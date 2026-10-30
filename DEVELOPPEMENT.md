@@ -131,3 +131,12 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - CI post-fusion sur `main` n°37 (`41060753951`) réussie.
 - Essais réels du déclencheur : workflows événementiels n°2 (`41061094373`) et n°3 (`41061693762`) bien déclenchés, mais publication du commentaire refusée avec HTTP 403 « Resource not accessible by integration » sur `POST /issues/{numero}/comments` (PR #6, PR de contrôle #8).
 - Correctif proposé sur PR dédiée : donner explicitement `pull-requests: write` au jeton du workflow en plus de `issues: write`. Contrôler une exécution réelle après fusion ; tant que la publication n'est pas vérifiée, ne pas annoncer le suivi comme opérationnel.
+
+### Validation opérationnelle du suivi événementiel — 30 octobre 2026
+
+- PR corrective #9 fusionnée sur `main` par squash `69135eab67e8eaede7c4def772a4b2a61ad4aee6`, après succès du workflow CI n°39 (`41062056608`). La correction accorde `pull-requests: write` au `GITHUB_TOKEN`.
+- CI post-fusion de la PR #9 sur `main` : exécution n°40 (`41062314305`) terminée avec succès.
+- Test de bout en bout : relance de la CI de la PR temporaire #8, run n°38 (`41061402910`), terminée avec succès ; l'événement a déclenché le workflow « Résultats CI des pull requests » n°5 (`41062630446`), également réussi.
+- Publication réelle constatée : commentaire créé par `github-actions[bot]` sur la PR #8, https://github.com/Xynph/cadrage-debordement/pull/8#issuecomment-6523854663, comprenant le statut ✅ Réussie, le lien du run n°38 et le SHA testé. La PR #8 de contrôle a été fermée sans fusion.
+- Le suivi événementiel est opérationnel pour publier les résultats CI directement dans les PR GitHub ; il ne génère pas de notification instantanée dans ChatGPT. Les workflows n°2 à n°4 antérieurs au correctif ont échoué en HTTP 403 ; la validation n°5 confirme la résolution du problème.
+- Prochaine priorité : finaliser la PR #6 (mesure des durées et délais de tests) avant de reprendre V20.
