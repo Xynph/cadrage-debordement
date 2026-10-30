@@ -11,16 +11,16 @@ const allTests=fs.readdirSync(path.join(root,'tests'))
 
 const name=key=>'tests/'+key+'.cjs';
 const dependencies={
- 'dist/rugby.js':['rugby','discipline','frontrow','match-rules','matchflow','goalkicking','opposition','v19-advantage','v20-numerical-ai','v21-numerical-advice','saves'],
+ 'dist/rugby.js':['rugby','discipline','frontrow','match-rules','matchflow','goalkicking','opposition','v19-advantage','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','saves'],
  'dist/frontrow.js':['frontrow','discipline','match-rules','rugby','saves'],
  'dist/restarts.js':['restarts','match-rules','rugby','saves'],
  'dist/matchflow.js':['matchflow','rugby','saves'],
- 'dist/tactical-plans.js':['tactical-plans','v20-numerical-ai','v21-numerical-advice','saves'],
- 'dist/opposition.js':['opposition','v20-numerical-ai','v21-numerical-advice','saves'],
- 'dist/saves.js':['saves','v20-numerical-ai','v21-numerical-advice','frontrow','match-rules'],
+ 'dist/tactical-plans.js':['tactical-plans','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','saves'],
+ 'dist/opposition.js':['opposition','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','saves'],
+ 'dist/saves.js':['saves','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','frontrow','match-rules'],
  'dist/match-actions.js':['match-actions','rugby','v19-advantage'],
- 'dist/match2d.js':['match2d','v21-numerical-advice'],
- 'dist/playbook.js':['playbook','tactical-plans','saves'],
+ 'dist/match2d.js':['match2d','v21-numerical-advice','v22-tactical-comparison'],
+ 'dist/playbook.js':['playbook','tactical-plans','v22-tactical-comparison','saves'],
  'dist/match-preparation.js':['preparation','saves'],
  'dist/manager.js':['manager','saves'],
  'dist/manager-squad.js':['manager','saves'],
@@ -28,8 +28,8 @@ const dependencies={
  'dist/economy.js':['economy','saves'],
  'dist/world-data.js':['rugby','development','economy','saves'],
  'dist/storage.js':['offline','saves'],
- 'dist/game.js':['manager','match2d','preparation','v21-numerical-advice','saves'],
- 'dist/style.css':['match2d','v21-numerical-advice'],
+ 'dist/game.js':['manager','match2d','preparation','v21-numerical-advice','v22-tactical-comparison','saves'],
+ 'dist/style.css':['match2d','v21-numerical-advice','v22-tactical-comparison'],
  'dist/index.html':['offline','v21-numerical-advice']
 };
 const helpers=new Set(['ci/select-tests.cjs','.github/workflows/tests.yml']);
