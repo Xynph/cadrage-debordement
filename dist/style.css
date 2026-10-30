@@ -46,3 +46,10 @@
 .numerical-advice .staff-suggestion p{margin:5px 0 0;font-size:12px;line-height:1.5}
 .numerical-advice .staff-suggestion button{white-space:normal}
 @media(max-width:600px){.numerical-advice .staff-suggestion{align-items:stretch;flex-direction:column;gap:9px}.numerical-advice .staff-suggestion button{width:100%}}
+
+/* V22 : comparaison des effets du moteur (lecture seule) dans le conseil du staff. */
+.advice-comparison{border:1px solid var(--line);background:#f8f8f2;padding:10px 12px;border-radius:7px;margin-top:10px}
+.advice-comparison .help{font-size:11px;line-height:1.5;margin:6px 0}
+.advice-comparison-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:11px}
+.advice-comparison-row span:last-child{text-align:right;overflow-wrap:anywhere}
+@media(max-width:600px){.advice-comparison-row{grid-template-columns:1fr;gap:3px}.advice-comparison-row span:last-child{text-align:left}}
