@@ -1,17 +1,20 @@
 # Cadrage Débordement
 
-Before changing match, squad, discipline or competition behavior, read
-`docs/rugby-rules-reference.md`. It records official sources, applicability dates,
-known engine errors and remaining checks. Verify the exact law and competition
-variation before coding. Do not use current game behavior or passing regression
-tests as proof that a rugby rule is correct.
+Avant de modifier le comportement d’un match, d’un effectif, de la discipline ou
+de la compétition, lire `docs/rugby-rules-reference.md`. Ce document conserve les
+sources officielles, leurs dates d’application, les erreurs connues du moteur
+et les vérifications restantes. Vérifier la loi exacte et la disposition de
+compétition avant de coder. Le comportement actuel du jeu ou la réussite des
+tests ne prouvent pas qu’une règle de rugby est correcte.
 
-The user wants a short French explanation before each work phase. Continue
-autonomously within the requested scope; do not repeatedly hand over the game or
-ask for confirmation. The user authorized implementation after the rules audit. Changes and their
-remaining limits are tracked under versions 7–14 in README.md. Finish and publish
-the current bounded change; do not claim all rugby rules are implemented.
+L’utilisateur souhaite une courte explication en français avant chaque phase de
+travail. Poursuivre de manière autonome dans le périmètre demandé, sans lui
+remettre systématiquement le jeu ni demander des confirmations répétées.
+L’implémentation a été autorisée après l’audit des règles. Les évolutions et leurs
+limites sont suivies dans les versions 7 à 14 du README.md. Terminer et publier
+le lot autorisé, sans prétendre que toutes les règles du rugby sont implémentées.
 
-Distinguish laws, French competition provisions, deliberate abstractions and
-unverified details. Pin the simulated season/rule edition before applying a new
-law. Never apply amateur, youth or sevens variations to elite adult XV by default.
+Distinguer les lois, les dispositions françaises de compétition, les abstractions
+volontaires et les détails non vérifiés. Fixer la saison simulée et l’édition des
+règles avant d’appliquer une nouvelle loi. Ne jamais appliquer par défaut les
+variantes amateurs, jeunes ou de rugby à sept au XV adulte d’élite.
