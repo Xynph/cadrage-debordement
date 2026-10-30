@@ -53,3 +53,12 @@
 .advice-comparison-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:11px}
 .advice-comparison-row span:last-child{text-align:right;overflow-wrap:anywhere}
 @media(max-width:600px){.advice-comparison-row{grid-template-columns:1fr;gap:3px}.advice-comparison-row span:last-child{text-align:left}}
+
+/* V23 : identifier clairement chaque priorité tactique locale et son action. */
+.advice-local-zones{margin:10px 0 0;padding:10px 12px;border:1px solid #d8decf;border-radius:7px;background:#eff4e9}
+.advice-local-zones>.help{margin:6px 0;font-size:11px}
+.advice-local-zone{display:flex;justify-content:space-between;align-items:center;gap:14px;border-top:1px solid #d1d8c9;padding:10px 0}
+.advice-local-zone>div{min-width:0;flex:1}
+.advice-local-zone .help{font-size:11px;line-height:1.5;margin:4px 0 0}
+.advice-local-zone button{flex-shrink:0;max-width:190px;white-space:normal}
+@media(max-width:600px){.advice-local-zone{align-items:stretch;flex-direction:column;gap:8px}.advice-local-zone button{max-width:none;width:100%}}
