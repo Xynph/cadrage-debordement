@@ -77,3 +77,15 @@
 .four-zone-preview td small{font-weight:600}
 .four-zone-preview .four-zone-current{background:rgba(108,137,87,.10)}
 @media(max-width:650px){.four-zone-preview th,.four-zone-preview td{padding:8px 6px}}
+
+/* V25 : scénario tactique transitoire, entièrement en lecture seule. */
+.four-zone-whatif{margin:16px 0 10px;padding:13px;border:1px solid var(--line);border-radius:7px;background:#f7f8f3}
+.four-zone-whatif h4{margin:0 0 8px;font-size:13px}
+.four-zone-whatif .help{margin:8px 0;line-height:1.55;font-size:11px}
+.four-zone-whatif-selects{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
+.four-zone-whatif-selects label{font-size:11px;font-weight:600;display:flex;flex-direction:column;gap:5px}
+.four-zone-whatif-selects select{width:100%;min-width:0;padding:8px;border:1px solid var(--line);border-radius:5px;background:var(--bg,#fff);color:inherit}
+.four-zone-whatif .four-zone-whatif-table{min-width:550px}
+.four-zone-whatif-table th:first-child{width:40%}
+.four-zone-whatif-table td{width:30%}
+@media(max-width:650px){.four-zone-whatif-selects{grid-template-columns:1fr}}
