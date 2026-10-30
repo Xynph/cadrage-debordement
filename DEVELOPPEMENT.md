@@ -439,3 +439,12 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - **Solution retenue dans la même PR** : résumé natif `GITHUB_STEP_SUMMARY` et annotation `::notice` dans le job existant ; zéro workflow supplémentaire et zéro appel API d'écriture, fonctionne sur PR et `main`. Le statut natif `Validation CI` reste l'unique verdict autorisant une fusion ; pas de notifications directes vers ChatGPT.
 - `tests/ci-report.cjs` vérifie les garde-fous de structure. Les shards complets incluent les sauvegardes ; aucune modification du moteur ni des règles rugby.
 - La réduction du nombre de lectures manuelles est un objectif de procédure, pas une métrique observée chez l'utilisateur. Mesurer la latence CI par rapport aux 93–95 s historiques ; ne pas revendiquer un gain de calcul sans preuve. Les exécutions GitHub du dernier SHA et de fusion documentent l'état final sans nouveau commit documentaire.
+
+## V36 — Satisfaction, promesses et négociations (31 octobre 2026)
+
+- Départ : dernier `main` `fa0a667e3b12b10b32241f89bf0120aa55981d39`, CI post-fusion V35 et infrastructure `41141602501` réussie.
+- Nouveau modèle de satisfaction optionnel : nouvelles carrières `satisfactionVersion:1`, anciennes carrières inchangées jusqu'à activation volontaire hors match et négociation. État par joueur : score 65/100, promesse sur 3 matchs, historique borné à 8 éléments ; sauvegardes validées.
+- Engagement explicite 80/160/200 min en trois rencontres ; minutes réellement enregistrées par `recordDevelopmentMatch` ; exclusion des matchs où le joueur blessé ne joue pas. Succès +8, échec −10, score 20–95 ; aucune sanction masquée ni changement du rugby.
+- En renouvellement uniquement, coefficient affiché borné de −1 % si satisfaction ≥80 et +2 % si satisfaction <40 ; seuil inchangé entre les deux. Confirmation contractuelle et transferts inchangés.
+- Test déterministe ajouté `tests/v36-satisfaction.cjs` ; validation de la CI PR et post-fusion à relever depuis GitHub. Pas de promesses en cours reprises automatiquement depuis l'ancien modèle.
+- Prochaine priorité unique V37 : historique des discussions contractuelles avec rappels et décisions explicables, sans refus ou sanction automatique supplémentaire.

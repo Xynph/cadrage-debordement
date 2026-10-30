@@ -1,6 +1,71 @@
 'use strict';
 // Fictional transfer economy. Salaries are charged by the career's weekly ledger.
 let marketTab='recruit';
+// V36 : promesses observables, indépendantes du calcul des matchs.
+const PROMISE_MINUTES={rotation:80,regulier:160,titulaire:200};
+function satisfactionActive(){return S?.satisfactionVersion===1}
+function ensureSatisfaction(p){
+ if(!satisfactionActive())return null;
+ if(!p.satisfaction)p.satisfaction={version:1,score:65,season:S.season,baseline:p.dev?.minutes||0,promise:null,history:[]};
+ return p.satisfaction;
+}
+function activateSatisfaction(){
+ if(!S||satisfactionActive()||S.live||Object.keys(S.economy.talks).length)return false;
+ S.satisfactionVersion=1;club().players.forEach(ensureSatisfaction);save();render();return true;
+}
+function makePlayingPromise(id,target){
+ if(!satisfactionActive()||S.live||S.phase!=='league'||S.round>23||Object.keys(S.economy.talks).length||!Object.prototype.hasOwnProperty.call(PROMISE_MINUTES,target))return false;
+ const p=player(id);if(!p||p.injury)return false;
+ const st=ensureSatisfaction(p);if(st.promise)return false;
+ st.promise={target,season:S.season,round:S.round,completed:0,minutes:0};
+ st.history.push({season:S.season,round:S.round,status:'promise',minutes:0,target});
+ st.history=st.history.slice(-8);save();render();return true;
+}
+function recordSatisfactionRound(l){
+ if(!satisfactionActive()||!l?.finished||l.pair[l.userSide]!==S.club)return false;
+ for(const p of club().players){
+  const st=ensureSatisfaction(p),current=p.dev?.minutes||0;
+  if(st.season!==S.season){st.season=S.season;st.baseline=0;st.promise=null;}
+  const played=Math.max(0,current-st.baseline);st.baseline=current;
+  const promise=st.promise;
+  if(!promise||promise.season!==S.season||promise.round>S.round)continue;
+  // Une blessure sans minute jouée suspend la promesse.
+  if(p.injury&&played===0)continue;
+  promise.completed++;promise.minutes+=played;
+  if(promise.completed===3){
+   const met=promise.minutes>=PROMISE_MINUTES[promise.target];
+   st.score=clamp(st.score+(met?8:-10),20,95);
+   st.history.push({season:S.season,round:S.round,status:met?'kept':'broken',minutes:promise.minutes,target:promise.target});
+   st.history=st.history.slice(-8);st.promise=null;
+  }
+ }
+ return true;
+}
+function resetSatisfactionSeason(){
+ if(!satisfactionActive())return;
+ for(const p of club().players){
+  const st=ensureSatisfaction(p);st.season=S.season;st.baseline=0;st.promise=null;
+ }
+}
+function satisfactionWageRate(p,kind){
+ if(kind!=='renew'||!satisfactionActive()||!p.satisfaction)return 0;
+ return p.satisfaction.score<40?.02:p.satisfaction.score>=80?-.01:0;
+}
+function satisfactionPanel(){
+ if(!satisfactionActive())return '<section class="card"><h2>Satisfaction V36</h2><p class="help">Carrière historique : contrat inchangé. Activation volontaire, hors match et négociations.</p><button class="small dark" onclick="activateSatisfaction()">Activer le suivi de satisfaction</button></section>';
+ const rows=club().players.slice().sort((a,b)=>(a.satisfaction?.score??65)-(b.satisfaction?.score??65)||a.name.localeCompare(b.name,'fr'));
+ const can=S.phase==='league'&&!S.live&&S.round<=23&&!Object.keys(S.economy.talks).length;
+ return '<section class="card"><h2>Satisfaction et promesses V36</h2><p class="help">Promesse explicite de 80, 160 ou 200 minutes sur 3 rencontres réellement disputées : respect +8, non-respect −10, bornes 20–95. Blessure sans minute : rencontre non comptée. Seuil de renouvellement : +2 % si score inférieur à 40 ; −1 % dès 80. Aucun effet sur le moteur rugby.</p><div class="tablewrap"><table><thead><tr><th>JOUEUR</th><th>ÉTAT</th><th>ENGAGEMENT / HISTORIQUE</th><th>ACTION</th></tr></thead><tbody>'+rows.map(p=>{
+ const st=p.satisfaction,pr=st.promise;
+ const label=st.score>=80?'Satisfait':st.score>=55?'Stable':st.score>=40?'Préoccupé':'Mécontent';
+ const last=st.history.slice(-2).map(h=>'<small>'+visualEscape('S'+h.season+' J'+(h.round+1)+' · '+h.status+' · '+h.minutes+' min')+'</small>').join(' · ');
+ const summary=pr?pr.minutes+'/'+PROMISE_MINUTES[pr.target]+' minutes, '+pr.completed+'/3 matchs':'Aucune promesse';
+ const options=Object.entries(PROMISE_MINUTES).map(([k,n])=>'<option value="'+k+'">'+n+' min / 3 matchs</option>').join('');
+ const action=can&&!pr&&!p.injury?'<select id="promise-'+p.id+'">'+options+'</select><button class="small" onclick="makePlayingPromise(\''+p.id+'\',document.querySelector(\'#promise-'+p.id+'\').value)">Promettre</button>':'—';
+ return '<tr><td>'+visualEscape(p.name)+'</td><td>'+st.score+'/100 · '+label+'</td><td>'+summary+'<div>'+last+'</div></td><td>'+action+'</td></tr>';
+ }).join('')+'</tbody></table></div></section>';
+}
+
 function ensureContract(p){if(!Number.isInteger(p.contractEnd))p.contractEnd=S.season+(seedHash(p.id)%3);return p}
 function setupEconomy(backup=false){if(!S)return;const fresh=!S.economy;if(fresh&&backup){try{if(!gameStorage.getItem('bdt-backup-economy'))gameStorage.setItem('bdt-backup-economy',JSON.stringify(S))}catch(e){}}
 S.economy=S.economy||{version:1,week:S.round,talks:{},listings:{},offers:[],transfers:[],freeAgents:[],settled:0};S.clubs.forEach(c=>c.players.forEach(ensureContract));if(fresh&&backup)news('Mercato enrichi : contrats, négociations, prolongations et offres de transfert. Salaires et trésorerie conservés.')}
@@ -97,7 +162,7 @@ function enableSalaryDemandModel(){
  toast('Demandes évolutives activées pour cette carrière. Aucun contrat signé.');
  return true;
 }
-function reservationWage(p,kind,years){const age=p.age>=31&&years===3?1.12:years===1?1.08:years===3?.96:1;return Math.ceil(askingWage(p,kind)*(.86+(seedHash(p.id)%8)/100)*age/100)*100}
+function reservationWage(p,kind,years){const age=p.age>=31&&years===3?1.12:years===1?1.08:years===3?.96:1;return Math.ceil(askingWage(p,kind)*(.86+(seedHash(p.id)%8)/100)*age*(1+satisfactionWageRate(p,kind))/100)*100}
 function contractFee(p,kind){return kind==='renew'?Math.round(p.salary*2/1000)*1000:p.price}
 function ledgerEntry(title,amount){club().cash+=amount;S.ledger.unshift({title,amount});S.ledger=S.ledger.slice(0,100)}
 function transferEvent(text){S.economy.transfers.unshift({season:S.season,round:S.round,text});S.economy.transfers=S.economy.transfers.slice(0,80);news(text)}
@@ -106,7 +171,7 @@ const years=t?.years||Math.max(2,min),salary=t?.salary||askingWage(p,kind),fee=c
 function submitContract(id,kind){const wage=Number($('#offer-wage').value),years=Number($('#offer-years').value);negotiateContract(id,kind,wage,years);openContract(id,kind)}
 function negotiateContract(id,kind,wage,years){if(economyLocked())return false;let p=talkPlayer(id,kind);if(!p||!['recruit','renew'].includes(kind)||!Number.isInteger(wage)||wage<1000||wage>100000||![1,2,3].includes(years)){toast('Vérifiez le salaire et la durée proposés.');return false}let end=contractBase()+years-1;if(years>careerContractYears(p)){toast('Cette durée dépasse la retraite prévue du joueur.');return false}if(kind==='renew'&&end<=p.contractEnd){toast('La prolongation doit allonger le contrat actuel.');return false}let key=talkKey(id,kind),prev=S.economy.talks[key];if(prev?.attempts>=3||prev?.status==='withdrawn'){toast('Le joueur ne négociera plus avant la prochaine journée.');return false}const attempts=(prev?.attempts||0)+1,minimum=reservationWage(p,kind,years);const accepted=wage>=minimum;const withdrawn=!accepted&&attempts===3;const acceptedSalary=accepted?wage:minimum;const status=accepted?'ready':withdrawn?'withdrawn':'counter';const message=accepted?`Accord de principe pour ${money(wage)} par semaine. Confirmez pour signer.`:withdrawn?'Les trois propositions ont échoué. Le joueur met fin aux échanges pour cette journée.':`Le joueur refuse et demande ${money(minimum)} par semaine sur ${years} saison(s). Proposition ${attempts}/3.`;
 S.economy.talks[key]={id,kind,week:S.economy.week,attempts,years,salary:wage,acceptedSalary,status,message,end,fee:contractFee(p,kind)};save();return true}
-function confirmContract(key){if(economyLocked())return false;const t=S.economy.talks[key];if(!t||!['ready','counter'].includes(t.status)||t.week!==S.economy.week)return false;const p=talkPlayer(t.id,t.kind);if(!p)return false;if(t.years>careerContractYears(p)){toast('Révisez la durée : elle dépasse la retraite prévue.');return false;}if(club().cash<t.fee){toast('Trésorerie insuffisante pour payer la prime.');return false}if(t.kind==='renew'&&t.end<=p.contractEnd)return false;if(t.kind==='recruit'&&club().players.some(x=>x.id===p.id))return false;ledgerEntry(`${t.kind==='renew'?'Prolongation':'Signature'} : ${p.name}`,-t.fee);p.salary=t.acceptedSalary;p.contractEnd=t.end;if(t.kind==='recruit'){p.joinedSeason=S.season;p.joinedRound=S.round;club().players.push(p);S.market=S.market.filter(x=>x.id!==p.id);S.economy.freeAgents=S.economy.freeAgents.filter(x=>x.id!==p.id)}t.status='signed';transferEvent(`${p.name} ${t.kind==='renew'?'prolonge':'rejoint le club'} jusqu’à la fin de la saison ${t.end}, à ${money(p.salary)} par semaine.`);delete S.economy.listings[p.id];S.economy.offers=S.economy.offers.filter(o=>o.playerId!==p.id);modal=null;save();render();toast('Contrat signé.');return true}
+function confirmContract(key){if(economyLocked())return false;const t=S.economy.talks[key];if(!t||!['ready','counter'].includes(t.status)||t.week!==S.economy.week)return false;const p=talkPlayer(t.id,t.kind);if(!p)return false;if(t.years>careerContractYears(p)){toast('Révisez la durée : elle dépasse la retraite prévue.');return false;}if(club().cash<t.fee){toast('Trésorerie insuffisante pour payer la prime.');return false}if(t.kind==='renew'&&t.end<=p.contractEnd)return false;if(t.kind==='recruit'&&club().players.some(x=>x.id===p.id))return false;ledgerEntry(`${t.kind==='renew'?'Prolongation':'Signature'} : ${p.name}`,-t.fee);p.salary=t.acceptedSalary;p.contractEnd=t.end;if(t.kind==='recruit'&&satisfactionActive())ensureSatisfaction(p);if(t.kind==='recruit'){p.joinedSeason=S.season;p.joinedRound=S.round;club().players.push(p);S.market=S.market.filter(x=>x.id!==p.id);S.economy.freeAgents=S.economy.freeAgents.filter(x=>x.id!==p.id)}t.status='signed';transferEvent(`${p.name} ${t.kind==='renew'?'prolonge':'rejoint le club'} jusqu’à la fin de la saison ${t.end}, à ${money(p.salary)} par semaine.`);delete S.economy.listings[p.id];S.economy.offers=S.economy.offers.filter(o=>o.playerId!==p.id);modal=null;save();render();toast('Contrat signé.');return true}
 function toggleListing(id){if(economyLocked())return;let p=player(id);if(!p)return;let why=saleBlocked(p);if(why){toast(why);return}if(S.economy.listings[id]){delete S.economy.listings[id];S.economy.offers=S.economy.offers.filter(o=>o.playerId!==id);toast('Joueur retiré du marché.')}else{S.economy.listings[id]=true;toast('Joueur proposé aux autres clubs. Consultez les offres après la prochaine journée.')}save();render()}
 function economyWeek(){setupEconomy();const e=S.economy;e.week++;e.offers=e.offers.filter(o=>o.expires>=e.week&&player(o.playerId));e.talks={};for(let id of Object.keys(e.listings)){const p=player(id);if(!p){delete e.listings[id];continue}if(saleBlocked(p)||e.offers.some(o=>o.playerId===id))continue;let fee=Math.round(transferValue(p)*(.78+(seedHash(id+e.week)%25)/100)/10000)*10000;const buyers=S.clubs.filter(c=>c.id!==S.club&&c.cash>=fee&&c.players.length<42).sort((a,b)=>{const aNeed=Math.max(0,...recruitmentNeeds(a).filter(n=>slotEligible(p,n.slot)).map(n=>n.score));const bNeed=Math.max(0,...recruitmentNeeds(b).filter(n=>slotEligible(p,n.slot)).map(n=>n.score));return bNeed-aNeed||Math.abs(a.base-p.rating)-Math.abs(b.base-p.rating)||a.id-b.id});if(!buyers.length)continue;const buyer=buyers[(seedHash(id+e.week)%Math.min(3,buyers.length))];e.offers.push({id:`offer-${e.week}-${id}`,playerId:id,buyer:buyer.id,fee,expires:e.week+1})}
 const expiry=club().players.filter(p=>p.contractEnd===S.season);if(expiry.length&&[0,13,22,26].includes(S.round))news(`${expiry.length} contrat(s) expire(nt) à la fin de cette saison. Consultez l’onglet Contrats pour anticiper les départs.`)}
@@ -117,7 +182,7 @@ function settleContracts(){const e=S.economy;if(e.settled===S.season)return;e.se
 function marketSwitch(tab){if(!['recruit','contracts','sales','history'].includes(tab))return;marketTab=tab;render()}
 function transferMarket(){setupEconomy();return heading('BÂTIR POUR DEMAIN','Le bureau du recrutement.','Recrutez les bons profils, anticipez les fins de contrat et gardez la maîtrise des salaires.')+`<div class="stats"><div class="card stat"><span class="eyebrow">TRÉSORERIE</span><b>${(club().cash/1e6).toFixed(2).replace('.',',')} <small>M€</small></b></div><div class="card stat"><span class="eyebrow">SALAIRES / JOURNÉE</span><b>${Math.round(totalWages()/1000)} <small>k€</small></b></div><div class="card stat"><span class="eyebrow">FIN DE CONTRAT</span><b>${club().players.filter(p=>p.contractEnd===S.season).length} <small>joueurs</small></b></div><div class="card stat"><span class="eyebrow">OFFRES REÇUES</span><b>${S.economy.offers.length}</b></div></div><div class="tabs markettabs">${[['recruit','Recruter'],['contracts','Contrats'],['sales','Ventes'],['history','Mouvements']].map(([k,t])=>`<button class="${marketTab===k?'dark':''}" onclick="marketSwitch('${k}')">${t}</button>`).join('')}</div>${({recruit:recruitmentPanel,contracts:contractsPanel,sales:salesPanel,history:movementsPanel})[marketTab]()}`}
 function recruitmentPanel(){return `${recruitmentNeedsPanel()}<div class="notice" style="margin:0 0 20px">Agents libres fictifs. La prime est payée à la signature ; les salaires sont débités à chaque journée. Les négociations sont renouvelées après la prochaine journée.</div><div class="marketgrid">${S.market.map(p=>`<div class="card marketplayer"><div class="row" style="margin:0"><span class="tag">${p.pos}</span><span class="rating">${recruitmentEvidence(p).noteMin}–${recruitmentEvidence(p).noteMax} (estimé)</span></div><h3>${p.name}</h3><span class="muted">${p.age} ans · ${p.formerClub?'Ancien club : '+p.formerClub:'Agent libre'}</span><div class="row"><span class="muted">Potentiel au poste</span><strong>${recruitmentEvidence(p).seen?recruitmentEvidence(p).potentialMin+'–'+recruitmentEvidence(p).potentialMax:'À observer'}</strong></div>${recruitmentEvidence(p).seen?skillChips(p):'<p class="help">Qualités non observées ; une mission est nécessaire.</p>'}<button class="textbutton" style="margin-top:12px" onclick="inspectPlayer('${p.id}')">${recruitmentEvidence(p).seen?'Voir les attributs ↗':'Évaluation préliminaire ↗'}</button><div class="row"><span class="muted">Prime de signature</span><strong>${money(p.price)}</strong></div><div class="row"><span class="muted">Salaire demandé / semaine</span><strong>${money(p.salary)}</strong></div><button class="dark" style="width:100%" onclick="openContract('${p.id}')" ${club().cash<p.price?'disabled':''}>Négocier le contrat →</button></div>`).join('')}</div>`}
-function contractsPanel(){return `<div class="card"><div class="cardtitle"><h2>Les engagements du club</h2><span class="tag">${club().players.length} CONTRATS</span></div><p class="help">Un contrat expire après les phases finales de sa dernière saison. Une prolongation remplace le salaire immédiatement. Les contrats longs pourront être prolongés quand leur échéance approchera.</p><div class="tablewrap"><table><thead><tr><th>JOUEUR</th><th>POSTE</th><th>SALAIRE / SEMAINE</th><th>ÉCHÉANCE</th><th>ACTION</th></tr></thead><tbody>${[...club().players].sort((a,b)=>a.contractEnd-b.contractEnd||b.salary-a.salary).map(p=>`<tr><td><button class="textbutton" onclick="inspectPlayer('${p.id}')">${p.name}</button></td><td>${p.pos}</td><td>${money(p.salary)}</td><td><span class="${p.contractEnd===S.season?'danger':''}">${contractLabel(p)}</span></td><td><button class="small" onclick="openContract('${p.id}','renew')" ${p.contractEnd>=contractBase()+2?'disabled':''}>Prolonger</button></td></tr>`).join('')}</tbody></table></div><div class="notice">Salaires restant à verser : environ ${money(futureWages())}. Estimation sur 29 journées payées par saison, hors primes de prolongation et futurs recrutements.</div></div>`+salaryDemandPanel()+renewalAdvisorPanel()+counterofferPanel()}
+function contractsPanel(){return `<div class="card"><div class="cardtitle"><h2>Les engagements du club</h2><span class="tag">${club().players.length} CONTRATS</span></div><p class="help">Un contrat expire après les phases finales de sa dernière saison. Une prolongation remplace le salaire immédiatement. Les contrats longs pourront être prolongés quand leur échéance approchera.</p><div class="tablewrap"><table><thead><tr><th>JOUEUR</th><th>POSTE</th><th>SALAIRE / SEMAINE</th><th>ÉCHÉANCE</th><th>ACTION</th></tr></thead><tbody>${[...club().players].sort((a,b)=>a.contractEnd-b.contractEnd||b.salary-a.salary).map(p=>`<tr><td><button class="textbutton" onclick="inspectPlayer('${p.id}')">${p.name}</button></td><td>${p.pos}</td><td>${money(p.salary)}</td><td><span class="${p.contractEnd===S.season?'danger':''}">${contractLabel(p)}</span></td><td><button class="small" onclick="openContract('${p.id}','renew')" ${p.contractEnd>=contractBase()+2?'disabled':''}>Prolonger</button></td></tr>`).join('')}</tbody></table></div><div class="notice">Salaires restant à verser : environ ${money(futureWages())}. Estimation sur 29 journées payées par saison, hors primes de prolongation et futurs recrutements.</div></div>`+salaryDemandPanel()+satisfactionPanel()+renewalAdvisorPanel()+counterofferPanel()}
 function salesPanel(){const e=S.economy;return `<div class="stack"><div class="card"><h2>Les offres sur votre bureau</h2>${e.offers.map(o=>{let p=player(o.playerId);if(!p)return '';return `<div class="transferoffer"><div><strong>${p.name}</strong><p>${S.clubs[o.buyer].name} · ${money(o.fee)} · valable jusqu’à la prochaine journée incluse</p></div><div class="matchactions"><button class="small" onclick="declineSale('${o.id}')">Refuser</button><button class="primary small" onclick="openSale('${o.id}')">Examiner l’offre</button></div></div>`}).join('')||'<p>Placez un joueur sur le marché. Les premières offres pourront arriver après la prochaine journée, selon les moyens des autres clubs.</p>'}</div><div class="card"><h2>Les joueurs à céder</h2><div class="tablewrap"><table><thead><tr><th>JOUEUR</th><th>POSTE</th><th>SALAIRE / SEMAINE</th><th>VALEUR ESTIMÉE</th><th>STATUT</th></tr></thead><tbody>${club().players.map(p=>`<tr><td>${p.name}</td><td>${p.pos}</td><td>${money(p.salary)}</td><td>${money(transferValue(p))}</td><td>${saleBlocked(p)?`<small class="muted">${saleBlocked(p)}</small>`:`<button class="small ${e.listings[p.id]?'dark':''}" onclick="toggleListing('${p.id}')">${e.listings[p.id]?'Retirer du marché':'Proposer à la vente'}</button>`}</td></tr>`).join('')}</tbody></table></div></div></div>`}
 function movementsPanel(){return `<div class="card"><h2>Le journal du mercato</h2>${S.economy.transfers.map(t=>`<div class="news"><small>SAISON ${t.season} · ${t.round<26?'J'+(t.round+1):'FIN DE SAISON'}</small>${t.text}</div>`).join('')||'<p>Vos signatures, prolongations, ventes et départs apparaîtront ici.</p>'}</div>`}
 function careerContractYears(p){ensureDevelopment(p);return Math.max(0,p.dev.retireAge-p.age-(S.phase==='ended'?1:0))}
