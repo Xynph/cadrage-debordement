@@ -46,3 +46,7 @@ Deux comptes ChatGPT interviennent comme développeurs de même niveau, **en alt
 
 Ce protocole s'applique à chaque session, même si l'utilisateur ne le rappelle pas explicitement. Il complète les autres consignes de ce fichier, notamment la vérification des règles de rugby avant tout changement du moteur.
 
+
+### Journal de passation
+
+À chaque reprise, lire également `DEVELOPPEMENT.md` après avoir vérifié les derniers changements sur GitHub. Ce journal consigne les travaux, décisions, problèmes connus, tests et priorités. À la fin de chaque chantier significatif, le mettre à jour, enregistrer cette mise à jour dans GitHub et vérifier le contenu publié. Si le journal et le code divergent, les commits et le code actuels prévalent.
