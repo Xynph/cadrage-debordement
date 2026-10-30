@@ -142,3 +142,15 @@
 .succession-table td{min-width:128px;vertical-align:top;font-variant-numeric:tabular-nums}
 .succession-table td small{display:block;margin-top:5px;line-height:1.5}
 .succession-table th:first-child{min-width:120px}
+
+/* V33 — comparaison de plusieurs décisions de prolongation, sans action sur le club. */
+.renewal-advisor{margin-top:18px}
+.renewal-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(164px,1fr));gap:10px;margin:16px 0}
+.renewal-controls label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:650}
+.renewal-controls select{min-width:0;max-width:100%;padding:8px;border:1px solid var(--line,#d7d7d7);border-radius:5px;color:inherit;background:var(--bg,#fff)}
+.renewal-ranking,.renewal-comparison{font-size:12px}
+.renewal-ranking td,.renewal-comparison td{vertical-align:top;font-variant-numeric:tabular-nums}
+.renewal-ranking td:last-child{min-width:240px;line-height:1.55}
+.renewal-ranking td small,.renewal-comparison td small{display:block;margin-top:4px;line-height:1.5}
+.renewal-comparison td{min-width:125px}
+.renewal-comparison th:first-child{min-width:160px}

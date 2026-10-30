@@ -35,7 +35,7 @@ function settleContracts(){const e=S.economy;if(e.settled===S.season)return;e.se
 function marketSwitch(tab){if(!['recruit','contracts','sales','history'].includes(tab))return;marketTab=tab;render()}
 function transferMarket(){setupEconomy();return heading('BÂTIR POUR DEMAIN','Le bureau du recrutement.','Recrutez les bons profils, anticipez les fins de contrat et gardez la maîtrise des salaires.')+`<div class="stats"><div class="card stat"><span class="eyebrow">TRÉSORERIE</span><b>${(club().cash/1e6).toFixed(2).replace('.',',')} <small>M€</small></b></div><div class="card stat"><span class="eyebrow">SALAIRES / JOURNÉE</span><b>${Math.round(totalWages()/1000)} <small>k€</small></b></div><div class="card stat"><span class="eyebrow">FIN DE CONTRAT</span><b>${club().players.filter(p=>p.contractEnd===S.season).length} <small>joueurs</small></b></div><div class="card stat"><span class="eyebrow">OFFRES REÇUES</span><b>${S.economy.offers.length}</b></div></div><div class="tabs markettabs">${[['recruit','Recruter'],['contracts','Contrats'],['sales','Ventes'],['history','Mouvements']].map(([k,t])=>`<button class="${marketTab===k?'dark':''}" onclick="marketSwitch('${k}')">${t}</button>`).join('')}</div>${({recruit:recruitmentPanel,contracts:contractsPanel,sales:salesPanel,history:movementsPanel})[marketTab]()}`}
 function recruitmentPanel(){return `${recruitmentNeedsPanel()}<div class="notice" style="margin:0 0 20px">Agents libres fictifs. La prime est payée à la signature ; les salaires sont débités à chaque journée. Les négociations sont renouvelées après la prochaine journée.</div><div class="marketgrid">${S.market.map(p=>`<div class="card marketplayer"><div class="row" style="margin:0"><span class="tag">${p.pos}</span><span class="rating">${recruitmentEvidence(p).noteMin}–${recruitmentEvidence(p).noteMax} (estimé)</span></div><h3>${p.name}</h3><span class="muted">${p.age} ans · ${p.formerClub?'Ancien club : '+p.formerClub:'Agent libre'}</span><div class="row"><span class="muted">Potentiel au poste</span><strong>${recruitmentEvidence(p).seen?recruitmentEvidence(p).potentialMin+'–'+recruitmentEvidence(p).potentialMax:'À observer'}</strong></div>${recruitmentEvidence(p).seen?skillChips(p):'<p class="help">Qualités non observées ; une mission est nécessaire.</p>'}<button class="textbutton" style="margin-top:12px" onclick="inspectPlayer('${p.id}')">${recruitmentEvidence(p).seen?'Voir les attributs ↗':'Évaluation préliminaire ↗'}</button><div class="row"><span class="muted">Prime de signature</span><strong>${money(p.price)}</strong></div><div class="row"><span class="muted">Salaire demandé / semaine</span><strong>${money(p.salary)}</strong></div><button class="dark" style="width:100%" onclick="openContract('${p.id}')" ${club().cash<p.price?'disabled':''}>Négocier le contrat →</button></div>`).join('')}</div>`}
-function contractsPanel(){return `<div class="card"><div class="cardtitle"><h2>Les engagements du club</h2><span class="tag">${club().players.length} CONTRATS</span></div><p class="help">Un contrat expire après les phases finales de sa dernière saison. Une prolongation remplace le salaire immédiatement. Les contrats longs pourront être prolongés quand leur échéance approchera.</p><div class="tablewrap"><table><thead><tr><th>JOUEUR</th><th>POSTE</th><th>SALAIRE / SEMAINE</th><th>ÉCHÉANCE</th><th>ACTION</th></tr></thead><tbody>${[...club().players].sort((a,b)=>a.contractEnd-b.contractEnd||b.salary-a.salary).map(p=>`<tr><td><button class="textbutton" onclick="inspectPlayer('${p.id}')">${p.name}</button></td><td>${p.pos}</td><td>${money(p.salary)}</td><td><span class="${p.contractEnd===S.season?'danger':''}">${contractLabel(p)}</span></td><td><button class="small" onclick="openContract('${p.id}','renew')" ${p.contractEnd>=contractBase()+2?'disabled':''}>Prolonger</button></td></tr>`).join('')}</tbody></table></div><div class="notice">Salaires restant à verser : environ ${money(futureWages())}. Estimation sur 29 journées payées par saison, hors primes de prolongation et futurs recrutements.</div></div>`}
+function contractsPanel(){return `<div class="card"><div class="cardtitle"><h2>Les engagements du club</h2><span class="tag">${club().players.length} CONTRATS</span></div><p class="help">Un contrat expire après les phases finales de sa dernière saison. Une prolongation remplace le salaire immédiatement. Les contrats longs pourront être prolongés quand leur échéance approchera.</p><div class="tablewrap"><table><thead><tr><th>JOUEUR</th><th>POSTE</th><th>SALAIRE / SEMAINE</th><th>ÉCHÉANCE</th><th>ACTION</th></tr></thead><tbody>${[...club().players].sort((a,b)=>a.contractEnd-b.contractEnd||b.salary-a.salary).map(p=>`<tr><td><button class="textbutton" onclick="inspectPlayer('${p.id}')">${p.name}</button></td><td>${p.pos}</td><td>${money(p.salary)}</td><td><span class="${p.contractEnd===S.season?'danger':''}">${contractLabel(p)}</span></td><td><button class="small" onclick="openContract('${p.id}','renew')" ${p.contractEnd>=contractBase()+2?'disabled':''}>Prolonger</button></td></tr>`).join('')}</tbody></table></div><div class="notice">Salaires restant à verser : environ ${money(futureWages())}. Estimation sur 29 journées payées par saison, hors primes de prolongation et futurs recrutements.</div></div>`+renewalAdvisorPanel()}
 function salesPanel(){const e=S.economy;return `<div class="stack"><div class="card"><h2>Les offres sur votre bureau</h2>${e.offers.map(o=>{let p=player(o.playerId);if(!p)return '';return `<div class="transferoffer"><div><strong>${p.name}</strong><p>${S.clubs[o.buyer].name} · ${money(o.fee)} · valable jusqu’à la prochaine journée incluse</p></div><div class="matchactions"><button class="small" onclick="declineSale('${o.id}')">Refuser</button><button class="primary small" onclick="openSale('${o.id}')">Examiner l’offre</button></div></div>`}).join('')||'<p>Placez un joueur sur le marché. Les premières offres pourront arriver après la prochaine journée, selon les moyens des autres clubs.</p>'}</div><div class="card"><h2>Les joueurs à céder</h2><div class="tablewrap"><table><thead><tr><th>JOUEUR</th><th>POSTE</th><th>SALAIRE / SEMAINE</th><th>VALEUR ESTIMÉE</th><th>STATUT</th></tr></thead><tbody>${club().players.map(p=>`<tr><td>${p.name}</td><td>${p.pos}</td><td>${money(p.salary)}</td><td>${money(transferValue(p))}</td><td>${saleBlocked(p)?`<small class="muted">${saleBlocked(p)}</small>`:`<button class="small ${e.listings[p.id]?'dark':''}" onclick="toggleListing('${p.id}')">${e.listings[p.id]?'Retirer du marché':'Proposer à la vente'}</button>`}</td></tr>`).join('')}</tbody></table></div></div></div>`}
 function movementsPanel(){return `<div class="card"><h2>Le journal du mercato</h2>${S.economy.transfers.map(t=>`<div class="news"><small>SAISON ${t.season} · ${t.round<26?'J'+(t.round+1):'FIN DE SAISON'}</small>${t.text}</div>`).join('')||'<p>Vos signatures, prolongations, ventes et départs apparaîtront ici.</p>'}</div>`}
 function careerContractYears(p){ensureDevelopment(p);return Math.max(0,p.dev.retireAge-p.age-(S.phase==='ended'?1:0))}
@@ -153,4 +153,165 @@ function financialForecastPanel(){
  const details=scenarios.slice(1).map(s=>'<p class="help"><strong>'+s.label+' :</strong> '+(s.value.valid?(s.value.executable?'Hypothèse simulable, sans engagement. ':'Hypothèse non exécutable actuellement. ')+s.value.notes.join(' '):s.value.error)+'</p>').join('');
  const first=baseline.annual[0],explain='Hypothèses du moteur : partenaires 160 000 € et salaires à chaque journée ; 300 000 à 450 000 € par match à domicile déjà programmé ; prime 0/40 000/80 000 € par match pour les bornes prudent/médian/haut. '+FORECAST_SEASON_FUNDING.toLocaleString('fr-FR')+' € versés au début des saisons suivantes. Les 26 matchs de championnat sont déterminés par le calendrier de la carrière. Les trois journées finales sont payées, mais ni match ni billetterie ni prime de titre ne sont garantis. Aucun nouveau transfert, blessure, retraite, coût de scouting, prolongation automatique ou recette non codée n’est supposé.';
  return '<section class="card finance-forecast"><div class="cardtitle"><h2>Prévoir sans engager le club</h2><span class="tag">SIMULATION V31</span></div><p class="help">Quatre plans comparés sur les mêmes journées et hypothèses. Les montants sont une trésorerie de jeu, pas un budget réel. Modifier les choix ne change ni les contrats, ni les sauvegardes, ni le match.</p>'+controls+'<div class="tablewrap"><table class="forecast-table">'+cols+'<tbody>'+body+'</tbody></table></div>'+details+'<details><summary>Hypothèses, limites et calendrier</summary><p class="help">'+explain+'</p><p class="help">Dès cette saison : '+first.payments+' journée(s) de flux, '+first.homes+' match(s) à domicile de championnat restant(s), '+first.matchDays+' match(s) de championnat programmé(s). Les contrats expirés ne sont plus payés la saison suivante ; les joueurs encore présents après leur retraite éventuelle ne sont pas prédits.</p></details></section>';
+}
+
+
+
+// V33 — Conseiller de prolongations en lecture seule : aucun appel à save(),
+// ledgerEntry(), submitContract() ou confirmContract(). Le contrat et le cash
+// effectifs du club sont exclusivement modifiés par les actions du mercato.
+let renewalChoice={first:null,second:null,third:null,years:2,horizon:3};
+function renewalEligibleYears(s,p,desired=2){
+ const base=forecastContractBase(s),min=Math.max(1,p.contractEnd-base+2),
+  max=Math.min(3,(p.dev?.retireAge??99)-p.age-(s.phase==='ended'?1:0));
+ if(max<min)return null;
+ return {min,max,years:Math.min(max,Math.max(min,desired))};
+}
+function renewalPriorities(s=S,horizon=3,desiredYears=2){
+ if(!s||!Number.isInteger(horizon)||horizon<1||horizon>3||
+  !Number.isInteger(desiredYears)||desiredYears<1||desiredYears>3)return [];
+ const team=s.clubs[s.club],baseline=successionSimulate(s,[],horizon);
+ if(!baseline.valid)return [];
+ const needs=POS.map((_,slot)=>recruitmentNeed(team,slot));
+ const totalMissing=baseline.gaps;
+ return team.players.flatMap(p=>{
+  const terms=renewalEligibleYears(s,p,desiredYears);
+  if(!terms)return [];
+  const quote=forecastQuote(s,{kind:'renew',id:p.id,years:terms.years});
+  if(!quote.valid)return [];
+  const projection=successionSimulate(s,[{kind:'renew',id:p.id,years:terms.years}],horizon);
+  if(!projection.valid)return [];
+  const slots=needs.filter(n=>slotEligible(p,n.slot));
+  if(!slots.length)return [];
+  const primary=slots.slice().sort((a,b)=>b.score-a.score||a.slot-b.slot)[0];
+  const peers=team.players.filter(q=>q.id!==p.id&&!q.injury&&slotEligible(q,primary.slot));
+  const here=roleNote(p,FAMILIES[primary.slot]);
+  const backup=peers.length?Math.max(...peers.map(q=>roleNote(q,FAMILIES[primary.slot]))):team.base-12;
+  const minutes=p.dev?.careerMinutes||0,age=p.age;
+  const futureDelta=Math.max(0,totalMissing-projection.gaps);
+  const urgency=p.contractEnd<=s.season?27:p.contractEnd===s.season+1?18:9;
+  const scarcity=Math.min(18,Math.round(primary.score*.2));
+  const impact=Math.min(24,futureDelta*12);
+  const strength=Math.min(14,Math.max(0,Math.round((here-backup)*.7)+5));
+  const upside=Math.min(9,Math.round(Math.max(0,(p.dev?.potential??p.rating)-p.rating)*.5));
+  const mature=age<=28?6:age<=31?3:0;
+  const retiredSoon=(p.dev?.retireAge??99)-age<=2?18:age>=34?7:0;
+  const fee=quote.fee,proposedSalary=quote.players.find(q=>q.id===p.id)?.salary??p.salary;
+  const financialPenalty=(fee>team.cash*.15?12:0)+(proposedSalary>p.salary*1.5?6:0);
+  const score=clamp(urgency+scarcity+impact+strength+upside+mature-retiredSoon-financialPenalty,0,100);
+  const youth=s.development.academy.filter(y=>slotEligible(y,primary.slot)&&y.dev?.potential>=y.rating+5).length;
+  const reasons=[
+   p.contractEnd<=s.season?'Contrat expirant cette saison':'Contrat fin S'+p.contractEnd,
+   primary.pos+' : besoin V30 '+primary.score+'/100',
+   'Note au poste '+here+' contre '+backup+' pour la meilleure alternative disponible',
+   'Relève V32 : '+futureDelta+' poste-saison(s) sécurisés sur '+horizon,
+   'Âge '+age+' ans, retraite prévue à '+(p.dev?.retireAge??'?')+' ans',
+   'Potentiel restant '+Math.max(0,(p.dev?.potential??p.rating)-p.rating)+' point(s)',
+   youth?youth+' espoir(s) du centre éligible(s)':'Aucun espoir adapté au poste',
+   'Prime '+money(fee)+' ; salaire simulé '+money(proposedSalary)+'/journée'
+  ];
+  if(p.dev?.specialization&&Object.values(p.dev.specialization.bonuses||{}).some(v=>v>0))
+   reasons.push('Qualités spécialisées V29 incluses dans la note actuelle, sans double bonus');
+  if(terms.years!==desiredYears)
+   reasons.push('Durée ajustée à '+terms.years+' saison(s) selon contrat existant et retraite');
+  if(!projection.executable)reasons.push('Prolongation non réalisable immédiatement');
+  return [{id:p.id,p,score,primarySlot:primary.slot,need:primary.score,
+   futureDelta,here,backup,upside,age,fee,proposedSalary,terms,projection,
+   reasons,executable:projection.executable,minutes}];
+ }).sort((a,b)=>b.score-a.score||b.futureDelta-a.futureDelta||
+  a.p.contractEnd-b.p.contractEnd||a.id.localeCompare(b.id));
+}
+function renewalCompare(s,ids=[],horizon=3,desiredYears=2,ranked=null){
+ if(!s||!Array.isArray(ids)||ids.length>3||
+  !Number.isInteger(horizon)||horizon<1||horizon>3||
+  !Number.isInteger(desiredYears)||desiredYears<1||desiredYears>3)
+  return {valid:false,error:'Horizon ou sélection invalide.'};
+ const cleanIds=ids.filter(id=>id!=='');
+ if(cleanIds.some(id=>typeof id!=='string')||new Set(cleanIds).size!==cleanIds.length)
+  return {valid:false,error:'Sélectionnez des joueurs différents.'};
+ const priorities=ranked||renewalPriorities(s,horizon,desiredYears);
+ const pool=new Map(priorities.map(c=>[c.id,c]));
+ if(cleanIds.some(id=>!pool.has(id)))return {valid:false,error:'Joueur indisponible à la prolongation.'};
+ const variants=[{name:'Sans prolongation',ids:[]}];
+ for(const id of cleanIds)variants.push({name:'Conserver '+pool.get(id).p.name,ids:[id]});
+ if(cleanIds.length>=2)variants.push({name:'Conserver les 2 premiers',ids:cleanIds.slice(0,2)});
+ if(cleanIds.length>=3)variants.push({name:'Conserver les 3',ids:cleanIds});
+ const baseline=successionSimulate(s,[],horizon);
+ if(!baseline.valid)return {valid:false,error:baseline.error};
+ const cases=variants.map(v=>{
+  const actions=v.ids.map(id=>({kind:'renew',id,years:pool.get(id).terms.years}));
+  const result=actions.length?successionSimulate(s,actions,horizon):baseline;
+  if(!result.valid)return {...v,valid:false,error:result.error};
+  const last=result.finance.points.at(-1),baselineLast=baseline.finance.points.at(-1);
+  return {...v,valid:true,executable:result.executable,fee:result.fee,
+   savedGaps:baseline.gaps-result.gaps,
+   financialChange:last.central-baselineLast.central,
+   cashLow:last.low,cashCentral:last.central,cashHigh:last.high,
+   minimumLow:result.finance.minima.low,risk:result.finance.risk,
+   annual:result.finance.annual,coverage:result.years.map(y=>y.covered),
+   gaps:result.years.map(y=>y.gaps.length),explanations:result.reasons};
+ });
+ return {valid:true,horizon,desiredYears,cases,priorities};
+}
+function setRenewalChoice(field,value){
+ if(!S||!['first','second','third','years','horizon'].includes(field))return false;
+ if(field==='years'||field==='horizon'){
+  value=Number(value);if(!Number.isInteger(value)||value<1||value>3)return false;
+ }else if(typeof value!=='string'||value.length>150||
+  (value&&!renewalPriorities(S,renewalChoice.horizon,renewalChoice.years).some(p=>p.id===value)))
+  return false;
+ renewalChoice[field]=value;render();return true;
+}
+function renewalAdvisorPanel(){
+ if(!S)return '';
+ const o=renewalChoice,ranked=renewalPriorities(S,o.horizon,o.years),top=ranked.slice(0,12);
+ const selected=[],labels=[['first','Joueur 1'],['second','Joueur 2'],['third','Joueur 3']];
+ const inputs=labels.map(([key,label],i)=>{
+  const remembered=o[key],fallback=top[i]?.id||'';
+  const id=remembered===null?fallback:remembered;
+  const current=top.find(p=>p.id===id),actual=current?id:(remembered===null?fallback:'');
+  if(actual)selected.push(actual);
+  return '<label>'+label+'<select aria-label="'+label+' à prolonger" onchange="setRenewalChoice(\''+
+   key+'\',this.value)"><option value=""'+(!actual?' selected':'')+'>Aucune prolongation</option>'+
+   top.map(t=>'<option value="'+t.id+'"'+(t.id===actual?' selected':'')+'>'+
+    visualEscape(t.p.name)+' · S'+t.p.contractEnd+' · '+t.score+'/100</option>').join('')+
+   '</select></label>';
+ }).join('');
+ const controls='<div class="renewal-controls">'+
+  [['years','Durée envisagée'],['horizon','Horizon de comparaison']].map(([key,label])=>
+   '<label>'+label+'<select aria-label="'+label+'" onchange="setRenewalChoice(\''+key+'\',this.value)">'+
+   [1,2,3].map(n=>'<option value="'+n+'"'+(o[key]===n?' selected':'')+'>'+n+' saison'+
+   (n>1?'s':'')+'</option>').join('')+'</select></label>').join('')+inputs+'</div>';
+ const analysis=renewalCompare(S,selected,o.horizon,o.years,ranked);
+ const recs=ranked.slice(0,8).map((r,i)=>
+  '<tr><td><strong>'+(i+1)+'. '+visualEscape(r.p.name)+'</strong><small>'+r.p.pos+
+  ' · '+r.p.age+' ans · fin S'+r.p.contractEnd+'</small></td><td><strong>'+r.score+'/100</strong></td>'+
+  '<td>'+r.here+'<small>Alternative '+r.backup+'</small></td>'+
+  '<td>'+r.futureDelta+'<small>poste-saison(s)</small></td>'+
+  '<td>'+money(r.fee)+'<small>'+money(r.proposedSalary)+'/journée, '+r.terms.years+' saison(s)</small></td>'+
+  '<td>'+r.reasons.slice(0,5).map(x=>visualEscape(x)).join(' · ')+
+  (r.executable?'':' · Non réalisable immédiatement')+'</td></tr>').join('');
+ const rows=analysis.valid?analysis.cases.map(c=>!c.valid?
+  '<tr><th>'+visualEscape(c.name)+'</th><td colspan="'+(o.horizon+4)+'>'+visualEscape(c.error)+'</td></tr>':
+  '<tr><th>'+visualEscape(c.name)+'</th>'+
+   c.coverage.map((n,i)=>'<td>'+n+'/15<small>'+c.gaps[i]+' poste(s) à couvrir</small></td>').join('')+
+   '<td>'+money(c.fee)+'</td><td>'+money(c.cashCentral)+
+   '<small>Prudent '+money(c.cashLow)+'</small></td>'+
+   '<td>'+(c.financialChange>=0?'+':'')+money(c.financialChange)+'</td>'+
+   '<td>'+(c.executable?'Simulation possible':'Non réalisable actuellement')+
+   '<small>'+visualEscape(c.risk)+'</small></td></tr>').join(''):
+  '<tr><td colspan="'+(o.horizon+5)+'>'+visualEscape(analysis.error)+'</td></tr>';
+ const table='<div class="tablewrap"><table class="renewal-comparison"><thead><tr><th>Option</th>'+
+  Array.from({length:o.horizon},(_,i)=>'<th>Fin S'+(S.season+i)+'</th>').join('')+
+  '<th>Prime totale</th><th>Trésorerie finale V31</th><th>Écart au statu quo</th>'+
+  '<th>Faisabilité</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+ return '<section class="card renewal-advisor"><div class="cardtitle"><h2>Prioriser les prolongations</h2>'+
+  '<span class="tag">CONSEILLER V33</span></div>'+
+  '<p class="help">Les priorités combinent urgence contractuelle, valeur sportive réelle, qualité V29, couverture V30, relève V32, âge, potentiel et risque de trésorerie V31. Les coefficients de priorité sont des critères fictifs d’aide à la décision, pas des probabilités ni des garanties d’accord.</p>'+
+  '<div class="tablewrap"><table class="renewal-ranking"><thead><tr><th>Joueur</th><th>Priorité</th>'+
+  '<th>Note au poste V29</th><th>Relève V32</th><th>Coût prévu V31</th><th>Explications</th></tr></thead><tbody>'+
+  (recs||'<tr><td colspan="6">Aucun contrat renouvelable pour le moment.</td></tr>')+
+  '</tbody></table></div><h3>Comparer plusieurs décisions sans négocier</h3>'+
+  controls+table+
+  '<p class="help">Une durée peut être ajustée si le contrat actuel exige une prolongation plus longue ou si la retraite prévue empêche la durée souhaitée. Les salaires et primes proviennent exactement de forecastQuote(), les flux futurs de forecastFinancialScenario() et les postes de successionSimulate(). Jusqu’à trois joueurs distincts peuvent être comparés seuls ou ensemble. Aucun contrat, journal ou fichier de sauvegarde n’est modifié.</p></section>';
 }
