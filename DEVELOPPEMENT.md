@@ -3,7 +3,7 @@
 > Document de passation partagé entre deux comptes ChatGPT de même niveau, intervenant **en alternance, jamais simultanément**. GitHub reste l'unique source de vérité. Ce document décrit l'état connu à la date de sa dernière mise à jour ; toujours le confronter aux commits, branches, pull requests et fichiers actuels avant de travailler.
 
 **Dernière mise à jour : 30 octobre 2026.**  
-**Dernière évolution fonctionnelle vérifiée : V27 (PR #18 fusionnée sur `main` ; validation Windows native non confirmée).**  
+**Dernière évolution fonctionnelle vérifiée : V28 (PR #19 fusionnée sur `main` ; validation Windows native non confirmée).**  
 **Branche de référence : `main`.**
 
 ## État du projet
@@ -271,5 +271,10 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - **Coût physique** : pendant le `trainWeek()` déjà idempotent, +4 points de fatigue cumulée par joueur concerné et non blessé ; aucun changement automatique des compétences. Conquête = avants, pied = arrières, défense = tout l'effectif apte. Zéro coût en mode préservation. Pas de calendrier quotidien ni de nouveau tirage aléatoire pour le choix.
 - **Compatibilité** : `S.collectivePrepVersion=1` et `S.collectiveFocus` pour nouveaux états et migrations de carrière ; l'instantané `l.collectivePreparation` n'est ajouté qu'aux **nouveaux matchs**. Les rencontres déjà ouvertes sans instantané gardent exactement leurs anciens calculs. Les exports, imports et rapports acceptent les champs facultatifs validés et rejettent les valeurs incohérentes.
 - **Fichiers concernés** : `dist/match-preparation.js`, `dist/game.js`, `dist/rugby.js`, `dist/restarts.js`, `dist/saves.js`, `tests/v28-collective-preparation.cjs` et sélection CI.
-- **Validation prévue** : tests déterministes (mêlée, défense, jeu au pied à tirage identique), frais V27 et idempotence, choix IA, import/export avec match historique, snapshots invalides ; relevé exploratoire de 20 matchs par politique, sans prétention de calibration définitive. CI ciblée puis complète sur le SHA exact et post-fusion sur `main` obligatoires. **Statut initial : branche de développement, pas encore fusionnée.**
+- **Validation ciblée :** workflow de branche n°179 (`41116580169`) **SUCCESS**, 23 suites réussies sur le commit `76cb18c1bb0918010b2f5b0d30640b63fb2f58a5`. Aucun échec dans les logs.
+- **Validation complète de PR :** workflow `pull_request` n°180 (`41116650691`) **SUCCESS**, 29 suites JavaScript réussies sur le même SHA exact, incluant V28, les sauvegardes, le moteur rugby et les régressions V27 ; aucune erreur.
+- **Fusion V28 :** PR #19 fusionnée par squash dans `main` au commit `852d253982de4ae51bf3d7611ad3b1ba835cb801`. Les fichiers V28 et le test ont été relus sur `main`.
+- **CI post-fusion :** workflow `push` sur `main` n°181 (`41117036724`) **completed / SUCCESS**, job `tests` (`124273843477`) **SUCCESS**, 29 suites validées et zéro échec confirmé dans les logs.
+- **Calibration exploratoire :** 80 rencontres simulées (20 par politique, même graine de départ par politique). Moyennes de points relevées : préservation 21,30 ; conquête 16,90 ; défense 19,75 ; pied 21,35. Les tirages divergent au fil des événements : ces moyennes ne prouvent ni causalité ni avantage durable. Vérification déterministe des variations locales de modèle : +3,92 points de conservation de mêlée/touche, −2,45 points d'avancée adverse et +2,94 mètres au pied pour une efficacité de 98 %. Coefficients internes fictifs, à recalibrer sur des échantillons et saisons plus étendus.
+- **Limites :** aucune validation native Windows pendant ce lot, aucune conformité exhaustive au rugby affirmée, aucune preuve de formules FM27. Les matchs anciens conservent leurs modèles sans bonus de préparation ajouté.
 - **Priorité V29 unique proposée après livraison** : progression individuelle ciblée et parcours de formation des espoirs, articulés sans double comptage avec `rating`, `skillBase`, le potentiel et le temps de jeu.
