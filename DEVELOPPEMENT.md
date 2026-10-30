@@ -460,3 +460,13 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Compatibilité : marqueur facultatif `relationsVersion:1` sur nouvelles carrières ; V36 et plus anciennes restent inchangées tant que V37 n'est pas activée. Validateur des nouveaux journaux et entretiens ; contrôle des exports, imports, scénarios historiques et match en cours dans `tests/v37-relations.cjs`.
 - La CI complète de PR, la fusion et la CI post-fusion seront vérifiées sur le SHA réel ; les runs définitifs figurent sur GitHub Actions sans nouveau commit documentaire après validation.
 - **Une priorité V38 :** développer des objectifs sportifs individuels discutables et mesurables sur plusieurs journées, avec historique et possibilité de réviser un objectif par accord explicite.
+
+## V38 — Objectifs sportifs individuels négociables (31 octobre 2026)
+
+- Point de départ vérifié : `main` `5f4ce30fbf14cd23fc51e085bfdf4059159f9c7f` ; PR V37 #31 fusionnée, CI post-fusion #41144024445 verte (96 s).
+- Modèle facultatif `objectivesVersion:1` pour les anciennes sauvegardes V37 et antérieures ; actif dans les nouvelles carrières. Les données restent dans `economy.objectives` (42 max, un engagement par joueur) et `economy.objectiveHistory` (80 max). Validation d'import/export étendue.
+- Proposition sur **minutes ou présences** mesurées via les compteurs de développement existants, horizon de 3 à 6 rencontres de championnat ; contre-proposition reproductible fondée sur un barème fictif clairement affiché. Seule la confirmation volontaire active un engagement. Aucun coût, réponse ou promesse implicite.
+- Révision proposée et acceptée séparément, sans effacer les minutes/présences déjà jouées. Suivi idempotent par journée, prise en compte des blessures sans minute, clôture sur résultat ou fin de saison avec historique explicite. Aucun effet secret sur satisfaction, moral, salaires ou physique des matchs ; les règles rugby demeurent inchangées.
+- Tableau dédié dans Contrats : progression, propositions, contre-propositions, validation, révision et événements datés. Un test `tests/v38-individual-objectives.cjs` couvre négociations, présence, blessures, idempotence, saisons, historiques, sauvegardes corrompues et migrations historiques. Carte des dépendances CI actualisée.
+- Fusion seulement après CI PR entière sur le dernier SHA, puis CI post-fusion `main` ; numéros et durées de run à consulter dans GitHub pour éviter un commit de passation post-fusion relançant les tests.
+- **Priorité V39 unique :** fiabiliser et rendre plus précis le suivi des objectifs et promesses lors des remplacements et des matchs interrompus, avec comparaison entre minutes affichées et minutes enregistrées, sans changer les règles de simulation.

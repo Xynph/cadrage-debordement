@@ -37,7 +37,7 @@ assert.ok(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
 run('p.satisfaction.score=110');
 assert.throws(()=>run('validateCareer(S)'));
 run('p.satisfaction.score=63');
-const legacy=JSON.parse(run('JSON.stringify(S)'));delete legacy.satisfactionVersion;delete legacy.relationsVersion;
+const legacy=JSON.parse(run('JSON.stringify(S)'));delete legacy.satisfactionVersion;delete legacy.relationsVersion;delete legacy.objectivesVersion;delete legacy.economy.objectives;delete legacy.economy.objectiveHistory;
 for(const c of legacy.clubs)for(const p of c.players)delete p.satisfaction;
 const old=context(legacy),r=old.run;
 assert.equal(r('S.satisfactionVersion'),undefined);
