@@ -66,6 +66,7 @@ jobs:
           if [[ "$EVENT_NAME" != "pull_request" || ! -s "$RUNNER_TEMP/modified.txt" ]]; then docs=false; fi
           echo "documentation_only=$docs" >> "$GITHUB_OUTPUT"
           echo "Documentation seule : $docs"
+  # Répartir la couverture complète sans omettre les tests de sauvegardes.
   shards:
     name: Suites ${{ matrix.shard }}/3
     needs: classification
