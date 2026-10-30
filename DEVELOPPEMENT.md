@@ -110,3 +110,10 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - PR #4 fusionnée sur `main` via `bc8bdfb57c6a8af7554076f3b40b799ca225347b` après succès complet de GitHub Actions `41057808869`.
 - Tests ajoutés pour avantage territorial, différentiel de joueurs actifs et compatibilité des anciennes sauvegardes ; tests du jeu exécutés avec succès sur la PR.
 - **Priorité V20 unique : améliorer l'intelligence tactique de l'IA en infériorité numérique**, en adaptant automatiquement les choix d'attaque et de défense aux cartons, avec tests déterministes et compatibilité des sauvegardes.
+
+## Documentation réglementaire — PR #5 (30 octobre 2026)
+
+- PR #5 fusionnée sur `main` par squash `0f91688a3969a401f1e972247797cb7dd6d71416` ; fichier `docs/matrice-tracabilite-rugby.md` relu sur `main` après fusion.
+- Workflow de PR GitHub Actions n°28 (`41058981202`) terminé avec succès : syntaxe JavaScript et tests du jeu réussis. Aucun changement du moteur ou des sauvegardes.
+- Audit CI : `.github/workflows/tests.yml` exécute séquentiellement toutes les suites `tests/*.cjs` hors `harness.cjs`, sans limite de temps par suite ni mesure de durée ; les logs montrent des simulations longues et un avertissement de dépréciation Node 20 pour `checkout@v4` et `setup-node@v4`. Ce sont des pistes d'amélioration, pas des échecs de test.
+- Prochaine priorité CI : mesurer la durée de chaque suite, plafonner la durée totale et moderniser les actions GitHub sur une PR séparée, sans modifier le moteur.
