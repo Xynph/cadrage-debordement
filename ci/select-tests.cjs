@@ -25,11 +25,11 @@ const dependencies={
  'dist/manager.js':['manager','saves','v30-recruitment-intelligence'],
  'dist/manager-squad.js':['manager','saves','v27-physical-load','v29-focused-development'],
  'dist/development.js':['development','saves','v27-physical-load','v29-focused-development','v30-recruitment-intelligence'],
- 'dist/economy.js':['economy','saves','v30-recruitment-intelligence'],
+ 'dist/economy.js':['economy','saves','v30-recruitment-intelligence','v31-finance-forecasts'],
  'dist/world-data.js':['rugby','development','economy','saves'],
  'dist/storage.js':['offline','saves'],
- 'dist/game.js':['manager','match2d','preparation','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves','v27-physical-load','v28-collective-preparation','v29-focused-development','v30-recruitment-intelligence'],
- 'dist/style.css':['match2d','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','v27-physical-load','v29-focused-development','v30-recruitment-intelligence'],
+ 'dist/game.js':['manager','match2d','preparation','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves','v27-physical-load','v28-collective-preparation','v29-focused-development','v30-recruitment-intelligence','v31-finance-forecasts'],
+ 'dist/style.css':['match2d','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','v27-physical-load','v29-focused-development','v30-recruitment-intelligence','v31-finance-forecasts'],
  'dist/index.html':['offline','v21-numerical-advice','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif']
 };
 const helpers=new Set(['ci/select-tests.cjs','.github/workflows/tests.yml']);
