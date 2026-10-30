@@ -4,12 +4,24 @@ on:
     branches: [main, 'feature/**', 'ci/**']
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
+
+# Les nouveaux commits remplacent les validations obsolètes sur une même branche/PR.
+# Les contrôles de main ne sont jamais annulés.
+concurrency:
+  group: tests-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   tests:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
@@ -17,12 +29,43 @@ jobs:
         run: |
           node --check dist/rugby.js
           node --check dist/tactical-plans.js
+          node --check ci/select-tests.cjs
+      - name: Sélection des suites de tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          list="$RUNNER_TEMP/cd-test-list.txt"
+          full() {
+            for test in tests/*.cjs; do
+              case "$test" in tests/harness.cjs) continue;; esac
+              printf '%s\n' "$test"
+            done > "$list"
+          }
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" || "$GITHUB_REF" == "refs/heads/main" ]]; then
+            full
+            echo "Validation complète obligatoire sur pull request et main."
+          else
+            if base=$(git merge-base HEAD origin/main); then
+              git diff --name-only "$base" HEAD > "$RUNNER_TEMP/cd-changed-files.txt"
+              node ci/select-tests.cjs "$RUNNER_TEMP/cd-changed-files.txt" > "$list"
+              echo "Validation ciblée pendant le développement."
+            else
+              echo "::warning::Base de comparaison introuvable : exécution de toutes les suites."
+              full
+            fi
+          fi
+          echo "CD_TEST_LIST=$list" >> "$GITHUB_ENV"
+          echo "Suites sélectionnées : $(wc -l < "$list")"
+          cat "$list"
       - name: Tests du jeu (durées et diagnostic)
         shell: bash
         run: |
           set -euo pipefail
-          for test in tests/*.cjs; do
-            case "$test" in tests/harness.cjs) continue;; esac
+          if [[ ! -s "$CD_TEST_LIST" ]]; then
+            echo "Aucun test métier pour cette modification documentaire ; les PR et main restent entièrement vérifiés."
+          fi
+          while IFS= read -r test; do
+            [[ -n "$test" ]] || continue
             echo "::group::$test"
             start=$SECONDS
             if timeout --signal=TERM --kill-after=10s 180s node "$test"; then
@@ -33,4 +76,4 @@ jobs:
               exit "$result"
             fi
             echo "::endgroup::"
-          done
+          done < "$CD_TEST_LIST"
