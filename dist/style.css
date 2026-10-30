@@ -154,3 +154,13 @@
 .renewal-ranking td small,.renewal-comparison td small{display:block;margin-top:4px;line-height:1.5}
 .renewal-comparison td{min-width:125px}
 .renewal-comparison th:first-child{min-width:160px}
+
+/* V34 — comparateur de salaires et durées, sans bouton de signature. */
+.counteroffer-panel{margin-top:18px}
+.counteroffer-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;margin:15px 0}
+.counteroffer-controls label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:650}
+.counteroffer-controls input,.counteroffer-controls select{min-width:0;max-width:100%;padding:8px;border:1px solid var(--line,#ddd);border-radius:5px;color:inherit;background:var(--bg,#fff)}
+.counteroffer-table{font-size:12px}
+.counteroffer-table td{min-width:118px;vertical-align:top;font-variant-numeric:tabular-nums}
+.counteroffer-table th:first-child{min-width:145px}
+.counteroffer-table td small{display:block;margin-top:4px;line-height:1.5}
