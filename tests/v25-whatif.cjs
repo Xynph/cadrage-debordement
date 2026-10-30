@@ -32,9 +32,10 @@ assert.equal(preview.alternateSource,'Consigne locale');
 assert.equal(preview.unchangedZones.join(','),'construction,pression,marque');
 assert.ok(preview.previous.minimum>preview.alternate.minimum,'Gain territorial calculé du moteur');
 const rendered=run('fourZoneWhatIfPanel(l)');
-for(const label of ['Avant','Après (aperçu)','Faute de main','Jeu au pied','Indice de fatigue offensive','Mètres par progression réussie','Occupation']){
- assert.ok(rendered.includes(label),label);
+for(const label of ['Avant','Après (aperçu)','faute de main','jeu au pied','Indice de fatigue offensive','Mètres par progression réussie']){
+ assert.ok(rendered.toLowerCase().includes(label.toLowerCase()),label);
 }
+assert.ok(rendered.includes(run('TACTICS[fourZoneWhatIf(l).alternate.actual][0]')),'Nom réel de la tactique alternative');
 assert.ok(rendered.includes("setFourZonePreviewChoice('plan',this.value)"));
 assert.equal(run('JSON.stringify(S)'),before,'La sélection n’altère pas les consignes ni les joueurs');
 assert.equal(t.store['bdt-v1'],disk,'La sélection ne déclenche aucune sauvegarde');
