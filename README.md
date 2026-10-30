@@ -17,6 +17,7 @@ Commencez par le [guide GitHub en français](docs/guide-github.md). Vous n’ave
 | `tests/` | Les vérifications automatiques du moteur et des sauvegardes |
 | `docs/` | Les guides et le référentiel des règles de rugby |
 | `AGENTS.md` | Les consignes à respecter lors des développements |
+| `DEVELOPPEMENT.md` | Journal partagé des travaux, décisions, problèmes et priorités |
 
 Les noms de fichiers, commandes et identifiants techniques restent identiques pour préserver les liens et le fonctionnement du projet. La documentation est rédigée en français.
 
@@ -71,6 +72,7 @@ Les tests nécessitent Node.js. Aucun paquet supplémentaire n’est nécessaire
 node --check dist/game.js
 node --check dist/rugby.js
 node tests/rugby.cjs
+node tests/goalkicking.cjs
 node tests/economy.cjs
 node tests/development.cjs
 node tests/saves.cjs
@@ -88,9 +90,16 @@ node tests/preparation.cjs
 node tests/offline.cjs
 ```
 
-Les 16 suites JavaScript couvrent notamment la sélection des 23, les spécialistes de première ligne, les remplacements, la discipline, les reprises de jeu, les sauvegardes, les finances, la formation, les tactiques, le recrutement et la cohérence de la 2D. Les scénarios comprennent 250 matchs indépendants, deux saisons complètes, dix intersaisons et des comparaisons tactiques contrôlées.
+Les 17 suites JavaScript couvrent notamment la sélection des 23, les spécialistes de première ligne, les remplacements, la discipline, les reprises de jeu, les sauvegardes, les finances, la formation, les tactiques, le recrutement et la cohérence de la 2D. Les scénarios comprennent 250 matchs indépendants, deux saisons complètes, dix intersaisons et des comparaisons tactiques contrôlées.
 
 Un test réussi ne prouve pas qu’une règle de rugby est correcte : les lois et dispositions applicables doivent être vérifiées dans le [référentiel rugby](docs/rugby-rules-reference.md).
+
+## Version 17 — tirs au but (en cours de validation)
+
+- La probabilité des transformations tient compte d'une géométrie indicative du point d'essai : distance et angle par rapport aux poteaux. Le point d'essai latéral reste une approximation du moteur, non une trajectoire individuelle reconstituée.
+- Le buteur choisi parmi les joueurs présents conserve une précision dépendant de sa compétence et de sa condition physique ; la météo continue d'influencer les tirs.
+- Un test ciblé `tests/goalkicking.cjs` et une automatisation GitHub Actions sont ajoutés. **Leur exécution effective doit être confirmée avant de déclarer la version validée.**
+- Le moteur continue de traiter essai et transformation comme une action unique ; les tirs ne sont pas encore une phase interactive distincte.
 
 ## Historique des versions
 
