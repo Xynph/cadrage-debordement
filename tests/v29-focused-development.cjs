@@ -71,7 +71,7 @@ assert.equal(academy.run('setDevelopmentFocus(youthId,"equilibre")'),false);
 
 // Minutes réellement jouées ; idempotence ; ancien match avec XP générale.
 const minutes=context();
-minutes.run('start(0);var p=club().players.find(p=>p.fam===0);p.age=19;p.dev.potential=99;setDevelopmentFocus(p.id,"scrum");var fixture={pair:[0,1],developmentFocusVersion:1,sheets:[{used:[p.id],minutes:{[p.id]:70}},{used:[],minutes:{}}],devBaseline:[{[p.id]:40},{}]};recordDevelopmentMatch(fixture)');
+minutes.run('start(0);var p=club().players.find(p=>p.fam===0);p.age=19;p.rating=70;p.skillBase=70;p.skills.scrum=55;p.dev.potential=99;setDevelopmentFocus(p.id,"scrum");var fixture={pair:[0,1],developmentFocusVersion:1,sheets:[{used:[p.id],minutes:{[p.id]:70}},{used:[],minutes:{}}],devBaseline:[{[p.id]:40},{}]};recordDevelopmentMatch(fixture)');
 assert.equal(minutes.run('p.dev.minutes'),30);
 assert.equal(minutes.run('p.dev.appearances'),1);
 assert.ok(minutes.run('p.dev.specialization.xp>0'));
