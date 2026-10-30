@@ -89,3 +89,14 @@
 .four-zone-whatif-table th:first-child{width:40%}
 .four-zone-whatif-table td{width:30%}
 @media(max-width:650px){.four-zone-whatif-selects{grid-template-columns:1fr}}
+
+/* V26 : double scénario tactique sans modification des consignes enregistrées. */
+.four-zone-double{padding:13px;margin:16px 0 10px;border:1px solid var(--line);border-radius:7px;background:#f2f5f0}
+.four-zone-double h4{font-size:13px;margin:0 0 8px}
+.four-zone-double .help{font-size:11px;line-height:1.5;margin:7px 0}
+.four-zone-double-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.four-zone-double-item{min-width:0;padding:9px;background:var(--bg,#fff);border:1px solid var(--line);border-radius:5px}
+.four-zone-double-item h5{font-size:12px;margin:0 0 6px}
+.four-zone-double .four-zone-whatif-table{min-width:480px}
+.four-zone-double-tradeoffs{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+@media(max-width:900px){.four-zone-double-grid{grid-template-columns:1fr}}

@@ -215,6 +215,7 @@ function fourZoneTacticalPanel(l){
    <span>Indice de fatigue défensive : ${index(z.defence.fatigue)}</span></td>
  </tr>`).join('')}</tbody></table></div>
  ${fourZoneWhatIfPanel(l)}
+ ${fourZoneDoubleWhatIfPanel(l)}
  <p class="help">Les valeurs correspondent à quatre situations représentatives indépendantes : vous attaquez avec le ballon, ou vous défendez face à la possession adverse. Elles peuvent varier selon le territoire exact, la météo et les joueurs. Modifier une tactique exige toujours une action explicite dans le carnet de jeu.</p>
  </div>`;
 }
@@ -226,6 +227,9 @@ function setFourZonePreviewChoice(field,value){
  if(field==='zone'){
   if(!Object.hasOwn(FIELD_ZONES,value))return false;
   fourZonePreviewChoice={...fourZonePreviewChoice,zone:value,plan:''};
+  if(fourZoneSecondChoice.zone===value){
+   fourZoneSecondChoice={...fourZoneSecondChoice,zone:Object.keys(FIELD_ZONES).find(zone=>zone!==value),plan:''};
+  }
  }else if(field==='kind'){
   if(!['attack','defence'].includes(value))return false;
   fourZonePreviewChoice={...fourZonePreviewChoice,kind:value,plan:''};
@@ -301,6 +305,119 @@ function fourZoneWhatIfPanel(l){
    ${same?'<p class="help">Aucun écart : les deux scénarios produisent les mêmes effets pour cette zone.</p>':''}`:
    '<p class="help">Choisissez une consigne alternative pour afficher ses effets, sans modification réelle.</p>'}
   <p class="help">Indices et coefficients du moteur fictif, à situation identique : ce ne sont ni des statistiques observées ni une prédiction de score. Aucun scénario n'est appliqué automatiquement ; les consignes réelles se modifient dans le carnet de jeu par action explicite.</p>
+ </section>`;
+}
+// V26 : comparer deux hypothèses dans des zones DISTINCTES sur une copie de match.
+// Les coefficients de deux secteurs ne s'additionnent pas : ce sont deux situations indépendantes.
+let fourZoneSecondChoice={zone:'construction',kind:'defence',plan:''};
+function setFourZoneSecondChoice(field,value){
+ const l=S?.live;
+ if(!l||!playbookRules(l))return false;
+ if(field==='zone'){
+  if(!Object.hasOwn(FIELD_ZONES,value)||value===fourZonePreviewChoice.zone)return false;
+  fourZoneSecondChoice={...fourZoneSecondChoice,zone:value,plan:''};
+ }else if(field==='kind'){
+  if(!['attack','defence'].includes(value))return false;
+  fourZoneSecondChoice={...fourZoneSecondChoice,kind:value,plan:''};
+ }else if(field==='plan'){
+  const allowed=fourZoneSecondChoice.kind==='attack'?TACTICS:DEFENCES;
+  if(value!==''&&value!=='inherit'&&!Object.hasOwn(allowed,value))return false;
+  fourZoneSecondChoice={...fourZoneSecondChoice,plan:value};
+ }else return false;
+ render();
+ return true;
+}
+function fourZoneDoubleWhatIf(l,firstChoice=fourZonePreviewChoice,secondChoice=fourZoneSecondChoice){
+ if(!l||!playbookRules(l)||![0,1].includes(l.userSide)||!firstChoice||!secondChoice
+  ||firstChoice.zone===secondChoice.zone)return null;
+ const first=fourZoneWhatIf(l,firstChoice),second=fourZoneWhatIf(l,secondChoice);
+ if(!first||!second)return null;
+ const side=l.userSide,base=fourZoneTacticalPreview(l);
+ // On clone le carnet une seule fois et on applique les deux hypothèses à cette copie.
+ const simulation=Object.create(l);
+ simulation.playbooks=[...l.playbooks];
+ const zones={...l.playbooks[side].zones};
+ for(const change of [first,second]){
+  zones[change.zone]={...zones[change.zone],[change.kind]:change.plan};
+ }
+ simulation.playbooks[side]={...l.playbooks[side],zones};
+ const changes=[first,second].map(change=>{
+  const zone=base.find(item=>item.zone===change.zone);
+  if(!zone)return null;
+  const shadow=Object.create(simulation);shadow.territory=zone.territory;
+  const plan=change.kind==='attack'?l.tactics[side]:l.defences[side];
+  const after=numericalAdviceModel(shadow,change.kind,plan);
+  if(!after)return null;
+  return {zone:change.zone,label:zone.label,kind:change.kind,plan:change.plan,
+   before:zone[change.kind],after,
+   beforeSource:change.previousSource,afterSource:change.alternateSource};
+ });
+ if(changes.some(change=>!change))return null;
+ return {changes,unchangedZones:base.filter(zone=>!changes.some(change=>change.zone===zone.zone)).map(zone=>zone.zone)};
+}
+function fourZoneDoubleWhatIfPanel(l){
+ if(!l||!playbookRules(l))return '';
+ const first=fourZoneWhatIf(l);
+ const selected=fourZoneSecondChoice;
+ const zones=Object.keys(FIELD_ZONES).filter(zone=>zone!==fourZonePreviewChoice.zone);
+ const zone=zones.includes(selected.zone)?selected.zone:zones[0];
+ const kind=['attack','defence'].includes(selected.kind)?selected.kind:'defence';
+ const options=kind==='attack'?TACTICS:DEFENCES;
+ const plan=selected.plan==='inherit'||Object.hasOwn(options,selected.plan)?selected.plan:'';
+ const combined=fourZoneDoubleWhatIf(l,fourZonePreviewChoice,{zone,kind,plan});
+ const percent=value=>(value*100).toFixed(1).replace('.',',')+' %';
+ const index=value=>value.toFixed(2).replace('.',',');
+ const points=value=>(value>0?'+':value<0?'−':'')+Math.abs(value*100).toFixed(1).replace('.',',')+' point(s)';
+ const rows=change=>change.kind==='attack'?[
+  ['Plan effectif',TACTICS[change.before.actual][0],TACTICS[change.after.actual][0]],
+  ['Gain par progression réussie',change.before.minimum+'–'+change.before.maximum+' m',change.after.minimum+'–'+change.after.maximum+' m'],
+  ['Faute de main par séquence',percent(change.before.handling),percent(change.after.handling)],
+  ['Jeu au pied',percent(change.before.kicking),percent(change.after.kicking)],
+  ['Indice de fatigue offensive',index(change.before.fatigue),index(change.after.fatigue)]
+ ]:[
+  ['Plan effectif',DEFENCES[change.before.actual][0],DEFENCES[change.after.actual][0]],
+  ['Pénalité : ajustement du modèle',points(change.before.penalty),points(change.after.penalty)],
+  ['Couverture défensive',change.before.cover,change.after.cover],
+  ['Indice de fatigue défensive',index(change.before.fatigue),index(change.after.fatigue)]
+ ];
+ const tradeoffs=combined?combined.changes.map(change=>{
+  if(change.kind==='attack'){
+   const before=change.before,after=change.after;
+   const gain=after.maximum>before.maximum?'plus de mètres possibles':after.maximum<before.maximum?'moins de mètres possibles':'même plafond de mètres';
+   const hands=after.handling>before.handling?'risque de faute de main accru':after.handling<before.handling?'risque de faute de main réduit':'risque de faute de main inchangé';
+   const effort=after.fatigue>before.fatigue?'fatigue offensive accrue':after.fatigue<before.fatigue?'fatigue offensive réduite':'fatigue offensive inchangée';
+   return `${change.label} : ${gain}, ${hands}, ${effort}.`;
+  }
+  const before=change.before,after=change.after;
+  const penalty=after.penalty>before.penalty?'ajustement de pénalité accru':after.penalty<before.penalty?'ajustement de pénalité réduit':'ajustement de pénalité inchangé';
+  const effort=after.fatigue>before.fatigue?'fatigue défensive accrue':after.fatigue<before.fatigue?'fatigue défensive réduite':'fatigue défensive inchangée';
+  return `${change.label} : ${penalty}, ${effort} ; couverture : ${after.cover}.`;
+ }):[];
+ return `<section class="four-zone-double" aria-label="Aperçu de deux ajustements tactiques combinés">
+  <h4>Deux ajustements, deux zones</h4>
+  <p class="help">Choisissez d’abord la première hypothèse ci-dessus, puis une deuxième zone distincte. Les deux consignes sont évaluées ensemble sur une copie temporaire du carnet de jeu.</p>
+  <div class="four-zone-whatif-selects">
+   <label>Deuxième zone<select aria-label="Deuxième zone" onchange="setFourZoneSecondChoice('zone',this.value)">
+    ${zones.map(key=>`<option value="${key}" ${zone===key?'selected':''}>${FIELD_ZONES[key]}</option>`).join('')}</select></label>
+   <label>Deuxième type de consigne<select aria-label="Deuxième type de consigne" onchange="setFourZoneSecondChoice('kind',this.value)">
+    <option value="attack" ${kind==='attack'?'selected':''}>Attaque</option>
+    <option value="defence" ${kind==='defence'?'selected':''}>Défense</option></select></label>
+   <label>Deuxième consigne alternative<select aria-label="Deuxième consigne alternative" onchange="setFourZoneSecondChoice('plan',this.value)">
+    <option value="" ${!plan?'selected':''}>Choisir un scénario</option>
+    <option value="inherit" ${plan==='inherit'?'selected':''}>Suivre le plan général</option>
+    ${Object.entries(options).map(([key,[label]])=>`<option value="${key}" ${plan===key?'selected':''}>${label}</option>`).join('')}</select></label>
+  </div>
+  ${combined?`<div class="four-zone-double-grid">
+   ${combined.changes.map((change,i)=>`<article class="four-zone-double-item">
+    <h5>${i+1}. ${change.label} — ${change.kind==='attack'?'attaque':'défense'}</h5>
+    <p class="help">Avant : ${change.beforeSource}. Après : ${change.afterSource}.</p>
+    <div class="four-zone-scroll"><table class="four-zone-whatif-table"><thead><tr><th scope="col">Effet du moteur</th><th scope="col">Avant</th><th scope="col">Après (aperçu)</th></tr></thead><tbody>
+     ${rows(change).map(([label,before,after])=>`<tr><th scope="row">${label}</th><td>${before}</td><td>${after}</td></tr>`).join('')}</tbody></table></div>
+   </article>`).join('')}</div>
+   <div class="four-zone-double-tradeoffs"><strong>Compromis dans les deux secteurs</strong>
+    ${tradeoffs.map(line=>`<p class="help">${line}</p>`).join('')}</div>`:
+   `<p class="help">${!first?'Choisissez d’abord une première consigne alternative.':'Choisissez une deuxième consigne alternative pour voir le scénario à deux zones.'}</p>`}
+  <p class="help">Les zones sont distinctes : les risques et indices de fatigue ne sont pas additionnés en une probabilité ou un résultat global. Les valeurs proviennent du moteur fictif à des positions représentatives. Aucune sélection ne modifie vos tactiques ni votre sauvegarde.</p>
  </section>`;
 }
 function numericalAdvicePanel(l){
