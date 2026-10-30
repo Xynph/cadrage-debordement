@@ -59,3 +59,10 @@ Ce protocole s'applique à chaque session, même si l'utilisateur ne le rappelle
 - Pour fusionner volontairement : `node ci/release-gate.cjs <PR> --merge` contrôle le SHA de la PR, le succès du workflow PR et de `Validation CI`, puis transmet le SHA attendu à GitHub. La fusion automatique native du dépôt reste désactivée ; **pas de contournement de la CI**.
 - Après fusion : un contrôle unique du run `push` sur le SHA de fusion, avec toutes les suites. Si échec, diagnostiquer et corriger ; ne jamais déclarer la livraison totalement validée sans cette preuve.
 - Écrire la passation et les mesures vérifiées dans le même commit que l'évolution quand c'est possible ; ne pas lancer un nouveau cycle CI uniquement pour recopier les IDs des workflows.
+
+## Remontée automatique CI native
+
+- Le job `Validation CI` publie un verdict, le SHA et le lien vers l'exécution **dans le résumé et les annotations GitHub Actions**. Aucun webhook, commentaire de PR, workflow additionnel ou permission d'écriture n'est nécessaire.
+- La tentative initiale de commentaire de PR dans cette PR a échoué : GitHub a refusé l'écriture avec `Resource not accessible by integration`. Ne pas prétendre que des commentaires ou notifications de conversation sont envoyés.
+- La conclusion native du contrôle `Validation CI` fait autorité ; le résumé n'autorise pas une fusion. Dernier SHA et CI complète restent exigés, puis CI post-fusion sur `main`.
+- Ne pas faire de sondages répétitifs : se fier aux contrôles natifs GitHub et consulter la page de résultat une fois terminée. GitHub peut notifier les participants selon leurs réglages. Aucun message n'est envoyé automatiquement dans ChatGPT.

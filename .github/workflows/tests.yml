@@ -138,3 +138,34 @@ jobs:
           else
             [[ "$SHARDS" == "success" ]]
           fi
+
+      - name: Publier le verdict natif (sans écriture API)
+        if: ${{ always() }}
+        shell: bash
+        env:
+          CLASSIFICATION: ${{ needs.classification.result }}
+          DOCS: ${{ needs.classification.outputs.documentation_only }}
+          SHARDS: ${{ needs.shards.result }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          result='ÉCHEC'
+          if [[ "$CLASSIFICATION" == "success" ]]; then
+            if [[ "$DOCS" == "true" && "$SHARDS" == "skipped" ]]; then result='SUCCÈS'; fi
+            if [[ "$DOCS" != "true" && "$SHARDS" == "success" ]]; then result='SUCCÈS'; fi
+          fi
+          url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          {
+            echo "## Verdict CI : $result"
+            echo ""
+            echo "- Commit évalué : \`$HEAD_SHA\`"
+            echo "- Événement : $EVENT_NAME"
+            echo "- Classification : $CLASSIFICATION"
+            echo "- Suites : $SHARDS"
+            echo "- Documentation seule : $DOCS"
+            echo "- [Voir les contrôles et les erreurs]($url)"
+            echo ""
+            echo "Ce résumé est informatif : seule la conclusion du contrôle Validation CI autorise la décision de fusion."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Verdict CI::$result sur $HEAD_SHA - $url"

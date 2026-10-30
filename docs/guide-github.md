@@ -101,3 +101,11 @@ phase de jeu si elles sont visibles.
 4. Consulter ensuite **une seule fois** la CI `push` de `main` correspondant au commit de fusion.
 
 **Limite de sécurité :** sur ce dépôt privé, la branche `main` n'a pas de protection obligatoire et `allow_auto_merge=false`. La fusion automatique permanente n'est pas activée : ce script impose un garde-fou applicatif mais ne remplace pas une protection GitHub. Ne jamais fusionner via un autre chemin non vérifié. Les commandes n'accélèrent pas les calculs des tests, elles réduisent surtout les consultations redondantes.
+
+## Verdict CI intégré à GitHub Actions
+
+À la fin de la CI, le job `Validation CI` produit directement un **résumé GitHub Actions** : succès/échec, SHA évalué, nombre de shards et lien vers les contrôles. Le statut vert/rouge apparaît nativement dans la PR, sans deuxième workflow et sans écriture API.
+
+La première tentative d'ajouter un commentaire automatique a été refusée par les permissions du dépôt (`Resource not accessible by integration`) : **aucun commentaire ni notification personnelle n'est garanti**. Le résumé et le check natifs fonctionnent sans cette permission ; les notifications GitHub dépendent des réglages utilisateur.
+
+Le contrôle `Validation CI` sur le dernier SHA reste nécessaire à la fusion. Après fusion, vérifier le workflow `push main` et son résumé sur le SHA fusionné. Aucun résultat ne peut arriver de GitHub directement dans cette conversation ChatGPT.

@@ -431,3 +431,11 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Protocole `AGENTS.md` et guide GitHub actualisés : une lecture initiale, diagnostics seulement sur échec, une CI complète de PR, un contrôle post-fusion, passation en même commit si possible.
 - Gain sur nombre d'appels attendu : lecture manuelle du gate en 3 requêtes GitHub (PR, liste runs, jobs) au lieu d'une suite indéfinie de sondages ; **gain réel en secondes à mesurer sur les runs de la PR et de main**. Aucun gain de latence des tests n'est garanti par ce changement de processus.
 - Références de PR/CI et résultats finaux : consulter l'historique GitHub ; ne pas prolonger le journal après fusion pour éviter de relancer une CI documentaire.
+
+## Verdict CI natif sans consultation répétée — 30 octobre 2026
+
+- Départ : `main` `cf0e24c1a4ed8db4926431c516c686729ce3dd30` ; CI précédente PR #28 `41140667914` = 93 s, post-fusion `41140877395` = 93 s, vertes.
+- **Essai réellement vérifié** sur PR #29 : run `41141168135`, SHA `56e3385d`, 95 s, tests complets et `Validation CI` réussis ; cependant GitHub a refusé l'appel `issues.createComment` avec `Resource not accessible by integration` (logs du job de validation). Aucun commentaire n'a été émis. Cette approche est abandonnée.
+- **Solution retenue dans la même PR** : résumé natif `GITHUB_STEP_SUMMARY` et annotation `::notice` dans le job existant ; zéro workflow supplémentaire et zéro appel API d'écriture, fonctionne sur PR et `main`. Le statut natif `Validation CI` reste l'unique verdict autorisant une fusion ; pas de notifications directes vers ChatGPT.
+- `tests/ci-report.cjs` vérifie les garde-fous de structure. Les shards complets incluent les sauvegardes ; aucune modification du moteur ni des règles rugby.
+- La réduction du nombre de lectures manuelles est un objectif de procédure, pas une métrique observée chez l'utilisateur. Mesurer la latence CI par rapport aux 93–95 s historiques ; ne pas revendiquer un gain de calcul sans preuve. Les exécutions GitHub du dernier SHA et de fusion documentent l'état final sans nouveau commit documentaire.
