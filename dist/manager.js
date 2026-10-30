@@ -45,6 +45,8 @@ function recruitmentDepth(c,slot){
 }
 function recruitmentNeed(c,slot){
  const depth=recruitmentDepth(c,slot),top=depth.fit.slice().sort((a,b)=>fitScore(b,FAMILIES[slot])-fitScore(a,FAMILIES[slot]))[0];
+ const weights=ROLE_WEIGHTS[FAMILIES[slot]]||ROLE_WEIGHTS[7];
+ const quality=Object.keys(weights).sort((a,b)=>{const aa=top?skill(top,a):c.base-15,bb=top?skill(top,b):c.base-15;return (aa-weights[a]*1.5)-(bb-weights[b]*1.5)||a.localeCompare(b)})[0];
  const danger=depth.fit.length===0?55:depth.fit.length===1?28:0;
  const succession=depth.durable.length===0?25:depth.durable.length===1?12:0;
  const expiring=depth.eligible.filter(p=>p.contractEnd===S.season).length;
@@ -61,7 +63,8 @@ function recruitmentNeed(c,slot){
  if(aging)reasons.push('titulaire expérimenté');
  if(weak)reasons.push('niveau à renforcer');
  if(depth.youth.length)reasons.push(depth.youth.length+' espoir(s) à développer');
- return {slot,family:FAMILIES[slot],pos:POS[slot],score,healthy:depth.fit.length,durable:depth.durable.length,youth:depth.youth.length,reasons,need:score>=20};
+ reasons.push('qualité à renforcer : '+ATTR[quality]);
+ return {slot,family:FAMILIES[slot],pos:POS[slot],score,healthy:depth.fit.length,durable:depth.durable.length,youth:depth.youth.length,quality,reasons,need:score>=20};
 }
 function recruitmentNeeds(c=club()){
  return POS.map((_,slot)=>recruitmentNeed(c,slot)).sort((a,b)=>b.score-a.score||a.slot-b.slot);
@@ -96,8 +99,10 @@ function recruitmentTargets(c=club(),pool=null,scouted=c.id===S.club){
   if(!matches.length)continue;
   const best=matches[0],evidence=recruitmentEvidence(p,scouted),finance=recruitmentFinance(c,p);
   const within=finance.sustainable&&p.salary<=100000;
-  const score=best.score*2+Math.round(evidence.quality/2)-(p.age>=32?10:0)-(finance.fee>c.cash*.3?12:0);
-  const reasons=[best.pos+': '+best.reasons.slice(0,2).join(', '),evidence.label];
+  const current=c.players.filter(q=>slotEligible(q,best.slot)).sort((a,b)=>roleNote(b)-roleNote(a))[0];
+  const observedQuality=evidence.seen?clamp(Math.round(((skill(p,best.quality)-(current?skill(current,best.quality):c.base))/3)), -8,8):0;
+  const score=best.score*2+Math.round(evidence.quality/2)+observedQuality-(p.age>=32?10:0)-(finance.fee>c.cash*.3?12:0);
+  const reasons=[best.pos+': '+best.reasons.slice(0,2).join(', '),'Qualité à vérifier : '+ATTR[best.quality],evidence.label];
   if(p.age<=22)reasons.push('profil de relève');
   if(!finance.sustainable)reasons.push('projection financière défavorable');
   out.push({p,need:best,evidence,finance,within,score,reasons});
