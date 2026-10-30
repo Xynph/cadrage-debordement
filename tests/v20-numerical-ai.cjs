@@ -3,7 +3,7 @@ const {context}=require('./harness.cjs');
 
 function fixture(level='expert'){
  const t=context(),run=t.run;
- run(`start(0);S.difficulty=${JSON.stringify(level)};beginMatch();pauseMatch();var l=S.live;l.minute=10;l.tactics=['equilibre','equilibre'];l.defences=['equilibre','equilibre']`);
+ run(`start(0);S.difficulty=${JSON.stringify(level)};beginMatch();pauseMatch();var l=S.live;l.minute=10;l.weather='Sec';l.tactics=['equilibre','equilibre'];l.defences=['equilibre','equilibre']`);
  return {t,run};
 }
 function incident(run,side,kind='yellow',index=4){
