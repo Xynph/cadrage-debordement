@@ -11,24 +11,24 @@ const allTests=fs.readdirSync(path.join(root,'tests'))
 
 const name=key=>'tests/'+key+'.cjs';
 const dependencies={
- 'dist/rugby.js':['rugby','discipline','frontrow','match-rules','matchflow','goalkicking','opposition','v19-advantage','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves','v27-physical-load'],
+ 'dist/rugby.js':['rugby','discipline','frontrow','match-rules','matchflow','goalkicking','opposition','v19-advantage','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves','v27-physical-load','v28-collective-preparation'],
  'dist/frontrow.js':['frontrow','discipline','match-rules','rugby','saves'],
- 'dist/restarts.js':['restarts','match-rules','rugby','saves'],
+ 'dist/restarts.js':['restarts','match-rules','rugby','saves','v28-collective-preparation'],
  'dist/matchflow.js':['matchflow','rugby','saves'],
  'dist/tactical-plans.js':['tactical-plans','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves'],
  'dist/opposition.js':['opposition','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves','v27-physical-load'],
- 'dist/saves.js':['saves','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','frontrow','match-rules','v27-physical-load'],
+ 'dist/saves.js':['saves','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','frontrow','match-rules','v27-physical-load','v28-collective-preparation'],
  'dist/match-actions.js':['match-actions','rugby','v19-advantage'],
  'dist/match2d.js':['match2d','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif'],
  'dist/playbook.js':['playbook','tactical-plans','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves'],
- 'dist/match-preparation.js':['preparation','saves'],
+ 'dist/match-preparation.js':['preparation','saves','v28-collective-preparation'],
  'dist/manager.js':['manager','saves'],
  'dist/manager-squad.js':['manager','saves','v27-physical-load'],
  'dist/development.js':['development','saves','v27-physical-load'],
  'dist/economy.js':['economy','saves'],
  'dist/world-data.js':['rugby','development','economy','saves'],
  'dist/storage.js':['offline','saves'],
- 'dist/game.js':['manager','match2d','preparation','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves','v27-physical-load'],
+ 'dist/game.js':['manager','match2d','preparation','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves','v27-physical-load','v28-collective-preparation'],
  'dist/style.css':['match2d','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','v27-physical-load'],
  'dist/index.html':['offline','v21-numerical-advice','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif']
 };

@@ -1,4 +1,69 @@
 'use strict';
+
+// V28 — préparation originale du rugby à XV. Coefficients fictifs à calibrer, non issus de FM27.
+const COLLECTIVE_FOCI={
+ aucune:['Préserver les organismes','Aucune charge additionnelle ni bonus temporaire.'],
+ conquete:['Conquête','Préparer la mêlée et la touche : rétention légèrement accrue.'],
+ defence:['Organisation défensive','Renforcer la couverture et les lectures défensives.'],
+ pied:['Jeu au pied','Améliorer le gain territorial des coups de pied en jeu courant.']
+};
+const COLLECTIVE_EFFECTS={conquete:.04,defence:.025,pied:3};
+function collectiveFocusForClub(ci){
+ if(S.collectivePrepVersion!==1)return 'aucune';
+ if(ci===S.club)return COLLECTIVE_FOCI[S.collectiveFocus]?S.collectiveFocus:'aucune';
+ const style=managerStyle(ci);
+ return style==='conquete'?'conquete':style==='occupation'?'pied':'defence';
+}
+function collectiveSpecialist(p,focus){return focus==='conquete'?p.fam<=3:focus==='pied'?p.fam>=4:focus==='defence'}
+function applyCollectiveTrainingCost(p,ci){
+ const focus=collectiveFocusForClub(ci);
+ if(p.injury||focus==='aucune'||!collectiveSpecialist(p,focus))return 0;
+ const state=ensurePhysicalLoad(p),before=state.fatigue;
+ state.fatigue=clamp(state.fatigue+4,0,100);
+ return state.fatigue-before;
+}
+function collectiveStrength(l,side,focus){
+ const c=S.clubs[l.pair[side]],ids=l.sheets[side].initial;
+ const relevant=ids.map(id=>c.players.find(p=>p.id===id)).filter(p=>p&&collectiveSpecialist(p,focus));
+ const fatigue=mean(relevant.map(p=>physicalLoadValue(p)));
+ return Math.round(clamp(1-fatigue/160,.55,1)*100)/100;
+}
+function initializeCollectivePreparation(l){
+ if(S.collectivePrepVersion!==1)return;
+ const focus=l.pair.map(ci=>collectiveFocusForClub(ci));
+ l.collectivePrepVersion=1;
+ l.collectivePreparation={v:1,season:S.season,round:S.round,focus,power:focus.map((f,side)=>collectiveStrength(l,side,f))};
+}
+function collectivePreparationBonus(l,side,focus){
+ const cp=l?.collectivePreparation;
+ if(l?.collectivePrepVersion!==1||cp?.v!==1||![0,1].includes(side)||cp.focus[side]!==focus)return 0;
+ return (COLLECTIVE_EFFECTS[focus]||0)*cp.power[side];
+}
+function setCollectiveFocus(focus){
+ if(!S||S.live||S.trained||S.phase==='ended'||S.collectivePrepVersion!==1||!Object.prototype.hasOwnProperty.call(COLLECTIVE_FOCI,focus))return false;
+ S.collectiveFocus=focus;save();render();return true;
+}
+function collectiveAdvice(){
+ const d=matchDossier();if(!d)return {focus:'aucune',reason:'Aucune rencontre à préparer.'};
+ const load=mean(starters().map(p=>physicalLoadValue(p)));
+ if(load>=65)return {focus:'aucune',reason:'Charge cumulée élevée dans le XV : préserver les organismes peut être prioritaire.'};
+ const focus=d.advice.attack==='conquete'?'conquete':d.advice.attack==='occupation'?'pied':'defence';
+ const reason=focus==='conquete'?'Le rapport de forces favorise le travail de la conquête.':focus==='pied'?'Le jeu d’occupation et les qualités au pied ressortent du dossier adverse.':'Renforcer la couverture défensive offre un compromis général.';
+ return {focus,reason};
+}
+function collectivePreparationCard(){
+ if(!S||S.phase==='ended')return '';
+ const advice=collectiveAdvice(),selected=S.collectiveFocus||'aucune';
+ const buttons=Object.entries(COLLECTIVE_FOCI).map(([k,[name,description]])=>'<button class="option '+(selected===k?'selected':'')+'" onclick="setCollectiveFocus(\''+k+'\')" '+(S.live||S.trained?'disabled':'')+'>'+name+'<small>'+description+'</small></button>').join('');
+ return '<div class="card collective-preparation"><div class="cardtitle"><h2>04 / Préparation collective rugby</h2><span class="tag">PROCHAIN MATCH</span></div><div class="options">'+buttons+'</div><p class="help">Une séance spécifique par échéance, figée au coup d’envoi. Coût : +4 points de charge cumulée pour les joueurs concernés (V27). Bonus fictifs maximaux : conquête +4 points de probabilité de conservation ; défense −2,5 points de probabilité d’avancée adverse ; pied jusqu’à +3 mètres au dégagement en jeu. Les effets décroissent avec la fatigue.</p><p class="help">Conseil du staff : <strong>'+COLLECTIVE_FOCI[advice.focus][0]+'</strong>. '+advice.reason+' Vous restez décisionnaire.</p></div>';
+}
+function collectiveMatchSummary(r,side){
+ const cp=r?.collectivePreparation;if(!cp||cp.v!==1)return '';
+ const focus=cp.focus[side],coefficient=COLLECTIVE_EFFECTS[focus]||0;
+ const effect=focus==='aucune'?'Aucun bonus spécifique.':focus==='pied'?'Gain fictif sur coup de pied en jeu : +'+(coefficient*cp.power[side]).toFixed(1)+' m.':'Ajustement fictif du moteur : '+(coefficient*cp.power[side]*100).toFixed(2)+' points de probabilité.';
+ return '<p class="help"><strong>Préparation collective au coup d’envoi :</strong> '+COLLECTIVE_FOCI[focus][0]+' · efficacité '+(cp.power[side]*100).toFixed(0)+' %. '+effect+' Il s’agit d’un effet de modèle, pas d’une explication certaine du score.</p>';
+}
+
 // Lecture des faits et conseils de jeu fictifs ; aucun bonus au moteur.
 const DOSSIER_DOMAINS=[
  {key:'scrum',label:'Mêlée',slot:0,skills:['scrum'],families:[0,1,2]},
@@ -68,5 +133,5 @@ function debriefNotes(r,side){
 }
 function matchDebrief(r){
  if(!r)return '';const side=r.pair.indexOf(S.club);if(side<0)return '';const p=r.preparation,u=r.planUsage;
- return `<section class="card match-debrief" aria-label="Bilan de votre plan de match"><div class="cardtitle"><h2>Vos choix, les faits du match</h2><span class="tag">BILAN</span></div>${p?`<p><strong>Au coup d’envoi :</strong> ${TACTICS[p.attack][0]} · ${DEFENCES[p.defence][0]}. Conseil de préparation du staff : ${TACTICS[p.recommendedAttack][0]} · ${DEFENCES[p.recommendedDefence][0]}.</p><p class="help">${p.observed} résultat(s) adverse(s) disponible(s) lors de la préparation. Ce bilan garde les choix initiaux, même si vos préférences ont changé depuis.</p>`:'<p class="help">Ancienne rencontre : le plan initial n’a pas été enregistré.</p>'}${debriefNotes(r,side).map(n=>`<p>${n}</p>`).join('')}${u?`<h3>Les attaques réellement utilisées</h3><div class="tablewrap"><table><thead><tr><th>PLAN</th><th>PHASES</th><th>PROGRESSIONS</th><th>MÈTRES</th><th>ERREURS</th><th>PIED EN JEU</th></tr></thead><tbody>${Object.entries(u.attack).filter(([,a])=>a.phases).map(([k,a])=>`<tr><td>${TACTICS[k][0]}</td><td>${a.phases}</td><td>${a.advances} / ${a.carries}</td><td>${Math.round(a.metres)}</td><td>${a.handErrors}</td><td>${a.kicks}</td></tr>`).join('')||'<tr><td colspan="6">Aucune phase commencée en possession.</td></tr>'}</tbody></table></div><h3>Les organisations sans ballon</h3><div class="tablewrap"><table><thead><tr><th>DÉFENSE</th><th>PHASES</th><th>PROGRESSIONS ADVERSES</th><th>MÈTRES CONCÉDÉS</th><th>PÉNALITÉS</th></tr></thead><tbody>${Object.entries(u.defence).filter(([,d])=>d.phases).map(([k,d])=>`<tr><td>${DEFENCES[k][0]}</td><td>${d.phases}</td><td>${d.oppAdvances} / ${d.oppCarries}</td><td>${Math.round(d.oppMetres)}</td><td>${d.penalties}</td></tr>`).join('')||'<tr><td colspan="5">Aucune phase commencée sans ballon.</td></tr>'}</tbody></table></div><p class="help">${Object.entries(u.zones).map(([k,n])=>`${FIELD_ZONES[k]} : ${n}`).join(' · ')}.</p><p class="help">Attribution au plan effectif et à la zone au début de chaque minute simulée, y compris les consignes locales et changements en pause. Une phase peut contenir un changement de possession. Ces observations ne permettent pas d’isoler une causalité ni de comparer équitablement des plans utilisés dans des situations différentes.</p>`:'<p class="help">Le suivi des plans par phase débute avec les nouveaux matchs de la version 15.</p>'}</section>`;
+ return `<section class="card match-debrief" aria-label="Bilan de votre plan de match"><div class="cardtitle"><h2>Vos choix, les faits du match</h2><span class="tag">BILAN</span></div>${collectiveMatchSummary(r,side)}${p?`<p><strong>Au coup d’envoi :</strong> ${TACTICS[p.attack][0]} · ${DEFENCES[p.defence][0]}. Conseil de préparation du staff : ${TACTICS[p.recommendedAttack][0]} · ${DEFENCES[p.recommendedDefence][0]}.</p><p class="help">${p.observed} résultat(s) adverse(s) disponible(s) lors de la préparation. Ce bilan garde les choix initiaux, même si vos préférences ont changé depuis.</p>`:'<p class="help">Ancienne rencontre : le plan initial n’a pas été enregistré.</p>'}${debriefNotes(r,side).map(n=>`<p>${n}</p>`).join('')}${u?`<h3>Les attaques réellement utilisées</h3><div class="tablewrap"><table><thead><tr><th>PLAN</th><th>PHASES</th><th>PROGRESSIONS</th><th>MÈTRES</th><th>ERREURS</th><th>PIED EN JEU</th></tr></thead><tbody>${Object.entries(u.attack).filter(([,a])=>a.phases).map(([k,a])=>`<tr><td>${TACTICS[k][0]}</td><td>${a.phases}</td><td>${a.advances} / ${a.carries}</td><td>${Math.round(a.metres)}</td><td>${a.handErrors}</td><td>${a.kicks}</td></tr>`).join('')||'<tr><td colspan="6">Aucune phase commencée en possession.</td></tr>'}</tbody></table></div><h3>Les organisations sans ballon</h3><div class="tablewrap"><table><thead><tr><th>DÉFENSE</th><th>PHASES</th><th>PROGRESSIONS ADVERSES</th><th>MÈTRES CONCÉDÉS</th><th>PÉNALITÉS</th></tr></thead><tbody>${Object.entries(u.defence).filter(([,d])=>d.phases).map(([k,d])=>`<tr><td>${DEFENCES[k][0]}</td><td>${d.phases}</td><td>${d.oppAdvances} / ${d.oppCarries}</td><td>${Math.round(d.oppMetres)}</td><td>${d.penalties}</td></tr>`).join('')||'<tr><td colspan="5">Aucune phase commencée sans ballon.</td></tr>'}</tbody></table></div><p class="help">${Object.entries(u.zones).map(([k,n])=>`${FIELD_ZONES[k]} : ${n}`).join(' · ')}.</p><p class="help">Attribution au plan effectif et à la zone au début de chaque minute simulée, y compris les consignes locales et changements en pause. Une phase peut contenir un changement de possession. Ces observations ne permettent pas d’isoler une causalité ni de comparer équitablement des plans utilisés dans des situations différentes.</p>`:'<p class="help">Le suivi des plans par phase débute avec les nouveaux matchs de la version 15.</p>'}</section>`;
 }
