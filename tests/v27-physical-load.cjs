@@ -75,8 +75,8 @@ assert.throws(()=>match('parseSaveDocument('+JSON.stringify(JSON.stringify(inval
 
 // At season reset, workload is reset and the selected training policy stays explicit.
 const next=context(),nextRun=next.run;
-nextRun('start(0);var seasonPlayer=club().players[0];seasonPlayer.physicalLoad={version:1,fatigue:88,plan:"repos"};S.phase="ended";S.ending="Fin";');
+nextRun('start(0);var seasonPlayer=[...club().players].sort((a,b)=>a.age-b.age)[0];var seasonId=seasonPlayer.id;seasonPlayer.physicalLoad={version:1,fatigue:88,plan:"repos"};S.phase="ended";S.ending="Fin";');
 nextRun('advanceSeason()');
-assert.equal(nextRun('physicalLoadValue(club().players[0])'),0);
-assert.equal(nextRun('physicalPlan(club().players[0])'),'repos');
+assert.equal(nextRun('physicalLoadValue(player(seasonId))'),0);
+assert.equal(nextRun('physicalPlan(player(seasonId))'),'repos');
 console.log(JSON.stringify({passed:true,cases:['training modes','unique weekly application','planning guard','match minutes','AI recovery','old live saves','validated exports','season rollover']}));
