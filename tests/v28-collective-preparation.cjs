@@ -72,10 +72,12 @@ approx(added,value(kickPrep,'collectivePreparationBonus(l,0,"pied")'));
 assert.ok(added>0&&added<=3);
 
 // Sauvegarde, export portable et rapport : état identique à l'import.
+prepared.run('S.live=game');
 const data=prepared.run('JSON.stringify(S)');
 assert.ok(prepared.run('!!createSaveDocument()'));
 const imported=context(JSON.parse(data));
 assert.equal(value(imported,'JSON.stringify(S.live)'),value(prepared,'JSON.stringify(S.live)'));
+assert.equal(value(imported,'S.live.collectivePreparation.focus[0]'),'conquete');
 // Ancien match V27 : la sauvegarde charge l'état sans lui appliquer une préparation V28.
 const previous=context();
 previous.run('start(0);beginMatch();pauseMatch();delete S.collectivePrepVersion;delete S.collectiveFocus;delete S.live.collectivePrepVersion;delete S.live.collectivePreparation;var legacy=JSON.parse(JSON.stringify(S));var score=JSON.stringify(S.live.score),minute=S.live.minute');
@@ -89,7 +91,7 @@ assert.equal(value(historic,'JSON.stringify(S.live.score)'),value(previous,'scor
 assert.ok(value(historic,'!!createSaveDocument()'));
 // Un import falsifié est rejeté même avec checksum recalculé.
 const checks=context();checks.run('start(0);S.collectiveFocus="pied";beginMatch();pauseMatch();var valid=createSaveDocument();');
-for(const mutate of ['bad.live.collectivePreparation.focus[0]="illegal"','bad.live.collectivePreparation.power[1]=500','bad.live.collectivePreparation.version=2','bad.collectiveFocus="unknown"']){
+for(const mutate of ['bad.live.collectivePreparation.focus[0]="illegal"','bad.live.collectivePreparation.power[1]=500','bad.live.collectivePreparation.v=2','bad.collectiveFocus="unknown"']){
  checks.run('var bad=JSON.parse(JSON.stringify(valid.state))');
  assert.throws(()=>checks.run(mutate+';validateCareer(bad)'),mutate);
 }
