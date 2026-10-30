@@ -448,3 +448,15 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - En renouvellement uniquement, coefficient affiché borné de −1 % si satisfaction ≥80 et +2 % si satisfaction <40 ; seuil inchangé entre les deux. Confirmation contractuelle et transferts inchangés.
 - Test déterministe ajouté `tests/v36-satisfaction.cjs` ; validation de la CI PR et post-fusion à relever depuis GitHub. Pas de promesses en cours reprises automatiquement depuis l'ancien modèle.
 - Prochaine priorité unique V37 : historique des discussions contractuelles avec rappels et décisions explicables, sans refus ou sanction automatique supplémentaire.
+
+## V37 — lot relations humaines et contrats — 31 octobre 2026
+
+- Départ : `main` `cff68f425f66ecdfed54e5cad57241f5fca43535`, CI post-fusion V36 #41142796483 verte (74 s). Lot de cinq fonctionnalités cohérentes, aucune modification du moteur de match ni des lois rugby.
+- **1. Historique des discussions** : sur nouvelle carrière ou activation volontaire V37, chaque offre, contre-proposition, fin des discussions et signature confirmée est conservée avec saison, journée, seuil salarial, montant, durée et tentative (maximum 60). La signature n'est jamais automatique.
+- **2. Rappels V36** : synthèse pure des promesses actives avec minutes enregistrées, 0–3 rencontres, priorité visuelle à la dernière rencontre et mention des blessures ; aucun malus sur simple consultation.
+- **3. Moral et satisfaction expliqués** : relevé avant/après du moral collectif après résultat de match, sans nouveau coefficient sur le moral historique. Satisfaction individuelle V36 inchangée hors choix de dialogue explicite.
+- **4. Dialogues entraîneur/joueur** : écouter +2, rassurer +1, clarifier +0 de satisfaction, un seul entretien par joueur et semaine, refus en match ou pendant les négociations, jamais de dépense ni signature ; effet plafonné à 95.
+- **5. Tableau des tensions** : joueurs sous 55, promesses et échéances, moral collectif avec cause, et panneaux de dialogue/journal dans l'onglet Contrats.
+- Compatibilité : marqueur facultatif `relationsVersion:1` sur nouvelles carrières ; V36 et plus anciennes restent inchangées tant que V37 n'est pas activée. Validateur des nouveaux journaux et entretiens ; contrôle des exports, imports, scénarios historiques et match en cours dans `tests/v37-relations.cjs`.
+- La CI complète de PR, la fusion et la CI post-fusion seront vérifiées sur le SHA réel ; les runs définitifs figurent sur GitHub Actions sans nouveau commit documentaire après validation.
+- **Une priorité V38 :** développer des objectifs sportifs individuels discutables et mesurables sur plusieurs journées, avec historique et possibilité de réviser un objectif par accord explicite.
