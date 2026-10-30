@@ -21,7 +21,7 @@ function tacticalEdge(l,side){
  return (attack-defence)*.004+pressure+(l.weather==='Pluie'&&a==='large'?-.075:0)+(l.weather==='Vent'&&a==='occupation'?-.025:0);
 }
 function tacticalPenaltyAdjustment(l,defender){return !tacticalRules(l)?0:defensivePlan(l,defender)==='pression'?.045:defensivePlan(l,defender)==='prudente'?-.02:0}
-function handFaultProbability(l,side){if(!tacticalRules(l))return .12;const a=effectiveAttack(l,side),d=defensivePlan(l,1-side);return clamp(.12+ATTACK_EFFECTS[a].error+(l.weather==='Pluie'&&a==='large'?.04:0)+(d==='pression'?.02:d==='prudente'?-.01:0),.04,.28)}
+function handFaultProbability(l,side){if(!tacticalRules(l))return .12;const a=effectiveAttack(l,side),d=defensivePlan(l,1-side);return clamp(.12+ATTACK_EFFECTS[a].error+(l.weather==='Pluie'&&a==='large'?.04:0)+(d==='pression'?.02:d==='prudente'?-.01:0)+clamp((70-unit(l,side,'pass'))*.0015,-.045,.045),.04,.28)}
 function failedCarryError(l,side){const base=l.weather==='Pluie'?.55:.3;return tacticalRules(l)?clamp(base+ATTACK_EFFECTS[effectiveAttack(l,side)].error,.1,.8):base}
 function carryGain(l,side){if(!tacticalRules(l))return rand(12,25);const range=ATTACK_EFFECTS[effectiveAttack(l,side)].gain,d=defensivePlan(l,1-side),shift=d==='pression'?4:d==='prudente'?-4:0;return rand(Math.max(3,range[0]+shift),range[1]+shift)}
 function tacticalFinishAdjustment(l,side){return !tacticalRules(l)?0:ATTACK_EFFECTS[effectiveAttack(l,side)].finish+(defensivePlan(l,1-side)==='pression'?.04:defensivePlan(l,1-side)==='prudente'?-.055:0)}
