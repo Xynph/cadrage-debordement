@@ -106,7 +106,7 @@ lc('start(0);var p=club().players.find(p=>p.contractEnd===S.season);p.dev.retire
 const noMoney=pure(lowCash,'counterofferQuote(S,{kind:"renew",id,wage:min,years:2},3)');
 assert.equal(noMoney.status,'ready');
 assert.equal(noMoney.executable,false);
-assert.ok(noMoney.explanation.some(x=>x.includes('Trésorerie')));
+assert.ok(noMoney.explanation.some(x=>x.toLowerCase().includes('trésorerie')));
 assert.equal(lc('club().cash'),0);
 
 // Recruiting: no hidden skill/rating/potential is used to project a player.
