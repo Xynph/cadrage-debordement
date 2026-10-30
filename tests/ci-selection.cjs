@@ -14,6 +14,7 @@ assert.ok(allTests.includes('tests/v28-collective-preparation.cjs'));
 assert.ok(allTests.includes('tests/v29-focused-development.cjs'));
 assert.ok(allTests.includes('tests/v30-recruitment-intelligence.cjs'));
 assert.ok(allTests.includes('tests/v31-finance-forecasts.cjs'));
+assert.ok(allTests.includes('tests/v32-succession-planning.cjs'));
 assert.ok(!allTests.includes('tests/harness.cjs'));
 
 // PR/main utilisent toujours la suite complète ; un diff manquant doit échouer en mode sûr.
@@ -33,7 +34,7 @@ for(const test of ['tests/rugby.cjs','tests/frontrow.cjs','tests/discipline.cjs'
  assert.ok(rugby.includes(test),test);
 }
 equals(['dist/saves.js'],[
- 'tests/saves.cjs','tests/v20-numerical-ai.cjs','tests/v21-numerical-advice.cjs','tests/v22-tactical-comparison.cjs','tests/v23-local-zones.cjs','tests/v24-four-zones.cjs','tests/v25-whatif.cjs','tests/v26-dual-whatif.cjs','tests/v27-physical-load.cjs','tests/v28-collective-preparation.cjs','tests/v29-focused-development.cjs','tests/v30-recruitment-intelligence.cjs',
+ 'tests/saves.cjs','tests/v20-numerical-ai.cjs','tests/v21-numerical-advice.cjs','tests/v22-tactical-comparison.cjs','tests/v23-local-zones.cjs','tests/v24-four-zones.cjs','tests/v25-whatif.cjs','tests/v26-dual-whatif.cjs','tests/v27-physical-load.cjs','tests/v28-collective-preparation.cjs','tests/v29-focused-development.cjs','tests/v30-recruitment-intelligence.cjs','tests/v32-succession-planning.cjs',
  'tests/frontrow.cjs','tests/match-rules.cjs'
 ]);
 equals(['tests/v21-numerical-advice.cjs'],['tests/v21-numerical-advice.cjs']);
@@ -47,6 +48,7 @@ equals(['tests/v28-collective-preparation.cjs'],['tests/v28-collective-preparati
 equals(['tests/v29-focused-development.cjs'],['tests/v29-focused-development.cjs']);
 equals(['tests/v30-recruitment-intelligence.cjs'],['tests/v30-recruitment-intelligence.cjs']);
 equals(['tests/v31-finance-forecasts.cjs'],['tests/v31-finance-forecasts.cjs']);
+equals(['tests/v32-succession-planning.cjs'],['tests/v32-succession-planning.cjs']);
 equals(['ci/select-tests.cjs','.github/workflows/tests.yml'],['tests/ci-selection.cjs']);
 assert.ok(selectTests(['dist/match-preparation.js']).includes('tests/v28-collective-preparation.cjs'));
 assert.ok(selectTests(['dist/restarts.js']).includes('tests/v28-collective-preparation.cjs'));
@@ -58,9 +60,10 @@ assert.ok(selectTests(['dist/game.js']).includes('tests/v29-focused-development.
 assert.ok(selectTests(['dist/rugby.js']).includes('tests/v29-focused-development.cjs'));
 for(const path of ['dist/manager.js','dist/economy.js','dist/rugby.js','dist/development.js','dist/saves.js','dist/game.js','dist/style.css'])assert.ok(selectTests([path]).includes('tests/v30-recruitment-intelligence.cjs'),path);
 for(const path of ['dist/game.js','dist/economy.js','dist/style.css'])assert.ok(selectTests([path]).includes('tests/v31-finance-forecasts.cjs'),path);
+for(const path of ['dist/manager.js','dist/manager-squad.js','dist/style.css','dist/economy.js','dist/development.js','dist/game.js','dist/rugby.js','dist/saves.js'])assert.ok(selectTests([path]).includes('tests/v32-succession-planning.cjs'),path);
 
 equals(['dist/style.css','tests/v21-numerical-advice.cjs'],[
- 'tests/match2d.cjs','tests/v21-numerical-advice.cjs','tests/v22-tactical-comparison.cjs','tests/v23-local-zones.cjs','tests/v24-four-zones.cjs','tests/v25-whatif.cjs','tests/v26-dual-whatif.cjs','tests/v27-physical-load.cjs','tests/v29-focused-development.cjs','tests/v30-recruitment-intelligence.cjs','tests/v31-finance-forecasts.cjs'
+ 'tests/match2d.cjs','tests/v21-numerical-advice.cjs','tests/v22-tactical-comparison.cjs','tests/v23-local-zones.cjs','tests/v24-four-zones.cjs','tests/v25-whatif.cjs','tests/v26-dual-whatif.cjs','tests/v27-physical-load.cjs','tests/v29-focused-development.cjs','tests/v30-recruitment-intelligence.cjs','tests/v31-finance-forecasts.cjs','tests/v32-succession-planning.cjs'
 ]);
 
 // Une modification documentaire seule n'exécute pas les simulations, mais la PR les exécute toutes.

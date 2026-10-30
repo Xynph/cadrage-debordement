@@ -132,3 +132,13 @@
 .forecast-table th:first-child{min-width:145px}
 .finance-forecast details{margin-top:16px}
 .finance-forecast details p{line-height:1.6}
+
+/* V32 — scénarios de succession : contrôles en grille, tableau lisible sur mobile. */
+.succession-panel{margin-top:14px}
+.succession-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:15px 0}
+.succession-controls label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:650}
+.succession-controls select{min-width:0;max-width:100%;padding:8px;border:1px solid var(--line,#ddd);border-radius:5px;color:inherit;background:var(--bg,#fff)}
+.succession-table{font-size:12px}
+.succession-table td{min-width:128px;vertical-align:top;font-variant-numeric:tabular-nums}
+.succession-table td small{display:block;margin-top:5px;line-height:1.5}
+.succession-table th:first-child{min-width:120px}

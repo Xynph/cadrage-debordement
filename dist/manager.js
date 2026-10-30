@@ -142,3 +142,180 @@ function aiRecruitmentWeek(){
  }
  return count;
 }
+
+
+
+// V32 — plans de relève sans mutation de l'état ni lecture des qualités
+// cachées des candidats non observés. Qualification = slotEligible du moteur.
+let successionChoice={slot:0,horizon:3,years:2,renew:'',youth:'',recruit:''};
+function successionPerson(p,origin='senior'){
+ const known=origin!=='external',weights=ROLE_WEIGHTS[p.fam]||ROLE_WEIGHTS[7];
+ let points=0,weight=0;
+ if(known)for(const [k,w] of Object.entries(weights)){
+  const bonus=p.dev?.specialization?.bonuses?.[k]||0;
+  points+=clamp((p.skills?.[k]??p.rating)+p.rating-(p.skillBase??p.rating)+bonus,15,99)*w;weight+=w;
+ }
+ return {id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,salary:p.salary,
+  contractEnd:p.contractEnd??null,retireAge:known?(p.dev?.retireAge??99):99,
+  level:known?Math.round(points/Math.max(weight,1)):null,
+  potentialGap:known?Math.max(0,(p.dev?.potential??p.rating)-p.rating):null,
+  origin,injury:p.injury||0};
+}
+function successionActive(p,year,start){
+ return (p.contractEnd==null||p.contractEnd>=year)&&
+  p.age+year-start<p.retireAge&&(year>start||!p.injury);
+}
+function successionAssignment(options){
+ const owner=new Map(),order=Array.from({length:15},(_,i)=>i)
+  .sort((a,b)=>options[a].length-options[b].length||a-b);
+ function visit(slot,seen){
+  for(const p of options[slot]){
+   if(seen.has(p.id))continue;seen.add(p.id);
+   if(!owner.has(p.id)||visit(owner.get(p.id),seen)){owner.set(p.id,slot);return true}
+  }
+  return false;
+ }
+ for(const slot of order)visit(slot,new Set());
+ return new Set(owner.values());
+}
+function successionYear(s,people,prospects,year){
+ const slots=Array.from({length:15},(_,slot)=>{
+  const available=people.filter(p=>successionActive(p,year,s.season)&&slotEligible(p,slot))
+   .sort((a,b)=>(b.level??50)-(a.level??50)||a.id.localeCompare(b.id));
+  const youth=prospects.filter(p=>p.age+year-s.season<=21&&p.dev?.potential>=p.rating+5&&slotEligible(p,slot));
+  const nearEnd=available.filter(p=>p.contractEnd===year||p.age+year-s.season+1>=p.retireAge);
+  return {slot,pos:POS[slot],count:available.length,ids:available.map(p=>p.id),youth:youth.length,
+   priority:clamp((available.length===0?55:available.length===1?28:0)+
+    Math.min(18,nearEnd.length*9)-Math.min(10,youth.length*5),0,100)};
+ });
+ const assigned=successionAssignment(slots.map(p=>people.filter(q=>p.ids.includes(q.id))));
+ return {year,covered:assigned.size,gaps:slots.filter(p=>!assigned.has(p.slot)).map(p=>p.slot),
+  thin:slots.filter(p=>p.count<2).length,slots};
+}
+function successionSimulate(s,actions=[],horizon=3){
+ if(!s||!Array.isArray(actions)||actions.length>3||!Number.isInteger(horizon)||horizon<1||horizon>3)
+  return {valid:false,error:'Plan ou horizon invalide.'};
+ const original=s.clubs[s.club].players,base=forecastContractBase(s);
+ const people=original.map(p=>successionPerson(p)),prospects=s.development.academy.slice();
+ let fee=0,executable=!s.live;const seen=new Set(),reasons=[];
+ for(const act of actions){
+  if(!act||!['renew','recruit','youth'].includes(act.kind)||typeof act.id!=='string'||seen.has(act.id))
+   return {valid:false,error:'Action répétée ou inconnue.'};
+  seen.add(act.id);
+  if(act.kind==='youth'){
+   const p=prospects.find(p=>p.id===act.id);
+   if(!p||people.length>=42)return {valid:false,error:'Espoir indisponible ou effectif complet.'};
+   prospects.splice(prospects.indexOf(p),1);
+   const newcomer=successionPerson(p,'promoted');
+   newcomer.contractEnd=base+1;newcomer.injury=0;people.push(newcomer);
+   reasons.push('Espoir : '+p.name+' (contrat jusqu’à S'+newcomer.contractEnd+
+    ', salaire '+money(p.salary)+'/journée), sans progression inventée.');
+  }else{
+   const quote=forecastQuote(s,{kind:act.kind,id:act.id,years:act.years??2});
+   if(!quote.valid)return {valid:false,error:quote.error};
+   const source=(act.kind==='renew'?original:s.market).find(p=>p.id===act.id);
+   const term=quote.players.find(p=>p.id===act.id);
+   if(!source||!term)return {valid:false,error:'Candidat indisponible.'};
+   fee+=quote.fee;if(quote.executable===false)executable=false;
+   if(act.kind==='renew'){
+    const p=people.find(p=>p.id===act.id);
+    p.salary=term.salary;p.contractEnd=term.contractEnd;
+    reasons.push('Prolongation : '+p.name+', salaire '+money(p.salary)+
+     '/journée, prime '+money(quote.fee)+'.');
+   }else{
+    if(people.length>=42)return {valid:false,error:'Effectif professionnel complet.'};
+    const p=successionPerson(source,'external');p.salary=term.salary;p.contractEnd=term.contractEnd;p.injury=0;
+    people.push(p);
+    reasons.push('Recrutement : '+p.name+', prime '+money(quote.fee)+', salaire '+money(p.salary)+
+     '/journée. '+(recruitmentEvidence(source).seen?'Rapport de scouting disponible.':'Qualités et potentiel non observés.'));
+   }
+  }
+ }
+ if(fee>s.clubs[s.club].cash)executable=false;
+ const years=Array.from({length:horizon},(_,i)=>successionYear(s,people,prospects,s.season+i));
+ const projected={...s,clubs:s.clubs.map((c,i)=>i===s.club?{...c,cash:c.cash-fee,
+  players:people.map(p=>({id:p.id,salary:p.salary,contractEnd:p.contractEnd}))}:c)};
+ const finance=forecastFinancialScenario(projected,{kind:'baseline'},horizon);
+ if(!finance.valid)return {valid:false,error:finance.error};
+ if(!executable)reasons.push('Plan non réalisable immédiatement (match, limite ou trésorerie).');
+ return {valid:true,executable,years,finance,fee,reasons,
+  gaps:years.reduce((n,y)=>n+y.gaps.length,0)};
+}
+function successionOptions(s,slot,horizon){
+ const own=s.clubs[s.club].players,base=forecastContractBase(s);
+ const renew=own.filter(p=>slotEligible(p,slot)&&p.contractEnd<=s.season+horizon&&
+  Math.max(1,p.contractEnd-base+2)<=3&&p.age<(p.dev?.retireAge??99)-1)
+  .sort((a,b)=>a.contractEnd-b.contractEnd||a.id.localeCompare(b.id));
+ const youth=s.development.academy.filter(p=>slotEligible(p,slot)&&p.age<=21&&p.dev?.potential>=p.rating+5)
+  .sort((a,b)=>b.dev.potential-a.dev.potential||a.id.localeCompare(b.id));
+ const recruit=s.market.filter(p=>slotEligible(p,slot)).sort((a,b)=>
+  recruitmentEvidence(b).quality-recruitmentEvidence(a).quality||a.price-b.price||a.id.localeCompare(b.id));
+ return {renew,youth,recruit};
+}
+function setSuccessionChoice(field,value){
+ if(!S||!['slot','horizon','years','renew','youth','recruit'].includes(field))return false;
+ if(['slot','horizon','years'].includes(field)){
+  value=Number(value);
+  if(!Number.isInteger(value)||(field==='slot'&&(value<0||value>14))||
+   (field!=='slot'&&(value<1||value>3)))return false;
+ }else if(typeof value!=='string'||value.length>150)return false;
+ successionChoice[field]=value;
+ if(field==='slot'){successionChoice.renew='';successionChoice.youth='';successionChoice.recruit='';}
+ render();return true;
+}
+function successionSelect(label,field,items,selected){
+ const content=items.length?items.map(p=>'<option value="'+p.id+'"'+(selected?.id===p.id?' selected':'')+'>'+
+  visualEscape(p.name)+' · '+p.age+' ans'+(field==='renew'?' · fin S'+p.contractEnd:
+   field==='youth'?' · potentiel '+p.dev.potential:' · prime '+money(p.price))+'</option>').join(''):
+  '<option value="">Aucun joueur adapté</option>';
+ return '<label>'+label+'<select aria-label="'+label+'" onchange="setSuccessionChoice(\''+field+'\',this.value)" '+
+  (items.length?'':'disabled')+'>'+content+'</select></label>';
+}
+function successionPlanningPanel(){
+ if(!S)return '';
+ const o=successionChoice,h=o.horizon,slot=o.slot,poss=successionOptions(S,slot,h),selected={};
+ for(const key of ['renew','youth','recruit'])selected[key]=poss[key].find(p=>p.id===o[key])||poss[key][0]||null;
+ const r=selected.renew,ry=r?Math.max(o.years,r.contractEnd-forecastContractBase(S)+2):o.years;
+ const choices=[
+  ['Sans intervention',[]],
+  ['Prolongation',r?[{kind:'renew',id:r.id,years:ry}]:null],
+  ['Relève interne',selected.youth?[{kind:'youth',id:selected.youth.id}]:null],
+  ['Renfort extérieur',selected.recruit?[{kind:'recruit',id:selected.recruit.id,years:o.years}]:null],
+  ['Prolonger + former',r&&selected.youth?[{kind:'renew',id:r.id,years:ry},
+   {kind:'youth',id:selected.youth.id}]:null]
+ ];
+ const plans=choices.map(([name,actions])=>({name,result:actions===null?
+  {valid:false,error:'Aucun joueur compatible.'}:successionSimulate(S,actions,h)}));
+ const baseline=plans[0].result,need=recruitmentNeed(club(),slot);
+ const controls='<div class="succession-controls"><label>Poste<select aria-label="Poste à anticiper" onchange="setSuccessionChoice(\'slot\',this.value)">'+
+  POS.map((name,i)=>'<option value="'+i+'"'+(o.slot===i?' selected':'')+'>'+(i+1)+' · '+name+'</option>').join('')+'</select></label>'+
+  [['horizon','Horizon'],['years','Durée du contrat']].map(([k,name])=>
+   '<label>'+name+'<select aria-label="'+name+'" onchange="setSuccessionChoice(\''+k+'\',this.value)">'+
+   [1,2,3].map(n=>'<option value="'+n+'"'+(o[k]===n?' selected':'')+'>'+n+' saison'+(n>1?'s':'')+'</option>').join('')+
+   '</select></label>').join('')+
+  successionSelect('Cadre','renew',poss.renew,r)+successionSelect('Espoir','youth',poss.youth,selected.youth)+
+  successionSelect('Agent libre','recruit',poss.recruit,selected.recruit)+'</div>';
+ const tableHead='<thead><tr><th>Plan</th>'+Array.from({length:h},(_,i)=>'<th>Fin S'+(S.season+i)+'</th>').join('')+
+  '<th>Trésorerie V31</th><th>Écart au statu quo</th><th>Faisabilité</th></tr></thead>';
+ const rows=plans.map(p=>{
+  const x=p.result;
+  if(!x.valid)return '<tr><th>'+p.name+'</th><td colspan="'+(h+3)+'>'+x.error+'</td></tr>';
+  const end=x.finance.points.at(-1),ref=baseline.finance.points.at(-1),diff=end.central-ref.central;
+  return '<tr><th>'+p.name+'</th>'+x.years.map(y=>'<td><strong>'+
+   (y.gaps.includes(slot)?'À couvrir':y.slots[slot].count+' solution(s)')+'</strong><small>'+
+   y.covered+'/15 postes · '+y.thin+' fragiles</small></td>').join('')+
+   '<td>'+money(end.central)+'<small>Prudent : '+money(end.low)+'</small></td>'+
+   '<td>'+(diff>=0?'+':'')+money(diff)+'</td><td>'+
+   (x.executable?'Simulation possible':'Non exécutable aujourd’hui')+'</td></tr>';
+ }).join('');
+ const notes=plans.slice(1).map(p=>'<p class="help"><strong>'+p.name+' :</strong> '+
+  (p.result.valid?p.result.reasons.join(' ')+' Risque : '+p.result.finance.risk+'.':p.result.error)+'</p>').join('');
+ return '<div class="card succession-panel"><div class="cardtitle"><h2>Anticiper les 3 saisons</h2>'+
+  '<span class="tag">PLANIFICATION V32</span></div>'+
+  '<p class="help">Scénarios sans effet sur la carrière, les matchs ou les sauvegardes. Les qualifications des postes sont celles du moteur : chaque joueur ne couvre qu’un seul des 15 postes simultanément.</p>'+
+  controls+'<p class="help">Besoin V30 en '+POS[slot]+' : '+need.score+'/100 ; qualité V29 à renforcer : '+
+  (ATTR[need.quality]||need.quality)+'. Les capacités cachées des candidats non observés restent inconnues.</p>'+
+  '<div class="tablewrap"><table class="succession-table">'+tableHead+'<tbody>'+rows+
+  '</tbody></table></div>'+notes+
+  '<p class="help">La trésorerie suit les coefficients et les échéances V31. Les contrats expirés et retraites prévues réduisent la couverture future ; la promotion ajoute uniquement le contrat et le salaire existants. Aucune nouvelle progression, victoire, blessure ou signature automatique n’est supposée.</p></div>';
+}
