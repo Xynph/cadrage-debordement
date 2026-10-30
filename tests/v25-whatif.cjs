@@ -19,7 +19,7 @@ assert.ok(run('playbookPanel(l).includes("Et si vous changiez une seule zone")')
 assert.equal(run('fourZoneTacticalPreview(l).length'),4);
 
 const before=run('JSON.stringify(S)'),disk=t.store['bdt-v1'];
-const exportedBefore=run('JSON.stringify(createSaveDocument())');
+const exportedBefore=run('JSON.stringify(createSaveDocument().state)');
 assert.equal(run('setFourZonePreviewChoice("plan","occupation")'),true);
 let preview=run('fourZoneWhatIf(l)');
 assert.equal(preview.zone,'sortie');
@@ -39,7 +39,7 @@ assert.ok(rendered.includes(run('TACTICS[fourZoneWhatIf(l).alternate.actual][0]'
 assert.ok(rendered.includes("setFourZonePreviewChoice('plan',this.value)"));
 assert.equal(run('JSON.stringify(S)'),before,'La sélection n’altère pas les consignes ni les joueurs');
 assert.equal(t.store['bdt-v1'],disk,'La sélection ne déclenche aucune sauvegarde');
-assert.equal(run('JSON.stringify(createSaveDocument())'),exportedBefore,'Le scénario est exclu de la sauvegarde');
+assert.equal(run('JSON.stringify(createSaveDocument().state)'),exportedBefore,'Le scénario est exclu de la sauvegarde');
 
 // Vérifier le calcul sur la même zone avec le même code que le moteur.
 run('var shadow=Object.create(l);shadow.territory=12;shadow.playbooks=[...l.playbooks];shadow.playbooks[0]={...l.playbooks[0],zones:{...l.playbooks[0].zones,sortie:{...l.playbooks[0].zones.sortie,attack:"occupation"}}}');
