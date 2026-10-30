@@ -124,10 +124,6 @@ jobs:
     needs: [classification, shards]
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # Droit d'écriture limité au job de verdict (les shards restent en lecture).
-    permissions:
-      contents: read
-      issues: write
     steps:
       - name: Consolider les décisions
         env:
@@ -143,49 +139,33 @@ jobs:
             [[ "$SHARDS" == "success" ]]
           fi
 
-      - name: Notifier la PR du verdict final (sans workflow supplémentaire)
-        if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
-        continue-on-error: true
-        uses: actions/github-script@v8
+      - name: Publier le verdict natif (sans écriture API)
+        if: ${{ always() }}
+        shell: bash
         env:
           CLASSIFICATION: ${{ needs.classification.result }}
           DOCS: ${{ needs.classification.outputs.documentation_only }}
           SHARDS: ${{ needs.shards.result }}
-        with:
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const number = context.payload.pull_request.number;
-            const sha = context.payload.pull_request.head.sha;
-            // Ne publier que pour le dernier SHA ouvert : pas de notification obsolète.
-            const { data: pr } = await github.rest.pulls.get({
-              owner, repo, pull_number: number
-            });
-            if (pr.state !== 'open' || pr.head.sha !== sha) {
-              core.notice('Exécution ancienne ou PR fermée : notification ignorée.');
-              return;
-            }
-            const classification = process.env.CLASSIFICATION;
-            const docs = process.env.DOCS === 'true';
-            const shards = process.env.SHARDS;
-            const passed = classification === 'success' &&
-              (docs ? shards === 'skipped' : shards === 'success');
-            const status = passed ? '✅ VALIDÉE' : '❌ ÉCHEC';
-            const details = docs ? 'Contrôle documentaire léger' : 'Trois shards, couverture complète';
-            const body = [
-              '### Verdict automatique CI : ' + status,
-              '',
-              '- **Commit évalué :** `' + sha.slice(0, 12) + '`',
-              '- **Type :** ' + details,
-              '- **Classification :** ' + classification,
-              '- **Tests :** ' + shards,
-              '- **Exécution :** ' + `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`,
-              '',
-              passed
-                ? 'Contrôle GitHub terminé. La fusion reste conditionnée au dernier SHA et au contrôle `Validation CI`.'
-                : 'Ne pas fusionner. Consulter les annotations et les logs des seuls jobs en échec.'
-            ].join('\n');
-            await github.rest.issues.createComment({
-              owner, repo, issue_number: number, body
-            });
-            core.info('Verdict final publié sur la PR #' + number);
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          result='ÉCHEC'
+          if [[ "$CLASSIFICATION" == "success" ]]; then
+            if [[ "$DOCS" == "true" && "$SHARDS" == "skipped" ]]; then result='SUCCÈS'; fi
+            if [[ "$DOCS" != "true" && "$SHARDS" == "success" ]]; then result='SUCCÈS'; fi
+          fi
+          url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          {
+            echo "## Verdict CI : $result"
+            echo ""
+            echo "- Commit évalué : \`$HEAD_SHA\`"
+            echo "- Événement : $EVENT_NAME"
+            echo "- Classification : $CLASSIFICATION"
+            echo "- Suites : $SHARDS"
+            echo "- Documentation seule : $DOCS"
+            echo "- [Voir les contrôles et les erreurs]($url)"
+            echo ""
+            echo "Ce résumé est informatif : seule la conclusion du contrôle Validation CI autorise la décision de fusion."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Verdict CI::$result sur $HEAD_SHA - $url"

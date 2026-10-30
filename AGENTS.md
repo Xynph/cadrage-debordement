@@ -60,9 +60,9 @@ Ce protocole s'applique à chaque session, même si l'utilisateur ne le rappelle
 - Après fusion : un contrôle unique du run `push` sur le SHA de fusion, avec toutes les suites. Si échec, diagnostiquer et corriger ; ne jamais déclarer la livraison totalement validée sans cette preuve.
 - Écrire la passation et les mesures vérifiées dans le même commit que l'évolution quand c'est possible ; ne pas lancer un nouveau cycle CI uniquement pour recopier les IDs des workflows.
 
-## Remontée automatique CI (PR)
+## Remontée automatique CI native
 
-- `Validation CI` reste la seule autorité technique de fusion, et les tests complets de PR sont inchangés.
-- Sur PR issue de ce dépôt, le job final publie **un commentaire de verdict à la fin de l'exécution** (succès ou échec), uniquement si la PR est encore ouverte sur le même SHA. Ce commentaire est informatif : il ne permet pas la fusion et son échec n'annule pas le verdict CI.
-- Ne pas sonder GitHub toutes les quelques secondes : laisser GitHub terminer, puis retrouver le verdict sur la PR ou dans les notifications GitHub. S'il est absent, consulter le contrôle natif `Validation CI` et utiliser `ci/release-gate.cjs` avant fusion.
-- Ne pas annoncer une notification directement dans ChatGPT : GitHub n'a pas de canal de transmission automatique vers cette conversation.
+- Le job `Validation CI` publie un verdict, le SHA et le lien vers l'exécution **dans le résumé et les annotations GitHub Actions**. Aucun webhook, commentaire de PR, workflow additionnel ou permission d'écriture n'est nécessaire.
+- La tentative initiale de commentaire de PR dans cette PR a échoué : GitHub a refusé l'écriture avec `Resource not accessible by integration`. Ne pas prétendre que des commentaires ou notifications de conversation sont envoyés.
+- La conclusion native du contrôle `Validation CI` fait autorité ; le résumé n'autorise pas une fusion. Dernier SHA et CI complète restent exigés, puis CI post-fusion sur `main`.
+- Ne pas faire de sondages répétitifs : se fier aux contrôles natifs GitHub et consulter la page de résultat une fois terminée. GitHub peut notifier les participants selon leurs réglages. Aucun message n'est envoyé automatiquement dans ChatGPT.
