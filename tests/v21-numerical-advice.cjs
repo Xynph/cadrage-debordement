@@ -40,7 +40,7 @@ run('l.paused=false');
 assert.equal(run('applyNumericalAdvice("attack","conquete")'),false);
 assert.ok(run('numericalAdvicePanel(l).includes("disabled")'));
 assert.equal(run('l.tactics[0]'),'equilibre');
-run('l.paused=true;addEvent(l,"Nouvelle action","play",{kind:"carry",team:0})');
+run('l.paused=true;addEvent(l,"Nouvelle action","play",{kind:"carry",team:0});playback(l).cursor=l.events.length-2');
 assert.equal(run('presentationPending(l)'),true);
 assert.equal(run('applyNumericalAdvice("attack","conquete")'),false);
 run('syncMatchPresentation(l)');
