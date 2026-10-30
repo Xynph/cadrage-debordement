@@ -10,7 +10,7 @@ function pure(t,expr){
  return result;
 }
 const one=context(),r=one.run;
-r('start(0);var p=club().players.find(p=>p.contractEnd===S.season);var id=p.id;var minimum=reservationWage(p,"renew",2);var fee=contractFee(p,"renew"),initialCash=club().cash');
+r('start(0);var p=club().players.find(p=>p.contractEnd===S.season);p.dev.retireAge=Math.max(p.dev.retireAge,p.age+3);var id=p.id;var minimum=reservationWage(p,"renew",2);var fee=contractFee(p,"renew"),initialCash=club().cash');
 assert.ok(r('minimum>1100'));
 const atThreshold=pure(one,'counterofferQuote(S,{kind:"renew",id,wage:minimum,years:2},3)');
 assert.equal(atThreshold.valid,true);
@@ -66,14 +66,14 @@ assert.equal(r('counterofferChoice.wage'),5000);
 // Actual negotiateContract must yield the same deterministic reply. It is
 // intentionally executed only in SEPARATE contexts from what-if simulations.
 const exact=context(),ex=exact.run;
-ex('start(0);var p=club().players.find(p=>p.contractEnd===S.season),id=p.id,min=reservationWage(p,"renew",2),cash=club().cash;negotiateContract(id,"renew",min,2);var talk=S.economy.talks[talkKey(id,"renew")]');
+ex('start(0);var p=club().players.find(p=>p.contractEnd===S.season);p.dev.retireAge=Math.max(p.dev.retireAge,p.age+3),id=p.id,min=reservationWage(p,"renew",2),cash=club().cash;negotiateContract(id,"renew",min,2);var talk=S.economy.talks[talkKey(id,"renew")]');
 assert.equal(ex('talk.status'),'ready');
 assert.equal(ex('talk.acceptedSalary'),atThreshold.acceptedSalary);
 assert.equal(ex('talk.fee'),atThreshold.fee);
 assert.equal(ex('club().cash'),ex('cash'));
 assert.equal(ex('p.contractEnd'),1,'An agreement of principle does not sign a deal');
 const lowActual=context(),la=lowActual.run;
-la('start(0);var p=club().players.find(p=>p.contractEnd===S.season),id=p.id,min=reservationWage(p,"renew",2);negotiateContract(id,"renew",min-100,2);var talk=S.economy.talks[talkKey(id,"renew")]');
+la('start(0);var p=club().players.find(p=>p.contractEnd===S.season);p.dev.retireAge=Math.max(p.dev.retireAge,p.age+3),id=p.id,min=reservationWage(p,"renew",2);negotiateContract(id,"renew",min-100,2);var talk=S.economy.talks[talkKey(id,"renew")]');
 assert.equal(la('talk.status'),'counter');
 assert.equal(la('talk.acceptedSalary'),below.acceptedSalary);
 assert.equal(la('talk.attempts'),1);
@@ -99,10 +99,10 @@ for(const expr of [
  'counterofferQuote(S,{kind:"sale",id,wage:5000,years:2})'
 ])assert.equal(pure(one,expr).valid,false);
 const retire=context(),rt=retire.run;
-rt('start(0);var p=club().players.find(p=>p.contractEnd===S.season),id=p.id;p.dev.retireAge=p.age+1');
+rt('start(0);var p=club().players.find(p=>p.contractEnd===S.season);p.dev.retireAge=Math.max(p.dev.retireAge,p.age+3),id=p.id;p.dev.retireAge=p.age+1');
 assert.equal(pure(retire,'counterofferQuote(S,{kind:"renew",id,wage:5000,years:2},3)').valid,false);
 const lowCash=context(),lc=lowCash.run;
-lc('start(0);var p=club().players.find(p=>p.contractEnd===S.season),id=p.id,min=reservationWage(p,"renew",2);club().cash=0');
+lc('start(0);var p=club().players.find(p=>p.contractEnd===S.season);p.dev.retireAge=Math.max(p.dev.retireAge,p.age+3),id=p.id,min=reservationWage(p,"renew",2);club().cash=0');
 const noMoney=pure(lowCash,'counterofferQuote(S,{kind:"renew",id,wage:min,years:2},3)');
 assert.equal(noMoney.status,'ready');
 assert.equal(noMoney.executable,false);
