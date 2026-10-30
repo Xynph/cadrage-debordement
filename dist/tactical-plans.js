@@ -166,17 +166,15 @@ function numericalAdviceZoneControls(l,suggestion){
  if(!conflicts.length)return '';
  const here=fieldZone(side,l.territory);
  const canApply=l.paused&&!l.finished&&!presentationPending(l);
- return '<div class="advice-local-zones" aria-label="Consignes locales prioritaires">'
-  +'<p class="help"><strong>Priorité du carnet de jeu :</strong> les zones suivantes remplacent le plan principal. Le conseil du staff ne s’y applique pas automatiquement.</p>'
-  +conflicts.map(([zone,title])=>{
-   const current=zones[zone][suggestion.kind],action=suggestion.kind==='attack'?'attaque':'défense';
-   return '<div class="advice-local-zone"><div><strong>'+title+(zone===here?' · zone actuelle':'')+'</strong>'
-    +'<p class="help">'+action[0].toUpperCase()+action.slice(1)+' locale : '+options[current][0]
-    +' ; le staff conseille '+options[suggestion.value][0]+'. Cette priorité locale neutralise le conseil dans cette zone.</p></div>'
-    +'<button class="small" onclick="applyNumericalZoneAdvice(\''+suggestion.kind+'\',\''+zone+'\',\''+suggestion.value+'\')"'
-    +(canApply?'':' disabled')+'>Adapter cette zone</button></div>';
-  }).join('')
-  +'<p class="help">Chaque bouton modifie uniquement la consigne locale indiquée, après votre clic. Le plan principal et les autres zones ne changent pas.</p></div>';
+ return `<div class="advice-local-zones" aria-label="Consignes locales prioritaires">
+ <p class="help"><strong>Priorité du carnet de jeu :</strong> les zones suivantes remplacent le plan principal. Le conseil du staff ne s’y applique pas automatiquement.</p>`
+ +conflicts.map(([zone,title])=>{
+  const current=zones[zone][suggestion.kind],action=suggestion.kind==='attack'?'attaque':'défense';
+  return `<div class="advice-local-zone"><div><strong>${title}${zone===here?' · zone actuelle':''}</strong>
+   <p class="help">${action[0].toUpperCase()+action.slice(1)} locale : ${options[current][0]} ; le staff conseille ${options[suggestion.value][0]}. Cette priorité locale neutralise le conseil dans cette zone.</p></div>
+   <button class="small" onclick="applyNumericalZoneAdvice('${suggestion.kind}','${zone}','${suggestion.value}')" ${canApply?'':'disabled'}>Adapter cette zone</button></div>`;
+ }).join('')
+ +`<p class="help">Chaque bouton modifie uniquement la consigne locale indiquée, après votre clic. Le plan principal et les autres zones ne changent pas.</p></div>`;
 }
 function numericalAdvicePanel(l){
  const advice=numericalStaffAdvice(l);if(!advice)return '';
