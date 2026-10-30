@@ -96,3 +96,11 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Vérification des sauvegardes : scénarios de restauration de l'historique, d'import portable et de reprise d'un état antérieur sans champ disciplinaire inclus dans la suite validée.
 - La discipline et les décisions de cartons restent des modèles simplifiés ; le référentiel des règles demeure la référence pour les futures améliorations.
 - **Prochaine priorité unique : V19 — arbitrage de l'avantage et effets tactiques du jeu en infériorité numérique.**
+
+## Chantier V19 — avantage et infériorité numérique
+
+- Branche `feature/v19-advantage-numerical` depuis `main` après confirmation des CI post-fusion V18 (`41057455417` et `41057476009`, toutes deux réussies).
+- Le nouveau profil `advantageModel=2`, activé uniquement pour les matchs créés après V19, affine la reconnaissance d'un avantage territorial après plusieurs phases ; les matchs sauvegardés antérieurs conservent leur modèle précédent.
+- En jeu au large, l'effet du différentiel de joueurs actifs est accru : l'exclusion pénalise l'équipe en infériorité et profite à son adversaire ; le modèle existant de retour des cartons demeure inchangé.
+- Tests dédiés `tests/v19-advantage.cjs` pour avantage, supériorité numérique et sauvegardes anciennes. Coefficients fictifs, non assimilables à des seuils réglementaires.
+- **Livraison conditionnée à une CI intégralement réussie et à la fusion de la PR.**
