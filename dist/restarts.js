@@ -69,7 +69,7 @@ function missedGoal(l,side){
 }
 function kickOpenPlay(l,side){
  tacticalCount(l,side,'kicks');
- const dir=side===0?1:-1,origin=l.territory,distance=clamp(12+(unit(l,side,'kick',p=>p.fam>=4)-60)*.5+rand(-8,10)-(l.weather==='Vent'?9:0),3,45),landing=origin+dir*distance;
+ const dir=side===0?1:-1,origin=l.territory,distance=clamp(12+(unit(l,side,'kick',p=>p.fam>=4)-60)*.5+rand(-8,10)+collectivePreparationBonus(l,side,'pied')-(l.weather==='Vent'?9:0),3,45),landing=origin+dir*distance;
  const outcome=Math.random();
  if(landing<=0||landing>=100)return resolveInGoal(l,side,outcome<.5?'attacking-kick-grounded':'kick-dead',origin);
  if(outcome<.23)return resolveTouch(l,side,landing,{direct:true});
