@@ -1,6 +1,6 @@
 # Cadrage Débordement
 
-**Un jeu de management de rugby à XV, en français, actuellement en version 14.**
+**Un jeu de management de rugby à XV, en français, actuellement en version 15.**
 
 Dirigez votre club : composez les 23, préparez votre équipe, recrutez, gérez les contrats et suivez les rencontres sur un terrain 2D accompagné de commentaires synchronisés.
 
@@ -27,6 +27,8 @@ Les noms de fichiers, commandes et identifiants techniques restent identiques po
 - **Staff** : délégation de l’entraînement et de la sélection.
 - **Recrutement** : missions sur les agents libres, rapports, joueurs suivis et négociations.
 - **Plan de jeu** : attaque et défense, consignes par zone, mêlées, touches et renvois.
+- **Préparation adverse** : résultats observés, projection des qualités, conseils argumentés et accès aux comparaisons par poste.
+- **Bilan des consignes** : plan initial conservé, plans effectifs et statistiques par phase.
 - **Matchs** : terrain entier en 2D, commentaires synchronisés, pauses, remplacements et statistiques.
 - **Carrière** : championnat, phases finales simplifiées, finances, contrats, formation, progression et retraite.
 - **Sauvegardes** : enregistrement local, export et import de la carrière.
@@ -66,9 +68,10 @@ node tests/match-actions.cjs
 node tests/tactical-plans.cjs
 node tests/manager.cjs
 node tests/playbook.cjs
+node tests/preparation.cjs
 ```
 
-Les 14 suites couvrent notamment la sélection des 23, les spécialistes de première ligne, les remplacements, la discipline, les reprises de jeu, les sauvegardes, les finances, la formation, les tactiques, le recrutement et la cohérence de la 2D. Les scénarios comprennent 250 matchs indépendants, deux saisons complètes, dix intersaisons et des comparaisons tactiques contrôlées.
+Les 15 suites couvrent notamment la sélection des 23, les spécialistes de première ligne, les remplacements, la discipline, les reprises de jeu, les sauvegardes, les finances, la formation, les tactiques, le recrutement et la cohérence de la 2D. Les scénarios comprennent 250 matchs indépendants, deux saisons complètes, dix intersaisons et des comparaisons tactiques contrôlées.
 
 Un test réussi ne prouve pas qu’une règle de rugby est correcte : les lois et dispositions applicables doivent être vérifiées dans le [référentiel rugby](docs/rugby-rules-reference.md).
 
@@ -200,6 +203,16 @@ Comparaison contrôlée : 80 matchs par cas, qualités uniformes à 75, côté t
 - Le moteur est commun aux deux équipes. L’adversaire hérite actuellement de sa stratégie générale dans chaque zone. Les changements en direct exigent pause et absence d’action en attente. Les faits enregistrés gardent plans effectifs et choix de conquête pour des commentaires cohérents et une vue entière schématique. Les anciens matchs gardent leur moteur ; les préférences de carrière s’appliquent aux suivants.
 - Bureau et carnet sont conservés après rechargement et export/import, avec validation bornée et migration des anciennes carrières. Quatorze suites couvrent missions, délégation, spécialistes, orientation, décisions réelles au pied, conquête et renvois, en plus des carrières, finances, formation, règles et animations. Les contrôles dans le navigateur couvrent bureau, comparaison, consignes, staff et soumission de mission.
 - Le code est original, inspiré de principes d’interaction documentés publiquement dans les jeux de management. Aucun code propriétaire de Football Manager ou d’un jeu de rugby n’a été obtenu ou copié.
+
+### Version 15 — préparer l’adversaire et analyser ses choix
+
+- Le Centre de match présente les cinq derniers résultats disponibles de l’adversaire, les statistiques de conquête réellement archivées et ses pénalités. Sans historique, le manque de données est annoncé ; aucun résultat n’est inventé.
+- Les forces comparées reposent sur votre XV sélectionné et une projection adverse sans blessés, sur terrain sec et avec la condition actuelle. Mêlée, touche, puissance, passe/vitesse, pied et discipline sont distingués. Les joueurs à surveiller sont pressentis, pas une composition confirmée ; entraînement, météo et décisions adverses peuvent changer le tableau.
+- Le staff recommande une attaque et une défense avec leurs raisons et compromis. Adopter ce plan règle les deux choix principaux, sans changer les 23, les consignes locales, les attributs ou les probabilités du moteur. Les zones personnalisées restent prioritaires. Les boutons par secteur ouvrent une comparaison de deux joueurs aptes et éligibles au poste, avec accès à la feuille et à la couverture.
+- Les nouveaux matchs du joueur conservent le plan et le carnet au coup d’envoi, ainsi que les recommandations données avant la préparation finale. Le bilan montre les portées, progressions, mètres, erreurs et coups de pied selon l’attaque effective au début de la phase ; les organisations sans ballon suivent les avancées adverses et les pénalités. Les changements en pause et consignes par zone sont pris en compte. L’attribution est à la minute simulée : un changement de possession peut intervenir pendant cette minute. Elle ne démontre pas de causalité ni une supériorité générale d’un plan.
+- Le bilan apparaît en fin de match et reste accessible à la préparation suivante. Les données sont conservées après rechargement, export et import, avec contrôles de structure, de compteurs et de références. Les anciennes rencontres n’acquièrent pas rétroactivement de plan initial ou de suivi ; les statistiques disponibles restent consultables.
+- Aucun changement des lois, coefficients, tirages ou résultats. Les comparaisons contrôlées du moteur restent identiques. Les 15 suites passent, dont les nouveaux scénarios de rapport sans mutation, absence d’aléatoire d’affichage, conseils, actions de préparation, suivi dans les deux sens, changements de plan, export/import, données hostiles et conservation des anciens matchs. Le scénario économique ancien a été corrigé pour ne pas contenir le bureau du manager apparu après son époque.
+- Le catalogue initial est extrait dans `dist/world-data.js`, sans changement des valeurs. Le [document sur les données](docs/donnees-du-jeu.md) prépare une future base réelle : saison, sources, identifiants et distinction entre trésorerie de jeu et budget annuel. Les joueurs et montants restent fictifs ; l’import et la migration d’une base réelle restent à réaliser.
 
 ## Limites actuelles
 

@@ -11,10 +11,16 @@ L’utilisateur souhaite une courte explication en français avant chaque phase 
 travail. Poursuivre de manière autonome dans le périmètre demandé, sans lui
 remettre systématiquement le jeu ni demander des confirmations répétées.
 L’implémentation a été autorisée après l’audit des règles. Les évolutions et leurs
-limites sont suivies dans les versions 7 à 14 du README.md. Terminer et publier
+limites sont suivies dans les versions 7 à 15 du README.md. Terminer et publier
 le lot autorisé, sans prétendre que toutes les règles du rugby sont implémentées.
 
 Distinguer les lois, les dispositions françaises de compétition, les abstractions
 volontaires et les détails non vérifiés. Fixer la saison simulée et l’édition des
 règles avant d’appliquer une nouvelle loi. Ne jamais appliquer par défaut les
 variantes amateurs, jeunes ou de rugby à sept au XV adulte d’élite.
+
+Le dépôt GitHub `Xynph/cadrage-debordement` est la référence du projet. Vérifier
+son état avant de modifier une copie locale et y enregistrer les évolutions.
+Conserver la documentation et les explications destinées à Léo en français.
+Avant d’intégrer des données réelles, consulter `docs/donnees-du-jeu.md` : la
+trésorerie fictive actuelle ne doit pas être présentée comme un budget réel.

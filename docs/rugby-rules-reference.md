@@ -205,3 +205,8 @@ Ce lot ajoute des politiques de simulation, sans modifier les lois ou le profil 
 ## Politiques par zone et conquête — version 14, 30 octobre 2026
 
 Ce lot conserve le profil réglementaire fixé pour 2025/26. Les quatre zones, les choix de mêlée/touche et leurs coefficients de conservation, gain et finition sont des politiques fictives de simulation. Un renvoi court au centre parcourt 10 à 14 mètres dans cette abstraction ; le minimum de dix mètres est conservé (loi 12, source déjà référencée). Le choix ne modifie ni les renvois aux 22 ni les drops de ligne d’essai. Les mêlées non disputées restent sans poussée, gain ou contest de l’introduction et passent avant tout coefficient tactique. Les matchs sans `playbookVersion: 1` gardent leurs anciens calculs. Le carnet ne prétend pas simuler les combinaisons joueur par joueur, les secondes exactes ni toutes les infractions de conquête.
+
+
+## Rapports et suivi des consignes — version 15
+
+Ce lot ne modifie aucune loi, disposition de compétition ou probabilité sportive. Les projections et recommandations sont des outils de gestion fictifs fondés sur les qualités de la carrière. Le suivi est observationnel, sans consommation de tirages aléatoires. Les résultats par plan sont attribués à la consigne effective au début de chaque minute simulée ; un changement de possession peut intervenir ensuite. Ils ne constituent ni une simulation physique détaillée ni une preuve de causalité. Le profil réglementaire 2025/26 et le comportement des matchs déjà commencés restent conservés.
