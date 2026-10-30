@@ -18,6 +18,8 @@ assert.ok(allTests.includes('tests/v32-succession-planning.cjs'));
 assert.ok(allTests.includes('tests/v33-contract-renewals.cjs'));
 assert.ok(allTests.includes('tests/v34-counteroffers.cjs'));
 assert.ok(allTests.includes('tests/v35-salary-demand.cjs'));
+assert.ok(allTests.includes('tests/v36-satisfaction.cjs'));
+for(const p of ['dist/economy.js','dist/game.js','dist/saves.js','dist/development.js'])assert.ok(selectTests([p]).includes('tests/v36-satisfaction.cjs'),p);
 assert.ok(!allTests.includes('tests/harness.cjs'));
 
 // PR/main utilisent toujours la suite complète ; un diff manquant doit échouer en mode sûr.
