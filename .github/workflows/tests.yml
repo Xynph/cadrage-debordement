@@ -1,0 +1,25 @@
+name: Tests JavaScript
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+    branches: [main]
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntaxe JavaScript
+        run: |
+          node --check dist/rugby.js
+          node --check dist/tactical-plans.js
+      - name: Tests du jeu
+        run: |
+          set -e
+          for test in tests/*.cjs; do
+            case "$test" in tests/harness.cjs) continue;; esac
+            node "$test"
+          done
