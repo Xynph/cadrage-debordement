@@ -81,11 +81,18 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 
 - Branche `feature/v18-discipline` issue de `ca60c62` ; moteur enrichi de catégories de fautes, historique de récidives, sanctions jaunes et rouges simulées, sans modifier le profil réglementaire `fr-pro-2025` ni les matchs historiques.
 - Nouveau test `tests/discipline.cjs` pour les incidents, l'historique et le chargement d'une carrière.
-- **Statut : non livré sur `main`**. Les tests de la V18 et la CI post-fusion V17 restent à confirmer ; le modèle de gravité est un choix de simulation, pas une transposition complète du protocole officiel d'arbitrage.
-- Priorité immédiate : examiner les résultats de CI, corriger les régressions et valider la sérialisation du nouvel historique avant fusion.
+- **Statut : livré sur `main` via PR #3, commit `b523481a9ed142f1f9e76b21875029a059e9895b`.** Les tests V18 sur la PR sont réussis, et la CI post-fusion V17 a réussi ; le modèle de gravité est un choix de simulation, pas une transposition complète du protocole officiel d'arbitrage.
+- Priorité suivante : V19 — améliorer la gestion de l'avantage et les conséquences tactiques des exclusions, avec tests de sauvegarde et validation CI.
 
 ### Validation complémentaire V18
 
 - Correctif `8d054b6` : suppression d'un tirage aléatoire supplémentaire dans la sélection des incidents, qui modifiait le scénario déterministe du test `tests/matchflow.cjs` (échec `l.flow.advantage.kind` sur valeur nulle).
 - Test de compatibilité enrichi par `566f94b` : sauvegarde portable, import et reprise d'une ancienne sauvegarde sans `disciplineHistory`.
-- Les workflows `41056994977` et `41057000494` étaient encore en cours lors du contrôle. **Aucune fusion autorisée tant que le dernier commit n'a pas passé toute la CI.**
+- Les workflows `41056994977` et `41057000494` se sont terminés avec succès. Les workflows `41057182500` et `41057189838` sur le dernier commit de la PR #3 (`ea2e663`) ont également réussi. PR #3 fusionnée dans `main` via `b523481a9`. La CI post-fusion de V18 est à contrôler séparément.
+
+### Livraison V18 — 30 octobre 2026
+
+- PR #3 fusionnée en squash sur `main` (`b523481a9ed142f1f9e76b21875029a059e9895b`). Les tests GitHub Actions de la branche et de la PR sont réussis sur son dernier commit (`41057182500`, `41057189838`).
+- Vérification des sauvegardes : scénarios de restauration de l'historique, d'import portable et de reprise d'un état antérieur sans champ disciplinaire inclus dans la suite validée.
+- La discipline et les décisions de cartons restent des modèles simplifiés ; le référentiel des règles demeure la référence pour les futures améliorations.
+- **Prochaine priorité unique : V19 — arbitrage de l'avantage et effets tactiques du jeu en infériorité numérique.**
