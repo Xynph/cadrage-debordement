@@ -250,3 +250,13 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - **Fusion V26 sur `main`** : PR #17 fusionnée par squash `c4721f2147609a0151378c925d8131c9ffa74f01`. Les fonctions du double aperçu, leurs tests et le présent journal ont été relus sur `main`.
 - **CI post-fusion** : workflow de push n°143 (`41103324018`) sur le commit de fusion **completed / SUCCESS** ; job `tests` (`124225651799`) terminé avec succès, **27 suites** validées, sans erreur. La conclusion globale du workflow a été revérifiée directement dans GitHub après la fin du job.
 - **Priorité V27 unique** : représenter les deux zones de comparaison sur un terrain de rugby schématique, en signalant les compromis issus des coefficients du moteur et l'orientation des équipes, sans appliquer de tactique et sans ajouter de champs aux sauvegardes.
+
+
+## Chantier V27 — charge individuelle, récupération et rotation (30 octobre 2026)
+
+- **Décision de priorité :** réaffectation explicite de V27, précédemment envisagée comme une visualisation du comparateur tactique sur terrain. Cette visualisation n'a pas été implémentée ; elle reste différée. Accord de développement reçu pour la charge individuelle.
+- **Point de départ confirmé :** `main` `8de57ebe9151d97fa8979b1a3b4253fabc5ecd64`, aucune nouvelle modification, aucune PR ouverte, CI V26 post-fusion n°143 réussie.
+- **Conception :** `dist/development.js` conserve un objet optionnel `physicalLoad` par joueur (`version:1`, fatigue entre 0 et 100, mode individuel ou collectif). Les variations fictives initiales sont −20 (repos), −10 (normal), +6 (intensif), et +18 pour 80 minutes de match (au prorata). Une pénalité plafonnée à dix points de récupération est déduite de la récupération de condition, déjà utilisée par le moteur ; aucune deuxième pénalité directe sur les compétences. Coefficients **fictifs à calibrer**, non issus de FM27.
+- **Intégration :** choix individuels dans `dist/manager-squad.js`, aperçu et avis du staff dans `dist/game.js`, prise en compte de l'IA dans `dist/opposition.js`, charge enregistrée une fois en fin de match dans `dist/rugby.js`. Pas de changement des lois rugby ou du moteur médical direct.
+- **Compatibilité :** champs facultatifs validés dans `dist/saves.js`, anciens matchs sans `physicalLoadVersion` préservés sans charge rétroactive, initialisation neutre de la fatigue pour les carrières historiques, réinitialisation en début de saison.
+- **Vérifications à effectuer avant fusion :** tests déterministes `tests/v27-physical-load.cjs`, CI ciblée puis CI complète sur le SHA exact, import/export et anciennes parties, régressions rugby, calibration de politiques sur plusieurs rencontres. Statut initial : **en branche de développement, non fusionné**.

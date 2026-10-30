@@ -100,3 +100,9 @@
 .four-zone-double .four-zone-whatif-table{min-width:480px}
 .four-zone-double-tradeoffs{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
 @media(max-width:900px){.four-zone-double-grid{grid-template-columns:1fr}}
+
+/* V27 — charge et récupération, sans nouvelle bibliothèque graphique. */
+.physical-plan{min-width:205px}
+.physical-plan select{width:100%;max-width:240px;padding:5px;border:1px solid var(--line);border-radius:5px;background:var(--bg,#fff);color:inherit}
+.physical-plan small{display:block;margin-top:5px;line-height:1.4;white-space:normal;font-size:10px}
+.physical-rotation-preview{margin-top:10px;border-left:3px solid var(--accent,#70956a);padding:9px 12px;font-size:11px;line-height:1.6;background:#f2f5f0}

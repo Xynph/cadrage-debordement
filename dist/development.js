@@ -1,4 +1,21 @@
 'use strict';
+
+// V27 : charge physique fictive, distincte de la condition instantanée.
+// Modèle : 0..100 ; la récupération ne modifie que la condition, déjà utilisée par skill/fitScore.
+const PHYSICAL_PLANS={collective:'Suivre le collectif',repos:'Récupération',normal:'Normale',intense:'Intensive'};
+function physicalState(p){return p.physicalLoad&&p.physicalLoad.version===1?p.physicalLoad:{version:1,fatigue:0,plan:'collective'}}
+function ensurePhysicalLoad(p){if(!p.physicalLoad)p.physicalLoad={version:1,fatigue:0,plan:'collective'};return p.physicalLoad}
+function physicalLoadValue(p){return physicalState(p).fatigue}
+function physicalPlan(p){return physicalState(p).plan}
+function physicalModeFor(p,ci){if(p.injury)return 'repos';if(ci!==S.club)return physicalLoadValue(p)>=55||p.condition<60?'repos':'normal';const selected=physicalPlan(p);return selected==='collective'?S.training:selected}
+function physicalTrainingOutcome(p,mode){const injured=!!p.injury,selected=injured?'repos':mode,current=physicalLoadValue(p);const fatigue=clamp(current+(selected==='repos'?-20:selected==='normal'?-10:6),0,100);const base=injured?15:selected==='repos'?30:selected==='normal'?20:8;const reduction=Math.min(10,Math.floor(fatigue/10));return {fatigue,condition:clamp(p.condition+Math.max(0,base-reduction),injured?0:20,100)}}
+function applyPhysicalTraining(p,mode){const next=physicalTrainingOutcome(p,mode),state=ensurePhysicalLoad(p);state.fatigue=next.fatigue;p.condition=next.condition;return next}
+function setPhysicalTraining(id,plan){if(!S||S.live||S.trained||S.phase==='ended'||!Object.prototype.hasOwnProperty.call(PHYSICAL_PLANS,plan))return false;const p=player(id);if(!p)return false;ensurePhysicalLoad(p).plan=plan;save();render();return true}
+function physicalLoadPreviewText(p){if(S.trained)return 'Séance déjà appliquée';const next=physicalTrainingOutcome(p,physicalModeFor(p,S.club));return 'Après séance : '+next.condition+' % de condition · charge '+next.fatigue+'/100'}
+function physicalStaffAdvice(){const high=starters().filter(p=>physicalLoadValue(p)>=45).sort((a,b)=>physicalLoadValue(b)-physicalLoadValue(a));if(high.length)return high.slice(0,2).map(p=>p.name+' ('+physicalLoadValue(p)+'/100)').join(', ')+' : charge cumulée élevée. Envisagez récupération ou rotation avant le prochain match.';return mean(starters().map(p=>p.condition))<70?'Votre XV est fatigué. Privilégiez la récupération et donnez du temps de jeu aux remplaçants.':'Le groupe est prêt à travailler. Ajustez individuellement la charge des titulaires dans Effectif & 23.'}
+function physicalTrainingPreview(){const selected=starters().filter(p=>physicalLoadValue(p)>=35).sort((a,b)=>physicalLoadValue(b)-physicalLoadValue(a)).slice(0,3);return '<p class="help">Définissez un mode collectif ici, puis des exceptions par joueur dans Effectif & 23. Projection avant match, hors minutes futures.</p>'+(selected.length?'<div class="physical-rotation-preview"><strong>À surveiller :</strong> '+selected.map(p=>p.name+' ('+physicalLoadValue(p)+'/100, '+physicalLoadPreviewText(p)+')').join(' · ')+'</div>':'')}
+function recordPhysicalMatchLoad(l){if(l.physicalLoadVersion!==1||l.physicalLoadRecorded)return false;l.physicalLoadRecorded=true;for(let side=0;side<2;side++){const sheet=l.sheets[side];for(const id of sheet.used){const p=matchPlayer(l,side,id),minutes=Math.min(80,Math.max(0,sheet.minutes[id]||0));if(!p||!minutes)continue;const state=ensurePhysicalLoad(p);state.fatigue=clamp(state.fatigue+Math.round(minutes*18/80),0,100)}}return true}
+
 // Fictional career curves: ceilings apply to the underlying rating, not the displayed role note.
 function ensureDevelopment(p){if(p.dev)return p;const h=seedHash(p.id),young=p.age<=22,mid=p.age<=26;let margin=young?8+h%14:mid?4+h%9:p.age<=29?1+h%5:h%3;if(p.id.startsWith('academy-'))margin=10+h%9;p.dev={potential:clamp(p.rating+margin,p.rating,99),xp:0,seasonStart:p.rating,minutes:0,appearances:0,careerMinutes:0,history:[],retireAge:Math.max(p.age+1,(p.fam<=3?35:34)+h%5),lastYear:0,decline:0};return p}
 function potentialAtRole(p){ensureDevelopment(p);return roleNote({...p,rating:p.dev.potential})}
