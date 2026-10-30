@@ -106,3 +106,8 @@
 .physical-plan select{width:100%;max-width:240px;padding:5px;border:1px solid var(--line);border-radius:5px;background:var(--bg,#fff);color:inherit}
 .physical-plan small{display:block;margin-top:5px;line-height:1.4;white-space:normal;font-size:10px}
 .physical-rotation-preview{margin-top:10px;border-left:3px solid var(--accent,#70956a);padding:9px 12px;font-size:11px;line-height:1.6;background:#f2f5f0}
+
+/* V29 — objectif de progression par qualité, disponible pour pros et espoirs. */
+.development-focus-control{display:flex;flex-direction:column;gap:5px;margin:12px 0 6px;font-size:12px;font-weight:650}
+.development-focus-control select{max-width:100%;padding:8px 10px;border-radius:5px;border:1px solid var(--line);background:var(--bg,#fff);color:inherit;font-size:12px}
+.marketplayer .development-focus-control{margin:14px 0 5px}
