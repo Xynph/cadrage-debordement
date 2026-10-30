@@ -103,4 +103,10 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Le nouveau profil `advantageModel=2`, activé uniquement pour les matchs créés après V19, affine la reconnaissance d'un avantage territorial après plusieurs phases ; les matchs sauvegardés antérieurs conservent leur modèle précédent.
 - En jeu au large, l'effet du différentiel de joueurs actifs est accru : l'exclusion pénalise l'équipe en infériorité et profite à son adversaire ; le modèle existant de retour des cartons demeure inchangé.
 - Tests dédiés `tests/v19-advantage.cjs` pour avantage, supériorité numérique et sauvegardes anciennes. Coefficients fictifs, non assimilables à des seuils réglementaires.
-- **Livraison conditionnée à une CI intégralement réussie et à la fusion de la PR.**
+- **Livré sur `main`** : workflow `41057808869` réussi sur le dernier commit de PR #4 (`45e38150`), fusion squash `bc8bdfb57c6a8af7554076f3b40b799ca225347b`. La CI post-fusion doit être vérifiée séparément.
+
+### Livraison V19 — 30 octobre 2026
+
+- PR #4 fusionnée sur `main` via `bc8bdfb57c6a8af7554076f3b40b799ca225347b` après succès complet de GitHub Actions `41057808869`.
+- Tests ajoutés pour avantage territorial, différentiel de joueurs actifs et compatibilité des anciennes sauvegardes ; tests du jeu exécutés avec succès sur la PR.
+- **Priorité V20 unique : améliorer l'intelligence tactique de l'IA en infériorité numérique**, en adaptant automatiquement les choix d'attaque et de défense aux cartons, avec tests déterministes et compatibilité des sauvegardes.
