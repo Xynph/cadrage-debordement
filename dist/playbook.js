@@ -26,7 +26,7 @@ function applyNumericalZoneAdvice(kind,zone,value){
  const allowed=kind==='attack'?TACTICS:DEFENCES;
  if(!Object.hasOwn(allowed,value))return false;
  const advice=numericalStaffAdvice(l);
- if(!advice||!advice.suggestions.some(s=>s.kind===kind&&s.value===value))return false;
+ if(!advice||![...advice.suggestions,...(advice.zoneSuggestions||[])].some(s=>s.kind===kind&&s.value===value))return false;
  const local=l.playbooks?.[l.userSide]?.zones?.[zone];
  const career=S.manager.playbook?.zones?.[zone];
  if(!local||!career||local[kind]==='inherit'||local[kind]===value)return false;
