@@ -1,0 +1,65 @@
+name: Résultats CI des pull requests
+on:
+  workflow_run:
+    workflows: ["Tests JavaScript"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  publish:
+    if: ${{ github.event.workflow_run.event == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Publier ou actualiser le résultat sur la PR
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const marker = '<!-- cadrage-debordement-ci-status -->';
+            const pulls = run.pull_requests || [];
+            if (!pulls.length) {
+              core.notice('Aucune PR associée au workflow terminé.');
+              return;
+            }
+            const state = run.conclusion === 'success' ? '✅ Réussie' : '❌ ' + (run.conclusion || 'Inconnue');
+            const body = [
+              marker,
+              '### Résultat CI automatique',
+              '',
+              '**Tests JavaScript : ' + state + '**',
+              '',
+              'Exécution : [#' + run.run_number + '](' + run.html_url + ')',
+              'Commit testé : `' + run.head_sha.slice(0, 12) + '`',
+              '',
+              'Ce message est actualisé à chaque fin de CI pour éviter les doublons.'
+            ].join('\n');
+            for (const pull of pulls) {
+              if (pull.head?.sha && pull.head.sha !== run.head_sha) {
+                core.notice('PR #' + pull.number + ' : exécution obsolète ignorée.');
+                continue;
+              }
+              const { data: comments } = await github.rest.issues.listComments({
+                owner, repo, issue_number: pull.number, per_page: 100
+              });
+              const previous = comments.find(c =>
+                c.user?.type === 'Bot' && c.body?.includes(marker)
+              );
+              if (previous) {
+                await github.rest.issues.updateComment({
+                  owner, repo, comment_id: previous.id, body
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: pull.number, body
+                });
+              }
+              core.info('Résultat CI publié sur PR #' + pull.number);
+            }
