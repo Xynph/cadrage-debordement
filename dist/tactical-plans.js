@@ -214,8 +214,94 @@ function fourZoneTacticalPanel(l){
    <span>Couverture : ${z.defence.cover}</span>
    <span>Indice de fatigue défensive : ${index(z.defence.fatigue)}</span></td>
  </tr>`).join('')}</tbody></table></div>
+ ${fourZoneWhatIfPanel(l)}
  <p class="help">Les valeurs correspondent à quatre situations représentatives indépendantes : vous attaquez avec le ballon, ou vous défendez face à la possession adverse. Elles peuvent varier selon le territoire exact, la météo et les joueurs. Modifier une tactique exige toujours une action explicite dans le carnet de jeu.</p>
  </div>`;
+}
+// V25 : sélection locale éphémère pour un scénario de comparaison, jamais sauvegardée.
+let fourZonePreviewChoice={zone:'sortie',kind:'attack',plan:''};
+function setFourZonePreviewChoice(field,value){
+ const l=S?.live;
+ if(!l||!playbookRules(l))return false;
+ if(field==='zone'){
+  if(!Object.hasOwn(FIELD_ZONES,value))return false;
+  fourZonePreviewChoice={...fourZonePreviewChoice,zone:value,plan:''};
+ }else if(field==='kind'){
+  if(!['attack','defence'].includes(value))return false;
+  fourZonePreviewChoice={...fourZonePreviewChoice,kind:value,plan:''};
+ }else if(field==='plan'){
+  const plans=fourZonePreviewChoice.kind==='attack'?TACTICS:DEFENCES;
+  if(value!==''&&value!=='inherit'&&!Object.hasOwn(plans,value))return false;
+  fourZonePreviewChoice={...fourZonePreviewChoice,plan:value};
+ }else return false;
+ render();
+ return true;
+}
+function fourZoneWhatIf(l,choice=fourZonePreviewChoice){
+ if(!l||!playbookRules(l)||![0,1].includes(l.userSide)||!choice||
+  !Object.hasOwn(FIELD_ZONES,choice.zone)||!['attack','defence'].includes(choice.kind))return null;
+ const allowed=choice.kind==='attack'?TACTICS:DEFENCES;
+ if(choice.plan===''||choice.plan!=='inherit'&&!Object.hasOwn(allowed,choice.plan))return null;
+ const original=fourZoneTacticalPreview(l).find(z=>z.zone===choice.zone);
+ if(!original)return null;
+ const side=l.userSide,local=l.playbooks[side].zones[choice.zone];
+ const shadow=Object.create(l);
+ shadow.territory=original.territory;
+ shadow.playbooks=[...l.playbooks];
+ shadow.playbooks[side]={...l.playbooks[side],zones:{...l.playbooks[side].zones,
+  [choice.zone]:{...local,[choice.kind]:choice.plan}}};
+ const alternate=numericalAdviceModel(shadow,choice.kind,choice.kind==='attack'?l.tactics[side]:l.defences[side]);
+ if(!alternate)return null;
+ return {zone:choice.zone,label:original.label,kind:choice.kind,plan:choice.plan,
+  previous:original[choice.kind],alternate,previousSource:local[choice.kind]==='inherit'?'Plan général':'Consigne locale',
+  alternateSource:choice.plan==='inherit'?'Plan général':'Consigne locale',
+  unchangedZones: Object.keys(FIELD_ZONES).filter(zone=>zone!==choice.zone)};
+}
+function fourZoneWhatIfPanel(l){
+ if(!l||!playbookRules(l))return '';
+ const selection=fourZonePreviewChoice;
+ const zone=Object.hasOwn(FIELD_ZONES,selection.zone)?selection.zone:'sortie';
+ const kind=['attack','defence'].includes(selection.kind)?selection.kind:'attack';
+ const choices=kind==='attack'?TACTICS:DEFENCES;
+ const plan=selection.plan==='inherit'||Object.hasOwn(choices,selection.plan)?selection.plan:'';
+ const scenario=fourZoneWhatIf(l,{zone,kind,plan});
+ const percent=n=>(n*100).toFixed(1).replace('.',',')+' %';
+ const index=n=>n.toFixed(2).replace('.',',');
+ const points=n=>(n>0?'+':n<0?'−':'')+Math.abs(n*100).toFixed(1).replace('.',',')+' point(s)';
+ const rows=scenario?(kind==='attack'?[
+  ['Plan réellement appliqué',TACTICS[scenario.previous.actual][0],TACTICS[scenario.alternate.actual][0]],
+  ['Mètres par progression réussie',scenario.previous.minimum+'–'+scenario.previous.maximum+' m',scenario.alternate.minimum+'–'+scenario.alternate.maximum+' m'],
+  ['Risque de faute de main par séquence',percent(scenario.previous.handling),percent(scenario.alternate.handling)],
+  ['Propension au jeu au pied',percent(scenario.previous.kicking),percent(scenario.alternate.kicking)],
+  ['Indice de fatigue offensive',index(scenario.previous.fatigue),index(scenario.alternate.fatigue)]
+ ]:[
+  ['Plan réellement appliqué',DEFENCES[scenario.previous.actual][0],DEFENCES[scenario.alternate.actual][0]],
+  ['Risque de pénalité : ajustement du modèle',points(scenario.previous.penalty),points(scenario.alternate.penalty)],
+  ['Couverture de profondeur',scenario.previous.cover,scenario.alternate.cover],
+  ['Indice de fatigue défensive',index(scenario.previous.fatigue),index(scenario.alternate.fatigue)]
+ ]):[];
+ const same=rows.length&&rows.every(row=>row[1]===row[2]);
+ return `<section class="four-zone-whatif" aria-label="Comparaison avant après d'une consigne alternative">
+  <h4>Et si vous changiez une seule zone ?</h4>
+  <p class="help">Comparez une hypothèse pour l'attaque ou la défense, sans toucher à votre match ni à la carrière.</p>
+  <div class="four-zone-whatif-selects">
+   <label>Zone à comparer<select aria-label="Zone à comparer" onchange="setFourZonePreviewChoice('zone',this.value)">
+    ${Object.entries(FIELD_ZONES).map(([k,label])=>`<option value="${k}" ${zone===k?'selected':''}>${label}</option>`).join('')}</select></label>
+   <label>Type de consigne<select aria-label="Type de consigne" onchange="setFourZonePreviewChoice('kind',this.value)">
+    <option value="attack" ${kind==='attack'?'selected':''}>Attaque</option>
+    <option value="defence" ${kind==='defence'?'selected':''}>Défense</option></select></label>
+   <label>Consigne alternative<select aria-label="Consigne alternative" onchange="setFourZonePreviewChoice('plan',this.value)">
+    <option value="" ${!plan?'selected':''}>Choisir un scénario</option>
+    <option value="inherit" ${plan==='inherit'?'selected':''}>Suivre le plan général</option>
+    ${Object.entries(choices).map(([key,[label]])=>`<option value="${key}" ${plan===key?'selected':''}>${label}</option>`).join('')}</select></label>
+  </div>
+  ${scenario?`<p class="help">${FIELD_ZONES[zone]} : actuel (${scenario.previousSource}) contre hypothèse (${scenario.alternateSource}). Seule cette zone est modifiée dans le calcul fictif.</p>
+   <div class="four-zone-scroll"><table class="four-zone-whatif-table"><thead><tr><th scope="col">Effet du moteur</th><th scope="col">Avant</th><th scope="col">Après (aperçu)</th></tr></thead><tbody>
+    ${rows.map(([label,before,after])=>`<tr><th scope="row">${label}</th><td>${before}</td><td>${after}</td></tr>`).join('')}</tbody></table></div>
+   ${same?'<p class="help">Aucun écart : les deux scénarios produisent les mêmes effets pour cette zone.</p>':''}`:
+   '<p class="help">Choisissez une consigne alternative pour afficher ses effets, sans modification réelle.</p>'}
+  <p class="help">Indices et coefficients du moteur fictif, à situation identique : ce ne sont ni des statistiques observées ni une prédiction de score. Aucun scénario n'est appliqué automatiquement ; les consignes réelles se modifient dans le carnet de jeu par action explicite.</p>
+ </section>`;
 }
 function numericalAdvicePanel(l){
  const advice=numericalStaffAdvice(l);if(!advice)return '';
