@@ -86,11 +86,16 @@ function numericalStaffAdvice(l){
  else if(replaceable.length)clockNote='Rouge remplaçable : remplacement envisageable dans '+Math.min(...replaceable)+' minute(s) de jeu au plus tôt, si un joueur éligible est disponible.';
  else if((sh.redCards||[]).some(c=>c.until===null))clockNote='Rouge définitif : aucun remplacement autorisé pour cette exclusion.';
  const scoreNote=margin>0?'vous menez de '+margin+' point(s)':margin<0?'vous êtes menés de '+(-margin)+' point(s)':'le score est à égalité';
- const suggestions=[
+ const recommended=[
   {kind:'attack',value:attack,reason:attackWhy},
   {kind:'defence',value:defence,reason:defenceWhy}
- ].filter(s=>s.value!==(s.kind==='attack'?l.tactics[side]:l.defences[side]));
- return {ours:ours.length,theirs:theirs.length,difference,remaining,scoreNote,weather:l.weather,clockNote,suggestions};
+ ];
+ const suggestions=recommended.filter(s=>s.value!==(s.kind==='attack'?l.tactics[side]:l.defences[side]));
+ // Le plan général peut déjà correspondre au conseil, sans que les zones
+ // locales le suivent : le manager doit voir ces conflits même sans conseil global.
+ const localZones=playbookRules(l)?l.playbooks[side].zones:null;
+ const zoneSuggestions=localZones?recommended.filter(s=>Object.values(localZones).some(z=>z[s.kind]!=='inherit'&&z[s.kind]!==s.value)):[];
+ return {ours:ours.length,theirs:theirs.length,difference,remaining,scoreNote,weather:l.weather,clockNote,suggestions,zoneSuggestions};
 }
 // V22: aperçus contrefactuels en lecture seule fondés sur les coefficients du moteur.
 // Pas de simulation aléatoire, de prévision de résultat ni de changement de consigne.
@@ -149,6 +154,28 @@ function numericalAdviceComparison(l,suggestion){
  +'<p class="help">Valeurs et indices du moteur fictif, à situation de jeu identique : ce ne sont ni des statistiques réelles ni des prédictions de score. Une autre zone, la possession ou les qualités des joueurs peuvent changer les effets.</p>'
  +'</div>';
 }
+// V23 : identifier par zone les priorités locales qui neutralisent le conseil.
+function numericalAdviceZoneControls(l,suggestion){
+ if(!playbookRules(l)||!suggestion||!['attack','defence'].includes(suggestion.kind))return '';
+ const side=l.userSide,zones=l.playbooks[side].zones;
+ const options=suggestion.kind==='attack'?TACTICS:DEFENCES;
+ const conflicts=Object.entries(FIELD_ZONES).filter(([zone])=>{
+  const local=zones[zone][suggestion.kind];
+  return local!=='inherit'&&local!==suggestion.value;
+ });
+ if(!conflicts.length)return '';
+ const here=fieldZone(side,l.territory);
+ const canApply=l.paused&&!l.finished&&!presentationPending(l);
+ return `<div class="advice-local-zones" aria-label="Consignes locales prioritaires">
+ <p class="help"><strong>Priorité du carnet de jeu :</strong> les zones suivantes remplacent le plan principal. Le conseil du staff ne s’y applique pas automatiquement.</p>`
+ +conflicts.map(([zone,title])=>{
+  const current=zones[zone][suggestion.kind],action=suggestion.kind==='attack'?'attaque':'défense';
+  return `<div class="advice-local-zone"><div><strong>${title}${zone===here?' · zone actuelle':''}</strong>
+   <p class="help">${action[0].toUpperCase()+action.slice(1)} locale : ${options[current][0]} ; le staff conseille ${options[suggestion.value][0]}. Cette priorité locale neutralise le conseil dans cette zone.</p></div>
+   <button class="small" onclick="applyNumericalZoneAdvice('${suggestion.kind}','${zone}','${suggestion.value}')" ${canApply?'':'disabled'}>Adapter cette zone</button></div>`;
+ }).join('')
+ +`<p class="help">Chaque bouton modifie uniquement la consigne locale indiquée, après votre clic. Le plan principal et les autres zones ne changent pas.</p></div>`;
+}
 function numericalAdvicePanel(l){
  const advice=numericalStaffAdvice(l);if(!advice)return '';
  const canApply=l.paused&&!presentationPending(l),text=advice.difference<0?'INFÉRIORITÉ':'SUPÉRIORITÉ';
@@ -157,9 +184,10 @@ function numericalAdvicePanel(l){
   <p>Sur le terrain : <strong>${advice.ours} contre ${advice.theirs}</strong> · ${advice.scoreNote} · ${advice.weather} · ${advice.remaining} min restantes au temps réglementaire.</p>
   ${advice.clockNote?`<p class="help">${advice.clockNote}</p>`:''}
   ${advice.suggestions.length?advice.suggestions.map(s=>`<div class="staff-suggestion">
-   <div><strong>${s.kind==='attack'?'Attaque':'Défense'} : ${s.kind==='attack'?TACTICS[s.value][0]:DEFENCES[s.value][0]}</strong><p>${s.reason}</p>${numericalAdviceComparison(l,s)}</div>
+   <div><strong>${s.kind==='attack'?'Attaque':'Défense'} : ${s.kind==='attack'?TACTICS[s.value][0]:DEFENCES[s.value][0]}</strong><p>${s.reason}</p>${numericalAdviceComparison(l,s)}${numericalAdviceZoneControls(l,s)}</div>
    <button class="small" onclick="applyNumericalAdvice('${s.kind}','${s.value}')" ${canApply?'':'disabled'}>Appliquer cette consigne</button>
-  </div>`).join(''):'<p class="help">Vos consignes actuelles correspondent déjà aux recommandations du staff.</p>'}
+  </div>`).join(''):'<p class="help">Vos consignes générales correspondent déjà aux recommandations du staff.</p>'}
+  ${(advice.zoneSuggestions||[]).filter(s=>!advice.suggestions.some(a=>a.kind===s.kind)).map(s=>`<div class="staff-suggestion"><div><strong>${s.kind==='attack'?'Attaque':'Défense'} : votre plan principal correspond au conseil du staff.</strong>${numericalAdviceZoneControls(l,s)}</div></div>`).join('')}
   <p class="help">${canApply?'À vous de choisir.':'Mettez le match en pause pour appliquer une recommandation.'} Les consignes par zone du carnet de jeu restent prioritaires. Aucun ajustement automatique.</p>
  </section>`;
 }
