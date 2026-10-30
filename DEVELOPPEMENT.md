@@ -470,3 +470,14 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Tableau dédié dans Contrats : progression, propositions, contre-propositions, validation, révision et événements datés. Un test `tests/v38-individual-objectives.cjs` couvre négociations, présence, blessures, idempotence, saisons, historiques, sauvegardes corrompues et migrations historiques. Carte des dépendances CI actualisée.
 - Fusion seulement après CI PR entière sur le dernier SHA, puis CI post-fusion `main` ; numéros et durées de run à consulter dans GitHub pour éviter un commit de passation post-fusion relançant les tests.
 - **Priorité V39 unique :** fiabiliser et rendre plus précis le suivi des objectifs et promesses lors des remplacements et des matchs interrompus, avec comparaison entre minutes affichées et minutes enregistrées, sans changer les règles de simulation.
+
+## V39 — cinq améliorations d'effectif, santé et vestiaire (31 octobre 2026)
+
+- Départ : dernier `main` `71a28da7e3a953534777325de85e7e8e9ae0be23` ; CI post-fusion V38 #41145816739 verte. Référentiel rugby consulté, aucune variation nouvelle HIA, remplacement médical, règle de carton ou simulation physique introduite.
+- **1 — Audit de temps de jeu** : comparaison des minutes de la feuille contre les minutes effectivement créditées aux joueurs par `recordDevelopmentMatch`, à la fin des vrais matchs du club. Historique borné 12 matchs, jusqu'à 23 joueurs, sans écriture supplémentaire dans les compteurs V36/V38 ; contrôle idempotent saison/journée.
+- **2 — Suivi des blessures** : événements de blessure après rencontre et entraînement, retour hebdomadaire en nombre de semaines, liste des indisponibles, sans tirage supplémentaire de blessure.
+- **3 — Récupération individuelle** : action explicite mettant au repos jusqu'à trois joueurs dont la charge V27 atteint 30, limitée à une fois par semaine, effet confié à la logique de récupération déjà existante.
+- **4 — Affinités entre joueurs** : choix de deux joueurs disponibles, séance hebdomadaire +8 affinité / +1 cohésion affichée, sans bonus caché sur le moteur ; 20 relations au maximum.
+- **5 — Vestiaire** : choix d'un leader (sans bonus masqué) et un dialogue collectif par semaine parmi trois options explicitement quantifiées : rassembler (+2 moral / +3 cohésion), exiger (-1 / +5), apaiser (+3 / +1).
+- Panneau V39 jouable dans l'effectif. Marqueur facultatif `v39Version:1` sur les nouvelles sauvegardes ; anciennes carrières non altérées tant que la fonctionnalité n'est pas activée volontairement hors match. Validation d'import/export et tests déterministes `tests/v39-team-dynamics.cjs` ; CI complète de PR et main nécessaires.
+- **V40, cinq améliorations proposées :** calendrier de récupération individualisé ; disponibilité pré-match avec alertes contextuelles ; événements de vestiaire fondés sur l'actualité du club ; progression encadrée des affinités ; agenda du staff et bilans de semaine.
