@@ -121,3 +121,14 @@
 .recruitment-target p{margin:6px 0;font-size:12px}
 .recruitment-target small{display:block;line-height:1.55}
 .recruitment-target .matchactions{margin:10px 0 0;flex-wrap:wrap;gap:6px}
+
+/* V31 — prévision en lecture seule, même palette que les finances existantes. */
+.finance-forecast{margin-top:20px}
+.forecast-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:14px 0}
+.forecast-controls label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:650}
+.forecast-controls select{max-width:100%;min-width:0;padding:8px;border:1px solid var(--line,#d7d7d7);border-radius:5px;color:inherit;background:var(--bg,#fff)}
+.forecast-table{font-size:12px}
+.forecast-table td{min-width:145px;vertical-align:top;font-variant-numeric:tabular-nums}
+.forecast-table th:first-child{min-width:145px}
+.finance-forecast details{margin-top:16px}
+.finance-forecast details p{line-height:1.6}

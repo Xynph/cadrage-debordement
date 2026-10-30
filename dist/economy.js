@@ -39,3 +39,118 @@ function contractsPanel(){return `<div class="card"><div class="cardtitle"><h2>L
 function salesPanel(){const e=S.economy;return `<div class="stack"><div class="card"><h2>Les offres sur votre bureau</h2>${e.offers.map(o=>{let p=player(o.playerId);if(!p)return '';return `<div class="transferoffer"><div><strong>${p.name}</strong><p>${S.clubs[o.buyer].name} · ${money(o.fee)} · valable jusqu’à la prochaine journée incluse</p></div><div class="matchactions"><button class="small" onclick="declineSale('${o.id}')">Refuser</button><button class="primary small" onclick="openSale('${o.id}')">Examiner l’offre</button></div></div>`}).join('')||'<p>Placez un joueur sur le marché. Les premières offres pourront arriver après la prochaine journée, selon les moyens des autres clubs.</p>'}</div><div class="card"><h2>Les joueurs à céder</h2><div class="tablewrap"><table><thead><tr><th>JOUEUR</th><th>POSTE</th><th>SALAIRE / SEMAINE</th><th>VALEUR ESTIMÉE</th><th>STATUT</th></tr></thead><tbody>${club().players.map(p=>`<tr><td>${p.name}</td><td>${p.pos}</td><td>${money(p.salary)}</td><td>${money(transferValue(p))}</td><td>${saleBlocked(p)?`<small class="muted">${saleBlocked(p)}</small>`:`<button class="small ${e.listings[p.id]?'dark':''}" onclick="toggleListing('${p.id}')">${e.listings[p.id]?'Retirer du marché':'Proposer à la vente'}</button>`}</td></tr>`).join('')}</tbody></table></div></div></div>`}
 function movementsPanel(){return `<div class="card"><h2>Le journal du mercato</h2>${S.economy.transfers.map(t=>`<div class="news"><small>SAISON ${t.season} · ${t.round<26?'J'+(t.round+1):'FIN DE SAISON'}</small>${t.text}</div>`).join('')||'<p>Vos signatures, prolongations, ventes et départs apparaîtront ici.</p>'}</div>`}
 function careerContractYears(p){ensureDevelopment(p);return Math.max(0,p.dev.retireAge-p.age-(S.phase==='ended'?1:0))}
+
+
+
+// V31 — Projection pure des mêmes flux fictifs que financeWeek() et advanceSeason().
+// Pas de save(), rand(), ledgerEntry(), mutation de S ou de ses joueurs.
+const FORECAST_PARTNERS=160000,FORECAST_HOME_LOW=300000,FORECAST_HOME_HIGH=450000;
+const FORECAST_WIN_BONUS=80000,FORECAST_SEASON_FUNDING=2500000;
+let forecastChoice={recruit:'',renew:'',sale:'',years:2,horizon:3};
+function forecastContractBase(s){return s.season+(s.phase==='ended'?1:0)}
+function forecastFirstWeek(s){return s.phase==='league'?s.round:s.phase==='barrage'?26:s.phase==='semi'?27:s.phase==='final'?28:29}
+function forecastQuote(s,request){
+ const kind=request?.kind||'baseline',years=request?.years??2;
+ const current=s.clubs[s.club],base=forecastContractBase(s);
+ if(kind==='baseline')return {kind,valid:true,fee:0,players:current.players.map(p=>({id:p.id,salary:p.salary,contractEnd:p.contractEnd})),notes:['Aucune opération']};
+ if(!['recruit','renew','sale'].includes(kind))return {kind,valid:false,error:'Opération inconnue.'};
+ const p=kind==='recruit'?s.market.find(q=>q.id===request.id):current.players.find(q=>q.id===request.id);
+ if(!p)return {kind,valid:false,error:'Joueur indisponible pour ce scénario.'};
+ if(!Number.isInteger(years)||years<1||years>3)return {kind,valid:false,error:'Durée de contrat invalide (1 à 3 saisons).'};
+ const players=current.players.map(q=>({id:q.id,salary:q.salary,contractEnd:q.contractEnd}));
+ let fee=0,notes=[],executable=true;
+ if(kind==='recruit'){
+  const maxYears=(p.dev?.retireAge??50)-p.age-(s.phase==='ended'?1:0);
+  if(years>maxYears||current.players.some(q=>q.id===p.id)||current.players.length>=42)return {kind,valid:false,error:'Durée, retraite ou effectif incompatible avec la signature.'};
+  fee=p.price;const wage=Math.max(askingWage(p,'recruit'),reservationWage(p,'recruit',years));
+  players.push({id:p.id,salary:wage,contractEnd:base+years-1});
+  notes.push('Salaire retenu : maximum du salaire demandé et de la réserve de négociation, sans accord garanti.');
+ }else if(kind==='renew'){
+  const item=players.find(q=>q.id===p.id),min=Math.max(1,p.contractEnd-base+2),maxYears=(p.dev?.retireAge??50)-p.age-(s.phase==='ended'?1:0);
+  if(years<min||years>maxYears)return {kind,valid:false,error:'La prolongation doit allonger le contrat sans dépasser la retraite.'};
+  fee=contractFee(p,'renew');
+  item.salary=Math.max(askingWage(p,'renew'),reservationWage(p,'renew',years));item.contractEnd=base+years-1;
+  notes.push('Nouveau salaire effectif immédiatement ; prime de prolongation existante.');
+ }else{
+  const offer=s.economy?.offers?.find(o=>o.playerId===p.id&&o.expires>=s.economy.week&&s.clubs[o.buyer]?.cash>=o.fee&&s.clubs[o.buyer]?.players.length<42);
+  const quote=offer?offer.fee:transferValue(JSON.parse(JSON.stringify(p)));
+  fee=-quote;const index=players.findIndex(q=>q.id===p.id);players.splice(index,1);
+  executable=!!offer&&!saleBlocked(p);
+  notes.push(offer?'Montant d’une offre existante, encore soumis à validation.':'Valeur de transfert estimée ; aucune offre ferme : vente non réalisable immédiatement.');
+  if(saleBlocked(p))notes.push('Vente actuellement bloquée par les règles du mercato.');
+ }
+ if(kind!=='sale'&&s.clubs[s.club].cash<fee){executable=false;notes.push('Trésorerie insuffisante pour payer la prime immédiate.');}
+ return {kind,valid:true,fee,players,notes,executable,player:p.name,years};
+}
+function forecastFinancialScenario(s,request={kind:'baseline'},horizon=3){
+ if(!s||!Number.isInteger(horizon)||horizon<1||horizon>3)return {valid:false,error:'Horizon invalide.'};
+ const quote=forecastQuote(s,request);
+ if(!quote.valid)return {...quote,horizon};
+ const startCash=s.clubs[s.club].cash,players=quote.players.map(p=>({...p}));
+ const cash={low:startCash-quote.fee,central:startCash-quote.fee,high:startCash-quote.fee};
+ const minima={...cash},points=[{label:'Après opération',season:s.season,week:forecastFirstWeek(s),...cash}];
+ const annual=[],cal=s.schedule,seasonal=typeof schedule==='function'?schedule():cal;
+ for(let offset=0;offset<horizon;offset++){
+  const year=s.season+offset,from=offset===0?forecastFirstWeek(s):0;
+  if(offset>0){for(const key of ['low','central','high'])cash[key]+=FORECAST_SEASON_FUNDING;}
+  let grossPayroll=0,homes=0,matchDays=0;
+  for(let week=from;week<29;week++){
+   const active=players.filter(p=>p.contractEnd===null||p.contractEnd===undefined||p.contractEnd>=year);
+   const wage=active.reduce((sum,p)=>sum+p.salary,0);grossPayroll+=wage;
+   const pairs=week<26?(offset===0?cal[week]:seasonal[week]):null;
+   const home=!!pairs?.some(pair=>pair[0]===s.club),match=!!pairs?.some(pair=>pair.includes(s.club));
+   if(home)homes++;
+   if(match)matchDays++;
+   cash.low+=FORECAST_PARTNERS-wage+(home?FORECAST_HOME_LOW:0);
+   cash.central+=FORECAST_PARTNERS-wage+(home?(FORECAST_HOME_LOW+FORECAST_HOME_HIGH)/2:0)+(match?FORECAST_WIN_BONUS/2:0);
+   cash.high+=FORECAST_PARTNERS-wage+(home?FORECAST_HOME_HIGH:0)+(match?FORECAST_WIN_BONUS:0);
+   for(const key of ['low','central','high'])minima[key]=Math.min(minima[key],cash[key]);
+  }
+  annual.push({season:year,payments:29-from,homes,matchDays,payroll:grossPayroll,partners:(29-from)*FORECAST_PARTNERS,low:cash.low,central:cash.central,high:cash.high});
+  points.push({label:'Fin S'+year,season:year,week:29,...cash});
+  for(let i=players.length-1;i>=0;i--)if(players[i].contractEnd!=null&&players[i].contractEnd<=year)players.splice(i,1);
+ }
+ const risk=quote.executable===false?'Non exécutable à ce jour':minima.low<0?'Trésorerie négative en scénario prudent':minima.central<0?'Trésorerie fragile en scénario médian':'Aucun déficit projeté dans ces hypothèses';
+ return {valid:true,kind:quote.kind,player:quote.player,fee:quote.fee,notes:quote.notes,executable:quote.executable!==false,horizon,points,annual,minima,risk};
+}
+function setForecastChoice(field,value){
+ if(!S||!['recruit','renew','sale','years','horizon'].includes(field))return false;
+ if(field==='years'||field==='horizon'){value=Number(value);if(!Number.isInteger(value)||value<1||value>3)return false;}
+ else if(typeof value!=='string'||value.length>150)return false;
+ forecastChoice[field]=value;render();return true;
+}
+function financeForecastOptionList(kind){
+ const choices=kind==='recruit'?S.market:club().players;
+ const selected=forecastChoice[kind],found=choices.find(p=>p.id===selected)||choices[0];
+ if(!found)return {id:'',html:'<option value="">Aucun joueur disponible</option>'};
+ return {id:found.id,html:choices.map(p=>'<option value="'+p.id+'"'+(p.id===found.id?' selected':'')+'>'+visualEscape(p.name)+' · '+p.pos+(kind==='recruit'?' · '+money(p.price):'')+'</option>').join('')};
+}
+function financialForecastPanel(){
+ const selection={};for(const kind of ['recruit','renew','sale'])selection[kind]=financeForecastOptionList(kind);
+ const horizon=forecastChoice.horizon,years=forecastChoice.years;
+ const scenarios=[
+  {label:'Sans opération',value:forecastFinancialScenario(S,{kind:'baseline'},horizon)},
+  {label:'Recrutement',value:forecastFinancialScenario(S,{kind:'recruit',id:selection.recruit.id,years},horizon)},
+  {label:'Prolongation',value:forecastFinancialScenario(S,{kind:'renew',id:selection.renew.id,years},horizon)},
+  {label:'Vente',value:forecastFinancialScenario(S,{kind:'sale',id:selection.sale.id,years},horizon)}
+ ];
+ const baseline=scenarios[0].value;
+ const controls='<div class="forecast-controls">'+
+  [['recruit','Recruter'],['renew','Prolonger'],['sale','Vendre']].map(([kind,label])=>'<label>'+label+'<select aria-label="Scénario '+label+'" onchange="setForecastChoice(\''+kind+'\',this.value)">'+selection[kind].html+'</select></label>').join('')+
+  '<label>Contrat envisagé<select aria-label="Durée simulée" onchange="setForecastChoice(\'years\',this.value)">'+[1,2,3].map(n=>'<option value="'+n+'"'+(n===years?' selected':'')+'>'+n+' saison'+(n>1?'s':'')+'</option>').join('')+'</select></label>'+
+  '<label>Horizon<select aria-label="Horizon financier" onchange="setForecastChoice(\'horizon\',this.value)">'+[1,2,3].map(n=>'<option value="'+n+'"'+(n===horizon?' selected':'')+'>'+n+' saison'+(n>1?'s':'')+'</option>').join('')+'</select></label></div>';
+ const row=(name,fn)=>'<tr><th>'+name+'</th>'+scenarios.map(x=>'<td>'+(!x.value.valid?'<span class="danger">Non calculable</span>':fn(x.value,baseline))+'</td>').join('')+'</tr>';
+ const points=horizon;
+ const cols='<thead><tr><th>Échéance</th>'+scenarios.map(s=>'<th>'+s.label+'</th>').join('')+'</tr></thead>';
+ const body=[
+  row('Effet immédiat',r=>money(-r.fee)),
+  ...Array.from({length:points},(_,i)=>row('Fin saison '+(S.season+i),r=>money(r.points[i+1].central))),
+  row('Écart final au statu quo',(r,b)=>{const end=r.points.at(-1),ref=b.points.at(-1);return (end.central>=ref.central?'+':'')+money(end.central-ref.central);}),
+  row('Fourchette finale',r=>money(r.points.at(-1).low)+' à '+money(r.points.at(-1).high)),
+  row('Point bas prudent',r=>money(r.minima.low)),
+  row('Risque',r=>r.risk)
+ ].join('');
+ const details=scenarios.slice(1).map(s=>'<p class="help"><strong>'+s.label+' :</strong> '+(s.value.valid?(s.value.executable?'Hypothèse simulable, sans engagement. ':'Hypothèse non exécutable actuellement. ')+s.value.notes.join(' '):s.value.error)+'</p>').join('');
+ const first=baseline.annual[0],explain='Hypothèses du moteur : partenaires 160 000 € et salaires à chaque journée ; 300 000 à 450 000 € par match à domicile déjà programmé ; prime 0/40 000/80 000 € par match pour les bornes prudent/médian/haut. '+FORECAST_SEASON_FUNDING.toLocaleString('fr-FR')+' € versés au début des saisons suivantes. Les 26 matchs de championnat sont déterminés par le calendrier de la carrière. Les trois journées finales sont payées, mais ni match ni billetterie ni prime de titre ne sont garantis. Aucun nouveau transfert, blessure, retraite, coût de scouting, prolongation automatique ou recette non codée n’est supposé.';
+ return '<section class="card finance-forecast"><div class="cardtitle"><h2>Prévoir sans engager le club</h2><span class="tag">SIMULATION V31</span></div><p class="help">Quatre plans comparés sur les mêmes journées et hypothèses. Les montants sont une trésorerie de jeu, pas un budget réel. Modifier les choix ne change ni les contrats, ni les sauvegardes, ni le match.</p>'+controls+'<div class="tablewrap"><table class="forecast-table">'+cols+'<tbody>'+body+'</tbody></table></div>'+details+'<details><summary>Hypothèses, limites et calendrier</summary><p class="help">'+explain+'</p><p class="help">Dès cette saison : '+first.payments+' journée(s) de flux, '+first.homes+' match(s) à domicile de championnat restant(s), '+first.matchDays+' match(s) de championnat programmé(s). Les contrats expirés ne sont plus payés la saison suivante ; les joueurs encore présents après leur retraite éventuelle ne sont pas prédits.</p></details></section>';
+}
