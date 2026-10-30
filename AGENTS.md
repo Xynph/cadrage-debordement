@@ -29,3 +29,20 @@ Pour la version portable, lire `offline/README.md`. Ne pas stocker les carrière
 dans le dossier de l’exécutable et ne pas annoncer un test Windows natif si seul
 le binaire croisé ou le lanceur Linux a été vérifié. Conserver les échecs
 d’écriture visibles ; aucun repli silencieux vers un autre stockage.
+
+## Continuité entre deux comptes ChatGPT — protocole obligatoire
+
+Deux comptes ChatGPT interviennent comme développeurs de même niveau, **en alternance et jamais simultanément**. Aucun compte n'est le superviseur de l'autre. L'utilisateur alterne entre les comptes selon leurs quotas.
+
+### À chaque nouvelle conversation ou reprise du développement
+
+1. **Commencer par consulter le dépôt GitHub `Xynph/cadrage-debordement`**, avant de proposer ou d'effectuer des modifications. Examiner la branche principale, les derniers commits et leurs changements, les branches pertinentes, les pull requests ouvertes ou récemment fusionnées, ainsi que les consignes du présent `AGENTS.md`.
+2. Reconstituer l'état réel du projet et les travaux précédents **directement depuis GitHub**. Ne jamais demander à l'utilisateur ce que l'autre compte ChatGPT a fait. Si les informations disponibles sur GitHub ne suffisent pas, signaler précisément ce qui manque sans inventer de modifications.
+3. **GitHub est l'unique source de vérité du code et de l'avancement.** Ne jamais reprendre une copie locale ou un souvenir de conversation sans les confronter à la version actuelle du dépôt.
+4. Partir de la dernière version pertinente. Pour une modification simple, une mise à jour directe de `main` est possible si elle est vérifiée ; pour un changement important ou risqué, utiliser une branche et une pull request, puis intégrer le travail validé. Ne pas laisser un chantier annoncé comme terminé uniquement sur une branche non fusionnée.
+5. **Enregistrer chaque modification sur GitHub**, avec un message de commit explicite, puis vérifier le commit et le contenu effectivement publiés sur la branche visée. Une modification non publiée et vérifiée n'est pas terminée.
+6. Exécuter les tests pertinents lorsque l'environnement le permet. Distinguer clairement les tests réussis, échoués et non exécutés ; ne jamais annoncer une validation qui n'a pas eu lieu.
+7. En fin d'intervention, résumer en français les changements, les fichiers concernés, les références de commits et de pull requests, l'état des tests et les travaux restant à faire, pour que l'autre compte puisse reprendre sans perte de contexte.
+
+Ce protocole s'applique à chaque session, même si l'utilisateur ne le rappelle pas explicitement. Il complète les autres consignes de ce fichier, notamment la vérification des règles de rugby avant tout changement du moteur.
+
