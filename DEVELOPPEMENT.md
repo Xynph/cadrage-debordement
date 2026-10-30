@@ -3,7 +3,7 @@
 > Document de passation partagé entre deux comptes ChatGPT de même niveau, intervenant **en alternance, jamais simultanément**. GitHub reste l'unique source de vérité. Ce document décrit l'état connu à la date de sa dernière mise à jour ; toujours le confronter aux commits, branches, pull requests et fichiers actuels avant de travailler.
 
 **Dernière mise à jour : 30 octobre 2026.**  
-**Version annoncée dans `README.md` : 17 (lot tirs au but, validation complète en attente).**  
+**Version annoncée dans `README.md` : 17 (fusionnée sur `main` ; validation Windows native non confirmée).**  
 **Branche de référence : `main`.**
 
 ## État du projet
@@ -18,7 +18,7 @@ Le profil réglementaire documenté du moteur est **`fr-pro-2025` (saison 2025/2
 
 | Date | Référence | Travaux | État |
 | --- | --- | --- | --- |
-| 30/10/2026 | V17, branche `feature/v17-goalkicking` | Géométrie des transformations, tests ciblés, workflow CI, README | Six assertions isolées exécutées ; suites complètes non exécutées localement, CI à confirmer |
+| 30/10/2026 | `600ae6f` / PR #2 | V17 : géométrie des transformations, scène 2D, test `goalkicking.cjs`, workflow CI, README | Fusionnée sur `main` ; CI de la PR réussie (syntaxe + toutes suites `tests/*.cjs` hors harness) ; CI post-fusion à confirmer |
 | 30/10/2026 | `541d32b` | Protocole de continuité des deux comptes ajouté à `AGENTS.md` | Présent sur `main`, contenu vérifié |
 | 30/10/2026 | `21dce3d` / PR #1 | Probabilité de faute de main ajustée selon la qualité des passes des joueurs actifs dans `dist/tactical-plans.js` | Fusionné sur `main`, contenu vérifié ; tests non exécutés lors de cette intervention |
 | 30/10/2026 | `dbcb0f3` | Version 16 : application Windows hors ligne et sauvegardes sur disque | Historique du dépôt ; tests Windows natifs non revendiqués dans la documentation |
@@ -47,7 +47,7 @@ Ces points sont des **limites documentées ou pistes d'audit**, pas nécessairem
 
 ## Prochaines priorités proposées
 
-1. Confirmer l'exécution et les résultats de la CI GitHub Actions et de toutes les suites, notamment `tests/goalkicking.cjs` et `tests/tactical-plans.cjs` ; mesurer l'impact de la PR #1 sur plusieurs simulations.
+1. Vérifier la CI post-fusion de `main` et mesurer statistiquement l'impact des ajustements tactiques et des transformations sur un échantillon de simulations.
 2. Raffiner le placement latéral des essais, la prise de décision sur les pénalités et la compatibilité des matchs sauvegardés, sans inventer de données de match.
 3. Examiner les cartons, l'avantage et les fautes répétées à partir des règles officielles applicables au profil simulé.
 4. Calibrer les styles offensifs et défensifs sur plusieurs matchs et documenter les résultats, sans présenter les coefficients comme des statistiques réelles.
@@ -73,6 +73,6 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 ## Vérification V17 — 30 octobre 2026
 
 - **Contrôle exécuté :** six assertions Node.js isolées sur la formule géométrique et ses conséquences (centre vs aile, vent, fatigue, distance) : réussies. Ces assertions utilisent une copie minimale de la formule et **ne remplacent pas** l'exécution du code complet du dépôt.
-- **Non exécutés localement :** `tests/goalkicking.cjs`, les 16 suites historiques et les simulations de plusieurs centaines de matchs ; le dépôt privé n'est pas accessible depuis l'environnement local de test de cette session.
-- **Automatisation ajoutée :** `.github/workflows/tests.yml` pour vérifier syntaxe et suites Node sur GitHub Actions ; statut de l'exécution à confirmer dans l'interface GitHub.
+- **Validation GitHub Actions :** exécution PR `41055792667` réussie sur la branche `feature/v17-goalkicking`, avec étape « Syntaxe JavaScript » et étape « Tests du jeu » réussies (boucle sur `tests/*.cjs` hors `harness.cjs`, comprenant les 17 suites). Exécutions push précédentes réussies également. Aucun test local du dépôt complet n'a été exécuté pendant cette session ; les simulations statistiques dédiées à la V17 restent à faire.
+- **Automatisation ajoutée :** `.github/workflows/tests.yml` pour vérifier syntaxe et suites Node sur GitHub Actions. PR #2 fusionnée en squash dans `main` via `600ae6fa055354a05405de86749e276d731a2a21` ; présence du test et du workflow vérifiée sur `main`. Une nouvelle exécution CI `41056246563` a été déclenchée sur le commit de fusion ; son résultat final était encore en cours au moment de ce relevé.
 - **Limites :** les probabilités sont des coefficients fictifs ; les positions latérales d'essai restent schématiques, et les matchs déjà en cours ne disposent pas d'une position latérale historique enregistrée.
