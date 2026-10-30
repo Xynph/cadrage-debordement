@@ -32,7 +32,7 @@ function applyNumericalZoneAdvice(kind,zone,value){
  if(!local||!career||local[kind]==='inherit'||local[kind]===value)return false;
  local[kind]=value;
  career[kind]=value;
- addEvent(l,\`Votre consigne locale de \${kind==='attack'?'attaque':'défense'} dans \${FIELD_ZONES[zone].toLowerCase()} : \${allowed[value][0]}.\`,'tactic',{team:l.userSide});
+ addEvent(l,`Votre consigne locale de ${kind==='attack'?'attaque':'défense'} dans ${FIELD_ZONES[zone].toLowerCase()} : ${allowed[value][0]}.`,'tactic',{team:l.userSide});
  syncMatchPresentation(l);
  save();
  render();
