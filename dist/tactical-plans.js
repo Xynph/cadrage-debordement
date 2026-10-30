@@ -92,6 +92,63 @@ function numericalStaffAdvice(l){
  ].filter(s=>s.value!==(s.kind==='attack'?l.tactics[side]:l.defences[side]));
  return {ours:ours.length,theirs:theirs.length,difference,remaining,scoreNote,weather:l.weather,clockNote,suggestions};
 }
+// V22: aperçus contrefactuels en lecture seule fondés sur les coefficients du moteur.
+// Pas de simulation aléatoire, de prévision de résultat ni de changement de consigne.
+function numericalAdviceModel(l,kind,plan){
+ if(!tacticalRules(l))return null;
+ const side=l.userSide,shadow=Object.create(l);
+ shadow.tactics=[...l.tactics];shadow.defences=[...l.defences];
+ if(kind==='attack'){
+  if(!Object.hasOwn(TACTICS,plan))return null;
+  shadow.tactics[side]=plan;shadow.possession=side;
+  const actual=effectiveAttack(shadow,side),range=ATTACK_EFFECTS[actual].gain;
+  const defence=defensivePlan(shadow,1-side),shift=defence==='pression'?4:defence==='prudente'?-4:0;
+  return {actual,minimum:Math.max(3,range[0]+shift),maximum:range[1]+shift,
+   handling:handFaultProbability(shadow,side),kicking:openKickProbability(shadow,side),
+   fatigue:tacticalLoad(shadow,side)};
+ }
+ if(kind==='defence'){
+  if(!Object.hasOwn(DEFENCES,plan))return null;
+  shadow.defences[side]=plan;shadow.possession=1-side;
+  const actual=effectiveDefence(shadow,side);
+  return {actual,penalty:tacticalPenaltyAdjustment(shadow,side),
+   fatigue:tacticalLoad(shadow,side),
+   cover:actual==='prudente'?'Profondeur mieux protégée':
+         actual==='pression'?'Plus de grands gains possibles si la montée est battue':
+         'Compromis de couverture'};
+ }
+ return null;
+}
+function numericalAdviceComparison(l,suggestion){
+ if(!suggestion||!['attack','defence'].includes(suggestion.kind))return '';
+ const side=l.userSide,oldPlan=suggestion.kind==='attack'?l.tactics[side]:l.defences[side];
+ const current=numericalAdviceModel(l,suggestion.kind,oldPlan);
+ const proposed=numericalAdviceModel(l,suggestion.kind,suggestion.value);
+ if(!current||!proposed)return '';
+ const percent=x=>(x*100).toFixed(1).replace('.',',')+' %';
+ const index=x=>x.toFixed(2).replace('.',',');
+ const points=x=>(x>0?'+':x<0?'−':'')+Math.abs(x*100).toFixed(1).replace('.',',')+' point(s)';
+ const zone=playbookRules(l)?l.playbooks[side].zones[fieldZone(side,l.territory)]:null;
+ const override=zone&&zone[suggestion.kind]!=='inherit';
+ const same=current.actual===proposed.actual;
+ const rows=suggestion.kind==='attack'?
+  [['Mètres par progression réussie',current.minimum+'–'+current.maximum+' m',proposed.minimum+'–'+proposed.maximum+' m'],
+   ['Risque de faute de main par séquence',percent(current.handling),percent(proposed.handling)],
+   ['Propension au jeu au pied dans cette zone',percent(current.kicking),percent(proposed.kicking)],
+   ['Indice de dépense offensive',index(current.fatigue),index(proposed.fatigue)]]:
+  [['Risque de pénalité : ajustement du moteur',points(current.penalty),points(proposed.penalty)],
+   ['Indice de dépense défensive',index(current.fatigue),index(proposed.fatigue)],
+   ['Couverture de la profondeur',current.cover,proposed.cover]];
+ const oldLabel=suggestion.kind==='attack'?TACTICS[oldPlan][0]:DEFENCES[oldPlan][0];
+ const newLabel=suggestion.kind==='attack'?TACTICS[suggestion.value][0]:DEFENCES[suggestion.value][0];
+ return '<div class="advice-comparison" aria-label="Comparaison tactique entre la consigne actuelle et celle du staff">'
+ +'<p class="help">Comparaison dans la zone actuelle : <strong>'+oldLabel+'</strong> → <strong>'+newLabel+'</strong>.</p>'
+ +rows.map(([label,currentValue,proposedValue])=>'<div class="advice-comparison-row"><span>'+label+'</span><span>'+currentValue+' → <strong>'+proposedValue+'</strong></span></div>').join('')
+ +(override?'<p class="help">Le carnet de jeu impose déjà un plan local dans cette zone : les effets affichés restent identiques tant que cette priorité est active.</p>':'')
+ +(same&&!override?'<p class="help">Dans cette zone, le moteur conserve les mêmes effets pour ces deux choix.</p>':'')
+ +'<p class="help">Valeurs et indices du moteur fictif, à situation de jeu identique : ce ne sont ni des statistiques réelles ni des prédictions de score. Une autre zone, la possession ou les qualités des joueurs peuvent changer les effets.</p>'
+ +'</div>';
+}
 function numericalAdvicePanel(l){
  const advice=numericalStaffAdvice(l);if(!advice)return '';
  const canApply=l.paused&&!presentationPending(l),text=advice.difference<0?'INFÉRIORITÉ':'SUPÉRIORITÉ';
@@ -100,7 +157,7 @@ function numericalAdvicePanel(l){
   <p>Sur le terrain : <strong>${advice.ours} contre ${advice.theirs}</strong> · ${advice.scoreNote} · ${advice.weather} · ${advice.remaining} min restantes au temps réglementaire.</p>
   ${advice.clockNote?`<p class="help">${advice.clockNote}</p>`:''}
   ${advice.suggestions.length?advice.suggestions.map(s=>`<div class="staff-suggestion">
-   <div><strong>${s.kind==='attack'?'Attaque':'Défense'} : ${s.kind==='attack'?TACTICS[s.value][0]:DEFENCES[s.value][0]}</strong><p>${s.reason}</p></div>
+   <div><strong>${s.kind==='attack'?'Attaque':'Défense'} : ${s.kind==='attack'?TACTICS[s.value][0]:DEFENCES[s.value][0]}</strong><p>${s.reason}</p>${numericalAdviceComparison(l,s)}</div>
    <button class="small" onclick="applyNumericalAdvice('${s.kind}','${s.value}')" ${canApply?'':'disabled'}>Appliquer cette consigne</button>
   </div>`).join(''):'<p class="help">Vos consignes actuelles correspondent déjà aux recommandations du staff.</p>'}
   <p class="help">${canApply?'À vous de choisir.':'Mettez le match en pause pour appliquer une recommandation.'} Les consignes par zone du carnet de jeu restent prioritaires. Aucun ajustement automatique.</p>
