@@ -87,7 +87,7 @@ rt('p.dev.retireAge=p.age+3');
 const term=rt('renewalEligibleYears(S,p,3)');
 assert.equal(term.min,2);
 assert.ok(term.years<=3);
-assert.equal(rt('forecastQuote(S,{kind:"renew",id,years:term.years}).valid'),true);
+assert.equal(rt('forecastQuote(S,{kind:"renew",id,years:'+term.years+'}).valid'),true);
 
 // L'impossibilité financière est explicitée, pas contournée.
 const unaffordable=context(),u=unaffordable.run;
