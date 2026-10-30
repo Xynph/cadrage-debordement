@@ -62,3 +62,18 @@
 .advice-local-zone .help{font-size:11px;line-height:1.5;margin:4px 0 0}
 .advice-local-zone button{flex-shrink:0;max-width:190px;white-space:normal}
 @media(max-width:600px){.advice-local-zone{align-items:stretch;flex-direction:column;gap:8px}.advice-local-zone button{max-width:none;width:100%}}
+
+/* V24 : tableau quatre zones entièrement consultatif, mobile avec défilement. */
+.four-zone-preview{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+.four-zone-preview>h3{margin:5px 0 8px}
+.four-zone-preview>.help{font-size:11px;line-height:1.5;margin:8px 0}
+.four-zone-scroll{max-width:100%;overflow-x:auto}
+.four-zone-preview table{min-width:610px;width:100%;border-collapse:collapse;font-size:11px;text-align:left}
+.four-zone-preview th,.four-zone-preview td{vertical-align:top;padding:10px 8px;border-bottom:1px solid var(--line)}
+.four-zone-preview thead th{font-size:12px}
+.four-zone-preview tbody th{width:24%}
+.four-zone-preview td{width:38%}
+.four-zone-preview td span,.four-zone-preview td small,.four-zone-preview tbody th small{display:block;line-height:1.5;margin-top:4px}
+.four-zone-preview td small{font-weight:600}
+.four-zone-preview .four-zone-current{background:rgba(108,137,87,.10)}
+@media(max-width:650px){.four-zone-preview th,.four-zone-preview td{padding:8px 6px}}
