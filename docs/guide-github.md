@@ -101,3 +101,9 @@ phase de jeu si elles sont visibles.
 4. Consulter ensuite **une seule fois** la CI `push` de `main` correspondant au commit de fusion.
 
 **Limite de sécurité :** sur ce dépôt privé, la branche `main` n'a pas de protection obligatoire et `allow_auto_merge=false`. La fusion automatique permanente n'est pas activée : ce script impose un garde-fou applicatif mais ne remplace pas une protection GitHub. Ne jamais fusionner via un autre chemin non vérifié. Les commandes n'accélèrent pas les calculs des tests, elles réduisent surtout les consultations redondantes.
+
+## Notification automatique du résultat final
+
+À la fin d'une CI de pull request ouverte **sur une branche du dépôt**, le job `Validation CI` publie directement un commentaire sur la PR avec le résultat vert/rouge, le SHA vérifié et le lien vers GitHub Actions. Cela ne lance **aucun workflow secondaire** : GitHub peut notifier les participants selon leurs réglages habituels.
+
+Le commentaire n'est **pas une autorisation de fusion** ; vérifier les contrôles officiels via `ci/release-gate.cjs` ou GitHub. Une notification peut être absente (droits ou incident API) sans rendre les tests invalides. Pour les forks, aucune écriture n'est demandée. La CI post-fusion `push main` n'ajoute pas de commentaire : son résultat reste dans Actions.

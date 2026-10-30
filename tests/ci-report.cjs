@@ -1,0 +1,21 @@
+'use strict';
+// Contrats statiques du rapport GitHub : pas de dépendance supplémentaire.
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const yaml=fs.readFileSync(path.resolve(__dirname,'../.github/workflows/tests.yml'),'utf8');
+assert.match(yaml,/name: Validation CI/);
+assert.match(yaml,/needs: \[classification, shards\]/);
+assert.match(yaml,/github\.event_name == 'pull_request'/);
+assert.match(yaml,/github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
+assert.match(yaml,/pr\.head\.sha !== sha/);
+assert.match(yaml,/pr\.state !== 'open'/);
+assert.match(yaml,/classification === 'success'/);
+assert.match(yaml,/docs \? shards === 'skipped' : shards === 'success'/);
+assert.match(yaml,/github\.rest\.issues\.createComment/);
+assert.match(yaml,/continue-on-error: true/);
+assert.match(yaml,/issues: write/);
+assert.match(yaml,/failed?\b|ÉCHEC/);
+assert.doesNotMatch(yaml,/pull_request_target:/);
+assert.doesNotMatch(yaml,/workflow_run:/);
+console.log('ci-report: 14 protections de notification vérifiées');

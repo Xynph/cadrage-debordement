@@ -431,3 +431,11 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Protocole `AGENTS.md` et guide GitHub actualisés : une lecture initiale, diagnostics seulement sur échec, une CI complète de PR, un contrôle post-fusion, passation en même commit si possible.
 - Gain sur nombre d'appels attendu : lecture manuelle du gate en 3 requêtes GitHub (PR, liste runs, jobs) au lieu d'une suite indéfinie de sondages ; **gain réel en secondes à mesurer sur les runs de la PR et de main**. Aucun gain de latence des tests n'est garanti par ce changement de processus.
 - Références de PR/CI et résultats finaux : consulter l'historique GitHub ; ne pas prolonger le journal après fusion pour éviter de relancer une CI documentaire.
+
+## Remontée événementielle du verdict CI — 30 octobre 2026
+
+- Départ : dernier `main` `cf0e24c1a4ed8db4926431c516c686729ce3dd30`. Baseline de la PR #28 : run `41140667914` terminé en 93 s ; post-fusion `41140877395` terminé en 93 s, tous deux verts. Ces durées incluent les tests, pas des appels de polling.
+- Le job final `Validation CI` publie sur les PR internes ouvertes un verdict succès/échec et le SHA courant, sans créer de workflow secondaire. Permissions `issues: write` cantonnées au job de validation ; aucune écriture pour les forks ; échec de notification non bloquant. Un contrôle spécifique `tests/ci-report.cjs` vérifie les garde-fous structurels.
+- Le commentaire GitHub est une notification, **jamais** un statut autorisant une fusion. Le SHA et la CI complète sont toujours obligatoires ; aucune modification du moteur, des sauvegardes ni des règles de rugby.
+- Gain attendu vérifiable : de multiples consultations manuelles répétées à zéro consultation proactive nécessaire pour connaître le verdict (l'alerte est publiée après le job) ; le nombre de consultations réellement évité chez les utilisateurs ne peut pas être mesuré automatiquement. Latence et coût CI seront relevés sur PR puis `main` ; aucune réduction garantie de calcul.
+- Ne pas déclencher de commit documentaire supplémentaire après validation afin de ne pas créer une nouvelle CI. Références finales de run visibles dans GitHub Actions pour la branche et le commit de fusion.
