@@ -134,6 +134,7 @@ for(let i=0;i<4;i++){
  summary.push({season:y('S.season'),low:baselineYear.low,central:baselineYear.central,high:baselineYear.high,actual:paid,engineCashChange:paid-now});
  y('S.phase="ended";S.round=26;advanceSeason()');
  assert.equal(y('S.season'),i+2);
+ assert.ok(y('S.ledger.length<=100'),'The real interseason funding must respect the save ledger limit');
  assert.ok(y('!!createSaveDocument()'));
 }
 assert.equal(summary.length,4);
