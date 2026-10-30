@@ -124,3 +124,10 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Publication du statut de succès ou d'échec et du lien vers l'exécution dans un commentaire de PR, mis à jour plutôt que dupliqué ; récupération alternative de la PR lorsque l'événement n'en liste aucune, puis vérification en direct que la PR est ouverte et que son SHA correspond au commit testé avant de publier.
 - Aucun polling et aucune fusion automatique. Ce suivi produit un commentaire GitHub, pas une notification ChatGPT instantanée ; le déclencheur ne sera opérationnel qu'après intégration du workflow sur la branche par défaut.
 - Vérification événementielle réelle à effectuer après fusion sur `main` et prochaine fin de workflow de PR.
+
+### Livraison et contrôle du suivi événementiel — 30 octobre 2026
+
+- PR #7 fusionnée dans `main` après succès du workflow de PR n°36 (`41060386114`), commit squash `6975c32495be7c3efa7ce977a06040dfd2c95de3` ; workflow et journal relus sur `main`.
+- CI post-fusion sur `main` n°37 (`41060753951`) réussie.
+- Essais réels du déclencheur : workflows événementiels n°2 (`41061094373`) et n°3 (`41061693762`) bien déclenchés, mais publication du commentaire refusée avec HTTP 403 « Resource not accessible by integration » sur `POST /issues/{numero}/comments` (PR #6, PR de contrôle #8).
+- Correctif proposé sur PR dédiée : donner explicitement `pull-requests: write` au jeton du workflow en plus de `issues: write`. Contrôler une exécution réelle après fusion ; tant que la publication n'est pas vérifiée, ne pas annoncer le suivi comme opérationnel.
