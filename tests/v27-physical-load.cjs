@@ -43,6 +43,17 @@ match('trainWeek()');
 assert.equal(match('physicalLoadValue(ai)'),50);
 assert.equal(match('ai.condition'),100);
 
+
+// Eight-round deterministic rotation comparison (our fictional coefficients, not FM27 data).
+const series=context(),sr=series.run;
+sr('start(0);var seasonFixture=createRugbyMatch([0,1]);var workId=seasonFixture.sheets[0].initial[0],rotateId=seasonFixture.sheets[0].initial[1]');
+for(let round=0;round<8;round++){
+ sr('applyPhysicalTraining(player(workId),"normal");applyPhysicalTraining(player(rotateId),'+JSON.stringify(round%2===0?'repos':'normal')+');var loadGame=createRugbyMatch([0,1]);loadGame.sheets[0].minutes[workId]=80;loadGame.sheets[0].minutes[rotateId]='+String(round%2===0?0:80)+';recordPhysicalMatchLoad(loadGame)');
+}
+const fullSeries=sr('physicalLoadValue(player(workId))'),rotatedSeries=sr('physicalLoadValue(player(rotateId))');
+assert.ok(fullSeries>rotatedSeries,'Giving regular match rest must reduce cumulative load');
+assert.ok(fullSeries>=0&&fullSeries<=100&&rotatedSeries>=0&&rotatedSeries<=100);
+
 // Old exports (including an in-progress match) remain valid; schema migration is forward-only.
 const before=context(),legacy=before.run;
 legacy('start(0);beginMatch()');
