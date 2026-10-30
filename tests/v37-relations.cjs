@@ -55,7 +55,7 @@ const restored=context(replay),q=restored.run;
 assert.equal(q('S.economy.relationLog[0].kind'),'signed');
 assert.ok(valid(q));
 const legacy=JSON.parse(r('JSON.stringify(S)'));
-delete legacy.relationsVersion;delete legacy.economy.relationLog;delete legacy.economy.moodLog;
+delete legacy.relationsVersion;delete legacy.economy.relationLog;delete legacy.economy.moodLog;legacy.economy.talks={};
 for(const c of legacy.clubs)for(const p of c.players)if(p.satisfaction)delete p.satisfaction.coachMeeting;
 const historical=context(legacy),h=historical.run;
 assert.equal(h('relationsActive()'),false);
