@@ -35,7 +35,7 @@ assert.equal(r('JSON.stringify(localStorage.getItem("bdt-v1"))'),r('savesBefore'
 
 // Montants alignés sur les fonctions métier et sans mutation des attributs.
 const job=context(),j=run(job);
-j('start(0);var candidate=S.market[0],cid=candidate.id,own=club().players[0],ownId=own.id,snapshot=JSON.stringify(S)');
+j('start(0);var candidate=S.market[0],cid=candidate.id,own=club().players.find(p=>p.contractEnd<=S.season+1),ownId=own.id,snapshot=JSON.stringify(S)');
 j('var recruit=forecastFinancialScenario(S,{kind:"recruit",id:cid,years:2},3),renew=forecastFinancialScenario(S,{kind:"renew",id:ownId,years:3},3),sale=forecastFinancialScenario(S,{kind:"sale",id:ownId,years:2},3),base=forecastFinancialScenario(S,{kind:"baseline"},3)');
 assert.equal(j('recruit.valid'),true);
 assert.equal(j('renew.valid'),true);
@@ -127,10 +127,10 @@ for(let i=0;i<4;i++){
  const now=y('club().cash'),baselineYear=annual[0];
  // Flux financiers réels : 26 semaines de championnat, sans victoire, et
  // trois journées finales sans billetterie, tous les salaires payés.
- y('for(let week=0;week<29;week++){S.round=Math.min(26,week);var own=week<26?S.schedule[week].find(pair=>pair.includes(S.club)):null;financeWeek(own,false);if(week<26&&own[0]===S.club){var ticketLine=S.ledger.find(x=>x.title.includes("Billetterie"));}}');
+ y('var ticketTotal=0;for(let week=0;week<29;week++){S.round=Math.min(26,week);var own=week<26?S.schedule[week].find(pair=>pair.includes(S.club)):null;financeWeek(own,false);if(week<26&&own[0]===S.club)ticketTotal+=S.ledger.find(x=>x.title.includes("Billetterie")).amount;}');
  const paid=y('club().cash');
  assert.ok(paid>=baselineYear.low&&paid<=baselineYear.high);
- assert.equal(y('club().cash-starting'),paid-summary.reduce((sum,q)=>sum+q.engineCashChange,0)-starting+0 /* historic cumulative reconciliation */);
+ assert.equal(y('club().cash-now'),y('baselineYear.partners-baselineYear.payroll+ticketTotal'));
  summary.push({season:y('S.season'),low:baselineYear.low,central:baselineYear.central,high:baselineYear.high,actual:paid,engineCashChange:paid-now});
  y('S.phase="ended";S.round=26;advanceSeason()');
  assert.equal(y('S.season'),i+2);
