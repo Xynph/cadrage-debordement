@@ -83,3 +83,12 @@ Vous pouvez continuer à le décrire dans la conversation avec Codex. Pour un bu
 précisez l’écran, l’action effectuée, ce qui s’est produit et ce que vous attendiez.
 Une capture peut aider. Pour un souci en match, indiquez aussi la minute et la
 phase de jeu si elles sont visibles.
+
+## Passation CI entre les deux comptes ChatGPT
+
+- Repartir du dernier `main`, lire `AGENTS.md` et `DEVELOPPEMENT.md`, puis relever les PR et les commits courants.
+- Créer une branche et une PR. Sur une PR documentaire uniquement (`AGENTS.md`, `README.md`, `DEVELOPPEMENT.md`, `docs/**`), le contrôle de syntaxe/diff est léger ; sinon les **toutes** les suites `tests/*.cjs` (sauf `harness.cjs`) sont distribuées sur trois exécutants.
+- Le contrôle requis à surveiller est **Validation CI** : son nom est stable pour la documentation et le code. Les autres jobs détaillent les diagnostics ; les échecs de plusieurs suites sont collectés dans chaque shard. Le résultat GitHub natif de la PR remplace les commentaires déclenchés par un second workflow.
+- Ne fusionner que si **Validation CI** est verte sur le dernier SHA de la PR ; après fusion vérifier le workflow `push` sur le SHA réel de `main`. Ne pas confondre SHA de fusion et SHA de la PR.
+- Sur `main`, toutes les suites s'exécutent sans exception documentaire. Les branches de travail ne déclenchent pas une deuxième CI `push` : seule la PR est validée. Une PR hors `main` n'est pas couverte.
+- Pour comparer la performance : relever `created_at`, `updated_at` et les durées des jobs dans GitHub Actions, puis additionner les durées facturables de tous les jobs ; la latence et les minutes de calcul ne sont pas équivalentes.

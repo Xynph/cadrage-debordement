@@ -409,3 +409,17 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - **Calibration déterministe et limites :** quatre transitions de saisons d'une carrière testée avec échantillons de minutes et résultats de club **injectés de manière contrôlée** (il ne s'agit pas de matchs complets joués). Les quatre barèmes V34 de l'échantillon étaient 12 400, 11 300, 12 200, puis 6 200 € par semaine ; les demandes V35 calculées 12 400, 11 200, 12 100, puis 6 200 €. La plupart des écarts de cet échantillon sont faibles car des facteurs positifs et négatifs se compensent ; d'autres scénarios déterministes confirment des variations plus nettes dans chaque sens. Ces coefficients sont **des choix d'équilibrage fictifs non validés par des données de contrats réels**, pas une prévision économique. Pas de statistique individuelle de performance de match ni de test Windows natif ; le calcul utilise explicitement la progression de note comme proxy. Aucune modification des contrats ou de la trésorerie lors d'une simple consultation.
 - **CI du commit documentaire final :** doit être vérifiée indépendamment, sans créer de chaîne infinie de mises à jour du journal.
 - **Prochaine priorité unique V36 proposée après validation :** amélioration de la satisfaction du joueur et des discussions contractuelles à partir d'une historique explicite des promesses et du temps de jeu, avec phase d'analyse et sans mécanisme punitif caché.
+
+## Optimisation infrastructure CI — 30 octobre 2026 (PR en préparation)
+
+- Point de départ `main` : `d5e7c1a2cab23c7907e0d2d7ad4f8b6f87f3bdd6`. Baselines CI réussies : actions/runs/41138531150 (environ 171 s de latence), actions/runs/41138251162 (environ 92 s). Mesures avant/après et minutes exécutants à confirmer depuis les runs finaux.
+- Nouvelle CI : trois shards des suites Node, exceptions documentaires uniquement sur PR, `Validation CI` constante, syntaxe des JS modifiés, diagnostics agrégés par shard. Les suites, sauvegardes et règles rugby ne sont pas modifiées.
+- Déclencheurs limités à PR vers main et push main (plus exécution manuelle) ; suppression du workflow annexe de commentaires CI, les checks GitHub natifs faisant foi.
+- **État de livraison : à renseigner après la validation réelle du dernier SHA, puis contrôle post-fusion de main.**
+
+### Mesures CI réelles avant/après (PR #27)
+
+- Baselines main : run `41138531150` : 171 s de latence environ, 168 s d'exécution du job ; run `41138251162` : 92 s de latence environ, 89 s d'exécution du job. Les fluctuations rendent une moyenne prématurée.
+- Premier run PR optimisé `41139835993` sur SHA `75d06ecd` : 58 s de latence, classification 6 s, shards 39/42/33 s, validation 4 s, **124 s cumulées de jobs**, tous réussis.
+- Comparaison au baseline 171 s : latence -66 % et secondes de jobs -26 %. Comparaison au baseline 92 s : latence -37 % mais secondes cumulées de jobs +39 %. Aucun gain garanti sur la facturation GitHub : arrondi éventuel par job et tarification du compte à consulter dans GitHub Billing.
+- Les trois shards ont réussi. Le dernier SHA et les vérifications post-fusion restent à contrôler ; ne pas présenter cette mesure initiale comme une moyenne stable.

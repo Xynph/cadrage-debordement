@@ -1,23 +1,24 @@
 name: Tests JavaScript
 on:
-  push:
-    branches: [main, 'feature/**', 'ci/**']
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
-# Les nouveaux commits remplacent les validations obsolètes sur une même branche/PR.
-# Les contrôles de main ne sont jamais annulés.
 concurrency:
   group: tests-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  tests:
+  classification:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
+    outputs:
+      documentation_only: ${{ steps.diff.outputs.documentation_only }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -25,55 +26,115 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Syntaxe JavaScript
-        run: |
-          node --check dist/rugby.js
-          node --check dist/tactical-plans.js
-          node --check ci/select-tests.cjs
-      - name: Sélection des suites de tests
+      - id: diff
+        name: Classifier le changement et vérifier la syntaxe JS modifiée
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          BEFORE: ${{ github.event.before }}
         run: |
           set -euo pipefail
-          list="$RUNNER_TEMP/cd-test-list.txt"
-          full() {
-            for test in tests/*.cjs; do
-              case "$test" in tests/harness.cjs) continue;; esac
-              printf '%s\n' "$test"
-            done > "$list"
-          }
-          if [[ "$GITHUB_EVENT_NAME" == "pull_request" || "$GITHUB_REF" == "refs/heads/main" ]]; then
-            full
-            echo "Validation complète obligatoire sur pull request et main."
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            base="$PR_BASE"
+          elif [[ "$EVENT_NAME" == "push" && -n "$BEFORE" && "$BEFORE" != "0000000000000000000000000000000000000000" ]]; then
+            base="$BEFORE"
           else
-            if base=$(git merge-base HEAD origin/main); then
-              git diff --name-only "$base" HEAD > "$RUNNER_TEMP/cd-changed-files.txt"
-              node ci/select-tests.cjs "$RUNNER_TEMP/cd-changed-files.txt" > "$list"
-              echo "Validation ciblée pendant le développement."
-            else
-              echo "::warning::Base de comparaison introuvable : exécution de toutes les suites."
-              full
-            fi
+            base=""
           fi
-          echo "CD_TEST_LIST=$list" >> "$GITHUB_ENV"
-          echo "Suites sélectionnées : $(wc -l < "$list")"
-          cat "$list"
-      - name: Tests du jeu (durées et diagnostic)
+          if [[ -n "$base" ]] && git cat-file -e "$base^{commit}"; then
+            git diff --name-only --diff-filter=ACMR "$base" HEAD > "$RUNNER_TEMP/modified.txt"
+          else
+            git ls-files > "$RUNNER_TEMP/modified.txt"
+          fi
+          docs=true
+          while IFS= read -r file; do
+            [[ -n "$file" ]] || continue
+            case "$file" in
+              AGENTS.md|README.md|DEVELOPPEMENT.md|docs/*) ;;
+              *) docs=false ;;
+            esac
+            case "$file" in
+              *.js|*.cjs|*.mjs)
+                if [[ -f "$file" ]]; then
+                  echo "Syntaxe : $file"
+                  node --check "$file"
+                fi ;;
+            esac
+          done < "$RUNNER_TEMP/modified.txt"
+          # Jamais contourner la validation complete sur main ou en lancement manuel.
+          if [[ "$EVENT_NAME" != "pull_request" || ! -s "$RUNNER_TEMP/modified.txt" ]]; then docs=false; fi
+          echo "documentation_only=$docs" >> "$GITHUB_OUTPUT"
+          echo "Documentation seule : $docs"
+  # Répartir la couverture complète sans omettre les tests de sauvegardes.
+  shards:
+    name: Suites ${{ matrix.shard }}/3
+    needs: classification
+    if: ${{ needs.classification.result == 'success' && needs.classification.outputs.documentation_only != 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Tests du jeu et bilan des erreurs
         shell: bash
+        env:
+          SHARD: ${{ matrix.shard }}
         run: |
-          set -euo pipefail
-          if [[ ! -s "$CD_TEST_LIST" ]]; then
-            echo "Aucun test métier pour cette modification documentaire ; les PR et main restent entièrement vérifiés."
-          fi
-          while IFS= read -r test; do
-            [[ -n "$test" ]] || continue
+          set -uo pipefail
+          mapfile -t suites < <(find tests -maxdepth 1 -name '*.cjs' ! -name 'harness.cjs' | LC_ALL=C sort)
+          total="${#suites[@]}"
+          failures=0
+          executed=0
+          for i in "${!suites[@]}"; do
+            (( i % 3 == SHARD - 1 )) || continue
+            test="${suites[$i]}"
+            executed=$((executed+1))
             echo "::group::$test"
             start=$SECONDS
             if timeout --signal=TERM --kill-after=10s 180s node "$test"; then
               echo "PASS $test ($((SECONDS-start)) s)"
+              echo "| $test | OK | $((SECONDS-start)) s |" >> "$RUNNER_TEMP/results.md"
             else
-              result=$?
-              echo "::error file=$test::Échec ou délai dépassé (code $result, durée $((SECONDS-start)) s)"
-              exit "$result"
+              code=$?
+              failures=$((failures+1))
+              echo "::error file=$test::Échec ou délai dépassé (code $code, durée $((SECONDS-start)) s)"
+              echo "| $test | ECHEC ($code) | $((SECONDS-start)) s |" >> "$RUNNER_TEMP/results.md"
             fi
             echo "::endgroup::"
-          done < "$CD_TEST_LIST"
+          done
+          {
+            echo "### Shard $SHARD/3 : $executed suites sur $total"
+            echo "| Suite | Résultat | Durée |"
+            echo "| --- | --- | --- |"
+            cat "$RUNNER_TEMP/results.md"
+            echo ""
+            echo "**Échecs : $failures**"
+          } >> "$GITHUB_STEP_SUMMARY"
+          [[ "$failures" -eq 0 ]]
+  validation:
+    name: Validation CI
+    if: ${{ always() }}
+    needs: [classification, shards]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Consolider les décisions
+        env:
+          CLASSIFICATION: ${{ needs.classification.result }}
+          DOCS: ${{ needs.classification.outputs.documentation_only }}
+          SHARDS: ${{ needs.shards.result }}
+        run: |
+          echo "Classification : $CLASSIFICATION ; documentation seule : $DOCS ; shards : $SHARDS" >> "$GITHUB_STEP_SUMMARY"
+          [[ "$CLASSIFICATION" == "success" ]] || exit 1
+          if [[ "$DOCS" == "true" ]]; then
+            [[ "$SHARDS" == "skipped" ]]
+          else
+            [[ "$SHARDS" == "success" ]]
+          fi
