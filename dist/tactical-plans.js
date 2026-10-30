@@ -176,6 +176,47 @@ function numericalAdviceZoneControls(l,suggestion){
  }).join('')
  +`<p class="help">Chaque bouton modifie uniquement la consigne locale indiquée, après votre clic. Le plan principal et les autres zones ne changent pas.</p></div>`;
 }
+// V24 : comparaison simultanée et sans mutation des quatre zones du terrain.
+// Les points repères sont au milieu de chaque secteur depuis notre propre en-but.
+const FOUR_ZONE_SAMPLE={sortie:12,construction:36,pression:64,marque:90};
+function fourZoneTacticalPreview(l){
+ if(!l||!playbookRules(l)||![0,1].includes(l.userSide))return [];
+ const side=l.userSide;
+ return Object.entries(FIELD_ZONES).map(([zone,label])=>{
+  const own=FOUR_ZONE_SAMPLE[zone],territory=side===0?own:100-own;
+  const sample=Object.create(l);sample.territory=territory;
+  const attack=numericalAdviceModel(sample,'attack',l.tactics[side]);
+  const defence=numericalAdviceModel(sample,'defence',l.defences[side]);
+  if(!attack||!defence)return null;
+  const local=l.playbooks[side].zones[zone];
+  return {zone,label,own,territory,current:fieldZone(side,l.territory)===zone,
+   attack,defence,attackLocal:local.attack!=='inherit',defenceLocal:local.defence!=='inherit'};
+ }).filter(Boolean);
+}
+function fourZoneTacticalPanel(l){
+ const zones=fourZoneTacticalPreview(l);if(zones.length!==4)return '';
+ const percent=n=>(n*100).toFixed(1).replace('.',',')+' %';
+ const index=n=>n.toFixed(2).replace('.',',');
+ const points=n=>(n>0?'+':n<0?'−':'')+Math.abs(n*100).toFixed(1).replace('.',',')+' pt';
+ return `<div class="four-zone-preview" aria-label="Comparaison tactique des quatre zones">
+ <h3>Votre plan sur les quatre zones</h3>
+ <p class="help">Aperçu comparatif en lecture seule, calculé à 12, 36, 64 et 90 m de votre en-but. Une consigne locale prioritaire est signalée. Les chiffres proviennent du moteur fictif, sans prédire le résultat.</p>
+ <div class="four-zone-scroll"><table><thead><tr><th scope="col">Zone</th><th scope="col">Attaque</th><th scope="col">Défense</th></tr></thead><tbody>
+ ${zones.map(z=>`<tr class="${z.current?'four-zone-current':''}">
+  <th scope="row">${z.label}${z.current?' · ballon ici':''}<small>Repère : ${z.own} m depuis votre en-but</small></th>
+  <td><strong>${TACTICS[z.attack.actual][0]}</strong> <small>${z.attackLocal?'Consigne locale':'Plan général'}</small>
+   <span>Gain si progression réussie : ${z.attack.minimum}–${z.attack.maximum} m</span>
+   <span>Faute de main / séquence : ${percent(z.attack.handling)}</span>
+   <span>Jeu au pied : ${percent(z.attack.kicking)}</span>
+   <span>Indice de fatigue offensive : ${index(z.attack.fatigue)}</span></td>
+  <td><strong>${DEFENCES[z.defence.actual][0]}</strong> <small>${z.defenceLocal?'Consigne locale':'Plan général'}</small>
+   <span>Risque de pénalité, ajustement : ${points(z.defence.penalty)}</span>
+   <span>Couverture : ${z.defence.cover}</span>
+   <span>Indice de fatigue défensive : ${index(z.defence.fatigue)}</span></td>
+ </tr>`).join('')}</tbody></table></div>
+ <p class="help">Les valeurs correspondent à quatre situations représentatives indépendantes : vous attaquez avec le ballon, ou vous défendez face à la possession adverse. Elles peuvent varier selon le territoire exact, la météo et les joueurs. Modifier une tactique exige toujours une action explicite dans le carnet de jeu.</p>
+ </div>`;
+}
 function numericalAdvicePanel(l){
  const advice=numericalStaffAdvice(l);if(!advice)return '';
  const canApply=l.paused&&!presentationPending(l),text=advice.difference<0?'INFÉRIORITÉ':'SUPÉRIORITÉ';
