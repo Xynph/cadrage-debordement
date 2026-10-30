@@ -130,7 +130,7 @@ for(let i=0;i<4;i++){
  y('var ticketTotal=0;for(let week=0;week<29;week++){S.round=Math.min(26,week);var own=week<26?S.schedule[week].find(pair=>pair.includes(S.club)):null;financeWeek(own,false);if(week<26&&own[0]===S.club)ticketTotal+=S.ledger.find(x=>x.title.includes("Billetterie")).amount;}');
  const paid=y('club().cash');
  assert.ok(paid>=baselineYear.low&&paid<=baselineYear.high);
- assert.equal(y('club().cash-now'),y('baselineYear.partners-baselineYear.payroll+ticketTotal'));
+ assert.equal(paid-now,baselineYear.partners-baselineYear.payroll+y('ticketTotal'));
  summary.push({season:y('S.season'),low:baselineYear.low,central:baselineYear.central,high:baselineYear.high,actual:paid,engineCashChange:paid-now});
  y('S.phase="ended";S.round=26;advanceSeason()');
  assert.equal(y('S.season'),i+2);
