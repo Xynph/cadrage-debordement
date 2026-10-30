@@ -14,7 +14,89 @@ function transferValue(p){ensureDevelopment(p);const ageFactor=p.age<25?1.2:p.ag
 function saleBlocked(p){if((p.id.startsWith('academy-')||p.id.startsWith('youth-'))&&p.age<20)return 'Espoir : disponible à la vente à partir de 20 ans.';if(p.joinedSeason===S.season&&S.round-(p.joinedRound||0)<3)return 'Nouvelle recrue : attendez trois journées avant de la revendre.';return ''}
 function talkKey(id,kind){return `${S.season}:${S.economy.week}:${kind}:${id}`}
 function talkPlayer(id,kind){return kind==='renew'?player(id):S.market.find(p=>p.id===id)}
-function askingWage(p,kind){return kind==='renew'?Math.max(p.salary,Math.round((roleNote(p)-43)*230/100)*100):p.salary}
+// V35 — nouveaux coefficients bornés autour du salaire de référence V34.
+// Source des signes : minutes réellement jouées, progression observée, rôle
+// dans la profondeur de poste, âge, finances et résultats réels du club.
+// Pas de donnée de match individuelle inventée, ni de tirage aléatoire.
+function salaryDemandBreakdown(p,kind='renew',s=S){
+ const base=kind==='renew'?Math.max(p.salary,Math.round((roleNote(p)-43)*230/100)*100):p.salary;
+ const owner=s?.clubs?.[s.club],active=kind==='renew'&&s?.salaryDemandVersion===1&&
+  !!owner?.players?.some(q=>q.id===p.id);
+ if(!active)return {active:false,base,asked:base,modifier:0,
+  factors:[],reason:kind!=='renew'?'Agents libres : salaire externe déjà demandé, aucun attribut caché utilisé.':
+  'Carrière historique : barème V34 conservé jusqu’à activation explicite.'};
+ const factors=[],d=p.dev||{};
+ const add=(key,rate,description)=>{factors.push({key,rate,description});};
+ // Ne pas pénaliser un joueur quand l'échantillon est insuffisant.
+ const history=d.history?.at(-1);
+ const currentSample=d.minutes>=160&&d.appearances>=2&&owner.played>=3;
+ const olderSample=!currentSample&&history?.season===s.season-1&&history.minutes>=160&&history.appearances>=2;
+ const minutes=currentSample?d.minutes:olderSample?history.minutes:0;
+ const matches=currentSample?owner.played:olderSample?26:0;
+ const usage=matches?clamp(minutes/(Math.max(3,matches)*80),0,1):null;
+ const usageRate=usage===null?0:usage>=.7?.045:usage<=.25?-.035:0;
+ add('minutes',usageRate,usage===null?'Temps de jeu insuffisant pour moduler le salaire':
+  'Temps de jeu : '+Math.round(minutes)+' min, part estimée '+Math.round(usage*100)+' %');
+ const growth=currentSample?p.rating-(d.seasonStart??p.rating):
+  olderSample?history.end-history.start:0;
+ const perfRate=clamp(growth,-3,3)*.01;
+ add('progression',perfRate,'Performance approchée par la progression générale constatée : '+
+  (growth>=0?'+':'')+growth+' point(s), pas par des statistiques individuelles de match');
+ const slot=POS.indexOf(p.pos),alternatives=slot<0?2:owner.players.filter(q=>
+  q.id!==p.id&&!q.injury&&slotEligible(q,slot)).length;
+ const roleRate=alternatives===0?.03:alternatives===1?.015:0;
+ add('role',roleRate,alternatives+' alternative(s) apte(s) au poste réglementaire');
+ const ageRate=p.age<=23?-.015:p.age>=33?-.02:0;
+ add('age',ageRate,'Âge '+p.age+' ans ; prime de durée et retraite déjà traitées par le moteur V34');
+ const clubRate=owner.cash<500000?-.025:owner.cash>=8000000?.015:0;
+ add('cash',clubRate,'Trésorerie fictive du club : '+money(owner.cash));
+ const wonRate=owner.played>=6?(owner.won/owner.played>=.65?.015:
+  owner.won/owner.played<=.25?-.015:0):0;
+ add('results',wonRate,owner.played>=6?
+  'Résultats du club : '+owner.won+' victoires en '+owner.played+' rencontres de championnat':
+  'Résultats insuffisants pour un ajustement (moins de 6 rencontres)');
+ const raw=factors.reduce((n,v)=>n+v.rate,0);
+ const modifier=clamp(raw,-.12,.12);
+ const asked=Math.max(p.salary,Math.round(base*(1+modifier)/100)*100);
+ return {active:true,base,asked,modifier,
+  factors,reason:'Modulation ±12 % maximum sur le barème V34. Contrat actuel conservé comme plancher.'};
+}
+function askingWage(p,kind){return salaryDemandBreakdown(p,kind).asked}
+function salaryDemandPanel(){
+ if(!S)return '';
+ const enabled=S.salaryDemandVersion===1;
+ const candidates=club().players.filter(p=>p.contractEnd<=S.season+2)
+  .slice().sort((a,b)=>a.contractEnd-b.contractEnd||a.id.localeCompare(b.id)).slice(0,6);
+ const rows=candidates.map(p=>{
+  const d=salaryDemandBreakdown(p,'renew'),difference=d.asked-d.base;
+  const labels={minutes:'Temps de jeu',progression:'Progression',role:'Rôle',age:'Âge',cash:'Trésorerie',results:'Résultats'};
+  const factors=d.factors.map(x=>'<span title="'+visualEscape(x.description)+'">'+
+   visualEscape(labels[x.key])+' '+(x.rate>=0?'+':'')+Math.round(x.rate*1000)/10+' %</span>').join(' · ');
+  return '<tr><th>'+visualEscape(p.name)+'<small>Fin S'+p.contractEnd+'</small></th>'+
+   '<td>'+money(d.base)+'</td><td>'+money(d.asked)+'</td>'+
+   '<td>'+(difference>=0?'+':'')+money(difference)+'</td><td>'+
+   (enabled?factors:'Barème de la carrière historique, non modifié')+'</td></tr>';
+ }).join('');
+ const status=enabled?'<p class="help">Demandes évolutives actives. Les seuils de contre-offres V34 les utilisent dès la prochaine proposition, selon les informations actuellement connues.</p>':
+  '<p class="help">Cette ancienne carrière conserve les demandes salariales V34, sans changement rétroactif. Activation facultative, impossible pendant un match ou avec des négociations ouvertes.</p>'+
+  '<button class="small dark" onclick="enableSalaryDemandModel()">Activer les demandes évolutives pour cette carrière</button>';
+ return '<section class="card salary-demand-panel"><div class="cardtitle"><h2>Expliquer les exigences salariales</h2>'+
+  '<span class="tag">MODÈLE V35</span></div><p class="help">Base : barème V34. Ajustements cumulés limités à ±12 % : minutes jouées, progression constatée, profondeur au poste, âge, trésorerie fictive et résultats du club. La progression sert d’indicateur de performance : essais et plaquages individuels ne sont pas enregistrés. Les salaires de recrutement externes restent identiques.</p>'+
+  status+'<div class="tablewrap"><table class="salary-demand-table"><thead><tr>'+
+  '<th>Joueur</th><th>Base V34</th><th>Demande V35</th><th>Écart</th><th>Facteurs transparents</th>'+
+  '</tr></thead><tbody>'+rows+'</tbody></table></div>'+
+  '<p class="help">Ce tableau ne signe ni ne négocie aucun contrat. Un salaire conforme donne seulement un accord de principe dans le moteur existant ; les salaires réels dépendent ensuite d’une confirmation.</p></section>';
+}
+function enableSalaryDemandModel(){
+ if(!S||S.salaryDemandVersion===1)return false;
+ if(S.live||Object.keys(S.economy?.talks||{}).length){
+  toast('Terminez le match et les discussions contractuelles en cours avant de changer de barème.');
+  return false;
+ }
+ S.salaryDemandVersion=1;save();render();
+ toast('Demandes évolutives activées pour cette carrière. Aucun contrat signé.');
+ return true;
+}
 function reservationWage(p,kind,years){const age=p.age>=31&&years===3?1.12:years===1?1.08:years===3?.96:1;return Math.ceil(askingWage(p,kind)*(.86+(seedHash(p.id)%8)/100)*age/100)*100}
 function contractFee(p,kind){return kind==='renew'?Math.round(p.salary*2/1000)*1000:p.price}
 function ledgerEntry(title,amount){club().cash+=amount;S.ledger.unshift({title,amount});S.ledger=S.ledger.slice(0,100)}
@@ -35,7 +117,7 @@ function settleContracts(){const e=S.economy;if(e.settled===S.season)return;e.se
 function marketSwitch(tab){if(!['recruit','contracts','sales','history'].includes(tab))return;marketTab=tab;render()}
 function transferMarket(){setupEconomy();return heading('BÂTIR POUR DEMAIN','Le bureau du recrutement.','Recrutez les bons profils, anticipez les fins de contrat et gardez la maîtrise des salaires.')+`<div class="stats"><div class="card stat"><span class="eyebrow">TRÉSORERIE</span><b>${(club().cash/1e6).toFixed(2).replace('.',',')} <small>M€</small></b></div><div class="card stat"><span class="eyebrow">SALAIRES / JOURNÉE</span><b>${Math.round(totalWages()/1000)} <small>k€</small></b></div><div class="card stat"><span class="eyebrow">FIN DE CONTRAT</span><b>${club().players.filter(p=>p.contractEnd===S.season).length} <small>joueurs</small></b></div><div class="card stat"><span class="eyebrow">OFFRES REÇUES</span><b>${S.economy.offers.length}</b></div></div><div class="tabs markettabs">${[['recruit','Recruter'],['contracts','Contrats'],['sales','Ventes'],['history','Mouvements']].map(([k,t])=>`<button class="${marketTab===k?'dark':''}" onclick="marketSwitch('${k}')">${t}</button>`).join('')}</div>${({recruit:recruitmentPanel,contracts:contractsPanel,sales:salesPanel,history:movementsPanel})[marketTab]()}`}
 function recruitmentPanel(){return `${recruitmentNeedsPanel()}<div class="notice" style="margin:0 0 20px">Agents libres fictifs. La prime est payée à la signature ; les salaires sont débités à chaque journée. Les négociations sont renouvelées après la prochaine journée.</div><div class="marketgrid">${S.market.map(p=>`<div class="card marketplayer"><div class="row" style="margin:0"><span class="tag">${p.pos}</span><span class="rating">${recruitmentEvidence(p).noteMin}–${recruitmentEvidence(p).noteMax} (estimé)</span></div><h3>${p.name}</h3><span class="muted">${p.age} ans · ${p.formerClub?'Ancien club : '+p.formerClub:'Agent libre'}</span><div class="row"><span class="muted">Potentiel au poste</span><strong>${recruitmentEvidence(p).seen?recruitmentEvidence(p).potentialMin+'–'+recruitmentEvidence(p).potentialMax:'À observer'}</strong></div>${recruitmentEvidence(p).seen?skillChips(p):'<p class="help">Qualités non observées ; une mission est nécessaire.</p>'}<button class="textbutton" style="margin-top:12px" onclick="inspectPlayer('${p.id}')">${recruitmentEvidence(p).seen?'Voir les attributs ↗':'Évaluation préliminaire ↗'}</button><div class="row"><span class="muted">Prime de signature</span><strong>${money(p.price)}</strong></div><div class="row"><span class="muted">Salaire demandé / semaine</span><strong>${money(p.salary)}</strong></div><button class="dark" style="width:100%" onclick="openContract('${p.id}')" ${club().cash<p.price?'disabled':''}>Négocier le contrat →</button></div>`).join('')}</div>`}
-function contractsPanel(){return `<div class="card"><div class="cardtitle"><h2>Les engagements du club</h2><span class="tag">${club().players.length} CONTRATS</span></div><p class="help">Un contrat expire après les phases finales de sa dernière saison. Une prolongation remplace le salaire immédiatement. Les contrats longs pourront être prolongés quand leur échéance approchera.</p><div class="tablewrap"><table><thead><tr><th>JOUEUR</th><th>POSTE</th><th>SALAIRE / SEMAINE</th><th>ÉCHÉANCE</th><th>ACTION</th></tr></thead><tbody>${[...club().players].sort((a,b)=>a.contractEnd-b.contractEnd||b.salary-a.salary).map(p=>`<tr><td><button class="textbutton" onclick="inspectPlayer('${p.id}')">${p.name}</button></td><td>${p.pos}</td><td>${money(p.salary)}</td><td><span class="${p.contractEnd===S.season?'danger':''}">${contractLabel(p)}</span></td><td><button class="small" onclick="openContract('${p.id}','renew')" ${p.contractEnd>=contractBase()+2?'disabled':''}>Prolonger</button></td></tr>`).join('')}</tbody></table></div><div class="notice">Salaires restant à verser : environ ${money(futureWages())}. Estimation sur 29 journées payées par saison, hors primes de prolongation et futurs recrutements.</div></div>`+renewalAdvisorPanel()+counterofferPanel()}
+function contractsPanel(){return `<div class="card"><div class="cardtitle"><h2>Les engagements du club</h2><span class="tag">${club().players.length} CONTRATS</span></div><p class="help">Un contrat expire après les phases finales de sa dernière saison. Une prolongation remplace le salaire immédiatement. Les contrats longs pourront être prolongés quand leur échéance approchera.</p><div class="tablewrap"><table><thead><tr><th>JOUEUR</th><th>POSTE</th><th>SALAIRE / SEMAINE</th><th>ÉCHÉANCE</th><th>ACTION</th></tr></thead><tbody>${[...club().players].sort((a,b)=>a.contractEnd-b.contractEnd||b.salary-a.salary).map(p=>`<tr><td><button class="textbutton" onclick="inspectPlayer('${p.id}')">${p.name}</button></td><td>${p.pos}</td><td>${money(p.salary)}</td><td><span class="${p.contractEnd===S.season?'danger':''}">${contractLabel(p)}</span></td><td><button class="small" onclick="openContract('${p.id}','renew')" ${p.contractEnd>=contractBase()+2?'disabled':''}>Prolonger</button></td></tr>`).join('')}</tbody></table></div><div class="notice">Salaires restant à verser : environ ${money(futureWages())}. Estimation sur 29 journées payées par saison, hors primes de prolongation et futurs recrutements.</div></div>`+salaryDemandPanel()+renewalAdvisorPanel()+counterofferPanel()}
 function salesPanel(){const e=S.economy;return `<div class="stack"><div class="card"><h2>Les offres sur votre bureau</h2>${e.offers.map(o=>{let p=player(o.playerId);if(!p)return '';return `<div class="transferoffer"><div><strong>${p.name}</strong><p>${S.clubs[o.buyer].name} · ${money(o.fee)} · valable jusqu’à la prochaine journée incluse</p></div><div class="matchactions"><button class="small" onclick="declineSale('${o.id}')">Refuser</button><button class="primary small" onclick="openSale('${o.id}')">Examiner l’offre</button></div></div>`}).join('')||'<p>Placez un joueur sur le marché. Les premières offres pourront arriver après la prochaine journée, selon les moyens des autres clubs.</p>'}</div><div class="card"><h2>Les joueurs à céder</h2><div class="tablewrap"><table><thead><tr><th>JOUEUR</th><th>POSTE</th><th>SALAIRE / SEMAINE</th><th>VALEUR ESTIMÉE</th><th>STATUT</th></tr></thead><tbody>${club().players.map(p=>`<tr><td>${p.name}</td><td>${p.pos}</td><td>${money(p.salary)}</td><td>${money(transferValue(p))}</td><td>${saleBlocked(p)?`<small class="muted">${saleBlocked(p)}</small>`:`<button class="small ${e.listings[p.id]?'dark':''}" onclick="toggleListing('${p.id}')">${e.listings[p.id]?'Retirer du marché':'Proposer à la vente'}</button>`}</td></tr>`).join('')}</tbody></table></div></div></div>`}
 function movementsPanel(){return `<div class="card"><h2>Le journal du mercato</h2>${S.economy.transfers.map(t=>`<div class="news"><small>SAISON ${t.season} · ${t.round<26?'J'+(t.round+1):'FIN DE SAISON'}</small>${t.text}</div>`).join('')||'<p>Vos signatures, prolongations, ventes et départs apparaîtront ici.</p>'}</div>`}
 function careerContractYears(p){ensureDevelopment(p);return Math.max(0,p.dev.retireAge-p.age-(S.phase==='ended'?1:0))}
