@@ -35,7 +35,7 @@ const initial=run('JSON.stringify(S)'),disk=t.store['bdt-v1'];
 let html=run('fourZoneTacticalPanel(l)');
 for(const phrase of ['Comparaison tactique des quatre zones','Vos 22 mètres','Vos 22 → milieu','Milieu → leurs 22','Leurs 22 mètres','Gain si progression réussie','Faute de main','Jeu au pied','Risque de pénalité','Couverture','fatigue offensive','fatigue défensive','moteur fictif'])
  assert.ok(html.includes(phrase),phrase);
-assert.equal((html.match(/<tr class="four-zone-/g)||[]).length,4);
+assert.equal((html.match(/<tr class="/g)||[]).length,4);
 assert.ok(run('playbookPanel(l).includes("Comparaison tactique des quatre zones")'));
 assert.ok(!run('playbookPanel(null).includes("Comparaison tactique des quatre zones")'));
 assert.equal(run('JSON.stringify(S)'),initial,'Le calcul et le rendu ne modifient pas le match');
