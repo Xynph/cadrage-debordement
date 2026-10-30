@@ -20,7 +20,7 @@ assert.equal(run('setPhysicalTraining(picked[0],"intense")'),false,'No retroacti
 assert.equal(run('physicalPlan(player(picked[0]))'),'repos');
 assert.equal(run('physicalLoadPreviewText(player(picked[0]))'),'Séance déjà appliquée');
 assert.equal(run('squadTable().includes("Charge de")'),true);
-assert.equal(run('tactics().includes("À surveiller")'),false); // depends on starters, not artificial alarms
+assert.equal(run('tactics().includes("Définissez un mode collectif")'),true);
 
 // Human/AI pay the same per-minute match-load coefficients; no double application.
 const m=context(),match=m.run;m.run('start(0)');
