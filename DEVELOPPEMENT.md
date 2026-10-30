@@ -121,6 +121,6 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 ## Suivi événementiel des résultats CI — PR dédiée (30 octobre 2026)
 
 - Ajout de `.github/workflows/pr-ci-results.yml` : déclenchement `workflow_run` à la fin de `Tests JavaScript` pour les exécutions de pull request.
-- Publication du statut de succès ou d'échec et du lien vers l'exécution dans un commentaire de PR, mis à jour plutôt que dupliqué ; les exécutions obsolètes associées à une autre révision sont ignorées lorsque le SHA de la PR est disponible.
+- Publication du statut de succès ou d'échec et du lien vers l'exécution dans un commentaire de PR, mis à jour plutôt que dupliqué ; récupération alternative de la PR lorsque l'événement n'en liste aucune, puis vérification en direct que la PR est ouverte et que son SHA correspond au commit testé avant de publier.
 - Aucun polling et aucune fusion automatique. Ce suivi produit un commentaire GitHub, pas une notification ChatGPT instantanée ; le déclencheur ne sera opérationnel qu'après intégration du workflow sur la branche par défaut.
 - Vérification événementielle réelle à effectuer après fusion sur `main` et prochaine fin de workflow de PR.
