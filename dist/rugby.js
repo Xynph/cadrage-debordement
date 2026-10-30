@@ -143,7 +143,7 @@ function awardPenalty(l,side){
  const foul=1-side;
  l.stats[foul].penalties++;
  if(revisedRules(l)){
-  const incident=selectDisciplineIncident();
+  const incident=selectDisciplineIncident(((l.minute*17+l.stats[foul].penalties*31)%100)/100);
   if(!l.disciplineHistory)l.disciplineHistory=[{count:0,recent:0},{count:0,recent:0}];
   const history=l.disciplineHistory[foul];
   const decision=disciplineDecision(l,foul,incident);
