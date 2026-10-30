@@ -117,8 +117,56 @@ function goalChance(l,side,conversion=false,tryY=35){
  return clamp((conversion?.28:.23)+skill(kicker,'goal',true)*.006-Math.max(0,shot.distance-25)*.005-shot.angle*.13+(unit(l,side,'mental')-70)*.001-(l.weather==='Vent'?.16:l.weather==='Pluie'?.06:0),.22,.93);
 }
 function scoreTry(l,side,origin,startAt=l.territory){if(!beforeTryUnderAdvantage(l,side))return;l.tries[side]++;l.score[side]+=5;const stat=l.stats[side];stat.conversionAttempts++;const tryY=origin==='maul'?10:origin==='open'&&effectiveAttack(l,side)==='large'?(l.minute%2?14:56):35;const ok=Math.random()<goalChance(l,side,true,tryY);if(ok){l.score[side]+=2;stat.conversions++}const candidates=activePlayers(l,side).filter(p=>origin==='maul'||origin==='scrum'?p.fam<=3:p.fam>=3);const scorer=candidates.length?candidates[rand(0,candidates.length-1)]:null;addEvent(l,`${S.clubs[l.pair[side]].abbr} · Essai${scorer?' de '+scorer.name:''}${origin==='maul'?' sur ballon porté':origin==='scrum'?' sur mêlée':''}, ${ok?'transformé':'transformation manquée'}. ${l.score.join(' – ')}.`, 'try',{kind:'try',team:side,actor:scorer?.id||null,from:{x:startAt,y:35},to:{x:attackingGoal(side),y:tryY},possession:side});if(restartRules(l)){if(!flowScored(l,side)&&(flowRules(l)||l.minute<80))performKickRestart(l,'kickoff',1-side,'score',side)}else{l.territory=50;l.possession=1-side}}
-function awardPenalty(l,side){const foul=1-side;l.stats[foul].penalties++;addEvent(l,`${S.clubs[l.pair[foul]].abbr} sanctionné. Pénalité pour ${S.clubs[l.pair[side]].abbr}.`,'penalty',{team:side});const discipline=unit(l,foul,'discipline');if(revisedRules(l)){if(Math.random()<clamp(.10+(65-discipline)*.003,.05,.22)){const eligible=activePlayers(l,foul).filter(p=>frontRowRules(l)||p.fam>=2);if(eligible.length)giveMatchCard(l,foul,eligible[rand(0,eligible.length-1)].id)}}else{if(Math.random()<clamp(.10+(65-discipline)*.003,.05,.22)){let s=l.sheets[foul],eligible=activePlayers(l,foul).filter(p=>p.fam>=2);if(eligible.length){let p=eligible[rand(0,eligible.length-1)];s.yellowCounts[p.id]=(s.yellowCounts[p.id]||0)+1;l.stats[foul].yellows++;if(s.yellowCounts[p.id]>=2){s.on=s.on.map(id=>id===p.id?null:id);s.sentOff.push(p.id);addEvent(l,`${p.name} reçoit un second jaune et quitte définitivement le terrain (règle simplifiée du jeu).`,'card')}else{s.cards.push({id:p.id,until:l.minute+10});addEvent(l,`Carton jaune pour ${p.name} : 10 minutes à quatorze.`,'card')}}}}
-if(flowRules(l)&&offerAdvantage(l,'penalty',side,foul,l.territory,{unsafe:l.events.at(-1)?.type==='card'}))return;executePenaltyChoice(l,side)}
+// Incidents are simulation categories, not automatic legal card tariffs.
+const DISCIPLINE_INCIDENTS=[
+ {id:'offside',label:'hors-jeu',weight:30,serious:false},
+ {id:'ruck',label:'entrée irrégulière dans un ruck',weight:25,serious:false},
+ {id:'holding',label:'ballon conservé au sol',weight:20,serious:false},
+ {id:'obstruction',label:'obstruction',weight:15,serious:false},
+ {id:'dangerous',label:'plaquage dangereux',weight:10,serious:true}
+];
+function selectDisciplineIncident(roll=Math.random()){
+ const total=DISCIPLINE_INCIDENTS.reduce((sum,i)=>sum+i.weight,0);
+ let threshold=clamp(roll,0,.999999)*total;
+ for(const incident of DISCIPLINE_INCIDENTS){threshold-=incident.weight;if(threshold<0)return incident}
+ return DISCIPLINE_INCIDENTS.at(-1);
+}
+function disciplineDecision(l,foul,incident){
+ const discipline=unit(l,foul,'discipline');
+ const history=l.disciplineHistory?.[foul]||{count:0,recent:0};
+ const repeated=history.recent>=3;
+ const risk=clamp(.045+(65-discipline)*.0015+(repeated?.18:0),.02,.35);
+ const sanction=incident.serious?(Math.random()<.18?'red':'yellow'):(Math.random()<risk?'yellow':null);
+ return {sanction,repeated};
+}
+function awardPenalty(l,side){
+ const foul=1-side;
+ l.stats[foul].penalties++;
+ if(revisedRules(l)){
+  const incident=selectDisciplineIncident();
+  if(!l.disciplineHistory)l.disciplineHistory=[{count:0,recent:0},{count:0,recent:0}];
+  const history=l.disciplineHistory[foul];
+  const decision=disciplineDecision(l,foul,incident);
+  history.count++;history.recent++;
+  addEvent(l,`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''}. Pénalité pour ${S.clubs[l.pair[side]].abbr}.`,'penalty',{team:side});
+  if(decision.sanction){
+   const eligible=activePlayers(l,foul);
+   if(eligible.length){
+    const offender=eligible[rand(0,eligible.length-1)];
+    if(giveMatchCard(l,foul,offender.id,decision.sanction))history.recent=0;
+   }
+  }
+ }else{
+  addEvent(l,`${S.clubs[l.pair[foul]].abbr} sanctionné. Pénalité pour ${S.clubs[l.pair[side]].abbr}.`,'penalty',{team:side});
+  const discipline=unit(l,foul,'discipline');
+  if(Math.random()<clamp(.10+(65-discipline)*.003,.05,.22)){
+   const s=l.sheets[foul],eligible=activePlayers(l,foul).filter(p=>p.fam>=2);
+   if(eligible.length){const p=eligible[rand(0,eligible.length-1)];s.yellowCounts[p.id]=(s.yellowCounts[p.id]||0)+1;l.stats[foul].yellows++;if(s.yellowCounts[p.id]>=2){s.on=s.on.map(id=>id===p.id?null:id);s.sentOff.push(p.id);addEvent(l,`${p.name} reçoit un second jaune et quitte définitivement le terrain (règle simplifiée du jeu).`,'card')}else{s.cards.push({id:p.id,until:l.minute+10});addEvent(l,`Carton jaune pour ${p.name} : 10 minutes à quatorze.`,'card')}}
+  }
+ }
+ if(flowRules(l)&&offerAdvantage(l,'penalty',side,foul,l.territory,{unsafe:l.events.at(-1)?.type==='card'}))return;
+ executePenaltyChoice(l,side);
+}
 function executePenaltyChoice(l,side){const distance=side===0?100-l.territory:l.territory,attempt=wantsPosts(l,side,distance);if(attempt){const kicker=chooseScorer(S.clubs[l.pair[side]],activePlayers(l,side).map(p=>p.id));l.stats[side].goalAttempts++;const scored=Math.random()<goalChance(l,side);if(scored){l.stats[side].goals++;l.score[side]+=3;addEvent(l,`${kicker?.name||S.clubs[l.pair[side]].abbr} (${S.clubs[l.pair[side]].abbr}) · Pénalité réussie. ${l.score.join(' – ')}.`,'goal',{kind:'goal',team:side,actor:kicker?.id||null,from:{x:l.territory,y:35},to:{x:attackingGoal(side),y:35}})}else addEvent(l,`${kicker?.name||S.clubs[l.pair[side]].abbr} manque la tentative de pénalité.`,'miss',{kind:'miss',team:side,actor:kicker?.id||null,from:{x:l.territory,y:35},to:{x:attackingGoal(side),y:42}});if(restartRules(l)){if(scored){if(!flowScored(l,side)&&(flowRules(l)||l.minute<80))performKickRestart(l,'kickoff',1-side,'score',side)}else missedGoal(l,side)}else{l.territory=50;changePossession(l)}}else{const exit=clamp(l.territory+(side===0?1:-1)*rand(16,25),6,94);if(restartRules(l))resolveTouch(l,side,exit,{direct:true,penalty:true});else{l.possession=side;l.territory=exit;addEvent(l,`${S.clubs[l.pair[side]].abbr} choisit la pénaltouche pour installer la pression.`);contestSetPiece(l,side,'lineout',true)}}}
 
 function contestSetPiece(l,side,kind,fromPenalty=false){if(restartRules(l)&&!authorizeSetPiece(l,side,kind))return false;if(kind==='scrum'&&frontRowRules(l)){prepareFrontRows(l);if(l.sheets.some(sh=>sh.front.uncontested)){if([0,1].some(team=>uncontestedParticipants(l,team).length!==8)){addEvent(l,'La mêlée ne peut pas être formée avec moins de huit joueurs par équipe.');return}l.stats[side].scrums++;l.stats[side].scrumsWon++;l.uncontestedScrums[side]++;l.possession=side;addEvent(l,`${S.clubs[l.pair[side]].abbr} introduit en mêlée non disputée : huit joueurs de chaque équipe, sans poussée ni contest de l’introduction.`,'play',{kind:'scrum',team:side,possession:side});return}}const at=l.territory;const st=l.stats[side],opp=1-side;let k=kind==='scrum'?'scrum':'lineout';st[kind==='scrum'?'scrums':'lineouts']++;let a=unit(l,side,k,p=>kind==='scrum'?p.fam<=2:p.fam===1||p.fam===2),b=unit(l,opp,k,p=>kind==='scrum'?p.fam<=2:p.fam===1||p.fam===2);const move=setPieceEffects(l,side,kind);let win=Math.random()<clamp(.80+(a-b)*(l.balanceVersion===2?.004:.009)+move.win,.35,.97);if(win){st[kind==='scrum'?'scrumsWon':'lineoutsWon']++;l.possession=side;l.territory=clamp(l.territory+(side===0?1:-1)*Math.max(1,rand(5,11)+move.gain),3,97);addEvent(l,`${S.clubs[l.pair[side]].abbr} conserve ${kind==='scrum'?'sa mêlée et avance':'sa touche'}${playbookRules(l)?' · '+(kind==='scrum'?SCRUM_MOVES:LINEOUT_MOVES)[move.move][0]:''}.`,'play',{kind:'setpiece-win',team:side,from:{x:at,y:kind==='lineout'?4:35},to:{x:l.territory,y:kind==='lineout'?15:35},actor:(kind==='lineout'&&move.move==='maul'?activePlayers(l,side).find(p=>p.fam<=3):actionPlayer(l,side))?.id||null,move:move.move});const close=side===0?l.territory>77:l.territory<23;if(close&&Math.random()<clamp(.18+(unit(l,side,'power',p=>p.fam<=3)-unit(l,opp,'tackle'))*(l.balanceVersion===2?.003:.005)+(effectiveAttack(l,side)==='conquete'?(l.balanceVersion===2?.07:.12):0)+move.finish,.08,.5))scoreTry(l,side,kind==='scrum'?'scrum':playbookRules(l)&&['fond','courte'].includes(move.move)?'open':'maul')}else{l.possession=opp;addEvent(l,`${S.clubs[l.pair[opp]].abbr} récupère ${kind==='scrum'?'le ballon en mêlée':'le lancer adverse en touche'} !`,'turnover',{kind:'setpiece-loss',team:opp,from:{x:at,y:kind==='lineout'?4:35},to:{x:at,y:kind==='lineout'?15:35},actor:actionPlayer(l,opp,'defender')?.id||null})}}
