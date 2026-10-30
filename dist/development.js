@@ -22,6 +22,7 @@ function recordPhysicalMatchLoad(l){if(l.physicalLoadVersion!==1||l.physicalLoad
 // à rating ET à la qualité ciblée. Tous les coefficients sont fictifs et calibrables.
 const DEVELOPMENT_BALANCED='equilibre';
 const DEVELOPMENT_FOCUS_SHARE=.5;
+const DEVELOPMENT_FOCUS_XP_COST=.5;
 const DEVELOPMENT_ATTRIBUTE_LIMIT=4;
 const DEVELOPMENT_TOTAL_LIMIT=8;
 const DEVELOPMENT_COLLECTIVE_LINK={
@@ -82,7 +83,7 @@ function focusedProgressDetails(p){
 function developmentFocusSelector(p){
  const selected=developmentFocusValue(p),locked=S.live||S.trained||S.phase==='ended';
  const choices=developmentFocusOptions(p).map(k=>'<option value="'+k+'"'+(k===selected?' selected':'')+'>'+(k===DEVELOPMENT_BALANCED?'Équilibré (progression générale)':ATTR[k])+'</option>').join('');
- return '<label class="development-focus-control">Objectif individuel (poste : '+p.pos+')<select aria-label="Objectif de développement de '+visualEscape(p.name)+'" onchange="setDevelopmentFocus(\''+p.id+'\',this.value)" '+(locked?'disabled':'')+'>'+choices+'</select></label><p class="help">Répartit une même réserve d’expérience entre niveau général et qualité choisie. La fatigue V27 freine l’apprentissage ; une préparation V28 alignée peut le favoriser. '+focusedProgressDetails(p)+'.</p>';
+ return '<label class="development-focus-control">Objectif individuel (poste : '+p.pos+')<select aria-label="Objectif de développement de '+visualEscape(p.name)+'" onchange="setDevelopmentFocus(\''+p.id+'\',this.value)" '+(locked?'disabled':'')+'>'+choices+'</select></label><p class="help">Répartit une même réserve d’expérience entre niveau général et qualité choisie (1 point de qualité pour 0,5 XP ciblée, plafond +4 par qualité). La fatigue V27 freine l’apprentissage ; une préparation V28 alignée peut le favoriser. '+focusedProgressDetails(p)+'.</p>';
 }
 
 // Fictional career curves: ceilings apply to the underlying rating, not the displayed role note.
@@ -103,8 +104,8 @@ function growPlayer(p,xp,allowFocus=true){
  if(focused)s.xp+=xp*share;
  while(p.dev.xp>=1&&p.rating<p.dev.potential){p.rating++;p.dev.xp-=1}
  if(focused&&p.rating<p.dev.potential){
-  while(s.xp>=1&&focusedGrowthAllowed(p)){
-   s.bonuses[s.focus]=(s.bonuses[s.focus]||0)+1;s.xp--;
+  while(s.xp>=DEVELOPMENT_FOCUS_XP_COST&&focusedGrowthAllowed(p)){
+   s.bonuses[s.focus]=(s.bonuses[s.focus]||0)+1;s.xp-=DEVELOPMENT_FOCUS_XP_COST;
   }
   if(!focusedGrowthAllowed(p))s.xp=0;
  }
