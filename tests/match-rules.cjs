@@ -58,7 +58,7 @@ for(const change of [
  d=>d.state.live.subs[0].returning=!d.state.live.subs[0].returning,
 ]){const bad=JSON.parse(JSON.stringify(doc));change(bad);assert.throws(()=>run(`var hostile=JSON.parse(${JSON.stringify(JSON.stringify(bad))});hostile.checksum=saveChecksum(hostile.state);parseSaveDocument(JSON.stringify(hostile))`))}
 // Old live snapshots remain under their original rule, with unchanged score, minute and fatigue.
-t=fixture();run=t.run;run('delete l.flowVersion;delete l.flow;delete l.playbookVersion;delete l.playbooks;delete l.tacticalVersion;delete l.defences;delete l.tacticalStats;delete l.restartVersion;delete l.restartLog;delete l.kickContext;delete l.firstKickoff;delete l.rulesProfile;for(var sh of l.sheets){delete sh.nominated;delete sh.tacticalReturns;delete sh.redCards}l.minute=27;l.score=[10,7];var before=JSON.stringify(S)');
+t=fixture();run=t.run;run('delete l.flowVersion;delete l.flow;delete l.playbookVersion;delete l.playbooks;delete l.tacticalVersion;delete l.defences;delete l.tacticalStats;delete l.numericalAiVersion;l.managerMemory?.forEach(m=>{delete m.lastCardDiff;delete m.cardBase});delete l.restartVersion;delete l.restartLog;delete l.kickContext;delete l.firstKickoff;delete l.rulesProfile;for(var sh of l.sheets){delete sh.nominated;delete sh.tacticalReturns;delete sh.redCards}l.minute=27;l.score=[10,7];var before=JSON.stringify(S)');
 const legacy=context(run('JSON.parse(before)'));assert.equal(legacy.run('JSON.stringify(S)'),run('before'));
 legacy.run('var l=S.live,sh=l.sheets[l.userSide],old=sh.on[1],incoming=sh.bench[0];makeSub(l,l.userSide,1,incoming)');
 assert.equal(legacy.run('makeSub(l,l.userSide,1,old)'),false);assert.equal(legacy.run('!!createSaveDocument()'),true);
