@@ -140,3 +140,12 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Publication réelle constatée : commentaire créé par `github-actions[bot]` sur la PR #8, https://github.com/Xynph/cadrage-debordement/pull/8#issuecomment-6523854663, comprenant le statut ✅ Réussie, le lien du run n°38 et le SHA testé. La PR #8 de contrôle a été fermée sans fusion.
 - Le suivi événementiel est opérationnel pour publier les résultats CI directement dans les PR GitHub ; il ne génère pas de notification instantanée dans ChatGPT. Les workflows n°2 à n°4 antérieurs au correctif ont échoué en HTTP 403 ; la validation n°5 confirme la résolution du problème.
 - Prochaine priorité : finaliser la PR #6 (mesure des durées et délais de tests) avant de reprendre V20.
+
+## Livraison CI — PR #6 : durées et limites de temps (30 octobre 2026)
+
+- PR #6 fusionnée dans `main` par squash `7d73b1cc39e0900f11c01481c6f458e045e2ea1d`, après validation du workflow GitHub Actions n°33 (`41059347179`) sur la tête `0fb74121f9d90ffa9b39d6009fe09ec4c3fc742a` ; deux tentatives réussies (initiale et relance).
+- Logs de la dernière tentative du n°33 : 19 suites `tests/*.cjs` exécutées et réussies, `tests/harness.cjs` exclu comme auparavant ; durées affichées à la seconde, cumul des durées arrondies par suite de 112 s et durée totale du job de 119 s.
+- Suites les plus longues : `tests/rugby.cjs` 38 s, `tests/opposition.cjs` 29 s, `tests/saves.cjs` 15 s, `tests/tactical-plans.cjs` 14 s. Aucune ne dépasse le délai de 180 s.
+- Workflow `.github/workflows/tests.yml` désormais sur `main` : `actions/checkout@v5`, `actions/setup-node@v5`, limite de 20 min par job, 180 s par suite, diagnostic d'échec et durée par suite, déclenchement `ci/**`. Pas de changement du moteur ni des formats de sauvegarde.
+- La CI post-fusion sur le commit de merge est le workflow de push n°42 (`41063500039`) ; son succès final doit être contrôlé avant toute conclusion sur la validation post-fusion. Le commit documentaire ci-présent lance également sa propre CI `main` à vérifier.
+- **Priorité V20 unique : IA tactique réactive à l'infériorité numérique** ; adapter les choix offensifs et défensifs au différentiel de joueurs actifs (cartons jaunes/rouges), prévoir des tests déterministes pour 15 contre 15, 15 contre 14 et 15 contre 13, tout en préservant le comportement des sauvegardes anciennes.
