@@ -9,8 +9,8 @@ assert.ok(run('goalKickGeometry(false,35,50,0).distance')>run('goalKickGeometry(
 assert.ok(run('goalKickGeometry(false,35,50,1).distance')<run('goalKickGeometry(false,35,80,1).distance'));
 run('var match=S.live,team=match.userSide;match.weather="Sec"');
 assert.ok(run('goalChance(match,team,true,35)')>run('goalChance(match,team,true,10)'),'central conversion should be easier');
-run('match.weather="Vent"');
-assert.ok(run('goalChance(match,team,true,35)')<run('goalChance(match,team,true,35) + .2'),'probability is finite');
+run('var dryChance=goalChance(match,team,true,35);match.weather="Vent"');
+assert.ok(run('goalChance(match,team,true,35)')<run('dryChance'),'wind should reduce kick accuracy');
 assert.ok(Number.isFinite(run('goalChance(match,team,true,35)')));
 run('match.weather="Sec";var kicker=chooseScorer(S.clubs[match.pair[team]],activePlayers(match,team).map(p=>p.id));var previousCondition=kicker.condition;var fitChance=goalChance(match,team,true,35);kicker.condition=30');
 assert.ok(run('goalChance(match,team,true,35)')<run('fitChance'),'fatigued kicker should be less accurate');
