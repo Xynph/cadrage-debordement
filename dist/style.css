@@ -164,3 +164,12 @@
 .counteroffer-table td{min-width:118px;vertical-align:top;font-variant-numeric:tabular-nums}
 .counteroffer-table th:first-child{min-width:145px}
 .counteroffer-table td small{display:block;margin-top:4px;line-height:1.5}
+
+/* V35 — explications du salaire demandé, sans contrôle de négociation. */
+.salary-demand-panel{margin-top:18px}
+.salary-demand-table{font-size:12px}
+.salary-demand-table td{vertical-align:top;font-variant-numeric:tabular-nums}
+.salary-demand-table th:first-child{min-width:170px}
+.salary-demand-table th small{display:block;margin-top:5px}
+.salary-demand-table td:last-child{min-width:280px;line-height:1.65}
+.salary-demand-panel>button{margin:10px 0 14px}

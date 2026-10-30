@@ -69,8 +69,9 @@ function salaryDemandPanel(){
   .slice().sort((a,b)=>a.contractEnd-b.contractEnd||a.id.localeCompare(b.id)).slice(0,6);
  const rows=candidates.map(p=>{
   const d=salaryDemandBreakdown(p,'renew'),difference=d.asked-d.base;
+  const labels={minutes:'Temps de jeu',progression:'Progression',role:'Rôle',age:'Âge',cash:'Trésorerie',results:'Résultats'};
   const factors=d.factors.map(x=>'<span title="'+visualEscape(x.description)+'">'+
-   visualEscape(x.key)+' '+(x.rate>=0?'+':'')+Math.round(x.rate*1000)/10+' %</span>').join(' · ');
+   visualEscape(labels[x.key])+' '+(x.rate>=0?'+':'')+Math.round(x.rate*1000)/10+' %</span>').join(' · ');
   return '<tr><th>'+visualEscape(p.name)+'<small>Fin S'+p.contractEnd+'</small></th>'+
    '<td>'+money(d.base)+'</td><td>'+money(d.asked)+'</td>'+
    '<td>'+(difference>=0?'+':'')+money(difference)+'</td><td>'+
