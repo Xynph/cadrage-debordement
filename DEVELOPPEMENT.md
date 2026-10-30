@@ -416,3 +416,10 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Nouvelle CI : trois shards des suites Node, exceptions documentaires uniquement sur PR, `Validation CI` constante, syntaxe des JS modifiés, diagnostics agrégés par shard. Les suites, sauvegardes et règles rugby ne sont pas modifiées.
 - Déclencheurs limités à PR vers main et push main (plus exécution manuelle) ; suppression du workflow annexe de commentaires CI, les checks GitHub natifs faisant foi.
 - **État de livraison : à renseigner après la validation réelle du dernier SHA, puis contrôle post-fusion de main.**
+
+### Mesures CI réelles avant/après (PR #27)
+
+- Baselines main : run `41138531150` : 171 s de latence environ, 168 s d'exécution du job ; run `41138251162` : 92 s de latence environ, 89 s d'exécution du job. Les fluctuations rendent une moyenne prématurée.
+- Premier run PR optimisé `41139835993` sur SHA `75d06ecd` : 58 s de latence, classification 6 s, shards 39/42/33 s, validation 4 s, **124 s cumulées de jobs**, tous réussis.
+- Comparaison au baseline 171 s : latence -66 % et secondes de jobs -26 %. Comparaison au baseline 92 s : latence -37 % mais secondes cumulées de jobs +39 %. Aucun gain garanti sur la facturation GitHub : arrondi éventuel par job et tarification du compte à consulter dans GitHub Billing.
+- Les trois shards ont réussi. Le dernier SHA et les vérifications post-fusion restent à contrôler ; ne pas présenter cette mesure initiale comme une moyenne stable.
