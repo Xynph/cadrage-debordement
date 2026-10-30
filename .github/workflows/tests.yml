@@ -1,25 +1,36 @@
 name: Tests JavaScript
 on:
   push:
-    branches: [main, 'feature/**']
+    branches: [main, 'feature/**', 'ci/**']
   pull_request:
     branches: [main]
 jobs:
   tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
       - name: Syntaxe JavaScript
         run: |
           node --check dist/rugby.js
           node --check dist/tactical-plans.js
-      - name: Tests du jeu
+      - name: Tests du jeu (durées et diagnostic)
+        shell: bash
         run: |
-          set -e
+          set -euo pipefail
           for test in tests/*.cjs; do
             case "$test" in tests/harness.cjs) continue;; esac
-            node "$test"
+            echo "::group::$test"
+            start=$SECONDS
+            if timeout --signal=TERM --kill-after=10s 180s node "$test"; then
+              echo "PASS $test ($((SECONDS-start)) s)"
+            else
+              result=$?
+              echo "::error file=$test::Échec ou délai dépassé (code $result, durée $((SECONDS-start)) s)"
+              exit "$result"
+            fi
+            echo "::endgroup::"
           done
