@@ -227,6 +227,9 @@ function setFourZonePreviewChoice(field,value){
  if(field==='zone'){
   if(!Object.hasOwn(FIELD_ZONES,value))return false;
   fourZonePreviewChoice={...fourZonePreviewChoice,zone:value,plan:''};
+  if(fourZoneSecondChoice.zone===value){
+   fourZoneSecondChoice={...fourZoneSecondChoice,zone:Object.keys(FIELD_ZONES).find(zone=>zone!==value),plan:''};
+  }
  }else if(field==='kind'){
   if(!['attack','defence'].includes(value))return false;
   fourZonePreviewChoice={...fourZonePreviewChoice,kind:value,plan:''};
