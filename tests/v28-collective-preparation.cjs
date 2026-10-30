@@ -112,4 +112,21 @@ for(const focus of ['aucune','conquete','defence','pied']){
 }
 assert.equal(sample.aucune.conquete+sample.aucune.defence+sample.aucune.pied,0);
 assert.ok(sample.conquete.conquete>0&&sample.defence.defence>0&&sample.pied.pied>0);
-console.log(JSON.stringify({passed:true,comparisons:sample,cases:['explicit decisions and idempotent cost','AI physical fairness','frozen snapshot','fatigue-dependent intensity','scrum result before/after','defensive edge','open-play kick distance','portable report','legacy running match','hostile snapshots']}));
+
+ // Relevé de calibration exploratoire : 20 matchs consécutifs par politique, même graine de départ.
+ // Ce relevé est une mesure du jeu, pas une statistique sportive ou un équilibre démontré.
+function simulatePolicy(focus){
+ const t=context();t.run('start(0);S.collectiveFocus='+JSON.stringify(focus));
+ const report={matches:0,points:0,scrums:0,scrumsWon:0,lineouts:0,lineoutsWon:0};
+ for(let i=0;i<20;i++){
+  t.run('trainWeek();var simulated=rugbySimulate([0,1]);S.trained=false;S.round=(S.round+1)%26');
+  const r=JSON.parse(t.run('JSON.stringify(simulated)')),stats=r.stats[0];
+  report.matches++;report.points+=r.score[0];report.scrums+=stats.scrums;report.scrumsWon+=stats.scrumsWon;
+  report.lineouts+=stats.lineouts;report.lineoutsWon+=stats.lineoutsWon;
+ }
+ assert.ok(report.scrumsWon<=report.scrums&&report.lineoutsWon<=report.lineouts);
+ return {...report,meanPoints:Math.round(report.points/report.matches*100)/100};
+}
+const exploratory={};
+for(const focus of ['aucune','conquete','defence','pied'])exploratory[focus]=simulatePolicy(focus);
+console.log(JSON.stringify({passed:true,comparisons:sample,exploratory,cases:['explicit decisions and idempotent cost','AI physical fairness','frozen snapshot','fatigue-dependent intensity','scrum result before/after','defensive edge','open-play kick distance','portable report','legacy running match','hostile snapshots']}));
