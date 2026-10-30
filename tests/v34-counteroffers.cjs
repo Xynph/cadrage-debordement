@@ -4,7 +4,7 @@ const {context}=require('./harness.cjs');
 const plain=x=>JSON.parse(JSON.stringify(x));
 function pure(t,expr){
  const old=t.run('JSON.stringify(S)'),storage=t.run('JSON.stringify(localStorage.getItem("bdt-v1"))');
- const result=plain(t.run('JSON.stringify('+expr+')'));
+ const result=JSON.parse(t.run('JSON.stringify('+expr+')'));
  assert.equal(t.run('JSON.stringify(S)'),old,'A what-if must never mutate the career');
  assert.equal(t.run('JSON.stringify(localStorage.getItem("bdt-v1"))'),storage,'A what-if must never change a save');
  return result;
