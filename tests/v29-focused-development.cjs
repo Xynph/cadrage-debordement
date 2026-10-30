@@ -43,7 +43,7 @@ assert.equal(focused.run('p.rating'),focused.run('p.dev.potential'));
 // V27 : fatigue. V28 : préparation alignée. Pas de nouveau coefficient pour
 // les carrières non spécialisées.
 const phys=context();
-phys.run('start(0);var p=club().players.find(p=>p.fam===0);setDevelopmentFocus(p.id,"scrum");p.rating=70;p.skillBase=70;p.skills.scrum=65;p.dev.potential=99;p.condition=100;var rested=JSON.parse(JSON.stringify(p)),heavy=JSON.parse(JSON.stringify(p)),aligned=JSON.parse(JSON.stringify(p));rested.physicalLoad={version:1,fatigue:0,plan:"collective"};heavy.physicalLoad={version:1,fatigue:90,plan:"collective"};aligned.physicalLoad={version:1,fatigue:0,plan:"collective"};');
+phys.run('start(0);var p=club().players.find(p=>p.fam===0);setDevelopmentFocus(p.id,"scrum");p.age=19;p.rating=70;p.skillBase=70;p.skills.scrum=65;p.dev.potential=99;p.condition=100;var rested=JSON.parse(JSON.stringify(p)),heavy=JSON.parse(JSON.stringify(p)),aligned=JSON.parse(JSON.stringify(p));rested.physicalLoad={version:1,fatigue:0,plan:"collective"};heavy.physicalLoad={version:1,fatigue:90,plan:"collective"};aligned.physicalLoad={version:1,fatigue:0,plan:"collective"};');
 phys.run('S.collectiveFocus="aucune";developmentTraining(rested,"normal",S.club);developmentTraining(heavy,"normal",S.club);S.collectiveFocus="conquete";developmentTraining(aligned,"normal",S.club)');
 assert.ok(phys.run('heavy.dev.xp<rested.dev.xp'));
 assert.ok(phys.run('aligned.dev.xp>rested.dev.xp'));
