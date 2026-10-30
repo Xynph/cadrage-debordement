@@ -35,7 +35,7 @@ function settleContracts(){const e=S.economy;if(e.settled===S.season)return;e.se
 function marketSwitch(tab){if(!['recruit','contracts','sales','history'].includes(tab))return;marketTab=tab;render()}
 function transferMarket(){setupEconomy();return heading('BÂTIR POUR DEMAIN','Le bureau du recrutement.','Recrutez les bons profils, anticipez les fins de contrat et gardez la maîtrise des salaires.')+`<div class="stats"><div class="card stat"><span class="eyebrow">TRÉSORERIE</span><b>${(club().cash/1e6).toFixed(2).replace('.',',')} <small>M€</small></b></div><div class="card stat"><span class="eyebrow">SALAIRES / JOURNÉE</span><b>${Math.round(totalWages()/1000)} <small>k€</small></b></div><div class="card stat"><span class="eyebrow">FIN DE CONTRAT</span><b>${club().players.filter(p=>p.contractEnd===S.season).length} <small>joueurs</small></b></div><div class="card stat"><span class="eyebrow">OFFRES REÇUES</span><b>${S.economy.offers.length}</b></div></div><div class="tabs markettabs">${[['recruit','Recruter'],['contracts','Contrats'],['sales','Ventes'],['history','Mouvements']].map(([k,t])=>`<button class="${marketTab===k?'dark':''}" onclick="marketSwitch('${k}')">${t}</button>`).join('')}</div>${({recruit:recruitmentPanel,contracts:contractsPanel,sales:salesPanel,history:movementsPanel})[marketTab]()}`}
 function recruitmentPanel(){return `${recruitmentNeedsPanel()}<div class="notice" style="margin:0 0 20px">Agents libres fictifs. La prime est payée à la signature ; les salaires sont débités à chaque journée. Les négociations sont renouvelées après la prochaine journée.</div><div class="marketgrid">${S.market.map(p=>`<div class="card marketplayer"><div class="row" style="margin:0"><span class="tag">${p.pos}</span><span class="rating">${recruitmentEvidence(p).noteMin}–${recruitmentEvidence(p).noteMax} (estimé)</span></div><h3>${p.name}</h3><span class="muted">${p.age} ans · ${p.formerClub?'Ancien club : '+p.formerClub:'Agent libre'}</span><div class="row"><span class="muted">Potentiel au poste</span><strong>${recruitmentEvidence(p).seen?recruitmentEvidence(p).potentialMin+'–'+recruitmentEvidence(p).potentialMax:'À observer'}</strong></div>${recruitmentEvidence(p).seen?skillChips(p):'<p class="help">Qualités non observées ; une mission est nécessaire.</p>'}<button class="textbutton" style="margin-top:12px" onclick="inspectPlayer('${p.id}')">${recruitmentEvidence(p).seen?'Voir les attributs ↗':'Évaluation préliminaire ↗'}</button><div class="row"><span class="muted">Prime de signature</span><strong>${money(p.price)}</strong></div><div class="row"><span class="muted">Salaire demandé / semaine</span><strong>${money(p.salary)}</strong></div><button class="dark" style="width:100%" onclick="openContract('${p.id}')" ${club().cash<p.price?'disabled':''}>Négocier le contrat →</button></div>`).join('')}</div>`}
-function contractsPanel(){return `<div class="card"><div class="cardtitle"><h2>Les engagements du club</h2><span class="tag">${club().players.length} CONTRATS</span></div><p class="help">Un contrat expire après les phases finales de sa dernière saison. Une prolongation remplace le salaire immédiatement. Les contrats longs pourront être prolongés quand leur échéance approchera.</p><div class="tablewrap"><table><thead><tr><th>JOUEUR</th><th>POSTE</th><th>SALAIRE / SEMAINE</th><th>ÉCHÉANCE</th><th>ACTION</th></tr></thead><tbody>${[...club().players].sort((a,b)=>a.contractEnd-b.contractEnd||b.salary-a.salary).map(p=>`<tr><td><button class="textbutton" onclick="inspectPlayer('${p.id}')">${p.name}</button></td><td>${p.pos}</td><td>${money(p.salary)}</td><td><span class="${p.contractEnd===S.season?'danger':''}">${contractLabel(p)}</span></td><td><button class="small" onclick="openContract('${p.id}','renew')" ${p.contractEnd>=contractBase()+2?'disabled':''}>Prolonger</button></td></tr>`).join('')}</tbody></table></div><div class="notice">Salaires restant à verser : environ ${money(futureWages())}. Estimation sur 29 journées payées par saison, hors primes de prolongation et futurs recrutements.</div></div>`+renewalAdvisorPanel()}
+function contractsPanel(){return `<div class="card"><div class="cardtitle"><h2>Les engagements du club</h2><span class="tag">${club().players.length} CONTRATS</span></div><p class="help">Un contrat expire après les phases finales de sa dernière saison. Une prolongation remplace le salaire immédiatement. Les contrats longs pourront être prolongés quand leur échéance approchera.</p><div class="tablewrap"><table><thead><tr><th>JOUEUR</th><th>POSTE</th><th>SALAIRE / SEMAINE</th><th>ÉCHÉANCE</th><th>ACTION</th></tr></thead><tbody>${[...club().players].sort((a,b)=>a.contractEnd-b.contractEnd||b.salary-a.salary).map(p=>`<tr><td><button class="textbutton" onclick="inspectPlayer('${p.id}')">${p.name}</button></td><td>${p.pos}</td><td>${money(p.salary)}</td><td><span class="${p.contractEnd===S.season?'danger':''}">${contractLabel(p)}</span></td><td><button class="small" onclick="openContract('${p.id}','renew')" ${p.contractEnd>=contractBase()+2?'disabled':''}>Prolonger</button></td></tr>`).join('')}</tbody></table></div><div class="notice">Salaires restant à verser : environ ${money(futureWages())}. Estimation sur 29 journées payées par saison, hors primes de prolongation et futurs recrutements.</div></div>`+renewalAdvisorPanel()+counterofferPanel()}
 function salesPanel(){const e=S.economy;return `<div class="stack"><div class="card"><h2>Les offres sur votre bureau</h2>${e.offers.map(o=>{let p=player(o.playerId);if(!p)return '';return `<div class="transferoffer"><div><strong>${p.name}</strong><p>${S.clubs[o.buyer].name} · ${money(o.fee)} · valable jusqu’à la prochaine journée incluse</p></div><div class="matchactions"><button class="small" onclick="declineSale('${o.id}')">Refuser</button><button class="primary small" onclick="openSale('${o.id}')">Examiner l’offre</button></div></div>`}).join('')||'<p>Placez un joueur sur le marché. Les premières offres pourront arriver après la prochaine journée, selon les moyens des autres clubs.</p>'}</div><div class="card"><h2>Les joueurs à céder</h2><div class="tablewrap"><table><thead><tr><th>JOUEUR</th><th>POSTE</th><th>SALAIRE / SEMAINE</th><th>VALEUR ESTIMÉE</th><th>STATUT</th></tr></thead><tbody>${club().players.map(p=>`<tr><td>${p.name}</td><td>${p.pos}</td><td>${money(p.salary)}</td><td>${money(transferValue(p))}</td><td>${saleBlocked(p)?`<small class="muted">${saleBlocked(p)}</small>`:`<button class="small ${e.listings[p.id]?'dark':''}" onclick="toggleListing('${p.id}')">${e.listings[p.id]?'Retirer du marché':'Proposer à la vente'}</button>`}</td></tr>`).join('')}</tbody></table></div></div></div>`}
 function movementsPanel(){return `<div class="card"><h2>Le journal du mercato</h2>${S.economy.transfers.map(t=>`<div class="news"><small>SAISON ${t.season} · ${t.round<26?'J'+(t.round+1):'FIN DE SAISON'}</small>${t.text}</div>`).join('')||'<p>Vos signatures, prolongations, ventes et départs apparaîtront ici.</p>'}</div>`}
 function careerContractYears(p){ensureDevelopment(p);return Math.max(0,p.dev.retireAge-p.age-(S.phase==='ended'?1:0))}
@@ -314,4 +314,172 @@ function renewalAdvisorPanel(){
   '</tbody></table></div><h3>Comparer plusieurs décisions sans négocier</h3>'+
   controls+table+
   '<p class="help">Une durée peut être ajustée si le contrat actuel exige une prolongation plus longue ou si la retraite prévue empêche la durée souhaitée. Les salaires et primes proviennent exactement de forecastQuote(), les flux futurs de forecastFinancialScenario() et les postes de successionSimulate(). Jusqu’à trois joueurs distincts peuvent être comparés seuls ou ensemble. Aucun contrat, journal ou fichier de sauvegarde n’est modifié.</p></section>';
+}
+
+
+// V34 — simulateur de contre-offres sans mutation ni sauvegarde.
+// Reprend strictement la réservation, les trois tentatives, et les états
+// ready/counter/withdrawn de negotiateContract(), jamais confirmContract().
+let counterofferChoice={kind:'renew',id:'',wage:0,horizon:3,years:2};
+function counterofferCandidates(s,kind){
+ if(!s||!['renew','recruit'].includes(kind))return [];
+ if(kind==='renew')return renewalPriorities(s,3,2).map(x=>x.p);
+ return s.market.filter(p=>s.clubs[s.club].players.every(q=>q.id!==p.id))
+  .sort((a,b)=>a.salary-b.salary||a.id.localeCompare(b.id)).slice(0,40);
+}
+function counterofferQuote(s,request={},horizon=3,priorityIndex=null){
+ const {kind='renew',id,wage,years}=request;
+ if(!s||!['renew','recruit'].includes(kind)||typeof id!=='string'||
+  !Number.isInteger(wage)||wage<1000||wage>100000||
+  !Number.isInteger(years)||years<1||years>3||
+  !Number.isInteger(horizon)||horizon<1||horizon>3)
+  return {valid:false,error:'Proposition hors limites du moteur : salaire 1 000 à 100 000 €, durée et horizon 1 à 3 saisons.'};
+ const team=s.clubs[s.club],p=kind==='renew'?team.players.find(q=>q.id===id):s.market.find(q=>q.id===id);
+ if(!p)return {valid:false,error:'Joueur indisponible dans le club ou sur le marché.'};
+ const end=forecastContractBase(s)+years-1;
+ const earliest=kind==='renew'?Math.max(1,p.contractEnd-forecastContractBase(s)+2):1;
+ const retirement=(p.dev?.retireAge??50)-p.age-(s.phase==='ended'?1:0);
+ if(years<earliest||years>retirement||end<=p.contractEnd&&kind==='renew')
+  return {valid:false,error:'Durée impossible : le contrat doit être allongé sans dépasser la retraite prévue.',
+   minYears:earliest,maxYears:Math.min(3,retirement)};
+ if(kind==='recruit'&&(team.players.some(q=>q.id===id)||team.players.length>=42))
+  return {valid:false,error:'Le joueur ne peut pas intégrer cet effectif complet ou existant.'};
+ const minimum=reservationWage(p,kind,years),asking=askingWage(p,kind);
+ const fee=contractFee(p,kind),key=s.season+':'+s.economy.week+':'+kind+':'+id;
+ const prev=s.economy.talks[key],attempts=prev?.attempts||0;
+ const exhausted=attempts>=3||prev?.status==='withdrawn';
+ const available=!s.live&&!exhausted;
+ const passes=wage>=minimum,nextAttempt=attempts+1;
+ const engineStatus=passes?'ready':nextAttempt===3?'withdrawn':'counter';
+ const status=available?engineStatus:'blocked';
+ const acceptedSalary=passes?wage:minimum;
+ const executable=available&&engineStatus!=='withdrawn'&&team.cash>=fee;
+ const memo=[
+  'Salaire demandé : '+money(asking)+' / semaine ; seuil de réservation calculé : '+money(minimum)+'.',
+  passes?'Le salaire atteint le seuil déterministe : accord de principe, signature séparée obligatoire.':
+   nextAttempt===3?'Sous le seuil : troisième refus, retrait des négociations pour cette journée.':
+   'Sous le seuil : le joueur propose '+money(minimum)+' / semaine ; confirmation séparée obligatoire.',
+  'Tentatives déjà utilisées cette journée : '+attempts+' / 3.',
+  s.live?'Match en cours : toute négociation réelle est verrouillée.':null,
+  exhausted?'Négociation épuisée ou retirée pour cette journée.':null,
+  team.cash<fee?'Prime supérieure à la trésorerie disponible : confirmation impossible.':null
+ ].filter(Boolean);
+ // Contrat de simulation uniquement : projection avec les mêmes coefficients
+ // financiers V31, mais le salaire réellement choisi dans cette contre-offre.
+ const players=team.players.map(q=>({id:q.id,salary:q.salary,contractEnd:q.contractEnd}));
+ if(kind==='renew'){
+  const target=players.find(q=>q.id===id);target.salary=acceptedSalary;target.contractEnd=end;
+ }else players.push({id:p.id,salary:acceptedSalary,contractEnd:end});
+ const synthetic={...s,clubs:s.clubs.map((c,i)=>i===s.club?
+  {...c,cash:c.cash-fee,players}:c)};
+ const finance=forecastFinancialScenario(synthetic,{kind:'baseline'},horizon);
+ const reference=forecastFinancialScenario(s,{kind:'baseline'},horizon);
+ if(!finance.valid||!reference.valid)return {valid:false,error:'Projection de trésorerie indisponible.'};
+ // Relève V32 : une seule place par joueur, aucune nouvelle compétence.
+ const people=team.players.map(q=>successionPerson(q)),academy=s.development.academy;
+ if(kind==='renew'){
+  const target=people.find(q=>q.id===id);target.contractEnd=end;target.salary=acceptedSalary;
+ }else{
+  const projected=successionPerson(p,'external');projected.contractEnd=end;
+  projected.salary=acceptedSalary;projected.injury=0;people.push(projected);
+ }
+ const yearsProjection=Array.from({length:horizon},(_,i)=>
+  successionYear(s,people,academy,s.season+i));
+ const now=finance.points.at(-1),base=reference.points.at(-1);
+ const needs=POS.map((_,slot)=>slotEligible(p,slot)?recruitmentNeed(team,slot):null)
+  .filter(Boolean).sort((a,b)=>b.score-a.score||a.slot-b.slot);
+ const v33=kind==='renew'?(priorityIndex||renewalPriorities(s,horizon,years)).find(x=>x.id===id):null;
+ const evidence=kind==='recruit'?recruitmentEvidence(p):null;
+ return {valid:true,kind,id,player:p.name,years,end,wage,minimum,asking,fee,
+  attempts,nextAttempt,status,engineStatus,acceptedSalary,passes,executable,
+  needs:needs[0]?.score??0,position:needs[0]?.pos||p.pos,
+  v33Priority:v33?.score??null,observed:kind==='renew'||!!evidence?.seen,
+  explanation:memo,finance:{low:now.low,central:now.central,high:now.high,
+   minLow:finance.minima.low,risk:finance.risk,
+   delta:now.central-base.central,annual:finance.annual},
+  succession:{covered:yearsProjection.map(y=>y.covered),
+   gaps:yearsProjection.map(y=>y.gaps.length)}};
+}
+function counterofferAlternatives(s,kind,id,customWage,years=2,horizon=3){
+ if(!s||!['renew','recruit'].includes(kind)||typeof id!=='string'||
+  !Number.isInteger(years)||years<1||years>3||
+  !Number.isInteger(horizon)||horizon<1||horizon>3)return [];
+ const p=kind==='renew'?s.clubs[s.club].players.find(q=>q.id===id):s.market.find(q=>q.id===id);
+ if(!p)return [];
+ const min=reservationWage(p,kind,years);
+ const low=Math.max(1000,Math.floor((min*.9)/100)*100);
+ const high=Math.min(100000,Math.ceil(Math.max(min+100,askingWage(p,kind)*1.1)/100)*100);
+ const chosen=Number.isInteger(customWage)&&customWage>=1000&&customWage<=100000?
+  customWage:askingWage(p,kind);
+ const priorities=kind==='renew'?renewalPriorities(s,horizon,years):null;
+ const candidates=[
+  {label:'Offre prudente · '+years+' saison(s)',wage:low,years},
+  {label:'Au seuil · '+years+' saison(s)',wage:min,years},
+  {label:'Marge haute · '+years+' saison(s)',wage:high,years},
+  ...[1,2,3].map(y=>({label:'Votre salaire · '+y+' saison(s)',wage:chosen,years:y}))
+ ];
+ return candidates.map(x=>({...x,result:counterofferQuote(s,{kind,id,wage:x.wage,years:x.years},horizon,priorities)}));
+}
+function setCounterofferChoice(field,value){
+ if(!S||!['kind','id','wage','years','horizon'].includes(field))return false;
+ if(field==='kind'){
+  if(!['renew','recruit'].includes(value))return false;
+  counterofferChoice.kind=value;counterofferChoice.id='';counterofferChoice.wage=0;
+ }else if(field==='id'){
+  if(typeof value!=='string'||value.length>150||
+   !counterofferCandidates(S,counterofferChoice.kind).some(p=>p.id===value))return false;
+  counterofferChoice.id=value;counterofferChoice.wage=0;
+ }else{
+  value=Number(value);if(!Number.isInteger(value)||
+   (field==='wage'?(value<1000||value>100000):(value<1||value>3)))return false;
+  counterofferChoice[field]=value;
+ }
+ render();return true;
+}
+function counterofferPanel(){
+ if(!S)return '';
+ const choice=counterofferChoice,list=counterofferCandidates(S,choice.kind);
+ const p=list.find(x=>x.id===choice.id)||list[0];
+ if(!p)return '<section class="card"><h2>Contre-offres V34</h2><p>Aucun joueur éligible à ce scénario.</p></section>';
+ const wage=choice.wage||askingWage(p,choice.kind);
+ const proposals=counterofferAlternatives(S,choice.kind,p.id,wage,choice.years,choice.horizon);
+ const control='<div class="counteroffer-controls">'+
+  '<label>Type de discussion<select aria-label="Type de négociation V34" onchange="setCounterofferChoice(\'kind\',this.value)">'+
+  [['renew','Prolongation'],['recruit','Recrutement']].map(([v,n])=>'<option value="'+v+'"'+(choice.kind===v?' selected':'')+'>'+n+'</option>').join('')+'</select></label>'+
+  '<label>Joueur<select aria-label="Joueur V34" onchange="setCounterofferChoice(\'id\',this.value)">'+
+  list.slice(0,24).map(q=>'<option value="'+q.id+'"'+(q.id===p.id?' selected':'')+'>'+
+   visualEscape(q.name)+' · '+q.pos+'</option>').join('')+'</select></label>'+
+  '<label>Salaire proposé (€ / semaine)<input aria-label="Salaire de scénario V34" type="number" min="1000" max="100000" step="100" value="'+wage+
+  '" onchange="setCounterofferChoice(\'wage\',this.value)"></label>'+
+  [['years','Durée principale'],['horizon','Horizon financier']].map(([k,n])=>'<label>'+n+
+  '<select aria-label="'+n+' V34" onchange="setCounterofferChoice(\''+k+'\',this.value)">'+
+   [1,2,3].map(y=>'<option value="'+y+'"'+(choice[k]===y?' selected':'')+'>'+y+' saison'+(y>1?'s':'')+'</option>').join('')+
+   '</select></label>').join('')+'</div>';
+ const rows=proposals.map(x=>{
+  const r=x.result;
+  if(!r.valid)return '<tr><th>'+visualEscape(x.label)+'</th><td>'+money(x.wage)+'</td>'+
+   '<td>'+x.years+'</td><td colspan="6">'+visualEscape(r.error)+'</td></tr>';
+  const label=r.status==='ready'?'Seuil atteint · accord de principe':r.status==='counter'?
+   'Contre-proposition':r.status==='withdrawn'?'Retrait à la 3e tentative':'Négociation verrouillée';
+  return '<tr><th>'+visualEscape(x.label)+'</th><td>'+money(r.wage)+'</td><td>'+r.years+'</td>'+
+   '<td>'+visualEscape(label)+'<small>'+r.attempts+'/3 tentatives déjà utilisées</small></td>'+
+   '<td>'+money(r.minimum)+'<small>Accord simulé à '+money(r.acceptedSalary)+'</small></td>'+
+   '<td>'+money(r.fee)+'</td><td>'+money(r.finance.central)+
+    '<small>Prudent '+money(r.finance.low)+'</small></td>'+
+   '<td>'+(r.finance.delta>=0?'+':'')+money(r.finance.delta)+'</td>'+
+   '<td>'+r.succession.covered.at(-1)+'/15<small>'+r.succession.gaps.at(-1)+' postes vacants</small>'+
+   (r.executable?'':'<small>Non confirmable maintenant</small>')+'</td></tr>';
+ }).join('');
+ const first=proposals.find(x=>x.result.valid)?.result;
+ const context=first?'<p class="help">Besoin au poste V30 : '+first.needs+'/100 · '+
+  (first.v33Priority===null?'':'priorité V33 '+first.v33Priority+'/100 · ')+
+  (first.observed?'joueur évalué':'joueur non observé : aucune note cachée utilisée')+
+  '. Les postes futurs sont calculés par V32.</p>':'';
+ return '<section class="card counteroffer-panel"><div class="cardtitle"><h2>Comparer les contre-offres</h2>'+
+  '<span class="tag">SIMULATION V34</span></div><p class="help">Trois niveaux de salaire et votre proposition sur 1, 2 et 3 saisons. Le seuil utilise reservationWage() et le statut suit les trois tentatives du moteur. Une contre-proposition ou un accord de principe ne constitue JAMAIS une signature.</p>'+
+  control+context+'<div class="tablewrap"><table class="counteroffer-table"><thead><tr><th>Scénario</th>'+
+  '<th>Salaire proposé</th><th>Durée</th><th>Réponse simulée</th><th>Seuil / salaire accepté</th>'+
+  '<th>Prime immédiate</th><th>Trésorerie finale V31</th><th>Écart</th><th>Relève V32</th>'+
+  '</tr></thead><tbody>'+rows+'</tbody></table></div>'+
+  '<p class="help">En cas de salaire inférieur au seuil, les chiffres financiers illustrent une acceptation ultérieure de la contre-proposition par le club, pas une signature automatique. Les coûts suivent les coefficients V31 ; l’âge, les contrats, la trésorerie, les tentatives et les matchs en cours sont contrôlés. Aucun bouton ne transmet une offre réelle, aucun journal ou sauvegarde n’est modifié.</p></section>';
 }
