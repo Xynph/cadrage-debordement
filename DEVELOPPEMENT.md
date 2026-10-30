@@ -3,7 +3,7 @@
 > Document de passation partagé entre deux comptes ChatGPT de même niveau, intervenant **en alternance, jamais simultanément**. GitHub reste l'unique source de vérité. Ce document décrit l'état connu à la date de sa dernière mise à jour ; toujours le confronter aux commits, branches, pull requests et fichiers actuels avant de travailler.
 
 **Dernière mise à jour : 30 octobre 2026.**  
-**Version annoncée dans `README.md` : 16.**  
+**Version annoncée dans `README.md` : 17 (lot tirs au but, validation complète en attente).**  
 **Branche de référence : `main`.**
 
 ## État du projet
@@ -18,6 +18,7 @@ Le profil réglementaire documenté du moteur est **`fr-pro-2025` (saison 2025/2
 
 | Date | Référence | Travaux | État |
 | --- | --- | --- | --- |
+| 30/10/2026 | V17, branche `feature/v17-goalkicking` | Géométrie des transformations, tests ciblés, workflow CI, README | Six assertions isolées exécutées ; suites complètes non exécutées localement, CI à confirmer |
 | 30/10/2026 | `541d32b` | Protocole de continuité des deux comptes ajouté à `AGENTS.md` | Présent sur `main`, contenu vérifié |
 | 30/10/2026 | `21dce3d` / PR #1 | Probabilité de faute de main ajustée selon la qualité des passes des joueurs actifs dans `dist/tactical-plans.js` | Fusionné sur `main`, contenu vérifié ; tests non exécutés lors de cette intervention |
 | 30/10/2026 | `dbcb0f3` | Version 16 : application Windows hors ligne et sauvegardes sur disque | Historique du dépôt ; tests Windows natifs non revendiqués dans la documentation |
@@ -36,7 +37,7 @@ Les références ci-dessus sont des repères historiques, **pas une garantie qu'
 
 ## Problèmes connus et limites à examiner
 
-1. **Transformations :** `goalChance` dans `dist/rugby.js` utilise actuellement une distance fixe de 25 mètres pour les transformations ; l'angle lié au point d'essai n'est pas modélisé. La transformation est traitée dans la même action que l'essai.
+1. **Transformations :** la V17 calcule désormais une distance et un angle indicatifs pour la transformation, mais la position latérale de l'essai reste approximative ; essai et transformation restent une seule action.
 2. **Discipline :** `awardPenalty` utilise une probabilité de carton simplifiée dépendant surtout de la discipline collective. Les causes de faute, leur gravité et les répétitions méritent un modèle plus explicite.
 3. **Équilibre tactique :** les coefficients de réussite, fatigue, fautes de main et gains de terrain sont fictifs. Le nouvel ajustement lié à la qualité des passes n'a pas encore fait l'objet d'une campagne de simulations statistiques documentée.
 4. **Règles et match :** la documentation réglementaire recense des abstractions et des vérifications restantes ; ne pas revendiquer une conformité intégrale aux lois World Rugby ou aux compétitions 2026/27.
@@ -46,8 +47,8 @@ Ces points sont des **limites documentées ou pistes d'audit**, pas nécessairem
 
 ## Prochaines priorités proposées
 
-1. Exécuter les suites de tests existantes, en particulier `tests/tactical-plans.cjs`, et mesurer l'impact de la PR #1 sur un ensemble de simulations.
-2. Auditer puis améliorer le modèle des transformations et des tirs au but, avec tests de régression et compatibilité des matchs sauvegardés.
+1. Confirmer l'exécution et les résultats de la CI GitHub Actions et de toutes les suites, notamment `tests/goalkicking.cjs` et `tests/tactical-plans.cjs` ; mesurer l'impact de la PR #1 sur plusieurs simulations.
+2. Raffiner le placement latéral des essais, la prise de décision sur les pénalités et la compatibilité des matchs sauvegardés, sans inventer de données de match.
 3. Examiner les cartons, l'avantage et les fautes répétées à partir des règles officielles applicables au profil simulé.
 4. Calibrer les styles offensifs et défensifs sur plusieurs matchs et documenter les résultats, sans présenter les coefficients comme des statistiques réelles.
 
@@ -68,3 +69,10 @@ Ces priorités sont **proposées**, non des tâches déjà exécutées ou approu
 4. Signaler les changements restant sur une branche ou en attente de fusion, sans les annoncer comme livrés sur `main`.
 
 Les commits, le code et les tests prévalent sur ce résumé en cas de contradiction.
+
+## Vérification V17 — 30 octobre 2026
+
+- **Contrôle exécuté :** six assertions Node.js isolées sur la formule géométrique et ses conséquences (centre vs aile, vent, fatigue, distance) : réussies. Ces assertions utilisent une copie minimale de la formule et **ne remplacent pas** l'exécution du code complet du dépôt.
+- **Non exécutés localement :** `tests/goalkicking.cjs`, les 16 suites historiques et les simulations de plusieurs centaines de matchs ; le dépôt privé n'est pas accessible depuis l'environnement local de test de cette session.
+- **Automatisation ajoutée :** `.github/workflows/tests.yml` pour vérifier syntaxe et suites Node sur GitHub Actions ; statut de l'exécution à confirmer dans l'interface GitHub.
+- **Limites :** les probabilités sont des coefficients fictifs ; les positions latérales d'essai restent schématiques, et les matchs déjà en cours ne disposent pas d'une position latérale historique enregistrée.
