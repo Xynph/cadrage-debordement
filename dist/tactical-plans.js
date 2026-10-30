@@ -46,3 +46,73 @@ function halftimeAdvice(l){
  return {notes,suggestions,tired};
 }
 function halftimeStaff(l){if(!atHalftime(l)||!tacticalRules(l))return '';const advice=halftimeAdvice(l);return `<section class="card halftime-staff" aria-label="Bilan du staff à la mi-temps"><div class="cardtitle"><h2>Le point du staff</h2><span class="tag">MI-TEMPS</span></div>${advice.notes.map(n=>`<p>${n}</p>`).join('')}${advice.suggestions.map(s=>`<div class="staff-suggestion"><p>${s.reason}</p><button class="small" onclick="${s.kind==='attack'?'setLiveTactic':'setLiveDefence'}('${s.value}')">${s.kind==='attack'?TACTICS[s.value][0]:DEFENCES[s.value][0]} →</button></div>`).join('')}<div class="staff-fitness"><strong>La fraîcheur</strong>${advice.tired.length?advice.tired.map(p=>`<button class="small" onclick="openMatchPlayer(${l.userSide},'${p.id}')">${visualEscape(p.name)} · ${Math.round(p.condition)}% →</button>`).join(''):'<span>Aucun joueur présent sous 70% de condition.</span>'}</div><p class="help">Constats sur cette mi-temps ; les recommandations ne garantissent pas le résultat.</p></section>`}
+
+ 
+// V21: conseils calculés à la lecture, jamais appliqués sans confirmation.
+// Le différentiel vient des joueurs effectivement actifs, pas des compteurs de cartons.
+function numericalStaffAdvice(l){
+ if(!l||l.finished||l.userSide<0||l.numericalAiVersion!==1||!tacticalRules(l))return null;
+ const side=l.userSide,ours=activePlayers(l,side),theirs=activePlayers(l,1-side);
+ const difference=ours.length-theirs.length;
+ if(difference===0)return null;
+ const margin=l.score[side]-l.score[1-side],remaining=Math.max(0,80-matchMinute(l));
+ const fitness=ours.length?mean(ours.map(p=>p.condition)):0;
+ const pack=unit(l,side,'power',p=>p.fam<=3);
+ const backs=(unit(l,side,'pass',p=>p.fam>=4)+unit(l,side,'speed',p=>p.fam>=4))/2;
+ const urgent=margin<=-5&&remaining<=15;
+ let attack,defence,attackWhy,defenceWhy;
+ if(difference<0){
+  attack=urgent&&l.weather!=='Pluie'&&backs>=67?'large':
+   l.weather==='Pluie'||difference<=-2||margin>=5||pack<backs-12?'occupation':'conquete';
+  defence='prudente';
+  attackWhy=attack==='large'?'En retard près du terme, tenter la largeur avec les arrières disponibles : choix risqué en sous-nombre.':
+   attack==='occupation'?'Privilégier le territoire et limiter les séquences de passes en sous-nombre, selon la météo et les joueurs présents.':
+   'S’appuyer sur la puissance des avants disponibles pour conserver le ballon sans trop étirer le dispositif.';
+  defenceWhy='Protéger la profondeur en sous-nombre, au prix de petites avancées adverses.';
+ }else{
+  attack=l.weather==='Pluie'||pack>backs+10?'conquete':'large';
+  defence=margin>=7||fitness<65?'prudente':difference>=2&&fitness>=75?'pression':'equilibre';
+  attackWhy=attack==='large'?'Exploiter les espaces laissés par les défenseurs moins nombreux avec la vitesse et les passes des arrières.':
+   'Sous la pluie ou avec un pack plus performant, privilégier le jeu au près malgré la supériorité numérique.';
+  defenceWhy=defence==='pression'?'La fraîcheur du groupe permet de monter plus vite, au risque de concéder des brèches et des pénalités.':
+   defence==='prudente'?'Préserver l’avance ou les joueurs fatigués en limitant les risques défensifs.':
+   'Garder une défense équilibrée sans surexposer la ligne malgré le joueur supplémentaire.';
+ }
+ const short=difference<0?side:1-side,sh=l.sheets[short];
+ const yellows=(sh.cards||[]).filter(c=>c.until>l.minute).map(c=>c.until-l.minute);
+ const replaceable=(sh.redCards||[]).filter(c=>!c.filled&&c.until!==null&&c.until>l.minute).map(c=>c.until-l.minute);
+ let clockNote='';
+ if(yellows.length)clockNote='Carton jaune : fin d’exclusion dans '+Math.min(...yellows)+' minute(s) de jeu au plus tôt.';
+ else if(replaceable.length)clockNote='Rouge remplaçable : remplacement envisageable dans '+Math.min(...replaceable)+' minute(s) de jeu au plus tôt, si un joueur éligible est disponible.';
+ else if((sh.redCards||[]).some(c=>c.until===null))clockNote='Rouge définitif : aucun remplacement autorisé pour cette exclusion.';
+ const scoreNote=margin>0?'vous menez de '+margin+' point(s)':margin<0?'vous êtes menés de '+(-margin)+' point(s)':'le score est à égalité';
+ const suggestions=[
+  {kind:'attack',value:attack,reason:attackWhy},
+  {kind:'defence',value:defence,reason:defenceWhy}
+ ].filter(s=>s.value!==(s.kind==='attack'?l.tactics[side]:l.defences[side]));
+ return {ours:ours.length,theirs:theirs.length,difference,remaining,scoreNote,weather:l.weather,clockNote,suggestions};
+}
+function numericalAdvicePanel(l){
+ const advice=numericalStaffAdvice(l);if(!advice)return '';
+ const canApply=l.paused&&!presentationPending(l),text=advice.difference<0?'INFÉRIORITÉ':'SUPÉRIORITÉ';
+ return `<section class="card numerical-advice" aria-label="Conseils tactiques en déséquilibre numérique">
+  <div class="cardtitle"><h2>Le conseil du staff</h2><span class="tag">${text} · ${advice.ours} CONTRE ${advice.theirs}</span></div>
+  <p>Sur le terrain : <strong>${advice.ours} contre ${advice.theirs}</strong> · ${advice.scoreNote} · ${advice.weather} · ${advice.remaining} min restantes au temps réglementaire.</p>
+  ${advice.clockNote?`<p class="help">${advice.clockNote}</p>`:''}
+  ${advice.suggestions.length?advice.suggestions.map(s=>`<div class="staff-suggestion">
+   <div><strong>${s.kind==='attack'?'Attaque':'Défense'} : ${s.kind==='attack'?TACTICS[s.value][0]:DEFENCES[s.value][0]}</strong><p>${s.reason}</p></div>
+   <button class="small" onclick="applyNumericalAdvice('${s.kind}','${s.value}')" ${canApply?'':'disabled'}>Appliquer cette consigne</button>
+  </div>`).join(''):'<p class="help">Vos consignes actuelles correspondent déjà aux recommandations du staff.</p>'}
+  <p class="help">${canApply?'À vous de choisir.':'Mettez le match en pause pour appliquer une recommandation.'} Les consignes par zone du carnet de jeu restent prioritaires. Aucun ajustement automatique.</p>
+ </section>`;
+}
+function applyNumericalAdvice(kind,value){
+ const l=S?.live;
+ if(!l||!l.paused||l.finished||presentationPending(l))return false;
+ const advice=numericalStaffAdvice(l);
+ if(!advice||!advice.suggestions.some(s=>s.kind===kind&&s.value===value))return false;
+ if(kind==='attack')setLiveTactic(value);
+ else if(kind==='defence')setLiveDefence(value);
+ else return false;
+ return true;
+}
