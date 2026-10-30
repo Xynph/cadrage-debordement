@@ -1,0 +1,30 @@
+const assert=require('node:assert/strict');
+const {context}=require('./harness.cjs');
+const t=context(),run=t.run;
+run('start(0);beginMatch();pauseMatch();var l=S.live,side=l.userSide');
+assert.equal(run('selectDisciplineIncident(0).id'),'offside');
+assert.equal(run('selectDisciplineIncident(.999).id'),'dangerous');
+assert.equal(run('selectDisciplineIncident(.50).id'),'ruck');
+run('l.disciplineHistory=[{count:4,recent:4},{count:0,recent:0}]');
+assert.equal(run('disciplineDecision(l,0,{serious:false}).repeated'),true);
+assert.equal(run('disciplineDecision(l,1,{serious:false}).repeated'),false);
+run('l.disciplineHistory=[{count:0,recent:0},{count:0,recent:0}];var old=executePenaltyChoice;executePenaltyChoice=function(){};awardPenalty(l,1)');
+assert.equal(run('l.disciplineHistory[0].count'),1);
+assert.equal(run('l.stats[0].penalties'),1);
+assert.ok(run('l.events.some(e=>e.text.includes("sanctionné pour"))'));
+const saved=run('JSON.parse(JSON.stringify(S))');
+assert.equal(context(saved).run('S.live.disciplineHistory[0].count'),1);
+// A portable save retains disciplinary history and existing cards.
+const portable=run('JSON.stringify(createSaveDocument())');
+const imported=context();
+imported.run(`pendingSave=parseSaveDocument(${JSON.stringify(portable)});confirmSaveImport()`);
+assert.equal(imported.run('S.live.disciplineHistory[0].count'),1);
+assert.equal(imported.run('S.live.stats[0].penalties'),1);
+// Pre-V18 saves without this optional field must continue to simulate penalties.
+const older=JSON.parse(JSON.stringify(saved));
+delete older.live.disciplineHistory;
+const resumed=context(older);
+resumed.run('var l=S.live;executePenaltyChoice=function(){};awardPenalty(l,1)');
+assert.equal(resumed.run('S.live.disciplineHistory[0].count'),1);
+assert.equal(resumed.run('S.live.stats[0].penalties'),2);
+console.log('V18 discipline checks passed');
