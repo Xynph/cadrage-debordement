@@ -36,3 +36,13 @@
 @media(max-width:650px){.dossier-table{min-width:470px}.dossier-results>div{gap:8px}}
 .prematch-grid{grid-template-columns:minmax(280px,.8fr) minmax(0,1.6fr);align-items:start}.dossier-table .small{white-space:nowrap}.dossier-table th,.dossier-table td{padding:12px 8px}
 @media(max-width:1100px){.prematch-grid{grid-template-columns:1fr}}
+
+/* V21 : recommandations facultatives du staff en déséquilibre numérique. */
+.numerical-advice{border:1px solid #d7d8c6;background:#fbfaf3}
+.numerical-advice>.cardtitle{margin-bottom:10px}
+.numerical-advice>.cardtitle .tag{background:#f2dfcf;color:#704f33}
+.numerical-advice>p{font-size:12px;line-height:1.6;margin:8px 0}
+.numerical-advice .staff-suggestion{align-items:center}
+.numerical-advice .staff-suggestion p{margin:5px 0 0;font-size:12px;line-height:1.5}
+.numerical-advice .staff-suggestion button{white-space:normal}
+@media(max-width:600px){.numerical-advice .staff-suggestion{align-items:stretch;flex-direction:column;gap:9px}.numerical-advice .staff-suggestion button{width:100%}}
