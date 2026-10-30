@@ -1,6 +1,6 @@
 'use strict';
 function flowRules(l){return restartRules(l)&&l.flowVersion===1}
-function initializeMatchFlow(l){l.flowVersion=1;l.flow={period:1,firstEnd:null,fullEnd:null,atBreak:false,ballDead:false,advantage:null,resolvingAward:false}}
+function initializeMatchFlow(l){l.advantageModel=2;l.flowVersion=1;l.flow={period:1,firstEnd:null,fullEnd:null,atBreak:false,ballDead:false,advantage:null,resolvingAward:false}}
 function periodBoundary(l){return l.flow.period===1?40:l.flow.fullEnd}
 function atHalftime(l){return flowRules(l)?l.flow.atBreak:l.minute===40&&l.paused&&!l.finished}
 function matchMinute(l){if(!flowRules(l)||l.flow.period===1)return l.minute;return 40+l.minute-l.flow.firstEnd}
@@ -23,6 +23,8 @@ function clearAdvantage(l,message='Avantage terminé : bénéfice réel obtenu.'
 function advantageReal(l,at=l.territory){
  const a=l.flow.advantage;if(!a)return false;
  const gain=(a.team===0?1:-1)*(at-a.at);
+ // A clear territorial gain after sustained possession can be a real benefit; the thresholds are simulation parameters.
+ if(l.advantageModel===2&&a.phases>=2&&l.possession===a.team&&gain>=(a.kind==='penalty'?18:8))return true;
  return gain>=(a.kind==='penalty'?25:12)||a.kind==='scrum'&&a.phases>=2&&l.possession===a.team&&gain>0;
 }
 function returnAdvantage(l){
