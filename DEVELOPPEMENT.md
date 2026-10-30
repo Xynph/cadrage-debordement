@@ -423,3 +423,11 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Premier run PR optimisé `41139835993` sur SHA `75d06ecd` : 58 s de latence, classification 6 s, shards 39/42/33 s, validation 4 s, **124 s cumulées de jobs**, tous réussis.
 - Comparaison au baseline 171 s : latence -66 % et secondes de jobs -26 %. Comparaison au baseline 92 s : latence -37 % mais secondes cumulées de jobs +39 %. Aucun gain garanti sur la facturation GitHub : arrondi éventuel par job et tarification du compte à consulter dans GitHub Billing.
 - Les trois shards ont réussi. Le dernier SHA et les vérifications post-fusion restent à contrôler ; ne pas présenter cette mesure initiale comme une moyenne stable.
+
+## Circuit court de vérification GitHub — 30 octobre 2026
+
+- Référence de départ : `main` `616aa4364c4145cc5d3060541ce74ba9991284bd`, CI post-fusion antérieure #41140179803 verte (100 s de latence ; 189 s de jobs). `main` n'est pas protégée (état de branche `protected=false`) ; `allow_auto_merge=false`, rulesets privés indisponibles selon API. Aucun robot de fusion non protégé n'est activé.
+- Nouvelle commande `ci/release-gate.cjs` : consultation condensée du dernier SHA de PR, d'un workflow complet de PR et du job `Validation CI` ; fusion volontaire par SHA attendu, aucune boucle de polling. Tests déterministes `tests/release-gate.cjs` sur décisions acceptées/refusées.
+- Protocole `AGENTS.md` et guide GitHub actualisés : une lecture initiale, diagnostics seulement sur échec, une CI complète de PR, un contrôle post-fusion, passation en même commit si possible.
+- Gain sur nombre d'appels attendu : lecture manuelle du gate en 3 requêtes GitHub (PR, liste runs, jobs) au lieu d'une suite indéfinie de sondages ; **gain réel en secondes à mesurer sur les runs de la PR et de main**. Aucun gain de latence des tests n'est garanti par ce changement de processus.
+- Références de PR/CI et résultats finaux : consulter l'historique GitHub ; ne pas prolonger le journal après fusion pour éviter de relancer une CI documentaire.

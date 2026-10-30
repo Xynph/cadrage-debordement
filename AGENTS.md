@@ -50,3 +50,12 @@ Ce protocole s'applique à chaque session, même si l'utilisateur ne le rappelle
 ### Journal de passation
 
 À chaque reprise, lire également `DEVELOPPEMENT.md` après avoir vérifié les derniers changements sur GitHub. Ce journal consigne les travaux, décisions, problèmes connus, tests et priorités. À la fin de chaque chantier significatif, le mettre à jour, enregistrer cette mise à jour dans GitHub et vérifier le contenu publié. Si le journal et le code divergent, les commits et le code actuels prévalent.
+
+## Procédure CI rapide et bornée (octobre 2026)
+
+- Lire `main`, `AGENTS.md` et `DEVELOPPEMENT.md` **une seule fois** en début de chantier, en regroupant les requêtes indépendantes. Ne relire que les fichiers qui ont changé.
+- Pendant le développement : tests ciblés ; un commit final par lot si possible, une PR, puis la CI complète de son dernier SHA. Éviter les commits cosmétiques après la dernière CI.
+- Ne pas vérifier périodiquement les mêmes statuts : utiliser la page Actions ou `node ci/release-gate.cjs <PR>` une fois la CI achevée. Consulter les logs détaillés seulement si échec ou diagnostic nécessaire.
+- Pour fusionner volontairement : `node ci/release-gate.cjs <PR> --merge` contrôle le SHA de la PR, le succès du workflow PR et de `Validation CI`, puis transmet le SHA attendu à GitHub. La fusion automatique native du dépôt reste désactivée ; **pas de contournement de la CI**.
+- Après fusion : un contrôle unique du run `push` sur le SHA de fusion, avec toutes les suites. Si échec, diagnostiquer et corriger ; ne jamais déclarer la livraison totalement validée sans cette preuve.
+- Écrire la passation et les mesures vérifiées dans le même commit que l'évolution quand c'est possible ; ne pas lancer un nouveau cycle CI uniquement pour recopier les IDs des workflows.
