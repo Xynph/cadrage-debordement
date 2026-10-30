@@ -76,3 +76,10 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - **Validation GitHub Actions :** exécution PR `41055792667` réussie sur la branche `feature/v17-goalkicking`, avec étape « Syntaxe JavaScript » et étape « Tests du jeu » réussies (boucle sur `tests/*.cjs` hors `harness.cjs`, comprenant les 17 suites). Exécutions push précédentes réussies également. Aucun test local du dépôt complet n'a été exécuté pendant cette session ; les simulations statistiques dédiées à la V17 restent à faire.
 - **Automatisation ajoutée :** `.github/workflows/tests.yml` pour vérifier syntaxe et suites Node sur GitHub Actions. PR #2 fusionnée en squash dans `main` via `600ae6fa055354a05405de86749e276d731a2a21` ; présence du test et du workflow vérifiée sur `main`. Une nouvelle exécution CI `41056246563` a été déclenchée sur le commit de fusion ; son résultat final était encore en cours au moment de ce relevé.
 - **Limites :** les probabilités sont des coefficients fictifs ; les positions latérales d'essai restent schématiques, et les matchs déjà en cours ne disposent pas d'une position latérale historique enregistrée.
+
+## Chantier V18 — discipline (branche de travail)
+
+- Branche `feature/v18-discipline` issue de `ca60c62` ; moteur enrichi de catégories de fautes, historique de récidives, sanctions jaunes et rouges simulées, sans modifier le profil réglementaire `fr-pro-2025` ni les matchs historiques.
+- Nouveau test `tests/discipline.cjs` pour les incidents, l'historique et le chargement d'une carrière.
+- **Statut : non livré sur `main`**. Les tests de la V18 et la CI post-fusion V17 restent à confirmer ; le modèle de gravité est un choix de simulation, pas une transposition complète du protocole officiel d'arbitrage.
+- Priorité immédiate : examiner les résultats de CI, corriger les régressions et valider la sérialisation du nouvel historique avant fusion.
