@@ -19,7 +19,7 @@ assert.equal(base.finance.points[0].central,t.run('club().cash'));
 assert.equal(base.finance.points.at(-1).central,t.run('forecastFinancialScenario(S,{kind:"baseline"},3).points.at(-1).central'));
 assert.ok(t.run('successionPlanningPanel().includes("PLANIFICATION V32")'));
 t.run('squadTab="planning"');
-assert.ok(t.run('managerTeamView().includes("Planification sur plusieurs saisons")'));
+assert.ok(t.run('managerTeamView().includes("Anticiper les 3 saisons")'));
 assert.ok(t.run('setSuccessionChoice("slot",2)'));
 assert.equal(t.run('successionChoice.slot'),2);
 assert.equal(t.run('setSuccessionChoice("slot",15)'),false);
