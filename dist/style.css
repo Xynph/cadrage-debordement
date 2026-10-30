@@ -111,3 +111,13 @@
 .development-focus-control{display:flex;flex-direction:column;gap:5px;margin:12px 0 6px;font-size:12px;font-weight:650}
 .development-focus-control select{max-width:100%;padding:8px 10px;border-radius:5px;border:1px solid var(--line);background:var(--bg,#fff);color:inherit;font-size:12px}
 .marketplayer .development-focus-control{margin:14px 0 5px}
+
+/* V30 — diagnostic recrutement : lecture seule, adaptation mobile. */
+.recruitment-intel{margin:0 0 18px}
+.recruitment-needs-list{display:grid;gap:8px;margin:12px 0 18px}
+.recruitment-needs-list .row{margin:0;align-items:flex-start;border-bottom:1px solid var(--line,#ddd);padding:7px 0;gap:12px}
+.recruitment-needs-list small{display:block;font-weight:400;line-height:1.45;margin-top:4px}
+.recruitment-target{border-top:1px solid var(--line,#ddd);padding:12px 0}
+.recruitment-target p{margin:6px 0;font-size:12px}
+.recruitment-target small{display:block;line-height:1.55}
+.recruitment-target .matchactions{margin:10px 0 0;flex-wrap:wrap;gap:6px}
