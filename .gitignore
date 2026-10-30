@@ -1,0 +1,3 @@
+# Copie embarquée et binaires produits par scripts/build-offline.py
+offline/launcher/app/
+offline/out/

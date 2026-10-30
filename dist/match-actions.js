@@ -4,7 +4,7 @@ const ACTION_KINDS=['message','carry','turnover','scrum','lineout','setpiece-win
 const ACTION_LABELS={message:'Jeu courant',carry:'Progression',turnover:'Récupération',scrum:'Mêlée',lineout:'Touche','setpiece-win':'Ballon conservé','setpiece-loss':'Ballon récupéré',kick:'Jeu au pied',kickoff:'Renvoi au centre',drop22:'Renvoi aux 22',goalLine:'Renvoi sur la ligne',reception:'Réception',touch:'Sortie en touche','hand-fault':'Faute de main',try:'Essai',goal:'Pénalité réussie',miss:'Tir manqué',penalty:'Pénalité',advantage:'Avantage',card:'Discipline',sub:'Remplacement',tactic:'Consigne',break:'Mi-temps',end:'Fin du match',ingoal:'En-but'};
 const MATCH_PLAYBACK=new WeakMap();
 let pauseOnTry=false,pauseOnCard=false;
-try{const prefs=JSON.parse(localStorage.getItem('bdt-match-view'));pauseOnTry=prefs?.try===true;pauseOnCard=prefs?.card===true}catch(e){}
+try{const prefs=JSON.parse(gameStorage.getItem('bdt-match-view'));pauseOnTry=prefs?.try===true;pauseOnCard=prefs?.card===true}catch(e){}
 function actionPlayer(l,side,role='carrier'){
  const players=activePlayers(l,side),preferred=players.filter(p=>role==='kicker'?p.fam>=4:role==='receiver'?p.fam>=6:role==='defender'?p.fam>=2&&p.fam<=3:effectiveAttack(l,side)==='conquete'?p.fam<=3:p.fam>=3);
  const pool=preferred.length?preferred:players;return pool.length?pool[(l.minute+side)%pool.length]:null;
@@ -41,7 +41,7 @@ function presentationTick(l){
  if(!presentationPending(l)&&(l.paused||l.finished))clearInterval(timer);
  if(changed)save();render();
 }
-function setAutoPause(kind,enabled){if(kind==='try')pauseOnTry=!!enabled;if(kind==='card')pauseOnCard=!!enabled;try{localStorage.setItem('bdt-match-view',JSON.stringify({try:pauseOnTry,card:pauseOnCard}))}catch(e){}render()}
+function setAutoPause(kind,enabled){if(kind==='try')pauseOnTry=!!enabled;if(kind==='card')pauseOnCard=!!enabled;try{gameStorage.setItem('bdt-match-view',JSON.stringify({try:pauseOnTry,card:pauseOnCard}))}catch(e){}render()}
 function autoPauseControls(){return `<fieldset class="auto-pause"><legend>Pause après la séquence</legend><label><input type="checkbox" ${pauseOnTry?'checked':''} onchange="setAutoPause('try',this.checked)"> Essai</label><label><input type="checkbox" ${pauseOnCard?'checked':''} onchange="setAutoPause('card',this.checked)"> Carton</label></fieldset>`}
 function openMatchPlayer(side,id){
  const l=S.live;if(!l||![0,1].includes(side))return;

@@ -2,7 +2,7 @@
 // Fictional transfer economy. Salaries are charged by the career's weekly ledger.
 let marketTab='recruit';
 function ensureContract(p){if(!Number.isInteger(p.contractEnd))p.contractEnd=S.season+(seedHash(p.id)%3);return p}
-function setupEconomy(backup=false){if(!S)return;const fresh=!S.economy;if(fresh&&backup){try{if(!localStorage.getItem('bdt-backup-economy'))localStorage.setItem('bdt-backup-economy',JSON.stringify(S))}catch(e){}}
+function setupEconomy(backup=false){if(!S)return;const fresh=!S.economy;if(fresh&&backup){try{if(!gameStorage.getItem('bdt-backup-economy'))gameStorage.setItem('bdt-backup-economy',JSON.stringify(S))}catch(e){}}
 S.economy=S.economy||{version:1,week:S.round,talks:{},listings:{},offers:[],transfers:[],freeAgents:[],settled:0};S.clubs.forEach(c=>c.players.forEach(ensureContract));if(fresh&&backup)news('Mercato enrichi : contrats, négociations, prolongations et offres de transfert. Salaires et trésorerie conservés.')}
 function economyLocked(){if(S.live){toast('Validez la rencontre avant de modifier les contrats ou l’effectif.');return true}return false}
 function contractBase(){return S.season+(S.phase==='ended'?1:0)}

@@ -1,6 +1,6 @@
 # Cadrage Débordement
 
-**Un jeu de management de rugby à XV, en français, actuellement en version 15.**
+**Un jeu de management de rugby à XV, en français, actuellement en version 16.**
 
 Dirigez votre club : composez les 23, préparez votre équipe, recrutez, gérez les contrats et suivez les rencontres sur un terrain 2D accompagné de commentaires synchronisés.
 
@@ -32,6 +32,22 @@ Les noms de fichiers, commandes et identifiants techniques restent identiques po
 - **Matchs** : terrain entier en 2D, commentaires synchronisés, pauses, remplacements et statistiques.
 - **Carrière** : championnat, phases finales simplifiées, finances, contrats, formation, progression et retraite.
 - **Sauvegardes** : enregistrement local, export et import de la carrière.
+
+## Application Windows hors ligne
+
+Une version portable est maintenant prévue pour Windows 10/11 x64. Décompressez
+l’archive de livraison puis ouvrez `CadrageDebordement.exe`. Le jeu et les polices
+sont embarqués ; aucune installation de Python ou Node.js n’est nécessaire.
+
+Les sauvegardes restent dans `%LOCALAPPDATA%\CadrageDebordement`, indépendamment
+du dossier de l’application. Pour reprendre la version en ligne, exportez votre
+carrière JSON depuis Sauvegardes puis importez-la dans l’application. Les mises
+à jour ne déplacent ni ne remplacent automatiquement ce dossier de données.
+
+Consultez la [notice de lancement](offline/LIRE-MOI.txt) et la
+[documentation de la version portable](offline/README.md). La fenêtre sur un
+véritable Windows reste à confirmer ; le stockage, le transfert, les reprises
+et la fermeture ont été vérifiés avec le lanceur natif Linux et le navigateur.
 
 ## Repères techniques
 
@@ -69,9 +85,10 @@ node tests/tactical-plans.cjs
 node tests/manager.cjs
 node tests/playbook.cjs
 node tests/preparation.cjs
+node tests/offline.cjs
 ```
 
-Les 15 suites couvrent notamment la sélection des 23, les spécialistes de première ligne, les remplacements, la discipline, les reprises de jeu, les sauvegardes, les finances, la formation, les tactiques, le recrutement et la cohérence de la 2D. Les scénarios comprennent 250 matchs indépendants, deux saisons complètes, dix intersaisons et des comparaisons tactiques contrôlées.
+Les 16 suites JavaScript couvrent notamment la sélection des 23, les spécialistes de première ligne, les remplacements, la discipline, les reprises de jeu, les sauvegardes, les finances, la formation, les tactiques, le recrutement et la cohérence de la 2D. Les scénarios comprennent 250 matchs indépendants, deux saisons complètes, dix intersaisons et des comparaisons tactiques contrôlées.
 
 Un test réussi ne prouve pas qu’une règle de rugby est correcte : les lois et dispositions applicables doivent être vérifiées dans le [référentiel rugby](docs/rugby-rules-reference.md).
 
@@ -214,6 +231,14 @@ Comparaison contrôlée : 80 matchs par cas, qualités uniformes à 75, côté t
 - Aucun changement des lois, coefficients, tirages ou résultats. Les comparaisons contrôlées du moteur restent identiques. Les 15 suites passent, dont les nouveaux scénarios de rapport sans mutation, absence d’aléatoire d’affichage, conseils, actions de préparation, suivi dans les deux sens, changements de plan, export/import, données hostiles et conservation des anciens matchs. Le scénario économique ancien a été corrigé pour ne pas contenir le bureau du manager apparu après son époque.
 - Le catalogue initial est extrait dans `dist/world-data.js`, sans changement des valeurs. Le [document sur les données](docs/donnees-du-jeu.md) prépare une future base réelle : saison, sources, identifiants et distinction entre trésorerie de jeu et budget annuel. Les joueurs et montants restent fictifs ; l’import et la migration d’une base réelle restent à réaliser.
 
+### Version 16 — distribution Windows portable
+
+- Un exécutable Windows x64 embarque les ressources du jeu et un serveur local, sans dépendance d’exécution à Python ou Node.js. Edge ou Chrome servent d’affichage dans une fenêtre dédiée, avec repli sur le navigateur par défaut. Aucun compte, accès Internet ou appel à une IA n’est nécessaire pour jouer.
+- `dist/storage.js` conserve l’interface du stockage existant. Sur le web, il utilise le navigateur ; dans la version portable, il reçoit l’adaptateur de fichiers. Les données restent dans un dossier Windows indépendant de l’exécutable. Les écritures sont confirmées sur disque, avec copie précédente, refus des conflits et récupération conservant un fichier illisible.
+- Les sauvegardes JSON existantes permettent le transfert dans les deux sens ; les matchs importés reprennent en pause. Une erreur de disque empêche une fausse confirmation de sauvegarde. « Enregistrer et quitter » sauvegarde avant de demander l’arrêt du lanceur.
+- Les polices Barlow Condensed et DM Sans deviennent locales, avec leurs licences. Le moteur et les règles sportives ne changent pas. La version en ligne n’est pas automatiquement remplacée par cette livraison Windows.
+- Les 16 suites JavaScript passent, ainsi que les tests Go du stockage, des accès locaux, du verrouillage et des erreurs. Le test du binaire natif vérifie l’écriture réelle, l’arrêt puis la reprise avec une nouvelle origine. L’interface a été contrôlée avec le stockage sur disque : création, match, pause, rechargement et fermeture. La compilation Windows et le format PE x64 sont vérifiés ; le double-clic Windows, l’ouverture du navigateur sur ce système et l’acceptation de l’exécutable non signé restent à confirmer sur le poste cible.
+
 ## Limites actuelles
 
-Joueurs et finances fictifs. Départages du championnat et prolongations simplifiés. Pas de blessures en cours de rencontre, protocole commotion, génération de rouges directs, compétitions européennes, règles JIFF ou promotion/relégation. La polyvalence au-delà de la famille de poste n’est pas simulée. Le terrain 2D illustre les actions sans simulation physique complète. Les sauvegardes restent locales à un navigateur, sans synchronisation en ligne.
+Joueurs et finances fictifs. Départages du championnat et prolongations simplifiés. Pas de blessures en cours de rencontre, protocole commotion, génération de rouges directs, compétitions européennes, règles JIFF ou promotion/relégation. La polyvalence au-delà de la famille de poste n’est pas simulée. Le terrain 2D illustre les actions sans simulation physique complète. Les sauvegardes restent locales au navigateur pour la version web, ou au dossier de données pour la version Windows, sans synchronisation en ligne.

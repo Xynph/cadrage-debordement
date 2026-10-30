@@ -1,0 +1,5 @@
+'use strict';
+// Même moteur : stockage du navigateur sur le web, fichiers dans l’application portable.
+const gameStorage=window.CDOfflineStorage||localStorage;
+function storageLocationText(){return gameStorage.offline?'Fichiers sur cet ordinateur':'Sur ce navigateur uniquement'}
+function offlineStorageInfo(){if(!gameStorage.offline)return '';return `<section class="card"><h2>Votre application hors ligne</h2><p>La carrière est enregistrée dans un dossier séparé de l’application. Remplacer l’exécutable ne supprime pas ces données.</p><p class="help">Dossier : ${visualEscape(gameStorage.directory)}</p>${gameStorage.recovered?'<div class="notice">Une copie locale précédente a été récupérée. Le fichier illisible a été conservé dans le dossier de données.</div>':''}<div class="contractactions"><button onclick="window.CDOfflineAction('open-folder')">Ouvrir le dossier des données</button><button onclick="window.CDOfflineAction('quit')">Enregistrer et quitter</button></div><p class="help">Gardez aussi un export JSON pour protéger votre carrière en cas de panne de l’ordinateur.</p></section>`}

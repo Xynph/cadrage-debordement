@@ -1,0 +1,60 @@
+CADRAGE DEBORDEMENT — VERSION WINDOWS PORTABLE 16
+
+PREMIER LANCEMENT
+1. Téléchargez l’archive ZIP sur votre ordinateur Windows.
+2. Faites un clic droit sur le ZIP, puis « Extraire tout ».
+3. Ouvrez le dossier extrait et double-cliquez sur CadrageDebordement.exe.
+4. Le jeu ouvre sa propre fenêtre avec Edge ou Chrome, s’il est disponible.
+   Sinon, il utilise votre navigateur par défaut.
+
+Aucune installation de Python, Node.js ou Go n’est nécessaire.
+Cette version est destinée à Windows 10/11, 64 bits x64.
+Le jeu, les polices et le moteur sont embarqués. Internet n’est pas nécessaire
+pour jouer. Les liens d’aide vers les sites officiels nécessitent une connexion.
+
+REPRENDRE UNE PARTIE DE LA VERSION EN LIGNE
+1. Dans le jeu en ligne, ouvrez Sauvegardes.
+2. Cliquez sur « Télécharger la sauvegarde JSON » et conservez le fichier.
+3. Lancez l’application Windows. À l’accueil, cliquez sur le bouton d’import.
+4. Choisissez le JSON, vérifiez la carrière puis confirmez son remplacement.
+Un match en cours est repris en pause. Aucun transfert automatique n’a lieu.
+Le même fichier peut servir pour revenir ensuite à la version en ligne.
+
+OU SONT LES SAUVEGARDES ?
+Les données sont conservées dans :
+%LOCALAPPDATA%\CadrageDebordement
+
+Collez cette ligne dans la barre d’adresse de l’Explorateur Windows pour ouvrir
+le dossier. Un bouton est aussi disponible dans l’écran Sauvegardes du jeu.
+
+« donnees.json » contient la sauvegarde automatique et les préférences.
+« donnees-precedentes.json » conserve l’état précédent de ce stockage.
+Le dossier « Profil » contient les préférences de la fenêtre du navigateur.
+Gardez également des exports JSON : ils protègent votre partie si l’ordinateur
+ou son disque tombe en panne. Fermez le jeu avant de copier tout ce dossier.
+
+METTRE LE JEU A JOUR
+1. Utilisez « Enregistrer et quitter » dans le jeu, puis fermez sa fenêtre.
+2. Décompressez la nouvelle version dans un nouveau dossier.
+3. Lancez le nouvel exécutable. Il retrouve le même dossier de données Windows.
+Ne supprimez pas le dossier %LOCALAPPDATA%\CadrageDebordement pour une mise à jour.
+
+FERMER LE JEU
+Le bouton « Enregistrer et quitter » sauvegarde et arrête le lanceur local.
+Si vous fermez simplement la fenêtre, le serveur local s’arrête après environ
+cinq minutes sans activité. Il ne communique qu’avec votre ordinateur.
+
+SI UN PROBLEME SURVIENT
+Ne laissez pas plusieurs fenêtres du jeu ouvertes en même temps. Si une autre
+fenêtre a modifié les données, une écriture obsolète est refusée pour éviter de
+remplacer silencieusement la carrière. Fermez les doublons et relancez le jeu.
+En cas d’échec de sauvegarde, exportez votre carrière avant de fermer.
+
+L’exécutable est une première livraison non signée numériquement. Le démarrage
+sur un véritable Windows reste à confirmer : il a été compilé pour Windows et
+son stockage et son moteur ont été testés dans l’environnement de développement.
+S’il est bloqué sur votre poste, transmettez le message affiché.
+
+Le code et les évolutions sont conservés dans le dépôt GitHub privé
+Xynph/cadrage-debordement. Joueurs et montants financiers restent fictifs.
+Les licences des polices sont incluses dans le dossier Licences.
