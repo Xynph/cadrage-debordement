@@ -112,7 +112,7 @@ function recruitmentNeedsPanel(c=club()){
  '<p class="help">Les recommandations ne recrutent personne automatiquement. Les notes exactes et les qualités d’un candidat non observé restent inconnues avant un rapport. Les transferts gardent leur négociation habituelle.</p></section>';
 }
 function aiRecruitmentWeek(){
- if(S.recruitmentIntelVersion!==1||S.live||S.phase!=='league'||![0,13].includes(S.round))return 0;
+ if(S.recruitmentIntelVersion!==1||S.live||S.phase!=='league'||![0,13].includes(S.round)||(S.season===1&&S.round===0))return 0;
  const e=S.economy,key=S.season+':'+S.round;
  if(e.aiRecruitmentWindow===key)return 0;
  e.aiRecruitmentWindow=key;
