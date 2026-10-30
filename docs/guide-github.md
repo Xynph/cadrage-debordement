@@ -92,3 +92,12 @@ phase de jeu si elles sont visibles.
 - Ne fusionner que si **Validation CI** est verte sur le dernier SHA de la PR ; après fusion vérifier le workflow `push` sur le SHA réel de `main`. Ne pas confondre SHA de fusion et SHA de la PR.
 - Sur `main`, toutes les suites s'exécutent sans exception documentaire. Les branches de travail ne déclenchent pas une deuxième CI `push` : seule la PR est validée. Une PR hors `main` n'est pas couverte.
 - Pour comparer la performance : relever `created_at`, `updated_at` et les durées des jobs dans GitHub Actions, puis additionner les durées facturables de tous les jobs ; la latence et les minutes de calcul ne sont pas équivalentes.
+
+## Circuit court de validation (sans surveillance répétitive)
+
+1. Pendant le codage, exécuter seulement les tests impactés ; la CI de la PR reste complète pour tout changement non documentaire.
+2. Après le dernier commit, laisser GitHub terminer la CI puis utiliser **une seule commande** : `node ci/release-gate.cjs NUMERO_PR` (GitHub CLI `gh` authentifié requis). Elle produit le verdict et l'URL de l'exécution ; aucun sondage continu.
+3. En cas de verdict vert, `node ci/release-gate.cjs NUMERO_PR --merge` refait les contrôles et demande la fusion uniquement avec le SHA attendu. En cas de verdict rouge, ne lire que les logs de la tâche concernée.
+4. Consulter ensuite **une seule fois** la CI `push` de `main` correspondant au commit de fusion.
+
+**Limite de sécurité :** sur ce dépôt privé, la branche `main` n'a pas de protection obligatoire et `allow_auto_merge=false`. La fusion automatique permanente n'est pas activée : ce script impose un garde-fou applicatif mais ne remplace pas une protection GitHub. Ne jamais fusionner via un autre chemin non vérifié. Les commandes n'accélèrent pas les calculs des tests, elles réduisent surtout les consultations redondantes.
