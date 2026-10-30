@@ -5,6 +5,8 @@ const t=context(),run=t.run;
 run('start(0);var p=club().players[0],id=p.id;var before=JSON.stringify(S),storage=localStorage.getItem("bdt-v1")');
 assert.equal(run('S.satisfactionVersion'),1);
 assert.equal(run('p.satisfaction.score'),65);
+assert.ok(run('club().players.every(p=>p.satisfaction?.version===1)'));
+
 assert.ok(run('satisfactionPanel().includes("Satisfaction et promesses V36")'));
 assert.equal(run('satisfactionWageRate(p,"renew")'),0);
 assert.equal(run('JSON.stringify(S)'),run('before'));
