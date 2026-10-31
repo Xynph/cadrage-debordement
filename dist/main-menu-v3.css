@@ -96,3 +96,93 @@
 .cd3-sidebar-foot p{color:var(--cd3-muted)}
 .cd3-topline{background:#0b251beb;padding:10px 12px}
 body:has(.cd3-menu) #toast{width:max-content;max-width:calc(100vw - 36px)}
+
+
+/* V3 / Fidélité maquette — stade plein écran, trois zones, cartes horizontales.
+   Toutes les images sont locales. Les données et actions restent celles du jeu. */
+.cd3-menu{--cd3-orange:#ff9d27;--cd3-ink:#f8fbf8;--cd3-muted:#d0ddd3;--cd3-line:#668579;min-height:100svh;background:#061e19;overflow:hidden}
+.cd3-backdrop{position:fixed;inset:0;background:linear-gradient(90deg,rgba(4,24,20,.80) 0%,rgba(4,24,20,.48) 35%,rgba(3,23,18,.22) 75%),linear-gradient(0deg,#05231d 0%,#09281ed8 12%,transparent 40%),url("assets/menu-stadium.webp") center center/cover no-repeat}
+.cd3-menu:after{content:"";position:fixed;inset:auto 0 0;height:9vh;z-index:-1;pointer-events:none;background:linear-gradient(0deg,#061b17d9,transparent)}
+.main-menu-layout.cd3-layout{display:grid;grid-template-columns:minmax(232px,23%) minmax(0,1fr) minmax(258px,25%);grid-template-rows:minmax(0,1fr) auto;min-height:100svh;align-items:stretch}
+.cd3-sidebar{grid-column:1;grid-row:1/3;padding:34px clamp(15px,2.2vw,34px) 24px;gap:44px;background:linear-gradient(90deg,#051d19ed,#061e19d9);border-right:1px solid #8bad973b}
+.cd3-brand{display:block;font:italic 900 clamp(31px,3.0vw,54px)/.82 'Barlow Condensed','Arial Narrow',sans-serif;letter-spacing:-.6px;transform:skew(-5deg);text-shadow:0 3px 12px #0007}
+.cd3-brand span{display:block}
+.cd3-brand b{color:#f5f7f0;display:block;border-bottom:4px solid var(--cd3-orange);padding-bottom:13px}
+.cd3-brand small{font:700 12px/1.3 'DM Sans',sans-serif;letter-spacing:4px;text-align:center;transform:skew(5deg);margin-top:14px;color:#e6eee6}
+.main-menu-actions.cd3-nav{display:flex;flex-direction:column;gap:1px;box-shadow:none}
+.main-menu-actions.cd3-nav button{border:0;border-bottom:1px solid #7e9a8455;border-radius:0;background:transparent;min-height:60px;padding:10px 14px;color:#f7fbf7;font-size:clamp(15px,1.2vw,19px);font-weight:750;text-align:left;gap:16px}
+.main-menu-actions.cd3-nav button>span{flex:0 0 24px;width:24px;font-size:25px;color:#e2eee5;text-align:center}
+.main-menu-actions.cd3-nav button.cd3-current:not(:disabled){background:linear-gradient(100deg,#ffad38,#ff8c14);border:1px solid #ffae42;color:#101f18;border-radius:10px;box-shadow:0 2px 0 #ffd084,0 9px 24px #0008;margin-bottom:8px}
+.main-menu-actions.cd3-nav button.cd3-current:not(:disabled)>span{color:#10251e}
+.main-menu-actions.cd3-nav button:hover:not(:disabled){background:#194439df}
+.main-menu-actions.cd3-nav button.cd3-current:hover:not(:disabled){background:#ffb848;color:#071a14}
+.cd3-sidebar-foot{margin-top:auto;padding-top:120px;background:linear-gradient(0deg,#0e342abf,transparent);letter-spacing:1px}
+.cd3-supporters{height:65px;width:100%;opacity:.5;background:repeating-linear-gradient(105deg,transparent 0 14px,#65806a 15px 17px,transparent 18px 24px);mask-image:linear-gradient(0deg,#000,transparent)}
+.cd3-stage{grid-column:2;grid-row:1;padding:clamp(127px,17vh,185px) clamp(12px,1.6vw,28px) 12px;display:block;min-width:0}
+.cd3-topline{display:none}
+.cd3-content{animation:cd3-enter .25s ease-out}
+.cd3-section-head{display:block;margin-bottom:22px}
+.cd3-section-head h1{font:800 clamp(27px,2.3vw,40px)/1.07 'DM Sans',sans-serif;color:#fff;letter-spacing:-1px;margin:0 0 7px}
+.cd3-section-head h1:before{content:"";display:inline-block;width:4px;height:28px;background:var(--cd3-orange);margin-right:14px;vertical-align:-4px}
+.cd3-section-head p{margin:0 0 0 20px;color:#d8e7dc;font-size:clamp(13px,1.2vw,17px);line-height:1.4}
+.cd3-section-head .cd3-eyebrow{display:none}
+.cd3-cards{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
+.cd3-career,.cd3-career:first-child{grid-column:auto;min-height:91px;display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #789688;border-radius:15px;background:linear-gradient(98deg,#08261fdc,#071f1ae8);box-shadow:0 4px 14px #0005}
+.cd3-career.cd3-active{border:2px solid #ff9925;box-shadow:0 0 0 1px #ffb13b,0 0 18px #ff9a2b8a,inset 0 0 12px #ff9a212c}
+.cd3-slot-number{font:700 10px 'DM Sans',sans-serif;color:#b4c8bb;flex:0 0 22px;text-align:center;letter-spacing:0}
+.cd3-club{flex:1;min-width:0;display:flex;align-items:center;gap:12px;margin:0}
+.cd3-crest{width:50px;height:59px;flex:0 0 50px;font-size:18px;filter:drop-shadow(0 2px 4px #0008)}
+.cd3-club-copy{min-width:0}
+.cd3-club h3{font:800 clamp(15px,1.25vw,22px)/1.08 'DM Sans',sans-serif;white-space:normal;overflow-wrap:anywhere;margin:0 0 6px}
+.cd3-club p{color:#f2f6ec;font:600 11px/1.4 'DM Sans',sans-serif;margin:0}
+.cd3-season-progress{color:#b6d3bf;font:500 10px/1.6 'DM Sans',sans-serif}
+.cd3-card-scene{flex:0 0 clamp(76px,8vw,142px);height:66px;border-radius:12px;background:linear-gradient(0deg,#09241e88,transparent),url("assets/menu-stadium.webp") 60% 63%/auto 250px no-repeat;box-shadow:inset 0 0 0 1px #ffffff29}
+.cd3-career:nth-child(2) .cd3-card-scene{background-position:20% 52%;filter:hue-rotate(12deg)}
+.cd3-career:nth-child(3) .cd3-card-scene{background-position:85% 35%;filter:hue-rotate(-18deg)}
+.cd3-card-meta{display:flex;flex-direction:column;gap:3px;min-width:0;flex:0 0 clamp(100px,9vw,155px);font:500 10px/1.3 'DM Sans',sans-serif;color:#bfd0c6}
+.cd3-card-meta time{font:650 12px/1.35 'DM Sans',sans-serif;color:#fff}
+.cd3-card-meta .cd3-universe{border:0;padding:0;font-size:9px;color:#a7c6b1}
+.cd3-card-actions{flex:0 0 45px;display:grid;gap:3px;margin:0;align-items:center;justify-items:center}
+.cd3-menu .cd3-resume{width:36px;height:37px;min-height:0;padding:0;display:grid;place-items:center;color:#fff;background:transparent;border:0;border-radius:7px;font-size:0}
+.cd3-menu .cd3-resume span{font:400 36px/1 'DM Sans',sans-serif}
+.cd3-menu .cd3-delete{min-height:0;background:#45645999;border:0;border-radius:8px;color:#f5f7f1;padding:1px 10px;line-height:1.1;font-size:14px}
+.cd3-menu .cd3-resume:hover{background:#ff9d273b;color:#fff}
+.cd3-empty{border-style:solid;background:linear-gradient(110deg,#09271fd9,#08231cbb)}
+.cd3-empty .cd3-create{flex:1;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:18px;text-align:left;min-height:67px;padding:0;background:transparent}
+.cd3-add{display:grid;place-items:center;flex:0 0 47px;width:47px;height:47px;border-radius:50%;background:#6381743d;border:1px solid #b3cbbb66;font:400 36px/1 sans-serif;color:#fff}
+.cd3-empty-copy{display:grid;gap:4px;flex:1}
+.cd3-create strong,.cd3-empty-copy strong{font:800 17px/1.1 'DM Sans',sans-serif;color:#fff}
+.cd3-empty-copy small{font:500 11px/1.3 'DM Sans',sans-serif;color:#cde0d1}
+.cd3-chevron{font-size:31px;color:#f8fbf6;font-weight:300}
+.cd3-broken{gap:15px}
+.cd3-broken-copy{flex:1;min-width:0}
+.cd3-broken h3{font-size:15px}
+.cd3-broken p{font-size:10px;line-height:1.4}
+.cd3-menu .cd3-back{margin-top:13px;font-size:12px}
+.cd3-legacy{background:#08291fdd}
+.cd3-right{grid-column:3;grid-row:1;min-width:0;padding:18px clamp(10px,1.2vw,24px) 14px 8px;display:flex;flex-direction:column;gap:14px}
+.cd3-right-head{display:flex;align-items:center;justify-content:flex-end;gap:14px;margin-bottom:clamp(84px,12vh,135px);color:#fff;font-size:10px;letter-spacing:1.5px}
+.cd3-menu .cd3-right-settings{border:none;background:#0d3027b8;border-radius:50%;width:42px;height:42px;min-height:42px;padding:0;text-align:center;font-size:25px;color:#f4f6ee}
+.cd3-promo{border:1px solid #9db3a98a;border-radius:17px;padding:28px 20px 18px;min-height:200px;display:flex;align-items:flex-start;position:relative;overflow:hidden;background:linear-gradient(110deg,#08251dea,#09271f63),url("assets/menu-stadium.webp") 70% 30%/auto 350px no-repeat}
+.cd3-promo>span{position:relative;z-index:1;font:italic 800 clamp(19px,1.75vw,29px)/1.18 'DM Sans',sans-serif;color:#fff;text-shadow:0 2px 10px #000a}
+.cd3-promo b{font-weight:800}
+.cd3-promo i{position:absolute;left:22px;bottom:26px;height:4px;width:85px;transform:rotate(-7deg);background:var(--cd3-orange)}
+.cd3-menu .cd3-feature{width:100%;min-height:109px;background:#082b22d9;border:1px solid #729584;border-radius:16px;display:flex;align-items:center;gap:14px;padding:16px 14px;color:#fff}
+.cd3-menu .cd3-feature:hover{background:#16503e}
+.cd3-feature-icon{color:var(--cd3-orange);font-size:38px;flex:0 0 43px;text-align:center}
+.cd3-feature>span:nth-child(2){flex:1;display:flex;flex-direction:column;gap:7px}
+.cd3-feature strong{font:800 17px/1.15 'DM Sans',sans-serif}
+.cd3-feature small{font:500 11px/1.45 'DM Sans',sans-serif;color:#d5e4d9}
+.cd3-right-bottom{flex:1;min-height:28px}
+.cd3-footer{grid-column:2/4;grid-row:2;display:flex;align-items:center;justify-content:space-between;background:#051b17bd;border-top:1px solid #81958940;padding:12px 22px;margin:0;color:#f1f4eb;letter-spacing:0;font-size:11px}
+.cd3-footer kbd{display:inline-block;background:#163a30;border:1px solid #718b80;border-radius:6px;padding:5px 7px;color:#fff;font:700 11px 'DM Sans',sans-serif}
+.cd3-panel{background:#0a271fe8}
+[data-menu-contrast="high"] .cd3-career,[data-menu-contrast="high"] .cd3-promo,[data-menu-contrast="high"] .cd3-feature{background-color:#092019;color:#fff}
+@media(min-width:1600px){.cd3-stage{padding-top:clamp(160px,19vh,215px)}.cd3-career{min-height:102px}.cd3-card-scene{height:75px}}
+@media(max-width:1250px){.main-menu-layout.cd3-layout{grid-template-columns:210px minmax(0,1fr) 250px}.cd3-sidebar{padding:24px 13px}.cd3-brand{font-size:34px}.cd3-stage{padding-top:145px}.cd3-card-scene{flex-basis:72px}.cd3-card-meta{flex-basis:110px}.cd3-career{padding:8px;gap:7px}.cd3-club h3{font-size:15px}.cd3-promo{padding:20px 14px}.cd3-feature-icon{flex-basis:28px;font-size:29px}}
+@media(max-width:1050px){.main-menu-layout.cd3-layout{grid-template-columns:205px minmax(0,1fr);grid-template-rows:auto auto auto}.cd3-sidebar{grid-row:1/4}.cd3-stage{grid-column:2;grid-row:1;padding:110px 20px 16px}.cd3-right{grid-column:2;grid-row:2;padding:0 20px 20px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cd3-right-head,.cd3-right-bottom{display:none}.cd3-promo{grid-column:1/-1;min-height:112px;background-size:cover}.cd3-menu .cd3-feature{min-height:90px}.cd3-footer{grid-column:2;grid-row:3}.cd3-card-scene{flex-basis:110px}}
+@media(max-width:740px){.main-menu-layout.cd3-layout{display:flex;flex-direction:column;min-height:100svh}.cd3-sidebar{padding:20px 18px;gap:17px;border-right:0;border-bottom:1px solid #779a8988}.cd3-brand{font-size:34px;width:max-content;max-width:100%}.cd3-brand small{font-size:9px}.main-menu-actions.cd3-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.main-menu-actions.cd3-nav button{font-size:12px;min-height:47px;padding:9px;gap:5px;border:1px solid #547d6c66;border-radius:6px}.main-menu-actions.cd3-nav button>span{font-size:18px;flex-basis:17px}.cd3-sidebar-foot{display:none}.cd3-stage{padding:20px 16px 8px}.cd3-section-head h1{font-size:27px}.cd3-section-head p{font-size:13px}.cd3-card-scene{flex-basis:90px}.cd3-card-meta{flex-basis:116px}.cd3-right{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:12px 16px;gap:9px}.cd3-promo{grid-column:1/-1;min-height:130px}.cd3-right-head,.cd3-right-bottom{display:none}.cd3-menu .cd3-feature{min-height:92px}.cd3-footer{padding:10px 16px;gap:8px;flex-wrap:wrap}.cd3-backdrop{background-position:60% center}}
+@media(max-width:525px){.main-menu-actions.cd3-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.main-menu-actions.cd3-nav button{font-size:13px}.cd3-career,.cd3-career:first-child{min-height:85px;gap:8px;border-radius:11px}.cd3-club{gap:8px}.cd3-crest{width:38px;height:46px;flex-basis:38px;font-size:14px}.cd3-club h3{font-size:14px}.cd3-club p{font-size:10px}.cd3-season-progress{font-size:9px}.cd3-card-scene{display:none}.cd3-card-meta{flex:0 0 90px;font-size:9px}.cd3-card-meta time{font-size:10px}.cd3-card-meta .cd3-universe{font-size:8px}.cd3-card-actions{flex-basis:28px}.cd3-menu .cd3-resume{width:30px}.cd3-menu .cd3-delete{padding:1px 5px}.cd3-slot-number{flex-basis:13px;font-size:9px}.cd3-add{flex-basis:40px;width:40px;height:40px}.cd3-empty-copy strong{font-size:14px}.cd3-menu .cd3-feature{padding:12px;gap:6px}.cd3-feature strong{font-size:14px}.cd3-feature small{font-size:10px}.cd3-feature-icon{flex-basis:24px;font-size:25px}.cd3-footer>span:last-child{display:none}}
+@media(max-width:370px){.cd3-card-meta .cd3-universe{display:none}.cd3-card-meta{flex-basis:76px}.cd3-club h3{font-size:13px}.cd3-menu .cd3-feature{min-height:112px}}
+@media(prefers-reduced-motion:reduce){.cd3-menu *, .cd3-menu *:before,.cd3-menu *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+[data-cd-motion="reduced"] .cd3-menu *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
