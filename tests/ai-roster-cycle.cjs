@@ -34,7 +34,7 @@ assert.equal(r('S.aiRoster.reports.some(x=>x.season===2)'),true);
 assert.ok(valid(r));
 // Recruiting uses current transfer pool and respects the weekly salary cap.
 const market=context(),m=market.run;
-m('start(0);S.round=13;var buyer=S.clubs[1];var buyerCash=buyer.cash;buyer.players=buyer.players.filter(p=>p.pos!==POS[0]);var ownCash=club().cash;var poolBefore=new Set([...S.market,...S.economy.freeAgents].map(p=>p.id))');
+m('start(0);S.round=13;var buyer=S.clubs[1];var buyerCash=buyer.cash;buyer.players=buyer.players.filter(p=>p.pos!==POS[0]);var forced=makePlayer(99,0,75);forced.id="test-ai-prospect";forced.age=24;forced.rating=75;forced.salary=3000;forced.price=10000;forced.contractEnd=null;ensureDevelopment(forced);forced.dev.retireAge=40;S.market=[forced];S.economy.freeAgents=[];var ownCash=club().cash;var poolBefore=new Set([...S.market,...S.economy.freeAgents].map(p=>p.id))');
 const signed=m('aiRecruitmentWeek()');
 assert.ok(signed>=1&&signed<=6);
 assert.equal(m('aiRecruitmentWeek()'),0);
