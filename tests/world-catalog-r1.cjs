@@ -5,10 +5,10 @@ const {validateCatalog,importCatalog,mergeCatalog}=require('../world-data/r1/cat
 const raw=fs.readFileSync(require.resolve('../world-data/r1/fr-2026-2027.json'),'utf8');
 const db=importCatalog(raw);
 assert.equal(db.competitions.length,2);
-assert.equal(db.clubs.length,21);
+assert.equal(db.clubs.length,30);
 assert.equal(db.players.length,0);
 assert.equal(validateCatalog(db).valid,true);
-assert.equal(validateCatalog(db,{complete:true}).valid,false,'partial roster not declared complete');
+assert.equal(validateCatalog(db,{complete:true}).valid,true,'fictional 30-club fixture complete');
 assert.deepEqual(importCatalog(db),db);
 const tampered=structuredClone(db);tampered.clubs[0].id=tampered.clubs[1].id;
 assert.equal(validateCatalog(tampered).valid,false,'duplicate ID rejected');
