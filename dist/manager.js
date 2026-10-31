@@ -56,8 +56,78 @@ function officeDecisions(){
  }
  return out;
 }
+// Pilote de saison : lecture seule des données déjà persistées par le moteur.
+// Aucun coefficient sportif, transaction ni champ de sauvegarde supplémentaire.
+function managerSeasonSnapshot(){
+ const team=club(),players=team.players,academy=S.development?.academy||[];
+ const expiring=players.filter(p=>p.contractEnd===S.season);
+ const injured=players.filter(p=>p.injury>0);
+ const youngsters=players.filter(p=>p.age<=23);
+ const offers=S.economy?.offers||[];
+ const reports=S.manager?.reports||[];
+ const missions=S.manager?.missions||[];
+ const available=42-players.length;
+ const seasonClosed=S.phase==='ended';
+ const lineupErrors=seasonClosed?[]:sheetErrors();
+ const priorities=[];
+ const add=(id,title,body,route,tab,weight)=>{
+  priorities.push({id,title,body,route,tab:tab||'',weight});
+ };
+ if(lineupErrors.length)add('sheet','Feuille de match incomplète',
+  lineupErrors[0],'team','',100);
+ if(expiring.length)add('expiring',expiring.length+' contrat(s) expirent cette saison',
+  'Anticipez les départs avant de sélectionner les remplaçants.','market','contracts',
+  S.round>=19?95:75);
+ if(injured.length)add('injured',injured.length+' joueur(s) blessé(s)',
+  'Contrôlez les postes couverts et les solutions disponibles.','team','',72);
+ if(offers.length)add('offers',offers.length+' offre(s) de transfert en cours',
+  'Étudiez les propositions avant leur échéance.','market','sales',80);
+ if(team.cash<0)add('cash','Trésorerie sous zéro',
+  'Examinez les finances et engagements avant tout recrutement.','finance','',98);
+ else if(team.cash<500000)add('cash','Marge financière réduite',
+  'Vérifiez la trésorerie avant une promotion ou une négociation.','finance','',65);
+ if(academy.length&&available>0)add('academy',academy.length+' espoir(s) au centre',
+  available+' place(s) disponibles chez les professionnels.','formation','',48);
+ const active=missions.filter(m=>m.status==='active'||m.status==='queued');
+ if(active.length)add('missions',active.length+' mission(s) de scouting en cours',
+  'Retrouvez les recherches et rapports de votre recruteur.','recruitment','',43);
+ else if(!seasonClosed&&reports.length===0)add('scout','Aucun rapport de recrutement',
+  'Une mission ciblée peut éclairer vos prochains choix.','recruitment','',38);
+ if(!seasonClosed&&S.round>=20&&expiring.length===0)add('renewals','Contrats anticipés',
+  'Aucune expiration de contrat détectée pour cette saison.','market','contracts',12);
+ priorities.sort((a,b)=>b.weight-a.weight||a.id.localeCompare(b.id,'fr'));
+ return {
+  season:S.season,round:S.round,phase:S.phase,
+  professionals:players.length,available:Math.max(0,available),
+  academy:academy.length,youngProfessionals:youngsters.length,
+  expiring:expiring.length,injured:injured.length,offers:offers.length,
+  activeMissions:active.length,reports:reports.length,cash:team.cash,
+  weeklyPayroll:players.reduce((sum,p)=>sum+(Number.isFinite(p.salary)?p.salary:0),0),
+  priorities:priorities.slice(0,5)
+ };
+}
+function managerSeasonPanel(){
+ const p=managerSeasonSnapshot();
+ const rows=p.priorities.map(x=>'<button type="button" class="office-decision" onclick="officeAction(\''+
+  x.route+'\',null,\''+x.tab+'\')"><strong>'+x.title+'</strong><span>'+x.body+'</span><b>→</b></button>').join('');
+ return '<section class="card" aria-label="Pilotage de saison">'+
+  '<div class="cardtitle"><h2>Piloter votre saison</h2><span class="tag">PLAN D’ACTION</span></div>'+
+  '<p class="help">Synthèse issue de la carrière en cours. Ces constats ne modifient ni joueurs ni finances.</p>'+
+  '<div class="office-summary">'+
+   '<div><small>CONTRATS EN FIN DE SAISON</small><strong>'+p.expiring+'</strong></div>'+
+   '<div><small>ESPOIRS AU CENTRE</small><strong>'+p.academy+'</strong></div>'+
+   '<div><small>PLACES CHEZ LES PROS</small><strong>'+p.available+'</strong></div>'+
+   '<div><small>MASSE SALARIALE / SEMAINE</small><strong>'+money(p.weeklyPayroll)+'</strong></div>'+
+  '</div><div class="cardtitle"><h3>Décisions à préparer</h3><span class="tag">'+p.priorities.length+' PISTES</span></div>'+
+  (rows||'<p>Pas de nouvelle échéance détectée. Continuez la préparation sportive.</p>')+
+  '<div class="office-links"><button type="button" onclick="nav(\'formation\')">Suivre la relève →</button>'+
+   '<button type="button" onclick="nav(\'recruitment\')">Explorer le recrutement →</button>'+
+   '<button type="button" onclick="officeAction(\'market\',null,\'contracts\')">Contrats →</button>'+
+   '<button type="button" onclick="nav(\'finance\')">Finances →</button></div>'+
+  '</section>';
+}
 function officeCalendar(){return S.schedule.slice(S.round,Math.min(26,S.round+4)).map((pairs,i)=>{const p=pairs.find(p=>p.includes(S.club)),other=p.find(ci=>ci!==S.club);return `<div class="office-fixture"><span class="calendar-day">J${S.round+i+1}</span>${badge(other)}<div><strong>${S.clubs[other].name}</strong><small>${p[0]===S.club?'À domicile':'À l’extérieur'} · ${S.clubs[p[0]].stadium}</small></div></div>`}).join('')||'<p>Les phases finales suivent le tableau de compétition.</p>'}
-function managerOffice(){const m=S.manager,decisions=officeDecisions(),messages=m.inbox.filter(x=>officeFilter==='all'||officeFilter==='unread'&&!x.read||x.kind===officeFilter);return heading('LE BUREAU DU MANAGER','Votre club, vos décisions.',`Saison ${S.season} · ${label()} · ${m.inbox.filter(x=>!x.read).length} messages non lus`,`<button class="primary" onclick="${S.phase==='ended'?'nextSeason()':"nav('match')"}">${S.phase==='ended'?'Préparer la saison suivante':'Préparer le prochain match'} →</button>`)+`<div class="office-summary"><div><small>TRÉSORERIE</small><strong>${money(club().cash)}</strong></div><div><small>CONDITION DU XV</small><strong>${Math.round(mean(starters().map(p=>p.condition)))}%</strong></div><div><small>CONFIANCE</small><strong>${S.trust}%</strong></div><div><small>CLASSEMENT</small><strong>${ranked().findIndex(c=>c.id===S.club)+1}e</strong></div></div><div class="office-grid"><div class="stack"><section class="card"><div class="cardtitle"><h2>Sur votre bureau</h2><span class="tag">${decisions.length} PRIORITÉS</span></div>${decisions.map(d=>`<button class="office-decision ${d.tone}" onclick="officeAction('${d.action}',null,'${d.tab||''}')"><strong>${d.title}</strong><span>${d.detail}</span><b>→</b></button>`).join('')||'<p>Les principales échéances sont sous contrôle. Préparez le prochain rendez-vous.</p>'}</section><section class="card office-inbox"><div class="cardtitle"><h2>Messages & rapports</h2><span class="tag">${m.inbox.length}</span></div><div class="tabs">${[['all','Tous'],['unread','Non lus'],['staff','Staff'],['recruitment','Recrutement']].map(([key,title])=>`<button class="small ${officeFilter===key?'dark':''}" onclick="officeFilter='${key}';render()">${title}</button>`).join('')}</div>${messages.slice(0,20).map(msg=>`<article class="office-message ${msg.read?'':'unread'}"><small>SAISON ${msg.season} · ÉCHÉANCE ${msg.week} · ${msg.kind==='recruitment'?'RECRUTEMENT':msg.kind==='staff'?'STAFF':'CLUB'}</small><h3>${visualEscape(msg.title)}</h3>${msg.body?`<p>${visualEscape(msg.body)}</p>`:''}<div><button class="small" onclick="officeAction('${msg.action}','${msg.id}')">Ouvrir →</button>${!msg.read?`<button class="small" onclick="markMessage('${msg.id}')">Marquer comme lu</button>`:''}</div></article>`).join('')||'<p>Aucun message dans cette vue.</p>'}</section></div><aside class="stack"><section class="card"><h2>Le calendrier</h2>${officeCalendar()}<button class="small" onclick="nav('league')">Toute la compétition →</button></section><section class="card"><h2>Votre projet sportif</h2><p><b>${TACTICS[S.tactic][0]}</b> · Défense ${DEFENCES[S.defence||'equilibre'][0].toLowerCase()}</p><p>${S.manager.delegation.training?'Préparation déléguée':'Préparation sous votre contrôle'}<br>${S.manager.delegation.lineup?'Sélection déléguée':'Vous choisissez les 23'}</p><div class="office-links"><button onclick="nav('plans')">Plan de jeu →</button><button onclick="nav('staff')">Staff & responsabilités →</button><button onclick="nav('recruitment')">Missions & rapports →</button></div></section><section class="card"><h2>Dernier résultat</h2>${S.lastReport?`<p>${S.clubs[S.lastReport.pair[0]].abbr} <strong>${S.lastReport.score.join(' – ')}</strong> ${S.clubs[S.lastReport.pair[1]].abbr}</p><p>${S.lastReport.analysis[0]}</p>`:'<p>La saison commence. Le premier compte rendu suivra votre rencontre.</p>'}</section></aside></div>`}
+function managerOffice(){const m=S.manager,decisions=officeDecisions(),messages=m.inbox.filter(x=>officeFilter==='all'||officeFilter==='unread'&&!x.read||x.kind===officeFilter);return heading('LE BUREAU DU MANAGER','Votre club, vos décisions.',`Saison ${S.season} · ${label()} · ${m.inbox.filter(x=>!x.read).length} messages non lus`,`<button class="primary" onclick="${S.phase==='ended'?'nextSeason()':"nav('match')"}">${S.phase==='ended'?'Préparer la saison suivante':'Préparer le prochain match'} →</button>`)+`<div class="office-summary"><div><small>TRÉSORERIE</small><strong>${money(club().cash)}</strong></div><div><small>CONDITION DU XV</small><strong>${Math.round(mean(starters().map(p=>p.condition)))}%</strong></div><div><small>CONFIANCE</small><strong>${S.trust}%</strong></div><div><small>CLASSEMENT</small><strong>${ranked().findIndex(c=>c.id===S.club)+1}e</strong></div></div>${managerSeasonPanel()}<div class="office-grid"><div class="stack"><section class="card"><div class="cardtitle"><h2>Sur votre bureau</h2><span class="tag">${decisions.length} PRIORITÉS</span></div>${decisions.map(d=>`<button class="office-decision ${d.tone}" onclick="officeAction('${d.action}',null,'${d.tab||''}')"><strong>${d.title}</strong><span>${d.detail}</span><b>→</b></button>`).join('')||'<p>Les principales échéances sont sous contrôle. Préparez le prochain rendez-vous.</p>'}</section><section class="card office-inbox"><div class="cardtitle"><h2>Messages & rapports</h2><span class="tag">${m.inbox.length}</span></div><div class="tabs">${[['all','Tous'],['unread','Non lus'],['staff','Staff'],['recruitment','Recrutement']].map(([key,title])=>`<button class="small ${officeFilter===key?'dark':''}" onclick="officeFilter='${key}';render()">${title}</button>`).join('')}</div>${messages.slice(0,20).map(msg=>`<article class="office-message ${msg.read?'':'unread'}"><small>SAISON ${msg.season} · ÉCHÉANCE ${msg.week} · ${msg.kind==='recruitment'?'RECRUTEMENT':msg.kind==='staff'?'STAFF':'CLUB'}</small><h3>${visualEscape(msg.title)}</h3>${msg.body?`<p>${visualEscape(msg.body)}</p>`:''}<div><button class="small" onclick="officeAction('${msg.action}','${msg.id}')">Ouvrir →</button>${!msg.read?`<button class="small" onclick="markMessage('${msg.id}')">Marquer comme lu</button>`:''}</div></article>`).join('')||'<p>Aucun message dans cette vue.</p>'}</section></div><aside class="stack"><section class="card"><h2>Le calendrier</h2>${officeCalendar()}<button class="small" onclick="nav('league')">Toute la compétition →</button></section><section class="card"><h2>Votre projet sportif</h2><p><b>${TACTICS[S.tactic][0]}</b> · Défense ${DEFENCES[S.defence||'equilibre'][0].toLowerCase()}</p><p>${S.manager.delegation.training?'Préparation déléguée':'Préparation sous votre contrôle'}<br>${S.manager.delegation.lineup?'Sélection déléguée':'Vous choisissez les 23'}</p><div class="office-links"><button onclick="nav('plans')">Plan de jeu →</button><button onclick="nav('staff')">Staff & responsabilités →</button><button onclick="nav('recruitment')">Missions & rapports →</button></div></section><section class="card"><h2>Dernier résultat</h2>${S.lastReport?`<p>${S.clubs[S.lastReport.pair[0]].abbr} <strong>${S.lastReport.score.join(' – ')}</strong> ${S.clubs[S.lastReport.pair[1]].abbr}</p><p>${S.lastReport.analysis[0]}</p>`:'<p>La saison commence. Le premier compte rendu suivra votre rencontre.</p>'}</section></aside></div>`}
 function staffView(){const m=S.manager;return heading('L’ÉQUIPE AUTOUR DE VOUS','Le staff.','Confiez des responsabilités précises ; vous gardez la décision sur les contrats.')+`<div class="manager-staff-grid"><section class="card"><span class="eyebrow">ADJOINT</span><h2>La sélection</h2><p>Compose les 23 après l’entraînement, avec des joueurs aptes et éligibles à leur poste.</p><label class="delegation-toggle"><input type="checkbox" ${m.delegation.lineup?'checked':''} onchange="setDelegation('lineup',this.checked)"> Déléguer la feuille de match</label><button class="small" onclick="autoLineup();save();render()">Demander une sélection maintenant</button></section><section class="card"><span class="eyebrow">PRÉPARATEUR</span><h2>La charge de travail</h2><p>Choisit récupération sous 75% de condition moyenne du XV ; sinon, travail collectif. La séance utilise les effets habituels d’entraînement.</p><label class="delegation-toggle"><input type="checkbox" ${m.delegation.training?'checked':''} onchange="setDelegation('training',this.checked)"> Déléguer l’entraînement</label></section><section class="card"><span class="eyebrow">RECRUTEUR</span><h2>Les profils à suivre</h2><p>Une mission à la fois, deux journées de travail. Trois missions peuvent attendre. Frais de mission : 5 000 €.</p><button class="dark" onclick="nav('recruitment')">Ouvrir les missions →</button></section></div><div class="notice">Le staff conseille et prépare. Les signatures et les ventes gardent leur confirmation habituelle. Les délégations sont appliquées au prochain coup d’envoi et restent modifiables entre les matchs.</div>`}
 function scoutMissionForm(){return `<section class="card"><h2>Confier une mission</h2><p>Recherche parmi les agents libres de la simulation. La prime et le salaire doivent respecter vos critères.</p><div class="mission-fields"><label>Poste<select id="scout-family">${[0,1,2,3,4,5,6,7,8].map(f=>`<option value="${f}">${POS[FAMILIES.indexOf(f)]}${f===0?' (gauche ou droit)':''}</option>`).join('')}</select></label><label>Âge maximum<input id="scout-age" type="number" min="18" max="40" value="28"></label><label>Prime maximale (€)<input id="scout-budget" type="number" min="0" max="10000000" value="700000"></label><label>Salaire maximal / semaine (€)<input id="scout-wage" type="number" min="1000" max="100000" value="12000"></label></div><button class="primary" onclick="submitScoutMission()" ${club().cash<5000?'disabled':''}>Confier la mission · 5 000 €</button></section>`}
 function scoutingReportHTML(r){const p=managerPool().find(p=>p.id===r.playerId);return `<article class="card scout-report"><div class="cardtitle"><span class="tag">RAPPORT ${r.grade}</span><small>S${r.season} · échéance ${r.week}</small></div><h2>${visualEscape(r.name)}</h2><p>${r.pos} · ${r.age} ans lors du rapport · niveau ${r.note}, potentiel au poste ${r.potential}</p><p>Prime ${money(r.price)} · salaire ${money(r.salary)} / semaine</p><p class="help">${r.grade==='A'?'Renfort potentiel du premier choix.':r.grade==='B'?'Profil proche du premier choix, utile pour la concurrence.':'Profil de complément à comparer à vos solutions actuelles.'} Appréciation à la date du rapport ; les informations connues restent visibles dans cette version.</p>${p?`<div class="matchactions"><button class="small" onclick="inspectPlayer('${p.id}')">Fiche & attributs</button><button class="small" onclick="watchPlayer('${p.id}')">${S.manager.watch.includes(p.id)?'Ne plus suivre':'Suivre'}</button><button class="dark small" onclick="openContract('${p.id}')">Négocier →</button></div>`:`<p class="muted">Ce joueur n’est plus disponible parmi les agents libres.</p>${S.manager.watch.includes(r.playerId)?`<button class="small" onclick="watchPlayer('${r.playerId}')">Ne plus suivre</button>`:''}`}</article>`}
