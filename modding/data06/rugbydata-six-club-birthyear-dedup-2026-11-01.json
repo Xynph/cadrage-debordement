@@ -14,8 +14,8 @@
     "rugbydata-profiles-01..04.json"
   ],
   "stats": {
-    "new": 0,
-    "already": 39,
+    "new": 34,
+    "already": 5,
     "hold": 10,
     "conflict": 0
   },
@@ -31,7 +31,7 @@
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
       "dedupStatus": "already",
-      "earlierSource": "individual-profile",
+      "earlierSource": "individual profile",
       "earlierYear": 1992
     },
     {
@@ -45,8 +45,8 @@
       "status": "hold_no_dual_match",
       "validAtCareerStart": null,
       "dedupStatus": "hold",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1996
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "dax",
@@ -58,9 +58,9 @@
       "rugbyDataId": "1295",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2004
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "dax",
@@ -73,7 +73,7 @@
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
       "dedupStatus": "already",
-      "earlierSource": "individual-profile",
+      "earlierSource": "individual profile",
       "earlierYear": 1993
     },
     {
@@ -87,7 +87,7 @@
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
       "dedupStatus": "already",
-      "earlierSource": "individual-profile",
+      "earlierSource": "individual profile",
       "earlierYear": 1992
     },
     {
@@ -101,8 +101,8 @@
       "status": "hold_no_dual_match",
       "validAtCareerStart": null,
       "dedupStatus": "hold",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2004
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "dax",
@@ -115,7 +115,7 @@
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
       "dedupStatus": "already",
-      "earlierSource": "individual-profile",
+      "earlierSource": "individual profile",
       "earlierYear": 2001
     },
     {
@@ -129,7 +129,7 @@
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
       "dedupStatus": "already",
-      "earlierSource": "individual-profile",
+      "earlierSource": "individual profile",
       "earlierYear": 2002
     },
     {
@@ -142,9 +142,9 @@
       "rugbyDataId": "1914",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2000
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "nevers",
@@ -156,9 +156,9 @@
       "rugbyDataId": "3222",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2004
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "nevers",
@@ -170,9 +170,9 @@
       "rugbyDataId": "2044",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2000
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "nevers",
@@ -184,9 +184,9 @@
       "rugbyDataId": "1158",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2001
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "nevers",
@@ -198,9 +198,9 @@
       "rugbyDataId": "2048",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1998
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "nevers",
@@ -212,9 +212,9 @@
       "rugbyDataId": "2063",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1995
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "nevers",
@@ -226,9 +226,9 @@
       "rugbyDataId": "2070",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2004
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "nevers",
@@ -240,9 +240,9 @@
       "rugbyDataId": "2067",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2004
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "angouleme",
@@ -254,9 +254,9 @@
       "rugbyDataId": "2183",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2002
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "angouleme",
@@ -268,9 +268,9 @@
       "rugbyDataId": "2157",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1990
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "angouleme",
@@ -282,9 +282,9 @@
       "rugbyDataId": "4067",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2001
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "angouleme",
@@ -310,9 +310,9 @@
       "rugbyDataId": "2262",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2005
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "angouleme",
@@ -324,9 +324,9 @@
       "rugbyDataId": "2178",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1997
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "angouleme",
@@ -338,9 +338,9 @@
       "rugbyDataId": "2181",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1999
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "angouleme",
@@ -352,9 +352,9 @@
       "rugbyDataId": "2155",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2000
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "valence-romans",
@@ -366,9 +366,9 @@
       "rugbyDataId": "2193",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1992
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "valence-romans",
@@ -380,9 +380,9 @@
       "rugbyDataId": "2222",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2003
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "valence-romans",
@@ -394,9 +394,9 @@
       "rugbyDataId": "2208",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1992
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "valence-romans",
@@ -409,8 +409,8 @@
       "status": "hold_no_dual_match",
       "validAtCareerStart": null,
       "dedupStatus": "hold",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1998
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "valence-romans",
@@ -423,8 +423,8 @@
       "status": "hold_no_dual_match",
       "validAtCareerStart": null,
       "dedupStatus": "hold",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2000
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "valence-romans",
@@ -436,9 +436,9 @@
       "rugbyDataId": "2221",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1994
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "valence-romans",
@@ -450,9 +450,9 @@
       "rugbyDataId": "1156",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1997
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "valence-romans",
@@ -464,9 +464,9 @@
       "rugbyDataId": "260",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2002
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "narbonne",
@@ -478,9 +478,9 @@
       "rugbyDataId": "4054",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2003
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "narbonne",
@@ -493,8 +493,8 @@
       "status": "hold_no_dual_match",
       "validAtCareerStart": null,
       "dedupStatus": "hold",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2003
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "narbonne",
@@ -507,8 +507,8 @@
       "status": "hold_no_dual_match",
       "validAtCareerStart": null,
       "dedupStatus": "hold",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1998
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "narbonne",
@@ -520,9 +520,9 @@
       "rugbyDataId": "378",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2004
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "narbonne",
@@ -562,9 +562,9 @@
       "rugbyDataId": "4309",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2001
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "narbonne",
@@ -576,9 +576,9 @@
       "rugbyDataId": "552",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2002
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "narbonne",
@@ -590,9 +590,9 @@
       "rugbyDataId": "4051",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2001
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "nice",
@@ -604,9 +604,9 @@
       "rugbyDataId": "4084",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2001
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "nice",
@@ -618,9 +618,9 @@
       "rugbyDataId": "181",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1993
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "nice",
@@ -632,9 +632,9 @@
       "rugbyDataId": "967",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2001
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "nice",
@@ -646,9 +646,9 @@
       "rugbyDataId": "4085",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 2000
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "nice",
@@ -660,9 +660,9 @@
       "rugbyDataId": "4086",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1995
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "nice",
@@ -674,9 +674,9 @@
       "rugbyDataId": "4087",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1997
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "nice",
@@ -689,8 +689,8 @@
       "status": "hold_no_dual_match",
       "validAtCareerStart": null,
       "dedupStatus": "hold",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1995
+      "earlierSource": null,
+      "earlierYear": null
     },
     {
       "club": "nice",
@@ -702,9 +702,9 @@
       "rugbyDataId": "4089",
       "status": "exact_unique_dual_match",
       "validAtCareerStart": null,
-      "dedupStatus": "already",
-      "earlierSource": "rugbydata-six-club-wikipedia-birthyears-2026-11-01.json",
-      "earlierYear": 1992
+      "dedupStatus": "new",
+      "earlierSource": null,
+      "earlierYear": null
     }
   ]
 }
