@@ -19,6 +19,7 @@ let dark=true,change=null;
 const rootAttrs={};
 a.ctx.document.documentElement={setAttribute(k,v){rootAttrs[k]=v}};
 a.ctx.window.matchMedia=query=>{
+ if(query==='(prefers-reduced-motion: reduce)')return {matches:false};
  assert.equal(query,'(prefers-color-scheme: dark)');
  return {get matches(){return dark},addEventListener(type,fn){assert.equal(type,'change');change=fn}};
 };
