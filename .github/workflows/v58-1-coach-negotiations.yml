@@ -1,0 +1,29 @@
+name: V58.1 negociations entraineurs
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Contrats V58 et V58.1
+        env:
+          CD_V581_REPORT: v581-report.json
+        run: |
+          node --check dist/coach-negotiations.js
+          node tests/v58-coach-career.cjs
+          node tests/v58-1-coach-negotiations.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rapport-v58-1
+          path: v581-report.json
+          if-no-files-found: ignore
