@@ -2,142 +2,143 @@
   "schema": "data06-birth-year-evidence-v1",
   "seasonContext": "2026-2027",
   "sourceRoster": "modding/data06/rugbydata-rosters-2026-10-31.json",
-  "note": "Independent sourced birth years for Rugby Data player IDs whose individual source pages had not been captured. Birth year explicitly published; never calculated from age. Does not replace birthDate or infer membership at 2026-07-01. Four Wikipedia-only records require further independent confirmation.",
+  "note": "Evidence staging only: ONE URL independently opened and verified in this session (Demba Bamba, TF1 Info). Other 19 birth-year candidates require re-opening the linked pages and confirming the explicit date before acceptance. No inference from age, no replacement of existing birth dates, no game integration.",
   "records": [
     {
       "sourceRecordId": "221",
       "name": "Grégory Alldritt",
       "birthYear": 1997,
       "sourceUrl": "https://www.staderochelais.com/les-equipes/gregory-alldritt",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "pending_source_recheck",
+      "reviewRequired": true
     },
     {
       "sourceRecordId": "667",
       "name": "Peato Mauvaka",
       "birthYear": 1997,
       "sourceUrl": "https://www.tf1info.fr/actualite/fiche-joueur-peato-mauvaka-13398/",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "pending_source_recheck",
+      "reviewRequired": true
     },
     {
       "sourceRecordId": "627",
       "name": "Gabin Villière",
       "birthYear": 1995,
       "sourceUrl": "https://www.tf1info.fr/actualite/fiche-joueur-gabin-villiere-13414/",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "pending_source_recheck",
+      "reviewRequired": true
     },
     {
       "sourceRecordId": "83",
       "name": "Romain Buros",
       "birthYear": 1997,
       "sourceUrl": "https://www.tf1info.fr/actualite/fiche-joueur-romain-buros-13838/",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "pending_source_recheck",
+      "reviewRequired": true
     },
     {
       "sourceRecordId": "493",
       "name": "Demba Bamba",
       "birthYear": 1998,
       "sourceUrl": "https://www.tf1info.fr/actualite/fiche-joueur-demba-bamba-14507/",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "17/03/1998"
     },
     {
       "sourceRecordId": "37",
       "name": "Maxime Machenaud",
       "birthYear": 1988,
       "sourceUrl": "https://www.abrugby.fr/equipe/effectif/maxime-machenaud_demi-de-melee",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "pending_source_recheck",
+      "reviewRequired": true
     },
     {
       "sourceRecordId": "284",
       "name": "Ethan Dumortier",
       "birthYear": 2000,
       "sourceUrl": "https://www.lourugby.fr/equipe/ethan-dumortier/",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "pending_source_recheck",
+      "reviewRequired": true
     },
     {
       "sourceRecordId": "558",
       "name": "Paul Gabrillagues",
       "birthYear": 1993,
       "sourceUrl": "https://www.lequipe.fr/fiche/paul-gabrillagues/254811",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "pending_source_recheck",
+      "reviewRequired": true
     },
     {
       "sourceRecordId": "772",
       "name": "Thomas Gallo",
       "birthYear": 1999,
       "sourceUrl": "https://www.lequipe.fr/fiche/thomas-gallo/251099",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "pending_source_recheck",
+      "reviewRequired": true
     },
     {
       "sourceRecordId": "486",
       "name": "Joaquin Oviedo",
       "birthYear": 2001,
       "sourceUrl": "https://www.lequipe.fr/fiche/joaquin-oviedo/250632",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "pending_source_recheck",
+      "reviewRequired": true
     },
     {
       "sourceRecordId": "1908",
       "name": "John Cooney",
       "birthYear": 1990,
       "sourceUrl": "https://www.lequipe.fr/fiche/john-cooney/256013",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "pending_source_recheck",
+      "reviewRequired": true
     },
     {
       "sourceRecordId": "304",
       "name": "Vincent Rattez",
       "birthYear": 1992,
       "sourceUrl": "https://www.lequipe.fr/fiche/vincent-rattez/255648",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "pending_source_recheck",
+      "reviewRequired": true
     },
     {
       "sourceRecordId": "95",
       "name": "Yann Lesgourgues",
       "birthYear": 1991,
       "sourceUrl": "https://www.lequipe.fr/fiche/yann-lesgourgues/257094",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "pending_source_recheck",
+      "reviewRequired": true
     },
     {
       "sourceRecordId": "1096",
       "name": "Mathieu Acebes",
       "birthYear": 1987,
       "sourceUrl": "https://www.lequipe.fr/Rugby/RugbyFicheJoueur4402.html",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "pending_source_recheck",
+      "reviewRequired": true
     },
     {
       "sourceRecordId": "1329",
       "name": "Sevu Reece",
       "birthYear": 1997,
       "sourceUrl": "https://www.crusaders.co.nz/sevu-reece",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "pending_source_recheck",
+      "reviewRequired": true
     },
     {
       "sourceRecordId": "278",
       "name": "Arno Botha",
       "birthYear": 1991,
       "sourceUrl": "https://www.lequipe.fr/Rugby/RugbyFicheJoueur6883.html",
-      "verification": "explicit_birth_date_or_year",
-      "reviewRequired": false
+      "verification": "pending_source_recheck",
+      "reviewRequired": true
     },
     {
       "sourceRecordId": "252",
       "name": "Ihaia West",
       "birthYear": 1992,
       "sourceUrl": "https://en.wikipedia.org/wiki/Ihaia_West",
-      "verification": "explicit_birth_date_or_year",
+      "verification": "pending_source_recheck",
       "reviewRequired": true
     },
     {
@@ -145,7 +146,7 @@
       "name": "Duncan Paia'aua",
       "birthYear": 1995,
       "sourceUrl": "https://en.wikipedia.org/wiki/Duncan_Paia%27aua",
-      "verification": "explicit_birth_date_or_year",
+      "verification": "pending_source_recheck",
       "reviewRequired": true
     },
     {
@@ -153,7 +154,7 @@
       "name": "Aphiwe Dyantyi",
       "birthYear": 1994,
       "sourceUrl": "https://en.wikipedia.org/wiki/Aphiwe_Dyantyi",
-      "verification": "explicit_birth_date_or_year",
+      "verification": "pending_source_recheck",
       "reviewRequired": true
     },
     {
@@ -161,7 +162,7 @@
       "name": "Vasil Lobzhanidze",
       "birthYear": 1996,
       "sourceUrl": "https://en.wikipedia.org/wiki/Vasil_Lobzhanidze",
-      "verification": "explicit_birth_date_or_year",
+      "verification": "pending_source_recheck",
       "reviewRequired": true
     }
   ]
