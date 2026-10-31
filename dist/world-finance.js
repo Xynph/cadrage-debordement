@@ -69,7 +69,7 @@
     club.coachConfidence=sporting.clubs.find(c=>c.id===club.id).coachConfidence;
     const blocked=result.restriction!=='normal';
     if(blocked)events.push({season,clubId:club.id,type:'financialRestriction',level:result.restriction});
-    rows.push({...row,cash:club.cash,debt:club.debt,restriction:result.restriction,spendingSaved:result.spendingSaved,
+    rows.push({...row,cash:club.cash,debt:club.debt,facilities:club.facilities,restriction:result.restriction,spendingSaved:result.spendingSaved,
      investmentDeferred:result.investmentDeferred,investmentPaid:invested,canRecruit:result.canRecruit,sportingPenalty:result.sportingPenalty});
    }
    penalties=nextPenalties;
