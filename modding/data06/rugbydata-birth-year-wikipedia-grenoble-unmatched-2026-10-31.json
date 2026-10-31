@@ -1,0 +1,416 @@
+{
+  "schema": "data06-wikipedia-unmatched-birth-year-evidence-v1",
+  "club": "grenoble",
+  "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+  "sourceSection": "Effectif de la saison 2026-2027",
+  "observedDate": "2026-10-31",
+  "status": "UNMATCHED_SOURCE_OBSERVATIONS_NOT_LNR_ENRICHMENT",
+  "notes": "45 explicit birth years transcribed from public 2026-2027 team table. No Rugby Data sourceRecordId or LNR player ID assigned: exact unique-match and exclusion of already known birth dates still required. Do not increment birth-year coverage or import to game before matching.",
+  "records": [
+    {
+      "name": "Lilian Rossi",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Romain Ruffenach",
+      "birthYear": 1994,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Bastien Soury",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Jérémy Toevalu",
+      "birthYear": 2005,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Eli Eglaine",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Zack Gauthier",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Johannes Jonker",
+      "birthYear": 1994,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Alexandre Langlois",
+      "birthYear": 2007,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Théo Lavoine",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Sascha Mistrulli",
+      "birthYear": 2005,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Giorgi Pertaïa",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Tommy Raynaud",
+      "birthYear": 1994,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Cody Thomas",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "James Fender",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Cameron Holt",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Tristan Labouteley",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Manuel Leindekar",
+      "birthYear": 1997,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Brandon Nansen",
+      "birthYear": 1993,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Noé Theraube",
+      "birthYear": 2005,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Baptiste Abescat",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Antonin Berruyer",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Steven David",
+      "birthYear": 1994,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Victor Guillaumond",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Fergus Lee-Warner",
+      "birthYear": 1994,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Josh Thompson",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Mathis Baret",
+      "birthYear": 2005,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Otunuku Pauta",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Max Clément",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Barnabé Couilloud",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Éric Escande",
+      "birthYear": 1992,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Sam Davies",
+      "birthYear": 1993,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Maël Navizet",
+      "birthYear": 2007,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Marc Palmier",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Romain Fusier",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Julien Hériteau",
+      "birthYear": 1994,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Lalomilo Lalomilo",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Nathan Pozin",
+      "birthYear": 2006,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Edward Sawailau",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Aurélien Callandret",
+      "birthYear": 1997,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Raffaele Costa Storti",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Nadir Megdoud",
+      "birthYear": 1997,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Gerswin Mouton",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Lucas Tauzin",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Thomas Alary",
+      "birthYear": 2006,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    },
+    {
+      "name": "Hugo Trouilloud",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby",
+      "sourceSeason": "2026-2027",
+      "sourceRecordId": null,
+      "lnrId": null,
+      "validAtCareerStart": null
+    }
+  ]
+}
