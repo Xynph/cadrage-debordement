@@ -66,3 +66,7 @@ Ce protocole s'applique à chaque session, même si l'utilisateur ne le rappelle
 - La tentative initiale de commentaire de PR dans cette PR a échoué : GitHub a refusé l'écriture avec `Resource not accessible by integration`. Ne pas prétendre que des commentaires ou notifications de conversation sont envoyés.
 - La conclusion native du contrôle `Validation CI` fait autorité ; le résumé n'autorise pas une fusion. Dernier SHA et CI complète restent exigés, puis CI post-fusion sur `main`.
 - Ne pas faire de sondages répétitifs : se fier aux contrôles natifs GitHub et consulter la page de résultat une fois terminée. GitHub peut notifier les participants selon leurs réglages. Aucun message n'est envoyé automatiquement dans ChatGPT.
+
+## Coordination prioritaire entre les deux comptes — consigne actualisée au 31 octobre 2026
+
+En cas de contradiction avec l'ancien protocole d'alternance ci-dessus, suivre la répartition explicitement décidée par l'utilisateur : **le compte principal est seul responsable des validations finales et des fusions dans `main`** jusqu'à nouvel ordre ; l'autre compte développe les fonctionnalités hors match sur des branches et PR distinctes et **ne les fusionne pas**. Les PR en brouillon restent en préparation : ne jamais les déclarer prêtes ou les fusionner sans vérification de leur état réel et coordination effective avec leur auteur. Privilégier des intégrations jouables et testées plutôt que la multiplication des versions isolées. Les protections GitHub et la validation CI sur le dernier SHA demeurent obligatoires.

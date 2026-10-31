@@ -1,0 +1,13 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {objectiveProgress,boardConfidence,sponsorContract}=require('../dist/board-planning.js');
+assert.deepEqual(objectiveProgress({direction:'minimum',target:8},6),{met:false,gap:-2,remaining:2});
+assert.equal(objectiveProgress({direction:'maximum',target:30},25).met,true);
+assert.equal(objectiveProgress({direction:'minimum',target:8},8).met,true);
+assert.deepEqual(boardConfidence({current:50,results:100,finances:50,youth:50}),{next:58,change:8,score:77.5,warning:false});
+assert.equal(boardConfidence({current:5,results:0,finances:0,youth:0}).warning,true);
+assert.deepEqual(sponsorContract({weeklyPayment:1000,signingBonus:500,winBonus:200,rankingBonus:3000,weeks:10,wins:4,rankingReached:true}),{guaranteed:10500,performance:3800,total:14300,weeklyEquivalent:1430});
+for(const args of [{weeks:0},{weeks:4,wins:5},{weeks:2,weeklyPayment:-1},{weeks:4,rankingReached:1}])assert.throws(()=>sponsorContract(args),RangeError);
+assert.throws(()=>boardConfidence({current:50,results:50,finances:50,youth:50,weights:{results:.7,finances:.7,youth:.1}}),RangeError);
+assert.throws(()=>objectiveProgress({direction:'minimum',target:NaN},2),RangeError);
+console.log(JSON.stringify({passed:true,checks:['objectifs minimum/maximum','confiance pondérée','alerte du conseil','sponsor fixe/variable','validation des données']}));

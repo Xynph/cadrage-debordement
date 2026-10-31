@@ -1,0 +1,14 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {transferCost,affordability,rankCandidates}=require('../dist/transfer-planning.js');
+assert.deepEqual(transferCost({fee:50000,weeklyWage:1000,signingBonus:5000,agentFee:2000,weeks:100}),{upFront:57000,recurring:100000,total:157000,averageWeekly:1570});
+assert.deepEqual(affordability({cash:60000,transferBudget:55000,wageRoom:1100,fee:50000,weeklyWage:1000,signingBonus:5000,weeks:20}),{upFront:55000,recurring:20000,total:75000,averageWeekly:3750,upFrontAffordable:true,wageAffordable:true,affordable:true,cashAfter:5000,transferBudgetAfter:0,wageRoomAfter:100});
+assert.equal(affordability({cash:60000,transferBudget:54000,wageRoom:2000,fee:55000,weeklyWage:1000,weeks:1}).affordable,false);
+assert.equal(affordability({cash:60000,transferBudget:60000,wageRoom:999,fee:100,weeklyWage:1000,weeks:1}).wageAffordable,false);
+const list=[{id:'a',pos:'Pilier',quality:80,fee:100000,weeklyWage:1000},{id:'b',pos:'Pilier',quality:90,fee:100000,weeklyWage:1000}];
+assert.deepEqual(rankCandidates(list).map(p=>p.id),['b','a']);
+assert.equal(list[0].quality,80);
+for(const input of [{weeklyWage:1000,weeks:0},{weeklyWage:-1,weeks:2},{weeklyWage:Infinity,weeks:2}])assert.throws(()=>transferCost(input),RangeError);
+assert.throws(()=>rankCandidates([...list,list[0]]),RangeError);
+assert.throws(()=>rankCandidates(list,{feeWeight:1,qualityWeight:1}),RangeError);
+console.log(JSON.stringify({passed:true,checks:['coût total','contraintes multiples','classement déterministe','absence de mutation','validation de saisies']}));

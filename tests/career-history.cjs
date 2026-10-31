@@ -1,0 +1,17 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {append,summary,leaderboard}=require('../dist/career-history.js');
+const first={type:'trophy',label:'  Championnat ',season:2,clubId:'a'};
+const one=append([],first);
+assert.equal(one[0].label,'Championnat');
+assert.equal(one[0].id,'2:a:trophy:Championnat');
+assert.equal(append(one,first).length,1);
+assert.equal(one.length,1);
+const history=append(append(one,{type:'trophy',label:'Coupe',season:3,clubId:'b'}),{type:'award',label:'Entraîneur',season:3,clubId:'a'});
+assert.deepEqual(summary(history,{clubId:'a'}),{count:2,byType:{trophy:1,award:1},seasons:[2,3],latestSeason:3});
+assert.deepEqual(leaderboard(history),[{clubId:'a',count:1},{clubId:'b',count:1}]);
+assert.equal(append(history,{type:'manager',label:'Changement',season:4,clubId:'a'},{limit:2}).length,2);
+assert.equal(summary([]).latestSeason,null);
+for(const bad of [{...first,type:'finance'},{...first,season:-1},{...first,label:''},{...first,id:''}])assert.throws(()=>append([],bad),RangeError);
+assert.throws(()=>leaderboard([], 'unknown'),RangeError);
+console.log(JSON.stringify({passed:true,checks:['historique sans mutation','déduplication','borne de conservation','statistiques','palmarès','entrées invalides']}));

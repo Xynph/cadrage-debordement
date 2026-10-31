@@ -127,7 +127,29 @@ function validateCollectiveSnapshot(cp){
  saveCheck(saveArray(cp.power,2)&&cp.power.length===2&&cp.power.every(v=>saveNumber(v,.55,1)));
 }
 
-function validateCareer(s){safeTree(s);saveCheck(saveObject(s)&&s.version===2,'Cette version de carrière n’est pas prise en charge.');saveCheck(saveInt(s.club,0,13)&&saveInt(s.season,1,10000)&&saveInt(s.round,0,26));saveCheck(['league','barrage','semi','final','ended'].includes(s.phase));saveCheck(s.phase==='league'?s.round<26:s.round===26);saveCheck(TACTICS[s.tactic]&&TRAIN[s.training]);if(s.defence!==undefined)saveCheck(Object.keys(DEFENCES).includes(s.defence));if(s.difficulty!==undefined)saveCheck(Object.keys(DIFFICULTIES).includes(s.difficulty));if(s.physicalLoadVersion!==undefined)saveCheck(s.physicalLoadVersion===1);if(s.developmentFocusVersion!==undefined)saveCheck(s.developmentFocusVersion===1);if(s.recruitmentIntelVersion!==undefined)saveCheck(s.recruitmentIntelVersion===1);if(s.salaryDemandVersion!==undefined)saveCheck(s.salaryDemandVersion===1);if(s.satisfactionVersion!==undefined)saveCheck(s.satisfactionVersion===1);if(s.relationsVersion!==undefined)saveCheck(s.relationsVersion===1&&s.satisfactionVersion===1);if(s.objectivesVersion!==undefined)saveCheck(s.objectivesVersion===1&&s.satisfactionVersion===1);if(s.v39Version!==undefined)saveCheck(s.v39Version===1);
+function validateCareer(s){safeTree(s);saveCheck(saveObject(s)&&s.version===2,'Cette version de carrière n’est pas prise en charge.');saveCheck(saveInt(s.club,0,13)&&saveInt(s.season,1,10000)&&saveInt(s.round,0,26));saveCheck(['league','barrage','semi','final','ended'].includes(s.phase));saveCheck(s.phase==='league'?s.round<26:s.round===26);saveCheck(TACTICS[s.tactic]&&TRAIN[s.training]);if(s.defence!==undefined)saveCheck(Object.keys(DEFENCES).includes(s.defence));if(s.difficulty!==undefined)saveCheck(Object.keys(DIFFICULTIES).includes(s.difficulty));if(s.physicalLoadVersion!==undefined)saveCheck(s.physicalLoadVersion===1);if(s.developmentFocusVersion!==undefined)saveCheck(s.developmentFocusVersion===1);if(s.recruitmentIntelVersion!==undefined)saveCheck(s.recruitmentIntelVersion===1);if(s.salaryDemandVersion!==undefined)saveCheck(s.salaryDemandVersion===1);if(s.satisfactionVersion!==undefined)saveCheck(s.satisfactionVersion===1);if(s.relationsVersion!==undefined)saveCheck(s.relationsVersion===1&&s.satisfactionVersion===1);if(s.objectivesVersion!==undefined)saveCheck(s.objectivesVersion===1&&s.satisfactionVersion===1);if(s.v39Version!==undefined)saveCheck(s.v39Version===1);if(s.integratedManagementVersion!==undefined)saveCheck(s.integratedManagementVersion===1&&saveObject(s.careerManagement));
+if(s.careerManagement!==undefined){
+ const v=s.careerManagement;
+ saveCheck(s.integratedManagementVersion===1&&saveObject(v)&&v.version===1&&
+ CAREER_ACADEMY_LEVELS.includes(v.academyInvestment)&&saveNumber(v.academySpent,0,1e9)&&
+ saveInt(v.academyWeeks,0,1000)&&saveInt(v.promotions,0,1000)&&saveInt(v.lastBoardRound,-1,26)&&
+ (v.lastAcademyWeek===null||typeof v.lastAcademyWeek==='string'&&/^[1-9]\d{0,4}:\d{1,5}$/.test(v.lastAcademyWeek))&&
+ saveArray(v.boardHistory,24)&&saveArray(v.history,180));
+ if(v.sponsor!==null)saveCheck(saveObject(v.sponsor)&&
+ Object.prototype.hasOwnProperty.call(CAREER_SPONSORS,v.sponsor.key)&&v.sponsor.season===s.season);
+ for(const x of v.boardHistory)saveCheck(saveObject(x)&&saveInt(x.season,1,s.season)&&
+ saveInt(x.round,0,26)&&saveInt(x.previous,0,100)&&saveInt(x.after,0,100)&&
+ ['results','finances','youth','score'].every(k=>saveInt(x[k],0,100)));
+ const eventIds=new Set();
+ for(const x of v.history){
+  saveCheck(saveObject(x)&&typeof x.id==='string'&&x.id.length>0&&x.id.length<=250&&
+   !eventIds.has(x.id)&&['trophy','promotion','relegation','award','record','manager'].includes(x.type)&&
+   typeof x.label==='string'&&x.label.length>0&&x.label.length<=160&&
+   saveInt(x.season,1,s.season)&&typeof x.clubId==='string'&&/^club-(?:[0-9]|1[0-3])$/.test(x.clubId));
+  eventIds.add(x.id);
+ }
+}
+
 if(s.v39!==undefined){
  const v=s.v39;saveCheck(s.v39Version===1&&saveObject(v)&&v.version===1&&
   saveArray(v.audits,12)&&saveArray(v.medical,40)&&saveArray(v.bonds,20)&&
