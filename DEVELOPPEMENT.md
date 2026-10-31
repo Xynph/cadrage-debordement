@@ -636,3 +636,13 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Diagnostic du run #41245174320 sur #157 : quatre assertions historiques obsolètes dans main-menu, saves, ui01-interface et ui02-live-integration. L'import est désormais intitulé « Importer une carrière JSON » ; main-menu-slots.js doit être chargé entre les préférences et game.js.
 - Assertions adaptées au contrôle réel : présence du libellé d'import et ordre explicite des trois scripts, sans imposer leur contiguïté. Aucun contrôle de sauvegarde retiré et aucun fichier de production modifié.
 - Suites ciblées menu, menu V2, sauvegardes et intégrations UI exécutées avec succès. La CI complète du dernier SHA et les scénarios Chromium restent exigés avant fusion ; contrôle push après fusion obligatoire.
+
+## Menu V3 — stade cinématique et bibliothèque jouable (31 octobre 2026)
+
+- Base `main d6032ccf6d5cf1e1ccf68c2c05bffa102f8c4067`, #157 fusionnée après 16 workflows verts et Validation CI sur `0c22a664`. Les cinq workflows push V2 sont réussis, dont Tests JavaScript #41246209282 et résilience #41246209281.
+- Menu vert sombre/orange : stade fictif original généré et livré en WebP local, logo vectoriel, navigation latérale et cinq cartes lisant les snapshots V2. Noms, saisons, journées et dates de sauvegarde réels ; écussons typographiques des clubs, sans inventer de logos officiels.
+- Création guidée : univers et club natifs, choix de difficulté de l'IA persisté dès la création. Aucune option d'entraîneur non implémentée. Réglages indépendants des carrières : contraste, texte, thème, animations et plein écran disponible.
+- Accessibilité : clavier, lien d'évitement, respect de reduced-motion, focus initial et confinement dans les dialogues ; régression reproduite puis corrigée pour le retour de focus après annulation et reconstruction du DOM. Pause et sauvegardes natives conservées. Rendu des cartes en lecture seule, erreurs d'index ou copies corrompues visibles.
+- Tests dédiés Node et Chromium ; le nouveau scénario rejoint le workflow UI01 existant, sans retirer aucun contrôle ni multiplier les jobs. Captures réelles 1440/768/390 dans docs/menu-v3-captures ; détails et limites docs/menu-principal-v3.md. Suite complète et CI exacte nécessaires avant fusion ; aucune validation future présentée comme acquise.
+- Aucun fichier Business, donnée externe, format de sauvegarde ou moteur rugby modifié. Aucun service payant de collecte. Pas de certification Windows native.
+- Prochaine priorité : bureau du manager harmonisé et décisions prioritaires tirées des données réelles de la carrière.
