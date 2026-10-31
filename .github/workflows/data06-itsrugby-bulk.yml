@@ -1,0 +1,41 @@
+name: DATA06 bulk roster capture
+on:
+  pull_request:
+    paths:
+      - tools/data06-itsrugby-bulk.cjs
+      - tests/data06-itsrugby-bulk.test.cjs
+      - .github/workflows/data06-itsrugby-bulk.yml
+  workflow_dispatch:
+    inputs:
+      clubs:
+        description: Comma-separated ItsRugby club slugs, e.g. clermont,toulouse,brive
+        required: true
+        default: clermont,toulouse,brive
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/data06-itsrugby-bulk.test.cjs
+  capture:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - env:
+          DATA06_OUT: data06-itsrugby-capture
+          CLUBS: ${{ inputs.clubs }}
+        run: node tools/data06-itsrugby-bulk.cjs --clubs "$CLUBS"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: itsrugby-roster-capture
+          path: data06-itsrugby-capture/
+          retention-days: 7
