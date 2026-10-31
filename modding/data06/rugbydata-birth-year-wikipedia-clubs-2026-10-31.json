@@ -1,7 +1,7 @@
 {
   "schema": "data06-wikipedia-club-roster-birthyears-v1",
   "collectedAt": "2026-10-31",
-  "scope": "Published dates in club roster tables. Identity matched by full name and exact unique Rugby Data roster sourceRecordId; no inference from age. Wikipedia club tables do not prove affiliation at 2026-07-01.",
+  "scope": "Club-table birth dates, exact roster identity; supplementary evidence only. Not necessarily a certified club affiliation at career start.",
   "records": [
     {
       "club": "toulouse",
@@ -80,6 +80,66 @@
       "birthYear": 2004,
       "birthDateAsPublished": "15 janvier 2004",
       "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_de_Provence_Rugby",
+      "identityMatch": "full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "bordeaux-begles",
+      "sourceRecordId": "4007",
+      "name": "Gabriel Bohn",
+      "birthYear": 2006,
+      "birthDateAsPublished": "14 octobre 2006",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Union_Bordeaux_B%C3%A8gles",
+      "identityMatch": "full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "bordeaux-begles",
+      "sourceRecordId": "3947",
+      "name": "Elyjah Ibsaiene",
+      "birthYear": 2006,
+      "birthDateAsPublished": "2 octobre 2006",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Union_Bordeaux_B%C3%A8gles",
+      "identityMatch": "full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "lyon",
+      "sourceRecordId": "309",
+      "name": "Beka Shvangiradze",
+      "birthYear": 2002,
+      "birthDateAsPublished": "12 juin 2002",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Lyon_olympique_universitaire_rugby",
+      "identityMatch": "full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "lyon",
+      "sourceRecordId": "299",
+      "name": "Théo Millet",
+      "birthYear": 1997,
+      "birthDateAsPublished": "8 juillet 1997",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Lyon_olympique_universitaire_rugby",
+      "identityMatch": "full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "lyon",
+      "sourceRecordId": "159",
+      "name": "Adrien Séguret",
+      "birthYear": 1998,
+      "birthDateAsPublished": "22 juillet 1998",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Lyon_olympique_universitaire_rugby",
+      "identityMatch": "full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "la-rochelle",
+      "sourceRecordId": "4436",
+      "name": "Sione Ahio",
+      "birthYear": 2001,
+      "birthDateAsPublished": "29 janvier 2001",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_rochelais",
       "identityMatch": "full_name_unique_in_source_roster",
       "validAtCareerStart": null
     }
