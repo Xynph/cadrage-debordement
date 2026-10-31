@@ -614,3 +614,10 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Chantier intégrateur sur `perf/ci-five-shards-fast-feedback`, base `main 2fcd3adb` : passage prévu des 82 suites JavaScript de 3 à 5 shards, sans exclusion de tests ni assouplissement de `Validation CI`.
 - Répartition pondérée calculée depuis le `main` de référence : 139/140/139 unités (3) contre 84/84/83/83/84 (5) ; **estimation uniquement**. Le protocole entre les deux comptes ChatGPT privilégie lectures groupées, tests locaux ciblés et absence de polling CI.
 - Résultats GitHub Actions sur la nouvelle PR **à vérifier** avant fusion. Aucune évolution du moteur, des sauvegardes ou du fonctionnement du jeu dans ce chantier.
+
+## Réception UI-02C sur le main actuel — 31 octobre 2026
+
+- Branche `integration/ui02-reception` : intégration de la PR #84 (`0b5241bb`) sur `main 2fcd3adb`, sans conflit ni correctif source supplémentaire. Les correctifs économiques et le format des sauvegardes restent intacts.
+- Candidat testé `e7e8bcf0f2f19ee295dfdc2abe64f34c9f93564a` : 85 suites JS réussies (Node 24.22.1/Windows,169,510s), sauvegardes comprises ; 91 contrôles Google Chrome Windows réussis,320à1440px/deux thèmes, zéro erreur page. Captures ordinateur et mobile inspectées.
+- Preuves et limites dans `docs/reception-ui02/validation.md`, rapports JSON et captures adjacents. Le commit documentaire qui publie ces preuves ne change aucun fichier exécutable par rapport au candidat testé.
+- Pas de validation du lanceur portable, de la CI Linux ou des campagnes spécialisées séparées. Aucun merge tant que la CI complète du dernier SHA n'est pas verte ; pas de double intégration des PR #84/#81/#83, #75 intacte. Réception coordonnée dans l'issue #73.
