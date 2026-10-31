@@ -51,11 +51,78 @@ function collectiveAdvice(){
  const reason=focus==='conquete'?'Le rapport de forces favorise le travail de la conquête.':focus==='pied'?'Le jeu d’occupation et les qualités au pied ressortent du dossier adverse.':'Renforcer la couverture défensive offre un compromis général.';
  return {focus,reason};
 }
+/* UI-05 : le panneau de préparation est déjà chargé dans l'écran Tactiques jouable.
+   Seul le rendu est changé ; coefficients et commandes natives V28 inchangés. */
+const UI05_COLLECTIVE_STYLE=String.raw`
+<style>
+.ui05-collective{--u5-line:var(--ui01-border,#36475c);--u5-accent:var(--ui01-accent,#9380ec);--u5-soft:var(--ui01-soft,#18273a);--u5-ink:var(--ui01-text,#e8effa);--u5-muted:var(--ui01-meta,#b0bccc);color:var(--u5-ink);min-width:0}
+.ui05-collective *{box-sizing:border-box}
+.ui05-collective .ui05-hero{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin:2px 0 16px}
+.ui05-collective .ui05-hero h2{margin:0;font-size:clamp(18px,2.2vw,24px);font-weight:850;letter-spacing:-.02em}
+.ui05-collective .ui05-kicker{font-size:10px!important;color:var(--u5-accent)!important;letter-spacing:.12em;font-weight:900;margin:0 0 6px!important}
+.ui05-collective .ui05-hero .tag{flex-shrink:0}
+.ui05-collective .ui05-summary{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:1px;background:var(--u5-line);border:1px solid var(--u5-line);border-radius:4px;overflow:hidden;margin-bottom:15px}
+.ui05-collective .ui05-metric{padding:12px 14px;background:var(--u5-soft);min-width:0;display:grid;gap:4px}
+.ui05-collective .ui05-metric span{font-size:10px;color:var(--u5-muted);font-weight:750}
+.ui05-collective .ui05-metric strong{font-size:15px;font-weight:850}
+.ui05-collective .ui05-lead{font-size:12px;line-height:1.5;color:var(--u5-muted);margin:0 0 13px}
+.ui05-collective .ui05-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.ui05-collective .ui05-option{display:grid;align-content:start;text-align:left;gap:7px;background:var(--u5-soft);color:var(--u5-ink);border:1px solid var(--u5-line);border-radius:4px;padding:14px;min-height:155px}
+.ui05-collective .ui05-option[aria-pressed="true"]{border-color:var(--u5-accent);box-shadow:inset 0 3px var(--u5-accent)}
+.ui05-collective .ui05-option strong{font-size:14px}
+.ui05-collective .ui05-option small{font-size:11px;line-height:1.45;color:var(--u5-muted)}
+.ui05-collective .ui05-pill{font-size:10px;font-weight:850;color:var(--u5-accent)}
+.ui05-collective .ui05-option-detail{display:flex;flex-wrap:wrap;gap:7px;margin-top:auto}
+.ui05-collective .ui05-option-detail span{font-size:10px;background:color-mix(in srgb,var(--u5-accent) 12%,transparent);border:1px solid var(--u5-line);border-radius:3px;padding:4px 6px}
+.ui05-collective .ui05-notes{margin-top:14px;padding:13px;background:var(--u5-soft);border-left:3px solid var(--u5-accent)}
+.ui05-collective .ui05-notes p{margin:0 0 8px;font-size:11px;line-height:1.5;color:var(--u5-muted)}
+.ui05-collective .ui05-notes p:last-child{margin-bottom:0}
+.ui05-collective button:focus-visible{outline:3px solid var(--u5-accent);outline-offset:3px}
+:root[data-cd-theme="tribune"] .ui05-collective{--u5-line:#ccd6df;--u5-accent:#6044b0;--u5-soft:#edf2f7;--u5-ink:#172a39;--u5-muted:#4c6474}
+@media(max-width:830px){.ui05-collective .ui05-summary{grid-template-columns:1fr 1fr}.ui05-collective .ui05-metric:first-child{grid-column:1/-1}}
+@media(max-width:580px){.ui05-collective .ui05-choices{grid-template-columns:1fr}.ui05-collective .ui05-option{min-height:0}.ui05-collective .ui05-hero{flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){.ui05-collective *{animation:none!important;transition:none!important}}
+</style>
+`;
 function collectivePreparationCard(){
  if(!S||S.phase==='ended')return '';
- const advice=collectiveAdvice(),selected=S.collectiveFocus||'aucune';
- const buttons=Object.entries(COLLECTIVE_FOCI).map(([k,[name,description]])=>'<button class="option '+(selected===k?'selected':'')+'" onclick="setCollectiveFocus(\''+k+'\')" '+(S.live||S.trained?'disabled':'')+'>'+name+'<small>'+description+'</small></button>').join('');
- return '<div class="card collective-preparation"><div class="cardtitle"><h2>04 / Préparation collective rugby</h2><span class="tag">PROCHAIN MATCH</span></div><div class="options">'+buttons+'</div><p class="help">Une séance spécifique par échéance, figée au coup d’envoi. Coût : +4 points de charge cumulée pour les joueurs concernés (V27). Bonus fictifs maximaux : conquête +4 points de probabilité de conservation ; défense −2,5 points de probabilité d’avancée adverse ; pied jusqu’à +3 mètres au dégagement en jeu. Les effets décroissent avec la fatigue.</p><p class="help">Conseil du staff : <strong>'+COLLECTIVE_FOCI[advice.focus][0]+'</strong>. '+advice.reason+' Vous restez décisionnaire.</p></div>';
+ const advice=collectiveAdvice();
+ const selected=Object.prototype.hasOwnProperty.call(COLLECTIVE_FOCI,S.collectiveFocus)?S.collectiveFocus:'aucune';
+ const locked=!!(S.live||S.trained||S.collectivePrepVersion!==1);
+ const fifteen=starters(),fatigue=mean(fifteen.map(p=>physicalLoadValue(p)));
+ const chosen=COLLECTIVE_FOCI[selected][0],recommended=COLLECTIVE_FOCI[advice.focus][0];
+ const stats=Object.entries(COLLECTIVE_FOCI).map(([key,[name,description]])=>{
+  const people=key==='aucune'?[]:fifteen.filter(p=>!p.injury&&collectiveSpecialist(p,key));
+  const loads=people.map(p=>physicalLoadValue(p));
+  const average=loads.length?Math.round(mean(loads)):null;
+  const maximum=key==='conquete'?'+'+Math.round(COLLECTIVE_EFFECTS.conquete*100)+' points de conservation':
+   key==='defence'?'−'+(COLLECTIVE_EFFECTS.defence*100).toLocaleString('fr-FR',{maximumFractionDigits:1})+' points d’avancée adverse':
+   key==='pied'?'+'+COLLECTIVE_EFFECTS.pied+' m au dégagement':'Aucun bonus spécifique';
+  const badge=key===selected?'PRÉPARATION CHOISIE':key===advice.focus?'CONSEIL DU STAFF':'ALTERNATIVE';
+  return '<button type="button" class="option ui05-option'+(key===selected?' selected':'')+'" aria-pressed="'+(key===selected)+
+   '" onclick="setCollectiveFocus(\''+key+'\')"'+(locked?' disabled':'')+'>'+
+   '<span class="ui05-pill">'+badge+'</span><strong>'+name+'</strong>'+
+   '<small>'+description+'</small><span class="ui05-option-detail">'+
+   '<span>'+people.length+' joueur(s) concerné(s)'+(key==='aucune'?' · 0 charge':' · +4 charge / séance')+'</span>'+
+   '<span>Charge actuelle '+(average===null?'—':average+'/100')+'</span>'+
+   '<span>'+maximum+' max.</span></span></button>';
+ }).join('');
+ return UI05_COLLECTIVE_STYLE+
+  '<section class="card collective-preparation ui05-collective" aria-label="Préparation collective rugby">'+
+  '<div class="ui05-hero"><div><p class="ui05-kicker">TACTIQUES / PRÉPARATION</p>'+
+  '<h2>04 / Préparation collective rugby</h2></div><span class="tag">PROCHAIN MATCH</span></div>'+
+  '<div class="ui05-summary" aria-label="Bilan de la préparation">'+
+  '<div class="ui05-metric"><span>PRÉPARATION RETENUE</span><strong>'+chosen+'</strong></div>'+
+  '<div class="ui05-metric"><span>CONSEIL DU STAFF</span><strong>'+recommended+'</strong></div>'+
+  '<div class="ui05-metric"><span>CHARGE MOYENNE DU XV ACTUEL</span><strong>'+
+  (Number.isFinite(fatigue)?Math.round(fatigue)+'/100':'—')+'</strong></div></div>'+
+  '<p class="ui05-lead">Choisissez le travail prioritaire du prochain match. Les effectifs et charges ci-dessous sont ceux du XV actuellement retenu, avant la prochaine séance ; ils peuvent changer.</p>'+
+  '<div class="ui05-choices" role="group" aria-label="Choix de préparation collective">'+stats+'</div>'+
+  '<div class="ui05-notes"><p><strong>Conseil du staff :</strong> '+advice.reason+
+  ' Vous restez décisionnaire.</p>'+
+  '<p><strong>Effets natifs V28 :</strong> une séance spécifique par échéance, figée au coup d’envoi ; +4 points de charge cumulée pour chaque joueur concerné. Bonus fictifs maximaux : conquête +4 points de probabilité de conservation ; défense −2,5 points de probabilité d’avancée adverse ; pied jusqu’à +3 mètres au dégagement en jeu. Les effets décroissent avec la fatigue et ne garantissent aucun résultat.</p>'+
+  (locked?'<p role="status">Choix verrouillé pendant le match ou après l’entraînement de la semaine.</p>':'')+
+  '</div></section>';
 }
 function collectiveMatchSummary(r,side){
  const cp=r?.collectivePreparation;if(!cp||cp.v!==1)return '';

@@ -1,0 +1,38 @@
+name: UI05 live collective preparation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/match-preparation.js'
+      - 'tests/ui05-*'
+      - '.github/workflows/ui05-live-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ui05-live-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  chromium:
+    name: UI05 playable Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Installer Playwright
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Tester le jeu jouable
+        run: python tests/ui05-live-browser.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui05-live-screenshots
+          path: ui05-browser-report/
+          retention-days: 7
