@@ -96,3 +96,14 @@ Le compte développeur produit les PR ; le compte intégrateur unique est seul r
 - Garder #73 ouverte ; ne jamais y publier de jeton, clé API, sauvegarde personnelle ou secret.
 - Pour les travaux de l'autre compte, prendre les **derniers commentaires** et le **GitHub actuel** comme références, non un ancien rapport de chat.
 - Les règles de CI, vérification du dernier SHA et fusion réservée au compte intégrateur unique restent intégralement en vigueur.
+
+## Mode de travail rapide — deux comptes ChatGPT (31 octobre 2026)
+
+**Objectif prioritaire : réduire le délai entre la demande et un résultat concret, sans affaiblir les règles de fusion.**
+
+- Les deux comptes restent ChatGPT (développeur producteur et intégrateur unique) ; aucun outil tiers n'est requis. Lire le contexte pertinent en **un lot de requêtes indépendantes**, une seule fois au début de la session : main, AGENTS.md, DEVELOPPEMENT.md, #73, PR concernées. Ne relire ensuite que les informations réellement modifiées.
+- Préférer une **modification fonctionnelle bornée et testable** à plusieurs petites PR cosmétiques. Développer avec les tests ciblés disponibles, préparer le journal avec le code et publier une seule tête de PR aussi stable que possible ; ne pas ajouter de commits de documentation après la CI complète sans nécessité.
+- **Jamais d'attente active** pour les workflows : ne pas relancer des lectures de statut ni télécharger les logs en boucle. Lire les logs en détail seulement en cas d'échec, d'incohérence ou de vérification spécifique indispensable. La CI se déclenche sur GitHub ; elle ne nécessite pas de scrutation continue de ChatGPT.
+- Si la CI distante n'est pas encore achevée dans le tour de travail, **rendre immédiatement** le code et la PR publiés, les tests réellement exécutés et le statut « CI en attente ; non fusionnée ». Le prochain tour de l'intégrateur pourra vérifier la conclusion et fusionner si toutes les conditions sont réunies. Ne jamais déclarer un résultat futur comme acquis.
+- Ne pas relancer de longues campagnes pour une documentation pure ou une UI isolée lorsque les filtres du dépôt les excluent légitimement ; **les tests complets de PR, le gate Validation CI et la vérification post-fusion restent obligatoires** selon les règles existantes.
+- Conclure en français avec le résultat utile, les liens de PR/commit et les éventuels blocages, sans journal minute par minute des opérations techniques. Ne jamais masquer un test échoué.

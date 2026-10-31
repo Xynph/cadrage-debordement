@@ -68,13 +68,13 @@ jobs:
           echo "Documentation seule : $docs"
   # Répartir la couverture complète sans omettre les tests de sauvegardes.
   shards:
-    name: Suites ${{ matrix.shard }}/3
+    name: Suites ${{ matrix.shard }}/5
     needs: classification
     if: ${{ needs.classification.result == 'success' && needs.classification.outputs.documentation_only != 'true' }}
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4, 5]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -111,7 +111,7 @@ jobs:
             echo "::endgroup::"
           done
           {
-            echo "### Shard $SHARD/3 : $executed suites sur $total"
+            echo "### Shard $SHARD/5 : $executed suites sur $total"
             echo "| Suite | Résultat | Durée |"
             echo "| --- | --- | --- |"
             cat "$RUNNER_TEMP/results.md"

@@ -46,10 +46,10 @@ function planShards(files, weights = WEIGHTS_SECONDS) {
     return value;
   };
   const ordered = files.slice().sort((a, b) => weight(b) - weight(a) || lexical(a, b));
-  const shards = Array.from({ length: 3 }, () => ({ weight: 0, files: [] }));
+  const shards = Array.from({ length: 5 }, () => ({ weight: 0, files: [] }));
   for (const file of ordered) {
     let target = 0;
-    for (let i = 1; i < 3; i++) {
+    for (let i = 1; i < shards.length; i++) {
       if (shards[i].weight < shards[target].weight ||
           (shards[i].weight === shards[target].weight &&
            shards[i].files.length < shards[target].files.length)) target = i;
@@ -60,8 +60,8 @@ function planShards(files, weights = WEIGHTS_SECONDS) {
   return shards.map(g => g.files.sort(lexical));
 }
 if (require.main === module) {
-  if (process.argv.length !== 3 || !/^[123]$/.test(process.argv[2])) {
-    console.error('Usage : node ci/shard-tests.cjs <1|2|3>');
+  if (process.argv.length !== 3 || !/^[1-5]$/.test(process.argv[2])) {
+    console.error('Usage : node ci/shard-tests.cjs <1|2|3|4|5>');
     process.exitCode = 2;
   } else {
     try {

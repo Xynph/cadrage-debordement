@@ -609,6 +609,12 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Développement : tests ciblés avant commit, publication en un seul commit final puis validations CI complètes sur HEAD ; fusion strictement après `Validation CI` et contrôles spécialisés verts et vérification de la CI post-fusion.
 - Références, limites et indicateurs avant/après dans `docs/ci-budget-optimization.md` ; mesures réelles et passation ajoutées à l'issue #73 après CI, sans commit documentaire supplémentaire. Aucun fichier `dist/**`, format de sauvegarde, règle rugby, droit GitHub ou facturation modifié.
 
+## Optimisation du temps de retour — CI à cinq groupes (31 octobre 2026)
+
+- Chantier intégrateur sur `perf/ci-five-shards-fast-feedback`, base `main 2fcd3adb` : passage prévu des 82 suites JavaScript de 3 à 5 shards, sans exclusion de tests ni assouplissement de `Validation CI`.
+- Répartition pondérée calculée depuis le `main` de référence : 139/140/139 unités (3) contre 84/84/83/83/84 (5) ; **estimation uniquement**. Le protocole entre les deux comptes ChatGPT privilégie lectures groupées, tests locaux ciblés et absence de polling CI.
+- Résultats GitHub Actions sur la nouvelle PR **à vérifier** avant fusion. Aucune évolution du moteur, des sauvegardes ou du fonctionnement du jeu dans ce chantier.
+
 ## Réception UI-02C sur le main actuel — 31 octobre 2026
 
 - Branche `integration/ui02-reception` : intégration de la PR #84 (`0b5241bb`) sur `main 2fcd3adb`, sans conflit ni correctif source supplémentaire. Les correctifs économiques et le format des sauvegardes restent intacts.
