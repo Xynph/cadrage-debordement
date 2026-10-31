@@ -1,11 +1,12 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {readZip,checkPackage,store}=require('../modding/r4/package-store.cjs');
+function crc32(bytes){let crc=0xffffffff;for(const b of bytes){crc^=b;for(let k=0;k<8;k++)crc=(crc>>>1)^((crc&1)?0xedb88320:0)}return (crc^0xffffffff)>>>0}
 function zip(files){
  const local=[],central=[];let offset=0;
  for(const [name,content] of Object.entries(files)){
   const n=Buffer.from(name),b=Buffer.from(content),a=Buffer.alloc(30),c=Buffer.alloc(46);
-  a.writeUInt32LE(0x04034b50);a.writeUInt16LE(20,4);a.writeUInt32LE(b.length,18);a.writeUInt32LE(b.length,22);a.writeUInt16LE(n.length,26);
+  a.writeUInt32LE(0x04034b50);a.writeUInt16LE(20,4);a.writeUInt32LE(crc32(b),14);c.writeUInt32LE(crc32(b),16);a.writeUInt32LE(b.length,18);a.writeUInt32LE(b.length,22);a.writeUInt16LE(n.length,26);
   c.writeUInt32LE(0x02014b50);c.writeUInt16LE(20,4);c.writeUInt16LE(20,6);c.writeUInt32LE(b.length,20);c.writeUInt32LE(b.length,24);c.writeUInt16LE(n.length,28);c.writeUInt32LE(offset,42);
   local.push(a,n,b);central.push(c,n);offset+=a.length+n.length+b.length;
  }
