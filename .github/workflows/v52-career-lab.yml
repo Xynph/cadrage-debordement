@@ -1,0 +1,31 @@
+name: Laboratoire V52 carrières longues
+on:
+  pull_request:
+    branches: [feature/v51-world-simulation]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  v52-careers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Contrats intermodules V46-V51
+        run: node tests/v46-v51-contracts.cjs
+      - name: Simulations V52, reprise et bilans
+        env:
+          CD_V52_REPORT: v52-career-report.json
+        run: |
+          node --check tests/v52-career-lab.cjs
+          timeout 900s node tests/v52-career-lab.cjs
+      - name: Publier rapport complet de carriere
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v52-career-lab-report
+          path: v52-career-report.json
+          if-no-files-found: ignore

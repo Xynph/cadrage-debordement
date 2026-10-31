@@ -1,0 +1,36 @@
+name: Validation indépendante V51
+on:
+  pull_request:
+    branches:
+      - feature/v51-world-simulation
+    paths:
+      - 'dist/world-finance.js'
+      - 'tests/v51-*.cjs'
+      - '.github/workflows/v51-checkpoint-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checkpoint-v51:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntaxe et tests V51 réels
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in dist/world-simulation.js dist/world-finance.js dist/financial-recovery.js dist/world-audit.js; do
+            node --check "$f"
+          done
+          for f in tests/v51-*.cjs; do
+            echo "::group::$f"
+            node --check "$f"
+            timeout 180s node "$f"
+            echo "::endgroup::"
+          done
