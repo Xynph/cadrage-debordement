@@ -35,6 +35,7 @@ assert.ok(valid(r));
 // Recruiting uses current transfer pool and respects the weekly salary cap.
 const market=context(),m=market.run;
 m('start(0);S.round=13;var buyer=S.clubs[1];var buyerCash=buyer.cash;buyer.players=buyer.players.filter(p=>p.pos!==POS[0]);var forced=makePlayer(99,0,75);forced.id="test-ai-prospect";forced.age=24;forced.rating=75;forced.salary=3000;forced.price=10000;forced.contractEnd=null;ensureDevelopment(forced);forced.dev.retireAge=40;S.market=[forced];S.economy.freeAgents=[];var ownCash=club().cash;var poolBefore=new Set([...S.market,...S.economy.freeAgents].map(p=>p.id))');
+console.log('DIAGNOSTIC IA CARRIÈRE',m("JSON.stringify((()=>{const x=recruitmentTargets(buyer,S.market,false),k=x.filter(t=>t.within&&t.need.score>=45&&t.p.salary<=Math.max(1000,buyer.base*250)&&aiRosterPayroll(buyer)+t.p.salary<=aiRosterWageLimit(buyer)&&buyer.cash-t.finance.fee>=400000);return {active:aiRosterActive(),last:S.economy.aiRecruitmentWindow,cash:buyer.cash,base:buyer.base,debt:worldClub(buyer.id).debt,rep:worldClub(buyer.id).reputation,payroll:aiRosterPayroll(buyer),limit:aiRosterWageLimit(buyer),need:recruitmentNeeds(buyer).slice(0,2).map(n=>({pos:n.pos,score:n.score})),targets:x.map(t=>({id:t.p.id,need:t.need.pos,score:t.need.score,within:t.within,fee:t.finance.fee,wage:t.p.salary})),passed:k.length,choice:worldAIRecruitmentChoice(buyer,k)?.p?.id||null,market:S.market.length}})())"));
 const signed=m('aiRecruitmentWeek()');
 assert.ok(signed>=1&&signed<=6);
 assert.equal(m('aiRecruitmentWeek()'),0);
