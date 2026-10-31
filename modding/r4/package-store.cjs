@@ -6,6 +6,14 @@ const crypto=require('node:crypto');
 const LIMIT={archive:64*1024*1024,entries:5000,total:256*1024*1024,entry:12*1024*1024,ratio:120};
 function ensure(ok,msg){if(!ok)throw Error(msg)}
 function safe(p){return typeof p==='string'&&p.length>0&&p.length<220&&!p.includes('\\')&&!p.includes('%')&&!p.includes(':')&&!p.startsWith('/')&&!p.includes('//')&&p.split('/').every(x=>x&&x!=='.'&&x!=='..'&&!x.startsWith('.'))&&/^[a-zA-Z0-9/_.-]+$/.test(p)}
+function crc32(bytes){
+ let crc=0xffffffff;
+ for(const b of bytes){
+  crc^=b;
+  for(let k=0;k<8;k++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);
+ }
+ return (crc^0xffffffff)>>>0;
+}
 function readZip(buffer){
  ensure(Buffer.isBuffer(buffer)&&buffer.length<=LIMIT.archive,'Archive trop volumineuse');
  const tail=Math.max(0,buffer.length-65557);let end=-1;
@@ -13,8 +21,8 @@ function readZip(buffer){
  ensure(end>=0,'Fin ZIP introuvable');
  const count=buffer.readUInt16LE(end+10),size=buffer.readUInt32LE(end+12),start=buffer.readUInt32LE(end+16);
  ensure(count<=LIMIT.entries&&start+size<=end,'Annuaire ZIP invalide');
- ensure(buffer.readUInt16LE(end+8)===count,'Archive ZIP multi-disque refusée');
- let offset=start,total=0;const files={};
+ ensure(buffer.readUInt16LE(end+8)===count&&buffer.readUInt16LE(end+4)===0&&buffer.readUInt16LE(end+6)===0,'Archive ZIP multi-disque refusée');
+ let offset=start,total=0;const files=Object.create(null);
  for(let i=0;i<count;i++){
   ensure(offset+46<=start+size&&buffer.readUInt32LE(offset)===0x02014b50,'Entrée centrale invalide');
   const flags=buffer.readUInt16LE(offset+8),method=buffer.readUInt16LE(offset+10);
@@ -24,7 +32,7 @@ function readZip(buffer){
   const name=buffer.subarray(offset+46,offset+46+nameSize).toString('utf8');
   offset+=46+nameSize+extra+comment;
   ensure(!(flags&1)&&[0,8].includes(method),'Chiffrement ou compression non supportée');
-  ensure(safe(name)&&!name.endsWith('/')&&!(name in files),'Nom ZIP invalide ou dupliqué : '+name);
+  ensure(safe(name)&&!name.endsWith('/')&&!Object.hasOwn(files,name),'Nom ZIP invalide ou dupliqué : '+name);
   ensure(unpacked<=LIMIT.entry&&packed<=LIMIT.archive&&unpacked<=Math.max(1,packed)*LIMIT.ratio,'ZIP bomb ou fichier trop grand');
   total+=unpacked;ensure(total<=LIMIT.total,'ZIP trop volumineux décompressé');
   ensure(local+30<=buffer.length&&buffer.readUInt32LE(local)===0x04034b50,'En-tête local invalide');
@@ -34,6 +42,7 @@ function readZip(buffer){
   const source=buffer.subarray(begin,begin+packed);
   const content=method===0?Buffer.from(source):zlib.inflateRawSync(source,{maxOutputLength:unpacked+1});
   ensure(content.length===unpacked,'Taille décompressée incorrecte');
+  ensure(crc32(content)===crc,'CRC32 ZIP incorrect : '+name);
   files[name]=content;
  }
  return files;
@@ -59,7 +68,7 @@ function checkPackage(files){
 function store(root){
  const location=path.resolve(root);fs.mkdirSync(location,{recursive:true});
  function installed(){
-  return fs.readdirSync(location,{withFileTypes:true}).filter(x=>x.isDirectory()&&/^[a-z][a-z0-9-]{2,63}$/.test(x.name)).map(x=>x.name);
+  return fs.readdirSync(location,{withFileTypes:true}).filter(x=>x.isDirectory()&&/^[a-z][a-z0-9-]{2,63}--[0-9]+\.[0-9]+\.[0-9]+$/.test(x.name)).map(x=>x.name);
  }
  function install(archive){
   const files=readZip(archive),manifest=checkPackage(files);
@@ -76,7 +85,7 @@ function store(root){
  }
  function checkBinding(binding){
   if(!binding||binding.schema!==1||!Array.isArray(binding.mods))return {ok:false,reason:'Signature absente'};
-  const missing=binding.mods.filter(m=>!m||!fs.existsSync(path.join(location,m.id+'--'+m.version,'manifest.json')));
+  const missing=binding.mods.filter(m=>!m||!/^[a-z][a-z0-9-]{2,63}$/.test(m.id||'')||!/^[0-9]+\.[0-9]+\.[0-9]+$/.test(m.version||'')||!fs.existsSync(path.join(location,m.id+'--'+m.version,'manifest.json')));
   return {ok:missing.length===0,missing};
  }
  return {install,checkBinding,installed};
