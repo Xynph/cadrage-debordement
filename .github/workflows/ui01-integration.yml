@@ -32,7 +32,8 @@ permissions:
   contents: read
 concurrency:
   group: ui01-review-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  # Eviter les receptions Chromium obsoletes apres un nouveau commit de PR.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   # Suites natives deja couvertes par Tests JavaScript : seulement reception Chromium ici.
   browser:
