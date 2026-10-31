@@ -9,7 +9,7 @@ check('startup displays an actual home menu, not immediate club choice',()=>{
  assert.equal(g.run('entryScreen'),'menu');
  assert.match(g.app.innerHTML,/Menu principal/);
  assert.match(g.app.innerHTML,/Nouvelle carrière/);
- assert.match(g.app.innerHTML,/Charger une sauvegarde JSON/);
+ assert.match(g.app.innerHTML,/Importer une carrière JSON/);
  assert.match(g.app.innerHTML,/Continuer ma carrière/);
  assert.match(g.app.innerHTML,/disabled/);
  assert.equal(g.run('mainMenuContinue()'),false);

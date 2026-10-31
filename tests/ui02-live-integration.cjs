@@ -10,7 +10,9 @@ assert.ok(html.includes('<link rel="stylesheet" href="ui01-integration.css"><lin
 for(const file of ['ui02-player-data.js','ui02-player-components.js','ui02-player-controller.js']){
  assert.ok(html.includes('<script src="'+file+'"></script>'));
 }
-assert.ok(html.includes('<script src="ui-preferences.js"></script><script src="game.js"></script>'));
+const scripts=[...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map(m=>m[1]);
+assert.ok(scripts.includes('ui-preferences.js') && scripts.indexOf('ui-preferences.js') < scripts.indexOf('main-menu-slots.js'));
+assert.ok(scripts.indexOf('main-menu-slots.js') < scripts.indexOf('game.js'));
 assert.ok(squad.includes("return tabs+rugbyTeam()"));
 assert.ok(squad.includes("squadTab==='profile'"));
 assert.ok(css.includes('cd02-roster-stack'));
