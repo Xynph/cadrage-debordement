@@ -1,0 +1,85 @@
+name: UI01 integration review
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [integration/ui01-reviewed, main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ui01-review-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  native:
+    name: UI01 native regression ${{ matrix.shard }}/3
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Syntax and complete native regression
+        shell: bash
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          set -euo pipefail
+          for file in dist/*.js tests/*.cjs; do node --check "$file"; done
+          failures=0
+          count=0
+          mkdir -p ui01-native-report
+          for file in tests/*.cjs; do
+            test "$file" != tests/harness.cjs || continue
+            index=$count
+            count=$((count+1))
+            test $((index % 3 + 1)) -eq "$SHARD" || continue
+            echo "TEST $file"
+            if timeout 180 node "$file" > "ui01-native-report/$(basename "$file").log" 2>&1; then
+              echo "PASS $file"
+            else
+              cat "ui01-native-report/$(basename "$file").log"
+              failures=$((failures+1))
+            fi
+          done
+          echo "FAILED SUITES $failures"
+          test "$failures" -eq 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui01-native-regression-${{ matrix.shard }}
+          path: ui01-native-report/
+          retention-days: 7
+  browser:
+    name: UI01 Chromium acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install fixed browser test dependency
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Actual game navigation, contrast and screenshots
+        run: |
+          python tests/ui01-browser.py
+          python tests/ui01-contrast.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui01-browser-report
+          path: ui01-browser-report/
+          retention-days: 7
+          if-no-files-found: error

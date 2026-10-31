@@ -1,0 +1,37 @@
+
+
+/* Revue d'integration UI-01 : conserver les commandes, erreurs et confirmations. */
+.ui01-session-tools{display:flex;align-items:center;flex-wrap:wrap;gap:7px 12px;padding:7px 16px;border-top:1px solid #2b3850;font-size:11px}
+.ui01-session-tools .ui01-save-state{border:0;padding:0;color:#b8efc9}
+.ui01-session-tools .ui01-save-state.is-error{color:#ffd4ce;font-weight:700}
+.ui01-session-tools .ui01-storage{color:#b7c2d6;margin-right:auto}
+.ui01-appbar .ui01-session-tools button{background:#26374e;color:#edf1fc;padding:7px 10px;border:1px solid #445774;border-radius:3px;font-size:11px}
+html[data-cd-theme] .modalback{z-index:200;overflow:auto}
+html[data-cd-theme] #toast{z-index:210}
+:root[data-cd-theme="analyste"] .welcome .clubchoice{background:var(--ui01-surface);color:var(--ui01-text);border-color:var(--ui01-border)}
+:root[data-cd-theme="analyste"] .welcome button:not(.clubchoice),
+:root[data-cd-theme="analyste"] .modal button:not(.primary),
+:root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) button:not(.primary):not(.option):not(.ui01-primary):not(.ui01-secondary):not(.ui01-help){background:var(--ui01-soft);color:var(--ui01-text)}
+:root[data-cd-theme="analyste"] .modal input,
+:root[data-cd-theme="analyste"] .modal select,
+:root[data-cd-theme="analyste"] .modal textarea{background:var(--ui01-soft);color:var(--ui01-text);border-color:var(--ui01-border)}
+:root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) .option.selected{border-color:#b9a7ff;box-shadow:inset 0 0 0 1px #b9a7ff}
+html[data-cd-theme] .modalback:focus-within{outline:none}
+@media(max-width:800px){
+ .ui01-session-tools{padding:8px 11px;gap:7px 9px}
+ .ui01-session-tools .ui01-save-state{flex-basis:100%}
+ .ui01-session-tools .ui01-storage{flex-basis:100%}
+ .ui01-appbar .ui01-session-tools button{min-height:40px}
+}
+:root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) .office-message.unread{background:var(--ui01-soft);border-left-color:#b9a7ff}
+:root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) .office-summary small,
+:root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) .office-message>small,
+:root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) .office-decision span{color:#b6c7d6}
+:root[data-cd-theme="tribune"] .ui01-layout:not(.live-layout) .office-summary small,
+:root[data-cd-theme="tribune"] .ui01-layout:not(.live-layout) .office-message>small,
+:root[data-cd-theme="tribune"] .ui01-layout:not(.live-layout) .office-message p,
+:root[data-cd-theme="tribune"] .ui01-layout:not(.live-layout) .office-decision span{color:#4d5c66}
+:root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) .office-decision{background:var(--ui01-soft)}
+:root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) .office-decision.urgent{background:#382b31;border-left-color:#edaf8d}
+/* Changement de palette instantane : conserver les effets de survol, pas un fondu illisible. */
+html[data-cd-theme] button{transition-property:transform,filter}

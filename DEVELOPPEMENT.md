@@ -565,3 +565,15 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - `tests/manager-mobility.cjs` : 22 scénarios du vrai harness, trois saisons complètes, deux changements de club, témoin comparatif sans mobilité, rapprochement financier, reprises et dix corruptions. Les tests ciblés et sauvegardes ont réussi en préparation ; correction du contrôle de sélection CI pour inclure la nouvelle suite sans en retirer aucune. Seules la CI finale du SHA et sa validation post-fusion établiront la livraison dans main.
 - Limites : aucun licenciement automatique, mode sans emploi ou salaire de manager ; seuils de décision fictifs, pas de preuve statistique d'équilibrage ; aucun test Windows natif. Dossier détaillé : `docs/v58-manager-mobility.md`.
 - Prochaine priorité : renforcer les carrières multi-clubs et le retour dans un ancien club avant d'élargir les contrats. Le protocole développeur/producteur et intégrateur unique reste en vigueur ; #75 intacte.
+
+
+## UI-01 — Navigation FM27 originale et trois apparences (31 octobre 2026)
+
+- Base de la branche producteur \`feature/ui01-fm27-navigation-themes\` : dernier \`main\` \`3655df2302d2f2ccbe37674ef473bb96cb91c6f5\`, contenant les raccordements V58 de mobilité du manager. Coordination et chemins réservés publiés dans l'issue #73.
+- Nouvelle couche de présentation \`dist/ui-preferences.js\` : navigation principale horizontale en six rubriques, sous-navigation contextuelle conservant les 14 anciennes destinations, accès direct aux onglets d'effectif (joueurs, feuille à 23, couverture, plan) et au plan de jeu. Les actions restent celles du moteur et ne modifient pas l'état en simple consultation.
+- Apparences \`Système\` (par défaut via \`prefers-color-scheme\` avec suivi en temps réel), \`Tribune\` (clair), \`Analyste\` (sombre) : préférences enregistrées dans \`cd-ui-theme-v1\` séparément des carrières \`bdt-v1\`, repli non bloquant si le stockage est indisponible.
+- \`dist/style.css\` : identité de manager sportif dense (en-têtes, tableaux, onglets, terrain), navigation horizontale, amélioration du responsive et focus visible ; le cockpit de match V40 garde son agencement sombre séparé.
+- \`dist/game.js\` et \`dist/index.html\` : branchement de la nouvelle couche avec repli compatible dans les tests sans module, préservation de \`managerMobilityPanel\` et du script \`manager-mobility.js\`; aucun changement de règles, moteur, joueurs, contrats ou format de sauvegarde.
+- Test dédié \`tests/ui01-interface.cjs\` pour navigation des rubriques, 23 joueurs, choix de thèmes, changement automatique du système, stockage séparé, lecture sans mutation de carrière, et maintien du cockpit en direct.
+- **Livraison :** PR à vérifier ; le compte producteur ne fusionne jamais dans \`main\`. L'intégrateur doit contrôler la CI sur le SHA de la PR, les sauvegardes anciennes, l'ergonomie réelle navigateur PC/tablette/mobile, puis le \`push\` post-fusion. Aucune validation Windows native annoncée.
+
