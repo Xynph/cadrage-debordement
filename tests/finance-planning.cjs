@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {forecast,compare}=require('../dist/finance-planning.js');
+const {forecast,compare,stressTest,runway}=require('../dist/finance-planning.js');
 const base={cash:1000000,weeklyIncome:160000,weeklyWages:130000,weeklyOtherCosts:10000,weeks:4};
 let f=forecast(base);
 assert.equal(f.initialBalance,1000000);
@@ -20,4 +20,11 @@ for(const invalid of [{...base,weeks:0},{...base,weeks:105},{...base,weeks:1.5},
 assert.throws(()=>compare(base,[{name:'x',adjustments:{cash:42}}]),RangeError);
 assert.throws(()=>compare(base,[{name:'',adjustments:{}}]),RangeError);
 assert.equal(JSON.stringify(base),JSON.stringify({cash:1000000,weeklyIncome:160000,weeklyWages:130000,weeklyOtherCosts:10000,weeks:4}));
+const stress=stressTest(base,{incomeDrop:.25,wageRise:.1});
+assert.equal(stress.loss,4*(40000+13000));
+assert.equal(stress.stressed.finalBalance,868000);
+assert.equal(stress.deficitAccelerated,false);
+assert.equal(runway({...base,cash:100000,weeklyIncome:0}).estimatedWeeksToDeficit,1);
+assert.equal(runway(base).estimatedWeeksToDeficit,null);
+assert.throws(()=>stressTest(base,{incomeDrop:1.2}),RangeError);
 console.log(JSON.stringify({passed:true,checks:['prévision hebdomadaire','solde et déficit','recettes et dépenses ponctuelles','part des salaires','comparaison de scénarios','validation des entrées','sans mutation']}));
