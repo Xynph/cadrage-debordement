@@ -621,3 +621,12 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Candidat testé `e7e8bcf0f2f19ee295dfdc2abe64f34c9f93564a` : 85 suites JS réussies (Node 24.22.1/Windows,169,510s), sauvegardes comprises ; 91 contrôles Google Chrome Windows réussis,320à1440px/deux thèmes, zéro erreur page. Captures ordinateur et mobile inspectées.
 - Preuves et limites dans `docs/reception-ui02/validation.md`, rapports JSON et captures adjacents. Le commit documentaire qui publie ces preuves ne change aucun fichier exécutable par rapport au candidat testé.
 - Pas de validation du lanceur portable, de la CI Linux ou des campagnes spécialisées séparées. Aucun merge tant que la CI complète du dernier SHA n'est pas verte ; pas de double intégration des PR #84/#81/#83, #75 intacte. Réception coordonnée dans l'issue #73.
+
+
+## SAVE-INT-01 — vérification de l'import au moment de confirmer (31 octobre 2026)
+
+- Source de vérité au démarrage : `main fe768e9ff6210123058f570274b38243ddfed561`. Chantier intégrateur indépendant des PR producteur DATA-05/DATA-06 ; réservation publiée dans #73.
+- Défaut vérifié par lecture du code : l'aperçu d'import valide le JSON et sa somme de contrôle, mais la confirmation vérifiait seulement la structure de `pendingSave.state` avant son écriture. Un objet d'aperçu modifié après vérification pouvait ainsi être enregistré sans nouvelle comparaison au checksum initial.
+- Correctif : `confirmSaveImport()` compare dorénavant la somme de contrôle de l'état en attente à celle du document déjà validé, **avant** l'écriture de la sauvegarde de secours et le remplacement de la carrière. Aucun changement de format, de contenu de sauvegarde ou d'algorithme d'export.
+- Régressions : trois mutations de l'aperçu (trésorerie, moral, checksum) doivent laisser la carrière, le stockage et la copie précédente intacts ; l'import légitime doit conserver sa copie de secours. Tests inclus dans `tests/saves.cjs` ; la CI sur tête exacte de PR doit établir le résultat.
+- Limitations : la somme de contrôle FNV existante détecte les modifications accidentelles, **elle n'est pas une authentification cryptographique**. Pas de preuve de résistance à une falsification volontaire avec recalcul du checksum. Aucun fichier Business, source DATA, collecte LNR ou Firecrawl concerné ; aucune fusion sans autorisation.
