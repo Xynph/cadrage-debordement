@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="fr"><meta charset="utf-8"><title>Cadrage Débordement — Atelier de mods</title>
+<style>body{font:16px system-ui;background:#132026;color:#fff;max-width:720px;margin:40px auto;padding:20px}section{background:#26404a;margin:15px 0;padding:20px;border-radius:12px}button,input,select{margin:8px;padding:10px}button{cursor:pointer}pre{white-space:pre-wrap}</style>
+<h1>Atelier de mods — R3</h1><p>Outil indépendant : aucun mod n'est activé automatiquement. Le jeu existant reste intact.</p>
+<section><h2>Importer</h2><label>Manifeste JSON <input id="manifest" type="file" accept=".json"></label>
+<label>Fichiers du mod <input id="files" type="file" multiple></label>
+<button id="install">Vérifier les fichiers et installer</button><p id="status" role="status"></p></section>
+<section><h2>Choisir un univers</h2><select id="list"></select>
+<button id="activate">Activer</button><button id="disable">Univers fictif</button><p id="universe"></p></section>
+<section><h2>Signature de sauvegarde future</h2><pre id="save"></pre></section>
+<script src="./manager.js"></script><script>
+'use strict';
+const el=id=>document.getElementById(id),registry=CDModManagerR3.manager({clubs:[]});
+function paint(){const select=el('list');select.replaceChildren(new Option('Choisir un mod',''));for(const item of registry.list())select.add(new Option(item.title,item.id));el('universe').textContent=registry.list().find(x=>x.active)?.title||'Univers fictif';el('save').textContent=JSON.stringify(registry.binding(),null,2)}
+el('install').onclick=async()=>{try{const m=el('manifest').files[0];if(!m||m.size>1048576)throw Error('Manifeste absent ou trop volumineux');const manifest=CDModManagerR3.validManifest(JSON.parse(await m.text()));const files={};for(const f of el('files').files){if(files[f.name])throw Error('Nom de fichier dupliqué');files[f.name]=f}if([...manifest.data,...manifest.assets].some(x=>x.path.includes('/')))throw Error('Cette interface accepte actuellement des packs plats uniquement');registry.install(await CDModManagerR3.importMod(manifest,files,crypto));el('status').textContent='Mod vérifié et installé, non activé.';paint()}catch(e){el('status').textContent='Import refusé : '+e.message}};
+el('activate').onclick=()=>{try{registry.activate(el('list').value);paint()}catch(e){el('status').textContent=e.message}};
+el('disable').onclick=()=>{registry.deactivate();paint()};paint();
+</script></html>
