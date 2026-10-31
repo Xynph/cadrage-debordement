@@ -423,3 +423,5 @@ html[data-cd-theme] body{background:var(--paper);color:var(--ink)}
 html[data-cd-motion="reduced"] .main-menu-sheen{animation:none!important}
 @media(prefers-reduced-motion:reduce){.main-menu-sheen{animation:none}}
 @media(max-width:490px){.main-menu-guide{grid-template-columns:1fr}.main-menu-slot{grid-template-columns:1fr 1fr}.main-menu-slot>div{grid-column:1/-1}}
+
+.match-menu-pause{position:relative;display:inline-flex;align-items:center;gap:8px;margin:14px 0 0;background:#224735;color:#fff;border:1px solid #a5c4ad;font-weight:700;z-index:9} .match-menu-pause:focus-visible{outline:3px solid #e77b45;outline-offset:3px}
