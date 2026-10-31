@@ -2,67 +2,44 @@ name: V58 mobilite native du manager
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: v58-integration-preparation-78
-  cancel-in-progress: false
+  group: v58-mobility-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
-  prepare-78:
-    if: github.repository == 'Xynph/cadrage-debordement' && github.event.pull_request.number == 78 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'integration/v58-manager-mobility-native'
+  native-mobility:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    permissions:
-      contents: write
-    env:
-      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
-      INTEGRATION_BRANCH: integration/v58-manager-mobility-native
-      CD_MOBILITY_REPORT: v58-mobility-report.json
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 1
+          persist-credentials: false
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Appliquer seulement les raccordements verifies
-        run: node ci/v58-apply.cjs
-      - name: Tests natifs avant publication sur la branche reservee
+      - name: Verifier les raccordements definitifs
         run: |
+          test ! -e ci/v58-apply.cjs
+          test ! -e ci/v58-manager-mobility-test.txt
           node --check dist/manager-mobility.js
           node --check dist/game.js
           node --check dist/saves.js
-          node tests/manager-mobility.cjs
+      - name: Mobilite du manager dans les vraies carrieres
+        env:
+          CD_MOBILITY_REPORT: v58-mobility-report.json
+        run: node tests/manager-mobility.cjs
+      - name: Sauvegardes natives et couverture CI
+        run: |
           node tests/saves.cjs
           node tests/ci-selection.cjs
-      - name: Publication gardee sans force-push ni fusion
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$INTEGRATION_BRANCH" = 'integration/v58-manager-mobility-native'
-          remote=$(git ls-remote origin "refs/heads/$INTEGRATION_BRANCH" | cut -f1)
-          test "$remote" = "$EXPECTED_HEAD"
-          git add -- dist/game.js dist/saves.js dist/index.html tests/harness.cjs ci/select-tests.cjs tests/ci-selection.cjs DEVELOPPEMENT.md tests/manager-mobility.cjs ci/v58-apply.cjs ci/v58-manager-mobility-test.txt
-          git diff --cached --name-only | while IFS= read -r file; do
-            case "$file" in
-              dist/game.js|dist/saves.js|dist/index.html|tests/harness.cjs|ci/select-tests.cjs|tests/ci-selection.cjs|DEVELOPPEMENT.md|tests/manager-mobility.cjs|ci/v58-apply.cjs|ci/v58-manager-mobility-test.txt) ;;
-              *) echo "Unexpected staged path"; exit 1 ;;
-            esac
-          done
-          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'feat(v58): raccorder la mobilite native et proteger les reprises'
-          git push origin "HEAD:refs/heads/$INTEGRATION_BRANCH"
-      - name: Sources reproductibles sans credentials
-        if: always()
-        run: |
-          mkdir -p "$RUNNER_TEMP/v58-validated"
-          git archive --format=tar HEAD > "$RUNNER_TEMP/v58-validated/source.tar"
-          git rev-parse HEAD > "$RUNNER_TEMP/v58-validated/REVISION.txt"
-          test ! -f "$CD_MOBILITY_REPORT" || cp "$CD_MOBILITY_REPORT" "$RUNNER_TEMP/v58-validated/"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: v58-native-candidate
-          path: ${{ runner.temp }}/v58-validated/
-          retention-days: 3
+          name: v58-native-mobility-report
+          path: v58-mobility-report.json
+          retention-days: 14
           if-no-files-found: error
