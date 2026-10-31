@@ -14,12 +14,12 @@ Périmètre : **98 arrivées publiées pour 14 clubs**, provenant du [tableau of
 `node --test tests/data06-evidence.cjs`
 `node tools/data06-evidence.cjs`
 
-Cette PR n'intègre pas encore les arrivées au moteur de jeu : les clés doivent être rapprochées des IDs LNR avant toute importation. Priorités suivantes : vérifier le rapprochement 80/1592 sur les véritables effectifs, enrichir les clubs restants (dont PRO D2), puis collecter les staffs et finances uniquement lorsque des documents publics datés les attestent.
+Cette PR n'intègre pas encore les arrivées au moteur de jeu : les clés doivent être rapprochées des IDs LNR avant toute importation. Priorités suivantes : vérifier le rapprochement 98/1592 sur les véritables effectifs, enrichir les clubs restants (dont PRO D2), puis collecter les staffs et finances uniquement lorsque des documents publics datés les attestent.
 
 Toute utilisation automatique des sites externes exige le respect de leurs règles d'accès, sans contournement de restrictions.
 
 ## Rapprochement contrôlé des 98 mutations
 
-La comparaison exacte, normalisée sur le nom et le club, avec les 1 592 entrées DATA-03 donne **52 correspondances exactes**, **12 noms présents dans un autre club (revue manuelle)**, **34 noms absents du roster de référence**. Le fichier `modding/data06/transfer-reconciliation-2026-2027.json` donne les 98 lignes, candidats et IDs lorsque la correspondance est univoque. Aucun des 46 cas litigieux n'est automatiquement créé, déplacé ou rattaché. Une absence peut correspondre à un nouvel arrivant, une variation orthographique ou une erreur d'identité : seule une preuve source peut trancher. Les 47 correspondances ne certifient pas rétroactivement la composition au 01/07/2026.
+La comparaison exacte, normalisée sur le nom et le club, avec les 1 592 entrées DATA-03 donne **52 correspondances exactes**, **12 noms présents dans un autre club (revue manuelle)**, **34 noms absents du roster de référence**. Le fichier `modding/data06/transfer-reconciliation-2026-2027.json` donne les 98 lignes, candidats et IDs lorsque la correspondance est univoque. Aucun des 46 cas litigieux n'est automatiquement créé, déplacé ou rattaché. Une absence peut correspondre à un nouvel arrivant, une variation orthographique ou une erreur d'identité : seule une preuve source peut trancher. Les 52 correspondances ne certifient pas rétroactivement la composition au 01/07/2026.
 
 Le complément porte sur les arrivées officiellement listées pour Toulon, le Stade Français, La Rochelle et Toulouse, y compris Apete NAROGO dont la provenance n'est pas précisée : ce champ reste vide plutôt que supposé. Toute vérification historique au 01/07/2026 reste distincte du tableau des mutations.
