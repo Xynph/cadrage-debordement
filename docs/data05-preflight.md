@@ -1,0 +1,3 @@
+# DATA-05 — Preflight guard
+
+Validation avant toute collecte HTTP/Firecrawl : catalogues 1592, cache, doublons ID, URL, club, limitation concurrence (1–2), pause >= 1000 ms, plan d'appels payants <= nombre de fiches tentées, confirmation explicite pour tout acces LNR. Par defaut dry-run zero budget. Module **non encore integre** a `tools/data05-pipeline.cjs` ; a raccorder apres verification de CI et fusion des dependances. Tests executes localement : `node --check` puis `node --test` : 3/3 PASS. Ne demontre pas un acces HTTP live, aucune collecte ni credit Firecrawl consomme. Aucune donnee historique du 1 juillet 2026 certifiee.
