@@ -1,0 +1,16 @@
+.cd-matchday{min-width:0;--md-line:var(--ui01-border,#36475c)}
+.cd-matchday *{box-sizing:border-box}
+.cd-matchday-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}
+.cd-matchday-kpi{background:var(--ui01-soft,#18273a);border:1px solid var(--md-line);border-radius:10px;padding:11px;min-width:0}
+.cd-matchday-kpi small{display:block;font-size:11px;opacity:.75}.cd-matchday-kpi strong{font-size:25px}
+.cd-matchday-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+.cd-matchday-grid>div{min-width:0}
+.cd-matchday-issue{border-left:3px solid #c99a59;padding:8px 10px;margin-bottom:8px;background:var(--ui01-soft,#18273a)}
+.cd-matchday-issue.sheet,.cd-matchday-issue.injury{border-left-color:#d66f65}
+.cd-matchday-issue strong,.cd-matchday-issue small{display:block}.cd-matchday-issue small{opacity:.78;font-size:12px}
+.cd-matchday-actions{display:flex;flex-wrap:wrap;gap:8px;margin:13px 0}
+.cd-matchday-actions button{min-width:0;white-space:normal;text-align:left}
+.cd-matchday-matchup{border:1px solid var(--md-line);padding:12px;border-radius:10px}
+.cd-matchday-depths{display:flex;gap:7px;flex-wrap:wrap}.cd-matchday-depth{border:1px solid var(--md-line);border-radius:8px;padding:6px;font-size:12px}
+@media(max-width:850px){.cd-matchday-grid{grid-template-columns:1fr}}
+@media(max-width:520px){.cd-matchday-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.cd-matchday-kpi strong{font-size:22px}}

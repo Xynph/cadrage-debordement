@@ -1,0 +1,33 @@
+name: Briefing match - Chromium
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/game.js'
+      - 'dist/index.html'
+      - 'dist/matchday-center.*'
+      - 'tests/matchday-center*'
+      - '.github/workflows/matchday-center-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: matchday-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Installer navigateur de test
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Tester les décisions d'avant-match
+        run: python tests/matchday-center-browser.py
