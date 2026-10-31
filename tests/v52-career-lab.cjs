@@ -10,7 +10,7 @@ const round=x=>Math.round(x*10000)/10000;
 function run(strength,uneven){
  const adapter={...base,reputation:p=>{const x=rep.update(p);return {...x,next:Math.max(0,Math.min(100,p.current+(x.next-p.current)*strength))}}};
  const byYear=Array.from({length:15},(_,i)=>({season:i+1,deficits:0,restricted:0,investments:0,coachChanges:0,reputationGap:0,champions:[]}));
- let dominate=0,unique=0,totalInvest=0,financialBreaches=0,careerCoachChanges=0,decisions=0,facilityQuotes=0;
+ let dominate=0,unique=0,totalInvest=0,financialBreaches=0,careerCoachChanges=0,decisions=0,facilityQuotes=0,recruitmentTypes={},facilityPaidEvents=0;
  for(const seed of seeds){
   const clubs=fixture(uneven),input=JSON.stringify(clubs);
   const opts={clubs,seed,seasons:15,adapters:adapter};
@@ -32,13 +32,18 @@ function run(strength,uneven){
     point.restricted+=Number(r.restriction!=='normal');
     point.investments+=r.investmentPaid||0;
     totalInvest+=r.investmentPaid||0;
-    if(typeof r.recruitmentDecision==='string')decisions++;
+    if(typeof r.recruitmentDecision==='string'){decisions++;recruitmentTypes[r.recruitmentDecision]=(recruitmentTypes[r.recruitmentDecision]||0)+1;}
+    assert.ok(Number.isFinite(r.investmentPaid)&&r.investmentPaid>=0,'investissement invalide');
+    assert.ok(Number.isFinite(r.investmentDeferred)&&r.investmentDeferred>=0,'investissement differe invalide');
+    assert.ok(!r.investmentPaid||r.restriction==='normal','investissement paye sous restriction');
    }
   }
   const changes=sim.events.filter(e=>e.type==='coachChange');
   careerCoachChanges+=changes.length;
   for(const e of changes)byYear[e.season-1].coachChanges++;
   facilityQuotes+=sim.events.filter(e=>e.type==='facility').length;
+  facilityPaidEvents+=sim.history.reduce((n,h)=>n+h.standings.filter(r=>r.investmentPaid>0).length,0);
+  assert.equal(sim.events.filter(e=>e.type==='facility').length,sim.history.reduce((n,h)=>n+h.standings.filter(r=>r.investmentPaid>0).length,0),'evenement infrastructure incoherent');
   dominate+=Math.max(...counts.values())/15;
   unique+=counts.size;
   const checkpoint=bridge.simulate({...opts,seasons:7}).checkpoint;
@@ -51,14 +56,15 @@ function run(strength,uneven){
  return {strength,uneven,dominantShare:round(dominate/seeds.length),uniqueChampions:round(unique/seeds.length),
   finalReputationGap:years.at(-1).reputationGap,deficitRate:round(byYear.reduce((a,y)=>a+y.deficits,0)/(seeds.length*15*14)),
   restrictionRate:round(byYear.reduce((a,y)=>a+y.restricted,0)/(seeds.length*15*14)),investmentTotal:totalInvest,coachChanges:careerCoachChanges,
-  facilityEvents:facilityQuotes,recruitmentDecisionRows:decisions,financialBreaches,years};
+  facilityEvents:facilityQuotes,facilityPaidEvents,recruitmentDecisionRows:decisions,recruitmentTypes,financialBreaches,years};
 }
 const scenarios=[];
 for(const uneven of [false,true])for(const strength of strengths)scenarios.push(run(strength,uneven));
 assert.equal(scenarios.length,8);
 assert.ok(scenarios.every(s=>s.years.length===15&&s.financialBreaches===0));
 assert.ok(scenarios.every(s=>s.recruitmentDecisionRows===0||s.recruitmentDecisionRows===seeds.length*15*14));
-const summarize=s=>({strength:s.strength,uneven:s.uneven,dominantShare:s.dominantShare,champions:s.uniqueChampions,repGap:s.finalReputationGap,deficits:s.deficitRate,restrictions:s.restrictionRate,investment:s.investmentTotal,coachChanges:s.coachChanges,facilityEvents:s.facilityEvents,decisions:s.recruitmentDecisionRows});
+assert.ok(scenarios.every(s=>s.facilityPaidEvents===s.facilityEvents),'coherence evenements investissements');
+const summarize=s=>({strength:s.strength,uneven:s.uneven,dominantShare:s.dominantShare,champions:s.uniqueChampions,repGap:s.finalReputationGap,deficits:s.deficitRate,restrictions:s.restrictionRate,investment:s.investmentTotal,coachChanges:s.coachChanges,facilityEvents:s.facilityEvents,decisions:s.recruitmentDecisionRows,recruitmentTypes:s.recruitmentTypes});
 const report={schemaVersion:1,seeds:seeds.length,seasons:15,clubs:14,scenarios,summary:scenarios.map(summarize)};
 if(process.env.CD_V52_REPORT)fs.writeFileSync(process.env.CD_V52_REPORT,JSON.stringify(report,null,2)+'\n');
 console.log('V52 CAREER LAB PASS '+JSON.stringify(report.summary));
