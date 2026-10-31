@@ -600,3 +600,11 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Les validations PR obsolètes sont annulées sur économie, UI01 et observatoire V58 ; le comportement protecteur des validations sur `main` est maintenu.
 - Tous les workflows spécialisés restent activables manuellement. Aucune modification de `dist/**`, `tests/**`, `ci/**`, ni des workflows réservés par le producteur. Comparaison de scénarios et limites : `docs/ci-budget-optimization.md`.
 - La livraison dépend de la CI du dernier SHA de PR, de la revue du diff et du contrôle post-fusion `push` sur le nouveau `main` ; les chiffres de réduction sont **projetés**, pas un gain de minutes déjà mesuré.
+
+## CI V2 — équilibrage et déduplication (31 octobre 2026)
+
+- Base `main 2ef6f9561a6ccb9613360476216cfc099bdd599e` ; CI de #90 post-fusion verte, `AGENTS.md`, `DEVELOPPEMENT.md` et #73 lus ; branche `perf/ci-v2-balanced-shards` réservée dans #73.
+- Mesures 81 suites : 78, 121 et 153 secondes de jobs JS sur run #41195460951. Pondération prudente des 23 suites lentes par le maximum de deux CI (#41195460951 et premier essai #41196473550) afin de prendre en compte les temps variables, découpage déterministe sans exclusion ; ajout `ci/shard-tests.cjs` et test de garde `tests/ci-sharding.cjs`. Chaque nouvelle suite sera incluse même sans pondération connue.
+- Résilience : 3 scénarios de 15 saisons et validations de rapports intacts ; test natif contrats unique dans la synthèse au lieu d'être répété dans les trois jobs. Mobilité : tests de sauvegarde/sélection répétés seulement sur lancement manuel, car la CI centrale les exécute sur chaque PR/push. Audit économique inchangé.
+- Développement : tests ciblés avant commit, publication en un seul commit final puis validations CI complètes sur HEAD ; fusion strictement après `Validation CI` et contrôles spécialisés verts et vérification de la CI post-fusion.
+- Références, limites et indicateurs avant/après dans `docs/ci-budget-optimization.md` ; mesures réelles et passation ajoutées à l'issue #73 après CI, sans commit documentaire supplémentaire. Aucun fichier `dist/**`, format de sauvegarde, règle rugby, droit GitHub ou facturation modifié.
