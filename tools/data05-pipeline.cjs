@@ -12,11 +12,12 @@ function loadResilience() {
 function parseArgs(args) {
  function get(k,d){const i=args.indexOf(k);return i<0?d:args[i+1];}
  const result={limit:Number(get('--limit','0')),budget:Number(get('--budget','0')),concurrency:Number(get('--concurrency','1')),delayMs:Number(get('--delay-ms','1200')),dir:path.resolve(get('--output','modding/data05-unified-output'))};
- if(!Number.isInteger(result.limit)||result.limit<0||result.limit>1592||!Number.isInteger(result.budget)||result.budget<0||!Number.isInteger(result.concurrency)||result.concurrency<1||result.concurrency>2||!Number.isInteger(result.delayMs)||result.delayMs<1000)throw Error('Invalid collection parameters');
+ if(!Number.isInteger(result.limit)||result.limit<0||result.limit>1592||!Number.isInteger(result.budget)||result.budget<0||!Number.isInteger(result.concurrency)||result.concurrency<1||result.concurrency>1||!Number.isInteger(result.delayMs)||result.delayMs<1000)throw Error('Invalid collection parameters');
  if(result.limit>0&&!args.includes('--ack-lnr-access'))throw Error('Confirm LNR access rules using --ack-lnr-access before live collection');
  return result;
 }
 async function execute(options={},deps={}) {
+ if((options.concurrency??1)!==1)throw Error('Concurrent DATA-05 collection is disabled until fail-closed proof');
  const root=options.root||path.resolve(__dirname,'..');
  const roster=(deps.roster||unified.loadRoster)(root);
  const createTransport=deps.transportFactory||loadTransport();
