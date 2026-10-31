@@ -608,3 +608,10 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Résilience : 3 scénarios de 15 saisons et validations de rapports intacts ; test natif contrats unique dans la synthèse au lieu d'être répété dans les trois jobs. Mobilité : tests de sauvegarde/sélection répétés seulement sur lancement manuel, car la CI centrale les exécute sur chaque PR/push. Audit économique inchangé.
 - Développement : tests ciblés avant commit, publication en un seul commit final puis validations CI complètes sur HEAD ; fusion strictement après `Validation CI` et contrôles spécialisés verts et vérification de la CI post-fusion.
 - Références, limites et indicateurs avant/après dans `docs/ci-budget-optimization.md` ; mesures réelles et passation ajoutées à l'issue #73 après CI, sans commit documentaire supplémentaire. Aucun fichier `dist/**`, format de sauvegarde, règle rugby, droit GitHub ou facturation modifié.
+
+## Réception UI-02C sur le main actuel — 31 octobre 2026
+
+- Branche `integration/ui02-reception` : intégration de la PR #84 (`0b5241bb`) sur `main 2fcd3adb`, sans conflit ni correctif source supplémentaire. Les correctifs économiques et le format des sauvegardes restent intacts.
+- Candidat testé `e7e8bcf0f2f19ee295dfdc2abe64f34c9f93564a` : 85 suites JS réussies (Node 24.22.1/Windows,169,510s), sauvegardes comprises ; 91 contrôles Google Chrome Windows réussis,320à1440px/deux thèmes, zéro erreur page. Captures ordinateur et mobile inspectées.
+- Preuves et limites dans `docs/reception-ui02/validation.md`, rapports JSON et captures adjacents. Le commit documentaire qui publie ces preuves ne change aucun fichier exécutable par rapport au candidat testé.
+- Pas de validation du lanceur portable, de la CI Linux ou des campagnes spécialisées séparées. Aucun merge tant que la CI complète du dernier SHA n'est pas verte ; pas de double intégration des PR #84/#81/#83, #75 intacte. Réception coordonnée dans l'issue #73.

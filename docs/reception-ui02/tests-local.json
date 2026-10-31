@@ -1,0 +1,434 @@
+{
+  "node": "v24.22.1",
+  "platform": "win32",
+  "count": 85,
+  "failures": 0,
+  "milliseconds": 169510,
+  "results": [
+    {
+      "suite": "academy-planning.cjs",
+      "ok": true,
+      "milliseconds": 59
+    },
+    {
+      "suite": "ai-roster-cycle.cjs",
+      "ok": true,
+      "milliseconds": 36433
+    },
+    {
+      "suite": "board-planning.cjs",
+      "ok": true,
+      "milliseconds": 48
+    },
+    {
+      "suite": "career-history.cjs",
+      "ok": true,
+      "milliseconds": 52
+    },
+    {
+      "suite": "career-integration.cjs",
+      "ok": true,
+      "milliseconds": 797
+    },
+    {
+      "suite": "career-resilience.cjs",
+      "ok": true,
+      "milliseconds": 6394
+    },
+    {
+      "suite": "champion-budget-regression.cjs",
+      "ok": true,
+      "milliseconds": 2039
+    },
+    {
+      "suite": "ci-report.cjs",
+      "ok": true,
+      "milliseconds": 43
+    },
+    {
+      "suite": "ci-selection.cjs",
+      "ok": true,
+      "milliseconds": 46
+    },
+    {
+      "suite": "ci-sharding.cjs",
+      "ok": true,
+      "milliseconds": 44
+    },
+    {
+      "suite": "club-ai.cjs",
+      "ok": true,
+      "milliseconds": 43
+    },
+    {
+      "suite": "coach-market.cjs",
+      "ok": true,
+      "milliseconds": 40
+    },
+    {
+      "suite": "development.cjs",
+      "ok": true,
+      "milliseconds": 815
+    },
+    {
+      "suite": "discipline.cjs",
+      "ok": true,
+      "milliseconds": 218
+    },
+    {
+      "suite": "economy-audit.cjs",
+      "ok": true,
+      "milliseconds": 1926
+    },
+    {
+      "suite": "economy.cjs",
+      "ok": true,
+      "milliseconds": 380
+    },
+    {
+      "suite": "facilities.cjs",
+      "ok": true,
+      "milliseconds": 40
+    },
+    {
+      "suite": "finance-planning.cjs",
+      "ok": true,
+      "milliseconds": 43
+    },
+    {
+      "suite": "frontrow.cjs",
+      "ok": true,
+      "milliseconds": 1244
+    },
+    {
+      "suite": "goalkicking.cjs",
+      "ok": true,
+      "milliseconds": 86
+    },
+    {
+      "suite": "manager-mobility.cjs",
+      "ok": true,
+      "milliseconds": 12288
+    },
+    {
+      "suite": "manager.cjs",
+      "ok": true,
+      "milliseconds": 482
+    },
+    {
+      "suite": "match-actions.cjs",
+      "ok": true,
+      "milliseconds": 275
+    },
+    {
+      "suite": "match-rules.cjs",
+      "ok": true,
+      "milliseconds": 790
+    },
+    {
+      "suite": "match2d.cjs",
+      "ok": true,
+      "milliseconds": 132
+    },
+    {
+      "suite": "matchflow.cjs",
+      "ok": true,
+      "milliseconds": 1184
+    },
+    {
+      "suite": "offline.cjs",
+      "ok": true,
+      "milliseconds": 252
+    },
+    {
+      "suite": "opposition.cjs",
+      "ok": true,
+      "milliseconds": 13605
+    },
+    {
+      "suite": "playbook.cjs",
+      "ok": true,
+      "milliseconds": 438
+    },
+    {
+      "suite": "preparation.cjs",
+      "ok": true,
+      "milliseconds": 1140
+    },
+    {
+      "suite": "release-gate.cjs",
+      "ok": true,
+      "milliseconds": 43
+    },
+    {
+      "suite": "reputation.cjs",
+      "ok": true,
+      "milliseconds": 42
+    },
+    {
+      "suite": "restarts.cjs",
+      "ok": true,
+      "milliseconds": 1063
+    },
+    {
+      "suite": "rugby-world.cjs",
+      "ok": true,
+      "milliseconds": 44
+    },
+    {
+      "suite": "rugby.cjs",
+      "ok": true,
+      "milliseconds": 25330
+    },
+    {
+      "suite": "saves.cjs",
+      "ok": true,
+      "milliseconds": 8114
+    },
+    {
+      "suite": "tactical-plans.cjs",
+      "ok": true,
+      "milliseconds": 7239
+    },
+    {
+      "suite": "transfer-planning.cjs",
+      "ok": true,
+      "milliseconds": 42
+    },
+    {
+      "suite": "ui01-integration.cjs",
+      "ok": true,
+      "milliseconds": 842
+    },
+    {
+      "suite": "ui01-interface.cjs",
+      "ok": true,
+      "milliseconds": 105
+    },
+    {
+      "suite": "ui02-live-integration.cjs",
+      "ok": true,
+      "milliseconds": 201
+    },
+    {
+      "suite": "ui02-player-components.cjs",
+      "ok": true,
+      "milliseconds": 56
+    },
+    {
+      "suite": "ui02-player-data.cjs",
+      "ok": true,
+      "milliseconds": 138
+    },
+    {
+      "suite": "v19-advantage.cjs",
+      "ok": true,
+      "milliseconds": 213
+    },
+    {
+      "suite": "v20-numerical-ai.cjs",
+      "ok": true,
+      "milliseconds": 389
+    },
+    {
+      "suite": "v21-numerical-advice.cjs",
+      "ok": true,
+      "milliseconds": 355
+    },
+    {
+      "suite": "v22-tactical-comparison.cjs",
+      "ok": true,
+      "milliseconds": 295
+    },
+    {
+      "suite": "v23-local-zones.cjs",
+      "ok": true,
+      "milliseconds": 277
+    },
+    {
+      "suite": "v24-four-zones.cjs",
+      "ok": true,
+      "milliseconds": 256
+    },
+    {
+      "suite": "v25-whatif.cjs",
+      "ok": true,
+      "milliseconds": 319
+    },
+    {
+      "suite": "v26-dual-whatif.cjs",
+      "ok": true,
+      "milliseconds": 322
+    },
+    {
+      "suite": "v27-physical-load.cjs",
+      "ok": true,
+      "milliseconds": 332
+    },
+    {
+      "suite": "v28-collective-preparation.cjs",
+      "ok": true,
+      "milliseconds": 2010
+    },
+    {
+      "suite": "v29-focused-development.cjs",
+      "ok": true,
+      "milliseconds": 1700
+    },
+    {
+      "suite": "v30-recruitment-intelligence.cjs",
+      "ok": true,
+      "milliseconds": 804
+    },
+    {
+      "suite": "v31-finance-forecasts.cjs",
+      "ok": true,
+      "milliseconds": 542
+    },
+    {
+      "suite": "v32-succession-planning.cjs",
+      "ok": true,
+      "milliseconds": 549
+    },
+    {
+      "suite": "v33-contract-renewals.cjs",
+      "ok": true,
+      "milliseconds": 971
+    },
+    {
+      "suite": "v34-counteroffers.cjs",
+      "ok": true,
+      "milliseconds": 895
+    },
+    {
+      "suite": "v35-salary-demand.cjs",
+      "ok": true,
+      "milliseconds": 1074
+    },
+    {
+      "suite": "v36-satisfaction.cjs",
+      "ok": true,
+      "milliseconds": 315
+    },
+    {
+      "suite": "v37-relations.cjs",
+      "ok": true,
+      "milliseconds": 551
+    },
+    {
+      "suite": "v38-individual-objectives.cjs",
+      "ok": true,
+      "milliseconds": 692
+    },
+    {
+      "suite": "v39-team-dynamics.cjs",
+      "ok": true,
+      "milliseconds": 569
+    },
+    {
+      "suite": "v40-match-cockpit.cjs",
+      "ok": true,
+      "milliseconds": 225
+    },
+    {
+      "suite": "v46-advanced.cjs",
+      "ok": true,
+      "milliseconds": 45
+    },
+    {
+      "suite": "v46-multiseason.cjs",
+      "ok": true,
+      "milliseconds": 42
+    },
+    {
+      "suite": "v46-v51-contracts.cjs",
+      "ok": true,
+      "milliseconds": 52
+    },
+    {
+      "suite": "v47-advanced.cjs",
+      "ok": true,
+      "milliseconds": 42
+    },
+    {
+      "suite": "v47-multiseason.cjs",
+      "ok": true,
+      "milliseconds": 43
+    },
+    {
+      "suite": "v48-advanced.cjs",
+      "ok": true,
+      "milliseconds": 47
+    },
+    {
+      "suite": "v48-multiseason.cjs",
+      "ok": true,
+      "milliseconds": 44
+    },
+    {
+      "suite": "v49-advanced.cjs",
+      "ok": true,
+      "milliseconds": 45
+    },
+    {
+      "suite": "v49-multiseason.cjs",
+      "ok": true,
+      "milliseconds": 43
+    },
+    {
+      "suite": "v50-advanced.cjs",
+      "ok": true,
+      "milliseconds": 44
+    },
+    {
+      "suite": "v50-multiseason.cjs",
+      "ok": true,
+      "milliseconds": 42
+    },
+    {
+      "suite": "v51-checkpoint.cjs",
+      "ok": true,
+      "milliseconds": 48
+    },
+    {
+      "suite": "v51-financial-recovery.cjs",
+      "ok": true,
+      "milliseconds": 42
+    },
+    {
+      "suite": "v51-financial-regressions.cjs",
+      "ok": true,
+      "milliseconds": 49
+    },
+    {
+      "suite": "v51-transactions.cjs",
+      "ok": true,
+      "milliseconds": 48
+    },
+    {
+      "suite": "v51-world-audit.cjs",
+      "ok": true,
+      "milliseconds": 49
+    },
+    {
+      "suite": "v51-world-finance.cjs",
+      "ok": true,
+      "milliseconds": 51
+    },
+    {
+      "suite": "v51-world-simulation.cjs",
+      "ok": true,
+      "milliseconds": 48
+    },
+    {
+      "suite": "v58-native-coach-opportunities.cjs",
+      "ok": true,
+      "milliseconds": 350
+    },
+    {
+      "suite": "world-career.cjs",
+      "ok": true,
+      "milliseconds": 30045
+    }
+  ]
+}
