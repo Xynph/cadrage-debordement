@@ -13,3 +13,7 @@
 Tester : `node tests/v51-world-finance.cjs`. Ce test est autonome dans la PR #46 et vérifie les parcours de 10 et 15 saisons sans exiger les PR #40 à #44.
 
 **À valider avant intégration :** doubles décisions sur infrastructures, transactions, présentation des finances, impacts sportifs, anciennes sauvegardes, calibrage des coûts et revenus réels du jeu (fictifs, pas chiffres officiels).
+
+## Correction transactionnelle
+
+Le pont passe désormais `externalEconomy:true` au simulateur sportif : ce dernier ne débite plus de recettes ni d'investissements internes. Le pont vérifie la capacité de payer, applique ensuite l'unique débit financier et augmente le niveau d'infrastructure seulement si le projet a réellement été financé. Les pénalités financières impactent la formule fictive de classement **dès la saison suivante**. Il ne s'agit pas d'une sanction officielle ni d'une modification du moteur de match. Tests ciblés : `tests/v51-transactions.cjs`.
