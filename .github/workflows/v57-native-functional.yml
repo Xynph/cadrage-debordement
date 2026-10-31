@@ -1,0 +1,33 @@
+name: V57 validation native independante
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-functional:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Audit lecture seule V57
+        env:
+          CD_V57_REPORT: v57-native-report.json
+        run: |
+          node --check tests/v57-native-functional.cjs
+          node tests/v57-native-functional.cjs
+      - name: Tests natifs moteur et sauvegarde
+        run: |
+          node tests/world-career.cjs
+          node tests/v46-v51-contracts.cjs
+          node tests/v51-world-finance.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v57-native-report
+          path: v57-native-report.json
+          if-no-files-found: ignore
