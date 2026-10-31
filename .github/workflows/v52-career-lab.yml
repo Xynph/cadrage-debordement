@@ -22,10 +22,16 @@ jobs:
         run: |
           node --check tests/v52-career-lab.cjs
           timeout 900s node tests/v52-career-lab.cjs
+      - name: Audit V53 financier et sportif
+        env:
+          CD_V53_REPORT: v53-audit-report.json
+        run: timeout 900s node tests/v53-career-audit.cjs
       - name: Publier rapport complet de carriere
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: v52-career-lab-report
-          path: v52-career-report.json
+          path: |
+            v52-career-report.json
+            v53-audit-report.json
           if-no-files-found: ignore
