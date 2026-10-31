@@ -19,7 +19,7 @@ try:
         p.set_default_timeout(15000)
         p.on('pageerror',lambda e:errors.append(str(e)))
         p.goto('http://127.0.0.1:%d/'%srv.server_address[1])
-        p.get_by_role('button',name='Nouvelle carrière').click();;;
+        p.get_by_role('button',name='Nouvelle carrière').click();p.get_by_role('button',name='Univers fictif').click()
         p.locator('.clubchoice').first.click()
         p.evaluate("nav('tactics')")
         panel=p.locator('[aria-label="Préparation du prochain match"]')
