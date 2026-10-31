@@ -12,7 +12,7 @@ assert.ok(a.history.some(y=>y.standings.some(r=>r.sportingPenalty>0)));
 assert.equal(clubs[0].cash,1000000);
 for(const c of a.clubs)assert.ok(c.facilities>=3&&c.facilities<=10);
 for(const y of a.history)for(const r of y.standings)assert.ok(r.investmentPaid===0||r.investmentPaid===30000);
-const noInvest=bridge.simulate({...options,profiles:Object.fromEntries(clubs.map(c=>[c.id,{revenue:0,baseCosts:300000,investment:30000}]))});
+const noInvest=bridge.simulate({...options,clubs:clubs.map(c=>({...c,cash:-100000,debt:100000})),profiles:Object.fromEntries(clubs.map(c=>[c.id,{revenue:0,baseCosts:300000,investment:30000}]))});
 assert.ok(noInvest.history.every(y=>y.standings.every(r=>r.investmentPaid===0)));
 assert.ok(noInvest.history.some(y=>y.standings.some(r=>r.cash<0)));
 console.log('V51 économie transactionnelle : scénarios 15 saisons validés');
