@@ -69,7 +69,7 @@ try:
         page.locator('.cd02-columns summary').click()
         page.locator('.cd02-columns input[value="salary"]').check()
         check('colonne salaire ajoutée',page.locator('th button[data-cd02-sort="salary"]').count()==1)
-        check('préférence enregistrée hors carrière',page.evaluate('"salary" in (JSON.parse(localStorage.getItem("cd-ui02-columns-v1")).columns||[])'))
+        check('préférence enregistrée hors carrière',page.evaluate('(JSON.parse(localStorage.getItem("cd-ui02-columns-v1")).columns||[]).includes("salary")'))
         check('sélection sans mutation carrière',page.evaluate('JSON.stringify(S)')==snapshot)
         page.locator('input[data-cd02-action="search"]').fill('ABSENT_TEST_012345')
         check('recherche vide',page.locator('.cd02-roster').get_by_text('Aucun joueur ne correspond aux critères.').count()==1)
