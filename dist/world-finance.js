@@ -28,7 +28,8 @@
     const investment=profile.investment??(row.facilities<10?60000+row.facilities*12000:0);
     const repayment=profile.repayment??15000;
     const quote=adapters.facility({cash:Math.max(0,club.cash),level:club.facilities,cost:investment,weeks:1});
-    const planned=club.cash>investment&&club.facilities<10&&quote?.affordable===true?investment:0;
+    const stressed=club.cash<0||club.debt>Math.max(1,revenue)*.8;
+    const planned=stressed?investment:(club.cash>investment&&club.facilities<10&&quote?.affordable===true?investment:0);
     const result=finance.annual(club,{revenue,baseCosts,investment:planned,repayment});
     club.cash=result.cash;club.debt=result.debt;
     club.reputation=row.reputation;
