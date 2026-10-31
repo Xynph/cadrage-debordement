@@ -1,10 +1,9 @@
-# DATA-06 — Lot de statistiques officielles d'effectif
+# DATA-06 — Audit de postes sur pages d'effectif LNR
 
-Lot vérifié manuellement sur les pages publiques LNR de [Clermont](https://top14.lnr.fr/club/clermont/effectif-staff) de [Provence Rugby](https://prod2.lnr.fr/club/provence-rugby/effectif-staff), [Toulouse](https://top14.lnr.fr/club/toulouse/effectif-staff) et [Brive](https://prod2.lnr.fr/club/brive/effectif-staff) au 31 octobre 2026. **90 entrées** comprenant poste affiché, matches, minutes et points, sans prétendre que ces totaux représentent toute la saison. Les chiffres étant susceptibles d'évoluer, chaque fiche conserve la page source ; cette livraison est un instantané, pas une photographie au 01/07/2026.
+Lot de **90 entrées** couvrant Clermont, Provence Rugby, Toulouse et Brive. Chaque club conserve son URL LNR et le poste tel qu'il a été précédemment relevé ; les correspondances avec les 1592 identités existantes exigent une concordance stricte club+nom et excluent toute création approximative.
 
-- `modding/data06/official-roster-batch.json` : 90 lignes de faits publics pour 4 clubs.
-- `tools/data06-roster-batch.cjs` : rapprochement unique club+nom aux 1592 IDs connus, aucun rapprochement approximatif ni création de joueurs si doute.
-- `tests/data06-roster-batch.cjs` : assertions de source, cohérence des stats, impossibilité de fausse association, test de bout en bout sur le catalogue.
-- `node tools/data06-roster-batch.cjs` affiche les comptes de rapprochement. `node --test tests/data06-roster-batch.cjs` lance les tests.
+**Correction critique au 31/10/2026 :** les pages LNR actuellement consultables pour Toulouse et Brive présentent les matchs, minutes et points à zéro, contrairement aux chiffres relevés antérieurement. Impossible de garantir ces totaux à la date annoncée : **les trois champs sont remis à null pour les 90 entrées**, avec `statsVerification: unverified-as-of-snapshot`, et le validateur refuse toute nouvelle valeur chiffrée sans vérification documentaire reproductible. Un changement de poste affiché selon le moment de consultation doit également être traité comme un conflit de source, pas silencieusement remplacé.
 
-Le lot ne calcule aucune note de talent, ni salaire ou budget et n'écrit aucune sauvegarde. Il est complémentaire aux PR #142/143/144. **Les 1352 profils non enrichis ne sont pas déclarés complets.** Les lignes déjà couvertes par les 240 profils ne doivent pas être comptées comme de nouveaux profils entièrement enrichis. Pour atteindre les 30 clubs, l'accès et la vérification des pages restantes doivent respecter les conditions des sites et les validations de provenance.
+Sources : https://top14.lnr.fr/club/toulouse/effectif-staff ; https://prod2.lnr.fr/club/brive/effectif-staff ; https://top14.lnr.fr/club/clermont/effectif-staff ; https://prod2.lnr.fr/club/provence-rugby/effectif-staff .
+
+`node --test tests/data06-roster-batch.cjs` ; `node tools/data06-roster-batch.cjs` (ne fait aucune collecte). Cette PR n'enrichit pas automatiquement les biographies ou les carrières. Pas de chiffres financiers ni de notes sportives inventés.
