@@ -23,3 +23,11 @@ html[data-cd-theme] .modalback:focus-within{outline:none}
  .ui01-session-tools .ui01-storage{flex-basis:100%}
  .ui01-appbar .ui01-session-tools button{min-height:40px}
 }
+:root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) .office-message.unread{background:var(--ui01-soft);border-left-color:#b9a7ff}
+:root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) .office-summary small,
+:root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) .office-message>small,
+:root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) .office-decision span{color:#b6c7d6}
+:root[data-cd-theme="tribune"] .ui01-layout:not(.live-layout) .office-summary small,
+:root[data-cd-theme="tribune"] .ui01-layout:not(.live-layout) .office-message>small,
+:root[data-cd-theme="tribune"] .ui01-layout:not(.live-layout) .office-message p,
+:root[data-cd-theme="tribune"] .ui01-layout:not(.live-layout) .office-decision span{color:#4d5c66}
