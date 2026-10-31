@@ -1,0 +1,30 @@
+name: Audit final V58-V58.2
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  final-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Audit complet
+        env:
+          CD_V58_FINAL_REPORT: v58-final-audit.json
+        run: |
+          node tests/v58-coach-career.cjs
+          node tests/v58-1-coach-negotiations.cjs
+          node tests/v58-2-contract-cycle.cjs
+          node tests/v58-final-integration-audit.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rapport-v58-final
+          path: v58-final-audit.json
+          if-no-files-found: ignore
