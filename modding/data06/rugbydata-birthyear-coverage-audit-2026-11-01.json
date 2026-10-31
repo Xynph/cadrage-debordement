@@ -1,0 +1,7198 @@
+{
+  "schema": "data06-birthyear-coverage-audit-v1",
+  "date": "2026-11-01",
+  "scope": "Distinct Rugby Data source-ID birth years deduplicated across existing external/Wikipedia/individual profile evidence; linked to LNR only by unique exact normalized full name within same club. This is not a playable import and not a guarantee of club as of 2026-07-01.",
+  "stats": {
+    "lnrTotal": 1592,
+    "rugbyDataSourceIdsWithBirthYear": 910,
+    "uniqueLnrIdsLinked": 894,
+    "remainingLnrWithoutLinkedBirthYear": 698,
+    "ambiguousRepeatedLnrMatches": 0
+  },
+  "sixClubCoverage": [
+    {
+      "club": "dax",
+      "lnrTotal": 36,
+      "linkedBirthYears": 24
+    },
+    {
+      "club": "narbonne",
+      "lnrTotal": 48,
+      "linkedBirthYears": 6
+    },
+    {
+      "club": "nice",
+      "lnrTotal": 51,
+      "linkedBirthYears": 8
+    },
+    {
+      "club": "angouleme",
+      "lnrTotal": 51,
+      "linkedBirthYears": 7
+    },
+    {
+      "club": "valence-romans",
+      "lnrTotal": 40,
+      "linkedBirthYears": 6
+    },
+    {
+      "club": "nevers",
+      "lnrTotal": 61,
+      "linkedBirthYears": 9
+    }
+  ],
+  "linked": [
+    {
+      "lnrId": "lnr:980",
+      "rugbyDataId": "221",
+      "club": "la-rochelle",
+      "name": "Grégory ALLDRITT",
+      "birthYear": 1997,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2461",
+      "rugbyDataId": "667",
+      "club": "toulouse",
+      "name": "Peato MAUVAKA",
+      "birthYear": 1997,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2360",
+      "rugbyDataId": "627",
+      "club": "toulon",
+      "name": "Gabin VILLIERE",
+      "birthYear": 1995,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:318",
+      "rugbyDataId": "83",
+      "club": "bordeaux-begles",
+      "name": "Romain BUROS",
+      "birthYear": 1997,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1079",
+      "rugbyDataId": "493",
+      "club": "racing-92",
+      "name": "Demba BAMBA",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2640",
+      "rugbyDataId": "37",
+      "club": "racing-92",
+      "name": "Maxime MACHENAUD",
+      "birthYear": 1988,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1125",
+      "rugbyDataId": "284",
+      "club": "lyon",
+      "name": "Ethan DUMORTIER",
+      "birthYear": 2000,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1789",
+      "rugbyDataId": "558",
+      "club": "paris",
+      "name": "Paul GABRILLAGUES",
+      "birthYear": 1993,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:13433",
+      "rugbyDataId": "772",
+      "club": "lyon",
+      "name": "Thomas GALLO",
+      "birthYear": 1999,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1955",
+      "rugbyDataId": "486",
+      "club": "perpignan",
+      "name": "Joaquin OVIEDO",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:13708",
+      "rugbyDataId": "1908",
+      "club": "brive",
+      "name": "John COONEY",
+      "birthYear": 1990,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1437",
+      "rugbyDataId": "304",
+      "club": "nice",
+      "name": "Vincent RATTEZ",
+      "birthYear": 1992,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:327",
+      "rugbyDataId": "95",
+      "club": "biarritz",
+      "name": "Yann LESGOURGUES",
+      "birthYear": 1991,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1980",
+      "rugbyDataId": "1096",
+      "club": "biarritz",
+      "name": "Mathieu ACEBES",
+      "birthYear": 1987,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:10482",
+      "rugbyDataId": "1329",
+      "club": "perpignan",
+      "name": "Sevu REECE",
+      "birthYear": 1997,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1077",
+      "rugbyDataId": "278",
+      "club": "nevers",
+      "name": "Arno BOTHA",
+      "birthYear": 1991,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2387",
+      "rugbyDataId": "252",
+      "club": "paris",
+      "name": "Ihaia WEST",
+      "birthYear": 1992,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2385",
+      "rugbyDataId": "616",
+      "club": "biarritz",
+      "name": "Duncan PAIA'AUA",
+      "birthYear": 1995,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:25068",
+      "rugbyDataId": "1427",
+      "club": "narbonne",
+      "name": "Aphiwe DYANTYI",
+      "birthYear": 1994,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:399",
+      "rugbyDataId": "2093",
+      "club": "oyonnax",
+      "name": "Vasil LOBZHANIDZE",
+      "birthYear": 1996,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2355",
+      "rugbyDataId": "615",
+      "club": "toulon",
+      "name": "Charles OLLIVON",
+      "birthYear": 1993,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:331",
+      "rugbyDataId": "96",
+      "club": "bordeaux-begles",
+      "name": "Maxime LUCU",
+      "birthYear": 1993,
+      "evidence": "rugbydata-birth-year-external-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2197",
+      "rugbyDataId": "529",
+      "club": "racing-92",
+      "name": "Maxime BAUDONNE",
+      "birthYear": 2002,
+      "evidence": "rugbydata-birth-year-wikipedia-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1084",
+      "rugbyDataId": "296",
+      "club": "lyon",
+      "name": "Guillaume MARCHAND",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-wikipedia-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1034",
+      "rugbyDataId": "319",
+      "club": "la-rochelle",
+      "name": "Davit NINIASHVILI",
+      "birthYear": 2002,
+      "evidence": "rugbydata-birth-year-wikipedia-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1000",
+      "rugbyDataId": "251",
+      "club": "montpellier",
+      "name": "Reda WARDI",
+      "birthYear": 1995,
+      "evidence": "rugbydata-birth-year-wikipedia-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2151",
+      "rugbyDataId": "522",
+      "club": "montpellier",
+      "name": "Donovan TAOFIFENUA",
+      "birthYear": 1999,
+      "evidence": "rugbydata-birth-year-wikipedia-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:179",
+      "rugbyDataId": "1088",
+      "club": "lyon",
+      "name": "Gabin LORRE",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:792",
+      "rugbyDataId": "346",
+      "club": "racing-92",
+      "name": "Nicolas MARTINS",
+      "birthYear": 1999,
+      "evidence": "rugbydata-birth-year-wikipedia-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2232",
+      "rugbyDataId": "403",
+      "club": "pau",
+      "name": "Jimi MAXIMIN",
+      "birthYear": 1999,
+      "evidence": "rugbydata-birth-year-wikipedia-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1802",
+      "rugbyDataId": "543",
+      "club": "paris",
+      "name": "Paul ALO EMILE",
+      "birthYear": 1991,
+      "evidence": "rugbydata-birth-year-wikipedia-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:982",
+      "rugbyDataId": "239",
+      "club": "la-rochelle",
+      "name": "Thomas LAVAULT",
+      "birthYear": 1999,
+      "evidence": "rugbydata-birth-year-wikipedia-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2366",
+      "rugbyDataId": "2133",
+      "club": "provence-rugby",
+      "name": "Thomas SALLES",
+      "birthYear": 1996,
+      "evidence": "rugbydata-birth-year-wikipedia-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:9",
+      "rugbyDataId": "958",
+      "club": "agen",
+      "name": "Matthieu BONNET",
+      "birthYear": 2000,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:13690",
+      "rugbyDataId": "1891",
+      "club": "agen",
+      "name": "Craig WILLIS",
+      "birthYear": 1995,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:91",
+      "rugbyDataId": "991",
+      "club": "agen",
+      "name": "Clément GARRIGUES",
+      "birthYear": 2002,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1567",
+      "rugbyDataId": "1039",
+      "club": "aurillac",
+      "name": "Basa KHONELIDZE",
+      "birthYear": 2003,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1642",
+      "rugbyDataId": "1020",
+      "club": "aurillac",
+      "name": "Luka NIORADZE",
+      "birthYear": 1999,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1603",
+      "rugbyDataId": "1012",
+      "club": "aurillac",
+      "name": "Gymael JEAN-JACQUES",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1637",
+      "rugbyDataId": "1013",
+      "club": "aurillac",
+      "name": "Giorgi KARTVELISHVILI",
+      "birthYear": 1991,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1635",
+      "rugbyDataId": "1026",
+      "club": "aurillac",
+      "name": "Robert RODGERS",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1580",
+      "rugbyDataId": "1038",
+      "club": "aurillac",
+      "name": "Skip JONGEJAN",
+      "birthYear": 2003,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1648",
+      "rugbyDataId": "1027",
+      "club": "aurillac",
+      "name": "Martial ROLLAND",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1598",
+      "rugbyDataId": "1042",
+      "club": "aurillac",
+      "name": "Mehdi SLAMANI",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1640",
+      "rugbyDataId": "1004",
+      "club": "aurillac",
+      "name": "Théo CAMBON",
+      "birthYear": 1999,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1571",
+      "rugbyDataId": "1035",
+      "club": "aurillac",
+      "name": "Tim DE JONG",
+      "birthYear": 2002,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1645",
+      "rugbyDataId": "1010",
+      "club": "aurillac",
+      "name": "Hugo HUURMAN",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1576",
+      "rugbyDataId": "1003",
+      "club": "aurillac",
+      "name": "Aleksandre BURDULI",
+      "birthYear": 2002,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:13787",
+      "rugbyDataId": "1895",
+      "club": "aurillac",
+      "name": "Viliami TAULANI",
+      "birthYear": 1997,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1612",
+      "rugbyDataId": "1030",
+      "club": "aurillac",
+      "name": "Didier TISON",
+      "birthYear": 1993,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1579",
+      "rugbyDataId": "1037",
+      "club": "aurillac",
+      "name": "Boris HADINEGORO",
+      "birthYear": 2003,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1356",
+      "rugbyDataId": "998",
+      "club": "aurillac",
+      "name": "Tedo ABZHANDADZE",
+      "birthYear": 1999,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1581",
+      "rugbyDataId": "1001",
+      "club": "aurillac",
+      "name": "Hugo BASTARD",
+      "birthYear": 2002,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2303",
+      "rugbyDataId": "1044",
+      "club": "aurillac",
+      "name": "Karsen TALALUA",
+      "birthYear": 2004,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:270",
+      "rugbyDataId": "1134",
+      "club": "aurillac",
+      "name": "François VERGNAUD",
+      "birthYear": 1997,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:12708",
+      "rugbyDataId": "1043",
+      "club": "aurillac",
+      "name": "Angus STANIFORTH",
+      "birthYear": 2004,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:13439",
+      "rugbyDataId": "1029",
+      "club": "aurillac",
+      "name": "Jake STRACHAN",
+      "birthYear": 1996,
+      "evidence": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:240",
+      "rugbyDataId": "1131",
+      "club": "beziers",
+      "name": "Killian TAOFIFENUA",
+      "birthYear": 2000,
+      "evidence": "rugbydata-birth-year-wikipedia-beziers-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:122",
+      "rugbyDataId": "1082",
+      "club": "beziers",
+      "name": "Thomas CANALETA",
+      "birthYear": 2004,
+      "evidence": "rugbydata-birth-year-wikipedia-beziers-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:12537",
+      "rugbyDataId": "1086",
+      "club": "beziers",
+      "name": "Tanguy JAILLON",
+      "birthYear": 2005,
+      "evidence": "rugbydata-birth-year-wikipedia-beziers-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:24977",
+      "rugbyDataId": "3077",
+      "club": "beziers",
+      "name": "Mackenzie MARTIN",
+      "birthYear": 2003,
+      "evidence": "rugbydata-birth-year-wikipedia-beziers-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1614",
+      "rugbyDataId": "1007",
+      "club": "beziers",
+      "name": "David DELARUE",
+      "birthYear": 1996,
+      "evidence": "rugbydata-birth-year-wikipedia-beziers-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1631",
+      "rugbyDataId": "1011",
+      "club": "beziers",
+      "name": "Jordon JANSE VAN RENSBURG",
+      "birthYear": 2000,
+      "evidence": "rugbydata-birth-year-wikipedia-beziers-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:11912",
+      "rugbyDataId": "3033",
+      "club": "beziers",
+      "name": "Barnabé MECHENTEL",
+      "birthYear": 2005,
+      "evidence": "rugbydata-birth-year-wikipedia-beziers-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2492",
+      "rugbyDataId": "650",
+      "club": "toulouse",
+      "name": "Joshua BRENNAN",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-clubs-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2414",
+      "rugbyDataId": "478",
+      "club": "toulouse",
+      "name": "Valentin DELPY",
+      "birthYear": 2003,
+      "evidence": "rugbydata-birth-year-wikipedia-clubs-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2329",
+      "rugbyDataId": "634",
+      "club": "toulon",
+      "name": "Pierre DAMOND",
+      "birthYear": 2003,
+      "evidence": "rugbydata-birth-year-wikipedia-clubs-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2291",
+      "rugbyDataId": "635",
+      "club": "toulon",
+      "name": "Marius DOMON",
+      "birthYear": 2002,
+      "evidence": "rugbydata-birth-year-wikipedia-clubs-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:12570",
+      "rugbyDataId": "498",
+      "club": "racing-92",
+      "name": "Diego ESCOBAR",
+      "birthYear": 2000,
+      "evidence": "rugbydata-birth-year-wikipedia-clubs-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2201",
+      "rugbyDataId": "507",
+      "club": "racing-92",
+      "name": "Gia KHARAISHVILI",
+      "birthYear": 1999,
+      "evidence": "rugbydata-birth-year-wikipedia-clubs-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:926",
+      "rugbyDataId": "1976",
+      "club": "provence-rugby",
+      "name": "Thibaut MARTEL",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-wikipedia-clubs-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2063",
+      "rugbyDataId": "2149",
+      "club": "provence-rugby",
+      "name": "Charly GAMBINI",
+      "birthYear": 2004,
+      "evidence": "rugbydata-birth-year-wikipedia-clubs-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:13402",
+      "rugbyDataId": "4007",
+      "club": "bordeaux-begles",
+      "name": "Gabriel BOHN",
+      "birthYear": 2006,
+      "evidence": "rugbydata-birth-year-wikipedia-clubs-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:11685",
+      "rugbyDataId": "3947",
+      "club": "bordeaux-begles",
+      "name": "Elyjah IBSAIENE",
+      "birthYear": 2006,
+      "evidence": "rugbydata-birth-year-wikipedia-clubs-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1584",
+      "rugbyDataId": "309",
+      "club": "lyon",
+      "name": "Beka SHVANGIRADZE",
+      "birthYear": 2002,
+      "evidence": "rugbydata-birth-year-wikipedia-clubs-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1712",
+      "rugbyDataId": "299",
+      "club": "lyon",
+      "name": "Theo MILLET",
+      "birthYear": 1997,
+      "evidence": "rugbydata-birth-year-wikipedia-clubs-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:596",
+      "rugbyDataId": "159",
+      "club": "lyon",
+      "name": "Adrien SEGURET",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-wikipedia-clubs-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:25076",
+      "rugbyDataId": "4436",
+      "club": "la-rochelle",
+      "name": "Sione AHIO",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-clubs-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2990",
+      "rugbyDataId": "1224",
+      "club": "colomiers",
+      "name": "Pierre Emmanuel PACHECO",
+      "birthYear": 2002,
+      "evidence": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:10260",
+      "rugbyDataId": "1231",
+      "club": "colomiers",
+      "name": "Michael SIMUTOGA",
+      "birthYear": 1996,
+      "evidence": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:743",
+      "rugbyDataId": "1214",
+      "club": "colomiers",
+      "name": "Maxime GRANOUILLET",
+      "birthYear": 1989,
+      "evidence": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2703",
+      "rugbyDataId": "1222",
+      "club": "colomiers",
+      "name": "Eliott MAUREL",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:12595",
+      "rugbyDataId": "1241",
+      "club": "colomiers",
+      "name": "Natan CULINAT",
+      "birthYear": 2005,
+      "evidence": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:11220",
+      "rugbyDataId": "1229",
+      "club": "colomiers",
+      "name": "Ugo SEGUELA",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:488",
+      "rugbyDataId": "1210",
+      "club": "colomiers",
+      "name": "Martin DULON",
+      "birthYear": 2000,
+      "evidence": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2599",
+      "rugbyDataId": "1952",
+      "club": "colomiers",
+      "name": "Alexandre BORIE",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1715",
+      "rugbyDataId": "2075",
+      "club": "oyonnax",
+      "name": "Antoine ABRAHAM",
+      "birthYear": 1995,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:131",
+      "rugbyDataId": "1050",
+      "club": "oyonnax",
+      "name": "Yannick ARROYO",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2169",
+      "rugbyDataId": "2097",
+      "club": "oyonnax",
+      "name": "Ali OZ",
+      "birthYear": 1995,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:11683",
+      "rugbyDataId": "67",
+      "club": "oyonnax",
+      "name": "Martin VILLAR",
+      "birthYear": 2002,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:13639",
+      "rugbyDataId": "1627",
+      "club": "oyonnax",
+      "name": "Mayco VIVAS",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:450",
+      "rugbyDataId": "343",
+      "club": "oyonnax",
+      "name": "Vano KARKADZE",
+      "birthYear": 2000,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:11648",
+      "rugbyDataId": "2101",
+      "club": "oyonnax",
+      "name": "Julien RATAJCZAK",
+      "birthYear": 2003,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:11418",
+      "rugbyDataId": "1002",
+      "club": "oyonnax",
+      "name": "Koen BLOEMEN",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1734",
+      "rugbyDataId": "2111",
+      "club": "oyonnax",
+      "name": "Antonin CORSO",
+      "birthYear": 2004,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:314",
+      "rugbyDataId": "307",
+      "club": "oyonnax",
+      "name": "Alban ROUSSEL",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:11662",
+      "rugbyDataId": "2113",
+      "club": "oyonnax",
+      "name": "Cyriac GUILLY",
+      "birthYear": 2003,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:11348",
+      "rugbyDataId": "2089",
+      "club": "oyonnax",
+      "name": "Hugo HERMET",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1690",
+      "rugbyDataId": "2092",
+      "club": "oyonnax",
+      "name": "Kevin LEBRETON",
+      "birthYear": 1995,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:322",
+      "rugbyDataId": "2095",
+      "club": "oyonnax",
+      "name": "Antoine MIQUEL",
+      "birthYear": 1994,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1684",
+      "rugbyDataId": "2098",
+      "club": "oyonnax",
+      "name": "Wandrille PICAULT",
+      "birthYear": 1994,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2608",
+      "rugbyDataId": "21",
+      "club": "oyonnax",
+      "name": "Uzair CASSIEM",
+      "birthYear": 1990,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:686",
+      "rugbyDataId": "2088",
+      "club": "oyonnax",
+      "name": "Loic GODENER",
+      "birthYear": 1995,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:3582",
+      "rugbyDataId": "2103",
+      "club": "oyonnax",
+      "name": "Jonathan RURU",
+      "birthYear": 1993,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2725",
+      "rugbyDataId": "2116",
+      "club": "oyonnax",
+      "name": "Jules SOLINAS",
+      "birthYear": 2003,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:88",
+      "rugbyDataId": "362",
+      "club": "oyonnax",
+      "name": "Thomas VINCENT",
+      "birthYear": 1999,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:12794",
+      "rugbyDataId": "151",
+      "club": "oyonnax",
+      "name": "Luka MATKAVA",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:849",
+      "rugbyDataId": "706",
+      "club": "oyonnax",
+      "name": "Iñaki AYARZA",
+      "birthYear": 1999,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1445",
+      "rugbyDataId": "332",
+      "club": "oyonnax",
+      "name": "Thomas DARMON",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1206",
+      "rugbyDataId": "2094",
+      "club": "oyonnax",
+      "name": "Lucas MENSA",
+      "birthYear": 1996,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2320",
+      "rugbyDataId": "2115",
+      "club": "oyonnax",
+      "name": "Louis MORLAND",
+      "birthYear": 2004,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:3228",
+      "rugbyDataId": "2109",
+      "club": "oyonnax",
+      "name": "Danny TOALA",
+      "birthYear": 1999,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:25024",
+      "rugbyDataId": "4145",
+      "club": "oyonnax",
+      "name": "Liam COOMBES-FABLING",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:11482",
+      "rugbyDataId": "124",
+      "club": "oyonnax",
+      "name": "Enzo REYBIER",
+      "birthYear": 2002,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1726",
+      "rugbyDataId": "2106",
+      "club": "oyonnax",
+      "name": "Gavin STARK",
+      "birthYear": 1995,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1844",
+      "rugbyDataId": "2076",
+      "club": "oyonnax",
+      "name": "Paul AURADOU",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:646",
+      "rugbyDataId": "194",
+      "club": "oyonnax",
+      "name": "Alex NEWSOME",
+      "birthYear": 1996,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:11829",
+      "rugbyDataId": "1185",
+      "club": "brive",
+      "name": "Quentin ALGAY",
+      "birthYear": 2006,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1118",
+      "rugbyDataId": "280",
+      "club": "brive",
+      "name": "Yanis CHARCOSSET",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:434",
+      "rugbyDataId": "1151",
+      "club": "brive",
+      "name": "Lucas DA SILVA",
+      "birthYear": 1997,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:11868",
+      "rugbyDataId": "4386",
+      "club": "brive",
+      "name": "Valerio SICILIANO",
+      "birthYear": 2004,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:4042",
+      "rugbyDataId": "1146",
+      "club": "brive",
+      "name": "Vakhtang ABDALADZE",
+      "birthYear": 1996,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1423",
+      "rugbyDataId": "1149",
+      "club": "brive",
+      "name": "Simon-pierre CHAUVAC",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:380",
+      "rugbyDataId": "1150",
+      "club": "brive",
+      "name": "Francisco CORIA MARCHETTI",
+      "birthYear": 2000,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2489",
+      "rugbyDataId": "674",
+      "club": "brive",
+      "name": "Hugo REILHES",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:401",
+      "rugbyDataId": "1179",
+      "club": "brive",
+      "name": "Marcel VAN DER MERWE",
+      "birthYear": 1990,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:13699",
+      "rugbyDataId": "1910",
+      "club": "brive",
+      "name": "Irné HERBST",
+      "birthYear": 1993,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:385",
+      "rugbyDataId": "1912",
+      "club": "brive",
+      "name": "Teun KARST",
+      "birthYear": 2004,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2643",
+      "rugbyDataId": "42",
+      "club": "brive",
+      "name": "Konstantine MIKAUTADZE",
+      "birthYear": 1991,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:776",
+      "rugbyDataId": "103",
+      "club": "brive",
+      "name": "Alexandre RICARD",
+      "birthYear": 1997,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:746",
+      "rugbyDataId": "1206",
+      "club": "brive",
+      "name": "Anthony COLETTA",
+      "birthYear": 1989,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:463",
+      "rugbyDataId": "1191",
+      "club": "brive",
+      "name": "David GENESTE",
+      "birthYear": 2004,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:448",
+      "rugbyDataId": "1155",
+      "club": "brive",
+      "name": "Sasha GUE",
+      "birthYear": 2000,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:369",
+      "rugbyDataId": "1198",
+      "club": "brive",
+      "name": "Geoffrey MALATERRE",
+      "birthYear": 2005,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:403",
+      "rugbyDataId": "1161",
+      "club": "brive",
+      "name": "Retief MARAIS",
+      "birthYear": 1995,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2252",
+      "rugbyDataId": "1162",
+      "club": "brive",
+      "name": "Samuel MAXIMIN",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:757",
+      "rugbyDataId": "157",
+      "club": "brive",
+      "name": "Yann PEYSSON",
+      "birthYear": 2000,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:12130",
+      "rugbyDataId": "1172",
+      "club": "brive",
+      "name": "Taniela SADRUGU",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2770",
+      "rugbyDataId": "1213",
+      "club": "brive",
+      "name": "Mathis GALTHIE",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:10715",
+      "rugbyDataId": "1173",
+      "club": "brive",
+      "name": "Maxime SIDOBRE",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:24981",
+      "rugbyDataId": "4146",
+      "club": "biarritz",
+      "name": "Reginald CHURCHWARD",
+      "birthYear": 1996,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:22923",
+      "rugbyDataId": "2402",
+      "club": "biarritz",
+      "name": "Kakhaber DARBAIDZE",
+      "birthYear": 2000,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:237",
+      "rugbyDataId": "1108",
+      "club": "biarritz",
+      "name": "Zakaria EL FAKIR",
+      "birthYear": 1997,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:12727",
+      "rugbyDataId": "1140",
+      "club": "biarritz",
+      "name": "François MUR",
+      "birthYear": 2003,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:272",
+      "rugbyDataId": "1124",
+      "club": "biarritz",
+      "name": "Giorgi NUTSUBIDZE",
+      "birthYear": 1998,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:739",
+      "rugbyDataId": "1226",
+      "club": "biarritz",
+      "name": "Hugo PIRLET",
+      "birthYear": 1996,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1583",
+      "rugbyDataId": "1127",
+      "club": "biarritz",
+      "name": "Alexandre PLANTIER",
+      "birthYear": 1991,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2762",
+      "rugbyDataId": "1144",
+      "club": "biarritz",
+      "name": "Yoni TUATAANE",
+      "birthYear": 2003,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:12729",
+      "rugbyDataId": "1138",
+      "club": "biarritz",
+      "name": "Anoa LAURENT",
+      "birthYear": 2006,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:25081",
+      "rugbyDataId": "943",
+      "club": "biarritz",
+      "name": "Charlie SHIEL",
+      "birthYear": 1997,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2676",
+      "rugbyDataId": "26",
+      "club": "biarritz",
+      "name": "Thomas DOLHAGARAY",
+      "birthYear": 2000,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:11861",
+      "rugbyDataId": "1139",
+      "club": "biarritz",
+      "name": "Carlo MIGNOT",
+      "birthYear": 2003,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:12724",
+      "rugbyDataId": "1143",
+      "club": "biarritz",
+      "name": "Yohan TAPIE",
+      "birthYear": 2004,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:420",
+      "rugbyDataId": "1101",
+      "club": "biarritz",
+      "name": "Arthur BONNEVAL",
+      "birthYear": 1995,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:12738",
+      "rugbyDataId": "1135",
+      "club": "biarritz",
+      "name": "Nicolas ELISSONDO",
+      "birthYear": 2003,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:261",
+      "rugbyDataId": "1136",
+      "club": "biarritz",
+      "name": "Baptiste FARISCOT",
+      "birthYear": 2001,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1311",
+      "rugbyDataId": "1110",
+      "club": "biarritz",
+      "name": "Bastien GUILLEMIN",
+      "birthYear": 1997,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1510",
+      "rugbyDataId": "1112",
+      "club": "biarritz",
+      "name": "Kylian JAMINET",
+      "birthYear": 1995,
+      "evidence": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:696",
+      "rugbyDataId": "196",
+      "club": "clermont",
+      "name": "Alivereti RAKA",
+      "birthYear": 1994,
+      "evidence": "rugbydata-birth-year-wikipedia-top14-remaining-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1397",
+      "rugbyDataId": "379",
+      "club": "montpellier",
+      "name": "Valentin WELSCH",
+      "birthYear": 2003,
+      "evidence": "rugbydata-birth-year-wikipedia-top14-remaining-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:13460",
+      "rugbyDataId": "2299",
+      "club": "montpellier",
+      "name": "Ricky RICCITELLI",
+      "birthYear": 1995,
+      "evidence": "rugbydata-birth-year-wikipedia-top14-remaining-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2501",
+      "rugbyDataId": "655",
+      "club": "montpellier",
+      "name": "Dimitri DELIBES",
+      "birthYear": 1999,
+      "evidence": "rugbydata-birth-year-wikipedia-top14-remaining-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:12786",
+      "rugbyDataId": "339",
+      "club": "montpellier",
+      "name": "Stuart HOGG",
+      "birthYear": 1992,
+      "evidence": "rugbydata-birth-year-wikipedia-top14-remaining-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1794",
+      "rugbyDataId": "565",
+      "club": "paris",
+      "name": "Sekou MACALOU",
+      "birthYear": 1995,
+      "evidence": "rugbydata-birth-year-wikipedia-top14-remaining-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1803",
+      "rugbyDataId": "554",
+      "club": "paris",
+      "name": "Julien DELBOUIS",
+      "birthYear": 1999,
+      "evidence": "rugbydata-birth-year-wikipedia-top14-remaining-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1876",
+      "rugbyDataId": "426",
+      "club": "pau",
+      "name": "Alexandre ETCHEBEHERE",
+      "birthYear": 2004,
+      "evidence": "rugbydata-birth-year-wikipedia-top14-remaining-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1960",
+      "rugbyDataId": "475",
+      "club": "perpignan",
+      "name": "Lorencio BOYER GALLARDO",
+      "birthYear": 2005,
+      "evidence": "rugbydata-birth-year-wikipedia-top14-remaining-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:2162",
+      "rugbyDataId": "287",
+      "club": "perpignan",
+      "name": "Cedate GOMES SA",
+      "birthYear": 1993,
+      "evidence": "rugbydata-birth-year-wikipedia-top14-remaining-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1952",
+      "rugbyDataId": "490",
+      "club": "perpignan",
+      "name": "Posolo TUILAGI",
+      "birthYear": 2004,
+      "evidence": "rugbydata-birth-year-wikipedia-top14-remaining-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1990",
+      "rugbyDataId": "468",
+      "club": "perpignan",
+      "name": "Giorgi TETRASHVILI",
+      "birthYear": 1993,
+      "evidence": "rugbydata-birth-year-wikipedia-top14-remaining-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1646",
+      "rugbyDataId": "437",
+      "club": "perpignan",
+      "name": "Antoine AUCAGNE",
+      "birthYear": 2000,
+      "evidence": "rugbydata-birth-year-wikipedia-top14-remaining-2026-10-31.json"
+    },
+    {
+      "lnrId": "lnr:1001",
+      "rugbyDataId": "2248",
+      "club": "montauban",
+      "name": "Leo AOUF",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:432",
+      "rugbyDataId": "597",
+      "club": "montauban",
+      "name": "Daniel BRENNAN",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1341",
+      "rugbyDataId": "2281",
+      "club": "montauban",
+      "name": "Lucas SEYROLLE",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:10999",
+      "rugbyDataId": "322",
+      "club": "montauban",
+      "name": "Valentin SIMUTOGA",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:3505",
+      "rugbyDataId": "520",
+      "club": "montauban",
+      "name": "Lucio SORDONI",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:925",
+      "rugbyDataId": "1982",
+      "club": "grenoble",
+      "name": "Lilian ROSSI",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1891",
+      "rugbyDataId": "409",
+      "club": "grenoble",
+      "name": "Romain RUFFENACH",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:235",
+      "rugbyDataId": "1984",
+      "club": "grenoble",
+      "name": "Bastien SOURY",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:920",
+      "rugbyDataId": "1964",
+      "club": "grenoble",
+      "name": "Eli EGLAINE",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:859",
+      "rugbyDataId": "1968",
+      "club": "grenoble",
+      "name": "Zack GAUTHIER",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:10917",
+      "rugbyDataId": "1974",
+      "club": "grenoble",
+      "name": "Johannes JONKER",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:870",
+      "rugbyDataId": "1992",
+      "club": "grenoble",
+      "name": "Theo LAVOINE",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:869",
+      "rugbyDataId": "1995",
+      "club": "grenoble",
+      "name": "Sascha MISTRULLI",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12402",
+      "rugbyDataId": "1980",
+      "club": "grenoble",
+      "name": "Giorgi PERTAIA",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1694",
+      "rugbyDataId": "1981",
+      "club": "grenoble",
+      "name": "Tommy RAYNAUD",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2251",
+      "rugbyDataId": "1985",
+      "club": "grenoble",
+      "name": "Cody THOMAS",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:23948",
+      "rugbyDataId": "2728",
+      "club": "grenoble",
+      "name": "James FENDER",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13367",
+      "rugbyDataId": "1972",
+      "club": "grenoble",
+      "name": "Cameron HOLT",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1982",
+      "rugbyDataId": "458",
+      "club": "grenoble",
+      "name": "Tristan LABOUTELEY",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:863",
+      "rugbyDataId": "2800",
+      "club": "grenoble",
+      "name": "Noe THERAUBE",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:883",
+      "rugbyDataId": "1960",
+      "club": "grenoble",
+      "name": "Antonin BERRUYER",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1531",
+      "rugbyDataId": "2038",
+      "club": "grenoble",
+      "name": "Steven DAVID",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:913",
+      "rugbyDataId": "1969",
+      "club": "grenoble",
+      "name": "Victor GUILLAUMOND",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:22911",
+      "rugbyDataId": "3908",
+      "club": "grenoble",
+      "name": "Fergus LEE WARNER",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:852",
+      "rugbyDataId": "1988",
+      "club": "grenoble",
+      "name": "Mathis BARET",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11846",
+      "rugbyDataId": "1070",
+      "club": "grenoble",
+      "name": "Otunuku PAUTA",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2742",
+      "rugbyDataId": "1961",
+      "club": "grenoble",
+      "name": "Max CLEMENT",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:249",
+      "rugbyDataId": "1962",
+      "club": "grenoble",
+      "name": "Barnabé COUILLOUD",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:893",
+      "rugbyDataId": "1965",
+      "club": "grenoble",
+      "name": "Eric ESCANDE",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12339",
+      "rugbyDataId": "3433",
+      "club": "grenoble",
+      "name": "Mael NAVIZET",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1632",
+      "rugbyDataId": "1979",
+      "club": "grenoble",
+      "name": "Marc PALMIER",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:919",
+      "rugbyDataId": "1967",
+      "club": "grenoble",
+      "name": "Romain FUSIER",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:685",
+      "rugbyDataId": "1971",
+      "club": "grenoble",
+      "name": "Julien HERITEAU",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:24997",
+      "rugbyDataId": "2864",
+      "club": "grenoble",
+      "name": "Lalomilo LALOMILO",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12458",
+      "rugbyDataId": "4033",
+      "club": "grenoble",
+      "name": "Nathan POZIN",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1687",
+      "rugbyDataId": "19",
+      "club": "grenoble",
+      "name": "Aurélien CALLANDRET",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:106",
+      "rugbyDataId": "551",
+      "club": "grenoble",
+      "name": "Raffaele COSTA STORTI",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1805",
+      "rugbyDataId": "41",
+      "club": "grenoble",
+      "name": "Nadir MEGDOUD",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12434",
+      "rugbyDataId": "1977",
+      "club": "grenoble",
+      "name": "Gerswin MOUTON",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2444",
+      "rugbyDataId": "201",
+      "club": "grenoble",
+      "name": "Lucas TAUZIN",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2415",
+      "rugbyDataId": "681",
+      "club": "grenoble",
+      "name": "Thomas ALARY",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:877",
+      "rugbyDataId": "1996",
+      "club": "grenoble",
+      "name": "Hugo TROUILLOUD",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:10017",
+      "rugbyDataId": "1257",
+      "club": "dax",
+      "name": "Thibaud DREAN",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12040",
+      "rugbyDataId": "1295",
+      "club": "dax",
+      "name": "Raphael LABOILLE",
+      "birthYear": 2004,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:10732",
+      "rugbyDataId": "1267",
+      "club": "dax",
+      "name": "Nephi LEATIGAGA",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2113",
+      "rugbyDataId": "1269",
+      "club": "dax",
+      "name": "David LOLOHEA",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11028",
+      "rugbyDataId": "1251",
+      "club": "dax",
+      "name": "Louis BARRERE",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2393",
+      "rugbyDataId": "684",
+      "club": "dax",
+      "name": "Ian BOUBILA",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13594",
+      "rugbyDataId": "1914",
+      "club": "nevers",
+      "name": "Yan ARNOLD",
+      "birthYear": 2000,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:11907",
+      "rugbyDataId": "3222",
+      "club": "nevers",
+      "name": "Herman COETZEE",
+      "birthYear": 2004,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:1553",
+      "rugbyDataId": "2044",
+      "club": "nevers",
+      "name": "Aselo IKAHEHEGI",
+      "birthYear": 2000,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:1582",
+      "rugbyDataId": "1158",
+      "club": "nevers",
+      "name": "Henzo KITEAU",
+      "birthYear": 2001,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:1555",
+      "rugbyDataId": "2048",
+      "club": "nevers",
+      "name": "Aitor KITUTU",
+      "birthYear": 1998,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:1517",
+      "rugbyDataId": "2063",
+      "club": "nevers",
+      "name": "Kamaliele TUFELE",
+      "birthYear": 1995,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:11723",
+      "rugbyDataId": "2070",
+      "club": "nevers",
+      "name": "Luka UNGIADZE",
+      "birthYear": 2004,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:11655",
+      "rugbyDataId": "2067",
+      "club": "nevers",
+      "name": "Jean-maxence JULES ROSETTE",
+      "birthYear": 2004,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:784",
+      "rugbyDataId": "2183",
+      "club": "angouleme",
+      "name": "Georgy BALAKAREV",
+      "birthYear": 2002,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:812",
+      "rugbyDataId": "2157",
+      "club": "angouleme",
+      "name": "Yassin BOUTEMMANI",
+      "birthYear": 1990,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:24994",
+      "rugbyDataId": "4067",
+      "club": "angouleme",
+      "name": "Elias COULIBALY",
+      "birthYear": 2001,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:3119",
+      "rugbyDataId": "2262",
+      "club": "angouleme",
+      "name": "Jean-yves LIUFAU",
+      "birthYear": 2005,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:1916",
+      "rugbyDataId": "2178",
+      "club": "angouleme",
+      "name": "Paul TAILHADES",
+      "birthYear": 1997,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:10699",
+      "rugbyDataId": "2181",
+      "club": "angouleme",
+      "name": "Sami ZOUHAIR",
+      "birthYear": 1999,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:3114",
+      "rugbyDataId": "2155",
+      "club": "angouleme",
+      "name": "Patxi BIDART",
+      "birthYear": 2000,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:11182",
+      "rugbyDataId": "2193",
+      "club": "valence-romans",
+      "name": "Anthony ALEO",
+      "birthYear": 1992,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:2807",
+      "rugbyDataId": "2222",
+      "club": "valence-romans",
+      "name": "Esteban CHOUTEAU",
+      "birthYear": 2003,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:3123",
+      "rugbyDataId": "2208",
+      "club": "valence-romans",
+      "name": "Gareth MILASINOVICH",
+      "birthYear": 1992,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:876",
+      "rugbyDataId": "2221",
+      "club": "valence-romans",
+      "name": "Vincent VIAL",
+      "birthYear": 1994,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:1521",
+      "rugbyDataId": "1156",
+      "club": "valence-romans",
+      "name": "Issam HAMEL",
+      "birthYear": 1997,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:947",
+      "rugbyDataId": "260",
+      "club": "valence-romans",
+      "name": "Sacha IDOUMI",
+      "birthYear": 2002,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:2852",
+      "rugbyDataId": "4054",
+      "club": "narbonne",
+      "name": "Gabriel ATLAN",
+      "birthYear": 2003,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:1408",
+      "rugbyDataId": "378",
+      "club": "narbonne",
+      "name": "Jules VEYRIER",
+      "birthYear": 2004,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:13663",
+      "rugbyDataId": "4309",
+      "club": "narbonne",
+      "name": "Baptiste COLLET",
+      "birthYear": 2001,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:1828",
+      "rugbyDataId": "552",
+      "club": "narbonne",
+      "name": "Thomas CRETU",
+      "birthYear": 2002,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:11486",
+      "rugbyDataId": "4051",
+      "club": "narbonne",
+      "name": "Mattéo LALANNE",
+      "birthYear": 2001,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:1953",
+      "rugbyDataId": "4084",
+      "club": "nice",
+      "name": "Nicolas CIANCIO",
+      "birthYear": 2001,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:667",
+      "rugbyDataId": "181",
+      "club": "nice",
+      "name": "Etienne FALGOUX",
+      "birthYear": 1993,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:79",
+      "rugbyDataId": "967",
+      "club": "nice",
+      "name": "Beau FARRANCE",
+      "birthYear": 2001,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:2284",
+      "rugbyDataId": "4085",
+      "club": "nice",
+      "name": "Fabio GONZALEZ",
+      "birthYear": 2000,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:11444",
+      "rugbyDataId": "4086",
+      "club": "nice",
+      "name": "Vazha KAPANADZE",
+      "birthYear": 1995,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:473",
+      "rugbyDataId": "4087",
+      "club": "nice",
+      "name": "Jules MARTINEZ",
+      "birthYear": 1997,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:12639",
+      "rugbyDataId": "4089",
+      "club": "nice",
+      "name": "Luvuyo PUPUMA",
+      "birthYear": 1992,
+      "evidence": "rugbydata-six-club-birthyear-dedup-2026-11-01.json"
+    },
+    {
+      "lnrId": "lnr:2353",
+      "rugbyDataId": "10",
+      "club": "toulon",
+      "name": "Jérémy SINZELLE",
+      "birthYear": 1990,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2677",
+      "rugbyDataId": "13",
+      "club": "castres",
+      "name": "Remy BAGET",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2658",
+      "rugbyDataId": "15",
+      "club": "bayonne",
+      "name": "Facundo BOSCH",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:462",
+      "rugbyDataId": "17",
+      "club": "bayonne",
+      "name": "Rodrigo BRUNI",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2632",
+      "rugbyDataId": "18",
+      "club": "perpignan",
+      "name": "Eneriko BULIRUARUA",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12404",
+      "rugbyDataId": "20",
+      "club": "bayonne",
+      "name": "Mateo CARRERAS",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2655",
+      "rugbyDataId": "22",
+      "club": "clermont",
+      "name": "Thomas CEYTE",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2669",
+      "rugbyDataId": "23",
+      "club": "bayonne",
+      "name": "Swan CORMENIER",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2645",
+      "rugbyDataId": "24",
+      "club": "provence-rugby",
+      "name": "Pascal COTET",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2633",
+      "rugbyDataId": "29",
+      "club": "bayonne",
+      "name": "Baptiste HEGUY",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2660",
+      "rugbyDataId": "32",
+      "club": "paris",
+      "name": "Pierre HUGUET",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:690",
+      "rugbyDataId": "33",
+      "club": "bayonne",
+      "name": "Arthur ITURRIA",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2612",
+      "rugbyDataId": "38",
+      "club": "bayonne",
+      "name": "Sireli MAQALA",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2649",
+      "rugbyDataId": "39",
+      "club": "agen",
+      "name": "Denis MARCHOIS",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2657",
+      "rugbyDataId": "40",
+      "club": "bayonne",
+      "name": "Guillaume MARTOCQ",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:280",
+      "rugbyDataId": "44",
+      "club": "bayonne",
+      "name": "Federico MORI",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2644",
+      "rugbyDataId": "45",
+      "club": "agen",
+      "name": "Peyo MUSCARDITZ",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2100",
+      "rugbyDataId": "52",
+      "club": "bayonne",
+      "name": "Luke TAGI",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2607",
+      "rugbyDataId": "55",
+      "club": "bayonne",
+      "name": "Esteban CAPILLA",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11813",
+      "rugbyDataId": "56",
+      "club": "bayonne",
+      "name": "Pierre CASTILLON",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2609",
+      "rugbyDataId": "58",
+      "club": "bayonne",
+      "name": "Arnaud ERBINARTEGARAY",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2628",
+      "rugbyDataId": "61",
+      "club": "bayonne",
+      "name": "Yohan ORABE",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:3536",
+      "rugbyDataId": "63",
+      "club": "bordeaux-begles",
+      "name": "Xan MOUSQUES",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2671",
+      "rugbyDataId": "64",
+      "club": "bordeaux-begles",
+      "name": "Matis PERCHAUD",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2753",
+      "rugbyDataId": "65",
+      "club": "bayonne",
+      "name": "Tom SPRING",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2674",
+      "rugbyDataId": "66",
+      "club": "bayonne",
+      "name": "Tevita TATAFU",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2565",
+      "rugbyDataId": "68",
+      "club": "bayonne",
+      "name": "Andy BORDELAI",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:241",
+      "rugbyDataId": "70",
+      "club": "clermont",
+      "name": "Baptiste GERMAIN",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1812",
+      "rugbyDataId": "71",
+      "club": "bayonne",
+      "name": "Giovanni HABEL KUFFNER",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1807",
+      "rugbyDataId": "74",
+      "club": "bayonne",
+      "name": "Joris SEGONDS",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2102",
+      "rugbyDataId": "78",
+      "club": "bayonne",
+      "name": "Lucas MARTIN",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11682",
+      "rugbyDataId": "79",
+      "club": "bayonne",
+      "name": "Noa TRAVERSIER",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:415",
+      "rugbyDataId": "81",
+      "club": "paris",
+      "name": "Paul ABADIE",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:309",
+      "rugbyDataId": "82",
+      "club": "vannes",
+      "name": "Ugo BONIFACE",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:324",
+      "rugbyDataId": "85",
+      "club": "bordeaux-begles",
+      "name": "Cyril CAZEAUX",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:9642",
+      "rugbyDataId": "86",
+      "club": "bordeaux-begles",
+      "name": "Adam COLEMAN",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:311",
+      "rugbyDataId": "89",
+      "club": "bordeaux-begles",
+      "name": "Sipili FALATEA",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:339",
+      "rugbyDataId": "91",
+      "club": "bordeaux-begles",
+      "name": "Matthieu JALIBERT",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12571",
+      "rugbyDataId": "92",
+      "club": "bordeaux-begles",
+      "name": "Röhan JANSE VAN RENSBURG",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:349",
+      "rugbyDataId": "93",
+      "club": "bordeaux-begles",
+      "name": "Maxime LAMOTHE",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1223",
+      "rugbyDataId": "94",
+      "club": "provence-rugby",
+      "name": "Romain LATTERRADE",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:205",
+      "rugbyDataId": "97",
+      "club": "bordeaux-begles",
+      "name": "Temo MATIU",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:695",
+      "rugbyDataId": "99",
+      "club": "bordeaux-begles",
+      "name": "Damian PENAUD",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:329",
+      "rugbyDataId": "101",
+      "club": "bordeaux-begles",
+      "name": "Jefferson POIROT",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2441",
+      "rugbyDataId": "102",
+      "club": "bordeaux-begles",
+      "name": "Arthur RETIERE",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:313",
+      "rugbyDataId": "111",
+      "club": "bordeaux-begles",
+      "name": "Pablo UBERTI",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:335",
+      "rugbyDataId": "112",
+      "club": "pau",
+      "name": "Bastien VERGNES TAILLEFER",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:277",
+      "rugbyDataId": "115",
+      "club": "bordeaux-begles",
+      "name": "Louis BIELLE-BIARREY",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:279",
+      "rugbyDataId": "116",
+      "club": "bordeaux-begles",
+      "name": "Pierre BOCHATON",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:304",
+      "rugbyDataId": "117",
+      "club": "bordeaux-begles",
+      "name": "Nicolas DEPOORTERE",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11712",
+      "rugbyDataId": "118",
+      "club": "montpellier",
+      "name": "Jon ECHEGARAY",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11027",
+      "rugbyDataId": "119",
+      "club": "toulon",
+      "name": "Mateo GARCIA",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2737",
+      "rugbyDataId": "120",
+      "club": "bordeaux-begles",
+      "name": "Romain GARDRAT",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:3607",
+      "rugbyDataId": "121",
+      "club": "bordeaux-begles",
+      "name": "Marko GAZZOTTI",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:203",
+      "rugbyDataId": "122",
+      "club": "bordeaux-begles",
+      "name": "Tiaan JACOBS",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:531",
+      "rugbyDataId": "125",
+      "club": "bordeaux-begles",
+      "name": "Connor SA",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:550",
+      "rugbyDataId": "128",
+      "club": "provence-rugby",
+      "name": "Tyler ARDRON",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:595",
+      "rugbyDataId": "129",
+      "club": "provence-rugby",
+      "name": "Aurelien AZAR",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:599",
+      "rugbyDataId": "130",
+      "club": "castres",
+      "name": "Mathieu BABILLOT",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:638",
+      "rugbyDataId": "131",
+      "club": "bordeaux-begles",
+      "name": "Gaëtan BARLOT",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:549",
+      "rugbyDataId": "132",
+      "club": "castres",
+      "name": "Vilimoni BOTITU",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:585",
+      "rugbyDataId": "134",
+      "club": "castres",
+      "name": "Levan CHILACHAVA",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:591",
+      "rugbyDataId": "135",
+      "club": "castres",
+      "name": "Adrea COCAGI",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:637",
+      "rugbyDataId": "137",
+      "club": "castres",
+      "name": "Pierre COLONNA",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1888",
+      "rugbyDataId": "138",
+      "club": "castres",
+      "name": "Nicolas CORATO",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:616",
+      "rugbyDataId": "139",
+      "club": "vannes",
+      "name": "Wayan DE BENEDITTIS",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:606",
+      "rugbyDataId": "140",
+      "club": "castres",
+      "name": "Baptiste DELAPORTE",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1892",
+      "rugbyDataId": "142",
+      "club": "castres",
+      "name": "Guillaume DUCAT",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:611",
+      "rugbyDataId": "145",
+      "club": "castres",
+      "name": "Jérémy FERNANDEZ",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1456",
+      "rugbyDataId": "149",
+      "club": "montauban",
+      "name": "Romain MACURDY",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:580",
+      "rugbyDataId": "150",
+      "club": "castres",
+      "name": "Gauthier MARAVAT",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:533",
+      "rugbyDataId": "152",
+      "club": "castres",
+      "name": "Simon MEKA",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:603",
+      "rugbyDataId": "155",
+      "club": "castres",
+      "name": "Geoffrey PALIS",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:990",
+      "rugbyDataId": "158",
+      "club": "vannes",
+      "name": "Pierre POPELIN",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:624",
+      "rugbyDataId": "163",
+      "club": "castres",
+      "name": "Florent VANVERBERGHE",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:592",
+      "rugbyDataId": "164",
+      "club": "castres",
+      "name": "Quentin WALCKER",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:68",
+      "rugbyDataId": "166",
+      "club": "castres",
+      "name": "Loris ZARANTONELLO",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:543",
+      "rugbyDataId": "170",
+      "club": "castres",
+      "name": "Théo CHABOUNI",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:633",
+      "rugbyDataId": "171",
+      "club": "castres",
+      "name": "Baptiste COPE",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:553",
+      "rugbyDataId": "173",
+      "club": "castres",
+      "name": "Louis LE BRUN",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:184",
+      "rugbyDataId": "174",
+      "club": "clermont",
+      "name": "Giorgi AKHALADZE",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:669",
+      "rugbyDataId": "177",
+      "club": "montpellier",
+      "name": "Sebastien BEZY",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:712",
+      "rugbyDataId": "178",
+      "club": "clermont",
+      "name": "Bautista DELGUY",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:661",
+      "rugbyDataId": "179",
+      "club": "montauban",
+      "name": "Lucas DESSAIGNE",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:663",
+      "rugbyDataId": "182",
+      "club": "bayonne",
+      "name": "Alexandre FISCHER",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:657",
+      "rugbyDataId": "183",
+      "club": "clermont",
+      "name": "Etienne FOURCADE",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1793",
+      "rugbyDataId": "185",
+      "club": "clermont",
+      "name": "Kylan HAMDAOUI",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2195",
+      "rugbyDataId": "186",
+      "club": "clermont",
+      "name": "Anthime HEMERY",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:402",
+      "rugbyDataId": "187",
+      "club": "clermont",
+      "name": "Joris JURAND",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1745",
+      "rugbyDataId": "188",
+      "club": "clermont",
+      "name": "Marcos KREMER",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:711",
+      "rugbyDataId": "189",
+      "club": "clermont",
+      "name": "Thibaud LANEN",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2023",
+      "rugbyDataId": "191",
+      "club": "clermont",
+      "name": "Sacha LOTRIAN",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:709",
+      "rugbyDataId": "192",
+      "club": "la-rochelle",
+      "name": "George MOALA",
+      "birthYear": 1990,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:921",
+      "rugbyDataId": "193",
+      "club": "clermont",
+      "name": "Régis MONTAGNE",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:694",
+      "rugbyDataId": "195",
+      "club": "clermont",
+      "name": "Cristian OJOVAN",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12302",
+      "rugbyDataId": "200",
+      "club": "clermont",
+      "name": "Pita-gus SOWAKULA",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11554",
+      "rugbyDataId": "202",
+      "club": "clermont",
+      "name": "Killian TIXERONT",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:594",
+      "rugbyDataId": "203",
+      "club": "perpignan",
+      "name": "Benjamin URDAPILLETA",
+      "birthYear": 1986,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:679",
+      "rugbyDataId": "205",
+      "club": "perpignan",
+      "name": "Peceli YATO",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:648",
+      "rugbyDataId": "206",
+      "club": "clermont",
+      "name": "Mathys BELAUBRE",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:650",
+      "rugbyDataId": "208",
+      "club": "clermont",
+      "name": "Antoine CHALUS-CERCY",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2709",
+      "rugbyDataId": "209",
+      "club": "clermont",
+      "name": "Léon DARRICARRERE",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:3233",
+      "rugbyDataId": "211",
+      "club": "clermont",
+      "name": "Giorgi DZMANASHVILI",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11002",
+      "rugbyDataId": "212",
+      "club": "clermont",
+      "name": "Yerim FALL",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:655",
+      "rugbyDataId": "213",
+      "club": "clermont",
+      "name": "Mathéo FRISACH",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11320",
+      "rugbyDataId": "214",
+      "club": "colomiers",
+      "name": "Théo GIRAL",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11297",
+      "rugbyDataId": "215",
+      "club": "clermont",
+      "name": "Baptiste JAUNEAU",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:862",
+      "rugbyDataId": "216",
+      "club": "clermont",
+      "name": "Barnabé MASSA",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:651",
+      "rugbyDataId": "220",
+      "club": "bayonne",
+      "name": "Viliame TUTUVULI",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1004",
+      "rugbyDataId": "223",
+      "club": "la-rochelle",
+      "name": "Thomas BERJON",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1017",
+      "rugbyDataId": "225",
+      "club": "la-rochelle",
+      "name": "Paul BOUDEHENT",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:999",
+      "rugbyDataId": "226",
+      "club": "la-rochelle",
+      "name": "Pierre BOURGARIT",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:675",
+      "rugbyDataId": "227",
+      "club": "toulon",
+      "name": "Judicael CANCORIET",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:991",
+      "rugbyDataId": "229",
+      "club": "la-rochelle",
+      "name": "Jonathan DANTY",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1018",
+      "rugbyDataId": "233",
+      "club": "la-rochelle",
+      "name": "Jules FAVRE",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1025",
+      "rugbyDataId": "234",
+      "club": "la-rochelle",
+      "name": "Matthias HADDAD",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:997",
+      "rugbyDataId": "235",
+      "club": "la-rochelle",
+      "name": "Antoine HASTOY",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:981",
+      "rugbyDataId": "237",
+      "club": "paris",
+      "name": "Tawera KERR BARLOW",
+      "birthYear": 1990,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:986",
+      "rugbyDataId": "240",
+      "club": "la-rochelle",
+      "name": "Quentin LESPIAUCQ",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1014",
+      "rugbyDataId": "241",
+      "club": "la-rochelle",
+      "name": "Dillyn LEYDS",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:984",
+      "rugbyDataId": "243",
+      "club": "paris",
+      "name": "Thierry PAIVA",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1024",
+      "rugbyDataId": "244",
+      "club": "vannes",
+      "name": "Thomas PLOYET",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:988",
+      "rugbyDataId": "247",
+      "club": "la-rochelle",
+      "name": "Ulupano SEUTENI",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:987",
+      "rugbyDataId": "249",
+      "club": "toulouse",
+      "name": "Teddy THOMAS",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12674",
+      "rugbyDataId": "253",
+      "club": "la-rochelle",
+      "name": "Lucas ANDJISSERAMATCHI",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:938",
+      "rugbyDataId": "254",
+      "club": "la-rochelle",
+      "name": "Nathan BOLLENGIER",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:964",
+      "rugbyDataId": "255",
+      "club": "la-rochelle",
+      "name": "Hoani BOSMORIN",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:966",
+      "rugbyDataId": "257",
+      "club": "la-rochelle",
+      "name": "Simeli DAUNIVUCU",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12407",
+      "rugbyDataId": "258",
+      "club": "la-rochelle",
+      "name": "Gabin GARAULT",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:939",
+      "rugbyDataId": "261",
+      "club": "la-rochelle",
+      "name": "Oscar JEGOU",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1028",
+      "rugbyDataId": "262",
+      "club": "la-rochelle",
+      "name": "Alexandre KADDOURI",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:969",
+      "rugbyDataId": "263",
+      "club": "la-rochelle",
+      "name": "Charles KANTE SAMBA",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:935",
+      "rugbyDataId": "264",
+      "club": "la-rochelle",
+      "name": "Aleksandre KUNTELIA",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:949",
+      "rugbyDataId": "268",
+      "club": "bordeaux-begles",
+      "name": "Hugo REUS",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1030",
+      "rugbyDataId": "271",
+      "club": "la-rochelle",
+      "name": "Karl SORIN",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:937",
+      "rugbyDataId": "273",
+      "club": "clermont",
+      "name": "Lucas ZAMORA",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1081",
+      "rugbyDataId": "276",
+      "club": "lyon",
+      "name": "Léo BERDEU",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:908",
+      "rugbyDataId": "277",
+      "club": "vannes",
+      "name": "Steeve BLANC MAPPAZ",
+      "birthYear": 1990,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1700",
+      "rugbyDataId": "279",
+      "club": "lyon",
+      "name": "Charlie CASSANG",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2165",
+      "rugbyDataId": "281",
+      "club": "lyon",
+      "name": "Camille CHAT",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1106",
+      "rugbyDataId": "282",
+      "club": "lyon",
+      "name": "Baptiste COUILLOUD",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1078",
+      "rugbyDataId": "283",
+      "club": "lyon",
+      "name": "Dylan CRETIN",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1105",
+      "rugbyDataId": "286",
+      "club": "bayonne",
+      "name": "Killian GERACI",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1128",
+      "rugbyDataId": "288",
+      "club": "lyon",
+      "name": "Maxime GOUZOU",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1123",
+      "rugbyDataId": "289",
+      "club": "lyon",
+      "name": "Mickaël GUILLARD",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11734",
+      "rugbyDataId": "290",
+      "club": "lyon",
+      "name": "Monty IOANE",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1107",
+      "rugbyDataId": "292",
+      "club": "lyon",
+      "name": "Hamza KAABECHE",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1095",
+      "rugbyDataId": "293",
+      "club": "lyon",
+      "name": "Félix LAMBEY",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2495",
+      "rugbyDataId": "301",
+      "club": "bordeaux-begles",
+      "name": "Martin PAGE RELO",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1126",
+      "rugbyDataId": "302",
+      "club": "lyon",
+      "name": "Alfred PARISIEN",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1101",
+      "rugbyDataId": "305",
+      "club": "lyon",
+      "name": "Thibaut REGARD",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1083",
+      "rugbyDataId": "306",
+      "club": "lyon",
+      "name": "Jérôme REY",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1127",
+      "rugbyDataId": "308",
+      "club": "lyon",
+      "name": "Beka SAGINADZE",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1100",
+      "rugbyDataId": "311",
+      "club": "provence-rugby",
+      "name": "Sébastien TAOFIFENUA",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1122",
+      "rugbyDataId": "313",
+      "club": "lyon",
+      "name": "Theo WILLIAM",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:857",
+      "rugbyDataId": "314",
+      "club": "lyon",
+      "name": "Irakli APTSIAURI",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1068",
+      "rugbyDataId": "315",
+      "club": "lyon",
+      "name": "Esteban GONZALEZ",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1037",
+      "rugbyDataId": "316",
+      "club": "lyon",
+      "name": "Arthur MATHIRON",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2122",
+      "rugbyDataId": "317",
+      "club": "lyon",
+      "name": "Martin MELIANDE",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1427",
+      "rugbyDataId": "324",
+      "club": "montpellier",
+      "name": "Alexandre BECOGNEE",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2769",
+      "rugbyDataId": "325",
+      "club": "montpellier",
+      "name": "Alexis BERNADET",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1426",
+      "rugbyDataId": "326",
+      "club": "vannes",
+      "name": "Anthony BOUTHIER",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:250",
+      "rugbyDataId": "328",
+      "club": "montpellier",
+      "name": "Auguste CADOT",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1434",
+      "rugbyDataId": "329",
+      "club": "montpellier",
+      "name": "Yacouba CAMARA",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1432",
+      "rugbyDataId": "330",
+      "club": "montpellier",
+      "name": "Bastien CHALUREAU",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1460",
+      "rugbyDataId": "331",
+      "club": "bayonne",
+      "name": "Léo COLY",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1383",
+      "rugbyDataId": "335",
+      "club": "montpellier",
+      "name": "Tyler DUGUID",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:267",
+      "rugbyDataId": "336",
+      "club": "montpellier",
+      "name": "Baptiste ERDOCIO",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1440",
+      "rugbyDataId": "337",
+      "club": "perpignan",
+      "name": "Enzo FORLETTA",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1446",
+      "rugbyDataId": "338",
+      "club": "montpellier",
+      "name": "Mohamed HAOUAS",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:574",
+      "rugbyDataId": "340",
+      "club": "montpellier",
+      "name": "Wilfrid HOUNKPATIN",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:454",
+      "rugbyDataId": "342",
+      "club": "montpellier",
+      "name": "Luka JAPARIDZE",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1415",
+      "rugbyDataId": "345",
+      "club": "provence-rugby",
+      "name": "Pierre LUCAS",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1444",
+      "rugbyDataId": "350",
+      "club": "montpellier",
+      "name": "Gabriel NGANDEBE",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2354",
+      "rugbyDataId": "358",
+      "club": "montpellier",
+      "name": "Christopher TOLOFUA",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12799",
+      "rugbyDataId": "359",
+      "club": "montpellier",
+      "name": "Jordan UELESE",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1438",
+      "rugbyDataId": "360",
+      "club": "montpellier",
+      "name": "Florian VERHAEGHE",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1416",
+      "rugbyDataId": "361",
+      "club": "montpellier",
+      "name": "Arthur VINCENT",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1401",
+      "rugbyDataId": "365",
+      "club": "montpellier",
+      "name": "Lyam AKRAB",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1413",
+      "rugbyDataId": "368",
+      "club": "agen",
+      "name": "Romain DELEMARLE",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:350",
+      "rugbyDataId": "369",
+      "club": "montpellier",
+      "name": "Maël MOUSTIN",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1400",
+      "rugbyDataId": "371",
+      "club": "montpellier",
+      "name": "Alexander MASIBAKA",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1376",
+      "rugbyDataId": "372",
+      "club": "montpellier",
+      "name": "Lenni NOUCHI",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1392",
+      "rugbyDataId": "373",
+      "club": "montpellier",
+      "name": "Mael PERRIN",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:202",
+      "rugbyDataId": "375",
+      "club": "montauban",
+      "name": "Youssouf SOUCOUNA",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1368",
+      "rugbyDataId": "376",
+      "club": "montpellier",
+      "name": "Luca TABAROT",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1378",
+      "rugbyDataId": "377",
+      "club": "bayonne",
+      "name": "Matthieu UHILA",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:708",
+      "rugbyDataId": "380",
+      "club": "pau",
+      "name": "Daniel BIBI BIZIWU",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1885",
+      "rugbyDataId": "381",
+      "club": "bayonne",
+      "name": "Ignacio CALLES",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1901",
+      "rugbyDataId": "382",
+      "club": "pau",
+      "name": "Mickael CAPELLI",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1678",
+      "rugbyDataId": "384",
+      "club": "pau",
+      "name": "Loïc CREDOZ",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1895",
+      "rugbyDataId": "386",
+      "club": "pau",
+      "name": "Thibault DAUBAGNA",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1902",
+      "rugbyDataId": "387",
+      "club": "pau",
+      "name": "Nathan DECRON",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1917",
+      "rugbyDataId": "388",
+      "club": "pau",
+      "name": "Youri DELHOMMEL",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1893",
+      "rugbyDataId": "390",
+      "club": "pau",
+      "name": "Beka GORGADZE",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:440",
+      "rugbyDataId": "391",
+      "club": "pau",
+      "name": "Aaron GRANDIDIER-NKANANG",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1940",
+      "rugbyDataId": "393",
+      "club": "pau",
+      "name": "Reece HEWAT",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:320",
+      "rugbyDataId": "394",
+      "club": "pau",
+      "name": "Thomas JOLMES",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:317",
+      "rugbyDataId": "396",
+      "club": "pau",
+      "name": "Lekso KAULASHVILI",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1915",
+      "rugbyDataId": "399",
+      "club": "pau",
+      "name": "Clément LAPORTE",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1853",
+      "rugbyDataId": "401",
+      "club": "pau",
+      "name": "Jack MADDOCKS",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1858",
+      "rugbyDataId": "402",
+      "club": "pau",
+      "name": "Tumua MANU",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:994",
+      "rugbyDataId": "405",
+      "club": "pau",
+      "name": "Rémi PICQUETTE",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1896",
+      "rugbyDataId": "406",
+      "club": "pau",
+      "name": "Lucas REY",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1905",
+      "rugbyDataId": "408",
+      "club": "vannes",
+      "name": "Eliott ROUDIL",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:4000",
+      "rugbyDataId": "411",
+      "club": "pau",
+      "name": "Joe SIMMONDS",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:133",
+      "rugbyDataId": "417",
+      "club": "pau",
+      "name": "Jon ZABALA ARRIETA",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1914",
+      "rugbyDataId": "418",
+      "club": "pau",
+      "name": "Sacha ZEGUEUR",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1861",
+      "rugbyDataId": "419",
+      "club": "pau",
+      "name": "Gregoire ARFEUIL",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1944",
+      "rugbyDataId": "420",
+      "club": "pau",
+      "name": "Théo ATTISSOGBE",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1845",
+      "rugbyDataId": "421",
+      "club": "pau",
+      "name": "Hugo AURADOU",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1945",
+      "rugbyDataId": "422",
+      "club": "pau",
+      "name": "Josselin BOUHIER",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11716",
+      "rugbyDataId": "423",
+      "club": "pau",
+      "name": "Fabien BRAU-BOIRIE",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12603",
+      "rugbyDataId": "425",
+      "club": "vannes",
+      "name": "Hayam EL BIBOUJI",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1927",
+      "rugbyDataId": "427",
+      "club": "pau",
+      "name": "Emilien GAILLETON",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1847",
+      "rugbyDataId": "428",
+      "club": "pau",
+      "name": "Brent LIUFAU",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1843",
+      "rugbyDataId": "429",
+      "club": "pau",
+      "name": "Clement MONDINAT",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1849",
+      "rugbyDataId": "430",
+      "club": "pau",
+      "name": "Hugo PARROU",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1877",
+      "rugbyDataId": "431",
+      "club": "pau",
+      "name": "Thomas SOUVERBIE",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1150",
+      "rugbyDataId": "434",
+      "club": "pau",
+      "name": "Mehdi TLILI",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12499",
+      "rugbyDataId": "435",
+      "club": "pau",
+      "name": "Quentin VALENTINO",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:662",
+      "rugbyDataId": "440",
+      "club": "vannes",
+      "name": "Giorgi BERIA",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:398",
+      "rugbyDataId": "443",
+      "club": "perpignan",
+      "name": "Pietro CECCARELLI",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1958",
+      "rugbyDataId": "446",
+      "club": "perpignan",
+      "name": "Jeronimo DE LA FUENTE",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2389",
+      "rugbyDataId": "447",
+      "club": "perpignan",
+      "name": "Bruce DEVAUX",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2170",
+      "rugbyDataId": "450",
+      "club": "agen",
+      "name": "Louis DUPICHOT",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1987",
+      "rugbyDataId": "451",
+      "club": "perpignan",
+      "name": "Tom ECOCHARD",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1971",
+      "rugbyDataId": "454",
+      "club": "perpignan",
+      "name": "Theo FORNER",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11989",
+      "rugbyDataId": "465",
+      "club": "perpignan",
+      "name": "Ignacio RUIZ",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1103",
+      "rugbyDataId": "466",
+      "club": "perpignan",
+      "name": "Patrick SOBELA",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2342",
+      "rugbyDataId": "467",
+      "club": "perpignan",
+      "name": "Mathieu TANGUY",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:693",
+      "rugbyDataId": "469",
+      "club": "perpignan",
+      "name": "Jacobus VAN TONDER",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2025",
+      "rugbyDataId": "470",
+      "club": "perpignan",
+      "name": "Lucas VELARTE",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2388",
+      "rugbyDataId": "472",
+      "club": "perpignan",
+      "name": "Adrien WARION",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1970",
+      "rugbyDataId": "476",
+      "club": "perpignan",
+      "name": "Bastien CHINARRO",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1013",
+      "rugbyDataId": "477",
+      "club": "perpignan",
+      "name": "Noe DELLA SCHIAVA",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:92",
+      "rugbyDataId": "481",
+      "club": "perpignan",
+      "name": "Jefferson Lee JOSEPH",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1962",
+      "rugbyDataId": "482",
+      "club": "beziers",
+      "name": "Gabin KRETCHMANN",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1967",
+      "rugbyDataId": "483",
+      "club": "perpignan",
+      "name": "Mathys LOTRIAN",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2009",
+      "rugbyDataId": "484",
+      "club": "perpignan",
+      "name": "Victor MONTGAILLARD",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11982",
+      "rugbyDataId": "487",
+      "club": "beziers",
+      "name": "Job POULET",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1951",
+      "rugbyDataId": "489",
+      "club": "perpignan",
+      "name": "Setareki TOGANIYADRAVA",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2148",
+      "rugbyDataId": "497",
+      "club": "racing-92",
+      "name": "Ibrahim DIALLO",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2168",
+      "rugbyDataId": "500",
+      "club": "toulon",
+      "name": "Gael FICKOU",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2150",
+      "rugbyDataId": "501",
+      "club": "racing-92",
+      "name": "Antoine GIBERT",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2190",
+      "rugbyDataId": "502",
+      "club": "racing-92",
+      "name": "Guram GOGICHASHVILI",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2132",
+      "rugbyDataId": "503",
+      "club": "racing-92",
+      "name": "Vinaya HABOSI",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12647",
+      "rugbyDataId": "504",
+      "club": "racing-92",
+      "name": "Samuel JAMES",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1909",
+      "rugbyDataId": "505",
+      "club": "racing-92",
+      "name": "Jordan JOSEPH",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2175",
+      "rugbyDataId": "508",
+      "club": "racing-92",
+      "name": "Hassane KOLINGAR",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1707",
+      "rugbyDataId": "510",
+      "club": "pau",
+      "name": "Thomas LACLAYAT",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1886",
+      "rugbyDataId": "512",
+      "club": "vannes",
+      "name": "Clovis LE BAIL",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1245",
+      "rugbyDataId": "516",
+      "club": "racing-92",
+      "name": "Wame NAITUVI",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2156",
+      "rugbyDataId": "517",
+      "club": "bordeaux-begles",
+      "name": "Boris PALU",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2157",
+      "rugbyDataId": "519",
+      "club": "racing-92",
+      "name": "Fabien SANCONNIE",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2198",
+      "rugbyDataId": "521",
+      "club": "racing-92",
+      "name": "Max SPRING",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1093",
+      "rugbyDataId": "523",
+      "club": "racing-92",
+      "name": "Romain TAOFIFENUA",
+      "birthYear": 1990,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2188",
+      "rugbyDataId": "524",
+      "club": "racing-92",
+      "name": "Janick TARRIT",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1102",
+      "rugbyDataId": "526",
+      "club": "racing-92",
+      "name": "Josua TUISOVA",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2177",
+      "rugbyDataId": "527",
+      "club": "bordeaux-begles",
+      "name": "Cameron WOKI",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2780",
+      "rugbyDataId": "530",
+      "club": "vannes",
+      "name": "Enzo BENMEGAL",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12612",
+      "rugbyDataId": "531",
+      "club": "racing-92",
+      "name": "Soumaila CAMARA",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13419",
+      "rugbyDataId": "533",
+      "club": "racing-92",
+      "name": "Nolann DONGUY",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:3118",
+      "rugbyDataId": "535",
+      "club": "provence-rugby",
+      "name": "Lino JULIEN",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2196",
+      "rugbyDataId": "538",
+      "club": "la-rochelle",
+      "name": "Nolann LE GARREC",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12565",
+      "rugbyDataId": "539",
+      "club": "racing-92",
+      "name": "Lehopoame LEOTA",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1829",
+      "rugbyDataId": "545",
+      "club": "paris",
+      "name": "Leo BARRE",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:974",
+      "rugbyDataId": "546",
+      "club": "vannes",
+      "name": "Pierre BOUDEHENT",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1790",
+      "rugbyDataId": "547",
+      "club": "paris",
+      "name": "Romain BRIATTE",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1428",
+      "rugbyDataId": "548",
+      "club": "paris",
+      "name": "Louis CARBONEL",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1804",
+      "rugbyDataId": "550",
+      "club": "paris",
+      "name": "Ryan CHAPUIS",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1757",
+      "rugbyDataId": "553",
+      "club": "paris",
+      "name": "Peniasi DAKUWAQA",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1788",
+      "rugbyDataId": "555",
+      "club": "paris",
+      "name": "Lester ETIEN",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:660",
+      "rugbyDataId": "556",
+      "club": "paris",
+      "name": "Samuel EZEALA",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1780",
+      "rugbyDataId": "563",
+      "club": "paris",
+      "name": "Mathieu HIRIGOYEN",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:263",
+      "rugbyDataId": "564",
+      "club": "vannes",
+      "name": "Joe JONAS",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1811",
+      "rugbyDataId": "567",
+      "club": "paris",
+      "name": "Giorgi MELIKIDZE",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2271",
+      "rugbyDataId": "568",
+      "club": "provence-rugby",
+      "name": "Hugo NDIAYE",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12539",
+      "rugbyDataId": "569",
+      "club": "paris",
+      "name": "Giacomo NICOTERA",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1806",
+      "rugbyDataId": "570",
+      "club": "pau",
+      "name": "Baptiste PESENTI",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1779",
+      "rugbyDataId": "572",
+      "club": "paris",
+      "name": "Lucas PEYRESBLANQUES",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12389",
+      "rugbyDataId": "580",
+      "club": "paris",
+      "name": "Martin BLUM",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1751",
+      "rugbyDataId": "582",
+      "club": "paris",
+      "name": "Mathis IBO",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1773",
+      "rugbyDataId": "584",
+      "club": "agen",
+      "name": "Charles LALOI",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1741",
+      "rugbyDataId": "587",
+      "club": "paris",
+      "name": "Léo MONIN",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1752",
+      "rugbyDataId": "590",
+      "club": "paris",
+      "name": "Juan Martin SCELZO",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1148",
+      "rugbyDataId": "591",
+      "club": "la-rochelle",
+      "name": "Andy TIMO",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12357",
+      "rugbyDataId": "592",
+      "club": "paris",
+      "name": "Setareki TURAGACOKE",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:431",
+      "rugbyDataId": "593",
+      "club": "toulon",
+      "name": "Esteban ABADIE",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2373",
+      "rugbyDataId": "595",
+      "club": "toulon",
+      "name": "Teddy BAUBIGNY",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2289",
+      "rugbyDataId": "599",
+      "club": "colomiers",
+      "name": "Jules DANGLOT",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2300",
+      "rugbyDataId": "600",
+      "club": "toulon",
+      "name": "Gaël DREAN",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:8861",
+      "rugbyDataId": "602",
+      "club": "toulon",
+      "name": "Antoine FRISCH",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1377",
+      "rugbyDataId": "603",
+      "club": "perpignan",
+      "name": "Paolo GARBISI",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2362",
+      "rugbyDataId": "604",
+      "club": "toulon",
+      "name": "Beka GIGASHVILI",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2384",
+      "rugbyDataId": "606",
+      "club": "toulon",
+      "name": "Matthias HALAGAHU",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:427",
+      "rugbyDataId": "607",
+      "club": "montauban",
+      "name": "Enzo HERVE",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2335",
+      "rugbyDataId": "608",
+      "club": "pau",
+      "name": "Facundo ISA",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2383",
+      "rugbyDataId": "611",
+      "club": "perpignan",
+      "name": "Mattéo LE CORVEC",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12577",
+      "rugbyDataId": "612",
+      "club": "toulon",
+      "name": "Gianmarco LUCCHESI",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2381",
+      "rugbyDataId": "618",
+      "club": "toulon",
+      "name": "Rayan REBBADJ",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2363",
+      "rugbyDataId": "619",
+      "club": "toulon",
+      "name": "Swan REBBADJ",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2352",
+      "rugbyDataId": "621",
+      "club": "toulon",
+      "name": "Baptiste SERIN",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2349",
+      "rugbyDataId": "622",
+      "club": "bayonne",
+      "name": "Emerick SETIANO",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12566",
+      "rugbyDataId": "623",
+      "club": "toulon",
+      "name": "Kyle SINCKLER",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2361",
+      "rugbyDataId": "624",
+      "club": "toulon",
+      "name": "Mathieu SMAILI",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2446",
+      "rugbyDataId": "625",
+      "club": "clermont",
+      "name": "Selevasio TOLOFUA",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:429",
+      "rugbyDataId": "626",
+      "club": "toulon",
+      "name": "Setariki TUICUVU",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2477",
+      "rugbyDataId": "630",
+      "club": "provence-rugby",
+      "name": "Yannick YOUYOUTTE",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11690",
+      "rugbyDataId": "631",
+      "club": "la-rochelle",
+      "name": "Thomas ADELAIDE",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2286",
+      "rugbyDataId": "632",
+      "club": "beziers",
+      "name": "Yanis BOULASSEL",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2317",
+      "rugbyDataId": "633",
+      "club": "toulon",
+      "name": "Oliver COWIE",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11823",
+      "rugbyDataId": "637",
+      "club": "toulon",
+      "name": "Corentin MEZOU",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2307",
+      "rugbyDataId": "639",
+      "club": "toulon",
+      "name": "Joe QUERE KARABA",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2448",
+      "rugbyDataId": "643",
+      "club": "toulouse",
+      "name": "Dorian ALDEGHERI",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2451",
+      "rugbyDataId": "645",
+      "club": "toulouse",
+      "name": "Cyril BAILLE",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11251",
+      "rugbyDataId": "647",
+      "club": "toulouse",
+      "name": "Léo BANOS",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2460",
+      "rugbyDataId": "648",
+      "club": "toulouse",
+      "name": "Pierre-louis BARASSI",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:426",
+      "rugbyDataId": "649",
+      "club": "provence-rugby",
+      "name": "Setareki BITUNIYATA",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2483",
+      "rugbyDataId": "651",
+      "club": "toulouse",
+      "name": "Ange CAPUOZZO",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2397",
+      "rugbyDataId": "652",
+      "club": "toulouse",
+      "name": "Santiago CHOCOBARES",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2484",
+      "rugbyDataId": "653",
+      "club": "bayonne",
+      "name": "Guillaume CRAMONT",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2453",
+      "rugbyDataId": "654",
+      "club": "toulouse",
+      "name": "Francois CROS",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2449",
+      "rugbyDataId": "656",
+      "club": "toulouse",
+      "name": "Antoine DUPONT",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2502",
+      "rugbyDataId": "657",
+      "club": "toulouse",
+      "name": "Nelson EPEE",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2405",
+      "rugbyDataId": "658",
+      "club": "toulouse",
+      "name": "Thibaud FLAMENT",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2463",
+      "rugbyDataId": "659",
+      "club": "toulouse",
+      "name": "Paul GRAOU",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2454",
+      "rugbyDataId": "660",
+      "club": "toulouse",
+      "name": "Anthony JELONCH",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2437",
+      "rugbyDataId": "663",
+      "club": "toulouse",
+      "name": "Matthis LEBEL",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2485",
+      "rugbyDataId": "664",
+      "club": "toulouse",
+      "name": "Paul MALLEZ",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2503",
+      "rugbyDataId": "665",
+      "club": "toulouse",
+      "name": "Juan Cruz MALLIA",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2445",
+      "rugbyDataId": "666",
+      "club": "toulouse",
+      "name": "Julien MARCHAND",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2498",
+      "rugbyDataId": "668",
+      "club": "toulouse",
+      "name": "Emmanuel MEAFOU",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2443",
+      "rugbyDataId": "670",
+      "club": "toulouse",
+      "name": "Rodrigue NETI",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2436",
+      "rugbyDataId": "671",
+      "club": "toulouse",
+      "name": "Romain NTAMACK",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2450",
+      "rugbyDataId": "673",
+      "club": "toulouse",
+      "name": "Thomas RAMOS",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2462",
+      "rugbyDataId": "675",
+      "club": "toulouse",
+      "name": "Alexandre ROUMAT",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2490",
+      "rugbyDataId": "678",
+      "club": "toulouse",
+      "name": "Clement VERGE",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2425",
+      "rugbyDataId": "679",
+      "club": "toulouse",
+      "name": "Jack WILLIS",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12438",
+      "rugbyDataId": "683",
+      "club": "toulouse",
+      "name": "Benjamin BERTRAND",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2401",
+      "rugbyDataId": "685",
+      "club": "toulouse",
+      "name": "Mathis CASTRO FERREIRA",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2427",
+      "rugbyDataId": "686",
+      "club": "racing-92",
+      "name": "Paul COSTES",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12342",
+      "rugbyDataId": "687",
+      "club": "toulouse",
+      "name": "Simon DAROQUE",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12363",
+      "rugbyDataId": "688",
+      "club": "toulouse",
+      "name": "Efrain ELIAS",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2432",
+      "rugbyDataId": "691",
+      "club": "toulouse",
+      "name": "Kalvin GOURGUES",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2429",
+      "rugbyDataId": "694",
+      "club": "toulouse",
+      "name": "Thomas LACOMBRE",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2410",
+      "rugbyDataId": "695",
+      "club": "toulouse",
+      "name": "Nathan LLAVERIA",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2430",
+      "rugbyDataId": "698",
+      "club": "toulouse",
+      "name": "Celian POUZELGUES",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12340",
+      "rugbyDataId": "699",
+      "club": "toulouse",
+      "name": "Matias REMUE",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2424",
+      "rugbyDataId": "701",
+      "club": "agen",
+      "name": "Sialevailea TOLOFUA",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1012",
+      "rugbyDataId": "703",
+      "club": "colomiers",
+      "name": "Martin ALONSO MUÑOZ",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:215",
+      "rugbyDataId": "705",
+      "club": "vannes",
+      "name": "Simon AUGRY",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2562",
+      "rugbyDataId": "709",
+      "club": "vannes",
+      "name": "Théo BEZIAT",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2585",
+      "rugbyDataId": "711",
+      "club": "vannes",
+      "name": "Simon BOURGEOIS",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2567",
+      "rugbyDataId": "713",
+      "club": "vannes",
+      "name": "Romaric CAMOU",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1930",
+      "rugbyDataId": "716",
+      "club": "colomiers",
+      "name": "Thibault DEBAES",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:770",
+      "rugbyDataId": "718",
+      "club": "vannes",
+      "name": "Hugo DJEHI",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2554",
+      "rugbyDataId": "720",
+      "club": "vannes",
+      "name": "Joseph EDWARDS",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2534",
+      "rugbyDataId": "722",
+      "club": "vannes",
+      "name": "Francisco GORRISSEN",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11840",
+      "rugbyDataId": "724",
+      "club": "vannes",
+      "name": "Sione KALAMAFONI",
+      "birthYear": 1988,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2560",
+      "rugbyDataId": "727",
+      "club": "vannes",
+      "name": "Maxime LAFAGE",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2549",
+      "rugbyDataId": "730",
+      "club": "vannes",
+      "name": "Eric MARKS",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12000",
+      "rugbyDataId": "731",
+      "club": "vannes",
+      "name": "Santiago MEDRANO",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1900",
+      "rugbyDataId": "732",
+      "club": "paris",
+      "name": "Fabrice METZ",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2523",
+      "rugbyDataId": "736",
+      "club": "vannes",
+      "name": "Juan Bautista PEDEMONTE",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12774",
+      "rugbyDataId": "738",
+      "club": "bordeaux-begles",
+      "name": "Salesi RAYASI",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2589",
+      "rugbyDataId": "739",
+      "club": "vannes",
+      "name": "Michael RURU",
+      "birthYear": 1990,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2267",
+      "rugbyDataId": "741",
+      "club": "vannes",
+      "name": "Paul SURANO",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:336",
+      "rugbyDataId": "746",
+      "club": "paris",
+      "name": "Tani VILI",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2584",
+      "rugbyDataId": "748",
+      "club": "vannes",
+      "name": "Léon BOULIER",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2527",
+      "rugbyDataId": "749",
+      "club": "vannes",
+      "name": "Jean COTARMANAC'H",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2580",
+      "rugbyDataId": "750",
+      "club": "vannes",
+      "name": "Matteo DESJEUX",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2595",
+      "rugbyDataId": "752",
+      "club": "vannes",
+      "name": "Timothé MEZOU",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2528",
+      "rugbyDataId": "755",
+      "club": "vannes",
+      "name": "Robin TACCOLA",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:14078",
+      "rugbyDataId": "756",
+      "club": "toulon",
+      "name": "Tomas ALBORNOZ",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13528",
+      "rugbyDataId": "762",
+      "club": "toulon",
+      "name": "Juan Ignacio BREX",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2548",
+      "rugbyDataId": "777",
+      "club": "vannes",
+      "name": "Edoardo IACHIZZI",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25047",
+      "rugbyDataId": "789",
+      "club": "toulouse",
+      "name": "Tommaso MENONCELLO",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13832",
+      "rugbyDataId": "844",
+      "club": "racing-92",
+      "name": "Gerónimo PRISCIANTELLI",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:14082",
+      "rugbyDataId": "873",
+      "club": "montpellier",
+      "name": "Adam HASTINGS",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25044",
+      "rugbyDataId": "877",
+      "club": "toulon",
+      "name": "Huw JONES",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25073",
+      "rugbyDataId": "952",
+      "club": "castres",
+      "name": "Hamish WATSON",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:15",
+      "rugbyDataId": "957",
+      "club": "agen",
+      "name": "Dorian BELLOT",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:90",
+      "rugbyDataId": "959",
+      "club": "castres",
+      "name": "Alex BURIN",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:51",
+      "rugbyDataId": "962",
+      "club": "agen",
+      "name": "William DEMOTTE",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:49",
+      "rugbyDataId": "964",
+      "club": "agen",
+      "name": "Arnaud DUPUTS",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13229",
+      "rugbyDataId": "965",
+      "club": "agen",
+      "name": "Javier EISSMANN",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:33",
+      "rugbyDataId": "966",
+      "club": "agen",
+      "name": "Iban ETCHEVERRY",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:38",
+      "rugbyDataId": "969",
+      "club": "agen",
+      "name": "Florent GUION",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:19",
+      "rugbyDataId": "971",
+      "club": "agen",
+      "name": "Julien LEBIAN",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:77",
+      "rugbyDataId": "973",
+      "club": "agen",
+      "name": "Hans LOMBARD BURET",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1248",
+      "rugbyDataId": "974",
+      "club": "bayonne",
+      "name": "Lasha MACHARASHVILI",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:157",
+      "rugbyDataId": "975",
+      "club": "agen",
+      "name": "John MADIGAN",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:8",
+      "rugbyDataId": "984",
+      "club": "agen",
+      "name": "Kolinio RAMOKA",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12453",
+      "rugbyDataId": "986",
+      "club": "agen",
+      "name": "Santiago SOCINO",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:30",
+      "rugbyDataId": "990",
+      "club": "agen",
+      "name": "Tomasi FINEANGANOFO",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2834",
+      "rugbyDataId": "992",
+      "club": "agen",
+      "name": "Valentin GAYRAUD",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:3129",
+      "rugbyDataId": "993",
+      "club": "agen",
+      "name": "Pierre JOUVIN",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12474",
+      "rugbyDataId": "995",
+      "club": "agen",
+      "name": "Lucas MARTINS",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12490",
+      "rugbyDataId": "996",
+      "club": "agen",
+      "name": "Dylan CAZEMAJOU",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1634",
+      "rugbyDataId": "999",
+      "club": "vannes",
+      "name": "Mikheil ALANIA",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1641",
+      "rugbyDataId": "1023",
+      "club": "montauban",
+      "name": "Dachi PAPUNASHVILI",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12473",
+      "rugbyDataId": "1028",
+      "club": "racing-92",
+      "name": "Ugo SEUNES",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:899",
+      "rugbyDataId": "1047",
+      "club": "beziers",
+      "name": "Clément ANCELY",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:512",
+      "rugbyDataId": "1048",
+      "club": "beziers",
+      "name": "Damien ANON",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:99",
+      "rugbyDataId": "1051",
+      "club": "beziers",
+      "name": "Gillian BENOY",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:107",
+      "rugbyDataId": "1052",
+      "club": "beziers",
+      "name": "Pierre COURTAUD",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:3477",
+      "rugbyDataId": "1053",
+      "club": "beziers",
+      "name": "Cameron DODSON",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:140",
+      "rugbyDataId": "1055",
+      "club": "beziers",
+      "name": "Victor DREUILLE",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2000",
+      "rugbyDataId": "1056",
+      "club": "beziers",
+      "name": "Shahn ERU",
+      "birthYear": 1989,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2268",
+      "rugbyDataId": "1060",
+      "club": "castres",
+      "name": "Taylor GONTINEAC",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:110",
+      "rugbyDataId": "1064",
+      "club": "beziers",
+      "name": "Sias KOEN",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:143",
+      "rugbyDataId": "1065",
+      "club": "beziers",
+      "name": "Yvann LALEVÉE",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:148",
+      "rugbyDataId": "1066",
+      "club": "beziers",
+      "name": "Charly MALIE",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:160",
+      "rugbyDataId": "1071",
+      "club": "beziers",
+      "name": "Nicolas PLAZY",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:180",
+      "rugbyDataId": "1072",
+      "club": "beziers",
+      "name": "Paul REAU",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:159",
+      "rugbyDataId": "1073",
+      "club": "beziers",
+      "name": "Paul RECOR",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:142",
+      "rugbyDataId": "1077",
+      "club": "beziers",
+      "name": "William VAN BOST",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:307",
+      "rugbyDataId": "1083",
+      "club": "beziers",
+      "name": "Yahnis EL MASLOUHI",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:130",
+      "rugbyDataId": "1090",
+      "club": "beziers",
+      "name": "Antoine PAYRASTRE",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:181",
+      "rugbyDataId": "1091",
+      "club": "beziers",
+      "name": "Julien RASAMOELINA",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11098",
+      "rugbyDataId": "1148",
+      "club": "racing-92",
+      "name": "Benjamin BOUDOU",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:430",
+      "rugbyDataId": "1154",
+      "club": "beziers",
+      "name": "Guillaume GALLETIER",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:442",
+      "rugbyDataId": "1180",
+      "club": "provence-rugby",
+      "name": "Renger VAN EERTEN",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:461",
+      "rugbyDataId": "1187",
+      "club": "racing-92",
+      "name": "Leo CARBONNEAU",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:395",
+      "rugbyDataId": "1189",
+      "club": "toulon",
+      "name": "Mathis FERTE",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:377",
+      "rugbyDataId": "1190",
+      "club": "la-rochelle",
+      "name": "Nathan FRAISSENON",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:391",
+      "rugbyDataId": "1192",
+      "club": "toulon",
+      "name": "Luka KELETAONA",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2597",
+      "rugbyDataId": "1204",
+      "club": "colomiers",
+      "name": "Grégoire BAZIN",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11330",
+      "rugbyDataId": "1205",
+      "club": "colomiers",
+      "name": "Robin BELLEMAND",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:287",
+      "rugbyDataId": "1209",
+      "club": "colomiers",
+      "name": "Pablo DIMCHEFF",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1649",
+      "rugbyDataId": "1218",
+      "club": "colomiers",
+      "name": "Theo LACHAUD",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:731",
+      "rugbyDataId": "1219",
+      "club": "colomiers",
+      "name": "Thomas LARRIEU",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1884",
+      "rugbyDataId": "1225",
+      "club": "colomiers",
+      "name": "Vincent PINTO",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:838",
+      "rugbyDataId": "1227",
+      "club": "lyon",
+      "name": "Janse ROUX",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2825",
+      "rugbyDataId": "1230",
+      "club": "colomiers",
+      "name": "Baptiste SERRANO",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:755",
+      "rugbyDataId": "1232",
+      "club": "colomiers",
+      "name": "Guillaume TARTAS",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:738",
+      "rugbyDataId": "1233",
+      "club": "colomiers",
+      "name": "Jean THOMAS",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2812",
+      "rugbyDataId": "1239",
+      "club": "colomiers",
+      "name": "Jeremy BECHU",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11697",
+      "rugbyDataId": "1240",
+      "club": "colomiers",
+      "name": "Alexis CAUMEL",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11676",
+      "rugbyDataId": "1242",
+      "club": "colomiers",
+      "name": "Farell DELOURMEL",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13551",
+      "rugbyDataId": "1244",
+      "club": "colomiers",
+      "name": "Rayan HOUARI",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:3133",
+      "rugbyDataId": "1246",
+      "club": "colomiers",
+      "name": "Paolo PARPAGIOLA",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:722",
+      "rugbyDataId": "1247",
+      "club": "colomiers",
+      "name": "Enzo SALLES",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:9000",
+      "rugbyDataId": "1248",
+      "club": "dax",
+      "name": "Arnaud ALETTI",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:156",
+      "rugbyDataId": "1250",
+      "club": "dax",
+      "name": "Jean Baptiste BARRERE",
+      "birthYear": 1989,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11940",
+      "rugbyDataId": "1255",
+      "club": "dax",
+      "name": "Hugo CERISIER",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:3106",
+      "rugbyDataId": "1258",
+      "club": "dax",
+      "name": "Théo DUPRAT",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11938",
+      "rugbyDataId": "1261",
+      "club": "dax",
+      "name": "Brice FERRER",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2613",
+      "rugbyDataId": "1262",
+      "club": "dax",
+      "name": "Hugo FOURQUET",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:10754",
+      "rugbyDataId": "1264",
+      "club": "dax",
+      "name": "Théo GATELIER",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:8974",
+      "rugbyDataId": "1268",
+      "club": "dax",
+      "name": "Etienne LOIRET",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11832",
+      "rugbyDataId": "1275",
+      "club": "racing-92",
+      "name": "Arthur ROCHE",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1316",
+      "rugbyDataId": "1278",
+      "club": "dax",
+      "name": "Alexandre MANUKULA",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:10756",
+      "rugbyDataId": "1284",
+      "club": "dax",
+      "name": "Benjamin PUNTOUS",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11528",
+      "rugbyDataId": "1285",
+      "club": "dax",
+      "name": "Paul RAVIER",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:10824",
+      "rugbyDataId": "1286",
+      "club": "dax",
+      "name": "Sylvère RETEAU",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:752",
+      "rugbyDataId": "1287",
+      "club": "dax",
+      "name": "Romuald SEGUY",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1613",
+      "rugbyDataId": "1288",
+      "club": "dax",
+      "name": "Jean Baptiste SINGER",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:3035",
+      "rugbyDataId": "1292",
+      "club": "dax",
+      "name": "Bastien DAGUERRE",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12779",
+      "rugbyDataId": "1294",
+      "club": "dax",
+      "name": "Malo HANNOYER",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12041",
+      "rugbyDataId": "1296",
+      "club": "dax",
+      "name": "Paul LAPERNE",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:3052",
+      "rugbyDataId": "1298",
+      "club": "pau",
+      "name": "Diego MIRANDA",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:668",
+      "rugbyDataId": "1336",
+      "club": "toulon",
+      "name": "Rabah SLIMANI",
+      "birthYear": 1989,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13453",
+      "rugbyDataId": "1342",
+      "club": "montpellier",
+      "name": "Langi GLEESON",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:24988",
+      "rugbyDataId": "1350",
+      "club": "clermont",
+      "name": "Darcy SWAIN",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25082",
+      "rugbyDataId": "1421",
+      "club": "la-rochelle",
+      "name": "David KRIEL",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25006",
+      "rugbyDataId": "1461",
+      "club": "lyon",
+      "name": "Sanele NOHAMBA",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25058",
+      "rugbyDataId": "1505",
+      "club": "montpellier",
+      "name": "Ruben VAN HEERDEN",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13649",
+      "rugbyDataId": "1514",
+      "club": "bayonne",
+      "name": "Herschel JANTJIES",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1863",
+      "rugbyDataId": "1620",
+      "club": "pau",
+      "name": "Santiago GRONDONA",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13817",
+      "rugbyDataId": "1637",
+      "club": "montpellier",
+      "name": "Justo PICCARDO",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25086",
+      "rugbyDataId": "1638",
+      "club": "vannes",
+      "name": "Nicolas ROGER FARIAS",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13502",
+      "rugbyDataId": "1743",
+      "club": "provence-rugby",
+      "name": "Albert TUISUE",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25051",
+      "rugbyDataId": "1746",
+      "club": "vannes",
+      "name": "Simione KURUVOLI",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13837",
+      "rugbyDataId": "1749",
+      "club": "provence-rugby",
+      "name": "Caleb MUNTZ",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2205",
+      "rugbyDataId": "1760",
+      "club": "vannes",
+      "name": "Inia TABUAVOU",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25057",
+      "rugbyDataId": "1772",
+      "club": "perpignan",
+      "name": "Bradley AMITUANAI",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2569",
+      "rugbyDataId": "1809",
+      "club": "bayonne",
+      "name": "Ewan JOHNSON",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25036",
+      "rugbyDataId": "1838",
+      "club": "perpignan",
+      "name": "Marco RICCIONI",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25025",
+      "rugbyDataId": "1878",
+      "club": "paris",
+      "name": "Rufus MCLEAN",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1325",
+      "rugbyDataId": "1890",
+      "club": "agen",
+      "name": "Cyril DELIGNY",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13468",
+      "rugbyDataId": "1892",
+      "club": "agen",
+      "name": "Taniela MATAKAIONGO",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2070",
+      "rugbyDataId": "1898",
+      "club": "beziers",
+      "name": "Jérôme DUFOUR",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2127",
+      "rugbyDataId": "1901",
+      "club": "beziers",
+      "name": "Jonathan MAIAU",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11332",
+      "rugbyDataId": "1918",
+      "club": "beziers",
+      "name": "Paul GADEA",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2568",
+      "rugbyDataId": "1953",
+      "club": "colomiers",
+      "name": "Myles EDWARDS",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1536",
+      "rugbyDataId": "1955",
+      "club": "colomiers",
+      "name": "Luka PLATARET",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2752",
+      "rugbyDataId": "1956",
+      "club": "colomiers",
+      "name": "Atonio ULUTUIPALELEI",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12426",
+      "rugbyDataId": "1970",
+      "club": "colomiers",
+      "name": "Richard HARDWICK",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:918",
+      "rugbyDataId": "1987",
+      "club": "provence-rugby",
+      "name": "Romain TROUILLOUD",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:884",
+      "rugbyDataId": "2012",
+      "club": "beziers",
+      "name": "Luka GOGINAVA",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11043",
+      "rugbyDataId": "2013",
+      "club": "vannes",
+      "name": "Ioane IASHAGASHVILI",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1209",
+      "rugbyDataId": "2030",
+      "club": "bayonne",
+      "name": "Raphael DARQUIER",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1615",
+      "rugbyDataId": "2036",
+      "club": "agen",
+      "name": "Hugo BOUYSSOU",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1550",
+      "rugbyDataId": "2055",
+      "club": "clermont",
+      "name": "Kevin NOAH",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1509",
+      "rugbyDataId": "2058",
+      "club": "bordeaux-begles",
+      "name": "Lasha PKHAKADZE",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12475",
+      "rugbyDataId": "2073",
+      "club": "agen",
+      "name": "Oliver CUMMINS",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:3136",
+      "rugbyDataId": "2074",
+      "club": "agen",
+      "name": "Mathias JEAN",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:3436",
+      "rugbyDataId": "2078",
+      "club": "provence-rugby",
+      "name": "Martin BOGADO",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11284",
+      "rugbyDataId": "2080",
+      "club": "clermont",
+      "name": "Justin BOURAUX",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12163",
+      "rugbyDataId": "2082",
+      "club": "vannes",
+      "name": "Thomas GEFFRE",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11787",
+      "rugbyDataId": "2086",
+      "club": "vannes",
+      "name": "Rudi BROWN",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2364",
+      "rugbyDataId": "2100",
+      "club": "perpignan",
+      "name": "Maëlan RABUT",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:312",
+      "rugbyDataId": "2110",
+      "club": "montauban",
+      "name": "Christopher VAOTOA",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2083",
+      "rugbyDataId": "2118",
+      "club": "provence-rugby",
+      "name": "Joris CAZENAVE",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1913",
+      "rugbyDataId": "2119",
+      "club": "provence-rugby",
+      "name": "Mathias COLOMBET",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1776",
+      "rugbyDataId": "2120",
+      "club": "provence-rugby",
+      "name": "Arthur COVILLE",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2050",
+      "rugbyDataId": "2124",
+      "club": "provence-rugby",
+      "name": "Teimana HARRISON",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:269",
+      "rugbyDataId": "2125",
+      "club": "provence-rugby",
+      "name": "Tornike JALAGONIA",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2069",
+      "rugbyDataId": "2129",
+      "club": "provence-rugby",
+      "name": "Julius NOSTADT",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2112",
+      "rugbyDataId": "2130",
+      "club": "provence-rugby",
+      "name": "Guillaume PIAZZOLI",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1682",
+      "rugbyDataId": "2135",
+      "club": "agen",
+      "name": "Jules SOULAN",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2035",
+      "rugbyDataId": "2136",
+      "club": "provence-rugby",
+      "name": "Malohi SUTA",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2041",
+      "rugbyDataId": "2140",
+      "club": "provence-rugby",
+      "name": "Federico WEGRZYN",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2390",
+      "rugbyDataId": "2141",
+      "club": "provence-rugby",
+      "name": "Eliott YEMSI",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2034",
+      "rugbyDataId": "2145",
+      "club": "provence-rugby",
+      "name": "Paul CELLIO ZWILER",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2042",
+      "rugbyDataId": "2148",
+      "club": "provence-rugby",
+      "name": "Léo DROUET",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:836",
+      "rugbyDataId": "2167",
+      "club": "beziers",
+      "name": "Ian KITWANGA",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:3091",
+      "rugbyDataId": "2212",
+      "club": "provence-rugby",
+      "name": "Andréa PONTANIER",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13482",
+      "rugbyDataId": "2229",
+      "club": "bordeaux-begles",
+      "name": "Valentin HUTTEAU",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11435",
+      "rugbyDataId": "2231",
+      "club": "castres",
+      "name": "Teddy DURAND",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13511",
+      "rugbyDataId": "2232",
+      "club": "castres",
+      "name": "Vuate KARAWALEVU",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2989",
+      "rugbyDataId": "2234",
+      "club": "castres",
+      "name": "Adam VARGAS",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1544",
+      "rugbyDataId": "2238",
+      "club": "clermont",
+      "name": "Alivereti LOALOA",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:906",
+      "rugbyDataId": "2239",
+      "club": "clermont",
+      "name": "Pio MUARUA",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:3221",
+      "rugbyDataId": "2244",
+      "club": "la-rochelle",
+      "name": "Semi LAGIVALA",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1035",
+      "rugbyDataId": "2246",
+      "club": "lyon",
+      "name": "Fousseynou CISSOKHO",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1747",
+      "rugbyDataId": "2247",
+      "club": "montauban",
+      "name": "Stéphane AHMED",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:222",
+      "rugbyDataId": "2249",
+      "club": "beziers",
+      "name": "Luka AZARIASHVILI",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:4957",
+      "rugbyDataId": "2250",
+      "club": "montauban",
+      "name": "Lewis BEAN",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2713",
+      "rugbyDataId": "2254",
+      "club": "paris",
+      "name": "Thomas BUE",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:158",
+      "rugbyDataId": "2255",
+      "club": "montauban",
+      "name": "Maxime ESPEUT",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1322",
+      "rugbyDataId": "2257",
+      "club": "montauban",
+      "name": "Kevin FIRMIN",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1873",
+      "rugbyDataId": "2258",
+      "club": "montauban",
+      "name": "Romain FONNICOLA",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:891",
+      "rugbyDataId": "2259",
+      "club": "montauban",
+      "name": "Thomas FORTUNEL",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2682",
+      "rugbyDataId": "2263",
+      "club": "beziers",
+      "name": "Yanis LOCKWOOD",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2266",
+      "rugbyDataId": "2265",
+      "club": "montauban",
+      "name": "Ru-hann GREYLING",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2212",
+      "rugbyDataId": "2266",
+      "club": "montauban",
+      "name": "John Thomas JACKSON",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:497",
+      "rugbyDataId": "2273",
+      "club": "montauban",
+      "name": "Baptiste MOUCHOUS",
+      "birthYear": 1998,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1329",
+      "rugbyDataId": "2277",
+      "club": "montauban",
+      "name": "Fred QUERCY",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1897",
+      "rugbyDataId": "2278",
+      "club": "montauban",
+      "name": "Yvan REILHAC",
+      "birthYear": 1995,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1244",
+      "rugbyDataId": "2279",
+      "club": "montauban",
+      "name": "Simon RENDA",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1284",
+      "rugbyDataId": "2280",
+      "club": "castres",
+      "name": "Kyllian RINGUET",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1351",
+      "rugbyDataId": "2285",
+      "club": "montauban",
+      "name": "Josua VICI",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1312",
+      "rugbyDataId": "2286",
+      "club": "montauban",
+      "name": "Tyrone VIIGA",
+      "birthYear": 1992,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11742",
+      "rugbyDataId": "2289",
+      "club": "montauban",
+      "name": "Mael CASTEL",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1385",
+      "rugbyDataId": "2294",
+      "club": "montauban",
+      "name": "Paul VALLEE",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12399",
+      "rugbyDataId": "2295",
+      "club": "castres",
+      "name": "Colin DUPUY",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:22916",
+      "rugbyDataId": "2296",
+      "club": "montpellier",
+      "name": "Lennox ANYANWU",
+      "birthYear": 2000,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13735",
+      "rugbyDataId": "2297",
+      "club": "montpellier",
+      "name": "Tom BANKS",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13459",
+      "rugbyDataId": "2298",
+      "club": "montpellier",
+      "name": "Adam BEARD",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1409",
+      "rugbyDataId": "2300",
+      "club": "agen",
+      "name": "Adam Mountaga BOUARE",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13604",
+      "rugbyDataId": "2303",
+      "club": "racing-92",
+      "name": "Jonathan HILL",
+      "birthYear": 1994,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13744",
+      "rugbyDataId": "2304",
+      "club": "racing-92",
+      "name": "Nathan HUGHES",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:916",
+      "rugbyDataId": "2305",
+      "club": "racing-92",
+      "name": "Wilfried HULLEU",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:888",
+      "rugbyDataId": "2306",
+      "club": "racing-92",
+      "name": "Thomas LAINAULT",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13640",
+      "rugbyDataId": "2307",
+      "club": "racing-92",
+      "name": "Joseph MANU",
+      "birthYear": 1996,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2404",
+      "rugbyDataId": "2313",
+      "club": "montauban",
+      "name": "Lomig JOUANNY",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12590",
+      "rugbyDataId": "2322",
+      "club": "la-rochelle",
+      "name": "Christian LUAKI",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12202",
+      "rugbyDataId": "2331",
+      "club": "bordeaux-begles",
+      "name": "Adrien DRAULT",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11824",
+      "rugbyDataId": "2363",
+      "club": "bordeaux-begles",
+      "name": "Thomas DELPEUCH",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12806",
+      "rugbyDataId": "2364",
+      "club": "agen",
+      "name": "Enzo SERIEYSSOL",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12449",
+      "rugbyDataId": "2381",
+      "club": "provence-rugby",
+      "name": "Baptiste LENOIR",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1060",
+      "rugbyDataId": "2390",
+      "club": "lyon",
+      "name": "Thomas MARCELINE",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12492",
+      "rugbyDataId": "2391",
+      "club": "clermont",
+      "name": "Axel GUILLAUD",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11838",
+      "rugbyDataId": "2392",
+      "club": "castres",
+      "name": "Louka GUILHOT",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11773",
+      "rugbyDataId": "2428",
+      "club": "perpignan",
+      "name": "Davit LAGVILAVA",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2297",
+      "rugbyDataId": "2480",
+      "club": "toulon",
+      "name": "Léo AMETLLA",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11741",
+      "rugbyDataId": "2482",
+      "club": "bayonne",
+      "name": "Tom LEVEQUE",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:864",
+      "rugbyDataId": "2483",
+      "club": "montpellier",
+      "name": "Melvyn RATES",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12362",
+      "rugbyDataId": "2485",
+      "club": "perpignan",
+      "name": "Mayron FAHY",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12374",
+      "rugbyDataId": "2529",
+      "club": "paris",
+      "name": "Ethan TIA",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12408",
+      "rugbyDataId": "2530",
+      "club": "la-rochelle",
+      "name": "Diego JURD",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13540",
+      "rugbyDataId": "2531",
+      "club": "clermont",
+      "name": "Timéo FRIER",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25038",
+      "rugbyDataId": "2557",
+      "club": "perpignan",
+      "name": "Luke MCGRATH",
+      "birthYear": 1993,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12447",
+      "rugbyDataId": "2741",
+      "club": "provence-rugby",
+      "name": "Tom NOBLE",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12477",
+      "rugbyDataId": "2742",
+      "club": "lyon",
+      "name": "Antoine DELIANCE",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12341",
+      "rugbyDataId": "2840",
+      "club": "toulouse",
+      "name": "Romeo BONNARD MARTIN",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11673",
+      "rugbyDataId": "2866",
+      "club": "racing-92",
+      "name": "Vladi ASHVETIA",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25049",
+      "rugbyDataId": "2887",
+      "club": "vannes",
+      "name": "Matias ALEMANNO",
+      "birthYear": 1991,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12500",
+      "rugbyDataId": "2912",
+      "club": "provence-rugby",
+      "name": "Sireli MASIWINI",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12444",
+      "rugbyDataId": "2952",
+      "club": "castres",
+      "name": "Mate GURTSKAIA",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12807",
+      "rugbyDataId": "3027",
+      "club": "bordeaux-begles",
+      "name": "Christian EVERITT",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13550",
+      "rugbyDataId": "3031",
+      "club": "la-rochelle",
+      "name": "Nolhann COUILLAUD",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12588",
+      "rugbyDataId": "3062",
+      "club": "bordeaux-begles",
+      "name": "Hugo AVOGADRO",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13465",
+      "rugbyDataId": "3063",
+      "club": "provence-rugby",
+      "name": "Bobby BISSU",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12387",
+      "rugbyDataId": "3070",
+      "club": "la-rochelle",
+      "name": "Upaleto FEAO",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13500",
+      "rugbyDataId": "3071",
+      "club": "la-rochelle",
+      "name": "Kirill FRAINDT",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12375",
+      "rugbyDataId": "3223",
+      "club": "racing-92",
+      "name": "Auguste ALBUISSON",
+      "birthYear": 2008,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13443",
+      "rugbyDataId": "3249",
+      "club": "castres",
+      "name": "Maël TURPIN",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12417",
+      "rugbyDataId": "3253",
+      "club": "lyon",
+      "name": "Lilian BARET",
+      "birthYear": 2008,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:953",
+      "rugbyDataId": "3254",
+      "club": "lyon",
+      "name": "Bartholome SANSON",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13614",
+      "rugbyDataId": "3257",
+      "club": "montauban",
+      "name": "Merlin LEFLAMAND",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13493",
+      "rugbyDataId": "3440",
+      "club": "perpignan",
+      "name": "Simon TATY",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12526",
+      "rugbyDataId": "3442",
+      "club": "pau",
+      "name": "Clement PAUL",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12376",
+      "rugbyDataId": "3443",
+      "club": "racing-92",
+      "name": "Antoine LATRASSE",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12736",
+      "rugbyDataId": "3444",
+      "club": "paris",
+      "name": "Jacques BOTHA",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13593",
+      "rugbyDataId": "3523",
+      "club": "pau",
+      "name": "Xander IOSEFO",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13650",
+      "rugbyDataId": "3525",
+      "club": "bayonne",
+      "name": "Emosi TUMANIA",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12099",
+      "rugbyDataId": "3527",
+      "club": "lyon",
+      "name": "Charly MIGNOT",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13401",
+      "rugbyDataId": "3568",
+      "club": "perpignan",
+      "name": "Diego MASCARENC",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12691",
+      "rugbyDataId": "3571",
+      "club": "racing-92",
+      "name": "Noham VALEU",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12344",
+      "rugbyDataId": "3573",
+      "club": "clermont",
+      "name": "Baptiste VESCHAMBRE",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:14061",
+      "rugbyDataId": "3574",
+      "club": "montauban",
+      "name": "Jean SEUX",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25037",
+      "rugbyDataId": "3597",
+      "club": "perpignan",
+      "name": "Braydon ENNOR",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11731",
+      "rugbyDataId": "3623",
+      "club": "bordeaux-begles",
+      "name": "Adam ZAPEDOWSKI",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12576",
+      "rugbyDataId": "3760",
+      "club": "clermont",
+      "name": "Louis VERMEULEN",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12692",
+      "rugbyDataId": "3827",
+      "club": "toulon",
+      "name": "Mikheili SHIOSHVILI",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:24989",
+      "rugbyDataId": "3861",
+      "club": "clermont",
+      "name": "Etene NANAI SETURO",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:18641",
+      "rugbyDataId": "3978",
+      "club": "la-rochelle",
+      "name": "Sacha ELISSALDE",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2536",
+      "rugbyDataId": "3994",
+      "club": "vannes",
+      "name": "Rayane TAFILI",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12594",
+      "rugbyDataId": "3995",
+      "club": "colomiers",
+      "name": "Theo PEDEMONS",
+      "birthYear": 2004,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12432",
+      "rugbyDataId": "4020",
+      "club": "pau",
+      "name": "Remi COUTY",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12695",
+      "rugbyDataId": "4023",
+      "club": "toulon",
+      "name": "Tana KELETAONA",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13531",
+      "rugbyDataId": "4034",
+      "club": "clermont",
+      "name": "Nohem EZ ZAHOUANY",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11706",
+      "rugbyDataId": "4128",
+      "club": "dax",
+      "name": "Théo MERCADIER",
+      "birthYear": 2003,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25042",
+      "rugbyDataId": "4244",
+      "club": "racing-92",
+      "name": "Serupepeli URU",
+      "birthYear": 1997,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25043",
+      "rugbyDataId": "4270",
+      "club": "toulon",
+      "name": "Apete NAROGO",
+      "birthYear": 2002,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:24987",
+      "rugbyDataId": "4273",
+      "club": "castres",
+      "name": "Théo VIDAL",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25079",
+      "rugbyDataId": "4311",
+      "club": "vannes",
+      "name": "Murray TAULAGI",
+      "birthYear": 1999,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12429",
+      "rugbyDataId": "4336",
+      "club": "lyon",
+      "name": "Paco MAZOYER",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2225",
+      "rugbyDataId": "4429",
+      "club": "montauban",
+      "name": "Zalan KADE",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:1725",
+      "rugbyDataId": "4430",
+      "club": "agen",
+      "name": "Nail AUDOIRE",
+      "birthYear": 2001,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:871",
+      "rugbyDataId": "4434",
+      "club": "grenoble",
+      "name": "Corentin PECCAUD",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11677",
+      "rugbyDataId": "4456",
+      "club": "toulon",
+      "name": "Samuel JEAN CHRISTOPHE",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12677",
+      "rugbyDataId": "4460",
+      "club": "pau",
+      "name": "Joseph ADAM",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13387",
+      "rugbyDataId": "4461",
+      "club": "clermont",
+      "name": "Yanis BROSSET",
+      "birthYear": 2008,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13463",
+      "rugbyDataId": "4465",
+      "club": "colomiers",
+      "name": "Guillaume LAFFONT",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:24976",
+      "rugbyDataId": "4469",
+      "club": "agen",
+      "name": "Valentino REGGIARDO",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:25001",
+      "rugbyDataId": "4476",
+      "club": "la-rochelle",
+      "name": "Valentin BOUJU",
+      "birthYear": 2008,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12552",
+      "rugbyDataId": "4477",
+      "club": "lyon",
+      "name": "Mathis GALEAZZI",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12495",
+      "rugbyDataId": "4479",
+      "club": "bordeaux-begles",
+      "name": "Amir HATTOUMA",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12406",
+      "rugbyDataId": "4509",
+      "club": "la-rochelle",
+      "name": "Peni Torau VUETIMAIWAI",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13534",
+      "rugbyDataId": "4511",
+      "club": "montpellier",
+      "name": "Raphaël AUDEBERT",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13471",
+      "rugbyDataId": "4544",
+      "club": "toulouse",
+      "name": "Lukas AMATI",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:14124",
+      "rugbyDataId": "4545",
+      "club": "toulouse",
+      "name": "Bernardo PUCCIARIELLO",
+      "birthYear": 2008,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:11729",
+      "rugbyDataId": "4610",
+      "club": "pau",
+      "name": "Yon CAPERAA",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13737",
+      "rugbyDataId": "4686",
+      "club": "bayonne",
+      "name": "Manus VAN LEEUWEN",
+      "birthYear": 2007,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:13529",
+      "rugbyDataId": "4733",
+      "club": "bordeaux-begles",
+      "name": "Louis FAVRAU",
+      "birthYear": 2008,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:2060",
+      "rugbyDataId": "4739",
+      "club": "provence-rugby",
+      "name": "Valentin IBANEZ",
+      "birthYear": 2005,
+      "evidence": "individual_profile"
+    },
+    {
+      "lnrId": "lnr:12673",
+      "rugbyDataId": "4751",
+      "club": "racing-92",
+      "name": "Liam COUTURIER",
+      "birthYear": 2006,
+      "evidence": "individual_profile"
+    }
+  ]
+}
