@@ -36,7 +36,7 @@ function matchCockpitRoster(l,side){
   '<span class="v40-condition '+(p?.condition<55?'is-low':'')+'">'+(p?Math.round(p.condition)+'%':'—')+'</span>'+
   sub+'</div>';
  }).join('');
- const benchIds=(sh.nominated?.length?sh.nominated:sh.bench||[]).slice(0,8);
+ const benchIds=(sh.nominated?.length?sh.nominated.filter(id=>!sh.initial.includes(id)):(sh.bench||[])).slice(0,8);
  const bench=benchIds.map((id,idx)=>{
   const p=matchPlayer(l,side,id),playing=active.has(id),card=matchCockpitCardStatus(l,side,id);
   return '<div class="v40-bench-row"><span class="v40-shirt is-bench">'+(idx+16)+'</span>'+

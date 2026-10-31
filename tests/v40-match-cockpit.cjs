@@ -15,7 +15,9 @@ assert.ok(run('matchCockpitRoster(l,selfSide).includes("Votre effectif en match"
 assert.ok(run('matchCockpitRoster(l,1-selfSide).includes("Effectif adverse")'));
 assert.ok(run('matchCockpitRoster(l,selfSide).includes("Les remplaçants")'));
 assert.equal(run('S.live.sheets[selfSide].on.length'),15);
-assert.equal(run('S.live.sheets[selfSide].nominated.length'),8);
+assert.equal(run('S.live.sheets[selfSide].nominated.length'),23);
+assert.equal(run('S.live.sheets[selfSide].nominated.filter(id=>!S.live.sheets[selfSide].initial.includes(id)).length'),8);
+assert.equal(run('(matchCockpitRoster(l,selfSide).match(/v40-shirt is-bench/g)||[]).length'),8);
 const saved=run('JSON.stringify(S)'),storage=run('localStorage.getItem("bdt-v1")');
 for(let i=0;i<3;i++)run('matchCockpitView(matchViewState(l));matchCockpitMetrics(l);matchCockpitRoster(l,selfSide)');
 assert.equal(run('JSON.stringify(S)'),saved,'read-only UI must not mutate match/save');
@@ -46,8 +48,8 @@ assert.ok(run('matchCockpitTactics(l).includes("Plan d’attaque")'));
 assert.equal(run('matchCockpitTactics(l).includes("disabled")'),false,'paused tactics should be actionable when replay is complete');
 run('l.paused=false');
 assert.ok(run('matchCockpitTactics(l).includes("disabled")'));
-run('l.paused=true;l.sheets[selfSide].cards.push({id:l.sheets[selfSide].on[0],until:l.minute+10})');
-assert.equal(run('matchCockpitCardStatus(l,selfSide,l.sheets[selfSide].on[0])'),'Jaune');
+run('l.paused=true;giveMatchCard(l,selfSide,l.sheets[selfSide].on[8])');
+assert.equal(run('matchCockpitCardStatus(l,selfSide,l.sheets[selfSide].on[8])'),'Jaune');
 assert.ok(run('matchCockpitRoster(l,selfSide).includes("Jaune")'));
 // Legacy save roundtrip and paused match rely solely on existing structures.
 const snapshot=JSON.parse(run('JSON.stringify(S)'));
