@@ -31,7 +31,7 @@ Les références ci-dessus sont des repères historiques, **pas une garantie qu'
 - Le **compte développeur** prépare les nouvelles fonctions et des PR sans fusion. Le **compte intégrateur unique** examine, raccorde, valide et fusionne seul dans `main` après CI verte ; les deux peuvent travailler sur des branches distinctes.
 - Chaque session commence par la lecture de l'état actuel de GitHub : commits, différences, branches, PR et `AGENTS.md`, puis ce journal.
 - Chaque changement doit être **commité sur GitHub et vérifié après publication**. Une branche non fusionnée ne constitue pas une livraison sur `main`.
-- Préférer des corrections ciblées et compatibles avec les sauvegardes existantes. Pour les changements risqués, passer par une branche/PR ; pour les changements simples et vérifiés, `main` peut être utilisé conformément à `AGENTS.md`.
+- Préférer des corrections ciblées et compatibles avec les sauvegardes existantes. Toute modification, même documentaire, passe par une branche et une PR ; aucun push direct dans `main`, conformément à `AGENTS.md`.
 - Ne pas confondre règles officielles du rugby, règlements français de compétition et coefficients fictifs de simulation.
 - Ne jamais présenter les données financières fictives du jeu comme des budgets réels.
 
@@ -553,3 +553,15 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - **Priorité C : PR #68 (réunions de direction)** ; conserver échéancier mais réutiliser le système V42 au lieu de dupliquer la confiance.
 - **PR #69–#72 : bancs de tests/audits**, à regrouper sans ajouter de nouvelles mécaniques avant que les intégrations jouables avancent.
 - Les autres PR historiques en brouillon sont à trier selon leur pertinence et leur état de fusion ; vérifier le dernier SHA et les CI.
+
+
+## V58 — candidatures et mobilité natives du manager (31 octobre 2026)
+
+- Base : PR #77 fusionnée, `213a20e19491dd1ddf978884097d229af656b9ea`. Sa CI post-fusion `41157451647` est réussie. La CI post-fusion #76 `41156862112` est également retrouvée et réussie : utiliser la recherche des événements `push`, pas le wrapper limité aux PR.
+- PR #78 : activation volontaire, candidatures après finale, offres/refus motivés, confirmation et annulation, prise de poste au passage de saison et historique de manager. Le titulaire reste `S.club`; risques/affinités V48 réutilisés, prototypes #60-63 non fusionnés.
+- La transition intervient après les traitements natifs : budgets, professionnels, installations, dettes et espoirs restent dans leur club. Pas de nouveau salaire personnel ni indemnité fictive. Archives financières et de direction rattachées au club quitté.
+- Extension facultative de sauvegarde V2, validation stricte des offres et nominations, acceptation des historiques IA antérieurs au nouveau mandat, maintien des jeunes du club quitté avant le prochain cycle IA. Aucune sauvegarde personnelle modifiée.
+- Transaction d'intersaison : écritures intermédiaires suspendues, validation native avant sauvegarde finale, restauration de l'instantané si erreur. Les échecs de stockage restent visibles.
+- `tests/manager-mobility.cjs` : 22 scénarios du vrai harness, trois saisons complètes, deux changements de club, témoin comparatif sans mobilité, rapprochement financier, reprises et dix corruptions. Les tests ciblés et sauvegardes ont réussi en préparation ; correction du contrôle de sélection CI pour inclure la nouvelle suite sans en retirer aucune. Seules la CI finale du SHA et sa validation post-fusion établiront la livraison dans main.
+- Limites : aucun licenciement automatique, mode sans emploi ou salaire de manager ; seuils de décision fictifs, pas de preuve statistique d'équilibrage ; aucun test Windows natif. Dossier détaillé : `docs/v58-manager-mobility.md`.
+- Prochaine priorité : renforcer les carrières multi-clubs et le retour dans un ancien club avant d'élargir les contrats. Le protocole développeur/producteur et intégrateur unique reste en vigueur ; #75 intacte.
