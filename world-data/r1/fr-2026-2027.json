@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "season": "2026-2027",
+  "snapshotDate": "2026-10-31",
+  "status": "partial-official-fixtures",
+  "competitions": [
+    {
+      "id": "competition:fr-top-14",
+      "name": "TOP 14",
+      "country": "FR",
+      "teamCount": 14,
+      "regularRounds": 26,
+      "provenance": {
+        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "competition:fr-pro-d2",
+      "name": "PRO D2",
+      "country": "FR",
+      "teamCount": 16,
+      "regularRounds": 30,
+      "provenance": {
+        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    }
+  ],
+  "clubs": [
+    {
+      "id": "club:fr-stade-rochelais",
+      "name": "Stade Rochelais",
+      "competitionId": "competition:fr-top-14",
+      "provenance": {
+        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-stade-tolosain",
+      "name": "Stade Toulousain",
+      "competitionId": "competition:fr-top-14",
+      "provenance": {
+        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-nion-bordeax-be-gles",
+      "name": "Union Bordeaux-Bègles",
+      "competitionId": "competition:fr-top-14",
+      "provenance": {
+        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-racing",
+      "name": "Racing 92",
+      "competitionId": "competition:fr-top-14",
+      "provenance": {
+        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-aviron-bayonnais",
+      "name": "Aviron Bayonnais",
+      "competitionId": "competition:fr-top-14",
+      "provenance": {
+        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-rc-tolon",
+      "name": "RC Toulon",
+      "competitionId": "competition:fr-top-14",
+      "provenance": {
+        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-rgby-clb-vannes",
+      "name": "Rugby Club Vannes",
+      "competitionId": "competition:fr-top-14",
+      "provenance": {
+        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-castres-olympiqe",
+      "name": "Castres Olympique",
+      "competitionId": "competition:fr-top-14",
+      "provenance": {
+        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-montpellier-he-ralt-rgby",
+      "name": "Montpellier Hérault Rugby",
+      "competitionId": "competition:fr-top-14",
+      "provenance": {
+        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-stade-ranc-ais-paris",
+      "name": "Stade Français Paris",
+      "competitionId": "competition:fr-top-14",
+      "provenance": {
+        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-section-paloise",
+      "name": "Section Paloise",
+      "competitionId": "competition:fr-top-14",
+      "provenance": {
+        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-provence-rgby",
+      "name": "Provence Rugby",
+      "competitionId": "competition:fr-pro-d2",
+      "provenance": {
+        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-s-agen",
+      "name": "SU Agen",
+      "competitionId": "competition:fr-pro-d2",
+      "provenance": {
+        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-ca-brive",
+      "name": "CA Brive",
+      "competitionId": "competition:fr-pro-d2",
+      "provenance": {
+        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-valence-romans-dro-me-rgby",
+      "name": "Valence Romans Drôme Rugby",
+      "competitionId": "competition:fr-pro-d2",
+      "provenance": {
+        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-s-dax",
+      "name": "US Dax",
+      "competitionId": "competition:fr-pro-d2",
+      "provenance": {
+        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-rc-narbonne",
+      "name": "RC Narbonne",
+      "competitionId": "competition:fr-pro-d2",
+      "provenance": {
+        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-c-grenoble-rgby",
+      "name": "FC Grenoble Rugby",
+      "competitionId": "competition:fr-pro-d2",
+      "provenance": {
+        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-stade-arillacois",
+      "name": "Stade Aurillacois",
+      "competitionId": "competition:fr-pro-d2",
+      "provenance": {
+        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-nissa-rgby",
+      "name": "Nissa Rugby",
+      "competitionId": "competition:fr-pro-d2",
+      "provenance": {
+        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    },
+    {
+      "id": "club:fr-biarritz-olympiqe-pays-basqe",
+      "name": "Biarritz Olympique Pays Basque",
+      "competitionId": "competition:fr-pro-d2",
+      "provenance": {
+        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "checkedOn": "2026-10-31",
+        "kind": "official",
+        "reuse": "permission-required"
+      }
+    }
+  ],
+  "players": [],
+  "staff": [],
+  "academy": []
+}
