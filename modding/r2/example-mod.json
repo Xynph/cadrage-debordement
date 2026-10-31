@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "schema": 1,
+    "id": "rugby-world-demo",
+    "version": "1.0.0",
+    "title": "Univers fictif de démonstration",
+    "kind": "dataset",
+    "baseGame": 1,
+    "data": [
+      {
+        "type": "clubs",
+        "path": "data/clubs.json"
+      }
+    ],
+    "assets": [],
+    "license": "Contenu fictif original"
+  },
+  "files": {
+    "data/clubs.json": [
+      {
+        "id": "club:demo",
+        "name": "Club des Collines"
+      }
+    ]
+  }
+}
