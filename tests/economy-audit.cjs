@@ -80,13 +80,13 @@ test('15 private world weekly function guarded against a repeated period',()=>{
  const g=fresh();assert.equal(g.run('worldWeeklyEconomy([])'),true);const b=N.data(g);
  assert.equal(g.run('worldWeeklyEconomy([])'),false);assert.deepEqual(N.data(g),b);
 });
-test('16 fixture observation: forecast V41 omits known facilities upkeep',()=>{
+test('16 regression: forecast V41 includes known facilities upkeep',()=>{
  const g=fresh();g.run('worldUpgradeFacility()');const before=cash(g),model=N.data(g,'careerBudgetModel()'),upkeep=g.run('worldUpkeep(worldClub(S.club).facilities)');
  // Isolated native settlement fixture without ticket or victory; not a season result.
  g.run('financeWeek(null,false);worldWeeklyEconomy([])');
  const predicted=model.weeklyIncome-model.weeklyWages-model.weeklyOtherCosts,actual=cash(g)-before;
- A.close(predicted-actual,upkeep,'Forecast gap');assert.ok(upkeep>0);
- observations.push({id:'FORECAST-UPKEEP',status:'confirmed-gap',weeklyEuros:upkeep,horizonWeeks:model.weeks,horizonEuros:upkeep*model.weeks,scope:'V41 careerBudgetModel; tickets excluded from both sides'});
+ A.close(predicted,actual,'Forecast reconciled');assert.equal(model.weeklyOtherCosts,upkeep);assert.ok(upkeep>0);
+ observations.push({id:'FORECAST-UPKEEP',status:'fixed-and-reconciled',weeklyEuros:upkeep,horizonWeeks:model.weeks,horizonEuros:upkeep*model.weeks,scope:'V41 careerBudgetModel; tickets excluded from both sides'});
 });
 test('17 adverse debt conversion has a liability, not free net wealth',()=>{
  const g=fresh();g.run('S.clubs[1].cash=-500000;worldClub(1).debt=200000');
@@ -112,6 +112,6 @@ test('21 rejected overflow evidence uses a copy and never repairs the career',()
  assert.throws(()=>g.run('createSaveDocument()'),'Original state must remain rejected');
  observations.push({id:'LEDGER-LIMIT',scope:'Synthetic overflow reproduction; full native seed reproduction runs separately',ledgerLimit:100,rejectedLength:101});
 });
-const report={passed:true,suites:1,scenarioGroups:checks.length,checks,observations,scope:'Native functions on isolated fictitious careers',limits:['Confirmed-gap assertions are reproductions, not proof of economic correctness','No production coefficients changed','Private helper fixtures are identified separately from full career runs']};
+const report={passed:true,suites:1,scenarioGroups:checks.length,checks,observations,scope:'Native functions on isolated fictitious careers',limits:['Boundary fixtures and reconciliation are not proof of economic balance','No production coefficients changed','Private helper fixtures are identified separately from full career runs']};
 if(process.env.CD_ECONOMY_TEST_REPORT)fs.writeFileSync(process.env.CD_ECONOMY_TEST_REPORT,JSON.stringify(report,null,2));
 console.log('ECONOMY TRANSACTIONS PASS '+JSON.stringify(report));

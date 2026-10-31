@@ -577,3 +577,13 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Test dédié \`tests/ui01-interface.cjs\` pour navigation des rubriques, 23 joueurs, choix de thèmes, changement automatique du système, stockage séparé, lecture sans mutation de carrière, et maintien du cockpit en direct.
 - **Livraison :** PR à vérifier ; le compte producteur ne fusionne jamais dans \`main\`. L'intégrateur doit contrôler la CI sur le SHA de la PR, les sauvegardes anciennes, l'ergonomie réelle navigateur PC/tablette/mobile, puis le \`push\` post-fusion. Aucune validation Windows native annoncée.
 
+
+
+## Correctifs prime de champion et prevision V41 (31 octobre 2026)
+
+- Audit #85 conserve : depassement de registre confirme en saison 7, profil modeste, graine 99173 ; oubli de l'entretien dans careerBudgetModel.
+- Prime de champion via ledgerEntry : un seul credit de 1 000 000, registre borne a 100, sans modifier saves.js ni les regles du championnat.
+- Prevision V41 : formation + entretien natif des installations actives ; aucun surcout pour les anciennes carrieres sans monde ou le niveau initial 2. La projection est sans effet de bord.
+- 22 groupes de regression avant/apres, dont reprise automatique, import confirme, titre au registre plein, idempotence et erreur d'ecriture ; les six campagnes natives de 15 saisons de #85 sont conservees. Les rapports CI sur le dernier SHA et apres fusion font autorite, pas cette entree preparatoire.
+- Les preuves d'audit historiques demeurent dans #85 ; aucune modification des branches UI-02/UI-03 du producteur, aucune sauvegarde personnelle touchee, #75 intacte. Pas de changement des coefficients economiques ni de test Windows natif revendique.
+- Dossier : docs/correctifs-prime-entretien.md. Les sauvegardes deja invalides ne sont pas reparees silencieusement.

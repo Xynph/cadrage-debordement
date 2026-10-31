@@ -116,7 +116,8 @@ function careerBudgetModel(){
  const s=careerIntegrated()?S.careerManagement:null;
  const sponsor=s?.sponsor?.season===S.season?CAREER_SPONSORS[s.sponsor.key]:null;
  return {cash:club().cash,weeklyIncome:160000+(sponsor?.weekly||0),
-  weeklyWages:totalWages(),weeklyOtherCosts:s?.academyInvestment||0,
+  weeklyWages:totalWages(),weeklyOtherCosts:(s?.academyInvestment||0)+
+   (typeof worldActive==='function'&&worldActive()?worldUpkeep(worldClub(S.club).facilities):0),
   weeks:Math.max(1,Math.min(12,29-S.round))};
 }
 function careerFinancialAnalysis(){
@@ -133,7 +134,7 @@ function careerFinancePanel(){
  const {base,projection,comparison}=careerFinancialAnalysis(),c=S.careerManagement,terms=c.sponsor?CAREER_SPONSORS[c.sponsor.key]:null;
  const remaining=Math.max(1,26-S.round);
  return '<section class="card career-integration-card"><div class="cardtitle"><h2>Prévisions financières et décisions</h2><span class="tag">MODÈLE FICTIF</span></div>'+
- '<p class="help">Projection prudente en euros sur '+base.weeks+' semaines : partenaires existants 160 000 €/semaine, nouveau sponsor éventuel, salaires actuels et formation. Billetterie, primes sportives, transferts et aléas exclus ; les contrats peuvent évoluer.</p>'+
+ '<p class="help">Projection prudente en euros sur '+base.weeks+' semaines : partenaires existants 160 000 €/semaine, nouveau sponsor éventuel, salaires actuels, formation et entretien des installations actives. Billetterie, primes sportives, transferts et aléas exclus ; les contrats peuvent évoluer.</p>'+
  '<div class="row"><span>Variation hebdomadaire projetée</span><strong>'+money(projection.weeklyNet)+'</strong></div>'+
  '<div class="row"><span>Trésorerie projetée</span><strong>'+money(projection.finalBalance)+'</strong></div>'+
  '<div class="row"><span>Déficit dans la période</span><strong>'+(projection.firstDeficit===null?'Non':'Semaine '+projection.firstDeficit)+'</strong></div>'+

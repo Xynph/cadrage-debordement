@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'tests/economy-audit.cjs'
+      - 'tests/champion-budget-regression.cjs'
       - 'tests/economy-audit/**'
       - 'ci/economy-audit.cjs'
       - '.github/workflows/economy-audit.yml'
@@ -14,6 +15,7 @@ on:
     branches: [main]
     paths:
       - 'tests/economy-audit.cjs'
+      - 'tests/champion-budget-regression.cjs'
       - 'tests/economy-audit/**'
       - 'ci/economy-audit.cjs'
       - '.github/workflows/economy-audit.yml'
@@ -41,15 +43,19 @@ jobs:
       - name: Cas limites sans modification du moteur
         env:
           CD_ECONOMY_TEST_REPORT: economy-transactions.json
+          CD_CHAMPION_BUDGET_REPORT: champion-budget-regression.json
         run: |
           node --check tests/economy-audit/native.cjs
           node --check ci/economy-audit.cjs
           node tests/economy-audit.cjs
+          node tests/champion-budget-regression.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: economy-transactions
-          path: economy-transactions.json
+          path: |
+            economy-transactions.json
+            champion-budget-regression.json
           if-no-files-found: error
           retention-days: 14
   campaigns:
