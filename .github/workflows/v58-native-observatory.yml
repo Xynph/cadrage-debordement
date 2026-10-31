@@ -1,0 +1,22 @@
+name: V58 observatoire natif des bancs
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  observatory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests natifs V58
+        run: |
+          node --check dist/coach-opportunities.js
+          node --check dist/world-career.js
+          node tests/v58-native-coach-opportunities.cjs
+          node tests/world-career.cjs
