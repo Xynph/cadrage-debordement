@@ -1,0 +1,33 @@
+name: Poste de decision MATCHDAY-03 - Chromium
+on:
+  pull_request:
+    branches: [main, integration/matchday02-lineup-advisor]
+    paths:
+      - 'dist/index.html'
+      - 'dist/matchday-center.js'
+      - 'dist/matchday-matchplan.*'
+      - 'tests/matchday-matchplan*'
+      - '.github/workflows/matchday-matchplan-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: matchday03-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Installer Chromium
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Essayer trois scénarios tactiques et de sélection
+        run: python tests/matchday-matchplan-browser.py
