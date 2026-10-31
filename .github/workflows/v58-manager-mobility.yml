@@ -17,7 +17,7 @@ jobs:
     env:
       EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
       INTEGRATION_BRANCH: integration/v58-manager-mobility-native
-      CD_MOBILITY_REPORT: ${{ runner.temp }}/v58-mobility-report.json
+      CD_MOBILITY_REPORT: v58-mobility-report.json
     steps:
       - uses: actions/checkout@v5
         with:
