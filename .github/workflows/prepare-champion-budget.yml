@@ -1,0 +1,51 @@
+name: Preparation ponctuelle correctifs prime budget
+on:
+  push:
+    branches: [prepare/champion-budget-native]
+permissions:
+  contents: read
+jobs:
+  candidate:
+    if: github.repository == 'Xynph/cadrage-debordement' && github.ref == 'refs/heads/prepare/champion-budget-native' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Reproduire les echecs sur sources historiques
+        shell: bash
+        run: |
+          mkdir -p candidate-proof
+          if CD_CHAMPION_BUDGET_REPORT=candidate-proof/before.json node tests/champion-budget-regression.cjs > candidate-proof/before.log 2>&1; then
+            echo 'Baseline unexpectedly passed'; exit 1
+          fi
+          node -e "const r=require('./candidate-proof/before.json');if(r.groups!==22||r.failedGroups.length!==14)process.exit(1)"
+      - name: Appliquer les remplacements exacts et verifier les fonctions natives
+        run: |
+          python scripts/prepare-champion-budget.py
+          node --check dist/game.js
+          node --check dist/career-integration.js
+          CD_CHAMPION_BUDGET_REPORT=candidate-proof/after.json node tests/champion-budget-regression.cjs > candidate-proof/after.log
+          node tests/economy-audit.cjs > candidate-proof/economy.log
+          node tests/career-integration.cjs > candidate-proof/career.log
+          node tests/saves.cjs > candidate-proof/saves.log
+      - name: Publier uniquement des objets Git sans modifier de branche
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/prepare-champion-budget.py --publish-tree
+      - name: Archiver les sources de verification sans polices ni secrets
+        run: |
+          tar --exclude='dist/fonts' -cf candidate-proof/source.tar dist tests ci docs DEVELOPPEMENT.md AGENTS.md .github/workflows/economy-audit.yml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: champion-budget-candidate
+          path: candidate-proof/
+          if-no-files-found: error
+          retention-days: 7
