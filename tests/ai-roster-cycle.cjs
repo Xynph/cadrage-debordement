@@ -1,7 +1,8 @@
 'use strict';
 const assert=require('node:assert/strict');
 const {context}=require('./harness.cjs');
-const valid=run=>run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))');
+let validationIndex=0;
+const valid=run=>{validationIndex++;try{return run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))')}catch(e){throw new Error('Sauvegarde invalide au contrôle '+validationIndex+' : '+e.message,{cause:e})}};
 const t=context(),r=t.run;
 r('start(0)');
 assert.equal(r('aiRosterActive()'),true);
@@ -64,7 +65,7 @@ assert.ok(valid(l));
 assert.equal(l('aiRosterEnable()'),true);
 assert.ok(valid(l));
 const paused=context(historic),pa=paused.run;
-pa('S.season=1;S.round=0;S.phase="league";beginMatch();pauseMatch()');
+pa('S.round=0;S.phase="league";beginMatch();pauseMatch()');
 assert.equal(pa('aiRosterEnable()'),false);
 assert.ok(valid(pa));
 const corrupt=context(),bad=corrupt.run;
