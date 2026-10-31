@@ -89,7 +89,7 @@ function worldAIRecruitmentChoice(c,targets){
  const wageRoom=Math.max(0,Math.min(100000,300000-wages));
  const candidates=targets.filter(t=>CDReputation.recruitmentReach({
   clubReputation:info.reputation,playerReputation:clamp(Math.round(t.evidence.noteMin),0,100),tolerance:15
- })).filter(x=>x.reachable).map(t=>({id:t.p.id,pos:t.need.pos,
+ }).reachable).map(t=>({id:t.p.id,pos:t.need.pos,
   fee:t.finance.fee,wage:t.p.salary,rating:clamp(Math.round(t.evidence.noteMin),0,100)}));
  const decision=CDClubAI.decideClub({cash:Math.max(0,c.cash-300000),
   wageRoom,needs:[...new Set(targets.map(t=>t.need.pos))],candidates});

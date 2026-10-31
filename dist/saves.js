@@ -128,6 +128,34 @@ function validateCollectiveSnapshot(cp){
 }
 
 function validateCareer(s){safeTree(s);saveCheck(saveObject(s)&&s.version===2,'Cette version de carrière n’est pas prise en charge.');saveCheck(saveInt(s.club,0,13)&&saveInt(s.season,1,10000)&&saveInt(s.round,0,26));saveCheck(['league','barrage','semi','final','ended'].includes(s.phase));saveCheck(s.phase==='league'?s.round<26:s.round===26);saveCheck(TACTICS[s.tactic]&&TRAIN[s.training]);if(s.defence!==undefined)saveCheck(Object.keys(DEFENCES).includes(s.defence));if(s.difficulty!==undefined)saveCheck(Object.keys(DIFFICULTIES).includes(s.difficulty));if(s.physicalLoadVersion!==undefined)saveCheck(s.physicalLoadVersion===1);if(s.developmentFocusVersion!==undefined)saveCheck(s.developmentFocusVersion===1);if(s.recruitmentIntelVersion!==undefined)saveCheck(s.recruitmentIntelVersion===1);if(s.salaryDemandVersion!==undefined)saveCheck(s.salaryDemandVersion===1);if(s.satisfactionVersion!==undefined)saveCheck(s.satisfactionVersion===1);if(s.relationsVersion!==undefined)saveCheck(s.relationsVersion===1&&s.satisfactionVersion===1);if(s.objectivesVersion!==undefined)saveCheck(s.objectivesVersion===1&&s.satisfactionVersion===1);if(s.v39Version!==undefined)saveCheck(s.v39Version===1);if(s.integratedManagementVersion!==undefined)saveCheck(s.integratedManagementVersion===1&&saveObject(s.careerManagement));
+if(s.worldVersion!==undefined)saveCheck(s.worldVersion===1&&saveObject(s.worldManagement));
+if(s.worldManagement!==undefined){
+ const w=s.worldManagement;
+ saveCheck(s.worldVersion===1&&saveObject(w)&&w.version===1&&saveArray(w.clubInfo,14)&&w.clubInfo.length===14&&
+  saveArray(w.matches,180)&&saveArray(w.yearbook,15)&&saveArray(w.upgrades,30)&&saveArray(w.awards,15)&&
+  saveInt(w.lastSeason,0,s.season)&&
+  (w.champion===null||saveInt(w.champion,0,13))&&
+  (w.lastFinance===null||typeof w.lastFinance==='string'&&/^[1-9]\d{0,4}:(league|barrage|semi|final):\d{1,2}$/.test(w.lastFinance)));
+ w.clubInfo.forEach((x,i)=>saveCheck(saveObject(x)&&x.id===i&&saveInt(x.reputation,0,100)&&
+  saveInt(x.facilities,1,10)&&saveNumber(x.debt,0,1e12)&&saveInt(x.coachConfidence,0,100)&&
+  saveInt(x.consecutiveLosses,0,20)&&saveInt(x.coachChanges,0,10000)));
+ for(const m of w.matches)saveCheck(saveObject(m)&&saveInt(m.season,1,s.season)&&saveInt(m.round,0,26)&&
+  ['league','barrage','semi','final'].includes(m.phase)&&/^club-(?:[0-9]|1[0-3])$/.test(m.home)&&
+  /^club-(?:[0-9]|1[0-3])$/.test(m.away)&&m.home!==m.away&&
+  saveNumber(m.homeScore,0,1000)&&saveNumber(m.awayScore,0,1000));
+ for(const y of w.yearbook){
+  saveCheck(saveObject(y)&&saveInt(y.season,1,s.season)&&saveInt(y.champion,0,13)&&
+   saveArray(y.standings,14)&&y.standings.length===14&&
+   new Set(y.standings.map(x=>x.id)).size===14);
+  y.standings.forEach(x=>saveCheck(saveObject(x)&&saveInt(x.id,0,13)&&
+   saveInt(x.position,1,14)&&saveNumber(x.cash)&&saveInt(x.reputation,0,100)&&
+   saveInt(x.facilities,1,10)&&saveNumber(x.debt,0,1e12)&&saveInt(x.coachRisk,0,100)));
+ }
+ for(const x of w.upgrades)saveCheck(saveObject(x)&&saveInt(x.season,1,s.season)&&
+  saveInt(x.id,0,13)&&saveInt(x.level,2,10)&&saveNumber(x.cost,0,1e9));
+ for(const x of w.awards)saveCheck(saveObject(x)&&saveInt(x.season,1,s.season)&&
+  saveId(x.id)&&typeof x.name==='string'&&x.name.length>0&&x.name.length<=120);
+}
 if(s.careerManagement!==undefined){
  const v=s.careerManagement;
  saveCheck(s.integratedManagementVersion===1&&saveObject(v)&&v.version===1&&
