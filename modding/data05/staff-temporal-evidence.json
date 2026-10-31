@@ -1,0 +1,26 @@
+{
+  "snapshotDate": "2026-10-31",
+  "status": "source-supported-subset-not-30-club-complete",
+  "staff": [
+    {
+      "club": "ASM Clermont",
+      "name": "Christophe Urios",
+      "role": "responsable sportif / conduit le sportif",
+      "periodEvidence": "en poste depuis janvier 2023 selon annonce du 07/10/2026; annonce qu'il quitte direction sportive juillet 2027",
+      "confirmedCareerStart": "not-proven-explicitly-on-2026-07-01",
+      "sourceUrl": "https://www.asm-rugby.com/actus/2026-10-07-12-32-38-en-2027-l-asm-lancera-un-nouveau-cycle"
+    }
+  ],
+  "excludedFutureStaff": [
+    {
+      "club": "ASM Clermont",
+      "name": "Joe El-Abd",
+      "role": "entraîneur principal",
+      "effectiveFrom": "2027-07",
+      "reason": "announced 2026, future 2027: must not be treated as July 2026 staff",
+      "sourceUrl": "https://www.asm-rugby.com/actus/2026-10-07-12-32-38-en-2027-l-asm-lancera-un-nouveau-cycle"
+    }
+  ],
+  "clubsWithVerifiedIndividualStaff": 1,
+  "clubsToVerify": 29
+}
