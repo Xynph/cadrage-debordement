@@ -6,6 +6,15 @@ assert.equal((g.app.innerHTML.match(/class="cd3-career /g)||[]).length,5,'home m
 assert.match(g.app.innerHTML,/aria-label="Menu principal"/);
 assert.match(g.app.innerHTML,/class="cd3-right"/,'reference layout must include secondary column');
 assert.match(g.app.innerHTML,/class="cd3-promo"/,'cinematic promo card must exist');
+assert.match(g.app.innerHTML,/class="cd3-right-bottom"/,'rugby ball area must be part of the real game UI');
+const fs=require('node:fs'),path=require('node:path');
+const ball=fs.readFileSync(path.join(__dirname,'../dist/assets/menu-rugby-ball-muddy.svg'),'utf8');
+assert.match(ball,/Ballon de rugby usé posé dans l'herbe/,'original muddy asset must be present');
+assert.match(ball,/leatherNoise|leather/,'worn leather texture must be defined');
+assert.match(ball,/earth/,'dirt marks must be defined');
+const skin=fs.readFileSync(path.join(__dirname,'../dist/main-menu-v3.css'),'utf8');
+assert.match(skin,/menu-rugby-ball-muddy\.svg/,'ball is actually referenced by production CSS');
+assert.match(skin,/pointer-events:none/,'decorative ball cannot steal clicks');
 assert.match(g.app.innerHTML,/class="cd3-feature"/,'functional quick actions must exist');
 assert.match(g.app.innerHTML,/class="cd3-create"/,'all free slots remain actionable');
 assert.match(g.app.innerHTML,/Charger/);
