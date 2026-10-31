@@ -9,7 +9,7 @@ test('import non destructif avant validation',()=>{const s=section(save,'confirm
 test('sauvegarde locale protege erreurs',()=>{assert.match(game,/function save\(/);assert.match(save,/loadSaveFailure/);assert.match(save,/lastSaveError/);});
 test('monde evenement match depuis vraie carriere',()=>{assert.match(world,/function worldRecordResult\(/);assert.match(world,/S\.history/);});
 test('finances reliees aux clubs reels',()=>{const s=section(world,'worldWeeklyEconomy');assert.match(s,/S\.clubs/);});
-test('infrastructures devis et validation',()=>{const s=section(world,'worldUpgradeFacility');assert.match(s,/worldFacilityQuote/);assert.match(s,/cash/);});
+test('infrastructures devis et validation',()=>{const s=section(world,'worldUpgradeFacility');assert.match(s,/worldFacilityQuote/);assert.match(s,/ledgerEntry\(/);assert.match(section(world,'worldFacilityQuote'),/cash/);});
 test('IA recrute selon decision et non signature fictive',()=>{assert.match(world,/function worldAIRecruitmentChoice\(/);assert.match(world,/négociations existantes restent seules décisionnaires/);});
 test('reputation et archives reelles',()=>{assert.match(world,/function worldRecordChampion\(/);assert.match(world,/function worldEndSeason\(/);assert.match(world,/yearbook/);});
 test('entraineur : variables de suivi',()=>{assert.match(world,/coachConfidence/);assert.match(world,/coachChanges/);});
