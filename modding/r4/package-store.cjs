@@ -68,7 +68,7 @@ function checkPackage(files){
 function store(root){
  const location=path.resolve(root);fs.mkdirSync(location,{recursive:true});
  function installed(){
-  return fs.readdirSync(location,{withFileTypes:true}).filter(x=>x.isDirectory()&&/^[a-z][a-z0-9-]{2,63}--[0-9]+\\.[0-9]+\\.[0-9]+$/.test(x.name)).map(x=>x.name);
+  return fs.readdirSync(location,{withFileTypes:true}).filter(x=>x.isDirectory()&&/^[a-z][a-z0-9-]{2,63}--[0-9]+\.[0-9]+\.[0-9]+$/.test(x.name)).map(x=>x.name);
  }
  function install(archive){
   const files=readZip(archive),manifest=checkPackage(files);
@@ -85,7 +85,7 @@ function store(root){
  }
  function checkBinding(binding){
   if(!binding||binding.schema!==1||!Array.isArray(binding.mods))return {ok:false,reason:'Signature absente'};
-  const missing=binding.mods.filter(m=>!m||!/^[a-z][a-z0-9-]{2,63}$/.test(m.id||'')||!/^[0-9]+\\.[0-9]+\\.[0-9]+$/.test(m.version||'')||!fs.existsSync(path.join(location,m.id+'--'+m.version,'manifest.json')));
+  const missing=binding.mods.filter(m=>!m||!/^[a-z][a-z0-9-]{2,63}$/.test(m.id||'')||!/^[0-9]+\.[0-9]+\.[0-9]+$/.test(m.version||'')||!fs.existsSync(path.join(location,m.id+'--'+m.version,'manifest.json')));
   return {ok:missing.length===0,missing};
  }
  return {install,checkBinding,installed};
