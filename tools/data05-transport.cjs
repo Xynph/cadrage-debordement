@@ -40,7 +40,13 @@ function createTransport({fetcher=fetch, firecrawlKey=null, firecrawlBudget=0, t
     if(!firecrawlKey) throw Error('FIRECRAWL_API_KEY required');
     if(spent>=firecrawlBudget) throw Error('Firecrawl budget exhausted');
     spent++; // reserve before making the paid request; never retry a paid call
-    const res=await call('https://api.firecrawl.dev/v2/scrape',{method:'POST',headers:{Authorization:'Bearer '+firecrawlKey,'Content-Type':'application/json'},body:JSON.stringify({url,formats:['markdown']})});
+    let res;
+    try {
+      res=await call('https://api.firecrawl.dev/v2/scrape',{method:'POST',headers:{Authorization:'Bearer '+firecrawlKey,'Content-Type':'application/json'},body:JSON.stringify({url,formats:['markdown']})});
+    } catch(error) {
+      if(kind(error)==='stop'){stopped=true;reason='Firecrawl HTTP '+error.status;}
+      throw error;
+    }
     const json=await res.json();
     if(!json.success||typeof json.data?.markdown!=='string'||!json.data.markdown.trim()) throw Error('Empty Firecrawl result');
     return json.data.markdown;
