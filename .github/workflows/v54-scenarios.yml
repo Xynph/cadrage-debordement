@@ -1,0 +1,30 @@
+name: V54 stress scenarios
+on:
+  pull_request:
+    branches: [feature/v51-world-simulation]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scenarios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Contrats V46-V51
+        run: node tests/v46-v51-contracts.cjs
+      - name: Stress economique, sportif et reprise
+        env:
+          CD_V54_REPORT: v54-report.json
+        run: |
+          node --check tests/v54-scenarios.cjs
+          timeout 900s node tests/v54-scenarios.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v54-report
+          path: v54-report.json
+          if-no-files-found: ignore
