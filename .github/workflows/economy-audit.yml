@@ -1,0 +1,118 @@
+name: Diagnostic economique natif
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/economy-audit.cjs'
+      - 'tests/champion-budget-regression.cjs'
+      - 'tests/economy-audit/**'
+      - 'ci/economy-audit.cjs'
+      - '.github/workflows/economy-audit.yml'
+      - 'dist/**'
+      - 'tests/harness.cjs'
+      - 'tests/career-resilience/native.cjs'
+  push:
+    branches: [main]
+    paths:
+      - 'tests/economy-audit.cjs'
+      - 'tests/champion-budget-regression.cjs'
+      - 'tests/economy-audit/**'
+      - 'ci/economy-audit.cjs'
+      - '.github/workflows/economy-audit.yml'
+      - 'dist/**'
+      - 'tests/harness.cjs'
+      - 'tests/career-resilience/native.cjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-economy-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  transactions:
+    name: Transactions natives et reproductions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Cas limites sans modification du moteur
+        env:
+          CD_ECONOMY_TEST_REPORT: economy-transactions.json
+          CD_CHAMPION_BUDGET_REPORT: champion-budget-regression.json
+        run: |
+          node --check tests/economy-audit/native.cjs
+          node --check ci/economy-audit.cjs
+          node tests/economy-audit.cjs
+          node tests/champion-budget-regression.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: economy-transactions
+          path: |
+            economy-transactions.json
+            champion-budget-regression.json
+          if-no-files-found: error
+          retention-days: 14
+  campaigns:
+    name: '${{ matrix.profile }} - graine ${{ matrix.seed }} - 15 saisons'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        profile: [reference, modeste, deficitFormation]
+        seed: [827381, 99173]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Quinze saisons du vrai moteur et rapprochement de tous les clubs
+        run: node ci/economy-audit.cjs '${{ matrix.profile }}' '${{ matrix.seed }}' 15 economy-audit-report
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: 'economy-campaign-${{ matrix.profile }}-${{ matrix.seed }}'
+          path: economy-audit-report/
+          if-no-files-found: error
+          retention-days: 14
+  summary:
+    name: Validation du diagnostic economique
+    if: always()
+    needs: [transactions, campaigns]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Refuser les echecs et les campagnes incompletes
+        env:
+          TRANSACTIONS: ${{ needs.transactions.result }}
+          CAMPAIGNS: ${{ needs.campaigns.result }}
+        run: test "$TRANSACTIONS" = success && test "$CAMPAIGNS" = success
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: economy-campaign-*
+          path: economy-audit-input
+          merge-multiple: true
+      - run: |
+          node ci/economy-audit.cjs --aggregate economy-audit-input
+          cat economy-audit-summary/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: economy-audit-summary
+          path: economy-audit-summary/
+          if-no-files-found: error
+          retention-days: 14
