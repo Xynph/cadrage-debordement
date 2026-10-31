@@ -1,0 +1,35 @@
+name: UI01 integration review
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  review:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'integration/ui01-reviewed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Native interface checks
+        run: node tests/ui01-interface.cjs
+      - name: Reproducible tracked sources for review
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/ui01-review"
+          git archive --format=tar HEAD > "$RUNNER_TEMP/ui01-review/source.tar"
+          git rev-parse HEAD > "$RUNNER_TEMP/ui01-review/REVISION.txt"
+          git rev-parse HEAD^{tree} > "$RUNNER_TEMP/ui01-review/TREE.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui01-review-source
+          path: ${{ runner.temp }}/ui01-review/
+          retention-days: 3
+          if-no-files-found: error
