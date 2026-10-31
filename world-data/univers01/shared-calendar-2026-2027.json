@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "season": "2026-2027",
+  "newCareerStart": "2026-07-01",
+  "preseasonWindow": {
+    "from": "2026-07-01",
+    "until": "2026-08-26",
+    "status": "game-design-window-not-official-training-schedule"
+  },
+  "calendarPolicy": {
+    "worlds": [
+      "alternative-original",
+      "optional-real-rugby"
+    ],
+    "sameRealCompetitionDates": true,
+    "fixturesMustBeLicensedOrIndividuallyVerified": true,
+    "unpublishedFixtures": "unknown-not-generated-as-official",
+    "seasonStartDoesNotPredetermineResults": true
+  },
+  "events": [
+    {
+      "competition": "PRO D2",
+      "type": "round1",
+      "start": "2026-08-27",
+      "end": "2026-08-28",
+      "status": "official"
+    },
+    {
+      "competition": "TOP 14",
+      "type": "round1",
+      "start": "2026-09-05",
+      "end": "2026-09-06",
+      "status": "official"
+    },
+    {
+      "competition": "PRO D2",
+      "type": "regularEnd",
+      "start": "2027-05-13",
+      "end": "2027-05-14",
+      "status": "official"
+    },
+    {
+      "competition": "PRO D2",
+      "type": "playoffBarrage",
+      "start": "2027-05-20",
+      "end": "2027-05-23",
+      "status": "official"
+    },
+    {
+      "competition": "PRO D2",
+      "type": "playoffSemiFinal",
+      "start": "2027-05-27",
+      "end": "2027-05-30",
+      "status": "official"
+    },
+    {
+      "competition": "PRO D2",
+      "type": "final",
+      "start": "2027-06-04",
+      "end": "2027-06-06",
+      "status": "official-weekend"
+    },
+    {
+      "competition": "TOP 14",
+      "type": "regularEnd",
+      "start": "2027-06-05",
+      "end": "2027-06-06",
+      "status": "official-weekend"
+    },
+    {
+      "competition": "TOP 14",
+      "type": "playoffBarrage",
+      "start": "2027-06-12",
+      "end": "2027-06-13",
+      "status": "official-weekend"
+    },
+    {
+      "competition": "TOP 14",
+      "type": "playoffSemiFinal",
+      "start": "2027-06-19",
+      "end": "2027-06-20",
+      "status": "official-weekend"
+    },
+    {
+      "competition": "TOP 14",
+      "type": "final",
+      "start": "2027-06-26",
+      "end": "2027-06-26",
+      "status": "official"
+    },
+    {
+      "competition": "PRO D2",
+      "type": "accessMatchTop14",
+      "start": "2027-06-12",
+      "end": "2027-06-13",
+      "status": "official"
+    }
+  ],
+  "fixtures": [],
+  "coverage": "official-dates-only-team-oppositions-not-yet-imported",
+  "sourceUrls": [
+    "https://top14.lnr.fr/actualite/calendrier-20262027-les-dates-connues",
+    "https://prod2.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+    "https://www.lnr.fr/presse/calendrier-des-competitions"
+  ]
+}
