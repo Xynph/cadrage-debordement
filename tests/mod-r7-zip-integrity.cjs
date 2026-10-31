@@ -12,7 +12,7 @@ function zip(name,contents){
 }
 const good=zip('test.json','[]');
 assert.equal(readZip(good)['test.json'].toString(),'[]');
-const corrupted=Buffer.from(good);corrupted[33]^=1;
+const corrupted=Buffer.from(good);corrupted[30+Buffer.byteLength('test.json')]^=1;
 assert.throws(()=>readZip(corrupted),/CRC32/);
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'r7-mods-'));
 try{
