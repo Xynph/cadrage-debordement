@@ -1,0 +1,23 @@
+'use strict';
+const assert=require('node:assert/strict');
+const crypto=require('node:crypto');
+const mod=require('../modding/r3/manager.js');
+const png=Buffer.from('89504e470d0a1a0a0000000049454e44ae426082','hex');
+const file=b=>({size:b.length,arrayBuffer:async()=>Uint8Array.from(b).buffer});
+const manifest={schema:1,id:'rugby-demo',version:'1.0.0',title:'Demo fictive',kind:'combined',data:[{type:'clubs',path:'clubs.json'}],assets:[{path:'logo.png',bytes:png.length,sha256:crypto.createHash('sha256').update(png).digest('hex'),ownerId:'club:demo',type:'club-logo'}]};
+(async()=>{
+ for(const p of ['../bad.png','/absolute.png','a\\b.png','http://bad.png'])assert.equal(mod.validPath(p),false);
+ mod.validManifest(manifest);
+ const files={'logo.png':file(png),'clubs.json':file(Buffer.from('[{"id":"club:demo","name":"Club fictif"}]'))};
+ const pack=await mod.importMod(manifest,files,crypto.webcrypto);
+ const registry=mod.manager({clubs:[]});
+ registry.install(pack);
+ assert.equal(registry.list()[0].active,false);
+ assert.equal(registry.activate('rugby-demo').clubs.length,1);
+ const binding=registry.binding();
+ assert.equal(registry.compatible(binding),true);
+ assert.equal(registry.compatible({schema:1,mods:[]}),false);
+ assert.equal(registry.deactivate().clubs.length,0);
+ await assert.rejects(mod.importMod(manifest,{...files,'logo.png':file(Buffer.from('other'))},crypto.webcrypto));
+ console.log(JSON.stringify({passed:true,checks:8}));
+})().catch(e=>{console.error(e);process.exitCode=1});
