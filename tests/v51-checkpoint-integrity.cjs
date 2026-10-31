@@ -25,11 +25,7 @@ const mutations=[
  {...snap,seed:-1},
  {...snap,completed:0},
  {...snap,history:snap.history.slice(0,4)},
- {...snap,clubs:[...snap.clubs.slice(1),snap.clubs[0]]},
  {...snap,penalties:{...snap.penalties,c0:-1}}
 ];
-for(const bad of mutations){
- if(bad.clubs[0]?.id!==snap.clubs[0].id)continue; // ordre de clubs non contractuel
- assert.throws(()=>bridge.simulate({...options,checkpoint:bad}));
-}
+for(const bad of mutations)assert.throws(()=>bridge.simulate({...options,checkpoint:bad}));
 console.log('V51: 6 points de reprise 1-14 saisons, 14 clubs, 15 saisons');
