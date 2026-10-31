@@ -10,8 +10,10 @@
     "held": 2,
     "previouslyCollectedEvidenceLinked": 118,
     "grenobleSourceIdNewlyLinked": 43,
-    "newBirthYearsBeyondExistingEvidenceCandidate": 43,
-    "newBirthYearsInPlayableLnrCatalog": 0
+    "newBirthYearsBeyondExistingEvidenceCandidate": 6,
+    "newBirthYearsInPlayableLnrCatalog": 0,
+    "grenobleAlreadyKnown": 37,
+    "grenobleNewComparedWith689Profiles": 6
   },
   "records": [
     {
@@ -2133,5 +2135,6 @@
       "status": "matched_existing_evidence",
       "previouslyCollected": true
     }
-  ]
+  ],
+  "notes": "The six are Grenoble roster-linked source observations absent from the 689 successful individual profiles; still require matching the 1,592 LNR IDs and cross-evidence dedup before counting them as playable catalog enrichment."
 }
