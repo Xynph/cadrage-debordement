@@ -1,0 +1,557 @@
+{
+  "schema": "data06-grenoble-profile-reconciliation-v1",
+  "sourceObservations": "rugbydata-birth-year-wikipedia-grenoble-unmatched-2026-10-31.json",
+  "profileSnapshots": [
+    "rugbydata-profiles-01.json",
+    "rugbydata-profiles-02.json",
+    "rugbydata-profiles-03.json",
+    "rugbydata-profiles-04.json"
+  ],
+  "method": "Unique exact normalized full name among 689 successful individual Rugby Data profiles. Birth year checked against day/month/year text. Missing profiles cannot be safely assigned to roster source IDs without a separate mapping.",
+  "stats": {
+    "observations": 45,
+    "alreadyKnown": 37,
+    "unresolved": 8,
+    "review": 0,
+    "newEnrichments": 0
+  },
+  "records": [
+    {
+      "name": "Lilian Rossi",
+      "birthYear": 1998,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1982",
+          "sourceName": "Lilian ROSSI",
+          "dateOfBirthAsPublished": "01/05/1998"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Romain Ruffenach",
+      "birthYear": 1994,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "409",
+          "sourceName": "Romain RUFFENACH",
+          "dateOfBirthAsPublished": "04/09/1994"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Bastien Soury",
+      "birthYear": 1995,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1984",
+          "sourceName": "Bastien SOURY",
+          "dateOfBirthAsPublished": "18/03/1995"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Jérémy Toevalu",
+      "birthYear": 2005,
+      "matchCount": 0,
+      "matches": [],
+      "status": "unresolved_no_successful_profile"
+    },
+    {
+      "name": "Eli Eglaine",
+      "birthYear": 2000,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1964",
+          "sourceName": "Eli EGLAINE",
+          "dateOfBirthAsPublished": "15/09/2000"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Zack Gauthier",
+      "birthYear": 2000,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1968",
+          "sourceName": "Zack GAUTHIER",
+          "dateOfBirthAsPublished": "31/01/2000"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Johannes Jonker",
+      "birthYear": 1994,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1974",
+          "sourceName": "Johannes JONKER",
+          "dateOfBirthAsPublished": "22/08/1994"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Alexandre Langlois",
+      "birthYear": 2007,
+      "matchCount": 0,
+      "matches": [],
+      "status": "unresolved_no_successful_profile"
+    },
+    {
+      "name": "Théo Lavoine",
+      "birthYear": 2003,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1992",
+          "sourceName": "Théo LAVOINE",
+          "dateOfBirthAsPublished": "10/05/2003"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Sascha Mistrulli",
+      "birthYear": 2005,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1995",
+          "sourceName": "Sascha MISTRULLI",
+          "dateOfBirthAsPublished": "09/02/2005"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Giorgi Pertaïa",
+      "birthYear": 1996,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1980",
+          "sourceName": "Giorgi PERTAIA",
+          "dateOfBirthAsPublished": "23/12/1996"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Tommy Raynaud",
+      "birthYear": 1994,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1981",
+          "sourceName": "Tommy RAYNAUD",
+          "dateOfBirthAsPublished": "13/06/1994"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Cody Thomas",
+      "birthYear": 1996,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1985",
+          "sourceName": "Cody THOMAS",
+          "dateOfBirthAsPublished": "01/03/1996"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "James Fender",
+      "birthYear": 2001,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "2728",
+          "sourceName": "James FENDER",
+          "dateOfBirthAsPublished": "03/08/2001"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Cameron Holt",
+      "birthYear": 1996,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1972",
+          "sourceName": "Cameron HOLT",
+          "dateOfBirthAsPublished": "16/10/1996"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Tristan Labouteley",
+      "birthYear": 1995,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "458",
+          "sourceName": "Tristan LABOUTELEY",
+          "dateOfBirthAsPublished": "12/04/1995"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Manuel Leindekar",
+      "birthYear": 1997,
+      "matchCount": 0,
+      "matches": [],
+      "status": "unresolved_no_successful_profile"
+    },
+    {
+      "name": "Brandon Nansen",
+      "birthYear": 1993,
+      "matchCount": 0,
+      "matches": [],
+      "status": "unresolved_no_successful_profile"
+    },
+    {
+      "name": "Noé Theraube",
+      "birthYear": 2005,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "2800",
+          "sourceName": "Noé THÉRAUBE",
+          "dateOfBirthAsPublished": "21/01/2005"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Baptiste Abescat",
+      "birthYear": 2000,
+      "matchCount": 0,
+      "matches": [],
+      "status": "unresolved_no_successful_profile"
+    },
+    {
+      "name": "Antonin Berruyer",
+      "birthYear": 1998,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1960",
+          "sourceName": "Antonin BERRUYER",
+          "dateOfBirthAsPublished": "08/09/1998"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Steven David",
+      "birthYear": 1994,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "2038",
+          "sourceName": "Steven DAVID",
+          "dateOfBirthAsPublished": "19/07/1994"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Victor Guillaumond",
+      "birthYear": 2001,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1969",
+          "sourceName": "Victor GUILLAUMOND",
+          "dateOfBirthAsPublished": "21/04/2001"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Fergus Lee-Warner",
+      "birthYear": 1994,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "3908",
+          "sourceName": "Fergus LEE-WARNER",
+          "dateOfBirthAsPublished": "03/02/1994"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Josh Thompson",
+      "birthYear": 2000,
+      "matchCount": 0,
+      "matches": [],
+      "status": "unresolved_no_successful_profile"
+    },
+    {
+      "name": "Mathis Baret",
+      "birthYear": 2005,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1988",
+          "sourceName": "Mathis BARET",
+          "dateOfBirthAsPublished": "23/04/2005"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Otunuku Pauta",
+      "birthYear": 1999,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1070",
+          "sourceName": "Otunuku PAUTA",
+          "dateOfBirthAsPublished": "13/02/1999"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Max Clément",
+      "birthYear": 2003,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1961",
+          "sourceName": "Max CLÉMENT",
+          "dateOfBirthAsPublished": "09/09/2003"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Barnabé Couilloud",
+      "birthYear": 1999,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1962",
+          "sourceName": "Barnabé COUILLOUD",
+          "dateOfBirthAsPublished": "20/02/1999"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Éric Escande",
+      "birthYear": 1992,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1965",
+          "sourceName": "Eric ESCANDE",
+          "dateOfBirthAsPublished": "18/11/1992"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Sam Davies",
+      "birthYear": 1993,
+      "matchCount": 0,
+      "matches": [],
+      "status": "unresolved_no_successful_profile"
+    },
+    {
+      "name": "Maël Navizet",
+      "birthYear": 2007,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "3433",
+          "sourceName": "Maël NAVIZET",
+          "dateOfBirthAsPublished": "05/02/2007"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Marc Palmier",
+      "birthYear": 1999,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1979",
+          "sourceName": "Marc PALMIER",
+          "dateOfBirthAsPublished": "17/02/1999"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Romain Fusier",
+      "birthYear": 2000,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1967",
+          "sourceName": "Romain FUSIER",
+          "dateOfBirthAsPublished": "27/01/2000"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Julien Hériteau",
+      "birthYear": 1994,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1971",
+          "sourceName": "Julien HÉRITEAU",
+          "dateOfBirthAsPublished": "12/09/1994"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Lalomilo Lalomilo",
+      "birthYear": 1999,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "2864",
+          "sourceName": "Lalomilo LALOMILO",
+          "dateOfBirthAsPublished": "12/02/1999"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Nathan Pozin",
+      "birthYear": 2006,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "4033",
+          "sourceName": "Nathan POZIN",
+          "dateOfBirthAsPublished": "14/04/2006"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Edward Sawailau",
+      "birthYear": 1996,
+      "matchCount": 0,
+      "matches": [],
+      "status": "unresolved_no_successful_profile"
+    },
+    {
+      "name": "Aurélien Callandret",
+      "birthYear": 1997,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "19",
+          "sourceName": "Aurélien CALLANDRET",
+          "dateOfBirthAsPublished": "23/08/1997"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Raffaele Costa Storti",
+      "birthYear": 2000,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "551",
+          "sourceName": "Raffaele COSTA STORTI",
+          "dateOfBirthAsPublished": "19/12/2000"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Nadir Megdoud",
+      "birthYear": 1997,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "41",
+          "sourceName": "Nadir MEGDOUD",
+          "dateOfBirthAsPublished": "26/03/1997"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Gerswin Mouton",
+      "birthYear": 1999,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1977",
+          "sourceName": "Gerswin MOUTON",
+          "dateOfBirthAsPublished": "16/12/1999"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Lucas Tauzin",
+      "birthYear": 1998,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "201",
+          "sourceName": "Lucas TAUZIN",
+          "dateOfBirthAsPublished": "21/05/1998"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Thomas Alary",
+      "birthYear": 2006,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "681",
+          "sourceName": "Thomas ALARY",
+          "dateOfBirthAsPublished": "06/09/2006"
+        }
+      ],
+      "status": "already_known_consistent"
+    },
+    {
+      "name": "Hugo Trouilloud",
+      "birthYear": 2003,
+      "matchCount": 1,
+      "matches": [
+        {
+          "sourceRecordId": "1996",
+          "sourceName": "Hugo TROUILLOUD",
+          "dateOfBirthAsPublished": "05/03/2003"
+        }
+      ],
+      "status": "already_known_consistent"
+    }
+  ]
+}
