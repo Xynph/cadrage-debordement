@@ -138,4 +138,6 @@ function returnToMainMenu(){if(S?.live&&!S.live.finished){clearInterval(timer);S
 function resetDialog(){modal=`<div class="modalback"><section class="modal" role="dialog" aria-modal="true" aria-label="Nouvelle carrière"><h2>Changer de banc ?</h2><p>Votre carrière actuelle sera remplacée. Cette action efface votre progression sur ce navigateur.</p><div class="row"><button onclick="closeModal()">Garder ma carrière</button><button class="primary" onclick="resetGame()">Nouvelle carrière</button></div></section></div>`;render()}
 function resetGame(){clearInterval(timer);try{if(typeof CDMenuSlots!=='undefined')CDMenuSlots.setActive(null);gameStorage.removeItem('bdt-v1')}catch(e){toast('Nouvelle carrière annulée : la sauvegarde actuelle est conservée.');return false}S=null;modal=null;entryScreen='clubs';mainMenuPanel='home';render();return true}
 function closeModal(){modal=null;render()}
+function mainMenuApplyMotion(){try{document.documentElement?.setAttribute?.('data-cd-motion',mainMenuReadMotion())}catch(_){}}
+mainMenuApplyMotion();
 if(!window.CDOfflineError)bootSavedCareer();
