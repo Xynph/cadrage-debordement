@@ -1,7 +1,7 @@
 {
   "season": "2026-2027",
   "snapshot": "2026-10-31",
-  "measurement": "LNR site snapshot, not July 1 2026",
+  "measurement": "Position roster evidence only; numeric match stats not currently reproducible on public LNR pages",
   "clubs": [
     {
       "club": "clermont",
@@ -10,170 +10,194 @@
         {
           "name": "Barnabé MASSA",
           "position": "1ère ligne",
-          "matches": 5,
-          "minutes": 259,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Giorgi DZMANASHVILI",
           "position": "1ère ligne",
-          "matches": 6,
-          "minutes": 205,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Régis MONTAGNE",
           "position": "1ère ligne",
-          "matches": 5,
-          "minutes": 268,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Sacha LOTRIAN",
           "position": "1ère ligne",
-          "matches": 4,
-          "minutes": 161,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Giorgi AKHALADZE",
           "position": "1ère ligne",
-          "matches": 5,
-          "minutes": 252,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Etienne FOURCADE",
           "position": "1ère ligne",
-          "matches": 3,
-          "minutes": 123,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Darcy SWAIN",
           "position": "2ème ligne",
-          "matches": 5,
-          "minutes": 298,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Thibaud LANEN",
           "position": "2ème ligne",
-          "matches": 6,
-          "minutes": 413,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Thomas CEYTE",
           "position": "2ème ligne",
-          "matches": 3,
-          "minutes": 181,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Marcos KREMER",
           "position": "3ème ligne",
-          "matches": 3,
-          "minutes": 224,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Killian TIXERONT",
           "position": "3ème ligne",
-          "matches": 6,
-          "minutes": 414,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Anthime HEMERY",
           "position": "3ème ligne",
-          "matches": 5,
-          "minutes": 319,
-          "points": 10
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Baptiste JAUNEAU",
           "position": "Demi de mêlée",
-          "matches": 6,
-          "minutes": 367,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Baptiste GERMAIN",
           "position": "Demi de mêlée",
-          "matches": 4,
-          "minutes": 103,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Justin BOURAUX",
           "position": "Demi d'ouverture",
-          "matches": 4,
-          "minutes": 197,
-          "points": 18
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Harrison PLUMMER",
           "position": "Demi d'ouverture",
-          "matches": 6,
-          "minutes": 441,
-          "points": 52
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Yerim FALL",
           "position": "Ailier",
-          "matches": 2,
-          "minutes": 165,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Bautista DELGUY",
           "position": "Ailier",
-          "matches": 4,
-          "minutes": 334,
-          "points": 15
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Alivereti RAKA",
           "position": "Ailier",
-          "matches": 3,
-          "minutes": 236,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Etene NANAI SETURO",
           "position": "Arrière",
-          "matches": 1,
-          "minutes": 57,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Kylan HAMDAOUI",
           "position": "Arrière",
-          "matches": 4,
-          "minutes": 333,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Léon DARRICARRERE",
           "position": "Centre",
-          "matches": 4,
-          "minutes": 264,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Alivereti LOALOA",
           "position": "Centre",
-          "matches": 6,
-          "minutes": 438,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Alexander James LAM",
           "position": "Centre",
-          "matches": 4,
-          "minutes": 152,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         }
       ]
     },
@@ -184,156 +208,178 @@
         {
           "name": "Andréa PONTANIER",
           "position": "1ère ligne",
-          "matches": 8,
-          "minutes": 322,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Hugo NDIAYE",
           "position": "1ère ligne",
-          "matches": 4,
-          "minutes": 122,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Eliott YEMSI",
           "position": "1ère ligne",
-          "matches": 4,
-          "minutes": 162,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Vincent GIUDICELLI",
           "position": "1ère ligne",
-          "matches": 7,
-          "minutes": 287,
-          "points": 15
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Romain LATTERRADE",
           "position": "1ère ligne",
-          "matches": 8,
-          "minutes": 347,
-          "points": 20
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Pascal COTET",
           "position": "1ère ligne",
-          "matches": 5,
-          "minutes": 231,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Lino JULIEN",
           "position": "1ère ligne",
-          "matches": 7,
-          "minutes": 314,
-          "points": 15
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Tyler ARDRON",
           "position": "2ème ligne",
-          "matches": 7,
-          "minutes": 470,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Izack RODDA",
           "position": "2ème ligne",
-          "matches": 7,
-          "minutes": 347,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Charly GAMBINI",
           "position": "2ème ligne",
-          "matches": 8,
-          "minutes": 382,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Andrès ZAFRA TARAZONA",
           "position": "2ème ligne",
-          "matches": 7,
-          "minutes": 511,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Yannick YOUYOUTTE",
           "position": "2ème ligne",
-          "matches": 8,
-          "minutes": 415,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Tornike JALAGONIA",
           "position": "3ème ligne",
-          "matches": 7,
-          "minutes": 496,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Albert TUISUE",
           "position": "3ème ligne",
-          "matches": 6,
-          "minutes": 296,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Joris CAZENAVE",
           "position": "Demi de mêlée",
-          "matches": 7,
-          "minutes": 240,
-          "points": 11
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Arthur COVILLE",
           "position": "Demi de mêlée",
-          "matches": 8,
-          "minutes": 467,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Thomas SALLES",
           "position": "Demi d'ouverture",
-          "matches": 6,
-          "minutes": 343,
-          "points": 50
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Caleb MUNTZ",
           "position": "Demi d'ouverture",
-          "matches": 4,
-          "minutes": 224,
-          "points": 14
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Setareki BITUNIYATA",
           "position": "Ailier",
-          "matches": 6,
-          "minutes": 390,
-          "points": 10
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Léo DROUET",
           "position": "Arrière",
-          "matches": 6,
-          "minutes": 383,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Kaveinga FINAU",
           "position": "Centre",
-          "matches": 6,
-          "minutes": 481,
-          "points": 10
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Baptiste LENOIR",
           "position": "Centre",
-          "matches": 7,
-          "minutes": 340,
-          "points": 15
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         }
       ]
     },
@@ -344,149 +390,170 @@
         {
           "name": "Julien MARCHAND",
           "position": "1ère ligne",
-          "matches": 5,
-          "minutes": 259,
-          "points": 20
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Cyril BAILLE",
           "position": "1ère ligne",
-          "matches": 5,
-          "minutes": 234,
-          "points": 10
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Peato MAUVAKA",
           "position": "1ère ligne",
-          "matches": 4,
-          "minutes": 184,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Dorian ALDEGHERI",
           "position": "1ère ligne",
-          "matches": 5,
-          "minutes": 232,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Thibaud FLAMENT",
           "position": "2ème ligne",
-          "matches": 5,
-          "minutes": 369,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Joshua BRENNAN",
           "position": "2ème ligne",
-          "matches": 6,
-          "minutes": 420,
-          "points": 10
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Emmanuel MEAFOU",
           "position": "2ème ligne",
-          "matches": 3,
-          "minutes": 129,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Francois CROS",
           "position": "3ème ligne",
-          "matches": 6,
-          "minutes": 480,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Anthony JELONCH",
           "position": "3ème ligne",
-          "matches": 1,
-          "minutes": 59,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Alexandre ROUMAT",
           "position": "3ème ligne",
-          "matches": 6,
-          "minutes": 340,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Antoine DUPONT",
           "position": "Demi de mêlée",
-          "matches": 6,
-          "minutes": 348,
-          "points": 20
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Paul GRAOU",
           "position": "Demi de mêlée",
-          "matches": 6,
-          "minutes": 239,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Romain NTAMACK",
           "position": "Demi d'ouverture",
-          "matches": 6,
-          "minutes": 416,
-          "points": 42
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Ange CAPUOZZO",
           "position": "Ailier",
-          "matches": 6,
-          "minutes": 428,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Matthis LEBEL",
           "position": "Ailier",
-          "matches": 6,
-          "minutes": 381,
-          "points": 15
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Teddy THOMAS",
           "position": "Ailier",
-          "matches": 6,
-          "minutes": 356,
-          "points": 25
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Thomas RAMOS",
           "position": "Arrière",
-          "matches": 3,
-          "minutes": 217,
-          "points": 22
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Blair KINGHORN",
           "position": "Arrière",
-          "matches": 3,
-          "minutes": 163,
-          "points": 11
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Santiago CHOCOBARES",
           "position": "Centre",
-          "matches": 4,
-          "minutes": 319,
-          "points": 10
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Kalvin GOURGUES",
           "position": "Centre",
-          "matches": 6,
-          "minutes": 435,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Tommaso MENONCELLO",
           "position": "Centre",
-          "matches": 3,
-          "minutes": 219,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         }
       ]
     },
@@ -497,163 +564,186 @@
         {
           "name": "Francisco CORIA MARCHETTI",
           "position": "1ère ligne",
-          "matches": 8,
-          "minutes": 322,
-          "points": 10
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Yanis CHARCOSSET",
           "position": "1ère ligne",
-          "matches": 7,
-          "minutes": 396,
-          "points": 25
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Vakhtang ABDALADZE",
           "position": "1ère ligne",
-          "matches": 6,
-          "minutes": 274,
-          "points": 10
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Christian James JUDGE",
           "position": "1ère ligne",
-          "matches": 8,
-          "minutes": 339,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Teun KARST",
           "position": "2ème ligne",
-          "matches": 4,
-          "minutes": 108,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Samuel MAXIMIN",
           "position": "2ème ligne",
-          "matches": 4,
-          "minutes": 170,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Alexandre RICARD",
           "position": "2ème ligne",
-          "matches": 7,
-          "minutes": 473,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Irné HERBST",
           "position": "2ème ligne",
-          "matches": 7,
-          "minutes": 373,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Lucas OUDARD",
           "position": "3ème ligne",
-          "matches": 8,
-          "minutes": 395,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Sasha GUE",
           "position": "3ème ligne",
-          "matches": 7,
-          "minutes": 558,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Yann PEYSSON",
           "position": "3ème ligne",
-          "matches": 7,
-          "minutes": 472,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Hendrik VENTER",
           "position": "3ème ligne",
-          "matches": 4,
-          "minutes": 183,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Mathis GALTHIE",
           "position": "Demi de mêlée",
-          "matches": 2,
-          "minutes": 140,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Maxime SIDOBRE",
           "position": "Demi de mêlée",
-          "matches": 7,
-          "minutes": 197,
-          "points": 5
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Aymeric LUC",
           "position": "Demi de mêlée",
-          "matches": 8,
-          "minutes": 661,
-          "points": 30
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "John COONEY",
           "position": "Demi d'ouverture",
-          "matches": 6,
-          "minutes": 396,
-          "points": 45
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "James SHILLCOCK",
           "position": "Demi d'ouverture",
-          "matches": 4,
-          "minutes": 275,
-          "points": 28
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Leny BRONCAN",
           "position": "Demi d'ouverture",
-          "matches": 4,
-          "minutes": 329,
-          "points": 18
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Geoffrey CROS",
           "position": "Arrière",
-          "matches": 8,
-          "minutes": 618,
-          "points": 25
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Julien TISSERON",
           "position": "Arrière",
-          "matches": 5,
-          "minutes": 362,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Gatien MASSE",
           "position": "Centre",
-          "matches": 8,
-          "minutes": 610,
-          "points": 10
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Nicolas Christian KRONE",
           "position": "Centre",
-          "matches": 7,
-          "minutes": 403,
-          "points": 0
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         },
         {
           "name": "Stuart OLDING",
           "position": "Centre",
-          "matches": 2,
-          "minutes": 155,
-          "points": 2
+          "matches": null,
+          "minutes": null,
+          "points": null,
+          "statsVerification": "unverified-as-of-snapshot"
         }
       ]
     }
