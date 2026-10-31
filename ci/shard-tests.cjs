@@ -1,20 +1,20 @@
 'use strict';
 // Ordonnancement déterministe des suites complètes, sans sélection liée au diff.
-// Durées réelles arrondies de la CI main post PR #90 : run 41195460951.
+// Poids prudents = maximum arrondi de deux mesures : main #41195460951 et PR V2 #41196473550.
 const fs = require('node:fs');
 const path = require('node:path');
 const WEIGHTS_SECONDS = Object.freeze({
   'tests/world-career.cjs': 66,
-  'tests/ai-roster-cycle.cjs': 59,
-  'tests/rugby.cjs': 49,
-  'tests/opposition.cjs': 30,
-  'tests/manager-mobility.cjs': 21,
+  'tests/ai-roster-cycle.cjs': 81,
+  'tests/rugby.cjs': 51,
+  'tests/opposition.cjs': 31,
+  'tests/manager-mobility.cjs': 29,
   'tests/career-resilience.cjs': 17,
   'tests/tactical-plans.cjs': 16,
-  'tests/saves.cjs': 13,
+  'tests/saves.cjs': 18,
   'tests/v28-collective-preparation.cjs': 6,
   'tests/champion-budget-regression.cjs': 5,
-  'tests/economy-audit.cjs': 4,
+  'tests/economy-audit.cjs': 6,
   'tests/v29-focused-development.cjs': 4,
   'tests/matchflow.cjs': 4,
   'tests/development.cjs': 3,
@@ -24,7 +24,7 @@ const WEIGHTS_SECONDS = Object.freeze({
   'tests/manager.cjs': 2,
   'tests/v30-recruitment-intelligence.cjs': 2,
   'tests/ui01-integration.cjs': 2,
-  'tests/v35-salary-demand.cjs': 2,
+  'tests/v35-salary-demand.cjs': 3,
   'tests/v34-counteroffers.cjs': 2,
   'tests/v37-relations.cjs': 2
 });
