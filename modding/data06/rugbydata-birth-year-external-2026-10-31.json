@@ -2,7 +2,7 @@
   "schema": "data06-birth-year-evidence-v1",
   "seasonContext": "2026-2027",
   "sourceRoster": "modding/data06/rugbydata-rosters-2026-10-31.json",
-  "note": "Evidence staging only: 4 individual pages explicitly checked (Demba Bamba, Maxime Lucu, Gabin Villiere, Charles Ollivon). Other 17 candidates remain pending independent source verification. Not imported in game; no birth year inferred from age.",
+  "note": "Evidence staging only. Dates taken from explicitly published dates, not age-derived. Other records remain pending verification. No replacement of existing birth dates, no game integration.",
   "records": [
     {
       "sourceRecordId": "221",
@@ -59,8 +59,9 @@
       "name": "Ethan Dumortier",
       "birthYear": 2000,
       "sourceUrl": "https://www.lourugby.fr/equipe/ethan-dumortier/",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "29/12/2000"
     },
     {
       "sourceRecordId": "558",
@@ -74,9 +75,10 @@
       "sourceRecordId": "772",
       "name": "Thomas Gallo",
       "birthYear": 1999,
-      "sourceUrl": "https://www.lequipe.fr/fiche/thomas-gallo/251099",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "sourceUrl": "https://m.lourugby.fr/equipe/thomas-gallo/",
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "30/04/1999"
     },
     {
       "sourceRecordId": "486",
@@ -90,33 +92,37 @@
       "sourceRecordId": "1908",
       "name": "John Cooney",
       "birthYear": 1990,
-      "sourceUrl": "https://www.lequipe.fr/fiche/john-cooney/256013",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "sourceUrl": "https://cabrive-rugby.com/index.php/joueurs/226-cooney",
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "01/05/1990"
     },
     {
       "sourceRecordId": "304",
       "name": "Vincent Rattez",
       "birthYear": 1992,
       "sourceUrl": "https://www.lequipe.fr/fiche/vincent-rattez/255648",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "24/03/1992"
     },
     {
       "sourceRecordId": "95",
       "name": "Yann Lesgourgues",
       "birthYear": 1991,
-      "sourceUrl": "https://www.lequipe.fr/fiche/yann-lesgourgues/257094",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "sourceUrl": "https://www.lequipe.fr/Rugby/RugbyFicheJoueur5135.html",
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "17/01/1991"
     },
     {
       "sourceRecordId": "1096",
       "name": "Mathieu Acebes",
       "birthYear": 1987,
       "sourceUrl": "https://www.lequipe.fr/Rugby/RugbyFicheJoueur4402.html",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "01/08/1987"
     },
     {
       "sourceRecordId": "1329",
