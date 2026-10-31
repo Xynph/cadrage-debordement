@@ -2,9 +2,23 @@ name: V58 observatoire natif des bancs
 on:
   pull_request:
     branches: [main]
+    paths:
+      - 'dist/coach-opportunities.js'
+      - 'dist/world-career.js'
+      - 'dist/game.js'
+      - 'dist/saves.js'
+      - 'dist/manager-mobility.js'
+      - 'tests/v58-native-coach-opportunities.cjs'
+      - 'tests/world-career.cjs'
+      - 'tests/harness.cjs'
+      - '.github/workflows/v58-native-observatory.yml'
   workflow_dispatch:
+
 permissions:
   contents: read
+concurrency:
+  group: v58-observatory-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   observatory:
     runs-on: ubuntu-latest

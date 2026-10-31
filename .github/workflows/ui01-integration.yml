@@ -2,61 +2,40 @@ name: UI01 integration review
 on:
   pull_request:
     branches: [main]
+    paths:
+      - 'dist/index.html'
+      - 'dist/style.css'
+      - 'dist/game.js'
+      - 'dist/ui*'
+      - 'dist/manager-squad.js'
+      - 'dist/match-preparation.js'
+      - 'dist/match-cockpit.js'
+      - 'tests/ui01*'
+      - 'tests/harness.cjs'
+      - '.github/workflows/ui01-integration.yml'
   push:
     branches: [integration/ui01-reviewed, main]
+    paths:
+      - 'dist/index.html'
+      - 'dist/style.css'
+      - 'dist/game.js'
+      - 'dist/ui*'
+      - 'dist/manager-squad.js'
+      - 'dist/match-preparation.js'
+      - 'dist/match-cockpit.js'
+      - 'tests/ui01*'
+      - 'tests/harness.cjs'
+      - '.github/workflows/ui01-integration.yml'
   workflow_dispatch:
+
 permissions:
   contents: read
 concurrency:
   group: ui01-review-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  # Eviter les receptions Chromium obsoletes apres un nouveau commit de PR.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
-  native:
-    name: UI01 native regression ${{ matrix.shard }}/3
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3]
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-      - name: Syntax and complete native regression
-        shell: bash
-        env:
-          SHARD: ${{ matrix.shard }}
-        run: |
-          set -euo pipefail
-          for file in dist/*.js tests/*.cjs; do node --check "$file"; done
-          failures=0
-          count=0
-          mkdir -p ui01-native-report
-          for file in tests/*.cjs; do
-            test "$file" != tests/harness.cjs || continue
-            index=$count
-            count=$((count+1))
-            test $((index % 3 + 1)) -eq "$SHARD" || continue
-            echo "TEST $file"
-            if timeout 180 node "$file" > "ui01-native-report/$(basename "$file").log" 2>&1; then
-              echo "PASS $file"
-            else
-              cat "ui01-native-report/$(basename "$file").log"
-              failures=$((failures+1))
-            fi
-          done
-          echo "FAILED SUITES $failures"
-          test "$failures" -eq 0
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: ui01-native-regression-${{ matrix.shard }}
-          path: ui01-native-report/
-          retention-days: 7
+  # Suites natives deja couvertes par Tests JavaScript : seulement reception Chromium ici.
   browser:
     name: UI01 Chromium acceptance
     runs-on: ubuntu-latest
