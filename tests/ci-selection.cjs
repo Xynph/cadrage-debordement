@@ -23,6 +23,8 @@ assert.ok(allTests.includes('tests/v38-individual-objectives.cjs'));
 assert.ok(allTests.includes('tests/v39-team-dynamics.cjs'));
 assert.ok(allTests.includes('tests/v40-match-cockpit.cjs'));
 assert.ok(allTests.includes('tests/world-career.cjs'));
+assert.ok(allTests.includes('tests/ai-roster-cycle.cjs'));
+for(const file of ['dist/economy.js','dist/manager.js','dist/development.js','dist/saves.js','dist/index.html'])assert.ok(selectTests([file]).includes('tests/ai-roster-cycle.cjs'),file);
 for(const path of ['dist/game.js','dist/manager.js','dist/saves.js','dist/index.html'])assert.ok(selectTests([path]).includes('tests/world-career.cjs'),path);
 for(const test of ['career-integration','finance-planning','board-planning','academy-planning','transfer-planning','career-history'])assert.ok(allTests.includes('tests/'+test+'.cjs'));
 for(const p of ['dist/game.js','dist/economy.js','dist/development.js','dist/saves.js','dist/index.html'])assert.ok(selectTests([p]).includes('tests/career-integration.cjs'),p);

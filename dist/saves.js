@@ -197,6 +197,48 @@ if(s.collectivePrepVersion!==undefined)saveCheck(s.collectivePrepVersion===1&&Ob
 const professionalIds=new Set();function checkPlayer(p){saveCheck(saveObject(p)&&saveId(p.id)&&typeof p.name==='string'&&p.name.length>0&&p.name.length<120);saveCheck(saveInt(p.fam,0,8)&&POS.includes(p.pos)&&FAMILIES[POS.indexOf(p.pos)]===p.fam);saveCheck(saveInt(p.age,16,60)&&saveInt(p.rating,15,99)&&saveNumber(p.condition,0,100)&&saveInt(p.injury,0,52)&&saveInt(p.salary,0,100000));saveCheck(p.contractEnd==null||saveInt(p.contractEnd,1,10003));if(p.satisfaction!==undefined){const st=p.satisfaction;if(st.coachMeeting!==undefined){const c=st.coachMeeting;saveCheck(s.relationsVersion===1&&saveObject(c)&&saveInt(c.season,1,s.season)&&saveInt(c.week,0,s.economy.week)&&['ecouter','rassurer','clarifier'].includes(c.choice))}saveCheck(s.satisfactionVersion===1&&saveObject(st)&&st.version===1&&saveInt(st.score,20,95)&&saveInt(st.season,1,s.season)&&saveNumber(st.baseline,0,100000)&&saveArray(st.history,8));for(const h of st.history)saveCheck(saveObject(h)&&saveInt(h.season,1,s.season)&&saveInt(h.round,0,26)&&['promise','kept','broken'].includes(h.status)&&saveNumber(h.minutes,0,240)&&Object.prototype.hasOwnProperty.call(PROMISE_MINUTES,h.target));if(st.promise!==null){const a=st.promise;saveCheck(saveObject(a)&&Object.prototype.hasOwnProperty.call(PROMISE_MINUTES,a.target)&&a.season===st.season&&saveInt(a.round,0,23)&&saveInt(a.completed,0,2)&&saveNumber(a.minutes,0,240))}}if(p.physicalLoad!==undefined)saveCheck(saveObject(p.physicalLoad)&&p.physicalLoad.version===1&&saveInt(p.physicalLoad.fatigue,0,100)&&Object.prototype.hasOwnProperty.call(PHYSICAL_PLANS,p.physicalLoad.plan));if(p.managerLoad!==undefined)saveCheck(saveObject(p.managerLoad)&&saveNumber(p.managerLoad.minutes,0,240)&&saveInt(p.managerLoad.streak));saveCheck(saveObject(p.skills)&&Object.keys(ATTR).every(k=>saveNumber(p.skills[k],15,99))&&saveNumber(p.skillBase,15,99));let d=p.dev;saveCheck(saveObject(d)&&saveNumber(d.potential,p.rating,99)&&saveNumber(d.xp,0,1)&&saveNumber(d.seasonStart,15,99)&&saveNumber(d.minutes,0,100000)&&saveInt(d.appearances,0,10000)&&saveNumber(d.careerMinutes,0,1e9)&&saveInt(d.retireAge,17,65)&&saveInt(d.lastYear)&&saveInt(d.decline,0,5)&&saveArray(d.history,12));d.history.forEach(h=>saveCheck(saveObject(h)&&saveInt(h.season,1)&&saveInt(h.age,16,60)&&saveNumber(h.start,15,99)&&saveNumber(h.end,15,99)&&saveNumber(h.minutes,0,100000)&&saveInt(h.appearances,0,10000)));if(d.specialization!==undefined){const sp=d.specialization;saveCheck(saveObject(sp)&&sp.version===1&&developmentFocusOptions(p).includes(sp.focus)&&saveNumber(sp.xp,0,DEVELOPMENT_FOCUS_XP_COST)&&saveObject(sp.bonuses));let spent=0;for(const [key,n] of Object.entries(sp.bonuses)){saveCheck(developmentFocusOptions(p).includes(key)&&key!==DEVELOPMENT_BALANCED&&saveInt(n,0,DEVELOPMENT_ATTRIBUTE_LIMIT));spent+=n}saveCheck(spent<=DEVELOPMENT_TOTAL_LIMIT)}}
 function players(list,max=100){saveCheck(saveArray(list,max));const ids=new Set();list.forEach(p=>{checkPlayer(p);saveCheck(!ids.has(p.id),'Un joueur apparaît plusieurs fois dans le même effectif.');ids.add(p.id)});return ids}
 s.clubs.forEach((c,i)=>{saveCheck(saveObject(c)&&c.id===i&&c.name===CLUBS[i][0]&&c.abbr===CLUBS[i][1]&&c.color===CLUBS[i][2]);if(c.morale!==undefined)saveCheck(saveNumber(c.morale,0,100));saveCheck(typeof c.stadium==='string'&&typeof c.goal==='string'&&saveNumber(c.base,0,100)&&saveNumber(c.cash));for(let k of ['points','played','won','drawn','lost','pf','pa','bonus'])saveCheck(saveNumber(c[k],0,10000));saveCheck(saveArray(c.form,26)&&c.form.every(x=>['V','D','N'].includes(x)));let ids=players(c.players);ids.forEach(id=>{saveCheck(!professionalIds.has(id),'Un joueur appartient à plusieurs clubs.');professionalIds.add(id)})});
+
+if(s.aiRosterVersion!==undefined)saveCheck(s.aiRosterVersion===1&&saveObject(s.aiRoster));
+if(s.aiRoster!==undefined){
+ const a=s.aiRoster;
+ saveCheck(s.aiRosterVersion===1&&saveObject(a)&&a.version===1&&
+  saveInt(a.lastContracts,0,s.season)&&saveInt(a.lastIntake,0,s.season)&&
+  (a.lastRecruitment===null||typeof a.lastRecruitment==='string'&&/^\d{1,5}:(0|13)$/.test(a.lastRecruitment))&&
+  saveArray(a.events,AI_ROSTER_MAX_EVENTS)&&saveArray(a.reports,AI_ROSTER_MAX_REPORTS)&&
+  saveArray(a.academies,13)&&a.academies.length===13);
+ const reportKeys=new Set();
+ for(const r of a.reports){
+  const key=r.season+':'+r.clubId;
+  saveCheck(saveObject(r)&&saveInt(r.clubId,0,13)&&r.clubId!==s.club&&
+   saveInt(r.season,1,s.season)&&!reportKeys.has(key));
+  reportKeys.add(key);
+  for(const key of ['renewed','released','retired','recruited','promoted','emergency'])
+   saveCheck(saveInt(r[key],0,100));
+  saveCheck(saveNumber(r.fees,0,1e10));
+ }
+ for(const e of a.events)saveCheck(saveObject(e)&&saveInt(e.clubId,0,13)&&
+  e.clubId!==s.club&&saveInt(e.season,1,s.season)&&
+  ['renew','release','retire','recruit','promote','emergency'].includes(e.kind)&&
+  saveId(e.playerId)&&typeof e.name==='string'&&e.name.length>0&&e.name.length<120&&
+  saveInt(e.salary,0,100000)&&saveNumber(e.fee,0,1e9));
+ const seenClubs=new Set(),academyIds=new Set();
+ for(const entry of a.academies){
+  saveCheck(saveObject(entry)&&saveInt(entry.clubId,0,13)&&entry.clubId!==s.club&&
+   !seenClubs.has(entry.clubId)&&saveInt(entry.intakeSeason,0,s.season)&&
+   saveArray(entry.players,6));
+  seenClubs.add(entry.clubId);
+  for(const p of entry.players){
+   checkPlayer(p);
+   saveCheck(p.academy===true&&p.age<=21&&p.contractEnd==null&&
+    !professionalIds.has(p.id)&&!academyIds.has(p.id));
+   academyIds.add(p.id);
+  }
+ }
+ saveCheck(seenClubs.size===13);
+ for(const p of s.market)saveCheck(!academyIds.has(p.id));
+ for(const p of s.economy.freeAgents)saveCheck(!academyIds.has(p.id));
+ for(const p of s.development.academy)saveCheck(!academyIds.has(p.id));
+}
 const own=new Set(s.clubs[s.club].players.map(p=>p.id));function refs(a,n,ids=own,nullable=false){saveCheck(saveArray(a,n)&&a.length===n);a.forEach(id=>saveCheck(nullable&&id===null||saveId(id)&&ids.has(id)));saveCheck(new Set(a.filter(Boolean)).size===a.filter(Boolean).length)}refs(s.lineup,15,own,true);saveCheck(saveArray(s.reserves,8));refs(s.reserves,s.live?s.reserves.length:8,own,true);s.lineup.forEach((id,i)=>saveCheck(id===null||slotEligible(s.clubs[s.club].players.find(p=>p.id===id),i)));if(!s.live)s.reserves.forEach((id,i)=>saveCheck(id===null||benchEligible(s.clubs[s.club].players.find(p=>p.id===id),i)));saveCheck(new Set([...s.lineup,...s.reserves].filter(Boolean)).size===[...s.lineup,...s.reserves].filter(Boolean).length);
 function pair(p){saveCheck(saveArray(p,2)&&p.length===2&&p.every(x=>saveInt(x,0,13))&&p[0]!==p[1])}saveCheck(saveArray(s.schedule,26)&&s.schedule.length===26);const fixtures=new Set();for(let round of s.schedule){saveCheck(saveArray(round,7)&&round.length===7);const clubs=new Set();round.forEach(p=>{pair(p);p.forEach(i=>clubs.add(i));fixtures.add(p.join('-'))});saveCheck(clubs.size===14,'Le calendrier est incohérent.')}saveCheck(fixtures.size===182,'Le calendrier contient des doublons.');
 function result(r){saveCheck(saveObject(r));pair(r.pair);for(let k of ['score','tries'])saveCheck(saveArray(r[k],2)&&r[k].length===2&&r[k].every(n=>saveInt(n,0,1000)));saveCheck(r.tries.every((n,i)=>n*5<=r.score[i]))}

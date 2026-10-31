@@ -17,20 +17,20 @@ const dependencies={
  'dist/matchflow.js':['matchflow','rugby','saves'],
  'dist/tactical-plans.js':['tactical-plans','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves'],
  'dist/opposition.js':['opposition','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves','v27-physical-load'],
- 'dist/saves.js':['world-career','career-integration','v39-team-dynamics','v38-individual-objectives','v36-satisfaction','saves','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','frontrow','match-rules','v27-physical-load','v28-collective-preparation','v29-focused-development','v30-recruitment-intelligence','v32-succession-planning','v33-contract-renewals','v34-counteroffers','v35-salary-demand'],
+ 'dist/saves.js':['ai-roster-cycle','world-career','career-integration','v39-team-dynamics','v38-individual-objectives','v36-satisfaction','saves','v20-numerical-ai','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','frontrow','match-rules','v27-physical-load','v28-collective-preparation','v29-focused-development','v30-recruitment-intelligence','v32-succession-planning','v33-contract-renewals','v34-counteroffers','v35-salary-demand'],
  'dist/match-actions.js':['match-actions','rugby','v19-advantage'],
  'dist/match2d.js':['v40-match-cockpit','match2d','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif'],
  'dist/playbook.js':['playbook','tactical-plans','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves'],
  'dist/match-preparation.js':['preparation','saves','v28-collective-preparation'],
- 'dist/manager.js':['world-career','career-integration','manager','saves','v30-recruitment-intelligence','v32-succession-planning','v33-contract-renewals','v34-counteroffers','v35-salary-demand'],
+ 'dist/manager.js':['ai-roster-cycle','world-career','career-integration','manager','saves','v30-recruitment-intelligence','v32-succession-planning','v33-contract-renewals','v34-counteroffers','v35-salary-demand'],
  'dist/manager-squad.js':['manager','saves','v27-physical-load','v29-focused-development','v32-succession-planning','v33-contract-renewals','v34-counteroffers','v35-salary-demand'],
- 'dist/development.js':['career-integration','v36-satisfaction','development','saves','v27-physical-load','v29-focused-development','v30-recruitment-intelligence','v32-succession-planning','v33-contract-renewals','v34-counteroffers','v35-salary-demand'],
- 'dist/economy.js':['career-integration','v38-individual-objectives','v36-satisfaction','economy','saves','v30-recruitment-intelligence','v31-finance-forecasts','v32-succession-planning','v33-contract-renewals','v34-counteroffers','v35-salary-demand'],
+ 'dist/development.js':['ai-roster-cycle','career-integration','v36-satisfaction','development','saves','v27-physical-load','v29-focused-development','v30-recruitment-intelligence','v32-succession-planning','v33-contract-renewals','v34-counteroffers','v35-salary-demand'],
+ 'dist/economy.js':['ai-roster-cycle','career-integration','v38-individual-objectives','v36-satisfaction','economy','saves','v30-recruitment-intelligence','v31-finance-forecasts','v32-succession-planning','v33-contract-renewals','v34-counteroffers','v35-salary-demand'],
  'dist/world-data.js':['rugby','development','economy','saves'],
  'dist/storage.js':['offline','saves'],
  'dist/game.js':['world-career','career-integration','v40-match-cockpit','v39-team-dynamics','v38-individual-objectives','v36-satisfaction','manager','match2d','preparation','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','saves','v27-physical-load','v28-collective-preparation','v29-focused-development','v30-recruitment-intelligence','v31-finance-forecasts','v32-succession-planning','v33-contract-renewals','v34-counteroffers','v35-salary-demand'],
  'dist/style.css':['match2d','v21-numerical-advice','v22-tactical-comparison','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif','v27-physical-load','v29-focused-development','v30-recruitment-intelligence','v31-finance-forecasts','v32-succession-planning','v33-contract-renewals','v34-counteroffers','v35-salary-demand'],
- 'dist/index.html':['world-career','career-integration','offline','v21-numerical-advice','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif']
+ 'dist/index.html':['ai-roster-cycle','world-career','career-integration','offline','v21-numerical-advice','v23-local-zones','v24-four-zones','v25-whatif','v26-dual-whatif']
 };
 const helpers=new Set(['ci/select-tests.cjs','.github/workflows/tests.yml']);
 function selectTests(files,available=allTests){
