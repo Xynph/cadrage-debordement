@@ -1,0 +1,371 @@
+{
+  "schemaVersion": 1,
+  "season": "2026-2027",
+  "universe": "alternative-original",
+  "newCareerStart": "2026-07-01",
+  "newCareerStartType": "design-convention-not-official-club-reporting-date",
+  "sources": [
+    {
+      "url": "https://top14.lnr.fr/actualite/calendrier-20262027-les-dates-connues",
+      "kind": "official",
+      "checkedOn": "2026-10-31"
+    },
+    {
+      "url": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+      "kind": "official",
+      "checkedOn": "2026-10-31"
+    },
+    {
+      "url": "https://prod2.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+      "kind": "official",
+      "checkedOn": "2026-10-31"
+    }
+  ],
+  "competitions": [
+    {
+      "id": "competition:fictional-premiere",
+      "name": "Championnat Élite XV",
+      "realCalendarReference": "TOP 14",
+      "regularRounds": 26
+    },
+    {
+      "id": "competition:fictional-deuxieme",
+      "name": "Division Pro XV",
+      "realCalendarReference": "PRO D2",
+      "regularRounds": 30
+    }
+  ],
+  "clubs": [
+    {
+      "id": "club:fictional-premiere-01",
+      "name": "Garonne XV",
+      "competitionId": "competition:fictional-premiere",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-premiere-02",
+      "name": "Atlantique Marins",
+      "competitionId": "competition:fictional-premiere",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-premiere-03",
+      "name": "Pyrénées Béarn XV",
+      "competitionId": "competition:fictional-premiere",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-premiere-04",
+      "name": "Océans Rochelais",
+      "competitionId": "competition:fictional-premiere",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-premiere-05",
+      "name": "Auvergne Volcans",
+      "competitionId": "competition:fictional-premiere",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-premiere-06",
+      "name": "Rhône Métropole",
+      "competitionId": "competition:fictional-premiere",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-premiere-07",
+      "name": "Rugby Hérault",
+      "competitionId": "competition:fictional-premiere",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-premiere-08",
+      "name": "Rade Méditerranée",
+      "competitionId": "competition:fictional-premiere",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-premiere-09",
+      "name": "Paris Rive Gauche",
+      "competitionId": "competition:fictional-premiere",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-premiere-10",
+      "name": "Paris Défense XV",
+      "competitionId": "competition:fictional-premiere",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-premiere-11",
+      "name": "Catalans du Roussillon",
+      "competitionId": "competition:fictional-premiere",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-premiere-12",
+      "name": "Tarn Olympique",
+      "competitionId": "competition:fictional-premiere",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-premiere-13",
+      "name": "Basques de l'Adour",
+      "competitionId": "competition:fictional-premiere",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-premiere-14",
+      "name": "Bordeaux Estuaire",
+      "competitionId": "competition:fictional-premiere",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-01",
+      "name": "Provence Éclairs",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-02",
+      "name": "Corrèze XV",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-03",
+      "name": "Biarritz Côte Basque",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-04",
+      "name": "Grenoble Montagnes",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-05",
+      "name": "Agen Gascogne",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-06",
+      "name": "Dax Landes",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-07",
+      "name": "Colomiers Aéro",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-08",
+      "name": "Oyonnax Haut-Bugey",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-09",
+      "name": "Nevers Loire",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-10",
+      "name": "Aurillac Cantal",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-11",
+      "name": "Angoulême Charente",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-12",
+      "name": "Romans Drôme",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-13",
+      "name": "Béziers Méditerranée",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-14",
+      "name": "Nice Côte d'Azur",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-15",
+      "name": "Narbonne Aude",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    },
+    {
+      "id": "club:fictional-deuxieme-16",
+      "name": "Montauban Tarn-et-Garonne",
+      "competitionId": "competition:fictional-deuxieme",
+      "identity": "original-alternative",
+      "crestAsset": null,
+      "playersStatus": "not-authored",
+      "rosterStatus": "pending",
+      "gameplayBaseline": "keep-current-engine",
+      "correspondenceStatus": "unverified-do-not-infer-by-index"
+    }
+  ],
+  "identityNote": "Names are original alternatives and are not legal clearance for club identity or players; validate individually."
+}
