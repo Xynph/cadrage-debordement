@@ -9,3 +9,6 @@ Les noms sont **déjà inclus dans l'état `S.clubs`**. Les carrières commencé
 
 ## Réception
 `node tests/fictional-league.cjs` valide l'alignement du catalogue R1, les anciennes sauvegardes et le départ d'une nouvelle carrière. La CI complète sur SHA final et la CI post-fusion sont obligatoires. Les anciennes captures de versions précédentes restent historiques.
+
+## Validation stricte des anciennes identités
+Le validateur autorise exactement deux listes **complètes** et immuables : le championnat fictif actuel ou les 14 identités historiques sérialisées. Tout mélange, nom inconnu ou couleur falsifiée reste rejeté. Les anciens noms ne sont stockés dans le code que pour assurer la lecture des sauvegardes existantes ; ils ne sont jamais proposés dans une nouvelle carrière.
