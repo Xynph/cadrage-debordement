@@ -1,0 +1,30 @@
+name: Contrats réels V46-V51
+on:
+  pull_request:
+    branches:
+      - feature/v51-world-simulation
+    paths:
+      - 'dist/club-ai.js'
+      - 'dist/reputation.js'
+      - 'dist/coach-market.js'
+      - 'dist/facilities.js'
+      - 'dist/rugby-world.js'
+      - 'tests/v46-v51-contracts.cjs'
+      - '.github/workflows/v46-v51-contracts.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verifier les modules et le test
+        run: |
+          set -euo pipefail
+          for file in dist/{club-ai,reputation,coach-market,facilities,rugby-world,world-simulation,financial-recovery,world-finance}.js tests/v46-v51-contracts.cjs; do node --check "$file"; done
+          node tests/v46-v51-contracts.cjs
