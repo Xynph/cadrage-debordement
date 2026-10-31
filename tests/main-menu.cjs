@@ -1,0 +1,76 @@
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path');
+const {context}=require('./harness.cjs');
+const root=path.resolve(__dirname,'..');
+const g=context();
+const check=(name,fn)=>{fn();console.log('PASS '+name)};
+check('startup displays an actual home menu, not immediate club choice',()=>{
+ assert.equal(g.run('entryScreen'),'menu');
+ assert.match(g.app.innerHTML,/Menu principal/);
+ assert.match(g.app.innerHTML,/Nouvelle carrière/);
+ assert.match(g.app.innerHTML,/Charger une sauvegarde JSON/);
+ assert.match(g.app.innerHTML,/Continuer ma carrière/);
+ assert.match(g.app.innerHTML,/disabled/);
+ assert.equal(g.run('mainMenuContinue()'),false);
+});
+check('new career selects clubs, can return to menu, and start a game',()=>{
+ g.run('mainMenuNewCareer()');
+ assert.equal(g.run('entryScreen'),'clubs');
+ assert.match(g.app.innerHTML,/CHOISISSEZ UN CLUB/);
+ g.run('mainMenuBack()');
+ assert.equal(g.run('entryScreen'),'menu');
+ g.run('mainMenuNewCareer()');
+ g.run('start(0)');
+ assert.equal(g.run('entryScreen'),'game');
+ assert.match(g.app.innerHTML,/Bureau du manager/);
+});
+check('main menu does not erase the current save and resumes it',()=>{
+ const saved=g.store['bdt-v1'];assert.ok(saved);
+ const before=g.run('JSON.stringify(S)');
+ g.run('returnToMainMenu()');
+ assert.equal(g.run('entryScreen'),'menu');
+ assert.equal(g.run('JSON.stringify(S)'),before);
+ assert.match(g.app.innerHTML,/Saison 1/);
+ assert.equal(g.run('mainMenuContinue()'),true);
+ assert.equal(g.run('entryScreen'),'game');
+ assert.ok(g.store['bdt-v1']);
+});
+check('relaunch always opens menu with a recoverable saved career',()=>{
+ const saved=JSON.parse(g.store['bdt-v1']);
+ const again=context(saved);
+ assert.equal(again.run('entryScreen'),'menu');
+ assert.match(again.app.innerHTML,/Continuer ma carrière/);
+ assert.doesNotMatch(again.app.innerHTML,/Aucune sauvegarde disponible/);
+ again.run('mainMenuContinue()');
+ assert.equal(again.run('entryScreen'),'game');
+});
+check('new career with an existing save requires confirmation',()=>{
+ const prior=g.store['bdt-v1'];
+ g.run('returnToMainMenu()');
+ g.run('mainMenuNewCareer()');
+ assert.match(g.app.innerHTML,/Garder ma carrière/);
+ assert.equal(g.store['bdt-v1'],prior);
+ g.run('closeModal()');
+ assert.equal(g.store['bdt-v1'],prior);
+ g.run('mainMenuNewCareer()');
+ g.run('resetGame()');
+ assert.equal(g.run('entryScreen'),'clubs');
+ assert.equal(g.store['bdt-v1'],undefined);
+});
+check('theme, help and keyboard-friendly actions exist and are independent of saves',()=>{
+ g.run('mainMenuBack()');
+ g.run("mainMenuShow('settings')");
+ assert.match(g.app.innerHTML,/id="main-menu-theme"/);
+ g.run("mainMenuShow('help')");
+ assert.match(g.app.innerHTML,/Votre premier match/);
+ const css=fs.readFileSync(path.join(root,'dist/style.css'),'utf8');
+ assert.match(css,/\.main-menu-layout/);
+ assert.match(css,/@media\(max-width:850px\)/);
+ const game=fs.readFileSync(path.join(root,'dist/game.js'),'utf8');
+ assert.match(game,/returnToMainMenu/);
+ const pref=fs.readFileSync(path.join(root,'dist/ui-preferences.js'),'utf8');
+ assert.match(pref,/onclick="returnToMainMenu\(\)"/);
+ const saves=fs.readFileSync(path.join(root,'dist/saves.js'),'utf8');
+ assert.match(saves,/entryScreen='game';render\(\);toast\('Carrière restaurée/);
+});
