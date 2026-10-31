@@ -6,7 +6,7 @@ function validate(document){
  if(document.season!=='2026-2027'||document.origin!=='LNR-public-transfers'||!Array.isArray(document.records))throw Error('Invalid DATA-06 season/source');
  const seen=new Set(),errors=[];
  for(const [i,p] of document.records.entries()){
-  if(!p.name||!p.club||!p.position||!p.nationality||!p.from||p.sourceUrl!==SOURCE||p.evidenceType!=='LNR-transfer-arrival')errors.push('Missing evidence '+i);
+  if(!p.name||!p.club||!p.position||!p.nationality||typeof p.from!=='string'||p.sourceUrl!==SOURCE||p.evidenceType!=='LNR-transfer-arrival')errors.push('Missing evidence '+i);
   if(p.historicalAsOfJuly1Verified!==false||p.verifiedSalary!==null||p.verifiedContractEnd!==null||p.verifiedBudget!==null)errors.push('Unverified historical/financial claim '+i);
   const key=clean(p.club)+'|'+clean(p.name);if(seen.has(key))errors.push('Duplicate '+key);seen.add(key);
   if(p.loan!==/prêt/i.test(p.from))errors.push('Loan conflict '+i);
