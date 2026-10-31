@@ -79,5 +79,5 @@ function matchdayReadinessView(){
   '</div><div><h3>Choix tactiques</h3>'+matchup+
   '<div class="cd-matchday-actions"><button type="button" onclick="nav(\'plans\')">Personnaliser le plan →</button>'+
   '<button type="button" onclick="nav(\'match\')">Voir le dossier complet →</button></div>'+
-  '</div></div></section>';
+  '</div></div></section>'+(typeof matchday02View==='function'?matchday02View():'');
 }
