@@ -1,0 +1,138 @@
+{
+  "schema": "data06-wikipedia-top14-birthyears-v1",
+  "source": "French Wikipedia club 2026-2027 roster tables",
+  "collectedOn": "2026-10-31",
+  "note": "Explicit birth dates from club roster tables for previously failed rugbydata individual profiles. Does not infer 2026-07-01 club membership. Exact identity from rugbydata roster IDs; no age inference. Separate source evidence; not imported in game.",
+  "records": [
+    {
+      "club": "clermont",
+      "sourceRecordId": "196",
+      "name": "Alivereti Raka",
+      "birthYear": 1994,
+      "birthDateAsPublished": "9 décembre 1994",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/ASM_Clermont_Auvergne",
+      "match": "exact_full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "montpellier",
+      "sourceRecordId": "379",
+      "name": "Valentin Welsch",
+      "birthYear": 2003,
+      "birthDateAsPublished": "10 avril 2003",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Montpellier_H%C3%A9rault_Rugby",
+      "match": "exact_full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "montpellier",
+      "sourceRecordId": "2299",
+      "name": "Ricky Riccitelli",
+      "birthYear": 1995,
+      "birthDateAsPublished": "3 février 1995",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Montpellier_H%C3%A9rault_Rugby",
+      "match": "exact_full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "montpellier",
+      "sourceRecordId": "655",
+      "name": "Dimitri Delibes",
+      "birthYear": 1999,
+      "birthDateAsPublished": "17 mars 1999",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Montpellier_H%C3%A9rault_Rugby",
+      "match": "exact_full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "montpellier",
+      "sourceRecordId": "339",
+      "name": "Stuart Hogg",
+      "birthYear": 1992,
+      "birthDateAsPublished": "24 juin 1992",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Montpellier_H%C3%A9rault_Rugby",
+      "match": "exact_full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "paris",
+      "sourceRecordId": "565",
+      "name": "Sékou Macalou",
+      "birthYear": 1995,
+      "birthDateAsPublished": "20 avril 1995",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_fran%C3%A7ais_Paris_rugby",
+      "match": "exact_full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "paris",
+      "sourceRecordId": "554",
+      "name": "Julien Delbouis",
+      "birthYear": 1999,
+      "birthDateAsPublished": "4 août 1999",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_fran%C3%A7ais_Paris_rugby",
+      "match": "exact_full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "pau",
+      "sourceRecordId": "426",
+      "name": "Alexandre Etchebehere",
+      "birthYear": 2004,
+      "birthDateAsPublished": "26 décembre 2004",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Section_paloise_(rugby_%C3%A0_XV)",
+      "match": "exact_full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "perpignan",
+      "sourceRecordId": "475",
+      "name": "Lorencio Boyer Gallardo",
+      "birthYear": 2005,
+      "birthDateAsPublished": "23 septembre 2005",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Union_sportive_Arlequins_perpignanais",
+      "match": "exact_full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "perpignan",
+      "sourceRecordId": "287",
+      "name": "Cédate Gomes Sa",
+      "birthYear": 1993,
+      "birthDateAsPublished": "7 août 1993",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Union_sportive_Arlequins_perpignanais",
+      "match": "exact_full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "perpignan",
+      "sourceRecordId": "490",
+      "name": "Posolo Tuilagi",
+      "birthYear": 2004,
+      "birthDateAsPublished": "28 juillet 2004",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Union_sportive_Arlequins_perpignanais",
+      "match": "exact_full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "perpignan",
+      "sourceRecordId": "468",
+      "name": "Giorgi Tetrashvili",
+      "birthYear": 1993,
+      "birthDateAsPublished": "31 août 1993",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Union_sportive_Arlequins_perpignanais",
+      "match": "exact_full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "perpignan",
+      "sourceRecordId": "437",
+      "name": "Antoine Aucagne",
+      "birthYear": 2000,
+      "birthDateAsPublished": "11 avril 2000",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Union_sportive_Arlequins_perpignanais",
+      "match": "exact_full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    }
+  ]
+}
