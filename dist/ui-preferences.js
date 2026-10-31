@@ -48,6 +48,19 @@ const UI01_GROUPS=[
  {id:'finance',label:'CLUB',routes:['finance','staff','saves'],tabs:[['finance','Finances'],['staff','Staff'],['saves','Sauvegardes']]},
  {id:'league',label:'COMPÉTITIONS',routes:['league','history'],tabs:[['league','Championnat'],['history','Palmarès & parcours']]}
 ];
+// Les commandes de session ne doivent pas disparaître avec la barre latérale.
+function ui01SessionTools(){
+ const failed=typeof lastSaveError!=='undefined'&&lastSaveError;
+ const location=typeof storageLocationText==='function'?storageLocationText():'';
+ const offline=typeof gameStorage!=='undefined'&&gameStorage.offline;
+ return '<div class="ui01-session-tools" aria-label="Session et sauvegarde">'+
+  '<span class="ui01-save-state'+(failed?' is-error':'')+'" role="'+(failed?'alert':'status')+'">'+
+  (failed?'Sauvegarde en échec — exportez votre carrière':'Sauvegarde auto')+'</span>'+
+  '<span class="ui01-storage">'+ui01Escape(location)+'</span>'+
+  '<button type="button" onclick="nav(\'saves\')">Sauvegardes</button>'+
+  (offline?'<button type="button" onclick="window.CDOfflineAction(\'quit\')">Enregistrer et quitter</button>':'')+
+  '<button type="button" onclick="resetDialog()">Nouvelle carrière</button></div>';
+}
 function ui01Navigation(view,state,rank){
  const group=UI01_GROUPS.find(g=>g.routes.includes(view))||UI01_GROUPS[0];
  const club=state.clubs[state.club];
@@ -71,6 +84,6 @@ function ui01Navigation(view,state,rank){
   '<button type="button" class="ui01-help" onclick="nav(\'help\')" title="Comment jouer" aria-label="Comment jouer">?</button></div></div>'+
   '<div class="ui01-appbar-bottom"><nav class="ui01-secondary-nav" aria-label="Sous-rubriques">'+subNav+'</nav>'+
   '<div class="ui01-season"><strong>'+ui01Escape(club?.abbr||'CLUB')+'</strong><span>TOP 14 · Saison '+ui01Escape(state.season)+' · '+ui01Escape(rank)+'e</span>'+
-  '<span class="ui01-save-state">'+(typeof lastSaveError!=='undefined'&&lastSaveError?'Sauvegarde en échec':'Sauvegarde auto')+'</span></div></div>'+
+  '</div></div>'+ui01SessionTools()+
   '</header>';
 }
