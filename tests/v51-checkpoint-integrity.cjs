@@ -7,6 +7,14 @@ const profiles=Object.fromEntries(clubs.map((c,i)=>[c.id,{revenue:i<4?280000:i<1
 const options={clubs,seasons:15,seed:987,adapters,profiles};
 const whole=bridge.simulate(options);
 assert.equal(whole.history.length,15);
+const finalRows=new Map(whole.history.at(-1).standings.map(r=>[r.clubId,r]));
+for(const club of whole.clubs){
+ const row=finalRows.get(club.id);
+ assert.equal(row.facilities,club.facilities,'infrastructure du bilan egale au club');
+ assert.equal(row.cash,club.cash,'tresorerie du bilan egale au club');
+ assert.equal(row.debt,club.debt,'dette du bilan egale au club');
+}
+
 for(const cut of [1,2,4,7,10,14]){
  const piece=bridge.simulate({...options,seasons:cut});
  const copy=JSON.parse(JSON.stringify(piece.checkpoint));
