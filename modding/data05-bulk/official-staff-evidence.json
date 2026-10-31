@@ -1,0 +1,35 @@
+{
+  "snapshotDate": "2026-10-31",
+  "careerStart": "2026-07-01",
+  "scope": "Only names and dates documented by official club sources",
+  "staff": [
+    {
+      "club": "asm-clermont",
+      "name": "Christophe Urios",
+      "role": "head of sporting operations",
+      "since": "2023-01",
+      "careerStartStatus": "plausible-not-directly-dated",
+      "evidenceUrl": "https://www.asm-rugby.com/actus/2026-10-07-12-32-38-en-2027-l-asm-lancera-un-nouveau-cycle"
+    },
+    {
+      "club": "union-bordeaux-begles",
+      "name": "Yannick Bru",
+      "role": "matchday team selection/coach",
+      "firstEvidenceDate": "2026-09-04",
+      "careerStartStatus": "not-confirmed",
+      "evidenceUrl": "https://www.ubbrugby.com/actualites/10470-la-compo-pour-la-j1-face-au-racing-92.html"
+    }
+  ],
+  "futureStarts": [
+    {
+      "club": "asm-clermont",
+      "name": "Joe El-Abd",
+      "role": "head coach",
+      "effectiveFrom": "2027-07",
+      "excludeAtCareerStart": true,
+      "evidenceUrl": "https://www.asm-rugby.com/actus/2026-10-07-12-32-38-en-2027-l-asm-lancera-un-nouveau-cycle"
+    }
+  ],
+  "clubsWithVerifiedPublishedStaff": 2,
+  "clubsWithoutStaffEvidence": 28
+}
