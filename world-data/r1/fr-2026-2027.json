@@ -2,265 +2,364 @@
   "schemaVersion": 1,
   "season": "2026-2027",
   "snapshotDate": "2026-10-31",
-  "status": "partial-official-fixtures",
+  "status": "fictional-fixture",
   "competitions": [
     {
-      "id": "competition:fr-top-14",
-      "name": "TOP 14",
+      "id": "competition:fictional-premiere",
+      "name": "Ligue Première fictive",
       "country": "FR",
       "teamCount": 14,
       "regularRounds": 26,
       "provenance": {
-        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "competition:fr-pro-d2",
-      "name": "PRO D2",
+      "id": "competition:fictional-deuxieme",
+      "name": "Ligue Deuxième fictive",
       "country": "FR",
       "teamCount": 16,
       "regularRounds": 30,
       "provenance": {
-        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     }
   ],
   "clubs": [
     {
-      "id": "club:fr-stade-rochelais",
-      "name": "Stade Rochelais",
-      "competitionId": "competition:fr-top-14",
+      "id": "club:fictional-premiere-01",
+      "name": "Club fictif Première 1",
+      "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-stade-tolosain",
-      "name": "Stade Toulousain",
-      "competitionId": "competition:fr-top-14",
+      "id": "club:fictional-premiere-02",
+      "name": "Club fictif Première 2",
+      "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-nion-bordeax-be-gles",
-      "name": "Union Bordeaux-Bègles",
-      "competitionId": "competition:fr-top-14",
+      "id": "club:fictional-premiere-03",
+      "name": "Club fictif Première 3",
+      "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-racing",
-      "name": "Racing 92",
-      "competitionId": "competition:fr-top-14",
+      "id": "club:fictional-premiere-04",
+      "name": "Club fictif Première 4",
+      "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-aviron-bayonnais",
-      "name": "Aviron Bayonnais",
-      "competitionId": "competition:fr-top-14",
+      "id": "club:fictional-premiere-05",
+      "name": "Club fictif Première 5",
+      "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-rc-tolon",
-      "name": "RC Toulon",
-      "competitionId": "competition:fr-top-14",
+      "id": "club:fictional-premiere-06",
+      "name": "Club fictif Première 6",
+      "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-rgby-clb-vannes",
-      "name": "Rugby Club Vannes",
-      "competitionId": "competition:fr-top-14",
+      "id": "club:fictional-premiere-07",
+      "name": "Club fictif Première 7",
+      "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-castres-olympiqe",
-      "name": "Castres Olympique",
-      "competitionId": "competition:fr-top-14",
+      "id": "club:fictional-premiere-08",
+      "name": "Club fictif Première 8",
+      "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-montpellier-he-ralt-rgby",
-      "name": "Montpellier Hérault Rugby",
-      "competitionId": "competition:fr-top-14",
+      "id": "club:fictional-premiere-09",
+      "name": "Club fictif Première 9",
+      "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-stade-ranc-ais-paris",
-      "name": "Stade Français Paris",
-      "competitionId": "competition:fr-top-14",
+      "id": "club:fictional-premiere-10",
+      "name": "Club fictif Première 10",
+      "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-section-paloise",
-      "name": "Section Paloise",
-      "competitionId": "competition:fr-top-14",
+      "id": "club:fictional-premiere-11",
+      "name": "Club fictif Première 11",
+      "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-provence-rgby",
-      "name": "Provence Rugby",
-      "competitionId": "competition:fr-pro-d2",
+      "id": "club:fictional-premiere-12",
+      "name": "Club fictif Première 12",
+      "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-s-agen",
-      "name": "SU Agen",
-      "competitionId": "competition:fr-pro-d2",
+      "id": "club:fictional-premiere-13",
+      "name": "Club fictif Première 13",
+      "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-ca-brive",
-      "name": "CA Brive",
-      "competitionId": "competition:fr-pro-d2",
+      "id": "club:fictional-premiere-14",
+      "name": "Club fictif Première 14",
+      "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-valence-romans-dro-me-rgby",
-      "name": "Valence Romans Drôme Rugby",
-      "competitionId": "competition:fr-pro-d2",
+      "id": "club:fictional-deuxieme-01",
+      "name": "Club fictif Deuxième 1",
+      "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-s-dax",
-      "name": "US Dax",
-      "competitionId": "competition:fr-pro-d2",
+      "id": "club:fictional-deuxieme-02",
+      "name": "Club fictif Deuxième 2",
+      "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-rc-narbonne",
-      "name": "RC Narbonne",
-      "competitionId": "competition:fr-pro-d2",
+      "id": "club:fictional-deuxieme-03",
+      "name": "Club fictif Deuxième 3",
+      "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-c-grenoble-rgby",
-      "name": "FC Grenoble Rugby",
-      "competitionId": "competition:fr-pro-d2",
+      "id": "club:fictional-deuxieme-04",
+      "name": "Club fictif Deuxième 4",
+      "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-stade-arillacois",
-      "name": "Stade Aurillacois",
-      "competitionId": "competition:fr-pro-d2",
+      "id": "club:fictional-deuxieme-05",
+      "name": "Club fictif Deuxième 5",
+      "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-nissa-rgby",
-      "name": "Nissa Rugby",
-      "competitionId": "competition:fr-pro-d2",
+      "id": "club:fictional-deuxieme-06",
+      "name": "Club fictif Deuxième 6",
+      "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
       }
     },
     {
-      "id": "club:fr-biarritz-olympiqe-pays-basqe",
-      "name": "Biarritz Olympique Pays Basque",
-      "competitionId": "competition:fr-pro-d2",
+      "id": "club:fictional-deuxieme-07",
+      "name": "Club fictif Deuxième 7",
+      "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2",
+        "sourceUrl": "https://example.org/fictional-dataset",
         "checkedOn": "2026-10-31",
-        "kind": "official",
-        "reuse": "permission-required"
+        "kind": "manual",
+        "reuse": "original"
+      }
+    },
+    {
+      "id": "club:fictional-deuxieme-08",
+      "name": "Club fictif Deuxième 8",
+      "competitionId": "competition:fictional-deuxieme",
+      "provenance": {
+        "sourceUrl": "https://example.org/fictional-dataset",
+        "checkedOn": "2026-10-31",
+        "kind": "manual",
+        "reuse": "original"
+      }
+    },
+    {
+      "id": "club:fictional-deuxieme-09",
+      "name": "Club fictif Deuxième 9",
+      "competitionId": "competition:fictional-deuxieme",
+      "provenance": {
+        "sourceUrl": "https://example.org/fictional-dataset",
+        "checkedOn": "2026-10-31",
+        "kind": "manual",
+        "reuse": "original"
+      }
+    },
+    {
+      "id": "club:fictional-deuxieme-10",
+      "name": "Club fictif Deuxième 10",
+      "competitionId": "competition:fictional-deuxieme",
+      "provenance": {
+        "sourceUrl": "https://example.org/fictional-dataset",
+        "checkedOn": "2026-10-31",
+        "kind": "manual",
+        "reuse": "original"
+      }
+    },
+    {
+      "id": "club:fictional-deuxieme-11",
+      "name": "Club fictif Deuxième 11",
+      "competitionId": "competition:fictional-deuxieme",
+      "provenance": {
+        "sourceUrl": "https://example.org/fictional-dataset",
+        "checkedOn": "2026-10-31",
+        "kind": "manual",
+        "reuse": "original"
+      }
+    },
+    {
+      "id": "club:fictional-deuxieme-12",
+      "name": "Club fictif Deuxième 12",
+      "competitionId": "competition:fictional-deuxieme",
+      "provenance": {
+        "sourceUrl": "https://example.org/fictional-dataset",
+        "checkedOn": "2026-10-31",
+        "kind": "manual",
+        "reuse": "original"
+      }
+    },
+    {
+      "id": "club:fictional-deuxieme-13",
+      "name": "Club fictif Deuxième 13",
+      "competitionId": "competition:fictional-deuxieme",
+      "provenance": {
+        "sourceUrl": "https://example.org/fictional-dataset",
+        "checkedOn": "2026-10-31",
+        "kind": "manual",
+        "reuse": "original"
+      }
+    },
+    {
+      "id": "club:fictional-deuxieme-14",
+      "name": "Club fictif Deuxième 14",
+      "competitionId": "competition:fictional-deuxieme",
+      "provenance": {
+        "sourceUrl": "https://example.org/fictional-dataset",
+        "checkedOn": "2026-10-31",
+        "kind": "manual",
+        "reuse": "original"
+      }
+    },
+    {
+      "id": "club:fictional-deuxieme-15",
+      "name": "Club fictif Deuxième 15",
+      "competitionId": "competition:fictional-deuxieme",
+      "provenance": {
+        "sourceUrl": "https://example.org/fictional-dataset",
+        "checkedOn": "2026-10-31",
+        "kind": "manual",
+        "reuse": "original"
+      }
+    },
+    {
+      "id": "club:fictional-deuxieme-16",
+      "name": "Club fictif Deuxième 16",
+      "competitionId": "competition:fictional-deuxieme",
+      "provenance": {
+        "sourceUrl": "https://example.org/fictional-dataset",
+        "checkedOn": "2026-10-31",
+        "kind": "manual",
+        "reuse": "original"
       }
     }
   ],
