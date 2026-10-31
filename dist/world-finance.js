@@ -27,15 +27,15 @@
     const baseCosts=profile.baseCosts??(125000+row.facilities*3500);
     const investment=profile.investment??(row.facilities<10?60000+row.facilities*12000:0);
     const repayment=profile.repayment??15000;
-    const result=finance.annual(club,{revenue,baseCosts,investment,repayment});
+    const quote=adapters.facility({cash:Math.max(0,club.cash),level:club.facilities,cost:investment,weeks:1});
+    const planned=club.cash>investment&&club.facilities<10&&quote?.affordable===true?investment:0;
+    const result=finance.annual(club,{revenue,baseCosts,investment:planned,repayment});
     club.cash=result.cash;club.debt=result.debt;
     club.reputation=row.reputation;
     const priorFacility=club.facilities;
-    const facilityQuote=adapters.facility({cash:Math.max(0,club.cash),level:priorFacility,cost:investment,weeks:1});
-    const permitted=result.restriction==='normal'&&facilityQuote?.affordable===true&&club.cash>=0&&priorFacility<10&&investment>0;
-    const invested=permitted?Math.max(0,result.investmentDeferred===0?investment:0):0;
+    const invested=result.restriction==='normal'&&planned>0&&result.investmentDeferred===0?planned:0;
     if(invested>0){club.facilities=Math.min(10,priorFacility+1);events.push({season,clubId:club.id,type:'facility',cost:invested});}
-    else if(result.investmentDeferred===0&&investment>0&&result.restriction==='normal')throw Error('Investissement non comptabilisé');
+    
     nextPenalties[club.id]=result.sportingPenalty;
     club.coachConfidence=sporting.clubs.find(c=>c.id===club.id).coachConfidence;
     const blocked=result.restriction!=='normal';
