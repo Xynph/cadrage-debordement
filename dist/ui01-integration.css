@@ -33,3 +33,5 @@ html[data-cd-theme] .modalback:focus-within{outline:none}
 :root[data-cd-theme="tribune"] .ui01-layout:not(.live-layout) .office-decision span{color:#4d5c66}
 :root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) .office-decision{background:var(--ui01-soft)}
 :root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) .office-decision.urgent{background:#382b31;border-left-color:#edaf8d}
+/* Changement de palette instantane : conserver les effets de survol, pas un fondu illisible. */
+html[data-cd-theme] button{transition-property:transform,filter}
