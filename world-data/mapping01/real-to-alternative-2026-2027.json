@@ -1,0 +1,309 @@
+{
+  "schema": 1,
+  "season": "2026-2027",
+  "careerStart": "2026-07-01",
+  "method": "manual-geographic-semantic-pairing-not-list-order",
+  "status": "proposed-explicit-mapping-with-validated-name-ids",
+  "entries": [
+    {
+      "alternateId": "club:fictional-premiere-01",
+      "alternateName": "Garonne XV",
+      "realId": "club:stade-toulousain",
+      "realName": "Stade Toulousain",
+      "competition": "top14",
+      "rationale": "Toulouse / Garonne",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-premiere-02",
+      "alternateName": "Atlantique Marins",
+      "realId": "club:rc-vannes",
+      "realName": "RC Vannes",
+      "competition": "top14",
+      "rationale": "Bretagne / littoral atlantique",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-premiere-03",
+      "alternateName": "Pyrénées Béarn XV",
+      "realId": "club:section-paloise",
+      "realName": "Section Paloise",
+      "competition": "top14",
+      "rationale": "Pau / Béarn",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-premiere-04",
+      "alternateName": "Océans Rochelais",
+      "realId": "club:stade-rochelais",
+      "realName": "Stade Rochelais",
+      "competition": "top14",
+      "rationale": "La Rochelle / littoral",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-premiere-05",
+      "alternateName": "Auvergne Volcans",
+      "realId": "club:asm-clermont",
+      "realName": "ASM Clermont",
+      "competition": "top14",
+      "rationale": "Clermont-Ferrand / Auvergne",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-premiere-06",
+      "alternateName": "Rhône Métropole",
+      "realId": "club:lou-rugby",
+      "realName": "LOU Rugby",
+      "competition": "top14",
+      "rationale": "Lyon / Rhône",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-premiere-07",
+      "alternateName": "Rugby Hérault",
+      "realId": "club:montpellier-herault-rugby",
+      "realName": "Montpellier Hérault Rugby",
+      "competition": "top14",
+      "rationale": "Montpellier / Hérault",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-premiere-08",
+      "alternateName": "Rade Méditerranée",
+      "realId": "club:rc-toulon",
+      "realName": "RC Toulon",
+      "competition": "top14",
+      "rationale": "Toulon / rade",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-premiere-09",
+      "alternateName": "Paris Rive Gauche",
+      "realId": "club:stade-francais-paris",
+      "realName": "Stade Français Paris",
+      "competition": "top14",
+      "rationale": "Paris",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-premiere-10",
+      "alternateName": "Paris Défense XV",
+      "realId": "club:racing-92",
+      "realName": "Racing 92",
+      "competition": "top14",
+      "rationale": "La Défense / Hauts-de-Seine",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-premiere-11",
+      "alternateName": "Catalans du Roussillon",
+      "realId": "club:usa-perpignan",
+      "realName": "USA Perpignan",
+      "competition": "top14",
+      "rationale": "Perpignan / Roussillon",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-premiere-12",
+      "alternateName": "Tarn Olympique",
+      "realId": "club:castres-olympique",
+      "realName": "Castres Olympique",
+      "competition": "top14",
+      "rationale": "Castres / Tarn",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-premiere-13",
+      "alternateName": "Basques de l'Adour",
+      "realId": "club:aviron-bayonnais",
+      "realName": "Aviron Bayonnais",
+      "competition": "top14",
+      "rationale": "Bayonne / Adour",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-premiere-14",
+      "alternateName": "Bordeaux Estuaire",
+      "realId": "club:union-bordeaux-begles",
+      "realName": "Union Bordeaux-Bègles",
+      "competition": "top14",
+      "rationale": "Bordeaux / Gironde",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-01",
+      "alternateName": "Provence Éclairs",
+      "realId": "club:provence-rugby",
+      "realName": "Provence Rugby",
+      "competition": "prod2",
+      "rationale": "Aix-en-Provence",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-02",
+      "alternateName": "Corrèze XV",
+      "realId": "club:ca-brive",
+      "realName": "CA Brive",
+      "competition": "prod2",
+      "rationale": "Brive / Corrèze",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-03",
+      "alternateName": "Biarritz Côte Basque",
+      "realId": "club:biarritz-olympique-pb",
+      "realName": "Biarritz Olympique PB",
+      "competition": "prod2",
+      "rationale": "Biarritz / Côte basque",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-04",
+      "alternateName": "Grenoble Montagnes",
+      "realId": "club:fc-grenoble-rugby",
+      "realName": "FC Grenoble Rugby",
+      "competition": "prod2",
+      "rationale": "Grenoble / Alpes",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-05",
+      "alternateName": "Agen Gascogne",
+      "realId": "club:su-agen",
+      "realName": "SU Agen",
+      "competition": "prod2",
+      "rationale": "Agen / Lot-et-Garonne",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-06",
+      "alternateName": "Dax Landes",
+      "realId": "club:us-dax",
+      "realName": "US Dax",
+      "competition": "prod2",
+      "rationale": "Dax / Landes",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-07",
+      "alternateName": "Colomiers Aéro",
+      "realId": "club:colomiers-rugby",
+      "realName": "Colomiers Rugby",
+      "competition": "prod2",
+      "rationale": "Colomiers / aéronautique",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-08",
+      "alternateName": "Oyonnax Haut-Bugey",
+      "realId": "club:oyonnax-rugby",
+      "realName": "Oyonnax Rugby",
+      "competition": "prod2",
+      "rationale": "Oyonnax / Haut-Bugey",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-09",
+      "alternateName": "Nevers Loire",
+      "realId": "club:uson-nevers",
+      "realName": "USON Nevers",
+      "competition": "prod2",
+      "rationale": "Nevers / Loire",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-10",
+      "alternateName": "Aurillac Cantal",
+      "realId": "club:stade-aurillacois",
+      "realName": "Stade Aurillacois",
+      "competition": "prod2",
+      "rationale": "Aurillac / Cantal",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-11",
+      "alternateName": "Angoulême Charente",
+      "realId": "club:soyaux-angouleme-xv",
+      "realName": "Soyaux-Angoulême XV",
+      "competition": "prod2",
+      "rationale": "Angoulême / Charente",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-12",
+      "alternateName": "Romans Drôme",
+      "realId": "club:valence-romans",
+      "realName": "Valence Romans",
+      "competition": "prod2",
+      "rationale": "Romans / Drôme",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-13",
+      "alternateName": "Béziers Méditerranée",
+      "realId": "club:as-beziers-herault",
+      "realName": "AS Béziers Hérault",
+      "competition": "prod2",
+      "rationale": "Béziers / Hérault",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-14",
+      "alternateName": "Nice Côte d'Azur",
+      "realId": "club:nissa-rugby",
+      "realName": "Nissa Rugby",
+      "competition": "prod2",
+      "rationale": "Nice / Côte d'Azur",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-15",
+      "alternateName": "Narbonne Aude",
+      "realId": "club:rc-narbonnais",
+      "realName": "RC Narbonnais",
+      "competition": "prod2",
+      "rationale": "Narbonne / Aude",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    },
+    {
+      "alternateId": "club:fictional-deuxieme-16",
+      "alternateName": "Montauban Tarn-et-Garonne",
+      "realId": "club:us-montauban",
+      "realName": "US Montauban",
+      "competition": "prod2",
+      "rationale": "Montauban / Tarn-et-Garonne",
+      "relation": "editorial-geographic-equivalence",
+      "review": "requires-game-design-approval"
+    }
+  ]
+}
