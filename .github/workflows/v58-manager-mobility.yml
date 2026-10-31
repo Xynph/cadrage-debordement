@@ -2,9 +2,36 @@ name: V58 mobilite native du manager
 on:
   pull_request:
     branches: [main]
+    paths:
+      - 'dist/game.js'
+      - 'dist/saves.js'
+      - 'dist/manager-mobility.js'
+      - 'dist/manager.js'
+      - 'dist/world-career.js'
+      - 'dist/coach-market.js'
+      - 'dist/coach-opportunities.js'
+      - 'tests/manager-mobility.cjs'
+      - 'tests/saves.cjs'
+      - 'tests/ci-selection.cjs'
+      - 'tests/harness.cjs'
+      - '.github/workflows/v58-manager-mobility.yml'
   push:
     branches: [main]
+    paths:
+      - 'dist/game.js'
+      - 'dist/saves.js'
+      - 'dist/manager-mobility.js'
+      - 'dist/manager.js'
+      - 'dist/world-career.js'
+      - 'dist/coach-market.js'
+      - 'dist/coach-opportunities.js'
+      - 'tests/manager-mobility.cjs'
+      - 'tests/saves.cjs'
+      - 'tests/ci-selection.cjs'
+      - 'tests/harness.cjs'
+      - '.github/workflows/v58-manager-mobility.yml'
   workflow_dispatch:
+
 permissions:
   contents: read
 concurrency:
