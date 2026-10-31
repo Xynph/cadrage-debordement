@@ -18,7 +18,7 @@ try:
   page.set_default_timeout(20000)
   page.on('pageerror',lambda e:errors.append(str(e)))
   page.goto('http://127.0.0.1:%d/'%server.server_address[1])
-  page.get_by_role('button',name='Nouvelle carrière').click();;;
+  page.get_by_role('button',name='Nouvelle carrière').click();page.get_by_role('button',name='Univers fictif').click()
   check('univers fictif par défaut',page.evaluate("lnrWelcomeMode==='fiction'"))
   page.get_by_role('button',name='Effectifs LNR · 31/10/2026').click()
   check('14 équipes LNR proposées',page.locator('.clubchoice').count()==14)
@@ -47,7 +47,7 @@ try:
   check('reprise et export cohérents',page.evaluate('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'))
   old=browser.new_page(viewport={'width':1280,'height':900})
   old.goto('http://127.0.0.1:%d/'%server.server_address[1])
-  old.get_by_role('button',name='Nouvelle carrière').click();;;
+  old.get_by_role('button',name='Nouvelle carrière').click();old.get_by_role('button',name='Univers fictif').click()
   old.locator('.clubchoice').first.click()
   check('carrière fictive historique préservée',old.evaluate("S.lnrMode===undefined"))
   check('sauvegarde fictive valide',old.evaluate('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'))
