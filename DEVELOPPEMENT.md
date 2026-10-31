@@ -597,5 +597,6 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - `ui01-integration.yml` : retrait de trois shards natifs redondants avec la CI centrale ; réception Chromium et contraste conservés, activation seulement sur modifications liées à l'interface et au navigateur.
 - `career-resilience.yml` et `economy-audit.yml` : campagnes natives de 15 saisons conservées à l'identique et activées sur modifications des modules de moteur/finance/carrière/sauvegarde et sur les tests ou workflows correspondants ; changements d'interface pure / documentation exclus.
 - `v58-manager-mobility.yml` et `v58-native-observatory.yml` : déclencheurs limités aux dossiers métier concernés, sans supprimer de tests natifs.
+- Les validations PR obsolètes sont annulées sur économie, UI01 et observatoire V58 ; le comportement protecteur des validations sur `main` est maintenu.
 - Tous les workflows spécialisés restent activables manuellement. Aucune modification de `dist/**`, `tests/**`, `ci/**`, ni des workflows réservés par le producteur. Comparaison de scénarios et limites : `docs/ci-budget-optimization.md`.
 - La livraison dépend de la CI du dernier SHA de PR, de la revue du diff et du contrôle post-fusion `push` sur le nouveau `main` ; les chiffres de réduction sont **projetés**, pas un gain de minutes déjà mesuré.
