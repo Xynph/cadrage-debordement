@@ -1,0 +1,14 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {shortlist,developmentPlan,positionalNeeds}=require('../dist/academy-planning.js');
+const players=[{id:'a',pos:'Pilier gauche',age:19,potential:82},{id:'b',pos:'Demi de mêlée',age:20,potential:90},{id:'c',pos:'Demi de mêlée',age:23,potential:99}];
+assert.deepEqual(shortlist(players).map(p=>p.id),['b','a']);
+assert.deepEqual(shortlist(players,{positions:['Pilier gauche']}).map(p=>p.id),['a']);
+assert.equal(players[0].potential,82);
+assert.deepEqual(developmentPlan({budget:10000,weeklyInvestment:400,weeks:26,academySize:4}),{cost:10400,remaining:-400,affordable:false,spendingPerProspect:2600});
+assert.equal(developmentPlan({budget:0}).affordable,true);
+assert.deepEqual(positionalNeeds([{pos:'Pilier gauche',injury:0},{pos:'Pilier gauche',injury:2}],{'Pilier gauche':2}),[{pos:'Pilier gauche',required:2,available:1,missing:1}]);
+assert.throws(()=>shortlist(players,{maxAge:10}),RangeError);
+assert.throws(()=>developmentPlan({budget:-1}),RangeError);
+assert.throws(()=>positionalNeeds([],{'Pilier gauche':-1}),RangeError);
+console.log(JSON.stringify({passed:true,checks:['détection et tri','filtre par poste','budget de formation','couverture des postes','données invalides','absence de mutation']}));
