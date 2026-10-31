@@ -1,0 +1,156 @@
+{
+  "collectionDate": "2026-10-31",
+  "method": "exact-normalized-full-name (accents/case/punctuation stripped) against 1592 LNR profiles; not proof of club membership on 2026-07-01",
+  "arrivals": [
+    {
+      "name": "Justin Bouraux",
+      "matched": true,
+      "id": "lnr:11284"
+    },
+    {
+      "name": "Baptiste Germain",
+      "matched": true,
+      "id": "lnr:241"
+    },
+    {
+      "name": "AJ Lam",
+      "matched": false,
+      "id": null
+    },
+    {
+      "name": "Etene Nanai-Seturo",
+      "matched": true,
+      "id": "lnr:24989"
+    },
+    {
+      "name": "Peniami Narisia",
+      "matched": false,
+      "id": null
+    },
+    {
+      "name": "Darcy Swain",
+      "matched": true,
+      "id": "lnr:24988"
+    },
+    {
+      "name": "Brian Alainu'uese",
+      "matched": false,
+      "id": null
+    },
+    {
+      "name": "Kilian Geraci",
+      "matched": false,
+      "id": null
+    },
+    {
+      "name": "Léo Coly",
+      "matched": true,
+      "id": "lnr:1460"
+    },
+    {
+      "name": "Guillaume Cramont",
+      "matched": true,
+      "id": "lnr:2484"
+    },
+    {
+      "name": "Raphaël Darquier",
+      "matched": true,
+      "id": "lnr:1209"
+    },
+    {
+      "name": "Lasha Macharashvili",
+      "matched": true,
+      "id": "lnr:1248"
+    },
+    {
+      "name": "Rob du Preez",
+      "matched": false,
+      "id": null
+    },
+    {
+      "name": "Madosh Tambwe",
+      "matched": false,
+      "id": null
+    },
+    {
+      "name": "Viliame Tutuvli",
+      "matched": false,
+      "id": null
+    },
+    {
+      "name": "Matthieu Uhila",
+      "matched": true,
+      "id": "lnr:1378"
+    },
+    {
+      "name": "Alex Burin",
+      "matched": true,
+      "id": "lnr:90"
+    },
+    {
+      "name": "Chris Gabriel",
+      "matched": false,
+      "id": null
+    },
+    {
+      "name": "Taylor Gontineac",
+      "matched": true,
+      "id": "lnr:2268"
+    },
+    {
+      "name": "Dalton Papali'i",
+      "matched": true,
+      "id": "lnr:24984"
+    },
+    {
+      "name": "Kyllian Ringuet",
+      "matched": true,
+      "id": "lnr:1284"
+    },
+    {
+      "name": "Maël Turpin",
+      "matched": true,
+      "id": "lnr:13443"
+    },
+    {
+      "name": "Théo Vidal",
+      "matched": true,
+      "id": "lnr:24987"
+    },
+    {
+      "name": "Hamish Watson",
+      "matched": true,
+      "id": "lnr:25073"
+    },
+    {
+      "name": "Benjamin Boudou",
+      "matched": true,
+      "id": "lnr:11098"
+    },
+    {
+      "name": "Paul Costes",
+      "matched": true,
+      "id": "lnr:2427"
+    },
+    {
+      "name": "Maxime Machenaud",
+      "matched": true,
+      "id": "lnr:2640"
+    },
+    {
+      "name": "Nicolas Martins",
+      "matched": true,
+      "id": "lnr:792"
+    },
+    {
+      "name": "Sere Uru",
+      "matched": false,
+      "id": null
+    },
+    {
+      "name": "Tommaso Menoncello",
+      "matched": true,
+      "id": "lnr:25047"
+    }
+  ]
+}
