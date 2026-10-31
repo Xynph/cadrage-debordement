@@ -18,7 +18,7 @@ try:
   page.set_default_timeout(20000)
   page.on('pageerror',lambda e:errors.append(str(e)))
   page.goto('http://127.0.0.1:%d/'%server.server_address[1])
-  page.get_by_role('button',name='Nouvelle carrière').click()
+  page.get_by_role('button',name='Nouvelle carrière').click();page.get_by_role('button',name='Univers fictif').click()
   page.locator('.clubchoice').first.click()
   page.evaluate("nav('team')")
   check('aucune cellule LNR en mode fictif',page.locator('.lnr05-center').count()==0)
