@@ -45,3 +45,12 @@ Prochaine évolution proposée : étendre cette identité au bureau du manager a
 - **Tests de régression** : présence de la composition à trois zones, des cinq cartes en colonne verticale, du panneau illustré et absence de débordement aux trois largeurs Chromium (1440, 768, 390 px). Les assertions précédentes de création, import JSON, reprise et pause restent obligatoires.
 
 La maquette visuelle n'est pas une capture du jeu ; les captures réellement produites par la CI après cette passe font autorité pour le rendu livré.
+
+
+## V3.2 — Ballon de rugby authentique au premier plan
+
+Ajout d'un asset local original `dist/assets/menu-rugby-ball-muddy.svg` : ballon ivoire légèrement usé, cuir granuleux, coutures visibles, traces de terre et d'herbe, éclairage orange d'un soleil bas, ombre au sol et brins d'herbe devant le ballon. L'image n'utilise aucune marque officielle ni texte d'un club. Elle est affichée **uniquement comme décoration en bas à droite** du menu, sans modifier le moteur ou les carrières.
+
+Le rendu CSS (`.cd3-right-bottom`) est non interactif (`pointer-events:none`) pour ne jamais masquer les commandes, et se réorganise sous les panneaux sur tablette et mobile. Aucun service d'images externe, police supplémentaire ou suivi réseau n'est chargé.
+
+Régressions ajoutées aux tests V3 : présence de l'asset et du CSS en JS, puis contrôle Chromium de la visibilité et du non-recouvrement aux largeurs 1440, 768 et 390 px. La réalisation reste une **illustration texturée** et non une photographie de ballon officiel.
