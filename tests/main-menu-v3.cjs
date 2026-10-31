@@ -15,6 +15,15 @@ assert.match(ball,/earth/,'dirt marks must be defined');
 const skin=fs.readFileSync(path.join(__dirname,'../dist/main-menu-v3.css'),'utf8');
 assert.match(skin,/menu-rugby-ball-muddy\.svg/,'ball is actually referenced by production CSS');
 assert.match(skin,/pointer-events:none/,'decorative ball cannot steal clicks');
+const stadiumPhoto=fs.readFileSync(path.join(__dirname,'../dist/assets/menu-stadium-cinematic.png'));
+const ballPhoto=fs.readFileSync(path.join(__dirname,'../dist/assets/menu-rugby-ball-photoreal.png'));
+assert.equal(stadiumPhoto.subarray(0,8).toString('hex'),'89504e470d0a1a0a','stadium is a real local PNG');
+assert.equal(ballPhoto.subarray(0,8).toString('hex'),'89504e470d0a1a0a','worn ball is a real local PNG');
+assert.ok(stadiumPhoto.length>100000 && ballPhoto.length>100000,'assets must be nonempty high-detail raster artwork');
+assert.match(skin,/menu-stadium-cinematic\\.png/,'real stadium photo must be wired in production CSS');
+assert.match(skin,/menu-rugby-ball-photoreal\\.png/,'real muddy rugby ball photo must be wired in production CSS');
+assert.match(skin,/mask-image:radial-gradient/,'ball photo must fade naturally into the pitch');
+
 assert.match(g.app.innerHTML,/class="cd3-feature"/,'functional quick actions must exist');
 assert.match(g.app.innerHTML,/class="cd3-create"/,'all free slots remain actionable');
 assert.match(g.app.innerHTML,/Charger/);
