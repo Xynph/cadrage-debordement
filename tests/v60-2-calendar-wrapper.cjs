@@ -1,0 +1,14 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),calendar=require('../dist/press-calendar.js'),events=require('../dist/press-events.js');
+const tests=[];function t(name,fn){fn();tests.push(name)}
+t('semaine rejouee sans penalite',()=>{let s=calendar.create('x');s.media=events.crisis(s.media,{id:'c',kind:'controversy',week:1,severity:4,weeks:5});let one=calendar.advance(s,{season:1,week:2}),again=calendar.advance(one.state,{season:1,week:2});assert.equal(again.skipped,true);assert.deepEqual(again.state,one.state)});
+t('deux crises simultanees dosees une fois',()=>{let s=calendar.create('x');s.media=events.crisis(s.media,{id:'a',kind:'controversy',week:1,severity:2,weeks:5});s.media=events.crisis(s.media,{id:'b',kind:'supporters',week:1,severity:3,weeks:5});let r=calendar.advance(s,{season:1,week:2});assert.equal(r.state.media.press.mediaTrust,45)});
+t('deux promesses concurrentes tenues',()=>{let s=calendar.create('x');for(const id of ['a','b'])s.media=events.promise(s.media,{id,kind:'wins',target:3,season:1,week:1,deadline:4});let r=calendar.advance(s,{season:1,week:4,metrics:{wins:3}});assert.equal(r.effects.filter(e=>e.type==='promiseResult').length,2);assert.equal(r.state.media.press.fanTrust,62)});
+t('nouvelle saison remet la semaine locale a zero',()=>{let s=calendar.create('x');s=calendar.advance(s,{season:1,week:20}).state;let r=calendar.advance(s,{season:2,week:1});assert.equal(r.state.timeline.length,2);assert.equal(r.skipped,false)});
+t('refus retour temps',()=>{let s=calendar.advance(calendar.create('x'),{season:2,week:2}).state;assert.throws(()=>calendar.advance(s,{season:1,week:40}));assert.throws(()=>calendar.advance(s,{season:2,week:1}))});
+t('crise se resout apres echeance',()=>{let s=calendar.create('x');s.media=events.crisis(s.media,{id:'c',kind:'controversy',week:1,severity:3,weeks:2});s=calendar.advance(s,{season:1,week:2}).state;s=calendar.advance(s,{season:1,week:3}).state;assert.equal(s.media.crises[0].status,'resolved')});
+t('quinze saisons avec reprise deterministe',()=>{function run(){let s=calendar.create('x');for(let season=1;season<=15;season++){s=calendar.advance(s,{season,week:1}).state;s=calendar.advance(s,{season,week:2}).state;}return s}assert.deepEqual(run(),run());assert.deepEqual(JSON.parse(JSON.stringify(run())),run())});
+t('corruption calendrier detectee',()=>{let s=calendar.create('x');s.processed=['1:1','1:1'];assert.throws(()=>calendar.validate(s))});
+const report={passed:tests.length,tests,scope:'synthetic calendar wrapper',limitations:['No native season calendar or official save integration','Promises and crisis source dates must be mapped from game schedule']};
+if(process.env.CD_V602_CALENDAR_REPORT)fs.writeFileSync(process.env.CD_V602_CALENDAR_REPORT,JSON.stringify(report,null,2)+'\n');
+console.log('V60.2 CALENDAR PASS '+JSON.stringify(report));
