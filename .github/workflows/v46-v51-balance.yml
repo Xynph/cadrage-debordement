@@ -1,0 +1,44 @@
+name: Equilibrage statistique V46-V51
+on:
+  pull_request:
+    branches: [feature/v51-world-simulation]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  balance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Contrats reels
+        run: node tests/v46-v51-contracts.cjs
+      - name: Benchmark deterministe 20 graines x 15 saisons
+        env:
+          CD_BENCH_REPORT: balance-report.json
+        run: |
+          node --check tests/v46-v51-balance.cjs
+          node tests/v46-v51-balance.cjs
+      - name: Sensibilite aux ecarts de depart
+        run: node tests/v46-v51-fixture-sensitivity.cjs
+      - name: Isoler retroaction de reputation
+        run: node tests/v46-v51-reputation-feedback.cjs
+      - name: Comparer sept amortissements de reputation
+        run: node tests/v46-v51-reputation-strength.cjs
+      - name: Confirmer reglages sur 80 graines
+        run: node tests/v46-v51-reputation-confirmation.cjs
+      - name: Campagne V52 et reprise deterministe
+        env:
+          CD_V52_REPORT: v52-career-report.json
+        run: timeout 900s node tests/v52-career-lab.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v46-v51-balance
+          path: |
+            balance-report.json
+            v52-career-report.json
+          if-no-files-found: ignore
