@@ -22,9 +22,15 @@ jobs:
         env:
           CD_V53_REPORT: v53-audit-report.json
         run: timeout 900s node tests/v53-career-audit.cjs
+      - name: Scenarios de crise et reprise V54
+        env:
+          CD_V54_REPORT: v54-report.json
+        run: timeout 900s node tests/v54-scenarios.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: v53-career-audit
-          path: v53-audit-report.json
+          path: |
+            v53-audit-report.json
+            v54-report.json
           if-no-files-found: ignore
