@@ -21,6 +21,8 @@ assert.ok(allTests.includes('tests/v35-salary-demand.cjs'));
 assert.ok(allTests.includes('tests/v36-satisfaction.cjs'));
 assert.ok(allTests.includes('tests/v38-individual-objectives.cjs'));
 assert.ok(allTests.includes('tests/v39-team-dynamics.cjs'));
+assert.ok(allTests.includes('tests/v40-match-cockpit.cjs'));
+for(const p of ['dist/match2d.js','dist/rugby.js','dist/game.js','dist/match-cockpit.js'])assert.ok(selectTests([p]).includes('tests/v40-match-cockpit.cjs'),p);
 for(const p of ['dist/rugby.js','dist/game.js','dist/saves.js'])assert.ok(selectTests([p]).includes('tests/v39-team-dynamics.cjs'),p);
 for(const p of ['dist/economy.js','dist/game.js','dist/saves.js'])assert.ok(selectTests([p]).includes('tests/v38-individual-objectives.cjs'),p);
 for(const p of ['dist/economy.js','dist/game.js','dist/saves.js','dist/development.js'])assert.ok(selectTests([p]).includes('tests/v36-satisfaction.cjs'),p);
