@@ -34,3 +34,17 @@ test('crosschecks actual 1592 player IDs without guessing ambiguous matches',()=
  assert.equal(new Set(linked.map(x=>x.linkedId)).size,linked.length);
  assert.ok(result.results.every(x=>x.linkedId===null||x.status==='club-match'));
 });
+
+test('published 80-transfer reconciliation is complete, unique and never guesses missing IDs',()=>{
+ const r=require('../modding/data06/transfer-reconciliation-2026-2027.json');
+ assert.deepEqual(r.summary,{total:80,exact:47,review:6,missing:27});
+ assert.equal(r.records.length,source.records.length);
+ const roster=['top14-a','top14-b','prod2-a','prod2-b'].flatMap(file=>require('../modding/data03/'+file+'.json').clubs).flatMap(c=>c.players.map(p=>({...p,club:c.club})));
+ const byId=new Map(roster.map(p=>[p.id,p]));
+ for(const e of r.records){
+  if(e.status==='exact-club-match'){
+   assert.ok(e.mappedId);assert.equal(byId.get(e.mappedId)?.club,e.arrivalClub);
+  }else{assert.equal(e.mappedId,null);assert.equal(e.autoImported,false)}
+ }
+ assert.equal(new Set(r.records.filter(x=>x.mappedId).map(x=>x.mappedId)).size,47);
+});
