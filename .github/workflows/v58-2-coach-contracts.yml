@@ -1,0 +1,31 @@
+name: V58.2 consolidation des contrats entraineurs
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validation V58 V58.1 V58.2
+        env:
+          CD_V582_REPORT: v582-report.json
+        run: |
+          node --check dist/coach-contract-cycle.js
+          node --check tests/v58-2-contract-cycle.cjs
+          node tests/v58-coach-career.cjs
+          node tests/v58-1-coach-negotiations.cjs
+          node tests/v58-2-contract-cycle.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v582-contract-report
+          path: v582-report.json
+          if-no-files-found: ignore
