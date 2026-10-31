@@ -1,0 +1,1648 @@
+{
+  "schema": "data06-prod2-lnr-birthyear-reconciliation-v1",
+  "sourceSeason": "2026-2027",
+  "sources": [
+    "all-players-2026-2027.json",
+    "rugbydata-prod2-roster-reconciliation-2026-10-31.json"
+  ],
+  "matching": "Exact unique normalized full name within exact club between 1592 LNR IDs and 2026-27 Rugby Data roster (no fuzzy alias). Existing birth data not overwritten; no career-start affiliation inferred.",
+  "stats": {
+    "total": 163,
+    "lnrRosterMatched": 148,
+    "unmatched": 15,
+    "uniqueLnrIds": 148,
+    "lnrExistingBirthDate": 0
+  },
+  "records": [
+    {
+      "club": "grenoble",
+      "name": "Lilian Rossi",
+      "birthYear": 1998,
+      "rugbyDataId": "1982",
+      "lnrId": "lnr:925",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Romain Ruffenach",
+      "birthYear": 1994,
+      "rugbyDataId": "409",
+      "lnrId": "lnr:1891",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Bastien Soury",
+      "birthYear": 1995,
+      "rugbyDataId": "1984",
+      "lnrId": "lnr:235",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Jérémy Toevalu",
+      "birthYear": 2005,
+      "rugbyDataId": "3256",
+      "lnrId": null,
+      "lnrExistingBirthDate": null,
+      "status": "unmatched_or_ambiguous",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Eli Eglaine",
+      "birthYear": 2000,
+      "rugbyDataId": "1964",
+      "lnrId": "lnr:920",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Zack Gauthier",
+      "birthYear": 2000,
+      "rugbyDataId": "1968",
+      "lnrId": "lnr:859",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Johannes Jonker",
+      "birthYear": 1994,
+      "rugbyDataId": "1974",
+      "lnrId": "lnr:10917",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Alexandre Langlois",
+      "birthYear": 2007,
+      "rugbyDataId": null,
+      "lnrId": "lnr:12587",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Théo Lavoine",
+      "birthYear": 2003,
+      "rugbyDataId": "1992",
+      "lnrId": "lnr:870",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Sascha Mistrulli",
+      "birthYear": 2005,
+      "rugbyDataId": "1995",
+      "lnrId": "lnr:869",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Giorgi Pertaïa",
+      "birthYear": 1996,
+      "rugbyDataId": "1980",
+      "lnrId": "lnr:12402",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Tommy Raynaud",
+      "birthYear": 1994,
+      "rugbyDataId": "1981",
+      "lnrId": "lnr:1694",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Cody Thomas",
+      "birthYear": 1996,
+      "rugbyDataId": "1985",
+      "lnrId": "lnr:2251",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "James Fender",
+      "birthYear": 2001,
+      "rugbyDataId": "2728",
+      "lnrId": "lnr:23948",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Cameron Holt",
+      "birthYear": 1996,
+      "rugbyDataId": "1972",
+      "lnrId": "lnr:13367",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Tristan Labouteley",
+      "birthYear": 1995,
+      "rugbyDataId": "458",
+      "lnrId": "lnr:1982",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Manuel Leindekar",
+      "birthYear": 1997,
+      "rugbyDataId": "34",
+      "lnrId": null,
+      "lnrExistingBirthDate": null,
+      "status": "unmatched_or_ambiguous",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Brandon Nansen",
+      "birthYear": 1993,
+      "rugbyDataId": "1978",
+      "lnrId": null,
+      "lnrExistingBirthDate": null,
+      "status": "unmatched_or_ambiguous",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Noé Theraube",
+      "birthYear": 2005,
+      "rugbyDataId": "2800",
+      "lnrId": "lnr:863",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Baptiste Abescat",
+      "birthYear": 2000,
+      "rugbyDataId": "1045",
+      "lnrId": null,
+      "lnrExistingBirthDate": null,
+      "status": "unmatched_or_ambiguous",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Antonin Berruyer",
+      "birthYear": 1998,
+      "rugbyDataId": "1960",
+      "lnrId": "lnr:883",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Steven David",
+      "birthYear": 1994,
+      "rugbyDataId": "2038",
+      "lnrId": "lnr:1531",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Victor Guillaumond",
+      "birthYear": 2001,
+      "rugbyDataId": "1969",
+      "lnrId": "lnr:913",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Fergus Lee-Warner",
+      "birthYear": 1994,
+      "rugbyDataId": "3908",
+      "lnrId": "lnr:22911",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Josh Thompson",
+      "birthYear": 2000,
+      "rugbyDataId": "1986",
+      "lnrId": null,
+      "lnrExistingBirthDate": null,
+      "status": "unmatched_or_ambiguous",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Mathis Baret",
+      "birthYear": 2005,
+      "rugbyDataId": "1988",
+      "lnrId": "lnr:852",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Otunuku Pauta",
+      "birthYear": 1999,
+      "rugbyDataId": "1070",
+      "lnrId": "lnr:11846",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Max Clément",
+      "birthYear": 2003,
+      "rugbyDataId": "1961",
+      "lnrId": "lnr:2742",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Barnabé Couilloud",
+      "birthYear": 1999,
+      "rugbyDataId": "1962",
+      "lnrId": "lnr:249",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Éric Escande",
+      "birthYear": 1992,
+      "rugbyDataId": "1965",
+      "lnrId": "lnr:893",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Sam Davies",
+      "birthYear": 1993,
+      "rugbyDataId": "1963",
+      "lnrId": null,
+      "lnrExistingBirthDate": null,
+      "status": "unmatched_or_ambiguous",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Maël Navizet",
+      "birthYear": 2007,
+      "rugbyDataId": "3433",
+      "lnrId": "lnr:12339",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Marc Palmier",
+      "birthYear": 1999,
+      "rugbyDataId": "1979",
+      "lnrId": "lnr:1632",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Romain Fusier",
+      "birthYear": 2000,
+      "rugbyDataId": "1967",
+      "lnrId": "lnr:919",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Julien Hériteau",
+      "birthYear": 1994,
+      "rugbyDataId": "1971",
+      "lnrId": "lnr:685",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Lalomilo Lalomilo",
+      "birthYear": 1999,
+      "rugbyDataId": "2864",
+      "lnrId": "lnr:24997",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Nathan Pozin",
+      "birthYear": 2006,
+      "rugbyDataId": "4033",
+      "lnrId": "lnr:12458",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Edward Sawailau",
+      "birthYear": 1996,
+      "rugbyDataId": null,
+      "lnrId": null,
+      "lnrExistingBirthDate": null,
+      "status": "unmatched_or_ambiguous",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Aurélien Callandret",
+      "birthYear": 1997,
+      "rugbyDataId": "19",
+      "lnrId": "lnr:1687",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Raffaele Costa Storti",
+      "birthYear": 2000,
+      "rugbyDataId": "551",
+      "lnrId": "lnr:106",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Nadir Megdoud",
+      "birthYear": 1997,
+      "rugbyDataId": "41",
+      "lnrId": "lnr:1805",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Gerswin Mouton",
+      "birthYear": 1999,
+      "rugbyDataId": "1977",
+      "lnrId": "lnr:12434",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Lucas Tauzin",
+      "birthYear": 1998,
+      "rugbyDataId": "201",
+      "lnrId": "lnr:2444",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Thomas Alary",
+      "birthYear": 2006,
+      "rugbyDataId": "681",
+      "lnrId": "lnr:2415",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "grenoble",
+      "name": "Hugo Trouilloud",
+      "birthYear": 2003,
+      "rugbyDataId": "1996",
+      "lnrId": "lnr:877",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Football_Club_de_Grenoble_rugby"
+    },
+    {
+      "club": "agen",
+      "name": "Matthieu Bonnet",
+      "birthYear": 2000,
+      "rugbyDataId": "958",
+      "lnrId": "lnr:9",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne"
+    },
+    {
+      "club": "agen",
+      "name": "Craig Willis",
+      "birthYear": 1995,
+      "rugbyDataId": "1891",
+      "lnrId": "lnr:13690",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne"
+    },
+    {
+      "club": "agen",
+      "name": "Clément Garrigues",
+      "birthYear": 2002,
+      "rugbyDataId": "991",
+      "lnrId": "lnr:91",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Basa Khonelidze",
+      "birthYear": 2003,
+      "rugbyDataId": "1039",
+      "lnrId": "lnr:1567",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Luka Nioradze",
+      "birthYear": 1999,
+      "rugbyDataId": "1020",
+      "lnrId": "lnr:1642",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Gymaël Jean-Jacques",
+      "birthYear": 1998,
+      "rugbyDataId": "1012",
+      "lnrId": "lnr:1603",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Giorgi Kartvelishvili",
+      "birthYear": 1991,
+      "rugbyDataId": "1013",
+      "lnrId": "lnr:1637",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Robert Rodgers",
+      "birthYear": 2001,
+      "rugbyDataId": "1026",
+      "lnrId": "lnr:1635",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Skip Jongejan",
+      "birthYear": 2003,
+      "rugbyDataId": "1038",
+      "lnrId": "lnr:1580",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Martial Rolland",
+      "birthYear": 1998,
+      "rugbyDataId": "1027",
+      "lnrId": "lnr:1648",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Mehdi Slamani",
+      "birthYear": 2001,
+      "rugbyDataId": "1042",
+      "lnrId": "lnr:1598",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Théo Cambon",
+      "birthYear": 1999,
+      "rugbyDataId": "1004",
+      "lnrId": "lnr:1640",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Tim De Jong",
+      "birthYear": 2002,
+      "rugbyDataId": "1035",
+      "lnrId": "lnr:1571",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Hugo Huurman",
+      "birthYear": 2001,
+      "rugbyDataId": "1010",
+      "lnrId": "lnr:1645",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Aleksandre Burduli",
+      "birthYear": 2002,
+      "rugbyDataId": "1003",
+      "lnrId": "lnr:1576",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Viliami Taulani",
+      "birthYear": 1997,
+      "rugbyDataId": "1895",
+      "lnrId": "lnr:13787",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Didier Tison",
+      "birthYear": 1993,
+      "rugbyDataId": "1030",
+      "lnrId": "lnr:1612",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Boris Hadinegoro",
+      "birthYear": 2003,
+      "rugbyDataId": "1037",
+      "lnrId": "lnr:1579",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Tedo Abzhandadze",
+      "birthYear": 1999,
+      "rugbyDataId": "998",
+      "lnrId": "lnr:1356",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Hugo Bastard",
+      "birthYear": 2002,
+      "rugbyDataId": "1001",
+      "lnrId": "lnr:1581",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Karsen Talalua",
+      "birthYear": 2004,
+      "rugbyDataId": "1044",
+      "lnrId": "lnr:2303",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "François Vergnaud",
+      "birthYear": 1997,
+      "rugbyDataId": "1134",
+      "lnrId": "lnr:270",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Angus Staniforth",
+      "birthYear": 2004,
+      "rugbyDataId": "1043",
+      "lnrId": "lnr:12708",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "aurillac",
+      "name": "Jake Strachan",
+      "birthYear": 1996,
+      "rugbyDataId": "1029",
+      "lnrId": "lnr:13439",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne"
+    },
+    {
+      "club": "beziers",
+      "name": "Killian Taofifenua",
+      "birthYear": 2000,
+      "rugbyDataId": "1131",
+      "lnrId": "lnr:240",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault"
+    },
+    {
+      "club": "beziers",
+      "name": "Thomas Canaleta",
+      "birthYear": 2004,
+      "rugbyDataId": "1082",
+      "lnrId": "lnr:122",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault"
+    },
+    {
+      "club": "beziers",
+      "name": "Tanguy Jaillon",
+      "birthYear": 2005,
+      "rugbyDataId": "1086",
+      "lnrId": "lnr:12537",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault"
+    },
+    {
+      "club": "beziers",
+      "name": "Mackenzie Martin",
+      "birthYear": 2003,
+      "rugbyDataId": "3077",
+      "lnrId": "lnr:24977",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault"
+    },
+    {
+      "club": "beziers",
+      "name": "David Delarue",
+      "birthYear": 1996,
+      "rugbyDataId": "1007",
+      "lnrId": "lnr:1614",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault"
+    },
+    {
+      "club": "beziers",
+      "name": "Jordon Janse van Rensburg",
+      "birthYear": 2000,
+      "rugbyDataId": "1011",
+      "lnrId": "lnr:1631",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault"
+    },
+    {
+      "club": "beziers",
+      "name": "Barnabé Mechentel",
+      "birthYear": 2005,
+      "rugbyDataId": "3033",
+      "lnrId": "lnr:11912",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault"
+    },
+    {
+      "club": "colomiers",
+      "name": "Pierre-Emmanuel Pacheco",
+      "birthYear": 2002,
+      "rugbyDataId": "1224",
+      "lnrId": "lnr:2990",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby"
+    },
+    {
+      "club": "colomiers",
+      "name": "Michaël Simutoga",
+      "birthYear": 1996,
+      "rugbyDataId": "1231",
+      "lnrId": "lnr:10260",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby"
+    },
+    {
+      "club": "colomiers",
+      "name": "Maxime Granouillet",
+      "birthYear": 1989,
+      "rugbyDataId": "1214",
+      "lnrId": "lnr:743",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby"
+    },
+    {
+      "club": "colomiers",
+      "name": "Eliott Maurel",
+      "birthYear": 2001,
+      "rugbyDataId": "1222",
+      "lnrId": "lnr:2703",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby"
+    },
+    {
+      "club": "colomiers",
+      "name": "Natan Culinat",
+      "birthYear": 2005,
+      "rugbyDataId": "1241",
+      "lnrId": "lnr:12595",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby"
+    },
+    {
+      "club": "colomiers",
+      "name": "Ugo Seguela",
+      "birthYear": 2001,
+      "rugbyDataId": "1229",
+      "lnrId": "lnr:11220",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby"
+    },
+    {
+      "club": "colomiers",
+      "name": "Martin Dulon",
+      "birthYear": 2000,
+      "rugbyDataId": "1210",
+      "lnrId": "lnr:488",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby"
+    },
+    {
+      "club": "colomiers",
+      "name": "Alexandre Borie",
+      "birthYear": 2001,
+      "rugbyDataId": "1952",
+      "lnrId": "lnr:2599",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Antoine Abraham",
+      "birthYear": 1995,
+      "rugbyDataId": "2075",
+      "lnrId": "lnr:1715",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Yannick Arroyo",
+      "birthYear": 1998,
+      "rugbyDataId": "1050",
+      "lnrId": "lnr:131",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Ali Oz",
+      "birthYear": 1995,
+      "rugbyDataId": "2097",
+      "lnrId": "lnr:2169",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Martin Villar",
+      "birthYear": 2002,
+      "rugbyDataId": "67",
+      "lnrId": "lnr:11683",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Mayco Vivas",
+      "birthYear": 1998,
+      "rugbyDataId": "1627",
+      "lnrId": "lnr:13639",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Feleti Kaitu'u",
+      "birthYear": 1994,
+      "rugbyDataId": "506",
+      "lnrId": null,
+      "lnrExistingBirthDate": null,
+      "status": "unmatched_or_ambiguous",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Vano Karkadze",
+      "birthYear": 2000,
+      "rugbyDataId": "343",
+      "lnrId": "lnr:450",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Julien Ratajczak",
+      "birthYear": 2003,
+      "rugbyDataId": "2101",
+      "lnrId": "lnr:11648",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Phoenix Battye",
+      "birthYear": 1990,
+      "rugbyDataId": "2077",
+      "lnrId": null,
+      "lnrExistingBirthDate": null,
+      "status": "unmatched_or_ambiguous",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Koen Bloemen",
+      "birthYear": 1998,
+      "rugbyDataId": "1002",
+      "lnrId": "lnr:11418",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Antonin Corso",
+      "birthYear": 2004,
+      "rugbyDataId": "2111",
+      "lnrId": "lnr:1734",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Alban Roussel",
+      "birthYear": 1998,
+      "rugbyDataId": "307",
+      "lnrId": "lnr:314",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Cyriac Guilly",
+      "birthYear": 2003,
+      "rugbyDataId": "2113",
+      "lnrId": "lnr:11662",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Hugo Hermet",
+      "birthYear": 2001,
+      "rugbyDataId": "2089",
+      "lnrId": "lnr:11348",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Kevin Lebreton",
+      "birthYear": 1995,
+      "rugbyDataId": "2092",
+      "lnrId": "lnr:1690",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Antoine Miquel",
+      "birthYear": 1994,
+      "rugbyDataId": "2095",
+      "lnrId": "lnr:322",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Wandrille Picault",
+      "birthYear": 1994,
+      "rugbyDataId": "2098",
+      "lnrId": "lnr:1684",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Uzair Cassiem",
+      "birthYear": 1990,
+      "rugbyDataId": "21",
+      "lnrId": "lnr:2608",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Loïc Godener",
+      "birthYear": 1995,
+      "rugbyDataId": "2088",
+      "lnrId": "lnr:686",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Jonathan Ruru",
+      "birthYear": 1993,
+      "rugbyDataId": "2103",
+      "lnrId": "lnr:3582",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Jules Solinas",
+      "birthYear": 2003,
+      "rugbyDataId": "2116",
+      "lnrId": "lnr:2725",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Thomas Vincent",
+      "birthYear": 1999,
+      "rugbyDataId": "362",
+      "lnrId": "lnr:88",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Luka Matkava",
+      "birthYear": 2001,
+      "rugbyDataId": "151",
+      "lnrId": "lnr:12794",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Inaki Ayarza",
+      "birthYear": 1999,
+      "rugbyDataId": "706",
+      "lnrId": "lnr:849",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Thomas Darmon",
+      "birthYear": 1998,
+      "rugbyDataId": "332",
+      "lnrId": "lnr:1445",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Lucas Mensa",
+      "birthYear": 1996,
+      "rugbyDataId": "2094",
+      "lnrId": "lnr:1206",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Louis Morland",
+      "birthYear": 2004,
+      "rugbyDataId": "2115",
+      "lnrId": "lnr:2320",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Danny Toala",
+      "birthYear": 1999,
+      "rugbyDataId": "2109",
+      "lnrId": "lnr:3228",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Liam Coombes-Fabling",
+      "birthYear": 1998,
+      "rugbyDataId": "4145",
+      "lnrId": "lnr:25024",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Karim Qadiri",
+      "birthYear": 1996,
+      "rugbyDataId": "2099",
+      "lnrId": null,
+      "lnrExistingBirthDate": null,
+      "status": "unmatched_or_ambiguous",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Enzo Reybier",
+      "birthYear": 2002,
+      "rugbyDataId": "124",
+      "lnrId": "lnr:11482",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Gavin Stark",
+      "birthYear": 1995,
+      "rugbyDataId": "2106",
+      "lnrId": "lnr:1726",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Paul Auradou",
+      "birthYear": 2001,
+      "rugbyDataId": "2076",
+      "lnrId": "lnr:1844",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "oyonnax",
+      "name": "Alex Newsome",
+      "birthYear": 1996,
+      "rugbyDataId": "194",
+      "lnrId": "lnr:646",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby"
+    },
+    {
+      "club": "brive",
+      "name": "Quentin Algay",
+      "birthYear": 2006,
+      "rugbyDataId": "1185",
+      "lnrId": "lnr:11829",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Yanis Charcosset",
+      "birthYear": 2001,
+      "rugbyDataId": "280",
+      "lnrId": "lnr:1118",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Lucas Da Silva",
+      "birthYear": 1997,
+      "rugbyDataId": "1151",
+      "lnrId": "lnr:434",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Valerio Siciliano",
+      "birthYear": 2004,
+      "rugbyDataId": "4386",
+      "lnrId": "lnr:11868",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Vakhtang Abdaladze",
+      "birthYear": 1996,
+      "rugbyDataId": "1146",
+      "lnrId": "lnr:4042",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Zaccharie Affane",
+      "birthYear": 2004,
+      "rugbyDataId": "113",
+      "lnrId": null,
+      "lnrExistingBirthDate": null,
+      "status": "unmatched_or_ambiguous",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Simon-Pierre Chauvac",
+      "birthYear": 1998,
+      "rugbyDataId": "1149",
+      "lnrId": "lnr:1423",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Francisco Coria Marchetti",
+      "birthYear": 2000,
+      "rugbyDataId": "1150",
+      "lnrId": "lnr:380",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Hugo Reilhes",
+      "birthYear": 2001,
+      "rugbyDataId": "674",
+      "lnrId": "lnr:2489",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Marcel Van der Merwe",
+      "birthYear": 1990,
+      "rugbyDataId": "1179",
+      "lnrId": "lnr:401",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Irné Herbst",
+      "birthYear": 1993,
+      "rugbyDataId": "1910",
+      "lnrId": "lnr:13699",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Teun Karst",
+      "birthYear": 2004,
+      "rugbyDataId": "1912",
+      "lnrId": "lnr:385",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Konstantine Mikautadze",
+      "birthYear": 1991,
+      "rugbyDataId": "42",
+      "lnrId": "lnr:2643",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Alexandre Ricard",
+      "birthYear": 1997,
+      "rugbyDataId": "103",
+      "lnrId": "lnr:776",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Anthony Coletta",
+      "birthYear": 1989,
+      "rugbyDataId": "1206",
+      "lnrId": "lnr:746",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "David Geneste",
+      "birthYear": 2004,
+      "rugbyDataId": "1191",
+      "lnrId": "lnr:463",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Sasha Gué",
+      "birthYear": 2000,
+      "rugbyDataId": "1155",
+      "lnrId": "lnr:448",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Geoffrey Malaterre",
+      "birthYear": 2005,
+      "rugbyDataId": "1198",
+      "lnrId": "lnr:369",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Retief Marais",
+      "birthYear": 1995,
+      "rugbyDataId": "1161",
+      "lnrId": "lnr:403",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Samuel Maximin",
+      "birthYear": 2001,
+      "rugbyDataId": "1162",
+      "lnrId": "lnr:2252",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Yann Peysson",
+      "birthYear": 2000,
+      "rugbyDataId": "157",
+      "lnrId": "lnr:757",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Taniela Sadrugu",
+      "birthYear": 1998,
+      "rugbyDataId": "1172",
+      "lnrId": "lnr:12130",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Mathis Galthié",
+      "birthYear": 2001,
+      "rugbyDataId": "1213",
+      "lnrId": "lnr:2770",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "brive",
+      "name": "Maxime Sidobre",
+      "birthYear": 1998,
+      "rugbyDataId": "1173",
+      "lnrId": "lnr:10715",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin"
+    },
+    {
+      "club": "biarritz",
+      "name": "Réginald Churchward",
+      "birthYear": 1996,
+      "rugbyDataId": "4146",
+      "lnrId": "lnr:24981",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Kakhaber Darbaidze",
+      "birthYear": 2000,
+      "rugbyDataId": "2402",
+      "lnrId": "lnr:22923",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Kepa Ebode N'koa",
+      "birthYear": 2005,
+      "rugbyDataId": "2242",
+      "lnrId": null,
+      "lnrExistingBirthDate": null,
+      "status": "unmatched_or_ambiguous",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Zakaria El Fakir",
+      "birthYear": 1997,
+      "rugbyDataId": "1108",
+      "lnrId": "lnr:237",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "François Mur",
+      "birthYear": 2003,
+      "rugbyDataId": "1140",
+      "lnrId": "lnr:12727",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Giorgi Nutsubidze",
+      "birthYear": 1998,
+      "rugbyDataId": "1124",
+      "lnrId": "lnr:272",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Hugo Pirlet",
+      "birthYear": 1996,
+      "rugbyDataId": "1226",
+      "lnrId": "lnr:739",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Alexandre Plantier",
+      "birthYear": 1991,
+      "rugbyDataId": "1127",
+      "lnrId": "lnr:1583",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Yoni Tuataane",
+      "birthYear": 2003,
+      "rugbyDataId": "1144",
+      "lnrId": "lnr:2762",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Sione Vailanu",
+      "birthYear": 1995,
+      "rugbyDataId": "901",
+      "lnrId": null,
+      "lnrExistingBirthDate": null,
+      "status": "unmatched_or_ambiguous",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Kerman Aurrekoetxea",
+      "birthYear": 2000,
+      "rugbyDataId": "1097",
+      "lnrId": null,
+      "lnrExistingBirthDate": null,
+      "status": "unmatched_or_ambiguous",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Anoa Laurent",
+      "birthYear": 2006,
+      "rugbyDataId": "1138",
+      "lnrId": "lnr:12729",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Charlie Shiel",
+      "birthYear": 1997,
+      "rugbyDataId": "943",
+      "lnrId": "lnr:25081",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Thomas Dolhagaray",
+      "birthYear": 2000,
+      "rugbyDataId": "26",
+      "lnrId": "lnr:2676",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Carlo Mignot",
+      "birthYear": 2003,
+      "rugbyDataId": "1139",
+      "lnrId": "lnr:11861",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Yohan Tapie",
+      "birthYear": 2004,
+      "rugbyDataId": "1143",
+      "lnrId": "lnr:12724",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Arthur Bonneval",
+      "birthYear": 1995,
+      "rugbyDataId": "1101",
+      "lnrId": "lnr:420",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Nicolas Elissondo",
+      "birthYear": 2003,
+      "rugbyDataId": "1135",
+      "lnrId": "lnr:12738",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Baptiste Fariscot",
+      "birthYear": 2001,
+      "rugbyDataId": "1136",
+      "lnrId": "lnr:261",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Bastien Guillemin",
+      "birthYear": 1997,
+      "rugbyDataId": "1110",
+      "lnrId": "lnr:1311",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    },
+    {
+      "club": "biarritz",
+      "name": "Kylian Jaminet",
+      "birthYear": 1995,
+      "rugbyDataId": "1112",
+      "lnrId": "lnr:1510",
+      "lnrExistingBirthDate": null,
+      "status": "exact_unique_name_club",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque"
+    }
+  ]
+}
