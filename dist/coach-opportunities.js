@@ -1,0 +1,6 @@
+'use strict';
+// Premier raccordement V58 : observatoire purement indicatif des bancs adverses.
+// Aucun contrat fictif, aucune mutation de S ou des sauvegardes.
+(function(root,factory){const api=factory(typeof module==='object'&&module.exports?require('./coach-market.js'):root.CDCoachMarket);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.CDCoachOpportunities=api})(typeof globalThis==='object'?globalThis:null,function(market){
+function snapshot(clubs,clubInfo,ownClubId){if(!Array.isArray(clubs)||!Array.isArray(clubInfo)||clubs.length!==clubInfo.length||!Number.isInteger(ownClubId))throw Error('Clubs invalides');return clubs.filter(c=>c.id!==ownClubId).map(c=>{const info=clubInfo[c.id];if(!info||!Number.isInteger(info.coachConfidence)||info.coachConfidence<0||info.coachConfidence>100||!Number.isInteger(info.consecutiveLosses)||info.consecutiveLosses<0)throw Error('Indicateur invalide');const risk=market.dismissalRisk({confidence:info.coachConfidence,consecutiveLosses:info.consecutiveLosses});return {id:c.id,name:c.name,risk:risk.risk,critical:risk.critical,confidence:info.coachConfidence};}).sort((a,b)=>b.risk-a.risk||a.id-b.id);}
+return Object.freeze({snapshot});});

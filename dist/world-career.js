@@ -193,11 +193,15 @@ function worldOfficePanel(){
  const info=worldClub(S.club),risk=CDCoachMarket.dismissalRisk({
   confidence:S.trust,consecutiveLosses:info.consecutiveLosses});
  const other=S.worldManagement.clubInfo.reduce((n,x)=>n+x.coachChanges,0);
+ const coaching=CDCoachOpportunities.snapshot(S.clubs,S.worldManagement.clubInfo,S.club).slice(0,3);
+ const coachRows=coaching.map(c=>'<div class="row"><span>'+visualEscape(c.name)+'</span><strong>Risque '+c.risk+'/100</strong></div>').join('');
  return '<section class="card"><h2>Réputation et situation du manager</h2>'+
  '<div class="row"><span>Réputation du club</span><strong>'+info.reputation+'/100</strong></div>'+
  '<div class="row"><span>Risque indicatif pour le manager</span><strong>'+risk.risk+
  '/100</strong></div><div class="row"><span>Changements de techniciens adverses consignés</span><strong>'+
- other+'</strong></div><p class="help">Risque calculé sur la confiance existante et les défaites réelles consécutives. Aucun licenciement automatique du joueur, faux entraîneur ou offre d’emploi attribuée. Marché complet des entraîneurs à intégrer ultérieurement.</p>'+
+ other+'</strong></div><p class="help">Risque calculé sur la confiance existante et les défaites réelles consécutives. Aucun licenciement automatique du joueur, faux entraîneur ou offre d’emploi attribuée. Marché complet des entraîneurs à intégrer ultérieurement.</p>'+ 
+ '<h3>Bancs adverses sous pression</h3>'+coachRows+
+ '<p class="help">Indicateurs fondés sur la confiance des techniciens adverses et leurs résultats dans cette carrière. Risque indicatif uniquement : aucun poste vacant ni contrat supposé.</p>'+
  '</section>';
 }
 function worldMarketPanel(){
