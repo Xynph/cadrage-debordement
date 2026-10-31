@@ -1,0 +1,93 @@
+name: Carrieres multi-clubs - validation native
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/**'
+      - 'tests/harness.cjs'
+      - 'tests/career-resilience.cjs'
+      - 'tests/career-resilience/**'
+      - 'ci/career-resilience-*.cjs'
+      - '.github/workflows/career-resilience.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'dist/**'
+      - 'tests/harness.cjs'
+      - 'tests/career-resilience.cjs'
+      - 'tests/career-resilience/**'
+      - 'ci/career-resilience-*.cjs'
+      - '.github/workflows/career-resilience.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: career-resilience-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+jobs:
+  long-careers:
+    name: Carriere ${{ matrix.scenario }} - 15 saisons
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario: [reference, deficit, rotation]
+    env:
+      SCENARIO: ${{ matrix.scenario }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Contrats natifs et cas negatifs
+        run: node tests/career-resilience.cjs
+      - name: Saisons 1 a 5
+        run: timeout --signal=TERM --kill-after=10s 240s node ci/career-resilience-run.cjs "$SCENARIO" 5 "$RUNNER_TEMP/career-resilience"
+      - name: Reprise - saisons 6 a 10
+        run: timeout --signal=TERM --kill-after=10s 240s node ci/career-resilience-run.cjs "$SCENARIO" 10 "$RUNNER_TEMP/career-resilience"
+      - name: Reprise - saisons 11 a 15
+        run: timeout --signal=TERM --kill-after=10s 240s node ci/career-resilience-run.cjs "$SCENARIO" 15 "$RUNNER_TEMP/career-resilience"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: career-resilience-${{ matrix.scenario }}
+          path: ${{ runner.temp }}/career-resilience/*-report.json
+          retention-days: 14
+          if-no-files-found: error
+  evidence:
+    name: Validation carrieres longues
+    if: ${{ always() }}
+    needs: long-careers
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: career-resilience-*
+          path: reports
+          merge-multiple: true
+      - name: Refuser toute campagne incomplete
+        env:
+          MATRIX_RESULT: ${{ needs.long-careers.result }}
+        run: |
+          test "$MATRIX_RESULT" = success
+          node ci/career-resilience-report.cjs reports
+          cat reports/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: career-resilience-summary
+          path: |
+            reports/summary.json
+            reports/summary.md
+          retention-days: 14
+          if-no-files-found: error
