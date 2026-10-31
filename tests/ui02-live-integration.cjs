@@ -18,6 +18,7 @@ const g=context();
 for(const file of ['ui02-player-data.js','ui02-player-components.js','ui02-player-controller.js']){
  vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),g.ctx,{filename:file});
 }
+vm.runInContext(fs.readFileSync(path.join(root,'ui-preferences.js'),'utf8'),g.ctx,{filename:'ui-preferences.js'});
 g.run('start(0)');
 assert.match(g.app.innerHTML,/ui01-appbar/);
 g.run("nav('team')");
