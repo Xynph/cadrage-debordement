@@ -4,10 +4,10 @@
   "snapshot": "2026-10-31",
   "warning": "No automatic creation of missing players; these are matching results, not confirmed 2026-07-01 club memberships.",
   "summary": {
-    "total": 80,
-    "exact": 47,
-    "review": 6,
-    "missing": 27
+    "total": 98,
+    "exact": 52,
+    "review": 12,
+    "missing": 34
   },
   "records": [
     {
@@ -759,6 +759,198 @@
       "reviewCandidates": [],
       "status": "not-found-in-roster",
       "autoImported": false
+    },
+    {
+      "name": "Apete NAROGO",
+      "arrivalClub": "toulon",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": "lnr:25043",
+      "reviewCandidates": [],
+      "status": "exact-club-match",
+      "autoImported": true
+    },
+    {
+      "name": "Thomas BUE",
+      "arrivalClub": "paris",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": "lnr:2713",
+      "reviewCandidates": [],
+      "status": "exact-club-match",
+      "autoImported": true
+    },
+    {
+      "name": "Alivereti DUGUIVALU",
+      "arrivalClub": "paris",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": null,
+      "reviewCandidates": [],
+      "status": "not-found-in-roster",
+      "autoImported": false
+    },
+    {
+      "name": "Israel LEOTA",
+      "arrivalClub": "paris",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": null,
+      "reviewCandidates": [],
+      "status": "not-found-in-roster",
+      "autoImported": false
+    },
+    {
+      "name": "Petero MAILULU",
+      "arrivalClub": "paris",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": null,
+      "reviewCandidates": [],
+      "status": "not-found-in-roster",
+      "autoImported": false
+    },
+    {
+      "name": "Rufus McLEAN",
+      "arrivalClub": "paris",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": "lnr:25025",
+      "reviewCandidates": [],
+      "status": "exact-club-match",
+      "autoImported": true
+    },
+    {
+      "name": "Tomasi MAKA",
+      "arrivalClub": "paris",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": null,
+      "reviewCandidates": [],
+      "status": "not-found-in-roster",
+      "autoImported": false
+    },
+    {
+      "name": "Ihaia WEST",
+      "arrivalClub": "paris",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": "lnr:2387",
+      "reviewCandidates": [],
+      "status": "exact-club-match",
+      "autoImported": true
+    },
+    {
+      "name": "Thomas ADELAÏDE",
+      "arrivalClub": "larochelle",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": null,
+      "reviewCandidates": [
+        {
+          "id": "lnr:11690",
+          "club": "la-rochelle"
+        }
+      ],
+      "status": "manual-club-review",
+      "autoImported": false
+    },
+    {
+      "name": "Nathan FRAISSENON",
+      "arrivalClub": "larochelle",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": null,
+      "reviewCandidates": [
+        {
+          "id": "lnr:377",
+          "club": "la-rochelle"
+        }
+      ],
+      "status": "manual-club-review",
+      "autoImported": false
+    },
+    {
+      "name": "Ben HEALY",
+      "arrivalClub": "larochelle",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": null,
+      "reviewCandidates": [
+        {
+          "id": "lnr:24998",
+          "club": "la-rochelle"
+        }
+      ],
+      "status": "manual-club-review",
+      "autoImported": false
+    },
+    {
+      "name": "Christophe LOUSTALOT",
+      "arrivalClub": "larochelle",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": null,
+      "reviewCandidates": [],
+      "status": "not-found-in-roster",
+      "autoImported": false
+    },
+    {
+      "name": "David KRIEL",
+      "arrivalClub": "larochelle",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": null,
+      "reviewCandidates": [
+        {
+          "id": "lnr:25082",
+          "club": "la-rochelle"
+        }
+      ],
+      "status": "manual-club-review",
+      "autoImported": false
+    },
+    {
+      "name": "Theo McFARLAND",
+      "arrivalClub": "larochelle",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": null,
+      "reviewCandidates": [],
+      "status": "not-found-in-roster",
+      "autoImported": false
+    },
+    {
+      "name": "George MOALA",
+      "arrivalClub": "larochelle",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": null,
+      "reviewCandidates": [
+        {
+          "id": "lnr:709",
+          "club": "la-rochelle"
+        }
+      ],
+      "status": "manual-club-review",
+      "autoImported": false
+    },
+    {
+      "name": "Salmaan MOERAT",
+      "arrivalClub": "larochelle",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": null,
+      "reviewCandidates": [
+        {
+          "id": "lnr:25000",
+          "club": "la-rochelle"
+        }
+      ],
+      "status": "manual-club-review",
+      "autoImported": false
+    },
+    {
+      "name": "Sam TUIFUA",
+      "arrivalClub": "larochelle",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": null,
+      "reviewCandidates": [],
+      "status": "not-found-in-roster",
+      "autoImported": false
+    },
+    {
+      "name": "Tommaso MENONCELLO",
+      "arrivalClub": "toulouse",
+      "sourceUrl": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "mappedId": "lnr:25047",
+      "reviewCandidates": [],
+      "status": "exact-club-match",
+      "autoImported": true
     }
   ]
 }
