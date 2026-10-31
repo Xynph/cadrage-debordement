@@ -82,7 +82,8 @@ permissions:
   contents: read
 concurrency:
   group: native-economy-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  # Annuler les anciennes revisions de PR ; ne jamais annuler les validations de main.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   transactions:
     name: Transactions natives et reproductions
