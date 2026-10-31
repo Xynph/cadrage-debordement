@@ -1,0 +1,71 @@
+{
+  "source": "https://itsrugby.fr/equipes/clermont/?saison=2026-27",
+  "sourceType": "ItsRugby public roster",
+  "licenseBasis": "User states provider explicitly authorized automated extraction and inclusion in Cadrage Débordement on 2026-10-31",
+  "observedAt": "2026-10-31",
+  "season": "2026-27",
+  "historicalAsOfJuly1Verified": false,
+  "club": "clermont",
+  "players": [
+    {
+      "id": "lnr:3233",
+      "name": "Giorgi DZMANASHVILI",
+      "heightCm": 186,
+      "weightKg": 122
+    },
+    {
+      "id": "lnr:184",
+      "name": "Giorgi AKHALADZE",
+      "heightCm": 186,
+      "weightKg": 120
+    },
+    {
+      "id": "lnr:2023",
+      "name": "Sacha LOTRIAN",
+      "heightCm": 180,
+      "weightKg": 106
+    },
+    {
+      "id": "lnr:655",
+      "name": "Mathéo FRISACH",
+      "heightCm": 188,
+      "weightKg": 127
+    },
+    {
+      "id": "lnr:921",
+      "name": "Régis MONTAGNE",
+      "heightCm": 186,
+      "weightKg": 133
+    },
+    {
+      "id": "lnr:694",
+      "name": "Cristian OJOVAN",
+      "heightCm": 183,
+      "weightKg": 118
+    },
+    {
+      "id": "lnr:862",
+      "name": "Barnabé MASSA",
+      "heightCm": 180,
+      "weightKg": 103
+    },
+    {
+      "id": "lnr:2176",
+      "name": "Peniami Nasali NARISIA",
+      "heightCm": 180,
+      "weightKg": 92
+    },
+    {
+      "id": "lnr:657",
+      "name": "Etienne FOURCADE",
+      "heightCm": 181,
+      "weightKg": 96
+    },
+    {
+      "id": "lnr:711",
+      "name": "Thibaud LANEN",
+      "heightCm": 196,
+      "weightKg": 106
+    }
+  ]
+}
