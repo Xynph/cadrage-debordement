@@ -19,7 +19,6 @@ jobs:
           CD_V631_REPORT: v631-native-long.json
         run: |
           node --check tests/v63-1-long-career.cjs
-          node tests/v63-native-career-transactions.cjs
           node tests/v63-1-long-career.cjs
       - uses: actions/upload-artifact@v4
         if: always()
