@@ -630,3 +630,9 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Correctif : `confirmSaveImport()` compare dorénavant la somme de contrôle de l'état en attente à celle du document déjà validé, **avant** l'écriture de la sauvegarde de secours et le remplacement de la carrière. Aucun changement de format, de contenu de sauvegarde ou d'algorithme d'export.
 - Régressions : trois mutations de l'aperçu (trésorerie, moral, checksum) doivent laisser la carrière, le stockage et la copie précédente intacts ; l'import légitime doit conserver sa copie de secours. Tests inclus dans `tests/saves.cjs` ; la CI sur tête exacte de PR doit établir le résultat.
 - Limitations : la somme de contrôle FNV existante détecte les modifications accidentelles, **elle n'est pas une authentification cryptographique**. Pas de preuve de résistance à une falsification volontaire avec recalcul du checksum. Aucun fichier Business, source DATA, collecte LNR ou Firecrawl concerné ; aucune fusion sans autorisation.
+
+## Menu V2 — correction des contrôles d'intégration (31 octobre 2026)
+
+- Diagnostic du run #41245174320 sur #157 : quatre assertions historiques obsolètes dans main-menu, saves, ui01-interface et ui02-live-integration. L'import est désormais intitulé « Importer une carrière JSON » ; main-menu-slots.js doit être chargé entre les préférences et game.js.
+- Assertions adaptées au contrôle réel : présence du libellé d'import et ordre explicite des trois scripts, sans imposer leur contiguïté. Aucun contrôle de sauvegarde retiré et aucun fichier de production modifié.
+- Suites ciblées menu, menu V2, sauvegardes et intégrations UI exécutées avec succès. La CI complète du dernier SHA et les scénarios Chromium restent exigés avant fusion ; contrôle push après fusion obligatoire.

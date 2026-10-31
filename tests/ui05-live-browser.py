@@ -35,6 +35,8 @@ try:
         page.set_default_timeout(12000)
         page.on("pageerror",lambda error:errors.append(str(error)))
         page.goto(url)
+        page.get_by_role('button',name='Nouvelle carrière').click()
+        page.get_by_role('button',name='Univers fictif').click()
         page.locator(".clubchoice").first.click()
         page.evaluate("nav('tactics')")
         test("panneau UI-05 dans le jeu",page.locator(".ui05-collective").is_visible())

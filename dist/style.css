@@ -408,3 +408,20 @@ html[data-cd-theme] body{background:var(--paper);color:var(--ink)}
 @media(max-width:850px){.main-menu-layout{grid-template-columns:1fr}.main-menu-head,.main-menu-footer{grid-column:1}.main-menu-hero{padding:35px 0 0}.main-menu-hero h1{font-size:clamp(60px,14vw,100px)}.main-menu-rule{margin-top:25px}.main-menu-actions{margin-bottom:25px}}
 @media(max-width:490px){.main-menu-label{font-size:8px;padding:8px}.main-menu-actions h2{font-size:31px}.main-menu-footer{align-items:start;flex-direction:column}.main-menu-secondary{flex-direction:column}.main-menu-hero p{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.main-menu button{transition:none}}
+
+
+/* Menu V2 : progression des étapes et gestion des cinq carrières. */
+.main-menu-guide{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.main-menu-guide button{display:flex;flex-direction:column;gap:7px;align-items:flex-start;min-height:105px;text-align:left;color:#173a2b;background:#e5ede2;border:1px solid #bbcab9;padding:15px;border-radius:9px}
+.main-menu-guide strong{font-size:16px}.main-menu-guide small{line-height:1.5;color:#506654}
+.main-menu-slot{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:7px;align-items:center;border:1px solid #d9e3d6;border-radius:8px;padding:10px;margin:8px 0;background:#eff2eb}
+.main-menu-slot strong{display:block;overflow-wrap:anywhere}.main-menu-slot small{display:block;margin-top:4px;color:#607564}.main-menu-slot button{padding:10px;font-size:12px;background:#d2e0d0}.main-menu-slot .main-menu-danger{background:#f5e0d7;color:#9a3b30}
+.main-menu-archive{width:100%;margin-top:12px;text-align:center;background:#214b36!important;color:#fff!important;padding:12px!important}
+.main-menu-pause-actions{display:grid;gap:10px;margin-top:22px}.main-menu-pause-actions button{width:100%;text-align:center;min-height:44px}
+@keyframes cd-menu-breathe{0%{opacity:.14;transform:translate3d(0,0,0)}50%{opacity:.26;transform:translate3d(2%,0,0)}100%{opacity:.14;transform:translate3d(0,0,0)}}
+.main-menu-sheen{animation:cd-menu-breathe 16s ease-in-out infinite;will-change:opacity}
+html[data-cd-motion="reduced"] .main-menu-sheen{animation:none!important}
+@media(prefers-reduced-motion:reduce){.main-menu-sheen{animation:none}}
+@media(max-width:490px){.main-menu-guide{grid-template-columns:1fr}.main-menu-slot{grid-template-columns:1fr 1fr}.main-menu-slot>div{grid-column:1/-1}}
+
+.match-menu-pause{position:relative;display:inline-flex;align-items:center;gap:8px;margin:14px 0 0;background:#224735;color:#fff;border:1px solid #a5c4ad;font-weight:700;z-index:9} .match-menu-pause:focus-visible{outline:3px solid #e77b45;outline-offset:3px}
