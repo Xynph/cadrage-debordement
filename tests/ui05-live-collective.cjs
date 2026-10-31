@@ -17,7 +17,7 @@ assert.match(p,/Organisation défensive/);
 assert.match(p,/Jeu au pied/);
 assert.match(p,/Préserver les organismes/);
 assert.equal((p.match(/class="option ui05-option/g)||[]).length,4);
-assert.equal((p.match(/aria-pressed="true"/g)||[]).length,1);
+assert.equal((p.match(/<button[^>]*aria-pressed="true"/g)||[]).length,1);
 assert.match(p,/setCollectiveFocus\('conquete'\)/);
 assert.match(p,/setCollectiveFocus\('defence'\)/);
 assert.match(p,/setCollectiveFocus\('pied'\)/);
