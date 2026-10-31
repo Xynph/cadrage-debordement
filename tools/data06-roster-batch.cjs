@@ -8,11 +8,11 @@ function reconcile(data,roster){
  for(const c of data.clubs){
   if(!c.sourceUrl||!/^https:\/\/(?:top14|prod2)\.lnr\.fr\/club\//.test(c.sourceUrl))throw Error('Invalid LNR source');
   for(const p of c.players){
-   if(!p.name||!p.position||![p.matches,p.minutes,p.points].every(x=>Number.isInteger(x)&&x>=0)||p.minutes>p.matches*100)throw Error('Invalid published player statistics');
+   if(!p.name||!p.position||![p.matches,p.minutes,p.points].every(x=>x===null))throw Error('Invalid published player statistics');
    const hits=roster.filter(x=>x.club===c.club&&normalized(x.name)===normalized(p.name));
    if(hits.length!==1){unresolved.push({name:p.name,club:c.club,reason:hits.length?'ambiguous-identity':'not-in-reference-roster',sourceUrl:c.sourceUrl});continue}
    if(ids.has(hits[0].id))throw Error('Duplicate player ID');
-   ids.add(hits[0].id);matches.push({id:hits[0].id,name:hits[0].name,club:c.club,position:p.position,matches:p.matches,minutes:p.minutes,points:p.points,sourceUrl:c.sourceUrl,kind:'official-current-snapshot',gameRating:null,historicalAsOfJuly1Verified:false});
+   ids.add(hits[0].id);matches.push({id:hits[0].id,name:hits[0].name,club:c.club,position:p.position,matches:null,minutes:null,points:null,sourceUrl:c.sourceUrl,kind:'official-roster-position-only',gameRating:null,historicalAsOfJuly1Verified:false});
   }
  }
  return {summary:{published:data.clubs.reduce((n,c)=>n+c.players.length,0),matched:matches.length,unresolved:unresolved.length},matches,unresolved};
