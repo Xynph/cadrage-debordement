@@ -186,3 +186,34 @@ body:has(.cd3-menu) #toast{width:max-content;max-width:calc(100vw - 36px)}
 @media(max-width:370px){.cd3-card-meta .cd3-universe{display:none}.cd3-card-meta{flex-basis:76px}.cd3-club h3{font-size:13px}.cd3-menu .cd3-feature{min-height:112px}}
 @media(prefers-reduced-motion:reduce){.cd3-menu *, .cd3-menu *:before,.cd3-menu *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 [data-cd-motion="reduced"] .cd3-menu *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+
+
+/* Ballon de match en bas à droite : cuir usé, terre, herbe et lumière chaude.
+   Illustration SVG locale, décorative et non cliquable. */
+.cd3-menu .cd3-right-bottom{
+ display:block;position:relative;min-height:235px;flex:1 1 235px;
+ margin:-2px -16px -18px -16px;pointer-events:none;
+ background:url("assets/menu-rugby-ball-muddy.svg") right bottom / min(100%,480px) auto no-repeat;
+ filter:drop-shadow(0 9px 12px #0008);
+}
+.cd3-menu .cd3-right-bottom:before{
+ content:"";position:absolute;inset:auto 0 0;height:30%;
+ background:radial-gradient(ellipse at 78% 80%,#dab56b28,transparent 68%);
+ pointer-events:none;
+}
+@media(max-width:1050px){
+ .cd3-menu .cd3-right-bottom{
+  grid-column:1/-1;display:block;min-height:175px;height:175px;max-height:190px;
+  margin:-8px 0 -16px;background-size:auto 235px;background-position:right bottom;
+  filter:drop-shadow(0 5px 9px #0008);
+ }
+}
+@media(max-width:740px){
+ .cd3-menu .cd3-right-bottom{height:145px;min-height:145px;max-height:145px;background-size:auto 205px;margin:-12px -12px -12px}
+}
+@media(max-width:525px){
+ .cd3-menu .cd3-right-bottom{height:115px;min-height:115px;max-height:115px;background-size:auto 178px;margin:0 -12px -10px}
+}
+@media(prefers-reduced-motion:reduce){
+ .cd3-menu .cd3-right-bottom{animation:none;transition:none}
+}
