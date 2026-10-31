@@ -1,0 +1,28 @@
+name: V61 calendrier conseil et objectifs
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  board:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validation V61
+        env:
+          CD_V61_REPORT: v61-report.json
+        run: |
+          node --check dist/board-calendar.js
+          node tests/v61-board-calendar.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rapport-v61
+          path: v61-report.json
+          if-no-files-found: ignore
