@@ -1,0 +1,636 @@
+{
+  "snapshot": "2026-10-31",
+  "selectionRule": "first three from DATA-03 roster per club; reproducible deterministic pilot",
+  "clubs": [
+    {
+      "club": "clermont",
+      "league": "top14",
+      "players": [
+        {
+          "id": "lnr:862",
+          "name": "Barnabé MASSA",
+          "url": "https://top14.lnr.fr/joueur/862-barnabe-massa"
+        },
+        {
+          "id": "lnr:3233",
+          "name": "Giorgi DZMANASHVILI",
+          "url": "https://top14.lnr.fr/joueur/3233-giorgi-dzmanashvili"
+        },
+        {
+          "id": "lnr:921",
+          "name": "Régis MONTAGNE",
+          "url": "https://top14.lnr.fr/joueur/921-regis-montagne"
+        }
+      ]
+    },
+    {
+      "club": "bayonne",
+      "league": "top14",
+      "players": [
+        {
+          "id": "lnr:2669",
+          "name": "Swan CORMENIER",
+          "url": "https://top14.lnr.fr/joueur/2669-swan-cormenier"
+        },
+        {
+          "id": "lnr:2484",
+          "name": "Guillaume CRAMONT",
+          "url": "https://top14.lnr.fr/joueur/2484-guillaume-cramont"
+        },
+        {
+          "id": "lnr:2100",
+          "name": "Luke TAGI",
+          "url": "https://top14.lnr.fr/joueur/2100-luke-tagi"
+        }
+      ]
+    },
+    {
+      "club": "castres",
+      "league": "top14",
+      "players": [
+        {
+          "id": "lnr:560",
+          "name": "Lois GUEROIS GALISSON",
+          "url": "https://top14.lnr.fr/joueur/560-lois-guerois-galisson"
+        },
+        {
+          "id": "lnr:637",
+          "name": "Pierre COLONNA",
+          "url": "https://top14.lnr.fr/joueur/637-pierre-colonna"
+        },
+        {
+          "id": "lnr:90",
+          "name": "Alex BURIN",
+          "url": "https://top14.lnr.fr/joueur/90-alex-burin"
+        }
+      ]
+    },
+    {
+      "club": "lyon",
+      "league": "top14",
+      "players": [
+        {
+          "id": "lnr:1060",
+          "name": "Thomas MARCELINE",
+          "url": "https://top14.lnr.fr/joueur/1060-thomas-marceline"
+        },
+        {
+          "id": "lnr:1062",
+          "name": "Baptiste NARMAND",
+          "url": "https://top14.lnr.fr/joueur/1062-baptiste-narmand"
+        },
+        {
+          "id": "lnr:2200",
+          "name": "Thomas MOUKORO ABOUEM",
+          "url": "https://top14.lnr.fr/joueur/2200-thomas-moukoro-abouem"
+        }
+      ]
+    },
+    {
+      "club": "montpellier",
+      "league": "top14",
+      "players": [
+        {
+          "id": "lnr:1368",
+          "name": "Luca TABAROT",
+          "url": "https://top14.lnr.fr/joueur/1368-luca-tabarot"
+        },
+        {
+          "id": "lnr:267",
+          "name": "Baptiste ERDOCIO",
+          "url": "https://top14.lnr.fr/joueur/267-baptiste-erdocio"
+        },
+        {
+          "id": "lnr:454",
+          "name": "Luka JAPARIDZE",
+          "url": "https://top14.lnr.fr/joueur/454-luka-japaridze"
+        }
+      ]
+    },
+    {
+      "club": "toulon",
+      "league": "top14",
+      "players": [
+        {
+          "id": "lnr:2297",
+          "name": "Léo AMETLLA",
+          "url": "https://top14.lnr.fr/joueur/2297-leo-ametlla"
+        },
+        {
+          "id": "lnr:2298",
+          "name": "Davit MTCHEDLIDZE",
+          "url": "https://top14.lnr.fr/joueur/2298-davit-mtchedlidze"
+        },
+        {
+          "id": "lnr:2329",
+          "name": "Pierre DAMOND",
+          "url": "https://top14.lnr.fr/joueur/2329-pierre-damond"
+        }
+      ]
+    },
+    {
+      "club": "vannes",
+      "league": "top14",
+      "players": [
+        {
+          "id": "lnr:2536",
+          "name": "Rayane TAFILI",
+          "url": "https://top14.lnr.fr/joueur/2536-rayane-tafili"
+        },
+        {
+          "id": "lnr:770",
+          "name": "Hugo DJEHI",
+          "url": "https://top14.lnr.fr/joueur/770-hugo-djehi"
+        },
+        {
+          "id": "lnr:2585",
+          "name": "Simon BOURGEOIS",
+          "url": "https://top14.lnr.fr/joueur/2585-simon-bourgeois"
+        }
+      ]
+    },
+    {
+      "club": "racing-92",
+      "league": "top14",
+      "players": [
+        {
+          "id": "lnr:11098",
+          "name": "Benjamin BOUDOU",
+          "url": "https://top14.lnr.fr/joueur/11098-benjamin-boudou"
+        },
+        {
+          "id": "lnr:2190",
+          "name": "Guram GOGICHASHVILI",
+          "url": "https://top14.lnr.fr/joueur/2190-guram-gogichashvili"
+        },
+        {
+          "id": "lnr:2201",
+          "name": "Gia KHARAISHVILI",
+          "url": "https://top14.lnr.fr/joueur/2201-gia-kharaishvili"
+        }
+      ]
+    },
+    {
+      "club": "pau",
+      "league": "top14",
+      "players": [
+        {
+          "id": "lnr:1849",
+          "name": "Hugo PARROU",
+          "url": "https://top14.lnr.fr/joueur/1849-hugo-parrou"
+        },
+        {
+          "id": "lnr:1850",
+          "name": "Siate Folau TOKOLAHI",
+          "url": "https://top14.lnr.fr/joueur/1850-siate-folau-tokolahi"
+        },
+        {
+          "id": "lnr:1876",
+          "name": "Alexandre ETCHEBEHERE",
+          "url": "https://top14.lnr.fr/joueur/1876-alexandre-etchebehere"
+        }
+      ]
+    },
+    {
+      "club": "paris",
+      "league": "top14",
+      "players": [
+        {
+          "id": "lnr:2713",
+          "name": "Thomas BUE",
+          "url": "https://top14.lnr.fr/joueur/2713-thomas-bue"
+        },
+        {
+          "id": "lnr:1736",
+          "name": "Sergo ABRAMISHVILI",
+          "url": "https://top14.lnr.fr/joueur/1736-sergo-abramishvili"
+        },
+        {
+          "id": "lnr:1831",
+          "name": "Moses Eneliko ALO EMILE",
+          "url": "https://top14.lnr.fr/joueur/1831-moses-eneliko-alo-emile"
+        }
+      ]
+    },
+    {
+      "club": "la-rochelle",
+      "league": "top14",
+      "players": [
+        {
+          "id": "lnr:935",
+          "name": "Aleksandre KUNTELIA",
+          "url": "https://top14.lnr.fr/joueur/935-aleksandre-kuntelia"
+        },
+        {
+          "id": "lnr:377",
+          "name": "Nathan FRAISSENON",
+          "url": "https://top14.lnr.fr/joueur/377-nathan-fraissenon"
+        },
+        {
+          "id": "lnr:1824",
+          "name": "Latu Silatolu LATU",
+          "url": "https://top14.lnr.fr/joueur/1824-latu-silatolu-latu"
+        }
+      ]
+    },
+    {
+      "club": "toulouse",
+      "league": "top14",
+      "players": [
+        {
+          "id": "lnr:2399",
+          "name": "Joel MERKLER PEREZ",
+          "url": "https://top14.lnr.fr/joueur/2399-joel-merkler-perez"
+        },
+        {
+          "id": "lnr:2407",
+          "name": "Malachi Shea HAWKES FAIMANIFO",
+          "url": "https://top14.lnr.fr/joueur/2407-malachi-shea-hawkes-faimanifo"
+        },
+        {
+          "id": "lnr:2429",
+          "name": "Thomas LACOMBRE",
+          "url": "https://top14.lnr.fr/joueur/2429-thomas-lacombre"
+        }
+      ]
+    },
+    {
+      "club": "perpignan",
+      "league": "top14",
+      "players": [
+        {
+          "id": "lnr:2009",
+          "name": "Victor MONTGAILLARD",
+          "url": "https://top14.lnr.fr/joueur/2009-victor-montgaillard"
+        },
+        {
+          "id": "lnr:2025",
+          "name": "Lucas VELARTE",
+          "url": "https://top14.lnr.fr/joueur/2025-lucas-velarte"
+        },
+        {
+          "id": "lnr:2389",
+          "name": "Bruce DEVAUX",
+          "url": "https://top14.lnr.fr/joueur/2389-bruce-devaux"
+        }
+      ]
+    },
+    {
+      "club": "bordeaux-begles",
+      "league": "top14",
+      "players": [
+        {
+          "id": "lnr:306",
+          "name": "Zaccharie AFFANE",
+          "url": "https://top14.lnr.fr/joueur/306-zaccharie-affane"
+        },
+        {
+          "id": "lnr:1509",
+          "name": "Lasha PKHAKADZE",
+          "url": "https://top14.lnr.fr/joueur/1509-lasha-pkhakadze"
+        },
+        {
+          "id": "lnr:2671",
+          "name": "Matis PERCHAUD",
+          "url": "https://top14.lnr.fr/joueur/2671-matis-perchaud"
+        }
+      ]
+    },
+    {
+      "club": "beziers",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:2286",
+          "name": "Yanis BOULASSEL",
+          "url": "https://prod2.lnr.fr/joueur/2286-yanis-boulassel"
+        },
+        {
+          "id": "lnr:2127",
+          "name": "Jonathan MAIAU",
+          "url": "https://prod2.lnr.fr/joueur/2127-jonathan-maiau"
+        },
+        {
+          "id": "lnr:307",
+          "name": "Yahnis EL MASLOUHI",
+          "url": "https://prod2.lnr.fr/joueur/307-yahnis-el-maslouhi"
+        }
+      ]
+    },
+    {
+      "club": "biarritz",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:1583",
+          "name": "Alexandre PLANTIER",
+          "url": "https://prod2.lnr.fr/joueur/1583-alexandre-plantier"
+        },
+        {
+          "id": "lnr:11009",
+          "name": "Luka BEGIC",
+          "url": "https://prod2.lnr.fr/joueur/11009-luka-begic"
+        },
+        {
+          "id": "lnr:272",
+          "name": "Giorgi NUTSUBIDZE",
+          "url": "https://prod2.lnr.fr/joueur/272-giorgi-nutsubidze"
+        }
+      ]
+    },
+    {
+      "club": "brive",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:380",
+          "name": "Francisco CORIA MARCHETTI",
+          "url": "https://prod2.lnr.fr/joueur/380-francisco-coria-marchetti"
+        },
+        {
+          "id": "lnr:1118",
+          "name": "Yanis CHARCOSSET",
+          "url": "https://prod2.lnr.fr/joueur/1118-yanis-charcosset"
+        },
+        {
+          "id": "lnr:2489",
+          "name": "Hugo REILHES",
+          "url": "https://prod2.lnr.fr/joueur/2489-hugo-reilhes"
+        }
+      ]
+    },
+    {
+      "club": "colomiers",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:2752",
+          "name": "Atonio ULUTUIPALELEI",
+          "url": "https://prod2.lnr.fr/joueur/2752-atonio-ulutuipalelei"
+        },
+        {
+          "id": "lnr:2903",
+          "name": "Mamik MSTOIAN",
+          "url": "https://prod2.lnr.fr/joueur/2903-mamik-mstoian"
+        },
+        {
+          "id": "lnr:2990",
+          "name": "Pierre Emmanuel PACHECO",
+          "url": "https://prod2.lnr.fr/joueur/2990-pierre-emmanuel-pacheco"
+        }
+      ]
+    },
+    {
+      "club": "grenoble",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:859",
+          "name": "Zack GAUTHIER",
+          "url": "https://prod2.lnr.fr/joueur/859-zack-gauthier"
+        },
+        {
+          "id": "lnr:920",
+          "name": "Eli EGLAINE",
+          "url": "https://prod2.lnr.fr/joueur/920-eli-eglaine"
+        },
+        {
+          "id": "lnr:925",
+          "name": "Lilian ROSSI",
+          "url": "https://prod2.lnr.fr/joueur/925-lilian-rossi"
+        }
+      ]
+    },
+    {
+      "club": "nice",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:1473",
+          "name": "Farai Tapuwa MUDARIKI",
+          "url": "https://prod2.lnr.fr/joueur/1473-farai-tapuwa-mudariki"
+        },
+        {
+          "id": "lnr:854",
+          "name": "Pierre STRIPPOLI",
+          "url": "https://prod2.lnr.fr/joueur/854-pierre-strippoli"
+        },
+        {
+          "id": "lnr:2284",
+          "name": "Fabio GONZALEZ",
+          "url": "https://prod2.lnr.fr/joueur/2284-fabio-gonzalez"
+        }
+      ]
+    },
+    {
+      "club": "oyonnax",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:450",
+          "name": "Vano KARKADZE",
+          "url": "https://prod2.lnr.fr/joueur/450-vano-karkadze"
+        },
+        {
+          "id": "lnr:11647",
+          "name": "Remi DI PIETRO",
+          "url": "https://prod2.lnr.fr/joueur/11647-remi-di-pietro"
+        },
+        {
+          "id": "lnr:11648",
+          "name": "Julien RATAJCZAK",
+          "url": "https://prod2.lnr.fr/joueur/11648-julien-ratajczak"
+        }
+      ]
+    },
+    {
+      "club": "provence-rugby",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:2041",
+          "name": "Federico WEGRZYN",
+          "url": "https://prod2.lnr.fr/joueur/2041-federico-wegrzyn"
+        },
+        {
+          "id": "lnr:3091",
+          "name": "Andréa PONTANIER",
+          "url": "https://prod2.lnr.fr/joueur/3091-andrea-pontanier"
+        },
+        {
+          "id": "lnr:2271",
+          "name": "Hugo NDIAYE",
+          "url": "https://prod2.lnr.fr/joueur/2271-hugo-ndiaye"
+        }
+      ]
+    },
+    {
+      "club": "narbonne",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:13663",
+          "name": "Baptiste COLLET",
+          "url": "https://prod2.lnr.fr/joueur/13663-baptiste-collet"
+        },
+        {
+          "id": "lnr:13227",
+          "name": "Daniel Viljoen JOOSTE",
+          "url": "https://prod2.lnr.fr/joueur/13227-daniel-viljoen-jooste"
+        },
+        {
+          "id": "lnr:2852",
+          "name": "Gabriel ATLAN",
+          "url": "https://prod2.lnr.fr/joueur/2852-gabriel-atlan"
+        }
+      ]
+    },
+    {
+      "club": "agen",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:3129",
+          "name": "Pierre JOUVIN",
+          "url": "https://prod2.lnr.fr/joueur/3129-pierre-jouvin"
+        },
+        {
+          "id": "lnr:77",
+          "name": "Hans LOMBARD BURET",
+          "url": "https://prod2.lnr.fr/joueur/77-hans-lombard-buret"
+        },
+        {
+          "id": "lnr:1725",
+          "name": "Nail AUDOIRE",
+          "url": "https://prod2.lnr.fr/joueur/1725-nail-audoire"
+        }
+      ]
+    },
+    {
+      "club": "angouleme",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:784",
+          "name": "Georgy BALAKAREV",
+          "url": "https://prod2.lnr.fr/joueur/784-georgy-balakarev"
+        },
+        {
+          "id": "lnr:3110",
+          "name": "Seydou DIAKITE",
+          "url": "https://prod2.lnr.fr/joueur/3110-seydou-diakite"
+        },
+        {
+          "id": "lnr:3114",
+          "name": "Patxi BIDART",
+          "url": "https://prod2.lnr.fr/joueur/3114-patxi-bidart"
+        }
+      ]
+    },
+    {
+      "club": "aurillac",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:1567",
+          "name": "Basa KHONELIDZE",
+          "url": "https://prod2.lnr.fr/joueur/1567-basa-khonelidze"
+        },
+        {
+          "id": "lnr:1599",
+          "name": "Ronan Patrick LOUGHNANE",
+          "url": "https://prod2.lnr.fr/joueur/1599-ronan-patrick-loughnane"
+        },
+        {
+          "id": "lnr:1635",
+          "name": "Robert RODGERS",
+          "url": "https://prod2.lnr.fr/joueur/1635-robert-rodgers"
+        }
+      ]
+    },
+    {
+      "club": "dax",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:11028",
+          "name": "Louis BARRERE",
+          "url": "https://prod2.lnr.fr/joueur/11028-louis-barrere"
+        },
+        {
+          "id": "lnr:2113",
+          "name": "David LOLOHEA",
+          "url": "https://prod2.lnr.fr/joueur/2113-david-lolohea"
+        },
+        {
+          "id": "lnr:11939",
+          "name": "Diogo JOEL DE ALMEIDA HASSE FERREIRA",
+          "url": "https://prod2.lnr.fr/joueur/11939-diogo-joel-de-almeida-hasse-ferreira"
+        }
+      ]
+    },
+    {
+      "club": "montauban",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:1382",
+          "name": "Sidi Mohamed DIALLO",
+          "url": "https://prod2.lnr.fr/joueur/1382-sidi-mohamed-diallo"
+        },
+        {
+          "id": "lnr:479",
+          "name": "Nugzari SOMKHISVHILI",
+          "url": "https://prod2.lnr.fr/joueur/479-nugzari-somkhisvhili"
+        },
+        {
+          "id": "lnr:3505",
+          "name": "Lucio SORDONI",
+          "url": "https://prod2.lnr.fr/joueur/3505-lucio-sordoni"
+        }
+      ]
+    },
+    {
+      "club": "nevers",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:2802",
+          "name": "Luka PETRIASHVILI",
+          "url": "https://prod2.lnr.fr/joueur/2802-luka-petriashvili"
+        },
+        {
+          "id": "lnr:1582",
+          "name": "Henzo KITEAU",
+          "url": "https://prod2.lnr.fr/joueur/1582-henzo-kiteau"
+        },
+        {
+          "id": "lnr:2219",
+          "name": "Efitusi Tupola MA&#039;AFU",
+          "url": "https://prod2.lnr.fr/joueur/2219-efitusi-tupola-maafu"
+        }
+      ]
+    },
+    {
+      "club": "valence-romans",
+      "league": "prod2",
+      "players": [
+        {
+          "id": "lnr:2807",
+          "name": "Esteban CHOUTEAU",
+          "url": "https://prod2.lnr.fr/joueur/2807-esteban-chouteau"
+        },
+        {
+          "id": "lnr:947",
+          "name": "Sacha IDOUMI",
+          "url": "https://prod2.lnr.fr/joueur/947-sacha-idoumi"
+        },
+        {
+          "id": "lnr:876",
+          "name": "Vincent VIAL",
+          "url": "https://prod2.lnr.fr/joueur/876-vincent-vial"
+        }
+      ]
+    }
+  ]
+}
