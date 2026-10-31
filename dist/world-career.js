@@ -199,7 +199,9 @@ function worldOfficePanel(){
  '<div class="row"><span>Réputation du club</span><strong>'+info.reputation+'/100</strong></div>'+
  '<div class="row"><span>Risque indicatif pour le manager</span><strong>'+risk.risk+
  '/100</strong></div><div class="row"><span>Changements de techniciens adverses consignés</span><strong>'+
- other+'</strong></div><p class="help">Risque calculé sur la confiance existante et les défaites réelles consécutives. Aucun licenciement automatique du joueur, faux entraîneur ou offre d’emploi attribuée. Marché complet des entraîneurs à intégrer ultérieurement.</p>'+\n '<h3>Bancs adverses sous pression</h3>'+coachRows+\n '<p class="help">Indicateurs fondés sur la confiance des techniciens adverses et leurs résultats dans cette carrière. Risque indicatif uniquement : aucun poste vacant ni contrat supposé.</p>'+
+ other+'</strong></div><p class="help">Risque calculé sur la confiance existante et les défaites réelles consécutives. Aucun licenciement automatique du joueur, faux entraîneur ou offre d’emploi attribuée. Marché complet des entraîneurs à intégrer ultérieurement.</p>'+ 
+ '<h3>Bancs adverses sous pression</h3>'+coachRows+
+ '<p class="help">Indicateurs fondés sur la confiance des techniciens adverses et leurs résultats dans cette carrière. Risque indicatif uniquement : aucun poste vacant ni contrat supposé.</p>'+
  '</section>';
 }
 function worldMarketPanel(){
