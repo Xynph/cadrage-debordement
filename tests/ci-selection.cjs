@@ -23,6 +23,8 @@ assert.ok(allTests.includes('tests/v38-individual-objectives.cjs'));
 assert.ok(allTests.includes('tests/v39-team-dynamics.cjs'));
 assert.ok(allTests.includes('tests/v40-match-cockpit.cjs'));
 assert.ok(allTests.includes('tests/world-career.cjs'));
+assert.ok(allTests.includes('tests/ai-roster-cycle.cjs'));
+for(const file of ['dist/economy.js','dist/manager.js','dist/development.js','dist/saves.js','dist/index.html'])assert.ok(selectTests([file]).includes('tests/ai-roster-cycle.cjs'),file);
 for(const path of ['dist/game.js','dist/manager.js','dist/saves.js','dist/index.html'])assert.ok(selectTests([path]).includes('tests/world-career.cjs'),path);
 for(const test of ['career-integration','finance-planning','board-planning','academy-planning','transfer-planning','career-history'])assert.ok(allTests.includes('tests/'+test+'.cjs'));
 for(const p of ['dist/game.js','dist/economy.js','dist/development.js','dist/saves.js','dist/index.html'])assert.ok(selectTests([p]).includes('tests/career-integration.cjs'),p);
@@ -49,7 +51,7 @@ for(const test of ['tests/rugby.cjs','tests/frontrow.cjs','tests/discipline.cjs'
  assert.ok(rugby.includes(test),test);
 }
 equals(['dist/saves.js'],[
- 'tests/saves.cjs','tests/v20-numerical-ai.cjs','tests/v21-numerical-advice.cjs','tests/v22-tactical-comparison.cjs','tests/v23-local-zones.cjs','tests/v24-four-zones.cjs','tests/v25-whatif.cjs','tests/v26-dual-whatif.cjs','tests/v27-physical-load.cjs','tests/v28-collective-preparation.cjs','tests/v29-focused-development.cjs','tests/v30-recruitment-intelligence.cjs','tests/v32-succession-planning.cjs','tests/v33-contract-renewals.cjs','tests/v34-counteroffers.cjs','tests/v35-salary-demand.cjs','tests/v36-satisfaction.cjs','tests/v38-individual-objectives.cjs','tests/v39-team-dynamics.cjs','tests/career-integration.cjs','tests/world-career.cjs',
+ 'tests/saves.cjs','tests/v20-numerical-ai.cjs','tests/v21-numerical-advice.cjs','tests/v22-tactical-comparison.cjs','tests/v23-local-zones.cjs','tests/v24-four-zones.cjs','tests/v25-whatif.cjs','tests/v26-dual-whatif.cjs','tests/v27-physical-load.cjs','tests/v28-collective-preparation.cjs','tests/v29-focused-development.cjs','tests/v30-recruitment-intelligence.cjs','tests/v32-succession-planning.cjs','tests/v33-contract-renewals.cjs','tests/v34-counteroffers.cjs','tests/v35-salary-demand.cjs','tests/v36-satisfaction.cjs','tests/v38-individual-objectives.cjs','tests/v39-team-dynamics.cjs','tests/career-integration.cjs','tests/world-career.cjs','tests/ai-roster-cycle.cjs',
  'tests/frontrow.cjs','tests/match-rules.cjs'
 ]);
 equals(['tests/v21-numerical-advice.cjs'],['tests/v21-numerical-advice.cjs']);

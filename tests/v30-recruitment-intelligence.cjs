@@ -70,12 +70,12 @@ const rec=f('recruitmentTargets().every(x=>x.reasons.length>=2&&x.evidence.noteM
 assert.equal(rec,true);
 
 // Décision IA : le besoin réel et le budget commandent l'achat sur le marché.
-// Garde-fous : un maximum de deux signatures par fenêtre, aucun accord humain
+// Garde-fous : au maximum six signatures par fenêtre pour les carrières enrichies, aucun accord humain
 // automatique, pas d'achat pendant une rencontre, aucun doublon.
 const ai=context(),a=ai.run;
-a('start(0);var me=club().cash;S.round=13;var buyer=S.clubs[1],budget=buyer.cash,headcount=buyer.players.length;buyer.players=buyer.players.filter(p=>p.pos!==POS[0]);var pool=S.market.length');
+a('start(0);var me=club().cash;S.round=13;var buyer=S.clubs[1],budget=buyer.cash,headcount=buyer.players.length;buyer.players=buyer.players.filter(p=>p.pos!==POS[0]);var forced=makePlayer(99,0,75);forced.id="test-v30-ai-prospect";forced.age=24;forced.rating=75;forced.salary=3000;forced.price=10000;forced.contractEnd=null;ensureDevelopment(forced);forced.dev.retireAge=40;S.market=[forced];S.economy.freeAgents=[];var pool=S.market.length');
 const bought=a('aiRecruitmentWeek()');
-assert.ok(bought>=1&&bought<=2);
+assert.ok(bought>=1&&bought<=6);
 assert.equal(a('buyer.players.length>headcount-2'),true);
 assert.equal(a('club().cash'),a('me'));
 assert.ok(a('buyer.cash<=budget'));
