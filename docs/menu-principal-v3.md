@@ -54,3 +54,17 @@ Ajout d'un asset local original `dist/assets/menu-rugby-ball-muddy.svg` : ballon
 Le rendu CSS (`.cd3-right-bottom`) est non interactif (`pointer-events:none`) pour ne jamais masquer les commandes, et se réorganise sous les panneaux sur tablette et mobile. Aucun service d'images externe, police supplémentaire ou suivi réseau n'est chargé.
 
 Régressions ajoutées aux tests V3 : présence de l'asset et du CSS en JS, puis contrôle Chromium de la visibilité et du non-recouvrement aux largeurs 1440, 768 et 390 px. La réalisation reste une **illustration texturée** et non une photographie de ballon officiel.
+
+
+## V3 — Direction artistique photo et référence Figma (31/10/2026)
+
+Conception structurée dans un [fichier Figma éditable](https://www.figma.com/design/Hi8W8uT1zHWyfrY0WJj3V2) : composition trois colonnes, cinq cartes horizontales, actions latérales, zones photographiques et positions du ballon. Figma est une **maquette de direction artistique**, pas une capture du jeu exécuté ; ses noms de clubs/dates illustratifs ne sont jamais injectés dans les sauvegardes du jeu.
+
+**Nouveaux assets originaux intégrés localement au jeu :**
+- `dist/assets/menu-stadium-cinematic.png` : photographie synthétique d'un stade de rugby XV au soleil couchant, projecteurs et pelouse, aucun logo ou sponsor officiel.
+- `dist/assets/menu-rugby-ball-photoreal.png` : photographie synthétique d'un ballon usé, **légèrement boueux**, grain de cuir, couture et brins d'herbe. Placé à droite en bas, avec fondu de bordure pour le fond de jeu.
+- Création via Figma AI / modèle image de l'éditeur. Les deux copies sont committées dans le dépôt, **sans dépendance aux URL Figma temporaires à l'exécution**.
+
+**Fidélité / intégrité** : le style `main-menu-v3.css` substitue ces assets aux précédentes illustrations sans modifier le code de carrière, la lecture des slots, les niveaux d'IA, les confirmations d'import, la pause ou les sauvegardes. En responsive, les panneaux passent sous les cartes, et le ballon décoratif conserve `pointer-events:none`. `prefers-reduced-motion` reste respecté. Le stade photographique reste sous des voiles sombres pour la lisibilité des textes.
+
+**Validation requise avant fusion :** test Node sur les signatures PNG et les références CSS, test Chromium du chargement local et de la visibilité du ballon aux largeurs 1440, 768 et 390 px, test de non-débordement, scénarios fonctionnels préexistants, `Tests JavaScript` avec `Validation CI` sur le SHA final ; après fusion, contrôler la CI `push` sur le nouveau `main`. Ne pas revendiquer un contrôle visuel manuel Playwright dans Work si non exécuté.
