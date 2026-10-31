@@ -24,6 +24,8 @@ jobs:
           node tests/v46-v51-balance.cjs
       - name: Sensibilite aux ecarts de depart
         run: node tests/v46-v51-fixture-sensitivity.cjs
+      - name: Isoler retroaction de reputation
+        run: node tests/v46-v51-reputation-feedback.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
