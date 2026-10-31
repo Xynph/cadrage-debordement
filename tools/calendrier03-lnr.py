@@ -52,7 +52,22 @@ def parse(html_source,league,round_no):
  if not dates:raise ValueError("Official round day missing")
  day,month=dates[0];year=2026 if MONTHS[norm(month)]>=7 else 2027
  begin=dt.date(year,MONTHS[norm(month)],int(day))
- return [(names[i],names[i+1]) for i in range(0,len(names),2)],begin
+ games=[]
+ context=parser.visible
+ for i in range(0,len(names),2):
+  home,away=names[i:i+2]
+  h_positions=[n for n,v in enumerate(context) if norm(v)==norm(home)]
+  a_positions=[n for n,v in enumerate(context) if norm(v)==norm(away)]
+  official=None
+  for hp in h_positions:
+   ap=next((j for j in a_positions if hp<j<=hp+12),None)
+   if ap is not None:
+    time_text=" ".join(context[hp+1:ap])
+    m=re.search(r"\\b(\\d{1,2})h(\\d{2})\\b",time_text)
+    if m:official=m.group(1).zfill(2)+":"+m.group(2)
+    break
+  games.append((home,away,official))
+ return games,begin
 def slot(league,round_no,i,weekend):
  """Simulation only: plausible TV pattern, varied across rounds and home games."""
  if league=="top14":
@@ -84,11 +99,13 @@ def main(argv=None):
       raw=response.read().decode("utf-8")
     matches,round_day=parse(raw,league,rnd)
     # No guessed weekend from source. Scheduler awaits official per-round date/window.
-    for i,(home,away) in enumerate(matches):
+    for i,(home,away,official_hour) in enumerate(matches):
      all_fixtures.append({"id":f"{league}-r{rnd:02d}-m{i+1:02d}",
       "competition":league,"round":rnd,"home":home,"away":away,
-      "officialKickoff":None,"officialKickoffVerified":False,
-      "simulatedKickoff":slot(league,rnd,i,round_day),"simulatedKickoffStatus":"invented-gameplay-time",
+      "officialKickoff":(round_day.isoformat()+"T"+official_hour+":00" if official_hour else None),
+      "officialKickoffVerified":bool(official_hour),
+      "simulatedKickoff":(None if official_hour else slot(league,rnd,i,round_day)),
+      "simulatedKickoffStatus":("not-needed" if official_hour else "invented-gameplay-time"),
       "roundReferenceDate":round_day.isoformat(),
       "score":None,"sourceUrl":url})
     audits.append({"league":league,"round":rnd,"matches":len(matches),"source":url})
