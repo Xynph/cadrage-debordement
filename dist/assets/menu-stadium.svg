@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1200" viewBox="0 0 1920 1200" fill="none">
+<!-- Original stadium illustration for Cadrage Débordement. CC0-1.0. No third-party marks. -->
+<defs>
+ <linearGradient id="sky" x2="0" y2="850" gradientUnits="userSpaceOnUse"><stop stop-color="#193b43"/><stop offset=".45" stop-color="#677d77"/><stop offset=".7" stop-color="#efaa70"/><stop offset="1" stop-color="#ef7844"/></linearGradient>
+ <radialGradient id="sun"><stop stop-color="#fff2c3" stop-opacity=".95"/><stop offset=".15" stop-color="#ffdc9c" stop-opacity=".7"/><stop offset="1" stop-color="#ff9e58" stop-opacity="0"/></radialGradient>
+ <linearGradient id="pitch" x1="0" y1="650" x2="0" y2="1200" gradientUnits="userSpaceOnUse"><stop stop-color="#396a43"/><stop offset="1" stop-color="#0a3027"/></linearGradient>
+ <linearGradient id="stand" x2="0" y2="1"><stop stop-color="#162d2d"/><stop offset="1" stop-color="#28443c"/></linearGradient>
+ <linearGradient id="beam" x2="0" y2="1"><stop stop-color="#fff3d0" stop-opacity=".19"/><stop offset="1" stop-color="#fff3d0" stop-opacity="0"/></linearGradient>
+ <pattern id="seats" width="19" height="12" patternUnits="userSpaceOnUse"><path d="M0 8h10M12 8h5" stroke="#9b9f7d" stroke-opacity=".46" stroke-width="3"/><path d="M3 2h5M13 2h4" stroke="#dbbc85" stroke-opacity=".22" stroke-width="2"/></pattern>
+ <pattern id="grass" width="100" height="170" patternUnits="userSpaceOnUse"><path fill="#75a55c" fill-opacity=".1" d="M0 0h100v85H0z"/></pattern>
+ <filter id="blur"><feGaussianBlur stdDeviation="17"/></filter>
+</defs>
+<path fill="url(#sky)" d="M0 0h1920v1200H0z"/>
+<ellipse cx="1370" cy="470" rx="560" ry="390" fill="url(#sun)"/>
+<circle cx="1360" cy="493" r="43" fill="#ffe8ae"/>
+<g stroke="#d7c5ad" stroke-opacity=".22" stroke-width="8" filter="url(#blur)"><path d="m500 210 410 33 190-17 460 37M900 130l500 45 310-13"/></g>
+<!-- Far tribune, tiered seating and canopy -->
+<path d="M0 555q960-175 1920 0v165H0Z" fill="#34473d"/>
+<path d="M0 578q960-175 1920 0v110H0Z" fill="url(#seats)"/>
+<g stroke="#111f24" stroke-width="8"><path d="M0 600q960-170 1920 0M0 643q960-157 1920 0M0 690q960-155 1920 0"/></g>
+<path d="M0 540q960-195 1920 0l-30-40Q960 310 30 500Z" fill="#203438"/>
+<path d="M0 500q960-195 1920 0" stroke="#92a09a" stroke-opacity=".45" stroke-width="5"/>
+<!-- Pitch in perspective -->
+<path d="M320 678h1280l320 522H0Z" fill="url(#pitch)"/>
+<path d="M320 678h1280l320 522H0Z" fill="url(#grass)"/>
+<g stroke="#d5dfbe" stroke-opacity=".48" stroke-width="3"><path d="m440 700-300 500m1340-500 300 500M440 700h1040M350 850h1220M260 1010h1400M960 700v500M90 1130h1740"/><path d="M410 742h1100M210 1080h1500" stroke-dasharray="28 24" stroke-width="2"/></g>
+<!-- Rugby posts -->
+<g stroke="#e2e4d0" stroke-width="6"><path d="M1150 708V460m100 248V460m-100 160h100"/></g>
+<!-- Side stands converge towards the pitch -->
+<path d="M0 400 360 650 160 1200H0Z" fill="url(#stand)"/><path d="M1920 400 1560 650l200 550h160Z" fill="url(#stand)"/>
+<path d="M0 450 320 663 120 1200H0Zm1920 0-320 213 200 537h120Z" fill="url(#seats)"/>
+<g stroke="#0c2529" stroke-width="11"><path d="m0 520 303 175M0 640l271 147M0 790l225 119M1920 520l-303 175m303-55-271 147m271 3-225 119"/></g>
+<!-- Canopies and steel ribs -->
+<path d="M0 190 417 547 363 611 0 365Zm1920 0-417 357 54 64 363-246Z" fill="#172a30"/>
+<g stroke="#6b827e" stroke-opacity=".45" stroke-width="3"><path d="M0 220 390 567M0 300l363 288M80 258v169m90-91v150m95-65v129M1920 220l-390 347m390-267-363 288m283-330v169m-90-91v150m-95-65v129"/></g>
+<!-- Floodlights and a soft atmospheric wash -->
+<g stroke="#34494b" stroke-width="9"><path d="M480 576V302m1000 274V302"/></g>
+<g fill="#fff1ca"><rect x="430" y="294" width="100" height="16" rx="3"/><rect x="1430" y="294" width="100" height="16" rx="3"/></g>
+<g fill="#ffe2ac" opacity=".4" filter="url(#blur)"><ellipse cx="480" cy="302" rx="66" ry="20"/><ellipse cx="1480" cy="302" rx="66" ry="20"/></g>
+<path d="m430 310-210 550h620L530 310Zm1000 0-310 550h620l-210-550Z" fill="url(#beam)"/>
+<path d="M0 1120q960-100 1920 0v80H0Z" fill="#061d1d" fill-opacity=".4"/>
+</svg>
