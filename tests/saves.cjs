@@ -24,7 +24,7 @@ run('start(13)');for(let y=0;y<10;y++){run('S.phase="ended";advanceSeason()');as
 // to the pending document must be rejected before backup or career replacement.
 for(const tamper of [
  'pendingSave.state.clubs[pendingSave.state.club].cash+=1',
- 'pendingSave.state.morale=Math.min(100,pendingSave.state.morale+1)',
+ 'pendingSave.state.morale=pendingSave.state.morale===0?1:0',
  'pendingSave.checksum="00000000"'
 ]){
  const q=context();q.run('start(0)');
