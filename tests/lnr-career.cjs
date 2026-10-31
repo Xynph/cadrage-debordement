@@ -20,7 +20,7 @@ assert.equal(run('LNR_TOP14.length'),14);
 assert.equal(run('LNR_PROD2.length'),16);
 assert.equal(run('LNR_CATALOGUE.clubs.reduce((n,c)=>n+c[3].length,0)'),1592);
 assert.equal(run('new Set(LNR_CATALOGUE.clubs.flatMap(c=>c[3].map(p=>p[0]))).size'),1592);
-assert.ok(run("lnrChooseMode('lnr')"));
+run('mainMenuNewCareer()');assert.ok(run("lnrChooseMode('lnr')"));
 assert.match(g.app.innerHTML,/Effectifs LNR/,'opt-in visible before a career');
 run("start(0,'lnr')");
 assert.equal(run('S.clubs.length'),14);

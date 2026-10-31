@@ -26,6 +26,7 @@ try:
         page.set_default_timeout(15000)
         page.on('pageerror',lambda e:errors.append(str(e)))
         page.goto('http://127.0.0.1:%d/'%server.server_address[1])
+        page.get_by_role('button',name='Nouvelle carrière').click()
         page.locator('.clubchoice').first.click()
         page.evaluate("nav('recruitment')")
         check('centre de recrutement visible',page.locator('.cd03').is_visible())

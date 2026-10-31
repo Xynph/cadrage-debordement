@@ -59,6 +59,7 @@ function ui01SessionTools(){
   '<span class="ui01-storage">'+ui01Escape(location)+'</span>'+
   '<button type="button" onclick="nav(\'saves\')">Sauvegardes</button>'+
   (offline?'<button type="button" onclick="window.CDOfflineAction(\'quit\')">Enregistrer et quitter</button>':'')+
+  '<button type="button" onclick="returnToMainMenu()">Menu principal</button>'+
   '<button type="button" onclick="resetDialog()">Nouvelle carrière</button></div>';
 }
 function ui01Navigation(view,state,rank){

@@ -16,7 +16,7 @@ for(let failureKey of ['bdt-before-import','bdt-v1']){let q=context();q.run('sta
 // New browsers can restore from the welcome screen without starting another career.
 const blank=context();blank.run(`pendingSave=parseSaveDocument(${JSON.stringify(incoming)});showImportReview()`);assert.equal(blank.run('S'),null);assert.equal(blank.run('confirmSaveImport()'),true);assert.equal(blank.run('S.club'),13);
 // A malformed local career never prevents reaching the welcome/import controls.
-const corrupt=context({version:2,clubs:[]});assert.equal(corrupt.run('S'),null);assert.ok(corrupt.run('loadSaveFailure'));assert.ok(corrupt.store['bdt-recovery-invalid']);assert.ok(corrupt.app.innerHTML.includes('Importer une carrière'));
+const corrupt=context({version:2,clubs:[]});assert.equal(corrupt.run('S'),null);assert.ok(corrupt.run('loadSaveFailure'));assert.ok(corrupt.store['bdt-recovery-invalid']);assert.ok(corrupt.app.innerHTML.includes('Charger une sauvegarde JSON'));
 // Long-running career metadata and large-ish snapshots remain exportable.
 run('start(13)');for(let y=0;y<10;y++){run('S.phase="ended";advanceSeason()');assert.equal(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),true)}
 
