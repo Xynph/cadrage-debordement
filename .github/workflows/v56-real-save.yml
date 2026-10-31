@@ -1,0 +1,30 @@
+name: V56 audit source reelle et sauvegardes
+on:
+  pull_request:
+    branches: [test/v55-playable-contract-harness]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  save-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Contracts synthetiques V55
+        run: node tests/v55-playable-contracts.cjs
+      - name: Source reelle V56
+        env:
+          CD_V56_REPORT: v56-report.json
+        run: |
+          node --check tests/v56-real-save-source.cjs
+          node tests/v56-real-save-source.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v56-report
+          path: v56-report.json
+          if-no-files-found: ignore
