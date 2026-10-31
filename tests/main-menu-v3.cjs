@@ -20,8 +20,8 @@ const ballPhoto=fs.readFileSync(path.join(__dirname,'../dist/assets/menu-rugby-b
 assert.equal(stadiumPhoto.subarray(0,8).toString('hex'),'89504e470d0a1a0a','stadium is a real local PNG');
 assert.equal(ballPhoto.subarray(0,8).toString('hex'),'89504e470d0a1a0a','worn ball is a real local PNG');
 assert.ok(stadiumPhoto.length>100000 && ballPhoto.length>100000,'assets must be nonempty high-detail raster artwork');
-assert.match(skin,/menu-stadium-cinematic\\.png/,'real stadium photo must be wired in production CSS');
-assert.match(skin,/menu-rugby-ball-photoreal\\.png/,'real muddy rugby ball photo must be wired in production CSS');
+assert.match(skin,/menu-stadium-cinematic\.png/,'real stadium photo must be wired in production CSS');
+assert.match(skin,/menu-rugby-ball-photoreal\.png/,'real muddy rugby ball photo must be wired in production CSS');
 assert.match(skin,/mask-image:radial-gradient/,'ball photo must fade naturally into the pitch');
 
 assert.match(g.app.innerHTML,/class="cd3-feature"/,'functional quick actions must exist');
