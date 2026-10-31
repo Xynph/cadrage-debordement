@@ -23,7 +23,8 @@
    ids.add(c.id);
   }
  }
- function simulate({clubs,seasons=10,seed=1,adapters}){
+ function simulate({clubs,seasons=10,seed=1,adapters,externalEconomy=false,sportingPenalties={}}){
+  if(typeof externalEconomy!=='boolean'||!sportingPenalties||typeof sportingPenalties!=='object'||Array.isArray(sportingPenalties))throw RangeError('Options invalides');
   validateClubs(clubs);
   if(!Number.isInteger(seasons)||seasons<1||seasons>15)throw new RangeError('Durée invalide');
   if(!adapters||!['reputation','coachRisk','facility','recruitment','world'].every(k=>typeof adapters[k]==='function'))
@@ -32,13 +33,13 @@
   const state=clubs.map(c=>({...c}));
   const history=[],events=[];
   for(let season=1;season<=seasons;season++){
-   const ordered=state.map(c=>({id:c.id,form:c.reputation+random()*24+(c.facilities-5)*2}))
+   const ordered=state.map(c=>({id:c.id,form:c.reputation+random()*24+(c.facilities-5)*2-(sportingPenalties[c.id]??0)}))
      .sort((a,b)=>b.form-a.form||a.id.localeCompare(b.id));
    const ranks=new Map(ordered.map((v,i)=>[v.id,i+1]));
    const seasonRows=[];
    for(const c of state){
     const finish=ranks.get(c.id);
-    const before={...c};
+    
     const reputation=adapters.reputation({current:c.reputation,leagueFinish:finish,leagueSize:state.length,champion:finish===1,financeHealthy:c.cash>0});
     if(!reputation||!valid(reputation.next)||reputation.next<0||reputation.next>100)throw Error('Réputation calculée invalide');
     c.reputation=reputation.next;
@@ -49,10 +50,10 @@
     else c.coachConfidence=Math.max(0,Math.min(100,Math.round(c.coachConfidence+(finish<=3?6:-4))));
     const revenue=90000+Math.round(c.reputation*1200)+(state.length-finish)*4000;
     const operations=Math.round(125000+c.facilities*3500);
-    c.cash=Math.max(0,Math.round(c.cash+revenue-operations));
+    if(!externalEconomy)c.cash=Math.max(0,Math.round(c.cash+revenue-operations));
     const proposed=adapters.facility({cash:c.cash,level:c.facilities,cost:60000+c.facilities*12000,weeks:1});
     if(!proposed||typeof proposed.affordable!=='boolean'||!valid(proposed.remaining))throw Error('Projet infrastructure invalide');
-    if(proposed.affordable&&c.facilities<10&&c.cash>200000&&finish<=Math.ceil(state.length/2)){
+    if(!externalEconomy&&proposed.affordable&&c.facilities<10&&c.cash>200000&&finish<=Math.ceil(state.length/2)){
       c.cash=proposed.remaining;c.facilities++;events.push({season,clubId:c.id,type:'facility'});
     }
     const recruit=adapters.recruitment({cash:c.cash,wageRoom:c.wageRoom,needs:[],candidates:[]});
