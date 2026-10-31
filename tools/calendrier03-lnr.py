@@ -48,7 +48,11 @@ def parse(html_source,league,round_no):
  expected=7 if league=="top14" else 8
  if len(names)!=expected*2 or len(set(names))!=expected*2:
   raise ValueError("Ambiguous match pairing: "+league+" J"+str(round_no)+", anchors="+repr(names))
- return [(names[i],names[i+1]) for i in range(0,len(names),2)]
+ dates=re.findall(r"(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\\s+(\\d{1,2})\\s+(janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|decembre)", text, re.I)
+ if not dates:raise ValueError("Official round day missing")
+ day,month=dates[0];year=2026 if MONTHS[norm(month)]>=7 else 2027
+ begin=dt.date(year,MONTHS[norm(month)],int(day))
+ return [(names[i],names[i+1]) for i in range(0,len(names),2)],begin
 def slot(league,round_no,i,weekend):
  """Simulation only: plausible TV pattern, varied across rounds and home games."""
  if league=="top14":
@@ -78,13 +82,14 @@ def main(argv=None):
      req=urllib.request.Request(url,headers={"User-Agent":"CadrageDebordement-CalendarResearch/1.0"})
      with urllib.request.urlopen(req,timeout=18) as response:
       raw=response.read().decode("utf-8")
-    matches=parse(raw,league,rnd)
+    matches,round_day=parse(raw,league,rnd)
     # No guessed weekend from source. Scheduler awaits official per-round date/window.
     for i,(home,away) in enumerate(matches):
      all_fixtures.append({"id":f"{league}-r{rnd:02d}-m{i+1:02d}",
       "competition":league,"round":rnd,"home":home,"away":away,
       "officialKickoff":None,"officialKickoffVerified":False,
-      "simulatedKickoff":None,"simulatedKickoffStatus":"pending-official-round-window",
+      "simulatedKickoff":slot(league,rnd,i,round_day),"simulatedKickoffStatus":"invented-gameplay-time",
+      "roundReferenceDate":round_day.isoformat(),
       "score":None,"sourceUrl":url})
     audits.append({"league":league,"round":rnd,"matches":len(matches),"source":url})
    except Exception as e:
@@ -95,7 +100,7 @@ def main(argv=None):
  if total!=422 and not opts.allow_partial:raise SystemExit("REJECTED: "+str(total)+"/422")
  payload={"season":"2026-2027","careerStart":"2026-07-01","completeness":"complete" if total==422 and not missing else "partial","count":total,
  "officialDataSource":"LNR public pages","fixtures":all_fixtures,"audits":audits,"missing":missing,
- "note":"Kickoffs not assigned until dates validated; results never imported."}
+ "note":"Simulated kickoffs are not LNR announcements; results never imported."}
  opts.output.parent.mkdir(parents=True,exist_ok=True)
  opts.output.write_text(json.dumps(payload,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
  print(json.dumps({"extracted":total,"missingRounds":len(missing),"complete":not missing and total==422}))
