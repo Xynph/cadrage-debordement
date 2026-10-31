@@ -27,9 +27,10 @@
     const baseCosts=profile.baseCosts??(125000+row.facilities*3500);
     const investment=profile.investment??(row.facilities<10?60000+row.facilities*12000:0);
     const repayment=profile.repayment??15000;
+    if(![revenue,baseCosts,investment,repayment].every(n=>typeof n==='number'&&Number.isFinite(n)&&n>=0))throw RangeError('Profil financier invalide');
     const quote=adapters.facility({cash:Math.max(0,club.cash),level:club.facilities,cost:investment,weeks:1});
     const stressed=club.cash<0||club.debt>Math.max(1,revenue)*.8;
-    const planned=stressed?investment:(club.cash>investment&&club.facilities<10&&quote?.affordable===true?investment:0);
+    const planned=stressed?investment:(club.cash>=investment&&club.cash+revenue-baseCosts-investment>=0&&club.facilities<10&&quote?.affordable===true?investment:0);
     const result=finance.annual(club,{revenue,baseCosts,investment:planned,repayment});
     club.cash=result.cash;club.debt=result.debt;
     club.reputation=row.reputation;
