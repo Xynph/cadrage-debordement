@@ -70,3 +70,26 @@ Ce protocole s'applique à chaque session, même si l'utilisateur ne le rappelle
 ## Coordination prioritaire entre les deux comptes — consigne actualisée au 31 octobre 2026
 
 En cas de contradiction avec l'ancien protocole d'alternance ci-dessus, suivre la répartition explicitement décidée par l'utilisateur : **le compte principal est seul responsable des validations finales et des fusions dans `main`** jusqu'à nouvel ordre ; l'autre compte développe les fonctionnalités hors match sur des branches et PR distinctes et **ne les fusionne pas**. Les PR en brouillon restent en préparation : ne jamais les déclarer prêtes ou les fusionner sans vérification de leur état réel et coordination effective avec leur auteur. Privilégier des intégrations jouables et testées plutôt que la multiplication des versions isolées. Les protections GitHub et la validation CI sur le dernier SHA demeurent obligatoires.
+
+
+## Canal de coordination permanent — issue #73 (proposition, applicable après fusion)
+
+**Salon partagé : https://github.com/Xynph/cadrage-debordement/issues/73**
+
+Cette section précise le fonctionnement en parallèle déjà autorisé par l'utilisateur et prévaut sur l'ancienne formule « jamais simultanément » lorsqu'il existe des branches, périmètres et fichiers distincts. Elle ne change pas la règle : le compte principal reste le seul responsable des fusions dans `main`.
+
+### Ouverture obligatoire d'une session
+1. Vérifier le dernier `main`, les changements et PR/CI récents ; lire `AGENTS.md` et `DEVELOPPEMENT.md`.
+2. Lire l'issue #73 **et ses commentaires récents** avant tout développement. Vérifier les revendications importantes dans les branches et PR : les commentaires ne sont pas une preuve de publication.
+3. Déclarer dans #73 une **PRISE DE CHANTIER** avec rôle du compte, date UTC, branche, SHA de base, mission, chemins exacts réservés, chemins exclus et dépendances. Utiliser le modèle inscrit dans l'issue.
+4. En cas de recouvrement de fichiers avec un chantier déclaré actif, s'arrêter sur ces fichiers et demander un arbitrage ; continuer uniquement sur une zone indépendante.
+5. Si l'API de commentaires est indisponible ou renvoie une erreur d'autorisation, **ne jamais prétendre avoir envoyé un message** ; signaler le blocage et publier l'état dans la PR. Le titulaire doit vérifier les droits du connecteur.
+6. Les réservations de fichiers sont **des conventions et non des verrous Git**. Recontrôler le SHA réel de la branche avant push, revue et fusion.
+
+### Messages et fin de session
+- Les échanges `MESSAGE / QUESTION`, `PRISE DE CHANTIER` et `PASSATION` suivent les formats décrits dans #73.
+- Avant de terminer, publier une PASSATION dans #73 : commits et PR, chemins réellement modifiés, tests réussis/échoués/non exécutés, CI, risques, sauvegardes, décisions et fichiers libérés.
+- Ne pas présenter la coordination comme une communication instantanée autonome : chaque compte intervient lorsqu'une session est active, sans surveillance continue.
+- Garder #73 ouverte ; ne jamais y publier de jeton, clé API, sauvegarde personnelle ou secret.
+- Pour les travaux de l'autre compte, prendre les **derniers commentaires** et le **GitHub actuel** comme références, non un ancien rapport de chat.
+- Les règles de CI, vérification du dernier SHA et fusion réservée au compte principal restent intégralement en vigueur.
