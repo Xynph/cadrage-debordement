@@ -1,0 +1,28 @@
+name: V63.1 douze saisons natives et checkpoints
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-long-career:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Carriere longue dans le vrai moteur
+        env:
+          CD_V631_REPORT: v631-native-long.json
+        run: |
+          node --check tests/v63-1-long-career.cjs
+          node tests/v63-1-long-career.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v631-native-long-career
+          path: v631-native-long.json
+          if-no-files-found: ignore
