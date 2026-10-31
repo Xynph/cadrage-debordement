@@ -57,3 +57,13 @@ Exemple UI-only : avant, 23 jobs (5 + 4 + 4 + 8 + 1 + 1) pouvaient s'exécuter ;
 - Avant publication d'une PR, tests ciblés et `node tests/ci-sharding.cjs` / `node tests/ci-selection.cjs` localement ; un seul commit final ; CI de PR **complète** sur HEAD exact, puis `Validation CI`, puis contrôle unique du `push` post-fusion. Pas d'abaissement du gate, pas de modification du format des sauvegardes ni de la facturation.
 
 **Réajustement après première CI de V2 :** la première attribution de 82 suites a bien été exhaustive, mais les durées réelles 72 / 159 / 125 s ont montré une volatilité marquée : `ai-roster-cycle` 59→81 s et `world-career` 66→38 s. Les poids utilisent donc le maximum des mesures des runs #41195460951 et #41196473550. Cette correction est publiée avant la décision de fusion, puis revalidée sur le nouveau SHA de PR ; le gain n'est pas supposé avant ce résultat.
+
+## V3 — parallélisme CI et temps de réponse (31 octobre 2026)
+
+**Proposition bornée sur une branche dédiée**, sans réduction de couverture : la matrice centrale passe de **3 à 5 shards**. Le répartiteur déterministe continue de découvrir toutes les suites `tests/*.cjs` (hors `harness.cjs`), notamment `saves.cjs`; le gate `Validation CI` conserve ses dépendances et son critère de réussite, et les campagnes spécialisées ne changent pas.
+
+- Données de base : 82 suites sur `main 2fcd3ad`, poids prudents = maximum de deux exécutions historiques ; anciennes charges estimées **139/140/139**.
+- Plan à 5 shards (mêmes 82 suites) : **84/84/83/83/84** unités, soit une réduction du chemin critique pondéré de 140 à 84 unités (**−40 % théoriques sur la répartition uniquement**). Le test le plus lourd pèse 81 unités à lui seul. Ce calcul **n'est pas une mesure de durée réelle** ni un gain de bout en bout ; les temps de démarrage/queue et la variabilité demeurent.
+- Référence réelle précédente : workflow `Tests JavaScript` post-fusion #41197121273 ≈ 151 s (11:30:20Z → 11:32:51Z) ; carrière longue #41197121265 ≈ 187 s, exécution indépendante qui peut rester le chemin critique pour les PR métier.
+- Validation attendue : `node tests/ci-sharding.cjs`, couverture sans omission ni doublon, CI complète sur HEAD exact de PR, puis comparaison des durées des **cinq** shards et contrôle post-fusion. Ne pas fusionner sans ces preuves.
+- Bénéfice côté ChatGPT : une lecture groupée initiale, une seule validation complète par SHA final et **aucun polling** de statuts ; une PR peut être rendue en attente de CI sans prétendre qu'elle est livrée.

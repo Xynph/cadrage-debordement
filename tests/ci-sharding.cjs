@@ -5,7 +5,7 @@ const all = allTestFiles();
 assert.ok(all.length >= 81, 'Toutes les suites doivent être découvertes');
 assert.ok(all.includes('tests/saves.cjs'));
 const groups = planShards(all);
-assert.equal(groups.length, 3);
+assert.equal(groups.length, 5);
 for (const group of groups) assert.ok(group.length, 'Groupe vide');
 assert.equal(new Set(groups.flat()).size, all.length, 'Suite dupliquée');
 assert.deepEqual(groups.flat().sort(), all.slice().sort(), 'Suite omise');
