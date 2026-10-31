@@ -1,0 +1,28 @@
+name: V55 contrats de carriere et transactions
+on:
+  pull_request:
+    branches: [test/v54-career-scenario-suite]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  playable-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests de contrat et sauvegarde
+        env:
+          CD_V55_REPORT: v55-contract-report.json
+        run: |
+          node --check tests/v55-playable-contracts.cjs
+          node tests/v55-playable-contracts.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v55-contract-report
+          path: v55-contract-report.json
+          if-no-files-found: ignore
