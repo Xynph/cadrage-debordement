@@ -33,3 +33,15 @@ Risques à couvrir : index ou snapshot corrompu ; ancienne carrière hors biblio
 - Limites : pas de certification Windows native, pas de profils personnalisés d'entraîneur, pas de sauvegarde cloud ; écussons typographiques existants, pas de nouveaux emblèmes officiels. La barre mesure les journées régulières jouées, pas une progression inventée vers un titre.
 
 Prochaine évolution proposée : étendre cette identité au bureau du manager avec le prochain match et trois décisions prioritaires réellement calculées depuis la carrière.
+
+
+## Rapprochement visuel de la maquette de référence — passe V3.1
+
+- **Grand écran** : mise en page en trois zones réelles, chacune avec sa fonction : navigation à gauche, cinq carrières en grandes lignes horizontales au centre, panneaux de raccourcis à droite. Le stade WebP original demeure visible sur tout l'arrière-plan.
+- **Hiérarchie** : logo massif blanc avec soulignement orange ; action Continuer dominante ; titre « Reprenez votre carrière » ; contour lumineux orange sur la carrière active et contrôles de reprise/suppression identifiés.
+- **Données authentiques** : le nom et l'abréviation d'écusson viennent du club de la carrière sauvegardée, la saison et le nombre de journées de l'état natif, la dernière sauvegarde de la date du slot V2 ; pas de classement inventé, de logo officiel téléchargé ou d'illustration spécifique à un club fictivement attribuée.
+- **Illustration** : vignette de chaque carte = recadrage de la photographie de stade originale locale, avec variation de cadrage. Les panneaux droits utilisent le même asset ; ce n'est pas une image de joueurs ou d'écussons officiels. Aucune requête externe n'est déclenchée par l'interface.
+- **Responsive** : trois colonnes au format large ; colonne latérale puis carrières + raccourcis empilés sur tablette ; navigation compacte et cartes adaptées au petit mobile. Tous les boutons conservent un nom accessible distinct, un focus visible et les actions natives.
+- **Tests de régression** : présence de la composition à trois zones, des cinq cartes en colonne verticale, du panneau illustré et absence de débordement aux trois largeurs Chromium (1440, 768, 390 px). Les assertions précédentes de création, import JSON, reprise et pause restent obligatoires.
+
+La maquette visuelle n'est pas une capture du jeu ; les captures réellement produites par la CI après cette passe font autorité pour le rendu livré.
