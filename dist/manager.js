@@ -126,7 +126,8 @@ function aiRecruitmentWeek(){
   if(count>=2)break;
   const urgent=recruitmentNeeds(c)[0];
   if(!urgent||urgent.score<55||c.players.length>=40)continue;
-  const best=recruitmentTargets(c,S.market,false).find(x=>x.within&&x.need.score>=55&&x.p.salary<=Math.max(1000,c.base*250));
+  const options=recruitmentTargets(c,S.market,false).filter(x=>x.within&&x.need.score>=55&&x.p.salary<=Math.max(1000,c.base*250));
+  const best=worldAIRecruitmentChoice(c,options);
   if(!best)continue;
   const p=best.p;
   // L'IA ne possède pas de note cachée : le choix repose sur la même fourchette

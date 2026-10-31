@@ -1,0 +1,17 @@
+'use strict';
+const assert=require('node:assert/strict');
+const bridge=require('../dist/world-finance.js');
+const clubs=Array.from({length:14},(_,i)=>({id:'club'+i,cash:100000,reputation:40+i,wageRoom:10000,facilities:3,coachConfidence:60,debt:0}));
+const adapters={reputation:({current})=>({next:current}),coachRisk:()=>({risk:0}),facility:({cash,cost})=>({affordable:cash>=cost,remaining:cash-cost}),recruitment:()=>({action:'conserve'}),world:()=>[]};
+const stressed=Object.fromEntries(clubs.map(c=>[c.id,{revenue:10000,baseCosts:100000,investment:30000,repayment:0}]));
+const saved=JSON.stringify(clubs);
+const result=bridge.simulate({clubs,seasons:15,seed:123,adapters,profiles:stressed});
+assert.equal(JSON.stringify(clubs),saved,'Les données initiales ne doivent pas être modifiées');
+assert.equal(result.history.length,15);
+assert.equal(result.history.every(y=>y.standings.every(r=>r.investmentPaid===0)),true,'Pas de dépense non financée');
+assert.equal(result.clubs.every(c=>c.facilities===3),true,'Pas d’augmentation sans paiement');
+assert.equal(result.history.some(y=>y.standings.some(r=>r.cash<0)),true,'Le déficit doit rester visible');
+assert.deepEqual(result,bridge.simulate({clubs,seasons:15,seed:123,adapters,profiles:stressed}));
+assert.throws(()=>bridge.simulate({clubs,seasons:1,seed:1,adapters,profiles:{club0:{revenue:-1}}}),RangeError);
+assert.throws(()=>bridge.simulate({clubs,seasons:1,seed:1,adapters,profiles:{club0:{investment:Infinity}}}),RangeError);
+console.log('V51 : régression finances, sauvegardes et investissements : OK');
