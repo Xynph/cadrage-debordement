@@ -27,7 +27,7 @@ assert.equal(run('S.clubs.length'),14);
 assert.equal(run('lnrCareerMode(S)'),true);
 assert.equal(run('S.clubs.every((c,i)=>c.name===lnrGameClub(i).name)'),true);
 assert.equal(run('S.clubs.every((c,i)=>c.players.length===lnrGameClub(i).players.length)'),true);
-assert.equal(run('S.clubs.every(c=>c.players.filter(p=>/^lnr:\\d+$/.test(p.id)).length>=30)'),true,'catalogue LNR conservé même avec apports fictifs du moteur');
+assert.equal(run('S.clubs.every(c=>c.players.filter(p=>p.id.startsWith("lnr:")).length>=30)'),true,'catalogue LNR conservé même avec apports fictifs du moteur');
 assert.equal(run('sheetErrors().length'),0,'native XV+8 possible');
 assert.ok(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),'LNR export accepted');
 run("nav('team')");
