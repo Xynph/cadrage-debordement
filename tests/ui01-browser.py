@@ -39,7 +39,7 @@ try:
         page.set_default_timeout(10000)
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.goto(url)
-        page.get_by_role('button',name='Nouvelle carrière').click();;;
+        page.get_by_role('button',name='Nouvelle carrière').click();page.get_by_role('button',name='Univers fictif').click()
         check('default system theme resolved dark', page.locator('html').get_attribute('data-cd-theme') == 'analyste')
         check('welcome dark cards have dark surface', page.locator('.clubchoice').first.evaluate('(e)=>getComputedStyle(e).backgroundColor') == 'rgb(20, 31, 48)')
         page.locator('.clubchoice').first.click()
@@ -93,8 +93,7 @@ try:
         # A bridge double verifies wiring, not the operating-system launcher.
         offline = browser.new_context(viewport={'width': 390, 'height': 844})
         offline.add_init_script("""window.CDOfflineStorage={offline:true,directory:'test-only',getItem:k=>localStorage.getItem(k),setItem:(k,v)=>localStorage.setItem(k,v),removeItem:k=>localStorage.removeItem(k)};window.CDOfflineAction=(a)=>{window.lastOfflineAction=a};""")
-        q=offline.new_page();q.on('pageerror',lambda e:errors.append(str(e)));q.goto(url);q.locator('.clubchoice').first.click()
-        q.get_by_role('button',name='Nouvelle carrière').click();;;
+        q=offline.new_page();q.on('pageerror',lambda e:errors.append(str(e)));q.goto(url);q.get_by_role('button',name='Nouvelle carrière').click();q.get_by_role('button',name='Univers fictif').click();q.locator('.clubchoice').first.click()
         q.locator('.ui01-session-tools button[onclick="window.CDOfflineAction(\'quit\')"]').click()
         check('offline quit routes to existing bridge', q.evaluate('window.lastOfflineAction') == 'quit')
         check('no page JavaScript exception', not errors)
