@@ -131,7 +131,7 @@ function careerFinancialAnalysis(){
 function careerFinancePanel(){
  if(!careerIntegrated())return '<section class="card"><h2>Gestion de club V41–V45</h2><p class="help">Carrière créée avant l’intégration : les systèmes de direction, sponsoring et formation restent inactifs jusqu’à activation volontaire.</p><button onclick="careerEnable()" '+(S.live?'disabled':'')+'>Activer la gestion intégrée</button></section>';
  const {base,projection,comparison}=careerFinancialAnalysis(),c=S.careerManagement,terms=c.sponsor?CAREER_SPONSORS[c.sponsor.key]:null;
- const remaining=Math.max(1,29-S.round);
+ const remaining=Math.max(1,26-S.round);
  return '<section class="card career-integration-card"><div class="cardtitle"><h2>Prévisions financières et décisions</h2><span class="tag">MODÈLE FICTIF</span></div>'+
  '<p class="help">Projection prudente en euros sur '+base.weeks+' semaines : partenaires existants 160 000 €/semaine, nouveau sponsor éventuel, salaires actuels et formation. Billetterie, primes sportives, transferts et aléas exclus ; les contrats peuvent évoluer.</p>'+
  '<div class="row"><span>Variation hebdomadaire projetée</span><strong>'+money(projection.weeklyNet)+'</strong></div>'+
@@ -144,7 +144,7 @@ function careerFinancePanel(){
  Object.entries(CAREER_SPONSORS).map(([key,t])=>{
  const v=CDBoardPlanning.sponsorContract({weeklyPayment:t.weekly,signingBonus:t.signing,winBonus:t.win,weeks:remaining,wins:0});
  return '<div class="row"><span>'+t.label+'<small> · '+money(t.weekly)+'/sem. · avance '+money(t.signing)+
-  ' · bonus victoire '+money(t.win)+' · garanti '+money(v.guaranteed)+' sur '+remaining+' rencontres</small></span>'+
+  ' · bonus victoire '+money(t.win)+' · garanti '+money(v.guaranteed)+' sur '+remaining+' journées garanties de championnat</small></span>'+
   '<button class="small dark" onclick="careerSponsorPick(\''+key+'\')" '+(S.live||S.phase!=='league'||S.round>4?'disabled':'')+'>Signer</button></div>';
  }).join(''))+
  '</section>';
