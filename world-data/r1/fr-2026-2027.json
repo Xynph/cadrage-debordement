@@ -11,7 +11,7 @@
       "teamCount": 14,
       "regularRounds": 26,
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -24,7 +24,7 @@
       "teamCount": 16,
       "regularRounds": 30,
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -37,7 +37,7 @@
       "name": "Club fictif Première 1",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -48,7 +48,7 @@
       "name": "Club fictif Première 2",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -59,7 +59,7 @@
       "name": "Club fictif Première 3",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -70,7 +70,7 @@
       "name": "Club fictif Première 4",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -81,7 +81,7 @@
       "name": "Club fictif Première 5",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -92,7 +92,7 @@
       "name": "Club fictif Première 6",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -103,7 +103,7 @@
       "name": "Club fictif Première 7",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -114,7 +114,7 @@
       "name": "Club fictif Première 8",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -125,7 +125,7 @@
       "name": "Club fictif Première 9",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -136,7 +136,7 @@
       "name": "Club fictif Première 10",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -147,7 +147,7 @@
       "name": "Club fictif Première 11",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -158,7 +158,7 @@
       "name": "Club fictif Première 12",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -169,7 +169,7 @@
       "name": "Club fictif Première 13",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -180,7 +180,7 @@
       "name": "Club fictif Première 14",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -191,7 +191,7 @@
       "name": "Club fictif Deuxième 1",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -202,7 +202,7 @@
       "name": "Club fictif Deuxième 2",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -213,7 +213,7 @@
       "name": "Club fictif Deuxième 3",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -224,7 +224,7 @@
       "name": "Club fictif Deuxième 4",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -235,7 +235,7 @@
       "name": "Club fictif Deuxième 5",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -246,7 +246,7 @@
       "name": "Club fictif Deuxième 6",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -257,7 +257,7 @@
       "name": "Club fictif Deuxième 7",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -268,7 +268,7 @@
       "name": "Club fictif Deuxième 8",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -279,7 +279,7 @@
       "name": "Club fictif Deuxième 9",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -290,7 +290,7 @@
       "name": "Club fictif Deuxième 10",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -301,7 +301,7 @@
       "name": "Club fictif Deuxième 11",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -312,7 +312,7 @@
       "name": "Club fictif Deuxième 12",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -323,7 +323,7 @@
       "name": "Club fictif Deuxième 13",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -334,7 +334,7 @@
       "name": "Club fictif Deuxième 14",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -345,7 +345,7 @@
       "name": "Club fictif Deuxième 15",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
@@ -356,7 +356,7 @@
       "name": "Club fictif Deuxième 16",
       "competitionId": "competition:fictional-deuxieme",
       "provenance": {
-        "sourceUrl": "https://example.org/fictional-dataset",
+        "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
         "checkedOn": "2026-10-31",
         "kind": "manual",
         "reuse": "original"
