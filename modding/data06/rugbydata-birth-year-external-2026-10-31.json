@@ -2,23 +2,25 @@
   "schema": "data06-birth-year-evidence-v1",
   "seasonContext": "2026-2027",
   "sourceRoster": "modding/data06/rugbydata-rosters-2026-10-31.json",
-  "note": "Evidence staging only. Dates taken from explicitly published dates, not age-derived. Other records remain pending verification. No replacement of existing birth dates, no game integration.",
+  "note": "All 22 individual external birth years reviewed against explicit dated biographies; no inference from age. Distinct, non-destructive supplemental evidence for Rugby Data source IDs; no game integration. Birth dates included solely as verbatim supporting evidence.",
   "records": [
     {
       "sourceRecordId": "221",
       "name": "Grégory Alldritt",
       "birthYear": 1997,
       "sourceUrl": "https://www.staderochelais.com/les-equipes/gregory-alldritt",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "23/03/1997"
     },
     {
       "sourceRecordId": "667",
       "name": "Peato Mauvaka",
       "birthYear": 1997,
-      "sourceUrl": "https://www.tf1info.fr/actualite/fiche-joueur-peato-mauvaka-13398/",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "sourceUrl": "https://www.stadetoulousain.fr/effectif/54-peato-mauvaka",
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "10/01/1997"
     },
     {
       "sourceRecordId": "627",
@@ -33,9 +35,10 @@
       "sourceRecordId": "83",
       "name": "Romain Buros",
       "birthYear": 1997,
-      "sourceUrl": "https://www.tf1info.fr/actualite/fiche-joueur-romain-buros-13838/",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "sourceUrl": "https://www.lequipe.fr/fiche/romain-buros/254005",
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "31/07/1997"
     },
     {
       "sourceRecordId": "493",
@@ -50,9 +53,10 @@
       "sourceRecordId": "37",
       "name": "Maxime Machenaud",
       "birthYear": 1988,
-      "sourceUrl": "https://www.abrugby.fr/equipe/effectif/maxime-machenaud_demi-de-melee",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "sourceUrl": "https://www.lequipe.fr/fiche/maxime-machenaud/257386",
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "30/12/1988"
     },
     {
       "sourceRecordId": "284",
@@ -68,8 +72,9 @@
       "name": "Paul Gabrillagues",
       "birthYear": 1993,
       "sourceUrl": "https://www.lequipe.fr/fiche/paul-gabrillagues/254811",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "03/06/1993"
     },
     {
       "sourceRecordId": "772",
@@ -85,8 +90,9 @@
       "name": "Joaquin Oviedo",
       "birthYear": 2001,
       "sourceUrl": "https://www.lequipe.fr/fiche/joaquin-oviedo/250632",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "17/07/2001"
     },
     {
       "sourceRecordId": "1908",
@@ -128,49 +134,55 @@
       "sourceRecordId": "1329",
       "name": "Sevu Reece",
       "birthYear": 1997,
-      "sourceUrl": "https://www.crusaders.co.nz/sevu-reece",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "sourceUrl": "https://crusaders.co.nz/sevu-reece",
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "13/02/1997"
     },
     {
       "sourceRecordId": "278",
       "name": "Arno Botha",
       "birthYear": 1991,
       "sourceUrl": "https://www.lequipe.fr/Rugby/RugbyFicheJoueur6883.html",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "26/10/1991"
     },
     {
       "sourceRecordId": "252",
       "name": "Ihaia West",
       "birthYear": 1992,
-      "sourceUrl": "https://en.wikipedia.org/wiki/Ihaia_West",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "sourceUrl": "https://www.staderochelais.com/les-equipes/ihaia-west",
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "16/01/1992"
     },
     {
       "sourceRecordId": "616",
       "name": "Duncan Paia'aua",
       "birthYear": 1995,
-      "sourceUrl": "https://en.wikipedia.org/wiki/Duncan_Paia%27aua",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "sourceUrl": "https://www.lequipe.fr/fiche/duncan-paia-aua/251271",
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "20/01/1995"
     },
     {
       "sourceRecordId": "1427",
       "name": "Aphiwe Dyantyi",
       "birthYear": 1994,
-      "sourceUrl": "https://en.wikipedia.org/wiki/Aphiwe_Dyantyi",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "sourceUrl": "https://bokhist.com/PlayerData.aspx?PlayerID=770",
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "26/08/1994"
     },
     {
       "sourceRecordId": "2093",
       "name": "Vasil Lobzhanidze",
       "birthYear": 1996,
-      "sourceUrl": "https://en.wikipedia.org/wiki/Vasil_Lobzhanidze",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "sourceUrl": "https://www.lequipe.fr/Rugby/RugbyFicheJoueur8116.html",
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "14/10/1996"
     },
     {
       "sourceRecordId": "615",
