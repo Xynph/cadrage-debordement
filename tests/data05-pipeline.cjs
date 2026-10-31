@@ -31,3 +31,27 @@ test('paid Firecrawl refusal locks both subsequent fallback and HTTP',async()=>{
   assert.equal(scraped,1);assert.equal(direct,1);
  }
 });
+
+test('collection serializes all workers to guarantee stop ordering',async()=>{
+ assert.throws(()=>parseArgs(['--concurrency','2']),/Invalid/);
+ await assert.rejects(execute({limit:2,budget:2,concurrency:2},{roster:()=>[]}),/Concurrent DATA-05/);
+});
+test('real transport scrape through execute: HTTP 403 from paid API stops after first reserved call',async()=>{
+ const {createTransport}=require('../tools/data05-transport.cjs');
+ const ref={id:'lnr:1',club:'club',url:'https://top14.lnr.fr/joueur/1-name'};
+ for(const status of [401,402,403,429]){
+  let paid=0;
+  const transportFactory=()=>createTransport({firecrawlKey:'fake',firecrawlBudget:3,retries:0,fetcher:async(url)=>{
+    if(url==='https://api.firecrawl.dev/v2/scrape'){paid++;return {ok:false,status}}
+    return {ok:false,status:500};
+  }});
+  const result=await execute({limit:1,budget:3,key:'fake',concurrency:1},{roster:()=>[ref],transportFactory,run:async opts=>{
+    await assert.rejects(opts.http(ref.url),/500/);
+    await assert.rejects(opts.fallback(ref.url),/HTTP/);
+    await assert.rejects(opts.fallback(ref.url),/stopped/);
+    await assert.rejects(opts.http(ref.url),/stopped/);
+    return {errors:[{id:ref.id}],remaining:[ref.id],firecrawlCalls:1};
+  }});
+  assert.equal(paid,1);assert.equal(result.transport.firecrawlCalls,1);
+ }
+});
