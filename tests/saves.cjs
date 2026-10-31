@@ -19,4 +19,29 @@ const blank=context();blank.run(`pendingSave=parseSaveDocument(${JSON.stringify(
 const corrupt=context({version:2,clubs:[]});assert.equal(corrupt.run('S'),null);assert.ok(corrupt.run('loadSaveFailure'));assert.ok(corrupt.store['bdt-recovery-invalid']);assert.ok(corrupt.app.innerHTML.includes('Importer une carrière'));
 // Long-running career metadata and large-ish snapshots remain exportable.
 run('start(13)');for(let y=0;y<10;y++){run('S.phase="ended";advanceSeason()');assert.equal(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),true)}
+
+// The preview does not grant permanent trust: a later, structurally valid change
+// to the pending document must be rejected before backup or career replacement.
+for(const tamper of [
+ 'pendingSave.state.clubs[pendingSave.state.club].cash+=1',
+ 'pendingSave.state.morale=Math.min(100,pendingSave.state.morale+1)',
+ 'pendingSave.checksum="00000000"'
+]){
+ const q=context();q.run('start(0)');
+ const before=q.run('JSON.stringify(S)'),disk=q.store['bdt-v1'],backup=q.store['bdt-before-import'];
+ q.run(`pendingSave=parseSaveDocument(${JSON.stringify(incoming)});showImportReview();${tamper}`);
+ assert.equal(q.run('confirmSaveImport()'),false,'tampered preview must not be committed');
+ assert.equal(q.run('JSON.stringify(S)'),before);
+ assert.equal(q.store['bdt-v1'],disk);
+ assert.equal(q.store['bdt-before-import'],backup);
+}
+// Valid preview still confirms normally and preserves the original backup.
+{
+ const q=context();q.run('start(0)');const initial=q.run('JSON.stringify(S)');
+ q.run(`pendingSave=parseSaveDocument(${JSON.stringify(incoming)});showImportReview()`);
+ assert.equal(q.run('confirmSaveImport()'),true);
+ assert.equal(q.run('S.club'),13);
+ assert.equal(q.run('JSON.stringify(backupDocument().state)'),initial);
+}
+
 console.log(JSON.stringify({passed:true,checks:['export/import round trip','non-mutating preview and cancellation','recoverable replacement','paused live-game restoration','halftime and playoffs','ten offseason exports','corrupted and oversized JSON','unsupported formats','hostile text and identifiers','cross-club duplicates and broken references','quota failure rollback','welcome-screen import','corrupt local-startup recovery']}));
