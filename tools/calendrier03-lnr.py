@@ -48,7 +48,7 @@ def parse(html_source,league,round_no):
  expected=7 if league=="top14" else 8
  if len(names)!=expected*2 or len(set(names))!=expected*2:
   raise ValueError("Ambiguous match pairing: "+league+" J"+str(round_no)+", anchors="+repr(names))
- dates=re.findall(r"(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\\s+(\\d{1,2})\\s+(janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|decembre)", text, re.I)
+ dates=re.findall(r"(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+(\d{1,2})\s+(janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|decembre)", text, re.I)
  if not dates:raise ValueError("Official round day missing")
  day,month=dates[0];year=2026 if MONTHS[norm(month)]>=7 else 2027
  begin=dt.date(year,MONTHS[norm(month)],int(day))
@@ -63,7 +63,7 @@ def parse(html_source,league,round_no):
    ap=next((j for j in a_positions if hp<j<=hp+12),None)
    if ap is not None:
     time_text=" ".join(context[hp+1:ap])
-    m=re.search(r"\\b(\\d{1,2})h(\\d{2})\\b",time_text)
+    m=re.search(r"\b(\d{1,2})h(\d{2})\b",time_text)
     if m:official=m.group(1).zfill(2)+":"+m.group(2)
     break
   games.append((home,away,official))
