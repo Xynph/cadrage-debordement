@@ -9,3 +9,27 @@ test('budget zero imports without network or paid calls',async()=>{const d=depen
 test('unsafe plans and unauthorized HTTP abort before executing pipeline',async()=>{for(const options of [{limit:1},{limit:1,confirmed:true},{limit:1,confirmed:true,authorizedHttp:true,budget:2},{limit:0,budget:1},{limit:0,budget:0,key:'secret'}]){const d=dependencies();await assert.rejects(runGuarded(options,d.deps));assert.equal(d.calls(),0)}});
 test('injection cannot falsely claim paid-free run',async()=>{const d=dependencies();d.deps.execute=async()=>({cached:240,newlyFetched:0,firecrawlCalls:1,transport:{firecrawlCalls:1}});await assert.rejects(runGuarded({},d.deps),/Paid attempts/);});
 test('CLI fails closed and never enables network accidentally',()=>{assert.deepEqual(cliArgs([]),{limit:0,budget:0,concurrency:1,delayMs:1200,confirmed:false,authorizedHttp:false});assert.throws(()=>cliArgs(['--limit']),/Missing/);assert.throws(()=>cliArgs(['--foo']),/Unexpected/);});
+
+test('real 15-file 240-profile corpus and genuine unified importer are offline and idempotent',async()=>{
+ const path=require('node:path'),fs=require('node:fs'),os=require('node:os');
+ const unified=require('../tools/data05-unified.cjs');
+ const {sourceProfiles}=require('../tools/data05-guarded-entrypoint.cjs');
+ const root=path.resolve(__dirname,'..');
+ const actualRoster=unified.loadRoster(root),actualProfiles=sourceProfiles(root);
+ assert.equal(actualRoster.length,1592);assert.equal(actualProfiles.length,240);
+ const map=new Map(actualRoster.map(x=>[x.id,x]));
+ for(const p of actualProfiles){const r=map.get(p.id);assert.ok(r);assert.equal(p.url,r.url);assert.equal(p.club,r.club)}
+ assert.equal(new Set(actualProfiles.map(x=>x.id)).size,240);
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'data05-zero-'));
+ let http=0,firecrawl=0;
+ try{
+  const options={root,dir,list:actualRoster,limit:0,budget:0,key:null,http:async()=>{http++;throw Error('HTTP forbidden')},fallback:async()=>{firecrawl++;throw Error('Firecrawl forbidden')},delayMs:0};
+  const first=await unified.run(options);
+  const second=await unified.run(options);
+  assert.equal(first.imported,240);assert.equal(first.cached,240);assert.equal(first.remaining.length,1352);
+  assert.equal(second.imported,0);assert.equal(second.cached,240);
+  assert.equal(first.firecrawlCalls,0);assert.equal(second.firecrawlCalls,0);
+  assert.equal(http,0);assert.equal(firecrawl,0);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'players.json'),'utf8')).players.length,240);
+ }finally{fs.rmSync(dir,{recursive:true,force:true})}
+});
