@@ -34,7 +34,7 @@
   "clubs": [
     {
       "id": "club:fictional-premiere-01",
-      "name": "Club fictif Première 1",
+      "name": "Stade des Brumes",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
         "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
@@ -45,7 +45,7 @@
     },
     {
       "id": "club:fictional-premiere-02",
-      "name": "Club fictif Première 2",
+      "name": "Union de l'Estuaire",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
         "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
@@ -56,7 +56,7 @@
     },
     {
       "id": "club:fictional-premiere-03",
-      "name": "Club fictif Première 3",
+      "name": "Écume Atlantique",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
         "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
@@ -67,7 +67,7 @@
     },
     {
       "id": "club:fictional-premiere-04",
-      "name": "Club fictif Première 4",
+      "name": "Dragons des Landes",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
         "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
@@ -78,7 +78,7 @@
     },
     {
       "id": "club:fictional-premiere-05",
-      "name": "Club fictif Première 5",
+      "name": "Vallée des Cerfs",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
         "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
@@ -89,7 +89,7 @@
     },
     {
       "id": "club:fictional-premiere-06",
-      "name": "Club fictif Première 6",
+      "name": "Aigles des Falaises",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
         "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
@@ -100,7 +100,7 @@
     },
     {
       "id": "club:fictional-premiere-07",
-      "name": "Club fictif Première 7",
+      "name": "Volcans du Plateau",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
         "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
@@ -111,7 +111,7 @@
     },
     {
       "id": "club:fictional-premiere-08",
-      "name": "Club fictif Première 8",
+      "name": "Olympique des Confluences",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
         "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
@@ -122,7 +122,7 @@
     },
     {
       "id": "club:fictional-premiere-09",
-      "name": "Club fictif Première 9",
+      "name": "Rugby des Garrigues",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
         "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
@@ -133,7 +133,7 @@
     },
     {
       "id": "club:fictional-premiere-10",
-      "name": "Club fictif Première 10",
+      "name": "Bisons du Haut-Pays",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
         "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
@@ -144,7 +144,7 @@
     },
     {
       "id": "club:fictional-premiere-11",
-      "name": "Club fictif Première 11",
+      "name": "Racing des Horizons",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
         "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
@@ -155,7 +155,7 @@
     },
     {
       "id": "club:fictional-premiere-12",
-      "name": "Club fictif Première 12",
+      "name": "Étoile des Deux Rives",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
         "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
@@ -166,7 +166,7 @@
     },
     {
       "id": "club:fictional-premiere-13",
-      "name": "Club fictif Première 13",
+      "name": "Corsaires du Midi",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
         "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
@@ -177,7 +177,7 @@
     },
     {
       "id": "club:fictional-premiere-14",
-      "name": "Club fictif Première 14",
+      "name": "Faucons du Golfe",
       "competitionId": "competition:fictional-premiere",
       "provenance": {
         "sourceUrl": "https://github.com/Xynph/cadrage-debordement",
