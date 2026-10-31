@@ -22,6 +22,8 @@ jobs:
         run: |
           node --check tests/v46-v51-balance.cjs
           node tests/v46-v51-balance.cjs
+      - name: Sensibilite aux ecarts de depart
+        run: node tests/v46-v51-fixture-sensitivity.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
