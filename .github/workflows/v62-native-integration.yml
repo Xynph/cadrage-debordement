@@ -1,0 +1,29 @@
+name: V62 barrières intégration modules natifs
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integration-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests natifs sans mutation des sauvegardes
+        env:
+          CD_V62_REPORT: v62-native-report.json
+        run: |
+          node --check tests/v62-native-integration-gates.cjs
+          node tests/v62-native-integration-gates.cjs
+          node tests/v46-v51-contracts.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v62-integration-report
+          path: v62-native-report.json
+          if-no-files-found: ignore
