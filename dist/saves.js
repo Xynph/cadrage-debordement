@@ -144,7 +144,7 @@ if(s.worldManagement!==undefined){
   /^club-(?:[0-9]|1[0-3])$/.test(m.away)&&m.home!==m.away&&
   saveNumber(m.homeScore,0,1000)&&saveNumber(m.awayScore,0,1000));
  for(const y of w.yearbook){
-  saveCheck(saveObject(y)&&saveInt(y.season,1,s.season)&&saveInt(y.champion,0,13)&&
+  saveCheck(saveObject(y)&&saveInt(y.season,1,s.season)&&(y.champion===null||saveInt(y.champion,0,13))&&
    saveArray(y.standings,14)&&y.standings.length===14&&
    new Set(y.standings.map(x=>x.id)).size===14);
   y.standings.forEach(x=>saveCheck(saveObject(x)&&saveInt(x.id,0,13)&&
