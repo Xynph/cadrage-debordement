@@ -9,7 +9,7 @@ const CDMenuSlots=(()=>{
   const raw=storage().getItem(INDEX);
   if(!raw)return {version:2,active:null,items:[]};
   const d=JSON.parse(raw);
-  if(!d||d.version!==2||!Array.isArray(d.items)||d.items.length>MAX||d.items.some(x=>!idOk(x.id)||typeof x.name!=='string')||new Set(d.items.map(x=>x.id)).size!==d.items.length||d.active!==null&&!d.items.some(x=>x.id===d.active))throw Error('Bibliothèque de carrières endommagée : aucune modification effectuée.');
+  if(!d||d.version!==2||!Array.isArray(d.items)||d.items.length>MAX||d.items.some(x=>!idOk(x.id)||typeof x.name!=='string'||x.name.length>56||typeof x.updatedAt!=='string'||!Number.isFinite(Date.parse(x.updatedAt)))||new Set(d.items.map(x=>x.id)).size!==d.items.length||d.active!==null&&!d.items.some(x=>x.id===d.active))throw Error('Bibliothèque de carrières endommagée : aucune modification effectuée.');
   return d;
  }
  function writeIndex(d){storage().setItem(INDEX,JSON.stringify(d))}
