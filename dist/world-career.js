@@ -16,6 +16,8 @@ function worldEnable(){
 }
 function worldClub(id){return worldActive()?S.worldManagement.clubInfo[id]:null}
 function worldUpkeep(level){
+ // Le niveau de départ 2 n'ajoute pas de charge au modèle financier V31 historique.
+ if(level<=2)return 0;
  return Math.round(CDFacilities.maintenanceForecast({cash:0,levels:[level],weeks:1,baseWeekly:2000}).weekly);
 }
 function worldFacilityQuote(id){
