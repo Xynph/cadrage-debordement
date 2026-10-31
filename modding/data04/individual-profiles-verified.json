@@ -1,0 +1,34 @@
+{
+  "snapshotDate": "2026-10-31",
+  "source": "LNR player profiles",
+  "complete": false,
+  "players": [
+    {
+      "url": "https://top14.lnr.fr/joueur/862-barnabe-massa",
+      "name": "Barnabé MASSA",
+      "height": "1m80",
+      "weightKg": "101",
+      "ageAtCollection": "22",
+      "nationality": "France",
+      "dateOfBirth": null
+    },
+    {
+      "url": "https://top14.lnr.fr/joueur/3233-giorgi-dzmanashvili",
+      "name": "Giorgi DZMANASHVILI",
+      "height": "1m86",
+      "weightKg": "122",
+      "ageAtCollection": "24",
+      "nationality": "Géorgie",
+      "dateOfBirth": null
+    },
+    {
+      "url": "https://prod2.lnr.fr/joueur/3129-pierre-jouvin",
+      "name": "Pierre JOUVIN",
+      "height": "1m85",
+      "weightKg": "105",
+      "ageAtCollection": "22",
+      "nationality": "France",
+      "dateOfBirth": null
+    }
+  ]
+}
