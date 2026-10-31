@@ -1,27 +1,13 @@
-# R1 — Référentiel mondial 2026/27 (fondations indépendantes)
+# R1 — Base fictive et système de mods séparés
 
-## Périmètre livré
-- Schéma versionné 1 : compétitions, clubs, joueurs, membres de staff, jeunes.
-- Identifiants stables préfixés et validation des références club/compétition.
-- Provenance obligatoire **par enregistrement** : URL HTTPS, date de vérification, type de source, état de réutilisation.
-- Contrôles de types, postes normalisés, rôles du staff, dates ISO, unicité des IDs, références et absence de chiffres financiers non étayés.
-- Import JSON, fusion de catalogues sans mutation et outil en ligne de commande.
-- Référentiel français **partiel** : TOP 14 (11 clubs nommés dans le communiqué officiel vérifié) et PRO D2 (10 clubs nommés dans le communiqué officiel vérifié), soit 21 clubs identifiés sur les 30 places. Les neuf autres clubs et les effectifs nécessitent un relevé officiel complémentaire.
+Le jeu de base doit être entièrement fictif. R1 fournit un **jeu d'essai fictif** de deux compétitions (14 et 16 clubs) sous des noms inventés, sans logos ni identités réelles. Ce catalogue de démonstration ne représente pas les participants réels 2026/27. Les joueurs, jeunes et staffs restent vides et seront initialisés par le moteur futur ou des données fictives originales.
 
-## Sources et droits
-TOP 14 : https://top14.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-top-14
-PRO D2 : https://www.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2
-Contrôle au 31/10/2026. Les formats de compétition 14/26 et 16/30, ainsi que les clubs nommés, proviennent de ces pages LNR.
+Le schéma versionné, les identifiants stables, les références entre entités, les rôles et postes, les dates, la provenance et les contrôles des droits sont conservés. Exécution : `node tests/world-catalog-r1.cjs` puis `node tools/world-import.cjs world-data/r1/fr-2026-2027.json`.
 
-**Licence de réutilisation non établie** : statut `permission-required`. La citation d'une source officielle ne vaut pas autorisation de republication commerciale ou de copie de base structurée. Pas de photos, logos, données sous licence, biographies ni contrats intégrés. Vérifier le droit de distribution de ces données avant publication d'un produit utilisant cette base ; envisager une base sous licence ou des saisies d'informations autorisées.
+## Architecture cible
+- **Jeu de base** : univers inventé entièrement fonctionnel sans packs.
+- **Mod extérieur facultatif** : paquet de données isolé, identifié, versionné et activé explicitement par le joueur. Aucun vrai nom, photo, blason, effectif ou calendrier réel n'est embarqué par défaut.
+- **Contrôle des droits** : la séparation en mod n'accorde aucun droit de reproduction ni de redistribution. Un mod réel ne doit être diffusé qu'avec les autorisations et licences nécessaires ; sinon, concevoir un importeur privé alimenté par des données légitimement détenues par l'utilisateur.
+- **Sauvegardes** : garder les carrières historiques inchangées ; une future carrière avec mod stockera son ID et sa version pour prévenir toute substitution involontaire.
 
-## Données de personnes
-Les collections joueurs, staff et jeunes sont **vides** en R1 plutôt que d'inventer des effectifs, dates de naissance, potentiels ou salaires. Les attributs simulés doivent rester dans une autre couche et ne sont pas acceptés comme faits du catalogue.
-
-## Raccordement futur
-R1 n'est pas encore jouable : aucun nouveau script chargé par `dist/index.html`. Les anciennes sauvegardes et le catalogue historique de 14 clubs restent intégralement inchangés. R2 devra compléter les participants 2026/27 à partir de sources officielles, les effectifs avec licences contrôlées, puis proposer un adaptateur vers un **nouveau format** de carrière multi-ligues avec migration volontaire. L'intégrateur seul autorise ce raccordement.
-
-## Tests
-`node tests/world-catalog-r1.cjs`
-`node tools/world-import.cjs world-data/r1/fr-2026-2027.json`
-Puis CI complète sur la tête de PR, contrôles sauvegardes inchangées et validation post-fusion.
+R1 n'est pas encore raccordé à `dist/`, et n'ajoute aucune donnée réelle. Les travaux futurs doivent créer l'installateur/validateur de mod et le moteur multi-ligues sans altérer les sauvegardes existantes.
