@@ -31,3 +31,5 @@ html[data-cd-theme] .modalback:focus-within{outline:none}
 :root[data-cd-theme="tribune"] .ui01-layout:not(.live-layout) .office-message>small,
 :root[data-cd-theme="tribune"] .ui01-layout:not(.live-layout) .office-message p,
 :root[data-cd-theme="tribune"] .ui01-layout:not(.live-layout) .office-decision span{color:#4d5c66}
+:root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) .office-decision{background:var(--ui01-soft)}
+:root[data-cd-theme="analyste"] .ui01-layout:not(.live-layout) .office-decision.urgent{background:#382b31;border-left-color:#edaf8d}
