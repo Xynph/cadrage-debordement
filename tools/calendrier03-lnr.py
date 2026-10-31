@@ -114,6 +114,13 @@ def main(argv=None):
  if missing and not opts.allow_partial:
   raise SystemExit("REJECTED incomplete schedule: "+str(len(missing))+" rounds failed; no output written")
  total=len(all_fixtures)
+ if total==422 and not missing:
+  for league,clubs,rounds in (("top14",14,26),("prod2",16,30)):
+   games=[x for x in all_fixtures if x["competition"]==league]
+   unique={(x["home"],x["away"]) for x in games}
+   allclubs={name for x in games for name in (x["home"],x["away"])}
+   if len(allclubs)!=clubs or len(unique)!=len(games) or len(games)!=(clubs-1)*clubs:
+    raise SystemExit("REJECTED: inconsistent full round robin for "+league)
  if total!=422 and not opts.allow_partial:raise SystemExit("REJECTED: "+str(total)+"/422")
  payload={"season":"2026-2027","careerStart":"2026-07-01","completeness":"complete" if total==422 and not missing else "partial","count":total,
  "officialDataSource":"LNR public pages","fixtures":all_fixtures,"audits":audits,"missing":missing,
