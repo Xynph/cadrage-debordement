@@ -1,0 +1,18 @@
+'use strict';
+const assert=require('node:assert/strict');
+const bridge=require('../dist/world-finance.js');
+const adapters={reputation:({current})=>({next:current}),coachRisk:()=>({risk:0}),facility:({cash,cost})=>({affordable:cash>=cost,remaining:cash-cost}),recruitment:()=>({action:'conserve'}),world:()=>[]};
+const clubs=Array.from({length:14},(_,i)=>({id:'c'+i,cash:i<4?1000000:i<10?110000:-100000,debt:i>=10?100000:0,reputation:45+i*2,wageRoom:10000,facilities:3,coachConfidence:60}));
+const profiles=Object.fromEntries(clubs.map((c,i)=>[c.id,{revenue:i<4?320000:i<10?180000:80000,baseCosts:i<4?140000:i<10?180000:280000,investment:30000,repayment:3000}]));
+const options={clubs,seasons:15,seed:321,adapters,profiles};
+const a=bridge.simulate(options),b=bridge.simulate(options);assert.deepEqual(a,b);
+assert.equal(a.history.length,15);assert.equal(a.history.every(y=>y.standings.length===14),true);
+assert.ok(a.clubs.some(c=>c.cash<0));assert.ok(a.events.some(e=>e.type==='facility'));
+assert.ok(a.history.some(y=>y.standings.some(r=>r.sportingPenalty>0)));
+assert.equal(clubs[0].cash,1000000);
+for(const c of a.clubs)assert.ok(c.facilities>=3&&c.facilities<=10);
+for(const y of a.history)for(const r of y.standings)assert.ok(r.investmentPaid===0||r.investmentPaid===30000);
+const noInvest=bridge.simulate({...options,profiles:Object.fromEntries(clubs.map(c=>[c.id,{revenue:0,baseCosts:300000,investment:30000}]))});
+assert.ok(noInvest.history.every(y=>y.standings.every(r=>r.investmentPaid===0)));
+assert.ok(noInvest.history.some(y=>y.standings.some(r=>r.cash<0)));
+console.log('V51 économie transactionnelle : scénarios 15 saisons validés');
