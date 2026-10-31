@@ -105,8 +105,6 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Contrats natifs et cas negatifs
-        run: node tests/career-resilience.cjs
       - name: Saisons 1 a 5
         run: timeout --signal=TERM --kill-after=10s 240s node ci/career-resilience-run.cjs "$SCENARIO" 5 "$RUNNER_TEMP/career-resilience"
       - name: Reprise - saisons 6 a 10
@@ -133,6 +131,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
+      - name: Contrats natifs et cas negatifs (une seule fois par workflow)
+        run: node tests/career-resilience.cjs
       - uses: actions/download-artifact@v4
         with:
           pattern: career-resilience-*

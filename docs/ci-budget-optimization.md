@@ -44,3 +44,14 @@ Exemple UI-only : avant, 23 jobs (5 + 4 + 4 + 8 + 1 + 1) pouvaient s'exécuter ;
 - Comparaison des `on.pull_request.paths` et `on.push.paths` des cinq workflows : le workflow central et les contrôles importants de sauvegarde restent intacts.
 - Diff de PR et conclusion `Tests JavaScript` / `Validation CI` sur le dernier SHA ; réception Chromium UI01 sur changement de son propre workflow.
 - Les campagnes spécialisées complètes de validation de leurs nouveaux YAML peuvent être déclenchées manuellement si GitHub ne les démarre pas automatiquement ; ne pas déclarer ces campagnes vertes sans leur verdict.
+
+## V2 — équilibrage et déduplication (31 octobre 2026)
+
+- Base mesurée : 81 suites uniques sur le workflow post-fusion [Tests JavaScript #41195460951](https://github.com/Xynph/cadrage-debordement/actions/runs/41195460951). Durées des jobs des trois groupes : **78 / 121 / 153 secondes** ; sommation des durées PASS arrondies : 73 / 115 / 146 secondes.
+- Nouveau `ci/shard-tests.cjs` : attribution des **toutes les suites** (hors harness) aux trois jobs par équilibrage glouton et ordre lexical déterministe ; 23 suites de 2 s ou plus pondérées selon les logs, les autres et les futures suites à 1 unité conservatrice. Aucun filtrage selon le diff ; `tests/saves.cjs` reste toujours exécuté.
+- Sur l'inventaire initial de 81 suites, charges théoriques de référence équilibrées ~125/126/125 unités, à confronter aux durées réelles post-fusion. **Pas** une mesure de minutes facturées.
+- Nouveau `tests/ci-sharding.cjs` : exactitude de couverture, déterminisme, nouvelles suites, sauvegardes, rejets d'entrées incohérentes ; le test est automatiquement compris dans le workflow JS complet.
+- `career-resilience.yml` conserve **3 × 15 saisons** et les rapports ; `tests/career-resilience.cjs` est exécuté **une fois**, dans le job de validation finale des carrières, au lieu de 3 fois dans la matrice ; le lancement manuel garde ce test.
+- `v58-manager-mobility.yml` garde les vérifications propres à la mobilité à chaque déclenchement. Ses vérifications `tests/saves.cjs` et `tests/ci-selection.cjs` restent disponibles en lancement manuel `workflow_dispatch`, mais ne sont pas répétées sur PR/push où elles sont déjà exécutées par le workflow central.
+- `economy-audit.yml` reste **inchangé** : les tests transactionnels spécifiques fournissent les rapports au diagnostic complet et les 6 campagnes × 15 saisons restent obligatoires.
+- Avant publication d'une PR, tests ciblés et `node tests/ci-sharding.cjs` / `node tests/ci-selection.cjs` localement ; un seul commit final ; CI de PR **complète** sur HEAD exact, puis `Validation CI`, puis contrôle unique du `push` post-fusion. Pas d'abaissement du gate, pas de modification du format des sauvegardes ni de la facturation.

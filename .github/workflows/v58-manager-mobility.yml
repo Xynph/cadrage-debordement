@@ -59,7 +59,8 @@ jobs:
         env:
           CD_MOBILITY_REPORT: v58-mobility-report.json
         run: node tests/manager-mobility.cjs
-      - name: Sauvegardes natives et couverture CI
+      - name: Sauvegardes et selection CI pour lancement manuel autonome
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           node tests/saves.cjs
           node tests/ci-selection.cjs

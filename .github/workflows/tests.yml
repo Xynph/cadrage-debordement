@@ -88,13 +88,14 @@ jobs:
           SHARD: ${{ matrix.shard }}
         run: |
           set -uo pipefail
-          mapfile -t suites < <(find tests -maxdepth 1 -name '*.cjs' ! -name 'harness.cjs' | LC_ALL=C sort)
-          total="${#suites[@]}"
+          # Refuser explicitement tout échec du calcul de répartition.
+          if ! node ci/shard-tests.cjs "$SHARD" > "$RUNNER_TEMP/shard-suites.txt"; then exit 1; fi
+          mapfile -t suites < "$RUNNER_TEMP/shard-suites.txt"
+          total="$(find tests -maxdepth 1 -name '*.cjs' ! -name 'harness.cjs' | wc -l)"
+          [[ "${#suites[@]}" -gt 0 ]] || exit 1
           failures=0
           executed=0
-          for i in "${!suites[@]}"; do
-            (( i % 3 == SHARD - 1 )) || continue
-            test="${suites[$i]}"
+          for test in "${suites[@]}"; do
             executed=$((executed+1))
             echo "::group::$test"
             start=$SECONDS
