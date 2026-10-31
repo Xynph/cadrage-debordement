@@ -1,0 +1,341 @@
+{
+  "season": "2026-2027",
+  "snapshot": "2026-10-31",
+  "measurement": "LNR site snapshot, not July 1 2026",
+  "clubs": [
+    {
+      "club": "clermont",
+      "sourceUrl": "https://top14.lnr.fr/club/clermont/effectif-staff",
+      "players": [
+        {
+          "name": "Barnabé MASSA",
+          "position": "1ère ligne",
+          "matches": 5,
+          "minutes": 259,
+          "points": 0
+        },
+        {
+          "name": "Giorgi DZMANASHVILI",
+          "position": "1ère ligne",
+          "matches": 6,
+          "minutes": 205,
+          "points": 0
+        },
+        {
+          "name": "Régis MONTAGNE",
+          "position": "1ère ligne",
+          "matches": 5,
+          "minutes": 268,
+          "points": 0
+        },
+        {
+          "name": "Sacha LOTRIAN",
+          "position": "1ère ligne",
+          "matches": 4,
+          "minutes": 161,
+          "points": 0
+        },
+        {
+          "name": "Giorgi AKHALADZE",
+          "position": "1ère ligne",
+          "matches": 5,
+          "minutes": 252,
+          "points": 5
+        },
+        {
+          "name": "Etienne FOURCADE",
+          "position": "1ère ligne",
+          "matches": 3,
+          "minutes": 123,
+          "points": 0
+        },
+        {
+          "name": "Darcy SWAIN",
+          "position": "2ème ligne",
+          "matches": 5,
+          "minutes": 298,
+          "points": 5
+        },
+        {
+          "name": "Thibaud LANEN",
+          "position": "2ème ligne",
+          "matches": 6,
+          "minutes": 413,
+          "points": 5
+        },
+        {
+          "name": "Thomas CEYTE",
+          "position": "2ème ligne",
+          "matches": 3,
+          "minutes": 181,
+          "points": 0
+        },
+        {
+          "name": "Marcos KREMER",
+          "position": "3ème ligne",
+          "matches": 3,
+          "minutes": 224,
+          "points": 0
+        },
+        {
+          "name": "Killian TIXERONT",
+          "position": "3ème ligne",
+          "matches": 6,
+          "minutes": 414,
+          "points": 0
+        },
+        {
+          "name": "Anthime HEMERY",
+          "position": "3ème ligne",
+          "matches": 5,
+          "minutes": 319,
+          "points": 10
+        },
+        {
+          "name": "Baptiste JAUNEAU",
+          "position": "Demi de mêlée",
+          "matches": 6,
+          "minutes": 367,
+          "points": 0
+        },
+        {
+          "name": "Baptiste GERMAIN",
+          "position": "Demi de mêlée",
+          "matches": 4,
+          "minutes": 103,
+          "points": 0
+        },
+        {
+          "name": "Justin BOURAUX",
+          "position": "Demi d'ouverture",
+          "matches": 4,
+          "minutes": 197,
+          "points": 18
+        },
+        {
+          "name": "Harrison PLUMMER",
+          "position": "Demi d'ouverture",
+          "matches": 6,
+          "minutes": 441,
+          "points": 52
+        },
+        {
+          "name": "Yerim FALL",
+          "position": "Ailier",
+          "matches": 2,
+          "minutes": 165,
+          "points": 5
+        },
+        {
+          "name": "Bautista DELGUY",
+          "position": "Ailier",
+          "matches": 4,
+          "minutes": 334,
+          "points": 15
+        },
+        {
+          "name": "Alivereti RAKA",
+          "position": "Ailier",
+          "matches": 3,
+          "minutes": 236,
+          "points": 5
+        },
+        {
+          "name": "Etene NANAI SETURO",
+          "position": "Arrière",
+          "matches": 1,
+          "minutes": 57,
+          "points": 0
+        },
+        {
+          "name": "Kylan HAMDAOUI",
+          "position": "Arrière",
+          "matches": 4,
+          "minutes": 333,
+          "points": 0
+        },
+        {
+          "name": "Léon DARRICARRERE",
+          "position": "Centre",
+          "matches": 4,
+          "minutes": 264,
+          "points": 0
+        },
+        {
+          "name": "Alivereti LOALOA",
+          "position": "Centre",
+          "matches": 6,
+          "minutes": 438,
+          "points": 5
+        },
+        {
+          "name": "Alexander James LAM",
+          "position": "Centre",
+          "matches": 4,
+          "minutes": 152,
+          "points": 5
+        }
+      ]
+    },
+    {
+      "club": "provence-rugby",
+      "sourceUrl": "https://prod2.lnr.fr/club/provence-rugby/effectif-staff",
+      "players": [
+        {
+          "name": "Andréa PONTANIER",
+          "position": "1ère ligne",
+          "matches": 8,
+          "minutes": 322,
+          "points": 5
+        },
+        {
+          "name": "Hugo NDIAYE",
+          "position": "1ère ligne",
+          "matches": 4,
+          "minutes": 122,
+          "points": 0
+        },
+        {
+          "name": "Eliott YEMSI",
+          "position": "1ère ligne",
+          "matches": 4,
+          "minutes": 162,
+          "points": 5
+        },
+        {
+          "name": "Vincent GIUDICELLI",
+          "position": "1ère ligne",
+          "matches": 7,
+          "minutes": 287,
+          "points": 15
+        },
+        {
+          "name": "Romain LATTERRADE",
+          "position": "1ère ligne",
+          "matches": 8,
+          "minutes": 347,
+          "points": 20
+        },
+        {
+          "name": "Pascal COTET",
+          "position": "1ère ligne",
+          "matches": 5,
+          "minutes": 231,
+          "points": 0
+        },
+        {
+          "name": "Lino JULIEN",
+          "position": "1ère ligne",
+          "matches": 7,
+          "minutes": 314,
+          "points": 15
+        },
+        {
+          "name": "Tyler ARDRON",
+          "position": "2ème ligne",
+          "matches": 7,
+          "minutes": 470,
+          "points": 5
+        },
+        {
+          "name": "Izack RODDA",
+          "position": "2ème ligne",
+          "matches": 7,
+          "minutes": 347,
+          "points": 0
+        },
+        {
+          "name": "Charly GAMBINI",
+          "position": "2ème ligne",
+          "matches": 8,
+          "minutes": 382,
+          "points": 0
+        },
+        {
+          "name": "Andrès ZAFRA TARAZONA",
+          "position": "2ème ligne",
+          "matches": 7,
+          "minutes": 511,
+          "points": 0
+        },
+        {
+          "name": "Yannick YOUYOUTTE",
+          "position": "2ème ligne",
+          "matches": 8,
+          "minutes": 415,
+          "points": 0
+        },
+        {
+          "name": "Tornike JALAGONIA",
+          "position": "3ème ligne",
+          "matches": 7,
+          "minutes": 496,
+          "points": 5
+        },
+        {
+          "name": "Albert TUISUE",
+          "position": "3ème ligne",
+          "matches": 6,
+          "minutes": 296,
+          "points": 5
+        },
+        {
+          "name": "Joris CAZENAVE",
+          "position": "Demi de mêlée",
+          "matches": 7,
+          "minutes": 240,
+          "points": 11
+        },
+        {
+          "name": "Arthur COVILLE",
+          "position": "Demi de mêlée",
+          "matches": 8,
+          "minutes": 467,
+          "points": 0
+        },
+        {
+          "name": "Thomas SALLES",
+          "position": "Demi d'ouverture",
+          "matches": 6,
+          "minutes": 343,
+          "points": 50
+        },
+        {
+          "name": "Caleb MUNTZ",
+          "position": "Demi d'ouverture",
+          "matches": 4,
+          "minutes": 224,
+          "points": 14
+        },
+        {
+          "name": "Setareki BITUNIYATA",
+          "position": "Ailier",
+          "matches": 6,
+          "minutes": 390,
+          "points": 10
+        },
+        {
+          "name": "Léo DROUET",
+          "position": "Arrière",
+          "matches": 6,
+          "minutes": 383,
+          "points": 0
+        },
+        {
+          "name": "Kaveinga FINAU",
+          "position": "Centre",
+          "matches": 6,
+          "minutes": 481,
+          "points": 10
+        },
+        {
+          "name": "Baptiste LENOIR",
+          "position": "Centre",
+          "matches": 7,
+          "minutes": 340,
+          "points": 15
+        }
+      ]
+    }
+  ]
+}
