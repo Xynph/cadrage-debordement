@@ -1,0 +1,91 @@
+{
+  "schema": "data06-external-birthyears-v1",
+  "dateChecked": "2026-11-01",
+  "note": "Pilot subset explicitly observed on Wikipedia roster. Unmatched values excluded from enrichment; no 2026-07-01 membership inferred. Not integrated to playable catalogue.",
+  "stats": {
+    "observations": 8,
+    "exactMatches": 5
+  },
+  "records": [
+    {
+      "name": "Siosifa Amone",
+      "birthYear": 2002,
+      "lnrId": null,
+      "rugbyDataId": "4287",
+      "matchStatus": "unresolved",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Union_sportive_montalbanaise",
+      "sourceSeason": "2026-2027",
+      "lnrBirthDate": null
+    },
+    {
+      "name": "Léo Aouf",
+      "birthYear": 1997,
+      "lnrId": "lnr:1001",
+      "rugbyDataId": "2248",
+      "matchStatus": "exact_unique",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Union_sportive_montalbanaise",
+      "sourceSeason": "2026-2027",
+      "lnrBirthDate": null
+    },
+    {
+      "name": "Daniel Brennan",
+      "birthYear": 1998,
+      "lnrId": "lnr:432",
+      "rugbyDataId": "597",
+      "matchStatus": "exact_unique",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Union_sportive_montalbanaise",
+      "sourceSeason": "2026-2027",
+      "lnrBirthDate": null
+    },
+    {
+      "name": "Sidi-Mohammed Diallo",
+      "birthYear": 2003,
+      "lnrId": null,
+      "rugbyDataId": "3988",
+      "matchStatus": "unresolved",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Union_sportive_montalbanaise",
+      "sourceSeason": "2026-2027",
+      "lnrBirthDate": null
+    },
+    {
+      "name": "Lucas Seyrolle",
+      "birthYear": 1995,
+      "lnrId": "lnr:1341",
+      "rugbyDataId": "2281",
+      "matchStatus": "exact_unique",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Union_sportive_montalbanaise",
+      "sourceSeason": "2026-2027",
+      "lnrBirthDate": null
+    },
+    {
+      "name": "Valentin Simutoga",
+      "birthYear": 2003,
+      "lnrId": "lnr:10999",
+      "rugbyDataId": "322",
+      "matchStatus": "exact_unique",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Union_sportive_montalbanaise",
+      "sourceSeason": "2026-2027",
+      "lnrBirthDate": null
+    },
+    {
+      "name": "Nugzar Somkhishvili",
+      "birthYear": 2001,
+      "lnrId": null,
+      "rugbyDataId": "2282",
+      "matchStatus": "unresolved",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Union_sportive_montalbanaise",
+      "sourceSeason": "2026-2027",
+      "lnrBirthDate": null
+    },
+    {
+      "name": "Lucio Sordoni",
+      "birthYear": 1998,
+      "lnrId": "lnr:3505",
+      "rugbyDataId": "520",
+      "matchStatus": "exact_unique",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Union_sportive_montalbanaise",
+      "sourceSeason": "2026-2027",
+      "lnrBirthDate": null
+    }
+  ]
+}
