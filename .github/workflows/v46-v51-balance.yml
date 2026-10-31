@@ -30,9 +30,15 @@ jobs:
         run: node tests/v46-v51-reputation-strength.cjs
       - name: Confirmer reglages sur 80 graines
         run: node tests/v46-v51-reputation-confirmation.cjs
+      - name: Campagne V52 et reprise deterministe
+        env:
+          CD_V52_REPORT: v52-career-report.json
+        run: timeout 900s node tests/v52-career-lab.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: v46-v51-balance
-          path: balance-report.json
+          path: |
+            balance-report.json
+            v52-career-report.json
           if-no-files-found: ignore
