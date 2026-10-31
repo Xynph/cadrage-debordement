@@ -12,12 +12,14 @@
    throw RangeError('Club invalide');
   const state=clubs.map(c=>({...c,debt:c.debt??0}));
   const history=[],events=[];
+  let penalties=Object.fromEntries(state.map(c=>[c.id,c.cash<0||c.debt>0?8:0]));
   for(let season=1;season<=seasons;season++){
    // Une seule saison à la fois : le moteur sportif existant garde sa propre logique.
    // Le compte économique est calculé séparément, sans double comptage de ses recettes fictives.
-   const sporting=world.simulate({clubs:state.map(c=>({...c,cash:Math.max(0,c.cash)})),seasons:1,seed:(seed+season*2654435761)>>>0,adapters});
+   const sporting=world.simulate({clubs:state.map(c=>({...c,cash:Math.max(0,c.cash)})),seasons:1,seed:(seed+season*2654435761)>>>0,adapters,externalEconomy:true,sportingPenalties:penalties});
    const ranking=sporting.history[0].standings;
    const rows=[];
+   const nextPenalties={};
    for(const row of ranking){
     const club=state.find(c=>c.id===row.clubId);
     const profile=profiles[club.id]||{};
@@ -27,13 +29,21 @@
     const repayment=profile.repayment??15000;
     const result=finance.annual(club,{revenue,baseCosts,investment,repayment});
     club.cash=result.cash;club.debt=result.debt;
-    club.reputation=row.reputation;club.facilities=row.facilities;
+    club.reputation=row.reputation;
+    const priorFacility=club.facilities;
+    const facilityQuote=adapters.facility({cash:Math.max(0,club.cash),level:priorFacility,cost:investment,weeks:1});
+    const permitted=result.restriction==='normal'&&facilityQuote?.affordable===true&&club.cash>=0&&priorFacility<10&&investment>0;
+    const invested=permitted?Math.max(0,result.investmentDeferred===0?investment:0):0;
+    if(invested>0){club.facilities=Math.min(10,priorFacility+1);events.push({season,clubId:club.id,type:'facility',cost:invested});}
+    else if(result.investmentDeferred===0&&investment>0&&result.restriction==='normal')throw Error('Investissement non comptabilisé');
+    nextPenalties[club.id]=result.sportingPenalty;
     club.coachConfidence=sporting.clubs.find(c=>c.id===club.id).coachConfidence;
     const blocked=result.restriction!=='normal';
     if(blocked)events.push({season,clubId:club.id,type:'financialRestriction',level:result.restriction});
     rows.push({...row,cash:club.cash,debt:club.debt,restriction:result.restriction,spendingSaved:result.spendingSaved,
-     investmentDeferred:result.investmentDeferred,canRecruit:result.canRecruit,sportingPenalty:result.sportingPenalty});
+     investmentDeferred:result.investmentDeferred,investmentPaid:invested,canRecruit:result.canRecruit,sportingPenalty:result.sportingPenalty});
    }
+   penalties=nextPenalties;
    events.push(...sporting.events.map(e=>({...e,season})));
    history.push({season,champion:sporting.history[0].champion,standings:rows,awards:sporting.history[0].awards});
   }
