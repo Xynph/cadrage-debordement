@@ -1,9 +1,9 @@
 # Journal de développement — Cadrage Débordement
 
-> Document de passation partagé entre deux comptes ChatGPT de même niveau, intervenant **en alternance, jamais simultanément**. GitHub reste l'unique source de vérité. Ce document décrit l'état connu à la date de sa dernière mise à jour ; toujours le confronter aux commits, branches, pull requests et fichiers actuels avant de travailler.
+> Journal partagé entre **un compte développeur/producteur** et **un compte intégrateur unique**, pouvant travailler simultanément sur des branches et fichiers distincts. GitHub reste l'unique source de vérité. Ce document décrit l'état connu à la date de sa dernière mise à jour ; toujours le confronter aux commits, branches, pull requests et fichiers actuels avant de travailler.
 
-**Dernière mise à jour : 30 octobre 2026.**  
-**Dernière évolution fonctionnelle vérifiée : V35 (PR #26 fusionnée sur `main` ; validation Windows native non confirmée).**  
+**Mise à jour de gouvernance : 31 octobre 2026.**  
+**Dernières intégrations constatées : V59 (PR #65, commit `4f194168`), puis coordination (PR #74, commit `8160a7c`). Vérifier à nouveau `main` avant toute intervention.**  
 **Branche de référence : `main`.**
 
 ## État du projet
@@ -28,7 +28,7 @@ Les références ci-dessus sont des repères historiques, **pas une garantie qu'
 
 ## Décisions de développement
 
-- Les deux comptes ChatGPT sont des contributeurs **de même niveau**, travaillent **successivement** et ne doivent pas demander à l'utilisateur le bilan du travail de l'autre.
+- Le **compte développeur** prépare les nouvelles fonctions et des PR sans fusion. Le **compte intégrateur unique** examine, raccorde, valide et fusionne seul dans `main` après CI verte ; les deux peuvent travailler sur des branches distinctes.
 - Chaque session commence par la lecture de l'état actuel de GitHub : commits, différences, branches, PR et `AGENTS.md`, puis ce journal.
 - Chaque changement doit être **commité sur GitHub et vérifié après publication**. Une branche non fusionnée ne constitue pas une livraison sur `main`.
 - Préférer des corrections ciblées et compatibles avec les sauvegardes existantes. Pour les changements risqués, passer par une branche/PR ; pour les changements simples et vérifiés, `main` peut être utilisé conformément à `AGENTS.md`.
@@ -535,3 +535,21 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - **Priorité du prochain lot :** mesurer et corriger les trajectoires de trésorerie, d'âge, de classement et de recrutement avec plusieurs profils de clubs sur quinze vraies saisons, puis étendre l'IA des joueurs à des négociations et transferts multiclubs équitables.
 
 - Correctif CI V59 : le barème initial du plafond salarial divisait une trésorerie en euros par **85 000** au lieu de l'échelle de salaire attendue. Formule corrigée : 235 000 € de masse hebdomadaire de référence + environ 11 111 €/semaine par million de trésorerie nette au-dessus de 1,5 M€, plafonnée à 335 000 €. Le recrutement V59 utilise les calculateurs purs V46/V47 et le même plafond financier, sans la limite statique de 300 000 € du modèle ancien. Scénario de test avec joueur effectivement disponible à tarif accessible et assertions du plafonnement selon trésorerie et dette.
+
+
+## Organisation durable — chaîne de livraison au 31 octobre 2026
+
+1. **Producteur** : créer et documenter les fonctions sur branche, les tester, publier une PR (brouillon pendant le travail), rédiger la passation dans [l'issue #73](https://github.com/Xynph/cadrage-debordement/issues/73). Aucun droit de fusion dans notre procédure.
+2. **Intégrateur unique** : lire les nouveaux commentaires #73 et le dernier `main`, prioriser les PR selon la valeur réellement jouable, examiner conflits, code, règles et sauvegardes. Réaliser les adaptations d'intégration dans sa branche dédiée et revalider.
+3. **Livraison** : convertir la PR prête à la revue si nécessaire, exiger `Tests JavaScript` et `Validation CI` verts sur le SHA pertinent, fusionner uniquement par l'intégrateur, puis contrôler le `push` sur le nouveau SHA de `main` et publier la preuve dans #73.
+4. **En cas de CI absente/rouge, conflit, provenance incertaine ou sauvegarde incompatibile : STOP.** La réussite d'un module de laboratoire ne constitue pas une fonctionnalité livrée.
+5. **PR #75 : projet de deux intégrateurs abandonné, ne pas fusionner.** Le protocole d'issue #73 doit refléter les rôles producteur/intégrateur unique.
+
+### File d'attente initiale à réévaluer
+
+- **V59 PR #65 déjà fusionnée**, ne pas la réintégrer.
+- **Priorité A : PR #60–#63 (entraîneurs / contrats manager)** ; auditer les dépendances avec V48 déjà intégré ; raccorder au jeu avant livraison.
+- **Priorité B : PR #64, #66, #67 (presse)** ; intégrer calendrier réel, éviter les doubles effets sur la confiance de direction.
+- **Priorité C : PR #68 (réunions de direction)** ; conserver échéancier mais réutiliser le système V42 au lieu de dupliquer la confiance.
+- **PR #69–#72 : bancs de tests/audits**, à regrouper sans ajouter de nouvelles mécaniques avant que les intégrations jouables avancent.
+- Les autres PR historiques en brouillon sont à trier selon leur pertinence et leur état de fusion ; vérifier le dernier SHA et les CI.
