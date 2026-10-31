@@ -9,3 +9,6 @@
 **Pas de campagne live lancée ici** : le conteneur producteur n'a pas d'accès direct vérifié aux serveurs LNR et n'a pas de clé Firecrawl accessible au processus Node. Les 1 352 fiches non approfondies restent à collecter ; aucune naissance exacte ou appartenance historique au 1er juillet 2026 n'est inférée.
 
 Aucun fichier `dist/**` ou sauvegarde modifié.
+
+
+**Sécurité des refus payants :** tant que la preuve d'arrêt avec plusieurs workers n'est pas acquise, le pipeline impose strictement `--concurrency 1` (CLI et API), et les réponses Firecrawl 401/402/403/429 verrouillent les appels suivants. Cela ne modifie pas les imports hors réseau déjà acquis.
