@@ -18,3 +18,12 @@ Le test `tests/v51-world-simulation.cjs` est autonome : il injecte des adaptateu
 ## Coordination
 
 PR V41–V45 : #34, #36, #37, #38, #39 et intégration #45 (autre compte). PR V46–V50 : #40–#44. Cette V51 doit être intégrée **après** ces PR, en adaptant l'économie au modèle réel de carrière. Aucun fichier d'intégration partagé n'a été touché.
+
+
+## Audit statistique indépendant (ajout du cycle)
+
+Le module `dist/world-audit.js` agrège les trajectoires de clubs : nombre de titres, podiums, entraîneurs remplacés, investissements, minima et maxima de trésorerie/réputation. Il signale chaque saison où la trésorerie atteint zéro, contrôle l'unicité des classements et détecte les états incohérents. `compareSeeds` mesure la concentration des titres et les épisodes de trésorerie nulle sur 2 à 50 simulations reproductibles.
+
+Test `node tests/v51-world-audit.cjs` : dix graines, quinze saisons, quatorze clubs, cohérence et données corrompues. Ce sont des assertions ajoutées, **pas une preuve d'exécution tant que la CI du SHA n'est pas confirmée**.
+
+À noter : la trésorerie bloquée à zéro est un problème de réalisme à résoudre avant intégration ; les signalements d'audit ne réparent pas les budgets et ne déclenchent aucune liquidation.
