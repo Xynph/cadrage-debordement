@@ -10,7 +10,7 @@ assert.equal(new Set(names).size,14);
 assert.deepEqual(names,catalog.clubs.slice(0,14).map(c=>c.name));
 assert.ok(names.every(n=>!['Stade Toulousain','Union Bordeaux-Bègles','Racing 92','RC Toulon'].includes(n)));
 assert.ok(!demo.app.innerHTML.includes('Stade Toulousain'));
-run('mainMenuNewCareer()');assert.ok(demo.app.innerHTML.includes('Stade des Brumes'));
+run('mainMenuNewCareer()');run("mainMenuChooseMode('fiction')");assert.ok(demo.app.innerHTML.includes('Stade des Brumes'));
 run('start(0)');
 assert.equal(run('club().name'),names[0]);
 assert.equal(run('S.clubs.length'),14);
