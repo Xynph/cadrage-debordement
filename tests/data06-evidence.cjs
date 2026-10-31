@@ -21,3 +21,16 @@ test('rating estimation is explicitly nonofficial and null without verified stat
  assert.equal(estimateAttributes(source.records[0],{matches:3,minutes:250,tries:1}).kind,'game-estimate');
  assert.equal(estimateAttributes(source.records[0],{matches:3,minutes:250,tries:1}).rating,estimateAttributes(source.records[0],{matches:3,minutes:250,tries:1}).rating);
 });
+
+test('crosschecks actual 1592 player IDs without guessing ambiguous matches',()=>{
+ const path=require('node:path');
+ const root=path.resolve(__dirname,'..');
+ const roster=['top14-a','top14-b','prod2-a','prod2-b'].flatMap(file=>require(path.join(root,'modding/data03',file+'.json')).clubs).flatMap(c=>c.players.map(p=>({...p,club:c.club})));
+ assert.equal(roster.length,1592);
+ const result=matchRoster(source,roster);
+ assert.equal(result.results.length,80);
+ assert.equal(result.matched+result.review+result.unknown,80);
+ const linked=result.results.filter(x=>x.linkedId!==null);
+ assert.equal(new Set(linked.map(x=>x.linkedId)).size,linked.length);
+ assert.ok(result.results.every(x=>x.linkedId===null||x.status==='club-match'));
+});
