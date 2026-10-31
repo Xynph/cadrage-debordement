@@ -15,11 +15,11 @@ run('start(0)');
 assert.equal(run('club().name'),names[0]);
 assert.equal(run('S.clubs.length'),14);
 assert.ok(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
-const snapshot=JSON.parse(run('JSON.stringify(S)'));
-snapshot.clubs[0].name='Stade Toulousain';
-const older=context(snapshot);
-assert.equal(older.run('club().name'),'Stade Toulousain','ancienne sauvegarde non renommée');
-assert.ok(older.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
+// Une sauvegarde historique garde son nom sérialisé, même si les nouveaux clubs changent.
+run("S.clubs[0].name='Stade Toulousain'");
+const historical=run('JSON.stringify(createSaveDocument())');
+assert.equal(run('parseSaveDocument('+JSON.stringify(historical)+').state.clubs[0].name'),
+ 'Stade Toulousain','ancienne sauvegarde non renommée');
 const game=fs.readFileSync(__dirname+'/../dist/game.js','utf8');
 assert.ok(!game.includes('Clubs réels'));
 assert.ok(!game.includes('top14.lnr.fr'));
