@@ -70,8 +70,11 @@ try:
         test("charge du moteur appliquée",page.evaluate(
             "starters().filter(p=>p.fam<=3&&!p.injury).some(p=>physicalLoadValue(p)>=4)"))
         test("choix V28 conservé",page.evaluate("S.collectiveFocus==='conquete'"))
-        page.evaluate("beginMatch();nav('tactics')")
-        test("verrou pendant match",page.locator(".ui05-option:disabled").count()==4)
+        page.evaluate("beginMatch();render()")
+        test("verrou natif pendant match",page.evaluate(
+            "(collectivePreparationCard().match(/ui05-option[^>]* disabled/g)||[]).length===4"))
+        test("navigation vers le club protégée pendant match",page.evaluate(
+            "(function(){const old=view;nav('tactics');return view===old})()"))
         test("préparation intégrée au match",page.evaluate(
             "S.live&&S.live.collectivePreparation&&S.live.collectivePreparation.focus[S.live.userSide]==='conquete'"))
         test("sauvegarde exportable avec match",page.evaluate("!!createSaveDocument()"))
