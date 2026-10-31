@@ -1,0 +1,667 @@
+{
+  "season": "2026-2027",
+  "datasetType": "optional-real-rugby-mod-research",
+  "verifiedAt": "2026-10-31",
+  "distributionStatus": "research-only-rights-not-established",
+  "competitions": [
+    {
+      "id": "competition:top14",
+      "name": "TOP 14",
+      "clubsExpected": 14,
+      "startDate": "2026-09-05",
+      "regularSeasonFinal": "2027-06-05",
+      "championshipFinal": "2027-06-26",
+      "source": "https://top14.lnr.fr/actualite/calendrier-20262027-les-dates-connues"
+    },
+    {
+      "id": "competition:prod2",
+      "name": "PRO D2",
+      "clubsExpected": 16,
+      "startDate": "2026-08-27",
+      "regularSeasonFinal": "2027-05-14",
+      "source": "https://prod2.lnr.fr/actualite/decouvrez-le-calendrier-2026-2027-de-pro-d2"
+    }
+  ],
+  "clubs": [
+    {
+      "id": "club:asm-clermont",
+      "name": "ASM Clermont",
+      "competitionId": "competition:top14",
+      "stadium": {
+        "name": "Stade Marcel Michelin",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://top14.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:aviron-bayonnais",
+      "name": "Aviron Bayonnais",
+      "competitionId": "competition:top14",
+      "stadium": {
+        "name": "Stade Jean Dauger",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://top14.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:castres-olympique",
+      "name": "Castres Olympique",
+      "competitionId": "competition:top14",
+      "stadium": {
+        "name": "Stade Pierre Fabre",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://top14.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:lou-rugby",
+      "name": "LOU Rugby",
+      "competitionId": "competition:top14",
+      "stadium": {
+        "name": "Matmut Stadium Gerland",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://top14.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:montpellier-herault-rugby",
+      "name": "Montpellier Hérault Rugby",
+      "competitionId": "competition:top14",
+      "stadium": {
+        "name": "Septeo Stadium",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://top14.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:rc-toulon",
+      "name": "RC Toulon",
+      "competitionId": "competition:top14",
+      "stadium": {
+        "name": "Stade Mayol",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://top14.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:rc-vannes",
+      "name": "RC Vannes",
+      "competitionId": "competition:top14",
+      "stadium": {
+        "name": "Stade de la Rabine",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://top14.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:racing-92",
+      "name": "Racing 92",
+      "competitionId": "competition:top14",
+      "stadium": {
+        "name": "Paris La Défense Arena",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://top14.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:section-paloise",
+      "name": "Section Paloise",
+      "competitionId": "competition:top14",
+      "stadium": {
+        "name": "Stade du Hameau",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://top14.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:stade-francais-paris",
+      "name": "Stade Français Paris",
+      "competitionId": "competition:top14",
+      "stadium": {
+        "name": "Stade Jean Bouin",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://top14.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:stade-rochelais",
+      "name": "Stade Rochelais",
+      "competitionId": "competition:top14",
+      "stadium": {
+        "name": "Stade Marcel Deflandre",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://top14.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:stade-toulousain",
+      "name": "Stade Toulousain",
+      "competitionId": "competition:top14",
+      "stadium": {
+        "name": "Stade Ernest Wallon",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://top14.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:usa-perpignan",
+      "name": "USA Perpignan",
+      "competitionId": "competition:top14",
+      "stadium": {
+        "name": "Stade Aimé Giral",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://top14.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:union-bordeaux-begles",
+      "name": "Union Bordeaux-Bègles",
+      "competitionId": "competition:top14",
+      "stadium": {
+        "name": "Stade Jacques Chaban Delmas",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://top14.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:as-beziers-herault",
+      "name": "AS Béziers Hérault",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Stade Raoul Barrière",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:biarritz-olympique-pb",
+      "name": "Biarritz Olympique PB",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Parc des Sports d'Aguilera",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:ca-brive",
+      "name": "CA Brive",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Stadium Municipal",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:colomiers-rugby",
+      "name": "Colomiers Rugby",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Stade Michel Bendichou",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:fc-grenoble-rugby",
+      "name": "FC Grenoble Rugby",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Stade des Alpes",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:nissa-rugby",
+      "name": "Nissa Rugby",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Stade Marcel Volot",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:oyonnax-rugby",
+      "name": "Oyonnax Rugby",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Stade Charles Mathon",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:provence-rugby",
+      "name": "Provence Rugby",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Stade Maurice David",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:rc-narbonnais",
+      "name": "RC Narbonnais",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Parc des Sports et de l'Amitié",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:su-agen",
+      "name": "SU Agen",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Stade Armandie",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:soyaux-angouleme-xv",
+      "name": "Soyaux-Angoulême XV",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Stade Chanzy",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:stade-aurillacois",
+      "name": "Stade Aurillacois",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Stade Jean Alric",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:us-dax",
+      "name": "US Dax",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Stade Maurice Boyau",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:us-montauban",
+      "name": "US Montauban",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Stade Sapiac",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:uson-nevers",
+      "name": "USON Nevers",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Stade du Pré Fleuri",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    },
+    {
+      "id": "club:valence-romans",
+      "name": "Valence Romans",
+      "competitionId": "competition:prod2",
+      "stadium": {
+        "name": "Stade Georges Pompidou",
+        "photo": null,
+        "photoRights": "unverified"
+      },
+      "verifiedFrom": "https://prod2.lnr.fr/clubs",
+      "verifiedAt": "2026-10-31",
+      "rosterComplete": false,
+      "staffComplete": false,
+      "academyComplete": false,
+      "budgetEur": null
+    }
+  ],
+  "transfers": [
+    {
+      "name": "Justin Bouraux",
+      "toClubId": "club:asm-clermont",
+      "fromClub": "Oyonnax",
+      "position": "Demi d'ouverture",
+      "reportedAge": 24,
+      "source": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "status": "source-listed-arrival-not-full-contract"
+    },
+    {
+      "name": "Baptiste Germain",
+      "toClubId": "club:asm-clermont",
+      "fromClub": "Bayonne",
+      "position": "Demi de mêlée",
+      "reportedAge": 25,
+      "source": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "status": "source-listed-arrival-not-full-contract"
+    },
+    {
+      "name": "Aj Lam",
+      "toClubId": "club:asm-clermont",
+      "fromClub": "Blues",
+      "position": "Ailier",
+      "reportedAge": 28,
+      "source": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "status": "source-listed-arrival-not-full-contract"
+    },
+    {
+      "name": "Léo Coly",
+      "toClubId": "club:aviron-bayonnais",
+      "fromClub": "Montpellier",
+      "position": "Demi de mêlée",
+      "reportedAge": 26,
+      "source": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "status": "source-listed-arrival-not-full-contract"
+    },
+    {
+      "name": "Gaël Fickou",
+      "toClubId": "club:rc-toulon",
+      "fromClub": "Racing 92",
+      "position": "Centre",
+      "reportedAge": 32,
+      "source": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "status": "source-listed-arrival-not-full-contract"
+    },
+    {
+      "name": "Huw Jones",
+      "toClubId": "club:rc-toulon",
+      "fromClub": "Glasgow",
+      "position": "Centre",
+      "reportedAge": 32,
+      "source": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "status": "source-listed-arrival-not-full-contract"
+    },
+    {
+      "name": "Paul Costes",
+      "toClubId": "club:racing-92",
+      "fromClub": "Toulouse",
+      "position": "Centre",
+      "reportedAge": 23,
+      "source": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "status": "source-listed-arrival-not-full-contract"
+    },
+    {
+      "name": "Tommaso Menoncello",
+      "toClubId": "club:stade-toulousain",
+      "fromClub": "Benetton Trévise",
+      "position": "Centre",
+      "reportedAge": 23,
+      "source": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "status": "source-listed-arrival-not-full-contract"
+    },
+    {
+      "name": "Paolo Garbisi",
+      "toClubId": "club:usa-perpignan",
+      "fromClub": "Toulon",
+      "position": "Demi d'ouverture",
+      "reportedAge": 26,
+      "source": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "status": "source-listed-arrival-not-full-contract"
+    },
+    {
+      "name": "Tom Willis",
+      "toClubId": "club:union-bordeaux-begles",
+      "fromClub": "Saracens",
+      "position": "Troisième ligne",
+      "reportedAge": 27,
+      "source": "https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027",
+      "status": "source-listed-arrival-not-full-contract"
+    }
+  ],
+  "federalCompetitions": [
+    {
+      "name": "Nationale",
+      "source": "https://amp.www.ffr.fr/actualites/competitions-federales-les-poules-pour-la-saison-2026-2027",
+      "clubsCollected": false
+    },
+    {
+      "name": "Nationale 2",
+      "source": "https://amp.www.ffr.fr/actualites/competitions-federales-les-poules-pour-la-saison-2026-2027",
+      "clubsCollected": false
+    },
+    {
+      "name": "Fédérale 1",
+      "source": "https://amp.www.ffr.fr/actualites/competitions-federales-les-poules-pour-la-saison-2026-2027",
+      "clubsCollected": false
+    },
+    {
+      "name": "Fédérale 2",
+      "source": "https://amp.www.ffr.fr/actualites/competitions-federales-les-poules-pour-la-saison-2026-2027",
+      "clubsCollected": false
+    },
+    {
+      "name": "Fédérale 3",
+      "source": "https://amp.www.ffr.fr/actualites/competitions-federales-les-poules-pour-la-saison-2026-2027",
+      "clubsCollected": false
+    },
+    {
+      "name": "Reichel Espoirs Élite",
+      "source": "https://amp.www.ffr.fr/actualites/competitions-federales-les-poules-pour-la-saison-2026-2027",
+      "clubsCollected": false
+    },
+    {
+      "name": "Reichel Espoirs Accession",
+      "source": "https://amp.www.ffr.fr/actualites/competitions-federales-les-poules-pour-la-saison-2026-2027",
+      "clubsCollected": false
+    },
+    {
+      "name": "Espoirs Nationaux",
+      "source": "https://amp.www.ffr.fr/actualites/competitions-federales-les-poules-pour-la-saison-2026-2027",
+      "clubsCollected": false
+    },
+    {
+      "name": "Espoirs Fédéraux",
+      "source": "https://amp.www.ffr.fr/actualites/competitions-federales-les-poules-pour-la-saison-2026-2027",
+      "clubsCollected": false
+    },
+    {
+      "name": "Élite Crabos",
+      "source": "https://amp.www.ffr.fr/actualites/competitions-federales-les-poules-pour-la-saison-2026-2027",
+      "clubsCollected": false
+    },
+    {
+      "name": "Élite Alamercery",
+      "source": "https://amp.www.ffr.fr/actualites/competitions-federales-les-poules-pour-la-saison-2026-2027",
+      "clubsCollected": false
+    },
+    {
+      "name": "Élite Gaudermen",
+      "source": "https://amp.www.ffr.fr/actualites/competitions-federales-les-poules-pour-la-saison-2026-2027",
+      "clubsCollected": false
+    }
+  ],
+  "visualAssets": [],
+  "notes": [
+    "Fiches des clubs et stades contrôlées contre pages LNR ; certains titres de pages peuvent afficher une saison ancienne : contrôler périodiquement changements/promotions.",
+    "Tableau transferts = uniquement arrivées publiées, pas effectif complet ni garantie date de signature.",
+    "Staffs, budgets, contrats, salaires, académies, calendriers détaillés et licences d'images non établis."
+  ]
+}
