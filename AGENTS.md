@@ -32,14 +32,14 @@ d’écriture visibles ; aucun repli silencieux vers un autre stockage.
 
 ## Continuité entre deux comptes ChatGPT — protocole obligatoire
 
-Deux comptes ChatGPT interviennent comme développeurs de même niveau, **en alternance et jamais simultanément**. Aucun compte n'est le superviseur de l'autre. L'utilisateur alterne entre les comptes selon leurs quotas.
+Deux comptes ChatGPT travaillent sur des branches distinctes, potentiellement simultanément : **le compte développeur produit les fonctionnalités et les PR sans fusion ; le compte intégrateur unique vérifie, raccorde, teste et fusionne dans `main`**. GitHub et l'issue #73 assurent la passation.
 
 ### À chaque nouvelle conversation ou reprise du développement
 
 1. **Commencer par consulter le dépôt GitHub `Xynph/cadrage-debordement`**, avant de proposer ou d'effectuer des modifications. Examiner la branche principale, les derniers commits et leurs changements, les branches pertinentes, les pull requests ouvertes ou récemment fusionnées, ainsi que les consignes du présent `AGENTS.md`.
 2. Reconstituer l'état réel du projet et les travaux précédents **directement depuis GitHub**. Ne jamais demander à l'utilisateur ce que l'autre compte ChatGPT a fait. Si les informations disponibles sur GitHub ne suffisent pas, signaler précisément ce qui manque sans inventer de modifications.
 3. **GitHub est l'unique source de vérité du code et de l'avancement.** Ne jamais reprendre une copie locale ou un souvenir de conversation sans les confronter à la version actuelle du dépôt.
-4. Partir de la dernière version pertinente. Pour une modification simple, une mise à jour directe de `main` est possible si elle est vérifiée ; pour un changement important ou risqué, utiliser une branche et une pull request, puis intégrer le travail validé. Ne pas laisser un chantier annoncé comme terminé uniquement sur une branche non fusionnée.
+4. Partir de la dernière version pertinente. Toute modification de code ou de documentation passe par une branche dédiée et une PR. **Aucun push direct sur `main`**, même pour les modifications simples. Le compte développeur ne fusionne jamais. Ne pas laisser un chantier annoncé comme terminé uniquement sur une branche non fusionnée.
 5. **Enregistrer chaque modification sur GitHub**, avec un message de commit explicite, puis vérifier le commit et le contenu effectivement publiés sur la branche visée. Une modification non publiée et vérifiée n'est pas terminée.
 6. Exécuter les tests pertinents lorsque l'environnement le permet. Distinguer clairement les tests réussis, échoués et non exécutés ; ne jamais annoncer une validation qui n'a pas eu lieu.
 7. En fin d'intervention, résumer en français les changements, les fichiers concernés, les références de commits et de pull requests, l'état des tests et les travaux restant à faire, pour que l'autre compte puisse reprendre sans perte de contexte.
@@ -67,16 +67,19 @@ Ce protocole s'applique à chaque session, même si l'utilisateur ne le rappelle
 - La conclusion native du contrôle `Validation CI` fait autorité ; le résumé n'autorise pas une fusion. Dernier SHA et CI complète restent exigés, puis CI post-fusion sur `main`.
 - Ne pas faire de sondages répétitifs : se fier aux contrôles natifs GitHub et consulter la page de résultat une fois terminée. GitHub peut notifier les participants selon leurs réglages. Aucun message n'est envoyé automatiquement dans ChatGPT.
 
-## Coordination prioritaire entre les deux comptes — consigne actualisée au 31 octobre 2026
+## Gouvernance définitive — producteur et intégrateur unique (31 octobre 2026)
 
-En cas de contradiction avec l'ancien protocole d'alternance ci-dessus, suivre la répartition explicitement décidée par l'utilisateur : **le compte principal est seul responsable des validations finales et des fusions dans `main`** jusqu'à nouvel ordre ; l'autre compte développe les fonctionnalités hors match sur des branches et PR distinctes et **ne les fusionne pas**. Les PR en brouillon restent en préparation : ne jamais les déclarer prêtes ou les fusionner sans vérification de leur état réel et coordination effective avec leur auteur. Privilégier des intégrations jouables et testées plutôt que la multiplication des versions isolées. Les protections GitHub et la validation CI sur le dernier SHA demeurent obligatoires.
+- **Compte développeur** : conçoit les fonctionnalités, produit des branches et PR, corrige ses tests et documente ses livraisons dans l'issue #73. **Aucune fusion ni push sur `main`.**
+- **Compte intégrateur (ce compte)** : lit #73, examine les PR et dépendances, vérifie la valeur jouable, les sauvegardes et le dernier SHA de `main`, réalise les raccordements sur une branche d'intégration si nécessaire, exécute la CI complète, puis **est seul habilité par la gouvernance du projet à fusionner**.
+- La fusion exige la PR non brouillon, l'absence de conflits, les tests ciblés et la validation complète `Tests JavaScript` / `Validation CI` sur la tête exacte ; après fusion, contrôler la CI `push` sur le SHA fusionné. En cas d'échec, **STOP et correction**.
+- Les travaux indépendants peuvent se poursuivre simultanément, avec réservation de chemins dans #73. La fusion n'est jamais autorisée par le seul message d'une issue.
+- La PR #75 (double intégration) est abandonnée et doit rester non fusionnée.
 
-
-## Canal de coordination permanent — issue #73 (proposition, applicable après fusion)
+## Canal de coordination permanent — issue #73 (en vigueur)
 
 **Salon partagé : https://github.com/Xynph/cadrage-debordement/issues/73**
 
-Cette section précise le fonctionnement en parallèle déjà autorisé par l'utilisateur et prévaut sur l'ancienne formule « jamais simultanément » lorsqu'il existe des branches, périmètres et fichiers distincts. Elle ne change pas la règle : le compte principal reste le seul responsable des fusions dans `main`.
+Le compte développeur produit les PR ; le compte intégrateur unique est seul responsable des fusions dans `main`. Les sessions peuvent être simultanées sur des branches et fichiers distincts.
 
 ### Ouverture obligatoire d'une session
 1. Vérifier le dernier `main`, les changements et PR/CI récents ; lire `AGENTS.md` et `DEVELOPPEMENT.md`.
@@ -92,4 +95,4 @@ Cette section précise le fonctionnement en parallèle déjà autorisé par l'ut
 - Ne pas présenter la coordination comme une communication instantanée autonome : chaque compte intervient lorsqu'une session est active, sans surveillance continue.
 - Garder #73 ouverte ; ne jamais y publier de jeton, clé API, sauvegarde personnelle ou secret.
 - Pour les travaux de l'autre compte, prendre les **derniers commentaires** et le **GitHub actuel** comme références, non un ancien rapport de chat.
-- Les règles de CI, vérification du dernier SHA et fusion réservée au compte principal restent intégralement en vigueur.
+- Les règles de CI, vérification du dernier SHA et fusion réservée au compte intégrateur unique restent intégralement en vigueur.
