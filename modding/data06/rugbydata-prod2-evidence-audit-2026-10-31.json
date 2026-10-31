@@ -1,0 +1,1198 @@
+{
+  "schema": "data06-prod2-evidence-dedup-audit-v1",
+  "method": "Cross-check four previously collected PRO D2 Wikipedia evidence batches against 689 successful Rugby Data individual profiles; validate exact source record ID and normalized full name; preserve supplemental years pending separate roster ID validation.",
+  "sourceEvidenceFiles": [
+    "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+    "rugbydata-birth-year-wikipedia-beziers-2026-10-31.json",
+    "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json",
+    "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json"
+  ],
+  "stats": {
+    "total": 118,
+    "byStatus": {
+      "supplemental_birth_year_no_successful_profile": 118
+    }
+  },
+  "records": [
+    {
+      "club": "agen",
+      "name": "Matthieu Bonnet",
+      "sourceRecordId": "958",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "agen",
+      "name": "Craig Willis",
+      "sourceRecordId": "1891",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "agen",
+      "name": "Clément Garrigues",
+      "sourceRecordId": "991",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Basa Khonelidze",
+      "sourceRecordId": "1039",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Luka Nioradze",
+      "sourceRecordId": "1020",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Gymaël Jean-Jacques",
+      "sourceRecordId": "1012",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Giorgi Kartvelishvili",
+      "sourceRecordId": "1013",
+      "birthYear": 1991,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Robert Rodgers",
+      "sourceRecordId": "1026",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Skip Jongejan",
+      "sourceRecordId": "1038",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Martial Rolland",
+      "sourceRecordId": "1027",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Mehdi Slamani",
+      "sourceRecordId": "1042",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Théo Cambon",
+      "sourceRecordId": "1004",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Tim De Jong",
+      "sourceRecordId": "1035",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Hugo Huurman",
+      "sourceRecordId": "1010",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Aleksandre Burduli",
+      "sourceRecordId": "1003",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Viliami Taulani",
+      "sourceRecordId": "1895",
+      "birthYear": 1997,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Didier Tison",
+      "sourceRecordId": "1030",
+      "birthYear": 1993,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Boris Hadinegoro",
+      "sourceRecordId": "1037",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Tedo Abzhandadze",
+      "sourceRecordId": "998",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Hugo Bastard",
+      "sourceRecordId": "1001",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Karsen Talalua",
+      "sourceRecordId": "1044",
+      "birthYear": 2004,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "François Vergnaud",
+      "sourceRecordId": "1134",
+      "birthYear": 1997,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Angus Staniforth",
+      "sourceRecordId": "1043",
+      "birthYear": 2004,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "aurillac",
+      "name": "Jake Strachan",
+      "sourceRecordId": "1029",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-agen-aurillac-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "beziers",
+      "name": "Killian Taofifenua",
+      "sourceRecordId": "1131",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-beziers-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "beziers",
+      "name": "Thomas Canaleta",
+      "sourceRecordId": "1082",
+      "birthYear": 2004,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-beziers-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "beziers",
+      "name": "Tanguy Jaillon",
+      "sourceRecordId": "1086",
+      "birthYear": 2005,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-beziers-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "beziers",
+      "name": "Mackenzie Martin",
+      "sourceRecordId": "3077",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-beziers-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "beziers",
+      "name": "David Delarue",
+      "sourceRecordId": "1007",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-beziers-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "beziers",
+      "name": "Jordon Janse van Rensburg",
+      "sourceRecordId": "1011",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-beziers-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "beziers",
+      "name": "Barnabé Mechentel",
+      "sourceRecordId": "3033",
+      "birthYear": 2005,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-beziers-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "colomiers",
+      "name": "Pierre-Emmanuel Pacheco",
+      "sourceRecordId": "1224",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "colomiers",
+      "name": "Michaël Simutoga",
+      "sourceRecordId": "1231",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "colomiers",
+      "name": "Maxime Granouillet",
+      "sourceRecordId": "1214",
+      "birthYear": 1989,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "colomiers",
+      "name": "Eliott Maurel",
+      "sourceRecordId": "1222",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "colomiers",
+      "name": "Natan Culinat",
+      "sourceRecordId": "1241",
+      "birthYear": 2005,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "colomiers",
+      "name": "Ugo Seguela",
+      "sourceRecordId": "1229",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "colomiers",
+      "name": "Martin Dulon",
+      "sourceRecordId": "1210",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "colomiers",
+      "name": "Alexandre Borie",
+      "sourceRecordId": "1952",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-colomiers-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Antoine Abraham",
+      "sourceRecordId": "2075",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Yannick Arroyo",
+      "sourceRecordId": "1050",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Ali Oz",
+      "sourceRecordId": "2097",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Martin Villar",
+      "sourceRecordId": "67",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Mayco Vivas",
+      "sourceRecordId": "1627",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Feleti Kaitu'u",
+      "sourceRecordId": "506",
+      "birthYear": 1994,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Vano Karkadze",
+      "sourceRecordId": "343",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Julien Ratajczak",
+      "sourceRecordId": "2101",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Phoenix Battye",
+      "sourceRecordId": "2077",
+      "birthYear": 1990,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Koen Bloemen",
+      "sourceRecordId": "1002",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Antonin Corso",
+      "sourceRecordId": "2111",
+      "birthYear": 2004,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Alban Roussel",
+      "sourceRecordId": "307",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Cyriac Guilly",
+      "sourceRecordId": "2113",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Hugo Hermet",
+      "sourceRecordId": "2089",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Kevin Lebreton",
+      "sourceRecordId": "2092",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Antoine Miquel",
+      "sourceRecordId": "2095",
+      "birthYear": 1994,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Wandrille Picault",
+      "sourceRecordId": "2098",
+      "birthYear": 1994,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Uzair Cassiem",
+      "sourceRecordId": "21",
+      "birthYear": 1990,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Loïc Godener",
+      "sourceRecordId": "2088",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Jonathan Ruru",
+      "sourceRecordId": "2103",
+      "birthYear": 1993,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Jules Solinas",
+      "sourceRecordId": "2116",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Thomas Vincent",
+      "sourceRecordId": "362",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Luka Matkava",
+      "sourceRecordId": "151",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Inaki Ayarza",
+      "sourceRecordId": "706",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Thomas Darmon",
+      "sourceRecordId": "332",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Lucas Mensa",
+      "sourceRecordId": "2094",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Louis Morland",
+      "sourceRecordId": "2115",
+      "birthYear": 2004,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Danny Toala",
+      "sourceRecordId": "2109",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Liam Coombes-Fabling",
+      "sourceRecordId": "4145",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Karim Qadiri",
+      "sourceRecordId": "2099",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Enzo Reybier",
+      "sourceRecordId": "124",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Gavin Stark",
+      "sourceRecordId": "2106",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Paul Auradou",
+      "sourceRecordId": "2076",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "oyonnax",
+      "name": "Alex Newsome",
+      "sourceRecordId": "194",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Quentin Algay",
+      "sourceRecordId": "1185",
+      "birthYear": 2006,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Yanis Charcosset",
+      "sourceRecordId": "280",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Lucas Da Silva",
+      "sourceRecordId": "1151",
+      "birthYear": 1997,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Valerio Siciliano",
+      "sourceRecordId": "4386",
+      "birthYear": 2004,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Vakhtang Abdaladze",
+      "sourceRecordId": "1146",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Zaccharie Affane",
+      "sourceRecordId": "113",
+      "birthYear": 2004,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Simon-Pierre Chauvac",
+      "sourceRecordId": "1149",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Francisco Coria Marchetti",
+      "sourceRecordId": "1150",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Hugo Reilhes",
+      "sourceRecordId": "674",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Marcel Van der Merwe",
+      "sourceRecordId": "1179",
+      "birthYear": 1990,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Irné Herbst",
+      "sourceRecordId": "1910",
+      "birthYear": 1993,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Teun Karst",
+      "sourceRecordId": "1912",
+      "birthYear": 2004,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Konstantine Mikautadze",
+      "sourceRecordId": "42",
+      "birthYear": 1991,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Alexandre Ricard",
+      "sourceRecordId": "103",
+      "birthYear": 1997,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Anthony Coletta",
+      "sourceRecordId": "1206",
+      "birthYear": 1989,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "David Geneste",
+      "sourceRecordId": "1191",
+      "birthYear": 2004,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Sasha Gué",
+      "sourceRecordId": "1155",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Geoffrey Malaterre",
+      "sourceRecordId": "1198",
+      "birthYear": 2005,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Retief Marais",
+      "sourceRecordId": "1161",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Samuel Maximin",
+      "sourceRecordId": "1162",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Yann Peysson",
+      "sourceRecordId": "157",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Taniela Sadrugu",
+      "sourceRecordId": "1172",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Mathis Galthié",
+      "sourceRecordId": "1213",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "brive",
+      "name": "Maxime Sidobre",
+      "sourceRecordId": "1173",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Réginald Churchward",
+      "sourceRecordId": "4146",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Kakhaber Darbaidze",
+      "sourceRecordId": "2402",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Kepa Ebode N'koa",
+      "sourceRecordId": "2242",
+      "birthYear": 2005,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Zakaria El Fakir",
+      "sourceRecordId": "1108",
+      "birthYear": 1997,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "François Mur",
+      "sourceRecordId": "1140",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Giorgi Nutsubidze",
+      "sourceRecordId": "1124",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Hugo Pirlet",
+      "sourceRecordId": "1226",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Alexandre Plantier",
+      "sourceRecordId": "1127",
+      "birthYear": 1991,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Yoni Tuataane",
+      "sourceRecordId": "1144",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Sione Vailanu",
+      "sourceRecordId": "901",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Kerman Aurrekoetxea",
+      "sourceRecordId": "1097",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Anoa Laurent",
+      "sourceRecordId": "1138",
+      "birthYear": 2006,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Charlie Shiel",
+      "sourceRecordId": "943",
+      "birthYear": 1997,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Thomas Dolhagaray",
+      "sourceRecordId": "26",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Carlo Mignot",
+      "sourceRecordId": "1139",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Yohan Tapie",
+      "sourceRecordId": "1143",
+      "birthYear": 2004,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Arthur Bonneval",
+      "sourceRecordId": "1101",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Nicolas Elissondo",
+      "sourceRecordId": "1135",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Baptiste Fariscot",
+      "sourceRecordId": "1136",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Bastien Guillemin",
+      "sourceRecordId": "1110",
+      "birthYear": 1997,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    },
+    {
+      "club": "biarritz",
+      "name": "Kylian Jaminet",
+      "sourceRecordId": "1112",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "evidenceFile": "rugbydata-birth-year-wikipedia-prod2-batch-2026-10-31.json",
+      "status": "supplemental_birth_year_no_successful_profile",
+      "alreadyKnownBirthDate": null
+    }
+  ]
+}
