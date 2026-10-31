@@ -1,0 +1,11 @@
+# Wikidata CC0 — export du catalogue des rugbymen (Wikidata:Q? rugby union player).
+# Q14089670 = rugby union player (occupation P106, vérifié dans les contraintes Wikidata).
+SELECT DISTINCT ?player ?playerLabel ?birth ?height ?weight ?citizenship ?citizenshipLabel ?club ?clubLabel WHERE {
+  ?player wdt:P106 wd:Q14089670 .
+  OPTIONAL { ?player wdt:P569 ?birth . }
+  OPTIONAL { ?player wdt:P2048 ?height . }
+  OPTIONAL { ?player wdt:P2067 ?weight . }
+  OPTIONAL { ?player wdt:P27 ?citizenship . }
+  OPTIONAL { ?player p:P54 ?membership . ?membership ps:P54 ?club . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en" . }
+}
