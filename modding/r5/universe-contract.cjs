@@ -10,6 +10,10 @@ function validatePack(p){
  guard(m.schema===1&&ID.test(m.id||'')&&VER.test(m.version||''),'Manifeste incompatible');
  guard(['dataset','visual','combined'].includes(m.kind),'Type incompatible');
  for(const key of Object.keys(p.records))guard(TYPES.includes(key)&&Array.isArray(p.records[key]),'Collection invalide '+key);
+ guard(!m.dependencies||Array.isArray(m.dependencies),'Dépendances invalides');
+ guard(!m.conflicts||Array.isArray(m.conflicts),'Conflits invalides');
+ for(const d of m.dependencies||[])guard(d&&ID.test(d.id||'')&&VER.test(d.version||'')&&d.id!==m.id,'Dépendance mal formée');
+ for(const c of m.conflicts||[])guard(ID.test(c)&&c!==m.id,'Conflit mal formé');
  const own=new Set();
  for(const [kind,rows] of Object.entries(p.records))for(const row of rows){
   guard(row&&typeof row.id==='string'&&row.id.length<=120&&typeof row.name==='string'&&row.name.trim(),'Entité invalide');
@@ -18,10 +22,11 @@ function validatePack(p){
  return copy(p);
 }
 function createUniverse(base){
+ guard(base&&typeof base==='object'&&!Array.isArray(base),'Univers de base invalide');
  const original=copy(base),installed=new Map();let selected=[];
  function install(p){const x=validatePack(p);guard(!installed.has(x.manifest.id),'Mod installé');installed.set(x.manifest.id,x);return x.manifest.id}
  function resolve(ids){
-  guard(Array.isArray(ids)&&new Set(ids).size===ids.length,'Sélection en doublon');
+  guard(Array.isArray(ids)&&ids.every(x=>typeof x==='string'&&ID.test(x))&&new Set(ids).size===ids.length,'Sélection invalide ou en doublon');
   for(const id of ids)guard(installed.has(id),'Mod manquant : '+id);
   for(const id of ids){
    const m=installed.get(id).manifest;
@@ -42,7 +47,7 @@ function createUniverse(base){
  }
  function select(ids){const world=resolve(ids);selected=ids.slice();return world}
  function binding(){return {schema:1,mods:selected.map(id=>({id,version:installed.get(id).manifest.version}))}}
- function checkBinding(b){if(!b||b.schema!==1||!Array.isArray(b.mods))return {ok:false,reason:'Signature absente'};const actual=binding();const ok=JSON.stringify(actual.mods)===JSON.stringify(b.mods);return {ok,reason:ok?'OK':'Mods manquants, version ou ordre incompatibles'}}
+ function checkBinding(b){if(!b||b.schema!==1||!Array.isArray(b.mods)||b.mods.some(x=>!x||!ID.test(x.id||'')||!VER.test(x.version||'')))return {ok:false,reason:'Signature absente ou invalide'};const actual=binding();const ok=JSON.stringify(actual.mods)===JSON.stringify(b.mods);return {ok,reason:ok?'OK':'Mods manquants, version ou ordre incompatibles'}}
  function prepareNewCareer(config={}){
   guard(config&&typeof config==='object'&&!Array.isArray(config),'Paramètres invalides');
   // On ajoute un champ uniquement à une nouvelle carrière, jamais aux anciennes.
@@ -50,7 +55,7 @@ function createUniverse(base){
   output.modBinding=binding();return output
  }
  function checkCareer(save){
-  if(!save||typeof save!=='object')return {ok:false,reason:'Sauvegarde invalide'};
+  if(!save||typeof save!=='object'||Array.isArray(save))return {ok:false,reason:'Sauvegarde invalide'};
   if(!Object.prototype.hasOwnProperty.call(save,'modBinding'))return {ok:selected.length===0,legacy:true,reason:selected.length?'Ancienne carrière : désactiver les mods':'Ancienne carrière compatible sans conversion'};
   return {...checkBinding(save.modBinding),legacy:false}
  }
