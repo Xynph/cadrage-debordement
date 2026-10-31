@@ -48,8 +48,8 @@ check('slot restoration uses existing review and restores exactly the selected c
 check('corrupted slot never replaces the current or canonical save',()=>{
  const first=g.run('CDMenuSlots.list().items[0].id');
  const snapshot=g.run('JSON.stringify(S)'),disk=g.store['bdt-v1'];
- g.store['cd-career-slot-v2:'+first]='{"version":2,"checksum":"bad","state":{}}';
  g.run('returnToMainMenu()');
+ g.store['cd-career-slot-v2:'+first]='{"version":2,"checksum":"bad","state":{}}';
  assert.equal(g.run('mainMenuSlotOpen('+JSON.stringify(first)+')'),false);
  assert.equal(g.run('JSON.stringify(S)'),snapshot);
  assert.equal(g.store['bdt-v1'],disk);
@@ -57,7 +57,7 @@ check('corrupted slot never replaces the current or canonical save',()=>{
 check('deleting an archive never removes the active canonical career',()=>{
  const second=g.run('CDMenuSlots.list().items[1].id');
  assert.equal(g.run('mainMenuSlotDelete('+JSON.stringify(second)+')'),true);
- assert.match(g.app.innerHTML,/Supprimer cette copie/);
+ assert.match(g.app.innerHTML,/Cette action supprime cette copie/);
  assert.equal(g.run('mainMenuSlotConfirmDelete('+JSON.stringify(second)+')'),true);
  assert.ok(g.store['bdt-v1']);
  assert.equal(g.run('CDMenuSlots.list().items.length'),1);
