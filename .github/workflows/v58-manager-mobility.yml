@@ -1,0 +1,29 @@
+name: V58 mobilite native du manager
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-mobility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Instantane reproductible des seuls fichiers suivis
+        run: |
+          mkdir -p "$RUNNER_TEMP/v58-source"
+          git archive --format=tar HEAD > "$RUNNER_TEMP/v58-source/source.tar"
+          git rev-parse HEAD > "$RUNNER_TEMP/v58-source/REVISION.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v58-native-source
+          path: ${{ runner.temp }}/v58-source/
+          retention-days: 3
+          if-no-files-found: error
