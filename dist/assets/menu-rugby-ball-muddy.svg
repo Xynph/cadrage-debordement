@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 440" role="img" aria-labelledby="t d"><title id="t">Ballon de rugby usé posé dans l'herbe</title><desc id="d">Ballon ivoire vieilli, coutures en relief, traces de terre et d'herbe, lumière orangée d'un stade au coucher du soleil.</desc>
+<defs>
+ <linearGradient id="leather" x1=".13" y1="0" x2=".85" y2="1"><stop offset="0" stop-color="#fff7e3"/><stop offset=".18" stop-color="#e7e0d0"/><stop offset=".43" stop-color="#bebaa9"/><stop offset=".66" stop-color="#918f81"/><stop offset=".83" stop-color="#676c61"/><stop offset="1" stop-color="#343e36"/></linearGradient>
+ <radialGradient id="shine" cx=".3" cy=".15" r=".78"><stop offset="0" stop-color="#fff3d8" stop-opacity=".91"/><stop offset=".37" stop-color="#e1ceb0" stop-opacity=".33"/><stop offset="1" stop-color="#15271f" stop-opacity=".43"/></radialGradient>
+ <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffc17a" stop-opacity=".78"/><stop offset=".6" stop-color="#f9a765" stop-opacity=".12"/><stop offset="1" stop-color="#0c2419" stop-opacity="0"/></linearGradient>
+ <linearGradient id="stripe" x1="0" x2="1"><stop stop-color="#083f38"/><stop offset=".45" stop-color="#e3f0e0"/><stop offset=".6" stop-color="#07483f"/><stop offset="1" stop-color="#093c35"/></linearGradient>
+ <radialGradient id="earth"><stop stop-color="#664c35" stop-opacity=".85"/><stop offset=".67" stop-color="#5f4c37" stop-opacity=".46"/><stop offset="1" stop-color="#5f4c37" stop-opacity="0"/></radialGradient>
+ <filter id="leatherNoise" x="-20%" y="-30%" width="140%" height="170%"><feTurbulence type="fractalNoise" baseFrequency=".45" numOctaves="3" seed="13" stitchTiles="stitch" result="n"/><feColorMatrix in="n" type="saturate" values=".17" result="gray"/><feBlend in="SourceGraphic" in2="gray" mode="multiply"/></filter>
+ <filter id="glow"><feGaussianBlur stdDeviation="14"/></filter>
+ <filter id="shadow" x="-40%" y="-50%" width="180%" height="200%"><feGaussianBlur stdDeviation="13"/></filter>
+ <clipPath id="ballclip"><path d="M-218 0 C-146-93 137-104 229-1 C141 104-144 103-218 0Z"/></clipPath>
+ <path id="shape" d="M-218 0 C-146-93 137-104 229-1 C141 104-144 103-218 0Z"/>
+</defs>
+<!-- Ground shadow and golden sidelight -->
+<ellipse cx="333" cy="379" rx="212" ry="30" fill="#010f0b" opacity=".8" filter="url(#shadow)"/>
+<ellipse cx="300" cy="387" rx="230" ry="23" fill="#214b25" opacity=".35"/>
+<g transform="translate(343 264) rotate(-24)">
+ <use href="#shape" fill="url(#leather)" stroke="#3b483f" stroke-width="5"/>
+ <g clip-path="url(#ballclip)">
+  <rect x="-230" y="-110" width="460" height="220" fill="url(#shine)"/>
+  <rect x="-230" y="-100" width="460" height="65" fill="url(#sun)"/>
+  <g opacity=".47" filter="url(#leatherNoise)"><rect x="-230" y="-112" width="460" height="224" fill="#d7cbb0" opacity=".5"/></g>
+  <!-- Signature stripes painted onto weathered leather -->
+  <path d="M-164-91 Q-144 4-167 87" fill="none" stroke="#244b43" stroke-width="28" opacity=".83"/>
+  <path d="M-147-90 Q-128 4-151 88" fill="none" stroke="#e5e2d5" stroke-width="8"/>
+  <path d="M172-93 Q146 1 175 88" fill="none" stroke="#214840" stroke-width="32" opacity=".81"/>
+  <path d="M156-90 Q138 4 159 88" fill="none" stroke="#dee4d9" stroke-width="9"/>
+  <!-- Center stitching in a recessed channel -->
+  <path d="M-95-18 Q0-28 101-13" fill="none" stroke="#4c5548" stroke-width="10" opacity=".6"/>
+  <path d="M-96-21 Q0-29 101-16" fill="none" stroke="#e1ddc9" stroke-width="4" opacity=".95"/>
+  <g stroke="#e7dfcb" stroke-width="4" stroke-linecap="round" opacity=".93">
+   <path d="M-62-31v25 M-42-33v25 M-21-34v25 M0-34v25 M21-33v25 M42-31v25 M63-28v25"/>
+  </g>
+  <path d="M-195 24 Q-20 125 210 38" fill="none" stroke="#273b2b" stroke-width="6" opacity=".52"/>
+  <!-- Dirt scuffs and imperfect wear, irregular shapes, no spotless leather -->
+  <g fill="#574633" opacity=".48">
+   <path d="M-110 33q23-18 34-3l-5 9-28 7z M-70 47l29-10 15 13-20 8z M75 54q18-9 30 6l-23 10-20-6z"/>
+   <path d="M119-37q23-8 35 7l-4 10-22-5-19 4z M-25 67l40-11 23 9-47 10z M-135-46l17-7 12 14-10 11-17-5z"/>
+  </g>
+  <g fill="url(#earth)"><ellipse cx="-96" cy="51" rx="65" ry="24"/><ellipse cx="62" cy="64" rx="78" ry="24"/><ellipse cx="145" cy="-33" rx="50" ry="27"/><ellipse cx="-130" cy="-60" rx="34" ry="16"/></g>
+  <g fill="#2e4d31" opacity=".55"><path d="M-76 64l20-13 16 10-15 9z M-7 66l18-14 26 9-10 10z M105 43l26-5-3 9-21 7z"/></g>
+  <g fill="#644d32" opacity=".69">
+   <circle cx="-62" cy="-42" r="3"/><circle cx="-53" cy="-37" r="2"/><circle cx="99" cy="-47" r="3"/><circle cx="121" cy="48" r="3"/><circle cx="-21" cy="49" r="2"/><circle cx="-131" cy="34" r="4"/>
+  </g>
+  <text x="-4" y="30" text-anchor="middle" transform="rotate(6)" font-family="Arial,sans-serif" font-weight="800" letter-spacing="-2" font-size="58" fill="#173e36" opacity=".65">CD</text>
+  <path d="M-203-8 Q-112-82 20-87" fill="none" stroke="#fff0c9" stroke-width="9" opacity=".19"/>
+ </g>
+ <use href="#shape" fill="none" stroke="#e4ca98" stroke-width="2" opacity=".55"/>
+</g>
+<!-- Individual foreground grass blades overlap the ball naturally -->
+<g fill="none" stroke-linecap="round">
+ <g stroke="#183f20" stroke-width="3" opacity=".85">
+  <path d="M84 428Q90 389 72 370 M103 440Q125 400 132 367 M149 440Q156 399 142 375 M218 438Q212 415 193 392 M267 441Q274 405 266 388 M337 440Q346 398 335 377 M413 444Q408 405 425 371 M473 444Q470 403 493 376 M520 439Q512 403 529 383"/>
+ </g>
+ <g stroke="#72a052" stroke-width="2" opacity=".79">
+  <path d="M94 442Q94 403 107 379 M134 441Q128 412 110 397 M194 440Q207 401 199 378 M249 441Q252 406 237 391 M294 441Q314 402 314 386 M372 441Q368 405 393 380 M453 442Q444 400 444 382 M556 444Q563 405 542 389"/>
+ </g>
+ <g stroke="#b0b76c" stroke-width="1.5" opacity=".5">
+  <path d="M116 441Q114 408 118 399 M231 441Q221 418 208 408 M388 440Q402 408 402 391 M486 440Q491 420 505 412"/>
+ </g>
+</g>
+</svg>
