@@ -22,7 +22,7 @@ function build(root=ROOT){
  if(enriched.size!==240)throw Error('Expected 240 individually sourced profiles, got '+enriched.size);
  const players=list.map(p=>{
   const a=enriched.get(p.id);
-  const h=a?.heightCm??(typeof a?.height==='string'&&/^[12]m\\d{2}$/.test(a.height)?Number(a.height.replace('m','')):null);
+  const h=a?.heightCm??(typeof a?.height==='string'&&/^[12]m\d{2}$/.test(a.height)?Number(a.height.replace('m','')):null);
   const player={...p,position:a?.positionGroup||a?.position||null,nationality:a?.nationality||null,ageReported:a?.ageReported??a?.age??null,heightCm:h??null,weightKg:a?.weightKg??null,birthDate:null,jiff:null,contractEnd:null,salary:null,clubBudget:null,actualPerformance:null,gameRatingEstimate:null,sourceType:a?'lnr-individual-snapshot':'lnr-official-roster',profileEnriched:Boolean(a),historicalAsOfJuly1Verified:false};
   const nm=p.club+'|'+p.name.normalize('NFKD').toLowerCase();
   seenNames.set(nm,(seenNames.get(nm)||0)+1);
