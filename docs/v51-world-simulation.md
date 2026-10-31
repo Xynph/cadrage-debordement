@@ -13,9 +13,7 @@ Moteur de démonstration purement calculatoire, non connecté aux carrières exi
 
 ## Dépendances pour test local
 
-Le test `tests/v51-world-simulation.cjs` nécessite les fichiers des PR V46–V50 ; celles-ci ne sont **pas dans main**. Le test n'est donc exécutable qu'une fois les modules présents ensemble dans un checkout d'intégration.
-
-Pour préserver l'indépendance, le module V51 lui-même reste importable seul, et le test de contrat autonome `tests/v51-contract.cjs` utilise des adaptateurs factices pour vérifier les invariants sans autre PR.
+Le test `tests/v51-world-simulation.cjs` est autonome : il injecte des adaptateurs de contrat factices et vérifie sur 10 et 15 saisons les invariants du simulateur. Il ne démontre **pas** l'interopérabilité réelle avec les modules V46–V50. Une validation croisée devra importer les vrais modules depuis un checkout d'intégration une fois les PR disponibles ensemble.
 
 ## Coordination
 
