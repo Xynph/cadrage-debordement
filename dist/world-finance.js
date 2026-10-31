@@ -18,7 +18,22 @@
    if(ids.size!==clubs.length||checkpoint.clubs.some(c=>!c||!ids.has(c.id)||!Number.isFinite(c.cash)||!Number.isFinite(c.debt)||c.debt<0||
       !Number.isFinite(c.reputation)||c.reputation<0||c.reputation>100||!Number.isInteger(c.facilities)||c.facilities<1||c.facilities>10||
       !Number.isFinite(c.coachConfidence)||c.coachConfidence<0||c.coachConfidence>100))throw RangeError('Checkpoint clubs invalide');
-   if(checkpoint.history.some((h,i)=>!h||h.season!==i+1||!Array.isArray(h.standings)||h.standings.length!==clubs.length))throw RangeError('Historique checkpoint invalide');
+   if(!checkpoint.penalties||typeof checkpoint.penalties!=='object'||Array.isArray(checkpoint.penalties)||
+    Object.keys(checkpoint.penalties).length!==ids.size||Object.keys(checkpoint.penalties).some(id=>!ids.has(id)))throw RangeError('Malus checkpoint invalides');
+   if(new Set(checkpoint.clubs.map(c=>c.id)).size!==ids.size)throw RangeError('Doublon checkpoint');
+   if(checkpoint.history.some((h,i)=>!h||h.season!==i+1||!Array.isArray(h.standings)||h.standings.length!==clubs.length||
+      !Array.isArray(h.awards)||typeof h.champion!=='string'||!ids.has(h.champion)||
+      new Set(h.standings.map(r=>r.clubId)).size!==ids.size||
+      new Set(h.standings.map(r=>r.finish)).size!==ids.size||
+      h.standings.some(r=>!r||!ids.has(r.clubId)||!Number.isInteger(r.finish)||r.finish<1||r.finish>ids.size||
+        !Number.isFinite(r.cash)||!Number.isFinite(r.debt)||r.debt<0||!Number.isFinite(r.reputation)||r.reputation<0||r.reputation>100||
+        !Number.isInteger(r.facilities)||r.facilities<1||r.facilities>10)||
+      h.standings.find(r=>r.finish===1)?.clubId!==h.champion))throw RangeError('Historique checkpoint invalide');
+   if(checkpoint.events.some(e=>!e||!ids.has(e.clubId)||!Number.isInteger(e.season)||e.season<1||e.season>checkpoint.completed||
+      typeof e.type!=='string'))throw RangeError('Événement checkpoint invalide');
+   const final=new Map(checkpoint.history.at(-1).standings.map(r=>[r.clubId,r]));
+   if(checkpoint.clubs.some(c=>{const r=final.get(c.id);return !r||r.cash!==c.cash||r.debt!==c.debt||r.reputation!==c.reputation||r.facilities!==c.facilities;}))
+      throw RangeError('État final incompatible avec historique');
   }
   const state=(checkpoint?checkpoint.clubs:clubs).map(c=>({...c,debt:c.debt??0}));
   const history=checkpoint?checkpoint.history.map(h=>({...h,standings:h.standings.map(r=>({...r})),awards:h.awards.map(a=>({...a}))})):[];
