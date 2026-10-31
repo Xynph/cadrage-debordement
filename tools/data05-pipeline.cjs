@@ -32,8 +32,10 @@ async function execute(options={},deps={}) {
  }
  async function fallback(url){
    if(stopped)throw Error('Collection stopped');
-   const markdown=await transport.scrape(url);
-   return unified.parseMarkdown(markdown);
+   try {
+     const markdown=await transport.scrape(url);
+     return unified.parseMarkdown(markdown);
+   }catch(e){if(resilience.classify(e).stop)stopped=true;throw e;}
  }
  const report=await (deps.run||unified.run)({root,dir:options.dir||path.join(root,'modding/data05-unified-output'),list:roster,http,fallback,key:options.key||process.env.FIRECRAWL_API_KEY,limit:options.limit??0,budget:options.budget??0,concurrency:options.concurrency??1,delayMs:options.delayMs??1200});
  const cost=transport.stats();
