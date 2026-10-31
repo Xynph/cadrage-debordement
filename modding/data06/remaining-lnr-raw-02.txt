@@ -1,0 +1,126 @@
+317|Section Paloise|1ère ligne|1m85|132 kg|34 ans|Géorgie
+25032|Section Paloise|1ère ligne|19 ans|Tonga
+12513|Section Paloise|1ère ligne|21 ans|Nouvelle Zélande
+12514|Section Paloise|1ère ligne|20 ans|Australie
+13598|Section Paloise|1ère ligne|1m83|113 kg|33 ans|Argentine
+25033|Section Paloise|2ème ligne|18 ans|Afrique du Sud
+25035|Section Paloise|2ème ligne|20 ans|Nouvelle Zélande
+12678|Section Paloise|2ème ligne|19 ans|France
+13695|Section Paloise|3ème ligne|17 ans|France
+1866|Section Paloise|Demi d'ouverture|1m83|81 kg|22 ans|France
+13618|Section Paloise|Demi d'ouverture|17 ans|France
+440|Section Paloise|Ailier|1m86|92 kg|26 ans|France
+11705|Section Paloise|Ailier|1m84|87 kg|26 ans|Portugal
+12785|Section Paloise|Ailier|18 ans|France
+25075|Section Paloise|Centre|20 ans|Australie
+25026|Stade Français Paris|1ère ligne|24 ans|Australie
+25029|Stade Français Paris|1ère ligne|18 ans|Afrique du Sud
+13940|Stade Français Paris|1ère ligne|1m87|122 kg|29 ans|Italie
+12709|Stade Français Paris|2ème ligne|22 ans|Australie
+12731|Stade Français Paris|2ème ligne|20 ans|Fidji
+1814|Stade Français Paris|2ème ligne|1m96|103 kg|28 ans|France
+25030|Stade Français Paris|2ème ligne|18 ans|Afrique du Sud
+11726|Stade Français Paris|3ème ligne|1m93|128 kg|22 ans|Australie
+909|Stade Français Paris|3ème ligne|1m96|115 kg|30 ans|Tonga
+25028|Stade Français Paris|3ème ligne|18 ans|Australie
+12543|Stade Français Paris|3ème ligne|20 ans|Fidji
+1769|Stade Français Paris|Demi de mêlée|1m75|79 kg|21 ans|France
+12383|Stade Français Paris|Demi d'ouverture|19 ans|France
+13385|Stade Français Paris|Demi d'ouverture|18 ans|France
+1770|Stade Français Paris|Ailier|1m82|72 kg|21 ans|France
+13548|Stade Français Paris|Arrière|18 ans|Fidji
+1771|Stade Français Paris|Centre|1m92|108 kg|22 ans|France
+12734|Stade Français Paris|Centre|19 ans|France
+12732|Stade Français Paris|Centre|21 ans|Nouvelle Zélande
+2001|Stade Français Paris|Centre|1m80|85 kg|29 ans|Fidji
+25027|Stade Français Paris|Centre|18 ans|Nouvelle Zélande
+13499|Stade Rochelais|1ère ligne|19 ans|France
+25003|Stade Rochelais|2ème ligne|1m96|113 kg|31 ans|Samoa occidental
+13417|Stade Rochelais|2ème ligne|17 ans|Australie
+13541|Stade Rochelais|3ème ligne|1m88|116 kg|24 ans|Nouvelle Zélande
+985|Stade Rochelais|3ème ligne|1m82|110 kg|37 ans|Fidji
+13725|Stade Rochelais|3ème ligne|19 ans|France
+24999|Stade Rochelais|Ailier|18 ans|France
+25002|Stade Rochelais|Ailier|18 ans|Grande-Bretagne
+13944|Stade Rochelais|Arrière|19 ans|Afrique du Sud
+988|Stade Rochelais|Centre|1m87|103 kg|32 ans|Australie
+13174|Stade Rochelais|Centre|19 ans|France
+12742|Stade Rochelais|Centre|21 ans|Fidji
+1009|Stade Toulousain|1ère ligne|1m93|156 kg|28 ans|France
+13489|Stade Toulousain|1ère ligne|19 ans|France
+13415|Stade Toulousain|1ère ligne|1m91|138 kg|21 ans|France
+25045|Stade Toulousain|2ème ligne|19 ans|France
+13660|Stade Toulousain|2ème ligne|18 ans|France
+2395|Stade Toulousain|2ème ligne|2m02|108 kg|23 ans|France
+2486|Stade Toulousain|3ème ligne|1m93|110 kg|24 ans|France
+12341|Stade Toulousain|3ème ligne|1m96|110 kg|20 ans|France
+2412|Stade Toulousain|3ème ligne|20 ans|France
+25046|Stade Toulousain|3ème ligne|17 ans|France
+13643|Stade Toulousain|3ème ligne|19 ans|Australie
+13488|Stade Toulousain|Demi d'ouverture|19 ans|France
+12602|Stade Toulousain|Demi d'ouverture|18 ans|France
+13461|Stade Toulousain|Demi d'ouverture|1m93|88 kg|21 ans|France
+14124|Stade Toulousain|Centre|1m91|100 kg|18 ans|Italie
+13472|Stade Toulousain|Centre|21 ans|France
+2417|Stade Toulousain|Centre|1m87|88 kg|21 ans|France
+25057|USA Perpignan|1ère ligne|1m80|125 kg|27 ans|Australie
+12498|USA Perpignan|2ème ligne|1m98|122 kg|32 ans|Grande-Bretagne
+12568|USA Perpignan|2ème ligne|1m95|113 kg|29 ans|Australie
+1782|USA Perpignan|Demi de mêlée|1m73|82 kg|30 ans|Afrique du Sud
+1976|USA Perpignan|Demi d'ouverture|1m80|78 kg|30 ans|Autriche
+2005|USA Perpignan|Demi d'ouverture|1m77|88 kg|32 ans|Australie
+25039|USA Perpignan|Ailier|17 ans|Fidji
+25037|USA Perpignan|Centre|1m86|94 kg|29 ans|Nouvelle Zélande
+2632|USA Perpignan|Centre|1m86|106 kg|29 ans|Fidji
+903|Union Bordeaux-Bègles|1ère ligne|1m80|145 kg|31 ans|Tonga
+340|Union Bordeaux-Bègles|1ère ligne|1m82|148 kg|35 ans|Nouvelle Zélande
+13686|Union Bordeaux-Bègles|1ère ligne|18 ans|France
+302|Union Bordeaux-Bègles|2ème ligne|1m98|127 kg|21 ans|France
+12486|Union Bordeaux-Bègles|2ème ligne|20 ans|France
+12629|Union Bordeaux-Bègles|2ème ligne|2m02|127 kg|30 ans|Grande-Bretagne
+13507|Union Bordeaux-Bègles|3ème ligne|1m94|114 kg|31 ans|Afrique du Sud
+12491|Union Bordeaux-Bègles|3ème ligne|19 ans|France
+295|Union Bordeaux-Bègles|3ème ligne|1m92|120 kg|27 ans|Angleterre
+11744|Union Bordeaux-Bègles|Demi d'ouverture|1m83|80 kg|20 ans|France
+12774|Union Bordeaux-Bègles|Ailier|1m93|105 kg|30 ans|Nouvelle Zélande
+338|Union Bordeaux-Bègles|Centre|1m82|97 kg|26 ans|France
+24983|Union Bordeaux-Bègles|Centre|31 ans|Afrique du Sud
+13687|Union Bordeaux-Bègles|Centre|18 ans|France
+13402|Union Bordeaux-Bègles|Centre|1m91|90 kg|20 ans|France
+11942|US Dax|2ème ligne|1m97|115 kg|29 ans|Fidji
+11957|US Dax|2ème ligne|2m01|115 kg|35 ans|Grande-Bretagne
+11941|US Dax|3ème ligne|1m90|125 kg|31 ans|Nouvelle Zélande
+13807|US Dax|Ailier|20 ans|Fidji
+13552|US Dax|Centre|1m80|110 kg|21 ans|Fidji
+13564|Provence Rugby|1ère ligne|16 ans|France
+13407|Provence Rugby|1ère ligne|18 ans|France
+13418|Provence Rugby|1ère ligne|1m83|111 kg|27 ans|Etats-Unis
+25040|Provence Rugby|2ème ligne|19 ans|Pays-Bas
+14059|Provence Rugby|2ème ligne|18 ans|France
+2058|Provence Rugby|2ème ligne|21 ans|France
+13526|Provence Rugby|Demi d'ouverture|17 ans|France
+2366|Provence Rugby|Demi d'ouverture|1m85|90 kg|30 ans|France
+13603|Provence Rugby|Demi d'ouverture|1m80|85 kg|21 ans|Portugal
+25041|Provence Rugby|Demi d'ouverture|18 ans|France
+1820|Provence Rugby|Ailier|1m81|96 kg|27 ans|Australie
+2103|Provence Rugby|Ailier|1m81|88 kg|28 ans|France
+3436|Provence Rugby|Arrière|1m92|96 kg|28 ans|Argentine
+13527|Provence Rugby|Centre|18 ans|France
+13559|Provence Rugby|Centre|17 ans|France
+829|Colomiers Rugby|1ère ligne|1m88|124 kg|29 ans|France
+2578|Colomiers Rugby|1ère ligne|1m85|137 kg|33 ans|Nouvelle Zélande
+1859|Colomiers Rugby|2ème ligne|2m02|120 kg|34 ans|Australie
+2703|Colomiers Rugby|3ème ligne|1m92|110 kg|25 ans|France
+24991|Colomiers Rugby|3ème ligne|1m93|100 kg|29 ans|Australie
+24992|Colomiers Rugby|Ailier|1m85|103 kg|28 ans|Nouvelle Zélande
+2301|Colomiers Rugby|Arrière|1m90|93 kg|22 ans|Espagne
+25072|Colomiers Rugby|Centre|1m85|102 kg|29 ans|Nouvelle Zélande
+12535|SU Agen|1ère ligne|21 ans|France
+23|SU Agen|1ère ligne|19 ans|France
+1409|SU Agen|1ère ligne|1m78|113 kg|22 ans|France
+13780|SU Agen|1ère ligne|1m90|138 kg|21 ans|Argentine
+14090|SU Agen|2ème ligne|17 ans|France
+2424|SU Agen|3ème ligne|1m85|95 kg|21 ans|France
+1682|SU Agen|Demi d'ouverture|1m81|77 kg|32 ans|France
+13690|SU Agen|Demi d'ouverture|1m80|92 kg|31 ans|Grande-Bretagne
+12490|SU Agen|Ailier|1m80|78 kg|20 ans|France
