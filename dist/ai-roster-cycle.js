@@ -161,6 +161,31 @@ function aiRosterRecruitmentChoice(c,targets){
   needs:[...new Set(targets.map(t=>t.need.pos))],candidates:pool}).candidate;
  return choice?targets.find(t=>t.p.id===choice.id)||null:null;
 }
+// Fenêtre de marché : tous les clubs éligibles préparent une proposition avant
+// que l'un d'eux ne signe. Un joueur ne peut être attribué qu'à un seul club.
+// L'arbitrage porte sur les besoins réels et les liquidités ; pas sur les notes
+// secrètes d'un joueur non observé ni sur un tirage aléatoire supplémentaire.
+function aiRosterAuctionWinner(offers){
+ if(!offers.length)return null;
+ return offers.slice().sort((a,b)=>b.priority-a.priority||
+  b.cashBuffer-a.cashBuffer||a.clubId-b.clubId)[0];
+}
+function aiRosterMarketProposals(clubs,pool){
+ const proposals=[];
+ for(const {c,urgent} of clubs){
+  if(aiRosterReport(c.id).recruited>=2||c.cash<450000||
+   worldActive()&&worldClub(c.id).debt>=2000000)continue;
+  const candidates=recruitmentTargets(c,pool,false)
+   .filter(t=>t.within&&t.need.score>=45&&t.p.salary<=Math.max(1000,c.base*250)&&
+    aiRosterPayroll(c)+t.p.salary<=aiRosterWageLimit(c)&&c.cash-t.finance.fee>=400000);
+  const best=aiRosterRecruitmentChoice(c,candidates);
+  if(!best)continue;
+  proposals.push({c,clubId:c.id,best,playerId:best.p.id,
+   priority:best.need.score*10+Math.min(100,Math.round(best.evidence.noteMin)),
+   cashBuffer:c.cash-best.finance.fee});
+ }
+ return proposals;
+}
 function aiRosterRecruitmentWeek(){
  if(!aiRosterActive()||S.live||S.phase!=='league'||![0,13].includes(S.round)||
   S.season===1&&S.round===0)return 0;
@@ -172,26 +197,44 @@ function aiRosterRecruitmentWeek(){
   .filter(x=>x.urgent&&x.urgent.score>=45)
   .sort((a,b)=>b.urgent.score-a.urgent.score||a.c.id-b.c.id);
  let count=0;
- for(const {c} of others){
-  if(count>=6)break;
-  if(aiRosterReport(c.id).recruited>=2)continue;
-  if(c.cash<450000||worldActive()&&worldClub(c.id).debt>=2000000)continue;
+ // Plusieurs tours permettent au club perdant une concurrence de rechercher
+ // un autre renfort, au lieu de réserver illégitimement le même joueur.
+ for(let turn=0;turn<6&&count<6;turn++){
   const pool=[...new Map([...S.market,...e.freeAgents].map(p=>[p.id,p])).values()]
    .filter(p=>!S.clubs.some(x=>x.players.some(y=>y.id===p.id))&&p.age<p.dev.retireAge-1);
-  const candidates=recruitmentTargets(c,pool,false)
-   .filter(t=>t.within&&t.need.score>=45&&t.p.salary<=Math.max(1000,c.base*250)&&
-     aiRosterPayroll(c)+t.p.salary<=aiRosterWageLimit(c)&&c.cash-t.finance.fee>=400000);
-  const best=aiRosterRecruitmentChoice(c,candidates);
-  if(!best||!pool.some(x=>x.id===best.p.id))continue;
-  const p=best.p;
-  c.cash-=best.finance.fee;
-  p.contractEnd=S.season+Math.min(2,Math.max(1,p.dev.retireAge-p.age-1));
-  p.joinedSeason=S.season;p.joinedRound=S.round;c.players.push(p);
-  S.market=S.market.filter(x=>x.id!==p.id);e.freeAgents=e.freeAgents.filter(x=>x.id!==p.id);
-  e.transfers.unshift({season:S.season,round:S.round,text:c.name+' recrute '+p.name+
-   ' pour '+money(best.finance.fee)+' (besoin : '+best.need.pos+').'});
-  e.transfers=e.transfers.slice(0,80);
-  aiRosterEvent(c.id,'recruit',p,best.finance.fee);count++;
+  if(!pool.length)break;
+  const offers=aiRosterMarketProposals(others,pool);
+  if(!offers.length)break;
+  const groups=new Map();
+  for(const offer of offers){
+   if(!groups.has(offer.playerId))groups.set(offer.playerId,[]);
+   groups.get(offer.playerId).push(offer);
+  }
+  const winners=[...groups.values()].map(group=>({
+   winner:aiRosterAuctionWinner(group),competitors:group.length
+  })).sort((a,b)=>b.winner.priority-a.winner.priority||
+   a.winner.clubId-b.winner.clubId);
+  let signed=0;
+  for(const {winner,competitors} of winners){
+   if(count>=6)break;
+   const {c,best}=winner,p=best.p;
+   if(aiRosterReport(c.id).recruited>=2||c.players.length>=40||
+    !pool.some(x=>x.id===p.id)||S.clubs.some(x=>x.players.some(y=>y.id===p.id))||
+    c.cash-best.finance.fee<400000||
+    aiRosterPayroll(c)+p.salary>aiRosterWageLimit(c))continue;
+   c.cash-=best.finance.fee;
+   p.contractEnd=S.season+Math.min(2,Math.max(1,p.dev.retireAge-p.age-1));
+   p.joinedSeason=S.season;p.joinedRound=S.round;c.players.push(p);
+   S.market=S.market.filter(x=>x.id!==p.id);
+   e.freeAgents=e.freeAgents.filter(x=>x.id!==p.id);
+   e.transfers.unshift({season:S.season,round:S.round,text:c.name+' recrute '+p.name+
+    ' pour '+money(best.finance.fee)+' (besoin : '+best.need.pos+
+    (competitors>1?' ; '+competitors+' clubs intéressés':'')+').'});
+   e.transfers=e.transfers.slice(0,80);
+   aiRosterEvent(c.id,'recruit',p,best.finance.fee);
+   count++;signed++;
+  }
+  if(!signed)break;
  }
  return count;
 }
