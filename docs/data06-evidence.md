@@ -1,0 +1,19 @@
+# DATA-06 — Premières preuves officielles indépendantes de Firecrawl
+
+Périmètre : **80 arrivées publiées pour 11 clubs**, provenant du [tableau officiel des transferts TOP 14 2026–2027](https://top14.lnr.fr/actualite/le-tableau-des-transferts-pour-la-saison-20262027), relevé le 31 octobre 2026. Cette sélection est **partielle** et ne représente pas les effectifs complets des 30 clubs. Le nom et le poste reprennent la source, y compris les éventuelles variantes orthographiques à vérifier. Une arrivée publiée ne certifie pas la présence au 01/07/2026 ; prêts indiqués lorsque le libellé officiel le précise.
+
+## Séparation stricte des données et du jeu
+
+- `modding/data06/official-transfers-2026-2027.json` conserve nom, club destinataire, poste, nationalité, provenance, indication de prêt, URL source. Les contrats, budgets, salaires et informations historiques non publiés sont `null` ou explicitement non vérifiés.
+- `tools/data06-evidence.cjs` refuse doublons club/nom, absence de source, prétentions financières/historiques injustifiées et contradictions sur les prêts ; rapprochement par nom normalisé et club, uniquement lorsque la correspondance est unique. Les conflits et transferts entre clubs nécessitent une revue humaine.
+- Les éventuelles notes de jeu sont des **estimations** distinctes (`kind:game-estimate`) ; aucune note n'est produite sans statistiques fiables transmises au calculateur. L'heuristique provisoire minutes/essais **ne mesure pas la compétence réelle** et ne doit pas être activée par défaut dans la carrière.
+- Aucun logo, photographie, chiffre salarial ou budget extrapolé, ni collecte automatique payante. Aucun changement des sauvegardes, de `dist/**` et des bases DATA-03/DATA-05.
+
+## Validation
+
+`node --test tests/data06-evidence.cjs`
+`node tools/data06-evidence.cjs`
+
+Cette PR n'intègre pas encore les arrivées au moteur de jeu : les clés doivent être rapprochées des IDs LNR avant toute importation. Priorités suivantes : vérifier le rapprochement 80/1592 sur les véritables effectifs, enrichir les clubs restants (dont PRO D2), puis collecter les staffs et finances uniquement lorsque des documents publics datés les attestent.
+
+Toute utilisation automatique des sites externes exige le respect de leurs règles d'accès, sans contournement de restrictions.
