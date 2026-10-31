@@ -16,11 +16,14 @@ check('startup displays an actual home menu, not immediate club choice',()=>{
 });
 check('new career selects clubs, can return to menu, and start a game',()=>{
  g.run('mainMenuNewCareer()');
+ assert.match(g.app.innerHTML,/Univers fictif/);
+ g.run("mainMenuChooseMode('fiction')");
  assert.equal(g.run('entryScreen'),'clubs');
  assert.match(g.app.innerHTML,/CHOISISSEZ UN CLUB/);
  g.run('mainMenuBack()');
  assert.equal(g.run('entryScreen'),'menu');
  g.run('mainMenuNewCareer()');
+ g.run("mainMenuChooseMode('fiction')");
  g.run('start(0)');
  assert.equal(g.run('entryScreen'),'game');
  assert.match(g.app.innerHTML,/Bureau du manager/);
@@ -49,11 +52,13 @@ check('new career with an existing save requires confirmation',()=>{
  const prior=g.store['bdt-v1'];
  g.run('returnToMainMenu()');
  g.run('mainMenuNewCareer()');
- assert.match(g.app.innerHTML,/Garder ma carrière/);
+ g.run("mainMenuChooseMode('fiction')");
+ assert.match(g.app.innerHTML,/Conserver et continuer/);
  assert.equal(g.store['bdt-v1'],prior);
  g.run('closeModal()');
  assert.equal(g.store['bdt-v1'],prior);
  g.run('mainMenuNewCareer()');
+ g.run("mainMenuChooseMode('fiction')");
  g.run('resetGame()');
  assert.equal(g.run('entryScreen'),'clubs');
  assert.equal(g.store['bdt-v1'],undefined);
