@@ -43,10 +43,10 @@ jobs:
           test "$INTEGRATION_BRANCH" = 'integration/v58-manager-mobility-native'
           remote=$(git ls-remote origin "refs/heads/$INTEGRATION_BRANCH" | cut -f1)
           test "$remote" = "$EXPECTED_HEAD"
-          git add -- dist/game.js dist/saves.js dist/index.html tests/harness.cjs ci/select-tests.cjs DEVELOPPEMENT.md tests/manager-mobility.cjs ci/v58-apply.cjs ci/v58-manager-mobility-test.txt
+          git add -- dist/game.js dist/saves.js dist/index.html tests/harness.cjs ci/select-tests.cjs tests/ci-selection.cjs DEVELOPPEMENT.md tests/manager-mobility.cjs ci/v58-apply.cjs ci/v58-manager-mobility-test.txt
           git diff --cached --name-only | while IFS= read -r file; do
             case "$file" in
-              dist/game.js|dist/saves.js|dist/index.html|tests/harness.cjs|ci/select-tests.cjs|DEVELOPPEMENT.md|tests/manager-mobility.cjs|ci/v58-apply.cjs|ci/v58-manager-mobility-test.txt) ;;
+              dist/game.js|dist/saves.js|dist/index.html|tests/harness.cjs|ci/select-tests.cjs|tests/ci-selection.cjs|DEVELOPPEMENT.md|tests/manager-mobility.cjs|ci/v58-apply.cjs|ci/v58-manager-mobility-test.txt) ;;
               *) echo "Unexpected staged path"; exit 1 ;;
             esac
           done
