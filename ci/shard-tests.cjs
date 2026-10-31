@@ -49,7 +49,7 @@ function planShards(files, weights = WEIGHTS_SECONDS) {
   const shards = Array.from({ length: 5 }, () => ({ weight: 0, files: [] }));
   for (const file of ordered) {
     let target = 0;
-    for (let i = 1; i < 3; i++) {
+    for (let i = 1; i < shards.length; i++) {
       if (shards[i].weight < shards[target].weight ||
           (shards[i].weight === shards[target].weight &&
            shards[i].files.length < shards[target].files.length)) target = i;
