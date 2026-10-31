@@ -11,7 +11,7 @@ async function runProtected({root=path.resolve(__dirname,'..'),dir,limit=0,budge
  const state={used:0,stopped:false};
  async function safeHttp(url){
   if(state.stopped)throw Error('Collection stopped');
-  const task=http||async()=>{const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),15000);try{const resp=await fetch(url,{signal:ctl.signal});if(!resp.ok)throw Object.assign(Error('LNR HTTP '+resp.status),{status:resp.status});return collector.parseHtml(await resp.text())}finally{clearTimeout(timer)}};
+  const task=http||(async()=>{const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),15000);try{const resp=await fetch(url,{signal:ctl.signal});if(!resp.ok)throw Object.assign(Error('LNR HTTP '+resp.status),{status:resp.status});return collector.parseHtml(await resp.text())}finally{clearTimeout(timer)}});
   return withRetries(()=>task(url),{maxRetries:1,onStop:()=>{state.stopped=true}});
  }
  async function safeFallback(url,apiKey){
