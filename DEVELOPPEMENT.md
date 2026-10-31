@@ -636,3 +636,9 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Diagnostic du run #41245174320 sur #157 : quatre assertions historiques obsolètes dans main-menu, saves, ui01-interface et ui02-live-integration. L'import est désormais intitulé « Importer une carrière JSON » ; main-menu-slots.js doit être chargé entre les préférences et game.js.
 - Assertions adaptées au contrôle réel : présence du libellé d'import et ordre explicite des trois scripts, sans imposer leur contiguïté. Aucun contrôle de sauvegarde retiré et aucun fichier de production modifié.
 - Suites ciblées menu, menu V2, sauvegardes et intégrations UI exécutées avec succès. La CI complète du dernier SHA et les scénarios Chromium restent exigés avant fusion ; contrôle push après fusion obligatoire.
+
+## DATA-06 — Rugby Data, lot partiel clos pour quota (31 octobre 2026)
+
+- 30 effectifs 2026-2027 collectés : 1493 lignes, 1159 identités LNR strictes. 689 fiches individuelles valides ; 107 HTTP 503 et 363 non tentées, explicitement séparées après demande utilisateur de préserver le quota. Collecte arrêtée, aucun arrière-plan.
+- 689 dates de naissance, 1159 JIFF, 1158 postes, 686 formations, 183 meilleurs pieds et 981 années de fin annoncées. 966 contradictions isolées sans remplacer les mensurations précédentes ; contrats annuels séparés de l'année de fin. 903 IDs sans naissance dans ce complément, pas de biographie complète prétendue.
+- Nouveaux fichiers rugbydata-* sous modding/data06, normaliseur hors réseau tools/data06-rugbydata.cjs, tests/data06-rugbydata.cjs, docs/data06-rugbydata.md. 14 tests ciblés réussis, JSON reproductible ; CI complète publiée à vérifier. Aucun changement dist, moteur, sauvegarde ou anciennes sources. Producteur, aucune fusion.
