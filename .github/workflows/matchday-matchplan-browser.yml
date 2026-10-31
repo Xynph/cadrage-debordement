@@ -15,6 +15,21 @@ concurrency:
   group: matchday03-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Vérifier les scénarios et les sauvegardes
+        run: |
+          node --check dist/matchday-matchplan.js
+          node tests/matchday-lineup.cjs
+          node tests/matchday-matchplan.cjs
   chromium:
     runs-on: ubuntu-latest
     timeout-minutes: 15
