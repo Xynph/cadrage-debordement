@@ -1,0 +1,48 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {context}=require('./harness.cjs');
+function ready(snapshot){
+ const g=context(snapshot);for(const f of ['lnr-rosters-data.js','lnr-career.js'])
+  vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+f,'utf8'),g.ctx);
+ return g;
+}
+const old=ready(),legacy=old.run;
+legacy('start(0)');
+assert.equal(legacy('S.lnrMode'),undefined,'default keeps existing fictitious career');
+assert.ok(legacy('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),'legacy save valid');
+const legacyText=legacy('JSON.stringify(S)');
+const oldRestored=ready(JSON.parse(legacyText));
+assert.equal(oldRestored.run('S.lnrMode'),undefined,'legacy loading remains fictional');
+assert.ok(oldRestored.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
+const g=ready(),run=g.run;
+assert.equal(run('LNR_CATALOGUE.clubs.length'),30);
+assert.equal(run('LNR_TOP14.length'),14);
+assert.equal(run('LNR_PROD2.length'),16);
+assert.equal(run('LNR_CATALOGUE.clubs.reduce((n,c)=>n+c[3].length,0)'),1592);
+assert.equal(run('new Set(LNR_CATALOGUE.clubs.flatMap(c=>c[3].map(p=>p[0]))).size'),1592);
+assert.ok(run("lnrChooseMode('lnr')"));
+assert.match(g.app.innerHTML,/Effectifs LNR/,'opt-in visible before a career');
+run("start(0,'lnr')");
+assert.equal(run('S.clubs.length'),14);
+assert.equal(run('lnrCareerMode(S)'),true);
+assert.equal(run('S.clubs.every((c,i)=>c.name===lnrGameClub(i).name)'),true);
+assert.equal(run('S.clubs.every((c,i)=>c.players.length===lnrGameClub(i).players.length)'),true);
+assert.equal(run('S.clubs.every(c=>c.players.every(p=>/^lnr:\d+$/.test(p.id)))'),true);
+assert.equal(run('sheetErrors().length'),0,'native XV+8 possible');
+assert.ok(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),'LNR export accepted');
+run("nav('team')");
+assert.match(g.app.innerHTML,/Catalogue LNR/);
+assert.match(g.app.innerHTML,/Source officielle/);
+const state=run('JSON.stringify(S)'),stored=g.store['bdt-v1'];
+run('lnrBrowseClub(16)');
+assert.equal(run('JSON.stringify(S)'),state,'catalog browsing has no side effects');
+assert.equal(g.store['bdt-v1'],stored,'catalog browsing is read-only');
+assert.equal(run('lnrBrowseIndex'),16);
+assert.ok(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
+const tamper=ready();
+tamper.run("start(0,'lnr');S.clubs[0].name='Club inventé'");
+assert.throws(()=>tamper.run('validateCareer(S)'),'prevent unauthorized spoofing of LNR club');
+const forged=ready();
+forged.run("start(0,'lnr');S.lnrMode.snapshot='2025-07-01'");
+assert.throws(()=>forged.run('validateCareer(S)'),'reject unverified historical snapshot');
+console.log('LNR-01 PASS : 30 clubs, 1592 IDs, TOP14 playable, PRO D2 consultable, ancien export et validation anti-faux historiques');

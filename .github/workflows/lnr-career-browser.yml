@@ -1,0 +1,59 @@
+name: LNR-01 - Carriere optionnelle et Chromium
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/game.js'
+      - 'dist/saves.js'
+      - 'dist/index.html'
+      - 'dist/lnr-*'
+      - 'tests/lnr-career*'
+      - '.github/workflows/lnr-career-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: lnr01-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: |
+          node --check dist/lnr-rosters-data.js
+          node --check dist/lnr-career.js
+          node --check dist/game.js
+          node --check dist/saves.js
+          node tests/lnr-career.cjs
+  long-career:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: node tests/lnr-career-long.cjs
+  chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - run: python tests/lnr-career-browser.py
