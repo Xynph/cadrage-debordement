@@ -4,7 +4,7 @@
 
 1. Ouvrir https://query.wikidata.org/ avec un navigateur disposant d'Internet.
 2. Coller le contenu de `modding/data06/wikidata-rugby-players.rq`.
-3. **Vérifier le QID de l'occupation joueur de rugby à XV** dans Wikidata avant exécution.
+3. Le QID de l'occupation **rugby union player est Q14089670**, vérifié dans les contraintes Wikidata pour la propriété P106.
 4. Exécuter, puis télécharger les résultats au format CSV ou JSON (SPARQL Query Results JSON).
 5. Conserver le fichier brut, sa date, la provenance et la mention CC0. Ne pas committer automatiquement une archive énorme dans le dépôt.
 
