@@ -1,0 +1,7 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict');const {validatePlan,checkCache}=require('../tools/data05-preflight.cjs');
+test('dry run 240 profiles zero cost',()=>assert.deepEqual(validatePlan({cached:240}),{catalogue:1592,cached:240,remaining:1352,planned:0,firecrawlMaximumAttempts:0,dryRun:true}));
+test('reject unsafe rate, paid budgets and unconfirmed network',()=>{assert.throws(()=>validatePlan({cached:240,limit:1}),/confirmation/);assert.throws(()=>validatePlan({cached:240,limit:1,budget:2,confirmed:true}),/budget/);assert.throws(()=>validatePlan({concurrency:2}),/rate/);assert.throws(()=>validatePlan({concurrency:3}),/rate/);assert.equal(validatePlan({cached:240,concurrency:1}).dryRun,true)});
+test('reject duplicate and wrong-url cached players',()=>{const r=[{id:'lnr:1',url:'https://top14.lnr.fr/joueur/1-test',club:'clermont'}],p={...r[0],name:'Test'};assert.equal(checkCache([p],r).valid,1);assert.throws(()=>checkCache([p,p],r),/Invalid cached/);assert.throws(()=>checkCache([{...p,url:'bad'}],r),/Invalid cached/)});
+
+test('serial-only contract matches integrated pipeline',()=>{const {parseArgs}=require('../tools/data05-pipeline.cjs');assert.equal(parseArgs(['--concurrency','1']).concurrency,1);assert.throws(()=>parseArgs(['--concurrency','2']),/Invalid collection parameters/);assert.throws(()=>validatePlan({cached:240,limit:1,confirmed:true,concurrency:2}),/rate/);});
