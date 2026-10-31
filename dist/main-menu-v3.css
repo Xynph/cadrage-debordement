@@ -217,3 +217,69 @@ body:has(.cd3-menu) #toast{width:max-content;max-width:calc(100vw - 36px)}
 @media(prefers-reduced-motion:reduce){
  .cd3-menu .cd3-right-bottom{animation:none;transition:none}
 }
+
+
+/* V3 Photo Art Direction — assets photographiques ORIGINAUX locaux, conçus en Figma.
+   Le panneau de contrôle reste interactif; les photographies sont uniquement décoratives. */
+.cd3-menu .cd3-backdrop{
+  background:
+    linear-gradient(90deg,rgba(3,22,18,.90) 0%,rgba(3,22,18,.68) 24%,rgba(5,22,19,.44) 53%,rgba(3,20,16,.20) 100%),
+    linear-gradient(0deg,#05231de8 0%,rgba(7,27,21,.39) 31%,transparent 65%),
+    url("assets/menu-stadium-cinematic.png") center center / cover no-repeat;
+  background-color:#06251c;
+}
+.cd3-menu .cd3-right-bottom{
+  position:relative;
+  display:block;
+  background:
+    linear-gradient(90deg,#0a2c1a66,transparent 42%),
+    url("assets/menu-rugby-ball-photoreal.png") 70% 61% / cover no-repeat;
+  -webkit-mask-image:radial-gradient(ellipse 95% 94% at 72% 78%,#000 41%,transparent 100%);
+  mask-image:radial-gradient(ellipse 95% 94% at 72% 78%,#000 41%,transparent 100%);
+  filter:drop-shadow(0 8px 16px #031c14a8);
+  pointer-events:none;
+  z-index:0;
+  margin:-8px -16px -18px -30px;
+  min-height:242px;
+}
+.cd3-menu .cd3-right-bottom:before{display:none}
+/* L'orange et la transparence du mockup restent lisibles sur la photo. */
+.cd3-menu .cd3-promo{
+  background:
+    linear-gradient(110deg,#08251ded 3%,#08251d88 58%,transparent 100%),
+    url("assets/menu-stadium-cinematic.png") 82% 32% / auto 365px no-repeat;
+}
+.cd3-menu .cd3-card-scene{
+  background:
+    linear-gradient(0deg,#09241e99,transparent),
+    url("assets/menu-stadium-cinematic.png") 57% 63% / auto 280px no-repeat;
+}
+.cd3-menu .cd3-career:nth-child(2) .cd3-card-scene{background-position:center,28% 53%}
+.cd3-menu .cd3-career:nth-child(3) .cd3-card-scene{background-position:center,88% 38%}
+@media(max-width:1050px){
+ .cd3-menu .cd3-right-bottom{
+  min-height:195px;height:195px;max-height:195px;
+  margin:-5px 0 -16px;
+  background-size:auto, auto 270px;
+  background-position:center,right 55%;
+ }
+}
+@media(max-width:740px){
+ .cd3-menu .cd3-right-bottom{
+  min-height:160px;height:160px;max-height:160px;
+  background-size:auto,auto 235px;
+  margin:-8px -12px -10px;
+ }
+}
+@media(max-width:525px){
+ .cd3-menu .cd3-right-bottom{
+  min-height:132px;height:132px;max-height:132px;
+  background-size:auto,auto 202px;
+  margin:0 -12px -10px;
+ }
+}
+[data-menu-contrast="high"] .cd3-menu .cd3-backdrop{
+  background:
+   linear-gradient(90deg,#041b17f7,#041b17cf 72%,#041b179c),
+   url("assets/menu-stadium-cinematic.png") center / cover no-repeat;
+}
