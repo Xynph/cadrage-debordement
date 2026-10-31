@@ -38,5 +38,26 @@
    return {name:s.name,result,delta:result.finalBalance-baseline.finalBalance};
   })};
  }
- return Object.freeze({forecast,compare});
+ function stressTest(base,options={}){
+  const incomeDrop=options.incomeDrop??0.2;
+  const wageRise=options.wageRise??0.1;
+  if(!finite(incomeDrop)||incomeDrop<0||incomeDrop>1||!finite(wageRise)||wageRise<0||wageRise>3)
+   throw new RangeError('Stress financier invalide');
+  const baseline=forecast(base);
+  const stressed=forecast({...base,weeklyIncome:(base.weeklyIncome??0)*(1-incomeDrop),
+   weeklyWages:base.weeklyWages*(1+wageRise)});
+  return {baseline,stressed,loss:baseline.finalBalance-stressed.finalBalance,
+   deficitAccelerated:stressed.firstDeficit!==null&&
+    (baseline.firstDeficit===null||stressed.firstDeficit<baseline.firstDeficit)};
+ }
+ function runway(base){
+  const projection=forecast({...base,weeks:104});
+  const starting=projection.initialBalance;
+  const first=projection.firstDeficit;
+  const weeklyBalance=projection.weeklyNet;
+  const estimated=weeklyBalance<0?Math.floor(starting/(-weeklyBalance))+1:null;
+  return {firstDeficitWithin104:first,estimatedWeeksToDeficit:
+   starting<0?0:estimated,weeklyNet:weeklyBalance};
+ }
+ return Object.freeze({forecast,compare,stressTest,runway});
 });
