@@ -1,0 +1,87 @@
+{
+  "schema": "data06-wikipedia-club-roster-birthyears-v1",
+  "collectedAt": "2026-10-31",
+  "scope": "Published dates in club roster tables. Identity matched by full name and exact unique Rugby Data roster sourceRecordId; no inference from age. Wikipedia club tables do not prove affiliation at 2026-07-01.",
+  "records": [
+    {
+      "club": "toulouse",
+      "sourceRecordId": "650",
+      "name": "Joshua Brennan",
+      "birthYear": 2001,
+      "birthDateAsPublished": "28 novembre 2001",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_toulousain",
+      "identityMatch": "full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "toulouse",
+      "sourceRecordId": "478",
+      "name": "Valentin Delpy",
+      "birthYear": 2003,
+      "birthDateAsPublished": "22 août 2003",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_toulousain",
+      "identityMatch": "full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "toulon",
+      "sourceRecordId": "634",
+      "name": "Pierre Damond",
+      "birthYear": 2003,
+      "birthDateAsPublished": "27 novembre 2003",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Rugby_club_toulonnais",
+      "identityMatch": "full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "toulon",
+      "sourceRecordId": "635",
+      "name": "Marius Domon",
+      "birthYear": 2002,
+      "birthDateAsPublished": "13 juin 2002",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Rugby_club_toulonnais",
+      "identityMatch": "full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "racing-92",
+      "sourceRecordId": "498",
+      "name": "Diego Escobar",
+      "birthYear": 2000,
+      "birthDateAsPublished": "17 avril 2000",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Racing_92",
+      "identityMatch": "full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "racing-92",
+      "sourceRecordId": "507",
+      "name": "Gia Kharaishvili",
+      "birthYear": 1999,
+      "birthDateAsPublished": "13 février 1999",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Racing_92",
+      "identityMatch": "full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "provence-rugby",
+      "sourceRecordId": "1976",
+      "name": "Thibaut Martel",
+      "birthYear": 1998,
+      "birthDateAsPublished": "15 août 1998",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_de_Provence_Rugby",
+      "identityMatch": "full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "provence-rugby",
+      "sourceRecordId": "2149",
+      "name": "Charly Gambini",
+      "birthYear": 2004,
+      "birthDateAsPublished": "15 janvier 2004",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_de_Provence_Rugby",
+      "identityMatch": "full_name_unique_in_source_roster",
+      "validAtCareerStart": null
+    }
+  ]
+}
