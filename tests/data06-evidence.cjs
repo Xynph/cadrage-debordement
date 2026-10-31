@@ -3,7 +3,7 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const {validate,matchRoster,estimateAttributes,load}=require('../tools/data06-evidence.cjs');
 const source=load();
 test('real LNR transfer evidence is internally valid',()=>{
- const report=validate(source);assert.equal(report.entries,24);assert.equal(report.clubs,3);assert.equal(report.financialFacts,0);
+ const report=validate(source);assert.equal(report.entries,80);assert.equal(report.clubs,11);assert.equal(report.financialFacts,0);
 });
 test('duplication, invented finances and historical claims are rejected',()=>{
  const copy=structuredClone(source);copy.records.push({...copy.records[0]});assert.throws(()=>validate(copy),/Duplicate/);
@@ -13,7 +13,7 @@ test('duplication, invented finances and historical claims are rejected',()=>{
 test('no automatic ambiguous identity mapping',()=>{
  const roster=[{id:'lnr:1',club:'clermont',name:'Justin BOURAUX'},{id:'lnr:2',club:'other',name:'Baptiste GERMAIN'}];
  const report=matchRoster(source,roster);
- assert.equal(report.matched,1);assert.equal(report.review,1);assert.equal(report.unknown,22);
+ assert.equal(report.matched,1);assert.equal(report.review,1);assert.equal(report.unknown,78);
  assert.equal(report.results[1].linkedId,null);
 });
 test('rating estimation is explicitly nonofficial and null without verified stats',()=>{
