@@ -1,0 +1,33 @@
+name: Audit integration V46-V56
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests de structure reels
+        env:
+          CD_READINESS_REPORT: integration-readiness.json
+        run: |
+          node --check tests/v56-integration-readiness.cjs
+          node tests/v56-integration-readiness.cjs
+      - name: Tests fonctionnels deja presents
+        run: |
+          node tests/v46-v51-contracts.cjs
+          node tests/world-career.cjs
+          node tests/v51-world-finance.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audit-integration-v46-v56
+          path: integration-readiness.json
+          if-no-files-found: ignore
