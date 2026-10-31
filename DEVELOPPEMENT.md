@@ -587,3 +587,15 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - 22 groupes de regression avant/apres, dont reprise automatique, import confirme, titre au registre plein, idempotence et erreur d'ecriture ; les six campagnes natives de 15 saisons de #85 sont conservees. Les rapports CI sur le dernier SHA et apres fusion font autorite, pas cette entree preparatoire.
 - Les preuves d'audit historiques demeurent dans #85 ; aucune modification des branches UI-02/UI-03 du producteur, aucune sauvegarde personnelle touchee, #75 intacte. Pas de changement des coefficients economiques ni de test Windows natif revendique.
 - Dossier : docs/correctifs-prime-entretien.md. Les sauvegardes deja invalides ne sont pas reparees silencieusement.
+
+
+## Optimisation CI / budget GitHub Actions — 31 octobre 2026
+
+- Base : `main` `5a48d54a1c1b408aeae7f6fc34f1e0124b2a01a6`, après correctifs prime de champion / entretien de la PR #89 ; protocole et réservations vérifiés dans l'issue #73. Branche d'optimisation : `perf/ci-budget-routing`.
+- Incident utilisateur : avertissement GitHub Actions 1 800 / 2 000 minutes (90 %). Aucune modification de facturation, aucune demande de dépense.
+- La CI centrale `.github/workflows/tests.yml` **n'est pas modifiée** : toutes les suites du jeu, notamment les sauvegardes, restent exécutées sur PR et sur `main` ; `Validation CI` est toujours le verdict de fusion.
+- `ui01-integration.yml` : retrait de trois shards natifs redondants avec la CI centrale ; réception Chromium et contraste conservés, activation seulement sur modifications liées à l'interface et au navigateur.
+- `career-resilience.yml` et `economy-audit.yml` : campagnes natives de 15 saisons conservées à l'identique et activées sur modifications des modules de moteur/finance/carrière/sauvegarde et sur les tests ou workflows correspondants ; changements d'interface pure / documentation exclus.
+- `v58-manager-mobility.yml` et `v58-native-observatory.yml` : déclencheurs limités aux dossiers métier concernés, sans supprimer de tests natifs.
+- Tous les workflows spécialisés restent activables manuellement. Aucune modification de `dist/**`, `tests/**`, `ci/**`, ni des workflows réservés par le producteur. Comparaison de scénarios et limites : `docs/ci-budget-optimization.md`.
+- La livraison dépend de la CI du dernier SHA de PR, de la revue du diff et du contrôle post-fusion `push` sur le nouveau `main` ; les chiffres de réduction sont **projetés**, pas un gain de minutes déjà mesuré.
