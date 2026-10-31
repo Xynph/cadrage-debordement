@@ -336,6 +336,326 @@
           "points": 15
         }
       ]
+    },
+    {
+      "club": "toulouse",
+      "sourceUrl": "https://top14.lnr.fr/club/toulouse/effectif-staff",
+      "players": [
+        {
+          "name": "Julien MARCHAND",
+          "position": "1ère ligne",
+          "matches": 5,
+          "minutes": 259,
+          "points": 20
+        },
+        {
+          "name": "Cyril BAILLE",
+          "position": "1ère ligne",
+          "matches": 5,
+          "minutes": 234,
+          "points": 10
+        },
+        {
+          "name": "Peato MAUVAKA",
+          "position": "1ère ligne",
+          "matches": 4,
+          "minutes": 184,
+          "points": 0
+        },
+        {
+          "name": "Dorian ALDEGHERI",
+          "position": "1ère ligne",
+          "matches": 5,
+          "minutes": 232,
+          "points": 0
+        },
+        {
+          "name": "Thibaud FLAMENT",
+          "position": "2ème ligne",
+          "matches": 5,
+          "minutes": 369,
+          "points": 0
+        },
+        {
+          "name": "Joshua BRENNAN",
+          "position": "2ème ligne",
+          "matches": 6,
+          "minutes": 420,
+          "points": 10
+        },
+        {
+          "name": "Emmanuel MEAFOU",
+          "position": "2ème ligne",
+          "matches": 3,
+          "minutes": 129,
+          "points": 5
+        },
+        {
+          "name": "Francois CROS",
+          "position": "3ème ligne",
+          "matches": 6,
+          "minutes": 480,
+          "points": 0
+        },
+        {
+          "name": "Anthony JELONCH",
+          "position": "3ème ligne",
+          "matches": 1,
+          "minutes": 59,
+          "points": 5
+        },
+        {
+          "name": "Alexandre ROUMAT",
+          "position": "3ème ligne",
+          "matches": 6,
+          "minutes": 340,
+          "points": 0
+        },
+        {
+          "name": "Antoine DUPONT",
+          "position": "Demi de mêlée",
+          "matches": 6,
+          "minutes": 348,
+          "points": 20
+        },
+        {
+          "name": "Paul GRAOU",
+          "position": "Demi de mêlée",
+          "matches": 6,
+          "minutes": 239,
+          "points": 5
+        },
+        {
+          "name": "Romain NTAMACK",
+          "position": "Demi d'ouverture",
+          "matches": 6,
+          "minutes": 416,
+          "points": 42
+        },
+        {
+          "name": "Ange CAPUOZZO",
+          "position": "Ailier",
+          "matches": 6,
+          "minutes": 428,
+          "points": 5
+        },
+        {
+          "name": "Matthis LEBEL",
+          "position": "Ailier",
+          "matches": 6,
+          "minutes": 381,
+          "points": 15
+        },
+        {
+          "name": "Teddy THOMAS",
+          "position": "Ailier",
+          "matches": 6,
+          "minutes": 356,
+          "points": 25
+        },
+        {
+          "name": "Thomas RAMOS",
+          "position": "Arrière",
+          "matches": 3,
+          "minutes": 217,
+          "points": 22
+        },
+        {
+          "name": "Blair KINGHORN",
+          "position": "Arrière",
+          "matches": 3,
+          "minutes": 163,
+          "points": 11
+        },
+        {
+          "name": "Santiago CHOCOBARES",
+          "position": "Centre",
+          "matches": 4,
+          "minutes": 319,
+          "points": 10
+        },
+        {
+          "name": "Kalvin GOURGUES",
+          "position": "Centre",
+          "matches": 6,
+          "minutes": 435,
+          "points": 5
+        },
+        {
+          "name": "Tommaso MENONCELLO",
+          "position": "Centre",
+          "matches": 3,
+          "minutes": 219,
+          "points": 5
+        }
+      ]
+    },
+    {
+      "club": "brive",
+      "sourceUrl": "https://prod2.lnr.fr/club/brive/effectif-staff",
+      "players": [
+        {
+          "name": "Francisco CORIA MARCHETTI",
+          "position": "1ère ligne",
+          "matches": 8,
+          "minutes": 322,
+          "points": 10
+        },
+        {
+          "name": "Yanis CHARCOSSET",
+          "position": "1ère ligne",
+          "matches": 7,
+          "minutes": 396,
+          "points": 25
+        },
+        {
+          "name": "Vakhtang ABDALADZE",
+          "position": "1ère ligne",
+          "matches": 6,
+          "minutes": 274,
+          "points": 10
+        },
+        {
+          "name": "Christian James JUDGE",
+          "position": "1ère ligne",
+          "matches": 8,
+          "minutes": 339,
+          "points": 0
+        },
+        {
+          "name": "Teun KARST",
+          "position": "2ème ligne",
+          "matches": 4,
+          "minutes": 108,
+          "points": 0
+        },
+        {
+          "name": "Samuel MAXIMIN",
+          "position": "2ème ligne",
+          "matches": 4,
+          "minutes": 170,
+          "points": 0
+        },
+        {
+          "name": "Alexandre RICARD",
+          "position": "2ème ligne",
+          "matches": 7,
+          "minutes": 473,
+          "points": 5
+        },
+        {
+          "name": "Irné HERBST",
+          "position": "2ème ligne",
+          "matches": 7,
+          "minutes": 373,
+          "points": 0
+        },
+        {
+          "name": "Lucas OUDARD",
+          "position": "3ème ligne",
+          "matches": 8,
+          "minutes": 395,
+          "points": 0
+        },
+        {
+          "name": "Sasha GUE",
+          "position": "3ème ligne",
+          "matches": 7,
+          "minutes": 558,
+          "points": 0
+        },
+        {
+          "name": "Yann PEYSSON",
+          "position": "3ème ligne",
+          "matches": 7,
+          "minutes": 472,
+          "points": 0
+        },
+        {
+          "name": "Hendrik VENTER",
+          "position": "3ème ligne",
+          "matches": 4,
+          "minutes": 183,
+          "points": 0
+        },
+        {
+          "name": "Mathis GALTHIE",
+          "position": "Demi de mêlée",
+          "matches": 2,
+          "minutes": 140,
+          "points": 0
+        },
+        {
+          "name": "Maxime SIDOBRE",
+          "position": "Demi de mêlée",
+          "matches": 7,
+          "minutes": 197,
+          "points": 5
+        },
+        {
+          "name": "Aymeric LUC",
+          "position": "Demi de mêlée",
+          "matches": 8,
+          "minutes": 661,
+          "points": 30
+        },
+        {
+          "name": "John COONEY",
+          "position": "Demi d'ouverture",
+          "matches": 6,
+          "minutes": 396,
+          "points": 45
+        },
+        {
+          "name": "James SHILLCOCK",
+          "position": "Demi d'ouverture",
+          "matches": 4,
+          "minutes": 275,
+          "points": 28
+        },
+        {
+          "name": "Leny BRONCAN",
+          "position": "Demi d'ouverture",
+          "matches": 4,
+          "minutes": 329,
+          "points": 18
+        },
+        {
+          "name": "Geoffrey CROS",
+          "position": "Arrière",
+          "matches": 8,
+          "minutes": 618,
+          "points": 25
+        },
+        {
+          "name": "Julien TISSERON",
+          "position": "Arrière",
+          "matches": 5,
+          "minutes": 362,
+          "points": 0
+        },
+        {
+          "name": "Gatien MASSE",
+          "position": "Centre",
+          "matches": 8,
+          "minutes": 610,
+          "points": 10
+        },
+        {
+          "name": "Nicolas Christian KRONE",
+          "position": "Centre",
+          "matches": 7,
+          "minutes": 403,
+          "points": 0
+        },
+        {
+          "name": "Stuart OLDING",
+          "position": "Centre",
+          "matches": 2,
+          "minutes": 155,
+          "points": 2
+        }
+      ]
     }
   ]
 }
