@@ -38,8 +38,9 @@ jobs:
       - name: Publier uniquement des objets Git sans modifier de branche
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python scripts/prepare-champion-budget.py --publish-tree
+        run: python scripts/publish-champion-objects.py
       - name: Archiver les sources de verification sans polices ni secrets
+        if: always()
         run: |
           tar --exclude='dist/fonts' -cf candidate-proof/source.tar dist tests ci docs DEVELOPPEMENT.md AGENTS.md .github/workflows/economy-audit.yml
       - uses: actions/upload-artifact@v4
