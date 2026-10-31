@@ -1,0 +1,5 @@
+'use strict';
+// V49 : calculs de carrière fictifs ; aucun effet de bord.
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.CDFacilities=api})(typeof globalThis==='object'?globalThis:null,function(){const num=n=>typeof n==='number'&&Number.isFinite(n)&&n>=0;
+function investment({cash,level,cost,weeklyMaintenance=0,weeks=26}){if(![cash,cost,weeklyMaintenance].every(num)||!Number.isInteger(level)||level<1||level>10||!Number.isInteger(weeks)||weeks<1||weeks>104)throw Error('Données invalides');const total=cost+weeklyMaintenance*weeks;return {affordable:total<=cash,total,remaining:cash-total,nextLevel:Math.min(10,level+1),atMaximum:level===10};}function projectedEffect({level,investmentLevel}){if(!Number.isInteger(level)||level<1||level>10||!Number.isInteger(investmentLevel)||investmentLevel<1||investmentLevel>10)throw Error('Données invalides');return {academyPotentialBonus:Math.max(0,investmentLevel-level)*.5,weeklyCostMultiplier:1+investmentLevel*.03};}
+return Object.freeze({investment,projectedEffect});});
