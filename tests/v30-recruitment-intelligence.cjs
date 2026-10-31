@@ -74,7 +74,6 @@ assert.equal(rec,true);
 // automatique, pas d'achat pendant une rencontre, aucun doublon.
 const ai=context(),a=ai.run;
 a('start(0);var me=club().cash;S.round=13;var buyer=S.clubs[1],budget=buyer.cash,headcount=buyer.players.length;buyer.players=buyer.players.filter(p=>p.pos!==POS[0]);var forced=makePlayer(99,0,75);forced.id="test-v30-ai-prospect";forced.age=24;forced.rating=75;forced.salary=3000;forced.price=10000;forced.contractEnd=null;ensureDevelopment(forced);forced.dev.retireAge=40;S.market=[forced];S.economy.freeAgents=[];var pool=S.market.length');
-console.log('DIAGNOSTIC IA V30',a("JSON.stringify((()=>{const x=recruitmentTargets(buyer,S.market,false),k=x.filter(t=>t.within&&t.need.score>=45&&t.p.salary<=Math.max(1000,buyer.base*250)&&aiRosterPayroll(buyer)+t.p.salary<=aiRosterWageLimit(buyer)&&buyer.cash-t.finance.fee>=400000);return {active:aiRosterActive(),last:S.economy.aiRecruitmentWindow,cash:buyer.cash,base:buyer.base,debt:worldClub(buyer.id).debt,rep:worldClub(buyer.id).reputation,payroll:aiRosterPayroll(buyer),limit:aiRosterWageLimit(buyer),need:recruitmentNeeds(buyer).slice(0,2).map(n=>({pos:n.pos,score:n.score})),targets:x.map(t=>({id:t.p.id,need:t.need.pos,score:t.need.score,within:t.within,fee:t.finance.fee,wage:t.p.salary})),passed:k.length,choice:worldAIRecruitmentChoice(buyer,k)?.p?.id||null,market:S.market.length}})())"));
 const bought=a('aiRecruitmentWeek()');
 assert.ok(bought>=1&&bought<=6);
 assert.equal(a('buyer.players.length>headcount-2'),true);

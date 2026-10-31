@@ -38,7 +38,8 @@ function aiRosterPayroll(c){return c.players.reduce((sum,p)=>sum+p.salary,0)}
 function aiRosterWageLimit(c){
  const info=worldActive()?worldClub(c.id):null;
  const liquidity=Math.max(0,c.cash-(info?.debt||0));
- return clamp(Math.round(235000+Math.max(0,liquidity-1500000)/85000),215000,335000);
+ // 1 M€ de liquidité nette au-dessus de 1,5 M€ ouvre 11 111 € de salaires hebdomadaires.
+ return clamp(Math.round(235000+Math.max(0,liquidity-1500000)/90),215000,335000);
 }
 function aiRosterContracts(){
  if(!aiRosterActive()||S.aiRoster.lastContracts===S.season)return false;
@@ -147,6 +148,19 @@ function aiRosterYouthIntake(){
  }
  return true;
 }
+function aiRosterRecruitmentChoice(c,targets){
+ if(!worldActive()||!targets.length)return null;
+ const info=worldClub(c.id);
+ if(!info||info.debt>=2000000)return null;
+ const pool=targets.filter(t=>CDReputation.recruitmentReach({
+  clubReputation:info.reputation,playerReputation:clamp(Math.round(t.evidence.noteMin),0,100),tolerance:15
+ }).reachable).map(t=>({id:t.p.id,pos:t.need.pos,fee:t.finance.fee,wage:t.p.salary,
+  rating:clamp(Math.round(t.evidence.noteMin),0,100)}));
+ const choice=CDClubAI.decideClub({cash:Math.max(0,c.cash-400000),
+  wageRoom:Math.max(0,aiRosterWageLimit(c)-aiRosterPayroll(c)),
+  needs:[...new Set(targets.map(t=>t.need.pos))],candidates:pool}).candidate;
+ return choice?targets.find(t=>t.p.id===choice.id)||null:null;
+}
 function aiRosterRecruitmentWeek(){
  if(!aiRosterActive()||S.live||S.phase!=='league'||![0,13].includes(S.round)||
   S.season===1&&S.round===0)return 0;
@@ -167,7 +181,7 @@ function aiRosterRecruitmentWeek(){
   const candidates=recruitmentTargets(c,pool,false)
    .filter(t=>t.within&&t.need.score>=45&&t.p.salary<=Math.max(1000,c.base*250)&&
      aiRosterPayroll(c)+t.p.salary<=aiRosterWageLimit(c)&&c.cash-t.finance.fee>=400000);
-  const best=worldAIRecruitmentChoice(c,candidates);
+  const best=aiRosterRecruitmentChoice(c,candidates);
   if(!best||!pool.some(x=>x.id===best.p.id))continue;
   const p=best.p;
   c.cash-=best.finance.fee;
