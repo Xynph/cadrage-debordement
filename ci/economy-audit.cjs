@@ -26,7 +26,16 @@ function main(args){
  }
  const seed=Number(seedText),years=Number(yearsText);fs.mkdirSync(out,{recursive:true});
  const sources=A.sourceFingerprint();
- const r=A.campaign({profile,seed,years,onSeason:s=>console.log(JSON.stringify({profile,seed,season:s.season,cash:s.closingCash,champion:s.champion}))});
+ const failure=(partial,state)=>{
+  partial.sources=sources;partial.sha=process.env.GITHUB_SHA||null;
+  fs.writeFileSync(path.join(out,`campaign-${profile}-${seed}.json`),JSON.stringify(partial,null,2));
+  fs.writeFileSync(path.join(out,`failure-state-${profile}-${seed}.json`),JSON.stringify({
+   format:'cd-test-diagnostic-state',productionSave:false,profile,seed,sources,sha:partial.sha,
+   explanation:'Generated test fixture only. This state is rejected by the native validator; it is not repaired or an exportable user save.',
+   evidence:partial.failure,state},null,2));
+  console.error('ECONOMY AUDIT FAILED '+JSON.stringify(partial.failure));
+ };
+ const r=A.campaign({profile,seed,years,onSeason:s=>console.log(JSON.stringify({profile,seed,season:s.season,cash:s.closingCash,champion:s.champion})),onFailure:failure});
  r.sources=sources;r.sha=process.env.GITHUB_SHA||null;validateReport(r);
  fs.writeFileSync(path.join(out,`campaign-${profile}-${seed}.json`),JSON.stringify(r,null,2));console.log('ECONOMY AUDIT PASS '+JSON.stringify(r.summary));
 }

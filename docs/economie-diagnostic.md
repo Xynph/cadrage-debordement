@@ -1,69 +1,69 @@
 # Diagnostic économique natif — lot indépendant pendant UI-02C
 
-Base auditée : `e706d6ade5406b7f7c8e9e9c4cdaeaa9033c4807` (UI-01 intégrée). Tous les montants sont des euros fictifs de jeu, **pas les budgets réels des clubs**. Aucun coefficient ni fichier de production n'est modifié. Les recettes positives ne sont pas automatiquement un bug et une CI verte ne certifie pas l'équilibrage.
+Base auditée : `e706d6ade5406b7f7c8e9e9c4cdaeaa9033c4807`. Tous les montants sont fictifs, pas les budgets réels des clubs. Six nouveaux fichiers seulement ; aucun coefficient, fichier `dist/`, harness partagé, sauvegarde utilisateur ou branche UI-02C modifié. La PR #85 reste séparée et non fusionnée.
 
-## Méthode et périmètre
+## État réellement observé
 
-Le banc réutilise `tests/harness.cjs` et `tests/career-resilience/native.cjs`. Il appelle les vrais `finishRound`, `advanceSeason`, `trainWeek`, opérations de recrutement, investissements et import/export. Aucun score ni classement n'est produit par V51 ou par un modèle économique de remplacement.
+La première CI du commit `79597eb8` (run `41191614809`) a validé **cinq campagnes de quinze saisons**, soit 75 saisons dans des campagnes complètes. Le scénario `modeste / 99173` a validé six saisons puis échoué à l'export de la septième : `validateCareer`, `saves.js:246:256`, contrôle du registre financier. La synthèse générale a correctement refusé de déclarer les 90 saisons validées.
 
-Pour chaque journée, l'observateur relève les écritures nouvelles du manager **avant leur éviction du registre borné à 100 lignes**. Pour les treize adversaires, il rapproche séparément la variation effective de trésorerie des partenaires, salaires courants, véritables scores et domiciles, entretien et primes de signature issues des rapports IA. Chaque transition annuelle distingue renouvellements, recrutements, apport, remboursement, conversion d'un déficit en dette et investissements. Tout résidu inexpliqué supérieur à 0,001 € fait échouer le diagnostic. Une étiquette de registre inconnue fait également échouer le test, au lieu d'être ignorée.
+La version suivante conserve le rapport partiel et l'état fictif rejeté dans les artefacts, puis **échoue toujours**. Le fichier `failure-state-*` porte `productionSave:false` : ce n'est pas une sauvegarde utilisateur importable. Un diagnostic sur copie vérifie si le seul retour du registre à 100 lignes suffit à satisfaire le validateur. Cette copie ne remplace jamais l'état fautif et ne permet pas à la campagne de continuer artificiellement.
 
-L'observateur n'intercepte ni ne remplace les fonctions métier. Son absence d'effet sur l'état complet et le flux aléatoire est confrontée à un témoin sur une vraie journée. Les sources et le SHA testé sont enregistrés dans les rapports. Les reprises passent par le parseur et la confirmation d'import natifs ; l'état RNG appartient seulement au banc de test, pas aux sauvegardes de production.
+Les 20 groupes courts initiaux ont réussi localement et dans la première CI. Un 21e groupe teste la capture d'un registre trop long, l'absence de modification de l'état d'origine et le maintien du rejet. Les essais locaux de trois saisons pour référence et déficit/formation ont réussi ; une répétition locale longue a été interrompue à sa limite d'exécution et n'est pas comptée comme campagne complète. Le verdict du dernier SHA et les artefacts, publiés en #73, font autorité.
 
-## Campagne exécutable
+## Méthode de mesure
 
-Trois politiques et deux graines (`827381`, `99173`), quinze saisons par combinaison :
+Réutilisation de `tests/harness.cjs` et `tests/career-resilience/native.cjs`. Appels aux vrais `finishRound`, `advanceSeason`, `trainWeek`, opérations de recrutement, investissements et import/export ; aucun score ou classement V51 de substitution.
 
-- `reference` : club 0, trésorerie native, manager passif sans recrutement, prolongation, entraînement ou investissement volontaire.
-- `modeste` : club 13, mêmes choix passifs, trésorerie native.
-- `deficitFormation` : club 13, trésorerie initiale forcée à −250 000 € et ajustement déclaré ; choix du sponsor stable, séances natives de formation à 4 000 € lorsqu'elles sont financées, tentative d'investissement annuel si abordable. Pas de recrutement ou prolongation discrétionnaire de professionnels.
+Les nouvelles écritures du manager sont relevées avant leur éviction du registre borné. Pour les treize adversaires, la variation effective de trésorerie est rapprochée des partenaires, salaires, scores et domiciles réels, entretien et primes issues des rapports IA. Les transitions distinguent renouvellements, recrutements, apport, remboursement, conversion de déficit en dette et installations. Un résidu supérieur à 0,001 € ou une étiquette inconnue fait échouer le banc. L'absence d'effet sur l'état complet et le RNG a été comparée à un témoin sur une vraie journée.
 
-Ces politiques sont des **scénarios contrôlés**, pas un comportement représentatif de tous les joueurs. La comparaison déficit/formation combine plusieurs changements : elle ne mesure pas isolément un effet causal de l'investissement. Deux graines par profil ne constituent pas une calibration statistique exhaustive.
+Sources et SHA sont enregistrés. Les reprises utilisent le parseur et la confirmation d'import natifs ; le RNG est un état annexe du test, pas une extension des sauvegardes officielles.
+
+## Scénarios et limites
+
+Trois politiques, graines `827381` et `99173`, quinze saisons prévues par combinaison :
+
+- `reference` : club 0, trésorerie native, sans décisions discrétionnaires de recrutement, prolongation, entraînement ou investissement.
+- `modeste` : club 13, mêmes choix passifs.
+- `deficitFormation` : club 13, trésorerie initiale −250 000 € avec ajustement déclaré ; sponsor stable, séances de formation à 4 000 € lorsqu'elles sont financées et investissement annuel si abordable. Aucun recrutement ou renouvellement discrétionnaire de professionnels.
+
+Ce ne sont pas des politiques représentatives de tous les joueurs. Le scénario déficit/formation combine plusieurs changements et ne mesure donc pas un effet causal isolé de l'investissement. Deux graines par profil ne constituent pas un étalonnage statistique exhaustif. Les classes de qualité utilisent les données natives ; leur corrélation avec l'argent ne prouve pas une causalité.
 
 ```sh
 node tests/economy-audit.cjs
-node ci/economy-audit.cjs reference 827381 15 economy-audit-report
+node ci/economy-audit.cjs modeste 99173 15 economy-audit-report
 node ci/economy-audit.cjs --aggregate economy-audit-input
 ```
 
-La CI refuse une campagne incomplète, des combinaisons manquantes ou dupliquées, des empreintes de sources différentes et une synthèse incompatible avec les mesures détaillées. Les six campagnes, rapports par club/saison, écritures agrégées et reprises sont disponibles en artefacts. **Ne revendiquer 90 saisons qu'après lecture de leur verdict final.**
+L'agrégation exige six campagnes distinctes et complètes, les mêmes empreintes sources, des totaux cohérents et aucun échec. Un scénario arrêté n'est jamais retiré de la matrice pour faire passer la CI.
 
-## Résultats préparatoires effectivement obtenus
+## Priorité P0 — registre financier après un titre
 
-Les vingt groupes courts de tests ont réussi localement sur les scripts natifs dont les blobs chargés ont été confrontés à `main`. Les essais locaux de trois saisons pour `reference` et `deficitFormation` ont rapproché tous les flux sans résidu. La CI sur le commit publié reste la référence de livraison du banc.
+La trace de la campagne en échec désigne `S.ledger`, limité à 100 lignes par le validateur. `finishRound` insère directement `Prime de champion` après les traitements qui bornent déjà le registre, sans le reborner ensuite. Le second passage de CI doit conserver la longueur exacte, le champion, le club du manager, l'état du signalement de sauvegarde et le résultat de validation de la copie diagnostique pour confirmer la reproduction native complète.
 
-Exemple de mesure de la première saison `reference`, graine 827381 : trésorerie cumulée de 67 700 000 € à 113 668 925 €. Variation de 45 968 925 €, expliquée par 64 960 000 € de partenaires, 67 588 000 € de billetterie, 14 160 000 € de primes de victoire, −98 549 075 € de salaires et −2 190 000 € de signatures IA. Aucun apport annuel ne doit être ajouté à cette première saison : les apports surviennent entre deux saisons.
+Correction recommandée dans un chantier distinct : passer par l'écriture financière centralisée ou borner l'insertion de prime, en préservant **un seul crédit**. Tester finale gagnée avec registre plein, export et reprise, répétition de `finishRound`, et ancienne carrière. Ne pas augmenter la limite du validateur pour masquer le défaut. Aucune correction de production n'est incluse ici ; le producteur a été averti en #73 pour éviter une intervention concurrente.
 
-## Constats confirmés et décisions à préparer
+## Priorité P1 — prévision V41 incomplète
 
-### 1. Prévision V41 : entretien absent — défaut reproductible
+`careerBudgetModel` ne reprend pas `worldUpkeep` dans `weeklyOtherCosts`. Après l'investissement natif au niveau 3, **2 900 € par période**, soit **34 800 € sur l'horizon de douze périodes**, sont omis. Le groupe 16 isole les règlements sans billetterie ni victoire et reproduit exactement l'écart. Son succès prouve la reproduction du défaut, pas la justesse de la prévision.
 
-`dist/career-integration.js`, `careerBudgetModel`, ne reprend pas `worldUpkeep` dans `weeklyOtherCosts`. Après un investissement natif au niveau 3, la prévision omet 2 900 € par période, soit 34 800 € sur son horizon de douze périodes. Le groupe 16 reproduit cet écart en isolant les règlements sans billetterie ni victoire. **Son succès prouve la reproduction du défaut, pas que la prévision est correcte.**
+Raccordement recommandé : intégrer une seule fois l'entretien connu, séparer la formation et tester plusieurs niveaux ainsi que les anciennes carrières sans `worldVersion`.
 
-Correction recommandée dans un chantier ultérieur : intégrer une seule fois l'entretien connu aux charges prévisionnelles, conserver séparément la formation et vérifier plusieurs niveaux ainsi que les anciennes carrières sans `worldVersion`. Pas de migration de sauvegarde nécessaire a priori ; à confirmer lors de la correction.
+## Accumulation monétaire : flux et fréquence
 
-### 2. Fréquence et excédents structurels — mesure, pas doublon présumé
+Première saison référence, graine 827381 : trésorerie cumulée de 67 700 000 € à 113 668 925 €. L'excédent de 45 968 925 € est expliqué par 64 960 000 € de partenaires, 67 588 000 € de billetterie, 14 160 000 € de primes de victoire, −98 549 075 € de salaires et −2 190 000 € de signatures IA. Aucun apport intersaison n'est ajouté à ce bilan initial.
 
-Le moteur courant règle partenaires et salaires sur 29 journées/tours, même lorsque le club ne dispute plus les phases finales. Il ne simule pas 52 semaines civiles. Les adversaires reçoivent 160 000 € par tour, 360 000 € lorsqu'ils sont premiers dans une paire et 80 000 € par victoire. Les 2,5 M€ d'apport sont alloués à chaque club lors de l'intersaison.
+Le moteur règle partenaires et salaires sur **29 tours** par saison, même lorsque le club ne joue plus les phases finales ; il ne simule pas un calendrier de 52 semaines. Les adversaires reçoivent 160 000 € par tour, 360 000 € lorsqu'ils sont premiers dans la paire et 80 000 € par victoire. L'apport de 2,5 M€ par club est versé à chaque intersaison. Vérifier occurrences et flux avant d'invoquer un doublon : barèmes, apports récurrents et dépenses limitées d'un manager passif peuvent produire l'excédent.
 
-Dans les campagnes testées, vérifier les nombres d'occurrences et la somme des flux avant de conclure à un double versement. Un excédent peut provenir du barème, de l'apport récurrent et d'une politique passive limitant les dépenses. Ne pas remplacer arbitrairement 29 par 52 ni réduire les recettes sans scénario comparatif et objectif de gameplay explicite.
+Ne pas remplacer arbitrairement 29 par 52 ni réduire des recettes sans objectif de gameplay et campagne comparée. Les clôtures annuelles ne prouvent pas l'absence de déficit intermédiaire ; les points d'observation négatifs du rapport peuvent inclure plusieurs décisions dans un même tour.
 
-### 3. Terrain neutre et prime de champion — asymétries à arbitrer
+## Asymétries à arbitrer, sans changement de règles ici
 
-L'interface décrit les demi-finales et la finale comme « Terrain neutre », mais `financeWeek` et `worldWeeklyEconomy` allouent une billetterie au club placé en premier dans la paire. Le rapport conserve chaque occurrence et son montant. Cette observation ne dicte pas la règle correcte : il faut décider si ces recettes sont partagées, attribuées ou absentes, puis harmoniser affichage et comptabilité.
+- Les demi-finales et la finale sont affichées « Terrain neutre », mais une billetterie est attribuée au premier club de la paire. Chaque occurrence est tracée. Définir ensuite la règle souhaitée : partage, attribution ou absence, puis harmoniser affichage et comptabilité.
+- La prime de champion de 1 M€ est attribuée seulement si le club du manager gagne. Les comptes adverses ne la reçoivent pas. C'est une asymétrie de gameplay à arbitrer, pas une règle officielle de rugby.
+- La remise à zéro d'une trésorerie IA négative augmente sa dette : ne pas compter cette conversion comme richesse nette gratuite. Les intérêts de 4 % et remboursements sont séparés. Le cas court −500 000 € de trésorerie / 200 000 € de dette aboutit à 2 250 000 € de trésorerie / 478 000 € de dette après le traitement natif.
 
-`finishRound` attribue la prime de champion de 1 M€ uniquement si le champion est le club du manager. Le rapprochement des comptes des adversaires ne montre pas cette prime. À classer comme choix asymétrique à valider, pas comme une règle sportive officielle.
+## Couverture et coordination
 
-### 4. Dette et richesse nette
+Seuil d'investissement à un euro près, réserve d'entretien non prélevée deux fois, répétition après import, formation financée/refusée, sponsor unique, recrutement à trésorerie exacte, transfert conservant les budgets et un seul propriétaire, acheteur insuffisant, panne de stockage visible, dernier fichier correct préservé, corruption rejetée, actions bloquées en match et preuve d'échec sur copie.
 
-La remise à zéro d'une trésorerie IA négative augmente simultanément la dette : elle ne doit pas être comptée comme un revenu gratuit net. Le banc distingue cette conversion, les intérêts annuels de 4 % et le remboursement. Le cas négatif court vérifie une dette de départ de 200 000 €, une trésorerie de −500 000 €, puis 2 250 000 € de trésorerie et 478 000 € de dette après traitement natif.
-
-## Tests de décisions réellement exécutables
-
-Seuil d'investissement exact et refus à un euro près ; réserve d'entretien non prélevée en double ; répétition après import ; formation financée ou refusée ; sponsor signé une fois ; signature à trésorerie exacte ; transfert conservant les deux budgets et un seul propriétaire ; acheteur insuffisamment financé ; échec de stockage visible et dernier fichier conservé ; corruption rejetée ; refus des opérations en match. Les injections de panne et trésoreries artificielles sont confinées aux copies de test.
-
-## Coordination et limites
-
-Seuls six nouveaux fichiers sont publiés. Tous les fichiers `dist/`, le harness, les sauvegardes officielles, le journal partagé et les branches UI-02C restent intacts. Le journal de ce lot se trouve ici et dans #73 pour éviter une modification concurrente. La PR reste séparée et non fusionnée pendant le raccordement UI-02C. Aucune correction de gameplay n'est livrée par ce diagnostic.
-
-Les classements et qualités moyennes proviennent du moteur, mais leur corrélation avec l'argent ne prouve pas une causalité. Les compteurs de rapprochements sont des groupes répétés, pas autant de suites indépendantes. Aucun test Windows natif ou visuel UI-02C n'est revendiqué.
+Le plan UI-02C se trouve dans `docs/ui02-reception-checklist.md`. Le journal du lot reste dans ces nouveaux documents et #73 pour ne pas modifier le journal partagé. Les compteurs de contrôles répétés ne sont pas autant de suites indépendantes. Aucun test Windows natif ou visuel UI-02C revendiqué. Une CI verte d'une reproduction ne garantit pas un jeu économiquement équilibré ; l'échec natif découvert reste bloquant jusqu'à sa correction coordonnée.

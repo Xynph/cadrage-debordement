@@ -102,6 +102,16 @@ test('20 live match blocks financial roster and infrastructure actions',()=>{
  const g=fresh();g.run('var econId=S.market[0].id;beginMatch();pauseMatch()');const b=book(g);
  assert.equal(g.run('worldUpgradeFacility()'),false);assert.equal(g.run('careerSponsorPick("prudent")'),false);assert.equal(g.run('negotiateContract(econId,"recruit",10000,1)'),false);assert.deepEqual(book(g),b);
 });
+test('21 rejected overflow evidence uses a copy and never repairs the career',()=>{
+ const g=fresh();g.run('for(let i=0;i<100;i++)ledgerEntry("Diagnostic fixture",0);S.ledger.unshift({title:"Diagnostic overflow",amount:0})');
+ const before=N.data(g),stored=g.store['bdt-v1'];let error;
+ try{g.run('createSaveDocument()');}catch(e){error=e;}
+ assert.ok(error);const d=A.failureEvidence(g,error);
+ assert.equal(d.evidence.ledgerLength,101);assert.equal(d.evidence.counterfactual.trimmedLedgerValid,true);
+ assert.deepEqual(N.data(g),before);assert.equal(g.store['bdt-v1'],stored);
+ assert.throws(()=>g.run('createSaveDocument()'),'Original state must remain rejected');
+ observations.push({id:'LEDGER-LIMIT',scope:'Synthetic overflow reproduction; full native seed reproduction runs separately',ledgerLimit:100,rejectedLength:101});
+});
 const report={passed:true,suites:1,scenarioGroups:checks.length,checks,observations,scope:'Native functions on isolated fictitious careers',limits:['Confirmed-gap assertions are reproductions, not proof of economic correctness','No production coefficients changed','Private helper fixtures are identified separately from full career runs']};
 if(process.env.CD_ECONOMY_TEST_REPORT)fs.writeFileSync(process.env.CD_ECONOMY_TEST_REPORT,JSON.stringify(report,null,2));
 console.log('ECONOMY TRANSACTIONS PASS '+JSON.stringify(report));

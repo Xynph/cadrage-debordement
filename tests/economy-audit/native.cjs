@@ -134,7 +134,27 @@ function summary(report){
   neutralVenueTickets:sum(report.neutralVenueTicketAllocations.map(x=>x.amount)),
   checks:report.checks.passed,unexplainedResidual:report.maxUnexplainedResidual};
 }
-function campaign({profile='reference',seed=827381,years=15,onSeason=()=>{}}={}){
+function failureEvidence(g,error){
+ // Raw generated test state, NOT an accepted or migrated production save.
+ const state=N.data(g),stored=g.store['bdt-v1'];
+ const evidence={error:String(error.message),stack:String(error.stack),season:state.season,phase:state.phase,
+  managerClub:state.club,champion:state.worldManagement?.champion,ledgerLength:state.ledger?.length,
+  ledgerHead:state.ledger?.slice(0,5),saveErrorVisible:!!g.run('lastSaveError'),
+  stateHash:N.hash(JSON.stringify(state)),lastStoredHash:typeof stored==='string'?N.hash(stored):null,
+  counterfactual:{scope:'diagnostic copy only; no repair of original state or storage',trimmedLedgerValid:false}};
+ g.ctx.__economyDiagnosticCopy=N.clone(state);
+ try{
+  if(Array.isArray(state.ledger)&&state.ledger.length>100){
+   g.ctx.__economyDiagnosticCopy.ledger=g.ctx.__economyDiagnosticCopy.ledger.slice(0,100);
+   g.run('validateCareer(__economyDiagnosticCopy)');evidence.counterfactual.trimmedLedgerValid=true;
+  }
+ }catch(e){evidence.counterfactual.error=String(e.message);}
+ finally{delete g.ctx.__economyDiagnosticCopy;}
+ assert.deepEqual(N.data(g),state,'Diagnostic mutated original career');
+ assert.equal(g.store['bdt-v1'],stored,'Diagnostic changed stored bytes');
+ return {evidence,state};
+}
+function campaign({profile='reference',seed=827381,years=15,onSeason=()=>{},onFailure=()=>{}}={}){
  assert.ok(PROFILES[profile]);assert.ok(Number.isInteger(years)&&years>=1&&years<=15);assert.ok(Number.isInteger(seed)&&seed>=0&&seed<=0xffffffff);
  const config=PROFILES[profile];let g=N.fresh(config.club,seed);
  const originalCash=g.run('club().cash');if(config.cash!==undefined)g.run('club().cash='+config.cash);
@@ -145,6 +165,7 @@ function campaign({profile='reference',seed=827381,years=15,onSeason=()=>{}}={})
    money:'Fictitious game euros; wages charged per native round, not a simulated 52-week calendar',rng:'Test sidecar only; not a production save field'},
   clubTotals:opening.clubs.map(c=>({id:c.id,name:c.name,openingCash:c.cash,closingCash:c.cash,closingDebt:c.debt,flows:{},debtInterest:0,minCash:c.cash,negativeCheckpoints:0})),
   checks:N.newStats(),rounds:0,matches:0,maxUnexplainedResidual:0,seasons:[],transitions:[],neutralVenueTicketAllocations:[],complete:false};
+ try{
  for(let y=1;y<=years;y++){
   const start=snapshot(g);assert.equal(start.season,y);
   if(config.policy==='formation'){
@@ -168,5 +189,11 @@ function campaign({profile='reference',seed=827381,years=15,onSeason=()=>{}}={})
   if(y<years)transition(g,report);
  }
  report.complete=true;report.summary=summary(report);return report;
+ }catch(error){
+  report.complete=false;
+  const diagnostic=failureEvidence(g,error);report.failure=diagnostic.evidence;
+  report.validatedSeasons=report.seasons.length;
+  onFailure(report,diagnostic.state);throw error;
+ }
 }
-module.exports={BASE,PROFILES,N,sum,close,category,add,total,merge,snapshot,fees,recordStep,action,round,transition,sourceFingerprint,summary,campaign};
+module.exports={BASE,PROFILES,N,sum,close,category,add,total,merge,snapshot,fees,recordStep,action,round,transition,sourceFingerprint,summary,failureEvidence,campaign};
