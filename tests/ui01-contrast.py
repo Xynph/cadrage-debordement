@@ -16,7 +16,7 @@ try:
     with sync_playwright() as p:
         b=p.chromium.launch(headless=True)
         page=b.new_page(viewport={'width':1440,'height':1000})
-        page.goto('http://127.0.0.1:%s/'%server.server_address[1]);page.get_by_role('button',name='Nouvelle carrière').click();page.get_by_role('button',name='Univers fictif').click()page.locator('.clubchoice').first.click()
+        page.goto('http://127.0.0.1:%s/'%server.server_address[1]);page.get_by_role('button',name='Nouvelle carrière').click();page.get_by_role('button',name='Univers fictif').click();page.locator('.clubchoice').first.click()
         for width in (1440,390):
             page.set_viewport_size({'width':width,'height':1000})
             for theme in ('tribune','analyste'):
