@@ -1,0 +1,11 @@
+'use strict';
+const assert=require('node:assert/strict');
+const dataset=require('../world-data/calendrier01/official-fixtures-partial.json');
+const {inspect}=require('../tools/calendrier01-validate.cjs');
+const p=inspect(dataset);assert.equal(p.ok,true,p.errors.join('; '));assert.equal(p.counts.top14,7);assert.equal(p.counts.prod2,8);
+assert.equal(p.complete,false);assert.equal(inspect(dataset,{requireComplete:true}).ok,false);
+assert.equal(new Set(dataset.fixtures.map(x=>x.id)).size,15);
+assert.ok(dataset.fixtures.every(x=>x.kickoff===null&&x.score===null));
+const duplicate=JSON.parse(JSON.stringify(dataset));duplicate.fixtures.push({...duplicate.fixtures[0]});assert.equal(inspect(duplicate).ok,false);
+const bogus=JSON.parse(JSON.stringify(dataset));bogus.fixtures[0].score='30-20';assert.equal(inspect(bogus).ok,false);
+console.log(JSON.stringify({passed:true,verifiedRound1:15,complete:false,expected:422}));
