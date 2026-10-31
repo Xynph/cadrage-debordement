@@ -29,15 +29,17 @@ test('crosschecks actual 1592 player IDs without guessing ambiguous matches',()=
  assert.equal(roster.length,1592);
  const result=matchRoster(source,roster);
  assert.equal(result.results.length,98);
- assert.equal(result.matched+result.review+result.unknown,80);
+ assert.equal(result.matched+result.review+result.unknown,source.records.length);
  const linked=result.results.filter(x=>x.linkedId!==null);
  assert.equal(new Set(linked.map(x=>x.linkedId)).size,linked.length);
  assert.ok(result.results.every(x=>x.linkedId===null||x.status==='club-match'));
 });
 
-test('published 80-transfer reconciliation is complete, unique and never guesses missing IDs',()=>{
+test('published 98-transfer reconciliation is complete, unique and never guesses missing IDs',()=>{
  const r=require('../modding/data06/transfer-reconciliation-2026-2027.json');
  assert.deepEqual(r.summary,{total:98,exact:52,review:12,missing:34});
+ assert.equal(r.summary.total,r.summary.exact+r.summary.review+r.summary.missing);
+ assert.equal(r.summary.total,source.records.length);
  assert.equal(r.records.length,source.records.length);
  const roster=['top14-a','top14-b','prod2-a','prod2-b'].flatMap(file=>require('../modding/data03/'+file+'.json').clubs).flatMap(c=>c.players.map(p=>({...p,club:c.club})));
  const byId=new Map(roster.map(p=>[p.id,p]));
