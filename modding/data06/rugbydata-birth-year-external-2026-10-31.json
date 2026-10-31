@@ -2,7 +2,7 @@
   "schema": "data06-birth-year-evidence-v1",
   "seasonContext": "2026-2027",
   "sourceRoster": "modding/data06/rugbydata-rosters-2026-10-31.json",
-  "note": "Evidence staging only: ONE URL independently opened and verified in this session (Demba Bamba, TF1 Info). Other 19 birth-year candidates require re-opening the linked pages and confirming the explicit date before acceptance. No inference from age, no replacement of existing birth dates, no game integration.",
+  "note": "Evidence staging only: 4 individual pages explicitly checked (Demba Bamba, Maxime Lucu, Gabin Villiere, Charles Ollivon). Other 17 candidates remain pending independent source verification. Not imported in game; no birth year inferred from age.",
   "records": [
     {
       "sourceRecordId": "221",
@@ -25,8 +25,9 @@
       "name": "Gabin Villière",
       "birthYear": 1995,
       "sourceUrl": "https://www.tf1info.fr/actualite/fiche-joueur-gabin-villiere-13414/",
-      "verification": "pending_source_recheck",
-      "reviewRequired": true
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false,
+      "birthDateAsPublished": "13/12/1995"
     },
     {
       "sourceRecordId": "83",
@@ -164,6 +165,15 @@
       "sourceUrl": "https://en.wikipedia.org/wiki/Vasil_Lobzhanidze",
       "verification": "pending_source_recheck",
       "reviewRequired": true
+    },
+    {
+      "sourceRecordId": "615",
+      "name": "Charles Ollivon",
+      "birthYear": 1993,
+      "sourceUrl": "https://www.tf1info.fr/actualite/fiche-joueur-charles-ollivon-13408/",
+      "birthDateAsPublished": "11/05/1993",
+      "verification": "verified_explicit_birth_date",
+      "reviewRequired": false
     }
   ]
 }
