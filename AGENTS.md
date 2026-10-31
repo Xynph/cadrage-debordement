@@ -93,3 +93,10 @@ Cette section précise le fonctionnement en parallèle déjà autorisé par l'ut
 - Garder #73 ouverte ; ne jamais y publier de jeton, clé API, sauvegarde personnelle ou secret.
 - Pour les travaux de l'autre compte, prendre les **derniers commentaires** et le **GitHub actuel** comme références, non un ancien rapport de chat.
 - Les règles de CI, vérification du dernier SHA et fusion réservée au compte principal restent intégralement en vigueur.
+
+
+## Projet de double intégration — non activé sans décision et protections GitHub
+
+La gouvernance permettant aux deux comptes de fusionner leurs propres PR est proposée dans `docs/gouvernance-deux-integrateurs.md`. **Tant que le propriétaire n'a pas approuvé et activé les protections de `main`, le compte principal reste le seul responsable des fusions.** Cette section ne constitue pas une autorisation implicite.
+
+Prérequis à une transition : PR approuvée, protection/ruleset réellement appliqué à `main` (aucun bypass, contrôles obligatoires à jour et PR exigée), CI `Tests JavaScript / Validation CI` verte sur le dernier SHA, sauvegardes compatibles et revue des conflits. Privilégier la merge queue de GitHub, si disponible et correctement configurée. Les réservations de l'issue #73 ne sont pas des verrous. En l'absence de preuve d'une protection serveur stricte : **STOP, aucune fusion supplémentaire**. Après chaque fusion, vérifier la CI push sur le SHA résultant et avertir l'autre compte dans #73.
