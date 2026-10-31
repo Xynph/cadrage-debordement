@@ -1,0 +1,456 @@
+{
+  "schema": "data06-wikipedia-birth-year-evidence-v1",
+  "scope": "Birth years explicitly published in 2025-26 Wikipedia club rosters; no inference of 2026-27 affiliation or age-based years; duplicate sources excluded.",
+  "records": [
+    {
+      "club": "agen",
+      "sourceRecordId": "1890",
+      "name": "Cyril Deligny",
+      "birthYear": 1992,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "993",
+      "name": "Pierre Jouvin",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "986",
+      "name": "Santiago Socino",
+      "birthYear": 1992,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "969",
+      "name": "Florent Guion",
+      "birthYear": 1993,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "973",
+      "name": "Hans Lombard-Buret",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "962",
+      "name": "William Demotte",
+      "birthYear": 1991,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "965",
+      "name": "Javier Eissmann",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "975",
+      "name": "John Madigan",
+      "birthYear": 1994,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "39",
+      "name": "Denis Marchois",
+      "birthYear": 1994,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "1892",
+      "name": "Taniela Matakaiongo",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "958",
+      "name": "Matthieu Bonnet",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "964",
+      "name": "Arnaud Duputs",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "990",
+      "name": "Tomasi Fineanganofo",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "992",
+      "name": "Valentin Gayraud",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "971",
+      "name": "Julien Lebian",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "957",
+      "name": "Dorian Bellot",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "1891",
+      "name": "Craig Willis",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "991",
+      "name": "Clément Garrigues",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "45",
+      "name": "Peyo Muscarditz",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "984",
+      "name": "Kolinio Ramoka",
+      "birthYear": 1994,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "996",
+      "name": "Dylan Cazemajou",
+      "birthYear": 2006,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "450",
+      "name": "Louis Dupichot",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "966",
+      "name": "Iban Etcheverry",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "995",
+      "name": "Lucas Martins",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1039",
+      "name": "Basa Khonelidze",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1020",
+      "name": "Luka Nioradze",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1012",
+      "name": "Gymaël Jean-Jacques",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1013",
+      "name": "Giorgi Kartvelishvili",
+      "birthYear": 1991,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1026",
+      "name": "Robert Rodgers",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1038",
+      "name": "Skip Jongejan",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1027",
+      "name": "Martial Rolland",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1042",
+      "name": "Mehdi Slamani",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1004",
+      "name": "Théo Cambon",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1035",
+      "name": "Tim De Jong",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1010",
+      "name": "Hugo Huurman",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1003",
+      "name": "Aleksandre Burduli",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1895",
+      "name": "Viliami Taulani",
+      "birthYear": 1997,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1030",
+      "name": "Didier Tison",
+      "birthYear": 1993,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1037",
+      "name": "Boris Hadinegoro",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "998",
+      "name": "Tedo Abzhandadze",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1001",
+      "name": "Hugo Bastard",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1044",
+      "name": "Karsen Talalua",
+      "birthYear": 2004,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1134",
+      "name": "François Vergnaud",
+      "birthYear": 1997,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1043",
+      "name": "Angus Staniforth",
+      "birthYear": 2004,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1029",
+      "name": "Jake Strachan",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    }
+  ]
+}
