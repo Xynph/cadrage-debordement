@@ -1,0 +1,30 @@
+name: V53 audit de carrieres independant
+on:
+  pull_request:
+    branches: [feature/v51-world-simulation]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit-v53:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verification syntaxe et contrats
+        run: |
+          node --check tests/v53-career-audit.cjs
+          node tests/v46-v51-contracts.cjs
+      - name: V53 3600 saisons et 240 reprises
+        env:
+          CD_V53_REPORT: v53-audit-report.json
+        run: timeout 900s node tests/v53-career-audit.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v53-career-audit
+          path: v53-audit-report.json
+          if-no-files-found: ignore
