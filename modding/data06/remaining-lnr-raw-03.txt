@@ -1,0 +1,126 @@
+14089|SU Agen|Arrière|18 ans|France
+12475|SU Agen|Centre|1m77|93 kg|22 ans|Australie
+25074|AS Béziers Hérault|1ère ligne|1m90|136 kg|27 ans|Nouvelle Zélande
+965|AS Béziers Hérault|1ère ligne|1m80|104 kg|23 ans|Géorgie
+3477|AS Béziers Hérault|2ème ligne|2m01|118 kg|30 ans|Grande-Bretagne
+116|AS Béziers Hérault|3ème ligne|1m93|100 kg|24 ans|Fidji
+24980|AS Béziers Hérault|3ème ligne|21 ans|Afrique du Sud
+24979|AS Béziers Hérault|Demi de mêlée|18 ans|Angleterre
+826|AS Béziers Hérault|Demi de mêlée|1m68|73 kg|32 ans|France
+13713|AS Béziers Hérault|Ailier|1m83|100 kg|21 ans|Afrique du Sud
+13815|AS Béziers Hérault|Arrière|1m79|79 kg|24 ans|Afrique du Sud
+10780|AS Béziers Hérault|Centre|1m88|100 kg|34 ans|Tonga
+11982|AS Béziers Hérault|Centre|1m80|79 kg|23 ans|France
+12587|FC Grenoble Rugby|1ère ligne|19 ans|France
+13458|FC Grenoble Rugby|2ème ligne|20 ans|Afrique du Sud
+2667|FC Grenoble Rugby|2ème ligne|2m05|117 kg|29 ans|Italie
+10988|FC Grenoble Rugby|2ème ligne|1m98|121 kg|32 ans|Nouvelle Zélande
+11846|FC Grenoble Rugby|3ème ligne|1m93|113 kg|27 ans|Nouvelle Zélande
+13795|FC Grenoble Rugby|3ème ligne|1m95|117 kg|25 ans|Fidji
+13462|FC Grenoble Rugby|Demi de mêlée|20 ans|France
+9423|FC Grenoble Rugby|Demi d'ouverture|1m80|89 kg|33 ans|Grande-Bretagne
+2004|FC Grenoble Rugby|Centre|1m82|107 kg|30 ans|Fidji
+12493|FC Grenoble Rugby|Centre|19 ans|France
+1749|US Montauban|2ème ligne|1m94|121 kg|24 ans|France
+202|US Montauban|2ème ligne|2m04|110 kg|22 ans|France
+25011|US Montauban|2ème ligne|18 ans|Fidji
+239|US Montauban|2ème ligne|2m01|121 kg|28 ans|Etats-Unis
+12675|US Montauban|2ème ligne|1m98|108 kg|23 ans|Argentine
+25060|US Montauban|2ème ligne|18 ans|Afrique du Sud
+25007|US Montauban|3ème ligne|1m81|107 kg|25 ans|Nouvelle Zélande
+1329|US Montauban|3ème ligne|1m88|103 kg|35 ans|France
+13758|US Montauban|3ème ligne|19 ans|Fidji
+13811|US Montauban|3ème ligne|1m96|113 kg|34 ans|Tonga
+2225|US Montauban|3ème ligne|20 ans|Hongrie
+12373|US Montauban|Demi de mêlée|1m78|80 kg|32 ans|Irlande
+25010|US Montauban|Demi d'ouverture|26 ans|Australie
+427|US Montauban|Demi d'ouverture|1m76|94 kg|28 ans|France
+25009|US Montauban|Centre|1m85|97 kg|26 ans|France
+25062|RC Narbonnais|1ère ligne|1m88|123 kg|27 ans|Nouvelle Zélande
+2426|RC Narbonnais|1ère ligne|1m84|118 kg|21 ans|France
+25067|RC Narbonnais|2ème ligne|1m98|124 kg|30 ans|Afrique du Sud
+352|RC Narbonnais|3ème ligne|1m90|121 kg|32 ans|Australie
+25066|RC Narbonnais|3ème ligne|1m91|113 kg|24 ans|Nouvelle Zélande
+2120|RC Narbonnais|3ème ligne|1m92|103 kg|22 ans|France
+10546|RC Narbonnais|Demi de mêlée|1m81|92 kg|32 ans|Afrique du Sud
+3230|RC Narbonnais|Arrière|1m77|80 kg|24 ans|France
+25065|RC Narbonnais|Arrière|1m80|106 kg|26 ans|Nouvelle Zélande
+25070|RC Narbonnais|Arrière|20 ans|France
+2575|Nissa Rugby|1ère ligne|1m81|122 kg|37 ans|Nouvelle Zélande
+1458|Nissa Rugby|3ème ligne|1m89|122 kg|32 ans|Fidji
+13812|Nissa Rugby|3ème ligne|1m82|104 kg|28 ans|Nouvelle Zélande
+81|Nissa Rugby|Ailier|1m80|94 kg|26 ans|Fidji
+12690|Stade Aurillacois|1ère ligne|20 ans|Géorgie
+1871|Stade Aurillacois|2ème ligne|1m91|117 kg|21 ans|Australie
+25023|Stade Aurillacois|2ème ligne|23 ans|Géorgie
+1586|Stade Aurillacois|3ème ligne|1m95|113 kg|33 ans|Irlande
+25021|Stade Aurillacois|3ème ligne|1m96|111 kg|27 ans|Australie
+12366|Stade Aurillacois|Demi de mêlée|1m75|65 kg|22 ans|France
+13439|Stade Aurillacois|Demi de mêlée|1m82|86 kg|29 ans|Australie
+1578|Stade Aurillacois|Centre|1m85|87 kg|25 ans|Pays-Bas
+1659|Stade Aurillacois|Centre|1m86|96 kg|28 ans|Fidji
+12207|Stade Aurillacois|Centre|1m88|112 kg|27 ans|Nouvelle Zélande
+13721|Stade Aurillacois|Centre|1m88|92 kg|31 ans|Australie
+13694|Oyonnax Rugby|1ère ligne|19 ans|Géorgie
+13195|Oyonnax Rugby|1ère ligne|1m83|110 kg|31 ans|Australie
+25087|Oyonnax Rugby|1ère ligne|1m83|122 kg|34 ans|Nouvelle Zélande
+1670|Oyonnax Rugby|2ème ligne|19 ans|France
+1691|Oyonnax Rugby|2ème ligne|2m04|114 kg|36 ans|Australie
+1671|Oyonnax Rugby|3ème ligne|20 ans|France
+754|Oyonnax Rugby|3ème ligne|1m92|115 kg|26 ans|France
+12448|Oyonnax Rugby|3ème ligne|20 ans|France
+13394|Oyonnax Rugby|Demi de mêlée|19 ans|France
+13729|Oyonnax Rugby|Demi d'ouverture|20 ans|Géorgie
+895|Oyonnax Rugby|Ailier|1m89|99 kg|30 ans|France
+849|Oyonnax Rugby|Centre|1m86|102 kg|27 ans|Espagne
+13892|Soyaux-Angoulême XV|1ère ligne|1m96|138 kg|29 ans|Australie
+13555|Soyaux-Angoulême XV|1ère ligne|20 ans|Fidji
+2499|Soyaux-Angoulême XV|2ème ligne|2m08|123 kg|36 ans|Australie
+810|Soyaux-Angoulême XV|2ème ligne|1m98|118 kg|29 ans|Canada
+1621|Soyaux-Angoulême XV|2ème ligne|1m94|124 kg|30 ans|Géorgie
+13684|Soyaux-Angoulême XV|2ème ligne|21 ans|Fidji
+789|Soyaux-Angoulême XV|3ème ligne|1m90|100 kg|30 ans|France
+12598|Soyaux-Angoulême XV|3ème ligne|22 ans|Fidji
+24996|Soyaux-Angoulême XV|Ailier|17 ans|Fidji
+2047|Soyaux-Angoulême XV|Arrière|1m86|83 kg|27 ans|France
+11875|Soyaux-Angoulême XV|Arrière|1m87|85 kg|21 ans|France
+24995|Soyaux-Angoulême XV|Centre|19 ans|Fidji
+11743|Soyaux-Angoulême XV|Centre|1m83|83 kg|20 ans|France
+24981|Biarritz Olympique PB|1ère ligne|1m96|140 kg|30 ans|Nouvelle Zélande
+13648|Biarritz Olympique PB|2ème ligne|1m98|116 kg|20 ans|Italie
+11858|Biarritz Olympique PB|2ème ligne|2m01|122 kg|22 ans|France
+10731|Biarritz Olympique PB|2ème ligne|1m98|107 kg|28 ans|Afrique du Sud
+2087|Biarritz Olympique PB|3ème ligne|1m90|97 kg|29 ans|France
+10717|Biarritz Olympique PB|3ème ligne|1m89|127 kg|31 ans|Tonga
+25084|Biarritz Olympique PB|3ème ligne|26 ans|Canada
+251|Biarritz Olympique PB|Demi de mêlée|1m78|77 kg|26 ans|Espagne
+11678|Biarritz Olympique PB|Centre|21 ans|France
+13685|Biarritz Olympique PB|Centre|18 ans|France
+12654|Valence Romans|1ère ligne|1m80|126 kg|28 ans|Australie
+12754|Valence Romans|3ème ligne|22 ans|France
+12405|Valence Romans|3ème ligne|1m85|105 kg|35 ans|France
+13408|Valence Romans|3ème ligne|1m83|103 kg|26 ans|Nouvelle Zélande
+551|Valence Romans|Demi de mêlée|1m77|105 kg|26 ans|Fidji
+25020|USON Nevers|1ère ligne|20 ans|Italie
+12619|USON Nevers|1ère ligne|1m84|106 kg|21 ans|Afrique du Sud
+13629|USON Nevers|1ère ligne|19 ans|Géorgie
+366|USON Nevers|2ème ligne|2m04|118 kg|24 ans|Allemagne
+11672|USON Nevers|2ème ligne|2m04|133 kg|23 ans|Australie
+25015|USON Nevers|2ème ligne|19 ans|Fidji
+25016|USON Nevers|2ème ligne|19 ans|Nouvelle Zélande
+1475|USON Nevers|3ème ligne|1m88|107 kg|23 ans|Afrique du Sud
+1532|USON Nevers|3ème ligne|1m96|108 kg|35 ans|France
+13834|USON Nevers|3ème ligne|19 ans|Géorgie
+12651|USON Nevers|Arrière|20 ans|France
+12563|USON Nevers|Centre|21 ans|Fidji
+12412|CA Brive|1ère ligne|1m80|120 kg|33 ans|Angleterre
+12703|CA Brive|2ème ligne|20 ans|Afrique du Sud
+2643|CA Brive|2ème ligne|2m00|128 kg|35 ans|France
+13754|CA Brive|2ème ligne|19 ans|Grande-Bretagne
+25056|CA Brive|2ème ligne|19 ans|Afrique du Sud
+13621|CA Brive|3ème ligne|19 ans|France
+13587|CA Brive|3ème ligne|1m87|108 kg|34 ans|Afrique du Sud
+612|CA Brive|Demi de mêlée|1m76|82 kg|30 ans|France
+13588|CA Brive|Demi d'ouverture|1m83|91 kg|29 ans|Angleterre
+390|CA Brive|Centre|1m86|98 kg|23 ans|Angleterre
+2431|CA Brive|Centre|1m92|105 kg|25 ans|Fidji

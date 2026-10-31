@@ -7,10 +7,10 @@ test('captures multiple full roster pages with manifest, preserves failures',asy
  const out=fs.mkdtempSync(path.join(os.tmpdir(),'data06-'));
  try{
   const seen=[];
-  const fake=async u=>{seen.push(u);if(u.includes('brive'))return {ok:false,status:429};return {ok:true,text:async()=>'<html><body>'+ 'Effectif Joueurs '.repeat(75)+'</body></html>'}};
+  const fake=async u=>{seen.push(u);if(u.includes('brive'))return {ok:false,status:500};return {ok:true,text:async()=>'<html><body><div id="effectif-list"><div class="fd-eff-row">'+ 'Player '.repeat(200)+'</div></div></body></html>'}};
   const r=await collect({slugs:['clermont','brive','toulouse'],out,fetchFn:fake,paceMs:0});
   assert.equal(seen.length,3);assert.equal(r.results.filter(x=>x.ok).length,2);
-  assert.equal(r.results[1].error,'HTTP 429');assert.ok(fs.existsSync(path.join(out,'toulouse.html')));
+  assert.equal(r.results[1].error,'HTTP 500');assert.ok(fs.existsSync(path.join(out,'stade-toulousain.html')));
   assert.equal(JSON.parse(fs.readFileSync(path.join(out,'manifest.json'))).results.length,3);
  }finally{fs.rmSync(out,{recursive:true,force:true})}
 });

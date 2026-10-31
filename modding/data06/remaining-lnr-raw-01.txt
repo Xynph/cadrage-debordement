@@ -1,0 +1,126 @@
+711|ASM Clermont|2ème ligne|1m98|109 kg|28 ans|France
+460|ASM Clermont|2ème ligne|1m98|122 kg|31 ans|Fidji
+650|ASM Clermont|3ème ligne|1m83|101 kg|21 ans|France
+1550|ASM Clermont|3ème ligne|1m87|112 kg|25 ans|France
+13514|ASM Clermont|3ème ligne|18 ans|France
+13371|ASM Clermont|Demi d'ouverture|1m84|94 kg|28 ans|Nouvelle Zélande
+12593|ASM Clermont|Ailier|19 ans|Espagne
+25078|ASM Clermont|Ailier|17 ans|Fidji
+13517|ASM Clermont|Centre|19 ans|France
+13522|ASM Clermont|Centre|18 ans|France
+24990|ASM Clermont|Centre|1m92|105 kg|28 ans|Nouvelle Zélande
+1885|Aviron Bayonnais|1ère ligne|1m87|116 kg|31 ans|Argentine
+13711|Aviron Bayonnais|1ère ligne|1m83|119 kg|21 ans|Espagne
+2391|Aviron Bayonnais|2ème ligne|2m02|136 kg|32 ans|Samoa occidental
+13651|Aviron Bayonnais|2ème ligne|21 ans|Argentine
+2569|Aviron Bayonnais|2ème ligne|2m03|120 kg|27 ans|Grande-Bretagne
+14043|Aviron Bayonnais|2ème ligne|17 ans|Fidji
+1378|Aviron Bayonnais|2ème ligne|2m00|113 kg|24 ans|France
+25053|Aviron Bayonnais|3ème ligne|18 ans|France
+25054|Aviron Bayonnais|3ème ligne|18 ans|Géorgie
+12599|Aviron Bayonnais|3ème ligne|18 ans|France
+13649|Aviron Bayonnais|Demi de mêlée|1m64|77 kg|30 ans|Afrique du Sud
+11937|Aviron Bayonnais|Demi de mêlée|1m78|81 kg|19 ans|France
+299|Aviron Bayonnais|Ailier|1m86|92 kg|29 ans|République Démocratique du Congo
+707|Aviron Bayonnais|Arrière|1m86|96 kg|26 ans|France
+13653|Aviron Bayonnais|Arrière|19 ans|Australie
+13731|Aviron Bayonnais|Centre|20 ans|Nouvelle Zélande
+12618|Aviron Bayonnais|Centre|20 ans|France
+12620|Aviron Bayonnais|Centre|21 ans|Australie
+12628|Aviron Bayonnais|Centre|1m85|108 kg|35 ans|Grande-Bretagne
+13717|Castres Olympique|1ère ligne|19 ans|Nouvelle Zélande
+13733|Castres Olympique|1ère ligne|20 ans|Géorgie
+12516|Castres Olympique|1ère ligne|1m83|120 kg|35 ans|Angleterre
+12423|Castres Olympique|1ère ligne|22 ans|France
+11761|Castres Olympique|2ème ligne|2m03|128 kg|26 ans|Nouvelle Zélande
+556|Castres Olympique|3ème ligne|1m90|111 kg|25 ans|Nouvelle Zélande
+384|Castres Olympique|3ème ligne|1m94|126 kg|33 ans|Nouvelle Zélande
+24984|Castres Olympique|3ème ligne|29 ans|Nouvelle Zélande
+11837|Castres Olympique|3ème ligne|21 ans|France
+13778|Castres Olympique|3ème ligne|18 ans|Fidji
+13370|Castres Olympique|Demi d'ouverture|18 ans|France
+1562|Castres Olympique|Ailier|1m89|107 kg|27 ans|Cameroun
+13521|Castres Olympique|Ailier|20 ans|France
+13375|Castres Olympique|Ailier|19 ans|France
+24985|Castres Olympique|Arrière|18 ans|France
+11820|Castres Olympique|Centre|1m88|100 kg|31 ans|Nouvelle Zélande
+24986|Castres Olympique|Centre|17 ans|Fidji
+562|Castres Olympique|Centre|20 ans|France
+569|Castres Olympique|Centre|21 ans|France
+11791|LOU Rugby|1ère ligne|1m89|132 kg|23 ans|Nouvelle Zélande
+1117|LOU Rugby|3ème ligne|1m90|110 kg|22 ans|France
+8958|LOU Rugby|3ème ligne|1m84|108 kg|31 ans|Grande-Bretagne
+13719|LOU Rugby|3ème ligne|19 ans|France
+1052|LOU Rugby|3ème ligne|1m91|105 kg|26 ans|Nouvelle Zélande
+11474|LOU Rugby|Demi d'ouverture|1m80|89 kg|34 ans|Irlande
+12429|LOU Rugby|Demi d'ouverture|20 ans|France
+2277|LOU Rugby|Ailier|1m87|97 kg|27 ans|Fidji
+11790|LOU Rugby|Ailier|22 ans|Géorgie
+12099|LOU Rugby|Ailier|1m72|81 kg|20 ans|France
+12666|LOU Rugby|Arrière|20 ans|France
+1074|LOU Rugby|Centre|1m80|97 kg|26 ans|Nouvelle Zélande
+13467|LOU Rugby|Centre|20 ans|Géorgie
+12504|LOU Rugby|Centre|1m91|109 kg|20 ans|France
+13410|LOU Rugby|Centre|1m90|97 kg|28 ans|Fidji
+574|Montpellier Hérault Rugby|1ère ligne|1m92|124 kg|35 ans|France
+13546|Montpellier Hérault Rugby|1ère ligne|19 ans|France
+1383|Montpellier Hérault Rugby|2ème ligne|2m01|124 kg|26 ans|Canada
+13545|Montpellier Hérault Rugby|2ème ligne|17 ans|Fidji
+12542|Montpellier Hérault Rugby|2ème ligne|19 ans|Géorgie
+25080|Montpellier Hérault Rugby|2ème ligne|16 ans|Géorgie
+12487|Montpellier Hérault Rugby|3ème ligne|20 ans|Angleterre
+12461|Montpellier Hérault Rugby|3ème ligne|1m91|134 kg|33 ans|Angleterre
+13547|Montpellier Hérault Rugby|3ème ligne|18 ans|Fidji
+13411|Montpellier Hérault Rugby|3ème ligne|20 ans|France
+13452|Montpellier Hérault Rugby|Demi de mêlée|1m78|88 kg|33 ans|Ecosse
+11987|Montpellier Hérault Rugby|Demi d'ouverture|1m88|91 kg|30 ans|Italie
+13234|Montpellier Hérault Rugby|Demi d'ouverture|18 ans|France
+13693|Montpellier Hérault Rugby|Ailier|20 ans|Fidji
+13735|Montpellier Hérault Rugby|Arrière|1m86|93 kg|32 ans|Australie
+1375|Montpellier Hérault Rugby|Centre|1m89|100 kg|24 ans|Irlande
+13628|Montpellier Hérault Rugby|Centre|17 ans|France
+12350|Montpellier Hérault Rugby|Centre|19 ans|France
+1053|Montpellier Hérault Rugby|Centre|1m78|98 kg|21 ans|Australie
+25013|Montpellier Hérault Rugby|Centre|18 ans|Fidji
+25014|Montpellier Hérault Rugby|Centre|17 ans|Australie
+2365|RC Toulon|1ère ligne|1m82|112 kg|32 ans|France
+12243|RC Toulon|2ème ligne|2m04|119 kg|21 ans|Angleterre
+12723|RC Toulon|2ème ligne|20 ans|Espagne
+13730|RC Toulon|2ème ligne|19 ans|Géorgie
+12457|RC Toulon|2ème ligne|18 ans|Espagne
+25059|RC Toulon|2ème ligne|2m03|124 kg|22 ans|Argentine
+12152|RC Toulon|2ème ligne|20 ans|France
+1373|RC Toulon|3ème ligne|1m91|113 kg|29 ans|Angleterre
+13641|RC Toulon|3ème ligne|1m91|113 kg|22 ans|France
+12567|RC Toulon|3ème ligne|1m90|111 kg|30 ans|Grande-Bretagne
+12695|RC Toulon|3ème ligne|19 ans|France
+11845|RC Toulon|Demi de mêlée|1m80|87 kg|28 ans|Grande-Bretagne
+13722|RC Toulon|Demi d'ouverture|18 ans|France
+25043|RC Toulon|Ailier|24 ans|Fidji
+13798|RC Vannes|1ère ligne|1m89|119 kg|35 ans|Allemagne
+25052|RC Vannes|1ère ligne|19 ans|Australie
+13836|RC Vannes|1ère ligne|19 ans|Australie
+14049|RC Vannes|1ère ligne|1m80|135 kg|33 ans|Nouvelle Zélande
+13704|RC Vannes|2ème ligne|18 ans|Australie
+13476|RC Vannes|2ème ligne|20 ans|Pays-Bas
+2554|RC Vannes|3ème ligne|1m88|114 kg|33 ans|Nouvelle Zélande
+1886|RC Vannes|Demi de mêlée|1m73|71 kg|30 ans|France
+12765|RC Vannes|Ailier|21 ans|Fidji
+13841|RC Vannes|Ailier|1m89|90 kg|28 ans|Angleterre
+2205|RC Vannes|Centre|1m85|101 kg|24 ans|Fidji
+25048|RC Vannes|Centre|19 ans|Géorgie
+1905|RC Vannes|Centre|1m84|95 kg|30 ans|France
+13705|RC Vannes|Centre|20 ans|Australie
+13539|RC Vannes|Centre|17 ans|France
+11748|RC Vannes|Centre|1m81|100 kg|28 ans|Nouvelle Zélande
+13764|Racing 92|1ère ligne|1m84|148 kg|30 ans|Tonga
+12646|Racing 92|1ère ligne|1m78|118 kg|20 ans|France
+12565|Racing 92|1ère ligne|1m75|130 kg|20 ans|Nouvelle Zélande
+13604|Racing 92|2ème ligne|2m02|133 kg|32 ans|Grande-Bretagne
+13813|Racing 92|2ème ligne|19 ans|Afrique du Sud
+11803|Racing 92|3ème ligne|1m85|100 kg|22 ans|Zimbabwe
+12450|Racing 92|3ème ligne|19 ans|France
+13613|Racing 92|Ailier|1m83|93 kg|26 ans|Fidji
+3236|Racing 92|Arrière|20 ans|Italie
+12647|Racing 92|Centre|1m95|94 kg|32 ans|Grande-Bretagne
+12691|Racing 92|Centre|18 ans|France
