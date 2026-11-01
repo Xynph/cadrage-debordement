@@ -13,7 +13,7 @@ test('LNR quatre strategies, quatre saisons, deux graines, entrainement et renco
  const results=[];
  for(const seed of SEEDS)for(const mode of MODES){
   const t=boot(seed),run=t.run,years=[];let matches=0,rotations=0,recovery=0,minutes=0;
-  run('var auditMinutes=0;var originalMatchFactory=createRugbyMatch;createRugbyMatch=function(pair,legacy,automated,preparation){const l=originalMatchFactory(pair,legacy,automated,preparation);if(pair.includes(S.club)){const originalAdvance=advanceRugby;/* feuille inspectee sans modifier ses choix */auditMinutes+=l.sheets[pair.indexOf(S.club)].on.filter(Boolean).length*80;}return l;}');
+  run('var auditMinutes=0;var auditLastMatch=null;var originalMatchFactory=createRugbyMatch;createRugbyMatch=function(pair,legacy,automated,preparation){const l=originalMatchFactory(pair,legacy,automated,preparation);if(automated&&pair.includes(S.club))auditLastMatch=l;return l;}');
   for(let season=1;season<=SEASONS;season++){
    let rounds=0;const start=snapshot(run);let proposed=0,trained=0;
    while(run("S.phase!=='ended'")&&rounds<42){
@@ -28,7 +28,7 @@ test('LNR quatre strategies, quatre saisons, deux graines, entrainement et renco
     }
     run('trainWeek()');trained++;
     // Match en mode simulation native; depuis #186 la feuille du manager est conservee.
-    run('finishRound()');rounds++;matches++;
+    run('finishRound()');run('if(auditLastMatch){auditMinutes+=Object.values(auditLastMatch.sheets[auditLastMatch.pair.indexOf(S.club)].minutes).reduce((a,b)=>a+b,0);auditLastMatch=null}');rounds++;matches++;
    }
    assert.equal(run('S.phase'),'ended');
    assert.equal(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),true,'sauvegarde saine');
@@ -38,9 +38,9 @@ test('LNR quatre strategies, quatre saisons, deux graines, entrainement et renco
   minutes=run('auditMinutes');
   assert.equal(years.length,SEASONS);
   assert(years.every(y=>y.rounds>0&&y.trained===y.rounds));
-  results.push({seed,mode,matches,rotations,recovery,minutesProxy:minutes,years});
+  results.push({seed,mode,matches,rotations,recovery,minutes:minutes,years});
  }
  assert.equal(results.length,SEEDS.length*MODES.length);
  for(const seed of SEEDS)assert.equal(new Set(results.filter(x=>x.seed===seed).map(x=>x.matches)).size,1,'calendriers comparables');
- console.log(JSON.stringify({passed:true,kind:'observational; minutesProxy counts nominal starters, not measured minutes',results}));
+ console.log(JSON.stringify({passed:true,kind:'observational; minutes are native recorded match minutes',results}));
 });
