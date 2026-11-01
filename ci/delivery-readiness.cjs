@@ -3,7 +3,7 @@
 const fs = require('node:fs');
 const {execFileSync} = require('node:child_process');
 const {decide} = require('./release-gate.cjs');
-const {fullCI, latestCI} = require('./chat-release.cjs');
+const {fullCI} = require('./chat-release.cjs');
 const REPO = 'Xynph/cadrage-debordement';
 const SHA = /^[0-9a-f]{40}$/;
 const JOBS = ['classification', ...[1,2,3,4,5].map(i => `Suites ${i}/5`), 'Validation CI'];
@@ -12,12 +12,29 @@ function completeJobs(jobs) {
   return Array.isArray(jobs) && jobs.length === JOBS.length && JOBS.every(name =>
     jobs.filter(j => j.name === name && j.status === 'completed' && j.conclusion === 'success').length === 1);
 }
+// GitHub conserve l'ID lors d'une relance : updated_at distingue l'activité récente.
+function activity(run) {
+  const time = Date.parse(run.updated_at ?? run.created_at);
+  need(Number.isFinite(time), 'Date de tentative CI absente ou invalide');
+  return time;
+}
+function order(a, b) {
+  const blocked = r => Number(r.status !== 'completed' || r.conclusion !== 'success');
+  return activity(b) - activity(a) || blocked(b) - blocked(a) || b.id - a.id;
+}
+function latestMain(runs, sha, id) {
+  const candidates = runs.filter(r => r.workflow_id === id && r.head_sha === sha && r.head_branch === 'main' &&
+    ['push','workflow_dispatch'].includes(r.event));
+  candidates.forEach(activity);
+  return candidates.sort(order)[0];
+}
 function latestRuns(runs, sha) {
   const selected = new Map();
   for (const r of runs) {
     if (r.head_sha !== sha || r.event !== 'pull_request') continue;
     need(Number.isSafeInteger(r.id) && Number.isSafeInteger(r.workflow_id), 'Identité de run absente');
-    if (!selected.has(r.workflow_id) || selected.get(r.workflow_id).id < r.id) selected.set(r.workflow_id, r);
+    activity(r);
+    if (!selected.has(r.workflow_id) || order(r, selected.get(r.workflow_id)) < 0) selected.set(r.workflow_id, r);
   }
   return [...selected.values()].sort((a,b) => a.workflow_id - b.workflow_id);
 }
@@ -60,7 +77,7 @@ function paged(api, endpoint, key) {
   throw Error('Pagination excessive : bilan refusé plutôt que tronqué');
 }
 function fingerprint(runs) {
-  return JSON.stringify(runs.map(r => [r.id,r.workflow_id,r.head_sha,r.status,r.conclusion,r.run_attempt || 1]).sort((a,b)=>a[0]-b[0]));
+  return JSON.stringify(runs.map(r => [r.id,r.workflow_id,r.head_sha,r.status,r.conclusion,r.run_attempt || 1,r.updated_at,r.created_at]).sort((a,b)=>a[0]-b[0]));
 }
 function inspect(number, expected, api) {
   need(Number.isSafeInteger(number) && number > 0 && SHA.test(expected), 'PR et SHA40 requis');
@@ -74,13 +91,13 @@ function inspect(number, expected, api) {
   const getMain = () => paged(api, 'actions/workflows/tests.yml/runs?branch=main', 'workflow_runs');
   const runs = getRuns(), mainRuns = getMain();
   const selected = latestRuns(runs, expected);
-  const mainRun = latestCI(mainRuns, main, workflow.id);
+  const mainRun = latestMain(mainRuns, main, workflow.id);
   const jobs = {};
   for (const r of selected) jobs[r.id] = paged(api, `actions/runs/${r.id}/jobs?filter=latest`, 'jobs');
   const mainJobs = mainRun ? paged(api, `actions/runs/${mainRun.id}/jobs?filter=latest`, 'jobs') : [];
   const result = aggregate({pr,expected,main,workflow,behind,runs,jobs,mainRun,mainJobs});
   need(fingerprint(selected) === fingerprint(latestRuns(getRuns(), expected)), 'CI PR modifiée pendant le bilan');
-  need(fingerprint(mainRun?[mainRun]:[]) === fingerprint([latestCI(getMain(),main,workflow.id)].filter(Boolean)), 'CI main modifiée pendant le bilan');
+  need(fingerprint(mainRun?[mainRun]:[]) === fingerprint([latestMain(getMain(),main,workflow.id)].filter(Boolean)), 'CI main modifiée pendant le bilan');
   const fresh = api(`pulls/${number}`);
   need(fresh.head?.sha === expected && fresh.state === pr.state && fresh.draft === pr.draft &&
     fresh.mergeable === pr.mergeable && fresh.mergeable_state === pr.mergeable_state &&

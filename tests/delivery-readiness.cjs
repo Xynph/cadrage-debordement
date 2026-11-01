@@ -39,15 +39,15 @@ test('dernière tentative rouge retenue et workflow auxiliaire bloquant',()=>{
   s.runs=[run(2),{...run(4,b,'pull_request',20),name:'Audit',conclusion:'failure'}];s.jobs[4]=jobs();assert.equal(aggregate(s).ready,false);
 });
 function fixture(options={}) {
-  const s=snapshot(), calls=[];let mainReads=0, prReads=0;
+  const s=snapshot(), calls=[];if(options.badMainDate)s.mainRun.updated_at='invalide';let mainReads=0, prReads=0, runListReads=0;
   const api=(p,method='GET')=>{
     calls.push([p,method]);assert.equal(method,'GET');
     if(p==='git/ref/heads/main')return {object:{sha:++mainReads>1&&options.moveMain?c:a}};
     if(p==='pulls/204')return {...pr(),head:{...pr().head,sha:++prReads>1&&options.moveHead?c:b}};
     if(p==='actions/workflows/tests.yml')return s.workflow;
     if(p.startsWith('compare/'))return {behind_by:0,status:'ahead'};
-    if(p.startsWith('actions/runs?'))return {workflow_runs:options.pages?Array(100).fill(run(2)):s.runs};
-    if(p.startsWith('actions/workflows/tests.yml/runs?'))return {workflow_runs:[s.mainRun]};
+    if(p.startsWith('actions/runs?')){runListReads++;return {workflow_runs:options.pages?Array(100).fill(run(2)):options.rerunDuring&&runListReads>1?[...s.runs,{...run(1),run_attempt:2,updated_at:'2026-11-01T00:01:00Z',conclusion:'failure'}]:s.runs};}
+    if(p.startsWith('actions/workflows/tests.yml/runs?'))return {workflow_runs:options.mainRerun?[s.mainRun,{...run(0,a,'push'),run_attempt:2,updated_at:'2026-11-01T00:01:00Z',conclusion:'failure'}]:[s.mainRun]};
     if(p.startsWith('actions/runs/'))return {jobs:jobs()};
     throw Error('unexpected '+p);
   };
@@ -88,4 +88,31 @@ test('workflow : pas de déclenchement automatique ou de code PR privilégié',(
 test('un nouveau run non associé ne laisse pas réutiliser un ancien succès',()=>{
  const s=snapshot();s.runs.push({...run(3),pull_requests:[],conclusion:'failure'});s.jobs[3]=jobs();
  assert.equal(aggregate(s).ready,false);
+});
+test('relance rouge plus récente d’un ancien ID : ancien succès non réutilisé',()=>{
+ const s=snapshot();s.runs.push({...run(1),run_attempt:2,updated_at:'2026-11-01T00:01:00Z',conclusion:'failure'});
+ s.jobs[1]=jobs();assert.equal(aggregate(s).ready,false);
+});
+test('égalité de date : une tentative en cours prévaut sur un succès',()=>{
+ const s=snapshot();s.runs.push({...run(1),run_attempt:2,updated_at:s.runs[0].created_at,status:'in_progress',conclusion:null});
+ s.jobs[1]=jobs();assert.equal(aggregate(s).ready,false);
+});
+
+test('relance rouge de main au même SHA : bilan bloqué',()=>{
+ const f=fixture({mainRerun:true});assert.equal(inspect(204,b,f.api).ready,false);
+});
+
+test('relance pendant la relecture : preuve devenue périmée refusée',()=>{
+ const f=fixture({rerunDuring:true});assert.throws(()=>inspect(204,b,f.api),/CI PR modifiée/);
+});
+test('un ancien échec réellement antérieur ne bloque pas un succès plus récent',()=>{
+ const s=snapshot();s.runs.push({...run(1),updated_at:'2026-10-31T23:00:00Z',conclusion:'failure'});
+ s.jobs[1]=jobs();assert.equal(aggregate(s).ready,true);
+});
+test('date CI invalide : aucune sélection devinée',()=>{
+ const s=snapshot();s.runs[0].updated_at='date-invalide';assert.throws(()=>aggregate(s),/Date de tentative/);
+});
+
+test('main unique à date invalide : bilan refusé',()=>{
+ const f=fixture({badMainDate:true});assert.throws(()=>inspect(204,b,f.api),/Date de tentative/);
 });

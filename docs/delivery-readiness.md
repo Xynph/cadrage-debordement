@@ -29,7 +29,7 @@ workflow_run ou pull_request ne lance ce workflow.
 Par défaut, seuls le journal et le résumé Actions sont produits. Le bilan :
 
 1. Lit la PR REST, le SHA de main, la comparaison Git et le workflow officiel.
-2. Agrège le dernier run de chaque workflow PR observé sur le SHA et associé à
+2. Agrège la dernière activité de tentative (updated_at puis ID) de chaque workflow PR observé sur le SHA et associé à
    cette PR, avec ses jobs paginés. Une ancienne réussite ne masque pas un run
    plus récent rouge ou en cours. Les jobs ignorés sont refusés : il peut donc
    être plus conservateur qu'un workflow ayant des jobs optionnels légitimes.
@@ -117,3 +117,16 @@ qu'après une fusion autorisée ultérieure : aucun essai live de dispatch ou de
 publication n'est revendiqué dans cette PR. La suite complète du jeu n'est pas
 rejouée localement pour ce chantier limité ; elle reste attendue sur GitHub.
 Les identifiants PR, SHA et résultats distants constatés figurent dans #73.
+
+
+### Correction après revue indépendante de réception
+
+La revue a reproduit un faux vert avec une relance rouge d'un ancien run :
+GitHub conserve le run ID. Le bilan trie désormais par activité `updated_at`
+(repli `created_at` si absent, date valide obligatoire), puis donne priorité à
+l'état non vert en cas d'égalité de date, puis ID. Ce choix s'applique aussi à
+la CI de main sans modifier les gates officiels. Les empreintes de relecture
+incluent les dates et le numéro de tentative. Tests : relance rouge ancienne,
+égalité de dates avec tentative en cours, relance de main, relance pendant la
+collecte, ancien échec antérieur et date invalide. Aucun changement du workflow
+ou d'activation automatique. Les résultats définitifs de la réception sont dans #73.
