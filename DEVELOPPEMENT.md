@@ -3,7 +3,7 @@
 > Journal partagé entre **deux comptes ChatGPT en alternance exclusive**, jamais actifs simultanément. Un seul intégrateur est désigné pendant une session, après passation dans l'issue #73. GitHub reste l'unique source de vérité. Ce document décrit l'état connu à la date de sa dernière mise à jour ; toujours le confronter aux commits, branches, pull requests et fichiers actuels avant de travailler.
 
 **Gouvernance en vigueur : PR #200 fusionnée le 1er novembre 2026 (`c04307abe4b825f6122e17272624d3bd8221e09b`).**  
-**Dernières intégrations constatées : V59 (PR #65, commit `4f194168`), puis coordination (PR #74, commit `8160a7c`). Vérifier à nouveau `main` avant toute intervention.**  
+**Dernière intégration vérifiée au 1er novembre 2026 : gouvernance exclusive PR #200, commit `c04307abe4b825f6122e17272624d3bd8221e09b` ; les PR #65 et #74 sont des jalons historiques, pas l'état courant. Vérifier `main` avant toute intervention.**  
 **Branche de référence : `main`.**
 
 **Règle courante prioritaire :** `AGENTS.md` sur `main` et les protections GitHub actives priment sur les anciennes indications historiques de ce journal. Les commentaires #73 sont des passations, pas des autorisations implicites. La règle est une seule session ChatGPT active, jamais de développement simultané entre comptes. Réserver les chemins, consigner les changements de rôle, conserver des preuves de tests et demander une autorisation distincte pour chaque fusion. Les comptes ne modifient jamais directement `main`.
