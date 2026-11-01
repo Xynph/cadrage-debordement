@@ -1,10 +1,12 @@
 # Journal de développement — Cadrage Débordement
 
-> Journal partagé entre **un compte développeur/producteur** et **un compte intégrateur unique**, pouvant travailler simultanément sur des branches et fichiers distincts. GitHub reste l'unique source de vérité. Ce document décrit l'état connu à la date de sa dernière mise à jour ; toujours le confronter aux commits, branches, pull requests et fichiers actuels avant de travailler.
+> Journal partagé entre **deux comptes ChatGPT en alternance exclusive**, jamais actifs simultanément. Un seul intégrateur est désigné pendant une session, après passation dans l'issue #73. GitHub reste l'unique source de vérité. Ce document décrit l'état connu à la date de sa dernière mise à jour ; toujours le confronter aux commits, branches, pull requests et fichiers actuels avant de travailler.
 
-**Mise à jour de gouvernance : 31 octobre 2026.**  
-**Dernières intégrations constatées : V59 (PR #65, commit `4f194168`), puis coordination (PR #74, commit `8160a7c`). Vérifier à nouveau `main` avant toute intervention.**  
+**Gouvernance en vigueur : PR #200 fusionnée le 1er novembre 2026 (`c04307abe4b825f6122e17272624d3bd8221e09b`).**  
+**Dernière intégration vérifiée au 1er novembre 2026 : gouvernance exclusive PR #200, commit `c04307abe4b825f6122e17272624d3bd8221e09b` ; les PR #65 et #74 sont des jalons historiques, pas l'état courant. Vérifier `main` avant toute intervention.**  
 **Branche de référence : `main`.**
+
+**Règle courante prioritaire :** `AGENTS.md` sur `main` et les protections GitHub actives priment sur les anciennes indications historiques de ce journal. Les commentaires #73 sont des passations, pas des autorisations implicites. La règle est une seule session ChatGPT active, jamais de développement simultané entre comptes. Réserver les chemins, consigner les changements de rôle, conserver des preuves de tests et demander une autorisation distincte pour chaque fusion. Les comptes ne modifient jamais directement `main`.
 
 ## État du projet
 
@@ -28,7 +30,7 @@ Les références ci-dessus sont des repères historiques, **pas une garantie qu'
 
 ## Décisions de développement
 
-- Le **compte développeur** prépare les nouvelles fonctions et des PR sans fusion. Le **compte intégrateur unique** examine, raccorde, valide et fusionne seul dans `main` après CI verte ; les deux peuvent travailler sur des branches distinctes.
+- **Alternance exclusive :** un seul des deux comptes ChatGPT travaille à la fois. Chacun peut intervenir comme producteur puis, dans une session distincte avec passation documentée dans #73, comme intégrateur unique actif. Une PR ne peut être fusionnée que sur autorisation explicite de Léo pour la PR et son HEAD, après CI complète, `Validation CI`, branche à jour, contrôle `/cd-check` et procédure officielle `/cd-merge`. Le rôle d'intégrateur seul ne suffit jamais à autoriser la fusion.
 - Chaque session commence par la lecture de l'état actuel de GitHub : commits, différences, branches, PR et `AGENTS.md`, puis ce journal.
 - Chaque changement doit être **commité sur GitHub et vérifié après publication**. Une branche non fusionnée ne constitue pas une livraison sur `main`.
 - Préférer des corrections ciblées et compatibles avec les sauvegardes existantes. Toute modification, même documentaire, passe par une branche et une PR ; aucun push direct dans `main`, conformément à `AGENTS.md`.
