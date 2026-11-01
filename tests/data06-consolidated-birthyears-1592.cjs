@@ -1,0 +1,10 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const rows = JSON.parse(fs.readFileSync(path.join(__dirname,'../modding/data06/consolidated-birthyears-1592-2026-11-01.json'),'utf8'));
+test('DATA-06 1592 IDs LNR uniques',()=>{assert.equal(rows.players.length,1592);assert.equal(new Set(rows.players.map(x=>x.id)).size,1592)});
+test('DATA-06 annees entieres et identifiants LNR',()=>{for(const x of rows.players){assert(/^lnr:[0-9]+$/.test(x.id));assert(Number.isInteger(x.birthYear));assert(x.birthYear>=1900 && x.birthYear<=2010)}});
+test('DATA-06 provenance 1442/150',()=>{assert.equal(rows.players.filter(x=>x.provenance==='research-evidence').length,1442);assert.equal(rows.players.filter(x=>x.provenance==='user-supplied').length,150)});
+test('DATA-06 les trois dates utilisateur sont conservees',()=>{for(const [id,date] of [['lnr:13725','2007-03-10'],['lnr:13497','2005-01-01'],['lnr:11779','2003-02-14']]){let x=rows.players.find(x=>x.id===id);assert(x);assert.equal(x.birthDate,date);assert.equal(x.previousConflictRetained,true)}});
