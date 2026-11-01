@@ -710,3 +710,13 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 ### V4.7.1b — vérification métrique
 
 Après première CI Chromium SUCCESS, le JSON audit a montré Mercato Diagnostic 713 px sur un run vs 677 px dans le run antérieur. La grille n'avait donc pas démontré la réduction de hauteur annoncée ; ajustement des tuiles en grille interne compacte et ajout d'une assertion de padding. Il faut revérifier la CI et comparer les captures à données de carrière variables, sans supposer causalité à partir de différences absolues entre runs.
+
+
+## Réception du lot de tests LNR et sauvegardes — Work, 1er novembre 2026
+
+- Intégration autorisée par Léo des PR #189, #190, #191, #192, #195 et #196. #194 remplacée par #195 et fermée ; #193 hors périmètre, toujours sans autorisation de fusion.
+- Six différences auditées : six fichiers tests supplémentaires et un workflow d’audit, aucun fichier de production, DATA-06, Business ou moteur modifié. Les assertions vérifient les sauvegardes natives, les erreurs de stockage, la préservation de carrière et la continuation de saisons. L’audit repos reste observationnel ; ses blessures incidentes sont une approximation et ne prouvent pas un effet causal des politiques de repos.
+- CI initiales des six têtes : JavaScript 7/7 dont Validation CI sur chacune, soit 42/42 ; #189 ajoute 20 jobs de matrice repos et 11 LNR-02, tous réussis. #195 : dix checkpoints sur deux clubs et deux saisons. #196 : cinq cas d’import altéré refusés sans mutation de la carrière active, logs du run #41335760041 inspectés, 5/5 réussis ; aucune correction de production nécessaire.
+- #189 fusionnée après verdict officiel positif et état REST clean sur a6996bdf : squash 3f51ae196fbf0540af8a146fb42a18a0565eb199. CI post-fusion à conclure avant l’intégration suivante. Les autres fusions et leurs SHA/runs push seront consignés dans #73 à mesure de leur réception ; ce journal ne préjuge pas leur résultat.
+- La fonction officielle decide() de ci/release-gate.cjs reste inchangée ; entrées REST brutes, puis mutation par connecteur GitHub authentifié avec expected_head_sha. Aucun contrôle désactivé. Chaque fusion exige une tête exacte validée et la CI push verte avant de passer à la suivante. Les tests sans conflits ne sont pas resynchronisés inutilement ; toute resynchronisation nécessaire impose une nouvelle validation.
+- Cette mise à jour documentaire est portée par #196 afin de ne pas créer une PR supplémentaire ; CI requise sur son nouveau SHA. Réservations libérées et résultats définitifs : passation finale dans l’issue #73. Pas de test Windows natif revendiqué.
