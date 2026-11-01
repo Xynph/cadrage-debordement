@@ -1,0 +1,26 @@
+name: LNR catalogue complet - Chromium
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/lnr-full-catalog-browser.py'
+      - '.github/workflows/lnr-full-catalog-browser.yml'
+      - 'dist/lnr-*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - run: python tests/lnr-full-catalog-browser.py
