@@ -587,3 +587,10 @@ html:root[data-cd-theme] .da42-market-grid strong{display:block;margin-top:12px;
  html:root[data-cd-theme] .da42-page .da4-desk-stage>.da4-fixture{height:100%;min-height:0}
  html:root[data-cd-theme] .da42-page .da4-fixtures{max-height:100%}
 }
+
+/* Lorsque les vrais espaces PC sont actifs, seule leur surface interne peut défiler.
+   La navigation principale et les sous-onglets ne poussent jamais le document. */
+@media(min-width:1100px){
+ html:root[data-cd-theme]:has(.da42-paged),
+ html:root[data-cd-theme]:has(.da42-paged) body{height:100dvh!important;max-height:100dvh!important;overflow:hidden!important}
+}
