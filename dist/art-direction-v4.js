@@ -274,7 +274,7 @@
    tab.id='da43-tab-'+route+'-'+g.id;
    panel.setAttribute('aria-labelledby',tab.id);
    tabs.append(tab);viewport.append(panel);
-   return {id:g.id,tab,panel};
+   return {id:g.id,label:g.label,tab,panel};
   });
   const assigned=new Set();
   groups.forEach((g,i)=>{
@@ -314,7 +314,7 @@
   }
   // Secondary-page commands live INSIDE the navigation band. They never
   // expand a panel or add content beneath the current page.
-  const auxiliary=node('<div class="da43-page-switch"><div class="da43-page-context"><span class="da43-context-key"></span><strong class="da43-context-value"></strong></div><button type="button" class="da43-skip" data-da43-prev aria-label="Sous-page précédente">←</button><output class="da43-page-count" aria-live="polite"></output><button type="button" class="da43-skip" data-da43-next aria-label="Sous-page suivante">→</button></div>');
+  const auxiliary=node('<div class="da43-page-switch" role="group" aria-label="Navigation entre sous-pages"><div class="da43-page-context"><span class="da43-context-key"></span><strong class="da43-context-value"></strong></div><button type="button" class="da43-skip" data-da43-prev aria-label="Sous-page précédente">←</button><output class="da43-page-count" aria-live="polite"></output><button type="button" class="da43-skip" data-da43-next aria-label="Sous-page suivante">→</button></div>');
   tabs.append(auxiliary);
   const contextKey=auxiliary.querySelector('.da43-context-key'),contextValue=auxiliary.querySelector('.da43-context-value'),pageCount=auxiliary.querySelector('.da43-page-count');
   const managerSnapshot=snapshot();
@@ -328,6 +328,13 @@
    const target=pages.find(p=>p.id===id)||pages[0];
    workspaceChoice[route]=target.id;
    const index=pages.indexOf(target),signal=page43Context(route,target.id,managerSnapshot);
+   const previous=pages[(index+pages.length-1)%pages.length],following=pages[(index+1)%pages.length];
+   const previousButton=auxiliary.querySelector('[data-da43-prev]');
+   const followingButton=auxiliary.querySelector('[data-da43-next]');
+   previousButton.setAttribute('aria-label','Sous-page précédente : '+previous.label);
+   previousButton.setAttribute('aria-controls',previous.panel.id);
+   followingButton.setAttribute('aria-label','Sous-page suivante : '+following.label);
+   followingButton.setAttribute('aria-controls',following.panel.id);
    pageCount.textContent=String(index+1).padStart(2,'0')+' / '+String(pages.length).padStart(2,'0');
    contextKey.textContent=signal.label;contextValue.textContent=signal.value;
    shell.dataset.da43Active=target.id;
@@ -344,8 +351,12 @@
   });
   tabs.addEventListener('keydown',event=>{
    if(!['ArrowRight','ArrowLeft','Home','End'].includes(event.key))return;
+   // Only the tab buttons own arrow/Home/End navigation. Do not trap
+   // navigation keys on the auxiliary previous/next buttons.
+   const focused=event.target.closest('button[data-da42-subpage]');
+   if(!focused||!tabs.contains(focused))return;
    event.preventDefault();
-   const current=pages.findIndex(p=>p.tab===document.activeElement);
+   const current=pages.findIndex(p=>p.tab===focused);
    const next=event.key==='Home'?0:event.key==='End'?pages.length-1:
     (Math.max(0,current)+(event.key==='ArrowRight'?1:pages.length-1))%pages.length;
    activate(pages[next].id,true);

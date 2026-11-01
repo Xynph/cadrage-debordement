@@ -185,6 +185,29 @@ try:
                 shell.locator('[data-da43-prev]').click()
                 check(f'V4.3 previous wraps to last {route} {width}',
                       tabs.last.get_attribute('aria-selected') == 'true')
+                # V4.4: auxiliary buttons are not roving-tab focus owners.
+                # Their ARIA destinations follow the actual active page.
+                check(f'V4.4 next destination {route} {width}',
+                      shell.locator('[data-da43-next]').get_attribute('aria-controls') ==
+                      tabs.first.get_attribute('aria-controls'))
+                check(f'V4.4 previous destination {route} {width}',
+                      shell.locator('[data-da43-prev]').get_attribute('aria-controls') ==
+                      tabs.nth(-2).get_attribute('aria-controls'))
+                check(f'V4.4 accessible pager labels {route} {width}',
+                      shell.locator('[data-da43-next]').get_attribute('aria-label').startswith('Sous-page suivante : ') and
+                      shell.locator('[data-da43-prev]').get_attribute('aria-label').startswith('Sous-page précédente : '))
+                shell.locator('[data-da43-next]').focus()
+                page.keyboard.press('ArrowRight')
+                check(f'V4.4 auxiliary arrow leaves tab unchanged {route} {width}',
+                      tabs.last.get_attribute('aria-selected') == 'true')
+                check(f'V4.4 auxiliary button retains focus {route} {width}',
+                      shell.locator('[data-da43-next]').evaluate('(el)=>document.activeElement===el'))
+                check(f'V4.4 pager has accessible grouping {route} {width}',
+                      shell.locator('.da43-page-switch').get_attribute('role') == 'group')
+                check(f'V4.4 desktop hit target {route} {width}',
+                      shell.locator('[data-da43-next]').evaluate("""(el)=>{
+                        const r=el.getBoundingClientRect();return r.width>=44&&r.height>=44;
+                      }"""))
                 check(f'V4.3 arrows keep save unchanged {route} {width}',
                       page.evaluate('JSON.stringify(S)') == original and
                       page.evaluate('localStorage.getItem("bdt-v1")') == stored)
