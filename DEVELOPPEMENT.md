@@ -690,3 +690,23 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Audit des captures natives du run Chromium V4.5 #41306769268, artefact #13083955546. Avant-match PC 1440×2023 et live 1440×1865 trop étendus et peu hiérarchisés ; importance du score, de la préparation et des commandes inférieure aux autres vues premium.
 - Lot V4.6 : page avant-match avec entrée photographique locale, duel et groupe plus lisibles, rapport adverse rééquilibré ; direct avec score et actions prioritaires, onglets et zones latérales du terrain clarifiés. CSS uniquement, ni moteur ni sauvegardes touchés.
 - Régressions : test Playwright V4 étendu de six vraies captures PC (4 avant-match dans les deux thèmes / tailles, 2 direct au repos), contrôle de la carrière et du stockage, absence de dépassement, du terrain, des commandes et de la minute figée. Document `docs/decision-studio-v46.md`. **CI à vérifier sur SHA de PR**, aucune fusion sans autorisation.
+
+
+## V4.7 Premium PC — Mercato, Palmarès et Sauvegardes — 1er novembre 2026
+
+- Base vérifiée `main b53603ee20e73f68853b27bae7c8cb6701f52182` ; réservations et PR #182 publiées dans l'issue #73, sans collision avec #180 LNR (propriétaire de `dist/lnr05-evidence-center.js` et tests dédiés).
+- Audit par captures Chromium réellement inspectées : archive #13084600844 puis nouvelle archive #13085215156 de 12 images et `v47-dom-audit.json`. Mercato très dense (~2986 px), Palmarès creux (~744 px), Sauvegardes peu hiérarchisées (~893 px) en Analyste 1440.
+- CSS V4.7 sur `dist/premium-v4.css` pour ces trois routes uniquement : scènes éditoriales, panneaux carrière rééquilibrés et commandes d'export/mercato renforcées. Les contenus de jeu et la sauvegarde sont inchangés ; tests Chromium étendus à 12 captures après corrections avec assertions de géométrie, fonctions natives et invariants de stockage. Rapport `docs/decision-studio-v47.md`.
+- CI de la nouvelle tête PR #182 à vérifier avant toute intégration ; fusion exclusivement après permission utilisateur, jamais automatique.
+
+
+## V4.7.1 Premium — second lot avant fusion — 1er novembre 2026
+
+- Demande : améliorer encore la PR #182 avant fusion, sans créer de PR concurrente. Audit réel du comparatif baseline #13085215156 contre final #13084168856 : la hiérarchie est mieux marquée mais le Diagnostic Mercato reste haut de 677 px, les archives ont peu de repères et les commandes de sauvegarde ne sont pas assez distinctes.
+- Correctifs CSS bornés au PC : besoins de recrutement sur deux colonnes sans retrait, paires valeur/libellé alignées dans les joueurs, chapitres graphiques des archives (sans trophées ajoutés), carte Exporter sombre et actions Exporter/Importer plus identifiables. Moteur, données et stockage inchangés.
+- Tests Chromium étendus de 12 captures `v47-polish` en Analyste/Tribune à 1440×900 / 1920×1080, géométrie réelle de la grille, chapitres, sauvegardes et état inchangés. Réception finale sur SHA exact attendue ; aucune fusion autorisée.
+
+
+### V4.7.1b — vérification métrique
+
+Après première CI Chromium SUCCESS, le JSON audit a montré Mercato Diagnostic 713 px sur un run vs 677 px dans le run antérieur. La grille n'avait donc pas démontré la réduction de hauteur annoncée ; ajustement des tuiles en grille interne compacte et ajout d'une assertion de padding. Il faut revérifier la CI et comparer les captures à données de carrière variables, sans supposer causalité à partir de différences absolues entre runs.

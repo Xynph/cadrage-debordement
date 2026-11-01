@@ -74,6 +74,118 @@ try:
   page.set_viewport_size({'width':1440,'height':1000})
   page.locator('#ui01-theme').select_option('analyste')
   page.evaluate("nav('dashboard')")
+  # V4.7 initial layout audit: real market, history and save screens.
+  audit=[]
+  for theme in ('analyste','tribune'):
+   page.locator('#ui01-theme').select_option(theme)
+   for width,height in ((1440,900),(1920,1080)):
+    page.set_viewport_size({'width':width,'height':height})
+    for route in ('market','history','saves'):
+     page.evaluate('(r)=>nav(r)',route)
+     original_state=page.evaluate('JSON.stringify(S)')
+     original_disk=page.evaluate('localStorage.getItem("bdt-v1")')
+     data=page.evaluate("""()=>{
+       const main=document.querySelector('.main');
+       return {screen:main?.getBoundingClientRect().toJSON(),
+        height:main?.scrollHeight,
+        top:main?[...main.children].slice(0,12).map(x=>({tag:x.tagName,classes:x.className,id:x.id,
+          text:x.innerText?.slice(0,80),height:Math.round(x.getBoundingClientRect().height)})):[],
+        rows:[...main.querySelectorAll('.card,.grid,.stack,.tabs,.tablewrap,.marketgrid,section')].slice(0,30)
+         .map(x=>({classes:x.className,tag:x.tagName,height:Math.round(x.getBoundingClientRect().height)})),
+        horizontalOverflow:document.documentElement.scrollWidth>innerWidth+1};
+     }""")
+     audit.append({'theme':theme,'width':width,'route':route,'dom':data})
+     page.locator('#toast').evaluate("e=>e.style.display='none'")
+     page.screenshot(path=str(OUT/('v47-baseline-'+route+'-'+theme+'-'+str(width)+'.png')),
+                     full_page=False)
+     check('V4.7 baseline route '+route+' '+theme+' '+str(width),
+           page.locator('.main').inner_text().strip()!='' and
+           not data['horizontalOverflow'])
+     # V4.7 structural/interaction gates; native actions are never invoked.
+     if route=='market':
+      check('V4.7 market navigation preserved '+theme+' '+str(width),
+            page.locator('.markettabs button').count()>=3)
+      check('V4.7 market cards preserved '+theme+' '+str(width),
+            page.locator('.marketgrid .marketplayer').count()>=3)
+      check('V4.7 market tab target '+theme+' '+str(width),
+            page.locator('.markettabs button').first.evaluate(
+             "e=>e.getBoundingClientRect().height>=44"))
+      check('V4.7 market richer hierarchy '+theme+' '+str(width),
+            page.locator('.main>.recruitment-intel').evaluate(
+             "e=>getComputedStyle(e).borderTopWidth==='3px'"))
+     if route=='history':
+      check('V4.7 history native sections '+theme+' '+str(width),
+            page.locator('.main>section.card').count()==2)
+      check('V4.7 history balanced cards '+theme+' '+str(width),
+            page.locator('.main>section.card').first.evaluate(
+             "e=>e.getBoundingClientRect().height>=300"))
+      check('V4.7 archives no fabricated entries '+theme+' '+str(width),
+            page.locator('.main>section.card').last.inner_text().strip()!='')
+     if route=='saves':
+      check('V4.7 native export/import '+theme+' '+str(width),
+            page.locator('[onclick="exportCareer()"]').count()==1 and
+            page.locator('[onclick="openImportPicker()"]').count()==1)
+      check('V4.7 save action hit area '+theme+' '+str(width),
+            page.locator('[onclick="exportCareer()"]').evaluate(
+             "e=>e.getBoundingClientRect().height>=44"))
+      check('V4.7 save controls preserve backup '+theme+' '+str(width),
+            page.locator('[onclick="reviewBackup()"]').count()==1)
+
+     # V4.7.1 second pass: structural and real-style checks on both desktop
+     # resolutions and both themes; no native actions are invoked.
+     if route=='market':
+      needs=page.locator('.main>.recruitment-intel .recruitment-needs-list')
+      check('V4.7.1 market needs retained '+theme+' '+str(width),
+            needs.count()==1 and needs.locator(':scope > .row').count()>=4)
+      check('V4.7.1 market needs two columns '+theme+' '+str(width),
+            needs.evaluate("""e=>{
+              const r=[...e.children].filter(x=>x.classList.contains('row')).map(
+                x=>x.getBoundingClientRect());
+              return getComputedStyle(e).display==='grid'&&r.length>=4&&
+                Math.abs(r[0].top-r[1].top)<3&&r[0].right<=r[1].left+3;
+            }"""))
+      check('V4.7.1 compact need cards '+theme+' '+str(width),
+            needs.locator(':scope > .row').first.evaluate(
+             """e=>{const s=getComputedStyle(e);
+                 return s.display==='grid'&&parseFloat(s.paddingTop)<=10&&
+                   s.gridTemplateColumns.split(' ').length>=2;
+             }"""))
+      check('V4.7.1 market card metrics accessible '+theme+' '+str(width),
+            page.locator('.marketgrid>.marketplayer').first.locator('.row').count()>=1)
+     if route=='history':
+      check('V4.7.1 history chapters '+theme+' '+str(width),
+            page.locator('.main>section.card').first.evaluate(
+             """e=>getComputedStyle(e,'::before').content.includes('CHAPITRE 01')""") and
+            page.locator('.main>section.card').last.evaluate(
+             """e=>getComputedStyle(e,'::before').content.includes('CHAPITRE 02')"""))
+      check('V4.7.1 history panels full content '+theme+' '+str(width),
+            page.locator('.main>section.card').first.evaluate(
+             """e=>e.scrollHeight<=e.clientHeight+1""") and
+            page.locator('.main>section.card').last.evaluate(
+             """e=>e.scrollHeight<=e.clientHeight+1"""))
+     if route=='saves':
+      check('V4.7.1 dark export panel '+theme+' '+str(width),
+            page.locator('.main>.grid>.stack:first-child>.card:first-child').evaluate(
+             """e=>getComputedStyle(e).backgroundImage.includes('linear-gradient')&&
+               getComputedStyle(e).borderTopWidth==='4px'"""))
+      check('V4.7.1 export and import hit area '+theme+' '+str(width),
+            all(page.locator(q).evaluate("e=>e.getBoundingClientRect().height>=44")
+                for q in ('[onclick="exportCareer()"]',
+                          '[onclick="openImportPicker()"]')))
+      check('V4.7.1 native backups still present '+theme+' '+str(width),
+            page.locator('[onclick="reviewBackup()"]').count()==1)
+     page.screenshot(path=str(OUT/('v47-polish-'+route+'-'+theme+'-'+str(width)+'.png')),
+                     full_page=False)
+     check('V4.7 career state preserved '+route+' '+theme+' '+str(width),
+           page.evaluate('JSON.stringify(S)')==original_state and
+           page.evaluate('localStorage.getItem("bdt-v1")')==original_disk)
+     page.screenshot(path=str(OUT/('v47-final-'+route+'-'+theme+'-'+str(width)+'.png')),
+                     full_page=False)
+
+  (OUT/'v47-dom-audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
+  page.set_viewport_size({'width':1440,'height':1000})
+  page.locator('#ui01-theme').select_option('analyste')
+  page.evaluate("nav('dashboard')")
   # Same career and same viewport, with only the final skin disabled for comparison.
   page.locator('#ui01-theme').select_option('analyste')
   page.screenshot(path=str(OUT/'dashboard-after.png'))
