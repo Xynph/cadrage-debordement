@@ -256,6 +256,12 @@
    const parts=Array.from(details.children).filter(x=>x.tagName!=='SUMMARY');
    details.replaceWith(...parts);
   }
+  // Tables remain directly visible in bounded local scroll areas.
+  for(const details of Array.from(shell.querySelectorAll('details.da4-data'))){
+   const wrapper=node('<div class="da4-data da42-static-values" aria-label="Tableau des valeurs"></div>');
+   Array.from(details.children).filter(x=>x.tagName!=='SUMMARY').forEach(x=>wrapper.append(x));
+   details.replaceWith(wrapper);
+  }
   function activate(id,focus){
    const target=pages.find(p=>p.id===id)||pages[0];
    workspaceChoice[route]=target.id;
