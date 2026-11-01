@@ -82,6 +82,8 @@ try:
     page.set_viewport_size({'width':width,'height':height})
     for route in ('market','history','saves'):
      page.evaluate('(r)=>nav(r)',route)
+     original_state=page.evaluate('JSON.stringify(S)')
+     original_disk=page.evaluate('localStorage.getItem("bdt-v1")')
      data=page.evaluate("""()=>{
        const main=document.querySelector('.main');
        return {screen:main?.getBoundingClientRect().toJSON(),
@@ -99,6 +101,41 @@ try:
      check('V4.7 baseline route '+route+' '+theme+' '+str(width),
            page.locator('.main').inner_text().strip()!='' and
            not data['horizontalOverflow'])
+     # V4.7 structural/interaction gates; native actions are never invoked.
+     if route=='market':
+      check('V4.7 market navigation preserved '+theme+' '+str(width),
+            page.locator('.markettabs button').count()>=3)
+      check('V4.7 market cards preserved '+theme+' '+str(width),
+            page.locator('.marketgrid .marketplayer').count()>=3)
+      check('V4.7 market tab target '+theme+' '+str(width),
+            page.locator('.markettabs button').first.evaluate(
+             "e=>e.getBoundingClientRect().height>=44"))
+      check('V4.7 market richer hierarchy '+theme+' '+str(width),
+            page.locator('.main>.recruitment-intel').evaluate(
+             "e=>getComputedStyle(e).borderTopWidth==='3px'"))
+     if route=='history':
+      check('V4.7 history native sections '+theme+' '+str(width),
+            page.locator('.main>section.card').count()==2)
+      check('V4.7 history balanced cards '+theme+' '+str(width),
+            page.locator('.main>section.card').first.evaluate(
+             "e=>e.getBoundingClientRect().height>=300"))
+      check('V4.7 archives no fabricated entries '+theme+' '+str(width),
+            page.locator('.main>section.card').last.inner_text().strip()!='')
+     if route=='saves':
+      check('V4.7 native export/import '+theme+' '+str(width),
+            page.locator('[onclick="exportCareer()"]').count()==1 and
+            page.locator('[onclick="openImportPicker()"]').count()==1)
+      check('V4.7 save action hit area '+theme+' '+str(width),
+            page.locator('[onclick="exportCareer()"]').evaluate(
+             "e=>e.getBoundingClientRect().height>=44"))
+      check('V4.7 save controls preserve backup '+theme+' '+str(width),
+            page.locator('[onclick="reviewBackup()"]').count()==1)
+     check('V4.7 career state preserved '+route+' '+theme+' '+str(width),
+           page.evaluate('JSON.stringify(S)')==original_state and
+           page.evaluate('localStorage.getItem("bdt-v1")')==original_disk)
+     page.screenshot(path=str(OUT/('v47-final-'+route+'-'+theme+'-'+str(width)+'.png')),
+                     full_page=False)
+
   (OUT/'v47-dom-audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
   page.set_viewport_size({'width':1440,'height':1000})
   page.locator('#ui01-theme').select_option('analyste')
