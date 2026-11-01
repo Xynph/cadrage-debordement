@@ -47,6 +47,7 @@ try:
   check('panorama decodes locally',page.evaluate("async()=>{let i=new Image();i.src='assets/premium-v4-matchday.webp';await i.decode();return i.naturalWidth>=1500&&i.naturalHeight>600}"))
   check('office visual columns do not overlap',page.evaluate("(()=>{const a=document.querySelector('.da42-command-lead').getBoundingClientRect(),b=document.querySelector('.da42-command-rail').getBoundingClientRect();return a.right<=b.left+2&&Math.abs(a.top-b.top)<2})()"))
   # V4.6: real PC pre-match, both themes and widths; no match started here.
+  page.evaluate("nav('dashboard')")
   for theme in ('analyste','tribune'):
    page.locator('#ui01-theme').select_option(theme)
    for width,height in ((1440,900),(1920,1080)):
@@ -192,6 +193,40 @@ try:
   page.evaluate("document.querySelector('link[href=\"premium-v4.css\"]').disabled=true")
   page.screenshot(path=str(OUT/'dashboard-before.png'))
   page.evaluate("document.querySelector('link[href=\"premium-v4.css\"]').disabled=false")
+  # V4.8 PC: native dashboard and management center screenshots in both themes.
+  # Screens are drawn by Chromium from the real game, with current career data.
+  page.evaluate("nav('dashboard')")
+  for theme in ('analyste','tribune'):
+   page.locator('#ui01-theme').select_option(theme)
+   for width,height in ((1440,900),(1920,1080)):
+    page.set_viewport_size({'width':width,'height':height})
+    for route in ('dashboard','team','tactics','plans'):
+     page.evaluate('(r)=>nav(r)',route)
+     state_before=page.evaluate('JSON.stringify(S)')
+     disk_before=page.evaluate('localStorage.getItem("bdt-v1")')
+     page.evaluate('render()')
+     check('V4.8 preserve state '+route+' '+theme+' '+str(width),
+           page.evaluate('JSON.stringify(S)')==state_before and
+           page.evaluate('localStorage.getItem("bdt-v1")')==disk_before)
+     check('V4.8 no horizontal overflow '+route+' '+theme+' '+str(width),
+           page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
+     check('V4.8 native navigation remains '+route+' '+theme+' '+str(width),
+           page.locator('.ui01-primary-nav button').count()>0)
+     if route=='dashboard':
+      check('V4.8 native command deck '+theme+' '+str(width),
+            page.locator('.da42-command-lead').count()==1 and
+            page.locator('.da42-command-lead').evaluate(
+             "e=>getComputedStyle(e).backgroundImage.includes('premium-v4-matchday.webp')"))
+      check('V4.8 native decisions visible '+theme+' '+str(width),
+            page.locator('.da42-rail-item').count()>=2)
+      check('V4.8 command action hit area '+theme+' '+str(width),
+            page.locator('.da42-command-cta').first.evaluate(
+             "e=>e.getBoundingClientRect().height>=44"))
+     for item in page.locator('.cd02-header,.cd03-header,.cd04-header').all():
+      check('V4.8 native center header '+route+' '+theme+' '+str(width),
+            item.evaluate("e=>parseFloat(getComputedStyle(e).minHeight)>=160"))
+     page.screenshot(path=str(OUT/('v48-'+route+'-'+theme+'-'+str(width)+'.png')),
+                     full_page=False)
   # Existing slot and save lifecycle is exercised through the actual menu.
   page.get_by_role('button',name='Menu principal',exact=True).first.click()
   page.locator('.cd3-nav').get_by_role('button',name='Réglages',exact=False).click()
