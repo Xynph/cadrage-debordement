@@ -47,7 +47,7 @@ function lnrGamePlayers(i,base){
   const order=groups[group]||0;groups[group]=order+1;
   const position=lnrAssignment(group,order),family=FAMILIES[position];
   // Évaluation, âge, salaire et condition = PARAMÈTRES DE JEU SIMULÉS.
-  const birthday=lnrBirthAge(id);
+  const birthday=typeof LNR_BIRTHYEARS_DATA==='undefined'?{age:21+(seedHash(id)%14),ageEstimated:true}:lnrBirthAge(id);
   const seed=seedHash(id);const rating=clamp(base+(seed%15)-8,48,92);
   return ensureSkills({id,name,pos:POS[position],fam:family,
    ...birthday,rating,condition:90+(seed%11),injury:0,
