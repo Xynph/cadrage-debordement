@@ -209,6 +209,117 @@
  function leagueStage(m){const gaps=standingsGaps(m.standings,m.club.id),mine=gaps.rows.find(r=>r.mine);return '<section class="da4-panel da4-league-stage">'+head('LA COURSE AU BOUCLIER','L’écart se mesure en points','J'+(m.round+1))+(mine?'<div class="da41-league-recap"><div><small>VOTRE RANG</small><strong>'+num(m.standings.find(t=>t.id===m.club.id)?.rank)+'</strong></div><div><small>RETARD SUR LE LEADER</small><strong>'+num(mine.gap)+' pts</strong></div></div>':'')+bars(m.standings.map(t=>({label:t.abbr,value:t.points,mine:t.mine})),'Points au classement','pts')+table(['Club','Points','Écart au leader'],gaps.rows.map(r=>[r.label,r.points,r.gap?'−'+r.gap:'0']),'Écarts de points au classement')+(!m.standings.some(t=>t.points)?'<p class="da4-empty">Le championnat n’a pas encore distribué ses premiers points. Les équipes sont à égalité.</p>':'')+'<p class="da4-chart-note">Ordre du classement natif · Orange : votre club. Les détails et départages restent dans le tableau.</p></section>';}
  function node(html){const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild;}
  function fold(el,title){if(!el)return;const d=node('<details class="da4-dossier"><summary>'+esc(title)+'<span>Ouvrir le dossier ↗</span></summary></details>');el.before(d);d.append(el);}
+
+ const workspaceChoice=Object.create(null);
+ function buildWorkspace(root,route,groups){
+  if(!root||root.querySelector(':scope>.da42-workspace-shell'))return;
+  // Existing game controls are MOVED, not cloned and not replaced.
+  // Everything not explicitly selected remains reachable on a native subpage.
+  const keep=new Set(Array.from(root.children).filter(el=>el.matches('.heading,.cd03-tabs,.cd04-tabs,.cd02-tabs')));
+  const shell=node('<div class="da42-workspace-shell" aria-label="Sous-pages de gestion PC"><nav class="da42-subnav" role="tablist" aria-label="Sous-pages du '+esc(route)+'"></nav><div class="da42-page-viewport"></div></div>');
+  const tabs=shell.querySelector('.da42-subnav'),viewport=shell.querySelector('.da42-page-viewport');
+  const pages=groups.map((g,index)=>{
+   const tab=node('<button type="button" role="tab" class="da42-subtab" data-da42-subpage="'+esc(g.id)+'" aria-controls="da42-'+route+'-'+g.id+'" aria-selected="false" tabindex="-1"><span class="da42-tab-index">0'+(index+1)+'</span>'+esc(g.label)+'</button>');
+   const panel=node('<section class="da42-page" role="tabpanel" id="da42-'+route+'-'+g.id+'" aria-label="'+esc(g.label)+'" hidden></section>');
+   if(g.native)panel.classList.add('da42-page-native');
+   tabs.append(tab);viewport.append(panel);
+   return {id:g.id,tab,panel};
+  });
+  const assigned=new Set();
+  groups.forEach((g,i)=>{
+   (g.selectors||[]).forEach(selector=>{
+    for(const el of Array.from(root.querySelectorAll(selector))){
+     if(assigned.has(el)||keep.has(el)||el.closest('.da42-workspace-shell'))continue;
+     if(!root.contains(el))continue;
+     // Avoid moving a child twice after its ancestor has been moved.
+     if(Array.from(assigned).some(a=>a.contains(el)))continue;
+     pages[i].panel.append(el);assigned.add(el);
+    }
+   });
+  });
+  // No folded dossier can be used to navigate primary information.
+  root.querySelectorAll('.da4-dossier').forEach(details=>{
+   if(Array.from(assigned).some(x=>x.contains(details)))return;
+   const parts=Array.from(details.children).filter(x=>x.tagName!=='SUMMARY');
+   parts.forEach(part=>details.before(part));details.remove();
+  });
+  const native=pages.find(p=>p.id==='dossiers')||pages[pages.length-1];
+  for(const child of Array.from(root.children)){
+   if(keep.has(child)||child===shell)continue;
+   native.panel.append(child);
+  }
+  root.append(shell);
+  function activate(id,focus){
+   const target=pages.find(p=>p.id===id)||pages[0];
+   workspaceChoice[route]=target.id;
+   for(const p of pages){
+    const active=p===target;
+    p.panel.hidden=!active;p.tab.setAttribute('aria-selected',String(active));
+    p.tab.tabIndex=active?0:-1;
+    if(active&&focus)p.tab.focus();
+   }
+  }
+  tabs.addEventListener('click',event=>{
+   const btn=event.target.closest('button[data-da42-subpage]');
+   if(btn)activate(btn.dataset.da42Subpage,false);
+  });
+  tabs.addEventListener('keydown',event=>{
+   if(!['ArrowRight','ArrowLeft','Home','End'].includes(event.key))return;
+   event.preventDefault();
+   const current=pages.findIndex(p=>p.tab===document.activeElement);
+   const next=event.key==='Home'?0:event.key==='End'?pages.length-1:
+    (Math.max(0,current)+(event.key==='ArrowRight'?1:pages.length-1))%pages.length;
+   activate(pages[next].id,true);
+  });
+  activate(workspaceChoice[route]||pages[0].id,false);
+  const main=root.closest('.main')||(root.matches('.main')?root:null);
+  if(main){main.classList.add('da42-paged');const size=()=>{
+   const top=main.getBoundingClientRect().top;
+   main.style.setProperty('--da42-available-height',Math.max(420,window.innerHeight-top-12)+'px');
+  };size();window.addEventListener('resize',size,{passive:true});}
+ }
+ function paginateRoute(main,route){
+  if(route==='dashboard')buildWorkspace(main,route,[
+   {id:'pilotage',label:'Vue d’ensemble',selectors:[':scope>.da42-command']},
+   {id:'calendrier',label:'Calendrier',selectors:[':scope>.da4-calendar',':scope>.da4-desk-stage']},
+   {id:'dossiers',label:'Dossiers du club',native:true,selectors:[':scope>.da4-decisions',':scope>.office-summary']}
+  ]);
+  if(route==='tactics')buildWorkspace(main,route,[
+   {id:'xv',label:'XV et décisions',selectors:[':scope>.cd-matchday']},
+   {id:'condition',label:'Condition',selectors:[':scope>.da42-fitness']},
+   {id:'analyse',label:'Analyse du XV',selectors:[':scope>.da4-tactics-stage']},
+   {id:'dossiers',label:'Autres commandes',native:true}
+  ]);
+  if(route==='finance'){
+   const stage=main.querySelector(':scope>.da4-finance-stage');
+   if(stage){for(const el of Array.from(stage.children))stage.before(el);stage.remove();}
+   buildWorkspace(main,route,[
+    {id:'tresorerie',label:'Trésorerie',selectors:[':scope>.da4-finance-chart']},
+    {id:'flux',label:'Flux hebdomadaires',selectors:[':scope>.da42-cash-stage']},
+    {id:'salaires',label:'Salaires',selectors:[':scope>.da4-panel:not(.da4-finance-chart)']},
+    {id:'dossiers',label:'Journal et décisions',native:true}
+   ]);
+  }
+  if(route==='recruitment'){
+   const content=main.querySelector('.cd03-content');
+   if(content&&main.querySelector('.cd03-tabs [aria-current="page"]')?.dataset.ui03Tab==='overview')
+    buildWorkspace(content,route,[
+     {id:'besoins',label:'Besoins du XV',selectors:[':scope>.da4-recruit-stage']},
+     {id:'marche',label:'Observatoire des coûts',selectors:[':scope>.da42-market']},
+     {id:'dossiers',label:'Missions et commandes',native:true}
+    ]);
+  }
+  if(route==='formation'){
+   const content=main.querySelector('.cd04-content');
+   if(content&&main.querySelector('.cd04-tabs [aria-current="page"]')?.dataset.ui04Tab==='overview')
+    buildWorkspace(content,route,[
+     {id:'passerelle',label:'Passerelle',selectors:[':scope>.da4-academy-stage']},
+     {id:'potentiel',label:'Potentiel des espoirs',selectors:[':scope>.da42-academy']},
+     {id:'dossiers',label:'Suivi et commandes',native:true}
+    ]);
+  }
+ }
+
  function enhance(route){
   if(typeof document==='undefined'||typeof document.querySelectorAll!=='function'||typeof S==='undefined'||!S||S.live)return;
   const main=document.querySelector('.ui01-layout>.main');if(!main||main.dataset.da4===route)return;
@@ -229,6 +340,7 @@
   if(route==='recruitment'){const center=main.querySelector('.cd03-content');if(center&&main.querySelector('.cd03-tabs [aria-current="page"]')?.dataset.ui03Tab==='overview'){const overview=center.firstElementChild;if(overview){overview.before(node(recruitStage(m)));const studio=main.querySelector('.da4-recruit-stage');if(studio)studio.after(node(marketStudio(m.candidates)));fold(overview,'Analyse détaillée & activité du recruteur');}}}
   if(route==='formation'){const center=main.querySelector('.cd04-content');if(center&&main.querySelector('.cd04-tabs [aria-current="page"]')?.dataset.ui04Tab==='overview'){const overview=center.firstElementChild;if(overview){overview.before(node(academyStage(m)));const studio=main.querySelector('.da4-academy-stage');if(studio)studio.after(node(academyStudio(m.academy)));fold(overview,'Tous les indicateurs de formation');}}}
   if(route==='league'){const heading=main.querySelector('.heading');if(heading)heading.after(node(leagueStage(m)));}
+  paginateRoute(main,route);
   main.querySelectorAll('.da4-scatter-figure').forEach(figure=>{const show=e=>{const point=e.target.closest?.('.da4-player-point');if(point)figure.querySelector('.da4-point-readout').textContent=point.getAttribute('aria-label');};figure.addEventListener('focusin',show);figure.addEventListener('pointerover',show);});
  }
  return Object.freeze({snapshot,extent,lineChart,bars,scatter,pitch,potentials,financeKeypoints,standingsGaps,priorityNeeds,groupLines,conditionBands,cashMovements,academyGaps,publicCosts,decisionSignals,enhance});
