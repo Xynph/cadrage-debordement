@@ -31,6 +31,15 @@ function lnrAssignment(group,index){
  if(group==='Arrière')return 14;
  return 13;
 }
+function lnrBirthAge(lnrId){
+ const birth=typeof LNR_BIRTHYEARS_DATA!=='undefined'&&LNR_BIRTHYEARS_DATA.byId[lnrId];
+ if(typeof birth==='number'&&Number.isInteger(birth))return {age:2026-birth-1,birthYear:birth,ageEstimated:true};
+ if(typeof birth==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(birth)){
+  const [year,month,day]=birth.split('-').map(Number);
+  return {age:2026-year-(month>7||month===7&&day>1?1:0),birthYear:year,birthDate:birth,ageEstimated:false};
+ }
+ throw Error('Année LNR introuvable pour '+lnrId);
+}
 function lnrGamePlayers(i,base){
  const origin=lnrGameClub(i);if(!origin)throw Error('Club LNR inconnu');
  const groups=Object.create(null);
@@ -38,9 +47,10 @@ function lnrGamePlayers(i,base){
   const order=groups[group]||0;groups[group]=order+1;
   const position=lnrAssignment(group,order),family=FAMILIES[position];
   // Évaluation, âge, salaire et condition = PARAMÈTRES DE JEU SIMULÉS.
+  const birthday=typeof LNR_BIRTHYEARS_DATA==='undefined'?{age:21+(seedHash(id)%14),ageEstimated:true}:lnrBirthAge(id);
   const seed=seedHash(id);const rating=clamp(base+(seed%15)-8,48,92);
   return ensureSkills({id,name,pos:POS[position],fam:family,
-   age:21+(seed%14),rating,condition:90+(seed%11),injury:0,
+   ...birthday,rating,condition:90+(seed%11),injury:0,
    salary:3500+(seed%18)*330,lnrGroup:group,lnrNationality:nationality||null});
  });
 }
@@ -54,7 +64,7 @@ function lnrWelcomeToggle(){
   '<button type="button" aria-pressed="'+(lnrWelcomeMode==='fiction')+'" onclick="lnrChooseMode(\'fiction\')">Univers fictif classique</button>'+
   '<button type="button" aria-pressed="'+(lnrWelcomeMode==='lnr')+'" onclick="lnrChooseMode(\'lnr\')">Effectifs LNR · 31/10/2026</button></div>'+
   '<p class="help">'+(lnrWelcomeMode==='lnr'?
-  'Mode optionnel : 14 clubs du catalogue TOP 14, joueurs et groupes de postes issus des pages LNR au 31/10/2026. Postes précis, notes, âges non sourcés, contrats, salaires, trésoreries, calendrier et résultats sont SIMULÉS. Pas de reconstitution des effectifs au 01/07/2026. Les 16 clubs PRO D2 restent consultables, non jouables dans cette ligue à 14.':
+  'Mode optionnel : 14 clubs du catalogue TOP 14, joueurs et groupes de postes issus des pages LNR au 31/10/2026. Postes précis, notes, contrats, salaires, trésoreries, calendrier et résultats sont SIMULÉS. Âges calculés à partir des années de naissance disponibles : lorsque seul le millésime est connu, l’âge retenu au 01/07/2026 est conservateur et estimé. Pas de reconstitution des effectifs au 01/07/2026. Les 16 clubs PRO D2 restent consultables, non jouables dans cette ligue à 14.':
   'Carrière fictive historique inchangée : clubs, joueurs, contrats et résultats inventés pour le jeu.')+
   '</p></section>';
 }
