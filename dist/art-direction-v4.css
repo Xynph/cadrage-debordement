@@ -313,3 +313,440 @@ html:root[data-cd-theme] .da41-league-recap>div+div{border-left:1px solid var(--
  html:root[data-cd-theme] .da41-league-recap>div{padding-right:15px}
  html:root[data-cd-theme] .da41-league-recap>div+div{padding-left:15px}
 }
+
+/* V4.2 — studio de décision : scènes distinctes et valeurs métier, sans panneau générique répétitif. */
+html:root[data-cd-theme] .da42-board{margin:18px 0 26px;padding:24px;background:var(--ui01-head);color:#f6f0e3;border:1px solid #516755;border-radius:3px}
+html:root[data-cd-theme] .da42-board .da4-panel-head h2{color:#f6f0e3;font-size:29px}
+html:root[data-cd-theme] .da42-board .da4-kicker{color:#ebb384}
+html:root[data-cd-theme] .da42-board .da4-meta{color:#c6d4c5}
+html:root[data-cd-theme] .da42-board-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-top:1px solid #a9c0ad55}
+html:root[data-cd-theme] .da42-board-item{padding:22px 18px 8px;border-right:1px solid #a9c0ad55;min-width:0;display:flex;flex-direction:column;gap:9px}
+html:root[data-cd-theme] .da42-board-item:first-child{padding-left:0}
+html:root[data-cd-theme] .da42-board-item:last-child{border-right:0}
+html:root[data-cd-theme] .da42-board-item small{font-size:10px;letter-spacing:1px;color:#d6b898;text-transform:uppercase}
+html:root[data-cd-theme] .da42-board-item strong{font:600 clamp(21px,2.3vw,33px)/1 'Barlow Condensed',sans-serif;overflow-wrap:anywhere}
+html:root[data-cd-theme] .da42-board-item p{font-size:11px;line-height:1.6;color:#d9e4d7;margin:0 0 6px;flex:1}
+html:root[data-cd-theme] .da42-board-item button{padding:9px 0;background:none!important;color:#f0b380!important;border:0!important;text-align:left;font-size:11px;font-weight:700;min-height:44px}
+html:root[data-cd-theme] .da42-board-item button:focus-visible{outline:3px solid #f0b380;outline-offset:2px}
+html:root[data-cd-theme] .da42-panel{margin:22px 0;padding:26px 28px;border:1px solid var(--ui01-border);background:var(--ui01-surface);min-width:0;border-radius:3px}
+html:root[data-cd-theme] .da42-panel .da4-panel-head h2{font-size:clamp(24px,2.5vw,31px)}
+html:root[data-cd-theme] .da42-summary{display:flex;align-items:center;gap:18px;padding:12px 0 24px;border-bottom:1px solid var(--ui01-border);margin-bottom:12px}
+html:root[data-cd-theme] .da42-summary strong{font:600 48px/1 'Barlow Condensed',sans-serif;color:var(--da4-chart)}
+html:root[data-cd-theme] .da42-summary span{font-size:12px;color:var(--da4-muted);line-height:1.6}
+html:root[data-cd-theme] .da42-fitness .da4-bars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+html:root[data-cd-theme] .da42-fitness .da4-bar-row{display:block}
+html:root[data-cd-theme] .da42-fitness .da4-bar-track{height:9px;margin:8px 0}
+html:root[data-cd-theme] .da42-movements{display:grid;gap:12px;margin:16px 0}
+html:root[data-cd-theme] .da42-movement{display:grid;grid-template-columns:55px minmax(0,1fr) minmax(85px,auto);align-items:center;gap:14px;font-size:12px}
+html:root[data-cd-theme] .da42-movement span{color:var(--da4-muted)}
+html:root[data-cd-theme] .da42-movement i{height:12px;display:block;width:var(--size);background:var(--da4-chart);min-width:4px;border-radius:2px}
+html:root[data-cd-theme] .da42-movement i.is-negative{background:var(--da4-copper)}
+html:root[data-cd-theme] .da42-movement strong{text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+html:root[data-cd-theme] .da42-academy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 30px;margin:20px 0}
+html:root[data-cd-theme] .da42-academy-item{display:grid;grid-template-columns:minmax(0,1fr) 80px;gap:8px 10px;font-size:12px}
+html:root[data-cd-theme] .da42-academy-item span{font-weight:600;overflow-wrap:anywhere}
+html:root[data-cd-theme] .da42-academy-item strong{font-variant-numeric:tabular-nums;text-align:right;color:var(--da4-copper)}
+html:root[data-cd-theme] .da42-academy-track{height:9px;background:var(--ui01-soft);position:relative;grid-column:1 / -1}
+html:root[data-cd-theme] .da42-academy-track i{display:block;height:9px;background:var(--da4-chart)}
+html:root[data-cd-theme] .da42-academy-track b{position:absolute;top:-3px;bottom:-3px;width:3px;background:var(--da4-copper)}
+html:root[data-cd-theme] .da42-market-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-block:1px solid var(--ui01-border)}
+html:root[data-cd-theme] .da42-market-grid>div{padding:18px;border-right:1px solid var(--ui01-border);min-width:0}
+html:root[data-cd-theme] .da42-market-grid>div:last-child{border-right:0}
+html:root[data-cd-theme] .da42-market-grid small{display:block;line-height:1.6;font-size:9px;letter-spacing:1px;color:var(--da4-muted)}
+html:root[data-cd-theme] .da42-market-grid strong{display:block;margin-top:12px;font:600 clamp(18px,2.5vw,31px) 'Barlow Condensed',sans-serif;color:var(--da4-type);overflow-wrap:anywhere}
+@media(max-width:950px){
+ html:root[data-cd-theme] .da42-board-grid,html:root[data-cd-theme] .da42-market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ html:root[data-cd-theme] .da42-board-item:nth-child(2){border-right:0}
+ html:root[data-cd-theme] .da42-board-item:nth-child(-n+2){border-bottom:1px solid #a9c0ad55}
+ html:root[data-cd-theme] .da42-market-grid>div:nth-child(2){border-right:0}
+ html:root[data-cd-theme] .da42-market-grid>div:nth-child(-n+2){border-bottom:1px solid var(--ui01-border)}
+}
+@media(max-width:600px){
+ html:root[data-cd-theme] .da42-board,html:root[data-cd-theme] .da42-panel{padding:18px 15px}
+ html:root[data-cd-theme] .da42-board-grid,html:root[data-cd-theme] .da42-market-grid{grid-template-columns:minmax(0,1fr)}
+ html:root[data-cd-theme] .da42-board-item{border:0!important;border-bottom:1px solid #a9c0ad55!important;padding:18px 0}
+ html:root[data-cd-theme] .da42-board-item:last-child{border-bottom:0!important}
+ html:root[data-cd-theme] .da42-market-grid>div{border:0!important;border-bottom:1px solid var(--ui01-border)!important;padding:14px 0}
+ html:root[data-cd-theme] .da42-market-grid>div:last-child{border-bottom:0!important}
+ html:root[data-cd-theme] .da42-academy-grid{grid-template-columns:1fr}
+ html:root[data-cd-theme] .da42-fitness .da4-bars{grid-template-columns:1fr}
+ html:root[data-cd-theme] .da42-movement{gap:8px;grid-template-columns:40px minmax(0,1fr) 90px;font-size:11px}
+}
+@media(forced-colors:active){
+ html:root[data-cd-theme] .da42-board{border-color:CanvasText;background:Canvas;color:CanvasText}
+ html:root[data-cd-theme] .da42-board :is(h2,strong,small,p,button){color:CanvasText!important}
+ html:root[data-cd-theme] .da42-movement i,.da42-academy-track i{background:CanvasText}
+ html:root[data-cd-theme] .da42-academy-track b{background:Highlight}
+}
+
+/* V4.2 PC art direction: editorial command deck, player fitness, cash columns,
+   scouting intelligence and academy player dossiers. Screen-first: 1440 & 1920. */
+@media(min-width:1100px){
+ html:root[data-cd-theme] .da42-command{display:grid;grid-template-columns:minmax(0,1.48fr) minmax(320px,.82fr);min-height:300px;margin:18px 0 25px;padding:0;border:1px solid var(--ui01-border);overflow:hidden}
+ html:root[data-cd-theme] .da42-command-lead{min-height:300px;position:relative;padding:26px 34px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(92deg,#10291f 0%,#10291fe8 40%,#10291f95 100%),url('assets/premium-v4-matchday.webp') center 53% / cover}
+ html:root[data-cd-theme] .da42-command-overline{display:flex;align-items:center;justify-content:space-between;gap:10px;letter-spacing:1.5px;font-size:10px;font-weight:700;color:#ecc5a4}
+ html:root[data-cd-theme] .da42-command-overline span{font-weight:400;color:#d8e4d3}
+ html:root[data-cd-theme] .da42-command-content{display:flex;align-items:center;justify-content:space-between;gap:18px}
+ html:root[data-cd-theme] .da42-command-content h2{font:600 clamp(33px,3.8vw,58px)/.98 'Barlow Condensed',sans-serif!important;color:#f8f5ea!important;max-width:600px;margin:9px 0 11px;letter-spacing:-.5px}
+ html:root[data-cd-theme] .da42-command-kicker{color:#f0b37f;font-size:10px;font-weight:700;letter-spacing:1.4px}
+ html:root[data-cd-theme] .da42-command-content p{color:#d9e4da;font-size:12px;line-height:1.65}
+ html:root[data-cd-theme] .da42-command-cta{margin-top:17px;min-height:43px;padding:12px 19px;background:#e6a16d!important;color:#17261f!important;border:1px solid #e6a16d!important;font-size:12px;font-weight:800}
+ html:root[data-cd-theme] .da42-command-cta span{margin-left:16px;font-size:16px}
+ html:root[data-cd-theme] .da42-command-cta:focus-visible,html:root[data-cd-theme] .da42-rail-item button:focus-visible{outline:3px solid #f7d9aa;outline-offset:3px}
+ html:root[data-cd-theme] .da42-command-crest{flex:none;display:grid;place-items:center;width:95px;height:115px;font:700 31px 'Barlow Condensed',sans-serif;background:linear-gradient(130deg,#edd6b5,#bd8660);color:#173c2f;clip-path:polygon(5% 0,95% 0,95% 78%,50% 100%,5% 78%);filter:drop-shadow(0 8px 15px #0008)}
+ html:root[data-cd-theme] .da42-command-fixtures{display:flex;gap:16px;align-items:center;flex-wrap:wrap;font-size:10px;letter-spacing:.4px;color:#d9e5d8}
+ html:root[data-cd-theme] .da42-command-fixtures span{padding-right:16px;border-right:1px solid #d8e5d84d}
+ html:root[data-cd-theme] .da42-command-fixtures b{color:#edb781}
+ html:root[data-cd-theme] .da42-command-rail{padding:22px 24px;background:#10291f;display:flex;flex-direction:column}
+ html:root[data-cd-theme] .da42-rail-head{font-size:10px;letter-spacing:1.2px;font-weight:700;color:#edb781;display:flex;justify-content:space-between;gap:8px;padding-bottom:10px}
+ html:root[data-cd-theme] .da42-rail-head span{color:#d7e4d7;font-size:9px;font-weight:400}
+ html:root[data-cd-theme] .da42-rail-item{flex:1;display:grid;grid-template-columns:23px minmax(0,1fr) 36px;gap:10px;align-items:center;border-top:1px solid #abc4b535;min-height:78px}
+ html:root[data-cd-theme] .da42-rail-index{font-size:10px;color:#e3a477;align-self:start;margin-top:18px}
+ html:root[data-cd-theme] .da42-rail-item small{font-size:9px;letter-spacing:.9px;color:#aec8b5}
+ html:root[data-cd-theme] .da42-rail-item strong{display:block;font:600 clamp(22px,2vw,28px) 'Barlow Condensed',sans-serif;color:#f7f5ec;line-height:1.15}
+ html:root[data-cd-theme] .da42-rail-item p{margin:3px 0 0;font-size:10px;color:#b8cbbc}
+ html:root[data-cd-theme] .da42-rail-item button{border:1px solid #d8ab8266;background:transparent;color:#f2bc8f;min-width:35px;min-height:35px;cursor:pointer;font-size:18px}
+ html:root[data-cd-theme] .da42-desktop-stage{border-top:3px solid var(--da4-copper);padding:29px 32px;margin:22px 0}
+ html:root[data-cd-theme] .da42-fitness-composition{display:grid;grid-template-columns:250px minmax(0,1fr);gap:42px;min-height:290px}
+ html:root[data-cd-theme] .da42-fitness-meter{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 12px;border-right:1px solid var(--ui01-border)}
+ html:root[data-cd-theme] .da42-fitness-disc{width:178px;height:178px;border-radius:50%;background:conic-gradient(var(--da4-chart) calc(var(--fitness)*1%),var(--ui01-soft) 0);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+ html:root[data-cd-theme] .da42-fitness-disc:before{content:'';position:absolute;inset:13px;background:var(--ui01-surface);border-radius:50%}
+ html:root[data-cd-theme] .da42-fitness-disc>*{position:relative;z-index:1}
+ html:root[data-cd-theme] .da42-fitness-disc span{font-size:8px;letter-spacing:1px;color:var(--da4-muted)}
+ html:root[data-cd-theme] .da42-fitness-disc strong{font:600 67px/1 'Barlow Condensed',sans-serif;color:var(--da4-type)}
+ html:root[data-cd-theme] .da42-fitness-disc small{font-size:11px;color:var(--da4-muted)}
+ html:root[data-cd-theme] .da42-fitness-meter>p{text-align:center;max-width:190px;font-size:11px;line-height:1.6;color:var(--da4-muted)}
+ html:root[data-cd-theme] .da42-fitness-distribution{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-content:center}
+ html:root[data-cd-theme] .da42-fitness-distribution>h3{grid-column:1/-1;font:600 24px 'Barlow Condensed',sans-serif;margin:0}
+ html:root[data-cd-theme] .da42-condition-grid{display:flex;gap:9px}
+ html:root[data-cd-theme] .da42-condition{flex:1;padding:17px 8px;text-align:center;background:var(--ui01-soft);border-top:3px solid var(--da4-chart)}
+ html:root[data-cd-theme] .da42-condition.is-0{border-color:var(--da4-copper)}
+ html:root[data-cd-theme] .da42-condition.is-1{border-color:#d9ad70}
+ html:root[data-cd-theme] .da42-condition strong{display:block;font:600 36px 'Barlow Condensed',sans-serif}
+ html:root[data-cd-theme] .da42-condition span,.da42-condition small{display:block;color:var(--da4-muted);font-size:10px}
+ html:root[data-cd-theme] .da42-fitness-low{border-left:1px solid var(--ui01-border);padding-left:20px}
+ html:root[data-cd-theme] .da42-fitness-low h3{font:600 19px 'Barlow Condensed',sans-serif;margin:0 0 8px}
+ html:root[data-cd-theme] .da42-fitness-low div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--ui01-border);padding:6px 0;font-size:11px}
+ html:root[data-cd-theme] .da42-fitness-low b{color:var(--da4-copper);white-space:nowrap}
+ html:root[data-cd-theme] .da42-cash-summary{display:grid;grid-template-columns:2fr 1fr 1fr;border-block:1px solid var(--ui01-border);margin-bottom:20px}
+ html:root[data-cd-theme] .da42-cash-summary>div{padding:16px 20px;border-right:1px solid var(--ui01-border)}
+ html:root[data-cd-theme] .da42-cash-summary>div:first-child{padding-left:0}
+ html:root[data-cd-theme] .da42-cash-summary>div:last-child{border:0}
+ html:root[data-cd-theme] .da42-cash-summary small{display:block;font-size:9px;letter-spacing:1px;color:var(--da4-muted)}
+ html:root[data-cd-theme] .da42-cash-summary strong{display:block;font:600 31px 'Barlow Condensed',sans-serif;margin-top:6px}
+ html:root[data-cd-theme] .da42-cash-timeline{height:190px;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:12px;border-bottom:1px solid var(--ui01-border);padding:0 4px 12px;margin:8px 0 16px}
+ html:root[data-cd-theme] .da42-cash-week{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-width:0}
+ html:root[data-cd-theme] .da42-cash-week>strong{order:2;color:var(--da4-type);font-size:10px;padding-top:8px}
+ html:root[data-cd-theme] .da42-cash-week>small{order:3;color:var(--da4-muted);font-size:9px;white-space:nowrap}
+ html:root[data-cd-theme] .da42-cash-column{width:100%;max-width:55px;height:132px;display:flex;align-items:flex-end;justify-content:center;background:linear-gradient(to top,var(--ui01-soft),transparent)}
+ html:root[data-cd-theme] .da42-cash-column i{width:75%;min-height:3px;display:block;background:var(--da4-chart);border-radius:2px 2px 0 0}
+ html:root[data-cd-theme] .da42-cash-column i.is-negative{background:var(--da4-copper)}
+ html:root[data-cd-theme] .da42-academy-intro{display:flex;align-items:center;gap:0;margin:15px 0 20px;border-block:1px solid var(--ui01-border)}
+ html:root[data-cd-theme] .da42-academy-intro>div{padding:13px 24px;border-right:1px solid var(--ui01-border)}
+ html:root[data-cd-theme] .da42-academy-intro>div:first-child{padding-left:0}
+ html:root[data-cd-theme] .da42-academy-intro strong{font:600 33px 'Barlow Condensed',sans-serif;display:block;color:var(--da4-copper)}
+ html:root[data-cd-theme] .da42-academy-intro span{color:var(--da4-muted);font-size:10px}
+ html:root[data-cd-theme] .da42-academy-intro>p{color:var(--da4-muted);font-size:12px;margin-left:auto;padding:0 15px}
+ html:root[data-cd-theme] .da42-talent-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0 20px}
+ html:root[data-cd-theme] .da42-talent{padding:16px 17px;border:1px solid var(--ui01-border);background:var(--ui01-soft);min-width:0}
+ html:root[data-cd-theme] .da42-talent-head{display:flex;justify-content:space-between;gap:5px;font-size:10px;color:var(--da4-copper)}
+ html:root[data-cd-theme] .da42-talent-head small{color:var(--da4-muted)}
+ html:root[data-cd-theme] .da42-talent h3{font:600 22px/1.1 'Barlow Condensed',sans-serif;min-height:49px;margin:16px 0 6px}
+ html:root[data-cd-theme] .da42-talent-numbers{display:flex;align-items:baseline;gap:8px;font-size:12px;color:var(--da4-muted)}
+ html:root[data-cd-theme] .da42-talent-numbers strong{font:600 27px 'Barlow Condensed',sans-serif;color:var(--da4-type)}
+ html:root[data-cd-theme] .da42-talent-numbers strong:nth-of-type(2){color:var(--da4-copper)}
+ html:root[data-cd-theme] .da42-talent-track{height:9px;position:relative;background:var(--ui01-border);margin:14px 0 17px}
+ html:root[data-cd-theme] .da42-talent-track i{height:9px;display:block;background:var(--da4-chart)}
+ html:root[data-cd-theme] .da42-talent-track b{position:absolute;top:-4px;bottom:-4px;width:3px;background:var(--da4-copper)}
+ html:root[data-cd-theme] .da42-talent footer{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.6px;color:var(--da4-muted)}
+ html:root[data-cd-theme] .da42-talent footer strong{color:var(--da4-copper)}
+ html:root[data-cd-theme] .da42-market-composition{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(230px,.7fr);gap:28px;min-height:245px}
+ html:root[data-cd-theme] .da42-market-primary>small{font-size:10px;letter-spacing:1px;color:var(--da4-muted)}
+ html:root[data-cd-theme] .da42-market-primary>strong{display:block;font:600 52px/1.1 'Barlow Condensed',sans-serif;color:var(--da4-copper)}
+ html:root[data-cd-theme] .da42-market-primary>p,.da42-market-breakdown>p{color:var(--da4-muted);font-size:11px}
+ html:root[data-cd-theme] .da42-market-breakdown{margin-top:18px;border-top:1px solid var(--ui01-border);padding-top:14px}
+ html:root[data-cd-theme] .da42-market-breakdown h3{font:600 20px 'Barlow Condensed',sans-serif;margin:0 0 10px}
+ html:root[data-cd-theme] .da42-market-bars{display:grid;gap:9px}
+ html:root[data-cd-theme] .da42-market-bar{display:grid;grid-template-columns:92px minmax(0,1fr) 26px;gap:11px;align-items:center;font-size:11px}
+ html:root[data-cd-theme] .da42-market-bar div{height:10px;background:var(--ui01-soft)}
+ html:root[data-cd-theme] .da42-market-bar i{display:block;height:100%;background:var(--da4-chart)}
+ html:root[data-cd-theme] .da42-market-bar i.is-2{background:var(--da4-copper)}
+ html:root[data-cd-theme] .da42-market-facts{display:grid;grid-template-rows:repeat(3,1fr);border-left:1px solid var(--ui01-border);padding-left:28px}
+ html:root[data-cd-theme] .da42-market-facts>div{padding:12px 0;border-bottom:1px solid var(--ui01-border)}
+ html:root[data-cd-theme] .da42-market-facts>div:last-child{border-bottom:0}
+ html:root[data-cd-theme] .da42-market-facts small{display:block;font-size:9px;letter-spacing:1px;color:var(--da4-muted)}
+ html:root[data-cd-theme] .da42-market-facts strong{font:600 26px 'Barlow Condensed',sans-serif;color:var(--da4-type)}
+}
+@media(min-width:1100px) and (max-width:1499px){
+ html:root[data-cd-theme] .da42-command{grid-template-columns:minmax(0,1.35fr) minmax(300px,.85fr)}
+ html:root[data-cd-theme] .da42-command-crest{width:76px;height:90px;font-size:24px}
+ html:root[data-cd-theme] .da42-talent-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+ html:root[data-cd-theme] .da42-fitness-composition{grid-template-columns:195px minmax(0,1fr);gap:20px}
+ html:root[data-cd-theme] .da42-fitness-distribution{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+}
+@media(min-width:1100px) and (prefers-reduced-motion:no-preference){
+ html:root[data-cd-theme] .da42-rail-item button,html:root[data-cd-theme] .da42-command-cta{transition:transform .16s ease,background .16s ease}
+ html:root[data-cd-theme] .da42-rail-item button:hover,html:root[data-cd-theme] .da42-command-cta:hover{transform:translateY(-2px)}
+}
+@media(forced-colors:active){
+ html:root[data-cd-theme] .da42-command-lead,html:root[data-cd-theme] .da42-command-rail{background:Canvas;color:CanvasText}
+ html:root[data-cd-theme] .da42-talent-track b{background:Highlight}
+}
+
+/* V4.2 PC — correction après lecture des captures réelles 1920/1440 : le visuel
+   matchday est déjà présenté dans le poste de commande ; la seconde affiche
+   devient une barre utilitaire accessible vers le centre de match natif. */
+@media(min-width:1100px){
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage{display:block!important;margin:0 0 16px!important}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-condition{display:none!important}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-fixture.da4-panel{
+  min-height:0!important;padding:12px 22px!important;display:flex!important;align-items:center!important;
+  flex-direction:row!important;justify-content:space-between!important;gap:18px!important;
+  background:var(--ui01-surface)!important;color:var(--da4-type)!important;
+  border-color:var(--ui01-border)!important}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-fixture .da4-panel-head{flex:1;min-width:0;margin:0!important}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-fixture h2{font-size:18px!important;color:var(--da4-type)!important}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-fixture .da4-duel{display:none!important}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-fixture footer{
+  display:flex!important;align-items:center!important;gap:16px!important;flex:0 0 auto;
+  margin:0!important;padding:0!important;border:0!important;min-height:0!important}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-fixture footer>span{color:var(--da4-muted)!important;font-size:11px}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-fixture .da4-cta{
+  min-height:40px!important;background:var(--da4-copper)!important;color:#fff!important}
+}
+
+/* V4.2 PC NAVIGATION — véritables sous-pages exclusives, jamais d'accordéon. */
+@media(min-width:1100px){
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)>.main.da42-paged{
+  height:var(--da42-available-height)!important;max-height:var(--da42-available-height)!important;
+  overflow:hidden!important;display:flex!important;flex-direction:column!important;min-height:0!important;
+ }
+ html:root[data-cd-theme] .main.da42-paged>.heading{flex:0 0 auto!important;margin-bottom:9px!important}
+ html:root[data-cd-theme] .main.da42-paged>.cd03-tabs,
+ html:root[data-cd-theme] .main.da42-paged>.cd04-tabs{flex:0 0 auto!important}
+ html:root[data-cd-theme] .main.da42-paged>.cd03-content:has(>.da42-workspace-shell),
+ html:root[data-cd-theme] .main.da42-paged>.cd04-content:has(>.da42-workspace-shell){
+  flex:1 1 auto!important;min-height:0!important;max-height:none!important;display:flex!important;
+  flex-direction:column!important;overflow:hidden!important;
+ }
+ html:root[data-cd-theme] .da42-workspace-shell{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;
+  min-height:0!important;min-width:0!important;width:100%!important;overflow:hidden!important}
+ html:root[data-cd-theme] .da42-subnav{display:flex;align-items:stretch;gap:0;flex:0 0 auto;border-bottom:2px solid var(--da4-chart);
+  background:var(--ui01-surface);min-height:50px;overflow-x:auto;overflow-y:hidden}
+ html:root[data-cd-theme] .da42-subtab{display:flex;align-items:center;gap:10px;flex:0 0 auto;min-width:155px;
+  padding:12px 20px!important;border:0!important;border-right:1px solid var(--ui01-border)!important;
+  border-radius:0!important;background:transparent!important;color:var(--da4-muted)!important;
+  font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:600;cursor:pointer}
+ html:root[data-cd-theme] .da42-subtab[aria-selected="true"]{background:var(--da4-chart)!important;color:#fff!important}
+ html:root[data-cd-theme] .da42-subtab:focus-visible{outline:3px solid var(--da4-copper);outline-offset:-4px}
+ html:root[data-cd-theme] .da42-tab-index{font:700 10px system-ui,sans-serif;opacity:.65}
+ html:root[data-cd-theme] .da42-page-viewport{flex:1 1 auto;min-height:0;overflow:hidden;position:relative;padding:15px 0 0}
+ html:root[data-cd-theme] .da42-page{display:flex;flex-direction:column;gap:12px;height:100%;max-height:100%;
+  min-height:0;min-width:0;overflow:hidden}
+ html:root[data-cd-theme] .da42-page[hidden]{display:none!important}
+ html:root[data-cd-theme] .da42-page>.da42-command{margin:0!important;min-height:0;height:100%!important;flex:1 1 auto}
+ html:root[data-cd-theme] .da42-page>.da42-command .da42-command-lead{height:100%;min-height:0}
+ html:root[data-cd-theme] .da42-page>.da42-command .da42-command-rail{height:100%;min-height:0}
+ html:root[data-cd-theme] .da42-page>.da42-panel{margin:0!important;min-height:0;flex:1 1 auto;overflow:hidden}
+ html:root[data-cd-theme] .da42-page>.da42-fitness,
+ html:root[data-cd-theme] .da42-page>.da42-cash-stage,
+ html:root[data-cd-theme] .da42-page>.da42-academy,
+ html:root[data-cd-theme] .da42-page>.da42-market{display:flex;flex-direction:column}
+ html:root[data-cd-theme] .da42-page :is(.da42-fitness-composition,.da42-cash-timeline,.da42-talent-grid,.da42-market-composition){
+  flex:1 1 auto;min-height:0;max-height:100%;overflow:hidden}
+ html:root[data-cd-theme] .da42-page .da42-talent-grid{grid-template-rows:repeat(2,minmax(0,1fr));gap:10px}
+ html:root[data-cd-theme] .da42-page .da42-talent{padding:10px 13px;overflow:hidden}
+ html:root[data-cd-theme] .da42-page .da42-talent h3{margin:9px 0 4px;min-height:0}
+ html:root[data-cd-theme] .da42-page .da42-talent-track{margin:6px 0 9px}
+ html:root[data-cd-theme] .da42-page .da42-academy-intro{flex:0 0 auto;margin:5px 0 10px}
+ html:root[data-cd-theme] .da42-page .da42-cash-summary{flex:0 0 auto;margin:0 0 12px}
+ html:root[data-cd-theme] .da42-page .da42-cash-timeline{height:auto!important}
+ html:root[data-cd-theme] .da42-page .da42-cash-column{height:100%;max-height:150px}
+ html:root[data-cd-theme] .da42-page .da42-market-primary>strong{font-size:45px}
+ html:root[data-cd-theme] .da42-page .da42-market-composition{min-height:0}
+ html:root[data-cd-theme] .da42-page .da4-chart-note{flex:0 0 auto;margin:7px 0 0;font-size:10px}
+ html:root[data-cd-theme] .da42-page :is(.da4-panel-head,.da4-panel-head h2){margin-bottom:9px}
+ html:root[data-cd-theme] .da42-page .da4-finance-chart{flex:1 1 auto;min-height:0;margin:0!important;
+  overflow:hidden;display:flex;flex-direction:column}
+ html:root[data-cd-theme] .da42-page .da4-finance-chart .da4-chart-viewport{flex:1 1 auto;min-height:0;overflow:hidden}
+ html:root[data-cd-theme] .da42-page .da4-finance-chart .da4-chart-note{margin-bottom:0}
+ html:root[data-cd-theme] .da42-page>.da4-panel,
+ html:root[data-cd-theme] .da42-page>.da4-tactics-stage,
+ html:root[data-cd-theme] .da42-page>.da4-academy-stage,
+ html:root[data-cd-theme] .da42-page>.da4-recruit-stage,
+ html:root[data-cd-theme] .da42-page>.da4-calendar,
+ html:root[data-cd-theme] .da42-page>.da4-desk-stage{
+  flex:1 1 auto;min-height:0;max-height:100%;overflow:hidden;margin:0!important}
+ html:root[data-cd-theme] .da42-page>.da4-recruit-stage{grid-template-columns:1fr 1fr}
+ html:root[data-cd-theme] .da42-page>.da4-academy-stage{grid-template-columns:1.4fr 1fr}
+ html:root[data-cd-theme] .da42-page .da4-dossier{border:0}
+ html:root[data-cd-theme] .da42-page-native{overflow-y:auto!important;overscroll-behavior:contain}
+ html:root[data-cd-theme] .da42-page-native :is(.table-wrap,.data-table,.cd03-table,.cd04-table){overflow-y:auto;max-height:100%}
+ html:root[data-cd-theme] .da42-page :is(.da4-values-table,.da4-chart-values,details.da4-values,details.da4-data){
+  flex:0 1 auto;max-height:200px;overflow-y:auto}
+ html:root[data-cd-theme] .da42-page .da4-desk-stage>.da4-fixture{height:100%;min-height:0}
+ html:root[data-cd-theme] .da42-page .da4-fixtures{max-height:100%}
+}
+
+/* Lorsque les vrais espaces PC sont actifs, seule leur surface interne peut défiler.
+   La navigation principale et les sous-onglets ne poussent jamais le document. */
+@media(min-width:1100px){
+ html:root[data-cd-theme]:has(.da42-paged),
+ html:root[data-cd-theme]:has(.da42-paged) body{height:100dvh!important;max-height:100dvh!important;overflow:hidden!important}
+}
+
+/* Ne jamais capturer la barre native (navigation principale, thème, sauvegarde)
+   à l'intérieur des sous-pages. Elle reste stable et entièrement visible. */
+@media(min-width:1100px){
+ html:root[data-cd-theme] .main.da42-paged>.ui01-appbar{
+  flex:0 0 auto!important;min-height:0!important;display:block!important;
+  overflow:visible!important;position:relative!important;z-index:90}
+ html:root[data-cd-theme] .main.da42-paged>.ui01-appbar #ui01-theme{
+  visibility:visible!important;opacity:1!important;display:block!important}
+}
+
+/* Les listes de valeurs ne sont jamais des accordéons : scroll dans le tableau,
+   sans augmentation de la hauteur de la sous-page. */
+@media(min-width:1100px){
+ html:root[data-cd-theme] .da42-page .da42-static-values{
+  flex:0 1 auto;min-height:0;max-height:155px;overflow:hidden!important;
+  border-top:1px solid var(--ui01-border);margin-top:8px;padding-top:5px;
+ }
+ html:root[data-cd-theme] .da42-page .da42-static-values .da4-table-scroll{
+  display:block!important;max-height:140px;overflow-y:auto!important;overscroll-behavior:contain;
+ }
+ html:root[data-cd-theme] .da42-page .da42-static-values table{width:100%;font-size:11px}
+}
+
+/* Affichage PC en une vue : les KPI natifs de Recrutement/Formation ont
+   leur propre sous-page "Dossiers", plutôt que de réduire chaque écran. */
+@media(min-width:1100px){
+ html:root[data-cd-theme] .main.da42-paged .cd03:has(.da42-workspace-shell),
+ html:root[data-cd-theme] .main.da42-paged .cd04:has(.da42-workspace-shell){
+  flex:1 1 auto;min-height:0;height:100%;max-height:100%;overflow:hidden;
+  display:flex;flex-direction:column
+ }
+ html:root[data-cd-theme] .main.da42-paged .cd03:has(.da42-workspace-shell)>.cd03-header,
+ html:root[data-cd-theme] .main.da42-paged .cd04:has(.da42-workspace-shell)>.cd04-header{
+  flex:0 0 auto!important;padding:9px 19px!important;min-height:63px!important;
+  align-items:center;gap:12px
+ }
+ html:root[data-cd-theme] .main.da42-paged .cd03:has(.da42-workspace-shell)>.cd03-header h2,
+ html:root[data-cd-theme] .main.da42-paged .cd04:has(.da42-workspace-shell)>.cd04-header h2{
+  font-size:26px!important;line-height:1.05;margin:3px 0!important
+ }
+ html:root[data-cd-theme] .main.da42-paged .cd03:has(.da42-workspace-shell)>.cd03-header p:last-child,
+ html:root[data-cd-theme] .main.da42-paged .cd04:has(.da42-workspace-shell)>.cd04-header p:last-child{
+  display:none!important
+ }
+ html:root[data-cd-theme] .main.da42-paged .cd03:has(.da42-workspace-shell)>.cd03-tabs,
+ html:root[data-cd-theme] .main.da42-paged .cd04:has(.da42-workspace-shell)>.cd04-tabs{
+  flex:0 0 auto!important
+ }
+ html:root[data-cd-theme] .main.da42-paged .cd03:has(.da42-workspace-shell)>.cd03-content,
+ html:root[data-cd-theme] .main.da42-paged .cd04:has(.da42-workspace-shell)>.cd04-content{
+  display:flex!important;flex:1 1 auto!important;min-height:0!important;
+  flex-direction:column!important;overflow:hidden!important
+ }
+ html:root[data-cd-theme] .da42-page-native>.cd03-kpis,
+ html:root[data-cd-theme] .da42-page-native>.cd04-kpis{flex:0 0 auto;margin-bottom:14px}
+}
+
+/* Correction mesurée à la CI : les quatre espoirs d'une carrière initiale
+   occupent UNE rangée entière, et le tableau prend un espace local réduit. */
+@media(min-width:1100px){
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-academy{
+  padding:17px 22px!important;gap:7px!important;
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da4-panel-head{
+  margin-bottom:2px!important;flex:0 0 auto
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-academy-intro{
+  flex:0 0 auto;margin:0 0 5px!important;padding:0!important;min-height:47px
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-academy-intro>div{
+  padding:3px 14px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-academy-intro strong{font-size:25px}
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-talent-grid{
+  display:grid!important;grid-template-rows:none!important;
+  grid-auto-rows:minmax(0,1fr)!important;align-content:stretch;
+  margin:2px 0 3px!important;min-height:0!important;flex:1 1 auto!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-talent{
+  padding:9px 12px!important;min-height:0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-talent h3{
+  font-size:19px!important;margin:6px 0 2px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-talent-numbers strong{
+  font-size:23px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-static-values{
+  flex:0 0 82px!important;max-height:82px!important;min-height:0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-static-values .da4-table-scroll{
+  max-height:77px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da4-chart-note{
+  font-size:9px!important;margin:2px 0!important
+ }
+}
+
+/* Audit PC 1440×900 : récupérer toute la hauteur de l'observatoire, avant
+   le tableau de comparaison. La carte et les trois indicateurs restent visibles. */
+@media(min-width:1100px){
+ html:root[data-cd-theme] .main.da42-paged .cd03:has(.da42-workspace-shell),
+ html:root[data-cd-theme] .main.da42-paged .cd04:has(.da42-workspace-shell){
+  height:auto!important;max-height:none!important;flex:1 1 0!important;min-height:0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market{
+  padding:14px 20px!important;gap:6px!important;min-height:0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da4-panel-head{
+  flex:0 0 auto!important;margin:0 0 2px!important;padding:0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da4-panel-head h2{
+  font-size:25px!important;margin:2px 0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-composition{
+  display:grid!important;grid-template-columns:minmax(0,1.7fr) minmax(180px,.6fr)!important;
+  flex:1 1 auto!important;min-height:150px!important;overflow:hidden!important;gap:12px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-primary>strong{
+  font-size:37px!important;margin:3px 0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-primary>p{
+  line-height:1.25!important;margin:3px 0!important;font-size:10px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-breakdown{
+  margin-top:7px!important;padding-top:5px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-breakdown h3{
+  font-size:17px!important;margin-bottom:3px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-bars{
+  gap:4px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-breakdown>p{
+  margin:4px 0!important;font-size:9px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-facts{
+  gap:0!important;padding-left:12px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-facts>div{
+  padding:5px 0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-facts strong{
+  font-size:21px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-static-values{
+  flex:0 0 65px!important;max-height:65px!important;min-height:0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-static-values .da4-table-scroll{
+  max-height:60px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da4-chart-note{
+  font-size:9px!important;margin:0!important
+ }
+}
