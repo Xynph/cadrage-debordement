@@ -89,7 +89,7 @@ function lnrPlayerFacts(club,player){
  const fact=(label,value)=>'<dt>'+lnrEscape(label)+'</dt><dd>'+lnrEscape(value)+'</dd>';
  const provenance='<p class="help">Source des identités, groupes et nationalités : effectif LNR au 31/10/2026. Année de naissance : compilation DATA-06. Les trois dates complètes sont les seules confirmées par l’utilisateur, non vérifiées indépendamment.</p>';
  const real='<dl>'+fact('Identifiant LNR',id)+fact('Nom LNR',player[1])+fact('Groupe de poste LNR',player[2])+fact('Nationalité LNR',player[3]||'Non renseignée')+
-  fact('Naissance',birth?(birth.birthDate||String(birth.birthYear)+(birth.ageEstimated?' (année seulement)':'')):'Non disponible')+
+  fact('Naissance',birth?(birth.birthDate?birth.birthDate:String(birth.birthYear)+(birth.ageEstimated?' (année seulement)':'')):'Non disponible')+
   fact('Âge au 01/07/2026',birth?String(birth.age)+(birth.ageEstimated?' (estimé)':' (date complète)'):'Non disponible')+'</dl>';
  const simulated=gamePlayer?'<dl>'+fact('Poste de simulation',gamePlayer.pos||'Non disponible')+
   fact('Note de simulation',gamePlayer.rating==null?'Non disponible':String(gamePlayer.rating))+
