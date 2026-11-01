@@ -1,0 +1,619 @@
+{
+  "schema": "data06-user-supplied-birthyears-v1",
+  "source": "user-completed-spreadsheet-2026-11-01",
+  "status": "user-supplied-not-independent-verification",
+  "catalogBaseline": "PR #160: 1442 existing linked years; 150 missing IDs",
+  "summary": {
+    "addedYears": 150,
+    "coverageAfterMerge": 1592,
+    "datedOverrides": 3
+  },
+  "records": [
+    {
+      "lnrId": "lnr:13516",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:13514",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:25078",
+      "birthYear": 2009
+    },
+    {
+      "lnrId": "lnr:13517",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:13522",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:24990",
+      "birthYear": 1998
+    },
+    {
+      "lnrId": "lnr:2391",
+      "birthYear": 1994
+    },
+    {
+      "lnrId": "lnr:14043",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:25053",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:25054",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:13653",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:12620",
+      "birthYear": 2005
+    },
+    {
+      "lnrId": "lnr:13717",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:384",
+      "birthYear": 1993
+    },
+    {
+      "lnrId": "lnr:24984",
+      "birthYear": 1997
+    },
+    {
+      "lnrId": "lnr:13778",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:24985",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:24986",
+      "birthYear": 2009
+    },
+    {
+      "lnrId": "lnr:25004",
+      "birthYear": 2003
+    },
+    {
+      "lnrId": "lnr:25005",
+      "birthYear": 1998
+    },
+    {
+      "lnrId": "lnr:1059",
+      "birthYear": 2005
+    },
+    {
+      "lnrId": "lnr:13532",
+      "birthYear": 2005
+    },
+    {
+      "lnrId": "lnr:13467",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:13410",
+      "birthYear": 1998
+    },
+    {
+      "lnrId": "lnr:25012",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:12715",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:13535",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:13545",
+      "birthYear": 2009
+    },
+    {
+      "lnrId": "lnr:25080",
+      "birthYear": 2010
+    },
+    {
+      "lnrId": "lnr:13547",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:13452",
+      "birthYear": 1993
+    },
+    {
+      "lnrId": "lnr:13234",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:13693",
+      "birthYear": 2006
+    },
+    {
+      "lnrId": "lnr:25013",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:25014",
+      "birthYear": 2009
+    },
+    {
+      "lnrId": "lnr:12243",
+      "birthYear": 2005
+    },
+    {
+      "lnrId": "lnr:12723",
+      "birthYear": 2006
+    },
+    {
+      "lnrId": "lnr:12457",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:1373",
+      "birthYear": 1997
+    },
+    {
+      "lnrId": "lnr:25052",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:13836",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:14049",
+      "birthYear": 1993
+    },
+    {
+      "lnrId": "lnr:13704",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:13476",
+      "birthYear": 2006
+    },
+    {
+      "lnrId": "lnr:12765",
+      "birthYear": 2005
+    },
+    {
+      "lnrId": "lnr:13705",
+      "birthYear": 2006
+    },
+    {
+      "lnrId": "lnr:13539",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:11748",
+      "birthYear": 1998
+    },
+    {
+      "lnrId": "lnr:13764",
+      "birthYear": 1996
+    },
+    {
+      "lnrId": "lnr:13813",
+      "birthYear": 2004
+    },
+    {
+      "lnrId": "lnr:13613",
+      "birthYear": 2000
+    },
+    {
+      "lnrId": "lnr:25031",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:25032",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:12514",
+      "birthYear": 2006
+    },
+    {
+      "lnrId": "lnr:13598",
+      "birthYear": 1993
+    },
+    {
+      "lnrId": "lnr:25033",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:25035",
+      "birthYear": 2006
+    },
+    {
+      "lnrId": "lnr:1866",
+      "birthYear": 2004
+    },
+    {
+      "lnrId": "lnr:25075",
+      "birthYear": 2006
+    },
+    {
+      "lnrId": "lnr:12369",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:13445",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:25026",
+      "birthYear": 2002
+    },
+    {
+      "lnrId": "lnr:25029",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:13940",
+      "birthYear": 1997
+    },
+    {
+      "lnrId": "lnr:12709",
+      "birthYear": 2004
+    },
+    {
+      "lnrId": "lnr:25030",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:25028",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:12543",
+      "birthYear": 2005
+    },
+    {
+      "lnrId": "lnr:12383",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:13385",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:13548",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:12732",
+      "birthYear": 2005
+    },
+    {
+      "lnrId": "lnr:25027",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:1824",
+      "birthYear": 1993
+    },
+    {
+      "lnrId": "lnr:25003",
+      "birthYear": 1995
+    },
+    {
+      "lnrId": "lnr:13417",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:13541",
+      "birthYear": 2002
+    },
+    {
+      "lnrId": "lnr:13725",
+      "birthYear": 2007,
+      "userConfirmedBirthDate": "2007-03-10",
+      "historicalConflictRetained": true
+    },
+    {
+      "lnrId": "lnr:24999",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:25002",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:13944",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:13174",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:2500",
+      "birthYear": 1999
+    },
+    {
+      "lnrId": "lnr:25046",
+      "birthYear": 2009
+    },
+    {
+      "lnrId": "lnr:12602",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:12568",
+      "birthYear": 1997
+    },
+    {
+      "lnrId": "lnr:25039",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:11780",
+      "birthYear": 2006
+    },
+    {
+      "lnrId": "lnr:13510",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:13686",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:302",
+      "birthYear": 2005
+    },
+    {
+      "lnrId": "lnr:13507",
+      "birthYear": 1995
+    },
+    {
+      "lnrId": "lnr:12491",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:13687",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:24978",
+      "birthYear": 2006
+    },
+    {
+      "lnrId": "lnr:25074",
+      "birthYear": 1999
+    },
+    {
+      "lnrId": "lnr:965",
+      "birthYear": 2003
+    },
+    {
+      "lnrId": "lnr:24980",
+      "birthYear": 2005
+    },
+    {
+      "lnrId": "lnr:13806",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:24979",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:25084",
+      "birthYear": 2000
+    },
+    {
+      "lnrId": "lnr:12703",
+      "birthYear": 2006
+    },
+    {
+      "lnrId": "lnr:13754",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:25056",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:13621",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:2431",
+      "birthYear": 2001
+    },
+    {
+      "lnrId": "lnr:2903",
+      "birthYear": 2001
+    },
+    {
+      "lnrId": "lnr:829",
+      "birthYear": 1997
+    },
+    {
+      "lnrId": "lnr:24992",
+      "birthYear": 1990
+    },
+    {
+      "lnrId": "lnr:13497",
+      "birthYear": 2005,
+      "userConfirmedBirthDate": "2005-01-01",
+      "historicalConflictRetained": true
+    },
+    {
+      "lnrId": "lnr:25071",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:13694",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:13195",
+      "birthYear": 1994
+    },
+    {
+      "lnrId": "lnr:895",
+      "birthYear": 1996
+    },
+    {
+      "lnrId": "lnr:13564",
+      "birthYear": 2010
+    },
+    {
+      "lnrId": "lnr:13407",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:13418",
+      "birthYear": 1999
+    },
+    {
+      "lnrId": "lnr:25040",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:14059",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:2058",
+      "birthYear": 2005
+    },
+    {
+      "lnrId": "lnr:13526",
+      "birthYear": 2009
+    },
+    {
+      "lnrId": "lnr:25041",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:13527",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:13559",
+      "birthYear": 2009
+    },
+    {
+      "lnrId": "lnr:25070",
+      "birthYear": 2006
+    },
+    {
+      "lnrId": "lnr:13780",
+      "birthYear": 2005
+    },
+    {
+      "lnrId": "lnr:14090",
+      "birthYear": 2009
+    },
+    {
+      "lnrId": "lnr:14089",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:13555",
+      "birthYear": 2006
+    },
+    {
+      "lnrId": "lnr:13684",
+      "birthYear": 2005
+    },
+    {
+      "lnrId": "lnr:24996",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:24995",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:25021",
+      "birthYear": 1999
+    },
+    {
+      "lnrId": "lnr:13831",
+      "birthYear": 2005
+    },
+    {
+      "lnrId": "lnr:13721",
+      "birthYear": 1995
+    },
+    {
+      "lnrId": "lnr:24993",
+      "birthYear": 1998
+    },
+    {
+      "lnrId": "lnr:1382",
+      "birthYear": 2003
+    },
+    {
+      "lnrId": "lnr:479",
+      "birthYear": 2001
+    },
+    {
+      "lnrId": "lnr:25011",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:239",
+      "birthYear": 1998
+    },
+    {
+      "lnrId": "lnr:12675",
+      "birthYear": 2003
+    },
+    {
+      "lnrId": "lnr:25060",
+      "birthYear": 2008
+    },
+    {
+      "lnrId": "lnr:25007",
+      "birthYear": 2001
+    },
+    {
+      "lnrId": "lnr:13758",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:12373",
+      "birthYear": 1994
+    },
+    {
+      "lnrId": "lnr:25015",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:25016",
+      "birthYear": 2007
+    },
+    {
+      "lnrId": "lnr:12563",
+      "birthYear": 2005
+    },
+    {
+      "lnrId": "lnr:12754",
+      "birthYear": 2004
+    },
+    {
+      "lnrId": "lnr:11779",
+      "birthYear": 2003,
+      "userConfirmedBirthDate": "2003-02-14",
+      "historicalConflictRetained": true
+    }
+  ]
+}
