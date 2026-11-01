@@ -157,17 +157,18 @@
    '<p class="da4-chart-note">Coûts comparables uniquement. Cette lecture ne dévoile ni niveau, ni potentiel, ni aptitude non observée.</p></section>';
  }
  function head(kicker,title,meta=''){return '<header class="da4-panel-head"><div><span class="da4-kicker">'+esc(kicker)+'</span><h2>'+esc(title)+'</h2></div>'+(meta?'<span class="da4-meta">'+esc(meta)+'</span>':'')+'</header>';}
- function svg(body,label,w=600,h=250,role='img'){return '<svg class="da4-chart" viewBox="0 0 '+w+' '+h+'" role="'+role+'" aria-label="'+esc(label)+'" xmlns="http://www.w3.org/2000/svg"><title>'+esc(label)+'</title>'+body+'</svg>';}
+ function svg(body,label,w=600,h=250,role='img',fillWidth=false){return '<svg class="da4-chart" viewBox="0 0 '+w+' '+h+'"'+(fillWidth?' preserveAspectRatio="none"':'')+' role="'+role+'" aria-label="'+esc(label)+'" xmlns="http://www.w3.org/2000/svg"><title>'+esc(label)+'</title>'+body+'</svg>';}
  function table(headers,rows,caption){return '<details class="da4-data"><summary>Lire les valeurs</summary><div class="da4-table-scroll"><table><caption>'+esc(caption)+'</caption><thead><tr>'+headers.map(x=>'<th scope="col">'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map((x,i)=>'<'+(i?'td':'th scope="row"')+'>'+esc(x)+'</'+(i?'td':'th')+'>').join('')+'</tr>').join('')+'</tbody></table></div></details>';}
  function lineChart(rows,title,currency=false){
   rows=rows.filter(r=>finite(r.value));if(!rows.length)return '<p class="da4-empty">Aucune donnée enregistrée.</p>';
   const values=rows.map(r=>r.value),rawMin=Math.min(...values),rawMax=Math.max(...values),span=rawMax-rawMin;
   const pad=span?span*.12:Math.max(Math.abs(rawMax)*.08,1),lo=rawMin-pad,hi=rawMax+pad;
-  const x=i=>58+i*514/Math.max(1,rows.length-1),y=v=>190-(v-lo)/(hi-lo)*156;
-  const grid=Array.from({length:5},(_,i)=>{const v=lo+(hi-lo)*i/4;return '<line class="da4-gridline" x1="58" x2="572" y1="'+y(v)+'" y2="'+y(v)+'"/><text class="da4-tick" x="49" y="'+(y(v)+4)+'" text-anchor="end">'+esc(compact(v))+'</text>';}).join('');
+  const wide=currency,chartW=wide?1120:600,chartH=wide?190:250,left=wide?75:58,right=wide?1050:572;
+  const x=i=>left+i*(right-left)/Math.max(1,rows.length-1),y=v=>(wide?142:190)-(v-lo)/(hi-lo)*(wide?108:156);
+  const grid=Array.from({length:5},(_,i)=>{const v=lo+(hi-lo)*i/4;return '<line class="da4-gridline" x1="'+left+'" x2="'+right+'"  y1="'+y(v)+'" y2="'+y(v)+'"/><text class="da4-tick" x="'+(left-9)+'" y="'+(y(v)+4)+'" text-anchor="end">'+esc(compact(v))+'</text>';}).join('');
   const pts=rows.map((r,i)=>x(i)+','+y(r.value)).join(' '),zero=y(Math.min(hi,Math.max(lo,0))),last=rows.at(-1);
-  const labels=rows.map((r,i)=>i===0||i===rows.length-1||i%3===0?'<text class="da4-tick" x="'+x(i)+'" y="216" text-anchor="middle">'+esc(r.label)+'</text>':'').join('');
-  return '<figure class="da4-figure"><div class="da4-chart-viewport" tabindex="0" role="region" aria-label="Graphique défilant horizontalement">'+svg(grid+'<text class="da4-tick" x="58" y="17">'+(currency?'EUR':'Valeur')+'</text><polygon class="da4-area" points="58,'+zero+' '+pts+' '+x(rows.length-1)+','+zero+'"/><polyline class="da4-line" points="'+pts+'"/>'+rows.map((r,i)=>'<circle class="da4-dot" cx="'+x(i)+'" cy="'+y(r.value)+'" r="3"><title>'+esc(r.label+' : '+(currency?eur(r.value):num(r.value)))+'</title></circle>').join('')+labels,title)+'</div><figcaption>'+esc(title)+' · '+esc(currency?eur(last.value):num(last.value))+' à l’horizon affiché.</figcaption></figure>'+table(['Échéance',currency?'Trésorerie (€)':'Valeur'],rows.map(r=>[r.label,currency?eur(r.value):num(r.value)]),title);
+  const labels=rows.map((r,i)=>i===0||i===rows.length-1||i%3===0?'<text class="da4-tick" x="'+x(i)+'" y="'+(wide?171:216)+'" text-anchor="middle">'+esc(r.label)+'</text>':'').join('');
+  return '<figure class="da4-figure"><div class="da4-chart-viewport" tabindex="0" role="region" aria-label="Graphique défilant horizontalement">'+svg(grid+'<text class="da4-tick" x="'+left+'" y="17">'+(currency?'EUR':'Valeur')+'</text><polygon class="da4-area" points="'+left+','+zero+' '+pts+' '+x(rows.length-1)+','+zero+'"/><polyline class="da4-line" points="'+pts+'"/>'+rows.map((r,i)=>'<circle class="da4-dot" cx="'+x(i)+'" cy="'+y(r.value)+'" r="3"><title>'+esc(r.label+' : '+(currency?eur(r.value):num(r.value)))+'</title></circle>').join('')+labels,title,chartW,chartH,'img',wide)+'</div><figcaption>'+esc(title)+' · '+esc(currency?eur(last.value):num(last.value))+' à l’horizon affiché.</figcaption></figure>'+table(['Échéance',currency?'Trésorerie (€)':'Valeur'],rows.map(r=>[r.label,currency?eur(r.value):num(r.value)]),title);
  }
  function bars(rows,title,unit=''){const max=Math.max(1,...rows.map(r=>Math.max(0,r.value||0)));return '<div class="da4-bars" role="img" aria-label="'+esc(title)+'">'+rows.map((r,i)=>'<div class="da4-bar-row'+(r.mine?' is-mine':'')+'"><span>'+esc(r.label)+'</span><div class="da4-bar-track"><i style="width:'+(Math.max(0,r.value||0)/max*100).toFixed(2)+'%;--bar-index:'+i+'"></i></div><strong>'+esc(unit==='€'?eur(r.value):num(r.value)+(unit?' '+unit:''))+'</strong></div>').join('')+'</div>';}
  function ring(rows,title){const total=rows.reduce((s,r)=>s+r.value,0);let off=0;const colors=['#9fc298','#dd8d58','#74877e'];const circles=rows.map((r,i)=>{const len=total?r.value/total*314.16:0,s='<circle cx="70" cy="70" r="50" fill="none" stroke="'+colors[i%3]+'" stroke-width="12" stroke-dasharray="'+len+' '+(314.16-len)+'" stroke-dashoffset="'+(-off)+'" transform="rotate(-90 70 70)"/>';off+=len;return s;}).join('');return '<div class="da4-ring-block">'+svg('<circle cx="70" cy="70" r="50" class="da4-ring-track" fill="none" stroke-width="12"/>'+circles+'<text class="da4-ring-total" x="70" y="76" text-anchor="middle">'+num(total)+'</text><text class="da4-ring-unit" x="70" y="94" text-anchor="middle">JOUEURS</text>',title,140,140)+'<dl class="da4-ring-legend">'+rows.map((r,i)=>'<div><dt><i style="background:'+colors[i%3]+'"></i>'+esc(r.label)+'</dt><dd>'+num(r.value)+'</dd></div>').join('')+'</dl></div>';}
@@ -211,6 +212,51 @@
  function fold(el,title){if(!el)return;const d=node('<details class="da4-dossier"><summary>'+esc(title)+'<span>Ouvrir le dossier ↗</span></summary></details>');el.before(d);d.append(el);}
 
  const workspaceChoice=Object.create(null);
+
+ // V4.3 — context sourced exclusively from the current native career, never an
+ // invented target, result or hidden scouting metric.
+ function page43Context(route,id,m){
+  if(!m)return {label:'DOSSIER DU MANAGER',value:'Données de carrière'};
+  const wages=(m.wages||[]).reduce((sum,x)=>sum+(finite(x.value)?x.value:0),0);
+  const values=cashMovements(m.finance.series);
+  const gaps=academyGaps(m.academy);
+  const needs=priorityNeeds(m.needs);
+  const costs=publicCosts(m.candidates);
+  const xv=(typeof S!=='undefined'&&Array.isArray(S.lineup)?S.lineup:[]).map(key=>m.squad.find(p=>p.id===key)).filter(Boolean);
+  const avg=xv.filter(p=>finite(p.condition));
+  const condition=avg.length?num(avg.reduce((sum,p)=>sum+p.condition,0)/avg.length)+'/100':'—';
+  const defaults={
+   dashboard:{
+    pilotage:['PROCHAIN MATCH',m.next?m.next.opponent.abbr:'Non programmé'],
+    calendrier:['ÉCHÉANCES À VENIR',num(m.fixtures.length)+' rencontres'],
+    dossiers:['EFFECTIF DISPONIBLE',num(m.availability[0]?.value||0)+' / '+num(m.squad.length)]
+   },
+   tactics:{
+    xv:['COMPOSITION COURANTE',num(xv.length)+' titulaires'],
+    condition:['ÉTAT DU XV',condition],
+    analyse:['CHARGE DE SÉLECTION',num(avg.length)+' conditions'],
+    dossiers:['LISTE NATIVE',num(xv.length)+' titulaires']
+   },
+   finance:{
+    tresorerie:['SOLDE DE CARRIÈRE',eur(m.club.cash)],
+    flux:['SEM. PROJETÉES',num(values.length)+' semaines'],
+    salaires:['PAIE HEBDOMADAIRE',eur(wages)+' / sem.'],
+    dossiers:['HORIZON FINANCIER',num(m.finance.budget.weeks)+' semaines']
+   },
+   recruitment:{
+    besoins:['PRIORITÉ PRINCIPALE',needs[0]?num(needs[0].score)+'/100':'Aucune'],
+    marche:['CANDIDATS DOCUMENTÉS',num(costs.count)+' profils'],
+    dossiers:['POSTES EN EXAMEN',num(needs.length)+' priorités']
+   },
+   formation:{
+    passerelle:['ESPOIRS AU CENTRE',num(m.academy.length)+' joueurs'],
+    potentiel:['ÉCARTS CALCULÉS',num(gaps.length)+' profils'],
+    dossiers:['JEUNES PROS',num(m.squad.filter(p=>p.age<=23).length)+' joueurs']
+   }
+  };
+  const pair=defaults[route]?.[id]||['DOSSIER',m.club.abbr];
+  return {label:pair[0],value:pair[1]};
+ }
  function buildWorkspace(root,route,groups){
   if(!root||root.querySelector(':scope>.da42-workspace-shell'))return;
   // Existing game controls are MOVED, not cloned and not replaced.
@@ -218,11 +264,15 @@
   const keep=new Set(Array.from(root.children).filter(el=>el.matches('.ui01-appbar,.heading,.cd03-tabs,.cd04-tabs,.cd02-tabs')));
   const shell=node('<div class="da42-workspace-shell" aria-label="Sous-pages de gestion PC"><nav class="da42-subnav" role="tablist" aria-label="Sous-pages du '+esc(route)+'"></nav><div class="da42-page-viewport"></div></div>');
   const tabs=shell.querySelector('.da42-subnav'),viewport=shell.querySelector('.da42-page-viewport');
+  shell.classList.add('da43-workspace');
+  shell.dataset.da43Section=route;
   const pages=groups.map((g,index)=>{
    const tab=node('<button type="button" role="tab" class="da42-subtab" data-da42-subpage="'+esc(g.id)+'" aria-controls="da42-'+route+'-'+g.id+'" aria-selected="false" tabindex="-1"><span class="da42-tab-index">0'+(index+1)+'</span>'+esc(g.label)+'</button>');
    const panel=node('<section class="da42-page" role="tabpanel" id="da42-'+route+'-'+g.id+'" aria-label="'+esc(g.label)+'" hidden></section>');
    panel.dataset.da42Page=g.id;
    if(g.native)panel.classList.add('da42-page-native');
+   tab.id='da43-tab-'+route+'-'+g.id;
+   panel.setAttribute('aria-labelledby',tab.id);
    tabs.append(tab);viewport.append(panel);
    return {id:g.id,tab,panel};
   });
@@ -262,9 +312,25 @@
    Array.from(details.children).filter(x=>x.tagName!=='SUMMARY').forEach(x=>wrapper.append(x));
    details.replaceWith(wrapper);
   }
+  // Secondary-page commands live INSIDE the navigation band. They never
+  // expand a panel or add content beneath the current page.
+  const auxiliary=node('<div class="da43-page-switch"><div class="da43-page-context"><span class="da43-context-key"></span><strong class="da43-context-value"></strong></div><button type="button" class="da43-skip" data-da43-prev aria-label="Sous-page précédente">←</button><output class="da43-page-count" aria-live="polite"></output><button type="button" class="da43-skip" data-da43-next aria-label="Sous-page suivante">→</button></div>');
+  tabs.append(auxiliary);
+  const contextKey=auxiliary.querySelector('.da43-context-key'),contextValue=auxiliary.querySelector('.da43-context-value'),pageCount=auxiliary.querySelector('.da43-page-count');
+  const managerSnapshot=snapshot();
+  const jump=delta=>{
+   const idx=pages.findIndex(p=>p.tab.getAttribute('aria-selected')==='true');
+   activate(pages[(idx+delta+pages.length)%pages.length].id,false);
+  };
+  auxiliary.querySelector('[data-da43-prev]').addEventListener('click',()=>jump(-1));
+  auxiliary.querySelector('[data-da43-next]').addEventListener('click',()=>jump(1));
   function activate(id,focus){
    const target=pages.find(p=>p.id===id)||pages[0];
    workspaceChoice[route]=target.id;
+   const index=pages.indexOf(target),signal=page43Context(route,target.id,managerSnapshot);
+   pageCount.textContent=String(index+1).padStart(2,'0')+' / '+String(pages.length).padStart(2,'0');
+   contextKey.textContent=signal.label;contextValue.textContent=signal.value;
+   shell.dataset.da43Active=target.id;
    for(const p of pages){
     const active=p===target;
     p.panel.hidden=!active;p.tab.setAttribute('aria-selected',String(active));

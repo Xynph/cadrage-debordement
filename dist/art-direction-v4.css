@@ -750,3 +750,307 @@ html:root[data-cd-theme] .da42-market-grid strong{display:block;margin-top:12px;
   font-size:9px!important;margin:0!important
  }
 }
+
+
+/* ======================================================================
+   CADRAGE DÉBORDEMENT — V4.3 PREMIUM PC
+   Navigation complète et lecture immersive, 1440×900 / 1920×1080.
+   Toutes les améliorations vivent dans les sous-pages EXISTANTES :
+   aucune section repliable, aucun défilement vertical du document.
+   ====================================================================== */
+@media (min-width:1100px){
+ html:root[data-cd-theme] .main.da42-paged{
+  --da43-edge:#e7a06d;
+  --da43-ink:var(--ui01-text);
+  --da43-quiet:var(--ui01-meta);
+  --da43-surface:var(--ui01-surface);
+  --da43-rim:var(--ui01-border);
+  --da43-halo:color-mix(in srgb,var(--da4-chart) 14%,transparent);
+  padding-bottom:0!important;
+ }
+ html:root[data-cd-theme] .main.da42-paged>.heading{
+  margin-top:12px!important;
+  margin-bottom:13px!important;
+  padding-bottom:0!important;
+ }
+ html:root[data-cd-theme] .main.da42-paged>.heading h1{
+  font-size:clamp(33px,2.7vw,43px)!important;
+  line-height:1.02!important;
+  letter-spacing:-.025em!important;
+ }
+ html:root[data-cd-theme] .da43-workspace{
+  border-top:1px solid color-mix(in srgb,var(--da43-edge) 55%,transparent);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--da4-chart) 7%,transparent) 0,transparent 20%);
+ }
+ /* One clear horizontal hierarchy: primary bar / native tab / sub-page / context. */
+ html:root[data-cd-theme] .da43-workspace>.da42-subnav{
+  min-height:51px!important;
+  border-bottom:2px solid var(--da43-edge)!important;
+  background:linear-gradient(93deg,color-mix(in srgb,var(--da43-surface) 94%,#154c35) 0%,var(--da43-surface) 100%);
+  overflow-x:auto;scrollbar-width:thin;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-subtab{
+  min-width:0!important;
+  flex-shrink:0!important;
+  padding:10px clamp(13px,1.35vw,23px)!important;
+  font-size:clamp(15px,1.13vw,18px)!important;
+  letter-spacing:.01em;
+  transition:background .16s ease,box-shadow .16s ease,color .16s ease;
+  border-right:1px solid color-mix(in srgb,var(--da43-rim) 78%,transparent)!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-subtab:hover:not([aria-selected="true"]){
+  background:color-mix(in srgb,var(--da4-chart) 15%,var(--da43-surface))!important;
+  color:var(--da43-ink)!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-subtab[aria-selected="true"]{
+  background:var(--da4-chart)!important;
+  color:#102119!important;
+  box-shadow:inset 0 3px 0 var(--da43-edge);
+ }
+ html:root[data-cd-theme="analyste"] .da43-workspace .da42-subtab[aria-selected="true"]{
+  background:#b9d2ad!important;color:#112920!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-tab-index{font-size:10px;letter-spacing:1px;opacity:.68}
+ html:root[data-cd-theme] .da43-page-switch{
+  display:flex;flex:0 0 auto;align-items:center;gap:0;
+  min-width:245px;margin-left:auto;padding-left:12px;
+  border-left:1px solid var(--da43-rim);
+  background:color-mix(in srgb,var(--da43-surface) 80%,#124b3a);
+  position:sticky;right:0;z-index:2;
+ }
+ html:root[data-cd-theme] .da43-page-context{
+  min-width:0;flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;
+  gap:2px;padding:4px 10px 4px 5px;
+  line-height:1.18;
+ }
+ html:root[data-cd-theme] .da43-context-key{
+  color:var(--da43-quiet);font-size:9px;font-weight:800;
+  letter-spacing:1.1px;white-space:nowrap;
+ }
+ html:root[data-cd-theme] .da43-context-value{
+  color:var(--da43-ink);font:650 13px 'DM Sans',sans-serif;
+  text-overflow:ellipsis;white-space:nowrap;overflow:hidden;
+ }
+ html:root[data-cd-theme] .da43-workspace button.da43-skip{
+  width:32px;height:36px;min-width:32px;padding:0!important;
+  border:1px solid var(--da43-rim)!important;border-radius:2px!important;
+  color:var(--da43-ink)!important;background:transparent!important;
+  font-size:18px;line-height:1;
+ }
+ html:root[data-cd-theme] .da43-workspace button.da43-skip:hover{
+  background:color-mix(in srgb,var(--da4-chart) 18%,var(--da43-surface))!important;
+  box-shadow:inset 0 -2px var(--da43-edge);
+ }
+ html:root[data-cd-theme] .da43-page-count{
+  min-width:62px;text-align:center;white-space:nowrap;
+  font:800 11px 'Barlow Condensed',sans-serif;
+  font-variant-numeric:tabular-nums;letter-spacing:1.1px;color:var(--da43-ink);
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page-viewport{
+  padding:12px 0 0!important;
+  background:radial-gradient(ellipse 75% 65% at 92% 6%,var(--da43-halo),transparent 75%);
+ }
+ /* Panels use the ENTIRE remaining desktop canvas, not postage stamps. */
+ html:root[data-cd-theme] .da43-workspace .da42-page{
+  gap:10px!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page>.da4-panel,
+ html:root[data-cd-theme] .da43-workspace .da42-page>.da42-panel,
+ html:root[data-cd-theme] .da43-workspace .da42-page>.da4-calendar{
+  border:1px solid color-mix(in srgb,var(--da43-rim) 90%,var(--da4-chart))!important;
+  border-top:2px solid color-mix(in srgb,var(--da43-edge) 80%,var(--da4-chart))!important;
+  border-radius:3px!important;
+  box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 4%,transparent);
+  background-color:var(--da43-surface);
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page>.da4-panel,
+ html:root[data-cd-theme] .da43-workspace .da42-page>.da42-panel{
+  position:relative;padding:clamp(15px,1.7vw,27px)!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da4-panel-head{
+  margin-bottom:clamp(11px,1.1vw,19px)!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da4-panel-head h2{
+  font-size:clamp(25px,2vw,36px)!important;line-height:1.04!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da4-kicker,
+ html:root[data-cd-theme] .da43-workspace .da4-panel-head>span{
+  letter-spacing:1.4px!important;
+ }
+ /* CALENDRIER — five full-height fixtures as a functional fixture strip. */
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"]>.da4-calendar{
+  display:flex;flex:1 1 auto;min-height:0;
+  flex-direction:column;
+  margin:0!important;padding:clamp(15px,1.5vw,25px)!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"]>.da4-calendar>.da4-panel-head{flex:0 0 auto}
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"]>.da4-calendar>.da4-fixtures{
+  display:grid;flex:1 1 auto;min-height:0;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:8px!important;border:0!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"] .da4-fixture-stop{
+  display:flex;flex-direction:column;justify-content:flex-start;
+  gap:clamp(7px,1.2vh,15px);
+  position:relative;min-height:0!important;height:100%;
+  padding:clamp(13px,1.65vw,27px)!important;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--da4-chart) 12%,var(--da43-surface)),var(--da43-surface) 70%)!important;
+  border:1px solid var(--da43-rim)!important;border-radius:2px!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"] .da4-fixture-stop.is-next{
+  background:linear-gradient(145deg,color-mix(in srgb,var(--da4-chart) 32%,var(--da43-surface)),var(--da43-surface) 78%)!important;
+  border-color:color-mix(in srgb,var(--da43-edge) 65%,var(--da43-rim))!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"] .da4-fixture-stop:before{
+  top:14px!important;left:auto!important;right:16px!important;width:7px;height:7px;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"] .da4-fixture-stop>b{
+  display:block;font-size:clamp(32px,3.65vw,58px)!important;letter-spacing:-1px!important;
+  line-height:1!important;margin:clamp(8px,2vh,24px) 0 0!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"] .da4-stop-name{
+  display:block;font-size:clamp(12px,1vw,16px)!important;
+  white-space:normal!important;line-height:1.35!important;max-width:100%;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"]>.da4-desk-stage{
+  flex:0 0 112px!important;max-height:112px!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"]>.da4-desk-stage .da4-fixture{
+  background:var(--da43-surface)!important;
+ }
+ /* Finance: nine wage families become a full-height, readable wage map. */
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="salaires"]>.da4-panel{
+  display:flex!important;flex-direction:column!important;min-height:0!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="salaires"] .da4-bars{
+  flex:1 1 auto;min-height:0;display:grid!important;
+  grid-template-rows:repeat(9,minmax(0,1fr));gap:5px!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="salaires"] .da4-bar-row{
+  display:grid!important;grid-template-columns:minmax(135px,26%) minmax(0,1fr) minmax(110px,15%)!important;
+  gap:17px!important;align-items:center;min-height:0;
+  padding:0 3px!important;border-bottom:1px solid color-mix(in srgb,var(--da43-rim) 45%,transparent);
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="salaires"] .da4-bar-row>span{
+  font-weight:650;font-size:clamp(12px,1vw,15px);
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="salaires"] .da4-bar-track{
+  height:12px!important;background:color-mix(in srgb,var(--da4-chart) 14%,var(--da43-surface))!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="salaires"] .da4-bar-track>i{
+  display:block;height:100%!important;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--da4-chart) 70%,#0e3527),var(--da4-chart))!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="salaires"] .da4-bar-row strong{
+  font-variant-numeric:tabular-nums;font-size:clamp(13px,1vw,17px)!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="salaires"] .da4-chart-note{
+  flex:0 0 auto;margin:12px 0 0!important;
+ }
+ /* Finance: projector and weekly flows expand to their panel boundaries. */
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="tresorerie"] .da4-finance-chart{
+  display:flex;flex-direction:column;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="tresorerie"] .da4-finance-chart>.da4-figure{
+  display:flex!important;flex:1 1 0!important;min-height:0!important;
+  flex-direction:column!important;margin:12px 0 5px!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="tresorerie"] .da4-finance-chart .da4-chart-viewport{
+  flex:1 1 0!important;display:flex;align-items:stretch;
+  min-height:130px!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="tresorerie"] .da4-finance-chart .da4-chart-viewport svg{
+  width:100%!important;height:100%!important;
+  max-height:none!important;min-height:130px!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="flux"] .da42-cash-timeline{
+  flex:1 1 auto;min-height:120px!important;align-items:stretch!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="flux"] .da42-cash-week{
+  display:flex!important;flex-direction:column;justify-content:space-between;min-height:0;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="flux"] .da42-cash-column{
+  max-height:none!important;flex:1 1 auto!important;min-height:60px!important;
+ }
+ /* Conditioning — larger real condition indicators, no fake warning state. */
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="condition"] .da42-fitness-composition{
+  flex:1 1 0!important;min-height:0;
+  align-items:stretch!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="condition"] .da42-fitness-meter{
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--da4-chart) 13%,transparent),transparent 64%);
+  border-right:1px solid var(--da43-rim);
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="condition"] .da42-fitness-disc{
+  width:min(29vh,270px)!important;height:min(29vh,270px)!important;
+  min-height:155px;min-width:155px;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="condition"] .da42-condition-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+ }
+ /* Data density and focus order on the talent and market screens. */
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="potentiel"] .da42-talent{
+  border-left:3px solid color-mix(in srgb,var(--da4-chart) 65%,var(--da43-edge));
+  background:linear-gradient(145deg,color-mix(in srgb,var(--da4-chart) 9%,var(--da43-surface)),var(--da43-surface) 75%)!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="potentiel"] .da42-talent-track{
+  height:9px!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="potentiel"] .da42-talent-numbers strong{
+  font-variant-numeric:tabular-nums;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="marche"] .da42-market-composition{
+  background:linear-gradient(135deg,color-mix(in srgb,var(--da4-chart) 7%,var(--da43-surface)),var(--da43-surface))!important;
+  border:1px solid var(--da43-rim)!important;padding:13px!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="marche"] .da42-market-bar i{
+  border-radius:0 2px 2px 0;
+ }
+ /* Dossiers: always a separate genuine page, independent scroll for long
+    native tools, clearer card boundaries and keyboard hover affordance. */
+ html:root[data-cd-theme] .da43-workspace .da42-page-native{
+  padding:3px 2px 5px!important;scrollbar-gutter:stable;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page-native :is(.card,.da4-panel,.cd03-kpi,.cd04-kpi){
+  border-color:var(--da43-rim)!important;
+  box-shadow:inset 3px 0 0 color-mix(in srgb,var(--da4-chart) 30%,transparent);
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page :is(button,a):focus-visible{
+  outline:3px solid var(--da43-edge)!important;outline-offset:2px;
+ }
+}
+@media (prefers-reduced-motion:reduce){
+ html:root[data-cd-theme] .da43-workspace *,
+ html:root[data-cd-theme] .da43-workspace *::before,
+ html:root[data-cd-theme] .da43-workspace *::after{transition:none!important;animation:none!important}
+}
+
+/* V4.3.1 — visual audit of 51 Chromium frames, 01/11/2026.
+   The fixture cards were unusually empty at 1920x1080. Use a subtle
+   sequence watermark and anchor opponent names to a ruled lower band.
+   All five cards remain native buttons, with identical text and actions. */
+@media (min-width:1200px){
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"]>.da4-calendar>.da4-fixtures{
+  counter-reset:da43-fixture;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"] .da4-fixture-stop{
+  counter-increment:da43-fixture;isolation:isolate;overflow:hidden;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"] .da4-fixture-stop::after{
+  content:counter(da43-fixture,decimal-leading-zero);
+  position:absolute;right:clamp(12px,1.3vw,24px);bottom:clamp(64px,8vh,110px);
+  font-family:inherit;font-size:clamp(72px,8.2vw,150px);font-weight:900;
+  line-height:1;letter-spacing:-.06em;pointer-events:none;
+  color:color-mix(in srgb,var(--da4-chart) 10%,transparent);
+  z-index:0;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"] .da4-fixture-stop>*{
+  position:relative;z-index:1;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"] .da4-stop-name{
+  margin-top:auto!important;padding-top:clamp(14px,2vh,24px)!important;
+  border-top:1px solid color-mix(in srgb,var(--da43-rim) 85%,var(--da4-chart));
+  font-weight:650;
+ }
+}
