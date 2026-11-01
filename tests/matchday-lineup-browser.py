@@ -9,6 +9,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 def check(name,passed):
     if not passed:raise AssertionError(name)
     checks.append(name)
+
+def open_matchday_panel(page,selector):
+    panel_id=page.locator(selector).evaluate('(el)=>el.closest("[role=tabpanel]")?.id || ""')
+    if panel_id:
+        page.locator('[role="tab"][aria-controls="'+panel_id+'"]').click()
 server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(Handler,directory=str(ROOT/'dist')))
 threading.Thread(target=server.serve_forever,daemon=True).start()
 result={'passed':False,'checks':checks,'errors':errors,'limitations':['Chromium Linux uniquement']}
@@ -22,7 +27,7 @@ try:
         page.get_by_role('button',name='Nouvelle carrière').click();page.get_by_role('button',name='Univers fictif').click()
         page.locator('.clubchoice').first.click()
         page.evaluate("nav('tactics')")
-        page.get_by_role('tab',name='XV et décisions').click()
+        open_matchday_panel(page,'[aria-label="Assistant de composition"]')
         root=page.locator('[aria-label="Assistant de composition"]')
         check('assistant visible dans Préparation',root.is_visible())
         check('23 lignes de composition',root.locator('tbody tr').count()==23)
@@ -34,7 +39,7 @@ try:
         for width in (1280,768,390,320):
             page.set_viewport_size({'width':width,'height':850})
             page.evaluate("nav('tactics')")
-            page.get_by_role('tab',name='XV et décisions').click()
+            open_matchday_panel(page,'[aria-label="Assistant de composition"]')
             check('assistant visible %d'%width,page.locator('.cd-lineup').is_visible())
             check('pas de débordement %d'%width,page.evaluate('document.documentElement.scrollWidth<=innerWidth+2'))
         page.set_viewport_size({'width':1280,'height':900})
