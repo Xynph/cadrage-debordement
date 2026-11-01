@@ -14,6 +14,8 @@ test('LNR: une rotation valide est utilisée par rugbySimulate, pas seulement st
  assert.equal(run('sheetErrors().length'),0,'feuille 15+8 cohérente');
  assert.equal(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),true,'sauvegarde compatible');
  const fixture=run('JSON.stringify(nextMatch())');assert(fixture!=='null','match du manager disponible');
+ const canonical=run('JSON.stringify(buildSheet(club(),S.lineup,S.reserves).lineup)');
+ assert.equal(canonical,after,'buildSheet préserve les postes des titulaires validés');
  const selected=run('JSON.stringify(createRugbyMatch('+fixture+',null,true).sheets['+run('nextMatch().indexOf(S.club)')+'].initial)');
  assert.equal(selected,after,'la simulation construit un match à partir des 15 joueurs choisis');
  run('var nativeCreateRugbyMatch=createRugbyMatch;var simulationObserved=null;createRugbyMatch=function(pair,legacy,automated,preparation){var l=nativeCreateRugbyMatch(pair,legacy,automated,preparation);if(automated&&pair.includes(S.club))simulationObserved=JSON.stringify(l.sheets[pair.indexOf(S.club)].initial);return l;}');
