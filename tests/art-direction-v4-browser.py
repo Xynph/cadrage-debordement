@@ -266,6 +266,68 @@ try:
         check('native save export compatible',
               page.evaluate('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'))
         check('no JS errors', not errors)
+
+        # V4.5: 16 new real Chromium captures beyond the 17 workspaces.
+        for width, height in ((1440, 900), (1920, 1080)):
+            page.set_viewport_size({'width': width, 'height': height})
+            for theme in ('analyste', 'tribune'):
+                page.locator('#ui01-theme').select_option(theme)
+                page.evaluate("squadTab='table';nav('team')")
+                check(f'V4.5 roster panorama {width} {theme}',
+                      page.locator('.da4-squad-stage').count() == 1)
+                check(f'V4.5 native player list {width} {theme}',
+                      page.locator('#da45-roster-table .cd02-player-link').count() ==
+                      page.evaluate('club().players.length'))
+                check(f'V4.5 jump targets native roster {width} {theme}',
+                      page.locator('.da45-roster-jump').get_attribute('href') == '#da45-roster-table')
+                check(f'V4.5 roster width {width} {theme}',
+                      page.evaluate('document.documentElement.scrollWidth<=innerWidth+2'))
+                page.screenshot(path=str(OUT / f'pc-v45-effectif-{theme}-{width}x{height}.png'),
+                                full_page=False)
+                page.locator('.cd02-player-link').first.click()
+                check(f'V4.5 player native tabs {width} {theme}',
+                      page.locator('.cd02-player [role=tab]').count() == 4)
+                page.locator('[data-cd02-tab="profil"]').click()
+                check(f'V4.5 profile native strengths {width} {theme}',
+                      page.locator('.da4-profile-stage .da4-strength').count() == 3)
+                page.screenshot(path=str(OUT / f'pc-v45-profil-{theme}-{width}x{height}.png'),
+                                full_page=False)
+                page.locator('[data-cd02-tab="contrat"]').click()
+                check(f'V4.5 contract composition {width} {theme}',
+                      page.locator('.da45-contract-studio .da45-contract-metric').count() == 3)
+                check(f'V4.5 contract native controls {width} {theme}',
+                      page.locator('.cd02-player-content .cd02-panels').count() == 1)
+                check(f'V4.5 condition uses native player {width} {theme}',
+                      page.evaluate("""()=>{
+                        const id=document.querySelector('.cd02-player')?.dataset.cd02Player;
+                        const p=CDArtDirection.snapshot().squad.find(x=>x.id===id);
+                        const meter=document.querySelector('.da45-contract-track');
+                        return !!p&&!!meter&&Number(meter.getAttribute('aria-valuenow'))===p.condition;
+                      }"""))
+                check(f'V4.5 contract width {width} {theme}',
+                      page.evaluate('document.documentElement.scrollWidth<=innerWidth+2'))
+                page.screenshot(path=str(OUT / f'pc-v45-contrat-{theme}-{width}x{height}.png'),
+                                full_page=False)
+                page.evaluate("nav('league')")
+                check(f'V4.5 league composition {width} {theme}',
+                      page.locator('.da45-league-summary').count() == 1)
+                check(f'V4.5 league native points {width} {theme}',
+                      page.evaluate("""()=>{
+                        const m=CDArtDirection.snapshot();
+                        const el=document.querySelector('.da45-league-summary');
+                        return !!el&&m.standings.length>0&&
+                          el.textContent.includes(m.standings[0].name)&&
+                          el.textContent.includes(m.club.abbr);
+                      }"""))
+                check(f'V4.5 league width {width} {theme}',
+                      page.evaluate('document.documentElement.scrollWidth<=innerWidth+2'))
+                page.screenshot(path=str(OUT / f'pc-v45-classement-{theme}-{width}x{height}.png'),
+                                full_page=False)
+                check(f'V4.5 career unchanged {width} {theme}',
+                      page.evaluate('JSON.stringify(S)') == original)
+                check(f'V4.5 save unchanged {width} {theme}',
+                      page.evaluate('localStorage.getItem("bdt-v1")') == stored)
+        page.locator('#ui01-theme').select_option('analyste')
         success = True
         browser.close()
 finally:

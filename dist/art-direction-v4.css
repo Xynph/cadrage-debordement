@@ -1068,3 +1068,148 @@ html:root[data-cd-theme] .da42-market-grid strong{display:block;margin-top:12px;
  }
  html:root[data-cd-theme] .da43-workspace .da42-tab-index{font-size:11px}
 }
+
+/* V4.5 — écrans métier hors des 17 sous-pages ; valeurs et contrôles natifs. */
+html:root[data-cd-theme] .da4-workspace .da45-contract-studio{
+ display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,1fr);
+ overflow:hidden;min-width:0;background:var(--ui01-surface);
+ border:1px solid var(--ui01-border);border-radius:3px;
+}
+html:root[data-cd-theme] .da4-workspace .da45-contract-lead{
+ padding:clamp(20px,2vw,35px);background:linear-gradient(135deg,#123e30,#0a241d);
+ color:#f5f1e7;border-right:1px solid #5d8065;min-width:0;
+}
+html:root[data-cd-theme] .da4-workspace .da45-contract-lead .da4-kicker{color:#ebbb91}
+html:root[data-cd-theme] .da4-workspace .da45-contract-lead h3{
+ font:700 clamp(29px,3vw,46px)/1 'Barlow Condensed',sans-serif;
+ margin:14px 0 6px;color:#fff6e6;
+}
+html:root[data-cd-theme] .da4-workspace .da45-contract-lead>p{color:#ceddd0;font-size:12px}
+html:root[data-cd-theme] .da4-workspace .da45-contract-role{
+ display:flex;align-items:baseline;gap:9px;margin:22px 0 14px;
+}
+html:root[data-cd-theme] .da4-workspace .da45-contract-role small{font-size:10px;letter-spacing:1px;color:#dce9d9}
+html:root[data-cd-theme] .da4-workspace .da45-contract-role strong{font:700 46px 'Barlow Condensed',sans-serif;color:#f7c592}
+html:root[data-cd-theme] .da4-workspace .da45-contract-role span{font-size:11px;color:#cbd8cc}
+html:root[data-cd-theme] .da4-workspace .da45-contract-condition>div:first-child{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;font-weight:700;
+}
+html:root[data-cd-theme] .da4-workspace .da45-contract-track{
+ height:11px;margin-top:10px;overflow:hidden;background:#557164;
+}
+html:root[data-cd-theme] .da4-workspace .da45-contract-track i{
+ display:block;height:100%;background:linear-gradient(90deg,#9fcf9e,#f0d49b);
+}
+html:root[data-cd-theme] .da4-workspace .da45-contract-note{
+ font-size:11px;line-height:1.5;margin:16px 0 0!important;color:#cbd9cf;
+}
+html:root[data-cd-theme] .da4-workspace .da45-contract-figures{display:grid;min-width:0}
+html:root[data-cd-theme] .da4-workspace .da45-contract-metric{
+ padding:clamp(13px,1.4vw,22px) clamp(19px,2vw,34px);
+ border-bottom:1px solid var(--ui01-border);
+ display:flex;flex-direction:column;justify-content:center;min-width:0;
+}
+html:root[data-cd-theme] .da4-workspace .da45-contract-metric small{
+ color:var(--da4-muted);font-size:10px;letter-spacing:1px;font-weight:800;
+}
+html:root[data-cd-theme] .da4-workspace .da45-contract-metric strong{
+ color:var(--da4-type);font:700 clamp(24px,2.5vw,36px) 'Barlow Condensed',sans-serif;margin:4px 0;
+}
+html:root[data-cd-theme] .da4-workspace .da45-contract-metric span,
+html:root[data-cd-theme] .da4-workspace .da45-contract-caption{
+ color:var(--da4-muted);font-size:11px;line-height:1.5;
+}
+html:root[data-cd-theme] .da4-workspace .da45-contract-caption{margin:0;padding:14px 24px}
+html:root[data-cd-theme] .da4-workspace .da45-roster-jump{
+ grid-column:1 / -1;min-height:48px;padding:13px 20px;
+ display:flex;align-items:center;justify-content:space-between;
+ font-size:13px;font-weight:800;text-decoration:none;letter-spacing:.03em;
+ color:var(--ui01-text);border:1px solid var(--ui01-border);
+ border-left:3px solid var(--da4-copper);background:var(--ui01-soft);
+}
+html:root[data-cd-theme] .da4-workspace .da45-roster-jump:hover{
+ background:color-mix(in srgb,var(--da4-chart) 14%,var(--ui01-soft));
+}
+html:root[data-cd-theme] .da4-workspace .da45-roster-jump:focus-visible,
+html:root[data-cd-theme] .da4-workspace .cd02-table-scroll:focus-visible{
+ outline:3px solid var(--da4-copper);outline-offset:3px;
+}
+html:root[data-cd-theme] .da4-workspace .da45-league-summary{
+ display:grid;grid-template-columns:minmax(0,1.55fr) minmax(150px,.8fr) minmax(150px,.8fr);
+ margin:10px 0 24px;border-block:1px solid var(--ui01-border);
+}
+html:root[data-cd-theme] .da4-workspace .da45-league-summary>div{
+ padding:20px;border-right:1px solid var(--ui01-border);min-width:0;
+}
+html:root[data-cd-theme] .da4-workspace .da45-league-summary>div:first-child{padding-left:0}
+html:root[data-cd-theme] .da4-workspace .da45-league-summary>div:last-child{border-right:0}
+html:root[data-cd-theme] .da4-workspace .da45-league-summary small{
+ display:block;font-size:10px;letter-spacing:1px;font-weight:800;color:var(--da4-muted);
+}
+html:root[data-cd-theme] .da4-workspace .da45-league-summary strong{
+ display:block;margin:8px 0;font:700 clamp(24px,2.5vw,40px)/1.08 'Barlow Condensed',sans-serif;
+ color:var(--da4-type);overflow-wrap:anywhere;
+}
+html:root[data-cd-theme] .da4-workspace .da45-league-summary span{font-size:12px;color:var(--da4-muted)}
+@media(min-width:1100px){
+ html:root[data-cd-theme] .da4-workspace .da4-squad-stage{
+  margin:14px 0 20px;gap:14px;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);
+  align-items:stretch;
+ }
+ html:root[data-cd-theme] .da4-workspace .da4-squad-stage>.da4-panel{
+  padding:clamp(18px,1.5vw,27px);border-top:3px solid var(--da4-chart);
+ }
+ html:root[data-cd-theme] .da4-workspace .da4-squad-stage .da4-panel-head{margin-bottom:10px}
+ html:root[data-cd-theme] .da4-workspace .da4-squad-stage .da4-scatter-figure>.da4-chart{max-height:265px}
+ html:root[data-cd-theme] .da4-workspace .cd02-roster{border-top:3px solid var(--da4-copper)}
+ html:root[data-cd-theme] .da4-workspace .cd02-roster-head{
+  background:linear-gradient(100deg,var(--ui01-head),color-mix(in srgb,var(--ui01-head) 85%,var(--da4-chart)));
+  color:#f6f5e8;
+ }
+ html:root[data-cd-theme] .da4-workspace .cd02-roster-head :is(.cd02-kicker,.cd02-help){color:#d6e3d7}
+ html:root[data-cd-theme] .da4-workspace .cd02-roster .cd02-table-scroll{
+  max-height:clamp(330px,55vh,560px);overflow:auto;scrollbar-gutter:stable;
+ }
+ html:root[data-cd-theme] .da4-workspace .cd02-roster .cd02-table thead th{
+  position:sticky;top:0;z-index:2;background:var(--ui01-head);color:#f2f0e8;
+ }
+ html:root[data-cd-theme] .da4-workspace .cd02-roster .cd02-table :is(th,td){padding:13px 14px;font-size:12px}
+ html:root[data-cd-theme] .da4-workspace .cd02-roster .cd02-table tbody tr:nth-child(even){
+  background:color-mix(in srgb,var(--da4-chart) 4%,transparent);
+ }
+ html:root[data-cd-theme] .da4-workspace .cd02-roster .cd02-table tbody tr:focus-within{
+  background:color-mix(in srgb,var(--da4-chart) 20%,var(--ui01-surface));
+  outline:2px solid var(--da4-copper);outline-offset:-2px;
+ }
+ html:root[data-cd-theme] .da4-workspace .cd02-roster .cd02-player-link{min-height:34px;padding:5px 1px}
+ html:root[data-cd-theme] .da4-workspace .cd02-player{border-top:3px solid var(--da4-copper)}
+ html:root[data-cd-theme] .da4-workspace .cd02-player-header{
+  padding:28px 32px;min-height:170px;
+  background:linear-gradient(110deg,var(--ui01-head) 15%,color-mix(in srgb,var(--ui01-head) 80%,var(--da4-chart)))!important;
+  color:#f4f5e9;
+ }
+ html:root[data-cd-theme] .da4-workspace .cd02-player-header h2{color:#faf5e8;font-size:clamp(32px,2.7vw,44px)}
+ html:root[data-cd-theme] .da4-workspace .cd02-player-header :is(.cd02-kicker,.cd02-byline){color:#d6e3d7}
+ html:root[data-cd-theme] .da4-workspace .cd02-player-header .cd02-avatar{
+  width:110px;height:124px;background:linear-gradient(145deg,#426e59,#15372d);border:1px solid #96ad8e;color:#faf4df;
+ }
+ html:root[data-cd-theme] .da4-workspace .cd02-player-header .cd02-score{
+  min-width:105px;padding:12px 16px;background:#092a2147;border:1px solid #b8c9b455;
+ }
+ html:root[data-cd-theme] .da4-workspace .cd02-player-content{padding:20px 26px 28px}
+ html:root[data-cd-theme] .da4-workspace .cd02-player-content:has(>.da45-contract-studio){min-height:450px}
+ html:root[data-cd-theme] .da4-workspace .cd02-player-content:has(>.da45-contract-studio)>.cd02-panels{
+  margin-top:18px;grid-template-columns:1fr 1fr;
+ }
+ html:root[data-cd-theme] .da4-workspace .da4-profile-stage{margin:0 0 12px}
+ html:root[data-cd-theme] .da4-workspace .da4-profile-stage>.da4-panel{border-top:3px solid var(--da4-chart)}
+ html:root[data-cd-theme] .da4-workspace .da4-profile-stage .da4-radar-figure>.da4-chart{max-height:360px}
+ html:root[data-cd-theme] .da4-workspace .da4-profile-strengths .da4-strength{padding:22px 0}
+ html:root[data-cd-theme] .da4-workspace .da4-league-stage{border-top:3px solid var(--da4-chart);padding:clamp(24px,2vw,36px)}
+ html:root[data-cd-theme] .da4-workspace .da4-league-stage .da4-bars{gap:18px 30px}
+}
+@media(max-width:1099px){
+ html:root[data-cd-theme] .da4-workspace .da45-contract-studio{grid-template-columns:1fr}
+ html:root[data-cd-theme] .da4-workspace .da45-league-summary{grid-template-columns:1fr 1fr;gap:12px}
+ html:root[data-cd-theme] .da4-workspace .da45-league-summary>div{padding:12px;border:1px solid var(--ui01-border)}
+}

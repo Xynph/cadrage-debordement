@@ -674,3 +674,11 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - **Travaux engagés :** refonte visuelle substantielle des 17 sous-pages à travers `dist/art-direction-v4.css` ; ajout à `dist/art-direction-v4.js` d'un contexte **calculé depuis les données natives** pour chaque sous-page et d'une navigation précédent/suivant à boucle (sans ouvrir de contenu en dessous). Liens ARIA explicites, état de carrière et sauvegardes inchangés. Script Playwright `tests/art-direction-v4-browser.py` étendu à la navigation V4.3, aux deux thèmes PC et à **51 captures** possibles (34 Analyste + 17 Tribune).
 - **Spécification et limites :** `docs/decision-studio-v43.md` ; aucun travail mobile, moteur, `dist/game.js`, sauvegarde, Business ou DATA-06. Les captures V4.3 et les tests JavaScript/Chromium doivent être **effectivement exécutés sur la dernière tête de la nouvelle PR** avant de déclarer le chantier validé. L'historique des validations V4.2 ne vaut pas validation V4.3.
 - **Priorité restante :** publier la PR non fusionnée, vérifier les deux workflows et leurs PNG, corriger toute régression graphique ou fonctionnelle, passer les fichiers libérés via #73. Aucun test Windows natif revendiqué.
+
+
+## V4.5 Premium PC — 1er novembre 2026
+
+- Base `main 2167c2ab5086c7c0abddb1be1958de884588cfa9` après fusion documentaire DATA-06 #172 ; chantier indépendant réservé dans #73. Aucun moteur, fichier Business, LNR ni sauvegarde.
+- Captures UI02 et UI01 réelles consultées (artefacts #13081594903 et #13082383115) ; constat : fiche joueur Contrat trop vide, effectif dense et navigation aux joueurs peu visible, championnat peu hiérarchisé.
+- Composition prévue et publiée dans une PR : effectif avec passage au tableau natif, nouveau studio graphique du contrat utilisant seulement les champs du joueur réel de la carrière, et résumé du classement natif. Deux thèmes et deux résolutions PC ; 16 captures et tests Playwright supplémentaires, état de carrière et sauvegardes immuables.
+- Spécification : `docs/decision-studio-v45.md`. Vérifier tests JavaScript, Validation CI, captures et non-régression sur SHA exact avant toute proposition de fusion.
