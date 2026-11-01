@@ -40,7 +40,7 @@ try:
   for route,selector in (
    ('dashboard','.da42-board'),
    ('tactics','.da42-fitness'),
-   ('finance','.da42-movements'),
+   ('finance','.da42-cash-stage'),
    ('formation','.da42-academy'),
    ('recruitment','.da42-market'),
   ):
@@ -49,20 +49,46 @@ try:
    check('V4.2 native career unchanged '+route,p.evaluate('JSON.stringify(S)')==original)
    check('V4.2 stored save unchanged '+route,p.evaluate('localStorage.getItem("bdt-v1")')==disk)
   p.evaluate("nav('dashboard')")
-  check('V4.2 four live decision links',p.locator('.da42-board-item button').count()==4)
-  p.locator('.da42-board-item button').first.click()
+  check('V4.2 four live decision links',p.locator('.da42-command-cta,.da42-rail-item button').count()==4)
+  p.locator('.da42-command-cta').click()
   check('V4.2 decision navigates to real tactics',p.evaluate("view==='tactics'"))
   p.evaluate("nav('finance')")
   expected_movements=p.evaluate('CDArtDirection.cashMovements(CDArtDirection.snapshot().finance.series).length')
-  check('V4.2 weekly forecast bars match native data',p.locator('.da42-movement').count()==expected_movements)
+  check('V4.2 weekly forecast bars match native data',p.locator('.da42-cash-week').count()==expected_movements)
   p.evaluate("nav('formation')")
   expected_espoirs=p.evaluate('Math.min(8,CDArtDirection.academyGaps(CDArtDirection.snapshot().academy).length)')
-  check('V4.2 ceiling comparison count matches actual academy',p.locator('.da42-academy-item').count()==expected_espoirs)
+  check('V4.2 ceiling comparison count matches actual academy',p.locator('.da42-talent').count()==expected_espoirs)
   p.evaluate("nav('recruitment')")
-  check('V4.2 public market cost cards',p.locator('.da42-market-grid>div').count()==4)
+  check('V4.2 public market cost cards',p.locator('.da42-market-facts>div').count()==3 and p.locator('.da42-market-bar').count()==3)
   p.evaluate("nav('tactics')")
-  check('V4.2 condition groups from real XV',p.locator('.da42-fitness tbody tr').count()==3)
+  check('V4.2 condition groups from real XV',p.locator('.da42-fitness tbody tr').count()==3 and p.locator('.da42-condition').count()==3)
   check('V4.2 never mutates native career',p.evaluate('JSON.stringify(S)')==original)
+  # Desktop-first V4.2 acceptance: exact requested Windows-like PC viewports.
+  # Screenshots are produced by the REAL browser and uploaded via the CI artifact.
+  p.locator('#ui01-theme').select_option('analyste')
+  for width,height in ((1920,1080),(1440,900)):
+   p.set_viewport_size({'width':width,'height':height})
+   for route,studio in (
+    ('dashboard','.da42-command'),
+    ('tactics','.da42-fitness-composition'),
+    ('finance','.da42-cash-timeline'),
+    ('formation','.da42-talent-grid'),
+    ('recruitment','.da42-market-composition'),
+   ):
+    p.evaluate('(r)=>nav(r)',route)
+    check('V4.2 PC studio visible '+route+str(width),p.locator(studio).count()==1 and p.locator(studio).is_visible())
+    check('V4.2 PC no horizontal overflow '+route+str(width),p.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
+    check('V4.2 PC stable native state '+route+str(width),p.evaluate('JSON.stringify(S)')==original)
+    if route=='dashboard':
+     check('V4.2 PC editorial two-column command '+str(width),p.evaluate("""()=>{
+      const a=document.querySelector('.da42-command-lead').getBoundingClientRect();
+      const b=document.querySelector('.da42-command-rail').getBoundingClientRect();
+      return a.width>300&&b.width>200&&a.right<=b.left+2&&a.height>=260&&b.height>=260;
+     }"""))
+    p.locator('#toast').evaluate("e=>e.style.display='none'")
+    p.mouse.move(0,0)
+    p.screenshot(path=str(OUT/('pc-'+route+'-analyste-'+str(width)+'x'+str(height)+'.png')),full_page=True)
+  check('V4.2 desktop snapshots remain read only',p.evaluate('localStorage.getItem("bdt-v1")')==disk)
   p.set_viewport_size({'width':1440,'height':1000});p.locator('#ui01-theme').select_option('analyste')
   p.evaluate("nav('finance')")
   expected=p.evaluate('CDArtDirection.snapshot().finance.series.length')
