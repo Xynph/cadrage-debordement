@@ -221,6 +221,7 @@
   const pages=groups.map((g,index)=>{
    const tab=node('<button type="button" role="tab" class="da42-subtab" data-da42-subpage="'+esc(g.id)+'" aria-controls="da42-'+route+'-'+g.id+'" aria-selected="false" tabindex="-1"><span class="da42-tab-index">0'+(index+1)+'</span>'+esc(g.label)+'</button>');
    const panel=node('<section class="da42-page" role="tabpanel" id="da42-'+route+'-'+g.id+'" aria-label="'+esc(g.label)+'" hidden></section>');
+   panel.dataset.da42Page=g.id;
    if(g.native)panel.classList.add('da42-page-native');
    tabs.append(tab);viewport.append(panel);
    return {id:g.id,tab,panel};
@@ -249,6 +250,12 @@
    native.panel.append(child);
   }
   root.append(shell);
+  // Undo only V4 presentation accordions: keep the native business controls intact.
+  // A dossier is now a separate page, not a disclosure expanding this page.
+  for(const details of Array.from(shell.querySelectorAll('details.da4-dossier')).reverse()){
+   const parts=Array.from(details.children).filter(x=>x.tagName!=='SUMMARY');
+   details.replaceWith(...parts);
+  }
   function activate(id,focus){
    const target=pages.find(p=>p.id===id)||pages[0];
    workspaceChoice[route]=target.id;
