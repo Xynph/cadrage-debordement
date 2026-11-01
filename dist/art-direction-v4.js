@@ -211,6 +211,51 @@
  function fold(el,title){if(!el)return;const d=node('<details class="da4-dossier"><summary>'+esc(title)+'<span>Ouvrir le dossier ↗</span></summary></details>');el.before(d);d.append(el);}
 
  const workspaceChoice=Object.create(null);
+
+ // V4.3 — context sourced exclusively from the current native career, never an
+ // invented target, result or hidden scouting metric.
+ function page43Context(route,id,m){
+  if(!m)return {label:'DOSSIER DU MANAGER',value:'Données de carrière'};
+  const wages=(m.wages||[]).reduce((sum,x)=>sum+(finite(x.value)?x.value:0),0);
+  const values=cashMovements(m.finance.series);
+  const gaps=academyGaps(m.academy);
+  const needs=priorityNeeds(m.needs);
+  const costs=publicCosts(m.candidates);
+  const xv=(typeof S!=='undefined'&&Array.isArray(S.lineup)?S.lineup:[]).map(key=>m.squad.find(p=>p.id===key)).filter(Boolean);
+  const avg=xv.filter(p=>finite(p.condition));
+  const condition=avg.length?num(avg.reduce((sum,p)=>sum+p.condition,0)/avg.length)+'/100':'—';
+  const defaults={
+   dashboard:{
+    pilotage:['PROCHAIN MATCH',m.next?m.next.opponent.abbr:'Non programmé'],
+    calendrier:['ÉCHÉANCES À VENIR',num(m.fixtures.length)+' rencontres'],
+    dossiers:['EFFECTIF DISPONIBLE',num(m.availability[0]?.value||0)+' / '+num(m.squad.length)]
+   },
+   tactics:{
+    xv:['COMPOSITION COURANTE',num(xv.length)+' titulaires'],
+    condition:['ÉTAT DU XV',condition],
+    analyse:['CHARGE DE SÉLECTION',num(avg.length)+' conditions'],
+    dossiers:['LISTE NATIVE',num(xv.length)+' titulaires']
+   },
+   finance:{
+    tresorerie:['SOLDE DE CARRIÈRE',eur(m.club.cash)],
+    flux:['SEM. PROJETÉES',num(values.length)+' semaines'],
+    salaires:['PAIE HEBDOMADAIRE',eur(wages)+' / sem.'],
+    dossiers:['HORIZON FINANCIER',num(m.finance.budget.weeks)+' semaines']
+   },
+   recruitment:{
+    besoins:['PRIORITÉ PRINCIPALE',needs[0]?num(needs[0].score)+'/100':'Aucune'],
+    marche:['CANDIDATS DOCUMENTÉS',num(costs.count)+' profils'],
+    dossiers:['POSTES EN EXAMEN',num(needs.length)+' priorités']
+   },
+   formation:{
+    passerelle:['ESPOIRS AU CENTRE',num(m.academy.length)+' joueurs'],
+    potentiel:['ÉCARTS CALCULÉS',num(gaps.length)+' profils'],
+    dossiers:['JEUNES PROS',num(m.squad.filter(p=>p.age<=23).length)+' joueurs']
+   }
+  };
+  const pair=defaults[route]?.[id]||['DOSSIER',m.club.abbr];
+  return {label:pair[0],value:pair[1]};
+ }
  function buildWorkspace(root,route,groups){
   if(!root||root.querySelector(':scope>.da42-workspace-shell'))return;
   // Existing game controls are MOVED, not cloned and not replaced.
@@ -218,11 +263,15 @@
   const keep=new Set(Array.from(root.children).filter(el=>el.matches('.ui01-appbar,.heading,.cd03-tabs,.cd04-tabs,.cd02-tabs')));
   const shell=node('<div class="da42-workspace-shell" aria-label="Sous-pages de gestion PC"><nav class="da42-subnav" role="tablist" aria-label="Sous-pages du '+esc(route)+'"></nav><div class="da42-page-viewport"></div></div>');
   const tabs=shell.querySelector('.da42-subnav'),viewport=shell.querySelector('.da42-page-viewport');
+  shell.classList.add('da43-workspace');
+  shell.dataset.da43Section=route;
   const pages=groups.map((g,index)=>{
    const tab=node('<button type="button" role="tab" class="da42-subtab" data-da42-subpage="'+esc(g.id)+'" aria-controls="da42-'+route+'-'+g.id+'" aria-selected="false" tabindex="-1"><span class="da42-tab-index">0'+(index+1)+'</span>'+esc(g.label)+'</button>');
    const panel=node('<section class="da42-page" role="tabpanel" id="da42-'+route+'-'+g.id+'" aria-label="'+esc(g.label)+'" hidden></section>');
    panel.dataset.da42Page=g.id;
    if(g.native)panel.classList.add('da42-page-native');
+   tab.id='da43-tab-'+route+'-'+g.id;
+   panel.setAttribute('aria-labelledby',tab.id);
    tabs.append(tab);viewport.append(panel);
    return {id:g.id,tab,panel};
   });
@@ -262,9 +311,25 @@
    Array.from(details.children).filter(x=>x.tagName!=='SUMMARY').forEach(x=>wrapper.append(x));
    details.replaceWith(wrapper);
   }
+  // Secondary-page commands live INSIDE the navigation band. They never
+  // expand a panel or add content beneath the current page.
+  const auxiliary=node('<div class="da43-page-switch"><div class="da43-page-context"><span class="da43-context-key"></span><strong class="da43-context-value"></strong></div><button type="button" class="da43-skip" data-da43-prev aria-label="Sous-page précédente">←</button><output class="da43-page-count" aria-live="polite"></output><button type="button" class="da43-skip" data-da43-next aria-label="Sous-page suivante">→</button></div>');
+  tabs.append(auxiliary);
+  const contextKey=auxiliary.querySelector('.da43-context-key'),contextValue=auxiliary.querySelector('.da43-context-value'),pageCount=auxiliary.querySelector('.da43-page-count');
+  const managerSnapshot=snapshot();
+  const jump=delta=>{
+   const idx=pages.findIndex(p=>p.tab.getAttribute('aria-selected')==='true');
+   activate(pages[(idx+delta+pages.length)%pages.length].id,false);
+  };
+  auxiliary.querySelector('[data-da43-prev]').addEventListener('click',()=>jump(-1));
+  auxiliary.querySelector('[data-da43-next]').addEventListener('click',()=>jump(1));
   function activate(id,focus){
    const target=pages.find(p=>p.id===id)||pages[0];
    workspaceChoice[route]=target.id;
+   const index=pages.indexOf(target),signal=page43Context(route,target.id,managerSnapshot);
+   pageCount.textContent=String(index+1).padStart(2,'0')+' / '+String(pages.length).padStart(2,'0');
+   contextKey.textContent=signal.label;contextValue.textContent=signal.value;
+   shell.dataset.da43Active=target.id;
    for(const p of pages){
     const active=p===target;
     p.panel.hidden=!active;p.tab.setAttribute('aria-selected',String(active));
