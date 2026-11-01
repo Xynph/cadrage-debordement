@@ -646,3 +646,13 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Tests dédiés Node et Chromium ; le nouveau scénario rejoint le workflow UI01 existant, sans retirer aucun contrôle ni multiplier les jobs. Captures réelles 1440/768/390 dans docs/menu-v3-captures ; détails et limites docs/menu-principal-v3.md. Suite complète et CI exacte nécessaires avant fusion ; aucune validation future présentée comme acquise.
 - Aucun fichier Business, donnée externe, format de sauvegarde ou moteur rugby modifié. Aucun service payant de collecte. Pas de certification Windows native.
 - Prochaine priorité : bureau du manager harmonisé et décisions prioritaires tirées des données réelles de la carrière.
+
+
+## V4 Premium — refonte graphique sur branche (01/11/2026)
+
+- **Base GitHub vérifiée :** `1b1d7d624995af823dcbdce42a6a1d6ad148d336`, CI JavaScript post-fusion `41251401877` réussie ; UI01 `41251401850` annulée, non revendiquée verte.
+- **Branche :** `integration/v4-premium`. **Aucune fusion autorisée pour ce cycle sans accord explicite de Léo.** PR à consulter dans l’issue #73 et sur GitHub.
+- Nouvelle couche `dist/premium-v4.css`, chargée après les styles existants : identité V3 étendue aux écrans de gestion et au live, thèmes sombre forêt / clair minéral, accents cuivre, bureau à trois colonnes sans chevauchement, tableaux, commandes et modales cohérents. Stade et ballon V3 conservés ; nouveau panorama original `dist/assets/premium-v4-matchday.webp` local, environ 153 Kio.
+- **Validation locale :** 142/142 suites Node réussies ; V4 Chromium 529 contrôles ; UI01 462 ; contraste 16 mesures ; 11 autres suites navigateur réussies (323 contrôles), avec reprises/import/export, fiches, carrière LNR et centres natifs. Aucune modification des moteurs, du stockage ou du format de sauvegarde. Captures avant/après de la même carrière et rapport dans `docs/premium-v4.md`.
+- **Limite Figma :** fichier V4 créé, puis quota MCP Starter atteint avant édition ; aucune maquette éditable achevée revendiquée. Image générée via l’outil intégré et intégrée en WebP, sans réseau à l’exécution. Chromium Linux seulement ; pas de validation Windows native.
+- La CI complète distante et la réception graphique de la tête de PR restent à confronter à GitHub ; ce journal ne présume pas leur conclusion. Prochaine priorité : revue de Léo sur les captures et décision de fusion ; finaliser Figma lorsque le quota le permet.

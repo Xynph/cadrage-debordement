@@ -1,0 +1,102 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "width": 1440,
+      "theme": "tribune",
+      "selector": ".office-message.unread h3",
+      "ratio": 11.148659749079123
+    },
+    {
+      "width": 1440,
+      "theme": "tribune",
+      "selector": ".office-message p",
+      "ratio": 4.979273212201998
+    },
+    {
+      "width": 1440,
+      "theme": "tribune",
+      "selector": ".office-summary small",
+      "ratio": 5.762826436719539
+    },
+    {
+      "width": 1440,
+      "theme": "tribune",
+      "selector": ".office-decision span",
+      "ratio": 4.979273212201998
+    },
+    {
+      "width": 1440,
+      "theme": "analyste",
+      "selector": ".office-message.unread h3",
+      "ratio": 10.846434014282638
+    },
+    {
+      "width": 1440,
+      "theme": "analyste",
+      "selector": ".office-message p",
+      "ratio": 7.056596603973956
+    },
+    {
+      "width": 1440,
+      "theme": "analyste",
+      "selector": ".office-summary small",
+      "ratio": 8.417746406992471
+    },
+    {
+      "width": 1440,
+      "theme": "analyste",
+      "selector": ".office-decision span",
+      "ratio": 7.056596603973956
+    },
+    {
+      "width": 390,
+      "theme": "tribune",
+      "selector": ".office-message.unread h3",
+      "ratio": 11.148659749079123
+    },
+    {
+      "width": 390,
+      "theme": "tribune",
+      "selector": ".office-message p",
+      "ratio": 4.979273212201998
+    },
+    {
+      "width": 390,
+      "theme": "tribune",
+      "selector": ".office-summary small",
+      "ratio": 5.762826436719539
+    },
+    {
+      "width": 390,
+      "theme": "tribune",
+      "selector": ".office-decision span",
+      "ratio": 4.979273212201998
+    },
+    {
+      "width": 390,
+      "theme": "analyste",
+      "selector": ".office-message.unread h3",
+      "ratio": 10.846434014282638
+    },
+    {
+      "width": 390,
+      "theme": "analyste",
+      "selector": ".office-message p",
+      "ratio": 7.056596603973956
+    },
+    {
+      "width": 390,
+      "theme": "analyste",
+      "selector": ".office-summary small",
+      "ratio": 8.417746406992471
+    },
+    {
+      "width": 390,
+      "theme": "analyste",
+      "selector": ".office-decision span",
+      "ratio": 7.056596603973956
+    }
+  ],
+  "scope": "four dashboard text samples; Chromium Linux"
+}
