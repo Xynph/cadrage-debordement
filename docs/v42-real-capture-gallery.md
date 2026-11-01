@@ -1,5 +1,23 @@
 # V4.2 — galerie de captures réelles et revue visuelle
 
+## Refonte PC approfondie (tête de PR à valider)
+
+**Décision produit : PC uniquement**, selon l'issue #73. L'audit des captures existantes V4.2 en 1440 px a montré un bureau trop proche de quatre statistiques génériques et une succession de flux financiers sans véritable hiérarchie visuelle. Une seconde passe de développement, sur la PR #164, remplace ces compositions par un **poste de commandement avec panorama de stade et panneau de navigation**, un **anneau de condition des titulaires et des groupes de disponibilité**, une **chronologie financière en colonnes**, des **fiches talent plus riches** et un **observatoire des coûts du marché**.
+
+Le script `tests/art-direction-v4-browser.py` produit désormais des captures dédiées sur de **vrais navigateurs Chromium** aux dimensions PC demandées :
+
+| Vue | PC 1920×1080 | PC 1440×900 |
+| --- | --- | --- |
+| Bureau | `pc-dashboard-analyste-1920x1080.png` | `pc-dashboard-analyste-1440x900.png` |
+| Préparation du XV | `pc-tactics-analyste-1920x1080.png` | `pc-tactics-analyste-1440x900.png` |
+| Finances | `pc-finance-analyste-1920x1080.png` | `pc-finance-analyste-1440x900.png` |
+| Formation | `pc-formation-analyste-1920x1080.png` | `pc-formation-analyste-1440x900.png` |
+| Recrutement | `pc-recruitment-analyste-1920x1080.png` | `pc-recruitment-analyste-1440x900.png` |
+
+**Ces nouveaux fichiers doivent être vérifiés dans l'artefact de la dernière CI verte** ; les noms dans ce tableau sont les sorties attendues du script, pas une preuve anticipée d'exécution. La CI vérifie en plus le non-débordement horizontal, la composition desktop en deux colonnes et le caractère strictement en lecture seule de ces navigations. Les captures 390 px des premières CI demeurent archivées mais ne constituent plus un axe d'amélioration.
+
+
+
 **Provenance contrôlée :** captures issues du workflow Chromium de la PR #164, [V4 Premium visual acceptance #41294785004](https://github.com/Xynph/cadrage-debordement/actions/runs/41294785004), artefact téléchargeable **`premium-v4-browser-report` (ID `13078897879`)**. Le workflow s'est terminé en `success` sur le SHA `c918958be09359a7a4e2f3f3943adff941a28e9b`. Ce sont les véritables rendus de l'application lancée en Chromium Linux avec une carrière fictive créée par le navigateur, et non des maquettes ou des images générées.
 
 **Référence avant :** captures V4.1, [workflow #41293020335](https://github.com/Xynph/cadrage-debordement/actions/runs/41293020335), artefact `premium-v4-browser-report` (ID `13077679797`), SHA V4.1 `4f3d68607ac62b11007b5028ef6f4fc7fbea4d33`. Les comparaisons suivantes concernent le même scénario de test avec seed fixe, mais des commits distincts. La galerie d'origine inclut 64 fichiers et deux thèmes ; les artefacts GitHub Actions **expirent après sept jours**, comme défini par le workflow.
