@@ -27,3 +27,25 @@ Les graphiques V4/V4.1 existants restent conservés. L'écran championnat et les
 Suite dédiée `tests/decision-studio-v42.cjs` : plages de condition, variation positive/négative, absence de données, classement des écarts de formation, filtrage des coûts publics, liens du bureau et absence de mutation. Les suites existantes de Node, V4 Premium Chromium et CI finale sur la tête exacte de la PR restent obligatoires. Aucun test de lecture d'écran NVDA/VoiceOver ou de navigateur Windows/Safari/Firefox n'est annoncé. Aucune capture Playwright n'est revendiquée sans exécution réelle.
 
 **Différencier :** les tests déjà publiés dans V4/V4.1, les tests lancés dans cette intervention, les CI distantes et les contrôles non exécutés. Aucune fusion sans autorisation explicite.
+
+## Architecture PC — vraies sous-pages de gestion (nouvelle révision)
+
+**Décision produit formelle : PC uniquement**, sans nouveau chantier mobile. Les pages natives de premier niveau (Bureau, Préparation, Finances, Recrutement, Formation) sont conservées. La couche V4.2 ajoute sous ces onglets un **second niveau de navigation permanent et exclusif** : des onglets qui remplacent le contenu courant. Les anciens `details.da4-dossier` de présentation sont dépliés et réaffectés dans une page dédiée ; ils ne servent plus de navigation. Les boutons « ouvrir un dossier » de présentation ne doivent plus agrandir les vues existantes. Les commandes du moteur restent des éléments DOM *déplacés*, sans clonage ni mutation des données.
+
+| Onglet principal | Sous-pages PC réelles | Destination des contrôles natifs |
+| --- | --- | --- |
+| Bureau | Vue d’ensemble · Calendrier · Dossiers du club | Dossiers, bouton de match dans Calendrier, navigation directe depuis le poste de commandement |
+| Préparation | XV et décisions · Condition · Analyse du XV · Autres commandes | XV et décisions / Autres commandes |
+| Finances | Trésorerie · Flux hebdomadaires · Salaires · Journal et décisions | Journal et décisions |
+| Recrutement (aperçu natif) | Besoins du XV · Observatoire des coûts · Missions et commandes | Missions et commandes ; les onglets natifs Candidats/Missions restent indépendants |
+| Formation (aperçu natif) | Passerelle · Potentiel des espoirs · Suivi et commandes | Suivi et commandes ; les onglets natifs restent disponibles |
+
+### Invariants
+
+- Une seule sous-page est visible à la fois (sémantique `tablist/tab/tabpanel`, `hidden`), avec navigation clavier flèches/Home/End et état de sélection non persistant dans la sauvegarde.
+- Le bloc principal est contraint à la hauteur disponible de fenêtre sur les vues 1920×1080 et 1440×900. Aucun défilement vertical du document ; tableaux et commandes historiques pouvant dépasser utilisent une zone de lecture locale, jamais un accordéon pour les sous-pages.
+- Les cinq écrans natifs restent accessibles ; pas de nouvelle écriture de carrière, transaction ou champ caché.
+- Les captures sont générées **par sous-page** en PC exclusivement : `pc-{route}-{page}-analyste-{width}x{height}.png`. Les PNG sont une sortie de CI, non des maquettes. La validation réelle exige le workflow Chromium terminé et ses images examinées sur le SHA final.
+- Les anciennes sauvegardes ne sont ni converties ni modifiées par la sélection de sous-page. Un test Playwright vérifie à chaque transition que `JSON.stringify(S)` et `localStorage` restent stables.
+
+**Limite :** ce lot modifie la navigation de présentation V4.2, sans prétendre refondre toutes les pages historiques du moteur. Les autres onglets natifs de premier niveau gardent pour le moment leur fonctionnement préexistant. Ne pas fusionner sans autorisation explicite.
