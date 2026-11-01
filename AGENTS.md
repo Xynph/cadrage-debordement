@@ -32,14 +32,14 @@ d’écriture visibles ; aucun repli silencieux vers un autre stockage.
 
 ## Continuité entre deux comptes ChatGPT — protocole obligatoire
 
-Deux comptes ChatGPT travaillent sur des branches distinctes, potentiellement simultanément : **le compte développeur produit les fonctionnalités et les PR sans fusion ; le compte intégrateur unique vérifie, raccorde, teste et fusionne dans `main`**. GitHub et l'issue #73 assurent la passation.
+Deux comptes ChatGPT peuvent successivement être **producteur ou intégrateur**, mais **jamais actifs simultanément**. Un seul compte actif et un seul intégrateur désigné à la fois. Chaque prise de relais et fin de session est consignée dans l'issue #73. Le rôle d'intégrateur ne constitue jamais une autorisation de fusion : **Léo doit autoriser explicitement chaque PR**. GitHub, les protections serveur vérifiées et le release gate restent les sources d'autorité technique.
 
 ### À chaque nouvelle conversation ou reprise du développement
 
 1. **Commencer par consulter le dépôt GitHub `Xynph/cadrage-debordement`**, avant de proposer ou d'effectuer des modifications. Examiner la branche principale, les derniers commits et leurs changements, les branches pertinentes, les pull requests ouvertes ou récemment fusionnées, ainsi que les consignes du présent `AGENTS.md`.
 2. Reconstituer l'état réel du projet et les travaux précédents **directement depuis GitHub**. Ne jamais demander à l'utilisateur ce que l'autre compte ChatGPT a fait. Si les informations disponibles sur GitHub ne suffisent pas, signaler précisément ce qui manque sans inventer de modifications.
 3. **GitHub est l'unique source de vérité du code et de l'avancement.** Ne jamais reprendre une copie locale ou un souvenir de conversation sans les confronter à la version actuelle du dépôt.
-4. Partir de la dernière version pertinente. Toute modification de code ou de documentation passe par une branche dédiée et une PR. **Aucun push direct sur `main`**, même pour les modifications simples. Le compte développeur ne fusionne jamais. Ne pas laisser un chantier annoncé comme terminé uniquement sur une branche non fusionnée.
+4. Partir de la dernière version pertinente. Toute modification de code ou de documentation passe par une branche dédiée et une PR. **Aucun push direct sur `main`**, même pour les modifications simples. La fusion est interdite sans autorisation explicite de Léo pour cette PR, contrôle officiel du HEAD SHA et du main actuels, CI valide et release gate sans bypass. Le compte producteur ne fusionne pas lors de la même session ; la reprise du rôle d'intégrateur exige une passation #73 et une revue explicite. Ne pas laisser un chantier annoncé comme terminé uniquement sur une branche non fusionnée.
 5. **Enregistrer chaque modification sur GitHub**, avec un message de commit explicite, puis vérifier le commit et le contenu effectivement publiés sur la branche visée. Une modification non publiée et vérifiée n'est pas terminée.
 6. Exécuter les tests pertinents lorsque l'environnement le permet. Distinguer clairement les tests réussis, échoués et non exécutés ; ne jamais annoncer une validation qui n'a pas eu lieu.
 7. En fin d'intervention, résumer en français les changements, les fichiers concernés, les références de commits et de pull requests, l'état des tests et les travaux restant à faire, pour que l'autre compte puisse reprendre sans perte de contexte.
@@ -67,19 +67,19 @@ Ce protocole s'applique à chaque session, même si l'utilisateur ne le rappelle
 - La conclusion native du contrôle `Validation CI` fait autorité ; le résumé n'autorise pas une fusion. Dernier SHA et CI complète restent exigés, puis CI post-fusion sur `main`.
 - Ne pas faire de sondages répétitifs : se fier aux contrôles natifs GitHub et consulter la page de résultat une fois terminée. GitHub peut notifier les participants selon leurs réglages. Aucun message n'est envoyé automatiquement dans ChatGPT.
 
-## Gouvernance définitive — producteur et intégrateur unique (31 octobre 2026)
+## Coordination et passation — gouvernance alternée (proposition, non activée)
 
 - **Compte développeur** : conçoit les fonctionnalités, produit des branches et PR, corrige ses tests et documente ses livraisons dans l'issue #73. **Aucune fusion ni push sur `main`.**
 - **Compte intégrateur (ce compte)** : lit #73, examine les PR et dépendances, vérifie la valeur jouable, les sauvegardes et le dernier SHA de `main`, réalise les raccordements sur une branche d'intégration si nécessaire, exécute la CI complète, puis **est seul habilité par la gouvernance du projet à fusionner**.
 - La fusion exige la PR non brouillon, l'absence de conflits, les tests ciblés et la validation complète `Tests JavaScript` / `Validation CI` sur la tête exacte ; après fusion, contrôler la CI `push` sur le SHA fusionné. En cas d'échec, **STOP et correction**.
-- Les travaux indépendants peuvent se poursuivre simultanément, avec réservation de chemins dans #73. La fusion n'est jamais autorisée par le seul message d'une issue.
+- Les travaux indépendants se succèdent entre sessions ; les chemins concernés sont réservés dans #73. La fusion n'est jamais autorisée par le seul message d'une issue.
 - La PR #75 (double intégration) est abandonnée et doit rester non fusionnée.
 
 ## Canal de coordination permanent — issue #73 (en vigueur)
 
 **Salon partagé : https://github.com/Xynph/cadrage-debordement/issues/73**
 
-Le compte développeur produit les PR ; le compte intégrateur unique est seul responsable des fusions dans `main`. Les sessions peuvent être simultanées sur des branches et fichiers distincts.
+Un seul compte est actif à la fois. Chacun peut produire des PR ou, dans une session distincte après passation, assurer la revue et l'intégration autorisée ; aucune fusion sans accord explicite de Léo pour la PR et son HEAD.
 
 ### Ouverture obligatoire d'une session
 1. Vérifier le dernier `main`, les changements et PR/CI récents ; lire `AGENTS.md` et `DEVELOPPEMENT.md`.
@@ -95,15 +95,25 @@ Le compte développeur produit les PR ; le compte intégrateur unique est seul r
 - Ne pas présenter la coordination comme une communication instantanée autonome : chaque compte intervient lorsqu'une session est active, sans surveillance continue.
 - Garder #73 ouverte ; ne jamais y publier de jeton, clé API, sauvegarde personnelle ou secret.
 - Pour les travaux de l'autre compte, prendre les **derniers commentaires** et le **GitHub actuel** comme références, non un ancien rapport de chat.
-- Les règles de CI, vérification du dernier SHA et fusion réservée au compte intégrateur unique restent intégralement en vigueur.
+- Les règles de CI, vérification du dernier SHA et unicité du rôle d'intégrateur actif restent intégralement en vigueur. Aucune autorisation de fusion implicite.
 
 ## Mode de travail rapide — deux comptes ChatGPT (31 octobre 2026)
 
 **Objectif prioritaire : réduire le délai entre la demande et un résultat concret, sans affaiblir les règles de fusion.**
 
-- Les deux comptes restent ChatGPT (développeur producteur et intégrateur unique) ; aucun outil tiers n'est requis. Lire le contexte pertinent en **un lot de requêtes indépendantes**, une seule fois au début de la session : main, AGENTS.md, DEVELOPPEMENT.md, #73, PR concernées. Ne relire ensuite que les informations réellement modifiées.
+- Les deux comptes restent ChatGPT, avec des rôles interchangeables mais des sessions exclusives ; aucun outil tiers n'est requis. Lire le contexte pertinent en **un lot de requêtes indépendantes**, une seule fois au début de la session : main, AGENTS.md, DEVELOPPEMENT.md, #73, PR concernées. Ne relire ensuite que les informations réellement modifiées.
 - Préférer une **modification fonctionnelle bornée et testable** à plusieurs petites PR cosmétiques. Développer avec les tests ciblés disponibles, préparer le journal avec le code et publier une seule tête de PR aussi stable que possible ; ne pas ajouter de commits de documentation après la CI complète sans nécessité.
 - **Jamais d'attente active** pour les workflows : ne pas relancer des lectures de statut ni télécharger les logs en boucle. Lire les logs en détail seulement en cas d'échec, d'incohérence ou de vérification spécifique indispensable. La CI se déclenche sur GitHub ; elle ne nécessite pas de scrutation continue de ChatGPT.
-- Si la CI distante n'est pas encore achevée dans le tour de travail, **rendre immédiatement** le code et la PR publiés, les tests réellement exécutés et le statut « CI en attente ; non fusionnée ». Le prochain tour de l'intégrateur pourra vérifier la conclusion et fusionner si toutes les conditions sont réunies. Ne jamais déclarer un résultat futur comme acquis.
+- Si la CI distante n'est pas encore achevée dans le tour de travail, **rendre immédiatement** le code et la PR publiés, les tests réellement exécutés et le statut « CI en attente ; non fusionnée ». La prochaine session pourra vérifier la conclusion ; toute fusion nécessitera en outre l'autorisation explicite de Léo pour la PR concernée. Ne jamais déclarer un résultat futur comme acquis.
 - Ne pas relancer de longues campagnes pour une documentation pure ou une UI isolée lorsque les filtres du dépôt les excluent légitimement ; **les tests complets de PR, le gate Validation CI et la vérification post-fusion restent obligatoires** selon les règles existantes.
 - Conclure en français avec le résultat utile, les liens de PR/commit et les éventuels blocages, sans journal minute par minute des opérations techniques. Ne jamais masquer un test échoué.
+
+
+### Alternance exclusive et protections requises — proposition d'activation
+
+- **Règle de sécurité :** vérifier `main`, HEAD, PR ouvertes, réservations #73 et CI avant toute mutation. L'autre compte doit être inactif pendant toute la session. Le dernier message #73 n'est pas un verrou GitHub atomique.
+- **Rôles :** chacun peut être producteur puis intégrateur lors d'une session distincte, jamais deux sessions actives ni deux intégrateurs en parallèle. Une PR développée par soi exige une revue indépendante documentée autant que possible.
+- **Fusion :** uniquement après autorisation explicite de Léo ciblant numéro et HEAD de la PR. `/cd-check` ne fusionne pas ; `/cd-merge` exige autorisation et mêmes contrôles. Utiliser `ci/release-gate.cjs` et `docs/chat-release-gate.md` sans les modifier ni désactiver leurs protections. Vérifier les sept jobs post-fusion sur le SHA du nouveau main.
+- **Protection serveur :** demander et vérifier des rulesets main : PR requise, CI à jour, pas de push direct, force-push ni bypass administrateur. Ne pas annoncer leur activation sans preuve. Merge queue seulement si compatible avec `merge_group`.
+- **Interdiction d'activation implicite :** cette proposition n'active ni accès GitHub ni droit de fusion ; la gouvernance courante reste applicable tant que cette PR n'est pas approuvée, intégrée et annoncée dans #73.
+- **Compte rendu :** un seul feu 🟢 (autonomie), 🟠 (message à l'autre compte), 🔴 (décision de Léo nécessaire) ; finir par un bouton cliquable dont le libellé est **la prochaine étape précise**, jamais seulement « Continuer ».
