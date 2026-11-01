@@ -74,6 +74,35 @@ try:
   page.set_viewport_size({'width':1440,'height':1000})
   page.locator('#ui01-theme').select_option('analyste')
   page.evaluate("nav('dashboard')")
+  # V4.7 initial layout audit: real market, history and save screens.
+  audit=[]
+  for theme in ('analyste','tribune'):
+   page.locator('#ui01-theme').select_option(theme)
+   for width,height in ((1440,900),(1920,1080)):
+    page.set_viewport_size({'width':width,'height':height})
+    for route in ('market','history','saves'):
+     page.evaluate('(r)=>nav(r)',route)
+     data=page.evaluate("""()=>{
+       const main=document.querySelector('.main');
+       return {screen:main?.getBoundingClientRect().toJSON(),
+        height:main?.scrollHeight,
+        top:main?[...main.children].slice(0,12).map(x=>({tag:x.tagName,classes:x.className,id:x.id,
+          text:x.innerText?.slice(0,80),height:Math.round(x.getBoundingClientRect().height)})):[],
+        rows:[...main.querySelectorAll('.card,.grid,.stack,.tabs,.tablewrap,.marketgrid,section')].slice(0,30)
+         .map(x=>({classes:x.className,tag:x.tagName,height:Math.round(x.getBoundingClientRect().height)})),
+        horizontalOverflow:document.documentElement.scrollWidth>innerWidth+1};
+     }""")
+     audit.append({'theme':theme,'width':width,'route':route,'dom':data})
+     page.locator('#toast').evaluate("e=>e.style.display='none'")
+     page.screenshot(path=str(OUT/('v47-baseline-'+route+'-'+theme+'-'+str(width)+'.png')),
+                     full_page=False)
+     check('V4.7 baseline route '+route+' '+theme+' '+str(width),
+           page.locator('.main').inner_text().strip()!='' and
+           not data['horizontalOverflow'])
+  (OUT/'v47-dom-audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2))
+  page.set_viewport_size({'width':1440,'height':1000})
+  page.locator('#ui01-theme').select_option('analyste')
+  page.evaluate("nav('dashboard')")
   # Same career and same viewport, with only the final skin disabled for comparison.
   page.locator('#ui01-theme').select_option('analyste')
   page.screenshot(path=str(OUT/'dashboard-after.png'))
