@@ -9,4 +9,6 @@ test('1592 ID LNR avec années et sans doublons',()=>{const s={};vm.runInNewCont
 test('ordonnancement navigateur',()=>{assert(html.indexOf('lnr-birthyears-data.js')>=0);assert(html.indexOf('lnr-birthyears-data.js')<html.indexOf('lnr-career.js'));});
 test('dates exactes, âge 2026 au 1er juillet',()=>{const age=resolve();assert.equal(age('lnr:13725').age,19);assert.equal(age('lnr:13497').age,21);assert.equal(age('lnr:11779').age,23);assert.equal(age('lnr:13725').ageEstimated,false);});
 test('année seule conservatrice sans inventer une date',()=>{const age=resolve();const a=age('lnr:862');assert.equal(a.age,2026-a.birthYear-1);assert.equal(a.ageEstimated,true);assert.equal(a.birthDate,undefined);});
-test('seule la construction de nouveaux joueurs LNR change',()=>{assert(lnr.includes('...birthday,rating'));assert(!lnr.includes('age:21+(seed%14)'));assert(html.includes('main-menu-v3.js'));});
+test('seule la construction de nouveaux joueurs LNR change',()=>{assert(lnr.includes('...birthday,rating'));assert(lnr.includes("typeof LNR_BIRTHYEARS_DATA==='undefined'?{age:21+(seedHash(id)%14),ageEstimated:true}:lnrBirthAge(id)"));assert(html.includes('main-menu-v3.js'));});
+
+test('sauvegardes LNR acceptent 15 ans, fiction reste à 16 ans',()=>{const saves=fs.readFileSync(path.join(root,'saves.js'),'utf8');assert(saves.includes('saveInt(p.age,s.lnrMode!==undefined?15:16,60)'));});
