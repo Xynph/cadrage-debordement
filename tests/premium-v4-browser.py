@@ -136,7 +136,7 @@ try:
      if route=='market':
       needs=page.locator('.main>.recruitment-intel .recruitment-needs-list')
       check('V4.7.1 market needs retained '+theme+' '+str(width),
-            needs.count()==1 and needs.locator('>.row').count()>=4)
+            needs.count()==1 and needs.locator(':scope > .row').count()>=4)
       check('V4.7.1 market needs two columns '+theme+' '+str(width),
             needs.evaluate("""e=>{
               const r=[...e.children].filter(x=>x.classList.contains('row')).map(
