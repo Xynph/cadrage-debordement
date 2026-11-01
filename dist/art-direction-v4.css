@@ -299,7 +299,7 @@ html:root[data-cd-theme] .da41-priority-list li{
  counter-increment:priority;display:grid;grid-template-columns:minmax(0,1fr) auto;
  gap:4px 12px;border-top:1px solid var(--ui01-border);padding:12px 0;
 }
-html:root[data-cd-theme] .da41-priority-list li:before{content:counter(priority,'decimal-leading-zero');font-size:10px;letter-spacing:1px;color:var(--da4-copper);grid-column:1 / -1}
+html:root[data-cd-theme] .da41-priority-list li:before{content:counter(priority,decimal-leading-zero);font-size:10px;letter-spacing:1px;color:var(--da4-copper);grid-column:1 / -1}
 html:root[data-cd-theme] .da41-priority-list li span{font-weight:600;font-size:14px;color:var(--da4-type)}
 html:root[data-cd-theme] .da41-priority-list li strong{font:600 21px 'Barlow Condensed',sans-serif;color:var(--da4-copper)}
 html:root[data-cd-theme] .da41-priority-list li small{grid-column:1 / -1;color:var(--da4-muted);line-height:1.6}
