@@ -132,7 +132,7 @@ function lnr05View(){
   '<div class="cardtitle"><h2>Cellule LNR · preuves et rotation</h2><span class="tag">MODE OPTIONNEL</span></div>'+
   '<p class="help">Dossiers individuels rapprochés : 240 / 1 592 joueurs LNR ; dans ce club : '+measured+
   ' joueurs mesurés. LNR = photographie du 31/10/2026, non certification au 01/07/2026. Notes, poste détaillé, condition, charge et contrats restent simulés.</p>'+
-  lnr05AdviceView()+'<div class="lnr05-filters" role="group" aria-label="Filtrer les preuves">'+buttons+'</div'+'>
+  lnr05AdviceView()+'<div class="lnr05-filters" role="group" aria-label="Filtrer les preuves">'+buttons+'</div>'
   '<div class="lnr05-scroll"><table><thead><tr><th>Joueur</th><th>Source</th><th>Âge LNR</th><th>Taille</th><th>Poids</th><th>Condition*</th><th>Charge*</th><th>Statut*</th></tr></thead><tbody>'+
   table+'</tbody></table></div>'+
   '<p class="help">* Donnée simulée. Cliquez sur un joueur pour comparer, étudier la feuille et demander un remplacement volontaire.</p>'+detail+
