@@ -7,9 +7,7 @@ const vm=require('node:vm');
 const dist=path.join(__dirname,'../dist');
 const source=fs.readFileSync(path.join(dist,'lnr-career.js'),'utf8');
 const birth=fs.readFileSync(path.join(dist,'lnr-birthyears-data.js'),'utf8');
-const catalog=fs.readFileSync(path.join(dist,'lnr-catalogue-data.js'),'utf8');
 const ageCode=source.slice(source.indexOf('function lnrBirthAge'),source.indexOf('function lnrGamePlayers'));
-const catalogueCode=source.slice(source.indexOf('function lnrCatalogueView'));
 test('catalogue: 1592 ages calculables, sans inventer dates',()=>{
  const sandbox={};
  vm.runInNewContext(birth+'\n'+ageCode+'\n;globalThis.getAge=lnrBirthAge;globalThis.raw=LNR_BIRTHYEARS_DATA;',sandbox);
