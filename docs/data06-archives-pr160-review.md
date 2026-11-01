@@ -15,11 +15,11 @@ Comparaison par chemins des arbres `c6c19af` et `3fc7213`, pour les chemins DATA
 | Famille absente de main | Fichiers | Traitement |
 | --- | ---: | --- |
 | Notes de recherche `docs/data06-*` | 4 | Conserver la traçabilité via #160 et cet index |
-| JSON d'années, correspondances, contrôles et provenance | 27 | Ne pas activer automatiquement ; comparer par ID LNR et statut avant usage |
+| Autres JSON d'années, correspondances, contrôles et provenance | 24 | Ne pas activer automatiquement ; comparer par ID LNR et statut avant usage |
 | Instantanés bruts `rugbydata-enrichment`, `rosters` et `profiles-01..04` | 6 | Rester dans l'archive Git #160 ; ne pas recopier des profils tiers |
 | Tests et collecteur de recherche | 5 | Archives d'outillage, pas nécessaires à l'exécution du mod |
 
-**Remarque sur le décompte** : les familles ci-dessus peuvent se recouper selon la portée attribuée aux JSON ; ce tableau est une classification indicative, non une somme de fichiers disjoints. Le décompte de référence reste 39 chemins absents.
+**Décompte vérifié** : 4 + 24 + 6 + 5 = 39 chemins distincts absents de main.
 
 ## Contrôles et limites de preuve
 
