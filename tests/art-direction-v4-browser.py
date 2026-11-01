@@ -33,7 +33,17 @@ try:
      check('SVG graph finite '+route+theme+str(width),p.locator('.da4-chart,.da4-bars').count()>0 and p.locator('.da4-chart').evaluate_all("els=>els.every(e=>!e.outerHTML.includes('NaN')&&!e.outerHTML.includes('Infinity'))"))
      check('read only '+route+theme+str(width),p.evaluate('JSON.stringify(S)')==original and p.evaluate('localStorage.getItem("bdt-v1")')==disk)
      if width in (1440,390):
-      p.locator('#toast').evaluate("e=>e.style.display='none'");p.mouse.move(0,0)
+      if route=='dashboard':
+     check('V4.2 PC no duplicate giant match banner '+str(width),p.evaluate("""()=>{
+      const band=document.querySelector('.da4-desk-stage>.da4-fixture');
+      const hero=document.querySelector('.da42-command-lead');
+      if(!band||!hero)return false;
+      const b=band.getBoundingClientRect(),h=hero.getBoundingClientRect();
+      return b.height>35&&b.height<170&&h.height>=260
+       &&!!band.querySelector('.da4-cta')
+       &&getComputedStyle(band.querySelector('.da4-duel')).display==='none';
+     }"""))
+    p.locator('#toast').evaluate("e=>e.style.display='none'");p.mouse.move(0,0)
       p.screenshot(path=str(OUT/(route+'-'+theme+'-'+str(width)+'.png')),full_page=True)
   # V4.2: verify actual new experiences in Chromium, not just source-level helpers.
   # Every view uses the same career: navigating cannot alter game state or the stored save.
