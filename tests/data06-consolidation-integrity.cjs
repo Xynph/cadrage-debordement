@@ -25,7 +25,7 @@ test('DATA-06: couverture exacte du catalogue historique par identifiant LNR',()
   assert.deepEqual(Object.keys(births.byId).sort(),[...sourceIds].sort());
   for(const p of consolidated.players){
     const source=roster.find(r=>r.id===p.id);
-    assert.equal(p.name,source.name,p.id+' name');
+    assert.equal(p.name,source.name.replace(/&#0*39;/g,"'"),p.id+' name');
     assert.equal(p.club,source.club,p.id+' club');
     const birth=births.byId[p.id];
     const year=typeof birth==='number'?birth:Number(birth.slice(0,4));
