@@ -54,10 +54,12 @@ try:
             page.locator('#ui01-theme').select_option(toast_theme)
             for toast_width, toast_height in ((1440, 900), (1920, 1080)):
                 page.set_viewport_size({'width': toast_width, 'height': toast_height})
-                status = page.get_by_role('status')
-                check(f'toast accessible status {toast_theme}/{toast_width}',
-                      status.count() == 1)
+                status = page.locator('#toast')
+                check(f'toast status element {toast_theme}/{toast_width}',
+                      status.count() == 1 and status.get_attribute('role') == 'status')
                 page.evaluate("()=>toast('Bienvenue au club. Votre saison commence maintenant.')")
+                check(f'toast accessible when shown {toast_theme}/{toast_width}',
+                      page.get_by_role('status').count() == 1)
                 check(f'toast initially shown {toast_theme}/{toast_width}',
                       status.is_visible() and
                       'Bienvenue au club.' in status.inner_text())
@@ -74,6 +76,7 @@ try:
                 action = formation_shell.locator('[data-da42-page="passerelle"]:not([hidden]) .da4-pathway .da4-text-action')
                 check(f'formation action during toast {toast_theme}/{toast_width}',
                       action.count() == 1 and action.is_enabled())
+                action.scroll_into_view_if_needed()
                 before_hit = action.evaluate("""e=>{
                     const r=e.getBoundingClientRect();
                     const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
@@ -81,10 +84,14 @@ try:
                 }""")
                 page.screenshot(path=str(OUT / f'v49-toast-formation-before-{toast_theme}-{toast_width}.png'),
                                 full_page=False)
+                elapsed = page.evaluate("()=>performance.now()")
                 page.wait_for_function("""() => {
                     const node=document.getElementById('toast');
                     return node && getComputedStyle(node).display==='none';
                 }""", timeout=7500)
+                elapsed = page.evaluate("start=>performance.now()-start", elapsed)
+                check(f'toast timeout within expected window {toast_theme}/{toast_width}',
+                      1000 <= elapsed <= 7200)
                 check(f'toast auto hidden {toast_theme}/{toast_width}',
                       not status.is_visible())
                 action.scroll_into_view_if_needed()
