@@ -1,4 +1,6 @@
-# V4 Premium — refonte graphique proposée
+# V4 Premium — première passe graphique
+
+> **Proposition remplacée par la [direction artistique et les graphiques métier](art-direction-v4.md).** La galerie ci-dessous documente la première passe ; consulter la nouvelle galerie pour le résultat actuel.
 
 **État : réalisée sur `integration/v4-premium`, sans fusion.** Base vérifiée : `1b1d7d624995af823dcbdce42a6a1d6ad148d336`. L’autorisation de Léo est nécessaire avant toute fusion de cette V4.
 

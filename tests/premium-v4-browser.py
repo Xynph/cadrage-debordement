@@ -42,9 +42,9 @@ try:
       page.locator('#toast').evaluate("e=>e.style.display='none'")
       page.screenshot(path=str(OUT/(route+'-'+theme+'-'+str(width)+'.png')),full_page=route!='dashboard')
   page.set_viewport_size({'width':1440,'height':1000});page.evaluate("nav('dashboard')")
-  check('panorama actually visible in office',page.locator('.heading').evaluate("e=>getComputedStyle(e).backgroundImage.includes('premium-v4-matchday.webp')"))
+  check('panorama actually visible in office',page.locator('.da4-fixture').evaluate("e=>getComputedStyle(e).backgroundImage.includes('premium-v4-matchday.webp')"))
   check('panorama decodes locally',page.evaluate("async()=>{let i=new Image();i.src='assets/premium-v4-matchday.webp';await i.decode();return i.naturalWidth>=1500&&i.naturalHeight>600}"))
-  check('three office columns do not overlap',page.evaluate("(()=>{const a=document.querySelector('[aria-label=\"Pilotage de saison\"]').getBoundingClientRect(),b=document.querySelector('.office-grid>div').getBoundingClientRect(),c=document.querySelector('.office-grid>aside').getBoundingClientRect();return a.right<=b.left&&b.right<=c.left&&Math.abs(a.top-b.top)<2&&Math.abs(b.top-c.top)<2})()"))
+  check('office visual columns do not overlap',page.evaluate("(()=>{const a=document.querySelector('.da4-fixture').getBoundingClientRect(),b=document.querySelector('.da4-condition').getBoundingClientRect();return a.right<=b.left&&Math.abs(a.top-b.top)<2})()"))
   # Same career and same viewport, with only the final skin disabled for comparison.
   page.locator('#ui01-theme').select_option('analyste')
   page.screenshot(path=str(OUT/'dashboard-after.png'))

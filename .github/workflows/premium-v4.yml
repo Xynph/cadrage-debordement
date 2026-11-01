@@ -5,6 +5,7 @@ on:
     paths:
       - 'dist/**'
       - 'tests/premium-v4-browser.py'
+      - 'tests/art-direction-v4-browser.py'
       - '.github/workflows/premium-v4.yml'
   workflow_dispatch:
 permissions:
@@ -29,11 +30,15 @@ jobs:
           python -m pip install playwright==1.57.0
           python -m playwright install --with-deps chromium
       - name: Real screens, two themes, six widths, slots and pause
-        run: python tests/premium-v4-browser.py
+        run: |
+          python tests/premium-v4-browser.py
+          python tests/art-direction-v4-browser.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: premium-v4-browser-report
-          path: ui01-browser-report/premium-v4/
+          path: |
+            ui01-browser-report/premium-v4/
+            ui01-browser-report/art-direction-v4/
           retention-days: 7
           if-no-files-found: error

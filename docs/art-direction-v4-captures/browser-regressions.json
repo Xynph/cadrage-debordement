@@ -1,0 +1,68 @@
+[
+  {
+    "test": "tests/matchday-matchplan-browser.py",
+    "exit": 0,
+    "seconds": 2.72,
+    "output": "{\"passed\": true, \"checks\": [\"poste de décision visible\", \"cinq comparaisons sectorielles\", \"sélection scénario sans mutation\", \"aucune sauvegarde sur aperçu\", \"scénarios accessibles 1280\", \"aucun débordement 1280\", \"scénarios accessibles 768\", \"aucun débordement 768\", \"scénarios accessibles 390\", \"aucun débordement 390\", \"scénarios accessibles 320\", \"aucun débordement 320\", \"défense protégée adoptée\", \"feuille valide\", \"sauvegarde compatible\", \"zéro erreur JavaScript\"], \"errors\": [], \"limitations\": [\"Chromium Linux uniquement\"]}\n"
+  },
+  {
+    "test": "tests/main-menu-v3-browser.py",
+    "exit": 0,
+    "seconds": 6.39,
+    "output": "{\"passed\": true, \"checks\": 43, \"errors\": []}\n"
+  },
+  {
+    "test": "tests/matchday-lineup-browser.py",
+    "exit": 0,
+    "seconds": 2.82,
+    "output": "{\"passed\": true, \"checks\": [\"assistant visible dans Préparation\", \"23 lignes de composition\", \"choix de stratégie sans mutation\", \"pas de sauvegarde durant aperçu\", \"assistant visible 1280\", \"pas de débordement 1280\", \"assistant visible 768\", \"pas de débordement 768\", \"assistant visible 390\", \"pas de débordement 390\", \"assistant visible 320\", \"pas de débordement 320\", \"application validée\", \"sauvegarde JSON après action\", \"accès à la feuille native\", \"aucune erreur JavaScript\"], \"errors\": [], \"limitations\": [\"Chromium Linux uniquement\"]}\n"
+  },
+  {
+    "test": "tests/ui02-live-browser.py",
+    "exit": 0,
+    "seconds": 7.44,
+    "output": "{\"passed\": true, \"checks\": 91, \"errors\": []}\n"
+  },
+  {
+    "test": "tests/lnr05-evidence-browser.py",
+    "exit": 0,
+    "seconds": 3.17,
+    "output": "{\"passed\": true, \"checks\": [\"aucune cellule LNR en mode fictif\", \"cellule LNR presente\", \"240 fiches disponibles\", \"filtres sans mutation\", \"filtres sans sauvegarde\", \"dossier joueur\", \"dossier indique simulations\", \"choix sans mutation\", \"cellule visible 1280\", \"aucun debordement 1280\", \"cellule visible 768\", \"aucun debordement 768\", \"cellule visible 390\", \"aucun debordement 390\", \"cellule visible 320\", \"aucun debordement 320\", \"composition proposee disponible\", \"joueur inclus dans feuille\", \"feuille native valide\", \"sauvegarde native apres choix\", \"reprise apres choix\", \"aucune erreur JS\"], \"errors\": [], \"limitations\": [\"Chromium Linux uniquement\", \"Aucune valeur sportive officielle calculée\"]}\n"
+  },
+  {
+    "test": "tests/ui05-live-browser.py",
+    "exit": 0,
+    "seconds": 5.68,
+    "output": "{\"passed\": true, \"checks\": 40, \"errors\": []}\n"
+  },
+  {
+    "test": "tests/manager-season-pilotage-browser.py",
+    "exit": 0,
+    "seconds": 2.45,
+    "output": "{\"passed\": true, \"checks\": [\"panneau jouable affiché\", \"4 indicateurs métier\", \"aucune mutation sur rendu\", \"aucune écriture de sauvegarde sur rendu\", \"1280 pixels sans débordement\", \"1280 pixels panneau visible\", \"768 pixels sans débordement\", \"768 pixels panneau visible\", \"390 pixels sans débordement\", \"390 pixels panneau visible\", \"320 pixels sans débordement\", \"320 pixels panneau visible\", \"contrats liés au module natif\", \"formation reliée au centre jouable\", \"recrutement relié au centre jouable\", \"sauvegarde toujours valide\", \"aucune erreur JavaScript navigateur\"], \"errors\": [], \"limits\": [\"Chromium Linux uniquement\"]}\n"
+  },
+  {
+    "test": "tests/ui-native-centers-browser.py",
+    "exit": 0,
+    "seconds": 2.53,
+    "output": "{\"passed\": true, \"checks\": [\"centre de recrutement visible\", \"candidats du moteur\", \"recherche sans résultat\", \"consultation sans mutation\", \"consultation sans écriture sauvegarde\", \"joueur suivi en carrière\", \"mission native créée\", \"mission débitée 5000 euros\", \"centre de formation visible\", \"espoirs présents\", \"fiche jeune ouverte\", \"promotion effective\", \"sortie du centre\", \"sauvegarde compatible\", \"aucune erreur navigateur\"], \"errors\": [], \"limits\": [\"Chromium Linux seulement, pas de certification mobile ou Windows\"]}\n"
+  },
+  {
+    "test": "tests/matchday-center-browser.py",
+    "exit": 0,
+    "seconds": 2.42,
+    "output": "{\"passed\": true, \"checks\": [\"briefing dans Préparation\", \"quatre KPI\", \"aucune mutation par consultation\", \"aucune sauvegarde réécrite par consultation\", \"panneau visible 1280\", \"pas de débordement 1280\", \"panneau visible 768\", \"pas de débordement 768\", \"panneau visible 390\", \"pas de débordement 390\", \"panneau visible 320\", \"pas de débordement 320\", \"navigation rotation\", \"navigation profondeur\", \"navigation feuille à 23\", \"dossier adversaire connu\", \"recommandation appliquée par moteur\", \"sauvegarde compatible\", \"aucune erreur navigateur\"], \"errors\": [], \"limitations\": [\"Chromium Linux uniquement\"]}\n"
+  },
+  {
+    "test": "tests/squad-health-center-browser.py",
+    "exit": 0,
+    "seconds": 2.49,
+    "output": "{\"passed\": true, \"checks\": [\"centre visible\", \"quinze postes\", \"trente joueurs visibles\", \"consultation sans mutation\", \"consultation sans réécriture sauvegarde\", \"largeur 1280 sans débordement\", \"largeur 1280 panneau visible\", \"largeur 768 sans débordement\", \"largeur 768 panneau visible\", \"largeur 390 sans débordement\", \"largeur 390 panneau visible\", \"largeur 320 sans débordement\", \"largeur 320 panneau visible\", \"recherche masque les lignes\", \"filtre disponibilité\", \"plan natif appliqué\", \"sauvegarde compatible\", \"navigation feuille à 23\", \"navigation profondeur\", \"aucune erreur navigateur\"], \"errors\": [], \"limits\": [\"Chromium Linux uniquement\"]}\n"
+  },
+  {
+    "test": "tests/lnr-career-browser.py",
+    "exit": 0,
+    "seconds": 3.6,
+    "output": "{\"passed\": true, \"checks\": [\"univers fictif par défaut\", \"14 équipes LNR proposées\", \"avertissement mode simulé\", \"carrière LNR initialisée\", \"14 clubs officiels\", \"XV et banc natifs\", \"sauvegarde export valide\", \"catalogue disponible\", \"30 clubs consultables\", \"navigation sans mutation\", \"navigation sans sauvegarde\", \"catalogue visible 1280\", \"aucun débordement 1280\", \"catalogue visible 768\", \"aucun débordement 768\", \"catalogue visible 390\", \"aucun débordement 390\", \"catalogue visible 320\", \"aucun débordement 320\", \"reprise de carrière LNR\", \"reprise et export cohérents\", \"carrière fictive historique préservée\", \"sauvegarde fictive valide\", \"aucune erreur navigateur\"], \"errors\": [], \"limitations\": [\"Chromium Linux uniquement\", \"Finances et capacités simulées, snapshot 31/10/2026\"]}\n"
+  }
+]
