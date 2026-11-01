@@ -76,7 +76,8 @@ function lnr05AdviceView(){
   ', charge évitée '+(a.fatigue>=0?'+':'')+Math.round(a.fatigue)+
   ' · banc recomposé par les règles natives · '+a.proposal.changes+' changement(s) prévus</li>').join('');
  return '<section class="lnr05-advice" aria-label="Conseils avant-match à 23">'+
-  '<h3>Options de rotation avant-match</h3>'+\n  '<p class="help">Plan tactique actuellement sélectionné : '+lnr05Escape(typeof TACTICS!=='undefined'&&TACTICS[S.tactic]?TACTICS[S.tactic][0]:'Non renseigné')+'. Le plan influe sur le match, mais cette recommandation ne fabrique pas de coefficient tactique individuel.</p>'+
+  '<h3>Options de rotation avant-match</h3>'+ 
+  '<p class="help">Plan tactique actuellement sélectionné : '+lnr05Escape(typeof TACTICS!=='undefined'&&TACTICS[S.tactic]?TACTICS[S.tactic][0]:'Non renseigné')+'. Le plan influe sur le match, mais cette recommandation ne fabrique pas de coefficient tactique individuel.</p>'+
   '<p class="help">Suggestions pour tous les joueurs LNR aptes du club, avec ou sans mesures individuelles. Notes au poste, condition et charge sont des données simulées. Les compatibilités de poste viennent des règles natives ; aucun bonus tactique chiffré non attesté. Le score ne prédit pas le résultat du match. Le XV reste inchangé jusqu’à confirmation.</p>'+
   (rows?'<ol>'+rows+'</ol><p class="help">Sélectionnez une option pour prévisualiser la feuille et confirmer manuellement.</p>':
    '<p class="help">Aucun remplacement titulaire améliorant ces critères et validé par la feuille native, ou match verrouillé.</p>')+
