@@ -1,0 +1,28 @@
+name: V63 transactions carriere natives
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-career:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Transactions et sauvegardes natives
+        env:
+          CD_V63_REPORT: v63-native.json
+        run: |
+          node --check tests/v63-native-career-transactions.cjs
+          node tests/v63-native-career-transactions.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v63-native-report
+          path: v63-native.json
+          if-no-files-found: ignore
