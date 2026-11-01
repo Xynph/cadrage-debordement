@@ -41,7 +41,7 @@ try:
         page.goto(url)
         page.get_by_role('button',name='Nouvelle carrière').click();page.get_by_role('button',name='Univers fictif').click()
         check('default system theme resolved dark', page.locator('html').get_attribute('data-cd-theme') == 'analyste')
-        check('welcome dark cards have dark surface', page.locator('.clubchoice').first.evaluate('(e)=>getComputedStyle(e).backgroundColor') == 'rgb(20, 31, 48)')
+        check('welcome dark cards have dark surface', page.locator('.clubchoice').first.evaluate('(e)=>getComputedStyle(e).backgroundColor') == 'rgb(16, 42, 33)')
         page.locator('.clubchoice').first.click()
         snapshot = page.evaluate('JSON.stringify(S)')
         saved = page.evaluate('localStorage.getItem("bdt-v1")')

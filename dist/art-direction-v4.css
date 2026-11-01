@@ -1,0 +1,257 @@
+/* DA V4 — compositions éditoriales et visualisations natives. */
+html:root[data-cd-theme]{--da4-copper:#b45328;--da4-chart:#3a7356;--da4-chart-soft:#3a73561a;--da4-secondary:#ab542c;--da4-grid:#a3b6a166;--da4-type:var(--ui01-text);--da4-muted:var(--ui01-meta)}
+html:root[data-cd-theme="analyste"]{--da4-copper:#e6a16d;--da4-chart:#a4c39b;--da4-chart-soft:#a4c39b15;--da4-secondary:#eda16c;--da4-grid:#85a18a30}
+html:root[data-cd-theme] .da4-workspace{--v4-shadow:none}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout)>.main.da4-workspace{max-width:1740px}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout)>.main.da4-desk{display:block}
+html:root[data-cd-theme] .da4-workspace h2{font-family:'Barlow Condensed',sans-serif!important;font-weight:600!important;letter-spacing:.3px!important}
+html:root[data-cd-theme] .da4-workspace .heading h1{font-weight:600;letter-spacing:-.6px}
+html:root[data-cd-theme] .da4-panel{background:var(--ui01-surface);border:1px solid var(--ui01-border);border-radius:3px;min-width:0;padding:25px 28px;position:relative;box-shadow:none}
+html:root[data-cd-theme] .da4-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;min-width:0}
+html:root[data-cd-theme] .da4-panel-head h2{font-size:clamp(25px,2.2vw,33px);line-height:1.08;margin:7px 0 0;color:var(--da4-type)}
+html:root[data-cd-theme] .da4-kicker{font:700 9px/1.5 'DM Sans',sans-serif;letter-spacing:1.8px;color:var(--da4-copper);display:block;text-transform:uppercase}
+html:root[data-cd-theme] .da4-meta{font-size:9px;font-weight:600;letter-spacing:1px;line-height:1.6;color:var(--da4-muted);text-align:right;max-width:160px}
+html:root[data-cd-theme] .da4-two{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);gap:20px;margin:22px 0;align-items:start}
+html:root[data-cd-theme] .da4-stack{display:grid;gap:20px;min-width:0}
+html:root[data-cd-theme] .da4-figure{margin:0;min-width:0}
+html:root[data-cd-theme] .da4-chart-viewport{max-width:100%;overflow-x:auto;padding-bottom:8px;scrollbar-color:var(--da4-chart) var(--ui01-soft);scrollbar-width:thin}
+html:root[data-cd-theme] .da4-chart{display:block;width:100%;height:auto;overflow:visible;color:var(--da4-type);font-family:'DM Sans',sans-serif}
+html:root[data-cd-theme] .da4-chart text{fill:var(--da4-muted);stroke:none}
+html:root[data-cd-theme] .da4-chart .da4-tick{font-size:10px;letter-spacing:.15px}
+html:root[data-cd-theme] .da4-chart .da4-chart-name{font-size:12px;font-weight:600;fill:var(--da4-type)}
+html:root[data-cd-theme] .da4-gridline{stroke:var(--da4-grid);stroke-width:1;stroke-dasharray:2 5}
+html:root[data-cd-theme] .da4-area{fill:var(--da4-chart-soft);stroke:none}
+html:root[data-cd-theme] .da4-line{stroke:var(--da4-chart);stroke-width:2.8;fill:none;stroke-linejoin:round;stroke-linecap:round}
+html:root[data-cd-theme] .da4-dot{fill:var(--da4-chart);stroke:var(--ui01-surface);stroke-width:1.5}
+html:root[data-cd-theme] .da4-figure figcaption{font-size:11px;line-height:1.7;color:var(--da4-muted);margin:7px 0}
+html:root[data-cd-theme] .da4-chart-note{font-size:11px!important;line-height:1.7!important;color:var(--da4-muted)!important;margin:15px 0 0}
+html:root[data-cd-theme] .da4-empty{font:400 12px/1.8 'DM Sans',sans-serif;color:var(--da4-muted);padding:20px 0;margin:0}
+html:root[data-cd-theme] .da4-data{margin-top:12px;border-top:1px solid var(--ui01-border);padding-top:9px}
+html:root[data-cd-theme] .da4-data summary{cursor:pointer;font-size:10px;letter-spacing:.5px;color:var(--da4-muted);padding:8px 0;min-height:30px}
+html:root[data-cd-theme] .da4-table-scroll{overflow:auto;max-width:100%}
+html:root[data-cd-theme] .da4-table-scroll caption{padding:12px;text-align:left;font-weight:600;font-size:12px;color:var(--da4-type)}
+html:root[data-cd-theme] .da4-table-scroll table{min-width:300px;font-size:11px}
+html:root[data-cd-theme] .da4-data[open] summary{color:var(--da4-type)}
+html:root[data-cd-theme] .da4-text-action{background:none!important;color:var(--da4-copper)!important;padding:12px 0!important;min-height:44px;font-size:12px!important;text-align:left;border:0!important;box-shadow:none!important;font-weight:700}
+html:root[data-cd-theme] .da4-text-action:hover{text-decoration:underline;text-underline-offset:4px}
+html:root[data-cd-theme] .da4-key{display:inline-block;vertical-align:middle;width:8px;height:8px;border-radius:50%;margin:0 4px 0 12px;background:var(--da4-chart)}
+html:root[data-cd-theme] .da4-key:first-child{margin-left:0}
+html:root[data-cd-theme] .da4-key.is-forward{background:var(--da4-secondary)}
+html:root[data-cd-theme] .da4-key.is-need{background:#e8a575}
+html:root[data-cd-theme] .da4-point-readout{display:block;min-height:38px;padding:12px 0 0;color:var(--da4-type);font-size:11px;line-height:1.6;border-top:1px solid var(--ui01-border);margin-top:12px}
+html:root[data-cd-theme] .da4-player-point{stroke:var(--ui01-surface);stroke-width:1.5;fill:var(--da4-chart);opacity:.87;outline:none}
+html:root[data-cd-theme] .da4-player-point.is-forward{fill:var(--da4-secondary)}
+html:root[data-cd-theme] .da4-player-point:hover,html:root[data-cd-theme] .da4-player-point:focus{stroke:var(--da4-type);stroke-width:3;opacity:1}
+html:root[data-cd-theme] .da4-ring-block{display:flex;align-items:center;gap:20px;min-width:0;margin:12px 0 24px}
+html:root[data-cd-theme] .da4-ring-block>.da4-chart{width:165px;flex:0 0 165px;overflow:visible}
+html:root[data-cd-theme] .da4-ring-track{stroke:var(--ui01-soft)}
+html:root[data-cd-theme] .da4-chart .da4-ring-total{fill:var(--da4-type);font:600 34px 'Barlow Condensed',sans-serif}
+html:root[data-cd-theme] .da4-chart .da4-ring-unit{fill:var(--da4-muted);font:600 7px 'DM Sans',sans-serif;letter-spacing:1px}
+html:root[data-cd-theme] .da4-ring-legend{margin:0;flex:1;font-size:12px;min-width:0}
+html:root[data-cd-theme] .da4-ring-legend>div{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:14px 0}
+html:root[data-cd-theme] .da4-ring-legend dt{color:var(--da4-muted);display:flex;align-items:center;gap:7px}
+html:root[data-cd-theme] .da4-ring-legend dt i{width:7px;height:7px;border-radius:50%;display:inline-block}
+html:root[data-cd-theme] .da4-ring-legend dd{font:600 25px 'Barlow Condensed',sans-serif;margin:0;color:var(--da4-type)}
+html:root[data-cd-theme] .da4-age-band{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--ui01-border);padding-top:20px;gap:14px}
+html:root[data-cd-theme] .da4-age-band strong{display:block;font:600 32px 'Barlow Condensed',sans-serif;color:var(--da4-type)}
+html:root[data-cd-theme] .da4-age-band span{display:block;font-size:10px;color:var(--da4-muted);margin-top:4px}
+
+/* Le bureau : le rendez-vous sportif prime sur les panneaux de gestion. */
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.heading{min-height:0;background:none;border:0;border-radius:0;box-shadow:none;padding:8px 0 18px;margin-bottom:8px;align-items:center;overflow:visible}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.heading:before{display:none}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.heading h1{font-size:45px;color:var(--da4-type);text-shadow:none;max-width:none}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.heading p{color:var(--da4-muted)}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.heading .eyebrow{color:var(--da4-copper)}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.heading .primary{background:var(--v4-action);color:var(--v4-action-ink);border-color:var(--v4-action);border-radius:3px}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.office-summary{gap:0;border-block:1px solid var(--ui01-border);margin-bottom:24px}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.office-summary>div{border:0;border-right:1px solid var(--ui01-border);padding:18px 24px;background:none;border-radius:0;box-shadow:none}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.office-summary>div:first-child{padding-left:0}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.office-summary>div:last-child{border:0}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.office-summary>div:before{display:none}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.office-summary strong{font-size:32px;font-weight:600;margin-top:4px}
+html:root[data-cd-theme] .da4-desk-stage{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(300px,1fr);gap:20px;margin-bottom:22px}
+html:root[data-cd-theme] .da4-fixture.da4-panel{color:#f6f1e1;overflow:hidden;isolation:isolate;border-color:#47654d;background:linear-gradient(90deg,#081f19f7,#08251dcc 60%,#0a281c91),url('assets/premium-v4-matchday.webp') right 55%/cover;padding:27px 30px 0;border-radius:3px;min-height:315px}
+html:root[data-cd-theme] .da4-fixture .da4-panel-head h2{color:#fff6e6;font-size:25px}
+html:root[data-cd-theme] .da4-fixture .da4-kicker{color:#e5b181}
+html:root[data-cd-theme] .da4-fixture .da4-meta{color:#d0ddc6}
+html:root[data-cd-theme] .da4-duel{display:grid;grid-template-columns:1fr 70px 1fr;align-items:center;text-align:center;gap:14px;padding:8px 0 28px}
+html:root[data-cd-theme] .da4-duel h3{font:600 26px/1.05 'Barlow Condensed',sans-serif;color:#fff5df;margin:11px 0 7px}
+html:root[data-cd-theme] .da4-duel small{font-size:8px;letter-spacing:1.5px;color:#d0ddc6}
+html:root[data-cd-theme] .da4-big-crest{display:inline-grid;place-items:center;width:62px;height:72px;background:#c1c7a7;color:#143228;clip-path:polygon(0 0,100% 0,100% 76%,50% 100%,0 76%);font:700 25px 'Barlow Condensed',sans-serif;box-shadow:inset 0 0 0 3px #f4e7c366}
+html:root[data-cd-theme] .da4-big-crest.is-away{background:#d9a276;color:#2c2017}
+html:root[data-cd-theme] .da4-versus{font:500 21px 'Barlow Condensed',sans-serif;letter-spacing:3px;color:#d3cbb5}
+html:root[data-cd-theme] .da4-fixture>footer{display:flex;align-items:center;justify-content:space-between;gap:15px;border-top:1px solid #a9bca24d;padding:15px 0;font-size:11px;color:#d8e4ce}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-cta{background:#e8a270;color:#172c1c;border:1px solid #f2be90;border-radius:3px;font-size:12px;padding:11px 15px;min-height:44px;display:flex;align-items:center;gap:20px;text-align:left}
+html:root[data-cd-theme] .da4-cta b{font-size:20px;font-weight:400}
+html:root[data-cd-theme] .da4-condition{display:flex;flex-direction:column;justify-content:space-between}
+html:root[data-cd-theme] .da4-condition .da4-ring-block{margin:0}
+html:root[data-cd-theme] .da4-calendar{padding:23px 0 18px;border-block:1px solid var(--ui01-border);margin-bottom:24px}
+html:root[data-cd-theme] .da4-calendar .da4-panel-head{margin-bottom:13px}
+html:root[data-cd-theme] .da4-calendar h2{font-size:24px}
+html:root[data-cd-theme] .da4-fixtures{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;border-top:1px solid var(--ui01-border)}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-fixture-stop{position:relative;text-align:left;padding:20px 20px 8px;background:transparent!important;color:var(--da4-type);border:0;border-right:1px solid var(--ui01-border);border-radius:0!important;min-width:0}
+html:root[data-cd-theme] .da4-fixture-stop:before{content:"";width:6px;height:6px;border:1px solid var(--da4-muted);background:var(--paper);border-radius:50%;position:absolute;top:-4px;left:20px}
+html:root[data-cd-theme] .da4-fixture-stop.is-next:before{background:var(--da4-copper);border-color:var(--da4-copper)}
+html:root[data-cd-theme] .da4-fixture-stop>span:first-child{display:block;font-size:9px;letter-spacing:1.5px;color:var(--da4-muted);margin-bottom:6px}
+html:root[data-cd-theme] .da4-fixture-stop b{font:600 26px 'Barlow Condensed',sans-serif;letter-spacing:.5px}
+html:root[data-cd-theme] .da4-fixture-stop small{font-size:8px;margin-left:10px;color:var(--da4-copper);letter-spacing:1px}
+html:root[data-cd-theme] .da4-stop-name{display:block;font-size:10px;font-weight:400;color:var(--da4-muted);margin-top:4px;line-height:1.6}
+html:root[data-cd-theme] .da4-decisions{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px 24px;grid-template-areas:"priority form" "priority inbox";align-items:start;margin-bottom:24px}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-decisions>[aria-label="Pilotage de saison"]{grid-area:priority;min-width:0}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-decisions>.office-grid{grid-area:inbox;display:block;min-width:0}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-decisions .office-grid>.stack{display:block}
+html:root[data-cd-theme] .da4-form{grid-area:form;min-width:0;padding:24px;background:var(--ui01-soft)}
+html:root[data-cd-theme] .da4-form h2{font-size:25px}
+html:root[data-cd-theme] .da4-results{display:flex;gap:10px;flex-wrap:wrap}
+html:root[data-cd-theme] .da4-result{padding:10px 13px;border-left:2px solid #789777;background:var(--ui01-surface);min-width:80px}
+html:root[data-cd-theme] .da4-result.is-D{border-color:var(--da4-copper)}
+html:root[data-cd-theme] .da4-result>span,.da4-result>small{display:block;font-size:8px;letter-spacing:1px;color:var(--da4-muted)}
+html:root[data-cd-theme] .da4-result>b{display:block;font:600 27px 'Barlow Condensed',sans-serif;margin:5px 0}
+html:root[data-cd-theme] .da4-result em{font-style:normal;padding-inline:6px;color:var(--da4-muted)}
+html:root[data-cd-theme] .da4-dossier{margin:15px 0;border-top:1px solid var(--ui01-border);border-bottom:1px solid var(--ui01-border);min-width:0}
+html:root[data-cd-theme] .da4-dossier>summary{display:flex;justify-content:space-between;gap:12px;cursor:pointer;font-size:13px;font-weight:600;color:var(--da4-type);padding:20px 4px;list-style:none}
+html:root[data-cd-theme] .da4-dossier>summary>span{font-size:10px;color:var(--da4-copper);font-weight:500}
+html:root[data-cd-theme] .da4-dossier[open]>summary{border-bottom:1px solid var(--ui01-border)}
+html:root[data-cd-theme] .da4-dossier>.card{margin-top:14px}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-decisions .card{border-radius:3px;padding:24px;margin:0}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-decisions .office-decision{background:none!important;border:0;border-left:2px solid var(--da4-copper);border-radius:0!important;padding:14px 16px;margin-block:14px}
+html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-decisions .office-decision:hover{background:var(--ui01-soft)!important}
+html:root[data-cd-theme] .da4-quicklinks{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:22px}
+
+/* Finances : une trajectoire lisible, puis une ventilation précise. */
+html:root[data-cd-theme] .da4-finance-stage{align-items:stretch;margin-bottom:24px;grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr)}
+html:root[data-cd-theme] .da4-chart-numbers{display:flex;gap:30px;align-items:center;flex-wrap:wrap;margin:26px 0 20px}
+html:root[data-cd-theme] .da4-chart-numbers small{display:block;color:var(--da4-muted);font-size:9px;letter-spacing:1px;margin-bottom:5px}
+html:root[data-cd-theme] .da4-chart-numbers strong{font:600 32px 'Barlow Condensed',sans-serif;color:var(--da4-type);font-variant-numeric:tabular-nums}
+html:root[data-cd-theme] .da4-chart-numbers>div:nth-child(2) strong{color:var(--da4-copper)}
+html:root[data-cd-theme] .da4-scenario-label{font-size:8px;letter-spacing:1px;line-height:1.6;color:var(--da4-muted);max-width:140px;border-left:1px solid var(--ui01-border);padding-left:15px}
+html:root[data-cd-theme] .da4-bars{display:grid;gap:17px;margin:25px 0}
+html:root[data-cd-theme] .da4-bar-row{display:grid;grid-template-columns:minmax(80px,1.1fr) minmax(50px,1.5fr) auto;gap:12px;align-items:center;font-size:11px;min-width:0}
+html:root[data-cd-theme] .da4-bar-row>span{color:var(--da4-muted);font-size:10px}
+html:root[data-cd-theme] .da4-bar-row>strong{font-variant-numeric:tabular-nums;font-weight:500;color:var(--da4-type);white-space:nowrap}
+html:root[data-cd-theme] .da4-bar-track{height:6px;background:var(--ui01-soft);width:100%;min-width:0}
+html:root[data-cd-theme] .da4-bar-track i{display:block;height:100%;background:var(--da4-chart)}
+html:root[data-cd-theme] .da4-bar-row.is-mine .da4-bar-track i{background:var(--da4-secondary)}
+html:root[data-cd-theme] .da4-bar-row.is-mine>span{font-weight:800;color:var(--da4-copper)}
+
+/* Recrutement : spatialiser le besoin et explorer les coûts connus. */
+html:root[data-cd-theme] .da4-recruit-stage{margin:0;grid-template-columns:minmax(0,1.03fr) minmax(0,1fr);align-items:start}
+html:root[data-cd-theme] .da4-pitch{height:480px;position:relative;background:repeating-linear-gradient(0deg,#1f4935 0 60px,#244f3a 60px 120px);border:1px solid #829c7b;margin:5px 0 16px;isolation:isolate}
+html:root[data-cd-theme] .da4-pitch-lines{position:absolute;inset:21px 18px;border:1px solid #ccdcc36b;pointer-events:none}
+html:root[data-cd-theme] .da4-pitch-lines i{position:absolute;left:0;right:0;border-top:1px dashed #ccdcc36b;top:22%}
+html:root[data-cd-theme] .da4-pitch-lines i:nth-child(2){top:50%;border-top-style:solid}
+html:root[data-cd-theme] .da4-pitch-lines i:nth-child(3){top:78%}
+html:root[data-cd-theme] .da4-position{position:absolute;transform:translate(-50%,0);text-align:center;color:#fff5df;width:87px;outline:none;z-index:1}
+html:root[data-cd-theme] .da4-position>span{display:grid;place-items:center;margin:0 auto;width:32px;height:32px;border:1px solid #d3dfc5;border-radius:50%;font:600 14px 'DM Sans',sans-serif;color:#e9efdb;background:#294e39}
+html:root[data-cd-theme] .da4-position>strong{position:absolute;right:11px;top:-7px;display:grid;place-items:center;font-size:10px;width:24px;height:24px;border-radius:4px;color:#173222;background:#b6cfa5;border:1px solid #f0ebd555}
+html:root[data-cd-theme] .da4-position.is-need>strong{background:#e8a575;color:#281f15}
+html:root[data-cd-theme] .da4-position>small{display:block;color:#dce6cf;font-size:8px;margin-top:5px;line-height:1.4}
+html:root[data-cd-theme] .da4-position-tooltip{display:none;position:absolute;top:64px;left:50%;transform:translateX(-50%);width:190px;padding:12px;background:#041c14;color:#fff3db;border:1px solid #a9b794;font-size:11px;line-height:1.7;z-index:20;text-align:left}
+html:root[data-cd-theme] .da4-position:hover,.da4-position:focus{z-index:10}
+html:root[data-cd-theme] .da4-position:hover .da4-position-tooltip,html:root[data-cd-theme] .da4-position:focus .da4-position-tooltip{display:block}
+html:root[data-cd-theme] .da4-position:focus>span{outline:3px solid #ffce99;outline-offset:3px}
+html:root[data-cd-theme] .da4-position.is-left .da4-position-tooltip{left:0;transform:none}
+html:root[data-cd-theme] .da4-position.is-right .da4-position-tooltip{left:auto;right:0;transform:none}
+html:root[data-cd-theme] .da4-position.is-low .da4-position-tooltip{top:auto;bottom:60px}
+html:root[data-cd-theme] .da4-brief{border-left:3px solid var(--da4-copper);background:var(--ui01-soft)}
+html:root[data-cd-theme] .da4-brief h3{font-size:31px;margin:12px 0}
+html:root[data-cd-theme] .da4-brief p{font-size:12px;line-height:1.8}
+html:root[data-cd-theme] .da4-workspace :is(.cd03-content,.cd04-content){padding:22px}
+html:root[data-cd-theme] .da4-workspace :is(.cd03-header,.cd04-header){background:var(--ui01-surface);color:var(--da4-type);border-top:3px solid var(--da4-copper);padding:28px 24px;border-bottom-color:var(--ui01-border)}
+html:root[data-cd-theme] .da4-workspace :is(.cd03-header,.cd04-header) h2{color:var(--da4-type);font-size:40px}
+html:root[data-cd-theme] .da4-workspace :is(.cd03-header,.cd04-header) :is(p,.cd04-season){color:var(--da4-muted)}
+html:root[data-cd-theme] .da4-workspace :is(.cd03-kpis,.cd04-kpis){background:var(--ui01-surface)}
+html:root[data-cd-theme] .da4-workspace :is(.cd03-kpi,.cd04-kpi){background:none;border-bottom:1px solid var(--ui01-border)}
+html:root[data-cd-theme] .da4-workspace .cd03{--c3-bg:var(--ui01-surface);--c3-ink:var(--ui01-text);--c3-muted:var(--ui01-meta);--c3-soft:var(--ui01-soft);--c3-border:var(--ui01-border);--c3-accent:var(--ui01-accent)}
+html:root[data-cd-theme] .da4-workspace .cd04{--c4-bg:var(--ui01-surface);--c4-deep:var(--ui01-head);--c4-soft:var(--ui01-soft);--c4-text:var(--ui01-text);--c4-muted:var(--ui01-meta);--c4-border:var(--ui01-border);--c4-accent:var(--ui01-accent)}
+html:root[data-cd-theme] .da4-workspace .cd02{--cd02-bg:var(--ui01-surface);--cd02-deep:var(--ui01-head);--cd02-soft:var(--ui01-soft);--cd02-border:var(--ui01-border);--cd02-text:var(--ui01-text);--cd02-muted:var(--ui01-meta);--cd02-accent:var(--ui01-accent)}
+
+html:root[data-cd-theme] .da4-radar-figure>.da4-chart{max-height:330px}
+html:root[data-cd-theme] .da4-radar-grid{fill:none;stroke:var(--da4-grid);stroke-width:1}
+html:root[data-cd-theme] .da4-radar-shape{fill:var(--da4-chart-soft);stroke:var(--da4-chart);stroke-width:2}
+html:root[data-cd-theme] .da4-chart .da4-radar-label{font-size:11px;fill:var(--da4-type)}
+html:root[data-cd-theme] .da4-profile-stage{margin:0 0 20px;grid-template-columns:minmax(0,1.3fr) minmax(250px,1fr)}
+html:root[data-cd-theme] .da4-profile-strengths .da4-strength{display:flex;gap:20px;align-items:center;padding:19px 0;border-bottom:1px solid var(--ui01-border)}
+html:root[data-cd-theme] .da4-strength>span{font:500 18px 'Barlow Condensed',sans-serif;color:var(--da4-copper);letter-spacing:1px}
+html:root[data-cd-theme] .da4-strength>div{flex:1;display:flex;justify-content:space-between;align-items:center;gap:10px}
+html:root[data-cd-theme] .da4-strength h3{font:600 23px 'Barlow Condensed',sans-serif}
+html:root[data-cd-theme] .da4-strength strong{font:600 30px 'Barlow Condensed',sans-serif;color:var(--da4-chart)}
+html:root[data-cd-theme] .da4-strength small{font:500 10px 'DM Sans',sans-serif;color:var(--da4-muted)}
+html:root[data-cd-theme] .da4-tactics-stage{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}
+html:root[data-cd-theme] .da4-xv-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 20px}
+html:root[data-cd-theme] .da4-xv-grid>div{display:grid;grid-template-columns:20px 1fr auto;gap:8px;position:relative;align-items:center;padding:12px 0;font-size:11px;border-bottom:1px solid var(--ui01-border);min-width:0}
+html:root[data-cd-theme] .da4-xv-grid>div>span{color:var(--da4-copper);font-size:10px}
+html:root[data-cd-theme] .da4-xv-grid strong{font-weight:500;color:var(--da4-type);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html:root[data-cd-theme] .da4-xv-grid b{font-weight:600;color:var(--da4-chart);font-variant-numeric:tabular-nums}
+html:root[data-cd-theme] .da4-xv-grid i{position:absolute;bottom:0;left:28px;right:0;height:2px;background:linear-gradient(90deg,var(--da4-chart) var(--condition),transparent var(--condition));opacity:.65}
+
+/* Formation : mesurer l'écart à développer, sans promettre le potentiel. */
+html:root[data-cd-theme] .da4-academy-stage{margin:0;grid-template-columns:minmax(0,1.7fr) minmax(270px,1fr)}
+html:root[data-cd-theme] .da4-potential-line{stroke:var(--da4-chart);stroke-width:4;opacity:.6}
+html:root[data-cd-theme] .da4-potential-end{fill:var(--ui01-surface);stroke:var(--da4-secondary);stroke-width:2}
+html:root[data-cd-theme] .da4-pathway-step{display:flex;gap:20px;position:relative;margin:25px 0;padding-bottom:12px;min-width:0}
+html:root[data-cd-theme] .da4-pathway-step>span{font:600 12px 'DM Sans',sans-serif;color:var(--da4-copper);border:1px solid var(--ui01-border);height:32px;width:32px;display:grid;place-items:center;flex-shrink:0;background:var(--ui01-surface);z-index:1}
+html:root[data-cd-theme] .da4-pathway-step:after{content:"";position:absolute;left:16px;top:32px;bottom:-26px;border-left:1px solid var(--ui01-border)}
+html:root[data-cd-theme] .da4-pathway-step:nth-last-child(2):after{display:none}
+html:root[data-cd-theme] .da4-pathway-step strong{font:600 44px 'Barlow Condensed',sans-serif;display:block;line-height:1}
+html:root[data-cd-theme] .da4-pathway-step strong small{font:600 10px 'DM Sans',sans-serif;letter-spacing:1px;color:var(--da4-muted)}
+html:root[data-cd-theme] .da4-pathway-step h3{font:600 22px 'Barlow Condensed',sans-serif;margin:5px 0}
+html:root[data-cd-theme] .da4-pathway-step p{font-size:11px;line-height:1.7;margin:6px 0;color:var(--da4-muted)}
+html:root[data-cd-theme] .da4-league-stage .da4-bars{grid-template-columns:1fr 1fr;gap:15px 40px;grid-auto-flow:column;grid-template-rows:repeat(7,auto)}
+
+@media(max-width:1100px){
+ html:root[data-cd-theme] .da4-desk-stage{grid-template-columns:minmax(0,1.5fr) minmax(270px,1fr)}
+ html:root[data-cd-theme] .da4-panel{padding:22px}
+ html:root[data-cd-theme] .da4-ring-block{flex-wrap:wrap;gap:10px}
+ html:root[data-cd-theme] .da4-ring-block>.da4-chart{width:130px;flex-basis:130px}
+ html:root[data-cd-theme] .da4-two{grid-template-columns:minmax(0,1.35fr) minmax(260px,1fr)}
+ html:root[data-cd-theme] .da4-position{width:70px}
+ html:root[data-cd-theme] .da4-position>strong{right:4px}
+}
+@media(max-width:800px){
+ html:root[data-cd-theme] .da4-desk-stage,html:root[data-cd-theme] .da4-two{grid-template-columns:minmax(0,1fr)}
+ html:root[data-cd-theme] .da4-decisions{display:block}
+ html:root[data-cd-theme] .da4-decisions>*{margin-bottom:18px!important}
+ html:root[data-cd-theme] .da4-ring-block{flex-wrap:nowrap}
+ html:root[data-cd-theme] .da4-ring-block>.da4-chart{width:150px;flex-basis:150px}
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.heading{padding:8px 0 16px;gap:16px}
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.heading h1{font-size:38px}
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.heading .primary{width:auto}
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.office-summary>div{padding:14px;border-bottom:1px solid var(--ui01-border)}
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.office-summary>div:first-child{padding-left:14px}
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout) .da4-desk>.office-summary strong{font-size:29px}
+ html:root[data-cd-theme] .da4-panel-head{gap:10px}
+ html:root[data-cd-theme] .da4-panel{padding:20px}
+ html:root[data-cd-theme] .da4-fixtures{overflow-x:auto;grid-template-columns:repeat(5,minmax(105px,1fr));padding-bottom:7px}
+ html:root[data-cd-theme] .da4-fixture.da4-panel{padding:22px 20px 0;min-height:300px}
+ html:root[data-cd-theme] .da4-fixture>footer{flex-wrap:wrap;gap:12px}
+ html:root[data-cd-theme] .da4-duel{grid-template-columns:1fr 30px 1fr;gap:7px}
+ html:root[data-cd-theme] .da4-duel h3{font-size:23px}
+ html:root[data-cd-theme] .da4-big-crest{width:51px;height:61px;font-size:21px}
+ html:root[data-cd-theme] .da4-meta{font-size:8px;max-width:110px}
+ html:root[data-cd-theme] .da4-chart-numbers{gap:15px}
+ html:root[data-cd-theme] .da4-chart-numbers strong{font-size:29px}
+ html:root[data-cd-theme] .da4-workspace :is(.cd03-content,.cd04-content){padding:14px}
+ html:root[data-cd-theme] .da4-pitch{height:460px}
+ html:root[data-cd-theme] .da4-position>small{font-size:7px}
+ html:root[data-cd-theme] .da4-league-stage .da4-bars{display:grid;grid-template-columns:1fr;grid-auto-flow:row;grid-template-rows:none}
+ html:root[data-cd-theme] .da4-dossier>summary{flex-wrap:wrap}
+ html:root[data-cd-theme] .da4-scenario-label{display:none}
+ html:root[data-cd-theme] .da4-chart-viewport>.da4-chart{width:600px;min-width:600px}
+ html:root[data-cd-theme] .da4-chart .da4-tick{font-size:12px}
+ html:root[data-cd-theme] .da4-chart-viewport:after{content:"Graphique détaillé · défilement horizontal ↔";display:block;font-size:10px;color:var(--da4-muted);padding:8px 0}
+ html:root[data-cd-theme] .da4-xv-grid{grid-template-columns:1fr}
+ html:root[data-cd-theme] .da4-chart .da4-radar-label{font-size:15px}
+}
+@media(max-width:400px){
+ html:root[data-cd-theme] .da4-panel{padding:16px 14px}
+ html:root[data-cd-theme] .da4-panel-head h2{font-size:27px}
+ html:root[data-cd-theme] .da4-duel h3{font-size:20px}
+ html:root[data-cd-theme] .da4-ring-block>.da4-chart{width:125px;flex-basis:125px}
+ html:root[data-cd-theme] .da4-pitch{height:440px;margin-inline:0}
+ html:root[data-cd-theme] .da4-position{width:54px}
+ html:root[data-cd-theme] .da4-position>span{width:27px;height:27px;font-size:12px}
+ html:root[data-cd-theme] .da4-position>strong{width:20px;height:20px;font-size:9px;right:-1px;top:-8px}
+ html:root[data-cd-theme] .da4-position>small{font-size:6.5px;overflow-wrap:anywhere}
+ html:root[data-cd-theme] .da4-bar-row{grid-template-columns:minmax(68px,1.2fr) minmax(30px,1fr) auto;gap:8px}
+}

@@ -1,0 +1,854 @@
+[
+  {
+    "suite": "tests/academy-planning.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "{\"passed\":true,\"checks\":[\"détection et tri\",\"filtre par poste\",\"budget de formation\",\"couverture des postes\",\"données invalides\",\"absence de mutation\"]}\n"
+  },
+  {
+    "suite": "tests/ai-roster-cycle.cjs",
+    "exit": 0,
+    "seconds": 76.85,
+    "output": "\"academy cohorts\",\"rugby lineup\",\"old save opt-in\",\"live lock\",\"corrupt saves\",\"actual rugby fixtures\",\"twelve seasons\",\"real league hierarchy\",\"financial and player invariants\"]}\n"
+  },
+  {
+    "suite": "tests/ai-transfer-competition.cjs",
+    "exit": 0,
+    "seconds": 0.51,
+    "output": "uction\",\"priority cash tie club id\",\"ineligible window\",\"market idempotence\",\"exclusive ownership\",\"cash protection\",\"reports\",\"save roundtrip\",\"legacy opt-in\",\"insolvent clubs\"]}\n"
+  },
+  {
+    "suite": "tests/board-planning.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "{\"passed\":true,\"checks\":[\"objectifs minimum/maximum\",\"confiance pondérée\",\"alerte du conseil\",\"sponsor fixe/variable\",\"validation des données\"]}\n"
+  },
+  {
+    "suite": "tests/calendrier01.cjs",
+    "exit": 0,
+    "seconds": 0.11,
+    "output": "{\"passed\":true,\"verifiedRound1\":15,\"complete\":false,\"expected\":422}\n"
+  },
+  {
+    "suite": "tests/calendrier02.cjs",
+    "exit": 0,
+    "seconds": 0.09,
+    "output": "{\"passed\":true,\"addedFixtures\":23,\"combinedWithPr113\":38,\"stillMissing\":384}\n"
+  },
+  {
+    "suite": "tests/calendrier04.cjs",
+    "exit": 0,
+    "seconds": 0.1,
+    "output": "CALENDRIER-04 PASS: 182 + 240 = 422 confrontations officielles, doubles allers-retours et 422 horaires simules distincts.\n"
+  },
+  {
+    "suite": "tests/career-history.cjs",
+    "exit": 0,
+    "seconds": 0.09,
+    "output": "{\"passed\":true,\"checks\":[\"historique sans mutation\",\"déduplication\",\"borne de conservation\",\"statistiques\",\"palmarès\",\"entrées invalides\"]}\n"
+  },
+  {
+    "suite": "tests/career-integration.cjs",
+    "exit": 0,
+    "seconds": 1.86,
+    "output": "sponsors once\",\"academy funded once\",\"board bounded\",\"professional youth\",\"scouted recruits\",\"deduplicated trophies\",\"season ledger\",\"old saves opt-in\",\"tampered save rejection\"]}\n"
+  },
+  {
+    "suite": "tests/career-resilience.cjs",
+    "exit": 0,
+    "seconds": 14.65,
+    "output": "t RNG replay the same transition\",\"report gate refuses missing, partial or mixed-source campaigns\"],\"scope\":\"native functions with generated fixtures; RNG sidecar only for tests\"}\n"
+  },
+  {
+    "suite": "tests/champion-budget-regression.cjs",
+    "exit": 0,
+    "seconds": 5.34,
+    "output": "lternatives keep the same maintenance baseline\nPASS 22 import preserves facility level and the derived forecast\nCHAMPION BUDGET REGRESSION {\"passed\":true,\"groups\":22,\"failures\":0}\n"
+  },
+  {
+    "suite": "tests/ci-report.cjs",
+    "exit": 0,
+    "seconds": 0.09,
+    "output": "ci-report: 15 contrats du verdict natif vérifiés\n"
+  },
+  {
+    "suite": "tests/ci-selection.cjs",
+    "exit": 0,
+    "seconds": 0.09,
+    "output": "\"fallback complet sur modification inconnue\",\"dépendances gameplay\",\"compatibilité sauvegardes\",\"tests dédiés\",\"documentation seule\",\"configuration CI\",\"sélection sans doublons\"]}\n"
+  },
+  {
+    "suite": "tests/ci-sharding.cjs",
+    "exit": 0,
+    "seconds": 0.09,
+    "output": "CI-sharding OK : 142 suites, sans exclusion\n"
+  },
+  {
+    "suite": "tests/club-ai.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "V46 : tests ciblés réussis\n"
+  },
+  {
+    "suite": "tests/coach-market.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "V48 : tests ciblés réussis\n"
+  },
+  {
+    "suite": "tests/data02-mapping01.cjs",
+    "exit": 0,
+    "seconds": 0.09,
+    "output": "{\"pass\":true,\"mappings\":30,\"verifiedArrivalExamples\":30,\"completeRosters\":false}\n"
+  },
+  {
+    "suite": "tests/data03-rosters.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "DATA-03 PASS 30 clubs 1592 profils joueurs LNR uniques; historique juillet non certifie\n"
+  },
+  {
+    "suite": "tests/data04.cjs",
+    "exit": 0,
+    "seconds": 0.06,
+    "output": "DATA-04: 30 clubs, 1592 postes, 1559 nationalites, 3 mensurations, 21 rapprochements sur 30\n"
+  },
+  {
+    "suite": "tests/data05-audit.cjs",
+    "exit": 0,
+    "seconds": 0.17,
+    "output": "et dry-run imports exactly 240 and exports exactly 240 without HTTP (53.242601ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 71.057658\n"
+  },
+  {
+    "suite": "tests/data05-bulk.cjs",
+    "exit": 0,
+    "seconds": 0.12,
+    "output": "ion (1.714346ms)\n✔ pas de faux staff ou faux transferts juillet 2026 (0.809312ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 10.978023\n"
+  },
+  {
+    "suite": "tests/data05-bulk2.cjs",
+    "exit": 0,
+    "seconds": 0.13,
+    "output": "05-BULK2 60 fiches uniques, source officielle, pas de date inventee (11.503653ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 22.416742\n"
+  },
+  {
+    "suite": "tests/data05-bulk3.cjs",
+    "exit": 0,
+    "seconds": 0.09,
+    "output": "alidés (1.206607ms)\n✔ staff source officiel et temporalité conservées (0.301815ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 8.687008\n"
+  },
+  {
+    "suite": "tests/data05-guarded-entrypoint.cjs",
+    "exit": 0,
+    "seconds": 0.18,
+    "output": "file corpus and genuine unified importer are offline and idempotent (69.275492ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 86.015715\n"
+  },
+  {
+    "suite": "tests/data05-pipeline.cjs",
+    "exit": 0,
+    "seconds": 0.1,
+    "output": "ough execute: HTTP 403 from paid API stops after first reserved call (2.538781ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 18.970448\n"
+  },
+  {
+    "suite": "tests/data05-preflight.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "yers (0.323848ms)\n✔ serial-only contract matches integrated pipeline (1.562582ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 11.407847\n"
+  },
+  {
+    "suite": "tests/data05-resilience.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "ed exponential retry (1.107552ms)\n✔ strict budget and identity checks (0.384897ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 9.249347\n"
+  },
+  {
+    "suite": "tests/data05-transport.cjs",
+    "exit": 0,
+    "seconds": 0.1,
+    "output": "y (5.369301ms)\n✔ zero paid-call budget performs no Firecrawl request (0.555609ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 19.496274\n"
+  },
+  {
+    "suite": "tests/data05-unified.cjs",
+    "exit": 0,
+    "seconds": 0.12,
+    "output": "nd shared cost ceiling (2.407938ms)\n✔ import rejects source mismatch (2.247682ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 22.155151\n"
+  },
+  {
+    "suite": "tests/data05-wired.cjs",
+    "exit": 0,
+    "seconds": 0.12,
+    "output": "network (1.399612ms)\n✔ fail closed without resilience dependency #134 (0.374712ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 7.892027\n"
+  },
+  {
+    "suite": "tests/data05.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "DATA05 PASS 12 profils complets champs LNR disponibles, 1 coach source et futur 2027 exclu\n"
+  },
+  {
+    "suite": "tests/data06-all-players.cjs",
+    "exit": 0,
+    "seconds": 0.15,
+    "output": "checked-in catalogue is the byte-for-byte deterministic build output (11.05666ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 54.203617\n"
+  },
+  {
+    "suite": "tests/data06-evidence.cjs",
+    "exit": 0,
+    "seconds": 0.1,
+    "output": "fer reconciliation is complete, unique and never guesses missing IDs (3.464294ms)\nℹ tests 6\nℹ suites 0\nℹ pass 6\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 25.506949\n"
+  },
+  {
+    "suite": "tests/data06-itsrugby-bulk.test.cjs",
+    "exit": 0,
+    "seconds": 0.09,
+    "output": "042ms)\n✔ rejects invalid HTML rather than accepting fake player data (0.720411ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 11.251436\n"
+  },
+  {
+    "suite": "tests/data06-triage.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "table IDs (0.42055ms)\n✔ real reference corpus is 1592 unique players (2.621167ms)\nℹ tests 4\nℹ suites 0\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 10.935917\n"
+  },
+  {
+    "suite": "tests/development.cjs",
+    "exit": 0,
+    "seconds": 2.1,
+    "output": "and wages\",\"cohort uniqueness\",\"legacy live-save migration\",\"decline and history\",\"retirement removal and payroll\",\"retirement contract limits\",\"AI renewal and positional cover\"]}\n"
+  },
+  {
+    "suite": "tests/discipline.cjs",
+    "exit": 0,
+    "seconds": 0.57,
+    "output": "V18 discipline checks passed\n"
+  },
+  {
+    "suite": "tests/economy-audit.cjs",
+    "exit": 0,
+    "seconds": 4.86,
+    "output": "ary fixtures and reconciliation are not proof of economic balance\",\"No production coefficients changed\",\"Private helper fixtures are identified separately from full career runs\"]}\n"
+  },
+  {
+    "suite": "tests/economy.cjs",
+    "exit": 0,
+    "seconds": 1.16,
+    "output": "and wages\",\"transfer cash conservation\",\"buyer funds\",\"expired and rejected bids\",\"live roster lock\",\"weekly payroll\",\"offseason review and free departures\",\"youth resale guard\"]}\n"
+  },
+  {
+    "suite": "tests/facilities.cjs",
+    "exit": 0,
+    "seconds": 0.12,
+    "output": "V49 : tests ciblés réussis\n"
+  },
+  {
+    "suite": "tests/fictional-league.cjs",
+    "exit": 0,
+    "seconds": 0.42,
+    "output": "{\"passed\":true,\"clubs\":14,\"checks\":[\"14 clubs fictifs\",\"catalogue R1 cohérent\",\"nouvelle carrière\",\"ancienne carrière inchangée\",\"JSON valide\",\"accueil original\"]}\n"
+  },
+  {
+    "suite": "tests/finance-planning.cjs",
+    "exit": 0,
+    "seconds": 0.09,
+    "output": ",\"checks\":[\"prévision hebdomadaire\",\"solde et déficit\",\"recettes et dépenses ponctuelles\",\"part des salaires\",\"comparaison de scénarios\",\"validation des entrées\",\"sans mutation\"]}\n"
+  },
+  {
+    "suite": "tests/frontrow.cjs",
+    "exit": 0,
+    "seconds": 2.88,
+    "output": "ard matrix\",\"return to contested scrums\",\"nominated player already reused\",\"both teams\",\"reload/import during carence\",\"hostile front-row data\",\"version-seven fixture preserved\"]}\n"
+  },
+  {
+    "suite": "tests/goalkicking.cjs",
+    "exit": 0,
+    "seconds": 0.19,
+    "output": "V17 goal-kicking geometry and accuracy checks passed\n"
+  },
+  {
+    "suite": "tests/lnr-career-long.cjs",
+    "exit": 0,
+    "seconds": 35.67,
+    "output": "LNR-01 LONG PASS : 4 saisons simulées avec moteur natif, reprises annuelles et sauvegardes validées\n"
+  },
+  {
+    "suite": "tests/lnr-career.cjs",
+    "exit": 0,
+    "seconds": 0.94,
+    "output": "LNR-01 PASS : 30 clubs, 1592 IDs, TOP14 playable, PRO D2 consultable, ancien export et validation anti-faux historiques\n"
+  },
+  {
+    "suite": "tests/lnr05-evidence-long.cjs",
+    "exit": 0,
+    "seconds": 36.2,
+    "output": "LNR05 LONG PASS: 4 seasons, evidence stable, native save compatible\n"
+  },
+  {
+    "suite": "tests/lnr05-evidence.cjs",
+    "exit": 0,
+    "seconds": 0.51,
+    "output": "LNR05 EVIDENCE PASS: 240 IDs, legacy, evidence display, preview, stale guard, application and save\n"
+  },
+  {
+    "suite": "tests/lnr05-real-import.cjs",
+    "exit": 0,
+    "seconds": 0.16,
+    "output": "riques importés puis relus sans HTTP ni crédit, sur données réelles (58.131836ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 63.418486\n"
+  },
+  {
+    "suite": "tests/main-menu-v2.cjs",
+    "exit": 0,
+    "seconds": 0.98,
+    "output": " replaces the current or canonical save\nPASS deleting an archive never removes the active canonical career\nPASS pause is non-destructive and reduced motion is persisted separately\n"
+  },
+  {
+    "suite": "tests/main-menu-v3.cjs",
+    "exit": 0,
+    "seconds": 0.59,
+    "output": "five slots, real metadata, read-only rendering, native difficulty, isolated preferences, corrupted copy\nPASS legacy save, full library, corrupt index and denied preference storage\n"
+  },
+  {
+    "suite": "tests/main-menu.cjs",
+    "exit": 0,
+    "seconds": 0.48,
+    "output": " menu with a recoverable saved career\nPASS new career with an existing save requires confirmation\nPASS theme, help and keyboard-friendly actions exist and are independent of saves\n"
+  },
+  {
+    "suite": "tests/manager-mobility.cjs",
+    "exit": 0,
+    "seconds": 28.23,
+    "output": "ns\":[\"No native Windows test\",\"No automatic firing or unemployed mode\",\"No manager salary or indemnity introduced\",\"Seeded contexts used, no claim of production RNG persistence\"]}\n"
+  },
+  {
+    "suite": "tests/manager-season-pilotage.cjs",
+    "exit": 0,
+    "seconds": 0.41,
+    "output": "manager-season-pilotage: PASS (priorités, économie, contrats, blessures, formation, rendu, sauvegarde)\n"
+  },
+  {
+    "suite": "tests/manager.cjs",
+    "exit": 0,
+    "seconds": 1.26,
+    "output": "d watchlist\",\"portable state and hostile data\",\"fitness-based delegation\",\"delegated repair of incomplete sheet\",\"live transaction locks\",\"specialist depth\",\"old-save migration\"]}\n"
+  },
+  {
+    "suite": "tests/match-actions.cjs",
+    "exit": 0,
+    "seconds": 0.65,
+    "output": "d management reconciles to head\",\"player click and legal replacement\",\"automatic pauses at sequence boundary\",\"clock held during playback\",\"scene export/reload and hostile data\"]}\n"
+  },
+  {
+    "suite": "tests/match-rules.cjs",
+    "exit": 0,
+    "seconds": 1.76,
+    "output": ",\"second yellow and twenty-minute boundary\",\"red replacement outside tactical quota\",\"permanent red\",\"AI restoration\",\"hostile rule snapshots\",\"legacy live fixture preservation\"]}\n"
+  },
+  {
+    "suite": "tests/match2d.cjs",
+    "exit": 0,
+    "seconds": 0.3,
+    "output": "board-accessible players\",\"model and RNG isolation\",\"action-level animation\",\"pause and reduced motion\",\"tempo controls\",\"second-half direction\",\"set-piece layouts within pitch\"]}\n"
+  },
+  {
+    "suite": "tests/matchday-center.cjs",
+    "exit": 0,
+    "seconds": 0.38,
+    "output": "matchday-center: PASS (dossier adverse, feuille à 23, fatigue, choix natif et sauvegardes)\n"
+  },
+  {
+    "suite": "tests/matchday-lineup.cjs",
+    "exit": 0,
+    "seconds": 0.36,
+    "output": "matchday-lineup: PASS (23 postes, modes, non-mutation, empreinte, application et sauvegarde)\n"
+  },
+  {
+    "suite": "tests/matchday-matchplan.cjs",
+    "exit": 0,
+    "seconds": 0.43,
+    "output": "matchday-matchplan: PASS (3 scénarios, 5 secteurs, 3 échéances, transaction et sauvegardes)\n"
+  },
+  {
+    "suite": "tests/matchflow.cjs",
+    "exit": 0,
+    "seconds": 2.63,
+    "output": "fter horn\",\"conversion after horn\",\"separate forty-minute halves\",\"playing-time exclusions\",\"overrun/advantage reload and import\",\"hostile flow data\",\"version-nine preservation\"]}\n"
+  },
+  {
+    "suite": "tests/mod-data01.cjs",
+    "exit": 0,
+    "seconds": 0.06,
+    "output": "{\"passed\":true,\"clubCount\":30,\"competitionCount\":2,\"transferExamples\":10}\n"
+  },
+  {
+    "suite": "tests/mod-manager-r3.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "{\"passed\":true,\"checks\":8}\n"
+  },
+  {
+    "suite": "tests/mod-package-r4.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "{\"passed\":true,\"checks\":[\"zip stored\",\"manifest\",\"atomic install\",\"version binding\",\"duplicate guard\",\"traversal\",\"undeclared file\"]}\n"
+  },
+  {
+    "suite": "tests/mod-r10-acceptance.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "sset hash\",\"no automatic activation\",\"new career\",\"resume\",\"legacy unchanged\",\"version rejection\",\"missing pack\",\"bad json\",\"bad image\",\"crc corruption\",\"failed resume rollback\"]}\n"
+  },
+  {
+    "suite": "tests/mod-r6-hardening.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "{\"passed\":true,\"checks\":[\"manifest deps\",\"conflicts\",\"invalid selection\",\"rollback\",\"snapshot isolation\",\"legacy saves\",\"version binding\",\"no mutation\"]}\n"
+  },
+  {
+    "suite": "tests/mod-r7-zip-integrity.cjs",
+    "exit": 0,
+    "seconds": 0.09,
+    "output": "{\"passed\":true,\"checks\":[\"crc accepted\",\"crc tamper rejected\",\"version path traversal rejected\",\"installed version listed\",\"missing manifest refused\"]}\n"
+  },
+  {
+    "suite": "tests/mod-r8-package-adapter.cjs",
+    "exit": 0,
+    "seconds": 0.11,
+    "output": "{\"passed\":true,\"checks\":[\"real zip parse\",\"normalize\",\"inject sole registry\",\"invalid collection\",\"invalid manifest\",\"tampering\"]}\n"
+  },
+  {
+    "suite": "tests/mod-r9-career-bridge.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "{\"passed\":true,\"checks\":[\"new career explicit\",\"save binding\",\"resume\",\"legacy exact\",\"missing version\",\"failed new creation rollback\",\"unknown pack\",\"failed resume rollback\"]}\n"
+  },
+  {
+    "suite": "tests/mod-runtime-r2.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "{\"passed\":true,\"checks\":[\"path traversal\",\"manifest\",\"assets sha\",\"undeclared file\",\"opt-in\",\"conflicts\",\"dependencies\",\"save binding\",\"disable\",\"base isolation\"]}\n"
+  },
+  {
+    "suite": "tests/mod-unified-r5.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "{\"passed\":true,\"checks\":[\"opt-in\",\"activation\",\"new career binding\",\"legacy save unchanged\",\"version mismatch\",\"dependency\",\"conflict\",\"reset\",\"base immutable\"]}\n"
+  },
+  {
+    "suite": "tests/office-alerts.cjs",
+    "exit": 0,
+    "seconds": 0.06,
+    "output": "office-alerts: PASS (alertes contextuelles, navigation, non-mutation, gardes phase)\n"
+  },
+  {
+    "suite": "tests/offline.cjs",
+    "exit": 0,
+    "seconds": 0.54,
+    "output": "vigateur\",\"copie locale indépendante du profil\",\"conflit entre fenêtres refusé\",\"échec d’écriture sans repli silencieux\",\"démarrage illisible bloqué\",\"polices et scripts locaux\"]}\n"
+  },
+  {
+    "suite": "tests/opposition.cjs",
+    "exit": 0,
+    "seconds": 29.52,
+    "output": "r in physics\",\"weather-aware tactics\",\"score-aware penalty decisions\",\"paced legal substitutions\",\"user lineup preserved\",\"saved match level locked\",\"legacy match compatibility\"]}\n"
+  },
+  {
+    "suite": "tests/playbook.cjs",
+    "exit": 0,
+    "seconds": 1.13,
+    "output": "ne-dependent kicking\",\"scrum possession/gain tradeoffs\",\"lineout possession/gain tradeoffs\",\"short/long restart distance and retention both directions\",\"older fixture preserved\"]}\n"
+  },
+  {
+    "suite": "tests/preparation.cjs",
+    "exit": 0,
+    "seconds": 2.86,
+    "output": "ns\",\"changement de plan en cours de match\",\"bilan initial conservé\",\"export/import direct et rapport\",\"données hostiles\",\"moteur et tirages inchangés\",\"anciens matchs préservés\"]}\n"
+  },
+  {
+    "suite": "tests/release-gate.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "release-gate: 12 scenarios verifies\n"
+  },
+  {
+    "suite": "tests/reputation.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "V47 : tests ciblés réussis\n"
+  },
+  {
+    "suite": "tests/restarts.cjs",
+    "exit": 0,
+    "seconds": 2.52,
+    "output": "-goal restarts\",\"dead-kick options\",\"score kick-off team\",\"missed-goal outcomes\",\"second-half kick-off\",\"reload/import\",\"hostile restart facts\",\"version-eight fixture preserved\"]}\n"
+  },
+  {
+    "suite": "tests/rugby-world.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "V50 : tests ciblés réussis\n"
+  },
+  {
+    "suite": "tests/rugby.cjs",
+    "exit": 0,
+    "seconds": 48.0,
+    "output": "ion limits\",\"tactical re-entry\",\"yellow card expiry\",\"live save restoration\",\"v1 migration incl halftime\",\"training injury cover\",\"same engine AI and live\",\"league and playoffs\"]}\n"
+  },
+  {
+    "suite": "tests/sale-negotiation.cjs",
+    "exit": 0,
+    "seconds": 0.82,
+    "output": "{\"passed\":true,\"checks\":[\"accepted counteroffer\",\"declined counteroffer\",\"finance conservation\",\"save roundtrip\",\"single negotiation\",\"match lock\",\"expiry\"]}\n"
+  },
+  {
+    "suite": "tests/saves.cjs",
+    "exit": 0,
+    "seconds": 17.03,
+    "output": "supported formats\",\"hostile text and identifiers\",\"cross-club duplicates and broken references\",\"quota failure rollback\",\"welcome-screen import\",\"corrupt local-startup recovery\"]}\n"
+  },
+  {
+    "suite": "tests/squad-health-center.cjs",
+    "exit": 0,
+    "seconds": 0.45,
+    "output": "squad-health-center: PASS (blessures, charge, postes, rotation, plans natifs, sauvegardes)\n"
+  },
+  {
+    "suite": "tests/tactical-plans.cjs",
+    "exit": 0,
+    "seconds": 14.84,
+    "output": "hostile data\",\"frozen action formations\",\"measured halftime advice\",\"legacy match preservation\",\"640 controlled comparisons\",\"gain/error/kick/pressure/penalty/fitness tradeoffs\"]}\n"
+  },
+  {
+    "suite": "tests/transfer-planning.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "{\"passed\":true,\"checks\":[\"coût total\",\"contraintes multiples\",\"classement déterministe\",\"absence de mutation\",\"validation de saisies\"]}\n"
+  },
+  {
+    "suite": "tests/ui-native-centers.cjs",
+    "exit": 0,
+    "seconds": 0.32,
+    "output": "UI03B/UI04B native integration PASS: read-only, mission, suivis, promotion, sauvegardes et navigation\n"
+  },
+  {
+    "suite": "tests/ui01-integration.cjs",
+    "exit": 0,
+    "seconds": 1.46,
+    "output": "eeps existing controls and save compatibility\",\"old career opens without enabling mobility implicitly\"],\"scope\":\"native harness and source contracts; browser checks are separate\"}\n"
+  },
+  {
+    "suite": "tests/ui01-interface.cjs",
+    "exit": 0,
+    "seconds": 0.18,
+    "output": "{\"passed\":true,\"checks\":[\"14 routes\",\"FM27 header and responsive\",\"23-player sheet\",\"tactics\",\"auto+manual themes\",\"OS change\",\"storage isolation\",\"V40 live\",\"storage denial\"]}\n"
+  },
+  {
+    "suite": "tests/ui02-live-integration.cjs",
+    "exit": 0,
+    "seconds": 0.35,
+    "output": "native training panel\",\"15+8 team sheet preserved\",\"depth and planning\",\"no mutation of career\",\"save roundtrip\",\"storage denial visible\",\"V40 cockpit\",\"legacy harness fallback\"]}\n"
+  },
+  {
+    "suite": "tests/ui02-player-components.cjs",
+    "exit": 0,
+    "seconds": 0.09,
+    "output": "nd empty state\",\"XSS escaping\",\"sort and search table\",\"column picker\",\"two-player comparison\",\"event binding/dispose\",\"responsive theme\",\"no career mutation\",\"UMD browser load\"]}\n"
+  },
+  {
+    "suite": "tests/ui02-player-data.cjs",
+    "exit": 0,
+    "seconds": 0.26,
+    "output": "eal native skills\",\"role rating\",\"native potential\",\"load\",\"configurable columns\",\"sorting\",\"search\",\"injuries\",\"contracts\",\"comparison\",\"legacy\",\"unchanged career\",\"saved game\"]}\n"
+  },
+  {
+    "suite": "tests/ui03-scout-components.cjs",
+    "exit": 0,
+    "seconds": 0.09,
+    "output": "al\",\"dated report\",\"historical unavailable candidate\",\"responsive CSS\",\"HTML escaping\",\"no game mutation\",\"delegated actions\",\"native mission limits\",\"unsubscribe\",\"browser UMD\"]}\n"
+  },
+  {
+    "suite": "tests/ui03-scout-data.cjs",
+    "exit": 0,
+    "seconds": 0.31,
+    "output": "mission real two-week queue\",\"native report discovery\",\"watched and observed cohorts\",\"obsolete report precision\",\"missing player preserved historically\",\"native save roundtrip\"]}\n"
+  },
+  {
+    "suite": "tests/ui04-academy-components.cjs",
+    "exit": 0,
+    "seconds": 0.1,
+    "output": "ks\",\"historical non-fabrication\",\"XSS escaping\",\"empty states\",\"disabled promotions\",\"events delegation and cleanup\",\"responsive accessible CSS\",\"UMD browser\",\"immutable source\"]}\n"
+  },
+  {
+    "suite": "tests/ui04-academy-data.cjs",
+    "exit": 0,
+    "seconds": 0.23,
+    "output": "ation ni sauvegarde par lecture\",\"anciens joueurs incomplets\",\"verrous et effectif plein\",\"promotion native unique et contrat\",\"sauvegarde native valide\",\"archives du seul club\"]}\n"
+  },
+  {
+    "suite": "tests/ui05-live-collective.cjs",
+    "exit": 0,
+    "seconds": 0.56,
+    "output": "r random mutation on reading\",\"native focus action and save roundtrip\",\"native training and match locks\",\"full and historical career\",\"unchanged native fatigue cost and effects\"]}\n"
+  },
+  {
+    "suite": "tests/univers01.cjs",
+    "exit": 0,
+    "seconds": 0.06,
+    "output": "{\"passed\":true,\"clubs\":30,\"calendarEvents\":11,\"fixtureClaims\":0}\n"
+  },
+  {
+    "suite": "tests/v19-advantage.cjs",
+    "exit": 0,
+    "seconds": 0.47,
+    "output": "V19 advantage and numerical superiority checks passed\n"
+  },
+  {
+    "suite": "tests/v20-numerical-ai.cjs",
+    "exit": 0,
+    "seconds": 0.79,
+    "output": "V20: 15v15, 15v14, 15v13, yellow expiry, red, red20, portable and legacy saves passed\n"
+  },
+  {
+    "suite": "tests/v21-numerical-advice.cjs",
+    "exit": 0,
+    "seconds": 0.71,
+    "output": "V21 : recommandations 15v15, 15v14, 15v13, météo, score, effectifs, cartons, choix explicite et sauvegardes validés\n"
+  },
+  {
+    "suite": "tests/v22-tactical-comparison.cjs",
+    "exit": 0,
+    "seconds": 0.6,
+    "output": "V22 : compromis tirés du moteur, rendu sans mutation, zones prioritaires, clic explicite et sauvegardes vérifiés\n"
+  },
+  {
+    "suite": "tests/v23-local-zones.cjs",
+    "exit": 0,
+    "seconds": 0.6,
+    "output": "V23 : priorités locales, clics par zone, absence de mutation automatique et anciennes sauvegardes validés\n"
+  },
+  {
+    "suite": "tests/v24-four-zones.cjs",
+    "exit": 0,
+    "seconds": 0.53,
+    "output": "V24 : quatre zones, coefficients du moteur, priorités locales, lecture seule et sauvegardes validés\n"
+  },
+  {
+    "suite": "tests/v25-whatif.cjs",
+    "exit": 0,
+    "seconds": 0.66,
+    "output": "V25 : comparaison attaque/défense, quatre zones, calcul moteur, lecture seule, UI, sauvegardes et héritage validés\n"
+  },
+  {
+    "suite": "tests/v26-dual-whatif.cjs",
+    "exit": 0,
+    "seconds": 0.69,
+    "output": "V26 : deux zones distinctes, attaque/défense, coefficients du moteur, lecture seule et sauvegardes validés\n"
+  },
+  {
+    "suite": "tests/v27-physical-load.cjs",
+    "exit": 0,
+    "seconds": 0.7,
+    "output": "{\"passed\":true,\"cases\":[\"training modes\",\"unique weekly application\",\"planning guard\",\"match minutes\",\"AI recovery\",\"old live saves\",\"validated exports\",\"season rollover\"]}\n"
+  },
+  {
+    "suite": "tests/v28-collective-preparation.cjs",
+    "exit": 0,
+    "seconds": 4.48,
+    "output": "rozen snapshot\",\"fatigue-dependent intensity\",\"scrum result before/after\",\"defensive edge\",\"open-play kick distance\",\"portable report\",\"legacy running match\",\"hostile snapshots\"]}\n"
+  },
+  {
+    "suite": "tests/v29-focused-development.cjs",
+    "exit": 0,
+    "seconds": 3.63,
+    "output": "e\",\"single XP pool\",\"role-specific effect\",\"fatigue V27\",\"preparation V28\",\"academy/promotion\",\"minutes and idempotence\",\"old live career\",\"hostile save\",\"six-season comparison\"]}\n"
+  },
+  {
+    "suite": "tests/v30-recruitment-intelligence.cjs",
+    "exit": 0,
+    "seconds": 1.78,
+    "output": "oard\",\"imperfect estimates\",\"scout mission and dated reports\",\"financial projection\",\"AI recruitment/idempotence\",\"legacy match and save\",\"invalid documents\",\"four interseasons\"]}\n"
+  },
+  {
+    "suite": "tests/v31-finance-forecasts.cjs",
+    "exit": 0,
+    "seconds": 1.26,
+    "output": "zons\",\"partner/ticket/win bands\",\"annual funding\",\"cash and risk warnings\",\"confirmed vs hypothetical sale\",\"rejected inputs\",\"old live saves\",\"four seasons against financeWeek\"]}\n"
+  },
+  {
+    "suite": "tests/v32-succession-planning.cjs",
+    "exit": 0,
+    "seconds": 1.14,
+    "output": "piration\",\"retirements\",\"renewal quote\",\"academy promotion without action\",\"scouting uncertainty\",\"combined strategy\",\"V29 specialization\",\"legacy live save\",\"four interseasons\"]}\n"
+  },
+  {
+    "suite": "tests/v33-contract-renewals.cjs",
+    "exit": 0,
+    "seconds": 2.27,
+    "output": "s\",\"V32 succession\",\"V31 fees and cash\",\"multi-renewal cumulative effects\",\"retirement limits\",\"cash warning\",\"pure career and storage\",\"legacy paused match\",\"four interseasons\"]}\n"
+  },
+  {
+    "suite": "tests/v34-counteroffers.cjs",
+    "exit": 0,
+    "seconds": 1.76,
+    "output": "uote and counteroffer costs\",\"V31 financial projection\",\"V32 succession\",\"V33 priorities\",\"V30 incomplete scouting\",\"unchanged storage\",\"paused legacy match\",\"four interseasons\"]}\n"
+  },
+  {
+    "suite": "tests/v35-salary-demand.cjs",
+    "exit": 0,
+    "seconds": 2.29,
+    "output": ",\"age and club situation\",\"no random/no save on quote\",\"V34 real negotiation\",\"optional old-save marker and explicit opt-in\",\"live and talks protected\",\"four valid interseasons\"]}\n"
+  },
+  {
+    "suite": "tests/v36-satisfaction.cjs",
+    "exit": 0,
+    "seconds": 0.53,
+    "output": "{\"passed\":true,\"checks\":[\"promises\",\"minutes\",\"injury\",\"renewal\",\"legacy\",\"save validation\"]}\n"
+  },
+  {
+    "suite": "tests/v37-relations.cjs",
+    "exit": 0,
+    "seconds": 1.03,
+    "output": "{\"passed\":true,\"checks\":[\"contract log\",\"live confirmation\",\"promise reminders\",\"team mood evidence\",\"coach cooldown\",\"legacy opt-in\",\"save roundtrip\",\"malformed log rejection\"]}\n"
+  },
+  {
+    "suite": "tests/v38-individual-objectives.cjs",
+    "exit": 0,
+    "seconds": 1.44,
+    "output": "ounter\",\"explicit acceptance\",\"measured minutes\",\"idempotent round\",\"revision by agreement\",\"appearances\",\"injury skip\",\"season expiry\",\"save validity\",\"legacy and paused match\"]}\n"
+  },
+  {
+    "suite": "tests/v39-team-dynamics.cjs",
+    "exit": 0,
+    "seconds": 1.16,
+    "output": ":true,\"checks\":[\"audit and idempotence\",\"medical history\",\"recovery\",\"relationships\",\"leadership\",\"locker meeting\",\"save roundtrip\",\"legacy opt-in\",\"paused match\",\"invalid data\"]}\n"
+  },
+  {
+    "suite": "tests/v40-match-cockpit.cjs",
+    "exit": 0,
+    "seconds": 0.43,
+    "output": "\":true,\"checks\":[\"5 UI regions\",\"23 and opponents\",\"no state/RNG mutations\",\"tab selection\",\"legal subs\",\"statistics counters\",\"paused tactics\",\"card status\",\"legacy match save\"]}\n"
+  },
+  {
+    "suite": "tests/v46-advanced.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "V46 : contrôles avancés réussis\n"
+  },
+  {
+    "suite": "tests/v46-multiseason.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "V46 — scénario pluriannuel : OK\n"
+  },
+  {
+    "suite": "tests/v46-v51-contracts.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "PASS : contrats reels V46-V51, 14 clubs, 15 saisons\n"
+  },
+  {
+    "suite": "tests/v47-advanced.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "V47 : contrôles avancés réussis\n"
+  },
+  {
+    "suite": "tests/v47-multiseason.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "V47 — scénario pluriannuel : OK\n"
+  },
+  {
+    "suite": "tests/v48-advanced.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "V48 : contrôles avancés réussis\n"
+  },
+  {
+    "suite": "tests/v48-multiseason.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "V48 — scénario pluriannuel : OK\n"
+  },
+  {
+    "suite": "tests/v49-advanced.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "V49 : contrôles avancés réussis\n"
+  },
+  {
+    "suite": "tests/v49-multiseason.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "V49 — scénario pluriannuel : OK\n"
+  },
+  {
+    "suite": "tests/v50-advanced.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "V50 : contrôles avancés réussis\n"
+  },
+  {
+    "suite": "tests/v50-multiseason.cjs",
+    "exit": 0,
+    "seconds": 0.06,
+    "output": "V50 — scénario pluriannuel : OK\n"
+  },
+  {
+    "suite": "tests/v51-checkpoint.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "V51 reprise par checkpoint: 14 clubs, 5 + 10 saisons identiques à 15 saisons\n"
+  },
+  {
+    "suite": "tests/v51-financial-recovery.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "{\"passed\":true,\"checks\":[\"déficit\",\"dette\",\"restriction\",\"arbitrage\",\"redressement 15 saisons\",\"crise prolongée\",\"déterminisme\",\"validation\"]}\n"
+  },
+  {
+    "suite": "tests/v51-financial-regressions.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "V51 : régression finances, sauvegardes et investissements : OK\n"
+  },
+  {
+    "suite": "tests/v51-transactions.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "V51 économie transactionnelle : scénarios 15 saisons validés\n"
+  },
+  {
+    "suite": "tests/v51-world-audit.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "{\"passed\":true,\"seasons\":15,\"seeds\":10,\"clubs\":14,\"checks\":[\"titres\",\"podiums\",\"trésorerie\",\"événements\",\"déterminisme\",\"données corrompues\"]}\n"
+  },
+  {
+    "suite": "tests/v51-world-finance.cjs",
+    "exit": 0,
+    "seconds": 0.09,
+    "output": "{\"passed\":true,\"clubs\":14,\"seasons\":[10,15],\"profiles\":[\"aisé\",\"modeste\",\"déficitaire\"]}\n"
+  },
+  {
+    "suite": "tests/v51-world-simulation.cjs",
+    "exit": 0,
+    "seconds": 0.07,
+    "output": "seasons\":[10,15],\"checks\":[\"déterminisme\",\"variabilité des graines\",\"plafonds\",\"entraîneurs\",\"réputation\",\"infrastructures\",\"récompenses\",\"entrées inchangées\",\"rejets invalides\"]}\n"
+  },
+  {
+    "suite": "tests/v58-native-coach-opportunities.cjs",
+    "exit": 0,
+    "seconds": 0.74,
+    "output": "auvegarde native compatible sans nouveau champ\nPASS ancien format de carriere accepte\nPASS une journee de vrais matchs laisse le panneau valide\nV58 NATIVE OBSERVATORY PASS 11 / 11\n"
+  },
+  {
+    "suite": "tests/world-career.cjs",
+    "exit": 0,
+    "seconds": 57.97,
+    "output": " and debt\",\"reputation and championship\",\"annual archives\",\"old-save opt-in\",\"corrupt-save rejection\",\"cross-season 14 clubs\",\"bounded history\",\"no match simulator substitution\"]}\n"
+  },
+  {
+    "suite": "tests/world-catalog-r1.cjs",
+    "exit": 0,
+    "seconds": 0.08,
+    "output": "{\"passed\":true,\"clubs\":30,\"competitions\":2,\"checks\":[\"schema\",\"IDs\",\"relations\",\"provenance\",\"complete flag\",\"merge\",\"non-mutation\"]}\n"
+  }
+]

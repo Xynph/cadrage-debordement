@@ -1,0 +1,44 @@
+name: V4 Premium visual acceptance
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/**'
+      - 'tests/premium-v4-browser.py'
+      - 'tests/art-direction-v4-browser.py'
+      - '.github/workflows/premium-v4.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: premium-v4-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    name: V4 Chromium visual and save regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install fixed browser dependency
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Real screens, two themes, six widths, slots and pause
+        run: |
+          python tests/premium-v4-browser.py
+          python tests/art-direction-v4-browser.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: premium-v4-browser-report
+          path: |
+            ui01-browser-report/premium-v4/
+            ui01-browser-report/art-direction-v4/
+          retention-days: 7
+          if-no-files-found: error

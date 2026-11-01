@@ -646,3 +646,22 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Tests dédiés Node et Chromium ; le nouveau scénario rejoint le workflow UI01 existant, sans retirer aucun contrôle ni multiplier les jobs. Captures réelles 1440/768/390 dans docs/menu-v3-captures ; détails et limites docs/menu-principal-v3.md. Suite complète et CI exacte nécessaires avant fusion ; aucune validation future présentée comme acquise.
 - Aucun fichier Business, donnée externe, format de sauvegarde ou moteur rugby modifié. Aucun service payant de collecte. Pas de certification Windows native.
 - Prochaine priorité : bureau du manager harmonisé et décisions prioritaires tirées des données réelles de la carrière.
+
+
+## V4 Premium — refonte graphique sur branche (01/11/2026)
+
+- **Base GitHub vérifiée :** `1b1d7d624995af823dcbdce42a6a1d6ad148d336`, CI JavaScript post-fusion `41251401877` réussie ; UI01 `41251401850` annulée, non revendiquée verte.
+- **Branche :** `integration/v4-premium`. **Aucune fusion autorisée pour ce cycle sans accord explicite de Léo.** PR à consulter dans l’issue #73 et sur GitHub.
+- Nouvelle couche `dist/premium-v4.css`, chargée après les styles existants : identité V3 étendue aux écrans de gestion et au live, thèmes sombre forêt / clair minéral, accents cuivre, bureau à trois colonnes sans chevauchement, tableaux, commandes et modales cohérents. Stade et ballon V3 conservés ; nouveau panorama original `dist/assets/premium-v4-matchday.webp` local, environ 153 Kio.
+- **Validation locale :** 142/142 suites Node réussies ; V4 Chromium 529 contrôles ; UI01 462 ; contraste 16 mesures ; 11 autres suites navigateur réussies (323 contrôles), avec reprises/import/export, fiches, carrière LNR et centres natifs. Aucune modification des moteurs, du stockage ou du format de sauvegarde. Captures avant/après de la même carrière et rapport dans `docs/premium-v4.md`.
+- **Limite Figma :** fichier V4 créé, puis quota MCP Starter atteint avant édition ; aucune maquette éditable achevée revendiquée. Image générée via l’outil intégré et intégrée en WebP, sans réseau à l’exécution. Chromium Linux seulement ; pas de validation Windows native.
+- La CI complète distante et la réception graphique de la tête de PR restent à confronter à GitHub ; ce journal ne présume pas leur conclusion. Prochaine priorité : revue de Léo sur les captures et décision de fusion ; finaliser Figma lorsque le quota le permet.
+
+
+## V4 — reprise de direction artistique après retour de Léo (01/11/2026)
+
+- La première passe graphique de #162 a ses onze workflows verts sur `f70ac617`, mais Léo la juge insuffisante : trop d’habillage et de listes. Ce succès technique n’est pas une validation graphique.
+- Nouvelle composition du bureau (affiche du match, anneau de disponibilité, calendrier et résultats), nuages effectif et marché, courbe de trésorerie du modèle natif, salaires par famille, terrain des quinze besoins de recrutement, intervalles de potentiel, radars de fiche joueur et de préparation, écarts de points au championnat.
+- Projections de lecture sur copies, champs publics du marché uniquement, SVG et tableaux de valeurs, pas de nouvelle sauvegarde ni d’historique inventé. Le seul raccordement dans `game.js` appelle le module de présentation après le rendu. Les contrôles natifs sont conservés, certains détails annexes passent en dossiers dépliables.
+- Validation locale : 143/143 suites Node complètes ; tests ciblés finaux de la projection et des phases finales ; Chromium direction artistique 372 contrôles et cinq matchs réellement simulés pour les captures de carrière jouée. V4 529, UI01 462, contraste 16 ; 11 autres suites navigateur (323 contrôles) réussies. Revue indépendante suivie de corrections du focus, des libellés de phases finales/terrain neutre et de la légende.
+- Nouveau rapport et galerie : `docs/art-direction-v4.md`, `docs/art-direction-v4-captures/`. La galerie initiale de `docs/premium-v4.md` est explicitement remplacée. Nouvelle tête de PR à vérifier en CI ; aucune fusion sans autorisation de Léo. Figma toujours limité par le quota précédemment constaté.
