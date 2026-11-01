@@ -514,3 +514,76 @@ html:root[data-cd-theme] .da42-market-grid strong{display:block;margin-top:12px;
  html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-fixture .da4-cta{
   min-height:40px!important;background:var(--da4-copper)!important;color:#fff!important}
 }
+
+/* V4.2 PC NAVIGATION — véritables sous-pages exclusives, jamais d'accordéon. */
+@media(min-width:1100px){
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)>.main.da42-paged{
+  height:var(--da42-available-height)!important;max-height:var(--da42-available-height)!important;
+  overflow:hidden!important;display:flex!important;flex-direction:column!important;min-height:0!important;
+ }
+ html:root[data-cd-theme] .main.da42-paged>.heading{flex:0 0 auto!important;margin-bottom:9px!important}
+ html:root[data-cd-theme] .main.da42-paged>.cd03-tabs,
+ html:root[data-cd-theme] .main.da42-paged>.cd04-tabs{flex:0 0 auto!important}
+ html:root[data-cd-theme] .main.da42-paged>.cd03-content:has(>.da42-workspace-shell),
+ html:root[data-cd-theme] .main.da42-paged>.cd04-content:has(>.da42-workspace-shell){
+  flex:1 1 auto!important;min-height:0!important;max-height:none!important;display:flex!important;
+  flex-direction:column!important;overflow:hidden!important;
+ }
+ html:root[data-cd-theme] .da42-workspace-shell{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;
+  min-height:0!important;min-width:0!important;width:100%!important;overflow:hidden!important}
+ html:root[data-cd-theme] .da42-subnav{display:flex;align-items:stretch;gap:0;flex:0 0 auto;border-bottom:2px solid var(--da4-chart);
+  background:var(--ui01-surface);min-height:50px;overflow-x:auto;overflow-y:hidden}
+ html:root[data-cd-theme] .da42-subtab{display:flex;align-items:center;gap:10px;flex:0 0 auto;min-width:155px;
+  padding:12px 20px!important;border:0!important;border-right:1px solid var(--ui01-border)!important;
+  border-radius:0!important;background:transparent!important;color:var(--da4-muted)!important;
+  font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:600;cursor:pointer}
+ html:root[data-cd-theme] .da42-subtab[aria-selected="true"]{background:var(--da4-chart)!important;color:#fff!important}
+ html:root[data-cd-theme] .da42-subtab:focus-visible{outline:3px solid var(--da4-copper);outline-offset:-4px}
+ html:root[data-cd-theme] .da42-tab-index{font:700 10px system-ui,sans-serif;opacity:.65}
+ html:root[data-cd-theme] .da42-page-viewport{flex:1 1 auto;min-height:0;overflow:hidden;position:relative;padding:15px 0 0}
+ html:root[data-cd-theme] .da42-page{display:flex;flex-direction:column;gap:12px;height:100%;max-height:100%;
+  min-height:0;min-width:0;overflow:hidden}
+ html:root[data-cd-theme] .da42-page[hidden]{display:none!important}
+ html:root[data-cd-theme] .da42-page>.da42-command{margin:0!important;min-height:0;height:100%!important;flex:1 1 auto}
+ html:root[data-cd-theme] .da42-page>.da42-command .da42-command-lead{height:100%;min-height:0}
+ html:root[data-cd-theme] .da42-page>.da42-command .da42-command-rail{height:100%;min-height:0}
+ html:root[data-cd-theme] .da42-page>.da42-panel{margin:0!important;min-height:0;flex:1 1 auto;overflow:hidden}
+ html:root[data-cd-theme] .da42-page>.da42-fitness,
+ html:root[data-cd-theme] .da42-page>.da42-cash-stage,
+ html:root[data-cd-theme] .da42-page>.da42-academy,
+ html:root[data-cd-theme] .da42-page>.da42-market{display:flex;flex-direction:column}
+ html:root[data-cd-theme] .da42-page :is(.da42-fitness-composition,.da42-cash-timeline,.da42-talent-grid,.da42-market-composition){
+  flex:1 1 auto;min-height:0;max-height:100%;overflow:hidden}
+ html:root[data-cd-theme] .da42-page .da42-talent-grid{grid-template-rows:repeat(2,minmax(0,1fr));gap:10px}
+ html:root[data-cd-theme] .da42-page .da42-talent{padding:10px 13px;overflow:hidden}
+ html:root[data-cd-theme] .da42-page .da42-talent h3{margin:9px 0 4px;min-height:0}
+ html:root[data-cd-theme] .da42-page .da42-talent-track{margin:6px 0 9px}
+ html:root[data-cd-theme] .da42-page .da42-academy-intro{flex:0 0 auto;margin:5px 0 10px}
+ html:root[data-cd-theme] .da42-page .da42-cash-summary{flex:0 0 auto;margin:0 0 12px}
+ html:root[data-cd-theme] .da42-page .da42-cash-timeline{height:auto!important}
+ html:root[data-cd-theme] .da42-page .da42-cash-column{height:100%;max-height:150px}
+ html:root[data-cd-theme] .da42-page .da42-market-primary>strong{font-size:45px}
+ html:root[data-cd-theme] .da42-page .da42-market-composition{min-height:0}
+ html:root[data-cd-theme] .da42-page .da4-chart-note{flex:0 0 auto;margin:7px 0 0;font-size:10px}
+ html:root[data-cd-theme] .da42-page :is(.da4-panel-head,.da4-panel-head h2){margin-bottom:9px}
+ html:root[data-cd-theme] .da42-page .da4-finance-chart{flex:1 1 auto;min-height:0;margin:0!important;
+  overflow:hidden;display:flex;flex-direction:column}
+ html:root[data-cd-theme] .da42-page .da4-finance-chart .da4-chart-viewport{flex:1 1 auto;min-height:0;overflow:hidden}
+ html:root[data-cd-theme] .da42-page .da4-finance-chart .da4-chart-note{margin-bottom:0}
+ html:root[data-cd-theme] .da42-page>.da4-panel,
+ html:root[data-cd-theme] .da42-page>.da4-tactics-stage,
+ html:root[data-cd-theme] .da42-page>.da4-academy-stage,
+ html:root[data-cd-theme] .da42-page>.da4-recruit-stage,
+ html:root[data-cd-theme] .da42-page>.da4-calendar,
+ html:root[data-cd-theme] .da42-page>.da4-desk-stage{
+  flex:1 1 auto;min-height:0;max-height:100%;overflow:hidden;margin:0!important}
+ html:root[data-cd-theme] .da42-page>.da4-recruit-stage{grid-template-columns:1fr 1fr}
+ html:root[data-cd-theme] .da42-page>.da4-academy-stage{grid-template-columns:1.4fr 1fr}
+ html:root[data-cd-theme] .da42-page .da4-dossier{border:0}
+ html:root[data-cd-theme] .da42-page-native{overflow-y:auto!important;overscroll-behavior:contain}
+ html:root[data-cd-theme] .da42-page-native :is(.table-wrap,.data-table,.cd03-table,.cd04-table){overflow-y:auto;max-height:100%}
+ html:root[data-cd-theme] .da42-page :is(.da4-values-table,.da4-chart-values,details.da4-values,details.da4-data){
+  flex:0 1 auto;max-height:200px;overflow-y:auto}
+ html:root[data-cd-theme] .da42-page .da4-desk-stage>.da4-fixture{height:100%;min-height:0}
+ html:root[data-cd-theme] .da42-page .da4-fixtures{max-height:100%}
+}
