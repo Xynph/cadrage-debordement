@@ -1,0 +1,25 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {context}=require('./harness.cjs');
+const t=context();for(const file of ['lnr-rosters-data.js','lnr-career.js','lnr05-enriched-data.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
+const run=t.run;run("start(0,'lnr')");
+const initial=run('JSON.stringify(S)'),save=t.store['bdt-v1'];
+// Expérience contrôlée : les titulaires sont fatigués, les remplaçants non sélectionnés sont frais.
+run('club().players.forEach(p=>{p.condition=S.lineup.includes(p.id)?5:100;p.injury=0})');
+const before=run('JSON.stringify(S)'),stored=t.store['bdt-v1'];
+const options=run('lnr05AdviceCandidates(15).map(x=>({id:x.id,slot:x.slot,score:x.score,valid:x.proposal.valid,changes:x.proposal.changes}))');
+assert(options.length>0,'au moins une rotation valable attendue avec titulaires épuisés');
+assert(options.every(x=>x.valid&&x.score>0&&x.changes>0&&x.slot<15));
+assert.equal(run('JSON.stringify(S)'),before,'calcul consultatif');
+assert.equal(t.store['bdt-v1'],stored,'aucune écriture pendant la prévisualisation');
+const chosen=options[0],id=JSON.stringify(chosen.id);
+const token=run('lnr05Proposal('+id+').token');
+assert.equal(run('lnr05Apply('+id+','+JSON.stringify(token)+')'),true,'validation explicite');
+assert.equal(run('S.lineup.includes('+id+')'),true);
+assert.equal(run('sheetErrors().length'),0,'XV et banc restent valides');
+assert.ok(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),'sauvegarde compatible');
+assert.notEqual(run('JSON.stringify(S)'),before,'confirmation modifie la feuille');
+const stale=token;
+run('club().players[0].condition=66');
+assert.equal(run('lnr05Apply('+id+','+JSON.stringify(stale)+')'),false,'jeton périmé refusé');
+console.log(JSON.stringify({passed:true,scenario:'fatigued starters vs fresh eligible reserves',suggestions:options.length,selected:chosen.id,changes:chosen.changes,conditionStarting:5,conditionOther:100,saveCompatible:true}));

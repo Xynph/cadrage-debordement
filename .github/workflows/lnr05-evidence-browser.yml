@@ -32,8 +32,10 @@ jobs:
           node --check dist/lnr05-evidence-center.js
           node --check dist/game.js
           node tests/lnr05-evidence.cjs
-          node tests/lnr05-evidence-long.cjs
+          node tests/lnr05-matchday-advice.cjs
+          node tests/lnr05-matchday-decision.cjs
           node tests/lnr05-rotation-audit.cjs
+          node tests/lnr05-evidence-long.cjs
   real-import-no-network:
     runs-on: ubuntu-latest
     timeout-minutes: 8
