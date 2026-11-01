@@ -85,8 +85,8 @@ function lnrCatalogueView(){
  const opts=LNR_CATALOGUE.clubs.map((c,i)=>'<option value="'+i+'"'+(i===lnrBrowseIndex?' selected':'')+'>'+
   lnrEscape((c[1]==='top14'?'TOP 14':'PRO D2')+' · '+(LNR_NAMES[c[0]]?.[0]||c[0]))+'</option>').join('');
  const c=LNR_CATALOGUE.clubs[lnrBrowseIndex];
- const rows=c[3].map(p=>{const born=lnrBirthAge(p[0]);return '<tr><td>'+lnrEscape(p[1])+'</td><td>'+lnrEscape(p[2])+
-  '</td><td>'+lnrEscape(p[3]||'Non renseignée')+'</td><td>'+born.age+(born.ageEstimated?' (estimé)':'')+'</td></tr>';}).join('');
+ const rows=c[3].map(p=>{const born=typeof LNR_BIRTHYEARS_DATA==='undefined'?null:lnrBirthAge(p[0]);return '<tr><td>'+lnrEscape(p[1])+'</td><td>'+lnrEscape(p[2])+
+  '</td><td>'+lnrEscape(p[3]||'Non renseignée')+'</td><td>'+(born?born.age+(born.ageEstimated?' (estimé)':''):'Non disponible')+'</td></tr>';}).join('');
  return '<section class="card lnr-catalogue" aria-label="Catalogue officiel LNR">'+
   '<div class="cardtitle"><h2>Catalogue LNR · 30 clubs</h2><span class="tag">SNAPSHOT 31/10/2026</span></div>'+
   '<p class="help">1 592 joueurs recensés au 31 octobre 2026 ; 14 clubs TOP 14 dans cette carrière, 16 clubs PRO D2 en lecture seule. Les postes précis, capacités, contrats et finances de la simulation ne sont pas des données officielles. Aucune certitude sur le 01/07/2026.</p>'+
