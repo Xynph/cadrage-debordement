@@ -17,6 +17,9 @@ test('LNR: une rotation valide est utilisée par rugbySimulate, pas seulement st
  const canonical=run('JSON.stringify(buildSheet(club(),S.lineup,S.reserves).lineup)');
  assert.equal(canonical,after,'buildSheet préserve les postes des titulaires validés');
  const selected=run('JSON.stringify(createRugbyMatch('+fixture+',null,true).sheets['+run('nextMatch().indexOf(S.club)')+'].initial)');
+ if(selected!==after){
+  console.log(JSON.stringify({diagnostic:'sheet-mismatch',fixture:JSON.parse(fixture),club:run('S.club'),clubIndex:run('nextMatch().indexOf(S.club)'),before:JSON.parse(before),after:JSON.parse(after),nativeBuildSheet:JSON.parse(canonical),matchSheet:JSON.parse(selected),allValid:run('sheetErrors().length===0'),fixtureClub:run('JSON.stringify(S.clubs[nextMatch()[nextMatch().indexOf(S.club)]].players.map(p=>p.id))')}));
+ }
  assert.equal(selected,after,'la simulation construit un match à partir des 15 joueurs choisis');
  run('var nativeCreateRugbyMatch=createRugbyMatch;var simulationObserved=null;createRugbyMatch=function(pair,legacy,automated,preparation){var l=nativeCreateRugbyMatch(pair,legacy,automated,preparation);if(automated&&pair.includes(S.club))simulationObserved=JSON.stringify(l.sheets[pair.indexOf(S.club)].initial);return l;}');
  const outcome=run('rugbySimulate('+fixture+')');
