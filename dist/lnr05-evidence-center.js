@@ -20,7 +20,7 @@ function lnr05FilterBy(mode){
 function lnr05Pick(id){if(!lnr05Enabled()||!player(id))return false;lnr05Selected=id;render();return true}
 function lnr05Proposal(id){
  if(!lnr05Enabled()||lnr05Locked())return null;
- const p=player(id);if(!p||!lnr05Proof(id)||p.injury)return null;
+ const p=player(id);if(!p||!p.id.startsWith('lnr:')||p.injury)return null;
  const prior=[...S.lineup,...S.reserves],already=prior.indexOf(id),token=lnr05Token();
  if(already!==-1)return {already:true,slot:already,token};
  const slot=Array.from({length:23},(_,i)=>i).find(i=>i<15?slotEligible(p,i):benchEligible(p,i-15));
@@ -49,7 +49,7 @@ function lnr05Health(){if(lnr05Enabled()){squadTab='health';render()}}
 function lnr05AdviceCandidates(limit=3){
  if(!lnr05Enabled()||lnr05Locked())return [];
  const chosen=new Set([...S.lineup,...S.reserves]);
- return club().players.filter(p=>p.id.startsWith('lnr:')&&!chosen.has(p.id)&&!p.injury&&lnr05Proof(p.id))
+ return club().players.filter(p=>p.id.startsWith('lnr:')&&!chosen.has(p.id)&&!p.injury)
   .map(p=>{
    const proposal=lnr05Proposal(p.id);
    if(!proposal?.valid||!Number.isInteger(proposal.slot)||proposal.slot>=15)return null;
@@ -74,10 +74,10 @@ function lnr05AdviceView(){
   ' · adaptation au poste '+(a.positional>=0?'+':'')+Math.round(a.positional)+
   ', condition '+(a.physical>=0?'+':'')+Math.round(a.physical)+' points'+
   ', charge évitée '+(a.fatigue>=0?'+':'')+Math.round(a.fatigue)+
-  ' · '+a.proposal.changes+' changement(s) prévus</li>').join('');
+  ' · banc recomposé par les règles natives · '+a.proposal.changes+' changement(s) prévus</li>').join('');
  return '<section class="lnr05-advice" aria-label="Conseils avant-match à 23">'+
-  '<h3>Options de rotation avant-match</h3>'+
-  '<p class="help">Suggestions calculées à partir des notes au poste, de la condition et de la charge du jeu (toutes simulées). Les compatibilités de poste viennent des règles natives ; aucun bonus tactique chiffré non attesté. Le score ne prédit pas le résultat du match. Le XV reste inchangé jusqu’à confirmation.</p>'+
+  '<h3>Options de rotation avant-match</h3>'+\n  '<p class="help">Plan tactique actuellement sélectionné : '+lnr05Escape(typeof TACTICS!=='undefined'&&TACTICS[S.tactic]?TACTICS[S.tactic][0]:'Non renseigné')+'. Le plan influe sur le match, mais cette recommandation ne fabrique pas de coefficient tactique individuel.</p>'+
+  '<p class="help">Suggestions pour tous les joueurs LNR aptes du club, avec ou sans mesures individuelles. Notes au poste, condition et charge sont des données simulées. Les compatibilités de poste viennent des règles natives ; aucun bonus tactique chiffré non attesté. Le score ne prédit pas le résultat du match. Le XV reste inchangé jusqu’à confirmation.</p>'+
   (rows?'<ol>'+rows+'</ol><p class="help">Sélectionnez une option pour prévisualiser la feuille et confirmer manuellement.</p>':
    '<p class="help">Aucun remplacement titulaire améliorant ces critères et validé par la feuille native, ou match verrouillé.</p>')+
   '</section>';
