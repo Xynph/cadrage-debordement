@@ -30,7 +30,9 @@ test('LNR: 1592 années chargées, trois dates exactes et catalogue en lecture s
  run('lnrBrowseClub(17)');
  assert.equal(run('JSON.stringify(S)'),before,'browsing must not mutate career');
  assert.ok(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
- const resumed=ready(JSON.parse(before));
+ const resumed=ready();
+ // Le harness ne declenche pas le chargement automatique ; reinjecter le snapshot valide.
+ resumed.run('S='+before);
  assert.equal(resumed.run('lnrCareerMode(S)'),true);
  assert.equal(resumed.run('S.clubs[0].players[0].birthYear'),run('S.clubs[0].players[0].birthYear'));
  assert.ok(resumed.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'));
