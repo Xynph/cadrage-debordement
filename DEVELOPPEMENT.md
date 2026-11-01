@@ -682,3 +682,11 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Captures UI02 et UI01 réelles consultées (artefacts #13081594903 et #13082383115) ; constat : fiche joueur Contrat trop vide, effectif dense et navigation aux joueurs peu visible, championnat peu hiérarchisé.
 - Composition prévue et publiée dans une PR : effectif avec passage au tableau natif, nouveau studio graphique du contrat utilisant seulement les champs du joueur réel de la carrière, et résumé du classement natif. Deux thèmes et deux résolutions PC ; 16 captures et tests Playwright supplémentaires, état de carrière et sauvegardes immuables.
 - Spécification : `docs/decision-studio-v45.md`. Vérifier tests JavaScript, Validation CI, captures et non-régression sur SHA exact avant toute proposition de fusion.
+
+
+## Chantier direction artistique V4.6 Premium PC — 1er novembre 2026
+
+- Base GitHub vérifiée : `main 0f02dc5b295df15dea2a7868403d3fd619725894`, après clôture de V4.5 avec run push #41307187308 COMPLETED/SUCCESS et 7/7 jobs. Réservation exclusive de `dist/premium-v4.css`, `tests/premium-v4-browser.py`, `docs/decision-studio-v46.md` et `DEVELOPPEMENT.md` déclarée dans issue #73. Aucune modification LNR/DATA-06.
+- Audit des captures natives du run Chromium V4.5 #41306769268, artefact #13083955546. Avant-match PC 1440×2023 et live 1440×1865 trop étendus et peu hiérarchisés ; importance du score, de la préparation et des commandes inférieure aux autres vues premium.
+- Lot V4.6 : page avant-match avec entrée photographique locale, duel et groupe plus lisibles, rapport adverse rééquilibré ; direct avec score et actions prioritaires, onglets et zones latérales du terrain clarifiés. CSS uniquement, ni moteur ni sauvegardes touchés.
+- Régressions : test Playwright V4 étendu de six vraies captures PC (4 avant-match dans les deux thèmes / tailles, 2 direct au repos), contrôle de la carrière et du stockage, absence de dépassement, du terrain, des commandes et de la minute figée. Document `docs/decision-studio-v46.md`. **CI à vérifier sur SHA de PR**, aucune fusion sans autorisation.
