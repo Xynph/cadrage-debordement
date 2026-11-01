@@ -66,11 +66,31 @@ try:
                 tabs = shell.get_by_role('tab')
                 check(f'full subnavigation {route} {width}', tabs.count() == len(subpages))
                 check(f'page count {route} {width}', shell.get_by_role('tabpanel', include_hidden=True).count() == len(subpages))
+                # V4.3: every workspace has a fixed context strip and two real
+                # previous/next controls inside the navigation band, never an accordion.
+                check(f'V4.3 context dock exists {route} {width}',
+                      shell.locator('.da43-page-switch').count() == 1)
+                check(f'V4.3 navigation commands {route} {width}',
+                      shell.locator('[data-da43-prev],[data-da43-next]').count() == 2)
+                check(f'V4.3 intact ARIA panel links {route} {width}',
+                      page.evaluate("""()=>[...document.querySelectorAll('.da43-workspace [role=tab]')].every(t=>{
+                         const panel=document.getElementById(t.getAttribute('aria-controls'));
+                         return !!panel && panel.getAttribute('aria-labelledby')===t.id;
+                      })"""))
                 # Each button swaps the whole page; no accordion is used for navigation.
                 for i, key in enumerate(subpages):
                     tab = shell.locator(f'[data-da42-subpage="{key}"]')
                     tab.click()
                     check(f'active tab {route}/{key} {width}', tab.get_attribute('aria-selected') == 'true')
+                    check(f'V4.3 accurate page index {route}/{key} {width}',
+                          shell.locator('.da43-page-count').inner_text().strip() ==
+                          f'{i+1:02d} / {len(subpages):02d}')
+                    check(f'V4.3 native contextual signal {route}/{key} {width}',
+                          page.evaluate("""()=>{
+                            const a=document.querySelector('.da43-context-key')?.textContent.trim();
+                            const b=document.querySelector('.da43-context-value')?.textContent.trim();
+                            return !!a && !!b && !/undefined|NaN/.test(a+' '+b);
+                          }"""))
                     check(f'one visible page {route}/{key} {width}',
                           shell.locator('.da42-page:not([hidden])').count() == 1)
                     check(f'panel id {route}/{key} {width}',
@@ -129,6 +149,16 @@ try:
                     page.mouse.move(0, 0)
                     page.screenshot(path=str(OUT / f'pc-{route}-{key}-analyste-{width}x{height}.png'),
                                     full_page=False)
+                # V4.3 cross-page controls swap panels and wrap, without changing career.
+                shell.locator('[data-da43-next]').click()
+                check(f'V4.3 next wraps to first {route} {width}',
+                      tabs.first.get_attribute('aria-selected') == 'true')
+                shell.locator('[data-da43-prev]').click()
+                check(f'V4.3 previous wraps to last {route} {width}',
+                      tabs.last.get_attribute('aria-selected') == 'true')
+                check(f'V4.3 arrows keep save unchanged {route} {width}',
+                      page.evaluate('JSON.stringify(S)') == original and
+                      page.evaluate('localStorage.getItem("bdt-v1")') == stored)
                 # Keyboard navigation changes active panel without appending content.
                 tabs.first.focus()
                 page.keyboard.press('End')
@@ -136,6 +166,21 @@ try:
                 page.keyboard.press('Home')
                 check(f'keyboard Home {route} {width}', tabs.first.get_attribute('aria-selected') == 'true')
                 check(f'no browser JS errors {route} {width}', not errors)
+
+        # V4.3: entire suite in both themes is a desktop product requirement.
+        page.set_viewport_size({'width': 1440, 'height': 900})
+        page.locator('#ui01-theme').select_option('tribune')
+        for route, subpages in PAGES.items():
+            page.evaluate('(r)=>nav(r)', route)
+            for key in subpages:
+                page.locator(f'[data-da42-subpage="{key}"]').click()
+                check(f'V4.3 Tribune PC no global scroll {route}/{key}',
+                      page.evaluate('document.documentElement.scrollHeight<=innerHeight+2'))
+                check(f'V4.3 Tribune PC native state intact {route}/{key}',
+                      page.evaluate('JSON.stringify(S)') == original)
+                page.screenshot(path=str(OUT / f'pc-v43-{route}-{key}-tribune-1440x900.png'),
+                                full_page=False)
+        page.locator('#ui01-theme').select_option('analyste')
 
         page.set_viewport_size({'width': 1440, 'height': 900})
         page.evaluate("nav('finance')")
