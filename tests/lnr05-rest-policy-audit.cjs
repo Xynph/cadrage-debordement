@@ -2,7 +2,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {context}=require('./harness.cjs');
 const seed=Number(process.env.LNR_REST_SEED||0),mode=process.env.LNR_REST_MODE||'persistent';
-assert(Number.isInteger(seed)&&seed>=0&&seed<10);
+assert(Number.isInteger(seed)&&seed>=0&&seed<100);
 assert(['persistent','weekly'].includes(mode));
 function boot(){
  const t=context();
