@@ -305,9 +305,9 @@ html:root[data-cd-theme][data-menu-text="large"] .cd3-menu :is(p,small,button,la
  }
  /* Direct: scoreboard and controls remain native; improve hierarchy, touch size,
     readable side benches and the field scene without resizing players or scores. */
- html:root[data-cd-theme] .live-layout>.main>.heading{margin:14px 0 20px}
- html:root[data-cd-theme] .live-layout .match-centre{gap:16px}
- html:root[data-cd-theme] .live-layout .match-scoreboard{
+ .live-layout>.main>.heading{margin:14px 0 20px}
+ .live-layout .match-centre{gap:16px}
+ .live-layout .match-scoreboard{
   position:sticky;top:0;z-index:8;
   background:linear-gradient(90deg,#0b2921ed,#08231df4 48%,#15392adf),
    url('assets/premium-v4-matchday.webp') center 55%/cover;
@@ -315,69 +315,69 @@ html:root[data-cd-theme][data-menu-text="large"] .cd3-menu :is(p,small,button,la
   padding:clamp(17px,1.5vw,25px) clamp(20px,2vw,33px);
   border-radius:3px;box-shadow:0 12px 30px #06170e55;
  }
- html:root[data-cd-theme] .live-layout .match-scoreboard .score{
+ .live-layout .match-scoreboard .score{
   font-size:clamp(56px,5vw,83px);font-weight:800;line-height:1;color:#fff6dc;
  }
- html:root[data-cd-theme] .live-layout .match-scoreboard .live-score{
+ .live-layout .match-scoreboard .live-score{
   gap:clamp(20px,2.8vw,52px);justify-content:space-around;
  }
- html:root[data-cd-theme] .live-layout .match-scoreboard .live-score h3{
+ .live-layout .match-scoreboard .live-score h3{
   font-size:clamp(21px,1.8vw,30px);line-height:1.03;color:#fff8ec;
  }
- html:root[data-cd-theme] .live-layout .match-scoreboard .eyebrow,
- html:root[data-cd-theme] .live-layout .match-scoreboard .row.muted{color:#d7e8d7}
- html:root[data-cd-theme] .live-layout .match-scoreboard .matchactions{gap:9px}
- html:root[data-cd-theme] .live-layout .match-scoreboard .matchactions button{
+ .live-layout .match-scoreboard .eyebrow,
+ .live-layout .match-scoreboard .row.muted{color:#d7e8d7}
+ .live-layout .match-scoreboard .matchactions{gap:9px}
+ .live-layout .match-scoreboard .matchactions button{
   min-height:42px;padding:10px 14px;font-size:12px;max-width:230px;
   text-align:center;white-space:normal;
  }
- html:root[data-cd-theme] .live-layout .match-scoreboard .scoreboard-progress{
+ .live-layout .match-scoreboard .scoreboard-progress{
   border-top:1px solid #a1bc9b44;padding-top:10px;
  }
- html:root[data-cd-theme] .live-layout .v40-tabs{
+ .live-layout .v40-tabs{
   padding:10px 13px;gap:10px;border-top:2px solid #7fad89;
   border-radius:3px;background:#102d24;
  }
- html:root[data-cd-theme] .live-layout .v40-tabs .v40-tab{
+ .live-layout .v40-tabs .v40-tab{
   font-size:13px;font-weight:800;min-height:44px;padding:11px 17px;
   border-radius:3px;
  }
- html:root[data-cd-theme] .live-layout .v40-tabs .v40-tab.is-active{
+ .live-layout .v40-tabs .v40-tab.is-active{
   background:#eda16c;color:#142a1e;border-color:#ffc490;
  }
- html:root[data-cd-theme] .live-layout .v40-arena{gap:14px}
- html:root[data-cd-theme] .live-layout .v40-roster{
+ .live-layout .v40-arena{gap:14px}
+ .live-layout .v40-roster{
   border:1px solid #466e56;border-top:3px solid #9bb8a0;
   background:#0f2b23;min-width:0;
  }
- html:root[data-cd-theme] .live-layout .v40-roster .v40-roster-row{
+ .live-layout .v40-roster .v40-roster-row{
   border-bottom-color:#3e654f;
  }
- html:root[data-cd-theme] .live-layout .v40-roster .v40-roster-row select{
+ .live-layout .v40-roster .v40-roster-row select{
   font-size:11px;min-height:32px;
  }
- html:root[data-cd-theme] .live-layout .v40-field-center>.match-2d{
+ .live-layout .v40-field-center>.match-2d{
   border:2px solid #7fa98c;box-shadow:0 0 0 2px #143a2b;
   border-radius:3px;
  }
- html:root[data-cd-theme] .live-layout .v40-field-center .match-2d-header h2{
+ .live-layout .v40-field-center .match-2d-header h2{
   font-size:clamp(25px,2vw,34px);color:#f4f4e6;
  }
- html:root[data-cd-theme] .live-layout .v40-field-center .stadium-stage{
+ .live-layout .v40-field-center .stadium-stage{
   border-top:1px solid #9bbfa0;overflow:hidden;
  }
- html:root[data-cd-theme] .live-layout .v40-field-center .match-field{
+ .live-layout .v40-field-center .match-field{
   max-height:590px;
  }
- html:root[data-cd-theme] .live-layout .v40-bottom>section{
+ .live-layout .v40-bottom>section{
   border-top:2px solid #85ae94;border-radius:3px;
  }
 }
 @media(min-width:1200px) and (max-width:1349px){
- html:root[data-cd-theme] .live-layout .match-scoreboard .score{
+ .live-layout .match-scoreboard .score{
   font-size:clamp(52px,4.7vw,65px);
  }
- html:root[data-cd-theme] .live-layout .v40-roster .v40-roster-row select{
+ .live-layout .v40-roster .v40-roster-row select{
   font-size:10px;
  }
 }
