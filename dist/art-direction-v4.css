@@ -492,3 +492,25 @@ html:root[data-cd-theme] .da42-market-grid strong{display:block;margin-top:12px;
  html:root[data-cd-theme] .da42-command-lead,html:root[data-cd-theme] .da42-command-rail{background:Canvas;color:CanvasText}
  html:root[data-cd-theme] .da42-talent-track b{background:Highlight}
 }
+
+/* V4.2 PC — correction après lecture des captures réelles 1920/1440 : le visuel
+   matchday est déjà présenté dans le poste de commande ; la seconde affiche
+   devient une barre utilitaire accessible vers le centre de match natif. */
+@media(min-width:1100px){
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage{display:block!important;margin:0 0 16px!important}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-condition{display:none!important}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-fixture.da4-panel{
+  min-height:0!important;padding:12px 22px!important;display:flex!important;align-items:center!important;
+  flex-direction:row!important;justify-content:space-between!important;gap:18px!important;
+  background:var(--ui01-surface)!important;color:var(--da4-type)!important;
+  border-color:var(--ui01-border)!important}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-fixture .da4-panel-head{flex:1;min-width:0;margin:0!important}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-fixture h2{font-size:18px!important;color:var(--da4-type)!important}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-fixture .da4-duel{display:none!important}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-fixture footer{
+  display:flex!important;align-items:center!important;gap:16px!important;flex:0 0 auto;
+  margin:0!important;padding:0!important;border:0!important;min-height:0!important}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-fixture footer>span{color:var(--da4-muted)!important;font-size:11px}
+ html:root[data-cd-theme] .da4-desk .da4-desk-stage>.da4-fixture .da4-cta{
+  min-height:40px!important;background:var(--da4-copper)!important;color:#fff!important}
+}
