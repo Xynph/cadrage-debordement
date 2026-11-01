@@ -1,0 +1,81 @@
+name: Livraison express — précontrôle informatif
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Numéro de PR (aucune fusion)
+        required: true
+        type: string
+      sha:
+        description: HEAD exact de la PR (40 caractères)
+        required: true
+        type: string
+      publish:
+        description: Publier le bilan dans #73 (exige aussi CD_DELIVERY_PUBLISH=true)
+        type: boolean
+        default: false
+permissions: {}
+concurrency:
+  group: delivery-readiness-${{ inputs.pr }}
+  cancel-in-progress: false
+jobs:
+  simulation:
+    if: >-
+      github.repository == 'Xynph/cadrage-debordement' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor_id == '350229047' && github.actor == 'Xynph' &&
+      github.triggering_actor == 'Xynph'
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+      - name: Tests ciblés hors réseau
+        run: node tests/delivery-readiness.cjs
+      - name: Bilan simulé sans écriture
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CD_PR: ${{ inputs.pr }}
+          CD_SHA: ${{ inputs.sha }}
+        run: node ci/delivery-readiness.cjs "$CD_PR" "$CD_SHA"
+  publication:
+    needs: simulation
+    if: >-
+      needs.simulation.result == 'success' && inputs.publish == true &&
+      vars.CD_DELIVERY_PUBLISH == 'true' &&
+      github.repository == 'Xynph/cadrage-debordement' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor_id == '350229047' && github.actor == 'Xynph' &&
+      github.triggering_actor == 'Xynph'
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+      issues: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+      - name: Recharger les preuves puis publier uniquement dans #73
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CD_PR: ${{ inputs.pr }}
+          CD_SHA: ${{ inputs.sha }}
+          CD_PUBLISH: 'true'
+          CD_PUBLISH_ENABLED: ${{ vars.CD_DELIVERY_PUBLISH }}
+        run: node ci/delivery-readiness.cjs "$CD_PR" "$CD_SHA"
