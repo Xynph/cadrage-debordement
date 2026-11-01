@@ -22,6 +22,14 @@ Le script `tests/art-direction-v4-browser.py` produit désormais des captures d�
 
 **Référence avant :** captures V4.1, [workflow #41293020335](https://github.com/Xynph/cadrage-debordement/actions/runs/41293020335), artefact `premium-v4-browser-report` (ID `13077679797`), SHA V4.1 `4f3d68607ac62b11007b5028ef6f4fc7fbea4d33`. Les comparaisons suivantes concernent le même scénario de test avec seed fixe, mais des commits distincts. La galerie d'origine inclut 64 fichiers et deux thèmes ; les artefacts GitHub Actions **expirent après sept jours**, comme défini par le workflow.
 
+## Contrôle photographique réel sur la première tête PC
+
+Le workflow [V4 Premium Chromium #41296264951](https://github.com/Xynph/cadrage-debordement/actions/runs/41296264951) a **réellement réussi** sur le SHA `6ed1a37711778c1a7f42b59efd4ef232ec9f7d90`. Son artefact `premium-v4-browser-report` (ID `13079536588`) a été téléchargé et examiné : les **dix vrais PNG 1920×1080 / 1440×900 existent** ; `art-direction-v4/report.json` contient `passed: true`, **427 contrôles**, aucune erreur JS ; `premium-v4/report.json` indique **529 contrôles réussis**.
+
+**Problème graphique identifié et corrigé après lecture des images :** le bureau cumulait deux grandes affiches de match presque identiques, la nouvelle zone de commande et l'ancien panneau duel, puis répétait l'information de disponibilité. L'ancien duel est devenu, **sur PC**, une barre de passage plus compacte vers le centre de match natif. Le nouvel espace de commande garde la mise en scène et les informations décisionnelles ; le bouton natif reste accessible. La CI de la correction doit être revalidée sur une nouvelle tête, et ses captures doivent remplacer la première galerie comme référence finale.
+
+**Autres constats :** les graphiques de finances occupent bien la largeur centrale PC ; les cartes de formation et l'observatoire du recrutement se trouvent plus bas dans les écrans complets. Aucun chevauchement visible sur les images examinées. La longueur du document tactique reste importante, mais il s'agit d'un jeu PC. Les vérifications Chromium ne certifient pas Windows natif, Safari/Firefox ni les lecteurs d'écran.
+
 ## Galerie — dix captures desktop/mobile V4.2
 
 Dans [l'artefact GitHub de V4.2](https://github.com/Xynph/cadrage-debordement/actions/runs/41294785004), ouvrir « Artifacts → premium-v4-browser-report », puis le dossier `art-direction-v4/`.
