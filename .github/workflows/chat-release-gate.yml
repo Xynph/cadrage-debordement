@@ -1,0 +1,78 @@
+name: Chat release gate (owner only)
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+  issues: write
+
+concurrency:
+  group: chat-release-gate-main
+  cancel-in-progress: false
+
+jobs:
+  guarded-merge:
+    if: ${{ github.repository == 'Xynph/cadrage-debordement' && github.event.issue.number == 73 && github.event.comment.user.login == 'Xynph' && startsWith(github.event.comment.body, '/cd-merge ') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Validate owner command and exact PR head
+        id: command
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_PATH: ${{ github.event_path }}
+        run: |
+          set -euo pipefail
+          command="$(jq -r '.comment.body' "$EVENT_PATH")"
+          if [[ ! "$command" =~ ^/cd-merge[[:space:]]+([1-9][0-9]*)[[:space:]]+([0-9a-f]{40})[[:space:]]*$ ]]; then
+            echo "::error::Expected /cd-merge PR SHA40"
+            exit 1
+          fi
+          pr="${BASH_REMATCH[1]}"
+          expected="${BASH_REMATCH[2]}"
+          actual="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr" --jq '.head.sha')"
+          if [[ "$actual" != "$expected" ]]; then
+            echo "::error::PR head changed; refusing stale SHA"
+            exit 1
+          fi
+          echo "pr=$pr" >> "$GITHUB_OUTPUT"
+          echo "expected=$expected" >> "$GITHUB_OUTPUT"
+      - name: Official authenticated release gate and SHA-locked squash
+        id: merge
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ steps.command.outputs.pr }}
+        run: |
+          set -euo pipefail
+          node ci/release-gate.cjs "$PR" --merge
+      - name: Explicit post-merge full CI (token-originated push does not trigger push workflows)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run tests.yml --ref main
+          echo "Triggered full main CI; inspect Validation CI before declaring release complete."
+      - name: Publish result into coordination issue
+        if: ${{ always() && steps.command.outcome == 'success' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ steps.command.outputs.pr }}
+          EXPECTED: ${{ steps.command.outputs.expected }}
+          RESULT: ${{ job.status }}
+        run: |
+          set -euo pipefail
+          gh issue comment 73 --repo "$GITHUB_REPOSITORY" --body "Chat release gate PR #$PR HEAD \`$EXPECTED\`: $RESULT. Full CI main triggered if merge succeeded; verify exact workflow result before declaring fully delivered. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
