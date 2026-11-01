@@ -93,6 +93,35 @@ function matchCockpitTactics(l){
  (source.finished?'disabled':'')+'>'+(source.paused?'Reprendre la rencontre':'Mettre en pause')+'</button></div>'+
  '<small class="v40-data-note">Remplacements, décisions de pénalité et consignes avancées : menu détaillé ci-dessous.</small></section>';
 }
+
+// Débrief en direct : lecture seule des compteurs natifs, sans tirage aléatoire ni sauvegarde.
+function matchCockpitCoachBrief(l){
+ const side=l.userSide,other=1-side,m=l.stats[side],o=l.stats[other];
+ const possession=m.possession+o.possession;
+ const territory=m.territory+o.territory;
+ const poss=possession?Math.round(100*m.possession/possession):null;
+ const field=territory?Math.round(100*m.territory/territory):null;
+ const margin=l.score[side]-l.score[other];
+ const notes=[];
+ if(poss===null)notes.push('La possession sera analysée après les premières séquences.');
+ else if(poss<42)notes.push('Vous avez peu le ballon ('+poss+' %) : privilégiez des séquences de conservation.');
+ else if(poss>58)notes.push('Vous contrôlez le ballon ('+poss+' %) : exploitez cette possession sans vous précipiter.');
+ else notes.push('Possession équilibrée ('+poss+' %) : chaque récupération peut faire la différence.');
+ if(field!==null){
+  if(field<43)notes.push('Occupation défavorable ('+field+' %) : cherchez à sortir de votre camp.');
+  else if(field>57)notes.push('Vous occupez le terrain adverse ('+field+' %) : maintenez la pression.');
+  else notes.push('Occupation partagée ('+field+' %) : surveillez les renvois et les sorties de camp.');
+ }
+ if(m.penalties>o.penalties+2)notes.push('Discipline : vous avez concédé '+(m.penalties-o.penalties)+' pénalités de plus que votre adversaire.');
+ if(m.yellows>o.yellows)notes.push('Infériorité disciplinaire : surveillez vos joueurs sanctionnés.');
+ if(margin<0)notes.push('Vous êtes menés de '+(-margin)+' points : adaptez votre gestion du risque au temps restant.');
+ else if(margin>0)notes.push('Vous menez de '+margin+' points : protégez cet avantage sans abandonner le terrain.');
+ else notes.push('Score à égalité : la prochaine séquence sera importante.');
+ return '<section class="card v40-coach-brief" aria-label="Débrief tactique en direct"><div class="v40-panel-heading"><h2>Lecture du match</h2><small>'+matchClock(l)+'</small></div>'+
+ '<ul>'+notes.map(note=>'<li>'+visualEscape(note)+'</li>').join('')+'</ul>'+
+ '<small class="v40-data-note">Conseils indicatifs issus du score et des statistiques ; aucune consigne n’est modifiée automatiquement.</small></section>';
+}
+
 function matchCockpitView(l){
  const active=l.visualSource||l;
  return '<section class="v40-cockpit v40-focus-'+matchCockpitFocus+'" aria-label="Cockpit rugby V40">'+
@@ -100,6 +129,6 @@ function matchCockpitView(l){
  '<div class="v40-arena">'+matchCockpitRoster(l,l.userSide)+
  '<div class="v40-field-center">'+match2D(l)+'</div>'+
  matchCockpitRoster(l,1-l.userSide)+'</div>'+
- '<div class="v40-bottom">'+matchCockpitMetrics(l)+matchCommentary(l)+matchCockpitTactics(l)+'</div>'+
+ '<div class="v40-bottom">'+matchCockpitMetrics(l)+matchCockpitCoachBrief(l)+matchCommentary(l)+matchCockpitTactics(l)+'</div>'+
  '<div class="v40-footnote">Représentation 2D schématique des phases : elle ne constitue pas une reconstitution exacte des trajectoires. Les décisions et statistiques proviennent de la rencontre '+(active.finished?'terminée':'en cours')+'.</div></section>';
 }
