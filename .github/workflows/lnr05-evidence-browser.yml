@@ -36,6 +36,7 @@ jobs:
           node tests/lnr05-matchday-decision.cjs
           node tests/lnr05-rotation-audit.cjs
           node tests/lnr05-fatigue-scenarios.cjs
+          node tests/lnr05-physical-propagation.cjs
           node tests/lnr05-evidence-long.cjs
   real-import-no-network:
     runs-on: ubuntu-latest
