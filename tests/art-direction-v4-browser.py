@@ -104,6 +104,14 @@ try:
                           });
                         }"""))
                     if route == 'recruitment' and key == 'marche':
+                        geometry = page.evaluate("""()=>{
+                          const e=document.querySelector('.da42-page:not([hidden]) .da42-market-composition');
+                          const p=document.querySelector('.da42-page:not([hidden])');
+                          const a=e.getBoundingClientRect(),b=p.getBoundingClientRect();
+                          return {height:a.height,top:a.top,bottom:a.bottom,viewportBottom:b.bottom,
+                                  pageHeight:b.height,fullyVisible:a.top>=b.top&&a.bottom<=b.bottom+2};
+                        }""")
+                        print('V4.2 PC market geometry',width,geometry)
                         check(f'market observatory fits the page {width}', page.evaluate("""()=>{
                           const el=document.querySelector('.da42-page:not([hidden]) .da42-market-composition');
                           const outer=document.querySelector('.da42-page:not([hidden])');
