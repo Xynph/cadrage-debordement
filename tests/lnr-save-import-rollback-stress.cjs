@@ -43,7 +43,13 @@ for(const [home,away] of [[0,13],[13,0],[4,8]]){
    assert.equal(current.run('confirmSaveImport()'),false);
    assert.equal(stateOf(current),original);
    assert.equal(current.store['bdt-v1'],disk);
-   assert.equal(current.store['bdt-before-import'],backup);
+   if(key==='bdt-before-import')assert.equal(current.store['bdt-before-import'],backup);
+   else {
+    const protectedCopy=current.store['bdt-before-import'];
+    assert.ok(protectedCopy,'backup must survive a failed active-save write');
+    const restored=current.run('parseSaveDocument('+JSON.stringify(protectedCopy)+').state.club');
+    assert.equal(restored,home);
+   }
   });
  }
 }
