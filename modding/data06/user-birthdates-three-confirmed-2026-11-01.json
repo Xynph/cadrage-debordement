@@ -1,0 +1,30 @@
+{
+  "schema": "data06-user-birthdate-confirmations-v1",
+  "receivedDate": "2026-11-01",
+  "source": "user-explicit-confirmation",
+  "scope": "Three LNR-identified birth dates, supplementary to pending DATA-06 PR #160 and 150-row user spreadsheet; does not override evidence automatically",
+  "records": [
+    {
+      "lnrId": "lnr:13725",
+      "name": "Igor GATTEAU",
+      "birthYear": 2007,
+      "birthDate": "2007-03-10",
+      "review": "Previous conflicting evidence retained; user-confirmed date, not independently validated."
+    },
+    {
+      "lnrId": "lnr:13497",
+      "name": "Lylian ZELIOLI",
+      "birthYear": 2005,
+      "birthDate": "2005-01-01",
+      "review": "Prior identity/date contradiction retained; user-confirmed date, not independently validated."
+    },
+    {
+      "lnrId": "lnr:11779",
+      "name": "Dylan IDRISSI",
+      "birthYear": 2003,
+      "birthDate": "2003-02-14",
+      "review": "Prior day-of-month disagreement retained; user-confirmed date, not independently validated."
+    }
+  ],
+  "mergePolicy": "Validate by stable LNR ID; explicit user source, retain earlier conflicts, do not automatically activate in playable mod."
+}
