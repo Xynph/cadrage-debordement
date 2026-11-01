@@ -1,0 +1,29 @@
+name: V60.1 crises et promesses presse
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  press:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V60 et V60.1
+        env:
+          CD_V601_REPORT: v601-report.json
+        run: |
+          node --check dist/press-events.js
+          node tests/v60-press-relations.cjs
+          node tests/v60-1-press-events.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v601-report
+          path: v601-report.json
+          if-no-files-found: ignore
