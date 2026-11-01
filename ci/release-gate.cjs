@@ -38,6 +38,10 @@ function main(argv=process.argv.slice(2)) {
   }
   const number=Number(argv[0]);
   const pr=api('repos/'+repo+'/pulls/'+number);
+  const expected=process.env.CD_EXPECTED_HEAD_SHA;
+  if(expected && (!/^[0-9a-f]{40}$/.test(expected) || pr.head?.sha!==expected)) {
+    throw Error('SHA attendu different de la tete de PR : aucune fusion');
+  }
   if (pr.state!=='open' || !pr.head?.sha) {
     console.log('PR fermee ou sans SHA : aucune fusion');process.exitCode=1;return;
   }
