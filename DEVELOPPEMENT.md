@@ -637,8 +637,27 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Assertions adaptées au contrôle réel : présence du libellé d'import et ordre explicite des trois scripts, sans imposer leur contiguïté. Aucun contrôle de sauvegarde retiré et aucun fichier de production modifié.
 - Suites ciblées menu, menu V2, sauvegardes et intégrations UI exécutées avec succès. La CI complète du dernier SHA et les scénarios Chromium restent exigés avant fusion ; contrôle push après fusion obligatoire.
 
+## Menu V3 — stade cinématique et bibliothèque jouable (31 octobre 2026)
+
+- Base `main d6032ccf6d5cf1e1ccf68c2c05bffa102f8c4067`, #157 fusionnée après 16 workflows verts et Validation CI sur `0c22a664`. Les cinq workflows push V2 sont réussis, dont Tests JavaScript #41246209282 et résilience #41246209281.
+- Menu vert sombre/orange : stade fictif original généré et livré en WebP local, logo vectoriel, navigation latérale et cinq cartes lisant les snapshots V2. Noms, saisons, journées et dates de sauvegarde réels ; écussons typographiques des clubs, sans inventer de logos officiels.
+- Création guidée : univers et club natifs, choix de difficulté de l'IA persisté dès la création. Aucune option d'entraîneur non implémentée. Réglages indépendants des carrières : contraste, texte, thème, animations et plein écran disponible.
+- Accessibilité : clavier, lien d'évitement, respect de reduced-motion, focus initial et confinement dans les dialogues ; régression reproduite puis corrigée pour le retour de focus après annulation et reconstruction du DOM. Pause et sauvegardes natives conservées. Rendu des cartes en lecture seule, erreurs d'index ou copies corrompues visibles.
+- Tests dédiés Node et Chromium ; le nouveau scénario rejoint le workflow UI01 existant, sans retirer aucun contrôle ni multiplier les jobs. Captures réelles 1440/768/390 dans docs/menu-v3-captures ; détails et limites docs/menu-principal-v3.md. Suite complète et CI exacte nécessaires avant fusion ; aucune validation future présentée comme acquise.
+- Aucun fichier Business, donnée externe, format de sauvegarde ou moteur rugby modifié. Aucun service payant de collecte. Pas de certification Windows native.
+- Prochaine priorité : bureau du manager harmonisé et décisions prioritaires tirées des données réelles de la carrière.
+
 ## DATA-06 — Rugby Data, lot partiel clos pour quota (31 octobre 2026)
 
 - 30 effectifs 2026-2027 collectés : 1493 lignes, 1159 identités LNR strictes. 689 fiches individuelles valides ; 107 HTTP 503 et 363 non tentées, explicitement séparées après demande utilisateur de préserver le quota. Collecte arrêtée, aucun arrière-plan.
 - 689 dates de naissance, 1159 JIFF, 1158 postes, 686 formations, 183 meilleurs pieds et 981 années de fin annoncées. 966 contradictions isolées sans remplacer les mensurations précédentes ; contrats annuels séparés de l'année de fin. 903 IDs sans naissance dans ce complément, pas de biographie complète prétendue.
 - Nouveaux fichiers rugbydata-* sous modding/data06, normaliseur hors réseau tools/data06-rugbydata.cjs, tests/data06-rugbydata.cjs, docs/data06-rugbydata.md. 14 tests ciblés réussis, JSON reproductible ; CI complète publiée à vérifier. Aucun changement dist, moteur, sauvegarde ou anciennes sources. Producteur, aucune fusion.
+
+
+## DATA-06 — 01/11/2026 : 350 années supplémentaires et versions Wikipédia vérifiées
+
+PRODUCTEUR sur PR #160, base de session main `1b1d7d624995af823dcbdce42a6a1d6ad148d336`, tête précédente `0198b97fa57b7e733ee84a3ab78018467807ceba`. Six pages Wikipédia 2026-27 et leurs permaliens comparés ligne à ligne ; titres, révisions, dates et empreintes conservés. Deux nouveaux JSON `modding/data06/birthyears-six-clubs-verified-2026-11-01.json` (162) et `modding/data06/birthyears-itsrugby-verified-2026-11-01.json` (188) : 350 années nouvelles rattachées à des IDs LNR uniques, absentes du précédent cumul 895. Couverture de recherche cumulée 1245/1592, 347 lacunes ; aucune intégration jouable automatique. Sur 210 fiches ItsRugby effectivement lues : 188 nouvelles, 15 dates absentes/invalides, 7 déjà présentes dans le complément des six clubs. Pas de dates déduites d'un âge. Les 13 IDs source répétés entre effectifs sont contrôlés par nom identique dans toutes occurrences et unicité globale LNR, sans preuve historique de club.
+
+Les six clubs reçoivent 184 années : Dax 31/36, Nevers 48/61, Angoulême 41/51, Valence Romans 35/40, Narbonne 42/48, Nice 48/51 ; 42 lacunes prioritaires demeurent. Alexis Levron 2000 confirmé officiellement, année erronée du tableau rejetée. Dylan Idrissi exclu : deux dates incompatibles sur la page officielle VRDR. Les années inconnues restent inconnues. Documentation `docs/data06-birthyears-six-clubs.md`, 10 tests ciblés réels `node --test tests/data06-birthyears-six-clubs.cjs`. Suite complète locale non exécutée ; CI distante à contrôler sur la nouvelle tête. Aucun Firecrawl/service payant, moteur, UI ou sauvegarde modifié ; aucune fusion. Priorité : sources officielles pour les 42 lacunes des six clubs, puis les 305 autres. Réservations du lot libérées après passation #73.
+
+

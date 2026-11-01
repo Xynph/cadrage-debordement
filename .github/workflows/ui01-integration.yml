@@ -7,6 +7,9 @@ on:
       - 'dist/style.css'
       - 'dist/game.js'
       - 'dist/ui*'
+      - 'dist/main-menu*'
+      - 'dist/assets/menu-stadium*'
+      - 'tests/main-menu*'
       - 'dist/manager-squad.js'
       - 'dist/match-preparation.js'
       - 'dist/match-cockpit.js'
@@ -20,6 +23,9 @@ on:
       - 'dist/style.css'
       - 'dist/game.js'
       - 'dist/ui*'
+      - 'dist/main-menu*'
+      - 'dist/assets/menu-stadium*'
+      - 'tests/main-menu*'
       - 'dist/manager-squad.js'
       - 'dist/match-preparation.js'
       - 'dist/match-cockpit.js'
@@ -55,6 +61,7 @@ jobs:
         run: |
           python tests/ui01-browser.py
           python tests/ui01-contrast.py
+          python tests/main-menu-v3-browser.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

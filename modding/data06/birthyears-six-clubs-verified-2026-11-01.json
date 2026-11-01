@@ -1,0 +1,4038 @@
+{
+  "schema": "data06-verified-birthyears-v1",
+  "observedDate": "2026-11-01",
+  "catalogSeason": "2026-2027",
+  "baselineHead": "0198b97fa57b7e733ee84a3ab78018467807ceba",
+  "scope": "New birth years only. Research evidence; no playable import, no assumed club membership at 2026-07-01.",
+  "records": [
+    {
+      "lnrId": "lnr:144",
+      "lnrName": "Maxence LEMARDELET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/144-maxence-lemardelet",
+      "club": "angouleme",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Maxence Lemardelet",
+          "dateAsPublished": "8 mai 1999 (27 ans)",
+          "birthYear": 1999
+        },
+        {
+          "sourceId": "s18",
+          "nameAsPublished": "Maxence Lemardelet",
+          "dateAsPublished": "Naissance 8 mai 1999 (27 ans)Limoges (France)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:815",
+      "lnrName": "Rémi BROSSET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/815-remi-brosset",
+      "club": "angouleme",
+      "birthYear": 2000,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Rémi Brosset",
+          "dateAsPublished": "12 février 2000 (26 ans)",
+          "birthYear": 2000
+        },
+        {
+          "sourceId": "s31",
+          "nameAsPublished": "Rémi Brosset",
+          "dateAsPublished": "Naissance 12 février 2000 (26 ans)",
+          "birthYear": 2000
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:823",
+      "lnrName": "Ledua MAU",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/823-ledua-mau",
+      "club": "angouleme",
+      "birthYear": 1993,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Ledua Mau",
+          "dateAsPublished": "16 février 1993 (33 ans)",
+          "birthYear": 1993
+        },
+        {
+          "sourceId": "s25",
+          "nameAsPublished": "Ledua Mau",
+          "dateAsPublished": "Naissance 16 février 1993 (33 ans)",
+          "birthYear": 1993
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:843",
+      "lnrName": "Hubert TEXIER",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/843-hubert-texier",
+      "club": "angouleme",
+      "birthYear": 2000,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Hubert Texier",
+          "dateAsPublished": "18 avril 2000 (26 ans)",
+          "birthYear": 2000
+        },
+        {
+          "sourceId": "s22",
+          "nameAsPublished": "Hubert Texier",
+          "dateAsPublished": "Naissance 18 avril 2000 (26 ans)",
+          "birthYear": 2000
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:844",
+      "lnrName": "Mathis LAFON",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/844-mathis-lafon",
+      "club": "angouleme",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Mathis Lafon",
+          "dateAsPublished": "28 février 1999 (27 ans)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:910",
+      "lnrName": "Corentin GLENAT",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/910-corentin-glenat",
+      "club": "angouleme",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Corentin Glénat",
+          "dateAsPublished": "26 août 1999 (27 ans)",
+          "birthYear": 1999
+        },
+        {
+          "sourceId": "s24",
+          "nameAsPublished": "Corentin Glénat",
+          "dateAsPublished": "Naissance 26 août 1999 (27 ans)Voiron (France)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1119",
+      "lnrName": "Nathan FARISSIER",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1119-nathan-farissier",
+      "club": "angouleme",
+      "birthYear": 2001,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Nathan Farissier",
+          "dateAsPublished": "20 avril 2001 (25 ans)",
+          "birthYear": 2001
+        },
+        {
+          "sourceId": "s29",
+          "nameAsPublished": "Nathan Farissier",
+          "dateAsPublished": "Naissance 20 avril 2001 (25 ans)Lyon (France)",
+          "birthYear": 2001
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1138",
+      "lnrName": "Jean Maurice DECUBBER",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1138-jean-maurice-decubber",
+      "club": "angouleme",
+      "birthYear": 1996,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Jean-Maurice Decubber",
+          "dateAsPublished": "10 septembre 1996 (30 ans)",
+          "birthYear": 1996
+        },
+        {
+          "sourceId": "s17",
+          "nameAsPublished": "Jean-Maurice Decubber",
+          "dateAsPublished": "Naissance 10 septembre 1996 (30 ans)L'Isle-d'Espagnac (France)",
+          "birthYear": 1996
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1195",
+      "lnrName": "Samuel NOLLET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1195-samuel-nollet",
+      "club": "angouleme",
+      "birthYear": 2001,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Samuel Nollet",
+          "dateAsPublished": "2 août 2001 (25 ans)",
+          "birthYear": 2001
+        },
+        {
+          "sourceId": "s20",
+          "nameAsPublished": "Samuel Nollet",
+          "dateAsPublished": "Naissance 2 août 2001 (25 ans)Schœlcher (France)",
+          "birthYear": 2001
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1207",
+      "lnrName": "Kaminieli RASAKU",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1207-kaminieli-rasaku",
+      "club": "angouleme",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Kaminieli Rasaku",
+          "dateAsPublished": "12 juillet 1999 (27 ans)",
+          "birthYear": 1999
+        },
+        {
+          "sourceId": "s30",
+          "nameAsPublished": "Kaminieli Rasaku",
+          "dateAsPublished": "Naissance 12 juillet 1999 (27 ans)Navunimono (Fidji)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1447",
+      "lnrName": "Gela APRASIDZE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1447-gela-aprasidze",
+      "club": "angouleme",
+      "birthYear": 1998,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Gela Aprasidze",
+          "dateAsPublished": "14 janvier 1998 (28 ans)",
+          "birthYear": 1998
+        },
+        {
+          "sourceId": "s23",
+          "nameAsPublished": "Gela Aprasidze",
+          "dateAsPublished": "Naissance 14 janvier 1998 (28 ans)Tbilissi (Géorgie)",
+          "birthYear": 1998
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1621",
+      "lnrName": "Giorgi JAVAKHIA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1621-giorgi-javakhia",
+      "club": "angouleme",
+      "birthYear": 1996,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Giorgi Javakhia",
+          "dateAsPublished": "24 septembre 1996 (30 ans)",
+          "birthYear": 1996
+        },
+        {
+          "sourceId": "s16",
+          "nameAsPublished": "Giorgi Javakhia",
+          "dateAsPublished": "Naissance 24 septembre 1996 (30 ans)Tbilissi (Géorgie)",
+          "birthYear": 1996
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1864",
+      "lnrName": "Adrian MITU",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1864-adrian-mitu",
+      "club": "angouleme",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Adrian Mitu",
+          "dateAsPublished": "12 mai 2004 (22 ans)",
+          "birthYear": 2004
+        },
+        {
+          "sourceId": "s19",
+          "nameAsPublished": "Adrian Mitu",
+          "dateAsPublished": "Naissance 12 mai 2004 (22 ans)Meaux (France)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1932",
+      "lnrName": "Alexis LEVRON",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1932-alexis-levron",
+      "club": "angouleme",
+      "birthYear": 2000,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s84",
+          "nameAsPublished": "Alexis Levron",
+          "dateAsPublished": "Né le 2 novembre 2000",
+          "birthYear": 2000
+        }
+      ],
+      "conflictResolution": "Wikipedia roster year rejected; official Section Paloise birth date agrees with individual biography.",
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1941",
+      "lnrName": "Eoghan BARRETT",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1941-eoghan-barrett",
+      "club": "angouleme",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Eoghan Barrett",
+          "dateAsPublished": "31 mai 1999 (27 ans)",
+          "birthYear": 1999
+        },
+        {
+          "sourceId": "s27",
+          "nameAsPublished": "Eoghan Barrett",
+          "dateAsPublished": "Naissance 31 mai 1999 (27 ans)Cork (Irlande)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2002",
+      "lnrName": "George TILSLEY",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2002-george-tilsley",
+      "club": "angouleme",
+      "birthYear": 1992,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "George Tilsley",
+          "dateAsPublished": "27 février 1992 (34 ans)",
+          "birthYear": 1992
+        },
+        {
+          "sourceId": "s26",
+          "nameAsPublished": "George Tilsley",
+          "dateAsPublished": "Naissance 27 février 1992 (34 ans)",
+          "birthYear": 1992
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2207",
+      "lnrName": "Lucas COSTA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2207-lucas-costa",
+      "club": "angouleme",
+      "birthYear": 2001,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Lucas Costa",
+          "dateAsPublished": "9 octobre 2001 (25 ans)",
+          "birthYear": 2001
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2236",
+      "lnrName": "Peter LYDON",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2236-peter-lydon",
+      "club": "angouleme",
+      "birthYear": 1992,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Peter Lydon",
+          "dateAsPublished": "19 octobre 1992 (34 ans)",
+          "birthYear": 1992
+        },
+        {
+          "sourceId": "s32",
+          "nameAsPublished": "Peter Lydon",
+          "dateAsPublished": "Naissance 19 octobre 1992 (34 ans)Kilkenny (Irlande)",
+          "birthYear": 1992
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2398",
+      "lnrName": "Leo LABARTHE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2398-leo-labarthe",
+      "club": "angouleme",
+      "birthYear": 2003,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Léo Labarthe",
+          "dateAsPublished": "22 novembre 2003 (22 ans)",
+          "birthYear": 2003
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2400",
+      "lnrName": "Clement SENTUBERY",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2400-clement-sentubery",
+      "club": "angouleme",
+      "birthYear": 2003,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Clément Sentubéry",
+          "dateAsPublished": "22 mars 2003 (23 ans)",
+          "birthYear": 2003
+        },
+        {
+          "sourceId": "s21",
+          "nameAsPublished": "Clément Sentubéry",
+          "dateAsPublished": "Naissance 22 mars 2003 (23 ans)",
+          "birthYear": 2003
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2499",
+      "lnrName": "Richard Tamanui ARNOLD",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2499-richard-tamanui-arnold",
+      "club": "angouleme",
+      "birthYear": 1990,
+      "identityMethod": "explicit-full-name",
+      "identityNameAsPublished": "Richard Tamanui Arnold",
+      "evidence": [
+        {
+          "sourceId": "s80",
+          "nameAsPublished": "Richie Arnold",
+          "dateAsPublished": "Naissance 1er juillet 1990 (36 ans)Wagga Wagga (Australie)",
+          "birthYear": 1990
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:3110",
+      "lnrName": "Seydou DIAKITE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/3110-seydou-diakite",
+      "club": "angouleme",
+      "birthYear": 2002,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Seydou Diakité",
+          "dateAsPublished": "6 janvier 2002 (24 ans)",
+          "birthYear": 2002
+        },
+        {
+          "sourceId": "s15",
+          "nameAsPublished": "Seydou Diakité",
+          "dateAsPublished": "Naissance 6 janvier 2002 (24 ans)Conakry (Guinée)",
+          "birthYear": 2002
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11030",
+      "lnrName": "Arthur PROULT",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11030-arthur-proult",
+      "club": "angouleme",
+      "birthYear": 1993,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Arthur Proult",
+          "dateAsPublished": "30 juillet 1993 (33 ans)",
+          "birthYear": 1993
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11138",
+      "lnrName": "Jules DUBECQ",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11138-jules-dubecq",
+      "club": "angouleme",
+      "birthYear": 2001,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Jules Dubecq",
+          "dateAsPublished": "31 août 2001 (25 ans)",
+          "birthYear": 2001
+        },
+        {
+          "sourceId": "s28",
+          "nameAsPublished": "Jules Dubecq",
+          "dateAsPublished": "Naissance 31 août 2001 (25 ans)",
+          "birthYear": 2001
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11322",
+      "lnrName": "Enzo MORAND BRUYAT",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11322-enzo-morand-bruyat",
+      "club": "angouleme",
+      "birthYear": 2002,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Enzo Morand-Bruyat",
+          "dateAsPublished": "7 juillet 2002 (24 ans)",
+          "birthYear": 2002
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11323",
+      "lnrName": "Leo MORAND BRUYAT",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11323-leo-morand-bruyat",
+      "club": "angouleme",
+      "birthYear": 2002,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s14",
+          "nameAsPublished": "Léo Morand-Bruyat",
+          "dateAsPublished": "7 juillet 2002 (24 ans)",
+          "birthYear": 2002
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2420",
+      "lnrName": "Naim BEN ALLA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2420-naim-ben-alla",
+      "club": "dax",
+      "birthYear": 2003,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s1",
+          "nameAsPublished": "Naïm Ben Alla",
+          "dateAsPublished": "19 décembre 2003 (22 ans)",
+          "birthYear": 2003
+        },
+        {
+          "sourceId": "s2",
+          "nameAsPublished": "Naïm Ben Alla",
+          "dateAsPublished": "Naissance 19 décembre 2003 (22 ans)",
+          "birthYear": 2003
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:8841",
+      "lnrName": "Maxime OLTMANN",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/8841-maxime-oltmann",
+      "club": "dax",
+      "birthYear": 1995,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s1",
+          "nameAsPublished": "Maxime Oltmann",
+          "dateAsPublished": "28 décembre 1995 (30 ans)",
+          "birthYear": 1995
+        },
+        {
+          "sourceId": "s4",
+          "nameAsPublished": "Maxime Oltmann",
+          "dateAsPublished": "Naissance 28 décembre 1995 (30 ans)Port-Vila (Vanuatu)",
+          "birthYear": 1995
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11374",
+      "lnrName": "Paul Arnaud AUSSET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11374-paul-arnaud-ausset",
+      "club": "dax",
+      "birthYear": 1999,
+      "identityMethod": "explicit-full-name",
+      "identityNameAsPublished": "Paul Arnaud Ausset",
+      "evidence": [
+        {
+          "sourceId": "s73",
+          "nameAsPublished": "Paul Ausset",
+          "dateAsPublished": "Naissance 19 juin 1999 (27 ans)Toulouse (France)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11942",
+      "lnrName": "Ratu Josaia NACIKA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11942-ratu-josaia-nacika",
+      "club": "dax",
+      "birthYear": 1997,
+      "identityMethod": "explicit-full-name",
+      "identityNameAsPublished": "Ratu Josaia Nacika",
+      "evidence": [
+        {
+          "sourceId": "s74",
+          "nameAsPublished": "Ratu Nacika",
+          "dateAsPublished": "Naissance 11 février 1997 (29 ans)",
+          "birthYear": 1997
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11951",
+      "lnrName": "Jope NASEARA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11951-jope-naseara",
+      "club": "dax",
+      "birthYear": 2002,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s1",
+          "nameAsPublished": "Jope Naseara",
+          "dateAsPublished": "11 décembre 2002 (23 ans)",
+          "birthYear": 2002
+        },
+        {
+          "sourceId": "s5",
+          "nameAsPublished": "Jope Naseara",
+          "dateAsPublished": "Naissance 11 décembre 2002 (23 ans)",
+          "birthYear": 2002
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:12717",
+      "lnrName": "Louis COUGET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/12717-louis-couget",
+      "club": "dax",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s1",
+          "nameAsPublished": "Louis Couget",
+          "dateAsPublished": "11 novembre 2004 (21 ans)",
+          "birthYear": 2004
+        },
+        {
+          "sourceId": "s3",
+          "nameAsPublished": "Louis Couget",
+          "dateAsPublished": "Naissance 11 novembre 2004 (21 ans)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:169",
+      "lnrName": "Clément BITZ",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/169-clement-bitz",
+      "club": "narbonne",
+      "birthYear": 1994,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Clément Bitz",
+          "dateAsPublished": "29 décembre 1994 (31 ans)",
+          "birthYear": 1994
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:208",
+      "lnrName": "Imanol BISCAY",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/208-imanol-biscay",
+      "club": "narbonne",
+      "birthYear": 2001,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Imanol Biscay",
+          "dateAsPublished": "14 octobre 2001 (25 ans)",
+          "birthYear": 2001
+        },
+        {
+          "sourceId": "s46",
+          "nameAsPublished": "Imanol Biscay",
+          "dateAsPublished": "Naissance 14 octobre 2001 (25 ans)Oloron-Sainte-Marie (France)",
+          "birthYear": 2001
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:352",
+      "lnrName": "Caleb Kalisi TIMU",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/352-caleb-kalisi-timu",
+      "club": "narbonne",
+      "birthYear": 1994,
+      "identityMethod": "explicit-full-name",
+      "identityNameAsPublished": "Caleb Kalisi Timu",
+      "evidence": [
+        {
+          "sourceId": "s79",
+          "nameAsPublished": "Caleb Timu",
+          "dateAsPublished": "Naissance 22 février 1994 (32 ans)Auckland (Nouvelle-Zélande)",
+          "birthYear": 1994
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:381",
+      "lnrName": "Loan LAVERGNE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/381-loan-lavergne",
+      "club": "narbonne",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Loan Lavergne",
+          "dateAsPublished": "28 avril 2004 (22 ans)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:528",
+      "lnrName": "Clément CLAVIERES",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/528-clement-clavieres",
+      "club": "narbonne",
+      "birthYear": 2001,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Clément Clavières",
+          "dateAsPublished": "21 février 2001 (25 ans)",
+          "birthYear": 2001
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:548",
+      "lnrName": "Stefan Marko BURUIANA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/548-stefan-marko-buruiana",
+      "club": "narbonne",
+      "birthYear": 2003,
+      "identityMethod": "explicit-full-name",
+      "identityNameAsPublished": "Ștefan Marko Buruiană",
+      "evidence": [
+        {
+          "sourceId": "s78",
+          "nameAsPublished": "Stefan Buruiana",
+          "dateAsPublished": "Naissance 3 mars 2003 (23 ans)Constanța (Roumanie)",
+          "birthYear": 2003
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:697",
+      "lnrName": "Apisai NAQALEVU",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/697-apisai-naqalevu",
+      "club": "narbonne",
+      "birthYear": 1989,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Apisai Naqalevu",
+          "dateAsPublished": "21 août 1989 (37 ans)",
+          "birthYear": 1989
+        },
+        {
+          "sourceId": "s49",
+          "nameAsPublished": "Apisai Naqalevu",
+          "dateAsPublished": "Naissance 21 août 1989 (37 ans)Botenaulu (Fidji)",
+          "birthYear": 1989
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:936",
+      "lnrName": "Morrison MABOPE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/936-morrison-mabope",
+      "club": "narbonne",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Morrison Mabope",
+          "dateAsPublished": "2 mars 2004 (22 ans)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:940",
+      "lnrName": "Simon HUCHET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/940-simon-huchet",
+      "club": "narbonne",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Simon Huchet",
+          "dateAsPublished": "7 avril 2004 (22 ans)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:942",
+      "lnrName": "Edouard RICHER",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/942-edouard-richer",
+      "club": "narbonne",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Édouard Richer",
+          "dateAsPublished": "17 avril 2004 (22 ans)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1379",
+      "lnrName": "Axel BEVIA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1379-axel-bevia",
+      "club": "narbonne",
+      "birthYear": 2002,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Axel Bevia",
+          "dateAsPublished": "4 mai 2002 (24 ans)",
+          "birthYear": 2002
+        },
+        {
+          "sourceId": "s50",
+          "nameAsPublished": "Axel Bevia",
+          "dateAsPublished": "Naissance 4 mai 2002 (24 ans)",
+          "birthYear": 2002
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2084",
+      "lnrName": "Thomas VERNET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2084-thomas-vernet",
+      "club": "narbonne",
+      "birthYear": 1994,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Thomas Vernet",
+          "dateAsPublished": "14 juillet 1994 (32 ans)",
+          "birthYear": 1994
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2099",
+      "lnrName": "Hugo NAVIZET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2099-hugo-navizet",
+      "club": "narbonne",
+      "birthYear": 2001,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Hugo Navizet",
+          "dateAsPublished": "14 novembre 2001 (24 ans)",
+          "birthYear": 2001
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2120",
+      "lnrName": "Noa ZINZEN",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2120-noa-zinzen",
+      "club": "narbonne",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Noa Zinzen",
+          "dateAsPublished": "24 février 2004 (22 ans)",
+          "birthYear": 2004
+        },
+        {
+          "sourceId": "s45",
+          "nameAsPublished": "Noa Zinzen",
+          "dateAsPublished": "Naissance 24 février 2004 (22 ans)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2858",
+      "lnrName": "Pablo BARBASTE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2858-pablo-barbaste",
+      "club": "narbonne",
+      "birthYear": 2003,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Pablo Barbaste",
+          "dateAsPublished": "6 novembre 2003 (22 ans)",
+          "birthYear": 2003
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:3063",
+      "lnrName": "Victor HANNOUN",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/3063-victor-hannoun",
+      "club": "narbonne",
+      "birthYear": 2003,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Victor Hannoun",
+          "dateAsPublished": "20 août 2003 (23 ans)",
+          "birthYear": 2003
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:3153",
+      "lnrName": "Hugo GOYENECH",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/3153-hugo-goyenech",
+      "club": "narbonne",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Hugo Goyenech",
+          "dateAsPublished": "29 décembre 2004 (21 ans)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:3207",
+      "lnrName": "Theo GOMEZ",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/3207-theo-gomez",
+      "club": "narbonne",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Théo Gomez",
+          "dateAsPublished": "15 janvier 2004 (22 ans)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:3220",
+      "lnrName": "Morgan MAGA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/3220-morgan-maga",
+      "club": "narbonne",
+      "birthYear": 2001,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Morgan Maga",
+          "dateAsPublished": "27 octobre 2001 (25 ans)",
+          "birthYear": 2001
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:3230",
+      "lnrName": "Thibault SANTORO",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/3230-thibault-santoro",
+      "club": "narbonne",
+      "birthYear": 2002,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Thibault Santoro",
+          "dateAsPublished": "11 janvier 2002 (24 ans)",
+          "birthYear": 2002
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:3518",
+      "lnrName": "Nael SOUID",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/3518-nael-souid",
+      "club": "narbonne",
+      "birthYear": 2003,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Naël Souid",
+          "dateAsPublished": "15 avril 2003 (23 ans)",
+          "birthYear": 2003
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:10256",
+      "lnrName": "Paul BELZONS",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/10256-paul-belzons",
+      "club": "narbonne",
+      "birthYear": 1994,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Paul Belzons",
+          "dateAsPublished": "10 septembre 1994 (32 ans)",
+          "birthYear": 1994
+        },
+        {
+          "sourceId": "s44",
+          "nameAsPublished": "Paul Belzons",
+          "dateAsPublished": "Naissance 10 septembre 1994 (32 ans)Narbonne (France)",
+          "birthYear": 1994
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:10546",
+      "lnrName": "Cameron WRIGHT",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/10546-cameron-wright",
+      "club": "narbonne",
+      "birthYear": 1994,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Cameron Wright",
+          "dateAsPublished": "20 avril 1994 (32 ans)",
+          "birthYear": 1994
+        },
+        {
+          "sourceId": "s47",
+          "nameAsPublished": "Cameron Wright",
+          "dateAsPublished": "Naissance 20 avril 1994 (32 ans)Westville (Afrique du Sud)",
+          "birthYear": 1994
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:10761",
+      "lnrName": "Jeff GOUFAN",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/10761-jeff-goufan",
+      "club": "narbonne",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Jeff Goufan",
+          "dateAsPublished": "19 juin 1999 (27 ans)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:10998",
+      "lnrName": "Facundo POMPONIO",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/10998-facundo-pomponio",
+      "club": "narbonne",
+      "birthYear": 1992,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Facundo Pomponio",
+          "dateAsPublished": "1er avril 1992 (34 ans)",
+          "birthYear": 1992
+        },
+        {
+          "sourceId": "s43",
+          "nameAsPublished": "Facundo Pomponio",
+          "dateAsPublished": "Naissance 1er avril 1992 (34 ans)",
+          "birthYear": 1992
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11125",
+      "lnrName": "Tom CHAUVET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11125-tom-chauvet",
+      "club": "narbonne",
+      "birthYear": 2000,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Tom Chauvet",
+          "dateAsPublished": "20 septembre 2000 (26 ans)",
+          "birthYear": 2000
+        },
+        {
+          "sourceId": "s48",
+          "nameAsPublished": "Tom Chauvet",
+          "dateAsPublished": "Naissance 20 septembre 2000 (26 ans)",
+          "birthYear": 2000
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11326",
+      "lnrName": "Louis DESCOUX",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11326-louis-descoux",
+      "club": "narbonne",
+      "birthYear": 2002,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Louis Descoux",
+          "dateAsPublished": "11 février 2002 (24 ans)",
+          "birthYear": 2002
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:12361",
+      "lnrName": "Mateo LAVASELE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/12361-mateo-lavasele",
+      "club": "narbonne",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Matéo Lavaselé",
+          "dateAsPublished": "13 mars 2004 (22 ans)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:13227",
+      "lnrName": "Daniel Viljoen JOOSTE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/13227-daniel-viljoen-jooste",
+      "club": "narbonne",
+      "birthYear": 1998,
+      "identityMethod": "explicit-full-name",
+      "identityNameAsPublished": "Daniel Viljoen Jooste",
+      "evidence": [
+        {
+          "sourceId": "s77",
+          "nameAsPublished": "Dan Jooste",
+          "dateAsPublished": "Naissance 21 février 1998 (28 ans)Johannesbourg (Afrique du Sud)",
+          "birthYear": 1998
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:18659",
+      "lnrName": "Hugo CLAUZEL",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/18659-hugo-clauzel",
+      "club": "narbonne",
+      "birthYear": 2005,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Hugo Clauzel",
+          "dateAsPublished": "23 février 2005 (21 ans)",
+          "birthYear": 2005
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:25063",
+      "lnrName": "Solomon ALAIMALO",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/25063-solomon-alaimalo",
+      "club": "narbonne",
+      "birthYear": 1995,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Solomon Alaimalo",
+          "dateAsPublished": "27 décembre 1995 (30 ans)",
+          "birthYear": 1995
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:25064",
+      "lnrName": "Lubabalo DOBELA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/25064-lubabalo-dobela",
+      "club": "narbonne",
+      "birthYear": 1998,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Lubabalo Dobela",
+          "dateAsPublished": "2 mai 1998 (28 ans)",
+          "birthYear": 1998
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:25067",
+      "lnrName": "Ruben SCHOEMAN",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/25067-ruben-schoeman",
+      "club": "narbonne",
+      "birthYear": 1996,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Ruben Schoeman",
+          "dateAsPublished": "14 mars 1996 (30 ans)",
+          "birthYear": 1996
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:25069",
+      "lnrName": "Théo BEVIA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/25069-theo-bevia",
+      "club": "narbonne",
+      "birthYear": 2006,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s42",
+          "nameAsPublished": "Théo Bévia",
+          "dateAsPublished": "20 octobre 2006 (20 ans)",
+          "birthYear": 2006
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:204",
+      "lnrName": "Yanis BRILLANT",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/204-yanis-brillant",
+      "club": "nevers",
+      "birthYear": 2005,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Yanis Brillant",
+          "dateAsPublished": "13 mai 2005 (21 ans)",
+          "birthYear": 2005
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:213",
+      "lnrName": "Charlie FRANCOZ",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/213-charlie-francoz",
+      "club": "nevers",
+      "birthYear": 1998,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Charlie Francoz",
+          "dateAsPublished": "3 juin 1998 (28 ans)",
+          "birthYear": 1998
+        },
+        {
+          "sourceId": "s7",
+          "nameAsPublished": "Charlie Francoz",
+          "dateAsPublished": "Naissance 3 juin 1998 (28 ans)",
+          "birthYear": 1998
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:366",
+      "lnrName": "Oskar Konstantin RIXEN",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/366-oskar-konstantin-rixen",
+      "club": "nevers",
+      "birthYear": 2002,
+      "identityMethod": "explicit-full-name",
+      "identityNameAsPublished": "Oskar Konstantin Rixen",
+      "evidence": [
+        {
+          "sourceId": "s81",
+          "nameAsPublished": "Oskar Rixen",
+          "dateAsPublished": "Naissance 9 février 2002 (24 ans)Berlin (Allemagne)",
+          "birthYear": 2002
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:687",
+      "lnrName": "Paul JEDRASIAK",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/687-paul-jedrasiak",
+      "club": "nevers",
+      "birthYear": 1993,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Paul Jedrasiak",
+          "dateAsPublished": "6 février 1993 (33 ans)",
+          "birthYear": 1993
+        },
+        {
+          "sourceId": "s8",
+          "nameAsPublished": "Paul Jedrasiak",
+          "dateAsPublished": "Naissance 6 février 1993 (33 ans)Montluçon (France)",
+          "birthYear": 1993
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1046",
+      "lnrName": "Ugo VIGNOLLES",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1046-ugo-vignolles",
+      "club": "nevers",
+      "birthYear": 2002,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Ugo Vignolles",
+          "dateAsPublished": "5 décembre 2002 (23 ans)",
+          "birthYear": 2002
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1071",
+      "lnrName": "Noa POMMELET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1071-noa-pommelet",
+      "club": "nevers",
+      "birthYear": 2003,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Noa Pommelet",
+          "dateAsPublished": "28 mars 2003 (23 ans)",
+          "birthYear": 2003
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1190",
+      "lnrName": "Tom DELEUZE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1190-tom-deleuze",
+      "club": "nevers",
+      "birthYear": 2000,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Tom Deleuze",
+          "dateAsPublished": "30 mars 2000 (26 ans)",
+          "birthYear": 2000
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1352",
+      "lnrName": "Raphael SANCHEZ",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1352-raphael-sanchez",
+      "club": "nevers",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Raphaël Sanchez",
+          "dateAsPublished": "22 avril 1999 (27 ans)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1411",
+      "lnrName": "Gabin ROCHER",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1411-gabin-rocher",
+      "club": "nevers",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Gabin Rocher",
+          "dateAsPublished": "30 avril 2004 (22 ans)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1488",
+      "lnrName": "Shaun REYNOLDS",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1488-shaun-reynolds",
+      "club": "nevers",
+      "birthYear": 1995,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Shaun Reynolds",
+          "dateAsPublished": "15 juin 1995 (31 ans)",
+          "birthYear": 1995
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1494",
+      "lnrName": "Nicolas RAGOEVI",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1494-nicolas-ragoevi",
+      "club": "nevers",
+      "birthYear": 2003,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Nicolas Ragoevi",
+          "dateAsPublished": "19 décembre 2003 (22 ans)",
+          "birthYear": 2003
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1499",
+      "lnrName": "Perry MAYO",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1499-perry-mayo",
+      "club": "nevers",
+      "birthYear": 2002,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Perry Mayo",
+          "dateAsPublished": "9 mai 2002 (24 ans)",
+          "birthYear": 2002
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1503",
+      "lnrName": "Rati ZAZADZE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1503-rati-zazadze",
+      "club": "nevers",
+      "birthYear": 2003,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Rati Zazadze",
+          "dateAsPublished": "27 juin 2003 (23 ans)",
+          "birthYear": 2003
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1512",
+      "lnrName": "Rudy DERRIEUX",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1512-rudy-derrieux",
+      "club": "nevers",
+      "birthYear": 1993,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Rudy Derrieux",
+          "dateAsPublished": "6 décembre 1993 (32 ans)",
+          "birthYear": 1993
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1518",
+      "lnrName": "Maxence BARJAUD",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1518-maxence-barjaud",
+      "club": "nevers",
+      "birthYear": 1996,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Maxence Barjaud",
+          "dateAsPublished": "25 mars 1996 (30 ans)",
+          "birthYear": 1996
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1524",
+      "lnrName": "Julien KAZUBEK",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1524-julien-kazubek",
+      "club": "nevers",
+      "birthYear": 1992,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Julien Kazubek",
+          "dateAsPublished": "16 juin 1992 (34 ans)",
+          "birthYear": 1992
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1530",
+      "lnrName": "Lucas BLANC",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1530-lucas-blanc",
+      "club": "nevers",
+      "birthYear": 1995,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Lucas Blanc",
+          "dateAsPublished": "19 avril 1995 (31 ans)",
+          "birthYear": 1995
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1534",
+      "lnrName": "Hugues BASTIDE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1534-hugues-bastide",
+      "club": "nevers",
+      "birthYear": 1991,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Hugues Bastide",
+          "dateAsPublished": "24 novembre 1991 (34 ans)",
+          "birthYear": 1991
+        },
+        {
+          "sourceId": "s10",
+          "nameAsPublished": "Hugues Bastide",
+          "dateAsPublished": "Naissance 24 novembre 1991 (34 ans)Rodez (France)",
+          "birthYear": 1991
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1543",
+      "lnrName": "Guillaume MANEVY",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1543-guillaume-manevy",
+      "club": "nevers",
+      "birthYear": 1997,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Guillaume Manevy",
+          "dateAsPublished": "29 mai 1997 (29 ans)",
+          "birthYear": 1997
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1862",
+      "lnrName": "Victor TEMPLIER",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1862-victor-templier",
+      "club": "nevers",
+      "birthYear": 2003,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Victor Templier",
+          "dateAsPublished": "15 janvier 2003 (23 ans)",
+          "birthYear": 2003
+        },
+        {
+          "sourceId": "s9",
+          "nameAsPublished": "Victor Templier",
+          "dateAsPublished": "Naissance 15 janvier 2003 (23 ans)Dijon (France)",
+          "birthYear": 2003
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1872",
+      "lnrName": "Ebenezer TSHIMANGA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1872-ebenezer-tshimanga",
+      "club": "nevers",
+      "birthYear": 2002,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Ebenezer Tshimanga",
+          "dateAsPublished": "7 février 2002 (24 ans)",
+          "birthYear": 2002
+        },
+        {
+          "sourceId": "s13",
+          "nameAsPublished": "Ebenezer Tshimanga",
+          "dateAsPublished": "Naissance 7 février 2002 (24 ans)Kinshasa (République démocratique du Congo)",
+          "birthYear": 2002
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2040",
+      "lnrName": "Simon TAREL",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2040-simon-tarel",
+      "club": "nevers",
+      "birthYear": 2003,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Simon Tarel",
+          "dateAsPublished": "5 février 2003 (23 ans)",
+          "birthYear": 2003
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2125",
+      "lnrName": "Mahamadou COULIBALY",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2125-mahamadou-coulibaly",
+      "club": "nevers",
+      "birthYear": 2002,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Mahamadou Coulibaly",
+          "dateAsPublished": "11 juin 2002 (24 ans)",
+          "birthYear": 2002
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2319",
+      "lnrName": "Wendemi VIELLARD",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2319-wendemi-viellard",
+      "club": "nevers",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Wendemi Viellard",
+          "dateAsPublished": "10 mai 2004 (22 ans)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2802",
+      "lnrName": "Luka PETRIASHVILI",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2802-luka-petriashvili",
+      "club": "nevers",
+      "birthYear": 2001,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Luka Petriashvili",
+          "dateAsPublished": "27 juillet 2001 (25 ans)",
+          "birthYear": 2001
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2961",
+      "lnrName": "Varian PASQUET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2961-varian-pasquet",
+      "club": "nevers",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Varian Pasquet",
+          "dateAsPublished": "29 juillet 1999 (27 ans)",
+          "birthYear": 1999
+        },
+        {
+          "sourceId": "s12",
+          "nameAsPublished": "Varian Pasquet",
+          "dateAsPublished": "Naissance 29 juillet 1999 (27 ans)Paris (France)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11692",
+      "lnrName": "Dylan JAMINET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11692-dylan-jaminet",
+      "club": "nevers",
+      "birthYear": 2002,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Dylan Jaminet",
+          "dateAsPublished": "22 mai 2002 (24 ans)",
+          "birthYear": 2002
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11770",
+      "lnrName": "Rémy LANEN",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11770-remy-lanen",
+      "club": "nevers",
+      "birthYear": 2006,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "→ Rémy Lanen",
+          "dateAsPublished": "2 mars 2006 (20 ans)",
+          "birthYear": 2006
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11783",
+      "lnrName": "Jules BOUSQUET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11783-jules-bousquet",
+      "club": "nevers",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Jules Bousquet",
+          "dateAsPublished": "29 octobre 2004 (22 ans)",
+          "birthYear": 2004
+        },
+        {
+          "sourceId": "s11",
+          "nameAsPublished": "Jules Bousquet",
+          "dateAsPublished": "Naissance 29 octobre 2004 (22 ans)Soustons (France)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:22913",
+      "lnrName": "Liam TURNER",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/22913-liam-turner",
+      "club": "nevers",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Liam Turner",
+          "dateAsPublished": "14 juillet 1999 (27 ans)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:25017",
+      "lnrName": "Anselme CELLIER",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/25017-anselme-cellier",
+      "club": "nevers",
+      "birthYear": 2001,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Anselme Cellier",
+          "dateAsPublished": "16 mai 2001 (25 ans)",
+          "birthYear": 2001
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:25018",
+      "lnrName": "Guillem CALMON",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/25018-guillem-calmon",
+      "club": "nevers",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s6",
+          "nameAsPublished": "Guillem Calmon",
+          "dateAsPublished": "10 novembre 1999 (26 ans)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:40",
+      "lnrName": "Clément MARTINEZ",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/40-clement-martinez",
+      "club": "nice",
+      "birthYear": 1996,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Clément Martinez",
+          "dateAsPublished": "14 mars 1996 (30 ans)",
+          "birthYear": 1996
+        },
+        {
+          "sourceId": "s53",
+          "nameAsPublished": "Clément Martinez",
+          "dateAsPublished": "Naissance 14 mars 1996 (30 ans)Carqueiranne (France)",
+          "birthYear": 1996
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:69",
+      "lnrName": "Baptiste LAFOND",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/69-baptiste-lafond",
+      "club": "nice",
+      "birthYear": 1998,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Baptiste Lafond",
+          "dateAsPublished": "23 mai 1998 (28 ans)",
+          "birthYear": 1998
+        },
+        {
+          "sourceId": "s68",
+          "nameAsPublished": "Baptiste Lafond",
+          "dateAsPublished": "Naissance 23 mai 1998 (28 ans)Paris (France)",
+          "birthYear": 1998
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:85",
+      "lnrName": "Evan OLMSTEAD",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/85-evan-olmstead",
+      "club": "nice",
+      "birthYear": 1991,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Evan Olmstead",
+          "dateAsPublished": "21 février 1991 (35 ans)",
+          "birthYear": 1991
+        },
+        {
+          "sourceId": "s55",
+          "nameAsPublished": "Evan Olmstead",
+          "dateAsPublished": "Naissance 21 février 1991 (35 ans)North Vancouver (Canada)",
+          "birthYear": 1991
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:89",
+      "lnrName": "Theo IDJELLIDAINE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/89-theo-idjellidaine",
+      "club": "nice",
+      "birthYear": 2001,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Théo Idjellidaine",
+          "dateAsPublished": "15 mars 2001 (25 ans)",
+          "birthYear": 2001
+        },
+        {
+          "sourceId": "s62",
+          "nameAsPublished": "Théo Idjellidaine",
+          "dateAsPublished": "Naissance 15 mars 2001 (25 ans)Toulouse (France)",
+          "birthYear": 2001
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:221",
+      "lnrName": "Adrian MOTOC",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/221-adrian-motoc",
+      "club": "nice",
+      "birthYear": 1996,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Adrian Moțoc",
+          "dateAsPublished": "11 juillet 1996 (30 ans)",
+          "birthYear": 1996
+        },
+        {
+          "sourceId": "s54",
+          "nameAsPublished": "Adrian Moțoc",
+          "dateAsPublished": "Naissance 11 juillet 1996 (30 ans)Saumur (France)",
+          "birthYear": 1996
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:303",
+      "lnrName": "Leo CHAUVIN",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/303-leo-chauvin",
+      "club": "nice",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Léo Chauvin",
+          "dateAsPublished": "25 juin 2004 (22 ans)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:348",
+      "lnrName": "Jules GIMBERT",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/348-jules-gimbert",
+      "club": "nice",
+      "birthYear": 1998,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Jules Gimbert",
+          "dateAsPublished": "2 mars 1998 (28 ans)",
+          "birthYear": 1998
+        },
+        {
+          "sourceId": "s61",
+          "nameAsPublished": "Jules Gimbert",
+          "dateAsPublished": "Naissance 2 mars 1998 (28 ans)Bordeaux (France)",
+          "birthYear": 1998
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:689",
+      "lnrName": "Jean Pascal BARRAQUE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/689-jean-pascal-barraque",
+      "club": "nice",
+      "birthYear": 1991,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Jean-Pascal Barraque",
+          "dateAsPublished": "24 avril 1991 (35 ans)",
+          "birthYear": 1991
+        },
+        {
+          "sourceId": "s65",
+          "nameAsPublished": "Jean-Pascal Barraque",
+          "dateAsPublished": "Naissance 24 avril 1991 (35 ans)Le Chesnay (France)",
+          "birthYear": 1991
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:853",
+      "lnrName": "Bautista EZCURRA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/853-bautista-ezcurra",
+      "club": "nice",
+      "birthYear": 1995,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Bautista Ezcurra",
+          "dateAsPublished": "21 avril 1995 (31 ans)",
+          "birthYear": 1995
+        },
+        {
+          "sourceId": "s67",
+          "nameAsPublished": "Bautista Ezcurra",
+          "dateAsPublished": "Naissance 21 avril 1995 (31 ans)Buenos Aires (Argentine)",
+          "birthYear": 1995
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:854",
+      "lnrName": "Pierre STRIPPOLI",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/854-pierre-strippoli",
+      "club": "nice",
+      "birthYear": 2001,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Pierre Strippoli",
+          "dateAsPublished": "3 juillet 2001 (25 ans)",
+          "birthYear": 2001
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:894",
+      "lnrName": "Julien FARNOUX",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/894-julien-farnoux",
+      "club": "nice",
+      "birthYear": 1993,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Julien Farnoux",
+          "dateAsPublished": "24 avril 1993 (33 ans)",
+          "birthYear": 1993
+        },
+        {
+          "sourceId": "s71",
+          "nameAsPublished": "Julien Farnoux",
+          "dateAsPublished": "Naissance 24 avril 1993 (33 ans)Clermont-Ferrand (France)",
+          "birthYear": 1993
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1011",
+      "lnrName": "Hayden THOMPSON-STRINGER",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1011-hayden-thompson-stringer",
+      "club": "nice",
+      "birthYear": 1994,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Hayden Thompson-Stringer",
+          "dateAsPublished": "29 décembre 1994 (31 ans)",
+          "birthYear": 1994
+        },
+        {
+          "sourceId": "s52",
+          "nameAsPublished": "Hayden Thompson-Stringer",
+          "dateAsPublished": "Naissance 29 décembre 1994 (31 ans)Chatham (Angleterre)",
+          "birthYear": 1994
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1075",
+      "lnrName": "Joel KPOKU",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1075-joel-kpoku",
+      "club": "nice",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Joel Kpoku",
+          "dateAsPublished": "22 juin 1999 (27 ans)",
+          "birthYear": 1999
+        },
+        {
+          "sourceId": "s59",
+          "nameAsPublished": "Joel Kpoku",
+          "dateAsPublished": "Naissance 22 juin 1999 (27 ans)Newham (Royaume-Uni)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1178",
+      "lnrName": "Massimo ORTOLAN",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1178-massimo-ortolan",
+      "club": "nice",
+      "birthYear": 1998,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Massimo Ortolan",
+          "dateAsPublished": "13 octobre 1998 (28 ans)",
+          "birthYear": 1998
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1458",
+      "lnrName": "Ro Masivesi DAKUWAQA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1458-ro-masivesi-dakuwaqa",
+      "club": "nice",
+      "birthYear": 1994,
+      "identityMethod": "explicit-full-name",
+      "identityNameAsPublished": "Ro Masivesi Dakuwaqa",
+      "evidence": [
+        {
+          "sourceId": "s76",
+          "nameAsPublished": "Masivesi Dakuwaqa",
+          "dateAsPublished": "Naissance 14 février 1994 (32 ans)Nadi (Fidji)",
+          "birthYear": 1994
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1473",
+      "lnrName": "Farai Tapuwa MUDARIKI",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1473-farai-tapuwa-mudariki",
+      "club": "nice",
+      "birthYear": 1995,
+      "identityMethod": "explicit-full-name",
+      "identityNameAsPublished": "Farai Tapuwa Mudariki",
+      "evidence": [
+        {
+          "sourceId": "s75",
+          "nameAsPublished": "Farai Mudariki",
+          "dateAsPublished": "Naissance 13 février 1995 (31 ans)Harare (Zimbabwe)",
+          "birthYear": 1995
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1520",
+      "lnrName": "Christiaan VAN DER MERWE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1520-christiaan-van-der-merwe",
+      "club": "nice",
+      "birthYear": 1996,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Christiaan van der Merwe",
+          "dateAsPublished": "9 septembre 1996 (30 ans)",
+          "birthYear": 1996
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1954",
+      "lnrName": "Boris GOUTARD",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1954-boris-goutard",
+      "club": "nice",
+      "birthYear": 1998,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Boris Goutard",
+          "dateAsPublished": "10 juin 1998 (28 ans)",
+          "birthYear": 1998
+        },
+        {
+          "sourceId": "s72",
+          "nameAsPublished": "Boris Goutard",
+          "dateAsPublished": "Naissance 10 juin 1998 (28 ans)",
+          "birthYear": 1998
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1984",
+      "lnrName": "Lucas BACHELIER",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1984-lucas-bachelier",
+      "club": "nice",
+      "birthYear": 1995,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Lucas Bachelier",
+          "dateAsPublished": "26 mars 1995 (31 ans)",
+          "birthYear": 1995
+        },
+        {
+          "sourceId": "s57",
+          "nameAsPublished": "Lucas Bachelier",
+          "dateAsPublished": "Naissance 26 mars 1995 (31 ans)",
+          "birthYear": 1995
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2124",
+      "lnrName": "Francis SAILI",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2124-francis-saili",
+      "club": "nice",
+      "birthYear": 1991,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Francis Saili",
+          "dateAsPublished": "16 février 1991 (35 ans)",
+          "birthYear": 1991
+        },
+        {
+          "sourceId": "s69",
+          "nameAsPublished": "Francis Saili",
+          "dateAsPublished": "Naissance 16 février 1991 (35 ans)Auckland (Nouvelle-Zélande)",
+          "birthYear": 1991
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2292",
+      "lnrName": "Clément EGIZIANO",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2292-clement-egiziano",
+      "club": "nice",
+      "birthYear": 2001,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Clément Egiziano",
+          "dateAsPublished": "23 décembre 2001 (24 ans)",
+          "birthYear": 2001
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2346",
+      "lnrName": "Atila SEPTAR",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2346-atila-septar",
+      "club": "nice",
+      "birthYear": 1996,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Atila Septar",
+          "dateAsPublished": "2 juin 1996 (30 ans)",
+          "birthYear": 1996
+        },
+        {
+          "sourceId": "s70",
+          "nameAsPublished": "Atila Septar",
+          "dateAsPublished": "Naissance 2 juin 1996 (30 ans)Constanța (Roumanie)",
+          "birthYear": 1996
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2575",
+      "lnrName": "Patrick LEAFA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2575-patrick-leafa",
+      "club": "nice",
+      "birthYear": 1989,
+      "identityMethod": "explicit-full-name",
+      "identityNameAsPublished": "Patrick Leafa",
+      "evidence": [
+        {
+          "sourceId": "s83",
+          "nameAsPublished": "Patrick Leafa",
+          "dateAsPublished": "BornPatrick Leafa (1989-03-16) 16 March 1989 (age 37)Auckland, New Zealand",
+          "birthYear": 1989
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2652",
+      "lnrName": "Guillaume ROUET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2652-guillaume-rouet",
+      "club": "nice",
+      "birthYear": 1988,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Guillaume Rouet",
+          "dateAsPublished": "13 août 1988 (38 ans)",
+          "birthYear": 1988
+        },
+        {
+          "sourceId": "s63",
+          "nameAsPublished": "Guillaume Rouet",
+          "dateAsPublished": "Naissance 13 août 1988 (38 ans)Bayonne (France)",
+          "birthYear": 1988
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:8666",
+      "lnrName": "Arthur VIGNOLLES",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/8666-arthur-vignolles",
+      "club": "nice",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Arthur Vignolles",
+          "dateAsPublished": "23 juin 1999 (27 ans)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:9882",
+      "lnrName": "Bastien BERENGUEL",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/9882-bastien-berenguel",
+      "club": "nice",
+      "birthYear": 1994,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Bastien Berenguel",
+          "dateAsPublished": "18 janvier 1994 (32 ans)",
+          "birthYear": 1994
+        },
+        {
+          "sourceId": "s58",
+          "nameAsPublished": "Bastien Berenguel",
+          "dateAsPublished": "Naissance 18 janvier 1994 (32 ans)",
+          "birthYear": 1994
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:10007",
+      "lnrName": "Thibaud REY",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/10007-thibaud-rey",
+      "club": "nice",
+      "birthYear": 1992,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Thibaud Rey",
+          "dateAsPublished": "20 juin 1992 (34 ans)",
+          "birthYear": 1992
+        },
+        {
+          "sourceId": "s56",
+          "nameAsPublished": "Thibaud Rey",
+          "dateAsPublished": "Naissance 20 juin 1992 (34 ans)",
+          "birthYear": 1992
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11654",
+      "lnrName": "Hugo SARRASIN",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11654-hugo-sarrasin",
+      "club": "nice",
+      "birthYear": 2003,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Hugo Sarrasin",
+          "dateAsPublished": "25 février 2003 (23 ans)",
+          "birthYear": 2003
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11807",
+      "lnrName": "Pablo PATILLA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11807-pablo-patilla",
+      "club": "nice",
+      "birthYear": 2002,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Pablo Patilla",
+          "dateAsPublished": "7 novembre 2002 (23 ans)",
+          "birthYear": 2002
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:12365",
+      "lnrName": "Hanru SIRGEL",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/12365-hanru-sirgel",
+      "club": "nice",
+      "birthYear": 1998,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Hanru Sirgel",
+          "dateAsPublished": "8 mai 1998 (28 ans)",
+          "birthYear": 1998
+        },
+        {
+          "sourceId": "s60",
+          "nameAsPublished": "Hanru Sirgel",
+          "dateAsPublished": "Naissance 8 mai 1998 (28 ans)East London (Afrique du Sud)",
+          "birthYear": 1998
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:12466",
+      "lnrName": "Samuel BIELLE BIARREY",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/12466-samuel-bielle-biarrey",
+      "club": "nice",
+      "birthYear": 2005,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Samuel Bielle-Biarrey",
+          "dateAsPublished": "18 janvier 2005 (21 ans)",
+          "birthYear": 2005
+        },
+        {
+          "sourceId": "s66",
+          "nameAsPublished": "Samuel Bielle-Biarrey",
+          "dateAsPublished": "Naissance 18 janvier 2005 (21 ans)La Tronche (France)",
+          "birthYear": 2005
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:12642",
+      "lnrName": "Kylian LAURANS",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/12642-kylian-laurans",
+      "club": "nice",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Kylian Laurans",
+          "dateAsPublished": "11 mai 2004 (22 ans)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:12657",
+      "lnrName": "Flavio ASQUINI",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/12657-flavio-asquini",
+      "club": "nice",
+      "birthYear": 2005,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Flavio Asquini",
+          "dateAsPublished": "3 septembre 2005 (21 ans)",
+          "birthYear": 2005
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:13591",
+      "lnrName": "Owen WILLIAMS",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/13591-owen-williams",
+      "club": "nice",
+      "birthYear": 1992,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Owen Williams",
+          "dateAsPublished": "27 février 1992 (34 ans)",
+          "birthYear": 1992
+        },
+        {
+          "sourceId": "s64",
+          "nameAsPublished": "Owen Williams",
+          "dateAsPublished": "Naissance 27 février 1992 (34 ans)Neath (Pays de Galles)",
+          "birthYear": 1992
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:13610",
+      "lnrName": "Baptiste MORENO",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/13610-baptiste-moreno",
+      "club": "nice",
+      "birthYear": 2003,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Baptiste Moreno",
+          "dateAsPublished": "15 mai 2003 (23 ans)",
+          "birthYear": 2003
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:24973",
+      "lnrName": "Enzo LABADIE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/24973-enzo-labadie",
+      "club": "nice",
+      "birthYear": 2001,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s51",
+          "nameAsPublished": "Enzo Labadie",
+          "dateAsPublished": "20 janvier 2001 (25 ans)",
+          "birthYear": 2001
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1069",
+      "lnrName": "Paul DUMAS",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1069-paul-dumas",
+      "club": "valence-romans",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Paul DUMAS",
+          "dateAsPublished": "1m73 - 79 kg19 septembre 2004Français",
+          "birthYear": 2004
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Paul Dumas",
+          "dateAsPublished": "19 septembre 2004 (22 ans)",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1132",
+      "lnrName": "Thomas ROZIERE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1132-thomas-roziere",
+      "club": "valence-romans",
+      "birthYear": 2000,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Thomas ROZIÈRE​",
+          "dateAsPublished": "1m78 - 86 kg13 avril 2000Français",
+          "birthYear": 2000
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Thomas Rozière",
+          "dateAsPublished": "13 avril 2000 (26 ans)",
+          "birthYear": 2000
+        },
+        {
+          "sourceId": "s40",
+          "nameAsPublished": "Thomas Rozière",
+          "dateAsPublished": "Naissance 13 avril 2000 (26 ans)",
+          "birthYear": 2000
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1164",
+      "lnrName": "Mathieu GUILLOMOT",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1164-mathieu-guillomot",
+      "club": "valence-romans",
+      "birthYear": 1993,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Mathieu GUILLOMOT",
+          "dateAsPublished": "1m83 - 91 kg15 novembre 1993Français",
+          "birthYear": 1993
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Mathieu Guillomot",
+          "dateAsPublished": "15 novembre 1993 (32 ans)",
+          "birthYear": 1993
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1441",
+      "lnrName": "Marco TAULEIGNE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1441-marco-tauleigne",
+      "club": "valence-romans",
+      "birthYear": 1993,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Marco TAULEIGNE",
+          "dateAsPublished": "1m91 - 115kg30 août 1993Français",
+          "birthYear": 1993
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Marco Tauleigne",
+          "dateAsPublished": "30 août 1993 (33 ans)",
+          "birthYear": 1993
+        },
+        {
+          "sourceId": "s35",
+          "nameAsPublished": "Marco Tauleigne",
+          "dateAsPublished": "Naissance 30 août 1993 (33 ans)Montelimar (France)",
+          "birthYear": 1993
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1548",
+      "lnrName": "Thomas ZENON",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1548-thomas-zenon",
+      "club": "valence-romans",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Thomas ZENON",
+          "dateAsPublished": "1m95 - 96 kg04 mars 1999Français",
+          "birthYear": 1999
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Thomas Zénon",
+          "dateAsPublished": "4 mars 1999 (27 ans)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1714",
+      "lnrName": "Hugo FABREGUE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1714-hugo-fabregue",
+      "club": "valence-romans",
+      "birthYear": 1992,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Hugo FABRÈGUE",
+          "dateAsPublished": "1m92 - 116 kg3 septembre1992Français",
+          "birthYear": 1992
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Hugo Fabregue",
+          "dateAsPublished": "3 septembre 1992 (34 ans)",
+          "birthYear": 1992
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:1977",
+      "lnrName": "Matteo RODOR",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/1977-matteo-rodor",
+      "club": "valence-romans",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Mattéo RODOR",
+          "dateAsPublished": "1m70 - 70 kg4 juillet 1999Français",
+          "birthYear": 1999
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Mattéo Rodor",
+          "dateAsPublished": "4 juillet 1999 (27 ans)",
+          "birthYear": 1999
+        },
+        {
+          "sourceId": "s36",
+          "nameAsPublished": "Mattéo Rodor",
+          "dateAsPublished": "Naissance 4 juillet 1999 (27 ans)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2079",
+      "lnrName": "Louis MARROU",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2079-louis-marrou",
+      "club": "valence-romans",
+      "birthYear": 1993,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Louis MARROU",
+          "dateAsPublished": "1m82 - 99 kg14 septembre 1993Français",
+          "birthYear": 1993
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Louis Marrou",
+          "dateAsPublished": "14 septembre 1993 (33 ans)",
+          "birthYear": 1993
+        },
+        {
+          "sourceId": "s38",
+          "nameAsPublished": "Louis Marrou",
+          "dateAsPublished": "Naissance 14 septembre 1993 (33 ans)Belfort (France)",
+          "birthYear": 1993
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2402",
+      "lnrName": "Hugo DESCUBE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2402-hugo-descube",
+      "club": "valence-romans",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Hugo DESCUBE",
+          "dateAsPublished": "1m96 - 112 kg29 juillet 2004Français",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2482",
+      "lnrName": "Marco Miguel TRAUTH",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2482-marco-miguel-trauth",
+      "club": "valence-romans",
+      "birthYear": 2000,
+      "identityMethod": "explicit-full-name",
+      "identityNameAsPublished": "Marco Miguel Trauth",
+      "evidence": [
+        {
+          "sourceId": "s82",
+          "nameAsPublished": "Marco Trauth",
+          "dateAsPublished": "Naissance 15 septembre 2000 (26 ans)Toulouse (France)",
+          "birthYear": 2000
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:2718",
+      "lnrName": "Axel BRUCHET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/2718-axel-bruchet",
+      "club": "valence-romans",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Axel BRUCHET",
+          "dateAsPublished": "1m93 - 98 kg25 octobre 1999Français",
+          "birthYear": 1999
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Axel Bruchet",
+          "dateAsPublished": "25 octobre 1999 (27 ans)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:5690",
+      "lnrName": "Calum RANDLE",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/5690-calum-randle",
+      "club": "valence-romans",
+      "birthYear": 2000,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Calum RANDLE​",
+          "dateAsPublished": "1m85 - 92 kg10 janvier 2000Franco-britannique",
+          "birthYear": 2000
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Calum Randle",
+          "dateAsPublished": "10 janvier 2000 (26 ans)",
+          "birthYear": 2000
+        },
+        {
+          "sourceId": "s39",
+          "nameAsPublished": "Calum Randle",
+          "dateAsPublished": "Naissance 18 janvier 2000 (26 ans)Cheltenham (Angleterre)",
+          "birthYear": 2000
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:8242",
+      "lnrName": "Florian GOUMAT",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/8242-florian-goumat",
+      "club": "valence-romans",
+      "birthYear": 1990,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Florian GOUMAT",
+          "dateAsPublished": "1m94 - 117 kg30 mars 1990Français",
+          "birthYear": 1990
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Florian Goumat",
+          "dateAsPublished": "30 mars 1990 (36 ans)",
+          "birthYear": 1990
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:8724",
+      "lnrName": "Dorian MARCO-PENA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/8724-dorian-marco-pena",
+      "club": "valence-romans",
+      "birthYear": 1996,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Dorian MARCO-PENA",
+          "dateAsPublished": "1m75 - 95 kg14 août 1996Français",
+          "birthYear": 1996
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Dorian Marco-Pena",
+          "dateAsPublished": "14 août 1996 (30 ans)",
+          "birthYear": 1996
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:9158",
+      "lnrName": "Lucas MERET",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/9158-lucas-meret",
+      "club": "valence-romans",
+      "birthYear": 1995,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Lucas MERET",
+          "dateAsPublished": "1m80 - 87 kg30 janvier 1995Français",
+          "birthYear": 1995
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Lucas Méret",
+          "dateAsPublished": "30 janvier 1995 (31 ans)",
+          "birthYear": 1995
+        },
+        {
+          "sourceId": "s37",
+          "nameAsPublished": "Lucas Méret",
+          "dateAsPublished": "Naissance 30 janvier 1995 (31 ans)",
+          "birthYear": 1995
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:10372",
+      "lnrName": "Anatole PAUVERT",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/10372-anatole-pauvert",
+      "club": "valence-romans",
+      "birthYear": 1997,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Anatole PAUVERT",
+          "dateAsPublished": "1m82 - 90 kg23 mai 1997Français",
+          "birthYear": 1997
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Anatole Pauvert",
+          "dateAsPublished": "23 mai 1997 (29 ans)",
+          "birthYear": 1997
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:10450",
+      "lnrName": "Thomas LHUSERO",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/10450-thomas-lhusero",
+      "club": "valence-romans",
+      "birthYear": 1996,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Thomas LHUSERO",
+          "dateAsPublished": "1m78 - 79 kg22 septembre 1996Français",
+          "birthYear": 1996
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Thomas Lhusero",
+          "dateAsPublished": "22 septembre 1996 (30 ans)",
+          "birthYear": 1996
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11363",
+      "lnrName": "Joris MOURA",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11363-joris-moura",
+      "club": "valence-romans",
+      "birthYear": 2000,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Joris MOURA",
+          "dateAsPublished": "1m86 - 86 kg7 mai 2000FrançaisInternational portugais",
+          "birthYear": 2000
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Joris Moura",
+          "dateAsPublished": "7 mai 2000 (26 ans)",
+          "birthYear": 2000
+        },
+        {
+          "sourceId": "s41",
+          "nameAsPublished": "Joris Moura",
+          "dateAsPublished": "Naissance 7 mai 2000 (26 ans)Annecy (France)",
+          "birthYear": 2000
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11784",
+      "lnrName": "Giga TUTISANI",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11784-giga-tutisani",
+      "club": "valence-romans",
+      "birthYear": 2004,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Giga TUTISANI",
+          "dateAsPublished": "1m85 - 125 kg03 février 2004Géorgien",
+          "birthYear": 2004
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11918",
+      "lnrName": "Loan REAL",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11918-loan-real",
+      "club": "valence-romans",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Loan REAL",
+          "dateAsPublished": "1m86 - 101 kg21 novembre 1999Français",
+          "birthYear": 1999
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Loan Real",
+          "dateAsPublished": "21 novembre 1999 (26 ans)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11923",
+      "lnrName": "Thembelani BHOLI",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11923-thembelani-bholi",
+      "club": "valence-romans",
+      "birthYear": 1990,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Thembelani BHOLI",
+          "dateAsPublished": "1m90 - 117 kg18 janvier 1990Sud-Africain",
+          "birthYear": 1990
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Thembelani Bholi",
+          "dateAsPublished": "18 janvier 1990 (36 ans)",
+          "birthYear": 1990
+        },
+        {
+          "sourceId": "s34",
+          "nameAsPublished": "Thembelani Bholi",
+          "dateAsPublished": "Naissance 18 janvier 1990 (36 ans)East London (Afrique du Sud)",
+          "birthYear": 1990
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11925",
+      "lnrName": "Ryan MCCAULEY",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11925-ryan-mccauley",
+      "club": "valence-romans",
+      "birthYear": 1997,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Ryan McCAULEY",
+          "dateAsPublished": "2m03 - 112 kg8 juin 1997Australien",
+          "birthYear": 1997
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Ryan McCauley",
+          "dateAsPublished": "8 juin 1997 (29 ans)",
+          "birthYear": 1997
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11926",
+      "lnrName": "Adrien ROUX",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11926-adrien-roux",
+      "club": "valence-romans",
+      "birthYear": 2002,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Adrien ROUX",
+          "dateAsPublished": "1m80 - 100 kg16 septembre 2002Français",
+          "birthYear": 2002
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Adrien Roux",
+          "dateAsPublished": "16 septembre 2002 (24 ans)",
+          "birthYear": 2002
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:11934",
+      "lnrName": "Adrien MARTIN",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/11934-adrien-martin",
+      "club": "valence-romans",
+      "birthYear": 2005,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Adrien MARTIN",
+          "dateAsPublished": "1m85 - 80 kg4 mai 2005Français",
+          "birthYear": 2005
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Adrien Martin",
+          "dateAsPublished": "4 mai 2005 (21 ans)",
+          "birthYear": 2005
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:12405",
+      "lnrName": "Matthieu VACHON",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/12405-matthieu-vachon",
+      "club": "valence-romans",
+      "birthYear": 1991,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Matthieu VACHON",
+          "dateAsPublished": "1m85 - 103 kg6 mai 1991Français",
+          "birthYear": 1991
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Matthieu Vachon",
+          "dateAsPublished": "6 mai 1991 (35 ans)",
+          "birthYear": 1991
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:12522",
+      "lnrName": "Ilia SPANDERASHVILI",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/12522-ilia-spanderashvili",
+      "club": "valence-romans",
+      "birthYear": 1997,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Ilia SPANDERASHVILI",
+          "dateAsPublished": "1m89 - 110 kg10 septembre 1997Géorgien",
+          "birthYear": 1997
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Ilia Spanderashvili",
+          "dateAsPublished": "10 septembre 1997 (29 ans)",
+          "birthYear": 1997
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:12633",
+      "lnrName": "Louis SUAUD",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/12633-louis-suaud",
+      "club": "valence-romans",
+      "birthYear": 1999,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Louis SUAUD",
+          "dateAsPublished": "1m92 - 108 kg26 juin 1999Français",
+          "birthYear": 1999
+        },
+        {
+          "sourceId": "s33",
+          "nameAsPublished": "Louis Suaud",
+          "dateAsPublished": "26 juin 1999 (27 ans)",
+          "birthYear": 1999
+        }
+      ],
+      "validAtCareerStart": null
+    },
+    {
+      "lnrId": "lnr:12929",
+      "lnrName": "Paul MARSAN",
+      "lnrUrl": "https://prod2.lnr.fr/joueur/12929-paul-marsan",
+      "club": "valence-romans",
+      "birthYear": 2001,
+      "identityMethod": "exact-normalized-name-and-club",
+      "evidence": [
+        {
+          "sourceId": "s85",
+          "nameAsPublished": "Paul MARSAN",
+          "dateAsPublished": "1m86 - 95 kg7 noembre 2001Français",
+          "birthYear": 2001
+        }
+      ],
+      "validAtCareerStart": null
+    }
+  ],
+  "sources": [
+    {
+      "id": "s1",
+      "url": "https://fr.wikipedia.org/w/index.php?title=Union_sportive_dacquoise&oldid=239388447",
+      "kind": "wikipedia-roster-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "93fe2b31780ee11096b07419251d38623b230ba6c7949887e7f3a47649d30522",
+      "club": "dax",
+      "revisionId": "239388447",
+      "seasonAsPublished": "2026-2027",
+      "heading": "Effectif 2026-2027",
+      "pageModified": "2026-09-10T20:15:43Z",
+      "currentAndPermanentRowsEqual": true
+    },
+    {
+      "id": "s2",
+      "url": "https://fr.wikipedia.org/wiki/Naïm_Ben_Alla?oldid=229124426",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "ece8731bb0b3bd0701c75431c9c035bfb22294e0634a6c639254caf5c702a8aa",
+      "revisionId": "229124426"
+    },
+    {
+      "id": "s3",
+      "url": "https://fr.wikipedia.org/wiki/Louis_Couget?oldid=234725224",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "9a2d548939162e8ab8455544d7ddbe13615319f59160fa6285e10c6277bbc554",
+      "revisionId": "234725224"
+    },
+    {
+      "id": "s4",
+      "url": "https://fr.wikipedia.org/wiki/Maxime_Oltmann?oldid=237998640",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "e707f81239ebe9ba0f7f4e12fcc0df01695d34184e8e3bc68598cccdefa7b84f",
+      "revisionId": "237998640"
+    },
+    {
+      "id": "s5",
+      "url": "https://fr.wikipedia.org/wiki/Jope_Naseara?oldid=227181268",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "f3abcbe994ceb1fe2c8d4362faf9f155c8249a73a7dff5eb77139ea7d77a43ed",
+      "revisionId": "227181268"
+    },
+    {
+      "id": "s6",
+      "url": "https://fr.wikipedia.org/w/index.php?title=Union_sportive_olympique_nivernaise&oldid=240519421",
+      "kind": "wikipedia-roster-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "4930f89ff784c5d33a75d589a6283e4b5e761c6cb8cc9ad2a7667ce16394c116",
+      "club": "nevers",
+      "revisionId": "240519421",
+      "seasonAsPublished": "2026-2027",
+      "heading": "Effectif 2026-2027",
+      "pageModified": "2026-10-19T14:12:12Z",
+      "currentAndPermanentRowsEqual": true
+    },
+    {
+      "id": "s7",
+      "url": "https://fr.wikipedia.org/wiki/Charlie_Francoz?oldid=235657766",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "628b264c492b89ff76434d1e649c8f90425666eb29225006f578a14d5262816a",
+      "revisionId": "235657766"
+    },
+    {
+      "id": "s8",
+      "url": "https://fr.wikipedia.org/wiki/Paul_Jedrasiak?oldid=239906628",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "e2e6fd11120ac88bfe1a5196b25180428c28bf42feef4a8a2bb67a9d4908bfd4",
+      "revisionId": "239906628"
+    },
+    {
+      "id": "s9",
+      "url": "https://fr.wikipedia.org/wiki/Victor_Templier?oldid=239072422",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "2475a5aee04a4c17f67f283268a6211cee79f0a7a234f6dd2acd30a0c34fc45e",
+      "revisionId": "239072422"
+    },
+    {
+      "id": "s10",
+      "url": "https://fr.wikipedia.org/wiki/Hugues_Bastide?oldid=223669765",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "cd7b03ca6aa285a5b19dc3c2a92218c6d1738d4feb3294b50e1f8a3ac5d03a7b",
+      "revisionId": "223669765"
+    },
+    {
+      "id": "s11",
+      "url": "https://fr.wikipedia.org/wiki/Jules_Bousquet?oldid=235656452",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "693811cedb6a20bf522e5068d0b32a786fcc634f8f055be86286b84bd107e741",
+      "revisionId": "235656452"
+    },
+    {
+      "id": "s12",
+      "url": "https://fr.wikipedia.org/wiki/Varian_Pasquet?oldid=239962789",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "2ae11f52d740980e53e7f8e6d16636f364b90381e00626259756f73265da06d8",
+      "revisionId": "239962789"
+    },
+    {
+      "id": "s13",
+      "url": "https://fr.wikipedia.org/wiki/Ebenezer_Tshimanga?oldid=235656516",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "699446b5e210645a271abc842145a984bd208b24d2451a983281428cfbadf07b",
+      "revisionId": "235656516"
+    },
+    {
+      "id": "s14",
+      "url": "https://fr.wikipedia.org/w/index.php?title=Soyaux_Angoul%C3%AAme_XV_Charente&oldid=239094469",
+      "kind": "wikipedia-roster-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "eee884177f45fe397fe74779865e83a99fa5e856ab9bfdd1ac1732633624a645",
+      "club": "angouleme",
+      "revisionId": "239094469",
+      "seasonAsPublished": "2026-2027",
+      "heading": "Effectif 2026-2027",
+      "pageModified": "2026-08-30T23:37:58Z",
+      "currentAndPermanentRowsEqual": true
+    },
+    {
+      "id": "s15",
+      "url": "https://fr.wikipedia.org/wiki/Seydou_Diakité?oldid=234865457",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "4f07a79926929d372adf088dc1afedafb8d525fd8b8d541e502c348e1cf72c11",
+      "revisionId": "234865457"
+    },
+    {
+      "id": "s16",
+      "url": "https://fr.wikipedia.org/wiki/Giorgi_Javakhia?oldid=240729250",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "354fa7f34f6f1c8db41949578e7cd76f57d03c96f6b59208cbebbfefef6a59f9",
+      "revisionId": "240729250"
+    },
+    {
+      "id": "s17",
+      "url": "https://fr.wikipedia.org/wiki/Jean-Maurice_Decubber?oldid=239790915",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "4d0420a6ec67141b6a3f19000c57275166202b4ae8dd954faba1916f28b8dea1",
+      "revisionId": "239790915"
+    },
+    {
+      "id": "s18",
+      "url": "https://fr.wikipedia.org/wiki/Maxence_Lemardelet?oldid=235651009",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "d0301f622e7e54d2fc23199306dfe8abf77877bb51766a598572b6cbcaa68384",
+      "revisionId": "235651009"
+    },
+    {
+      "id": "s19",
+      "url": "https://fr.wikipedia.org/wiki/Adrian_Mitu?oldid=237593216",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "34e59a7f411a9502b5aa6f920f0aedb6a03489b49326d517cfe14b852c97151a",
+      "revisionId": "237593216"
+    },
+    {
+      "id": "s20",
+      "url": "https://fr.wikipedia.org/wiki/Samuel_Nollet?oldid=235637261",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "c1e1c3c0f2d6eca4ddc3ad088dc63c75d5631c63979b6f02270926d561812109",
+      "revisionId": "235637261"
+    },
+    {
+      "id": "s21",
+      "url": "https://fr.wikipedia.org/wiki/Clément_Sentubéry?oldid=235637274",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "8406e511f9bfafd3b413ed21dd01a33a713050a4ed60a47fca813577104404b4",
+      "revisionId": "235637274"
+    },
+    {
+      "id": "s22",
+      "url": "https://fr.wikipedia.org/wiki/Hubert_Texier?oldid=235637287",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "d302452b1975ea02c184994ffbdbea82c9af574fcef8afca98ef51876e9cd0c8",
+      "revisionId": "235637287"
+    },
+    {
+      "id": "s23",
+      "url": "https://fr.wikipedia.org/wiki/Gela_Aprasidze?oldid=238882159",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "aa39d84bb89ed25499b6b5cd73d2cc8370a16752c59d3ff8655065e6258f5d3b",
+      "revisionId": "238882159"
+    },
+    {
+      "id": "s24",
+      "url": "https://fr.wikipedia.org/wiki/Corentin_Glénat?oldid=223781381",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "6a425ba2af48984ad69e1c9887d04691a2e06718f48fe6c9c77dce5610ade5da",
+      "revisionId": "223781381"
+    },
+    {
+      "id": "s25",
+      "url": "https://fr.wikipedia.org/wiki/Ledua_Mau?oldid=235637350",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "93b9592bad0622cfe81ae1f62328fe9a78e10de23b759d81134d67873a3bdab8",
+      "revisionId": "235637350"
+    },
+    {
+      "id": "s26",
+      "url": "https://fr.wikipedia.org/wiki/George_Tilsley?oldid=236902261",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "537f43fdc3be7079e78dd6bfb83024b802671dba742fd1b597b1b1165772091e",
+      "revisionId": "236902261"
+    },
+    {
+      "id": "s27",
+      "url": "https://fr.wikipedia.org/wiki/Eoghan_Barrett?oldid=235637401",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "0fd882e0478a960f99cc096cd693fe8fcd074420e3fc05e5a4d05c4643756959",
+      "revisionId": "235637401"
+    },
+    {
+      "id": "s28",
+      "url": "https://fr.wikipedia.org/wiki/Jules_Dubecq?oldid=235637483",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "d1313d4dd70a2955cc94a269e04f6fe5d958f1f243d4106ee0b1b6e68d735658",
+      "revisionId": "235637483"
+    },
+    {
+      "id": "s29",
+      "url": "https://fr.wikipedia.org/wiki/Nathan_Farissier?oldid=235637417",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "518adaf64e2d3aec07bbb918bc97a3df8aa3d749b579dd43e6285ca92dd095a6",
+      "revisionId": "235637417"
+    },
+    {
+      "id": "s30",
+      "url": "https://fr.wikipedia.org/wiki/Kaminieli_Rasaku?oldid=240283330",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "4b23bb1800d85ce9f6e99e0c8a63aa5ca58500988d134bf09aeb96a1ff025720",
+      "revisionId": "240283330"
+    },
+    {
+      "id": "s31",
+      "url": "https://fr.wikipedia.org/wiki/Rémi_Brosset?oldid=235787180",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "10d2a7e891319c589d6fa6dd3e932313c63f73e8a3bdcbb79628d401411cf5e0",
+      "revisionId": "235787180"
+    },
+    {
+      "id": "s32",
+      "url": "https://fr.wikipedia.org/wiki/Peter_Lydon?oldid=235647423",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "7c2a0353bb46beedbd81d8b833a20458c044c366778a195484b6d1871c391384",
+      "revisionId": "235647423"
+    },
+    {
+      "id": "s33",
+      "url": "https://fr.wikipedia.org/w/index.php?title=Valence_Romans_Dr%C3%B4me_Rugby&oldid=239093909",
+      "kind": "wikipedia-roster-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "a536bc59d84d6083b43420aef5e871e385492d3f46bce854b8b5b2b16f06c243",
+      "club": "valence-romans",
+      "revisionId": "239093909",
+      "seasonAsPublished": "2026-2027",
+      "heading": "Effectif 2026-2027",
+      "pageModified": "2026-08-30T23:12:08Z",
+      "currentAndPermanentRowsEqual": true
+    },
+    {
+      "id": "s34",
+      "url": "https://fr.wikipedia.org/wiki/Thembelani_Bholi?oldid=237373679",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "859694440bffa48cd6895fa6c1048b70197435259d8f42190ed9551b094f2c6f",
+      "revisionId": "237373679"
+    },
+    {
+      "id": "s35",
+      "url": "https://fr.wikipedia.org/wiki/Marco_Tauleigne?oldid=240809572",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "718634c90a065f6b1983c0bbdbcd6ca956320bd17d70d9e6f110a1138e1eb07b",
+      "revisionId": "240809572"
+    },
+    {
+      "id": "s36",
+      "url": "https://fr.wikipedia.org/wiki/Mattéo_Rodor?oldid=235656604",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "717478b32dc412da6e824c3b071a862887da1bc401134948fef795f24cf98bca",
+      "revisionId": "235656604"
+    },
+    {
+      "id": "s37",
+      "url": "https://fr.wikipedia.org/wiki/Lucas_Méret?oldid=236839653",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "de297d5734761b0b868f2b027c26fbb6ddab02c5608783d518002a7086db5dae",
+      "revisionId": "236839653"
+    },
+    {
+      "id": "s38",
+      "url": "https://fr.wikipedia.org/wiki/Louis_Marrou?oldid=238699231",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "e9852c5e65839c7d92243cee12f71373e9125d5781b6bfa3525994f9f1ec3e4a",
+      "revisionId": "238699231"
+    },
+    {
+      "id": "s39",
+      "url": "https://fr.wikipedia.org/wiki/Calum_Randle?oldid=229559671",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "92b5780cf40a77917f73b36d962b45150cf2b0eb53ecd666d19b4ba327e3ae0a",
+      "revisionId": "229559671"
+    },
+    {
+      "id": "s40",
+      "url": "https://fr.wikipedia.org/wiki/Thomas_Rozière?oldid=237885090",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "0114be65133f3ffa13e29fd254a12da843a1828d2134ac4249b2c07b23bee8d9",
+      "revisionId": "237885090"
+    },
+    {
+      "id": "s41",
+      "url": "https://fr.wikipedia.org/wiki/Joris_Moura?oldid=235656676",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "612ccefa08ac9ca5c9d270e1898c625f722c0f973c46f69a07c5ceaa20506ca2",
+      "revisionId": "235656676"
+    },
+    {
+      "id": "s42",
+      "url": "https://fr.wikipedia.org/w/index.php?title=Racing_Club_narbonnais&oldid=240802046",
+      "kind": "wikipedia-roster-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "ac7a2db9d15e5c485ebbd99dd1cc1dfb7ec223d043a82f75d2afd6b6ae1f4ad2",
+      "club": "narbonne",
+      "revisionId": "240802046",
+      "seasonAsPublished": "2026-2027",
+      "heading": "Effectif 2026-2027",
+      "pageModified": "2026-10-28T17:16:28Z",
+      "currentAndPermanentRowsEqual": true
+    },
+    {
+      "id": "s43",
+      "url": "https://fr.wikipedia.org/wiki/Facundo_Pomponio?oldid=239656448",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "1052edd91fdc43823976eb77d13062edae07171b6925bc38c863cb2107cc5660",
+      "revisionId": "239656448"
+    },
+    {
+      "id": "s44",
+      "url": "https://fr.wikipedia.org/wiki/Paul_Belzons?oldid=236350283",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "6ff75413876b2a9a38472266da37683fcf8ed97b5c4ad6b577f79bf2aa49c250",
+      "revisionId": "236350283"
+    },
+    {
+      "id": "s45",
+      "url": "https://fr.wikipedia.org/wiki/Noa_Zinzen?oldid=239711942",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "b0d442df36d623c55bc02fef5ceaa6d62e8d00324e41f1ac9ddf707a36c17ca2",
+      "revisionId": "239711942"
+    },
+    {
+      "id": "s46",
+      "url": "https://fr.wikipedia.org/wiki/Imanol_Biscay?oldid=239012967",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "d760b335c0f5697bee06e3b0a5ed684b2fddf820235025791f712a6d24bc1791",
+      "revisionId": "239012967"
+    },
+    {
+      "id": "s47",
+      "url": "https://fr.wikipedia.org/wiki/Cameron_Wright?oldid=236826276",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "5952cba3b10bb299ceb742b873b7b3d88c3ae456e4e02c8a0bd7cd121b7cbcb1",
+      "revisionId": "236826276"
+    },
+    {
+      "id": "s48",
+      "url": "https://fr.wikipedia.org/wiki/Tom_Chauvet?oldid=236371014",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "7c2c3a3d23aab4449c4558f519007e3eff8375102e8ac26c904b2ab679dba243",
+      "revisionId": "236371014"
+    },
+    {
+      "id": "s49",
+      "url": "https://fr.wikipedia.org/wiki/Apisai_Naqalevu?oldid=236826238",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "3459b52da7aef9f878cfed88c061992d86d0248dbd69a9d085384663a187878f",
+      "revisionId": "236826238"
+    },
+    {
+      "id": "s50",
+      "url": "https://fr.wikipedia.org/wiki/Axel_Bevia?oldid=239285335",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "363ae8f746b0977ccf34c0820d40b79c330d6bd1a4387a72cc5d771901612c3f",
+      "revisionId": "239285335"
+    },
+    {
+      "id": "s51",
+      "url": "https://fr.wikipedia.org/w/index.php?title=Stade_ni%C3%A7ois&oldid=240235189",
+      "kind": "wikipedia-roster-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "61fab2af123fcfe305cb8c06a419a35a09f815a5429969aaf53dee3194716ec2",
+      "club": "nice",
+      "revisionId": "240235189",
+      "seasonAsPublished": "2026-2027",
+      "heading": "Effectif 2026-2027",
+      "pageModified": "2026-10-10T05:24:18Z",
+      "currentAndPermanentRowsEqual": true
+    },
+    {
+      "id": "s52",
+      "url": "https://fr.wikipedia.org/wiki/Hayden_Thompson-Stringer?oldid=238699388",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "a2b91f2271b474b440d525a1fa40014f25057ebece7a1b94b5bdd9052187094f",
+      "revisionId": "238699388"
+    },
+    {
+      "id": "s53",
+      "url": "https://fr.wikipedia.org/wiki/Clément_Martinez?oldid=239012943",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "0983c5b24e40b2b975f6b1b0397ea7bf674915789596a82b7c2cf8875f726503",
+      "revisionId": "239012943"
+    },
+    {
+      "id": "s54",
+      "url": "https://fr.wikipedia.org/wiki/Adrian_Moțoc?oldid=235659483",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "a2b8b160b84333fa589b5f995194ccd484820d80beb6b69ee6ae3b01896ffd4f",
+      "revisionId": "235659483"
+    },
+    {
+      "id": "s55",
+      "url": "https://fr.wikipedia.org/wiki/Evan_Olmstead?oldid=239047533",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "4e06a907ad18a9b887e54ce6252f31467d9ac866df580f8ab9632d9005439bf7",
+      "revisionId": "239047533"
+    },
+    {
+      "id": "s56",
+      "url": "https://fr.wikipedia.org/wiki/Thibaud_Rey?oldid=235659441",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "1c6d24eacc1b12dc222b98d26f27a31d7d5180dbec28b406eddb812c66ae7b55",
+      "revisionId": "235659441"
+    },
+    {
+      "id": "s57",
+      "url": "https://fr.wikipedia.org/wiki/Lucas_Bachelier?oldid=239035178",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "d3da117ef52b445c3f93e916284521dc4f724d3ce4fc23a49adb6f65d21b3758",
+      "revisionId": "239035178"
+    },
+    {
+      "id": "s58",
+      "url": "https://fr.wikipedia.org/wiki/Bastien_Berenguel?oldid=235659689",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "a25fb7eba9f64dd139630a2c8e8ace4f0f896ed69376ff0862e54d3f0ba1eecb",
+      "revisionId": "235659689"
+    },
+    {
+      "id": "s59",
+      "url": "https://fr.wikipedia.org/wiki/Joel_Kpoku?oldid=239035204",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "62304fd38e3d5a1f11b001d469ce55d790a6577b28f20044fdd526294689f232",
+      "revisionId": "239035204"
+    },
+    {
+      "id": "s60",
+      "url": "https://fr.wikipedia.org/wiki/Hanru_Sirgel?oldid=239035260",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "ed47f25b1887aaa371a7a82d51a90f435fa4a1624cec257a29f660fc42314bdf",
+      "revisionId": "239035260"
+    },
+    {
+      "id": "s61",
+      "url": "https://fr.wikipedia.org/wiki/Jules_Gimbert?oldid=235659628",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "2e5368887f10cb3d45969e97dca24e91034d4553fbe4c921551a81889c2653de",
+      "revisionId": "235659628"
+    },
+    {
+      "id": "s62",
+      "url": "https://fr.wikipedia.org/wiki/Théo_Idjellidaine?oldid=239035311",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "cecef18c138e4738edae599b9b63d285ddc05d87a44411d87bcbc8cc01815910",
+      "revisionId": "239035311"
+    },
+    {
+      "id": "s63",
+      "url": "https://fr.wikipedia.org/wiki/Guillaume_Rouet?oldid=235659422",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "619ca9aad894a3f844279b29321239f1ebb39ec581efd8a33768411081fae94f",
+      "revisionId": "235659422"
+    },
+    {
+      "id": "s64",
+      "url": "https://fr.wikipedia.org/wiki/Owen_Williams_(rugby_à_XV,_1992)?oldid=236130809",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "f816f2aa0548572ee9979a638427e2e58c2a81356434b95e5f3f6bbdbc20ed86",
+      "revisionId": "236130809"
+    },
+    {
+      "id": "s65",
+      "url": "https://fr.wikipedia.org/wiki/Jean-Pascal_Barraque?oldid=235659698",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "a73cf337b87754ddef9c7bd2e6393e824610b8618d3a8d0c2bfba51cc9e6cdfa",
+      "revisionId": "235659698"
+    },
+    {
+      "id": "s66",
+      "url": "https://fr.wikipedia.org/wiki/Samuel_Bielle-Biarrey?oldid=239618679",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "0e00c2a9c88f44507c56fb71f9b5226af2ae293c05103c483850d8d98996dede",
+      "revisionId": "239618679"
+    },
+    {
+      "id": "s67",
+      "url": "https://fr.wikipedia.org/wiki/Bautista_Ezcurra?oldid=239035372",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "44b5fbaea42d72d9846df9b77dfef52a028390f7bdb41a0ebcea848302eeffbc",
+      "revisionId": "239035372"
+    },
+    {
+      "id": "s68",
+      "url": "https://fr.wikipedia.org/wiki/Baptiste_Lafond?oldid=238370303",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "0f0a50e8e6bdc68b1595c8b9f3045e7e2d980450d127b5123bb2bad04d4f02a2",
+      "revisionId": "238370303"
+    },
+    {
+      "id": "s69",
+      "url": "https://fr.wikipedia.org/wiki/Francis_Saili?oldid=240592617",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "66c881d529afb399b0858d3ab90a517188bd104d9606340e30724999cef664ec",
+      "revisionId": "240592617"
+    },
+    {
+      "id": "s70",
+      "url": "https://fr.wikipedia.org/wiki/Atila_Septar?oldid=238699348",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "c02548e609dfc7262c91bb4aa9782dcad5398b54a77f5ddca0d0bdf17d7303ea",
+      "revisionId": "238699348"
+    },
+    {
+      "id": "s71",
+      "url": "https://fr.wikipedia.org/wiki/Julien_Farnoux?oldid=239035516",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "9acfdb093683040f096d416d762c2c4df2a122d82cb5d5595f437942a94f6fdc",
+      "revisionId": "239035516"
+    },
+    {
+      "id": "s72",
+      "url": "https://fr.wikipedia.org/wiki/Boris_Goutard?oldid=239035570",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "2f2f31d83b840a4510f47931b7c5a1abeb4fa681e130ebe11f823f7d605f5174",
+      "revisionId": "239035570"
+    },
+    {
+      "id": "s73",
+      "url": "https://fr.wikipedia.org/wiki/Paul_Ausset?oldid=231673393",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "36fcc93f275ccaf0b5c2f82fa98d62db4ee661b9375549e2b602b7905cded6f5",
+      "revisionId": "231673393"
+    },
+    {
+      "id": "s74",
+      "url": "https://fr.wikipedia.org/wiki/Ratu_Nacika?oldid=240822897",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "214f5e3aed011bdd979bac3144aa922310df3a9eed09baa7da75c60f9aaf55cb",
+      "revisionId": "240822897"
+    },
+    {
+      "id": "s75",
+      "url": "https://fr.wikipedia.org/wiki/Farai_Mudariki?oldid=235659479",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "38c20bc04448aec0ee73b1e7020f8bdbee73209eea327bf57aad7a49977ec2a2",
+      "revisionId": "235659479"
+    },
+    {
+      "id": "s76",
+      "url": "https://fr.wikipedia.org/wiki/Masivesi_Dakuwaqa?oldid=238371915",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "d77ac7f24d2d125204171cde9beeee8f18210340afec575e2846ea265788c5b3",
+      "revisionId": "238371915"
+    },
+    {
+      "id": "s77",
+      "url": "https://fr.wikipedia.org/wiki/Dan_Jooste?oldid=240624066",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "667a41f642add04757e1e6405d313a5f9a532b9ed0779ce603ce84c24b67e2cc",
+      "revisionId": "240624066"
+    },
+    {
+      "id": "s78",
+      "url": "https://fr.wikipedia.org/wiki/Stefan_Buruiana?oldid=239284885",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "1b3dbb62e478b3ac611987b03c5e1573232497d4db78324471b499f01911ce3c",
+      "revisionId": "239284885"
+    },
+    {
+      "id": "s79",
+      "url": "https://fr.wikipedia.org/wiki/Caleb_Timu?oldid=239285259",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "30110813a2486c7de6fb9ca420b14843b7d90ff7f62b8af3c6013a29381a6ae6",
+      "revisionId": "239285259"
+    },
+    {
+      "id": "s80",
+      "url": "https://fr.wikipedia.org/wiki/Richie_Arnold?oldid=235635442",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "2503649d591604e8dd9eb42ab852ca6d3ae31e701a495a40cc2a7afad95b149e",
+      "revisionId": "235635442"
+    },
+    {
+      "id": "s81",
+      "url": "https://fr.wikipedia.org/wiki/Oskar_Rixen?oldid=237925592",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "1e9d7ab0714b602345c1d67ea5730fd1c1a279ae0bdb7cd71fdf496ab423bcba",
+      "revisionId": "237925592"
+    },
+    {
+      "id": "s82",
+      "url": "https://fr.wikipedia.org/wiki/Marco_Trauth?oldid=237963249",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "af9f2e96713baa6982b92202a8e9ddefe37f40c215f1af7d8e18af4feb203015",
+      "revisionId": "237963249"
+    },
+    {
+      "id": "s83",
+      "url": "https://en.wikipedia.org/w/index.php?title=Pat_Leafa&oldid=1349017719",
+      "kind": "wikipedia-biography-permalink",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "46794958f4bbefa0754c4239722326ca05fad9cb0c12354755eb2788311ca80e",
+      "revisionId": "1349017719"
+    },
+    {
+      "id": "s84",
+      "url": "https://www.section-paloise.com/actualites/le-demi-de-melee-alexis-levron-rejoint-la-section",
+      "kind": "official-club",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "a29caaf2b2cabf88541978da0b6deda58772ff230eab6600751f9dd3a19351d7"
+    },
+    {
+      "id": "s85",
+      "url": "https://www.vrdr.fr/seniors/effectifs",
+      "kind": "official-club-roster",
+      "observedDate": "2026-11-01",
+      "htmlSha256": "a7d76c3468f1706e4d6e8d694e1938a007769f3d496723e9ffe086078846e73a",
+      "seasonAsPublished": "2026-2027"
+    }
+  ],
+  "conflicts": [
+    {
+      "lnrId": "lnr:1932",
+      "status": "resolved-by-official-source",
+      "issue": "Wikipedia club roster contradicts individual biography; official Section Paloise controls."
+    },
+    {
+      "lnrId": "lnr:11779",
+      "status": "unresolved-excluded",
+      "issue": "Official VRDR roster repeats Dylan Idrissi with two different birth years. No year retained in this supplement."
+    }
+  ]
+}
