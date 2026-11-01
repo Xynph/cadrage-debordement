@@ -43,6 +43,77 @@
   {label:'Charnière',value:rows.filter(p=>p.family===4||p.family===5).length},
   {label:'Trois-quarts',value:rows.filter(p=>p.family>=6&&p.family<=8).length}
  ];}
+
+ // V4.2 : calculs de lecture exclusivement dérivés des snapshots natifs.
+ function conditionBands(players){
+  const valid=(players||[]).filter(p=>finite(p.condition));
+  return [{label:'0–49',value:valid.filter(p=>p.condition<50).length},
+   {label:'50–79',value:valid.filter(p=>p.condition>=50&&p.condition<80).length},
+   {label:'80–100',value:valid.filter(p=>p.condition>=80).length}];
+ }
+ function cashMovements(series){
+  const valid=(series||[]).filter(p=>finite(p.value));
+  return valid.slice(1).map((p,i)=>({label:p.label,change:p.value-valid[i].value,balance:p.value}));
+ }
+ function academyGaps(rows){
+  return (rows||[]).filter(p=>finite(p.note)&&finite(p.potential))
+   .map(p=>({name:p.name,position:p.position,age:p.age,actual:p.note,ceiling:p.potential,gap:Math.max(0,p.potential-p.note)}))
+   .sort((a,b)=>b.gap-a.gap||String(a.name).localeCompare(String(b.name),'fr'));
+ }
+ function publicCosts(rows){
+  const valid=(rows||[]).filter(p=>finite(p.price)&&finite(p.salary));
+  return {count:valid.length,
+   zeroPrime:valid.filter(p=>p.price===0).length,
+   minPrime:valid.length?Math.min(...valid.map(p=>p.price)):null,
+   minSalary:valid.length?Math.min(...valid.map(p=>p.salary)):null,
+   medianSalary:valid.length?valid.map(p=>p.salary).sort((a,b)=>a-b)[Math.floor((valid.length-1)/2)]:null};
+ }
+ function decisionSignals(m){
+  const injured=m.availability.find(p=>p.label==='Blessés')?.value||0;
+  const mine=m.standings.find(t=>t.mine);
+  const next=m.next;
+  return [
+   {label:'Prochain match',value:next?next.opponent.abbr:'Aucun match',detail:next?(next.neutral?'Terrain neutre':next.home?'Domicile':'Extérieur'):'Phase sans rencontre',route:'tactics'},
+   {label:'Disponibilité',value:num(m.squad.length-injured)+' / '+num(m.squad.length),detail:injured?num(injured)+' blessé(s)':'Aucune blessure signalée',route:'team'},
+   {label:'Position',value:mine?num(mine.rank)+'e':'—',detail:mine?num(mine.points)+' points':'Pas de classement',route:'league'},
+   {label:'Trésorerie',value:eur(m.club.cash),detail:'Montant fictif de la carrière',route:'finance'}
+  ];
+ }
+ function decisionBoard(m){
+  return '<section class="da42-board" aria-label="Centre de décisions du manager">'+head('VUE DE PILOTAGE','Quatre décisions à examiner','DONNÉES DE LA CARRIÈRE')+
+  '<div class="da42-board-grid">'+decisionSignals(m).map(s=>'<article class="da42-board-item"><small>'+esc(s.label)+'</small><strong>'+esc(s.value)+'</strong><p>'+esc(s.detail)+'</p><button type="button" onclick="nav(\''+s.route+'\')">Ouvrir le dossier →</button></article>').join('')+'</div></section>';
+ }
+ function fitnessStudio(players){
+  const bands=conditionBands(players),valid=(players||[]).filter(p=>finite(p.condition)),average=valid.length?valid.reduce((t,p)=>t+p.condition,0)/valid.length:null;
+  return '<section class="da42-panel da42-fitness" aria-label="Lecture de la condition du XV">'+head('DISPONIBILITÉ DU XV','La condition en trois zones','LECTURE, PAS DE SÉLECTION')+
+   '<div class="da42-summary"><strong>'+(average===null?'—':num(average)+'/100')+'</strong><span>Condition moyenne des titulaires renseignés</span></div>'+
+   bars(bands,'Répartition des conditions','joueurs')+table(['Condition /100','Titulaires'],bands.map(p=>[p.label,p.value]),'Répartition des conditions du XV')+
+   '<p class="da4-chart-note">Plages descriptives de condition. Aucune recommandation médicale ni modification automatique de composition.</p></section>';
+ }
+ function cashStudio(series){
+  const values=cashMovements(series);
+  return '<section class="da42-panel" aria-label="Variations hebdomadaires de trésorerie">'+head('FLUX DE LA PROJECTION','D’une semaine à l’autre','ÉVOLUTION FICTIVE')+
+   (values.length?'<div class="da42-movements">'+values.map(p=>'<div class="da42-movement"><span>'+esc(p.label)+'</span><i class="'+(p.change<0?'is-negative':'is-positive')+'" style="--size:'+Math.max(4,Math.min(100,Math.abs(p.change)/Math.max(1,...values.map(x=>Math.abs(x.change)))*100)).toFixed(1)+'%"></i><strong>'+esc((p.change>0?'+':'')+eur(p.change))+'</strong></div>').join('')+'</div>':'<p class="da4-empty">Aucune variation hebdomadaire disponible.</p>')+
+   table(['Semaine','Variation (€)','Solde (€)'],values.map(p=>[p.label,(p.change>0?'+':'')+eur(p.change),eur(p.balance)]),'Projection par semaine')+
+   '<p class="da4-chart-note">Écarts entre points successifs du modèle courant ; ce ne sont pas des transactions passées ou garanties.</p></section>';
+ }
+ function academyStudio(academy){
+  const values=academyGaps(academy);
+  return '<section class="da42-panel da42-academy" aria-label="Écart au plafond de potentiel des espoirs">'+head('LECTURE DES ESPOIRS','Écart actuel au plafond','SIMULATION, PAS UNE PROMESSE')+
+   (values.length?'<div class="da42-academy-grid">'+values.slice(0,8).map(p=>'<div class="da42-academy-item"><span>'+esc(p.name)+'</span><div class="da42-academy-track"><i style="width:'+Math.max(0,Math.min(100,p.actual))+'%"></i><b style="left:'+Math.max(0,Math.min(100,p.ceiling))+'%"></b></div><strong>'+num(p.actual)+' → '+num(p.ceiling)+'</strong></div>').join('')+'</div>':'<p class="da4-empty">Aucun espoir évaluable.</p>')+
+   table(['Espoir','Actuel /100','Plafond /100','Écart'],values.map(p=>[p.name,p.actual,p.ceiling,p.gap]),'Écarts au plafond des espoirs')+
+   '<p class="da4-chart-note">Les écarts les plus grands sont affichés en premier ; aucun potentiel ne garantit une progression.</p></section>';
+ }
+ function marketStudio(candidates){
+  const costs=publicCosts(candidates);
+  return '<section class="da42-panel da42-market" aria-label="Synthèse des coûts publics du marché">'+head('REPÈRES DU MARCHÉ','Comparer sans révéler','COÛTS PUBLICS UNIQUEMENT')+
+   '<div class="da42-market-grid"><div><small>PROFILS AVEC COÛTS</small><strong>'+num(costs.count)+'</strong></div>'+
+   '<div><small>PRIME MINIMALE</small><strong>'+eur(costs.minPrime)+'</strong></div>'+
+   '<div><small>SALAIRE HEBDO MÉDIAN</small><strong>'+eur(costs.medianSalary)+'</strong></div>'+
+   '<div><small>PRIME NULLE</small><strong>'+num(costs.zeroPrime)+'</strong></div></div>'+
+   '<p class="da4-chart-note">Médiane inférieure si nombre pair. Aucun niveau ou potentiel non observé, aucune estimation d’attribut.</p></section>';
+ }
+
  function head(kicker,title,meta=''){return '<header class="da4-panel-head"><div><span class="da4-kicker">'+esc(kicker)+'</span><h2>'+esc(title)+'</h2></div>'+(meta?'<span class="da4-meta">'+esc(meta)+'</span>':'')+'</header>';}
  function svg(body,label,w=600,h=250,role='img'){return '<svg class="da4-chart" viewBox="0 0 '+w+' '+h+'" role="'+role+'" aria-label="'+esc(label)+'" xmlns="http://www.w3.org/2000/svg"><title>'+esc(label)+'</title>'+body+'</svg>';}
  function table(headers,rows,caption){return '<details class="da4-data"><summary>Lire les valeurs</summary><div class="da4-table-scroll"><table><caption>'+esc(caption)+'</caption><thead><tr>'+headers.map(x=>'<th scope="col">'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map((x,i)=>'<'+(i?'td':'th scope="row"')+'>'+esc(x)+'</'+(i?'td':'th')+'>').join('')+'</tr>').join('')+'</tbody></table></div></details>';}
@@ -103,7 +174,7 @@
   main.dataset.da4=route;main.classList.add('da4-workspace');const m=snapshot();
   if(route==='dashboard'){
    main.classList.add('da4-desk');const heading=main.querySelector('.heading');if(heading){heading.querySelector('h1').textContent=m.club.name;heading.querySelector('.eyebrow').textContent='LE BUREAU · SAISON '+m.season;}
-   const summary=main.querySelector(':scope>.office-summary');if(summary){const stage=node('<div class="da4-desk-stage">'+fixture(m)+'<section class="da4-panel da4-condition">'+head('LE GROUPE','Prêts à entrer en jeu')+ring(m.availability,'Disponibilité du groupe')+'<button class="da4-text-action" onclick="nav(\'team\')">Voir l’effectif →</button></section></div>');summary.after(stage);stage.after(node(runway(m)));}
+   const summary=main.querySelector(':scope>.office-summary');if(summary){const stage=node('<div class="da4-desk-stage">'+fixture(m)+'<section class="da4-panel da4-condition">'+head('LE GROUPE','Prêts à entrer en jeu')+ring(m.availability,'Disponibilité du groupe')+'<button class="da4-text-action" onclick="nav(\'team\')">Voir l’effectif →</button></section></div>');summary.after(stage);stage.after(node(runway(m)));stage.before(node(decisionBoard(m)));}
    const office=main.querySelector(':scope>.office-grid');if(office){const calendar=office.querySelector('aside');if(calendar)fold(calendar,'Calendrier détaillé & projet sportif');}
    const season=main.querySelector(':scope>[aria-label="Pilotage de saison"]');if(season){const mini=season.querySelector('.office-summary');if(mini)fold(mini,'Les indicateurs de la relève');const links=season.querySelector('.office-links');if(links)links.classList.add('da4-quicklinks');}
    if(season&&office){const decisions=node('<div class="da4-decisions"></div>');season.before(decisions);decisions.append(season,node(form(m)),office);const duplicate=office.querySelector('.stack>.card:not(.office-inbox)');if(duplicate)fold(duplicate,'Autres décisions du bureau');}
@@ -111,12 +182,12 @@
   }
   if(route==='team'&&typeof squadTab!=='undefined'&&squadTab==='table'){const roster=main.querySelector('.cd02-roster');if(roster)roster.before(node(squadStage(m)));}
   if(route==='team'&&typeof ui02ProfileId!=='undefined'&&ui02ProfileId&&typeof ui02Tab!=='undefined'&&ui02Tab==='profil'){const p=m.squad.find(p=>p.id===ui02ProfileId),content=main.querySelector('.cd02-player-content');if(p&&content)content.prepend(node(profileStage(p)));}
-  if(route==='tactics'){const panel=main.querySelector('.cd-matchday');if(panel)panel.before(node(tacticsStage(m)));}
-  if(route==='finance'){const stats=main.querySelector(':scope>.stats');if(stats)stats.after(node(financeStage(m)));const journal=main.querySelector(':scope>.grid');if(journal)fold(journal,'Journal des mouvements & engagements');}
-  if(route==='recruitment'){const center=main.querySelector('.cd03-content');if(center&&main.querySelector('.cd03-tabs [aria-current="page"]')?.dataset.ui03Tab==='overview'){const overview=center.firstElementChild;if(overview){overview.before(node(recruitStage(m)));fold(overview,'Analyse détaillée & activité du recruteur');}}}
-  if(route==='formation'){const center=main.querySelector('.cd04-content');if(center&&main.querySelector('.cd04-tabs [aria-current="page"]')?.dataset.ui04Tab==='overview'){const overview=center.firstElementChild;if(overview){overview.before(node(academyStage(m)));fold(overview,'Tous les indicateurs de formation');}}}
+  if(route==='tactics'){const panel=main.querySelector('.cd-matchday');if(panel){panel.before(node(tacticsStage(m)));panel.before(node(fitnessStudio((S.lineup||[]).map(id=>m.squad.find(p=>p.id===id)).filter(Boolean))));}}
+  if(route==='finance'){const stats=main.querySelector(':scope>.stats');if(stats){stats.after(node(financeStage(m)));const graph=main.querySelector('.da4-finance-stage');if(graph)graph.after(node(cashStudio(m.finance.series)));}const journal=main.querySelector(':scope>.grid');if(journal)fold(journal,'Journal des mouvements & engagements');}
+  if(route==='recruitment'){const center=main.querySelector('.cd03-content');if(center&&main.querySelector('.cd03-tabs [aria-current="page"]')?.dataset.ui03Tab==='overview'){const overview=center.firstElementChild;if(overview){overview.before(node(recruitStage(m)));const studio=main.querySelector('.da4-recruit-stage');if(studio)studio.after(node(marketStudio(m.candidates)));fold(overview,'Analyse détaillée & activité du recruteur');}}}
+  if(route==='formation'){const center=main.querySelector('.cd04-content');if(center&&main.querySelector('.cd04-tabs [aria-current="page"]')?.dataset.ui04Tab==='overview'){const overview=center.firstElementChild;if(overview){overview.before(node(academyStage(m)));const studio=main.querySelector('.da4-academy-stage');if(studio)studio.after(node(academyStudio(m.academy)));fold(overview,'Tous les indicateurs de formation');}}}
   if(route==='league'){const heading=main.querySelector('.heading');if(heading)heading.after(node(leagueStage(m)));}
   main.querySelectorAll('.da4-scatter-figure').forEach(figure=>{const show=e=>{const point=e.target.closest?.('.da4-player-point');if(point)figure.querySelector('.da4-point-readout').textContent=point.getAttribute('aria-label');};figure.addEventListener('focusin',show);figure.addEventListener('pointerover',show);});
  }
- return Object.freeze({snapshot,extent,lineChart,bars,scatter,pitch,potentials,financeKeypoints,standingsGaps,priorityNeeds,groupLines,enhance});
+ return Object.freeze({snapshot,extent,lineChart,bars,scatter,pitch,potentials,financeKeypoints,standingsGaps,priorityNeeds,groupLines,conditionBands,cashMovements,academyGaps,publicCosts,decisionSignals,enhance});
 });
