@@ -8,6 +8,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 def check(name,ok):
     if not ok:raise AssertionError(name)
     checks.append(name)
+
+def open_matchday_panel(page,selector):
+    panel_id=page.locator(selector).evaluate('(el)=>el.closest("[role=tabpanel]")?.id || ""')
+    if panel_id:
+        page.locator('[role="tab"][aria-controls="'+panel_id+'"]').click()
 server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(Handler,directory=str(ROOT/'dist')))
 threading.Thread(target=server.serve_forever,daemon=True).start()
 out={'passed':False,'checks':checks,'errors':errors,'limitations':['Chromium Linux uniquement']}
@@ -21,7 +26,7 @@ try:
   page.get_by_role('button',name='Nouvelle carrière').click();page.get_by_role('button',name='Univers fictif').click()
   page.locator('.clubchoice').first.click()
   page.evaluate("nav('tactics')")
-  page.get_by_role('tab',name='XV et décisions').click()
+  open_matchday_panel(page,'[aria-label="Poste de décision avant-match"]')
   root=page.locator('[aria-label="Poste de décision avant-match"]')
   check('poste de décision visible',root.is_visible())
   check('cinq comparaisons sectorielles',root.locator('tbody tr').count()==5)
@@ -33,7 +38,7 @@ try:
   for width in (1280,768,390,320):
    page.set_viewport_size({'width':width,'height':850})
    page.evaluate("nav('tactics')")
-   page.get_by_role('tab',name='XV et décisions').click()
+   open_matchday_panel(page,'[aria-label="Poste de décision avant-match"]')
    check('scénarios accessibles %d'%width,page.locator('.cd-cmd').is_visible())
    check('aucun débordement %d'%width,page.evaluate('document.documentElement.scrollWidth<=innerWidth+2'))
   page.set_viewport_size({'width':1280,'height':900})
