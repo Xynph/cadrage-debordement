@@ -80,40 +80,82 @@
   ];
  }
  function decisionBoard(m){
-  return '<section class="da42-board" aria-label="Centre de décisions du manager">'+head('VUE DE PILOTAGE','Quatre décisions à examiner','DONNÉES DE LA CARRIÈRE')+
-  '<div class="da42-board-grid">'+decisionSignals(m).map(s=>'<article class="da42-board-item"><small>'+esc(s.label)+'</small><strong>'+esc(s.value)+'</strong><p>'+esc(s.detail)+'</p><button type="button" onclick="nav(\''+s.route+'\')">Ouvrir le dossier →</button></article>').join('')+'</div></section>';
+  const signals=decisionSignals(m),match=signals[0],other=signals.slice(1);
+  const timeline=(m.fixtures||[]).slice(0,3);
+  return '<section class="da42-board da42-command" aria-label="Centre de décisions du manager">'+
+   '<div class="da42-command-lead"><div class="da42-command-overline">LE POSTE DE COMMANDE <span>SAISON '+esc(m.season)+'</span></div>'+
+   '<div class="da42-command-content"><div><span class="da42-command-kicker">PROCHAIN DÉFI</span><h2>'+esc(m.next?m.next.opponent.name:'Le prochain chapitre')+'</h2>'+
+   '<p>'+esc(m.roundTitle||'Saison en cours')+' · '+esc(match.detail)+' · '+esc(m.competition)+'</p>'+
+   '<button class="da42-command-cta" type="button" onclick="nav(\'tactics\')">Préparer ce rendez-vous <span>↗</span></button></div>'+
+   '<div class="da42-command-crest" aria-hidden="true">'+esc(m.next?m.next.opponent.abbr:'CD')+'</div></div>'+
+   '<div class="da42-command-fixtures" aria-label="Trois prochaines échéances">'+timeline.map(x=>'<span><b>J'+esc(x.round)+'</b> '+esc(x.abbr)+' · '+(x.home?'DOM':'EXT')+'</span>').join('')+'</div></div>'+
+   '<div class="da42-command-rail"><div class="da42-rail-head">ÉTAT DU CLUB <span>LECTURE DIRECTE</span></div>'+
+   other.map((a,i)=>'<article class="da42-rail-item"><span class="da42-rail-index">0'+(i+1)+'</span><div><small>'+esc(a.label)+'</small><strong>'+esc(a.value)+'</strong><p>'+esc(a.detail)+'</p></div><button type="button" onclick="nav(\''+a.route+'\')" aria-label="Ouvrir '+esc(a.label)+'">↗</button></article>').join('')+
+   '</div></section>';
  }
  function fitnessStudio(players){
-  const bands=conditionBands(players),valid=(players||[]).filter(p=>finite(p.condition)),average=valid.length?valid.reduce((t,p)=>t+p.condition,0)/valid.length:null;
-  return '<section class="da42-panel da42-fitness" aria-label="Lecture de la condition du XV">'+head('DISPONIBILITÉ DU XV','La condition en trois zones','LECTURE, PAS DE SÉLECTION')+
-   '<div class="da42-summary"><strong>'+(average===null?'—':num(average)+'/100')+'</strong><span>Condition moyenne des titulaires renseignés</span></div>'+
-   bars(bands,'Répartition des conditions','joueurs')+table(['Condition /100','Titulaires'],bands.map(p=>[p.label,p.value]),'Répartition des conditions du XV')+
-   '<p class="da4-chart-note">Plages descriptives de condition. Aucune recommandation médicale ni modification automatique de composition.</p></section>';
+  const bands=conditionBands(players),valid=(players||[]).filter(p=>finite(p.condition)),
+   average=valid.length?valid.reduce((t,p)=>t+p.condition,0)/valid.length:null,
+   low=valid.slice().sort((a,b)=>a.condition-b.condition).slice(0,4);
+  return '<section class="da42-panel da42-fitness da42-desktop-stage" aria-label="Lecture de la condition du XV">'+
+   head('LECTURE DU XV','L’état de la sélection','CHIFFRES DU XV ACTUEL')+
+   '<div class="da42-fitness-composition"><div class="da42-fitness-meter"><div class="da42-fitness-disc" style="--fitness:'+Math.max(0,Math.min(100,average??0))+'"><span>CONDITION MOYENNE</span><strong>'+(average===null?'—':num(average))+'</strong><small>/ 100</small></div>'+
+   '<p>Valeur moyenne des titulaires renseignés, sans modification de sélection.</p></div>'+
+   '<div class="da42-fitness-distribution"><h3>Répartition de la condition</h3><div class="da42-condition-grid">'+
+   bands.map((a,i)=>'<article class="da42-condition is-'+i+'"><strong>'+num(a.value)+'</strong><span>joueurs</span><small>'+esc(a.label)+' /100</small></article>').join('')+
+   '</div><div class="da42-fitness-low"><h3>Conditions les plus basses</h3>'+
+   (low.length?low.map(p=>'<div><span>'+esc(p.name||'Joueur')+'</span><b>'+num(p.condition)+'/100</b></div>').join(''):'<p>Aucun titulaire renseigné.</p>')+
+   '</div></div></div>'+
+   table(['Condition /100','Titulaires'],bands.map(p=>[p.label,p.value]),'Répartition des conditions du XV')+
+   '<p class="da4-chart-note">Plages descriptives du moteur natif. Il ne s’agit ni d’un avis médical ni d’une consigne de sélection.</p></section>';
  }
  function cashStudio(series){
-  const values=cashMovements(series);
-  return '<section class="da42-panel" aria-label="Variations hebdomadaires de trésorerie">'+head('FLUX DE LA PROJECTION','D’une semaine à l’autre','ÉVOLUTION FICTIVE')+
-   (values.length?'<div class="da42-movements">'+values.map(p=>'<div class="da42-movement"><span>'+esc(p.label)+'</span><i class="'+(p.change<0?'is-negative':'is-positive')+'" style="--size:'+Math.max(4,Math.min(100,Math.abs(p.change)/Math.max(1,...values.map(x=>Math.abs(x.change)))*100)).toFixed(1)+'%"></i><strong>'+esc((p.change>0?'+':'')+eur(p.change))+'</strong></div>').join('')+'</div>':'<p class="da4-empty">Aucune variation hebdomadaire disponible.</p>')+
-   table(['Semaine','Variation (€)','Solde (€)'],values.map(p=>[p.label,(p.change>0?'+':'')+eur(p.change),eur(p.balance)]),'Projection par semaine')+
-   '<p class="da4-chart-note">Écarts entre points successifs du modèle courant ; ce ne sont pas des transactions passées ou garanties.</p></section>';
+  const values=cashMovements(series),total=values.reduce((a,b)=>a+b.change,0),
+   rises=values.filter(v=>v.change>0).length,falls=values.filter(v=>v.change<0).length,
+   max=Math.max(1,...values.map(x=>Math.abs(x.change)));
+  return '<section class="da42-panel da42-cash-stage da42-desktop-stage" aria-label="Variations hebdomadaires de trésorerie">'+
+   head('ANALYSE DES FLUX','Lire les mouvements','PROJECTION · PAS UN HISTORIQUE')+
+   '<div class="da42-cash-summary"><div><small>ÉVOLUTION SUR LA PÉRIODE</small><strong>'+esc((total>0?'+':'')+eur(total))+'</strong></div>'+
+   '<div><small>SEMAINES EN HAUSSE</small><strong>'+num(rises)+'</strong></div>'+
+   '<div><small>SEMAINES EN BAISSE</small><strong>'+num(falls)+'</strong></div></div>'+
+   (values.length?'<div class="da42-cash-timeline" role="img" aria-label="Amplitude des variations de trésorerie par semaine. Toutes les valeurs sont dans le tableau ci-dessous.">'+
+   values.map(p=>'<div class="da42-cash-week"><strong>'+esc(p.label)+'</strong><div class="da42-cash-column"><i class="'+(p.change<0?'is-negative':p.change>0?'is-positive':'is-neutral')+'" style="height:'+Math.max(3,Math.round(Math.abs(p.change)/max*100))+'%"></i></div><small>'+esc((p.change>0?'+':'')+compact(p.change))+'</small></div>').join('')+
+   '</div>':'<p class="da4-empty">Aucune variation hebdomadaire disponible.</p>')+
+   table(['Semaine','Variation (€)','Solde (€)'],values.map(p=>[p.label,(p.change>0?'+':'')+eur(p.change),eur(p.balance)]),'Projection hebdomadaire de trésorerie')+
+   '<p class="da4-chart-note">Les colonnes représentent l’amplitude des variations hebdomadaires du modèle fictif. Les valeurs complètes restent consultables.</p></section>';
  }
  function academyStudio(academy){
-  const values=academyGaps(academy);
-  return '<section class="da42-panel da42-academy" aria-label="Écart au plafond de potentiel des espoirs">'+head('LECTURE DES ESPOIRS','Écart actuel au plafond','SIMULATION, PAS UNE PROMESSE')+
-   (values.length?'<div class="da42-academy-grid">'+values.slice(0,8).map(p=>'<div class="da42-academy-item"><span>'+esc(p.name)+'</span><div class="da42-academy-track"><i style="width:'+Math.max(0,Math.min(100,p.actual))+'%"></i><b style="left:'+Math.max(0,Math.min(100,p.ceiling))+'%"></b></div><strong>'+num(p.actual)+' → '+num(p.ceiling)+'</strong></div>').join('')+'</div>':'<p class="da4-empty">Aucun espoir évaluable.</p>')+
+  const values=academyGaps(academy),lead=values.slice(0,8),maxGap=values.length?Math.max(...values.map(x=>x.gap)):0;
+  return '<section class="da42-panel da42-academy da42-desktop-stage" aria-label="Écart au plafond de potentiel des espoirs">'+
+   head('LABORATOIRE DE LA RELÈVE','Les trajectoires possibles','ACTUEL / PLAFOND')+
+   '<div class="da42-academy-intro"><div><strong>'+num(values.length)+'</strong><span>espoirs évaluables</span></div>'+
+   '<div><strong>'+num(maxGap)+'</strong><span>plus grand écart /100</span></div>'+
+   '<p>Une cartographie des écarts, pas une promesse de progression.</p></div>'+
+   (lead.length?'<div class="da42-talent-grid">'+lead.map((p,i)=>'<article class="da42-talent"><div class="da42-talent-head"><span>0'+(i+1)+'</span><small>'+esc(p.position||'Espoir')+' · '+esc(p.age??'—')+' ans</small></div>'+
+   '<h3>'+esc(p.name)+'</h3><div class="da42-talent-numbers"><strong>'+num(p.actual)+'</strong><span>→</span><strong>'+num(p.ceiling)+'</strong><small> /100</small></div>'+
+   '<div class="da42-talent-track"><i style="width:'+Math.max(0,Math.min(100,p.actual))+'%"></i><b style="left:'+Math.max(0,Math.min(100,p.ceiling))+'%"></b></div>'+
+   '<footer>ÉCART <strong>'+num(p.gap)+'</strong></footer></article>').join('')+'</div>':'<p class="da4-empty">Aucun espoir évaluable.</p>')+
    table(['Espoir','Actuel /100','Plafond /100','Écart'],values.map(p=>[p.name,p.actual,p.ceiling,p.gap]),'Écarts au plafond des espoirs')+
-   '<p class="da4-chart-note">Les écarts les plus grands sont affichés en premier ; aucun potentiel ne garantit une progression.</p></section>';
+   '<p class="da4-chart-note">Plafonds théoriques natifs ; rien ne garantit leur atteinte. Le classement ne préjuge pas du meilleur choix sportif.</p></section>';
  }
  function marketStudio(candidates){
-  const costs=publicCosts(candidates);
-  return '<section class="da42-panel da42-market" aria-label="Synthèse des coûts publics du marché">'+head('REPÈRES DU MARCHÉ','Comparer sans révéler','COÛTS PUBLICS UNIQUEMENT')+
-   '<div class="da42-market-grid"><div><small>PROFILS AVEC COÛTS</small><strong>'+num(costs.count)+'</strong></div>'+
+  const costs=publicCosts(candidates),valid=(candidates||[]).filter(p=>finite(p.price)&&finite(p.salary)),
+    salaries=valid.map(p=>p.salary),maxSalary=Math.max(1,...salaries),
+    bands=[{label:'Bas',count:salaries.filter(v=>v<=maxSalary/3).length},
+      {label:'Intermédiaire',count:salaries.filter(v=>v>maxSalary/3&&v<=maxSalary*2/3).length},
+      {label:'Élevé',count:salaries.filter(v=>v>maxSalary*2/3).length}];
+  return '<section class="da42-panel da42-market da42-desktop-stage" aria-label="Synthèse des coûts publics du marché">'+
+   head('OBSERVATOIRE DES TRANSFERTS','Le prix du marché','DONNÉES PUBLIQUES SEULEMENT')+
+   '<div class="da42-market-composition"><div class="da42-market-primary"><small>SALAIRE MÉDIAN / SEMAINE</small><strong>'+eur(costs.medianSalary)+'</strong><p>Médiane inférieure si nombre pair. Aucun talent masqué n’est révélé.</p>'+
+   '<div class="da42-market-breakdown"><h3>Répartition relative des salaires</h3><div class="da42-market-bars">'+
+   bands.map((g,i)=>'<div class="da42-market-bar"><span>'+esc(g.label)+'</span><div><i class="is-'+i+'" style="width:'+Math.max(0,g.count/Math.max(1,costs.count)*100).toFixed(1)+'%"></i></div><strong>'+num(g.count)+'</strong></div>').join('')+
+   '</div><p>Trois tranches relatives au salaire maximal observé, sans seuil sportif arbitraire.</p></div></div>'+
+   '<div class="da42-market-facts"><div><small>PROFILS AVEC COÛTS</small><strong>'+num(costs.count)+'</strong></div>'+
    '<div><small>PRIME MINIMALE</small><strong>'+eur(costs.minPrime)+'</strong></div>'+
-   '<div><small>SALAIRE HEBDO MÉDIAN</small><strong>'+eur(costs.medianSalary)+'</strong></div>'+
-   '<div><small>PRIME NULLE</small><strong>'+num(costs.zeroPrime)+'</strong></div></div>'+
-   '<p class="da4-chart-note">Médiane inférieure si nombre pair. Aucun niveau ou potentiel non observé, aucune estimation d’attribut.</p></section>';
+   '<div><small>SANS PRIME</small><strong>'+num(costs.zeroPrime)+'</strong></div></div></div>'+
+   table(['Tranche de salaire','Candidats'],bands.map(x=>[x.label,x.count]),'Distribution relative des salaires publics')+
+   '<p class="da4-chart-note">Coûts comparables uniquement. Cette lecture ne dévoile ni niveau, ni potentiel, ni aptitude non observée.</p></section>';
  }
-
  function head(kicker,title,meta=''){return '<header class="da4-panel-head"><div><span class="da4-kicker">'+esc(kicker)+'</span><h2>'+esc(title)+'</h2></div>'+(meta?'<span class="da4-meta">'+esc(meta)+'</span>':'')+'</header>';}
  function svg(body,label,w=600,h=250,role='img'){return '<svg class="da4-chart" viewBox="0 0 '+w+' '+h+'" role="'+role+'" aria-label="'+esc(label)+'" xmlns="http://www.w3.org/2000/svg"><title>'+esc(label)+'</title>'+body+'</svg>';}
  function table(headers,rows,caption){return '<details class="da4-data"><summary>Lire les valeurs</summary><div class="da4-table-scroll"><table><caption>'+esc(caption)+'</caption><thead><tr>'+headers.map(x=>'<th scope="col">'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map((x,i)=>'<'+(i?'td':'th scope="row"')+'>'+esc(x)+'</'+(i?'td':'th')+'>').join('')+'</tr>').join('')+'</tbody></table></div></details>';}
