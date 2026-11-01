@@ -123,6 +123,23 @@ try:
                             return b.top>=bounds.top-2 && b.bottom<=bounds.bottom+2 && b.height>=100;
                           });
                         }"""))
+                    if route == 'finance' and key == 'tresorerie':
+                        check(f'V4.3 full-width treasury curve {width}', page.evaluate("""()=>{
+                          const poly=document.querySelector('.da42-page:not([hidden]) .da4-finance-chart .da4-line');
+                          if(!poly)return false;
+                          const b=poly.getBoundingClientRect();
+                          return b.width>=Math.min(innerWidth*.42,780) && b.height>18;
+                        }"""))
+                    if route == 'finance' and key == 'salaires':
+                        check(f'V4.3 readable nine wage rows {width}', page.evaluate("""()=>{
+                          const rows=[...document.querySelectorAll('.da42-page:not([hidden]) .da4-bar-row')];
+                          return rows.length===9&&rows.every(row=>row.getBoundingClientRect().height>=24);
+                        }"""))
+                    if route == 'dashboard' and key == 'calendrier':
+                        check(f'V4.3 full-height fixture cards {width}', page.evaluate("""()=>{
+                          const rows=[...document.querySelectorAll('.da42-page:not([hidden]) .da4-fixture-stop')];
+                          return rows.length>0&&rows.every(row=>row.getBoundingClientRect().height>=130);
+                        }"""))
                     if route == 'recruitment' and key == 'marche':
                         geometry = page.evaluate("""()=>{
                           const e=document.querySelector('.da42-page:not([hidden]) .da42-market-composition');
