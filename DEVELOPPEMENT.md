@@ -705,3 +705,8 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Demande : améliorer encore la PR #182 avant fusion, sans créer de PR concurrente. Audit réel du comparatif baseline #13085215156 contre final #13084168856 : la hiérarchie est mieux marquée mais le Diagnostic Mercato reste haut de 677 px, les archives ont peu de repères et les commandes de sauvegarde ne sont pas assez distinctes.
 - Correctifs CSS bornés au PC : besoins de recrutement sur deux colonnes sans retrait, paires valeur/libellé alignées dans les joueurs, chapitres graphiques des archives (sans trophées ajoutés), carte Exporter sombre et actions Exporter/Importer plus identifiables. Moteur, données et stockage inchangés.
 - Tests Chromium étendus de 12 captures `v47-polish` en Analyste/Tribune à 1440×900 / 1920×1080, géométrie réelle de la grille, chapitres, sauvegardes et état inchangés. Réception finale sur SHA exact attendue ; aucune fusion autorisée.
+
+
+### V4.7.1b — vérification métrique
+
+Après première CI Chromium SUCCESS, le JSON audit a montré Mercato Diagnostic 713 px sur un run vs 677 px dans le run antérieur. La grille n'avait donc pas démontré la réduction de hauteur annoncée ; ajustement des tuiles en grille interne compacte et ajout d'une assertion de padding. Il faut revérifier la CI et comparer les captures à données de carrière variables, sans supposer causalité à partir de différences absolues entre runs.

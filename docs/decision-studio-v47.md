@@ -32,3 +32,8 @@ Suite à la demande explicite « améliore encore avant de fusionner », un seco
 - **Palmarès** : chapitres 01/02 pour distinguer les deux panneaux d'archives existants, motif de ledger discret et largeur de lecture contrôlée. Ces numéros décrivent **l'ordre des sections**, pas un nombre de trophées ou de saisons. Aucun palmarès fictif.
 - **Sauvegardes** : carte Exporter sur fond sombre à contraste renforcé avec commande principale cuivrée de 48 px, Importer et retour de secours séparés. Aucun déclencheur, format, stockage ou migration modifiés.
 - **Preuves** : 12 captures supplémentaires `v47-polish-*` dans les deux thèmes et aux deux résolutions, tests de vraie grille 2 colonnes, intégrité DOM des besoins, chapitres, absence de rognage et maintien de l'export/import, sauvegarde `S` et stockage `bdt-v1`. Contrôles anciens maintenus. Les nouveaux résultats de CI doivent être vérifiés sur le SHA final.
+
+
+### Correction de mesure après première CI verte
+
+Le premier rendu V4.7.1 avait bien deux colonnes et 12 nouvelles captures, mais une **mesure indépendante du JSON Chromium** a montré `recruitment-intel` **713 px contre 677 px** dans l'artefact V4.7 précédent. Le résultat ne justifiait donc pas d'annoncer une réduction de hauteur. Nouveau correctif : besoins en deux colonnes à rangées plus denses, alignement libellé/valeur et padding réduit de 15 à 9 px, sans cacher ni tronquer les besoins. Les tests vérifient désormais également la compacité mesurée des tuiles. Les hauteurs exactes et leurs variations entre carrières seront contrôlées sur un nouvel artefact Chromium, et non supposées depuis le CSS.

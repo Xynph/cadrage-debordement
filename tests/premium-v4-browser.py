@@ -144,6 +144,12 @@ try:
               return getComputedStyle(e).display==='grid'&&r.length>=4&&
                 Math.abs(r[0].top-r[1].top)<3&&r[0].right<=r[1].left+3;
             }"""))
+      check('V4.7.1 compact need cards '+theme+' '+str(width),
+            needs.locator(':scope > .row').first.evaluate(
+             """e=>{const s=getComputedStyle(e);
+                 return s.display==='grid'&&parseFloat(s.paddingTop)<=10&&
+                   s.gridTemplateColumns.split(' ').length>=2;
+             }"""))
       check('V4.7.1 market card metrics accessible '+theme+' '+str(width),
             page.locator('.marketgrid>.marketplayer').first.locator('.row').count()>=1)
      if route=='history':

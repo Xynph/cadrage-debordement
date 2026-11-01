@@ -658,3 +658,23 @@ html:root[data-cd-theme][data-menu-text="large"] .cd3-menu :is(p,small,button,la
   max-width:53ch;
  }
 }
+
+
+/* V4.7.1b — spacing verified against actual Chromium report (no clipping):
+   tighter two-column needs in the market, not larger cards than the initial list. */
+@media(min-width:1200px){
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main>.recruitment-intel .recruitment-needs-list{
+  gap:7px 12px;margin:12px 0 12px;
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main>.recruitment-intel .recruitment-needs-list>.row{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;
+  gap:5px 10px;align-items:center;justify-content:stretch;
+  min-height:0;padding:9px 12px;
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main>.recruitment-intel .recruitment-needs-list .row small{
+  margin-top:3px;line-height:1.4;
+ }
+}
