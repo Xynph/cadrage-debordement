@@ -17,7 +17,7 @@ jobs:
   guarded-merge:
     if: ${{ github.repository == 'Xynph/cadrage-debordement' && github.event.issue.number == 73 && github.event.comment.user.login == 'Xynph' && startsWith(github.event.comment.body, '/cd-merge ') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v5
         with:
@@ -63,8 +63,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          merged_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           gh workflow run tests.yml --ref main
-          echo "Triggered full main CI; inspect Validation CI before declaring release complete."
+          run_id=""
+          for attempt in $(seq 1 20); do
+            run_id="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/tests.yml/runs?event=workflow_dispatch&per_page=10" --jq '.workflow_runs | map(select(.head_sha == "'$merged_sha'" and .created_at >= "'$started'")) | first | .id // empty')"
+            [[ -n "$run_id" ]] && break
+            sleep 6
+          done
+          [[ -n "$run_id" ]] || { echo "::error::Post-merge run not found"; exit 1; }
+          gh run watch "$run_id" --repo "$GITHUB_REPOSITORY" --exit-status
+          gate="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/jobs?per_page=100" --jq '.jobs | map(select(.name == "Validation CI" and .conclusion == "success")) | length')"
+          [[ "$gate" == "1" ]] || { echo "::error::Post-merge Validation CI not green"; exit 1; }
+          echo "Post-merge CI succeeded on $merged_sha; run $run_id"
       - name: Publish result into coordination issue
         if: ${{ always() && steps.command.outcome == 'success' }}
         shell: bash
