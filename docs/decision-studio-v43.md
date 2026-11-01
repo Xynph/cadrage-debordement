@@ -32,3 +32,7 @@ La référence provient de GitHub Actions **V4 Premium visual acceptance #412988
 ## Fichiers réservés
 
 `dist/art-direction-v4.js`, `dist/art-direction-v4.css`, `tests/art-direction-v4-browser.py`, `docs/decision-studio-v43.md`, `DEVELOPPEMENT.md`. Aucune modification Business, DATA-06 ou du producteur. Passation de coordination dans l'issue #73 ; PR autonome sans fusion.
+
+## Revue V4.3.1 des captures — 1er novembre 2026
+
+Archive réelle du workflow Chromium #41303665206, artefact #13082381296 : **51 captures inspectées** (17 Analyste 1440×900, 17 Analyste 1920×1080, 17 Tribune 1440×900) et rapport `report.json` : **530 contrôles réussis, zéro erreur JavaScript** sur HEAD `6f65c51`. Constat visuel ciblé : les cinq très grandes cartes Calendrier contiennent le nom et l'abréviation de l'adversaire dans leur tiers supérieur et une grande zone vide en dessous, particulièrement en 1920×1080. Correctif V4.3.1 limité à ce calendrier : numérotation décorative 01–05 en filigrane, nom d'adversaire ancré en bas derrière un filet, contenu et navigation native inchangés, deux thèmes. Nouveau contrôle Playwright pour vérifier la position des noms et les cinq repères ; **résultat sur nouvelle tête à confirmer par CI**. Les autres captures ne révèlent pas de défilement global ou de panneau tronqué à ce niveau de revue ; l'acceptation esthétique reste distincte du passage des tests.

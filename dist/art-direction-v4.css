@@ -1025,3 +1025,32 @@ html:root[data-cd-theme] .da42-market-grid strong{display:block;margin-top:12px;
  html:root[data-cd-theme] .da43-workspace *::before,
  html:root[data-cd-theme] .da43-workspace *::after{transition:none!important;animation:none!important}
 }
+
+/* V4.3.1 — visual audit of 51 Chromium frames, 01/11/2026.
+   The fixture cards were unusually empty at 1920x1080. Use a subtle
+   sequence watermark and anchor opponent names to a ruled lower band.
+   All five cards remain native buttons, with identical text and actions. */
+@media (min-width:1200px){
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"]>.da4-calendar>.da4-fixtures{
+  counter-reset:da43-fixture;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"] .da4-fixture-stop{
+  counter-increment:da43-fixture;isolation:isolate;overflow:hidden;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"] .da4-fixture-stop::after{
+  content:counter(da43-fixture,decimal-leading-zero);
+  position:absolute;right:clamp(12px,1.3vw,24px);bottom:clamp(64px,8vh,110px);
+  font-family:inherit;font-size:clamp(72px,8.2vw,150px);font-weight:900;
+  line-height:1;letter-spacing:-.06em;pointer-events:none;
+  color:color-mix(in srgb,var(--da4-chart) 10%,transparent);
+  z-index:0;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"] .da4-fixture-stop>*{
+  position:relative;z-index:1;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="calendrier"] .da4-stop-name{
+  margin-top:auto!important;padding-top:clamp(14px,2vh,24px)!important;
+  border-top:1px solid color-mix(in srgb,var(--da43-rim) 85%,var(--da4-chart));
+  font-weight:650;
+ }
+}

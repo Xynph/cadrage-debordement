@@ -140,6 +140,17 @@ try:
                           const rows=[...document.querySelectorAll('.da42-page:not([hidden]) .da4-fixture-stop')];
                           return rows.length>0&&rows.every(row=>row.getBoundingClientRect().height>=130);
                         }"""))
+                    if route == 'dashboard' and key == 'calendrier':
+                        check(f'V4.3.1 fixture composition balances 5 cards {width}', page.evaluate("""()=>{
+                          const rows=[...document.querySelectorAll('.da42-page:not([hidden]) .da4-fixture-stop')];
+                          return rows.length===5&&rows.every((row,i)=>{
+                            const card=row.getBoundingClientRect();
+                            const name=row.querySelector('.da4-stop-name')?.getBoundingClientRect();
+                            const mark=getComputedStyle(row,'::after').content;
+                            return !!name && name.bottom<=card.bottom+1 && name.top>card.top+card.height*.50
+                              && mark.includes(String(i+1).padStart(2,'0'));
+                          });
+                        }"""))
                     if route == 'recruitment' and key == 'marche':
                         geometry = page.evaluate("""()=>{
                           const e=document.querySelector('.da42-page:not([hidden]) .da42-market-composition');
