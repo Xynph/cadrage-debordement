@@ -122,3 +122,68 @@
   font-size:30px;
  }
 }
+
+/* V4.9.1 — keep each chart, caption and data table in its own space.
+   Desktop workspaces retain their fixed viewport; long panels scroll locally. */
+@media (min-width:1200px) {
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="tresorerie"] .da4-finance-chart {
+  overflow-y:auto;overscroll-behavior:contain;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="tresorerie"] .da4-finance-chart>* {
+  flex-shrink:0;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="tresorerie"] .da4-finance-chart>.da4-figure {
+  flex:0 0 auto!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="tresorerie"] .da4-finance-chart .da4-chart-viewport {
+  flex:0 0 auto!important;height:clamp(190px,22vh,250px);min-height:190px!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="tresorerie"] .da42-static-values {
+  flex:0 0 auto;min-height:100px;max-height:140px;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="tresorerie"] .da4-chart-numbers {
+  grid-template-columns:repeat(2,minmax(0,1fr)) auto;margin:5px 0 8px;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="tresorerie"] .da4-scenario-label {
+  padding:12px 18px;align-self:center;max-width:23ch;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="tresorerie"] .da4-line {
+  stroke-width:3;vector-effect:non-scaling-stroke;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="tresorerie"] .da4-area {opacity:.18}
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="potentiel"]>.da42-academy {
+  overflow-y:auto;overscroll-behavior:contain;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="potentiel"] .da42-talent-grid {
+  flex:1 0 auto!important;grid-auto-rows:minmax(180px,1fr)!important;
+  overflow:visible;min-height:180px!important;gap:12px;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="potentiel"] .da42-talent {
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:16px!important;overflow:visible;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="potentiel"] .da42-talent h3 {
+  font-size:25px!important;margin:10px 0 8px!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="potentiel"] .da42-talent-numbers strong {
+  font-size:36px!important;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="potentiel"] .da42-talent footer {
+  padding-top:10px;border-top:1px solid var(--ui01-border);font-size:12px;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="passerelle"]>.da4-academy-stage {
+  height:100%;min-height:0;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="passerelle"] .da4-academy-stage>.da4-panel {
+  min-height:0;overflow-y:auto;overscroll-behavior:contain;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="passerelle"] .da4-pathway-step>div {
+  display:grid;grid-template-columns:80px minmax(0,1fr);column-gap:14px;align-items:center;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="passerelle"] .da4-pathway-step p {
+  grid-column:1/-1;font-size:12px;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-page[data-da42-page="passerelle"] .da4-text-action {
+  min-height:44px;display:inline-flex;align-items:center;
+ }
+}

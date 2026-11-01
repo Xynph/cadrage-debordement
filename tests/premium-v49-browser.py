@@ -77,6 +77,12 @@ try:
                         if route == 'finance' and key == 'tresorerie':
                             check(f'native treasury graph {theme}/{width}',
                                   active.locator('.da4-finance-chart').count() > 0)
+                            check(f'treasury plot readable {theme}/{width}',
+                                  active.locator('.da4-chart-viewport').evaluate(
+                                      "e=>e.clientHeight>=180 && e.getBoundingClientRect().bottom<=e.parentElement.querySelector('figcaption').getBoundingClientRect().top+1"))
+                            check(f'treasury table below graph {theme}/{width}',
+                                  active.locator('.da4-finance-chart').evaluate(
+                                      "e=>e.querySelector('.da4-figure').getBoundingClientRect().bottom<=e.querySelector('.da42-static-values').getBoundingClientRect().top+1"))
                             check(f'V4.9 treasury hierarchy {theme}/{width}',
                                   active.locator('.da4-chart-numbers').evaluate(
                                       "e=>getComputedStyle(e).display==='grid'"))
@@ -89,6 +95,21 @@ try:
                         if route == 'formation' and key == 'potentiel':
                             check(f'V4.9 real player cards {theme}/{width}',
                                   active.locator('.da42-talent').count() > 0)
+                        if route == 'formation' and key == 'potentiel':
+                            check(f'talent cards do not clip their values {theme}/{width}',
+                                  active.locator('.da42-talent').evaluate_all(
+                                      "cards=>cards.every(e=>e.scrollHeight<=e.clientHeight+1 && e.querySelector('footer').getBoundingClientRect().bottom<=e.getBoundingClientRect().bottom)"))
+                        if route == 'finance' and key == 'tresorerie':
+                            values = active.locator('.da42-static-values')
+                            values.locator('tbody tr').last.scroll_into_view_if_needed()
+                            check(f'treasury last value reachable {theme}/{width}',
+                                  values.locator('tbody tr').last.is_visible())
+                            active.locator('.da4-finance-chart').evaluate('e=>e.scrollTop=0')
+                        if route == 'formation' and key == 'passerelle':
+                            action = active.locator('.da4-pathway .da4-text-action')
+                            action.scroll_into_view_if_needed()
+                            check(f'young pros action reachable {theme}/{width}', action.is_visible())
+                            active.locator('.da4-pathway').evaluate('e=>e.scrollTop=0')
                         metrics.append({'route': route, 'subpage': key, 'theme': theme,
                                         'width': width,
                                         'tabCount': shell.get_by_role('tab').count(),

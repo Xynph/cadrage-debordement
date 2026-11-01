@@ -710,3 +710,9 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 ### V4.7.1b — vérification métrique
 
 Après première CI Chromium SUCCESS, le JSON audit a montré Mercato Diagnostic 713 px sur un run vs 677 px dans le run antérieur. La grille n'avait donc pas démontré la réduction de hauteur annoncée ; ajustement des tuiles en grille interne compacte et ajout d'une assertion de padding. Il faut revérifier la CI et comparer les captures à données de carrière variables, sans supposer causalité à partir de différences absolues entre runs.
+
+## V4.8 intégrée / V4.9.1 en réception — Work, 1er novembre 2026
+
+- #188 : tête `4c0c7644`, gate officiel `decide()` positif sur réponses REST (`mergeable_state=clean`), JavaScript #41316209611 7/7 dont Validation CI et Chromium #41316209610 verts ; 16 captures réellement inspectées. Fusion authentifiée avec SHA attendu : `aee4c66376ea34195c3851d1f1086b5a982083ef`. CI push #41335435594 à vérifier ; ne pas anticiper sa réussite.
+- #193 : branche V4.9 raccordée à ce main sans conflit. Audit des 28 PNG initiaux et reproduction locale des défauts de compression de courbe et de pieds de cartes coupés. Correction CSS : graphique plus lisible et sans chevauchement, cartes de potentiel complètes, parcours et actions de formation accessibles par scroll local. Rapport `docs/decision-studio-v49.md`.
+- Vérifications locales : 28 captures / 208 contrôles Chromium, carrière et stockage invariants ; tests Node sauvegardes et projections réussis. CI complète requise sur tête publiée, résultats exacts et passation dans #73. #193 reste ouverte sans autorisation de fusion. Aucun fichier LNR/DATA/Business/moteur/sauvegarde modifié ; aucun test Windows natif revendiqué.
