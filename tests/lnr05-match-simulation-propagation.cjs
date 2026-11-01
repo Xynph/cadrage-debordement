@@ -1,0 +1,29 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {context}=require('./harness.cjs');
+test('LNR: une rotation valide est utilisée par rugbySimulate, pas seulement stockée',()=>{
+ const t=context();for(const file of ['lnr-rosters-data.js','lnr-career.js','lnr05-enriched-data.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),t.ctx);
+ const run=t.run;run("start(0,'lnr')");
+ run("club().players.forEach(p=>{p.condition=S.lineup.includes(p.id)?5:100;p.injury=0})");
+ const before=run('JSON.stringify(S.lineup)'),choices=run('lnr05AdviceCandidates(15).map(x=>({id:x.id,token:x.proposal.token}))');
+ assert(choices.length>0,'test doit provoquer des conseils de rotation');
+ const choice=choices[0];
+ assert.equal(run('lnr05Apply('+JSON.stringify(choice.id)+','+JSON.stringify(choice.token)+')'),true);
+ const after=run('JSON.stringify(S.lineup)');
+ assert.notEqual(after,before,'composition validée différente');
+ assert.equal(run('sheetErrors().length'),0,'feuille 15+8 cohérente');
+ assert.equal(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),true,'sauvegarde compatible');
+ const fixture=run('JSON.stringify(nextMatch())');assert(fixture!=='null','match du manager disponible');
+ const canonical=run('JSON.stringify(buildSheet(club(),S.lineup,S.reserves).lineup)');
+ assert.equal(canonical,after,'buildSheet préserve les postes des titulaires validés');
+ const selected=run('JSON.stringify(createRugbyMatch('+fixture+',null,true).sheets['+run('nextMatch().indexOf(S.club)')+'].initial)');
+ if(selected!==after){
+  console.log(JSON.stringify({diagnostic:'sheet-mismatch',fixture:JSON.parse(fixture),club:run('S.club'),clubIndex:run('nextMatch().indexOf(S.club)'),before:JSON.parse(before),after:JSON.parse(after),nativeBuildSheet:JSON.parse(canonical),matchSheet:JSON.parse(selected),allValid:run('sheetErrors().length===0'),fixtureClub:run('JSON.stringify(S.clubs[nextMatch()[nextMatch().indexOf(S.club)]].players.map(p=>p.id))')}));
+ }
+ assert.equal(selected,after,'la simulation construit un match à partir des 15 joueurs choisis');
+ run('var nativeCreateRugbyMatch=createRugbyMatch;var simulationObserved=null;createRugbyMatch=function(pair,legacy,automated,preparation){var l=nativeCreateRugbyMatch(pair,legacy,automated,preparation);if(automated&&pair.includes(S.club))simulationObserved=JSON.stringify(l.sheets[pair.indexOf(S.club)].initial);return l;}');
+ const outcome=run('rugbySimulate('+fixture+')');
+ assert.equal(run('simulationObserved'),after,'rugbySimulate consomme la feuille réellement validée');
+ assert.equal(outcome.pair.length,2);
+ console.log(JSON.stringify({passed:true,fixture:JSON.parse(fixture),selected:choice.id,matchLineupConsumed:true,saveCompatible:true}));
+});
