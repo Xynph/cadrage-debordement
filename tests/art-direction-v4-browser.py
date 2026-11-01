@@ -90,6 +90,27 @@ try:
                     if key != 'dossiers':
                         check(f'no disclosure for navigation {route}/{key} {width}',
                               shell.locator(f'[data-da42-page="{key}"] > details.da4-dossier').count() == 0)
+                    if route in ('formation', 'recruitment') and key == 'dossiers':
+                        metric = '.cd04-kpis' if route == 'formation' else '.cd03-kpis'
+                        check(f'native KPIs moved to dossiers {route} {width}',
+                              shell.locator(f'[data-da42-page="dossiers"] {metric}').count() == 1)
+                    if route == 'formation' and key == 'potentiel':
+                        check(f'visible complete talent cards {width}', page.evaluate("""()=>{
+                          const cards=[...document.querySelectorAll('.da42-page:not([hidden]) .da42-talent')];
+                          const bounds=document.querySelector('.da42-page:not([hidden])').getBoundingClientRect();
+                          return !!cards.length && cards.every(c=>{
+                            const b=c.getBoundingClientRect();
+                            return b.top>=bounds.top-2 && b.bottom<=bounds.bottom+2 && b.height>=100;
+                          });
+                        }"""))
+                    if route == 'recruitment' and key == 'marche':
+                        check(f'market observatory fits the page {width}', page.evaluate("""()=>{
+                          const el=document.querySelector('.da42-page:not([hidden]) .da42-market-composition');
+                          const outer=document.querySelector('.da42-page:not([hidden])');
+                          if(!el||!outer)return false;
+                          const a=el.getBoundingClientRect(),b=outer.getBoundingClientRect();
+                          return a.top>=b.top && a.bottom<=b.bottom+2 && a.height>=150;
+                        }"""))
                     if route == 'dashboard' and key == 'pilotage':
                         check(f'desktop command fills panel {width}', page.evaluate("""()=>{
                           let a=document.querySelector('.da42-command-lead').getBoundingClientRect();
