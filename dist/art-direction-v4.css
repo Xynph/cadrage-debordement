@@ -594,3 +594,13 @@ html:root[data-cd-theme] .da42-market-grid strong{display:block;margin-top:12px;
  html:root[data-cd-theme]:has(.da42-paged),
  html:root[data-cd-theme]:has(.da42-paged) body{height:100dvh!important;max-height:100dvh!important;overflow:hidden!important}
 }
+
+/* Ne jamais capturer la barre native (navigation principale, thème, sauvegarde)
+   à l'intérieur des sous-pages. Elle reste stable et entièrement visible. */
+@media(min-width:1100px){
+ html:root[data-cd-theme] .main.da42-paged>.ui01-appbar{
+  flex:0 0 auto!important;min-height:0!important;display:block!important;
+  overflow:visible!important;position:relative!important;z-index:90}
+ html:root[data-cd-theme] .main.da42-paged>.ui01-appbar #ui01-theme{
+  visibility:visible!important;opacity:1!important;display:block!important}
+}
