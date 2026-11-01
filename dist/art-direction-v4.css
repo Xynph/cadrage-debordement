@@ -255,3 +255,61 @@ html:root[data-cd-theme] .da4-league-stage .da4-bars{grid-template-columns:1fr 1
  html:root[data-cd-theme] .da4-position>small{font-size:6.5px;overflow-wrap:anywhere}
  html:root[data-cd-theme] .da4-bar-row{grid-template-columns:minmax(68px,1.2fr) minmax(30px,1fr) auto;gap:8px}
 }
+
+/* V4.1 — un graphique défilant doit être atteignable et identifiable au clavier. */
+html:root[data-cd-theme] .da4-chart-viewport:focus-visible{
+ outline:3px solid var(--da4-copper);
+ outline-offset:3px;
+ border-radius:3px;
+}
+html:root[data-cd-theme] .da4-player-point:focus-visible{
+ stroke:var(--da4-copper);
+ stroke-width:4;
+ opacity:1;
+}
+@media(forced-colors:active){
+ html:root[data-cd-theme] .da4-chart-viewport:focus-visible{outline:3px solid Highlight}
+ html:root[data-cd-theme] .da4-player-point:focus-visible{stroke:Highlight;stroke-width:4}
+ html:root[data-cd-theme] .da4-line,.da4-radar-shape,.da4-potential-line{stroke:CanvasText}
+ html:root[data-cd-theme] .da4-gridline{stroke:GrayText}
+}
+
+/* V4.1 — repères décisionnels, distincts des tableaux natifs conservés. */
+html:root[data-cd-theme] .da41-insights{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:18px 0 16px;
+ border-block:1px solid var(--ui01-border);
+}
+html:root[data-cd-theme] .da41-insights>div{padding:15px 14px;border-right:1px solid var(--ui01-border);min-width:0}
+html:root[data-cd-theme] .da41-insights>div:first-child{padding-left:0}
+html:root[data-cd-theme] .da41-insights>div:last-child{border-right:0}
+html:root[data-cd-theme] .da41-insights small,
+html:root[data-cd-theme] .da41-league-recap small{
+ display:block;color:var(--da4-muted);font-size:9px;letter-spacing:1px;line-height:1.5;margin-bottom:6px
+}
+html:root[data-cd-theme] .da41-insights strong,
+html:root[data-cd-theme] .da41-league-recap strong{
+ display:block;color:var(--da4-type);font:600 clamp(19px,2vw,27px) 'Barlow Condensed',sans-serif;overflow-wrap:anywhere
+}
+html:root[data-cd-theme] .da41-lines{border-top:1px solid var(--ui01-border);padding-top:18px;margin-top:20px}
+html:root[data-cd-theme] .da41-lines .da4-panel-head{margin-bottom:8px}
+html:root[data-cd-theme] .da41-lines .da4-panel-head h2{font-size:23px}
+html:root[data-cd-theme] .da41-lines .da4-bar-row{grid-template-columns:minmax(85px,1fr) minmax(80px,2fr) minmax(60px,auto)}
+html:root[data-cd-theme] .da41-priority-list{list-style:none;padding:0;margin:18px 0 10px;counter-reset:priority}
+html:root[data-cd-theme] .da41-priority-list li{
+ counter-increment:priority;display:grid;grid-template-columns:minmax(0,1fr) auto;
+ gap:4px 12px;border-top:1px solid var(--ui01-border);padding:12px 0;
+}
+html:root[data-cd-theme] .da41-priority-list li:before{content:counter(priority,decimal-leading-zero);font-size:10px;letter-spacing:1px;color:var(--da4-copper);grid-column:1 / -1}
+html:root[data-cd-theme] .da41-priority-list li span{font-weight:600;font-size:14px;color:var(--da4-type)}
+html:root[data-cd-theme] .da41-priority-list li strong{font:600 21px 'Barlow Condensed',sans-serif;color:var(--da4-copper)}
+html:root[data-cd-theme] .da41-priority-list li small{grid-column:1 / -1;color:var(--da4-muted);line-height:1.6}
+html:root[data-cd-theme] .da41-league-recap{display:flex;gap:0;border-block:1px solid var(--ui01-border);margin:4px 0 24px}
+html:root[data-cd-theme] .da41-league-recap>div{padding:15px 28px 15px 0;min-width:0}
+html:root[data-cd-theme] .da41-league-recap>div+div{border-left:1px solid var(--ui01-border);padding-left:28px}
+@media(max-width:650px){
+ html:root[data-cd-theme] .da41-insights{grid-template-columns:1fr}
+ html:root[data-cd-theme] .da41-insights>div{border-right:0;border-bottom:1px solid var(--ui01-border);padding:12px 0}
+ html:root[data-cd-theme] .da41-insights>div:last-child{border-bottom:0}
+ html:root[data-cd-theme] .da41-league-recap>div{padding-right:15px}
+ html:root[data-cd-theme] .da41-league-recap>div+div{padding-left:15px}
+}
