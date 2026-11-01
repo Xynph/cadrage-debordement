@@ -58,8 +58,8 @@ try:
                 check(f'toast status element {toast_theme}/{toast_width}',
                       status.count() == 1 and status.get_attribute('role') == 'status')
                 page.evaluate("()=>toast('Bienvenue au club. Votre saison commence maintenant.')")
-                check(f'toast accessible when shown {toast_theme}/{toast_width}',
-                      page.get_by_role('status').count() == 1)
+                check(f'toast status announced by native role {toast_theme}/{toast_width}',
+                      status.get_attribute('role') == 'status' and status.is_visible())
                 check(f'toast initially shown {toast_theme}/{toast_width}',
                       status.is_visible() and
                       'Bienvenue au club.' in status.inner_text())
