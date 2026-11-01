@@ -1,5 +1,25 @@
 # V4.2 — galerie de captures réelles et revue visuelle
 
+## Nouvelle référence — Sous-pages PC exclusives (architecture type FM)
+
+La version actuelle de la PR #164 introduit des **sous-pages réelles**, jamais des dossiers déroulés dans l'écran principal. Sur bureau, préparation, finances, recrutement et formation, la navigation secondaire se trouve sous l'onglet métier natif. Une seule page est présente visuellement : l'ancien contenu est masqué au changement d'onglet. Les raccourcis clavier Flèche gauche / Flèche droite / Home / End fonctionnent.
+
+**Captures attendues du dernier workflow Chromium** : une capture **de chaque sous-page**, avec nom `pc-{onglet}-{souspage}-analyste-1920x1080.png` et `pc-{onglet}-{souspage}-analyste-1440x900.png`. Cela couvre **17 sous-pages × 2 résolutions = 34 images PC**, notamment :
+
+| Onglet principal | Sous-pages (illustrées en 1920×1080 et 1440×900) |
+| --- | --- |
+| Bureau | pilotage, calendrier, dossiers |
+| Tactiques | xv, condition, analyse, dossiers |
+| Finances | tresorerie, flux, salaires, dossiers |
+| Recrutement | besoins, marche, dossiers |
+| Formation | passerelle, potentiel, dossiers |
+
+Pour accéder aux PNG réels, ouvrir **Actions → V4 Premium visual acceptance → artefact `premium-v4-browser-report` → `art-direction-v4/`**, puis chercher les noms ci-dessus. **Ne pas les confondre avec les anciennes captures V4.2** : la preuve correspond uniquement au workflow vert sur la tête finale de la PR après navigation PC. L'artefact a une rétention de sept jours.
+
+**Critères d'acceptation** : aucune sous-page ajoutée au-dessous d'une autre, `aria-selected` et `hidden` corrects, pas de scroll du document sur les fenêtres PC 1920×1080 et 1440×900 ; navigation native du centre de match, des candidats et des espoirs toujours fonctionnelle ; aucune modification de `S` ou du contenu sauvegardé lors du passage d'une sous-page à une autre. Si une commande native exige davantage de lignes, seul son dossier de travail peut défiler localement.
+
+**Périmètre :** PC uniquement. Les anciennes archives 390 px sont historiques et ne font pas partie de cette galerie ni des critères d'acceptation de la navigation.
+
 ## Refonte PC approfondie (tête de PR à valider)
 
 **Décision produit : PC uniquement**, selon l'issue #73. L'audit des captures existantes V4.2 en 1440 px a montré un bureau trop proche de quatre statistiques génériques et une succession de flux financiers sans véritable hiérarchie visuelle. Une seconde passe de développement, sur la PR #164, remplace ces compositions par un **poste de commandement avec panorama de stade et panneau de navigation**, un **anneau de condition des titulaires et des groupes de disponibilité**, une **chronologie financière en colonnes**, des **fiches talent plus riches** et un **observatoire des coûts du marché**.
