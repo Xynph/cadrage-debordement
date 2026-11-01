@@ -692,3 +692,61 @@ html:root[data-cd-theme] .da42-market-grid strong{display:block;margin-top:12px;
   font-size:9px!important;margin:2px 0!important
  }
 }
+
+/* Audit PC 1440×900 : récupérer toute la hauteur de l'observatoire, avant
+   le tableau de comparaison. La carte et les trois indicateurs restent visibles. */
+@media(min-width:1100px){
+ html:root[data-cd-theme] .main.da42-paged .cd03:has(.da42-workspace-shell),
+ html:root[data-cd-theme] .main.da42-paged .cd04:has(.da42-workspace-shell){
+  height:auto!important;max-height:none!important;flex:1 1 0!important;min-height:0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market{
+  padding:14px 20px!important;gap:6px!important;min-height:0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da4-panel-head{
+  flex:0 0 auto!important;margin:0 0 2px!important;padding:0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da4-panel-head h2{
+  font-size:25px!important;margin:2px 0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-composition{
+  display:grid!important;grid-template-columns:minmax(0,1.7fr) minmax(180px,.6fr)!important;
+  flex:1 1 auto!important;min-height:150px!important;overflow:hidden!important;gap:12px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-primary>strong{
+  font-size:37px!important;margin:3px 0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-primary>p{
+  line-height:1.25!important;margin:3px 0!important;font-size:10px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-breakdown{
+  margin-top:7px!important;padding-top:5px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-breakdown h3{
+  font-size:17px!important;margin-bottom:3px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-bars{
+  gap:4px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-breakdown>p{
+  margin:4px 0!important;font-size:9px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-facts{
+  gap:0!important;padding-left:12px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-facts>div{
+  padding:5px 0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-market-facts strong{
+  font-size:21px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-static-values{
+  flex:0 0 65px!important;max-height:65px!important;min-height:0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da42-static-values .da4-table-scroll{
+  max-height:60px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="marche"] .da4-chart-note{
+  font-size:9px!important;margin:0!important
+ }
+}
