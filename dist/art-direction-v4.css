@@ -313,3 +313,68 @@ html:root[data-cd-theme] .da41-league-recap>div+div{border-left:1px solid var(--
  html:root[data-cd-theme] .da41-league-recap>div{padding-right:15px}
  html:root[data-cd-theme] .da41-league-recap>div+div{padding-left:15px}
 }
+
+/* V4.2 — studio de décision : scènes distinctes et valeurs métier, sans panneau générique répétitif. */
+html:root[data-cd-theme] .da42-board{margin:18px 0 26px;padding:24px;background:var(--ui01-head);color:#f6f0e3;border:1px solid #516755;border-radius:3px}
+html:root[data-cd-theme] .da42-board .da4-panel-head h2{color:#f6f0e3;font-size:29px}
+html:root[data-cd-theme] .da42-board .da4-kicker{color:#ebb384}
+html:root[data-cd-theme] .da42-board .da4-meta{color:#c6d4c5}
+html:root[data-cd-theme] .da42-board-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-top:1px solid #a9c0ad55}
+html:root[data-cd-theme] .da42-board-item{padding:22px 18px 8px;border-right:1px solid #a9c0ad55;min-width:0;display:flex;flex-direction:column;gap:9px}
+html:root[data-cd-theme] .da42-board-item:first-child{padding-left:0}
+html:root[data-cd-theme] .da42-board-item:last-child{border-right:0}
+html:root[data-cd-theme] .da42-board-item small{font-size:10px;letter-spacing:1px;color:#d6b898;text-transform:uppercase}
+html:root[data-cd-theme] .da42-board-item strong{font:600 clamp(21px,2.3vw,33px)/1 'Barlow Condensed',sans-serif;overflow-wrap:anywhere}
+html:root[data-cd-theme] .da42-board-item p{font-size:11px;line-height:1.6;color:#d9e4d7;margin:0 0 6px;flex:1}
+html:root[data-cd-theme] .da42-board-item button{padding:9px 0;background:none!important;color:#f0b380!important;border:0!important;text-align:left;font-size:11px;font-weight:700;min-height:44px}
+html:root[data-cd-theme] .da42-board-item button:focus-visible{outline:3px solid #f0b380;outline-offset:2px}
+html:root[data-cd-theme] .da42-panel{margin:22px 0;padding:26px 28px;border:1px solid var(--ui01-border);background:var(--ui01-surface);min-width:0;border-radius:3px}
+html:root[data-cd-theme] .da42-panel .da4-panel-head h2{font-size:clamp(24px,2.5vw,31px)}
+html:root[data-cd-theme] .da42-summary{display:flex;align-items:center;gap:18px;padding:12px 0 24px;border-bottom:1px solid var(--ui01-border);margin-bottom:12px}
+html:root[data-cd-theme] .da42-summary strong{font:600 48px/1 'Barlow Condensed',sans-serif;color:var(--da4-chart)}
+html:root[data-cd-theme] .da42-summary span{font-size:12px;color:var(--da4-muted);line-height:1.6}
+html:root[data-cd-theme] .da42-fitness .da4-bars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+html:root[data-cd-theme] .da42-fitness .da4-bar-row{display:block}
+html:root[data-cd-theme] .da42-fitness .da4-bar-track{height:9px;margin:8px 0}
+html:root[data-cd-theme] .da42-movements{display:grid;gap:12px;margin:16px 0}
+html:root[data-cd-theme] .da42-movement{display:grid;grid-template-columns:55px minmax(0,1fr) minmax(85px,auto);align-items:center;gap:14px;font-size:12px}
+html:root[data-cd-theme] .da42-movement span{color:var(--da4-muted)}
+html:root[data-cd-theme] .da42-movement i{height:12px;display:block;width:var(--size);background:var(--da4-chart);min-width:4px;border-radius:2px}
+html:root[data-cd-theme] .da42-movement i.is-negative{background:var(--da4-copper)}
+html:root[data-cd-theme] .da42-movement strong{text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+html:root[data-cd-theme] .da42-academy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 30px;margin:20px 0}
+html:root[data-cd-theme] .da42-academy-item{display:grid;grid-template-columns:minmax(0,1fr) 80px;gap:8px 10px;font-size:12px}
+html:root[data-cd-theme] .da42-academy-item span{font-weight:600;overflow-wrap:anywhere}
+html:root[data-cd-theme] .da42-academy-item strong{font-variant-numeric:tabular-nums;text-align:right;color:var(--da4-copper)}
+html:root[data-cd-theme] .da42-academy-track{height:9px;background:var(--ui01-soft);position:relative;grid-column:1 / -1}
+html:root[data-cd-theme] .da42-academy-track i{display:block;height:9px;background:var(--da4-chart)}
+html:root[data-cd-theme] .da42-academy-track b{position:absolute;top:-3px;bottom:-3px;width:3px;background:var(--da4-copper)}
+html:root[data-cd-theme] .da42-market-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-block:1px solid var(--ui01-border)}
+html:root[data-cd-theme] .da42-market-grid>div{padding:18px;border-right:1px solid var(--ui01-border);min-width:0}
+html:root[data-cd-theme] .da42-market-grid>div:last-child{border-right:0}
+html:root[data-cd-theme] .da42-market-grid small{display:block;line-height:1.6;font-size:9px;letter-spacing:1px;color:var(--da4-muted)}
+html:root[data-cd-theme] .da42-market-grid strong{display:block;margin-top:12px;font:600 clamp(18px,2.5vw,31px) 'Barlow Condensed',sans-serif;color:var(--da4-type);overflow-wrap:anywhere}
+@media(max-width:950px){
+ html:root[data-cd-theme] .da42-board-grid,html:root[data-cd-theme] .da42-market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ html:root[data-cd-theme] .da42-board-item:nth-child(2){border-right:0}
+ html:root[data-cd-theme] .da42-board-item:nth-child(-n+2){border-bottom:1px solid #a9c0ad55}
+ html:root[data-cd-theme] .da42-market-grid>div:nth-child(2){border-right:0}
+ html:root[data-cd-theme] .da42-market-grid>div:nth-child(-n+2){border-bottom:1px solid var(--ui01-border)}
+}
+@media(max-width:600px){
+ html:root[data-cd-theme] .da42-board,html:root[data-cd-theme] .da42-panel{padding:18px 15px}
+ html:root[data-cd-theme] .da42-board-grid,html:root[data-cd-theme] .da42-market-grid{grid-template-columns:minmax(0,1fr)}
+ html:root[data-cd-theme] .da42-board-item{border:0!important;border-bottom:1px solid #a9c0ad55!important;padding:18px 0}
+ html:root[data-cd-theme] .da42-board-item:last-child{border-bottom:0!important}
+ html:root[data-cd-theme] .da42-market-grid>div{border:0!important;border-bottom:1px solid var(--ui01-border)!important;padding:14px 0}
+ html:root[data-cd-theme] .da42-market-grid>div:last-child{border-bottom:0!important}
+ html:root[data-cd-theme] .da42-academy-grid{grid-template-columns:1fr}
+ html:root[data-cd-theme] .da42-fitness .da4-bars{grid-template-columns:1fr}
+ html:root[data-cd-theme] .da42-movement{gap:8px;grid-template-columns:40px minmax(0,1fr) 90px;font-size:11px}
+}
+@media(forced-colors:active){
+ html:root[data-cd-theme] .da42-board{border-color:CanvasText;background:Canvas;color:CanvasText}
+ html:root[data-cd-theme] .da42-board :is(h2,strong,small,p,button){color:CanvasText!important}
+ html:root[data-cd-theme] .da42-movement i,.da42-academy-track i{background:CanvasText}
+ html:root[data-cd-theme] .da42-academy-track b{background:Highlight}
+}
