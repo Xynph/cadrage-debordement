@@ -22,6 +22,7 @@ try:
         page.get_by_role('button',name='Nouvelle carrière').click();page.get_by_role('button',name='Univers fictif').click()
         page.locator('.clubchoice').first.click()
         page.evaluate("nav('tactics')")
+        page.get_by_role('tab',name='XV et décisions').click()
         root=page.locator('[aria-label="Assistant de composition"]')
         check('assistant visible dans Préparation',root.is_visible())
         check('23 lignes de composition',root.locator('tbody tr').count()==23)
@@ -33,6 +34,7 @@ try:
         for width in (1280,768,390,320):
             page.set_viewport_size({'width':width,'height':850})
             page.evaluate("nav('tactics')")
+            page.get_by_role('tab',name='XV et décisions').click()
             check('assistant visible %d'%width,page.locator('.cd-lineup').is_visible())
             check('pas de débordement %d'%width,page.evaluate('document.documentElement.scrollWidth<=innerWidth+2'))
         page.set_viewport_size({'width':1280,'height':900})
