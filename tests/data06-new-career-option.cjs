@@ -1,0 +1,12 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict');
+const {createUniverse}=require('../modding/r5/universe-contract.cjs');
+const {planResume}=require('../modding/r4/career-bridge.cjs');
+const {choices,startNewCareer}=require('../modding/data06/new-career-option.cjs');
+const base=()=>({players:[{id:'fiction:1',name:'Joueur fictif'}],clubs:[]});
+const native=(prepared,snapshot)=>({...prepared,playersSeen:snapshot.players.length});
+test('choix explicite: fictif par défaut',()=>{assert.equal(choices()[0].id,'fictional');const w=createUniverse(base());const save=startNewCareer(w,'fictional',{},native);assert.equal(save.playersSeen,1);assert.equal(w.snapshot().players.length,1);assert.equal(save.startDate,'2026-07-01');assert.deepEqual(save.modBinding.mods,[]);});
+test('opt-in: 1592 joueurs LNR, ancienne base non altérée',()=>{const b=base(),w=createUniverse(b);const save=startNewCareer(w,'rugby-real-2026',{},native);assert.equal(save.playersSeen,1593);assert.equal(save.modBinding.mods.length,1);assert.equal(b.players.length,1);assert.equal(w.snapshot().players.length,1593);assert.equal(new Set(w.snapshot().players.map(x=>x.id)).size,1593);});
+test('sauvegarde héritée non modifiée: remise à zéro et reprise',()=>{const w=createUniverse(base()),legacy={season:7,club:'fiction:1'};startNewCareer(w,'rugby-real-2026',{},native);assert.equal(planResume(w,legacy).ok,true);assert.deepEqual(legacy,{season:7,club:'fiction:1'});assert.deepEqual(w.active(),[]);});
+test('refus date incohérente et sélection inconnue',()=>{const w=createUniverse(base());assert.throws(()=>startNewCareer(w,'fictional',{startDate:'2026-09-01'},native),/2026-07-01/);assert.throws(()=>startNewCareer(w,'nonexistent',{},native),/invalide/);assert.deepEqual(w.active(),[]);});
+test('échouer sans changer de carrière active',()=>{const w=createUniverse(base());assert.throws(()=>startNewCareer(w,'rugby-real-2026',{},()=>{throw Error('échec natif');}),/échec natif/);assert.deepEqual(w.active(),[]);});
