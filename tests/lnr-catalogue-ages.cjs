@@ -22,8 +22,9 @@ test('catalogue: 1592 ages calculables, sans inventer dates',()=>{
  assert.equal(sandbox.getAge('lnr:13725').ageEstimated,false);
 });
 test('catalogue: âge affiché et estimation explicitement signalée',()=>{
- assert(source.includes('const rows=c[3].map(p=>{const born=lnrBirthAge(p[0]);'));
+ assert(source.includes("typeof LNR_BIRTHYEARS_DATA==='undefined'?null:lnrBirthAge(p[0])"));
  assert(source.includes("born.ageEstimated?' (estimé)':''"));
+ assert(source.includes("'Non disponible'"));
  assert(source.includes('<th>Âge au 01/07/2026</th>'));
  assert(source.includes('Âges au 01/07/2026 ;'));
  assert(!source.includes('birthDate||'));
