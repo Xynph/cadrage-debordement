@@ -651,3 +651,44 @@ html:root[data-cd-theme] .da42-market-grid strong{display:block;margin-top:12px;
  html:root[data-cd-theme] .da42-page-native>.cd03-kpis,
  html:root[data-cd-theme] .da42-page-native>.cd04-kpis{flex:0 0 auto;margin-bottom:14px}
 }
+
+/* Correction mesurée à la CI : les quatre espoirs d'une carrière initiale
+   occupent UNE rangée entière, et le tableau prend un espace local réduit. */
+@media(min-width:1100px){
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-academy{
+  padding:17px 22px!important;gap:7px!important;
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da4-panel-head{
+  margin-bottom:2px!important;flex:0 0 auto
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-academy-intro{
+  flex:0 0 auto;margin:0 0 5px!important;padding:0!important;min-height:47px
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-academy-intro>div{
+  padding:3px 14px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-academy-intro strong{font-size:25px}
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-talent-grid{
+  display:grid!important;grid-template-rows:none!important;
+  grid-auto-rows:minmax(0,1fr)!important;align-content:stretch;
+  margin:2px 0 3px!important;min-height:0!important;flex:1 1 auto!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-talent{
+  padding:9px 12px!important;min-height:0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-talent h3{
+  font-size:19px!important;margin:6px 0 2px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-talent-numbers strong{
+  font-size:23px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-static-values{
+  flex:0 0 82px!important;max-height:82px!important;min-height:0!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da42-static-values .da4-table-scroll{
+  max-height:77px!important
+ }
+ html:root[data-cd-theme] .da42-page[data-da42-page="potentiel"] .da4-chart-note{
+  font-size:9px!important;margin:2px 0!important
+ }
+}
