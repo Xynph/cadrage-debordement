@@ -35,6 +35,34 @@ try:
      if width in (1440,390):
       p.locator('#toast').evaluate("e=>e.style.display='none'");p.mouse.move(0,0)
       p.screenshot(path=str(OUT/(route+'-'+theme+'-'+str(width)+'.png')),full_page=True)
+  # V4.2: verify actual new experiences in Chromium, not just source-level helpers.
+  # Every view uses the same career: navigating cannot alter game state or the stored save.
+  for route,selector in (
+   ('dashboard','.da42-board'),
+   ('tactics','.da42-fitness'),
+   ('finance','.da42-movements'),
+   ('formation','.da42-academy'),
+   ('recruitment','.da42-market'),
+  ):
+   p.evaluate('(r)=>nav(r)',route)
+   check('V4.2 studio rendered '+route,p.locator(selector).count()==1)
+   check('V4.2 native career unchanged '+route,p.evaluate('JSON.stringify(S)')==original)
+   check('V4.2 stored save unchanged '+route,p.evaluate('localStorage.getItem("bdt-v1")')==disk)
+  p.evaluate("nav('dashboard')")
+  check('V4.2 four live decision links',p.locator('.da42-board-item button').count()==4)
+  p.locator('.da42-board-item button').first.click()
+  check('V4.2 decision navigates to real tactics',p.evaluate("view==='tactics'"))
+  p.evaluate("nav('finance')")
+  expected_movements=p.evaluate('CDArtDirection.cashMovements(CDArtDirection.snapshot().finance.series).length')
+  check('V4.2 weekly forecast bars match native data',p.locator('.da42-movement').count()==expected_movements)
+  p.evaluate("nav('formation')")
+  expected_espoirs=p.evaluate('Math.min(8,CDArtDirection.academyGaps(CDArtDirection.snapshot().academy).length)')
+  check('V4.2 ceiling comparison count matches actual academy',p.locator('.da42-academy-item').count()==expected_espoirs)
+  p.evaluate("nav('recruitment')")
+  check('V4.2 public market cost cards',p.locator('.da42-market-grid>div').count()==4)
+  p.evaluate("nav('tactics')")
+  check('V4.2 condition groups from real XV',p.locator('.da42-fitness tbody tr').count()==3)
+  check('V4.2 never mutates native career',p.evaluate('JSON.stringify(S)')==original)
   p.set_viewport_size({'width':1440,'height':1000});p.locator('#ui01-theme').select_option('analyste')
   p.evaluate("nav('finance')")
   expected=p.evaluate('CDArtDirection.snapshot().finance.series.length')
