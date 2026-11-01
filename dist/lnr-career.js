@@ -1,6 +1,6 @@
 'use strict';
 // LNR-01 : mode de nouvelle carrière facultatif. Aucun état fictif préexistant modifié.
-let lnrWelcomeMode='fiction',lnrBrowseIndex=0;
+let lnrWelcomeMode='fiction',lnrBrowseIndex=0,lnrBrowsePlayerId=null;
 const LNR_NAMES={
  'clermont':['ASM Clermont Auvergne','ASM'],'bayonne':['Aviron Bayonnais','AB'],
  'castres':['Castres Olympique','CO'],'lyon':['LOU Rugby','LOU'],
@@ -77,6 +77,30 @@ function lnrBrowseClub(value){
  const idx=Number(value);if(!Number.isInteger(idx)||idx<0||idx>=LNR_CATALOGUE.clubs.length)return;
  lnrBrowseIndex=idx;render();
 }
+function lnrSelectPlayer(id){
+ const club=LNR_CATALOGUE.clubs[lnrBrowseIndex];
+ if(!S||!lnrCareerMode(S)||!club||!club[3].some(p=>p[0]===id))return false;
+ lnrBrowsePlayerId=id;render();return true;
+}
+function lnrPlayerFacts(club,player){
+ if(!player)return '';
+ const id=player[0],birth=typeof LNR_BIRTHYEARS_DATA==='undefined'?null:lnrBirthAge(id);
+ const gamePlayer=S.clubs.flatMap(c=>c.players).find(p=>p.id===id);
+ const fact=(label,value)=>'<dt>'+lnrEscape(label)+'</dt><dd>'+lnrEscape(value)+'</dd>';
+ const provenance='<p class="help">Source des identités, groupes et nationalités : effectif LNR au 31/10/2026. Année de naissance : compilation DATA-06. Les trois dates complètes sont les seules confirmées par l’utilisateur, non vérifiées indépendamment.</p>';
+ const real='<dl>'+fact('Identifiant LNR',id)+fact('Nom LNR',player[1])+fact('Groupe de poste LNR',player[2])+fact('Nationalité LNR',player[3]||'Non renseignée')+
+  fact('Naissance',birth?(birth.birthDate?birth.birthDate:String(birth.birthYear)+(birth.ageEstimated?' (année seulement)':'')):'Non disponible')+
+  fact('Âge au 01/07/2026',birth?String(birth.age)+(birth.ageEstimated?' (estimé)':' (date complète)'):'Non disponible')+'</dl>';
+ const simulated=gamePlayer?'<dl>'+fact('Poste de simulation',gamePlayer.pos||'Non disponible')+
+  fact('Note de simulation',gamePlayer.rating==null?'Non disponible':String(gamePlayer.rating))+
+  fact('Salaire simulé',gamePlayer.salary==null?'Non disponible':String(gamePlayer.salary)+' €')+
+  fact('Condition simulée',gamePlayer.condition==null?'Non disponible':String(gamePlayer.condition))+'</dl>':
+  '<p class="help">Aucun indicateur de simulation pour ce joueur dans cette carrière. Club consultable seulement.</p>';
+ return '<aside class="lnr-player-facts" aria-label="Fiche joueur LNR"><h3>'+lnrEscape(player[1])+'</h3>'+
+  '<h4>Informations sourcées</h4>'+real+provenance+
+  '<p><a href="'+lnrEscape(club[2])+'" target="_blank" rel="noopener noreferrer">Consulter l’effectif officiel du club</a></p>'+
+  '<h4>Paramètres fictifs du jeu — non officiels</h4>'+simulated+'</aside>';
+}
 function lnrEscape(value){
  return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -85,7 +109,7 @@ function lnrCatalogueView(){
  const opts=LNR_CATALOGUE.clubs.map((c,i)=>'<option value="'+i+'"'+(i===lnrBrowseIndex?' selected':'')+'>'+
   lnrEscape((c[1]==='top14'?'TOP 14':'PRO D2')+' · '+(LNR_NAMES[c[0]]?.[0]||c[0]))+'</option>').join('');
  const c=LNR_CATALOGUE.clubs[lnrBrowseIndex];
- const rows=c[3].map(p=>{const born=typeof LNR_BIRTHYEARS_DATA==='undefined'?null:lnrBirthAge(p[0]);return '<tr><td>'+lnrEscape(p[1])+'</td><td>'+lnrEscape(p[2])+
+ const rows=c[3].map(p=>{const born=typeof LNR_BIRTHYEARS_DATA==='undefined'?null:lnrBirthAge(p[0]);return '<tr><td><button type="button" onclick="lnrSelectPlayer('+JSON.stringify(p[0]).replace(/\"/g,'&quot;')+')">'+lnrEscape(p[1])+'</button></td><td>'+lnrEscape(p[2])+
   '</td><td>'+lnrEscape(p[3]||'Non renseignée')+'</td><td>'+(born?born.age+(born.ageEstimated?' (estimé)':''):'Non disponible')+'</td></tr>';}).join('');
  return '<section class="card lnr-catalogue" aria-label="Catalogue officiel LNR">'+
   '<div class="cardtitle"><h2>Catalogue LNR · 30 clubs</h2><span class="tag">SNAPSHOT 31/10/2026</span></div>'+
@@ -94,5 +118,5 @@ function lnrCatalogueView(){
   '<p><a href="'+lnrEscape(c[2])+'" target="_blank" rel="noopener noreferrer">Source officielle : effectif et staff LNR</a></p>'+
   '<p class="help">Âges au 01/07/2026 ; les âges déduits de la seule année de naissance sont conservateurs et estimés.</p>'+ 
   '<div class="lnr-scroll"><table><thead><tr><th>Joueur</th><th>Groupe de poste LNR</th><th>Nationalité LNR</th><th>Âge au 01/07/2026</th></tr></thead>'+
-  '<tbody>'+rows+'</tbody></table></div></section>';
+  '<tbody>'+rows+'</tbody></table></div>'+lnrPlayerFacts(c,c[3].find(p=>p[0]===lnrBrowsePlayerId))+'</section>';
 }
