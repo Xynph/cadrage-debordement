@@ -45,6 +45,43 @@ function lnr05Apply(id,token){
 function lnr05Compare(id){if(!lnr05Enabled()||!player(id))return false;toggleCompare(id);return true}
 function lnr05Sheet(){if(lnr05Enabled()){squadTab='sheet';render()}}
 function lnr05Health(){if(lnr05Enabled()){squadTab='health';render()}}
+// Conseils fondes sur les aptitudes du moteur ; aucune statistique sportive officielle inferee.
+function lnr05AdviceCandidates(limit=3){
+ if(!lnr05Enabled()||lnr05Locked())return [];
+ const chosen=new Set([...S.lineup,...S.reserves]);
+ return club().players.filter(p=>p.id.startsWith('lnr:')&&!chosen.has(p.id)&&!p.injury&&lnr05Proof(p.id))
+  .map(p=>{
+   const proposal=lnr05Proposal(p.id);
+   if(!proposal?.valid||!Number.isInteger(proposal.slot)||proposal.slot>=15)return null;
+   const index=proposal.slot,old=club().players.find(q=>q.id===S.lineup[index]);
+   if(!old)return null;
+   const family=FAMILIES[index],load=physicalLoadValue(p),oldLoad=physicalLoadValue(old);
+   const positional=fitScore(p,family)-fitScore(old,family);
+   const physical=Math.round(p.condition-old.condition);
+   const fatigue=oldLoad-load;
+   // Seuil fixe, reproductible et explicable ; il sert uniquement au tri de suggestions.
+   const score=positional+physical*0.25+fatigue*0.15;
+   if(score<=0)return null;
+   return {id:p.id,name:p.name,slot:index,score,proposal,
+    positional,physical,fatigue,condition:p.condition,load};
+  }).filter(Boolean).sort((a,b)=>b.score-a.score||a.id.localeCompare(b.id)).slice(0,limit);
+}
+function lnr05AdviceView(){
+ if(!lnr05Enabled())return '';
+ const advice=lnr05AdviceCandidates();
+ const rows=advice.map(a=>'<li><button type="button" onclick="lnr05Pick(\''+lnr05Escape(a.id)+'\')">'+
+  lnr05Escape(a.name)+'</button> · poste '+(a.slot+1)+
+  ' · adaptation au poste '+(a.positional>=0?'+':'')+Math.round(a.positional)+
+  ', condition '+(a.physical>=0?'+':'')+Math.round(a.physical)+' points'+
+  ', charge évitée '+(a.fatigue>=0?'+':'')+Math.round(a.fatigue)+
+  ' · '+a.proposal.changes+' changement(s) prévus</li>').join('');
+ return '<section class="lnr05-advice" aria-label="Conseils avant-match à 23">'+
+  '<h3>Options de rotation avant-match</h3>'+
+  '<p class="help">Suggestions calculées à partir des notes au poste, de la condition et de la charge du jeu (toutes simulées). Les compatibilités de poste viennent des règles natives ; aucun bonus tactique chiffré non attesté. Le score ne prédit pas le résultat du match. Le XV reste inchangé jusqu’à confirmation.</p>'+
+  (rows?'<ol>'+rows+'</ol><p class="help">Sélectionnez une option pour prévisualiser la feuille et confirmer manuellement.</p>':
+   '<p class="help">Aucun remplacement titulaire améliorant ces critères et validé par la feuille native, ou match verrouillé.</p>')+
+  '</section>';
+}
 function lnr05View(){
  if(!lnr05Enabled())return '';
  const roster=club().players.filter(p=>typeof p.id==='string'&&p.id.startsWith('lnr:'));
@@ -95,7 +132,7 @@ function lnr05View(){
   '<div class="cardtitle"><h2>Cellule LNR · preuves et rotation</h2><span class="tag">MODE OPTIONNEL</span></div>'+
   '<p class="help">Dossiers individuels rapprochés : 240 / 1 592 joueurs LNR ; dans ce club : '+measured+
   ' joueurs mesurés. LNR = photographie du 31/10/2026, non certification au 01/07/2026. Notes, poste détaillé, condition, charge et contrats restent simulés.</p>'+
-  '<div class="lnr05-filters" role="group" aria-label="Filtrer les preuves">'+buttons+'</div>'+
+  lnr05AdviceView()+'<div class="lnr05-filters" role="group" aria-label="Filtrer les preuves">'+buttons+'</div'+'>
   '<div class="lnr05-scroll"><table><thead><tr><th>Joueur</th><th>Source</th><th>Âge LNR</th><th>Taille</th><th>Poids</th><th>Condition*</th><th>Charge*</th><th>Statut*</th></tr></thead><tbody>'+
   table+'</tbody></table></div>'+
   '<p class="help">* Donnée simulée. Cliquez sur un joueur pour comparer, étudier la feuille et demander un remplacement volontaire.</p>'+detail+
