@@ -1054,3 +1054,17 @@ html:root[data-cd-theme] .da42-market-grid strong{display:block;margin-top:12px;
   font-weight:650;
  }
 }
+
+/* V4.4 desktop — readable, accessible contextual pager after visual audit.
+   Larger hit areas and context labels at 1440/1920, without growing the page. */
+@media (min-width:1200px){
+ html:root[data-cd-theme] .da43-workspace>.da42-subnav{min-height:56px!important}
+ html:root[data-cd-theme] .da43-workspace .da43-page-switch{min-width:275px}
+ html:root[data-cd-theme] .da43-workspace .da43-context-key{font-size:10px;letter-spacing:.8px}
+ html:root[data-cd-theme] .da43-workspace .da43-context-value{font-size:14px}
+ html:root[data-cd-theme] .da43-workspace .da43-page-count{font-size:13px;min-width:66px}
+ html:root[data-cd-theme] .da43-workspace button.da43-skip{
+  min-width:44px;width:44px;height:44px;font-size:20px;
+ }
+ html:root[data-cd-theme] .da43-workspace .da42-tab-index{font-size:11px}
+}
