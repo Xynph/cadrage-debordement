@@ -34,8 +34,10 @@ test('repos persistant versus repos ponctuel: suivi et veritable reprise native'
    assert.equal(r('!!parseSaveDocument('+JSON.stringify(document)+')'),true);
    const resumed=context(parsed.state);
    for(const file of ['lnr-rosters-data.js','lnr-career.js','lnr05-enriched-data.js','lnr05-evidence-center.js'])vm.runInContext(fs.readFileSync(__dirname+'/../dist/'+file,'utf8'),resumed.ctx);
+   resumed.run('S=parseSaveDocument('+JSON.stringify(document)+').state');
    assert.equal(resumed.run('S.round'),r('S.round'),'vraie reprise sauvegarde meme journee');
    assert.equal(resumed.run('club().players[0].condition'),r('club().players[0].condition'),'condition reprise identique');
+   assert.equal(resumed.run('S.phase'),r('S.phase'),'phase reprise identique');
    stats.checkpoints++;
   }
  }
