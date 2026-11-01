@@ -146,9 +146,10 @@ try:
                           return rows.length===5&&rows.every((row,i)=>{
                             const card=row.getBoundingClientRect();
                             const name=row.querySelector('.da4-stop-name')?.getBoundingClientRect();
-                            const mark=getComputedStyle(row,'::after').content;
+                            const css=getComputedStyle(row), mark=getComputedStyle(row,'::after').content;
                             return !!name && name.bottom<=card.bottom+1 && name.top>card.top+card.height*.50
-                              && mark.includes(String(i+1).padStart(2,'0'));
+                              && css.counterIncrement.includes('da43-fixture')
+                              && mark.includes('counter(da43-fixture');
                           });
                         }"""))
                     if route == 'recruitment' and key == 'marche':
