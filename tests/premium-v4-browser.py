@@ -46,6 +46,34 @@ try:
   check('panorama actually visible in office',page.locator('.da42-command-lead').evaluate("e=>getComputedStyle(e).backgroundImage.includes('premium-v4-matchday.webp')"))
   check('panorama decodes locally',page.evaluate("async()=>{let i=new Image();i.src='assets/premium-v4-matchday.webp';await i.decode();return i.naturalWidth>=1500&&i.naturalHeight>600}"))
   check('office visual columns do not overlap',page.evaluate("(()=>{const a=document.querySelector('.da42-command-lead').getBoundingClientRect(),b=document.querySelector('.da42-command-rail').getBoundingClientRect();return a.right<=b.left+2&&Math.abs(a.top-b.top)<2})()"))
+  # V4.6: real PC pre-match, both themes and widths; no match started here.
+  for theme in ('analyste','tribune'):
+   page.locator('#ui01-theme').select_option(theme)
+   for width,height in ((1440,900),(1920,1080)):
+    page.set_viewport_size({'width':width,'height':height})
+    page.evaluate("nav('match')")
+    original_state=page.evaluate('JSON.stringify(S)')
+    original_disk=page.evaluate('localStorage.getItem("bdt-v1")')
+    check('V4.6 actual pre-match grid '+theme+' '+str(width),
+          page.locator('.prematch-grid').count()==1 and page.locator('.prematch-grid .stack').count()>=2)
+    check('V4.6 real kickoff controls '+theme+' '+str(width),
+          page.locator('.prematch-grid button.primary').count()>=1)
+    check('V4.6 editorial match header '+theme+' '+str(width),
+          page.locator('.main>.heading').evaluate(
+           "e=>getComputedStyle(e).backgroundImage.includes('premium-v4-matchday.webp')"))
+    check('V4.6 opponent preview preserved '+theme+' '+str(width),
+          page.locator('.prematch-grid>.stack:last-child .card').count()>0)
+    check('V4.6 prematch width '+theme+' '+str(width),
+          page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
+    check('V4.6 prematch saves and engine unchanged '+theme+' '+str(width),
+          page.evaluate('JSON.stringify(S)')==original_state and
+          page.evaluate('localStorage.getItem("bdt-v1")')==original_disk)
+    page.locator('#toast').evaluate("e=>e.style.display='none'")
+    page.screenshot(path=str(OUT/('v46-prematch-'+theme+'-'+str(width)+'.png')),
+                    full_page=False)
+  page.set_viewport_size({'width':1440,'height':1000})
+  page.locator('#ui01-theme').select_option('analyste')
+  page.evaluate("nav('dashboard')")
   # Same career and same viewport, with only the final skin disabled for comparison.
   page.locator('#ui01-theme').select_option('analyste')
   page.screenshot(path=str(OUT/'dashboard-after.png'))
@@ -84,6 +112,30 @@ try:
   }'''
   for selector in ('.commentary-feed .latest-event p','.auto-pause label','.full-pitch-label'):
    check('live text contrast '+selector,page.locator(selector).first.evaluate(contrast_js))
+  # V4.6: the match is intentionally paused; screenshots do not advance time.
+  paused_minute=page.evaluate('S.live.minute')
+  for width,height in ((1440,900),(1920,1080)):
+   page.set_viewport_size({'width':width,'height':height})
+   check('V4.6 live native scoreboard '+str(width),
+         page.locator('.live-layout .match-scoreboard .score').count()==1)
+   check('V4.6 live actions preserved '+str(width),
+         page.locator('.live-layout .match-scoreboard .matchactions button').count()>=2)
+   check('V4.6 live rugby field '+str(width),
+         page.locator('.live-layout .v40-field-center .match-field').count()==1)
+   live_style=page.locator('.live-layout .match-scoreboard').evaluate("""e=>({
+       image:getComputedStyle(e).backgroundImage,
+       theme:document.documentElement.dataset.cdTheme||'none',
+       sheet:[...document.styleSheets].some(s=>s.href?.includes('premium-v4.css')&&!s.disabled),
+       width:innerWidth
+   })""")
+   check('V4.6 live highlight '+str(width)+' '+str(live_style),
+         'premium-v4-matchday.webp' in live_style['image'])
+   check('V4.6 live width '+str(width),
+         page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
+   check('V4.6 live minute stable '+str(width),
+         page.evaluate('S.live.paused&&S.live.minute')==paused_minute)
+   page.screenshot(path=str(OUT/('v46-live-analyste-'+str(width)+'.png')),
+                   full_page=False)
   for width in (1440,390):
    page.set_viewport_size({'width':width,'height':1000})
    page.screenshot(path=str(OUT/('live-'+str(width)+'.png')),full_page=True)
