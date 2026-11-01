@@ -316,20 +316,26 @@
   if(route==='recruitment'){
    const content=main.querySelector('.cd03-content');
    if(content&&main.querySelector('.cd03-tabs [aria-current="page"]')?.dataset.ui03Tab==='overview')
-    buildWorkspace(content,route,[
+    {buildWorkspace(content,route,[
      {id:'besoins',label:'Besoins du XV',selectors:[':scope>.da4-recruit-stage']},
      {id:'marche',label:'Observatoire des coûts',selectors:[':scope>.da42-market']},
      {id:'dossiers',label:'Missions et commandes',native:true}
     ]);
+     const metrics=main.querySelector('.cd03-kpis'),dossier=content.querySelector('[data-da42-page="dossiers"]');
+     if(metrics&&dossier)dossier.prepend(metrics);
+    }
   }
   if(route==='formation'){
    const content=main.querySelector('.cd04-content');
    if(content&&main.querySelector('.cd04-tabs [aria-current="page"]')?.dataset.ui04Tab==='overview')
-    buildWorkspace(content,route,[
+    {buildWorkspace(content,route,[
      {id:'passerelle',label:'Passerelle',selectors:[':scope>.da4-academy-stage']},
      {id:'potentiel',label:'Potentiel des espoirs',selectors:[':scope>.da42-academy']},
      {id:'dossiers',label:'Suivi et commandes',native:true}
     ]);
+     const metrics=main.querySelector('.cd04-kpis'),dossier=content.querySelector('[data-da42-page="dossiers"]');
+     if(metrics&&dossier)dossier.prepend(metrics);
+    }
   }
  }
 
