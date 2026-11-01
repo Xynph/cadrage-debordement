@@ -122,9 +122,14 @@ try:
          page.locator('.live-layout .match-scoreboard .matchactions button').count()>=2)
    check('V4.6 live rugby field '+str(width),
          page.locator('.live-layout .v40-field-center .match-field').count()==1)
-   check('V4.6 live highlight '+str(width),
-         page.locator('.live-layout .match-scoreboard').evaluate(
-          "e=>getComputedStyle(e).backgroundImage.includes('premium-v4-matchday.webp')"))
+   live_style=page.locator('.live-layout .match-scoreboard').evaluate("""e=>({
+       image:getComputedStyle(e).backgroundImage,
+       theme:document.documentElement.dataset.cdTheme||'none',
+       sheet:[...document.styleSheets].some(s=>s.href?.includes('premium-v4.css')&&!s.disabled),
+       width:innerWidth
+   })""")
+   check('V4.6 live highlight '+str(width)+' '+str(live_style),
+         'premium-v4-matchday.webp' in live_style['image'])
    check('V4.6 live width '+str(width),
          page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
    check('V4.6 live minute stable '+str(width),

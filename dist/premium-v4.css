@@ -381,3 +381,12 @@ html:root[data-cd-theme][data-menu-text="large"] .cd3-menu :is(p,small,button,la
   font-size:10px;
  }
 }
+
+/* V4.6 robustesse : priorité au décor du score, même face aux surfaces globales du live. */
+@media(min-width:1200px){
+ .live-layout .match-scoreboard{
+  background-image:linear-gradient(90deg,#0b2921ed,#08231df4 48%,#15392adf),url('assets/premium-v4-matchday.webp')!important;
+  background-position:center,center 55%!important;
+  background-size:auto,cover!important;
+ }
+}
