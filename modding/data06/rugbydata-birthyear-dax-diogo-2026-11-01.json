@@ -1,0 +1,21 @@
+{
+  "schema": "data06-individual-birthyear-evidence-v1",
+  "observedDate": "2026-11-01",
+  "records": [
+    {
+      "lnrId": "lnr:11939",
+      "lnrName": "Diogo JOEL DE ALMEIDA HASSE FERREIRA",
+      "rugbyDataId": "1260",
+      "rugbyDataName": "Diogo Hasse Ferreira",
+      "club": "dax",
+      "birthYear": 1996,
+      "birthDateAsPublished": "17 octobre 1996",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Diogo_Hasse_Ferreira",
+      "independentCorroboration": "https://www.lequipe.fr/fiche/diogo-hasse-ferreira/248901",
+      "sourceRoster": "https://www.rugbydata.fr/club/effectif/panel/13/27",
+      "season": "2026-2027",
+      "identityEvidence": "Wikipedia explicitly names the full name Diogo Joel de Almeida Hasse Ferreira and shortened display name Diogo Hasse Ferreira; unique club match in LNR and Rugby Data",
+      "validAtCareerStart": null
+    }
+  ]
+}
