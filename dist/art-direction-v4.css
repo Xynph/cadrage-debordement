@@ -617,3 +617,37 @@ html:root[data-cd-theme] .da42-market-grid strong{display:block;margin-top:12px;
  }
  html:root[data-cd-theme] .da42-page .da42-static-values table{width:100%;font-size:11px}
 }
+
+/* Affichage PC en une vue : les KPI natifs de Recrutement/Formation ont
+   leur propre sous-page "Dossiers", plutôt que de réduire chaque écran. */
+@media(min-width:1100px){
+ html:root[data-cd-theme] .main.da42-paged .cd03:has(.da42-workspace-shell),
+ html:root[data-cd-theme] .main.da42-paged .cd04:has(.da42-workspace-shell){
+  flex:1 1 auto;min-height:0;height:100%;max-height:100%;overflow:hidden;
+  display:flex;flex-direction:column
+ }
+ html:root[data-cd-theme] .main.da42-paged .cd03:has(.da42-workspace-shell)>.cd03-header,
+ html:root[data-cd-theme] .main.da42-paged .cd04:has(.da42-workspace-shell)>.cd04-header{
+  flex:0 0 auto!important;padding:9px 19px!important;min-height:63px!important;
+  align-items:center;gap:12px
+ }
+ html:root[data-cd-theme] .main.da42-paged .cd03:has(.da42-workspace-shell)>.cd03-header h2,
+ html:root[data-cd-theme] .main.da42-paged .cd04:has(.da42-workspace-shell)>.cd04-header h2{
+  font-size:26px!important;line-height:1.05;margin:3px 0!important
+ }
+ html:root[data-cd-theme] .main.da42-paged .cd03:has(.da42-workspace-shell)>.cd03-header p:last-child,
+ html:root[data-cd-theme] .main.da42-paged .cd04:has(.da42-workspace-shell)>.cd04-header p:last-child{
+  display:none!important
+ }
+ html:root[data-cd-theme] .main.da42-paged .cd03:has(.da42-workspace-shell)>.cd03-tabs,
+ html:root[data-cd-theme] .main.da42-paged .cd04:has(.da42-workspace-shell)>.cd04-tabs{
+  flex:0 0 auto!important
+ }
+ html:root[data-cd-theme] .main.da42-paged .cd03:has(.da42-workspace-shell)>.cd03-content,
+ html:root[data-cd-theme] .main.da42-paged .cd04:has(.da42-workspace-shell)>.cd04-content{
+  display:flex!important;flex:1 1 auto!important;min-height:0!important;
+  flex-direction:column!important;overflow:hidden!important
+ }
+ html:root[data-cd-theme] .da42-page-native>.cd03-kpis,
+ html:root[data-cd-theme] .da42-page-native>.cd04-kpis{flex:0 0 auto;margin-bottom:14px}
+}
