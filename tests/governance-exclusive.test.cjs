@@ -21,3 +21,7 @@ test('handoff and user-facing action labels', () => {
  assert.match(file, /passation #73/);
  assert.match(file, /jamais seulement « Continuer »/);
 });
+
+test('no contradictory legacy parallel-work or fixed-account clauses', () => {
+ for (const forbidden of ['Les sessions peuvent être simultanées','travaux indépendants peuvent se poursuivre simultanément','compte intégrateur unique est seul responsable','fusion réservée au compte intégrateur unique']) assert.ok(!file.includes(forbidden), forbidden);
+});
