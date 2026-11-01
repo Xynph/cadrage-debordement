@@ -540,3 +540,121 @@ html:root[data-cd-theme][data-menu-text="large"] .cd3-menu :is(p,small,button,la
   grid-template-columns:repeat(4,minmax(0,1fr));
  }
 }
+
+
+/* V4.7.1 Premium PC — second visual pass from real Chromium captures.
+   Compact decision reading without hiding any native data or altering commands. */
+@media(min-width:1200px){
+ /* Mercado: put all recruitment needs in a genuine two-column decision matrix,
+    rather than 677px of consecutive full-width single-line rows. */
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main>.recruitment-intel .recruitment-needs-list{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px 14px;align-items:stretch;margin:17px 0 18px;
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main>.recruitment-intel .recruitment-needs-list>.row{
+  display:flex;flex-direction:column;align-items:stretch;justify-content:space-between;
+  margin:0;padding:15px 17px;min-height:92px;min-width:0;
+  border:1px solid var(--ui01-border);
+  border-left:3px solid var(--ui01-accent);
+  background:color-mix(in srgb,var(--ui01-soft) 78%,var(--ui01-surface));
+  gap:8px;
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main>.recruitment-intel .recruitment-needs-list>.row>:is(strong,b){
+  font-variant-numeric:tabular-nums;font-size:15px;
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main>.recruitment-intel .recruitment-needs-list .row small{
+  font-size:11px;line-height:1.55;color:var(--ui01-meta);
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main>.recruitment-intel .recruitment-target{
+  border-top:1px solid var(--ui01-border);padding:17px 0 10px;
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main>.recruitment-intel .recruitment-target .matchactions button{
+  min-height:42px;white-space:normal;
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main>.marketgrid>.marketplayer .row{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;
+  align-items:start;gap:11px;min-width:0;
+  padding:8px 0;margin:6px 0;
+  border-bottom:1px solid var(--ui01-border);
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main>.marketgrid>.marketplayer .row>:last-child{
+  font-variant-numeric:tabular-nums;text-align:right;
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main>.marketgrid>.marketplayer :is(button,select):focus-visible{
+  outline:3px solid var(--ui01-accent);outline-offset:3px;
+ }
+
+ /* Career archives: two numbered chapters and a subtle season ledger motif.
+    Numbers refer to panel order only; they do NOT imply titles or seasons. */
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main:has(>.heading + .career-integration-card)>section.card{
+  padding:clamp(28px,2.5vw,42px) clamp(28px,2.4vw,40px);
+  padding-top:73px;overflow:hidden;
+  background:
+   linear-gradient(90deg,transparent 0 92%,color-mix(in srgb,var(--ui01-accent) 7%,transparent) 92% 93%,transparent 93%),
+   repeating-linear-gradient(180deg,transparent 0 51px,color-mix(in srgb,var(--ui01-border) 34%,transparent) 51px 52px),
+   linear-gradient(145deg,var(--ui01-surface),var(--ui01-soft));
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main:has(>.heading + .career-integration-card)>section.card::before{
+  content:'CHAPITRE 01';position:absolute;top:23px;left:clamp(28px,2.4vw,40px);
+  color:var(--ui01-accent);letter-spacing:2px;font:800 10px/1.25 'DM Sans',sans-serif;
+  border-bottom:1px solid var(--ui01-border);padding-bottom:9px;
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main:has(>.heading + .career-integration-card)>section.card:last-of-type::before{
+  content:'CHAPITRE 02';
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main:has(>.heading + .career-integration-card)>section.card :is(h2,h3){
+  line-height:1.1;max-width:85%;
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main:has(>.heading + .career-integration-card)>section.card p{
+  max-width:49ch;line-height:1.7;
+ }
+
+ /* Save/export: make the irreversible import distinction visibly legible,
+    while leaving button handlers, disabled states and storage untouched. */
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main:has(button[onclick="openImportPicker()"])>.grid>.stack:first-child>.card:first-child{
+  background:linear-gradient(135deg,#133e30,#071f19);
+  border:1px solid #527b64;border-top:4px solid #f0b17d;color:#faf5e8;
+  min-height:287px;
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main:has(button[onclick="openImportPicker()"])>.grid>.stack:first-child>.card:first-child :is(h2,h3,strong){
+  color:#fff9ed;
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main:has(button[onclick="openImportPicker()"])>.grid>.stack:first-child>.card:first-child :is(p,small,.help){
+  color:#d4e2d5;
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main:has(button[onclick="openImportPicker()"])>.grid button[onclick="exportCareer()"]{
+  min-height:48px;background:#eda16c;color:#152719;border-color:#f4bc92;
+  font-weight:800;font-size:13px;padding:13px 20px;
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main:has(button[onclick="openImportPicker()"])>.grid button[onclick="openImportPicker()"]{
+  min-height:46px;font-weight:800;
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main:has(button[onclick="openImportPicker()"])>.grid>.stack:last-child>.card:first-child{
+  border-top:4px solid #c8aa72;
+  background:linear-gradient(145deg,var(--ui01-surface),var(--ui01-soft));
+ }
+ html:root[data-cd-theme] .ui01-layout:not(.live-layout)
+ .main:has(button[onclick="openImportPicker()"])>.grid>.stack:last-child>.card:first-child :is(p,.help){
+  max-width:53ch;
+ }
+}

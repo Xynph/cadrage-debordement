@@ -22,3 +22,13 @@ Archive de référence `premium-v4-browser-report` #13084600844, téléchargée 
 Le navigateur produit les 12 captures initiales et **12 captures après stylisation** (24 au total, sur les mêmes routes), contrôle l'existence des vrais filtres / liens / boutons, la géométrie, `JSON.stringify(S)` et le stockage `bdt-v1` avant/après chaque route, les écrans V4 antérieurs, la pause du match, les ressources HTTP et l'absence de débordement.
 
 Aucun fichier `dist/saves.js`, moteur rugby, DATA-06, Business ou collecteur payé n'est touché. Les captures et tests ne certifient pas Windows natif, Safari ni lecteur d'écran. **Aucune fusion sans autorisation expresse.**
+
+
+## Deuxième lot V4.7.1 — densité et hiérarchie contrôlées
+
+Suite à la demande explicite « améliore encore avant de fusionner », un second audit du véritable avant/après (artefact baseline #13085215156 et V4.7 #13084168856) a révélé que le premier changement était réel, mais la section Diagnostic de l'effectif occupait encore **677 px** à 1440×900. Le Mercato poussait les neuf profils recrutables en dessous de la ligne de flottaison. Le Palmarès occupait l'écran avec deux panneaux encore peu identifiables et les Sauvegardes demandaient une distinction plus visible entre exporter et importer.
+
+- **Mercato** : besoins de recrutement natifs en deux colonnes sur PC, chaque besoin occupant une carte éditoriale complète avec valeurs et texte conservés ; métriques de joueur rangées en paires libellé/valeur pour accélérer la comparaison. Aucun budget, filtre, recrue, contrat, ni résultat nouveau.
+- **Palmarès** : chapitres 01/02 pour distinguer les deux panneaux d'archives existants, motif de ledger discret et largeur de lecture contrôlée. Ces numéros décrivent **l'ordre des sections**, pas un nombre de trophées ou de saisons. Aucun palmarès fictif.
+- **Sauvegardes** : carte Exporter sur fond sombre à contraste renforcé avec commande principale cuivrée de 48 px, Importer et retour de secours séparés. Aucun déclencheur, format, stockage ou migration modifiés.
+- **Preuves** : 12 captures supplémentaires `v47-polish-*` dans les deux thèmes et aux deux résolutions, tests de vraie grille 2 colonnes, intégrité DOM des besoins, chapitres, absence de rognage et maintien de l'export/import, sauvegarde `S` et stockage `bdt-v1`. Contrôles anciens maintenus. Les nouveaux résultats de CI doivent être vérifiés sur le SHA final.

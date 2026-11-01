@@ -130,6 +130,46 @@ try:
              "e=>e.getBoundingClientRect().height>=44"))
       check('V4.7 save controls preserve backup '+theme+' '+str(width),
             page.locator('[onclick="reviewBackup()"]').count()==1)
+
+     # V4.7.1 second pass: structural and real-style checks on both desktop
+     # resolutions and both themes; no native actions are invoked.
+     if route=='market':
+      needs=page.locator('.main>.recruitment-intel .recruitment-needs-list')
+      check('V4.7.1 market needs retained '+theme+' '+str(width),
+            needs.count()==1 and needs.locator('>.row').count()>=4)
+      check('V4.7.1 market needs two columns '+theme+' '+str(width),
+            needs.evaluate("""e=>{
+              const r=[...e.children].filter(x=>x.classList.contains('row')).map(
+                x=>x.getBoundingClientRect());
+              return getComputedStyle(e).display==='grid'&&r.length>=4&&
+                Math.abs(r[0].top-r[1].top)<3&&r[0].right<=r[1].left+3;
+            }"""))
+      check('V4.7.1 market card metrics accessible '+theme+' '+str(width),
+            page.locator('.marketgrid>.marketplayer').first.locator('.row').count()>=1)
+     if route=='history':
+      check('V4.7.1 history chapters '+theme+' '+str(width),
+            page.locator('.main>section.card').first.evaluate(
+             """e=>getComputedStyle(e,'::before').content.includes('CHAPITRE 01')""") and
+            page.locator('.main>section.card').last.evaluate(
+             """e=>getComputedStyle(e,'::before').content.includes('CHAPITRE 02')"""))
+      check('V4.7.1 history panels full content '+theme+' '+str(width),
+            page.locator('.main>section.card').first.evaluate(
+             """e=>e.scrollHeight<=e.clientHeight+1""") and
+            page.locator('.main>section.card').last.evaluate(
+             """e=>e.scrollHeight<=e.clientHeight+1"""))
+     if route=='saves':
+      check('V4.7.1 dark export panel '+theme+' '+str(width),
+            page.locator('.main>.grid>.stack:first-child>.card:first-child').evaluate(
+             """e=>getComputedStyle(e).backgroundImage.includes('linear-gradient')&&
+               getComputedStyle(e).borderTopWidth==='4px'"""))
+      check('V4.7.1 export and import hit area '+theme+' '+str(width),
+            all(page.locator(q).evaluate("e=>e.getBoundingClientRect().height>=44")
+                for q in ('[onclick="exportCareer()"]',
+                          '[onclick="openImportPicker()"]')))
+      check('V4.7.1 native backups still present '+theme+' '+str(width),
+            page.locator('[onclick="reviewBackup()"]').count()==1)
+     page.screenshot(path=str(OUT/('v47-polish-'+route+'-'+theme+'-'+str(width)+'.png')),
+                     full_page=False)
      check('V4.7 career state preserved '+route+' '+theme+' '+str(width),
            page.evaluate('JSON.stringify(S)')==original_state and
            page.evaluate('localStorage.getItem("bdt-v1")')==original_disk)

@@ -698,3 +698,10 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Audit par captures Chromium réellement inspectées : archive #13084600844 puis nouvelle archive #13085215156 de 12 images et `v47-dom-audit.json`. Mercato très dense (~2986 px), Palmarès creux (~744 px), Sauvegardes peu hiérarchisées (~893 px) en Analyste 1440.
 - CSS V4.7 sur `dist/premium-v4.css` pour ces trois routes uniquement : scènes éditoriales, panneaux carrière rééquilibrés et commandes d'export/mercato renforcées. Les contenus de jeu et la sauvegarde sont inchangés ; tests Chromium étendus à 12 captures après corrections avec assertions de géométrie, fonctions natives et invariants de stockage. Rapport `docs/decision-studio-v47.md`.
 - CI de la nouvelle tête PR #182 à vérifier avant toute intégration ; fusion exclusivement après permission utilisateur, jamais automatique.
+
+
+## V4.7.1 Premium — second lot avant fusion — 1er novembre 2026
+
+- Demande : améliorer encore la PR #182 avant fusion, sans créer de PR concurrente. Audit réel du comparatif baseline #13085215156 contre final #13084168856 : la hiérarchie est mieux marquée mais le Diagnostic Mercato reste haut de 677 px, les archives ont peu de repères et les commandes de sauvegarde ne sont pas assez distinctes.
+- Correctifs CSS bornés au PC : besoins de recrutement sur deux colonnes sans retrait, paires valeur/libellé alignées dans les joueurs, chapitres graphiques des archives (sans trophées ajoutés), carte Exporter sombre et actions Exporter/Importer plus identifiables. Moteur, données et stockage inchangés.
+- Tests Chromium étendus de 12 captures `v47-polish` en Analyste/Tribune à 1440×900 / 1920×1080, géométrie réelle de la grille, chapitres, sauvegardes et état inchangés. Réception finale sur SHA exact attendue ; aucune fusion autorisée.
