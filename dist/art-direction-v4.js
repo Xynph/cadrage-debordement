@@ -215,7 +215,7 @@
   if(!root||root.querySelector(':scope>.da42-workspace-shell'))return;
   // Existing game controls are MOVED, not cloned and not replaced.
   // Everything not explicitly selected remains reachable on a native subpage.
-  const keep=new Set(Array.from(root.children).filter(el=>el.matches('.heading,.cd03-tabs,.cd04-tabs,.cd02-tabs')));
+  const keep=new Set(Array.from(root.children).filter(el=>el.matches('.ui01-appbar,.heading,.cd03-tabs,.cd04-tabs,.cd02-tabs')));
   const shell=node('<div class="da42-workspace-shell" aria-label="Sous-pages de gestion PC"><nav class="da42-subnav" role="tablist" aria-label="Sous-pages du '+esc(route)+'"></nav><div class="da42-page-viewport"></div></div>');
   const tabs=shell.querySelector('.da42-subnav'),viewport=shell.querySelector('.da42-page-viewport');
   const pages=groups.map((g,index)=>{
