@@ -37,8 +37,30 @@ jobs:
           node tests/lnr05-rotation-audit.cjs
           node tests/lnr05-fatigue-scenarios.cjs
           node tests/lnr05-physical-propagation.cjs
+          node tests/lnr05-multiseason-strategies.cjs
           node tests/lnr05-match-simulation-propagation.cjs
           node tests/lnr05-evidence-long.cjs
+  longitudinal-audit:
+    name: "Audit 4 saisons / ${{ matrix.mode }} / graine ${{ matrix.seed }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [temoin, rotation, repos, combine]
+        seed: [0, 29]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Mesurer quatre saisons et sauvegardes
+        env:
+          LNR_AUDIT_MODE: ${{ matrix.mode }}
+          LNR_AUDIT_SEED: ${{ matrix.seed }}
+        run: node tests/lnr05-multiseason-strategies.cjs
   real-import-no-network:
     runs-on: ubuntu-latest
     timeout-minutes: 8
