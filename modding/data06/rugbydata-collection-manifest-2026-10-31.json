@@ -1,0 +1,224 @@
+{
+  "schema": "data06-rugbydata-collection-manifest-v1",
+  "source": "https://www.rugbydata.fr",
+  "completedAt": "2026-10-31T22:27:36.700193+00:00",
+  "sourceSeason": "2026-2027",
+  "scope": "Partial individual collection deliberately closed to preserve user quota; all 30 seasonal rosters collected. Unattempted profiles are explicit.",
+  "robotsObserved": {
+    "url": "https://www.rugbydata.fr/robots.txt",
+    "status": 200,
+    "directives": [
+      "User-agent: *",
+      "Allow: /"
+    ],
+    "meaning": "Technical crawl guidance; no claim of a separate reuse licence."
+  },
+  "discovery": {
+    "url": "https://www.rugbydata.fr/clubs/panel/1",
+    "htmlSha256": "b9c051e2ecba39fd428fd89c2902b5d1de599d2eb702326034619684a7ff5228",
+    "seasonEvidenceUrl": "https://www.rugbydata.fr/club/effectif/8",
+    "seasonId": "27",
+    "seasonLabel": "2026-2027",
+    "clubs": [
+      {
+        "sourceClubId": 22,
+        "club": "beziers",
+        "labelAsPublished": "AS Béziers Béziers",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/22"
+      },
+      {
+        "sourceClubId": 8,
+        "club": "clermont",
+        "labelAsPublished": "ASM Clermont Clermont-Ferrand",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/8"
+      },
+      {
+        "sourceClubId": 5,
+        "club": "bayonne",
+        "labelAsPublished": "Aviron Bayonnais Bayonne",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/5"
+      },
+      {
+        "sourceClubId": 33,
+        "club": "biarritz",
+        "labelAsPublished": "Biarritz Olympique Biarritz",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/33"
+      },
+      {
+        "sourceClubId": 25,
+        "club": "brive",
+        "labelAsPublished": "CA Brive Brive-la-Gaillarde",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/25"
+      },
+      {
+        "sourceClubId": 9,
+        "club": "castres",
+        "labelAsPublished": "Castres Olympique Castres",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/9"
+      },
+      {
+        "sourceClubId": 29,
+        "club": "colomiers",
+        "labelAsPublished": "Colomiers Colomiers",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/29"
+      },
+      {
+        "sourceClubId": 23,
+        "club": "grenoble",
+        "labelAsPublished": "FC Grenoble Grenoble",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/23"
+      },
+      {
+        "sourceClubId": 10,
+        "club": "lyon",
+        "labelAsPublished": "Lyon OU Lyon",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/10"
+      },
+      {
+        "sourceClubId": 11,
+        "club": "montpellier",
+        "labelAsPublished": "Montpellier HR Montpellier",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/11"
+      },
+      {
+        "sourceClubId": 35,
+        "club": "nice",
+        "labelAsPublished": "Nissa Rugby Nice",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/35"
+      },
+      {
+        "sourceClubId": 20,
+        "club": "oyonnax",
+        "labelAsPublished": "Oyonnax Oyonnax",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/20"
+      },
+      {
+        "sourceClubId": 21,
+        "club": "provence-rugby",
+        "labelAsPublished": "Provence Rugby Aix-en-Provence",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/21"
+      },
+      {
+        "sourceClubId": 12,
+        "club": "racing-92",
+        "labelAsPublished": "Racing 92 Nanterre",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/12"
+      },
+      {
+        "sourceClubId": 37,
+        "club": "narbonne",
+        "labelAsPublished": "RC Narbonne Narbonne",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/37"
+      },
+      {
+        "sourceClubId": 13,
+        "club": "toulon",
+        "labelAsPublished": "RC Toulon Toulon",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/13"
+      },
+      {
+        "sourceClubId": 19,
+        "club": "vannes",
+        "labelAsPublished": "RC Vannes Vannes",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/19"
+      },
+      {
+        "sourceClubId": 14,
+        "club": "pau",
+        "labelAsPublished": "Section Paloise Pau",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/14"
+      },
+      {
+        "sourceClubId": 31,
+        "club": "angouleme",
+        "labelAsPublished": "Soyaux Angoulême XV Angoulême",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/31"
+      },
+      {
+        "sourceClubId": 28,
+        "club": "aurillac",
+        "labelAsPublished": "Stade Aurillacois Aurillac",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/28"
+      },
+      {
+        "sourceClubId": 15,
+        "club": "paris",
+        "labelAsPublished": "Stade Français Paris",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/15"
+      },
+      {
+        "sourceClubId": 16,
+        "club": "la-rochelle",
+        "labelAsPublished": "Stade Rochelais La Rochelle",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/16"
+      },
+      {
+        "sourceClubId": 17,
+        "club": "toulouse",
+        "labelAsPublished": "Stade Toulousain Toulouse",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/17"
+      },
+      {
+        "sourceClubId": 32,
+        "club": "agen",
+        "labelAsPublished": "SU Agen Agen",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/32"
+      },
+      {
+        "sourceClubId": 6,
+        "club": "bordeaux-begles",
+        "labelAsPublished": "Union Bordeaux Bègles Bordeaux",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/6"
+      },
+      {
+        "sourceClubId": 24,
+        "club": "dax",
+        "labelAsPublished": "US Dax Dax",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/24"
+      },
+      {
+        "sourceClubId": 34,
+        "club": "montauban",
+        "labelAsPublished": "US Montauban Montauban",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/34"
+      },
+      {
+        "sourceClubId": 18,
+        "club": "perpignan",
+        "labelAsPublished": "USA Perpignan Perpignan",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/18"
+      },
+      {
+        "sourceClubId": 26,
+        "club": "nevers",
+        "labelAsPublished": "USON Nevers Sermoise-sur-Loire",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/26"
+      },
+      {
+        "sourceClubId": 30,
+        "club": "valence-romans",
+        "labelAsPublished": "Valence Romans DR Valence",
+        "sourceUrl": "https://www.rugbydata.fr/clubs/view/30"
+      }
+    ]
+  },
+  "summary": {
+    "sourceRosterRows": 1493,
+    "plannedIndividualProfiles": 1159,
+    "successfulIndividualProfiles": 689,
+    "errors": {
+      "Not attempted: quota-preserving closeout": 363,
+      "HTTP Error 503: Service Unavailable": 107
+    },
+    "ageBirthDateDiscrepancies": []
+  },
+  "limits": [
+    "No images downloaded",
+    "No login or paid service",
+    "No fuzzy identity aliases",
+    "Annual contract registration dates do not prove complete contract duration",
+    "Values observed in October do not certify club at career start",
+    "HTTP 503 responses and any other errors remain explicit failures"
+  ],
+  "pausedForQuota": true
+}

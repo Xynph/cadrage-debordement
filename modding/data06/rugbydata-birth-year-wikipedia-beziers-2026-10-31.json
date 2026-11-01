@@ -1,0 +1,72 @@
+{
+  "schema": "data06-wikipedia-club-birthyears-v1",
+  "club": "beziers",
+  "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault",
+  "sourceSection": "Effectif 2026-2027",
+  "scope": "Only Rugby Data individual profiles with missing birth date; exact source roster identities. Wikipedia is secondary evidence; no career-start membership inferred.",
+  "records": [
+    {
+      "sourceRecordId": "1131",
+      "name": "Killian Taofifenua",
+      "birthYear": 2000,
+      "birthDateAsPublished": "20 juillet 2000",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault",
+      "status": "explicit_club_table_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1082",
+      "name": "Thomas Canaleta",
+      "birthYear": 2004,
+      "birthDateAsPublished": "23 avril 2004",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault",
+      "status": "explicit_club_table_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1086",
+      "name": "Tanguy Jaillon",
+      "birthYear": 2005,
+      "birthDateAsPublished": "29 octobre 2005",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault",
+      "status": "explicit_club_table_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "3077",
+      "name": "Mackenzie Martin",
+      "birthYear": 2003,
+      "birthDateAsPublished": "26 octobre 2003",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault",
+      "status": "explicit_club_table_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1007",
+      "name": "David Delarue",
+      "birthYear": 1996,
+      "birthDateAsPublished": "27 octobre 1996",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault",
+      "status": "explicit_club_table_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1011",
+      "name": "Jordon Janse van Rensburg",
+      "birthYear": 2000,
+      "birthDateAsPublished": "30 mai 2000",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault",
+      "status": "explicit_club_table_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "3033",
+      "name": "Barnabé Mechentel",
+      "birthYear": 2005,
+      "birthDateAsPublished": "21 mars 2005",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Association_sportive_de_B%C3%A9ziers_H%C3%A9rault",
+      "status": "explicit_club_table_birth_date",
+      "validAtCareerStart": null
+    }
+  ]
+}

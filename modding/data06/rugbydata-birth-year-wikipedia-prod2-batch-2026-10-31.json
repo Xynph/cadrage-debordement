@@ -1,0 +1,798 @@
+{
+  "schema": "data06-wikipedia-pro-d2-birthyears-v1",
+  "source": "Wikipedia club roster tables",
+  "sourceObservedDate": "2026-10-31",
+  "warning": "Biarritz page shows conflicting Kakhaber Darbaidze day across articles; birthYear 2000 only accepted. Roster pages vary in season labeling. No membership at career start inferred.",
+  "records": [
+    {
+      "sourceRecordId": "2075",
+      "name": "Antoine Abraham",
+      "club": "oyonnax",
+      "birthYear": 1995,
+      "birthDateAsPublished": "1 mai 1995",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1050",
+      "name": "Yannick Arroyo",
+      "club": "oyonnax",
+      "birthYear": 1998,
+      "birthDateAsPublished": "18 décembre 1998",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2097",
+      "name": "Ali Oz",
+      "club": "oyonnax",
+      "birthYear": 1995,
+      "birthDateAsPublished": "28 mai 1995",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "67",
+      "name": "Martin Villar",
+      "club": "oyonnax",
+      "birthYear": 2002,
+      "birthDateAsPublished": "6 novembre 2002",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1627",
+      "name": "Mayco Vivas",
+      "club": "oyonnax",
+      "birthYear": 1998,
+      "birthDateAsPublished": "2 juin 1998",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "506",
+      "name": "Feleti Kaitu'u",
+      "club": "oyonnax",
+      "birthYear": 1994,
+      "birthDateAsPublished": "30 décembre 1994",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "343",
+      "name": "Vano Karkadze",
+      "club": "oyonnax",
+      "birthYear": 2000,
+      "birthDateAsPublished": "25 juin 2000",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2101",
+      "name": "Julien Ratajczak",
+      "club": "oyonnax",
+      "birthYear": 2003,
+      "birthDateAsPublished": "22 avril 2003",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2077",
+      "name": "Phoenix Battye",
+      "club": "oyonnax",
+      "birthYear": 1990,
+      "birthDateAsPublished": "28 septembre 1990",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1002",
+      "name": "Koen Bloemen",
+      "club": "oyonnax",
+      "birthYear": 1998,
+      "birthDateAsPublished": "13 mai 1998",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2111",
+      "name": "Antonin Corso",
+      "club": "oyonnax",
+      "birthYear": 2004,
+      "birthDateAsPublished": "9 avril 2004",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "307",
+      "name": "Alban Roussel",
+      "club": "oyonnax",
+      "birthYear": 1998,
+      "birthDateAsPublished": "11 septembre 1998",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2113",
+      "name": "Cyriac Guilly",
+      "club": "oyonnax",
+      "birthYear": 2003,
+      "birthDateAsPublished": "6 avril 2003",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2089",
+      "name": "Hugo Hermet",
+      "club": "oyonnax",
+      "birthYear": 2001,
+      "birthDateAsPublished": "2 août 2001",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2092",
+      "name": "Kevin Lebreton",
+      "club": "oyonnax",
+      "birthYear": 1995,
+      "birthDateAsPublished": "7 janvier 1995",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2095",
+      "name": "Antoine Miquel",
+      "club": "oyonnax",
+      "birthYear": 1994,
+      "birthDateAsPublished": "20 juin 1994",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2098",
+      "name": "Wandrille Picault",
+      "club": "oyonnax",
+      "birthYear": 1994,
+      "birthDateAsPublished": "1 janvier 1994",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "21",
+      "name": "Uzair Cassiem",
+      "club": "oyonnax",
+      "birthYear": 1990,
+      "birthDateAsPublished": "17 mars 1990",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2088",
+      "name": "Loïc Godener",
+      "club": "oyonnax",
+      "birthYear": 1995,
+      "birthDateAsPublished": "13 août 1995",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2103",
+      "name": "Jonathan Ruru",
+      "club": "oyonnax",
+      "birthYear": 1993,
+      "birthDateAsPublished": "2 février 1993",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2116",
+      "name": "Jules Solinas",
+      "club": "oyonnax",
+      "birthYear": 2003,
+      "birthDateAsPublished": "22 février 2003",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "362",
+      "name": "Thomas Vincent",
+      "club": "oyonnax",
+      "birthYear": 1999,
+      "birthDateAsPublished": "21 juillet 1999",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "151",
+      "name": "Luka Matkava",
+      "club": "oyonnax",
+      "birthYear": 2001,
+      "birthDateAsPublished": "10 mai 2001",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "706",
+      "name": "Inaki Ayarza",
+      "club": "oyonnax",
+      "birthYear": 1999,
+      "birthDateAsPublished": "7 septembre 1999",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "332",
+      "name": "Thomas Darmon",
+      "club": "oyonnax",
+      "birthYear": 1998,
+      "birthDateAsPublished": "12 mai 1998",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2094",
+      "name": "Lucas Mensa",
+      "club": "oyonnax",
+      "birthYear": 1996,
+      "birthDateAsPublished": "24 mai 1996",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2115",
+      "name": "Louis Morland",
+      "club": "oyonnax",
+      "birthYear": 2004,
+      "birthDateAsPublished": "10 juin 2004",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2109",
+      "name": "Danny Toala",
+      "club": "oyonnax",
+      "birthYear": 1999,
+      "birthDateAsPublished": "26 mars 1999",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "4145",
+      "name": "Liam Coombes-Fabling",
+      "club": "oyonnax",
+      "birthYear": 1998,
+      "birthDateAsPublished": "7 juillet 1998",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2099",
+      "name": "Karim Qadiri",
+      "club": "oyonnax",
+      "birthYear": 1996,
+      "birthDateAsPublished": "16 février 1996",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "124",
+      "name": "Enzo Reybier",
+      "club": "oyonnax",
+      "birthYear": 2002,
+      "birthDateAsPublished": "4 avril 2002",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2106",
+      "name": "Gavin Stark",
+      "club": "oyonnax",
+      "birthYear": 1995,
+      "birthDateAsPublished": "18 décembre 1995",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2076",
+      "name": "Paul Auradou",
+      "club": "oyonnax",
+      "birthYear": 2001,
+      "birthDateAsPublished": "13 septembre 2001",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "194",
+      "name": "Alex Newsome",
+      "club": "oyonnax",
+      "birthYear": 1996,
+      "birthDateAsPublished": "20 janvier 1996",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Oyonnax_Rugby",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1185",
+      "name": "Quentin Algay",
+      "club": "brive",
+      "birthYear": 2006,
+      "birthDateAsPublished": "1 mars 2006",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "280",
+      "name": "Yanis Charcosset",
+      "club": "brive",
+      "birthYear": 2001,
+      "birthDateAsPublished": "28 août 2001",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1151",
+      "name": "Lucas Da Silva",
+      "club": "brive",
+      "birthYear": 1997,
+      "birthDateAsPublished": "19 décembre 1997",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "4386",
+      "name": "Valerio Siciliano",
+      "club": "brive",
+      "birthYear": 2004,
+      "birthDateAsPublished": "31 mai 2004",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1146",
+      "name": "Vakhtang Abdaladze",
+      "club": "brive",
+      "birthYear": 1996,
+      "birthDateAsPublished": "6 février 1996",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "113",
+      "name": "Zaccharie Affane",
+      "club": "brive",
+      "birthYear": 2004,
+      "birthDateAsPublished": "15 juillet 2004",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1149",
+      "name": "Simon-Pierre Chauvac",
+      "club": "brive",
+      "birthYear": 1998,
+      "birthDateAsPublished": "23 mars 1998",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1150",
+      "name": "Francisco Coria Marchetti",
+      "club": "brive",
+      "birthYear": 2000,
+      "birthDateAsPublished": "7 octobre 2000",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "674",
+      "name": "Hugo Reilhes",
+      "club": "brive",
+      "birthYear": 2001,
+      "birthDateAsPublished": "8 janvier 2001",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1179",
+      "name": "Marcel Van der Merwe",
+      "club": "brive",
+      "birthYear": 1990,
+      "birthDateAsPublished": "24 octobre 1990",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1910",
+      "name": "Irné Herbst",
+      "club": "brive",
+      "birthYear": 1993,
+      "birthDateAsPublished": "4 mai 1993",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1912",
+      "name": "Teun Karst",
+      "club": "brive",
+      "birthYear": 2004,
+      "birthDateAsPublished": "12 décembre 2004",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "42",
+      "name": "Konstantine Mikautadze",
+      "club": "brive",
+      "birthYear": 1991,
+      "birthDateAsPublished": "1 juillet 1991",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "103",
+      "name": "Alexandre Ricard",
+      "club": "brive",
+      "birthYear": 1997,
+      "birthDateAsPublished": "30 juin 1997",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1206",
+      "name": "Anthony Coletta",
+      "club": "brive",
+      "birthYear": 1989,
+      "birthDateAsPublished": "25 avril 1989",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1191",
+      "name": "David Geneste",
+      "club": "brive",
+      "birthYear": 2004,
+      "birthDateAsPublished": "8 décembre 2004",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1155",
+      "name": "Sasha Gué",
+      "club": "brive",
+      "birthYear": 2000,
+      "birthDateAsPublished": "19 juin 2000",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1198",
+      "name": "Geoffrey Malaterre",
+      "club": "brive",
+      "birthYear": 2005,
+      "birthDateAsPublished": "9 août 2005",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1161",
+      "name": "Retief Marais",
+      "club": "brive",
+      "birthYear": 1995,
+      "birthDateAsPublished": "20 juillet 1995",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1162",
+      "name": "Samuel Maximin",
+      "club": "brive",
+      "birthYear": 2001,
+      "birthDateAsPublished": "30 avril 2001",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "157",
+      "name": "Yann Peysson",
+      "club": "brive",
+      "birthYear": 2000,
+      "birthDateAsPublished": "6 juillet 2000",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1172",
+      "name": "Taniela Sadrugu",
+      "club": "brive",
+      "birthYear": 1998,
+      "birthDateAsPublished": "25 juillet 1998",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1213",
+      "name": "Mathis Galthié",
+      "club": "brive",
+      "birthYear": 2001,
+      "birthDateAsPublished": "18 novembre 2001",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1173",
+      "name": "Maxime Sidobre",
+      "club": "brive",
+      "birthYear": 1998,
+      "birthDateAsPublished": "25 octobre 1998",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Club_athl%C3%A9tique_Brive_Corr%C3%A8ze_Limousin",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "4146",
+      "name": "Réginald Churchward",
+      "club": "biarritz",
+      "birthYear": 1996,
+      "birthDateAsPublished": "14 août 1996",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2402",
+      "name": "Kakhaber Darbaidze",
+      "club": "biarritz",
+      "birthYear": 2000,
+      "birthDateAsPublished": "20 mai 2000",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2242",
+      "name": "Kepa Ebode N'koa",
+      "club": "biarritz",
+      "birthYear": 2005,
+      "birthDateAsPublished": "3 février 2005",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1108",
+      "name": "Zakaria El Fakir",
+      "club": "biarritz",
+      "birthYear": 1997,
+      "birthDateAsPublished": "29 janvier 1997",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1140",
+      "name": "François Mur",
+      "club": "biarritz",
+      "birthYear": 2003,
+      "birthDateAsPublished": "5 septembre 2003",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1124",
+      "name": "Giorgi Nutsubidze",
+      "club": "biarritz",
+      "birthYear": 1998,
+      "birthDateAsPublished": "11 novembre 1998",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1226",
+      "name": "Hugo Pirlet",
+      "club": "biarritz",
+      "birthYear": 1996,
+      "birthDateAsPublished": "2 octobre 1996",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1127",
+      "name": "Alexandre Plantier",
+      "club": "biarritz",
+      "birthYear": 1991,
+      "birthDateAsPublished": "19 décembre 1991",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1144",
+      "name": "Yoni Tuataane",
+      "club": "biarritz",
+      "birthYear": 2003,
+      "birthDateAsPublished": "22 octobre 2003",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "901",
+      "name": "Sione Vailanu",
+      "club": "biarritz",
+      "birthYear": 1995,
+      "birthDateAsPublished": "27 janvier 1995",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1097",
+      "name": "Kerman Aurrekoetxea",
+      "club": "biarritz",
+      "birthYear": 2000,
+      "birthDateAsPublished": "4 mai 2000",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1138",
+      "name": "Anoa Laurent",
+      "club": "biarritz",
+      "birthYear": 2006,
+      "birthDateAsPublished": "18 octobre 2006",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "943",
+      "name": "Charlie Shiel",
+      "club": "biarritz",
+      "birthYear": 1997,
+      "birthDateAsPublished": "3 décembre 1997",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "26",
+      "name": "Thomas Dolhagaray",
+      "club": "biarritz",
+      "birthYear": 2000,
+      "birthDateAsPublished": "21 mai 2000",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1139",
+      "name": "Carlo Mignot",
+      "club": "biarritz",
+      "birthYear": 2003,
+      "birthDateAsPublished": "16 février 2003",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1143",
+      "name": "Yohan Tapie",
+      "club": "biarritz",
+      "birthYear": 2004,
+      "birthDateAsPublished": "19 août 2004",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1101",
+      "name": "Arthur Bonneval",
+      "club": "biarritz",
+      "birthYear": 1995,
+      "birthDateAsPublished": "31 mai 1995",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1135",
+      "name": "Nicolas Elissondo",
+      "club": "biarritz",
+      "birthYear": 2003,
+      "birthDateAsPublished": "25 août 2003",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1136",
+      "name": "Baptiste Fariscot",
+      "club": "biarritz",
+      "birthYear": 2001,
+      "birthDateAsPublished": "15 novembre 2001",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1110",
+      "name": "Bastien Guillemin",
+      "club": "biarritz",
+      "birthYear": 1997,
+      "birthDateAsPublished": "22 septembre 1997",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1112",
+      "name": "Kylian Jaminet",
+      "club": "biarritz",
+      "birthYear": 1995,
+      "birthDateAsPublished": "28 décembre 1995",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Saison_2026-2027_du_Biarritz_olympique_Pays_basque",
+      "matching": "unique_normalized_full_name_within_exact_source_club",
+      "validAtCareerStart": null
+    }
+  ]
+}

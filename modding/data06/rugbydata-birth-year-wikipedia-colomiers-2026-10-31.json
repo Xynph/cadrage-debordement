@@ -1,0 +1,82 @@
+{
+  "schema": "data06-wikipedia-club-birthyears-v1",
+  "club": "colomiers",
+  "source": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+  "sourceSection": "Effectif 2025-2026",
+  "retrievedDate": "2026-10-31",
+  "notes": "Explicit date on Wikipedia club roster table; uniquely matches named Rugby Data club roster source ID. Not used to infer club in 2026-2027. Excluded all profiles whose Rugby Data birth date was already successfully collected.",
+  "records": [
+    {
+      "sourceRecordId": "1224",
+      "name": "Pierre-Emmanuel Pacheco",
+      "birthYear": 2002,
+      "birthDateAsPublished": "4 novembre 2002",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "verifiedClaim": "explicit_birth_year",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1231",
+      "name": "Michaël Simutoga",
+      "birthYear": 1996,
+      "birthDateAsPublished": "29 septembre 1996",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "verifiedClaim": "explicit_birth_year",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1214",
+      "name": "Maxime Granouillet",
+      "birthYear": 1989,
+      "birthDateAsPublished": "12 février 1989",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "verifiedClaim": "explicit_birth_year",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1222",
+      "name": "Eliott Maurel",
+      "birthYear": 2001,
+      "birthDateAsPublished": "25 janvier 2001",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "verifiedClaim": "explicit_birth_year",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1241",
+      "name": "Natan Culinat",
+      "birthYear": 2005,
+      "birthDateAsPublished": "9 décembre 2005",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "verifiedClaim": "explicit_birth_year",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1229",
+      "name": "Ugo Seguela",
+      "birthYear": 2001,
+      "birthDateAsPublished": "14 février 2001",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "verifiedClaim": "explicit_birth_year",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1210",
+      "name": "Martin Dulon",
+      "birthYear": 2000,
+      "birthDateAsPublished": "11 janvier 2000",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "verifiedClaim": "explicit_birth_year",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1952",
+      "name": "Alexandre Borie",
+      "birthYear": 2001,
+      "birthDateAsPublished": "17 avril 2001",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Colomiers_Rugby",
+      "verifiedClaim": "explicit_birth_year",
+      "validAtCareerStart": null
+    }
+  ]
+}

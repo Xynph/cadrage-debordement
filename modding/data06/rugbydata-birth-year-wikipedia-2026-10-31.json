@@ -1,0 +1,118 @@
+{
+  "schema": "data06-wikipedia-birthyear-evidence-v1",
+  "source": "Wikipedia public biographies",
+  "collectedOn": "2026-10-31",
+  "scope": "Only source IDs matched exactly to roster names; cited biography explicitly states birth date. Secondary-source evidence, review official confirmation before game integration.",
+  "records": [
+    {
+      "sourceRecordId": "529",
+      "name": "Maxime Baudonne",
+      "birthYear": 2002,
+      "birthDateAsPublished": "12/07/2002",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Maxime_Baudonne",
+      "identityMatch": "exact_name_and_unique_source_roster_id",
+      "status": "explicit_wikipedia_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "296",
+      "name": "Guillaume Marchand",
+      "birthYear": 1998,
+      "birthDateAsPublished": "05/06/1998",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Guillaume_Marchand",
+      "identityMatch": "exact_name_and_unique_source_roster_id",
+      "status": "explicit_wikipedia_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "319",
+      "name": "Davit Niniashvili",
+      "birthYear": 2002,
+      "birthDateAsPublished": "14/07/2002",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Davit_Niniashvili",
+      "identityMatch": "exact_name_and_unique_source_roster_id",
+      "status": "explicit_wikipedia_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "251",
+      "name": "Reda Wardi",
+      "birthYear": 1995,
+      "birthDateAsPublished": "02/08/1995",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Reda_Wardi",
+      "identityMatch": "exact_name_and_unique_source_roster_id",
+      "status": "explicit_wikipedia_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "522",
+      "name": "Donovan Taofifenua",
+      "birthYear": 1999,
+      "birthDateAsPublished": "30/03/1999",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Donovan_Taofif%C3%A9nua",
+      "identityMatch": "exact_name_and_unique_source_roster_id",
+      "status": "explicit_wikipedia_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "1088",
+      "name": "Gabin Lorre",
+      "birthYear": 2001,
+      "birthDateAsPublished": "23/12/2001",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Gabin_Lorre",
+      "identityMatch": "exact_name_and_unique_source_roster_id",
+      "status": "explicit_wikipedia_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "346",
+      "name": "Nicolas Martins",
+      "birthYear": 1999,
+      "birthDateAsPublished": "18/01/1999",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Nicolas_Martins",
+      "identityMatch": "exact_name_and_unique_source_roster_id",
+      "status": "explicit_wikipedia_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "403",
+      "name": "Jimi Maximin",
+      "birthYear": 1999,
+      "birthDateAsPublished": "03/04/1999",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Jimi_Maximin",
+      "identityMatch": "exact_name_and_unique_source_roster_id",
+      "status": "explicit_wikipedia_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "543",
+      "name": "Paul Alo-Emile",
+      "birthYear": 1991,
+      "birthDateAsPublished": "22/12/1991",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Paul_Alo-Emile",
+      "identityMatch": "exact_name_and_unique_source_roster_id",
+      "status": "explicit_wikipedia_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "239",
+      "name": "Thomas Lavault",
+      "birthYear": 1999,
+      "birthDateAsPublished": "03/05/1999",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Thomas_Lavault",
+      "identityMatch": "exact_name_and_unique_source_roster_id",
+      "status": "explicit_wikipedia_birth_date",
+      "validAtCareerStart": null
+    },
+    {
+      "sourceRecordId": "2133",
+      "name": "Thomas Salles",
+      "birthYear": 1996,
+      "birthDateAsPublished": "19/08/1996",
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Thomas_Salles",
+      "identityMatch": "exact_name_and_unique_source_roster_id",
+      "status": "explicit_wikipedia_birth_date",
+      "validAtCareerStart": null
+    }
+  ]
+}

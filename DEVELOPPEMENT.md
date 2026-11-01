@@ -646,3 +646,36 @@ Les commits, le code et les tests prévalent sur ce résumé en cas de contradic
 - Tests dédiés Node et Chromium ; le nouveau scénario rejoint le workflow UI01 existant, sans retirer aucun contrôle ni multiplier les jobs. Captures réelles 1440/768/390 dans docs/menu-v3-captures ; détails et limites docs/menu-principal-v3.md. Suite complète et CI exacte nécessaires avant fusion ; aucune validation future présentée comme acquise.
 - Aucun fichier Business, donnée externe, format de sauvegarde ou moteur rugby modifié. Aucun service payant de collecte. Pas de certification Windows native.
 - Prochaine priorité : bureau du manager harmonisé et décisions prioritaires tirées des données réelles de la carrière.
+
+## DATA-06 — Rugby Data, lot partiel clos pour quota (31 octobre 2026)
+
+- 30 effectifs 2026-2027 collectés : 1493 lignes, 1159 identités LNR strictes. 689 fiches individuelles valides ; 107 HTTP 503 et 363 non tentées, explicitement séparées après demande utilisateur de préserver le quota. Collecte arrêtée, aucun arrière-plan.
+- 689 dates de naissance, 1159 JIFF, 1158 postes, 686 formations, 183 meilleurs pieds et 981 années de fin annoncées. 966 contradictions isolées sans remplacer les mensurations précédentes ; contrats annuels séparés de l'année de fin. 903 IDs sans naissance dans ce complément, pas de biographie complète prétendue.
+- Nouveaux fichiers rugbydata-* sous modding/data06, normaliseur hors réseau tools/data06-rugbydata.cjs, tests/data06-rugbydata.cjs, docs/data06-rugbydata.md. 14 tests ciblés réussis, JSON reproductible ; CI complète publiée à vérifier. Aucun changement dist, moteur, sauvegarde ou anciennes sources. Producteur, aucune fusion.
+
+
+## DATA-06 — 01/11/2026 : 350 années supplémentaires et versions Wikipédia vérifiées
+
+PRODUCTEUR sur PR #160, base de session main `1b1d7d624995af823dcbdce42a6a1d6ad148d336`, tête précédente `0198b97fa57b7e733ee84a3ab78018467807ceba`. Six pages Wikipédia 2026-27 et leurs permaliens comparés ligne à ligne ; titres, révisions, dates et empreintes conservés. Deux nouveaux JSON `modding/data06/birthyears-six-clubs-verified-2026-11-01.json` (162) et `modding/data06/birthyears-itsrugby-verified-2026-11-01.json` (188) : 350 années nouvelles rattachées à des IDs LNR uniques, absentes du précédent cumul 895. Couverture de recherche cumulée 1245/1592, 347 lacunes ; aucune intégration jouable automatique. Sur 210 fiches ItsRugby effectivement lues : 188 nouvelles, 15 dates absentes/invalides, 7 déjà présentes dans le complément des six clubs. Pas de dates déduites d'un âge. Les 13 IDs source répétés entre effectifs sont contrôlés par nom identique dans toutes occurrences et unicité globale LNR, sans preuve historique de club.
+
+Les six clubs reçoivent 184 années : Dax 31/36, Nevers 48/61, Angoulême 41/51, Valence Romans 35/40, Narbonne 42/48, Nice 48/51 ; 42 lacunes prioritaires demeurent. Alexis Levron 2000 confirmé officiellement, année erronée du tableau rejetée. Dylan Idrissi exclu : deux dates incompatibles sur la page officielle VRDR. Les années inconnues restent inconnues. Documentation `docs/data06-birthyears-six-clubs.md`, 10 tests ciblés réels `node --test tests/data06-birthyears-six-clubs.cjs`. Suite complète locale non exécutée ; CI distante à contrôler sur la nouvelle tête. Aucun Firecrawl/service payant, moteur, UI ou sauvegarde modifié ; aucune fusion. Priorité : sources officielles pour les 42 lacunes des six clubs, puis les 305 autres. Réservations du lot libérées après passation #73.
+
+
+
+
+## DATA-06 — 01/11/2026 : 122 années supplémentaires, cumul 1367/1592
+
+PRODUCTEUR sur #160 depuis cf10270f46c74b1c5e37cce7950f0cb9485e8c86 ; main 1b1d7d624995af823dcbdce42a6a1d6ad148d336 inchangé. CI précédente Tests JavaScript #41288332930 SUCCESS. Nouveau fichier modding/data06/birthyears-followup-2026-11-01.json : 122 nouvelles années rattachées, 67 TOP14 et 55 PRO D2, cumul 1367/1592, 225 lacunes. 175 fiches Rugby Data candidates réellement examinées : 114 acceptées, 58 noms complets insuffisants/incompatibles, un HTTP 503 persistant, un écart à l'âge LNR, un conflit officiel antérieur ; huit apports complémentaires (U20, fédérations et biographies), 59 années Rugby Data corroborées ItsRugby sur noms affichés identiques. Les noms complets publiés et leur unicité globale contrôlent les variantes et prénoms supplémentaires ; aucun rapprochement par seul patronyme, aucune année déduite d'âge ni date précise inventée.
+
+Six clubs : Dax 34/36, Nevers 56/61, Angoulême 46/51, Valence Romans 38/40, Narbonne 45/48, Nice 49/51 ; encore 19 lacunes prioritaires et 206 autres. Lylian Zelioli et Dylan Idrissi restent exclus pour contradiction ; la fiche Rati Zazadze n'est pas attribuée à Giorgi. Les mauvaises propositions Sandro/Karl Martin, Harrison/Braxton Asi, Gaétan/Jean et Jules/Roméo sont rejetées. Sources et révisions/pages/empreintes dans le JSON ; aperçu indexé Sofascore identifié explicitement, jamais présenté comme HTML factuel extrait.
+
+Fichiers : nouveau JSON, tests/data06-birthyears-followup.cjs, docs/data06-birthyears-followup.md et présent appendice. 20/20 tests ciblés passés via node --test tests/data06-birthyears-six-clubs.cjs tests/data06-birthyears-followup.cjs. Suite complète locale non exécutée ; CI distante du nouveau SHA à vérifier. Aucune modification V4/UI/moteur/sauvegarde/source antérieure, aucun service payant/Firecrawl ni fusion. Fin de collecte du lot, pas de processus de collecte restant. Priorité : preuves officielles pour les 19 lacunes prioritaires puis les 206 autres. Réservations libérées à la passation #73.
+
+
+## DATA-06 — 01/11/2026 : 75 nouvelles années par Espoirs et noms abrégés revus
+
+PRODUCTEUR sur #160 depuis f2998abf0c518989af2440ddf5e87304434d3031, main 1b1d7d624995af823dcbdce42a6a1d6ad148d336. CI précédente Tests JavaScript #41289656701 SUCCESS. Nouveau modding/data06/birthyears-final-gaps-2026-11-01.json : 75 années inédites rattachées, cumul 1442/1592, 150 restantes. 27 effectifs Espoirs 2026-27, 1195 lignes, 108 noms LNR exacts et fiches individuelles analysées : 50 années retenues. Trois pages limitées HTTP 429 conservées comme indisponibles ; pause de 180 s puis profils espacés de 3,2 s, arrêt sur refus/limitation. 23 correspondances de prénoms omis explicitement revues par nom court unique, fiche officielle LNR/club/âge et deux éditeurs de naissance concordants. Aucune correction floue de lettres ni année déduite d'âge.
+
+Giorgi Zazadze 2007 résolu par son propre profil Nevers/Géorgie U20 et deux sources d'année, désaccord juin/juillet signalé sans date exacte importée ; Rati exclu de ce rapprochement. Duacake Vulainabuwaha 2006 sourcé. Jason Fraser 1991 confirmé par l'USON officielle. Lylian Zelioli, Dylan Idrissi et Noah Brown incompatibles restent exclus. Encore 13 lacunes sur les six clubs prioritaires, 137 ailleurs.
+
+Fichiers : nouveau JSON, tests/data06-birthyears-final-gaps.cjs, docs/data06-birthyears-final-gaps.md et présent appendice. 32/32 tests ciblés réellement réussis ; suite complète locale non exécutée, CI de la nouvelle tête à contrôler. Aucun fichier V4/UI/moteur/sauvegarde/source antérieure modifié, aucun service payant/Firecrawl, aucune fusion. Collecte du lot terminée, aucun processus de collecte restant. Réservations libérées à la passation #73.

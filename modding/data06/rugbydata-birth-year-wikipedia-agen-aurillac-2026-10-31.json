@@ -1,0 +1,246 @@
+{
+  "schema": "data06-wikipedia-birth-year-evidence-v1",
+  "scope": "Only previously missing individual birth dates. Excluded IDs with successful Rugby Data profile birth dates. Explicit years from 2025-26 roster do not prove 2026-27 affiliation.",
+  "records": [
+    {
+      "club": "agen",
+      "sourceRecordId": "958",
+      "name": "Matthieu Bonnet",
+      "birthYear": 2000,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "1891",
+      "name": "Craig Willis",
+      "birthYear": 1995,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "agen",
+      "sourceRecordId": "991",
+      "name": "Clément Garrigues",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Sporting_Union_Agen_Lot-et-Garonne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1039",
+      "name": "Basa Khonelidze",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1020",
+      "name": "Luka Nioradze",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1012",
+      "name": "Gymaël Jean-Jacques",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1013",
+      "name": "Giorgi Kartvelishvili",
+      "birthYear": 1991,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1026",
+      "name": "Robert Rodgers",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1038",
+      "name": "Skip Jongejan",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1027",
+      "name": "Martial Rolland",
+      "birthYear": 1998,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1042",
+      "name": "Mehdi Slamani",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1004",
+      "name": "Théo Cambon",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1035",
+      "name": "Tim De Jong",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1010",
+      "name": "Hugo Huurman",
+      "birthYear": 2001,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1003",
+      "name": "Aleksandre Burduli",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1895",
+      "name": "Viliami Taulani",
+      "birthYear": 1997,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1030",
+      "name": "Didier Tison",
+      "birthYear": 1993,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1037",
+      "name": "Boris Hadinegoro",
+      "birthYear": 2003,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "998",
+      "name": "Tedo Abzhandadze",
+      "birthYear": 1999,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1001",
+      "name": "Hugo Bastard",
+      "birthYear": 2002,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1044",
+      "name": "Karsen Talalua",
+      "birthYear": 2004,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1134",
+      "name": "François Vergnaud",
+      "birthYear": 1997,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1043",
+      "name": "Angus Staniforth",
+      "birthYear": 2004,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    },
+    {
+      "club": "aurillac",
+      "sourceRecordId": "1029",
+      "name": "Jake Strachan",
+      "birthYear": 1996,
+      "sourceUrl": "https://fr.wikipedia.org/wiki/Stade_aurillacois_Cantal_Auvergne",
+      "sourceSeason": "2025-2026",
+      "identityMatch": "unique_exact_normalized_name_in_club_roster",
+      "validAtCareerStart": null
+    }
+  ]
+}
