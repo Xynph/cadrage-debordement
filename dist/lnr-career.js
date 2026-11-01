@@ -34,7 +34,7 @@ function lnrAssignment(group,index){
 function lnrBirthAge(lnrId){
  const birth=typeof LNR_BIRTHYEARS_DATA!=='undefined'&&LNR_BIRTHYEARS_DATA.byId[lnrId];
  if(typeof birth==='number'&&Number.isInteger(birth))return {age:2026-birth-1,birthYear:birth,ageEstimated:true};
- if(typeof birth==='string'&&/^\\d{4}-\\d{2}-\\d{2}$/.test(birth)){
+ if(typeof birth==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(birth)){
   const [year,month,day]=birth.split('-').map(Number);
   return {age:2026-year-(month>7||month===7&&day>1?1:0),birthYear:year,birthDate:birth,ageEstimated:false};
  }
