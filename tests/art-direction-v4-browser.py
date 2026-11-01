@@ -205,9 +205,9 @@ try:
                 check(f'V4.4 pager has accessible grouping {route} {width}',
                       shell.locator('.da43-page-switch').get_attribute('role') == 'group')
                 check(f'V4.4 desktop hit target {route} {width}',
-                      shell.locator('[data-da43-next]').evaluate('(el)=>{
+                      shell.locator('[data-da43-next]').evaluate("""(el)=>{
                         const r=el.getBoundingClientRect();return r.width>=44&&r.height>=44;
-                      }'))
+                      }"""))
                 check(f'V4.3 arrows keep save unchanged {route} {width}',
                       page.evaluate('JSON.stringify(S)') == original and
                       page.evaluate('localStorage.getItem("bdt-v1")') == stored)
