@@ -46,6 +46,70 @@ try:
         page.locator('.clubchoice').first.click()
         initial_state = page.evaluate('JSON.stringify(S)')
         initial_disk = page.evaluate('localStorage.getItem("bdt-v1")')
+        # Réception du toast natif : captures et interaction sans mutation métier.
+        # Chaque combinaison réarme le message authentique via toast(), sans
+        # toucher à la carrière ni au stockage. Les essais de clic restent dry-run.
+        toast_metrics = []
+        for toast_theme in ('analyste', 'tribune'):
+            page.locator('#ui01-theme').select_option(toast_theme)
+            for toast_width, toast_height in ((1440, 900), (1920, 1080)):
+                page.set_viewport_size({'width': toast_width, 'height': toast_height})
+                status = page.get_by_role('status')
+                check(f'toast accessible status {toast_theme}/{toast_width}',
+                      status.count() == 1)
+                page.evaluate("()=>toast('Bienvenue au club. Votre saison commence maintenant.')")
+                check(f'toast initially shown {toast_theme}/{toast_width}',
+                      status.is_visible() and
+                      'Bienvenue au club.' in status.inner_text())
+                page.evaluate("()=>nav('finance')")
+                finance_shell = page.locator('.da42-workspace-shell')
+                finance_shell.locator('[data-da42-subpage="tresorerie"]').click()
+                check(f'finance tab during toast {toast_theme}/{toast_width}',
+                      finance_shell.locator('[data-da42-subpage="tresorerie"]').get_attribute('aria-selected') == 'true')
+                page.screenshot(path=str(OUT / f'v49-toast-finance-before-{toast_theme}-{toast_width}.png'),
+                                full_page=False)
+                page.evaluate("()=>nav('formation')")
+                formation_shell = page.locator('.da42-workspace-shell')
+                formation_shell.locator('[data-da42-subpage="passerelle"]').click()
+                action = formation_shell.locator('[data-da42-page="passerelle"]:not([hidden]) .da4-pathway .da4-text-action')
+                check(f'formation action during toast {toast_theme}/{toast_width}',
+                      action.count() == 1 and action.is_enabled())
+                before_hit = action.evaluate("""e=>{
+                    const r=e.getBoundingClientRect();
+                    const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+                    return !!hit && (e===hit || e.contains(hit));
+                }""")
+                page.screenshot(path=str(OUT / f'v49-toast-formation-before-{toast_theme}-{toast_width}.png'),
+                                full_page=False)
+                page.wait_for_function("""() => {
+                    const node=document.getElementById('toast');
+                    return node && getComputedStyle(node).display==='none';
+                }""", timeout=7500)
+                check(f'toast auto hidden {toast_theme}/{toast_width}',
+                      not status.is_visible())
+                action.scroll_into_view_if_needed()
+                action.click(trial=True)
+                check(f'formation action interactable after toast {toast_theme}/{toast_width}',
+                      action.is_visible() and action.is_enabled())
+                page.screenshot(path=str(OUT / f'v49-toast-formation-after-{toast_theme}-{toast_width}.png'),
+                                full_page=False)
+                page.evaluate("()=>nav('finance')")
+                finance_shell = page.locator('.da42-workspace-shell')
+                finance_shell.locator('[data-da42-subpage="tresorerie"]').click()
+                values = finance_shell.locator('[data-da42-page="tresorerie"]:not([hidden]) .da42-static-values tbody tr')
+                values.last.scroll_into_view_if_needed()
+                check(f'finance bottom value after toast {toast_theme}/{toast_width}',
+                      values.count() > 0 and values.last.is_visible())
+                page.screenshot(path=str(OUT / f'v49-toast-finance-after-{toast_theme}-{toast_width}.png'),
+                                full_page=False)
+                check(f'career preserved after toast {toast_theme}/{toast_width}',
+                      page.evaluate('JSON.stringify(S)') == initial_state)
+                check(f'save preserved after toast {toast_theme}/{toast_width}',
+                      page.evaluate('localStorage.getItem("bdt-v1")') == initial_disk)
+                toast_metrics.append({'theme': toast_theme, 'width': toast_width,
+                                      'visibleInitially': True, 'hiddenAfterTimer': True,
+                                      'formationActionCenterHitBefore': before_hit})
+        check('16 toast before and after screenshots', len(toast_metrics) == 4)
         metrics = []
         for theme in ('analyste', 'tribune'):
             page.locator('#ui01-theme').select_option(theme)
@@ -129,6 +193,7 @@ finally:
         'errors': errors,
         'httpErrors': http_errors,
         'metrics': metrics if 'metrics' in locals() else [],
+        'toastMetrics': toast_metrics if 'toast_metrics' in locals() else [],
         'limits': ['Chromium Linux seulement; pas de Windows natif, Safari ou audit lecteur ecran.']
     }, ensure_ascii=False, indent=2))
 print(json.dumps({'passed': passed, 'checks': len(checks), 'errors': errors}))
