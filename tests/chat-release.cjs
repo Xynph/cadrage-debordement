@@ -100,11 +100,11 @@ const REPAIR_MAIN='f189d09f317b73d4e9e3d54ee694e6c4c2c9262b';
 const REPAIR_RUN=41427301234;
 function repairFixture(options={}){
  const calls=[];
- const e=event();e.comment.body='/cd-repair-check 212 '+REPAIR_HEAD;
+ const e=event();e.comment.body='/cd-repair-check 212 '+REPAIR_HEAD+' '+REPAIR_MAIN+' '+REPAIR_RUN;
  const cmd=validateEvent(e,env);
  const failed=jobs().map(j=>({...j}));
  for(const name of ['Suites 1/5','Validation CI'])failed.find(x=>x.name===name).conclusion='failure';
- if(options.wrongFailure)failed.find(x=>x.name==='Suites 3/5').conclusion='failure';
+ if(options.wrongFailure)failed.find(x=>x.name==='classification').conclusion='failure';
  const badRun={...run(REPAIR_MAIN,options.wrongRun?REPAIR_RUN-1:REPAIR_RUN,'workflow_dispatch'),conclusion:'failure'};
  const api=(url)=>{
   calls.push(url);
@@ -122,7 +122,7 @@ function repairFixture(options={}){
 }
 test('réparation explicite : commande propriétaire au SHA verrouillé',()=>{
  const f=repairFixture();assert.equal(f.cmd.pr,212);assert.equal(f.cmd.mode,'repair-check');
- assert.equal(f.cmd.expected,REPAIR_HEAD);
+ assert.equal(f.cmd.expected,REPAIR_HEAD);assert.equal(f.cmd.repairMain,REPAIR_MAIN);assert.equal(f.cmd.failedRun,REPAIR_RUN);
 });
 test('réparation vérifiée en lecture seule malgré main rouge précis',async()=>{
  const f=repairFixture();
@@ -146,7 +146,7 @@ test('les commandes ordinaires ne profitent jamais de la réparation',async()=>{
 });
 test('une autre PR ne peut obtenir un traitement de réparation',async()=>{
  const f=repairFixture();
- f.e.comment.body='/cd-repair-check 213 '+REPAIR_HEAD;
+ f.e.comment.body='/cd-repair-check 213 '+REPAIR_HEAD+' '+REPAIR_MAIN+' '+REPAIR_RUN;
  f.cmd=validateEvent(f.e,env);
  await assert.rejects(()=>execute(f.cmd,f.e,f.deps));
  assert(!f.calls.includes('gate'));
@@ -159,4 +159,16 @@ test('workflow Chat garde le même rôle privilégié et reconnaît seulement la
  assert.match(y,/group: chat-release-gate-main/);
  assert.match(y,/^permissions: \{\}$/m);
  assert(!y.includes('pull_request_target'));
+});
+
+test('commande de récupération refuse l’absence de SHA main ou run',()=>{
+ const e=event();e.comment.body='/cd-repair-check 212 '+REPAIR_HEAD;
+ assert.throws(()=>validateEvent(e,env));
+});
+test('commande de récupération refuse un run nommé différent du dernier',async()=>{
+ const f=repairFixture();
+ f.e.comment.body='/cd-repair-check 212 '+REPAIR_HEAD+' '+REPAIR_MAIN+' '+(REPAIR_RUN+1);
+ f.cmd=validateEvent(f.e,env);
+ await assert.rejects(()=>execute(f.cmd,f.e,f.deps));
+ assert(!f.calls.includes('gate'));
 });
