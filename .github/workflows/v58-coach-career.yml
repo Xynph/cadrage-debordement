@@ -1,0 +1,30 @@
+name: V58 marche des entraineurs independant
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  coach-career:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Contrats V58 et non-regression V48
+        env:
+          CD_V58_REPORT: v58-coach-report.json
+        run: |
+          node --check dist/coach-career.js
+          node --check tests/v58-coach-career.cjs
+          node tests/v58-coach-career.cjs
+          node tests/coach-market.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v58-coach-report
+          path: v58-coach-report.json
+          if-no-files-found: ignore
