@@ -4,6 +4,11 @@ const bank=require('../dist/press-question-bank.js');
 assert.equal(bank.validate(),true);
 assert.equal(bank.topics.length,25);
 assert.equal(bank.questions.length,500);
+assert.equal(bank.journalists.length,3);
+assert.ok(bank.journalists.every(j=>j.name&&j.outlet&&j.source.startsWith('https://')));
+assert.ok(bank.journalists.some(j=>j.name==='Nicolas Zanardi'&&j.outlet.includes('Rugbyrama')));
+assert.ok(bank.journalists.some(j=>j.name==='Renaud Bourel'&&j.outlet==='L\'Équipe'));
+assert.ok(bank.journalists.some(j=>j.name==='Arnaud Beurdeley'));
 assert.equal(new Set(bank.questions.map(q=>q.id)).size,500);
 assert.equal(new Set(bank.questions.flatMap(q=>q.variants)).size,1500);
 for(const q of bank.questions){assert.equal(q.answers.length,4);assert.equal(new Set(q.answers.map(a=>a.text)).size,4);}
