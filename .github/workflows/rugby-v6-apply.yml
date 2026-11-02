@@ -1,0 +1,110 @@
+name: Rugby V6 - appliquer estimations DATA (branche uniquement)
+on:
+  pull_request:
+    branches:
+      - data/rugby-real-top14-prod2-verified-import-20261102
+    paths:
+      - .github/workflows/rugby-v6-apply.yml
+      - tools/rugby-v6-estimates/**
+      - modding/data06/rugby-v6-estimates-20261102.json
+  push:
+    branches:
+      - data/rugby-v6-mass-estimates-20261102
+    paths:
+      - .github/workflows/rugby-v6-apply.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-estimates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests unitaires d'application
+        run: node tools/rugby-v6-estimates/apply.test.cjs
+      - name: Application sur fichier temporaire
+        run: |
+          node tools/rugby-v6-estimates/apply.cjs modding/data06/rugby-master-2026-2027.json modding/data06/rugby-v6-estimates-20261102.json "$RUNNER_TEMP/rugby-master-2026-2027.json"
+      - name: Verification stricte complete avant remplacement
+        env:
+          OUTPUT: ${{ runner.temp }}/rugby-master-2026-2027.json
+        run: |
+          node <<'NODE'
+          const fs=require('node:fs'),assert=require('node:assert/strict');
+          const old=JSON.parse(fs.readFileSync('modding/data06/rugby-master-2026-2027.json','utf8'));
+          const newer=JSON.parse(fs.readFileSync(process.env.OUTPUT,'utf8'));
+          const layer=JSON.parse(fs.readFileSync('modding/data06/rugby-v6-estimates-20261102.json','utf8'));
+          assert.equal(old.players.length,1592);assert.equal(newer.players.length,1592);
+          assert.equal(old.rugbyDataObservations.length,763);
+          assert.deepEqual(newer.rugbyDataObservations,old.rugbyDataObservations);
+          assert.deepEqual(newer.modelV6,old.modelV6);
+          assert.equal(new Set(newer.players.map(p=>p.id)).size,1592);
+          const before=new Map(old.players.map(p=>[p.id,p]));
+          const estimates=new Map(layer.players.map(p=>[p.id,p]));
+          assert.equal(estimates.size,1592);
+          let nr=0,np=0,na=0,top=0,pro=0;
+          for(const p of newer.players){
+            const oldp=before.get(p.id),e=estimates.get(p.id);
+            assert.ok(oldp && e);assert.equal(p.club,oldp.club);assert.equal(p.league,oldp.league);
+            assert.equal(p.realName,oldp.realName);assert.equal(p.fictionName,oldp.fictionName);
+            assert.deepEqual(p.performance2025_2026,oldp.performance2025_2026);
+            assert.equal(p.rating,e.rating);assert.equal(p.potential,e.potential);
+            if(p.rating!==oldp.rating)nr++;
+            if(p.potential!==oldp.potential)np++;
+            if(Object.keys(e.attributesV2).length)na++;
+            if(p.league==='top14')top++;else if(p.league==='prod2')pro++;else throw Error('unknown league');
+            assert.ok(p.potential>=p.rating);
+            for(const key of Object.keys(p.attributesV2)){
+              assert.equal(p.attributesV2[key],e.attributesV2[key]??oldp.attributesV2[key]);
+            }
+          }
+          assert.deepEqual([na,top,pro],[347,805,787]);
+          if(nr===0 && np===0){
+            assert.equal(old.v6MassEstimateSummary?.sourceBlob,layer.sourceBlob);
+            assert.equal(old.v6MassEstimateSummary?.model,layer.model);
+            assert.equal(old.v6MassEstimateSummary?.players,1592);
+            assert.equal(old.v6MassEstimateSummary?.summary?.changedRatings,480);
+            assert.equal(old.v6MassEstimateSummary?.summary?.changedPotential,1080);
+            console.log('Reprise idempotente : BDD centrale deja appliquee, aucun doublon');
+          }else{
+            assert.deepEqual([nr,np],[480,1080]);
+          }
+          console.log(JSON.stringify({playerCount:1592,top14:top,prod2:pro,changedRatings:nr,changedPotential:np,changedAttributes:na,observationsUnchanged:763}));
+          NODE
+      - name: Tests de sauvegarde et de regression cibles
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t tests < <(find tests -maxdepth 1 -name '*.cjs' ! -name 'harness.cjs' | grep -Ei 'sav|persist|storage|career|migration|modding|roster|data' || true)
+          echo "Suites sauvegarde/data detectees : ${#tests[@]}"
+          if (( ${#tests[@]} == 0 )); then
+            echo "::error::Aucune suite sauvegarde/data identifiee; stopper sans publication"
+            exit 1
+          fi
+          for test in "${tests[@]}"; do node "$test"; done
+      - name: Validation finale avant commit
+        run: |
+          cp "$RUNNER_TEMP/rugby-master-2026-2027.json" modding/data06/rugby-master-2026-2027.json
+          node -e "const d=require('./modding/data06/rugby-master-2026-2027.json');if(d.players.length!==1592||d.rugbyDataObservations.length!==763)process.exit(1)"
+          git diff --check
+      - name: Publier uniquement le JSON DATA sur cette branche
+        if: ${{ success() && github.event_name == 'push' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "data/rugby-v6-mass-estimates-20261102"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- modding/data06/rugby-master-2026-2027.json
+          git diff --cached --quiet && { echo "Aucune modification"; exit 0; }
+          git commit -m "data: apply 1592 verified estimated overrides to central Rugby V6"
+          git push origin "HEAD:$GITHUB_REF_NAME"
