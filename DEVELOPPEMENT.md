@@ -744,3 +744,10 @@ Après première CI Chromium SUCCESS, le JSON audit a montré Mercato Diagnostic
 - Les tâches Node déjà incluses dans les tests complets `tests/*.cjs` de la CI principale ne sont plus relancées automatiquement dans les deux workflows LNR-01 et LNR-02 ; elles restent lançables manuellement. Matrice LNR-02 de huit scénarios distincts et tests Chromium conservés.
 - Nouvelle suite de sélection `tests/ci-matchday-browser-selector.cjs`. Voir `docs/ci-v2-consolidation.md` pour l'inventaire exact, les limites et la mesure avant/après. Les contrôles requis configurés côté serveur doivent être vérifiés avant toute intégration ; pas de modification du release gate, du moteur ni des sauvegardes.
 - Résultats à constater sur le HEAD de PR : `Tests JavaScript` complet et `Matchday Chromium regroupé` avec captures/résultats. Aucune preuve de gain réel de durée n'est revendiquée avant ces exécutions.
+
+## CI V3 — mutualisation des réceptions Chromium UI — 2 novembre 2026
+
+- Branche `ci/v3-ui-chromium-20261102` depuis `4eaaad5a849f6d25e9849f3606f75bc0e22a9e55`, issue #73. Lot producteur, fusion non autorisée implicitement.
+- UI01 (3 scripts dont menu, contraste), UI02 (1), centres natifs (1), V4 Premium (2, dont régression sauvegardes) sont consolidés en un job Playwright 1.57 / Chromium, sans suppression des parcours. Anciens workflows disponibles en lancement manuel.
+- Couverture UI01 en push (main et integration/ui01-reviewed) conservée par le nouveau workflow ; sélecteur à repli exhaustif et tests déterministes. Artefacts UI01, UI02, Premium conservés ; les tests JavaScript officiels et le gate restent inchangés.
+- Référence GitHub sur une même PR `7964ab962d49590af615738231590e41da6162f3` : jobs UI01/UI02/Centres/V4 = 46/28/30/94 s, soit 198 s de durée runner cumulée dont 74 s d'installation ; comparer à la CI réelle de la PR V3, sans garantir le même gain. Détail dans `docs/ci-v3-chromium.md`.
