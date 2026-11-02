@@ -60,7 +60,7 @@ export async function capture(a,engine) {
     if(await tab.count())await tab.click({timeout:4000}).catch(()=>{});
     await page.waitForTimeout(a.delay);
     await fs.mkdir(a.out,{recursive:true});
-    const checkpoint=path.join(a.out,'rugbydata-'+a.url.match(/\\d+\\/?$/)[0].replace('/','')+'-'+a.season+'-checkpoint.json');
+    const checkpoint=path.join(a.out,'rugbydata-'+a.url.match(/\d+\/?$/)[0].replace('/','')+'-'+a.season+'-checkpoint.json');
     const pagination=await expandRankings(page,{rounds:Math.min(a.limit,100),delay:a.delay,checkpoint});
     const tables=await page.locator('table').evaluateAll(xs=>xs.map(t=>({headers:[...t.querySelectorAll('th')].map(x=>x.textContent.trim()),rows:[...t.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('td')].map(x=>x.textContent.trim())).filter(xs=>xs.length)})));
     const visible=await page.locator('body').innerText();
