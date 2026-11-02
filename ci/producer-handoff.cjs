@@ -27,8 +27,16 @@ function candidates(event){
 async function handle(event,api){
  if(!event?.pull_request&&!event?.workflow_run)return [];
  if(event.workflow_run&&event.workflow_run.event!=='pull_request')return [];
+ let numbers=candidates(event);
+ // workflow_run.pull_requests peut être vide selon GitHub ; retrouver les PR par HEAD exact.
+ if(numbers.length===0&&event.workflow_run?.event==='pull_request'){
+  const linked=await api('commits/'+event.workflow_run.head_sha+'/pulls?per_page=100');
+  if(!Array.isArray(linked))throw Error('Association HEAD vers PR indisponible');
+  numbers=[...new Set(linked.filter(p=>p.head?.sha===event.workflow_run.head_sha)
+    .map(p=>p.number).filter(Number.isSafeInteger))];
+ }
  const sent=[];
- for(const number of candidates(event)){
+ for(const number of numbers){
   const pr=await api('pulls/'+number);
   if(pr.head?.sha!==(event.workflow_run?.head_sha||event.pull_request?.head?.sha)||
      pr.head?.repo?.full_name!==REPO)continue;
