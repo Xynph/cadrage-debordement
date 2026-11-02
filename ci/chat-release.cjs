@@ -2,7 +2,6 @@
 // Seul le code de main est exécuté avec le jeton ; jamais celui de la PR.
 const fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process');
 const REPO='Xynph/cadrage-debordement',OWNER_ID=350229047,REPO_ID=1439603196;
-const REPAIR=Object.freeze({pr:212,sha:'59aeb359c9966a892ac8994e636af38f12fe0bbd',base:'f189d09f317b73d4e9e3d54ee694e6c4c2c9262b',failedRun:41427301234,file:'tests/governance-exclusive.test.cjs'});
 const JOBS=['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI'];
 function need(value,message){if(!value)throw Error(message);}
 function owner(user){return user?.id===OWNER_ID&&user.login==='Xynph'&&user.type==='User';}
@@ -10,9 +9,15 @@ function validateEvent(e,env){
  need(env.GITHUB_EVENT_NAME==='issue_comment'&&env.GITHUB_REPOSITORY===REPO&&env.GITHUB_ACTOR==='Xynph'&&env.GITHUB_TRIGGERING_ACTOR==='Xynph','Événement ou acteur non autorisé');
  need(e.action==='created'&&e.repository?.full_name===REPO&&e.repository.id===REPO_ID&&e.issue?.number===73&&!e.issue.pull_request,'Dépôt/issue/événement non autorisé');
  need(owner(e.comment?.user)&&e.sender?.id===OWNER_ID&&e.sender.login==='Xynph'&&Number.isSafeInteger(e.comment.id),'Auteur non autorisé');
- const body=e.comment.body,m=typeof body==='string'&&body.match(/^\/cd-(repair-merge|repair-check|merge|check) ([1-9][0-9]*) ([0-9a-f]{40})$/);
- need(m&&m[0]===body&&Number.isSafeInteger(Number(m[2])),'Commande stricte attendue : /cd-check, /cd-merge, /cd-repair-check ou /cd-repair-merge PR SHA40');
- return {pr:Number(m[2]),expected:m[3],mode:m[1],commentId:e.comment.id};
+ const body=e.comment.body;
+ const normal=typeof body==='string'&&body.match(/^\/cd-(merge|check) ([1-9][0-9]*) ([0-9a-f]{40})$/);
+ const repair=typeof body==='string'&&body.match(/^\/cd-(repair-merge|repair-check) ([1-9][0-9]*) ([0-9a-f]{40}) ([0-9a-f]{40}) ([1-9][0-9]*)$/);
+ const m=normal||repair;
+ need(m&&m[0]===body&&Number.isSafeInteger(Number(m[2]))&&
+   (!repair||Number.isSafeInteger(Number(repair[5]))),
+   'Commande stricte : /cd-(check|merge) PR HEAD ou /cd-repair-(check|merge) PR HEAD MAIN RUN');
+ return {pr:Number(m[2]),expected:m[3],mode:m[1],commentId:e.comment.id,
+   ...(repair?{repairMain:repair[4],failedRun:Number(repair[5])}:{})};
 }
 function fullCI(run,jobs,sha,workflowId){
  return !!run&&run.workflow_id===workflowId&&run.head_branch==='main'&&run.head_sha===sha&&['push','workflow_dispatch'].includes(run.event)&&run.name==='Tests JavaScript'&&run.status==='completed'&&run.conclusion==='success'&&jobs.length===JOBS.length&&JOBS.every(name=>jobs.filter(j=>j.name===name&&j.status==='completed'&&j.conclusion==='success').length===1);
@@ -29,28 +34,31 @@ async function execute(cmd,event,d){
  const before=latestCI(listRuns(),base,workflow.id);
  const repair=cmd.mode==='repair-check'||cmd.mode==='repair-merge';
  if(repair){
-   // Une récupération unique et auditée : aucune exception générique pour une CI main rouge.
-   need(cmd.pr===REPAIR.pr&&cmd.expected===REPAIR.sha&&base===REPAIR.base,
-     'Réparation non autorisée pour cette PR, ce HEAD ou ce main');
-   need(before&&before.id===REPAIR.failedRun&&before.workflow_id===workflow.id&&
-     before.head_sha===base&&before.head_branch==='main'&&
-     ['push','workflow_dispatch'].includes(before.event)&&
+   // Mode réparation : jamais de politique implicite ni de réutilisation d'une ancienne CI.
+   need(cmd.repairMain===base&&cmd.failedRun===before?.id,
+     'SHA main ou run rouge non identique à la commande');
+   need(before.workflow_id===workflow.id&&before.head_sha===base&&
+     before.head_branch==='main'&&['push','workflow_dispatch'].includes(before.event)&&
      before.status==='completed'&&before.conclusion==='failure',
-     'Run main rouge attendu absent ou remplacé');
+     'La CI main citée n’est pas la dernière exécution rouge exacte');
    const failed=listJobs(before.id);
-   need(failed.length===JOBS.length&&JOBS.every(name=>failed.filter(x=>x.name===name&&x.status==='completed').length===1),
-     'Jobs de la CI main incomplets ou ambigus');
-   need(failed.find(x=>x.name==='Suites 1/5').conclusion==='failure'&&
+   need(failed.length===JOBS.length&&JOBS.every(name=>
+     failed.filter(x=>x.name===name&&x.status==='completed').length===1),
+     'Sept jobs main obligatoires absents ou ambigus');
+   need(failed.find(x=>x.name==='classification').conclusion==='success'&&
      failed.find(x=>x.name==='Validation CI').conclusion==='failure'&&
-     JOBS.filter(n=>n!=='Suites 1/5'&&n!=='Validation CI')
-       .every(n=>failed.find(x=>x.name===n).conclusion==='success'),
-     'Panne CI main différente de l’incident autorisé');
+     JOBS.filter(n=>n.startsWith('Suites ')).every(n=>
+       ['success','failure'].includes(failed.find(x=>x.name===n).conclusion))&&
+     JOBS.filter(n=>n.startsWith('Suites ')).some(n=>
+       failed.find(x=>x.name===n).conclusion==='failure'),
+     'Motif de CI rouge incompatible avec une réparation ciblée');
    const pr=api('pulls/'+cmd.pr);
-   need(pr.head?.sha===REPAIR.sha&&pr.base?.ref==='main'&&pr.base?.sha===base,
-     'PR de réparation déplacée ou tête modifiée');
+   need(pr.head?.sha===cmd.expected&&pr.base?.ref==='main'&&pr.base?.sha===base,
+     'La PR a changé ou ne cible plus le main exact');
    const changed=api('pulls/'+cmd.pr+'/files?per_page=100');
-   need(Array.isArray(changed)&&changed.length===1&&changed[0].filename===REPAIR.file&&
-     changed[0].status==='modified','Périmètre de réparation élargi');
+   need(Array.isArray(changed)&&changed.length===1&&changed[0].status==='modified'&&
+     /^(tests\/[^/]+\.cjs|dist\/[^/]+\.js)$/.test(changed[0].filename),
+     'Réparation non minimale ou modification de chemins privilégiés');
  }else{
    need(fullCI(before,before?listJobs(before.id):[],base,workflow.id),
      'main ne possède pas une CI complète verte ; arrêter les intégrations');
