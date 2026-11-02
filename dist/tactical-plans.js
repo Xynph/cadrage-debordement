@@ -28,7 +28,7 @@ function tacticalFinishAdjustment(l,side){return !tacticalRules(l)?0:ATTACK_EFFE
 function openKickProbability(l,side){if(!tacticalRules(l))return l.tactics[side]==='occupation'?.5:0;const distance=Math.abs(attackingGoal(side)-l.territory),style=effectiveAttack(l,side);if(style==='occupation')return distance>50?.65:distance>22?.35:.08;return distance>50?(style==='conquete'?.04:style==='large'?.06:.08):distance>22?.025:.01}
 function tacticalLoad(l,side){if(!tacticalRules(l))return l.tactics[side]==='large'?.49:l.tactics[side]==='conquete'?.44:.39;return l.possession===side?ATTACK_EFFECTS[effectiveAttack(l,side)].load:defensivePlan(l,side)==='pression'?.53:defensivePlan(l,side)==='prudente'?.31:.37}
 function tacticalCount(l,side,key,n=1){if(tacticalRules(l))l.tacticalStats[side][key]+=n}
-function adaptDefence(l,side){if(!tacticalRules(l))return;const next=chooseDefence(l,side);if(next===l.defences[side])return;l.defences[side]=next;addEvent(l,`${S.clubs[l.pair[side]].abbr} choisit une défense ${DEFENCES[next][0].toLowerCase()} selon le score et la fraîcheur.`,'tactic',{team:side})}
+function adaptDefence(l,side){if(!tacticalRules(l))return;if(side!==l.userSide)adaptOpponentAttack(l,side);const next=chooseDefence(l,side);if(next===l.defences[side])return;l.defences[side]=next;addEvent(l,`${S.clubs[l.pair[side]].abbr} choisit une défense ${DEFENCES[next][0].toLowerCase()} selon le score et la fraîcheur.`,'tactic',{team:side})}
 function setDefence(plan){if(S.live||!Object.keys(DEFENCES).includes(plan))return;S.defence=plan;save();render()}
 function setLiveDefence(plan){const l=S.live;if(!l||!tacticalRules(l)||!l.paused||l.finished||presentationPending(l)||!Object.keys(DEFENCES).includes(plan))return;l.defences[l.userSide]=plan;S.defence=plan;addEvent(l,`Votre défense : ${DEFENCES[plan][0]}. ${DEFENCES[plan][1]}`,'tactic',{team:l.userSide});syncMatchPresentation(l);save();render()}
 function defencePreparation(){return `<div class="card"><div class="cardtitle"><h2>02 / Organisation défensive</h2><span class="tag">PROCHAIN MATCH</span></div><div class="options defence-options">${Object.entries(DEFENCES).map(([key,[title,desc]])=>`<button class="option ${(S.defence||'equilibre')===key?'selected':''}" onclick="setDefence('${key}')">${title}<small>${desc}</small></button>`).join('')}</div><p class="help">Ces choix modifient la réussite adverse, les mètres concédés, les risques de pénalité et la fatigue. Le même calcul s’applique aux adversaires.</p></div>`}
@@ -443,5 +443,32 @@ function applyNumericalAdvice(kind,value){
  if(kind==='attack')setLiveTactic(value);
  else if(kind==='defence')setLiveDefence(value);
  else return false;
+ return true;
+}
+
+// Native opponent AI V65: deterministic choice from observable current-match facts.
+// No new engine, random calls, or persistent schema; legacy matches keep their own plans.
+function opponentAttackDecision(l,side){
+ if(!l||!tacticalRules(l)||side===l.userSide||![0,1].includes(side))return null;
+ const minute=matchMinute(l),remaining=Math.max(0,80-minute),margin=l.score[side]-l.score[1-side];
+ const active=activePlayers(l,side),fitness=active.length?mean(active.map(p=>p.condition)):0;
+ const own=l.tacticalStats?.[side],other=l.tacticalStats?.[1-side];
+ const turnovers=own?.handErrors||0,attempts=own?.carries||0,advances=own?.advances||0;
+ const pass=unit(l,side,'pass',p=>p.fam>=4),speed=unit(l,side,'speed',p=>p.fam>=4);
+ const power=unit(l,side,'power',p=>p.fam<=3);
+ let plan='equilibre',reason='équilibre entre conservation et progression';
+ if(fitness<58) {plan='occupation';reason='préserver les joueurs fatigués';}
+ else if(l.weather==='Pluie'&&(turnovers>=2||l.tactics[side]==='large')){plan='conquete';reason='réduire les risques de faute de main sous la pluie';}
+ else if(margin<=-7&&remaining<=22&&fitness>=68&&speed+pass>power*1.65){plan='large';reason='tenter des espaces avant la fin';}
+ else if(margin>=7&&remaining<=24){plan='occupation';reason='protéger le terrain et limiter le risque';}
+ else if(attempts>=6&&advances/attempts<.35){plan=power>=pass?'conquete':'large';reason='corriger un manque de progression';}
+ else if(other?.kicks>=5&&power>pass+7){plan='conquete';reason='reprendre la maîtrise au près';}
+ return {plan,reason,remaining,margin,fitness};
+}
+function adaptOpponentAttack(l,side){
+ const choice=opponentAttackDecision(l,side);
+ if(!choice||!l.tactics||l.tactics[side]===choice.plan)return false;
+ l.tactics[side]=choice.plan;
+ addEvent(l,`${S.clubs[l.pair[side]].abbr} ajuste son attaque : ${TACTICS[choice.plan][0].toLowerCase()} (${choice.reason}).`,'tactic',{team:side});
  return true;
 }
