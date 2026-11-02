@@ -18,7 +18,7 @@ function generate(s){
  const topResult=evidence.find(e=>e.kind==='result');
  const topInjury=evidence.find(e=>e.kind==='injury');
  const leader=evidence.find(e=>e.kind==='standing');
- const special=topResult&&s.round>=20?'Édition spéciale : le sprint final du championnat':topInjury&&pressure>65?'Édition spéciale : le défi de l'effectif':'Le débrief de la semaine';
+ const special=topResult&&s.round>=20?'Édition spéciale : le sprint final du championnat':topInjury&&pressure>65?"Édition spéciale : le défi de l'effectif":'Le débrief de la semaine';
  const titles=[
  topResult?topResult.title:club+' : les enjeux d’une semaine décisive',
  leader?'Classement : '+leader.title:'Analyse : les choix collectifs à surveiller lors de la prochaine journée',
