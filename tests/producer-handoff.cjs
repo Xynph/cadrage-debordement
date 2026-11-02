@@ -80,3 +80,15 @@ test('pas de transfert de workflow push sur main',async()=>{
  assert.deepEqual(await handle({workflow_run:{event:'push',head_sha:SHA,pull_requests:[{number:215}]}},m.api),[]);
  assert.equal(m.calls.length,0);
 });
+
+test('workflow_run sans tableau pull_requests utilise le commit exact',async()=>{
+ const m=mock();
+ const source=m.api;
+ m.api=async(path,method='GET',data)=>{
+  if(path==='commits/'+SHA+'/pulls?per_page=100')return [pr()];
+  return source(path,method,data);
+ };
+ const result=await handle({workflow_run:{event:'pull_request',head_sha:SHA,pull_requests:[]}},m.api);
+ assert.equal(result.length,1);
+ assert.equal(m.calls.filter(c=>c.method==='POST').length,1);
+});
