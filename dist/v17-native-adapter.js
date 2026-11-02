@@ -15,8 +15,8 @@
    const opp=pair.find(id=>id!==s.club);
    fixtures.push({id:'round-'+round,round:round+1,opponent:s.clubs?.[opp]?.name||'Adversaire inconnu',date:null,played:false});
   }
-  const safePlayers=players.map(p=>({id:p.id,name:p.name,age:p.age,condition:p.condition,injury:p.injury,minutes:p.dev?.minutes??null,fatigue:typeof root.physicalLoadValue==='function'?root.physicalLoadValue(p):null,dev:{minutes:p.dev?.minutes??null}}));
-  return {players:safePlayers,fixtures,matches:[],lineup:Array.isArray(s.lineup)?s.lineup.slice():[],reserves:Array.isArray(s.reserves)?s.reserves.slice():[],allowedAttacks:typeof root.ATTACKS==='object'?Object.keys(root.ATTACKS):[],today:null,round:s.round,season:s.season};
+  const safePlayers=players.map(p=>({id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,condition:p.condition,injury:p.injury,minutes:p.dev?.minutes??null,fatigue:typeof root.physicalLoadValue==='function'?root.physicalLoadValue(p):null,dev:{minutes:p.dev?.minutes??null}}));
+  return {players:safePlayers,fixtures,matches:[],lineup:Array.isArray(s.lineup)?s.lineup.slice():[],reserves:Array.isArray(s.reserves)?s.reserves.slice():[],allowedAttacks:typeof TACTICS==='object'?Object.keys(TACTICS):[],today:null,round:s.round,season:s.season};
  }
  let dashboard=null;
  function create(){
