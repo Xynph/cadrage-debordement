@@ -1,10 +1,11 @@
 'use strict';
 // V17: vue dans le bureau existant, donnees natives strictement en lecture seule.
 (function(root){
- function available(){return !!(root.S&&typeof root.club==='function'&&root.CDV17V10&&root.CDV17UnifiedPC);}
+ function state(){return typeof S!=='undefined'?S:null;}
+ function available(){return !!(state()&&typeof root.club==='function'&&root.CDV17V10&&root.CDV17UnifiedPC);}
  function snapshot(){
   if(!available())return null;
-  const s=root.S,team=root.club(),players=Array.isArray(team?.players)?team.players:[];
+  const s=state(),team=root.club(),players=Array.isArray(team?.players)?team.players:[];
   const fixtures=[];
   if(Array.isArray(s.schedule))for(let round=Number(s.round)||0;round<Math.min(s.schedule.length,(Number(s.round)||0)+8);round++){
    const pairs=s.schedule[round];
@@ -20,7 +21,7 @@
  let dashboard=null;
  function create(){
   if(!available())return null;
-  return root.CDV17UnifiedPC.create({engine:root.CDV17V10,snapshot,slotEligible:typeof root.slotEligible==='function'?root.slotEligible:null,scenarios:()=>{const s=root.S;return s?[{name:'Composition actuelle',lineup:[...(s.lineup||[]),...(s.reserves||[])],attack:s.tactic}]:[];}});
+  return root.CDV17UnifiedPC.create({engine:root.CDV17V10,snapshot,slotEligible:typeof root.slotEligible==='function'?root.slotEligible:null,scenarios:()=>{const s=state();return s?[{name:'Composition actuelle',lineup:[...(s.lineup||[]),...(s.reserves||[])],attack:s.tactic}]:[];}});
  }
  function section(){if(!available())return '';try{dashboard=create();return '<div id="v17-manager-office">'+dashboard.render()+'</div>';}catch(e){return '<section class="card">Centre V17 indisponible : donnees natives incompletes.</section>';}}
  function install(){if(typeof root.managerOffice!=='function')return false;if(root.managerOffice.__v17Wrapped)return true;const original=root.managerOffice;function wrapped(){return original()+'<section class="card v17-office-integration" aria-label="Centre de commandement V17">'+section()+'</section>';}wrapped.__v17Wrapped=true;root.managerOffice=wrapped;return true;}
