@@ -1,32 +1,36 @@
 'use strict';
 // Ordonnancement déterministe des suites complètes, sans sélection liée au diff.
-// Poids prudents = maximum arrondi de deux mesures : main #41195460951 et PR V2 #41196473550.
+// Poids (secondes arrondies avec marge de 15 %) : maximum observé sur les
+// runs PR #41359113513 et main #41359554302, le 01/11/2026.
+// Seules les suites dépassant 3 s dans au moins un run sont pondérées ;
+// les autres et toute nouvelle suite conservent le poids prudent de 1.
+// Reprofiler si les suites ou les runtimes changent ; ce n'est pas une promesse de durée.
 const fs = require('node:fs');
 const path = require('node:path');
 const WEIGHTS_SECONDS = Object.freeze({
-  'tests/world-career.cjs': 66,
-  'tests/ai-roster-cycle.cjs': 81,
-  'tests/rugby.cjs': 51,
-  'tests/opposition.cjs': 31,
-  'tests/manager-mobility.cjs': 29,
+  'tests/ai-roster-cycle.cjs': 84,
+  'tests/world-career.cjs': 72,
+  'tests/rugby.cjs': 59,
+  'tests/lnr-multiclub-continuity.cjs': 52,
+  'tests/lnr05-evidence-long.cjs': 50,
+  'tests/lnr-career-long.cjs': 40,
+  'tests/lnr05-rotation-audit.cjs': 40,
+  'tests/lnr05-multiseason-strategies.cjs': 38,
+  'tests/lnr05-fatigue-scenarios.cjs': 37,
+  'tests/opposition.cjs': 33,
+  'tests/manager-mobility.cjs': 30,
+  'tests/lnr-cross-season-recovery.cjs': 26,
+  'tests/lnr-save-resume-continuation.cjs': 26,
+  'tests/saves.cjs': 21,
+  'tests/tactical-plans.cjs': 18,
   'tests/career-resilience.cjs': 17,
-  'tests/tactical-plans.cjs': 16,
-  'tests/saves.cjs': 18,
-  'tests/v28-collective-preparation.cjs': 6,
-  'tests/champion-budget-regression.cjs': 5,
+  'tests/lnr-save-integrity-guards.cjs': 17,
+  'tests/lnr05-rest-policy-audit.cjs': 12,
+  'tests/champion-budget-regression.cjs': 6,
   'tests/economy-audit.cjs': 6,
-  'tests/v29-focused-development.cjs': 4,
-  'tests/matchflow.cjs': 4,
-  'tests/development.cjs': 3,
-  'tests/frontrow.cjs': 3,
-  'tests/v33-contract-renewals.cjs': 3,
-  'tests/preparation.cjs': 3,
-  'tests/manager.cjs': 2,
-  'tests/v30-recruitment-intelligence.cjs': 2,
-  'tests/ui01-integration.cjs': 2,
-  'tests/v35-salary-demand.cjs': 3,
-  'tests/v34-counteroffers.cjs': 2,
-  'tests/v37-relations.cjs': 2
+  'tests/v28-collective-preparation.cjs': 6,
+  'tests/lnr-save-import-rollback-stress.cjs': 5,
+  'tests/v29-focused-development.cjs': 5
 });
 const lexical = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 function allTestFiles() {
