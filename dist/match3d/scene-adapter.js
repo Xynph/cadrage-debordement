@@ -11,7 +11,8 @@
   if(!scene||!Array.isArray(scene.players))throw new TypeError('Scène de match indisponible');
   const players=scene.players.filter(p=>p&&p.id!=null&&[0,1].includes(p.side)).slice(0,30)
    .map(p=>({id:String(p.id),side:p.side,slot:bounded(p.slot,0,14),x:bounded(p.x,0,100),y:bounded(p.y,0,70),featured:!!p.featured}));
-  const eventKey=scene.key&&typeof scene.key==='object'?JSON.stringify([scene.key.min,scene.key.text,scene.key.scene?.kind,scene.key.scene?.to]):String(scene.key??'');\n  return {key:eventKey,kind:String(scene.kind||'message'),stage:String(scene.stage||''),period:scene.period===2?2:1,
+  const eventKey=scene.key&&typeof scene.key==='object'?JSON.stringify([scene.key.min,scene.key.text,scene.key.scene?.kind,scene.key.scene?.to]):String(scene.key??'');
+  return {key:eventKey,kind:String(scene.kind||'message'),stage:String(scene.stage||''),period:scene.period===2?2:1,
    players,ball:point(scene.ball),origin:point(scene.origin||scene.ball),possession:scene.possession===1?1:0};
  }
  const world=p=>({x:p.x-50,z:p.y-35});
