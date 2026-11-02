@@ -1,0 +1,17 @@
+'use strict';
+const assert=require('node:assert/strict');
+const bank=require('../dist/press-question-bank.js');
+assert.equal(bank.validate(),true);
+assert.equal(bank.topics.length,25);
+assert.equal(bank.questions.length,500);
+assert.equal(new Set(bank.questions.map(q=>q.id)).size,500);
+assert.equal(new Set(bank.questions.flatMap(q=>q.variants)).size,1500);
+for(const q of bank.questions){assert.equal(q.answers.length,4);assert.equal(new Set(q.answers.map(a=>a.text)).size,4);}
+const chosen=bank.pick({season:2,week:8,count:4,context:{themes:['defaite','crise','vestiaire','direction']},seed:7});
+assert.equal(chosen.length,4);
+assert.ok(chosen.every(q=>['defaite','crise','vestiaire','direction'].includes(q.theme)));
+const history=bank.appendHistory([],chosen[0],2,8,'r1');
+assert.ok(!bank.pick({season:2,week:9,count:4,context:{themes:['defaite','crise','vestiaire','direction']},history,seed:7}).some(q=>q.id===chosen[0].id));
+assert.ok(bank.pick({season:2,week:20,count:4,context:{themes:['defaite','crise','vestiaire','direction']},history,seed:7}).length===4);
+assert.throws(()=>bank.appendHistory([],chosen[0],2,8,'r9'));
+console.log('PASS V60 bank: 25 themes, 500 prompts, 1500 variants, 4 responses, 12-week exclusion');
