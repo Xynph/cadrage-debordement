@@ -12,7 +12,7 @@ jobs:
       github.event.comment.user.id == 350229047 &&
       github.event.comment.user.login == 'Xynph' &&
       github.event.comment.user.type == 'User' &&
-      (startsWith(github.event.comment.body, '/cd-merge ') || startsWith(github.event.comment.body, '/cd-check '))
+      (startsWith(github.event.comment.body, '/cd-merge ') || startsWith(github.event.comment.body, '/cd-check ') || startsWith(github.event.comment.body, '/cd-repair-check ') || startsWith(github.event.comment.body, '/cd-repair-merge '))
     permissions:
       contents: write
       pull-requests: read
