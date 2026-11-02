@@ -11,7 +11,9 @@ function tacticalVisualSummary(scene) {
  const near=(arr,metres)=>Number.isFinite(ball.x)&&Number.isFinite(ball.y)?arr.filter(p=>distance(p)<=metres).length:0;
  const wings=[0,1,2].map(i=>({label:['Aile gauche','Axe','Aile droite'][i],attack:attack.filter(p=>Math.min(2,Math.floor(p.y/23.34))===i).length,defence:defence.filter(p=>Math.min(2,Math.floor(p.y/23.34))===i).length}));
  const line=arr=>arr.length?arr.reduce((sum,p)=>sum+p.x,0)/arr.length:null;
- return {possession,attackCount:attack.length,defenceCount:defence.length,attackNear:near(attack,12),defenceNear:near(defence,12),wings,attackLine:line(attack),defenceLine:line(defence),eventKind:String(scene?.kind||'message'),hasActualEvent:!!scene?.event?.scene};
+ const pressure=near(defence,12)>near(attack,12)?'Pression adverse':near(attack,12)>near(defence,12)?'Soutien offensif':'Zone disputée';
+ const longitudinalGap=line(attack)===null||line(defence)===null?null:Math.round(Math.abs(line(attack)-line(defence))*10)/10;
+ return {pressure,longitudinalGap,possession,attackCount:attack.length,defenceCount:defence.length,attackNear:near(attack,12),defenceNear:near(defence,12),wings,attackLine:line(attack),defenceLine:line(defence),eventKind:String(scene?.kind||'message'),hasActualEvent:!!scene?.event?.scene};
 }
 function tacticalVisualHtml(scene) {
  const v=tacticalVisualSummary(scene);
@@ -20,6 +22,7 @@ function tacticalVisualHtml(scene) {
  return '<section class="card match-tactical-observatory" aria-label="Observatoire spatial tactique"><h2>Espaces et soutiens</h2>'+
  '<p>Lecture des '+v.attackCount+' joueurs en possession et '+v.defenceCount+' défenseurs affichés. '+
  'Soutiens dans un rayon schématique de 12 m autour du ballon : <strong>'+v.attackNear+'</strong> contre <strong>'+v.defenceNear+'</strong>.</p>'+
+ '<p><strong>'+escape(v.pressure)+'</strong> · Écart longitudinal moyen : '+(v.longitudinalGap===null?'indisponible':v.longitudinalGap.toFixed(1)+' m')+'.</p>'+ 
  '<table><caption>Répartition latérale estimée des joueurs affichés</caption><thead><tr><th>Zone</th><th>Attaque</th><th>Défense</th><th>Écart</th></tr></thead><tbody>'+rows+'</tbody></table>'+
  '<p class="v40-data-note">Observations dérivées des positions du rendu 2D, pas du moteur de collision. '+
  (v.hasActualEvent?'Action native synchronisée.':'Aucune géométrie historique enregistrée : positions schématiques.')+
