@@ -1,15 +1,7 @@
 name: Centres recrutement et formation - Chromium
+# Réceptions PR et push assurées par ui-browser-consolidated.yml.
+# Le job historique reste disponible en workflow_dispatch pour diagnostic.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'dist/index.html'
-      - 'dist/game.js'
-      - 'dist/ui-native-centers.js'
-      - 'dist/ui03-*'
-      - 'dist/ui04-*'
-      - 'tests/ui-native-centers*'
-      - '.github/workflows/ui-native-centers-browser.yml'
   workflow_dispatch:
 permissions:
   contents: read

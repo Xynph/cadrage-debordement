@@ -1,39 +1,8 @@
 name: UI01 integration review
+# Réceptions PR et push assurées par ui-browser-consolidated.yml.
+# Le job historique reste disponible en workflow_dispatch pour diagnostic.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'dist/index.html'
-      - 'dist/style.css'
-      - 'dist/game.js'
-      - 'dist/ui*'
-      - 'dist/main-menu*'
-      - 'dist/assets/menu-stadium*'
-      - 'tests/main-menu*'
-      - 'dist/manager-squad.js'
-      - 'dist/match-preparation.js'
-      - 'dist/match-cockpit.js'
-      - 'tests/ui01*'
-      - 'tests/harness.cjs'
-      - '.github/workflows/ui01-integration.yml'
-  push:
-    branches: [integration/ui01-reviewed, main]
-    paths:
-      - 'dist/index.html'
-      - 'dist/style.css'
-      - 'dist/game.js'
-      - 'dist/ui*'
-      - 'dist/main-menu*'
-      - 'dist/assets/menu-stadium*'
-      - 'tests/main-menu*'
-      - 'dist/manager-squad.js'
-      - 'dist/match-preparation.js'
-      - 'dist/match-cockpit.js'
-      - 'tests/ui01*'
-      - 'tests/harness.cjs'
-      - '.github/workflows/ui01-integration.yml'
   workflow_dispatch:
-
 permissions:
   contents: read
 concurrency:

@@ -1,12 +1,7 @@
 name: V4 Premium visual acceptance
+# Réceptions PR et push assurées par ui-browser-consolidated.yml.
+# Le job historique reste disponible en workflow_dispatch pour diagnostic.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'dist/**'
-      - 'tests/premium-v4-browser.py'
-      - 'tests/art-direction-v4-browser.py'
-      - '.github/workflows/premium-v4.yml'
   workflow_dispatch:
 permissions:
   contents: read

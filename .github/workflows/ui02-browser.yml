@@ -1,14 +1,7 @@
 name: UI02 live browser acceptance
+# Réceptions PR et push assurées par ui-browser-consolidated.yml.
+# Le job historique reste disponible en workflow_dispatch pour diagnostic.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'dist/index.html'
-      - 'dist/manager-squad.js'
-      - 'dist/ui02-*.js'
-      - 'dist/ui02-*.css'
-      - 'tests/ui02-*'
-      - '.github/workflows/ui02-browser.yml'
   workflow_dispatch:
 permissions:
   contents: read

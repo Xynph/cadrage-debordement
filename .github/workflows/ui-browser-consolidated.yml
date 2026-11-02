@@ -1,0 +1,145 @@
+name: UI Chromium mutualise - CI V3
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/**'
+      - 'tests/main-menu*'
+      - 'tests/ui01*'
+      - 'tests/ui02-*'
+      - 'tests/ui-native-centers*'
+      - 'tests/harness.cjs'
+      - 'tests/premium-v4-browser.py'
+      - 'tests/art-direction-v4-browser.py'
+      - 'ci/ui-browser-selector.cjs'
+      - 'tests/ci-ui-browser-selector.cjs'
+      - '.github/workflows/ui-browser-consolidated.yml'
+      - '.github/workflows/ui01-integration.yml'
+      - '.github/workflows/ui02-browser.yml'
+      - '.github/workflows/ui-native-centers-browser.yml'
+      - '.github/workflows/premium-v4.yml'
+  push:
+    branches: [main, integration/ui01-reviewed]
+    paths:
+      - 'dist/index.html'
+      - 'dist/style.css'
+      - 'dist/game.js'
+      - 'dist/ui*'
+      - 'dist/main-menu*'
+      - 'dist/assets/menu-stadium*'
+      - 'tests/main-menu*'
+      - 'dist/manager-squad.js'
+      - 'dist/match-preparation.js'
+      - 'dist/match-cockpit.js'
+      - 'tests/ui01*'
+      - 'tests/harness.cjs'
+      - '.github/workflows/ui01-integration.yml'
+      - '.github/workflows/ui-browser-consolidated.yml'
+      - 'ci/ui-browser-selector.cjs'
+      - 'tests/ci-ui-browser-selector.cjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: ui-chromium-v3-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  chromium:
+    name: UI — Chromium mutualisé (7 parcours)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - id: select
+        name: Sélection des parcours et test déterministe
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          node tests/ci-ui-browser-selector.cjs
+          base=''
+          if [[ "$EVENT_NAME" == 'pull_request' ]]; then
+            base="$PR_BASE"
+          elif [[ "$EVENT_NAME" == 'push' && -n "$BEFORE" && "$BEFORE" != '0000000000000000000000000000000000000000' ]]; then
+            base="$BEFORE"
+          fi
+          if [[ -n "$base" ]] && git cat-file -e "$base^{commit}" 2>/dev/null; then
+            git diff --name-only --diff-filter=ACMRD "$base" HEAD > "$RUNNER_TEMP/ui-changes.txt"
+            node ci/ui-browser-selector.cjs --event "$EVENT_NAME" "--files=$RUNNER_TEMP/ui-changes.txt" > "$RUNNER_TEMP/ui-scripts.txt"
+          else
+            node ci/ui-browser-selector.cjs --event "$EVENT_NAME" --all > "$RUNNER_TEMP/ui-scripts.txt"
+          fi
+          test -s "$RUNNER_TEMP/ui-scripts.txt"
+          cat "$RUNNER_TEMP/ui-scripts.txt"
+          if grep -Fxq 'tests/ui01-browser.py' "$RUNNER_TEMP/ui-scripts.txt"; then echo 'ui01=true' >> "$GITHUB_OUTPUT"; fi
+          if grep -Fxq 'tests/ui02-live-browser.py' "$RUNNER_TEMP/ui-scripts.txt"; then echo 'ui02=true' >> "$GITHUB_OUTPUT"; fi
+          if grep -Fxq 'tests/premium-v4-browser.py' "$RUNNER_TEMP/ui-scripts.txt"; then echo 'premium=true' >> "$GITHUB_OUTPUT"; fi
+      - name: Installer Playwright 1.57 et Chromium une seule fois
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Exécuter toutes les réceptions sélectionnées, captures et sauvegardes
+        shell: bash
+        run: |
+          set -uo pipefail
+          count=0
+          failures=0
+          while IFS= read -r script; do
+            case "$script" in
+              tests/ui01-browser.py|tests/ui01-contrast.py|tests/main-menu-v3-browser.py|tests/ui02-live-browser.py|tests/ui-native-centers-browser.py|tests/premium-v4-browser.py|tests/art-direction-v4-browser.py) ;;
+              *) echo "::error::Script Chromium non autorisé : $script"; exit 1 ;;
+            esac
+            count=$((count+1))
+            echo "::group::$script"
+            if python "$script"; then
+              echo "PASS $script" >> "$GITHUB_STEP_SUMMARY"
+            else
+              code=$?
+              failures=$((failures+1))
+              echo "::error file=$script::Échec (code $code)"
+              echo "ECHEC $script ($code)" >> "$GITHUB_STEP_SUMMARY"
+            fi
+            echo "::endgroup::"
+          done < "$RUNNER_TEMP/ui-scripts.txt"
+          echo "Parcours : $count ; échecs : $failures" >> "$GITHUB_STEP_SUMMARY"
+          [[ "$count" -gt 0 && "$failures" -eq 0 ]]
+      - name: Captures UI01
+        if: ${{ always() && steps.select.outputs.ui01 == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui01-browser-report
+          path: ui01-browser-report/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Captures UI02
+        if: ${{ always() && steps.select.outputs.ui02 == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui02-live-browser-report
+          path: ui02-browser-report/
+          retention-days: 7
+      - name: Preuves V4 Premium et sauvegardes
+        if: ${{ always() && steps.select.outputs.premium == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: premium-v4-browser-report
+          path: |
+            ui01-browser-report/premium-v4/
+            ui01-browser-report/art-direction-v4/
+          retention-days: 7
+          if-no-files-found: error
