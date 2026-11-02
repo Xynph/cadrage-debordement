@@ -1,0 +1,34 @@
+name: V60.2 audit calendrier et crises
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  calendar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests V60 V60.1 V60.2
+        env:
+          CD_V602_CALENDAR_REPORT: v602-calendar.json
+          CD_V602_REPORT: v602-audit.json
+        run: |
+          node --check dist/press-calendar.js
+          node tests/v60-press-relations.cjs
+          node tests/v60-1-press-events.cjs
+          node tests/v60-2-calendar-audit.cjs
+          node tests/v60-2-calendar-wrapper.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v602-calendar
+          path: |
+            v602-calendar.json
+            v602-audit.json
+          if-no-files-found: ignore
