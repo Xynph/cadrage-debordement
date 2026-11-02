@@ -30,6 +30,7 @@ test('seuls petits fichiers UI JavaScript ou tests sont autorisés',()=>{
    assert.equal(safeFiles([{filename:file,status:'modified'}]),false,file);
  }
  assert.equal(safeFiles([{filename:'dist/manager-mobility.js',status:'removed'}]),false);
+ assert.equal(safeFiles([{filename:'dist/manager-mobility.js',previous_filename:'dist/saves.js',status:'renamed'}]),false);
  assert.throws(()=>safeFiles([]));
  assert.throws(()=>safeFiles(Array.from({length:100},()=>({filename:'tests/x.cjs',status:'modified'}))));
 });
