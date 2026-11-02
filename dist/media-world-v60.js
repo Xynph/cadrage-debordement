@@ -23,7 +23,7 @@ function headlines(s){
 function issue(s){if(!s||!Number.isInteger(s.season)||!Number.isInteger(s.round))return null;return {id:s.season+':'+s.round,season:s.season,week:s.round,articles:headlines(s)};}
 function render(s){
  const edition=issue(s);if(!edition)return '';
- const evidence=globalThis.CDMediaEvidence;const factual=evidence&&Array.isArray(s.mediaEvents)?evidence.html(s.mediaEvents,{season:s.season,week:s.round}):'';
+ const evidence=globalThis.CDMediaEvidence,bridge=globalThis.CDMediaNativeAdapter;const derived=bridge?bridge.collect(s):[];const factual=evidence?evidence.html([...derived,...(Array.isArray(s.mediaEvents)?s.mediaEvents:[])],{season:s.season,week:s.round}):'';
  return factual+'<section class="card" id="cd-media-world"><h3>Troisième Mi-Temps · Le fil rugby</h3><p>Édition de carrière · saison '+edition.season+', semaine '+edition.week+'</p><details><summary>Explorer les '+edition.articles.length+' chroniques du championnat</summary>'+
  edition.articles.map(a=>'<article><h4>'+escape(a.kind)+' · '+escape(a.title)+'</h4><p>'+escape(a.summary)+'</p><small>'+escape(a.byline?a.byline.name+' · '+a.byline.outlet:'Rédaction de Troisième Mi-Temps')+' · chronique simulée</small></article>').join('')+
  '</details><p><small>Actualités fictives fondées uniquement sur les données disponibles du jeu. Les noms des journalistes identifient des intervenants simulés, sans déclaration ni approbation réelle.</small></p></section>';
