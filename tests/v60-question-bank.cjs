@@ -4,7 +4,7 @@ const bank=require('../dist/press-question-bank.js');
 assert.equal(bank.validate(),true);
 assert.equal(bank.topics.length,25);
 assert.equal(bank.questions.length,500);
-assert.equal(bank.journalists.length,3);
+assert.equal(bank.journalists.length,8);
 assert.ok(bank.journalists.every(j=>j.name&&j.outlet&&j.source.startsWith('https://')));
 assert.ok(bank.journalists.some(j=>j.name==='Nicolas Zanardi'&&j.outlet.includes('Rugbyrama')));
 assert.ok(bank.journalists.some(j=>j.name==='Renaud Bourel'&&j.outlet==='L\'Équipe'));
