@@ -25,7 +25,7 @@ function safeFiles(files){
  need(Array.isArray(files)&&files.length>0&&files.length<100,
    'Diff absent ou pagination indécidable');
  // La voie rapide exclut les changements privilégiés, moteur et sauvegardes.
- return files.every(f=>f.status!=='removed'&&
+ return files.every(f=>['added','modified'].includes(f.status)&&
    (/^tests\/[a-zA-Z0-9._-]+\.cjs$/.test(f.filename)||
     /^dist\/[a-zA-Z0-9._-]+\.js$/.test(f.filename))&&
    !/^(dist\/(?:rugby|saves|index|game|economy|world-career)\.js|tests\/(?:chat-release|release-gate)\.cjs)$/.test(f.filename));
