@@ -39,10 +39,10 @@ export async function integrate(db, observations, mapping) {
    id=matches[0].id;
   }else{hold(r,'unknown_type');continue}
   if(!id){hold(r,'club_unmatched');continue}
-  const obs={competition:r.competition,season:r.season,phase:r.phase,type:r.type,entityId:id,category:r.category??null,indicator:r.indicator,unit:r.unit??null,scope:r.source_scope??null,value:v,sources:[r.source_url],sourceCategory:r.category};
+  const obs={competition:r.competition,season:r.season,phase:r.phase,type:r.type,entityId:id,category:r.category??null,indicator:r.indicator,unit:r.unit??null,scope:r.source_scope??null,value:v,sources:[r.source_url],sourceUrl:r.source_url,sourceCategory:r.category};
   const k=key(obs),fingerprint=hash([k,v,r.source_url]);if(seen.has(fingerprint)){stats.duplicates++;continue}seen.add(fingerprint);
   const existing=facts.get(k);
-  if(existing){if(existing.value!==v){stats.conflicts++;if(conflictSamples.length<100)conflictSamples.push({key:k,old:existing.value,new:v,source:r.source_url});continue}stats.already_present++;if(!existing.sources.includes(r.source_url))existing.sources.push(r.source_url);continue}
+  if(existing){if(existing.value!==v){stats.conflicts++;if(conflictSamples.length<100)conflictSamples.push({key:k,old:existing.value,new:v,source:r.source_url});continue}stats.already_present++;const knownSources=Array.isArray(existing.sources)?existing.sources:(existing.sourceUrl?[existing.sourceUrl]:[]);if(!knownSources.includes(r.source_url))existing.sources=[...knownSources,r.source_url];continue}
   obs.id=k;out.rugbyDataObservations.push(obs);facts.set(k,obs);stats.added++;stats.byCompetition[r.competition].added++;
  }
  return {db:out,report:{...stats,pendingSamples,conflictSamples}};
