@@ -35,3 +35,11 @@ test('zéro réel distinct du manquant',async()=>{
 test('affiliation source nécessaire',async()=>{
  await assert.rejects(()=>integrate(db,input([player]),{...mapping,verifiedMembership:[{...mapping.verifiedMembership[0],evidenceUrl:null}]}),/Affiliation/);
 });
+
+test('Deux rubriques distinctes peuvent partager le même indicateur',async()=>{
+ const c={...club,category:'Défense',indicator:'Total',raw_value:'13'};
+ const d={...club,category:'Attaque',indicator:'Total',raw_value:'18'};
+ const x=await integrate(db,input([c,d]),mapping);
+ assert.equal(x.report.added,2);
+ assert.equal(x.report.conflicts,0);
+});
