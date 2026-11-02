@@ -1,0 +1,16 @@
+'use strict';const assert=require('node:assert/strict');
+global.CDPressQuestionBank=require('../dist/press-question-bank.js');
+global.S={season:2,round:7,club:0,clubs:[{id:0,name:'Club Exemple'}],morale:72,trust:52};
+global.managerOffice=()=>'<section>Bureau</section>';
+const show=require('../dist/rugby-broadcast.js');
+assert.equal(show.name,'Troisième Mi-Temps');
+const a=show.generate(global.S),b=show.generate(JSON.parse(JSON.stringify(global.S)));
+assert.deepEqual(a,b,'weekly edition must be deterministic');
+assert.equal(a.segments.length,5);
+assert.equal(new Set(a.segments.map(x=>x.type)).size,5);
+assert.ok(a.segments.every(x=>x.journalist?.name&&x.journalist?.outlet));
+assert.ok(show.render(global.S).includes('édition fictive'));
+assert.ok(global.managerOffice().includes('Troisième Mi-Temps'));
+const previous=JSON.stringify(global.S);show.generate(global.S);assert.equal(JSON.stringify(global.S),previous,'no legacy save mutation');
+global.S.round++;assert.notEqual(show.generate(global.S).id,a.id,'weekly rotation');
+console.log('PASS V60: original weekly show, 5 segments, journalists, deterministic, old saves untouched');
