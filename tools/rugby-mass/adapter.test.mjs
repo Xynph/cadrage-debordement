@@ -1,0 +1,14 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {adapt} from './adapter.mjs';
+const raw=(data,season='2025/2026')=>({schema:'rugbydata-raw-v1',seasonRequested:'2025-2026',seasonSelected:{text:season},source:'https://www.rugbydata.fr/statistics/competition/1',json:[{url:'https://www.rugbydata.fr/statistics/competition/1',data}]});
+const p={name:'Émile Exemple',club:'Club A',matches:12,minutes:800,tries:3,points:15};
+test('normalise et préserve la provenance',()=>{const r=adapt(raw([p]));assert.equal(r.summary.accepted,1);assert.equal(r.rows[0].league,'TOP14');assert.equal(r.rows[0].points,15);assert.ok(r.rows[0].sourceUrl.startsWith('https://'));});
+test('inconnues null et non zéro',()=>{const r=adapt(raw([{name:'A',club:'B',matches:2}]));assert.equal(r.rows[0].minutes,null);assert.equal(r.rows[0].tries,null);});
+test('saison non vérifiée rejetée',()=>assert.throws(()=>adapt(raw([p],'2026/2027'))));
+test('saison de ligne incompatible refusée',()=>assert.equal(adapt(raw([{...p,season:'2026-2027'}])).summary.accepted,0));
+test('clubs absents refusés',()=>assert.equal(adapt(raw([{...p,club:null}])).summary.accepted,0));
+test('statistiques négatives refusées',()=>assert.equal(adapt(raw([{...p,matches:-1}])).summary.accepted,0));
+test('doublons dédupliqués',()=>assert.equal(adapt(raw([p,p])).summary.accepted,1));
+test('ne pas interpréter les totaux par équipe',()=>assert.equal(adapt(raw({totals:[{points:33}]})).summary.accepted,0));
+test('compétitions non autorisées rejetées',()=>assert.throws(()=>adapt({...raw([p]),source:'https://www.rugbydata.fr/statistics/competition/8'})));
