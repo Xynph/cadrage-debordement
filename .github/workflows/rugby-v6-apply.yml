@@ -1,5 +1,12 @@
 name: Rugby V6 - appliquer estimations DATA (branche uniquement)
 on:
+  pull_request:
+    branches:
+      - data/rugby-real-top14-prod2-verified-import-20261102
+    paths:
+      - .github/workflows/rugby-v6-apply.yml
+      - tools/rugby-v6-estimates/**
+      - modding/data06/rugby-v6-estimates-20261102.json
   push:
     branches:
       - data/rugby-v6-mass-estimates-20261102
@@ -80,7 +87,7 @@ jobs:
           node -e "const d=require('./modding/data06/rugby-master-2026-2027.json');if(d.players.length!==1592||d.rugbyDataObservations.length!==763)process.exit(1)"
           git diff --check
       - name: Publier uniquement le JSON DATA sur cette branche
-        if: success()
+        if: ${{ success() && github.event_name == 'push' }}
         shell: bash
         run: |
           set -euo pipefail
