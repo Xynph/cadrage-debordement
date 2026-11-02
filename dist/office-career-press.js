@@ -21,7 +21,7 @@
   if(s.pressRelations===undefined)return true;
   if(!root.CDPressRelations||!Number.isInteger(s.club)||!Number.isInteger(s.season)||!Number.isInteger(s.round))throw Error('Carrière presse invalide');
   const p=s.pressRelations;root.CDPressRelations.validate(p);
-  if(p.clubId!=='club-'+s.club||p.season>s.season||p.stories.length>40||p.history.length>500||p.used.length>500||p.week>26||p.stories.some(e=>!e||!root.CDPressRelations.topics.includes(e.topic)||!root.CDPressRelations.tones.includes(e.tone)))throw Error('Carrière presse incohérente');
+  if(!/^club-[0-9]+$/.test(p.clubId)||p.season>s.season||p.stories.length>40||p.history.length>500||p.used.length>500||p.week>26||p.stories.some(e=>!e||!root.CDPressRelations.topics.includes(e.topic)||!root.CDPressRelations.tones.includes(e.tone)))throw Error('Carrière presse incohérente');
   return true;
  }
  function holdConference(s,selectedTopic=topic,selectedTone=tone){
@@ -73,6 +73,7 @@
   if(el.hasAttribute('data-cd-press-tone')&&tones[el.value])tone=el.value;
   const host=document.getElementById('cd-office-v58-v60');if(!host)return;
   const panel=host.querySelector('[data-cd-press-preview]'),v=pressPreview(current());
+  const confirm=host.querySelector('[data-cd-press-confirm]');if(confirm)confirm.disabled=!v||!!current()?.live;
   if(panel)panel.textContent=v?'Effets théoriques : médias '+(v.media>0?'+':'')+v.media+', supporters '+(v.fans>0?'+':'')+v.fans+', pression direction '+(v.pressure>0?'+':'')+v.pressure+', moral '+(v.morale>0?'+':'')+v.morale+'.':'Projection indisponible.';
  });
  const api=Object.freeze({coachRisks,pressPreview,holdConference,validatePressCareer,render,install});root.validatePressCareer=validatePressCareer;
