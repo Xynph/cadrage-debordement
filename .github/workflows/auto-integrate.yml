@@ -1,0 +1,38 @@
+name: Intégration rapide (sélection explicite)
+on:
+  pull_request_target:
+    types: [labeled]
+permissions: {}
+jobs:
+  guarded-integration:
+    if: >-
+      github.repository == 'Xynph/cadrage-debordement' &&
+      github.event.label.name == 'cd-integrate' &&
+      github.actor == 'Xynph' &&
+      github.triggering_actor == 'Xynph' &&
+      github.event.sender.id == 350229047 &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.base.repo.full_name == 'Xynph/cadrage-debordement' &&
+      github.event.pull_request.head.repo.full_name == 'Xynph/cadrage-debordement'
+    permissions:
+      contents: write
+      pull-requests: read
+      actions: write
+      issues: write
+    concurrency:
+      group: chat-release-gate-main
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+      - name: Vérifier le label, le diff, les CI et fusionner par le gate officiel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node ci/auto-integrate.cjs
