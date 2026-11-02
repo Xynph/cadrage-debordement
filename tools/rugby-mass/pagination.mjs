@@ -20,7 +20,7 @@ export async function expandRankings(page,{rounds=30,delay=750,checkpoint=null}=
     const afterHash=crypto.createHash('sha256').update(after).digest('hex');
     const status=beforeHash===afterHash?'stalled':'advanced';
     history.push({round:n,expanded,beforeHash,afterHash,status});
-    if(checkpoint)await fs.writeFile(checkpoint,JSON.stringify({version:1,history,complete:status==='stalled'},null,2)+'\n');
+    if(checkpoint)await fs.writeFile(checkpoint,JSON.stringify({version:1,history,complete:false},null,2)+'\n');
     if(status==='stalled'||!expanded)break;
   }
   const complete=history.length>0 && history.at(-1).status==='no-more-button';
