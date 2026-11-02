@@ -1,6 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const {validateEvent,safeFiles,verify}=require('../ci/auto-integrate.cjs');
+const {validateEvent,validateDispatch,safeFiles,verify}=require('../ci/auto-integrate.cjs');
+const {validateRequest}=require('../ci/auto-integrate-request.cjs');
 const {execute}=require('../ci/chat-release.cjs');
 const REPO='Xynph/cadrage-debordement',SHA='a'.repeat(40),MAIN='b'.repeat(40);
 function e(){return {action:'labeled',repository:{full_name:REPO,id:1439603196},label:{name:'cd-integrate'},sender:{id:350229047,login:'Xynph',type:'User'},pull_request:{number:241,base:{ref:'main',repo:{full_name:REPO}},head:{sha:SHA,repo:{full_name:REPO}}}};}
@@ -57,18 +58,53 @@ test('execute refuse un contexte sans commentaire non expressément autorisé',a
  await assert.rejects(()=>execute(cmd,e(),{api:(url)=>{calls.push(url);throw Error('no api needed')},snapshot:MAIN,autoAuthorized:false}),/non autorisée/);
  assert.deepEqual(calls,[]);
 });
-test('workflow privilégié uniquement sur main, sans code PR ni interpolation',()=>{
- const y=fs.readFileSync(path.join(__dirname,'../.github/workflows/auto-integrate.yml'),'utf8');
- assert.match(y,/pull_request_target:/);
- assert.match(y,/types: \[labeled\]/);
- assert.match(y,/^permissions: \{\}$/m);
- assert.match(y,/github\.event\.label\.name == 'cd-integrate'/);
- assert.match(y,/github\.event\.sender\.id == 350229047/);
- assert.match(y,/group: chat-release-gate-main/);
- assert.match(y,/ref: \$\{\{ github.sha \}\}/);
- assert.match(y,/persist-credentials: false/);
- assert(!y.includes('secrets.'));
- assert(!y.includes('id-token:'));
- assert(!y.includes('github.event.pull_request.head.sha }}'));
- for(const action of y.matchAll(/uses: (\S+)/g))assert.match(action[1],/@[0-9a-f]{40}$/);
+test('demande étiquetée liée au main et au run original',()=>{
+ const x=sample();
+ const api=url=>url==='git/ref/heads/main'?{object:{sha:MAIN}}:x.api(url);
+ assert.deepEqual(validateRequest(e(),{...env,GITHUB_RUN_ID:'456'},api),{pr:'241',sha:SHA,source_run:'456'});
+ assert.throws(()=>validateRequest(e(),{...env,GITHUB_RUN_ID:'456'},url=>
+   url==='git/ref/heads/main'?{object:{sha:'c'.repeat(40)}}:x.api(url)));
+});
+const dispatched={inputs:{pr:'241',sha:SHA,source_run:'456'}};
+const dispatchEnv={GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_REPOSITORY:REPO,GITHUB_REF:'refs/heads/main',GITHUB_SHA:MAIN};
+const source=()=>({event:'pull_request_target',path:'.github/workflows/auto-integrate-request.yml',
+ actor:{id:350229047,login:'Xynph',type:'User'},status:'completed',conclusion:'success',
+ head_sha:SHA,pull_requests:[{number:241}]});
+test('dispatch autorisé seulement après un run de sélection propriétaire terminé',()=>{
+ const cmd=validateDispatch(dispatched,dispatchEnv,()=>source());
+ assert.deepEqual(cmd,{pr:241,expected:SHA,base:MAIN,mode:'merge'});
+});
+for(const [description,patch] of [
+ ['run rouge',{conclusion:'failure'}],['run encore en cours',{status:'in_progress'}],
+ ['autre workflow',{path:'.github/workflows/unsafe.yml'}],['autre acteur',{actor:{id:99,login:'other',type:'User'}}],
+ ['mauvais SHA',{head_sha:'c'.repeat(40)}],['PR absente',{pull_requests:[]}],
+ ['autre événement',{event:'workflow_dispatch'}]
+])test('dispatch refuse '+description,()=>{
+ assert.throws(()=>validateDispatch(dispatched,dispatchEnv,()=>({...source(),...patch})));
+});
+test('dispatch refuse un SHA invalide et une branche non-main',()=>{
+ assert.throws(()=>validateDispatch({inputs:{...dispatched.inputs,sha:'wrong'}},dispatchEnv,()=>source()));
+ assert.throws(()=>validateDispatch(dispatched,{...dispatchEnv,GITHUB_REF:'refs/heads/feature'},()=>source()));
+});
+test('deux workflows privilégiés isolés, concurrence unique, aucun code de PR',()=>{
+ const first=fs.readFileSync(path.join(__dirname,'../.github/workflows/auto-integrate-request.yml'),'utf8');
+ const second=fs.readFileSync(path.join(__dirname,'../.github/workflows/auto-integrate.yml'),'utf8');
+ assert.match(first,/pull_request_target:/);
+ assert.match(first,/types: \[labeled\]/);
+ assert.match(first,/github\.event\.label\.name == 'cd-integrate'/);
+ assert.match(first,/github\.event\.sender\.id == 350229047/);
+ assert.match(first,/run: node ci\/auto-integrate-request\.cjs/);
+ assert.match(second,/workflow_dispatch:/);
+ assert(!second.includes('pull_request_target:'));
+ assert.match(second,/run: node ci\/auto-integrate\.cjs/);
+ for(const y of [first,second]){
+   assert.match(y,/^permissions: \{\}$/m);
+   assert.match(y,/group: chat-release-gate-main/);
+   assert.match(y,/ref: \$\{\{ github.sha \}\}/);
+   assert.match(y,/persist-credentials: false/);
+   assert(!y.includes('secrets.'));
+   assert(!y.includes('id-token:'));
+   assert(!y.includes('github.event.pull_request.head.sha }}'));
+   for(const action of y.matchAll(/uses: (\S+)/g))assert.match(action[1],/@[0-9a-f]{40}$/);
+ }
 });
