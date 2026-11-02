@@ -43,3 +43,14 @@ test('Deux rubriques distinctes peuvent partager le même indicateur',async()=>{
  assert.equal(x.report.added,2);
  assert.equal(x.report.conflicts,0);
 });
+
+test('Import relançable sur observation historique sans tableau sources',async()=>{
+ const existing={competition:'TOP 14',season:'2025-2026',phase:'Phase régulière',type:'Club',entityId:'toulouse',category:'Attaque',indicator:'Points marqués',unit:'Points',scope:null,value:981,sourceUrl:'https://rugbydata.fr/statistics/panel/51'};
+ const d={...db,rugbyDataObservations:[existing]};
+ const before=JSON.stringify(d);
+ const x=await integrate(d,input([club]),mapping);
+ assert.equal(x.report.added,0);
+ assert.equal(x.report.already_present,1);
+ assert.equal(JSON.stringify(d),before);
+ assert.deepEqual(x.db.rugbyDataObservations,[existing]);
+});
