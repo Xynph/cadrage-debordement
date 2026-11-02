@@ -23,7 +23,7 @@ function pick({season=1,week=0,history=[],context={},count=3,seed=0}={}){
  const selected=[],seen=new Set();
  for(const {q} of weighted){if(selected.length>=count)break;if(seen.has(q.theme)&&weighted.length>=count*3)continue;selected.push(q);seen.add(q.theme);}
  for(const {q} of weighted){if(selected.length>=count)break;if(!selected.includes(q))selected.push(q);}
- return selected.map((q,i)=>({id:q.id,theme:q.theme,label:q.label,question:q.variants[Math.abs(seed+week+i)%3],variant:(seed+week+i)%3,journalist:JOURNALISTS.find(j=>j.specialties.includes(q.theme))||JOURNALISTS[(i+Math.abs(seed))%JOURNALISTS.length],answers:q.answers}));
+ return selected.map((q,i)=>{const journalist=JOURNALISTS.find(j=>j.specialties.includes(q.theme))||JOURNALISTS[(i+Math.abs(seed))%JOURNALISTS.length];const preferred={technique:0,analyse:1,interview:2}[journalist.style]??0;const variant=(preferred+Math.abs(week+seed+i)%2)%3;return {id:q.id,theme:q.theme,label:q.label,question:q.variants[variant],variant,journalist,answers:q.answers};});
 }
 function appendHistory(history,question,season,week,answerId){if(!questions.some(q=>q.id===question.id)||!question.answers.some(a=>a.id===answerId))throw Error('Réponse inconnue');return [...history,{id:question.id,season,week,answerId}].slice(-500);}
 validate();return Object.freeze({questions,topics:TOPICS.map(t=>t[0]),journalists:JOURNALISTS,validate,pick,appendHistory});
