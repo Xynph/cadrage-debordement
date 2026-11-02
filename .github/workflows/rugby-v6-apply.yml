@@ -67,7 +67,17 @@ jobs:
               assert.equal(p.attributesV2[key],e.attributesV2[key]??oldp.attributesV2[key]);
             }
           }
-          assert.deepEqual([nr,np,na,top,pro],[480,1080,347,805,787]);
+          assert.deepEqual([na,top,pro],[347,805,787]);
+          if(nr===0 && np===0){
+            assert.equal(old.v6MassEstimateSummary?.sourceBlob,layer.sourceBlob);
+            assert.equal(old.v6MassEstimateSummary?.model,layer.model);
+            assert.equal(old.v6MassEstimateSummary?.players,1592);
+            assert.equal(old.v6MassEstimateSummary?.summary?.changedRatings,480);
+            assert.equal(old.v6MassEstimateSummary?.summary?.changedPotential,1080);
+            console.log('Reprise idempotente : BDD centrale deja appliquee, aucun doublon');
+          }else{
+            assert.deepEqual([nr,np],[480,1080]);
+          }
           console.log(JSON.stringify({playerCount:1592,top14:top,prod2:pro,changedRatings:nr,changedPotential:np,changedAttributes:na,observationsUnchanged:763}));
           NODE
       - name: Tests de sauvegarde et de regression cibles
