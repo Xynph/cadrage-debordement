@@ -14,3 +14,4 @@ assert.ok(global.managerOffice().includes('Troisième Mi-Temps'));
 const previous=JSON.stringify(global.S);show.generate(global.S);assert.equal(JSON.stringify(global.S),previous,'no legacy save mutation');
 global.S.round++;assert.notEqual(show.generate(global.S).id,a.id,'weekly rotation');
 console.log('PASS V60: original weekly show, 5 segments, journalists, deterministic, old saves untouched');
+const withFacts=JSON.parse(JSON.stringify(global.S));withFacts.history=[{pair:[0,1],score:[28,19],round:6,phase:'league'}];withFacts.clubs.push({id:1,name:'Club Adverse',points:6,played:2,pf:34,pa:40,players:[]});withFacts.clubs[0].points=9;withFacts.clubs[0].played=2;withFacts.clubs[0].pf=45;withFacts.clubs[0].pa=20;global.CDMediaNativeAdapter=require('../dist/media-native-adapter-v60.js');const factual=show.generate(withFacts);assert.ok(factual.segments[0].title.includes('28–19'));assert.ok(factual.segments[1].title.includes('Classement'));
