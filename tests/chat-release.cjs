@@ -105,6 +105,8 @@ function repairFixture(options={}){
  const failed=jobs().map(j=>({...j}));
  for(const name of ['Suites 1/5','Validation CI'])failed.find(x=>x.name===name).conclusion='failure';
  if(options.wrongFailure)failed.find(x=>x.name==='classification').conclusion='failure';
+ if(options.skippedShard)failed.find(x=>x.name==='Suites 2/5').conclusion='skipped';
+ if(options.extraJob)failed.push({name:'extra',status:'completed',conclusion:'success'});
  const badRun={...run(REPAIR_MAIN,options.wrongRun?REPAIR_RUN-1:REPAIR_RUN,'workflow_dispatch'),conclusion:'failure'};
  const api=(url)=>{
   calls.push(url);
@@ -131,7 +133,7 @@ test('réparation vérifiée en lecture seule malgré main rouge précis',async(
  assert(f.calls.includes('gate'));
  assert(!f.calls.some(x=>x.includes('dispatches')));
 });
-for(const option of ['wrongRun','wrongFailure','wrongHead','wrongFile','movedMain'])
+for(const option of ['wrongRun','wrongFailure','wrongHead','wrongFile','movedMain','skippedShard','extraJob'])
  test('réparation refuse '+option,async()=>{
   const f=repairFixture({[option]:true});
   await assert.rejects(()=>execute(f.cmd,f.e,f.deps));
