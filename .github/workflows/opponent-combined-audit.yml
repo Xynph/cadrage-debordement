@@ -1,0 +1,74 @@
+name: Reception IA combinee - 24 graines et V16
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/opponent-combined-audit.yml'
+      - 'docs/opponent-combined-audit.md'
+      - 'dist/rugby.js'
+      - 'tests/opponent-defensive-scout.cjs'
+      - 'tests/champion-budget-regression.cjs'
+permissions:
+  contents: read
+jobs:
+  combined-native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install browser
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Compare genuine main and integrated PR engines on fixed non-finalist regression
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p opponent-combined-proof
+          git fetch --no-tags origin "$BASE_SHA"
+          git show "$BASE_SHA:dist/rugby.js" > dist/rugby.js
+          node tests/champion-budget-regression.cjs > opponent-combined-proof/main-regression.log 2>&1 || { cat opponent-combined-proof/main-regression.log; exit 1; }
+          git show "$HEAD_SHA:dist/rugby.js" > dist/rugby.js
+          git diff --name-only > opponent-combined-proof/overlay-paths.txt
+          node tests/opponent-tactical-ai.cjs
+          node tests/opponent-defensive-scout.cjs
+          node tests/champion-budget-regression.cjs > opponent-combined-proof/combined-regression.log 2>&1 || { cat opponent-combined-proof/combined-regression.log; exit 1; }
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('opponent-combined-proof')
+          for case in ('main','combined'):
+              log=(p/(case+'-regression.log')).read_text()
+              assert 'PASS 07' in log and 'FAIL 07' not in log, case+' missing PASS 07 or has FAIL 07'
+              print(case+': PASS 07 on the corrected non-finalist test')
+          PY
+      - name: 24 seeds x control/adapted on combined native engine plus genuine historical V16 import
+        run: |
+          (cd dist && python -m http.server 8765 --bind 127.0.0.1) &
+          python tests/opponent-native-browser.py > opponent-combined-proof/native.log 2>&1 || { cat opponent-combined-proof/native.log; exit 1; }
+          cp opponent-native-audit/report.json opponent-combined-proof/native-report.json
+          python - <<'PY'
+          import json
+          r=json.load(open('opponent-combined-proof/native-report.json'))
+          assert r['runs']==48 and r['completed']==48
+          assert r['historicalV16']['passed'] is True
+          assert len(r['paired'])==24
+          print('PASS: 24 paired seeds / 48 native matches, historical V16 import')
+          PY
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: combined-opponent-native-proof
+          path: opponent-combined-proof/
+          retention-days: 14
