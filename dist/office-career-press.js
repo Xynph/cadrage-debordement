@@ -7,9 +7,9 @@
  let topic='form',tone='honest';
  function current(){return typeof S==='undefined'?null:S;}
  function coachRisks(s){
-  if(!s||!Array.isArray(s.clubs)||!Array.isArray(s.world?.clubs)||!root.CDCoachMarket)return [];
+  if(!s||!Array.isArray(s.clubs)||!Array.isArray(s.worldManagement?.clubInfo)||!root.CDCoachMarket)return [];
   return s.clubs.filter(c=>c&&c.id!==s.club).map(c=>{
-   const w=s.world.clubs[c.id];if(!w||!Number.isInteger(w.coachConfidence)||!Number.isInteger(w.consecutiveLosses))return null;
+   const w=s.worldManagement.clubInfo[c.id];if(!w||!Number.isInteger(w.coachConfidence)||!Number.isInteger(w.consecutiveLosses))return null;
    try{return {id:c.id,name:c.name,risk:root.CDCoachMarket.dismissalRisk({confidence:w.coachConfidence,consecutiveLosses:w.consecutiveLosses}).risk};}catch(_){return null;}
   }).filter(Boolean).sort((a,b)=>b.risk-a.risk).slice(0,3);
  }
