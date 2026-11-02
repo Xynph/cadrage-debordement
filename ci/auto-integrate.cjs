@@ -47,10 +47,28 @@ function api(endpoint,method='GET',body){
  const raw=execFileSync('gh',args,{encoding:'utf8',input:body?JSON.stringify(body):undefined,timeout:30000,maxBuffer:8*1024*1024});
  return raw.trim()?JSON.parse(raw):null;
 }
+function validateDispatch(e,env,transport){
+ need(env.GITHUB_EVENT_NAME==='workflow_dispatch'&&env.GITHUB_REPOSITORY===REPO&&
+   env.GITHUB_REF==='refs/heads/main'&&/^[0-9a-f]{40}$/.test(env.GITHUB_SHA||''),
+   'Dispatch uniquement sur main');
+ const i=e.inputs||{};
+ need(/^[1-9][0-9]*$/.test(i.pr||'')&&/^[1-9][0-9]*$/.test(i.source_run||'')&&
+   /^[0-9a-f]{40}$/.test(i.sha||'')&&Number.isSafeInteger(Number(i.pr))&&
+   Number.isSafeInteger(Number(i.source_run)),'Paramètres de sélection invalides');
+ const source=transport('actions/runs/'+i.source_run);
+ need(source?.event==='pull_request_target'&&
+   source.path==='.github/workflows/auto-integrate-request.yml'&&
+   source.actor?.id===OWNER_ID&&source.actor?.login==='Xynph'&&
+   source.actor?.type==='User'&&source.status==='completed'&&
+   source.conclusion==='success'&&source.head_sha===i.sha&&
+   source.pull_requests?.some(p=>p.number===Number(i.pr)),
+   'Provenance propriétaire et sélection terminée non démontrées');
+ return {pr:Number(i.pr),expected:i.sha,base:env.GITHUB_SHA,mode:'merge'};
+}
 async function main(){
  const event=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8'));
- const cmd=validateEvent(event,process.env);
  const githubApi=(endpoint,method='GET',body)=>api(endpoint,method,body);
+ const cmd=validateDispatch(event,process.env,githubApi);
  let receipt;
  try{
    verify(cmd,githubApi);
@@ -79,4 +97,4 @@ async function main(){
  }
 }
 if(require.main===module)main().catch(e=>{console.error(e.message);process.exitCode=1;});
-module.exports={validateEvent,safeFiles,verify};
+module.exports={validateEvent,validateDispatch,safeFiles,verify};
