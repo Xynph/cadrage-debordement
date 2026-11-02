@@ -1,0 +1,2187 @@
+{
+  "schema": "rugby-real-positions-physique-collecte-v1",
+  "season": "2026-2027",
+  "snapshot": "2026-11-02",
+  "usage": "recherche uniquement - aucune activation dans le jeu",
+  "totalRoster": 1592,
+  "summary": {
+    "players": 217,
+    "heights": 212,
+    "weights": 212,
+    "precisePositions": 16,
+    "secondaryPositions": 0,
+    "unindexed": 1375
+  },
+  "players": [
+    {
+      "id": "lnr:862",
+      "name": "Barnabé MASSA",
+      "club": "clermont",
+      "league": "top14",
+      "position": "talonneur",
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 101
+    },
+    {
+      "id": "lnr:3233",
+      "name": "Giorgi DZMANASHVILI",
+      "club": "clermont",
+      "league": "top14",
+      "position": "pilier droit",
+      "secondaryPositions": null,
+      "heightCm": 186,
+      "weightKg": 122
+    },
+    {
+      "id": "lnr:921",
+      "name": "Régis MONTAGNE",
+      "club": "clermont",
+      "league": "top14",
+      "position": "pilier droit",
+      "secondaryPositions": null,
+      "heightCm": 186,
+      "weightKg": 132
+    },
+    {
+      "id": "lnr:2023",
+      "name": "Sacha LOTRIAN",
+      "club": "clermont",
+      "league": "top14",
+      "position": "pilier gauche",
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 100
+    },
+    {
+      "id": "lnr:184",
+      "name": "Giorgi AKHALADZE",
+      "club": "clermont",
+      "league": "top14",
+      "position": "pilier gauche",
+      "secondaryPositions": null,
+      "heightCm": 186,
+      "weightKg": 128
+    },
+    {
+      "id": "lnr:655",
+      "name": "Mathéo FRISACH",
+      "club": "clermont",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 188,
+      "weightKg": 127
+    },
+    {
+      "id": "lnr:2669",
+      "name": "Swan CORMENIER",
+      "club": "bayonne",
+      "league": "top14",
+      "position": "pilier gauche",
+      "secondaryPositions": null,
+      "heightCm": 170,
+      "weightKg": 120
+    },
+    {
+      "id": "lnr:2484",
+      "name": "Guillaume CRAMONT",
+      "club": "bayonne",
+      "league": "top14",
+      "position": "talonneur",
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 107
+    },
+    {
+      "id": "lnr:2100",
+      "name": "Luke TAGI",
+      "club": "bayonne",
+      "league": "top14",
+      "position": "pilier droit",
+      "secondaryPositions": null,
+      "heightCm": 187,
+      "weightKg": 130
+    },
+    {
+      "id": "lnr:2674",
+      "name": "Tevita TATAFU",
+      "club": "bayonne",
+      "league": "top14",
+      "position": "pilier droit",
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 133
+    },
+    {
+      "id": "lnr:2102",
+      "name": "Lucas MARTIN",
+      "club": "bayonne",
+      "league": "top14",
+      "position": "talonneur",
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 96
+    },
+    {
+      "id": "lnr:11813",
+      "name": "Pierre CASTILLON",
+      "club": "bayonne",
+      "league": "top14",
+      "position": "pilier gauche",
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 104
+    },
+    {
+      "id": "lnr:1885",
+      "name": "Ignacio CALLES",
+      "club": "bayonne",
+      "league": "top14",
+      "position": "pilier gauche",
+      "secondaryPositions": null,
+      "heightCm": null,
+      "weightKg": null
+    },
+    {
+      "id": "lnr:2349",
+      "name": "Emerick SETIANO",
+      "club": "bayonne",
+      "league": "top14",
+      "position": "pilier droit",
+      "secondaryPositions": null,
+      "heightCm": null,
+      "weightKg": null
+    },
+    {
+      "id": "lnr:2565",
+      "name": "Andy BORDELAI",
+      "club": "bayonne",
+      "league": "top14",
+      "position": "pilier gauche",
+      "secondaryPositions": null,
+      "heightCm": null,
+      "weightKg": null
+    },
+    {
+      "id": "lnr:1248",
+      "name": "Lasha MACHARASHVILI",
+      "club": "bayonne",
+      "league": "top14",
+      "position": "pilier droit",
+      "secondaryPositions": null,
+      "heightCm": null,
+      "weightKg": null
+    },
+    {
+      "id": "lnr:2658",
+      "name": "Facundo BOSCH",
+      "club": "bayonne",
+      "league": "top14",
+      "position": "talonneur",
+      "secondaryPositions": null,
+      "heightCm": null,
+      "weightKg": null
+    },
+    {
+      "id": "lnr:560",
+      "name": "Lois GUEROIS GALISSON",
+      "club": "castres",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 192,
+      "weightKg": 122
+    },
+    {
+      "id": "lnr:637",
+      "name": "Pierre COLONNA",
+      "club": "castres",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 188,
+      "weightKg": 113
+    },
+    {
+      "id": "lnr:90",
+      "name": "Alex BURIN",
+      "club": "castres",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 190,
+      "weightKg": 123
+    },
+    {
+      "id": "lnr:11435",
+      "name": "Teddy DURAND",
+      "club": "castres",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 102
+    },
+    {
+      "id": "lnr:1888",
+      "name": "Nicolas CORATO",
+      "club": "castres",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 184,
+      "weightKg": 123
+    },
+    {
+      "id": "lnr:585",
+      "name": "Levan CHILACHAVA",
+      "club": "castres",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 188,
+      "weightKg": 133
+    },
+    {
+      "id": "lnr:592",
+      "name": "Quentin WALCKER",
+      "club": "castres",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 109
+    },
+    {
+      "id": "lnr:68",
+      "name": "Loris ZARANTONELLO",
+      "club": "castres",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 178,
+      "weightKg": 95
+    },
+    {
+      "id": "lnr:1060",
+      "name": "Thomas MARCELINE",
+      "club": "lyon",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 179,
+      "weightKg": 112
+    },
+    {
+      "id": "lnr:1062",
+      "name": "Baptiste NARMAND",
+      "club": "lyon",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 184,
+      "weightKg": 110
+    },
+    {
+      "id": "lnr:2200",
+      "name": "Thomas MOUKORO ABOUEM",
+      "club": "lyon",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 121
+    },
+    {
+      "id": "lnr:929",
+      "name": "Mathis SARRAGALLET",
+      "club": "lyon",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 178,
+      "weightKg": 109
+    },
+    {
+      "id": "lnr:25004",
+      "name": "Timothy HOYT",
+      "club": "lyon",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 189,
+      "weightKg": 125
+    },
+    {
+      "id": "lnr:11953",
+      "name": "Lyan PAKIHIVATAU",
+      "club": "lyon",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 120
+    },
+    {
+      "id": "lnr:1368",
+      "name": "Luca TABAROT",
+      "club": "montpellier",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 187,
+      "weightKg": 115
+    },
+    {
+      "id": "lnr:267",
+      "name": "Baptiste ERDOCIO",
+      "club": "montpellier",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 175,
+      "weightKg": 115
+    },
+    {
+      "id": "lnr:454",
+      "name": "Luka JAPARIDZE",
+      "club": "montpellier",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 125
+    },
+    {
+      "id": "lnr:13460",
+      "name": "Ricky RICCITELLI",
+      "club": "montpellier",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 178,
+      "weightKg": 110
+    },
+    {
+      "id": "lnr:1397",
+      "name": "Valentin WELSCH",
+      "club": "montpellier",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 112
+    },
+    {
+      "id": "lnr:2297",
+      "name": "Léo AMETLLA",
+      "club": "toulon",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 186,
+      "weightKg": 107
+    },
+    {
+      "id": "lnr:2298",
+      "name": "Davit MTCHEDLIDZE",
+      "club": "toulon",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 184,
+      "weightKg": 114
+    },
+    {
+      "id": "lnr:2329",
+      "name": "Pierre DAMOND",
+      "club": "toulon",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 103
+    },
+    {
+      "id": "lnr:11811",
+      "name": "Owen SORHAINDO",
+      "club": "toulon",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 190,
+      "weightKg": 125
+    },
+    {
+      "id": "lnr:11677",
+      "name": "Samuel JEAN CHRISTOPHE",
+      "club": "toulon",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 186,
+      "weightKg": 107
+    },
+    {
+      "id": "lnr:668",
+      "name": "Rabah SLIMANI",
+      "club": "toulon",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 178,
+      "weightKg": 123
+    },
+    {
+      "id": "lnr:2358",
+      "name": "Jean Baptiste GROS",
+      "club": "toulon",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 186,
+      "weightKg": 112
+    },
+    {
+      "id": "lnr:2362",
+      "name": "Beka GIGASHVILI",
+      "club": "toulon",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 179,
+      "weightKg": 116
+    },
+    {
+      "id": "lnr:770",
+      "name": "Hugo DJEHI",
+      "club": "vannes",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 115
+    },
+    {
+      "id": "lnr:2585",
+      "name": "Simon BOURGEOIS",
+      "club": "vannes",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 189,
+      "weightKg": 122
+    },
+    {
+      "id": "lnr:25050",
+      "name": "Millenium SANERIVI",
+      "club": "vannes",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 113
+    },
+    {
+      "id": "lnr:12000",
+      "name": "Santiago MEDRANO",
+      "club": "vannes",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 118
+    },
+    {
+      "id": "lnr:309",
+      "name": "Ugo BONIFACE",
+      "club": "vannes",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 190,
+      "weightKg": 125
+    },
+    {
+      "id": "lnr:2562",
+      "name": "Théo BEZIAT",
+      "club": "vannes",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 102
+    },
+    {
+      "id": "lnr:616",
+      "name": "Wayan DE BENEDITTIS",
+      "club": "vannes",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 107
+    },
+    {
+      "id": "lnr:11098",
+      "name": "Benjamin BOUDOU",
+      "club": "racing-92",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 182,
+      "weightKg": 120
+    },
+    {
+      "id": "lnr:2190",
+      "name": "Guram GOGICHASHVILI",
+      "club": "racing-92",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 118
+    },
+    {
+      "id": "lnr:2201",
+      "name": "Gia KHARAISHVILI",
+      "club": "racing-92",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 120
+    },
+    {
+      "id": "lnr:13447",
+      "name": "Yanis BASSE",
+      "club": "racing-92",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 175,
+      "weightKg": 103
+    },
+    {
+      "id": "lnr:1079",
+      "name": "Demba BAMBA",
+      "club": "racing-92",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 125
+    },
+    {
+      "id": "lnr:2175",
+      "name": "Hassane KOLINGAR",
+      "club": "racing-92",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 184,
+      "weightKg": 115
+    },
+    {
+      "id": "lnr:1849",
+      "name": "Hugo PARROU",
+      "club": "pau",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 110
+    },
+    {
+      "id": "lnr:1850",
+      "name": "Siate Folau TOKOLAHI",
+      "club": "pau",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 179,
+      "weightKg": 123
+    },
+    {
+      "id": "lnr:1876",
+      "name": "Alexandre ETCHEBEHERE",
+      "club": "pau",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 178,
+      "weightKg": 108
+    },
+    {
+      "id": "lnr:708",
+      "name": "Daniel BIBI BIZIWU",
+      "club": "pau",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 119
+    },
+    {
+      "id": "lnr:11729",
+      "name": "Yon CAPERAA",
+      "club": "pau",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 109
+    },
+    {
+      "id": "lnr:133",
+      "name": "Jon ZABALA ARRIETA",
+      "club": "pau",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 190,
+      "weightKg": 132
+    },
+    {
+      "id": "lnr:2713",
+      "name": "Thomas BUE",
+      "club": "paris",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 123
+    },
+    {
+      "id": "lnr:1736",
+      "name": "Sergo ABRAMISHVILI",
+      "club": "paris",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 184,
+      "weightKg": 112
+    },
+    {
+      "id": "lnr:1831",
+      "name": "Moses Eneliko ALO EMILE",
+      "club": "paris",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 187,
+      "weightKg": 125
+    },
+    {
+      "id": "lnr:11725",
+      "name": "Isaac Alexandre Nounagnon KOFFI",
+      "club": "paris",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 195,
+      "weightKg": 98
+    },
+    {
+      "id": "lnr:11764",
+      "name": "Alvaro GARCIA ALBO",
+      "club": "paris",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 120
+    },
+    {
+      "id": "lnr:935",
+      "name": "Aleksandre KUNTELIA",
+      "club": "la-rochelle",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 197,
+      "weightKg": 135
+    },
+    {
+      "id": "lnr:377",
+      "name": "Nathan FRAISSENON",
+      "club": "la-rochelle",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 130
+    },
+    {
+      "id": "lnr:1824",
+      "name": "Latu Silatolu LATU",
+      "club": "la-rochelle",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 178,
+      "weightKg": 110
+    },
+    {
+      "id": "lnr:1027",
+      "name": "Louis Keziah PENVERNE",
+      "club": "la-rochelle",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 187,
+      "weightKg": 111
+    },
+    {
+      "id": "lnr:1028",
+      "name": "Alexandre KADDOURI",
+      "club": "la-rochelle",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 189,
+      "weightKg": 114
+    },
+    {
+      "id": "lnr:1030",
+      "name": "Karl SORIN",
+      "club": "la-rochelle",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 186,
+      "weightKg": 135
+    },
+    {
+      "id": "lnr:986",
+      "name": "Quentin LESPIAUCQ",
+      "club": "la-rochelle",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 102
+    },
+    {
+      "id": "lnr:2399",
+      "name": "Joel MERKLER PEREZ",
+      "club": "toulouse",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 194,
+      "weightKg": 135
+    },
+    {
+      "id": "lnr:2407",
+      "name": "Malachi Shea HAWKES FAIMANIFO",
+      "club": "toulouse",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 179,
+      "weightKg": 115
+    },
+    {
+      "id": "lnr:2429",
+      "name": "Thomas LACOMBRE",
+      "club": "toulouse",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 174,
+      "weightKg": 106
+    },
+    {
+      "id": "lnr:2485",
+      "name": "Paul MALLEZ",
+      "club": "toulouse",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 116
+    },
+    {
+      "id": "lnr:2500",
+      "name": "David AINUU",
+      "club": "toulouse",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 178,
+      "weightKg": 122
+    },
+    {
+      "id": "lnr:12438",
+      "name": "Benjamin BERTRAND",
+      "club": "toulouse",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 128
+    },
+    {
+      "id": "lnr:2443",
+      "name": "Rodrigue NETI",
+      "club": "toulouse",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 121
+    },
+    {
+      "id": "lnr:2445",
+      "name": "Julien MARCHAND",
+      "club": "toulouse",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 110
+    },
+    {
+      "id": "lnr:2009",
+      "name": "Victor MONTGAILLARD",
+      "club": "perpignan",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 101
+    },
+    {
+      "id": "lnr:2025",
+      "name": "Lucas VELARTE",
+      "club": "perpignan",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 108
+    },
+    {
+      "id": "lnr:2389",
+      "name": "Bruce DEVAUX",
+      "club": "perpignan",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 108
+    },
+    {
+      "id": "lnr:13637",
+      "name": "Sama Leonardo MALOLO",
+      "club": "perpignan",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 184,
+      "weightKg": 109
+    },
+    {
+      "id": "lnr:25036",
+      "name": "Marco RICCIONI",
+      "club": "perpignan",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 123
+    },
+    {
+      "id": "lnr:11989",
+      "name": "Ignacio RUIZ",
+      "club": "perpignan",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 187,
+      "weightKg": 104
+    },
+    {
+      "id": "lnr:1967",
+      "name": "Mathys LOTRIAN",
+      "club": "perpignan",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 177,
+      "weightKg": 110
+    },
+    {
+      "id": "lnr:398",
+      "name": "Pietro CECCARELLI",
+      "club": "perpignan",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 184,
+      "weightKg": 115
+    },
+    {
+      "id": "lnr:306",
+      "name": "Zaccharie AFFANE",
+      "club": "bordeaux-begles",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 191,
+      "weightKg": 126
+    },
+    {
+      "id": "lnr:1509",
+      "name": "Lasha PKHAKADZE",
+      "club": "bordeaux-begles",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 184,
+      "weightKg": 120
+    },
+    {
+      "id": "lnr:2671",
+      "name": "Matis PERCHAUD",
+      "club": "bordeaux-begles",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 187,
+      "weightKg": 112
+    },
+    {
+      "id": "lnr:11240",
+      "name": "Carlu Johann SADIE",
+      "club": "bordeaux-begles",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 182,
+      "weightKg": 138
+    },
+    {
+      "id": "lnr:531",
+      "name": "Connor SA",
+      "club": "bordeaux-begles",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 101
+    },
+    {
+      "id": "lnr:638",
+      "name": "Gaëtan BARLOT",
+      "club": "bordeaux-begles",
+      "league": "top14",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 184,
+      "weightKg": 107
+    },
+    {
+      "id": "lnr:2286",
+      "name": "Yanis BOULASSEL",
+      "club": "beziers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 189,
+      "weightKg": 107
+    },
+    {
+      "id": "lnr:2127",
+      "name": "Jonathan MAIAU",
+      "club": "beziers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 174,
+      "weightKg": 112
+    },
+    {
+      "id": "lnr:307",
+      "name": "Yahnis EL MASLOUHI",
+      "club": "beziers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 116
+    },
+    {
+      "id": "lnr:181",
+      "name": "Julien RASAMOELINA",
+      "club": "beziers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 111
+    },
+    {
+      "id": "lnr:2682",
+      "name": "Yanis LOCKWOOD",
+      "club": "beziers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 98
+    },
+    {
+      "id": "lnr:222",
+      "name": "Luka AZARIASHVILI",
+      "club": "beziers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 186,
+      "weightKg": 125
+    },
+    {
+      "id": "lnr:143",
+      "name": "Yvann LALEVÉE",
+      "club": "beziers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 182,
+      "weightKg": 100
+    },
+    {
+      "id": "lnr:240",
+      "name": "Killian TAOFIFENUA",
+      "club": "beziers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 178,
+      "weightKg": 104
+    },
+    {
+      "id": "lnr:1583",
+      "name": "Alexandre PLANTIER",
+      "club": "biarritz",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 110
+    },
+    {
+      "id": "lnr:11009",
+      "name": "Luka BEGIC",
+      "club": "biarritz",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 113
+    },
+    {
+      "id": "lnr:272",
+      "name": "Giorgi NUTSUBIDZE",
+      "club": "biarritz",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 178,
+      "weightKg": 116
+    },
+    {
+      "id": "lnr:12085",
+      "name": "Iban HIRIART URRUTY",
+      "club": "biarritz",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 98
+    },
+    {
+      "id": "lnr:12727",
+      "name": "François MUR",
+      "club": "biarritz",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 103
+    },
+    {
+      "id": "lnr:223",
+      "name": "Quentin SAMARAN",
+      "club": "biarritz",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 173,
+      "weightKg": 113
+    },
+    {
+      "id": "lnr:739",
+      "name": "Hugo PIRLET",
+      "club": "biarritz",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 189,
+      "weightKg": 126
+    },
+    {
+      "id": "lnr:380",
+      "name": "Francisco CORIA MARCHETTI",
+      "club": "brive",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 186,
+      "weightKg": 125
+    },
+    {
+      "id": "lnr:1118",
+      "name": "Yanis CHARCOSSET",
+      "club": "brive",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 184,
+      "weightKg": 104
+    },
+    {
+      "id": "lnr:2489",
+      "name": "Hugo REILHES",
+      "club": "brive",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 108
+    },
+    {
+      "id": "lnr:11950",
+      "name": "Louis MARY",
+      "club": "brive",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 128
+    },
+    {
+      "id": "lnr:11829",
+      "name": "Quentin ALGAY",
+      "club": "brive",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 187,
+      "weightKg": 97
+    },
+    {
+      "id": "lnr:4042",
+      "name": "Vakhtang ABDALADZE",
+      "club": "brive",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 188,
+      "weightKg": 121
+    },
+    {
+      "id": "lnr:1423",
+      "name": "Simon-pierre CHAUVAC",
+      "club": "brive",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 190,
+      "weightKg": 115
+    },
+    {
+      "id": "lnr:401",
+      "name": "Marcel VAN DER MERWE",
+      "club": "brive",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 188,
+      "weightKg": 129
+    },
+    {
+      "id": "lnr:2752",
+      "name": "Atonio ULUTUIPALELEI",
+      "club": "colomiers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 186,
+      "weightKg": 135
+    },
+    {
+      "id": "lnr:2903",
+      "name": "Mamik MSTOIAN",
+      "club": "colomiers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 187,
+      "weightKg": 120
+    },
+    {
+      "id": "lnr:2990",
+      "name": "Pierre Emmanuel PACHECO",
+      "club": "colomiers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 123
+    },
+    {
+      "id": "lnr:287",
+      "name": "Pablo DIMCHEFF",
+      "club": "colomiers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 182,
+      "weightKg": 103
+    },
+    {
+      "id": "lnr:11330",
+      "name": "Robin BELLEMAND",
+      "club": "colomiers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 192,
+      "weightKg": 127
+    },
+    {
+      "id": "lnr:1649",
+      "name": "Theo LACHAUD",
+      "club": "colomiers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 184,
+      "weightKg": 103
+    },
+    {
+      "id": "lnr:731",
+      "name": "Thomas LARRIEU",
+      "club": "colomiers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 187,
+      "weightKg": 106
+    },
+    {
+      "id": "lnr:10260",
+      "name": "Michael SIMUTOGA",
+      "club": "colomiers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 121
+    },
+    {
+      "id": "lnr:859",
+      "name": "Zack GAUTHIER",
+      "club": "grenoble",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 179,
+      "weightKg": 109
+    },
+    {
+      "id": "lnr:920",
+      "name": "Eli EGLAINE",
+      "club": "grenoble",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 187,
+      "weightKg": 124
+    },
+    {
+      "id": "lnr:925",
+      "name": "Lilian ROSSI",
+      "club": "grenoble",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 182,
+      "weightKg": 104
+    },
+    {
+      "id": "lnr:1891",
+      "name": "Romain RUFFENACH",
+      "club": "grenoble",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 186,
+      "weightKg": 107
+    },
+    {
+      "id": "lnr:1694",
+      "name": "Tommy RAYNAUD",
+      "club": "grenoble",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 110
+    },
+    {
+      "id": "lnr:235",
+      "name": "Bastien SOURY",
+      "club": "grenoble",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 105
+    },
+    {
+      "id": "lnr:2251",
+      "name": "Cody THOMAS",
+      "club": "grenoble",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 186,
+      "weightKg": 125
+    },
+    {
+      "id": "lnr:10917",
+      "name": "Johannes JONKER",
+      "club": "grenoble",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 119
+    },
+    {
+      "id": "lnr:1473",
+      "name": "Farai Tapuwa MUDARIKI",
+      "club": "nice",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 186,
+      "weightKg": 120
+    },
+    {
+      "id": "lnr:854",
+      "name": "Pierre STRIPPOLI",
+      "club": "nice",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 107
+    },
+    {
+      "id": "lnr:2284",
+      "name": "Fabio GONZALEZ",
+      "club": "nice",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 118
+    },
+    {
+      "id": "lnr:303",
+      "name": "Leo CHAUVIN",
+      "club": "nice",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 182,
+      "weightKg": 102
+    },
+    {
+      "id": "lnr:1011",
+      "name": "Hayden THOMPSON-STRINGER",
+      "club": "nice",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 190,
+      "weightKg": 124
+    },
+    {
+      "id": "lnr:79",
+      "name": "Beau FARRANCE",
+      "club": "nice",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 193,
+      "weightKg": 124
+    },
+    {
+      "id": "lnr:13610",
+      "name": "Baptiste MORENO",
+      "club": "nice",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 104
+    },
+    {
+      "id": "lnr:450",
+      "name": "Vano KARKADZE",
+      "club": "oyonnax",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 178,
+      "weightKg": 114
+    },
+    {
+      "id": "lnr:11647",
+      "name": "Remi DI PIETRO",
+      "club": "oyonnax",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 188,
+      "weightKg": 111
+    },
+    {
+      "id": "lnr:11648",
+      "name": "Julien RATAJCZAK",
+      "club": "oyonnax",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 174,
+      "weightKg": 106
+    },
+    {
+      "id": "lnr:13639",
+      "name": "Mayco VIVAS",
+      "club": "oyonnax",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 186,
+      "weightKg": 121
+    },
+    {
+      "id": "lnr:11683",
+      "name": "Martin VILLAR",
+      "club": "oyonnax",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 184,
+      "weightKg": 124
+    },
+    {
+      "id": "lnr:12391",
+      "name": "Sacha LONCHAMPT",
+      "club": "oyonnax",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 189,
+      "weightKg": 85
+    },
+    {
+      "id": "lnr:131",
+      "name": "Yannick ARROYO",
+      "club": "oyonnax",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 184,
+      "weightKg": 140
+    },
+    {
+      "id": "lnr:2041",
+      "name": "Federico WEGRZYN",
+      "club": "provence-rugby",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 191,
+      "weightKg": 120
+    },
+    {
+      "id": "lnr:3091",
+      "name": "Andréa PONTANIER",
+      "club": "provence-rugby",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 179,
+      "weightKg": 108
+    },
+    {
+      "id": "lnr:2271",
+      "name": "Hugo NDIAYE",
+      "club": "provence-rugby",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 120
+    },
+    {
+      "id": "lnr:2390",
+      "name": "Eliott YEMSI",
+      "club": "provence-rugby",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 121
+    },
+    {
+      "id": "lnr:2069",
+      "name": "Julius NOSTADT",
+      "club": "provence-rugby",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 117
+    },
+    {
+      "id": "lnr:1424",
+      "name": "Vincent GIUDICELLI",
+      "club": "provence-rugby",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 184,
+      "weightKg": 102
+    },
+    {
+      "id": "lnr:1223",
+      "name": "Romain LATTERRADE",
+      "club": "provence-rugby",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 179,
+      "weightKg": 109
+    },
+    {
+      "id": "lnr:13663",
+      "name": "Baptiste COLLET",
+      "club": "narbonne",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 192,
+      "weightKg": 143
+    },
+    {
+      "id": "lnr:13227",
+      "name": "Daniel Viljoen JOOSTE",
+      "club": "narbonne",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 187,
+      "weightKg": 105
+    },
+    {
+      "id": "lnr:548",
+      "name": "Stefan Marko BURUIANA",
+      "club": "narbonne",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 177,
+      "weightKg": 93
+    },
+    {
+      "id": "lnr:1408",
+      "name": "Jules VEYRIER",
+      "club": "narbonne",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 174,
+      "weightKg": 85
+    },
+    {
+      "id": "lnr:2084",
+      "name": "Thomas VERNET",
+      "club": "narbonne",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 187,
+      "weightKg": 126
+    },
+    {
+      "id": "lnr:10998",
+      "name": "Facundo POMPONIO",
+      "club": "narbonne",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 190,
+      "weightKg": 119
+    },
+    {
+      "id": "lnr:2593",
+      "name": "Charles Henri BERGUET",
+      "club": "narbonne",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 115
+    },
+    {
+      "id": "lnr:3129",
+      "name": "Pierre JOUVIN",
+      "club": "agen",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 105
+    },
+    {
+      "id": "lnr:77",
+      "name": "Hans LOMBARD BURET",
+      "club": "agen",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 177,
+      "weightKg": 117
+    },
+    {
+      "id": "lnr:1725",
+      "name": "Nail AUDOIRE",
+      "club": "agen",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 182,
+      "weightKg": 122
+    },
+    {
+      "id": "lnr:2022",
+      "name": "Akato FAKATIKA",
+      "club": "agen",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 118
+    },
+    {
+      "id": "lnr:13143",
+      "name": "Enrique PIERETTO HEILAND",
+      "club": "agen",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 122
+    },
+    {
+      "id": "lnr:38",
+      "name": "Florent GUION",
+      "club": "agen",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 179,
+      "weightKg": 107
+    },
+    {
+      "id": "lnr:1325",
+      "name": "Cyril DELIGNY",
+      "club": "agen",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 101
+    },
+    {
+      "id": "lnr:784",
+      "name": "Georgy BALAKAREV",
+      "club": "angouleme",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 123
+    },
+    {
+      "id": "lnr:3110",
+      "name": "Seydou DIAKITE",
+      "club": "angouleme",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 176,
+      "weightKg": 114
+    },
+    {
+      "id": "lnr:3114",
+      "name": "Patxi BIDART",
+      "club": "angouleme",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 172,
+      "weightKg": 91
+    },
+    {
+      "id": "lnr:3119",
+      "name": "Jean-yves LIUFAU",
+      "club": "angouleme",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 179,
+      "weightKg": 117
+    },
+    {
+      "id": "lnr:1840",
+      "name": "Mamoudou Alain MEITE",
+      "club": "angouleme",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 182,
+      "weightKg": 108
+    },
+    {
+      "id": "lnr:812",
+      "name": "Yassin BOUTEMMANI",
+      "club": "angouleme",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 177,
+      "weightKg": 119
+    },
+    {
+      "id": "lnr:2245",
+      "name": "Mathieu BONNOT",
+      "club": "angouleme",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 176,
+      "weightKg": 94
+    },
+    {
+      "id": "lnr:10699",
+      "name": "Sami ZOUHAIR",
+      "club": "angouleme",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 189,
+      "weightKg": 110
+    },
+    {
+      "id": "lnr:1567",
+      "name": "Basa KHONELIDZE",
+      "club": "aurillac",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 176,
+      "weightKg": 102
+    },
+    {
+      "id": "lnr:1599",
+      "name": "Ronan Patrick LOUGHNANE",
+      "club": "aurillac",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 179,
+      "weightKg": 103
+    },
+    {
+      "id": "lnr:1635",
+      "name": "Robert RODGERS",
+      "club": "aurillac",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 115
+    },
+    {
+      "id": "lnr:1642",
+      "name": "Luka NIORADZE",
+      "club": "aurillac",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 105
+    },
+    {
+      "id": "lnr:1661",
+      "name": "Irakli MTCHEDLIDZE",
+      "club": "aurillac",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 180,
+      "weightKg": 116
+    },
+    {
+      "id": "lnr:1603",
+      "name": "Gymael JEAN-JACQUES",
+      "club": "aurillac",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 108
+    },
+    {
+      "id": "lnr:1612",
+      "name": "Didier TISON",
+      "club": "aurillac",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 105
+    },
+    {
+      "id": "lnr:11028",
+      "name": "Louis BARRERE",
+      "club": "dax",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 176,
+      "weightKg": 100
+    },
+    {
+      "id": "lnr:2113",
+      "name": "David LOLOHEA",
+      "club": "dax",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 193,
+      "weightKg": 138
+    },
+    {
+      "id": "lnr:11939",
+      "name": "Diogo JOEL DE ALMEIDA HASSE FERREIRA",
+      "club": "dax",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 176,
+      "weightKg": 115
+    },
+    {
+      "id": "lnr:12040",
+      "name": "Raphael LABOILLE",
+      "club": "dax",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 189,
+      "weightKg": 109
+    },
+    {
+      "id": "lnr:10017",
+      "name": "Thibaud DREAN",
+      "club": "dax",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 175,
+      "weightKg": 125
+    },
+    {
+      "id": "lnr:10732",
+      "name": "Nephi LEATIGAGA",
+      "club": "dax",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 193,
+      "weightKg": 150
+    },
+    {
+      "id": "lnr:2393",
+      "name": "Ian BOUBILA",
+      "club": "dax",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 108
+    },
+    {
+      "id": "lnr:1382",
+      "name": "Sidi Mohamed DIALLO",
+      "club": "montauban",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 187,
+      "weightKg": 133
+    },
+    {
+      "id": "lnr:479",
+      "name": "Nugzari SOMKHISVHILI",
+      "club": "montauban",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 182,
+      "weightKg": 116
+    },
+    {
+      "id": "lnr:3505",
+      "name": "Lucio SORDONI",
+      "club": "montauban",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 190,
+      "weightKg": 130
+    },
+    {
+      "id": "lnr:10999",
+      "name": "Valentin SIMUTOGA",
+      "club": "montauban",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 184,
+      "weightKg": 125
+    },
+    {
+      "id": "lnr:2266",
+      "name": "Ru-hann GREYLING",
+      "club": "montauban",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 108
+    },
+    {
+      "id": "lnr:25008",
+      "name": "Johnathan MATTHEWS",
+      "club": "montauban",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 110
+    },
+    {
+      "id": "lnr:312",
+      "name": "Christopher VAOTOA",
+      "club": "montauban",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 138
+    },
+    {
+      "id": "lnr:1322",
+      "name": "Kevin FIRMIN",
+      "club": "montauban",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 181,
+      "weightKg": 108
+    },
+    {
+      "id": "lnr:2802",
+      "name": "Luka PETRIASHVILI",
+      "club": "nevers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 182,
+      "weightKg": 108
+    },
+    {
+      "id": "lnr:1582",
+      "name": "Henzo KITEAU",
+      "club": "nevers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 190,
+      "weightKg": 125
+    },
+    {
+      "id": "lnr:2219",
+      "name": "Efitusi Tupola MA'AFU",
+      "club": "nevers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 178,
+      "weightKg": 113
+    },
+    {
+      "id": "lnr:1553",
+      "name": "Aselo IKAHEHEGI",
+      "club": "nevers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 137
+    },
+    {
+      "id": "lnr:1555",
+      "name": "Aitor KITUTU",
+      "club": "nevers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 178,
+      "weightKg": 108
+    },
+    {
+      "id": "lnr:11655",
+      "name": "Jean-maxence JULES ROSETTE",
+      "club": "nevers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 182,
+      "weightKg": 106
+    },
+    {
+      "id": "lnr:11907",
+      "name": "Herman COETZEE",
+      "club": "nevers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 188,
+      "weightKg": 125
+    },
+    {
+      "id": "lnr:11723",
+      "name": "Luka UNGIADZE",
+      "club": "nevers",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 112
+    },
+    {
+      "id": "lnr:2807",
+      "name": "Esteban CHOUTEAU",
+      "club": "valence-romans",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 170,
+      "weightKg": 99
+    },
+    {
+      "id": "lnr:947",
+      "name": "Sacha IDOUMI",
+      "club": "valence-romans",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 183,
+      "weightKg": 105
+    },
+    {
+      "id": "lnr:876",
+      "name": "Vincent VIAL",
+      "club": "valence-romans",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 179,
+      "weightKg": 132
+    },
+    {
+      "id": "lnr:2482",
+      "name": "Marco Miguel TRAUTH",
+      "club": "valence-romans",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 187,
+      "weightKg": 113
+    },
+    {
+      "id": "lnr:11182",
+      "name": "Anthony ALEO",
+      "club": "valence-romans",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 176,
+      "weightKg": 112
+    },
+    {
+      "id": "lnr:11784",
+      "name": "Giga TUTISANI",
+      "club": "valence-romans",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 185,
+      "weightKg": 118
+    },
+    {
+      "id": "lnr:3123",
+      "name": "Gareth MILASINOVICH",
+      "club": "valence-romans",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 191,
+      "weightKg": 133
+    },
+    {
+      "id": "lnr:8724",
+      "name": "Dorian MARCO-PENA",
+      "club": "valence-romans",
+      "league": "prod2",
+      "position": null,
+      "secondaryPositions": null,
+      "heightCm": 175,
+      "weightKg": 97
+    }
+  ]
+}
