@@ -8,12 +8,12 @@ const scene={kind:'carry',possession:0,ball:{x:50,y:35},event:{scene:{kind:'carr
 test('native geometry creates reproducible pressure and lane observations',()=>{
  const before=JSON.stringify(scene),v=tacticalVisualSummary(scene);
  assert.equal(v.attackNear,2);assert.equal(v.defenceNear,1);assert.equal(v.attackCount,3);
- assert.equal(v.defenceCount,2);assert.equal(v.wings.length,3);assert.equal(v.hasActualEvent,true);
+ assert.equal(v.defenceCount,2);assert.equal(v.pressure,'Soutien offensif');assert.equal(typeof v.longitudinalGap,'number');assert.equal(v.wings.length,3);assert.equal(v.hasActualEvent,true);
  assert.equal(JSON.stringify(scene),before);assert.deepEqual(tacticalVisualSummary(scene),v);
 });
 test('legacy match without geometry stays safe and read-only',()=>{
  const v=tacticalVisualSummary({possession:1,players:[],ball:{},kind:'message'});
- assert.equal(v.attackNear,0);assert.equal(v.attackLine,null);assert.equal(v.hasActualEvent,false);
+ assert.equal(v.attackNear,0);assert.equal(v.attackLine,null);assert.equal(v.longitudinalGap,null);assert.equal(v.hasActualEvent,false);
  assert.match(tacticalVisualHtml({players:[]}),/Aucune géométrie historique/);
 });
 test('presentation escapes labels and does not require a mutable career',()=>{
