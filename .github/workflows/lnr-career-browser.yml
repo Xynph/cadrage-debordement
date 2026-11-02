@@ -17,6 +17,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   node:
+    # tests/lnr-career.cjs est déjà exécuté par Tests JavaScript en PR.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -33,6 +35,8 @@ jobs:
           node --check dist/saves.js
           node tests/lnr-career.cjs
   long-career:
+    # tests/lnr-career-long.cjs est déjà exécuté par Tests JavaScript en PR.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:

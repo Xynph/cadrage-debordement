@@ -1,0 +1,89 @@
+name: Matchday Chromium regroupé
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/index.html'
+      - 'dist/game.js'
+      - 'dist/matchday-center.*'
+      - 'dist/matchday-lineup.*'
+      - 'dist/matchday-matchplan.*'
+      - 'tests/matchday-center*'
+      - 'tests/matchday-lineup*'
+      - 'tests/matchday-matchplan*'
+      - 'ci/matchday-browser-selector.cjs'
+      - 'tests/ci-matchday-browser-selector.cjs'
+      - '.github/workflows/matchday-browser.yml'
+      - '.github/workflows/matchday-center-browser.yml'
+      - '.github/workflows/matchday-lineup-browser.yml'
+      - '.github/workflows/matchday-matchplan-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: matchday-browser-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  chromium:
+    name: Matchday — réception Chromium unique
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Sélection stricte des parcours depuis le diff (repli sur tous)
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == 'pull_request' && -n "$PR_BASE" ]] &&
+             git cat-file -e "${PR_BASE}^{commit}" 2>/dev/null; then
+            git diff --name-only --diff-filter=ACMRD "$PR_BASE" HEAD > "$RUNNER_TEMP/matchday-changes.txt"
+            node ci/matchday-browser-selector.cjs --files "$RUNNER_TEMP/matchday-changes.txt" > "$RUNNER_TEMP/matchday-selected.txt"
+          else
+            node ci/matchday-browser-selector.cjs --all > "$RUNNER_TEMP/matchday-selected.txt"
+          fi
+          node tests/ci-matchday-browser-selector.cjs
+          test -s "$RUNNER_TEMP/matchday-selected.txt"
+          cat "$RUNNER_TEMP/matchday-selected.txt"
+      - name: Installer Playwright et Chromium une seule fois
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Exécuter tous les parcours sélectionnés, sans masquer les échecs
+        shell: bash
+        run: |
+          set -uo pipefail
+          count=0
+          failures=0
+          while IFS= read -r script; do
+            case "$script" in
+              tests/matchday-center-browser.py|tests/matchday-lineup-browser.py|tests/matchday-matchplan-browser.py) ;;
+              *) echo "::error::Parcours inconnu $script"; exit 1 ;;
+            esac
+            count=$((count+1))
+            echo "::group::$script"
+            if python "$script"; then
+              echo "PASS $script" >> "$GITHUB_STEP_SUMMARY"
+            else
+              failures=$((failures+1))
+              echo "::error file=$script::Échec de la réception Chromium"
+              echo "ECHEC $script" >> "$GITHUB_STEP_SUMMARY"
+            fi
+            echo "::endgroup::"
+          done < "$RUNNER_TEMP/matchday-selected.txt"
+          echo "Parcours : $count ; échecs : $failures" >> "$GITHUB_STEP_SUMMARY"
+          [[ "$count" -gt 0 && "$failures" -eq 0 ]]
