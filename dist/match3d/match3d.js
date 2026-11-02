@@ -66,7 +66,13 @@
   if(mode!=='3d'||!sceneData)return;
   const host=document.getElementById('cd3d-host');if(!host)return;
   if(typeof window.THREE==='undefined'){host.textContent='Moteur graphique indisponible : utilisez la vue 2D.';return;}
-  if(liveInstance&&liveInstance.host===host){update(liveInstance,sceneData);return;}
+  if(liveInstance){
+   if(liveInstance.host!==host){liveInstance.host=host;host.appendChild(liveInstance.renderer.domElement);}
+   const width=Math.max(300,host.clientWidth),height=Math.max(180,Math.floor(host.clientWidth*9/16));
+   liveInstance.camera.aspect=width/height;liveInstance.camera.updateProjectionMatrix();
+   liveInstance.renderer.setSize(width,height);
+   update(liveInstance,sceneData);return;
+  }
   dispose();
   const T=window.THREE;let renderer;
   try{renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});}
