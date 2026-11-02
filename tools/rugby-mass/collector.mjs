@@ -32,7 +32,8 @@ export async function capture(a,engine) {
   try{
     const page=await browser.newPage({locale:'fr-FR'});
     const json=[],seen=new Set(),failures=[];
-    page.on('response',async response=>{
+    const pending=new Set();
+    const onResponse=async response=>{
       try{
         if(!response.ok()||!/json/i.test(response.headers()['content-type']||''))return;
         const u=new URL(response.url());
@@ -43,7 +44,7 @@ export async function capture(a,engine) {
         if(seen.has(digest)||json.length>=a.limit)return;
         seen.add(digest);json.push({url:redact(response.url()),sha256:digest,data});
       }catch(e){failures.push(String(e));}
-    });
+    };
     await page.goto(a.url,{waitUntil:'domcontentloaded',timeout:45000});
     await page.waitForTimeout(a.delay);
     const selects=page.locator('select');
@@ -53,18 +54,26 @@ export async function capture(a,engine) {
       try{chosen={i,option:optionForSeason(options,a.season)};break;}catch{}
     }
     if(!chosen)throw Error('Selected season not available as native select. Inspect rendered UI before adapting; no output created.');
+    // Ignore responses loaded for the default (possibly different) season.
+    page.on('response',response=>{
+      const task=onResponse(response);
+      pending.add(task);task.finally(()=>pending.delete(task));
+    });
     await selects.nth(chosen.i).selectOption(chosen.option.value);
     await page.waitForTimeout(a.delay);
     if(await selects.nth(chosen.i).inputValue()!==chosen.option.value)throw Error('Season selection not confirmed');
     const tab=page.getByText(/statistiques individuelles/i).first();
-    if(await tab.count())await tab.click({timeout:4000}).catch(()=>{});
+    if(!await tab.count())throw Error('Individual statistics tab not found; no export created');
+    await tab.click({timeout:4000});
     await page.waitForTimeout(a.delay);
     await fs.mkdir(a.out,{recursive:true});
     const checkpoint=path.join(a.out,'rugbydata-'+a.url.match(/\d+\/?$/)[0].replace('/','')+'-'+a.season+'-checkpoint.json');
     const pagination=await expandRankings(page,{rounds:Math.min(a.limit,100),delay:a.delay,checkpoint});
+    // Wait for response handlers still parsing JSON after UI expansion.
+    await Promise.allSettled([...pending]);
     const tables=await page.locator('table').evaluateAll(xs=>xs.map(t=>({headers:[...t.querySelectorAll('th')].map(x=>x.textContent.trim()),rows:[...t.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('td')].map(x=>x.textContent.trim())).filter(xs=>xs.length)})));
     const visible=await page.locator('body').innerText();
-    const out={schema:'rugbydata-raw-v1',seasonRequested:a.season,seasonSelected:chosen.option,source:a.url,capturedAt:new Date().toISOString(),pagination,json,tables,text:visible.slice(0,1000000),failures};
+    const out={schema:'rugbydata-raw-v1',seasonRequested:a.season,seasonSelected:chosen.option,source:a.url,capturedAt:new Date().toISOString(),responseScope:'after-season-selection',pagination,json,tables,text:visible.slice(0,1000000),failures};
     await fs.mkdir(a.out,{recursive:true});
     const file=path.join(a.out,'rugbydata-'+a.url.match(/\d+\/?$/)[0].replace('/','')+'-'+a.season+'.json');
     await fs.writeFile(file,JSON.stringify(out,null,2)+'\n');
