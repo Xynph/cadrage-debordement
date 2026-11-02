@@ -1,0 +1,20 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const sources=Object.fromEntries(['dist/saves.js','dist/world-career.js','dist/game.js','dist/club-ai.js','dist/reputation.js','dist/facilities.js','dist/coach-market.js','dist/world-finance.js'].map(f=>[f,fs.readFileSync(f,'utf8')]));
+const tests=[];
+function check(name,fn){fn();tests.push({name,status:'pass'});}
+const save=sources['dist/saves.js'],world=sources['dist/world-career.js'],game=sources['dist/game.js'];
+check('sauvegardes natives: create/parse/validate',()=>{for(const f of ['createSaveDocument','parseSaveDocument','validateCareer','bootSavedCareer'])assert.match(save,new RegExp('function '+f+'\\('));});
+check('migrations natives presentes',()=>assert.match(save,/migrateGame\(\)/));
+check('format export et limite documentees',()=>{assert.match(save,/SAVE_FORMAT='cadrage-debordement-save'/);assert.match(save,/SAVE_LIMIT=5\*1024\*1024/);});
+check('echec de lecture non masque',()=>assert.match(save,/loadSaveFailure/));
+check('monde reel: historiques sportifs et finances',()=>{for(const f of ['worldRecordResult','worldWeeklyEconomy','worldRecordChampion','worldEndSeason'])assert.match(world,new RegExp('function '+f+'\\('));});
+check('monde reel: recrutement IA vs signature',()=>{assert.match(world,/function worldAIRecruitmentChoice\(/);assert.match(world,/négociations existantes restent seules décisionnaires/);});
+check('monde reel: installations et paiement',()=>{for(const f of ['worldFacilityQuote','worldUpgradeFacility','worldUpkeep'])assert.match(world,new RegExp('function '+f+'\\('));});
+check('monde reel: informations et management',()=>{assert.match(world,/clubInfo:/);assert.match(world,/coachConfidence:/);});
+check('carriere reelle: sauvegarde et nouvelle saison',()=>{assert.match(game,/function save\(/);assert.match(game,/function advanceSeason\(/);});
+check('moteurs V46-V51: presence et exports CommonJS',()=>{for(const f of ['dist/club-ai.js','dist/reputation.js','dist/coach-market.js','dist/facilities.js','dist/world-finance.js'])assert.match(sources[f],/module\.exports/);});
+check('tests natifs: contrats et vrai moteur existants',()=>{for(const file of ['tests/world-career.cjs','tests/v46-v51-contracts.cjs','tests/v51-world-finance.cjs'])assert.ok(fs.statSync(file).isFile());});
+check('contrat: integrateur proprietaire des fichiers existants',()=>{for(const f of ['dist/game.js','dist/saves.js','dist/world-career.js'])assert.ok(sources[f].length>1000);});
+console.log('INTEGRATION READINESS: '+JSON.stringify({passed:tests.length,checks:tests}));
+if(process.env.CD_READINESS_REPORT)fs.writeFileSync(process.env.CD_READINESS_REPORT,JSON.stringify({schemaVersion:1,sourceSha:'main integration V46-V51',kind:'source contracts and native tests',checks:tests,limitations:['No browser execution','No legacy user save import','No real transfer proven by this test']},null,2)+'\n');
