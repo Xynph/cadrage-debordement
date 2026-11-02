@@ -30,16 +30,22 @@ dans le dossier de l’exécutable et ne pas annoncer un test Windows natif si s
 le binaire croisé ou le lanceur Linux a été vérifié. Conserver les échecs
 d’écriture visibles ; aucun repli silencieux vers un autre stockage.
 
+## Travail parallèle à deux comptes — décision du 2 novembre 2026
+
+Décision explicite de Léo consignée dans [l'issue #73, commentaire #6573792553](https://github.com/Xynph/cadrage-debordement/issues/73#issuecomment-6573792553) : **deux développeurs peuvent travailler en même temps sur GitHub**, chacun dans sa branche, si leurs changements de fichiers et d'interfaces sont compatibles. Réserver les chemins dans #73 avant modification, signaler les dépendances même sans chevauchement de fichiers et arrêter toute écriture conflictuelle. La lecture, les tests et les PR indépendantes ne requièrent pas d'alternance exclusive.
+
+**La fusion reste sérialisée :** un seul intégrateur désigné, autorisation explicite de Léo par numéro de PR et HEAD, contrôle GitHub du main et du HEAD, CI obligatoire, release gate officiel sans bypass, puis CI post-fusion 7/7. Les réservations #73 n'accordent aucun droit de fusion. Voir `docs/developpement-parallele.md` pour le protocole concret ; cette section prévaut sur les formulations historiques d'alternance exclusive ci-dessous.
+
 ## Continuité entre deux comptes ChatGPT — protocole obligatoire
 
-Deux comptes ChatGPT peuvent successivement être **producteur ou intégrateur**, mais **jamais actifs simultanément**. Un seul compte actif et un seul intégrateur désigné à la fois. Chaque prise de relais et fin de session est consignée dans l'issue #73. Le rôle d'intégrateur ne constitue jamais une autorisation de fusion : **Léo doit autoriser explicitement chaque PR**. GitHub, les protections serveur vérifiées et le release gate restent les sources d'autorité technique.
+Deux comptes ChatGPT peuvent être **producteurs simultanément sur des branches et chemins disjoints**, après réservation dans l'issue #73. **Un seul intégrateur effectue les opérations de fusion à la fois** ; ses décisions et les passations sont consignées dans #73. Le protocole opérationnel en vigueur est `docs/developpement-parallele.md`.  Le rôle d'intégrateur ne constitue jamais une autorisation de fusion : **Léo doit autoriser explicitement chaque PR**. GitHub, les protections serveur vérifiées et le release gate restent les sources d'autorité technique.
 
 ### À chaque nouvelle conversation ou reprise du développement
 
 1. **Commencer par consulter le dépôt GitHub `Xynph/cadrage-debordement`**, avant de proposer ou d'effectuer des modifications. Examiner la branche principale, les derniers commits et leurs changements, les branches pertinentes, les pull requests ouvertes ou récemment fusionnées, ainsi que les consignes du présent `AGENTS.md`.
 2. Reconstituer l'état réel du projet et les travaux précédents **directement depuis GitHub**. Ne jamais demander à l'utilisateur ce que l'autre compte ChatGPT a fait. Si les informations disponibles sur GitHub ne suffisent pas, signaler précisément ce qui manque sans inventer de modifications.
 3. **GitHub est l'unique source de vérité du code et de l'avancement.** Ne jamais reprendre une copie locale ou un souvenir de conversation sans les confronter à la version actuelle du dépôt.
-4. Partir de la dernière version pertinente. Toute modification de code ou de documentation passe par une branche dédiée et une PR. **Aucun push direct sur `main`**, même pour les modifications simples. La fusion est interdite sans autorisation explicite de Léo pour cette PR, contrôle officiel du HEAD SHA et du main actuels, CI valide et release gate sans bypass. Le compte producteur ne fusionne pas lors de la même session ; la reprise du rôle d'intégrateur exige une passation #73 et une revue explicite. Ne pas laisser un chantier annoncé comme terminé uniquement sur une branche non fusionnée.
+4. Partir de la dernière version pertinente. Toute modification de code ou de documentation passe par une branche dédiée et une PR. **Aucun push direct sur `main`**, même pour les modifications simples. La fusion est interdite sans autorisation explicite de Léo pour cette PR, contrôle officiel du HEAD SHA et du main actuels, CI valide et release gate sans bypass. Le producteur ne fusionne pas sa propre PR sans revue indépendante ; un intégrateur unique prend en charge la fusion après coordination #73 et autorisation de Léo. Ne pas laisser un chantier annoncé comme terminé uniquement sur une branche non fusionnée.
 5. **Enregistrer chaque modification sur GitHub**, avec un message de commit explicite, puis vérifier le commit et le contenu effectivement publiés sur la branche visée. Une modification non publiée et vérifiée n'est pas terminée.
 6. Exécuter les tests pertinents lorsque l'environnement le permet. Distinguer clairement les tests réussis, échoués et non exécutés ; ne jamais annoncer une validation qui n'a pas eu lieu.
 7. En fin d'intervention, résumer en français les changements, les fichiers concernés, les références de commits et de pull requests, l'état des tests et les travaux restant à faire, pour que l'autre compte puisse reprendre sans perte de contexte.
@@ -67,19 +73,19 @@ Ce protocole s'applique à chaque session, même si l'utilisateur ne le rappelle
 - La conclusion native du contrôle `Validation CI` fait autorité ; le résumé n'autorise pas une fusion. Dernier SHA et CI complète restent exigés, puis CI post-fusion sur `main`.
 - Ne pas faire de sondages répétitifs : se fier aux contrôles natifs GitHub et consulter la page de résultat une fois terminée. GitHub peut notifier les participants selon leurs réglages. Aucun message n'est envoyé automatiquement dans ChatGPT.
 
-## Coordination et passation — gouvernance alternée (proposition, non activée)
+## Coordination et passation — historique de la gouvernance alternée (supplanté par le protocole parallèle)
 
 - **Compte développeur** : conçoit les fonctionnalités, produit des branches et PR, corrige ses tests et documente ses livraisons dans l'issue #73. **Aucune fusion ni push sur `main`.**
 - **Compte intégrateur (ce compte)** : lit #73, examine les PR et dépendances, vérifie la valeur jouable, les sauvegardes et le dernier SHA de `main`, réalise les raccordements sur une branche d'intégration si nécessaire, exécute la CI complète, puis **est seul habilité par la gouvernance du projet à fusionner**.
 - La fusion exige la PR non brouillon, l'absence de conflits, les tests ciblés et la validation complète `Tests JavaScript` / `Validation CI` sur la tête exacte ; après fusion, contrôler la CI `push` sur le SHA fusionné. En cas d'échec, **STOP et correction**.
-- Les travaux indépendants se succèdent entre sessions ; les chemins concernés sont réservés dans #73. La fusion n'est jamais autorisée par le seul message d'une issue.
+- Les travaux indépendants peuvent se dérouler simultanément, sur des branches distinctes et chemins réservés sans conflit. La fusion n'est jamais autorisée par le seul message d'une issue.
 - La PR #75 (double intégration) est abandonnée et doit rester non fusionnée.
 
 ## Canal de coordination permanent — issue #73 (en vigueur)
 
 **Salon partagé : https://github.com/Xynph/cadrage-debordement/issues/73**
 
-Un seul compte est actif à la fois. Chacun peut produire des PR ou, dans une session distincte après passation, assurer la revue et l'intégration autorisée ; aucune fusion sans accord explicite de Léo pour la PR et son HEAD.
+Deux comptes peuvent développer simultanément si leurs modifications ne présentent pas de risque de conflit. Un seul intégrateur procède aux fusions, jamais sans accord explicite de Léo pour la PR et son HEAD.
 
 ### Ouverture obligatoire d'une session
 1. Vérifier le dernier `main`, les changements et PR/CI récents ; lire `AGENTS.md` et `DEVELOPPEMENT.md`.
@@ -101,7 +107,7 @@ Un seul compte est actif à la fois. Chacun peut produire des PR ou, dans une se
 
 **Objectif prioritaire : réduire le délai entre la demande et un résultat concret, sans affaiblir les règles de fusion.**
 
-- Les deux comptes restent ChatGPT, avec des rôles interchangeables mais des sessions exclusives ; aucun outil tiers n'est requis. Lire le contexte pertinent en **un lot de requêtes indépendantes**, une seule fois au début de la session : main, AGENTS.md, DEVELOPPEMENT.md, #73, PR concernées. Ne relire ensuite que les informations réellement modifiées.
+- Les deux comptes restent ChatGPT, avec des rôles interchangeables et des sessions de production potentiellement parallèles sur fichiers disjoints ; aucun outil tiers n'est requis. Lire le contexte pertinent en **un lot de requêtes indépendantes**, une seule fois au début de la session : main, AGENTS.md, DEVELOPPEMENT.md, #73, PR concernées. Ne relire ensuite que les informations réellement modifiées.
 - Préférer une **modification fonctionnelle bornée et testable** à plusieurs petites PR cosmétiques. Développer avec les tests ciblés disponibles, préparer le journal avec le code et publier une seule tête de PR aussi stable que possible ; ne pas ajouter de commits de documentation après la CI complète sans nécessité.
 - **Jamais d'attente active** pour les workflows : ne pas relancer des lectures de statut ni télécharger les logs en boucle. Lire les logs en détail seulement en cas d'échec, d'incohérence ou de vérification spécifique indispensable. La CI se déclenche sur GitHub ; elle ne nécessite pas de scrutation continue de ChatGPT.
 - Si la CI distante n'est pas encore achevée dans le tour de travail, **rendre immédiatement** le code et la PR publiés, les tests réellement exécutés et le statut « CI en attente ; non fusionnée ». La prochaine session pourra vérifier la conclusion ; toute fusion nécessitera en outre l'autorisation explicite de Léo pour la PR concernée. Ne jamais déclarer un résultat futur comme acquis.
@@ -109,11 +115,11 @@ Un seul compte est actif à la fois. Chacun peut produire des PR ou, dans une se
 - Conclure en français avec le résultat utile, les liens de PR/commit et les éventuels blocages, sans journal minute par minute des opérations techniques. Ne jamais masquer un test échoué.
 
 
-### Alternance exclusive et protections requises — proposition d'activation
+### Protections requises pour le développement parallèle (en vigueur)
 
-- **Règle de sécurité :** vérifier `main`, HEAD, PR ouvertes, réservations #73 et CI avant toute mutation. L'autre compte doit être inactif pendant toute la session. Le dernier message #73 n'est pas un verrou GitHub atomique.
-- **Rôles :** chacun peut être producteur puis intégrateur lors d'une session distincte, jamais deux sessions actives ni deux intégrateurs en parallèle. Une PR développée par soi exige une revue indépendante documentée autant que possible.
+- **Règle de sécurité :** vérifier `main`, HEAD, PR ouvertes, réservations #73 et CI avant toute mutation. L'autre compte peut travailler sur des chemins disjoints ; STOP sur recouvrement non arbitré ou changement d'interface incompatible. Le dernier message #73 n'est pas un verrou GitHub atomique.
+- **Rôles :** deux producteurs peuvent être actifs sur branches séparées et chemins compatibles ; un seul intégrateur est désigné pour les mutations de fusion. Une PR développée par soi exige une revue indépendante documentée autant que possible.
 - **Fusion :** uniquement après autorisation explicite de Léo ciblant numéro et HEAD de la PR. `/cd-check` ne fusionne pas ; `/cd-merge` exige autorisation et mêmes contrôles. Utiliser `ci/release-gate.cjs` et `docs/chat-release-gate.md` sans les modifier ni désactiver leurs protections. Vérifier les sept jobs post-fusion sur le SHA du nouveau main.
 - **Protection serveur :** demander et vérifier des rulesets main : PR requise, CI à jour, pas de push direct, force-push ni bypass administrateur. Ne pas annoncer leur activation sans preuve. Merge queue seulement si compatible avec `merge_group`.
-- **Interdiction d'activation implicite :** cette proposition n'active ni accès GitHub ni droit de fusion ; la gouvernance courante reste applicable tant que cette PR n'est pas approuvée, intégrée et annoncée dans #73.
+- **Activation documentée :** le parallélisme a été explicitement autorisé par Léo et annoncé dans #73 (#6573792553) ; cette documentation ne donne aucun accès GitHub supplémentaire ni droit de fusion.
 - **Compte rendu :** un seul feu 🟢 (autonomie), 🟠 (message à l'autre compte), 🔴 (décision de Léo nécessaire) ; finir par un bouton cliquable dont le libellé est **la prochaine étape précise**, jamais seulement « Continuer ».
