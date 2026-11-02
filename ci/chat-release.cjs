@@ -108,9 +108,7 @@ async function main(){
     try{return execFileSync(process.execPath,[path.join(__dirname,'release-gate.cjs'),String(pr),...(merge?['--merge']:[])],{encoding:'utf8',timeout:120000,maxBuffer:4*1024*1024,env:{...process.env,CD_REPO:REPO,CD_EXPECTED_HEAD_SHA:expected}});}
     catch(e){
      const stdout=String(e.stdout||'').slice(0,8000),stderr=String(e.stderr||'').slice(0,4000);
-     throw Error('Gate refuse pour PR #'+pr+' (code '+String(e.status??'inconnu')+')\
-'+stdout+'\
-'+stderr);
+     throw Error('Gate refuse pour PR #'+pr+' (code '+String(e.status??'inconnu')+')'+JSON.stringify({stdout,stderr}));
     }
    },
    watch:id=>execFileSync('gh',['run','watch',String(id),'--repo',REPO,'--interval','30','--exit-status'],{stdio:'inherit',timeout:32*60*1000})});
