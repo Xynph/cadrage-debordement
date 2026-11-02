@@ -77,7 +77,7 @@
   const camera=new T.PerspectiveCamera(48,16/9,.1,500);positionCamera(camera);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
   renderer.setSize(Math.max(300,host.clientWidth),Math.max(180,Math.floor(host.clientWidth*9/16)));
-  renderer.outputColorSpace=T.SRGBColorSpace;
+  renderer.outputEncoding=T.sRGBEncoding;
   host.append(renderer.domElement);
   const ball=new T.Mesh(new T.SphereGeometry(.58,12,8),new T.MeshStandardMaterial({color:0xf8e9c6}));
   ball.scale.set(1.4,.7,.85);scene.add(ball);
