@@ -9,9 +9,15 @@ function validateEvent(e,env){
  need(env.GITHUB_EVENT_NAME==='issue_comment'&&env.GITHUB_REPOSITORY===REPO&&env.GITHUB_ACTOR==='Xynph'&&env.GITHUB_TRIGGERING_ACTOR==='Xynph','Événement ou acteur non autorisé');
  need(e.action==='created'&&e.repository?.full_name===REPO&&e.repository.id===REPO_ID&&e.issue?.number===73&&!e.issue.pull_request,'Dépôt/issue/événement non autorisé');
  need(owner(e.comment?.user)&&e.sender?.id===OWNER_ID&&e.sender.login==='Xynph'&&Number.isSafeInteger(e.comment.id),'Auteur non autorisé');
- const body=e.comment.body,m=typeof body==='string'&&body.match(/^\/cd-(merge|check) ([1-9][0-9]*) ([0-9a-f]{40})$/);
- need(m&&m[0]===body&&Number.isSafeInteger(Number(m[2])),'Commande stricte attendue : /cd-merge PR SHA40 ou /cd-check PR SHA40');
- return {pr:Number(m[2]),expected:m[3],mode:m[1],commentId:e.comment.id};
+ const body=e.comment.body;
+ const normal=typeof body==='string'&&body.match(/^\/cd-(merge|check) ([1-9][0-9]*) ([0-9a-f]{40})$/);
+ const repair=typeof body==='string'&&body.match(/^\/cd-(repair-merge|repair-check) ([1-9][0-9]*) ([0-9a-f]{40}) ([0-9a-f]{40}) ([1-9][0-9]*)$/);
+ const m=normal||repair;
+ need(m&&m[0]===body&&Number.isSafeInteger(Number(m[2]))&&
+   (!repair||Number.isSafeInteger(Number(repair[5]))),
+   'Commande stricte : /cd-(check|merge) PR HEAD ou /cd-repair-(check|merge) PR HEAD MAIN RUN');
+ return {pr:Number(m[2]),expected:m[3],mode:m[1],commentId:e.comment.id,
+   ...(repair?{repairMain:repair[4],failedRun:Number(repair[5])}:{})};
 }
 function fullCI(run,jobs,sha,workflowId){
  return !!run&&run.workflow_id===workflowId&&run.head_branch==='main'&&run.head_sha===sha&&['push','workflow_dispatch'].includes(run.event)&&run.name==='Tests JavaScript'&&run.status==='completed'&&run.conclusion==='success'&&jobs.length===JOBS.length&&JOBS.every(name=>jobs.filter(j=>j.name===name&&j.status==='completed'&&j.conclusion==='success').length===1);
@@ -26,13 +32,43 @@ async function execute(cmd,event,d){
  const listRuns=()=>api('actions/workflows/tests.yml/runs?branch=main&per_page=100').workflow_runs;
  const listJobs=id=>{const all=[];for(let page=1;page<=10;page++){const batch=api('actions/runs/'+id+'/jobs?per_page=100&page='+page).jobs;all.push(...batch);if(batch.length<100)return all;}throw Error('Pagination CI excessive');};
  const before=latestCI(listRuns(),base,workflow.id);
- need(fullCI(before,before?listJobs(before.id):[],base,workflow.id),'main ne possède pas une CI complète verte ; arrêter les intégrations');
+ const repair=cmd.mode==='repair-check'||cmd.mode==='repair-merge';
+ if(repair){
+   // Mode réparation : jamais de politique implicite ni de réutilisation d'une ancienne CI.
+   need(cmd.repairMain===base&&cmd.failedRun===before?.id,
+     'SHA main ou run rouge non identique à la commande');
+   need(before.workflow_id===workflow.id&&before.head_sha===base&&
+     before.head_branch==='main'&&['push','workflow_dispatch'].includes(before.event)&&
+     before.status==='completed'&&before.conclusion==='failure',
+     'La CI main citée n’est pas la dernière exécution rouge exacte');
+   const failed=listJobs(before.id);
+   need(failed.length===JOBS.length&&JOBS.every(name=>
+     failed.filter(x=>x.name===name&&x.status==='completed').length===1),
+     'Sept jobs main obligatoires absents ou ambigus');
+   need(failed.find(x=>x.name==='classification').conclusion==='success'&&
+     failed.find(x=>x.name==='Validation CI').conclusion==='failure'&&
+     JOBS.filter(n=>n.startsWith('Suites ')).every(n=>
+       ['success','failure'].includes(failed.find(x=>x.name===n).conclusion))&&
+     JOBS.filter(n=>n.startsWith('Suites ')).some(n=>
+       failed.find(x=>x.name===n).conclusion==='failure'),
+     'Motif de CI rouge incompatible avec une réparation ciblée');
+   const pr=api('pulls/'+cmd.pr);
+   need(pr.head?.sha===cmd.expected&&pr.base?.ref==='main'&&pr.base?.sha===base,
+     'La PR a changé ou ne cible plus le main exact');
+   const changed=api('pulls/'+cmd.pr+'/files?per_page=100');
+   need(Array.isArray(changed)&&changed.length===1&&changed[0].status==='modified'&&
+     /^(tests\/[^/]+\.cjs|dist\/[^/]+\.js)$/.test(changed[0].filename),
+     'Réparation non minimale ou modification de chemins privilégiés');
+ }else{
+   need(fullCI(before,before?listJobs(before.id):[],base,workflow.id),
+     'main ne possède pas une CI complète verte ; arrêter les intégrations');
+ }
  need(api('pulls/'+cmd.pr).head?.sha===cmd.expected,'SHA attendu différent de HEAD');
  need(head()===base,'main a changé avant le gate');
  // Le CLI revérifie le SHA attendu dans sa propre lecture, puis GitHub le
  // compare atomiquement au moment du squash. Les critères decide() sont intacts.
- const output=d.execGate(cmd.pr,cmd.expected,cmd.mode==='merge');
- if(cmd.mode==='check')return {mode:'check',pr:cmd.pr,expected:cmd.expected,ready:true};
+ const output=d.execGate(cmd.pr,cmd.expected,(cmd.mode==='merge'||cmd.mode==='repair-merge'));
+ if(cmd.mode==='check'||cmd.mode==='repair-check')return {mode:cmd.mode,pr:cmd.pr,expected:cmd.expected,ready:true};
  const match=output.match(/^Fusion ([0-9a-f]{40}) : verifier une seule fois le run push main sur ce SHA\.$/m);
  need(match,'Reçu de fusion officiel absent ; consulter le run, aucune livraison déclarée');
  const mergedSha=match[1];need(head()===mergedSha,'main ne correspond pas au reçu de fusion');
@@ -66,7 +102,7 @@ async function main(){
    watch:id=>execFileSync('gh',['run','watch',String(id),'--repo',REPO,'--interval','30','--exit-status'],{stdio:'inherit',timeout:32*60*1000})});
  }catch(e){error=e;}
  const runUrl='https://github.com/'+REPO+'/actions/runs/'+process.env.GITHUB_RUN_ID;
- const message=error?'ÉCHEC — aucune livraison validée. Une fusion peut avoir eu lieu avant cet échec : consulter le run et main avant toute nouvelle commande.':result.mode==='check'?'CONTRÔLE VERT — aucune fusion effectuée.':'SUCCÈS — fusion '+result.mergedSha+' ; CI post-fusion 7/7 : https://github.com/'+REPO+'/actions/runs/'+result.postRun;
+ const message=error?'ÉCHEC — aucune livraison validée. Une fusion peut avoir eu lieu avant cet échec : consulter le run et main avant toute nouvelle commande.':(result.mode==='check'||result.mode==='repair-check')?'CONTRÔLE VERT — aucune fusion effectuée.':'SUCCÈS — fusion '+result.mergedSha+' ; CI post-fusion 7/7 : https://github.com/'+REPO+'/actions/runs/'+result.postRun;
  const summary='Chat release gate — PR #'+cmd.pr+' — HEAD `'+cmd.expected+'`\n\n'+message+'\n\nRun : '+runUrl;
  fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,summary+'\n');api('issues/73/comments','POST',{body:summary});
  if(error)throw error;console.log(JSON.stringify(result));
