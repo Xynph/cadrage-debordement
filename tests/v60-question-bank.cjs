@@ -14,6 +14,7 @@ assert.ok(bank.journalists.some(j=>j.name==='Arnaud Beurdeley'));
 assert.equal(new Set(bank.questions.map(q=>q.id)).size,500);
 assert.equal(new Set(bank.questions.flatMap(q=>q.variants)).size,1500);
 for(const q of bank.questions){assert.equal(q.answers.length,4);assert.equal(new Set(q.answers.map(a=>a.text)).size,4);}
+assert.equal(new Set(bank.questions.map(q=>q.variants[0].split('?').slice(-2).join('?'))).size,125,'125 editorial subject probes');
 const chosen=bank.pick({season:2,week:8,count:4,context:{themes:['defaite','crise','vestiaire','direction']},seed:7});
 assert.equal(chosen.length,4);
 assert.ok(chosen.every(q=>['defaite','crise','vestiaire','direction'].includes(q.theme)));
