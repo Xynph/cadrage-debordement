@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import {expandRankings} from './pagination.mjs';
 
 export function validateURL(raw) {
   const u=new URL(raw);
@@ -58,21 +59,16 @@ export async function capture(a,engine) {
     const tab=page.getByText(/statistiques individuelles/i).first();
     if(await tab.count())await tab.click({timeout:4000}).catch(()=>{});
     await page.waitForTimeout(a.delay);
-    // Try expanding limited ranking lists; do not crawl arbitrary links.
-    for(let k=0;k<2;k++){
-      const more=page.getByText(/voir plus/i);
-      const count=Math.min(await more.count(),a.limit);
-      if(!count)break;
-      for(let i=count-1;i>=0;i--)await more.nth(i).click({timeout:900}).catch(()=>{});
-      await page.waitForTimeout(a.delay);
-    }
+    await fs.mkdir(a.out,{recursive:true});
+    const checkpoint=path.join(a.out,'rugbydata-'+a.url.match(/\\d+\\/?$/)[0].replace('/','')+'-'+a.season+'-checkpoint.json');
+    const pagination=await expandRankings(page,{rounds:Math.min(a.limit,100),delay:a.delay,checkpoint});
     const tables=await page.locator('table').evaluateAll(xs=>xs.map(t=>({headers:[...t.querySelectorAll('th')].map(x=>x.textContent.trim()),rows:[...t.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('td')].map(x=>x.textContent.trim())).filter(xs=>xs.length)})));
     const visible=await page.locator('body').innerText();
-    const out={schema:'rugbydata-raw-v1',seasonRequested:a.season,seasonSelected:chosen.option,source:a.url,capturedAt:new Date().toISOString(),json,tables,text:visible.slice(0,1000000),failures};
+    const out={schema:'rugbydata-raw-v1',seasonRequested:a.season,seasonSelected:chosen.option,source:a.url,capturedAt:new Date().toISOString(),pagination,json,tables,text:visible.slice(0,1000000),failures};
     await fs.mkdir(a.out,{recursive:true});
     const file=path.join(a.out,'rugbydata-'+a.url.match(/\d+\/?$/)[0].replace('/','')+'-'+a.season+'.json');
     await fs.writeFile(file,JSON.stringify(out,null,2)+'\n');
-    return {file,JSONResponses:json.length,tables:tables.length};
+    return {file,JSONResponses:json.length,tables:tables.length,paginationComplete:pagination.complete};
   }finally{await browser.close();}
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href)capture(argsOf(process.argv.slice(2))).then(console.log).catch(e=>{console.error(e.message);process.exitCode=1;});
