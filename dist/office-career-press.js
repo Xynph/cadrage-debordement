@@ -46,7 +46,7 @@
   if(!s||!root.CDPressRelations||!topics[selectedTopic]||!tones[selectedTone])return null;
   try{
    const api=root.CDPressRelations,base=api.create('club-'+s.club);
-   const existing=s.pressRelations;const state=existing?advance(existing,s.season):base;const result=api.interview(state,{topic:selectedTopic,tone:selectedTone,season:s.season,week:s.round});
+   const existing=s.pressRelations,season=Number.isInteger(s.season)?s.season:1,week=Number.isInteger(s.round)?s.round:0;const state=existing?advance(existing,season):base;const result=api.interview(state,{topic:selectedTopic,tone:selectedTone,season,week});
    return {media:result.state.mediaTrust-state.mediaTrust,fans:result.state.fanTrust-state.fanTrust,pressure:result.state.boardPressure-state.boardPressure,morale:result.state.morale-state.morale};
   }catch(_){return null;}
  }
