@@ -9,7 +9,7 @@ const norm = v => String(v??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
 const hash = v => crypto.createHash('sha256').update(JSON.stringify(v)).digest('hex');
 const numeric = v => {if(v===null||v===undefined||String(v).trim()==='')return null;const s=String(v).replace(/[\u00a0 ]/g,'').replace(',','.');if(!/^-?\d+(?:\.\d+)?$/.test(s))return null;const n=Number(s);return Number.isFinite(n)&&n>=0?n:null};
 const league = v => v==='TOP 14'?'top14':v==='PRO D2'?'prod2':null;
-const key = v => hash([v.competition,v.season,v.phase,v.type,v.entityId,v.indicator,v.unit??null,v.scope??null]);
+const key = v => hash([v.competition,v.season,v.phase,v.type,v.entityId,v.category??null,v.indicator,v.unit??null,v.scope??null]);
 
 export async function integrate(db, observations, mapping) {
  if(db.schema!=='rugby-master-sports-v6'||!Array.isArray(db.players))throw Error('Schéma BDD incompatible');
@@ -39,7 +39,7 @@ export async function integrate(db, observations, mapping) {
    id=matches[0].id;
   }else{hold(r,'unknown_type');continue}
   if(!id){hold(r,'club_unmatched');continue}
-  const obs={competition:r.competition,season:r.season,phase:r.phase,type:r.type,entityId:id,indicator:r.indicator,unit:r.unit??null,scope:r.source_scope??null,value:v,sources:[r.source_url],sourceCategory:r.category};
+  const obs={competition:r.competition,season:r.season,phase:r.phase,type:r.type,entityId:id,category:r.category??null,indicator:r.indicator,unit:r.unit??null,scope:r.source_scope??null,value:v,sources:[r.source_url],sourceCategory:r.category};
   const k=key(obs),fingerprint=hash([k,v,r.source_url]);if(seen.has(fingerprint)){stats.duplicates++;continue}seen.add(fingerprint);
   const existing=facts.get(k);
   if(existing){if(existing.value!==v){stats.conflicts++;if(conflictSamples.length<100)conflictSamples.push({key:k,old:existing.value,new:v,source:r.source_url});continue}stats.already_present++;if(!existing.sources.includes(r.source_url))existing.sources.push(r.source_url);continue}
