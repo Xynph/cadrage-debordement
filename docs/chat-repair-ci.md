@@ -10,19 +10,20 @@ Le code du workflow privilégié provient uniquement du SHA de `main`, jamais du
 
 ## Réparation encadrée d'une CI rouge
 
-L'orchestrateur accepte également deux syntaxes strictes **une fois cette évolution fusionnée sur main** :
+L'orchestrateur accepte également deux syntaxes strictes **uniquement après installation de cette évolution sur main** :
 
 ```text
-/cd-repair-check 212 59aeb359c9966a892ac8994e636af38f12fe0bbd
-/cd-repair-merge 212 59aeb359c9966a892ac8994e636af38f12fe0bbd
+/cd-repair-check PR HEAD_SHA40 MAIN_SHA40 RUN_MAIN_ROUGE
+/cd-repair-merge PR HEAD_SHA40 MAIN_SHA40 RUN_MAIN_ROUGE
 ```
 
-Elles sont **épinglées à ce seul incident** :
-- main attendu `f189d09f317b73d4e9e3d54ee694e6c4c2c9262b` ;
-- dernier run main `41427301234`, terminal `failure`, sept jobs complets, seuls `Suites 1/5` et `Validation CI` en échec ;
-- PR #212 ouverte sur `main`, HEAD exact, et **unique** fichier modifié `tests/governance-exclusive.test.cjs`.
+Par exemple, pour l'incident documenté #212 : `/cd-repair-check 212 59aeb359c9966a892ac8994e636af38f12fe0bbd f189d09f317b73d4e9e3d54ee694e6c4c2c9262b 41427301234`. **Ceci n'est pas une commande à émettre avant installation.**
 
-Tout autre main, run récent, PR, SHA, chemin ou motif d'échec est **refusé**, y compris une PR ajoutant un fichier CI. Le contrôle du CLI `ci/release-gate.cjs` reste obligatoire avec `CD_EXPECTED_HEAD_SHA` ; GitHub doit appliquer sa protection native `Validation CI`, les règles de synchronisation, l'interdiction de push direct et ses autres restrictions. Aucune mutation n'est automatique par publication d'une PR ; la commande de fusion nécessite toujours l'autorisation explicite de Léo et une exécution par l'intégrateur désigné. Le même groupe de concurrence sérialise commandes normales et réparation.
+Le mode réparation n'est pas une dispense générale :
+- Le **dernier** run de CI main doit correspondre à l'identifiant explicitement fourni, au SHA main courant et au bon workflow ; état terminal `failure`, sept jobs complets et uniques. `classification` réussie, `Validation CI` échouée, cinq suites réellement exécutées (success/failure), au moins une en échec ; ni skipped ni échec d'infrastructure non classifié accepté.
+- La PR doit cibler ce main exact et conserver son HEAD exact. La comparaison des fichiers est bornée à **un seul fichier modifié**, soit `tests/*.cjs`, soit `dist/*.js` sans sous-répertoire. Impossible de modifier le gate, les workflows, les permissions ou les fichiers de données avec une commande de réparation.
+- Le contrôle du CLI `ci/release-gate.cjs` reste obligatoire avec `CD_EXPECTED_HEAD_SHA` ; la PR non draft, `mergeable_state=clean`, la CI PR complète réussie sur HEAD exact et `Validation CI` restent nécessaires. GitHub doit appliquer son ruleset et la fusion SHA-verrouillée.
+- Une commande de fusion exige **toujours** une autorisation explicite de Léo ciblant le numéro et le HEAD, puis l'exécution par l'intégrateur unique. Le même groupe de concurrence sérialise commandes normales et réparation. Les commandes normales continuent d'exiger un main vert.
 
 Après une fusion autorisée, conserver le reçu SHA de GitHub, déclencher la CI complète du **nouveau** main sur ce SHA et vérifier exactement sept jobs `success` ; tout échec entraîne `STOP` et un bilan factuel dans #73. Aucun ancien succès ni ancienne exécution n'est recyclé.
 
@@ -30,7 +31,7 @@ Après une fusion autorisée, conserver le reçu SHA de GitHub, déclencher la C
 
 **Cette PR d'orchestration ne peut pas débloquer rétroactivement #212.** Le code de `main` est le seul exécuté par le workflow GitHub privilégié. Tant que la présente évolution n'est pas elle-même intégrée via une procédure autorisée, les nouvelles commandes n'existent pas côté serveur. Il est interdit de lancer un workflow privilégié depuis une branche de PR pour contourner ce problème. Pour #212, conserver la procédure exceptionnelle approuvée dans [#6574920305](https://github.com/Xynph/cadrage-debordement/issues/73#issuecomment-6574920305) et sa condition de disposer d'un vrai environnement CLI authentifié. Aucun merge direct via le connecteur, aucune modification temporaire du ruleset et aucun `push` vers `main`.
 
-Une fois le main réparé, envisager **dans une autre PR**, avec tests et autorisation distincte, une politique de récupération réutilisable. Cette première version reste volontairement épinglée afin de ne pas introduire de permission générique de fusion depuis main rouge.
+Pour tout incident touchant plusieurs fichiers ou les protections de CI elles-mêmes, la commande refuse et une procédure exceptionnelle documentée, avec autorisation distincte et environnement authentifié, reste nécessaire. La récupération courante est volontairement limitée aux correctifs minimaux d'un seul fichier, pour éviter une voie de fusion ouverte à des changements privilégiés.
 
 ## Métriques à relever sur trois PR suivantes
 
