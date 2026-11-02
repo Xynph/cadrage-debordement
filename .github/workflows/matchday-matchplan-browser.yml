@@ -1,13 +1,7 @@
 name: Poste de decision MATCHDAY-03 - Chromium
+# Validation PR regroupée dans .github/workflows/matchday-browser.yml.
+# Exécution individuelle toujours disponible manuellement pour diagnostic.
 on:
-  pull_request:
-    branches: [main, integration/matchday02-lineup-advisor]
-    paths:
-      - 'dist/index.html'
-      - 'dist/matchday-center.js'
-      - 'dist/matchday-matchplan.*'
-      - 'tests/matchday-matchplan*'
-      - '.github/workflows/matchday-matchplan-browser.yml'
   workflow_dispatch:
 permissions:
   contents: read

@@ -1,13 +1,7 @@
 name: Briefing match - Chromium
+# Validation PR regroupée dans .github/workflows/matchday-browser.yml.
+# Exécution individuelle toujours disponible manuellement pour diagnostic.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'dist/game.js'
-      - 'dist/index.html'
-      - 'dist/matchday-center.*'
-      - 'tests/matchday-center*'
-      - '.github/workflows/matchday-center-browser.yml'
   workflow_dispatch:
 permissions:
   contents: read

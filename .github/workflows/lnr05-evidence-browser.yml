@@ -17,6 +17,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   node:
+    # Tests Node ordinaires déjà exécutés dans le shard complet CI sur chaque PR.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -62,6 +64,8 @@ jobs:
           LNR_AUDIT_SEED: ${{ matrix.seed }}
         run: node tests/lnr05-multiseason-strategies.cjs
   real-import-no-network:
+    # La même suite sans réseau est incluse dans tests/*.cjs de la CI principale.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:

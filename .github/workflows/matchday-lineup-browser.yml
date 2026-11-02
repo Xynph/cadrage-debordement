@@ -1,13 +1,7 @@
 name: Assistant composition MATCHDAY-02 - Chromium
+# Validation PR regroupée dans .github/workflows/matchday-browser.yml.
+# Exécution individuelle toujours disponible manuellement pour diagnostic.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'dist/index.html'
-      - 'dist/matchday-center.js'
-      - 'dist/matchday-lineup.*'
-      - 'tests/matchday-lineup*'
-      - '.github/workflows/matchday-lineup-browser.yml'
   workflow_dispatch:
 permissions:
   contents: read
