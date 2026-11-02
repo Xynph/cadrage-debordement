@@ -1,0 +1,39 @@
+name: Consolidation native V56 V57 V62 V63
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/v56-integration-readiness.cjs'
+      - 'tests/v57-native-functional.cjs'
+      - 'tests/v62-native-integration-gates.cjs'
+      - 'tests/v63-native-career-transactions.cjs'
+      - 'tests/v63-1-long-career.cjs'
+      - 'tests/v63-2-stress-native.cjs'
+      - '.github/workflows/native-career-v56-v63-consolidated.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    name: Native career ${{ matrix.test }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - v56-integration-readiness
+          - v57-native-functional
+          - v62-native-integration-gates
+          - v63-native-career-transactions
+          - v63-1-long-career
+          - v63-2-stress-native
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v5
+        with:
+          node-version: '22'
+      - name: Executer le vrai test natif
+        run: node tests/${{ matrix.test }}.cjs
