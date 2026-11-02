@@ -40,8 +40,45 @@ with sync_playwright() as p:
      }finally{clearInterval(timer);Math.random=original;adaptOpponentAttack=oldAdapt;}
    }""",{'seed':seed,'enabled':enabled})
    results.append(result)
+ # Import an actual export produced by the historical V16 native game.
+ import subprocess,tempfile,tarfile,io,functools,http.server,threading,hashlib
+ class Quiet(http.server.SimpleHTTPRequestHandler):
+  def log_message(self,*args): pass
+ with tempfile.TemporaryDirectory(prefix='opponent-v16-') as tmp:
+  archive=subprocess.check_output(['git','archive','dbcb0f3','dist'])
+  with tarfile.open(fileobj=io.BytesIO(archive)) as tar:tar.extractall(tmp,filter='data')
+  srv=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(Quiet,directory=str(Path(tmp)/'dist')))
+  threading.Thread(target=srv.serve_forever,daemon=True).start()
+  old=browser.new_context().new_page()
+  try:
+   old.goto('http://127.0.0.1:%d/'%srv.server_port)
+   old.locator('.clubchoice').first.click()
+   old.evaluate('finishRound()')
+   old_core=old.evaluate('({round:S.round,season:S.season,club:S.club,cash:S.clubs[S.club].cash})')
+   assert old_core['round']==1
+   legacy=old.evaluate('JSON.stringify(createSaveDocument())')
+  finally:
+   old.context.close();srv.shutdown()
+  export=out/'historical-v16-export.json';export.write_text(legacy)
+  page.reload()
+  page.evaluate("start(0,'fiction')")
+  before=page.evaluate('JSON.stringify(S)')
+  store=page.evaluate('JSON.stringify(Object.fromEntries(Object.keys(localStorage).sort().map(k=>[k,localStorage.getItem(k)])))')
+  page.locator('#save-import').set_input_files(str(export))
+  page.get_by_role('dialog',name='Vérifier la sauvegarde').wait_for()
+  assert page.evaluate('JSON.stringify(S)')==before
+  assert page.evaluate('JSON.stringify(Object.fromEntries(Object.keys(localStorage).sort().map(k=>[k,localStorage.getItem(k)])))')==store
+  page.get_by_role('button',name='Remplacer et reprendre la carrière').click()
+  restored=page.evaluate('({round:S.round,season:S.season,club:S.club,cash:S.clubs[S.club].cash})')
+  assert restored==old_core,(restored,old_core)
+  state=page.evaluate('JSON.stringify(S)')
+  page.evaluate("opponentAttackDecision({tacticalVersion:0},1)")
+  assert page.evaluate('JSON.stringify(S)')==state
+  page.reload()
+  assert page.evaluate('S.round')==old_core['round']
+  historical={"passed":True,"round":old_core['round'],"sha256":hashlib.sha256(legacy.encode()).hexdigest()}
  browser.close()
-summary={"runs":len(results),"completed":sum(bool(x["finished"]) for x in results),
+summary={"historicalV16":historical,"runs":len(results),"completed":sum(bool(x["finished"]) for x in results),
  "changes":sum(x["changes"] for x in results),"results":results,
  "paired": [{"seed":i,"control":results[2*i],"adapted":results[2*i+1]} for i in range(24)],
  "limits":["24 paired seeds, 48 genuine engine matches; seed reinitializes Math.random in browser scope","Adaptation disabled only in control; other engine AI remains active","Descriptive pairing, not proof of statistical balance"]}
