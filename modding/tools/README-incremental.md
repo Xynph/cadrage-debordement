@@ -5,7 +5,7 @@ La seule BDD centrale reste `modding/data06/rugby-master-2026-2027.json`. Ce scr
 ## Usage
 
 ```bash
-node --test tests/rugby-incremental-import.test.cjs
+node --test tests/rugby-incremental-import.cjs
 node modding/tools/rugby-incremental-import.cjs --input /chemin/lot.json
 # Après examen du bilan, sur une branche issue de main :
 node modding/tools/rugby-incremental-import.cjs --input /chemin/lot.json --write
