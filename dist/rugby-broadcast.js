@@ -1,6 +1,6 @@
 'use strict';
 // Programme TV fictif : aucune émission réelle, aucune citation de journaliste réel.
-(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.CDRugbyBroadcast=api;api.install();})(typeof globalThis==='object'?globalThis:null,function(){
+(function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.CDRugbyBroadcast=api;api.install();})(typeof globalThis==='object'?globalThis:null,function(root){
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const HASH=s=>Array.from(String(s)).reduce((h,c)=>(h*33+c.charCodeAt(0))>>>0,5381);
 const SHOW='Troisième Mi-Temps';
