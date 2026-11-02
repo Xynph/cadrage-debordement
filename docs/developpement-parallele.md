@@ -1,24 +1,20 @@
-# Développement parallèle sûr — Cadrage Débordement
+# Développement parallèle — cycle court
 
-**Décision du 2 novembre 2026.** Léo autorise deux développeurs GitHub simultanés sur des branches et fichiers compatibles. Source de coordination : [issue #73](https://github.com/Xynph/cadrage-debordement/issues/73#issuecomment-6573792553). Le présent document complète `AGENTS.md` ; aucune protection technique n'est désactivée.
+**Décision de Léo du 2 novembre 2026** : deux comptes producteurs peuvent écrire simultanément sur branches et chemins compatibles. Un seul intégrateur gère les fusions. Le propriétaire donne une autorisation générale pour les **fusions ordinaires**, sans demande répétée à chaque PR.
 
-## Modèle de travail
+## Cycle de travail par lot
 
-1. **Avant de coder :** consulter une fois le main et son SHA, AGENTS.md, l'issue #73 et les PR actives. Publier une prise de chantier courte indiquant le rôle, la branche, le SHA de base, les fichiers ou motifs de chemins réservés, les dépendances et exclusions.
-2. **En parallèle :** chaque producteur écrit sur sa branche et ses chemins. Les tests, captures et PR indépendantes peuvent s'exécuter simultanément. Ne pas traiter l'absence de chevauchement nominal comme une preuve de compatibilité : vérifier les API, les imports, les sauvegardes, les workflows et les données partagés.
-3. **Conflit :** si deux chantiers nécessitent le même fichier, un contrat partagé incompatible ou une mise à jour de branche concurrente, STOP sur la zone touchée, signaler la collision dans #73 et choisir un propriétaire du fichier ou un ordre d'intégration. Ne jamais forcer un push pour résoudre le conflit.
-4. **Livraison :** lot cohérent, tests ciblés locaux lorsque possible, un commit final stable, une PR, CI sur le HEAD exact. Passation courte dans #73 précisant SHA, chemins, tests réellement exécutés, sauvegardes, dépendances, risques et chemins libérés. Les verdicts pending ne sont pas verts ; ne pas multiplier les consultations.
-5. **Intégration unique :** un seul intégrateur intervient sur les opérations de fusion à un instant donné. Pour chaque PR : autorisation explicite de Léo pour la PR et son HEAD, vérifications du main/HEAD et de la CI complète, `/cd-check`, puis procédure officielle `/cd-merge` avec SHA verrouillé. Après fusion, sept jobs obligatoires de la CI post-fusion réussis avant clôture. Aucun bypass et aucun push sur main.
+1. Consulter une fois le main et l'issue #73 ; signaler les chemins réservés seulement en cas de travail simultané ou d'interface partagée.
+2. Développer un lot fonctionnel sur une branche dédiée, sans toucher aux DATA ou aux fichiers réservés par l'autre chantier.
+3. Exécuter les tests ciblés. Préserver les sauvegardes : tests de rétrocompatibilité en cas de changement de schéma/import. Ne jamais présenter « non exécuté » comme « réussi ».
+4. Publier une PR avec HEAD et résultats vérifiés, puis transmettre une passation courte. Éviter de relire plusieurs fois les mêmes workflows.
+5. L'intégrateur juge l'utilité, écarte les doublons, vérifie l'absence de conflits et applique le chemin de fusion techniquement autorisé. Aucune revue externe n'est exigée comme condition **interne** nouvelle.
+6. Après livraison, bilan concis : fonctionnalité, tests, commit de main, risque éventuel. Si la CI obligatoire ou les protections refusent la fusion, STOP technique documenté.
 
-## Priorités et cas concrets
+## Déploiement du nouveau régime
 
-- Les modifications de `AGENTS.md` et des guides de coordination se font dans une PR dédiée. Si `DEVELOPPEMENT.md` est déjà réservé par une PR, ne pas le modifier en parallèle : consigner la passation dans #73.
-- Le lot V17 sur PR #209 utilise ses propres fichiers d'interface et de tests. La coordination documentaire n'y touche pas. Toute modification ultérieure de son adapter/API commune doit être coordonnée.
-- La PR Fast Lane #208 est indépendante : son bilan rapide reste **informatif**, jamais un remplacement du release gate ni de l'autorisation de fusion.
-- Les fichiers `dist/`, les sauvegardes, DATA et Business restent soumis aux restrictions spécifiques de chaque chantier.
+Ce fichier et AGENTS.md fixent la **politique humaine voulue**. Ils ne modifient pas les protections serveur ni `ci/release-gate.cjs` : le gate historique peut encore exiger une autorisation spécifique ou une CI complète. Une PR séparée devra adapter le gate et ses tests de sécurité pour autoriser le cycle de fusion autonome sur les travaux ordinaires. Ne pas utiliser d'API directe ou de bypass pour esquiver un refus de ce gate avant cette adaptation.
 
-## Contrôles de réussite
+## Exceptions
 
-Sur les trois prochaines évolutions jouables, mesurer les conflits évités, le délai demande → PR prête, le délai PR verte → intégration, le nombre de vérifications manuelles et les éventuelles CI redondantes. Objectif : moins de coordination et d'interruptions, **sans réduire les tests obligatoires**.
-
-Cette politique ne modifie ni règles GitHub côté serveur, ni secrets, ni permissions, ni moteur de jeu.
+Renforcer les validations pour migration de sauvegardes, sécurité, règles du rugby, finances sensibles, changements d'architecture et données réelles. Ne pas fusionner deux branches concurrentes sans résoudre leurs dépendances. Pas de push direct vers main ; ne pas effacer les preuves d'intégration.

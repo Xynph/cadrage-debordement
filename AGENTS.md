@@ -1,5 +1,16 @@
 # Cadrage Débordement
 
+## Décision produit du 2 novembre 2026 — cycle court (prioritaire pour la gouvernance humaine)
+
+Léo autorise **par avance** les intégrations ordinaires des améliorations de Cadrage Débordement. Il demande : **développer → tester rapidement et de manière ciblée → intégrer**, sans demander d'accord humain à chaque PR et sans exiger de deuxième examinateur GitHub. L'intégrateur unique décide de la valeur produit et de l'ordre d'intégration ; les deux producteurs peuvent développer sur branches/chemins compatibles.
+
+**Règles minimales** : vérifier une fois le main et les chemins réservés au départ ; développer sur branche isolée ; exécuter réellement les tests ciblés, notamment les tests de sauvegarde en cas de modification du format/import ; s'assurer que le HEAD, les checks exigés et les protections serveur sont valides ; faire fusionner par un seul intégrateur ; produire un bilan bref. Aucun résultat CI en attente ne compte comme réussi. Aucune fusion en conflit, avec tests rouges, ou sans vérification de compatibilité des sauvegardes. Les modifications sensibles (migration de sauvegardes, sécurité, règles économiques centrales, réglementation) justifient des validations renforcées.
+
+**Distinction autorisation / capacité technique** : cette décision est l'autorisation générale *du propriétaire* pour les fusions ordinaires futures, et remplace l'obligation interne d'obtenir une permission PR par PR. Elle **ne désactive pas** le gate actuel, les protections de branche, les identités autorisées ni les workflows. Tant que le code du gate impose une autorisation spécifique ou d'autres exigences, ne pas le contourner ; adapter et tester ce mécanisme dans une PR technique distincte avant de prétendre que la fusion automatique est disponible. En particulier, cette modification documentaire n'autorise aucune commande /cd-merge non conforme au gate actuellement déployé.
+
+Cette section prévaut sur les exigences **organisationnelles anciennes** ci-dessous (accord PR par PR, revue indépendante imposée, longues passations) ; les exigences de sécurité techniques réellement déployées restent applicables jusqu'à leur évolution contrôlée.
+
+
 Avant de modifier le comportement d’un match, d’un effectif, de la discipline ou
 de la compétition, lire `docs/rugby-rules-reference.md`. Ce document conserve les
 sources officielles, leurs dates d’application, les erreurs connues du moteur
