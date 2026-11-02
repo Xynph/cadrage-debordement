@@ -1,0 +1,14 @@
+'use strict';const assert=require('node:assert/strict');
+global.CDPressQuestionBank=require('../dist/press-question-bank.js');
+global.managerOffice=()=>'<p>Bureau</p>';
+global.S={season:3,round:9,club:0,morale:40,clubs:[{id:0,name:'Club Maison'},{id:1,name:'Club Rivale'},{id:2,name:'Club Tiers'}]};
+const api=require('../dist/media-world-v60.js');
+const before=JSON.stringify(global.S);
+const a=api.issue(global.S),b=api.issue(JSON.parse(JSON.stringify(global.S)));
+assert.deepEqual(a,b);assert.equal(a.articles.length,7);
+assert.equal(new Set(a.articles.map(x=>x.id)).size,7);
+assert.ok(a.articles.every(x=>x.byline?.name&&x.byline?.outlet));
+assert.ok(global.managerOffice().includes('Troisième Mi-Temps'));
+assert.equal(JSON.stringify(global.S),before,'no saved state mutation');
+global.S.round=10;assert.notEqual(api.issue(global.S).id,a.id);
+console.log('PASS V60 media world: 7 stories, clubs, deterministic, no save mutation');
