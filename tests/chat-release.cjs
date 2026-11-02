@@ -94,3 +94,83 @@ test('workflow privilegie: permissions locales, checkout main fige, pas de comme
  for(const action of y.matchAll(/uses: (\S+)/g))assert.match(action[1],/@[0-9a-f]{40}$/);
  assert(!y.includes('${{ github.event.comment.body }}'));
 });
+
+const REPAIR_HEAD='59aeb359c9966a892ac8994e636af38f12fe0bbd';
+const REPAIR_MAIN='f189d09f317b73d4e9e3d54ee694e6c4c2c9262b';
+const REPAIR_RUN=41427301234;
+function repairFixture(options={}){
+ const calls=[];
+ const e=event();e.comment.body='/cd-repair-check 212 '+REPAIR_HEAD+' '+REPAIR_MAIN+' '+REPAIR_RUN;
+ const cmd=validateEvent(e,env);
+ const failed=jobs().map(j=>({...j}));
+ for(const name of ['Suites 1/5','Validation CI'])failed.find(x=>x.name===name).conclusion='failure';
+ if(options.wrongFailure)failed.find(x=>x.name==='classification').conclusion='failure';
+ if(options.skippedShard)failed.find(x=>x.name==='Suites 2/5').conclusion='skipped';
+ if(options.extraJob)failed.push({name:'extra',status:'completed',conclusion:'success'});
+ const badRun={...run(REPAIR_MAIN,options.wrongRun?REPAIR_RUN-1:REPAIR_RUN,'workflow_dispatch'),conclusion:'failure'};
+ const api=(url)=>{
+  calls.push(url);
+  if(url==='issues/comments/123')return {...e.comment,issue_url:'https://api.github.com/repos/'+repo+'/issues/73'};
+  if(url==='git/ref/heads/main')return {object:{sha:options.movedMain?c:REPAIR_MAIN}};
+  if(url==='actions/workflows/tests.yml')return {id:10,state:'active'};
+  if(url.startsWith('actions/workflows/tests.yml/runs?'))return {workflow_runs:[badRun]};
+  if(url==='actions/runs/'+badRun.id+'/jobs?per_page=100&page=1')return {jobs:failed};
+  if(url==='pulls/212')return {head:{sha:options.wrongHead?c:REPAIR_HEAD},base:{ref:'main',sha:REPAIR_MAIN}};
+  if(url==='pulls/212/files?per_page=100')return [{filename:options.wrongFile?'ci/chat-release.cjs':'tests/governance-exclusive.test.cjs',status:'modified'}];
+  throw Error('Unexpected API '+url);
+ };
+ const deps={api,snapshot:REPAIR_MAIN,execGate:(pr,sha,merge)=>{calls.push('gate');assert.equal(pr,212);assert.equal(sha,REPAIR_HEAD);assert.equal(merge,false);return 'ready:true';}};
+ return {e,cmd,calls,deps};
+}
+test('réparation explicite : commande propriétaire au SHA verrouillé',()=>{
+ const f=repairFixture();assert.equal(f.cmd.pr,212);assert.equal(f.cmd.mode,'repair-check');
+ assert.equal(f.cmd.expected,REPAIR_HEAD);assert.equal(f.cmd.repairMain,REPAIR_MAIN);assert.equal(f.cmd.failedRun,REPAIR_RUN);
+});
+test('réparation vérifiée en lecture seule malgré main rouge précis',async()=>{
+ const f=repairFixture();
+ const x=await execute(f.cmd,f.e,f.deps);
+ assert.equal(x.mode,'repair-check');
+ assert(f.calls.includes('gate'));
+ assert(!f.calls.some(x=>x.includes('dispatches')));
+});
+for(const option of ['wrongRun','wrongFailure','wrongHead','wrongFile','movedMain','skippedShard','extraJob'])
+ test('réparation refuse '+option,async()=>{
+  const f=repairFixture({[option]:true});
+  await assert.rejects(()=>execute(f.cmd,f.e,f.deps));
+  assert(!f.calls.includes('gate'));
+ });
+test('les commandes ordinaires ne profitent jamais de la réparation',async()=>{
+ const f=repairFixture();
+ f.e.comment.body='/cd-check 212 '+REPAIR_HEAD;
+ f.cmd=validateEvent(f.e,env);
+ await assert.rejects(()=>execute(f.cmd,f.e,f.deps));
+ assert(!f.calls.includes('gate'));
+});
+test('une autre PR ne peut obtenir un traitement de réparation',async()=>{
+ const f=repairFixture();
+ f.e.comment.body='/cd-repair-check 213 '+REPAIR_HEAD+' '+REPAIR_MAIN+' '+REPAIR_RUN;
+ f.cmd=validateEvent(f.e,env);
+ await assert.rejects(()=>execute(f.cmd,f.e,f.deps));
+ assert(!f.calls.includes('gate'));
+});
+test('workflow Chat garde le même rôle privilégié et reconnaît seulement la nouvelle famille de commandes',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const y=fs.readFileSync(path.resolve(__dirname,'../.github/workflows/chat-release-gate.yml'),'utf8');
+ assert.match(y,/startsWith\(github.event.comment.body, '\/cd-repair-check '/);
+ assert.match(y,/startsWith\(github.event.comment.body, '\/cd-repair-merge '/);
+ assert.match(y,/group: chat-release-gate-main/);
+ assert.match(y,/^permissions: \{\}$/m);
+ assert(!y.includes('pull_request_target'));
+});
+
+test('commande de récupération refuse l’absence de SHA main ou run',()=>{
+ const e=event();e.comment.body='/cd-repair-check 212 '+REPAIR_HEAD;
+ assert.throws(()=>validateEvent(e,env));
+});
+test('commande de récupération refuse un run nommé différent du dernier',async()=>{
+ const f=repairFixture();
+ f.e.comment.body='/cd-repair-check 212 '+REPAIR_HEAD+' '+REPAIR_MAIN+' '+(REPAIR_RUN+1);
+ f.cmd=validateEvent(f.e,env);
+ await assert.rejects(()=>execute(f.cmd,f.e,f.deps));
+ assert(!f.calls.includes('gate'));
+});
