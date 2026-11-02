@@ -14,4 +14,6 @@ assert.equal(result.players[3].featured,true);
 assert.equal(normalize({...raw,players:raw.players.concat(raw.players)}).players.length,30);
 assert.deepEqual(normalize({...raw,ball:{x:500,y:-2}}).ball,{x:100,y:0});
 assert.throws(()=>normalize({}),/indisponible/);
-console.log('MATCH 3D adapter: 9 assertions OK');
+const keyed={...raw,key:{min:1,text:'Passe',scene:{kind:'carry',to:{x:40,y:35}}}};
+assert.notEqual(normalize(keyed).key,normalize({...keyed,key:{...keyed.key,min:2}}).key);
+console.log('MATCH 3D adapter: 10 assertions OK');
