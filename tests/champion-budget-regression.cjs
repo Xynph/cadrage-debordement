@@ -17,7 +17,7 @@ function valid(g) {
   delete g.ctx.__document; return doc;
 }
 function finalFixture({legacy=false,loser=false}={}) {
-  const g=context();g.run('start('+(loser?13:0)+')');
+  const g=context();g.run('start('+(loser?12:0)+')');
   if(legacy)g.run('delete S.worldVersion;delete S.worldManagement;delete S.integratedManagementVersion;delete S.careerManagement');
   g.run('S.phase="final";S.round=26;S.playoff={seeds:[0,1,2,3,4,5],pairs:[[0,13]],log:[]};for(let i=0;i<100;i++)ledgerEntry("History "+i,0)');
   valid(g);return g;
@@ -64,7 +64,7 @@ test('06 old career without world/management retains the same prize rule',()=>{
 });
 test('07 non-champion is not credited a manager prize',()=>{
   const g=finalFixture({loser:true});const entries=settled(g);
-  assert.notEqual(g.run('S.worldManagement.champion'),13);
+  assert.notEqual(g.run('S.worldManagement.champion'),12);
   assert.equal(entries.filter(e=>e.title==='Prime de champion').length,0);valid(g);
 });
 test('08 storage failure preserves the previous bytes and retry pays once',()=>{
