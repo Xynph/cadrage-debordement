@@ -1,6 +1,6 @@
 'use strict';
 // V60: fictional media coverage, grounded only in the current simulated career.
-(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.CDMediaWorld=api;api.install();})(typeof globalThis==='object'?globalThis:null,function(){
+(function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.CDMediaWorld=api;api.install();})(typeof globalThis==='object'?globalThis:null,function(root){
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hash=s=>Array.from(String(s)).reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,2166136261);
 const types=['Débrief de la journée','Le marché des transferts','La relève','Enquête tactique','L’édito des supporters','Entretien du vestiaire','Les enjeux de demain'];
