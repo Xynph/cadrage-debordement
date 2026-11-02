@@ -14,21 +14,26 @@ function generate(s){
  const pressure=s.pressRelations?.boardPressure??Math.max(0,100-(s.trust??50));
  const morale=s.morale??50;
  const form=morale<45?'une période de doute':morale>70?'une dynamique encourageante':'une saison disputée';
+ const evidence=globalThis.CDMediaNativeAdapter?.collect(s)||[];
+ const topResult=evidence.find(e=>e.kind==='result');
+ const topInjury=evidence.find(e=>e.kind==='injury');
+ const leader=evidence.find(e=>e.kind==='standing');
+ const special=topResult&&s.round>=20?'Édition spéciale : le sprint final du championnat':topInjury&&pressure>65?'Édition spéciale : le défi de l'effectif':'Le débrief de la semaine';
  const titles=[
- club+' : les enjeux d’une semaine décisive',
- 'Analyse : les choix collectifs à surveiller lors de la prochaine journée',
+ topResult?topResult.title:club+' : les enjeux d’une semaine décisive',
+ leader?'Classement : '+leader.title:'Analyse : les choix collectifs à surveiller lors de la prochaine journée',
  'Table ronde : jusqu’où peut aller '+club+' ?',
- 'Entretien fictif : le management sous pression',
+ topInjury?'Infirmerie : '+topInjury.title:'Entretien fictif : le management sous pression',
  'Les supporters s’interrogent sur les ambitions du club'
  ];
  const bodies=[
- 'Notre rédaction revient sur '+form+' et les priorités sportives de '+club+'.',
- 'Débat de plateau sur la conquête, la défense et l’utilisation du banc.',
+ topResult?topResult.detail:'Notre rédaction revient sur '+form+' et les priorités sportives de '+club+'.',
+ leader?leader.detail:'Débat de plateau sur la conquête, la défense et l’utilisation du banc.',
  'Les observateurs confrontent les objectifs annoncés à la progression du collectif.',
- pressure>65?'L’encadrement devra répondre aux attentes grandissantes de la direction.':'Comment maintenir la confiance et la cohésion du groupe ?',
+ topInjury?topInjury.detail:pressure>65?'L’encadrement devra répondre aux attentes grandissantes de la direction.':'Comment maintenir la confiance et la cohésion du groupe ?',
  'Le public attend une réponse sportive et des décisions lisibles de la part du staff.'
  ];
- return {id:key,name:SHOW,season:s.season,week:s.round,segments:SEGMENTS.map((type,i)=>({type,title:titles[i],body:bodies[i],journalist:journalists.length?journalists[(seed+i*3)%journalists.length]:null}))};
+ return {id:key,name:SHOW,special,season:s.season,week:s.round,segments:SEGMENTS.map((type,i)=>({type,title:titles[i],body:bodies[i],journalist:journalists.length?journalists[(seed+i*3)%journalists.length]:null}))};
 }
 function render(s){
  const ep=generate(s);if(!ep)return '';
