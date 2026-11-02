@@ -4,7 +4,7 @@ const bank=require('../dist/press-question-bank.js');
 assert.equal(bank.validate(),true);
 assert.equal(bank.topics.length,25);
 assert.equal(bank.questions.length,500);
-assert.equal(bank.journalists.length,8);
+assert.equal(bank.journalists.length,10);
 assert.ok(bank.journalists.every(j=>j.name&&j.outlet&&j.source.startsWith('https://')));
 assert.ok(bank.journalists.some(j=>j.name==='Nicolas Zanardi'&&j.outlet.includes('Rugbyrama')));
 assert.ok(bank.journalists.some(j=>j.name==='Renaud Bourel'&&j.outlet==='L\'Équipe'));
@@ -20,3 +20,4 @@ assert.ok(!bank.pick({season:2,week:9,count:4,context:{themes:['defaite','crise'
 assert.ok(bank.pick({season:2,week:20,count:4,context:{themes:['defaite','crise','vestiaire','direction']},history,seed:7}).length===4);
 assert.throws(()=>bank.appendHistory([],chosen[0],2,8,'r9'));
 console.log('PASS V60 bank: 25 themes, 500 prompts, 1500 variants, 4 responses, 12-week exclusion');
+const conference=bank.pick({season:3,week:9,count:4,seed:5});assert.equal(new Set(conference.map(q=>q.journalist.outlet)).size,4,'one journalist per outlet at each conference');
