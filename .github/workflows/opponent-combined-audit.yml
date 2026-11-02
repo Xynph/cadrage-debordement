@@ -5,6 +5,9 @@ on:
     paths:
       - '.github/workflows/opponent-combined-audit.yml'
       - 'docs/opponent-combined-audit.md'
+      - 'dist/rugby.js'
+      - 'tests/opponent-defensive-scout.cjs'
+      - 'tests/champion-budget-regression.cjs'
 permissions:
   contents: read
 jobs:
@@ -14,6 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -26,38 +30,28 @@ jobs:
         run: |
           python -m pip install playwright==1.57.0
           python -m playwright install --with-deps chromium
-      - name: Prove FAIL 07 against current main engine
+      - name: Compare genuine main and integrated PR engines on fixed non-finalist regression
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          set -euo pipefail
           mkdir -p opponent-combined-proof
-          set +e
-          node tests/champion-budget-regression.cjs > opponent-combined-proof/main-regression.log 2>&1
-          echo $? > opponent-combined-proof/main-regression.exit
-          set -e
-          grep 'FAIL 07\|PASS 07\|CHAMPION BUDGET REGRESSION' opponent-combined-proof/main-regression.log || true
-      - name: Overlay exactly PR 216 rugby implementation
-        run: |
-          git fetch --no-tags --depth=1 origin b80df6bf4e6fec0df63c27254f18ec6604c4aab4
-          git show b80df6bf4e6fec0df63c27254f18ec6604c4aab4:dist/rugby.js > dist/rugby.js
-          git show b80df6bf4e6fec0df63c27254f18ec6604c4aab4:tests/opponent-defensive-scout.cjs > tests/opponent-defensive-scout.cjs
+          git fetch --no-tags origin "$BASE_SHA"
+          git show "$BASE_SHA:dist/rugby.js" > dist/rugby.js
+          node tests/champion-budget-regression.cjs > opponent-combined-proof/main-regression.log 2>&1 || { cat opponent-combined-proof/main-regression.log; exit 1; }
+          git show "$HEAD_SHA:dist/rugby.js" > dist/rugby.js
           git diff --name-only > opponent-combined-proof/overlay-paths.txt
           node tests/opponent-tactical-ai.cjs
           node tests/opponent-defensive-scout.cjs
-      - name: Prove FAIL 07 on combined engine
-        run: |
-          set +e
-          node tests/champion-budget-regression.cjs > opponent-combined-proof/combined-regression.log 2>&1
-          echo $? > opponent-combined-proof/combined-regression.exit
-          set -e
-          grep 'FAIL 07\|PASS 07\|CHAMPION BUDGET REGRESSION' opponent-combined-proof/combined-regression.log || true
+          node tests/champion-budget-regression.cjs > opponent-combined-proof/combined-regression.log 2>&1 || { cat opponent-combined-proof/combined-regression.log; exit 1; }
           python - <<'PY'
           from pathlib import Path
           p=Path('opponent-combined-proof')
-          main=(p/'main-regression.log').read_text()
-          combined=(p/'combined-regression.log').read_text()
-          print('main failure 07:', 'FAIL 07' in main)
-          print('combined failure 07:', 'FAIL 07' in combined)
-          if ('FAIL 07' in main)!=('FAIL 07' in combined):
-              print('REGRESSION CONFIRMED: FAIL 07 differs; preserve evidence and continue non-mutating match checks')
+          for case in ('main','combined'):
+              log=(p/(case+'-regression.log')).read_text()
+              assert 'PASS 07' in log and 'FAIL 07' not in log, case+' missing PASS 07 or has FAIL 07'
+              print(case+': PASS 07 on the corrected non-finalist test')
           PY
       - name: 24 seeds x control/adapted on combined native engine plus genuine historical V16 import
         run: |
