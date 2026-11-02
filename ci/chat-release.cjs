@@ -25,8 +25,14 @@ function fullCI(run,jobs,sha,workflowId){
 function latestCI(runs,sha,id){return runs.filter(r=>r.workflow_id===id&&r.head_sha===sha&&r.head_branch==='main'&&['push','workflow_dispatch'].includes(r.event)).sort((a,b)=>b.id-a.id)[0];}
 async function execute(cmd,event,d){
  const api=d.api,head=()=>api('git/ref/heads/main').object.sha;
- const fresh=api('issues/comments/'+cmd.commentId);
- need(owner(fresh.user)&&fresh.body===event.comment.body&&fresh.issue_url==='https://api.github.com/repos/'+REPO+'/issues/73','Commentaire modifié, déplacé ou auteur invalide');
+ if(cmd.commentId===undefined){
+   // Réservé au lanceur de main qui valide l'événement GitHub et les fichiers PR.
+   need(d.autoAuthorized===true && cmd.mode==='merge' && /^[0-9a-f]{40}$/.test(cmd.expected),
+     'Fusion automatique non autorisée');
+ } else {
+   const fresh=api('issues/comments/'+cmd.commentId);
+   need(owner(fresh.user)&&fresh.body===event.comment.body&&fresh.issue_url==='https://api.github.com/repos/'+REPO+'/issues/73','Commentaire modifié, déplacé ou auteur invalide');
+ }
  const base=head();need(base===d.snapshot,'main a changé depuis cet événement ; soumettre une nouvelle commande');
  const workflow=api('actions/workflows/tests.yml');need(workflow.state==='active','CI principale inactive');
  const listRuns=()=>api('actions/workflows/tests.yml/runs?branch=main&per_page=100').workflow_runs;
