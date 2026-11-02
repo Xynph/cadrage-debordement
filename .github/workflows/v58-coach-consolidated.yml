@@ -1,0 +1,30 @@
+name: V58 Consolidation Entraineurs
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/coach-career.js'
+      - 'dist/coach-negotiations.js'
+      - 'dist/coach-contract-cycle.js'
+      - 'tests/v58-*.cjs'
+      - '.github/workflows/v58-coach-consolidated.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  coach:
+    name: V58 ${{ matrix.test }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        test: [v58-coach-career, v58-1-coach-negotiations, v58-2-contract-cycle, v58-final-integration-audit]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v5
+        with:
+          node-version: '22'
+      - run: node tests/${{ matrix.test }}.cjs

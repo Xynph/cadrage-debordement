@@ -1,0 +1,44 @@
+name: Intégration rapide (sélection explicite)
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Numéro de PR sélectionnée par étiquette
+        type: string
+        required: true
+      sha:
+        description: SHA exact de la PR
+        type: string
+        required: true
+      source_run:
+        description: Run propriétaire de sélection à vérifier
+        type: string
+        required: true
+permissions: {}
+jobs:
+  guarded-integration:
+    if: >-
+      github.repository == 'Xynph/cadrage-debordement' &&
+      github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      pull-requests: read
+      actions: write
+      issues: write
+    concurrency:
+      group: chat-release-gate-main
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+      - name: Vérifier la provenance, la CI et fusionner par le gate officiel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node ci/auto-integrate.cjs
