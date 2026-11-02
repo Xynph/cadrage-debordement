@@ -23,6 +23,6 @@ export async function expandRankings(page,{rounds=30,delay=750,checkpoint=null}=
     if(checkpoint)await fs.writeFile(checkpoint,JSON.stringify({version:1,history,complete:status==='stalled'},null,2)+'\n');
     if(status==='stalled'||!expanded)break;
   }
-  const complete=history.length>0 && ['stalled','no-more-button'].includes(history.at(-1).status);
+  const complete=history.length>0 && history.at(-1).status==='no-more-button';
   return {complete,history};
 }
