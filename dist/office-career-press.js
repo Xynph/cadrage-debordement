@@ -21,7 +21,7 @@
   if(s.pressRelations===undefined)return true;
   if(!root.CDPressRelations||!Number.isInteger(s.club)||!Number.isInteger(s.season)||!Number.isInteger(s.round))throw Error('Carrière presse invalide');
   const p=s.pressRelations;root.CDPressRelations.validate(p);
-  if(!/^club-[0-9]+$/.test(p.clubId)||p.season>s.season||p.stories.length>40||p.history.length>500||p.used.length>500||p.week>26||p.stories.some(e=>!e||!root.CDPressRelations.topics.includes(e.topic)||!root.CDPressRelations.tones.includes(e.tone)))throw Error('Carrière presse incohérente');
+  if(!/^club-[0-9]+$/.test(p.clubId)||!Array.isArray(s.clubs)||!s.clubs.some(c=>c&&Number.isInteger(c.id)&&p.clubId==='club-'+c.id)||p.season>s.season||p.stories.length>40||p.history.length>500||p.used.length>500||p.week>26||p.stories.some(e=>!e||!root.CDPressRelations.topics.includes(e.topic)||!root.CDPressRelations.tones.includes(e.tone)))throw Error('Carrière presse incohérente');
   return true;
  }
  function holdConference(s,selectedTopic=topic,selectedTone=tone){
