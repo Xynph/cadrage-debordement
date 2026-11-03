@@ -13,7 +13,7 @@
   const phase=(Number.isFinite(clock)?clock:0)*.013+seed*.83;
   const progressBounded=clamp(progress,0,1);
   const envelope=progressBounded===0||progressBounded===1?0:Math.sin(Math.PI*progressBounded);
-  const stride=Math.sin(phase)*pace*envelope;
+  const stride=pace===0||envelope===0?0:Math.sin(phase)*pace*envelope;
   const direction=distance>.01?Math.atan2(dy,dx):0;
   return Object.freeze({
    stride:clamp(stride,-1,1),
