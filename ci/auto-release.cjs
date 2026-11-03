@@ -2,6 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process');
 const {execute}=require('./chat-release.cjs');
 const REPO='Xynph/cadrage-debordement',OWNER=350229047,SHA=/^[a-f0-9]{40}$/;
+const TRIGGERS=['Tests JavaScript','UI Chromium mutualise - CI V3','Carrieres multi-clubs - validation native','IA adverse - audit 24 matchs natifs','V60 relations presse hors match','V61 calendrier conseil et objectifs'];
 const JOBS=['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI'];
 function need(v,s){if(!v)throw Error(s);}
 function validateTrigger(e,env){
@@ -9,12 +10,12 @@ function validateTrigger(e,env){
  need(env.CD_AUTO_RELEASE_ENABLED==='true','Feature flag disabled');
  need(e.action==='completed'&&e.repository?.full_name===REPO,'Bad event');
  const r=e.workflow_run;
- need(r?.name==='Tests JavaScript'&&r.event==='pull_request'&&r.status==='completed'&&r.conclusion==='success','Not a successful PR CI');
+ need(r&&TRIGGERS.includes(r.name)&&r.event==='pull_request'&&r.status==='completed'&&r.conclusion==='success','Not a successful PR CI');
  need(SHA.test(r.head_sha)&&Number.isSafeInteger(r.id),'Bad workflow SHA or ID');
  need(Array.isArray(r.pull_requests)&&r.pull_requests.length===1,'No unique PR');
  const pr=r.pull_requests[0].number;need(Number.isSafeInteger(pr)&&pr>0,'Bad PR number');
  need(SHA.test(env.GITHUB_SHA),'Bad pinned main SHA');
- return {pr,head:r.head_sha,runId:r.id,main:env.GITHUB_SHA};
+ return {pr,head:r.head_sha,runId:r.id,sourceName:r.name,main:env.GITHUB_SHA};
 }
 function safePath(f){
  const p=f.filename||'';
@@ -61,10 +62,15 @@ async function runAuto(event,env,services={}){
  const pr=req('pulls/'+t.pr),files=req('pulls/'+t.pr+'/files?per_page=100');
  validateCandidate(pr,files,t.head,t.main);
  const wf=req('actions/workflows/tests.yml');need(wf.state==='active','Required workflow inactive');
- const source=req('actions/runs/'+t.runId),jobs=req('actions/runs/'+t.runId+'/jobs?per_page=100').jobs;
- need(source.workflow_id===wf.id&&source.head_sha===t.head&&source.event==='pull_request','Unexpected source CI');
+ const source=req('actions/runs/'+t.runId);
+ need(source.name===t.sourceName&&source.head_sha===t.head&&source.event==='pull_request'&&source.status==='completed'&&source.conclusion==='success','Unexpected source CI');
+ const runs=req('actions/runs?event=pull_request&head_sha='+t.head+'&per_page=100').workflow_runs;
+ const js=runs.filter(r=>r.name==='Tests JavaScript'&&r.head_sha===t.head).sort((x,y)=>y.id-x.id)[0];
+ need(js&&js.workflow_id===wf.id,'Required JS CI missing');
+ const jobs=req('actions/runs/'+js.id+'/jobs?per_page=100').jobs;
  need(jobs.length===7&&JOBS.every(n=>jobs.filter(j=>j.name===n&&j.status==='completed'&&j.conclusion==='success').length===1),'Missing seven green PR jobs');
- latestRuns(req('actions/runs?event=pull_request&head_sha='+t.head+'&per_page=100').workflow_runs,t.head,t.runId);
+ latestRuns(runs,t.head,js.id);
+ need(runs.filter(r=>r.name===source.name).sort((x,y)=>y.id-x.id)[0]?.id===source.id,'Stale source run');
  need(req('git/ref/heads/main').object.sha===t.main,'Main moved before gate');
  return (services.execute||execute)({pr:t.pr,expected:t.head,mode:'merge'}, {}, {
   api:req,snapshot:t.main,autoAuthorized:true,
