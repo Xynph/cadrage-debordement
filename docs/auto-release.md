@@ -11,3 +11,5 @@ Avant activation : CI complète de cette PR, revue des permissions GitHub Action
 Le contrôleur compare les fichiers de la PR avec ceux de toutes les autres PR ouvertes et refuse un chevauchement (réservations des deux producteurs). Si la liste est trop longue/incomplète, il échoue fermé.
 
 La politique exige les workflows JS, V60 et V61 sur chaque HEAD ; tout changement sous dist/ exige aussi UI Chromium. Si un contrôle attendu n'apparaît pas (même pas démarré), son absence bloque automatiquement. Un run rouge, annulé, en cours ou des résultats paginés/ambigus bloquent également.
+
+Les fichiers de tests et documentation de sécurité (`tests/auto-release.cjs`, `tests/chat-release.cjs`, `docs/auto-release.md`, `docs/chat-release-gate.md`, etc.) sont explicitement exclus de l'auto-intégration ; revue manuelle obligatoire pour ces chemins.

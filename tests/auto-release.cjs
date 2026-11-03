@@ -20,7 +20,7 @@ for(const [name,fn] of [
  test('reject '+name,()=>{const e=event();fn(e);assert.throws(()=>validateTrigger(e,env));});
 test('strict file policy',()=>{
  for(const p of ['docs/a.md','tests/a.cjs','dist/ui03-scout-components.js','dist/v17-view.js','dist/style.css'])assert(safePath({filename:p,status:'modified'}),p);
- for(const p of ['.github/workflows/tests.yml','ci/release-gate.cjs','dist/storage.js','dist/rugby.js','dist/tactical-plans.js','modding/data06/rugby-master-2026-2027.json','AGENTS.md','docs/../ci/evil.md'])assert(!safePath({filename:p,status:'modified'}),p);
+ for(const p of ['.github/workflows/tests.yml','ci/release-gate.cjs','dist/storage.js','dist/rugby.js','dist/tactical-plans.js','modding/data06/rugby-master-2026-2027.json','AGENTS.md','docs/../ci/evil.md','tests/auto-release.cjs','tests/chat-release.cjs','docs/chat-release-gate.md','docs/auto-release.md'])assert(!safePath({filename:p,status:'modified'}),p);
  assert(!safePath({filename:'docs/a.md',status:'removed'}));
 });
 test('conflicting producer reservations block automatic integration',()=>{

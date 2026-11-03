@@ -20,6 +20,8 @@ function validateTrigger(e,env){
 function safePath(f){
  const p=f.filename||'';
  if(!['added','modified'].includes(f.status)||p.includes('..'))return false;
+ if(/^tests\/(?:auto-release|auto-integrate|chat-release|release-gate|governance|ci-|security|policy)/.test(p))return false;
+ if(/^docs\/(?:auto-release|chat-release-gate|developpement-parallele|security|governance)/.test(p))return false;
  return /^docs\/[a-zA-Z0-9_./-]+\.md$/.test(p)
  || /^tests\/[a-zA-Z0-9_-]+\.cjs$/.test(p)
  || /^dist\/[a-zA-Z0-9_-]+\.css$/.test(p)
