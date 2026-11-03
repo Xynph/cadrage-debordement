@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {lane,overlap,select,report}=require('../ci/dev-conductor.cjs');
+const {lane,overlap,select,report,statusCI,attachCI}=require('../ci/dev-conductor.cjs');
 const base=(number,files,opts={})=>({number,title:'PR '+number,files,head:{sha:'a'.repeat(40)},base:{ref:'main'},state:'open',draft:false,mergeable:true,mergeable_state:'clean',...opts});
 assert.deepEqual(lane(['modding/data06/rugby-master-2026-2027.json']),['DATA']);
 assert.deepEqual(lane(['dist/press-question-bank.js','dist/saves.js']),['V60']);
@@ -22,4 +22,23 @@ const stacked=select([base(6,['dist/file.js'],{base:{ref:'feature/another'}})])[
 assert.match(stacked.next,/dépendance/);
 assert.throws(()=>select([{number:0,files:[]}]),/invalides/);
 assert.throws(()=>lane([null]),/Chemin invalide/);
-console.log('dev-conductor : 13 vérifications réussies');
+
+// Le tableau donne une preuve informative uniquement sur le HEAD exact.
+const sha='a'.repeat(40), old='b'.repeat(40);
+const run=(head_sha,id=101)=>({id,head_sha,event:'pull_request',name:'Tests JavaScript',
+  path:'.github/workflows/tests.yml',status:'completed',conclusion:'success',created_at:'2026-11-03T12:00:00Z'});
+const green=['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI']
+  .map(name=>({name,status:'completed',conclusion:'success'}));
+assert.equal(statusCI(sha,[run(old)],{101:green}),'CI absente sur HEAD');
+assert.equal(statusCI(sha,[run(sha)],{101:green}),'7/7 SUCCESS (gate non exécuté)');
+assert.equal(statusCI(sha,[run(sha)],{}),'Jobs CI non vérifiés');
+assert.equal(statusCI(sha,[{...run(sha),status:'in_progress'}],{}),'CI en cours');
+assert.equal(statusCI(sha,[{...run(sha),conclusion:'failure'}],{}),'CI échouée ou annulée');
+assert.equal(statusCI(sha,[run(sha)],{101:green.slice(0,6)}),'CI incomplète ou non conforme');
+assert.equal(statusCI(sha,[run(sha)],{101:[...green,green[0]]}),'CI incomplète ou non conforme');
+assert.equal(statusCI('bad',[],{}),'SHA invalide');
+const rich=attachCI(select([base(7,['docs/readme.md'])]),[run(sha)],()=>green);
+assert.match(rich[0].ci,/7\/7 SUCCESS/);
+assert.match(report(rich),/7\/7 SUCCESS/);
+
+console.log('dev-conductor : tests de sélection et CI exacte réussis');
