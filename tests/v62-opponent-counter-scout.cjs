@@ -9,11 +9,11 @@ const sandbox={tacticalRules:()=>true,matchMinute:l=>l.minute,activePlayers:(l,s
 vm.createContext(sandbox);
 vm.runInContext(source.slice(start),sandbox);
 const decide=sandbox.opponentCounterScout;
-function match(style='large'){return {userSide:0,minute:35,score:[7,7],tactics:[style,'equilibre'],players:[[90],[85]],tacticalStats:[{carries:8,advances:5,metres:112,kicks:1},{carries:8,advances:5,metres:112,kicks:1}]};}
+function match(style='large'){return {userSide:0,minute:35,score:[7,7],tactics:[style,'equilibre'],players:[[{condition:90}],[{condition:85}]],tacticalStats:[{carries:8,advances:5,metres:112,kicks:1},{carries:8,advances:5,metres:112,kicks:1}]};}
 let l=match();assert.equal(decide(l,1).plan,'pression','successful width countered');
 l.tacticalStats[0].carries=5;assert.equal(decide(l,1),null,'insufficient sample');
 l=match();l.minute=12;assert.equal(decide(l,1),null,'early match ignored');
-l=match();l.players[1]=[60];assert.equal(decide(l,1).plan,'prudente','fatigue takes precedence');
+l=match();l.players[1]=[{condition:60}];assert.equal(decide(l,1).plan,'prudente','fatigue takes precedence');
 l=match('occupation');l.tacticalStats[0].kicks=5;assert.equal(decide(l,1).plan,'prudente','territorial kicking covered');
 l=match('conquete');assert.equal(decide(l,1).plan,'pression','repeated forward gains countered');
 l=match();assert.equal(decide(l,0),null,'never overrides manager defence');
