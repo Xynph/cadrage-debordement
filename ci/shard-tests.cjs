@@ -1,39 +1,34 @@
 'use strict';
-// Ordonnancement déterministe des suites complètes, sans sélection liée au diff.
-// Poids (secondes arrondies avec marge de 15 %) : maximum observé sur les
-// runs PR #41359113513 et main #41359554302, le 01/11/2026,
-// completes par deux suites V63 mesurees le 03/11/2026.
-// Seules les suites dépassant 3 s dans au moins un run sont pondérées ;
-// les autres et toute nouvelle suite conservent le poids prudent de 1.
-// Reprofiler si les suites ou les runtimes changent ; ce n'est pas une promesse de durée.
+// Répartition complète et déterministe : toutes les suites sont conservées.
+// Pondérations = max des durées de trois runs SUCCESS (PR #41708215803,
+// main #41709297149, PR #41715682628) + 15 % de marge arrondie.
+// Le pic simulé ne constitue pas une mesure de gain réel ; reprofiler régulièrement.
 const fs = require('node:fs');
 const path = require('node:path');
 const WEIGHTS_SECONDS = Object.freeze({
-  // Mesure GitHub Actions PR #41694849000 (03/11/2026), marge prudente.
-  'tests/v63-2-stress-native.cjs': 106,
-  'tests/v63-1-long-career.cjs': 92,
-  'tests/ai-roster-cycle.cjs': 84,
-  'tests/world-career.cjs': 72,
+  'tests/v63-2-stress-native.cjs': 126,
+  'tests/v63-1-long-career.cjs': 91,
+  'tests/ai-roster-cycle.cjs': 87,
+  'tests/world-career.cjs': 74,
   'tests/rugby.cjs': 59,
-  'tests/lnr-multiclub-continuity.cjs': 52,
-  'tests/lnr05-evidence-long.cjs': 50,
+  'tests/lnr-multiclub-continuity.cjs': 55,
   'tests/lnr-career-long.cjs': 40,
   'tests/lnr05-rotation-audit.cjs': 40,
-  'tests/lnr05-multiseason-strategies.cjs': 38,
-  'tests/lnr05-fatigue-scenarios.cjs': 37,
-  'tests/opposition.cjs': 33,
-  'tests/manager-mobility.cjs': 30,
+  'tests/lnr05-fatigue-scenarios.cjs': 38,
+  'tests/lnr05-multiseason-strategies.cjs': 37,
+  'tests/lnr05-evidence-long.cjs': 35,
+  'tests/opposition.cjs': 34,
+  'tests/manager-mobility.cjs': 32,
   'tests/lnr-cross-season-recovery.cjs': 26,
-  'tests/lnr-save-resume-continuation.cjs': 26,
-  'tests/saves.cjs': 21,
-  'tests/tactical-plans.cjs': 18,
-  'tests/career-resilience.cjs': 17,
+  'tests/lnr-save-resume-continuation.cjs': 25,
+  'tests/saves.cjs': 22,
+  'tests/tactical-plans.cjs': 19,
   'tests/lnr-save-integrity-guards.cjs': 17,
-  'tests/lnr05-rest-policy-audit.cjs': 12,
-  'tests/champion-budget-regression.cjs': 6,
+  'tests/career-resilience.cjs': 14,
+  'tests/lnr05-rest-policy-audit.cjs': 11,
   'tests/economy-audit.cjs': 6,
-  'tests/v28-collective-preparation.cjs': 6,
   'tests/lnr-save-import-rollback-stress.cjs': 5,
+  'tests/v28-collective-preparation.cjs': 5,
   'tests/v29-focused-development.cjs': 5
 });
 const lexical = (a, b) => a < b ? -1 : a > b ? 1 : 0;

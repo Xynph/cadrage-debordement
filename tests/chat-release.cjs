@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
-const {validateEvent,fullCI,latestCI,execute}=require('../ci/chat-release.cjs');
+const {validateEvent,fullCI,latestCI,latestPushCI,execute}=require('../ci/chat-release.cjs');
 const repo='Xynph/cadrage-debordement',owner={id:350229047,login:'Xynph',type:'User'};
 const a='a'.repeat(40),b='b'.repeat(40),c='c'.repeat(40);
 const event=()=>({action:'created',repository:{full_name:repo,id:1439603196},issue:{number:73},sender:{...owner},comment:{id:123,user:{...owner},body:'/cd-merge 198 '+b}});
@@ -40,11 +40,11 @@ function fixture(options={}){
   if(path==='issues/comments/123')return {...event().comment,body:options.edited?'edited':event().comment.body,issue_url:'https://api.github.com/repos/'+repo+'/issues/73'};
   if(path==='git/ref/heads/main')return {object:{sha:options.mainChanged?c:head}};
   if(path==='actions/workflows/tests.yml')return {id:10,state:'active'};
-  if(path.startsWith('actions/workflows/tests.yml/runs?'))return {workflow_runs:dispatched?[run(a,1),run(options.wrongPostSha?a:b,2,'workflow_dispatch')]:[{...run(a,1),conclusion:options.redMain?'failure':'success'}]};
+  if(path.startsWith('actions/workflows/tests.yml/runs?'))return {workflow_runs:options.pushPost&&head===b?[run(a,1),{...run(b,2,'push'),conclusion:options.redPush?'failure':'success'}]:dispatched?[run(a,1),run(options.wrongPostSha?a:b,2,'workflow_dispatch')]:[{...run(a,1),conclusion:options.redMain?'failure':'success'}]};
   if(path==='actions/runs/1/jobs?per_page=100&page=1'||path==='actions/runs/2/jobs?per_page=100&page=1')return {jobs:options.badJobs?jobs().slice(1):jobs()};
   if(path==='pulls/198')return {head:{sha:options.stale?c:b}};
   if(path==='actions/workflows/tests.yml/dispatches'){dispatched=true;return options.directId?{workflow_run_id:2}:null;}
-  if(path==='actions/runs/2')return run(options.wrongPostSha?a:b,2,'workflow_dispatch');
+  if(path==='actions/runs/2')return options.pushPost?{...run(b,2,'push'),conclusion:options.redPush?'failure':'success'}:run(options.wrongPostSha?a:b,2,'workflow_dispatch');
   throw Error('Unexpected API '+path);
  };
  return {cmd,calls,deps:{api,snapshot:a,sleep:async()=>{},execGate:(pr,expected,merge)=>{calls.push({gate:true,pr,expected,merge});if(options.gateFailure)throw Error('gate refused');if(merge)head=b;return merge?'Fusion '+b+' : verifier une seule fois le run push main sur ce SHA.':'';},watch:()=>calls.push({watch:true})}};
@@ -62,7 +62,23 @@ test('gate refusé : aucun dispatch ni annonce de succès',async()=>{
 });
 test('reçu REST de dispatch utilisé sans recherche approximative du run',async()=>{
  const f=fixture({directId:true});const result=await execute(f.cmd,event(),f.deps);assert.equal(result.postRun,2);
- assert.equal(f.calls.filter(x=>x.path?.startsWith('actions/workflows/tests.yml/runs?')).length,2);
+ assert(f.calls.filter(x=>x.path?.startsWith('actions/workflows/tests.yml/runs?')).length>=2);
+});
+test('sélection push : SHA, workflow et event exacts et plus récent',()=>{
+ assert.equal(latestPushCI([run(b,2,'workflow_dispatch'),run(a,3,'push'),run(b,4,'push'),run(b,5,'push')],b,10).id,5);
+ assert.equal(latestPushCI([run(a,3,'push')],b,10),undefined);
+ assert.equal(latestPushCI([{...run(b,8,'push'),workflow_id:11}],b,10),undefined);
+});
+test('réutilise la CI push post-fusion verte sans lancer de deuxième CI',async()=>{
+ const f=fixture({pushPost:true});const result=await execute(f.cmd,event(),f.deps);
+ assert.equal(result.postRun,2);
+ assert(!f.calls.some(x=>x.path==='actions/workflows/tests.yml/dispatches'));
+ assert(f.calls.some(x=>x.watch));
+});
+test('une CI push post-fusion rouge bloque la livraison et interdit un dispatch masquant',async()=>{
+ const f=fixture({pushPost:true,redPush:true});
+ await assert.rejects(()=>execute(f.cmd,event(),f.deps),/CI post-fusion/);
+ assert(!f.calls.some(x=>x.path==='actions/workflows/tests.yml/dispatches'));
 });
 test('CI sur autre SHA : échec même après mutation réussie',async()=>{
  const f=fixture({wrongPostSha:true});await assert.rejects(()=>execute(f.cmd,event(),f.deps));
