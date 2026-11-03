@@ -14,7 +14,20 @@ assert.ok(bank.journalists.some(j=>j.name==='Arnaud Beurdeley'));
 assert.equal(new Set(bank.questions.map(q=>q.id)).size,500);
 assert.equal(new Set(bank.questions.flatMap(q=>q.variants)).size,1500);
 for(const q of bank.questions){assert.equal(q.answers.length,4);assert.equal(new Set(q.answers.map(a=>a.text)).size,4);}
-assert.equal(new Set(bank.questions.map(q=>q.variants[0].split('?').slice(-2).join('?'))).size,125,'125 editorial subject probes');
+const primary=bank.questions.map(q=>q.variants[0]);
+assert.equal(new Set(primary).size,500,'500 distinct first-hand editorial prompts');
+assert.ok(primary.every(text=>text.length>34&&text.endsWith('?')&&(text.match(/\\?/g)||[]).length===1),'one coherent question per lead');
+assert.ok(primary.every(text=>!text.includes('{s}')&&!text.includes('Quel regard portez-vous')),'no generic placeholders or boilerplate');
+assert.ok(new Set(primary.map(text=>text.slice(0,42))).size>=360,'editorial openings must vary beyond subject substitution');
+const byTheme=new Map();
+for(const q of bank.questions){
+  const batch=byTheme.get(q.theme)||[];
+  batch.push(q.variants[0]);
+  byTheme.set(q.theme,batch);
+}
+assert.equal(byTheme.size,25);
+assert.ok([...byTheme.values()].every(batch=>batch.length===20&&new Set(batch).size===20),'20 distinct lead questions per theme');
+assert.equal(new Set(bank.questions.flatMap(q=>q.answers.map(a=>a.id))).size,4,'answer IDs remain backward compatible');
 const chosen=bank.pick({season:2,week:8,count:4,context:{themes:['defaite','crise','vestiaire','direction']},seed:7});
 assert.equal(chosen.length,4);
 assert.ok(chosen.every(q=>['defaite','crise','vestiaire','direction'].includes(q.theme)));
