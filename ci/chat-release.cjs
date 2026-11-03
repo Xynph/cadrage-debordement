@@ -23,6 +23,8 @@ function fullCI(run,jobs,sha,workflowId){
  return !!run&&run.workflow_id===workflowId&&run.head_branch==='main'&&run.head_sha===sha&&['push','workflow_dispatch'].includes(run.event)&&run.name==='Tests JavaScript'&&run.status==='completed'&&run.conclusion==='success'&&jobs.length===JOBS.length&&JOBS.every(name=>jobs.filter(j=>j.name===name&&j.status==='completed'&&j.conclusion==='success').length===1);
 }
 function latestCI(runs,sha,id){return runs.filter(r=>r.workflow_id===id&&r.head_sha===sha&&r.head_branch==='main'&&['push','workflow_dispatch'].includes(r.event)).sort((a,b)=>b.id-a.id)[0];}
+// Réutiliser exclusivement le run push du SHA de fusion, jamais une CI d'une ancienne tête.
+function latestPushCI(runs,sha,id){return runs.filter(r=>r.workflow_id===id&&r.head_sha===sha&&r.head_branch==='main'&&r.event==='push').sort((a,b)=>b.id-a.id)[0];}
 async function execute(cmd,event,d){
  const api=d.api,head=()=>api('git/ref/heads/main').object.sha;
  if(cmd.commentId===undefined){
@@ -78,14 +80,26 @@ async function execute(cmd,event,d){
  const match=output.match(/^Fusion ([0-9a-f]{40}) : verifier une seule fois le run push main sur ce SHA\.$/m);
  need(match,'Reçu de fusion officiel absent ; consulter le run, aucune livraison déclarée');
  const mergedSha=match[1];need(head()===mergedSha,'main ne correspond pas au reçu de fusion');
- const known=new Set(listRuns().map(r=>r.id));
- const dispatched=api('actions/workflows/tests.yml/dispatches','POST',{ref:'main'});
- let post=Number.isSafeInteger(dispatched?.workflow_run_id)?api('actions/runs/'+dispatched.workflow_run_id):undefined;
- for(let attempt=0;!post&&attempt<20;attempt++){
-  const candidates=listRuns().filter(r=>!known.has(r.id)&&r.workflow_id===workflow.id&&r.head_sha===mergedSha&&r.head_branch==='main'&&r.event==='workflow_dispatch');
-  need(candidates.length<=1,'Plusieurs dispatchs concurrents : identité de la CI ambiguë');
-  if(candidates.length===1){post=candidates[0];break;}
-  await d.sleep(6000);
+ // GitHub déclenche déjà tests.yml sur push main : préférer cette preuve.
+ // Attente bornée : si le run push n'apparaît pas, conserver un dispatch explicite.
+ // Une CI push rouge ou annulée ne déclenche JAMAIS de second essai masquant le résultat.
+ let post;
+ for(let attempt=0;!post&&attempt<6;attempt++){
+  need(head()===mergedSha,'main a changé avant sélection de la CI post-fusion');
+  post=latestPushCI(listRuns(),mergedSha,workflow.id);
+  if(!post&&attempt<5)await d.sleep(6000);
+ }
+ if(!post){
+  need(head()===mergedSha,'main a changé avant dispatch de secours');
+  const known=new Set(listRuns().map(r=>r.id));
+  const dispatched=api('actions/workflows/tests.yml/dispatches','POST',{ref:'main'});
+  post=Number.isSafeInteger(dispatched?.workflow_run_id)?api('actions/runs/'+dispatched.workflow_run_id):undefined;
+  for(let attempt=0;!post&&attempt<20;attempt++){
+   const candidates=listRuns().filter(r=>!known.has(r.id)&&r.workflow_id===workflow.id&&r.head_sha===mergedSha&&r.head_branch==='main'&&r.event==='workflow_dispatch');
+   need(candidates.length<=1,'Plusieurs dispatchs concurrents : identité de la CI ambiguë');
+   if(candidates.length===1){post=candidates[0];break;}
+   await d.sleep(6000);
+  }
  }
  need(post,'CI post-fusion du SHA exact introuvable');
  d.watch(post.id);
@@ -120,4 +134,4 @@ async function main(){
  if(error)throw error;console.log(JSON.stringify(result));
 }
 if(require.main===module)main().catch(e=>{console.error(e.message);process.exitCode=1;});
-module.exports={validateEvent,fullCI,latestCI,execute};
+module.exports={validateEvent,fullCI,latestCI,latestPushCI,execute};
