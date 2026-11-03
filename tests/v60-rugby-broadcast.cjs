@@ -1,0 +1,17 @@
+'use strict';const assert=require('node:assert/strict');
+global.CDPressQuestionBank=require('../dist/press-question-bank.js');
+global.S={season:2,round:7,club:0,clubs:[{id:0,name:'Club Exemple'}],morale:72,trust:52};
+global.managerOffice=()=>'<section>Bureau</section>';
+const show=require('../dist/rugby-broadcast.js');
+assert.equal(show.name,'Troisième Mi-Temps');
+const a=show.generate(global.S),b=show.generate(JSON.parse(JSON.stringify(global.S)));
+assert.deepEqual(a,b,'weekly edition must be deterministic');
+assert.equal(a.segments.length,5);
+assert.equal(new Set(a.segments.map(x=>x.type)).size,5);
+assert.ok(a.segments.every(x=>x.journalist?.name&&x.journalist?.outlet));
+assert.ok(show.render(global.S).includes('édition fictive'));
+assert.ok(global.managerOffice().includes('Troisième Mi-Temps'));
+const previous=JSON.stringify(global.S);show.generate(global.S);assert.equal(JSON.stringify(global.S),previous,'no legacy save mutation');
+global.S.round++;assert.notEqual(show.generate(global.S).id,a.id,'weekly rotation');
+console.log('PASS V60: original weekly show, 5 segments, journalists, deterministic, old saves untouched');
+const withFacts=JSON.parse(JSON.stringify(global.S));withFacts.history=[{pair:[0,1],score:[28,19],round:6,phase:'league'}];withFacts.clubs.push({id:1,name:'Club Adverse',points:6,played:2,pf:34,pa:40,players:[]});withFacts.clubs[0].points=9;withFacts.clubs[0].played=2;withFacts.clubs[0].pf=45;withFacts.clubs[0].pa=20;global.CDMediaNativeAdapter=require('../dist/media-native-adapter-v60.js');const factual=show.generate(withFacts);assert.ok(factual.segments[0].title.includes('28–19'));assert.ok(factual.segments[1].title.includes('Classement'));
