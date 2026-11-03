@@ -1,7 +1,7 @@
 name: Auto-release guarded (opt-in)
 on:
   workflow_run:
-    workflows: ["Tests JavaScript"]
+    workflows: ["Tests JavaScript", "UI Chromium mutualise - CI V3", "Carrieres multi-clubs - validation native", "IA adverse - audit 24 matchs natifs", "V60 relations presse hors match", "V61 calendrier conseil et objectifs"]
     types: [completed]
 permissions: {}
 jobs:
