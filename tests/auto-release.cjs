@@ -1,6 +1,6 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict');
-const {validateTrigger,safePath,validateCandidate,latestRuns,runAuto}=require('../ci/auto-release.cjs');
+const {validateTrigger,safePath,validateCandidate,checkReservations,latestRuns,runAuto}=require('../ci/auto-release.cjs');
 const sha='a'.repeat(40),main='b'.repeat(40),repo='Xynph/cadrage-debordement';
 const env={GITHUB_EVENT_NAME:'workflow_run',GITHUB_REPOSITORY:repo,GITHUB_SHA:main,CD_AUTO_RELEASE_ENABLED:'true'};
 const event=()=>({action:'completed',repository:{full_name:repo},workflow_run:{id:42,name:'Tests JavaScript',event:'pull_request',status:'completed',conclusion:'success',head_sha:sha,pull_requests:[{number:271}]}});
@@ -23,6 +23,10 @@ test('strict file policy',()=>{
  for(const p of ['.github/workflows/tests.yml','ci/release-gate.cjs','dist/storage.js','dist/rugby.js','dist/tactical-plans.js','modding/data06/rugby-master-2026-2027.json','AGENTS.md','docs/../ci/evil.md'])assert(!safePath({filename:p,status:'modified'}),p);
  assert(!safePath({filename:'docs/a.md',status:'removed'}));
 });
+test('conflicting producer reservations block automatic integration',()=>{
+ assert.throws(()=>checkReservations(271,files(),[{number:272,state:'open'}],()=>[{filename:'tests/scouting.cjs',status:'modified'}]),/Conflicting/);
+ assert(checkReservations(271,files(),[{number:272,state:'open'}],()=>[{filename:'tests/other.cjs',status:'added'}]));
+});
 test('clean owner PR with tested UI',()=>assert(validateCandidate(pr(),files(),sha,main)));
 for(const [name,fn] of [['draft',p=>p.draft=true],['fork',p=>p.head.repo.full_name='other/repo'],['non-owner',p=>p.user.id=99],['conflict',p=>p.mergeable_state='dirty'],['old main',p=>p.base.sha=sha],['old head',p=>p.head.sha=main],['missing files',p=>p.changed_files=1]])
  test('reject '+name,()=>{const p=pr();fn(p);assert.throws(()=>validateCandidate(p,files(),sha,main));});
@@ -39,6 +43,7 @@ test('delegates only to guarded release engine',async()=>{
  const api=p=>{
   if(p==='git/ref/heads/main')return {object:{sha:main}};
   if(p==='pulls/271')return pr();
+  if(p==='pulls?state=open&per_page=100')return [{number:271,state:'open'}];
   if(p==='pulls/271/files?per_page=100')return files();
   if(p==='actions/workflows/tests.yml')return {id:7,state:'active'};
   if(p==='actions/runs/42')return {...run(42),workflow_id:7};

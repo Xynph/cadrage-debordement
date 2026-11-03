@@ -36,6 +36,17 @@ function validateCandidate(p,files,head,main){
   need(files.some(f=>f.filename.startsWith('tests/')&&f.filename.endsWith('.cjs')),'JS without test');
  return true;
 }
+function checkReservations(prNumber,files,otherPRs,fetchFiles){
+ need(Array.isArray(otherPRs)&&otherPRs.length<100,'Open PR list incomplete');
+ const own=new Set(files.map(f=>f.filename));
+ for(const p of otherPRs){
+  if(p.number===prNumber||p.state!=='open')continue;
+  const changed=fetchFiles(p.number);
+  need(Array.isArray(changed)&&changed.length<100,'Other PR diff incomplete');
+  need(!changed.some(f=>own.has(f.filename)),'Conflicting concurrent PR #'+p.number);
+ }
+ return true;
+}
 function latestRuns(runs,head,trigger){
  need(Array.isArray(runs)&&runs.length>0&&runs.length<100,'Missing/ambiguous CI runs');
  const latest=new Map();
@@ -61,6 +72,7 @@ async function runAuto(event,env,services={}){
  need(req('git/ref/heads/main').object.sha===t.main,'Main changed');
  const pr=req('pulls/'+t.pr),files=req('pulls/'+t.pr+'/files?per_page=100');
  validateCandidate(pr,files,t.head,t.main);
+ checkReservations(t.pr,files,req('pulls?state=open&per_page=100'),n=>req('pulls/'+n+'/files?per_page=100'));
  const wf=req('actions/workflows/tests.yml');need(wf.state==='active','Required workflow inactive');
  const source=req('actions/runs/'+t.runId);
  need(source.name===t.sourceName&&source.head_sha===t.head&&source.event==='pull_request'&&source.status==='completed'&&source.conclusion==='success','Unexpected source CI');
@@ -85,4 +97,4 @@ async function main(){
  catch(e){fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'Auto-release STOP: '+e.message+'\n');throw e;}
 }
 if(require.main===module)main().catch(e=>{console.error(e.message);process.exitCode=1;});
-module.exports={validateTrigger,safePath,validateCandidate,latestRuns,runAuto};
+module.exports={validateTrigger,safePath,validateCandidate,checkReservations,latestRuns,runAuto};
