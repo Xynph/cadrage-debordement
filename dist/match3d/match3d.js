@@ -61,7 +61,7 @@
   scene.add(group);return group;
  }
  function dispose(){
-  if(!liveInstance)return;const i=liveInstance;liveInstance=null;cancelAnimationFrame(i.raf);
+  if(!liveInstance)return;const i=liveInstance;liveInstance=null;cancelAnimationFrame(i.raf);if(i.crowdAnimator)i.crowdAnimator.dispose();
   i.renderer.dispose();i.renderer.domElement.remove();
   i.scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>m.dispose());}});
  }
@@ -82,7 +82,8 @@
   catch(e){host.textContent='WebGL indisponible. Choisissez la vue 2D.';return;}
   const scene=new T.Scene();scene.background=new T.Color(0x101d19);field(scene);
   if(window.CDMatch3DStadium)window.CDMatch3DStadium.build(scene,T);
-  if(window.CDMatch3DCrowd)window.CDMatch3DCrowd.build(scene,T);
+  const crowdMesh=window.CDMatch3DCrowd?window.CDMatch3DCrowd.build(scene,T):null;
+  const crowdAnimator=crowdMesh&&window.CDMatch3DCrowdAnimation?window.CDMatch3DCrowdAnimation.create(crowdMesh,T,window.CDMatch3DCrowd.plan()):null;
   scene.add(new T.HemisphereLight(0xe6fbff,0x3e4436,2.2));
   const stadium=new T.Mesh(new T.RingGeometry(64,86,96),new T.MeshStandardMaterial({color:0x263c3b,roughness:1,side:T.DoubleSide}));
   stadium.rotation.x=-Math.PI/2;stadium.position.y=-.08;scene.add(stadium);
@@ -96,7 +97,7 @@
   host.append(renderer.domElement);
   const ball=new T.Mesh(new T.SphereGeometry(.58,12,8),new T.MeshStandardMaterial({color:0xf8e9c6}));
   ball.scale.set(1.4,.7,.85);scene.add(ball);
-  const instance={host,renderer,scene,camera,ball,players:new Map(),raf:0,last:performance.now(),state:null,start:performance.now()};
+  const instance={host,renderer,scene,camera,ball,players:new Map(),crowdAnimator,raf:0,last:performance.now(),state:null,start:performance.now()};
   liveInstance=instance;update(instance,sceneData);
   function loop(now){
    if(liveInstance!==instance)return;
@@ -119,6 +120,7 @@
     instance.camera.position.set(cameraGuide.smooth(instance.camera.position.x,desired.x,dt),desired.y,cameraGuide.smooth(instance.camera.position.z,desired.z,dt));
     instance.camera.lookAt(focus.x,focus.y,focus.z);
    }
+   if(instance.crowdAnimator)instance.crowdAnimator.tick(now);
    instance.last=now;
    instance.renderer.render(instance.scene,instance.camera);
    instance.raf=requestAnimationFrame(loop);
@@ -128,6 +130,7 @@
  function update(i,next){
   if(i.state?.key===next.key&&i.state?.players.length===next.players.length)return;
   i.previous=i.state||{players:next.players,ball:next.origin};i.state=next;i.start=performance.now();
+  if(i.crowdAnimator)i.crowdAnimator.event(next,i.start);
   const ids=new Set(next.players.map(p=>p.id));
   for(const [id,obj] of i.players)if(!ids.has(id)){i.scene.remove(obj);i.players.delete(id);}
   for(const p of next.players)if(!i.players.has(p.id))i.players.set(p.id,makePlayer(i.scene,p));
