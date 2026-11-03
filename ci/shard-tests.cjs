@@ -3,10 +3,14 @@
 // Pondérations = max des durées de trois runs SUCCESS (PR #41708215803,
 // main #41709297149, PR #41715682628) + 15 % de marge arrondie.
 // Le pic simulé ne constitue pas une mesure de gain réel ; reprofiler régulièrement.
+// V63.2 : réserve anti-colocation (poids de planification, PAS sa durée mesurée).
+// Cinq runs SUCCESS : 62/67/82/100/109 s ; P90 interpolé 105,4 s.
+// Réserve 150 pour éviter de grouper cette suite variable avec d'autres longues.
+// Rejeu des trois anciens profils : aucun pic supérieur au plan précédent.
 const fs = require('node:fs');
 const path = require('node:path');
 const WEIGHTS_SECONDS = Object.freeze({
-  'tests/v63-2-stress-native.cjs': 126,
+  'tests/v63-2-stress-native.cjs': 150,
   'tests/v63-1-long-career.cjs': 91,
   'tests/ai-roster-cycle.cjs': 87,
   'tests/world-career.cjs': 74,
