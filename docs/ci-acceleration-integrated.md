@@ -14,14 +14,12 @@ Tests positifs/négatifs : SHA et workflow exacts, refus run rouge, repli, absen
 
 **Limite** : les deux déclenchements initiaux existaient par configuration ; l'économie effective en minutes de runner doit être confirmée avec les exécutions post-fusion d'une livraison réelle. Si le run push est retardé au-delà de la fenêtre bornée, le repli peut toujours créer une exécution supplémentaire. Une CI rouge bloque la livraison.
 
-## Pondération des shards : deux jeux de 220 suites
-Répartition greedy et garantie d'exécution exhaustive conservées. Les pondérations ont été recalculées d'après les durées PASS de deux runs terminaux : CI PR `41708215803` et post-fusion `41709297149`, maximum observé par suite puis marge 15 %, pour les suites dépassant trois secondes. Les tests de rejouabilité contiennent les **440 mesures de suites**, vérifient la couverture complète et comparent la charge critique avec les anciens poids.
+## Pondération des shards : trois profils de CI
+La stratégie greedy et la couverture exhaustive restent inchangées. Les poids proviennent désormais de **trois** runs terminaux : CI PR `41708215803` (220 suites), post-fusion `41709297149` (220 suites), nouvelle PR `41715682628` (221 suites, dont le test de profilage). Le maximum par suite est majoré de 15 %. Le test de rejeu compare les 220 suites communes sur trois profils.
 
-Rejeu des mêmes traces, **prédiction** (somme des durées PASS, pas temps réel) :
-- run PR : chemin critique ancien 169 s → nouveau environ 141 s ;
-- run post-fusion : ancien 170 s → nouveau environ 142 s.
+Le premier recalibrage fondé sur deux exécutions était **suradapté** : sur la nouvelle PR, le shard critique réel a duré 221 s, contre 189 s sur le run précédent. Une suite V63 est passée de 62 à 109 s. Cette régression observée ne démontre pas à elle seule un défaut d'ordonnancement, car charges et runners varient ; elle invalide en revanche toute annonce de gain durable fondée sur deux traces.
 
-Ces deux traces sont des données d'entraînement : ces gains théoriques ne sont **pas** des gains de CI mesurés indépendamment. Il faut comparer plusieurs runs ultérieurs, sans modifier la couverture ou le niveau d'exigence.
+Le deuxième recalibrage inclut le troisième profil. Simulation de charge (somme des durées des suites, hors overhead, **pas un gain mesuré**) avec les ensembles de 221 suites : anciens poids → nouveaux poids : environ 167→151 s, 167→163 s, 179→164 s, selon le run. Les mesures doivent être reproduites sur de nouveaux runs indépendants.
 
 ## À mesurer après intégration
 - Temps total CI (run_started_at → updated_at) ; temps critique des shards ; somme des durées de suites et P90.
