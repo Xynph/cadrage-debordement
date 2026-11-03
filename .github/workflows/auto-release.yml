@@ -9,6 +9,9 @@ jobs:
     if: >-
       github.repository == 'Xynph/cadrage-debordement' &&
       vars.CD_AUTO_RELEASE_ENABLED == 'true' &&
+      vars.CD_AUTO_RELEASE_MODE == 'trial' &&
+      vars.CD_AUTO_RELEASE_TEST_PR != '' &&
+      vars.CD_AUTO_RELEASE_TEST_SHA != '' &&
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success'
     permissions:
@@ -32,4 +35,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           CD_AUTO_RELEASE_ENABLED: ${{ vars.CD_AUTO_RELEASE_ENABLED }}
+          CD_AUTO_RELEASE_MODE: ${{ vars.CD_AUTO_RELEASE_MODE }}
+          CD_AUTO_RELEASE_TEST_PR: ${{ vars.CD_AUTO_RELEASE_TEST_PR }}
+          CD_AUTO_RELEASE_TEST_SHA: ${{ vars.CD_AUTO_RELEASE_TEST_SHA }}
         run: node ci/auto-release.cjs
