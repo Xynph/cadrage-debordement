@@ -66,6 +66,19 @@ try:
         page.goto(url, wait_until="load")
         page.wait_for_function("typeof CDMatch3D !== 'undefined' && typeof THREE !== 'undefined'")
         enter_live(page)
+        check("module de contact 3D chargé hors ligne", page.evaluate(
+            "typeof CDMatch3DContact === 'object'"))
+        check("contact, chute et récupération bornés dans Chromium", page.evaluate("""() => {
+          const input={kind:'turnover',possession:0,ball:{x:50,y:35},
+            players:[{id:'a',side:0,x:50,y:35,featured:true},
+                     {id:'b',side:1,x:53,y:36}]};
+          const before=JSON.stringify(input),pair=CDMatch3DContact.plan(input);
+          if(!pair)return false;
+          const impact=CDMatch3DContact.pose(pair,'b',440);
+          const recovered=CDMatch3DContact.pose(pair,'b',800);
+          return impact.fall>0 && impact.fall<=1.1 &&
+            recovered.fall===0 && JSON.stringify(input)===before;
+        }"""))
         initial = snapshot(page)
 
         # Instrumenter le changement de caméra sans modifier le code du jeu.
