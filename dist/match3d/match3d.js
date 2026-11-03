@@ -4,8 +4,8 @@
  if(typeof match2D!=='function'||typeof matchScene!=='function'||!window.CDMatch3DAdapter)return;
  const original2D=match2D,bridge=window.CDMatch3DAdapter;
  let mode='2d',cameraMode='tv',sceneData=null,liveInstance=null,scheduled=false;
- const motion=window.CDMatch3DMotion;
- if(!motion)return;
+ const motion=window.CDMatch3DMotion,cameraGuide=window.CDMatch3DCamera;
+ if(!motion||!cameraGuide)return;
  function setMode(next){if(!['2d','3d'].includes(next))return;mode=next;dispose();render();}
  function setCamera(next){if(!['tv','tactical'].includes(next))return;cameraMode=next;if(liveInstance)positionCamera(liveInstance.camera);}
  window.CDMatch3D=Object.freeze({setMode,setCamera,getMode:()=>mode});
@@ -109,6 +109,15 @@
      parts.torso.rotation.x=pose.torsoLean;}
    }}
    const b=bridge.world(f.ball);instance.ball.position.set(b.x,1.25+Math.sin(t*Math.PI)*Math.min(5,Math.abs(instance.state.ball.x-instance.state.origin.x)*.2),b.z);
+   // Presentation-only rotation: no change to ball position or match events.
+   instance.ball.rotation.z=t*Math.PI*2;
+   if(cameraMode==='tv'){
+    const focus=cameraGuide.target(b),desired=cameraGuide.tvPosition(focus);
+    const dt=Math.min(100,Math.max(0,now-instance.last));
+    instance.camera.position.set(cameraGuide.smooth(instance.camera.position.x,desired.x,dt),desired.y,cameraGuide.smooth(instance.camera.position.z,desired.z,dt));
+    instance.camera.lookAt(focus.x,focus.y,focus.z);
+   }
+   instance.last=now;
    instance.renderer.render(instance.scene,instance.camera);
    instance.raf=requestAnimationFrame(loop);
   }
