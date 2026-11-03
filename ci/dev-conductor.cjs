@@ -117,11 +117,34 @@ function readCI(rows){
     return result.jobs;
   });
 }
+function gateNumber(raw){
+  // Un seul identifiant décimal : aucun argument supplémentaire vers le gate.
+  if(typeof raw!=='string'||!(/^[1-9][0-9]{0,8}$/).test(raw))throw Error('Numéro PR invalide');
+  const number=Number(raw);
+  if(!Number.isSafeInteger(number))throw Error('Numéro PR invalide');
+  return number;
+}
+function checkOfficialGate(raw){
+  const number=gateNumber(raw);
+  // Appel explicite du gate OFFICIEL sans --merge ; aucune écriture ou bypass.
+  // Une CI verte dans le tableau n'est pas un feu vert de fusion.
+  const result=execFileSync(process.execPath,['ci/release-gate.cjs',String(number)],{
+    encoding:'utf8',timeout:45000,maxBuffer:1024*1024,
+    env:{...process.env,CD_REPO:REPO}
+  });
+  return result;
+}
 function main(argv=process.argv.slice(2)){
+  if(argv[0]==='--gate'){
+    if(argv.length!==2)throw Error('Usage : node ci/dev-conductor.cjs --gate NUMERO_PR');
+    console.log('Précontrôle par le gate officiel (aucune fusion):');
+    process.stdout.write(checkOfficialGate(argv[1]));
+    return;
+  }
   if(argv.length>1||argv[0]&&!['--json','--text'].includes(argv[0]))throw Error('Usage : node ci/dev-conductor.cjs [--json|--text]');
   const rows=readCI(select(inspect()));
   if(argv[0]==='--json')console.log(JSON.stringify(rows,null,2));
   else console.log(report(rows));
 }
 if(require.main===module){try{main();}catch(error){console.error('STOP lecture seule : '+error.message);process.exitCode=1;}}
-module.exports={lane,overlap,select,report,statusCI,attachCI};
+module.exports={lane,overlap,select,report,statusCI,attachCI,gateNumber};
