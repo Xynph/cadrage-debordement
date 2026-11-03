@@ -12,7 +12,7 @@ const lanes={
 function lane(files) {
   const out=new Set();
   for(const file of files){
-    const path=typeof file==='string'?file:file.filename;
+    const path=typeof file==='string'?file:file?.filename;
     if(typeof path!=='string')throw Error('Chemin invalide');
     let found=false;
     for(const [name,re] of Object.entries(lanes))if(re.test(path)){out.add(name);found=true;break;}
