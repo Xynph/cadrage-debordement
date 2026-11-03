@@ -10,6 +10,10 @@ Le dépôt possède déjà : `tests.yml` (classification + 5 suites + Validation
 
 Il **n'affirme jamais** qu'une PR est validée : seul le gate officiel sur le SHA exact et les protections GitHub peuvent le déterminer. Un chevauchement signale une coordination nécessaire, pas un conflit Git certain. Les périmètres DATA et V60 restent intacts.
 
+## Accès directement depuis GitHub (désactivé tant que cette PR n'est pas intégrée)
+
+Le nouveau workflow `.github/workflows/dev-conductor-dashboard.yml` propose un déclenchement **manuel** depuis l'onglet Actions, sur `main` uniquement. Il réexécute les tests ciblés et produit le bilan dans le résumé de son exécution. Il possède seulement `contents: read` et `pull-requests: read`, sans token d'écriture ni `pull_request_target`. Il ne peut pas intégrer de PR, et ne se déclenche pas sur les modifications DATA ou V60. Une fois le code validé et fusionné par le gate officiel, il devient un point d'entrée simple pour l'intégrateur. Il ne remplace aucune CI existante.
+
 ## Suite en deux phases, soumise à validation
 
 1. **Pilotage unique** : faire consommer ce bilan en complément du précontrôle existant, éviter les doubles passations, conserver un seul compte intégrateur. Évaluer sur des PR réelles le nombre de requêtes manuelles économisées.
