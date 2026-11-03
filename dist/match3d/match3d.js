@@ -4,7 +4,8 @@
  if(typeof match2D!=='function'||typeof matchScene!=='function'||!window.CDMatch3DAdapter)return;
  const original2D=match2D,bridge=window.CDMatch3DAdapter;
  let mode='2d',cameraMode='tv',sceneData=null,liveInstance=null,scheduled=false;
- const objects=[],previous=new Map();
+ const motion=window.CDMatch3DMotion;
+ if(!motion)return;
  function setMode(next){if(!['2d','3d'].includes(next))return;mode=next;dispose();render();}
  function setCamera(next){if(!['tv','tactical'].includes(next))return;cameraMode=next;if(liveInstance)positionCamera(liveInstance.camera);}
  window.CDMatch3D=Object.freeze({setMode,setCamera,getMode:()=>mode});
@@ -49,10 +50,12 @@
   const shorts=new T.MeshStandardMaterial({color:p.side===0?0x19312c:0xe5e6df});
   const torso=new T.Mesh(new T.CylinderGeometry(.65,.72,1.45,10),shirt);torso.position.y=1.5;group.add(torso);
   const head=new T.Mesh(new T.SphereGeometry(.39,9,7),skin);head.position.y=2.56;group.add(head);
-  for(const s of [-1,1]){
-   const leg=new T.Mesh(new T.CylinderGeometry(.21,.24,1,7),shorts);leg.position.set(s*.31,.5,0);group.add(leg);
-   const arm=new T.Mesh(new T.CylinderGeometry(.19,.18,1.08,7),skin);arm.rotation.z=s*.25;arm.position.set(s*.82,1.55,0);group.add(arm);
+  const legs=[],arms=[];
+  for(const side of [-1,1]){
+   const leg=new T.Mesh(new T.CylinderGeometry(.21,.24,1,7),shorts);leg.position.set(side*.31,.5,0);group.add(leg);legs.push(leg);
+   const arm=new T.Mesh(new T.CylinderGeometry(.19,.18,1.08,7),skin);arm.rotation.z=side*.25;arm.position.set(side*.82,1.55,0);group.add(arm);arms.push(arm);
   }
+  group.userData.motionParts={legs,arms,torso};
   const flat=new T.Mesh(new T.CircleGeometry(.95,16),new T.MeshBasicMaterial({color:p.featured?0xffd07d:p.side===0?0xffb27a:0x9adfff,transparent:true,opacity:.32}));
   flat.rotation.x=-Math.PI/2;flat.position.y=.06;group.add(flat);
   scene.add(group);return group;
@@ -79,6 +82,10 @@
   catch(e){host.textContent='WebGL indisponible. Choisissez la vue 2D.';return;}
   const scene=new T.Scene();scene.background=new T.Color(0x101d19);field(scene);
   scene.add(new T.HemisphereLight(0xe6fbff,0x3e4436,2.2));
+  const stadium=new T.Mesh(new T.RingGeometry(64,86,96),new T.MeshStandardMaterial({color:0x263c3b,roughness:1,side:T.DoubleSide}));
+  stadium.rotation.x=-Math.PI/2;stadium.position.y=-.08;scene.add(stadium);
+  const crowd=new T.Mesh(new T.RingGeometry(88,98,96),new T.MeshBasicMaterial({color:0x45605a,side:T.DoubleSide}));
+  crowd.rotation.x=-Math.PI/2;crowd.position.y=.22;scene.add(crowd);
   const sun=new T.DirectionalLight(0xffffff,2.4);sun.position.set(30,80,10);scene.add(sun);
   const camera=new T.PerspectiveCamera(48,16/9,.1,500);positionCamera(camera);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
@@ -92,7 +99,15 @@
   function loop(now){
    if(liveInstance!==instance)return;
    const t=Math.min(1,(now-instance.start)/750),f=bridge.frame(instance.previous,instance.state,t);
-   for(const p of f.players){const object=instance.players.get(p.id);if(object){const w=bridge.world(p);object.position.set(w.x,0,w.z);}}
+   for(const p of f.players){const object=instance.players.get(p.id);if(object){
+    const w=bridge.world(p),previous=instance.previous?.players?.find(q=>q.id===p.id)||p;
+    const pose=motion.pose(previous,p,t,now-instance.start,p.slot+p.side*15);
+    object.position.set(w.x,pose.bounce,w.z);
+    const parts=object.userData.motionParts;
+    if(parts){parts.legs[0].rotation.x=pose.stride*.54;parts.legs[1].rotation.x=-pose.stride*.54;
+     parts.arms[0].rotation.x=pose.armSwing*.6;parts.arms[1].rotation.x=-pose.armSwing*.6;
+     parts.torso.rotation.x=pose.torsoLean;}
+   }}
    const b=bridge.world(f.ball);instance.ball.position.set(b.x,1.25+Math.sin(t*Math.PI)*Math.min(5,Math.abs(instance.state.ball.x-instance.state.origin.x)*.2),b.z);
    instance.renderer.render(instance.scene,instance.camera);
    instance.raf=requestAnimationFrame(loop);
