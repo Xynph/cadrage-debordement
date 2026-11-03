@@ -14,6 +14,12 @@ assert.ok(bank.journalists.some(j=>j.name==='Arnaud Beurdeley'));
 assert.equal(new Set(bank.questions.map(q=>q.id)).size,500);
 assert.equal(new Set(bank.questions.flatMap(q=>q.variants)).size,1500);
 for(const q of bank.questions){assert.equal(q.answers.length,4);assert.equal(new Set(q.answers.map(a=>a.text)).size,4);}
+const secondary=bank.questions.flatMap(q=>q.variants.slice(1));
+assert.equal(secondary.length,1000,'two alternative formulations per question');
+assert.equal(new Set(secondary).size,1000,'secondary formulations stay distinct across the 500 questions');
+assert.ok(secondary.every(text=>text.length>32&&text.endsWith('?')&&(text.match(/\\?/g)||[]).length===1),'secondary prompts read as complete single questions');
+assert.ok(secondary.every(text=>!text.includes('{s}')&&!text.includes('Comment évaluez-vous la situation concernant')&&!text.includes('Assumez-vous personnellement les choix autour')),'secondary prompts avoid legacy generic boilerplate');
+for(const q of bank.questions){assert.equal(new Set(q.variants).size,3,'no repeated question within an entry');}
 const primary=bank.questions.map(q=>q.variants[0]);
 assert.equal(new Set(primary).size,500,'500 distinct first-hand editorial prompts');
 assert.ok(primary.every(text=>text.length>34&&text.endsWith('?')&&(text.match(/\?/g)||[]).length===1),'one coherent question per lead');
