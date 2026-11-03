@@ -1,0 +1,56 @@
+name: Pilotage simplifie - tableau des chantiers
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'Facultatif : numéro de PR à vérifier par le gate officiel (sans fusion)'
+        required: false
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: dev-conductor-readonly
+  cancel-in-progress: false
+
+jobs:
+  overview:
+    if: github.repository == 'Xynph/cadrage-debordement' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+      - name: Valider le tableau en lecture seule
+        run: node tests/dev-conductor.cjs
+      - name: Produire un bilan unique des PR ouvertes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_PROMPT_DISABLED: '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node ci/dev-conductor.cjs --text | tee "$GITHUB_STEP_SUMMARY"
+      - name: Précontrôle officiel ciblé (sans fusion)
+        if: inputs.pr != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_PROMPT_DISABLED: '1'
+          PR_NUMBER: ${{ inputs.pr }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo ""
+            echo "## Gate officiel — vérification uniquement"
+            node ci/dev-conductor.cjs --gate "$PR_NUMBER"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
