@@ -1,0 +1,37 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {context}=require('./harness.cjs');
+const a=context(),run=a.run;
+run('start(0);beginMatch();pauseMatch();var l=S.live,side=l.userSide,other=1-side');
+assert.equal(run('!!matchV61Advice(l)'),true);
+assert.match(run('matchCockpitView(matchViewState(l))'),/Conseiller du bord de terrain/);
+const state=run('JSON.stringify(S)'),stored=run('localStorage.getItem("bdt-v1")');
+for(let i=0;i<12;i++)run('matchV61AdviceHtml(l);matchV61Advice(l)');
+assert.equal(run('JSON.stringify(S)'),state);
+assert.equal(run('localStorage.getItem("bdt-v1")'),stored);
+const b=context(),c=context();
+b.run('start(0);beginMatch();pauseMatch();matchV61AdviceHtml(S.live)');
+c.run('start(0);beginMatch();pauseMatch()');
+assert.equal(b.run('Math.random()'),c.run('Math.random()'));
+run('l.minute=60;l.score[side]=3;l.score[other]=17;l.stats[side].territory=20;l.stats[other].territory=80;l.stats[side].possession=30;l.stats[other].possession=70;');
+assert.equal(run('matchV61Advice(l).attack'),'large');
+assert.equal(run('matchV61Advice(l).defence'),'pression');
+assert.equal(run('applyMatchV61Advice("attack","occupation")'),false,'reject stale or forged advice');
+assert.equal(run('applyMatchV61Advice("attack","large")'),true);
+assert.equal(run('l.tactics[side]'),'large');
+assert.equal(run('applyMatchV61Advice("attack","large")'),false,'no duplicate events');
+if(run('matchV61Advice(l).defenceAvailable')){
+ assert.equal(run('applyMatchV61Advice("defence","pression")'),true);
+ assert.equal(run('l.defences[side]'),'pression');
+}
+run('l.paused=false');
+assert.equal(run('applyMatchV61Advice("attack","large")'),false);
+assert.match(run('matchV61AdviceHtml(l)'),/disabled/);
+run('l.paused=true;l.finished=true');
+assert.equal(run('applyMatchV61Advice("defence","prudente")'),false);
+assert.equal(run('matchV61Advice(null)'),null);
+assert.match(run('matchV61AdviceHtml(null)'),/indisponible/);
+const old=context(JSON.parse(state));
+assert.match(old.run('matchV61AdviceHtml(matchViewState(S.live))'),/Conseiller du bord de terrain/);
+assert.equal(old.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),true);
+console.log(JSON.stringify({passed:true,checks:['read-only analysis','RNG isolation','score based attack','defensive contextual advice','pause only','stale advice rejected','no duplicate change','legacy match and save parser']}));
