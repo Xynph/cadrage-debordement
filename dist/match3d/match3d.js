@@ -81,6 +81,7 @@
   try{renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});}
   catch(e){host.textContent='WebGL indisponible. Choisissez la vue 2D.';return;}
   const scene=new T.Scene();scene.background=new T.Color(0x101d19);field(scene);
+  if(window.CDMatch3DStadium)window.CDMatch3DStadium.build(scene,T);
   scene.add(new T.HemisphereLight(0xe6fbff,0x3e4436,2.2));
   const stadium=new T.Mesh(new T.RingGeometry(64,86,96),new T.MeshStandardMaterial({color:0x263c3b,roughness:1,side:T.DoubleSide}));
   stadium.rotation.x=-Math.PI/2;stadium.position.y=-.08;scene.add(stadium);
