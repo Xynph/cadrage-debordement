@@ -126,6 +126,7 @@ function matchCockpitView(l){
  const active=l.visualSource||l;
  return '<section class="v40-cockpit v40-focus-'+matchCockpitFocus+'" aria-label="Cockpit rugby V40">'+
  matchCockpitToolbar(l)+
+ (typeof matchV61AdviceHtml==='function'?matchV61AdviceHtml(l):'')+
  (typeof tacticalVisualHtml==='function'&&typeof matchScene==='function'?tacticalVisualHtml(matchScene(l)):'')+
  '<div class="v40-arena">'+matchCockpitRoster(l,l.userSide)+
  '<div class="v40-field-center">'+match2D(l)+'</div>'+
