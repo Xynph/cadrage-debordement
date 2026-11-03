@@ -45,6 +45,34 @@ function select(prs) {
   }
   return sorted;
 }
+const EXPECTED=['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI'];
+function statusCI(sha,runs,jobs){
+  if(!/^[0-9a-f]{40}$/.test(sha||''))return 'SHA invalide';
+  const matching=(runs||[]).filter(r=>r.head_sha===sha&&r.event==='pull_request'&&
+    r.path==='.github/workflows/tests.yml'&&r.name==='Tests JavaScript');
+  matching.sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0)||b.id-a.id);
+  const run=matching[0];
+  if(!run)return 'CI absente sur HEAD';
+  const j=jobs?.[run.id];
+  if(run.status!=='completed')return 'CI en cours';
+  if(run.conclusion!=='success')return 'CI échouée ou annulée';
+  if(!Array.isArray(j))return 'Jobs CI non vérifiés';
+  if(j.length!==EXPECTED.length||!EXPECTED.every(name=>
+    j.filter(x=>x.name===name&&x.status==='completed'&&x.conclusion==='success').length===1))
+    return 'CI incomplète ou non conforme';
+  return '7/7 SUCCESS (gate non exécuté)';
+}
+function attachCI(rows,runs,getJobs){
+  return rows.map(row=>{
+    const candidates=(runs||[]).filter(r=>r.head_sha===row.sha&&r.event==='pull_request'&&
+      r.path==='.github/workflows/tests.yml'&&r.name==='Tests JavaScript')
+      .sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0)||b.id-a.id);
+    const latest=candidates[0];
+    const jobs={};
+    if(latest&&latest.status==='completed'&&latest.conclusion==='success')jobs[latest.id]=getJobs(latest.id);
+    return {...row,ci:statusCI(row.sha,candidates,jobs)};
+  });
+}
 function report(prs){
   const rows=prs.every(p=>Array.isArray(p.paths))?prs:select(prs);
   return ['# État des chantiers (lecture seule)','',...rows.map(p=>
@@ -78,11 +106,22 @@ function inspect(){
     return {...pr,files};
   });
 }
+function readCI(rows){
+  // Lecture non privilégiée du workflow officiel, bornée aux 100 runs PR récents.
+  // Si un SHA plus ancien n'est pas trouvé, état "absent" plutôt que faux succès.
+  const response=api('repos/'+REPO+'/actions/workflows/tests.yml/runs?event=pull_request&per_page=100');
+  if(!Array.isArray(response.workflow_runs))throw Error('Liste CI illisible');
+  return attachCI(rows,response.workflow_runs,id=>{
+    const result=api('repos/'+REPO+'/actions/runs/'+id+'/jobs?per_page=100');
+    if(!Array.isArray(result.jobs))throw Error('Liste des jobs CI illisible');
+    return result.jobs;
+  });
+}
 function main(argv=process.argv.slice(2)){
   if(argv.length>1||argv[0]&&!['--json','--text'].includes(argv[0]))throw Error('Usage : node ci/dev-conductor.cjs [--json|--text]');
-  const rows=select(inspect());
+  const rows=readCI(select(inspect()));
   if(argv[0]==='--json')console.log(JSON.stringify(rows,null,2));
   else console.log(report(rows));
 }
 if(require.main===module){try{main();}catch(error){console.error('STOP lecture seule : '+error.message);process.exitCode=1;}}
-module.exports={lane,overlap,select,report};
+module.exports={lane,overlap,select,report,statusCI,attachCI};
