@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {lane,overlap,select,report,statusCI,attachCI}=require('../ci/dev-conductor.cjs');
+const {lane,overlap,select,report,statusCI,attachCI,gateNumber}=require('../ci/dev-conductor.cjs');
 const base=(number,files,opts={})=>({number,title:'PR '+number,files,head:{sha:'a'.repeat(40)},base:{ref:'main'},state:'open',draft:false,mergeable:true,mergeable_state:'clean',...opts});
 assert.deepEqual(lane(['modding/data06/rugby-master-2026-2027.json']),['DATA']);
 assert.deepEqual(lane(['dist/press-question-bank.js','dist/saves.js']),['V60']);
@@ -41,4 +41,10 @@ const rich=attachCI(select([base(7,['docs/readme.md'])]),[run(sha)],()=>green);
 assert.match(rich[0].ci,/7\/7 SUCCESS/);
 assert.match(report(rich),/7\/7 SUCCESS/);
 
-console.log('dev-conductor : tests de sélection et CI exacte réussis');
+assert.equal(gateNumber('259'),259);
+assert.throws(()=>gateNumber('0'),/invalide/);
+assert.throws(()=>gateNumber('259 --merge'),/invalide/);
+assert.throws(()=>gateNumber('1;echo hacked'),/invalide/);
+assert.throws(()=>gateNumber(''),/invalide/);
+assert.throws(()=>gateNumber('99999999999999'),/invalide/);
+console.log('dev-conductor : sélection, CI SHA exact et précontrôle officiel sûrs');
