@@ -8,12 +8,18 @@ function need(v,s){if(!v)throw Error(s);}
 function validateTrigger(e,env){
  need(env.GITHUB_EVENT_NAME==='workflow_run'&&env.GITHUB_REPOSITORY===REPO,'Bad trigger or repository');
  need(env.CD_AUTO_RELEASE_ENABLED==='true','Feature flag disabled');
+ // Deliberately refuse every unscoped or general-purpose activation until a
+ // separate, audited change explicitly adds a production mode.
+ need(env.CD_AUTO_RELEASE_MODE==='trial','Trial-only mode required');
+ need(/^[1-9][0-9]*$/.test(env.CD_AUTO_RELEASE_TEST_PR||''),'Trial PR number missing');
+ need(SHA.test(env.CD_AUTO_RELEASE_TEST_SHA||''),'Trial HEAD missing');
  need(e.action==='completed'&&e.repository?.full_name===REPO,'Bad event');
  const r=e.workflow_run;
  need(r&&TRIGGERS.includes(r.name)&&r.event==='pull_request'&&r.status==='completed'&&r.conclusion==='success','Not a successful PR CI');
  need(SHA.test(r.head_sha)&&Number.isSafeInteger(r.id),'Bad workflow SHA or ID');
  need(Array.isArray(r.pull_requests)&&r.pull_requests.length===1,'No unique PR');
  const pr=r.pull_requests[0].number;need(Number.isSafeInteger(pr)&&pr>0,'Bad PR number');
+ need(String(pr)===env.CD_AUTO_RELEASE_TEST_PR&&r.head_sha===env.CD_AUTO_RELEASE_TEST_SHA,'Event outside trial PR/HEAD');
  need(SHA.test(env.GITHUB_SHA),'Bad pinned main SHA');
  return {pr,head:r.head_sha,runId:r.id,sourceName:r.name,main:env.GITHUB_SHA};
 }
@@ -81,6 +87,9 @@ async function runAuto(event,env,services={}){
  need(req('git/ref/heads/main').object.sha===t.main,'Main changed');
  const pr=req('pulls/'+t.pr),files=req('pulls/'+t.pr+'/files?per_page=100');
  validateCandidate(pr,files,t.head,t.main);
+ // The only permitted live trial is a single, isolated documentation file.
+ // No normal PR can merge while the trial variable is briefly enabled.
+ need(files.length===1&&files[0].filename==='docs/ci-auto-release-trial.md'&&files[0].status==='added','Trial file scope mismatch');
  checkReservations(t.pr,files,req('pulls?state=open&per_page=100'),n=>req('pulls/'+n+'/files?per_page=100'));
  const wf=req('actions/workflows/tests.yml');need(wf.state==='active','Required workflow inactive');
  const source=req('actions/runs/'+t.runId);
