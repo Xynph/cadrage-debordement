@@ -11,7 +11,7 @@
   const distance=Math.hypot(dx,dy);
   const pace=clamp(distance/9,0,1);
   const phase=(Number.isFinite(clock)?clock:0)*.013+seed*.83;
-  const envelope=Math.sin(Math.PI*clamp(progress,0,1))*.72+.28;
+  const envelope=Math.sin(Math.PI*clamp(progress,0,1));
   const stride=Math.sin(phase)*pace*envelope;
   const direction=distance>.01?Math.atan2(dy,dx):0;
   return Object.freeze({
