@@ -14,6 +14,7 @@
   const progressBounded=clamp(progress,0,1);
   const envelope=progressBounded===0||progressBounded===1?0:Math.sin(Math.PI*progressBounded);
   const stride=pace===0||envelope===0?0:Math.sin(phase)*pace*envelope;
+  const kneeBend=Object.freeze([0,Math.PI].map(offset=>clamp(Math.max(0,Math.sin(phase+offset))*.75*pace*envelope,0,.75)));
   const direction=distance>.01?Math.atan2(dy,dx):0;
   return Object.freeze({
    stride:clamp(stride,-1,1),
@@ -21,6 +22,7 @@
    torsoLean:pace*.09*envelope,
    bounce:Math.abs(stride)*.12,
    direction,
+   kneeBend,
    pace
   });
  }
