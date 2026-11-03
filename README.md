@@ -1,5 +1,7 @@
 # Cadrage Débordement
 
+**© 2026 Cadrage Débordement — Tous droits réservés.** Le code et les contenus originaux de ce projet ne sont pas publiés sous licence open source. Le dépôt est consultable publiquement, sous réserve des droits de GitHub, des licences tierces et des exceptions légales. Voir [LICENSE](LICENSE) pour le détail.
+
 **Un jeu de management de rugby à XV, en français, actuellement en version 16.**
 
 Dirigez votre club : composez les 23, préparez votre équipe, recrutez, gérez les contrats et suivez les rencontres sur un terrain 2D accompagné de commentaires synchronisés.
