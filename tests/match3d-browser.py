@@ -28,7 +28,7 @@ def snapshot(page):
         storage: JSON.stringify(Object.fromEntries(
           Object.keys(localStorage).sort().map(k => [k, localStorage.getItem(k)])
         )),
-        save: JSON.stringify(createSaveDocument())
+        save: JSON.stringify((({exportedAt, ...stable}) => stable)(createSaveDocument()))
     })""")
 
 def enter_live(page):
