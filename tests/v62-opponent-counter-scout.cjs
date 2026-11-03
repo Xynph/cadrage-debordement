@@ -9,7 +9,7 @@ const sandbox={tacticalRules:()=>true,matchMinute:l=>l.minute,activePlayers:(l,s
 vm.createContext(sandbox);
 vm.runInContext(source.slice(start),sandbox);
 const decide=sandbox.opponentCounterScout;
-function match(style='large'){return {userSide:0,minute:35,score:[7,7],tactics:['equilibre',style],players:[[90],[85]],tacticalStats:[{carries:8,advances:5,metres:112,kicks:1},{carries:8,advances:5,metres:112,kicks:1}]};}
+function match(style='large'){return {userSide:0,minute:35,score:[7,7],tactics:[style,'equilibre'],players:[[90],[85]],tacticalStats:[{carries:8,advances:5,metres:112,kicks:1},{carries:8,advances:5,metres:112,kicks:1}]};}
 let l=match();assert.equal(decide(l,1).plan,'pression','successful width countered');
 l.tacticalStats[0].carries=5;assert.equal(decide(l,1),null,'insufficient sample');
 l=match();l.minute=12;assert.equal(decide(l,1),null,'early match ignored');
