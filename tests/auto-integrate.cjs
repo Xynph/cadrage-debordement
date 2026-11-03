@@ -69,7 +69,7 @@ const dispatched={inputs:{pr:'241',sha:SHA,source_run:'456'}};
 const dispatchEnv={GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_REPOSITORY:REPO,GITHUB_REF:'refs/heads/main',GITHUB_SHA:MAIN};
 const source=()=>({event:'pull_request_target',path:'.github/workflows/auto-integrate-request.yml',
  actor:{id:350229047,login:'Xynph',type:'User'},status:'completed',conclusion:'success',
- head_sha:SHA,pull_requests:[{number:241}]});
+ head_sha:MAIN,pull_requests:[{number:241,head:{sha:SHA}}]});
 test('dispatch autorisé seulement après un run de sélection propriétaire terminé',()=>{
  const cmd=validateDispatch(dispatched,dispatchEnv,()=>source());
  assert.deepEqual(cmd,{pr:241,expected:SHA,base:MAIN,mode:'merge'});
@@ -77,7 +77,8 @@ test('dispatch autorisé seulement après un run de sélection propriétaire ter
 for(const [description,patch] of [
  ['run rouge',{conclusion:'failure'}],['run encore en cours',{status:'in_progress'}],
  ['autre workflow',{path:'.github/workflows/unsafe.yml'}],['autre acteur',{actor:{id:99,login:'other',type:'User'}}],
- ['mauvais SHA',{head_sha:'c'.repeat(40)}],['PR absente',{pull_requests:[]}],
+ ['main du run obsolète',{head_sha:'c'.repeat(40)}],['PR absente',{pull_requests:[]}],
+ ['SHA PR source incorrect',{pull_requests:[{number:241,head:{sha:'c'.repeat(40)}}]}],
  ['autre événement',{event:'workflow_dispatch'}]
 ])test('dispatch refuse '+description,()=>{
  assert.throws(()=>validateDispatch(dispatched,dispatchEnv,()=>({...source(),...patch})));
@@ -85,6 +86,18 @@ for(const [description,patch] of [
 test('dispatch refuse un SHA invalide et une branche non-main',()=>{
  assert.throws(()=>validateDispatch({inputs:{...dispatched.inputs,sha:'wrong'}},dispatchEnv,()=>source()));
  assert.throws(()=>validateDispatch(dispatched,{...dispatchEnv,GITHUB_REF:'refs/heads/feature'},()=>source()));
+});
+test('dispatch utilise le SHA du main et non celui de la PR',()=>{
+ const cmd=validateDispatch(dispatched,dispatchEnv,()=>source());
+ assert.equal(cmd.base,MAIN);
+ assert.equal(cmd.expected,SHA);
+ assert.notEqual(cmd.base,cmd.expected);
+ assert.throws(()=>validateDispatch(dispatched,dispatchEnv,()=>({...source(),head_sha:SHA})));
+ assert.throws(()=>validateDispatch(dispatched,{...dispatchEnv,GITHUB_SHA:'c'.repeat(40)},()=>source()));
+});
+test('dispatch refuse des entrées liées à une autre PR ou un autre SHA',()=>{
+ assert.throws(()=>validateDispatch({inputs:{...dispatched.inputs,pr:'242'}},dispatchEnv,()=>source()));
+ assert.throws(()=>validateDispatch({inputs:{...dispatched.inputs,sha:'c'.repeat(40)}},dispatchEnv,()=>source()));
 });
 test('deux workflows privilégiés isolés, concurrence unique, aucun code de PR',()=>{
  const first=fs.readFileSync(path.join(__dirname,'../.github/workflows/auto-integrate-request.yml'),'utf8');
