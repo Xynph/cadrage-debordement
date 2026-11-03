@@ -1,0 +1,21 @@
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const source=fs.readFileSync(require('node:path').join(__dirname,'../dist/tactical-plans.js'),'utf8');
+const start=source.indexOf('function opponentCounterScout(');
+assert.ok(start>=0,'V62 function present');
+const sandbox={tacticalRules:()=>true,matchMinute:l=>l.minute,activePlayers:(l,side)=>l.players[side],mean:xs=>xs.reduce((a,b)=>a+b,0)/xs.length,effectiveAttack:(l,side)=>l.tactics[side]};
+vm.createContext(sandbox);
+vm.runInContext(source.slice(start),sandbox);
+const decide=sandbox.opponentCounterScout;
+function match(style='large'){return {userSide:0,minute:35,score:[7,7],tactics:['equilibre',style],players:[[90],[85]],tacticalStats:[{carries:8,advances:5,metres:112,kicks:1},{carries:8,advances:5,metres:112,kicks:1}]};}
+let l=match();assert.equal(decide(l,1).plan,'pression','successful width countered');
+l.tacticalStats[0].carries=5;assert.equal(decide(l,1),null,'insufficient sample');
+l=match();l.minute=12;assert.equal(decide(l,1),null,'early match ignored');
+l=match();l.players[1]=[60];assert.equal(decide(l,1).plan,'prudente','fatigue takes precedence');
+l=match('occupation');l.tacticalStats[0].kicks=5;assert.equal(decide(l,1).plan,'prudente','territorial kicking covered');
+l=match('conquete');assert.equal(decide(l,1).plan,'pression','repeated forward gains countered');
+l=match();assert.equal(decide(l,0),null,'never overrides manager defence');
+l=match();l.tacticalStats[0].advances=1;assert.equal(decide(l,1),null,'no arbitrary tactical switch');
+console.log('V62 opponent counter-scout: 8 assertions passed');
