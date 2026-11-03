@@ -8,6 +8,7 @@ const pr=()=>({state:'open',draft:false,base:{ref:'main',sha:main},head:{sha,rep
 const files=()=>[{filename:'dist/ui03-scout-components.js',status:'modified'},{filename:'tests/scouting.cjs',status:'added'}];
 test('disabled by default',()=>assert.throws(()=>validateTrigger(event(),{...env,CD_AUTO_RELEASE_ENABLED:''}),/flag/));
 test('valid exact CI event',()=>assert.equal(validateTrigger(event(),env).pr,271));
+test('terminal ancillary CI may retrigger when all runs are green',()=>{const e=event();e.workflow_run.name='UI Chromium mutualise - CI V3';assert.equal(validateTrigger(e,env).sourceName,'UI Chromium mutualise - CI V3');});
 for(const [name,fn] of [
  ['multiple PR',e=>e.workflow_run.pull_requests.push({number:272})],
  ['missing PR',e=>e.workflow_run.pull_requests=[]],
@@ -42,7 +43,7 @@ test('delegates only to guarded release engine',async()=>{
   if(p==='actions/workflows/tests.yml')return {id:7,state:'active'};
   if(p==='actions/runs/42')return {...run(42),workflow_id:7};
   if(p==='actions/runs/42/jobs?per_page=100')return {jobs:names.map(name=>({name,status:'completed',conclusion:'success'}))};
-  if(p.startsWith('actions/runs?'))return {workflow_runs:[run(42)]};
+  if(p.startsWith('actions/runs?'))return {workflow_runs:[{...run(42),workflow_id:7}]};
   throw Error('Unexpected '+p);
  };
  const result=await runAuto(event(),env,{api,execute:async(c,e,d)=>{called=true;assert.equal(c.expected,sha);assert(d.autoAuthorized);assert.equal(d.snapshot,main);return {ready:true};}});
