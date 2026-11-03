@@ -26,7 +26,11 @@ if(run('matchV61Advice(l).defenceAvailable')){
 }
 run('l.paused=false');
 assert.equal(run('applyMatchV61Advice("attack","large")'),false);
+assert.match(run('matchV61AdviceHtml(l)'),/Mettre en pause pour appliquer une consigne/);
+assert.equal(run('applyMatchV61Advice("attack","occupation")'),false);
+run('l.tactics[side]="equilibre"');
 assert.match(run('matchV61AdviceHtml(l)'),/disabled/);
+run('l.tactics[side]="large"');
 run('l.paused=true;l.finished=true');
 assert.equal(run('applyMatchV61Advice("defence","prudente")'),false);
 assert.equal(run('matchV61Advice(null)'),null);
