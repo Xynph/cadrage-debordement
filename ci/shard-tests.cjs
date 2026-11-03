@@ -1,35 +1,35 @@
 'use strict';
-// Répartition complète et déterministe, sans modification de la couverture.
-// Pondérations = maximum observé entre les runs CI PR #41708215803 et
-// post-fusion #41709297149, majoré de 15 % et arrondi au supérieur.
-// Modèle descriptif : comparer à une CI réelle avant de revendiquer un gain.
-// Les suites <= 3 s et nouvelles suites conservent leur poids conservateur de 1.
+// Répartition complète et déterministe : toutes les suites sont conservées.
+// Pondérations = max des durées de trois runs SUCCESS (PR #41708215803,
+// main #41709297149, PR #41715682628) + 15 % de marge arrondie.
+// Le pic simulé ne constitue pas une mesure de gain réel ; reprofiler régulièrement.
 const fs = require('node:fs');
 const path = require('node:path');
 const WEIGHTS_SECONDS = Object.freeze({
+  'tests/v63-2-stress-native.cjs': 126,
   'tests/v63-1-long-career.cjs': 91,
   'tests/ai-roster-cycle.cjs': 87,
-  'tests/v63-2-stress-native.cjs': 78,
-  'tests/world-career.cjs': 66,
-  'tests/rugby.cjs': 57,
+  'tests/world-career.cjs': 74,
+  'tests/rugby.cjs': 59,
   'tests/lnr-multiclub-continuity.cjs': 55,
   'tests/lnr-career-long.cjs': 40,
   'tests/lnr05-rotation-audit.cjs': 40,
   'tests/lnr05-fatigue-scenarios.cjs': 38,
+  'tests/lnr05-multiseason-strategies.cjs': 37,
   'tests/lnr05-evidence-long.cjs': 35,
+  'tests/opposition.cjs': 34,
   'tests/manager-mobility.cjs': 32,
-  'tests/opposition.cjs': 29,
   'tests/lnr-cross-season-recovery.cjs': 26,
-  'tests/lnr05-multiseason-strategies.cjs': 25,
+  'tests/lnr-save-resume-continuation.cjs': 25,
   'tests/saves.cjs': 22,
   'tests/tactical-plans.cjs': 19,
   'tests/lnr-save-integrity-guards.cjs': 17,
-  'tests/lnr-save-resume-continuation.cjs': 15,
   'tests/career-resilience.cjs': 14,
   'tests/lnr05-rest-policy-audit.cjs': 11,
-  'tests/economy-audit.cjs': 5,
+  'tests/economy-audit.cjs': 6,
   'tests/lnr-save-import-rollback-stress.cjs': 5,
-  'tests/v28-collective-preparation.cjs': 5
+  'tests/v28-collective-preparation.cjs': 5,
+  'tests/v29-focused-development.cjs': 5
 });
 const lexical = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 function allTestFiles() {
