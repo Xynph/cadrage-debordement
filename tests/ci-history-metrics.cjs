@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const {analyze,report}=require('../ci/ci-history-metrics.cjs');
 function sample(id,durationSeconds,s1,s2){
  const start='2026-11-03T00:00:00Z',end=new Date(Date.parse(start)+durationSeconds*1000).toISOString();
- const jobs=Array.from({length:5},(_,i)=>({name:'Suites '+(i+1)+'/5',status:'completed',conclusion:'success',log:i===0?'PASS tests/slow.cjs ('+s1+' s)\\nPASS tests/quick.cjs ('+s2+' s)':'PASS tests/extra'+i+'.cjs (1 s)'}));
+ const jobs=Array.from({length:5},(_,i)=>({name:'Suites '+(i+1)+'/5',status:'completed',conclusion:'success',log:i===0?'PASS tests/slow.cjs ('+s1+' s)\nPASS tests/quick.cjs ('+s2+' s)':'PASS tests/extra'+i+'.cjs (1 s)'}));
  jobs.push({name:'classification',status:'completed',conclusion:'success'},{name:'Validation CI',status:'completed',conclusion:'success'});
  return {id,name:'Tests JavaScript',status:'completed',conclusion:'success',sha:'sha'+id,started_at:start,completed_at:end,jobs};
 }
