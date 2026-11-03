@@ -5,7 +5,7 @@
  const original2D=match2D,bridge=window.CDMatch3DAdapter;
  let mode='2d',cameraMode='tv',sceneData=null,liveInstance=null,scheduled=false;
  const motion=window.CDMatch3DMotion,cameraGuide=window.CDMatch3DCamera;
- if(!motion||!cameraGuide)return;
+ if(!motion||!cameraGuide||!window.CDMatch3DPlayerModel)return;
  function setMode(next){if(!['2d','3d'].includes(next))return;mode=next;dispose();render();}
  function setCamera(next){if(!['tv','tactical'].includes(next))return;cameraMode=next;if(liveInstance)positionCamera(liveInstance.camera);}
  window.CDMatch3D=Object.freeze({setMode,setCamera,getMode:()=>mode});
@@ -44,21 +44,10 @@
   }
  }
  function makePlayer(scene,p){
-  const T=window.THREE,group=new T.Group();
-  const shirt=new T.MeshStandardMaterial({color:p.side===0?0xed8134:0x5bb6e0,roughness:.85});
-  const skin=new T.MeshStandardMaterial({color:0xbd8e6d,roughness:1});
-  const shorts=new T.MeshStandardMaterial({color:p.side===0?0x19312c:0xe5e6df});
-  const torso=new T.Mesh(new T.CylinderGeometry(.65,.72,1.45,10),shirt);torso.position.y=1.5;group.add(torso);
-  const head=new T.Mesh(new T.SphereGeometry(.39,9,7),skin);head.position.y=2.56;group.add(head);
-  const legs=[],arms=[];
-  for(const side of [-1,1]){
-   const leg=new T.Mesh(new T.CylinderGeometry(.21,.24,1,7),shorts);leg.position.set(side*.31,.5,0);group.add(leg);legs.push(leg);
-   const arm=new T.Mesh(new T.CylinderGeometry(.19,.18,1.08,7),skin);arm.rotation.z=side*.25;arm.position.set(side*.82,1.55,0);group.add(arm);arms.push(arm);
-  }
-  group.userData.motionParts={legs,arms,torso};
-  const flat=new T.Mesh(new T.CircleGeometry(.95,16),new T.MeshBasicMaterial({color:p.featured?0xffd07d:p.side===0?0xffb27a:0x9adfff,transparent:true,opacity:.32}));
-  flat.rotation.x=-Math.PI/2;flat.position.y=.06;group.add(flat);
-  scene.add(group);return group;
+  const T=window.THREE;
+  const model=window.CDMatch3DPlayerModel;
+  if(!model)return null;
+  const group=model.build(T,p);scene.add(group);return group;
  }
  function dispose(){
   if(!liveInstance)return;const i=liveInstance;liveInstance=null;cancelAnimationFrame(i.raf);if(i.crowdAnimator)i.crowdAnimator.dispose();
@@ -106,9 +95,11 @@
     const w=bridge.world(p),previous=instance.previous?.players?.find(q=>q.id===p.id)||p;
     const pose=motion.pose(previous,p,t,now-instance.start,p.slot+p.side*15);
     object.position.set(w.x,pose.bounce,w.z);
+    object.rotation.y=-(pose.direction+Math.PI/2);
     const parts=object.userData.motionParts;
-    if(parts){parts.legs[0].rotation.x=pose.stride*.54;parts.legs[1].rotation.x=-pose.stride*.54;
-     parts.arms[0].rotation.x=pose.armSwing*.6;parts.arms[1].rotation.x=-pose.armSwing*.6;
+    if(parts){parts.legs[0].rotation.x=pose.stride*.68;parts.legs[1].rotation.x=-pose.stride*.68;
+     parts.knees[0].rotation.x=pose.kneeBend[0];parts.knees[1].rotation.x=pose.kneeBend[1];
+     parts.arms[0].rotation.x=pose.armSwing*.75;parts.arms[1].rotation.x=-pose.armSwing*.75;
      parts.torso.rotation.x=pose.torsoLean;}
    }}
    const b=bridge.world(f.ball);instance.ball.position.set(b.x,1.25+Math.sin(t*Math.PI)*Math.min(5,Math.abs(instance.state.ball.x-instance.state.origin.x)*.2),b.z);
