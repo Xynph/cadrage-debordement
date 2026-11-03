@@ -46,7 +46,7 @@ function select(prs) {
   return sorted;
 }
 function report(prs){
-  const rows=select(prs);
+  const rows=prs.every(p=>Array.isArray(p.paths))?prs:select(prs);
   return ['# État des chantiers (lecture seule)','',...rows.map(p=>
     '- PR #'+p.number+' — '+p.kinds.join('/')+' — '+p.next+
     (p.conflicts.length?' ; chemins communs avec #'+p.conflicts.map(c=>c.pr).join(', #'):'')+
