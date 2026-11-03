@@ -10,7 +10,7 @@
  function isTry(scene){
   if(!scene||typeof scene!=='object')return false;
   return /^(try|essai|try-scored|essai-marque)$/i.test(String(scene.kind||'').trim()) ||
-   /\b(?:essai marqué|essai marque|try scored)\b/i.test(String(scene.stage||''));
+   /(?:^|\W)(?:essai marqué|essai marque|try scored)(?=$|\W)/i.test(String(scene.stage||''));
  }
  function offset(index,now,celebration=0){
   const phase=finite(now)*.0026+index*.79;
