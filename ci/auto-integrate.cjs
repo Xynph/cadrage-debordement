@@ -64,7 +64,7 @@ function validateDispatch(e,env,transport){
    source.actor?.id===OWNER_ID&&source.actor?.login==='Xynph'&&
    source.actor?.type==='User'&&source.status==='completed'&&
    source.conclusion==='success'&&source.head_sha===env.GITHUB_SHA&&
-   source.pull_requests?.some(p=>p.number===Number(i.pr)),
+   source.pull_requests?.some(p=>p.number===Number(i.pr)&&p.head?.sha===i.sha),
    'Provenance propriétaire et sélection terminée non démontrées');
  return {pr:Number(i.pr),expected:i.sha,base:env.GITHUB_SHA,mode:'merge'};
 }
