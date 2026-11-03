@@ -9,3 +9,5 @@ Les sept jobs JavaScript doivent être verts ; tous les derniers workflows PR vi
 Avant activation : CI complète de cette PR, revue des permissions GitHub Actions, essais à blanc/contrôles de refus et preuve réelle d'une fusion témoin. Une CI d'une PR sensible peut finir avant les autres workflows : l'auto-release refuse alors la fusion, sans relance automatique ; l'intégrateur utilise le gate historique. Aucun bypass.
 
 Le contrôleur compare les fichiers de la PR avec ceux de toutes les autres PR ouvertes et refuse un chevauchement (réservations des deux producteurs). Si la liste est trop longue/incomplète, il échoue fermé.
+
+La politique exige les workflows JS, V60 et V61 sur chaque HEAD ; tout changement sous dist/ exige aussi UI Chromium. Si un contrôle attendu n'apparaît pas (même pas démarré), son absence bloque automatiquement. Un run rouge, annulé, en cours ou des résultats paginés/ambigus bloquent également.

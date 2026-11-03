@@ -47,12 +47,19 @@ function checkReservations(prNumber,files,otherPRs,fetchFiles){
  }
  return true;
 }
-function latestRuns(runs,head,trigger){
+function requiredWorkflows(files){
+ const required=['Tests JavaScript','V60 relations presse hors match','V61 calendrier conseil et objectifs'];
+ if(files.some(f=>f.filename.startsWith('dist/')))required.push('UI Chromium mutualise - CI V3');
+ return required;
+}
+function latestRuns(runs,head,trigger,required){
  need(Array.isArray(runs)&&runs.length>0&&runs.length<100,'Missing/ambiguous CI runs');
+ need(Array.isArray(required)&&required.length>=3,'Required workflow policy missing');
  const latest=new Map();
  for(const r of runs.filter(r=>r.head_sha===head&&r.event==='pull_request'))
   if(!latest.has(r.name)||r.id>latest.get(r.name).id)latest.set(r.name,r);
  need(latest.get('Tests JavaScript')?.id===trigger,'Stale JS run');
+ for(const name of required)need(latest.has(name),'Required PR workflow absent: '+name);
  for(const r of latest.values())need(r.status==='completed'&&r.conclusion==='success','Pending/failing PR CI '+r.name);
  return true;
 }
@@ -81,7 +88,7 @@ async function runAuto(event,env,services={}){
  need(js&&js.workflow_id===wf.id,'Required JS CI missing');
  const jobs=req('actions/runs/'+js.id+'/jobs?per_page=100').jobs;
  need(jobs.length===7&&JOBS.every(n=>jobs.filter(j=>j.name===n&&j.status==='completed'&&j.conclusion==='success').length===1),'Missing seven green PR jobs');
- latestRuns(runs,t.head,js.id);
+ latestRuns(runs,t.head,js.id,requiredWorkflows(files));
  need(runs.filter(r=>r.name===source.name).sort((x,y)=>y.id-x.id)[0]?.id===source.id,'Stale source run');
  need(req('git/ref/heads/main').object.sha===t.main,'Main moved before gate');
  return (services.execute||execute)({pr:t.pr,expected:t.head,mode:'merge'}, {}, {
@@ -97,4 +104,4 @@ async function main(){
  catch(e){fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'Auto-release STOP: '+e.message+'\n');throw e;}
 }
 if(require.main===module)main().catch(e=>{console.error(e.message);process.exitCode=1;});
-module.exports={validateTrigger,safePath,validateCandidate,checkReservations,latestRuns,runAuto};
+module.exports={validateTrigger,safePath,validateCandidate,checkReservations,requiredWorkflows,latestRuns,runAuto};

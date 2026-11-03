@@ -1,6 +1,6 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict');
-const {validateTrigger,safePath,validateCandidate,checkReservations,latestRuns,runAuto}=require('../ci/auto-release.cjs');
+const {validateTrigger,safePath,validateCandidate,checkReservations,requiredWorkflows,latestRuns,runAuto}=require('../ci/auto-release.cjs');
 const sha='a'.repeat(40),main='b'.repeat(40),repo='Xynph/cadrage-debordement';
 const env={GITHUB_EVENT_NAME:'workflow_run',GITHUB_REPOSITORY:repo,GITHUB_SHA:main,CD_AUTO_RELEASE_ENABLED:'true'};
 const event=()=>({action:'completed',repository:{full_name:repo},workflow_run:{id:42,name:'Tests JavaScript',event:'pull_request',status:'completed',conclusion:'success',head_sha:sha,pull_requests:[{number:271}]}});
@@ -34,9 +34,15 @@ test('source JS requires test',()=>assert.throws(()=>validateCandidate({...pr(),
 test('sensitive file denied',()=>assert.throws(()=>validateCandidate({...pr(),changed_files:1},[{filename:'ci/release-gate.cjs',status:'modified'}],sha,main)));
 const run=(id,name='Tests JavaScript',status='completed',conclusion='success')=>({id,name,status,conclusion,head_sha:sha,event:'pull_request'});
 test('stale or pending CI denied',()=>{
- assert(latestRuns([run(42),run(40,'Chromium')],sha,42));
- assert.throws(()=>latestRuns([run(42),run(44,'Tests JavaScript','completed','failure')],sha,42));
- assert.throws(()=>latestRuns([run(42),run(44,'Chromium','in_progress',null)],sha,42));
+ const basic=[run(42),run(40,'V60 relations presse hors match'),run(41,'V61 calendrier conseil et objectifs')];
+ assert(latestRuns(basic,sha,42,requiredWorkflows([{filename:'tests/example.cjs'}])));
+ assert.throws(()=>latestRuns([...basic,run(44,'Tests JavaScript','completed','failure')],sha,42,requiredWorkflows([{filename:'tests/example.cjs'}])));
+ assert.throws(()=>latestRuns([...basic,run(44,'UI Chromium mutualise - CI V3','in_progress',null)],sha,42,requiredWorkflows(files())));
+ assert.throws(()=>latestRuns([...basic,run(44,'UI Chromium mutualise - CI V3','completed','failure')],sha,42,requiredWorkflows(files())));
+ assert.throws(()=>latestRuns([...basic,run(44,'UI Chromium mutualise - CI V3','completed','cancelled')],sha,42,requiredWorkflows(files())));
+ assert.throws(()=>latestRuns(basic,sha,42,requiredWorkflows(files())),/absent/);
+ assert.throws(()=>latestRuns(basic.filter(r=>r.name!=='V61 calendrier conseil et objectifs'),sha,42,requiredWorkflows([{filename:'docs/a.md'}])),/absent/);
+ assert.throws(()=>latestRuns(Array.from({length:100},(_,i)=>run(i+1)),sha,42,requiredWorkflows([{filename:'docs/a.md'}])),/ambiguous/);
 });
 test('delegates only to guarded release engine',async()=>{
  const names=['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI'];let called=false;
@@ -48,7 +54,7 @@ test('delegates only to guarded release engine',async()=>{
   if(p==='actions/workflows/tests.yml')return {id:7,state:'active'};
   if(p==='actions/runs/42')return {...run(42),workflow_id:7};
   if(p==='actions/runs/42/jobs?per_page=100')return {jobs:names.map(name=>({name,status:'completed',conclusion:'success'}))};
-  if(p.startsWith('actions/runs?'))return {workflow_runs:[{...run(42),workflow_id:7}]};
+  if(p.startsWith('actions/runs?'))return {workflow_runs:[{...run(42),workflow_id:7},run(43,'V60 relations presse hors match'),run(44,'V61 calendrier conseil et objectifs'),run(45,'UI Chromium mutualise - CI V3')]};
   throw Error('Unexpected '+p);
  };
  const result=await runAuto(event(),env,{api,execute:async(c,e,d)=>{called=true;assert.equal(c.expected,sha);assert(d.autoAuthorized);assert.equal(d.snapshot,main);return {ready:true};}});
