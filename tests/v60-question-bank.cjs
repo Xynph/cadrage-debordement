@@ -28,6 +28,12 @@ for(const q of bank.questions){
 assert.equal(byTheme.size,25);
 assert.ok([...byTheme.values()].every(batch=>batch.length===20&&new Set(batch).size===20),'20 distinct lead questions per theme');
 assert.equal(new Set(bank.questions.flatMap(q=>q.answers.map(a=>a.id))).size,4,'answer IDs remain backward compatible');
+const samples=Array.from({length:25},(_,week)=>bank.pick({season:3,week,count:4,seed:19}));
+const sampleTotal=samples.flat();
+assert.equal(sampleTotal.length,100);
+assert.ok(sampleTotal.filter(q=>q.variant===0).length>=75,'bespoke questions dominate live interviews');
+assert.ok(samples.every(batch=>batch.some(q=>q.variant===0)),'every conference contains authored editorial material');
+assert.ok(samples.some(batch=>batch.some(q=>q.variant===1||q.variant===2)),'alternate formulations remain reachable');
 const chosen=bank.pick({season:2,week:8,count:4,context:{themes:['defaite','crise','vestiaire','direction']},seed:7});
 assert.equal(chosen.length,4);
 assert.ok(chosen.every(q=>['defaite','crise','vestiaire','direction'].includes(q.theme)));
