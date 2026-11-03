@@ -4,8 +4,8 @@
  if(typeof match2D!=='function'||typeof matchScene!=='function'||!window.CDMatch3DAdapter)return;
  const original2D=match2D,bridge=window.CDMatch3DAdapter;
  let mode='2d',cameraMode='tv',sceneData=null,liveInstance=null,scheduled=false;
- const motion=window.CDMatch3DMotion,cameraGuide=window.CDMatch3DCamera;
- if(!motion||!cameraGuide||!window.CDMatch3DPlayerModel)return;
+ const motion=window.CDMatch3DMotion,cameraGuide=window.CDMatch3DCamera,contact=window.CDMatch3DContact;
+ if(!motion||!cameraGuide||!contact||!window.CDMatch3DPlayerModel)return;
  function setMode(next){if(!['2d','3d'].includes(next))return;mode=next;dispose();render();}
  function setCamera(next){if(!['tv','tactical'].includes(next))return;cameraMode=next;if(liveInstance)positionCamera(liveInstance.camera);}
  window.CDMatch3D=Object.freeze({setMode,setCamera,getMode:()=>mode});
@@ -96,11 +96,14 @@
     const pose=motion.pose(previous,p,t,now-instance.start,p.slot+p.side*15);
     object.position.set(w.x,pose.bounce,w.z);
     object.rotation.y=-(pose.direction+Math.PI/2);
+    const cue=contact.pose(instance.contact,p.id,now-instance.start);
+    object.rotation.x=cue.fall;
+    object.rotation.z=cue.roll;
     const parts=object.userData.motionParts;
     if(parts){parts.legs[0].rotation.x=pose.stride*.68;parts.legs[1].rotation.x=-pose.stride*.68;
      parts.knees[0].rotation.x=pose.kneeBend[0];parts.knees[1].rotation.x=pose.kneeBend[1];
-     parts.arms[0].rotation.x=pose.armSwing*.75;parts.arms[1].rotation.x=-pose.armSwing*.75;
-     parts.torso.rotation.x=pose.torsoLean;}
+     parts.arms[0].rotation.x=pose.armSwing*.75-cue.bracing*.55;parts.arms[1].rotation.x=-pose.armSwing*.75-cue.bracing*.55;
+     parts.torso.rotation.x=pose.torsoLean+cue.lean;}
    }}
    const b=bridge.world(f.ball);instance.ball.position.set(b.x,1.25+Math.sin(t*Math.PI)*Math.min(5,Math.abs(instance.state.ball.x-instance.state.origin.x)*.2),b.z);
    // Presentation-only rotation: no change to ball position or match events.
@@ -121,6 +124,7 @@
  function update(i,next){
   if(i.state?.key===next.key&&i.state?.players.length===next.players.length)return;
   i.previous=i.state||{players:next.players,ball:next.origin};i.state=next;i.start=performance.now();
+  i.contact=contact.plan(next);
   if(i.crowdAnimator)i.crowdAnimator.event(next,i.start);
   const ids=new Set(next.players.map(p=>p.id));
   for(const [id,obj] of i.players)if(!ids.has(id)){i.scene.remove(obj);i.players.delete(id);}
