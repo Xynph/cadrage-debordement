@@ -1,0 +1,14 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {target,smooth,tvPosition}=require('../dist/match3d/premium-camera.js');
+const frozen=Object.freeze({x:1000,z:-1000});
+assert.deepEqual(target(frozen),{x:16.8,y:0,z:-10});
+assert.equal(frozen.x,1000);
+assert.deepEqual(target({x:0,z:0}),{x:0,y:0,z:0});
+assert.deepEqual(tvPosition(target({x:0,z:0})),{x:8,y:68,z:85});
+assert.equal(smooth(12,42,0),12);
+assert.ok(smooth(0,100,16)>0&&smooth(0,100,16)<100);
+assert.ok(smooth(0,100,32)>smooth(0,100,16));
+assert.ok(Number.isFinite(smooth(NaN,Infinity,32)));
+assert.ok(Object.isFrozen(target({x:4,z:8})));
+console.log('MATCH 3D lot 03 — camera smoothing: OK');
