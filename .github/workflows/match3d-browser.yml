@@ -1,0 +1,65 @@
+name: MATCH 3D — réception Chromium et hors ligne
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/index.html'
+      - 'dist/match3d/**'
+      - 'tests/match3d-*'
+      - '.github/workflows/match3d-browser.yml'
+      - 'scripts/build-offline.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  match3d:
+    name: MATCH 3D — 2D/3D, caméras, WebGL, sauvegardes et offline
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Installer Chromium Playwright
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Valider les projections et les ressources offline
+        run: |
+          node tests/match3d-adapter.cjs
+          node tests/offline.cjs
+          python scripts/build-offline.py --prepare-only
+          python - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          source=Path('dist/match3d')
+          packed=Path('offline/launcher/app/match3d')
+          for file in source.rglob('*'):
+              if file.is_file():
+                  copy=packed/file.relative_to(source)
+                  assert copy.is_file(),str(copy)
+                  assert sha256(copy.read_bytes()).digest()==sha256(file.read_bytes()).digest(),str(copy)
+          html=(Path('offline/launcher/app/index.html')).read_text()
+          assert 'match-v61-advisor.js' in html
+          assert 'press-conference-interactive.js' in html
+          assert 'match3d/match3d.js' in html
+          assert 'offline-bridge.js' in html
+          print('MATCH 3D offline: assets identiques, scripts V60/V61 conservés')
+          PY
+      - name: Réception réelle Chromium
+        run: python tests/match3d-browser.py
+      - name: Publier les preuves Chromium
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-browser-report
+          path: match3d-browser-report/
+          if-no-files-found: warn
