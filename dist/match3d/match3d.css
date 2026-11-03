@@ -1,0 +1,11 @@
+/* MATCH 3D — progressive enhancement; 2D remains the default. */
+.cd3d-panel{overflow:hidden}
+.cd3d-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 10px}
+.cd3d-toolbar strong{margin-right:auto}
+.cd3d-toolbar button{padding:6px 13px;border-radius:7px}
+.cd3d-toolbar button[aria-pressed="true"]{background:#df8738;color:#15251e;font-weight:750}
+.cd3d-toolbar small{color:#9faeaa;margin-left:auto}
+#cd3d-host{width:100%;min-height:240px;aspect-ratio:16/9;background:#12211b;border:1px solid #355345;border-radius:9px;overflow:hidden}
+#cd3d-host canvas{width:100%;height:100%;display:block}
+.cd3d-help{font-size:12px;color:#9caaa4;margin:8px 0 0}
+@media(max-width:620px){#cd3d-host{min-height:200px}.cd3d-toolbar small{width:100%;margin:0}}
