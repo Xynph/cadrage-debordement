@@ -55,12 +55,15 @@ function validateDispatch(e,env,transport){
  need(/^[1-9][0-9]*$/.test(i.pr||'')&&/^[1-9][0-9]*$/.test(i.source_run||'')&&
    /^[0-9a-f]{40}$/.test(i.sha||'')&&Number.isSafeInteger(Number(i.pr))&&
    Number.isSafeInteger(Number(i.source_run)),'Paramètres de sélection invalides');
+ // pull_request_target runs on the trusted base commit, NOT on the PR head SHA.
+ // Preserve both invariants: source run on this exact main and live PR HEAD
+ // matching i.sha (validated separately by verify before privileged execution).
  const source=transport('actions/runs/'+i.source_run);
  need(source?.event==='pull_request_target'&&
    source.path==='.github/workflows/auto-integrate-request.yml'&&
    source.actor?.id===OWNER_ID&&source.actor?.login==='Xynph'&&
    source.actor?.type==='User'&&source.status==='completed'&&
-   source.conclusion==='success'&&source.head_sha===i.sha&&
+   source.conclusion==='success'&&source.head_sha===env.GITHUB_SHA&&
    source.pull_requests?.some(p=>p.number===Number(i.pr)),
    'Provenance propriétaire et sélection terminée non démontrées');
  return {pr:Number(i.pr),expected:i.sha,base:env.GITHUB_SHA,mode:'merge'};
