@@ -1,6 +1,11 @@
 name: Pilotage simplifie - tableau des chantiers
 on:
   workflow_dispatch:
+    inputs:
+      pr:
+        description: 'Facultatif : numéro de PR à vérifier par le gate officiel (sans fusion)'
+        required: false
+        type: string
 
 permissions: {}
 
@@ -34,3 +39,17 @@ jobs:
         run: |
           set -euo pipefail
           node ci/dev-conductor.cjs --text | tee "$GITHUB_STEP_SUMMARY"
+      - name: Précontrôle officiel ciblé (sans fusion)
+        if: inputs.pr != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_PROMPT_DISABLED: '1'
+          PR_NUMBER: ${{ inputs.pr }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo ""
+            echo "## Gate officiel — vérification uniquement"
+            node ci/dev-conductor.cjs --gate "$PR_NUMBER"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
