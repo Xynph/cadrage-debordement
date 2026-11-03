@@ -1,13 +1,17 @@
 'use strict';
 // Ordonnancement déterministe des suites complètes, sans sélection liée au diff.
 // Poids (secondes arrondies avec marge de 15 %) : maximum observé sur les
-// runs PR #41359113513 et main #41359554302, le 01/11/2026.
+// runs PR #41359113513 et main #41359554302, le 01/11/2026,
+// completes par deux suites V63 mesurees le 03/11/2026.
 // Seules les suites dépassant 3 s dans au moins un run sont pondérées ;
 // les autres et toute nouvelle suite conservent le poids prudent de 1.
 // Reprofiler si les suites ou les runtimes changent ; ce n'est pas une promesse de durée.
 const fs = require('node:fs');
 const path = require('node:path');
 const WEIGHTS_SECONDS = Object.freeze({
+  // Mesure GitHub Actions PR #41694849000 (03/11/2026), marge prudente.
+  'tests/v63-2-stress-native.cjs': 106,
+  'tests/v63-1-long-career.cjs': 92,
   'tests/ai-roster-cycle.cjs': 84,
   'tests/world-career.cjs': 72,
   'tests/rugby.cjs': 59,

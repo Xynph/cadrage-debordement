@@ -1,0 +1,40 @@
+name: Feedback rapide de developpement (non bloquant)
+on:
+  workflow_dispatch:
+    inputs:
+      base_sha:
+        description: "SHA de base pour le diff (main par defaut)"
+        required: false
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: quick-check-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  feedback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Selection conservatrice et tests rapides
+        env:
+          BASE_SHA: ${{ inputs.base_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tests/ci-quick-check.cjs
+          git fetch --no-tags origin main
+          base="${BASE_SHA:-$(git merge-base HEAD origin/main)}"
+          if ! [[ "$base" =~ ^[0-9a-f]{40}$ ]] || ! git cat-file -e "$base^{commit}"; then
+            echo "::error::Base absente ou invalide" ; exit 1
+          fi
+          git diff --name-only --diff-filter=ACMR "$base" HEAD > "$RUNNER_TEMP/quick-changed.txt"
+          node ci/quick-check.cjs "$RUNNER_TEMP/quick-changed.txt"
+          echo "Ce job ne remplace jamais Validation CI." >> "$GITHUB_STEP_SUMMARY"

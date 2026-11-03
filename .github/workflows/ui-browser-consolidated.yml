@@ -60,6 +60,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Cache des téléchargements Python et Chromium
+        id: browser_cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-py312-playwright157-chromium-v1
       - id: select
         name: Sélection des parcours et test déterministe
         shell: bash
@@ -87,12 +95,23 @@ jobs:
           if grep -Fxq 'tests/ui01-browser.py' "$RUNNER_TEMP/ui-scripts.txt"; then echo 'ui01=true' >> "$GITHUB_OUTPUT"; fi
           if grep -Fxq 'tests/ui02-live-browser.py' "$RUNNER_TEMP/ui-scripts.txt"; then echo 'ui02=true' >> "$GITHUB_OUTPUT"; fi
           if grep -Fxq 'tests/premium-v4-browser.py' "$RUNNER_TEMP/ui-scripts.txt"; then echo 'premium=true' >> "$GITHUB_OUTPUT"; fi
-      - name: Installer Playwright 1.57 et Chromium une seule fois
+      - name: Installer Playwright 1.57 et Chromium une seule fois (mesure cache)
         shell: bash
+        env:
+          CACHE_HIT: ${{ steps.browser_cache.outputs.cache-hit }}
         run: |
           set -euo pipefail
+          start="$SECONDS"
           python -m pip install playwright==1.57.0
           python -m playwright install --with-deps chromium
+          elapsed="$((SECONDS-start))"
+          {
+            echo "### Installation Chromium"
+            echo "- Cache restauré : ${CACHE_HIT:-inconnu}"
+            echo "- Durée installation (pip + navigateur + dépendances) : ${elapsed} s"
+            echo "- Playwright : 1.57.0"
+            echo "- Vérification maintenue : install --with-deps"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Exécuter toutes les réceptions sélectionnées, captures et sauvegardes
         shell: bash
         run: |
