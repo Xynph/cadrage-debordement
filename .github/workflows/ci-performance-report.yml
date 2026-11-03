@@ -1,0 +1,34 @@
+name: Audit performances CI — mesure avant apres
+on:
+  workflow_dispatch:
+    inputs:
+      before_run:
+        description: "ID du run Tests JavaScript avant"
+        required: true
+        type: string
+      after_run:
+        description: "ID du run Tests JavaScript apres"
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Tests unitaires du calcul P90 et des garde-fous
+        run: node tests/ci-run-metrics.cjs
+      - name: Lire les deux runs GitHub sans modifier la CI ni le gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE_RUN: ${{ inputs.before_run }}
+          AFTER_RUN: ${{ inputs.after_run }}
+        run: node ci/ci-run-metrics.cjs "$BEFORE_RUN" "$AFTER_RUN"
