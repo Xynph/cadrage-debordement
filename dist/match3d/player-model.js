@@ -23,7 +23,7 @@
    socks=material(look.socks),skin=material(look.skin),boots=material(0x171d20,.68);
   function mesh(geo,mat,parent,x,y,z){const obj=new T.Mesh(geo,mat);obj.position.set(x,y,z);parent.add(obj);return obj;}
   // Tapered body, shoulder yoke, visible collar and seams.
-  mesh(new T.CylinderGeometry(.48,.64,1.18,12),kit,group,0,1.68,0);
+  const torso=mesh(new T.CylinderGeometry(.48,.64,1.18,12),kit,group,0,1.68,0);
   mesh(new T.SphereGeometry(.53,12,8),kit,group,0,2.15,0).scale.set(1.22,.34,.80);
   mesh(new T.CylinderGeometry(.19,.24,.12,12),trim,group,0,2.34,0);
   mesh(new T.CylinderGeometry(.16,.17,.25,10),skin,group,0,2.44,0);
@@ -39,22 +39,22 @@
   }
   const legs=[],arms=[],knees=[];
   for(const sign of [-1,1]){
-   const shoulder=mesh(new T.Group(),kit,group,sign*.69,2.14,0);
+   const shoulder=new T.Group();shoulder.position.set(sign*.69,2.14,0);group.add(shoulder);
    mesh(new T.CylinderGeometry(.24,.19,.42,9),kit,shoulder,sign*.07,-.19,0);
    mesh(new T.CylinderGeometry(.145,.12,.60,9),skin,shoulder,sign*.09,-.69,0);
    mesh(new T.SphereGeometry(.145,8,7),skin,shoulder,sign*.09,-1.01,0);
    mesh(new T.BoxGeometry(.065,.27,.05),trim,shoulder,sign*.26,-.18,-.02);
    arms.push(shoulder);
-   const hip=mesh(new T.Group(),shorts,group,sign*.32,1.11,0);
+   const hip=new T.Group();hip.position.set(sign*.32,1.11,0);group.add(hip);
    mesh(new T.CylinderGeometry(.32,.255,.48,10),shorts,hip,0,-.23,0);
    mesh(new T.CylinderGeometry(.205,.17,.48,9),skin,hip,0,-.70,0);
-   const knee=mesh(new T.Group(),skin,hip,0,-.95,0);
+   const knee=new T.Group();knee.position.set(0,-.95,0);hip.add(knee);
    mesh(new T.CylinderGeometry(.165,.145,.53,9),socks,knee,0,-.28,0);
    const shoe=mesh(new T.BoxGeometry(.30,.17,.56),boots,knee,0,-.58,-.14);
    shoe.rotation.x=-.06;
    legs.push(hip);knees.push(knee);
   }
-  group.userData.motionParts={legs,arms,knees,torso:group};
+  group.userData.motionParts={legs,arms,knees,torso};
   const ring=mesh(new T.CircleGeometry(.94,20),new T.MeshBasicMaterial({
    color:player?.featured?0xffd07d:look.side===0?0xffb27a:0x9adfff,transparent:true,opacity:.28
   }),group,0,.045,0);
