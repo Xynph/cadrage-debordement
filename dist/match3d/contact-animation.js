@@ -21,7 +21,7 @@
   let best=null;
   for(const lead of leads)for(const other of defenders){
    const distance=Math.hypot(lead.x-other.x,lead.y-other.y);
-   if(distance>9||(!best||distance<best.distance))continue;
+   if(distance>9)continue;
    const candidate={lead:String(lead.id),other:String(other.id),distance,kind:scene.kind};
    if(!best||distance<best.distance)best=candidate;
   }
