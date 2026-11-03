@@ -1,0 +1,29 @@
+name: V60 relations presse hors match
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  press-relations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validation moteur et quinze saisons
+        env:
+          CD_V60_REPORT: v60-report.json
+        run: |
+          node --check dist/press-relations.js
+          node --check tests/v60-press-relations.cjs
+          node tests/v60-press-relations.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rapport-presse-v60
+          path: v60-report.json
+          if-no-files-found: ignore

@@ -1,0 +1,21 @@
+name: V24 career invariants
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/v24-career-invariants.cjs'
+      - '.github/workflows/v24-career-invariants.yml'
+      - 'dist/development.js'
+permissions:
+  contents: read
+jobs:
+  career-invariants:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Verify V24 invariants
+        run: node tests/v24-career-invariants.cjs

@@ -1,12 +1,19 @@
 # Journal de développement — Cadrage Débordement
 
-> Journal partagé entre **deux comptes ChatGPT en alternance exclusive**, jamais actifs simultanément. Un seul intégrateur est désigné pendant une session, après passation dans l'issue #73. GitHub reste l'unique source de vérité. Ce document décrit l'état connu à la date de sa dernière mise à jour ; toujours le confronter aux commits, branches, pull requests et fichiers actuels avant de travailler.
-
+> Journal partagé entre deux comptes ChatGPT pouvant travailler en parallèle sur des chemins compatibles, avec un seul intégrateur responsable des fusions. GitHub reste la source de vérité.\n
 **Gouvernance en vigueur : PR #200 fusionnée le 1er novembre 2026 (`c04307abe4b825f6122e17272624d3bd8221e09b`).**  
 **Dernière intégration vérifiée au 1er novembre 2026 : gouvernance exclusive PR #200, commit `c04307abe4b825f6122e17272624d3bd8221e09b` ; les PR #65 et #74 sont des jalons historiques, pas l'état courant. Vérifier `main` avant toute intervention.**  
 **Branche de référence : `main`.**
 
-**Règle courante prioritaire :** `AGENTS.md` sur `main` et les protections GitHub actives priment sur les anciennes indications historiques de ce journal. Les commentaires #73 sont des passations, pas des autorisations implicites. La règle est une seule session ChatGPT active, jamais de développement simultané entre comptes. Réserver les chemins, consigner les changements de rôle, conserver des preuves de tests et demander une autorisation distincte pour chaque fusion. Les comptes ne modifient jamais directement `main`.
+**Règle courante prioritaire :** `AGENTS.md` sur `main` et les protections GitHub actives priment sur les anciennes indications historiques de ce journal. Les commentaires #73 sont des passations, pas des autorisations implicites. La décision actuelle du 2 novembre autorise les travaux simultanés compatibles et les fusions ordinaires sans autorisation humaine répétitive. Réserver seulement les chemins en conflit potentiel, conserver les preuves utiles des tests, et ne jamais pousser directement sur `main`.
+
+## Gouvernance actuelle — décision du 2 novembre 2026 (prioritaire)
+
+**Cycle de livraison : DÉVELOPPER → TESTER RAPIDEMENT → INTÉGRER.** Le compte Business est **PRODUCTEUR**, le compte Plus **INTÉGRATEUR UNIQUE**. Les deux comptes peuvent travailler simultanément sur des branches et fichiers compatibles. Un seul intégrateur fusionne à la fois. Léo autorise par avance les **fusions ordinaires** : pas de demande de permission PR par PR, ni de revue indépendante ajoutée par une ancienne règle interne. Les tests ciblés, la compatibilité des sauvegardes, les contrôles CI réellement exigés, la protection de `main` et le verrouillage du SHA restent obligatoires. Les changements sensibles exigent des validations adaptées. **Bilan bref** : fonctionnalités, tests réellement exécutés, statut d'intégration, blocages éventuels.
+
+La PR #239 met à jour `AGENTS.md` et `docs/developpement-parallele.md` séparément : **ne pas modifier ces fichiers dans ce chantier**. Cette nouvelle gouvernance prime sur les formulations historiques contradictoires conservées plus bas comme journal de décisions anciennes. Les procédures techniques déployées continuent de s'appliquer jusqu'à leur adaptation effective. 
+
+**Protection serveur vérifiée le 2 novembre 2026 :** ruleset actif `main-ci-et-pr-obligatoires` (#26326518) : PR obligatoire, **0 approbation requise**, contrôle `Validation CI` requis avec branche à jour, aucune exception de contournement. La lecture détaillée de la protection de branche séparée renvoie 403 à l'intégration ; ne pas en déduire qu'elle est absente. Le gate `ci/chat-release.cjs` exige toujours une commande stricte `/cd-merge PR SHA` déposée par l'identité propriétaire sur l'issue #73, la CI complète du main exact et de la PR, puis la CI post-fusion. L'autorisation générale de Léo retire le frein humain organisationnel, **pas** ces étapes techniques. Pour une intégration entièrement autonome sans commentaire propriétaire, concevoir et tester séparément un déclenchement sécurisé sur événements/identité autorisés ; ne jamais supprimer la vérification de SHA ni les statuts requis.
 
 ## État du projet
 
@@ -30,8 +37,7 @@ Les références ci-dessus sont des repères historiques, **pas une garantie qu'
 
 ## Décisions de développement
 
-- **Alternance exclusive :** un seul des deux comptes ChatGPT travaille à la fois. Chacun peut intervenir comme producteur puis, dans une session distincte avec passation documentée dans #73, comme intégrateur unique actif. Une PR ne peut être fusionnée que sur autorisation explicite de Léo pour la PR et son HEAD, après CI complète, `Validation CI`, branche à jour, contrôle `/cd-check` et procédure officielle `/cd-merge`. Le rôle d'intégrateur seul ne suffit jamais à autoriser la fusion.
-- Chaque session commence par la lecture de l'état actuel de GitHub : commits, différences, branches, PR et `AGENTS.md`, puis ce journal.
+- **Gouvernance actuelle :** Business = PRODUCTEUR ; Plus = INTÉGRATEUR UNIQUE. Développement parallèle autorisé sur chemins compatibles, fusions ordinaires préautorisées. Conserver les gardes techniques déployées et les tests proportionnés aux risques.\n- Chaque session commence par la lecture de l'état actuel de GitHub : commits, différences, branches, PR et `AGENTS.md`, puis ce journal.
 - Chaque changement doit être **commité sur GitHub et vérifié après publication**. Une branche non fusionnée ne constitue pas une livraison sur `main`.
 - Préférer des corrections ciblées et compatibles avec les sauvegardes existantes. Toute modification, même documentaire, passe par une branche et une PR ; aucun push direct dans `main`, conformément à `AGENTS.md`.
 - Ne pas confondre règles officielles du rugby, règlements français de compétition et coefficients fictifs de simulation.
