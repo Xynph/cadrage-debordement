@@ -1,0 +1,35 @@
+name: Auto-release guarded (opt-in)
+on:
+  workflow_run:
+    workflows: ["Tests JavaScript"]
+    types: [completed]
+permissions: {}
+jobs:
+  integrate:
+    if: >-
+      github.repository == 'Xynph/cadrage-debordement' &&
+      vars.CD_AUTO_RELEASE_ENABLED == 'true' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: write
+      pull-requests: read
+      actions: write
+    concurrency:
+      group: chat-release-gate-main
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+      - name: Policy, official gate and post-merge CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CD_AUTO_RELEASE_ENABLED: ${{ vars.CD_AUTO_RELEASE_ENABLED }}
+        run: node ci/auto-release.cjs
