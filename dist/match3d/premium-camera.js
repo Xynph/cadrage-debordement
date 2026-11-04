@@ -19,5 +19,10 @@
  function tvPosition(focus){
   return Object.freeze({x:8+focus.x,y:68,z:85+focus.z});
  }
- return Object.freeze({target,smooth,tvPosition});
+ function sidelinePosition(focus){
+  const x=clamp(focus?.x,-17,17),z=clamp(focus?.z,-11,11);
+  // Broadcast touchline angle: lower to the pitch, still safely outside play.
+  return Object.freeze({x:x*.82+4,y:24,z:69+z*.48});
+ }
+ return Object.freeze({target,smooth,tvPosition,sidelinePosition});
 });
