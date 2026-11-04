@@ -31,4 +31,11 @@ assert.ok(a.children.filter(x=>x instanceof Line).every(x=>
  x.geometry.points.length===15&&x.geometry.points.every(p=>
  [p.x,p.y,p.z].every(Number.isFinite))));
 assert.equal(a.position.values,undefined);
-console.log('MATCH 3D lot 12: modèle ballon rugby hors-ligne et sans moteur OK');
+const fs=require('node:fs'),path=require('node:path');
+const html=fs.readFileSync(path.join(__dirname,'../dist/index.html'),'utf8');
+const renderer=fs.readFileSync(path.join(__dirname,'../dist/match3d/match3d.js'),'utf8');
+assert.equal(html.split('match3d/rugby-ball-model.js').length-1,1);
+assert.ok(html.indexOf('match3d/rugby-ball-model.js')<html.indexOf('match3d/match3d.js'));
+assert.ok(renderer.includes('CDMatch3DBallModel.build(T)'));
+assert.ok(renderer.includes('instance.ball.rotation.z=t*Math.PI*2'));
+console.log('MATCH 3D lot 12: modèle ballon rugby raccordé hors ligne et sans moteur OK');
