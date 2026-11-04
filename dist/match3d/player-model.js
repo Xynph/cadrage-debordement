@@ -15,6 +15,32 @@
   const slot=Number.isFinite(player?.slot)?Math.max(0,Math.floor(player.slot)):0;
   return Object.freeze({...palette[side],skin:skinTones[(slot*7+side)%skinTones.length],number:slot%15+1,side});
  }
+ const glyphs=Object.freeze({
+  '0':'abcefd', '1':'bc', '2':'abged', '3':'abgcd', '4':'fgbc',
+  '5':'afgcd', '6':'afgecd', '7':'abc', '8':'abcdefg', '9':'abcdfg'
+ });
+ function jerseyDigits(number){
+  const n=Number.isFinite(number)?Math.max(1,Math.min(99,Math.floor(number))):1;
+  return String(n).split('').map(d=>glyphs[d]||glyphs['1']);
+ }
+ function addJerseyNumber(T,group,number,ink){
+  const digits=jerseyDigits(number);
+  const bars=Object.freeze({
+   a:[0,.24,.20,.045],b:[.115,.125,.045,.19],c:[.115,-.125,.045,.19],
+   d:[0,-.24,.20,.045],e:[-.115,-.125,.045,.19],f:[-.115,.125,.045,.19],
+   g:[0,0,.20,.045]
+  });
+  const width=digits.length===2?.32:0;
+  const root=new T.Group();root.position.set(0,1.81,.63);group.add(root);
+  for(let i=0;i<digits.length;i++){
+   const digit=new T.Group();digit.position.set((i-(digits.length-1)/2)*width,0,0);root.add(digit);
+   for(const key of digits[i]){
+    const b=bars[key],segment=new T.Mesh(new T.BoxGeometry(b[2],b[3],.025),ink);
+    segment.position.set(b[0],b[1],.015);digit.add(segment);
+   }
+  }
+  return root;
+ }
  function build(T,player){
   const look=appearance(player);
   const group=new T.Group();
@@ -37,6 +63,7 @@
   for(const x of [-.38,.38]){
    mesh(new T.BoxGeometry(.07,.74,.035),trim,group,x,1.80,-.48);
   }
+  const jerseyNumber=addJerseyNumber(T,group,look.number,trim);
   const legs=[],arms=[],knees=[];
   for(const sign of [-1,1]){
    const shoulder=new T.Group();shoulder.position.set(sign*.69,2.14,0);group.add(shoulder);
@@ -55,11 +82,12 @@
    legs.push(hip);knees.push(knee);
   }
   group.userData.motionParts={legs,arms,knees,torso};
+  group.userData.jerseyNumber=jerseyNumber;
   const ring=mesh(new T.CircleGeometry(.94,20),new T.MeshBasicMaterial({
    color:player?.featured?0xffd07d:look.side===0?0xffb27a:0x9adfff,transparent:true,opacity:.28
   }),group,0,.045,0);
   ring.rotation.x=-Math.PI/2;
   return group;
  }
- return Object.freeze({appearance,build});
+ return Object.freeze({appearance,jerseyDigits,build});
 });
