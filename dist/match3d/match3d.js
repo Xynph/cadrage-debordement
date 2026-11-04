@@ -7,7 +7,7 @@
  const motion=window.CDMatch3DMotion,cameraGuide=window.CDMatch3DCamera,contact=window.CDMatch3DContact,impact=window.CDMatch3DImpact;
  if(!motion||!cameraGuide||!contact||!window.CDMatch3DPlayerModel)return;
  function setMode(next){if(!['2d','3d'].includes(next))return;mode=next;dispose();render();}
- function setCamera(next){if(!['tv','tactical','sideline'].includes(next))return;cameraMode=next;if(liveInstance)positionCamera(liveInstance.camera);}
+ function setCamera(next){if(!['tv','tactical','sideline','immersive'].includes(next))return;cameraMode=next;if(liveInstance)positionCamera(liveInstance.camera);}
  window.CDMatch3D=Object.freeze({setMode,setCamera,getMode:()=>mode});
  match2D=function(l){
   let scene;
@@ -15,13 +15,14 @@
   sceneData=scene;
   const legacy=original2D(l);
   const controls='<section class="card cd3d-panel" aria-label="Affichage du match"><div class="cd3d-toolbar"><strong>Vue du match</strong><button type="button" aria-pressed="'+(mode==='2d')+'" onclick="CDMatch3D.setMode(\'2d\')">2D</button><button type="button" aria-pressed="'+(mode==='3d')+'" onclick="CDMatch3D.setMode(\'3d\')">3D</button></div>'+
-   (mode==='3d'?'<div class="cd3d-toolbar"><span>Caméra</span><button type="button" onclick="CDMatch3D.setCamera(\'tv\')">TV</button><button type="button" onclick="CDMatch3D.setCamera(\'tactical\')">Tactique</button><button type=\"button\" onclick=\"CDMatch3D.setCamera(\'sideline\')\">Latérale</button><small>Reconstitution visuelle · moteur rugby inchangé</small></div><div id="cd3d-host" aria-label="Terrain de rugby 3D"></div><p class="cd3d-help">30 joueurs, ballon et phases issus du moteur de match. Affichage expérimental : mouvements schématiques interpolés.</p>':'');
+   (mode==='3d'?'<div class="cd3d-toolbar"><span>Caméra</span><button type="button" onclick="CDMatch3D.setCamera(\'tv\')">TV</button><button type="button" onclick="CDMatch3D.setCamera(\'tactical\')">Tactique</button><button type=\"button\" onclick=\"CDMatch3D.setCamera(\'sideline\')\">Latérale</button><button type="button" onclick="CDMatch3D.setCamera(\'immersive\')">Immersive</button><small>Reconstitution visuelle · moteur rugby inchangé</small></div><div id="cd3d-host" aria-label="Terrain de rugby 3D"></div><p class="cd3d-help">30 joueurs, ballon et phases issus du moteur de match. Affichage expérimental : mouvements schématiques interpolés.</p>':'');
   if(mode==='3d'&&!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;mount();});}
   return mode==='3d'?controls:controls+legacy;
  };
  function positionCamera(camera){
   if(cameraMode==='tactical'){camera.position.set(0,115,.01);camera.up.set(0,0,-1);}
   else if(cameraMode==='sideline'){const pos=cameraGuide.sidelinePosition({x:0,z:0});camera.position.set(pos.x,pos.y,pos.z);camera.up.set(0,1,0);}
+  else if(cameraMode==='immersive'){camera.position.set(-14,15,20);camera.up.set(0,1,0);}
   else {camera.position.set(8,68,85);camera.up.set(0,1,0);}
   camera.lookAt(0,0,0);
  }
@@ -121,10 +122,10 @@
    const b=bridge.world(f.ball);instance.ball.position.set(b.x,1.25+Math.sin(t*Math.PI)*Math.min(5,Math.abs(instance.state.ball.x-instance.state.origin.x)*.2),b.z);
    // Presentation-only rotation: no change to ball position or match events.
    instance.ball.rotation.z=t*Math.PI*2;
-   if(cameraMode==='tv'||cameraMode==='sideline'){
-    const focus=cameraGuide.target(b),desired=cameraMode==='sideline'?cameraGuide.sidelinePosition(focus):cameraGuide.tvPosition(focus);
+   if(cameraMode==='tv'||cameraMode==='sideline'||cameraMode==='immersive'){
+    const focus=cameraGuide.target(b),desired=cameraMode==='immersive'?{x:focus.x-14,y:15,z:focus.z+20}:cameraMode==='sideline'?cameraGuide.sidelinePosition(focus):cameraGuide.tvPosition(focus);
     const dt=Math.min(100,Math.max(0,now-instance.last));
-    instance.camera.position.set(cameraGuide.smooth(instance.camera.position.x,desired.x,dt),desired.y,cameraGuide.smooth(instance.camera.position.z,desired.z,dt));
+    instance.camera.position.set(cameraGuide.smooth(instance.camera.position.x,desired.x,dt),cameraGuide.smooth(instance.camera.position.y,desired.y,dt),cameraGuide.smooth(instance.camera.position.z,desired.z,dt));
     instance.camera.lookAt(focus.x,focus.y,focus.z);
    }
    if(instance.crowdAnimator)instance.crowdAnimator.tick(now);
