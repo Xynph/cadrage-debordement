@@ -137,4 +137,3 @@
  }
  return Object.freeze({appearance,jerseyDigits,build});
 });
-/* lot 20 asset hook pending */
