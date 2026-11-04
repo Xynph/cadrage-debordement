@@ -14,12 +14,12 @@
   const progressBounded=clamp(progress,0,1);
   const envelope=progressBounded===0||progressBounded===1?0:Math.sin(Math.PI*progressBounded);
   const stride=pace===0||envelope===0?0:Math.sin(phase)*Math.sqrt(pace)*envelope;
-  const kneeBend=Object.freeze([0,Math.PI].map(offset=>clamp(Math.max(0,Math.sin(phase+offset))*.84*Math.sqrt(pace)*envelope,0,.84)));
+  const kneeBend=Object.freeze([0,Math.PI].map(offset=>clamp(Math.max(0,Math.sin(phase+offset))*.75*Math.sqrt(pace)*envelope,0,.75)));
   const direction=distance>.01?Math.atan2(dy,dx):0;
   // Secondary gait cues remain visual only: no access to simulation decisions.
   const elbowFlex=Object.freeze([0,Math.PI].map(offset=>
    clamp(.14+Math.max(0,Math.sin(phase+offset))*.46*Math.sqrt(pace)*envelope,.14,.60)));
-  const hipSway=clamp(Math.sin(phase)*Math.sqrt(pace)*envelope*.085,-.085,.085);
+  const hipSway=clamp(Math.sin(phase)*Math.sqrt(pace)*envelope*.06,-.06,.06);
   const landing=clamp(Math.max(0,Math.cos(phase))*pace*envelope,0,1);
   return Object.freeze({
    stride:clamp(stride,-1,1),
