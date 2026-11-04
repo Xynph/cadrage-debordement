@@ -85,8 +85,9 @@
   renderer.setSize(Math.max(300,host.clientWidth),Math.max(180,Math.floor(host.clientWidth*9/16)));
   renderer.outputEncoding=T.sRGBEncoding;
   host.append(renderer.domElement);
-  const ball=new T.Mesh(new T.SphereGeometry(.58,12,8),new T.MeshStandardMaterial({color:0xf8e9c6}));
-  ball.scale.set(1.4,.7,.85);scene.add(ball);
+  const ball=window.CDMatch3DBallModel?window.CDMatch3DBallModel.build(T):new T.Mesh(new T.SphereGeometry(.58,12,8),new T.MeshStandardMaterial({color:0xf8e9c6}));
+  if(!window.CDMatch3DBallModel)ball.scale.set(1.4,.7,.85);
+  scene.add(ball);
   const impactEffects=impact?impact.create(scene,T):null;
   const instance={host,renderer,scene,camera,ball,players:new Map(),crowdAnimator,impactEffects,raf:0,last:performance.now(),state:null,start:performance.now()};
   liveInstance=instance;update(instance,sceneData);
