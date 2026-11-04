@@ -55,11 +55,14 @@
   mesh(new T.SphereGeometry(.52,16,10),kit,group,0,2.15,0).scale.set(1.32,.36,.83);
   mesh(new T.CylinderGeometry(.19,.24,.12,12),trim,group,0,2.34,0);
   mesh(new T.CylinderGeometry(.16,.17,.25,10),skin,group,0,2.44,0);
-  const head=mesh(new T.SphereGeometry(.32,14,12),skin,group,0,2.77,0);
+  // Independently articulated neck and head; pivot remains inside the collar.
+  const headRig=new T.Group();headRig.position.set(0,2.59,0);group.add(headRig);
+  const head=mesh(new T.SphereGeometry(.32,18,14),skin,headRig,0,.18,0);
   head.scale.set(.91,1.15,.92);
-  mesh(new T.SphereGeometry(.105,9,7),skin,group,0,2.73,-.29).scale.set(.77,.72,.78);
+  mesh(new T.SphereGeometry(.105,10,8),skin,headRig,0,.14,-.29).scale.set(.77,.72,.78);
+  for(const sign of [-1,1])mesh(new T.SphereGeometry(.078,9,8),skin,headRig,sign*.30,.17,.015);
   const hair=material(0x262523);
-  const cap=mesh(new T.SphereGeometry(.315,12,8,0,Math.PI*2,0,Math.PI*.38),hair,group,0,2.85,0);
+  const cap=mesh(new T.SphereGeometry(.315,16,10,0,Math.PI*2,0,Math.PI*.38),hair,headRig,0,.26,0);
   cap.scale.set(.95,.9,.95);
   // Front is negative Z. Kit markings remain geometrical, offline and cheap.
   mesh(new T.BoxGeometry(.28,.28,.035),trim,group,0,1.78,-.57);
@@ -76,16 +79,16 @@
    // Distinctive shoulder colour blocks make the silhouettes clearer from TV distance.
    const shoulderPatch=mesh(new T.BoxGeometry(.32,.10,.45),trim,group,side*.51,2.22,-.12);
    shoulderPatch.rotation.z=side*.12;
-   mesh(new T.SphereGeometry(.038,7,6),eye,group,side*.115,2.79,-.288);
-   mesh(new T.BoxGeometry(.105,.029,.032),dark,group,side*.115,2.885,-.270);
+   mesh(new T.SphereGeometry(.038,7,6),eye,headRig,side*.115,.20,-.288);
+   mesh(new T.BoxGeometry(.105,.029,.032),dark,headRig,side*.115,.295,-.270);
   }
-  mesh(new T.BoxGeometry(.145,.021,.034),mouth,group,0,2.645,-.302);
+  mesh(new T.BoxGeometry(.145,.021,.034),mouth,headRig,0,.055,-.302);
   mesh(new T.BoxGeometry(.20,.045,.07),white,group,0,2.26,-.467);
   // Lightweight procedural crest and chest strip, no external textures required.
   mesh(new T.BoxGeometry(.13,.17,.046),trim,group,-.22,1.95,-.526);
   mesh(new T.BoxGeometry(.64,.055,.045),dark,group,0,1.48,-.517);
   const jerseyNumber=addJerseyNumber(T,group,look.number,trim);
-  const legs=[],arms=[],knees=[],elbows=[];
+  const legs=[],arms=[],knees=[],elbows=[],wrists=[],ankles=[];
   for(const sign of [-1,1]){
    const shoulder=new T.Group();shoulder.position.set(sign*.69,2.14,0);group.add(shoulder);
    mesh(new T.SphereGeometry(.235,10,8),kit,shoulder,sign*.07,-.09,0).scale.set(1.05,.86,1.02);
@@ -93,9 +96,12 @@
    const elbow=new T.Group();elbow.position.set(sign*.09,-.49,0);shoulder.add(elbow);
    mesh(new T.SphereGeometry(.15,10,8),skin,elbow,0,0,0);
    mesh(new T.CylinderGeometry(.155,.11,.54,10),skin,elbow,0,-.30,0);
-   mesh(new T.SphereGeometry(.14,10,8),skin,elbow,0,-.59,0);
+   // Moving wrist and palm: fingers rotate with the forearm rather than the torso.
+   const wrist=new T.Group();wrist.position.set(0,-.57,0);elbow.add(wrist);
+   mesh(new T.SphereGeometry(.13,12,9),skin,wrist,0,-.055,-.025).scale.set(.89,1.20,.72);
+   mesh(new T.SphereGeometry(.065,9,7),skin,wrist,sign*.105,-.025,-.075);
    mesh(new T.BoxGeometry(.065,.27,.05),trim,shoulder,sign*.26,-.18,-.02);
-   arms.push(shoulder);elbows.push(elbow);
+   arms.push(shoulder);elbows.push(elbow);wrists.push(wrist);
    const hip=new T.Group();hip.position.set(sign*.32,1.11,0);group.add(hip);
    mesh(new T.SphereGeometry(.31,10,8),shorts,hip,0,-.08,0).scale.set(1.05,.84,1.04);
    mesh(new T.CylinderGeometry(.29,.235,.48,12),shorts,hip,0,-.27,0);
@@ -103,21 +109,23 @@
    const knee=new T.Group();knee.position.set(0,-.95,0);hip.add(knee);
    mesh(new T.SphereGeometry(.185,9,8),skin,knee,0,-.02,0);
    mesh(new T.CylinderGeometry(.18,.135,.53,10),socks,knee,0,-.28,0);
-   const shoe=mesh(new T.BoxGeometry(.34,.19,.64),boots,knee,0,-.58,-.17);
+   const ankle=new T.Group();ankle.position.set(0,-.47,0);knee.add(ankle);
+   const shoe=mesh(new T.BoxGeometry(.34,.19,.64),boots,ankle,0,-.11,-.17);
    shoe.rotation.x=-.06;
    // Laces and sole visible during strides and contact close-ups.
-   mesh(new T.BoxGeometry(.235,.035,.32),white,knee,0,-.477,-.29);
-   mesh(new T.BoxGeometry(.34,.047,.64),dark,knee,0,-.685,-.17);
+   mesh(new T.BoxGeometry(.235,.035,.32),white,ankle,0,-.007,-.29);
+   mesh(new T.BoxGeometry(.34,.047,.64),dark,ankle,0,-.215,-.17);
    for(const zz of [-.35,.02]){
-    mesh(new T.BoxGeometry(.09,.06,.075),dark,knee,-.095,-.725,zz);
-    mesh(new T.BoxGeometry(.09,.06,.075),dark,knee,.095,-.725,zz);
+    mesh(new T.BoxGeometry(.09,.06,.075),dark,ankle,-.095,-.255,zz);
+    mesh(new T.BoxGeometry(.09,.06,.075),dark,ankle,.095,-.255,zz);
    }
    // Compression tape and striped socks create an identifiable lower-body silhouette.
    mesh(new T.CylinderGeometry(.186,.186,.075,10),trim,knee,0,-.17,0);
    mesh(new T.CylinderGeometry(.176,.176,.055,10),white,knee,0,-.28,0);
-   legs.push(hip);knees.push(knee);
+   legs.push(hip);knees.push(knee);ankles.push(ankle);
   }
-  group.userData.motionParts={legs,arms,knees,elbows,torso};
+  group.userData.motionParts={legs,arms,knees,elbows,wrists,ankles,headRig,torso};
+  group.userData.articulatedAthleteV19=true;
   group.userData.premiumAthleteRig=true;
   group.userData.broadcastDetails=true;
   group.userData.jerseyNumber=jerseyNumber;
