@@ -49,6 +49,7 @@ test('v20: 30 rigged instances own independent skinned geometry and animate',asy
   traverse(fn){fn(this);fn(mesh());},
   clone(){const m=mesh();return {
    scale:{setScalar(){}},
+   add(child){(this.uniforms??=[]).push(child);},
    traverse(fn){fn(this);fn(m);},
    mesh:m
   };}
