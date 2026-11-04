@@ -201,7 +201,7 @@ try:
         check("FPS mesuré dans Chromium", perf["render"]["fps"] > 0)
         check("mémoire géométrique mesurée", perf["render"]["geometries"] > 0)
         (REPORT / "match3d-v20-performance.json").write_text(
-            json.dumps(perf, ensure_ascii=False, indent=2) + "\\n")
+            json.dumps(perf, ensure_ascii=False, indent=2) + "\n")
         page.screenshot(path=str(REPORT / "match3d-chromium.png"), full_page=True)
         page.locator(".cd3d-panel button").filter(has_text="Immersive").click()
         check("caméra immersive disponible", page.evaluate("CDMatch3D.getMode() === '3d'"))
