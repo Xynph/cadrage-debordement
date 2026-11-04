@@ -39,12 +39,12 @@ const sprint=motion.pose(still,moving,.5,200,0);
 assert.equal(neutral.stride,0);
 assert.ok(sprint.pace>0);
 assert.ok(Number.isFinite(sprint.bounce));
-assert.ok(sprint.kneeBend.every(v=>v>=0&&v<=.84));
+assert.ok(sprint.kneeBend.every(v=>v>=0&&v<=.75));
 assert.ok(sprint.elbowFlex.every(v=>v>=.14&&v<=.60));
 for(const progress of [-100,0,.25,.5,.75,1,100]){
  const pose=motion.pose(still,moving,progress,1234,6);
  assert.ok(Object.values(pose).flat().every(Number.isFinite));
- assert.ok(Math.abs(pose.hipSway)<=.085);
+ assert.ok(Math.abs(pose.hipSway)<=.06);
 }
 assert.equal(motion.pose(still,moving,0,200,0).stride,0);
 assert.equal(motion.pose(still,moving,1,200,0).stride,0);
