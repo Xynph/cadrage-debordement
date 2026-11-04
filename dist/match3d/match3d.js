@@ -28,7 +28,7 @@
  }
  function field(scene){
   const T=window.THREE;
-  const grass=new T.Mesh(new T.PlaneGeometry(110,80),new T.MeshLambertMaterial({color:0x2c7548}));
+  const grass=new T.Mesh(new T.PlaneGeometry(110,80),(window.CDMatch3DBroadcast?window.CDMatch3DBroadcast.grassMaterial(T):new T.MeshLambertMaterial({color:0x2c7548})));
   grass.rotation.x=-Math.PI/2;grass.position.y=-.025;scene.add(grass);
   const stripe=new T.MeshBasicMaterial({color:0x348355,side:T.DoubleSide});
   for(let x=-50;x<50;x+=20){const m=new T.Mesh(new T.PlaneGeometry(10,70),stripe);m.rotation.x=-Math.PI/2;m.position.set(x+5,.002,0);scene.add(m);}
@@ -52,7 +52,7 @@
   const group=model.build(T,p);scene.add(group);return group;
  }
  function dispose(){
-  if(!liveInstance)return;const i=liveInstance;liveInstance=null;cancelAnimationFrame(i.raf);if(i.crowdAnimator)i.crowdAnimator.dispose();if(i.impactEffects)i.impactEffects.dispose();
+  if(!liveInstance)return;const i=liveInstance;liveInstance=null;cancelAnimationFrame(i.raf);if(i.crowdAnimator)i.crowdAnimator.dispose();if(i.impactEffects)i.impactEffects.dispose();if(i.broadcast)i.broadcast.dispose();
   i.renderer.dispose();i.renderer.domElement.remove();
   i.scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>m.dispose());}});
  }
@@ -90,7 +90,8 @@
   if(!window.CDMatch3DBallModel)ball.scale.set(1.4,.7,.85);
   scene.add(ball);
   const impactEffects=impact?impact.create(scene,T):null;
-  const instance={host,renderer,scene,camera,ball,players:new Map(),crowdAnimator,impactEffects,raf:0,last:performance.now(),state:null,start:performance.now()};
+  const broadcast=window.CDMatch3DBroadcast?window.CDMatch3DBroadcast.create(scene,T):null;
+  const instance={host,renderer,scene,camera,ball,players:new Map(),crowdAnimator,impactEffects,broadcast,raf:0,last:performance.now(),state:null,start:performance.now()};
   liveInstance=instance;update(instance,sceneData);
   function loop(now){
    if(liveInstance!==instance)return;
@@ -119,6 +120,7 @@
      parts.torso.rotation.z=pose.hipSway+cue.roll*.22+stumble.shoulder*.18;}
    }}
    if(instance.impactEffects)instance.impactEffects.tick(instance.contact,now-instance.start,instance.players);
+   if(instance.broadcast)instance.broadcast.sync(instance.players);
    const b=bridge.world(f.ball);instance.ball.position.set(b.x,1.25+Math.sin(t*Math.PI)*Math.min(5,Math.abs(instance.state.ball.x-instance.state.origin.x)*.2),b.z);
    // Presentation-only rotation: no change to ball position or match events.
    instance.ball.rotation.z=t*Math.PI*2;
