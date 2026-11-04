@@ -206,6 +206,9 @@ try:
             animation_before))
         page.wait_for_function("CDMatch3D.diagnostics().render.fps > 0", timeout=15000)
         perf = page.evaluate("CDMatch3D.diagnostics()")
+        check("deux tenues d'équipe générées hors ligne", perf["asset"]["kits"] == 2)
+        check("géométries du kit mutualisées", perf["render"]["geometries"] <= 90)
+        check("FPS logiciel Chromium au moins 10", perf["render"]["fps"] >= 10)
         check("FPS mesuré dans Chromium", perf["render"]["fps"] > 0)
         check("mémoire géométrique mesurée", perf["render"]["geometries"] > 0)
         (REPORT / "match3d-v20-performance.json").write_text(
