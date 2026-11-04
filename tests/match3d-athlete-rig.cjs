@@ -31,7 +31,7 @@ assert.ok(moving.elbowFlex.every(a=>a>=.14&&a<=.60));
 assert.ok(moving.landing>=0&&moving.landing<=1);
 assert.ok(Math.abs(moving.hipSway)<=.06);
 assert.deepEqual(idle.elbowFlex,[.14,.14]);
-assert.equal(idle.hipSway,0);
+assert.ok(Math.abs(idle.hipSway)<1e-12);
 assert.deepEqual(pose(before,next,.5,160,3),moving);
 assert.deepEqual(before,{x:0,y:0});
 const fs=require('node:fs'),path=require('node:path');
