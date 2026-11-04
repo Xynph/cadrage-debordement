@@ -42,8 +42,9 @@ assert.ok(html.indexOf('match3d/contact-animation.js')>html.indexOf('match3d/pla
 assert.ok(html.indexOf('match3d/contact-animation.js')<html.indexOf('match3d/match3d.js'));
 assert.equal((html.match(/match3d\/contact-animation\.js/g)||[]).length,1);
 assert.ok(renderer.includes('contact.plan(next)'));
-assert.ok(renderer.includes('contact.pose(instance.contact,p.id,now-instance.start)'));
-assert.ok(renderer.includes('object.rotation.x=cue.fall'));
-assert.ok(renderer.includes('object.rotation.z=cue.roll'));
+assert.ok(renderer.includes('contact.pose(instance.contact,p.id,elapsed)'));
+assert.ok(renderer.includes('contact.stunt(instance.contact,p.id,elapsed)'));
+assert.ok(renderer.includes('object.rotation.x=cue.fall+stumble.shoulder*.17'));
+assert.ok(renderer.includes('object.rotation.z=cue.roll+stumble.shoulder'));
 assert.deepEqual(src.players[0],{id:'attacker',side:0,x:50,y:35,featured:true});
 console.log('MATCH 3D contact lot 08: 29 assertions OK');
