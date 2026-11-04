@@ -4,7 +4,7 @@
  if(typeof match2D!=='function'||typeof matchScene!=='function'||!window.CDMatch3DAdapter)return;
  const original2D=match2D,bridge=window.CDMatch3DAdapter;
  let mode='2d',cameraMode='tv',sceneData=null,liveInstance=null,scheduled=false;
- const asset=window.CDMatch3DAssetPlayer;
+ const asset=window.CDMatch3DRugbyPlayer||window.CDMatch3DAssetPlayer;
  const motion=window.CDMatch3DMotion,cameraGuide=window.CDMatch3DCamera,contact=window.CDMatch3DContact,impact=window.CDMatch3DImpact;
  if(!motion||!cameraGuide||!contact||!window.CDMatch3DPlayerModel)return;
  function setMode(next){if(!['2d','3d'].includes(next))return;mode=next;dispose();render();}
@@ -55,7 +55,7 @@
  function dispose(){
   if(!liveInstance)return;const i=liveInstance;liveInstance=null;cancelAnimationFrame(i.raf);if(i.crowdAnimator)i.crowdAnimator.dispose();if(i.impactEffects)i.impactEffects.dispose();if(i.broadcast)i.broadcast.dispose();
   i.renderer.dispose();i.renderer.domElement.remove();
-  i.scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>m.dispose());}});
+  i.scene.traverse(o=>{if(o.geometry&&!o.geometry.userData?.cdMatch3DReusable)o.geometry.dispose();if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{if(!m.userData?.cdMatch3DReusable)m.dispose();});}});
  }
  function mount(){
   if(mode!=='3d'||!sceneData)return;
@@ -116,7 +116,7 @@
     const stumble=contact.stunt(instance.contact,p.id,elapsed);
     if(asset&&object.userData.gltfAthleteV20){
      const pace=(Math.abs(cue.fall)>0.2||stumble.tuck>0.2)?0.7:Math.max(.75,Math.min(1.45,1+Math.abs(pose.stride)*.2));
-     asset.tick(object,Math.min(.05,(now-instance.last)/1000),pace);
+     asset.tick(object,Math.min(.05,(now-instance.last)/1000),pace,Math.abs(cue.fall)>0.2||stumble.tuck>0.2);
     }
     // Raise the model slightly when its shoulder rolls down; avoid ground clipping.
     object.position.set(w.x,pose.bounce+stumble.lift,w.z);
