@@ -116,7 +116,8 @@
     const stumble=contact.stunt(instance.contact,p.id,elapsed);
     if(asset&&object.userData.gltfAthleteV20){
      const pace=(Math.abs(cue.fall)>0.2||stumble.tuck>0.2)?0.7:Math.max(.75,Math.min(1.45,1+Math.abs(pose.stride)*.2));
-     asset.tick(object,Math.min(.05,(now-instance.last)/1000),pace,Math.abs(cue.fall)>0.2||stumble.tuck>0.2);
+     const passCue=/pass|offload/i.test(instance.state.kind)&&p.featured?Math.sin(Math.PI*Math.min(1,elapsed/750)):0;
+     asset.tick(object,Math.min(.05,(now-instance.last)/1000),pace,Math.abs(cue.fall)>0.2||stumble.tuck>0.2,{brace:cue.bracing,pass:passCue,recovery:stumble.recovery});
     }
     // Raise the model slightly when its shoulder rolls down; avoid ground clipping.
     object.position.set(w.x,pose.bounce+stumble.lift,w.z);
