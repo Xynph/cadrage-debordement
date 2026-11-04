@@ -55,7 +55,7 @@
  function dispose(){
   if(!liveInstance)return;const i=liveInstance;liveInstance=null;cancelAnimationFrame(i.raf);if(i.crowdAnimator)i.crowdAnimator.dispose();if(i.impactEffects)i.impactEffects.dispose();if(i.broadcast)i.broadcast.dispose();
   i.renderer.dispose();i.renderer.domElement.remove();
-  i.scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>m.dispose());}});
+  i.scene.traverse(o=>{if(o.geometry&&!o.geometry.userData?.cdMatch3DReusable)o.geometry.dispose();if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{if(!m.userData?.cdMatch3DReusable)m.dispose();});}});
  }
  function mount(){
   if(mode!=='3d'||!sceneData)return;
