@@ -48,7 +48,7 @@ const html=fs.readFileSync(path.join(__dirname,'../dist/index.html'),'utf8');
 assert.ok(renderer.includes('impact.create(scene,T)'));
 assert.ok(renderer.includes('instance.impactEffects.tick(instance.contact,now-instance.start,instance.players)'));
 assert.ok(renderer.includes('i.impactEffects.dispose()'));
-assert.equal((html.match(/match3d\\/impact-effects\\.js/g)||[]).length,1);
+assert.equal(html.split('match3d/impact-effects.js').length-1,1);
 assert.ok(html.indexOf('match3d/impact-effects.js')>html.indexOf('match3d/contact-animation.js'));
 assert.ok(html.indexOf('match3d/impact-effects.js')<html.indexOf('match3d/match3d.js'));
 console.log('MATCH 3D lot 09 impact visuel: contrôles Node OK');
