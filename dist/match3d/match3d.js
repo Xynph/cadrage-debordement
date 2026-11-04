@@ -75,12 +75,12 @@
   if(window.CDMatch3DStadium)window.CDMatch3DStadium.build(scene,T);
   const crowdMesh=window.CDMatch3DCrowd?window.CDMatch3DCrowd.build(scene,T):null;
   const crowdAnimator=crowdMesh&&window.CDMatch3DCrowdAnimation?window.CDMatch3DCrowdAnimation.create(crowdMesh,T,window.CDMatch3DCrowd.plan()):null;
-  scene.add(new T.HemisphereLight(0xe6fbff,0x3e4436,2.2));
+  scene.add(new T.HemisphereLight(0xe6fbff,0x3e4436,1.05));
   const stadium=new T.Mesh(new T.RingGeometry(64,86,96),new T.MeshStandardMaterial({color:0x263c3b,roughness:1,side:T.DoubleSide}));
   stadium.rotation.x=-Math.PI/2;stadium.position.y=-.08;scene.add(stadium);
   const crowd=new T.Mesh(new T.RingGeometry(88,98,96),new T.MeshBasicMaterial({color:0x45605a,side:T.DoubleSide}));
   crowd.rotation.x=-Math.PI/2;crowd.position.y=.22;scene.add(crowd);
-  const sun=new T.DirectionalLight(0xffffff,2.4);sun.position.set(30,80,10);scene.add(sun);
+  const sun=new T.DirectionalLight(0xffffff,1.35);sun.position.set(30,80,10);scene.add(sun);
   const camera=new T.PerspectiveCamera(48,16/9,.1,500);positionCamera(camera);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
   renderer.setSize(Math.max(300,host.clientWidth),Math.max(180,Math.floor(host.clientWidth*9/16)));
