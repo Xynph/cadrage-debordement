@@ -4,7 +4,7 @@
  if(typeof match2D!=='function'||typeof matchScene!=='function'||!window.CDMatch3DAdapter)return;
  const original2D=match2D,bridge=window.CDMatch3DAdapter;
  let mode='2d',cameraMode='tv',sceneData=null,liveInstance=null,scheduled=false;
- const asset=window.CDMatch3DAssetPlayer;
+ const asset=window.CDMatch3DRugbyPlayer||window.CDMatch3DAssetPlayer;
  const motion=window.CDMatch3DMotion,cameraGuide=window.CDMatch3DCamera,contact=window.CDMatch3DContact,impact=window.CDMatch3DImpact;
  if(!motion||!cameraGuide||!contact||!window.CDMatch3DPlayerModel)return;
  function setMode(next){if(!['2d','3d'].includes(next))return;mode=next;dispose();render();}
@@ -116,7 +116,7 @@
     const stumble=contact.stunt(instance.contact,p.id,elapsed);
     if(asset&&object.userData.gltfAthleteV20){
      const pace=(Math.abs(cue.fall)>0.2||stumble.tuck>0.2)?0.7:Math.max(.75,Math.min(1.45,1+Math.abs(pose.stride)*.2));
-     asset.tick(object,Math.min(.05,(now-instance.last)/1000),pace);
+     asset.tick(object,Math.min(.05,(now-instance.last)/1000),pace,Math.abs(cue.fall)>0.2||stumble.tuck>0.2);
     }
     // Raise the model slightly when its shoulder rolls down; avoid ground clipping.
     object.position.set(w.x,pose.bounce+stumble.lift,w.z);
