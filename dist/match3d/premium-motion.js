@@ -18,7 +18,7 @@
   const direction=distance>.01?Math.atan2(dy,dx):0;
   // Secondary gait cues remain visual only: no access to simulation decisions.
   const elbowFlex=Object.freeze([0,Math.PI].map(offset=>
-   clamp(.16+Math.max(0,Math.sin(phase+offset))*.55*Math.sqrt(pace)*envelope,.16,.71)));
+   clamp(.14+Math.max(0,Math.sin(phase+offset))*.46*Math.sqrt(pace)*envelope,.14,.60)));
   const hipSway=clamp(Math.sin(phase)*Math.sqrt(pace)*envelope*.085,-.085,.085);
   const landing=clamp(Math.max(0,Math.cos(phase))*pace*envelope,0,1);
   return Object.freeze({
