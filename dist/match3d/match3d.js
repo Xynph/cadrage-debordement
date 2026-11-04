@@ -97,20 +97,25 @@
    for(const p of f.players){const object=instance.players.get(p.id);if(object){
     const w=bridge.world(p),previous=instance.previous?.players?.find(q=>q.id===p.id)||p;
     const pose=motion.pose(previous,p,t,now-instance.start,p.slot+p.side*15);
-    object.position.set(w.x,pose.bounce,w.z);
+    const elapsed=now-instance.start;
+    const cue=contact.pose(instance.contact,p.id,elapsed);
+    const stumble=contact.stunt(instance.contact,p.id,elapsed);
+    // Raise the model slightly when its shoulder rolls down; avoid ground clipping.
+    object.position.set(w.x,pose.bounce+stumble.lift,w.z);
     object.rotation.y=-(pose.direction+Math.PI/2);
-    const cue=contact.pose(instance.contact,p.id,now-instance.start);
-    object.rotation.x=cue.fall;
-    object.rotation.z=cue.roll;
+    object.rotation.x=cue.fall+stumble.shoulder*.17;
+    object.rotation.z=cue.roll+stumble.shoulder;
     const parts=object.userData.motionParts;
-    if(parts){parts.legs[0].rotation.x=pose.stride*.68;parts.legs[1].rotation.x=-pose.stride*.68;
-     parts.knees[0].rotation.x=pose.kneeBend[0];parts.knees[1].rotation.x=pose.kneeBend[1];
+    if(parts){parts.legs[0].rotation.x=pose.stride*.68-stumble.tuck*.22;
+     parts.legs[1].rotation.x=-pose.stride*.68-stumble.tuck*.22;
+     parts.knees[0].rotation.x=pose.kneeBend[0]+stumble.tuck*.85;
+     parts.knees[1].rotation.x=pose.kneeBend[1]+stumble.tuck*.85;
      parts.arms[0].rotation.x=pose.armSwing*.75-cue.bracing*.55;parts.arms[1].rotation.x=-pose.armSwing*.75-cue.bracing*.55;
      // Both forearms bend naturally in a sprint and rise defensively on visual contact.
-     if(parts.elbows){parts.elbows[0].rotation.x=-pose.elbowFlex[0]-cue.bracing*.55;
-      parts.elbows[1].rotation.x=-pose.elbowFlex[1]-cue.bracing*.55;}
-     parts.torso.rotation.x=pose.torsoLean+cue.lean;
-     parts.torso.rotation.z=pose.hipSway+cue.roll*.22;}
+     if(parts.elbows){parts.elbows[0].rotation.x=-pose.elbowFlex[0]-cue.bracing*.55-stumble.tuck*.44;
+      parts.elbows[1].rotation.x=-pose.elbowFlex[1]-cue.bracing*.55-stumble.tuck*.44;}
+     parts.torso.rotation.x=pose.torsoLean+cue.lean+stumble.recovery*.12;
+     parts.torso.rotation.z=pose.hipSway+cue.roll*.22+stumble.shoulder*.18;}
    }}
    if(instance.impactEffects)instance.impactEffects.tick(instance.contact,now-instance.start,instance.players);
    const b=bridge.world(f.ball);instance.ball.position.set(b.x,1.25+Math.sin(t*Math.PI)*Math.min(5,Math.abs(instance.state.ball.x-instance.state.origin.x)*.2),b.z);

@@ -79,6 +79,22 @@ try:
           return impact.fall>0 && impact.fall<=1.1 &&
             recovered.fall===0 && JSON.stringify(input)===before;
         }"""))
+        check("roulade et récupération animées sans décision rugby", page.evaluate("""() => {
+          const scene={kind:'turnover',possession:0,ball:{x:50,y:35},players:[
+            {id:'a',side:0,x:50,y:35,featured:true},
+            {id:'b',side:1,x:53,y:36}]};
+          const initial=JSON.stringify(scene),pair=CDMatch3DContact.plan(scene);
+          if(!pair)return false;
+          const early=CDMatch3DContact.stunt(pair,'b',120);
+          const floor=CDMatch3DContact.stunt(pair,'b',430);
+          const rise=CDMatch3DContact.stunt(pair,'b',680);
+          const done=CDMatch3DContact.stunt(pair,'b',800);
+          return floor.tuck>early.tuck && floor.shoulder>0 &&
+            floor.lift>0 && rise.recovery>0 &&
+            done.tuck===0 && done.lift===0 &&
+            CDMatch3DContact.stunt(pair,'outsider',430).tuck===0 &&
+            JSON.stringify(scene)===initial;
+        }"""))
         check("effets physiques visuels 3D chargés localement", page.evaluate(
             "typeof CDMatch3DImpact === 'object' && CDMatch3DImpact.count === 12"))
         check("impact visuel déterministe sans mutation du moteur", page.evaluate("""() => {
@@ -134,6 +150,8 @@ try:
         }"""))
         check("vue 3D sélectionnée", page.evaluate("CDMatch3D.getMode() === '3d'"))
         check("ballon procédural ajouté à la scène réelle", page.evaluate("__rugbyBallCreated"))
+        check("30 rigs aptes aux transitions de contact", page.evaluate(
+            "__premiumRigsAdded === 30 && __rigElbowsValid && typeof CDMatch3DContact.stunt === 'function'"))
         check("30 joueurs en 3D équipés du rig premium", page.evaluate(
             "__premiumRigsAdded === 30 && __rigElbowsValid"))
         check("course et coudes animés hors moteur", page.evaluate("""() => {
