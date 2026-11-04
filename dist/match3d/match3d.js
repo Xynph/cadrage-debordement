@@ -7,7 +7,7 @@
  const motion=window.CDMatch3DMotion,cameraGuide=window.CDMatch3DCamera,contact=window.CDMatch3DContact,impact=window.CDMatch3DImpact;
  if(!motion||!cameraGuide||!contact||!window.CDMatch3DPlayerModel)return;
  function setMode(next){if(!['2d','3d'].includes(next))return;mode=next;dispose();render();}
- function setCamera(next){if(!['tv','tactical'].includes(next))return;cameraMode=next;if(liveInstance)positionCamera(liveInstance.camera);}
+ function setCamera(next){if(!['tv','tactical','sideline'].includes(next))return;cameraMode=next;if(liveInstance)positionCamera(liveInstance.camera);}
  window.CDMatch3D=Object.freeze({setMode,setCamera,getMode:()=>mode});
  match2D=function(l){
   let scene;
@@ -15,12 +15,13 @@
   sceneData=scene;
   const legacy=original2D(l);
   const controls='<section class="card cd3d-panel" aria-label="Affichage du match"><div class="cd3d-toolbar"><strong>Vue du match</strong><button type="button" aria-pressed="'+(mode==='2d')+'" onclick="CDMatch3D.setMode(\'2d\')">2D</button><button type="button" aria-pressed="'+(mode==='3d')+'" onclick="CDMatch3D.setMode(\'3d\')">3D</button></div>'+
-   (mode==='3d'?'<div class="cd3d-toolbar"><span>Caméra</span><button type="button" onclick="CDMatch3D.setCamera(\'tv\')">TV</button><button type="button" onclick="CDMatch3D.setCamera(\'tactical\')">Tactique</button><small>Reconstitution visuelle · moteur rugby inchangé</small></div><div id="cd3d-host" aria-label="Terrain de rugby 3D"></div><p class="cd3d-help">30 joueurs, ballon et phases issus du moteur de match. Affichage expérimental : mouvements schématiques interpolés.</p>':'');
+   (mode==='3d'?'<div class="cd3d-toolbar"><span>Caméra</span><button type="button" onclick="CDMatch3D.setCamera(\'tv\')">TV</button><button type="button" onclick="CDMatch3D.setCamera(\'tactical\')">Tactique</button><button type=\"button\" onclick=\"CDMatch3D.setCamera(\'sideline\')\">Latérale</button><small>Reconstitution visuelle · moteur rugby inchangé</small></div><div id="cd3d-host" aria-label="Terrain de rugby 3D"></div><p class="cd3d-help">30 joueurs, ballon et phases issus du moteur de match. Affichage expérimental : mouvements schématiques interpolés.</p>':'');
   if(mode==='3d'&&!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;mount();});}
   return mode==='3d'?controls:controls+legacy;
  };
  function positionCamera(camera){
   if(cameraMode==='tactical'){camera.position.set(0,115,.01);camera.up.set(0,0,-1);}
+  else if(cameraMode==='sideline'){const pos=cameraGuide.sidelinePosition({x:0,z:0});camera.position.set(pos.x,pos.y,pos.z);camera.up.set(0,1,0);}
   else {camera.position.set(8,68,85);camera.up.set(0,1,0);}
   camera.lookAt(0,0,0);
  }
@@ -84,8 +85,9 @@
   renderer.setSize(Math.max(300,host.clientWidth),Math.max(180,Math.floor(host.clientWidth*9/16)));
   renderer.outputEncoding=T.sRGBEncoding;
   host.append(renderer.domElement);
-  const ball=new T.Mesh(new T.SphereGeometry(.58,12,8),new T.MeshStandardMaterial({color:0xf8e9c6}));
-  ball.scale.set(1.4,.7,.85);scene.add(ball);
+  const ball=window.CDMatch3DBallModel?window.CDMatch3DBallModel.build(T):new T.Mesh(new T.SphereGeometry(.58,12,8),new T.MeshStandardMaterial({color:0xf8e9c6}));
+  if(!window.CDMatch3DBallModel)ball.scale.set(1.4,.7,.85);
+  scene.add(ball);
   const impactEffects=impact?impact.create(scene,T):null;
   const instance={host,renderer,scene,camera,ball,players:new Map(),crowdAnimator,impactEffects,raf:0,last:performance.now(),state:null,start:performance.now()};
   liveInstance=instance;update(instance,sceneData);
@@ -95,23 +97,32 @@
    for(const p of f.players){const object=instance.players.get(p.id);if(object){
     const w=bridge.world(p),previous=instance.previous?.players?.find(q=>q.id===p.id)||p;
     const pose=motion.pose(previous,p,t,now-instance.start,p.slot+p.side*15);
-    object.position.set(w.x,pose.bounce,w.z);
+    const elapsed=now-instance.start;
+    const cue=contact.pose(instance.contact,p.id,elapsed);
+    const stumble=contact.stunt(instance.contact,p.id,elapsed);
+    // Raise the model slightly when its shoulder rolls down; avoid ground clipping.
+    object.position.set(w.x,pose.bounce+stumble.lift,w.z);
     object.rotation.y=-(pose.direction+Math.PI/2);
-    const cue=contact.pose(instance.contact,p.id,now-instance.start);
-    object.rotation.x=cue.fall;
-    object.rotation.z=cue.roll;
+    object.rotation.x=cue.fall+stumble.shoulder*.17;
+    object.rotation.z=cue.roll+stumble.shoulder;
     const parts=object.userData.motionParts;
-    if(parts){parts.legs[0].rotation.x=pose.stride*.68;parts.legs[1].rotation.x=-pose.stride*.68;
-     parts.knees[0].rotation.x=pose.kneeBend[0];parts.knees[1].rotation.x=pose.kneeBend[1];
+    if(parts){parts.legs[0].rotation.x=pose.stride*.68-stumble.tuck*.22;
+     parts.legs[1].rotation.x=-pose.stride*.68-stumble.tuck*.22;
+     parts.knees[0].rotation.x=pose.kneeBend[0]+stumble.tuck*.85;
+     parts.knees[1].rotation.x=pose.kneeBend[1]+stumble.tuck*.85;
      parts.arms[0].rotation.x=pose.armSwing*.75-cue.bracing*.55;parts.arms[1].rotation.x=-pose.armSwing*.75-cue.bracing*.55;
-     parts.torso.rotation.x=pose.torsoLean+cue.lean;}
+     // Both forearms bend naturally in a sprint and rise defensively on visual contact.
+     if(parts.elbows){parts.elbows[0].rotation.x=-pose.elbowFlex[0]-cue.bracing*.55-stumble.tuck*.44;
+      parts.elbows[1].rotation.x=-pose.elbowFlex[1]-cue.bracing*.55-stumble.tuck*.44;}
+     parts.torso.rotation.x=pose.torsoLean+cue.lean+stumble.recovery*.12;
+     parts.torso.rotation.z=pose.hipSway+cue.roll*.22+stumble.shoulder*.18;}
    }}
    if(instance.impactEffects)instance.impactEffects.tick(instance.contact,now-instance.start,instance.players);
    const b=bridge.world(f.ball);instance.ball.position.set(b.x,1.25+Math.sin(t*Math.PI)*Math.min(5,Math.abs(instance.state.ball.x-instance.state.origin.x)*.2),b.z);
    // Presentation-only rotation: no change to ball position or match events.
    instance.ball.rotation.z=t*Math.PI*2;
-   if(cameraMode==='tv'){
-    const focus=cameraGuide.target(b),desired=cameraGuide.tvPosition(focus);
+   if(cameraMode==='tv'||cameraMode==='sideline'){
+    const focus=cameraGuide.target(b),desired=cameraMode==='sideline'?cameraGuide.sidelinePosition(focus):cameraGuide.tvPosition(focus);
     const dt=Math.min(100,Math.max(0,now-instance.last));
     instance.camera.position.set(cameraGuide.smooth(instance.camera.position.x,desired.x,dt),desired.y,cameraGuide.smooth(instance.camera.position.z,desired.z,dt));
     instance.camera.lookAt(focus.x,focus.y,focus.z);

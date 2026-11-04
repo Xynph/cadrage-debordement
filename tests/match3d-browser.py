@@ -79,8 +79,24 @@ try:
           return impact.fall>0 && impact.fall<=1.1 &&
             recovered.fall===0 && JSON.stringify(input)===before;
         }"""))
+        check("roulade et récupération animées sans décision rugby", page.evaluate("""() => {
+          const scene={kind:'turnover',possession:0,ball:{x:50,y:35},players:[
+            {id:'a',side:0,x:50,y:35,featured:true},
+            {id:'b',side:1,x:53,y:36}]};
+          const initial=JSON.stringify(scene),pair=CDMatch3DContact.plan(scene);
+          if(!pair)return false;
+          const early=CDMatch3DContact.stunt(pair,'b',120);
+          const floor=CDMatch3DContact.stunt(pair,'b',430);
+          const rise=CDMatch3DContact.stunt(pair,'b',680);
+          const done=CDMatch3DContact.stunt(pair,'b',800);
+          return floor.tuck>early.tuck && floor.shoulder>0 &&
+            floor.lift>0 && rise.recovery>0 &&
+            done.tuck===0 && done.lift===0 &&
+            CDMatch3DContact.stunt(pair,'outsider',430).tuck===0 &&
+            JSON.stringify(scene)===initial;
+        }"""))
         check("effets physiques visuels 3D chargés localement", page.evaluate(
-            "typeof CDMatch3DImpact === 'object' && CDMatch3DImpact.count === 12"))
+            "typeof CDMatch3DImpact === 'object' && CDMatch3DImpact.count === 20"))
         check("impact visuel déterministe sans mutation du moteur", page.evaluate("""() => {
           const participants=new Map([
             ['a',{position:{x:4,z:8}}],
@@ -92,6 +108,9 @@ try:
             CDMatch3DImpact.active(null,430,participants)===null &&
             JSON.stringify([...participants])===source;
         }"""))
+        check("nouveau ballon de rugby 3D hors ligne", page.evaluate("""() =>
+          typeof CDMatch3DBallModel === 'object' &&
+          CDMatch3DBallModel.detail.laceCount === 5"""))
         initial = snapshot(page)
 
         # Instrumenter le changement de caméra sans modifier le code du jeu.
@@ -106,6 +125,22 @@ try:
             return original.apply(this,args);
           };
         }""")
+        page.evaluate("""() => {
+          window.__rugbyBallCreated = false;
+          window.__premiumRigsAdded = 0;
+          window.__rigElbowsValid = true;
+          const oldAdd = THREE.Scene.prototype.add;
+          THREE.Scene.prototype.add = function(...objects) {
+            if(objects.some(o => o.userData?.renderOnlyBall))window.__rugbyBallCreated = true;
+            for(const o of objects)if(o.userData?.premiumAthleteRig) {
+              window.__premiumRigsAdded++;
+              const rig=o.userData.motionParts;
+              if(!rig || rig.elbows?.length!==2 || rig.knees?.length!==2 ||
+                 rig.arms?.length!==2 || rig.legs?.length!==2)window.__rigElbowsValid=false;
+            }
+            return oldAdd.apply(this, objects);
+          };
+        }""")
         page.locator(".cd3d-panel button").filter(has_text="3D").click()
         page.locator("#cd3d-host canvas").wait_for()
         page.wait_for_function("document.querySelector('#cd3d-host canvas').width > 0")
@@ -114,11 +149,38 @@ try:
           return !!c && c.width>0 && c.height>0 && !!c.getContext('webgl2') || !!c?.getContext('webgl');
         }"""))
         check("vue 3D sélectionnée", page.evaluate("CDMatch3D.getMode() === '3d'"))
+        check("ballon procédural ajouté à la scène réelle", page.evaluate("__rugbyBallCreated"))
+        check("30 rigs aptes aux transitions de contact", page.evaluate(
+            "__premiumRigsAdded === 30 && __rigElbowsValid && typeof CDMatch3DContact.stunt === 'function'"))
+        check("30 joueurs en 3D équipés du rig premium", page.evaluate(
+            "__premiumRigsAdded === 30 && __rigElbowsValid"))
+        check("course et coudes animés hors moteur", page.evaluate("""() => {
+          const input=Object.freeze({x:0,y:0});
+          const target=Object.freeze({x:9,y:0});
+          const active=CDMatch3DMotion.pose(input,target,.5,160,3);
+          const still=CDMatch3DMotion.pose(input,input,.5,160,3);
+          return active.elbowFlex.length===2 &&
+            active.elbowFlex.every(x=>x>=.14&&x<=.6) &&
+            still.elbowFlex.every(x=>x===.14) &&
+            Number.isFinite(active.hipSway) &&
+            input.x===0 && input.y===0 && target.x===9;
+        }"""))
         check("caméra TV active", page.evaluate("""() =>
           __cameraPositions.some(p=>p.y===68 && p.z===85)"""))
         page.locator(".cd3d-panel button").filter(has_text="Tactique").click()
         check("caméra tactique active", page.evaluate("""() =>
           __cameraPositions.some(p=>p.y===115 && p.z===0.01 && p.up[2]===-1)"""))
+        page.locator(".cd3d-panel button").filter(has_text="Latérale").click()
+        check("caméra latérale activable", page.evaluate("""() =>
+          __cameraPositions.some(p=>p.y===24 && p.z===69)"""))
+        check("suivi de caméra latérale disponible", page.evaluate("""() => {
+          const f=CDMatch3DCamera.target({x:23,z:10});
+          const p=CDMatch3DCamera.sidelinePosition(f);
+          return p.y===24 && p.z>=60 && p.z<=80 && Number.isFinite(p.x);
+        }"""))
+        page.locator(".cd3d-panel button").filter(has_text="TV").click()
+        check("retour caméra TV après latérale", page.evaluate("""() =>
+          __cameraPositions.filter(p=>p.y===68).length>=2"""))
         page.evaluate("render()")
         page.locator("#cd3d-host canvas").wait_for()
         check("canvas toujours présent après nouveau rendu", page.locator("#cd3d-host canvas").count()==1)
