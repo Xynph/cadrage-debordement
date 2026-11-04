@@ -83,7 +83,8 @@
   crowd.rotation.x=-Math.PI/2;crowd.position.y=.22;scene.add(crowd);
   const sun=new T.DirectionalLight(0xffffff,1.35);sun.position.set(30,80,10);scene.add(sun);
   const camera=new T.PerspectiveCamera(48,16/9,.1,500);positionCamera(camera);
-  // Cap supersampling for thirty independently animated skinned characters.\n  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.25));
+  // Cap supersampling for thirty independently animated skinned characters.
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.25));
   renderer.setSize(Math.max(300,host.clientWidth),Math.max(180,Math.floor(host.clientWidth*9/16)));
   renderer.outputEncoding=T.sRGBEncoding;
   host.append(renderer.domElement);
@@ -112,7 +113,11 @@
     
     const elapsed=now-instance.start;
     const cue=contact.pose(instance.contact,p.id,elapsed);
-    const stumble=contact.stunt(instance.contact,p.id,elapsed);\n    if(asset&&object.userData.gltfAthleteV20){\n     const pace=(Math.abs(cue.fall)>0.2||stumble.tuck>0.2)?0.7:Math.max(.75,Math.min(1.45,1+Math.abs(pose.stride)*.2));\n     asset.tick(object,Math.min(.05,(now-instance.last)/1000),pace);\n    }
+    const stumble=contact.stunt(instance.contact,p.id,elapsed);
+    if(asset&&object.userData.gltfAthleteV20){
+     const pace=(Math.abs(cue.fall)>0.2||stumble.tuck>0.2)?0.7:Math.max(.75,Math.min(1.45,1+Math.abs(pose.stride)*.2));
+     asset.tick(object,Math.min(.05,(now-instance.last)/1000),pace);
+    }
     // Raise the model slightly when its shoulder rolls down; avoid ground clipping.
     object.position.set(w.x,pose.bounce+stumble.lift,w.z);
     object.rotation.y=-(pose.direction+Math.PI/2);
