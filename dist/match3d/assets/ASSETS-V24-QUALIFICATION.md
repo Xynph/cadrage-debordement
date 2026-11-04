@@ -41,3 +41,22 @@
 ## Coordination et interdits
 
 Réservation initiale #73 : uniquement ce fichier. Ne pas toucher PRODUCTEUR, V62, DATA/LNR, moteur, sauvegardes, auto-release ni fichiers tiers. Pas de PR de remplacement graphique avant acquisition, vérification des licences de redistribution, examen du modèle habillé et preuve d'animations dédiées. Aucun `/cd-check` ou `/cd-merge` sans PR intégrable et CI terminale verte.
+
+## Avancement d'acquisition — deuxième intervention (4 novembre 2026)
+
+- **Candidat concret identifié :** [kblood/CharacterCreator](https://github.com/kblood/CharacterCreator), `output/base_body_anim.glb` (~8,2 Mo annoncés), `output/clothing_tshirt.glb`, `output/clothing_shorts.glb`, `output/clothing_shoes.glb`. Le rig MakeHuman game_engine revendique 53 os, avec corps anatomique, textures et animations de locomotion procédurales. La présence GitHub du fichier `base_body_anim.glb` a été vérifiée (blob `bdbdab04eb85903e46c56ff56c7a1ea0cbe9c78b`).
+- **Licence :** `LICENSE-NOTES.md` de CharacterCreator indique que les exports sous `output/` dérivés exclusivement de sources CC0 sont CC0-1.0, **mais le code du générateur est GPL-3.0-or-later**, pas MIT sur le HEAD courant. Il n'est pas prévu d'importer son code GPL dans le runtime propriétaire. Chaque GLB et chaque vêtement doit être contrôlé séparément.
+- **Limite de transport :** le connecteur GitHub renvoie un contenu vide pour `fetch_file` sur le GLB binaire ; `fetch_blob` lève une erreur de décodage UTF-8. Aucun octet de ce modèle n'a donc été téléchargé ni ajouté au dépôt, malgré sa présence confirmée en amont.
+- **Outil nouveau :** `tools/match3d-v24-glb-audit.cjs` parse un GLB 2.0 pour vérifier jointures, skinning, absence d'URI externes, triangles et clips ; `tests/match3d-v24-glb-audit.cjs` fournit des cas synthétiques. **Ce test ne vérifie ni la morphologie, ni les vêtements visibles, ni les droits, ni les animations rugby.** Le GLB réel n'a pas été analysé.
+- Aucun clip de passe, plaquage, chute et relevé rugby reconnu juridiquement et artistiquement n'a été importé. Ne pas fabriquer un intitulé de clip sans animation correspondante.
+
+### Commandes après acquisition vérifiable du fichier
+
+```sh
+node tools/match3d-v24-glb-audit.cjs dist/match3d/assets/athlete-lod0.glb 30000
+node tools/match3d-v24-glb-audit.cjs dist/match3d/assets/athlete-lod1.glb 10000
+node tools/match3d-v24-glb-audit.cjs dist/match3d/assets/athlete-lod2.glb 3000
+node tests/match3d-v24-glb-audit.cjs
+```
+
+L'exigence d'anatomie **et** de tenue et de gestes rugby demeure bloquante. Le parseur géométrique ne constitue pas la qualification visuelle, ni une preuve d'un fichier réellement acquis. PR #300 toujours DRAFT ; aucun gate de fusion.
