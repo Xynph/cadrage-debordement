@@ -1,21 +1,23 @@
 'use strict';
-/* MATCH 3D lot 09 — lightweight, deterministic visual-only turf at existing contact cues. */
+/* MATCH 3D lot 15 — directional, deterministic visual-only turf on existing contact cues. */
 (function(root,factory){
  const api=factory();
  if(typeof module==='object'&&module.exports)module.exports=api;
  if(root)root.CDMatch3DImpact=api;
 })(typeof globalThis!=='undefined'?globalThis:null,function(){
- const count=12;
+ const count=20;
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,Number.isFinite(v)?v:a));
- function sample(i,t){
-  const angle=i*Math.PI*2/count;
-  const speed=.9+(i%4)*.26;
+ function sample(i,t,heading=0){
+  t=clamp(t,0,1);
+  const phase=i*Math.PI*2/count;
+  const angle=phase+(Number.isFinite(heading)?heading:0);
+  const speed=(.9+(i%4)*.26)*(1+.42*Math.cos(phase));
   const radius=t*speed;
   return Object.freeze({
    x:Math.cos(angle)*radius,
    y:Math.max(.04,Math.sin(Math.PI*t)*(0.3+(i%3)*.19)-t*t*.17),
    z:Math.sin(angle)*radius,
-   opacity:clamp((1-t)*.52,0,.52)
+   opacity:clamp((1-t)*(.42+(i%5)*.035),0,.56)
   });
  }
  function active(pair,elapsed,players){
@@ -25,6 +27,14 @@
   const ax=a.position.x,az=a.position.z,bx=b.position.x,bz=b.position.z;
   if(![ax,az,bx,bz].every(Number.isFinite))return null;
   return Object.freeze({x:(ax+bx)/2,z:(az+bz)/2,t:clamp((elapsed-110)/640,0,1)});
+ }
+ // Orientation is purely visual: derived from the two existing displayed rigs.
+ function heading(pair,players){
+  if(!pair||!players)return 0;
+  const a=players.get(pair.lead),b=players.get(pair.other);
+  if(!a?.position||!b?.position)return 0;
+  const dx=b.position.x-a.position.x,dz=b.position.z-a.position.z;
+  return Number.isFinite(dx)&&Number.isFinite(dz)&&Math.hypot(dx,dz)>1e-6?Math.atan2(dz,dx):0;
  }
  function create(scene,T){
   const group=new T.Group();group.visible=false;scene.add(group);
@@ -46,8 +56,9 @@
    group.visible=!!frame;
    if(!frame)return;
    group.position.set(frame.x,0,frame.z);
+   const travel=heading(pair,players);
    for(let i=0;i<count;i++){
-    const s=sample(i,frame.t),obj=particles[i];
+    const s=sample(i,frame.t,travel),obj=particles[i];
     obj.position.set(s.x,s.y,s.z);
     obj.scale.setScalar(.75+(i%3)*.2);
     obj.visible=s.opacity>.015;
@@ -66,5 +77,5 @@
   }
   return Object.freeze({tick,dispose,group});
  }
- return Object.freeze({count,sample,active,create});
+ return Object.freeze({count,sample,active,heading,create});
 });

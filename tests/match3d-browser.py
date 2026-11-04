@@ -96,7 +96,7 @@ try:
             JSON.stringify(scene)===initial;
         }"""))
         check("effets physiques visuels 3D chargés localement", page.evaluate(
-            "typeof CDMatch3DImpact === 'object' && CDMatch3DImpact.count === 12"))
+            "typeof CDMatch3DImpact === 'object' && CDMatch3DImpact.count === 20"))
         check("impact visuel déterministe sans mutation du moteur", page.evaluate("""() => {
           const participants=new Map([
             ['a',{position:{x:4,z:8}}],
