@@ -42,12 +42,16 @@
    if(bones.some(b=>!b))return fallback?fallback.build(T,player):null;
    to.skeleton=new T.Skeleton(bones,from.skeleton.boneInverses.map(m=>m.clone()));
    to.bind(to.skeleton,from.bindMatrix.clone());
-   to.geometry=from.geometry.clone();
+   // Shared immutable skin geometry limits thirty rigs to the original GLB GPU buffers.
+   to.geometry=from.geometry;
+   to.geometry.userData=to.geometry.userData||{};
+   to.geometry.userData.cdMatch3DReusable=true;
    function material(source){
     const key=source.uuid||source.name||'unnamed';
     if(!materialCache.has(key)){
      const m=source.clone(),keyName=source.name||'';
      if(Object.prototype.hasOwnProperty.call(color,keyName)&&m.color)m.color.setHex(color[keyName]);
+     m.userData=m.userData||{};m.userData.cdMatch3DReusable=true;
      materialCache.set(key,m);
     }
     return materialCache.get(key);
