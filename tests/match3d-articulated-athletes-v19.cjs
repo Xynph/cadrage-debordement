@@ -39,13 +39,13 @@ for(const progress of [-2,0,.1,.4,.5,.8,1,3]){
  if(progress<=0||progress>=1){
   assert.ok(p.footRoll.every(v=>v===0));
   assert.ok(p.wristFlex.every(v=>v===0));
-  assert.equal(p.headTurn,0);
+  assert.ok(p.headTurn===0);
  }
 }
 const still=motion.pose({x:1,y:1},{x:1,y:1},.5,800,3);
 assert.ok(still.footRoll.every(v=>v===0));
 assert.ok(still.wristFlex.every(v=>v===0));
-assert.equal(still.headTurn,0);
+assert.ok(still.headTurn===0);
 assert.match(scene,/parts\.headRig\.rotation\.y=pose\.headTurn/);
 assert.match(scene,/parts\.wrists\[0\]\.rotation\.x=pose\.wristFlex\[0\]/);
 assert.match(scene,/parts\.ankles\[0\]\.rotation\.x=pose\.footRoll\[0\]/);
