@@ -111,9 +111,17 @@ try:
         }""")
         page.evaluate("""() => {
           window.__rugbyBallCreated = false;
+          window.__premiumRigsAdded = 0;
+          window.__rigElbowsValid = true;
           const oldAdd = THREE.Scene.prototype.add;
           THREE.Scene.prototype.add = function(...objects) {
             if(objects.some(o => o.userData?.renderOnlyBall))window.__rugbyBallCreated = true;
+            for(const o of objects)if(o.userData?.premiumAthleteRig) {
+              window.__premiumRigsAdded++;
+              const rig=o.userData.motionParts;
+              if(!rig || rig.elbows?.length!==2 || rig.knees?.length!==2 ||
+                 rig.arms?.length!==2 || rig.legs?.length!==2)window.__rigElbowsValid=false;
+            }
             return oldAdd.apply(this, objects);
           };
         }""")
@@ -126,6 +134,19 @@ try:
         }"""))
         check("vue 3D sélectionnée", page.evaluate("CDMatch3D.getMode() === '3d'"))
         check("ballon procédural ajouté à la scène réelle", page.evaluate("__rugbyBallCreated"))
+        check("30 joueurs en 3D équipés du rig premium", page.evaluate(
+            "__premiumRigsAdded === 30 && __rigElbowsValid"))
+        check("course et coudes animés hors moteur", page.evaluate("""() => {
+          const input=Object.freeze({x:0,y:0});
+          const target=Object.freeze({x:9,y:0});
+          const active=CDMatch3DMotion.pose(input,target,.5,160,3);
+          const still=CDMatch3DMotion.pose(input,input,.5,160,3);
+          return active.elbowFlex.length===2 &&
+            active.elbowFlex.every(x=>x>=.14&&x<=.6) &&
+            still.elbowFlex.every(x=>x===.14) &&
+            Number.isFinite(active.hipSway) &&
+            input.x===0 && input.y===0 && target.x===9;
+        }"""))
         check("caméra TV active", page.evaluate("""() =>
           __cameraPositions.some(p=>p.y===68 && p.z===85)"""))
         page.locator(".cd3d-panel button").filter(has_text="Tactique").click()
