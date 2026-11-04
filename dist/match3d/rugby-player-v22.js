@@ -30,6 +30,7 @@
   const clone=template.clone(true),orig=[],copy=[];
   template.traverse(o=>orig.push(o));clone.traverse(o=>copy.push(o));
   const corresponding=new Map(orig.map((o,i)=>[o,copy[i]]));
+  const skeletonCache=new Map();
   const side=player&&player.side===1?'away':'home';
   const color=kitColors[side];
   // Material instances shared per team. Skin, eyes and hair retain source colors.
@@ -40,7 +41,11 @@
    if(!from.isSkinnedMesh)continue;
    const bones=from.skeleton.bones.map(b=>corresponding.get(b));
    if(bones.some(b=>!b))return fallback?fallback.build(T,player):null;
-   to.skeleton=new T.Skeleton(bones,from.skeleton.boneInverses.map(m=>m.clone()));
+   // A GLB with nine material primitives references the same joint set.
+   // Reuse one Skeleton per *player* to avoid nine bone textures per rig.
+   const key=bones.map(b=>b.name||'').join('|');
+   if(!skeletonCache.has(key))skeletonCache.set(key,new T.Skeleton(bones,from.skeleton.boneInverses.map(m=>m.clone())));
+   to.skeleton=skeletonCache.get(key);
    to.bind(to.skeleton,from.bindMatrix.clone());
    // Shared immutable skin geometry limits thirty rigs to the original GLB GPU buffers.
    to.geometry=from.geometry;
