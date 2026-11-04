@@ -1,0 +1,15 @@
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const script=fs.readFileSync(path.join(__dirname,'../dist/match3d/match3d.js'),'utf8');
+assert.doesNotThrow(()=>new vm.Script(script));
+assert.match(script,/\['tv','tactical','sideline','immersive'\]/);
+assert.match(script,/setCamera\(\\'immersive\\'\)/);
+assert.match(script,/cam[eé]ra/i.test(script)?/CDMatch3D\.setCamera/:/CDMatch3D\.setCamera/);
+assert.match(script,/cameraMode==='immersive'\?\{x:focus\.x-14,y:15,z:focus\.z\+20\}/);
+assert.match(script,/cameraMode==='tv'\|\|cameraMode==='sideline'\|\|cameraMode==='immersive'/);
+assert.match(script,/cameraGuide\.smooth\(instance\.camera\.position\.y,desired\.y,dt\)/);
+assert.match(script,/cameraMode==='immersive'\)\{camera\.position\.set\(-14,15,20\)/);
+console.log('MATCH 3D caméra immersive : syntaxe, bouton, cadrage et interpolation contrôlés');
