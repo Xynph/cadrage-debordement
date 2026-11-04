@@ -99,7 +99,7 @@ jobs:
             executed=$((executed+1))
             echo "::group::$test"
             start=$SECONDS
-            if timeout --signal=TERM --kill-after=10s 180s node "$test"; then
+            if timeout --signal=TERM --kill-after=10s 180s /usr/bin/time -f "CD_CPU_PROFILE suite=$test user_s=%U system_s=%S wall_s=%e cpu_pct=%P max_rss_kb=%M" node "$test"; then
               echo "PASS $test ($((SECONDS-start)) s)"
               echo "| $test | OK | $((SECONDS-start)) s |" >> "$RUNNER_TEMP/results.md"
             else
