@@ -166,7 +166,7 @@ try:
             input.x===0 && input.y===0 && target.x===9;
         }"""))
         check("caméra TV active", page.evaluate("""() =>
-          __cameraPositions.some(p=>p.y===68 && p.z===85)"""))
+          __cameraPositions.some(p=>p.y===48 && p.z===62)"""))
         page.locator(".cd3d-panel button").filter(has_text="Tactique").click()
         check("caméra tactique active", page.evaluate("""() =>
           __cameraPositions.some(p=>p.y===115 && p.z===0.01 && p.up[2]===-1)"""))
@@ -180,7 +180,7 @@ try:
         }"""))
         page.locator(".cd3d-panel button").filter(has_text="TV").click()
         check("retour caméra TV après latérale", page.evaluate("""() =>
-          __cameraPositions.filter(p=>p.y===68).length>=2"""))
+          __cameraPositions.filter(p=>p.y===48).length>=2"""))
         page.evaluate("render()")
         page.locator("#cd3d-host canvas").wait_for()
         check("canvas toujours présent après nouveau rendu", page.locator("#cd3d-host canvas").count()==1)
@@ -206,6 +206,9 @@ try:
             animation_before))
         page.wait_for_function("CDMatch3D.diagnostics().render.fps > 0", timeout=15000)
         perf = page.evaluate("CDMatch3D.diagnostics()")
+        check("deux tenues d'équipe générées hors ligne", perf["asset"]["kits"] == 2)
+        check("géométries du kit mutualisées", perf["render"]["geometries"] <= 90)
+        check("FPS logiciel Chromium au moins 10", perf["render"]["fps"] >= 10)
         check("FPS mesuré dans Chromium", perf["render"]["fps"] > 0)
         check("mémoire géométrique mesurée", perf["render"]["geometries"] > 0)
         (REPORT / "match3d-v20-performance.json").write_text(

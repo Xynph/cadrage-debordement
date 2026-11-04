@@ -16,15 +16,15 @@
   sceneData=scene;
   const legacy=original2D(l);
   const controls='<section class="card cd3d-panel" aria-label="Affichage du match"><div class="cd3d-toolbar"><strong>Vue du match</strong><button type="button" aria-pressed="'+(mode==='2d')+'" onclick="CDMatch3D.setMode(\'2d\')">2D</button><button type="button" aria-pressed="'+(mode==='3d')+'" onclick="CDMatch3D.setMode(\'3d\')">3D</button></div>'+
-   (mode==='3d'?'<div class="cd3d-toolbar"><span>Caméra</span><button type="button" onclick="CDMatch3D.setCamera(\'tv\')">TV</button><button type="button" onclick="CDMatch3D.setCamera(\'tactical\')">Tactique</button><button type=\"button\" onclick=\"CDMatch3D.setCamera(\'sideline\')\">Latérale</button><button type="button" onclick="CDMatch3D.setCamera(\'immersive\')">Immersive</button><small>Reconstitution visuelle · moteur rugby inchangé</small></div><div id="cd3d-host" aria-label="Terrain de rugby 3D"></div><p class="cd3d-help">30 joueurs, ballon et phases issus du moteur de match. Affichage expérimental : mouvements schématiques interpolés.</p>':'');
+   (mode==='3d'?'<div class="cd3d-toolbar"><span>Caméra</span><button type="button" onclick="CDMatch3D.setCamera(\'tv\')">TV</button><button type="button" onclick="CDMatch3D.setCamera(\'tactical\')">Tactique</button><button type=\"button\" onclick=\"CDMatch3D.setCamera(\'sideline\')\">Latérale</button><button type="button" onclick="CDMatch3D.setCamera(\'immersive\')">Immersive</button><small>Reconstitution visuelle · moteur rugby inchangé</small></div><div id="cd3d-host" aria-label="Terrain de rugby 3D"></div><p class="cd3d-help">30 joueurs, ballon et phases issus du moteur de match. Affichage expérimental : maillots locaux, squelettes animés et contacts visuels expérimentaux.</p>':'');
   if(mode==='3d'&&!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;mount();});}
   return mode==='3d'?controls:controls+legacy;
  };
  function positionCamera(camera){
   if(cameraMode==='tactical'){camera.position.set(0,115,.01);camera.up.set(0,0,-1);}
   else if(cameraMode==='sideline'){const pos=cameraGuide.sidelinePosition({x:0,z:0});camera.position.set(pos.x,pos.y,pos.z);camera.up.set(0,1,0);}
-  else if(cameraMode==='immersive'){camera.position.set(-14,15,20);camera.up.set(0,1,0);}
-  else {camera.position.set(8,68,85);camera.up.set(0,1,0);}
+  else if(cameraMode==='immersive'){camera.position.set(-9,9,13);camera.up.set(0,1,0);}
+  else {camera.position.set(7,48,62);camera.up.set(0,1,0);}
   camera.lookAt(0,0,0);
  }
  function field(scene){
@@ -83,7 +83,8 @@
   crowd.rotation.x=-Math.PI/2;crowd.position.y=.22;scene.add(crowd);
   const sun=new T.DirectionalLight(0xffffff,1.35);sun.position.set(30,80,10);scene.add(sun);
   const camera=new T.PerspectiveCamera(48,16/9,.1,500);positionCamera(camera);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
+  // Cap supersampling for thirty independently animated skinned characters.
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.25));
   renderer.setSize(Math.max(300,host.clientWidth),Math.max(180,Math.floor(host.clientWidth*9/16)));
   renderer.outputEncoding=T.sRGBEncoding;
   host.append(renderer.domElement);
@@ -109,10 +110,14 @@
    for(const p of f.players){const object=instance.players.get(p.id);if(object){
     const w=bridge.world(p),previous=instance.previous?.players?.find(q=>q.id===p.id)||p;
     const pose=motion.pose(previous,p,t,now-instance.start,p.slot+p.side*15);
-    if(asset&&object.userData.gltfAthleteV20)asset.tick(object,Math.min(.05,(now-instance.last)/1000));
+    
     const elapsed=now-instance.start;
     const cue=contact.pose(instance.contact,p.id,elapsed);
     const stumble=contact.stunt(instance.contact,p.id,elapsed);
+    if(asset&&object.userData.gltfAthleteV20){
+     const pace=(Math.abs(cue.fall)>0.2||stumble.tuck>0.2)?0.7:Math.max(.75,Math.min(1.45,1+Math.abs(pose.stride)*.2));
+     asset.tick(object,Math.min(.05,(now-instance.last)/1000),pace);
+    }
     // Raise the model slightly when its shoulder rolls down; avoid ground clipping.
     object.position.set(w.x,pose.bounce+stumble.lift,w.z);
     object.rotation.y=-(pose.direction+Math.PI/2);
@@ -139,7 +144,7 @@
    // Presentation-only rotation: no change to ball position or match events.
    instance.ball.rotation.z=t*Math.PI*2;
    if(cameraMode==='tv'||cameraMode==='sideline'||cameraMode==='immersive'){
-    const focus=cameraGuide.target(b),desired=cameraMode==='immersive'?{x:focus.x-14,y:15,z:focus.z+20}:cameraMode==='sideline'?cameraGuide.sidelinePosition(focus):cameraGuide.tvPosition(focus);
+    const focus=cameraGuide.target(b),desired=cameraMode==='immersive'?{x:focus.x-9,y:9,z:focus.z+13}:cameraMode==='sideline'?cameraGuide.sidelinePosition(focus):(()=>{const p=cameraGuide.tvPosition(focus);return {x:focus.x+(p.x-focus.x)*.74,y:p.y*.74,z:focus.z+(p.z-focus.z)*.74};})();
     const dt=Math.min(100,Math.max(0,now-instance.last));
     instance.camera.position.set(cameraGuide.smooth(instance.camera.position.x,desired.x,dt),cameraGuide.smooth(instance.camera.position.y,desired.y,dt),cameraGuide.smooth(instance.camera.position.z,desired.z,dt));
     instance.camera.lookAt(focus.x,focus.y,focus.z);
