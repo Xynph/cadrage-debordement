@@ -92,6 +92,9 @@ try:
             CDMatch3DImpact.active(null,430,participants)===null &&
             JSON.stringify([...participants])===source;
         }"""))
+        check("nouveau ballon de rugby 3D hors ligne", page.evaluate("""() =>
+          typeof CDMatch3DBallModel === 'object' &&
+          CDMatch3DBallModel.detail.laceCount === 5"""))
         initial = snapshot(page)
 
         # Instrumenter le changement de caméra sans modifier le code du jeu.
@@ -106,6 +109,14 @@ try:
             return original.apply(this,args);
           };
         }""")
+        page.evaluate("""() => {
+          window.__rugbyBallCreated = false;
+          const oldAdd = THREE.Scene.prototype.add;
+          THREE.Scene.prototype.add = function(...objects) {
+            if(objects.some(o => o.userData?.renderOnlyBall))window.__rugbyBallCreated = true;
+            return oldAdd.apply(this, objects);
+          };
+        }""")
         page.locator(".cd3d-panel button").filter(has_text="3D").click()
         page.locator("#cd3d-host canvas").wait_for()
         page.wait_for_function("document.querySelector('#cd3d-host canvas').width > 0")
@@ -114,6 +125,7 @@ try:
           return !!c && c.width>0 && c.height>0 && !!c.getContext('webgl2') || !!c?.getContext('webgl');
         }"""))
         check("vue 3D sélectionnée", page.evaluate("CDMatch3D.getMode() === '3d'"))
+        check("ballon procédural ajouté à la scène réelle", page.evaluate("__rugbyBallCreated"))
         check("caméra TV active", page.evaluate("""() =>
           __cameraPositions.some(p=>p.y===68 && p.z===85)"""))
         page.locator(".cd3d-panel button").filter(has_text="Tactique").click()
