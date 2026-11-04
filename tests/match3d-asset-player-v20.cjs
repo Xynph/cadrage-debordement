@@ -61,9 +61,9 @@ test('v20: 30 rigged instances own independent skinned geometry and animate',asy
  vm.runInNewContext(source,{window,Promise});
  const adapter=window.CDMatch3DAssetPlayer;
  assert.equal(await adapter.load({GLTFLoader:Loader}),true);
- const T={GLTFLoader:Loader,Group,AnimationMixer:Mixer,Skeleton};
+ class Mesh{constructor(geometry,material){this.geometry=geometry;this.material=material;this.position={y:0};}}\n class CylinderGeometry{constructor(...args){this.args=args;}}\n class MeshStandardMaterial{constructor(opts){this.color=opts.color;}}\n const T={GLTFLoader:Loader,Group,AnimationMixer:Mixer,Skeleton,Mesh,CylinderGeometry,MeshStandardMaterial};
  const players=Array.from({length:30},(_,i)=>adapter.build(T,{side:i%2}));
- assert.equal(players.filter(p=>p.userData.gltfAthleteV20).length,30);
+ assert.equal(players.filter(p=>p.userData.gltfAthleteV20&&p.userData.gltfAthleteV21).length,30);\n assert.ok(players.every(p=>p.node.uniforms.length===3));\n assert.equal(adapter.status().kits,2);
  assert.equal(new Set(players.map(p=>p.node.mesh.geometry)).size,30);
  for(const p of players)adapter.tick(p,.025);
  assert.ok(players.every(p=>p.userData.mixer.time>.02));
