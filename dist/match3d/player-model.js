@@ -66,6 +66,24 @@
   for(const x of [-.38,.38]){
    mesh(new T.BoxGeometry(.07,.74,.035),trim,group,x,1.80,-.48);
   }
+  // Broadcast-readable design details: collar opening, front chevron, side panels.
+  const dark=material(0x141b1e,.84),eye=material(0x191715,.76),mouth=material(0x633a35,.9);
+  const white=material(0xe8dfd4,.9);
+  for(const side of [-1,1]){
+   const trimStrip=mesh(new T.BoxGeometry(.105,.64,.05),trim,group,side*.48,1.67,-.29);
+   trimStrip.rotation.z=side*.10;
+   mesh(new T.BoxGeometry(.075,.82,.08),dark,group,side*.50,1.68,.24);
+   // Distinctive shoulder colour blocks make the silhouettes clearer from TV distance.
+   const shoulderPatch=mesh(new T.BoxGeometry(.32,.10,.45),trim,group,side*.51,2.22,-.12);
+   shoulderPatch.rotation.z=side*.12;
+   mesh(new T.SphereGeometry(.038,7,6),eye,group,side*.115,2.79,-.288);
+   mesh(new T.BoxGeometry(.105,.029,.032),dark,group,side*.115,2.885,-.270);
+  }
+  mesh(new T.BoxGeometry(.145,.021,.034),mouth,group,0,2.645,-.302);
+  mesh(new T.BoxGeometry(.20,.045,.07),white,group,0,2.26,-.467);
+  // Lightweight procedural crest and chest strip, no external textures required.
+  mesh(new T.BoxGeometry(.13,.17,.046),trim,group,-.22,1.95,-.526);
+  mesh(new T.BoxGeometry(.64,.055,.045),dark,group,0,1.48,-.517);
   const jerseyNumber=addJerseyNumber(T,group,look.number,trim);
   const legs=[],arms=[],knees=[],elbows=[];
   for(const sign of [-1,1]){
@@ -85,12 +103,23 @@
    const knee=new T.Group();knee.position.set(0,-.95,0);hip.add(knee);
    mesh(new T.SphereGeometry(.185,9,8),skin,knee,0,-.02,0);
    mesh(new T.CylinderGeometry(.18,.135,.53,10),socks,knee,0,-.28,0);
-   const shoe=mesh(new T.BoxGeometry(.30,.17,.56),boots,knee,0,-.58,-.14);
+   const shoe=mesh(new T.BoxGeometry(.34,.19,.64),boots,knee,0,-.58,-.17);
    shoe.rotation.x=-.06;
+   // Laces and sole visible during strides and contact close-ups.
+   mesh(new T.BoxGeometry(.235,.035,.32),white,knee,0,-.477,-.29);
+   mesh(new T.BoxGeometry(.34,.047,.64),dark,knee,0,-.685,-.17);
+   for(const zz of [-.35,.02]){
+    mesh(new T.BoxGeometry(.09,.06,.075),dark,knee,-.095,-.725,zz);
+    mesh(new T.BoxGeometry(.09,.06,.075),dark,knee,.095,-.725,zz);
+   }
+   // Compression tape and striped socks create an identifiable lower-body silhouette.
+   mesh(new T.CylinderGeometry(.186,.186,.075,10),trim,knee,0,-.17,0);
+   mesh(new T.CylinderGeometry(.176,.176,.055,10),white,knee,0,-.28,0);
    legs.push(hip);knees.push(knee);
   }
   group.userData.motionParts={legs,arms,knees,elbows,torso};
   group.userData.premiumAthleteRig=true;
+  group.userData.broadcastDetails=true;
   group.userData.jerseyNumber=jerseyNumber;
   const ring=mesh(new T.CircleGeometry(.94,20),new T.MeshBasicMaterial({
    color:player?.featured?0xffd07d:look.side===0?0xffb27a:0x9adfff,transparent:true,opacity:.28
