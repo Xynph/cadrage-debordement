@@ -24,3 +24,12 @@ test('v20: local loader and athlete scripts precede renderer',()=>{
  assert.match(js,/model\.build\(T,p\)/);
  assert.match(js,/diagnostics:/);
 });
+
+test('v20: loader source is bundled and uses no remote URLs',()=>{
+ const loader=read('match3d/vendor/GLTFLoader-r149.js').toString();
+ const athlete=read('match3d/asset-player.js').toString();
+ assert.match(loader,/THREE\.GLTFLoader = GLTFLoader/);
+ assert.doesNotMatch(loader,/^\s*import\s/m);
+ assert.match(athlete,/CesiumMan_data|cesium-athlete\.gltf/);
+ assert.doesNotMatch(athlete,/https?:\/\//i);
+});
