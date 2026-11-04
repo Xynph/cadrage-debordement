@@ -10,7 +10,7 @@ for(const kind of ['shadow','grass']){
  assert.ok(a.every(v=>v>=0&&v<=255));
 }
 const turf=broadcast.pixels('grass');
-assert.notEqual(turf[1],turf[(5*64+13)*4+1]);
+assert.ok(new Set(Array.from({length:64*64},(_,i)=>turf[i*4+1])).size>12);
 const shadow=broadcast.pixels('shadow');
 assert.equal(shadow[3],0);
 assert.ok(shadow[(32*64+32)*4+3]>100);
