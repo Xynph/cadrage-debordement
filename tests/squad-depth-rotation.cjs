@@ -12,7 +12,7 @@ const players=[
 ];
 const context={
  club:()=>({players}),slotEligible:(p,slot)=>slot===0,fitScore:p=>p.condition,
- FAMILIES:Array(15).fill(0),POS:['Pilier',...Array.from({length:14},(_,i)=>'Poste '+(i+2))],
+ FAMILIES:[0],POS:['Pilier'],
  physicalLoadValue:p=>p.load,roleNote:p=>p.condition,render:()=>{},squadTab:'depth',
  console
 };
