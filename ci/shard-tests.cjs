@@ -16,7 +16,7 @@ const WEIGHTS_SECONDS = Object.freeze({
   'tests/world-career.cjs': 74,
   'tests/rugby.cjs': 59,
   'tests/lnr-multiclub-continuity.cjs': 55,
-  'tests/lnr-career-long.cjs': 40,
+  'tests/lnr-career-long.cjs': 55,
   'tests/lnr05-rotation-audit.cjs': 40,
   'tests/lnr05-fatigue-scenarios.cjs': 38,
   'tests/lnr05-multiseason-strategies.cjs': 37,

@@ -62,6 +62,14 @@ jobs:
                 fi ;;
             esac
           done < "$RUNNER_TEMP/modified.txt"
+          # La PR temoin isolee #281 doit executer les cinq shards complets.
+          # Aucun autre changement documentaire ne perd son optimisation.
+          if [[ "$EVENT_NAME" == "pull_request" && "${{ github.event.pull_request.number }}" == "281" ]] &&
+             [[ "$(wc -l < "$RUNNER_TEMP/modified.txt")" -eq 1 ]] &&
+             grep -Fxq "docs/ci-auto-release-trial.md" "$RUNNER_TEMP/modified.txt"; then
+            docs=false
+            echo "Temoin trial #281 : couverture complete obligatoire"
+          fi
           # Jamais contourner la validation complete sur main ou en lancement manuel.
           if [[ "$EVENT_NAME" != "pull_request" || ! -s "$RUNNER_TEMP/modified.txt" ]]; then docs=false; fi
           echo "documentation_only=$docs" >> "$GITHUB_OUTPUT"
