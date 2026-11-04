@@ -4,11 +4,12 @@
  if(typeof match2D!=='function'||typeof matchScene!=='function'||!window.CDMatch3DAdapter)return;
  const original2D=match2D,bridge=window.CDMatch3DAdapter;
  let mode='2d',cameraMode='tv',sceneData=null,liveInstance=null,scheduled=false;
+ const asset=window.CDMatch3DAssetPlayer;
  const motion=window.CDMatch3DMotion,cameraGuide=window.CDMatch3DCamera,contact=window.CDMatch3DContact,impact=window.CDMatch3DImpact;
  if(!motion||!cameraGuide||!contact||!window.CDMatch3DPlayerModel)return;
  function setMode(next){if(!['2d','3d'].includes(next))return;mode=next;dispose();render();}
  function setCamera(next){if(!['tv','tactical','sideline','immersive'].includes(next))return;cameraMode=next;if(liveInstance)positionCamera(liveInstance.camera);}
- window.CDMatch3D=Object.freeze({setMode,setCamera,getMode:()=>mode});
+ window.CDMatch3D=Object.freeze({setMode,setCamera,getMode:()=>mode,diagnostics:()=>({players:liveInstance?liveInstance.players.size:0,rigged:liveInstance?[...liveInstance.players.values()].filter(o=>o?.userData.gltfAthleteV20).length:0,animationTime:liveInstance?[...liveInstance.players.values()].find(o=>o?.userData.gltfAthleteV20)?.userData.mixer?.time||0:0,asset:asset?asset.status():null,render:liveInstance?{...liveInstance.metrics}:null})});
  match2D=function(l){
   let scene;
   try{scene=bridge.normalize(matchScene(l));}catch(e){return original2D(l);}
@@ -49,7 +50,7 @@
   const T=window.THREE;
   const model=window.CDMatch3DPlayerModel;
   if(!model)return null;
-  const group=model.build(T,p);scene.add(group);return group;
+  const group=(asset&&asset.build(T,p))||model.build(T,p);scene.add(group);return group;
  }
  function dispose(){
   if(!liveInstance)return;const i=liveInstance;liveInstance=null;cancelAnimationFrame(i.raf);if(i.crowdAnimator)i.crowdAnimator.dispose();if(i.impactEffects)i.impactEffects.dispose();if(i.broadcast)i.broadcast.dispose();
@@ -91,14 +92,24 @@
   scene.add(ball);
   const impactEffects=impact?impact.create(scene,T):null;
   const broadcast=window.CDMatch3DBroadcast?window.CDMatch3DBroadcast.create(scene,T):null;
-  const instance={host,renderer,scene,camera,ball,players:new Map(),crowdAnimator,impactEffects,broadcast,raf:0,last:performance.now(),state:null,start:performance.now()};
+  const instance={host,renderer,scene,camera,ball,players:new Map(),crowdAnimator,impactEffects,broadcast,raf:0,last:performance.now(),state:null,start:performance.now(),metrics:{frames:0,elapsed:0,fps:0,geometries:0,textures:0}};
   liveInstance=instance;update(instance,sceneData);
+  if(asset)asset.load(T).then(ok=>{
+   if(!ok||liveInstance!==instance)return;
+   for(const p of instance.state.players){
+    const old=instance.players.get(p.id),fresh=asset.build(T,p);
+    if(!old||!fresh)continue;
+    fresh.position.copy(old.position);fresh.rotation.copy(old.rotation);
+    instance.scene.remove(old);instance.scene.add(fresh);instance.players.set(p.id,fresh);
+   }
+  });
   function loop(now){
    if(liveInstance!==instance)return;
    const t=Math.min(1,(now-instance.start)/750),f=bridge.frame(instance.previous,instance.state,t);
    for(const p of f.players){const object=instance.players.get(p.id);if(object){
     const w=bridge.world(p),previous=instance.previous?.players?.find(q=>q.id===p.id)||p;
     const pose=motion.pose(previous,p,t,now-instance.start,p.slot+p.side*15);
+    if(asset&&object.userData.gltfAthleteV20)asset.tick(object,Math.min(.05,(now-instance.last)/1000));
     const elapsed=now-instance.start;
     const cue=contact.pose(instance.contact,p.id,elapsed);
     const stumble=contact.stunt(instance.contact,p.id,elapsed);
@@ -134,6 +145,14 @@
     instance.camera.lookAt(focus.x,focus.y,focus.z);
    }
    if(instance.crowdAnimator)instance.crowdAnimator.tick(now);
+   const frameMs=Math.max(0,Math.min(100,now-instance.last));
+   instance.metrics.frames++;instance.metrics.elapsed+=frameMs;
+   if(instance.metrics.elapsed>=2000){
+    instance.metrics.fps=Math.round(instance.metrics.frames*1000/instance.metrics.elapsed);
+    instance.metrics.frames=0;instance.metrics.elapsed=0;
+    instance.metrics.geometries=instance.renderer.info.memory.geometries;
+    instance.metrics.textures=instance.renderer.info.memory.textures;
+   }
    instance.last=now;
    instance.renderer.render(instance.scene,instance.camera);
    instance.raf=requestAnimationFrame(loop);
