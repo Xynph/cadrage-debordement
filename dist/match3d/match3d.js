@@ -24,7 +24,7 @@
   if(cameraMode==='tactical'){camera.position.set(0,115,.01);camera.up.set(0,0,-1);}
   else if(cameraMode==='sideline'){const pos=cameraGuide.sidelinePosition({x:0,z:0});camera.position.set(pos.x,pos.y,pos.z);camera.up.set(0,1,0);}
   else if(cameraMode==='immersive'){camera.position.set(-9,9,13);camera.up.set(0,1,0);}
-  else {camera.position.set(8,68,85);camera.up.set(0,1,0);}
+  else {camera.position.set(7,48,62);camera.up.set(0,1,0);}
   camera.lookAt(0,0,0);
  }
  function field(scene){
@@ -144,7 +144,7 @@
    // Presentation-only rotation: no change to ball position or match events.
    instance.ball.rotation.z=t*Math.PI*2;
    if(cameraMode==='tv'||cameraMode==='sideline'||cameraMode==='immersive'){
-    const focus=cameraGuide.target(b),desired=cameraMode==='immersive'?{x:focus.x-9,y:9,z:focus.z+13}:cameraMode==='sideline'?cameraGuide.sidelinePosition(focus):cameraGuide.tvPosition(focus);
+    const focus=cameraGuide.target(b),desired=cameraMode==='immersive'?{x:focus.x-9,y:9,z:focus.z+13}:cameraMode==='sideline'?cameraGuide.sidelinePosition(focus):(()=>{const p=cameraGuide.tvPosition(focus);return {x:focus.x+(p.x-focus.x)*.74,y:p.y*.74,z:focus.z+(p.z-focus.z)*.74};})();
     const dt=Math.min(100,Math.max(0,now-instance.last));
     instance.camera.position.set(cameraGuide.smooth(instance.camera.position.x,desired.x,dt),cameraGuide.smooth(instance.camera.position.y,desired.y,dt),cameraGuide.smooth(instance.camera.position.z,desired.z,dt));
     instance.camera.lookAt(focus.x,focus.y,focus.z);
