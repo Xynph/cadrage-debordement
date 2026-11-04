@@ -9,7 +9,7 @@
  if(!motion||!cameraGuide||!contact||!window.CDMatch3DPlayerModel)return;
  function setMode(next){if(!['2d','3d'].includes(next))return;mode=next;dispose();render();}
  function setCamera(next){if(!['tv','tactical','sideline','immersive'].includes(next))return;cameraMode=next;if(liveInstance)positionCamera(liveInstance.camera);}
- window.CDMatch3D=Object.freeze({setMode,setCamera,getMode:()=>mode,diagnostics:()=>({players:liveInstance?liveInstance.players.size:0,rigged:liveInstance?[...liveInstance.players.values()].filter(o=>o?.userData.gltfAthleteV20).length:0,asset:asset?asset.status():null,render:liveInstance?{...liveInstance.metrics}:null})});
+ window.CDMatch3D=Object.freeze({setMode,setCamera,getMode:()=>mode,diagnostics:()=>({players:liveInstance?liveInstance.players.size:0,rigged:liveInstance?[...liveInstance.players.values()].filter(o=>o?.userData.gltfAthleteV20).length:0,animationTime:liveInstance?[...liveInstance.players.values()].find(o=>o?.userData.gltfAthleteV20)?.userData.mixer?.time||0:0,asset:asset?asset.status():null,render:liveInstance?{...liveInstance.metrics}:null})});
  match2D=function(l){
   let scene;
   try{scene=bridge.normalize(matchScene(l));}catch(e){return original2D(l);}
