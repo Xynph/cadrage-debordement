@@ -119,6 +119,17 @@ try:
         page.locator(".cd3d-panel button").filter(has_text="Tactique").click()
         check("caméra tactique active", page.evaluate("""() =>
           __cameraPositions.some(p=>p.y===115 && p.z===0.01 && p.up[2]===-1)"""))
+        page.locator(".cd3d-panel button").filter(has_text="Latérale").click()
+        check("caméra latérale activable", page.evaluate("""() =>
+          __cameraPositions.some(p=>p.y===24 && p.z===69)"""))
+        check("suivi de caméra latérale disponible", page.evaluate("""() => {
+          const f=CDMatch3DCamera.target({x:23,z:10});
+          const p=CDMatch3DCamera.sidelinePosition(f);
+          return p.y===24 && p.z>=60 && p.z<=80 && Number.isFinite(p.x);
+        }"""))
+        page.locator(".cd3d-panel button").filter(has_text="TV").click()
+        check("retour caméra TV après latérale", page.evaluate("""() =>
+          __cameraPositions.filter(p=>p.y===68).length>=2"""))
         page.evaluate("render()")
         page.locator("#cd3d-host canvas").wait_for()
         check("canvas toujours présent après nouveau rendu", page.locator("#cd3d-host canvas").count()==1)
