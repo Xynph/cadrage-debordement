@@ -33,3 +33,45 @@ test('v20: loader source is bundled and uses no remote URLs',()=>{
  assert.match(athlete,/CesiumMan_data|cesium-athlete\.gltf/);
  assert.doesNotMatch(athlete,/https?:\/\//i);
 });
+
+test('v20: 30 rigged instances own independent skinned geometry and animate',async()=>{
+ const vm=require('node:vm');
+ const source=read('match3d/asset-player.js').toString();
+ const mesh=()=>({
+  isMesh:true,isSkinnedMesh:true,
+  geometry:{clone:()=>({independent:true})},
+  material:{clone:()=>({color:{setHex(){}}})},
+  skeleton:{bones:[],boneInverses:[]},
+  bindMatrix:{clone:()=>({})},
+  bind(s){this.skeleton=s;}
+ });
+ const template={
+  traverse(fn){fn(this);fn(mesh());},
+  clone(){const m=mesh();return {
+   scale:{setScalar(){}},
+   traverse(fn){fn(this);fn(m);},
+   mesh:m
+  };}
+ };
+ class Loader{load(_url,ok){ok({scene:template,animations:[{name:'walking'}]});}}
+ class Group{constructor(){this.userData={};}add(node){this.node=node;}}
+ class Mixer{constructor(){this.time=0;}clipAction(){return {play(){}};}update(dt){this.time+=dt;}}
+ class Skeleton{constructor(bones,inverses){this.bones=bones;this.boneInverses=inverses;}}
+ const window={};
+ vm.runInNewContext(source,{window,Promise});
+ const adapter=window.CDMatch3DAssetPlayer;
+ assert.equal(await adapter.load({GLTFLoader:Loader}),true);
+ const T={GLTFLoader:Loader,Group,AnimationMixer:Mixer,Skeleton};
+ const players=Array.from({length:30},(_,i)=>adapter.build(T,{side:i%2}));
+ assert.equal(players.filter(p=>p.userData.gltfAthleteV20).length,30);
+ assert.equal(new Set(players.map(p=>p.node.mesh.geometry)).size,30);
+ for(const p of players)adapter.tick(p,.025);
+ assert.ok(players.every(p=>p.userData.mixer.time>.02));
+});
+test('v20: no loader preserves procedural fallback',async()=>{
+ const vm=require('node:vm'),window={};
+ vm.runInNewContext(read('match3d/asset-player.js').toString(),{window,Promise});
+ const adapter=window.CDMatch3DAssetPlayer;
+ assert.equal(await adapter.load({}),false);
+ assert.equal(adapter.build({},{}),null);
+});
