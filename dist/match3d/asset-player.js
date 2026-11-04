@@ -23,8 +23,19 @@
    const from=original[i],to=copied[i];
    to.skeleton=new T.Skeleton(from.skeleton.bones.map(b=>nodes.get(b)),from.skeleton.boneInverses.map(m=>m.clone()));
    to.bind(to.skeleton,from.bindMatrix.clone());
+   // Per-instance geometry prevents scene disposal from invalidating the template.
+   to.geometry=from.geometry.clone();
   }
   clone.scale.setScalar(1.8);
+  const jersey=player&&player.side===1?0x4cafe4:0xe87932;
+  clone.traverse(o=>{
+   if(!o.isMesh)return;
+   if(o.material){
+    o.material=Array.isArray(o.material)?o.material.map(m=>m.clone()):o.material.clone();
+    const tint=m=>{if(m.color)m.color.setHex(jersey);};
+    if(Array.isArray(o.material))o.material.forEach(tint);else tint(o.material);
+   }
+  });
   const group=new T.Group();group.add(clone);
   const mixer=new T.AnimationMixer(clone);mixer.clipAction(animation).play();
   group.userData.gltfAthleteV20=true;group.userData.mixer=mixer;
