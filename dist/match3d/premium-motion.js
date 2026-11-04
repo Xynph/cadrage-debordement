@@ -21,6 +21,11 @@
    clamp(.14+Math.max(0,Math.sin(phase+offset))*.46*Math.sqrt(pace)*envelope,.14,.60)));
   const hipSway=clamp(Math.sin(phase)*Math.sqrt(pace)*envelope*.06,-.06,.06);
   const landing=clamp(Math.max(0,Math.cos(phase))*pace*envelope,0,1);
+  // Secondary joint motion is deterministic and visual-only; zero at interpolation endpoints.
+  const footRoll=Object.freeze([0,Math.PI].map(offset=>clamp(Math.sin(phase+offset)*pace*envelope*.23,-.23,.23)));
+  const wristFlex=Object.freeze([0,Math.PI].map(offset=>clamp(-Math.sin(phase+offset)*pace*envelope*.18,-.18,.18)));
+  const headTurn=clamp(Math.sin(phase*.5+seed*.1)*pace*envelope*.10,-.10,.10);
+  const headNod=clamp(Math.abs(stride)*.075,0,.075);
   return Object.freeze({
    stride:clamp(stride,-1,1),
    armSwing:clamp(-stride*.78,-1,1),
@@ -31,6 +36,10 @@
    elbowFlex,
    hipSway,
    landing,
+   footRoll,
+   wristFlex,
+   headTurn,
+   headNod,
    pace
   });
  }

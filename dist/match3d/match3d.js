@@ -117,7 +117,10 @@
      if(parts.elbows){parts.elbows[0].rotation.x=-pose.elbowFlex[0]-cue.bracing*.55-stumble.tuck*.44;
       parts.elbows[1].rotation.x=-pose.elbowFlex[1]-cue.bracing*.55-stumble.tuck*.44;}
      parts.torso.rotation.x=pose.torsoLean+cue.lean+stumble.recovery*.12;
-     parts.torso.rotation.z=pose.hipSway+cue.roll*.22+stumble.shoulder*.18;}
+     parts.torso.rotation.z=pose.hipSway+cue.roll*.22+stumble.shoulder*.18;
+     if(parts.headRig){parts.headRig.rotation.y=pose.headTurn;parts.headRig.rotation.x=-pose.headNod+cue.bracing*.12;}
+     if(parts.wrists){parts.wrists[0].rotation.x=pose.wristFlex[0]-cue.bracing*.18;parts.wrists[1].rotation.x=pose.wristFlex[1]-cue.bracing*.18;}
+     if(parts.ankles){parts.ankles[0].rotation.x=pose.footRoll[0]-stumble.tuck*.14;parts.ankles[1].rotation.x=pose.footRoll[1]-stumble.tuck*.14;}}
    }}
    if(instance.impactEffects)instance.impactEffects.tick(instance.contact,now-instance.start,instance.players);
    if(instance.broadcast)instance.broadcast.sync(instance.players);
