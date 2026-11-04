@@ -40,7 +40,7 @@ assert.equal(neutral.stride,0);
 assert.ok(sprint.pace>0);
 assert.ok(Number.isFinite(sprint.bounce));
 assert.ok(sprint.kneeBend.every(v=>v>=0&&v<=.84));
-assert.ok(sprint.elbowFlex.every(v=>v>=.16&&v<=.71));
+assert.ok(sprint.elbowFlex.every(v=>v>=.14&&v<=.60));
 for(const progress of [-100,0,.25,.5,.75,1,100]){
  const pose=motion.pose(still,moving,progress,1234,6);
  assert.ok(Object.values(pose).flat().every(Number.isFinite));
