@@ -214,10 +214,12 @@ try:
         (REPORT / "match3d-v20-performance.json").write_text(
             json.dumps(perf, ensure_ascii=False, indent=2) + "\n")
         page.screenshot(path=str(REPORT / "match3d-chromium.png"), full_page=True)
+        page.locator("#cd3d-host canvas").screenshot(path=str(REPORT / "match3d-v22-tv-players-close.png"))
         page.locator(".cd3d-panel button").filter(has_text="Immersive").click()
         check("caméra immersive disponible", page.evaluate("CDMatch3D.getMode() === '3d'"))
         page.wait_for_timeout(200)
         page.screenshot(path=str(REPORT / "match3d-immersive.png"), full_page=True)
+        page.locator("#cd3d-host canvas").screenshot(path=str(REPORT / "match3d-v22-immersive-players-close.png"))
         page.locator(".cd3d-panel button").filter(has_text="TV").click()
         page.locator(".cd3d-panel button").filter(has_text="2D").click()
         check("retour 2D avec terrain", page.locator(".match-2d .match-field").count()==1)
