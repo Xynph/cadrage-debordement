@@ -28,7 +28,7 @@
  }
  function field(scene){
   const T=window.THREE;
-  const grass=new T.Mesh(new T.PlaneGeometry(110,80),new T.MeshLambertMaterial({color:0x2c7548}));
+  const grass=new T.Mesh(new T.PlaneGeometry(110,80),(window.CDMatch3DBroadcast?window.CDMatch3DBroadcast.grassMaterial(T):new T.MeshLambertMaterial({color:0x2c7548})));
   grass.rotation.x=-Math.PI/2;grass.position.y=-.025;scene.add(grass);
   const stripe=new T.MeshBasicMaterial({color:0x348355,side:T.DoubleSide});
   for(let x=-50;x<50;x+=20){const m=new T.Mesh(new T.PlaneGeometry(10,70),stripe);m.rotation.x=-Math.PI/2;m.position.set(x+5,.002,0);scene.add(m);}
@@ -52,7 +52,7 @@
   const group=model.build(T,p);scene.add(group);return group;
  }
  function dispose(){
-  if(!liveInstance)return;const i=liveInstance;liveInstance=null;cancelAnimationFrame(i.raf);if(i.crowdAnimator)i.crowdAnimator.dispose();if(i.impactEffects)i.impactEffects.dispose();
+  if(!liveInstance)return;const i=liveInstance;liveInstance=null;cancelAnimationFrame(i.raf);if(i.crowdAnimator)i.crowdAnimator.dispose();if(i.impactEffects)i.impactEffects.dispose();if(i.broadcast)i.broadcast.dispose();
   i.renderer.dispose();i.renderer.domElement.remove();
   i.scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>m.dispose());}});
  }
@@ -75,12 +75,12 @@
   if(window.CDMatch3DStadium)window.CDMatch3DStadium.build(scene,T);
   const crowdMesh=window.CDMatch3DCrowd?window.CDMatch3DCrowd.build(scene,T):null;
   const crowdAnimator=crowdMesh&&window.CDMatch3DCrowdAnimation?window.CDMatch3DCrowdAnimation.create(crowdMesh,T,window.CDMatch3DCrowd.plan()):null;
-  scene.add(new T.HemisphereLight(0xe6fbff,0x3e4436,2.2));
+  scene.add(new T.HemisphereLight(0xe6fbff,0x3e4436,1.05));
   const stadium=new T.Mesh(new T.RingGeometry(64,86,96),new T.MeshStandardMaterial({color:0x263c3b,roughness:1,side:T.DoubleSide}));
   stadium.rotation.x=-Math.PI/2;stadium.position.y=-.08;scene.add(stadium);
   const crowd=new T.Mesh(new T.RingGeometry(88,98,96),new T.MeshBasicMaterial({color:0x45605a,side:T.DoubleSide}));
   crowd.rotation.x=-Math.PI/2;crowd.position.y=.22;scene.add(crowd);
-  const sun=new T.DirectionalLight(0xffffff,2.4);sun.position.set(30,80,10);scene.add(sun);
+  const sun=new T.DirectionalLight(0xffffff,1.35);sun.position.set(30,80,10);scene.add(sun);
   const camera=new T.PerspectiveCamera(48,16/9,.1,500);positionCamera(camera);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
   renderer.setSize(Math.max(300,host.clientWidth),Math.max(180,Math.floor(host.clientWidth*9/16)));
@@ -90,7 +90,8 @@
   if(!window.CDMatch3DBallModel)ball.scale.set(1.4,.7,.85);
   scene.add(ball);
   const impactEffects=impact?impact.create(scene,T):null;
-  const instance={host,renderer,scene,camera,ball,players:new Map(),crowdAnimator,impactEffects,raf:0,last:performance.now(),state:null,start:performance.now()};
+  const broadcast=window.CDMatch3DBroadcast?window.CDMatch3DBroadcast.create(scene,T):null;
+  const instance={host,renderer,scene,camera,ball,players:new Map(),crowdAnimator,impactEffects,broadcast,raf:0,last:performance.now(),state:null,start:performance.now()};
   liveInstance=instance;update(instance,sceneData);
   function loop(now){
    if(liveInstance!==instance)return;
@@ -119,6 +120,7 @@
      parts.torso.rotation.z=pose.hipSway+cue.roll*.22+stumble.shoulder*.18;}
    }}
    if(instance.impactEffects)instance.impactEffects.tick(instance.contact,now-instance.start,instance.players);
+   if(instance.broadcast)instance.broadcast.sync(instance.players);
    const b=bridge.world(f.ball);instance.ball.position.set(b.x,1.25+Math.sin(t*Math.PI)*Math.min(5,Math.abs(instance.state.ball.x-instance.state.origin.x)*.2),b.z);
    // Presentation-only rotation: no change to ball position or match events.
    instance.ball.rotation.z=t*Math.PI*2;
