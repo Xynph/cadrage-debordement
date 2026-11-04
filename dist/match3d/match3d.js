@@ -106,7 +106,11 @@
     if(parts){parts.legs[0].rotation.x=pose.stride*.68;parts.legs[1].rotation.x=-pose.stride*.68;
      parts.knees[0].rotation.x=pose.kneeBend[0];parts.knees[1].rotation.x=pose.kneeBend[1];
      parts.arms[0].rotation.x=pose.armSwing*.75-cue.bracing*.55;parts.arms[1].rotation.x=-pose.armSwing*.75-cue.bracing*.55;
-     parts.torso.rotation.x=pose.torsoLean+cue.lean;}
+     // Both forearms bend naturally in a sprint and rise defensively on visual contact.
+     if(parts.elbows){parts.elbows[0].rotation.x=-pose.elbowFlex[0]-cue.bracing*.55;
+      parts.elbows[1].rotation.x=-pose.elbowFlex[1]-cue.bracing*.55;}
+     parts.torso.rotation.x=pose.torsoLean+cue.lean;
+     parts.torso.rotation.z=pose.hipSway+cue.roll*.22;}
    }}
    if(instance.impactEffects)instance.impactEffects.tick(instance.contact,now-instance.start,instance.players);
    const b=bridge.world(f.ball);instance.ball.position.set(b.x,1.25+Math.sin(t*Math.PI)*Math.min(5,Math.abs(instance.state.ball.x-instance.state.origin.x)*.2),b.z);
