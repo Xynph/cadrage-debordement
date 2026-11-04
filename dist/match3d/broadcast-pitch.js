@@ -43,7 +43,7 @@
   return tex;
  }
  function grassMaterial(T){
-  return new T.MeshLambertMaterial({color:0xffffff,map:texture(T,'grass')});
+  return new T.MeshLambertMaterial({color:0x346e46,map:texture(T,'grass')});
  }
  function create(scene,T){
   const map=texture(T,'shadow'),geometry=new T.PlaneGeometry(3.3,2.1);
