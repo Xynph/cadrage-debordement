@@ -213,6 +213,7 @@ try:
         check("FPS logiciel Chromium au moins 10", perf["render"]["fps"] >= 10)
         check("FPS mesuré dans Chromium", perf["render"]["fps"] > 0)
         check("mémoire géométrique mesurée", perf["render"]["geometries"] > 0)
+        check("textures GPU et os mutualisées sous 90", perf["render"]["textures"] <= 90)
         (REPORT / "match3d-v20-performance.json").write_text(
             json.dumps(perf, ensure_ascii=False, indent=2) + "\n")
         page.screenshot(path=str(REPORT / "match3d-chromium.png"), full_page=True)
