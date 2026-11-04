@@ -79,6 +79,19 @@ try:
           return impact.fall>0 && impact.fall<=1.1 &&
             recovered.fall===0 && JSON.stringify(input)===before;
         }"""))
+        check("effets physiques visuels 3D chargés localement", page.evaluate(
+            "typeof CDMatch3DImpact === 'object' && CDMatch3DImpact.count === 12"))
+        check("impact visuel déterministe sans mutation du moteur", page.evaluate("""() => {
+          const participants=new Map([
+            ['a',{position:{x:4,z:8}}],
+            ['b',{position:{x:6,z:10}}]
+          ]);
+          const source=JSON.stringify([...participants]);
+          const fx=CDMatch3DImpact.active({lead:'a',other:'b'},430,participants);
+          return fx.x===5 && fx.z===9 && fx.t===.5 &&
+            CDMatch3DImpact.active(null,430,participants)===null &&
+            JSON.stringify([...participants])===source;
+        }"""))
         initial = snapshot(page)
 
         # Instrumenter le changement de caméra sans modifier le code du jeu.
