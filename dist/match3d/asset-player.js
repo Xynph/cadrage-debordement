@@ -1,7 +1,7 @@
 'use strict';
 /* Offline glTF skinned athlete adapter. Cesium model © 2017, CC BY 4.0. */
 (function(root){
- let model=null,animation=null,pending=null,failed=false;
+ let model=null,animation=null,pending=null,failed=false;\n const kits=new Map();\n function kit(T,side){\n  const key=side===1?'away':'home';if(kits.has(key))return kits.get(key);\n  const palette=side===1?{shirt:0x1886cf,shorts:0x14283c,socks:0xf1f5f9,trim:0xf8f9fb}:{shirt:0xe87932,shorts:0x242e39,socks:0x263444,trim:0xf6e8d0};\n  const mats=Object.fromEntries(Object.entries(palette).map(([k,v])=>[k,new T.MeshStandardMaterial({color:v,roughness:.83,metalness:0})]));\n  kits.set(key,mats);return mats;\n }\n function uniform(T,clone,player){\n  // Lightweight, locally generated kit: no external textures or draw-call-heavy skin overlays.\n  const m=kit(T,player&&player.side),geo=new T.CylinderGeometry(.22,.18,.49,8,1),torso=new T.Mesh(geo,m.shirt);\n  torso.position.y=.98;clone.add(torso);\n  const shorts=new T.Mesh(new T.CylinderGeometry(.185,.19,.22,8),m.shorts);shorts.position.y=.64;clone.add(shorts);\n  const stripe=new T.Mesh(new T.CylinderGeometry(.224,.224,.055,8),m.trim);stripe.position.y=1.09;clone.add(stripe);\n  return {torso,shorts,stripe};\n }
  function load(T){
   if(pending)return pending;
   if(!T||!T.GLTFLoader){failed=true;return Promise.resolve(false);}
@@ -26,7 +26,7 @@
    // Per-instance geometry prevents scene disposal from invalidating the template.
    to.geometry=from.geometry.clone();
   }
-  clone.scale.setScalar(1.8);
+  clone.scale.setScalar(1.8);\n  uniform(T,clone,player);
   const jersey=player&&player.side===1?0x4cafe4:0xe87932;
   clone.traverse(o=>{
    if(!o.isMesh)return;
@@ -38,12 +38,12 @@
   });
   const group=new T.Group();group.add(clone);
   const mixer=new T.AnimationMixer(clone);mixer.clipAction(animation).play();
-  group.userData.gltfAthleteV20=true;group.userData.mixer=mixer;
+  group.userData.gltfAthleteV20=true;group.userData.gltfAthleteV21=true;group.userData.mixer=mixer;
   return group;
  }
  root.CDMatch3DAssetPlayer=Object.freeze({
   load,build,
-  tick:(group,delta)=>{if(group?.userData.mixer)group.userData.mixer.update(Math.max(0,Math.min(.05,delta)));},
-  status:()=>({ready:!!model,failed,loading:!!pending&&!model&&!failed})
+  tick:(group,delta,pace=1)=>{if(group?.userData.mixer)group.userData.mixer.update(Math.max(0,Math.min(.05,delta))*Math.max(.65,Math.min(1.6,pace)));},
+  status:()=>({ready:!!model,failed,loading:!!pending&&!model&&!failed,kits:kits.size})
  });
 })(typeof window!=='undefined'?window:globalThis);
