@@ -23,7 +23,7 @@ assert.equal(a.children[0].geometry.args[0],1);
 assert.deepEqual(a.children[0].scale.values,[.775,.35,.35]);
 assert.equal(a.children.filter(x=>x.geometry.args.length===4).length,2);
 assert.equal(a.children.filter(x=>x instanceof Line).length,2);
-assert.equal(a.children.filter(x=>x.geometry.args.length===3).length,5);
+assert.equal(a.children.filter(x=>x.geometry.args.length===3 && x.geometry.args[0]===.025).length,5);
 assert.equal(b.children.length,a.children.length);
 assert.notEqual(a,b);
 assert.ok(objects.every(o=>o.geometry&&o.material));
