@@ -206,6 +206,8 @@ try:
             animation_before))
         page.wait_for_function("CDMatch3D.diagnostics().render.fps > 0", timeout=15000)
         perf = page.evaluate("CDMatch3D.diagnostics()")
+        check("v22 nouveau rig GLB actif", perf["asset"].get("realRig") is True)
+        check("v22 course et chute presentes", any("Man_Run" in c for c in perf["asset"].get("clips", [])) and any("Man_Death" in c for c in perf["asset"].get("clips", [])))
         check("deux tenues d'équipe générées hors ligne", perf["asset"]["kits"] == 2)
         check("géométries du kit mutualisées", perf["render"]["geometries"] <= 90)
         check("FPS logiciel Chromium au moins 10", perf["render"]["fps"] >= 10)
