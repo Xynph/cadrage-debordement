@@ -25,7 +25,7 @@
    stride:clamp(stride,-1,1),
    armSwing:clamp(-stride*.78,-1,1),
    torsoLean:pace*.13*envelope,
-   bounce:Math.abs(stride)*.17,
+   bounce:Math.abs(stride)*.12,
    direction,
    kneeBend,
    elbowFlex,
