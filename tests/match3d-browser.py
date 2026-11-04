@@ -187,6 +187,21 @@ try:
         check("30 joueurs issus du vrai moteur", page.evaluate(
             "CDMatch3DAdapter.normalize(matchScene(S.live)).players.length === 30"))
         check("état et sauvegarde inchangés par 3D", snapshot(page) == initial)
+        # Lot 20: assert the real local skinned glTF is visible before screenshots.
+        page.wait_for_function(
+            "CDMatch3D.diagnostics().rigged === 30 && CDMatch3D.diagnostics().asset.ready",
+            timeout=15000,
+        )
+        check("30 humanoïdes glTF riggés réellement chargés", page.evaluate(
+            "CDMatch3D.diagnostics().rigged === 30"))
+        check("30 joueurs présents en 3D", page.evaluate(
+            "CDMatch3D.diagnostics().players === 30"))
+        page.wait_for_function("CDMatch3D.diagnostics().render.fps > 0", timeout=15000)
+        perf = page.evaluate("CDMatch3D.diagnostics()")
+        check("FPS mesuré dans Chromium", perf["render"]["fps"] > 0)
+        check("mémoire géométrique mesurée", perf["render"]["geometries"] > 0)
+        (REPORT / "match3d-v20-performance.json").write_text(
+            json.dumps(perf, ensure_ascii=False, indent=2) + "\\n")
         page.screenshot(path=str(REPORT / "match3d-chromium.png"), full_page=True)
         page.locator(".cd3d-panel button").filter(has_text="Immersive").click()
         check("caméra immersive disponible", page.evaluate("CDMatch3D.getMode() === '3d'"))
