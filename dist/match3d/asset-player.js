@@ -39,9 +39,10 @@
  }
  function attachRugbyGear(T,clone,player){
   // All geometry and materials are shared; no network requests or textures.
-  const g=gearGeometry(T),m=kit(T,player&&player.side),bones=new Map();
+  const bones=new Map();
   clone.traverse(o=>{if(o.isBone&&o.name)bones.set(o.name,o);});
   if(!bones.size)return 0;
+  const g=gearGeometry(T),m=kit(T,player&&player.side);
   const items=[
    ['Skeleton_arm_joint_R',g.shoulder,m.shirt,[-.02,0,0]],
    ['Skeleton_arm_joint_L__4_',g.shoulder,m.shirt,[.02,0,0]],
