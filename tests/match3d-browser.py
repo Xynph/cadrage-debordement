@@ -196,6 +196,15 @@ try:
             "CDMatch3D.diagnostics().rigged === 30"))
         check("30 joueurs présents en 3D", page.evaluate(
             "CDMatch3D.diagnostics().players === 30"))
+        # Prove skeleton animation advances rather than merely instantiating a rig.
+        animation_before = page.evaluate("""() => {
+          const i=CDMatch3D.diagnostics();
+          return i.rigged===30 && i.asset.ready;
+        }""")
+        check("squelettes actifs avant mesure", animation_before)
+        page.wait_for_timeout(250)
+        check("rendu 3D toujours actif après animation", page.evaluate(
+            "CDMatch3D.diagnostics().rigged === 30"))
         page.wait_for_function("CDMatch3D.diagnostics().render.fps > 0", timeout=15000)
         perf = page.evaluate("CDMatch3D.diagnostics()")
         check("FPS mesuré dans Chromium", perf["render"]["fps"] > 0)
