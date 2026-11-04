@@ -4,7 +4,7 @@
  if(typeof match2D!=='function'||typeof matchScene!=='function'||!window.CDMatch3DAdapter)return;
  const original2D=match2D,bridge=window.CDMatch3DAdapter;
  let mode='2d',cameraMode='tv',sceneData=null,liveInstance=null,scheduled=false;
- const motion=window.CDMatch3DMotion,cameraGuide=window.CDMatch3DCamera,contact=window.CDMatch3DContact;
+ const motion=window.CDMatch3DMotion,cameraGuide=window.CDMatch3DCamera,contact=window.CDMatch3DContact,impact=window.CDMatch3DImpact;
  if(!motion||!cameraGuide||!contact||!window.CDMatch3DPlayerModel)return;
  function setMode(next){if(!['2d','3d'].includes(next))return;mode=next;dispose();render();}
  function setCamera(next){if(!['tv','tactical'].includes(next))return;cameraMode=next;if(liveInstance)positionCamera(liveInstance.camera);}
@@ -50,7 +50,7 @@
   const group=model.build(T,p);scene.add(group);return group;
  }
  function dispose(){
-  if(!liveInstance)return;const i=liveInstance;liveInstance=null;cancelAnimationFrame(i.raf);if(i.crowdAnimator)i.crowdAnimator.dispose();
+  if(!liveInstance)return;const i=liveInstance;liveInstance=null;cancelAnimationFrame(i.raf);if(i.crowdAnimator)i.crowdAnimator.dispose();if(i.impactEffects)i.impactEffects.dispose();
   i.renderer.dispose();i.renderer.domElement.remove();
   i.scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>m.dispose());}});
  }
@@ -86,7 +86,8 @@
   host.append(renderer.domElement);
   const ball=new T.Mesh(new T.SphereGeometry(.58,12,8),new T.MeshStandardMaterial({color:0xf8e9c6}));
   ball.scale.set(1.4,.7,.85);scene.add(ball);
-  const instance={host,renderer,scene,camera,ball,players:new Map(),crowdAnimator,raf:0,last:performance.now(),state:null,start:performance.now()};
+  const impactEffects=impact?impact.create(scene,T):null;
+  const instance={host,renderer,scene,camera,ball,players:new Map(),crowdAnimator,impactEffects,raf:0,last:performance.now(),state:null,start:performance.now()};
   liveInstance=instance;update(instance,sceneData);
   function loop(now){
    if(liveInstance!==instance)return;
@@ -105,6 +106,7 @@
      parts.arms[0].rotation.x=pose.armSwing*.75-cue.bracing*.55;parts.arms[1].rotation.x=-pose.armSwing*.75-cue.bracing*.55;
      parts.torso.rotation.x=pose.torsoLean+cue.lean;}
    }}
+   if(instance.impactEffects)instance.impactEffects.tick(instance.contact,now-instance.start,instance.players);
    const b=bridge.world(f.ball);instance.ball.position.set(b.x,1.25+Math.sin(t*Math.PI)*Math.min(5,Math.abs(instance.state.ball.x-instance.state.origin.x)*.2),b.z);
    // Presentation-only rotation: no change to ball position or match events.
    instance.ball.rotation.z=t*Math.PI*2;
