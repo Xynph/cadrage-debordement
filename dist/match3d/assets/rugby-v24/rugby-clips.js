@@ -237,6 +237,32 @@
    if(!Number.isFinite(min)||vertices<30)throw Error('Sol maillage skin indisponible');
    return {min,vertices,torsoMinY:Number.isFinite(torsoMin)?torsoMin:null,torsoVertices,lowest};
   };
+  // A toe tip is sometimes the lowest Body vertex after the finger clearance.
+  // Select a bounded anatomical ankle flexion before the final mesh-ground solve.
+  // Optimise the measured torso-to-lowest-surface gap rather than moving the
+  // whole player down through the pitch (which would penetrate the turf).
+  const ankleAdjustments=[];
+  if(landing>.4){
+   for(const rig of [tackler,carrier]){
+    const changes=[];
+    for(const side of ['l','r']){
+     const foot=get(rig,'foot_'+side),original=foot.quaternion.clone();
+     let best={score:Infinity,angle:0,q:original.clone(),gap:null};
+     for(const angle of [-1.2,-.8,-.4,0,.4,.8,1.2]){
+      foot.quaternion.copy(original).multiply(
+       new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),angle*landing));
+      rig.body.updateMatrixWorld(true);
+      const evidence=meshFloor(rig);
+      const gap=evidence.torsoMinY-evidence.min;
+      const score=gap+.012*Math.abs(angle);
+      if(score<best.score)best={score,angle,q:foot.quaternion.clone(),gap};
+     }
+     foot.quaternion.copy(best.q);rig.body.updateMatrixWorld(true);
+     changes.push({side,angle:best.angle,torsoToLowestGapM:best.gap});
+    }
+    ankleAdjustments.push(changes);
+   }
+  }
   // Separate the actual upper-torso joints, avoiding unphysical overlap of
   // the torso centres. This is a proxy clearance, NOT exact mesh collision.
   const delta=point(carrier,'spine_03').sub(point(tackler,'spine_03'));
@@ -269,7 +295,7 @@
     handsY:['hand_l','hand_r'].map(n=>point(rig,n).y),feetY:['foot_l','foot_r'].map(n=>point(rig,n).y),kneesY:['calf_l','calf_r'].map(n=>point(rig,n).y),pelvisY:pelvis.y,
     headY:head.y,verticalTorsoRatio:Math.abs(head.y-pelvis.y)/head.distanceTo(pelvis)});
   }
-  return {progress:p,onset,settle,landing,groundSamples,torsoSeparationM:point(tackler,'spine_03').distanceTo(point(carrier,'spine_03')),
+  return {progress:p,onset,settle,landing,ankleAdjustments,groundSamples,torsoSeparationM:point(tackler,'spine_03').distanceTo(point(carrier,'spine_03')),
    horizontalTorsoGapM:new THREE.Vector2(point(tackler,'spine_03').x-point(carrier,'spine_03').x,point(tackler,'spine_03').z-point(carrier,'spine_03').z).length(),
    tacklerRoot:tackler.body.position.toArray(),carrierRoot:carrier.body.position.toArray()};
  }
