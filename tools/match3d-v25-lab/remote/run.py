@@ -5,6 +5,16 @@ from pathlib import Path
 ROOT=Path.cwd();HERE=Path(__file__).resolve().parent
 OUT=ROOT/'rd-report';WORK=ROOT/'rd-work';OUT.mkdir(exist_ok=True);WORK.mkdir(exist_ok=True)
 LOCK=json.loads((HERE/'lock.json').read_text())
+REQUIRED=['acquire','published-auditor','binary-audit','blender-headless','rigger-registration',
+          'mesh2motion-npm-ci','mesh2motion-build','mesh2motion-roundtrip','ara-npm-ci','ara-build-assets','ara-export',
+          'chromium-lod','chromium-contact','chromium-surface','chromium-stage','chromium-paired',
+          'baseline-offline-node','baseline-runtime-browser']
+
+def receipt(statuses,has_acquisition,has_capture):
+    missing=[name for name in REQUIRED if not any(s['name']==name and s['status']=='PASS' for s in statuses)]
+    if not has_acquisition:missing.append('acquisition.json')
+    if not has_capture:missing.append('real Chromium capture')
+    return {'complete':not missing,'verdict':'COMPLETE' if not missing else 'PARTIAL_OR_FAILED','missingOrFailed':missing}
 
 def sha(file):return hashlib.sha256(Path(file).read_bytes()).hexdigest()
 def run(name,cmd,cwd=ROOT,timeout=900):
@@ -29,6 +39,7 @@ def acquire():
     for folder in ['charactercreator-v24','rugby-v24/lod']:
         dest=target/Path(folder).name;dest.mkdir(exist_ok=True)
         for file in (assets/folder).glob('*.glb'):shutil.copy2(file,dest/file.name)
+    for name,expected in LOCK['baselineSha256'].items():assert sha(target/name)==expected,name
     source_manifest=json.loads((assets/'charactercreator-v24/manifest.json').read_text())
     for entry in source_manifest['files']:
         file=assets/'charactercreator-v24'/entry['file'];assert sha(file)==entry['sha256'],str(file)
@@ -43,17 +54,20 @@ def acquire():
         for f in dest.rglob('*'):
             if f.is_file() and '.git' not in f.parts and (f.suffix=='.glb' or 'LICENSE' in f.name.upper() or f.name in ['package.json','package-lock.json']):
                 records.append({'source':key,'file':str(f.relative_to(WORK)),'sha256':sha(f),'bytes':f.stat().st_size})
+                if 'LICENSE' in f.name.upper():
+                    license_copy=OUT/'licenses'/key/f.relative_to(dest);license_copy.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(f,license_copy)
     blender=download(LOCK['blenderUrl'],WORK/'blender.tar.xz');records.append(blender)
     checksum=download(LOCK['blenderChecksums'],WORK/'blender.sha256');records.append(checksum)
     name=LOCK['blenderUrl'].split('/')[-1]
     expected=next(line.split()[0] for line in (WORK/'blender.sha256').read_text().splitlines() if name in line)
     assert blender['sha256']==expected,'Official Blender checksum mismatch'
+    assert blender['sha256']==LOCK['blenderSha256'] and checksum['sha256']==LOCK['blenderChecksumFileSha256'],'Pinned Blender SHA256 mismatch'
     if not (WORK/f"blender-{LOCK['blender']}-linux-x64/blender").exists():
         with tarfile.open(WORK/'blender.tar.xz') as archive:archive.extractall(WORK,filter='data')
     # Pack is CC0; no additional CMU downloads (the Ara source already contains baked clips).
     pack=download(LOCK['makehumanPack'],WORK/'makehuman-system-cc0.zip');records.append(pack)
-    expected_pack=LOCK.get('makehumanPackSha256')
-    if expected_pack:assert pack['sha256']==expected_pack,'CC0 pack checksum mismatch'
+    expected_pack=LOCK['makehumanPackSha256']
+    assert pack['sha256']==expected_pack,'CC0 pack checksum mismatch'
     ara=WORK/'ara';vendor=ara/'vendor';vendor.mkdir(exist_ok=True)
     if not (vendor/'mh').exists():(vendor/'mh').symlink_to(WORK/'makehuman',target_is_directory=True)
     if not (vendor/'sys').exists():
@@ -80,22 +94,39 @@ def tools():
     blender=str(WORK/f"blender-{LOCK['blender']}-linux-x64/blender")
     run('rigger-build',[sys.executable,'build.py'],WORK/'rigger')
     assert run('blender-headless',[blender,'--background','--factory-startup','--python-exit-code','1','--python',str(HERE/'blender_probe.py')])
+    blender_report=json.loads((OUT/'blender.json').read_text())
+    (OUT/'rigger-registration.status.json').write_text(json.dumps({'name':'rigger-registration','status':blender_report['riggerRegistration'],'error':blender_report.get('riggerError')},indent=2)+'\n')
     run('rigger-upstream-generate',[blender,'--background','--factory-startup','--python-exit-code','1','--python',str(WORK/'rigger/tests/test_generate.py')])
 
 def browser():
+    (OUT/'copies').mkdir(exist_ok=True)
+    if (WORK/'mesh2motion/node_modules').exists():
+        run('mesh2motion-roundtrip',[sys.executable,str(HERE/'mesh2motion_probe.py')])
     for case in ['lod','contact','surface','stage','paired']:
         run('chromium-'+case,[sys.executable,f'tests/match3d-v24-{case}-browser.py'],ROOT/'baseline',timeout=900)
+    run('baseline-offline-node',['node','tests/offline.cjs'],ROOT/'baseline')
+    run('baseline-offline-pack',[sys.executable,'scripts/build-offline.py','--prepare-only'],ROOT/'baseline')
+    run('baseline-runtime-browser',[sys.executable,'tests/match3d-browser.py'],ROOT/'baseline')
     for folder in (ROOT/'baseline').glob('match3d-v24-*-report'):
         shutil.copytree(folder,OUT/folder.name,dirs_exist_ok=True)
+    if (ROOT/'baseline/match3d-browser-report').exists():
+        shutil.copytree(ROOT/'baseline/match3d-browser-report',OUT/'baseline-runtime-report',dirs_exist_ok=True)
 
 def finalize():
     statuses=[json.loads(p.read_text()) for p in sorted(OUT.glob('*.status.json'))]
     files=[{'path':str(f.relative_to(OUT)),'bytes':f.stat().st_size,'sha256':sha(f)} for f in sorted(OUT.rglob('*')) if f.is_file() and f.name!='manifest.json']
     report={'head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'baseline':LOCK['baseline'],'run':os.getenv('GITHUB_RUN_ID'),'renderer':'CPU SwiftShader; no hardware GPU/VRAM measurement','host':platform.platform(),'cpuCount':os.cpu_count(),'node':subprocess.check_output(['node','--version'],text=True).strip(),'python':sys.version,'statuses':statuses,'files':files,
-    'limits':['No runtime integration or artistic qualification','Ara generates an alternative character; does not import the canonical rugby GLB','Mesh2Motion build is not yet an import/export test','Rigger registration and synthetic tests are not a rugby rig fitting approval','MakeHuman pack is initially observed SHA256, must be pinned from first receipt']}
+    'receipt':receipt(statuses,(OUT/'acquisition.json').is_file(),any(OUT.rglob('*.jpg'))),
+    'limits':['No V24 runtime integration or artistic qualification','Ara generates an alternative character; does not import the canonical rugby GLB','Mesh2Motion minimal API roundtrip does not fit/retarget rugby animations','Rigger registration and synthetic tests are not a rugby rig fitting approval','Baseline runtime/fallback tests are separate from isolated V24 stage']}
     (OUT/'manifest.json').write_text(json.dumps(report,indent=2)+'\n')
-    essential=['binary-audit','blender-headless','chromium-lod','chromium-stage']
-    assert all(any(s['name']==name and s['status']=='PASS' for s in statuses) for name in essential),'Missing essential receipt; inspect status JSON and logs'
-    assert any(OUT.rglob('*.jpg')),'No real Chromium capture'
+    assert report['receipt']['complete'],report['receipt']
 
-if __name__=='__main__':globals()[sys.argv[1]]()
+if __name__=='__main__':
+    stage=sys.argv[1];start=time.monotonic()
+    try:
+        globals()[stage]();status={'name':stage,'status':'PASS','seconds':time.monotonic()-start}
+    except Exception as error:
+        status={'name':stage,'status':'FAIL','error':str(error),'seconds':time.monotonic()-start}
+        raise
+    finally:
+        (OUT/(stage+'.status.json')).write_text(json.dumps(status,indent=2)+'\n')

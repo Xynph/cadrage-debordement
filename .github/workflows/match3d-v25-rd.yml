@@ -39,6 +39,7 @@ jobs:
           free -h > rd-report/runner-memory.txt
           df -h > rd-report/runner-storage.txt
           python tools/match3d-v25-lab/remote/test_audit.py
+          python tools/match3d-v25-lab/remote/test_receipt.py
       - name: Acquisition vérifiée des sources, Blender et pack CC0
         continue-on-error: true
         run: python tools/match3d-v25-lab/remote/run.py acquire 2>&1 | tee rd-report/acquire.log
