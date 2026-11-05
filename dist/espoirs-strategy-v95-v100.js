@@ -302,7 +302,7 @@
    for(const promoted of allPromotions){
     const found=n.players.find(p=>p.id===promoted.playerId);
     const first=promoted.season;
-    if(!found||!Number.isInteger(first)||s.season<first||s.season>=first+10||
+    if(!found||found.status!=='recruited'||!Number.isInteger(first)||s.season<first||s.season>=first+10||
       n.credits.some(c=>c.id===found.id&&c.season===s.season))continue;
     n.credits.push({id:found.id,club:found.clubId,season:s.season,
       firstProfessionalSeason:first,kind:'RIF-descriptive'});
