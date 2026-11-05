@@ -2,13 +2,14 @@
 import bpy,sys,json,math,traceback
 from pathlib import Path
 from mathutils import Quaternion
+native_run='--native-run' in sys.argv
 root=Path.cwd();out=root/'rd-report';out.mkdir(exist_ok=True)
-report={'schema':1,'target':'canonical LOD0 53 joints','artisticApproval':False,'status':'NOT_TESTED'}
+report={'schema':1,'target':'canonical LOD0 53 joints','artisticApproval':False,'status':'NOT_TESTED','probeMode':'ara-native-run' if native_run else 'controlled'}
 try:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     sys.path.insert(0,str(root/'rd-work/rigger'))
     import rigger
-    from rigger import retarget
+    from rigger import retarget,utils
     rigger.register()
     assets=list((root/'rd-work/ara-export').rglob('*.glb'))
     if not assets:raise FileNotFoundError('Ara exported GLB unavailable')
@@ -26,20 +27,36 @@ try:
     target=targets[0];settings=bpy.context.scene.rigger_remap
     settings.source=source;settings.target=target
     settings.multiple=False;settings.frame_start=1;settings.frame_end=13
-    settings.root_motion=False;settings.in_place=False;settings.action_name='RD_Ara_Controlled_to_Canonical53'
+    settings.root_motion=False;settings.in_place=False;settings.action_name='RD_Ara_Native_Run_to_Canonical53' if native_run else 'RD_Ara_Controlled_to_Canonical53'
     count=retarget.auto_map(settings)
     report['mappedBoneCount']=count
     report['mappedPairs']=[{'source':i.source,'target':i.target} for i in settings.items]
     if count<10:raise ValueError('Under 10 semantic pairs; no retarget')
     arms=[i for i in settings.items if retarget.classify(i.source) and retarget.classify(i.source)[0]=='upper_arm']
     if not arms:raise ValueError('No upper arm mapped')
-    pair=arms[0];pb=source.pose.bones[pair.source];pb.rotation_mode='QUATERNION'
-    # Controlled calibration motion is generated on the *real* Ara armature.
-    # Never label it a source-provided Ara animation.
-    for frame,angle in ((1,0),(7,35),(13,0)):
-        pb.rotation_quaternion=Quaternion((0,0,1),math.radians(angle))
-        pb.keyframe_insert(data_path='rotation_quaternion',frame=frame)
-    report['motionSource']='CONTROLLED_KEYFRAMES_ON_ARA_RIG_NOT_ORIGINAL_ARA_CLIP'
+    pair=arms[0];pb=source.pose.bones[pair.source]
+    if native_run:
+        action=bpy.data.actions.get('Run')
+        if action is None:raise ValueError('Ara native Run action unavailable')
+        utils.assign_action(source,action)
+        report['motionSource']='ARA_NATIVE_RUN_GLTF_ACTION'
+        report['sourceAction']=action.name
+        report['sourceFrameRange']=[float(v) for v in action.frame_range]
+        if action.frame_range[1]-action.frame_range[0]<12:
+            raise ValueError('Ara Run shorter than required 13 sample frames')
+        source_world=[]
+        for frame in (1,7,13):
+            bpy.context.scene.frame_set(frame);bpy.context.view_layer.update()
+            source_world.append((source.matrix_world @ pb.matrix).copy())
+        report['sourceArmMatrixDelta']=max(abs(source_world[0][i][j]-source_world[1][i][j]) for i in range(4) for j in range(4))
+        if report['sourceArmMatrixDelta']<0.001:raise ValueError('Native Run does not animate mapped left arm')
+    else:
+        pb.rotation_mode='QUATERNION'
+        # Deterministic calibration, never presented as a native Ara clip.
+        for frame,angle in ((1,0),(7,35),(13,0)):
+            pb.rotation_quaternion=Quaternion((0,0,1),math.radians(angle))
+            pb.keyframe_insert(data_path='rotation_quaternion',frame=frame)
+        report['motionSource']='CONTROLLED_KEYFRAMES_ON_ARA_RIG_NOT_ORIGINAL_ARA_CLIP'
     report['drivenBone']=pair.source;report['targetBone']=pair.target
     baked=retarget.Retargeter(bpy.context,settings).run()
     report['bakedAction']=baked.name
@@ -93,7 +110,7 @@ try:
             camera.location=center+direction*max(2.0,span*2.5)
             camera.rotation_euler=(center-camera.location).to_track_quat('-Z','Y').to_euler()
             scene.camera=camera
-            path=out/'captures'/('ara-'+label+'-frame'+str(frame)+'-'+view+'.png')
+            path=out/'captures'/('ara-'+('native-run-' if native_run else '')+label+'-frame'+str(frame)+'-'+view+'.png')
             path.parent.mkdir(exist_ok=True)
             scene.render.filepath=str(path)
             bpy.ops.render.render(write_still=True)
@@ -108,18 +125,19 @@ try:
     report['maxBoneMatrixComponentMotion']=max(abs(x-y) for x,y in zip(snapshots[0]['worldBoneMatrix'],snapshots[2]['worldBoneMatrix']))
     report['maxWorldVertexMotionMeters']=max((math.dist(a,b) for a,b in zip(snapshots[0]['skinnedWorldVertices'],snapshots[2]['skinnedWorldVertices'])),default=0)
     if report['maxBoneMatrixComponentMotion']<1e-5:raise AssertionError('Target did not move')
-    copy=out/'copies/ara-controlled-retarget-canonical-lod0.glb';copy.parent.mkdir(exist_ok=True)
+    copy=out/'copies'/('ara-native-run-retarget-canonical-lod0.glb' if native_run else 'ara-controlled-retarget-canonical-lod0.glb');copy.parent.mkdir(exist_ok=True)
     for o in bpy.context.selected_objects:o.select_set(False)
     target.select_set(True)
     for o in meshes:o.select_set(True)
     bpy.context.view_layer.objects.active=target
     bpy.ops.export_scene.gltf(filepath=str(copy),export_format='GLB',use_selection=True,export_animations=True)
     report['copyBytes']=copy.stat().st_size
-    report['status']='CONTROLLED_SOURCE_POSE_RETARGETED_NOT_ART_APPROVED'
-    report['actualAraClipRetargetQualified']=False
+    report['copyExport']=str(copy.relative_to(out))
+    report['status']='ARA_NATIVE_RUN_TRANSFERRED_NOT_ART_APPROVED' if native_run else 'CONTROLLED_SOURCE_POSE_RETARGETED_NOT_ART_APPROVED'
+    report['actualAraClipRetargetQualified']=bool(native_run and report['maxBoneMatrixComponentMotion']>1e-5)
 except Exception as e:
     report['status']='FAIL';report['error']=str(e);report['traceback']=traceback.format_exc()
 finally:
-    (out/'ara-retarget-controlled.json').write_text(json.dumps(report,indent=2,default=str)+'\n')
+    (out/('ara-retarget-native-run.json' if native_run else 'ara-retarget-controlled.json')).write_text(json.dumps(report,indent=2,default=str)+'\n')
 print(json.dumps({'status':report['status'],'mapped':report.get('mappedBoneCount')}))
 if report['status']=='FAIL':raise SystemExit(1)
