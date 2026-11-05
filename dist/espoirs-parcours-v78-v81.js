@@ -169,7 +169,18 @@
         if(!returnLoans(s)){Object.assign(s,old);return false}
       }
       const r=oldYear.apply(this,arguments);
-      if(get()&&get().season!==before){year(get(),before);save()}
+      if(get()&&get().season!==before){
+        const updated=get(),st=updated.v78to81;
+        // The native season can render before returning to this wrapper.
+        // Reset even when a nested V77/V76 render has observed the new year.
+        if(st&&valid(st)&&st.season<updated.season){
+          updated.v78to81={...st,season:updated.season,loans:[],u20:[],
+            contracts:st.contracts.filter(x=>x.expires>=updated.season),
+            history:[{season:st.season,loans:st.loans.map(x=>({id:x.id,to:x.to,name:x.name})),
+              u20:copy(st.u20),facilities:st.facilities,coaches:st.coaches},...st.history].slice(0,4)};
+        }
+        year(updated,before);save()
+      }
       return r;
     };
     const oldRender=g.render;g.render=function(){const r=oldRender.apply(this,arguments),s=get();
