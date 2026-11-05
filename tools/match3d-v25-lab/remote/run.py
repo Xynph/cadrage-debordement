@@ -97,6 +97,8 @@ def tools():
     blender_report=json.loads((OUT/'blender.json').read_text())
     (OUT/'rigger-registration.status.json').write_text(json.dumps({'name':'rigger-registration','status':blender_report['riggerRegistration'],'error':blender_report.get('riggerError')},indent=2)+'\n')
     run('rigger-upstream-generate',[blender,'--background','--factory-startup','--python-exit-code','1','--python',str(WORK/'rigger/tests/test_generate.py')])
+    # Exploratory real-body probe is separately reported, not part of REQUIRED nor artistic approval.
+    run('ara-rigger-real-body',[blender,'--background','--factory-startup','--python-exit-code','1','--python',str(HERE/'ara_rigger_probe.py')],timeout=600)
 
 def browser():
     (OUT/'copies').mkdir(exist_ok=True)
