@@ -169,6 +169,50 @@ function matchDossier(){
 function adoptDossierPlan(){if(S.live)return;const d=matchDossier();if(!d)return;S.tactic=d.advice.attack;S.defence=d.advice.defence;save();render();toast('Plan principal adopté. Les consignes personnalisées par zone restent prioritaires.')}
 function prepareSquad(tab='sheet'){if(S.live||!['sheet','depth','table'].includes(tab))return;squadTab=tab;nav('team')}
 function compareDossierPosition(slot){if(S.live||!Number.isInteger(slot)||slot<0||slot>14)return;squadTab='table';squadFamily=String(slot);compareIds=depthAt(slot).filter(p=>!p.injury).slice(0,2).map(p=>p.id);nav('team')}
+// V62 — diagnostics d'observation avant-match : des faits archives uniquement.
+// Pas de tirage, ni mutation, ni extrapolation des statistiques manquantes.
+function dossierScoutSignals(recent){
+ const archived=(recent||[]).filter(r=>r&&r.stats&&typeof r.stats==='object');
+ const valid=(r,key)=>Number.isFinite(r.stats[key])&&r.stats[key]>=0;
+ const setPieces=[
+  {played:'scrums',won:'scrumsWon',name:'mêlée',slot:0},
+  {played:'lineouts',won:'lineoutsWon',name:'touche',slot:1}
+ ];
+ const signals=[];
+ for(const sector of setPieces){
+  const games=archived.filter(r=>valid(r,sector.played)&&valid(r,sector.won)&&r.stats[sector.won]<=r.stats[sector.played]);
+  const attempts=games.reduce((n,r)=>n+r.stats[sector.played],0);
+  const retained=games.reduce((n,r)=>n+r.stats[sector.won],0);
+  if(games.length<3||attempts<10)continue;
+  const rate=retained/attempts,percent=Math.round(rate*100);
+  if(rate<=.55)signals.push({kind:'opportunity',title:'Conquête adverse fragile : '+sector.name,
+   evidence:retained+' / '+attempts+' ballons conservés ('+percent+' %) sur '+games.length+' matchs documentés.',
+   advice:'Comparer vos titulaires à ce poste et préparer une conquête solide.',slot:sector.slot});
+  else if(rate>=.85)signals.push({kind:'warning',title:'Point fort adverse : '+sector.name,
+   evidence:retained+' / '+attempts+' ballons conservés ('+percent+' %) sur '+games.length+' matchs documentés.',
+   advice:'Vérifier votre couverture au poste avant de viser ce secteur.',slot:sector.slot});
+ }
+ const discipline=archived.filter(r=>valid(r,'penalties'));
+ if(discipline.length>=3){
+  const sum=discipline.reduce((n,r)=>n+r.stats.penalties,0),average=sum/discipline.length;
+  if(average>=9)signals.push({kind:'opportunity',title:'Indiscipline adverse observée',
+   evidence:sum+' pénalités concédées sur '+discipline.length+' matchs ('+average.toFixed(1).replace('.',',')+' par match).',
+   advice:'Vérifier votre buteur et les consignes sur pénalité.',slot:9});
+  else if(average<=4)signals.push({kind:'warning',title:'Adversaire discipliné',
+   evidence:sum+' pénalités concédées sur '+discipline.length+' matchs ('+average.toFixed(1).replace('.',',')+' par match).',
+   advice:'Ne pas construire le plan sur des pénalités hypothétiques.',slot:9});
+ }
+ return signals.slice(0,3);
+}
+function dossierScoutHTML(recent){
+ const signals=dossierScoutSignals(recent);
+ return '<h3>Les signaux du recruteur vidéo</h3>'+
+ (signals.length?'<div class="dossier-scout-signals" aria-label="Signaux observés chez l’adversaire">'+signals.map(s=>
+  '<article class="card"><strong>'+s.title+'</strong><p>'+s.evidence+'</p><p class="help">'+s.advice+'</p>'+
+  '<button class="small" onclick="compareDossierPosition('+s.slot+')">Comparer vos options au poste</button></article>').join('')+'</div>':
+  '<p class="help">Aucun signal robuste dans les statistiques conservées : au moins 3 rencontres documentées et, pour la conquête, 10 phases comparables sont nécessaires. Le rapport de forces reste une estimation de l’effectif.</p>')+
+ '<p class="help">Échantillon limité aux cinq derniers résultats. Ces tendances ne prouvent ni une faiblesse permanente ni le prochain plan adverse ; elles ne modifient pas le moteur.</p>';
+}
 function dossierObservedHTML(recent){
  const games=recent.filter(r=>r.stats),sum=key=>games.reduce((n,r)=>n+r.stats[key],0),scrums=sum('scrums'),lineouts=sum('lineouts');
  return `<p class="help">${games.length} rencontre(s) avec statistiques archivées sur ${recent.length} résultat(s). ${scrums?`Mêlées conservées : ${sum('scrumsWon')} / ${scrums}.`:'Aucune mêlée documentée.'} ${lineouts?`Touches conservées : ${sum('lineoutsWon')} / ${lineouts}.`:'Aucune touche documentée.'} ${games.length?`Pénalités concédées : ${sum('penalties')}.`:''}</p>`;
@@ -176,7 +220,7 @@ function dossierObservedHTML(recent){
 function oppositionDossierHTML(){
  const d=matchDossier();if(!d)return '';
  const adopted=S.tactic===d.advice.attack&&(S.defence||'equilibre')===d.advice.defence;
- return `<section class="card opponent-dossier" aria-label="Rapport sur le prochain adversaire"><div class="cardtitle"><div><span class="eyebrow">DOSSIER ADVERSAIRE</span><h2>${visualEscape(d.opponent.name)}</h2></div>${badge(d.opponent.id)}</div><p>Tendance du staff : <strong>${TACTICS[managerStyle(d.opponent.id)][0]}</strong> · Moral ${Math.round(clubMorale(d.opponent.id))}/100.</p><h3>Les faits récents</h3>${d.recent.length?`<div class="dossier-results">${d.recent.map(r=>`<div><span class="form ${r.result}">${r.result}</span><span>${r.phase==='league'?'J'+(r.round+1):({barrage:'Barrage',semi:'Demi-finale',final:'Finale'})[r.phase]} · ${visualEscape(S.clubs[r.opponent].abbr)}</span><strong>${r.score[r.side]} – ${r.score[1-r.side]}</strong></div>`).join('')}</div>`:'<p>Pas encore de résultat cette saison. Le rapport repose sur les qualités de l’effectif.</p>'}${dossierObservedHTML(d.recent)}<h3>Le rapport de forces estimé</h3><p class="help">Votre XV sélectionné face à une projection adverse sur terrain sec, avant le coup d’envoi. Les notes tiennent compte de la condition actuelle. La météo, l’entraînement et les choix adverses peuvent modifier ce tableau. Les cases vides de votre XV ne sont pas remplacées dans cette estimation.</p><div class="tablewrap"><table class="dossier-table"><thead><tr><th>SECTEUR</th><th>VOUS</th><th>ADVERSAIRE</th><th>PRÉPARER</th></tr></thead><tbody>${DOSSIER_DOMAINS.map(k=>`<tr><td>${k.label}</td><td>${Math.round(d.own[k.key])}</td><td>${Math.round(d.other[k.key])}</td><td><button class="small" aria-label="Comparer vos options : ${k.label}" onclick="compareDossierPosition(${k.slot})">Comparer →</button></td></tr>`).join('')}</tbody></table></div><h3>Les joueurs à surveiller</h3><div class="dossier-threats">${d.threats.map(p=>`<article><small>${p.role}</small><strong>${visualEscape(p.name)}</strong><span>${p.pos} · ${p.note}/100 · condition ${Math.round(p.fitness)}%</span></article>`).join('')}</div><p class="help">Joueurs pressentis dans une projection, pas une feuille adverse confirmée. Les informations de l’effectif sont connues dans cette version.</p></section><section class="card dossier-advice" aria-label="Préparer votre plan de match"><div class="cardtitle"><h2>Le conseil du staff</h2><span class="tag">À VOTRE CHOIX</span></div><h3>${TACTICS[d.advice.attack][0]}</h3><p>${d.advice.attackReason}</p><h3>${DEFENCES[d.advice.defence][0]}</h3><p>${d.advice.defenceReason}</p><button class="primary" onclick="adoptDossierPlan()">${adopted?'Plan principal déjà adopté':'Adopter ce plan principal'}</button><p class="help">Ce bouton règle votre attaque et votre défense principales. Les zones personnalisées restent prioritaires. Aucun changement automatique des 23, aucun bonus de résultat. À réévaluer selon la météo au coup d’envoi.</p><div class="matchactions"><button onclick="prepareSquad('sheet')">Composer les 23 →</button><button onclick="prepareSquad('depth')">Couverture des postes →</button><button onclick="nav('plans')">Vérifier les consignes par zone →</button></div>${sheetErrors().length?'<p class="notice">La feuille est incomplète : complétez les postes pour fiabiliser les conseils.</p>':''}</section>`;
+ return `<section class="card opponent-dossier" aria-label="Rapport sur le prochain adversaire"><div class="cardtitle"><div><span class="eyebrow">DOSSIER ADVERSAIRE</span><h2>${visualEscape(d.opponent.name)}</h2></div>${badge(d.opponent.id)}</div><p>Tendance du staff : <strong>${TACTICS[managerStyle(d.opponent.id)][0]}</strong> · Moral ${Math.round(clubMorale(d.opponent.id))}/100.</p><h3>Les faits récents</h3>${d.recent.length?`<div class="dossier-results">${d.recent.map(r=>`<div><span class="form ${r.result}">${r.result}</span><span>${r.phase==='league'?'J'+(r.round+1):({barrage:'Barrage',semi:'Demi-finale',final:'Finale'})[r.phase]} · ${visualEscape(S.clubs[r.opponent].abbr)}</span><strong>${r.score[r.side]} – ${r.score[1-r.side]}</strong></div>`).join('')}</div>`:'<p>Pas encore de résultat cette saison. Le rapport repose sur les qualités de l’effectif.</p>'}${dossierObservedHTML(d.recent)}${dossierScoutHTML(d.recent)}<h3>Le rapport de forces estimé</h3><p class="help">Votre XV sélectionné face à une projection adverse sur terrain sec, avant le coup d’envoi. Les notes tiennent compte de la condition actuelle. La météo, l’entraînement et les choix adverses peuvent modifier ce tableau. Les cases vides de votre XV ne sont pas remplacées dans cette estimation.</p><div class="tablewrap"><table class="dossier-table"><thead><tr><th>SECTEUR</th><th>VOUS</th><th>ADVERSAIRE</th><th>PRÉPARER</th></tr></thead><tbody>${DOSSIER_DOMAINS.map(k=>`<tr><td>${k.label}</td><td>${Math.round(d.own[k.key])}</td><td>${Math.round(d.other[k.key])}</td><td><button class="small" aria-label="Comparer vos options : ${k.label}" onclick="compareDossierPosition(${k.slot})">Comparer →</button></td></tr>`).join('')}</tbody></table></div><h3>Les joueurs à surveiller</h3><div class="dossier-threats">${d.threats.map(p=>`<article><small>${p.role}</small><strong>${visualEscape(p.name)}</strong><span>${p.pos} · ${p.note}/100 · condition ${Math.round(p.fitness)}%</span></article>`).join('')}</div><p class="help">Joueurs pressentis dans une projection, pas une feuille adverse confirmée. Les informations de l’effectif sont connues dans cette version.</p></section><section class="card dossier-advice" aria-label="Préparer votre plan de match"><div class="cardtitle"><h2>Le conseil du staff</h2><span class="tag">À VOTRE CHOIX</span></div><h3>${TACTICS[d.advice.attack][0]}</h3><p>${d.advice.attackReason}</p><h3>${DEFENCES[d.advice.defence][0]}</h3><p>${d.advice.defenceReason}</p><button class="primary" onclick="adoptDossierPlan()">${adopted?'Plan principal déjà adopté':'Adopter ce plan principal'}</button><p class="help">Ce bouton règle votre attaque et votre défense principales. Les zones personnalisées restent prioritaires. Aucun changement automatique des 23, aucun bonus de résultat. À réévaluer selon la météo au coup d’envoi.</p><div class="matchactions"><button onclick="prepareSquad('sheet')">Composer les 23 →</button><button onclick="prepareSquad('depth')">Couverture des postes →</button><button onclick="nav('plans')">Vérifier les consignes par zone →</button></div>${sheetErrors().length?'<p class="notice">La feuille est incomplète : complétez les postes pour fiabiliser les conseils.</p>':''}</section>`;
 }
 function emptyPlanUsage(){return {v:1,minutes:0,zones:Object.fromEntries(Object.keys(FIELD_ZONES).map(k=>[k,0])),attack:Object.fromEntries(Object.keys(TACTICS).map(k=>[k,{phases:0,carries:0,advances:0,metres:0,handErrors:0,kicks:0}])),defence:Object.fromEntries(Object.keys(DEFENCES).map(k=>[k,{phases:0,oppCarries:0,oppAdvances:0,oppMetres:0,penalties:0}]))}}
 function initializePreparation(l,preview=null){
