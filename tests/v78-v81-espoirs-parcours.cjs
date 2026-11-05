@@ -43,8 +43,12 @@ assert.equal(run(api+'.loan(S,'+JSON.stringify(promote)+','+loanTo+',()=>true)')
 const bad=run('(function(){const found=[];function visit(x,path){if(typeof x==="string"&&(/[<>"\x60&\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]/.test(x)||x.length>6000))found.push({path,value:x.slice(0,120)});else if(Array.isArray(x))x.forEach((z,i)=>visit(z,path+"["+i+"]"));else if(x&&typeof x==="object")for(const [k,z] of Object.entries(x))visit(z,path+"."+k)}visit(S,"S");return JSON.stringify(found.slice(0,8))})()');assert.equal(bad,'[]','save-safe tree: '+bad);
 assert.equal(run('JSON.parse(JSON.stringify(parseSaveDocument(JSON.stringify(createSaveDocument())).state.v78to81)).loans.length'),1,'save roundtrip loan');
 assert.equal(run('JSON.stringify(createSaveDocument()).length<5*1024*1024'),true,'save size');
+const preflight=run('CDEspoirsPathwaysV78V81.returnLoans(JSON.parse(JSON.stringify(S)))');
+assert.equal(preflight,true,'preflight must allow loan return');
 run('S.phase="ended";S.round=26;advanceSeason()');
-assert.equal(run('S.v78to81.loans.length'),0,'annual loan reset');
+const seasonProbe=run('JSON.stringify({season:S.season,phase:S.phase,loans:S.v78to81.loans.length,loansSeason:S.v78to81.season,proSeason:S.v77Promotions?.season})');
+assert.equal(run('S.season'),2,'native year must advance: '+seasonProbe);
+assert.equal(run('S.v78to81.loans.length'),0,'annual loan reset: '+seasonProbe);
 assert.equal(run('S.clubs[S.club].players.some(p=>p.id==='+JSON.stringify(promote)+')'),true,'real loan return');
 assert.equal(run('S.clubs['+loanTo+'].players.some(p=>p.id==='+JSON.stringify(promote)+')'),false,'borrower released player');
 assert.equal(run('S.v78to81.history[0].loans.length'),1,'loan history');
