@@ -28,7 +28,7 @@ function tacticalFinishAdjustment(l,side){return !tacticalRules(l)?0:ATTACK_EFFE
 function openKickProbability(l,side){if(!tacticalRules(l))return l.tactics[side]==='occupation'?.5:0;const distance=Math.abs(attackingGoal(side)-l.territory),style=effectiveAttack(l,side);if(style==='occupation')return distance>50?.65:distance>22?.35:.08;return distance>50?(style==='conquete'?.04:style==='large'?.06:.08):distance>22?.025:.01}
 function tacticalLoad(l,side){if(!tacticalRules(l))return l.tactics[side]==='large'?.49:l.tactics[side]==='conquete'?.44:.39;return l.possession===side?ATTACK_EFFECTS[effectiveAttack(l,side)].load:defensivePlan(l,side)==='pression'?.53:defensivePlan(l,side)==='prudente'?.31:.37}
 function tacticalCount(l,side,key,n=1){if(tacticalRules(l))l.tacticalStats[side][key]+=n}
-function adaptDefence(l,side){if(!tacticalRules(l))return;if(side!==l.userSide)adaptOpponentAttack(l,side);const next=chooseDefence(l,side);if(next===l.defences[side])return;l.defences[side]=next;addEvent(l,`${S.clubs[l.pair[side]].abbr} choisit une défense ${DEFENCES[next][0].toLowerCase()} selon le score et la fraîcheur.`,'tactic',{team:side})}
+function adaptDefence(l,side){if(!tacticalRules(l))return;if(side!==l.userSide)adaptOpponentAttack(l,side);const counter=opponentCounterScout(l,side);const next=counter?counter.plan:chooseDefence(l,side);if(next===l.defences[side])return;l.defences[side]=next;addEvent(l,`${S.clubs[l.pair[side]].abbr} choisit une défense ${DEFENCES[next][0].toLowerCase()} selon le score et la fraîcheur.`,'tactic',{team:side})}
 function setDefence(plan){if(S.live||!Object.keys(DEFENCES).includes(plan))return;S.defence=plan;save();render()}
 function setLiveDefence(plan){const l=S.live;if(!l||!tacticalRules(l)||!l.paused||l.finished||presentationPending(l)||!Object.keys(DEFENCES).includes(plan))return;l.defences[l.userSide]=plan;S.defence=plan;addEvent(l,`Votre défense : ${DEFENCES[plan][0]}. ${DEFENCES[plan][1]}`,'tactic',{team:l.userSide});syncMatchPresentation(l);save();render()}
 function defencePreparation(){return `<div class="card"><div class="cardtitle"><h2>02 / Organisation défensive</h2><span class="tag">PROCHAIN MATCH</span></div><div class="options defence-options">${Object.entries(DEFENCES).map(([key,[title,desc]])=>`<button class="option ${(S.defence||'equilibre')===key?'selected':''}" onclick="setDefence('${key}')">${title}<small>${desc}</small></button>`).join('')}</div><p class="help">Ces choix modifient la réussite adverse, les mètres concédés, les risques de pénalité et la fatigue. Le même calcul s’applique aux adversaires.</p></div>`}
@@ -471,4 +471,29 @@ function adaptOpponentAttack(l,side){
  l.tactics[side]=choice.plan;
  addEvent(l,`${S.clubs[l.pair[side]].abbr} ajuste son attaque : ${TACTICS[choice.plan][0].toLowerCase()} (${choice.reason}).`,'tactic',{team:side});
  return true;
+}
+
+// V62: defensive counter-scouting from observable match behaviour only.
+// The 6-carry sample and cooldown avoid reacting to one lucky phase.
+// No persistent state: the decision is derived from existing match counters.
+function opponentCounterScout(l,side){
+ if(!l||!tacticalRules(l)||side===l.userSide||![0,1].includes(side))return null;
+ const rival=1-side,stats=l.tacticalStats?.[rival];
+ if(!stats||stats.carries<6||matchMinute(l)<18)return null;
+ const fitness=mean(activePlayers(l,side).map(p=>p.condition));
+ const margin=l.score[side]-l.score[rival];
+ const style=effectiveAttack(l,rival);
+ const progress=stats.advances/Math.max(1,stats.carries);
+ const metres=stats.metres/Math.max(1,stats.carries);
+ const late=matchMinute(l)>=65;
+ // A tired defence never presses just to chase a counter-plan.
+ if(fitness<68)return {plan:'prudente',reason:'préserver une défense fatiguée'};
+ if(style==='large'&&progress>=.48&&metres>=12)
+  return {plan:'pression',reason:'couper les transmissions adverses sur la largeur'};
+ if(style==='conquete'&&progress>=.55&&metres>=8)
+  return {plan:'pression',reason:'ralentir les avancées répétées au près'};
+ if(style==='occupation'&&stats.kicks>=4&&margin>=0)
+  return {plan:'prudente',reason:'protéger la profondeur contre le jeu au pied'};
+ if(late&&margin>=7)return {plan:'prudente',reason:'conserver une couverture en fin de rencontre'};
+ return null;
 }
