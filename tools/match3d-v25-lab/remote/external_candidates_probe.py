@@ -199,15 +199,26 @@ def run_godot():
         str(binary),"--headless","--path",str(directory),"--script",
         str(ROOT/"tools/match3d-v25-lab/remote/godot_paired_tackle_probe.gd"),"--",
         str(OUT/"paired-tackle-3lod.json"),*input_paths],timeout=480) if physical["status"]=="PASS" else {"status":"SKIP"}
+    # Re-run the IDENTICAL paired scenarios with an actual software OpenGL
+    # renderer in Xvfb, saving skinned GLB face/side screenshots at five phases.
+    # Never claim rendered visuals from the headless/null-renderer run.
+    render=command("kickback-paired-render-3lod",[
+        "xvfb-run","-a","-s","-screen 0 800x450x24",
+        str(binary),"--rendering-driver","opengl3",
+        "--rendering-method","gl_compatibility",
+        "--path",str(directory),"--script",
+        str(ROOT/"tools/match3d-v25-lab/remote/godot_paired_tackle_probe.gd"),"--",
+        str(OUT/"paired-render-3lod.json"),*input_paths,"visual"],timeout=480) if paired["status"]=="PASS" else {"status":"SKIP"}
     verdict={"version":version["status"],"upstreamGodotImport":imported["status"],
              "upstreamGutTests":upstream["status"],"ourThreeCanonRigs":canonical["status"],
              "realTwoRigJoltImpacts":physical["status"],
              "realPairedControlImpactGrip":paired["status"],
+             "pairedRealGlbFaceSideRendering":render["status"],
              "licensing":"Kickback MIT; no Kickback source copied to V24",
              "limitations":"Physical hit smoke is NOT a qualified rugby grasp, skin collision approval or Three.js port"}
     (OUT/"godot-test-verdict.json").write_text(json.dumps(verdict,indent=2)+"\n")
     assert all(v=="PASS" for k,v in verdict.items() if k in
-               ("version","upstreamGodotImport","upstreamGutTests","ourThreeCanonRigs","realTwoRigJoltImpacts","realPairedControlImpactGrip")),verdict
+               ("version","upstreamGodotImport","upstreamGutTests","ourThreeCanonRigs","realTwoRigJoltImpacts","realPairedControlImpactGrip","pairedRealGlbFaceSideRendering")),verdict
 
 def main():
     try:
