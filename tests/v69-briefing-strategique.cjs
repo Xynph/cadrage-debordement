@@ -8,7 +8,7 @@ vm.runInContext(fs.readFileSync(__dirname+'/../dist/briefing-strategique-v69.js'
 run('start(0)');
 assert.equal(run('v69Selection(matchDossier())'),'neutre');
 assert.ok(run('v69BriefingView().includes("Briefing strategique cible")'));
-assert.ok(run('matchdayReadinessView().includes("Briefing strategique cible")'));
+assert.ok(run('v69BriefingView().includes("DECISION DU MANAGER")'));
 assert.equal(run('v69Set("invalid",v69Context(matchDossier()))'),false);
 assert.equal(run('v69Set("pack","context-perime")'),false);
 const token=run('v69Context(matchDossier())');
