@@ -39,11 +39,13 @@ assert.equal(run('S.v73Espoirs.results.filter(x=>x.phase==="challenge-finale").l
 assert.equal(run('Number.isInteger(S.v73Espoirs.champion)'),true);
 assert.equal(run('Number.isInteger(S.v73Espoirs.challenge)'),true);
 assert.equal(run('CDEspoirsV73.read(S).minutes&&Object.values(S.v73Espoirs.minutes).some(x=>x>=80)'),true);
+run('S.round=0;S.phase="league"');
 assert.equal(run('JSON.stringify(createSaveDocument()).length<5*1024*1024'),true,'export sous 5 Mo');
 assert.equal(run('parseSaveDocument(JSON.stringify(createSaveDocument())).state.v73Espoirs.results.length'),202,'export/import complet');
 run('CDEspoirsV73.closeSeason(S)');
 assert.equal(run('S.v73Espoirs.history.length'),1);
 run('for(let i=0;i<3;i++){rollDevelopmentYear();S.season++;S.round=0;S.phase="league";beginDevelopmentSeason();CDEspoirsV73.setup(S);S.round=26;CDEspoirsV73.advance(S);CDEspoirsV73.closeSeason(S)}');
+run('S.round=0;S.phase="league"');
 assert.equal(run('S.v73Espoirs.history.length'),4,'quatre saisons archivees');
 assert.equal(run('parseSaveDocument(JSON.stringify(createSaveDocument())).state.v73Espoirs.history.length'),4);
 run('delete S.v73Espoirs');
