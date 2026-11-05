@@ -57,6 +57,22 @@
  function gripCarrierSurface(THREE,tacklerBones,carrierBody,carrierBones,blend=1,options={}){
   const bone=(bones,name)=>{const b=bones.find(x=>x.name===name);if(!b)throw Error('Os de prise manquant : '+name);return b;};
   const world=b=>b.getWorldPosition(new THREE.Vector3());
+  // Optional fixed input pose for deterministic repeated IK experiments.
+  // By default preserve the historical behavior and all runtime callers.
+  // Only restore the four anatomical arm joints; clavicle/root variations
+  // remain independent so actual reach can still be measured.
+  if(options.referenceArms){
+   for(const name of ['upperarm_l','lowerarm_l','upperarm_r','lowerarm_r']){
+    const q=options.referenceArms[name];
+    if(!q||!Number.isFinite(q.x)||!Number.isFinite(q.y)
+       ||!Number.isFinite(q.z)||!Number.isFinite(q.w))
+      throw Error('Pose de référence IK invalide : '+name);
+    bone(tacklerBones,name).quaternion.copy(q);
+   }
+   const root=tacklerBones[0];let top=root;
+   while(top.parent)top=top.parent;
+   top.updateMatrixWorld(true);
+  }
   const torso=world(bone(carrierBones,'spine_03'));
   carrierBody.updateMatrixWorld(true);
   const points=[];
