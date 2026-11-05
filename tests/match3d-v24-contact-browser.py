@@ -237,6 +237,13 @@ try:
     if phase==1.0:
      sweep=fall['relativePoseSweep']
      clavicle=fall['clavicleSweep']
+     grip_trial=fall['clavicleGripTrial']
+     assert grip_trial and isinstance(grip_trial['accepted'],bool),(lod,'missing real-IK trial')
+     assert all(isinstance(grip_trial[k][metric],(int,float)) for k in ('baseline','candidate') for metric in ('leftM','rightM','intersections')),(lod,'invalid actual-grip trial',grip_trial)
+     if grip_trial['accepted']:
+      assert grip_trial['candidate']['rightM']<grip_trial['baseline']['rightM']-.005
+      assert grip_trial['candidate']['leftM']<=grip_trial['baseline']['leftM']+.001
+      assert grip_trial['candidate']['intersections']<=grip_trial['baseline']['intersections']
      assert len(clavicle['candidates'])==7 and clavicle['candidates'][0]['angleRadians']==0,(lod,'clavicle diagnostic unavailable',clavicle)
      assert all(x['armReachM']>.3 and x['sampledTriangleIntersections']>=0 for x in clavicle['candidates']),(lod,'invalid skinned clavicle sweep',clavicle)
      assert len(sweep['samples'])==10 and sweep['samples'][0]['forwardM']==0 and sweep['samples'][0]['lateralM']==0,(lod,'pose-sweep unavailable',sweep)
@@ -276,8 +283,12 @@ try:
           and x['sampledTriangleIntersections']<=reference[lod]['sampledTriangleIntersections']
           for lod,x in enumerate(candidates)):
     safe_shared.append({'forwardM':candidates[0]['forwardM'],'lateralM':candidates[0]['lateralM']})
+  clavicle_trials={x['lod']:x['clavicleGripTrial'] for x in fallSequence if x['progress']==1}
+  assert set(clavicle_trials)=={0,1,2},('trial must cover every LOD',clavicle_trials.keys())
+  shared_clavicle_safe=all(x['accepted'] for x in clavicle_trials.values())
   pose_decision={'status':'DIAGNOSTIC_ONLY_NO_RUNTIME_RELOCATION',
-    'safeSharedOffsets':safe_shared,'referenceByLOD':reference,
+    'safeSharedOffsets':safe_shared,'sharedClavicleAccepted':shared_clavicle_safe,
+    'clavicleByLOD':clavicle_trials,'referenceByLOD':reference,
     'limits':'Sampled Body triangles are not exhaustive collision certification'}
   assert not errors and not external,(errors,external)
   (OUT/'report.json').write_text(json.dumps({'status':'TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL','poseDecision':pose_decision,'levels':results,'temporalSamples':temporal,'fallSequence':fallSequence,'errors':errors,'externalRequests':external,'limits':['Paired-rig arm IK aims at carrier torso; no coordinated impact dynamics or contact certification','No collision physics or engine mutation','Actual skinned-mesh ground and torso-horizontal metrics tested at impact; visual contact and runtime still unqualified']},indent=2)+'\n');b.close()
