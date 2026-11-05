@@ -771,3 +771,11 @@ Après première CI Chromium SUCCESS, le JSON audit a montré Mercato Diagnostic
 - Publication des quatre GLB CharacterCreator sources (9 689 952 octets), des notices upstream CC0 et d’un manifeste d’intégrité/audit. Six blobs identiques au commit upstream `852e48f316b90a0937234886630e4fb4cdfd1f78`, arbre vérifié via GitHub. Aucun code GPL importé.
 - Audit structurel des quatre vrais GLB réussi : 53 joints chacun, noms/ordre identiques, ressources autonomes, total 42 634 triangles. Corps : 12 clips génériques ; aucune animation rugby dédiée validée. Tests synthétiques existants : 8 PASS. Aucun résultat visuel/Chromium/FPS/VRAM annoncé.
 - Étape suivante : assemblage masculin athlétique habillé, suppression des géométries cachées puis trois LOD vérifiés ; ne pas relancer l’acquisition. Runtime, PRODUCTEUR/V62, DATA/LNR, moteur, sauvegardes, auto-release intacts. Main observé `9ed7a0140755407c988dcee77826d8ab56c85be0` ; réalignement avant intégration finale.
+
+## MATCH 3D lot 24 — jalon 2a : assemblage isolé, réception visuelle bloquée — 5 novembre 2026
+
+- PR #300 DRAFT, base de travail 2536e5533115c4b7dc3758ef29a0af61cb70b752 ; main observé 2fe9b2fc095062c8576164e4a6d082bcf57fce75. Aucun runtime du jeu modifié.
+- Page de qualification offline `dist/match3d/assets/rugby-v24/assembly.html` et module d’assemblage : morphologie commune appliquée aux quatre GLB, trois vêtements rattachés aux os du corps par nom. Aucun nouveau binaire source ni code GPL.
+- Node : correspondance/rejet d’os manquant PASS ; audit synthétique GLB existant 8 PASS. Chromium réel : trois vêtements liés aux 53 os, 12 clips et coordonnées finies sur idle/run à trois instants vérifiés.
+- ÉCHEC de réception : capture de page timeout 30 secondes ; extraction directe du canvas également sans résultat, interrompue. Aucun PNG obtenu ni aspect visuel approuvé. Rapport partiel `proof/report.json`. Le test navigateur ne réussit pas de bout en bout.
+- Reprise : diagnostiquer export/rendu Chromium puis inspecter face/dos/profil/course ; vérifier pénétration et déformations avant géométrie cachée/LOD. Étape 2 globale incomplète ; aucun geste rugby dédié ni benchmark 30 joueurs. PRODUCTEUR/V62/V63/DATA/LNR/moteur/sauvegardes/auto-release intacts. Aucun gate ni fusion.

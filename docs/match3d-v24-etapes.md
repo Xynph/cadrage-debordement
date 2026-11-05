@@ -29,3 +29,11 @@ Contrôles : GLB 2.0, longueur déclarée, présence de skins et poids, comptage
 Licence : `LICENSE-NOTES.md` upstream distingue explicitement les sorties GLB et animations CC0-1.0 du générateur GPL-3.0-or-later. Notice et `asset_licenses.json` copiés à l’identique ; aucun code du générateur importé. Les douze clips sont génériques, aucun n’est présenté comme un geste rugby dédié. La morphologie de base doit encore être adaptée et inspectée. Les 42 634 triangles sources dépassent la cible LOD0 ; aucune performance en jeu n’est déduite de cet audit.
 
 Aucun changement runtime, aucune nouvelle capture, aucun benchmark, aucun résultat GPU Windows et aucune fusion à cette étape. Préserver PRODUCTEUR/V62, DATA/LNR, moteur, sauvegardes et auto-release. Le main observé au départ est `9ed7a0140755407c988dcee77826d8ab56c85be0` ; la branche #300 demeure fondée sur son ancienne base et devra être réalignée avant la réception finale.
+
+## Jalon 2a — assemblage isolé d’un joueur
+
+Choix : réutiliser les quatre sources publiées via une page de qualification offline, sans modifier le runtime du jeu. `dist/match3d/assets/rugby-v24/assembly.html` charge les quatre GLB, applique aux positions la même morphologie masculine athlétique, puis relie les vêtements aux os du corps par nom (rejet d’un os manquant). Les normales sont recalculées après déformation. Aucun code du générateur GPL importé.
+
+Plan borné : test Node des correspondances d’os ; assemblage ; contrôle Chromium des trois vêtements/53 os et déformations à trois poses ; captures face/dos/profil/course ; publication et vérification sur PR #300. Aperçu à rendu fixe à la demande pour réception logicielle. Les clips restent génériques : le sélecteur fixe une pose, il ne simule pas un match.
+
+Ce jalon ne valide pas la suppression des surfaces cachées, les trois LOD, les gestes rugby, les trente joueurs ni les performances. L’étape 2 globale reste ouverte. Aucun gate ni fusion.

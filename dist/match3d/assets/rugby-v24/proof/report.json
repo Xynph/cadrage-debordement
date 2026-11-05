@@ -1,0 +1,20 @@
+{
+  "status": "VISUAL_VALIDATION_BLOCKED",
+  "checksPassed": [
+    "3 vêtements liés aux 53 os du corps",
+    "12 clips génériques chargés",
+    "Déformations finies idle 0, run 0.25 et run 0.5"
+  ],
+  "failed": [
+    "Page.screenshot : timeout 30000ms (deux tentatives)",
+    "Export canvas toDataURL sans résultat, interrompu"
+  ],
+  "notValidated": [
+    "Aspect de la tenue",
+    "Absence de pénétration corps/vêtements",
+    "LOD",
+    "Animations rugby",
+    "30 joueurs et performances"
+  ],
+  "environment": "Chromium headless 143, SwiftShader Linux"
+}
