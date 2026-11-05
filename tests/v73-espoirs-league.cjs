@@ -15,7 +15,7 @@ assert.equal(run('S.v73Espoirs.fixtures.length'),10,'10 journées initiales');
 assert.equal(run('S.v73Espoirs.fixtures.every(r=>r.length===12)'),true,'12 affiches par journée');
 assert.equal(run('new Set(S.v73Espoirs.fixtures.flat().map(x=>x.join("-"))).size'),120,'aucune affiche dupliquee');
 assert.equal(run('CDEspoirsV73.setMode(S,"developpement",()=>true)'),true);
-const youth=run('S.development.academy[0].id');
+const youth=run('S.development.academy.find(p=>p.pos===POS[0]).id');
 assert.equal(run('CDEspoirsV73.setPlayer(S,0,'+JSON.stringify(youth)+',()=>true)'),true);
 assert.equal(run('CDEspoirsV73.setPlayer(S,0,"nonexistent",()=>true)'),false);
 assert.ok(run('CDEspoirsV73.panel(S).includes("Reichel Espoirs")'));
