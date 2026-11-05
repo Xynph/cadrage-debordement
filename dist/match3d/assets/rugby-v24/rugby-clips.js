@@ -314,9 +314,11 @@
    const lowest=Math.min(...landmarks.map(name=>point(rig,name).y));
    if(lowest<.045){rig.body.position.y+=.045-lowest;rig.body.updateMatrixWorld(true);}
   }
-  // Align actual surface to the field once the body rotates into its landing.
-  // Never shift the original standing pose at progress=0 or recovery=1.85.
-  const floorCorrection=smooth((Math.min(p,1)-.3)/.6)*recovery;
+  // Maintain actual skinned-surface clearance through approach, impact AND recovery.
+  // Previously the correction faded to zero at both standing endpoints, leaving
+  // toes/boots below the pitch despite an apparently grounded impact frame.
+  // This is a measured root translation, not a cosmetic mesh or a physics claim.
+  const floorCorrection=1;
   const groundSamples=[];
   for(const rig of [tackler,carrier]){
    const before=meshFloor(rig);
