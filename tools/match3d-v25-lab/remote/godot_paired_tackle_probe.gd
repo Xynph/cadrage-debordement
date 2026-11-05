@@ -84,7 +84,10 @@ func run_pair() -> void:
 				var scene: Node = doc.generate_scene(state)
 				var root := Node3D.new()
 				root.name = "CanonicalLOD%d_%s_Player%d" % [lod, mode, actor_index]
-				root.position = Vector3(-0.32 if actor_index == 0 else 0.32, 0.0, 0.0)
+				# Face-to-face paired interaction instead of side-by-side rigs.
+				# The canonical GLB's positive Z is its forward direction.
+				root.position = Vector3(0.0, 0.0, -0.42 if actor_index == 0 else 0.42)
+				root.rotation.y = 0.0 if actor_index == 0 else PI
 				get_root().add_child(root)
 				root.add_child(scene)
 				var skel := find_skeleton(scene)
@@ -163,7 +166,14 @@ func run_pair() -> void:
 					for frame in 48:
 						await physics_frame
 					scenario["samples"].append(snap(108, "recovery", a, b))
-					scenario["status"] = "PASS"
+					# A nominal "two-handed grip" is not a valid two-hand
+					# contact experiment when only one PinJoint attaches.
+					if mode == "impact_with_hand_pins" and scenario["gripPhysicsLinks"] != 2:
+						scenario["error"] = "Two simultaneous real hand-body joints were not created"
+						scenario["status"] = "FAIL"
+						all_pass = false
+					else:
+						scenario["status"] = "PASS"
 			for actor in actors:
 				actor.queue_free()
 			for frame in 4:
