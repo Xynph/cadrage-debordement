@@ -24,7 +24,7 @@ try:
     const shoulder=asset.bones.find(b=>b.name==='upperarm_l').getWorldPosition(new THREE.Vector3());
     partner.body.position.set(shoulder.x+.06,0,shoulder.z+.16);partner.body.rotation.y=Math.PI;
     partner.mixer.clipAction(partner.clips.find(c=>c.name==='rugby_carry')).play();partner.mixer.setTime(.25);scene.updateMatrixWorld(true);
-    window.partner=partner;window.contactBases={tackler:{position:asset.body.position.clone(),quaternion:asset.body.quaternion.clone()},carrier:{position:partner.body.position.clone(),quaternion:partner.body.quaternion.clone()}};
+    window.partner=partner;window.contactBases={tackler:{position:asset.body.position.clone(),quaternion:asset.body.quaternion.clone(),joints:Object.fromEntries(asset.bones.map(b=>[b.name,b.quaternion.clone()]))},carrier:{position:partner.body.position.clone(),quaternion:partner.body.quaternion.clone(),joints:Object.fromEntries(partner.bones.map(b=>[b.name,b.quaternion.clone()]))}};
     document.querySelector('header').style.display='none';camera.position.set(3.4,1.5,2.6);camera.lookAt(0,.85,.35);renderer.render(scene,camera);
     return {independentRig:partner.bones.every((b,i)=>b!==asset.bones[i]),shoulder:shoulder.toArray(),carrierRoot:partner.body.position.toArray(),lod:asset.lod};
    }""")
