@@ -75,9 +75,10 @@ try:
    surface['lod']=lod
    surface['ground']=data['state']['groundSamples']
    assert all(0<=d<2 for d in surface['handToCarrierSurfaceM'])
+   assert all(after <= before-.005 for before,after in zip(surface['handBeforeM'],surface['handToCarrierSurfaceM'])),(lod,'contact must improve for each wrist',surface)
    assert all(n>=10 for n in surface['samples'])
    report.append(surface)
-   page.evaluate("camera.position.set(4,1.2,.3);camera.lookAt(0,.85,.35);renderer.render(scene,camera)")
+   page.evaluate("document.querySelector('header').style.display='none';camera.position.set(4,1.2,.3);camera.lookAt(0,.85,.35);renderer.render(scene,camera)")
    page.screenshot(path=str(OUT/f'lod{lod}-surface-side.jpg'),type='jpeg',quality=90)
   assert not errors and not external,(errors,external)
   (OUT/'report.json').write_text(json.dumps({'head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(), 'levels':report,
