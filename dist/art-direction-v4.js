@@ -125,7 +125,7 @@
    '<p class="da4-chart-note">Les colonnes représentent l’amplitude des variations hebdomadaires du modèle fictif. Les valeurs complètes restent consultables.</p></section>';
  }
  function academyStudio(academy){
-  const values=academyGaps(academy),lead=values.slice(0,8),maxGap=values.length?Math.max(...values.map(x=>x.gap)):0;
+  const values=academyGaps(academy),lead=values.slice(0,4),maxGap=values.length?Math.max(...values.map(x=>x.gap)):0;
   return '<section class="da42-panel da42-academy da42-desktop-stage" aria-label="Écart au plafond de potentiel des espoirs">'+
    head('LABORATOIRE DE LA RELÈVE','Les trajectoires possibles','ACTUEL / PLAFOND')+
    '<div class="da42-academy-intro"><div><strong>'+num(values.length)+'</strong><span>espoirs évaluables</span></div>'+
