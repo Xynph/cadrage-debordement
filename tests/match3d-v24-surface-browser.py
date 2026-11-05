@@ -1,5 +1,5 @@
 """Isolated Chromium probe of actual deformed torso mesh distances at the tackle impact."""
-import functools,http.server,json,threading,os
+import functools,http.server,json,threading,os,subprocess
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 from importlib.machinery import SourceFileLoader
@@ -59,14 +59,19 @@ try:
       });return out;
     }
     const point=(bones,name)=>bones.find(b=>b.name===name).getWorldPosition(new THREE.Vector3()).toArray();
+    const before=['hand_l','hand_r'].map(n=>point(asset.bones,n));
+    const grip=CDMatch3DV24RugbyClips.gripCarrierSurface(THREE,asset.bones,carrier.body,carrier.bones,1);
+    scene.updateMatrixWorld(true);
     window.surfaceScene={carrier};
-    return {state,ik,a:sample(asset.body,asset.bones),b:sample(carrier.body,carrier.bones),
-      hands:['hand_l','hand_r'].map(n=>point(asset.bones,n))};
+    return {state,ik,grip,a:sample(asset.body,asset.bones),b:sample(carrier.body,carrier.bones),
+      handsBefore:before,hands:['hand_l','hand_r'].map(n=>point(asset.bones,n))};
    }""")
    surface=summarize_surface_samples(data['a'],data['b'])
    def nearest(hand):
     return min(sum((x-y)**2 for x,y in zip(hand,v))**.5 for v in data['b'])
+   surface['handBeforeM']=[nearest(h) for h in data['handsBefore']]
    surface['handToCarrierSurfaceM']=[nearest(h) for h in data['hands']]
+   surface['gripIK']=data['grip']
    surface['lod']=lod
    surface['ground']=data['state']['groundSamples']
    assert all(0<=d<2 for d in surface['handToCarrierSurfaceM'])
@@ -75,7 +80,7 @@ try:
    page.evaluate("camera.position.set(4,1.2,.3);camera.lookAt(0,.85,.35);renderer.render(scene,camera)")
    page.screenshot(path=str(OUT/f'lod{lod}-surface-side.jpg'),type='jpeg',quality=90)
   assert not errors and not external,(errors,external)
-  (OUT/'report.json').write_text(json.dumps({'head':os.environ.get('GITHUB_SHA',''), 'levels':report,
+  (OUT/'report.json').write_text(json.dumps({'head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(), 'levels':report,
     'status':'SAMPLED_UNSIGNED_SURFACE_GAPS_NOT_CONTACT_APPROVAL',
     'errors':errors,'externalRequests':external},indent=2)+'\n')
   browser.close()
