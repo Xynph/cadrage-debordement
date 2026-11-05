@@ -43,6 +43,10 @@ jobs:
           retention-days: 14
           compression-level: 6
   reception:
+    # A dedicated physics probe does not need to rerun the full 55-minute
+    # Blender/Ara/Chromium baseline, whose pinned job remains independently
+    # available and runs for ordinary R&D commits.
+    if: ${{ !startsWith(github.event.head_commit.message, 'test(v25-external):') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     steps:
