@@ -188,13 +188,21 @@ def run_godot():
     canonical=command("kickback-canonical-53-rig",[str(binary),"--headless",
         "--path",str(directory),"--script",str(scene_script),"--",
         str(OUT/"canonical-import.json"),*input_paths],timeout=360)
+    # Two full canonical characters per LOD. Run ACTUAL Godot Jolt bodies,
+    # Kickback spring tracking and a deterministic hit. Distinct from a
+    # rugby tackle qualification, and no assets are written to the game.
+    physical=command("kickback-real-ragdoll-3lod",[
+        str(binary),"--headless","--path",str(directory),"--script",
+        str(ROOT/"tools/match3d-v25-lab/remote/godot_real_ragdoll_probe.gd"),"--",
+        str(OUT/"real-ragdoll-3lod.json"),*input_paths],timeout=480) if canonical["status"]=="PASS" else {"status":"SKIP"}
     verdict={"version":version["status"],"upstreamGodotImport":imported["status"],
              "upstreamGutTests":upstream["status"],"ourThreeCanonRigs":canonical["status"],
+             "realTwoRigJoltImpacts":physical["status"],
              "licensing":"Kickback MIT; no Kickback source copied to V24",
-             "limitations":"Godot test/rig import is NOT a functional rugby tackle or Three.js port"}
+             "limitations":"Physical hit smoke is NOT a qualified rugby grasp, skin collision approval or Three.js port"}
     (OUT/"godot-test-verdict.json").write_text(json.dumps(verdict,indent=2)+"\n")
     assert all(v=="PASS" for k,v in verdict.items() if k in
-               ("version","upstreamGodotImport","upstreamGutTests","ourThreeCanonRigs")),verdict
+               ("version","upstreamGodotImport","upstreamGutTests","ourThreeCanonRigs","realTwoRigJoltImpacts")),verdict
 
 def main():
     try:
