@@ -117,6 +117,9 @@ try:
      assert all(g['verticalTorsoRatio']<.60 for g in fall['groundSamples']),(lod,phase,'torsos not horizontal',fall)
      assert all(.12<g['pelvisY']<.55 for g in fall['groundSamples']),(lod,phase,'pelvis hovering or underground',fall)
      assert max(fall['handDistancesM'])<.60,(lod,phase,'arms lost contact',fall)
+     for side in ('l','r'):
+      grip=fall['surfaceGrip'][side]
+      assert grip['afterSurfaceMetres']<=grip['bestReachableSurfaceMetres']+.00051,(lod,phase,side,'opposite flank loses reachable real-skin contact',grip)
     assert all(isinstance(d,(float,int)) and 0<=d<2 for d in fall['handDistancesM']),(lod,phase,fall)
     fallSequence.append(fall)
     page.evaluate('renderer.render(scene,camera)')
