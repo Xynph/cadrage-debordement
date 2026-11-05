@@ -263,6 +263,38 @@
     ankleAdjustments.push(changes);
    }
   }
+  // Anatomical ankle-to-toe correction in world space. Local foot X is not
+  // guaranteed to be the toe-flexion axis in CharacterCreator's 53-joint rig.
+  // Aim the REAL ball joint slightly upwards, with a bounded 1.2 rad turn.
+  // This changes skinned toe vertices, not a visual proxy or the pitch plane.
+  const toeCorrection=[];
+  if(landing>.4){
+   for(const rig of [tackler,carrier]){
+    const hip=point(rig,'pelvis'),head=point(rig,'head');
+    const back=hip.clone().sub(head);back.y=0;
+    if(back.lengthSq()<1e-8)back.set(0,0,-1);
+    back.normalize();
+    const moved=[];
+    for(const side of ['l','r']){
+     const foot=get(rig,'foot_'+side),toe=get(rig,'ball_'+side);
+     rig.body.updateMatrixWorld(true);
+     const ankle=point(rig,'foot_'+side),tip=point(rig,'ball_'+side);
+     const from=tip.clone().sub(ankle);
+     if(from.lengthSq()<1e-8)throw Error('Cheville et pointe confondues');
+     const goal=back.clone().multiplyScalar(.16).add(new THREE.Vector3(0,.14,0)).normalize();
+     const delta=new THREE.Quaternion().setFromUnitVectors(from.normalize(),goal);
+     const angle=2*Math.acos(THREE.MathUtils.clamp(Math.abs(delta.w),0,1));
+     const fraction=Math.min(1,1.2/Math.max(angle,1e-6))*landing;
+     const limited=new THREE.Quaternion().slerp(delta,fraction);
+     const parent=foot.parent.getWorldQuaternion(new THREE.Quaternion()).invert();
+     const current=foot.getWorldQuaternion(new THREE.Quaternion());
+     foot.quaternion.copy(parent.multiply(limited.multiply(current))).normalize();
+     rig.body.updateMatrixWorld(true);
+     moved.push({side,angleRadians:angle*fraction,toeY:point(rig,'ball_'+side).y});
+    }
+    toeCorrection.push(moved);
+   }
+  }
   // Separate the actual upper-torso joints, avoiding unphysical overlap of
   // the torso centres. This is a proxy clearance, NOT exact mesh collision.
   const delta=point(carrier,'spine_03').sub(point(tackler,'spine_03'));
@@ -295,7 +327,7 @@
     handsY:['hand_l','hand_r'].map(n=>point(rig,n).y),feetY:['foot_l','foot_r'].map(n=>point(rig,n).y),kneesY:['calf_l','calf_r'].map(n=>point(rig,n).y),pelvisY:pelvis.y,
     headY:head.y,verticalTorsoRatio:Math.abs(head.y-pelvis.y)/head.distanceTo(pelvis)});
   }
-  return {progress:p,onset,settle,landing,ankleAdjustments,groundSamples,torsoSeparationM:point(tackler,'spine_03').distanceTo(point(carrier,'spine_03')),
+  return {progress:p,onset,settle,landing,ankleAdjustments,toeCorrection,groundSamples,torsoSeparationM:point(tackler,'spine_03').distanceTo(point(carrier,'spine_03')),
    horizontalTorsoGapM:new THREE.Vector2(point(tackler,'spine_03').x-point(carrier,'spine_03').x,point(tackler,'spine_03').z-point(carrier,'spine_03').z).length(),
    tacklerRoot:tackler.body.position.toArray(),carrierRoot:carrier.body.position.toArray()};
  }
