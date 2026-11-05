@@ -195,14 +195,19 @@ def run_godot():
         str(binary),"--headless","--path",str(directory),"--script",
         str(ROOT/"tools/match3d-v25-lab/remote/godot_real_ragdoll_probe.gd"),"--",
         str(OUT/"real-ragdoll-3lod.json"),*input_paths],timeout=480) if canonical["status"]=="PASS" else {"status":"SKIP"}
+    paired=command("kickback-paired-tackle-3lod",[
+        str(binary),"--headless","--path",str(directory),"--script",
+        str(ROOT/"tools/match3d-v25-lab/remote/godot_paired_tackle_probe.gd"),"--",
+        str(OUT/"paired-tackle-3lod.json"),*input_paths],timeout=480) if physical["status"]=="PASS" else {"status":"SKIP"}
     verdict={"version":version["status"],"upstreamGodotImport":imported["status"],
              "upstreamGutTests":upstream["status"],"ourThreeCanonRigs":canonical["status"],
              "realTwoRigJoltImpacts":physical["status"],
+             "realPairedControlImpactGrip":paired["status"],
              "licensing":"Kickback MIT; no Kickback source copied to V24",
              "limitations":"Physical hit smoke is NOT a qualified rugby grasp, skin collision approval or Three.js port"}
     (OUT/"godot-test-verdict.json").write_text(json.dumps(verdict,indent=2)+"\n")
     assert all(v=="PASS" for k,v in verdict.items() if k in
-               ("version","upstreamGodotImport","upstreamGutTests","ourThreeCanonRigs","realTwoRigJoltImpacts")),verdict
+               ("version","upstreamGodotImport","upstreamGutTests","ourThreeCanonRigs","realTwoRigJoltImpacts","realPairedControlImpactGrip")),verdict
 
 def main():
     try:
