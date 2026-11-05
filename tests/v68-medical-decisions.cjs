@@ -75,7 +75,7 @@ test('V68 : HTML échappé, commandes indisponibles après séance',()=>{
 test('V68 : installation idempotente, réutilisation de la séance native et affichage santé',()=>{
  const s=state();let saves=0,trainings=0;
  const root={S:s,squadTab:'health',managerTeamView(){return 'Effectif';},
-  trainWeek(){trainings++;s.trained=true;s.clubs[0].players[0].injury--;s.clubs[0].players[1].injury--;},
+  trainWeek(){if(s.trained)return;trainings++;s.trained=true;s.clubs[0].players[0].injury--;s.clubs[0].players[1].injury--;},
   save(){saves++;},render(){}};
  assert.equal(V68.install(root),true);assert.equal(V68.install(root),true);
  assert.equal((root.managerTeamView().match(/Cellule médicale · V68/g)||[]).length,1);
