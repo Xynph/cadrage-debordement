@@ -64,21 +64,43 @@
   if(!bases||!bases.tackler||!bases.carrier)throw Error('Bases de contact requises');
   // Gradual translational impulse and rotational loss of balance for BOTH rigs.
   // Keep meshes, skinned materials and independent armature hierarchy unchanged.
-  tackler.body.position.copy(bases.tackler.position).add(new THREE.Vector3(0,-.10*onset,.10*onset));
-  carrier.body.position.copy(bases.carrier.position).add(new THREE.Vector3(0,-.23*onset,.17*onset));
-  tackler.body.quaternion.copy(bases.tackler.quaternion).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),.20*onset));
-  carrier.body.quaternion.copy(bases.carrier.quaternion).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),.43*onset));
+  tackler.body.position.copy(bases.tackler.position).add(new THREE.Vector3(0,-.22*onset,.06*onset));
+  carrier.body.position.copy(bases.carrier.position).add(new THREE.Vector3(0,-.32*onset,.26*onset));
+  tackler.body.quaternion.copy(bases.tackler.quaternion).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),.47*onset));
+  carrier.body.quaternion.copy(bases.carrier.quaternion).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),.78*onset));
   // A controlled roll and leg bend, not an artificial low-poly body proxy.
-  for(const [rig,lean,legs]of [[tackler,.27,.40],[carrier,.36,.65]]){
+  for(const [rig,base,lean,legs]of [[tackler,bases.tackler,.32,.48],[carrier,bases.carrier,.46,.80]]){
+   for(const name of ['spine_02','thigh_l','thigh_r','calf_l','calf_r']){
+    const original=base.joints?.[name];if(!original)throw Error('Pose de base manquante : '+name);
+    get(rig,name).quaternion.copy(original);
+   }
    get(rig,'spine_02').rotateX(lean*onset);
    get(rig,'thigh_l').rotateX(-legs*onset);
    get(rig,'thigh_r').rotateX(-legs*onset);
    get(rig,'calf_l').rotateX(legs*.8*settle);
    get(rig,'calf_r').rotateX(legs*.8*settle);
   }
-  tackler.body.updateMatrixWorld(true);carrier.body.updateMatrixWorld(true);
   const point=(rig,name)=>get(rig,name).getWorldPosition(new THREE.Vector3());
+  tackler.body.updateMatrixWorld(true);carrier.body.updateMatrixWorld(true);
+  // Separate the actual upper-torso joints, avoiding unphysical overlap of
+  // the torso centres. This is a proxy clearance, NOT exact mesh collision.
+  const delta=point(carrier,'spine_03').sub(point(tackler,'spine_03'));
+  const horizontal=new THREE.Vector3(delta.x,0,delta.z);
+  const length=horizontal.length();
+  if(length<.38){
+   if(length<1e-6)horizontal.set(0,0,1);else horizontal.divideScalar(length);
+   carrier.body.position.addScaledVector(horizontal,.38-length);
+   carrier.body.updateMatrixWorld(true);
+  }
+  // Prevent bone landmarks from falling below a basic ground plane. This
+  // is deliberately only a skeleton-ground constraint, not cloth collision.
+  for(const rig of [tackler,carrier]){
+   const landmarks=['foot_l','foot_r','hand_l','hand_r','head'].filter(name=>rig.bones.some(b=>b.name===name));
+   const lowest=Math.min(...landmarks.map(name=>point(rig,name).y));
+   if(lowest<.045){rig.body.position.y+=.045-lowest;rig.body.updateMatrixWorld(true);}
+  }
   return {progress:p,onset,settle,torsoSeparationM:point(tackler,'spine_03').distanceTo(point(carrier,'spine_03')),
+   horizontalTorsoGapM:new THREE.Vector2(point(tackler,'spine_03').x-point(carrier,'spine_03').x,point(tackler,'spine_03').z-point(carrier,'spine_03').z).length(),
    tacklerRoot:tackler.body.position.toArray(),carrierRoot:carrier.body.position.toArray()};
  }
  function create(THREE,bones){
