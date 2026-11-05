@@ -95,8 +95,9 @@
   if(n.lastSeason>=s.season)return;
   const years=Math.min(20,s.season-n.lastSeason);
   for(let year=n.lastSeason+1;year<=s.season;year++){
-   for(const p of n.players)if(p.status==='available'||p.status==='declined'){
-    p.age++;
+   for(const p of n.players){
+    if(p.status!=='aged-out')p.age++;
+    if(p.status!=='available'&&p.status!=='declined')continue;
     if(p.age>21){p.status='aged-out';n.history.push({id:p.id,season:year,action:'aged-out',club:p.clubId});continue}
     if(p.status==='declined'){p.status='available';p.trial=false}
     // Other centres act autonomously: prospects can leave the accessible pool.
