@@ -109,7 +109,7 @@
   }
   function record(s,id,type,detail,save){
     const st=ensure(s);if(!st||!persons(s).some(x=>x.id===id)||!['formation','promotion','bilan','recrutement'].includes(type)||s.live)return false;
-    const text=String(detail||'').slice(0,120).replace(/[<>\x00-\x1f]/g,' ');
+    const text=String(detail||'').slice(0,120).replace(/[&<>"'`\x00-\x1f]/g,' ');
     return transact(s,()=>{
       st.events.push({id,type,season:s.season,text});
       st.events=st.events.slice(-150);return true;
