@@ -29,7 +29,7 @@ assert.equal(run('S.v73Espoirs.groups.length'),6,'4 poules de qualification et d
 assert.equal(run('new Set(S.v73Espoirs.groups.flat()).size'),24,'les 24 clubs sont repartis une seule fois');
 assert.equal(run('S.v73Espoirs.results.length'),192,'qualification et challenge aller retour');
 assert.equal(run('S.v73Espoirs.fixtures.slice(10,16).every(r=>r.length===12)'),true);
-run('S.round=26; CDEspoirsV73.advance(S)');
+run('S.round=26; S.phase="ended"; CDEspoirsV73.advance(S)');
 assert.equal(run('S.v73Espoirs.round'),26);
 assert.equal(run('S.v73Espoirs.results.filter(x=>x.phase==="quarts").length'),4);
 assert.equal(run('S.v73Espoirs.results.filter(x=>x.phase==="demi-finales").length'),2);
@@ -40,7 +40,7 @@ assert.equal(run('Number.isInteger(S.v73Espoirs.champion)'),true);
 assert.equal(run('Number.isInteger(S.v73Espoirs.challenge)'),true);
 assert.equal(run('CDEspoirsV73.read(S).minutes&&Object.values(S.v73Espoirs.minutes).some(x=>x>=80)'),true);
 assert.equal(run('JSON.stringify(createSaveDocument()).length<5*1024*1024'),true,'export sous 5 Mo');
-assert.equal(run('parseSaveDocument(JSON.stringify(createSaveDocument())).state.v73Espoirs.results.length'),200,'export/import complet');
+assert.equal(run('parseSaveDocument(JSON.stringify(createSaveDocument())).state.v73Espoirs.results.length'),202,'export/import complet');
 run('CDEspoirsV73.closeSeason(S)');
 assert.equal(run('S.v73Espoirs.history.length'),1);
 run('for(let i=0;i<3;i++){rollDevelopmentYear();S.season++;S.round=0;S.phase="league";beginDevelopmentSeason();CDEspoirsV73.setup(S);S.round=26;CDEspoirsV73.advance(S);CDEspoirsV73.closeSeason(S)}');
