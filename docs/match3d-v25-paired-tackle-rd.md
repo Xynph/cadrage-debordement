@@ -33,3 +33,13 @@ Renseigner : écart de chaque **poignet à la surface réellement skinnée**, in
 **Interdit de proclamer ce prototype qualifié** tant que l'interaction à deux joueurs n'a pas passé la qualification visuelle, la vraie peau skinnée, les appuis temporels et la comparaison avec/sans choc sur les trois LOD. Un script avec deux ressorts physiques peut démontrer une interaction mais ne remplace pas un geste de plaquage capturé/réutilisable.
 
 Aucune modification autorisée : PR #300, moteur V24, GLB originaux, 30 rigs runtime, PRODUCTEUR, DATA/LNR, sauvegardes, auto-release, gate ou fusion.
+
+## Mesures réellement obtenues — protocole R&D à deux joueurs
+
+Le run `42124620151` (HEAD `beb7e4913284d5b2f99e8f0d23fbcf3077c4d92f`) a exécuté sur les trois LOD les trois scénarios contrôle / impact / impact avec deux PinJoint3D entre les corps physiques des vraies mains et ceux du porteur. **3/3 LOD, 9/9 scénarios terminés**, 2/2 joints créés par LOD. Artefact GitHub `13459474083`, digest SHA256 `a04bcc741686cf974b923ae51cef038478c4b0eb12fcc764c444a8d60b0035e3` vérifié sur les octets téléchargés.
+
+Les distances **centre de la main rigide → centre du torse adverse** sont encore comprises souvent entre 0,8 et 1,0 m. Il serait faux d'en déduire une saisie visible, un contact peau-peau ou une non-intersection des triangles. Au moment de l'approche, le centre rigide d'un pied descend parfois sous y=0 selon le scénario, **ce qui ne mesure pas directement le point le plus bas de la véritable chaussure skinnée** ; la physique ne remplace pas un audit de surfaces.
+
+La paire CMU **18_03 / 19_03**, « A pulls B; B resists », a été téléchargée à partir de `una-dinosauria/cmu-mocap` commit `09a07f54f3bbb58797325f009282d0b2048a2871` et analysée comme source potentielle de saisie : **593 frames par sujet, ≈4,94 s synchronisées**, empreintes individuelles enregistrées dans `cmu-two-actor-pull-source.json`. La conversion BVH Bruce Hahne revendique explicitement n'ajouter aucune restriction à CMU dans `READMEFIRST.txt`. **Aucun retargeting ni rendu sur nos GLB n'est encore qualifié.**
+
+Les images Godot face/profil issues d'une simulation réellement rendue restent **obligatoires** avant d'identifier une amélioration visuelle ; les chiffres physiques ci-dessus ne comptent pas comme qualification.
