@@ -32,10 +32,10 @@ async function repairNormalizedSparse(gltf){
   restoreSparseValues(attribute,new types[sparse.indices.componentType](ib,sparse.indices.byteOffset||0,sparse.count),new types[def.componentType](vb,sparse.values.byteOffset||0,sparse.count*attribute.itemSize));
  }));
 }
-async function load(THREE,base){
+async function load(THREE,base,options={}){
  const loader=new THREE.GLTFLoader();
  const files=['base_body_anim','clothing_tshirt','clothing_shorts','clothing_shoes'];
- const models=await Promise.all(files.map(f=>loader.loadAsync(base+f+'.glb')));
+ const models=await Promise.all(files.map(f=>loader.loadAsync(base+f+(options.lod===undefined?'':'-lod'+options.lod)+'.glb')));
  await Promise.all(models.map(repairNormalizedSparse));
  const body=models[0].scene;body.updateMatrixWorld(true);let skeleton;
  body.traverse(n=>{if(n.isSkinnedMesh&&!skeleton)skeleton=n.skeleton;});
@@ -60,7 +60,8 @@ async function load(THREE,base){
   }
  }
  const mixer=new THREE.AnimationMixer(body);
- return {body,mixer,clips:models[0].animations,bones:skeleton.bones,morphs};
+ const rugby=(options.rugby&&root.CDMatch3DV24RugbyClips)?root.CDMatch3DV24RugbyClips.create(THREE,skeleton.bones):[];
+ return {body,mixer,clips:models[0].animations.concat(rugby),bones:skeleton.bones,morphs,lod:options.lod??null};
 }
 root.CDV24Assembly={load,matchBones,bakePosition,restoreSparseValues};
 })(globalThis);
