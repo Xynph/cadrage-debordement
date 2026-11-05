@@ -55,7 +55,8 @@
     if(pool.length<=15)return [];
     const taken=new Set((ensure(s)?.recruited||[]).map(x=>x.playerId));
     return pool.filter(p=>p&&typeof p.id==='string'&&!taken.has(p.id)&&
-      Number.isFinite(p.rating)&&Number.isFinite(p.potential??p.dev?.potential)&&Number.isInteger(p.age)&&p.age<=21).sort((a,b)=>
+      Number.isFinite(p.rating)&&Number.isFinite(p.potential??p.dev?.potential)&&Number.isInteger(p.age)&&p.age<=21&&
+      (c.division!=='accession'||pool.filter(q=>q.slot===p.slot).length>=2)).sort((a,b)=>
         (b.potential??b.dev?.potential)-(a.potential??a.dev?.potential)||b.rating-a.rating||a.id.localeCompare(b.id)).slice(0,5);
   }
   function price(s,c,p){
@@ -82,7 +83,8 @@
     const source=centers(s).find(c=>c.id!==manager.id&&st.scouted.includes(c.id)&&players(s,c).some(p=>p.id===id));
     if(!source)return false;
     const origin=players(s,source),target=players(s,manager),p=origin.find(p=>p.id===id);
-    if(!p||origin.length<=15||target.some(q=>q.id===id)||target.length>=40||!Number.isFinite(p.potential??p.dev?.potential))return false;
+    if(!p||origin.length<=15||target.some(q=>q.id===id)||target.length>=40||!Number.isFinite(p.potential??p.dev?.potential)||
+       (source.division==='accession'&&origin.filter(q=>q.slot===p.slot).length<2))return false;
     const cost=price(s,source,p),required=cost.minimum;
     if(offer<required||offer>st.budgets[manager.id]||offer>200000)return false;
     const m=move()?.ensure(s);if(!m)return false;
