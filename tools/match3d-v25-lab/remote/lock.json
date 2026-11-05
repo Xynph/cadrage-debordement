@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "baseline": "2d8c8c7eee5aa0dad899aa6bb119e95bda0e7987",
+  "baseline": "d6fbcb38438609c0ca461f54717655223b438b09",
   "node": "24.11.0",
   "playwright": "1.57.0",
   "blender": "4.5.3",
