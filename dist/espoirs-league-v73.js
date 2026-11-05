@@ -3,7 +3,10 @@
 const GUESTS=[['Agen','Union de Garonne'],['Aurillac','Monts du Cantal'],['Biarritz','Cote Basque'],['Brive','Correze Rugby'],['Colomiers','Colombes de Garonne'],['Grenoble','Alpes Rugby'],['Nevers','Nievre Rugby'],['Oyonnax','Haut Jura Rugby'],['Rouen','Normandie Rugby'],['Valence Romans','Drome Rugby']];
 const fullIds=()=>Array.from({length:24},(_,i)=>i);
 function extraName(s,id){return s.lnrMode?.version===1?GUESTS[id-14][0]:GUESTS[id-14][1]}
-function guestYouth(s,id){return Array.from({length:15},(_,i)=>{const key='v73-guest-'+id+'-'+s.season+'-'+i,h=hash(key),pos=(typeof POS!=='undefined'?POS[i]:''),rating=53+h%15;return {id:key,name:'Espoir '+(id-13)+'-'+(i+1),pos,rating,condition:100,injury:0,dev:{potential:Math.min(99,rating+12+h%12),xp:0}}})}
+const REAL_GROUPS=[['paris','racing-92','vannes','la-rochelle','nevers','rouen'],['clermont','grenoble','lyon','toulon','oyonnax','valence-romans'],['brive','castres','montpellier','aurillac','toulouse','perpignan'],['bayonne','biarritz','agen','pau','colomiers','bordeaux-begles']];
+const GUEST_SLUGS=['agen','aurillac','biarritz','brive','colomiers','grenoble','nevers','oyonnax','rouen','valence-romans'];
+function guestYouth(s,id){return Array.from({length:15},(_,i)=>academyPlayer(id,i,s.season,300+i))}
+function realGroups(){const ids=new Map(GUEST_SLUGS.map((slug,i)=>[slug,14+i]));if(typeof lnrGameClub==='function')for(let i=0;i<14;i++){const c=lnrGameClub(i);if(c)ids.set(c.slug,i)}const groups=REAL_GROUPS.map(g=>g.map(slug=>ids.get(slug)));return groups.every(g=>g.length===6&&g.every(Number.isInteger))&&new Set(groups.flat()).size===24?groups:null}
 const MODES=['equilibre','performance','developpement','repos'];
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const hash=str=>{let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
@@ -13,7 +16,7 @@ function roundRobin(ids){const a=ids.slice();if(a.length%2)a.push(-1);const out=
 function groupRounds(groups){const rounds=groups.map(g=>roundRobin(g));return Array.from({length:Math.max(...rounds.map(x=>x.length))},(_,i)=>rounds.flatMap(r=>r[i]||[]))}
 function setup(s){if(!s?.development||!s.aiRoster?.academies||s.clubs?.length!==14)return null;
  if(s.v73Espoirs?.version===1&&s.v73Espoirs.season===s.season)return s.v73Espoirs;
- const old=s.v73Espoirs,groups=Array.from({length:4},(_,i)=>Array.from({length:6},(_,j)=>i*6+j));
+ const old=s.v73Espoirs,groups=realGroups()||Array.from({length:4},(_,i)=>Array.from({length:6},(_,j)=>i*6+j));
  const state={version:1,season:s.season,round:0,stage:'preliminaire',groups,fixtures:groupRounds(groups),results:[],mode:'equilibre',lineup:[],minutes:{},fatigue:{},history:old?.history?.slice(-4)||[],qualified:[],champion:null,challenge:null,guests:GUESTS.map((_,i)=>({id:14+i,players:guestYouth(s,14+i)}))};
  s.v73Espoirs=state;return state}
 function read(s){return s?.v73Espoirs?.version===1&&s.v73Espoirs.season===s.season?s.v73Espoirs:null}
