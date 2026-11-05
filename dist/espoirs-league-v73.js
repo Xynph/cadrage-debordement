@@ -1,16 +1,20 @@
 'use strict';
 (function(root){
+const GUESTS=[['Agen','Union de Garonne'],['Aurillac','Monts du Cantal'],['Biarritz','Cote Basque'],['Brive','Correze Rugby'],['Colomiers','Colombes de Garonne'],['Grenoble','Alpes Rugby'],['Nevers','Nievre Rugby'],['Oyonnax','Haut Jura Rugby'],['Rouen','Normandie Rugby'],['Valence Romans','Drome Rugby']];
+const fullIds=()=>Array.from({length:24},(_,i)=>i);
+function extraName(s,id){return s.lnrMode?.version===1?GUESTS[id-14][0]:GUESTS[id-14][1]}
+function guestYouth(s,id){return Array.from({length:15},(_,i)=>{const key='v73-guest-'+id+'-'+s.season+'-'+i,h=hash(key),pos=(typeof POS!=='undefined'?POS[i]:''),rating=53+h%15;return {id:key,name:'Espoir '+(id-13)+'-'+(i+1),pos,rating,condition:100,injury:0,dev:{potential:Math.min(99,rating+12+h%12),xp:0}}})}
 const MODES=['equilibre','performance','developpement','repos'];
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const hash=str=>{let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
-const clubPlayers=(s,id)=>id===s.club?s.development?.academy||[]:s.aiRoster?.academies?.find(a=>a.clubId===id)?.players||[];
-const clubName=(s,id)=>s.clubs[id]?.name||('Club '+id);
+const clubPlayers=(s,id)=>id>=14?s.v73Espoirs?.guests?.[id-14]?.players||[]:id===s.club?s.development?.academy||[]:s.aiRoster?.academies?.find(a=>a.clubId===id)?.players||[];
+const clubName=(s,id)=>id>=14?extraName(s,id):s.clubs[id]?.name||('Club '+id);
 function roundRobin(ids){const a=ids.slice();if(a.length%2)a.push(-1);const out=[];for(let r=0;r<2*(a.length-1);r++){const pairs=[];for(let i=0;i<a.length/2;i++){const x=a[i],y=a[a.length-1-i];if(x>=0&&y>=0)pairs.push((r+i)%2?[y,x]:[x,y])}out.push(pairs);a.splice(1,0,a.pop())}return out}
 function groupRounds(groups){const rounds=groups.map(g=>roundRobin(g));return Array.from({length:Math.max(...rounds.map(x=>x.length))},(_,i)=>rounds.flatMap(r=>r[i]||[]))}
 function setup(s){if(!s?.development||!s.aiRoster?.academies||s.clubs?.length!==14)return null;
  if(s.v73Espoirs?.version===1&&s.v73Espoirs.season===s.season)return s.v73Espoirs;
- const old=s.v73Espoirs,groups=[Array.from({length:7},(_,i)=>i),Array.from({length:7},(_,i)=>i+7)];
- const state={version:1,season:s.season,round:0,stage:'preliminaire',groups,fixtures:groupRounds(groups),results:[],mode:'equilibre',lineup:[],minutes:{},fatigue:{},history:old?.history?.slice(-4)||[],qualified:[],champion:null,challenge:null};
+ const old=s.v73Espoirs,groups=Array.from({length:4},(_,i)=>Array.from({length:6},(_,j)=>i*6+j));
+ const state={version:1,season:s.season,round:0,stage:'preliminaire',groups,fixtures:groupRounds(groups),results:[],mode:'equilibre',lineup:[],minutes:{},fatigue:{},history:old?.history?.slice(-4)||[],qualified:[],champion:null,challenge:null,guests:GUESTS.map((_,i)=>({id:14+i,players:guestYouth(s,14+i)}))};
  s.v73Espoirs=state;return state}
 function read(s){return s?.v73Espoirs?.version===1&&s.v73Espoirs.season===s.season?s.v73Espoirs:null}
 function standing(s,ids,results=read(s)?.results||[]){const rows=ids.map(id=>({id,played:0,win:0,draw:0,loss:0,for:0,against:0,bonus:0,points:0}));
@@ -30,23 +34,29 @@ function registerMinutes(s,m,st){for(let side=0;side<2;side++){const club=m.pair
  if(typeof root.growPlayer==='function')root.growPlayer(p,.07*Math.max(.4,p.condition/100),false);
  if(prior<640&&st.minutes[id]>=640&&p.dev){p.dev.potential=clamp(Math.max(p.rating,p.dev.potential+1),p.rating,99)}
  }}}
+function winners(matches){return matches.map(m=>m.pair[m.score[0]>=m.score[1]?0:1])}
 function applyRound(s,st,round){if(round!==st.round||round<0||round>=26)return false;
- if(round===14){const first=st.groups.map(ids=>standing(s,ids,st.results.filter(x=>x.phase==='preliminaire')));
- const selected=first.map(g=>g.slice(0,4).map(x=>x.id)),losers=first.flatMap(g=>g.slice(4).map(x=>x.id));
- st.qualified=selected.flat();st.groups=[ [selected[0][0],selected[1][1],selected[0][2],selected[1][3]], [selected[1][0],selected[0][1],selected[1][2],selected[0][3]],losers ];
- const stages=groupRounds(st.groups.slice(0,2)),challenge=roundRobin(losers).slice(0,6);
- st.fixtures=st.fixtures.concat(Array.from({length:6},(_,i)=>[...(stages[i]||[]),...(challenge[i]||[])]));st.stage='qualification'}
- if(round===20){const ranked=st.groups.slice(0,2).map(g=>standing(s,g,st.results.filter(x=>x.phase==='qualification')));
- st.fixtures[20]=[[ranked[0][0].id,ranked[1][1].id],[ranked[1][0].id,ranked[0][1].id]];st.stage='demi-finales';
- const challengers=standing(s,st.groups[2],st.results.filter(x=>x.phase==='challenge'));st.challenge=challengers[0]?.id??null}
- if(round===21){const semis=st.results.filter(x=>x.phase==='demi-finales');if(semis.length===2)st.fixtures[21]=[semis.map(m=>m.pair[m.score[0]>=m.score[1]?0:1])];st.stage='finale'}
- const phase=round<14?'preliminaire':round<20?'qualification':round===20?'demi-finales':round===21?'finale':'repos';
- for(const pair of st.fixtures[round]||[]){const kind=round>=14&&round<20&&st.groups[2].includes(pair[0])?'challenge':phase;
+ if(round===10){const rankings=st.groups.map(ids=>standing(s,ids,st.results.filter(x=>x.phase==='preliminaire')));
+ const qualifiers=rankings.map(g=>g.slice(0,4).map(x=>x.id));const challengers=rankings.map(g=>g.slice(4).map(x=>x.id));
+ st.qualified=qualifiers.flat();
+ st.groups=[...Array.from({length:4},(_,i)=>Array.from({length:4},(_,j)=>qualifiers[(i+j)%4][(i+j)%4])),[...challengers[0],...challengers[1]],[...challengers[2],...challengers[3]]];
+ const stages=groupRounds(st.groups.slice(0,4)),challenges=groupRounds(st.groups.slice(4));
+ st.fixtures=st.fixtures.concat(Array.from({length:6},(_,i)=>[...stages[i],...challenges[i]]));st.stage='qualification'}
+ if(round===16){const ranked=st.groups.slice(0,4).map(g=>standing(s,g,st.results.filter(x=>x.phase==='qualification')));
+ const teams=ranked.flatMap(g=>g.slice(0,2).map(x=>x.id));
+ st.fixtures[16]=[[teams[0],teams[7]],[teams[2],teams[5]],[teams[4],teams[3]],[teams[6],teams[1]]];st.stage='quarts';
+ const challenger=st.groups.slice(4).map(g=>standing(s,g,st.results.filter(x=>x.phase==='challenge')));
+ st.fixtures[19]=[[challenger[0][0].id,challenger[1][1].id],[challenger[1][0].id,challenger[0][1].id]]}
+ if(round===17){const win=winners(st.results.filter(x=>x.phase==='quarts'));if(win.length===4)st.fixtures[17]=[[win[0],win[1]],[win[2],win[3]]];st.stage='demi-finales'}
+ if(round===18){const win=winners(st.results.filter(x=>x.phase==='demi-finales'));if(win.length===2)st.fixtures[18]=[[win[0],win[1]]];st.stage='finale'}
+ if(round===20){const win=winners(st.results.filter(x=>x.phase==='challenge-demi'));if(win.length===2)st.fixtures[20]=[[win[0],win[1]]]}
+ const phase=round<10?'preliminaire':round<16?'qualification':round===16?'quarts':round===17?'demi-finales':round===18?'finale':round===19?'challenge-demi':round===20?'challenge-finale':'repos';
+ for(const pair of st.fixtures[round]||[]){const kind=round>=10&&round<16&&st.groups.slice(4).some(g=>g.includes(pair[0]))?'challenge':phase;
  const match=scoreMatch(s,pair,round,kind,st);st.results.push(match);registerMinutes(s,match,st)}
- // Recovery for every unselected academy player, including those on a bye.
  const played=new Set(st.results.filter(x=>x.round===round).flatMap(x=>x.players.flat()).filter(Boolean));
- for(const id of s.clubs.map(x=>x.id))for(const p of clubPlayers(s,id)){const prev=st.fatigue[p.id]||0;if(!played.has(p.id))p.condition=clamp(p.condition+8,35,100);st.fatigue[p.id]=clamp(prev-(played.has(p.id)?2:11),0,100)}
- if(round===21){const f=st.results.find(x=>x.phase==='finale');st.champion=f?f.pair[f.score[0]>=f.score[1]?0:1]:null;st.stage='terminee'}
+ for(const id of fullIds())for(const p of clubPlayers(s,id)){const prev=st.fatigue[p.id]||0;if(!played.has(p.id))p.condition=clamp(p.condition+8,35,100);st.fatigue[p.id]=clamp(prev-(played.has(p.id)?2:11),0,100)}
+ if(round===18){const f=st.results.find(x=>x.phase==='finale');st.champion=f?f.pair[f.score[0]>=f.score[1]?0:1]:null;st.stage='terminee'}
+ if(round===20){const f=st.results.find(x=>x.phase==='challenge-finale');st.challenge=f?f.pair[f.score[0]>=f.score[1]?0:1]:null}
  st.round++;return true}
 function advance(s){const st=read(s);if(!st||!s.development)return false;const target=Math.min(26,s.phase==='league'?s.round:26);
  while(st.round<target)applyRound(s,st,st.round);return true}
@@ -58,18 +68,18 @@ function setPlayer(s,slot,id,save){const st=read(s),players=clubPlayers(s,s.club
  const prev=st.lineup.slice();st.lineup[slot]=id;try{if(save()===false)throw Error('save')}catch{st.lineup=prev;return false}return true}
 const safe=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 function panel(s){const st=read(s);if(!st)return '<section class="card"><h2>Championnat Espoirs</h2><p>Disponible dans une carrière avec centres de formation actifs.</p></section>';
- const groups=st.groups.map((ids,i)=>{const phase=i===2?'challenge':st.round<14?'preliminaire':'qualification',r=standing(s,ids,st.results.filter(x=>x.phase===phase));
- return '<div class="card"><h3>'+(i===2?'Challenge de France · groupe simulé':'Poule '+(i+1))+'</h3><div class="tablewrap"><table><thead><tr><th>#</th><th>Club</th><th>J</th><th>Pts</th><th>Diff.</th></tr></thead><tbody>'+r.map((x,k)=>'<tr><td>'+(k+1)+'</td><td>'+safe(clubName(s,x.id))+'</td><td>'+x.played+'</td><td>'+x.points+'</td><td>'+(x.for-x.against)+'</td></tr>').join('')+'</tbody></table></div></div>'}).join('');
+ const groups=st.groups.map((ids,i)=>{const phase=i>=4?'challenge':st.round<10?'preliminaire':'qualification',r=standing(s,ids,st.results.filter(x=>x.phase===phase));
+ return '<div class="card"><h3>'+(i>=4?'Challenge de France · poule '+(i-3):'Poule '+(i+1))+'</h3><div class="tablewrap"><table><thead><tr><th>#</th><th>Club</th><th>J</th><th>Pts</th><th>Diff.</th></tr></thead><tbody>'+r.map((x,k)=>'<tr><td>'+(k+1)+'</td><td>'+safe(clubName(s,x.id))+'</td><td>'+x.played+'</td><td>'+x.points+'</td><td>'+(x.for-x.against)+'</td></tr>').join('')+'</tbody></table></div></div>'}).join('');
  const chosenPlayers=chosen(s,s.club,st),editable=!s.live&&s.phase!=='ended';
  const composition=chosenPlayers.map((p,i)=>'<tr><td>'+(i+1)+'</td><td>'+safe(root.POS?.[i]||'Poste')+'</td><td><select aria-label="Espoir poste '+(i+1)+'" onchange="v73Select('+i+',this.value)" '+(editable?'':'disabled')+'>'+clubPlayers(s,s.club).filter(x=>x.pos===root.POS?.[i]).map(x=>'<option value="'+safe(x.id)+'" '+(p?.id===x.id?'selected':'')+'>'+safe(x.name)+' · '+Math.round(x.rating)+' · '+Math.round(x.condition)+'%</option>').join('')+'</select></td><td>'+(p?st.minutes[p.id]||0:0)+'</td></tr>').join('');
  const recent=st.results.slice(-12).reverse().map(m=>'<div class="row budgetline"><span>'+safe(clubName(s,m.pair[0]))+' — '+safe(clubName(s,m.pair[1]))+'</span><b>'+m.score.join(' – ')+'</b></div>').join('');
  const next=st.fixtures[st.round]||[];
  const promotions=clubPlayers(s,s.club).slice().sort((a,b)=>(st.minutes[b.id]||0)-(st.minutes[a.id]||0)).slice(0,3).map(p=>'<p>'+safe(p.name)+' · '+(st.minutes[p.id]||0)+' min · niveau '+Math.round(p.rating)+' / potentiel '+Math.round(p.dev?.potential||p.rating)+'</p>').join('');
- return '<section class="cd04-panel" style="padding:18px;margin-top:18px"><h2>V73 · Reichel Espoirs — Trophée Medhi Narjissi</h2><p>Adaptation fictive à 14 clubs, inspirée des phases FFR : 2 poules de 7 (14 journées), 2 poules qualificatives de 4 et un challenge de 6 (6 journées), demi-finales et finale (J21–J22). Matchs générés, sans calendrier officiel.</p><p><strong>Saison '+st.season+' · Journée Espoirs '+Math.min(26,st.round)+' / 26 · '+safe(st.stage)+'</strong> · '+st.results.length+' résultats · Champion : '+(st.champion===null?'à déterminer':safe(clubName(s,st.champion)))+'</p><h3>Composition et rotation</h3><label>Gestion du XV Espoirs <select onchange="v73Mode(this.value)" '+(editable?'':'disabled')+'>'+MODES.map(v=>'<option value="'+v+'" '+(st.mode===v?'selected':'')+'>'+({equilibre:'Équilibrée',performance:'Performance',developpement:'Développement des jeunes',repos:'Préserver la condition'}[v])+'</option>').join('')+'</select></label><div class="tablewrap"><table><thead><tr><th>#</th><th>Poste</th><th>Espoir retenu</th><th>Minutes</th></tr></thead><tbody>'+composition+'</tbody></table></div><h3>Jeunes à suivre pour une promotion</h3>'+promotions+'<p class="help">Les promotions se font via les boutons natifs de la Formation ; le championnat ne crée aucun professionnel automatiquement. Les titulaires progressent, gagnent des minutes et subissent une fatigue réversible.</p><h3>Classements et qualifications</h3><div class="grid">'+groups+'</div><h3>Prochaines affiches</h3>'+(next.map(p=>'<p>'+safe(clubName(s,p[0]))+' — '+safe(clubName(s,p[1]))+'</p>').join('')||'<p>Aucune rencontre programmée.</p>')+'<h3>Derniers résultats</h3>'+recent+'</section>'}
+ return '<section class="cd04-panel" style="padding:18px;margin-top:18px"><h2>V73 · Reichel Espoirs — Trophée Medhi Narjissi</h2><p>Adaptation fictive à 14 clubs, inspirée des phases FFR : 4 poules de 6 (10 journées), 4 poules qualificatives de 4 et 2 poules de Challenge de 4 (6 journées), quarts, demi-finales et finale. Matchs générés, sans calendrier officiel.</p><p><strong>Saison '+st.season+' · Journée Espoirs '+Math.min(26,st.round)+' / 26 · '+safe(st.stage)+'</strong> · '+st.results.length+' résultats · Champion : '+(st.champion===null?'à déterminer':safe(clubName(s,st.champion)))+'</p><h3>Composition et rotation</h3><label>Gestion du XV Espoirs <select onchange="v73Mode(this.value)" '+(editable?'':'disabled')+'>'+MODES.map(v=>'<option value="'+v+'" '+(st.mode===v?'selected':'')+'>'+({equilibre:'Équilibrée',performance:'Performance',developpement:'Développement des jeunes',repos:'Préserver la condition'}[v])+'</option>').join('')+'</select></label><div class="tablewrap"><table><thead><tr><th>#</th><th>Poste</th><th>Espoir retenu</th><th>Minutes</th></tr></thead><tbody>'+composition+'</tbody></table></div><h3>Jeunes à suivre pour une promotion</h3>'+promotions+'<p class="help">Les promotions se font via les boutons natifs de la Formation ; le championnat ne crée aucun professionnel automatiquement. Les titulaires progressent, gagnent des minutes et subissent une fatigue réversible.</p><h3>Classements et qualifications</h3><div class="grid">'+groups+'</div><h3>Prochaines affiches</h3>'+(next.map(p=>'<p>'+safe(clubName(s,p[0]))+' — '+safe(clubName(s,p[1]))+'</p>').join('')||'<p>Aucune rencontre programmée.</p>')+'<h3>Derniers résultats</h3>'+recent+'</section>'}
 function install(g){if(!g||typeof g.finishRound!=='function'||typeof g.advanceSeason!=='function')return false;if(g.finishRound.__v73)return true;
  const get=()=>typeof S!=='undefined'?S:g.S,save=()=>{g.save();return typeof lastSaveError==='undefined'||!lastSaveError};
- const finish=g.finishRound;g.finishRound=function(){const s=get(),before=s&&s.round,season=s&&s.season,r=finish.apply(this,arguments);if(s&&s.season===season&&s.round!==before&&read(s)){advance(s);save()}return r};g.finishRound.__v73=true;
- const next=g.advanceSeason;g.advanceSeason=function(){const s=get();if(s)closeSeason(s);const r=next.apply(this,arguments);if(get()&&get().season!==s?.season){setup(get());save()}return r};
+ const finish=g.finishRound;g.finishRound=function(){const s=get(),before=s&&s.round,season=s&&s.season,r=finish.apply(this,arguments);if(s&&s.season===season&&s.round!==before){setup(s);advance(s);save()}return r};g.finishRound.__v73=true;
+ const next=g.advanceSeason;g.advanceSeason=function(){const s=get(),season=s?.season;if(s)closeSeason(s);const r=next.apply(this,arguments);if(get()&&get().season!==season){setup(get());save()}return r};
  const former=g.formationView; if(typeof former==='function'){g.formationView=function(){const html=former.apply(this,arguments);return html+panel(get())}}
  if(typeof g.CDNativeCenters==='object'&&typeof g.CDNativeCenters.formationView==='function'){const old=g.CDNativeCenters.formationView;g.CDNativeCenters.formationView=function(){return old.apply(this,arguments)+panel(get())}}
  g.v73Mode=mode=>{const ok=setMode(get(),mode,save);if(ok)g.render();return ok};
