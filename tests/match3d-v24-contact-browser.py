@@ -192,6 +192,24 @@ try:
     page.screenshot(path=str(OUT/f'lod{lod}-fall-{int(phase*100):03d}-front.jpg'),type='jpeg',quality=90)
     page.evaluate('camera.position.set(4,1.2,.3);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
    results.append(info)
+  # Reject a shared positional "fix" unless all three skinned LODs
+  # improve right-arm reach without worsening left reach or sampled crossings.
+  # Diagnostic only: the runtime never consumes these offsets.
+  sweeps={f['lod']:f['relativePoseSweep']['samples'] for f in fallSequence if f['progress']==1}
+  assert set(sweeps)=={0,1,2},('all LOD impact sweeps required',sweeps.keys())
+  reference={lod:items[0] for lod,items in sweeps.items()}
+  safe_shared=[]
+  for index in range(1,10):
+   candidates=[sweeps[lod][index] for lod in range(3)]
+   assert len({(x['forwardM'],x['lateralM']) for x in candidates})==1,('offset mismatch across LOD',index)
+   if all(x['rightDeficitM'] < reference[lod]['rightDeficitM']-.005
+          and x['leftDeficitM'] <= reference[lod]['leftDeficitM']+1e-6
+          and x['sampledTriangleIntersections']<=reference[lod]['sampledTriangleIntersections']
+          for lod,x in enumerate(candidates)):
+    safe_shared.append({'forwardM':candidates[0]['forwardM'],'lateralM':candidates[0]['lateralM']})
+  pose_decision={'status':'DIAGNOSTIC_ONLY_NO_RUNTIME_RELOCATION',
+    'safeSharedOffsets':safe_shared,'referenceByLOD':reference,
+    'limits':'Sampled Body triangles are not exhaustive collision certification'}
   assert not errors and not external,(errors,external)
-  (OUT/'report.json').write_text(json.dumps({'status':'TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL','levels':results,'temporalSamples':temporal,'fallSequence':fallSequence,'errors':errors,'externalRequests':external,'limits':['Paired-rig arm IK aims at carrier torso; no coordinated impact dynamics or contact certification','No collision physics or engine mutation','Actual skinned-mesh ground and torso-horizontal metrics tested at impact; visual contact and runtime still unqualified']},indent=2)+'\n');b.close()
+  (OUT/'report.json').write_text(json.dumps({'status':'TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL','poseDecision':pose_decision,'levels':results,'temporalSamples':temporal,'fallSequence':fallSequence,'errors':errors,'externalRequests':external,'limits':['Paired-rig arm IK aims at carrier torso; no coordinated impact dynamics or contact certification','No collision physics or engine mutation','Actual skinned-mesh ground and torso-horizontal metrics tested at impact; visual contact and runtime still unqualified']},indent=2)+'\n');b.close()
 finally:s.shutdown()
