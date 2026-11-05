@@ -48,8 +48,10 @@ function v69BriefingView(){
  '<p class="help"><strong>Choix retenu : '+esc(V69_PLANS[current].label)+'.</strong> Au coup d\'envoi, l\'effet est fige pour ce match. Ciblage des avants : jusqu\'a +3,5 points sur les resolutions au pres, contre -0,8 au large ; ciblage des espaces : meme gain conditionnel au large, contre -0,8 au pres ; couverture : jusqu\'a -3,0 points sur les attaques larges adverses, contre +0,8 au pres. Ces ajustements du moteur fictif ne modifient ni l\'issue garantie ni les regles rugby. Une nouvelle rencontre requiert un nouveau choix.</p></section>';
 }
 // Le panneau matchday est deja un point d'entree : ajout uniquement, sans copie.
-const v69MatchdayViewBefore=matchdayReadinessView;
-matchdayReadinessView=function(){return v69MatchdayViewBefore()+v69BriefingView()};
+if(typeof matchdayReadinessView==='function'){
+ const v69MatchdayViewBefore=matchdayReadinessView;
+ matchdayReadinessView=function(){return v69MatchdayViewBefore()+v69BriefingView()};
+}
 const v69CreateMatchBefore=createRugbyMatch;
 createRugbyMatch=function(pair,legacy=null,automated=false,preparation=null){
  const d=!legacy&&!automated&&pair.includes(S.club)?preparation||matchDossier():null;
