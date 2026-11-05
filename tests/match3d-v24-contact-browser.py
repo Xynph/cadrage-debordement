@@ -141,7 +141,44 @@ try:
         relativePoseSweep={reachL,reachR,samples,
           status:'DIAGNOSTIC_ONLY_NO_POSE_MUTATION_AND_SAMPLED_TRIANGLES_ONLY'};
       }
-      return {...state,meshIntersections:collision,relativePoseSweep,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
+      // Separate diagnostic: do bounded REAL right-clavicle rotations make
+      // the carrier reachable without worsening the actual skinned crossing?
+      // Probe no fake limb extensions; restore the skeleton before screenshot.
+      let clavicleSweep=null;
+      if(progress===1){
+        const clav=asset.bones.find(b=>b.name==='clavicle_r'),base=clav.quaternion.clone();
+        const shoulder=asset.bones.find(b=>b.name==='upperarm_r');
+        const elbow=asset.bones.find(b=>b.name==='lowerarm_r');
+        const wrist=asset.bones.find(b=>b.name==='hand_r');
+        const skin=[],centre=p(partner.bones,'spine_03');
+        partner.body.traverse(mesh=>{
+          if(!mesh.isSkinnedMesh||mesh.name!=='Body')return;
+          const attr=mesh.geometry.getAttribute('position'),v=new THREE.Vector3();
+          const stride=Math.max(1,Math.floor(attr.count/700));
+          for(let i=0;i<attr.count;i+=stride){
+            mesh.boneTransform(i,v.fromBufferAttribute(attr,i));mesh.localToWorld(v);
+            if(v.distanceTo(centre)<.45)skin.push(v.clone());
+          }
+        });
+        const candidates=[];
+        for(const [axis,angle] of [['x',0],['x',-.25],['x',.25],['y',-.25],['y',.25],['z',-.25],['z',.25]]){
+          clav.quaternion.copy(base);
+          if(angle)clav.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(
+            axis==='x'?new THREE.Vector3(1,0,0):axis==='y'?new THREE.Vector3(0,1,0):new THREE.Vector3(0,0,1),angle));
+          asset.body.updateMatrixWorld(true);
+          const a=p(asset.bones,'upperarm_r');
+          const armLength=a.distanceTo(p(asset.bones,'lowerarm_r'))+
+            p(asset.bones,'lowerarm_r').distanceTo(p(asset.bones,'hand_r'));
+          const closest=Math.min(...skin.map(v=>a.distanceTo(v)));
+          const crossings=CDMatch3DV24MeshIntersections.probe(THREE,{body:asset.body,bones:asset.bones},partner,260);
+          candidates.push({axis,angleRadians:angle,armReachM:armLength,
+            shoulderToRealSkinM:closest,reachDeficitM:Math.max(0,closest-armLength),
+            sampledTriangleIntersections:crossings.properTriangleIntersections});
+        }
+        clav.quaternion.copy(base);asset.body.updateMatrixWorld(true);
+        clavicleSweep={candidates,status:'DIAGNOSTIC_ONLY_RESTORED_SKELETON'};
+      }
+      return {...state,meshIntersections:collision,relativePoseSweep,clavicleSweep,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
     }""",phase)
     fall['lod']=lod
     assert fall['meshIntersections']['tacklerTriangles']>=20 and fall['meshIntersections']['carrierTriangles']>=20,(lod,phase,'real mesh triangle samples missing',fall['meshIntersections'])
