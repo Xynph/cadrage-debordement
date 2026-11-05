@@ -33,7 +33,8 @@ const CDNativeCenters=(function(){
   const table=(youth.view==='academy'||youth.view==='young')?
    CDUI04AcademyData.table(model,{kind:youth.view,search:youth.search,family:youth.family,
     sortBy:youth.sortBy,direction:youth.direction}):undefined;
-  return CDUI04AcademyComponents.renderCenter(model,{...youth,table,attributeLabels:ATTR});
+  return CDUI04AcademyComponents.renderCenter(model,{...youth,table,attributeLabels:ATTR})+
+   (typeof CDYouthV72==='object'?CDYouthV72.panel(S):'');
  }
  function validScout(id){return typeof id==='string'&&managerPool().some(p=>p.id===id);}
  function validYouth(id){return typeof id==='string'&&
