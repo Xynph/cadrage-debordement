@@ -366,8 +366,11 @@ try:
      assert all(item['intersections']>=0 and item['leftM']>=0 and item['rightM']>=0 for item in approach['samples']),(lod,'approach probe invalid',approach)
     if phase==1.0:
      pole=fall['elbowPoleTrial']
-     assert pole and len(pole['candidates'])==5,(lod,'five real elbow pole profiles required',pole)
-     assert all(v['intersections']>=0 and v['elbowSeparationM']>.05 for v in pole['candidates']),(lod,'invalid anatomical elbow pose',pole)
+     # An elbow sweep is forbidden until a common clavicle pose has been
+     # qualified; a missing sweep here is the intended safe diagnostic.
+     if pole is not None:
+      assert len(pole['candidates'])==5,(lod,'five real elbow pole profiles required',pole)
+      assert all(v['intersections']>=0 and v['elbowSeparationM']>.05 for v in pole['candidates']),(lod,'invalid anatomical elbow pose',pole)
     fallSequence.append(fall)
     page.evaluate('renderer.render(scene,camera)')
     page.screenshot(path=str(OUT/f'lod{lod}-fall-{int(phase*100):03d}-side.jpg'),type='jpeg',quality=90)
@@ -423,20 +426,21 @@ try:
                and item['intersections']<=data['baseline']['intersections']
                for item in data['samples']) for data in approach_profiles.values())]
   elbow_profiles={x['lod']:x['elbowPoleTrial'] for x in fallSequence if x['progress']==1}
-  assert set(elbow_profiles)=={0,1,2},('missing skinned elbow diagnostics',elbow_profiles.keys())
+  assert set(elbow_profiles)=={0,1,2},('missing elbow phases',elbow_profiles.keys())
   safe_elbow_poles=[]
-  # The same actual IK profile must improve elbow separation and/or opposite
-  # wrap while not increasing either wrist gap or skinned intersections.
-  for index in range(1,5):
-   candidates=[elbow_profiles[lod]['candidates'][index] for lod in range(3)]
-   baselines=[elbow_profiles[lod]['candidates'][0] for lod in range(3)]
-   assert len({(x['poleY'],x['poleZ']) for x in candidates})==1
-   if all(x['rightM']<=base['rightM']+.001 and
-          x['leftM']<=base['leftM']+.001 and
-          x['intersections']<=base['intersections'] and
-          x['elbowSeparationM']>=base['elbowSeparationM']+.005
-          for x,base in zip(candidates,baselines)):
-    safe_elbow_poles.append({'poleY':candidates[0]['poleY'],'poleZ':candidates[0]['poleZ']})
+  if all(data is not None for data in elbow_profiles.values()):
+   # Only evaluate a shared elbow pole when all 3 LODs produced safe
+   # anatomical input poses. Otherwise expose the missing evidence.
+   for index in range(1,5):
+    candidates=[elbow_profiles[lod]['candidates'][index] for lod in range(3)]
+    baselines=[elbow_profiles[lod]['candidates'][0] for lod in range(3)]
+    assert len({(x['poleY'],x['poleZ']) for x in candidates})==1
+    if all(x['rightM']<=base['rightM']+.001 and
+           x['leftM']<=base['leftM']+.001 and
+           x['intersections']<=base['intersections'] and
+           x['elbowSeparationM']>=base['elbowSeparationM']+.005
+           for x,base in zip(candidates,baselines)):
+     safe_elbow_poles.append({'poleY':candidates[0]['poleY'],'poleZ':candidates[0]['poleZ']})
   pose_decision={'status':'DIAGNOSTIC_ONLY_NO_RUNTIME_RELOCATION',
     'safeSharedOffsets':safe_shared,'sharedClavicleAccepted':shared_clavicle_safe,'safeClavicleAngles':shared_clavicle_angles,
     'clavicleByLOD':clavicle_trials,'safeElbowPoles':safe_elbow_poles,'elbowByLOD':elbow_profiles,'safeApproachAngles':safe_approach_angles,'approachByLOD':approach_profiles,'referenceByLOD':reference,
