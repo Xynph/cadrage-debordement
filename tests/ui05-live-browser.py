@@ -21,6 +21,19 @@ def test(label,condition):
         raise AssertionError(label)
     checks.append(label)
 
+def reveal_ui05(page):
+    """Open the native commands subpage where the UI-05 panel lives.
+    Art direction V4 moves the original tactics controls into a hidden tabpanel.
+    The Playwright test must follow the real desktop navigation rather than
+    asserting that every tab is simultaneously visible.
+    """
+    panel=page.locator(".ui05-collective").locator("xpath=ancestor::*[@role='tabpanel'][1]")
+    if panel.count():
+        panel_id=panel.get_attribute("id")
+        if panel_id:
+            page.locator('[role="tab"][aria-controls="'+panel_id+'"]').click()
+    test("onglet de préparation collective affiché",page.locator(".ui05-collective").is_visible())
+
 server=http.server.ThreadingHTTPServer(("127.0.0.1",0),
     functools.partial(Quiet,directory=str(BASE/"dist")))
 threading.Thread(target=server.serve_forever,daemon=True).start()
@@ -39,6 +52,7 @@ try:
         page.get_by_role('button',name='Univers fictif').click()
         page.locator(".clubchoice").first.click()
         page.evaluate("nav('tactics')")
+        reveal_ui05(page)
         test("panneau UI-05 dans le jeu",page.locator(".ui05-collective").is_visible())
         test("quatre préparations natives",page.locator(".ui05-collective .ui05-option").count()==4)
         test("recommandation et charge visibles",page.locator(".ui05-summary .ui05-metric").count()==3)
@@ -46,6 +60,7 @@ try:
         first_state=page.evaluate("JSON.stringify(S)")
         first_save=page.evaluate('localStorage.getItem("bdt-v1")')
         page.evaluate("collectivePreparationCard();collectivePreparationCard();render()")
+        reveal_ui05(page)
         test("lecture sans mutation carrière",page.evaluate("JSON.stringify(S)")==first_state)
         test("lecture sans sauvegarde",page.evaluate('localStorage.getItem("bdt-v1")')==first_save)
         test("aucun verrou avant entraînement",page.locator(".ui05-option:disabled").count()==0)
@@ -55,6 +70,7 @@ try:
             for theme in ("analyste","tribune"):
                 page.locator("#ui01-theme").select_option(theme)
                 page.evaluate("nav('tactics')")
+                reveal_ui05(page)
                 test("panneau %d %s visible"%(width,theme),page.locator(".ui05-collective").is_visible())
                 test("panneau %d %s sans débordement global"%(width,theme),
                      page.evaluate("document.documentElement.scrollWidth<=innerWidth+2"))
@@ -63,11 +79,13 @@ try:
         page.set_viewport_size({"width":1440,"height":900})
         page.locator("#ui01-theme").select_option("analyste")
         page.locator(".ui05-option").nth(1).click()
+        reveal_ui05(page)
         test("choix conquête par vraie interaction",page.evaluate("S.collectiveFocus==='conquete'"))
         test("bouton conquête sélectionné",page.locator('.ui05-option[aria-pressed="true"]').count()==1)
         test("choix enregistré en carrière",page.evaluate('JSON.parse(localStorage.getItem("bdt-v1")).collectiveFocus==="conquete"'))
         test("carrière valide après choix",page.evaluate("!!parseSaveDocument(JSON.stringify(createSaveDocument()))"))
         page.evaluate("trainWeek();render()")
+        reveal_ui05(page)
         test("verrou après entraînement",page.locator(".ui05-option:disabled").count()==4)
         test("charge du moteur appliquée",page.evaluate(
             "starters().filter(p=>p.fam<=3&&!p.injury).some(p=>physicalLoadValue(p)>=4)"))
