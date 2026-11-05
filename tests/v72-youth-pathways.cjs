@@ -38,6 +38,10 @@ assert.equal(run('parseSaveDocument(JSON.stringify(createSaveDocument())).state.
 // Simuler six nouvelles generations sans doubler les joueurs ou saturer les sauvegardes.
 run('for(let i=0;i<6;i++){rollDevelopmentYear();S.season++;S.round=0;S.phase="league";S.trained=false;beginDevelopmentSeason();}');
 assert.ok(run('S.development.academy.length')<=75,'capacite intersaison de 75 Espoirs');
+assert.equal(run('S.aiRoster.academies.length'),13,'13 academies adverses');
+assert.equal(run('S.aiRoster.academies.every(a=>a.players.length<=75)'),true,'effectifs IA bornes');
+assert.equal(run('S.aiRoster.academies.every(a=>a.players.filter(p=>p.id.startsWith("youth-"+a.clubId+"-"+S.season+"-")).length===15)'),true,'15 nouveaux Espoirs dans chaque club IA');
+assert.equal(run('S.aiRoster.academies.every(a=>new Set(a.players.map(p=>p.id)).size===a.players.length)'),true,'absence de doublons IA');
 assert.equal(run('new Set(S.development.academy.map(p=>p.id)).size'),run('S.development.academy.length'),'IDs uniques en carriere longue');
 assert.ok(run('parseSaveDocument(JSON.stringify(createSaveDocument())).state.development.academy.length')<=75,'export et import apres sept saisons');
 run('delete S.v72Youth');assert.equal(run('parseSaveDocument(JSON.stringify(createSaveDocument())).state.v72Youth===undefined'),true,'ancienne sauvegarde sans V72');
