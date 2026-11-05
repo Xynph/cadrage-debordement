@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "baseline": "2d8c8c7eee5aa0dad899aa6bb119e95bda0e7987",
+  "node": "24.11.0",
+  "playwright": "1.57.0",
+  "blender": "4.5.3",
+  "blenderUrl": "https://download.blender.org/release/Blender4.5/blender-4.5.3-linux-x64.tar.xz",
+  "blenderChecksums": "https://download.blender.org/release/Blender4.5/blender-4.5.3.sha256",
+  "makehumanPack": "https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip",
+  "sources": {
+    "mesh2motion": {"repo":"Mesh2Motion/mesh2motion-app","sha":"4f1316296660f2b9827ff46b4db10fb241ec2147","license":"MIT + CC0 art"},
+    "ara": {"repo":"olatunde85/3d-gen","sha":"fbf8a590a3c085bdb18a5ecd27554e5d0156bd4f","license":"MIT + CC0 MakeHuman, CMU clips restricted standalone resale"},
+    "rigger": {"repo":"asu37/Rigger","sha":"c8f1d1b9a8729582c61fa0ffa9a658ec4f4f6e77","license":"GPL-3.0-or-later"},
+    "makehuman": {"repo":"makehumancommunity/makehuman","sha":"a8bc2d54ff0ac92e78ff71431b1023eda42bf482","license":"AGPL code; core data CC0"}
+  }
+}
