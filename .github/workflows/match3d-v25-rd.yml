@@ -61,7 +61,7 @@ jobs:
     # A dedicated physics probe does not need to rerun the full 55-minute
     # Blender/Ara/Chromium baseline, whose pinned job remains independently
     # available and runs for ordinary R&D commits.
-    if: ${{ !startsWith(github.event.head_commit.message, 'test(v25-external):') && !contains(github.event.head_commit.message, '[idle-only]') && !contains(github.event.head_commit.message, '[paired-only]') }}
+    if: ${{ !startsWith(github.event.head_commit.message, 'test(v25-external):') && !contains(github.event.head_commit.message, '[idle-only]') && !contains(github.event.head_commit.message, '[paired-only]') && !contains(github.event.head_commit.message, '[duo-only]') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     steps:
