@@ -81,8 +81,24 @@ test('V68 : installation idempotente, réutilisation de la séance native et aff
  assert.equal((root.managerTeamView().match(/Cellule médicale · V68/g)||[]).length,1);
  V68.choose(s,'a','prudent',{save:()=>true});
  root.trainWeek();root.trainWeek();
- assert.equal(trainings,2);assert.equal(s.clubs[0].players[0].injury,2);
+ assert.equal(trainings,1);assert.equal(s.clubs[0].players[0].injury,2);
  assert.equal(s.clubs[0].players[0].condition,73);
  assert.equal(s.clubs[0].players[1].medicalV68.stage,'reprise');
  assert.equal(saves,0);
+});
+
+test('V68 : ancienne sauvegarde sans champ médical inchangée à la consultation',()=>{
+ const s=state(),serialized=JSON.stringify(s),legacy=JSON.parse(serialized);
+ assert.equal(legacy.clubs[0].players[0].medicalV68,undefined);
+ assert.equal(V68.treatment(legacy.clubs[0].players[0]),'standard');
+ assert.match(V68.panel(legacy),/Suivi standard/);
+ assert.equal(JSON.stringify(legacy),serialized);
+});
+test('V68 : round-trip sauvegarde d’un protocole et absence de rechute implicite',()=>{
+ const s=state();
+ assert.equal(V68.choose(s,'a','prudent',{save:()=>true}),true);
+ const restored=JSON.parse(JSON.stringify(s));
+ assert.equal(V68.treatment(restored.clubs[0].players[0]),'prudent');
+ assert.equal(restored.clubs[0].players[0].injury,3);
+ assert.equal(restored.clubs[0].players[1].medicalV68,undefined);
 });
