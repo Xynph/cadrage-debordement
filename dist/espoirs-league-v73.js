@@ -10,14 +10,14 @@ function realGroups(){const ids=new Map(GUEST_SLUGS.map((slug,i)=>[slug,14+i]));
 const MODES=['equilibre','performance','developpement','repos'];
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const hash=str=>{let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
-const clubPlayers=(s,id)=>id>=14?s.v73Espoirs?.guests?.[id-14]?.players||[]:id===s.club?s.development?.academy||[]:s.aiRoster?.academies?.find(a=>a.clubId===id)?.players||[];
-const clubName=(s,id)=>id>=14?extraName(s,id):s.clubs[id]?.name||('Club '+id);
+const clubPlayers=(s,id)=>{const base=id>=14?s.v73Espoirs?.guests?.[id-14]?.players||[]:id===s.club?s.development?.academy||[]:s.aiRoster?.academies?.find(a=>a.clubId===id)?.players||[];return root.CDEspoirsMovementV75?.roster(s,'elite',id,base)||base};
+const clubName=(s,id)=>{const base=id>=14?extraName(s,id):s.clubs[id]?.name||('Club '+id);return root.CDEspoirsMovementV75?.name(s,'elite',id,base)||base};
 function roundRobin(ids){const a=ids.slice();if(a.length%2)a.push(-1);const out=[];for(let r=0;r<2*(a.length-1);r++){const pairs=[];for(let i=0;i<a.length/2;i++){const x=a[i],y=a[a.length-1-i];if(x>=0&&y>=0)pairs.push((r+i)%2?[y,x]:[x,y])}out.push(pairs);a.splice(1,0,a.pop())}return out}
 function groupRounds(groups){const rounds=groups.map(g=>roundRobin(g));return Array.from({length:Math.max(...rounds.map(x=>x.length))},(_,i)=>rounds.flatMap(r=>r[i]||[]))}
 function setup(s){if(!s?.development||!s.aiRoster?.academies||s.clubs?.length!==14)return null;
  if(s.v73Espoirs?.version===1&&s.v73Espoirs.season===s.season)return s.v73Espoirs;
  const old=s.v73Espoirs,groups=realGroups()||Array.from({length:4},(_,i)=>Array.from({length:6},(_,j)=>i*6+j));
- const state={version:1,season:s.season,round:0,stage:'preliminaire',groups,fixtures:groupRounds(groups),results:[],mode:'equilibre',lineup:[],minutes:{},fatigue:{},history:old?.history?.slice(-4)||[],qualified:[],champion:null,challenge:null,guests:GUESTS.map((_,i)=>({id:14+i,players:guestYouth(s,14+i)}))};
+ const state={version:1,season:s.season,round:0,stage:'preliminaire',groups,initialGroups:groups.map(g=>g.slice()),fixtures:groupRounds(groups),results:[],mode:'equilibre',lineup:[],minutes:{},fatigue:{},history:old?.history?.slice(-4)||[],qualified:[],champion:null,challenge:null,guests:GUESTS.map((_,i)=>({id:14+i,players:guestYouth(s,14+i)}))};
  s.v73Espoirs=state;return state}
 function read(s){return s?.v73Espoirs?.version===1&&s.v73Espoirs.season===s.season?s.v73Espoirs:null}
 function standing(s,ids,results=read(s)?.results||[]){const rows=ids.map(id=>({id,played:0,win:0,draw:0,loss:0,for:0,against:0,bonus:0,points:0}));
@@ -91,5 +91,5 @@ function install(g){if(!g||typeof g.finishRound!=='function'||typeof g.advanceSe
   }return result};
  g.v73Mode=mode=>{const ok=setMode(get(),mode,save);if(ok)g.render();return ok};
  g.v73Select=(slot,id)=>{const ok=setPlayer(get(),slot,id,save);if(ok)g.render();return ok};return true}
-const api={roundRobin,setup,read,standing,chosen,scoreMatch,applyRound,advance,closeSeason,setMode,setPlayer,panel,install};if(typeof module==='object'&&module.exports)module.exports=api;root.CDEspoirsV73=api;if(typeof document!=='undefined')install(root)
+const api={roundRobin,setup,read,clubPlayers,clubName,standing,chosen,scoreMatch,applyRound,advance,closeSeason,setMode,setPlayer,panel,install};if(typeof module==='object'&&module.exports)module.exports=api;root.CDEspoirsV73=api;if(typeof document!=='undefined')install(root)
 })(typeof globalThis==='object'?globalThis:this);
