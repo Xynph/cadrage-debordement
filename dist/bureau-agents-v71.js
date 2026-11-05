@@ -90,6 +90,7 @@
   choice.id=selected.id;
   const validYears=[1,2,3].filter(y=>eligible(s,selected,y));
   const years=validYears.includes(choice.years)?choice.years:validYears[0];
+  if(years)choice.years=years;
   const policy=POLICY[choice.policy]?choice.policy:'equilibre';
   const q=years?quote(s,selected.id,years,policy,bridge):null;
   const talkKey=String(s.season)+':'+String(s.economy.week)+':renew:'+selected.id;
