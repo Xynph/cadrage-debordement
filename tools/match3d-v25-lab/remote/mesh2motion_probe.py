@@ -5,6 +5,7 @@ from playwright.sync_api import sync_playwright
 
 root=Path.cwd();repo=root/'rd-work/mesh2motion';out=root/'rd-report';external=[];errors=[]
 # Temporary harness is written ONLY in the independent third-party working copy.
+(repo/'src/rd-glb-loader.ts').write_text("export { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'\n")
 (repo/'src/rd-probe.html').write_text('<!doctype html><title>Mesh2Motion API roundtrip</title><a id="export-model-hidden-link"></a><div id="status">Local API test</div>')
 shutil.copy2(root/'baseline/dist/match3d/assets/rugby-v24/lod/base_body_anim-lod2.glb',repo/'static/rd-body.glb')
 log=(out/'mesh2motion-vite.log').open('w')
@@ -27,7 +28,7 @@ try:
         result=page.evaluate('''async()=>{
           const {StepLoadModel}=await import('/lib/processes/load-model/StepLoadModel.ts');
           const {StepExportToFile}=await import('/lib/processes/export-to-file/StepExportToFile.ts');
-          const {GLTFLoader}=await import('three/examples/jsm/loaders/GLTFLoader.js');
+          const {GLTFLoader}=await import('/src/rd-glb-loader.ts');
           const source=await new GLTFLoader().loadAsync('/rd-body.glb');
           const sourceClips=source.animations;
           if(sourceClips.length!==12)throw Error('Expected 12 original rugby-body clips, found '+sourceClips.length);
