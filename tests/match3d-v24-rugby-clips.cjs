@@ -47,4 +47,17 @@ for(const name of ['rugby_pass','rugby_tackle']){
 }
 assert.deepEqual(bones.map(b=>b.quaternion.toArray()),initial,'Never mutate original bones');
 assert.throws(()=>create(THREE,bones.slice(1)),/manquant/);
+// Exact intersection sanity checks: crossing faces versus separated faces.
+// Coplanar faces are intentionally outside the current detector's contract.
+const intersectionContext={};
+vm.runInNewContext(fs.readFileSync('dist/match3d/assets/rugby-v24/mesh-intersections.js','utf8'),intersectionContext);
+const intersection=intersectionContext.CDMatch3DV24MeshIntersections.intersects;
+const V=(x,y,z)=>new THREE.Vector3(x,y,z);
+const flat=[V(0,0,0),V(1,0,0),V(0,1,0)];
+const crossing=[V(.25,.25,-1),V(.25,.25,1),V(.8,.8,0)];
+const separate=[V(2,2,-1),V(2,2,1),V(3,3,0)];
+assert.equal(intersection(THREE,flat,crossing),true,'real triangle crossing must be detected');
+assert.equal(intersection(THREE,crossing,flat),true,'intersection must be symmetric');
+assert.equal(intersection(THREE,flat,separate),false,'separated triangles must not intersect');
+
 console.log('PASS original rugby clips: 4 actions, normalized keyframes, nonmutation, missing-joint gate');
