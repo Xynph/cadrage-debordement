@@ -78,7 +78,9 @@ try:
     fall=page.evaluate("""(progress)=>{
       // At recovery, sample the actual authored rugby_recover clip rather
       // than continuing to replay an impact crouch through p=1.85.
-      if(progress>1.15)window.setPose('rugby_recover',Math.min(1.15,(progress-1.15)/.70*1.15));
+      // Avoid sampling exactly at 1.15s: LoopRepeat wraps to the initial
+      // crouched keyframe. Stop strictly before the clip endpoint.
+      if(progress>1.15)window.setPose('rugby_recover',Math.min(1.149,(progress-1.15)/.70*1.15));
       else window.setPose('rugby_tackle',.55);
       partner.mixer.setTime(.25);
       asset.body.position.copy(contactBases.tackler.position);
