@@ -100,6 +100,8 @@ try:
      assert len(fall['groundSamples'])==2,(lod,phase,'two real skinned rigs',fall)
      assert all(-.04<g['minMeshY']<.10 and g['vertices']>=30 for g in fall['groundSamples']),(lod,phase,'grounded real GLB surfaces',fall)
      assert all(g['torsoVertices']>=10 and isinstance(g['torsoMinY'],(float,int)) for g in fall['groundSamples']),(lod,phase,'real skinned torso-floor evidence absent',fall)
+     # Actual skinned chest must approach turf, not merely a toe or calf.
+     assert all(.015 <= g['torsoMinY'] <= .10 for g in fall['groundSamples']),(lod,phase,'chest still airborne or penetrating ground',fall)
      assert all(g['verticalTorsoRatio']<.60 for g in fall['groundSamples']),(lod,phase,'torsos not horizontal',fall)
      assert all(.12<g['pelvisY']<.55 for g in fall['groundSamples']),(lod,phase,'pelvis hovering or underground',fall)
      assert max(fall['handDistancesM'])<.60,(lod,phase,'arms lost contact',fall)
