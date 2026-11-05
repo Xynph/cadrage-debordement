@@ -157,7 +157,7 @@
   }
   function install(g){
     if(!g||typeof g.start!=='function'||typeof g.advanceSeason!=='function'||typeof g.render!=='function'||!pro())return false;
-    if(g.start.__v81)return true;
+    if(typeof g.v78Loan==='function')return true;
     const get=()=>typeof S!=='undefined'?S:g.S;
     const save=()=>{if(typeof g.save!=='function')return false;const result=g.save();return result!==false&&(typeof lastSaveError==='undefined'||!lastSaveError)};
     const oldStart=g.start;g.start=function(){const r=oldStart.apply(this,arguments);if(get()){ensure(get());save()}return r};g.start.__v81=true;
