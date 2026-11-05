@@ -24,7 +24,7 @@ assert.equal(run('S.clubs[S.club].players.find(p=>p.id==='+JSON.stringify(id)+')
 assert.equal(run('S.clubs[S.club].players.find(p=>p.id==='+JSON.stringify(id)+').name'),original.name,'identity conserved');
 assert.equal(run('S.development.academy.some(p=>p.id==='+JSON.stringify(id)+')'),false,'removed from academy');
 assert.equal(run('S.development.academy.length'),startYouth,'replacement keeps XV');
-assert.equal(run('new Set(S.development.academy.map(p=>p.pos)).size'),13,'all 15 slots covered (13 unique positions)');
+assert.equal(run('new Set(S.development.academy.map(p=>p.pos)).size'),run('new Set(POS).size'),'all required positions covered');
 assert.equal(run('CDEspoirsV73.chosen(S,S.club).filter(Boolean).length'),15,'playing XV remains intact');
 assert.equal(run('S.clubs[S.club].players.some(p=>p.id==='+JSON.stringify(id)+')'),true);
 assert.equal(run(api+'.promote(S,'+JSON.stringify(id)+',1,()=>true)'),false,'no double promotion');
