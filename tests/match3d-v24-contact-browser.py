@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'match3d-v24-contact-report';O
 class Handler(http.server.SimpleHTTPRequestHandler):
  def log_message(self,*args):pass
 s=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(Handler,directory=str(ROOT/'dist')));threading.Thread(target=s.serve_forever,daemon=True).start()
-errors=[];external=[];results=[]
+errors=[];external=[];results=[];temporal=[]
 try:
  with sync_playwright() as p:
   b=p.chromium.launch(executable_path=os.environ.get('CD_CHROMIUM_PATH'),args=['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'])
@@ -32,7 +32,27 @@ try:
    page.screenshot(path=str(OUT/f'lod{lod}-contact-front.jpg'),type='jpeg',quality=90)
    page.evaluate('camera.position.set(4,1.2,.3);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
    page.screenshot(path=str(OUT/f'lod{lod}-contact-side.jpg'),type='jpeg',quality=90)
+   # Temporal evidence: four real clip samples, both views, with wrist-to-carrier distances.
+   # Distances are observations, not an invented contact approval threshold.
+   for t in [.12,.30,.55,.75]:
+    sample=page.evaluate("""(time)=>{
+      window.setPose('rugby_tackle',time);
+      partner.mixer.setTime(.25);
+      scene.updateMatrixWorld(true);
+      const pos=(bones,name)=>bones.find(b=>b.name===name).getWorldPosition(new THREE.Vector3());
+      const torso=pos(partner.bones,'spine_03');
+      const left=pos(asset.bones,'hand_l'),right=pos(asset.bones,'hand_r');
+      const separation=left.distanceTo(right);
+      renderer.render(scene,camera);
+      return {time,leftTorsoM:left.distanceTo(torso),rightTorsoM:right.distanceTo(torso),handSeparationM:separation,torso:torso.toArray()};
+    }""",t)
+    sample['lod']=lod
+    temporal.append(sample)
+    page.screenshot(path=str(OUT/f'lod{lod}-tackle-{int(t*100):02d}-side.jpg'),type='jpeg',quality=90)
+    page.evaluate('camera.position.set(3.4,1.5,2.6);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
+    page.screenshot(path=str(OUT/f'lod{lod}-tackle-{int(t*100):02d}-front.jpg'),type='jpeg',quality=90)
+    page.evaluate('camera.position.set(4,1.2,.3);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
    results.append(info)
   assert not errors and not external,(errors,external)
-  (OUT/'report.json').write_text(json.dumps({'status':'TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL','levels':results,'errors':errors,'externalRequests':external,'limits':['Static contact arrangement','No collision physics or engine mutation','No fall/landing sequence qualified']},indent=2)+'\n');b.close()
+  (OUT/'report.json').write_text(json.dumps({'status':'TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL','levels':results,'temporalSamples':temporal,'errors':errors,'externalRequests':external,'limits':['Static carrier with sampled tackling animation; not a coordinated impact sequence','No collision physics or engine mutation','No fall/landing sequence qualified']},indent=2)+'\n');b.close()
 finally:s.shutdown()
