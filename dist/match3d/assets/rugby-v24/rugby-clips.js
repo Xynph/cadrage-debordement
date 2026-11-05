@@ -135,7 +135,13 @@
    if(contactFallback)best=closest;
    upper.quaternion.copy(best.upper);lower.quaternion.copy(best.lower);
    upper.updateMatrixWorld(true);lower.updateMatrixWorld(true);
-   results[side]={contactFallback,bestReachableSurfaceMetres:closest.gap,beforeMetres:Math.sqrt(Math.min(...points.map(p=>origin.distanceToSquared(p)))),
+   // Distinguish a truly out-of-reach torso from a poor IK pole/target:
+   // both distances come from world-space joints and actual deformed skin.
+   const armReach=world(upper).distanceTo(world(lower))+world(lower).distanceTo(world(hand));
+   const shoulderToSkin=Math.min(...points.map(p=>world(upper).distanceTo(p)));
+   results[side]={armReachMetres:armReach,shoulderToSkinMetres:shoulderToSkin,
+     reachDeficitMetres:Math.max(0,shoulderToSkin-armReach),
+     contactFallback,bestReachableSurfaceMetres:closest.gap,beforeMetres:Math.sqrt(Math.min(...points.map(p=>origin.distanceToSquared(p)))),
      afterSurfaceMetres:best.gap,afterToTargetMetres:world(hand).distanceTo(best.goal),
      examined:candidates.length*3,improved:best.gap<beforeGap,
      oppositeFlankSamples:preferred.length,flankSignedM:world(hand).sub(torso).dot(lateral)*sign};
