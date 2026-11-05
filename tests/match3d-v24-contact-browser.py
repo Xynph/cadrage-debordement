@@ -233,7 +233,42 @@ try:
           accepted:trials.some(t=>t.accepted),
           status:'STAGE_ONLY_PREVIEW_NO_GLBS_OR_RUNTIME_MODIFIED'};
       }
-      return {...state,meshIntersections:collision,relativePoseSweep,clavicleSweep,clavicleGripTrial,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
+      // Sweep anatomically bounded elbow-pole targets in the +0.20
+      // clavicle pose. Measure real wrists, opposing elbow placement and
+      // sampled skinned-surface crossings, restoring all bones each time.
+      let elbowPoleTrial=null;
+      if(progress===1 && clavicleGripTrial?.preview?.appliedToIsolatedScreenshot){
+        const original=asset.bones.map(b=>b.quaternion.clone());
+        const center=p(partner.bones,'spine_03');
+        const toward=center.clone().sub(p(asset.bones,'upperarm_l')
+          .add(p(asset.bones,'upperarm_r')).multiplyScalar(.5));
+        toward.y=0;toward.normalize();
+        const lateral=new THREE.Vector3(-toward.z,0,toward.x);
+        const profiles=[[0,0],[.16,0],[-.16,0],[0,.16],[0,-.16]];
+        const candidates=[];
+        for(const [poleY,poleZ] of profiles){
+          asset.bones.forEach((bone,i)=>bone.quaternion.copy(original[i]));
+          asset.body.updateMatrixWorld(true);
+          const grip=CDMatch3DV24RugbyClips.gripCarrierSurface(
+            THREE,asset.bones,partner.body,partner.bones,state.onset,{poleY,poleZ});
+          const crossings=CDMatch3DV24MeshIntersections.probe(
+            THREE,{body:asset.body,bones:asset.bones},partner,850);
+          const eL=p(asset.bones,'lowerarm_l'),eR=p(asset.bones,'lowerarm_r');
+          candidates.push({poleY,poleZ,leftM:grip.l.afterSurfaceMetres,
+            rightM:grip.r.afterSurfaceMetres,intersections:crossings.properTriangleIntersections,
+            elbowSeparationM:eL.distanceTo(eR),
+            elbowLateralL:eL.clone().sub(center).dot(lateral),
+            elbowLateralR:eR.clone().sub(center).dot(lateral)});
+        }
+        asset.bones.forEach((bone,i)=>bone.quaternion.copy(original[i]));
+        asset.body.updateMatrixWorld(true);
+        const base=candidates[0];
+        elbowPoleTrial={candidates,
+          eligible:candidates.slice(1).filter(t=>t.rightM<=base.rightM+.001
+            &&t.leftM<=base.leftM+.001&&t.intersections<=base.intersections),
+          status:'DIAGNOSTIC_ONLY_SKELETON_RESTORED'};
+      }
+      return {...state,meshIntersections:collision,relativePoseSweep,clavicleSweep,clavicleGripTrial,elbowPoleTrial,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
     }""",phase)
     fall['lod']=lod
     assert fall['meshIntersections']['tacklerTriangles']>=20 and fall['meshIntersections']['carrierTriangles']>=20,(lod,phase,'real mesh triangle samples missing',fall['meshIntersections'])
@@ -294,11 +329,33 @@ try:
       grip=fall['surfaceGrip'][side]
       assert grip['afterSurfaceMetres']<=grip['bestReachableSurfaceMetres']+.00051,(lod,phase,side,'opposite flank loses reachable real-skin contact',grip)
     assert all(isinstance(d,(float,int)) and 0<=d<2 for d in fall['handDistancesM']),(lod,phase,fall)
+    if phase==1.0:
+     pole=fall['elbowPoleTrial']
+     assert pole and len(pole['candidates'])==5,(lod,'five real elbow pole profiles required',pole)
+     assert all(v['intersections']>=0 and v['elbowSeparationM']>.05 for v in pole['candidates']),(lod,'invalid anatomical elbow pose',pole)
     fallSequence.append(fall)
     page.evaluate('renderer.render(scene,camera)')
     page.screenshot(path=str(OUT/f'lod{lod}-fall-{int(phase*100):03d}-side.jpg'),type='jpeg',quality=90)
     page.evaluate('camera.position.set(3.4,1.5,2.6);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
     page.screenshot(path=str(OUT/f'lod{lod}-fall-{int(phase*100):03d}-front.jpg'),type='jpeg',quality=90)
+    if phase==1.0:
+     # True close-up: focus camera on world-space wrist/elbow/skin rather
+     # than cropping a distant TV image. Both viewpoints use the same target.
+     page.evaluate("""()=>{
+       const bone=name=>asset.bones.find(b=>b.name===name).getWorldPosition(new THREE.Vector3());
+       const carrier=partner.bones.find(b=>b.name==='spine_03').getWorldPosition(new THREE.Vector3());
+       const focus=bone('hand_l').add(bone('hand_r')).add(bone('lowerarm_l'))
+         .add(bone('lowerarm_r')).add(carrier.multiplyScalar(2)).multiplyScalar(1/6);
+       window.gripCameraFocus=focus.clone();
+       camera.position.copy(focus).add(new THREE.Vector3(1.2,.40,.95));
+       camera.lookAt(focus);renderer.render(scene,camera);
+     }""")
+     page.screenshot(path=str(OUT/f'lod{lod}-fall-100-grip-close-front.jpg'),type='jpeg',quality=92)
+     page.evaluate("""()=>{
+       camera.position.copy(window.gripCameraFocus).add(new THREE.Vector3(1.45,.30,.12));
+       camera.lookAt(window.gripCameraFocus);renderer.render(scene,camera);
+     }""")
+     page.screenshot(path=str(OUT/f'lod{lod}-fall-100-grip-close-side.jpg'),type='jpeg',quality=92)
     page.evaluate('camera.position.set(4,1.2,.3);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
    results.append(info)
   # Reject a shared positional "fix" unless all three skinned LODs
