@@ -1,5 +1,7 @@
 # MATCH 3D V25 — laboratoire distant pour le mode Chat
 
+Réception effective et bilan : [autonomie Chat vérifiée](../../../docs/match3d-v25-chat-autonomy.md).
+
 Branche exclusive : `research/match3d-v25-open-source-tools-20261105`. Aucun gate/fusion. Le lot 24 est uniquement lu au commit `2d8c8c7eee5aa0dad899aa6bb119e95bda0e7987` de PR #300.
 
 ## Relancer depuis Chat
@@ -55,7 +57,7 @@ Tout est sous `rd-report/` dans le ZIP :
 | `match3d-v24-*-report/` | Captures et rapports LOD, contacts, surfaces, 30 rigs, paires SwiftShader |
 | `baseline-runtime-report/` | Réception du rendu de match existant et du fallback, séparée du stage V24 |
 
-Un échec d'acquisition : vérifier réseau officiel et checksum, **ne pas remplacer silencieusement une empreinte**. Un échec npm : lire le log et le lock upstream. Un échec Blender : lire version, traceback et registration ; ne pas altérer le rig original pour faire passer le test. Un échec Chromium : examiner les erreurs JS, les requêtes externes bloquées et la capture du dernier scénario. Un corps non téléchargé, un audit absent, Blender headless échoué ou l'absence de capture fait échouer la réception indispensable. Les essais optionnels conservent leur FAIL visible dans le manifeste même si ce socle passe.
+Un échec d'acquisition : vérifier réseau officiel et checksum, **ne pas remplacer silencieusement une empreinte**. Un échec npm : lire le log et le lock upstream. Un échec Blender : lire version, traceback et registration ; ne pas altérer le rig original pour faire passer le test. Un échec Chromium : examiner les erreurs JS, les requêtes externes bloquées et la capture du dernier scénario. Le verdict `receipt.complete` exige les étapes de la liste `REQUIRED` dans `remote/run.py` : acquisition et manifeste, deux auditeurs, Blender/Rigger, builds/export Ara et Mesh2Motion avec réimportation, cinq scénarios Chromium, offline et rendu de match existant. Un échec requis produit `PARTIAL_OR_FAILED` et un workflow en échec, avec les preuves conservées. Cela ne constitue toujours pas une approbation artistique des résultats. Les tests expérimentaux supplémentaires gardent leur propre statut dans le manifeste.
 
 ## Licences et redistribution
 
