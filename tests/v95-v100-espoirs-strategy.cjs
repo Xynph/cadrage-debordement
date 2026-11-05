@@ -80,12 +80,13 @@ const legacy=make();delete legacy.v95to100;assert.ok(api.ensure(legacy),'old sav
 const credits=make();
 const cn=api.ensure(credits).network;
 const promoted=cn.players.find(p=>p.union==='FR');
+const originalFeederAge=promoted.age;
 credits.v77Promotions.promotions=[{playerId:promoted.id,season:1}];
 credits.phase='ended';assert.equal(api.settle(credits),true);
 assert.equal(credits.v95to100.network.credits.length,1,'RIF descriptive credit after promotion');
 assert.equal(credits.v95to100.network.credits[0].club,promoted.clubId,'original training club retained');
 credits.season=2;credits.phase='league';api.ensure(credits);
-assert.equal(credits.v95to100.network.players.find(x=>x.id===promoted.id).age,promoted.age+1,
+assert.equal(credits.v95to100.network.players.find(x=>x.id===promoted.id).age,originalFeederAge+1,
  'feeder ages with season');
 credits.phase='ended';assert.equal(api.settle(credits),true);
 assert.equal(credits.v95to100.network.credits.length,2,'annual credit, no fake cash payment');
