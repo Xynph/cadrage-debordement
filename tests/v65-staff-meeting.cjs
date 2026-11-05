@@ -70,7 +70,7 @@ test('V65 : installation idempotente dans bureau et sans nouveau champ de sauveg
  managerMessage:fx.message,save(){saves++},render(){}};
  assert.equal(V65.install(root),true);
  assert.equal(V65.install(root),true);
- assert.equal((root.managerOffice().match(/Réunion de staff/g)||[]).length,1);
+ assert.equal((root.managerOffice().match(/<h2>Réunion de staff/g)||[]).length,1);
  assert.equal(root.staffMeetingV65('cohesion'),true);
  assert.equal(saves,1);
  assert.equal(s.morale,73);
