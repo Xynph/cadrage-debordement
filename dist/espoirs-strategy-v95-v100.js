@@ -91,8 +91,15 @@
   if(n.lastSeason>=s.season)return;
   const years=Math.min(20,s.season-n.lastSeason);
   for(let year=n.lastSeason+1;year<=s.season;year++){
-   for(const p of n.players)if(p.status==='available'){
-    p.age++;if(p.age>21){p.status='aged-out';n.history.push({id:p.id,season:year,action:'aged-out',club:p.clubId})}
+   for(const p of n.players)if(p.status==='available'||p.status==='declined'){
+    p.age++;
+    if(p.age>21){p.status='aged-out';n.history.push({id:p.id,season:year,action:'aged-out',club:p.clubId});continue}
+    if(p.status==='declined'){p.status='available';p.trial=false}
+    // Other centres act autonomously: prospects can leave the accessible pool.
+    const rivalChance=hash('rival-sign:'+year+':'+p.id)%100;
+    if(rivalChance<(p.offers?12:5)){
+      p.status='joined-rival';n.history.push({id:p.id,season:year,action:'joined-rival',club:p.clubId})
+    }
    }
    if(year%2===0)for(let i=0;i<n.feeders.length;i++){
     const seed=hash('generation:'+year+':'+i),base=n.feeders[i];
