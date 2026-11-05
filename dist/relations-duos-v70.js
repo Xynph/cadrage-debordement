@@ -73,9 +73,20 @@
  function matchSnapshot(s,match){
   if(!s||!match||match.userSide<0||match.pair[match.userSide]!==s.club)return null;
   const ids=new Set(match.sheets[match.userSide].initial);
-  const duos=records(s).filter(x=>ids.has(x.a)&&ids.has(x.b)&&
-   Number.isFinite(x.score)&&roster(s).some(p=>p.id===x.a)&&roster(s).some(p=>p.id===x.b))
+  const starters=roster(s).filter(p=>ids.has(p.id)&&!p.injury);
+  const valid=new Set(starters.map(p=>p.id));
+  const existing=records(s).filter(x=>valid.has(x.a)&&valid.has(x.b)&&Number.isFinite(x.score))
    .map(x=>({a:x.a,b:x.b,score:clamp(x.score,-30,60)}));
+  const keys=new Set(existing.map(x=>pairKey(x.a,x.b))),risks=[];
+  // Rivalites *potentielles* fondees sur les profils visibles : aucune biographie inventee.
+  for(let i=0;i<starters.length;i++)for(let j=i+1;j<starters.length;j++){
+   const a=starters[i],b=starters[j],key=pairKey(a.id,b.id);
+   if(keys.has(key))continue;
+   const score=rawRisk(a,b);
+   if(score<0)risks.push({a:a.id,b:b.id,score});
+  }
+  risks.sort((a,b)=>a.score-b.score||pairKey(a.a,a.b).localeCompare(pairKey(b.a,b.b)));
+  const duos=[...existing,...risks.slice(0,2)].slice(0,8);
   return duos.length?{version:1,side:match.userSide,duos}:null;
  }
  function matchBonus(match,side,kind){
