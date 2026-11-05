@@ -23,6 +23,35 @@
   }
   aim(upper,lower,elbow);aim(lower,hand,wrist);
  }
+ // Context-aware, paired-rig contact probe. The carrier's actual torso determines
+ // both targets: there is no fake mesh, collision claim or engine mutation.
+ // Apply after sampling the tackle clip; clip-only fallback remains unchanged.
+ function wrapCarrier(THREE,tacklerBones,carrierBones,blend=1){
+  const get=(bones,name)=>{const b=bones.find(b=>b.name===name);if(!b)throw Error('Os contact manquant : '+name);return b;};
+  const point=b=>b.getWorldPosition(new THREE.Vector3());
+  const torso=point(get(carrierBones,'spine_03'));
+  const shoulderL=get(tacklerBones,'upperarm_l'),shoulderR=get(tacklerBones,'upperarm_r');
+  const shoulders=point(shoulderL).add(point(shoulderR)).multiplyScalar(.5);
+  const toward=torso.clone().sub(shoulders);toward.y=0;
+  if(toward.lengthSq()<1e-6)throw Error('Direction de contact indefinie');
+  toward.normalize();
+  const lateral=new THREE.Vector3(-toward.z,0,toward.x);
+  const amount=THREE.MathUtils.clamp(blend,0,1);
+  const measurements={};
+  for(const [side,sign]of [['l',1],['r',-1]]){
+   const upper=get(tacklerBones,'upperarm_'+side),lower=get(tacklerBones,'lowerarm_'+side),hand=get(tacklerBones,'hand_'+side);
+   const current=point(hand);
+   // Place wrists behind the carrier's torso, on opposite sides, to aim
+   // for a genuine two-arm wrap rather than an ungrounded forward gesture.
+   const target=torso.clone().addScaledVector(lateral,sign*.16).addScaledVector(toward,.095);
+   target.y-=.14;
+   const goal=current.clone().lerp(target,amount);
+   const pole=point(upper).addScaledVector(lateral,sign*.42).add(new THREE.Vector3(0,-.18,0));
+   solveArm(THREE,upper,lower,hand,goal,pole);
+   measurements[side]={distance:point(hand).distanceTo(target),target:target.toArray()};
+  }
+  return measurements;
+ }
  function create(THREE,bones){
   if(!THREE?.AnimationClip||!THREE?.QuaternionKeyframeTrack)throw Error('Three.js animations requises');
   const map=new Map(bones.map(b=>[b.name,b]));
@@ -103,5 +132,5 @@
   if(hierarchy){let top=bones[0];while(top.parent)top=top.parent;top.updateMatrixWorld(true);}
   return clips;
  }
- root.CDMatch3DV24RugbyClips=Object.freeze({create,solveArm});
+ root.CDMatch3DV24RugbyClips=Object.freeze({create,solveArm,wrapCarrier});
 })(typeof window!=='undefined'?window:globalThis);
