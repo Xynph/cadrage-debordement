@@ -64,6 +64,9 @@ try:
     page.evaluate('camera.position.set(4,1.2,.3);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
     sample['lod']=lod
     temporal.append(sample)
+    # Restore the unmodified tackle pose before the 'before' screenshots:
+    # previous code accidentally photographed the IK-modified pose twice.
+    page.evaluate('(time)=>{window.setPose("rugby_tackle",time);scene.updateMatrixWorld(true);renderer.render(scene,camera)}',t)
     page.screenshot(path=str(OUT/f'lod{lod}-tackle-{int(t*100):02d}-side.jpg'),type='jpeg',quality=90)
     page.evaluate('camera.position.set(3.4,1.5,2.6);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
     page.screenshot(path=str(OUT/f'lod{lod}-tackle-{int(t*100):02d}-front.jpg'),type='jpeg',quality=90)
