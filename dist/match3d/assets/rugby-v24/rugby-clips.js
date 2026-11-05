@@ -200,8 +200,9 @@
       const joint=mesh.geometry.getAttribute('skinIndex');
       const weight=mesh.geometry.getAttribute('skinWeight');
       let major=0;
-      if(weight){for(let j=1;j<4;j++)if(weight.getComponent(i,j)>weight.getComponent(i,major))major=j;}
-      const boneId=joint?joint.getComponent(i,major):-1;
+      const getters=['getX','getY','getZ','getW'];
+      if(weight){for(let j=1;j<4;j++)if(weight[getters[j]](i)>weight[getters[major]](i))major=j;}
+      const boneId=joint?joint[getters[major]](i):-1;
       lowest={mesh:mesh.name,bone:mesh.skeleton?.bones?.[boneId]?.name||null,index:i,y:v.y};
      }
      vertices++;
