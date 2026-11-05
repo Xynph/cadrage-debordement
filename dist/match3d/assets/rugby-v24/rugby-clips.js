@@ -58,7 +58,8 @@
  function coordinateFall(THREE,tackler,carrier,progress,bases){
   const clamp=THREE.MathUtils.clamp, p=clamp(progress,0,2);
   const smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x);};
-  const recovery=p<=1?1:1-smooth((p-1)/.85);\n  const onset=smooth((Math.min(p,1)-.25)/.75)*recovery, settle=smooth((Math.min(p,1)-.63)/.37)*recovery;
+  const recovery=p<=1?1:1-smooth((p-1)/.85);
+  const onset=smooth((Math.min(p,1)-.25)/.75)*recovery, settle=smooth((Math.min(p,1)-.63)/.37)*recovery;
   const get=(rig,name)=>{const b=rig.bones.find(x=>x.name===name);if(!b)throw Error('Os chute absent : '+name);return b;};
   if(!bases||!bases.tackler||!bases.carrier)throw Error('Bases de contact requises');
   // Gradual translational impulse and rotational loss of balance for BOTH rigs.
