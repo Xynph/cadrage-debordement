@@ -31,6 +31,7 @@ assert.equal(run(api+'.recruit(S,'+JSON.stringify(candidate.id)+','+fee+',()=>tr
 assert.equal(run(api+'.recruit(S,'+JSON.stringify(candidate.id)+','+fee+',()=>true)'),false,'no duplicate buying');
 assert.equal(run(api+'.players(S,'+api+'.own(S)).length'),initialTarget+1,'target gains player');
 assert.equal(run(api+'.players(S,'+api+'.centers(S).find(c=>c.id==='+JSON.stringify(source)+')).length'),initialSource-1,'origin loses player');
+assert.equal(run('new Set('+api+'.players(S,'+api+'.centers(S).find(c=>c.id==='+JSON.stringify(source)+')).map(p=>p.slot)).size'),15,'seller retains the 15 required positions');
 assert.equal(run(api+'.players(S,'+api+'.own(S)).some(p=>p.id==='+JSON.stringify(candidate.id)+')'),true,'identity remains');
 assert.equal(run(api+'.players(S,'+api+'.own(S)).find(p=>p.id==='+JSON.stringify(candidate.id)+').potential'),candidate.potential,'potential preserved');
 assert.equal(run('S.v76Scouting.recruited[0].fee'),fee);
