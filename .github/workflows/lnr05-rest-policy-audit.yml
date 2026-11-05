@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         mode: [persistent, weekly]
-        seed: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        batch: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -24,8 +24,16 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
-      - name: Audit repos et sauvegarde
+      - name: Audit 10 graines, repos et sauvegarde
         env:
           LNR_REST_MODE: ${{ matrix.mode }}
-          LNR_REST_SEED: ${{ matrix.seed }}
-        run: node --test tests/lnr05-rest-policy-audit.cjs
+          LNR_REST_BATCH: ${{ matrix.batch }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for offset in $(seq 0 9); do
+            export LNR_REST_SEED=$((LNR_REST_BATCH * 10 + offset))
+            echo "::group::Mode $LNR_REST_MODE - graine $LNR_REST_SEED"
+            node --test tests/lnr05-rest-policy-audit.cjs
+            echo "::endgroup::"
+          done
