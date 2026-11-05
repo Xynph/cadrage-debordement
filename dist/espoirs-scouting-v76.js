@@ -95,6 +95,20 @@
       chosen.pos=move().normalize([chosen],manager.division)[0]?.pos||chosen.pos;
       chosen.slot=slot;
     }
+    // Le centre géré par le joueur partage son académie avec le moteur de carrière.
+    // V74 stocke des profils allégés : normaliser avant de les insérer dans development.academy.
+    if(manager.division==='elite'&&manager.slot===s.club){
+      if(typeof ensureSkills!=='function'||typeof ensureDevelopment!=='function'||
+         typeof POS==='undefined'||typeof FAMILIES==='undefined')return false;
+      const index=POS.indexOf(chosen.pos);
+      if(index<0)return false;
+      chosen.fam=FAMILIES[index];chosen.injury=Number.isInteger(chosen.injury)?chosen.injury:0;
+      chosen.salary=Number.isInteger(chosen.salary)?chosen.salary:2000;
+      chosen.academy=true;
+      ensureSkills(chosen);ensureDevelopment(chosen);
+      const potential=Number.isFinite(chosen.potential)?chosen.potential:chosen.dev.potential;
+      chosen.dev.potential=Math.min(99,Math.max(chosen.rating,potential));
+    }
     nextTarget.push(chosen);
     m.rosters[source.id]=nextOrigin;m.rosters[manager.id]=nextTarget;
     if(manager.division==='elite'&&manager.slot===s.club&&s.development)s.development.academy=clone(nextTarget);
