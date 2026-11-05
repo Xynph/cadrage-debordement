@@ -107,6 +107,8 @@
    const flankPenalty=p=>.04*Math.max(0,.025-p.clone().sub(torso).dot(lateral)*sign)/.025;
    let best={err:beforeGap+flankPenalty(origin),gap:beforeGap,goal:origin.clone(),
      upper:initialUpper.clone(),lower:initialLower.clone()};
+   let closest={err:beforeGap,gap:beforeGap,goal:origin.clone(),
+     upper:initialUpper.clone(),lower:initialLower.clone()};
    for(const {p:surface} of candidates){
     // Offset towards the approaching wrist to avoid targeting inside the body.
     const normal=origin.clone().sub(surface);
@@ -120,13 +122,20 @@
      const actual=world(hand);
      let nearest=Infinity;
      for(const vertex of points)nearest=Math.min(nearest,actual.distanceTo(vertex));
-     const err=nearest+.01*actual.distanceTo(goal)+flankPenalty(actual);
+     const contactCost=nearest+.01*actual.distanceTo(goal);
+     const err=contactCost+flankPenalty(actual);
+     if(contactCost<closest.err-1e-7)closest={err:contactCost,gap:nearest,goal:goal.clone(),pole:pole.clone(),upper:upper.quaternion.clone(),lower:lower.quaternion.clone()};
      if(err<best.err-1e-7)best={err,gap:nearest,goal:goal.clone(),pole:pole.clone(),upper:upper.quaternion.clone(),lower:lower.quaternion.clone()};
     }
    }
+   // A preferred flank is secondary to physical contact. Never accept a
+   // grip that is over 0.5 mm farther from real skin than the closest
+   // anatomically reachable candidate from the very same IK search.
+   const contactFallback=best.gap>closest.gap+.0005;
+   if(contactFallback)best=closest;
    upper.quaternion.copy(best.upper);lower.quaternion.copy(best.lower);
    upper.updateMatrixWorld(true);lower.updateMatrixWorld(true);
-   results[side]={beforeMetres:Math.sqrt(Math.min(...points.map(p=>origin.distanceToSquared(p)))),
+   results[side]={contactFallback,bestReachableSurfaceMetres:closest.gap,beforeMetres:Math.sqrt(Math.min(...points.map(p=>origin.distanceToSquared(p)))),
      afterSurfaceMetres:best.gap,afterToTargetMetres:world(hand).distanceTo(best.goal),
      examined:candidates.length*3,improved:best.gap<beforeGap,
      oppositeFlankSamples:preferred.length,flankSignedM:world(hand).sub(torso).dot(lateral)*sign};
