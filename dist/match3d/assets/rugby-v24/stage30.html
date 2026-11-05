@@ -1,0 +1,48 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Lot 24 — 30 joueurs / qualification hors match</title><style>body{margin:0;background:#111a25;color:#fff;font:14px sans-serif}#status{position:fixed;left:12px;top:8px;background:#142333cc;padding:12px;z-index:2}canvas{display:block}</style></head><body><div id="status">30 joueurs anatomiques : chargement des LOD...</div>
+<script src="../../vendor/three-r149.min.js"></script>
+<script src="../../vendor/GLTFLoader-r149.js"></script>
+<script src="rugby-clips.js"></script>
+<script src="assembly.js"></script>
+<script src="player-stage.js"></script>
+<script>
+'use strict';
+window.ready=false;window.failures=[];
+const T=THREE,scene=new T.Scene();scene.background=new T.Color(0x182a32);
+const renderer=new T.WebGLRenderer({antialias:false,preserveDrawingBuffer:true});
+renderer.setSize(960,540);renderer.setPixelRatio(1);document.body.appendChild(renderer.domElement);
+scene.add(new T.HemisphereLight(0xffffff,0x506050,1.8));
+const sun=new T.DirectionalLight(0xffffff,2.0);sun.position.set(12,25,12);scene.add(sun);
+const ground=new T.Mesh(new T.PlaneGeometry(110,80),new T.MeshStandardMaterial({color:0x346c42,roughness:1}));
+ground.rotation.x=-Math.PI/2;scene.add(ground);
+const camera=new T.PerspectiveCamera(42,960/540,.1,300);
+window.setView=function(view){
+ if(view==='zoom')camera.position.set(6,6,14);
+ else camera.position.set(15,35,75);
+ camera.lookAt(0,.9,0);renderer.render(scene,camera);
+};
+window.benchmark=function(frames=18){
+ const gl=renderer.getContext(),start=performance.now();
+ for(let i=0;i<frames;i++){
+  for(const m of window.models)m.mixer.update(1/60);
+  renderer.render(scene,camera);
+  gl.finish(); // synchronisation logicielle WebGL, pas VRAM ni GPU natif.
+ }
+ const elapsed=performance.now()-start;
+ return {frames,elapsedMs:elapsed,fps:1000*frames/elapsed,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles};
+};
+Promise.all([0,1,2].map(lod=>CDV24Assembly.load(T,'lod/',{lod,rugby:true}))).then(assets=>{
+ const players=Array.from({length:30},(_,i)=>({id:'p'+i,side:i<15?0:1,x:(i%15-7)*6,z:i<15?-9:9}));
+ const models=CDMatch3DV24Stage.stage(T,assets,players,{x:0,z:0});window.models=models;window.assets=assets;
+ models.forEach((m,i)=>{
+  scene.add(m.body);
+  const clip=m.clips.find(c=>c.name==='run');
+  if(clip)m.mixer.clipAction(clip).play();
+ });
+ window.setView('tv');
+ const lodCounts=[0,1,2].map(n=>models.filter(m=>m.lod===n).length);
+ const bones=new Set(models.map(m=>m.bones[0]));
+ window.diagnostics={players:models.length,lodCounts,independentRoots:bones.size,independentMixers:new Set(models.map(m=>m.mixer)).size,clips:assets.map(a=>a.clips.length)};
+ document.getElementById('status').textContent='30 joueurs / LOD '+lodCounts.join(' · ')+' — qualification isolée';
+ window.ready=true;
+}).catch(e=>{window.failures.push(String(e&&e.stack||e));document.getElementById('status').textContent='Échec : '+String(e);});
+</script></body></html>
