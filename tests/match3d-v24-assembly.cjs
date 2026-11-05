@@ -21,3 +21,19 @@ api.restoreSparseValues(sparse,new Uint16Array([1]),new Int16Array([16384,0,-163
 assert.ok(Math.abs(sparse.getX(1)-16384/32767)<1e-6);
 assert.equal(sparse.getX(0),0);
 console.log('PASS sparse normalisé : valeurs brutes restaurées sans double conversion');
+
+const root=new THREE.Group(),skeletonBones=Array.from({length:53},(_,i)=>{const b=new THREE.Bone();b.name='b'+i;return b;});
+root.add(skeletonBones[0]);for(let i=1;i<skeletonBones.length;i++)skeletonBones[i-1].add(skeletonBones[i]);
+const skeleton=new THREE.Skeleton(skeletonBones);
+function mesh(name,geo){const m=new THREE.SkinnedMesh(geo,new THREE.MeshStandardMaterial());m.name=name;root.add(m);m.bind(skeleton);return m;}
+const bodyGeo=new THREE.BoxGeometry(.6,.8,.3,10,10,4);bodyGeo.translate(0,1.15,0);
+const shirtGeo=new THREE.BoxGeometry(.75,.95,.42);shirtGeo.translate(0,1.15,0);
+const bodyMesh=mesh('Body',bodyGeo),shirtMesh=mesh('Cloth_tshirt',shirtGeo);
+const before=bodyGeo.index.count/3,first=api.coverSkinByShirt(THREE,root);
+assert.ok(first.removed>8,'Real covered skin triangles removed');
+assert.ok(first.remaining<before,'Anatomical surface cropped under shirt');
+assert.equal(shirtMesh.geometry.index.count,36,'Garment unaffected');
+assert.equal(first.remaining,bodyMesh.geometry.index.count/3);
+const noShirt=new THREE.Group();noShirt.add(bodyMesh);
+assert.equal(api.coverSkinByShirt(THREE,noShirt).removed,0,'Missing shirt leaves original body intact');
+console.log('PASS covered torso skin culled only under shirt, with missing-shirt fallback');

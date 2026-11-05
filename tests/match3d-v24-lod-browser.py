@@ -29,9 +29,10 @@ try:
      const bounds=new THREE.Box3().setFromObject(asset.body);
      return {lod:asset.lod,clips:asset.clips.map(c=>c.name),meshes:meshes.map(m=>({name:m.name,joints:m.skeleton.bones.length,vertices:m.geometry.attributes.position.count})),
        garmentsShareBones:meshes.filter(m=>m.name.startsWith('Cloth')).every(m=>m.skeleton.bones.every(b=>asset.bones.includes(b))),
-       height:bounds.max.y-bounds.min.y, width:bounds.max.x-bounds.min.x};
+       height:bounds.max.y-bounds.min.y, width:bounds.max.x-bounds.min.x, cover:asset.cover};
    }""")
    assert info['lod']==level,info
+   assert info['cover'].get('removed',0)>0,('Body skin under shirt must be hidden',level,info['cover'])
    assert len(info['meshes'])>=4,info
    assert info['garmentsShareBones'],info
    assert all(m['joints']==53 for m in info['meshes']),info
