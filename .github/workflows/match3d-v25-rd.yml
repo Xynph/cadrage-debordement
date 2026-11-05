@@ -42,7 +42,7 @@ jobs:
         continue-on-error: true
         run: python tools/match3d-v25-lab/remote/cmu_pair_probe.py
       - name: Auditer les droits et executer la suite Godot amont sur code MIT
-        run: python tools/match3d-v25-lab/remote/external_candidates_probe.py
+        run: python tools/match3d-v25-lab/remote/external_candidates_probe.py --idle-only
       - name: Publier les preuves moteur reel et compatibilite des 3 GLB
         if: always()
         uses: actions/upload-artifact@v4
@@ -56,7 +56,7 @@ jobs:
     # A dedicated physics probe does not need to rerun the full 55-minute
     # Blender/Ara/Chromium baseline, whose pinned job remains independently
     # available and runs for ordinary R&D commits.
-    if: ${{ !startsWith(github.event.head_commit.message, 'test(v25-external):') }}
+    if: ${{ !startsWith(github.event.head_commit.message, 'test(v25-external):') && !contains(github.event.head_commit.message, '[idle-only]') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     steps:
