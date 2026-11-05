@@ -33,8 +33,11 @@ const CDNativeCenters=(function(){
   const table=(youth.view==='academy'||youth.view==='young')?
    CDUI04AcademyData.table(model,{kind:youth.view,search:youth.search,family:youth.family,
     sortBy:youth.sortBy,direction:youth.direction}):undefined;
-  return CDUI04AcademyComponents.renderCenter(model,{...youth,table,attributeLabels:ATTR})+
-   (typeof CDYouthV72==='object'?CDYouthV72.panel(S):'');
+  const html=CDUI04AcademyComponents.renderCenter(model,{...youth,table,attributeLabels:ATTR});
+  if(typeof CDYouthV72!=='object')return html;
+  // V72 must live in the formation content, not alongside the paginated workspace.
+  const closing='</div></section>',index=html.lastIndexOf(closing);
+  return index<0?html:html.slice(0,index)+CDYouthV72.panel(S)+html.slice(index);
  }
  function validScout(id){return typeof id==='string'&&managerPool().some(p=>p.id===id);}
  function validYouth(id){return typeof id==='string'&&
