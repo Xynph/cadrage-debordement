@@ -189,7 +189,9 @@ func run_pair() -> void:
 				scenario["animationPlayer%d" % actor_index] = animation
 				var mapping := SkeletonDetector.detect_humanoid_bones(skel)
 				var profile := SkeletonDetector.create_profile_from_skeleton(skel, mapping)
-				var nodes := KickbackSetup.add_active_rig(root, skel, profile, RagdollTuning.create_default())
+				var tuning := RagdollTuning.create_default()
+				tuning.strip_root_motion = false
+				var nodes := KickbackSetup.add_active_rig(root, skel, profile, tuning)
 				actors.append(root)
 				builders.append(nodes[0])
 				controllers.append(nodes[3])
