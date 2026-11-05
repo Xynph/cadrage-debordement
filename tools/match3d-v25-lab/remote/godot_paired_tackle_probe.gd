@@ -15,6 +15,38 @@ func find_skeleton(node: Node) -> Skeleton3D:
 	return null
 
 
+func find_animation_player(node: Node) -> AnimationPlayer:
+	if node is AnimationPlayer:
+		return node
+	for child in node.get_children():
+		var found := find_animation_player(child)
+		if found != null:
+			return found
+	return null
+
+
+func start_idle_animation(scene: Node) -> Dictionary:
+	var player := find_animation_player(scene)
+	if player == null:
+		return {"status": "NO_ANIMATION_PLAYER"}
+	var names: Array = Array(player.get_animation_list())
+	var selected := ""
+	for name in names:
+		var low := str(name).to_lower()
+		if "idle" in low or "stand" in low:
+			selected = str(name)
+			break
+	if selected.is_empty():
+		return {"status": "NO_IDLE_CLIP", "availableClips": names}
+	var clip: Animation = player.get_animation(selected)
+	# Only on an ephemeral test copy; never mutate/source-control originals.
+	if clip != null:
+		clip.loop_mode = Animation.LOOP_LINEAR
+	player.play(selected)
+	player.seek(0.0, true)
+	return {"status": "PLAYING", "selected": selected, "availableClips": names}
+
+
 func snap(frame: int, phase: String, a: Dictionary, b: Dictionary) -> Dictionary:
 	var left: RigidBody3D = a["Hand_L"]
 	var right: RigidBody3D = a["Hand_R"]
@@ -153,6 +185,8 @@ func run_pair() -> void:
 				if skel == null:
 					scenario["error"] = "Actual 53-bone skeleton not found"
 					break
+				var animation := start_idle_animation(scene)
+				scenario["animationPlayer%d" % actor_index] = animation
 				var mapping := SkeletonDetector.detect_humanoid_bones(skel)
 				var profile := SkeletonDetector.create_profile_from_skeleton(skel, mapping)
 				var nodes := KickbackSetup.add_active_rig(root, skel, profile, RagdollTuning.create_default())
@@ -189,6 +223,10 @@ func run_pair() -> void:
 					for frame in 12:
 						await physics_frame
 					scenario["samples"].append(snap(12, "approach_end", a, b))
+					var start_height: float = scenario["samples"][0]["chestA"][1]
+					var approach_height: float = scenario["samples"][-1]["chestA"][1]
+					scenario["preImpactChestDropM"] = maxf(0.0, start_height - approach_height)
+					scenario["stableBeforeImpact"] = scenario["preImpactChestDropM"] <= 0.35
 					if render_requested:
 						scenario["images"].append_array(await capture_pair(camera, visual_dir, lod, mode, "approach_end"))
 					if mode != "control":
@@ -237,7 +275,11 @@ func run_pair() -> void:
 						scenario["images"].append_array(await capture_pair(camera, visual_dir, lod, mode, "recovery"))
 					# A nominal "two-handed grip" is not a valid two-hand
 					# contact experiment when only one PinJoint attaches.
-					if render_requested and (not scenario.has("images") or scenario["images"].size() != 10 or 							scenario["images"].any(func(q): return q.get("errorCode", FAILED) != OK or q.get("bytes", 0) < 2000)):
+					if not scenario["stableBeforeImpact"]:
+						scenario["error"] = "Existing canonical rig physically collapses before tackle impact"
+						scenario["status"] = "FAIL"
+						all_pass = false
+					elif render_requested and (not scenario.has("images") or scenario["images"].size() != 10 or 							scenario["images"].any(func(q): return q.get("errorCode", FAILED) != OK or q.get("bytes", 0) < 2000)):
 						scenario["error"] = "Real Godot viewport face/side image missing or invalid"
 						scenario["status"] = "FAIL"
 						all_pass = false
