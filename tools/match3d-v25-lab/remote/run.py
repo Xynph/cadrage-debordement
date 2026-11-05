@@ -99,6 +99,7 @@ def tools():
     run('rigger-upstream-generate',[blender,'--background','--factory-startup','--python-exit-code','1','--python',str(WORK/'rigger/tests/test_generate.py')])
     # Exploratory real-body probe is separately reported, not part of REQUIRED nor artistic approval.
     run('ara-rigger-real-body',[blender,'--background','--factory-startup','--python-exit-code','1','--python',str(HERE/'ara_rigger_probe.py')],timeout=600)
+    run('ara-controlled-retarget',[blender,'--background','--factory-startup','--python-exit-code','1','--python',str(HERE/'ara_retarget_probe.py')],timeout=360)
 
 def browser():
     (OUT/'copies').mkdir(exist_ok=True)
