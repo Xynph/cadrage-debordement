@@ -7,6 +7,7 @@ import os
 import pathlib
 import shutil
 import subprocess
+import struct
 import sys
 import time
 import urllib.error
@@ -108,6 +109,69 @@ def acquire_kickback():
     assert subprocess.check_output(["git","rev-parse","HEAD"],cwd=location,text=True).strip()==k["sha"]
     return location
 
+def glb_structure(file):
+    """Compare identities/parentage of real skinned joints, independent of binary accessor order."""
+    blob=pathlib.Path(file).read_bytes()
+    assert blob[:4]==b"glTF",str(file)
+    json_length,chunk_type=struct.unpack_from("<I4s",blob,12)
+    assert chunk_type==b"JSON",str(file)
+    doc=json.loads(blob[20:20+json_length])
+    nodes=doc["nodes"]
+    parent={}
+    for parent_index,node in enumerate(nodes):
+        for child in node.get("children",[]):
+            parent[child]=parent_index
+    skins=[]
+    for skin in doc.get("skins",[]):
+        joints=skin["joints"]
+        names=[nodes[i].get("name",str(i)) for i in joints]
+        pairs=sorted((nodes[i].get("name",str(i)),
+                      nodes[parent[i]].get("name",str(parent[i])) if i in parent else None)
+                     for i in joints)
+        skins.append({"count":len(joints),"names":names,"parentPairs":pairs})
+    assert skins and any(x["count"]==53 for x in skins),str(file)
+    return {"extensionsRequired":doc.get("extensionsRequired",[]),
+            "skins":skins,"animationCount":len(doc.get("animations",[]))}
+
+def dequantize_canonical():
+    package="@gltf-transform/cli@4.5.1"  # MIT, pinned: no auto-update.
+    tools_dir=WORK/"gltf-transform-tools"
+    tools_dir.mkdir(exist_ok=True)
+    installed=command("gltf-transform-install",["npm","install","--prefix",str(tools_dir),
+                      "--no-save","--no-audit","--no-fund",package],timeout=480)
+    assert installed["status"]=="PASS","Pinned glTF Transform CLI install failed"
+    cli=tools_dir/"node_modules/@gltf-transform/cli/bin/cli.js"
+    assert cli.exists(),str(cli)
+    baseline=ROOT/"baseline/dist/match3d/assets/rugby-v24/lod"
+    converted=WORK/"dequantized"
+    converted.mkdir(exist_ok=True)
+    records=[]
+    for lod in range(3):
+        original=baseline/f"base_body_anim-lod{lod}.glb"
+        target=converted/f"body-lod{lod}-dequantized.glb"
+        before=glb_structure(original)
+        assert "KHR_mesh_quantization" in before["extensionsRequired"],before
+        task=command(f"gltf-dequantize-lod{lod}",["node",str(cli),"dequantize",
+                     str(original),str(target)],timeout=180)
+        assert task["status"]=="PASS",task
+        after=glb_structure(target)
+        assert "KHR_mesh_quantization" not in after["extensionsRequired"],after
+        assert len(before["skins"])==len(after["skins"])
+        for a,b in zip(before["skins"],after["skins"]):
+            assert a["count"]==b["count"]==53
+            assert a["parentPairs"]==b["parentPairs"],"Canonical hierarchy altered by dequantize"
+        assert before["animationCount"]==after["animationCount"],"Animation count changed"
+        records.append({"lod":lod,"originalSha256":digest(original.read_bytes()),
+                        "copySha256":digest(target.read_bytes()),
+                        "originalBytes":original.stat().st_size,
+                        "copyBytes":target.stat().st_size,
+                        "originalStructure":before,
+                        "copyStructure":after,
+                        "verdict":"PRESERVED_53_BONE_HIERARCHY_AND_ANIMATION_COUNT"})
+    (OUT/"canonical-dequantization.json").write_text(json.dumps(
+        {"tool":package,"originalsUnmodified":True,"records":records},indent=2)+"\n")
+    return [str(converted/f"body-lod{i}-dequantized.glb") for i in range(3)]
+
 def run_godot():
     binary=godot_release()
     directory=acquire_kickback()
@@ -116,9 +180,11 @@ def run_godot():
     upstream=command("kickback-upstream-gut",
         [str(binary),"--headless","--path",str(directory),"--script",
          "addons/gut/gut_cmdln.gd","--","-gdir=res://test/","-gexit"],timeout=900)
-    baseline=ROOT/"baseline/dist/match3d/assets/rugby-v24/lod"
+    # Godot 4.7 rejects the ORIGINAL KHR_mesh_quantization extension.
+    # Decode copies with a pinned MIT tool, compare all 53 parent/bone pairs,
+    # and never rewrite the canonical repository assets.
+    input_paths=dequantize_canonical()
     scene_script=ROOT/"tools/match3d-v25-lab/remote/godot_canonical_probe.gd"
-    input_paths=[str(baseline/f"base_body_anim-lod{x}.glb") for x in (0,1,2)]
     canonical=command("kickback-canonical-53-rig",[str(binary),"--headless",
         "--path",str(directory),"--script",str(scene_script),"--",
         str(OUT/"canonical-import.json"),*input_paths],timeout=360)
