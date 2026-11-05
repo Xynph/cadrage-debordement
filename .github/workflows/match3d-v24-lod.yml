@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: '22'
       - name: Installer glTF-Transform dans un repertoire isole
-        run: npm install --no-audit --no-fund --prefix "$RUNNER_TEMP/v24-gltf" '@gltf-transform/cli@^4.0.0'
+        run: npm install --no-audit --no-fund --prefix "$RUNNER_TEMP/v24-gltf" '@gltf-transform/cli@4.5.1'
       - name: Auditer puis calculer douze binaires LOD
         env:
           GLTF_TRANSFORM_CLI: ${{ runner.temp }}/v24-gltf/node_modules/.bin/gltf-transform
@@ -45,6 +45,18 @@ jobs:
           test "$(git rev-parse HEAD)" = "$(git rev-parse FETCH_HEAD)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Reject replacing previously reviewed GLB shirts with old binaries.
+          python - <<'PY'
+          import hashlib,json,pathlib,subprocess
+          expected=json.loads(subprocess.check_output(['git','show','HEAD:dist/match3d/assets/rugby-v24/lod/shirt-fit-report.json'],text=True))
+          current=json.loads(pathlib.Path('dist/match3d/assets/rugby-v24/lod/shirt-fit-report.json').read_text())
+          for a,b in zip(expected['levels'],current['levels']):
+              assert a['lod']==b['lod']
+              f=pathlib.Path('dist/match3d/assets/rugby-v24/lod')/('clothing_tshirt-lod%d.glb'%a['lod'])
+              actual=hashlib.sha256(f.read_bytes()).hexdigest()
+              assert actual==a['outputSHA256']==b['outputSHA256'],(str(f),actual,a['outputSHA256'],b['outputSHA256'])
+          print('Reviewed T-shirt SHA256 preserved on all LODs')
+          PY
           git add dist/match3d/assets/rugby-v24/lod/
           git diff --cached --quiet && exit 0
           git commit -m "build(match3d): audited experimental v24 LOD binaries"
