@@ -37,13 +37,13 @@
       const old=s.v76Scouting,ids=centers(s);
       const history=[{season:old.season,recruited:clone(old.recruited),spent:old.spent||0},...old.history].slice(0,4);
       s.v76Scouting={version:1,season:s.season,budgets:Object.fromEntries(ids.map(c=>[c.id,initialBudget(c)])),
-        focus:ids.find(c=>c.id===old.focus)?.id||ids.find(c=>c.id!==own(s)?.id)?.id||'',
+        focus:ids.find(c=>c.id===old.focus)?.id||ids.find(c=>c.division==='accession')?.id||'',
         scouted:[],recruited:[],spent:0,history};
       return s.v76Scouting;
     }
     const ids=centers(s),manager=own(s);
     s.v76Scouting={version:1,season:s.season,budgets:Object.fromEntries(ids.map(c=>[c.id,initialBudget(c)])),
-      focus:ids.find(c=>c.id!==manager?.id)?.id||'',scouted:[],recruited:[],spent:0,history:[]};
+      focus:ids.find(c=>c.division==='accession'&&c.id!==manager?.id)?.id||'',scouted:[],recruited:[],spent:0,history:[]};
     return s.v76Scouting;
   }
   function candidate(s,id){
@@ -145,7 +145,7 @@
       ' € · Recrues '+st.recruited.length+'/3 · Rapports '+st.scouted.length+'/12</p>'+
       '<label>Centre à observer <select aria-label="Centre Espoirs à observer" onchange="v76Focus(this.value)" '+(locked?'disabled':'')+'>'+options+'</select></label>'+
       '<button type="button" onclick="v76Scout('+JSON.stringify(selected?.id||'').replace(/"/g,'&quot;')+')" '+
-      (locked||scouted||st.scouted.length>=12||st.budgets[manager.id]<1200?'disabled':'')+'>Observer ce centre · 1 200 €</button>'+
+      (locked||scouted||!available(s,selected).length||st.scouted.length>=12||st.budgets[manager.id]<1200?'disabled':'')+'>Observer ce centre · 1 200 €</button>'+
       (scouted?market:'<p>Commandez un rapport pour révéler cinq candidats et les offres minimales tenant compte de la concurrence.</p>')+
       '<h3>Recrutements de la saison</h3><ul>'+(st.recruited.map(x=>'<li>'+safe(x.name)+' · '+safe(x.from)+' → '+safe(x.to)+' · '+x.fee.toLocaleString('fr-FR')+' €</li>').join('')||'<li>Aucune recrue.</li>')+'</ul>'+
       '<p class="help">Les jeunes conservent leur identité et leur potentiel. Les centres cédants conservent au minimum 15 joueurs. Budget renouvelé chaque saison ; historique limité à quatre saisons.</p></section>';
