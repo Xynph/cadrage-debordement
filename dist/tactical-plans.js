@@ -28,7 +28,41 @@ function tacticalFinishAdjustment(l,side){return !tacticalRules(l)?0:ATTACK_EFFE
 function openKickProbability(l,side){if(!tacticalRules(l))return l.tactics[side]==='occupation'?.5:0;const distance=Math.abs(attackingGoal(side)-l.territory),style=effectiveAttack(l,side);if(style==='occupation')return distance>50?.65:distance>22?.35:.08;return distance>50?(style==='conquete'?.04:style==='large'?.06:.08):distance>22?.025:.01}
 function tacticalLoad(l,side){if(!tacticalRules(l))return l.tactics[side]==='large'?.49:l.tactics[side]==='conquete'?.44:.39;return l.possession===side?ATTACK_EFFECTS[effectiveAttack(l,side)].load:defensivePlan(l,side)==='pression'?.53:defensivePlan(l,side)==='prudente'?.31:.37}
 function tacticalCount(l,side,key,n=1){if(tacticalRules(l))l.tacticalStats[side][key]+=n}
-function adaptDefence(l,side){if(!tacticalRules(l))return;if(side!==l.userSide)adaptOpponentAttack(l,side);const next=chooseDefence(l,side);if(next===l.defences[side])return;l.defences[side]=next;addEvent(l,`${S.clubs[l.pair[side]].abbr} choisit une défense ${DEFENCES[next][0].toLowerCase()} selon le score et la fraîcheur.`,'tactic',{team:side})}
+// V63: l'IA observe les courses adverses et ses erreurs, sans anticiper les tirages futurs.
+// Pas de nouveau champ sauvegardé ni d'aléa ; les matchs historiques gardent leurs règles.
+function opponentDefenceDecision(l,side){
+ if(!l||!tacticalRules(l)||side===l.userSide||![0,1].includes(side))return null;
+ const observed=l.tacticalStats?.[1-side];
+ if(!observed||observed.carries<8)return null;
+ const minute=matchMinute(l),remaining=Math.max(0,80-minute),margin=l.score[side]-l.score[1-side];
+ const players=activePlayers(l,side),fitness=players.length?mean(players.map(p=>p.condition)):0;
+ const advances=observed.advances/Math.max(1,observed.carries);
+ const longGains=observed.longGains||0,errors=observed.handErrors||0;
+ const attack=effectiveAttack(l,1-side),current=defensivePlan(l,side);
+ // Ne pas multiplier les montées à risque quand le groupe manque de fraîcheur.
+ if(fitness<66)return {plan:'prudente',reason:'ménager une ligne défensive fatiguée'};
+ if(attack==='large'&&observed.carries>=10&&(longGains>=3||advances>=.65))
+  return {plan:'prudente',reason:'couvrir les franchissements adverses au large'};
+ // Laisser la priorité à la gestion du score en fin de rencontre.
+ if(margin>=7&&remaining<=20)return {plan:'prudente',reason:'conserver une avance tardive'};
+ if(margin<=-7&&remaining<=16&&fitness>=78&&errors>=3)
+  return {plan:'pression',reason:'chercher une récupération en fin de rencontre'};
+ // Il faut assez de signal : au moins 3 fautes sur 8 portés et une faible progression.
+ if(errors>=3&&advances<=.35&&fitness>=78&&margin<7&&current!=='pression')
+  return {plan:'pression',reason:'exploiter les fautes de main et les courses peu efficaces'};
+ if(l.stats?.[side]?.penalties>=4&&current==='pression')
+  return {plan:'equilibre',reason:'limiter les pénalités concédées'};
+ return null;
+}
+function adaptDefence(l,side){
+ if(!tacticalRules(l))return;
+ if(side!==l.userSide)adaptOpponentAttack(l,side);
+ const choice=side!==l.userSide?opponentDefenceDecision(l,side):null;
+ const next=choice?choice.plan:chooseDefence(l,side);
+ if(next===l.defences[side])return;
+ l.defences[side]=next;
+ addEvent(l,`${S.clubs[l.pair[side]].abbr} choisit une défense ${DEFENCES[next][0].toLowerCase()} (${choice?choice.reason:'selon le score et la fraîcheur'}).`,'tactic',{team:side});
+}
 function setDefence(plan){if(S.live||!Object.keys(DEFENCES).includes(plan))return;S.defence=plan;save();render()}
 function setLiveDefence(plan){const l=S.live;if(!l||!tacticalRules(l)||!l.paused||l.finished||presentationPending(l)||!Object.keys(DEFENCES).includes(plan))return;l.defences[l.userSide]=plan;S.defence=plan;addEvent(l,`Votre défense : ${DEFENCES[plan][0]}. ${DEFENCES[plan][1]}`,'tactic',{team:l.userSide});syncMatchPresentation(l);save();render()}
 function defencePreparation(){return `<div class="card"><div class="cardtitle"><h2>02 / Organisation défensive</h2><span class="tag">PROCHAIN MATCH</span></div><div class="options defence-options">${Object.entries(DEFENCES).map(([key,[title,desc]])=>`<button class="option ${(S.defence||'equilibre')===key?'selected':''}" onclick="setDefence('${key}')">${title}<small>${desc}</small></button>`).join('')}</div><p class="help">Ces choix modifient la réussite adverse, les mètres concédés, les risques de pénalité et la fatigue. Le même calcul s’applique aux adversaires.</p></div>`}
