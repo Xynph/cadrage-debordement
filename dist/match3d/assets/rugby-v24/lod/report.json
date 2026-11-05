@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "qualification": "geometrie seulement; animation rugby, peau/chaussures et rendu 30 joueurs NON qualifies",
+  "sourceTriangles": 42634,
+  "levels": [
+    {
+      "lod": 0,
+      "cap": 30000,
+      "triangles": 27704,
+      "entries": [
+        {
+          "file": "base_body_anim-lod0.glb",
+          "bytes": 5250696,
+          "triangles": 23993,
+          "joints": 53,
+          "clips": [
+            "fall",
+            "idle",
+            "idle_breathe",
+            "idle_fidget",
+            "idle_look",
+            "jump",
+            "land",
+            "run",
+            "strafe_left",
+            "strafe_right",
+            "walk",
+            "walk_back"
+          ],
+          "ratioUsed": 0.65
+        },
+        {
+          "file": "clothing_tshirt-lod0.glb",
+          "bytes": 259828,
+          "triangles": 993,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.65
+        },
+        {
+          "file": "clothing_shorts-lod0.glb",
+          "bytes": 185136,
+          "triangles": 560,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.65
+        },
+        {
+          "file": "clothing_shoes-lod0.glb",
+          "bytes": 647752,
+          "triangles": 2158,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.65
+        }
+      ]
+    },
+    {
+      "lod": 1,
+      "cap": 10000,
+      "triangles": 8519,
+      "entries": [
+        {
+          "file": "base_body_anim-lod1.glb",
+          "bytes": 3254488,
+          "triangles": 7378,
+          "joints": 53,
+          "clips": [
+            "fall",
+            "idle",
+            "idle_breathe",
+            "idle_fidget",
+            "idle_look",
+            "jump",
+            "land",
+            "run",
+            "strafe_left",
+            "strafe_right",
+            "walk",
+            "walk_back"
+          ],
+          "ratioUsed": 0.2
+        },
+        {
+          "file": "clothing_tshirt-lod1.glb",
+          "bytes": 144520,
+          "triangles": 305,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.2
+        },
+        {
+          "file": "clothing_shorts-lod1.glb",
+          "bytes": 122008,
+          "triangles": 172,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.2
+        },
+        {
+          "file": "clothing_shoes-lod1.glb",
+          "bytes": 425180,
+          "triangles": 664,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.2
+        }
+      ]
+    },
+    {
+      "lod": 2,
+      "cap": 3000,
+      "triangles": 2550,
+      "entries": [
+        {
+          "file": "base_body_anim-lod2.glb",
+          "bytes": 2596128,
+          "triangles": 2210,
+          "joints": 53,
+          "clips": [
+            "fall",
+            "idle",
+            "idle_breathe",
+            "idle_fidget",
+            "idle_look",
+            "jump",
+            "land",
+            "run",
+            "strafe_left",
+            "strafe_right",
+            "walk",
+            "walk_back"
+          ],
+          "ratioUsed": 0.06
+        },
+        {
+          "file": "clothing_tshirt-lod2.glb",
+          "bytes": 105300,
+          "triangles": 91,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.06
+        },
+        {
+          "file": "clothing_shorts-lod2.glb",
+          "bytes": 100160,
+          "triangles": 50,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.06
+        },
+        {
+          "file": "clothing_shoes-lod2.glb",
+          "bytes": 350360,
+          "triangles": 199,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.06
+        }
+      ]
+    }
+  ]
+}
