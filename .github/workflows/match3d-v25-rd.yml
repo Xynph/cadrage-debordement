@@ -31,6 +31,13 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24.11.0'
+      - name: Preparer le rendu logiciel reel Godot en ecran virtuel
+        run: |
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y xvfb
+          fi
+          command -v xvfb-run
       - name: Acquerir et qualifier un vrai duo mocap CMU synchronise (A tire B)
         continue-on-error: true
         run: python tools/match3d-v25-lab/remote/cmu_pair_probe.py
