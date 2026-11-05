@@ -51,6 +51,7 @@ assert.equal(api.recruit(s,foreign.id,()=>true),false,'no international minor fa
 const adult=s.v95to100.network.players.find(x=>x.union!=='FR'&&x.age>=18);
 assert.ok(adult,'foreign adult prospect exists');
 adult.scouted=2;adult.trial=true;
+assert.ok(api.panel(s).includes('v95Clearance'),'clearance control offered for eligible foreign adult');
 assert.equal(api.recruit(s,adult.id,()=>true),false,'international clearance must be recorded');
 assert.equal(api.clearance(s,adult.id,()=>false),false,'clearance rollback');
 assert.equal(api.clearance(s,adult.id,()=>true),true,'simulated administrative receipt');
@@ -111,5 +112,4 @@ assert.ok(api.panel(s).includes('v98Ambition'));
 assert.ok(api.panel(s).includes('v95Watch'));
 assert.ok(api.panel(s).includes('v95Trial'));
 assert.ok(api.panel(s).includes('v95Partner'));
-assert.ok(api.panel(s).includes('v95Clearance'));
 console.log('V95-V100 PASS: scouting/recruitment rollback, cohesion, training, ambition, identity, reputation, old saves, 17 seasons');
