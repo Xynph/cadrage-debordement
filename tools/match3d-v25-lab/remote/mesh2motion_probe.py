@@ -27,6 +27,10 @@ try:
         result=page.evaluate('''async()=>{
           const {StepLoadModel}=await import('/lib/processes/load-model/StepLoadModel.ts');
           const {StepExportToFile}=await import('/lib/processes/export-to-file/StepExportToFile.ts');
+          const {GLTFLoader}=await import('three/examples/jsm/loaders/GLTFLoader.js');
+          const source=await new GLTFLoader().loadAsync('/rd-body.glb');
+          const sourceClips=source.animations;
+          if(sourceClips.length!==12)throw Error('Expected 12 original rugby-body clips, found '+sourceClips.length);
 
           const importer=new StepLoadModel();importer.set_preserve_skinned_mesh(true);
           await new Promise((resolve,reject)=>{
@@ -50,7 +54,25 @@ try:
           const exporter=new StepExportToFile();
           // Intercept the actual exporter's download sink, without substituting exporter logic.
           exporter.save_array_buffer=(buffer,name)=>{window.rdExport=Array.from(new Uint8Array(buffer));};
-          await exporter.export_glb(model,[],'rd-roundtrip');
+          await exporter.export_glb(model,sourceClips,'rd-roundtrip');
+          const binary=new Uint8Array(window.rdExport);
+          const exported=await new GLTFLoader().parseAsync(binary.buffer,'http://127.0.0.1:5199/');
+          const outputClips=exported.animations;
+          if(outputClips.length!==sourceClips.length)throw Error('Clip count changed '+sourceClips.length+' -> '+outputClips.length);
+          let animationDelta=0;
+          const animationEvidence=[];
+          for(let i=0;i<sourceClips.length;i++){
+            const a=sourceClips[i],b=outputClips[i];
+            if(a.name!==b.name||Math.abs(a.duration-b.duration)>1e-5||a.tracks.length!==b.tracks.length)throw Error('Clip identity/count changed: '+a.name+' -> '+b.name);
+            const reference=new Map(a.tracks.map(track=>[track.name,track]));
+            for(const track of b.tracks){
+              const original=reference.get(track.name);
+              if(!original||original.times.length!==track.times.length||original.values.length!==track.values.length)throw Error('Track identity/count changed: '+a.name+' '+track.name);
+              for(const key of ['times','values'])for(let j=0;j<track[key].length;j++)animationDelta=Math.max(animationDelta,Math.abs(track[key][j]-original[key][j]));
+            }
+            animationEvidence.push({name:a.name,duration:a.duration,tracks:a.tracks.length,exportedTracks:b.tracks.length});
+          }
+          if(!Number.isFinite(animationDelta)||animationDelta>1e-5)throw Error('Animation key data delta '+animationDelta);
           const copy=new StepLoadModel();copy.set_preserve_skinned_mesh(true);
           const url=URL.createObjectURL(new Blob([new Uint8Array(window.rdExport)]));
           await new Promise((resolve,reject)=>{
@@ -69,7 +91,7 @@ try:
             }
           }
           if(!Number.isFinite(delta)||delta>1e-5)throw Error('Weights or bind matrices changed: '+delta);
-          return {rigs,bytes:window.rdExport.length,reimportVerified:true,meshes:after.length,maxWeightOrBindDelta:delta,importer:'StepLoadModel preserve_skinned_mesh',exporter:'StepExportToFile.export_glb',animations:'Not exported in this minimal API probe; retarget/fitting deferred'};
+          return {rigs,bytes:window.rdExport.length,reimportVerified:true,meshes:after.length,maxWeightOrBindDelta:delta,importer:'StepLoadModel preserve_skinned_mesh',exporter:'StepExportToFile.export_glb',animations:{status:'PASS_KEY_DATA_ROUNDTRIP_NOT_DEFORMATION_APPROVAL',clips:animationEvidence,maxKeyDataDelta:animationDelta,source:'original LOD2 GLTFLoader clips',note:'No retarget or anatomical fitting; deformation comparison still pending'}};
         }''')
         data=bytes(page.evaluate('window.rdExport'));(out/'copies/mesh2motion-roundtrip.glb').write_bytes(data)
         result['externalRequests']=external;result['pageErrors']=errors
