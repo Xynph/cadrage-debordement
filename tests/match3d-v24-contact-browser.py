@@ -331,12 +331,13 @@ try:
           candidate.leftM<=baseline.leftM+.001 &&
           candidate.intersections<=baseline.intersections &&
           candidate.minSkinnedY>=.015 && candidate.sampledSkinnedVertices>=30;
-        if(!accepted){
-          asset.bones.forEach((bone,i)=>bone.quaternion.copy(saved[i]));
-          asset.body.updateMatrixWorld(true);
-        }
+        // A candidate is never shown before it has passed the *same*
+        // ground, wrist and triangle constraints on all three LODs.
+        asset.bones.forEach((bone,i)=>bone.quaternion.copy(saved[i]));
+        asset.body.updateMatrixWorld(true);
         anatomicalPreview={angleRadians:angle,baseline,candidate,accepted,
-          status:'ISOLATED_KEYFRAME_PREVIEW_NO_RUNTIME_CHANGE'};
+          appliedToScreenshot:false,
+          status:'DIAGNOSTIC_ONLY_REJECT_OR_DEFER_CROSS_LOD_PREVIEW'};
       }
       return {...state,meshIntersections:collision,approachShoulderTrial,relativePoseSweep,clavicleSweep,clavicleGripTrial,elbowPoleTrial,anatomicalPreview,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
     }""",phase)
@@ -404,9 +405,11 @@ try:
     assert all(isinstance(d,(float,int)) and 0<=d<2 for d in fall['handDistancesM']),(lod,phase,fall)
     if phase in (.75,1.0):
      preview=fall['anatomicalPreview']
-     assert preview and preview['accepted'],(lod,phase,'anatomical preview violates real skin/IK safeguards',preview)
-     assert preview['candidate']['minSkinnedY']>=.015,(lod,phase,'body penetrates pitch',preview)
-     assert preview['candidate']['intersections']<=preview['baseline']['intersections'],(lod,phase,'mesh crossing regression',preview)
+     assert preview and not preview['appliedToScreenshot'],(lod,phase,'unqualified anatomy may not affect the screenshots',preview)
+     assert preview['candidate']['sampledSkinnedVertices']>=30,(lod,phase,'missing real surface samples',preview)
+     if preview['accepted']:
+      assert preview['candidate']['minSkinnedY']>=.015,(lod,phase,'ground clearance regression',preview)
+      assert preview['candidate']['intersections']<=preview['baseline']['intersections'],(lod,phase,'mesh crossing regression',preview)
     if phase==.75:
      approach=fall['approachShoulderTrial']
      assert approach and len(approach['samples'])==3,(lod,'approach skin probe absent',approach)
@@ -464,6 +467,10 @@ try:
     if all(any(abs(t['angleRadians']-angle)<1e-8 and t['accepted']
                for t in data['trials']) for data in clavicle_trials.values())]
   shared_clavicle_safe=bool(shared_clavicle_angles)
+  anatomical_keyframes={phase:{x['lod']:x['anatomicalPreview'] for x in fallSequence if x['progress']==phase} for phase in (.75,1)}
+  assert all(set(by_lod)=={0,1,2} for by_lod in anatomical_keyframes.values()),('missing LOD anatomical keyframes',anatomical_keyframes.keys())
+  safe_keyframe_previews={str(phase):all(by_lod[lod]['accepted'] for lod in range(3))
+    for phase,by_lod in anatomical_keyframes.items()}
   approach_profiles={x['lod']:x['approachShoulderTrial'] for x in fallSequence if x['progress']==.75}
   assert set(approach_profiles)=={0,1,2},('missing approach probes',approach_profiles.keys())
   safe_approach_angles=[angle for angle in (.10,.15,.20)
@@ -490,7 +497,7 @@ try:
      safe_elbow_poles.append({'poleY':candidates[0]['poleY'],'poleZ':candidates[0]['poleZ']})
   pose_decision={'status':'DIAGNOSTIC_ONLY_NO_RUNTIME_RELOCATION',
     'safeSharedOffsets':safe_shared,'sharedClavicleAccepted':shared_clavicle_safe,'safeClavicleAngles':shared_clavicle_angles,
-    'clavicleByLOD':clavicle_trials,'safeElbowPoles':safe_elbow_poles,'elbowByLOD':elbow_profiles,'safeApproachAngles':safe_approach_angles,'approachByLOD':approach_profiles,'referenceByLOD':reference,
+    'clavicleByLOD':clavicle_trials,'safeElbowPoles':safe_elbow_poles,'elbowByLOD':elbow_profiles,'safeApproachAngles':safe_approach_angles,'approachByLOD':approach_profiles,'safeAnatomicalKeyframes':safe_keyframe_previews,'anatomicalByPhase':anatomical_keyframes,'referenceByLOD':reference,
     'limits':'Sampled Body triangles are not exhaustive collision certification'}
   assert not errors and not external,(errors,external)
   (OUT/'report.json').write_text(json.dumps({'status':'TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL','poseDecision':pose_decision,'levels':results,'temporalSamples':temporal,'fallSequence':fallSequence,'errors':errors,'externalRequests':external,'limits':['Paired-rig arm IK aims at carrier torso; no coordinated impact dynamics or contact certification','No collision physics or engine mutation','Actual skinned-mesh ground and torso-horizontal metrics tested at impact; visual contact and runtime still unqualified']},indent=2)+'\n');b.close()
