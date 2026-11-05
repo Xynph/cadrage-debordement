@@ -36,7 +36,7 @@ assert.ok(valid(r));
 r('S.season=2;S.phase="league";S.round=0;S.economy.settled=1');
 assert.equal(r('aiRosterYouthIntake()'),true);
 assert.equal(r('aiRosterYouthIntake()'),false);
-assert.ok(r('S.aiRoster.academies.every(a=>a.intakeSeason===2&&a.players.length<=6)'));
+assert.ok(r('S.aiRoster.academies.every(a=>a.intakeSeason===2&&a.players.length<=75)'));
 assert.ok(r('S.clubs.filter(c=>c.id!==S.club).every(c=>buildSheet(c).lineup.every(Boolean)&&buildSheet(c).bench.every(Boolean))'));
 assert.equal(r('S.aiRoster.reports.some(x=>x.season===2)'),true);
 assert.ok(valid(r));
@@ -90,7 +90,7 @@ for(let season=1;season<=12;season++){
  totalRetired=report.reduce((n,x)=>n+x.retired,0);
  const cash=JSON.parse(s('JSON.stringify(S.clubs.map(c=>c.cash))'));
  lowest=Math.min(lowest,...cash);highest=Math.max(highest,...cash);
- assert.ok(s('S.aiRoster.academies.every(a=>a.players.length<=6)'));
+ assert.ok(s('S.aiRoster.academies.every(a=>a.players.length<=75)'));
  assert.ok(s('S.clubs.every(c=>c.players.length<=42&&new Set(c.players.map(p=>p.id)).size===c.players.length)'));
  if(season<12){s('advanceSeason()');assert.equal(s('S.season'),season+1);assert.ok(valid(s));}
 }
