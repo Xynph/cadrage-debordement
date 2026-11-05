@@ -92,6 +92,8 @@ try:
       return {...state,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik};
     }""",phase)
     fall['lod']=lod
+    assert fall['horizontalTorsoGapM']>=.375,(lod,phase,'torso clearance',fall)
+    assert all(isinstance(d,(float,int)) and 0<=d<2 for d in fall['handDistancesM']),(lod,phase,fall)
     fallSequence.append(fall)
     page.evaluate('renderer.render(scene,camera)')
     page.screenshot(path=str(OUT/f'lod{lod}-fall-{int(phase*100):03d}-side.jpg'),type='jpeg',quality=90)
