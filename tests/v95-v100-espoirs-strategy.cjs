@@ -35,8 +35,9 @@ assert.equal(s.development.academy.length,initial);
 const score=api.model(s,c,n);
 assert.ok(score.interest>=0&&score.interest<=100,'well bounded prospect decision');
 assert.equal(api.recruit(s,c.id,()=>true),true,'offer resolved once (accept or decline)');
-assert.ok(['recruited','declined'].includes(c.status));
-if(c.status==='recruited'){
+const decisionState=s.v95to100.network.players.find(x=>x.id===c.id).status;
+assert.ok(['recruited','declined'].includes(decisionState));
+if(decisionState==='recruited'){
  assert.equal(s.development.academy.length,initial+1,'new youth joins native academy');
  assert.equal(s.development.academy.find(x=>x.id===c.id).trainingOrigin.clubId,c.clubId);
 }else assert.equal(s.development.academy.length,initial,'young player refuses and stays away');
