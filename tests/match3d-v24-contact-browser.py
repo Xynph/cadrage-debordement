@@ -76,7 +76,10 @@ try:
    # No mesh replacement, rigid-body collision claim, or match-runtime coupling.
    for phase in [0,.40,.75,1.0,1.15,1.85]:
     fall=page.evaluate("""(progress)=>{
-      window.setPose('rugby_tackle',.55);
+      // At recovery, sample the actual authored rugby_recover clip rather
+      // than continuing to replay an impact crouch through p=1.85.
+      if(progress>1.15)window.setPose('rugby_recover',Math.min(1.15,(progress-1.15)/.70*1.15));
+      else window.setPose('rugby_tackle',.55);
       partner.mixer.setTime(.25);
       asset.body.position.copy(contactBases.tackler.position);
       asset.body.quaternion.copy(contactBases.tackler.quaternion);
