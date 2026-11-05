@@ -317,9 +317,10 @@ try:
               if(v.y>=min)continue;
               min=v.y;
               let major=0;
+              const getters=['getX','getY','getZ','getW'];
               if(skinWeights)for(let k=1;k<4;k++)
-                if(skinWeights.getComponent(i,k)>skinWeights.getComponent(i,major))major=k;
-              const boneId=skinIndices?skinIndices.getComponent(i,major):-1;
+                if(skinWeights[getters[k]](i)>skinWeights[getters[major]](i))major=k;
+              const boneId=skinIndices?skinIndices[getters[major]](i):-1;
               lowest={mesh:mesh.name,bone:mesh.skeleton?.bones?.[boneId]?.name||null,
                 vertexIndex:i,y:v.y};
             }
