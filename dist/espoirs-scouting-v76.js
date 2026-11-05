@@ -55,7 +55,7 @@
     if(pool.length<=15)return [];
     const taken=new Set((ensure(s)?.recruited||[]).map(x=>x.playerId));
     return pool.filter(p=>p&&typeof p.id==='string'&&!taken.has(p.id)&&
-      Number.isFinite(p.rating)&&Number.isFinite(p.potential??p.dev?.potential)).sort((a,b)=>
+      Number.isFinite(p.rating)&&Number.isFinite(p.potential??p.dev?.potential)&&Number.isInteger(p.age)&&p.age<=21).sort((a,b)=>
         (b.potential??b.dev?.potential)-(a.potential??a.dev?.potential)||b.rating-a.rating||a.id.localeCompare(b.id)).slice(0,5);
   }
   function price(s,c,p){
@@ -107,14 +107,14 @@
         youth.fam=FAMILIES[index];
         youth.injury=Number.isInteger(youth.injury)?youth.injury:0;
         youth.salary=Number.isInteger(youth.salary)?youth.salary:2000;
-        youth.academy=true;
+        youth.academy=true;youth.contractEnd=null;
         ensureSkills(youth);ensureDevelopment(youth);
         const potential=Number.isFinite(youth.potential)?youth.potential:youth.dev.potential;
         youth.dev.potential=Math.min(99,Math.max(youth.rating,potential));
       }
     }
     m.rosters[source.id]=nextOrigin;m.rosters[manager.id]=nextTarget;
-    if(manager.division==='elite'&&manager.slot===s.club&&s.development)s.development.academy=clone(nextTarget);
+    if(manager.division==='elite'&&manager.slot===s.club&&s.development)s.development.academy=clone(nextTarget.filter(p=>p.age<=21));
     if(source.division==='accession'&&s.v74Accession?.centers?.[source.slot])
       s.v74Accession.centers[source.slot].players=clone(nextOrigin);
     st.budgets[manager.id]-=offer;st.spent+=offer;
