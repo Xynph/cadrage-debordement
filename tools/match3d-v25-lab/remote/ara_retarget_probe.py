@@ -58,6 +58,46 @@ try:
         snapshots.append({'frame':frame,'worldBoneMatrix':[float(x) for row in bm for x in row],
                           'skinnedWorldVertices':vertices})
     report['samples']=snapshots
+    # Actual Blender workbench captures (not mockups), reproducible orthographic views.
+    from mathutils import Vector
+    def render_pose(label,subjects,frame,view):
+        scene=bpy.context.scene
+        scene.frame_set(frame)
+        scene.render.engine='BLENDER_WORKBENCH'
+        scene.render.resolution_x=560;scene.render.resolution_y=560
+        scene.render.resolution_percentage=100
+        scene.render.image_settings.file_format='PNG'
+        scene.display.shading.light='STUDIO'
+        scene.display.shading.color_type='OBJECT'
+        scene.render.film_transparent=False
+        all_meshes=[o for o in bpy.data.objects if o.type=='MESH']
+        active=set(subjects)
+        initial={o:o.hide_render for o in all_meshes}
+        try:
+            for o in all_meshes:o.hide_render=o not in active
+            points=[o.matrix_world @ Vector(corner) for o in subjects for corner in o.bound_box]
+            center=sum(points,Vector())/len(points)
+            span=max(max(v[i] for v in points)-min(v[i] for v in points) for i in range(3))
+            camdata=bpy.data.cameras.new('RD_camera_'+label+'_'+view)
+            camera=bpy.data.objects.new(camdata.name,camdata)
+            scene.collection.objects.link(camera)
+            camdata.type='ORTHO';camdata.ortho_scale=max(0.5,span*1.25)
+            direction=Vector((0,-1,0)) if view=='front' else Vector((1,0,0))
+            camera.location=center+direction*max(2.0,span*2.5)
+            camera.rotation_euler=(center-camera.location).to_track_quat('-Z','Y').to_euler()
+            scene.camera=camera
+            path=out/'captures'/('ara-'+label+'-frame'+str(frame)+'-'+view+'.png')
+            path.parent.mkdir(exist_ok=True)
+            scene.render.filepath=str(path)
+            bpy.ops.render.render(write_still=True)
+            return {'file':str(path.relative_to(out)),'bytes':path.stat().st_size}
+        finally:
+            for o,v in initial.items():o.hide_render=v
+    report['captures']=[]
+    for frame in (1,7,13):
+        for view in ('front','profile'):
+            report['captures'].append(render_pose('source', [o for o in bpy.data.objects if o.type=='MESH' and o not in meshes],frame,view))
+            report['captures'].append(render_pose('target',meshes,frame,view))
     report['maxBoneMatrixComponentMotion']=max(abs(x-y) for x,y in zip(snapshots[0]['worldBoneMatrix'],snapshots[2]['worldBoneMatrix']))
     report['maxWorldVertexMotionMeters']=max((math.dist(a,b) for a,b in zip(snapshots[0]['skinnedWorldVertices'],snapshots[2]['skinnedWorldVertices'])),default=0)
     if report['maxBoneMatrixComponentMotion']<1e-5:raise AssertionError('Target did not move')
