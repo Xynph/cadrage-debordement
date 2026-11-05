@@ -1,0 +1,33 @@
+{
+  "method": "nearest body triangle clearance and barycentric skin weights; athletic morph baked into shirt only",
+  "clearance": 0.012,
+  "levels": [
+    {
+      "lod": 0,
+      "vertices": 619,
+      "moved": 216,
+      "maxMove": 0.016300627519344833,
+      "weightChanges": 64,
+      "sourceSHA256": "ea3b75c7c63f944736a41539141ef9b6c830fd140a4936bf4ab05f66234cb455",
+      "outputSHA256": "a79a168de89685a66c94fdcd5561f594748a7e83dcfaa8338b928706cab95763"
+    },
+    {
+      "lod": 1,
+      "vertices": 222,
+      "moved": 82,
+      "maxMove": 0.015651207542080735,
+      "weightChanges": 20,
+      "sourceSHA256": "8927d462869d4b9a9b62c51a12139bedcb6342fadc5ba7facd63999b9f298932",
+      "outputSHA256": "93ed9aca40c80c76d61212f6a894dec2a9a26610793b70f0b70d0b9d3fc94519"
+    },
+    {
+      "lod": 2,
+      "vertices": 378,
+      "moved": 128,
+      "maxMove": 0.01858431267048657,
+      "weightChanges": 55,
+      "sourceSHA256": "9f5c961c12bcb1297665ffa28bc32cf0a2df3a7bed2dcdf20242141fa2834a6e",
+      "outputSHA256": "405e1cb2864d3911333c7ec9c6f09746002d37cb1e3f2ddc2200a708b060f06b"
+    }
+  ]
+}
