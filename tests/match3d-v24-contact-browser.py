@@ -97,8 +97,13 @@ try:
         {body:asset.body,bones:asset.bones},partner,progress,contactBases);
       // Real post-fall wrist targets depend on the actual carrier pose.
       const ik=CDMatch3DV24RugbyClips.wrapCarrier(THREE,asset.bones,partner.bones,.85*state.onset);
+      // Freeze the four real arm bones BEFORE the first skin-target solve.
+      // Repeated IK should start from these same anatomical joint rotations,
+      // rather than treating the last wrist displacement as a fresh input.
+      const referenceArms=Object.fromEntries(['upperarm_l','lowerarm_l','upperarm_r','lowerarm_r']
+        .map(n=>[n,asset.bones.find(b=>b.name===n).quaternion.clone()]));
       const surfaceGrip=CDMatch3DV24RugbyClips.gripCarrierSurface(
-        THREE,asset.bones,partner.body,partner.bones,state.onset);
+        THREE,asset.bones,partner.body,partner.bones,state.onset,{referenceArms});
       scene.updateMatrixWorld(true);
       const p=(bones,name)=>bones.find(b=>b.name===name).getWorldPosition(new THREE.Vector3());
       const target=p(partner.bones,'spine_03');
@@ -195,7 +200,7 @@ try:
           clav.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),angle));
           asset.body.updateMatrixWorld(true);
           const trialGrip=CDMatch3DV24RugbyClips.gripCarrierSurface(
-            THREE,asset.bones,partner.body,partner.bones,state.onset);
+            THREE,asset.bones,partner.body,partner.bones,state.onset,{referenceArms});
           const intersections=CDMatch3DV24MeshIntersections.probe(
             THREE,{body:asset.body,bones:asset.bones},partner,850).properTriangleIntersections;
           const candidate={angleRadians:angle,leftM:trialGrip.l.afterSurfaceMetres,
@@ -216,7 +221,7 @@ try:
           clav.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),.20));
           asset.body.updateMatrixWorld(true);
           const gripPreview=CDMatch3DV24RugbyClips.gripCarrierSurface(
-            THREE,asset.bones,partner.body,partner.bones,state.onset);
+            THREE,asset.bones,partner.body,partner.bones,state.onset,{referenceArms});
           const crossingsPreview=CDMatch3DV24MeshIntersections.probe(
             THREE,{body:asset.body,bones:asset.bones},partner,850).properTriangleIntersections;
           preview={appliedToIsolatedScreenshot:true,angleRadians:.20,
@@ -229,9 +234,23 @@ try:
         } else {
           preview={appliedToIsolatedScreenshot:false,angleRadians:.20};
         }
-        clavicleGripTrial={baseline,trials,preview,
+        // Re-run identical input with the same fixed anatomical reference.
+        // Crossing counts, not only wrist distances, MUST remain unchanged.
+        let repeatability=null;
+        if(preview.appliedToIsolatedScreenshot){
+         const firstPose=asset.bones.map(b=>b.quaternion.clone());
+         const second=CDMatch3DV24RugbyClips.gripCarrierSurface(
+           THREE,asset.bones,partner.body,partner.bones,state.onset,{referenceArms});
+         const crossing=CDMatch3DV24MeshIntersections.probe(
+           THREE,{body:asset.body,bones:asset.bones},partner,850).properTriangleIntersections;
+         repeatability={first:preview,second:{
+           leftM:second.l.afterSurfaceMetres,rightM:second.r.afterSurfaceMetres,
+           intersections:crossing},
+           maxJointQuaternionDelta:Math.max(...asset.bones.map((b,i)=>1-Math.abs(b.quaternion.dot(firstPose[i]))))};
+        }
+        clavicleGripTrial={baseline,trials,preview,repeatability,
           accepted:trials.some(t=>t.accepted),
-          status:'STAGE_ONLY_PREVIEW_NO_GLBS_OR_RUNTIME_MODIFIED'};
+          status:'STAGE_ONLY_PREVIEW_WITH_FIXED_INPUT_IK'};
       }
       // Sweep anatomically bounded elbow-pole targets in the +0.20
       // clavicle pose. Measure real wrists, opposing elbow placement and
@@ -250,7 +269,7 @@ try:
           asset.bones.forEach((bone,i)=>bone.quaternion.copy(original[i]));
           asset.body.updateMatrixWorld(true);
           const grip=CDMatch3DV24RugbyClips.gripCarrierSurface(
-            THREE,asset.bones,partner.body,partner.bones,state.onset,{poleY,poleZ});
+            THREE,asset.bones,partner.body,partner.bones,state.onset,{poleY,poleZ,referenceArms});
           const crossings=CDMatch3DV24MeshIntersections.probe(
             THREE,{body:asset.body,bones:asset.bones},partner,850);
           const eL=p(asset.bones,'lowerarm_l'),eR=p(asset.bones,'lowerarm_r');
@@ -305,6 +324,12 @@ try:
      assert preview['rightM']<grip_trial['baseline']['rightM']-.005,(lod,'right wrist regression')
      assert preview['leftM']<=grip_trial['baseline']['leftM']+.001,(lod,'left wrist regression')
      assert preview['intersections']<=grip_trial['baseline']['intersections'],(lod,'real triangle crossings regression')
+     repeat=grip_trial['repeatability']
+     assert repeat is not None,(lod,'repeatability test missing')
+     assert abs(repeat['first']['leftM']-repeat['second']['leftM'])<1e-5,(lod,'left wrist non-idempotent',repeat)
+     assert abs(repeat['first']['rightM']-repeat['second']['rightM'])<1e-5,(lod,'right wrist non-idempotent',repeat)
+     assert repeat['first']['intersections']==repeat['second']['intersections'],(lod,'skinned triangles non-idempotent',repeat)
+     assert repeat['maxJointQuaternionDelta']<1e-5,(lod,'bones changed on repeated IK',repeat)
      assert all(isinstance(grip_trial['baseline'][metric],(int,float)) for metric in ('leftM','rightM','intersections')),(lod,'invalid baseline',grip_trial)
      for trial in grip_trial['trials']:
       assert all(isinstance(trial[metric],(int,float)) for metric in ('angleRadians','leftM','rightM','intersections')),(lod,'invalid actual-grip trial',trial)
