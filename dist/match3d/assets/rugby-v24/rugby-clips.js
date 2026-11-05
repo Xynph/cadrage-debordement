@@ -63,10 +63,10 @@
   carrierBody.traverse(mesh=>{
    if(!mesh.isSkinnedMesh||mesh.name!=='Body')return;
    const attr=mesh.geometry.getAttribute('position');
-   const stride=Math.max(1,Math.floor(attr.count/900)),v=new THREE.Vector3();
+   const stride=Math.max(1,Math.floor(attr.count/700)),v=new THREE.Vector3();
    for(let i=0;i<attr.count;i+=stride){
     mesh.boneTransform(i,v.fromBufferAttribute(attr,i));mesh.localToWorld(v);
-    if(v.distanceTo(torso)<.43)points.push(v.clone());
+    if(v.distanceTo(torso)<.45)points.push(v.clone());
    }
   });
   if(points.length<20)throw Error('Surface anatomique du porteur absente');
