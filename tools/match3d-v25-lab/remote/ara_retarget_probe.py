@@ -63,13 +63,20 @@ try:
     def render_pose(label,subjects,frame,view):
         scene=bpy.context.scene
         scene.frame_set(frame)
-        scene.render.engine='BLENDER_WORKBENCH'
-        scene.render.resolution_x=560;scene.render.resolution_y=560
+        # Cycles CPU avoids EGL/Workbench GPU dependencies on ubuntu-24.04 runners.
+        scene.render.engine='CYCLES'
+        scene.cycles.device='CPU'
+        scene.cycles.samples=4
+        scene.render.resolution_x=360;scene.render.resolution_y=360
         scene.render.resolution_percentage=100
         scene.render.image_settings.file_format='PNG'
-        scene.display.shading.light='STUDIO'
-        scene.display.shading.color_type='OBJECT'
         scene.render.film_transparent=False
+        if scene.world is None:scene.world=bpy.data.worlds.new('RD_CPU_world')
+        scene.world.use_nodes=True
+        background=scene.world.node_tree.nodes.get('Background')
+        if background is not None:
+            background.inputs['Color'].default_value=(0.8,0.8,0.8,1)
+            background.inputs['Strength'].default_value=1.0
         all_meshes=[o for o in bpy.data.objects if o.type=='MESH']
         active=set(subjects)
         initial={o:o.hide_render for o in all_meshes}
