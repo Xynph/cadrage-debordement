@@ -48,7 +48,7 @@ func _initialize() -> void:
 			var names := PackedStringArray()
 			for bone_index in skeleton.get_bone_count():
 				names.append(skeleton.get_bone_name(bone_index))
-			record["bones_sha256"] = names.join("|").sha256_text()
+			record["bones_sha256"] = "|".join(names).sha256_text()
 			record["important_bones"] = {
 				"upperarm_l": names.has("upperarm_l"), "upperarm_r": names.has("upperarm_r"),
 				"lowerarm_l": names.has("lowerarm_l"), "lowerarm_r": names.has("lowerarm_r"),
