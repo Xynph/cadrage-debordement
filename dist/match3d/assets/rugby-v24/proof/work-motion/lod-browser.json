@@ -1,0 +1,263 @@
+{
+  "status": "BROWSER_STRUCTURAL_PASS_NOT_VISUAL_APPROVAL",
+  "levels": [
+    {
+      "lod": 0,
+      "clips": [
+        "fall",
+        "idle",
+        "idle_breathe",
+        "idle_fidget",
+        "idle_look",
+        "jump",
+        "land",
+        "run",
+        "strafe_left",
+        "strafe_right",
+        "walk",
+        "walk_back",
+        "rugby_carry",
+        "rugby_pass",
+        "rugby_tackle",
+        "rugby_recover"
+      ],
+      "meshes": [
+        {
+          "name": "Body",
+          "joints": 53,
+          "vertices": 9554
+        },
+        {
+          "name": "Eyebrows",
+          "joints": 53,
+          "vertices": 87
+        },
+        {
+          "name": "Eyelashes",
+          "joints": 53,
+          "vertices": 179
+        },
+        {
+          "name": "Eyes_1",
+          "joints": 53,
+          "vertices": 247
+        },
+        {
+          "name": "Eyes_2",
+          "joints": 53,
+          "vertices": 158
+        },
+        {
+          "name": "Eyes_3",
+          "joints": 53,
+          "vertices": 352
+        },
+        {
+          "name": "Teeth",
+          "joints": 53,
+          "vertices": 3114
+        },
+        {
+          "name": "Tongue",
+          "joints": 53,
+          "vertices": 169
+        },
+        {
+          "name": "Cloth_tshirt",
+          "joints": 53,
+          "vertices": 720
+        },
+        {
+          "name": "Cloth_shorts",
+          "joints": 53,
+          "vertices": 337
+        },
+        {
+          "name": "Cloth_shoes",
+          "joints": 53,
+          "vertices": 1257
+        }
+      ],
+      "garmentsShareBones": true,
+      "height": 1.7382754841819406,
+      "width": 1.1297869682312012,
+      "cover": {
+        "removed": 1625,
+        "remaining": 15765
+      }
+    },
+    {
+      "lod": 1,
+      "clips": [
+        "fall",
+        "idle",
+        "idle_breathe",
+        "idle_fidget",
+        "idle_look",
+        "jump",
+        "land",
+        "run",
+        "strafe_left",
+        "strafe_right",
+        "walk",
+        "walk_back",
+        "rugby_carry",
+        "rugby_pass",
+        "rugby_tackle",
+        "rugby_recover"
+      ],
+      "meshes": [
+        {
+          "name": "Body",
+          "joints": 53,
+          "vertices": 3078
+        },
+        {
+          "name": "Eyebrows",
+          "joints": 53,
+          "vertices": 33
+        },
+        {
+          "name": "Eyelashes",
+          "joints": 53,
+          "vertices": 69
+        },
+        {
+          "name": "Eyes_1",
+          "joints": 53,
+          "vertices": 78
+        },
+        {
+          "name": "Eyes_2",
+          "joints": 53,
+          "vertices": 64
+        },
+        {
+          "name": "Eyes_3",
+          "joints": 53,
+          "vertices": 119
+        },
+        {
+          "name": "Teeth",
+          "joints": 53,
+          "vertices": 1187
+        },
+        {
+          "name": "Tongue",
+          "joints": 53,
+          "vertices": 56
+        },
+        {
+          "name": "Cloth_tshirt",
+          "joints": 53,
+          "vertices": 284
+        },
+        {
+          "name": "Cloth_shorts",
+          "joints": 53,
+          "vertices": 120
+        },
+        {
+          "name": "Cloth_shoes",
+          "joints": 53,
+          "vertices": 436
+        }
+      ],
+      "garmentsShareBones": true,
+      "height": 1.7382754841819406,
+      "width": 1.1289058923721313,
+      "cover": {
+        "removed": 581,
+        "remaining": 4769
+      }
+    },
+    {
+      "lod": 2,
+      "clips": [
+        "fall",
+        "idle",
+        "idle_breathe",
+        "idle_fidget",
+        "idle_look",
+        "jump",
+        "land",
+        "run",
+        "strafe_left",
+        "strafe_right",
+        "walk",
+        "walk_back",
+        "rugby_carry",
+        "rugby_pass",
+        "rugby_tackle",
+        "rugby_recover"
+      ],
+      "meshes": [
+        {
+          "name": "Body",
+          "joints": 53,
+          "vertices": 699
+        },
+        {
+          "name": "Eyebrows",
+          "joints": 53,
+          "vertices": 11
+        },
+        {
+          "name": "Eyelashes",
+          "joints": 53,
+          "vertices": 22
+        },
+        {
+          "name": "Eyes_1",
+          "joints": 53,
+          "vertices": 19
+        },
+        {
+          "name": "Eyes_2",
+          "joints": 53,
+          "vertices": 18
+        },
+        {
+          "name": "Eyes_3",
+          "joints": 53,
+          "vertices": 26
+        },
+        {
+          "name": "Teeth",
+          "joints": 53,
+          "vertices": 367
+        },
+        {
+          "name": "Tongue",
+          "joints": 53,
+          "vertices": 14
+        },
+        {
+          "name": "Cloth_tshirt",
+          "joints": 53,
+          "vertices": 382
+        },
+        {
+          "name": "Cloth_shorts",
+          "joints": 53,
+          "vertices": 156
+        },
+        {
+          "name": "Cloth_shoes",
+          "joints": 53,
+          "vertices": 270
+        }
+      ],
+      "garmentsShareBones": true,
+      "height": 1.7372798481956124,
+      "width": 1.1297869682312012,
+      "cover": {
+        "removed": 120,
+        "remaining": 950
+      }
+    }
+  ],
+  "jsErrors": [],
+  "externalRequests": [],
+  "caveat": "Captures non approuvees esthetiquement, chaussure/penetration a inspecter; ne teste pas les 30 joueurs ou FPS"
+}

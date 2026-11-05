@@ -1,0 +1,37 @@
+<!doctype html><html><meta charset="utf-8"><base href="/"><title>Qualification appariée v23/v24</title><style>body{margin:0}canvas{display:block}</style><body>
+<script src="match3d/vendor/three-r149.min.js"></script><script src="match3d/vendor/GLTFLoader-r149.js"></script>
+<script src="match3d/asset-player.js"></script><script src="match3d/rugby-player-v22.js"></script>
+<script src="match3d/assets/rugby-v24/rugby-clips.js"></script><script src="match3d/assets/rugby-v24/assembly.js"></script><script src="match3d/assets/rugby-v24/player-stage.js"></script>
+<script>
+'use strict';
+const T=THREE,scene=new T.Scene(),renderer=new T.WebGLRenderer({antialias:false,preserveDrawingBuffer:true});
+renderer.setSize(960,540);renderer.setPixelRatio(1);document.body.appendChild(renderer.domElement);scene.background=new T.Color(0x182a32);
+scene.add(new T.HemisphereLight(0xffffff,0x506050,1.8));const sun=new T.DirectionalLight(0xffffff,2);sun.position.set(12,25,12);scene.add(sun);
+const ground=new T.Mesh(new T.PlaneGeometry(110,80),new T.MeshStandardMaterial({color:0x346c42,roughness:1}));ground.rotation.x=-Math.PI/2;scene.add(ground);
+const camera=new T.PerspectiveCamera(42,960/540,.1,300),params=new URLSearchParams(location.search),version=params.get('version'),view=params.get('view');
+if(!['v23','v24'].includes(version)||!['tv','zoom'].includes(view))throw Error('Configuration invalide');
+if(view==='tv'){camera.position.set(15,35,75);camera.lookAt(0,.9,0);}else{camera.position.set(-1,6,1);camera.lookAt(-6,1,-9);}
+const players=Array.from({length:30},(_,i)=>({id:'p'+i,slot:i%15,side:i<15?0:1,x:(i%15-7)*6,z:i<15?-9:9}));
+let models=[];window.ready=false;window.failures=[];
+(async()=>{
+ if(version==='v23'){
+  if(!await CDMatch3DRugbyPlayer.load(T)||!CDMatch3DRugbyPlayer.status().realRig)throw Error('V23 real rig absent');
+  models=players.map(p=>{const body=CDMatch3DRugbyPlayer.build(T,p);body.position.set(p.x,0,p.z);body.traverse(n=>{if(n.isMesh)n.frustumCulled=false;});return {body,mixer:body.userData.mixer};});
+ }else{
+  const assets=await Promise.all([0,1,2].map(lod=>CDV24Assembly.load(T,'match3d/assets/rugby-v24/lod/',{lod,rugby:true})));
+  models=CDMatch3DV24Stage.stage(T,assets,players,camera.position);
+  for(const m of models)m.mixer.clipAction(m.clips.find(c=>c.name==='run')).play();
+ }
+ models.forEach(m=>scene.add(m.body));renderer.render(scene,camera);window.ready=true;
+})().catch(e=>window.failures.push(String(e.stack||e)));
+window.sample=function(frames=24){
+ const samples=[],gl=renderer.getContext();
+ for(let i=0;i<frames;i++){
+  const start=performance.now();
+  for(const m of models){if(version==='v23')CDMatch3DRugbyPlayer.tick(m.body,1/60,1,false);else m.mixer.update(1/60);}
+  renderer.render(scene,camera);gl.finish();samples.push(performance.now()-start);
+ }
+ const elapsed=samples.reduce((a,b)=>a+b,0);
+ return {version,view,players:models.length,frames,frameMs:samples,fps:frames*1000/elapsed,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,lods:version==='v24'?[0,1,2].map(l=>models.filter(m=>m.lod===l).length):null};
+};
+</script></html>

@@ -43,3 +43,17 @@ Ce jalon ne valide pas la suppression des surfaces cachées, les trois LOD, les 
 Correctifs de l’aperçu : morphs entiers normalisés décodés ; valeurs sparse normalisées restaurées pour éviter la double conversion de GLTFLoader r149 ; bornes recalculées. Deux régressions Node ajoutées. Chromium exécute huit contrôles, dont les proportions humaines, et produit quatre vues JPEG (face/dos/profil/course). Inspection détaillée : `dist/match3d/assets/rugby-v24/proof/visual-review.md`.
 
 Réception partielle : anatomie et tenue reconnaissables ; pénétration du pied dans une chaussure pendant la course, bottines/graphisme encore issus de la source. Pas de validation production. Étape suivante : surfaces cachées/chaussures et LOD ; animations rugby/30 joueurs/benchmarks toujours à faire. Le suivi et la coordination peuvent reprendre en Chat ; les prochaines transformations binaires et réceptions locales nécessiteront ponctuellement Work.
+
+## Reprise Work du 5 novembre — correction réelle et réception encore ouverte
+
+Premier jalon 599db575 : T-shirts GLB ajustés et poids transférés. Le générateur a ensuite restauré les anciens binaires dans 71d883af ; le nouveau jalon raccorde la correction au générateur, ajoute une subdivision du maillage et une cinématique de bras par objectifs de poignets. Les preuves, limites et le benchmark apparié sont dans `dist/match3d/assets/rugby-v24/proof/work-motion/review.md`.
+
+- [x] Retrouver le HEAD 2b14a92f, les passations et les vrais binaires ; main observé e661c865.
+- [x] Reproduire 15 vues avant et 15 après ; modifier les vrais GLB, conserver les sources CC0 et le masque.
+- [x] Retopologie locale, poids anatomiques, génération reproductible et assertions de poignets devant le buste.
+- [x] Conserver les 30 rigs indépendants et le fallback existant ; six vues de contact statique.
+- [x] Mesurer v23/v24 dans une scène appariée ; V24 plus coûteuse, aucun gain revendiqué.
+- [ ] Qualifier les emmanchures sur toute la séquence, les mains/ballon et un plaquage avec enroulement, chute et récupération crédibles.
+- [ ] Réceptionner les CI du nouveau HEAD exact, puis qualifier le runtime et son benchmark apparié avant gate/fusion.
+
+Retour en Chat possible pour réception des preuves et CI ; les retouches binaires supplémentaires ou la qualification animée locale restent du travail Work. PR #300 DRAFT/non intégrable.

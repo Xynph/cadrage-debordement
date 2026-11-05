@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "qualification": "geometrie seulement; animation rugby, peau/chaussures et rendu 30 joueurs NON qualifies",
+  "qualification": "T-shirt ajuste et retopologise; qualification visuelle globale et runtime NON acquis",
   "sourceTriangles": 42634,
   "levels": [
     {
       "lod": 0,
       "cap": 30000,
-      "triangles": 27704,
+      "triangles": 27906,
       "entries": [
         {
           "file": "base_body_anim-lod0.glb",
@@ -31,8 +31,8 @@
         },
         {
           "file": "clothing_tshirt-lod0.glb",
-          "bytes": 259828,
-          "triangles": 993,
+          "bytes": 304044,
+          "triangles": 1195,
           "joints": 53,
           "clips": [],
           "ratioUsed": 0.65
@@ -58,7 +58,7 @@
     {
       "lod": 1,
       "cap": 10000,
-      "triangles": 8519,
+      "triangles": 8643,
       "entries": [
         {
           "file": "base_body_anim-lod1.glb",
@@ -83,8 +83,8 @@
         },
         {
           "file": "clothing_tshirt-lod1.glb",
-          "bytes": 144520,
-          "triangles": 305,
+          "bytes": 159708,
+          "triangles": 429,
           "joints": 53,
           "clips": [],
           "ratioUsed": 0.2
@@ -110,7 +110,7 @@
     {
       "lod": 2,
       "cap": 3000,
-      "triangles": 2549,
+      "triangles": 2557,
       "entries": [
         {
           "file": "base_body_anim-lod2.glb",
@@ -135,8 +135,8 @@
         },
         {
           "file": "clothing_tshirt-lod2.glb",
-          "bytes": 189584,
-          "triangles": 534,
+          "bytes": 210940,
+          "triangles": 542,
           "joints": 53,
           "clips": [],
           "ratioUsed": 0.35

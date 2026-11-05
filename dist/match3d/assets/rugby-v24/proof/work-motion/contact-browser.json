@@ -1,0 +1,54 @@
+{
+  "status": "TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL",
+  "levels": [
+    {
+      "independentRig": true,
+      "shoulder": [
+        -0.0242488441605212,
+        1.0277425074394015,
+        0.3471294106536588
+      ],
+      "carrierRoot": [
+        0.0357511558394788,
+        0,
+        0.5071294106536588
+      ],
+      "lod": 0
+    },
+    {
+      "independentRig": true,
+      "shoulder": [
+        -0.0242488441605212,
+        1.0277425074394015,
+        0.3471294106536588
+      ],
+      "carrierRoot": [
+        0.0357511558394788,
+        0,
+        0.5071294106536588
+      ],
+      "lod": 1
+    },
+    {
+      "independentRig": true,
+      "shoulder": [
+        -0.0242488441605212,
+        1.0277425074394015,
+        0.3471294106536588
+      ],
+      "carrierRoot": [
+        0.0357511558394788,
+        0,
+        0.5071294106536588
+      ],
+      "lod": 2
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "limits": [
+    "Static contact arrangement",
+    "No collision physics or engine mutation",
+    "No fall/landing sequence qualified"
+  ]
+}

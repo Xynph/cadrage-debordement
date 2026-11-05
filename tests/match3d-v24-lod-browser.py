@@ -54,6 +54,17 @@ try:
     assert finite['ok'] and finite['samples']>0,(level,gesture,finite)
     if gesture in ['idle','rugby_pass','rugby_tackle']:
      page.screenshot(path=str(OUT/f'lod{level}-{gesture}.jpg'),type='jpeg',quality=85,timeout=25000)
+   # World-space wrist gates: catch arms extending sideways/backward despite valid quaternions.
+   for gesture,when in [('rugby_pass',.42),('rugby_tackle',.55)]:
+    page.evaluate('([name,time])=>window.setPose(name,time)',[gesture,when])
+    physical=page.evaluate("""() => {
+      const point=n=>asset.bones.find(b=>b.name===n).getWorldPosition(new THREE.Vector3());
+      const shoulder=point('upperarm_l').add(point('upperarm_r')).multiplyScalar(.5);
+      const l=point('hand_l'),r=point('hand_r');
+      return {forwardL:l.z-shoulder.z,forwardR:r.z-shoulder.z,separation:l.distanceTo(r)};
+    }""")
+    assert min(physical['forwardL'],physical['forwardR'])>.20,(level,gesture,physical)
+    assert physical['separation']<.5,(level,gesture,physical)
    # Profil détaillé au sommet des gestes : contrôle visuel, pas approbation automatique.
    for gesture,when in [('rugby_pass',.42),('rugby_tackle',.55)]:
     page.evaluate('([name,time])=>window.setPose(name,time)',[gesture,when])

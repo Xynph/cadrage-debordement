@@ -42,6 +42,18 @@ try{
   if(triangles>limits[lod])throw Error('LOD'+lod+' depasse '+limits[lod]);
   report.levels.push({lod,cap:limits[lod],triangles,entries});
  }
+ // Apply the anatomical repair as part of regeneration; the bot must never
+ // replace reviewed garments with the earlier uncorrected simplification.
+ const fit=spawnSync(process.execPath,[path.join(__dirname,'match3d-v24-shirt-fit.cjs')],{
+  encoding:'utf8',timeout:180000,env:{...process.env,NODE_PATH:path.dirname(path.dirname(cli))},maxBuffer:8000000
+ });
+ if(fit.error||fit.status!==0)throw Error('Ajustement T-shirt : '+(fit.error?.message||fit.stderr));
+ for(const level of report.levels){
+  for(const entry of level.entries){const file=path.join(out,entry.file),audit=auditGLB(fs.readFileSync(file));entry.bytes=audit.bytes;entry.triangles=audit.triangles;}
+  level.triangles=level.entries.reduce((n,e)=>n+e.triangles,0);
+  if(level.triangles>level.cap)throw Error('Budget après retopologie dépassé');
+ }
+ report.qualification='T-shirt ajuste et retopologise; qualification visuelle globale et runtime NON acquis';
  fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2)+'\n');
  console.log(JSON.stringify(report));
 }finally{fs.rmSync(temp,{recursive:true,force:true});}

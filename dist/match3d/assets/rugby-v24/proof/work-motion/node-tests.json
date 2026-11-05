@@ -1,0 +1,1234 @@
+{
+  "suites": 245,
+  "passed": 245,
+  "failed": [],
+  "elapsedSeconds": 282.504,
+  "timeoutPerSuite": 180,
+  "results": [
+    {
+      "suite": "tests/academy-planning.cjs",
+      "exitCode": 0,
+      "seconds": 0.124
+    },
+    {
+      "suite": "tests/ai-roster-cycle.cjs",
+      "exitCode": 0,
+      "seconds": 102.199
+    },
+    {
+      "suite": "tests/ai-transfer-competition.cjs",
+      "exitCode": 0,
+      "seconds": 0.591
+    },
+    {
+      "suite": "tests/art-direction-v4.cjs",
+      "exitCode": 0,
+      "seconds": 0.284
+    },
+    {
+      "suite": "tests/art-direction-v41-insights.cjs",
+      "exitCode": 0,
+      "seconds": 0.216
+    },
+    {
+      "suite": "tests/art-direction-v41.cjs",
+      "exitCode": 0,
+      "seconds": 0.108
+    },
+    {
+      "suite": "tests/auto-integrate.cjs",
+      "exitCode": 0,
+      "seconds": 0.155
+    },
+    {
+      "suite": "tests/auto-preflight.cjs",
+      "exitCode": 0,
+      "seconds": 0.141
+    },
+    {
+      "suite": "tests/auto-release.cjs",
+      "exitCode": 0,
+      "seconds": 0.12
+    },
+    {
+      "suite": "tests/board-planning.cjs",
+      "exitCode": 0,
+      "seconds": 0.085
+    },
+    {
+      "suite": "tests/calendrier01.cjs",
+      "exitCode": 0,
+      "seconds": 0.082
+    },
+    {
+      "suite": "tests/calendrier02.cjs",
+      "exitCode": 0,
+      "seconds": 0.095
+    },
+    {
+      "suite": "tests/calendrier04.cjs",
+      "exitCode": 0,
+      "seconds": 0.09
+    },
+    {
+      "suite": "tests/career-history.cjs",
+      "exitCode": 0,
+      "seconds": 0.096
+    },
+    {
+      "suite": "tests/career-integration.cjs",
+      "exitCode": 0,
+      "seconds": 2.225
+    },
+    {
+      "suite": "tests/career-resilience.cjs",
+      "exitCode": 0,
+      "seconds": 16.077
+    },
+    {
+      "suite": "tests/champion-budget-regression.cjs",
+      "exitCode": 0,
+      "seconds": 5.259
+    },
+    {
+      "suite": "tests/chat-release.cjs",
+      "exitCode": 0,
+      "seconds": 0.336
+    },
+    {
+      "suite": "tests/ci-auto-release-witness.cjs",
+      "exitCode": 0,
+      "seconds": 0.17
+    },
+    {
+      "suite": "tests/ci-development-snapshot.cjs",
+      "exitCode": 0,
+      "seconds": 0.092
+    },
+    {
+      "suite": "tests/ci-history-metrics.cjs",
+      "exitCode": 0,
+      "seconds": 0.08
+    },
+    {
+      "suite": "tests/ci-long-career-balance.cjs",
+      "exitCode": 0,
+      "seconds": 0.078
+    },
+    {
+      "suite": "tests/ci-matchday-browser-selector.cjs",
+      "exitCode": 0,
+      "seconds": 0.066
+    },
+    {
+      "suite": "tests/ci-p90-stress-guard.cjs",
+      "exitCode": 0,
+      "seconds": 0.083
+    },
+    {
+      "suite": "tests/ci-quick-check.cjs",
+      "exitCode": 0,
+      "seconds": 0.078
+    },
+    {
+      "suite": "tests/ci-report.cjs",
+      "exitCode": 0,
+      "seconds": 0.069
+    },
+    {
+      "suite": "tests/ci-run-metrics.cjs",
+      "exitCode": 0,
+      "seconds": 0.063
+    },
+    {
+      "suite": "tests/ci-selection.cjs",
+      "exitCode": 0,
+      "seconds": 0.076
+    },
+    {
+      "suite": "tests/ci-shard-balancing.cjs",
+      "exitCode": 0,
+      "seconds": 0.071
+    },
+    {
+      "suite": "tests/ci-shard-profiles.cjs",
+      "exitCode": 0,
+      "seconds": 0.098
+    },
+    {
+      "suite": "tests/ci-sharding.cjs",
+      "exitCode": 0,
+      "seconds": 0.074
+    },
+    {
+      "suite": "tests/ci-ui-browser-selector.cjs",
+      "exitCode": 0,
+      "seconds": 0.081
+    },
+    {
+      "suite": "tests/club-ai.cjs",
+      "exitCode": 0,
+      "seconds": 0.076
+    },
+    {
+      "suite": "tests/coach-market.cjs",
+      "exitCode": 0,
+      "seconds": 0.062
+    },
+    {
+      "suite": "tests/data02-mapping01.cjs",
+      "exitCode": 0,
+      "seconds": 0.07
+    },
+    {
+      "suite": "tests/data03-rosters.cjs",
+      "exitCode": 0,
+      "seconds": 0.07
+    },
+    {
+      "suite": "tests/data04.cjs",
+      "exitCode": 0,
+      "seconds": 0.071
+    },
+    {
+      "suite": "tests/data05-audit.cjs",
+      "exitCode": 0,
+      "seconds": 0.119
+    },
+    {
+      "suite": "tests/data05-bulk.cjs",
+      "exitCode": 0,
+      "seconds": 0.083
+    },
+    {
+      "suite": "tests/data05-bulk2.cjs",
+      "exitCode": 0,
+      "seconds": 0.086
+    },
+    {
+      "suite": "tests/data05-bulk3.cjs",
+      "exitCode": 0,
+      "seconds": 0.096
+    },
+    {
+      "suite": "tests/data05-guarded-entrypoint.cjs",
+      "exitCode": 0,
+      "seconds": 0.165
+    },
+    {
+      "suite": "tests/data05-pipeline.cjs",
+      "exitCode": 0,
+      "seconds": 0.116
+    },
+    {
+      "suite": "tests/data05-preflight.cjs",
+      "exitCode": 0,
+      "seconds": 0.084
+    },
+    {
+      "suite": "tests/data05-resilience.cjs",
+      "exitCode": 0,
+      "seconds": 0.094
+    },
+    {
+      "suite": "tests/data05-transport.cjs",
+      "exitCode": 0,
+      "seconds": 0.094
+    },
+    {
+      "suite": "tests/data05-unified.cjs",
+      "exitCode": 0,
+      "seconds": 0.106
+    },
+    {
+      "suite": "tests/data05-wired.cjs",
+      "exitCode": 0,
+      "seconds": 0.078
+    },
+    {
+      "suite": "tests/data05.cjs",
+      "exitCode": 0,
+      "seconds": 0.076
+    },
+    {
+      "suite": "tests/data06-all-players.cjs",
+      "exitCode": 0,
+      "seconds": 0.178
+    },
+    {
+      "suite": "tests/data06-consolidated-birthyears-1592.cjs",
+      "exitCode": 0,
+      "seconds": 0.095
+    },
+    {
+      "suite": "tests/data06-consolidation-integrity.cjs",
+      "exitCode": 0,
+      "seconds": 0.133
+    },
+    {
+      "suite": "tests/data06-evidence.cjs",
+      "exitCode": 0,
+      "seconds": 0.102
+    },
+    {
+      "suite": "tests/data06-itsrugby-bulk.test.cjs",
+      "exitCode": 0,
+      "seconds": 0.093
+    },
+    {
+      "suite": "tests/data06-lnrbirthyears-runtime.cjs",
+      "exitCode": 0,
+      "seconds": 0.098
+    },
+    {
+      "suite": "tests/data06-new-career-option.cjs",
+      "exitCode": 0,
+      "seconds": 0.168
+    },
+    {
+      "suite": "tests/data06-r5-birthyears-pack.cjs",
+      "exitCode": 0,
+      "seconds": 0.126
+    },
+    {
+      "suite": "tests/data06-triage.cjs",
+      "exitCode": 0,
+      "seconds": 0.11
+    },
+    {
+      "suite": "tests/decision-studio-v42.cjs",
+      "exitCode": 0,
+      "seconds": 0.109
+    },
+    {
+      "suite": "tests/delivery-readiness.cjs",
+      "exitCode": 0,
+      "seconds": 0.096
+    },
+    {
+      "suite": "tests/dev-conductor.cjs",
+      "exitCode": 0,
+      "seconds": 0.097
+    },
+    {
+      "suite": "tests/development.cjs",
+      "exitCode": 0,
+      "seconds": 2.354
+    },
+    {
+      "suite": "tests/discipline.cjs",
+      "exitCode": 0,
+      "seconds": 0.594
+    },
+    {
+      "suite": "tests/economy-audit.cjs",
+      "exitCode": 0,
+      "seconds": 5.205
+    },
+    {
+      "suite": "tests/economy.cjs",
+      "exitCode": 0,
+      "seconds": 1.08
+    },
+    {
+      "suite": "tests/facilities.cjs",
+      "exitCode": 0,
+      "seconds": 0.082
+    },
+    {
+      "suite": "tests/fictional-league.cjs",
+      "exitCode": 0,
+      "seconds": 0.403
+    },
+    {
+      "suite": "tests/finance-planning.cjs",
+      "exitCode": 0,
+      "seconds": 0.096
+    },
+    {
+      "suite": "tests/frontrow.cjs",
+      "exitCode": 0,
+      "seconds": 3.085
+    },
+    {
+      "suite": "tests/goalkicking.cjs",
+      "exitCode": 0,
+      "seconds": 0.181
+    },
+    {
+      "suite": "tests/governance-exclusive.test.cjs",
+      "exitCode": 0,
+      "seconds": 0.082
+    },
+    {
+      "suite": "tests/lnr-career-long.cjs",
+      "exitCode": 0,
+      "seconds": 47.202
+    },
+    {
+      "suite": "tests/lnr-career.cjs",
+      "exitCode": 0,
+      "seconds": 1.01
+    },
+    {
+      "suite": "tests/lnr-catalogue-ages.cjs",
+      "exitCode": 0,
+      "seconds": 0.086
+    },
+    {
+      "suite": "tests/lnr-cross-season-recovery.cjs",
+      "exitCode": 0,
+      "seconds": 28.31
+    },
+    {
+      "suite": "tests/lnr-loaded-birthyears-career.cjs",
+      "exitCode": 0,
+      "seconds": 0.889
+    },
+    {
+      "suite": "tests/lnr-multiclub-continuity.cjs",
+      "exitCode": 0,
+      "seconds": 61.396
+    },
+    {
+      "suite": "tests/lnr-player-facts.cjs",
+      "exitCode": 0,
+      "seconds": 0.816
+    },
+    {
+      "suite": "tests/lnr-save-import-rollback-stress.cjs",
+      "exitCode": 0,
+      "seconds": 5.268
+    },
+    {
+      "suite": "tests/lnr-save-integrity-guards.cjs",
+      "exitCode": 0,
+      "seconds": 19.182
+    },
+    {
+      "suite": "tests/lnr-save-resume-continuation.cjs",
+      "exitCode": 0,
+      "seconds": 29.667
+    },
+    {
+      "suite": "tests/lnr05-evidence-long.cjs",
+      "exitCode": 0,
+      "seconds": 46.742
+    },
+    {
+      "suite": "tests/lnr05-evidence.cjs",
+      "exitCode": 0,
+      "seconds": 0.743
+    },
+    {
+      "suite": "tests/lnr05-fatigue-scenarios.cjs",
+      "exitCode": 0,
+      "seconds": 44.426
+    },
+    {
+      "suite": "tests/lnr05-match-simulation-propagation.cjs",
+      "exitCode": 0,
+      "seconds": 0.715
+    },
+    {
+      "suite": "tests/lnr05-matchday-advice.cjs",
+      "exitCode": 0,
+      "seconds": 0.708
+    },
+    {
+      "suite": "tests/lnr05-matchday-decision.cjs",
+      "exitCode": 0,
+      "seconds": 0.431
+    },
+    {
+      "suite": "tests/lnr05-multiseason-strategies.cjs",
+      "exitCode": 0,
+      "seconds": 46.117
+    },
+    {
+      "suite": "tests/lnr05-physical-propagation.cjs",
+      "exitCode": 0,
+      "seconds": 1.281
+    },
+    {
+      "suite": "tests/lnr05-real-import.cjs",
+      "exitCode": 0,
+      "seconds": 0.226
+    },
+    {
+      "suite": "tests/lnr05-rest-policy-audit.cjs",
+      "exitCode": 0,
+      "seconds": 12.702
+    },
+    {
+      "suite": "tests/lnr05-rotation-audit.cjs",
+      "exitCode": 0,
+      "seconds": 47.285
+    },
+    {
+      "suite": "tests/main-menu-v2.cjs",
+      "exitCode": 0,
+      "seconds": 1.214
+    },
+    {
+      "suite": "tests/main-menu-v3.cjs",
+      "exitCode": 0,
+      "seconds": 0.622
+    },
+    {
+      "suite": "tests/main-menu.cjs",
+      "exitCode": 0,
+      "seconds": 0.551
+    },
+    {
+      "suite": "tests/manager-mobility.cjs",
+      "exitCode": 0,
+      "seconds": 34.699
+    },
+    {
+      "suite": "tests/manager-season-pilotage.cjs",
+      "exitCode": 0,
+      "seconds": 0.422
+    },
+    {
+      "suite": "tests/manager.cjs",
+      "exitCode": 0,
+      "seconds": 1.479
+    },
+    {
+      "suite": "tests/match-actions.cjs",
+      "exitCode": 0,
+      "seconds": 0.93
+    },
+    {
+      "suite": "tests/match-commentary-filters.cjs",
+      "exitCode": 0,
+      "seconds": 0.406
+    },
+    {
+      "suite": "tests/match-rules.cjs",
+      "exitCode": 0,
+      "seconds": 2.298
+    },
+    {
+      "suite": "tests/match-tactical-visual.cjs",
+      "exitCode": 0,
+      "seconds": 0.117
+    },
+    {
+      "suite": "tests/match2d.cjs",
+      "exitCode": 0,
+      "seconds": 0.493
+    },
+    {
+      "suite": "tests/match3d-adapter.cjs",
+      "exitCode": 0,
+      "seconds": 0.097
+    },
+    {
+      "suite": "tests/match3d-articulated-athletes-v19.cjs",
+      "exitCode": 0,
+      "seconds": 0.09
+    },
+    {
+      "suite": "tests/match3d-asset-player-v20.cjs",
+      "exitCode": 0,
+      "seconds": 0.099
+    },
+    {
+      "suite": "tests/match3d-asset-player-v22.cjs",
+      "exitCode": 0,
+      "seconds": 0.108
+    },
+    {
+      "suite": "tests/match3d-athlete-rig.cjs",
+      "exitCode": 0,
+      "seconds": 0.073
+    },
+    {
+      "suite": "tests/match3d-broadcast-pitch.cjs",
+      "exitCode": 0,
+      "seconds": 0.099
+    },
+    {
+      "suite": "tests/match3d-camera.cjs",
+      "exitCode": 0,
+      "seconds": 0.084
+    },
+    {
+      "suite": "tests/match3d-contact-animation.cjs",
+      "exitCode": 0,
+      "seconds": 0.084
+    },
+    {
+      "suite": "tests/match3d-contact-recovery.cjs",
+      "exitCode": 0,
+      "seconds": 0.073
+    },
+    {
+      "suite": "tests/match3d-crowd-animation.cjs",
+      "exitCode": 0,
+      "seconds": 0.081
+    },
+    {
+      "suite": "tests/match3d-crowd.cjs",
+      "exitCode": 0,
+      "seconds": 0.077
+    },
+    {
+      "suite": "tests/match3d-immersive-camera.cjs",
+      "exitCode": 0,
+      "seconds": 0.076
+    },
+    {
+      "suite": "tests/match3d-impact-effects.cjs",
+      "exitCode": 0,
+      "seconds": 0.076
+    },
+    {
+      "suite": "tests/match3d-jersey-numbers.cjs",
+      "exitCode": 0,
+      "seconds": 0.085
+    },
+    {
+      "suite": "tests/match3d-player-model.cjs",
+      "exitCode": 0,
+      "seconds": 0.094
+    },
+    {
+      "suite": "tests/match3d-premium-athletes-v17.cjs",
+      "exitCode": 0,
+      "seconds": 0.1
+    },
+    {
+      "suite": "tests/match3d-premium-v23.cjs",
+      "exitCode": 0,
+      "seconds": 0.107
+    },
+    {
+      "suite": "tests/match3d-premium.cjs",
+      "exitCode": 0,
+      "seconds": 0.092
+    },
+    {
+      "suite": "tests/match3d-quaternius-v22.cjs",
+      "exitCode": 0,
+      "seconds": 0.103
+    },
+    {
+      "suite": "tests/match3d-rugby-ball-model.cjs",
+      "exitCode": 0,
+      "seconds": 0.081
+    },
+    {
+      "suite": "tests/match3d-stadium.cjs",
+      "exitCode": 0,
+      "seconds": 0.076
+    },
+    {
+      "suite": "tests/match3d-v24-arm-ik.cjs",
+      "exitCode": 0,
+      "seconds": 0.139
+    },
+    {
+      "suite": "tests/match3d-v24-assembly.cjs",
+      "exitCode": 0,
+      "seconds": 0.142
+    },
+    {
+      "suite": "tests/match3d-v24-glb-audit.cjs",
+      "exitCode": 0,
+      "seconds": 0.098
+    },
+    {
+      "suite": "tests/match3d-v24-player-stage.cjs",
+      "exitCode": 0,
+      "seconds": 0.164
+    },
+    {
+      "suite": "tests/match3d-v24-real-shirt.cjs",
+      "exitCode": 0,
+      "seconds": 0.12
+    },
+    {
+      "suite": "tests/match3d-v24-rugby-clips.cjs",
+      "exitCode": 0,
+      "seconds": 0.12
+    },
+    {
+      "suite": "tests/match3d-v24-shirt-fit.cjs",
+      "exitCode": 0,
+      "seconds": 0.112
+    },
+    {
+      "suite": "tests/matchday-center.cjs",
+      "exitCode": 0,
+      "seconds": 0.483
+    },
+    {
+      "suite": "tests/matchday-lineup.cjs",
+      "exitCode": 0,
+      "seconds": 0.407
+    },
+    {
+      "suite": "tests/matchday-matchplan.cjs",
+      "exitCode": 0,
+      "seconds": 0.555
+    },
+    {
+      "suite": "tests/matchflow.cjs",
+      "exitCode": 0,
+      "seconds": 3.774
+    },
+    {
+      "suite": "tests/mod-data01.cjs",
+      "exitCode": 0,
+      "seconds": 0.083
+    },
+    {
+      "suite": "tests/mod-manager-r3.cjs",
+      "exitCode": 0,
+      "seconds": 0.105
+    },
+    {
+      "suite": "tests/mod-package-r4.cjs",
+      "exitCode": 0,
+      "seconds": 0.096
+    },
+    {
+      "suite": "tests/mod-r10-acceptance.cjs",
+      "exitCode": 0,
+      "seconds": 0.127
+    },
+    {
+      "suite": "tests/mod-r6-hardening.cjs",
+      "exitCode": 0,
+      "seconds": 0.079
+    },
+    {
+      "suite": "tests/mod-r7-zip-integrity.cjs",
+      "exitCode": 0,
+      "seconds": 0.083
+    },
+    {
+      "suite": "tests/mod-r8-package-adapter.cjs",
+      "exitCode": 0,
+      "seconds": 0.091
+    },
+    {
+      "suite": "tests/mod-r9-career-bridge.cjs",
+      "exitCode": 0,
+      "seconds": 0.088
+    },
+    {
+      "suite": "tests/mod-runtime-r2.cjs",
+      "exitCode": 0,
+      "seconds": 0.079
+    },
+    {
+      "suite": "tests/mod-unified-r5.cjs",
+      "exitCode": 0,
+      "seconds": 0.096
+    },
+    {
+      "suite": "tests/office-alerts.cjs",
+      "exitCode": 0,
+      "seconds": 0.08
+    },
+    {
+      "suite": "tests/office-career-press.cjs",
+      "exitCode": 0,
+      "seconds": 0.093
+    },
+    {
+      "suite": "tests/offline.cjs",
+      "exitCode": 0,
+      "seconds": 0.671
+    },
+    {
+      "suite": "tests/opponent-defensive-scout.cjs",
+      "exitCode": 0,
+      "seconds": 0.096
+    },
+    {
+      "suite": "tests/opponent-tactical-ai.cjs",
+      "exitCode": 0,
+      "seconds": 0.117
+    },
+    {
+      "suite": "tests/opposition.cjs",
+      "exitCode": 0,
+      "seconds": 36.609
+    },
+    {
+      "suite": "tests/playbook.cjs",
+      "exitCode": 0,
+      "seconds": 1.137
+    },
+    {
+      "suite": "tests/pr-leadtime.cjs",
+      "exitCode": 0,
+      "seconds": 0.095
+    },
+    {
+      "suite": "tests/preparation.cjs",
+      "exitCode": 0,
+      "seconds": 3.444
+    },
+    {
+      "suite": "tests/producer-handoff.cjs",
+      "exitCode": 0,
+      "seconds": 0.11
+    },
+    {
+      "suite": "tests/release-gate.cjs",
+      "exitCode": 0,
+      "seconds": 0.067
+    },
+    {
+      "suite": "tests/reputation.cjs",
+      "exitCode": 0,
+      "seconds": 0.077
+    },
+    {
+      "suite": "tests/restarts.cjs",
+      "exitCode": 0,
+      "seconds": 2.783
+    },
+    {
+      "suite": "tests/rugby-world.cjs",
+      "exitCode": 0,
+      "seconds": 0.067
+    },
+    {
+      "suite": "tests/rugby.cjs",
+      "exitCode": 0,
+      "seconds": 64.142
+    },
+    {
+      "suite": "tests/sale-negotiation.cjs",
+      "exitCode": 0,
+      "seconds": 0.88
+    },
+    {
+      "suite": "tests/saves.cjs",
+      "exitCode": 0,
+      "seconds": 23.347
+    },
+    {
+      "suite": "tests/squad-depth-rotation.cjs",
+      "exitCode": 0,
+      "seconds": 0.084
+    },
+    {
+      "suite": "tests/squad-health-center.cjs",
+      "exitCode": 0,
+      "seconds": 0.471
+    },
+    {
+      "suite": "tests/tactical-plans.cjs",
+      "exitCode": 0,
+      "seconds": 19.293
+    },
+    {
+      "suite": "tests/transfer-planning.cjs",
+      "exitCode": 0,
+      "seconds": 0.084
+    },
+    {
+      "suite": "tests/ui-native-centers.cjs",
+      "exitCode": 0,
+      "seconds": 0.376
+    },
+    {
+      "suite": "tests/ui01-integration.cjs",
+      "exitCode": 0,
+      "seconds": 2.128
+    },
+    {
+      "suite": "tests/ui01-interface.cjs",
+      "exitCode": 0,
+      "seconds": 0.218
+    },
+    {
+      "suite": "tests/ui02-live-integration.cjs",
+      "exitCode": 0,
+      "seconds": 0.454
+    },
+    {
+      "suite": "tests/ui02-player-components.cjs",
+      "exitCode": 0,
+      "seconds": 0.087
+    },
+    {
+      "suite": "tests/ui02-player-data.cjs",
+      "exitCode": 0,
+      "seconds": 0.274
+    },
+    {
+      "suite": "tests/ui03-scout-components.cjs",
+      "exitCode": 0,
+      "seconds": 0.114
+    },
+    {
+      "suite": "tests/ui03-scout-data.cjs",
+      "exitCode": 0,
+      "seconds": 0.277
+    },
+    {
+      "suite": "tests/ui04-academy-components.cjs",
+      "exitCode": 0,
+      "seconds": 0.101
+    },
+    {
+      "suite": "tests/ui04-academy-data.cjs",
+      "exitCode": 0,
+      "seconds": 0.38
+    },
+    {
+      "suite": "tests/ui05-live-collective.cjs",
+      "exitCode": 0,
+      "seconds": 0.647
+    },
+    {
+      "suite": "tests/univers01.cjs",
+      "exitCode": 0,
+      "seconds": 0.076
+    },
+    {
+      "suite": "tests/v17-unified-pc.test.cjs",
+      "exitCode": 0,
+      "seconds": 0.103
+    },
+    {
+      "suite": "tests/v19-advantage.cjs",
+      "exitCode": 0,
+      "seconds": 0.576
+    },
+    {
+      "suite": "tests/v20-numerical-ai.cjs",
+      "exitCode": 0,
+      "seconds": 1.207
+    },
+    {
+      "suite": "tests/v21-numerical-advice.cjs",
+      "exitCode": 0,
+      "seconds": 0.942
+    },
+    {
+      "suite": "tests/v22-tactical-comparison.cjs",
+      "exitCode": 0,
+      "seconds": 0.812
+    },
+    {
+      "suite": "tests/v23-local-zones.cjs",
+      "exitCode": 0,
+      "seconds": 0.708
+    },
+    {
+      "suite": "tests/v24-career-depth.cjs",
+      "exitCode": 0,
+      "seconds": 0.283
+    },
+    {
+      "suite": "tests/v24-career-invariants.cjs",
+      "exitCode": 0,
+      "seconds": 0.595
+    },
+    {
+      "suite": "tests/v24-four-zones.cjs",
+      "exitCode": 0,
+      "seconds": 0.562
+    },
+    {
+      "suite": "tests/v25-whatif.cjs",
+      "exitCode": 0,
+      "seconds": 0.841
+    },
+    {
+      "suite": "tests/v26-dual-whatif.cjs",
+      "exitCode": 0,
+      "seconds": 0.772
+    },
+    {
+      "suite": "tests/v27-physical-load.cjs",
+      "exitCode": 0,
+      "seconds": 0.824
+    },
+    {
+      "suite": "tests/v28-collective-preparation.cjs",
+      "exitCode": 0,
+      "seconds": 5.235
+    },
+    {
+      "suite": "tests/v29-focused-development.cjs",
+      "exitCode": 0,
+      "seconds": 4.411
+    },
+    {
+      "suite": "tests/v30-recruitment-intelligence.cjs",
+      "exitCode": 0,
+      "seconds": 2.147
+    },
+    {
+      "suite": "tests/v31-finance-forecasts.cjs",
+      "exitCode": 0,
+      "seconds": 1.494
+    },
+    {
+      "suite": "tests/v32-succession-planning.cjs",
+      "exitCode": 0,
+      "seconds": 1.226
+    },
+    {
+      "suite": "tests/v33-contract-renewals.cjs",
+      "exitCode": 0,
+      "seconds": 2.499
+    },
+    {
+      "suite": "tests/v34-counteroffers.cjs",
+      "exitCode": 0,
+      "seconds": 2.178
+    },
+    {
+      "suite": "tests/v35-salary-demand.cjs",
+      "exitCode": 0,
+      "seconds": 2.574
+    },
+    {
+      "suite": "tests/v36-satisfaction.cjs",
+      "exitCode": 0,
+      "seconds": 0.821
+    },
+    {
+      "suite": "tests/v37-relations.cjs",
+      "exitCode": 0,
+      "seconds": 1.243
+    },
+    {
+      "suite": "tests/v38-individual-objectives.cjs",
+      "exitCode": 0,
+      "seconds": 1.76
+    },
+    {
+      "suite": "tests/v39-team-dynamics.cjs",
+      "exitCode": 0,
+      "seconds": 1.319
+    },
+    {
+      "suite": "tests/v40-match-cockpit.cjs",
+      "exitCode": 0,
+      "seconds": 0.567
+    },
+    {
+      "suite": "tests/v46-advanced.cjs",
+      "exitCode": 0,
+      "seconds": 0.083
+    },
+    {
+      "suite": "tests/v46-multiseason.cjs",
+      "exitCode": 0,
+      "seconds": 0.073
+    },
+    {
+      "suite": "tests/v46-v51-contracts.cjs",
+      "exitCode": 0,
+      "seconds": 0.125
+    },
+    {
+      "suite": "tests/v47-advanced.cjs",
+      "exitCode": 0,
+      "seconds": 0.076
+    },
+    {
+      "suite": "tests/v47-multiseason.cjs",
+      "exitCode": 0,
+      "seconds": 0.086
+    },
+    {
+      "suite": "tests/v48-advanced.cjs",
+      "exitCode": 0,
+      "seconds": 0.076
+    },
+    {
+      "suite": "tests/v48-multiseason.cjs",
+      "exitCode": 0,
+      "seconds": 0.085
+    },
+    {
+      "suite": "tests/v49-advanced.cjs",
+      "exitCode": 0,
+      "seconds": 0.077
+    },
+    {
+      "suite": "tests/v49-multiseason.cjs",
+      "exitCode": 0,
+      "seconds": 0.078
+    },
+    {
+      "suite": "tests/v50-advanced.cjs",
+      "exitCode": 0,
+      "seconds": 0.075
+    },
+    {
+      "suite": "tests/v50-multiseason.cjs",
+      "exitCode": 0,
+      "seconds": 0.087
+    },
+    {
+      "suite": "tests/v51-checkpoint.cjs",
+      "exitCode": 0,
+      "seconds": 0.094
+    },
+    {
+      "suite": "tests/v51-financial-recovery.cjs",
+      "exitCode": 0,
+      "seconds": 0.078
+    },
+    {
+      "suite": "tests/v51-financial-regressions.cjs",
+      "exitCode": 0,
+      "seconds": 0.1
+    },
+    {
+      "suite": "tests/v51-transactions.cjs",
+      "exitCode": 0,
+      "seconds": 0.099
+    },
+    {
+      "suite": "tests/v51-world-audit.cjs",
+      "exitCode": 0,
+      "seconds": 0.093
+    },
+    {
+      "suite": "tests/v51-world-finance.cjs",
+      "exitCode": 0,
+      "seconds": 0.107
+    },
+    {
+      "suite": "tests/v51-world-simulation.cjs",
+      "exitCode": 0,
+      "seconds": 0.099
+    },
+    {
+      "suite": "tests/v56-integration-readiness.cjs",
+      "exitCode": 0,
+      "seconds": 0.094
+    },
+    {
+      "suite": "tests/v57-native-functional.cjs",
+      "exitCode": 0,
+      "seconds": 0.082
+    },
+    {
+      "suite": "tests/v58-1-coach-negotiations.cjs",
+      "exitCode": 0,
+      "seconds": 0.08
+    },
+    {
+      "suite": "tests/v58-2-contract-cycle.cjs",
+      "exitCode": 0,
+      "seconds": 0.08
+    },
+    {
+      "suite": "tests/v58-coach-career.cjs",
+      "exitCode": 0,
+      "seconds": 0.082
+    },
+    {
+      "suite": "tests/v58-final-integration-audit.cjs",
+      "exitCode": 0,
+      "seconds": 0.071
+    },
+    {
+      "suite": "tests/v58-native-coach-opportunities.cjs",
+      "exitCode": 0,
+      "seconds": 0.912
+    },
+    {
+      "suite": "tests/v58-native-dashboard.cjs",
+      "exitCode": 0,
+      "seconds": 0.076
+    },
+    {
+      "suite": "tests/v60-interactive-conference.cjs",
+      "exitCode": 0,
+      "seconds": 0.087
+    },
+    {
+      "suite": "tests/v60-media-evidence.cjs",
+      "exitCode": 0,
+      "seconds": 0.081
+    },
+    {
+      "suite": "tests/v60-media-native-adapter.cjs",
+      "exitCode": 0,
+      "seconds": 0.086
+    },
+    {
+      "suite": "tests/v60-media-world.cjs",
+      "exitCode": 0,
+      "seconds": 0.094
+    },
+    {
+      "suite": "tests/v60-press-persistent.cjs",
+      "exitCode": 0,
+      "seconds": 0.083
+    },
+    {
+      "suite": "tests/v60-press-relations.cjs",
+      "exitCode": 0,
+      "seconds": 0.138
+    },
+    {
+      "suite": "tests/v60-question-bank.cjs",
+      "exitCode": 0,
+      "seconds": 0.102
+    },
+    {
+      "suite": "tests/v60-rugby-broadcast.cjs",
+      "exitCode": 0,
+      "seconds": 0.098
+    },
+    {
+      "suite": "tests/v61-board-calendar.cjs",
+      "exitCode": 0,
+      "seconds": 0.079
+    },
+    {
+      "suite": "tests/v61-match-advisor.cjs",
+      "exitCode": 0,
+      "seconds": 0.462
+    },
+    {
+      "suite": "tests/v62-native-integration-gates.cjs",
+      "exitCode": 0,
+      "seconds": 0.091
+    },
+    {
+      "suite": "tests/v63-1-long-career.cjs",
+      "exitCode": 0,
+      "seconds": 94.766
+    },
+    {
+      "suite": "tests/v63-2-stress-native.cjs",
+      "exitCode": 0,
+      "seconds": 129.742
+    },
+    {
+      "suite": "tests/v63-native-career-transactions.cjs",
+      "exitCode": 0,
+      "seconds": 1.176
+    },
+    {
+      "suite": "tests/world-career.cjs",
+      "exitCode": 0,
+      "seconds": 77.923
+    },
+    {
+      "suite": "tests/world-catalog-r1.cjs",
+      "exitCode": 0,
+      "seconds": 0.088
+    }
+  ]
+}

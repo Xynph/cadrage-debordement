@@ -29,7 +29,24 @@ function fitShirt(shirt,body,clearance=.012){
  }
  return {positions,joints,weights,moved,maxMove,weightChanges};
 }
-module.exports={fitShirt};
+function refineShirt(input,maxEdge){
+ const out=Object.fromEntries(Object.entries(input).map(([k,v])=>[k,Array.from(v)]));out.indices=[];
+ const p=i=>new THREE.Vector3().fromArray(input.positions,i*3);
+ for(let i=0;i<input.indices.length;i+=3){
+  const ids=input.indices.slice(i,i+3),v=ids.map(p),long=Math.max(v[0].distanceTo(v[1]),v[1].distanceTo(v[2]),v[2].distanceTo(v[0]));
+  if(long<=maxEdge){out.indices.push(...ids);continue;}
+  const n=out.positions.length/3;
+  for(let c=0;c<3;c++)out.positions.push(ids.reduce((a,id)=>a+input.positions[id*3+c]/3,0));
+  for(let c=0;c<2;c++)out.uv.push(ids.reduce((a,id)=>a+input.uv[id*2+c]/3,0));
+  // These provisional weights are replaced by body-surface transfer below.
+  const blend=new Map();for(const id of ids)for(let c=0;c<4;c++){const b=input.joints[id*4+c];blend.set(b,(blend.get(b)||0)+input.weights[id*4+c]/3);}
+  const sorted=[...blend].sort((a,b)=>b[1]-a[1]).slice(0,4),sum=sorted.reduce((a,b)=>a+b[1],0);
+  for(let k=0;k<4;k++){out.joints.push(sorted[k]?.[0]||0);out.weights.push((sorted[k]?.[1]||0)/sum);}
+  out.indices.push(ids[0],ids[1],n,ids[1],ids[2],n,ids[2],ids[0],n);
+ }
+ return out;
+}
+module.exports={fitShirt,refineShirt};
 if(require.main===module)(async()=>{
  const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
  const {NodeIO}=require('@gltf-transform/core'),{ALL_EXTENSIONS}=require('@gltf-transform/extensions');
@@ -38,7 +55,7 @@ if(require.main===module)(async()=>{
  function baked(mesh,prim){const a=prim.getAttribute('POSITION'),names=mesh.getExtras().targetNames||[],targets=prim.listTargets();const positions=[];
   for(let i=0;i<a.getCount();i++){const p=a.getElement(i,[]);for(const [name,w]of Object.entries(morphs)){const t=targets[names.indexOf(name)]?.getAttribute('POSITION');if(t){const d=t.getElement(i,[]);for(let k=0;k<3;k++)p[k]+=w*d[k];}}positions.push(...p);}return positions;}
  function values(a){const out=[];for(let i=0;i<a.getCount();i++)out.push(...a.getElement(i,[]));return out;}
- const dir='dist/match3d/assets/rugby-v24/lod',report={method:'nearest body triangle clearance and barycentric skin weights; athletic morph baked into shirt only',clearance:.012,levels:[]};
+ const dir='dist/match3d/assets/rugby-v24/lod',report={method:'nearest body triangle clearance and barycentric skin weights with adaptive face-centre retopology; athletic morph baked into shirt only',clearance:.012,levels:[]};
  for(let lod=0;lod<3;lod++){
   const file=path.join(dir,'clothing_tshirt-lod'+lod+'.glb'),original=fs.readFileSync(file);
   const body=await io.read(path.join(dir,'base_body_anim-lod'+lod+'.glb')),shirt=await io.read(file);
@@ -47,17 +64,22 @@ if(require.main===module)(async()=>{
   const skin=shirt.getRoot().listSkins()[0],bs=body.getRoot().listSkins()[0];
   const a=skin.getInverseBindMatrices().getArray(),b=bs.getInverseBindMatrices().getArray();
   if(a.length!==b.length||a.some((v,i)=>Math.abs(v-b[i])>1e-5))throw Error('Inverse bind mismatch');
-  const input={positions:baked(sm,sp),joints:values(sp.getAttribute('JOINTS_0')),weights:values(sp.getAttribute('WEIGHTS_0'))};
+  const input=refineShirt({positions:baked(sm,sp),joints:values(sp.getAttribute('JOINTS_0')),weights:values(sp.getAttribute('WEIGHTS_0')),uv:values(sp.getAttribute('TEXCOORD_0')),indices:values(sp.getIndices())},[.085,.13,.18][lod]);
   const r=fitShirt(input,{positions:baked(bm,bp),indices:values(bp.getIndices()),joints:values(bp.getAttribute('JOINTS_0')),weights:values(bp.getAttribute('WEIGHTS_0'))});
+  const oldTriangles=sp.getIndices().getCount()/3;
+  for(const semantic of sp.listSemantics())sp.setAttribute(semantic,null);
   const buffer=shirt.getRoot().listBuffers()[0];
-  for(const [semantic,type,array]of [['POSITION','VEC3',new Float32Array(r.positions)],['JOINTS_0','VEC4',new Uint16Array(r.joints)],['WEIGHTS_0','VEC4',new Float32Array(r.weights)]]){
+  for(const [semantic,type,array]of [['POSITION','VEC3',new Float32Array(r.positions)],['TEXCOORD_0','VEC2',new Float32Array(input.uv)],['JOINTS_0','VEC4',new Uint16Array(r.joints)],['WEIGHTS_0','VEC4',new Float32Array(r.weights)]]){
    sp.setAttribute(semantic,shirt.createAccessor().setType(type).setArray(array).setBuffer(buffer));
   }
+  const normalGeometry=new THREE.BufferGeometry();normalGeometry.setAttribute('position',new THREE.Float32BufferAttribute(r.positions,3));normalGeometry.setIndex(input.indices);normalGeometry.computeVertexNormals();
+  sp.setAttribute('NORMAL',shirt.createAccessor().setType('VEC3').setArray(normalGeometry.attributes.normal.array).setBuffer(buffer));
+  sp.setIndices(shirt.createAccessor().setType('SCALAR').setArray(new Uint16Array(input.indices)).setBuffer(buffer));
   // Fixed athletic derivative: leave no active morph that would be applied twice.
   for(const target of sp.listTargets())sp.removeTarget(target);
   sm.setWeights([]);sm.setExtras({...sm.getExtras(),targetNames:[],cdAthleticFit:true});
   await io.write(file,shirt);
-  report.levels.push({lod,vertices:r.positions.length/3,moved:r.moved,maxMove:r.maxMove,weightChanges:r.weightChanges,sourceSHA256:crypto.createHash('sha256').update(original).digest('hex'),outputSHA256:crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')});
+  report.levels.push({lod,trianglesBefore:oldTriangles,trianglesAfter:input.indices.length/3,vertices:r.positions.length/3,moved:r.moved,maxMove:r.maxMove,weightChanges:r.weightChanges,sourceSHA256:crypto.createHash('sha256').update(original).digest('hex'),outputSHA256:crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')});
  }
  fs.writeFileSync(path.join(dir,'shirt-fit-report.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
 })().catch(e=>{console.error(e);process.exitCode=1;});
