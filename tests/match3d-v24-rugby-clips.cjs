@@ -7,7 +7,7 @@ const names=['pelvis','spine_02','spine_03','upperarm_l','upperarm_r','lowerarm_
 const bones=names.map(name=>{const b=new THREE.Bone();b.name=name;return b;});
 const initial=bones.map(b=>b.quaternion.toArray());
 const clips=create(THREE,bones);
-assert.deepEqual(clips.map(c=>c.name),['rugby_carry','rugby_pass','rugby_tackle','rugby_recover']);
+assert.deepEqual(Array.from(clips,c=>c.name),['rugby_carry','rugby_pass','rugby_tackle','rugby_recover']);
 for(const clip of clips){
  assert.ok(clip.duration>0&&clip.tracks.length>0);
  for(const track of clip.tracks){
