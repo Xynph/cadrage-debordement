@@ -43,6 +43,9 @@ jobs:
         run: python tools/match3d-v25-lab/remote/cmu_pair_probe.py
       - name: Auditer les droits et executer la suite Godot amont sur code MIT
         run: python tools/match3d-v25-lab/remote/external_candidates_probe.py --paired-stabilized
+      - name: Tester un vrai retarget des deux BVH CMU vers les trois squelettes 53 os
+        continue-on-error: true
+        run: python tools/match3d-v25-lab/remote/cmu_duo_retarget_runner.py
       - name: Publier les preuves moteur reel et compatibilite des 3 GLB
         if: always()
         uses: actions/upload-artifact@v4
