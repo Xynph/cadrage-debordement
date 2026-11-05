@@ -101,6 +101,18 @@ try:
     fall['lod']=lod
     assert fall['meshIntersections']['tacklerTriangles']>=20 and fall['meshIntersections']['carrierTriangles']>=20,(lod,phase,'real mesh triangle samples missing',fall['meshIntersections'])
     assert isinstance(fall['meshIntersections']['properTriangleIntersections'],int),(lod,phase,'intersection count unavailable')
+    # Real deformed surface samples near anatomical support regions;
+    # neither joint position nor an invisible floor proxy is a contact proof.
+    for support in fall['groundSamples']:
+     regions=support['supportSurfaces']
+     assert set(regions)=={'chest','pelvis','kneeL','kneeR','footL','footR'},(lod,phase,'missing anatomical support regions')
+     assert all(region['samples']>=10 and isinstance(region['minY'],(float,int))
+                for region in regions.values()),(lod,phase,'insufficient skinned support samples',regions)
+     if phase==1.0:
+      assert all(.015 <= regions[name]['minY'] <= .11 for name in regions),(lod,phase,'impact body support outside measured pitch range',regions)
+     if phase==1.85:
+      assert all(.015 <= regions[name]['minY'] <= .075 for name in ('footL','footR')),(lod,phase,'recovery feet do not plant on real mesh',regions)
+      assert regions['chest']['minY']>.20 and regions['pelvis']['minY']>.15,(lod,phase,'torso still down during recovery',regions)
     assert fall['horizontalTorsoGapM']>=.375,(lod,phase,'torso clearance',fall)
     # Grounded skinned mesh must remain outside the turf while upright again,
     # not just at the peak of the fall. Measure both actual player meshes.
