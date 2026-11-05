@@ -33,6 +33,7 @@ for(let i=0;i<2;i++){
  assert.equal(run('S.v75Movement.elite['+e+']'),'accession:'+a);
  assert.equal(run('S.v75Movement.accession['+a+']'),'elite:'+e);
  assert.equal(run('CDEspoirsV73.clubPlayers(S,'+e+').length'),22);
+ assert.equal(run('CDEspoirsV73.chosen(S,'+e+').every((p,i)=>p&&p.pos===POS[i])'),true,'correct Elite positions after promotion');
  assert.equal(run('S.v74Accession.centers['+a+'].players.length')>=15,true);
  assert.equal(run('CDEspoirsV73.clubName(S,'+e+').length>0'),true);
  assert.equal(run('S.v73Espoirs.fixtures.every(r=>r.every(p=>p.every(id=>id>=0&&id<24)))'),true);
