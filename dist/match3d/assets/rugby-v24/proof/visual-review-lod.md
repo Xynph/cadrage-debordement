@@ -1,0 +1,18 @@
+# Réception visuelle réelle des LOD — 5 novembre 2026
+
+## Provenance
+- Workflow Chromium `42020901993`, HEAD `beb4a7ae1f5036cb6e2ebb97cda2d92f65d6b6c3`, terminé SUCCESS.
+- Artefact `match3d-v24-lod-browser-report` ID `13412355198` : neuf JPEG (3 LOD × idle/passe/plaquage), rapport JSON ; téléchargés et inspectés manuellement.
+- La CI établit le chargement offline, 53 os, quatre clips rugby supplémentaires et déformations finies, **pas** la qualité esthétique.
+
+## Décision de réception : REFUSÉE pour intégration des 30 joueurs
+- LOD0 : silhouette adulte habillée reconnaissable ; maillot bleu avec graphisme amont, short et bottines non qualifiées rugby.
+- LOD1 : aspect encore reconnaissable, réduction et petits défauts observables.
+- **LOD2 : défaut visible** aux épaules et sur le maillot (zones claires, surfaces trouées/déchirées), déjà dans la vue statique et aggravé pendant les poses de passe/plaquage.
+- Les poses de passe et plaquage sont bien déclenchées, mais les bras restent trop écartés pour une animation rugby de production.
+- Les captures correspondent à un joueur isolé, non à une réception TV/zoom des 30 joueurs ; aucun résultat FPS mesuré dans ce jalon.
+
+## Action corrective en cours
+- Ajuster les budgets LOD2 par composant pour privilégier les vêtements et préserver les bordures topologiques des vêtements lors de la simplification.
+- Rejouer le même test Chromium et comparer réellement les neuf captures ; **ne pas déclarer corrigé sur le seul succès structurel**.
+- Garder la PR #300 DRAFT ; pas de gate ni fusion. Raccorder au runtime seulement après résolution visuelle.
