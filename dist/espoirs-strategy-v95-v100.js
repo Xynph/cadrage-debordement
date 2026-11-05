@@ -26,7 +26,12 @@
    st.candidates.every(x=>x&&typeof x.id==='string'&&REGIONS.includes(x.region)&&Number.isInteger(x.rating)&&Number.isInteger(x.potential))&&
    st.loads.every(x=>x&&typeof x.id==='string'&&['allegee','equilibree','intensive'].includes(x.load))&&
    st.ambitions.every(x=>x&&typeof x.id==='string'&&DECISIONS.includes(x.decision)&&Number.isInteger(x.season))&&
-   st.history.every(x=>x&&Number.isInteger(x.season)&&Number.isInteger(x.reputation));
+   st.history.every(x=>x&&Number.isInteger(x.season)&&Number.isInteger(x.reputation))&&
+   (st.network===undefined||(st.network.version===1&&Array.isArray(st.network.feeders)&&
+    st.network.feeders.length===16&&Array.isArray(st.network.players)&&st.network.players.length<=96&&
+    Array.isArray(st.network.partners)&&st.network.partners.length<=8&&
+    Array.isArray(st.network.history)&&st.network.history.length<=150&&
+    Array.isArray(st.network.credits)&&st.network.credits.length<=80));
  }
  function ensure(s){
   if(!s?.development||!Number.isInteger(s.season)||s.season<1)return null;
@@ -36,7 +41,7 @@
    if(old.season===s.season){network(old,s);return old;}
    s.v95to100={...old,season:s.season,scouts:0,meetings:0,candidates:[],recruits:[],loads:[],ambitions:[],
     history:old.history.slice(0,15)};
-   network(s.v95to100,s);return s.v95to100;
+   evolveNetwork(network(s.v95to100,s),s);return s.v95to100;
   }
   s.v95to100={version:1,season:s.season,region:'Atlantique',identity:'polyvalence',
    cohesion:55,reputation:45,scouts:0,meetings:0,candidates:[],recruits:[],loads:[],ambitions:[],history:[]};
@@ -81,6 +86,32 @@
   }
   st.network={version:1,feeders,players,partners:[],history:[],credits:[],lastSeason:s.season};
   return st.network;
+ }
+ function evolveNetwork(n,s){
+  if(n.lastSeason>=s.season)return;
+  const years=Math.min(20,s.season-n.lastSeason);
+  for(let year=n.lastSeason+1;year<=s.season;year++){
+   for(const p of n.players)if(p.status==='available'){
+    p.age++;if(p.age>21){p.status='aged-out';n.history.push({id:p.id,season:year,action:'aged-out',club:p.clubId})}
+   }
+   if(year%2===0)for(let i=0;i<n.feeders.length;i++){
+    const seed=hash('generation:'+year+':'+i),base=n.feeders[i];
+    const current=n.players.filter(p=>p.clubId===base.id&&p.status==='available').length;
+    if(current>=3)continue;
+    const rate=43+seed%21;
+    const native=youth(s),pos=native.length?native[(seed>>>3)%native.length].pos:'10';
+    n.players.push({id:'feeder-youth-'+i+'-season-'+year,clubId:base.id,clubName:base.name,
+     region:base.region,union:base.union,
+     name:firstnames[seed%firstnames.length]+' '+surnames[Math.floor(seed/17)%surnames.length],
+     pos,age:15+Math.floor(seed/71)%3,rating:rate,potential:Math.min(94,rate+12+Math.floor(seed/29)%20),
+     schooling:40+Math.floor(seed/37)%61,family:40+Math.floor(seed/67)%61,
+     ambition:40+Math.floor(seed/89)%61,scouted:0,trial:false,offers:0,
+     status:'available',originSeason:year,homeClub:base.id});
+   }
+  }
+  n.players=n.players.filter(p=>p.status!=='aged-out').slice(-96);
+  n.history=n.history.slice(-150);
+  n.lastSeason=s.season;
  }
  function model(s,p,net){
   const feeder=net.feeders.find(x=>x.id===p.clubId);
@@ -256,13 +287,18 @@
     p.rating=Math.min(potential(p),99,p.rating+1);styleProgress++;
    }
    if(st.identity==='defense')st.cohesion=clamp(st.cohesion+2,0,100);
-   // Educational attribution ledger: intentionally no invented legal transfer fees.
+   // Describe RIF formation attribution for up to 10 professional seasons.
+   // It is NOT a legal financial calculation or a payable domestic transfer fee.
    const n=network(st,s);
-   for(const promoted of s.v77Promotions?.promotions||[]){
+   const allPromotions=[...(s.v77Promotions?.promotions||[]),
+     ...(s.v77Promotions?.history||[]).flatMap(h=>h.promotions||[])];
+   for(const promoted of allPromotions){
     const found=n.players.find(p=>p.id===promoted.playerId);
-    if(!found||n.credits.some(c=>c.id===found.id))continue;
-    n.credits.push({id:found.id,club:found.clubId,firstProfessionalSeason:s.season,
-      kind:'RIF-descriptive',yearsRecognized:1});
+    const first=promoted.season;
+    if(!found||!Number.isInteger(first)||s.season<first||s.season>=first+10||
+      n.credits.some(c=>c.id===found.id&&c.season===s.season))continue;
+    n.credits.push({id:found.id,club:found.clubId,season:s.season,
+      firstProfessionalSeason:first,kind:'RIF-descriptive'});
    }
    n.credits=n.credits.slice(-80);
    n.history=n.history.slice(-150);
