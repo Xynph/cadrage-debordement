@@ -230,7 +230,7 @@ if(s.aiRoster!==undefined){
  for(const entry of a.academies){
   saveCheck(saveObject(entry)&&saveInt(entry.clubId,0,13)&&entry.clubId!==s.club&&
    !seenClubs.has(entry.clubId)&&saveInt(entry.intakeSeason,0,s.season)&&
-   saveArray(entry.players,s.managerMobilityVersion===1?12:6));
+   saveArray(entry.players,75));
   seenClubs.add(entry.clubId);
   for(const p of entry.players){
    checkPlayer(p);
