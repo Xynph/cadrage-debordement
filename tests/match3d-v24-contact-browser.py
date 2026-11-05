@@ -178,7 +178,36 @@ try:
         clav.quaternion.copy(base);asset.body.updateMatrixWorld(true);
         clavicleSweep={candidates,status:'DIAGNOSTIC_ONLY_RESTORED_SKELETON'};
       }
-      return {...state,meshIntersections:collision,relativePoseSweep,clavicleSweep,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
+      // Visual-stage ONLY: test the observed +0.25 rad anatomical right
+      // clavicle candidate against the ACTUAL IK wrist-to-skin gaps and the
+      // finer 850-triangle crossing assay. Keep the candidate solely when it
+      // improves right contact, preserves left contact and adds no crossings.
+      let clavicleGripTrial=null;
+      if(progress===1){
+        const originalBones=asset.bones.map(b=>b.quaternion.clone());
+        const baseline={leftM:surfaceGrip.l.afterSurfaceMetres,
+          rightM:surfaceGrip.r.afterSurfaceMetres,
+          intersections:collision.properTriangleIntersections};
+        const clav=asset.bones.find(b=>b.name==='clavicle_r');
+        clav.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),.25));
+        asset.body.updateMatrixWorld(true);
+        const trialGrip=CDMatch3DV24RugbyClips.gripCarrierSurface(
+          THREE,asset.bones,partner.body,partner.bones,state.onset);
+        const afterCrossings=CDMatch3DV24MeshIntersections.probe(
+          THREE,{body:asset.body,bones:asset.bones},partner,850).properTriangleIntersections;
+        const candidate={leftM:trialGrip.l.afterSurfaceMetres,
+          rightM:trialGrip.r.afterSurfaceMetres,intersections:afterCrossings};
+        const accepted=candidate.rightM<baseline.rightM-.005
+          && candidate.leftM<=baseline.leftM+.001
+          && candidate.intersections<=baseline.intersections;
+        if(!accepted){
+          asset.bones.forEach((bone,i)=>bone.quaternion.copy(originalBones[i]));
+          asset.body.updateMatrixWorld(true);
+        }
+        clavicleGripTrial={baseline,candidate,accepted,
+          status:'VISUAL_STAGE_ONLY_NO_RUNTIME_COUPLING'};
+      }
+      return {...state,meshIntersections:collision,relativePoseSweep,clavicleSweep,clavicleGripTrial,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
     }""",phase)
     fall['lod']=lod
     assert fall['meshIntersections']['tacklerTriangles']>=20 and fall['meshIntersections']['carrierTriangles']>=20,(lod,phase,'real mesh triangle samples missing',fall['meshIntersections'])
