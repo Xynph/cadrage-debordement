@@ -180,6 +180,29 @@
     solveArm(THREE,thigh,calf,foot,goal,pole);
    }
   }
+  // Order matters: fingers were the lowest *real* Body vertices and the
+  // global floor alignment lifted both floating chests to protect them.
+  // Fold both anatomical arms toward their own upper torso BEFORE grounding.
+  // The later paired-rig grip solves on the carrier's actual surface.
+  if(landing>1e-4){
+   for(const rig of [tackler,carrier]){
+    rig.body.updateMatrixWorld(true);
+    const chest=point(rig,'spine_03'),hip=point(rig,'pelvis');
+    const axis=chest.clone().sub(hip);axis.y=0;
+    if(axis.lengthSq()<1e-8)axis.set(0,0,1);
+    axis.normalize();
+    const lateral=new THREE.Vector3(-axis.z,0,axis.x);
+    for(const [side,sign]of [['l',1],['r',-1]]){
+     const shoulder=get(rig,'upperarm_'+side),elbow=get(rig,'lowerarm_'+side),wrist=get(rig,'hand_'+side);
+     const current=point(rig,'hand_'+side);
+     const target=chest.clone().addScaledVector(lateral,sign*.21).addScaledVector(axis,.10);
+     target.y=Math.max(chest.y+.12,.35);
+     const pole=point(rig,'upperarm_'+side).addScaledVector(lateral,sign*.36);
+     pole.y+=.17;
+     solveArm(THREE,shoulder,elbow,wrist,current.lerp(target,landing),pole);
+    }
+   }
+  }
   // Ground alignment uses deformed GLB vertices (not skeleton-only landmarks
   // or a cosmetic body proxy); sample a bounded set of real skinned vertices.
   const meshFloor=rig=>{
@@ -243,7 +266,7 @@
    const pelvis=point(rig,'pelvis'),head=point(rig,'head');
    groundSamples.push({minMeshY:after.min,vertices:after.vertices,
     torsoMinY:after.torsoMinY,torsoVertices:after.torsoVertices,lowest:after.lowest,
-    feetY:['foot_l','foot_r'].map(n=>point(rig,n).y),kneesY:['calf_l','calf_r'].map(n=>point(rig,n).y),pelvisY:pelvis.y,
+    handsY:['hand_l','hand_r'].map(n=>point(rig,n).y),feetY:['foot_l','foot_r'].map(n=>point(rig,n).y),kneesY:['calf_l','calf_r'].map(n=>point(rig,n).y),pelvisY:pelvis.y,
     headY:head.y,verticalTorsoRatio:Math.abs(head.y-pelvis.y)/head.distanceTo(pelvis)});
   }
   return {progress:p,onset,settle,landing,groundSamples,torsoSeparationM:point(tackler,'spine_03').distanceTo(point(carrier,'spine_03')),
