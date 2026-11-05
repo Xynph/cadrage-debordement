@@ -137,13 +137,29 @@
     a.fulfilled=a.decision==='professionnel'?promoted:a.decision==='pret'?loan:false;
     if(a.fulfilled)fulfilled++;else broken++;
    }
+   // The club's teaching identity has a bounded, observable annual effect.
+   let styleProgress=0;
+   const backs=new Set(['9','10','11','12','13','14','15','DEMI','AILIER','ARRIERE']);
+   for(const p of youth(s)){
+    if(!p.dev||p.injury>0)continue;
+    const isBack=backs.has(String(p.pos).toUpperCase());
+    const compatible=st.identity==='polyvalence'||
+      (st.identity==='mouvement'&&isBack)||
+      (st.identity==='puissance'&&!isBack)||
+      (st.identity==='defense'&&p.condition>=70);
+    if(!compatible||potential(p)<=p.rating)continue;
+    // Limit to 3 bonuses per year to keep academy balance stable.
+    if(styleProgress>=3)break;
+    p.rating=Math.min(potential(p),99,p.rating+1);styleProgress++;
+   }
+   if(st.identity==='defense')st.cohesion=clamp(st.cohesion+2,0,100);
    const graduates=(s.v77Promotions?.promotions||[]).length;
    const completed=(s.v73Espoirs?.results||[]).filter(m=>Array.isArray(m.pair)&&m.pair.includes(s.club)).length;
    const performance=completed>0?Math.min(5,Math.round(completed/5)):0;
    st.cohesion=clamp(st.cohesion+(fulfilled-broken)*2-Math.ceil(overloaded/4),0,100);
    st.reputation=clamp(st.reputation+graduates*3+performance+Math.floor((st.cohesion-50)/12)-broken*2,0,100);
    st.history=[{season:s.season,reputation:st.reputation,cohesion:st.cohesion,
-    graduates,trained,fulfilled,broken,identity:st.identity},...st.history].slice(0,15);
+    graduates,trained,styleProgress,fulfilled,broken,identity:st.identity},...st.history].slice(0,15);
    return true;
   });
  }
