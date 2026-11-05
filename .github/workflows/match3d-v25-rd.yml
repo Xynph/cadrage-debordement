@@ -51,7 +51,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: match3d-v25-external-${{ github.sha }}
-          path: rd-report/external-tackle/
+          path: |
+            rd-report/external-tackle/
+            rd-report/cmu-duo/
           if-no-files-found: warn
           retention-days: 14
           compression-level: 6
