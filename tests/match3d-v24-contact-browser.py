@@ -296,15 +296,41 @@ try:
             &&t.leftM<=base.leftM+.001&&t.intersections<=base.intersections),
           status:'DIAGNOSTIC_ONLY_SKELETON_RESTORED'};
       }
-      // Anatomical two-keyframe investigation: never render a pose unless
-      // the same angular candidate clears real skin/ground/intersections on
-      // EVERY LOD. Test smaller angles as LOD1 penetrated by 3.94 cm at +.15.
+      // Paired, identical-resolution floor evidence BEFORE/AFTER each
+      // anatomical trial. Label the actual lowest skinned mesh and dominant
+      // bone instead of mistaking an inherited penetration for a new one.
       let anatomicalPreview=null;
       if(Math.abs(progress-.75)<1e-8 || progress===1){
+        const floor=()=>{
+          asset.body.updateMatrixWorld(true);
+          let min=Infinity,lowest=null,sampled=0;
+          asset.body.traverse(mesh=>{
+            if(!mesh.isSkinnedMesh)return;
+            const attr=mesh.geometry.getAttribute('position'),v=new THREE.Vector3();
+            if(!attr)return;
+            const skinIndices=mesh.geometry.getAttribute('skinIndex');
+            const skinWeights=mesh.geometry.getAttribute('skinWeight');
+            const stride=Math.max(1,Math.floor(attr.count/350));
+            for(let i=0;i<attr.count;i+=stride){
+              mesh.boneTransform(i,v.fromBufferAttribute(attr,i));mesh.localToWorld(v);
+              sampled++;
+              if(v.y>=min)continue;
+              min=v.y;
+              let major=0;
+              if(skinWeights)for(let k=1;k<4;k++)
+                if(skinWeights.getComponent(i,k)>skinWeights.getComponent(i,major))major=k;
+              const boneId=skinIndices?skinIndices.getComponent(i,major):-1;
+              lowest={mesh:mesh.name,bone:mesh.skeleton?.bones?.[boneId]?.name||null,
+                vertexIndex:i,y:v.y};
+            }
+          });
+          return {minSkinnedY:min,sampledSkinnedVertices:sampled,lowest};
+        };
         const saved=asset.bones.map(b=>b.quaternion.clone());
         const baseline={leftM:surfaceGrip.l.afterSurfaceMetres,
           rightM:surfaceGrip.r.afterSurfaceMetres,
-          intersections:collision.properTriangleIntersections};
+          intersections:collision.properTriangleIntersections,
+          ...floor()};
         const clav=asset.bones.find(b=>b.name==='clavicle_r'),trials=[];
         for(const angle of [.05,.10,.15,.20]){
           asset.bones.forEach((bone,i)=>bone.quaternion.copy(saved[i]));
@@ -314,20 +340,8 @@ try:
             THREE,asset.bones,partner.body,partner.bones,state.onset,{referenceArms});
           const crossing=CDMatch3DV24MeshIntersections.probe(
             THREE,{body:asset.body,bones:asset.bones},partner,850).properTriangleIntersections;
-          let lowest=Infinity,sampled=0;
-          asset.body.traverse(mesh=>{
-            if(!mesh.isSkinnedMesh)return;
-            const attr=mesh.geometry.getAttribute('position'),v=new THREE.Vector3();
-            if(!attr)return;
-            const stride=Math.max(1,Math.floor(attr.count/350));
-            for(let i=0;i<attr.count;i+=stride){
-              mesh.boneTransform(i,v.fromBufferAttribute(attr,i));mesh.localToWorld(v);
-              lowest=Math.min(lowest,v.y);sampled++;
-            }
-          });
           const candidate={angleRadians:angle,leftM:trial.l.afterSurfaceMetres,
-            rightM:trial.r.afterSurfaceMetres,intersections:crossing,
-            minSkinnedY:lowest,sampledSkinnedVertices:sampled};
+            rightM:trial.r.afterSurfaceMetres,intersections:crossing,...floor()};
           candidate.accepted=candidate.rightM<baseline.rightM-.005 &&
             candidate.leftM<=baseline.leftM+.001 &&
             candidate.intersections<=baseline.intersections &&
@@ -337,7 +351,7 @@ try:
         asset.bones.forEach((bone,i)=>bone.quaternion.copy(saved[i]));
         asset.body.updateMatrixWorld(true);
         anatomicalPreview={baseline,trials,appliedToScreenshot:false,
-          status:'DIAGNOSTIC_ONLY_FOUR_ANGLES_GROUND_AND_SKIN_RESTORED'};
+          status:'DIAGNOSTIC_ONLY_SAME_SKINNED_FLOOR_SAMPLING_BEFORE_AFTER'};
       }
       return {...state,meshIntersections:collision,approachShoulderTrial,relativePoseSweep,clavicleSweep,clavicleGripTrial,elbowPoleTrial,anatomicalPreview,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
     }""",phase)
