@@ -52,7 +52,14 @@ test('V70 : rollback exact en cas de sauvegarde impossible',()=>{
  assert.equal(V70.perform(s,'duo','a','b',{...fx(s),save:()=>false}),false);
  assert.equal(JSON.stringify(s),before);
 });
-test('V70 : rivalite potentielle presente au coup d envoi sans intervention',()=>{\n const s=state();\n const m={userSide:0,pair:[0,1],sheets:[{initial:['a','b','c'],on:['a','b','c']}],finished:false};\n m.v70Relations=V70.matchSnapshot(s,m);\n assert.ok(m.v70Relations.duos.some(x=>x.score<0));\n assert.ok(V70.matchBonus(m,0,'attack')<0);\n});\ntest('V70 : incidence sur la feuille et le terrain, pas sur banc, plafonds, matchs historiques',()=>{
+test('V70 : rivalite potentielle presente au coup d envoi sans intervention',()=>{
+ const s=state();
+ const m={userSide:0,pair:[0,1],sheets:[{initial:['a','b','c'],on:['a','b','c']}],finished:false};
+ m.v70Relations=V70.matchSnapshot(s,m);
+ assert.ok(m.v70Relations.duos.some(x=>x.score<0));
+ assert.ok(V70.matchBonus(m,0,'attack')<0);
+});
+test('V70 : incidence sur la feuille et le terrain, pas sur banc, plafonds, matchs historiques',()=>{
  const s=state();
  assert.equal(V70.perform(s,'duo','a','c',fx(s)),true);
  const l={userSide:0,pair:[0,1],sheets:[{initial:['a','b','c'],on:['a','b','c']}],finished:false};
