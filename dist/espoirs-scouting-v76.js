@@ -50,13 +50,20 @@
     const found=centers(s).find(c=>c.id===id);
     return found&&found.id!==own(s)?.id?found:null;
   }
+  function canLeave(c,p,pool){
+    if(!c||!p||pool.length<=15)return false;
+    if(c.division==='accession')return pool.filter(q=>q.slot===p.slot).length>=2;
+    const slots=typeof POS==='undefined'?[]:POS;
+    const required=slots.filter(pos=>pos===p.pos).length;
+    return required>0&&pool.filter(q=>q.pos===p.pos).length>required;
+  }
   function available(s,c){
     const pool=players(s,c);
     if(pool.length<=15)return [];
     const taken=new Set((ensure(s)?.recruited||[]).map(x=>x.playerId));
     return pool.filter(p=>p&&typeof p.id==='string'&&!taken.has(p.id)&&
       Number.isFinite(p.rating)&&Number.isFinite(p.potential??p.dev?.potential)&&Number.isInteger(p.age)&&p.age<=21&&
-      (c.division!=='accession'||pool.filter(q=>q.slot===p.slot).length>=2)).sort((a,b)=>
+      canLeave(c,p,pool)).sort((a,b)=>
         (b.potential??b.dev?.potential)-(a.potential??a.dev?.potential)||b.rating-a.rating||a.id.localeCompare(b.id)).slice(0,5);
   }
   function price(s,c,p){
@@ -84,7 +91,7 @@
     if(!source)return false;
     const origin=players(s,source),target=players(s,manager),p=origin.find(p=>p.id===id);
     if(!p||origin.length<=15||target.some(q=>q.id===id)||target.length>=40||!Number.isFinite(p.potential??p.dev?.potential)||
-       (source.division==='accession'&&origin.filter(q=>q.slot===p.slot).length<2))return false;
+       !canLeave(source,p,origin))return false;
     const cost=price(s,source,p),required=cost.minimum;
     if(offer<required||offer>st.budgets[manager.id]||offer>200000)return false;
     const m=move()?.ensure(s);if(!m)return false;
