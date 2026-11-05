@@ -2,7 +2,8 @@
 import functools,http.server,json,threading,os
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-from match3d_v24_surface_proximity import summarize_surface_samples
+from importlib.machinery import SourceFileLoader
+summarize_surface_samples=SourceFileLoader('surface_probe',str(Path(__file__).with_name('match3d-v24-surface-proximity.py'))).load_module().summarize_surface_samples
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'match3d-v24-surface-report'
 OUT.mkdir(exist_ok=True)
