@@ -73,7 +73,7 @@ try:
     page.evaluate('camera.position.set(4,1.2,.3);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
    # Genuine, reproducible two-rig transform timeline: approach, fall, then recovery.
    # No mesh replacement, rigid-body collision claim, or match-runtime coupling.
-   for phase in [0,.40,.75,1.15,1.85]:
+   for phase in [0,.40,.75,1.0,1.15,1.85]:
     fall=page.evaluate("""(progress)=>{
       window.setPose('rugby_tackle',.55);
       partner.mixer.setTime(.25);
@@ -93,6 +93,11 @@ try:
     }""",phase)
     fall['lod']=lod
     assert fall['horizontalTorsoGapM']>=.375,(lod,phase,'torso clearance',fall)
+    if phase==1.0:
+     assert fall['landing']>.95,(lod,phase,'full landing not reached',fall)
+     assert len(fall['groundSamples'])==2,(lod,phase,'two real skinned rigs',fall)
+     assert all(-.04<g['minMeshY']<.10 and g['vertices']>=30 for g in fall['groundSamples']),(lod,phase,'grounded real GLB surfaces',fall)
+     assert all(g['verticalTorsoRatio']<.60 for g in fall['groundSamples']),(lod,phase,'torsos not horizontal',fall)
     assert all(isinstance(d,(float,int)) and 0<=d<2 for d in fall['handDistancesM']),(lod,phase,fall)
     fallSequence.append(fall)
     page.evaluate('renderer.render(scene,camera)')
@@ -102,5 +107,5 @@ try:
     page.evaluate('camera.position.set(4,1.2,.3);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
    results.append(info)
   assert not errors and not external,(errors,external)
-  (OUT/'report.json').write_text(json.dumps({'status':'TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL','levels':results,'temporalSamples':temporal,'fallSequence':fallSequence,'errors':errors,'externalRequests':external,'limits':['Paired-rig arm IK aims at carrier torso; no coordinated impact dynamics or contact certification','No collision physics or engine mutation','Fall/recovery is an isolated paired-rig kinematic probe, not a qualified grounded landing or runtime interaction']},indent=2)+'\n');b.close()
+  (OUT/'report.json').write_text(json.dumps({'status':'TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL','levels':results,'temporalSamples':temporal,'fallSequence':fallSequence,'errors':errors,'externalRequests':external,'limits':['Paired-rig arm IK aims at carrier torso; no coordinated impact dynamics or contact certification','No collision physics or engine mutation','Actual skinned-mesh ground and torso-horizontal metrics tested at impact; visual contact and runtime still unqualified']},indent=2)+'\n');b.close()
 finally:s.shutdown()
