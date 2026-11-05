@@ -22,7 +22,7 @@ def get(rel):
         return r.read()
 
 def parse_bvh(content):
-    lines=content.decode("utf-8").replace("\r","\n").split("\n")
+    lines=content.decode("utf-8").splitlines()
     header=next(i for i,line in enumerate(lines) if line.strip()=="MOTION")
     names=[re.search(r"^\s*(?:ROOT|JOINT)\s+(\S+)",x).group(1)
            for x in lines[:header] if re.search(r"^\s*(?:ROOT|JOINT)\s+(\S+)",x)]
