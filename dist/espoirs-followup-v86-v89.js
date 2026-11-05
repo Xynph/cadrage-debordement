@@ -117,17 +117,44 @@
   }
   function panel(s){
     const st=ensure(s);if(!st)return '';
+    const locked=!!s.live||s.phase==='ended';
+    const actionId=id=>JSON.stringify(id).replace(/"/g,'&quot;');
     const rows=minutesReport(s).map(x=>'<tr><td>'+escape(x.name)+'</td><td>'+x.played+' / '+x.target+
-      '</td><td>'+x.progress+' %</td><td>'+escape(x.alert)+'</td></tr>').join('');
-    const paths=succession(s).filter(x=>x.risk!=='couvert').slice(0,12)
-      .map(x=>'<li>'+escape(x.pos)+' : '+escape(x.risk)+' · '+escape(x.successors[0]?.name||'aucune relève')+'</li>').join('');
-    const seniors=own(s).filter(p=>p.age<=23).slice(0,8);
-    const dest=seniors.map(p=>{const o=loanOptions(s,p.id)[0];return o?'<li>'+escape(p.name)+
-      ' : '+escape(o.club)+' · '+o.expectedMinutes+' min estimées</li>':''}).join('');
+      '</td><td>'+x.progress+' %</td><td>'+escape(x.alert)+'</td><td>'+
+      (x.ratingChange===null?'n.d.':(x.ratingChange>0?'+':'')+x.ratingChange)+'</td></tr>').join('');
+    const candidates=academy(s).filter(p=>p.age<=21).slice(0,10).map(p=>
+      '<tr><td>'+escape(p.name)+'</td><td>'+escape(p.pos)+'</td><td>'+currentMinutes(s,p.id)+'</td><td>'+
+      [480,960,1440].map(n=>'<button type="button" onclick="v86Target('+actionId(p.id)+','+n+')"'+
+        (locked?' disabled':'')+'>'+n+' min</button>').join(' ')+'</td></tr>').join('');
+    const paths=succession(s).slice(0,15).map(x=>
+      '<li><strong>'+escape(x.pos)+'</strong> · titulaire '+escape(x.starter||'aucun')+
+      ' · '+escape(x.risk)+' · relève : '+(x.successors.map(q=>escape(q.name)+' ('+
+      q.rating+'/'+q.potential+')').join(', ')||'aucune')+'</li>').join('');
+    const borrowers=own(s).filter(p=>p.age<=23);
+    const dest=borrowers.slice(0,8).map(p=>{
+      const choices=loanOptions(s,p.id).slice(0,3);
+      return !choices.length?'':'<li><strong>'+escape(p.name)+'</strong> · '+escape(p.pos)+
+        '<ul>'+choices.map(o=>'<li>'+escape(o.club)+' · '+o.expectedMinutes+
+        ' min projetées · '+o.competition+' concurrent(s) '+
+        '<button type="button" onclick="v78Loan('+actionId(p.id)+','+o.to+')"'+
+        (locked||s.lineup?.includes(p.id)||s.reserves?.includes(p.id)||s.v78to81?.loans?.length>=3?' disabled':'')+
+        '>Prêter ici</button></li>').join('')+'</ul></li>';
+    }).join('');
+    const history=persons(s).filter(p=>p.age<=23).slice(0,12).map(p=>{
+      const info=career(s,p.id);
+      const events=info?.events||[];
+      return '<li><strong>'+escape(p.name)+'</strong> · '+escape(p.pos)+' · '+
+        (events.map(e=>'S'+e.season+' '+escape(e.text||e.type)).join(' → ')||'En formation')+'</li>';
+    }).join('');
     return '<section class="cd04-panel" style="padding:18px;margin-top:18px"><h2>V86–V89 · Suivi des talents</h2>'+
-      '<h3>Objectifs de minutes et alertes</h3><table><thead><tr><th>Joueur</th><th>Minutes</th><th>Objectif</th><th>Alerte</th></tr></thead><tbody>'+rows+'</tbody></table>'+
-      '<h3>Relève par poste</h3><ul>'+paths+'</ul><h3>Clubs de prêt conseillés</h3><ul>'+dest+'</ul>'+
-      '<p class="help">Les minutes Espoirs proviennent des matchs simulés. Les projections de prêt sont indicatives et ne garantissent pas la sélection par le club d’accueil. Historique consultable via l’API carrière.</p></section>';
+      '<h3>V86 · Fixer les objectifs de minutes</h3><div class="tablewrap"><table><thead><tr><th>Espoir</th><th>Poste</th><th>Déjà jouées</th><th>Objectif annuel</th></tr></thead><tbody>'+
+      candidates+'</tbody></table></div>'+
+      '<h3>Progression et alertes</h3><div class="tablewrap"><table><thead><tr><th>Joueur</th><th>Minutes</th><th>Avancement</th><th>Diagnostic</th><th>Évolution de note</th></tr></thead><tbody>'+
+      rows+'</tbody></table></div>'+
+      '<h3>V87 · Plan de succession par poste</h3><ul>'+paths+'</ul>'+
+      '<h3>V88 · Choisir le club de prêt</h3><ul>'+dest+'</ul>'+
+      '<h3>V89 · Histoires des talents</h3><ul>'+history+'</ul>'+
+      '<p class="help">Minutes issues de la compétition Espoirs V73. Estimations de prêt indicatives sans garantie de titularisation. Les prêts réels utilisent le dispositif V78 et reviennent au changement de saison. Les actions sont désactivées pendant le match et en fin de saison.</p></section>';
   }
   function install(g){
     if(!g||typeof g.render!=='function'||typeof g.start!=='function')return false;
