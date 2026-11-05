@@ -65,3 +65,7 @@ Travaux encore à faire : retarget Ara vers le rig canonique ; préservation et 
 Aucune opération graphique locale n’est indispensable aux tests préparés. Les retouches artistiques interactives restent une option humaine ; un benchmark GPU Windows natif nécessite un poste/runner GPU et reste hors de la réception SwiftShader. Aucun achat, service cloud propriétaire, abonnement ou modèle interdit en France/UE n’a été utilisé.
 
 PR #300 et ses GLB, moteur, sauvegardes, fallback, PRODUCTEUR, DATA/LNR, main et auto-release inchangés par cette intervention. Les seuls fichiers de workflow écrits sont ceux du nouveau laboratoire R&D. Aucun gate, aucune fusion.
+
+## Évolution parallèle observée au contrôle final
+
+PR #300 a avancé indépendamment à `d6fbcb38438609c0ca461f54717655223b438b09` (passation #73 `6665512540`). Comparaison GitHub avec notre baseline `2d8c8c7eee5aa0dad899aa6bb119e95bda0e7987` : **deux fichiers changés seulement**, `rugby-clips.js` et `tests/match3d-v24-contact-browser.py` ; aucun GLB modifié. Ne pas attribuer notre réception figée aux nouvelles animations de ce HEAD. La procédure de mise à jour des deux références est dans le README et peut être exécutée en Chat. Main est resté `b585105767a11d2712a8f3c7e5fd8874387c23eb` au dernier contrôle.

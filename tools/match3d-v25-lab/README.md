@@ -22,6 +22,12 @@ GET /repos/Xynph/cadrage-debordement/actions/runs/<RUN>/artifacts
 
 Le connecteur fournit `fetch`, `fetch_workflow_run_artifacts`, `download_workflow_artifact`, `fetch_workflow_job_logs`, `rerun_workflow_job`, `create_file` et `update_file`. Les quatre premiers servent à recevoir/inspecter ; les deux derniers permettent la requête de relance, sans shell local ni navigateur graphique obligatoire.
 
+## Changer de référence du lot 24 depuis Chat
+
+Le banc reste volontairement figé à `2d8c8c7eee5aa0dad899aa6bb119e95bda0e7987`. Au contrôle final, PR #300 a avancé dans une autre session à `d6fbcb38438609c0ca461f54717655223b438b09` : seuls `rugby-clips.js` et le test de contact ont changé, aucun GLB. La réception publiée ici porte sur la baseline figée.
+
+Pour essayer ce nouveau HEAD en Chat, réserver puis modifier **ensemble** `remote/lock.json` (`baseline`) et le deuxième `actions/checkout` de `.github/workflows/match3d-v25-rd.yml` (`ref`). Vérifier les GLB et leurs empreintes avant de conserver/modifier `baselineSha256`, publier atomiquement et recevoir le nouveau run au nouveau SHA R&D. Le workflow doit ensuite lire le même HEAD dans le manifeste et dans les deux références. Aucun téléchargement manuel ni Work requis pour cette mise à jour.
+
 ## Commandes exactes sur runner ou poste Linux
 
 Après checkout de la branche R&D, placer un checkout **indépendant** de PR #300 dans `baseline/` au SHA verrouillé. Node 24.11.0, Python 3.12 et dépendances système de Chromium sont préparés par le workflow.
