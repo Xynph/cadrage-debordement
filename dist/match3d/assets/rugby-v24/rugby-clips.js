@@ -100,6 +100,27 @@
    // Preserve the world-space hip pivot through the full-body rotation.
    rig.body.position.add(hip.sub(point(rig,'pelvis')));
    rig.body.updateMatrixWorld(true);
+   // A torso is not landed while the hips hover over bent, dangling legs.
+   // Lower the actual pelvis and put both real feet behind it with two-bone IK.
+   const pelvis=point(rig,'pelvis');
+   rig.body.position.y+=landing*(.34-pelvis.y);
+   rig.body.updateMatrixWorld(true);
+   const hipNow=point(rig,'pelvis');
+   const longDirection=point(rig,'head').sub(hipNow);
+   longDirection.y=0;
+   if(longDirection.lengthSq()<1e-6)longDirection.copy(forward);
+   longDirection.normalize();
+   const sideways=new THREE.Vector3(-longDirection.z,0,longDirection.x);
+   for(const [side,sign]of [['l',1],['r',-1]]){
+    const thigh=get(rig,'thigh_'+side),calf=get(rig,'calf_'+side),foot=get(rig,'foot_'+side);
+    const initial=point(foot);
+    const proneFoot=hipNow.clone().addScaledVector(longDirection,-.72).addScaledVector(sideways,sign*.14);
+    proneFoot.y=.12;
+    const goal=initial.lerp(proneFoot,landing);
+    const pole=hipNow.clone().addScaledVector(longDirection,-.33).addScaledVector(sideways,sign*.30);
+    pole.y=.35;
+    solveArm(THREE,thigh,calf,foot,goal,pole);
+   }
   }
   // Ground alignment uses deformed GLB vertices (not skeleton-only landmarks
   // or a cosmetic body proxy); sample a bounded set of real skinned vertices.
