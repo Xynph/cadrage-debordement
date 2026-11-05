@@ -28,7 +28,7 @@ try:
         result=page.evaluate('''async()=>{
           const {StepLoadModel}=await import('/lib/processes/load-model/StepLoadModel.ts');
           const {StepExportToFile}=await import('/lib/processes/export-to-file/StepExportToFile.ts');
-          const {GLTFLoader}=await import('/src/rd-glb-loader.ts');
+          const {GLTFLoader}=await import('/rd-glb-loader.ts');
           const source=await new GLTFLoader().loadAsync('/rd-body.glb');
           const sourceClips=source.animations;
           if(sourceClips.length!==12)throw Error('Expected 12 original rugby-body clips, found '+sourceClips.length);
