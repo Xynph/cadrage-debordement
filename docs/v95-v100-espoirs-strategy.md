@@ -6,7 +6,7 @@
 - **V96 · Vie collective :** indice de cohésion de 0 à 100, trois réunions payantes par saison, impact des promesses tenues ou non.
 - **V97 · Préparation des jeunes :** charge allégée, équilibrée ou intensive. Le bilan annuel améliore au maximum d'un point de note le joueur en charge intensive lorsque son potentiel l'autorise, contre une baisse de condition ; charge allégée et équilibrée servent à récupérer.
 - **V98 · Ambitions :** décisions individuelles (accompagner, prêt, passage professionnel, patienter). Les promesses de prêt et de professionnalisation sont vérifiées en fin de saison sur les opérations V77/V78 déjà réellement effectuées, sans mutation automatique.
-- **V99 · Identité :** choix entre mouvement, puissance, défense et polyvalence ; orientation managériale persistante et visible dans les bilans. Cette version ne modifie pas les règles ni le moteur de match.
+- **V99 · Identité :** choix entre mouvement, puissance, défense et polyvalence ; orientation managériale persistante et visible dans les bilans, avec jusqu’à trois bonus de développement par an pour les profils compatibles ; la défense peut également améliorer légèrement la cohésion. Cette version ne modifie pas les règles ni le moteur de match.
 - **V100 · Réputation :** score fictif sur 100 fondé sur les promotions V77, l'activité Espoirs, la cohésion et les promesses ; classement qualitatif et 15 saisons d'historique.
 
 ## Contrat technique
