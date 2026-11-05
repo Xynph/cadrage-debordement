@@ -82,7 +82,7 @@
     st.promotions.push({playerId:id,name:promoted.name,pos:promoted.pos,season:s.season,
       round:s.round,age:promoted.age,rating:promoted.rating,potential:promoted.dev.potential,
       salary:promoted.salary,years,contractEnd:promoted.contractEnd});
-    if(Array.isArray(s.news))s.news.unshift(promoted.name+' passe professionnel pour '+years+' saison(s). Choisissez sa place dans l'effectif professionnel.');
+    if(Array.isArray(s.news))s.news.unshift(promoted.name+' passe professionnel pour '+years+' saison(s). Choisissez sa place dans le groupe professionnel.');
     try{
       if(save&&save()===false)throw Error('save');
       return true;
