@@ -173,7 +173,9 @@
     const thigh=get(rig,'thigh_'+side),calf=get(rig,'calf_'+side),foot=get(rig,'foot_'+side);
     const initial=point(rig,'foot_'+side);
     const proneFoot=hipNow.clone().addScaledVector(longDirection,-.72).addScaledVector(sideways,sign*.14);
-    proneFoot.y=.12;
+    // Lift the anatomical ankles during the prone phase so toe/calf skin
+    // no longer props the floating torso above the pitch.
+    proneFoot.y=.27;
     const goal=initial.lerp(proneFoot,landing);
     const pole=hipNow.clone().addScaledVector(longDirection,-.33).addScaledVector(sideways,sign*.30);
     pole.y=.35;
@@ -295,32 +297,6 @@
     toeCorrection.push(moved);
    }
   }
-  // Refine the actual spine geometry against the ground, not a hidden proxy.
-  // The toes can keep a horizontal chest suspended: choose a bounded local
-  // spine rotation that minimizes the gap from real torso skin to lowest skin.
-  // No rigid body, physics engine or saved animation is changed.
-  const spineAdjustments=[];
-  if(landing>.4){
-   for(const rig of [tackler,carrier]){
-    const spine=get(rig,'spine_02'),original=spine.quaternion.clone();
-    let best={score:Infinity,axis:'rest',angle:0,q:original.clone(),gap:null};
-    const axes=[['x',new THREE.Vector3(1,0,0)],['z',new THREE.Vector3(0,0,1)]];
-    for(const [axis,vector] of axes){
-     for(const angle of [-.48,-.32,-.16,0,.16,.32,.48]){
-      spine.quaternion.copy(original).multiply(
-       new THREE.Quaternion().setFromAxisAngle(vector,angle*landing)).normalize();
-      rig.body.updateMatrixWorld(true);
-      const evidence=meshFloor(rig);
-      if(evidence.torsoMinY===null)throw Error('Vrai torse absent pendant optimisation');
-      const gap=evidence.torsoMinY-evidence.min;
-      const score=gap+.018*Math.abs(angle);
-      if(score<best.score)best={score,axis,angle,q:spine.quaternion.clone(),gap};
-     }
-    }
-    spine.quaternion.copy(best.q);rig.body.updateMatrixWorld(true);
-    spineAdjustments.push({axis:best.axis,angle:best.angle,torsoToLowestGapM:best.gap});
-   }
-  }
   // Separate the actual upper-torso joints, avoiding unphysical overlap of
   // the torso centres. This is a proxy clearance, NOT exact mesh collision.
   const delta=point(carrier,'spine_03').sub(point(tackler,'spine_03'));
@@ -353,7 +329,7 @@
     handsY:['hand_l','hand_r'].map(n=>point(rig,n).y),feetY:['foot_l','foot_r'].map(n=>point(rig,n).y),kneesY:['calf_l','calf_r'].map(n=>point(rig,n).y),pelvisY:pelvis.y,
     headY:head.y,verticalTorsoRatio:Math.abs(head.y-pelvis.y)/head.distanceTo(pelvis)});
   }
-  return {progress:p,onset,settle,landing,ankleAdjustments,toeCorrection,spineAdjustments,groundSamples,torsoSeparationM:point(tackler,'spine_03').distanceTo(point(carrier,'spine_03')),
+  return {progress:p,onset,settle,landing,ankleAdjustments,toeCorrection,groundSamples,torsoSeparationM:point(tackler,'spine_03').distanceTo(point(carrier,'spine_03')),
    horizontalTorsoGapM:new THREE.Vector2(point(tackler,'spine_03').x-point(carrier,'spine_03').x,point(tackler,'spine_03').z-point(carrier,'spine_03').z).length(),
    tacklerRoot:tackler.body.position.toArray(),carrierRoot:carrier.body.position.toArray()};
  }
