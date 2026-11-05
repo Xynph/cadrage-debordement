@@ -110,12 +110,12 @@
     {
       "lod": 2,
       "cap": 3000,
-      "triangles": 2550,
+      "triangles": 2549,
       "entries": [
         {
           "file": "base_body_anim-lod2.glb",
-          "bytes": 2596128,
-          "triangles": 2210,
+          "bytes": 2494500,
+          "triangles": 1469,
           "joints": 53,
           "clips": [
             "fall",
@@ -131,31 +131,31 @@
             "walk",
             "walk_back"
           ],
-          "ratioUsed": 0.06
+          "ratioUsed": 0.04
         },
         {
           "file": "clothing_tshirt-lod2.glb",
-          "bytes": 105300,
-          "triangles": 91,
+          "bytes": 189584,
+          "triangles": 534,
           "joints": 53,
           "clips": [],
-          "ratioUsed": 0.06
+          "ratioUsed": 0.35
         },
         {
           "file": "clothing_shorts-lod2.glb",
-          "bytes": 100160,
-          "triangles": 50,
+          "bytes": 132364,
+          "triangles": 214,
           "joints": 53,
           "clips": [],
-          "ratioUsed": 0.06
+          "ratioUsed": 0.25
         },
         {
           "file": "clothing_shoes-lod2.glb",
-          "bytes": 350360,
-          "triangles": 199,
+          "bytes": 380024,
+          "triangles": 332,
           "joints": 53,
           "clips": [],
-          "ratioUsed": 0.06
+          "ratioUsed": 0.1
         }
       ]
     }
