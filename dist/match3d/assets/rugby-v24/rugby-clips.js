@@ -71,6 +71,15 @@
   });
   if(points.length<20)throw Error('Surface anatomique du porteur absente');
   const amount=THREE.MathUtils.clamp(blend,0,1),results={samples:points.length};
+  // Define the two opposite flanks in the tackler-to-carrier frame.
+  // A nearest-point search alone lets both wrists settle on the near face,
+  // which can look like two separate pushes instead of an arm wrap.
+  const shoulderCentre=world(bone(tacklerBones,'upperarm_l'))
+    .add(world(bone(tacklerBones,'upperarm_r'))).multiplyScalar(.5);
+  const advance=torso.clone().sub(shoulderCentre);advance.y=0;
+  if(advance.lengthSq()<1e-8)advance.set(0,0,1);
+  advance.normalize();
+  const lateral=new THREE.Vector3(-advance.z,0,advance.x);
   // Search a small deterministic set of reachable *real skin* samples.
   // A closest vertex is not necessarily reachable by a two-segment arm;
   // evaluate the resulting wrist position, not the target alone.
@@ -80,9 +89,16 @@
    const initialUpper=upper.quaternion.clone(),initialLower=lower.quaternion.clone();
    // A surface can lie just beyond the natural reach. The IK solver already
    // clamps targets to the anatomical arm length; do not discard all targets.
-   const candidates=points.map(p=>({p,d:p.distanceToSquared(origin)}))
-     .sort((a,b)=>a.d-b.d).slice(0,24);
-   const beforeGap=Math.sqrt(candidates[0].d);
+   const allCandidates=points.map(p=>({p,d:p.distanceToSquared(origin),
+     flank:p.clone().sub(torso).dot(lateral)*sign}));
+   const nearest=allCandidates.reduce((a,b)=>a.d<b.d?a:b);
+   // Favor skin on the appropriate side, without forcing unreachable contact.
+   // Retain the unconstrained candidates whenever fewer than 12 real skin
+   // vertices are available on the desired flank.
+   const preferred=allCandidates.filter(x=>x.flank>.025);
+   const pool=preferred.length>=12?preferred:allCandidates;
+   const candidates=pool.sort((a,b)=>a.d-b.d).slice(0,24);
+   const beforeGap=Math.sqrt(nearest.d);
    let best={err:beforeGap,gap:beforeGap,goal:origin.clone(),
      upper:initialUpper.clone(),lower:initialLower.clone()};
    for(const {p:surface} of candidates){
@@ -106,7 +122,8 @@
    upper.updateMatrixWorld(true);lower.updateMatrixWorld(true);
    results[side]={beforeMetres:Math.sqrt(Math.min(...points.map(p=>origin.distanceToSquared(p)))),
      afterSurfaceMetres:best.gap,afterToTargetMetres:world(hand).distanceTo(best.goal),
-     examined:candidates.length*3,improved:best.gap<beforeGap};
+     examined:candidates.length*3,improved:best.gap<beforeGap,
+     oppositeFlankSamples:preferred.length,flankSignedM:world(hand).sub(torso).dot(lateral)*sign};
   }
   return results;
  }
