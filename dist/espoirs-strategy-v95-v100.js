@@ -33,14 +33,14 @@
   const old=s.v95to100;
   if(old!==undefined){
    if(!valid(old)||old.season>s.season)return null;
-   if(old.season===s.season)return old;
+   if(old.season===s.season){network(old,s);return old;}
    s.v95to100={...old,season:s.season,scouts:0,meetings:0,candidates:[],recruits:[],loads:[],ambitions:[],
     history:old.history.slice(0,15)};
-   return s.v95to100;
+   network(s.v95to100,s);return s.v95to100;
   }
   s.v95to100={version:1,season:s.season,region:'Atlantique',identity:'polyvalence',
    cohesion:55,reputation:45,scouts:0,meetings:0,candidates:[],recruits:[],loads:[],ambitions:[],history:[]};
-  return s.v95to100;
+  network(s.v95to100,s);return s.v95to100;
  }
  function transact(s,action,save){
   const previous=copy(s);
@@ -49,39 +49,142 @@
  }
  function unlocked(s){return !!s&&!s.live&&s.phase!=='ended'}
  function cost(s,amount){return Number.isFinite(s?.clubs?.[s.club]?.cash)&&s.clubs[s.club].cash>=amount}
- function discover(s,region,save){
-  const st=ensure(s);
-  if(!st||!unlocked(s)||!REGIONS.includes(region)||st.scouts>=3||st.candidates.length>=9||!cost(s,3000))return false;
+
+ // This fictional feeder network is distinct from LNR clubs and official calendars.
+ const FEEDERS=[
+  ['Cote du Ponant','Bretagne','FR'],['Val de Loire','Atlantique','FR'],
+  ['Forez Union','Centre','FR'],['Garonne Ovalie','Sud-Ouest','FR'],
+  ['Riviera Ovalie','Mediterranee','FR'],['Savoie Montagne','Alpes','FR'],
+  ['Bocage Atlantique','Atlantique','FR'],['Argoat Rugby','Bretagne','FR'],
+  ['Massif Central','Centre','FR'],['Delta Rugby','Mediterranee','FR'],
+  ['Porto Académie','Portugal','PT'],['Tbilissi Espoir','Georgie','GE'],
+  ['Cardiff Vallée','Pays de Galles','GB'],['Fiji Islands Youth','Fidji','FJ'],
+  ['Cape Youth Rugby','Afrique du Sud','ZA'],['Rosario Club','Argentine','AR']
+ ];
+ const surnames=['Martin','Bernard','Perrin','Le Goff','Robert','Santos','Morel','Silva','Laurent','Dumas','Tavita','Beridze'];
+ const firstnames=['Eliott','Noam','Mael','Hugo','Mathis','Timo','Leo','Tane','Lucas','Pablo','Nino','Sami'];
+ const fam=(s,p)=>s?.development?.academy?.find(q=>q.pos===p.pos)||s?.development?.academy?.[0];
+ function network(st,s){
+  if(st.network)return st.network;
+  const feeders=FEEDERS.map((f,i)=>({id:'feeder-'+i,name:f[0]+' RC',region:f[1],union:f[2],relationship:0}));
+  const players=[];
+  for(let i=0;i<feeders.length;i++)for(let j=0;j<2;j++){
+   const seed=hash('feeder:'+s.club+':'+i+':'+j),age=15+seed%5,rating=44+Math.floor(seed/7)%20;
+   const native=youth(s),pos=native.length?native[(seed>>>4)%native.length].pos:'10';
+   players.push({id:'feeder-youth-'+i+'-'+j,clubId:feeders[i].id,clubName:feeders[i].name,
+    region:feeders[i].region,union:feeders[i].union,
+    name:firstnames[seed%firstnames.length]+' '+surnames[Math.floor(seed/13)%surnames.length],
+    pos,age,rating,potential:Math.min(94,rating+10+Math.floor(seed/31)%24),
+    schooling:40+Math.floor(seed/77)%61,family:40+Math.floor(seed/107)%61,
+    ambition:40+Math.floor(seed/167)%61,scouted:0,trial:false,offers:0,
+    status:'available',originSeason:s.season,homeClub:feeders[i].id});
+  }
+  st.network={version:1,feeders,players,partners:[],history:[],credits:[],lastSeason:s.season};
+  return st.network;
+ }
+ function model(s,p,net){
+  const feeder=net.feeders.find(x=>x.id===p.clubId);
+  const partner=net.partners.includes(p.clubId),local=feeder?.union==='FR';
+  const reputation=Number.isInteger(s.v95to100?.reputation)?s.v95to100.reputation:45;
+  const school=Math.round(45+(partner?20:0)+Math.max(0,50-p.schooling)*.1);
+  const proximity=local?58+(partner?20:0):10;
+  const minutes=Math.round(70-Math.max(0,(youth(s).filter(x=>x.pos===p.pos).length-2))*10);
+  const sportif=Math.round(50+reputation*.35+(partner?10:0));
+  const project=Math.round(clamp(
+    (sportif*p.ambition+school*p.schooling+proximity*p.family+
+      minutes*(200-p.ambition-p.family)/2)/(p.ambition+p.schooling+p.family+(200-p.ambition-p.family)/2),
+    0,100));
+  const rivals=hash(s.season+':rivals:'+p.id)%4;
+  return {project,school,proximity,minutes,sportif,rivals,interest:clamp(project-rivals*4,0,100)};
+ }
+ function watch(s,id,save){
+  const st=ensure(s),n=st&&network(st,s),p=n?.players.find(x=>x.id===id);
+  if(!st||!unlocked(s)||!p||p.status!=='available'||p.scouted>=3||!cost(s,500))return false;
+  return transact(s,()=>{s.clubs[s.club].cash-=500;p.scouted++;return true},save);
+ }
+ function trial(s,id,save){
+  const st=ensure(s),n=st&&network(st,s),p=n?.players.find(x=>x.id===id);
+  if(!st||!unlocked(s)||!p||p.status!=='available'||p.scouted<1||p.trial||!cost(s,1000))return false;
+  return transact(s,()=>{s.clubs[s.club].cash-=1000;p.trial=true;return true},save);
+ }
+ function partner(s,clubId,save){
+  const st=ensure(s),n=st&&network(st,s),c=n?.feeders.find(x=>x.id===clubId);
+  if(!st||!unlocked(s)||!c||n.partners.includes(clubId)||n.partners.length>=8||!cost(s,2000))return false;
+  return transact(s,()=>{s.clubs[s.club].cash-=2000;n.partners.push(clubId);c.relationship++;return true},save);
+ }
+ function clearance(s,id,save){
+  const st=ensure(s),n=st&&network(st,s),p=n?.players.find(x=>x.id===id);
+  if(!st||!unlocked(s)||!p||p.union==='FR'||p.age<18||!p.trial)return false;
+  // A manager marks that clearance has been received in this fictional universe.
+  return transact(s,()=>{p.clearanceRecorded=true;return true},save);
+ }
+ function recruitFeeder(s,id,save){
+  const st=ensure(s),n=st&&network(st,s),p=n?.players.find(x=>x.id===id),academy=youth(s);
+  if(!st||!unlocked(s)||!p||p.status!=='available'||p.scouted<2||!p.trial||
+     academy.length>=35||st.recruits.length>=5||!cost(s,8000)||academy.some(x=>x.id===id))return false;
+  // Underage international recruitment is not simulated as an ordinary domestic transfer.
+  if(p.union!=='FR'&&(p.age<18||p.clearanceRecorded!==true))return false;
+  const template=fam(s,p);
+  if(!template?.dev||!Number.isInteger(template.fam))return false;
+  const score=model(s,p,n);
+  // Uncertain decisions remain reproducible for a given season/player and are not identity-based.
+  const decision=hash('decision:'+s.season+':'+s.club+':'+p.id)%100;
+  const accepts=decision<score.interest;
   return transact(s,()=>{
-   s.clubs[s.club].cash-=3000;st.scouts++;st.region=region;
-   const names=['Aurel','Mael','Nohan','Elian','Tilio','Sacha','Noe','Loan','Yanis','Axel','Ilan','Lino'];
-   for(let i=0;i<3;i++){
-    const h=hash(s.season+':'+s.club+':'+region+':'+st.scouts+':'+i);
-    const id='v95-'+s.season+'-'+s.club+'-'+region.toLowerCase()+'-'+st.scouts+'-'+i;
-    const rating=clamp(44+h%18,40,65),upside=12+Math.floor(h/19)%22;
-    st.candidates.push({id,name:names[h%names.length]+' '+region+' '+(i+1),region,
-     pos:(root.POS&&root.POS.length?root.POS[Math.floor(h/7)%root.POS.length]:(youth(s)[i%Math.max(1,youth(s).length)]?.pos||'10')),
-     age:16+(Math.floor(h/31)%3),rating,potential:clamp(rating+upside,rating,95)});
-   }
+   p.offers++;
+   if(!accepts){p.status='declined';n.history.push({id:p.id,season:s.season,action:'declined',club:p.clubId});return true}
+   const newPlayer=copy(template);
+   newPlayer.id=p.id;newPlayer.name=clean(p.name);newPlayer.pos=p.pos;newPlayer.age=p.age;
+   newPlayer.rating=p.rating;newPlayer.injury=0;newPlayer.condition=95;newPlayer.academy=true;
+   newPlayer.dev={...newPlayer.dev,potential:p.potential,xp:0,seasonStart:p.rating};
+   newPlayer.trainingOrigin={clubId:p.clubId,clubName:p.clubName,union:p.union,region:p.region,
+     joinedSeason:s.season,history:[{season:s.season,club:p.clubId,phase:'amateur'},
+       {season:s.season,club:s.club,phase:'academy'}]};
+   academy.push(newPlayer);s.clubs[s.club].cash-=8000;
+   p.status='recruited';st.recruits.push({id:p.id,name:p.name,season:s.season,origin:p.clubId});
+   n.history.push({id:p.id,season:s.season,action:'recruited',club:p.clubId});
    return true;
   },save);
  }
- function recruit(s,id,save){
-  const st=ensure(s),candidate=st?.candidates.find(p=>p.id===id),academy=youth(s);
-  if(!st||!unlocked(s)||!candidate||st.recruits.length>=5||academy.length>=35||!cost(s,8000)||
-   academy.some(x=>x.id===id)||!academy.length)return false;
-  // Use a real academy player as the structural template for native simulation/save compatibility.
-  const template=academy.find(x=>x.pos===candidate.pos)||academy[0];
-  if(!template||!template.dev||!Number.isInteger(template.fam))return false;
+ function networkPanel(s){
+  const st=ensure(s),n=st&&network(st,s);if(!n)return '';
+  const locked=!unlocked(s),arg=x=>JSON.stringify(x).replace(/"/g,'&quot;');
+  const available=n.players.filter(p=>p.status==='available').filter(p=>p.scouted||n.partners.includes(p.clubId)).slice(0,18);
+  return '<section class="cd04-panel" style="padding:18px;margin-top:18px"><h3>V95 · Filière clubs amateurs</h3>'+
+   '<p>Réseau : '+n.feeders.length+' clubs formateurs · '+n.players.filter(p=>p.status==='available').length+
+   ' jeunes suivables · '+n.partners.length+' partenaires. Recruter demande observations, essai et accord du joueur.</p>'+
+   '<ul>'+n.feeders.map(c=>'<li>'+safe(c.name)+' ('+safe(c.region)+', '+safe(c.union)+')'+
+   '<button onclick="v95Partner('+arg(c.id)+')"'+(locked||n.partners.includes(c.id)?' disabled':'')+
+   '>Partenariat · 2 000 €</button></li>').join('')+'</ul>'+
+   '<h4>Jeunes identifiés</h4><ul>'+available.map(p=>{
+    const m=model(s,p,n);
+    return '<li>'+safe(p.name)+' · '+safe(p.clubName)+' · '+safe(p.pos)+' · '+p.age+
+     ' ans · note observée '+(p.scouted?Math.round(p.rating/5)*5:'?')+
+     ' · potentiel estimé '+(p.scouted>=2?p.potential:'à confirmer')+
+     ' · adéquation '+m.interest+'/100 · concurrence '+m.rivals+
+     '<button onclick="v95Watch('+arg(p.id)+')"'+(locked||p.scouted>=3?' disabled':'')+'>Observer · 500 €</button>'+
+     '<button onclick="v95Trial('+arg(p.id)+')"'+(locked||p.scouted<1||p.trial?' disabled':'')+'>Essai · 1 000 €</button>'+
+     (p.union!=='FR'?'<button onclick="v95Clearance('+arg(p.id)+')"'+
+       (locked||p.age<18||!p.trial||p.clearanceRecorded?' disabled':'')+
+       '>Enregistrer clearance reçue</button>':'')+
+     '<button onclick="v95Sign('+arg(p.id)+')"'+
+       (locked||p.scouted<2||!p.trial||(p.union!=='FR'&&(p.age<18||!p.clearanceRecorded))?' disabled':'')+
+     '>Proposer le projet · 8 000 € si accepté</button></li>';
+   }).join('')+'</ul>'+
+   '<p class="help">Tous les clubs et joueurs sont fictifs. Les recrutements internationaux mineurs sont bloqués ; les clearance et accords sont simulés, jamais une preuve de conformité administrative réelle. L’historique formateur reste associé à chaque recrue.</p></section>';
+ }
+ function discover(s,region,save){
+  const st=ensure(s),n=st&&network(st,s);
+  if(!st||!unlocked(s)||!REGIONS.includes(region)||st.scouts>=3||!cost(s,3000))return false;
   return transact(s,()=>{
-   const p=copy(template);
-   p.id=candidate.id;p.name=clean(candidate.name);p.pos=candidate.pos;p.age=candidate.age;p.rating=candidate.rating;
-   p.injury=0;p.condition=95;p.academy=true;
-   p.dev={...p.dev,potential:candidate.potential,xp:0,seasonStart:candidate.rating};
-   s.clubs[s.club].cash-=8000;academy.push(p);st.recruits.push({id,name:p.name,season:s.season,region:candidate.region});
-   st.candidates=st.candidates.filter(x=>x.id!==id);return true;
+   s.clubs[s.club].cash-=3000;st.scouts++;st.region=region;
+   const clubs=n.feeders.filter(x=>x.region===region);
+   const pool=n.players.filter(x=>clubs.some(c=>c.id===x.clubId)&&x.status==='available');
+   for(const p of pool.slice(0,3))p.scouted=Math.max(1,p.scouted);
+   return true;
   },save);
  }
+ function recruit(s,id,save){return recruitFeeder(s,id,save)}
  function meeting(s,save){
   const st=ensure(s);
   if(!st||!unlocked(s)||st.meetings>=3||!cost(s,2000))return false;
@@ -153,6 +256,16 @@
     p.rating=Math.min(potential(p),99,p.rating+1);styleProgress++;
    }
    if(st.identity==='defense')st.cohesion=clamp(st.cohesion+2,0,100);
+   // Educational attribution ledger: intentionally no invented legal transfer fees.
+   const n=network(st,s);
+   for(const promoted of s.v77Promotions?.promotions||[]){
+    const found=n.players.find(p=>p.id===promoted.playerId);
+    if(!found||n.credits.some(c=>c.id===found.id))continue;
+    n.credits.push({id:found.id,club:found.clubId,firstProfessionalSeason:s.season,
+      kind:'RIF-descriptive',yearsRecognized:1});
+   }
+   n.credits=n.credits.slice(-80);
+   n.history=n.history.slice(-150);
    const graduates=(s.v77Promotions?.promotions||[]).length;
    const completed=(s.v73Espoirs?.results||[]).filter(m=>Array.isArray(m.pair)&&m.pair.includes(s.club)).length;
    const performance=completed>0?Math.min(5,Math.round(completed/5)):0;
@@ -188,7 +301,7 @@
    '<h3>V100 · Réputation du centre</h3><p>'+st.reputation+'/100 · '+safe(rankings(s).tier)+
    '</p><ul>'+st.history.slice(0,10).map(h=>'<li>S'+h.season+' · '+h.graduates+' promus · réputation '+
    h.reputation+' · cohésion '+h.cohesion+'</li>').join('')+'</ul>'+
-   '<p class="help">Candidats et réputation entièrement fictifs. Les promesses ne déclenchent pas de transfert ni de promotion automatique. Développement physique soldé à la fin de saison.</p></section>';
+   networkPanel(s)+'<p class="help">Candidats et réputation entièrement fictifs. Les promesses ne déclenchent pas de transfert ni de promotion automatique. Développement physique soldé à la fin de saison.</p></section>';
  }
  function install(g){
   if(!g||typeof g.start!=='function'||typeof g.advanceSeason!=='function'||typeof g.render!=='function')return false;
@@ -210,12 +323,14 @@
     if(target?.insertAdjacentHTML)target.insertAdjacentHTML('beforeend',panel(s));
    }return r};
   for(const [name,fn] of [['v95Scout',discover],['v95Recruit',recruit],['v96Meeting',meeting],
-   ['v97Load',load],['v98Ambition',ambition],['v99Identity',identity]]){
+   ['v97Load',load],['v98Ambition',ambition],['v99Identity',identity],
+   ['v95Watch',watch],['v95Trial',trial],['v95Partner',partner],
+   ['v95Clearance',clearance],['v95Sign',recruitFeeder]]){
     g[name]=function(){const ok=fn(state(),...arguments,save);if(ok)g.render();return ok};
   }
   return true;
  }
- const api={valid,ensure,discover,recruit,meeting,load,ambition,identity,rankings,settle,panel,install};
+ const api={valid,ensure,network,model,watch,trial,partner,clearance,recruitFeeder,networkPanel,discover,recruit,meeting,load,ambition,identity,rankings,settle,panel,install};
  root.CDEspoirsStrategyV95V100=api;
  if(typeof module==='object'&&module.exports)module.exports=api;
  if(typeof document!=='undefined')install(root);
