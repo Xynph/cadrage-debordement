@@ -1,3 +1,5 @@
+> Mise à jour du 5 novembre 2026 — étape 1 : les quatre GLB sources et les deux notices sont maintenant acquis et audités dans `charactercreator-v24/`. Voir le manifeste et `docs/match3d-v24-etapes.md`. Le blocage d’acquisition décrit dans l’historique ci-dessous est levé pour ces sources. L’intégration runtime, les LOD, les gestes rugby et la qualification visuelle restent à faire ; aucune fusion autorisée par cette seule acquisition.
+
 # MATCH 3D Premium — lot 24 : qualification des personnages anatomiques
 
 État au 2026-11-04 : **qualification préalable, intégration refusée tant que les critères ci-dessous ne sont pas satisfaits**. Ce fichier n'est ni une preuve de remplacement 3D ni un benchmark.
