@@ -32,7 +32,7 @@ function tacticalCount(l,side,key,n=1){if(tacticalRules(l))l.tacticalStats[side]
 // Pas de nouveau champ sauvegardé ni d'aléa ; les matchs historiques gardent leurs règles.
 function opponentDefenceDecision(l,side){
  if(!l||!tacticalRules(l)||side===l.userSide||![0,1].includes(side))return null;
- const observed=l.tacticalStats?.[1-side],ours=l.tacticalStats?.[side];
+ const observed=l.tacticalStats?.[1-side];
  if(!observed||observed.carries<8)return null;
  const minute=matchMinute(l),remaining=Math.max(0,80-minute),margin=l.score[side]-l.score[1-side];
  const players=activePlayers(l,side),fitness=players.length?mean(players.map(p=>p.condition)):0;
@@ -50,7 +50,7 @@ function opponentDefenceDecision(l,side){
  // Il faut assez de signal : au moins 3 fautes sur 8 portés et une faible progression.
  if(errors>=3&&advances<=.35&&fitness>=78&&margin<7&&current!=='pression')
   return {plan:'pression',reason:'exploiter les fautes de main et les courses peu efficaces'};
- if(ours?.penalties>=4&&current==='pression')
+ if(l.stats?.[side]?.penalties>=4&&current==='pression')
   return {plan:'equilibre',reason:'limiter les pénalités concédées'};
  return null;
 }
