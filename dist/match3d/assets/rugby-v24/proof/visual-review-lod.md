@@ -16,3 +16,7 @@
 - Ajuster les budgets LOD2 par composant pour privilégier les vêtements et préserver les bordures topologiques des vêtements lors de la simplification.
 - Rejouer le même test Chromium et comparer réellement les neuf captures ; **ne pas déclarer corrigé sur le seul succès structurel**.
 - Garder la PR #300 DRAFT ; pas de gate ni fusion. Raccorder au runtime seulement après résolution visuelle.
+
+## Reconstruction corrective publiée, réception à refaire
+
+Le constructeur a publié sur la branche PR #300 le rapport LOD2 corrigé : **2 549 triangles** au total, dont **1 469 corps, 534 T-shirt, 214 short et 332 chaussures**. Ancien maillot LOD2 : 91 triangles. Cette redistribution ne prouve pas que les surfaces trouées ont disparu. Les CI du commit automatique sont notées `action_required` : il faut une nouvelle exécution déclenchée normalement et les nouvelles captures avant validation visuelle.
