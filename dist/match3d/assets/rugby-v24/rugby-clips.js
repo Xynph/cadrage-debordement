@@ -52,6 +52,34 @@
   }
   return measurements;
  }
+ // Coordinated two-rig fall demonstrator. Alters only the actual bone/root
+ // transforms of two independent rigs in the isolated qualification scene.
+ // Caller must resample the original clip and restore base transforms each frame.
+ function coordinateFall(THREE,tackler,carrier,progress,bases){
+  const clamp=THREE.MathUtils.clamp, p=clamp(progress,0,1);
+  const smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x);};
+  const onset=smooth((p-.25)/.75), settle=smooth((p-.63)/.37);
+  const get=(rig,name)=>{const b=rig.bones.find(x=>x.name===name);if(!b)throw Error('Os chute absent : '+name);return b;};
+  if(!bases||!bases.tackler||!bases.carrier)throw Error('Bases de contact requises');
+  // Gradual translational impulse and rotational loss of balance for BOTH rigs.
+  // Keep meshes, skinned materials and independent armature hierarchy unchanged.
+  tackler.body.position.copy(bases.tackler.position).add(new THREE.Vector3(0,-.10*onset,.10*onset));
+  carrier.body.position.copy(bases.carrier.position).add(new THREE.Vector3(0,-.23*onset,.17*onset));
+  tackler.body.quaternion.copy(bases.tackler.quaternion).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),.20*onset));
+  carrier.body.quaternion.copy(bases.carrier.quaternion).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),.43*onset));
+  // A controlled roll and leg bend, not an artificial low-poly body proxy.
+  for(const [rig,lean,legs]of [[tackler,.27,.40],[carrier,.36,.65]]){
+   get(rig,'spine_02').rotateX(lean*onset);
+   get(rig,'thigh_l').rotateX(-legs*onset);
+   get(rig,'thigh_r').rotateX(-legs*onset);
+   get(rig,'calf_l').rotateX(legs*.8*settle);
+   get(rig,'calf_r').rotateX(legs*.8*settle);
+  }
+  tackler.body.updateMatrixWorld(true);carrier.body.updateMatrixWorld(true);
+  const point=(rig,name)=>get(rig,name).getWorldPosition(new THREE.Vector3());
+  return {progress:p,onset,settle,torsoSeparationM:point(tackler,'spine_03').distanceTo(point(carrier,'spine_03')),
+   tacklerRoot:tackler.body.position.toArray(),carrierRoot:carrier.body.position.toArray()};
+ }
  function create(THREE,bones){
   if(!THREE?.AnimationClip||!THREE?.QuaternionKeyframeTrack)throw Error('Three.js animations requises');
   const map=new Map(bones.map(b=>[b.name,b]));
@@ -132,5 +160,5 @@
   if(hierarchy){let top=bones[0];while(top.parent)top=top.parent;top.updateMatrixWorld(true);}
   return clips;
  }
- root.CDMatch3DV24RugbyClips=Object.freeze({create,solveArm,wrapCarrier});
+ root.CDMatch3DV24RugbyClips=Object.freeze({create,solveArm,wrapCarrier,coordinateFall});
 })(typeof window!=='undefined'?window:globalThis);
