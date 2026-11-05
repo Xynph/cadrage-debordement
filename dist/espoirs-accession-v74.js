@@ -15,7 +15,7 @@ const hash=x=>{let h=2166136261;for(const c of String(x)){h^=c.charCodeAt(0);h=M
 const rand=(seed,mod)=>(hash(seed)%mod);
 const safe=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const ids=()=>Array.from({length:20},(_,i)=>i);
-const name=(s,id)=>(s.lnrMode?.version===1?REAL:FICTION)[Math.floor(id/10)]?.[id%10]||('Centre '+id);
+const name=(s,id)=>{const base=(s.lnrMode?.version===1?REAL:FICTION)[Math.floor(id/10)]?.[id%10]||('Centre '+id);return root.CDEspoirsMovementV75?.name(s,'accession',id,base)||base};
 function fixtures(groups){
  const schedule=groups.map(ids=>{const a=ids.slice(),out=[];for(let r=0;r<18;r++){const day=[];for(let i=0;i<5;i++){const x=a[i],y=a[9-i];day.push((r+i)%2?[y,x]:[x,y])}out.push(day);a.splice(1,0,a.pop())}return out});
  return Array.from({length:18},(_,i)=>[...schedule[0][i],...schedule[1][i]])}
@@ -25,6 +25,7 @@ function setup(s){if(!s||!s.development||!s.aiRoster?.academies)return null;
  if(s.v74Accession?.version===1&&s.v74Accession.season===s.season)return s.v74Accession;
  const previous=s.v74Accession,groups=[ids().slice(0,10),ids().slice(10)];
  s.v74Accession={version:1,season:s.season,round:0,stage:'poules',groups,fixtures:fixtures(groups),results:[],centers:ids().map(id=>({id,players:prospects(s.season,id)})),follow:previous?.follow??0,plan:'equilibre',history:previous?.history?.slice(0,4)||[],champion:null,finalists:[],playoffs:[]};
+ if(root.CDEspoirsMovementV75?.sync)root.CDEspoirsMovementV75.sync(s);
  return s.v74Accession}
 function read(s){return s?.v74Accession?.version===1&&s.v74Accession.season===s.season?s.v74Accession:null}
 function standings(st,group){const rows=group.map(id=>({id,p:0,w:0,d:0,l:0,scored:0,conceded:0,bonus:0,points:0}));
@@ -76,6 +77,6 @@ function install(g){if(!g||typeof g.finishRound!=='function'||typeof g.advanceSe
  const origStart=g.start;if(typeof origStart==='function')g.start=function(){const result=origStart.apply(this,arguments);if(get()){setup(get());save()}return result};
  const origRender=g.render;g.render=function(){const result=origRender.apply(this,arguments),s=get();if(s&&typeof view!=='undefined'&&view==='formation'&&typeof document!=='undefined'){const target=document.querySelector('.cd04-content [data-da42-page="dossiers"]');if(target)target.insertAdjacentHTML('beforeend',panel(s))}return result};
  g.v74Select=(field,value)=>{const ok=select(get(),field,value,save);if(ok)g.render();return ok};return true}
-const api={REAL,FICTION,fixtures,setup,read,standings,play,apply,advance,closeSeason,select,panel,install};
+const api={REAL,FICTION,name,fixtures,setup,read,standings,play,apply,advance,closeSeason,select,panel,install};
 if(typeof module==='object'&&module.exports)module.exports=api;root.CDEspoirsAccessionV74=api;if(typeof document!=='undefined')install(root)
 })(typeof globalThis==='object'?globalThis:this);
