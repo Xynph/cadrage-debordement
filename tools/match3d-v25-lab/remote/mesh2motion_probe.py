@@ -5,9 +5,10 @@ from playwright.sync_api import sync_playwright
 
 root=Path.cwd();repo=root/'rd-work/mesh2motion';out=root/'rd-report';external=[];errors=[]
 # Temporary harness is written ONLY in the independent third-party working copy.
-(repo/'src/rd-glb-loader.ts').write_text("export { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'\n")
+(repo/'src/rd-glb-loader.ts').write_text("export { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'\nexport { AnimationMixer, Vector3 } from 'three'\n")
 (repo/'src/rd-probe.html').write_text('<!doctype html><title>Mesh2Motion API roundtrip</title><a id="export-model-hidden-link"></a><div id="status">Local API test</div>')
-shutil.copy2(root/'baseline/dist/match3d/assets/rugby-v24/lod/base_body_anim-lod2.glb',repo/'static/rd-body.glb')
+for lod in range(3):
+    shutil.copy2(root/f'baseline/dist/match3d/assets/rugby-v24/lod/base_body_anim-lod{lod}.glb',repo/f'static/rd-body-lod{lod}.glb')
 log=(out/'mesh2motion-vite.log').open('w')
 env={k:v for k,v in os.environ.items() if k in ['PATH','HOME','LANG','TMPDIR','NODE_EXTRA_CA_CERTS']}
 server=subprocess.Popen(['npm','run','dev','--','--host','127.0.0.1','--port','5199','--strictPort'],cwd=repo,stdout=log,stderr=subprocess.STDOUT,env=env)
@@ -25,79 +26,146 @@ try:
             except Exception:
                 if attempt==29:raise
                 time.sleep(1)
-        result=page.evaluate('''async()=>{
-          const {StepLoadModel}=await import('/lib/processes/load-model/StepLoadModel.ts');
-          const {StepExportToFile}=await import('/lib/processes/export-to-file/StepExportToFile.ts');
-          const {GLTFLoader}=await import('/rd-glb-loader.ts');
-          const source=await new GLTFLoader().loadAsync('/rd-body.glb');
-          const sourceClips=source.animations;
-          if(sourceClips.length!==12)throw Error('Expected 12 original rugby-body clips, found '+sourceClips.length);
+        records=[]
+        for lod in range(3):
+            result=page.evaluate('''async(lod)=>{
+              const {StepLoadModel}=await import('/lib/processes/load-model/StepLoadModel.ts');
+              const {StepExportToFile}=await import('/lib/processes/export-to-file/StepExportToFile.ts');
+              const {GLTFLoader,AnimationMixer,Vector3}=await import('/rd-glb-loader.ts');
+              const modelUrl='/rd-body-lod'+lod+'.glb';
+              const source=await new GLTFLoader().loadAsync(modelUrl);
+              const sourceClips=source.animations;
+              if(sourceClips.length!==12)throw Error('Expected 12 original rugby-body clips, found '+sourceClips.length);
 
-          const importer=new StepLoadModel();importer.set_preserve_skinned_mesh(true);
-          await new Promise((resolve,reject)=>{
-            importer.addEventListener('modelLoadedForRetargeting',resolve,{once:true});
-            importer.load_model_file('/rd-body.glb','glb');setTimeout(()=>reject(Error('Import timeout')),90000);
-          });
-          const model=importer.get_final_retargetable_model_data();
-          const rigs=[];model.traverse(n=>{if(n.isSkinnedMesh)rigs.push(n.skeleton.bones.length)});
-          if(!rigs.length||rigs.some(n=>n!==53))throw Error('Canonical rig lost on import');
-          function snapshot(scene){
-            const meshes=[];scene.updateMatrixWorld(true);
-            scene.traverse(n=>{if(!n.isSkinnedMesh)return;
-              const weights=n.geometry.getAttribute('skinWeight'),joints=n.geometry.getAttribute('skinIndex');
-              const values=a=>Array.from({length:a.count},(_,i)=>[a.getX(i),a.getY(i),a.getZ(i),a.getW(i)]).flat();
-              meshes.push({name:n.name,vertices:weights.count,weights:values(weights),joints:values(joints),
-                bones:n.skeleton.bones.map(b=>[b.name,b.parent?.isBone?b.parent.name:null]),
-                inverseBind:n.skeleton.boneInverses.flatMap(m=>m.elements)});
-            });return meshes.sort((a,b)=>a.name.localeCompare(b.name));
-          }
-          const before=snapshot(model);
-          const exporter=new StepExportToFile();
-          // Intercept the actual exporter's download sink, without substituting exporter logic.
-          exporter.save_array_buffer=(buffer,name)=>{window.rdExport=Array.from(new Uint8Array(buffer));};
-          await exporter.export_glb(model,sourceClips,'rd-roundtrip');
-          const binary=new Uint8Array(window.rdExport);
-          const exported=await new GLTFLoader().parseAsync(binary.buffer,'http://127.0.0.1:5199/');
-          const outputClips=exported.animations;
-          if(outputClips.length!==sourceClips.length)throw Error('Clip count changed '+sourceClips.length+' -> '+outputClips.length);
-          let animationDelta=0;
-          const animationEvidence=[];
-          for(let i=0;i<sourceClips.length;i++){
-            const a=sourceClips[i],b=outputClips[i];
-            if(a.name!==b.name||Math.abs(a.duration-b.duration)>1e-5||a.tracks.length!==b.tracks.length)throw Error('Clip identity/count changed: '+a.name+' -> '+b.name);
-            const reference=new Map(a.tracks.map(track=>[track.name,track]));
-            for(const track of b.tracks){
-              const original=reference.get(track.name);
-              if(!original||original.times.length!==track.times.length||original.values.length!==track.values.length)throw Error('Track identity/count changed: '+a.name+' '+track.name);
-              for(const key of ['times','values'])for(let j=0;j<track[key].length;j++)animationDelta=Math.max(animationDelta,Math.abs(track[key][j]-original[key][j]));
-            }
-            animationEvidence.push({name:a.name,duration:a.duration,tracks:a.tracks.length,exportedTracks:b.tracks.length});
-          }
-          if(!Number.isFinite(animationDelta)||animationDelta>1e-5)throw Error('Animation key data delta '+animationDelta);
-          const copy=new StepLoadModel();copy.set_preserve_skinned_mesh(true);
-          const url=URL.createObjectURL(new Blob([new Uint8Array(window.rdExport)]));
-          await new Promise((resolve,reject)=>{
-            copy.addEventListener('modelLoadedForRetargeting',resolve,{once:true});
-            copy.load_model_file(url,'glb');setTimeout(()=>reject(Error('Reimport timeout')),90000);
-          });URL.revokeObjectURL(url);
-          const after=snapshot(copy.get_final_retargetable_model_data());
-          let delta=0;
-          if(before.length!==after.length)throw Error('Export lost meshes');
-          for(let i=0;i<before.length;i++){
-            const a=before[i],b=after[i];
-            if(a.name!==b.name||a.vertices!==b.vertices||JSON.stringify(a.bones)!==JSON.stringify(b.bones)||JSON.stringify(a.joints)!==JSON.stringify(b.joints))throw Error('Mesh or skeleton identity changed');
-            for(const key of ['weights','inverseBind']){
-              if(a[key].length!==b[key].length)throw Error(key+' size changed');
-              for(let j=0;j<a[key].length;j++)delta=Math.max(delta,Math.abs(a[key][j]-b[key][j]));
-            }
-          }
-          if(!Number.isFinite(delta)||delta>1e-5)throw Error('Weights or bind matrices changed: '+delta);
-          return {rigs,bytes:window.rdExport.length,reimportVerified:true,meshes:after.length,maxWeightOrBindDelta:delta,importer:'StepLoadModel preserve_skinned_mesh',exporter:'StepExportToFile.export_glb',animations:{status:'PASS_KEY_DATA_ROUNDTRIP_NOT_DEFORMATION_APPROVAL',clips:animationEvidence,maxKeyDataDelta:animationDelta,source:'original LOD2 GLTFLoader clips',note:'No retarget or anatomical fitting; deformation comparison still pending'}};
-        }''')
-        data=bytes(page.evaluate('window.rdExport'));(out/'copies/mesh2motion-roundtrip.glb').write_bytes(data)
-        result['externalRequests']=external;result['pageErrors']=errors
-        (out/'mesh2motion.json').write_text(json.dumps(result,indent=2)+'\n')
-        assert not external and not errors,(external,errors)
-        assert data[:4]==b'glTF'
+              const importer=new StepLoadModel();importer.set_preserve_skinned_mesh(true);
+              await new Promise((resolve,reject)=>{
+                importer.addEventListener('modelLoadedForRetargeting',resolve,{once:true});
+                importer.load_model_file(modelUrl,'glb');setTimeout(()=>reject(Error('Import timeout')),90000);
+              });
+              const model=importer.get_final_retargetable_model_data();
+              const rigs=[];model.traverse(n=>{if(n.isSkinnedMesh)rigs.push(n.skeleton.bones.length)});
+              if(!rigs.length||rigs.some(n=>n!==53))throw Error('Canonical rig lost on import');
+              function snapshot(scene){
+                const meshes=[];scene.updateMatrixWorld(true);
+                scene.traverse(n=>{if(!n.isSkinnedMesh)return;
+                  const weights=n.geometry.getAttribute('skinWeight'),joints=n.geometry.getAttribute('skinIndex');
+                  const values=a=>Array.from({length:a.count},(_,i)=>[a.getX(i),a.getY(i),a.getZ(i),a.getW(i)]).flat();
+                  meshes.push({name:n.name,vertices:weights.count,weights:values(weights),joints:values(joints),
+                    bones:n.skeleton.bones.map(b=>[b.name,b.parent?.isBone?b.parent.name:null]),
+                    inverseBind:n.skeleton.boneInverses.flatMap(m=>m.elements)});
+                });return meshes.sort((a,b)=>a.name.localeCompare(b.name));
+              }
+              const before=snapshot(model);
+              const exporter=new StepExportToFile();
+              // Intercept the actual exporter's download sink, without substituting exporter logic.
+              exporter.save_array_buffer=(buffer,name)=>{window.rdExport=Array.from(new Uint8Array(buffer));};
+              await exporter.export_glb(model,sourceClips,'rd-roundtrip');
+              const binary=new Uint8Array(window.rdExport);
+              const exported=await new GLTFLoader().parseAsync(binary.buffer,'http://127.0.0.1:5199/');
+              const outputClips=exported.animations;
+              if(outputClips.length!==sourceClips.length)throw Error('Clip count changed '+sourceClips.length+' -> '+outputClips.length);
+              let animationDelta=0;
+              const animationEvidence=[];
+              for(let i=0;i<sourceClips.length;i++){
+                const a=sourceClips[i],b=outputClips[i];
+                if(a.name!==b.name||Math.abs(a.duration-b.duration)>1e-5||a.tracks.length!==b.tracks.length)throw Error('Clip identity/count changed: '+a.name+' -> '+b.name);
+                const reference=new Map(a.tracks.map(track=>[track.name,track]));
+                for(const track of b.tracks){
+                  const original=reference.get(track.name);
+                  if(!original||original.times.length!==track.times.length||original.values.length!==track.values.length)throw Error('Track identity/count changed: '+a.name+' '+track.name);
+                  for(const key of ['times','values'])for(let j=0;j<track[key].length;j++)animationDelta=Math.max(animationDelta,Math.abs(track[key][j]-original[key][j]));
+                }
+                animationEvidence.push({name:a.name,duration:a.duration,tracks:a.tracks.length,exportedTracks:b.tracks.length});
+              }
+              if(!Number.isFinite(animationDelta)||animationDelta>1e-5)throw Error('Animation key data delta '+animationDelta);
+
+              const originalMeshes=[];source.scene.traverse(n=>{if(n.isSkinnedMesh)originalMeshes.push(n)});
+              const exportedMeshes=[];exported.scene.traverse(n=>{if(n.isSkinnedMesh)exportedMeshes.push(n)});
+              const byName=(a,b)=>a.name.localeCompare(b.name);
+              originalMeshes.sort(byName);exportedMeshes.sort(byName);
+              if(originalMeshes.length!==8||exportedMeshes.length!==8)throw Error('Skinned mesh count incorrect LOD '+lod);
+              const matrixMetrics={lod,clipCount:sourceClips.length,fractions:[0,.25,.5,.75,.9999],
+                maxBoneMatrixComponentDelta:0,maxMeshMatrixComponentDelta:0,maxSkinnedVertexWorldDistance:0,
+                boneMatrixSamples:0,meshMatrixSamples:0,skinnedVertexSamples:0};
+              const checkMatrix=(a,b,label)=>{
+                for(let c=0;c<16;c++){
+                  const delta=Math.abs(a.elements[c]-b.elements[c]);
+                  if(!Number.isFinite(delta))throw Error('Non finite '+label);
+                  if(label==='bone')matrixMetrics.maxBoneMatrixComponentDelta=Math.max(matrixMetrics.maxBoneMatrixComponentDelta,delta);
+                  else matrixMetrics.maxMeshMatrixComponentDelta=Math.max(matrixMetrics.maxMeshMatrixComponentDelta,delta);
+                }
+                if(label==='bone')matrixMetrics.boneMatrixSamples++;
+                else matrixMetrics.meshMatrixSamples++;
+              };
+              for(let clipIndex=0;clipIndex<sourceClips.length;clipIndex++){
+                const left=new AnimationMixer(source.scene),right=new AnimationMixer(exported.scene);
+                left.clipAction(sourceClips[clipIndex]).play();
+                right.clipAction(outputClips[clipIndex]).play();
+                for(const fraction of matrixMetrics.fractions){
+                  left.setTime(sourceClips[clipIndex].duration*fraction);
+                  right.setTime(outputClips[clipIndex].duration*fraction);
+                  source.scene.updateMatrixWorld(true);exported.scene.updateMatrixWorld(true);
+                  for(let mi=0;mi<originalMeshes.length;mi++){
+                    const a=originalMeshes[mi],b=exportedMeshes[mi];
+                    if(a.name!==b.name||a.skeleton.bones.length!==53||b.skeleton.bones.length!==53||
+                       a.geometry.getAttribute('position').count!==b.geometry.getAttribute('position').count)
+                      throw Error('Mesh identity differs at LOD '+lod+' index '+mi);
+                    a.skeleton.update();b.skeleton.update();
+                    checkMatrix(a.matrixWorld,b.matrixWorld,'mesh');
+                    for(let bi=0;bi<53;bi++){
+                      if(a.skeleton.bones[bi].name!==b.skeleton.bones[bi].name)
+                        throw Error('Bone mismatch LOD '+lod+' bone '+bi);
+                      checkMatrix(a.skeleton.bones[bi].matrixWorld,b.skeleton.bones[bi].matrixWorld,'bone');
+                    }
+                    const pa=a.geometry.getAttribute('position'),pb=b.geometry.getAttribute('position');
+                    const sampleCount=Math.min(32,pa.count);
+                    for(let vi=0;vi<sampleCount;vi++){
+                      const index=Math.floor(vi*(pa.count-1)/Math.max(1,sampleCount-1));
+                      const va=new Vector3().fromBufferAttribute(pa,index);
+                      const vb=new Vector3().fromBufferAttribute(pb,index);
+                      a.applyBoneTransform(index,va);b.applyBoneTransform(index,vb);
+                      a.localToWorld(va);b.localToWorld(vb);
+                      const delta=va.distanceTo(vb);
+                      if(!Number.isFinite(delta))throw Error('Nonfinite skin vertex LOD '+lod);
+                      matrixMetrics.maxSkinnedVertexWorldDistance=Math.max(matrixMetrics.maxSkinnedVertexWorldDistance,delta);
+                      matrixMetrics.skinnedVertexSamples++;
+                    }
+                  }
+                }
+                left.stopAllAction();right.stopAllAction();
+              }
+              if(matrixMetrics.boneMatrixSamples!==12*5*8*53||matrixMetrics.skinnedVertexSamples===0)
+                throw Error('Incomplete deterministic pose sample LOD '+lod);
+              if(matrixMetrics.maxBoneMatrixComponentDelta>1e-4||
+                 matrixMetrics.maxMeshMatrixComponentDelta>1e-4||
+                 matrixMetrics.maxSkinnedVertexWorldDistance>1e-3)
+                throw Error('Deformation regression LOD '+lod+': '+JSON.stringify(matrixMetrics));
+              const copy=new StepLoadModel();copy.set_preserve_skinned_mesh(true);
+              const url=URL.createObjectURL(new Blob([new Uint8Array(window.rdExport)]));
+              await new Promise((resolve,reject)=>{
+                copy.addEventListener('modelLoadedForRetargeting',resolve,{once:true});
+                copy.load_model_file(url,'glb');setTimeout(()=>reject(Error('Reimport timeout')),90000);
+              });URL.revokeObjectURL(url);
+              const after=snapshot(copy.get_final_retargetable_model_data());
+              let delta=0;
+              if(before.length!==after.length)throw Error('Export lost meshes');
+              for(let i=0;i<before.length;i++){
+                const a=before[i],b=after[i];
+                if(a.name!==b.name||a.vertices!==b.vertices||JSON.stringify(a.bones)!==JSON.stringify(b.bones)||JSON.stringify(a.joints)!==JSON.stringify(b.joints))throw Error('Mesh or skeleton identity changed');
+                for(const key of ['weights','inverseBind']){
+                  if(a[key].length!==b[key].length)throw Error(key+' size changed');
+                  for(let j=0;j<a[key].length;j++)delta=Math.max(delta,Math.abs(a[key][j]-b[key][j]));
+                }
+              }
+              if(!Number.isFinite(delta)||delta>1e-5)throw Error('Weights or bind matrices changed: '+delta);
+              return {lod,poseMetrics:matrixMetrics,rigs,bytes:window.rdExport.length,reimportVerified:true,meshes:after.length,maxWeightOrBindDelta:delta,importer:'StepLoadModel preserve_skinned_mesh',exporter:'StepExportToFile.export_glb',animations:{status:'PASS_KEY_DATA_ROUNDTRIP_NOT_DEFORMATION_APPROVAL',clips:animationEvidence,maxKeyDataDelta:animationDelta,source:'original LOD2 GLTFLoader clips',note:'No retarget or anatomical fitting; deformation comparison still pending'}};
+            }''',lod)
+            data=bytes(page.evaluate('window.rdExport'));(out/f'copies/mesh2motion-roundtrip-lod{lod}.glb').write_bytes(data)
+            result['externalRequests']=list(external);result['pageErrors']=list(errors)
+            records.append(result)
+            assert not external and not errors,(external,errors)
+            assert data[:4]==b'glTF'
+        (out/'mesh2motion.json').write_text(json.dumps(records[2],indent=2)+'\n')
+        (out/'mesh2motion-deformation.json').write_text(json.dumps({'lods':records,'sampleFractions':[0,.25,.5,.75,.9999],'units':'meters','thresholds':{'boneMatrixComponent':1e-4,'meshMatrixComponent':1e-4,'skinnedVertexWorld':1e-3}},indent=2)+'\n')
         browser.close()
 finally:server.terminate();server.wait(timeout=20);log.close()
