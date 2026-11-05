@@ -103,7 +103,45 @@ try:
       const p=(bones,name)=>bones.find(b=>b.name===name).getWorldPosition(new THREE.Vector3());
       const target=p(partner.bones,'spine_03');
       const collision=CDMatch3DV24MeshIntersections.probe(THREE,{body:asset.body,bones:asset.bones},partner,850);
-      return {...state,meshIntersections:collision,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
+      // Non-mutating deterministic pose search at impact. Test ACTUAL skinned
+      // carrier vertices, two anatomically fixed arm reaches and intersecting
+      // triangles. Only report candidates; never move a rig without review.
+      let relativePoseSweep=null;
+      if(progress===1){
+        const right=p(asset.bones,'upperarm_r'),left=p(asset.bones,'upperarm_l');
+        const chest=p(partner.bones,'spine_03'),direction=right.clone().sub(chest);
+        direction.y=0;
+        if(direction.lengthSq()<1e-8)direction.set(1,0,0);
+        direction.normalize();
+        const sideways=new THREE.Vector3(-direction.z,0,direction.x);
+        const start=partner.body.position.clone(),samples=[];
+        const reach=side=>{const a=p(asset.bones,'upperarm_'+side),b=p(asset.bones,'lowerarm_'+side),c=p(asset.bones,'hand_'+side);return a.distanceTo(b)+b.distanceTo(c);};
+        const reachL=reach('l'),reachR=reach('r');
+        for(const [forward,lateral] of [[0,0],[.04,0],[.08,0],[.12,0],[0,.04],[0,-.04],[.06,.04],[.06,-.04],[.10,.04],[.10,-.04]]){
+          partner.body.position.copy(start).addScaledVector(direction,forward).addScaledVector(sideways,lateral);
+          partner.body.updateMatrixWorld(true);
+          const skin=[];
+          partner.body.traverse(mesh=>{
+            if(!mesh.isSkinnedMesh||mesh.name!=='Body')return;
+            const attr=mesh.geometry.getAttribute('position'),v=new THREE.Vector3();
+            const stride=Math.max(1,Math.floor(attr.count/600));
+            for(let i=0;i<attr.count;i+=stride){
+              mesh.boneTransform(i,v.fromBufferAttribute(attr,i));mesh.localToWorld(v);
+              if(v.distanceTo(p(partner.bones,'spine_03'))<.45)skin.push(v.clone());
+            }
+          });
+          const distance=a=>Math.min(...skin.map(v=>v.distanceTo(a)));
+          const leftDeficit=Math.max(0,distance(left)-reachL);
+          const rightDeficit=Math.max(0,distance(right)-reachR);
+          const crossed=CDMatch3DV24MeshIntersections.probe(THREE,{body:asset.body,bones:asset.bones},partner,260);
+          samples.push({forwardM:forward,lateralM:lateral,leftDeficitM:leftDeficit,
+            rightDeficitM:rightDeficit,sampledTriangleIntersections:crossed.properTriangleIntersections});
+        }
+        partner.body.position.copy(start);partner.body.updateMatrixWorld(true);
+        relativePoseSweep={reachL,reachR,samples,
+          status:'DIAGNOSTIC_ONLY_NO_POSE_MUTATION_AND_SAMPLED_TRIANGLES_ONLY'};
+      }
+      return {...state,meshIntersections:collision,relativePoseSweep,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
     }""",phase)
     fall['lod']=lod
     assert fall['meshIntersections']['tacklerTriangles']>=20 and fall['meshIntersections']['carrierTriangles']>=20,(lod,phase,'real mesh triangle samples missing',fall['meshIntersections'])
