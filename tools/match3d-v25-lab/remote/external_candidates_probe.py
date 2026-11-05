@@ -195,6 +195,26 @@ def run_godot():
         str(binary),"--headless","--path",str(directory),"--script",
         str(ROOT/"tools/match3d-v25-lab/remote/godot_real_ragdoll_probe.gd"),"--",
         str(OUT/"real-ragdoll-3lod.json"),*input_paths],timeout=480) if canonical["status"]=="PASS" else {"status":"SKIP"}
+    if "--idle-only" in sys.argv:
+        # Paired tackle is previously rejected; isolate target-vs-physics
+        # WITHOUT impulses, joints or root movement. Do not conflate its
+        # expected failures with a failed experiment execution.
+        idle=command("kickback-idle-stability-3lod",[
+            "xvfb-run","-a","-s","-screen 0 800x450x24",
+            str(binary),"--rendering-driver","opengl3",
+            "--rendering-method","gl_compatibility",
+            "--path",str(directory),"--script",
+            str(ROOT/"tools/match3d-v25-lab/remote/godot_idle_stability_probe.gd"),"--",
+            str(OUT/"idle-stability-3lod.json"),*input_paths,"visual"],timeout=650)
+        verdict={"version":version["status"],"upstreamGodotImport":imported["status"],
+                 "upstreamGutTests":upstream["status"],"ourThreeCanonRigs":canonical["status"],
+                 "historicalTwoRigImpact":physical["status"],"idleDiagnostic":idle["status"],
+                 "qualification":"NOT_APPROVED_UNTIL_IDLE_STABILITY_AND_SKIN_CONTACT",
+                 "limitations":"Diagnostic per-mode FAIL_UNSTABLE is expected, not an approved tackle"}
+        (OUT/"godot-test-verdict.json").write_text(json.dumps(verdict,indent=2)+"\n")
+        assert all(verdict[k]=="PASS" for k in
+            ("version","upstreamGodotImport","upstreamGutTests","ourThreeCanonRigs","historicalTwoRigImpact","idleDiagnostic")),verdict
+        return
     paired=command("kickback-paired-tackle-3lod",[
         str(binary),"--headless","--path",str(directory),"--script",
         str(ROOT/"tools/match3d-v25-lab/remote/godot_paired_tackle_probe.gd"),"--",
