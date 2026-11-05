@@ -76,6 +76,21 @@ assert.equal(s.v95to100.history.length,1);
 assert.equal(s.v95to100.history[0].broken,1);
 assert.equal(api.valid(JSON.parse(JSON.stringify(s)).v95to100),true,'serialized state valid');
 const legacy=make();delete legacy.v95to100;assert.ok(api.ensure(legacy),'old saves supported');
+
+const credits=make();
+const cn=api.ensure(credits).network;
+const promoted=cn.players.find(p=>p.union==='FR');
+credits.v77Promotions.promotions=[{playerId:promoted.id,season:1}];
+credits.phase='ended';assert.equal(api.settle(credits),true);
+assert.equal(credits.v95to100.network.credits.length,1,'RIF descriptive credit after promotion');
+assert.equal(credits.v95to100.network.credits[0].club,promoted.clubId,'original training club retained');
+credits.season=2;credits.phase='league';api.ensure(credits);
+assert.equal(credits.v95to100.network.players.find(x=>x.id===promoted.id).age,promoted.age+1,
+ 'feeder ages with season');
+credits.phase='ended';assert.equal(api.settle(credits),true);
+assert.equal(credits.v95to100.network.credits.length,2,'annual credit, no fake cash payment');
+assert.equal(api.valid(credits.v95to100),true,'feeder network survives season');
+
 const bad=make();bad.v95to100={version:8};assert.equal(api.ensure(bad),null,'invalid state rejected');
 for(let year=2;year<=17;year++){
  s.season=year;s.phase='league';api.ensure(s);
