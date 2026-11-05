@@ -49,11 +49,9 @@ function coverSkinByShirt(THREE,body){
  const keep=[],newGroups=[];let removed=0;
  const vertex=new THREE.Vector3();
  // Torso interior: leave collar, hem and sleeve borders intact.
- // Conservative border probe: extend coverage under the shirt near the collar and sleeve roots.
- // Keep nonzero safety margins so exposed arms/neck remain untouched.
- const minY=aabb.min.y+.045,maxY=aabb.max.y-.055;
- const minX=aabb.min.x+.025,maxX=aabb.max.x-.025;
- const minZ=aabb.min.z+.025,maxZ=aabb.max.z-.025;
+ const minY=aabb.min.y+.055,maxY=aabb.max.y-.075;
+ const minX=aabb.min.x+.035,maxX=aabb.max.x-.035;
+ const minZ=aabb.min.z+.035,maxZ=aabb.max.z-.035;
  if(maxY<=minY||maxX<=minX||maxZ<=minZ)return {removed:0,reason:'marge non valide'};
  const get=(i)=>oldIndex?oldIndex.getX(i):i;
  for(const group of groups){
