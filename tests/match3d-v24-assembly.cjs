@@ -26,7 +26,7 @@ const root=new THREE.Group(),skeletonBones=Array.from({length:53},(_,i)=>{const 
 root.add(skeletonBones[0]);for(let i=1;i<skeletonBones.length;i++)skeletonBones[i-1].add(skeletonBones[i]);
 const skeleton=new THREE.Skeleton(skeletonBones);
 function mesh(name,geo){const m=new THREE.SkinnedMesh(geo,new THREE.MeshStandardMaterial());m.name=name;root.add(m);m.bind(skeleton);return m;}
-const bodyGeo=new THREE.BoxGeometry(.6,.8,.3,10,10,4);bodyGeo.translate(0,1.15,0);
+const bodyGeo=new THREE.BoxGeometry(.6,1.7,.3,10,20,4);bodyGeo.translate(0,.85,0);
 const shirtGeo=new THREE.BoxGeometry(.75,.95,.42);shirtGeo.translate(0,1.15,0);
 const bodyMesh=mesh('Body',bodyGeo),shirtMesh=mesh('Cloth_tshirt',shirtGeo);
 const before=bodyGeo.index.count/3,first=api.coverSkinByShirt(THREE,root);
