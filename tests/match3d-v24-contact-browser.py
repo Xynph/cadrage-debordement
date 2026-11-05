@@ -296,48 +296,48 @@ try:
             &&t.leftM<=base.leftM+.001&&t.intersections<=base.intersections),
           status:'DIAGNOSTIC_ONLY_SKELETON_RESTORED'};
       }
-      // Isolated anatomical preview at exactly the two independently tested
-      // keyframes. The root, player GLBs and match runtime remain untouched.
-      // If ANY measured criterion fails, restore the complete original pose.
+      // Anatomical two-keyframe investigation: never render a pose unless
+      // the same angular candidate clears real skin/ground/intersections on
+      // EVERY LOD. Test smaller angles as LOD1 penetrated by 3.94 cm at +.15.
       let anatomicalPreview=null;
       if(Math.abs(progress-.75)<1e-8 || progress===1){
-        const angle=progress===1?.15:.20;
         const saved=asset.bones.map(b=>b.quaternion.clone());
         const baseline={leftM:surfaceGrip.l.afterSurfaceMetres,
           rightM:surfaceGrip.r.afterSurfaceMetres,
           intersections:collision.properTriangleIntersections};
-        const clav=asset.bones.find(b=>b.name==='clavicle_r');
-        clav.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),angle));
-        asset.body.updateMatrixWorld(true);
-        const trial=CDMatch3DV24RugbyClips.gripCarrierSurface(
-          THREE,asset.bones,partner.body,partner.bones,state.onset,{referenceArms});
-        const crossing=CDMatch3DV24MeshIntersections.probe(
-          THREE,{body:asset.body,bones:asset.bones},partner,850).properTriangleIntersections;
-        let lowest=Infinity,sampled=0;
-        asset.body.traverse(mesh=>{
-          if(!mesh.isSkinnedMesh)return;
-          const attr=mesh.geometry.getAttribute('position'),v=new THREE.Vector3();
-          if(!attr)return;
-          const stride=Math.max(1,Math.floor(attr.count/350));
-          for(let i=0;i<attr.count;i+=stride){
-            mesh.boneTransform(i,v.fromBufferAttribute(attr,i));mesh.localToWorld(v);
-            lowest=Math.min(lowest,v.y);sampled++;
-          }
-        });
-        const candidate={leftM:trial.l.afterSurfaceMetres,
-          rightM:trial.r.afterSurfaceMetres,intersections:crossing,
-          minSkinnedY:lowest,sampledSkinnedVertices:sampled};
-        const accepted=candidate.rightM<baseline.rightM-.005 &&
-          candidate.leftM<=baseline.leftM+.001 &&
-          candidate.intersections<=baseline.intersections &&
-          candidate.minSkinnedY>=.015 && candidate.sampledSkinnedVertices>=30;
-        // A candidate is never shown before it has passed the *same*
-        // ground, wrist and triangle constraints on all three LODs.
+        const clav=asset.bones.find(b=>b.name==='clavicle_r'),trials=[];
+        for(const angle of [.05,.10,.15,.20]){
+          asset.bones.forEach((bone,i)=>bone.quaternion.copy(saved[i]));
+          clav.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),angle));
+          asset.body.updateMatrixWorld(true);
+          const trial=CDMatch3DV24RugbyClips.gripCarrierSurface(
+            THREE,asset.bones,partner.body,partner.bones,state.onset,{referenceArms});
+          const crossing=CDMatch3DV24MeshIntersections.probe(
+            THREE,{body:asset.body,bones:asset.bones},partner,850).properTriangleIntersections;
+          let lowest=Infinity,sampled=0;
+          asset.body.traverse(mesh=>{
+            if(!mesh.isSkinnedMesh)return;
+            const attr=mesh.geometry.getAttribute('position'),v=new THREE.Vector3();
+            if(!attr)return;
+            const stride=Math.max(1,Math.floor(attr.count/350));
+            for(let i=0;i<attr.count;i+=stride){
+              mesh.boneTransform(i,v.fromBufferAttribute(attr,i));mesh.localToWorld(v);
+              lowest=Math.min(lowest,v.y);sampled++;
+            }
+          });
+          const candidate={angleRadians:angle,leftM:trial.l.afterSurfaceMetres,
+            rightM:trial.r.afterSurfaceMetres,intersections:crossing,
+            minSkinnedY:lowest,sampledSkinnedVertices:sampled};
+          candidate.accepted=candidate.rightM<baseline.rightM-.005 &&
+            candidate.leftM<=baseline.leftM+.001 &&
+            candidate.intersections<=baseline.intersections &&
+            candidate.minSkinnedY>=.015 && candidate.sampledSkinnedVertices>=30;
+          trials.push(candidate);
+        }
         asset.bones.forEach((bone,i)=>bone.quaternion.copy(saved[i]));
         asset.body.updateMatrixWorld(true);
-        anatomicalPreview={angleRadians:angle,baseline,candidate,accepted,
-          appliedToScreenshot:false,
-          status:'DIAGNOSTIC_ONLY_REJECT_OR_DEFER_CROSS_LOD_PREVIEW'};
+        anatomicalPreview={baseline,trials,appliedToScreenshot:false,
+          status:'DIAGNOSTIC_ONLY_FOUR_ANGLES_GROUND_AND_SKIN_RESTORED'};
       }
       return {...state,meshIntersections:collision,approachShoulderTrial,relativePoseSweep,clavicleSweep,clavicleGripTrial,elbowPoleTrial,anatomicalPreview,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
     }""",phase)
@@ -405,11 +405,15 @@ try:
     assert all(isinstance(d,(float,int)) and 0<=d<2 for d in fall['handDistancesM']),(lod,phase,fall)
     if phase in (.75,1.0):
      preview=fall['anatomicalPreview']
-     assert preview and not preview['appliedToScreenshot'],(lod,phase,'unqualified anatomy may not affect the screenshots',preview)
-     assert preview['candidate']['sampledSkinnedVertices']>=30,(lod,phase,'missing real surface samples',preview)
-     if preview['accepted']:
-      assert preview['candidate']['minSkinnedY']>=.015,(lod,phase,'ground clearance regression',preview)
-      assert preview['candidate']['intersections']<=preview['baseline']['intersections'],(lod,phase,'mesh crossing regression',preview)
+     assert preview and not preview['appliedToScreenshot'],(lod,phase,'unqualified anatomy may not affect screenshots',preview)
+     assert len(preview['trials'])==4,(lod,phase,'four anatomical angles missing',preview)
+     for trial in preview['trials']:
+      assert trial['sampledSkinnedVertices']>=30,(lod,phase,'missing real skin vertices',trial)
+      assert isinstance(trial['minSkinnedY'],(float,int)),(lod,phase,'invalid ground sample',trial)
+      if trial['accepted']:
+       assert trial['minSkinnedY']>=.015,(lod,phase,'ground regression',trial)
+       assert trial['leftM']<=preview['baseline']['leftM']+.001,(lod,phase,'left grip regression',trial)
+       assert trial['intersections']<=preview['baseline']['intersections'],(lod,phase,'triangle crossings regression',trial)
     if phase==.75:
      approach=fall['approachShoulderTrial']
      assert approach and len(approach['samples'])==3,(lod,'approach skin probe absent',approach)
@@ -469,8 +473,11 @@ try:
   shared_clavicle_safe=bool(shared_clavicle_angles)
   anatomical_keyframes={phase:{x['lod']:x['anatomicalPreview'] for x in fallSequence if x['progress']==phase} for phase in (.75,1)}
   assert all(set(by_lod)=={0,1,2} for by_lod in anatomical_keyframes.values()),('missing LOD anatomical keyframes',anatomical_keyframes.keys())
-  safe_keyframe_previews={str(phase):all(by_lod[lod]['accepted'] for lod in range(3))
+  safe_anatomical_angles={str(phase):[angle for angle in (.05,.10,.15,.20)
+    if all(any(abs(item['angleRadians']-angle)<1e-8 and item['accepted']
+               for item in by_lod[lod]['trials']) for lod in range(3))]
     for phase,by_lod in anatomical_keyframes.items()}
+  safe_keyframe_previews={phase:bool(angles) for phase,angles in safe_anatomical_angles.items()}
   approach_profiles={x['lod']:x['approachShoulderTrial'] for x in fallSequence if x['progress']==.75}
   assert set(approach_profiles)=={0,1,2},('missing approach probes',approach_profiles.keys())
   safe_approach_angles=[angle for angle in (.10,.15,.20)
@@ -497,7 +504,7 @@ try:
      safe_elbow_poles.append({'poleY':candidates[0]['poleY'],'poleZ':candidates[0]['poleZ']})
   pose_decision={'status':'DIAGNOSTIC_ONLY_NO_RUNTIME_RELOCATION',
     'safeSharedOffsets':safe_shared,'sharedClavicleAccepted':shared_clavicle_safe,'safeClavicleAngles':shared_clavicle_angles,
-    'clavicleByLOD':clavicle_trials,'safeElbowPoles':safe_elbow_poles,'elbowByLOD':elbow_profiles,'safeApproachAngles':safe_approach_angles,'approachByLOD':approach_profiles,'safeAnatomicalKeyframes':safe_keyframe_previews,'anatomicalByPhase':anatomical_keyframes,'referenceByLOD':reference,
+    'clavicleByLOD':clavicle_trials,'safeElbowPoles':safe_elbow_poles,'elbowByLOD':elbow_profiles,'safeApproachAngles':safe_approach_angles,'approachByLOD':approach_profiles,'safeAnatomicalKeyframes':safe_keyframe_previews,'safeAnatomicalAngles':safe_anatomical_angles,'anatomicalByPhase':anatomical_keyframes,'referenceByLOD':reference,
     'limits':'Sampled Body triangles are not exhaustive collision certification'}
   assert not errors and not external,(errors,external)
   (OUT/'report.json').write_text(json.dumps({'status':'TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL','poseDecision':pose_decision,'levels':results,'temporalSamples':temporal,'fallSequence':fallSequence,'errors':errors,'externalRequests':external,'limits':['Paired-rig arm IK aims at carrier torso; no coordinated impact dynamics or contact certification','No collision physics or engine mutation','Actual skinned-mesh ground and torso-horizontal metrics tested at impact; visual contact and runtime still unqualified']},indent=2)+'\n');b.close()
