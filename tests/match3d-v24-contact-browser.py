@@ -46,6 +46,22 @@ try:
       renderer.render(scene,camera);
       return {time,leftTorsoM:left.distanceTo(torso),rightTorsoM:right.distanceTo(torso),handSeparationM:separation,torso:torso.toArray()};
     }""",t)
+    # Paired-rig IK contact: compare real skinned meshes and measured wrist distances.
+    wrapped=page.evaluate("""(time)=>{
+      const blend=Math.max(0,Math.min(1,(time-.18)/.27));
+      const info=CDMatch3DV24RugbyClips.wrapCarrier(THREE,asset.bones,partner.bones,blend);
+      scene.updateMatrixWorld(true);
+      const pos=(bones,name)=>bones.find(b=>b.name===name).getWorldPosition(new THREE.Vector3());
+      const torso=pos(partner.bones,'spine_03');
+      return {blend,leftTorsoM:pos(asset.bones,'hand_l').distanceTo(torso),
+        rightTorsoM:pos(asset.bones,'hand_r').distanceTo(torso),ikTargets:info};
+    }""",t)
+    sample['wrapped']=wrapped
+    page.evaluate('renderer.render(scene,camera)')
+    page.screenshot(path=str(OUT/f'lod{lod}-wrap-{int(t*100):02d}-side.jpg'),type='jpeg',quality=90)
+    page.evaluate('camera.position.set(3.4,1.5,2.6);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
+    page.screenshot(path=str(OUT/f'lod{lod}-wrap-{int(t*100):02d}-front.jpg'),type='jpeg',quality=90)
+    page.evaluate('camera.position.set(4,1.2,.3);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
     sample['lod']=lod
     temporal.append(sample)
     page.screenshot(path=str(OUT/f'lod{lod}-tackle-{int(t*100):02d}-side.jpg'),type='jpeg',quality=90)
@@ -54,5 +70,5 @@ try:
     page.evaluate('camera.position.set(4,1.2,.3);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
    results.append(info)
   assert not errors and not external,(errors,external)
-  (OUT/'report.json').write_text(json.dumps({'status':'TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL','levels':results,'temporalSamples':temporal,'errors':errors,'externalRequests':external,'limits':['Static carrier with sampled tackling animation; not a coordinated impact sequence','No collision physics or engine mutation','No fall/landing sequence qualified']},indent=2)+'\n');b.close()
+  (OUT/'report.json').write_text(json.dumps({'status':'TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL','levels':results,'temporalSamples':temporal,'errors':errors,'externalRequests':external,'limits':['Paired-rig arm IK aims at carrier torso; no coordinated impact dynamics or contact certification','No collision physics or engine mutation','No fall/landing sequence qualified']},indent=2)+'\n');b.close()
 finally:s.shutdown()
