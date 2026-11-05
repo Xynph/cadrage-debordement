@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'match3d-v24-contact-report';O
 class Handler(http.server.SimpleHTTPRequestHandler):
  def log_message(self,*args):pass
 s=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(Handler,directory=str(ROOT/'dist')));threading.Thread(target=s.serve_forever,daemon=True).start()
-errors=[];external=[];results=[];temporal=[]
+errors=[];external=[];results=[];temporal=[];fallSequence=[]
 try:
  with sync_playwright() as p:
   b=p.chromium.launch(executable_path=os.environ.get('CD_CHROMIUM_PATH'),args=['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'])
@@ -24,7 +24,7 @@ try:
     const shoulder=asset.bones.find(b=>b.name==='upperarm_l').getWorldPosition(new THREE.Vector3());
     partner.body.position.set(shoulder.x+.06,0,shoulder.z+.16);partner.body.rotation.y=Math.PI;
     partner.mixer.clipAction(partner.clips.find(c=>c.name==='rugby_carry')).play();partner.mixer.setTime(.25);scene.updateMatrixWorld(true);
-    window.partner=partner;
+    window.partner=partner;window.contactBases={tackler:{position:asset.body.position.clone(),quaternion:asset.body.quaternion.clone()},carrier:{position:partner.body.position.clone(),quaternion:partner.body.quaternion.clone()}};
     document.querySelector('header').style.display='none';camera.position.set(3.4,1.5,2.6);camera.lookAt(0,.85,.35);renderer.render(scene,camera);
     return {independentRig:partner.bones.every((b,i)=>b!==asset.bones[i]),shoulder:shoulder.toArray(),carrierRoot:partner.body.position.toArray(),lod:asset.lod};
    }""")
@@ -71,7 +71,34 @@ try:
     page.evaluate('camera.position.set(3.4,1.5,2.6);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
     page.screenshot(path=str(OUT/f'lod{lod}-tackle-{int(t*100):02d}-front.jpg'),type='jpeg',quality=90)
     page.evaluate('camera.position.set(4,1.2,.3);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
+   # Genuine, reproducible two-rig transform timeline: approach, fall, then recovery.
+   # No mesh replacement, rigid-body collision claim, or match-runtime coupling.
+   for phase in [0,.40,.75,1.15,1.85]:
+    fall=page.evaluate("""(progress)=>{
+      window.setPose('rugby_tackle',.55);
+      partner.mixer.setTime(.25);
+      asset.body.position.copy(contactBases.tackler.position);
+      asset.body.quaternion.copy(contactBases.tackler.quaternion);
+      partner.body.position.copy(contactBases.carrier.position);
+      partner.body.quaternion.copy(contactBases.carrier.quaternion);
+      scene.updateMatrixWorld(true);
+      const state=CDMatch3DV24RugbyClips.coordinateFall(THREE,
+        {body:asset.body,bones:asset.bones},partner,progress,contactBases);
+      // Real post-fall wrist targets depend on the actual carrier pose.
+      const ik=CDMatch3DV24RugbyClips.wrapCarrier(THREE,asset.bones,partner.bones,.85*state.onset);
+      scene.updateMatrixWorld(true);
+      const p=(bones,name)=>bones.find(b=>b.name===name).getWorldPosition(new THREE.Vector3());
+      const target=p(partner.bones,'spine_03');
+      return {...state,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik};
+    }""",phase)
+    fall['lod']=lod
+    fallSequence.append(fall)
+    page.evaluate('renderer.render(scene,camera)')
+    page.screenshot(path=str(OUT/f'lod{lod}-fall-{int(phase*100):03d}-side.jpg'),type='jpeg',quality=90)
+    page.evaluate('camera.position.set(3.4,1.5,2.6);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
+    page.screenshot(path=str(OUT/f'lod{lod}-fall-{int(phase*100):03d}-front.jpg'),type='jpeg',quality=90)
+    page.evaluate('camera.position.set(4,1.2,.3);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
    results.append(info)
   assert not errors and not external,(errors,external)
-  (OUT/'report.json').write_text(json.dumps({'status':'TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL','levels':results,'temporalSamples':temporal,'errors':errors,'externalRequests':external,'limits':['Paired-rig arm IK aims at carrier torso; no coordinated impact dynamics or contact certification','No collision physics or engine mutation','No fall/landing sequence qualified']},indent=2)+'\n');b.close()
+  (OUT/'report.json').write_text(json.dumps({'status':'TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL','levels':results,'temporalSamples':temporal,'fallSequence':fallSequence,'errors':errors,'externalRequests':external,'limits':['Paired-rig arm IK aims at carrier torso; no coordinated impact dynamics or contact certification','No collision physics or engine mutation','Fall/recovery is an isolated paired-rig kinematic probe, not a qualified grounded landing or runtime interaction']},indent=2)+'\n');b.close()
 finally:s.shutdown()
