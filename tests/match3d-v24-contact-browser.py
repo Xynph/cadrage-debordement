@@ -95,6 +95,11 @@ try:
     }""",phase)
     fall['lod']=lod
     assert fall['horizontalTorsoGapM']>=.375,(lod,phase,'torso clearance',fall)
+    # Grounded skinned mesh must remain outside the turf while upright again,
+    # not just at the peak of the fall. Measure both actual player meshes.
+    if phase in (0,1.85):
+     assert len(fall['groundSamples'])==2,(lod,phase,'two skinned rigs required')
+     assert all(.015 <= g['minMeshY'] <= .055 for g in fall['groundSamples']),(lod,phase,'standing/recovery mesh penetrates turf',fall['groundSamples'])
     if phase==1.0:
      assert fall['landing']>.95,(lod,phase,'full landing not reached',fall)
      assert len(fall['groundSamples'])==2,(lod,phase,'two real skinned rigs',fall)
