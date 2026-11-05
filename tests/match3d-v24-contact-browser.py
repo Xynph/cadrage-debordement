@@ -379,9 +379,24 @@ try:
     if all(any(abs(t['angleRadians']-angle)<1e-8 and t['accepted']
                for t in data['trials']) for data in clavicle_trials.values())]
   shared_clavicle_safe=bool(shared_clavicle_angles)
+  elbow_profiles={x['lod']:x['elbowPoleTrial'] for x in fallSequence if x['progress']==1}
+  assert set(elbow_profiles)=={0,1,2},('missing skinned elbow diagnostics',elbow_profiles.keys())
+  safe_elbow_poles=[]
+  # The same actual IK profile must improve elbow separation and/or opposite
+  # wrap while not increasing either wrist gap or skinned intersections.
+  for index in range(1,5):
+   candidates=[elbow_profiles[lod]['candidates'][index] for lod in range(3)]
+   baselines=[elbow_profiles[lod]['candidates'][0] for lod in range(3)]
+   assert len({(x['poleY'],x['poleZ']) for x in candidates})==1
+   if all(x['rightM']<=base['rightM']+.001 and
+          x['leftM']<=base['leftM']+.001 and
+          x['intersections']<=base['intersections'] and
+          x['elbowSeparationM']>=base['elbowSeparationM']+.005
+          for x,base in zip(candidates,baselines)):
+    safe_elbow_poles.append({'poleY':candidates[0]['poleY'],'poleZ':candidates[0]['poleZ']})
   pose_decision={'status':'DIAGNOSTIC_ONLY_NO_RUNTIME_RELOCATION',
     'safeSharedOffsets':safe_shared,'sharedClavicleAccepted':shared_clavicle_safe,'safeClavicleAngles':shared_clavicle_angles,
-    'clavicleByLOD':clavicle_trials,'referenceByLOD':reference,
+    'clavicleByLOD':clavicle_trials,'safeElbowPoles':safe_elbow_poles,'elbowByLOD':elbow_profiles,'referenceByLOD':reference,
     'limits':'Sampled Body triangles are not exhaustive collision certification'}
   assert not errors and not external,(errors,external)
   (OUT/'report.json').write_text(json.dumps({'status':'TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL','poseDecision':pose_decision,'levels':results,'temporalSamples':temporal,'fallSequence':fallSequence,'errors':errors,'externalRequests':external,'limits':['Paired-rig arm IK aims at carrier torso; no coordinated impact dynamics or contact certification','No collision physics or engine mutation','Actual skinned-mesh ground and torso-horizontal metrics tested at impact; visual contact and runtime still unqualified']},indent=2)+'\n');b.close()
