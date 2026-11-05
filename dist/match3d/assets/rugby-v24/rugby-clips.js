@@ -348,6 +348,35 @@
     toeCorrection.push(moved);
    }
   }
+  // Recover weight-bearing feet under both REAL pelvis joints. The previous
+  // authored recovery pose leaves one leg reaching behind the tackler,
+  // with the feet appearing to float despite global mesh-ground alignment.
+  // This is two-bone anatomical IK on the existing rig, not a replacement mesh.
+  const recoverPlant=smooth((p-1.15)/.70),recoveryFeet=[];
+  if(recoverPlant>1e-5){
+   for(const rig of [tackler,carrier]){
+    rig.body.updateMatrixWorld(true);
+    const hip=point(rig,'pelvis'),head=point(rig,'head');
+    const front=head.clone().sub(hip);front.y=0;
+    if(front.lengthSq()<1e-6)
+     front.set(0,0,1).applyQuaternion(rig.body.getWorldQuaternion(new THREE.Quaternion()));
+    front.y=0;front.normalize();
+    const sideAxis=new THREE.Vector3(-front.z,0,front.x),feet=[];
+    for(const [side,sign] of [['l',1],['r',-1]]){
+     const thigh=get(rig,'thigh_'+side),calf=get(rig,'calf_'+side),foot=get(rig,'foot_'+side);
+     const before=point(rig,'foot_'+side);
+     const stand=hip.clone().addScaledVector(sideAxis,sign*.19).addScaledVector(front,.08);
+     stand.y=.095;
+     const goal=before.clone().lerp(stand,recoverPlant);
+     const pole=hip.clone().addScaledVector(front,.40).addScaledVector(sideAxis,sign*.14);
+     pole.y=hip.y-.22;
+     solveArm(THREE,thigh,calf,foot,goal,pole);
+     feet.push({side,target:stand.toArray(),ankleY:point(rig,'foot_'+side).y,
+      targetGapM:point(rig,'foot_'+side).distanceTo(stand)});
+    }
+    recoveryFeet.push(feet);
+   }
+  }
   // Separate the actual upper-torso joints, avoiding unphysical overlap of
   // the torso centres. This is a proxy clearance, NOT exact mesh collision.
   const delta=point(carrier,'spine_03').sub(point(tackler,'spine_03'));
@@ -383,7 +412,7 @@
     handsY:['hand_l','hand_r'].map(n=>point(rig,n).y),feetY:['foot_l','foot_r'].map(n=>point(rig,n).y),kneesY:['calf_l','calf_r'].map(n=>point(rig,n).y),pelvisY:pelvis.y,
     headY:head.y,verticalTorsoRatio:Math.abs(head.y-pelvis.y)/head.distanceTo(pelvis)});
   }
-  return {progress:p,onset,settle,landing,ankleAdjustments,toeCorrection,groundSamples,torsoSeparationM:point(tackler,'spine_03').distanceTo(point(carrier,'spine_03')),
+  return {progress:p,onset,settle,landing,ankleAdjustments,toeCorrection,recoveryFeet,groundSamples,torsoSeparationM:point(tackler,'spine_03').distanceTo(point(carrier,'spine_03')),
    horizontalTorsoGapM:new THREE.Vector2(point(tackler,'spine_03').x-point(carrier,'spine_03').x,point(tackler,'spine_03').z-point(carrier,'spine_03').z).length(),
    tacklerRoot:tackler.body.position.toArray(),carrierRoot:carrier.body.position.toArray()};
  }
