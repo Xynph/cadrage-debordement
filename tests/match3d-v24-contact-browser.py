@@ -415,7 +415,40 @@ try:
           asset.body.updateMatrixWorld(true);
           wristClearance={status:'DIAGNOSTIC_ONLY_REAL_WRIST_BONE_RESTORED',samples};
         }
-        anatomicalPreview={baseline,trials,thumbClearance,wristClearance,
+        // Coordinate real left wrist and thumb joints to try to lift
+        // both thumb/index skins WITHOUT increasing skinned crossings.
+        // Every candidate restores the original actual armature hierarchy.
+        let handThumbTrial=null;
+        if(progress===1 && baseline.minSkinnedY<.015){
+          const hand=asset.bones.find(b=>b.name==='hand_l');
+          const thumb=asset.bones.find(b=>b.name==='thumb_02_l');
+          if(!hand||!thumb)throw Error('Actual hand/thumb joints unavailable');
+          const firstHands=['hand_l','hand_r'].map(n=>p(asset.bones,n));
+          const candidates=[];
+          for(const wristAngle of [-.40,-.45,-.50,-.55,-.60])
+            for(const thumbAngle of [-.50,0,.50]){
+              asset.bones.forEach((bone,i)=>bone.quaternion.copy(saved[i]));
+              hand.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(
+                new THREE.Vector3(1,0,0),wristAngle));
+              thumb.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(
+                new THREE.Vector3(1,0,0),thumbAngle));
+              asset.body.updateMatrixWorld(true);
+              const ground=floor();
+              const crossing=CDMatch3DV24MeshIntersections.probe(
+                THREE,{body:asset.body,bones:asset.bones},partner,850).properTriangleIntersections;
+              const drift=Math.max(...['hand_l','hand_r'].map((n,i)=>
+                p(asset.bones,n).distanceTo(firstHands[i])));
+              candidates.push({wristAngle,thumbAngle,...ground,
+                intersections:crossing,handDriftM:drift,
+                accepted:ground.minSkinnedY>=.015 &&
+                  crossing<=baseline.intersections&&drift<.001});
+            }
+          asset.bones.forEach((bone,i)=>bone.quaternion.copy(saved[i]));
+          asset.body.updateMatrixWorld(true);
+          handThumbTrial={status:'DIAGNOSTIC_ONLY_REAL_WRIST_AND_THUMB_RESTORED',
+            candidates};
+        }
+        anatomicalPreview={baseline,trials,thumbClearance,wristClearance,handThumbTrial,
           appliedToScreenshot:false,
           status:'DIAGNOSTIC_ONLY_SAME_SKINNED_FLOOR_SAMPLING_BEFORE_AFTER'};
       }
@@ -495,6 +528,10 @@ try:
       wrist=preview['wristClearance']
       assert len(wrist['samples'])==12,(lod,phase,'missing real wrist orientations',wrist)
       assert all(item['handDriftM']<.001 and item['intersections']>=0 for item in wrist['samples']),(lod,phase,'wrist probe invalid',wrist)
+     if preview['handThumbTrial'] is not None:
+      combo=preview['handThumbTrial']
+      assert len(combo['candidates'])==15,(lod,phase,'real combined joint sweep missing',combo)
+      assert all(c['handDriftM']<.001 and c['intersections']>=0 for c in combo['candidates']),(lod,phase,'combined joint candidate invalid',combo)
      for trial in preview['trials']:
       assert trial['sampledSkinnedVertices']>=30,(lod,phase,'missing real skin vertices',trial)
       assert isinstance(trial['minSkinnedY'],(float,int)),(lod,phase,'invalid ground sample',trial)
