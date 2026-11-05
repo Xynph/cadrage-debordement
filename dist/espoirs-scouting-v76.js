@@ -95,21 +95,24 @@
       chosen.pos=move().normalize([chosen],manager.division)[0]?.pos||chosen.pos;
       chosen.slot=slot;
     }
-    // Le centre géré par le joueur partage son académie avec le moteur de carrière.
-    // V74 stocke des profils allégés : normaliser avant de les insérer dans development.academy.
+    // Un centre promu d'Accession peut contenir des profils V74 allégés.
+    // Normaliser l'ensemble de l'académie native avant toute sauvegarde.
+    nextTarget.push(chosen);
     if(manager.division==='elite'&&manager.slot===s.club){
       if(typeof ensureSkills!=='function'||typeof ensureDevelopment!=='function'||
          typeof POS==='undefined'||typeof FAMILIES==='undefined')return false;
-      const index=POS.indexOf(chosen.pos);
-      if(index<0)return false;
-      chosen.fam=FAMILIES[index];chosen.injury=Number.isInteger(chosen.injury)?chosen.injury:0;
-      chosen.salary=Number.isInteger(chosen.salary)?chosen.salary:2000;
-      chosen.academy=true;
-      ensureSkills(chosen);ensureDevelopment(chosen);
-      const potential=Number.isFinite(chosen.potential)?chosen.potential:chosen.dev.potential;
-      chosen.dev.potential=Math.min(99,Math.max(chosen.rating,potential));
+      for(const youth of nextTarget){
+        const index=POS.indexOf(youth.pos);
+        if(index<0)return false;
+        youth.fam=FAMILIES[index];
+        youth.injury=Number.isInteger(youth.injury)?youth.injury:0;
+        youth.salary=Number.isInteger(youth.salary)?youth.salary:2000;
+        youth.academy=true;
+        ensureSkills(youth);ensureDevelopment(youth);
+        const potential=Number.isFinite(youth.potential)?youth.potential:youth.dev.potential;
+        youth.dev.potential=Math.min(99,Math.max(youth.rating,potential));
+      }
     }
-    nextTarget.push(chosen);
     m.rosters[source.id]=nextOrigin;m.rosters[manager.id]=nextTarget;
     if(manager.division==='elite'&&manager.slot===s.club&&s.development)s.development.academy=clone(nextTarget);
     if(source.division==='accession'&&s.v74Accession?.centers?.[source.slot])
