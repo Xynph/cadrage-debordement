@@ -161,7 +161,7 @@
    // A torso is not landed while the hips hover over bent, dangling legs.
    // Lower the actual pelvis and put both real feet behind it with two-bone IK.
    const pelvis=point(rig,'pelvis');
-   rig.body.position.y+=landing*(.34-pelvis.y);
+   rig.body.position.y+=landing*(.23-pelvis.y);
    rig.body.updateMatrixWorld(true);
    const hipNow=point(rig,'pelvis');
    const longDirection=point(rig,'head').sub(hipNow);
@@ -173,7 +173,7 @@
     const thigh=get(rig,'thigh_'+side),calf=get(rig,'calf_'+side),foot=get(rig,'foot_'+side);
     const initial=point(rig,'foot_'+side);
     const proneFoot=hipNow.clone().addScaledVector(longDirection,-.72).addScaledVector(sideways,sign*.14);
-    proneFoot.y=.12;
+    proneFoot.y=.36;
     const goal=initial.lerp(proneFoot,landing);
     const pole=hipNow.clone().addScaledVector(longDirection,-.33).addScaledVector(sideways,sign*.30);
     pole.y=.35;
