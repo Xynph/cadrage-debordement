@@ -38,14 +38,14 @@
   if(!st||s.live||s.phase==='ended'||!p||!TARGETS.includes(target)||st.plans.length>=3||
    st.plans.some(x=>x.id===id)||p.age>21)return false;
   return transact(s,()=>{st.plans.push({id,name:p.name,target,startRating:p.rating,season:s.season});
-   s.news.unshift('Formation : objectif '+target+' attribué à '+p.name+'.');s.news=s.news.slice(0,100);return true},save);
+   if(!Array.isArray(s.news))s.news=[];s.news.unshift('Formation : objectif '+target+' attribué à '+p.name+'.');s.news=s.news.slice(0,100);return true},save);
  }
  function mentor(s,youthId,seniorId,save){
   const st=ensure(s),p=academy(s).find(x=>x.id===youthId),pro=seniors(s).find(x=>x.id===seniorId);
   if(!st||s.live||s.phase==='ended'||!p||!pro||p.pos!==pro.pos||st.mentors.length>=3||
    st.mentors.some(x=>x.youthId===youthId||x.seniorId===seniorId)||pro.age<23)return false;
   return transact(s,()=>{st.mentors.push({youthId,seniorId,name:p.name,mentor:pro.name,season:s.season});
-   s.news.unshift('Formation : '+pro.name+' accompagne '+p.name+'.');s.news=s.news.slice(0,100);return true},save);
+   if(!Array.isArray(s.news))s.news=[];s.news.unshift('Formation : '+pro.name+' accompagne '+p.name+'.');s.news=s.news.slice(0,100);return true},save);
  }
  function goal(s,value,save){
   const st=ensure(s);
@@ -61,8 +61,9 @@
    return {id:l.id,name:l.name,club:s.clubs[l.to]?.name||'Club',minutes,season:s.season,successful:minutes>=200};
   });
  }
- function seasonEnd(s){
+ function seasonEnd(s,save){
   const st=ensure(s);if(!st||s.phase!=='ended'||st.history.some(h=>h.season===s.season))return false;
+  return transact(s,()=>{
   const loans=report(s);
   let achieved=0;
   for(const entry of st.plans){
@@ -82,14 +83,16 @@
   const promotions=s.v77Promotions?.promotions?.length||0;
   const target=st.goal==='promotions'?promotions>=2:st.goal==='prets'?loans.filter(x=>x.successful).length>=1:achieved>=2;
   const reward=target?24000:0;
-  if(reward){s.clubs[s.club].cash+=reward;s.ledger.unshift({title:'Objectif centre de formation',amount:reward});s.ledger=s.ledger.slice(0,100)}
+  if(reward){if(!Array.isArray(s.ledger))s.ledger=[];s.clubs[s.club].cash+=reward;s.ledger.unshift({title:'Objectif centre de formation',amount:reward});s.ledger=s.ledger.slice(0,100)}
   st.reports=loans;
   st.history=[{season:s.season,goal:st.goal,completed:target,planned:st.plans.length,
    achieved,mentorshipBonuses:bonuses,loans:copy(loans),promotions,reward},...st.history].slice(0,4);
+  if(!Array.isArray(s.news))s.news=[];
   s.news.unshift('Bilan formation S'+s.season+' : '+achieved+' objectif(s) individuels, '+
    bonuses+' mentorat(s), '+loans.length+' pret(s), objectif du centre '+(target?'atteint.':'non atteint.'));
   s.news=s.news.slice(0,100);
   return true;
+  },save);
  }
  function panel(s){
   const st=ensure(s);if(!st)return '';
@@ -125,7 +128,9 @@
   const prevStart=g.start;g.start=function(){const r=prevStart.apply(this,arguments);if(get()){ensure(get());save()}return r};
   const prevYear=g.advanceSeason;g.advanceSeason=function(){
    const s=get(),before=s?.season;
-   if(s?.phase==='ended')seasonEnd(s);
+   if(s?.phase==='ended'&&!s?.v82to85?.history?.some(h=>h.season===s.season)){
+    if(!seasonEnd(s,save))return false;
+   }
    const r=prevYear.apply(this,arguments);
    if(get()&&get().season!==before){ensure(get());save()}
    return r;
