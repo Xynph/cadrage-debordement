@@ -78,12 +78,13 @@
    const upper=bone(tacklerBones,'upperarm_'+side),lower=bone(tacklerBones,'lowerarm_'+side),hand=bone(tacklerBones,'hand_'+side);
    const origin=world(hand),shoulder=world(upper);
    const initialUpper=upper.quaternion.clone(),initialLower=lower.quaternion.clone();
-   const armLength=shoulder.distanceTo(world(lower))+world(lower).distanceTo(world(hand));
-   const candidates=points.filter(p=>p.distanceTo(shoulder)<armLength+.04)
-     .map(p=>({p,d:p.distanceToSquared(origin)})).sort((a,b)=>a.d-b.d)
-     .slice(0,24);
-   if(!candidates.length)throw Error('Surface hors de portee du bras '+side);
-   let best=null;
+   // A surface can lie just beyond the natural reach. The IK solver already
+   // clamps targets to the anatomical arm length; do not discard all targets.
+   const candidates=points.map(p=>({p,d:p.distanceToSquared(origin)}))
+     .sort((a,b)=>a.d-b.d).slice(0,24);
+   const beforeGap=Math.sqrt(candidates[0].d);
+   let best={err:beforeGap,gap:beforeGap,goal:origin.clone(),
+     upper:initialUpper.clone(),lower:initialLower.clone()};
    for(const {p:surface} of candidates){
     // Offset towards the approaching wrist to avoid targeting inside the body.
     const normal=origin.clone().sub(surface);
@@ -98,14 +99,14 @@
      let nearest=Infinity;
      for(const vertex of points)nearest=Math.min(nearest,actual.distanceTo(vertex));
      const err=nearest+.01*actual.distanceTo(goal);
-     if(!best||err<best.err)best={err,gap:nearest,goal:goal.clone(),pole:pole.clone(),upper:upper.quaternion.clone(),lower:lower.quaternion.clone()};
+     if(err<best.err-1e-7)best={err,gap:nearest,goal:goal.clone(),pole:pole.clone(),upper:upper.quaternion.clone(),lower:lower.quaternion.clone()};
     }
    }
    upper.quaternion.copy(best.upper);lower.quaternion.copy(best.lower);
    upper.updateMatrixWorld(true);lower.updateMatrixWorld(true);
    results[side]={beforeMetres:Math.sqrt(Math.min(...points.map(p=>origin.distanceToSquared(p)))),
      afterSurfaceMetres:best.gap,afterToTargetMetres:world(hand).distanceTo(best.goal),
-     examined:candidates.length*3};
+     examined:candidates.length*3,improved:best.gap<beforeGap};
   }
   return results;
  }
