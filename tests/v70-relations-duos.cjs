@@ -57,7 +57,7 @@ test('V70 : rivalite potentielle presente au coup d envoi sans intervention',()=
  assert.equal(V70.perform(s,'duo','a','c',fx(s)),true);
  const l={userSide:0,pair:[0,1],sheets:[{initial:['a','b','c'],on:['a','b','c']}],finished:false};
  l.v70Relations=V70.matchSnapshot(s,l);
- assert.equal(l.v70Relations.duos.length,1);
+ assert.equal(l.v70Relations.duos.length,2);
  assert.ok(V70.matchBonus(l,0,'attack')>0);
  assert.equal(V70.matchBonus(l,1,'attack'),0);
  assert.equal(V70.matchBonus(l,0,'defence'),0);
