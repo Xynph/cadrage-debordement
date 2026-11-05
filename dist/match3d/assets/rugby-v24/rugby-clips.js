@@ -54,7 +54,7 @@
  }
  // Secondary contact refinement against the actual deformed Body skin.
  // This is a surface-target IK probe, not a collision/penetration solver.
- function gripCarrierSurface(THREE,tacklerBones,carrierBody,carrierBones,blend=1){
+ function gripCarrierSurface(THREE,tacklerBones,carrierBody,carrierBones,blend=1,options={}){
   const bone=(bones,name)=>{const b=bones.find(x=>x.name===name);if(!b)throw Error('Os de prise manquant : '+name);return b;};
   const world=b=>b.getWorldPosition(new THREE.Vector3());
   const torso=world(bone(carrierBones,'spine_03'));
@@ -70,6 +70,10 @@
    }
   });
   if(points.length<20)throw Error('Surface anatomique du porteur absente');
+  // Optional bounded elbow-pole variations on real two-bone IK.
+  // Unset options retain exactly the earlier behavior for all callers.
+  const poleY=THREE.MathUtils.clamp(options.poleY||0,-.25,.25);
+  const poleZ=THREE.MathUtils.clamp(options.poleZ||0,-.25,.25);
   const amount=THREE.MathUtils.clamp(blend,0,1),results={samples:points.length};
   // Define the two opposite flanks in the tackler-to-carrier frame.
   // A nearest-point search alone lets both wrists settle on the near face,
@@ -117,7 +121,7 @@
     const goal=surface.clone().addScaledVector(normal,.025);
     for(const poleOffset of [0,.18,-.18]){
      upper.quaternion.copy(initialUpper);lower.quaternion.copy(initialLower);
-     const pole=shoulder.clone().add(new THREE.Vector3(sign*(.34+poleOffset),-.22,.15));
+     const pole=shoulder.clone().add(new THREE.Vector3(sign*(.34+poleOffset),-.22+poleY,.15+poleZ));
      solveArm(THREE,upper,lower,hand,origin.clone().lerp(goal,amount),pole);
      const actual=world(hand);
      let nearest=Infinity;
