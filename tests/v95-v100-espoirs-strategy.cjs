@@ -42,11 +42,11 @@ if(decisionState==='recruited'){
  assert.equal(s.development.academy.find(x=>x.id===c.id).trainingOrigin.clubId,c.clubId);
 }else assert.equal(s.development.academy.length,initial,'young player refuses and stays away');
 assert.equal(api.recruit(s,c.id,()=>true),false,'no duplicate');
-const foreign=n.players.find(x=>x.union!=='FR'&&x.age<18);
+const foreign=s.v95to100.network.players.find(x=>x.union!=='FR'&&x.age<18);
 assert.ok(foreign,'underage foreign prospect exists');
 foreign.scouted=2;foreign.trial=true;
 assert.equal(api.recruit(s,foreign.id,()=>true),false,'no international minor fast-track');
-const adult=n.players.find(x=>x.union!=='FR'&&x.age>=18);
+const adult=s.v95to100.network.players.find(x=>x.union!=='FR'&&x.age>=18);
 assert.ok(adult,'foreign adult prospect exists');
 adult.scouted=2;adult.trial=true;
 assert.equal(api.recruit(s,adult.id,()=>true),false,'international clearance must be recorded');
