@@ -75,7 +75,7 @@ func run_pair() -> void:
 			all_pass = false
 			result["lods"].append(lod_report)
 			continue
-		for mode in ["control", "impact", "impact_with_hand_hand_links"]:
+		for mode in ["control", "impact", "impact_with_hand_pins"]:
 			var scenario := {"name": mode, "status": "FAIL", "samples": [], "gripPhysicsLinks": 0}
 			var actors: Array = []
 			var builders: Array = []
@@ -133,7 +133,7 @@ func run_pair() -> void:
 						hit.strength_reduction = 0.65
 						controllers[0].apply_hit(a["Chest"], towards, a["Chest"].global_position, hit)
 					var hand_links: Array = []
-					if mode == "impact_with_hand_hand_links":
+					if mode == "impact_with_hand_pins":
 						# Explicit experimental physical attachment, NOT
 						# a verified anatomical grasp at true skinned surface.
 						for pair in [["Hand_L", "Chest"], ["Hand_R", "Hips"]]:
