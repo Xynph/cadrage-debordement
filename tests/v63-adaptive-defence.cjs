@@ -28,10 +28,15 @@ assert.equal(decision().plan,'prudente','la fatigue prime');
 const original=run('JSON.stringify(S)');
 assert.equal(run('opponentDefenceDecision(l,1-l.userSide).plan'),'prudente');
 assert.equal(run('JSON.stringify(S)'),original,'décision sans mutation ou RNG');
-assert.equal(run('!!createSaveDocument()'),true,'export possible');
-const saved=run('JSON.stringify(createSaveDocument())'),restored=context();
+// Le test de fatigue altère volontairement une fixture de match ; ne pas exporter
+// cette fixture artificielle. Vérifier la persistance sur une vraie carrière valide.
+const saveCase=context();
+saveCase.run('start(0);beginMatch();pauseMatch()');
+const saved=saveCase.run('JSON.stringify(createSaveDocument())'),restored=context();
 restored.run('pendingSave=parseSaveDocument('+JSON.stringify(saved)+');confirmSaveImport()');
-assert.equal(restored.run('S.live.defences[1-S.live.userSide]'),run('l.defences[1-l.userSide]'));
+assert.equal(restored.run('S.live.defences[1-S.live.userSide]'),saveCase.run('S.live.defences[1-S.live.userSide]'),'défense conservée au chargement');
+assert.equal(restored.run('S.live.tacticalVersion'),saveCase.run('S.live.tacticalVersion'),'même modèle tactique');
+assert.equal(restored.run('opponentDefenceDecision(S.live,1-S.live.userSide)'),null,'aucune adaptation sans signal enregistré');
 const legacy=context();legacy.run('start(0);beginMatch();var x=S.live;delete x.tacticalVersion');
 assert.equal(legacy.run('opponentDefenceDecision(x,1-x.userSide)'),null,'ancien moteur inchangé');
 console.log('V63 adaptive defensive AI: evidence, reaction, discipline, fatigue, save/import, legacy PASS');
