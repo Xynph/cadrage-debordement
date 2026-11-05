@@ -67,7 +67,7 @@ function setPlayer(s,slot,id,save){const st=read(s),players=clubPlayers(s,s.club
  if(!st||!Number.isInteger(slot)||slot<0||slot>=15||!players.some(p=>p.id===id&&p.pos===pos)||st.lineup.some((x,i)=>i!==slot&&x===id)||s.live||s.phase==='ended')return false;
  const prev=st.lineup.slice();st.lineup[slot]=id;try{if(save()===false)throw Error('save')}catch{st.lineup=prev;return false}return true}
 const safe=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-function panel(s){const st=read(s);if(!st)return '<section class="card"><h2>Championnat Espoirs</h2><p>Disponible dans une carrière avec centres de formation actifs.</p></section>';
+function panel(s){const st=read(s)||setup(s);if(!st)return '<section class="card"><h2>Championnat Espoirs</h2><p>Disponible dans une carrière avec centres de formation actifs.</p></section>';
  const groups=st.groups.map((ids,i)=>{const phase=i>=4?'challenge':st.round<10?'preliminaire':'qualification',r=standing(s,ids,st.results.filter(x=>x.phase===phase));
  return '<div class="card"><h3>'+(i>=4?'Challenge de France · poule '+(i-3):'Poule '+(i+1))+'</h3><div class="tablewrap"><table><thead><tr><th>#</th><th>Club</th><th>J</th><th>Pts</th><th>Diff.</th></tr></thead><tbody>'+r.map((x,k)=>'<tr><td>'+(k+1)+'</td><td>'+safe(clubName(s,x.id))+'</td><td>'+x.played+'</td><td>'+x.points+'</td><td>'+(x.for-x.against)+'</td></tr>').join('')+'</tbody></table></div></div>'}).join('');
  const chosenPlayers=chosen(s,s.club,st),editable=!s.live&&s.phase!=='ended';
