@@ -86,7 +86,7 @@ function install(g){if(!g||typeof g.finishRound!=='function'||typeof g.advanceSe
  const oldRender=g.render;
  g.render=function(){const result=oldRender.apply(this,arguments),s=get();
   if(s&&typeof view!=='undefined'&&view==='formation'&&typeof document!=='undefined'){
-   const target=document.querySelector('main.main');if(target&&typeof target.insertAdjacentHTML==='function')target.insertAdjacentHTML('beforeend',panel(s));
+   const target=document.querySelector('.cd04-content [data-da42-page="passerelle"]')||document.querySelector('.cd04-content');if(target&&typeof target.insertAdjacentHTML==='function')target.insertAdjacentHTML('beforeend',panel(s));
   }return result};
  g.v73Mode=mode=>{const ok=setMode(get(),mode,save);if(ok)g.render();return ok};
  g.v73Select=(slot,id)=>{const ok=setPlayer(get(),slot,id,save);if(ok)g.render();return ok};return true}
