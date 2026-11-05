@@ -232,10 +232,20 @@
   }
   // Ground alignment uses deformed GLB vertices (not skeleton-only landmarks
   // or a cosmetic body proxy); sample a bounded set of real skinned vertices.
-  const meshFloor=rig=>{
+  const meshFloor=(rig,withRegions=false)=>{
    rig.body.updateMatrixWorld(true);
    let min=Infinity,vertices=0,torsoMin=Infinity,torsoVertices=0,lowest=null;
    const spine=point(rig,'spine_03');
+   // Sample the actual deformed meshes around anatomical landmarks rather
+   // than declaring skeleton joint heights to be physical ground contacts.
+   const regions=withRegions?{
+    chest:{centre:spine,radius:.35,min:Infinity,count:0},
+    pelvis:{centre:point(rig,'pelvis'),radius:.24,min:Infinity,count:0},
+    kneeL:{centre:point(rig,'calf_l'),radius:.18,min:Infinity,count:0},
+    kneeR:{centre:point(rig,'calf_r'),radius:.18,min:Infinity,count:0},
+    footL:{centre:point(rig,'foot_l'),radius:.20,min:Infinity,count:0},
+    footR:{centre:point(rig,'foot_r'),radius:.20,min:Infinity,count:0}
+   }:null;
    rig.body.traverse(mesh=>{
     if(!mesh.isSkinnedMesh)return;
     const positions=mesh.geometry.getAttribute('position');
@@ -256,13 +266,20 @@
       lowest={mesh:mesh.name,bone:mesh.skeleton?.bones?.[boneId]?.name||null,index:i,y:v.y};
      }
      vertices++;
+     if(regions)for(const region of Object.values(regions)){
+      if(v.distanceToSquared(region.centre)<=region.radius*region.radius){
+       region.count++;region.min=Math.min(region.min,v.y);
+      }
+     }
      if(mesh.name==='Body' && v.distanceTo(spine)<.35){
       torsoMin=Math.min(torsoMin,v.y);torsoVertices++;
      }
     }
    });
    if(!Number.isFinite(min)||vertices<30)throw Error('Sol maillage skin indisponible');
-   return {min,vertices,torsoMinY:Number.isFinite(torsoMin)?torsoMin:null,torsoVertices,lowest};
+   return {min,vertices,torsoMinY:Number.isFinite(torsoMin)?torsoMin:null,torsoVertices,lowest,
+    supportSurfaces:regions?Object.fromEntries(Object.entries(regions).map(([name,r])=>
+     [name,{minY:Number.isFinite(r.min)?r.min:null,samples:r.count}])):null};
   };
   // A toe tip is sometimes the lowest Body vertex after the finger clearance.
   // Select a bounded anatomical ankle flexion before the final mesh-ground solve.
@@ -349,10 +366,11 @@
    const before=meshFloor(rig);
    rig.body.position.y+=(.025-before.min)*floorCorrection;
    rig.body.updateMatrixWorld(true);
-   const after=meshFloor(rig);
+   const after=meshFloor(rig,true);
    const pelvis=point(rig,'pelvis'),head=point(rig,'head');
    groundSamples.push({minMeshY:after.min,vertices:after.vertices,
     torsoMinY:after.torsoMinY,torsoVertices:after.torsoVertices,lowest:after.lowest,
+    supportSurfaces:after.supportSurfaces,
     handsY:['hand_l','hand_r'].map(n=>point(rig,n).y),feetY:['foot_l','foot_r'].map(n=>point(rig,n).y),kneesY:['calf_l','calf_r'].map(n=>point(rig,n).y),pelvisY:pelvis.y,
     headY:head.y,verticalTorsoRatio:Math.abs(head.y-pelvis.y)/head.distanceTo(pelvis)});
   }
