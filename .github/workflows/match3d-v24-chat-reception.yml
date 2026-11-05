@@ -1,0 +1,118 @@
+name: MATCH 3D v24 - reception distante Chat
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/match3d-v24-chat-reception.yml'
+      - 'tools/match3d-v24-*.cjs'
+      - 'tests/match3d-v24-*.py'
+      - 'tests/match3d-v24-*.cjs'
+      - 'dist/match3d/assets/rugby-v24/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reception:
+    if: github.event_name != 'pull_request' || (github.event.pull_request.number == 300 && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout exact PR head (not synthetic merge)
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Identifier le commit et les preuves de reference
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p match3d-v24-chat-report
+          git rev-parse HEAD | tee match3d-v24-chat-report/head-sha.txt
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          git show HEAD:dist/match3d/assets/rugby-v24/lod/shirt-fit-report.json > match3d-v24-chat-report/expected-shirt-fit-report.json
+          python - <<'PY'
+          import json,hashlib,pathlib
+          p=pathlib.Path('dist/match3d/assets/rugby-v24/lod')
+          d=json.loads(pathlib.Path('match3d-v24-chat-report/expected-shirt-fit-report.json').read_text())
+          for x in d['levels']:
+              f=p/('clothing_tshirt-lod%d.glb'%x['lod'])
+              actual=hashlib.sha256(f.read_bytes()).hexdigest()
+              assert actual==x['outputSHA256'], (str(f),actual,x['outputSHA256'])
+          print('Tracked shirts match tracked SHA256 report')
+          PY
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Installer une version verrouillee de glTF-Transform
+        run: npm install --no-audit --no-fund --prefix "$RUNNER_TEMP/v24-gltf" '@gltf-transform/cli@4.5.1'
+      - name: Regenerer et verifier les trois T-shirts sans ecriture Git
+        env:
+          GLTF_TRANSFORM_CLI: ${{ runner.temp }}/v24-gltf/node_modules/.bin/gltf-transform
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tests/match3d-v24-glb-audit.cjs
+          node tools/match3d-v24-lod-build.cjs > match3d-v24-chat-report/generation.json
+          python - <<'PY'
+          import hashlib,json,pathlib
+          p=pathlib.Path('dist/match3d/assets/rugby-v24/lod')
+          expected=json.loads(pathlib.Path('match3d-v24-chat-report/expected-shirt-fit-report.json').read_text())
+          current=json.loads((p/'shirt-fit-report.json').read_text())
+          for a,b in zip(expected['levels'],current['levels']):
+              assert a['lod']==b['lod']
+              f=p/('clothing_tshirt-lod%d.glb'%a['lod'])
+              h=hashlib.sha256(f.read_bytes()).hexdigest()
+              assert h==a['outputSHA256']==b['outputSHA256'],(str(f),h,a['outputSHA256'],b['outputSHA256'])
+          print('PASS: generated GLB LOD0/1/2 reproduce reviewed SHA256')
+          PY
+          git diff --exit-code -- dist/match3d/assets/rugby-v24/lod/
+      - name: Tests Node ciblés sur les vrais assets et les gestes
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in tests/match3d-v24-{shirt-fit,real-shirt,arm-ik,player-stage,rugby-clips}.cjs; do
+            node "$file"
+          done
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Installer Chromium Playwright version verrouillee
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Captures 3 LOD et gestes
+        run: python tests/match3d-v24-lod-browser.py
+      - name: Captures contact entre deux vrais rigs
+        run: python tests/match3d-v24-contact-browser.py
+      - name: Captures 30 rigs offline
+        run: python tests/match3d-v24-stage-browser.py
+      - name: Benchmark apparié de scene isolee (non runtime)
+        run: python tests/match3d-v24-paired-browser.py
+      - name: Produire manifeste de provenance des artefacts
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib,subprocess
+          out=pathlib.Path('match3d-v24-chat-report')
+          out.mkdir(exist_ok=True)
+          files=[]
+          for dirname in ['match3d-v24-chat-report','match3d-v24-lod-report','match3d-v24-contact-report','match3d-v24-stage-report','match3d-v24-paired-report']:
+              for f in sorted(pathlib.Path(dirname).rglob('*')):
+                  if f.is_file() and f.name!='manifest.json':
+                      files.append({'path':str(f),'bytes':f.stat().st_size,'sha256':hashlib.sha256(f.read_bytes()).hexdigest()})
+          (out/'manifest.json').write_text(json.dumps({'head':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'files':files},indent=2)+'\n')
+          PY
+      - name: Publier toutes les preuves inspectables sans modifier la branche
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-v24-chat-reception
+          path: |
+            match3d-v24-chat-report/
+            match3d-v24-lod-report/
+            match3d-v24-contact-report/
+            match3d-v24-stage-report/
+            match3d-v24-paired-report/
+          if-no-files-found: warn
+          retention-days: 30
