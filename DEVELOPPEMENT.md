@@ -779,3 +779,10 @@ Après première CI Chromium SUCCESS, le JSON audit a montré Mercato Diagnostic
 - Node : correspondance/rejet d’os manquant PASS ; audit synthétique GLB existant 8 PASS. Chromium réel : trois vêtements liés aux 53 os, 12 clips et coordonnées finies sur idle/run à trois instants vérifiés.
 - ÉCHEC de réception : capture de page timeout 30 secondes ; extraction directe du canvas également sans résultat, interrompue. Aucun PNG obtenu ni aspect visuel approuvé. Rapport partiel `proof/report.json`. Le test navigateur ne réussit pas de bout en bout.
 - Reprise : diagnostiquer export/rendu Chromium puis inspecter face/dos/profil/course ; vérifier pénétration et déformations avant géométrie cachée/LOD. Étape 2 globale incomplète ; aucun geste rugby dédié ni benchmark 30 joueurs. PRODUCTEUR/V62/V63/DATA/LNR/moteur/sauvegardes/auto-release intacts. Aucun gate ni fusion.
+
+## MATCH 3D lot 24 — jalon 2b : captures débloquées, 5 novembre 2026
+
+- Correction isolée de l’aperçu : lecture décodée des morphs normalisés, restauration des données sparse normalisées chargées deux fois par r149, recalcul des bornes. Vendor et runtime inchangés. Deux régressions Node ajoutées et réussies ; audit synthétique GLB existant 8 PASS.
+- Réception Chromium/SwiftShader : huit contrôles réussis, dimensions 1,738 m de haut / 1,130 m de large en géométrie de repos, rig 53 joints commun aux vêtements et corps, 12 clips génériques, trois poses sans coordonnées invalides, aucune erreur JS ni requête externe.
+- Quatre captures face/dos/profil/course réellement inspectées et publiées dans assets/rugby-v24/proof/. Rapport et visual-review.md détaillent la limite : peau visible à travers une chaussure en course, bottines et graphisme encore upstream. Assemblage visible, pas de validation production.
+- Prochaine étape : corriger surfaces cachées/pénétrations et chaussures puis LOD. Pas de gestes rugby dédiés, intégration 30 joueurs ni benchmark. PR #300 DRAFT, aucun gate/fusion ; fichiers PRODUCTEUR V64 #305 et toutes zones exclues préservés. Suivi possible en Chat ; transformations binaires/réceptions locales ponctuelles en Work.

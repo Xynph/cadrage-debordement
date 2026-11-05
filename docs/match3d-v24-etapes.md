@@ -37,3 +37,9 @@ Choix : réutiliser les quatre sources publiées via une page de qualification o
 Plan borné : test Node des correspondances d’os ; assemblage ; contrôle Chromium des trois vêtements/53 os et déformations à trois poses ; captures face/dos/profil/course ; publication et vérification sur PR #300. Aperçu à rendu fixe à la demande pour réception logicielle. Les clips restent génériques : le sélecteur fixe une pose, il ne simule pas un match.
 
 Ce jalon ne valide pas la suppression des surfaces cachées, les trois LOD, les gestes rugby, les trente joueurs ni les performances. L’étape 2 globale reste ouverte. Aucun gate ni fusion.
+
+## Jalon 2b — captures débloquées et inspection réalisée
+
+Correctifs de l’aperçu : morphs entiers normalisés décodés ; valeurs sparse normalisées restaurées pour éviter la double conversion de GLTFLoader r149 ; bornes recalculées. Deux régressions Node ajoutées. Chromium exécute huit contrôles, dont les proportions humaines, et produit quatre vues JPEG (face/dos/profil/course). Inspection détaillée : `dist/match3d/assets/rugby-v24/proof/visual-review.md`.
+
+Réception partielle : anatomie et tenue reconnaissables ; pénétration du pied dans une chaussure pendant la course, bottines/graphisme encore issus de la source. Pas de validation production. Étape suivante : surfaces cachées/chaussures et LOD ; animations rugby/30 joueurs/benchmarks toujours à faire. Le suivi et la coordination peuvent reprendre en Chat ; les prochaines transformations binaires et réceptions locales nécessiteront ponctuellement Work.

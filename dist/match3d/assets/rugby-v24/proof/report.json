@@ -1,20 +1,95 @@
 {
-  "status": "VISUAL_VALIDATION_BLOCKED",
-  "checksPassed": [
-    "3 vêtements liés aux 53 os du corps",
+  "checks": [
+    "Trois vêtements liés aux 53 os du corps",
+    "Dimensions humaines du corps et des vêtements après morphs normalisés",
     "12 clips génériques chargés",
-    "Déformations finies idle 0, run 0.25 et run 0.5"
+    "Déformations finies idle 0",
+    "Déformations finies run 0.25",
+    "Déformations finies run 0.5",
+    "Aucune erreur JavaScript",
+    "Aucune requête externe autorisée"
   ],
-  "failed": [
-    "Page.screenshot : timeout 30000ms (deux tentatives)",
-    "Export canvas toDataURL sans résultat, interrompu"
-  ],
-  "notValidated": [
-    "Aspect de la tenue",
-    "Absence de pénétration corps/vêtements",
-    "LOD",
-    "Animations rugby",
-    "30 joueurs et performances"
-  ],
-  "environment": "Chromium headless 143, SwiftShader Linux"
+  "asset": {
+    "meshes": [
+      {
+        "name": "Body",
+        "bones": 53
+      },
+      {
+        "name": "Eyebrows",
+        "bones": 53
+      },
+      {
+        "name": "Eyelashes",
+        "bones": 53
+      },
+      {
+        "name": "Eyes_1",
+        "bones": 53
+      },
+      {
+        "name": "Eyes_2",
+        "bones": 53
+      },
+      {
+        "name": "Eyes_3",
+        "bones": 53
+      },
+      {
+        "name": "Teeth",
+        "bones": 53
+      },
+      {
+        "name": "Tongue",
+        "bones": 53
+      },
+      {
+        "name": "Cloth_tshirt",
+        "bones": 53
+      },
+      {
+        "name": "Cloth_shorts",
+        "bones": 53
+      },
+      {
+        "name": "Cloth_shoes",
+        "bones": 53
+      }
+    ],
+    "allGarmentsShareBones": true,
+    "clips": [
+      "fall",
+      "idle",
+      "idle_breathe",
+      "idle_fidget",
+      "idle_look",
+      "jump",
+      "land",
+      "run",
+      "strafe_left",
+      "strafe_right",
+      "walk",
+      "walk_back"
+    ]
+  },
+  "bounds": {
+    "min": [
+      -0.5648934841156006,
+      -0.009170369245111942,
+      -0.10614871233701706
+    ],
+    "max": [
+      0.5648934841156006,
+      1.7291051149368286,
+      0.3761313855648041
+    ]
+  },
+  "status": "CAPTURED_NOT_PRODUCTION_READY",
+  "visualReview": "visual-review.md",
+  "errors": [],
+  "external": [],
+  "limits": [
+    "Un joueur de qualification ; pas de LOD, gestes rugby ou benchmark 30 joueurs",
+    "Rendu logiciel Chromium ; aucune mesure GPU Windows"
+  ]
 }
