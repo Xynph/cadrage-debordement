@@ -109,20 +109,21 @@ function aiRosterYouthIntake(){
  for(const c of S.clubs){
   if(c.id===S.club)continue;
   const a=aiRosterAcademy(c),info=worldActive()?worldClub(c.id):null;
-  // Formation sur l'année écoulée, puis trois nouveaux espoirs par club.
+  // Les 15 postes recoivent chaque annee un nouvel Espoir. Les profils precedents
+  // conservent leur suivi jusqu'a 21 ans, sauf promotion professionnelle.
   for(const p of a.players){
    ageDevelopmentPlayer(p);
    growPlayer(p,(.65+Math.max(0,(info?.facilities||2)-2)*.08)*ageGrowth(p),false);
   }
   a.players=a.players.filter(p=>p.age<=21&&p.age<p.dev.retireAge);
-  const needs=recruitmentNeeds(c).slice(0,6);
-  for(let k=0;k<3;k++){
-   const slot=needs[k]?.slot??(c.id*3+S.season*7+k*5)%15;
+  for(let k=0;k<15;k++){
+   const slot=(c.id*3+S.season*7+k)%15;
    const p=academyPlayer(c.id,slot,S.season,300+k);
    p.dev.potential=clamp(p.dev.potential+Math.max(0,(info?.facilities||2)-2),p.rating,99);
    a.players.push(p);
   }
-  a.players=a.players.sort((x,y)=>y.dev.potential-x.dev.potential||x.id.localeCompare(y.id)).slice(0,6);
+  // Plafond quinquennal : aucun recrutement fantome, anciens profils preservés.
+  a.players=a.players.slice(-75);
   a.intakeSeason=S.season;
   let sh=buildSheet(c),serial=0;
   for(let slot=0;slot<23;slot++){
