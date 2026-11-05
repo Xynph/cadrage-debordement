@@ -86,10 +86,12 @@ try:
         {body:asset.body,bones:asset.bones},partner,progress,contactBases);
       // Real post-fall wrist targets depend on the actual carrier pose.
       const ik=CDMatch3DV24RugbyClips.wrapCarrier(THREE,asset.bones,partner.bones,.85*state.onset);
+      const surfaceGrip=CDMatch3DV24RugbyClips.gripCarrierSurface(
+        THREE,asset.bones,partner.body,partner.bones,state.onset);
       scene.updateMatrixWorld(true);
       const p=(bones,name)=>bones.find(b=>b.name===name).getWorldPosition(new THREE.Vector3());
       const target=p(partner.bones,'spine_03');
-      return {...state,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik};
+      return {...state,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
     }""",phase)
     fall['lod']=lod
     assert fall['horizontalTorsoGapM']>=.375,(lod,phase,'torso clearance',fall)
