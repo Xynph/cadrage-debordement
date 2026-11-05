@@ -184,7 +184,8 @@
   // or a cosmetic body proxy); sample a bounded set of real skinned vertices.
   const meshFloor=rig=>{
    rig.body.updateMatrixWorld(true);
-   let min=Infinity,vertices=0;
+   let min=Infinity,vertices=0,torsoMin=Infinity,torsoVertices=0;
+   const spine=point(rig,'spine_03');
    rig.body.traverse(mesh=>{
     if(!mesh.isSkinnedMesh)return;
     const positions=mesh.geometry.getAttribute('position');
@@ -194,10 +195,13 @@
     for(let i=0;i<positions.count;i+=stride){
      mesh.boneTransform(i,v.fromBufferAttribute(positions,i));
      mesh.localToWorld(v);min=Math.min(min,v.y);vertices++;
+     if(mesh.name==='Body' && v.distanceTo(spine)<.35){
+      torsoMin=Math.min(torsoMin,v.y);torsoVertices++;
+     }
     }
    });
    if(!Number.isFinite(min)||vertices<30)throw Error('Sol maillage skin indisponible');
-   return {min,vertices};
+   return {min,vertices,torsoMinY:Number.isFinite(torsoMin)?torsoMin:null,torsoVertices};
   };
   // Separate the actual upper-torso joints, avoiding unphysical overlap of
   // the torso centres. This is a proxy clearance, NOT exact mesh collision.
@@ -226,7 +230,8 @@
    rig.body.updateMatrixWorld(true);
    const after=meshFloor(rig);
    const pelvis=point(rig,'pelvis'),head=point(rig,'head');
-   groundSamples.push({minMeshY:after.min,vertices:after.vertices,pelvisY:pelvis.y,
+   groundSamples.push({minMeshY:after.min,vertices:after.vertices,
+    torsoMinY:after.torsoMinY,torsoVertices:after.torsoVertices,pelvisY:pelvis.y,
     headY:head.y,verticalTorsoRatio:Math.abs(head.y-pelvis.y)/head.distanceTo(pelvis)});
   }
   return {progress:p,onset,settle,landing,groundSamples,torsoSeparationM:point(tackler,'spine_03').distanceTo(point(carrier,'spine_03')),
