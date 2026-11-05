@@ -61,7 +61,7 @@ test('V70 : rivalite potentielle presente au coup d envoi sans intervention',()=
  assert.ok(V70.matchBonus(l,0,'attack')>0);
  assert.equal(V70.matchBonus(l,1,'attack'),0);
  assert.equal(V70.matchBonus(l,0,'defence'),0);
- l.sheets[0].on=['a','b'];
+ l.sheets[0].on=['a'];
  assert.equal(V70.matchBonus(l,0,'attack'),0);
  l.finished=true;
  assert.equal(V70.matchBonus(l,0,'attack'),0);
