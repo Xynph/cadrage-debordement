@@ -18,6 +18,7 @@ try:
   for lod in range(3):
    page.goto(f'http://127.0.0.1:{s.server_port}/match3d/assets/rugby-v24/assembly.html?lod={lod}',wait_until='domcontentloaded');page.wait_for_function('window.ready || window.failures.length',timeout=120000);assert page.evaluate('window.ready'),page.evaluate('window.failures')
    page.add_script_tag(url=f'http://127.0.0.1:{s.server_port}/match3d/assets/rugby-v24/player-stage.js')
+   page.add_script_tag(url=f'http://127.0.0.1:{s.server_port}/match3d/assets/rugby-v24/mesh-intersections.js')
    info=page.evaluate("""()=>{
     window.setPose('idle',0);const partner=CDMatch3DV24Stage.instantiate(THREE,asset,0);scene.add(partner.body);
     window.setPose('rugby_tackle',.55);asset.body.position.x=-.2;scene.updateMatrixWorld(true);
@@ -91,9 +92,12 @@ try:
       scene.updateMatrixWorld(true);
       const p=(bones,name)=>bones.find(b=>b.name===name).getWorldPosition(new THREE.Vector3());
       const target=p(partner.bones,'spine_03');
-      return {...state,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
+      const collision=CDMatch3DV24MeshIntersections.probe(THREE,{body:asset.body,bones:asset.bones},partner,850);
+      return {...state,meshIntersections:collision,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
     }""",phase)
     fall['lod']=lod
+    assert fall['meshIntersections']['tacklerTriangles']>=20 and fall['meshIntersections']['carrierTriangles']>=20,(lod,phase,'real mesh triangle samples missing',fall['meshIntersections'])
+    assert isinstance(fall['meshIntersections']['properTriangleIntersections'],int),(lod,phase,'intersection count unavailable')
     assert fall['horizontalTorsoGapM']>=.375,(lod,phase,'torso clearance',fall)
     # Grounded skinned mesh must remain outside the turf while upright again,
     # not just at the peak of the fall. Measure both actual player meshes.
