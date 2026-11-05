@@ -51,3 +51,13 @@ Le run `42125241449`, SHA `e56827726f8a243d1a3f8ccdd94a7b632edc1f21`, a publié 
 **Conclusion visuelle après inspection de l'impact et de la récupération : échec de qualification.** Le témoin et les scénarios à impact montrent une flexion excessive des jambes et un effondrement trop précoce des torses, avec pieds et genoux en posture de squat à la place d'une course/prise rugby. Les deux liaisons `PinJoint3D` fonctionnent dans la physique (2/2 sur chaque LOD), mais les centres des mains restent typiquement à 0,8–1,0 m des centres du torse cible et les mains n'enveloppent pas réellement sa peau. Des centres de pieds rigides passent par des valeurs y négatives pendant l'approche ; sans test de sommets skinnés cela ne démontre ni ne réfute une pénétration réelle.
 
 **Aucun rendu/pose de ce run ne doit être considéré comme qualifié**. Le prochain test d'animation idle + rigid body cible précisément la stabilisation AVANT impact ; aucune pose ni ressource n'est transférée au moteur Three.js.
+
+## Verdict de stabilité après raccordement Idle — refus confirmé
+
+Le run `42126024200`, HEAD `612d692abd77fefa4266e952239268568e5c1dbf`, a **échoué à bon droit** sur le garde-fou pré-impact, sans panne de téléchargement ni de maillage. Artefact `13460427378`, ZIP SHA256 `7e1eeef7f15e8def7735f1cf72f121d75b4945199c578b640e195eb18f03c68d`, identique au digest GitHub, rapports complets pour les neuf scénarios.
+
+Les **12 vraies animations** sont bien reconnues : `fall, idle, idle_breathe, idle_fidget, idle_look, jump, land, run, strafe_left, strafe_right, walk, walk_back`. L'animation `idle` a été sélectionnée et jouée en boucle sur les deux personnages de chaque LOD.
+
+Malgré cela, la descente du torse entre début et fin d'approche est de **0,80 à 0,82 m** dans les neuf scénarios, **avant** le choc. Le seuil de stabilité `preImpactChestDropM <= 0.35 m` rejette donc **9/9** scénarios. Cela invalide toute revendication de plaquage/récupération crédible dans la scène actuelle. Le moteur Kickback a réussi ses tests amont et son test élémentaire à deux rigs, mais l'**adaptation de sa cible d'animation/ressorts au vrai squelette canonique en séquence n'est PAS stabilisée**. La cause profonde (calibrage des ressorts, poses cibles, boucle de synchronisation) reste à investiguer ; ne pas lui attribuer une cause précise non mesurée.
+
+**Décision produit R&D** : conserver l'audit des 53 os, les 221 tests amont, la déquantification en copies, le duo CMU synchronisé et les 90 captures comme résultats techniques vérifiés. Mettre le montage Kickback+PinJoint en statut **NON QUALIFIÉ**, sans intégration moteur, PR #300, GLB ni runtime. La prochaine recherche doit isoler la stabilité du ragdoll animé avant de réexaminer tout geste de plaquage.
