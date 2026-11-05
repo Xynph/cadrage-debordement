@@ -161,7 +161,7 @@
    // A torso is not landed while the hips hover over bent, dangling legs.
    // Lower the actual pelvis and put both real feet behind it with two-bone IK.
    const pelvis=point(rig,'pelvis');
-   rig.body.position.y+=landing*(.23-pelvis.y);
+   rig.body.position.y+=landing*(.34-pelvis.y);
    rig.body.updateMatrixWorld(true);
    const hipNow=point(rig,'pelvis');
    const longDirection=point(rig,'head').sub(hipNow);
@@ -173,7 +173,7 @@
     const thigh=get(rig,'thigh_'+side),calf=get(rig,'calf_'+side),foot=get(rig,'foot_'+side);
     const initial=point(rig,'foot_'+side);
     const proneFoot=hipNow.clone().addScaledVector(longDirection,-.72).addScaledVector(sideways,sign*.14);
-    proneFoot.y=.36;
+    proneFoot.y=.12;
     const goal=initial.lerp(proneFoot,landing);
     const pole=hipNow.clone().addScaledVector(longDirection,-.33).addScaledVector(sideways,sign*.30);
     pole.y=.35;
@@ -184,7 +184,7 @@
   // or a cosmetic body proxy); sample a bounded set of real skinned vertices.
   const meshFloor=rig=>{
    rig.body.updateMatrixWorld(true);
-   let min=Infinity,vertices=0,torsoMin=Infinity,torsoVertices=0;
+   let min=Infinity,vertices=0,torsoMin=Infinity,torsoVertices=0,lowest=null;
    const spine=point(rig,'spine_03');
    rig.body.traverse(mesh=>{
     if(!mesh.isSkinnedMesh)return;
@@ -194,14 +194,24 @@
     const v=new THREE.Vector3();
     for(let i=0;i<positions.count;i+=stride){
      mesh.boneTransform(i,v.fromBufferAttribute(positions,i));
-     mesh.localToWorld(v);min=Math.min(min,v.y);vertices++;
+     mesh.localToWorld(v);
+     if(v.y<min){
+      min=v.y;
+      const joint=mesh.geometry.getAttribute('skinIndex');
+      const weight=mesh.geometry.getAttribute('skinWeight');
+      let major=0;
+      if(weight){for(let j=1;j<4;j++)if(weight.getComponent(i,j)>weight.getComponent(i,major))major=j;}
+      const boneId=joint?joint.getComponent(i,major):-1;
+      lowest={mesh:mesh.name,bone:mesh.skeleton?.bones?.[boneId]?.name||null,index:i,y:v.y};
+     }
+     vertices++;
      if(mesh.name==='Body' && v.distanceTo(spine)<.35){
       torsoMin=Math.min(torsoMin,v.y);torsoVertices++;
      }
     }
    });
    if(!Number.isFinite(min)||vertices<30)throw Error('Sol maillage skin indisponible');
-   return {min,vertices,torsoMinY:Number.isFinite(torsoMin)?torsoMin:null,torsoVertices};
+   return {min,vertices,torsoMinY:Number.isFinite(torsoMin)?torsoMin:null,torsoVertices,lowest};
   };
   // Separate the actual upper-torso joints, avoiding unphysical overlap of
   // the torso centres. This is a proxy clearance, NOT exact mesh collision.
@@ -231,7 +241,8 @@
    const after=meshFloor(rig);
    const pelvis=point(rig,'pelvis'),head=point(rig,'head');
    groundSamples.push({minMeshY:after.min,vertices:after.vertices,
-    torsoMinY:after.torsoMinY,torsoVertices:after.torsoVertices,pelvisY:pelvis.y,
+    torsoMinY:after.torsoMinY,torsoVertices:after.torsoVertices,lowest:after.lowest,
+    feetY:['foot_l','foot_r'].map(n=>point(rig,n).y),kneesY:['calf_l','calf_r'].map(n=>point(rig,n).y),pelvisY:pelvis.y,
     headY:head.y,verticalTorsoRatio:Math.abs(head.y-pelvis.y)/head.distanceTo(pelvis)});
   }
   return {progress:p,onset,settle,landing,groundSamples,torsoSeparationM:point(tackler,'spine_03').distanceTo(point(carrier,'spine_03')),
