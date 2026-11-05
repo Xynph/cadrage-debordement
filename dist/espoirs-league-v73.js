@@ -83,8 +83,11 @@ function install(g){if(!g||typeof g.finishRound!=='function'||typeof g.advanceSe
  const get=()=>typeof S!=='undefined'?S:g.S,save=()=>{g.save();return typeof lastSaveError==='undefined'||!lastSaveError};
  const finish=g.finishRound;g.finishRound=function(){const s=get(),before=s&&s.round,season=s&&s.season,r=finish.apply(this,arguments);if(s&&s.season===season&&s.round!==before){setup(s);advance(s);save()}return r};g.finishRound.__v73=true;
  const next=g.advanceSeason;g.advanceSeason=function(){const s=get(),season=s?.season;if(s){setup(s);closeSeason(s)}const r=next.apply(this,arguments);if(get()&&get().season!==season){setup(get());save()}return r};
- const former=g.formationIntegrated; if(typeof former==='function'){g.formationIntegrated=function(){const html=former.apply(this,arguments);return html+panel(get())}}
- if(typeof CDNativeCenters==='object'&&typeof CDNativeCenters.formationView==='function'){const old=CDNativeCenters.formationView;CDNativeCenters.formationView=function(){return old.apply(this,arguments)+panel(get())}}
+ const oldRender=g.render;
+ g.render=function(){const result=oldRender.apply(this,arguments),s=get();
+  if(s&&typeof view!=='undefined'&&view==='formation'&&typeof document!=='undefined'){
+   const target=document.querySelector('main.main');if(target&&typeof target.insertAdjacentHTML==='function')target.insertAdjacentHTML('beforeend',panel(s));
+  }return result};
  g.v73Mode=mode=>{const ok=setMode(get(),mode,save);if(ok)g.render();return ok};
  g.v73Select=(slot,id)=>{const ok=setPlayer(get(),slot,id,save);if(ok)g.render();return ok};return true}
 const api={roundRobin,setup,read,standing,chosen,scoreMatch,applyRound,advance,closeSeason,setMode,setPlayer,panel,install};if(typeof module==='object'&&module.exports)module.exports=api;root.CDEspoirsV73=api;if(typeof document!=='undefined')install(root)
