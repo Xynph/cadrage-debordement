@@ -20,7 +20,7 @@ assert.equal(decision().plan,'pression','exploitation des erreurs adverse');
 prep({carries:12,advances:2,handErrors:5});
 run('l.defences[1-l.userSide]="pression";l.stats[1-l.userSide].penalties=5');
 assert.equal(decision().plan,'equilibre','discipline défensive');
-prep({carries:12,advances:8,longGains:0,handErrors:0});
+prep({carries:12,advances:6,longGains:0,handErrors:0});
 assert.equal(decision(),null,'absence de réaction sans preuve');
 prep({carries:12,advances:9,longGains:4});
 run('activePlayers(l,1-l.userSide).forEach(p=>p.condition=45)');
