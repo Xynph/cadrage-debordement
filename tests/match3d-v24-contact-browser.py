@@ -207,6 +207,9 @@ try:
      assert all(.015 <= g['minMeshY'] <= .055 for g in fall['groundSamples']),(lod,phase,'standing/recovery mesh penetrates turf',fall['groundSamples'])
     if phase==1.0:
      sweep=fall['relativePoseSweep']
+     clavicle=fall['clavicleSweep']
+     assert len(clavicle['candidates'])==7 and clavicle['candidates'][0]['angleRadians']==0,(lod,'clavicle diagnostic unavailable',clavicle)
+     assert all(x['armReachM']>.3 and x['sampledTriangleIntersections']>=0 for x in clavicle['candidates']),(lod,'invalid skinned clavicle sweep',clavicle)
      assert len(sweep['samples'])==10 and sweep['samples'][0]['forwardM']==0 and sweep['samples'][0]['lateralM']==0,(lod,'pose-sweep unavailable',sweep)
      assert all(isinstance(item['rightDeficitM'],(int,float)) and isinstance(item['leftDeficitM'],(int,float)) and item['sampledTriangleIntersections']>=0 for item in sweep['samples']),(lod,'invalid real-skin pose sweep',sweep)
      assert fall['landing']>.95,(lod,phase,'full landing not reached',fall)
