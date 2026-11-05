@@ -19,6 +19,15 @@ for(const clip of clips){
   }
  }
 }
+// Limiter la rotation des bras dans les poses clés pour éviter les manches disjointes.
+for(const clip of clips.filter(c=>['rugby_pass','rugby_tackle'].includes(c.name))){
+ for(const track of clip.tracks.filter(t=>/^upperarm_[lr]\.quaternion$/.test(t.name))){
+  for(let i=0;i<track.values.length;i+=4){
+   const angle=2*Math.acos(Math.min(1,Math.abs(track.values[i+3])));
+   assert.ok(angle<=1.05,'Epaule trop ouverte '+clip.name+' '+angle);
+  }
+ }
+}
 assert.deepEqual(bones.map(b=>b.quaternion.toArray()),initial,'Never mutate original bones');
 assert.throws(()=>create(THREE,bones.slice(1)),/manquant/);
 console.log('PASS original rugby clips: 4 actions, normalized keyframes, nonmutation, missing-joint gate');

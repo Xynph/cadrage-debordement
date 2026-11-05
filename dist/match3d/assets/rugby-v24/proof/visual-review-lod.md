@@ -20,3 +20,7 @@
 ## Reconstruction corrective publiée, réception à refaire
 
 Le constructeur a publié sur la branche PR #300 le rapport LOD2 corrigé : **2 549 triangles** au total, dont **1 469 corps, 534 T-shirt, 214 short et 332 chaussures**. Ancien maillot LOD2 : 91 triangles. Cette redistribution ne prouve pas que les surfaces trouées ont disparu. Les CI du commit automatique sont notées `action_required` : il faut une nouvelle exécution déclenchée normalement et les nouvelles captures avant validation visuelle.
+
+## Jalon cinématique v24c — corrections des amplitudes
+
+L'inspection des 9 captures Chromium précédentes refuse les manches/épaules trop ouvertes lors de passe et plaquage. Le présent changement réduit les rotations **uniquement dans les clips de présentation** (sans modifier les os, les GLB, le moteur, les sauvegardes ni le runtime de match). Les amplitudes de bras de passe et plaquage restent sous 1,05 rad dans les tests unitaires. Le résultat visuel demeure à vérifier via `MATCH 3D v24 - qualification LOD et gestes`; une CI verte n'est pas à elle seule une preuve d'absence d'intersection vêtement/peau. PR reste DRAFT.

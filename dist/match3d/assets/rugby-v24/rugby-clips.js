@@ -1,5 +1,6 @@
 'use strict';
 /* Clips rugby originaux CC0 : os CharacterCreator, rendu uniquement.
+ * Essai cinématique v24c : amplitudes d'épaule réduites pour limiter le décollement du maillot.
  * Les rotations sont relatives au repos de chaque os, sans moteur sportif. */
 (function(root){
  function create(THREE,bones){
@@ -15,17 +16,17 @@
     [.8,{upperarm_l:[-.55,0,.18],lowerarm_l:[-.7,0,0],upperarm_r:[-.5,0,-.2],lowerarm_r:[-.7,0,0],spine_03:[.08,0,0]}]]},
    {name:'rugby_pass',duration:.72,keys:[
     [0,{spine_02:[0,-.25,0],upperarm_l:[-.7,0,.15],upperarm_r:[-.65,0,-.2],lowerarm_l:[-.85,0,0],lowerarm_r:[-.8,0,0]}],
-    [.24,{spine_02:[-.05,.1,0],upperarm_l:[-1.15,0,.35],upperarm_r:[-1.2,0,-.4],lowerarm_l:[-.3,0,0],lowerarm_r:[-.3,0,0]}],
-    [.42,{spine_02:[.04,.4,0],upperarm_l:[-1.35,0,.6],upperarm_r:[-1.35,0,-.65],lowerarm_l:[0,0,0],lowerarm_r:[0,0,0]}],
+    [.24,{spine_02:[-.05,.1,0],upperarm_l:[-.72,0,.12],upperarm_r:[-.75,0,-.12],lowerarm_l:[-.3,0,0],lowerarm_r:[-.3,0,0]}],
+    [.42,{spine_02:[.04,.4,0],upperarm_l:[-.88,0,.16],upperarm_r:[-.88,0,-.16],lowerarm_l:[0,0,0],lowerarm_r:[0,0,0]}],
     [.72,{}]]},
    {name:'rugby_tackle',duration:.92,keys:[
     [0,{spine_02:[.10,0,0],upperarm_l:[-.4,0,.2],upperarm_r:[-.4,0,-.2]}],
-    [.24,{pelvis:[.22,0,0],spine_02:[.48,0,0],upperarm_l:[-1.12,0,.4],upperarm_r:[-1.12,0,-.4],thigh_l:[-.4,0,0],thigh_r:[-.32,0,0]}],
-    [.55,{pelvis:[.46,0,0],spine_02:[.65,0,0],upperarm_l:[-1.5,0,.45],upperarm_r:[-1.5,0,-.45],thigh_l:[-.62,0,0],thigh_r:[-.54,0,0],calf_l:[.4,0,0],calf_r:[.4,0,0]}],
+    [.24,{pelvis:[.22,0,0],spine_02:[.48,0,0],upperarm_l:[-.68,0,.14],upperarm_r:[-.68,0,-.14],thigh_l:[-.4,0,0],thigh_r:[-.32,0,0]}],
+    [.55,{pelvis:[.46,0,0],spine_02:[.65,0,0],upperarm_l:[-.92,0,.16],upperarm_r:[-.92,0,-.16],thigh_l:[-.62,0,0],thigh_r:[-.54,0,0],calf_l:[.4,0,0],calf_r:[.4,0,0]}],
     [.92,{}]]},
    {name:'rugby_recover',duration:1.15,keys:[
-    [0,{pelvis:[.8,0,0],spine_02:[.6,0,0],upperarm_l:[-1.1,0,.45],upperarm_r:[-1.1,0,-.45],thigh_l:[-1.0,0,0],thigh_r:[-1.0,0,0],calf_l:[1.2,0,0],calf_r:[1.2,0,0]}],
-    [.4,{pelvis:[.4,0,0],spine_02:[.45,0,0],upperarm_l:[-.8,0,.35],upperarm_r:[-.8,0,-.35],thigh_l:[-.7,0,0],thigh_r:[-.7,0,0],calf_l:[.9,0,0],calf_r:[.9,0,0]}],
+    [0,{pelvis:[.8,0,0],spine_02:[.6,0,0],upperarm_l:[-.76,0,.18],upperarm_r:[-.76,0,-.18],thigh_l:[-1.0,0,0],thigh_r:[-1.0,0,0],calf_l:[1.2,0,0],calf_r:[1.2,0,0]}],
+    [.4,{pelvis:[.4,0,0],spine_02:[.45,0,0],upperarm_l:[-.6,0,.12],upperarm_r:[-.6,0,-.12],thigh_l:[-.7,0,0],thigh_r:[-.7,0,0],calf_l:[.9,0,0],calf_r:[.9,0,0]}],
     [.85,{pelvis:[.14,0,0],spine_02:[.15,0,0],upperarm_l:[-.2,0,.1],upperarm_r:[-.2,0,-.1],thigh_l:[-.2,0,0],thigh_r:[-.2,0,0]}],
     [1.15,{}]]}
   ];
