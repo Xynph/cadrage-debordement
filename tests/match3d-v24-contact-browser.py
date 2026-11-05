@@ -82,7 +82,12 @@ try:
       // crouched keyframe. Stop strictly before the clip endpoint.
       if(progress>1.15)window.setPose('rugby_recover',Math.min(1.149,(progress-1.15)/.70*1.15));
       else window.setPose('rugby_tackle',.55);
-      partner.mixer.setTime(.25);
+      // Apply the same authored recovery to the carrier; leaving rugby_carry
+      // active produced an upright tackler behind a leaning carrier.
+      const recovering=progress>1.15;
+      partner.mixer.stopAllAction();
+      partner.mixer.clipAction(partner.clips.find(c=>c.name===(recovering?'rugby_recover':'rugby_carry'))).play();
+      partner.mixer.setTime(recovering?Math.min(1.149,(progress-1.15)/.70*1.15):.25);
       asset.body.position.copy(contactBases.tackler.position);
       asset.body.quaternion.copy(contactBases.tackler.quaternion);
       partner.body.position.copy(contactBases.carrier.position);
