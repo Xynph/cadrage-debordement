@@ -71,19 +71,41 @@
   });
   if(points.length<20)throw Error('Surface anatomique du porteur absente');
   const amount=THREE.MathUtils.clamp(blend,0,1),results={samples:points.length};
+  // Search a small deterministic set of reachable *real skin* samples.
+  // A closest vertex is not necessarily reachable by a two-segment arm;
+  // evaluate the resulting wrist position, not the target alone.
   for(const [side,sign]of [['l',1],['r',-1]]){
    const upper=bone(tacklerBones,'upperarm_'+side),lower=bone(tacklerBones,'lowerarm_'+side),hand=bone(tacklerBones,'hand_'+side);
-   const origin=world(hand);
-   let nearest=points[0],distance=Infinity;
-   for(const p of points){const d=origin.distanceToSquared(p);if(d<distance){distance=d;nearest=p;}}
-   // Two centimetres outside the observed surface; never target its interior.
-   const normal=origin.clone().sub(nearest);
-   if(normal.lengthSq()<1e-8)normal.copy(world(upper).sub(torso));
-   normal.normalize();
-   const goal=nearest.clone().addScaledVector(normal,.025);
-   const pole=world(upper).add(new THREE.Vector3(sign*.3,-.23,.15));
-   solveArm(THREE,upper,lower,hand,origin.lerp(goal,amount),pole);
-   results[side]={beforeMetres:Math.sqrt(distance),afterToTargetMetres:world(hand).distanceTo(goal)};
+   const origin=world(hand),shoulder=world(upper);
+   const initialUpper=upper.quaternion.clone(),initialLower=lower.quaternion.clone();
+   const armLength=shoulder.distanceTo(world(lower))+world(lower).distanceTo(world(hand));
+   const candidates=points.filter(p=>p.distanceTo(shoulder)<armLength+.04)
+     .map(p=>({p,d:p.distanceToSquared(origin)})).sort((a,b)=>a.d-b.d)
+     .slice(0,24);
+   if(!candidates.length)throw Error('Surface hors de portee du bras '+side);
+   let best=null;
+   for(const {p:surface} of candidates){
+    // Offset towards the approaching wrist to avoid targeting inside the body.
+    const normal=origin.clone().sub(surface);
+    if(normal.lengthSq()<1e-8)normal.copy(shoulder).sub(torso);
+    normal.normalize();
+    const goal=surface.clone().addScaledVector(normal,.025);
+    for(const poleOffset of [0,.18,-.18]){
+     upper.quaternion.copy(initialUpper);lower.quaternion.copy(initialLower);
+     const pole=shoulder.clone().add(new THREE.Vector3(sign*(.34+poleOffset),-.22,.15));
+     solveArm(THREE,upper,lower,hand,origin.clone().lerp(goal,amount),pole);
+     const actual=world(hand);
+     let nearest=Infinity;
+     for(const vertex of points)nearest=Math.min(nearest,actual.distanceTo(vertex));
+     const err=nearest+.01*actual.distanceTo(goal);
+     if(!best||err<best.err)best={err,gap:nearest,goal:goal.clone(),pole:pole.clone(),upper:upper.quaternion.clone(),lower:lower.quaternion.clone()};
+    }
+   }
+   upper.quaternion.copy(best.upper);lower.quaternion.copy(best.lower);
+   upper.updateMatrixWorld(true);lower.updateMatrixWorld(true);
+   results[side]={beforeMetres:Math.sqrt(Math.min(...points.map(p=>origin.distanceToSquared(p)))),
+     afterSurfaceMetres:best.gap,afterToTargetMetres:world(hand).distanceTo(best.goal),
+     examined:candidates.length*3};
   }
   return results;
  }
