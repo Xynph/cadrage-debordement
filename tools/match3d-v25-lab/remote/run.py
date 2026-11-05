@@ -7,7 +7,7 @@ OUT=ROOT/'rd-report';WORK=ROOT/'rd-work';OUT.mkdir(exist_ok=True);WORK.mkdir(exi
 LOCK=json.loads((HERE/'lock.json').read_text())
 REQUIRED=['acquire','published-auditor','binary-audit','blender-headless','rigger-registration',
           'mesh2motion-npm-ci','mesh2motion-build','mesh2motion-roundtrip','ara-npm-ci','ara-build-assets','ara-export',
-          'ara-rigger-real-body','ara-controlled-retarget',
+          'ara-rigger-real-body','ara-controlled-retarget','ara-native-run-retarget',
           'chromium-lod','chromium-contact','chromium-surface','chromium-stage','chromium-paired',
           'baseline-offline-node','baseline-runtime-browser']
 
@@ -101,6 +101,7 @@ def tools():
     # Exploratory real-body probe is separately reported, not part of REQUIRED nor artistic approval.
     run('ara-rigger-real-body',[blender,'--background','--factory-startup','--python-exit-code','1','--python',str(HERE/'ara_rigger_probe.py')],timeout=600)
     run('ara-controlled-retarget',[blender,'--background','--factory-startup','--python-exit-code','1','--python',str(HERE/'ara_retarget_probe.py')],timeout=360)
+    run('ara-native-run-retarget',[blender,'--background','--factory-startup','--python-exit-code','1','--python',str(HERE/'ara_retarget_probe.py'),'--native-run'],timeout=360)
 
 def browser():
     (OUT/'copies').mkdir(exist_ok=True)
