@@ -1,0 +1,51 @@
+name: MATCH 3D v24 - LOD CC0 experimentaux
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/match3d-v24-lod-build.cjs'
+      - '.github/workflows/match3d-v24-lod.yml'
+permissions:
+  contents: write
+jobs:
+  lod:
+    if: github.event.pull_request.number == 300 && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Installer glTF-Transform dans un repertoire isole
+        run: npm install --no-audit --no-fund --prefix "$RUNNER_TEMP/v24-gltf" '@gltf-transform/cli@^4.0.0'
+      - name: Auditer puis calculer douze binaires LOD
+        env:
+          GLTF_TRANSFORM_CLI: ${{ runner.temp }}/v24-gltf/node_modules/.bin/gltf-transform
+        run: |
+          node tests/match3d-v24-glb-audit.cjs
+          node tools/match3d-v24-lod-build.cjs
+      - name: Preuves de qualification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-v24-lod-qualification
+          path: dist/match3d/assets/rugby-v24/lod/
+          if-no-files-found: warn
+      - name: Publier seulement si audit et geometrie valides
+        env:
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          git fetch origin "$PR_BRANCH"
+          test "$(git rev-parse HEAD)" = "$(git rev-parse FETCH_HEAD)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist/match3d/assets/rugby-v24/lod/
+          git diff --cached --quiet && exit 0
+          git commit -m "build(match3d): audited experimental v24 LOD binaries"
+          git push origin "HEAD:refs/heads/$PR_BRANCH"
