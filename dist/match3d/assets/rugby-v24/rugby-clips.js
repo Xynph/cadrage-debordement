@@ -82,6 +82,44 @@
   }
   const point=(rig,name)=>get(rig,name).getWorldPosition(new THREE.Vector3());
   tackler.body.updateMatrixWorld(true);carrier.body.updateMatrixWorld(true);
+  // Whole-body landing, pivoting the real rig around its pelvis rather than
+  // only folding knees/spine while leaving both players standing.
+  // On approach the correction is zero; at recovery it smoothly vanishes.
+  const landing=smooth((Math.min(p,1)-.35)/.55)*recovery;
+  for(const rig of [tackler,carrier]){
+   const hip=point(rig,'pelvis'),head=point(rig,'head');
+   const longAxis=head.clone().sub(hip).normalize();
+   const forward=new THREE.Vector3(0,0,1).applyQuaternion(rig.body.getWorldQuaternion(new THREE.Quaternion()));
+   forward.y=0;
+   if(forward.lengthSq()<1e-6)forward.set(0,0,1);
+   forward.normalize();
+   const target=new THREE.Quaternion().setFromUnitVectors(longAxis,forward);
+   const turn=new THREE.Quaternion().slerp(target,landing);
+   rig.body.quaternion.premultiply(turn).normalize();
+   rig.body.updateMatrixWorld(true);
+   // Preserve the world-space hip pivot through the full-body rotation.
+   rig.body.position.add(hip.sub(point(rig,'pelvis')));
+   rig.body.updateMatrixWorld(true);
+  }
+  // Ground alignment uses deformed GLB vertices (not skeleton-only landmarks
+  // or a cosmetic body proxy); sample a bounded set of real skinned vertices.
+  const meshFloor=rig=>{
+   rig.body.updateMatrixWorld(true);
+   let min=Infinity,vertices=0;
+   rig.body.traverse(mesh=>{
+    if(!mesh.isSkinnedMesh)return;
+    const positions=mesh.geometry.getAttribute('position');
+    if(!positions)return;
+    const stride=Math.max(1,Math.floor(positions.count/350));
+    const v=new THREE.Vector3();
+    for(let i=0;i<positions.count;i+=stride){
+     mesh.boneTransform(i,v.fromBufferAttribute(positions,i));
+     mesh.localToWorld(v);min=Math.min(min,v.y);vertices++;
+    }
+   });
+   if(!Number.isFinite(min)||vertices<30)throw Error('Sol maillage skin indisponible');
+   return {min,vertices};
+  };
   // Separate the actual upper-torso joints, avoiding unphysical overlap of
   // the torso centres. This is a proxy clearance, NOT exact mesh collision.
   const delta=point(carrier,'spine_03').sub(point(tackler,'spine_03'));
@@ -99,7 +137,20 @@
    const lowest=Math.min(...landmarks.map(name=>point(rig,name).y));
    if(lowest<.045){rig.body.position.y+=.045-lowest;rig.body.updateMatrixWorld(true);}
   }
-  return {progress:p,onset,settle,torsoSeparationM:point(tackler,'spine_03').distanceTo(point(carrier,'spine_03')),
+  // Align actual surface to the field once the body rotates into its landing.
+  // Never shift the original standing pose at progress=0 or recovery=1.85.
+  const floorCorrection=smooth((Math.min(p,1)-.3)/.6)*recovery;
+  const groundSamples=[];
+  for(const rig of [tackler,carrier]){
+   const before=meshFloor(rig);
+   rig.body.position.y+=(.025-before.min)*floorCorrection;
+   rig.body.updateMatrixWorld(true);
+   const after=meshFloor(rig);
+   const pelvis=point(rig,'pelvis'),head=point(rig,'head');
+   groundSamples.push({minMeshY:after.min,vertices:after.vertices,pelvisY:pelvis.y,
+    headY:head.y,verticalTorsoRatio:Math.abs(head.y-pelvis.y)/head.distanceTo(pelvis)});
+  }
+  return {progress:p,onset,settle,landing,groundSamples,torsoSeparationM:point(tackler,'spine_03').distanceTo(point(carrier,'spine_03')),
    horizontalTorsoGapM:new THREE.Vector2(point(tackler,'spine_03').x-point(carrier,'spine_03').x,point(tackler,'spine_03').z-point(carrier,'spine_03').z).length(),
    tacklerRoot:tackler.body.position.toArray(),carrierRoot:carrier.body.position.toArray()};
  }
