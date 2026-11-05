@@ -27,7 +27,8 @@
    st.loads.every(x=>x&&typeof x.id==='string'&&['allegee','equilibree','intensive'].includes(x.load))&&
    st.ambitions.every(x=>x&&typeof x.id==='string'&&DECISIONS.includes(x.decision)&&Number.isInteger(x.season))&&
    st.history.every(x=>x&&Number.isInteger(x.season)&&Number.isInteger(x.reputation))&&
-   (st.network===undefined||(st.network.version===1&&Array.isArray(st.network.feeders)&&
+   (st.network===undefined||(st.network.version===1&&Array.isArray(st.network.recruiters)&&
+    st.network.recruiters.length===3&&Array.isArray(st.network.feeders)&&
     st.network.feeders.length===16&&Array.isArray(st.network.players)&&st.network.players.length<=96&&
     Array.isArray(st.network.partners)&&st.network.partners.length<=8&&
     Array.isArray(st.network.history)&&st.network.history.length<=150&&
@@ -70,7 +71,7 @@
  const firstnames=['Eliott','Noam','Mael','Hugo','Mathis','Timo','Leo','Tane','Lucas','Pablo','Nino','Sami'];
  const fam=(s,p)=>s?.development?.academy?.find(q=>q.pos===p.pos)||s?.development?.academy?.[0];
  function network(st,s){
-  if(st.network)return st.network;
+  if(st.network){if(!Array.isArray(st.network.recruiters))st.network.recruiters=[{name:'Recruteur Nord',zone:'Bretagne',skill:75},{name:'Recruteur Sud',zone:'Sud-Ouest',skill:81},{name:'Recruteur International',zone:'International',skill:72}];return st.network;}
   const feeders=FEEDERS.map((f,i)=>({id:'feeder-'+i,name:f[0]+' RC',region:f[1],union:f[2],relationship:0}));
   const players=[];
   for(let i=0;i<feeders.length;i++)for(let j=0;j<2;j++){
@@ -84,7 +85,10 @@
     ambition:40+Math.floor(seed/167)%61,scouted:0,trial:false,offers:0,
     status:'available',originSeason:s.season,homeClub:feeders[i].id});
   }
-  st.network={version:1,feeders,players,partners:[],history:[],credits:[],lastSeason:s.season};
+  st.network={version:1,feeders,players,partners:[],history:[],credits:[],lastSeason:s.season,
+   recruiters:[{name:'Recruteur Nord',zone:'Bretagne',skill:75},
+    {name:'Recruteur Sud',zone:'Sud-Ouest',skill:81},
+    {name:'Recruteur International',zone:'International',skill:72}]};
   return st.network;
  }
  function evolveNetwork(n,s){
@@ -138,7 +142,10 @@
  function watch(s,id,save){
   const st=ensure(s),n=st&&network(st,s),p=n?.players.find(x=>x.id===id);
   if(!st||!unlocked(s)||!p||p.status!=='available'||p.scouted>=3||!cost(s,500))return false;
-  return transact(s,()=>{s.clubs[s.club].cash-=500;p.scouted++;return true},save);
+  return transact(s,()=>{s.clubs[s.club].cash-=500;p.scouted++;
+   const scout=n.recruiters.find(r=>r.zone===p.region)||(p.union==='FR'?n.recruiters[1]:n.recruiters[2]);
+   p.lastReport={season:s.season,recruiter:scout.name,reliability:Math.min(95,scout.skill+p.scouted*4)};
+   return true},save);
  }
  function trial(s,id,save){
   const st=ensure(s),n=st&&network(st,s),p=n?.players.find(x=>x.id===id);
@@ -191,6 +198,7 @@
   return '<section class="cd04-panel" style="padding:18px;margin-top:18px"><h3>V95 · Filière clubs amateurs</h3>'+
    '<p>Réseau : '+n.feeders.length+' clubs formateurs · '+n.players.filter(p=>p.status==='available').length+
    ' jeunes suivables · '+n.partners.length+' partenaires. Recruter demande observations, essai et accord du joueur.</p>'+
+   '<p>Recruteurs : '+n.recruiters.map(r=>safe(r.name)+' ('+safe(r.zone)+', '+r.skill+'/100)').join(' · ')+'</p>'+
    '<ul>'+n.feeders.map(c=>'<li>'+safe(c.name)+' ('+safe(c.region)+', '+safe(c.union)+')'+
    '<button onclick="v95Partner('+arg(c.id)+')"'+(locked||n.partners.includes(c.id)?' disabled':'')+
    '>Partenariat · 2 000 €</button></li>').join('')+'</ul>'+
