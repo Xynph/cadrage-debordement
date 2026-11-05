@@ -96,10 +96,16 @@
    // Retain the unconstrained candidates whenever fewer than 12 real skin
    // vertices are available on the desired flank.
    const preferred=allCandidates.filter(x=>x.flank>.025);
-   const pool=preferred.length>=12?preferred:allCandidates;
-   const candidates=pool.sort((a,b)=>a.d-b.d).slice(0,24);
+   // Include the nearest unconstrained skin as a fallback, while exploring
+   // opposite-flank samples. A strict flank filter stranded the right wrist
+   // 11-12 cm off the body at p=1 in all three LOD.
+   const candidates=[...new Set([
+     ...preferred.slice().sort((a,b)=>a.d-b.d).slice(0,24),
+     ...allCandidates.slice().sort((a,b)=>a.d-b.d).slice(0,24)
+   ])];
    const beforeGap=Math.sqrt(nearest.d);
-   let best={err:beforeGap,gap:beforeGap,goal:origin.clone(),
+   const flankPenalty=p=>.04*Math.max(0,.025-p.clone().sub(torso).dot(lateral)*sign)/.025;
+   let best={err:beforeGap+flankPenalty(origin),gap:beforeGap,goal:origin.clone(),
      upper:initialUpper.clone(),lower:initialLower.clone()};
    for(const {p:surface} of candidates){
     // Offset towards the approaching wrist to avoid targeting inside the body.
@@ -114,7 +120,7 @@
      const actual=world(hand);
      let nearest=Infinity;
      for(const vertex of points)nearest=Math.min(nearest,actual.distanceTo(vertex));
-     const err=nearest+.01*actual.distanceTo(goal);
+     const err=nearest+.01*actual.distanceTo(goal)+flankPenalty(actual);
      if(err<best.err-1e-7)best={err,gap:nearest,goal:goal.clone(),pole:pole.clone(),upper:upper.quaternion.clone(),lower:lower.quaternion.clone()};
     }
    }
