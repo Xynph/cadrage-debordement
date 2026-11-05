@@ -7,6 +7,7 @@ OUT=ROOT/'rd-report';WORK=ROOT/'rd-work';OUT.mkdir(exist_ok=True);WORK.mkdir(exi
 LOCK=json.loads((HERE/'lock.json').read_text())
 REQUIRED=['acquire','published-auditor','binary-audit','blender-headless','rigger-registration',
           'mesh2motion-npm-ci','mesh2motion-build','mesh2motion-roundtrip','ara-npm-ci','ara-build-assets','ara-export',
+          'ara-rigger-real-body','ara-controlled-retarget',
           'chromium-lod','chromium-contact','chromium-surface','chromium-stage','chromium-paired',
           'baseline-offline-node','baseline-runtime-browser']
 
