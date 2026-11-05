@@ -22,7 +22,10 @@ const choice=run('JSON.parse(JSON.stringify(CDEspoirsMovementV75.candidates(S)))
 assert.equal(choice.promoted.length,2);
 assert.equal(choice.relegated.length,2);
 const oldPlayers=run('JSON.parse(JSON.stringify(S.v74Accession.centers[CDEspoirsMovementV75.candidates(S).promoted[0]].players.map(p=>p.id)))');
+const shot=run('JSON.parse(JSON.stringify(CDEspoirsMovementV75.snapshot(S,CDEspoirsMovementV75.candidates(S))))');
+console.log('V75 DIAG pre',JSON.stringify({installed:run('advanceSeason.__v75'),shots:shot&&[shot.elite.map(x=>x.players.length),shot.acc.map(x=>x.players.length)],choice}));
 run('advanceSeason()');
+console.log('V75 DIAG post',JSON.stringify({season:run('S.season'),movementSeason:run('S.v75Movement.season'),history:run('S.v75Movement.history.length'),installed:run('advanceSeason.__v75')}));
 assert.equal(run('S.season'),season+1);
 assert.equal(run('S.v75Movement.history.length'),1);
 assert.equal(run('S.v75Movement.history[0].season'),season);
