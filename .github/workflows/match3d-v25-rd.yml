@@ -31,6 +31,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24.11.0'
+      - name: Acquerir et qualifier un vrai duo mocap CMU synchronise (A tire B)
+        continue-on-error: true
+        run: python tools/match3d-v25-lab/remote/cmu_pair_probe.py
       - name: Auditer les droits et executer la suite Godot amont sur code MIT
         run: python tools/match3d-v25-lab/remote/external_candidates_probe.py
       - name: Publier les preuves moteur reel et compatibilite des 3 GLB
