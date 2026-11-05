@@ -52,6 +52,41 @@
   }
   return measurements;
  }
+ // Secondary contact refinement against the actual deformed Body skin.
+ // This is a surface-target IK probe, not a collision/penetration solver.
+ function gripCarrierSurface(THREE,tacklerBones,carrierBody,carrierBones,blend=1){
+  const bone=(bones,name)=>{const b=bones.find(x=>x.name===name);if(!b)throw Error('Os de prise manquant : '+name);return b;};
+  const world=b=>b.getWorldPosition(new THREE.Vector3());
+  const torso=world(bone(carrierBones,'spine_03'));
+  carrierBody.updateMatrixWorld(true);
+  const points=[];
+  carrierBody.traverse(mesh=>{
+   if(!mesh.isSkinnedMesh||mesh.name!=='Body')return;
+   const attr=mesh.geometry.getAttribute('position');
+   const stride=Math.max(1,Math.floor(attr.count/900)),v=new THREE.Vector3();
+   for(let i=0;i<attr.count;i+=stride){
+    mesh.boneTransform(i,v.fromBufferAttribute(attr,i));mesh.localToWorld(v);
+    if(v.distanceTo(torso)<.43)points.push(v.clone());
+   }
+  });
+  if(points.length<20)throw Error('Surface anatomique du porteur absente');
+  const amount=THREE.MathUtils.clamp(blend,0,1),results={samples:points.length};
+  for(const [side,sign]of [['l',1],['r',-1]]){
+   const upper=bone(tacklerBones,'upperarm_'+side),lower=bone(tacklerBones,'lowerarm_'+side),hand=bone(tacklerBones,'hand_'+side);
+   const origin=world(hand);
+   let nearest=points[0],distance=Infinity;
+   for(const p of points){const d=origin.distanceToSquared(p);if(d<distance){distance=d;nearest=p;}}
+   // Two centimetres outside the observed surface; never target its interior.
+   const normal=origin.clone().sub(nearest);
+   if(normal.lengthSq()<1e-8)normal.copy(world(upper).sub(torso));
+   normal.normalize();
+   const goal=nearest.clone().addScaledVector(normal,.025);
+   const pole=world(upper).add(new THREE.Vector3(sign*.3,-.23,.15));
+   solveArm(THREE,upper,lower,hand,origin.lerp(goal,amount),pole);
+   results[side]={beforeMetres:Math.sqrt(distance),afterToTargetMetres:world(hand).distanceTo(goal)};
+  }
+  return results;
+ }
  // Coordinated two-rig fall demonstrator. Alters only the actual bone/root
  // transforms of two independent rigs in the isolated qualification scene.
  // Caller must resample the original clip and restore base transforms each frame.
@@ -255,5 +290,5 @@
   if(hierarchy){let top=bones[0];while(top.parent)top=top.parent;top.updateMatrixWorld(true);}
   return clips;
  }
- root.CDMatch3DV24RugbyClips=Object.freeze({create,solveArm,wrapCarrier,coordinateFall});
+ root.CDMatch3DV24RugbyClips=Object.freeze({create,solveArm,wrapCarrier,gripCarrierSurface,coordinateFall});
 })(typeof window!=='undefined'?window:globalThis);
