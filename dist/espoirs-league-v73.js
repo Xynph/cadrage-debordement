@@ -10,7 +10,23 @@ function realGroups(){const ids=new Map(GUEST_SLUGS.map((slug,i)=>[slug,14+i]));
 const MODES=['equilibre','performance','developpement','repos'];
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const hash=str=>{let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
-const clubPlayers=(s,id)=>{const base=id>=14?s.v73Espoirs?.guests?.[id-14]?.players||[]:id===s.club?s.development?.academy||[]:s.aiRoster?.academies?.find(a=>a.clubId===id)?.players||[];return root.CDEspoirsMovementV75?.roster(s,'elite',id,base)||base};
+const clubPlayers=(s,id)=>{
+ const base=id>=14?s.v73Espoirs?.guests?.[id-14]?.players||[]:id===s.club?s.development?.academy||[]:s.aiRoster?.academies?.find(a=>a.clubId===id)?.players||[];
+ const moved=root.CDEspoirsMovementV75?.roster(s,'elite',id,base);
+ if(moved&&moved!==base)return moved;
+ if(id>=14||id===s.club||base.length>=15)return base;
+ const state=s.v73Espoirs;if(!state)return base;
+ state.nativeYouth=state.nativeYouth||{};
+ if(!state.nativeYouth[id]){
+  const used=new Set();
+  state.nativeYouth[id]=Array.from({length:15},(_,i)=>{
+   const chosen=base.find(p=>p.pos===(typeof POS!=='undefined'?POS[i]:null)&&!used.has(p.id));
+   if(chosen){used.add(chosen.id);return chosen}
+   return academyPlayer(id,i,s.season,600+i);
+  });
+ }
+ return state.nativeYouth[id];
+};
 const clubName=(s,id)=>{const base=id>=14?extraName(s,id):s.clubs[id]?.name||('Club '+id);return root.CDEspoirsMovementV75?.name(s,'elite',id,base)||base};
 function roundRobin(ids){const a=ids.slice();if(a.length%2)a.push(-1);const out=[];for(let r=0;r<2*(a.length-1);r++){const pairs=[];for(let i=0;i<a.length/2;i++){const x=a[i],y=a[a.length-1-i];if(x>=0&&y>=0)pairs.push((r+i)%2?[y,x]:[x,y])}out.push(pairs);a.splice(1,0,a.pop())}return out}
 function groupRounds(groups){const rounds=groups.map(g=>roundRobin(g));return Array.from({length:Math.max(...rounds.map(x=>x.length))},(_,i)=>rounds.flatMap(r=>r[i]||[]))}
