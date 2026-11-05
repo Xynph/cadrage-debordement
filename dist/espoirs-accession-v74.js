@@ -19,8 +19,8 @@ const name=(s,id)=>(s.lnrMode?.version===1?REAL:FICTION)[Math.floor(id/10)]?.[id
 function fixtures(groups){
  const schedule=groups.map(ids=>{const a=ids.slice(),out=[];for(let r=0;r<18;r++){const day=[];for(let i=0;i<5;i++){const x=a[i],y=a[9-i];day.push((r+i)%2?[y,x]:[x,y])}out.push(day);a.splice(1,0,a.pop())}return out});
  return Array.from({length:18},(_,i)=>[...schedule[0][i],...schedule[1][i]])}
-function prospects(season,club){return Array.from({length:15},(_,i)=>{const h=hash(season+':'+club+':'+i),rating=42+h%25;
- return {id:'a74-'+season+'-'+club+'-'+i,name:'Espoir '+(club+1)+'-'+(i+1),pos:POSITIONS[i],age:17+rand(h+':age',5),rating,potential:clamp(rating+8+rand(h+':potential',17),rating,95),condition:100,minutes:0};})}
+function prospects(season,club){return Array.from({length:22},(_,i)=>{const h=hash(season+':'+club+':'+i),rating=42+h%25;
+ return {id:'a74-'+season+'-'+club+'-'+i,name:'Espoir '+(club+1)+'-'+(i+1),pos:POSITIONS[i%15],slot:i%15,age:17+rand(h+':age',5),rating,potential:clamp(rating+8+rand(h+':potential',17),rating,95),condition:100,minutes:0};})}
 function setup(s){if(!s||!s.development||!s.aiRoster?.academies)return null;
  if(s.v74Accession?.version===1&&s.v74Accession.season===s.season)return s.v74Accession;
  const previous=s.v74Accession,groups=[ids().slice(0,10),ids().slice(10)];
@@ -33,7 +33,7 @@ function standings(st,group){const rows=group.map(id=>({id,p:0,w:0,d:0,l:0,score
  const bonus=(m.tries[side]-m.tries[1-side]>=3?1:0)+(diff<0&&diff>=-5?1:0);row.bonus+=bonus;row.points+=bonus}}
  return rows.sort((a,b)=>b.points-a.points||(b.scored-b.conceded)-(a.scored-a.conceded)||b.scored-a.scored||a.id-b.id)}
 function fifteen(st,id){const c=st.centers[id],mode=id===st.follow?st.plan:'equilibre';
- return c.players.slice().sort((a,b)=>{const power=p=>p.rating+(mode==='formation'?(p.potential-p.rating)*.6:0)+(mode==='repos'?(p.condition-100)*.7:0);return power(b)-power(a)||a.id.localeCompare(b.id)}).slice(0,15)}
+ return Array.from({length:15},(_,slot)=>{const available=c.players.filter(p=>p.slot===slot);available.sort((a,b)=>{const power=p=>p.rating+(mode==='formation'?(p.potential-p.rating)*.65:0)+(mode==='repos'?(p.condition-100)*.7:0);return power(b)-power(a)||a.id.localeCompare(b.id)});return available[0]})}
 function play(st,pair,round,stage){const xi=pair.map(id=>fifteen(st,id)),quality=xi.map(ps=>ps.reduce((t,p)=>t+p.rating*p.condition/100,0)/15);
  const seed=st.season+':'+round+':'+stage+':'+pair.join('-'),delta=quality[0]-quality[1];
  const a=clamp(Math.round(21+delta*.55+rand(seed+':home',17)-6),3,60),b=clamp(Math.round(21-delta*.55+rand(seed+':away',17)-8),3,60);
