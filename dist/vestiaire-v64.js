@@ -81,7 +81,9 @@
      const already=st.coachMeeting?.season===s.season&&st.coachMeeting?.week===s.economy?.week;
      const available=!blocked&&!already;
      const choices=available?options.map(([key,label])=>'<button class="small" type="button" onclick="coachConversation(\''+safe(p.id)+'\',\''+key+'\')">'+safe(label)+'</button>').join(' '):'<small>'+(already?'Entretien deja effectue cette semaine':'Entretien indisponible')+'</small>';
-     return '<tr><td>'+safe(p.name)+'</td><td>'+safe(status(p))+' · '+(st.score??65)+'/100</td><td>'+ (promise?'Promesse '+safe(promise.target)+' · '+promise.completed+'/3 matchs':'Aucune promesse active')+'</td><td>'+choices+'</td></tr>';
+     const canPromise=!blocked&&!p.injury&&!promise&&s.phase==='league'&&s.round<=23;
+     const prom=canPromise?'<select id="v64-promise-'+safe(p.id)+'" aria-label="Promesse de temps de jeu pour '+safe(p.name)+'"><option value="rotation">80 minutes</option><option value="regulier">160 minutes</option><option value="titulaire">200 minutes</option></select><button class="small" type="button" onclick="makePlayingPromise(\\''+safe(p.id)+'\\',document.getElementById(\\'v64-promise-'+safe(p.id)+'\\').value)">Promettre</button>':'';
+     return '<tr><td>'+safe(p.name)+'</td><td>'+safe(status(p))+' · '+(st.score??65)+'/100</td><td>'+ (promise?'Promesse '+safe(promise.target)+' · '+promise.completed+'/3 matchs':'Aucune promesse active')+prom+'</td><td>'+choices+'</td></tr>';
     }).join('')+
     '</tbody></table></div></details>'+
     '<p class="help">Les promesses de temps de jeu sont gerees dans le panneau Satisfaction et promesses. La discussion « Écouter » ameliore le joueur ; « Rassurer » ou « Clarifier » peut aussi modifier le moral collectif ou la confiance. Un seul bonus collectif par journee.</p></section>';
