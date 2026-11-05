@@ -178,10 +178,10 @@ try:
         clav.quaternion.copy(base);asset.body.updateMatrixWorld(true);
         clavicleSweep={candidates,status:'DIAGNOSTIC_ONLY_RESTORED_SKELETON'};
       }
-      // Visual-stage ONLY: test the observed +0.25 rad anatomical right
-      // clavicle candidate against the ACTUAL IK wrist-to-skin gaps and the
-      // finer 850-triangle crossing assay. Keep the candidate solely when it
-      // improves right contact, preserves left contact and adds no crossings.
+      // Four bounded real right-clavicle angles, each followed by the exact
+      // two-hand IK and the 850-triangle Body intersection probe. Restore ALL
+      // bone quaternions between trials and before screenshots: no per-LOD
+      // acceptance may silently alter the scene if another LOD fails.
       let clavicleGripTrial=null;
       if(progress===1){
         const originalBones=asset.bones.map(b=>b.quaternion.clone());
@@ -189,23 +189,27 @@ try:
           rightM:surfaceGrip.r.afterSurfaceMetres,
           intersections:collision.properTriangleIntersections};
         const clav=asset.bones.find(b=>b.name==='clavicle_r');
-        clav.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),.25));
-        asset.body.updateMatrixWorld(true);
-        const trialGrip=CDMatch3DV24RugbyClips.gripCarrierSurface(
-          THREE,asset.bones,partner.body,partner.bones,state.onset);
-        const afterCrossings=CDMatch3DV24MeshIntersections.probe(
-          THREE,{body:asset.body,bones:asset.bones},partner,850).properTriangleIntersections;
-        const candidate={leftM:trialGrip.l.afterSurfaceMetres,
-          rightM:trialGrip.r.afterSurfaceMetres,intersections:afterCrossings};
-        const accepted=candidate.rightM<baseline.rightM-.005
-          && candidate.leftM<=baseline.leftM+.001
-          && candidate.intersections<=baseline.intersections;
-        if(!accepted){
+        const trials=[];
+        for(const angle of [.10,.15,.20,.25]){
           asset.bones.forEach((bone,i)=>bone.quaternion.copy(originalBones[i]));
+          clav.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),angle));
           asset.body.updateMatrixWorld(true);
+          const trialGrip=CDMatch3DV24RugbyClips.gripCarrierSurface(
+            THREE,asset.bones,partner.body,partner.bones,state.onset);
+          const intersections=CDMatch3DV24MeshIntersections.probe(
+            THREE,{body:asset.body,bones:asset.bones},partner,850).properTriangleIntersections;
+          const candidate={angleRadians:angle,leftM:trialGrip.l.afterSurfaceMetres,
+            rightM:trialGrip.r.afterSurfaceMetres,intersections};
+          candidate.accepted=candidate.rightM<baseline.rightM-.005
+            && candidate.leftM<=baseline.leftM+.001
+            && candidate.intersections<=baseline.intersections;
+          trials.push(candidate);
         }
-        clavicleGripTrial={baseline,candidate,accepted,
-          status:'VISUAL_STAGE_ONLY_NO_RUNTIME_COUPLING'};
+        asset.bones.forEach((bone,i)=>bone.quaternion.copy(originalBones[i]));
+        asset.body.updateMatrixWorld(true);
+        clavicleGripTrial={baseline,trials,
+          accepted:trials.some(t=>t.accepted),
+          status:'DIAGNOSTIC_ONLY_ALL_QUATERNIONS_RESTORED'};
       }
       return {...state,meshIntersections:collision,relativePoseSweep,clavicleSweep,clavicleGripTrial,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
     }""",phase)
@@ -238,12 +242,14 @@ try:
      sweep=fall['relativePoseSweep']
      clavicle=fall['clavicleSweep']
      grip_trial=fall['clavicleGripTrial']
-     assert grip_trial and isinstance(grip_trial['accepted'],bool),(lod,'missing real-IK trial')
-     assert all(isinstance(grip_trial[k][metric],(int,float)) for k in ('baseline','candidate') for metric in ('leftM','rightM','intersections')),(lod,'invalid actual-grip trial',grip_trial)
-     if grip_trial['accepted']:
-      assert grip_trial['candidate']['rightM']<grip_trial['baseline']['rightM']-.005
-      assert grip_trial['candidate']['leftM']<=grip_trial['baseline']['leftM']+.001
-      assert grip_trial['candidate']['intersections']<=grip_trial['baseline']['intersections']
+     assert grip_trial and len(grip_trial['trials'])==4,(lod,'missing four real-IK trials',grip_trial)
+     assert all(isinstance(grip_trial['baseline'][metric],(int,float)) for metric in ('leftM','rightM','intersections')),(lod,'invalid baseline',grip_trial)
+     for trial in grip_trial['trials']:
+      assert all(isinstance(trial[metric],(int,float)) for metric in ('angleRadians','leftM','rightM','intersections')),(lod,'invalid actual-grip trial',trial)
+      if trial['accepted']:
+       assert trial['rightM']<grip_trial['baseline']['rightM']-.005
+       assert trial['leftM']<=grip_trial['baseline']['leftM']+.001
+       assert trial['intersections']<=grip_trial['baseline']['intersections']
      assert len(clavicle['candidates'])==7 and clavicle['candidates'][0]['angleRadians']==0,(lod,'clavicle diagnostic unavailable',clavicle)
      assert all(x['armReachM']>.3 and x['sampledTriangleIntersections']>=0 for x in clavicle['candidates']),(lod,'invalid skinned clavicle sweep',clavicle)
      assert len(sweep['samples'])==10 and sweep['samples'][0]['forwardM']==0 and sweep['samples'][0]['lateralM']==0,(lod,'pose-sweep unavailable',sweep)
@@ -285,9 +291,12 @@ try:
     safe_shared.append({'forwardM':candidates[0]['forwardM'],'lateralM':candidates[0]['lateralM']})
   clavicle_trials={x['lod']:x['clavicleGripTrial'] for x in fallSequence if x['progress']==1}
   assert set(clavicle_trials)=={0,1,2},('trial must cover every LOD',clavicle_trials.keys())
-  shared_clavicle_safe=all(x['accepted'] for x in clavicle_trials.values())
+  shared_clavicle_angles=[angle for angle in (.10,.15,.20,.25)
+    if all(any(abs(t['angleRadians']-angle)<1e-8 and t['accepted']
+               for t in data['trials']) for data in clavicle_trials.values())]
+  shared_clavicle_safe=bool(shared_clavicle_angles)
   pose_decision={'status':'DIAGNOSTIC_ONLY_NO_RUNTIME_RELOCATION',
-    'safeSharedOffsets':safe_shared,'sharedClavicleAccepted':shared_clavicle_safe,
+    'safeSharedOffsets':safe_shared,'sharedClavicleAccepted':shared_clavicle_safe,'safeClavicleAngles':shared_clavicle_angles,
     'clavicleByLOD':clavicle_trials,'referenceByLOD':reference,
     'limits':'Sampled Body triangles are not exhaustive collision certification'}
   assert not errors and not external,(errors,external)
