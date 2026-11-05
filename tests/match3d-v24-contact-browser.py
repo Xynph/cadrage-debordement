@@ -207,9 +207,31 @@ try:
         }
         asset.bones.forEach((bone,i)=>bone.quaternion.copy(originalBones[i]));
         asset.body.updateMatrixWorld(true);
-        clavicleGripTrial={baseline,trials,
+        // Trial preview ONLY. Never write to assets/runtime and only show
+        // +0.20 rad if the exact current LOD passes both wrists and 850-face
+        // intersection checks. The Python report requires ALL 3 LODs safe.
+        const previewCandidate=trials.find(t=>Math.abs(t.angleRadians-.20)<1e-8);
+        let preview=null;
+        if(previewCandidate?.accepted){
+          clav.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),.20));
+          asset.body.updateMatrixWorld(true);
+          const gripPreview=CDMatch3DV24RugbyClips.gripCarrierSurface(
+            THREE,asset.bones,partner.body,partner.bones,state.onset);
+          const crossingsPreview=CDMatch3DV24MeshIntersections.probe(
+            THREE,{body:asset.body,bones:asset.bones},partner,850).properTriangleIntersections;
+          preview={appliedToIsolatedScreenshot:true,angleRadians:.20,
+            leftM:gripPreview.l.afterSurfaceMetres,rightM:gripPreview.r.afterSurfaceMetres,
+            intersections:crossingsPreview};
+          if(preview.rightM>=baseline.rightM-.005
+            ||preview.leftM>baseline.leftM+.001
+            ||preview.intersections>baseline.intersections)
+            throw Error('Real skinned candidate preview violates original contact and collision checks');
+        } else {
+          preview={appliedToIsolatedScreenshot:false,angleRadians:.20};
+        }
+        clavicleGripTrial={baseline,trials,preview,
           accepted:trials.some(t=>t.accepted),
-          status:'DIAGNOSTIC_ONLY_ALL_QUATERNIONS_RESTORED'};
+          status:'STAGE_ONLY_PREVIEW_NO_GLBS_OR_RUNTIME_MODIFIED'};
       }
       return {...state,meshIntersections:collision,relativePoseSweep,clavicleSweep,clavicleGripTrial,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
     }""",phase)
@@ -243,6 +265,11 @@ try:
      clavicle=fall['clavicleSweep']
      grip_trial=fall['clavicleGripTrial']
      assert grip_trial and len(grip_trial['trials'])==4,(lod,'missing four real-IK trials',grip_trial)
+     preview=grip_trial['preview']
+     assert preview and preview['appliedToIsolatedScreenshot'],(lod,'shared +.20 rad candidate must safely preview on all 3 LOD',grip_trial)
+     assert preview['rightM']<grip_trial['baseline']['rightM']-.005,(lod,'right wrist regression')
+     assert preview['leftM']<=grip_trial['baseline']['leftM']+.001,(lod,'left wrist regression')
+     assert preview['intersections']<=grip_trial['baseline']['intersections'],(lod,'real triangle crossings regression')
      assert all(isinstance(grip_trial['baseline'][metric],(int,float)) for metric in ('leftM','rightM','intersections')),(lod,'invalid baseline',grip_trial)
      for trial in grip_trial['trials']:
       assert all(isinstance(trial[metric],(int,float)) for metric in ('angleRadians','leftM','rightM','intersections')),(lod,'invalid actual-grip trial',trial)
