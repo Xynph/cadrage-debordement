@@ -75,7 +75,7 @@ func run_pair() -> void:
 			all_pass = false
 			result["lods"].append(lod_report)
 			continue
-		for mode in ["control", "impact", "impact_with_hand_springs"]:
+		for mode in ["control", "impact", "impact_with_hand_hand_links"]:
 			var scenario := {"name": mode, "status": "FAIL", "samples": [], "gripPhysicsLinks": 0}
 			var actors: Array = []
 			var builders: Array = []
@@ -132,8 +132,8 @@ func run_pair() -> void:
 						hit.ragdoll_probability = 0.0
 						hit.strength_reduction = 0.65
 						controllers[0].apply_hit(a["Chest"], towards, a["Chest"].global_position, hit)
-					var springs: Array = []
-					if mode == "impact_with_hand_springs":
+					var hand_links: Array = []
+					if mode == "impact_with_hand_hand_links":
 						# Explicit experimental physical attachment, NOT
 						# a verified anatomical grasp at true skinned surface.
 						for pair in [["Hand_L", "Chest"], ["Hand_R", "Hips"]]:
@@ -142,17 +142,15 @@ func run_pair() -> void:
 							var initial_gap := hand.global_position.distance_to(target.global_position)
 							if initial_gap > 0.95:
 								continue
-							var link := DampedSpringJoint3D.new()
+							# Godot 4.7 has PinJoint3D, NOT DampedSpringJoint3D.
+							# A genuine physics link between real Kickback bodies.
+							var link := PinJoint3D.new()
 							link.position = (hand.global_position + target.global_position) / 2.0
-							link.length = maxf(0.04, initial_gap)
-							link.rest_length = maxf(0.04, minf(initial_gap, 0.20))
-							link.stiffness = 14.0
-							link.damping = 1.8
 							get_root().add_child(link)
 							link.node_a = link.get_path_to(hand)
 							link.node_b = link.get_path_to(target)
-							springs.append(link)
-						scenario["gripPhysicsLinks"] = springs.size()
+							hand_links.append(link)
+						scenario["gripPhysicsLinks"] = hand_links.size()
 					for frame in 48:
 						await physics_frame
 						if frame == 11:
@@ -160,7 +158,7 @@ func run_pair() -> void:
 						if frame == 35:
 							scenario["samples"].append(snap(48, "fall", a, b))
 					# Release the experimental hand attachment at recovery.
-					for link in springs:
+					for link in hand_links:
 						link.queue_free()
 					for frame in 48:
 						await physics_frame
