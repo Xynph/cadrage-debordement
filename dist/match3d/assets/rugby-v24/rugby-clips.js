@@ -113,7 +113,7 @@
    const sideways=new THREE.Vector3(-longDirection.z,0,longDirection.x);
    for(const [side,sign]of [['l',1],['r',-1]]){
     const thigh=get(rig,'thigh_'+side),calf=get(rig,'calf_'+side),foot=get(rig,'foot_'+side);
-    const initial=point(foot);
+    const initial=point(rig,'foot_'+side);
     const proneFoot=hipNow.clone().addScaledVector(longDirection,-.72).addScaledVector(sideways,sign*.14);
     proneFoot.y=.12;
     const goal=initial.lerp(proneFoot,landing);
