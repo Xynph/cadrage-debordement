@@ -10,8 +10,35 @@ permissions:
   contents: read
 concurrency:
   group: match3d-v25-rd-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
+  external-engines:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v5
+        with:
+          ref: d6fbcb38438609c0ca461f54717655223b438b09
+          path: baseline
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Auditer les droits et executer la suite Godot amont sur code MIT
+        run: python tools/match3d-v25-lab/remote/external_candidates_probe.py
+      - name: Publier les preuves moteur reel et compatibilite des 3 GLB
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-v25-external-${{ github.sha }}
+          path: rd-report/external-tackle/
+          if-no-files-found: warn
+          retention-days: 14
+          compression-level: 6
   reception:
     runs-on: ubuntu-24.04
     timeout-minutes: 55
