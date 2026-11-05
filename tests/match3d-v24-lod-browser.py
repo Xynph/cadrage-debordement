@@ -53,6 +53,12 @@ try:
     assert finite['ok'] and finite['samples']>0,(level,gesture,finite)
     if gesture in ['idle','rugby_pass','rugby_tackle']:
      page.screenshot(path=str(OUT/f'lod{level}-{gesture}.jpg'),type='jpeg',quality=85,timeout=25000)
+   # Profil détaillé au sommet des gestes : contrôle visuel, pas approbation automatique.
+   for gesture,when in [('rugby_pass',.42),('rugby_tackle',.55)]:
+    page.evaluate('([name,time])=>window.setPose(name,time)',[gesture,when])
+    page.evaluate("document.getElementById('side').click()")
+    page.screenshot(path=str(OUT/f'lod{level}-{gesture}-side.jpg'),type='jpeg',quality=90,timeout=25000)
+    page.evaluate("document.getElementById('front').click()")
    results.append(info)
   assert not errors,errors
   assert not external,external

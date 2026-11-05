@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const THREE=require('../dist/match3d/vendor/three-r149.min.js');
 const ctx={};vm.runInNewContext(fs.readFileSync('dist/match3d/assets/rugby-v24/rugby-clips.js','utf8'),ctx);
 const create=ctx.CDMatch3DV24RugbyClips.create;
-const names=['pelvis','spine_02','spine_03','upperarm_l','upperarm_r','lowerarm_l','lowerarm_r','thigh_l','thigh_r','calf_l','calf_r'];
+const names=['pelvis','spine_02','spine_03','clavicle_l','clavicle_r','upperarm_l','upperarm_r','lowerarm_l','lowerarm_r','thigh_l','thigh_r','calf_l','calf_r'];
 const bones=names.map(name=>{const b=new THREE.Bone();b.name=name;return b;});
 const initial=bones.map(b=>b.quaternion.toArray());
 const clips=create(THREE,bones);
@@ -24,9 +24,13 @@ for(const clip of clips.filter(c=>['rugby_pass','rugby_tackle'].includes(c.name)
  for(const track of clip.tracks.filter(t=>/^upperarm_[lr]\.quaternion$/.test(t.name))){
   for(let i=0;i<track.values.length;i+=4){
    const angle=2*Math.acos(Math.min(1,Math.abs(track.values[i+3])));
-   assert.ok(angle<=1.05,'Epaule trop ouverte '+clip.name+' '+angle);
+   assert.ok(angle<=0.85,'Epaule trop ouverte '+clip.name+' '+angle);
   }
  }
+}
+for(const clip of clips.filter(c=>['rugby_pass','rugby_tackle'].includes(c.name))){
+ assert.ok(clip.tracks.some(t=>t.name==='clavicle_l.quaternion'),'left clavicle in '+clip.name);
+ assert.ok(clip.tracks.some(t=>t.name==='clavicle_r.quaternion'),'right clavicle in '+clip.name);
 }
 assert.deepEqual(bones.map(b=>b.quaternion.toArray()),initial,'Never mutate original bones');
 assert.throws(()=>create(THREE,bones.slice(1)),/manquant/);
