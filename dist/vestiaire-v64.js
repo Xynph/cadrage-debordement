@@ -89,9 +89,10 @@
  function install(root){
   if(!root||typeof root.recordSatisfactionRound!=='function'||typeof root.coachConversation!=='function'||typeof root.managerTeamView!=='function')return false;
   if(root.recordSatisfactionRound.__v64Wrapped)return true;
+  const current=()=>typeof S!=='undefined'?S:root.S;
   const oldRound=root.recordSatisfactionRound;
   function record(l){
-   const s=root.S;
+   const s=current();
    const can=!!s&&s.satisfactionVersion===1&&s.relationsVersion===1&&l?.finished&&l.pair?.[l.userSide]===s.club;
    const prior=can?snapshot(s.clubs[s.club].players):null;
    const result=oldRound(l);
@@ -106,19 +107,19 @@
   root.recordSatisfactionRound=record;
   const oldTalk=root.coachConversation;
   root.coachConversation=function(id,choice){
-   const s=root.S;
+   const s=current();
    const first=!!s&&!(s.economy?.relationLog||[]).some(x=>x.kind==='coach'&&x.season===s.season&&x.round===s.round);
    const ok=oldTalk(id,choice);
    if(!ok||!s)return ok;
    const bonus=meetingImpact(choice,first);
    if(bonus.morale)s.morale=bounded(s.morale+bonus.morale,25,98);
    if(bonus.trust)s.trust=bounded(s.trust+bonus.trust,0,100);
-   if((bonus.morale||bonus.trust)&&typeof root.save==='function')root.save();
+   if((bonus.morale||bonus.trust)&&typeof root.save==='function'){root.save();if(typeof root.render==='function')root.render();}
    return ok;
   };
   const oldTeam=root.managerTeamView;
   root.managerTeamView=function(){
-   const s=root.S;
+   const s=current();
    return oldTeam()+(s?.clubs?.[s.club]?panel(s,s.clubs[s.club].players):'');
   };
   return true;
