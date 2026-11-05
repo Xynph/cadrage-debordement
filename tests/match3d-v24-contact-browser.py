@@ -113,6 +113,10 @@ try:
      if phase==1.0:
       assert all(.015 <= regions[name]['minY'] <= .11 for name in regions),(lod,phase,'impact body support outside measured pitch range',regions)
      if phase==1.85:
+      # The tackler must genuinely rise after touchdown, not hold the first
+      # crouched recovery keyframe due to looping at exactly duration.
+      if support is fall['groundSamples'][0]:
+       assert support['headY']>.95,(lod,phase,'tackler recovery remains crouched',support)
       assert all(.015 <= regions[name]['minY'] <= .075 for name in ('footL','footR')),(lod,phase,'recovery feet do not plant on real mesh',regions)
       assert regions['chest']['minY']>.20 and regions['pelvis']['minY']>.15,(lod,phase,'torso still down during recovery',regions)
     assert fall['horizontalTorsoGapM']>=.375,(lod,phase,'torso clearance',fall)
