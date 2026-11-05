@@ -45,7 +45,7 @@ assert.ok(!JSON.stringify(model).includes('undefined'));
 
 const table=ui.table(model);
 assert.equal(table.kind,'academy');
-assert.equal(table.total,4);
+assert.equal(table.total,15);
 assert.equal(ui.table(model,{kind:'young'}).total,model.totals.young);
 const sample=model.academy[0];
 assert.ok(ui.table(model,{search:sample.name.toLocaleUpperCase('fr')}).rows.some(p=>p.id===sample.id));
