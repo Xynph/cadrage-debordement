@@ -153,7 +153,9 @@
   for(const [rig,base,lean,legs]of [[tackler,bases.tackler,.32,.48],[carrier,bases.carrier,.46,.80]]){
    for(const name of ['spine_02','thigh_l','thigh_r','calf_l','calf_r']){
     const original=base.joints?.[name];if(!original)throw Error('Pose de base manquante : '+name);
-    get(rig,name).quaternion.copy(original);
+    // During recovery use the freshly sampled recovery clip, not the
+    // saved impact crouch; otherwise p=1.85 keeps a tackle spine pose.
+    if(p<=1.15)get(rig,name).quaternion.copy(original);
    }
    get(rig,'spine_02').rotateX(lean*onset);
    get(rig,'thigh_l').rotateX(-legs*onset);
