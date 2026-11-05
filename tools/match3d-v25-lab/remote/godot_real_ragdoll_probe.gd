@@ -76,10 +76,20 @@ func test_physics() -> void:
 			await process_frame
 			report["lods"].append(item)
 			continue
-		for tick in 12:
+		# Real Kickback bodies are assembled asynchronously on the first
+		# frames. Wait for both 16-body rigs, rather than sampling LOD0
+		# before the importer/builder has warmed up.
+		var first: Dictionary = {}
+		var second: Dictionary = {}
+		var startup_frames := 0
+		for tick in 120:
 			await physics_frame
-		var first: Dictionary = builders[0].get_bodies()
-		var second: Dictionary = builders[1].get_bodies()
+			startup_frames = tick + 1
+			first = builders[0].get_bodies()
+			second = builders[1].get_bodies()
+			if first.size() == 16 and second.size() == 16:
+				break
+		item["startupFrames"] = startup_frames
 		item["bodyCount"] = [first.size(), second.size()]
 		if first.size() != 16 or second.size() != 16:
 			item["error"] = "Kickback could not assemble 16 actual rigid bodies per GLB"
