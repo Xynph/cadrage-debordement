@@ -108,6 +108,32 @@ try:
       const p=(bones,name)=>bones.find(b=>b.name===name).getWorldPosition(new THREE.Vector3());
       const target=p(partner.bones,'spine_03');
       const collision=CDMatch3DV24MeshIntersections.probe(THREE,{body:asset.body,bones:asset.bones},partner,850);
+      // Anatomical approach-only probe at p=.75, the worst observed LOD2
+      // skinned-mesh crossing phase. No rig translation or fake collision hull.
+      // Never leave a changed approach pose in the rendered timeline.
+      let approachShoulderTrial=null;
+      if(Math.abs(progress-.75)<1e-8){
+        const original=asset.bones.map(b=>b.quaternion.clone());
+        const base={leftM:surfaceGrip.l.afterSurfaceMetres,
+          rightM:surfaceGrip.r.afterSurfaceMetres,
+          intersections:collision.properTriangleIntersections};
+        const clav=asset.bones.find(b=>b.name==='clavicle_r'),samples=[];
+        for(const angle of [.10,.15,.20]){
+          asset.bones.forEach((bone,i)=>bone.quaternion.copy(original[i]));
+          clav.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),angle));
+          asset.body.updateMatrixWorld(true);
+          const grip=CDMatch3DV24RugbyClips.gripCarrierSurface(
+            THREE,asset.bones,partner.body,partner.bones,state.onset,{referenceArms});
+          const crossing=CDMatch3DV24MeshIntersections.probe(
+            THREE,{body:asset.body,bones:asset.bones},partner,850);
+          samples.push({angleRadians:angle,leftM:grip.l.afterSurfaceMetres,
+            rightM:grip.r.afterSurfaceMetres,
+            intersections:crossing.properTriangleIntersections});
+        }
+        asset.bones.forEach((bone,i)=>bone.quaternion.copy(original[i]));
+        asset.body.updateMatrixWorld(true);
+        approachShoulderTrial={baseline:base,samples,status:'DIAGNOSTIC_ONLY_SKINNED_POSE_RESTORED'};
+      }
       // Non-mutating deterministic pose search at impact. Test ACTUAL skinned
       // carrier vertices, two anatomically fixed arm reaches and intersecting
       // triangles. Only report candidates; never move a rig without review.
@@ -287,7 +313,7 @@ try:
             &&t.leftM<=base.leftM+.001&&t.intersections<=base.intersections),
           status:'DIAGNOSTIC_ONLY_SKELETON_RESTORED'};
       }
-      return {...state,meshIntersections:collision,relativePoseSweep,clavicleSweep,clavicleGripTrial,elbowPoleTrial,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
+      return {...state,meshIntersections:collision,approachShoulderTrial,relativePoseSweep,clavicleSweep,clavicleGripTrial,elbowPoleTrial,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
     }""",phase)
     fall['lod']=lod
     assert fall['meshIntersections']['tacklerTriangles']>=20 and fall['meshIntersections']['carrierTriangles']>=20,(lod,phase,'real mesh triangle samples missing',fall['meshIntersections'])
@@ -354,6 +380,10 @@ try:
       grip=fall['surfaceGrip'][side]
       assert grip['afterSurfaceMetres']<=grip['bestReachableSurfaceMetres']+.00051,(lod,phase,side,'opposite flank loses reachable real-skin contact',grip)
     assert all(isinstance(d,(float,int)) and 0<=d<2 for d in fall['handDistancesM']),(lod,phase,fall)
+    if phase==.75:
+     approach=fall['approachShoulderTrial']
+     assert approach and len(approach['samples'])==3,(lod,'approach skin probe absent',approach)
+     assert all(item['intersections']>=0 and item['leftM']>=0 and item['rightM']>=0 for item in approach['samples']),(lod,'approach probe invalid',approach)
     if phase==1.0:
      pole=fall['elbowPoleTrial']
      assert pole and len(pole['candidates'])==5,(lod,'five real elbow pole profiles required',pole)
@@ -404,6 +434,14 @@ try:
     if all(any(abs(t['angleRadians']-angle)<1e-8 and t['accepted']
                for t in data['trials']) for data in clavicle_trials.values())]
   shared_clavicle_safe=bool(shared_clavicle_angles)
+  approach_profiles={x['lod']:x['approachShoulderTrial'] for x in fallSequence if x['progress']==.75}
+  assert set(approach_profiles)=={0,1,2},('missing approach probes',approach_profiles.keys())
+  safe_approach_angles=[angle for angle in (.10,.15,.20)
+    if all(any(abs(item['angleRadians']-angle)<1e-8
+               and item['rightM']<data['baseline']['rightM']-.005
+               and item['leftM']<=data['baseline']['leftM']+.001
+               and item['intersections']<=data['baseline']['intersections']
+               for item in data['samples']) for data in approach_profiles.values())]
   elbow_profiles={x['lod']:x['elbowPoleTrial'] for x in fallSequence if x['progress']==1}
   assert set(elbow_profiles)=={0,1,2},('missing skinned elbow diagnostics',elbow_profiles.keys())
   safe_elbow_poles=[]
@@ -421,7 +459,7 @@ try:
     safe_elbow_poles.append({'poleY':candidates[0]['poleY'],'poleZ':candidates[0]['poleZ']})
   pose_decision={'status':'DIAGNOSTIC_ONLY_NO_RUNTIME_RELOCATION',
     'safeSharedOffsets':safe_shared,'sharedClavicleAccepted':shared_clavicle_safe,'safeClavicleAngles':shared_clavicle_angles,
-    'clavicleByLOD':clavicle_trials,'safeElbowPoles':safe_elbow_poles,'elbowByLOD':elbow_profiles,'referenceByLOD':reference,
+    'clavicleByLOD':clavicle_trials,'safeElbowPoles':safe_elbow_poles,'elbowByLOD':elbow_profiles,'safeApproachAngles':safe_approach_angles,'approachByLOD':approach_profiles,'referenceByLOD':reference,
     'limits':'Sampled Body triangles are not exhaustive collision certification'}
   assert not errors and not external,(errors,external)
   (OUT/'report.json').write_text(json.dumps({'status':'TWO_RIG_VISUAL_PROBE_NOT_CONTACT_APPROVAL','poseDecision':pose_decision,'levels':results,'temporalSamples':temporal,'fallSequence':fallSequence,'errors':errors,'externalRequests':external,'limits':['Paired-rig arm IK aims at carrier torso; no coordinated impact dynamics or contact certification','No collision physics or engine mutation','Actual skinned-mesh ground and torso-horizontal metrics tested at impact; visual contact and runtime still unqualified']},indent=2)+'\n');b.close()
