@@ -39,6 +39,58 @@ func snap(frame: int, phase: String, a: Dictionary, b: Dictionary) -> Dictionary
 	}
 
 
+func capture_pair(camera: Camera3D, output_dir: String, lod: int, mode: String, phase: String) -> Array:
+	var saved := []
+	# Freeze the physics world while rendering both angles on the same frame.
+	paused = true
+	for view in ["front", "side"]:
+		camera.position = Vector3(0.0, 1.45, 3.45) if view == "front" else Vector3(3.45, 1.45, 0.0)
+		camera.look_at(Vector3(0.0, 0.67, 0.0), Vector3.UP)
+		await RenderingServer.frame_post_draw
+		var image: Image = get_root().get_texture().get_image()
+		if image.is_empty() or image.get_width() < 320 or image.get_height() < 180:
+			saved.append({"view": view, "error": "EMPTY_RENDERED_VIEWPORT"})
+			continue
+		var path := output_dir.path_join("lod%d_%s_%s_%s.jpg" % [lod, mode, phase, view])
+		var error := image.save_jpg(path, 0.88)
+		saved.append({"view": view, "file": path.get_file(), "errorCode": error,
+			"bytes": FileAccess.get_file_as_bytes(path).size() if error == OK else 0,
+			"width": image.get_width(), "height": image.get_height()})
+	paused = false
+	return saved
+
+
+func prepare_visual_stage() -> Camera3D:
+	get_root().size = Vector2i(800, 450)
+	var env := WorldEnvironment.new()
+	var sky := Environment.new()
+	sky.background_mode = Environment.BG_COLOR
+	sky.background_color = Color(0.78, 0.83, 0.90)
+	sky.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	sky.ambient_light_color = Color(0.83, 0.85, 0.90)
+	sky.ambient_light_energy = 1.3
+	env.environment = sky
+	get_root().add_child(env)
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-48.0, 37.0, -8.0)
+	sun.light_energy = 1.7
+	get_root().add_child(sun)
+	var visual_pitch := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(25.0, 25.0)
+	visual_pitch.mesh = plane
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.24, 0.40, 0.29)
+	material.roughness = 0.95
+	visual_pitch.material_override = material
+	get_root().add_child(visual_pitch)
+	var camera := Camera3D.new()
+	camera.fov = 42.0
+	camera.current = true
+	get_root().add_child(camera)
+	return camera
+
+
 func _initialize() -> void:
 	call_deferred("run_pair")
 
@@ -51,10 +103,17 @@ func run_pair() -> void:
 		"groundSkinnedVertexCheck": "NOT_EXECUTED",
 		"visualEvidence": "NOT_RENDERED",
 		"contactMeaning": "Hand rigid-body centers to opposing chest/hips centers; not skinned contact"}
-	if args.size() != 4:
-		printerr("Expected output and 3 exact dequantized GLB paths")
+	if args.size() != 4 and args.size() != 5:
+		printerr("Expected output, 3 exact dequantized GLB paths and optional visual flag")
 		quit(2)
 		return
+	var render_requested: bool = args.size() == 5 and args[4] == "visual"
+	var visual_dir: String = str(args[0]).get_base_dir().path_join("paired-images")
+	var camera: Camera3D = null
+	if render_requested:
+		DirAccess.make_dir_recursive_absolute(visual_dir)
+		camera = prepare_visual_stage()
+		result["visualEvidence"] = "GODOT_RENDERED_VIEWPORT_SOFTWARE_OPENGL_FACE_SIDE"
 	var ground := StaticBody3D.new()
 	ground.name = "PhysicalPitch"
 	ground.position.y = -0.5
@@ -123,11 +182,15 @@ func run_pair() -> void:
 					# No root teleports: a real, bounded impulse on the body.
 					var initial := snap(0, "approach_start", a, b)
 					scenario["samples"].append(initial)
+					if render_requested:
+						scenario["images"] = await capture_pair(camera, visual_dir, lod, mode, "approach_start")
 					var towards: Vector3 = (b["Chest"].global_position - a["Chest"].global_position).normalized()
 					a["Chest"].apply_central_impulse(towards * 0.9)
 					for frame in 12:
 						await physics_frame
 					scenario["samples"].append(snap(12, "approach_end", a, b))
+					if render_requested:
+						scenario["images"].append_array(await capture_pair(camera, visual_dir, lod, mode, "approach_end"))
 					if mode != "control":
 						var hit := ImpactProfile.new()
 						hit.base_impulse = 6.0
@@ -158,17 +221,27 @@ func run_pair() -> void:
 						await physics_frame
 						if frame == 11:
 							scenario["samples"].append(snap(24, "impact", a, b))
+							if render_requested:
+								scenario["images"].append_array(await capture_pair(camera, visual_dir, lod, mode, "impact"))
 						if frame == 35:
 							scenario["samples"].append(snap(48, "fall", a, b))
+							if render_requested:
+								scenario["images"].append_array(await capture_pair(camera, visual_dir, lod, mode, "fall"))
 					# Release the experimental hand attachment at recovery.
 					for link in hand_links:
 						link.queue_free()
 					for frame in 48:
 						await physics_frame
 					scenario["samples"].append(snap(108, "recovery", a, b))
+					if render_requested:
+						scenario["images"].append_array(await capture_pair(camera, visual_dir, lod, mode, "recovery"))
 					# A nominal "two-handed grip" is not a valid two-hand
 					# contact experiment when only one PinJoint attaches.
-					if mode == "impact_with_hand_pins" and scenario["gripPhysicsLinks"] != 2:
+					if render_requested and (not scenario.has("images") or scenario["images"].size() != 10 or 							scenario["images"].any(func(q): return q.get("errorCode", FAILED) != OK or q.get("bytes", 0) < 2000)):
+						scenario["error"] = "Real Godot viewport face/side image missing or invalid"
+						scenario["status"] = "FAIL"
+						all_pass = false
+					elif mode == "impact_with_hand_pins" and scenario["gripPhysicsLinks"] != 2:
 						scenario["error"] = "Two simultaneous real hand-body joints were not created"
 						scenario["status"] = "FAIL"
 						all_pass = false
