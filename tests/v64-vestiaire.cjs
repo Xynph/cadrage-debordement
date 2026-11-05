@@ -30,7 +30,8 @@ test('V64 : une promesse tenue renforce le collectif ; un echec le fragilise',()
  broken.satisfaction.history.push({status:'broken'});
  const result=V64.roundImpact([kept,broken],prior);
  assert.deepEqual(result.warnings.map(x=>x.type),['kept','broken']);
- assert.equal(result.moodDelta,-2);
+ assert.equal(result.moodDelta,0); // une promesse tenue compense une promesse rompue
+ assert.equal(V64.roundImpact([kept],[V64.snapshot([kept])[0]]).moodDelta,0);
  assert.equal(kept.satisfaction.score,66);
  assert.equal(broken.satisfaction.score,66);
 });
@@ -63,6 +64,7 @@ test('V64 : raccordement reel V36/V37, sauvegarde native sans nouvelle propriete
   managerTeamView(){return '<div>Équipe</div>';},
   recordSatisfactionRound(){return true;},
   coachConversation(id,choice){
+   if(s.economy.relationLog.some(x=>x.kind==='coach'&&x.playerId===id&&x.round===s.round))return false;
    if(choice==='rassurer'){
     p.satisfaction.score++;
     s.economy.relationLog.unshift({kind:'coach',season:1,round:2,playerId:id,detail:choice});
@@ -76,13 +78,13 @@ test('V64 : raccordement reel V36/V37, sauvegarde native sans nouvelle propriete
  assert.match(root.managerTeamView(),/Vestiaire/);
  assert.equal(root.coachConversation('p1','rassurer'),true);
  assert.equal(s.morale,71);
- assert.equal(root.coachConversation('p1','rassurer'),true);
- assert.equal(s.morale,71); // anti cumul des bonus collectifs
+ assert.equal(root.coachConversation('p1','rassurer'),false);
+ assert.equal(s.morale,71); // entretien repete bloque par V37
  assert.equal(root.recordSatisfactionRound({finished:true,pair:[0,1],userSide:0}),true);
  assert.equal(p.satisfaction.score,45); // zero minute et tension deja visible
  assert.ok(s.morale<71);
- assert.equal(saved,2);
- assert.equal(rendered,2);
+ assert.equal(saved,1);
+ assert.equal(rendered,1);
  const json=JSON.parse(JSON.stringify(s));
  assert.equal(json.vestiaireV64,undefined);
  assert.equal(json.clubs[0].players[0].satisfaction.score,45);
