@@ -6,6 +6,7 @@
   const clone=x=>JSON.parse(JSON.stringify(x));
   const unique=a=>new Set(a).size===a.length;
   const fields=['Pilier G','Talonneur','Pilier D','Deuxième ligne','Deuxième ligne','Troisième ligne','Troisième ligne','N°8','Mêlée','Ouverture','Ailier G','Centre','Centre','Ailier D','Arrière'];
+  const eliteFields=['Pilier gauche','Talonneur','Pilier droit','Deuxième ligne','Deuxième ligne','Troisième ligne','Troisième ligne','Numéro 8','Demi de mêlée','Demi d’ouverture','Ailier','Centre','Centre','Ailier','Arrière'];
   function valid(st){
     return !!st&&st.version===1&&Number.isInteger(st.season)&&
       Array.isArray(st.elite)&&st.elite.length===24&&Array.isArray(st.accession)&&st.accession.length===20&&
@@ -61,21 +62,19 @@
     if(promoted.some(x=>!Number.isInteger(x)||x<0||x>=20)||relegated.some(x=>!Number.isInteger(x)||x<0||x>=24))return null;
     return {season:s.season,promoted,relegated};
   }
-  function normalize(players){
-    const used=new Set(),count={};
+  function normalize(players,target){
+    const count={};
     return players.map(p=>{
-      const x=clone(p);
+      const x=clone(p),source=fields.includes(x.pos)?fields:eliteFields;
       let slot=Number.isInteger(x.slot)&&x.slot>=0&&x.slot<15?x.slot:-1;
       if(slot<0){
-        const matching=fields.map((pos,i)=>pos===x.pos?i:-1).filter(i=>i>=0);
+        const matches=source.map((pos,i)=>pos===x.pos?i:-1).filter(i=>i>=0);
         const n=count[x.pos]||0;
-        slot=matching[n%matching.length]??-1;
-        if(slot<0)slot=used.size%15;
+        slot=matches.length?matches[n%matches.length]:Object.values(count).reduce((a,b)=>a+b,0)%15;
         count[x.pos]=n+1;
       }
-      if(!used.has(slot))used.add(slot);
       x.slot=slot;
-      if(!x.pos)x.pos=fields[slot];
+      x.pos=(target==='elite'?eliteFields:fields)[slot];
       if(!Number.isFinite(x.potential))x.potential=Math.max(x.rating||45,x.dev?.potential||x.rating||45);
       x.condition=100;
       if(Number.isFinite(x.age))x.age++;
@@ -85,11 +84,11 @@
   function snapshot(s,choice){
     const elite=choice.relegated.map(slot=>{
       const base=root.CDEspoirsV73.clubPlayers(s,slot);
-      return {slot,id:identity(s,'elite',slot),name:root.CDEspoirsV73.clubName(s,slot),players:normalize(base)};
+      return {slot,id:identity(s,'elite',slot),name:root.CDEspoirsV73.clubName(s,slot),players:normalize(base,'accession')};
     });
     const acc=choice.promoted.map(slot=>{
       const base=s.v74Accession?.centers?.[slot]?.players||[];
-      return {slot,id:identity(s,'accession',slot),name:root.CDEspoirsAccessionV74.name(s,slot),players:normalize(base)};
+      return {slot,id:identity(s,'accession',slot),name:root.CDEspoirsAccessionV74.name(s,slot),players:normalize(base,'elite')};
     });
     if([...elite,...acc].some(x=>!x.id||!Array.isArray(x.players)||x.players.length<15))return null;
     return {elite,acc};
@@ -138,11 +137,11 @@
     const result=[];
     for(let i=0;i<24;i++){
       const id=st.elite[i];
-      if(st.rosters[id])result.push({id,players:normalize(root.CDEspoirsV73.clubPlayers(s,i))});
+      if(st.rosters[id])result.push({id,players:normalize(root.CDEspoirsV73.clubPlayers(s,i),'elite')});
     }
     for(let i=0;i<20;i++){
       const id=st.accession[i];
-      if(st.rosters[id])result.push({id,players:normalize(s.v74Accession?.centers?.[i]?.players||[])});
+      if(st.rosters[id])result.push({id,players:normalize(s.v74Accession?.centers?.[i]?.players||[],'accession')});
     }
     return result.filter(x=>x.players.length>=15);
   }
