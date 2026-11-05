@@ -296,7 +296,49 @@ try:
             &&t.leftM<=base.leftM+.001&&t.intersections<=base.intersections),
           status:'DIAGNOSTIC_ONLY_SKELETON_RESTORED'};
       }
-      return {...state,meshIntersections:collision,approachShoulderTrial,relativePoseSweep,clavicleSweep,clavicleGripTrial,elbowPoleTrial,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
+      // Isolated anatomical preview at exactly the two independently tested
+      // keyframes. The root, player GLBs and match runtime remain untouched.
+      // If ANY measured criterion fails, restore the complete original pose.
+      let anatomicalPreview=null;
+      if(Math.abs(progress-.75)<1e-8 || progress===1){
+        const angle=progress===1?.15:.20;
+        const saved=asset.bones.map(b=>b.quaternion.clone());
+        const baseline={leftM:surfaceGrip.l.afterSurfaceMetres,
+          rightM:surfaceGrip.r.afterSurfaceMetres,
+          intersections:collision.properTriangleIntersections};
+        const clav=asset.bones.find(b=>b.name==='clavicle_r');
+        clav.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),angle));
+        asset.body.updateMatrixWorld(true);
+        const trial=CDMatch3DV24RugbyClips.gripCarrierSurface(
+          THREE,asset.bones,partner.body,partner.bones,state.onset,{referenceArms});
+        const crossing=CDMatch3DV24MeshIntersections.probe(
+          THREE,{body:asset.body,bones:asset.bones},partner,850).properTriangleIntersections;
+        let lowest=Infinity,sampled=0;
+        asset.body.traverse(mesh=>{
+          if(!mesh.isSkinnedMesh)return;
+          const attr=mesh.geometry.getAttribute('position'),v=new THREE.Vector3();
+          if(!attr)return;
+          const stride=Math.max(1,Math.floor(attr.count/350));
+          for(let i=0;i<attr.count;i+=stride){
+            mesh.boneTransform(i,v.fromBufferAttribute(attr,i));mesh.localToWorld(v);
+            lowest=Math.min(lowest,v.y);sampled++;
+          }
+        });
+        const candidate={leftM:trial.l.afterSurfaceMetres,
+          rightM:trial.r.afterSurfaceMetres,intersections:crossing,
+          minSkinnedY:lowest,sampledSkinnedVertices:sampled};
+        const accepted=candidate.rightM<baseline.rightM-.005 &&
+          candidate.leftM<=baseline.leftM+.001 &&
+          candidate.intersections<=baseline.intersections &&
+          candidate.minSkinnedY>=.015 && candidate.sampledSkinnedVertices>=30;
+        if(!accepted){
+          asset.bones.forEach((bone,i)=>bone.quaternion.copy(saved[i]));
+          asset.body.updateMatrixWorld(true);
+        }
+        anatomicalPreview={angleRadians:angle,baseline,candidate,accepted,
+          status:'ISOLATED_KEYFRAME_PREVIEW_NO_RUNTIME_CHANGE'};
+      }
+      return {...state,meshIntersections:collision,approachShoulderTrial,relativePoseSweep,clavicleSweep,clavicleGripTrial,elbowPoleTrial,anatomicalPreview,handDistancesM:[p(asset.bones,'hand_l').distanceTo(target),p(asset.bones,'hand_r').distanceTo(target)],ik,surfaceGrip};
     }""",phase)
     fall['lod']=lod
     assert fall['meshIntersections']['tacklerTriangles']>=20 and fall['meshIntersections']['carrierTriangles']>=20,(lod,phase,'real mesh triangle samples missing',fall['meshIntersections'])
@@ -360,6 +402,11 @@ try:
       grip=fall['surfaceGrip'][side]
       assert grip['afterSurfaceMetres']<=grip['bestReachableSurfaceMetres']+.00051,(lod,phase,side,'opposite flank loses reachable real-skin contact',grip)
     assert all(isinstance(d,(float,int)) and 0<=d<2 for d in fall['handDistancesM']),(lod,phase,fall)
+    if phase in (.75,1.0):
+     preview=fall['anatomicalPreview']
+     assert preview and preview['accepted'],(lod,phase,'anatomical preview violates real skin/IK safeguards',preview)
+     assert preview['candidate']['minSkinnedY']>=.015,(lod,phase,'body penetrates pitch',preview)
+     assert preview['candidate']['intersections']<=preview['baseline']['intersections'],(lod,phase,'mesh crossing regression',preview)
     if phase==.75:
      approach=fall['approachShoulderTrial']
      assert approach and len(approach['samples'])==3,(lod,'approach skin probe absent',approach)
@@ -376,7 +423,7 @@ try:
     page.screenshot(path=str(OUT/f'lod{lod}-fall-{int(phase*100):03d}-side.jpg'),type='jpeg',quality=90)
     page.evaluate('camera.position.set(3.4,1.5,2.6);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
     page.screenshot(path=str(OUT/f'lod{lod}-fall-{int(phase*100):03d}-front.jpg'),type='jpeg',quality=90)
-    if phase==1.0:
+    if phase in (.75,1.0):
      # True close-up: focus camera on world-space wrist/elbow/skin rather
      # than cropping a distant TV image. Both viewpoints use the same target.
      page.evaluate("""()=>{
@@ -388,12 +435,12 @@ try:
        camera.position.copy(focus).add(new THREE.Vector3(1.2,.40,.95));
        camera.lookAt(focus);renderer.render(scene,camera);
      }""")
-     page.screenshot(path=str(OUT/f'lod{lod}-fall-100-grip-close-front.jpg'),type='jpeg',quality=92)
+     page.screenshot(path=str(OUT/f'lod{lod}-fall-{int(phase*100):03d}-grip-close-front.jpg'),type='jpeg',quality=92)
      page.evaluate("""()=>{
        camera.position.copy(window.gripCameraFocus).add(new THREE.Vector3(1.45,.30,.12));
        camera.lookAt(window.gripCameraFocus);renderer.render(scene,camera);
      }""")
-     page.screenshot(path=str(OUT/f'lod{lod}-fall-100-grip-close-side.jpg'),type='jpeg',quality=92)
+     page.screenshot(path=str(OUT/f'lod{lod}-fall-{int(phase*100):03d}-grip-close-side.jpg'),type='jpeg',quality=92)
     page.evaluate('camera.position.set(4,1.2,.3);camera.lookAt(0,.85,.35);renderer.render(scene,camera)')
    results.append(info)
   # Reject a shared positional "fix" unless all three skinned LODs
