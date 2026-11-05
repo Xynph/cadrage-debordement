@@ -16,9 +16,28 @@ const ground=new T.Mesh(new T.PlaneGeometry(110,80),new T.MeshStandardMaterial({
 ground.rotation.x=-Math.PI/2;scene.add(ground);
 const camera=new T.PerspectiveCamera(42,960/540,.1,300);
 window.setView=function(view){
- if(view==='zoom')camera.position.set(6,6,14);
- else camera.position.set(15,35,75);
- camera.lookAt(0,.9,0);renderer.render(scene,camera);
+ // Qualification: focus an actual player, never an arbitrary field coordinate.
+ if(view==='zoom'){
+  const focus=new T.Vector3(-6,1.0,-9);
+  camera.position.set(focus.x+5,focus.y+5,focus.z+10);
+  camera.lookAt(focus);
+ }else{
+  camera.position.set(15,35,75);
+  camera.lookAt(0,.9,0);
+ }
+ // Distance-based LODs with hysteresis, replacing only rendered clones.
+ if(window.models){
+  const cam={x:camera.position.x,z:camera.position.z};
+  window.models=window.models.map(m=>{
+   const next=CDMatch3DV24Stage.retarget(T,window.assets,m,cam);
+   if(next!==m){scene.remove(m.body);scene.add(next.body);
+    const clip=next.clips.find(c=>c.name==='run');
+    if(clip)next.mixer.clipAction(clip).play();
+   }
+   return next;
+  });
+ }
+ renderer.render(scene,camera);
 };
 window.benchmark=function(frames=18){
  const gl=renderer.getContext(),start=performance.now();

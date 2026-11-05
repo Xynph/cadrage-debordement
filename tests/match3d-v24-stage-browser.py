@@ -28,9 +28,17 @@ try:
   metrics={}
   for view in ['tv','zoom']:
    page.evaluate('(v)=>window.setView(v)',view)
+   switched=page.evaluate("""() => ({
+     lods:models.map(m=>m.lod), activeLOD:window.models.map(m=>m.lod),
+     rigs:new Set(window.models.map(m=>m.bones[0])).size,
+     mixers:new Set(window.models.map(m=>m.mixer)).size
+   })""")
+   assert switched['rigs']==30 and switched['mixers']==30,switched
+   assert len(set(switched['activeLOD']))>=2,switched
    page.screenshot(path=str(OUT/f'{view}.jpg'),type='jpeg',quality=87,timeout=50000)
    metrics[view]=page.evaluate('window.benchmark(18)')
    assert 0<metrics[view]['fps']<10000,metrics
+  assert metrics['tv']['fps']>0 and metrics['zoom']['fps']>0
   assert not errors,errors
   assert not external,external
   report={'status':'STAGING_ONLY_NOT_RUNTIME_APPROVED','environment':'Chromium SwiftShader software / synchronous gl.finish','diagnostics':diag,'metrics':metrics,'jsErrors':errors,'externalRequests':external,'limits':['No comparison to v23 within this run','No WebGL GPU VRAM accounting','Not integrated into the game','30 objects only; no crowds/match logic','Visual validation pending']}

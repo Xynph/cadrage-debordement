@@ -43,6 +43,22 @@
   const mixer=new THREE.AnimationMixer(body);
   return {body,mixer,meshes,bones:asset.bones.map(b=>cloneByOriginal.get(b)),lod:asset.lod,side,clips:asset.clips};
  }
+ function retarget(THREE,assets,model,camera){
+  if(!model?.body||!Number.isInteger(model.lod)||model.lod<0||model.lod>2)throw Error('Modele LOD invalide');
+  if(!camera||!Number.isFinite(camera.x)||!Number.isFinite(camera.z))throw Error('Camera invalide');
+  if(!Array.isArray(assets)||assets.length!==3||assets.some((a,i)=>a?.lod!==i))throw Error('Trois LOD requis');
+  const p=model.body.position;
+  const next=chooseLOD(Math.hypot(p.x-camera.x,p.z-camera.z),model.lod);
+  if(next===model.lod)return model;
+  const replacement=instantiate(THREE,assets[next],model.side);
+  replacement.body.position.copy(p);
+  replacement.body.rotation.copy(model.body.rotation);
+  replacement.body.scale.copy(model.body.scale);
+  replacement.id=model.id;
+  replacement.lodChangedFrom=model.lod;
+  // No mutation of match state; remove old scene object in the caller after swap.
+  return replacement;
+ }
  function stage(THREE,assets,players,camera){
   if(!Array.isArray(assets)||assets.length!==3||assets.some((a,i)=>!a||a.lod!==i))throw Error('3 LOD validés requis');
   if(!Array.isArray(players)||players.length!==30||new Set(players.map(p=>p.id)).size!==30)throw Error('30 identifiants joueurs indépendants requis');
@@ -55,5 +71,5 @@
   }
   return groups;
  }
- root.CDMatch3DV24Stage=Object.freeze({chooseLOD,instantiate,stage});
+ root.CDMatch3DV24Stage=Object.freeze({chooseLOD,instantiate,retarget,stage});
 })(typeof window!=='undefined'?window:globalThis);
