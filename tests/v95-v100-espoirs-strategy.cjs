@@ -81,6 +81,7 @@ const credits=make();
 const cn=api.ensure(credits).network;
 const promoted=cn.players.find(p=>p.union==='FR');
 const originalFeederAge=promoted.age;
+promoted.status='recruited';
 credits.v77Promotions.promotions=[{playerId:promoted.id,season:1}];
 credits.phase='ended';assert.equal(api.settle(credits),true);
 assert.equal(credits.v95to100.network.credits.length,1,'RIF descriptive credit after promotion');
