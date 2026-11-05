@@ -6,7 +6,7 @@ run('start(0)');
 const before=run('JSON.stringify(S)');
 const randomBefore=context();
 randomBefore.run('start(0)');
-assert.deepEqual(run('dossierScoutSignals([])'),[]);
+assert.equal(run('JSON.stringify(dossierScoutSignals([]))'),'[]');
 const fixture=[
  {stats:{scrums:4,scrumsWon:2,lineouts:4,lineoutsWon:4,penalties:10}},
  {stats:{scrums:4,scrumsWon:2,lineouts:4,lineoutsWon:4,penalties:11}},
@@ -25,8 +25,8 @@ assert.equal(signals[1].slot,1);
 assert.ok(signals[1].evidence.includes('11 / 12'));
 assert.ok(signals[2].evidence.includes('33 pénalités'));
 assert.ok(run('dossierScoutHTML(scoutFixture)').includes('compareDossierPosition(0)'));
-assert.deepEqual(run('dossierScoutSignals([{stats:{scrums:2,scrumsWon:0}}])'),[]);
-assert.deepEqual(run('dossierScoutSignals([{stats:{scrums:10,scrumsWon:11}},{stats:{scrums:10,scrumsWon:10}},{stats:{scrums:10,scrumsWon:10}}])'),[]);
+assert.equal(run('JSON.stringify(dossierScoutSignals([{stats:{scrums:2,scrumsWon:0}}]))'),'[]');
+assert.equal(run('JSON.stringify(dossierScoutSignals([{stats:{scrums:10,scrumsWon:11}},{stats:{scrums:10,scrumsWon:10}},{stats:{scrums:10,scrumsWon:10}}]))'),'[]');
 assert.ok(run('dossierScoutHTML([])').includes('Aucun signal robuste'));
 assert.ok(run('dossierScoutHTML([])').includes('ne modifient pas le moteur'));
 run('var preview=oppositionDossierHTML()');
