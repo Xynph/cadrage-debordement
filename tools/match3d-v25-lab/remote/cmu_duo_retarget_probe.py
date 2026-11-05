@@ -35,7 +35,9 @@ try:
     # First prove actual paired motion can be transferred to each LOD,
     # then test artistic contact separately. The same source frame interval
     # is used for both actors, without synthetic motion insertion.
+    visuals={}
     for lod in range(3):
+        visuals[lod]={}
         entry={"lod":lod,"actors":[],"status":"FAIL"}
         for label,source,action in source_actors:
             before=set(bpy.data.objects)
@@ -45,6 +47,7 @@ try:
             targets=[o for o in added if o.type=="ARMATURE"]
             assert len(targets)==1 and len(targets[0].data.bones)==53,(lod,label)
             target=targets[0];target.name=f"CD_LOD{lod}_{label}"
+            visuals[lod][label]={"armature":target,"meshes":[o for o in added if o.type=="MESH"]}
             settings=bpy.context.scene.rigger_remap
             settings.source=source;settings.target=target
             settings.multiple=False
@@ -81,6 +84,112 @@ try:
             assert delta>0.001,(lod,actor["actor"],"no real right hand motion")
         entry["status"]="PASS_BVH_TRANSFER_NUMERIC_ONLY"
         report["lods"].append(entry)
+    # Use the actual evaluated deforming vertices of BOTH canonical characters.
+    # Six support regions are classified by their original skin weights,
+    # not by proxy physics rigid-body centers. This is RETARGET CLIP skin
+    # geometry, not yet Godot post-impact skinning.
+    from mathutils import Vector
+    region_bones={
+        "chest":{"spine_02","spine_03"},
+        "pelvis":{"pelvis","spine_01"},
+        "knee_l":{"thigh_l","calf_l"},
+        "knee_r":{"thigh_r","calf_r"},
+        "foot_l":{"foot_l","ball_l"},
+        "foot_r":{"foot_r","ball_r"},
+    }
+    def true_skin_regions(meshes):
+        deps=bpy.context.evaluated_depsgraph_get()
+        minimum={k:float("inf") for k in region_bones}
+        observed={k:0 for k in region_bones}
+        total=0
+        for obj in meshes:
+            ev=obj.evaluated_get(deps)
+            mesh=ev.to_mesh()
+            try:
+                if not mesh.vertices:continue
+                stride=max(1,len(mesh.vertices)//1500)
+                for index in range(0,len(mesh.vertices),stride):
+                    vertex=mesh.vertices[index]
+                    # Evaluated Armature modifier preserves glTF vertex
+                    # ordering and vertex group assignments.
+                    source=obj.data.vertices[index]
+                    dominant=max(source.groups,key=lambda g:g.weight,default=None)
+                    if dominant is None:continue
+                    name=obj.vertex_groups[dominant.group].name
+                    for region,names in region_bones.items():
+                        if name in names and dominant.weight>=.2:
+                            point=ev.matrix_world@vertex.co
+                            minimum[region]=min(minimum[region],point.z)
+                            observed[region]+=1
+                    total+=1
+            finally:ev.to_mesh_clear()
+        return {"minSkinnedZMetres":{k:(round(v,5) if math.isfinite(v) else None) for k,v in minimum.items()},
+                "sampleCounts":observed,"sampledSkinVertices":total,
+                "status":"BLENDER_EVALUATED_REAL_SKIN_WEIGHTS_DIAGNOSTIC"}
+    scene=bpy.context.scene
+    scene.render.engine="CYCLES"
+    scene.cycles.device="CPU"
+    scene.cycles.samples=3
+    scene.render.resolution_x=440
+    scene.render.resolution_y=360
+    scene.render.resolution_percentage=100
+    scene.render.image_settings.file_format="PNG"
+    if scene.world is None:scene.world=bpy.data.worlds.new("CD_RD_CMU_World")
+    scene.world.use_nodes=True
+    bg=scene.world.node_tree.nodes.get("Background")
+    bg.inputs["Color"].default_value=(.78,.85,.9,1)
+    bg.inputs["Strength"].default_value=1.1
+    lamp_data=bpy.data.lights.new("CD_RD_Key","AREA")
+    lamp=bpy.data.objects.new("CD_RD_Key",lamp_data)
+    scene.collection.objects.link(lamp)
+    lamp.location=(1,-3,4);lamp_data.energy=450;lamp_data.shape="DISK";lamp_data.size=4
+    scene.render.film_transparent=False
+    all_meshes=[x for x in bpy.data.objects if x.type=="MESH"]
+    report["visualPairs"]=[]
+    for lod in range(3):
+        actors=visuals[lod]
+        targets=[actors[name]["armature"] for name in ("A","B")]
+        meshes=actors["A"]["meshes"]+actors["B"]["meshes"]
+        if len(meshes)<2:raise RuntimeError("Canonical skin geometry absent")
+        # Source motion remains synchronized. The BVH world-root trajectory
+        # is restored only as a preview offset; no movement is invented.
+        for frame in [1,45,90]:
+            scene.frame_set(frame);bpy.context.view_layer.update()
+            src_roots=[]
+            for label,source,action in source_actors:
+                pelvis=source.pose.bones.get("Hips")
+                src_roots.append((source.matrix_world@pelvis.matrix).translation.copy())
+            center=(src_roots[0]+src_roots[1])/2
+            for idx,target in enumerate(targets):
+                offset=src_roots[idx]-center
+                target.location.x=offset.x
+                target.location.y=offset.y
+            bpy.context.view_layer.update()
+            supports={label:true_skin_regions(actors[label]["meshes"]) for label in ("A","B")}
+            pair={"lod":lod,"frame":frame,"supports":supports,"images":[],
+                  "sourceRootSeparationXYMetres":round(math.dist(
+                      src_roots[0][:2],src_roots[1][:2]),5)}
+            for view in ("front","profile"):
+                direction=Vector((0,-1,0)) if view=="front" else Vector((1,0,0))
+                camd=bpy.data.cameras.new(f"CD_RD_LOD{lod}_{frame}_{view}")
+                cam=bpy.data.objects.new(camd.name,camd);scene.collection.objects.link(cam)
+                camd.type="ORTHO";camd.ortho_scale=2.75
+                cam.location=direction*5+Vector((0,0,0.9))
+                cam.rotation_euler=(Vector((0,0,0.9))-cam.location).to_track_quat("-Z","Y").to_euler()
+                scene.camera=cam
+                for obj in all_meshes:obj.hide_render=obj not in meshes
+                path=OUT/f"lod{lod}-duo-{frame:03d}-{view}.png"
+                scene.render.filepath=str(path)
+                bpy.ops.render.render(write_still=True)
+                if not path.exists() or path.stat().st_size<2000:
+                    raise RuntimeError(f"No real retarget skin render: {path}")
+                pair["images"].append({"file":path.name,"bytes":path.stat().st_size})
+                bpy.data.objects.remove(cam,do_unlink=True)
+            report["visualPairs"].append(pair)
+        for target in targets:target.location=(0,0,0)
+    assert len(report["visualPairs"])==9
+    report["skinSupportsAreFromRagdollPhysics"]=False
+    report["visualApproved"]=False
     report["status"]="TRANSFERRED_2_REAL_CLIPS_TO_3_CANONICAL_LODS_NOT_ART_APPROVED"
 except Exception as exc:
     report["errors"].append(str(exc));report["traceback"]=traceback.format_exc()
