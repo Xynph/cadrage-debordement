@@ -56,3 +56,15 @@ function groupSites(trace,aggregates){
  }
 }
 module.exports={snap,traceAction,groupSites};
+
+if(require.main===module&&process.argv.includes('--self-test')){
+ const normal=N.fresh(0,827381),observed=N.fresh(0,827381);
+ const baseline=JSON.stringify(N.data(normal)),instrumented=JSON.stringify(N.data(observed));
+ assert.equal(instrumented,baseline,'Fresh native state changed');
+ const referenceLedger=N.round(normal,N.newStats());
+ const trace=traceAction(observed,()=>N.round(observed,N.newStats()),'deterministic-parity');
+ assert.deepEqual(trace.outcome,referenceLedger,'Ledger mutated by observation');
+ assert.equal(JSON.stringify(N.data(observed)),JSON.stringify(N.data(normal)),'Observer changed native game state');
+ assert.equal(JSON.stringify(N.data(observed,'createSaveDocument()')),JSON.stringify(N.data(normal,'createSaveDocument()')),'Observer changed native save export');
+ console.log('E21 PARITY PASS: native game state, ledger and save document identical');
+}
