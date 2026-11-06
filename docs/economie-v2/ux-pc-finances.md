@@ -127,3 +127,17 @@ Le moteur financier est le même dans les trois modes. Changer de mode est réve
 - Il peut signer un joueur et comprendre immédiatement le coût annuel et l'impact sur sa capacité de recrutement.
 - Pas plus d'une alerte financière prioritaire non demandée dans une séquence de match, et aucune modalité bloquante lors d'un match en direct.
 - La vue avancée conserve toutes les tables et graphes, sans les cacher aux joueurs qui aiment optimiser.
+
+
+## Priorité UX : des finances amusantes, compréhensibles et non envahissantes
+
+**Premier niveau joueur** : quatre indicateurs lisibles (« trésorerie », « budget encore mobilisable », « prévision fin de saison », « risque »), plus une recommandation claire et deux choix. Les informations comptables avancées restent derrière des sous-onglets, sans cacher les engagements importants.
+
+Une mauvaise nouvelle doit proposer une action immédiatement exploitable :
+- « Sponsor non renouvelé : prévision -0,7 M€ » → **Négocier / Réduire un engagement / Voir les scénarios** ;
+- « Recrue convoitée : +0,3 M€ sur 2 ans » → **Comparer le coût total / Renégocier / Recruter un espoir** ;
+- « Trésorerie sous le seuil de sécurité dans cinq mois » → **Réviser budget / Demander conseil / Voir échéancier**.
+
+**Présentation de deux trajectoires** pour chaque décision lourde : gain sportif ou commercial attendu, cash restant, risques et effets différés. Le budget disponible n'est pas une caisse magique mais un montant autorisé compte tenu des obligations déjà connues.
+
+Le mode Accompagné regroupe les coûts invisibles en une ligne « autres engagements » avec détail accessible ; le mode Expert affiche le poste par poste. Des graphiques sobres, explicables, accessibles et cohérents avec le vrai registre ; jamais une avalanche de courbes sans décision associée. Test de compréhension : identifier en moins de deux minutes un problème et une action plausible, sans tutoriel imposé.
