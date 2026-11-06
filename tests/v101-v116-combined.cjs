@@ -32,9 +32,10 @@ function fixture(){
  };
 }
 const inserted=[];
+const bridgeSelectors=[];
 let saveCount=0;
 const ctx={S:fixture(),view:'bureau',console,JSON,saveFailure:false,
- document:{querySelector:()=>({insertAdjacentHTML:(position,markup)=>inserted.push(markup)})},
+ document:{querySelector:(selector)=>{bridgeSelectors.push(selector);return {insertAdjacentHTML:(position,markup)=>inserted.push(markup)};}},
  start(){this.S=fixture();return true;},
  advanceSeason(){this.S.season++;this.S.phase='league';return true;},
  render(){return true;},
@@ -63,6 +64,7 @@ assert.ok(inserted.some(x=>x.includes('V105')));
 assert.ok(inserted.some(x=>x.includes('V111')));
 inserted.length=0;ctx.view='dashboard';ctx.render();
 assert.equal(inserted.length,2,'two bureau panels visible on real dashboard view');
+assert.ok(bridgeSelectors.some(s=>s.includes('[data-da42-page="dossiers"]')),'bridge mounts inside scrollable native dossiers, not main');
 assert.ok(inserted.some(x=>x.includes('V105'))&&inserted.some(x=>x.includes('V111')));
 function click(markup,pattern){
  const match=markup.match(pattern);assert.ok(match,'button exists '+pattern);
