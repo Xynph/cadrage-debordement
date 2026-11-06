@@ -1,0 +1,26 @@
+name: Finances V2 — réception jouable native
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/finance-v2.js'
+      - 'dist/index.html'
+      - 'dist/game.js'
+      - 'tests/finance-v2-playable.cjs'
+      - '.github/workflows/finance-v2-playable.yml'
+jobs:
+  native-finance-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax of product code and tests
+        run: |
+          node --check dist/finance-v2.js
+          node --check dist/game.js
+          node --check tests/finance-v2-playable.cjs
+      - name: Native finance actions and save/import regression
+        run: node --test tests/finance-v2-playable.cjs tests/career-integration.cjs tests/saves.cjs tests/v51-world-finance.cjs
