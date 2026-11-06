@@ -64,7 +64,7 @@ function experiment(clubId,seed,kind){
   assert(Number.isSafeInteger(paid)&&paid>=0);
   if(kind==='facility')assert.equal(paid,0);
   else assert([0,kind==='academy4000'?4000:12000].includes(paid));
-  assert.equal(trained.cash-cashBefore,-paid,'Native weekly training debit not reconciled');
+  assert.equal(trained.cash-cashBefore,paid===0?0:-paid,'Native weekly training debit not reconciled');
   if(paid){academyDebit+=paid;academyPaidPeriods.push({season:preT.season,economyWeek:preT.week,round:preT.round,paid});}
   control.run('finishRound()');treated.run('finishRound()');
   const c=sample(control,kind),t=sample(treated,kind);
