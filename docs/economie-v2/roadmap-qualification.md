@@ -76,3 +76,22 @@ Ne PAS exiger « tous les clubs ont un certain cash » ni une médiane forcée. 
 - J3 : un club IA qui change réellement sa stratégie après changement de résultats/sponsor.
 - J4 : quinze saisons où la richesse n'augmente pas systématiquement malgré des finances plausibles ; aucun plafond artificiel de cash.
 - J5 : cockpit finances où le joueur peut expliquer une crise, comparer deux choix et retrouver les mêmes chiffres après rechargement.
+
+## Gate supplémentaire : le système doit rester un jeu amusant
+
+La réussite comptable de 360 saisons est nécessaire mais **insuffisante**. Ajouter une matrice de tests « plaisir de jeu » sur les mêmes graines et trois politiques de conseil : accompagné (auto), manager (mixte), expert (manuel/script).
+
+| Critère | Condition d'acceptation | Prévenir l'effet pervers |
+|---|---|---|
+| Onboarding | Trois premières saisons jouables avec les choix financiers délégués | une IA de conseil doit réellement respecter le budget |
+| Agence | au moins deux décisions financières/sportives raisonnables dans un club sain | pas de transferts coûteux obligatoires |
+| Transparence | tout refus budget ou sanction a raison chiffrée et alternative | éviter la sanction opaque |
+| Résilience | choc modéré : simulation d'au moins deux plans de redressement réalisables | aucun « cadeau » de cash à posteriori |
+| Risque | décisions imprudentes répétées peuvent mener à des contraintes sérieuses | ne pas rendre le jeu invincible |
+| Sport | un club aux moyens modestes peut progresser par formation et tactique | ne pas transformer le résultat sportif en classement budgétaire |
+| Tempo | les finances n'imposent pas de microdécision à chaque journée | aucune cascade de popups |
+| UI | cockpit riche en expert, résumé clair en accompagné | pas de masquage permanent de données |
+
+Ajout au lot E7 : moteur de décision d'un **directeur financier délégué** qui utilise les mêmes règles que les dirigeants IA, pas un script de subvention. Ajout au lot E9 : mode Accompagné par défaut, Manager et Expert comme niveaux d'interface/gestion sans triche sur les taux économiques. Ajout à E10 : simulations d'agents naïfs/proactifs/prudents et tests manuels Chromium du parcours d'un novice. Mesurer le nombre de décisions imposées, alertes, crises incompréhensibles et actions réellement disponibles.
+
+**Règle produit** : si le moteur économique est réaliste mais que le joueur débutant ne peut jamais améliorer son club, le lot est refusé. Si le jeu donne systématiquement les fonds pour acheter tout le monde, il est refusé aussi.
