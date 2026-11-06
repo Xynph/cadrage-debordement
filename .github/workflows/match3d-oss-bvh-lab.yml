@@ -1,5 +1,11 @@
 name: MATCH 3D OSS — BVH static R&D only
 on:
+  push:
+    branches:
+      - research/match3d-oss-audit-ekza-bvh-ik-20261106
+    paths:
+      - research/oss-match3d-20261106/**
+      - .github/workflows/match3d-oss-bvh-lab.yml
   workflow_dispatch:
 
 permissions:
