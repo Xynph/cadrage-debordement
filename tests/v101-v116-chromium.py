@@ -18,16 +18,25 @@ try:
         dashboard=page.evaluate("""() => {
           start(0);
           nav('dashboard');
-          const panels=[...document.querySelectorAll('#app .layout .main > section.cd04-panel')];
+          const panels=[...document.querySelectorAll('#app .layout .main [data-da43-section="dashboard"] [data-da42-page="dossiers"] > section.cd04-panel')];
           if(panels.length!==2)throw Error('Bureau reel: expected two manager panels, got '+panels.length);
           const names=panels.map(x=>x.querySelector('h2')?.textContent||'');
           if(!names.some(x=>x.includes('V105'))||!names.some(x=>x.includes('V111')))
             throw Error('Bureau reel: V105/V111 missing');
           return {panels:panels.length,names};
         }""")
-        page.locator("#app .layout .main button[onclick^='v105Priority']").first.click()
-        page.locator("#app .layout .main button[onclick^='v112Price']").first.click()
-        assert page.locator("#app .layout .main > section.cd04-panel").count()==2
+        pilotage=page.locator('[data-da43-section="dashboard"] [data-da42-subpage="pilotage"]')
+        dossiers=page.locator('[data-da43-section="dashboard"] [data-da42-subpage="dossiers"]')
+        pilotage.click()
+        dossiers.click()
+        assert dossiers.get_attribute('aria-selected')=='true', 'Dossiers accessible with native tab'
+        page.locator('[data-da43-section="dashboard"] [data-da42-page="dossiers"] button[onclick^="v105Priority"]').first.click()
+        # A manager action may re-render the workspace. Restore the native dossiers tab before the next click.
+        page.locator('[data-da43-section="dashboard"] [data-da42-subpage="dossiers"]').click()
+        page.locator('[data-da43-section="dashboard"] [data-da42-page="dossiers"] button[onclick^="v112Price"]').first.click()
+        page.locator('[data-da43-section="dashboard"] [data-da42-subpage="pilotage"]').click()
+        assert page.locator('[data-da43-section="dashboard"] [data-da42-subpage="pilotage"]').get_attribute('aria-selected')=='true'
+        assert page.locator('#app .layout .main [data-da43-section="dashboard"] [data-da42-page="dossiers"] > section.cd04-panel').count()==2
         info=page.evaluate("""() => {
           const needed=['CDEspoirsCoachingV101V104','CDSportingDirectorV105V110',
             'CDFanExperienceV111V116','v102Path','v105Priority','v106Delegate',
