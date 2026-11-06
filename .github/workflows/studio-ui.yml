@@ -7,7 +7,7 @@ on:
     paths: ['studio-ui/**', '.github/workflows/studio-ui.yml']
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
   studio-ui:
     runs-on: ubuntu-latest
@@ -20,24 +20,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Dépendances
-        run: |
-          if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
-      - name: Initialisation réelle shadcn et verrouillage npm sur branche isolée
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/studio-ui-premium-toolchain-20261106'
-        run: |
-          if ! git ls-files --error-unmatch studio-ui/package-lock.json >/dev/null 2>&1; then
-            npx --yes shadcn@latest init --yes
-            npx --yes shadcn@latest add badge --yes
-            npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add -A -- .
-            if ! git diff --cached --quiet; then
-              git commit -m "chore(studio-ui): finalize shadcn CLI and lock npm dependencies"
-              git push origin HEAD:feature/studio-ui-premium-toolchain-20261106
-            fi
-          fi
+          cache: npm
+          cache-dependency-path: studio-ui/package-lock.json
+      - name: Dépendances verrouillées
+        run: npm ci --no-audit --no-fund
       - name: Vérification TypeScript
         run: npm run check
       - name: Construction Vite
