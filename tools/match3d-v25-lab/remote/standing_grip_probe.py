@@ -105,7 +105,7 @@ def coplanar_triangle_overlap(tri_a,tri_b,tol=1e-6):
     return True
 
 def mesh_regions(meshes):
-    result={k:{"minZ":None,"vertices":0} for k in REGIONS}
+    result={k:{"minZ":None,"vertices":0,"sumXY":[0.0,0.0]} for k in REGIONS}
     deps=bpy.context.evaluated_depsgraph_get()
     for obj in meshes:
         ev=obj.evaluated_get(deps); mesh=ev.to_mesh()
@@ -120,7 +120,16 @@ def mesh_regions(meshes):
                         cur=result[region]["minZ"]
                         result[region]["minZ"]=round(min(z,cur) if cur is not None else z,5)
                         result[region]["vertices"]+=1
+                        world=ev.matrix_world@vertex.co
+                        result[region]["sumXY"][0]+=world.x
+                        result[region]["sumXY"][1]+=world.y
         finally:ev.to_mesh_clear()
+    for region in result:
+        count=result[region]["vertices"]
+        result[region]["centroidXY"]=(
+            [round(v/count,5) for v in result[region]["sumXY"]]
+            if count else None)
+        del result[region]["sumXY"]
     return result
 def audit(a,b):
     va,fa=evaluated_geometry(a["meshes"]);vb,fb=evaluated_geometry(b["meshes"])
@@ -369,6 +378,23 @@ try:
                 row["images"].append({"file":path.name,"sha256":sha(path),"bytes":path.stat().st_size})
                 bpy.data.objects.remove(cam,do_unlink=True)
             record["frames"].append(row)
+        # Foot gliding on a planted stance is disqualifying independently of
+        # floor height: compare TRUE dominant-weighted skinned foot centroids.
+        record["footGlideByPhase"]=[]
+        for prev,now in zip(record["frames"],record["frames"][1:]):
+            row={"startFrame":prev["frame"],"endFrame":now["frame"],"actors":{}}
+            for lab in ("A","B"):
+                vals={}
+                for side in ("foot_l","foot_r"):
+                    p=prev["supports"][lab][side]["centroidXY"]
+                    q=now["supports"][lab][side]["centroidXY"]
+                    vals[side]=round(math.dist(p,q),5) if p and q else None
+                row["actors"][lab]=vals
+            row["bothActorsFeetStayWithin5cm"]=all(
+                row["actors"][lab][side] is not None
+                and row["actors"][lab][side]<=.05
+                for lab in ("A","B") for side in ("foot_l","foot_r"))
+            record["footGlideByPhase"].append(row)
         REPORT["lods"].append(record)
         for lab in ik:
             for side in ik[lab]:
@@ -386,6 +412,10 @@ try:
         sample["actors"][lab][side]["reachableByLength"]
         for lod in REPORT["lods"] for sample in lod["authoredContactTargets"]
         if sample["frame"] in (40,60) for lab in ("A",) for side in ("l","r"))
+    REPORT["standingFootSlipQualified"]=all(
+        phase["bothActorsFeetStayWithin5cm"]
+        for lod in REPORT["lods"] for phase in lod["footGlideByPhase"]
+        if phase["startFrame"]==22 and phase["endFrame"]==40)
     REPORT["floorStageQualified"]=all(
         not f["quality"]["floorPenetrationFound"]
         and f["quality"]["eachActorHasGroundSupport"]
