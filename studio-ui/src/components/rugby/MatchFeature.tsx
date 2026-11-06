@@ -1,0 +1,4 @@
+import { CalendarDays, ChevronRight, MapPin, Trophy } from "lucide-react";
+import { Button } from "@/components/ui/button";
+export type Match = {opponent:string;competition:string;date:string;venue:string};
+export function MatchFeature({match}:{match:Match}){return <section className="match-feature" aria-labelledby="next-match"><div className="match-overline"><Trophy size={18}/> PROCHAIN RENDEZ-VOUS · {match.competition}</div><h2 id="next-match">{match.opponent}</h2><p className="match-subtitle">Une semaine pour imposer notre rugby.</p><div className="match-meta"><span><CalendarDays size={17}/>{match.date}</span><span><MapPin size={17}/>{match.venue}</span></div><Button type="button" onClick={()=>document.getElementById("decisions")?.scrollIntoView({behavior:"smooth"})}>Préparer le match <ChevronRight size={17}/></Button></section>}

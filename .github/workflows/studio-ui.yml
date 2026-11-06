@@ -1,0 +1,45 @@
+name: Studio UI Premium PC
+on:
+  push:
+    branches: [feature/studio-ui-premium-toolchain-20261106]
+    paths: ['studio-ui/**', '.github/workflows/studio-ui.yml']
+  pull_request:
+    paths: ['studio-ui/**', '.github/workflows/studio-ui.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  studio-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: studio-ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: studio-ui/package-lock.json
+      - name: Dépendances verrouillées
+        run: npm ci --no-audit --no-fund
+      - name: Vérification TypeScript
+        run: npm run check
+      - name: Construction Vite
+        run: npm run build
+      - name: Construction Storybook
+        run: npm run build-storybook
+      - name: Chromium
+        run: npx playwright install chromium
+      - name: Tests visuels PC
+        run: npm run test:e2e
+      - name: Captures et rapports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-ui-artifacts
+          path: |
+            studio-ui/test-results/
+            studio-ui/playwright-report/
+          if-no-files-found: ignore
