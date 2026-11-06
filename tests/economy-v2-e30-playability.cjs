@@ -6,7 +6,7 @@ const scenario=(overrides={})=>({openingCash:100,income:[20,20,20,20],required:[
 test('E3.0 scenarios: maintain costly project vs stage vs pause',()=>{
  const x=P.compare(scenario());
  const [maintain,stage,pause]=x.options;
- assert.equal(maintain.endingCash,-60);
+ assert.equal(maintain.endingCash,-20);
  assert.equal(stage.endingCash,60);
  assert.equal(pause.endingCash,60);
  assert.equal(maintain.optionalPaid,80);
@@ -19,7 +19,7 @@ test('E3.0 staging invests only from demonstrated liquid surplus',()=>{
  const x=P.simulate({openingCash:80,income:[40,50,50],required:[30,30,30],optional:[60,0,0],targetReserve:50},'stage');
  assert.equal(x.optionalPaid,60);
  assert.equal(x.optionalDeferred,0);
- assert.equal(x.endingCash,130);
+ assert.equal(x.endingCash,70);
  assert.ok(x.weekly.every(w=>w.closingCash>=50));
 });
 test('E3.0 mandatory obligations are never deferred by player tactics',()=>{
