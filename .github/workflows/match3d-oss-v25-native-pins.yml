@@ -65,6 +65,9 @@ jobs:
           summary=json.loads((root/'capture-summary.json').read_text())
           assert summary['status']=='REAL_V25_TEMPORAL_INPUTS_CAPTURED_NOT_EKZA_ANIMATED'
           assert summary['samples']==57 and summary['images']==171
+          assert summary['sourceRef']=='065589001fbef9641070218b6f85bb597da96a6a'
+          assert summary['sourceScriptSHA256']=='2f139c9c9903a8f1b52e9ef8af67a79db180e9d5b79e96d5e9fba089886707df'
+          assert summary['timeSampleSHA256']==hashlib.sha256((root/'actual-v25-frame-worlds.json').read_bytes()).hexdigest()
           print('ORIGINAL_V25_INPUT_IMMUTABLE_AND_VERIFIED')
           PY
       - name: Extract true GLB rest hierarchy and humane mapping
