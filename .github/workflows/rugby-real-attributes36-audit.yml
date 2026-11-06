@@ -1,0 +1,65 @@
+name: Rugby Reel - audit 36 attributs (PR 363)
+on:
+  push:
+    branches:
+      - data/rugby-real-attributes36-audit-20261106
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inspecter le schema sans exposer les joueurs
+        run: |
+          node <<'NODE'
+          const fs=require('node:fs');
+          const file=JSON.parse(fs.readFileSync('modding/data06/rugby-master-2026-2027.json','utf8'));
+          const {findPlayers}=require('./tools/rugby-real-attributes36-audit.cjs');
+          const p=findPlayers(file);
+          console.log('root keys:', Object.keys(file));
+          console.log('detected players:',p.length);
+          if(p.length) {
+            console.log('player field names:',Object.keys(p[0]));
+            console.log('attribute names:',Object.keys(p[0].attributesV2));
+            console.log('potential type:',typeof p[0].potential);
+            console.log('hidden trait field types:', Object.fromEntries(Object.entries(p[0]).filter(([k])=>/trait|hidden/i.test(k)).map(([k,v])=>[k,Array.isArray(v)?'array':typeof v])));
+          }
+          NODE
+      - name: Tests automatises audit
+        run: node --test tests/rugby-real-attributes36-audit.cjs
+      - name: Auditer les 1592 fiches sur le fichier reel
+        shell: bash
+        run: |
+          set +e
+          node tools/rugby-real-attributes36-audit.cjs > "$RUNNER_TEMP/rugby-real-attributes36-report.json"
+          result=$?
+          set -e
+          node - "$RUNNER_TEMP/rugby-real-attributes36-report.json" <<'NODE'
+          const fs=require('node:fs');
+          const p=process.argv[2];
+          const r=JSON.parse(fs.readFileSync(p,'utf8'));
+          const summary={
+            status:r.status,playerCount:r.playerCount,attributeCount:r.attributeCount,
+            checks:r.checks,attributeKeys:r.attributeKeys,
+            groupNames:Object.keys(r.groups),highCorrelations:r.highCorrelations.slice(0,25),
+            warningCount:r.warnings.length,
+            distributions:Object.fromEntries(Object.entries(r.distributions).map(([k,v])=>[k,v&&{median:v.median,sd:v.sd,p10:v.p10,p90:v.p90}]))
+          };
+          console.log('AUDIT_SUMMARY',JSON.stringify(summary));
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'### Audit DATA 36 attributs\n\n```json\n'+JSON.stringify(summary,null,2)+'\n```\n');
+          NODE
+          exit "$result"
+      - name: Archiver le rapport non nominatif
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rugby-real-attributes36-audit
+          path: ${{ runner.temp }}/rugby-real-attributes36-report.json
+          if-no-files-found: ignore
+          retention-days: 7
