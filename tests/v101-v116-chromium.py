@@ -15,6 +15,19 @@ try:
         errors=[]
         page.on("pageerror",lambda exc:errors.append(str(exc)))
         page.goto(f"http://127.0.0.1:{server.server_port}/index.html",wait_until="domcontentloaded",timeout=60000)
+        dashboard=page.evaluate("""() => {
+          start(0);
+          nav('dashboard');
+          const panels=[...document.querySelectorAll('#app .layout .main > section.cd04-panel')];
+          if(panels.length!==2)throw Error('Bureau reel: expected two manager panels, got '+panels.length);
+          const names=panels.map(x=>x.querySelector('h2')?.textContent||'');
+          if(!names.some(x=>x.includes('V105'))||!names.some(x=>x.includes('V111')))
+            throw Error('Bureau reel: V105/V111 missing');
+          return {panels:panels.length,names};
+        }""")
+        page.locator("#app .layout .main button[onclick^='v105Priority']").first.click()
+        page.locator("#app .layout .main button[onclick^='v112Price']").first.click()
+        assert page.locator("#app .layout .main > section.cd04-panel").count()==2
         info=page.evaluate("""() => {
           const needed=['CDEspoirsCoachingV101V104','CDSportingDirectorV105V110',
             'CDFanExperienceV111V116','v102Path','v105Priority','v106Delegate',
@@ -91,7 +104,7 @@ try:
         }""")
         assert not errors,errors
         page.screenshot(path="/tmp/v101-v116-chromium.png",full_page=True)
-        print("V101-V116 CHROMIUM PASS",json.dumps({"page":info,"actions":len(actions),"result":result},ensure_ascii=False))
+        print("V101-V116 CHROMIUM PASS",json.dumps({"real_dashboard":dashboard,"page":info,"actions":len(actions),"result":result},ensure_ascii=False))
         browser.close()
 finally:
     server.shutdown()
