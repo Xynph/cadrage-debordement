@@ -1,0 +1,37 @@
+name: Rugby Reel - calibration V6 candidats
+on:
+  push:
+    branches: [data/rugby-real-role-calibration-v6-20261106]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests candidats V6
+        run: node --test tests/rugby-real-role-calibration-v6.cjs
+      - name: Calibrer sans modifier le master
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum modding/data06/rugby-master-2026-2027.json > "$RUNNER_TEMP/master.before"
+          node tools/rugby-real-role-calibration-v6.cjs modding/data06/rugby-master-2026-2027.json "$RUNNER_TEMP/rugby-real-v6-candidates.json"
+          sha256sum -c "$RUNNER_TEMP/master.before"
+          node - "$RUNNER_TEMP/rugby-real-v6-candidates.json" <<'NODE'
+          const fs=require('node:fs'),a=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(a.candidates.length!==1592)throw Error('Candidate count incorrect');
+          if(a.candidates.some(p=>p.changes.some(c=>c.evidence!=='model-estimate')))throw Error('Untrusted evidence label');
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'## Rugby Réel V6 - propositions uniquement\n\n\`\`\`json\n'+JSON.stringify(a.summary,null,2)+'\n\`\`\`\n');
+          NODE
+      - name: Archiver les candidats par ID
+        uses: actions/upload-artifact@v4
+        with:
+          name: rugby-real-v6-candidates
+          path: \${{ runner.temp }}/rugby-real-v6-candidates.json
+          retention-days: 7
