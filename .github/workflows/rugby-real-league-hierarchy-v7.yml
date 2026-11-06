@@ -1,0 +1,39 @@
+name: Rugby Reel - V7 hierarchy TOP14 ProD2
+on:
+  push:
+    branches: [data/rugby-real-league-hierarchy-v7-20261106]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tester la hierarchie
+        run: node --test tests/rugby-real-league-hierarchy-v7.cjs
+      - name: Evaluer les 1592 joueurs sans toucher aux donnees
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum modding/data06/rugby-master-2026-2027.json > "$RUNNER_TEMP/master.sha256"
+          node tools/rugby-real-league-hierarchy-v7.cjs modding/data06/rugby-master-2026-2027.json "$RUNNER_TEMP/candidates.json"
+          sha256sum -c "$RUNNER_TEMP/master.sha256"
+          node - "$RUNNER_TEMP/candidates.json" <<'NODE'
+          const fs=require('node:fs');
+          const d=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(d.candidates.length!==1592||d.byLeague.top14!==805||d.byLeague.prod2!==787)throw Error('Invalid roster');
+          if(d.candidates.filter(x=>x.league==='prod2').some(x=>x.changes.length))throw Error('Pro D2 downgrade prohibited');
+          const summary={byLeague:d.byLeague,evidence:d.evidence,affectedPlayers:d.affectedPlayers,roleReports:d.roleReports};
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'## TOP14 / PRO D2 : propositions V7\n\n\`\`\`json\n'+JSON.stringify(summary,null,2)+'\n\`\`\`\n');
+          NODE
+      - name: Sauvegarder les candidats non appliques
+        uses: actions/upload-artifact@v4
+        with:
+          name: rugby-real-v7-league-candidates
+          path: ${{ runner.temp }}/candidates.json
+          retention-days: 7
