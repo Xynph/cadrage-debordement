@@ -19,3 +19,17 @@ test('E2.2: native rollover reconciles all components without inventing payments
  assert.equal(x.rows.reduce((s,r)=>s+r.delta,0),x.delta);
  assert.ok(x.rows.some(r=>r.site.includes('worldNewSeason')));
 });
+
+test('E2.2: synthetic stressed AI offseason identifies financing and repayment without changing native result',()=>{
+ const g=N.fresh(0,827381);
+ g.run('S.clubs[1].cash=-100');
+ const before=E.nativeContext(g).clubs.find(c=>c.id===1);
+ const x=E.auditedAction(g,()=>g.run('worldNewSeason()'),'rollover');
+ const after=E.nativeContext(g).clubs.find(c=>c.id===1);
+ const ai=x.rows.filter(r=>r.clubId===1);
+ assert.equal(before.cash,-100);
+ assert.ok(ai.some(r=>r.components.some(c=>c.reason==='negative-cash-converted-to-debt'&&c.amount===100)));
+ assert.ok(ai.some(r=>r.components.some(c=>c.reason==='season-allocation'&&c.amount===2500000)));
+ assert.equal(ai.reduce((s,r)=>s+r.delta,0),after.cash-before.cash);
+ assert.ok(after.debt>=0);
+});
