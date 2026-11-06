@@ -98,3 +98,12 @@ test('E2.5: no automatic migration from offers, salary or debt',()=>{
  assert.equal(preview.ledger.payments.length,0);
  assert.equal(preview.ledger.obligations.length,0);
 });
+
+test('E2.5: historical as-of reporting retains unpaid due before later receipt',()=>{
+ let w=C.register(C.create(),base);w=C.mature(w,'2027-03');
+ w=C.settle(w,{...pay,paidPeriod:'2027-04'});
+ assert.equal(C.summary(w,'club-1','2027-03').dueUnpaid,300);
+ assert.equal(C.summary(w,'club-1','2027-03').paidDocuments,0);
+ assert.equal(C.summary(w,'club-1','2027-04').dueUnpaid,0);
+ assert.equal(C.summary(w,'club-1','2027-04').paidDocuments,1);
+});
