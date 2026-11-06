@@ -51,3 +51,13 @@ Exécuter `node --check dist/economy-v2-core.js`, `node --check tests/economy-v2
 2. Faire tourner une comparaison de six campagnes × quinze saisons, avec trois imports par campagne. Le nouveau registre doit expliquer 100 % des variations de cash sans modifier `S`.
 3. Reconstruire les séries vraiment disponibles pour le futur cockpit : trésorerie, résultats, engagements, salaires, dette, budget. Ne pas créer de fausses dates mensuelles si les 29 tours ne correspondent pas aux mois.
 4. Écran PC consultatif premium, courbes et tableaux sourcés par le registre, tests Chromium 1920×1080 et 1440×900. La nouvelle logique économique ne sera activée qu'après qualification, migration sûre et décision de produit.
+
+## Durcissement E1 — cessions et affectations de paiements
+
+- `transfer(..., bookValue=0)` accepte une **valeur comptable explicite**, soustraite aux immobilisations du vendeur et comptabilisée en charge de sortie ; le résultat de cession vaut produit encaissé moins valeur comptable. La valeur zéro reste le cas legacy non immobilisé et ne crée pas d'actif fictif. Refus atomique si l'actif comptable est insuffisant.
+- `settleCommitment` attache chaque écriture de règlement à `commitmentId` par une référence persistée dans la description, protège les identifiants d'écritures déjà utilisés et valide l'unicité et le montant correspondant. Les soldes sont reconstruits du journal, sans retoucher les sauvegardes historiques du jeu.
+- Limite volontaire : `fixedAssets` reste un agrégat et ne porte pas encore le registre individuel des joueurs, amortissements ni plus-values de cession détaillées. E2 ne doit **jamais** inventer une valeur comptable depuis le seul prix de transfert.
+
+## Contrat E2 shadow (préparation uniquement)
+
+Adaptateur **strictement lecture seule**, sans import par `dist/index.html` et sans écriture dans `S`. Les entrées devront être des captures structurées et datées des vrais flux du jeu ; chaque observation reçoit un identifiant stable et une origine, puis un rapprochement par variation de trésorerie, non un deuxième décaissement. Ne pas confondre tours de compétition et mois calendaires. Exiger six campagnes de quinze saisons et trois imports par campagne, bilan de rapprochement exhaustif (somme des mouvements documentés + résidu inexpliqué) et contrôle déterministe ; lorsque le moteur ne fournit pas la granularité, signaler un écart **inexpliqué**, jamais produire une série mensuelle fictive. Le cockpit ne doit afficher que les données réelles disponibles, avec mention explicite des inconnues. Aucun raccordement gameplay ni migration n'est autorisé par E1.
