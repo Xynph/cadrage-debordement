@@ -262,7 +262,18 @@ try:
             rig=rigs[0];rig.name=f"OriginalTackle_LOD{lod}_{label}"
             meshes=[x for x in added if x.type=="MESH"]
             assert meshes
-            if rig.animation_data:rig.animation_data_clear()
+            # Imported glTF can leave the LAST sampled action pose as an
+            # evaluated state even after clearing AnimationData. Reset ALL
+            # 53 canonical bones to their neutral/rest transform first,
+            # symmetrically for both actor copies, before authoring the source.
+            for node in added:
+                if node.animation_data:
+                    node.animation_data_clear()
+            for pose_bone in rig.pose.bones:
+                pose_bone.matrix_basis.identity()
+            bpy.context.view_layer.update()
+            # Verify the imported rigs are neutral BEFORE any authored steps.
+            assert all(p.matrix_basis.is_identity for p in rig.pose.bones),                 "Imported source GLB pose not neutralized"
             # glTF import can include multiple top-level nodes. Driving only
             # the Armature object leaves non-parented evaluated skin at origin.
             # A dedicated ACTOR root drives ALL imported top-level nodes, while
