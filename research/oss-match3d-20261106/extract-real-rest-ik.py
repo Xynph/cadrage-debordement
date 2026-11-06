@@ -37,7 +37,57 @@ for lod in range(3):
         ancestors.reverse()
         sides[side]={"ancestors":[tr(k) for k in ancestors],
                      "upper":tr(ix[0]),"mid":tr(ix[1]),"end":tr(ix[2])}
-    result["lods"].append({"lod":lod,"originalGlbSha256":sha,"rigBoneCount":53,"sides":sides})
+    # Keep exactly the 53 original skin joints plus their original ancestors.
+    # The compiler's node array is parent-before-child; glTF node IDs are retained separately.
+    kept=set(joints)
+    for joint in joints:
+        p=parent.get(joint)
+        while p is not None:
+            kept.add(p)
+            p=parent.get(p)
+    def depth(i):
+        d=0
+        while i in parent:
+            i=parent[i];d+=1
+            assert d<len(nodes),"cycle in original glTF hierarchy"
+        return d
+    ordered=sorted(kept,key=lambda i:(depth(i),i))
+    index={old:new for new,old in enumerate(ordered)}
+    skeleton_nodes=[]
+    for i in ordered:
+        node=tr(i)
+        skeleton_nodes.append({
+            "index":index[i],"gltfIndex":i,"name":node["name"],
+            "parent":index[parent[i]] if i in parent else -1,
+            "restLocal":{k:node[k] for k in ("t","q","s")},
+            "hasMatrix":False,"isJoint":i in joints,"hasMesh":"mesh" in nodes[i]
+        })
+    required_names={
+        "hips":["pelvis"],"spine":["spine_01"],"chest":["spine_02"],
+        "upperChest":["spine_03"],"neck":["neck_01","neck"],"head":["head"],
+        "leftUpperLeg":["thigh_l"],"leftLowerLeg":["calf_l"],"leftFoot":["foot_l"],"leftToes":["ball_l"],
+        "rightUpperLeg":["thigh_r"],"rightLowerLeg":["calf_r"],"rightFoot":["foot_r"],"rightToes":["ball_r"],
+        "leftUpperArm":["upperarm_l"],"leftLowerArm":["lowerarm_l"],"leftHand":["hand_l"],
+        "rightUpperArm":["upperarm_r"],"rightLowerArm":["lowerarm_r"],"rightHand":["hand_r"],
+    }
+    by_name={obj["name"]:obj["index"] for obj in skeleton_nodes}
+    humanoid={}
+    for human,alternates in required_names.items():
+        for name in alternates:
+            if name in by_name:
+                humanoid[human]=by_name[name];break
+    for name in ("hips","head","leftUpperLeg","leftLowerLeg","leftFoot","rightUpperLeg",
+                 "rightLowerLeg","rightFoot","leftUpperArm","leftLowerArm","leftHand",
+                 "rightUpperArm","rightLowerArm","rightHand"):
+        assert name in humanoid,f"LOD{lod} unmapped required humanoid name: {name}"
+    full={
+        "format":"gltf","facing":[0,0,0,1],"nodes":skeleton_nodes,
+        "humanoid":humanoid,"springJoints":[],"nodeConstraints":[],"constrainedNodes":[],
+        "boneRadii":[None]*len(skeleton_nodes),"height":1.8,"heightSource":"joints",
+        "fingerprint":"sha256:"+sha,"ekzaHeightScale":None,"warnings":[]
+    }
+    result["lods"].append({"lod":lod,"originalGlbSha256":sha,"rigBoneCount":53,
+                           "sides":sides,"compiledHumanoidSkeleton":full})
 out.parent.mkdir(parents=True,exist_ok=True)
 out.write_text(json.dumps(result,indent=2)+"\n")
 print(json.dumps({"realRestLods":len(result["lods"]),"sides":6,"source":"original glTF TRS"},indent=2))
