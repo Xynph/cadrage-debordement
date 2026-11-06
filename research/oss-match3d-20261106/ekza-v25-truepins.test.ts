@@ -16,7 +16,10 @@ const result:any={schema:'cd-v25-ekza-native-real-19frame-v1',status:'STOP_UNQUA
   'This is real world IK evaluation, not yet Blender skinning or shoe geometry',
   'No cinematic gait art approval unless paired new Blender renders are inspected'
   ]};
-// Original V25 Blender exporter stored m[col][row], i.e. a transposed row-major snapshot.\n// Decode that representation explicitly; Ekza boneWorld buffers are column-major.\nconst captured=(xs:number[])=>new Matrix4().fromArray(xs).transpose();\nconst native=(xs:number[])=>new Matrix4().fromArray(xs);
+// Original V25 Blender exporter stored m[col][row], i.e. a transposed row-major snapshot.
+// Decode that representation explicitly; Ekza boneWorld buffers are column-major.
+const captured=(xs:number[])=>new Matrix4().fromArray(xs).transpose();
+const native=(xs:number[])=>new Matrix4().fromArray(xs);
 const vec=(m:Matrix4)=>new Vector3().setFromMatrixPosition(m);
 function xfrm(x:any):Matrix4 {const {t,q,s}=x;
  return new Matrix4().compose(
