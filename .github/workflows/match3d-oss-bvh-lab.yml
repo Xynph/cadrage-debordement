@@ -1,0 +1,22 @@
+name: MATCH 3D OSS — BVH static R&D only
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-proxy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned isolated OSS dependencies
+        working-directory: research/oss-match3d-20261106
+        run: npm install --no-audit --no-fund
+      - name: Run three-LOD static geometry probe
+        working-directory: research/oss-match3d-20261106
+        run: npm test
