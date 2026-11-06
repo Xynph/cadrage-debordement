@@ -1,0 +1,83 @@
+name: MATCH 3D OSS — forensic true V25 ankle vs foot IK effectors
+on:
+  push:
+    branches: [research/match3d-oss-audit-ekza-bvh-ik-20261106]
+    paths:
+      - research/oss-match3d-20261106/forensic_effectors.py
+      - .github/workflows/match3d-oss-v25-effectors.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  anatomical-measure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: d6fbcb38438609c0ca461f54717655223b438b09
+          path: baseline
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 065589001fbef9641070218b6f85bb597da96a6a
+          path: rd-source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: match3d-oss-original-19frames-b903331d31a6020ebd872265d91c64916eb03d6b
+          run-id: 42295487770
+          github-token: ${{ github.token }}
+          path: input-v25
+      - name: Verify immutable 19-frame source SHA256
+        run: |
+          python - <<'PY'
+          import pathlib,json,hashlib
+          root=pathlib.Path('input-v25')
+          manifest=json.loads((root/'sha256-manifest.json').read_text())
+          for f in manifest:
+            p=root/f['name']
+            assert p.is_file() and p.stat().st_size==f['bytes']
+            assert hashlib.sha256(p.read_bytes()).hexdigest()==f['sha256']
+          s=json.loads((root/'capture-summary.json').read_text())
+          assert s['sourceRef']=='065589001fbef9641070218b6f85bb597da96a6a'
+          assert s['samples']==57 and s['images']==171
+          print('IMMUTABLE_ORIGINAL_19FRAME_SOURCE_PASS')
+          PY
+      - name: Extract rest lengths from locked authentic 3 LOD GLBs
+        run: |
+          mkdir -p oss-effectors-report
+          python research/oss-match3d-20261106/extract-real-rest-ik.py baseline rd-source/tools/match3d-v25-lab/remote/lock.json oss-effectors-report/glb-rest.json
+      - name: Measure IK effectors without solver correction or new captures
+        env:
+          CD_V25_REAL_FRAMES: input-v25/actual-v25-frame-worlds.json
+          CD_GLB_REST: oss-effectors-report/glb-rest.json
+          CD_EFFECTOR_OUT: oss-effectors-report/forensic-effectors.json
+        run: |
+          python research/oss-match3d-20261106/forensic_effectors.py
+      - name: SHA256 diagnostics and manifest even if geometry STOP
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          p=Path('oss-effectors-report');p.mkdir(exist_ok=True)
+          files=sorted(x for x in p.iterdir() if x.is_file() and x.name!='sha256-manifest.json')
+          (p/'sha256-manifest.json').write_text(json.dumps([
+            {'name':f.name,'bytes':f.stat().st_size,'sha256':hashlib.sha256(f.read_bytes()).hexdigest()}
+            for f in files],indent=2)+'\n')
+          PY
+      - name: Publish forensic measurements only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-oss-v25-effectors-${{ github.sha }}
+          path: oss-effectors-report/
+          retention-days: 14
+          if-no-files-found: error
