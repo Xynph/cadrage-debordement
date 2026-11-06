@@ -19,6 +19,7 @@ with sync_playwright() as p:
         assert page.locator('#case option').count() == 4
         assert page.locator('#chart .bar').count() == 6
         assert page.locator('#after').inner_text().strip()
+        page.locator('#case').select_option(label='Surinvestissement facultatif')
         page.locator('#choices button').nth(2).click()
         assert page.locator('#after').inner_text().strip() == '100'
         assert page.locator('#deferred').inner_text().strip() == '115'
