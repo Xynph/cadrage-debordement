@@ -1,0 +1,41 @@
+name: Rugby Reel - V10 hierarchy promotion relegation
+on:
+  push:
+    branches: [data/rugby-real-promotion-tier-v10-20261107]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests promotion et relegation
+        run: node --test tests/rugby-real-promotion-tier-v10.cjs
+      - name: Auditer 1592 profils sans modifier master
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum modding/data06/rugby-master-2026-2027.json > "$RUNNER_TEMP/master.sha"
+          node tools/rugby-real-promotion-tier-v10.cjs modding/data06/rugby-master-2026-2027.json "$RUNNER_TEMP/candidates.json"
+          sha256sum -c "$RUNNER_TEMP/master.sha"
+          node - "$RUNNER_TEMP/candidates.json" <<'NODE'
+          const fs=require('node:fs');
+          const o=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(o.candidates.length!==1592||o.summary.top14!==805||o.summary.prod2!==787)throw Error('Master roster mismatch');
+          if(o.candidates.filter(p=>p.leagueAtStart==='prod2').some(p=>p.changes.length))throw Error('PRO D2 has been nerfed');
+          if(Object.values(o.roleAudit).some(p=>p.gapAfter+0.001<p.gapBefore))throw Error('Hierarchy inverted');
+          const summary={target:o.targetGap,summary:o.summary,roles:o.roleAudit};
+          console.log('V10_SUMMARY',JSON.stringify(summary));
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'## TOP14 / PRO D2 - V10\n\n\`\`\`json\n'+JSON.stringify(summary,null,2)+'\n\`\`\`\n');
+          NODE
+      - name: Archiver propositions hors BDD
+        uses: actions/upload-artifact@v4
+        with:
+          name: rugby-real-v10-candidates
+          path: ${{ runner.temp }}/candidates.json
+          retention-days: 7
