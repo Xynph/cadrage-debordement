@@ -35,7 +35,7 @@ jobs:
           ref: d6fbcb38438609c0ca461f54717655223b438b09
           path: baseline
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - name: Checkout pinned V25 lock manifest\n        uses: actions/checkout@v4\n        with:\n          ref: 065589001fbef9641070218b6f85bb597da96a6a\n          path: rd-source\n          persist-credentials: false\n      - uses: actions/setup-node@v4
         with:
           node-version: '24.11.0'
       - uses: actions/setup-python@v5
@@ -53,7 +53,7 @@ jobs:
           git -C ekza-upstream rev-parse HEAD > oss-ekza-report/ekza-upstream-sha.txt
       - name: Extract three real GLBs with SHA and 53 ordered bones
         run: |
-          python research/oss-match3d-20261106/extract-real-glb-rig.py baseline oss-ekza-report/rig-fixtures.json             baseline/tools/match3d-v25-lab/remote/lock.json
+          python research/oss-match3d-20261106/extract-real-glb-rig.py baseline oss-ekza-report/rig-fixtures.json             rd-source/tools/match3d-v25-lab/remote/lock.json
       - name: Install pinned upstream workspace and execute real original solver
         run: |
           npm install --global pnpm@10.32.1
