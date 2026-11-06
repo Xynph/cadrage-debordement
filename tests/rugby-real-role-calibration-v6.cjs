@@ -7,7 +7,7 @@ function fixture(){
   for(let i=0;i<1592;i++){
     const league=i<805?'top14':'prod2',r=roles[i%roles.length];
     players.push({id:'p-'+i,league,gameplayPosition:r,gameplayPositionEstimated:true,
-      attributesV2:Object.fromEntries(Array.from({length:36},(_,k)=>['k'+k,60+(i%7)]).concat(keys.map((x,k)=>[x,45+(i%19)+(k%6)]))),
+      attributesV2:Object.fromEntries(Array.from({length:36-keys.length},(_,k)=>['k'+k,60+(i%7)]).concat(keys.map((x,k)=>[x,45+(i%19)+(k%6)]))),
       potential:80,hiddenTraitsV2:{professionalism:50,consistency:50,bigMatches:50,injuryResistance:50,ambition:50,loyalty:50}});
   }
   return {players};
