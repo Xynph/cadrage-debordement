@@ -46,7 +46,7 @@
   const context={tension:'Son niveau de satisfaction est bas.',fatigue:'Sa condition physique exige une attention particuliere.',
    revelation:'Ses minutes en equipe premiere commencent a compter.',contrat:'Son contrat arrive a echeance cette saison.',
    leadership:'Son influence potentielle dans le groupe est importante.',ambition:'Son projet individuel et celui du club doivent etre alignes.'}[selected.kind];
-  return {key,playerId:selected.p.id,kind,title:label,context,trait:selected.leader.trait,leadership:selected.leader.leadership};
+  return {key,playerId:selected.p.id,kind:selected.kind,title:label,context,trait:selected.leader.trait,leadership:selected.leader.leadership};
  }
  function allowed(s){return !!valid(s)&&!s.live&&!s.trained&&!getState(s)?.history.some(x=>x.key===weekKey(s))}
  function apply(s,choice,{save,message,render}={}){
