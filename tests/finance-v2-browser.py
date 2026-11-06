@@ -31,7 +31,7 @@ try:
         check('Finance subpage navigation present',page.locator('[data-da42-subpage="dossiers"]').count()==1)
         page.locator('[data-da42-subpage="dossiers"]').click()
         check('V2 inside real Finances tab / Journal et décisions',page.locator('.finance-v2-native').is_visible())
-        check('real cash shown',page.locator('.finance-v2-native').inner_text().find('Trésorerie actuelle')>=0)
+        check('real cash shown',page.locator('.finance-v2-native .stat').first.text_content().casefold().find('trésorerie actuelle')>=0)
         check('interactive cash chart visible',page.locator('.finv2-curve').is_visible())
         check('native transaction table visible',page.locator('.finv2-table').is_visible())
         check('accessible cash curve point hover data',page.locator('.finv2-point title').count()>0)
