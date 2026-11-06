@@ -37,7 +37,7 @@ test('E2.6 insufficient funds cannot produce paid receipt or cash deficit',()=>{
 });
 test('E2.6 premature payment is atomic',()=>{
  const x=A.register(funded(),o,trust),before=JSON.stringify(x);
- assert.throws(()=>A.settle(x,p,trust),/not due/);
+ assert.throws(()=>A.settle(x,p,trust),/Payment before maturity|Commitment not due/);
  assert.equal(JSON.stringify(x),before);
 });
 test('E2.6 forged receipt rejects global reuse across clubs',()=>{
