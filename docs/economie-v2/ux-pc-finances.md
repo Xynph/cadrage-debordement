@@ -90,3 +90,40 @@ RegulationStatus : {edition, capLimit, eligibleCommitted, exceptions, nextReview
 - Vérifier que les chiffres du graphe sont EXACTEMENT les mêmes que les valeurs du ledger/contrat et qu'une sauvegarde importée restitue les graphiques.
 - Stress tests 14 clubs, historique 15 saisons, données manquantes, valeurs négatives, longues dénominations, zéro revenus, cash extrême.
 - Deux captures de comparaison avant/après pour toute évolution majeure, et éventuel essai utilisateur : « peux-tu identifier pourquoi le club est déficitaire et la meilleure action ? ».
+
+## UX jeu, et non logiciel de comptabilité : divulgation progressive
+
+**Écran d'accueil Finances, mode accompagné :** 3 réponses prioritaires seulement, visibles sans scroll : « Combien puis-je engager ? », « Est-ce que je vais manquer d'argent ? », « Qu'est-ce qui a changé ? ». Afficher d'abord budget recrutement, solde de saison prévu et statut (sain / vigilance / pression). Cash, dettes et comptes détaillés restent accessibles par clic. Le joueur doit pouvoir retourner à sa tactique ou son match en une action.
+
+### Carte d'arbitrage intuitive
+
+Exemple purement illustratif : **Signer un troisième-ligne** → « 180 k€/an pendant 2 ans ; laisse 0,6 M€ de marge annuelle ; limite les travaux de stade à l'été suivant ; conseil favorable ». Sous « Voir le détail », déplier charges sociales estimées, prime de signature, salaire cap éligible, engagements et scénarios.
+
+Les suggestions du directeur financier doivent être produites par les **mêmes calculs** que les simulateurs et le budget ; aucune carte rassurante si les contrats imposent une crise de trésorerie.
+
+### Mode de consultation
+
+| Accompagné | Manager | Expert |
+|---|---|---|
+| 3 KPI et 1 conseil prioritaire | 4-6 KPI et scénarios | reporting complet + variations |
+| opérations administratives déléguées | choix hebdomadaires optionnels | choix détaillés |
+| alertes pédagogiques avec remèdes | avertissements contextualisés | conformité et engagements contractuels |
+| aucun micromanagement obligatoire | commande sur demande | instruments complets |
+
+Le moteur financier est le même dans les trois modes. Changer de mode est réversible et ne crée aucune monnaie ni ne supprime des coûts.
+
+### Éviter les écrans décourageants
+
+- Ne pas présenter « 12 000 000 € de dette » comme un échec automatique : montrer échéances, intérêts, capacité de remboursement et marge disponible.
+- Fournir un bouton « Recommandation du directeur financier » qui propose un plan viable (avec coûts et hypothèses), jamais un bouton qui ajoute des fonds.
+- Les événements positifs sont aussi narrés : sponsor renouvelé, guichets fermés, promotion d'un espoir économe, prêt remboursé, réserve reconstruite.
+- Les sanctions et crises ne surgissent pas sans avertissement et horizon de correction, sauf scénario de défi explicite ou événement imprévisible bien expliqué.
+- Conserver un rythme de jeu fluide : interventions majeures mensuelles, synthèses intermédiaires, pas de popup finance à chaque match.
+- Les graphiques détaillés et tableaux comparatifs enrichissent la profondeur mais ne deviennent pas une condition pour avancer la saison.
+
+### Critères de validation UX supplémentaires
+
+- Un testeur en mode accompagné explique la différence entre « argent disponible » et « argent en banque » après une explication contextuelle.
+- Il peut signer un joueur et comprendre immédiatement le coût annuel et l'impact sur sa capacité de recrutement.
+- Pas plus d'une alerte financière prioritaire non demandée dans une séquence de match, et aucune modalité bloquante lors d'un match en direct.
+- La vue avancée conserve toutes les tables et graphes, sans les cacher aux joueurs qui aiment optimiser.
