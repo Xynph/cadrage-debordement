@@ -1,0 +1,65 @@
+name: MATCH 3D OSS — capture authentic V25 nineteen-frame stance pins
+on:
+  push:
+    branches: [research/match3d-oss-audit-ekza-bvh-ik-20261106]
+    paths:
+      - research/oss-match3d-20261106/export_original_19frame.py
+      - .github/workflows/match3d-oss-temporal-source.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture-source-v25:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 95
+    env:
+      V25_REF: 065589001fbef9641070218b6f85bb597da96a6a
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 065589001fbef9641070218b6f85bb597da96a6a
+          path: rd-source
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: d6fbcb38438609c0ca461f54717655223b438b09
+          path: baseline
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check immutable inputs
+        run: |
+          test "$(git -C rd-source rev-parse HEAD)" = "$V25_REF"
+          test "$(git -C baseline rev-parse HEAD)" = d6fbcb38438609c0ca461f54717655223b438b09
+      - name: Capture all 19 original evaluated poses and actual IK targets
+        run: python research/oss-match3d-20261106/export_original_19frame.py
+      - name: SHA256 evidence manifest even on failure
+        if: always()
+        run: |
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          root=Path('oss-temporal-report')
+          root.mkdir(exist_ok=True)
+          items=[]
+          for p in root.rglob('*'):
+            if p.is_file() and p.name!='sha256-manifest.json':
+              items.append({'name':p.relative_to(root).as_posix(),'bytes':p.stat().st_size,
+                'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
+          (root/'sha256-manifest.json').write_text(json.dumps(items,indent=2)+'\n')
+          PY
+      - name: Upload original temporal evidence (not Ekza output)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-oss-original-19frames-${{ github.sha }}
+          path: oss-temporal-report/
+          retention-days: 14
+          compression-level: 6
+          if-no-files-found: warn
