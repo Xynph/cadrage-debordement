@@ -1,0 +1,78 @@
+'use strict';
+const assert=require('node:assert/strict');
+const api=require('../dist/sporting-director-v105-v110.js');
+const make=()=>({season:1,club:0,phase:'league',live:false,
+ clubs:[{name:'Union fictive',cash:90000,players:Array.from({length:25},(_,i)=>({
+ id:'p'+i,name:'Joueur '+i,age:23,condition:i<20?90:55,injury:i===0?2:0
+ }))}],development:{academy:[]}});
+const s=make();assert.equal(api.ensure(s).confidence,55);
+assert.equal(api.valid(s.v105to110),true,'V105 initial state valid');
+assert.equal(api.priority(s,'finances',()=>false),false,'priority rollback');
+assert.equal(api.ensure(s).priority,'stabilite','priority rollback restored');
+assert.equal(api.priority(s,'finances',()=>true),true);
+assert.equal(api.priority(s,'unknown',()=>true),false);
+assert.equal(api.delegate(s,'sportif','analyse',()=>false),false,'delegation rollback');
+assert.equal(api.ensure(s).missions.length,0);
+assert.equal(api.delegate(s,'sportif','analyse',()=>true),true);
+assert.equal(api.delegate(s,'sportif','recuperation',()=>true),false,'one delegation per department');
+assert.equal(api.delegate(s,'physique','recuperation',()=>true),true);
+assert.equal(api.delegate(s,'recrutement','prospection',()=>true),true);
+assert.equal(api.delegate(s,'administratif','organisation',()=>true),true);
+assert.equal(api.ensure(s).missions.length,4,'staff mission limit');
+assert.equal(api.invest(s,'video',()=>false),false,'investment rollback');
+assert.equal(s.clubs[0].cash,90000);
+assert.equal(api.invest(s,'video',()=>true),true,'V107 club investment');
+assert.equal(s.clubs[0].cash,78000);
+assert.equal(api.invest(s,'video',()=>true),false,'no duplicate facility');
+assert.equal(api.mitigate(s,'fatigue','prevenir',()=>false),false,'risk rollback');
+assert.equal(api.mitigate(s,'fatigue','prevenir',()=>true),true);
+assert.equal(s.clubs[0].cash,77000);
+assert.equal(api.mitigate(s,'fatigue','prioriser',()=>true),false,'one risk decision per season');
+const dashboard=api.readiness(s);
+assert.equal(dashboard.available,24);
+assert.equal(dashboard.fit,19);
+assert.ok(dashboard.coverage>75&&dashboard.coverage<85);
+assert.equal(dashboard.cashSignal,'normal');
+assert.equal(dashboard.pending,1);
+assert.equal(dashboard.actions,4);
+assert.equal(api.panel(s).includes('v106Delegate('),true,'UI staff buttons wired to real callbacks');
+assert.equal(api.panel(s).includes('v108Mitigate('),true,'UI risk buttons wired to real callbacks');
+s.phase='ended';
+assert.equal(api.invest(s,'medical',()=>true),false,'no spending in completed season');
+const balance=s.clubs[0].cash;
+assert.equal(api.closeSeason(s,()=>false),false,'annual report save rollback');
+assert.equal(api.ensure(s).history.length,0);
+assert.equal(s.clubs[0].cash,balance);
+assert.equal(api.closeSeason(s,()=>true),true);
+assert.equal(api.closeSeason(s,()=>true),false,'no double annual report');
+assert.equal(api.ensure(s).projects[0].complete,true);
+assert.ok(api.ensure(s).history[0].score>=60);
+assert.equal(api.ensure(s).history[0].completed[0],'video');
+assert.equal(api.valid(JSON.parse(JSON.stringify(s)).v105to110),true);
+s.season=2;s.phase='league';assert.equal(api.rotate(s),true);
+assert.equal(api.ensure(s).missions.length,0);
+assert.equal(api.ensure(s).risks.length,0);
+assert.equal(api.ensure(s).projects.length,1,'infrastructure persists into next year');
+assert.equal(api.invest(s,'video',()=>true),false);
+const old=make();delete old.v105to110;assert.equal(api.ensure(old).season,1,'old saves supported');
+const corrupt=make();corrupt.v105to110={version:12};assert.equal(api.ensure(corrupt),null,'invalid saved state not erased');
+const limited=make();limited.clubs[0].cash=100;
+assert.equal(api.invest(limited,'medical',()=>true),false,'budget guard');
+assert.equal(api.mitigate(limited,'fatigue','prevenir',()=>true),false,'risk cost guard');
+const archived=make();for(let year=1;year<=17;year++){
+ archived.season=year;archived.phase='ended';
+ assert.equal(api.closeSeason(archived,()=>true),true,'closing year '+year);
+ assert.equal(api.closeSeason(archived,()=>true),false);
+ assert.equal(api.valid(JSON.parse(JSON.stringify(archived)).v105to110),true);
+ archived.phase='league';api.rotate(archived);
+}
+assert.equal(archived.v105to110.history.length,12,'12-season history bound');
+const game={S:make(),start(){return true;},advanceSeason(){this.S.season++;this.S.phase='league';return true;},
+ render(){return true;},save(){return true;}};
+assert.equal(api.install(game),true);assert.equal(api.install(game),true,'install only once');
+assert.equal(game.v105Priority('effectif'),true);
+assert.equal(game.v106Delegate('sportif','analyse'),true);
+game.S.phase='ended';assert.equal(game.advanceSeason(),true);
+assert.equal(game.S.season,2);assert.equal(game.S.v105to110.history.length,1);
+assert.equal(game.S.v105to110.missions.length,0);
+console.log('V105-V110 PASS: plans, staff, facilities, risks, dashboard, 17 seasons, legacy save, rollback, UI adapters');
