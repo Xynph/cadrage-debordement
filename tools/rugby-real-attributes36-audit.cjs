@@ -37,17 +37,17 @@ function correlation(pairs) {
   return dx&&dy?round(num/dx/dy):null;
 }
 function groupValue(p, keys) {
-  for (const k of keys) if (typeof p[k] === 'string' && p[k].trim()) return p[k].trim();
+  for (const k of keys) if (typeof p[k] === 'string' && p[k].trim() && !['inconnu','unknown','n/a','non renseigne'].includes(p[k].trim().toLowerCase())) return p[k].trim();
   return 'inconnu';
 }
 function analyze(root) {
   const players=findPlayers(root), warnings=[],seen=new Set(), groups=new Map(), vectors=new Map();
   const keys=[...new Set(players.flatMap(p=>Object.keys(p.attributesV2)))].sort();
-  let invalid=0, missing=0, potentials=0, hidden=0, duplicates=0;
+  let invalid=0, missing=0, potentials=0, missingPotentials=0, hidden=0, missingHidden=0, duplicates=0, missingIds=0, estimatedPositions=0;
   const numeric = Object.fromEntries(keys.map(k=>[k,[]]));
   for (const [index,p] of players.entries()) {
     const id = p.id ?? p.playerId ?? p.player_id;
-    if (id != null) { if(seen.has(String(id))) duplicates++; seen.add(String(id)); }
+    if (id != null && String(id).trim()) { if(seen.has(String(id))) duplicates++; seen.add(String(id)); } else missingIds++;
     const entries=keys.map(k=>p.attributesV2[k]);
     const sig=JSON.stringify(entries);
     vectors.set(sig,(vectors.get(sig)||0)+1);
@@ -58,13 +58,16 @@ function analyze(root) {
       numeric[keys[i]].push(v);
     }
     if (!isObject(p.attributesV2) || Object.keys(p.attributesV2).length !== 36) warnings.push({type:'attribute_count',player:index,count:Object.keys(p.attributesV2).length});
+    if (p.potential === undefined || p.potential === null) missingPotentials++;
     if (p.potential !== undefined && p.potential !== null) {
       if (typeof p.potential !== 'number' || p.potential>97 || p.potential<20) potentials++;
     }
-    const traits=p.hiddenTraits ?? p.hidden_traits;
-    if (traits !== undefined && traits !== null && !(isObject(traits) && Object.keys(traits).length===6)) hidden++;
+    const traits=p.hiddenTraitsV2 ?? p.hiddenTraits ?? p.hidden_traits;
+    if (traits === undefined || traits === null) missingHidden++;
+    else if (!(isObject(traits) && Object.keys(traits).length===6 && Object.values(traits).every(v=>typeof v==='number' && Number.isFinite(v) && v>=0 && v<=100))) hidden++;
     const league=groupValue(p,['competition','league','division','championship']);
-    const role=groupValue(p,['position','primaryPosition','primary_position','pos','poste','role']);
+    const role=groupValue(p,['gameplayPosition','position','primaryPosition','primary_position','pos','poste','role']);
+    if (p.gameplayPositionEstimated && role !== 'inconnu') estimatedPositions++;
     const g=league+' / '+role;
     if (!groups.has(g)) groups.set(g,[]);
     groups.get(g).push(p);
@@ -80,7 +83,7 @@ function analyze(root) {
   const byGroup={};
   for(const [name,group] of groups) if(group.length>=5) byGroup[name]={players:group.length,attributes:Object.fromEntries(keys.map(k=>[k,stats(group.map(p=>p.attributesV2[k]).filter(Number.isFinite))]))};
   const repeated=[...vectors.values()].filter(n=>n>1).reduce((s,n)=>s+n,0);
-  return {status:players.length===1592&&keys.length===36&&invalid===0&&missing===0&&duplicates===0?'schema-ok':'review-required',playerCount:players.length,attributeCount:keys.length,attributeKeys:keys,checks:{invalidValues:invalid,missingValues:missing,duplicateIds:duplicates,invalidPotential:potentials,unexpectedHiddenTraitShape:hidden,repeatedIdenticalVectorsPlayers:repeated,distinctVectors:vectors.size},distributions,groups:byGroup,highCorrelations:correlations.sort((a,b)=>Math.abs(b.r)-Math.abs(a.r)),warnings:warnings.slice(0,50),caveats:['Données descriptives, pas une validation sportive individuelle','Les groupes inconnu signalent des métadonnées absentes du niveau joueur','Aucune modification des fiches ou notes']};
+  return {status:players.length===1592&&keys.length===36&&invalid===0&&missing===0&&duplicates===0&&missingIds===0&&potentials===0&&missingPotentials===0&&hidden===0&&missingHidden===0?'schema-ok':'review-required',playerCount:players.length,attributeCount:keys.length,attributeKeys:keys,checks:{invalidValues:invalid,missingValues:missing,duplicateIds:duplicates,missingIds,invalidPotential:potentials,missingPotentials,invalidHiddenTraits:hidden,missingHiddenTraits:missingHidden,estimatedGameplayPositions:estimatedPositions,repeatedIdenticalVectorsPlayers:repeated,distinctVectors:vectors.size},distributions,groups:byGroup,highCorrelations:correlations.sort((a,b)=>Math.abs(b.r)-Math.abs(a.r)),warnings:warnings.slice(0,50),caveats:['Données descriptives, pas une validation sportive individuelle','Les groupes inconnu signalent des métadonnées absentes du niveau joueur','Aucune modification des fiches ou notes']};
 }
 if (require.main===module) {
   const file=process.argv[2]||SOURCE;
