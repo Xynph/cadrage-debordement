@@ -249,6 +249,39 @@ def author_contact_keyframes(scene,actors,ik):
     scene.frame_set(PHASES[0]);bpy.context.view_layer.update()
     return samples
 
+def calibrate_sole_centroid_ik(scene,actors,locks):
+    """Fit the stance ankle IK TARGET to a stationary evaluated skin-foot
+    centroid. No actor root translation; measures *evaluated vertices*.
+    Only keyframe endpoint 40 is adjusted; foot bones remain canonical.
+    """
+    scene.frame_set(22);bpy.context.view_layer.update()
+    reference={}
+    for lab in ("A","B"):
+        side="foot_"+locks[lab]["side"]
+        reference[lab]=mesh_regions(actors[lab]["meshes"])[side]["centroidXY"]
+        if reference[lab] is None:raise RuntimeError("Missing foot skin centroid")
+    diagnostic=[]
+    for iteration in range(4):
+        scene.frame_set(40);bpy.context.view_layer.update()
+        item={"iteration":iteration,"actors":{}}
+        for lab in ("A","B"):
+            side="foot_"+locks[lab]["side"]
+            current=mesh_regions(actors[lab]["meshes"])[side]["centroidXY"]
+            error=[reference[lab][i]-current[i] for i in (0,1)]
+            obj=locks[lab]["pivot"]
+            # Bounded skin-space correction of the IK goal, not repositioning
+            # either character: the target moves only if the real foot slides.
+            if iteration<3:
+                obj.location.x+=max(-.10,min(.10,error[0]))
+                obj.location.y+=max(-.10,min(.10,error[1]))
+                obj.keyframe_insert("location",frame=40)
+                obj.keyframe_insert("location",frame=60)
+            item["actors"][lab]={"skinCentroidErrorXYMetres":[round(x,5) for x in error],
+                                "goalWorldXYZ":[round(x,5) for x in obj.location]}
+        diagnostic.append(item)
+    scene.frame_set(1);bpy.context.view_layer.update()
+    return {"referenceFootCentroidAt22":reference,"iterations":diagnostic}
+
 def author_foot_lock(scene,actors):
     """Hold a source-authored planted stance foot in WORLD coordinates.
     A's left foot and B's right foot become the stance feet during
@@ -340,6 +373,7 @@ try:
                     bone.keyframe_insert("rotation_euler",frame=frame)
             actors[label]={"rig":rig,"meshes":meshes,"actor_root":actor_root}
         foot_lock=author_foot_lock(scene,actors)
+        foot_calibration=calibrate_sole_centroid_ik(scene,actors,foot_lock)
         ik=prepare_arm_ik(scene,actors)
         authored_targets=author_contact_keyframes(scene,actors,ik)
         # Baseline sole calibration is measured, NOT an aesthetic shift of one
@@ -349,7 +383,7 @@ try:
         floor_z=min(base[lab][reg]["minZ"] for lab in ("A","B")
                   for reg in ("foot_l","foot_r")
                   if base[lab][reg]["minZ"] is not None)
-        record={"lod":lod,"plantedFootLocks":{lab:{k:v for k,v in item.items() if k!="pivot"} for lab,item in foot_lock.items()},"authoredContactTargets":authored_targets,"assets":{lab:sha(ROOT/"baseline/dist/match3d/assets/rugby-v24/lod"/f"base_body_anim-lod{lod}.glb") for lab in actors},
+        record={"lod":lod,"footSkinIKCalibration":foot_calibration,"plantedFootLocks":{lab:{k:v for k,v in item.items() if k!="pivot"} for lab,item in foot_lock.items()},"authoredContactTargets":authored_targets,"assets":{lab:sha(ROOT/"baseline/dist/match3d/assets/rugby-v24/lod"/f"base_body_anim-lod{lod}.glb") for lab in actors},
                 "floorZMeasuredFromTrueSoles":floor_z,"frames":[]}
         for frame in PHASES:
             scene.frame_set(frame);bpy.context.view_layer.update()
