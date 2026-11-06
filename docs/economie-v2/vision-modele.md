@@ -136,3 +136,29 @@ Le mode d'accompagnement ne modifie pas secrètement la demande des supporters, 
 - Le joueur peut ignorer le détail des écritures tout en voyant un indicateur simple « budget disponible », un avertissement et un résumé de fin de saison.
 
 Une bonne économie n'est ni toujours riche ni perpétuellement pauvre : elle doit produire une tension **gérable** et laisser au joueur la liberté de gagner par le sport.
+
+
+## 10. Pilier non négociable : le plaisir de jouer
+
+L'économie est un **moteur de décisions sportives**, pas un jeu de comptable. L'objectif est que le joueur puisse monter un projet, se payer quelques recrues, prendre des risques et constater des conséquences intelligibles. Une carrière ne doit pas devenir une spirale de déficit où seules les coupes budgétaires sont possibles.
+
+**Trois principes :**
+- **Accès à l'action** : au démarrage, chaque club dispose d'une marge de manœuvre cohérente avec sa taille (par exemple un renfort ou une prolongation stratégique), même si sa situation n'est pas luxueuse. On ne distribue pas une somme magique : la marge provient de contrats, recettes futures prudentes, engagements existants et politique de conseil documentée.
+- **Choix intéressants** : éviter le « toujours moins cher » ; un investissement sportif peut augmenter affluence, visibilité et recettes, avec coût et incertitude. Un club formateur peut progresser par d'autres voies qu'un club riche.
+- **Échecs récupérables** : avertissements précoces, délai raisonnable pour redresser et plusieurs leviers (sponsor, étalement d'investissement, recrutement libre, promotion jeune, vente, renégociation), avant sanctions lourdes. Les grosses crises restent possibles, mais évitables et compréhensibles.
+
+Le soutien financier ne doit pas être un bouton « gagner de l'argent ». Si une direction aide, il s'agit d'un capital, prêt ou accord conditionnel clairement comptabilisé et accepté.
+
+### Accessibilité économique configurable
+
+Modes **Conseil accompagné** (par défaut), **Manager** et **Expert** : ils partagent **les mêmes règles économiques du monde**. Ils ajustent seulement l'aide, le degré d'automatisation et la tolérance de validation du conseil pour les choix non réglementaires. Aucun mode ne modifie silencieusement les revenus ni les lois de la ligue.
+
+- Accompagné : projection simplifiée, alertes claires, propositions de solutions classées, aide à répartir le budget et automatisation possible des dépenses de routine ; confirmation pour opérations majeures.
+- Manager : recommandations toujours visibles mais arbitrages laissés au joueur.
+- Expert : plus de granularité, délégation réglable, gestion du risque et hypothèses complètes.
+- L'échec sportif reste possible dans tous les modes ; un déficit ponctuel n'est pas automatiquement une catastrophe.
+- Un joueur désactivant l'aide ne perd jamais accès aux chiffres essentiels ni aux sauvegardes.
+
+### Objectif d'expérience vérifiable
+
+Dans un club moyen, au cours des trois premières saisons, un testeur doit pouvoir (a) financer au moins une décision ambitieuse parmi recrue, prolongation, formation ou stade sans tricherie ; (b) comprendre pourquoi sa trésorerie change ; (c) identifier au moins deux plans de sortie d'une tension financière. Ces objectifs sont **des critères de test utilisateur**, pas une injection monétaire forcée. Le test doit inclure clubs riches, moyens et modestes afin de mesurer frustration et sentiment de progression.
