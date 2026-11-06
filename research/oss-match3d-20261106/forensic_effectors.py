@@ -14,8 +14,8 @@ assert len(rest["lods"])==3
 def p(m):
     assert len(m)==16
     # Authentic Blender exporter stores m[col][row]; transposed from matrix row-major.
-    # Translation is the last ROW in the exported flat array (indices 12-14).
-    return [float(m[i]) for i in (12,13,14)]
+    # Translation occupies indices 3,7,11 in this exporter (m[row][column] flattened as m[col][row]).
+    return [float(m[i]) for i in (3,7,11)]
 def d(a,b): return math.dist(a,b)
 rows=[]; critical=None
 for sample in samples["samples"]:
