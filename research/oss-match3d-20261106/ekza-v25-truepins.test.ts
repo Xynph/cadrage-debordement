@@ -16,7 +16,7 @@ const result:any={schema:'cd-v25-ekza-native-real-19frame-v1',status:'STOP_UNQUA
   'This is real world IK evaluation, not yet Blender skinning or shoe geometry',
   'No cinematic gait art approval unless paired new Blender renders are inspected'
   ]};
-const mat=(xs:number[])=>new Matrix4().fromArray(xs);
+// Original V25 Blender exporter stored m[col][row], i.e. a transposed row-major snapshot.\n// Decode that representation explicitly; Ekza boneWorld buffers are column-major.\nconst captured=(xs:number[])=>new Matrix4().fromArray(xs).transpose();\nconst native=(xs:number[])=>new Matrix4().fromArray(xs);
 const vec=(m:Matrix4)=>new Vector3().setFromMatrixPosition(m);
 function xfrm(x:any):Matrix4 {const {t,q,s}=x;
  return new Matrix4().compose(
@@ -65,13 +65,13 @@ test('fail-closed 3 LOD × 2 actors × 19 genuine V25 frames original Ekza foot 
      expect(Object.keys(actor.bones)).toHaveLength(53);
      const names=['thigh_l','thigh_r','foot_l'];
      const g=names.map(n=>world.get(n));
-     const b=names.map(n=>mat(actor.bones[n].restWorld));
+     const b=names.map(n=>captured(actor.bones[n].restWorld));
      expect(g.every(Boolean)).toBe(true);
      const C=conversion(g,b),Ci=C.clone().invert();
      let maxRestError=0;
      for(const name of ['thigh_l','thigh_r','calf_l','calf_r','foot_l','foot_r']){
        const gg=world.get(name)!;
-       const bb=mat(actor.bones[name].restWorld);
+       const bb=captured(actor.bones[name].restWorld);
        maxRestError=Math.max(maxRestError,dist(C.clone().multiply(gg),bb));
      }
      expect(maxRestError).toBeLessThan(.015);
@@ -79,7 +79,7 @@ test('fail-closed 3 LOD × 2 actors × 19 genuine V25 frames original Ekza foot 
      for(const [name,data] of Object.entries(actor.bones) as [string,any][]){
        const node=lookup.get(name);
        if(node===undefined)continue;
-       targetBones.set(node as number,Ci.clone().multiply(mat(data.world)).toArray());
+       targetBones.set(node as number,Ci.clone().multiply(captured(data.world)).toArray());
      }
      const ch=program.allocChannels(),pose=program.allocPose();
      program.evaluate(ch,pose);
@@ -90,16 +90,16 @@ test('fail-closed 3 LOD × 2 actors × 19 genuine V25 frames original Ekza foot 
      let maxReconstruction=0;
      for(const name of ['pelvis','thigh_l','calf_l','foot_l','thigh_r','calf_r','foot_r']){
        const n=lookup.get(name) as number;
-       const target=mat(targetBones.get(n)!);
+       const target=native(targetBones.get(n)!);
        maxReconstruction=Math.max(maxReconstruction,
-         dist(mat(Array.from(pose.boneWorld.slice(n*16,n*16+16))),target));
+         dist(native(Array.from(pose.boneWorld.slice(n*16,n*16+16))),target));
      }
      expect(maxReconstruction).toBeLessThan(.015);
      const pins:any[]=[];
      for(const lock of actor.stanceLocks){
        if(lock.influence<.99)continue;
-       const footBone=mat(actor.bones['foot_'+lock.side].world);
-       const position=vec(mat(lock.authoredTargetWorld));
+       const footBone=captured(actor.bones['foot_'+lock.side].world);
+       const position=vec(captured(lock.authoredTargetWorld));
        footBone.setPosition(position);
        const pin=Ci.clone().multiply(footBone);
        pins.push({side:lock.side==='l'?'L':'R',footWorld:pin.toArray()});
@@ -117,13 +117,13 @@ test('fail-closed 3 LOD × 2 actors × 19 genuine V25 frames original Ekza foot 
      for(const pin of pins){
        const side=pin.side==='L'?'l':'r';
        const n=lookup.get('foot_'+side) as number;
-       const actual=mat(Array.from(pose.boneWorld.slice(n*16,n*16+16)));
-       maxPinError=Math.max(maxPinError,dist(actual,mat(pin.footWorld)));
+       const actual=native(Array.from(pose.boneWorld.slice(n*16,n*16+16)));
+       maxPinError=Math.max(maxPinError,dist(actual,native(pin.footWorld)));
      }
      expect(maxPinError).toBeLessThan(.008);
      const pelvisNode=lookup.get('pelvis') as number;
-     const oldPelvis=mat(Array.from(poseBefore.boneWorld.slice(pelvisNode*16,pelvisNode*16+16)));
-     const newPelvis=mat(Array.from(pose.boneWorld.slice(pelvisNode*16,pelvisNode*16+16)));
+     const oldPelvis=native(Array.from(poseBefore.boneWorld.slice(pelvisNode*16,pelvisNode*16+16)));
+     const newPelvis=native(Array.from(pose.boneWorld.slice(pelvisNode*16,pelvisNode*16+16)));
      expect(dist(oldPelvis,newPelvis)).toBeLessThan(.0001);
      const relevant:any={};
      for(const name of ['thigh_l','calf_l','foot_l','thigh_r','calf_r','foot_r']){
