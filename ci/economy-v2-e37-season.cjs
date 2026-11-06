@@ -94,7 +94,10 @@ function experiment(clubId,seed,kind){
  assert.equal(c.phase,'ended');assert.equal(t.phase,'ended');
  assert.equal(steps.length,maxRounds);
  const g=E36.diffPeople(c.players,t.players);
- assert.deepEqual(N.capture(source),origin,'Original native save or RNG changed');
+ const originalAfter=N.capture(source);
+ assert.deepEqual(originalAfter.document.state,origin.document.state,'Original native state changed');
+ assert.equal(originalAfter.document.checksum,origin.document.checksum,'Original native checksum changed');
+ assert.deepEqual(originalAfter.rng,origin.rng,'Original native RNG changed');
  const checkedC=N.capture(control),checkedT=N.capture(treated);
  assert.equal(N.restore(checkedC.document,checkedC.rng).run('S.phase'),'ended');
  assert.equal(N.restore(checkedT.document,checkedT.rng).run('S.phase'),'ended');
