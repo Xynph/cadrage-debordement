@@ -2,7 +2,7 @@
 // This is a rig-dimension smoke test; no Blender skinning is claimed.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
-import { solveTwoBoneIk } from './twoBone';
+import { solveTwoBoneIk } from '../src/ik/twoBone';
 
 type Vec3 = [number, number, number];
 const unit: [number,number,number,number] = [0,0,0,1];
