@@ -1,0 +1,40 @@
+name: Rugby Reel - collecte performances historiques V8
+on:
+  push:
+    branches: [data/rugby-real-2025-26-performances-v8-20261106]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests rapprochement et non-double-comptage
+        run: node --test tests/rugby-real-2025-26-v8.cjs
+      - name: Mesurer la collecte sur les 1592 joueurs et proteger master
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum modding/data06/rugby-master-2026-2027.json > "$RUNNER_TEMP/master.sha"
+          node tools/rugby-real-2025-26-v8.cjs modding/data06/rugby-master-2026-2027.json data/scouting/performance-2025-26-v8.json "$RUNNER_TEMP/v8-candidates.json"
+          sha256sum -c "$RUNNER_TEMP/master.sha"
+          node - "$RUNNER_TEMP/v8-candidates.json" <<'NODE'
+          const fs=require('node:fs');const o=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(o.candidates.length!==1592||o.matched+o.unmatched.length+o.ambiguous.length!==o.distinctLnrEntries)throw Error('Identity matching mismatch');
+          if(o.matches.some(m=>m.originalEvidenceAlreadyUsed&&m.changes.length))throw Error('Double counted evidence');
+          if(o.matches.some(m=>m.changes.some(c=>c.delta>2||c.delta<=0)))throw Error('Unbounded delta');
+          const summary={rows:o.observedRows,distinct:o.distinctLnrEntries,matched:o.matched,proD2Matched:o.proD2Matched,top14Matched:o.top14Matched,alreadyObservedNoDoubleCount:o.alreadyObservedNoDoubleCount,changedPlayers:o.changedPlayers,changedAttributes:o.changedAttributes,unmatched:o.unmatched.length,ambiguous:o.ambiguous.length,leagueGapBefore:o.leagueGapBefore,leagueGapAfter:o.leagueGapAfter};
+          console.log('V8_SUMMARY',JSON.stringify(summary));
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'## Rugby Réel V8 — collecte historisée\n\n\`\`\`json\n'+JSON.stringify(summary,null,2)+'\n\`\`\`\n');
+          NODE
+      - name: Archiver uniquement candidats hors base
+        uses: actions/upload-artifact@v4
+        with:
+          name: rugby-real-v8-candidates
+          path: ${{ runner.temp }}/v8-candidates.json
+          retention-days: 7

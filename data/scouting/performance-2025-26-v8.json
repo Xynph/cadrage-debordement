@@ -1,0 +1,1327 @@
+{
+  "schema": "lnr-rankings-2025-26-v8",
+  "cutoff": "2026-07-01",
+  "note": "Official top-20 rankings only, not complete championship roster. Same player may occur in several lists.",
+  "lists": [
+    {
+      "season": "2025-2026",
+      "league": "prod2",
+      "metric": "points",
+      "sourceUrl": "https://prod2.lnr.fr/classement/joueurs/meilleurs-realisateurs/2025-2026",
+      "ranking": [
+        {
+          "name": "Lucas MERET",
+          "lnrId": "9158",
+          "historicalClub": "Valence Romans",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 334,
+            "tries": 2,
+            "penalties": 70,
+            "drops": 0,
+            "conversions": 57,
+            "matches": 26,
+            "minutes": 2056
+          }
+        },
+        {
+          "name": "James SHILLCOCK",
+          "lnrId": "13588",
+          "historicalClub": "CA Brive",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 260,
+            "tries": 2,
+            "penalties": 34,
+            "drops": 2,
+            "conversions": 71,
+            "matches": 24,
+            "minutes": 1922
+          }
+        },
+        {
+          "name": "Justin BOURAUX",
+          "lnrId": "11284",
+          "historicalClub": "Oyonnax Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 253,
+            "tries": 4,
+            "penalties": 37,
+            "drops": 0,
+            "conversions": 61,
+            "matches": 28,
+            "minutes": 1850
+          }
+        },
+        {
+          "name": "Samuel MARQUES",
+          "lnrId": "513",
+          "historicalClub": "AS Béziers Hérault",
+          "historicalPosition": "Demi de mêlée",
+          "stats": {
+            "points": 232,
+            "tries": 10,
+            "penalties": 36,
+            "drops": 0,
+            "conversions": 37,
+            "matches": 26,
+            "minutes": 1790
+          }
+        },
+        {
+          "name": "Valentin DELPY",
+          "lnrId": "2414",
+          "historicalClub": "Colomiers Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 206,
+            "tries": 2,
+            "penalties": 32,
+            "drops": 0,
+            "conversions": 50,
+            "matches": 20,
+            "minutes": 1509
+          }
+        },
+        {
+          "name": "Craig WILLIS",
+          "lnrId": "13690",
+          "historicalClub": "SU Agen",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 202,
+            "tries": 1,
+            "penalties": 31,
+            "drops": 0,
+            "conversions": 52,
+            "matches": 27,
+            "minutes": 1714
+          }
+        },
+        {
+          "name": "Maxime LAFAGE",
+          "lnrId": "2560",
+          "historicalClub": "RC Vannes",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 178,
+            "tries": 1,
+            "penalties": 17,
+            "drops": 0,
+            "conversions": 61,
+            "matches": 20,
+            "minutes": 1366
+          }
+        },
+        {
+          "name": "Romain TROUILLOUD",
+          "lnrId": "918",
+          "historicalClub": "FC Grenoble Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 164,
+            "tries": 1,
+            "penalties": 29,
+            "drops": 0,
+            "conversions": 36,
+            "matches": 19,
+            "minutes": 1328
+          }
+        },
+        {
+          "name": "Théo GIRAL",
+          "lnrId": "11320",
+          "historicalClub": "Colomiers Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 138,
+            "tries": 4,
+            "penalties": 23,
+            "drops": 1,
+            "conversions": 23,
+            "matches": 24,
+            "minutes": 1664
+          }
+        },
+        {
+          "name": "Tedo ABZHANDADZE",
+          "lnrId": "1356",
+          "historicalClub": "Stade Aurillacois",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 138,
+            "tries": 1,
+            "penalties": 26,
+            "drops": 1,
+            "conversions": 26,
+            "matches": 21,
+            "minutes": 1447
+          }
+        },
+        {
+          "name": "Edgar RETIERE",
+          "lnrId": "2478",
+          "historicalClub": "Biarritz Olympique PB",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 138,
+            "tries": 3,
+            "penalties": 21,
+            "drops": 0,
+            "conversions": 30,
+            "matches": 22,
+            "minutes": 1072
+          }
+        },
+        {
+          "name": "John MCPHILLIPS",
+          "lnrId": "2039",
+          "historicalClub": "US Carcassonnaise",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "points": 127,
+            "tries": 0,
+            "penalties": 23,
+            "drops": 0,
+            "conversions": 29,
+            "matches": 17,
+            "minutes": 1189
+          }
+        },
+        {
+          "name": "Hugo CERISIER",
+          "lnrId": "11940",
+          "historicalClub": "US Dax",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 124,
+            "tries": 0,
+            "penalties": 24,
+            "drops": 0,
+            "conversions": 26,
+            "matches": 30,
+            "minutes": 1264
+          }
+        },
+        {
+          "name": "Manuel PORTELA MORAIS VAREIRO",
+          "lnrId": "13603",
+          "historicalClub": "Provence Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 121,
+            "tries": 4,
+            "penalties": 13,
+            "drops": 0,
+            "conversions": 31,
+            "matches": 17,
+            "minutes": 1358
+          }
+        },
+        {
+          "name": "Romuald SEGUY",
+          "lnrId": "752",
+          "historicalClub": "US Dax",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 120,
+            "tries": 0,
+            "penalties": 19,
+            "drops": 1,
+            "conversions": 30,
+            "matches": 22,
+            "minutes": 1226
+          }
+        },
+        {
+          "name": "Thibault DEBAES",
+          "lnrId": "1930",
+          "historicalClub": "RC Vannes",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 119,
+            "tries": 1,
+            "penalties": 8,
+            "drops": 0,
+            "conversions": 45,
+            "matches": 20,
+            "minutes": 867
+          }
+        },
+        {
+          "name": "Iban LACLAU",
+          "lnrId": "13606",
+          "historicalClub": "Stade Montois Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 112,
+            "tries": 1,
+            "penalties": 19,
+            "drops": 0,
+            "conversions": 25,
+            "matches": 27,
+            "minutes": 1227
+          }
+        },
+        {
+          "name": "Christophe LOUSTALOT",
+          "lnrId": "1234",
+          "historicalClub": "Stade Montois Rugby",
+          "historicalPosition": "Demi de mêlée",
+          "stats": {
+            "points": 110,
+            "tries": 2,
+            "penalties": 20,
+            "drops": 0,
+            "conversions": 20,
+            "matches": 21,
+            "minutes": 926
+          }
+        },
+        {
+          "name": "Dachi PAPUNASHVILI",
+          "lnrId": "1641",
+          "historicalClub": "Stade Aurillacois",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 108,
+            "tries": 5,
+            "penalties": 19,
+            "drops": 0,
+            "conversions": 13,
+            "matches": 15,
+            "minutes": 972
+          }
+        },
+        {
+          "name": "Benjamin BOTICA",
+          "lnrId": "808",
+          "historicalClub": "Soyaux-Angoulême XV",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 101,
+            "tries": 1,
+            "penalties": 18,
+            "drops": 0,
+            "conversions": 21,
+            "matches": 16,
+            "minutes": 963
+          }
+        }
+      ]
+    },
+    {
+      "season": "2025-2026",
+      "league": "prod2",
+      "metric": "tries",
+      "sourceUrl": "https://prod2.lnr.fr/classement/joueurs/meilleurs-marqueurs-dessais/2025-2026",
+      "ranking": [
+        {
+          "name": "Lucas MARTINS",
+          "lnrId": "12474",
+          "historicalClub": "SU Agen",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 17,
+            "matches": 24,
+            "minutes": 1880
+          }
+        },
+        {
+          "name": "Mohamed Karim QADIRI",
+          "lnrId": "895",
+          "historicalClub": "Oyonnax Rugby",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 16,
+            "matches": 25,
+            "minutes": 1913
+          }
+        },
+        {
+          "name": "Clément MARTINEZ",
+          "lnrId": "40",
+          "historicalClub": "Biarritz Olympique PB",
+          "historicalPosition": "1ère ligne",
+          "stats": {
+            "tries": 16,
+            "matches": 24,
+            "minutes": 1328
+          }
+        },
+        {
+          "name": "Dorian MARCO-PENA",
+          "lnrId": "8724",
+          "historicalClub": "Valence Romans",
+          "historicalPosition": "1ère ligne",
+          "stats": {
+            "tries": 15,
+            "matches": 26,
+            "minutes": 1383
+          }
+        },
+        {
+          "name": "Raffaele COSTA STORTI",
+          "lnrId": "106",
+          "historicalClub": "FC Grenoble Rugby",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "tries": 15,
+            "matches": 17,
+            "minutes": 1282
+          }
+        },
+        {
+          "name": "Setareki BITUNIYATA",
+          "lnrId": "426",
+          "historicalClub": "Provence Rugby",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 14,
+            "matches": 27,
+            "minutes": 2074
+          }
+        },
+        {
+          "name": "Samuel TUIFUA",
+          "lnrId": "13541",
+          "historicalClub": "Stade Montois Rugby",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "tries": 14,
+            "matches": 24,
+            "minutes": 1770
+          }
+        },
+        {
+          "name": "Michael RURU",
+          "lnrId": "2589",
+          "historicalClub": "RC Vannes",
+          "historicalPosition": "Demi de mêlée",
+          "stats": {
+            "tries": 14,
+            "matches": 24,
+            "minutes": 1514
+          }
+        },
+        {
+          "name": "Iban HIRIART URRUTY",
+          "lnrId": "12085",
+          "historicalClub": "US Dax",
+          "historicalPosition": "1ère ligne",
+          "stats": {
+            "tries": 13,
+            "matches": 23,
+            "minutes": 1335
+          }
+        },
+        {
+          "name": "Louis MORLAND",
+          "lnrId": "2320",
+          "historicalClub": "Oyonnax Rugby",
+          "historicalPosition": "Centre",
+          "stats": {
+            "tries": 13,
+            "matches": 19,
+            "minutes": 1202
+          }
+        },
+        {
+          "name": "Léo DROUET",
+          "lnrId": "2042",
+          "historicalClub": "Provence Rugby",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "tries": 11,
+            "matches": 24,
+            "minutes": 1783
+          }
+        },
+        {
+          "name": "Paul SURANO",
+          "lnrId": "2267",
+          "historicalClub": "RC Vannes",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "tries": 11,
+            "matches": 27,
+            "minutes": 1745
+          }
+        },
+        {
+          "name": "Perry MAYO",
+          "lnrId": "1499",
+          "historicalClub": "USON Nevers",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 11,
+            "matches": 22,
+            "minutes": 1711
+          }
+        },
+        {
+          "name": "Enzo BENMEGAL",
+          "lnrId": "2780",
+          "historicalClub": "RC Vannes",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 11,
+            "matches": 19,
+            "minutes": 1421
+          }
+        },
+        {
+          "name": "Rodrigo DE BIVAR WEINHOLTZ CARDOSO MARTA",
+          "lnrId": "11705",
+          "historicalClub": "Colomiers Rugby",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 11,
+            "matches": 18,
+            "minutes": 1385
+          }
+        },
+        {
+          "name": "Romain LATTERRADE",
+          "lnrId": "1223",
+          "historicalClub": "Provence Rugby",
+          "historicalPosition": "1ère ligne",
+          "stats": {
+            "tries": 11,
+            "matches": 23,
+            "minutes": 1030
+          }
+        },
+        {
+          "name": "Samuel MARQUES",
+          "lnrId": "513",
+          "historicalClub": "AS Béziers Hérault",
+          "historicalPosition": "Demi de mêlée",
+          "stats": {
+            "tries": 10,
+            "matches": 26,
+            "minutes": 1790
+          }
+        },
+        {
+          "name": "Alexandre DE NARDI",
+          "lnrId": "1246",
+          "historicalClub": "Stade Montois Rugby",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "tries": 10,
+            "matches": 20,
+            "minutes": 1622
+          }
+        },
+        {
+          "name": "Luka PETRIASHVILI",
+          "lnrId": "2802",
+          "historicalClub": "USON Nevers",
+          "historicalPosition": "1ère ligne",
+          "stats": {
+            "tries": 10,
+            "matches": 26,
+            "minutes": 1140
+          }
+        },
+        {
+          "name": "Erwan DRIDI",
+          "lnrId": "923",
+          "historicalClub": "CA Brive",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "tries": 10,
+            "matches": 13,
+            "minutes": 996
+          }
+        }
+      ]
+    },
+    {
+      "season": "2025-2026",
+      "league": "top14",
+      "metric": "points",
+      "sourceUrl": "https://top14.lnr.fr/classement/joueurs/meilleurs-realisateurs/2025-2026",
+      "ranking": [
+        {
+          "name": "Harrison PLUMMER",
+          "lnrId": "13371",
+          "historicalClub": "ASM Clermont",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 295,
+            "tries": 6,
+            "penalties": 40,
+            "drops": 1,
+            "conversions": 71,
+            "matches": 25,
+            "minutes": 1961
+          }
+        },
+        {
+          "name": "Louis CARBONEL",
+          "lnrId": "1428",
+          "historicalClub": "Stade Français Paris",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 288,
+            "tries": 3,
+            "penalties": 31,
+            "drops": 0,
+            "conversions": 90,
+            "matches": 24,
+            "minutes": 1936
+          }
+        },
+        {
+          "name": "Hugo Domingo MIOTTI",
+          "lnrId": "11987",
+          "historicalClub": "Montpellier Hérault Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 265,
+            "tries": 3,
+            "penalties": 46,
+            "drops": 0,
+            "conversions": 56,
+            "matches": 23,
+            "minutes": 1514
+          }
+        },
+        {
+          "name": "Joris SEGONDS",
+          "lnrId": "1807",
+          "historicalClub": "Aviron Bayonnais",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 222,
+            "tries": 0,
+            "penalties": 35,
+            "drops": 1,
+            "conversions": 57,
+            "matches": 23,
+            "minutes": 1671
+          }
+        },
+        {
+          "name": "Nolann LE GARREC",
+          "lnrId": "2196",
+          "historicalClub": "Stade Rochelais",
+          "historicalPosition": "Demi de mêlée",
+          "stats": {
+            "points": 187,
+            "tries": 13,
+            "penalties": 14,
+            "drops": 0,
+            "conversions": 40,
+            "matches": 20,
+            "minutes": 1500
+          }
+        },
+        {
+          "name": "Axel DESPERES RIGOU",
+          "lnrId": "1866",
+          "historicalClub": "Section Paloise",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 183,
+            "tries": 1,
+            "penalties": 32,
+            "drops": 0,
+            "conversions": 41,
+            "matches": 26,
+            "minutes": 1540
+          }
+        },
+        {
+          "name": "Ugo SEUNES",
+          "lnrId": "12473",
+          "historicalClub": "Racing 92",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 164,
+            "tries": 0,
+            "penalties": 26,
+            "drops": 2,
+            "conversions": 40,
+            "matches": 24,
+            "minutes": 1316
+          }
+        },
+        {
+          "name": "Joe SIMMONDS",
+          "lnrId": "4000",
+          "historicalClub": "Section Paloise",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 164,
+            "tries": 2,
+            "penalties": 30,
+            "drops": 0,
+            "conversions": 32,
+            "matches": 14,
+            "minutes": 874
+          }
+        },
+        {
+          "name": "Melvyn JAMINET",
+          "lnrId": "2479",
+          "historicalClub": "RC Toulon",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "points": 155,
+            "tries": 6,
+            "penalties": 12,
+            "drops": 1,
+            "conversions": 43,
+            "matches": 18,
+            "minutes": 1137
+          }
+        },
+        {
+          "name": "Antoine GIBERT",
+          "lnrId": "2150",
+          "historicalClub": "Racing 92",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 150,
+            "tries": 1,
+            "penalties": 23,
+            "drops": 0,
+            "conversions": 38,
+            "matches": 22,
+            "minutes": 1049
+          }
+        },
+        {
+          "name": "Thomas RAMOS",
+          "lnrId": "2450",
+          "historicalClub": "Stade Toulousain",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "points": 149,
+            "tries": 2,
+            "penalties": 9,
+            "drops": 0,
+            "conversions": 56,
+            "matches": 16,
+            "minutes": 995
+          }
+        },
+        {
+          "name": "Léo BERDEU",
+          "lnrId": "1081",
+          "historicalClub": "LOU Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 129,
+            "tries": 2,
+            "penalties": 18,
+            "drops": 1,
+            "conversions": 31,
+            "matches": 20,
+            "minutes": 1082
+          }
+        },
+        {
+          "name": "Antoine HASTOY",
+          "lnrId": "997",
+          "historicalClub": "Stade Rochelais",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 123,
+            "tries": 3,
+            "penalties": 18,
+            "drops": 0,
+            "conversions": 27,
+            "matches": 23,
+            "minutes": 1661
+          }
+        },
+        {
+          "name": "Maxime LUCU",
+          "lnrId": "331",
+          "historicalClub": "Union Bordeaux-Bègles",
+          "historicalPosition": "Demi de mêlée",
+          "stats": {
+            "points": 120,
+            "tries": 4,
+            "penalties": 12,
+            "drops": 0,
+            "conversions": 32,
+            "matches": 14,
+            "minutes": 1098
+          }
+        },
+        {
+          "name": "Romain NTAMACK",
+          "lnrId": "2436",
+          "historicalClub": "Stade Toulousain",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 119,
+            "tries": 4,
+            "penalties": 13,
+            "drops": 0,
+            "conversions": 30,
+            "matches": 19,
+            "minutes": 1327
+          }
+        },
+        {
+          "name": "Jérôme BOSVIEL",
+          "lnrId": "1334",
+          "historicalClub": "US Montauban",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 114,
+            "tries": 1,
+            "penalties": 20,
+            "drops": 1,
+            "conversions": 23,
+            "matches": 17,
+            "minutes": 1042
+          }
+        },
+        {
+          "name": "Martin MELIANDE",
+          "lnrId": "2122",
+          "historicalClub": "LOU Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 101,
+            "tries": 1,
+            "penalties": 12,
+            "drops": 0,
+            "conversions": 30,
+            "matches": 18,
+            "minutes": 1001
+          }
+        },
+        {
+          "name": "Pierre POPELIN",
+          "lnrId": "990",
+          "historicalClub": "Castres Olympique",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "points": 101,
+            "tries": 2,
+            "penalties": 19,
+            "drops": 0,
+            "conversions": 17,
+            "matches": 17,
+            "minutes": 929
+          }
+        },
+        {
+          "name": "Benjamin URDAPILLETA",
+          "lnrId": "594",
+          "historicalClub": "USA Perpignan",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 101,
+            "tries": 0,
+            "penalties": 19,
+            "drops": 0,
+            "conversions": 22,
+            "matches": 13,
+            "minutes": 856
+          }
+        },
+        {
+          "name": "Matthieu JALIBERT",
+          "lnrId": "339",
+          "historicalClub": "Union Bordeaux-Bègles",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "points": 91,
+            "tries": 6,
+            "penalties": 5,
+            "drops": 0,
+            "conversions": 23,
+            "matches": 15,
+            "minutes": 1108
+          }
+        }
+      ]
+    },
+    {
+      "season": "2025-2026",
+      "league": "top14",
+      "metric": "tries",
+      "sourceUrl": "https://top14.lnr.fr/classement/joueurs/meilleurs-marqueurs-dessais/2025-2026",
+      "ranking": [
+        {
+          "name": "Jiuta Naqoli WAINIQOLO",
+          "lnrId": "2277",
+          "historicalClub": "LOU Rugby",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 18,
+            "matches": 20,
+            "minutes": 1590
+          }
+        },
+        {
+          "name": "Tom SPRING",
+          "lnrId": "2753",
+          "historicalClub": "Aviron Bayonnais",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 13,
+            "matches": 23,
+            "minutes": 1605
+          }
+        },
+        {
+          "name": "Nolann LE GARREC",
+          "lnrId": "2196",
+          "historicalClub": "Stade Rochelais",
+          "historicalPosition": "Demi de mêlée",
+          "stats": {
+            "tries": 13,
+            "matches": 20,
+            "minutes": 1500
+          }
+        },
+        {
+          "name": "Louis BIELLE-BIARREY",
+          "lnrId": "277",
+          "historicalClub": "Union Bordeaux-Bègles",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 13,
+            "matches": 15,
+            "minutes": 1064
+          }
+        },
+        {
+          "name": "Leo BARRE",
+          "lnrId": "1829",
+          "historicalClub": "Stade Français Paris",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "tries": 12,
+            "matches": 26,
+            "minutes": 1901
+          }
+        },
+        {
+          "name": "Teddy THOMAS",
+          "lnrId": "987",
+          "historicalClub": "Stade Toulousain",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 12,
+            "matches": 21,
+            "minutes": 1383
+          }
+        },
+        {
+          "name": "Max SPRING",
+          "lnrId": "2198",
+          "historicalClub": "Racing 92",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "tries": 11,
+            "matches": 22,
+            "minutes": 1568
+          }
+        },
+        {
+          "name": "Jérémy Charles WARD",
+          "lnrId": "1756",
+          "historicalClub": "Stade Français Paris",
+          "historicalPosition": "Centre",
+          "stats": {
+            "tries": 11,
+            "matches": 23,
+            "minutes": 1551
+          }
+        },
+        {
+          "name": "Lucas MARTIN",
+          "lnrId": "2102",
+          "historicalClub": "Aviron Bayonnais",
+          "historicalPosition": "1ère ligne",
+          "stats": {
+            "tries": 11,
+            "matches": 23,
+            "minutes": 994
+          }
+        },
+        {
+          "name": "Peniasi DAKUWAQA",
+          "lnrId": "1757",
+          "historicalClub": "Stade Français Paris",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 10,
+            "matches": 21,
+            "minutes": 1583
+          }
+        },
+        {
+          "name": "Matthis LEBEL",
+          "lnrId": "2437",
+          "historicalClub": "Stade Toulousain",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 10,
+            "matches": 21,
+            "minutes": 1510
+          }
+        },
+        {
+          "name": "Gaël DREAN",
+          "lnrId": "2300",
+          "historicalClub": "RC Toulon",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 10,
+            "matches": 15,
+            "minutes": 1228
+          }
+        },
+        {
+          "name": "Wilfried HULLEU",
+          "lnrId": "916",
+          "historicalClub": "Racing 92",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 10,
+            "matches": 17,
+            "minutes": 1178
+          }
+        },
+        {
+          "name": "Esteban CAPILLA",
+          "lnrId": "2607",
+          "historicalClub": "Aviron Bayonnais",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "tries": 10,
+            "matches": 17,
+            "minutes": 1152
+          }
+        },
+        {
+          "name": "Jules FAVRE",
+          "lnrId": "1018",
+          "historicalClub": "Stade Rochelais",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 9,
+            "matches": 21,
+            "minutes": 1513
+          }
+        },
+        {
+          "name": "Gregoire ARFEUIL",
+          "lnrId": "1861",
+          "historicalClub": "Section Paloise",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "tries": 9,
+            "matches": 19,
+            "minutes": 1480
+          }
+        },
+        {
+          "name": "Noah Tisie NENE",
+          "lnrId": "1771",
+          "historicalClub": "Stade Français Paris",
+          "historicalPosition": "Centre",
+          "stats": {
+            "tries": 9,
+            "matches": 18,
+            "minutes": 1260
+          }
+        },
+        {
+          "name": "Nathan HUGHES",
+          "lnrId": "13744",
+          "historicalClub": "Racing 92",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "tries": 9,
+            "matches": 24,
+            "minutes": 1106
+          }
+        },
+        {
+          "name": "Christopher TOLOFUA",
+          "lnrId": "2354",
+          "historicalClub": "Montpellier Hérault Rugby",
+          "historicalPosition": "1ère ligne",
+          "stats": {
+            "tries": 9,
+            "matches": 24,
+            "minutes": 904
+          }
+        },
+        {
+          "name": "Nicolas DEPOORTERE",
+          "lnrId": "304",
+          "historicalClub": "Union Bordeaux-Bègles",
+          "historicalPosition": "Centre",
+          "stats": {
+            "tries": 9,
+            "matches": 12,
+            "minutes": 903
+          }
+        }
+      ]
+    },
+    {
+      "season": "2025-2026",
+      "league": "prod2",
+      "metric": "conversionRate",
+      "sourceUrl": "https://prod2.lnr.fr/classement/joueurs/meilleurs-taux-de-transformation/2025-2026",
+      "ranking": [
+        {
+          "name": "John MCPHILLIPS",
+          "lnrId": "2039",
+          "historicalClub": "US Carcassonnaise",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "conversionRate": 89.7,
+            "conversionAttempts": 58,
+            "conversionMade": 52,
+            "conversionMissed": 6
+          }
+        },
+        {
+          "name": "Zack HOLMES",
+          "lnrId": "334",
+          "historicalClub": "Oyonnax Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 86.8,
+            "conversionAttempts": 38,
+            "conversionMade": 33,
+            "conversionMissed": 5
+          }
+        },
+        {
+          "name": "Craig WILLIS",
+          "lnrId": "13690",
+          "historicalClub": "SU Agen",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 86.5,
+            "conversionAttempts": 96,
+            "conversionMade": 83,
+            "conversionMissed": 13
+          }
+        },
+        {
+          "name": "Thibault DEBAES",
+          "lnrId": "1930",
+          "historicalClub": "RC Vannes",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 85.3,
+            "conversionAttempts": 61,
+            "conversionMade": 52,
+            "conversionMissed": 9
+          }
+        },
+        {
+          "name": "Lucas MERET",
+          "lnrId": "9158",
+          "historicalClub": "Valence Romans",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 83.6,
+            "conversionAttempts": 152,
+            "conversionMade": 127,
+            "conversionMissed": 25
+          }
+        },
+        {
+          "name": "Anthony BOUTHIER",
+          "lnrId": "1426",
+          "historicalClub": "RC Vannes",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "conversionRate": 83.3,
+            "conversionAttempts": 24,
+            "conversionMade": 20,
+            "conversionMissed": 4
+          }
+        },
+        {
+          "name": "Maxime LAFAGE",
+          "lnrId": "2560",
+          "historicalClub": "RC Vannes",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 83.3,
+            "conversionAttempts": 90,
+            "conversionMade": 75,
+            "conversionMissed": 15
+          }
+        },
+        {
+          "name": "Romain TROUILLOUD",
+          "lnrId": "918",
+          "historicalClub": "FC Grenoble Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 83.3,
+            "conversionAttempts": 78,
+            "conversionMade": 65,
+            "conversionMissed": 13
+          }
+        },
+        {
+          "name": "Christophe LOUSTALOT",
+          "lnrId": "1234",
+          "historicalClub": "Stade Montois Rugby",
+          "historicalPosition": "Demi de mêlée",
+          "stats": {
+            "conversionRate": 83.3,
+            "conversionAttempts": 48,
+            "conversionMade": 40,
+            "conversionMissed": 8
+          }
+        },
+        {
+          "name": "Jules SOULAN",
+          "lnrId": "1682",
+          "historicalClub": "Provence Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 83.3,
+            "conversionAttempts": 24,
+            "conversionMade": 20,
+            "conversionMissed": 4
+          }
+        },
+        {
+          "name": "Tedo ABZHANDADZE",
+          "lnrId": "1356",
+          "historicalClub": "Stade Aurillacois",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 82.5,
+            "conversionAttempts": 63,
+            "conversionMade": 52,
+            "conversionMissed": 11
+          }
+        },
+        {
+          "name": "Jake STRACHAN",
+          "lnrId": "13439",
+          "historicalClub": "Stade Aurillacois",
+          "historicalPosition": "Demi de mêlée",
+          "stats": {
+            "conversionRate": 82.4,
+            "conversionAttempts": 34,
+            "conversionMade": 28,
+            "conversionMissed": 6
+          }
+        },
+        {
+          "name": "Curwin BOSCH",
+          "lnrId": "12581",
+          "historicalClub": "CA Brive",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 82.4,
+            "conversionAttempts": 17,
+            "conversionMade": 14,
+            "conversionMissed": 3
+          }
+        },
+        {
+          "name": "Thomas SALLES",
+          "lnrId": "2366",
+          "historicalClub": "Provence Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 82.2,
+            "conversionAttempts": 45,
+            "conversionMade": 37,
+            "conversionMissed": 8
+          }
+        },
+        {
+          "name": "Benjamin BOTICA",
+          "lnrId": "808",
+          "historicalClub": "Soyaux-Angoulême XV",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 81.3,
+            "conversionAttempts": 48,
+            "conversionMade": 39,
+            "conversionMissed": 9
+          }
+        },
+        {
+          "name": "Franck POURTEAU",
+          "lnrId": "2246",
+          "historicalClub": "SU Agen",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 81.3,
+            "conversionAttempts": 32,
+            "conversionMade": 26,
+            "conversionMissed": 6
+          }
+        },
+        {
+          "name": "Valentin DELPY",
+          "lnrId": "2414",
+          "historicalClub": "Colomiers Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 81.2,
+            "conversionAttempts": 101,
+            "conversionMade": 82,
+            "conversionMissed": 19
+          }
+        },
+        {
+          "name": "Edgar RETIERE",
+          "lnrId": "2478",
+          "historicalClub": "Biarritz Olympique PB",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 81,
+            "conversionAttempts": 63,
+            "conversionMade": 51,
+            "conversionMissed": 12
+          }
+        },
+        {
+          "name": "Manuel PORTELA MORAIS VAREIRO",
+          "lnrId": "13603",
+          "historicalClub": "Provence Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 80.8,
+            "conversionAttempts": 52,
+            "conversionMade": 42,
+            "conversionMissed": 10
+          }
+        },
+        {
+          "name": "Shaun REYNOLDS",
+          "lnrId": "1488",
+          "historicalClub": "USON Nevers",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 80.6,
+            "conversionAttempts": 36,
+            "conversionMade": 29,
+            "conversionMissed": 7
+          }
+        }
+      ]
+    }
+  ]
+}
