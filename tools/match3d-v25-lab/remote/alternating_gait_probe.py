@@ -24,9 +24,9 @@ REGIONS={"chest":{"spine_02","spine_03"},"pelvis":{"pelvis","spine_01"},
 # Distinct, authored *standing* approach: frame 40 and 60 are holds,
 # not an animated fall. No opponent-driven per-frame root snap.
 # Two authored short steps, not opponent-driven root snapping.
-# A: +0.24 m to transfer support, then +0.24 m on the other leg.
+# A: +0.17 m to transfer support, then +0.17 m on the other leg.\n# Reduced anatomical stride, not a post-hoc skin contact translation.
 ROOTS={
- "A":[(-1.50,0,0),(-1.13,0,0),(-0.89,0,0),(-0.65,0,0),(-0.65,0,0),(-1.30,0,0)],
+ "A":[(-1.50,0,0),(-1.13,0,0),(-0.96,0,0),(-0.79,0,0),(-0.79,0,0),(-1.30,0,0)],
  "B":[(0.80,0,0),(0.80,0,0),(0.76,0,0),(0.72,0,0),(0.72,0,0),(0.80,0,0)]
 }
 
