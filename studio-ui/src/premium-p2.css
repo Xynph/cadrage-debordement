@@ -56,3 +56,9 @@
 .profile{background-image:linear-gradient(90deg,#0c211a6b,#11261b4c),url('/assets/premium/backgrounds/effectif-ai-preview.webp'),url('/assets/premium/backgrounds/effectif.svg')}
 .tactics .pitch-wrap{background-image:linear-gradient(180deg,#142e27e8,#10251ac9),url('/assets/premium/backgrounds/tactiques-ai-preview.webp'),url('/assets/premium/backgrounds/tactiques.svg')}
 .scouting-banner{background-image:linear-gradient(90deg,#122920ec,#204434a3),url('/assets/premium/backgrounds/recrutement-ai-preview.webp'),url('/assets/premium/backgrounds/recrutement.svg')}
+
+/* Visages photographiques fictionnels générés par IA, en miniatures seulement :
+   évite l'agrandissement destructeur d'une source 54×72. */
+.photo-sprite{background-image:url('/assets/premium/portraits/photo-atlas-ui.webp');background-size:400% 100%;background-repeat:no-repeat;background-color:#1b3b2c;display:block;object-fit:unset}
+.row-portrait.photo-sprite{width:34px;height:42px}
+.avatar-portrait.photo-sprite{width:45px;height:47px;flex:0 0 45px}
