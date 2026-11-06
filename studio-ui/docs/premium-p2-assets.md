@@ -7,7 +7,7 @@ Univers rugby éditorial premium : scènes de stade, badges de clubs et visages 
 ## Assets versionnés sur GitHub
 
 - `public/assets/premium/crests/*.svg` : quatre **blasons fictifs originaux** (Atlantique XV, Stade Armorique, Valmont, Estuaire), dessin vectoriel de ce projet. Aucune reproduction de marque sportive.
-- `public/assets/premium/portraits/*.svg` : quatre **portraits illustrés fictifs** réutilisables (Gabriel, Eliott, Théo, manager). Ne pas les présenter comme photographies.
+- `public/assets/premium/portraits/*.svg` : quatre **portraits illustrés fictifs** réutilisables (Gabriel, Eliott, Théo, manager). Ne pas les présenter comme photographies.\n- `public/assets/premium/portraits/photo-atlas-ui.webp` : quatre **visages photographiques fictifs issus des concepts IA originaux**, recadrés/nettoyés et compressés en miniatures (54×72 chacun), affectés aux listes Effectif et Recrutement ; ne jamais les agrandir en portraits de dossier pleine taille.
 - `public/assets/premium/backgrounds/*.svg` : quatre illustrations vectorielles de stades sous projecteurs.
 - `public/assets/premium/backgrounds/*-ai-preview.webp` : quatre **textures photo générées par IA** pour ce projet, extraites de concepts graphiques, recadrées et fortement floutées puis compressées à 240×135 pixels. Ces images ont été dépouillées de leurs faux textes UI par le flou et utilisées uniquement comme sous-couche d'ambiance, jamais comme source de chiffres.
 
