@@ -1,0 +1,37 @@
+name: Economy V2 E2.5 verified due obligations
+on:
+  pull_request:
+    branches:
+      - research/economy-v2-e24-obligations-cockpit-20261106
+    paths:
+      - 'dist/economy-v2-due-contract.js'
+      - 'tests/economy-v2-due-contract.cjs'
+      - 'tests/economy-v2-due-native.cjs'
+      - 'ci/economy-v2-due-run.cjs'
+      - '.github/workflows/economy-v2-due.yml'
+      - 'docs/economie-v2/e25-due-contract.md'
+  workflow_dispatch:
+jobs:
+  native-e25:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [reference, modeste, alternatif]
+        seed: [827381, 99173]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check dist/economy-v2-due-contract.js && node --check ci/economy-v2-due-run.cjs
+      - run: node --test tests/economy-v2-due-contract.cjs tests/economy-v2-due-native.cjs tests/economy-v2-obligations.test.cjs tests/economy-v2-debt-audit.test.cjs tests/economy-v2-components.test.cjs tests/economy-v2-shadow.cjs tests/economy-v2-core.cjs
+      - run: node tests/economy-v2-cash-trace.cjs --self-test
+      - run: node ci/economy-v2-due-run.cjs ${{ matrix.profile }} ${{ matrix.seed }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e25-${{ matrix.profile }}-${{ matrix.seed }}
+          path: economy-v2-e25-reports/
+          if-no-files-found: warn
