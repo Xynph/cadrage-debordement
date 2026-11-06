@@ -293,7 +293,7 @@ def author_measured_cadence(scene,actors):
                               (34,-.04),(40,0),(60,0),(90,0)):
                 scene.frame_set(frame);bpy.context.view_layer.update()
                 base=bone.rotation_euler.copy()
-                bone.rotation_euler=(base.x,base.y,base.z+sign*gain*yaw)
+                bone.rotation_euler=(base.x,base.y,sign*gain*yaw)
                 bone.keyframe_insert("rotation_euler",frame=frame)
     scene.frame_set(1);bpy.context.view_layer.update()
 
