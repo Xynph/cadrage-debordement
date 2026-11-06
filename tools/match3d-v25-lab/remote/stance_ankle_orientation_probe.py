@@ -295,6 +295,16 @@ def calibrate_stance_ankle_orientation(scene,actors):
     Optimization is independently rejected if no anatomical orientation fits.
     """
     measurements=[]
+    # Without explicit pre-contact/rest keys, Blender extrapolates the first
+    # authored ankle correction backwards to frame 1. That silently CHANGES
+    # the later measured common floor and fakes an approved foot contact.
+    foot=actors["A"]["rig"].pose.bones.get("foot_r")
+    if foot is None:raise RuntimeError("Canonical right ankle unavailable")
+    foot.rotation_mode="XYZ"
+    for frame in (1,22,90):
+        scene.frame_set(frame)
+        foot.rotation_euler=(0.0,0.0,0.0)
+        foot.keyframe_insert("rotation_euler",frame=frame)
     scene.frame_set(1);bpy.context.view_layer.update()
     neutral=mesh_regions(actors["A"]["meshes"])
     neutral_floor=min(v["minZ"] for actor in actors.values()
@@ -558,6 +568,10 @@ try:
         all(phase["stanceFootStableByActor"].values())
         for lod in REPORT["lods"] for phase in lod["footGlideByPhase"]
         if phase["startFrame"] in (22,30) and phase["endFrame"] in (30,40))
+    REPORT["calibrationFloorConsistent"]=all(
+        abs(lod["stanceAnkleCalibration"]["baselineFloorZ"]-
+            lod["floorZMeasuredFromTrueSoles"])<=.001
+        for lod in REPORT["lods"])
     REPORT["stanceAnkleOrientationQualified"]=all(
         lod["stanceAnkleCalibration"]["allAnkleSelectionsAdmissible"]
         for lod in REPORT["lods"])
