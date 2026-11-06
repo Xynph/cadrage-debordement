@@ -43,7 +43,9 @@ function rulesetStatus(r) {
   const list=r.rules||[];
   const status=list.find(x=>x.type==='required_status_checks');
   const required=status?.parameters?.required_status_checks||[];
-  return r.id===RULESET&&r.enforcement==='active'&&Array.isArray(r.bypass_actors)&&r.bypass_actors.length===0&&
+  const includes=r.conditions?.ref_name?.include||[];
+  const mainTargeted=includes.some(x=>['refs/heads/main','~DEFAULT_BRANCH','~ALL'].includes(x));
+  return mainTargeted&&r.id===RULESET&&r.enforcement==='active'&&Array.isArray(r.bypass_actors)&&r.bypass_actors.length===0&&
     list.some(x=>x.type==='pull_request')&&list.some(x=>x.type==='deletion')&&list.some(x=>x.type==='non_fast_forward')&&
     status?.parameters?.strict_required_status_checks_policy===true&&
     required.some(x=>x.context==='Validation CI'&&x.integration_id===15368);
