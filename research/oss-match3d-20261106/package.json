@@ -1,0 +1,13 @@
+{
+  "name": "cd-match3d-oss-bvh-isolated-probe",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "scripts": {
+    "test": "node probe.mjs"
+  },
+  "dependencies": {
+    "three": "0.185.0",
+    "three-mesh-bvh": "0.9.18"
+  }
+}
