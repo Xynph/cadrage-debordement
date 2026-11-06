@@ -1,0 +1,8 @@
+{
+  "status": "proposal-only; production file untouched",
+  "file": "dist/saves.js",
+  "function": "validateCareer",
+  "find": "saveInt(h.age,16,60)",
+  "replace": "saveInt(h.age,s.lnrMode!==undefined?15:16,60)",
+  "reason": "Native LNR start permits age 15, but development history rejects age 15 after the first interseason. Align history lower bound with the existing professional-player rule only in LNR careers. Keep fictional history minimum 16 and reject 14 everywhere."
+}

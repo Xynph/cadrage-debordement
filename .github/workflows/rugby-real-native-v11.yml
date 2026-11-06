@@ -1,0 +1,92 @@
+name: Rugby Reel V11 - native balance and ageing
+on:
+  push:
+    branches: [data/rugby-real-native-balance-v11-20261107]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests candidats, sources, vrai moteur et sauvegardes
+        run: node --test tests/rugby-real-native-v11.cjs
+      - name: Invariance du master et export consolide
+        run: |
+          sha256sum modding/data06/rugby-master-2026-2027.json > "$RUNNER_TEMP/master.sha"
+          mkdir -p "$RUNNER_TEMP/v11"
+          node tools/rugby-real-v11/export.cjs "$RUNNER_TEMP/v11"
+          sha256sum -c "$RUNNER_TEMP/master.sha"
+      - name: Trois saisons LNR et reproduction du blocage sauvegarde existant
+        run: node tools/rugby-real-v11/seasons.cjs "$RUNNER_TEMP/v11/seasons.json"
+      - name: Effet des courbes agees dans le vrai moteur
+        run: node tools/rugby-real-v11/age-impact.cjs "$RUNNER_TEMP/v11/age-impact.json" 64
+      - name: Verifier portee et conclusions
+        run: |
+          node - "$RUNNER_TEMP/v11" <<'NODE'
+          const fs=require('fs'),d=process.argv[2];
+          const s=JSON.parse(fs.readFileSync(d+'/seasons.json'));
+          if(s.current.passed!==false||s.current.failedAtSeason!==2||!s.isolatedSaveProposal.passed||s.isolatedSaveProposal.years!==3)throw Error('Unexpected native/proposal save outcome');
+          const a=JSON.parse(fs.readFileSync(d+'/age-impact.json'));if(a.matches!==384)throw Error('Missing native ageing matches');
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'## V11\n\nTests candidats executés. Defaut de sauvegarde existant reproduit en saison 2 ; correction testée UNIQUEMENT en sandbox. 3 saisons / 561 matchs avec proposition isolée ; aucun correctif activé dans le jeu. 384 matchs age candidat. Master intact.\n');
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rugby-real-v11-contracts
+          path: ${{ runner.temp }}/v11/
+          retention-days: 14
+  native-matches:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [legacy, baseline, candidate, responseCandidate]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Matchs natifs apparies - 64 graines et les deux domiciles
+        run: node tools/rugby-real-v11/campaign.cjs "$RUNNER_TEMP/matches.json" 64 "${{ matrix.version }}"
+      - name: Verifier campagne et publier mesures
+        run: |
+          node - "$RUNNER_TEMP/matches.json" <<'NODE'
+          const fs=require('fs');const r=JSON.parse(fs.readFileSync(process.argv[2]));
+          const v=Object.values(r.versions)[0],results=Object.entries(v.results);
+          if(r.seeds.length!==64||!results.every(([,s])=>s.rows.length===128))throw Error('Incomplete native campaign');
+          if(!results.every(([,s])=>s.rows.every(x=>x.engine===2&&x.duration>=80)))throw Error('Not native complete matches');
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'## '+v.label+'\n\n| Scenario | Matchs | Victoires % | Ecart |\n|---|---:|---:|---:|\n'+results.map(([k,s])=>'|'+k+'|'+s.summary.matches+'|'+s.summary.winPct+'|'+s.summary.margin+'|').join('\n')+'\n\nObjectifs de game design exploratoires, pas statistiques officielles. Les seuils manqués sont conservés dans le rapport. Aucun changement de production.\n');
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rugby-real-v11-${{ matrix.version }}
+          path: ${{ runner.temp }}/matches.json
+          retention-days: 14
+  measured-comparison:
+    needs: [native-matches, contracts]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: rugby-real-v11-*
+          path: ${{ runner.temp }}/v11-inputs
+      - name: Comparer les quatre variantes avec IDs fixes
+        run: node tools/rugby-real-v11/merge-reports.cjs "$RUNNER_TEMP/v11-inputs" "$RUNNER_TEMP/v11-final"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rugby-real-v11-measured-comparison
+          path: ${{ runner.temp }}/v11-final
+          retention-days: 14

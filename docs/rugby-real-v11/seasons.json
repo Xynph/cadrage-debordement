@@ -1,0 +1,95 @@
+{
+  "current": {
+    "passed": false,
+    "saveProposal": false,
+    "failedAtSeason": 2,
+    "error": "Le fichier contient des données de carrière incohérentes.",
+    "rounds": 58,
+    "matches": 374,
+    "records": [
+      {
+        "season": 1,
+        "rounds": 29,
+        "clubs": 14,
+        "managerWins": 14,
+        "players": 50,
+        "meanRating": 87.38,
+        "meanCondition": 98.123161,
+        "injuries": 1,
+        "market": 9
+      }
+    ],
+    "diagnostic": [
+      {
+        "id": "lnr:25080",
+        "name": "Aleksandre GABUNIA",
+        "age": 16,
+        "history": [
+          {
+            "season": 1,
+            "age": 15,
+            "start": 83,
+            "end": 85,
+            "minutes": 1164,
+            "appearances": 16
+          }
+        ]
+      }
+    ],
+    "productionUntouched": true
+  },
+  "isolatedSaveProposal": {
+    "passed": true,
+    "saveProposal": true,
+    "kind": "Native LNR 14-club seasons, not senior TOP14/PROD2 promotion testing",
+    "years": 3,
+    "rounds": 87,
+    "matches": 561,
+    "nativeSaveImportExport": 3,
+    "clubNamesUnchanged": true,
+    "records": [
+      {
+        "season": 1,
+        "rounds": 29,
+        "clubs": 14,
+        "managerWins": 14,
+        "players": 50,
+        "meanRating": 87.38,
+        "meanCondition": 98.123161,
+        "injuries": 1,
+        "market": 9
+      },
+      {
+        "season": 2,
+        "rounds": 29,
+        "clubs": 14,
+        "managerWins": 15,
+        "players": 31,
+        "meanRating": 87.51612903225806,
+        "meanCondition": 91.96473612903226,
+        "injuries": 0,
+        "market": 69
+      },
+      {
+        "season": 3,
+        "rounds": 29,
+        "clubs": 14,
+        "managerWins": 4,
+        "players": 26,
+        "meanRating": 80.84615384615384,
+        "meanCondition": 90.47525499999999,
+        "injuries": 0,
+        "market": 68
+      }
+    ],
+    "binding": {
+      "uses36AttributesInLnrGenerator": false,
+      "seniorPromotionImplemented": false
+    },
+    "limitations": [
+      "No senior two-division transition implementation: cannot claim maintenance/promotion odds",
+      "Generated LNR skill values are independent of master attributesV2",
+      "Native market/development run; candidate profiles were NOT injected into these saved careers"
+    ]
+  }
+}
