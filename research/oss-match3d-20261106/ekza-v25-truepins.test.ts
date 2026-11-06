@@ -130,7 +130,7 @@ test('fail-closed 3 LOD × 2 actors × 19 genuine V25 frames original Ekza foot 
            restFrameErrorM:maxRestError};
          result.errors.push(failure);
          result.status='STOP_V25_REAL_STANCE_PIN_UNREACHABLE';
-         writeFileSync(process.env.CD_NATIVE_OUT!,JSON.stringify(result,null,2)+'\\n');
+         writeFileSync(process.env.CD_NATIVE_OUT!,JSON.stringify(result,null,2));
          console.error('REAL_V25_EKZA_PIN_UNREACHABLE',JSON.stringify(failure));
        }
        expect(plant.reached).toBe(true);
@@ -168,6 +168,6 @@ test('fail-closed 3 LOD × 2 actors × 19 genuine V25 frames original Ekza foot 
  expect(result.samples).toHaveLength(114);
  expect(new Set(result.samples.filter((x:any)=>x.pinCount).map((x:any)=>x.lod)).size).toBe(3);
  result.status='NATIVE_EKZA_SOURCE_V25_TRUE_PINS_NUMERIC_ONLY_NOT_VISUAL';
- writeFileSync(process.env.CD_NATIVE_OUT!,JSON.stringify(result,null,2)+'\n');
+ writeFileSync(process.env.CD_NATIVE_OUT!,JSON.stringify(result,null,2));
  } finally{dispose();}
 });
