@@ -14,7 +14,8 @@ for(const name of scripts){
  assert.ok(pos>previous,'ordered script '+name);
  previous=pos;
 }
-assert.ok(html.indexOf('fan-experience-v111-v116.js')<html.indexOf('office-career-press.js'));
+assert.ok(html.indexOf('fan-experience-v111-v116.js')<html.indexOf('v101-v116-ui-bridge.js'));
+assert.ok(html.indexOf('v101-v116-ui-bridge.js')<html.indexOf('office-career-press.js'));
 function fixture(){
  const player=(id,pos,age,rating)=>({id,name:id,pos,age,rating,condition:90,injury:0,
   dev:{potential:rating+20,xp:0,seasonStart:rating}});
@@ -40,7 +41,7 @@ const ctx={S:fixture(),view:'bureau',console,JSON,saveFailure:false,
  save(){saveCount++;return !this.saveFailure;}
 };
 ctx.globalThis=ctx;vm.createContext(ctx);
-for(const name of scripts.slice(-3)){
+for(const name of [...scripts.slice(-3),'v101-v116-ui-bridge.js']){
  const code=fs.readFileSync(path.join(__dirname,'../dist',name),'utf8');
  vm.runInContext(code,ctx,{filename:name});
 }
@@ -60,6 +61,9 @@ inserted.length=0;ctx.view='bureau';ctx.render();
 assert.equal(inserted.length,2,'two distinct bureau panels');
 assert.ok(inserted.some(x=>x.includes('V105')));
 assert.ok(inserted.some(x=>x.includes('V111')));
+inserted.length=0;ctx.view='dashboard';ctx.render();
+assert.equal(inserted.length,2,'two bureau panels visible on real dashboard view');
+assert.ok(inserted.some(x=>x.includes('V105'))&&inserted.some(x=>x.includes('V111')));
 function click(markup,pattern){
  const match=markup.match(pattern);assert.ok(match,'button exists '+pattern);
  return vm.runInContext(match[1].replace(/&quot;/g,'"').replace(/&#39;/g,"'"),ctx);
@@ -113,7 +117,7 @@ assert.equal(ctx.S.v111to116.history[0].season,17);
 const legacy=fixture();
 delete legacy.v82to85;delete legacy.v95to100;
 ctx.S=legacy;ctx.view='formation';ctx.render();
-ctx.view='bureau';ctx.render();
-for(const key of keys)assert.ok(ctx.S[key],'legacy navigation initializes missing '+key);
+ctx.view='dashboard';ctx.render();
+for(const key of keys)assert.ok(ctx.S[key],'legacy actual dashboard initializes missing '+key);
 assert.ok(saveCount>40,'real save callbacks exercised');
 console.log('V101-V116 COMBINED PASS: 7 scripts ordered, 3 panel installs, 10 onclick actions, legacy JSON import/export, storage rollback, 17 linked seasons');
