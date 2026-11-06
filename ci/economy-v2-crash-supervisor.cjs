@@ -44,11 +44,11 @@ function recover(file,{authorize,expectedPid,expectedRevision}={}){
  return {recovered:true,previousOwner:evidence.owner.pid,revision:evidence.store.revision,sha256:evidence.store.sha256};
 }
 function retryContention(work,maxAttempts=50){
- check(typeof work==='function'&&safeInt(maxAttempts)&&maxAttempts<=1000,'Invalid retry limits');
+ check(typeof work==='function'&&safeInt(maxAttempts)&&maxAttempts<=10000,'Invalid retry limits');
  let conflicts=0;
  for(let i=0;i<maxAttempts;i++){
   try{return {result:work(),conflicts}}
-  catch(e){if(!/Concurrent writer or orphan lock: fail closed/.test(e.message))throw e;conflicts++;}
+  catch(e){if(!/Concurrent writer or orphan lock: fail closed/.test(e.message))throw e;conflicts++;Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,3);}
  }
  throw Error('Contention limit exceeded: fail closed');
 }
