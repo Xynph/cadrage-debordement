@@ -32,6 +32,7 @@ function run(profile,seed){
  assert.ok(checks.optionalInvestmentOverreach.options[2].endingCash>=checks.optionalInvestmentOverreach.options[0].endingCash);
  assert.equal(checks.mandatoryCostsUncovered.summary.recoveryPossibleWithoutNewMoney,false);
  assert.ok(checks.laterEarnedIncome.options[2].endingCash>0);
+ assert.equal(checks.laterEarnedIncome.summary.recoveryPossibleWithoutNewMoney,true);
  for(const c of Object.values(checks)){
   assert.equal(c.options.length,3);
   for(const o of c.options){
