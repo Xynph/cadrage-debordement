@@ -65,10 +65,24 @@ jobs:
           npm install --global pnpm@10.32.1
           cd ekza-upstream
           pnpm install --frozen-lockfile
-          cp ../research/oss-match3d-20261106/ekza-real-source.test.ts packages/rig/src/ik/cd-oss-ik.test.ts
+          cp ../research/oss-match3d-20261106/ekza-real-source.test.ts packages/rig/test/cd-oss-ik.test.ts
           export CD_RIG_FIXTURES="$GITHUB_WORKSPACE/oss-ekza-report/rig-fixtures.json"
           export CD_EKZA_REPORT="$GITHUB_WORKSPACE/oss-ekza-report/solver-report.json"
-          pnpm --filter @ekza-studio/rig exec vitest run src/ik/cd-oss-ik.test.ts --reporter=verbose
+          pnpm --filter @ekza-studio/rig exec vitest run test/cd-oss-ik.test.ts --reporter=verbose
+      - name: Require six actual Ekza solver results (fail closed)
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('oss-ekza-report/solver-report.json')
+          assert p.is_file(), 'NO_EKZA_TEST_EXECUTED: missing solver-report.json'
+          r=json.loads(p.read_text())
+          assert r.get('sourceExecutedDirectly') is True
+          assert r.get('upstreamPinnedSha')=='b7e3e92f25d2656caace50c0869aeef0d562dbf3'
+          a=r.get('results',[])
+          assert len(a)==6 and all(x.get('reached') is True for x in a)
+          assert len({(x['lod'],x['side']) for x in a})==6
+          print('REAL_EKZA_6_OF_6_ACTUALLY_EXECUTED')
+          PY
       - name: Emit evidence hashes
         if: always()
         run: |
