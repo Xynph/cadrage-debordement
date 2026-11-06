@@ -66,10 +66,10 @@
    strategy='equilibre';reason='Recuperation prioritaire pour limiter la fatigue';
   }else if(played<240){
    strategy='minutes';reason='Temps de jeu insuffisant sur la saison';
-  }else if(growth>=8&&!hasMentor){
-   strategy='progression';reason='Potentiel de progression et mentorat a explorer';
   }else if(p.age>=20&&played>=480&&rating(p)>=65){
    strategy='professionnel';reason='Preparer une evaluation pour le groupe professionnel';
+  }else if(growth>=8&&!hasMentor){
+   strategy='progression';reason='Potentiel de progression et mentorat a explorer';
   }
   return {id,strategy,reason,minutes:played,growth,condition,eligible,hasMentor,
    current:ensure(s)?.paths.find(x=>x.id===id)?.strategy||null};
