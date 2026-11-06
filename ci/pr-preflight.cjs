@@ -83,4 +83,4 @@ function main(){
  if(!result.technicalPass)process.exitCode=1;
 }
 if(require.main===module)main();
-module.exports={parseEvent,assess,main};
+module.exports={parseEvent,assess};
