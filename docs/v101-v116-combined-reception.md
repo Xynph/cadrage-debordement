@@ -6,14 +6,14 @@ Cette branche **depuis main** raccorde les trois lots non fusionnés : #325 (V10
 
 ## Raccordement
 
-Dans `dist/index.html`, insertion dans cet ordre après les quatre modules V82–V100 et avant les overlays du bureau : `espoirs-coaching-v101-v104.js`, `sporting-director-v105-v110.js`, `fan-experience-v111-v116.js`. Chacun installe ses wrappers de `start`, `render` et `advanceSeason` à son chargement. Les versions V101–V104 apparaissent sous `view==='formation'`, les deux autres sous `view==='bureau'`. Les modules ne modifient ni les lois ni les données des matchs.
+Dans `dist/index.html`, insertion dans cet ordre après les quatre modules V82–V100 et avant les overlays du bureau : `espoirs-coaching-v101-v104.js`, `sporting-director-v105-v110.js`, `fan-experience-v111-v116.js`. Chacun installe ses wrappers de `start`, `render` et `advanceSeason` à son chargement. Les versions V101–V104 apparaissent sous `view==='formation'`. Les modules sources V105 et V111 ciblaient `view==='bureau'`, mais **le véritable Bureau du manager utilise `view==='dashboard'`**. Pour les y rendre accessibles sans toucher aux neuf blobs sources, le nouveau `dist/v101-v116-ui-bridge.js` installe un wrapper de rendu du dashboard natif après les trois modules. Ses panneaux sont montés dans `#app .layout .main` et sont redessinés par les vrais callbacks du jeu. Les modules ne modifient ni les lois ni les données des matchs.
 
 Le raccordement **ne modifie pas les sources** : le test combiné protège le choix du gestionnaire de rester sur les branches sources intactes. Les effets économiques V105 et V111 s'appliquent à la trésorerie fictive dans la sauvegarde du club. Il faut vérifier la cohérence de l'expérience d'interface avec les pages actives de `V17`.
 
 ## Preuves demandées
 
 - `node tests/v101-v116-combined.cjs` : ordre de sept scripts (quatre dépendances antérieures et trois nouveaux), installation simultanée, panneaux formation/bureau, clics des dix commandes `onclick` sous VM, export/import JSON, sauvegarde refusée et rollback, bilan par saison sur 17 saisons, historique borné.
-- `python tests/v101-v116-chromium.py` : navigateur Chromium réel avec scripts chargés depuis `dist/index.html`, rendu des trois panneaux de réception, **10 clics réels Playwright** et contrôle du JSON après clic. Le test utilise une **fixture synthétique isolée** afin de ne pas détourner la carrière existante ; ne prouve pas un parcours complet de carrière en interface.
+- `python tests/v101-v116-chromium.py` : navigateur Chromium réel avec scripts chargés depuis `dist/index.html`, rendu des trois panneaux de réception, **10 clics réels Playwright sur les panneaux synthétiques, plus 2 clics supplémentaires dans le vrai Bureau après `start(0)` et `nav('dashboard')`** et contrôle du JSON après clic. Le test utilise une **fixture synthétique isolée** afin de ne pas détourner la carrière existante ; ne prouve pas un parcours complet de carrière en interface.
 - `.github/workflows/v101-v116-chromium.yml` : workflow de test indépendant déclenché sur PR, sans aucun accès d'écriture ni commande de gate.
 - Suites JavaScript du dépôt et autres workflows obligatoires sur le **HEAD exact de composition**. Corriger tout échec sur cette branche, ne jamais reprendre les résultats d'un SHA précédent.
 
