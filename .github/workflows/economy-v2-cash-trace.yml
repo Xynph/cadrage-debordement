@@ -25,6 +25,7 @@ jobs:
           node-version: '22'
       - run: node --check tests/economy-v2-cash-trace.cjs && node --check ci/economy-v2-cash-trace-run.cjs
       - run: node --test tests/economy-v2-shadow.cjs tests/economy-v2-core.cjs
+      - run: node tests/economy-v2-cash-trace.cjs --self-test
       - run: node ci/economy-v2-cash-trace-run.cjs ${{ matrix.profile }} ${{ matrix.seed }}
       - uses: actions/upload-artifact@v4
         if: always()
