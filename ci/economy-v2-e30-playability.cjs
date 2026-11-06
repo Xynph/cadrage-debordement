@@ -60,7 +60,7 @@ function simulate(input,mode){
 function compare(input){
  const options=Object.keys(modes).map(mode=>simulate(input,mode));
  const maintain=options[0],stage=options[1],pause=options[2];
- const recoveryPossible=options.some(x=>x.endingCash>=0&&x.negativeWeeks===0);
+ const recoveryPossible=options.some(x=>x.endingCash>=0&&(x.negativeWeeks===0||x.firstRecoveryWeek!==null));
  const mandatoryUnfunded=options.some(x=>x.requiredCoverageRiskWeeks>0);
  return {schema:1,options,summary:{
   recoveryPossibleWithoutNewMoney:recoveryPossible,
