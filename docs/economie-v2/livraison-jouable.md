@@ -19,3 +19,10 @@ Aucune qualification n'est acquise tant que les tests/CI correspondants ne sont 
 
 ## Sécurité
 Diff borné à `dist/finance-v2.js`, `dist/index.html`, la fonction `finance()` de `dist/game.js`, ce test et cette note. Aucun changement PRODUCTEUR, DATA/LNR, studio-ui, MATCH 3D, gate ni PR R&D.
+
+## Cockpit visuel interactif (extension demandée)
+Dans l'onglet **Finances → Journal et décisions** : une courbe SVG représente la trésorerie **reconstituée sur la seule fenêtre du journal conservé**, avec infobulle native sur chaque point accessible au survol ou au focus clavier. Le premier solde est calculé depuis la trésorerie actuelle et la somme des écritures conservées : aucune date, trésorerie annuelle ou opération antérieure n'est inventée.
+
+Un graphique de barres compare les encaissements et décaissements **du journal disponible**. Cliquer sur une barre filtre le tableau détaillé ; trois boutons accessibles permettent Toutes / Recettes / Dépenses, avec ligne et libellé exact, montant et information au survol. Le filtre reste uniquement dans la mémoire de présentation : **aucune mutation de carrière, du RNG, des investissements, du moteur ou de la sauvegarde**. Mise en page PC adaptative et styles confinés à `finance-v2.css`.
+
+La page V4.9 conserve ses sous-pages « Trésorerie », « Flux hebdomadaires », « Salaires » et « Journal et décisions ». La courbe ne prétend pas être un historique complet de 15 saisons et ne se substitue pas au modèle de projection fictif existant.
