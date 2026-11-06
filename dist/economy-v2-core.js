@@ -37,6 +37,10 @@
   for(const c of w.commitments){
    check(c&&id(c.clubId)&&own(w.balances,c.clubId)&&id(c.commitmentId)&&date(c.due)&&money(c.amount)&&id(c.kind)&&typeof c.settled==='boolean','Invalid commitment state');
    const k=c.clubId+'|'+c.commitmentId;check(!commitments.has(k),'Duplicate commitment');commitments.add(k);
+   const bound=w.events.filter(e=>e.clubId===c.clubId&&e.description==='commitment:'+c.commitmentId);
+   check(bound.length===(c.settled?1:0),'Commitment payment binding mismatch');
+   if(c.settled){const e=bound[0];check(e.category==='commitment-'+c.kind&&e.period>=c.due&&e.lines.some(l=>l.account==='expense'&&l.debit===c.amount)&&e.lines.some(l=>l.account==='cash'&&l.credit===c.amount),'Invalid commitment payment')}
+
   }
   return true;
  }
@@ -79,16 +83,29 @@
   const next=copy(w);next.commitments.push({clubId,commitmentId,due,amount,kind,settled:false});return next;
  }
  function settleCommitment(w,{clubId,commitmentId,eventId,period}={}){
+  validate(w);
   const c=w.commitments?.find(x=>x.clubId===clubId&&x.commitmentId===commitmentId);
-  check(c,'Unknown commitment');check(date(period)&&period>=c.due,'Commitment not due');
-  const prev=w.events?.find(x=>x.clubId===clubId&&x.eventId===eventId);
-  if(c.settled){check(prev&&prev.category==='commitment-'+c.kind&&prev.period===period,'Commitment already settled');return w}
-  const next=payment(w,{clubId,eventId,period,amount:c.amount,category:'commitment-'+c.kind});
-  next.commitments.find(x=>x.clubId===clubId&&x.commitmentId===commitmentId).settled=true;return next;
+  check(c,'Unknown commitment');check(id(eventId)&&date(period)&&period>=c.due,'Commitment not due');
+  const binding='commitment:'+commitmentId, category='commitment-'+c.kind;
+  const prev=w.events.find(x=>x.clubId===clubId&&x.eventId===eventId);
+  if(c.settled){
+   check(prev&&prev.category===category&&prev.description===binding&&prev.period===period,'Commitment already settled');
+   return w;
+  }
+  check(!prev,'Payment event already assigned');
+  check(!w.events.some(x=>x.clubId===clubId&&x.description===binding),'Commitment payment already recorded');
+  const next=payment(w,{clubId,eventId,period,amount:c.amount,category,description:binding});
+  next.commitments.find(x=>x.clubId===clubId&&x.commitmentId===commitmentId).settled=true;
+  validate(next);return next;
  }
- function transfer(w,{sellerId,buyerId,eventId,period,amount}={}){
-  check(sellerId!==buyerId&&money(amount)&&id(eventId)&&date(period),'Invalid transfer');
-  return postBatch(w,[{clubId:buyerId,eventId,period,category:'transfer-in',lines:[{account:'fixedAssets',debit:amount},{account:'cash',credit:amount}]},{clubId:sellerId,eventId,period,category:'transfer-out',lines:[{account:'cash',debit:amount},{account:'revenue',credit:amount}]}]);
+ function transfer(w,{sellerId,buyerId,eventId,period,amount,bookValue=0}={}){
+  check(sellerId!==buyerId&&money(amount)&&Number.isSafeInteger(bookValue)&&bookValue>=0&&bookValue<=1e12&&id(eventId)&&date(period),'Invalid transfer');
+  // The seller recognizes both proceeds and the carrying value disposed of.
+  // Zero bookValue is an explicit uncapitalized legacy case; do not invent assets.
+  check(w.balances?.[sellerId]?.fixedAssets>=bookValue,'Transfer book value exceeds seller assets');
+  const sale=[{account:'cash',debit:amount},{account:'revenue',credit:amount}];
+  if(bookValue){sale.push({account:'expense',debit:bookValue},{account:'fixedAssets',credit:bookValue})}
+  return postBatch(w,[{clubId:buyerId,eventId,period,category:'transfer-in',lines:[{account:'fixedAssets',debit:amount},{account:'cash',credit:amount}]},{clubId:sellerId,eventId,period,category:'transfer-out',lines:sale}]);
  }
  function snapshot(w,clubId,asOfPeriod){
   validate(w);check(id(clubId)&&own(w.balances,clubId),'Unknown club');check(asOfPeriod===undefined||date(asOfPeriod),'Invalid period');
