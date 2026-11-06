@@ -89,7 +89,7 @@ def audit(a,b):
                 "maxXYZ":[round(v,5) for v in hi],
                 "centerXYZ":[round((lo[k]+hi[k])/2,5) for k in range(3)]}
     skin_bounds={"A":bounds(va),"B":bounds(vb)}
-    root_centers={name:[round(v,5) for v in ob["rig"].matrix_world.translation]
+    root_centers={name:[round(v,5) for v in ob["actor_root"].matrix_world.translation]
         for name,ob in (("A",a),("B",b))}
     bbox_separation_x=max(0.0,skin_bounds["A"]["minXYZ"][0]-skin_bounds["B"]["maxXYZ"][0],
                              skin_bounds["B"]["minXYZ"][0]-skin_bounds["A"]["maxXYZ"][0])
@@ -135,12 +135,23 @@ try:
             meshes=[x for x in added if x.type=="MESH"]
             assert meshes
             if rig.animation_data:rig.animation_data_clear()
-            for frame,(xyz) in zip(PHASES,ROOTS[label]):
-                rig.location=xyz
-                # Facing along the shared X-axis, no frame-dependent correction.
-                rig.rotation_euler.z=(math.pi/2 if label=="A" else -math.pi/2)
-                rig.keyframe_insert("location",frame=frame)
-                rig.keyframe_insert("rotation_euler",frame=frame)
+            # glTF import can include multiple top-level nodes. Driving only
+            # the Armature object leaves non-parented evaluated skin at origin.
+            # A dedicated ACTOR root drives ALL imported top-level nodes, while
+            # their original rest/world transforms remain unchanged.
+            actor_root=bpy.data.objects.new(f"Original_LOD{lod}_{label}_Root",None)
+            scene.collection.objects.link(actor_root)
+            for node in added:
+                if node.parent not in added:
+                    original_world=node.matrix_world.copy()
+                    node.parent=actor_root
+                    node.matrix_world=original_world
+            for frame,xyz in zip(PHASES,ROOTS[label]):
+                actor_root.location=xyz
+                # Fixed source facing, not opponent-facing cosmetic snapping.
+                actor_root.rotation_euler.z=(math.pi/2 if label=="A" else -math.pi/2)
+                actor_root.keyframe_insert("location",frame=frame)
+                actor_root.keyframe_insert("rotation_euler",frame=frame)
             for name,angles in POSE[label].items():
                 bone=rig.pose.bones.get(name)
                 if bone is None:continue
@@ -148,7 +159,7 @@ try:
                 for frame,angle in zip(PHASES,angles):
                     bone.rotation_euler=(angle,0,0)
                     bone.keyframe_insert("rotation_euler",frame=frame)
-            actors[label]={"rig":rig,"meshes":meshes}
+            actors[label]={"rig":rig,"meshes":meshes,"actor_root":actor_root}
         # Baseline sole calibration is measured, NOT an aesthetic shift of one
         # player relative to the other. One global floor for all LOD actors.
         scene.frame_set(1);bpy.context.view_layer.update()
@@ -161,7 +172,7 @@ try:
         for frame in PHASES:
             scene.frame_set(frame);bpy.context.view_layer.update()
             row=audit(actors["A"],actors["B"]);row["frame"]=frame
-            delta=actors["B"]["rig"].location-actors["A"]["rig"].location
+            delta=actors["B"]["actor_root"].location-actors["A"]["actor_root"].location
             row["rootDisplacementXYZ"]=[round(v,5) for v in delta]
             row["footToCalibratedFloor"]={lab:{
                 side:(round(row["supports"][lab][side]["minZ"]-floor_z,5)
@@ -186,6 +197,7 @@ try:
         for lab in actors:
             for mesh in actors[lab]["meshes"]:bpy.data.objects.remove(mesh,do_unlink=True)
             bpy.data.objects.remove(actors[lab]["rig"],do_unlink=True)
+            bpy.data.objects.remove(actors[lab]["actor_root"],do_unlink=True)
     REPORT["status"]="AUTHORED_AND_MEASURED_NOT_VISUALLY_APPROVED"
     REPORT["imagesProduced"]=sum(len(f["images"]) for l in REPORT["lods"] for f in l["frames"])
     # No automatic acceptance without independent image inspection.
