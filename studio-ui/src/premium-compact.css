@@ -1,0 +1,40 @@
+/* Densité éditoriale PC 1440 × 900 : garder les décisions au premier écran. */
+@media (min-width:1200px) and (max-width:1600px) and (max-height:950px){
+  .topbar{height:55px}
+  .screen{padding:14px 23px 10px}
+  .stack{gap:10px}
+  .intro{min-height:95px}
+  .intro h1{font-size:37px;line-height:1;margin:9px 0 7px}
+  .intro>p:last-child{font-size:12px}
+  .panel{padding:15px}
+  .panel-head{margin-bottom:10px}
+  .panel-head h2{font-size:21px;margin-top:5px}
+  .hero{height:310px}
+  .hero-line{padding:26px 34px}
+  .hero h1{font-size:43px}
+  .hero-fixture{bottom:14px}
+  .decision{padding:10px 0;min-height:58px}
+  .ranking{margin-top:13px}
+  .ranking>div{width:93px;height:93px;font-size:46px}
+  .metrics{margin-top:11px;padding-top:13px}
+  .headline{padding:11px 20px}
+  .headline h2{font-size:20px;margin:5px 0}
+  .search{padding:9px}
+  .roster-label{padding:10px}
+  .player-row{padding:10px 12px}
+  .profile{min-height:378px}
+  .profile h2{font-size:42px;margin:12px 0}
+  .profile-main{padding:20px}
+  .ratings{margin:15px 0}
+  .ratings strong{font-size:34px}
+  .attributes{gap:12px}
+  .pitch{height:410px}
+  .bench{padding-top:10px}
+  .scouting-banner{min-height:191px;padding:22px 31px}
+  .scouting-banner h2{font-size:35px;margin:9px 0}
+  .prospect{padding:10px}
+  .scout-score{padding:5px 0 10px}
+  .scout-score strong{font-size:44px}
+  .meta-row{padding:10px 0}
+  .footer{padding:0 23px 10px}
+}
