@@ -65,7 +65,7 @@ function run(cmd,e){
   const contents=(sha)=>{
    const f=gh('contents/dist/index.html?ref='+sha);
    need(f?.type==='file'&&f.encoding==='base64'&&typeof f.content==='string'&&f.path==='dist/index.html','Contenu index non attestable');
-   return Buffer.from(f.content.replace(/\\s/g,''),'base64').toString('utf8');
+   return Buffer.from(f.content.replace(/\s/g,''),'base64').toString('utf8');
   };
   const handler=require('./pr-overlap-evidence.cjs');
   overlapEvidence=handler.resolve({overlaps,comments,pr,expected:cmd.expected,main,files,mainHtml:contents(main),candidateHtml:contents(cmd.expected)});
