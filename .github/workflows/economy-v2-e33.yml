@@ -1,0 +1,55 @@
+name: Economy V2 E3.3 native optional investment evidence
+on:
+  pull_request:
+    branches:
+      - research/economy-v2-e32-native-readonly-20261106
+    paths:
+      - '.github/workflows/economy-v2-e33.yml'
+      - 'ci/economy-v2-e33-investments.cjs'
+      - 'ci/economy-v2-e33-run.cjs'
+      - 'tests/economy-v2-e33-investments.cjs'
+      - 'tests/economy-v2-e33-chromium.py'
+      - 'docs/economie-v2/e33-investments.md'
+  workflow_dispatch:
+jobs:
+  native-e33:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [reference, modeste, alternatif]
+        seed: [827381, 99173]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check ci/economy-v2-e33-investments.cjs && node --check ci/economy-v2-e33-run.cjs && node --check tests/economy-v2-e33-investments.cjs
+      - run: node --test tests/economy-v2-e33-investments.cjs tests/economy-v2-e32-adapter.cjs tests/economy-v2-e31-pc.cjs tests/economy-v2-e30-playability.cjs tests/economy-v2-e29-integrity.cjs tests/economy-v2-sigkill-concurrency.cjs tests/economy-v2-durable-store.cjs tests/economy-v2-atomic-adapter.cjs tests/economy-v2-due-contract.cjs tests/economy-v2-due-native.cjs tests/economy-v2-obligations.test.cjs tests/economy-v2-debt-audit.test.cjs tests/economy-v2-components.test.cjs tests/economy-v2-shadow.cjs tests/economy-v2-core.cjs
+      - run: node ci/economy-v2-e33-run.cjs ${{ matrix.profile }} ${{ matrix.seed }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e33-${{ matrix.profile }}-${{ matrix.seed }}
+          path: economy-v2-e33-reports/
+          if-no-files-found: error
+  viewport-e33:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: native-e33
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node ci/economy-v2-e33-run.cjs reference 827381
+      - run: python -m pip install playwright
+      - run: python -m playwright install --with-deps chromium
+      - run: python tests/economy-v2-e33-chromium.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e33-viewport-proof
+          path: economy-v2-e33-reports/
+          if-no-files-found: error
