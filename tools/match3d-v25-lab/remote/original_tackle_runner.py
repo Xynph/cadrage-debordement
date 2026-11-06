@@ -4,7 +4,7 @@ ROOT=pathlib.Path.cwd(); WORK=ROOT/"rd-work";WORK.mkdir(exist_ok=True)
 OUT=ROOT/"rd-report"/"original-tackle";OUT.mkdir(parents=True,exist_ok=True)
 LOCK=json.loads((ROOT/"tools/match3d-v25-lab/remote/lock.json").read_text())
 def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
-status={"status":"FAIL","origin":"ORIGINAL_STANDING_GRIP_V3_NO_EXTERNAL_CLIP","blender":LOCK["blender"]}
+status={"status":"FAIL","origin":"ORIGINAL_STANDING_FOOTLOCK_V1_NO_EXTERNAL_CLIP","blender":LOCK["blender"]}
 try:
     path=WORK/"blender.tar.xz"
     if not path.exists():
@@ -17,7 +17,7 @@ try:
     assert blender.exists()
     status["archiveSha256"]=sha(path)
     cmd=[str(blender),"--background","--factory-startup","--python-exit-code","1",
-         "--python","tools/match3d-v25-lab/remote/standing_grip_probe.py"]
+         "--python","tools/match3d-v25-lab/remote/standing_footlock_probe.py"]
     with (OUT/"blender-original.log").open("w") as log:
         proc=subprocess.run(cmd,stdout=log,stderr=subprocess.STDOUT,timeout=1000)
     status["returnCode"]=proc.returncode
