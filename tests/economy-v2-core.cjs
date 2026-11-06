@@ -41,3 +41,34 @@ test('E1: falsification du journal détectée',()=>{const w=inc(fresh());w.event
 test('E1: journal dupliqué refusé',()=>{const w=inc(fresh());w.events.push(JSON.parse(JSON.stringify(w.events[0])));bad(()=>C.validate(w),/Duplicate ledger event/)});
 test('E1: engagement dupliqué refusé',()=>{const w=C.addCommitment(fresh(),{clubId:'a',commitmentId:'wages',due:next,amount:400});w.commitments.push({...w.commitments[0]});bad(()=>C.validate(w),/Duplicate commitment/)});
 test('E1: export JSON puis relecture cohérente',()=>{let w=cap(fresh());w=inc(w,300);w=pay(w,80);const read=JSON.parse(JSON.stringify(w));assert.equal(C.validate(read),true);assert.deepEqual(C.snapshot(read,'a'),C.snapshot(w,'a'))});
+
+test('E1 hardening: sale recognizes carrying value and real margin',()=>{
+ let w=cap(fresh(),'a',5000,'seller-cap');
+ w=C.invest(w,{clubId:'a',eventId:'asset',period:month,amount:600});
+ w=cap(w,'b',1000,'buyer-cap');
+ const before=C.snapshot(w,'a').cash+C.snapshot(w,'b').cash;
+ w=C.transfer(w,{sellerId:'a',buyerId:'b',eventId:'player-sale',period:next,amount:800,bookValue:600});
+ const a=C.snapshot(w,'a'),b=C.snapshot(w,'b');
+ assert.deepEqual([a.fixedAssets,a.revenue,a.expense,a.result,b.fixedAssets],[0,800,600,200,800]);
+ assert.equal(a.cash+b.cash,before);assert.equal(C.validate(w),true);
+});
+test('E1 hardening: selling more asset value than owned rejects atomically',()=>{
+ let w=cap(fresh(),'a',1000,'seller-cap');w=cap(w,'b',1000,'buyer-cap');
+ const original=JSON.stringify(w);
+ bad(()=>C.transfer(w,{sellerId:'a',buyerId:'b',eventId:'bad-sale',period:next,amount:800,bookValue:1}),/book value exceeds/);
+ assert.equal(JSON.stringify(w),original);
+});
+test('E1 hardening: distinct commitments cannot reuse the same payment event',()=>{
+ let w=cap(fresh());w=C.addCommitment(w,{clubId:'a',commitmentId:'salary-one',due:next,amount:100});
+ w=C.addCommitment(w,{clubId:'a',commitmentId:'salary-two',due:next,amount:100});
+ w=C.settleCommitment(w,{clubId:'a',commitmentId:'salary-one',eventId:'shared-payment',period:next});
+ bad(()=>C.settleCommitment(w,{clubId:'a',commitmentId:'salary-two',eventId:'shared-payment',period:next}),/already assigned/);
+ assert.equal(C.snapshot(w,'a').cash,900);
+});
+test('E1 hardening: forged settled promise or mismatched payment is detected',()=>{
+ let w=C.addCommitment(cap(fresh()),{clubId:'a',commitmentId:'salary',due:next,amount:100});
+ w.commitments[0].settled=true;bad(()=>C.validate(w),/payment binding mismatch/);
+ let paid=C.settleCommitment(C.addCommitment(cap(fresh()),{clubId:'a',commitmentId:'salary',due:next,amount:100}),{clubId:'a',commitmentId:'salary',eventId:'salary-payment',period:next});
+ paid.events.find(e=>e.eventId==='salary-payment').description='commitment:other';
+ bad(()=>C.validate(paid),/payment binding mismatch/);
+});
