@@ -461,7 +461,7 @@ try:
                 if f["frame"] in (phase["startFrame"],phase["endFrame"])
             ]
             phase["stanceGroundedA"]=all(
-                abs(h)<=.03 for h in phase["stanceSkinHeightsA"])
+                -.01 <= h <= .03 for h in phase["stanceSkinHeightsA"])
             # At least one supporting skinned foot per actor within 3cm,
             # plus neither supporting foot penetrating > 1cm.
             phase["stanceGroundedB"]=all(
@@ -470,6 +470,7 @@ try:
                     for s in ("foot_l","foot_r"))
                 for f in record["frames"]
                 if f["frame"] in (phase["startFrame"],phase["endFrame"]))
+            # Reject >1 cm floor penetration even when XY lock is excellent.
             phase["standingStance3DQualified"]=(
                 phase["stanceGroundedA"]
                 and phase["stanceGroundedB"]
