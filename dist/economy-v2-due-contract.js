@@ -86,13 +86,14 @@
  function summary(w,clubId,asOfPeriod){
   validate(w);check(id(clubId)&&period(asOfPeriod),'Invalid summary');
   const matched=w.obligations.filter(o=>o.clubId===clubId&&o.confirmedPeriod<=asOfPeriod);
-  const unpaid=matched.filter(o=>o.status!=='paid');
+  const paidAsOf=o=>w.payments.some(p=>p.clubId===o.clubId&&p.obligationId===o.obligationId&&p.paidPeriod<=asOfPeriod);
+  const unpaid=matched.filter(o=>!paidAsOf(o));
   const due=unpaid.filter(o=>o.due<=asOfPeriod);
   return {clubId,asOfPeriod,verifiedDocuments:matched.length,
    registeredFuture:unpaid.filter(o=>o.due>asOfPeriod).reduce((s,o)=>s+o.amount,0),
    dueUnpaid:due.reduce((s,o)=>s+o.amount,0),
    dueCount:due.length,
-   paidDocuments:matched.filter(o=>o.status==='paid').length,
+   paidDocuments:matched.filter(paidAsOf).length,
    unmeasuredLegacyLiabilities:null};
  }
  function legacyPreview(save){
