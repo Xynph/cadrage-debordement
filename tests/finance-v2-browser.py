@@ -25,7 +25,12 @@ try:
         page.goto('http://127.0.0.1:%s/'%server.server_address[1])
         page.evaluate('start(0)')
         page.evaluate("nav('finance')")
-        check('V2 inside real Finances tab',page.locator('.finance-v2-native').is_visible())
+        # V4.9's genuine native navigation partitions Finance into subpages.
+        # New financial decisions belong to the existing "Journal et décisions"
+        # subpage, which is hidden until selected (not a standalone HTML view).
+        check('Finance subpage navigation present',page.locator('[data-da42-subpage="dossiers"]').count()==1)
+        page.locator('[data-da42-subpage="dossiers"]').click()
+        check('V2 inside real Finances tab / Journal et décisions',page.locator('.finance-v2-native').is_visible())
         check('real cash shown',page.locator('.finance-v2-native').inner_text().find('Trésorerie actuelle')>=0)
         original=page.evaluate('JSON.stringify(S)')
         page.screenshot(path=str(OUT/'finance-v2-1920x1080.png'),full_page=True)
@@ -47,6 +52,7 @@ try:
         check('reloaded facility level',page.evaluate('worldClub(S.club).facilities')==3)
         check('reloaded academy plan',page.evaluate('S.careerManagement.academyInvestment')==4000)
         page.evaluate("nav('finance')")
+        page.locator('[data-da42-subpage="dossiers"]').click()
         check('screen persists after load',page.locator('.finance-v2-native').is_visible())
         page.set_viewport_size({'width':1440,'height':900})
         page.screenshot(path=str(OUT/'finance-v2-1440x900.png'),full_page=True)
