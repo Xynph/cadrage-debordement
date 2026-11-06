@@ -75,9 +75,25 @@ try:
             })""")
             assert outcome['choice']==choice and outcome['inbox']==1,outcome
             variants[choice]=outcome
+        career=page.evaluate("""() => {
+          start(0);
+          const checks=[];
+          for(let y=0;y<15;y++){
+            const before=S.season;
+            S.phase='ended';S.round=26;S.live=null;
+            advanceSeason();
+            if(S.season!==before+1)throw Error('Real rollover failure year '+before);
+            const doc=createSaveDocument();
+            const restored=parseSaveDocument(JSON.stringify(doc));
+            if(restored.state.season!==S.season)throw Error('JSON roundtrip failed year '+before);
+            checks.push(S.season);
+          }
+          return {rollovers:checks.length,season:S.season,history:S.livingLockerRoom?.history?.length??0};
+        }""")
+        assert career['rollovers']==15 and career['season']==16,career
         assert not errors,errors
         page.screenshot(path="/tmp/v117-v123-chromium.png",full_page=True)
-        print("V117-V123 CHROMIUM PASS",json.dumps({"initial":init,"responsabiliser":first,"legacy":legacy,"variants":variants},ensure_ascii=False))
+        print("V117-V123 CHROMIUM PASS",json.dumps({"initial":init,"responsabiliser":first,"legacy":legacy,"variants":variants,"career":career},ensure_ascii=False))
         browser.close()
 finally:
     server.shutdown()
