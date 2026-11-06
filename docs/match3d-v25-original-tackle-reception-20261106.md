@@ -41,3 +41,15 @@ Au commit `111cf896676cdc3ef5855acdf261f55b5fe3ed45`, le script de test a été 
 Suite obligatoire : réceptionner le nouveau run, comparer volumes et racines et corriger, si démontré, l'application réelle des transforms communes aux objets de chaque acteur, sur copies exclusivement ; créer ensuite une cinématique nouvelle anatomiquement plausible avec véritable prise, chute et récupération, puis inspecter vues et six appuis. Aucune comparaison Kickback sans validation visuelle de l'animation seule.
 
 Non-modifications : PR #300, GLB sources, moteur, PRODUCTEUR, DATA/LNR, sauvegardes, main, gate, fusion et Work. CMU 18_03/19_03 refusé, Player Motion non acquis.
+
+## Réception après correction de la hiérarchie glTF (complément)
+
+- Run [42188844864](https://github.com/Xynph/cadrage-debordement/actions/runs/42188844864) au SHA `974acbba374317b5c1176229fc5c296d975bc966` : `completed/success`.
+- Artefact GitHub `13489190339` : ZIP **4 441 668 octets**, SHA256 octets locaux = digest GitHub `06f92dc3b7f6e5be62fdd2a5d6a8cced3d6cfd602732c6c841e2cc533ddd47f2`.
+- **33 entrées dont 30 nouveaux PNG** aux mêmes 5 frames × 2 vues × 3 LOD ; rapport `errors=[]`. Toutes les vues inspectées.
+- À frame 1 : écart racine A/B X inchangé **2,30 m**, écart des AABB skinnées X **0,30 m** sur LOD0/1/2, croisements non coplanaires **0/0/0** (contre 109/78/31 avant correction). **Correction structurelle mesurée**, sans translation ajoutée pour faire correspondre les mains.
+- Frame 40 : mains A gauche/droite **99,6/83,1 cm**, B **90,5/103,2 cm** sur LOD0 (valeurs des LOD1/2 très voisines) ; 0/4 à ≤5cm. Croisements stricts **30/30/30** LOD0/1/2 ; les comptes coplanaires/tangents restent non déterminés, et le volume de pénétration n'est pas résolu.
+- Frame 60 : minima des pieds à +7,4 à +22,2 cm environ au-dessus du plan calibré selon acteur/LOD ; aucun contact sol physique. Le clip montre des personnages suspendus et une bascule sans plaquage. **REFUS VISUEL maintenu 3/3 LOD**.
+- **Kickback non exécuté**, puisque la qualité cinématique initiale est insuffisante. Cette correction constitue une fiabilisation du banc de test, non une animation rugby livrable.
+
+Suite : concevoir sur les copies des animations locomotion/pose et appuis réalistes, y compris une saisie anatomique chronométrée, en conservant le parent d'acteur glTF désormais cohérent. Vérifier chaque frame et les intersections de vraie peau avant toute comparaison physique.
