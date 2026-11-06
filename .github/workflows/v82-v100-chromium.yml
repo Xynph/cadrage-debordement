@@ -1,0 +1,24 @@
+name: V82-V100 Formation Chromium dedie
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/espoirs-*.js'
+      - 'dist/index.html'
+      - 'tests/v82-v100-*'
+      - '.github/workflows/v82-v100-chromium.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  formation-chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install playwright==1.57.0
+      - run: python -m playwright install --with-deps chromium
+      - run: python tests/v82-v100-chromium.py
