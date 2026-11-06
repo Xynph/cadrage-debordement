@@ -27,6 +27,12 @@ jobs:
           if(p.length) {
             console.log('player field names:',Object.keys(p[0]));
             console.log('attribute names:',Object.keys(p[0].attributesV2));
+            console.log('v2-v5 model metadata:',Object.fromEntries(['modelV2','modelV3','modelV4','modelV5'].map(k=>[k, file[k]&&typeof file[k]==='object'?Object.keys(file[k]):typeof file[k]])));
+            for(const k of ['v2Evidence','v3Calibration','performance2025_2026','v4EvidenceAdjustment','hiddenTraitsV2']){
+              console.log('evidence '+k+' shape:',p[0][k]&&typeof p[0][k]==='object'?Object.keys(p[0][k]):typeof p[0][k]);
+              console.log('evidence '+k+' populated count:',p.filter(x=>x[k]!==undefined&&x[k]!==null).length);
+            }
+            console.log('gameplay position estimates:',p.filter(x=>x.gameplayPositionEstimated).length);
             console.log('potential type:',typeof p[0].potential);
             console.log('hidden trait field types:', Object.fromEntries(Object.entries(p[0]).filter(([k])=>/trait|hidden/i.test(k)).map(([k,v])=>[k,Array.isArray(v)?'array':typeof v])));
           }
