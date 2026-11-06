@@ -1,0 +1,4635 @@
+{
+  "schema": "rugby-real-v11-native-campaign",
+  "sourceBase": "3014774ab4ca13d1d325756ed89f2bb029b1b99c",
+  "masterSha256": "d339d50542bfafd759c188fe593c9e51126826aca39cf9e35945ec197de55bb3",
+  "node": "v24.22.1",
+  "method": "Unmodified createRugbyMatch -> advanceRugby -> applyMatchInjuries, tests/harness.cjs. Both AI classic, morale 75, fresh condition 100 except stated fatigue scenario. Same independent seeds, both home/away at every seed. No league bonus.",
+  "seeds": [
+    763395069,
+    1304513460,
+    3609578174,
+    903317724,
+    316293930,
+    1583989358,
+    4066634993,
+    1356552994,
+    1710479887,
+    2724796043,
+    3725534180,
+    1565090572,
+    3685245790,
+    2169168717,
+    1996651305,
+    2722247995,
+    3759435805,
+    2502267158,
+    859637816,
+    3766549327,
+    3146827743,
+    3234173274,
+    3881974050,
+    859762454,
+    1702316493,
+    397867251,
+    3799770915,
+    2635853538,
+    4002845493,
+    1700092013,
+    2262619867,
+    79353921,
+    3586905402,
+    1189342990,
+    111011676,
+    4068173550,
+    2232512243,
+    3356432696,
+    38476294,
+    295592820,
+    1200901661,
+    1314670910,
+    1760717132,
+    89184480,
+    1860749477,
+    1562708086,
+    2498860025,
+    456582892,
+    652860799,
+    3610912531,
+    2438077356,
+    3022901954,
+    3352714762,
+    1348813805,
+    3282206938,
+    3086075373,
+    3681158748,
+    2415847393,
+    2306538441,
+    3589255316,
+    4029345405,
+    148341091,
+    3191972657,
+    2859073654
+  ],
+  "referenceRanking": {
+    "top14": [
+      {
+        "slug": "clermont",
+        "q": 78.53333333333333
+      },
+      {
+        "slug": "pau",
+        "q": 79.33333333333333
+      },
+      {
+        "slug": "la-rochelle",
+        "q": 79.4
+      },
+      {
+        "slug": "bayonne",
+        "q": 79.46666666666667
+      },
+      {
+        "slug": "lyon",
+        "q": 80
+      },
+      {
+        "slug": "bordeaux-begles",
+        "q": 80.13333333333334
+      },
+      {
+        "slug": "perpignan",
+        "q": 80.53333333333333
+      },
+      {
+        "slug": "toulon",
+        "q": 80.53333333333333
+      },
+      {
+        "slug": "castres",
+        "q": 80.8
+      },
+      {
+        "slug": "vannes",
+        "q": 80.8
+      },
+      {
+        "slug": "paris",
+        "q": 80.86666666666666
+      },
+      {
+        "slug": "racing-92",
+        "q": 80.86666666666666
+      },
+      {
+        "slug": "toulouse",
+        "q": 81.13333333333334
+      },
+      {
+        "slug": "montpellier",
+        "q": 81.4
+      }
+    ],
+    "prod2": [
+      {
+        "slug": "agen",
+        "q": 74.06666666666666
+      },
+      {
+        "slug": "biarritz",
+        "q": 74.86666666666666
+      },
+      {
+        "slug": "angouleme",
+        "q": 75.2
+      },
+      {
+        "slug": "dax",
+        "q": 75.26666666666667
+      },
+      {
+        "slug": "oyonnax",
+        "q": 75.53333333333333
+      },
+      {
+        "slug": "nice",
+        "q": 75.73333333333333
+      },
+      {
+        "slug": "nevers",
+        "q": 75.8
+      },
+      {
+        "slug": "colomiers",
+        "q": 76
+      },
+      {
+        "slug": "grenoble",
+        "q": 76.06666666666666
+      },
+      {
+        "slug": "beziers",
+        "q": 76.07142857142857
+      },
+      {
+        "slug": "narbonne",
+        "q": 76.13333333333334
+      },
+      {
+        "slug": "provence-rugby",
+        "q": 76.2
+      },
+      {
+        "slug": "valence-romans",
+        "q": 76.23076923076923
+      },
+      {
+        "slug": "brive",
+        "q": 76.35714285714286
+      },
+      {
+        "slug": "aurillac",
+        "q": 76.38461538461539
+      },
+      {
+        "slug": "montauban",
+        "q": 77.21428571428571
+      }
+    ]
+  },
+  "selected": {
+    "topWeak": "clermont",
+    "topMid": "toulon",
+    "topPeer": "perpignan",
+    "topStrong": "montpellier",
+    "proWeak": "agen",
+    "proMid": "grenoble",
+    "proPeer": "colomiers",
+    "proBest": "montauban"
+  },
+  "candidate": {
+    "players": 1592,
+    "affected": 805,
+    "adjustments": 3860
+  },
+  "roleAudit": {
+    "Pilier gauche": {
+      "top14": 74,
+      "prod2": 71,
+      "gapBefore": 4.97,
+      "gapAfter": 6.89,
+      "targetGap": 7,
+      "primary": [
+        "scrumTechnique",
+        "strength",
+        "ruckClearout",
+        "maul",
+        "tackling"
+      ]
+    },
+    "Pilier droit": {
+      "top14": 65,
+      "prod2": 61,
+      "gapBefore": 3.53,
+      "gapAfter": 6.52,
+      "targetGap": 7,
+      "primary": [
+        "scrumTechnique",
+        "strength",
+        "ruckClearout",
+        "maul",
+        "tackling"
+      ]
+    },
+    "Talonneur": {
+      "top14": 68,
+      "prod2": 67,
+      "gapBefore": 4.09,
+      "gapAfter": 6.99,
+      "targetGap": 7,
+      "primary": [
+        "hooking",
+        "lineoutThrow",
+        "tackling",
+        "maul",
+        "ruckClearout"
+      ]
+    },
+    "Deuxième ligne": {
+      "top14": 110,
+      "prod2": 107,
+      "gapBefore": 3.86,
+      "gapAfter": 6.42,
+      "targetGap": 7,
+      "primary": [
+        "lineoutJump",
+        "lineoutLift",
+        "maul",
+        "ruckClearout",
+        "strength"
+      ]
+    },
+    "Troisième ligne": {
+      "top14": 107,
+      "prod2": 107,
+      "gapBefore": 4.4,
+      "gapAfter": 6.98,
+      "targetGap": 7,
+      "primary": [
+        "jackal",
+        "tackling",
+        "ruckClearout",
+        "workRate",
+        "ballCarry"
+      ]
+    },
+    "Numéro 8": {
+      "top14": 47,
+      "prod2": 46,
+      "gapBefore": 5.46,
+      "gapAfter": 6.98,
+      "targetGap": 7,
+      "primary": [
+        "ballCarry",
+        "strength",
+        "tackling",
+        "jackal",
+        "workRate"
+      ]
+    },
+    "Demi de mêlée": {
+      "top14": 47,
+      "prod2": 64,
+      "gapBefore": 4.5,
+      "gapAfter": 6.83,
+      "targetGap": 7,
+      "primary": [
+        "passing",
+        "decisions",
+        "vision",
+        "kickAccuracy",
+        "workRate"
+      ]
+    },
+    "Demi d’ouverture": {
+      "top14": 55,
+      "prod2": 64,
+      "gapBefore": 3.72,
+      "gapAfter": 6.78,
+      "targetGap": 7,
+      "primary": [
+        "kickAccuracy",
+        "passing",
+        "decisions",
+        "vision",
+        "kickDistance"
+      ]
+    },
+    "Centre": {
+      "top14": 115,
+      "prod2": 99,
+      "gapBefore": 5.71,
+      "gapAfter": 7,
+      "targetGap": 7,
+      "primary": [
+        "tackling",
+        "ballCarry",
+        "passing",
+        "offload",
+        "decisions"
+      ]
+    },
+    "Ailier": {
+      "top14": 76,
+      "prod2": 53,
+      "gapBefore": 3.93,
+      "gapAfter": 6.79,
+      "targetGap": 7,
+      "primary": [
+        "topSpeed",
+        "acceleration",
+        "evasion",
+        "receiving",
+        "kickChase"
+      ]
+    },
+    "Arrière": {
+      "top14": 41,
+      "prod2": 48,
+      "gapBefore": 3.53,
+      "gapAfter": 7,
+      "targetGap": 7,
+      "primary": [
+        "aerialAbility",
+        "receiving",
+        "positioning",
+        "kickDistance",
+        "decisions"
+      ]
+    }
+  },
+  "versions": {
+    "legacy": {
+      "label": "11 historical master skills; offline input, NOT current LNR runtime",
+      "recruits": [
+        {
+          "playerId": "lnr:1148",
+          "donor": "la-rochelle",
+          "role": "Troisième ligne",
+          "replaces": "lnr:1312",
+          "gain": 5
+        },
+        {
+          "playerId": "lnr:12438",
+          "donor": "toulouse",
+          "role": "Pilier droit",
+          "replaces": "lnr:1001",
+          "gain": 5
+        },
+        {
+          "playerId": "lnr:11794",
+          "donor": "castres",
+          "role": "Troisième ligne",
+          "replaces": "lnr:286",
+          "gain": 4
+        },
+        {
+          "playerId": "lnr:133",
+          "donor": "pau",
+          "role": "Talonneur",
+          "replaces": "lnr:479",
+          "gain": 3
+        },
+        {
+          "playerId": "lnr:1004",
+          "donor": "la-rochelle",
+          "role": "Demi de mêlée",
+          "replaces": "lnr:12521",
+          "gain": 2
+        }
+      ],
+      "lost": [
+        {
+          "playerId": "lnr:402",
+          "role": "Ailier",
+          "note": 84
+        },
+        {
+          "playerId": "lnr:13371",
+          "role": "Demi d’ouverture",
+          "note": 81
+        },
+        {
+          "playerId": "lnr:3233",
+          "role": "Pilier droit",
+          "note": 80
+        },
+        {
+          "playerId": "lnr:696",
+          "role": "Ailier",
+          "note": 80
+        },
+        {
+          "playerId": "lnr:657",
+          "role": "Pilier gauche",
+          "note": 79
+        }
+      ],
+      "results": {
+        "top14_peer": {
+          "teams": [
+            "toulon",
+            "perpignan"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 60,
+            "draws": 6,
+            "winPct": 46.88,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              40.02,
+              53.73
+            ],
+            "drawPct": 4.69,
+            "margin": 0.29,
+            "score": [
+              16.17,
+              15.88
+            ],
+            "tries": [
+              2.15,
+              2.03
+            ],
+            "penalties": [
+              5.26,
+              5.05
+            ],
+            "yellows": [
+              0.87,
+              0.8
+            ],
+            "reds": [
+              0.1,
+              0.1
+            ],
+            "fatigue": [
+              21.95,
+              22.31
+            ],
+            "injuries": [
+              0.37,
+              0.36
+            ],
+            "metres": [
+              180.4,
+              176.14
+            ],
+            "duration": 82.92
+          },
+          "rowsSha256": "658715d3609781cb74fc53a749dd0c8b2b4bbfafa08685284a3634a0ec09b3a3"
+        },
+        "prod2_peer": {
+          "teams": [
+            "grenoble",
+            "colomiers"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 64,
+            "draws": 3,
+            "winPct": 50,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              44.23,
+              55.77
+            ],
+            "drawPct": 2.34,
+            "margin": 0.71,
+            "score": [
+              16.67,
+              15.96
+            ],
+            "tries": [
+              2.25,
+              2.19
+            ],
+            "penalties": [
+              5.52,
+              5.87
+            ],
+            "yellows": [
+              0.87,
+              0.98
+            ],
+            "reds": [
+              0.1,
+              0.09
+            ],
+            "fatigue": [
+              23.15,
+              23.27
+            ],
+            "injuries": [
+              0.47,
+              0.43
+            ],
+            "metres": [
+              167.96,
+              170.62
+            ],
+            "duration": 83.12
+          },
+          "rowsSha256": "8195670531f6bca2fe7bc49f298a0f9c1a2a6b023221a48549ab7ab6d9d53627"
+        },
+        "prod2_mid_top14_mid": {
+          "teams": [
+            "grenoble",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 39,
+            "draws": 7,
+            "winPct": 30.47,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              22.41,
+              38.52
+            ],
+            "drawPct": 5.47,
+            "margin": -4.56,
+            "score": [
+              14.39,
+              18.95
+            ],
+            "tries": [
+              1.89,
+              2.57
+            ],
+            "penalties": [
+              5.66,
+              5.02
+            ],
+            "yellows": [
+              0.95,
+              0.86
+            ],
+            "reds": [
+              0.08,
+              0.09
+            ],
+            "fatigue": [
+              23,
+              21.97
+            ],
+            "injuries": [
+              0.45,
+              0.35
+            ],
+            "metres": [
+              160.18,
+              186.23
+            ],
+            "duration": 82.8
+          },
+          "rowsSha256": "1f17055d88cd08dedbb76f3beaf6e99f674d7a5636a55747faa2d96c9102d0ca"
+        },
+        "promoted0_weak": {
+          "teams": [
+            "montauban",
+            "clermont"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 39,
+            "draws": 6,
+            "winPct": 30.47,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              21.31,
+              39.63
+            ],
+            "drawPct": 4.69,
+            "margin": -6.89,
+            "score": [
+              13.11,
+              20
+            ],
+            "tries": [
+              1.73,
+              2.7
+            ],
+            "penalties": [
+              5.21,
+              5.71
+            ],
+            "yellows": [
+              1.04,
+              0.86
+            ],
+            "reds": [
+              0.11,
+              0.14
+            ],
+            "fatigue": [
+              20.19,
+              24.16
+            ],
+            "injuries": [
+              0.41,
+              0.47
+            ],
+            "metres": [
+              119.45,
+              233.04
+            ],
+            "duration": 82.9
+          },
+          "rowsSha256": "1e62c4129107cc089346b8b30a722a4d1af68849c2dd007e554cc4d815585839"
+        },
+        "promoted0_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 31,
+            "draws": 4,
+            "winPct": 24.22,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              16.98,
+              31.46
+            ],
+            "drawPct": 3.13,
+            "margin": -7.15,
+            "score": [
+              12.17,
+              19.32
+            ],
+            "tries": [
+              1.59,
+              2.48
+            ],
+            "penalties": [
+              5.28,
+              5.58
+            ],
+            "yellows": [
+              0.8,
+              0.79
+            ],
+            "reds": [
+              0.09,
+              0.1
+            ],
+            "fatigue": [
+              20.18,
+              23.73
+            ],
+            "injuries": [
+              0.27,
+              0.39
+            ],
+            "metres": [
+              117.47,
+              225.95
+            ],
+            "duration": 82.67
+          },
+          "rowsSha256": "d90fab21e017f06d796f4eca8569f1c75b3e5458a47c02d3c26b991cf5760baf"
+        },
+        "promoted0_strong": {
+          "teams": [
+            "montauban",
+            "montpellier"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 32,
+            "draws": 4,
+            "winPct": 25,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              18.1,
+              31.9
+            ],
+            "drawPct": 3.13,
+            "margin": -7.23,
+            "score": [
+              12.3,
+              19.52
+            ],
+            "tries": [
+              1.55,
+              2.48
+            ],
+            "penalties": [
+              5.43,
+              5.77
+            ],
+            "yellows": [
+              0.92,
+              0.84
+            ],
+            "reds": [
+              0.09,
+              0.13
+            ],
+            "fatigue": [
+              20.13,
+              24.19
+            ],
+            "injuries": [
+              0.41,
+              0.38
+            ],
+            "metres": [
+              115.08,
+              223.25
+            ],
+            "duration": 82.73
+          },
+          "rowsSha256": "90ba186c14594984b52ed2ccd1daa579dadcf2ec9c1015b33768cfae77d08290"
+        },
+        "relegated_keep_weak": {
+          "teams": [
+            "clermont",
+            "agen"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 81,
+            "draws": 9,
+            "winPct": 63.28,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              55.64,
+              70.92
+            ],
+            "drawPct": 7.03,
+            "margin": 3.38,
+            "score": [
+              18.38,
+              15.01
+            ],
+            "tries": [
+              2.44,
+              2.08
+            ],
+            "penalties": [
+              5.2,
+              5.74
+            ],
+            "yellows": [
+              0.8,
+              0.92
+            ],
+            "reds": [
+              0.05,
+              0.09
+            ],
+            "fatigue": [
+              22.51,
+              23.19
+            ],
+            "injuries": [
+              0.31,
+              0.45
+            ],
+            "metres": [
+              188.26,
+              162.22
+            ],
+            "duration": 82.73
+          },
+          "rowsSha256": "7180e730464e1156d4d18ea431804e7b151676b207120ae6fe5e8b9428e9e7a1"
+        },
+        "relegated_keep_mid": {
+          "teams": [
+            "clermont",
+            "grenoble"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 71,
+            "draws": 10,
+            "winPct": 55.47,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              46.98,
+              63.96
+            ],
+            "drawPct": 7.81,
+            "margin": 1.82,
+            "score": [
+              16.98,
+              15.16
+            ],
+            "tries": [
+              2.24,
+              2.09
+            ],
+            "penalties": [
+              5.13,
+              5.62
+            ],
+            "yellows": [
+              0.88,
+              0.97
+            ],
+            "reds": [
+              0.08,
+              0.08
+            ],
+            "fatigue": [
+              22.56,
+              23.05
+            ],
+            "injuries": [
+              0.37,
+              0.45
+            ],
+            "metres": [
+              186.55,
+              168.99
+            ],
+            "duration": 83.08
+          },
+          "rowsSha256": "a85a1123a303717a284eb6d5b1f17c5f09e332fc79ec1455ded098eb81db3ca1"
+        },
+        "relegated_keep_best": {
+          "teams": [
+            "clermont",
+            "montauban"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 83,
+            "draws": 6,
+            "winPct": 64.84,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              55.67,
+              74.02
+            ],
+            "drawPct": 4.69,
+            "margin": 6.89,
+            "score": [
+              20,
+              13.11
+            ],
+            "tries": [
+              2.7,
+              1.73
+            ],
+            "penalties": [
+              5.71,
+              5.21
+            ],
+            "yellows": [
+              0.86,
+              1.04
+            ],
+            "reds": [
+              0.14,
+              0.11
+            ],
+            "fatigue": [
+              24.16,
+              20.19
+            ],
+            "injuries": [
+              0.47,
+              0.41
+            ],
+            "metres": [
+              233.04,
+              119.45
+            ],
+            "duration": 82.9
+          },
+          "rowsSha256": "2cad94e064aa1b7f4fa71aee19c8b35d7684b80fd746654a7a915b49681c53da"
+        },
+        "promoted2_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 27,
+            "draws": 3,
+            "winPct": 21.09,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              14.26,
+              27.93
+            ],
+            "drawPct": 2.34,
+            "margin": -7.26,
+            "score": [
+              12.74,
+              20
+            ],
+            "tries": [
+              1.68,
+              2.59
+            ],
+            "penalties": [
+              5.42,
+              5.47
+            ],
+            "yellows": [
+              0.93,
+              0.73
+            ],
+            "reds": [
+              0.13,
+              0.12
+            ],
+            "fatigue": [
+              19.99,
+              23.78
+            ],
+            "injuries": [
+              0.36,
+              0.4
+            ],
+            "metres": [
+              115.94,
+              232
+            ],
+            "duration": 82.86
+          },
+          "rowsSha256": "d76af960a229b1b3515e49a713223015f842924d13fc5b98a5ea6c32fb8187fe"
+        },
+        "promoted3_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 28,
+            "draws": 4,
+            "winPct": 21.88,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              14.68,
+              29.07
+            ],
+            "drawPct": 3.13,
+            "margin": -7.32,
+            "score": [
+              12.87,
+              20.19
+            ],
+            "tries": [
+              1.7,
+              2.61
+            ],
+            "penalties": [
+              5.34,
+              5.51
+            ],
+            "yellows": [
+              0.93,
+              0.75
+            ],
+            "reds": [
+              0.13,
+              0.12
+            ],
+            "fatigue": [
+              19.93,
+              23.79
+            ],
+            "injuries": [
+              0.36,
+              0.37
+            ],
+            "metres": [
+              116.29,
+              233.75
+            ],
+            "duration": 82.85
+          },
+          "rowsSha256": "5ac882b7e68af59c39ab8a7bedd70a5c612d9f6442c7ac24dc21e25ccaaaee1b"
+        },
+        "promoted5_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 36,
+            "draws": 6,
+            "winPct": 28.13,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              19.43,
+              36.82
+            ],
+            "drawPct": 4.69,
+            "margin": -6.43,
+            "score": [
+              12.95,
+              19.38
+            ],
+            "tries": [
+              1.71,
+              2.49
+            ],
+            "penalties": [
+              5.24,
+              5.49
+            ],
+            "yellows": [
+              0.91,
+              0.79
+            ],
+            "reds": [
+              0.12,
+              0.09
+            ],
+            "fatigue": [
+              19.74,
+              23.82
+            ],
+            "injuries": [
+              0.34,
+              0.41
+            ],
+            "metres": [
+              118.75,
+              229.37
+            ],
+            "duration": 82.67
+          },
+          "rowsSha256": "45cb02953ea10651ad358487b8011985b69092c928edd174e040978081f6570a"
+        },
+        "relegated_lose5_mid": {
+          "teams": [
+            "clermont",
+            "grenoble"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 69,
+            "draws": 6,
+            "winPct": 53.91,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              46.25,
+              61.56
+            ],
+            "drawPct": 4.69,
+            "margin": 2.28,
+            "score": [
+              17.07,
+              14.79
+            ],
+            "tries": [
+              2.3,
+              1.95
+            ],
+            "penalties": [
+              5.34,
+              5.63
+            ],
+            "yellows": [
+              0.92,
+              0.97
+            ],
+            "reds": [
+              0.08,
+              0.09
+            ],
+            "fatigue": [
+              22.92,
+              23.05
+            ],
+            "injuries": [
+              0.33,
+              0.4
+            ],
+            "metres": [
+              187.29,
+              170.51
+            ],
+            "duration": 82.97
+          },
+          "rowsSha256": "aa56e3a893b8ede801ddb132b1ec63a8db8d3cbc32a849f20ad653a71c764265"
+        }
+      }
+    },
+    "baseline": {
+      "label": "36 baseline attributes through candidate projection",
+      "recruits": [
+        {
+          "playerId": "lnr:1148",
+          "donor": "la-rochelle",
+          "role": "Troisième ligne",
+          "replaces": "lnr:1312",
+          "gain": 5
+        },
+        {
+          "playerId": "lnr:12438",
+          "donor": "toulouse",
+          "role": "Pilier droit",
+          "replaces": "lnr:1001",
+          "gain": 5
+        },
+        {
+          "playerId": "lnr:11794",
+          "donor": "castres",
+          "role": "Troisième ligne",
+          "replaces": "lnr:286",
+          "gain": 4
+        },
+        {
+          "playerId": "lnr:133",
+          "donor": "pau",
+          "role": "Talonneur",
+          "replaces": "lnr:479",
+          "gain": 3
+        },
+        {
+          "playerId": "lnr:1004",
+          "donor": "la-rochelle",
+          "role": "Demi de mêlée",
+          "replaces": "lnr:12521",
+          "gain": 2
+        }
+      ],
+      "lost": [
+        {
+          "playerId": "lnr:402",
+          "role": "Ailier",
+          "note": 84
+        },
+        {
+          "playerId": "lnr:13371",
+          "role": "Demi d’ouverture",
+          "note": 81
+        },
+        {
+          "playerId": "lnr:3233",
+          "role": "Pilier droit",
+          "note": 80
+        },
+        {
+          "playerId": "lnr:696",
+          "role": "Ailier",
+          "note": 80
+        },
+        {
+          "playerId": "lnr:657",
+          "role": "Pilier gauche",
+          "note": 79
+        }
+      ],
+      "results": {
+        "top14_peer": {
+          "teams": [
+            "toulon",
+            "perpignan"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 60,
+            "draws": 5,
+            "winPct": 46.88,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              39.68,
+              54.07
+            ],
+            "drawPct": 3.91,
+            "margin": -0.63,
+            "score": [
+              16.15,
+              16.78
+            ],
+            "tries": [
+              2.06,
+              2.11
+            ],
+            "penalties": [
+              5.3,
+              5.11
+            ],
+            "yellows": [
+              0.87,
+              0.88
+            ],
+            "reds": [
+              0.13,
+              0.11
+            ],
+            "fatigue": [
+              21.79,
+              22.06
+            ],
+            "injuries": [
+              0.48,
+              0.45
+            ],
+            "metres": [
+              168.81,
+              172.59
+            ],
+            "duration": 83.26
+          },
+          "rowsSha256": "f39495c1ce47b398016d9f1c0acc14f71d48700223bf122898ac42fbe8d80762"
+        },
+        "prod2_peer": {
+          "teams": [
+            "grenoble",
+            "colomiers"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 59,
+            "draws": 5,
+            "winPct": 46.09,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              39.8,
+              52.38
+            ],
+            "drawPct": 3.91,
+            "margin": 0.18,
+            "score": [
+              16.03,
+              15.85
+            ],
+            "tries": [
+              2.05,
+              2.17
+            ],
+            "penalties": [
+              5.68,
+              5.36
+            ],
+            "yellows": [
+              0.97,
+              0.9
+            ],
+            "reds": [
+              0.11,
+              0.09
+            ],
+            "fatigue": [
+              23.33,
+              23.42
+            ],
+            "injuries": [
+              0.41,
+              0.39
+            ],
+            "metres": [
+              166.08,
+              173.22
+            ],
+            "duration": 82.98
+          },
+          "rowsSha256": "73bfec6772ba51257845a4361f98b9bdd28a623847892c3344f39457f04ddbeb"
+        },
+        "prod2_mid_top14_mid": {
+          "teams": [
+            "grenoble",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 41,
+            "draws": 5,
+            "winPct": 32.03,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              25,
+              39.06
+            ],
+            "drawPct": 3.91,
+            "margin": -3.98,
+            "score": [
+              14.39,
+              18.37
+            ],
+            "tries": [
+              1.88,
+              2.35
+            ],
+            "penalties": [
+              5.63,
+              5.09
+            ],
+            "yellows": [
+              0.91,
+              0.76
+            ],
+            "reds": [
+              0.17,
+              0.09
+            ],
+            "fatigue": [
+              23.34,
+              21.84
+            ],
+            "injuries": [
+              0.39,
+              0.43
+            ],
+            "metres": [
+              162.32,
+              182.83
+            ],
+            "duration": 82.98
+          },
+          "rowsSha256": "4c5a470b91f70425bec50a3f7988c5a52027383df645c2fc9c3c84ecef5f2ff0"
+        },
+        "promoted0_weak": {
+          "teams": [
+            "montauban",
+            "clermont"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 32,
+            "draws": 4,
+            "winPct": 25,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              17.44,
+              32.56
+            ],
+            "drawPct": 3.13,
+            "margin": -5.94,
+            "score": [
+              13.59,
+              19.52
+            ],
+            "tries": [
+              1.7,
+              2.54
+            ],
+            "penalties": [
+              5.27,
+              5.5
+            ],
+            "yellows": [
+              0.88,
+              0.8
+            ],
+            "reds": [
+              0.11,
+              0.08
+            ],
+            "fatigue": [
+              20.19,
+              24.49
+            ],
+            "injuries": [
+              0.38,
+              0.4
+            ],
+            "metres": [
+              115.12,
+              227.97
+            ],
+            "duration": 82.5
+          },
+          "rowsSha256": "39f821c1b30948b52b15d0c7acba97446b3eedfa42394e0d11f57d63ca00b4a2"
+        },
+        "promoted0_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 35,
+            "draws": 2,
+            "winPct": 27.34,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              19.5,
+              35.19
+            ],
+            "drawPct": 1.56,
+            "margin": -7.87,
+            "score": [
+              12.45,
+              20.31
+            ],
+            "tries": [
+              1.58,
+              2.59
+            ],
+            "penalties": [
+              5.21,
+              5.41
+            ],
+            "yellows": [
+              0.88,
+              0.82
+            ],
+            "reds": [
+              0.12,
+              0.07
+            ],
+            "fatigue": [
+              20.08,
+              23.68
+            ],
+            "injuries": [
+              0.32,
+              0.38
+            ],
+            "metres": [
+              114.31,
+              226.1
+            ],
+            "duration": 82.69
+          },
+          "rowsSha256": "73dbc5292c6228ec02b0da76d0ff714a52ddf9e7a1ac9bb24512f2961ccb5d76"
+        },
+        "promoted0_strong": {
+          "teams": [
+            "montauban",
+            "montpellier"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 30,
+            "draws": 1,
+            "winPct": 23.44,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              15.89,
+              30.99
+            ],
+            "drawPct": 0.78,
+            "margin": -8.57,
+            "score": [
+              11.65,
+              20.22
+            ],
+            "tries": [
+              1.39,
+              2.52
+            ],
+            "penalties": [
+              5.59,
+              5.52
+            ],
+            "yellows": [
+              0.98,
+              0.86
+            ],
+            "reds": [
+              0.09,
+              0.09
+            ],
+            "fatigue": [
+              20.04,
+              23.94
+            ],
+            "injuries": [
+              0.33,
+              0.35
+            ],
+            "metres": [
+              112.38,
+              229.04
+            ],
+            "duration": 82.5
+          },
+          "rowsSha256": "2fcda1557d21ce3bfc0dd36da328c1a43fece5f16ecb97f7bbe346e9baf4b31f"
+        },
+        "relegated_keep_weak": {
+          "teams": [
+            "clermont",
+            "agen"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 82,
+            "draws": 3,
+            "winPct": 64.06,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              57.35,
+              70.78
+            ],
+            "drawPct": 2.34,
+            "margin": 3.42,
+            "score": [
+              17.85,
+              14.43
+            ],
+            "tries": [
+              2.39,
+              1.84
+            ],
+            "penalties": [
+              5.18,
+              5.61
+            ],
+            "yellows": [
+              0.84,
+              1.09
+            ],
+            "reds": [
+              0.12,
+              0.12
+            ],
+            "fatigue": [
+              22.76,
+              23.25
+            ],
+            "injuries": [
+              0.42,
+              0.34
+            ],
+            "metres": [
+              183.15,
+              159.1
+            ],
+            "duration": 83.09
+          },
+          "rowsSha256": "767b8689d7e5c82f8fcd5d72c094d2a9d6c2c75fce0bcb4024b7b1d460b424d9"
+        },
+        "relegated_keep_mid": {
+          "teams": [
+            "clermont",
+            "grenoble"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 69,
+            "draws": 7,
+            "winPct": 53.91,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              47.25,
+              60.56
+            ],
+            "drawPct": 5.47,
+            "margin": 1.66,
+            "score": [
+              16.86,
+              15.2
+            ],
+            "tries": [
+              2.22,
+              1.95
+            ],
+            "penalties": [
+              5.24,
+              5.59
+            ],
+            "yellows": [
+              0.87,
+              0.91
+            ],
+            "reds": [
+              0.13,
+              0.11
+            ],
+            "fatigue": [
+              22.73,
+              23.3
+            ],
+            "injuries": [
+              0.42,
+              0.47
+            ],
+            "metres": [
+              182.01,
+              167.14
+            ],
+            "duration": 83.12
+          },
+          "rowsSha256": "c47893ef0783965b1bf933a417b1a65c9ced91ad9dbfceabc0309837f51e78ee"
+        },
+        "relegated_keep_best": {
+          "teams": [
+            "clermont",
+            "montauban"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 92,
+            "draws": 4,
+            "winPct": 71.88,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              64.04,
+              79.71
+            ],
+            "drawPct": 3.13,
+            "margin": 5.94,
+            "score": [
+              19.52,
+              13.59
+            ],
+            "tries": [
+              2.54,
+              1.7
+            ],
+            "penalties": [
+              5.5,
+              5.27
+            ],
+            "yellows": [
+              0.8,
+              0.88
+            ],
+            "reds": [
+              0.08,
+              0.11
+            ],
+            "fatigue": [
+              24.49,
+              20.19
+            ],
+            "injuries": [
+              0.4,
+              0.38
+            ],
+            "metres": [
+              227.97,
+              115.12
+            ],
+            "duration": 82.5
+          },
+          "rowsSha256": "b4531a9940b22127a5b7962c3e375c13e1ac487d05698d9487cf0bb8b83deef5"
+        },
+        "promoted2_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 38,
+            "draws": 3,
+            "winPct": 29.69,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              21.9,
+              37.47
+            ],
+            "drawPct": 2.34,
+            "margin": -6.98,
+            "score": [
+              13.29,
+              20.27
+            ],
+            "tries": [
+              1.7,
+              2.55
+            ],
+            "penalties": [
+              5.35,
+              5.34
+            ],
+            "yellows": [
+              0.87,
+              0.77
+            ],
+            "reds": [
+              0.13,
+              0.09
+            ],
+            "fatigue": [
+              20.03,
+              23.61
+            ],
+            "injuries": [
+              0.4,
+              0.41
+            ],
+            "metres": [
+              118.15,
+              218.81
+            ],
+            "duration": 82.68
+          },
+          "rowsSha256": "11bb46ac7f9f6684a1e221440e163c3ce5e25bb96a122d16b97d0ac5e113c11f"
+        },
+        "promoted3_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 39,
+            "draws": 1,
+            "winPct": 30.47,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              22.12,
+              38.81
+            ],
+            "drawPct": 0.78,
+            "margin": -6.37,
+            "score": [
+              13.58,
+              19.95
+            ],
+            "tries": [
+              1.74,
+              2.51
+            ],
+            "penalties": [
+              5.2,
+              5.32
+            ],
+            "yellows": [
+              0.81,
+              0.84
+            ],
+            "reds": [
+              0.14,
+              0.08
+            ],
+            "fatigue": [
+              20.08,
+              23.6
+            ],
+            "injuries": [
+              0.32,
+              0.41
+            ],
+            "metres": [
+              119.91,
+              218.72
+            ],
+            "duration": 82.61
+          },
+          "rowsSha256": "5c67b30b6c8ad5955aec154a5b613d68bc724b2d35721d178978bbf02f752847"
+        },
+        "promoted5_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 28,
+            "draws": 3,
+            "winPct": 21.88,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              14.35,
+              29.4
+            ],
+            "drawPct": 2.34,
+            "margin": -7.08,
+            "score": [
+              12.85,
+              19.93
+            ],
+            "tries": [
+              1.62,
+              2.55
+            ],
+            "penalties": [
+              4.95,
+              5.33
+            ],
+            "yellows": [
+              0.77,
+              0.79
+            ],
+            "reds": [
+              0.13,
+              0.04
+            ],
+            "fatigue": [
+              19.91,
+              23.67
+            ],
+            "injuries": [
+              0.32,
+              0.43
+            ],
+            "metres": [
+              116.67,
+              223.11
+            ],
+            "duration": 82.7
+          },
+          "rowsSha256": "79fff9e99e2a94ea22c91124b73515e7e61411121717193bd0a204dfcc51b420"
+        },
+        "relegated_lose5_mid": {
+          "teams": [
+            "clermont",
+            "grenoble"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 69,
+            "draws": 5,
+            "winPct": 53.91,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              47.25,
+              60.56
+            ],
+            "drawPct": 3.91,
+            "margin": 1,
+            "score": [
+              16.67,
+              15.67
+            ],
+            "tries": [
+              2.19,
+              2.01
+            ],
+            "penalties": [
+              5.49,
+              5.77
+            ],
+            "yellows": [
+              0.92,
+              0.92
+            ],
+            "reds": [
+              0.09,
+              0.09
+            ],
+            "fatigue": [
+              23.2,
+              23.34
+            ],
+            "injuries": [
+              0.45,
+              0.37
+            ],
+            "metres": [
+              180.65,
+              166.1
+            ],
+            "duration": 82.95
+          },
+          "rowsSha256": "11c330f7ce2e4d9fde647e5a42bc52054b203c4d92f5ca0a939b92670e877549"
+        }
+      }
+    },
+    "candidate": {
+      "label": "36 consolidated attributes through same candidate projection",
+      "recruits": [
+        {
+          "playerId": "lnr:1148",
+          "donor": "la-rochelle",
+          "role": "Troisième ligne",
+          "replaces": "lnr:1312",
+          "gain": 5
+        },
+        {
+          "playerId": "lnr:12438",
+          "donor": "toulouse",
+          "role": "Pilier droit",
+          "replaces": "lnr:1001",
+          "gain": 5
+        },
+        {
+          "playerId": "lnr:11794",
+          "donor": "castres",
+          "role": "Troisième ligne",
+          "replaces": "lnr:286",
+          "gain": 4
+        },
+        {
+          "playerId": "lnr:133",
+          "donor": "pau",
+          "role": "Talonneur",
+          "replaces": "lnr:479",
+          "gain": 3
+        },
+        {
+          "playerId": "lnr:1004",
+          "donor": "la-rochelle",
+          "role": "Demi de mêlée",
+          "replaces": "lnr:12521",
+          "gain": 2
+        }
+      ],
+      "lost": [
+        {
+          "playerId": "lnr:402",
+          "role": "Ailier",
+          "note": 84
+        },
+        {
+          "playerId": "lnr:13371",
+          "role": "Demi d’ouverture",
+          "note": 81
+        },
+        {
+          "playerId": "lnr:3233",
+          "role": "Pilier droit",
+          "note": 80
+        },
+        {
+          "playerId": "lnr:696",
+          "role": "Ailier",
+          "note": 80
+        },
+        {
+          "playerId": "lnr:657",
+          "role": "Pilier gauche",
+          "note": 79
+        }
+      ],
+      "results": {
+        "top14_peer": {
+          "teams": [
+            "toulon",
+            "perpignan"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 55,
+            "draws": 10,
+            "winPct": 42.97,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              36.85,
+              49.09
+            ],
+            "drawPct": 7.81,
+            "margin": -0.63,
+            "score": [
+              16.17,
+              16.8
+            ],
+            "tries": [
+              2.08,
+              2.16
+            ],
+            "penalties": [
+              5.14,
+              5.23
+            ],
+            "yellows": [
+              0.9,
+              0.81
+            ],
+            "reds": [
+              0.12,
+              0.11
+            ],
+            "fatigue": [
+              21.82,
+              21.9
+            ],
+            "injuries": [
+              0.45,
+              0.43
+            ],
+            "metres": [
+              170.15,
+              175.81
+            ],
+            "duration": 83.2
+          },
+          "rowsSha256": "3827c30b81b7cefc2ad9870af21b07f38ba6a0eada431bdc7e03b0a5659375aa"
+        },
+        "prod2_peer": {
+          "teams": [
+            "grenoble",
+            "colomiers"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 59,
+            "draws": 5,
+            "winPct": 46.09,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              39.8,
+              52.38
+            ],
+            "drawPct": 3.91,
+            "margin": 0.18,
+            "score": [
+              16.03,
+              15.85
+            ],
+            "tries": [
+              2.05,
+              2.17
+            ],
+            "penalties": [
+              5.68,
+              5.36
+            ],
+            "yellows": [
+              0.97,
+              0.9
+            ],
+            "reds": [
+              0.11,
+              0.09
+            ],
+            "fatigue": [
+              23.33,
+              23.42
+            ],
+            "injuries": [
+              0.41,
+              0.39
+            ],
+            "metres": [
+              166.08,
+              173.22
+            ],
+            "duration": 82.98
+          },
+          "rowsSha256": "73bfec6772ba51257845a4361f98b9bdd28a623847892c3344f39457f04ddbeb"
+        },
+        "prod2_mid_top14_mid": {
+          "teams": [
+            "grenoble",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 46,
+            "draws": 7,
+            "winPct": 35.94,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              28.88,
+              43
+            ],
+            "drawPct": 5.47,
+            "margin": -3.78,
+            "score": [
+              14.78,
+              18.56
+            ],
+            "tries": [
+              1.91,
+              2.39
+            ],
+            "penalties": [
+              5.63,
+              5.11
+            ],
+            "yellows": [
+              0.92,
+              0.8
+            ],
+            "reds": [
+              0.17,
+              0.1
+            ],
+            "fatigue": [
+              23.28,
+              21.81
+            ],
+            "injuries": [
+              0.45,
+              0.45
+            ],
+            "metres": [
+              161.75,
+              184.06
+            ],
+            "duration": 83.04
+          },
+          "rowsSha256": "2b2e052d4c08bf54032fe266ff099cce6e510810e2f47cff68e3f8b54a31cb01"
+        },
+        "promoted0_weak": {
+          "teams": [
+            "montauban",
+            "clermont"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 33,
+            "draws": 3,
+            "winPct": 25.78,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              17.91,
+              33.65
+            ],
+            "drawPct": 2.34,
+            "margin": -6.54,
+            "score": [
+              13.37,
+              19.91
+            ],
+            "tries": [
+              1.66,
+              2.59
+            ],
+            "penalties": [
+              5.42,
+              5.41
+            ],
+            "yellows": [
+              1.03,
+              0.78
+            ],
+            "reds": [
+              0.11,
+              0.09
+            ],
+            "fatigue": [
+              20.15,
+              24.54
+            ],
+            "injuries": [
+              0.32,
+              0.41
+            ],
+            "metres": [
+              111,
+              232.36
+            ],
+            "duration": 82.54
+          },
+          "rowsSha256": "070c8caf03198630104bece83f028fd4b50e94fbdab1341d168e6e87f718c1ea"
+        },
+        "promoted0_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 34,
+            "draws": 2,
+            "winPct": 26.56,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              18.4,
+              34.72
+            ],
+            "drawPct": 1.56,
+            "margin": -7.58,
+            "score": [
+              12.43,
+              20.01
+            ],
+            "tries": [
+              1.55,
+              2.53
+            ],
+            "penalties": [
+              5.32,
+              5.47
+            ],
+            "yellows": [
+              0.85,
+              0.82
+            ],
+            "reds": [
+              0.09,
+              0.09
+            ],
+            "fatigue": [
+              20.2,
+              23.61
+            ],
+            "injuries": [
+              0.29,
+              0.36
+            ],
+            "metres": [
+              113.81,
+              226.09
+            ],
+            "duration": 82.7
+          },
+          "rowsSha256": "e976c137cc69ed0370948898657e083890cd9af67ae74e418a3d5f30531fa03c"
+        },
+        "promoted0_strong": {
+          "teams": [
+            "montauban",
+            "montpellier"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 32,
+            "draws": 5,
+            "winPct": 25,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              17.13,
+              32.87
+            ],
+            "drawPct": 3.91,
+            "margin": -8.13,
+            "score": [
+              11.7,
+              19.83
+            ],
+            "tries": [
+              1.41,
+              2.48
+            ],
+            "penalties": [
+              5.46,
+              5.55
+            ],
+            "yellows": [
+              0.97,
+              0.96
+            ],
+            "reds": [
+              0.09,
+              0.09
+            ],
+            "fatigue": [
+              20.04,
+              23.93
+            ],
+            "injuries": [
+              0.39,
+              0.32
+            ],
+            "metres": [
+              114.43,
+              229.71
+            ],
+            "duration": 82.39
+          },
+          "rowsSha256": "6bc3744c2d2ab96b2e35df7583de61fa6fac55ffed13809eb92b1adea51a6e84"
+        },
+        "relegated_keep_weak": {
+          "teams": [
+            "clermont",
+            "agen"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 81,
+            "draws": 5,
+            "winPct": 63.28,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              56.65,
+              69.92
+            ],
+            "drawPct": 3.91,
+            "margin": 3.15,
+            "score": [
+              17.54,
+              14.39
+            ],
+            "tries": [
+              2.34,
+              1.84
+            ],
+            "penalties": [
+              5.27,
+              5.59
+            ],
+            "yellows": [
+              0.83,
+              1.02
+            ],
+            "reds": [
+              0.11,
+              0.13
+            ],
+            "fatigue": [
+              22.69,
+              23.29
+            ],
+            "injuries": [
+              0.45,
+              0.3
+            ],
+            "metres": [
+              183.08,
+              155.83
+            ],
+            "duration": 83.08
+          },
+          "rowsSha256": "857a4c07e97028831c12a2747272147529e6ccac37dd4860d8faddbe4b7b780d"
+        },
+        "relegated_keep_mid": {
+          "teams": [
+            "clermont",
+            "grenoble"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 75,
+            "draws": 6,
+            "winPct": 58.59,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              50.86,
+              66.33
+            ],
+            "drawPct": 4.69,
+            "margin": 2.04,
+            "score": [
+              17.26,
+              15.22
+            ],
+            "tries": [
+              2.3,
+              1.97
+            ],
+            "penalties": [
+              5.23,
+              5.67
+            ],
+            "yellows": [
+              0.84,
+              0.96
+            ],
+            "reds": [
+              0.12,
+              0.15
+            ],
+            "fatigue": [
+              22.65,
+              23.29
+            ],
+            "injuries": [
+              0.55,
+              0.42
+            ],
+            "metres": [
+              181.13,
+              163.81
+            ],
+            "duration": 83.04
+          },
+          "rowsSha256": "d8232e12bef6bf9cba79f06a3e59356967899c46040d1421e1b663eba5d22e5b"
+        },
+        "relegated_keep_best": {
+          "teams": [
+            "clermont",
+            "montauban"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 92,
+            "draws": 3,
+            "winPct": 71.88,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              64.04,
+              79.71
+            ],
+            "drawPct": 2.34,
+            "margin": 6.54,
+            "score": [
+              19.91,
+              13.37
+            ],
+            "tries": [
+              2.59,
+              1.66
+            ],
+            "penalties": [
+              5.41,
+              5.42
+            ],
+            "yellows": [
+              0.78,
+              1.03
+            ],
+            "reds": [
+              0.09,
+              0.11
+            ],
+            "fatigue": [
+              24.54,
+              20.15
+            ],
+            "injuries": [
+              0.41,
+              0.32
+            ],
+            "metres": [
+              232.36,
+              111
+            ],
+            "duration": 82.54
+          },
+          "rowsSha256": "c1ac6c9e804ef73f780dc3bdea64fe6b5bef28b9895cfeea46848afaeb1f9cc9"
+        },
+        "promoted2_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 33,
+            "draws": 4,
+            "winPct": 25.78,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              18.54,
+              33.02
+            ],
+            "drawPct": 3.13,
+            "margin": -8.01,
+            "score": [
+              12.66,
+              20.67
+            ],
+            "tries": [
+              1.58,
+              2.63
+            ],
+            "penalties": [
+              5.31,
+              5.41
+            ],
+            "yellows": [
+              0.88,
+              0.77
+            ],
+            "reds": [
+              0.12,
+              0.09
+            ],
+            "fatigue": [
+              20.02,
+              23.62
+            ],
+            "injuries": [
+              0.37,
+              0.35
+            ],
+            "metres": [
+              114.65,
+              224.26
+            ],
+            "duration": 82.66
+          },
+          "rowsSha256": "5485cf3b0dc1f179e1f6c91b7f21248572b4de7e29a3c34e725128ee46f48047"
+        },
+        "promoted3_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 34,
+            "draws": 3,
+            "winPct": 26.56,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              19.01,
+              34.11
+            ],
+            "drawPct": 2.34,
+            "margin": -7.3,
+            "score": [
+              12.87,
+              20.16
+            ],
+            "tries": [
+              1.62,
+              2.55
+            ],
+            "penalties": [
+              5.12,
+              5.3
+            ],
+            "yellows": [
+              0.8,
+              0.79
+            ],
+            "reds": [
+              0.11,
+              0.09
+            ],
+            "fatigue": [
+              20.11,
+              23.65
+            ],
+            "injuries": [
+              0.37,
+              0.39
+            ],
+            "metres": [
+              116.84,
+              223.19
+            ],
+            "duration": 82.78
+          },
+          "rowsSha256": "22d8a6ebb00c60ae26256c200def300a2007b72351d376952737d7e1867f96a3"
+        },
+        "promoted5_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 31,
+            "draws": 1,
+            "winPct": 24.22,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              16.66,
+              31.78
+            ],
+            "drawPct": 0.78,
+            "margin": -6.65,
+            "score": [
+              13.34,
+              19.99
+            ],
+            "tries": [
+              1.67,
+              2.56
+            ],
+            "penalties": [
+              4.91,
+              5.34
+            ],
+            "yellows": [
+              0.76,
+              0.78
+            ],
+            "reds": [
+              0.09,
+              0.04
+            ],
+            "fatigue": [
+              19.98,
+              23.65
+            ],
+            "injuries": [
+              0.32,
+              0.45
+            ],
+            "metres": [
+              116.54,
+              224.99
+            ],
+            "duration": 82.8
+          },
+          "rowsSha256": "41470104807de3a258a305bc9f675a2038e26cadae696b4143e1cb73c8d18fdc"
+        },
+        "relegated_lose5_mid": {
+          "teams": [
+            "clermont",
+            "grenoble"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 72,
+            "draws": 4,
+            "winPct": 56.25,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              49.89,
+              62.61
+            ],
+            "drawPct": 3.13,
+            "margin": 1.61,
+            "score": [
+              16.59,
+              14.98
+            ],
+            "tries": [
+              2.2,
+              1.92
+            ],
+            "penalties": [
+              5.39,
+              5.79
+            ],
+            "yellows": [
+              0.92,
+              0.96
+            ],
+            "reds": [
+              0.13,
+              0.07
+            ],
+            "fatigue": [
+              23.05,
+              23.34
+            ],
+            "injuries": [
+              0.45,
+              0.35
+            ],
+            "metres": [
+              178.96,
+              163.43
+            ],
+            "duration": 82.9
+          },
+          "rowsSha256": "3fd52e4337ef1a403da0b9d02cef20b41ac7b9784d3bdb55b01781006356a68f"
+        },
+        "promoted_tired_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {
+            "condition": 70
+          },
+          "summary": {
+            "matches": 128,
+            "wins": 12,
+            "draws": 2,
+            "winPct": 9.38,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              4.56,
+              14.19
+            ],
+            "drawPct": 1.56,
+            "margin": -13.45,
+            "score": [
+              10.51,
+              23.95
+            ],
+            "tries": [
+              1.33,
+              3.11
+            ],
+            "penalties": [
+              6.2,
+              4.98
+            ],
+            "yellows": [
+              1.23,
+              0.76
+            ],
+            "reds": [
+              0.15,
+              0.1
+            ],
+            "fatigue": [
+              19.33,
+              23.95
+            ],
+            "injuries": [
+              1.07,
+              0.45
+            ],
+            "metres": [
+              88.07,
+              250.45
+            ],
+            "duration": 82.23
+          },
+          "rowsSha256": "11f9145b75e6b169371e710d0fd86d2f01297509ecb71c8023d56a79625c474c"
+        },
+        "promoted_equilibre_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {
+            "tactic": "equilibre"
+          },
+          "summary": {
+            "matches": 128,
+            "wins": 33,
+            "draws": 2,
+            "winPct": 25.78,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              18.22,
+              33.34
+            ],
+            "drawPct": 1.56,
+            "margin": -7.57,
+            "score": [
+              12.27,
+              19.84
+            ],
+            "tries": [
+              1.5,
+              2.54
+            ],
+            "penalties": [
+              5.21,
+              5.46
+            ],
+            "yellows": [
+              0.81,
+              0.81
+            ],
+            "reds": [
+              0.11,
+              0.09
+            ],
+            "fatigue": [
+              20.06,
+              23.6
+            ],
+            "injuries": [
+              0.3,
+              0.37
+            ],
+            "metres": [
+              114.97,
+              223.37
+            ],
+            "duration": 82.68
+          },
+          "rowsSha256": "4612646bb2d0041d41e1068c07eae333aa6a72b833314f44009d29e72226625b"
+        },
+        "promoted_conquete_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {
+            "tactic": "conquete"
+          },
+          "summary": {
+            "matches": 128,
+            "wins": 35,
+            "draws": 3,
+            "winPct": 27.34,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              19.2,
+              35.49
+            ],
+            "drawPct": 2.34,
+            "margin": -7.64,
+            "score": [
+              12.09,
+              19.73
+            ],
+            "tries": [
+              1.51,
+              2.51
+            ],
+            "penalties": [
+              5.26,
+              5.45
+            ],
+            "yellows": [
+              0.85,
+              0.84
+            ],
+            "reds": [
+              0.11,
+              0.09
+            ],
+            "fatigue": [
+              20.15,
+              23.6
+            ],
+            "injuries": [
+              0.27,
+              0.4
+            ],
+            "metres": [
+              112.54,
+              226.01
+            ],
+            "duration": 82.7
+          },
+          "rowsSha256": "e7264d5277b9dd269a35ea5f97223039a12f4a49b652eb3706c65cebdab87381"
+        },
+        "promoted_large_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {
+            "tactic": "large"
+          },
+          "summary": {
+            "matches": 128,
+            "wins": 34,
+            "draws": 1,
+            "winPct": 26.56,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              18.7,
+              34.42
+            ],
+            "drawPct": 0.78,
+            "margin": -7.99,
+            "score": [
+              12.16,
+              20.16
+            ],
+            "tries": [
+              1.49,
+              2.58
+            ],
+            "penalties": [
+              5.34,
+              5.47
+            ],
+            "yellows": [
+              0.83,
+              0.81
+            ],
+            "reds": [
+              0.09,
+              0.09
+            ],
+            "fatigue": [
+              20.26,
+              23.64
+            ],
+            "injuries": [
+              0.34,
+              0.39
+            ],
+            "metres": [
+              113.14,
+              224.46
+            ],
+            "duration": 82.63
+          },
+          "rowsSha256": "856ecac99ba7f251982688195c9a7a159689cfbca6956b00d0d09529aeda53b4"
+        },
+        "promoted_occupation_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {
+            "tactic": "occupation"
+          },
+          "summary": {
+            "matches": 128,
+            "wins": 33,
+            "draws": 2,
+            "winPct": 25.78,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              17.91,
+              33.65
+            ],
+            "drawPct": 1.56,
+            "margin": -8.32,
+            "score": [
+              12.09,
+              20.41
+            ],
+            "tries": [
+              1.48,
+              2.62
+            ],
+            "penalties": [
+              5.38,
+              5.5
+            ],
+            "yellows": [
+              0.89,
+              0.84
+            ],
+            "reds": [
+              0.14,
+              0.11
+            ],
+            "fatigue": [
+              19.88,
+              23.64
+            ],
+            "injuries": [
+              0.23,
+              0.41
+            ],
+            "metres": [
+              106.16,
+              226.05
+            ],
+            "duration": 82.64
+          },
+          "rowsSha256": "9d36db016506e2292b3bcc727bae9ec9f5cb0900cd6ec3b428c9e5e6d0111c0f"
+        },
+        "promoted_defence_pression": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {
+            "defence": "pression"
+          },
+          "summary": {
+            "matches": 128,
+            "wins": 31,
+            "draws": 2,
+            "winPct": 24.22,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              16.35,
+              32.09
+            ],
+            "drawPct": 1.56,
+            "margin": -8.23,
+            "score": [
+              12.19,
+              20.42
+            ],
+            "tries": [
+              1.48,
+              2.58
+            ],
+            "penalties": [
+              5.35,
+              5.59
+            ],
+            "yellows": [
+              0.91,
+              0.9
+            ],
+            "reds": [
+              0.11,
+              0.08
+            ],
+            "fatigue": [
+              20.53,
+              23.62
+            ],
+            "injuries": [
+              0.3,
+              0.38
+            ],
+            "metres": [
+              111.18,
+              224.84
+            ],
+            "duration": 82.67
+          },
+          "rowsSha256": "732df353c2daa00f2d42016c50f0bbb1193772c9844d68d6f4b0379a191c853f"
+        },
+        "promoted_defence_prudente": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {
+            "defence": "prudente"
+          },
+          "summary": {
+            "matches": 128,
+            "wins": 35,
+            "draws": 2,
+            "winPct": 27.34,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              19.5,
+              35.19
+            ],
+            "drawPct": 1.56,
+            "margin": -7.32,
+            "score": [
+              12.02,
+              19.34
+            ],
+            "tries": [
+              1.49,
+              2.5
+            ],
+            "penalties": [
+              5.09,
+              5.48
+            ],
+            "yellows": [
+              0.84,
+              0.84
+            ],
+            "reds": [
+              0.1,
+              0.09
+            ],
+            "fatigue": [
+              20.07,
+              23.61
+            ],
+            "injuries": [
+              0.33,
+              0.36
+            ],
+            "metres": [
+              113.32,
+              223.93
+            ],
+            "duration": 82.59
+          },
+          "rowsSha256": "23f3c4cec849b484760692161fd0b12d6fddbf9d6f27ab768bc305b7e762c58e"
+        }
+      }
+    },
+    "responseCandidate": {
+      "label": "Same consolidated inputs; isolated x2 native tacticalEdge skill differential proposal",
+      "recruits": [
+        {
+          "playerId": "lnr:1148",
+          "donor": "la-rochelle",
+          "role": "Troisième ligne",
+          "replaces": "lnr:1312",
+          "gain": 5
+        },
+        {
+          "playerId": "lnr:12438",
+          "donor": "toulouse",
+          "role": "Pilier droit",
+          "replaces": "lnr:1001",
+          "gain": 5
+        },
+        {
+          "playerId": "lnr:11794",
+          "donor": "castres",
+          "role": "Troisième ligne",
+          "replaces": "lnr:286",
+          "gain": 4
+        },
+        {
+          "playerId": "lnr:133",
+          "donor": "pau",
+          "role": "Talonneur",
+          "replaces": "lnr:479",
+          "gain": 3
+        },
+        {
+          "playerId": "lnr:1004",
+          "donor": "la-rochelle",
+          "role": "Demi de mêlée",
+          "replaces": "lnr:12521",
+          "gain": 2
+        }
+      ],
+      "lost": [
+        {
+          "playerId": "lnr:402",
+          "role": "Ailier",
+          "note": 84
+        },
+        {
+          "playerId": "lnr:13371",
+          "role": "Demi d’ouverture",
+          "note": 81
+        },
+        {
+          "playerId": "lnr:3233",
+          "role": "Pilier droit",
+          "note": 80
+        },
+        {
+          "playerId": "lnr:696",
+          "role": "Ailier",
+          "note": 80
+        },
+        {
+          "playerId": "lnr:657",
+          "role": "Pilier gauche",
+          "note": 79
+        }
+      ],
+      "results": {
+        "top14_peer": {
+          "teams": [
+            "toulon",
+            "perpignan"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 58,
+            "draws": 8,
+            "winPct": 45.31,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              38.87,
+              51.76
+            ],
+            "drawPct": 6.25,
+            "margin": -0.65,
+            "score": [
+              16.63,
+              17.27
+            ],
+            "tries": [
+              2.16,
+              2.27
+            ],
+            "penalties": [
+              5.05,
+              5.05
+            ],
+            "yellows": [
+              0.83,
+              0.77
+            ],
+            "reds": [
+              0.11,
+              0.1
+            ],
+            "fatigue": [
+              21.9,
+              21.95
+            ],
+            "injuries": [
+              0.48,
+              0.38
+            ],
+            "metres": [
+              175.91,
+              178.76
+            ],
+            "duration": 83.27
+          },
+          "rowsSha256": "8489fdcf609a7fe653474e96f65dcd6467fb6c020ccbd9db93d0feb4b207d8ad"
+        },
+        "prod2_peer": {
+          "teams": [
+            "grenoble",
+            "colomiers"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 61,
+            "draws": 4,
+            "winPct": 47.66,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              40.61,
+              54.71
+            ],
+            "drawPct": 3.13,
+            "margin": -0.27,
+            "score": [
+              16.35,
+              16.62
+            ],
+            "tries": [
+              2.11,
+              2.27
+            ],
+            "penalties": [
+              5.38,
+              5.39
+            ],
+            "yellows": [
+              0.92,
+              0.86
+            ],
+            "reds": [
+              0.1,
+              0.1
+            ],
+            "fatigue": [
+              23.42,
+              23.53
+            ],
+            "injuries": [
+              0.41,
+              0.34
+            ],
+            "metres": [
+              170.59,
+              181.12
+            ],
+            "duration": 83.08
+          },
+          "rowsSha256": "bb967ab371f0df26c5e50667d7b6757890f22c2558445b1c222ae99420c759dc"
+        },
+        "prod2_mid_top14_mid": {
+          "teams": [
+            "grenoble",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 39,
+            "draws": 9,
+            "winPct": 30.47,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              22.72,
+              38.22
+            ],
+            "drawPct": 7.03,
+            "margin": -5.25,
+            "score": [
+              14.71,
+              19.96
+            ],
+            "tries": [
+              1.9,
+              2.68
+            ],
+            "penalties": [
+              5.71,
+              5.18
+            ],
+            "yellows": [
+              0.94,
+              0.8
+            ],
+            "reds": [
+              0.19,
+              0.08
+            ],
+            "fatigue": [
+              23.2,
+              21.96
+            ],
+            "injuries": [
+              0.41,
+              0.39
+            ],
+            "metres": [
+              158.7,
+              203.8
+            ],
+            "duration": 82.97
+          },
+          "rowsSha256": "31951d117ae8df02205de8c2aa02764b379d4d4194b5d9ff39e37d223c84bbd3"
+        },
+        "promoted0_weak": {
+          "teams": [
+            "montauban",
+            "clermont"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 21,
+            "draws": 4,
+            "winPct": 16.41,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              10.21,
+              22.6
+            ],
+            "drawPct": 3.13,
+            "margin": -9.9,
+            "score": [
+              12.38,
+              22.28
+            ],
+            "tries": [
+              1.45,
+              2.97
+            ],
+            "penalties": [
+              5.66,
+              5.37
+            ],
+            "yellows": [
+              0.98,
+              0.88
+            ],
+            "reds": [
+              0.11,
+              0.12
+            ],
+            "fatigue": [
+              20.16,
+              24.58
+            ],
+            "injuries": [
+              0.34,
+              0.39
+            ],
+            "metres": [
+              108.69,
+              251.8
+            ],
+            "duration": 82.63
+          },
+          "rowsSha256": "b748836f0e44ec7a1747c4150bdcae9b5793a3103c7da5c4a378b2b10732b9e3"
+        },
+        "promoted0_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 16,
+            "draws": 3,
+            "winPct": 12.5,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              7.15,
+              17.85
+            ],
+            "drawPct": 2.34,
+            "margin": -11.09,
+            "score": [
+              11.3,
+              22.39
+            ],
+            "tries": [
+              1.3,
+              2.9
+            ],
+            "penalties": [
+              5.41,
+              5.31
+            ],
+            "yellows": [
+              0.88,
+              0.8
+            ],
+            "reds": [
+              0.09,
+              0.07
+            ],
+            "fatigue": [
+              20.11,
+              23.79
+            ],
+            "injuries": [
+              0.31,
+              0.3
+            ],
+            "metres": [
+              105.53,
+              248.12
+            ],
+            "duration": 82.53
+          },
+          "rowsSha256": "11610d16f6b337a1b4123a5f8c7cc20f5c04bfe8444cd320dd3b20c53d6c854c"
+        },
+        "promoted0_strong": {
+          "teams": [
+            "montauban",
+            "montpellier"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 17,
+            "draws": 2,
+            "winPct": 13.28,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              7.02,
+              19.55
+            ],
+            "drawPct": 1.56,
+            "margin": -12.37,
+            "score": [
+              10.83,
+              23.2
+            ],
+            "tries": [
+              1.33,
+              2.96
+            ],
+            "penalties": [
+              5.63,
+              5.2
+            ],
+            "yellows": [
+              0.96,
+              0.8
+            ],
+            "reds": [
+              0.07,
+              0.08
+            ],
+            "fatigue": [
+              20.05,
+              24.23
+            ],
+            "injuries": [
+              0.45,
+              0.38
+            ],
+            "metres": [
+              103.81,
+              260.54
+            ],
+            "duration": 82.59
+          },
+          "rowsSha256": "07432c0e32586aa98016f404dc86b6eabb231e3a4dfdb3dea582679f2ad9d088"
+        },
+        "relegated_keep_weak": {
+          "teams": [
+            "clermont",
+            "agen"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 85,
+            "draws": 8,
+            "winPct": 66.41,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              57.39,
+              75.42
+            ],
+            "drawPct": 6.25,
+            "margin": 5.48,
+            "score": [
+              19.51,
+              14.03
+            ],
+            "tries": [
+              2.65,
+              1.79
+            ],
+            "penalties": [
+              5.18,
+              5.64
+            ],
+            "yellows": [
+              0.8,
+              0.94
+            ],
+            "reds": [
+              0.09,
+              0.13
+            ],
+            "fatigue": [
+              22.68,
+              23.26
+            ],
+            "injuries": [
+              0.39,
+              0.34
+            ],
+            "metres": [
+              203.96,
+              152.77
+            ],
+            "duration": 82.84
+          },
+          "rowsSha256": "679be9f614eee38ef18faea51891fa0abd6b46b1ead1263d1e3b8517ee5cea26"
+        },
+        "relegated_keep_mid": {
+          "teams": [
+            "clermont",
+            "grenoble"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 82,
+            "draws": 5,
+            "winPct": 64.06,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              55.48,
+              72.65
+            ],
+            "drawPct": 3.91,
+            "margin": 2.9,
+            "score": [
+              17.95,
+              15.05
+            ],
+            "tries": [
+              2.41,
+              1.98
+            ],
+            "penalties": [
+              5,
+              5.7
+            ],
+            "yellows": [
+              0.7,
+              0.93
+            ],
+            "reds": [
+              0.07,
+              0.13
+            ],
+            "fatigue": [
+              22.75,
+              23.32
+            ],
+            "injuries": [
+              0.46,
+              0.43
+            ],
+            "metres": [
+              191.08,
+              166.13
+            ],
+            "duration": 83.01
+          },
+          "rowsSha256": "5ed2da747a404b3d55eead52538884a9fedabcd50499d955d8cb7414f56bc1bf"
+        },
+        "relegated_keep_best": {
+          "teams": [
+            "clermont",
+            "montauban"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 103,
+            "draws": 4,
+            "winPct": 80.47,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              74.06,
+              86.88
+            ],
+            "drawPct": 3.13,
+            "margin": 9.9,
+            "score": [
+              22.28,
+              12.38
+            ],
+            "tries": [
+              2.97,
+              1.45
+            ],
+            "penalties": [
+              5.37,
+              5.66
+            ],
+            "yellows": [
+              0.88,
+              0.98
+            ],
+            "reds": [
+              0.12,
+              0.11
+            ],
+            "fatigue": [
+              24.58,
+              20.16
+            ],
+            "injuries": [
+              0.39,
+              0.34
+            ],
+            "metres": [
+              251.8,
+              108.69
+            ],
+            "duration": 82.63
+          },
+          "rowsSha256": "0c96410b23c9a7e8e8c817c83f9b60bdcd55959dbfc5cb0f78599cad7527a559"
+        },
+        "promoted2_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 22,
+            "draws": 4,
+            "winPct": 17.19,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              10.93,
+              23.44
+            ],
+            "drawPct": 3.13,
+            "margin": -9.79,
+            "score": [
+              12.09,
+              21.88
+            ],
+            "tries": [
+              1.46,
+              2.79
+            ],
+            "penalties": [
+              5.34,
+              5.43
+            ],
+            "yellows": [
+              0.85,
+              0.76
+            ],
+            "reds": [
+              0.11,
+              0.07
+            ],
+            "fatigue": [
+              19.96,
+              23.73
+            ],
+            "injuries": [
+              0.36,
+              0.34
+            ],
+            "metres": [
+              109.92,
+              238.63
+            ],
+            "duration": 82.55
+          },
+          "rowsSha256": "b928770580df74482e73b045a136fff13aef910cb861f3c50814245f639ae6a1"
+        },
+        "promoted3_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 25,
+            "draws": 2,
+            "winPct": 19.53,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              13.12,
+              25.94
+            ],
+            "drawPct": 1.56,
+            "margin": -9.28,
+            "score": [
+              12.22,
+              21.5
+            ],
+            "tries": [
+              1.53,
+              2.7
+            ],
+            "penalties": [
+              5.34,
+              5.24
+            ],
+            "yellows": [
+              0.9,
+              0.75
+            ],
+            "reds": [
+              0.09,
+              0.07
+            ],
+            "fatigue": [
+              19.98,
+              23.8
+            ],
+            "injuries": [
+              0.35,
+              0.4
+            ],
+            "metres": [
+              109.61,
+              242.62
+            ],
+            "duration": 82.33
+          },
+          "rowsSha256": "e235a8eaac9acc9fb94da990c9980f780a9395d8651ab85f462de8df1d01da31"
+        },
+        "promoted5_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 32,
+            "draws": 0,
+            "winPct": 25,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              17.76,
+              32.24
+            ],
+            "drawPct": 0,
+            "margin": -7.69,
+            "score": [
+              13.31,
+              21
+            ],
+            "tries": [
+              1.66,
+              2.72
+            ],
+            "penalties": [
+              5.02,
+              5.34
+            ],
+            "yellows": [
+              0.84,
+              0.91
+            ],
+            "reds": [
+              0.08,
+              0.03
+            ],
+            "fatigue": [
+              20.19,
+              23.7
+            ],
+            "injuries": [
+              0.38,
+              0.44
+            ],
+            "metres": [
+              115.34,
+              234
+            ],
+            "duration": 82.57
+          },
+          "rowsSha256": "3d0d032b06c23879dcef3cffea35da8b99e818077fb10d64c5b42d84b377264e"
+        },
+        "relegated_lose5_mid": {
+          "teams": [
+            "clermont",
+            "grenoble"
+          ],
+          "options": {},
+          "summary": {
+            "matches": 128,
+            "wins": 73,
+            "draws": 4,
+            "winPct": 57.03,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              49.2,
+              64.86
+            ],
+            "drawPct": 3.13,
+            "margin": 1.65,
+            "score": [
+              16.85,
+              15.2
+            ],
+            "tries": [
+              2.27,
+              1.94
+            ],
+            "penalties": [
+              5.4,
+              5.8
+            ],
+            "yellows": [
+              0.98,
+              1.01
+            ],
+            "reds": [
+              0.09,
+              0.09
+            ],
+            "fatigue": [
+              23.05,
+              23.38
+            ],
+            "injuries": [
+              0.38,
+              0.36
+            ],
+            "metres": [
+              187.84,
+              169.56
+            ],
+            "duration": 82.84
+          },
+          "rowsSha256": "458317b3332521275e4fe7fbc716203399e965135f49ddc7079188c6780503e4"
+        },
+        "promoted_tired_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {
+            "condition": 70
+          },
+          "summary": {
+            "matches": 128,
+            "wins": 2,
+            "draws": 0,
+            "winPct": 1.56,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              0,
+              3.71
+            ],
+            "drawPct": 0,
+            "margin": -21.49,
+            "score": [
+              8.2,
+              29.69
+            ],
+            "tries": [
+              0.93,
+              3.92
+            ],
+            "penalties": [
+              6.73,
+              4.73
+            ],
+            "yellows": [
+              1.28,
+              0.74
+            ],
+            "reds": [
+              0.17,
+              0.09
+            ],
+            "fatigue": [
+              19.1,
+              24.26
+            ],
+            "injuries": [
+              1.01,
+              0.42
+            ],
+            "metres": [
+              67.56,
+              303.66
+            ],
+            "duration": 82.6
+          },
+          "rowsSha256": "45c37f30c1e2b2c870d448b1a42a0c2bcd967dcd1f51c828d75cc3712c75bbbe"
+        },
+        "promoted_equilibre_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {
+            "tactic": "equilibre"
+          },
+          "summary": {
+            "matches": 128,
+            "wins": 8,
+            "draws": 4,
+            "winPct": 6.25,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              2.17,
+              10.33
+            ],
+            "drawPct": 3.13,
+            "margin": -12.03,
+            "score": [
+              10.83,
+              22.86
+            ],
+            "tries": [
+              1.24,
+              2.98
+            ],
+            "penalties": [
+              5.38,
+              5.18
+            ],
+            "yellows": [
+              0.89,
+              0.79
+            ],
+            "reds": [
+              0.1,
+              0.05
+            ],
+            "fatigue": [
+              19.99,
+              23.82
+            ],
+            "injuries": [
+              0.3,
+              0.37
+            ],
+            "metres": [
+              105.8,
+              249.65
+            ],
+            "duration": 82.59
+          },
+          "rowsSha256": "b90033c3f20b0687be84b64eed6b0b9cfd9c3ff675ea6be044f2cee2de32b893"
+        },
+        "promoted_conquete_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {
+            "tactic": "conquete"
+          },
+          "summary": {
+            "matches": 128,
+            "wins": 16,
+            "draws": 4,
+            "winPct": 12.5,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              7.15,
+              17.85
+            ],
+            "drawPct": 3.13,
+            "margin": -11.02,
+            "score": [
+              11.13,
+              22.15
+            ],
+            "tries": [
+              1.3,
+              2.85
+            ],
+            "penalties": [
+              5.38,
+              5.22
+            ],
+            "yellows": [
+              0.88,
+              0.78
+            ],
+            "reds": [
+              0.1,
+              0.07
+            ],
+            "fatigue": [
+              20.1,
+              23.81
+            ],
+            "injuries": [
+              0.27,
+              0.35
+            ],
+            "metres": [
+              104.99,
+              247.27
+            ],
+            "duration": 82.5
+          },
+          "rowsSha256": "17ec10b407b93ccc6e1a94fbe013231452291c59ee2d5338df329ec5f12a1e2d"
+        },
+        "promoted_large_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {
+            "tactic": "large"
+          },
+          "summary": {
+            "matches": 128,
+            "wins": 14,
+            "draws": 0,
+            "winPct": 10.94,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              4.97,
+              16.9
+            ],
+            "drawPct": 0,
+            "margin": -11.17,
+            "score": [
+              11.41,
+              22.59
+            ],
+            "tries": [
+              1.32,
+              2.95
+            ],
+            "penalties": [
+              5.37,
+              5.43
+            ],
+            "yellows": [
+              0.83,
+              0.83
+            ],
+            "reds": [
+              0.1,
+              0.07
+            ],
+            "fatigue": [
+              20.19,
+              23.78
+            ],
+            "injuries": [
+              0.38,
+              0.34
+            ],
+            "metres": [
+              106.78,
+              248.81
+            ],
+            "duration": 82.55
+          },
+          "rowsSha256": "7b0b891a072c77b57f816aafe0e6b437ad2344d9493c9b8e15e727f4e49d27bd"
+        },
+        "promoted_occupation_mid": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {
+            "tactic": "occupation"
+          },
+          "summary": {
+            "matches": 128,
+            "wins": 11,
+            "draws": 2,
+            "winPct": 8.59,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              3.45,
+              13.74
+            ],
+            "drawPct": 1.56,
+            "margin": -12.22,
+            "score": [
+              10.6,
+              22.82
+            ],
+            "tries": [
+              1.22,
+              2.98
+            ],
+            "penalties": [
+              5.41,
+              5.13
+            ],
+            "yellows": [
+              0.88,
+              0.78
+            ],
+            "reds": [
+              0.1,
+              0.09
+            ],
+            "fatigue": [
+              19.89,
+              23.87
+            ],
+            "injuries": [
+              0.31,
+              0.41
+            ],
+            "metres": [
+              99.68,
+              249.1
+            ],
+            "duration": 82.7
+          },
+          "rowsSha256": "80d59815d112fa4d4e280c6073e318517e09252fe0829edf55749152c19af807"
+        },
+        "promoted_defence_pression": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {
+            "defence": "pression"
+          },
+          "summary": {
+            "matches": 128,
+            "wins": 15,
+            "draws": 2,
+            "winPct": 11.72,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              6.49,
+              16.95
+            ],
+            "drawPct": 1.56,
+            "margin": -11.62,
+            "score": [
+              10.84,
+              22.46
+            ],
+            "tries": [
+              1.26,
+              2.91
+            ],
+            "penalties": [
+              5.5,
+              5.27
+            ],
+            "yellows": [
+              0.9,
+              0.8
+            ],
+            "reds": [
+              0.11,
+              0.04
+            ],
+            "fatigue": [
+              20.45,
+              23.83
+            ],
+            "injuries": [
+              0.35,
+              0.35
+            ],
+            "metres": [
+              101.63,
+              249.57
+            ],
+            "duration": 82.64
+          },
+          "rowsSha256": "e73073966aef43bcaf2a97955f726ab948570f16dbae96a8374ad0dfa52462d0"
+        },
+        "promoted_defence_prudente": {
+          "teams": [
+            "montauban",
+            "toulon"
+          ],
+          "options": {
+            "defence": "prudente"
+          },
+          "summary": {
+            "matches": 128,
+            "wins": 17,
+            "draws": 5,
+            "winPct": 13.28,
+            "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+            "win95": [
+              7.41,
+              19.16
+            ],
+            "drawPct": 3.91,
+            "margin": -10.73,
+            "score": [
+              11.13,
+              21.87
+            ],
+            "tries": [
+              1.33,
+              2.88
+            ],
+            "penalties": [
+              5.23,
+              5.27
+            ],
+            "yellows": [
+              0.89,
+              0.79
+            ],
+            "reds": [
+              0.08,
+              0.05
+            ],
+            "fatigue": [
+              19.98,
+              23.8
+            ],
+            "injuries": [
+              0.33,
+              0.29
+            ],
+            "metres": [
+              105.21,
+              244.31
+            ],
+            "duration": 82.38
+          },
+          "rowsSha256": "757af9b9582ebd8c1c47c36ecd2173d1bed7f00edbd4307f322f7858bd3ec4a2"
+        }
+      }
+    }
+  },
+  "totalMatches": 8448,
+  "limitations": [
+    "Offline controlled rosters; no 2-division senior career exists on main",
+    "Champion and relegated labels are roster-quality proxies, not historical champions or natural relegations",
+    "No native salary/fee claim for controlled recruits; all salaries held neutral at 5000",
+    "Position certainty still limited by master estimated roles",
+    "Hidden traits and potential retained; not newly wired into match engine",
+    "Wilson intervals are descriptive match-level intervals; home/away share seeds, clustered paired-margin intervals are the inferential comparison; design goals are not historical frequencies"
+  ],
+  "pairedComparison": {
+    "dataOnly": {
+      "top14_peer": {
+        "marginChange": 0,
+        "marginChange95": [
+          -1,
+          1
+        ],
+        "winPctChange": -3.91
+      },
+      "prod2_peer": {
+        "marginChange": 0,
+        "marginChange95": [
+          0,
+          0
+        ],
+        "winPctChange": 0
+      },
+      "prod2_mid_top14_mid": {
+        "marginChange": 0.2,
+        "marginChange95": [
+          -0.67,
+          1.06
+        ],
+        "winPctChange": 3.91
+      },
+      "promoted0_weak": {
+        "marginChange": -0.6,
+        "marginChange95": [
+          -1.66,
+          0.46
+        ],
+        "winPctChange": 0.78
+      },
+      "promoted0_mid": {
+        "marginChange": 0.29,
+        "marginChange95": [
+          -0.8,
+          1.38
+        ],
+        "winPctChange": -0.78
+      },
+      "promoted0_strong": {
+        "marginChange": 0.44,
+        "marginChange95": [
+          -0.61,
+          1.49
+        ],
+        "winPctChange": 1.56
+      },
+      "relegated_keep_weak": {
+        "marginChange": -0.27,
+        "marginChange95": [
+          -1.33,
+          0.78
+        ],
+        "winPctChange": -0.78
+      },
+      "relegated_keep_mid": {
+        "marginChange": 0.38,
+        "marginChange95": [
+          -1,
+          1.75
+        ],
+        "winPctChange": 4.68
+      },
+      "relegated_keep_best": {
+        "marginChange": 0.6,
+        "marginChange95": [
+          -0.46,
+          1.66
+        ],
+        "winPctChange": 0
+      },
+      "promoted2_mid": {
+        "marginChange": -1.02,
+        "marginChange95": [
+          -2.22,
+          0.17
+        ],
+        "winPctChange": -3.91
+      },
+      "promoted3_mid": {
+        "marginChange": -0.93,
+        "marginChange95": [
+          -2.07,
+          0.21
+        ],
+        "winPctChange": -3.91
+      },
+      "promoted5_mid": {
+        "marginChange": 0.43,
+        "marginChange95": [
+          -0.63,
+          1.49
+        ],
+        "winPctChange": 2.34
+      },
+      "relegated_lose5_mid": {
+        "marginChange": 0.61,
+        "marginChange95": [
+          -0.52,
+          1.74
+        ],
+        "winPctChange": 2.34
+      }
+    },
+    "responseOnly": {
+      "top14_peer": {
+        "marginChange": -0.02,
+        "marginChange95": [
+          -1.52,
+          1.49
+        ],
+        "winPctChange": 2.34
+      },
+      "prod2_peer": {
+        "marginChange": -0.45,
+        "marginChange95": [
+          -1.54,
+          0.65
+        ],
+        "winPctChange": 1.57
+      },
+      "prod2_mid_top14_mid": {
+        "marginChange": -1.47,
+        "marginChange95": [
+          -3.17,
+          0.23
+        ],
+        "winPctChange": -5.47
+      },
+      "promoted0_weak": {
+        "marginChange": -3.36,
+        "marginChange95": [
+          -4.87,
+          -1.85
+        ],
+        "winPctChange": -9.37
+      },
+      "promoted0_mid": {
+        "marginChange": -3.52,
+        "marginChange95": [
+          -5.22,
+          -1.82
+        ],
+        "winPctChange": -14.06
+      },
+      "promoted0_strong": {
+        "marginChange": -4.23,
+        "marginChange95": [
+          -6.34,
+          -2.13
+        ],
+        "winPctChange": -11.72
+      },
+      "relegated_keep_weak": {
+        "marginChange": 2.33,
+        "marginChange95": [
+          0.56,
+          4.1
+        ],
+        "winPctChange": 3.13
+      },
+      "relegated_keep_mid": {
+        "marginChange": 0.86,
+        "marginChange95": [
+          -0.87,
+          2.58
+        ],
+        "winPctChange": 5.47
+      },
+      "relegated_keep_best": {
+        "marginChange": 3.36,
+        "marginChange95": [
+          1.85,
+          4.87
+        ],
+        "winPctChange": 8.59
+      },
+      "promoted2_mid": {
+        "marginChange": -1.78,
+        "marginChange95": [
+          -3.51,
+          -0.06
+        ],
+        "winPctChange": -8.59
+      },
+      "promoted3_mid": {
+        "marginChange": -1.98,
+        "marginChange95": [
+          -3.32,
+          -0.65
+        ],
+        "winPctChange": -7.03
+      },
+      "promoted5_mid": {
+        "marginChange": -1.04,
+        "marginChange95": [
+          -2.71,
+          0.63
+        ],
+        "winPctChange": 0.78
+      },
+      "relegated_lose5_mid": {
+        "marginChange": 0.04,
+        "marginChange95": [
+          -1.61,
+          1.69
+        ],
+        "winPctChange": 0.78
+      },
+      "promoted_tired_mid": {
+        "marginChange": -8.05,
+        "marginChange95": [
+          -10.44,
+          -5.65
+        ],
+        "winPctChange": -7.82
+      },
+      "promoted_equilibre_mid": {
+        "marginChange": -4.46,
+        "marginChange95": [
+          -6.49,
+          -2.43
+        ],
+        "winPctChange": -19.53
+      },
+      "promoted_conquete_mid": {
+        "marginChange": -3.37,
+        "marginChange95": [
+          -5.09,
+          -1.66
+        ],
+        "winPctChange": -14.84
+      },
+      "promoted_large_mid": {
+        "marginChange": -3.18,
+        "marginChange95": [
+          -4.94,
+          -1.42
+        ],
+        "winPctChange": -15.62
+      },
+      "promoted_occupation_mid": {
+        "marginChange": -3.9,
+        "marginChange95": [
+          -5.72,
+          -2.08
+        ],
+        "winPctChange": -17.19
+      },
+      "promoted_defence_pression": {
+        "marginChange": -3.38,
+        "marginChange95": [
+          -5.15,
+          -1.61
+        ],
+        "winPctChange": -12.5
+      },
+      "promoted_defence_prudente": {
+        "marginChange": -3.41,
+        "marginChange95": [
+          -5.11,
+          -1.72
+        ],
+        "winPctChange": -14.06
+      }
+    },
+    "combined": {
+      "top14_peer": {
+        "marginChange": -0.02,
+        "marginChange95": [
+          -1.76,
+          1.72
+        ],
+        "winPctChange": -1.57
+      },
+      "prod2_peer": {
+        "marginChange": -0.45,
+        "marginChange95": [
+          -1.54,
+          0.65
+        ],
+        "winPctChange": 1.57
+      },
+      "prod2_mid_top14_mid": {
+        "marginChange": -1.27,
+        "marginChange95": [
+          -3.11,
+          0.57
+        ],
+        "winPctChange": -1.56
+      },
+      "promoted0_weak": {
+        "marginChange": -3.96,
+        "marginChange95": [
+          -5.51,
+          -2.41
+        ],
+        "winPctChange": -8.59
+      },
+      "promoted0_mid": {
+        "marginChange": -3.23,
+        "marginChange95": [
+          -5.21,
+          -1.24
+        ],
+        "winPctChange": -14.84
+      },
+      "promoted0_strong": {
+        "marginChange": -3.8,
+        "marginChange95": [
+          -5.98,
+          -1.62
+        ],
+        "winPctChange": -10.16
+      },
+      "relegated_keep_weak": {
+        "marginChange": 2.05,
+        "marginChange95": [
+          0.07,
+          4.04
+        ],
+        "winPctChange": 2.35
+      },
+      "relegated_keep_mid": {
+        "marginChange": 1.23,
+        "marginChange95": [
+          -0.76,
+          3.23
+        ],
+        "winPctChange": 10.15
+      },
+      "relegated_keep_best": {
+        "marginChange": 3.96,
+        "marginChange95": [
+          2.41,
+          5.51
+        ],
+        "winPctChange": 8.59
+      },
+      "promoted2_mid": {
+        "marginChange": -2.8,
+        "marginChange95": [
+          -4.73,
+          -0.88
+        ],
+        "winPctChange": -12.5
+      },
+      "promoted3_mid": {
+        "marginChange": -2.91,
+        "marginChange95": [
+          -4.53,
+          -1.3
+        ],
+        "winPctChange": -10.94
+      },
+      "promoted5_mid": {
+        "marginChange": -0.61,
+        "marginChange95": [
+          -2.46,
+          1.25
+        ],
+        "winPctChange": 3.12
+      },
+      "relegated_lose5_mid": {
+        "marginChange": 0.65,
+        "marginChange95": [
+          -1.11,
+          2.4
+        ],
+        "winPctChange": 3.12
+      }
+    }
+  },
+  "designTargets": {
+    "kind": "Exploratory game-design goals; NOT official historical statistics",
+    "averagePromotedWinAtMost30": false,
+    "bestPromotedVsStrongAtMost25": true,
+    "bestPromotedVsWeakAtLeast15": true,
+    "fiveRecruitsImproveMargin": true,
+    "relegatedAdvantageNotGuaranteed": true,
+    "departuresReduceMargin": true
+  },
+  "uncertainty": "95% normal intervals with seed clusters; exploratory, not independent holdout"
+}

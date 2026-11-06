@@ -1,0 +1,8 @@
+{
+  "status": "sandbox-proposal-only; production file untouched",
+  "file": "dist/tactical-plans.js",
+  "function": "tacticalEdge",
+  "find": "(attack-defence)*.004",
+  "replace": "(attack-defence)*.008",
+  "reason": "Compare x2 sensitivity to actual attack-defence skill differential in the same native engine. Preserve weather, plans, home, fitness, discipline, substitutions and all native probability clamps. No league, club status, promotion or relegation term. Needs integrator review and broader balance validation before any production patch."
+}

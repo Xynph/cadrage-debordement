@@ -1,0 +1,3026 @@
+{
+  "schema": "rugby-real-v11-age-native-impact",
+  "matches": 384,
+  "results": {
+    "unchanged": {
+      "roster": "montauban",
+      "opponent": "castres",
+      "summary": {
+        "matches": 128,
+        "wins": 23,
+        "draws": 6,
+        "winPct": 17.97,
+        "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+        "win95": [
+          11.29,
+          24.65
+        ],
+        "drawPct": 4.69,
+        "margin": -10.02,
+        "score": [
+          11.98,
+          22.01
+        ],
+        "tries": [
+          1.38,
+          2.97
+        ],
+        "penalties": [
+          5.34,
+          5.44
+        ],
+        "yellows": [
+          0.92,
+          0.89
+        ],
+        "reds": [
+          0.05,
+          0.15
+        ],
+        "fatigue": [
+          20.21,
+          24.76
+        ],
+        "injuries": [
+          0.39,
+          0.44
+        ],
+        "metres": [
+          109.55,
+          245.16
+        ],
+        "duration": 82.77
+      },
+      "changes": [],
+      "rowsHash": "c454ed120c4cf7cc48ec84c746c990a72198120ee7335c2fec51d3d0ca226d9d"
+    },
+    "youngFourYears": {
+      "roster": "montauban",
+      "opponent": "castres",
+      "summary": {
+        "matches": 128,
+        "wins": 28,
+        "draws": 3,
+        "winPct": 21.88,
+        "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+        "win95": [
+          14.35,
+          29.4
+        ],
+        "drawPct": 2.34,
+        "margin": -7.72,
+        "score": [
+          12.88,
+          20.6
+        ],
+        "tries": [
+          1.55,
+          2.71
+        ],
+        "penalties": [
+          5.43,
+          5.33
+        ],
+        "yellows": [
+          0.92,
+          0.99
+        ],
+        "reds": [
+          0.09,
+          0.06
+        ],
+        "fatigue": [
+          19.78,
+          24.83
+        ],
+        "injuries": [
+          0.37,
+          0.41
+        ],
+        "metres": [
+          112.32,
+          241.02
+        ],
+        "duration": 82.49
+      },
+      "changes": [
+        {
+          "id": "lnr:1382",
+          "speedBefore": 41,
+          "speedAfter": 42.77
+        },
+        {
+          "id": "lnr:479",
+          "speedBefore": 54,
+          "speedAfter": 54.43
+        },
+        {
+          "id": "lnr:3505",
+          "speedBefore": 33,
+          "speedAfter": 34.74
+        },
+        {
+          "id": "lnr:10999",
+          "speedBefore": 42,
+          "speedAfter": 43.63
+        },
+        {
+          "id": "lnr:2266",
+          "speedBefore": 53,
+          "speedAfter": 53.79
+        },
+        {
+          "id": "lnr:25008",
+          "speedBefore": 38,
+          "speedAfter": 39.27
+        },
+        {
+          "id": "lnr:312",
+          "speedBefore": 40,
+          "speedAfter": 41.71
+        },
+        {
+          "id": "lnr:1322",
+          "speedBefore": 49,
+          "speedAfter": 49.08
+        },
+        {
+          "id": "lnr:1001",
+          "speedBefore": 48,
+          "speedAfter": 49.76
+        },
+        {
+          "id": "lnr:1341",
+          "speedBefore": 36,
+          "speedAfter": 37.65
+        },
+        {
+          "id": "lnr:432",
+          "speedBefore": 56,
+          "speedAfter": 56.78
+        },
+        {
+          "id": "lnr:1749",
+          "speedBefore": 51,
+          "speedAfter": 52.08
+        },
+        {
+          "id": "lnr:202",
+          "speedBefore": 48,
+          "speedAfter": 48.83
+        },
+        {
+          "id": "lnr:1456",
+          "speedBefore": 63,
+          "speedAfter": 64.11
+        },
+        {
+          "id": "lnr:25011",
+          "speedBefore": 64,
+          "speedAfter": 65.78
+        },
+        {
+          "id": "lnr:4957",
+          "speedBefore": 62,
+          "speedAfter": 62.9
+        },
+        {
+          "id": "lnr:10149",
+          "speedBefore": 49,
+          "speedAfter": 50.25
+        },
+        {
+          "id": "lnr:239",
+          "speedBefore": 57,
+          "speedAfter": 58.07
+        },
+        {
+          "id": "lnr:12675",
+          "speedBefore": 48,
+          "speedAfter": 49.16
+        },
+        {
+          "id": "lnr:25060",
+          "speedBefore": 57,
+          "speedAfter": 58.79
+        },
+        {
+          "id": "lnr:2404",
+          "speedBefore": 59,
+          "speedAfter": 60.14
+        },
+        {
+          "id": "lnr:286",
+          "speedBefore": 66,
+          "speedAfter": 67.33
+        },
+        {
+          "id": "lnr:25007",
+          "speedBefore": 73,
+          "speedAfter": 73.41
+        },
+        {
+          "id": "lnr:1312",
+          "speedBefore": 64,
+          "speedAfter": 64.36
+        },
+        {
+          "id": "lnr:661",
+          "speedBefore": 76,
+          "speedAfter": 76.54
+        },
+        {
+          "id": "lnr:1329",
+          "speedBefore": 61,
+          "speedAfter": 61.12
+        },
+        {
+          "id": "lnr:13758",
+          "speedBefore": 70,
+          "speedAfter": 70.8
+        },
+        {
+          "id": "lnr:13811",
+          "speedBefore": 69,
+          "speedAfter": 69.1
+        },
+        {
+          "id": "lnr:2225",
+          "speedBefore": 62,
+          "speedAfter": 63.11
+        },
+        {
+          "id": "lnr:354",
+          "speedBefore": 90,
+          "speedAfter": 91.15
+        },
+        {
+          "id": "lnr:11742",
+          "speedBefore": 69,
+          "speedAfter": 70.21
+        },
+        {
+          "id": "lnr:12373",
+          "speedBefore": 68,
+          "speedAfter": 68.36
+        },
+        {
+          "id": "lnr:12521",
+          "speedBefore": 81,
+          "speedAfter": 82.3
+        },
+        {
+          "id": "lnr:1641",
+          "speedBefore": 70,
+          "speedAfter": 71.23
+        },
+        {
+          "id": "lnr:13614",
+          "speedBefore": 70,
+          "speedAfter": 71.2
+        },
+        {
+          "id": "lnr:25010",
+          "speedBefore": 74,
+          "speedAfter": 75.04
+        },
+        {
+          "id": "lnr:497",
+          "speedBefore": 71,
+          "speedAfter": 71.74
+        },
+        {
+          "id": "lnr:891",
+          "speedBefore": 74,
+          "speedAfter": 75.06
+        },
+        {
+          "id": "lnr:14061",
+          "speedBefore": 72,
+          "speedAfter": 73.25
+        },
+        {
+          "id": "lnr:427",
+          "speedBefore": 58,
+          "speedAfter": 58.94
+        },
+        {
+          "id": "lnr:1747",
+          "speedBefore": 82,
+          "speedAfter": 82.58
+        },
+        {
+          "id": "lnr:1873",
+          "speedBefore": 86,
+          "speedAfter": 86.76
+        },
+        {
+          "id": "lnr:1351",
+          "speedBefore": 86,
+          "speedAfter": 86.64
+        },
+        {
+          "id": "lnr:13734",
+          "speedBefore": 80,
+          "speedAfter": 80.8
+        },
+        {
+          "id": "lnr:2212",
+          "speedBefore": 84,
+          "speedAfter": 84.23
+        },
+        {
+          "id": "lnr:1385",
+          "speedBefore": 73,
+          "speedAfter": 73.9
+        },
+        {
+          "id": "lnr:25009",
+          "speedBefore": 81,
+          "speedAfter": 82.14
+        },
+        {
+          "id": "lnr:1897",
+          "speedBefore": 63,
+          "speedAfter": 63.51
+        },
+        {
+          "id": "lnr:1244",
+          "speedBefore": 75,
+          "speedAfter": 75.64
+        },
+        {
+          "id": "lnr:158",
+          "speedBefore": 90,
+          "speedAfter": 90.77
+        }
+      ],
+      "rowsHash": "74978160ca5d8cfaae402c188bbe6e06c20794bb0c2f35e1d5b3eadea04c9c33"
+    },
+    "veteranFourYears": {
+      "roster": "montauban",
+      "opponent": "castres",
+      "summary": {
+        "matches": 128,
+        "wins": 15,
+        "draws": 3,
+        "winPct": 11.72,
+        "winIntervalMethod": "seed-cluster normal 95%, clipped 0-100; exploratory sample",
+        "win95": [
+          6.05,
+          17.39
+        ],
+        "drawPct": 2.34,
+        "margin": -12.6,
+        "score": [
+          10.64,
+          23.24
+        ],
+        "tries": [
+          1.23,
+          3.12
+        ],
+        "penalties": [
+          5.3,
+          5.21
+        ],
+        "yellows": [
+          0.85,
+          0.79
+        ],
+        "reds": [
+          0.06,
+          0.09
+        ],
+        "fatigue": [
+          20.83,
+          24.98
+        ],
+        "injuries": [
+          0.37,
+          0.41
+        ],
+        "metres": [
+          92.85,
+          259.88
+        ],
+        "duration": 82.67
+      },
+      "changes": [
+        {
+          "id": "lnr:1382",
+          "speedBefore": 41,
+          "speedAfter": 33.46
+        },
+        {
+          "id": "lnr:479",
+          "speedBefore": 54,
+          "speedAfter": 46.11
+        },
+        {
+          "id": "lnr:3505",
+          "speedBefore": 33,
+          "speedAfter": 25.38
+        },
+        {
+          "id": "lnr:10999",
+          "speedBefore": 42,
+          "speedAfter": 34.6
+        },
+        {
+          "id": "lnr:2266",
+          "speedBefore": 53,
+          "speedAfter": 44.9
+        },
+        {
+          "id": "lnr:25008",
+          "speedBefore": 38,
+          "speedAfter": 30.47
+        },
+        {
+          "id": "lnr:312",
+          "speedBefore": 40,
+          "speedAfter": 32.33
+        },
+        {
+          "id": "lnr:1322",
+          "speedBefore": 49,
+          "speedAfter": 40.8
+        },
+        {
+          "id": "lnr:1001",
+          "speedBefore": 48,
+          "speedAfter": 40.42
+        },
+        {
+          "id": "lnr:1341",
+          "speedBefore": 36,
+          "speedAfter": 28.28
+        },
+        {
+          "id": "lnr:432",
+          "speedBefore": 56,
+          "speedAfter": 47.73
+        },
+        {
+          "id": "lnr:1749",
+          "speedBefore": 51,
+          "speedAfter": 43.25
+        },
+        {
+          "id": "lnr:202",
+          "speedBefore": 48,
+          "speedAfter": 40.28
+        },
+        {
+          "id": "lnr:1456",
+          "speedBefore": 63,
+          "speedAfter": 55.69
+        },
+        {
+          "id": "lnr:25011",
+          "speedBefore": 64,
+          "speedAfter": 56.58
+        },
+        {
+          "id": "lnr:4957",
+          "speedBefore": 62,
+          "speedAfter": 54.57
+        },
+        {
+          "id": "lnr:10149",
+          "speedBefore": 49,
+          "speedAfter": 41.25
+        },
+        {
+          "id": "lnr:239",
+          "speedBefore": 57,
+          "speedAfter": 49.58
+        },
+        {
+          "id": "lnr:12675",
+          "speedBefore": 48,
+          "speedAfter": 40.55
+        },
+        {
+          "id": "lnr:25060",
+          "speedBefore": 57,
+          "speedAfter": 49.5
+        },
+        {
+          "id": "lnr:2404",
+          "speedBefore": 59,
+          "speedAfter": 50.73
+        },
+        {
+          "id": "lnr:286",
+          "speedBefore": 66,
+          "speedAfter": 58.19
+        },
+        {
+          "id": "lnr:25007",
+          "speedBefore": 73,
+          "speedAfter": 65.13
+        },
+        {
+          "id": "lnr:1312",
+          "speedBefore": 64,
+          "speedAfter": 56.2
+        },
+        {
+          "id": "lnr:661",
+          "speedBefore": 76,
+          "speedAfter": 68.13
+        },
+        {
+          "id": "lnr:1329",
+          "speedBefore": 61,
+          "speedAfter": 52.8
+        },
+        {
+          "id": "lnr:13758",
+          "speedBefore": 70,
+          "speedAfter": 61.96
+        },
+        {
+          "id": "lnr:13811",
+          "speedBefore": 69,
+          "speedAfter": 60.98
+        },
+        {
+          "id": "lnr:2225",
+          "speedBefore": 62,
+          "speedAfter": 54.2
+        },
+        {
+          "id": "lnr:354",
+          "speedBefore": 90,
+          "speedAfter": 81.9
+        },
+        {
+          "id": "lnr:11742",
+          "speedBefore": 69,
+          "speedAfter": 60.72
+        },
+        {
+          "id": "lnr:12373",
+          "speedBefore": 68,
+          "speedAfter": 60.11
+        },
+        {
+          "id": "lnr:12521",
+          "speedBefore": 81,
+          "speedAfter": 73.09
+        },
+        {
+          "id": "lnr:1641",
+          "speedBefore": 70,
+          "speedAfter": 62.06
+        },
+        {
+          "id": "lnr:13614",
+          "speedBefore": 70,
+          "speedAfter": 61.76
+        },
+        {
+          "id": "lnr:25010",
+          "speedBefore": 74,
+          "speedAfter": 66.13
+        },
+        {
+          "id": "lnr:497",
+          "speedBefore": 71,
+          "speedAfter": 62.7
+        },
+        {
+          "id": "lnr:891",
+          "speedBefore": 74,
+          "speedAfter": 65.85
+        },
+        {
+          "id": "lnr:14061",
+          "speedBefore": 72,
+          "speedAfter": 63.9
+        },
+        {
+          "id": "lnr:427",
+          "speedBefore": 58,
+          "speedAfter": 50.19
+        },
+        {
+          "id": "lnr:1747",
+          "speedBefore": 82,
+          "speedAfter": 73.15
+        },
+        {
+          "id": "lnr:1873",
+          "speedBefore": 86,
+          "speedAfter": 77.35
+        },
+        {
+          "id": "lnr:1351",
+          "speedBefore": 86,
+          "speedAfter": 77.29
+        },
+        {
+          "id": "lnr:13734",
+          "speedBefore": 80,
+          "speedAfter": 71.7
+        },
+        {
+          "id": "lnr:2212",
+          "speedBefore": 84,
+          "speedAfter": 76.2
+        },
+        {
+          "id": "lnr:1385",
+          "speedBefore": 73,
+          "speedAfter": 64.98
+        },
+        {
+          "id": "lnr:25009",
+          "speedBefore": 81,
+          "speedAfter": 73.09
+        },
+        {
+          "id": "lnr:1897",
+          "speedBefore": 63,
+          "speedAfter": 54.75
+        },
+        {
+          "id": "lnr:1244",
+          "speedBefore": 75,
+          "speedAfter": 67.11
+        },
+        {
+          "id": "lnr:158",
+          "speedBefore": 90,
+          "speedAfter": 81.72
+        }
+      ],
+      "rowsHash": "94f48ab3209c0a67c774c5d826fbd82e32fa5e73a593e15f7e628c76c06dfbd6"
+    }
+  },
+  "trajectories": [
+    {
+      "role": "Pilier gauche",
+      "kind": "Controlled gameplay trajectory; NOT observed career",
+      "peakAge": 29,
+      "years": [
+        {
+          "age": 18,
+          "physical": 65,
+          "quickness": 65,
+          "strength": 65,
+          "technique": 65,
+          "decisions": 65,
+          "overall": 65
+        },
+        {
+          "age": 19,
+          "physical": 65.86,
+          "quickness": 65.78,
+          "strength": 66.15,
+          "technique": 65.89,
+          "decisions": 65.68,
+          "overall": 65.83
+        },
+        {
+          "age": 20,
+          "physical": 66.71,
+          "quickness": 66.56,
+          "strength": 67.3,
+          "technique": 66.78,
+          "decisions": 66.36,
+          "overall": 66.66
+        },
+        {
+          "age": 21,
+          "physical": 67.47,
+          "quickness": 67.21,
+          "strength": 68.45,
+          "technique": 67.67,
+          "decisions": 67.04,
+          "overall": 67.47
+        },
+        {
+          "age": 22,
+          "physical": 68.14,
+          "quickness": 67.73,
+          "strength": 69.6,
+          "technique": 68.56,
+          "decisions": 67.72,
+          "overall": 68.25
+        },
+        {
+          "age": 23,
+          "physical": 68.7,
+          "quickness": 68.12,
+          "strength": 70.75,
+          "technique": 69.45,
+          "decisions": 68.4,
+          "overall": 69
+        },
+        {
+          "age": 24,
+          "physical": 69.14,
+          "quickness": 68.38,
+          "strength": 71.9,
+          "technique": 70.34,
+          "decisions": 69.08,
+          "overall": 69.71
+        },
+        {
+          "age": 25,
+          "physical": 69.44,
+          "quickness": 68.51,
+          "strength": 72.86,
+          "technique": 71.23,
+          "decisions": 69.76,
+          "overall": 70.39
+        },
+        {
+          "age": 26,
+          "physical": 69.59,
+          "quickness": 68.51,
+          "strength": 73.61,
+          "technique": 71.95,
+          "decisions": 70.42,
+          "overall": 70.93
+        },
+        {
+          "age": 27,
+          "physical": 69.69,
+          "quickness": 68.51,
+          "strength": 74.15,
+          "technique": 72.51,
+          "decisions": 71.06,
+          "overall": 71.38
+        },
+        {
+          "age": 28,
+          "physical": 69.74,
+          "quickness": 68.51,
+          "strength": 74.5,
+          "technique": 72.91,
+          "decisions": 71.57,
+          "overall": 71.7
+        },
+        {
+          "age": 29,
+          "physical": 69.76,
+          "quickness": 68.51,
+          "strength": 74.67,
+          "technique": 73.17,
+          "decisions": 71.97,
+          "overall": 71.92
+        },
+        {
+          "age": 30,
+          "physical": 69.03,
+          "quickness": 67.49,
+          "strength": 74.67,
+          "technique": 73.3,
+          "decisions": 72.27,
+          "overall": 71.86
+        },
+        {
+          "age": 31,
+          "physical": 68.21,
+          "quickness": 66.34,
+          "strength": 74.67,
+          "technique": 73.3,
+          "decisions": 72.47,
+          "overall": 71.68
+        },
+        {
+          "age": 32,
+          "physical": 67.21,
+          "quickness": 65.07,
+          "strength": 74.67,
+          "technique": 73.3,
+          "decisions": 72.57,
+          "overall": 71.42
+        },
+        {
+          "age": 33,
+          "physical": 66.1,
+          "quickness": 63.67,
+          "strength": 74.67,
+          "technique": 73.3,
+          "decisions": 72.64,
+          "overall": 71.12
+        },
+        {
+          "age": 34,
+          "physical": 64.81,
+          "quickness": 62.14,
+          "strength": 74.19,
+          "technique": 73.3,
+          "decisions": 72.72,
+          "overall": 70.78
+        },
+        {
+          "age": 35,
+          "physical": 63.42,
+          "quickness": 60.48,
+          "strength": 73.64,
+          "technique": 73.3,
+          "decisions": 72.8,
+          "overall": 70.4
+        },
+        {
+          "age": 36,
+          "physical": 61.91,
+          "quickness": 58.7,
+          "strength": 73.03,
+          "technique": 73.15,
+          "decisions": 72.88,
+          "overall": 69.93
+        },
+        {
+          "age": 37,
+          "physical": 60.3,
+          "quickness": 56.79,
+          "strength": 72.36,
+          "technique": 72.99,
+          "decisions": 72.96,
+          "overall": 69.41
+        },
+        {
+          "age": 38,
+          "physical": 58.56,
+          "quickness": 54.75,
+          "strength": 71.63,
+          "technique": 72.81,
+          "decisions": 73.04,
+          "overall": 68.86
+        },
+        {
+          "age": 39,
+          "physical": 56.73,
+          "quickness": 52.59,
+          "strength": 70.84,
+          "technique": 72.61,
+          "decisions": 73.04,
+          "overall": 68.25
+        },
+        {
+          "age": 40,
+          "physical": 54.78,
+          "quickness": 50.3,
+          "strength": 69.99,
+          "technique": 72.39,
+          "decisions": 72.96,
+          "overall": 67.57
+        }
+      ]
+    },
+    {
+      "role": "Pilier droit",
+      "kind": "Controlled gameplay trajectory; NOT observed career",
+      "peakAge": 29,
+      "years": [
+        {
+          "age": 18,
+          "physical": 65,
+          "quickness": 65,
+          "strength": 65,
+          "technique": 65,
+          "decisions": 65,
+          "overall": 65
+        },
+        {
+          "age": 19,
+          "physical": 65.86,
+          "quickness": 65.78,
+          "strength": 66.15,
+          "technique": 65.89,
+          "decisions": 65.68,
+          "overall": 65.83
+        },
+        {
+          "age": 20,
+          "physical": 66.71,
+          "quickness": 66.56,
+          "strength": 67.3,
+          "technique": 66.78,
+          "decisions": 66.36,
+          "overall": 66.66
+        },
+        {
+          "age": 21,
+          "physical": 67.47,
+          "quickness": 67.21,
+          "strength": 68.45,
+          "technique": 67.67,
+          "decisions": 67.04,
+          "overall": 67.47
+        },
+        {
+          "age": 22,
+          "physical": 68.14,
+          "quickness": 67.73,
+          "strength": 69.6,
+          "technique": 68.56,
+          "decisions": 67.72,
+          "overall": 68.25
+        },
+        {
+          "age": 23,
+          "physical": 68.7,
+          "quickness": 68.12,
+          "strength": 70.75,
+          "technique": 69.45,
+          "decisions": 68.4,
+          "overall": 69
+        },
+        {
+          "age": 24,
+          "physical": 69.14,
+          "quickness": 68.38,
+          "strength": 71.9,
+          "technique": 70.34,
+          "decisions": 69.08,
+          "overall": 69.71
+        },
+        {
+          "age": 25,
+          "physical": 69.44,
+          "quickness": 68.51,
+          "strength": 72.86,
+          "technique": 71.23,
+          "decisions": 69.76,
+          "overall": 70.39
+        },
+        {
+          "age": 26,
+          "physical": 69.59,
+          "quickness": 68.51,
+          "strength": 73.61,
+          "technique": 71.95,
+          "decisions": 70.42,
+          "overall": 70.93
+        },
+        {
+          "age": 27,
+          "physical": 69.69,
+          "quickness": 68.51,
+          "strength": 74.15,
+          "technique": 72.51,
+          "decisions": 71.06,
+          "overall": 71.38
+        },
+        {
+          "age": 28,
+          "physical": 69.74,
+          "quickness": 68.51,
+          "strength": 74.5,
+          "technique": 72.91,
+          "decisions": 71.57,
+          "overall": 71.7
+        },
+        {
+          "age": 29,
+          "physical": 69.76,
+          "quickness": 68.51,
+          "strength": 74.67,
+          "technique": 73.17,
+          "decisions": 71.97,
+          "overall": 71.92
+        },
+        {
+          "age": 30,
+          "physical": 69.03,
+          "quickness": 67.49,
+          "strength": 74.67,
+          "technique": 73.3,
+          "decisions": 72.27,
+          "overall": 71.86
+        },
+        {
+          "age": 31,
+          "physical": 68.21,
+          "quickness": 66.34,
+          "strength": 74.67,
+          "technique": 73.3,
+          "decisions": 72.47,
+          "overall": 71.68
+        },
+        {
+          "age": 32,
+          "physical": 67.21,
+          "quickness": 65.07,
+          "strength": 74.67,
+          "technique": 73.3,
+          "decisions": 72.57,
+          "overall": 71.42
+        },
+        {
+          "age": 33,
+          "physical": 66.1,
+          "quickness": 63.67,
+          "strength": 74.67,
+          "technique": 73.3,
+          "decisions": 72.64,
+          "overall": 71.12
+        },
+        {
+          "age": 34,
+          "physical": 64.81,
+          "quickness": 62.14,
+          "strength": 74.19,
+          "technique": 73.3,
+          "decisions": 72.72,
+          "overall": 70.78
+        },
+        {
+          "age": 35,
+          "physical": 63.42,
+          "quickness": 60.48,
+          "strength": 73.64,
+          "technique": 73.3,
+          "decisions": 72.8,
+          "overall": 70.4
+        },
+        {
+          "age": 36,
+          "physical": 61.91,
+          "quickness": 58.7,
+          "strength": 73.03,
+          "technique": 73.15,
+          "decisions": 72.88,
+          "overall": 69.93
+        },
+        {
+          "age": 37,
+          "physical": 60.3,
+          "quickness": 56.79,
+          "strength": 72.36,
+          "technique": 72.99,
+          "decisions": 72.96,
+          "overall": 69.41
+        },
+        {
+          "age": 38,
+          "physical": 58.56,
+          "quickness": 54.75,
+          "strength": 71.63,
+          "technique": 72.81,
+          "decisions": 73.04,
+          "overall": 68.86
+        },
+        {
+          "age": 39,
+          "physical": 56.73,
+          "quickness": 52.59,
+          "strength": 70.84,
+          "technique": 72.61,
+          "decisions": 73.04,
+          "overall": 68.25
+        },
+        {
+          "age": 40,
+          "physical": 54.78,
+          "quickness": 50.3,
+          "strength": 69.99,
+          "technique": 72.39,
+          "decisions": 72.96,
+          "overall": 67.57
+        }
+      ]
+    },
+    {
+      "role": "Talonneur",
+      "kind": "Controlled gameplay trajectory; NOT observed career",
+      "peakAge": 28,
+      "years": [
+        {
+          "age": 18,
+          "physical": 65,
+          "quickness": 65,
+          "strength": 65,
+          "technique": 65,
+          "decisions": 65,
+          "overall": 65
+        },
+        {
+          "age": 19,
+          "physical": 65.86,
+          "quickness": 65.78,
+          "strength": 66.15,
+          "technique": 65.89,
+          "decisions": 65.68,
+          "overall": 65.83
+        },
+        {
+          "age": 20,
+          "physical": 66.62,
+          "quickness": 66.43,
+          "strength": 67.3,
+          "technique": 66.78,
+          "decisions": 66.36,
+          "overall": 66.64
+        },
+        {
+          "age": 21,
+          "physical": 67.29,
+          "quickness": 66.95,
+          "strength": 68.45,
+          "technique": 67.67,
+          "decisions": 67.04,
+          "overall": 67.42
+        },
+        {
+          "age": 22,
+          "physical": 67.87,
+          "quickness": 67.34,
+          "strength": 69.6,
+          "technique": 68.56,
+          "decisions": 67.72,
+          "overall": 68.18
+        },
+        {
+          "age": 23,
+          "physical": 68.33,
+          "quickness": 67.6,
+          "strength": 70.75,
+          "technique": 69.45,
+          "decisions": 68.4,
+          "overall": 68.9
+        },
+        {
+          "age": 24,
+          "physical": 68.65,
+          "quickness": 67.73,
+          "strength": 71.71,
+          "technique": 70.34,
+          "decisions": 69.08,
+          "overall": 69.58
+        },
+        {
+          "age": 25,
+          "physical": 68.82,
+          "quickness": 67.73,
+          "strength": 72.48,
+          "technique": 71.08,
+          "decisions": 69.76,
+          "overall": 70.15
+        },
+        {
+          "age": 26,
+          "physical": 68.95,
+          "quickness": 67.73,
+          "strength": 73.05,
+          "technique": 71.67,
+          "decisions": 70.43,
+          "overall": 70.63
+        },
+        {
+          "age": 27,
+          "physical": 69.02,
+          "quickness": 67.73,
+          "strength": 73.42,
+          "technique": 72.1,
+          "decisions": 70.97,
+          "overall": 70.98
+        },
+        {
+          "age": 28,
+          "physical": 69.05,
+          "quickness": 67.73,
+          "strength": 73.6,
+          "technique": 72.38,
+          "decisions": 71.39,
+          "overall": 71.22
+        },
+        {
+          "age": 29,
+          "physical": 68.32,
+          "quickness": 66.71,
+          "strength": 73.6,
+          "technique": 72.52,
+          "decisions": 71.7,
+          "overall": 71.16
+        },
+        {
+          "age": 30,
+          "physical": 67.5,
+          "quickness": 65.56,
+          "strength": 73.6,
+          "technique": 72.52,
+          "decisions": 71.91,
+          "overall": 70.98
+        },
+        {
+          "age": 31,
+          "physical": 66.59,
+          "quickness": 64.29,
+          "strength": 73.6,
+          "technique": 72.52,
+          "decisions": 72.02,
+          "overall": 70.76
+        },
+        {
+          "age": 32,
+          "physical": 65.5,
+          "quickness": 62.89,
+          "strength": 73.6,
+          "technique": 72.52,
+          "decisions": 72.1,
+          "overall": 70.47
+        },
+        {
+          "age": 33,
+          "physical": 64.22,
+          "quickness": 61.36,
+          "strength": 73.11,
+          "technique": 72.52,
+          "decisions": 72.18,
+          "overall": 70.13
+        },
+        {
+          "age": 34,
+          "physical": 62.84,
+          "quickness": 59.7,
+          "strength": 72.56,
+          "technique": 72.52,
+          "decisions": 72.26,
+          "overall": 69.76
+        },
+        {
+          "age": 35,
+          "physical": 61.35,
+          "quickness": 57.92,
+          "strength": 71.95,
+          "technique": 72.37,
+          "decisions": 72.34,
+          "overall": 69.29
+        },
+        {
+          "age": 36,
+          "physical": 59.74,
+          "quickness": 56.01,
+          "strength": 71.28,
+          "technique": 72.21,
+          "decisions": 72.42,
+          "overall": 68.78
+        },
+        {
+          "age": 37,
+          "physical": 58.02,
+          "quickness": 53.97,
+          "strength": 70.55,
+          "technique": 72.03,
+          "decisions": 72.5,
+          "overall": 68.23
+        },
+        {
+          "age": 38,
+          "physical": 56.2,
+          "quickness": 51.81,
+          "strength": 69.76,
+          "technique": 71.83,
+          "decisions": 72.5,
+          "overall": 67.63
+        },
+        {
+          "age": 39,
+          "physical": 54.26,
+          "quickness": 49.52,
+          "strength": 68.91,
+          "technique": 71.61,
+          "decisions": 72.42,
+          "overall": 66.96
+        },
+        {
+          "age": 40,
+          "physical": 52.21,
+          "quickness": 47.1,
+          "strength": 68,
+          "technique": 71.37,
+          "decisions": 72.33,
+          "overall": 66.25
+        }
+      ]
+    },
+    {
+      "role": "Deuxième ligne",
+      "kind": "Controlled gameplay trajectory; NOT observed career",
+      "peakAge": 29,
+      "years": [
+        {
+          "age": 18,
+          "physical": 65,
+          "quickness": 65,
+          "strength": 65,
+          "technique": 65,
+          "decisions": 65,
+          "overall": 65
+        },
+        {
+          "age": 19,
+          "physical": 65.86,
+          "quickness": 65.78,
+          "strength": 66.15,
+          "technique": 65.89,
+          "decisions": 65.68,
+          "overall": 65.83
+        },
+        {
+          "age": 20,
+          "physical": 66.71,
+          "quickness": 66.56,
+          "strength": 67.3,
+          "technique": 66.78,
+          "decisions": 66.36,
+          "overall": 66.66
+        },
+        {
+          "age": 21,
+          "physical": 67.47,
+          "quickness": 67.21,
+          "strength": 68.45,
+          "technique": 67.67,
+          "decisions": 67.04,
+          "overall": 67.47
+        },
+        {
+          "age": 22,
+          "physical": 68.14,
+          "quickness": 67.73,
+          "strength": 69.6,
+          "technique": 68.56,
+          "decisions": 67.72,
+          "overall": 68.25
+        },
+        {
+          "age": 23,
+          "physical": 68.7,
+          "quickness": 68.12,
+          "strength": 70.75,
+          "technique": 69.45,
+          "decisions": 68.4,
+          "overall": 69
+        },
+        {
+          "age": 24,
+          "physical": 69.11,
+          "quickness": 68.38,
+          "strength": 71.71,
+          "technique": 70.34,
+          "decisions": 69.08,
+          "overall": 69.71
+        },
+        {
+          "age": 25,
+          "physical": 69.38,
+          "quickness": 68.51,
+          "strength": 72.48,
+          "technique": 71.08,
+          "decisions": 69.76,
+          "overall": 70.3
+        },
+        {
+          "age": 26,
+          "physical": 69.51,
+          "quickness": 68.51,
+          "strength": 73.04,
+          "technique": 71.66,
+          "decisions": 70.43,
+          "overall": 70.77
+        },
+        {
+          "age": 27,
+          "physical": 69.58,
+          "quickness": 68.51,
+          "strength": 73.4,
+          "technique": 72.08,
+          "decisions": 70.97,
+          "overall": 71.12
+        },
+        {
+          "age": 28,
+          "physical": 69.6,
+          "quickness": 68.51,
+          "strength": 73.58,
+          "technique": 72.35,
+          "decisions": 71.39,
+          "overall": 71.35
+        },
+        {
+          "age": 29,
+          "physical": 69.6,
+          "quickness": 68.51,
+          "strength": 73.58,
+          "technique": 72.48,
+          "decisions": 71.7,
+          "overall": 71.49
+        },
+        {
+          "age": 30,
+          "physical": 68.88,
+          "quickness": 67.49,
+          "strength": 73.58,
+          "technique": 72.48,
+          "decisions": 71.9,
+          "overall": 71.33
+        },
+        {
+          "age": 31,
+          "physical": 68.05,
+          "quickness": 66.34,
+          "strength": 73.58,
+          "technique": 72.48,
+          "decisions": 72,
+          "overall": 71.13
+        },
+        {
+          "age": 32,
+          "physical": 67.05,
+          "quickness": 65.07,
+          "strength": 73.58,
+          "technique": 72.48,
+          "decisions": 72.08,
+          "overall": 70.87
+        },
+        {
+          "age": 33,
+          "physical": 65.87,
+          "quickness": 63.67,
+          "strength": 73.1,
+          "technique": 72.48,
+          "decisions": 72.16,
+          "overall": 70.56
+        },
+        {
+          "age": 34,
+          "physical": 64.58,
+          "quickness": 62.14,
+          "strength": 72.55,
+          "technique": 72.48,
+          "decisions": 72.24,
+          "overall": 70.21
+        },
+        {
+          "age": 35,
+          "physical": 63.17,
+          "quickness": 60.48,
+          "strength": 71.94,
+          "technique": 72.33,
+          "decisions": 72.32,
+          "overall": 69.77
+        },
+        {
+          "age": 36,
+          "physical": 61.66,
+          "quickness": 58.7,
+          "strength": 71.27,
+          "technique": 72.17,
+          "decisions": 72.4,
+          "overall": 69.28
+        },
+        {
+          "age": 37,
+          "physical": 60.04,
+          "quickness": 56.79,
+          "strength": 70.54,
+          "technique": 71.99,
+          "decisions": 72.48,
+          "overall": 68.76
+        },
+        {
+          "age": 38,
+          "physical": 58.3,
+          "quickness": 54.75,
+          "strength": 69.75,
+          "technique": 71.79,
+          "decisions": 72.48,
+          "overall": 68.17
+        },
+        {
+          "age": 39,
+          "physical": 56.45,
+          "quickness": 52.59,
+          "strength": 68.9,
+          "technique": 71.57,
+          "decisions": 72.4,
+          "overall": 67.53
+        },
+        {
+          "age": 40,
+          "physical": 54.49,
+          "quickness": 50.3,
+          "strength": 67.99,
+          "technique": 71.33,
+          "decisions": 72.31,
+          "overall": 66.84
+        }
+      ]
+    },
+    {
+      "role": "Troisième ligne",
+      "kind": "Controlled gameplay trajectory; NOT observed career",
+      "peakAge": 28,
+      "years": [
+        {
+          "age": 18,
+          "physical": 65,
+          "quickness": 65,
+          "strength": 65,
+          "technique": 65,
+          "decisions": 65,
+          "overall": 65
+        },
+        {
+          "age": 19,
+          "physical": 65.86,
+          "quickness": 65.78,
+          "strength": 66.15,
+          "technique": 65.89,
+          "decisions": 65.68,
+          "overall": 65.83
+        },
+        {
+          "age": 20,
+          "physical": 66.62,
+          "quickness": 66.43,
+          "strength": 67.3,
+          "technique": 66.78,
+          "decisions": 66.36,
+          "overall": 66.64
+        },
+        {
+          "age": 21,
+          "physical": 67.29,
+          "quickness": 66.95,
+          "strength": 68.45,
+          "technique": 67.67,
+          "decisions": 67.04,
+          "overall": 67.42
+        },
+        {
+          "age": 22,
+          "physical": 67.87,
+          "quickness": 67.34,
+          "strength": 69.6,
+          "technique": 68.56,
+          "decisions": 67.72,
+          "overall": 68.18
+        },
+        {
+          "age": 23,
+          "physical": 68.3,
+          "quickness": 67.6,
+          "strength": 70.56,
+          "technique": 69.45,
+          "decisions": 68.4,
+          "overall": 68.89
+        },
+        {
+          "age": 24,
+          "physical": 68.59,
+          "quickness": 67.73,
+          "strength": 71.33,
+          "technique": 70.19,
+          "decisions": 69.08,
+          "overall": 69.5
+        },
+        {
+          "age": 25,
+          "physical": 68.74,
+          "quickness": 67.73,
+          "strength": 71.9,
+          "technique": 70.78,
+          "decisions": 69.76,
+          "overall": 69.98
+        },
+        {
+          "age": 26,
+          "physical": 68.84,
+          "quickness": 67.73,
+          "strength": 72.28,
+          "technique": 71.22,
+          "decisions": 70.33,
+          "overall": 70.36
+        },
+        {
+          "age": 27,
+          "physical": 68.89,
+          "quickness": 67.73,
+          "strength": 72.47,
+          "technique": 71.51,
+          "decisions": 70.77,
+          "overall": 70.61
+        },
+        {
+          "age": 28,
+          "physical": 68.89,
+          "quickness": 67.73,
+          "strength": 72.47,
+          "technique": 71.65,
+          "decisions": 71.1,
+          "overall": 70.76
+        },
+        {
+          "age": 29,
+          "physical": 68.16,
+          "quickness": 66.71,
+          "strength": 72.47,
+          "technique": 71.65,
+          "decisions": 71.31,
+          "overall": 70.61
+        },
+        {
+          "age": 30,
+          "physical": 67.34,
+          "quickness": 65.56,
+          "strength": 72.47,
+          "technique": 71.65,
+          "decisions": 71.42,
+          "overall": 70.41
+        },
+        {
+          "age": 31,
+          "physical": 66.43,
+          "quickness": 64.29,
+          "strength": 72.47,
+          "technique": 71.65,
+          "decisions": 71.5,
+          "overall": 70.18
+        },
+        {
+          "age": 32,
+          "physical": 65.27,
+          "quickness": 62.89,
+          "strength": 71.99,
+          "technique": 71.65,
+          "decisions": 71.58,
+          "overall": 69.87
+        },
+        {
+          "age": 33,
+          "physical": 63.99,
+          "quickness": 61.36,
+          "strength": 71.44,
+          "technique": 71.65,
+          "decisions": 71.66,
+          "overall": 69.54
+        },
+        {
+          "age": 34,
+          "physical": 62.59,
+          "quickness": 59.7,
+          "strength": 70.83,
+          "technique": 71.5,
+          "decisions": 71.74,
+          "overall": 69.09
+        },
+        {
+          "age": 35,
+          "physical": 61.09,
+          "quickness": 57.92,
+          "strength": 70.16,
+          "technique": 71.34,
+          "decisions": 71.82,
+          "overall": 68.61
+        },
+        {
+          "age": 36,
+          "physical": 59.48,
+          "quickness": 56.01,
+          "strength": 69.43,
+          "technique": 71.16,
+          "decisions": 71.9,
+          "overall": 68.09
+        },
+        {
+          "age": 37,
+          "physical": 57.75,
+          "quickness": 53.97,
+          "strength": 68.64,
+          "technique": 70.96,
+          "decisions": 71.9,
+          "overall": 67.51
+        },
+        {
+          "age": 38,
+          "physical": 55.92,
+          "quickness": 51.81,
+          "strength": 67.79,
+          "technique": 70.74,
+          "decisions": 71.82,
+          "overall": 66.87
+        },
+        {
+          "age": 39,
+          "physical": 53.97,
+          "quickness": 49.52,
+          "strength": 66.88,
+          "technique": 70.5,
+          "decisions": 71.73,
+          "overall": 66.19
+        },
+        {
+          "age": 40,
+          "physical": 51.91,
+          "quickness": 47.1,
+          "strength": 65.91,
+          "technique": 70.25,
+          "decisions": 71.63,
+          "overall": 65.47
+        }
+      ]
+    },
+    {
+      "role": "Numéro 8",
+      "kind": "Controlled gameplay trajectory; NOT observed career",
+      "peakAge": 28,
+      "years": [
+        {
+          "age": 18,
+          "physical": 65,
+          "quickness": 65,
+          "strength": 65,
+          "technique": 65,
+          "decisions": 65,
+          "overall": 65
+        },
+        {
+          "age": 19,
+          "physical": 65.86,
+          "quickness": 65.78,
+          "strength": 66.15,
+          "technique": 65.89,
+          "decisions": 65.68,
+          "overall": 65.83
+        },
+        {
+          "age": 20,
+          "physical": 66.62,
+          "quickness": 66.43,
+          "strength": 67.3,
+          "technique": 66.78,
+          "decisions": 66.36,
+          "overall": 66.64
+        },
+        {
+          "age": 21,
+          "physical": 67.29,
+          "quickness": 66.95,
+          "strength": 68.45,
+          "technique": 67.67,
+          "decisions": 67.04,
+          "overall": 67.42
+        },
+        {
+          "age": 22,
+          "physical": 67.87,
+          "quickness": 67.34,
+          "strength": 69.6,
+          "technique": 68.56,
+          "decisions": 67.72,
+          "overall": 68.18
+        },
+        {
+          "age": 23,
+          "physical": 68.33,
+          "quickness": 67.6,
+          "strength": 70.75,
+          "technique": 69.45,
+          "decisions": 68.4,
+          "overall": 68.9
+        },
+        {
+          "age": 24,
+          "physical": 68.65,
+          "quickness": 67.73,
+          "strength": 71.71,
+          "technique": 70.19,
+          "decisions": 69.08,
+          "overall": 69.51
+        },
+        {
+          "age": 25,
+          "physical": 68.82,
+          "quickness": 67.73,
+          "strength": 72.48,
+          "technique": 70.78,
+          "decisions": 69.76,
+          "overall": 70
+        },
+        {
+          "age": 26,
+          "physical": 68.95,
+          "quickness": 67.73,
+          "strength": 73.05,
+          "technique": 71.22,
+          "decisions": 70.44,
+          "overall": 70.4
+        },
+        {
+          "age": 27,
+          "physical": 69.02,
+          "quickness": 67.73,
+          "strength": 73.42,
+          "technique": 71.51,
+          "decisions": 70.99,
+          "overall": 70.69
+        },
+        {
+          "age": 28,
+          "physical": 69.05,
+          "quickness": 67.73,
+          "strength": 73.6,
+          "technique": 71.65,
+          "decisions": 71.42,
+          "overall": 70.86
+        },
+        {
+          "age": 29,
+          "physical": 68.32,
+          "quickness": 66.71,
+          "strength": 73.6,
+          "technique": 71.65,
+          "decisions": 71.74,
+          "overall": 70.73
+        },
+        {
+          "age": 30,
+          "physical": 67.5,
+          "quickness": 65.56,
+          "strength": 73.6,
+          "technique": 71.65,
+          "decisions": 71.96,
+          "overall": 70.56
+        },
+        {
+          "age": 31,
+          "physical": 66.59,
+          "quickness": 64.29,
+          "strength": 73.6,
+          "technique": 71.65,
+          "decisions": 72.07,
+          "overall": 70.34
+        },
+        {
+          "age": 32,
+          "physical": 65.5,
+          "quickness": 62.89,
+          "strength": 73.6,
+          "technique": 71.65,
+          "decisions": 72.15,
+          "overall": 70.04
+        },
+        {
+          "age": 33,
+          "physical": 64.22,
+          "quickness": 61.36,
+          "strength": 73.11,
+          "technique": 71.65,
+          "decisions": 72.23,
+          "overall": 69.71
+        },
+        {
+          "age": 34,
+          "physical": 62.84,
+          "quickness": 59.7,
+          "strength": 72.56,
+          "technique": 71.5,
+          "decisions": 72.31,
+          "overall": 69.27
+        },
+        {
+          "age": 35,
+          "physical": 61.35,
+          "quickness": 57.92,
+          "strength": 71.95,
+          "technique": 71.34,
+          "decisions": 72.39,
+          "overall": 68.79
+        },
+        {
+          "age": 36,
+          "physical": 59.74,
+          "quickness": 56.01,
+          "strength": 71.28,
+          "technique": 71.16,
+          "decisions": 72.47,
+          "overall": 68.27
+        },
+        {
+          "age": 37,
+          "physical": 58.02,
+          "quickness": 53.97,
+          "strength": 70.55,
+          "technique": 70.96,
+          "decisions": 72.55,
+          "overall": 67.71
+        },
+        {
+          "age": 38,
+          "physical": 56.2,
+          "quickness": 51.81,
+          "strength": 69.76,
+          "technique": 70.74,
+          "decisions": 72.55,
+          "overall": 67.09
+        },
+        {
+          "age": 39,
+          "physical": 54.26,
+          "quickness": 49.52,
+          "strength": 68.91,
+          "technique": 70.5,
+          "decisions": 72.47,
+          "overall": 66.41
+        },
+        {
+          "age": 40,
+          "physical": 52.21,
+          "quickness": 47.1,
+          "strength": 68,
+          "technique": 70.25,
+          "decisions": 72.38,
+          "overall": 65.7
+        }
+      ]
+    },
+    {
+      "role": "Demi de mêlée",
+      "kind": "Controlled gameplay trajectory; NOT observed career",
+      "peakAge": 28,
+      "years": [
+        {
+          "age": 18,
+          "physical": 65,
+          "quickness": 65,
+          "strength": 65,
+          "technique": 65,
+          "decisions": 65,
+          "overall": 65
+        },
+        {
+          "age": 19,
+          "physical": 65.86,
+          "quickness": 65.78,
+          "strength": 66.15,
+          "technique": 65.89,
+          "decisions": 65.68,
+          "overall": 65.83
+        },
+        {
+          "age": 20,
+          "physical": 66.62,
+          "quickness": 66.43,
+          "strength": 67.3,
+          "technique": 66.78,
+          "decisions": 66.36,
+          "overall": 66.64
+        },
+        {
+          "age": 21,
+          "physical": 67.29,
+          "quickness": 66.95,
+          "strength": 68.45,
+          "technique": 67.67,
+          "decisions": 67.04,
+          "overall": 67.42
+        },
+        {
+          "age": 22,
+          "physical": 67.84,
+          "quickness": 67.34,
+          "strength": 69.41,
+          "technique": 68.56,
+          "decisions": 67.72,
+          "overall": 68.17
+        },
+        {
+          "age": 23,
+          "physical": 68.25,
+          "quickness": 67.6,
+          "strength": 70.18,
+          "technique": 69.45,
+          "decisions": 68.4,
+          "overall": 68.88
+        },
+        {
+          "age": 24,
+          "physical": 68.51,
+          "quickness": 67.73,
+          "strength": 70.75,
+          "technique": 70.34,
+          "decisions": 69.08,
+          "overall": 69.55
+        },
+        {
+          "age": 25,
+          "physical": 68.63,
+          "quickness": 67.73,
+          "strength": 71.13,
+          "technique": 71.08,
+          "decisions": 69.76,
+          "overall": 70.11
+        },
+        {
+          "age": 26,
+          "physical": 68.7,
+          "quickness": 67.73,
+          "strength": 71.32,
+          "technique": 71.67,
+          "decisions": 70.43,
+          "overall": 70.58
+        },
+        {
+          "age": 27,
+          "physical": 68.72,
+          "quickness": 67.73,
+          "strength": 71.32,
+          "technique": 72.1,
+          "decisions": 71.08,
+          "overall": 70.95
+        },
+        {
+          "age": 28,
+          "physical": 68.72,
+          "quickness": 67.73,
+          "strength": 71.32,
+          "technique": 72.38,
+          "decisions": 71.61,
+          "overall": 71.2
+        },
+        {
+          "age": 29,
+          "physical": 68,
+          "quickness": 66.71,
+          "strength": 71.32,
+          "technique": 72.52,
+          "decisions": 72.03,
+          "overall": 71.17
+        },
+        {
+          "age": 30,
+          "physical": 67.17,
+          "quickness": 65.56,
+          "strength": 71.32,
+          "technique": 72.52,
+          "decisions": 72.34,
+          "overall": 71.01
+        },
+        {
+          "age": 31,
+          "physical": 66.2,
+          "quickness": 64.29,
+          "strength": 70.83,
+          "technique": 72.52,
+          "decisions": 72.55,
+          "overall": 70.8
+        },
+        {
+          "age": 32,
+          "physical": 65.02,
+          "quickness": 62.89,
+          "strength": 70.28,
+          "technique": 72.52,
+          "decisions": 72.66,
+          "overall": 70.5
+        },
+        {
+          "age": 33,
+          "physical": 63.73,
+          "quickness": 61.36,
+          "strength": 69.67,
+          "technique": 72.52,
+          "decisions": 72.74,
+          "overall": 70.16
+        },
+        {
+          "age": 34,
+          "physical": 62.33,
+          "quickness": 59.7,
+          "strength": 69,
+          "technique": 72.52,
+          "decisions": 72.82,
+          "overall": 69.79
+        },
+        {
+          "age": 35,
+          "physical": 60.82,
+          "quickness": 57.92,
+          "strength": 68.27,
+          "technique": 72.37,
+          "decisions": 72.9,
+          "overall": 69.31
+        },
+        {
+          "age": 36,
+          "physical": 59.2,
+          "quickness": 56.01,
+          "strength": 67.48,
+          "technique": 72.21,
+          "decisions": 72.98,
+          "overall": 68.8
+        },
+        {
+          "age": 37,
+          "physical": 57.46,
+          "quickness": 53.97,
+          "strength": 66.63,
+          "technique": 72.03,
+          "decisions": 73.06,
+          "overall": 68.25
+        },
+        {
+          "age": 38,
+          "physical": 55.62,
+          "quickness": 51.81,
+          "strength": 65.72,
+          "technique": 71.83,
+          "decisions": 73.14,
+          "overall": 67.66
+        },
+        {
+          "age": 39,
+          "physical": 53.66,
+          "quickness": 49.52,
+          "strength": 64.75,
+          "technique": 71.61,
+          "decisions": 73.14,
+          "overall": 67
+        },
+        {
+          "age": 40,
+          "physical": 51.59,
+          "quickness": 47.1,
+          "strength": 63.72,
+          "technique": 71.37,
+          "decisions": 73.06,
+          "overall": 66.29
+        }
+      ]
+    },
+    {
+      "role": "Demi d’ouverture",
+      "kind": "Controlled gameplay trajectory; NOT observed career",
+      "peakAge": 29,
+      "years": [
+        {
+          "age": 18,
+          "physical": 65,
+          "quickness": 65,
+          "strength": 65,
+          "technique": 65,
+          "decisions": 65,
+          "overall": 65
+        },
+        {
+          "age": 19,
+          "physical": 65.86,
+          "quickness": 65.78,
+          "strength": 66.15,
+          "technique": 65.89,
+          "decisions": 65.68,
+          "overall": 65.83
+        },
+        {
+          "age": 20,
+          "physical": 66.62,
+          "quickness": 66.43,
+          "strength": 67.3,
+          "technique": 66.78,
+          "decisions": 66.36,
+          "overall": 66.64
+        },
+        {
+          "age": 21,
+          "physical": 67.29,
+          "quickness": 66.95,
+          "strength": 68.45,
+          "technique": 67.67,
+          "decisions": 67.04,
+          "overall": 67.42
+        },
+        {
+          "age": 22,
+          "physical": 67.84,
+          "quickness": 67.34,
+          "strength": 69.41,
+          "technique": 68.56,
+          "decisions": 67.72,
+          "overall": 68.17
+        },
+        {
+          "age": 23,
+          "physical": 68.25,
+          "quickness": 67.6,
+          "strength": 70.18,
+          "technique": 69.45,
+          "decisions": 68.4,
+          "overall": 68.88
+        },
+        {
+          "age": 24,
+          "physical": 68.51,
+          "quickness": 67.73,
+          "strength": 70.75,
+          "technique": 70.34,
+          "decisions": 69.08,
+          "overall": 69.55
+        },
+        {
+          "age": 25,
+          "physical": 68.63,
+          "quickness": 67.73,
+          "strength": 71.13,
+          "technique": 71.23,
+          "decisions": 69.76,
+          "overall": 70.19
+        },
+        {
+          "age": 26,
+          "physical": 68.7,
+          "quickness": 67.73,
+          "strength": 71.32,
+          "technique": 71.96,
+          "decisions": 70.43,
+          "overall": 70.72
+        },
+        {
+          "age": 27,
+          "physical": 68.72,
+          "quickness": 67.73,
+          "strength": 71.32,
+          "technique": 72.52,
+          "decisions": 71.08,
+          "overall": 71.16
+        },
+        {
+          "age": 28,
+          "physical": 68.72,
+          "quickness": 67.73,
+          "strength": 71.32,
+          "technique": 72.93,
+          "decisions": 71.71,
+          "overall": 71.5
+        },
+        {
+          "age": 29,
+          "physical": 68,
+          "quickness": 66.71,
+          "strength": 71.32,
+          "technique": 73.2,
+          "decisions": 72.22,
+          "overall": 71.55
+        },
+        {
+          "age": 30,
+          "physical": 67.17,
+          "quickness": 65.56,
+          "strength": 71.32,
+          "technique": 73.33,
+          "decisions": 72.63,
+          "overall": 71.48
+        },
+        {
+          "age": 31,
+          "physical": 66.2,
+          "quickness": 64.29,
+          "strength": 70.83,
+          "technique": 73.33,
+          "decisions": 72.94,
+          "overall": 71.29
+        },
+        {
+          "age": 32,
+          "physical": 65.02,
+          "quickness": 62.89,
+          "strength": 70.28,
+          "technique": 73.33,
+          "decisions": 73.15,
+          "overall": 71.01
+        },
+        {
+          "age": 33,
+          "physical": 63.73,
+          "quickness": 61.36,
+          "strength": 69.67,
+          "technique": 73.33,
+          "decisions": 73.26,
+          "overall": 70.68
+        },
+        {
+          "age": 34,
+          "physical": 62.33,
+          "quickness": 59.7,
+          "strength": 69,
+          "technique": 73.33,
+          "decisions": 73.34,
+          "overall": 70.31
+        },
+        {
+          "age": 35,
+          "physical": 60.82,
+          "quickness": 57.92,
+          "strength": 68.27,
+          "technique": 73.33,
+          "decisions": 73.42,
+          "overall": 69.91
+        },
+        {
+          "age": 36,
+          "physical": 59.2,
+          "quickness": 56.01,
+          "strength": 67.48,
+          "technique": 73.18,
+          "decisions": 73.5,
+          "overall": 69.4
+        },
+        {
+          "age": 37,
+          "physical": 57.46,
+          "quickness": 53.97,
+          "strength": 66.63,
+          "technique": 73.02,
+          "decisions": 73.58,
+          "overall": 68.86
+        },
+        {
+          "age": 38,
+          "physical": 55.62,
+          "quickness": 51.81,
+          "strength": 65.72,
+          "technique": 72.84,
+          "decisions": 73.66,
+          "overall": 68.28
+        },
+        {
+          "age": 39,
+          "physical": 53.66,
+          "quickness": 49.52,
+          "strength": 64.75,
+          "technique": 72.64,
+          "decisions": 73.74,
+          "overall": 67.65
+        },
+        {
+          "age": 40,
+          "physical": 51.59,
+          "quickness": 47.1,
+          "strength": 63.72,
+          "technique": 72.42,
+          "decisions": 73.74,
+          "overall": 66.97
+        }
+      ]
+    },
+    {
+      "role": "Centre",
+      "kind": "Controlled gameplay trajectory; NOT observed career",
+      "peakAge": 28,
+      "years": [
+        {
+          "age": 18,
+          "physical": 65,
+          "quickness": 65,
+          "strength": 65,
+          "technique": 65,
+          "decisions": 65,
+          "overall": 65
+        },
+        {
+          "age": 19,
+          "physical": 65.86,
+          "quickness": 65.78,
+          "strength": 66.15,
+          "technique": 65.89,
+          "decisions": 65.68,
+          "overall": 65.83
+        },
+        {
+          "age": 20,
+          "physical": 66.62,
+          "quickness": 66.43,
+          "strength": 67.3,
+          "technique": 66.78,
+          "decisions": 66.36,
+          "overall": 66.64
+        },
+        {
+          "age": 21,
+          "physical": 67.29,
+          "quickness": 66.95,
+          "strength": 68.45,
+          "technique": 67.67,
+          "decisions": 67.04,
+          "overall": 67.42
+        },
+        {
+          "age": 22,
+          "physical": 67.87,
+          "quickness": 67.34,
+          "strength": 69.6,
+          "technique": 68.56,
+          "decisions": 67.72,
+          "overall": 68.18
+        },
+        {
+          "age": 23,
+          "physical": 68.3,
+          "quickness": 67.6,
+          "strength": 70.56,
+          "technique": 69.45,
+          "decisions": 68.4,
+          "overall": 68.89
+        },
+        {
+          "age": 24,
+          "physical": 68.59,
+          "quickness": 67.73,
+          "strength": 71.33,
+          "technique": 70.19,
+          "decisions": 69.08,
+          "overall": 69.5
+        },
+        {
+          "age": 25,
+          "physical": 68.74,
+          "quickness": 67.73,
+          "strength": 71.9,
+          "technique": 70.78,
+          "decisions": 69.76,
+          "overall": 69.98
+        },
+        {
+          "age": 26,
+          "physical": 68.84,
+          "quickness": 67.73,
+          "strength": 72.28,
+          "technique": 71.22,
+          "decisions": 70.44,
+          "overall": 70.38
+        },
+        {
+          "age": 27,
+          "physical": 68.89,
+          "quickness": 67.73,
+          "strength": 72.47,
+          "technique": 71.51,
+          "decisions": 70.99,
+          "overall": 70.66
+        },
+        {
+          "age": 28,
+          "physical": 68.89,
+          "quickness": 67.73,
+          "strength": 72.47,
+          "technique": 71.65,
+          "decisions": 71.42,
+          "overall": 70.83
+        },
+        {
+          "age": 29,
+          "physical": 68.16,
+          "quickness": 66.71,
+          "strength": 72.47,
+          "technique": 71.65,
+          "decisions": 71.74,
+          "overall": 70.7
+        },
+        {
+          "age": 30,
+          "physical": 67.34,
+          "quickness": 65.56,
+          "strength": 72.47,
+          "technique": 71.65,
+          "decisions": 71.96,
+          "overall": 70.53
+        },
+        {
+          "age": 31,
+          "physical": 66.43,
+          "quickness": 64.29,
+          "strength": 72.47,
+          "technique": 71.65,
+          "decisions": 72.07,
+          "overall": 70.3
+        },
+        {
+          "age": 32,
+          "physical": 65.27,
+          "quickness": 62.89,
+          "strength": 71.99,
+          "technique": 71.65,
+          "decisions": 72.15,
+          "overall": 70
+        },
+        {
+          "age": 33,
+          "physical": 63.99,
+          "quickness": 61.36,
+          "strength": 71.44,
+          "technique": 71.65,
+          "decisions": 72.23,
+          "overall": 69.66
+        },
+        {
+          "age": 34,
+          "physical": 62.59,
+          "quickness": 59.7,
+          "strength": 70.83,
+          "technique": 71.5,
+          "decisions": 72.31,
+          "overall": 69.22
+        },
+        {
+          "age": 35,
+          "physical": 61.09,
+          "quickness": 57.92,
+          "strength": 70.16,
+          "technique": 71.34,
+          "decisions": 72.39,
+          "overall": 68.74
+        },
+        {
+          "age": 36,
+          "physical": 59.48,
+          "quickness": 56.01,
+          "strength": 69.43,
+          "technique": 71.16,
+          "decisions": 72.47,
+          "overall": 68.22
+        },
+        {
+          "age": 37,
+          "physical": 57.75,
+          "quickness": 53.97,
+          "strength": 68.64,
+          "technique": 70.96,
+          "decisions": 72.55,
+          "overall": 67.66
+        },
+        {
+          "age": 38,
+          "physical": 55.92,
+          "quickness": 51.81,
+          "strength": 67.79,
+          "technique": 70.74,
+          "decisions": 72.55,
+          "overall": 67.04
+        },
+        {
+          "age": 39,
+          "physical": 53.97,
+          "quickness": 49.52,
+          "strength": 66.88,
+          "technique": 70.5,
+          "decisions": 72.47,
+          "overall": 66.36
+        },
+        {
+          "age": 40,
+          "physical": 51.91,
+          "quickness": 47.1,
+          "strength": 65.91,
+          "technique": 70.25,
+          "decisions": 72.38,
+          "overall": 65.64
+        }
+      ]
+    },
+    {
+      "role": "Ailier",
+      "kind": "Controlled gameplay trajectory; NOT observed career",
+      "peakAge": 27,
+      "years": [
+        {
+          "age": 18,
+          "physical": 65,
+          "quickness": 65,
+          "strength": 65,
+          "technique": 65,
+          "decisions": 65,
+          "overall": 65
+        },
+        {
+          "age": 19,
+          "physical": 65.76,
+          "quickness": 65.65,
+          "strength": 66.15,
+          "technique": 65.89,
+          "decisions": 65.68,
+          "overall": 65.81
+        },
+        {
+          "age": 20,
+          "physical": 66.43,
+          "quickness": 66.17,
+          "strength": 67.3,
+          "technique": 66.78,
+          "decisions": 66.36,
+          "overall": 66.59
+        },
+        {
+          "age": 21,
+          "physical": 67.01,
+          "quickness": 66.56,
+          "strength": 68.45,
+          "technique": 67.67,
+          "decisions": 67.04,
+          "overall": 67.34
+        },
+        {
+          "age": 22,
+          "physical": 67.47,
+          "quickness": 66.82,
+          "strength": 69.41,
+          "technique": 68.56,
+          "decisions": 67.72,
+          "overall": 68.07
+        },
+        {
+          "age": 23,
+          "physical": 67.78,
+          "quickness": 66.95,
+          "strength": 70.18,
+          "technique": 69.3,
+          "decisions": 68.4,
+          "overall": 68.68
+        },
+        {
+          "age": 24,
+          "physical": 67.95,
+          "quickness": 66.95,
+          "strength": 70.75,
+          "technique": 69.89,
+          "decisions": 69.08,
+          "overall": 69.18
+        },
+        {
+          "age": 25,
+          "physical": 68.07,
+          "quickness": 66.95,
+          "strength": 71.13,
+          "technique": 70.33,
+          "decisions": 69.76,
+          "overall": 69.59
+        },
+        {
+          "age": 26,
+          "physical": 68.15,
+          "quickness": 66.95,
+          "strength": 71.32,
+          "technique": 70.63,
+          "decisions": 70.33,
+          "overall": 69.88
+        },
+        {
+          "age": 27,
+          "physical": 68.17,
+          "quickness": 66.95,
+          "strength": 71.32,
+          "technique": 70.78,
+          "decisions": 70.78,
+          "overall": 70.07
+        },
+        {
+          "age": 28,
+          "physical": 67.44,
+          "quickness": 65.93,
+          "strength": 71.32,
+          "technique": 70.78,
+          "decisions": 71.12,
+          "overall": 69.95
+        },
+        {
+          "age": 29,
+          "physical": 66.62,
+          "quickness": 64.78,
+          "strength": 71.32,
+          "technique": 70.78,
+          "decisions": 71.35,
+          "overall": 69.77
+        },
+        {
+          "age": 30,
+          "physical": 65.71,
+          "quickness": 63.51,
+          "strength": 71.32,
+          "technique": 70.78,
+          "decisions": 71.46,
+          "overall": 69.55
+        },
+        {
+          "age": 31,
+          "physical": 64.64,
+          "quickness": 62.11,
+          "strength": 70.83,
+          "technique": 70.78,
+          "decisions": 71.54,
+          "overall": 69.28
+        },
+        {
+          "age": 32,
+          "physical": 63.37,
+          "quickness": 60.58,
+          "strength": 70.28,
+          "technique": 70.78,
+          "decisions": 71.62,
+          "overall": 68.95
+        },
+        {
+          "age": 33,
+          "physical": 61.99,
+          "quickness": 58.92,
+          "strength": 69.67,
+          "technique": 70.63,
+          "decisions": 71.7,
+          "overall": 68.51
+        },
+        {
+          "age": 34,
+          "physical": 60.5,
+          "quickness": 57.14,
+          "strength": 69,
+          "technique": 70.47,
+          "decisions": 71.78,
+          "overall": 68.04
+        },
+        {
+          "age": 35,
+          "physical": 58.9,
+          "quickness": 55.23,
+          "strength": 68.27,
+          "technique": 70.29,
+          "decisions": 71.86,
+          "overall": 67.52
+        },
+        {
+          "age": 36,
+          "physical": 57.19,
+          "quickness": 53.19,
+          "strength": 67.48,
+          "technique": 70.09,
+          "decisions": 71.94,
+          "overall": 66.96
+        },
+        {
+          "age": 37,
+          "physical": 55.36,
+          "quickness": 51.03,
+          "strength": 66.63,
+          "technique": 69.87,
+          "decisions": 71.94,
+          "overall": 66.35
+        },
+        {
+          "age": 38,
+          "physical": 53.43,
+          "quickness": 48.74,
+          "strength": 65.72,
+          "technique": 69.63,
+          "decisions": 71.86,
+          "overall": 65.67
+        },
+        {
+          "age": 39,
+          "physical": 51.38,
+          "quickness": 46.32,
+          "strength": 64.75,
+          "technique": 69.38,
+          "decisions": 71.77,
+          "overall": 64.96
+        },
+        {
+          "age": 40,
+          "physical": 49.22,
+          "quickness": 43.77,
+          "strength": 63.72,
+          "technique": 69.11,
+          "decisions": 71.67,
+          "overall": 64.2
+        }
+      ]
+    },
+    {
+      "role": "Arrière",
+      "kind": "Controlled gameplay trajectory; NOT observed career",
+      "peakAge": 28,
+      "years": [
+        {
+          "age": 18,
+          "physical": 65,
+          "quickness": 65,
+          "strength": 65,
+          "technique": 65,
+          "decisions": 65,
+          "overall": 65
+        },
+        {
+          "age": 19,
+          "physical": 65.86,
+          "quickness": 65.78,
+          "strength": 66.15,
+          "technique": 65.89,
+          "decisions": 65.68,
+          "overall": 65.83
+        },
+        {
+          "age": 20,
+          "physical": 66.62,
+          "quickness": 66.43,
+          "strength": 67.3,
+          "technique": 66.78,
+          "decisions": 66.36,
+          "overall": 66.64
+        },
+        {
+          "age": 21,
+          "physical": 67.29,
+          "quickness": 66.95,
+          "strength": 68.45,
+          "technique": 67.67,
+          "decisions": 67.04,
+          "overall": 67.42
+        },
+        {
+          "age": 22,
+          "physical": 67.84,
+          "quickness": 67.34,
+          "strength": 69.41,
+          "technique": 68.56,
+          "decisions": 67.72,
+          "overall": 68.17
+        },
+        {
+          "age": 23,
+          "physical": 68.25,
+          "quickness": 67.6,
+          "strength": 70.18,
+          "technique": 69.45,
+          "decisions": 68.4,
+          "overall": 68.88
+        },
+        {
+          "age": 24,
+          "physical": 68.51,
+          "quickness": 67.73,
+          "strength": 70.75,
+          "technique": 70.34,
+          "decisions": 69.08,
+          "overall": 69.55
+        },
+        {
+          "age": 25,
+          "physical": 68.63,
+          "quickness": 67.73,
+          "strength": 71.13,
+          "technique": 71.08,
+          "decisions": 69.76,
+          "overall": 70.11
+        },
+        {
+          "age": 26,
+          "physical": 68.7,
+          "quickness": 67.73,
+          "strength": 71.32,
+          "technique": 71.67,
+          "decisions": 70.43,
+          "overall": 70.58
+        },
+        {
+          "age": 27,
+          "physical": 68.72,
+          "quickness": 67.73,
+          "strength": 71.32,
+          "technique": 72.1,
+          "decisions": 71.08,
+          "overall": 70.95
+        },
+        {
+          "age": 28,
+          "physical": 68.72,
+          "quickness": 67.73,
+          "strength": 71.32,
+          "technique": 72.38,
+          "decisions": 71.61,
+          "overall": 71.2
+        },
+        {
+          "age": 29,
+          "physical": 68,
+          "quickness": 66.71,
+          "strength": 71.32,
+          "technique": 72.52,
+          "decisions": 72.03,
+          "overall": 71.17
+        },
+        {
+          "age": 30,
+          "physical": 67.17,
+          "quickness": 65.56,
+          "strength": 71.32,
+          "technique": 72.52,
+          "decisions": 72.34,
+          "overall": 71.01
+        },
+        {
+          "age": 31,
+          "physical": 66.2,
+          "quickness": 64.29,
+          "strength": 70.83,
+          "technique": 72.52,
+          "decisions": 72.55,
+          "overall": 70.8
+        },
+        {
+          "age": 32,
+          "physical": 65.02,
+          "quickness": 62.89,
+          "strength": 70.28,
+          "technique": 72.52,
+          "decisions": 72.66,
+          "overall": 70.5
+        },
+        {
+          "age": 33,
+          "physical": 63.73,
+          "quickness": 61.36,
+          "strength": 69.67,
+          "technique": 72.52,
+          "decisions": 72.74,
+          "overall": 70.16
+        },
+        {
+          "age": 34,
+          "physical": 62.33,
+          "quickness": 59.7,
+          "strength": 69,
+          "technique": 72.52,
+          "decisions": 72.82,
+          "overall": 69.79
+        },
+        {
+          "age": 35,
+          "physical": 60.82,
+          "quickness": 57.92,
+          "strength": 68.27,
+          "technique": 72.37,
+          "decisions": 72.9,
+          "overall": 69.31
+        },
+        {
+          "age": 36,
+          "physical": 59.2,
+          "quickness": 56.01,
+          "strength": 67.48,
+          "technique": 72.21,
+          "decisions": 72.98,
+          "overall": 68.8
+        },
+        {
+          "age": 37,
+          "physical": 57.46,
+          "quickness": 53.97,
+          "strength": 66.63,
+          "technique": 72.03,
+          "decisions": 73.06,
+          "overall": 68.25
+        },
+        {
+          "age": 38,
+          "physical": 55.62,
+          "quickness": 51.81,
+          "strength": 65.72,
+          "technique": 71.83,
+          "decisions": 73.14,
+          "overall": 67.66
+        },
+        {
+          "age": 39,
+          "physical": 53.66,
+          "quickness": 49.52,
+          "strength": 64.75,
+          "technique": 71.61,
+          "decisions": 73.14,
+          "overall": 67
+        },
+        {
+          "age": 40,
+          "physical": 51.59,
+          "quickness": 47.1,
+          "strength": 63.72,
+          "technique": 71.37,
+          "decisions": 73.06,
+          "overall": 66.29
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Hypothetical equal starting ages, NOT actual player histories or natural career seasons",
+    "Held roster: no retirement, transfer, injuries or budget decisions between age steps",
+    "Same unmodified native match engine; x2 skill-response sandbox proposal active",
+    "Observed win differences can include sampling noise, not proof of historical ageing rates"
+  ]
+}
