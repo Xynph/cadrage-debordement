@@ -126,6 +126,55 @@ try:
         return {"minSkinnedZMetres":{k:(round(v,5) if math.isfinite(v) else None) for k,v in minimum.items()},
                 "sampleCounts":observed,"sampledSkinVertices":total,
                 "status":"BLENDER_EVALUATED_REAL_SKIN_WEIGHTS_DIAGNOSTIC"}
+    # Exact evaluated, skinned triangles, transformed into world space.
+    # BVH overlap counts are broad-phase CANDIDATES, NOT proofs of
+    # proper triangle/triangle crossings or skin penetration.
+    from mathutils.bvhtree import BVHTree
+    def actor_skin_bvh(meshes):
+        deps=bpy.context.evaluated_depsgraph_get()
+        vertices=[];faces=[];n=0
+        for obj in meshes:
+            ev=obj.evaluated_get(deps)
+            skin=ev.to_mesh()
+            try:
+                if not skin.vertices or not skin.polygons:continue
+                skin.calc_loop_triangles()
+                positions=[ev.matrix_world @ v.co for v in skin.vertices]
+                offset=len(vertices)
+                vertices.extend(positions)
+                faces.extend(tuple(offset+i for i in tri.vertices) for tri in skin.loop_triangles)
+                n+=len(skin.loop_triangles)
+            finally:
+                ev.to_mesh_clear()
+        if not faces:raise RuntimeError("Missing true evaluated skinned triangles")
+        return BVHTree.FromPolygons(vertices,faces,all_triangles=True),n
+
+    def pair_contact(actors):
+        bvh={};triangles={}
+        for label in ("A","B"):
+            bvh[label],triangles[label]=actor_skin_bvh(actors[label]["meshes"])
+        distances={}
+        for source,target in (("A","B"),("B","A")):
+            arm=actors[source]["armature"]
+            measurements={}
+            for side in ("l","r"):
+                hand=arm.pose.bones.get("hand_"+side)
+                if hand is None:raise RuntimeError("True 53-bone wrist unavailable")
+                position=(arm.matrix_world @ hand.matrix).translation
+                hit=bvh[target].find_nearest(position)
+                if hit is None:raise RuntimeError("No opposing skinned triangle")
+                measurements["hand_"+side]={
+                    "distanceToAnyOpposingSkinnedTriangleM":round(hit[3],5),
+                    "closestPolygonIndex":hit[2],
+                    "handWorldXYZ":[round(v,5) for v in position]}
+            distances[source+"To"+target]=measurements
+        # Precise name: a BVHTree overlap is a potential pair of triangles,
+        # and should not be presented as a validated geometric intersection.
+        possible=bvh["A"].overlap(bvh["B"])
+        return {"hands":distances,"bvhPotentialTriangleOverlapPairs":len(possible),
+            "trianglesByActor":triangles,
+            "geometryQualification":"BROAD_PHASE_ONLY_NOT_PROPER_TRIANGLE_INTERSECTIONS"}
+
     scene=bpy.context.scene
     scene.render.engine="CYCLES"
     scene.cycles.device="CPU"
@@ -166,7 +215,8 @@ try:
                 target.location.y=offset.y
             bpy.context.view_layer.update()
             supports={label:true_skin_regions(actors[label]["meshes"]) for label in ("A","B")}
-            pair={"lod":lod,"frame":frame,"supports":supports,"images":[],
+            contact=pair_contact(actors)
+            pair={"lod":lod,"frame":frame,"supports":supports,"contact":contact,"images":[],
                   "sourceRootSeparationXYMetres":round(math.dist(
                       src_roots[0][:2],src_roots[1][:2]),5)}
             for view in ("front","profile"):
@@ -190,6 +240,8 @@ try:
     assert len(report["visualPairs"])==9
     report["skinSupportsAreFromRagdollPhysics"]=False
     report["visualApproved"]=False
+    report["bimanualRealSkinQualified"]=False
+    report["properTriangleIntersectionTest"]="NOT_EXECUTED_BVH_OVERLAPS_ARE_CANDIDATES"
     report["status"]="TRANSFERRED_2_REAL_CLIPS_TO_3_CANONICAL_LODS_NOT_ART_APPROVED"
 except Exception as exc:
     report["errors"].append(str(exc));report["traceback"]=traceback.format_exc()
