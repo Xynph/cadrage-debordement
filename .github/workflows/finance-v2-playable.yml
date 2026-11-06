@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'dist/finance-v2.js'
+      - 'dist/finance-v2.css'
       - 'dist/index.html'
       - 'dist/game.js'
       - 'tests/finance-v2-playable.cjs'
