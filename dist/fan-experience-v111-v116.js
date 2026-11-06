@@ -64,7 +64,7 @@
   }
   // V113: one campaign per season, paid in fictional club cash.
   function campaign(s,kind,save){
-    const st=ready(s),config=CAMPAIGNS[kind],c=club(s);
+    const st=ready(s),config=has(CAMPAIGNS,kind)?CAMPAIGNS[kind]:null,c=club(s);
     if(!st||!config||st.campaign?.season===s.season||!Number.isFinite(c.cash)||c.cash<config.cost)return false;
     return transact(s,()=>{
       c.cash-=config.cost;st.campaign={kind,season:s.season,cost:config.cost};
@@ -74,7 +74,7 @@
   }
   // V114: two community activities per season, each type once.
   function community(s,kind,save){
-    const st=ready(s),cfg=EVENTS[kind],c=club(s);
+    const st=ready(s),cfg=has(EVENTS,kind)?EVENTS[kind]:null,c=club(s);
     if(!st||!cfg||st.community.length>=2||st.community.some(e=>e.kind===kind)||
        !Number.isFinite(c.cash)||c.cash<cfg.cost)return false;
     return transact(s,()=>{
@@ -84,7 +84,7 @@
   }
   // V115: one matchday-service configuration per season, no engine effects.
   function service(s,kind,save){
-    const st=ready(s),cfg=SERVICES[kind],c=club(s);
+    const st=ready(s),cfg=has(SERVICES,kind)?SERVICES[kind]:null,c=club(s);
     if(!st||!cfg||st.service?.season===s.season||!Number.isFinite(c.cash)||c.cash<cfg.cost)return false;
     return transact(s,()=>{
       c.cash-=cfg.cost;st.service={kind,season:s.season,cost:cfg.cost};return true;
@@ -131,12 +131,15 @@
   function panel(s){
     const st=ensure(s);if(!st)return '';
     const f=forecast(s),locked=!open(s)||st.season!==s.season;
+    const nextRound=Array.from({length:26},(_,i)=>i+1).find(i=>!st.ledger.some(e=>e.round===i));
     const btn=(call,label,disabled)=>'<button type="button" onclick="'+call+'"'+(disabled?' disabled':'')+'>'+esc(label)+'</button>';
     return '<section class="cd04-panel" style="padding:18px;margin-top:18px">'+
       '<h2>V111–V116 · Supporters et accueil</h2>'+
       '<h3>V111 · Affluence prévisionnelle</h3><p>Jauge '+f.capacity+
       ' · demande estimée '+f.demand+' % · '+f.expectedAttendance+' spectateurs prévus.'+
-      ' Simulation interne, aucune donnée officielle.</p>'+
+      ' Simulation interne, aucune donnée officielle.</p>'+ 
+      (nextRound?btn('v111Record('+nextRound+','+f.expectedAttendance+')',
+        'Simuler l accueil commercial '+nextRound+' ('+f.expectedAttendance+' visiteurs fictifs)',locked):'')+
       '<h3>V112 · Billetterie fictive</h3>'+
       Object.keys(PRICES).map(k=>btn('v112Price(\''+k+'\')',k+' · '+PRICES[k]+' €',
         locked)).join(' ')+
