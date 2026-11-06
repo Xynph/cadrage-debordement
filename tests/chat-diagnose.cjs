@@ -24,7 +24,7 @@ test('CI main respecte SHA et événement exacts',()=>{
  assert.equal(latestRun([{...base,head_sha:'b'.repeat(40)}],sha,1,['workflow_dispatch']),undefined);
 });
 test('ruleset non contournable vérifié, pas seulement son identifiant',()=>{
- const r={id:26326518,enforcement:'active',bypass_actors:[],rules:[
+ const r={id:26326518,enforcement:'active',bypass_actors:[],conditions:{ref_name:{include:['~DEFAULT_BRANCH']}},rules:[
   {type:'pull_request'},{type:'deletion'},{type:'non_fast_forward'},
   {type:'required_status_checks',parameters:{strict_required_status_checks_policy:true,required_status_checks:[{context:'Validation CI',integration_id:15368}]}}
  ]};
