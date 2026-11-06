@@ -21,6 +21,21 @@ function api(endpoint,method='GET',body) {
   const output=execFileSync('gh',args,{encoding:'utf8',input:body?JSON.stringify(body):undefined,timeout:30000,maxBuffer:8*1024*1024});
   return output.trim()?JSON.parse(output):null;
 }
+function rulesetAuthEnv(env=process.env) {
+  assert(typeof env.CD_RULESET_TOKEN==='string'&&env.CD_RULESET_TOKEN.length>0,
+    'Jeton GitHub App ruleset absent : diagnostic refuse');
+  return {...env,GH_TOKEN:env.CD_RULESET_TOKEN};
+}
+function rulesetApi() {
+  const args=['api','--method','GET','-H','X-GitHub-Api-Version: 2026-03-10',
+    'repos/'+REPO+'/rulesets/'+RULESET];
+  const output=execFileSync('gh',args,{encoding:'utf8',env:rulesetAuthEnv(),
+    timeout:30000,maxBuffer:8*1024*1024});
+  const data=JSON.parse(output);
+  // Missing/hidden bypass_actors must never be interpreted as an empty list.
+  assert(Array.isArray(data?.bypass_actors),'Liste bypass_actors non démontrée');
+  return data;
+}
 function pages(endpoint,key,max=10) {
   const out=[];
   for(let page=1;page<=max;page++) {
@@ -66,7 +81,9 @@ function diagnose(cmd) {
   const pr=api('pulls/'+cmd.number);
   assert(pr.head?.sha===cmd.expected&&pr.base?.ref==='main'&&pr.base?.sha===main,'PR / HEAD / main différents de la commande');
   assert(pr.head?.repo?.full_name===REPO,'Dépôt de PR externe refusé');
-  const ruleset=api('rulesets/'+RULESET);
+  // Only this read uses the short-lived App token. Every other request and the
+  // issue report keep the job-scoped GITHUB_TOKEN; never broaden that token.
+  const ruleset=rulesetApi();
   const ruleDetails=rulesetDetails(ruleset);
   const validRuleset=rulesetStatus(ruleset);
   const workflow=api('actions/workflows/tests.yml');
@@ -113,4 +130,4 @@ async function main() {
   if(error||!result.valid)process.exitCode=1;
 }
 if(require.main===module)main().catch(e=>{console.error(e.message);process.exitCode=1;});
-module.exports={validate,completedSeven,latestRun,rulesetStatus,rulesetDetails,format};
+module.exports={validate,completedSeven,latestRun,rulesetStatus,rulesetDetails,rulesetAuthEnv,format};
