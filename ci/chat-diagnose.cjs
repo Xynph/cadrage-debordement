@@ -39,16 +39,25 @@ function completedSeven(jobs) {
 function latestRun(runs,sha,workflowId,events) {
   return runs.filter(r=>r.workflow_id===workflowId&&r.head_sha===sha&&r.head_branch==='main'&&events.includes(r.event)).sort((a,b)=>b.id-a.id)[0];
 }
-function rulesetStatus(r) {
+function rulesetDetails(r) {
   const list=r.rules||[];
   const status=list.find(x=>x.type==='required_status_checks');
   const required=status?.parameters?.required_status_checks||[];
   const includes=r.conditions?.ref_name?.include||[];
-  const mainTargeted=includes.some(x=>['refs/heads/main','~DEFAULT_BRANCH','~ALL'].includes(x));
-  return mainTargeted&&r.id===RULESET&&r.enforcement==='active'&&Array.isArray(r.bypass_actors)&&r.bypass_actors.length===0&&
-    list.some(x=>x.type==='pull_request')&&list.some(x=>x.type==='deletion')&&list.some(x=>x.type==='non_fast_forward')&&
-    status?.parameters?.strict_required_status_checks_policy===true&&
-    required.some(x=>x.context==='Validation CI'&&x.integration_id===15368);
+  return {
+    targetedMain:includes.some(x=>['refs/heads/main','~DEFAULT_BRANCH','~ALL'].includes(x)),
+    expectedId:r.id===RULESET,
+    active:r.enforcement==='active',
+    noBypass:Array.isArray(r.bypass_actors)&&r.bypass_actors.length===0,
+    requiresPR:list.some(x=>x.type==='pull_request'),
+    preventsDeletion:list.some(x=>x.type==='deletion'),
+    preventsForcePush:list.some(x=>x.type==='non_fast_forward'),
+    strictChecks:status?.parameters?.strict_required_status_checks_policy===true,
+    validationCI:required.some(x=>x.context==='Validation CI'&&x.integration_id===15368)
+  };
+}
+function rulesetStatus(r) {
+  return Object.values(rulesetDetails(r)).every(Boolean);
 }
 function diagnose(cmd) {
   const original=api('issues/comments/'+cmd.commentId);
@@ -58,6 +67,7 @@ function diagnose(cmd) {
   assert(pr.head?.sha===cmd.expected&&pr.base?.ref==='main'&&pr.base?.sha===main,'PR / HEAD / main différents de la commande');
   assert(pr.head?.repo?.full_name===REPO,'Dépôt de PR externe refusé');
   const ruleset=api('rulesets/'+RULESET);
+  const ruleDetails=rulesetDetails(ruleset);
   const validRuleset=rulesetStatus(ruleset);
   const workflow=api('actions/workflows/tests.yml');
   assert(workflow.state==='active','Workflow Tests JavaScript inactif');
@@ -73,7 +83,7 @@ function diagnose(cmd) {
   const required=ruleset.rules.find(x=>x.type==='required_status_checks')?.parameters?.required_status_checks||[];
   const missing=required.filter(x=>!checks.some(c=>c.name===x.context&&c.status==='completed'&&c.conclusion==='success'&&(!x.integration_id||c.app?.id===x.integration_id))).map(x=>x.context);
   const valid=validRuleset&&mainCI&&prCI&&missing.length===0&&pr.state==='open'&&!pr.draft&&pr.mergeable===true&&pr.mergeable_state==='clean';
-  return {valid,pr:cmd.number,head:cmd.expected,main,mergeable:pr.mergeable,mergeable_state:pr.mergeable_state,ready:!pr.draft,ruleset:validRuleset,mainCI,mainRun:run?.id,prCI,prRun:prRun?.id,missing};
+  return {valid,pr:cmd.number,head:cmd.expected,main,mergeable:pr.mergeable,mergeable_state:pr.mergeable_state,ready:!pr.draft,ruleset:validRuleset,ruleDetails,mainCI,mainRun:run?.id,prCI,prRun:prRun?.id,missing};
 }
 function format(result,error,runUrl) {
   if(error)return 'DIAGNOSTIC IMPOSSIBLE — STOP (aucune fusion). Erreur : '+String(error.message).slice(0,500)+'\nRun : '+runUrl;
@@ -83,6 +93,7 @@ function format(result,error,runUrl) {
     'main '+result.main,
     'READY='+result.ready+' mergeable='+result.mergeable+' mergeable_state='+result.mergeable_state,
     'ruleset #'+RULESET+' vérifié='+result.ruleset,
+    'Critères ruleset (lecture Actions)='+JSON.stringify(result.ruleDetails||{}),
     'main Tests JavaScript 7/7='+result.mainCI+' (run '+(result.mainRun||'absent')+')',
     'PR Tests JavaScript 7/7='+result.prCI+' (run '+(result.prRun||'absent')+')',
     'Checks requis manquants/non SUCCESS='+JSON.stringify(result.missing),
@@ -102,4 +113,4 @@ async function main() {
   if(error||!result.valid)process.exitCode=1;
 }
 if(require.main===module)main().catch(e=>{console.error(e.message);process.exitCode=1;});
-module.exports={validate,completedSeven,latestRun,rulesetStatus,format};
+module.exports={validate,completedSeven,latestRun,rulesetStatus,rulesetDetails,format};

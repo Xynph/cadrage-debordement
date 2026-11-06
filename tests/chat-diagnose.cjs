@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {validate,completedSeven,latestRun,rulesetStatus,format}=require('../ci/chat-diagnose.cjs');
+const {validate,completedSeven,latestRun,rulesetStatus,rulesetDetails,format}=require('../ci/chat-diagnose.cjs');
 const sha='a'.repeat(40);
 const env={GITHUB_EVENT_NAME:'issue_comment',GITHUB_REPOSITORY:'Xynph/cadrage-debordement',GITHUB_ACTOR:'Xynph',GITHUB_TRIGGERING_ACTOR:'Xynph'};
 const event={action:'created',repository:{id:1439603196,full_name:'Xynph/cadrage-debordement'},issue:{number:73},sender:{id:350229047,login:'Xynph'},comment:{id:123,user:{id:350229047,login:'Xynph',type:'User'},body:'/cd-diagnose 328 '+sha}};
@@ -41,4 +41,18 @@ test('pagination CI bornée au SHA exact pour main et PR',()=>{
  assert.ok(src.includes("runs?branch=main&head_sha='+main"));
  assert.ok(src.includes("runs?event=pull_request&head_sha='+cmd.expected"));
  assert.ok(!src.includes("runs?event=pull_request','workflow_runs'"));
+});
+
+test('détail des refus ruleset conserve chaque exigence bloquante',()=>{
+ const base={id:26326518,enforcement:'active',bypass_actors:[],conditions:{ref_name:{include:['refs/heads/main']}},rules:[
+  {type:'pull_request'},{type:'deletion'},{type:'non_fast_forward'},
+  {type:'required_status_checks',parameters:{strict_required_status_checks_policy:true,required_status_checks:[{context:'Validation CI',integration_id:15368}]}}
+ ]};
+ assert.ok(Object.values(rulesetDetails(base)).every(Boolean));
+ const missing={...base,bypass_actors:undefined};
+ assert.equal(rulesetDetails(missing).noBypass,false);
+ assert.equal(rulesetStatus(missing),false);
+ const noStrict={...base,rules:base.rules.map(r=>r.type==='required_status_checks'?{...r,parameters:{...r.parameters,strict_required_status_checks_policy:false}}:r)};
+ assert.equal(rulesetDetails(noStrict).strictChecks,false);
+ assert.equal(rulesetStatus(noStrict),false);
 });
