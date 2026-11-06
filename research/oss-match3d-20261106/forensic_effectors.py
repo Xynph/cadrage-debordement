@@ -37,7 +37,7 @@ for sample in samples["samples"]:
                  "upperRestM":upper,"lowerRestM":lower,"twoSegmentRestReachM":upper+lower,
                  "hipToAnkleM":d(h,a),"hipToTargetM":d(h,target) if target else None,
                  "ankleToTargetM":d(a,target) if target else None,
-                 "ankleToBallM":d(a,ball) if ball else None,
+                 "ankleToBallM":d(a,ball) if ball else None,\n                 "ballToTargetM":d(ball,target) if ball and target else None,\n                 "anatomicalAnkleForSameBallPin":([a[i]+target[i]-ball[i] for i in range(3)] if ball and target else None),\n                 "hipToAnatomicalAnkleForSameBallPinM":(d(h,[a[i]+target[i]-ball[i] for i in range(3)]) if ball and target else None),
                  "anklePlusFootTargetGapM":(d(h,target)-(upper+lower)) if target else None,
                  "actorRootWorldSha256":hashlib.sha256(json.dumps(actor["actorRootWorld"]).encode()).hexdigest()}
             rows.append(row)
@@ -47,18 +47,18 @@ assert len(rows)==228 and critical is not None
 assert abs(critical["hipToTargetM"]-0.805630074354069)<0.00002,critical
 # Rest length in the same Blender sampling frame must agree with source Ekza reach.
 assert abs(critical["twoSegmentRestReachM"]-0.8020380174703425)<0.00002,critical
-assert critical["hipToTargetM"]>critical["twoSegmentRestReachM"]
+assert critical["hipToTargetM"]>critical["twoSegmentRestReachM"]\nassert critical["ballToTargetM"]<0.000002,critical\nassert critical["hipToAnatomicalAnkleForSameBallPinM"]<critical["twoSegmentRestReachM"],critical
 # No assert that the unmeasured sole is reachable; ball is a joint, not a shoe outsole.
 report={"schema":"cd-v25-anatomical-effector-audit-v1","sourceSha256":hashlib.sha256(src.read_bytes()).hexdigest(),
  "glbRestSha256":hashlib.sha256(rig.read_bytes()).hexdigest(),"status":"GEOMETRY_STOP_UNTIL_SHOE_SOLE_EFFECTOR_PROVEN",
  "observations":len(rows),"sourceFrames":len(samples["samples"]),"critical":critical,
- "byLod":[{"lod":i,"activeLocks":sum(x["influence"] is not None and x["influence"]>=.99 for x in rows if x["lod"]==i),
+ "byLod":[{"lod":i,\n "criticalFrame22AnkleReachGapM":(next(x for x in rows if x["lod"]==i and x["actor"]=="A" and x["frame"]==22 and x["side"]=="l")["hipToAnatomicalAnkleForSameBallPinM"]-next(x for x in rows if x["lod"]==i and x["actor"]=="A" and x["frame"]==22 and x["side"]=="l")["twoSegmentRestReachM"]),\n "activeLockMaxBallPinDeltaM":max(x["ballToTargetM"] for x in rows if x["lod"]==i and x["influence"] is not None and x["influence"]>=.99),"activeLocks":sum(x["influence"] is not None and x["influence"]>=.99 for x in rows if x["lod"]==i),
  "maxTargetExcessM":max(x["anklePlusFootTargetGapM"] for x in rows if x["lod"]==i and x["influence"] is not None)}
  for i in range(3)],
  "limitations":["Only joint and target object origins measured; target object is not asserted to be shoe outsole.",
  "Blender foot IK chain_length=3 cannot be equated to 3 collinear anatomical segment lengths.",
  "Original meshes/weights not evaluated in this job; no real skinned shoe sole geometry qualified.",
- "No correction or retargeting applied: preserving baseline until anatomical offset is proven."],
+ "Calculated ankle target is an analysis-only effect of preserving the SAME fixed ball pin and original foot orientation; not a new or moved physical pin.",\n "No correction or retargeting applied: preserving baseline until anatomical offset and skinned sole are proven."],
  "rows":rows}
 out.parent.mkdir(parents=True,exist_ok=True)
 out.write_text(json.dumps(report,indent=2)+"\n")
