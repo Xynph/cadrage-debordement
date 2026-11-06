@@ -52,7 +52,7 @@ jobs:
           const r=JSON.parse(fs.readFileSync(p,'utf8'));
           const summary={
             status:r.status,playerCount:r.playerCount,attributeCount:r.attributeCount,
-            checks:r.checks,attributeKeys:r.attributeKeys,
+            checks:r.checks,provenance:r.provenance,attributeKeys:r.attributeKeys,
             groupNames:Object.keys(r.groups),highCorrelations:r.highCorrelations.slice(0,25),
             warningCount:r.warnings.length,
             distributions:Object.fromEntries(Object.entries(r.distributions).map(([k,v])=>[k,v&&{median:v.median,sd:v.sd,p10:v.p10,p90:v.p90}]))
