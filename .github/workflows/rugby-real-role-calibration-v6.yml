@@ -33,5 +33,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rugby-real-v6-candidates
-          path: \${{ runner.temp }}/rugby-real-v6-candidates.json
+          path: ${{ runner.temp }}/rugby-real-v6-candidates.json
           retention-days: 7
