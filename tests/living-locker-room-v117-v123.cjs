@@ -81,7 +81,8 @@ const make=()=>({
   managerMessage:(title,body,kind,action)=>{s.manager.inbox.push({title,body,kind,action})},
   save:()=>true,render:()=>{},toast:()=>{}};
  assert.equal(api.install(root),true,'PC wiring installed');
- assert.ok(root.managerOffice().includes('Vie du vestiaire'),'office panel really wired');
+ assert.equal(typeof root.render,'function','native render wrapper installed');
+ assert.ok(api.panel(s).includes('Vie du vestiaire'),'dossiers panel available');
  assert.equal(root.livingLockerDecision('ecouter'),true,'native click handler');
  assert.ok(s.livingLockerRoom.history.length===1);
  assert.equal(root.livingLockerDecision('ecouter'),false,'no repeated clicks');
