@@ -93,4 +93,36 @@ const make=()=>({
  assert.deepEqual(api.settle(s),[]);
  assert.equal(s.livingLockerRoom.commitments[0].status,'expired','no perpetual pending promise after season rollover');
 }
-console.log('V117-V123: 9 suites PASS; legacy saves, rollback, context, decisions, commitments, idempotence, long seasons.');
+{
+ const v64=require('../dist/vestiaire-v64.js');
+ const v70=require('../dist/relations-duos-v70.js');
+ const s=make(),p=s.clubs[0].players[0],second=s.clubs[0].players[1];
+ const firstStatus=v64.status(p),pairBefore=v70.relation(s,p.id,second.id);
+ assert.ok(pairBefore,'V70 legacy relationships available');
+ assert.equal(api.apply(s,'ecouter',{save:()=>true}),true);
+ assert.notEqual(v64.status(p),undefined);
+ assert.equal(v64.status(p),firstStatus,'V64 status remains coherent');
+ const pairAfter=v70.relation(s,p.id,second.id);
+ assert.ok(pairAfter&&Number.isFinite(pairAfter.score));
+ assert.equal(s.livingLockerRoom.history.length,1);
+}
+{
+ // Fifteen season boundaries, including unresolved promises. No synthetic match results.
+ const s=make(),seasons=[];
+ for(let season=1;season<=15;season++){
+  s.season=season;s.economy.week=1;s.phase='league';s.trained=false;
+  s.clubs[0].players[0].dev.minutes=0;
+  assert.equal(api.apply(s,'responsabiliser',{save:()=>true}),true,'season '+season);
+  s.economy.week=26;
+  api.settle(s);
+  assert.equal(s.livingLockerRoom.commitments.at(-1).status,'broken','promise resolved season '+season);
+  const restored=JSON.parse(JSON.stringify(s));
+  assert.equal(restored.livingLockerRoom.history.at(-1).season,season);
+  assert.ok(api.panel(restored).includes('Vie du vestiaire'));
+  seasons.push({season,history:restored.livingLockerRoom.history.length});
+ }
+ assert.equal(seasons.length,15);
+ assert.equal(s.livingLockerRoom.commitments.length,15);
+ assert.equal(s.livingLockerRoom.history.length,15);
+}
+console.log('V117-V123: 11 suites PASS; V64/V70 compatibility, 15 interseasons, legacy saves, rollback, context, commitments, idempotence.');
