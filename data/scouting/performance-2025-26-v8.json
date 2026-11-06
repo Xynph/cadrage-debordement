@@ -1074,6 +1074,254 @@
           }
         }
       ]
+    },
+    {
+      "season": "2025-2026",
+      "league": "prod2",
+      "metric": "conversionRate",
+      "sourceUrl": "https://prod2.lnr.fr/classement/joueurs/meilleurs-taux-de-transformation/2025-2026",
+      "ranking": [
+        {
+          "name": "John MCPHILLIPS",
+          "lnrId": "2039",
+          "historicalClub": "US Carcassonnaise",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "conversionRate": 89.7,
+            "conversionAttempts": 58,
+            "conversionMade": 52,
+            "conversionMissed": 6
+          }
+        },
+        {
+          "name": "Zack HOLMES",
+          "lnrId": "334",
+          "historicalClub": "Oyonnax Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 86.8,
+            "conversionAttempts": 38,
+            "conversionMade": 33,
+            "conversionMissed": 5
+          }
+        },
+        {
+          "name": "Craig WILLIS",
+          "lnrId": "13690",
+          "historicalClub": "SU Agen",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 86.5,
+            "conversionAttempts": 96,
+            "conversionMade": 83,
+            "conversionMissed": 13
+          }
+        },
+        {
+          "name": "Thibault DEBAES",
+          "lnrId": "1930",
+          "historicalClub": "RC Vannes",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 85.3,
+            "conversionAttempts": 61,
+            "conversionMade": 52,
+            "conversionMissed": 9
+          }
+        },
+        {
+          "name": "Lucas MERET",
+          "lnrId": "9158",
+          "historicalClub": "Valence Romans",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 83.6,
+            "conversionAttempts": 152,
+            "conversionMade": 127,
+            "conversionMissed": 25
+          }
+        },
+        {
+          "name": "Anthony BOUTHIER",
+          "lnrId": "1426",
+          "historicalClub": "RC Vannes",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "conversionRate": 83.3,
+            "conversionAttempts": 24,
+            "conversionMade": 20,
+            "conversionMissed": 4
+          }
+        },
+        {
+          "name": "Maxime LAFAGE",
+          "lnrId": "2560",
+          "historicalClub": "RC Vannes",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 83.3,
+            "conversionAttempts": 90,
+            "conversionMade": 75,
+            "conversionMissed": 15
+          }
+        },
+        {
+          "name": "Romain TROUILLOUD",
+          "lnrId": "918",
+          "historicalClub": "FC Grenoble Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 83.3,
+            "conversionAttempts": 78,
+            "conversionMade": 65,
+            "conversionMissed": 13
+          }
+        },
+        {
+          "name": "Christophe LOUSTALOT",
+          "lnrId": "1234",
+          "historicalClub": "Stade Montois Rugby",
+          "historicalPosition": "Demi de mêlée",
+          "stats": {
+            "conversionRate": 83.3,
+            "conversionAttempts": 48,
+            "conversionMade": 40,
+            "conversionMissed": 8
+          }
+        },
+        {
+          "name": "Jules SOULAN",
+          "lnrId": "1682",
+          "historicalClub": "Provence Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 83.3,
+            "conversionAttempts": 24,
+            "conversionMade": 20,
+            "conversionMissed": 4
+          }
+        },
+        {
+          "name": "Tedo ABZHANDADZE",
+          "lnrId": "1356",
+          "historicalClub": "Stade Aurillacois",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 82.5,
+            "conversionAttempts": 63,
+            "conversionMade": 52,
+            "conversionMissed": 11
+          }
+        },
+        {
+          "name": "Jake STRACHAN",
+          "lnrId": "13439",
+          "historicalClub": "Stade Aurillacois",
+          "historicalPosition": "Demi de mêlée",
+          "stats": {
+            "conversionRate": 82.4,
+            "conversionAttempts": 34,
+            "conversionMade": 28,
+            "conversionMissed": 6
+          }
+        },
+        {
+          "name": "Curwin BOSCH",
+          "lnrId": "12581",
+          "historicalClub": "CA Brive",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 82.4,
+            "conversionAttempts": 17,
+            "conversionMade": 14,
+            "conversionMissed": 3
+          }
+        },
+        {
+          "name": "Thomas SALLES",
+          "lnrId": "2366",
+          "historicalClub": "Provence Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 82.2,
+            "conversionAttempts": 45,
+            "conversionMade": 37,
+            "conversionMissed": 8
+          }
+        },
+        {
+          "name": "Benjamin BOTICA",
+          "lnrId": "808",
+          "historicalClub": "Soyaux-Angoulême XV",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 81.3,
+            "conversionAttempts": 48,
+            "conversionMade": 39,
+            "conversionMissed": 9
+          }
+        },
+        {
+          "name": "Franck POURTEAU",
+          "lnrId": "2246",
+          "historicalClub": "SU Agen",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 81.3,
+            "conversionAttempts": 32,
+            "conversionMade": 26,
+            "conversionMissed": 6
+          }
+        },
+        {
+          "name": "Valentin DELPY",
+          "lnrId": "2414",
+          "historicalClub": "Colomiers Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 81.2,
+            "conversionAttempts": 101,
+            "conversionMade": 82,
+            "conversionMissed": 19
+          }
+        },
+        {
+          "name": "Edgar RETIERE",
+          "lnrId": "2478",
+          "historicalClub": "Biarritz Olympique PB",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 81,
+            "conversionAttempts": 63,
+            "conversionMade": 51,
+            "conversionMissed": 12
+          }
+        },
+        {
+          "name": "Manuel PORTELA MORAIS VAREIRO",
+          "lnrId": "13603",
+          "historicalClub": "Provence Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 80.8,
+            "conversionAttempts": 52,
+            "conversionMade": 42,
+            "conversionMissed": 10
+          }
+        },
+        {
+          "name": "Shaun REYNOLDS",
+          "lnrId": "1488",
+          "historicalClub": "USON Nevers",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "conversionRate": 80.6,
+            "conversionAttempts": 36,
+            "conversionMade": 29,
+            "conversionMissed": 7
+          }
+        }
+      ]
     }
   ]
 }
