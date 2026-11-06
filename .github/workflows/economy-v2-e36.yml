@@ -1,0 +1,40 @@
+name: Economy V2 E3.6 six-week paired native investment experiments
+on:
+  pull_request:
+    branches:
+      - research/economy-v2-e35-native-counterfactual-20261106
+    paths:
+      - '.github/workflows/economy-v2-e36.yml'
+      - 'ci/economy-v2-e36-multiweek.cjs'
+      - 'ci/economy-v2-e36-run.cjs'
+      - 'tests/economy-v2-e36-multiweek.cjs'
+      - 'docs/economie-v2/e36-multiweek.md'
+  workflow_dispatch:
+jobs:
+  native-e36:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [reference, modeste, alternatif]
+        seed: [827381, 99173]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and paired test suites
+        run: |
+          node --check ci/economy-v2-e36-multiweek.cjs
+          node --check ci/economy-v2-e36-run.cjs
+          node --check tests/economy-v2-e36-multiweek.cjs
+          node --test tests/economy-v2-e36-multiweek.cjs tests/economy-v2-e35-counterfactual.cjs tests/economy-v2-e34-advisor.cjs
+      - name: Six-week real native forks and fifteen-season regression
+        run: node ci/economy-v2-e36-run.cjs ${{ matrix.profile }} ${{ matrix.seed }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e36-${{ matrix.profile }}-${{ matrix.seed }}
+          path: economy-v2-e36-reports/
+          if-no-files-found: error
