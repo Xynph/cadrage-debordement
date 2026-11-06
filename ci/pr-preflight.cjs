@@ -12,7 +12,7 @@ function parseEvent(e,env){
  need(m&&m[0]===e.comment.body&&Number.isSafeInteger(Number(m[1])),'Commande invalide');
  return {number:Number(m[1]),expected:m[2],commentId:e.comment.id};
 }
-function assess({pr,expected,main,runs,jobs,files,otherFiles,comments}){
+function assess({pr,expected,main,runs,jobs,files,otherFiles,comments,overlapEvidence}){
  const errors=[];
  if(pr?.state!=='open'||pr?.base?.ref!=='main'||pr?.base?.sha!==main||pr?.head?.sha!==expected||pr?.head?.repo?.full_name!==REPO||!SHA.test(expected))errors.push('PR, HEAD ou base non conformes');
  if(pr?.mergeable!==true||pr?.mergeable_state!=='clean')errors.push('mergeable_state non clean');
@@ -23,10 +23,10 @@ function assess({pr,expected,main,runs,jobs,files,otherFiles,comments}){
  const own=new Set(files||[]);
  if(!own.size)errors.push('Fichiers PR non vérifiables');
  const overlaps=(otherFiles||[]).filter(x=>own.has(x.path));
- if(overlaps.length)errors.push('Chevauchement avec une PR ouverte');
+ if(overlaps.length&&!overlapEvidence?.accepted)errors.push('Chevauchement avec une PR ouverte');
  const evidence=(comments||[]).filter(c=>c.user?.login==='Xynph'&&String(c.body||'').includes('RÉSERVATION')&&String(c.body||'').includes('#'+pr.number)&&[...own].every(p=>String(c.body||'').includes(p)));
  if(!evidence.length)errors.push('Réservation complète #73 non attestée');
- return {technicalPass:errors.length===0,errors,overlaps,runId:run?.id||null,reservationCommentId:evidence.at(-1)?.id||null,ruleSet:{id:26326518,bypassActors:'INCONNU',attested:false},authorizedToMerge:false};
+ return {technicalPass:errors.length===0,errors,overlaps,overlapEvidence:overlaps.length?(overlapEvidence||{accepted:false}):null,runId:run?.id||null,reservationCommentId:evidence.at(-1)?.id||null,ruleSet:{id:26326518,bypassActors:'INCONNU',attested:false},authorizedToMerge:false};
 }
 function gh(path,method='GET',body){
  const args=['api','--method',method,'-H','X-GitHub-Api-Version: 2026-03-10','repos/'+REPO+'/'+path];
@@ -56,8 +56,20 @@ function run(cmd,e){
  const jobs=latest?pages('actions/runs/'+latest.id+'/jobs','jobs',10):[];
  const others=pages('pulls?state=open',null,10),otherFiles=[];
  for(const other of others)if(other.number!==cmd.number)
-  for(const f of pages('pulls/'+other.number+'/files'))otherFiles.push({pr:other.number,path:f.filename});
+  for(const f of pages('pulls/'+other.number+'/files'))otherFiles.push({pr:other.number,head:other.head?.sha,path:f.filename});
  const comments=pages('issues/73/comments',null,30);
+ // Une collision ne devient admissible que sur libération propriétaire exacte + ajout HTML strict.
+ const overlaps=otherFiles.filter(x=>files.includes(x.path));
+ let overlapEvidence=null;
+ if(overlaps.length){
+  const contents=(sha)=>{
+   const f=gh('contents/dist/index.html?ref='+sha);
+   need(f?.type==='file'&&f.encoding==='base64'&&typeof f.content==='string'&&f.path==='dist/index.html','Contenu index non attestable');
+   return Buffer.from(f.content.replace(/\s/g,''),'base64').toString('utf8');
+  };
+  const handler=require('./pr-overlap-evidence.cjs');
+  overlapEvidence=handler.resolve({overlaps,comments,pr,expected:cmd.expected,main,files,mainHtml:contents(main),candidateHtml:contents(cmd.expected)});
+ }
  const mainWorkflow=gh('actions/workflows/tests.yml');
  const mainRuns=pages('actions/workflows/tests.yml/runs?branch=main', 'workflow_runs', 3);
  const mainRun=mainRuns.filter(r=>r.workflow_id===mainWorkflow.id&&r.head_branch==='main'&&r.head_sha===main&&['push','workflow_dispatch'].includes(r.event)).sort((a,b)=>b.id-a.id)[0];
@@ -65,10 +77,19 @@ function run(cmd,e){
  const mainCI=require('./chat-release.cjs').fullCI(mainRun,mainJobs,main,mainWorkflow.id);
  // Décision existante réutilisée à titre consultatif ; DRAFT autorisé pour le diagnostic uniquement.
  const decision=require('./release-gate.cjs').decide({...pr,draft:false},runs,jobs);
- const result=assess({pr,expected:cmd.expected,main,runs,jobs,files,otherFiles,comments});
+ const result=assess({pr,expected:cmd.expected,main,runs,jobs,files,otherFiles,comments,overlapEvidence});
  if(!decision.ready)result.errors.push('Gate existant : '+decision.reason);
  if(!mainCI)result.errors.push('Main : CI complète 7/7 non validée');
  if(gh('git/ref/heads/main')?.object?.sha!==main||gh('pulls/'+cmd.number)?.head?.sha!==cmd.expected)result.errors.push('Main ou HEAD a changé durant le contrôle');
+ if(overlapEvidence?.accepted){
+  // Revalidation contre TOCTOU des anciens HEAD, de leurs PR et des attestations.
+  for(const record of overlapEvidence.releases){
+   const live=gh('pulls/'+record.pr);
+   if(live?.state!=='open'||live?.head?.sha!==record.head)result.errors.push('PR historique modifiée durant le contrôle');
+   const proof=gh('issues/comments/'+record.commentId);
+   if(proof?.user?.id!==OWNER||!comments.some(c=>c.id===record.commentId&&c.body===proof.body))result.errors.push('Attestation modifiée durant le contrôle');
+  }
+ }
  result.technicalPass=result.errors.length===0;
  return {...result,pr:cmd.number,head:cmd.expected,main,mainCIRunId:mainRun?.id||null,draft:pr.draft,mergeableState:pr.mergeable_state};
 }
