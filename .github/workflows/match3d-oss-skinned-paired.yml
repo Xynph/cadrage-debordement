@@ -1,0 +1,54 @@
+name: MATCH 3D OSS — 53-bone real-skinned A-B Blender R&D
+on:
+  push:
+    branches: [research/match3d-oss-audit-ekza-bvh-ik-20261106]
+    paths:
+      - 'research/oss-match3d-20261106/run_paired_ik.py'
+      - '.github/workflows/match3d-oss-skinned-paired.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-skinned-ik-ab:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 95
+    env:
+      V25_REF: 065589001fbef9641070218b6f85bb597da96a6a
+    steps:
+      - name: Checkout isolated PR 350 R&D
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout pinned V25 R&D source READ ONLY
+        uses: actions/checkout@v4
+        with:
+          ref: 065589001fbef9641070218b6f85bb597da96a6a
+          path: rd-source
+          persist-credentials: false
+      - name: Checkout original GLB baseline READ ONLY
+        uses: actions/checkout@v4
+        with:
+          ref: d6fbcb38438609c0ca461f54717655223b438b09
+          path: baseline
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check out exact source SHA
+        run: |
+          test "$(git -C rd-source rev-parse HEAD)" = "$V25_REF"
+          test "$(git -C baseline rev-parse HEAD)" = "d6fbcb38438609c0ca461f54717655223b438b09"
+      - name: Execute pinned Blender 4.5.3 on actual three LOD copies
+        run: python research/oss-match3d-20261106/run_paired_ik.py
+      - name: Upload all evidence even if failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-oss-skinned-paired-${{ github.sha }}
+          path: oss-paired-report/
+          retention-days: 14
+          compression-level: 6
+          if-no-files-found: warn
