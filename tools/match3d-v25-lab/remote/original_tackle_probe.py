@@ -82,6 +82,17 @@ def audit(a,b):
     bva=BVHTree.FromPolygons(va,fa,all_triangles=True)
     bvb=BVHTree.FromPolygons(vb,fb,all_triangles=True)
     pairs=bva.overlap(bvb);proper=0
+    def bounds(points):
+        lo=[min(v[k] for v in points) for k in range(3)]
+        hi=[max(v[k] for v in points) for k in range(3)]
+        return {"minXYZ":[round(v,5) for v in lo],
+                "maxXYZ":[round(v,5) for v in hi],
+                "centerXYZ":[round((lo[k]+hi[k])/2,5) for k in range(3)]}
+    skin_bounds={"A":bounds(va),"B":bounds(vb)}
+    root_centers={name:[round(v,5) for v in ob["rig"].matrix_world.translation]
+        for name,ob in (("A",a),("B",b))}
+    bbox_separation_x=max(0.0,skin_bounds["A"]["minXYZ"][0]-skin_bounds["B"]["maxXYZ"][0],
+                             skin_bounds["B"]["minXYZ"][0]-skin_bounds["A"]["maxXYZ"][0])
     for i,j in pairs:
         if cross_triangles(*[va[k] for k in fa[i]],*[vb[k] for k in fb[j]]):proper+=1
     hands={}
@@ -94,7 +105,9 @@ def audit(a,b):
             near=tree.find_nearest(p)
             hands[source][side]={"metersToOpposingTrueSkin":round(near[3],5),
                 "worldPosition":[round(x,5) for x in p]}
-    return {"hands":hands,"potentialBVHPairs":len(pairs),
+    return {"hands":hands,"rootWorldCenters":root_centers,
+       "skinBoundsWorld":skin_bounds,"skinBoundingBoxGapXMetres":round(bbox_separation_x,5),
+       "potentialBVHPairs":len(pairs),
        "properNonCoplanarTriangleCrossings":proper,
        "coplanarOrTangentUnresolved":True,
        "trueSkinnedTriangleCount":{"A":len(fa),"B":len(fb)},
