@@ -18,3 +18,5 @@ Six campagnes de 15 saisons, 29 tours par saison et trois imports/campagne. Le w
 ## Cockpit PC (préparation, aucun écran ajouté)
 
 Les objets `years` fournissent des séries issues du vrai moteur : trésorerie et dette à l'ouverture et à la clôture de chaque saison, et une ventilation de **flux de cash de la saison**. La dette est un solde observé, pas un résultat économique. Ne jamais afficher `cashComponents.revenue` comme « chiffre d'affaires comptable certifié » : c'est un encaissement du modèle fictif. Les données non classées doivent être clairement signalées, avec une note méthodologique. Aucun mois fictif : les tours de championnat ne sont pas des mois.
+
+Le financement de début de saison du manager (+2,5 M€ directement dans `advanceSeason`) est enregistré comme **financement de direction** : il ne doit pas être confondu avec le produit annuel des clubs IA (`worldNewSeason`). Test de stress supplémentaire à trésorerie IA initiale négative, clairement identifié comme fixture et non comme saison naturellement observée.
