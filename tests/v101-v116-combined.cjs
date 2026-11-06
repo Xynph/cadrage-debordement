@@ -62,7 +62,7 @@ assert.ok(inserted.some(x=>x.includes('V105')));
 assert.ok(inserted.some(x=>x.includes('V111')));
 function click(markup,pattern){
  const match=markup.match(pattern);assert.ok(match,'button exists '+pattern);
- return vm.runInContext(match[1],ctx);
+ return vm.runInContext(match[1].replace(/&quot;/g,'"').replace(/&#39;/g,"'"),ctx);
 }
 assert.equal(click(inserted[0],/onclick="(v105Priority\('finances'\))"/),true,'V105 clickable');
 assert.equal(click(inserted[0],/onclick="(v106Delegate\('sportif','analyse'\))"/),true,'V106 clickable');
