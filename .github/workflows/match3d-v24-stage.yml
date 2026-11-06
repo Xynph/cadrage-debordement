@@ -1,0 +1,34 @@
+name: MATCH 3D v24 - 30 rigs offline qualification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/match3d/assets/rugby-v24/**'
+      - 'tests/match3d-v24-stage-browser.py'
+      - '.github/workflows/match3d-v24-stage.yml'
+permissions:
+  contents: read
+jobs:
+  stage30:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Installer Chromium
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Qualifier 30 rigs et mesurer le rendu stage TV et zoom
+        run: python tests/match3d-v24-stage-browser.py
+      - name: Garder les preuves
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-v24-stage30-report
+          path: match3d-v24-stage-report/
+          if-no-files-found: warn

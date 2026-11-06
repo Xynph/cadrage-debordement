@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "stage": "1-acquisition-structure-only",
+  "date": "2026-11-05",
+  "sourceRepository": "https://github.com/kblood/CharacterCreator",
+  "sourceCommit": "852e48f316b90a0937234886630e4fb4cdfd1f78",
+  "license": "CC0-1.0",
+  "licenseEvidence": "LICENSE-NOTES.md, Generated files (owner decision 2026-10-03)",
+  "generatorCodeImported": false,
+  "upstreamMetadataVerified": true,
+  "jointOrderMatches": true,
+  "files": [
+    {
+      "file": "base_body_anim.glb",
+      "upstreamPath": "output/base_body_anim.glb",
+      "gitBlob": "bdbdab04eb85903e46c56ff56c7a1ea0cbe9c78b",
+      "bytes": 8212156,
+      "sha256": "0eb271d4adea12b7f6bb1d4d8f7398db702f9449479be559ab9f019b5ab30b0f",
+      "audit": {
+        "bytes": 8212156,
+        "triangles": 36924,
+        "meshes": 6,
+        "materials": 8,
+        "skins": 1,
+        "joints": 53,
+        "animations": [
+          "fall",
+          "idle",
+          "idle_breathe",
+          "idle_fidget",
+          "idle_look",
+          "jump",
+          "land",
+          "run",
+          "strafe_left",
+          "strafe_right",
+          "walk",
+          "walk_back"
+        ],
+        "embeddedBinaryBytes": 7894744,
+        "selfContained": true
+      }
+    },
+    {
+      "file": "clothing_tshirt.glb",
+      "upstreamPath": "output/clothing_tshirt.glb",
+      "gitBlob": "ce7966dfd52c4bc6158e1e3b21969e6a63b066da",
+      "bytes": 388104,
+      "sha256": "f77eaea89354ad57bcce48a877bec314e82d71de84700810e7c8290b20886063",
+      "audit": {
+        "bytes": 388104,
+        "triangles": 1528,
+        "meshes": 1,
+        "materials": 1,
+        "skins": 1,
+        "joints": 53,
+        "animations": [],
+        "embeddedBinaryBytes": 350488,
+        "selfContained": true
+      }
+    },
+    {
+      "file": "clothing_shorts.glb",
+      "upstreamPath": "output/clothing_shorts.glb",
+      "gitBlob": "28ad2e22376347539ebd63a6620f095241385799",
+      "bytes": 242008,
+      "sha256": "505d9a6ae140c16a8694d628e65ed7a681dc7410b08631212d6121d4b88d2dfe",
+      "audit": {
+        "bytes": 242008,
+        "triangles": 862,
+        "meshes": 1,
+        "materials": 1,
+        "skins": 1,
+        "joints": 53,
+        "animations": [],
+        "embeddedBinaryBytes": 209984,
+        "selfContained": true
+      }
+    },
+    {
+      "file": "clothing_shoes.glb",
+      "upstreamPath": "output/clothing_shoes.glb",
+      "gitBlob": "aab06a01a235242c7e8aac4fda83278c6e0b42f4",
+      "bytes": 847684,
+      "sha256": "ea483876a6de5d51bf9fef16e1fd1e8957573398eab3321870d93af8c7dbc9a2",
+      "audit": {
+        "bytes": 847684,
+        "triangles": 3320,
+        "meshes": 1,
+        "materials": 1,
+        "skins": 1,
+        "joints": 53,
+        "animations": [],
+        "embeddedBinaryBytes": 810748,
+        "selfContained": true
+      }
+    },
+    {
+      "file": "LICENSE-NOTES.md",
+      "upstreamPath": "LICENSE-NOTES.md",
+      "gitBlob": "4dad3599865b2faf00a22ff152e05395df76a7da",
+      "bytes": 18771,
+      "sha256": "18af8d071bcb1cab2260263991ad49c314dc616facf7f33b0ab19bee78d4ec13"
+    },
+    {
+      "file": "asset_licenses.json",
+      "upstreamPath": "output/asset_licenses.json",
+      "gitBlob": "298c63ecb119536207e122c77b37737e2427e08c",
+      "bytes": 7730,
+      "sha256": "b18bbc7f45fe7c28bcf3b119f44f7b8425d3b4c871f99c694b181b5603f4758e"
+    }
+  ],
+  "limitations": [
+    "Structure only: no visual qualification or full glTF conformance certification.",
+    "Body is a configurable base, not yet an assembled adult male rugby player.",
+    "12 generic body animations, no dedicated rugby clips at this stage.",
+    "43k source triangles exceed LOD0 target; assembly/hidden geometry/LOD still required.",
+    "No runtime integration, Chromium captures, benchmark, GPU Windows validation or merge."
+  ]
+}

@@ -1,0 +1,14 @@
+'use strict';
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),THREE=require('../dist/match3d/vendor/three-r149.min.js');
+const ctx={};vm.runInNewContext(fs.readFileSync('dist/match3d/assets/rugby-v24/rugby-clips.js','utf8'),ctx);
+const solve=ctx.CDMatch3DV24RugbyClips.solveArm;
+assert.equal(typeof solve,'function','physical arm solver available');
+const root=new THREE.Group(),upper=new THREE.Bone(),lower=new THREE.Bone(),hand=new THREE.Bone();root.add(upper);upper.add(lower);lower.add(hand);lower.position.set(0,-.3,0);hand.position.set(0,-.25,0);
+const target=new THREE.Vector3(.12,-.15,.35);root.updateMatrixWorld(true);
+solve(THREE,upper,lower,hand,target,new THREE.Vector3(.4,-.2,.1));
+assert.ok(hand.getWorldPosition(new THREE.Vector3()).distanceTo(target)<1e-5,'hand reaches a forward target');
+assert.ok(Math.abs(upper.getWorldPosition(new THREE.Vector3()).distanceTo(lower.getWorldPosition(new THREE.Vector3()))-.3)<1e-6,'humerus length conserved');
+solve(THREE,upper,lower,hand,new THREE.Vector3(0,0,10),new THREE.Vector3(1,0,0));
+assert.ok(hand.getWorldPosition(new THREE.Vector3()).length()<.551,'unreachable target bounded by real limb length');
+assert.ok([...upper.quaternion.toArray(),...lower.quaternion.toArray()].every(Number.isFinite));
+console.log('PASS forward wrist IK, bone lengths, unreachable-target bound');

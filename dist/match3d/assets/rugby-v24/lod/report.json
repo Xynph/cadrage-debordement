@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "qualification": "T-shirt ajuste et retopologise; qualification visuelle globale et runtime NON acquis",
+  "sourceTriangles": 42634,
+  "levels": [
+    {
+      "lod": 0,
+      "cap": 30000,
+      "triangles": 27906,
+      "entries": [
+        {
+          "file": "base_body_anim-lod0.glb",
+          "bytes": 5250696,
+          "triangles": 23993,
+          "joints": 53,
+          "clips": [
+            "fall",
+            "idle",
+            "idle_breathe",
+            "idle_fidget",
+            "idle_look",
+            "jump",
+            "land",
+            "run",
+            "strafe_left",
+            "strafe_right",
+            "walk",
+            "walk_back"
+          ],
+          "ratioUsed": 0.65
+        },
+        {
+          "file": "clothing_tshirt-lod0.glb",
+          "bytes": 304044,
+          "triangles": 1195,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.65
+        },
+        {
+          "file": "clothing_shorts-lod0.glb",
+          "bytes": 185136,
+          "triangles": 560,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.65
+        },
+        {
+          "file": "clothing_shoes-lod0.glb",
+          "bytes": 647752,
+          "triangles": 2158,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.65
+        }
+      ]
+    },
+    {
+      "lod": 1,
+      "cap": 10000,
+      "triangles": 8643,
+      "entries": [
+        {
+          "file": "base_body_anim-lod1.glb",
+          "bytes": 3254488,
+          "triangles": 7378,
+          "joints": 53,
+          "clips": [
+            "fall",
+            "idle",
+            "idle_breathe",
+            "idle_fidget",
+            "idle_look",
+            "jump",
+            "land",
+            "run",
+            "strafe_left",
+            "strafe_right",
+            "walk",
+            "walk_back"
+          ],
+          "ratioUsed": 0.2
+        },
+        {
+          "file": "clothing_tshirt-lod1.glb",
+          "bytes": 159708,
+          "triangles": 429,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.2
+        },
+        {
+          "file": "clothing_shorts-lod1.glb",
+          "bytes": 122008,
+          "triangles": 172,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.2
+        },
+        {
+          "file": "clothing_shoes-lod1.glb",
+          "bytes": 425180,
+          "triangles": 664,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.2
+        }
+      ]
+    },
+    {
+      "lod": 2,
+      "cap": 3000,
+      "triangles": 2557,
+      "entries": [
+        {
+          "file": "base_body_anim-lod2.glb",
+          "bytes": 2494500,
+          "triangles": 1469,
+          "joints": 53,
+          "clips": [
+            "fall",
+            "idle",
+            "idle_breathe",
+            "idle_fidget",
+            "idle_look",
+            "jump",
+            "land",
+            "run",
+            "strafe_left",
+            "strafe_right",
+            "walk",
+            "walk_back"
+          ],
+          "ratioUsed": 0.04
+        },
+        {
+          "file": "clothing_tshirt-lod2.glb",
+          "bytes": 210940,
+          "triangles": 542,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.35
+        },
+        {
+          "file": "clothing_shorts-lod2.glb",
+          "bytes": 132364,
+          "triangles": 214,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.25
+        },
+        {
+          "file": "clothing_shoes-lod2.glb",
+          "bytes": 380024,
+          "triangles": 332,
+          "joints": 53,
+          "clips": [],
+          "ratioUsed": 0.1
+        }
+      ]
+    }
+  ]
+}

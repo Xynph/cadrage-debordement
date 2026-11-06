@@ -1,0 +1,48 @@
+{
+  "status": "STAGING_ONLY_NOT_RUNTIME_APPROVED",
+  "environment": "Chromium SwiftShader software / synchronous gl.finish",
+  "diagnostics": {
+    "players": 30,
+    "lodCounts": [
+      6,
+      20,
+      4
+    ],
+    "independentRoots": 30,
+    "independentMixers": 30,
+    "clips": [
+      16,
+      16,
+      16
+    ]
+  },
+  "metrics": {
+    "tv": {
+      "frames": 18,
+      "elapsedMs": 147.6999999997206,
+      "fps": 121.86865267457041,
+      "geometries": 12,
+      "textures": 42,
+      "drawCalls": 361,
+      "triangles": 74252
+    },
+    "zoom": {
+      "frames": 18,
+      "elapsedMs": 100.39999999990687,
+      "fps": 179.2828685260627,
+      "geometries": 34,
+      "textures": 88,
+      "drawCalls": 361,
+      "triangles": 276096
+    }
+  },
+  "jsErrors": [],
+  "externalRequests": [],
+  "limits": [
+    "No comparison to v23 within this run",
+    "No WebGL GPU VRAM accounting",
+    "Not integrated into the game",
+    "30 objects only; no crowds/match logic",
+    "Visual validation pending"
+  ]
+}
