@@ -23,6 +23,11 @@ with sync_playwright() as pw:
         development:{academy:[player('jeune','10',18,63),player('jeune2','9',19,64)]},
         v73Espoirs:{results:[],minutes:{jeune:400,jeune2:350}},v77Promotions:{promotions:[],history:[]},
         v78to81:{version:1,season:1,loans:[],history:[]}};
+      // Fixture synthétique : le module V78 dépend normalement de la carrière V77 complète.
+      // Ne remplacer son validateur que pour cet état isolé, puis restaurer l'original.
+      const pathways=window.CDEspoirsPathwaysV78V81;
+      const nativeEnsure=pathways.ensure;
+      pathways.ensure=(candidate)=>candidate===s ? s.v78to81 : nativeEnsure(candidate);
       const root=document.createElement('main');root.id='v82-v100-reception';root.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px;background:#f1f5f9;color:#15231f';document.body.replaceChildren(root);
       const reports=[];
       for(const name of names){
@@ -37,6 +42,7 @@ with sync_playwright() as pw:
       }
       const imported=JSON.parse(JSON.stringify(s));
       for(const key of ['v82to85','v86to89','v90to94','v95to100'])if(!imported[key])throw Error('JSON absent '+key);
+      pathways.ensure=nativeEnsure;
       return reports;
     }""")
     page.screenshot(path="/tmp/v82-v100-chromium.png", full_page=True)
