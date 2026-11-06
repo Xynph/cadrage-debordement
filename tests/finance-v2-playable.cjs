@@ -90,3 +90,36 @@ test('native match engine: facility purchase and academy training survive save i
  assert.equal(reloaded.run('worldClub(S.club).facilities'),3);
  assert.equal(reloaded.run('S.careerManagement.academyWeeks'),1);
 });
+
+test('interactive dashboard: cash reconstruction and filters use only retained native entries',()=>{
+ const s=career(), before=JSON.stringify(s),v=ui.snapshot(s);
+ const points=ui.series(v);
+ assert.equal(points.length,3);
+ assert.equal(points[0].cash,s.clubs[0].cash-135000);
+ assert.equal(points.at(-1).cash,s.clubs[0].cash);
+ const markup=ui.html(s);
+ assert.match(markup,/Trajectoire de trésorerie/);
+ assert.match(markup,/Journal interactif/);
+ assert.match(markup,/role="img"/);
+ assert.match(markup,/<title>/);
+ assert.match(markup,/aria-pressed="true"/);
+ assert.match(markup,/finv2-table/);
+ assert.equal(ui.setFilter('income'),true);
+ const incomeOnly=ui.html(s);
+ assert.ok(incomeOnly.includes('Partenaires'));
+ assert.ok(!incomeOnly.includes('<td>Salaires</td>'));
+ assert.equal(ui.setFilter('expense'),true);
+ const expenseOnly=ui.html(s);
+ assert.ok(expenseOnly.includes('<td>Salaires</td>'));
+ assert.ok(!expenseOnly.includes('<td>Partenaires</td>'));
+ assert.equal(ui.setFilter('invalid'),false);
+ assert.equal(ui.setFilter('all'),true);
+ assert.equal(JSON.stringify(s),before,'filters and charts must never mutate the saved career');
+});
+test('interactive finance stylesheet is loaded inside the actual PC application',()=>{
+ const index=fs.readFileSync(path.join(__dirname,'../dist/index.html'),'utf8');
+ const css=fs.readFileSync(path.join(__dirname,'../dist/finance-v2.css'),'utf8');
+ assert.match(index,/href="finance-v2.css"/);
+ assert.match(css,/\.finv2-point:hover/);
+ assert.match(css,/\.finv2-filter\[aria-pressed="true"\]/);
+});
