@@ -49,3 +49,10 @@
   .scout-portrait{width:68px;height:84px}
 }
 @media(prefers-reduced-motion:reduce){.decision,.player-row,.prospect,.marker{transition:none}}
+
+/* Photographies IA de concept, éditées et fortement défocalisées pour supprimer le texte généré. */
+.hero{background-image:linear-gradient(90deg,#071d19f0 0%,#102a24d6 43%,#11291f8f 100%),url('/assets/premium/backgrounds/bureau-ai-preview.webp'),url('/assets/premium/backgrounds/bureau.svg');background-size:cover;background-position:center;}
+.headline{background-image:linear-gradient(90deg,#102721ec,#15271ccd),url('/assets/premium/backgrounds/bureau-ai-preview.webp')}
+.profile{background-image:linear-gradient(90deg,#0c211a6b,#11261b4c),url('/assets/premium/backgrounds/effectif-ai-preview.webp'),url('/assets/premium/backgrounds/effectif.svg')}
+.tactics .pitch-wrap{background-image:linear-gradient(180deg,#142e27e8,#10251ac9),url('/assets/premium/backgrounds/tactiques-ai-preview.webp'),url('/assets/premium/backgrounds/tactiques.svg')}
+.scouting-banner{background-image:linear-gradient(90deg,#122920ec,#204434a3),url('/assets/premium/backgrounds/recrutement-ai-preview.webp'),url('/assets/premium/backgrounds/recrutement.svg')}
