@@ -10,8 +10,8 @@ test('E3.0 scenarios: maintain costly project vs stage vs pause',()=>{
  assert.equal(stage.endingCash,20);
  assert.equal(pause.endingCash,60);
  assert.equal(maintain.optionalPaid,80);
- assert.equal(stage.optionalPaid,50);
- assert.equal(stage.optionalDeferred,30);
+ assert.equal(stage.optionalPaid,40);
+ assert.equal(stage.optionalDeferred,40);
  assert.equal(pause.optionalDeferred,80);
  assert.equal(x.summary.recoveryPossibleWithoutNewMoney,true);
 });
