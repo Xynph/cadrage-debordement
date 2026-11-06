@@ -1,0 +1,74 @@
+name: R&D Economie - scenarios natifs compares
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/economy-scenarios.cjs'
+      - '.github/workflows/economy-scenarios.yml'
+      - 'docs/economy-scenarios-rd.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: econ-scenarios-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  campaigns:
+    name: '${{ matrix.scenario }} / ${{ matrix.profile }} / ${{ matrix.seed }}'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        scenario: [control, A, B, C]
+        profile: [reference, modeste, deficitFormation]
+        seed: [827381, 99173]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Syntaxe et simulation native 15 saisons
+        run: |
+          node --check tests/economy-scenarios.cjs
+          node tests/economy-scenarios.cjs '${{ matrix.scenario }}' '${{ matrix.profile }}' '${{ matrix.seed }}' economy-scenarios-report
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: 'economy-scenario-${{ matrix.scenario }}-${{ matrix.profile }}-${{ matrix.seed }}'
+          path: economy-scenarios-report/
+          if-no-files-found: error
+          retention-days: 14
+  summary:
+    name: Comparaison stricte 24 campagnes et 360 saisons
+    if: always()
+    needs: campaigns
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Exiger tous les resultats
+        env:
+          RESULT: ${{ needs.campaigns.result }}
+        run: test "$RESULT" = success
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: economy-scenario-*
+          path: economy-scenarios-input
+          merge-multiple: true
+      - name: Agreger et verifier les 24 campagnes
+        run: node tests/economy-scenarios.cjs --aggregate economy-scenarios-input
+      - uses: actions/upload-artifact@v4
+        with:
+          name: economy-scenarios-summary
+          path: economy-scenarios-summary/
+          if-no-files-found: error
+          retention-days: 14
