@@ -7,6 +7,7 @@ on:
       - 'dist/espoirs-coaching-v101-v104.js'
       - 'dist/sporting-director-v105-v110.js'
       - 'dist/fan-experience-v111-v116.js'
+      - 'dist/v101-v116-ui-bridge.js'
       - 'tests/v101-v116-*'
       - '.github/workflows/v101-v116-chromium.yml'
   workflow_dispatch:
