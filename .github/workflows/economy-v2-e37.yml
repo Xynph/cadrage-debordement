@@ -1,0 +1,40 @@
+name: Economy V2 E3.7 paired full-season sport and opportunity cost
+on:
+  pull_request:
+    branches:
+      - research/economy-v2-e36-multiweek-20261106
+    paths:
+      - '.github/workflows/economy-v2-e37.yml'
+      - 'ci/economy-v2-e37-season.cjs'
+      - 'ci/economy-v2-e37-run.cjs'
+      - 'tests/economy-v2-e37-season.cjs'
+      - 'docs/economie-v2/e37-season.md'
+  workflow_dispatch:
+jobs:
+  native-e37:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [reference, modeste, alternatif]
+        seed: [827381, 99173]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax, unit tests and real native paired seasons
+        run: |
+          node --check ci/economy-v2-e37-season.cjs
+          node --check ci/economy-v2-e37-run.cjs
+          node --check tests/economy-v2-e37-season.cjs
+          node --test tests/economy-v2-e37-season.cjs tests/economy-v2-e36-multiweek.cjs tests/economy-v2-e35-counterfactual.cjs
+      - name: Six fifteen-season non-regression and full paired season
+        run: node ci/economy-v2-e37-run.cjs ${{ matrix.profile }} ${{ matrix.seed }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e37-${{ matrix.profile }}-${{ matrix.seed }}
+          path: economy-v2-e37-reports/
+          if-no-files-found: error
