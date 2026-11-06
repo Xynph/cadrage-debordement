@@ -1,0 +1,84 @@
+name: MATCH 3D OSS — original Ekza solver vs three real 53-joint GLBs
+on:
+  push:
+    branches: [research/match3d-oss-audit-ekza-bvh-ik-20261106]
+    paths:
+      - research/oss-match3d-20261106/extract-real-glb-rig.py
+      - research/oss-match3d-20261106/ekza-real-source.test.ts
+      - .github/workflows/match3d-oss-ekza-native.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-ekza-53joint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CD_EKZA_SHA: b7e3e92f25d2656caace50c0869aeef0d562dbf3
+    steps:
+      - name: Checkout isolated PR350 R&D
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout ORIGINAL Ekza Studio source at immutable upstream SHA
+        uses: actions/checkout@v4
+        with:
+          repository: ekza-space/ekza-studio
+          ref: b7e3e92f25d2656caace50c0869aeef0d562dbf3
+          path: ekza-upstream
+          persist-credentials: false
+      - name: Checkout pinned original three GLBs
+        uses: actions/checkout@v4
+        with:
+          ref: d6fbcb38438609c0ca461f54717655223b438b09
+          path: baseline
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify exact upstream references and read original licenses
+        run: |
+          test "$(git -C ekza-upstream rev-parse HEAD)" = "$CD_EKZA_SHA"
+          test "$(git -C baseline rev-parse HEAD)" = "d6fbcb38438609c0ca461f54717655223b438b09"
+          test -f ekza-upstream/LICENSE
+          test -f ekza-upstream/packages/rig/src/ik/twoBone.ts
+          test -f ekza-upstream/packages/rig/src/ik/plantFeet.ts
+          mkdir -p oss-ekza-report
+          cp ekza-upstream/LICENSE oss-ekza-report/LICENSE-EKZA-MIT.txt
+          git -C ekza-upstream rev-parse HEAD > oss-ekza-report/ekza-upstream-sha.txt
+      - name: Extract three real GLBs with SHA and 53 ordered bones
+        run: |
+          python research/oss-match3d-20261106/extract-real-glb-rig.py baseline oss-ekza-report/rig-fixtures.json             baseline/tools/match3d-v25-lab/remote/lock.json
+      - name: Install pinned upstream workspace and execute real original solver
+        run: |
+          npm install --global pnpm@10.32.1
+          cd ekza-upstream
+          pnpm install --frozen-lockfile
+          cp ../research/oss-match3d-20261106/ekza-real-source.test.ts packages/rig/src/ik/cd-oss-ik.test.ts
+          export CD_RIG_FIXTURES="$GITHUB_WORKSPACE/oss-ekza-report/rig-fixtures.json"
+          export CD_EKZA_REPORT="$GITHUB_WORKSPACE/oss-ekza-report/solver-report.json"
+          pnpm --filter @ekza-studio/rig exec vitest run src/ik/cd-oss-ik.test.ts --reporter=verbose
+      - name: Emit evidence hashes
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('oss-ekza-report')
+          files=[p for p in root.iterdir() if p.is_file() and p.name!='sha256-manifest.json']
+          (root/'sha256-manifest.json').write_text(json.dumps([
+            {'name':p.name,'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size}
+            for p in files],indent=2)+'\n')
+          PY
+      - name: Upload evidence even when tests fail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-oss-ekza-real-source-${{ github.sha }}
+          path: oss-ekza-report/
+          retention-days: 14
+          if-no-files-found: warn
