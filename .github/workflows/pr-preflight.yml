@@ -1,0 +1,49 @@
+name: Précontrôle PR depuis #73 (sans fusion)
+on:
+  issue_comment:
+    types: [created]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ci/pr-preflight.cjs'
+      - 'tests/pr-preflight.cjs'
+      - '.github/workflows/pr-preflight.yml'
+permissions:
+  contents: read
+jobs:
+  preflight:
+    if: github.event_name == 'issue_comment' && github.event.issue.number == 73 && github.event.sender.id == 350229047 && startsWith(github.event.comment.body, '/cd-preflight ')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+      issues: write
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Précontrôle GitHub sans merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node ci/pr-preflight.cjs
+  tests:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          node --check ci/pr-preflight.cjs
+          node tests/pr-preflight.cjs

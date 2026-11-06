@@ -1,0 +1,21 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {parseEvent,assess}=require('../ci/pr-preflight.cjs');
+const SHA='a'.repeat(40),MAIN='b'.repeat(40);
+const event={action:'created',repository:{id:1439603196,full_name:'Xynph/cadrage-debordement'},issue:{number:73},sender:{id:350229047,login:'Xynph'},comment:{id:42,user:{id:350229047,login:'Xynph'},body:'/cd-preflight 336 '+SHA}};
+const env={GITHUB_EVENT_NAME:'issue_comment',GITHUB_REPOSITORY:'Xynph/cadrage-debordement',GITHUB_ACTOR:'Xynph',GITHUB_TRIGGERING_ACTOR:'Xynph'};
+assert.deepEqual(parseEvent(event,env),{number:336,expected:SHA,commentId:42});
+assert.throws(()=>parseEvent({...event,comment:{...event.comment,body:'/cd-merge 336 '+SHA}},env));
+assert.throws(()=>parseEvent(event,{...env,GITHUB_ACTOR:'attacker'}));
+assert.throws(()=>parseEvent({...event,issue:{number:74}},env));
+assert.throws(()=>parseEvent({...event,sender:{id:1,login:'Xynph'}},env));
+const names=['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI'];
+function fixture(){return {pr:{number:336,state:'open',base:{ref:'main',sha:MAIN},head:{sha:SHA,repo:{full_name:'Xynph/cadrage-debordement'}},mergeable:true,mergeable_state:'clean',draft:true},expected:SHA,main:MAIN,runs:[{id:99,event:'pull_request',name:'Tests JavaScript',head_sha:SHA,status:'completed',conclusion:'success'}],jobs:names.map(name=>({name,status:'completed',conclusion:'success'})),files:['ci/a.cjs'],otherFiles:[],comments:[{id:12,user:{login:'Xynph'},body:'RÉSERVATION PR #336 : ci/a.cjs'}]};}
+let a=assess(fixture());assert.equal(a.technicalPass,true);assert.equal(a.authorizedToMerge,false);assert.equal(a.ruleSet.attested,false);
+let f=fixture();f.pr.mergeable_state='unstable';assert.equal(assess(f).technicalPass,false);
+f=fixture();f.pr.head.sha='c'.repeat(40);assert.equal(assess(f).technicalPass,false);
+f=fixture();f.jobs.pop();assert.equal(assess(f).technicalPass,false);
+f=fixture();f.otherFiles=[{pr:337,path:'ci/a.cjs'}];assert.equal(assess(f).technicalPass,false);
+f=fixture();f.comments=[];assert.equal(assess(f).technicalPass,false);
+f=fixture();f.pr.base.sha='c'.repeat(40);assert.equal(assess(f).technicalPass,false);
+console.log('pr-preflight: 12 assertions/scénarios PASS');
