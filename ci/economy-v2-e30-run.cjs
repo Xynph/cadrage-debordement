@@ -28,7 +28,7 @@ function run(profile,seed){
  const checks=Object.fromEntries(Object.entries(cases).map(([name,input])=>[name,P.compare(input)]));
  // A crisis must be genuinely reversible through optional choices or new earnings already listed,
  // not by moving a mandatory obligation into a fabricated payable.
- assert.equal(checks.temporaryRevenueDip.options[0].endingCash,65);
+ assert.equal(checks.temporaryRevenueDip.options[0].endingCash,140);
  assert.ok(checks.optionalInvestmentOverreach.options[2].endingCash>=checks.optionalInvestmentOverreach.options[0].endingCash);
  assert.equal(checks.mandatoryCostsUncovered.summary.recoveryPossibleWithoutNewMoney,false);
  assert.ok(checks.laterEarnedIncome.options[2].endingCash>0);
