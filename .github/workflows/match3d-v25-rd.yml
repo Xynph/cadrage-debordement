@@ -1,0 +1,195 @@
+name: MATCH 3D V25 — laboratoire distant Chat
+on:
+  push:
+    branches: [research/match3d-v25-open-source-tools-20261105]
+    paths:
+      - 'tools/match3d-v25-lab/remote/**'
+      - '.github/workflows/match3d-v25-rd.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: match3d-v25-rd-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+
+  sole-ik-blender:
+    # Publish the actual original-tackle sole-IK evidence independently from
+    # the general Ara/Chromium laboratory. Never gate its upload on Chromium.
+    if: ${{ contains(github.event.head_commit.message, '[sole-ik-only]') || contains(github.event.head_commit.message, '[original-only]') || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v5
+        with:
+          ref: d6fbcb38438609c0ca461f54717655223b438b09
+          path: baseline
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run pinned Blender on true skinned-sole IK probe
+        id: blender
+        run: python tools/match3d-v25-lab/remote/original_tackle_runner.py
+      - name: Verify 3 LOD x 8 phases + isolated player profiles and emit SHA256 manifest
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,os
+          out=Path("rd-report/original-tackle")
+          out.mkdir(parents=True,exist_ok=True)
+          paths=sorted(p for p in out.rglob("*") if p.is_file() and p.name!="sole-ik-manifest.json")
+          png=[p for p in paths if p.suffix.lower()==".png"]
+          report=out/"original-tackle-report.json"
+          meta={"head":os.environ.get("GITHUB_SHA"),"run":os.environ.get("GITHUB_RUN_ID"),
+            "expectedViews":84,"actualViews":len(png),
+            "hasReport":report.exists(),
+            "status":"EVIDENCE_PRESENT_NOT_ART_APPROVED" if report.exists() and len(png)==84 else "INCOMPLETE",
+            "files":[{"path":p.relative_to(out).as_posix(),"bytes":p.stat().st_size,
+                "sha256":hashlib.sha256(p.read_bytes()).hexdigest()} for p in paths]}
+          if report.exists():
+            try:
+              r=json.loads(report.read_text())
+              meta["reportStatus"]=r.get("status")
+              meta["trueSoleIKCalibrationPresent"]=all(
+                "trueSoleIKCalibration" in lod for lod in r.get("lods",[]))
+              meta["lods"]=len(r.get("lods",[]))
+            except Exception as e: meta["reportParseError"]=str(e)
+          (out/"sole-ik-manifest.json").write_text(json.dumps(meta,indent=2)+"\n")
+          print(json.dumps({k:v for k,v in meta.items() if k!="files"},indent=2))
+          if meta["status"]=="INCOMPLETE" or meta.get("lods")!=3 or not meta.get("trueSoleIKCalibrationPresent"):
+            raise SystemExit("Missing true-sole IK evidence; artifact still uploads")
+          PY
+      - name: Upload standalone Blender evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-v25-sole-ik-${{ github.sha }}
+          path: rd-report/original-tackle/
+          retention-days: 14
+          compression-level: 6
+          if-no-files-found: warn
+  external-engines:
+    if: ${{ !contains(github.event.head_commit.message, '[sole-ik-only]') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v5
+        with:
+          ref: d6fbcb38438609c0ca461f54717655223b438b09
+          path: baseline
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24.11.0'
+      - name: Preparer le rendu logiciel reel Godot en ecran virtuel
+        run: |
+          if ! command -v xvfb-run >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y xvfb
+          fi
+          command -v xvfb-run
+      - name: Produire le clip original sur deux copies 53 os et mesurer les vraies surfaces
+        if: ${{ contains(github.event.head_commit.message, '[original-only]') }}
+        run: python tools/match3d-v25-lab/remote/original_tackle_runner.py
+      - name: Acquerir et qualifier un vrai duo mocap CMU synchronise (A tire B)
+        if: ${{ !contains(github.event.head_commit.message, '[original-only]') }}
+        continue-on-error: true
+        run: python tools/match3d-v25-lab/remote/cmu_pair_probe.py
+      - name: Auditer les droits et executer la suite Godot amont sur code MIT
+        if: ${{ !contains(github.event.head_commit.message, '[original-only]') }}
+        run: python tools/match3d-v25-lab/remote/external_candidates_probe.py --paired-stabilized
+      - name: Tester un vrai retarget des deux BVH CMU vers les trois squelettes 53 os
+        if: ${{ !contains(github.event.head_commit.message, '[original-only]') }}
+        continue-on-error: true
+        run: python tools/match3d-v25-lab/remote/cmu_duo_retarget_runner.py
+      - name: Publier les preuves moteur reel et compatibilite des 3 GLB
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-v25-external-${{ github.sha }}
+          path: |
+            rd-report/external-tackle/
+            rd-report/cmu-duo/
+            rd-report/original-tackle/
+          if-no-files-found: warn
+          retention-days: 14
+          compression-level: 6
+  reception:
+    # A dedicated physics probe does not need to rerun the full 55-minute
+    # Blender/Ara/Chromium baseline, whose pinned job remains independently
+    # available and runs for ordinary R&D commits.
+    if: ${{ !startsWith(github.event.head_commit.message, 'test(v25-external):') && !contains(github.event.head_commit.message, '[idle-only]') && !contains(github.event.head_commit.message, '[paired-only]') && !contains(github.event.head_commit.message, '[duo-only]') && !contains(github.event.head_commit.message, '[original-only]') && !contains(github.event.head_commit.message, '[sole-ik-only]') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v5
+        with:
+          ref: d6fbcb38438609c0ca461f54717655223b438b09
+          path: baseline
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24.11.0'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Préparer les rapports et relever les ressources CPU
+        run: |
+          mkdir -p rd-report
+          git rev-parse HEAD > rd-report/head.txt
+          lscpu > rd-report/runner-cpu.txt
+          free -h > rd-report/runner-memory.txt
+          df -h > rd-report/runner-storage.txt
+          python tools/match3d-v25-lab/remote/test_audit.py
+          python tools/match3d-v25-lab/remote/test_receipt.py
+      - name: Acquisition vérifiée des sources, Blender et pack CC0
+        continue-on-error: true
+        run: python tools/match3d-v25-lab/remote/run.py acquire 2>&1 | tee rd-report/acquire.log
+      - name: Auditer les 16 vrais GLB sans régénération
+        continue-on-error: true
+        run: python tools/match3d-v25-lab/remote/run.py audit
+      - name: Construire les outils et exécuter Blender headless sur copies
+        continue-on-error: true
+        run: python tools/match3d-v25-lab/remote/run.py tools
+      - name: Installer Chromium verrouillé (rendu logiciel CPU)
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+          python -m pip freeze > rd-report/python-installed.txt
+          python -m playwright --version > rd-report/playwright-version.txt
+      - name: Réception Chromium, contacts, trois LOD, 30 rigs et paires SwiftShader
+        continue-on-error: true
+        run: python tools/match3d-v25-lab/remote/run.py browser
+      - name: Vérifier que les fichiers suivis du lot 24 sont inchangés
+        if: always()
+        run: git -C baseline diff --exit-code
+      - name: Manifeste SHA256 et verdict indispensable
+        if: always()
+        run: python tools/match3d-v25-lab/remote/run.py finalize
+      - name: Archiver preuves et copies de test (14 jours, régénérables)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-v25-rd-${{ github.sha }}
+          path: rd-report/
+          retention-days: 14
+          compression-level: 6
+          if-no-files-found: error
