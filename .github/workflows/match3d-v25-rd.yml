@@ -35,7 +35,7 @@ jobs:
       - name: Run pinned Blender on true skinned-sole IK probe
         id: blender
         run: python tools/match3d-v25-lab/remote/original_tackle_runner.py
-      - name: Verify 3 LOD x 6 phases x 3 views and emit SHA256 manifest
+      - name: Verify 3 LOD x 8 sampled phases x 3 views and emit SHA256 manifest
         if: always()
         shell: bash
         run: |
@@ -48,9 +48,9 @@ jobs:
           png=[p for p in paths if p.suffix.lower()==".png"]
           report=out/"original-tackle-report.json"
           meta={"head":os.environ.get("GITHUB_SHA"),"run":os.environ.get("GITHUB_RUN_ID"),
-            "expectedViews":54,"actualViews":len(png),
+            "expectedViews":72,"actualViews":len(png),
             "hasReport":report.exists(),
-            "status":"EVIDENCE_PRESENT_NOT_ART_APPROVED" if report.exists() and len(png)==54 else "INCOMPLETE",
+            "status":"EVIDENCE_PRESENT_NOT_ART_APPROVED" if report.exists() and len(png)==72 else "INCOMPLETE",
             "files":[{"path":p.relative_to(out).as_posix(),"bytes":p.stat().st_size,
                 "sha256":hashlib.sha256(p.read_bytes()).hexdigest()} for p in paths]}
           if report.exists():
