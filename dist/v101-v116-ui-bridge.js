@@ -9,7 +9,9 @@
   const result=previous.apply(this,arguments);
   if(typeof document==='undefined'||typeof view==='undefined'||view!=='dashboard')return result;
   const state=typeof S!=='undefined'?S:root.S;
-  const target=document.querySelector('#app .layout .main');
+  // Keep the native PC viewport bounded: extra siblings of .main obstruct its fixed subnavigation.
+  // The dedicated "Dossiers du club" tab is the scrollable home for additional manager decisions.
+  const target=document.querySelector('#app .layout .main .da42-workspace-shell[data-da43-section="dashboard"] [data-da42-page="dossiers"]');
   if(!state||!target||typeof target.insertAdjacentHTML!=='function')return result;
   for(const name of ['CDSportingDirectorV105V110','CDFanExperienceV111V116']){
    const api=root[name];
