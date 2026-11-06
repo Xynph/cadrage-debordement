@@ -26,7 +26,7 @@ jobs:
       - name: Initialisation réelle shadcn et verrouillage npm sur branche isolée
         if: github.event_name == 'push' && github.ref == 'refs/heads/feature/studio-ui-premium-toolchain-20261106'
         run: |
-          if [ ! -f package-lock.json ]; then
+          if ! git ls-files --error-unmatch studio-ui/package-lock.json >/dev/null 2>&1; then
             npx --yes shadcn@latest init --yes
             npx --yes shadcn@latest add badge --yes
             npm install --package-lock-only --ignore-scripts --no-audit --no-fund
