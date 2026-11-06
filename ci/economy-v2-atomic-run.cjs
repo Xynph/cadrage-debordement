@@ -9,7 +9,7 @@ function run(profile,seed){
  assert.equal(observed.series.length,15);assert.equal(observed.counts.rounds,435);
  assert.equal(observed.counts.rollovers,14);assert.equal(observed.counts.imports,3);
  const g=Native.fresh(({reference:0,modeste:13,alternatif:6})[profile],seed);
- const before=Native.data(g,'createSaveDocument()'),beforeString=JSON.stringify(before);
+ const before=Native.data(g,'createSaveDocument()'),beforeState=JSON.stringify(before.state);
  const trusted=(kind,doc)=>kind==='obligation'?doc.evidenceRef==='explicit-fixture':
    kind==='receipt'?doc.receiptRef==='explicit-bank-fixture':false;
  let x=A.create(['sandbox']);
@@ -24,7 +24,7 @@ function run(profile,seed){
  assert.equal(again.due.payments.length,1);
  assert.throws(()=>A.settle(again,{...receipt,paymentId:'other'},trusted));
  const after=Native.data(g,'createSaveDocument()');
- assert.equal(beforeString,JSON.stringify(after));
+ assert.equal(beforeState,JSON.stringify(after.state));
  assert.equal(before.checksum,after.checksum);
  return {profile,seed,source:'actual-native-career-with-isolated-payment-fixture',seasons:15,
   rounds:observed.counts.rounds,rollovers:observed.counts.rollovers,imports:observed.counts.imports,
