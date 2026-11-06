@@ -86,11 +86,13 @@ function evaluate(master,collection,{allowFixture=false}={}){
    }else if(triesRate>=.3&&['Ailier','Centre','Arrière','Numéro 8','Troisième ligne'].includes(role))delta.ballCarry=1;
    if(metrics.minutes>=1500&&ROLES[role])delta.workRate=Math.max(delta.workRate||0,1); // minutes are only a proxy for coach selection
   }
+  // Conversion success is a direct observed rate, unlike scoring volume; enough attempts required.
+  if(!already&&metrics.conversionAttempts>=25&&metrics.conversionRate>=82&&metrics.conversionMade<=metrics.conversionAttempts&&['Demi d’ouverture','Arrière','Demi de mêlée'].includes(role))delta.goalAccuracy=1;
   const changes=[];
   for(const [attr,amount] of Object.entries(delta)){
    if(!Object.hasOwn(p.attributesV2,attr))continue;
    const from=p.attributesV2[attr],to=Math.min(97,from+amount);
-   if(to>from)changes.push({attribute:attr,from,to,delta:to-from,kind:'gameplay-estimate',reason:attr==='workRate'?'high-playing-time-proxy':'tries-per-match-proxy'});
+   if(to>from)changes.push({attribute:attr,from,to,delta:to-from,kind:'gameplay-estimate',reason:attr==='workRate'?'high-playing-time-proxy':attr==='goalAccuracy'?'conversion-rate-over-sample':'tries-per-match-proxy'});
   }
   if(changes.length)overrides.set(p.id,Object.fromEntries(changes.map(c=>[c.attribute,c.to])));
   if(record.historicalLeague==='prod2')proMatched++;else topMatched++;
