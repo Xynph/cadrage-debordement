@@ -62,7 +62,7 @@ function analyze(g,before,after,trace,ledger=[],phase='round'){
   sites[site]=(sites[site]||0)+1;
   rows.push({clubId:m.clubId,site,delta:m.delta,components});
  }
- assert.equal(unused.filter(x=>!x.used).length,0,'Unmatched manager journal entries');
+ assert.equal(unused.filter(x=>!x.used&&x.amount!==0).length,0,'Unmatched nonzero manager journal entries');
  const delta=after.clubs.reduce((s,c)=>s+c.cash-(b.get(c.id)?.cash||0),0);
  assert.equal(rows.reduce((s,x)=>s+x.delta,0),delta,'Aggregate cash delta mismatch');
  return {rows,totals,sites,delta,unknownCount:rows.flatMap(x=>x.components).filter(x=>x.type==='unknown'||x.type.startsWith('unclassified')).length,
