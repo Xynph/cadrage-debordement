@@ -1,0 +1,35 @@
+name: Economy V2 E2.1 native cash provenance
+on:
+  pull_request:
+    branches:
+      - research/economy-v2-e2-shadow-20261106
+    paths:
+      - 'tests/economy-v2-cash-trace.cjs'
+      - 'ci/economy-v2-cash-trace-run.cjs'
+      - '.github/workflows/economy-v2-cash-trace.yml'
+      - 'docs/economie-v2/e21-tracabilite.md'
+  workflow_dispatch:
+jobs:
+  cash-trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [reference, modeste, alternatif]
+        seed: [827381, 99173]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check tests/economy-v2-cash-trace.cjs && node --check ci/economy-v2-cash-trace-run.cjs
+      - run: node --test tests/economy-v2-shadow.cjs tests/economy-v2-core.cjs
+      - run: node tests/economy-v2-cash-trace.cjs --self-test
+      - run: node ci/economy-v2-cash-trace-run.cjs ${{ matrix.profile }} ${{ matrix.seed }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e21-${{ matrix.profile }}-${{ matrix.seed }}
+          path: economy-v2-e21-reports/
+          if-no-files-found: warn
