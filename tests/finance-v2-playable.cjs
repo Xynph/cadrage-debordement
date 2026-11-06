@@ -59,3 +59,34 @@ test('production navigation loads dashboard before native finance panels',()=>{
  assert.ok(index.indexOf('finance-v2.js')<index.indexOf('game.js'));
  assert.ok(index.includes('src="finance-v2.js"'));
 });
+
+test('native match engine: facility purchase and academy training survive save import',()=>{
+ const vm=require('node:vm');
+ const {context}=require('./harness.cjs');
+ const g=context(),run=g.run;
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'../dist/finance-v2.js'),'utf8'),g.ctx);
+ run('start(0)');
+ assert.match(run('finance()'),/Finances V2/);
+ const before=run('club().cash');
+ const quote=run('worldFacilityQuote(S.club).cost');
+ assert.equal(run('worldUpgradeFacility()'),true);
+ assert.equal(run('club().cash'),before-quote);
+ assert.equal(run('worldUpgradeFacility()'),false);
+ assert.equal(run('worldClub(S.club).facilities'),3);
+ assert.equal(run('careerSetAcademyInvestment(4000)'),true);
+ const selectedCash=run('club().cash');
+ assert.equal(selectedCash,before-quote,'selection alone must not charge');
+ run('trainWeek()');
+ assert.equal(run('club().cash'),selectedCash-4000);
+ assert.equal(run('S.careerManagement.academyWeeks'),1);
+ assert.equal(run('careerAcademyTraining()'),false,'same training period must not double-charge');
+ const saved=JSON.parse(run('JSON.stringify(createSaveDocument())'));
+ assert.equal(saved.state.worldManagement.clubInfo[0].facilities,3);
+ assert.equal(saved.state.careerManagement.academyInvestment,4000);
+ const reloaded=context();
+ reloaded.ctx.__payload=JSON.stringify(saved);
+ assert.equal(reloaded.run('pendingSave=parseSaveDocument(__payload);confirmSaveImport()'),true);
+ assert.equal(reloaded.run('club().cash'),selectedCash-4000);
+ assert.equal(reloaded.run('worldClub(S.club).facilities'),3);
+ assert.equal(reloaded.run('S.careerManagement.academyWeeks'),1);
+});
