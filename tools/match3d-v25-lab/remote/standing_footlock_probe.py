@@ -301,6 +301,10 @@ def author_foot_lock(scene,actors):
         pivot=bpy.data.objects.new(f"STANDING_LOCK_{lab}_{side}",None)
         scene.collection.objects.link(pivot)
         pivot.location=foot_world
+        # A key at start-of-stance is essential: otherwise later centroid
+        # calibration changes the target at frame 22 retroactively.
+        pivot.keyframe_insert("location",frame=1)
+        pivot.keyframe_insert("location",frame=22)
         con=foot.constraints.new("IK")
         con.target=pivot
         con.chain_count=3
