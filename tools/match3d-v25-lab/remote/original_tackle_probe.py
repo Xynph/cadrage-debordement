@@ -241,6 +241,17 @@ try:
                     for lab in ("A","B") for side in ("foot_l","foot_r")),
                 "artisticApproval":"REQUIRES_INDEPENDENT_IMAGE_INSPECTION"
             }
+            # Contact is measured against a shared physically calibrated
+            # floor, and lack of penetration is NOT positive floor support.
+            row["quality"]["groundedRegionsByActor"]={}
+            row["quality"]["eachActorHasGroundSupport"]=True
+            for lab in ("A","B"):
+                grounded=[reg for reg in REGIONS
+                    if row["supports"][lab][reg]["minZ"] is not None
+                    and abs(row["supports"][lab][reg]["minZ"]-floor_z)<=.05]
+                row["quality"]["groundedRegionsByActor"][lab]=grounded
+                if not grounded:
+                    row["quality"]["eachActorHasGroundSupport"]=False
             row["images"]=[]
             for view,direction in [("front",Vector((0,-1,0))),("profile",Vector((1,0,0)))]:
                 cd=bpy.data.cameras.new("camera");cam=bpy.data.objects.new("camera",cd)
@@ -268,6 +279,7 @@ try:
         for lod in REPORT["lods"] for f in lod["frames"] if f["frame"]==40)
     REPORT["floorStageQualified"]=all(
         not f["quality"]["floorPenetrationFound"]
+        and f["quality"]["eachActorHasGroundSupport"]
         for lod in REPORT["lods"] for f in lod["frames"])
     REPORT["status"]="AUTHORED_AND_MEASURED_NOT_VISUALLY_APPROVED"
     REPORT["imagesProduced"]=sum(len(f["images"]) for l in REPORT["lods"] for f in l["frames"])
