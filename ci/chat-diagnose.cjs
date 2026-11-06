@@ -61,11 +61,11 @@ function diagnose(cmd) {
   const validRuleset=rulesetStatus(ruleset);
   const workflow=api('actions/workflows/tests.yml');
   assert(workflow.state==='active','Workflow Tests JavaScript inactif');
-  const runs=pages('actions/workflows/tests.yml/runs?branch=main','workflow_runs');
+  const runs=pages('actions/workflows/tests.yml/runs?branch=main&head_sha='+main,'workflow_runs');
   const run=latestRun(runs,main,workflow.id,['push','workflow_dispatch']);
   const mainJobs=run?pages('actions/runs/'+run.id+'/jobs','jobs'):[];
   const mainCI=!!run&&run.status==='completed'&&run.conclusion==='success'&&completedSeven(mainJobs);
-  const prRuns=pages('actions/workflows/tests.yml/runs?event=pull_request','workflow_runs');
+  const prRuns=pages('actions/workflows/tests.yml/runs?event=pull_request&head_sha='+cmd.expected,'workflow_runs');
   const prRun=prRuns.filter(x=>x.head_sha===cmd.expected&&x.event==='pull_request'&&x.name==='Tests JavaScript').sort((a,b)=>b.id-a.id)[0];
   const prJobs=prRun?pages('actions/runs/'+prRun.id+'/jobs','jobs'):[];
   const prCI=!!prRun&&prRun.status==='completed'&&prRun.conclusion==='success'&&completedSeven(prJobs);

@@ -36,3 +36,9 @@ test('aucun faux verdict vert sur échec API',()=>{
  assert.match(format(null,new Error('403'), 'https://github.com/example'),/STOP/);
  assert.match(format({valid:false,pr:328,head:sha,main:sha,mergeable:true,mergeable_state:'unstable',ready:true,ruleset:true,mainCI:true,prCI:true,missing:[]},null,'https://github.com/example'),/DIAGNOSTIC STOP/);
 });
+test('pagination CI bornée au SHA exact pour main et PR',()=>{
+ const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'../ci/chat-diagnose.cjs'),'utf8');
+ assert.ok(src.includes("runs?branch=main&head_sha='+main"));
+ assert.ok(src.includes("runs?event=pull_request&head_sha='+cmd.expected"));
+ assert.ok(!src.includes("runs?event=pull_request','workflow_runs'"));
+});
