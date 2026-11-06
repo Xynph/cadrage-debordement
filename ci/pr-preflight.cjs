@@ -58,12 +58,19 @@ function run(cmd,e){
  for(const other of others)if(other.number!==cmd.number)
   for(const f of pages('pulls/'+other.number+'/files'))otherFiles.push({pr:other.number,path:f.filename});
  const comments=pages('issues/73/comments',null,30);
+ const mainWorkflow=gh('actions/workflows/tests.yml');
+ const mainRuns=pages('actions/workflows/tests.yml/runs?branch=main', 'workflow_runs', 3);
+ const mainRun=mainRuns.filter(r=>r.workflow_id===mainWorkflow.id&&r.head_branch==='main'&&r.head_sha===main&&['push','workflow_dispatch'].includes(r.event)).sort((a,b)=>b.id-a.id)[0];
+ const mainJobs=mainRun?pages('actions/runs/'+mainRun.id+'/jobs','jobs',10):[];
+ const mainCI=require('./chat-release.cjs').fullCI(mainRun,mainJobs,main,mainWorkflow.id);
  // Décision existante réutilisée à titre consultatif ; DRAFT autorisé pour le diagnostic uniquement.
  const decision=require('./release-gate.cjs').decide({...pr,draft:false},runs,jobs);
  const result=assess({pr,expected:cmd.expected,main,runs,jobs,files,otherFiles,comments});
  if(!decision.ready)result.errors.push('Gate existant : '+decision.reason);
+ if(!mainCI)result.errors.push('Main : CI complète 7/7 non validée');
+ if(gh('git/ref/heads/main')?.object?.sha!==main||gh('pulls/'+cmd.number)?.head?.sha!==cmd.expected)result.errors.push('Main ou HEAD a changé durant le contrôle');
  result.technicalPass=result.errors.length===0;
- return {...result,pr:cmd.number,head:cmd.expected,main,draft:pr.draft,mergeableState:pr.mergeable_state};
+ return {...result,pr:cmd.number,head:cmd.expected,main,mainCIRunId:mainRun?.id||null,draft:pr.draft,mergeableState:pr.mergeable_state};
 }
 function main(){
  const event=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8')),cmd=parseEvent(event,process.env);
