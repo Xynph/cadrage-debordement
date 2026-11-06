@@ -5,10 +5,10 @@ Ce lot est **indépendant** des PR #363/#364/#366, ne modifie pas le master ni l
 ## Données réellement recueillies
 
 Le fichier \`data/scouting/performance-2025-26-v8.json\` contient des **lignes de classement** de la saison historique 2025-2026 extraites des pages LNR, **pas l'effectif complet de la compétition** :
-- PRO D2 : 20 meilleurs réalisateurs + 20 meilleurs marqueurs d'essais
+- PRO D2 : 20 meilleurs réalisateurs + 20 meilleurs marqueurs d'essais + 20 meilleurs taux de transformation
 - TOP 14 : 20 meilleurs réalisateurs + 20 meilleurs marqueurs d'essais
 
-Les noms et valeurs sont conservés sous forme de petits relevés regroupés par **page**, sans dossier individuel de justificatifs. Les personnes qui apparaissent dans plusieurs classements sont dédupliquées par identifiant de profil LNR et saison. Ces valeurs sont des mesures publiées (points, essais, minutes et matches) et restent distinctes des notes de jeu.
+Les noms et valeurs sont conservés sous forme de petits relevés regroupés par **page**, sans dossier individuel de justificatifs. Les personnes qui apparaissent dans plusieurs classements sont dédupliquées par identifiant de profil LNR et saison. Ces valeurs sont des mesures publiées (points, essais, minutes, matches, taux de transformations et tentatives) et restent distinctes des notes de jeu.
 
 ## Rapprochement avec la base maîtresse
 
@@ -20,7 +20,7 @@ Les noms et valeurs sont conservés sous forme de petits relevés regroupés par
 
 ## Estimation de gameplay, non donnée réelle
 
-Les essais/rencontre et les minutes de temps de jeu sont des **indicateurs indirects**, pas des mesures de vitesse, de précision technique ou de mental. Le calcul propose, avec limites modestes, +1 à +2 sur \`ballCarry\` et parfois +1 \`evasion\` pour les profils concernés, et +1 \`workRate\` au-dessus de 1 500 minutes (simple proxy de sélection). Pas de dégradation automatique de la PRO D2. Aucun bonus par seule appartenance TOP 14. Toutes les variations sont marquées \`gameplay-estimate\`, et **ne sont pas appliquées** dans le fichier maître.
+Les essais/rencontre et les minutes de temps de jeu sont des **indicateurs indirects**, pas des mesures de vitesse, de précision technique ou de mental. Le calcul propose, avec limites modestes, +1 à +2 sur \`ballCarry\` et parfois +1 \`evasion\` pour les profils concernés, et +1 \`workRate\` au-dessus de 1 500 minutes (simple proxy de sélection). Une réussite d'au moins 82 % sur au moins 25 transformations tentées peut proposer +1 en \`goalAccuracy\` pour les buteurs des postes correspondants. Aucun malus pour une absence du classement. Pas de dégradation automatique de la PRO D2. Aucun bonus par seule appartenance TOP 14. Toutes les variations sont marquées \`gameplay-estimate\`, et **ne sont pas appliquées** dans le fichier maître.
 
 Le programme vérifie que la moyenne des cinq spécialités de chaque poste garde l'avantage TOP 14, déjà démontré dans #366. Une inversion échoue immédiatement. Ce contrôle ne remplace pas une campagne de simulations et de recrutement.
 
