@@ -37,3 +37,14 @@
 .finance-v2-native .finv2-table th:last-child{text-align:right}
 @media(max-width:980px){.finance-v2-native .finv2-charts{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:580px){.finance-v2-native .finv2-panel{padding:12px}.finance-v2-native .finv2-barrow{grid-template-columns:82px minmax(0,1fr) 90px;font-size:11px}.finance-v2-native .finv2-chartfoot{flex-wrap:wrap}}
+
+/* V4.9 native dossier is a bounded scroll container with flex children.
+   Prevent our rich finance card from shrinking to a 50px title strip. */
+html:root[data-cd-theme] .da42-page-native>.finance-v2-native{
+ flex:0 0 auto!important;display:block!important;height:auto!important;
+ min-height:max-content!important;overflow:visible!important;
+}
+html:root[data-cd-theme] .da42-page-native>.finance-v2-native .finv2-charts,
+html:root[data-cd-theme] .da42-page-native>.finance-v2-native .finv2-journal{
+ flex-shrink:0;min-height:0;
+}
