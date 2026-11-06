@@ -21,4 +21,4 @@ assert.equal(rulesetStatus(base),false);
 assert.equal(rulesetStatus({...base,bypass_actors:[{actor_type:'User',actor_id:1}]}),false);
 assert.equal(rulesetStatus({...base,bypass_actors:[]}),true);
 assert.equal(rulesetStatus({...base,bypass_actors:[],enforcement:'disabled'}),false);
-console.log('chat diagnose auth: 7 assertions PASS');
+console.log('chat diagnose auth: all assertions PASS');
