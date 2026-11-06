@@ -49,6 +49,8 @@ function analyze(g,before,after,trace,ledger=[],phase='round'){
     components.push(part('debtService',-repaid,'debt-principal-repayment'));
    }else if(/:149:/.test(site))components.push(part('investment',m.delta,'facility-upgrade'));
    else components.push(part('unknown',m.delta,'unidentified-season-write'));
+  }else if(phase==='rollover'&&m.clubId===before.manager&&site.includes('advanceSeason')&&m.delta===2500000){
+   components.push(part('financing',2500000,'manager-season-board-funding'));
   }else if(m.clubId===before.manager){
    const candidate=unused.find(e=>!e.used&&e.amount===m.delta);
    if(candidate){
