@@ -111,6 +111,28 @@ test('fail-closed 3 LOD × 2 actors × 19 genuine V25 frames original Ekza foot 
      program.evaluate(ch,poseBefore);
      if(pins.length){
        const plant=plantFeetChannels(program,poseBefore,pins,new Map(),ch);
+       if(!plant.reached || plant.warnings.length){
+         const diagnostics=pins.map(pin=>{
+           const prefix=pin.side==='L'?'l':'r';
+           const hipId=lookup.get('thigh_'+prefix) as number;
+           const hip=native(Array.from(poseBefore.boneWorld.slice(hipId*16,hipId*16+16)));
+           const knee=world.get('calf_'+prefix)!;
+           const foot=world.get('foot_'+prefix)!;
+           const upper=world.get('thigh_'+prefix)!;
+           return {side:pin.side,
+             sourcePinToHipM:dist(hip,native(pin.footWorld)),
+             originalRigReachM:dist(upper,knee)+dist(knee,foot),
+             pinWorldPosition:vec(native(pin.footWorld)).toArray(),
+             hipPosition:vec(hip).toArray()};
+         });
+         const failure={lod,frame:sample.frame,actor:label,warnings:plant.warnings,
+           realSourcePins:diagnostics,poseReconstructionErrorM:maxReconstruction,
+           restFrameErrorM:maxRestError};
+         result.errors.push(failure);
+         result.status='STOP_V25_REAL_STANCE_PIN_UNREACHABLE';
+         writeFileSync(process.env.CD_NATIVE_OUT!,JSON.stringify(result,null,2)+'\\n');
+         console.error('REAL_V25_EKZA_PIN_UNREACHABLE',JSON.stringify(failure));
+       }
        expect(plant.reached).toBe(true);
        expect(plant.warnings).toEqual([]);
        for(const [ctrl,v] of plant.values)writeControlChannels(program,ch,ctrl,v);
