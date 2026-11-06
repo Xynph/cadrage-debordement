@@ -37,7 +37,7 @@ test('ligne incoherente sur deux tableaux rejetee',()=>{
 
 test('transformations PRO D2 valides a echantillon suffisant',()=>{
  const p=makePlayer('a','Zack HOLMES','prod2','Demi d’ouverture');
- p.attributesV2.goalAccuracy=72;
+ delete p.attributesV2.x3;p.attributesV2.goalAccuracy=72;
  const d=input([p],[{name:'Zack HOLMES',lnrId:'334',historicalClub:'Oyonnax',historicalPosition:'Demi d’ouverture',stats:{conversionRate:86.8,conversionAttempts:38,conversionMade:33,conversionMissed:5}}]);
  const r=evaluate(d.master,d.collected,{allowFixture:true});
  assert.equal(r.matched,1);assert.ok(r.matches[0].changes.some(x=>x.attribute==='goalAccuracy'&&x.to===73));
