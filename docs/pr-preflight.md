@@ -12,6 +12,7 @@ La commande déclenche le workflow `pr-preflight.yml` **de `main`**, qui checkou
 - `main` réel ; PR ouverte ciblant `main` exact, dépôt d'origine, HEAD exact, `mergeable_state=clean` et `mergeable=true`.
 - Réutilise `decide()` de `ci/release-gate.cjs` uniquement en diagnostic et autorise l'analyse d'une PR DRAFT en neutralisant son drapeau dans la copie en mémoire. **Ne modifie jamais la PR**.
 - Workflow JavaScript de la tête exacte terminé SUCCESS, sept jobs obligatoires chacun SUCCESS (Validation CI incluse).
+- Réutilise également `fullCI()` de `ci/chat-release.cjs` pour exiger les sept jobs du dernier run complet de `main` sur le SHA courant, puis relit HEAD et `main` à la fin du diagnostic.
 - Diff paginé, absence de chemin identique dans les autres PR ouvertes ; existence d'un commentaire propriétaire #73 de RÉSERVATION mentionnant numéro de PR et chacun des chemins. Cela vérifie une trace de réservation, non une exclusivité parfaite des réservations historiques ; une collision ou absence de preuve donne STOP.
 - Diagnostic dans résumé Actions et commentaire #73 ; aucune mutation de branche, de DRAFT/READY, ni déclenchement des commandes /cd-check ou /cd-merge.
 
