@@ -4,7 +4,7 @@ ROOT=pathlib.Path.cwd(); WORK=ROOT/"rd-work";WORK.mkdir(exist_ok=True)
 OUT=ROOT/"rd-report"/"original-tackle";OUT.mkdir(parents=True,exist_ok=True)
 LOCK=json.loads((ROOT/"tools/match3d-v25-lab/remote/lock.json").read_text())
 def sha(p):return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
-status={"status":"FAIL","origin":"ORIGINAL_TRUE_SOLE_IK_SKINNED_ONLY_V14_NO_EXTERNAL_CLIP","blender":LOCK["blender"]}
+status={"status":"FAIL","origin":"ORIGINAL_TRUE_SOLE_IK_SOLO_PROFILE_V15_NO_EXTERNAL_CLIP","blender":LOCK["blender"]}
 try:
     path=WORK/"blender.tar.xz"
     if not path.exists():
@@ -17,14 +17,14 @@ try:
     assert blender.exists()
     status["archiveSha256"]=sha(path)
     cmd=[str(blender),"--background","--factory-startup","--python-exit-code","1",
-         "--python","tools/match3d-v25-lab/remote/true_sole_ik_skinned_only_collision_probe.py"]
+         "--python","tools/match3d-v25-lab/remote/true_sole_ik_solo_profiles_probe.py"]
     with (OUT/"blender-original.log").open("w") as log:
         proc=subprocess.run(cmd,stdout=log,stderr=subprocess.STDOUT,timeout=1000)
     status["returnCode"]=proc.returncode
     assert proc.returncode==0,"Blender error: read blender-original.log"
     report=json.loads((OUT/"original-tackle-report.json").read_text())
     assert report["status"]=="AUTHORED_AND_MEASURED_NOT_VISUALLY_APPROVED"
-    assert len(report["lods"])==3 and report["imagesProduced"]==72
+    assert len(report["lods"])==3 and report["imagesProduced"]==84
     status["status"]="RENDERED_NOT_ART_APPROVED"
     status["reportSha256"]=sha(OUT/"original-tackle-report.json")
 except Exception as e:
