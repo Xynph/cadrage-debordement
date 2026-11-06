@@ -44,3 +44,22 @@ Sources : `LICENSE`, `README.md`, `package.json` (version déclarée 0.1.0).
 
 ## Verdict global
 **ORANGE — audit utile, expérimentation statique publiée, qualification réelle encore absente.** Aucune fusion ni gate.
+
+## Réception du 6 novembre — essais réels et réemploi source Ekza
+
+### A/B Blender sur copies R&D : RUN 42287132476
+- HEAD `a151d72e6afa35f307e7a28c7cd49aea7c1d034e`, job SUCCESS. Artefact #13538212527, 105441663 octets, ZIP SHA256 recalculé sur octets téléchargés `afba64d9c2885f25c310f1b91f940c3ade1624e2391ef7371ef43615feac7054` = digest GitHub.
+- Rapports JSON téléchargés et inspectés : A (`baseline-three-bone`) et B (`two-bone-proxy`), 171 images par variante, 342 PNG originaux de l'étude A/B (le ZIP contient en plus 8 PNG sous ses répertoires de travail).
+- 3 GLB sources authentiques, SHA256 par LOD `8ab6118d...`, `180adeaf...`, `81bebd11...` (octets exacts documentés dans run-summary.json).
+- Baseline A : `denseTemporalFloorQualified=true` 3/3 LOD, 0 croisement strict aux 13 frames supplémentaires. Proxy B : `denseTemporalFloorQualified=false`, 7 mesures pied sous -1 cm (LOD0 frames 34,36 ; LOD1 24,34,36 ; LOD2 24,36), extrema -1.088 / -1.109 / -1.118 cm selon LOD. Ne jamais promouvoir ce proxy à « véritable Ekza ».
+- Inspection visuelle réellement effectuée sur planches des 3 LOD, vues front/profile/threequarter, frames 24/34/40, 54 images sélectionnées. Anatomie encore raide, le profil partagé superpose souvent les deux joueurs, pas de vrai contact rugby, aucune approbation artistique (0/3 LOD). Les 342 images n'ont PAS toutes été inspectées individuellement.
+
+### Réemploi de la vraie source Ekza : RUN 42289963938
+- Upstream **réel et épinglé** : `ekza-space/ekza-studio` SHA `b7e3e92f25d2656caace50c0869aeef0d562dbf3` ; fonction `solveTwoBoneIk` appelée sans réécriture depuis `packages/rig/src/ik/twoBone.ts`. Workspace pnpm, licence originale MIT conservée.
+- HEAD PR #350 `63c8bfb7ff6e26e8bc5d09107603f2a83d281488`. GitHub job `128140498205` COMPLETED/SUCCESS : 1 test Vitest effectif, contrôle additionnel obligatoire `REAL_EKZA_6_OF_6_ACTUALLY_EXECUTED`. Première tentative antérieure avait produit un faux vert (« No test files found »), résolu en plaçant le test dans `packages/rig/test/` et en exigeant la présence du JSON.
+- ZIP artifact #13539795962, SHA256 recalculé `5c1363a22bdce01fd4e75ec41afb098e01d7c3ff86a8dc6713f0f904afbce883` identique GitHub ; quatre empreintes internes 4/4 concordantes.
+- Les 3 GLB originaux ont été lus directement, 53 os ordonnés sur chaque LOD, mêmes cartes ; chaque côté a une cuisse tibia env. 0.394707 m et tibia-pied env. 0.407331 m. Six appels réels au solveur (LOD 0/1/2 × G/D) ont renvoyé `reached=true` et quaternions normalisés / finis.
+- **Périmètre exact du test :** longueurs d'os tirées des vrais GLB, MAIS transformations rest/targets canoniques simplifiées ; aucune animation ni semelle skinnée issue d'Ekza et aucun résultat `plantFeetChannels` sur programme de rig compilé. Aucune équivalence Blender ↔ Ekza ni amélioration cinématique prouvée.
+
+### Décision
+**VERT uniquement** pour la CI BVH statique, le rendu A/B existant et l'exécution directe du vrai solveur Ekza sur les 6 dimensions de jambes ; **ROUGE pour le candidat proxy Blender B** sur la pénétration temporelle ; **ORANGE global R&D** pour la véritable intégration et qualification artistique. Prochain travail : pont de repères et quaternions Ekza ↔ Blender, foot pins réels sur copies de 53 os, mêmes 19 frames × 3 LOD, mesure des chaussures skinnées, images A/B et inspection exhaustive, sans changer baselines/jeu/PR #300.
