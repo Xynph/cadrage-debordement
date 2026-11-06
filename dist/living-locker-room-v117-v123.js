@@ -120,12 +120,20 @@
    '</ul></details><p class="help">Les decisions ajustent la satisfaction V36/V64, le moral collectif utilise par le moteur et la confiance de direction. Les engagements sont controles deux semaines plus tard.</p></section>';
  }
  function install(root){
-  if(!root||typeof root.managerOffice!=='function'||typeof root.managerWeek!=='function'||typeof root.managerMessage!=='function'||typeof root.save!=='function')return false;
-  if(root.managerOffice.__livingRoomWrapped)return true;
+  if(!root||typeof root.render!=='function'||typeof root.managerWeek!=='function'||typeof root.managerMessage!=='function'||typeof root.save!=='function')return false;
+  if(root.__livingRoomInstalled)return true;
+  root.__livingRoomInstalled=true;
   const current=()=>typeof S!=='undefined'?S:root.S;
-  const oldOffice=root.managerOffice,oldWeek=root.managerWeek;
-  const office=function(){return oldOffice()+panel(current())};
-  office.__livingRoomWrapped=true;root.managerOffice=office;
+  const oldRender=root.render,oldWeek=root.managerWeek;
+  // A native PC dashboard renders a fixed workspace. Mount this section in
+  // its scrollable Dossiers tab, never as an extra fixed-layout main sibling.
+  root.render=function(){
+   const result=oldRender.apply(this,arguments);
+   if(typeof document==='undefined'||typeof view==='undefined'||view!=='dashboard')return result;
+   const target=root.document?.querySelector('#app .layout .main .da42-workspace-shell[data-da43-section="dashboard"] [data-da42-page="dossiers"]');
+   if(target&&typeof target.insertAdjacentHTML==='function')target.insertAdjacentHTML('beforeend',panel(current()));
+   return result;
+  };
   root.managerWeek=function(){const result=oldWeek.apply(this,arguments);const s=current();if(s){const out=settle(s,{message:(...args)=>root.managerMessage(...args)});if(out.length)root.save()}return result};
   root.livingLockerDecision=function(choice){
    const ok=apply(current(),choice,{save:()=>{root.save();return typeof lastSaveError==='undefined'||!lastSaveError;},
