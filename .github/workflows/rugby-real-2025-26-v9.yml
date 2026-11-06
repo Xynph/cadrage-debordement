@@ -1,0 +1,40 @@
+name: Rugby Reel - V9 avants et rotation 2025-2026
+on:
+  push:
+    branches: [data/rugby-real-forward-minutes-v9-20261107]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scouting:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests V9
+        run: node --test tests/rugby-real-2025-26-v9.cjs
+      - name: Donnees 1592 joueurs en lecture seule
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum modding/data06/rugby-master-2026-2027.json > "$RUNNER_TEMP/master.sha"
+          node tools/rugby-real-2025-26-v9.cjs modding/data06/rugby-master-2026-2027.json data/scouting/performance-2025-26-v9.json "$RUNNER_TEMP/v9.json"
+          sha256sum -c "$RUNNER_TEMP/master.sha"
+          node - "$RUNNER_TEMP/v9.json" <<'NODE'
+          const fs=require('node:fs'),a=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(a.masterCount!==1592||a.candidates.length!==1592||a.measuredRows!==60)throw Error('Invalid roster/collection');
+          if(a.matched+a.unmatched.length+a.ambiguous.length!==a.distinctEntries)throw Error('Identity totals inconsistent');
+          if(a.matches.some(m=>(m.previousV8Entry||m.previousV4V5Observation)&&m.changes.length))throw Error('Double counting');
+          if(a.matches.some(m=>m.changes.some(c=>c.attribute!=='workRate'||c.delta!==1)))throw Error('Unknown candidate');
+          console.log('V9_SUMMARY',JSON.stringify({master:a.masterCount,rows:a.measuredRows,unique:a.distinctEntries,matched:a.matched,newBeyondV8:a.newlyMatchedEntriesBeyondV8,forwards:a.matchedForwards,byLeague:a.matchedByHistoricalLeague,changedPlayers:a.changedPlayers,changedAttributes:a.changedAttributes}));
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'## DATA V9\n\n\`\`\`json\n'+JSON.stringify({rows:a.measuredRows,unique:a.distinctEntries,matched:a.matched,newBeyondV8:a.newlyMatchedEntriesBeyondV8,forwards:a.matchedForwards,changedPlayers:a.changedPlayers,leagueBefore:a.leagueGapBefore,leagueAfter:a.leagueGapAfter},null,2)+'\n\`\`\`\n');
+          NODE
+      - name: Archiver les candidats sans modifier la base
+        uses: actions/upload-artifact@v4
+        with:
+          name: rugby-real-v9-candidates
+          path: ${{ runner.temp }}/v9.json
+          retention-days: 7
