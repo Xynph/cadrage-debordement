@@ -22,14 +22,44 @@ ROOTS={
  "B":[(0.80,0,0),(0.80,0,0),(0.92,0,0),(1.02,0,0),(1.06,0,0)]
 }
 # These rotations are explicitly *hypotheses* awaiting contact validation.
+# Keyframes represent phases of a first, strictly UNQUALIFIED choreography.
+# No opponent-driven adjustments are made to the authored actor roots.
+PHASE_NAMES={1:"approach",22:"plant",40:"first-contact-attempt",
+             60:"fall-attempt",90:"release-recovery-attempt"}
+# Rotation magnitudes remain deliberately modest until true skin metrics and
+# front/profile rendering establish whether local bone axes are appropriate.
 POSE={
-"A":{"upperarm_l":[0,-.15,-.45,-.65,-.1],"upperarm_r":[0,-.15,.45,.65,.1],
-"lowerarm_l":[0,.25,.65,.85,.1],"lowerarm_r":[0,-.25,-.65,-.85,-.1],
-"spine_01":[0,.05,.12,.26,.07],"spine_02":[0,.04,.12,.20,.03],
-"thigh_l":[0,.12,.12,.52,.25],"thigh_r":[0,-.09,-.13,.23,-.05]},
-"B":{"upperarm_l":[0,.04,.15,.34,.05],"upperarm_r":[0,-.04,-.15,-.34,-.05],
-"spine_01":[0,0,-.07,-.42,-.16],"spine_02":[0,0,-.09,-.38,-.10],
-"thigh_l":[0,0,.05,.49,.12],"thigh_r":[0,0,-.05,.35,.16]}}
+ "A":{
+  "pelvis":[0,.06,.12,.30,.05],
+  "spine_01":[-.03,.08,.20,.42,.02],
+  "spine_02":[0,.09,.18,.30,.01],
+  "upperarm_l":[.12,-.25,-.75,-.95,-.12],
+  "upperarm_r":[-.12,.25,.75,.95,.12],
+  "lowerarm_l":[.05,.24,.85,1.08,.08],
+  "lowerarm_r":[-.05,-.24,-.85,-1.08,-.08],
+  "thigh_l":[.28,-.23,.44,.62,.18],
+  "thigh_r":[-.27,.24,-.27,.45,-.12],
+  "calf_l":[.28,.38,.55,.82,.32],
+  "calf_r":[.32,.30,.62,.74,.28],
+  "foot_l":[-.12,-.05,-.25,-.30,-.08],
+  "foot_r":[.12,-.08,-.12,-.28,.08],
+ },
+ "B":{
+  "pelvis":[0,-.02,-.08,-.28,-.06],
+  "spine_01":[.02,-.04,-.14,-.35,-.08],
+  "spine_02":[0,-.03,-.12,-.24,-.03],
+  "upperarm_l":[.05,.10,.36,.52,.04],
+  "upperarm_r":[-.05,-.10,-.36,-.52,-.04],
+  "lowerarm_l":[.06,.10,.25,.55,.04],
+  "lowerarm_r":[-.06,-.10,-.25,-.55,-.04],
+  "thigh_l":[.04,.08,.22,.60,.14],
+  "thigh_r":[-.03,-.07,-.18,.52,.08],
+  "calf_l":[.05,.12,.42,.72,.22],
+  "calf_r":[.06,.14,.48,.74,.25],
+  "foot_l":[0,-.06,-.15,-.20,0],
+  "foot_r":[0,.06,-.13,-.23,0],
+ }}
+
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 def evaluated_geometry(meshes):
     deps=bpy.context.evaluated_depsgraph_get(); verts=[]; faces=[]
@@ -95,7 +125,7 @@ def audit(a,b):
                              skin_bounds["B"]["minXYZ"][0]-skin_bounds["A"]["maxXYZ"][0])
     for i,j in pairs:
         if cross_triangles(*[va[k] for k in fa[i]],*[vb[k] for k in fb[j]]):proper+=1
-    hands={}
+    hands={};shoulders={}
     for source,target,tree in [("A",a,bvb),("B",b,bva)]:
         hands[source]={}
         for side in ("l","r"):
@@ -105,7 +135,17 @@ def audit(a,b):
             near=tree.find_nearest(p)
             hands[source][side]={"metersToOpposingTrueSkin":round(near[3],5),
                 "worldPosition":[round(x,5) for x in p]}
-    return {"hands":hands,"rootWorldCenters":root_centers,
+    # The shoulder-to-torso measure is necessary for a rugby contact;
+    # a close wrist alone cannot qualify a tackle.
+    for source,target,tree in [("A",a,bvb),("B",b,bva)]:
+        shoulders[source]={}
+        for side in ("l","r"):
+            bone=target["rig"].pose.bones.get("upperarm_"+side)
+            if bone is None:raise RuntimeError("Canonical upper-arm bone missing")
+            p=(target["rig"].matrix_world @ bone.matrix).translation
+            near=tree.find_nearest(p)
+            shoulders[source][side]={"metersToOpposingSkin":round(near[3],5)}
+    return {"hands":hands,"shoulders":shoulders,"rootWorldCenters":root_centers,
        "skinBoundsWorld":skin_bounds,"skinBoundingBoxGapXMetres":round(bbox_separation_x,5),
        "potentialBVHPairs":len(pairs),
        "properNonCoplanarTriangleCrossings":proper,
@@ -172,12 +212,35 @@ try:
         for frame in PHASES:
             scene.frame_set(frame);bpy.context.view_layer.update()
             row=audit(actors["A"],actors["B"]);row["frame"]=frame
+            row["phase"]=PHASE_NAMES[frame]
             delta=actors["B"]["actor_root"].location-actors["A"]["actor_root"].location
             row["rootDisplacementXYZ"]=[round(v,5) for v in delta]
             row["footToCalibratedFloor"]={lab:{
                 side:(round(row["supports"][lab][side]["minZ"]-floor_z,5)
                 if row["supports"][lab][side]["minZ"] is not None else None)
                 for side in ("foot_l","foot_r")} for lab in actors}
+            # Explicitly reject this cinematic phase if its true skin or
+            # feet do not satisfy the physical acceptance preconditions.
+            hand_distances=[row["hands"][lab][side]["metersToOpposingTrueSkin"]
+                for lab in ("A","B") for side in ("l","r")]
+            shoulder_distances=[row["shoulders"][lab][side]["metersToOpposingSkin"]
+                for lab in ("A","B") for side in ("l","r")]
+            row["quality"]={
+                "fourHandsWithin5cm":all(x<=.05 for x in hand_distances)
+                    if frame in (40,60) else None,
+                "anyShoulderWithin8cm":any(x<=.08 for x in shoulder_distances)
+                    if frame in (40,60) else None,
+                "properNonCoplanarCrossingsZero":row["properNonCoplanarTriangleCrossings"]==0,
+                "floorPenetrationFound":any(
+                    row["supports"][lab][reg]["minZ"] is not None
+                    and row["supports"][lab][reg]["minZ"]<floor_z-.01
+                    for lab in ("A","B") for reg in REGIONS),
+                "allFeetWithin3cmOfFloor":all(
+                    row["footToCalibratedFloor"][lab][side] is not None
+                    and abs(row["footToCalibratedFloor"][lab][side])<=.03
+                    for lab in ("A","B") for side in ("foot_l","foot_r")),
+                "artisticApproval":"REQUIRES_INDEPENDENT_IMAGE_INSPECTION"
+            }
             row["images"]=[]
             for view,direction in [("front",Vector((0,-1,0))),("profile",Vector((1,0,0)))]:
                 cd=bpy.data.cameras.new("camera");cam=bpy.data.objects.new("camera",cd)
@@ -198,6 +261,14 @@ try:
             for mesh in actors[lab]["meshes"]:bpy.data.objects.remove(mesh,do_unlink=True)
             bpy.data.objects.remove(actors[lab]["rig"],do_unlink=True)
             bpy.data.objects.remove(actors[lab]["actor_root"],do_unlink=True)
+    REPORT["contactStageQualified"]=all(
+        f["quality"]["fourHandsWithin5cm"] and
+        f["quality"]["anyShoulderWithin8cm"] and
+        f["quality"]["properNonCoplanarCrossingsZero"]
+        for lod in REPORT["lods"] for f in lod["frames"] if f["frame"]==40)
+    REPORT["floorStageQualified"]=all(
+        not f["quality"]["floorPenetrationFound"]
+        for lod in REPORT["lods"] for f in lod["frames"])
     REPORT["status"]="AUTHORED_AND_MEASURED_NOT_VISUALLY_APPROVED"
     REPORT["imagesProduced"]=sum(len(f["images"]) for l in REPORT["lods"] for f in l["frames"])
     # No automatic acceptance without independent image inspection.
