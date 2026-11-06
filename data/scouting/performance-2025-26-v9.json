@@ -1,0 +1,791 @@
+{
+  "schema": "lnr-rotation-defence-2025-26-v9",
+  "cutoff": "2026-07-01",
+  "notes": "Each list is top-20 only; cards are not direct skill evidence; TOP14 time ranking and discipline rankings both leagues. PRO D2 time-of-play leaderboard was not accessible without authentication.",
+  "lists": [
+    {
+      "league": "top14",
+      "season": "2025-2026",
+      "metric": "minutes",
+      "sourceUrl": "https://top14.lnr.fr/classement/joueurs/temps-de-jeu/2025-2026",
+      "ranking": [
+        {
+          "name": "Tom BANKS",
+          "lnrId": "13735",
+          "historicalClub": "Montpellier Hérault Rugby",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "minutes": 2145,
+            "matches": 26
+          }
+        },
+        {
+          "name": "Harrison PLUMMER",
+          "lnrId": "13371",
+          "historicalClub": "ASM Clermont",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "minutes": 1961,
+            "matches": 25
+          }
+        },
+        {
+          "name": "Gabriel NGANDEBE",
+          "lnrId": "1444",
+          "historicalClub": "Montpellier Hérault Rugby",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "minutes": 1950,
+            "matches": 25
+          }
+        },
+        {
+          "name": "Maxime BAUDONNE",
+          "lnrId": "2197",
+          "historicalClub": "Racing 92",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "minutes": 1947,
+            "matches": 28
+          }
+        },
+        {
+          "name": "Louis CARBONEL",
+          "lnrId": "1428",
+          "historicalClub": "Stade Français Paris",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "minutes": 1936,
+            "matches": 24
+          }
+        },
+        {
+          "name": "Leo CARBONNEAU",
+          "lnrId": "461",
+          "historicalClub": "Racing 92",
+          "historicalPosition": "Demi de mêlée",
+          "stats": {
+            "minutes": 1917,
+            "matches": 26
+          }
+        },
+        {
+          "name": "Leo BARRE",
+          "lnrId": "1829",
+          "historicalClub": "Stade Français Paris",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "minutes": 1901,
+            "matches": 26
+          }
+        },
+        {
+          "name": "Jonathan HILL",
+          "lnrId": "13604",
+          "historicalClub": "Racing 92",
+          "historicalPosition": "2ème ligne",
+          "stats": {
+            "minutes": 1880,
+            "matches": 26
+          }
+        },
+        {
+          "name": "Davit NINIASHVILI",
+          "lnrId": "1034",
+          "historicalClub": "Stade Rochelais",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "minutes": 1761,
+            "matches": 23
+          }
+        },
+        {
+          "name": "Grégory ALLDRITT",
+          "lnrId": "980",
+          "historicalClub": "Stade Rochelais",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "minutes": 1746,
+            "matches": 24
+          }
+        },
+        {
+          "name": "Theo MILLET",
+          "lnrId": "1712",
+          "historicalClub": "LOU Rugby",
+          "historicalPosition": "Centre",
+          "stats": {
+            "minutes": 1745,
+            "matches": 22
+          }
+        },
+        {
+          "name": "Aaron GRANDIDIER-NKANANG",
+          "lnrId": "440",
+          "historicalClub": "Section Paloise",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "minutes": 1677,
+            "matches": 22
+          }
+        },
+        {
+          "name": "Mathis FERTE",
+          "lnrId": "395",
+          "historicalClub": "RC Toulon",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "minutes": 1672,
+            "matches": 24
+          }
+        },
+        {
+          "name": "Joris SEGONDS",
+          "lnrId": "1807",
+          "historicalClub": "Aviron Bayonnais",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "minutes": 1671,
+            "matches": 23
+          }
+        },
+        {
+          "name": "Théo CHABOUNI",
+          "lnrId": "543",
+          "historicalClub": "Castres Olympique",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "minutes": 1661,
+            "matches": 22
+          }
+        },
+        {
+          "name": "Antoine HASTOY",
+          "lnrId": "997",
+          "historicalClub": "Stade Rochelais",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "minutes": 1661,
+            "matches": 23
+          }
+        },
+        {
+          "name": "Paul GABRILLAGUES",
+          "lnrId": "1789",
+          "historicalClub": "Stade Français Paris",
+          "historicalPosition": "2ème ligne",
+          "stats": {
+            "minutes": 1656,
+            "matches": 24
+          }
+        },
+        {
+          "name": "Fabien BRAU-BOIRIE",
+          "lnrId": "11716",
+          "historicalClub": "Section Paloise",
+          "historicalPosition": "Centre",
+          "stats": {
+            "minutes": 1620,
+            "matches": 20
+          }
+        },
+        {
+          "name": "Tom SPRING",
+          "lnrId": "2753",
+          "historicalClub": "Aviron Bayonnais",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "minutes": 1605,
+            "matches": 23
+          }
+        },
+        {
+          "name": "Tyler DUGUID",
+          "lnrId": "1383",
+          "historicalClub": "Montpellier Hérault Rugby",
+          "historicalPosition": "2ème ligne",
+          "stats": {
+            "minutes": 1592,
+            "matches": 24
+          }
+        }
+      ]
+    },
+    {
+      "league": "top14",
+      "season": "2025-2026",
+      "metric": "cards",
+      "sourceUrl": "https://top14.lnr.fr/classement/joueurs/nombre-de-cartons/2025-2026",
+      "ranking": [
+        {
+          "name": "Viliami VUNIPOLA",
+          "lnrId": "12461",
+          "historicalClub": "Montpellier Hérault Rugby",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "cards": 4,
+            "yellow": 4,
+            "orange": 0,
+            "red": 0,
+            "matches": 23,
+            "minutes": 1533
+          }
+        },
+        {
+          "name": "Josua TUISOVA",
+          "lnrId": "1102",
+          "historicalClub": "Racing 92",
+          "historicalPosition": "Centre",
+          "stats": {
+            "cards": 4,
+            "yellow": 3,
+            "orange": 0,
+            "red": 1,
+            "matches": 24,
+            "minutes": 1375
+          }
+        },
+        {
+          "name": "Fred QUERCY",
+          "lnrId": "1329",
+          "historicalClub": "US Montauban",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "cards": 4,
+            "yellow": 3,
+            "orange": 0,
+            "red": 1,
+            "matches": 13,
+            "minutes": 770
+          }
+        },
+        {
+          "name": "Facundo POMPONIO",
+          "lnrId": "10998",
+          "historicalClub": "US Montauban",
+          "historicalPosition": "1ère ligne",
+          "stats": {
+            "cards": 4,
+            "yellow": 4,
+            "orange": 0,
+            "red": 0,
+            "matches": 18,
+            "minutes": 672
+          }
+        },
+        {
+          "name": "Leo CARBONNEAU",
+          "lnrId": "461",
+          "historicalClub": "Racing 92",
+          "historicalPosition": "Demi de mêlée",
+          "stats": {
+            "cards": 3,
+            "yellow": 2,
+            "orange": 1,
+            "red": 0,
+            "matches": 26,
+            "minutes": 1917
+          }
+        },
+        {
+          "name": "Jiuta Naqoli WAINIQOLO",
+          "lnrId": "2277",
+          "historicalClub": "LOU Rugby",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "cards": 3,
+            "yellow": 3,
+            "orange": 0,
+            "red": 0,
+            "matches": 20,
+            "minutes": 1590
+          }
+        },
+        {
+          "name": "Hugo AURADOU",
+          "lnrId": "1845",
+          "historicalClub": "Section Paloise",
+          "historicalPosition": "2ème ligne",
+          "stats": {
+            "cards": 3,
+            "yellow": 3,
+            "orange": 0,
+            "red": 0,
+            "matches": 20,
+            "minutes": 1431
+          }
+        },
+        {
+          "name": "Romain BRIATTE",
+          "lnrId": "1790",
+          "historicalClub": "Stade Français Paris",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "cards": 3,
+            "yellow": 3,
+            "orange": 0,
+            "red": 0,
+            "matches": 22,
+            "minutes": 1423
+          }
+        },
+        {
+          "name": "Cheikh Saliou TIBERGHIEN",
+          "lnrId": "707",
+          "historicalClub": "Aviron Bayonnais",
+          "historicalPosition": "Arrière",
+          "stats": {
+            "cards": 3,
+            "yellow": 3,
+            "orange": 0,
+            "red": 0,
+            "matches": 22,
+            "minutes": 1364
+          }
+        },
+        {
+          "name": "Guillaume DUCAT",
+          "lnrId": "1892",
+          "historicalClub": "Castres Olympique",
+          "historicalPosition": "2ème ligne",
+          "stats": {
+            "cards": 3,
+            "yellow": 2,
+            "orange": 1,
+            "red": 0,
+            "matches": 20,
+            "minutes": 1293
+          }
+        },
+        {
+          "name": "Levani Botia VEIVUKE",
+          "lnrId": "985",
+          "historicalClub": "Stade Rochelais",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "cards": 3,
+            "yellow": 3,
+            "orange": 0,
+            "red": 0,
+            "matches": 25,
+            "minutes": 1280
+          }
+        },
+        {
+          "name": "Andy BORDELAI",
+          "lnrId": "2565",
+          "historicalClub": "Aviron Bayonnais",
+          "historicalPosition": "1ère ligne",
+          "stats": {
+            "cards": 3,
+            "yellow": 3,
+            "orange": 0,
+            "red": 0,
+            "matches": 19,
+            "minutes": 1057
+          }
+        },
+        {
+          "name": "Jefferson POIROT",
+          "lnrId": "329",
+          "historicalClub": "Union Bordeaux-Bègles",
+          "historicalPosition": "1ère ligne",
+          "stats": {
+            "cards": 3,
+            "yellow": 2,
+            "orange": 1,
+            "red": 0,
+            "matches": 20,
+            "minutes": 958
+          }
+        },
+        {
+          "name": "Facundo BOSCH",
+          "lnrId": "2658",
+          "historicalClub": "Aviron Bayonnais",
+          "historicalPosition": "1ère ligne",
+          "stats": {
+            "cards": 3,
+            "yellow": 3,
+            "orange": 0,
+            "red": 0,
+            "matches": 20,
+            "minutes": 903
+          }
+        },
+        {
+          "name": "Juliàn Sixto MONTOYA",
+          "lnrId": "13598",
+          "historicalClub": "Section Paloise",
+          "historicalPosition": "1ère ligne",
+          "stats": {
+            "cards": 3,
+            "yellow": 3,
+            "orange": 0,
+            "red": 0,
+            "matches": 15,
+            "minutes": 796
+          }
+        },
+        {
+          "name": "Tyrone VIIGA",
+          "lnrId": "1312",
+          "historicalClub": "US Montauban",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "cards": 3,
+            "yellow": 1,
+            "orange": 0,
+            "red": 2,
+            "matches": 13,
+            "minutes": 674
+          }
+        },
+        {
+          "name": "Maxime BAUDONNE",
+          "lnrId": "2197",
+          "historicalClub": "Racing 92",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "cards": 2,
+            "yellow": 2,
+            "orange": 0,
+            "red": 0,
+            "matches": 28,
+            "minutes": 1947
+          }
+        },
+        {
+          "name": "Antoine HASTOY",
+          "lnrId": "997",
+          "historicalClub": "Stade Rochelais",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "cards": 2,
+            "yellow": 1,
+            "orange": 0,
+            "red": 1,
+            "matches": 23,
+            "minutes": 1661
+          }
+        },
+        {
+          "name": "Peniasi DAKUWAQA",
+          "lnrId": "1757",
+          "historicalClub": "Stade Français Paris",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "cards": 2,
+            "yellow": 2,
+            "orange": 0,
+            "red": 0,
+            "matches": 21,
+            "minutes": 1583
+          }
+        },
+        {
+          "name": "Baptiste MOUCHOUS",
+          "lnrId": "497",
+          "historicalClub": "US Montauban",
+          "historicalPosition": "Demi d'ouverture",
+          "stats": {
+            "cards": 2,
+            "yellow": 2,
+            "orange": 0,
+            "red": 0,
+            "matches": 21,
+            "minutes": 1575
+          }
+        }
+      ]
+    },
+    {
+      "league": "prod2",
+      "season": "2025-2026",
+      "metric": "cards",
+      "sourceUrl": "https://prod2.lnr.fr/classement/joueurs/nombre-de-cartons/2025-2026",
+      "ranking": [
+        {
+          "name": "Ilia SPANDERASHVILI",
+          "lnrId": "12522",
+          "historicalClub": "Valence Romans",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "cards": 6,
+            "yellow": 6,
+            "orange": 0,
+            "red": 0,
+            "matches": 23,
+            "minutes": 1252
+          }
+        },
+        {
+          "name": "Caleb Kalisi TIMU",
+          "lnrId": "352",
+          "historicalClub": "Colomiers Rugby",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "cards": 5,
+            "yellow": 5,
+            "orange": 0,
+            "red": 0,
+            "matches": 24,
+            "minutes": 1602
+          }
+        },
+        {
+          "name": "Fabien LORENZON",
+          "lnrId": "5694",
+          "historicalClub": "US Carcassonnaise",
+          "historicalPosition": "1ère ligne",
+          "stats": {
+            "cards": 5,
+            "yellow": 5,
+            "orange": 0,
+            "red": 0,
+            "matches": 19,
+            "minutes": 874
+          }
+        },
+        {
+          "name": "Ratu Josaia NACIKA",
+          "lnrId": "11942",
+          "historicalClub": "US Dax",
+          "historicalPosition": "2ème ligne",
+          "stats": {
+            "cards": 5,
+            "yellow": 3,
+            "orange": 2,
+            "red": 0,
+            "matches": 14,
+            "minutes": 792
+          }
+        },
+        {
+          "name": "Motu FARAO MATU'U",
+          "lnrId": "375",
+          "historicalClub": "Soyaux-Angoulême XV",
+          "historicalPosition": "1ère ligne",
+          "stats": {
+            "cards": 5,
+            "yellow": 4,
+            "orange": 1,
+            "red": 0,
+            "matches": 11,
+            "minutes": 476
+          }
+        },
+        {
+          "name": "Hugo FABREGUE",
+          "lnrId": "1714",
+          "historicalClub": "Valence Romans",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "cards": 4,
+            "yellow": 4,
+            "orange": 0,
+            "red": 0,
+            "matches": 29,
+            "minutes": 1556
+          }
+        },
+        {
+          "name": "Lucas OUDARD",
+          "lnrId": "2804",
+          "historicalClub": "Stade Aurillacois",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "cards": 4,
+            "yellow": 3,
+            "orange": 0,
+            "red": 1,
+            "matches": 22,
+            "minutes": 1389
+          }
+        },
+        {
+          "name": "David DELARUE",
+          "lnrId": "1614",
+          "historicalClub": "Stade Aurillacois",
+          "historicalPosition": "Demi de mêlée",
+          "stats": {
+            "cards": 4,
+            "yellow": 3,
+            "orange": 1,
+            "red": 0,
+            "matches": 21,
+            "minutes": 1004
+          }
+        },
+        {
+          "name": "Piula FAASALELE",
+          "lnrId": "1996",
+          "historicalClub": "Biarritz Olympique PB",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "cards": 4,
+            "yellow": 4,
+            "orange": 0,
+            "red": 0,
+            "matches": 22,
+            "minutes": 928
+          }
+        },
+        {
+          "name": "Viliame TUTUVULI",
+          "lnrId": "651",
+          "historicalClub": "US Carcassonnaise",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "cards": 4,
+            "yellow": 4,
+            "orange": 0,
+            "red": 0,
+            "matches": 11,
+            "minutes": 880
+          }
+        },
+        {
+          "name": "Brandon Julio Tiute NANSEN",
+          "lnrId": "10988",
+          "historicalClub": "FC Grenoble Rugby",
+          "historicalPosition": "2ème ligne",
+          "stats": {
+            "cards": 4,
+            "yellow": 4,
+            "orange": 0,
+            "red": 0,
+            "matches": 20,
+            "minutes": 829
+          }
+        },
+        {
+          "name": "Setareki BITUNIYATA",
+          "lnrId": "426",
+          "historicalClub": "Provence Rugby",
+          "historicalPosition": "Ailier",
+          "stats": {
+            "cards": 3,
+            "yellow": 3,
+            "orange": 0,
+            "red": 0,
+            "matches": 27,
+            "minutes": 2074
+          }
+        },
+        {
+          "name": "Kylian JAMINET",
+          "lnrId": "1510",
+          "historicalClub": "Biarritz Olympique PB",
+          "historicalPosition": "Centre",
+          "stats": {
+            "cards": 3,
+            "yellow": 2,
+            "orange": 1,
+            "red": 0,
+            "matches": 22,
+            "minutes": 1593
+          }
+        },
+        {
+          "name": "Pablo PATILLA",
+          "lnrId": "11807",
+          "historicalClub": "US Carcassonnaise",
+          "historicalPosition": "Centre",
+          "stats": {
+            "cards": 3,
+            "yellow": 3,
+            "orange": 0,
+            "red": 0,
+            "matches": 20,
+            "minutes": 1474
+          }
+        },
+        {
+          "name": "Hubert TEXIER",
+          "lnrId": "843",
+          "historicalClub": "Soyaux-Angoulême XV",
+          "historicalPosition": "3ème ligne",
+          "stats": {
+            "cards": 3,
+            "yellow": 3,
+            "orange": 0,
+            "red": 0,
+            "matches": 25,
+            "minutes": 1437
+          }
+        },
+        {
+          "name": "Nicolas Christian KRONE",
+          "lnrId": "390",
+          "historicalClub": "CA Brive",
+          "historicalPosition": "Centre",
+          "stats": {
+            "cards": 3,
+            "yellow": 3,
+            "orange": 0,
+            "red": 0,
+            "matches": 24,
+            "minutes": 1306
+          }
+        },
+        {
+          "name": "Mael PERRIN",
+          "lnrId": "1392",
+          "historicalClub": "Stade Aurillacois",
+          "historicalPosition": "2ème ligne",
+          "stats": {
+            "cards": 3,
+            "yellow": 3,
+            "orange": 0,
+            "red": 0,
+            "matches": 22,
+            "minutes": 1285
+          }
+        },
+        {
+          "name": "Sylvère RETEAU",
+          "lnrId": "10824",
+          "historicalClub": "US Dax",
+          "historicalPosition": "Demi de mêlée",
+          "stats": {
+            "cards": 3,
+            "yellow": 3,
+            "orange": 0,
+            "red": 0,
+            "matches": 28,
+            "minutes": 1285
+          }
+        },
+        {
+          "name": "Santiago SOCINO",
+          "lnrId": "12453",
+          "historicalClub": "SU Agen",
+          "historicalPosition": "1ère ligne",
+          "stats": {
+            "cards": 3,
+            "yellow": 2,
+            "orange": 0,
+            "red": 1,
+            "matches": 24,
+            "minutes": 1223
+          }
+        },
+        {
+          "name": "John MADIGAN",
+          "lnrId": "157",
+          "historicalClub": "SU Agen",
+          "historicalPosition": "2ème ligne",
+          "stats": {
+            "cards": 3,
+            "yellow": 2,
+            "orange": 0,
+            "red": 1,
+            "matches": 21,
+            "minutes": 1178
+          }
+        }
+      ]
+    }
+  ]
+}
