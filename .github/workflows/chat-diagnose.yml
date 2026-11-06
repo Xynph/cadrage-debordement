@@ -29,7 +29,20 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '22'
+      # Installation limited to this repository; token is revoked automatically at job end.
+      # Administration write is required by GitHub to expose bypass_actors; do not
+      # grant Contents/Actions/Checks/Issues write to this App.
+      - name: Créer le jeton éphémère de lecture complète du ruleset
+        id: ruleset-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
+        with:
+          client-id: ${{ vars.CD_DIAGNOSTIC_APP_CLIENT_ID }}
+          private-key: ${{ secrets.CD_DIAGNOSTIC_APP_PRIVATE_KEY }}
+          owner: Xynph
+          repositories: cadrage-debordement
+          permission-administration: write
       - name: Diagnostic REST en lecture seule et rapport issue 73
         env:
           GH_TOKEN: ${{ github.token }}
+          CD_RULESET_TOKEN: ${{ steps.ruleset-token.outputs.token }}
         run: node ci/chat-diagnose.cjs
