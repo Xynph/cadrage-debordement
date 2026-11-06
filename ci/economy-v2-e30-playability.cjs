@@ -31,7 +31,7 @@ function simulate(input,mode){
   if(mode==='stage'){
    // Optional plans can be moved to a later week but not booked as legally due.
    pending+=v.optional[i];
-   invest=Math.min(pending,Math.max(0,available-v.targetReserve));
+   // Reserve sufficient cash for the WORST mandatory-only position through the horizon,\n   // never merely this week's balance (which can hide upcoming payroll bills).\n   let mandatoryWorst=available,projected=available;\n   for(let j=i+1;j<v.income.length;j++){projected+=v.income[j]-v.required[j];mandatoryWorst=Math.min(mandatoryWorst,projected)}\n   invest=Math.min(pending,Math.max(0,mandatoryWorst-v.targetReserve));
    pending-=invest;
   }
   if(mode==='pause')pending+=v.optional[i];
