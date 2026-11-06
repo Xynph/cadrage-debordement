@@ -103,3 +103,36 @@ Créer une couche de règles de finances indépendante de la simulation sportive
 ## 9. Non-objectifs du premier déploiement
 
 Pas de comptabilité fiscale exhaustive, pas de simulation bancaire réglementaire, pas de collecte payante de comptes privés, pas de valeurs de clubs réels présentées comme factuelles sans provenance, pas de dynamique d'inflation visant un chiffre final arbitraire. L'impact sur les lois de rugby et le calendrier sportif est hors périmètre.
+
+## 10. Principe directeur : une économie amusante et accessible
+
+Le manager joue pour construire un club et gagner des matchs. La finance soutient le sport ; elle ne doit pas le remplacer. **Réalisme des mécanismes, accessibilité des décisions, conséquences lisibles, difficulté progressive.** Il doit être possible de gagner un titre en n'étant pas expert-comptable. Les clubs prudents, formateurs et ambitieux disposent chacun d'une stratégie viable.
+
+### Trois niveaux d'accompagnement joueur, sans tricher sur les lois économiques
+
+- **Accompagné (par défaut)** : le directeur financier propose un budget équilibré, préremplit les choix non sportifs, affiche les conséquences prévisionnelles en langage simple et prévient avant une grosse dépense. Le joueur peut déléguer sponsors, tarification, maintenance, échéancier et opérations quotidiennes, mais garde contrôle de ses recrutements majeurs.
+- **Manager** : mêmes calculs, mêmes recettes et risques, davantage d'arbitrages manuels (staff, sponsor, stade, dette, répartition budget) et alertes sans automatisation.
+- **Expert** : mêmes règles, exposition complète des engagements, échéances, coûts et arbitrages pluriannuels ; options avancées facultatives. Pas de mode « inflation punitive » cachée.
+
+Le mode d'accompagnement ne modifie pas secrètement la demande des supporters, les charges ou les règles ; il module les **tâches déléguées**, la densité d'informations et la tolérance de validation du conseil explicitement présentée. Si des paramètres de difficulté additionnels sont créés ultérieurement, les rendre opt-in, visibles et reproductibles dans la sauvegarde.
+
+### Courbe de difficulté et prévention de frustration
+
+1. Début de partie : budget approuvé couvrant les engagements courants, réserve raisonnable et au moins 2 options viables pour améliorer l'effectif, sauf scénario « sauvetage d'un club » choisi volontairement. Pas de faillite-surprise après quelques semaines.
+2. Une erreur ordinaire de transfert doit créer un coût d'opportunité, pas une fin de carrière : discussion avec conseil, reports, prêts, jeunes, ventes, réduction de primes et nouveaux contrats sponsor sont des leviers organiques.
+3. Les alertes se déclenchent **avant** l'urgence, avec explications sur horizon 3/12 mois et trois actions plausibles (ex. « différer des travaux », « vendre un remplaçant », « renégocier une avance sponsor »). Elles n'ajoutent aucun argent magique.
+4. Les déficits doivent être possibles, mais la direction, les créanciers, la ligue et les supporters réagissent progressivement. Sans mesure et en cas de manquements répétés, les restrictions restent crédibles.
+5. Le succès sportif apporte des retombées économiques différées et plausibles : sponsors renégociés, abonnement renouvelé, revenus de diffusion et de mérite, pas une prime hebdomadaire sans origine.
+6. Un club sans recrutements coûteux doit pouvoir progresser par formation, tactique et gestion du temps de jeu ; le portefeuille ne doit pas déterminer à lui seul le classement.
+7. La compétition crée de l'incertitude lisible : négocier et investir peut réussir ou échouer, et le rapport explique pourquoi sans punir aléatoirement le joueur.
+
+### Critères « plaisir de jeu » obligatoires
+
+- Partie standard : le joueur accompagné peut terminer 3 saisons sans gérer manuellement le compte d'exploitation, sans incident financier incompréhensible.
+- À chaque intersaison dans un club sain, il conserve au moins deux voies stratégiques crédibles (ex. formation + prolongations ou recrutement ciblé + structure), mais pas nécessairement deux transferts coûteux.
+- Après un choc financier modéré, au moins deux remèdes *économiquement causaux* existent et l'IA conseillère peut les exposer.
+- Même une mauvaise saison doit conserver une voie de rétablissement, sans garantir l'absence de faillite pour une mauvaise gestion répétée.
+- Tests aveugles : le joueur identifie en moins de deux interactions la cause d'un déficit et l'effet probable d'une décision importante ; ce seuil est un objectif UX à mesurer, non une réussite déjà constatée.
+- Le joueur peut ignorer le détail des écritures tout en voyant un indicateur simple « budget disponible », un avertissement et un résumé de fin de saison.
+
+Une bonne économie n'est ni toujours riche ni perpétuellement pauvre : elle doit produire une tension **gérable** et laisser au joueur la liberté de gagner par le sport.
