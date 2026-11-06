@@ -19,3 +19,43 @@ f=fixture();f.otherFiles=[{pr:337,path:'ci/a.cjs'}];assert.equal(assess(f).techn
 f=fixture();f.comments=[];assert.equal(assess(f).technicalPass,false);
 f=fixture();f.pr.base.sha='c'.repeat(40);assert.equal(assess(f).technicalPass,false);
 console.log('pr-preflight: 12 assertions/scénarios PASS');
+
+
+// Régression end-to-end de l'entrée issue_comment : main() doit transmettre
+// l'objet événement à run() avant de lire le HEAD main.
+{
+ const vm=require('node:vm'),fs=require('node:fs');
+ const source=fs.readFileSync(require.resolve('../ci/pr-preflight.cjs'),'utf8');
+ const invoked=[],messages=[];
+ const fakeFs={
+  readFileSync:()=>JSON.stringify(event),
+  appendFileSync:(_path,body)=>messages.push(body)
+ };
+ const fakeExec=(_binary,args)=>{
+  const path=args.find(x=>String(x).startsWith('repos/Xynph/cadrage-debordement/'));
+  invoked.push(path);
+  if(path==='repos/Xynph/cadrage-debordement/issues/comments/42')
+   return JSON.stringify({body:event.comment.body,user:{id:350229047},issue_url:'https://api.github.com/repos/Xynph/cadrage-debordement/issues/73'});
+  if(path==='repos/Xynph/cadrage-debordement/git/ref/heads/main')
+   throw Error('MOCK_AFTER_EVENT_VALIDATION');
+  if(path==='repos/Xynph/cadrage-debordement/issues/73/comments')
+   return JSON.stringify({id:99});
+  throw Error('Unexpected GitHub request: '+path);
+ };
+ const moduleShim={exports:{}};
+ function fakeRequire(id){
+  if(id==='node:fs')return fakeFs;
+  if(id==='node:child_process')return {execFileSync:fakeExec};
+  throw Error('Unexpected import: '+id);
+ }
+ fakeRequire.main=moduleShim; // démarre réellement main(), comme node ci/pr-preflight.cjs
+ const processShim={env:{...env,GITHUB_EVENT_PATH:'mock-event.json',GITHUB_STEP_SUMMARY:'mock-summary.md'},exitCode:0};
+ vm.runInNewContext(source,{module:moduleShim,require:fakeRequire,process:processShim,console},{filename:'ci/pr-preflight.cjs'});
+ assert.ok(invoked.includes('repos/Xynph/cadrage-debordement/issues/comments/42'));
+ assert.ok(invoked.includes('repos/Xynph/cadrage-debordement/git/ref/heads/main'),
+  'run(cmd,event) doit atteindre la lecture de main après validation de event.comment');
+ assert.ok(messages[0].includes('MOCK_AFTER_EVENT_VALIDATION'));
+ assert.ok(!messages[0].includes("Cannot read properties of undefined"));
+ assert.equal(processShim.exitCode,1,'Une erreur GitHub doit rester STOP');
+}
+console.log('pr-preflight: regression issue_comment -> run(cmd,event) PASS');

@@ -75,7 +75,7 @@ function run(cmd,e){
 function main(){
  const event=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8')),cmd=parseEvent(event,process.env);
  let result;
- try{result=run(cmd);}catch(err){result={technicalPass:false,errors:[String(err.message)],authorizedToMerge:false,ruleSet:{id:26326518,bypassActors:'INCONNU',attested:false}};}
+ try{result=run(cmd,event);}catch(err){result={technicalPass:false,errors:[String(err.message)],authorizedToMerge:false,ruleSet:{id:26326518,bypassActors:'INCONNU',attested:false}};}
  const status=result.technicalPass?'PRÉCONTRÔLE TECHNIQUE VERT — RULESET NON ATTESTÉ':'STOP PRÉCONTRÔLE';
  const message='### '+status+' — PR #'+cmd.number+'\n\nHEAD : '+cmd.expected+'\n\n    '+JSON.stringify(result)+'\n\nAucune attestation de bypass_actors=[], aucun READY, aucun /cd-check, aucun /cd-merge, aucune fusion. Gate officiel toujours requis.';
  fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,message+'\n');
