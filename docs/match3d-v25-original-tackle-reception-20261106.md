@@ -53,3 +53,9 @@ Non-modifications : PR #300, GLB sources, moteur, PRODUCTEUR, DATA/LNR, sauvegar
 - **Kickback non exécuté**, puisque la qualité cinématique initiale est insuffisante. Cette correction constitue une fiabilisation du banc de test, non une animation rugby livrable.
 
 Suite : concevoir sur les copies des animations locomotion/pose et appuis réalistes, y compris une saisie anatomique chronométrée, en conservant le parent d'acteur glTF désormais cohérent. Vérifier chaque frame et les intersections de vraie peau avant toute comparaison physique.
+
+## Nouvelle tentative cinématique R&D : jalon 49953471
+
+Commit `499534718ad4e606879d7ac3b337b3a7350eb6d6` : remplacement des premières poses trop rudimentaires par des phases originales synchronisées approche / plant / tentative de contact / tentative de chute / récupération, avec mouvements keyframés des os de bassin, torse, bras, cuisses, mollets et pieds sur les mêmes deux racines spatiales documentées. Les copies des trois LOD utilisent toujours le parent actor_root corrigé au commit `974acbba`. Les nouveaux comptes rendus distinguent les distances réelles des deux épaules et des quatre poignets aux peaux opposées, tests stricts segment-triangle non coplanaires, minima des six régions de peau et écarts à la hauteur sol calibrée. La qualification automatique est intentionnellement conservatrice, et `visualApproval=false` jusqu'à inspection humaine de chaque capture.
+
+Run [42189938627](https://github.com/Xynph/cadrage-debordement/actions/runs/42189938627) lié au commit source. **Ne pas déclarer qualification/rendus/SHA256 du nouveau run sans en vérifier la conclusion et les octets.** Conserver le REFUS précédent tant que l'essai n'a pas été inspecté. Aucune comparaison Kickback exécutée ou autorisée avant qualification.
