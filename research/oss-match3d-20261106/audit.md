@@ -63,3 +63,26 @@ Sources : `LICENSE`, `README.md`, `package.json` (version déclarée 0.1.0).
 
 ### Décision
 **VERT uniquement** pour la CI BVH statique, le rendu A/B existant et l'exécution directe du vrai solveur Ekza sur les 6 dimensions de jambes ; **ROUGE pour le candidat proxy Blender B** sur la pénétration temporelle ; **ORANGE global R&D** pour la véritable intégration et qualification artistique. Prochain travail : pont de repères et quaternions Ekza ↔ Blender, foot pins réels sur copies de 53 os, mêmes 19 frames × 3 LOD, mesure des chaussures skinnées, images A/B et inspection exhaustive, sans changer baselines/jeu/PR #300.
+
+## Extension qualifiée du 6 novembre — vrai pont et vrai Plant Feet Ekza
+
+### 1. Exact-rest solver (vraies TRS glTF, pas seulement longueurs)
+- Nouveau script `extract-real-rest-ik.py` : parse les 3 GLB originaux, refuse mismatch SHA256, 53 joints et hiérarchie, exporte les TRS de repos des articulations/ancêtres.
+- Nouveau test `ekza-rest-world.test.ts` : appelle `solveTwoBoneIk` **original** depuis Ekza upstream SHA `b7e3e92f25d2656caace50c0869aeef0d562dbf3`; reconstruction FK de 6 positions monde.
+- CI <https://github.com/Xynph/cadrage-debordement/actions/runs/42291347853> SUCCESS, run HEAD `aeceeca424cfbd5901c91e3e581d0aef36fccd09`; ZIP #13539023010 SHA256 recalculé = digest GitHub `8d74fee50c054dbf2b8a9cd5f566889dd1bd9ac755ced2bc7a6cef96eb7a0815`; 3/3 fichiers du manifeste, erreur max 8.461545×10⁻⁸ m. **Cibles synthétiques**, pas appuis du match.
+
+### 2. Pont vrai Ekza → vraies armatures skinnées Blender
+- Script R&D `ekza_blender_bridge.py` : lit les quaternions natifs du run ci-dessus, déduit et valide le repère rig Blender vs GLB (repos gauche/droite) sur trois LOD 53 os, convertit les matrices de chaque os, impose distance pied/cible <2 cm et déplacement de vrais sommets de pied >0.1 cm, génère images avant/après face/profil/3⁄4.
+- CI <https://github.com/Xynph/cadrage-debordement/actions/runs/42292338534> SUCCESS au HEAD `4cf469de006a1dff81ffddef21f2f06a9da06f2d`. Première tentative 42292073643 échouée (HTTP 401 lecture API), corrigée par `actions/download-artifact@v4` sur run épinglé exact.
+- ZIP #13539673940, **3 207 880 octets**, SHA256 recalculé sur octets téléchargés = GitHub `2432093cea3580c55ab0201f5f719809d2552ec7d1d46e7f06cdf0fc865ddc3f`, manifeste **19/19**.
+- 3/3 LOD × 2 variantes × 3 vues = 18/18 PNG, **inspectées visuellement**. Alignement rest glTF/Blender 0 cm (arrondi de rapport) et erreur cible 0 cm. Vrais sommets pieds déformés, 850/837 (LOD0 G/D), 263/258 (LOD1), 57/52 (LOD2) ; déplacements moyens centroids 5.98–6.38 cm. **Semelles du corps après pose autour de 3.29 à 3.45 cm au-dessus de z=0 (pas au sol) : NON QUALIFIÉ ARTISTIQUEMENT**. Pas de chaussure GLB séparée. Ce run est une pose statique, pas 19 frames ni 342 vues temporelles.
+
+### 3. VRAI `plantFeetChannels` compilé sur squelettes CD
+- `extract-real-rest-ik.py` étendu pour construire un `SkeletonDesc` parent-before-child avec les 53 joints skin et ancêtres, noms originaux, humanoid map obligatoire, empreinte GLB. Nouveaux test/workflow `ekza-plant-feet-real.test.ts` / `match3d-oss-ekza-plant-feet.yml`.
+- La chaîne utilisée est **authentiquement issue du code source upstream Ekza** : `registerBuiltinRigOps`, `autoRig({ik:{legs:true}})`, `compileRig`, `plantFeetChannels`, puis évaluation `RigProgram.evaluate`. Pas une imitation de pin. Résultat 3 LOD × 2 jambes, 53 joints originaux/LOD, 26 contrôles et 2 membres IK par programme ; six cibles de test déplacées de 6% vers la hanche par rapport au pied au repos.
+- CI <https://github.com/Xynph/cadrage-debordement/actions/runs/42293410777> run HEAD `23b5c5f6f485ff7417c14d6a8e6d2e4c87af3e29`, **COMPLETED/SUCCESS**, Vitest 1 vrai test, garde-fou `ORIGINAL_EKZA_PLANTFEET_6_OF_6_PASS`. Artefact #13539249653 SHA256 octets téléchargés = digest GitHub `128ea3f254bd42b78052c50d810334ed469e54ce885e609a3bd4bab15db08e19`, 3/3 empreintes internes. Six positions atteintes, erreur max 1.28×10⁻¹⁵ m. **Ce sont des cibles synthétiques, pas encore des pins issus de la locomotion V25**.
+
+### Limites explicites de qualification
+- **Validé VERT techniquement** : code original `solveTwoBoneIk` exécuté sur vraies TRS/hierarchies ; matrices converties vers vrais os Blender et skinned mesh modifié sur 3 LOD ; vrai `plantFeetChannels` exécuté en rig compilé 53 os avec six cibles synthétiques.
+- **NON QUALIFIÉ** : continuité des deux foulées 19 frames, cycle marche, vrai contact/sol lors des poses natives, glissement XY, genoux-hanches-épaules, mains/porteur, déformations chaussures, tri-croisements, 342 images temporelles générées par Ekza et approuvées. Ancienne campagne **342 images du proxy Blender 2 os** reste écartée et n'est pas un test d'Ekza.
+- **Prochaine décision** : uniquement si un raccord temporel strictement apparié 19 frames × 3 LOD × 2 variantes produit rapport de vrais pieds skinnés (corps et chaussures), aucune pénétration ni perte de cadence, images entièrement inspectées et ZIP SHA256, sinon STOP. Aucune PR prête à merger pour ce lot. Pas de READY, gate, fusion ni modification de la PR #300 ou de la branche V25 existante.
