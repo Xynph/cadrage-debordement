@@ -28,6 +28,7 @@ try:
         selector='section[aria-label="Monde vivant et vestiaire V117"]'
         panel=page.locator(selector)
         assert panel.count()==1, f"Real dashboard panel must appear once, got {panel.count()}"
+        page.locator('[data-da43-section="dashboard"] [data-da42-subpage="dossiers"]').click(timeout=15000)
         panel.locator('button[onclick="livingLockerDecision(\'responsabiliser\')"]').click(timeout=15000)
         first=page.evaluate("""() => {
           if(!S.livingLockerRoom||S.livingLockerRoom.history.length!==1)
@@ -67,6 +68,7 @@ try:
         variants={}
         for choice in ['ecouter','cadrer']:
             page.evaluate("() => {start(0);nav('dashboard');}")
+            page.locator('[data-da43-section="dashboard"] [data-da42-subpage="dossiers"]').click(timeout=15000)
             page.locator(selector+f' button[onclick="livingLockerDecision(\'{choice}\')"]').click(timeout=15000)
             outcome=page.evaluate("""() => ({
               choice:S.livingLockerRoom.history[0].choice,
