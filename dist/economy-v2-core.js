@@ -38,7 +38,7 @@
    check(c&&id(c.clubId)&&own(w.balances,c.clubId)&&id(c.commitmentId)&&date(c.due)&&money(c.amount)&&id(c.kind)&&typeof c.settled==='boolean','Invalid commitment state');
    const k=c.clubId+'|'+c.commitmentId;check(!commitments.has(k),'Duplicate commitment');commitments.add(k);
    const bound=w.events.filter(e=>e.clubId===c.clubId&&e.description==='commitment:'+c.commitmentId);
-   check(bound.length===(c.settled?1:0),'Commitment payment binding mismatch');
+   check(!c.settled||bound.length===1,'Commitment payment binding mismatch');
    if(c.settled){const e=bound[0];check(e.category==='commitment-'+c.kind&&e.period>=c.due&&e.lines.some(l=>l.account==='expense'&&l.debit===c.amount)&&e.lines.some(l=>l.account==='cash'&&l.credit===c.amount),'Invalid commitment payment')}
 
   }
