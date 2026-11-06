@@ -35,7 +35,13 @@ jobs:
           ref: d6fbcb38438609c0ca461f54717655223b438b09
           path: baseline
           persist-credentials: false
-      - name: Checkout pinned V25 lock manifest\n        uses: actions/checkout@v4\n        with:\n          ref: 065589001fbef9641070218b6f85bb597da96a6a\n          path: rd-source\n          persist-credentials: false\n      - uses: actions/setup-node@v4
+      - name: Checkout pinned V25 lock manifest
+        uses: actions/checkout@v4
+        with:
+          ref: 065589001fbef9641070218b6f85bb597da96a6a
+          path: rd-source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
         with:
           node-version: '24.11.0'
       - uses: actions/setup-python@v5
