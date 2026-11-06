@@ -85,7 +85,9 @@
   const st=getState(s);if(!valid(s)||!st)return [];
   const outcomes=[];
   for(const c of st.commitments){
-   if(c.status!=='open'||c.originSeason!==s.season||s.economy.week<c.dueWeek)continue;
+   if(c.status!=='open')continue;
+   if(c.originSeason!==s.season){c.status='expired';c.resolvedWeek=s.economy.week;continue;}
+   if(s.economy.week<c.dueWeek)continue;
    const p=roster(s).find(x=>x.id===c.playerId);
    const minutes=p?.dev?.minutes??0;
    const honored=!!p&&(minutes-c.baseline>=c.target||!!p.injury);
