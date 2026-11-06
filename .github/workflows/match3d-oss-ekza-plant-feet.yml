@@ -1,0 +1,96 @@
+name: MATCH 3D OSS — actual Ekza plantFeetChannels on original CD GLBs
+on:
+  push:
+    branches: [research/match3d-oss-audit-ekza-bvh-ik-20261106]
+    paths:
+      - research/oss-match3d-20261106/extract-real-rest-ik.py
+      - research/oss-match3d-20261106/ekza-plant-feet-real.test.ts
+      - .github/workflows/match3d-oss-ekza-plant-feet.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-ekza-plants:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CD_EKZA_SHA: b7e3e92f25d2656caace50c0869aeef0d562dbf3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ekza-space/ekza-studio
+          ref: b7e3e92f25d2656caace50c0869aeef0d562dbf3
+          path: ekza-upstream
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: d6fbcb38438609c0ca461f54717655223b438b09
+          path: baseline
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 065589001fbef9641070218b6f85bb597da96a6a
+          path: rd-source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify upstream source and exact inputs
+        run: |
+          test "$(git -C ekza-upstream rev-parse HEAD)" = "$CD_EKZA_SHA"
+          test "$(git -C baseline rev-parse HEAD)" = "d6fbcb38438609c0ca461f54717655223b438b09"
+          test -f ekza-upstream/packages/rig/src/ik/plantFeet.ts
+          mkdir -p oss-plant-report
+          cp ekza-upstream/LICENSE oss-plant-report/LICENSE-EKZA-MIT.txt
+      - name: Extract actual 53-bone glTF humanoid skeletons and rest TRS
+        run: |
+          python research/oss-match3d-20261106/extract-real-rest-ik.py baseline rd-source/tools/match3d-v25-lab/remote/lock.json oss-plant-report/real-rest-trs.json
+      - name: Execute ORIGINAL plantFeetChannels via compiled Ekza RigProgram
+        run: |
+          npm install --global pnpm@10.32.1
+          cd ekza-upstream
+          pnpm install --frozen-lockfile
+          cp ../research/oss-match3d-20261106/ekza-plant-feet-real.test.ts packages/rig/test/cd-oss-plant.test.ts
+          export CD_REST_INPUT="$GITHUB_WORKSPACE/oss-plant-report/real-rest-trs.json"
+          export CD_PLANT_REPORT="$GITHUB_WORKSPACE/oss-plant-report/plant-feet-results.json"
+          pnpm --filter @ekza-studio/rig exec vitest run test/cd-oss-plant.test.ts --reporter=verbose
+      - name: No zero-test green; verify exact six pin errors
+        run: |
+          python - <<'PY'
+          import json,pathlib,math
+          p=pathlib.Path('oss-plant-report/plant-feet-results.json')
+          assert p.is_file(), 'No plantFeetChannels executed report'
+          x=json.loads(p.read_text())
+          assert x['status']=='NATIVE_EKZA_PLANT_FEET_COMPILED_REAL_53_BONES_SYNTHETIC_PIN'
+          assert x['actualSourceCalls']==['autoRig','compileRig','plantFeetChannels']
+          rows=x['results']
+          assert len(rows)==6 and len({(v['lod'],v['side']) for v in rows})==6
+          assert all(v['humanoidJointCount']==53 and math.isfinite(v['pinPositionErrorMetres']) and v['pinPositionErrorMetres']<.002 for v in rows)
+          print('ORIGINAL_EKZA_PLANTFEET_6_OF_6_PASS')
+          PY
+      - name: Generate evidence SHA manifest even on failure
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          root=Path('oss-plant-report');root.mkdir(exist_ok=True)
+          files=[p for p in root.iterdir() if p.is_file() and p.name!='sha256-manifest.json']
+          (root/'sha256-manifest.json').write_text(json.dumps([
+            {'name':p.name,'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size}
+            for p in files],indent=2)+'\n')
+          PY
+      - name: Upload all source evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-oss-ekza-plantfeet-${{ github.sha }}
+          path: oss-plant-report/
+          retention-days: 14
+          if-no-files-found: warn

@@ -1,0 +1,108 @@
+name: MATCH 3D OSS — Ekza native quaternion to Blender real skinned rig bridge
+on:
+  push:
+    branches: [research/match3d-oss-audit-ekza-bvh-ik-20261106]
+    paths:
+      - research/oss-match3d-20261106/ekza_blender_bridge.py
+      - .github/workflows/match3d-oss-ekza-blender-bridge.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-to-blender:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: d6fbcb38438609c0ca461f54717655223b438b09
+          path: baseline
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 065589001fbef9641070218b6f85bb597da96a6a
+          path: rd-source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download pinned Ekza native output using official artifact action
+        uses: actions/download-artifact@v4
+        with:
+          name: match3d-oss-ekza-rest-aeceeca424cfbd5901c91e3e581d0aef36fccd09
+          run-id: 42291347853
+          github-token: ${{ github.token }}
+          path: oss-bridge-in
+      - name: Verify immutable input manifests and actual native calculations
+        run: |
+          mkdir -p oss-bridge-report
+          python - <<'PY'
+          import pathlib,json,hashlib
+          p=pathlib.Path('oss-bridge-in')
+          assert {x.name for x in p.iterdir()} == {'real-rest-results.json','real-rest-trs.json','sha256-manifest.json','LICENSE-EKZA-MIT.txt'}
+          manifest=json.loads((p/'sha256-manifest.json').read_text())
+          assert len(manifest)==3
+          for x in manifest:
+            f=p/x['name']
+            assert f.stat().st_size==x['bytes']
+            assert hashlib.sha256(f.read_bytes()).hexdigest()==x['sha256']
+          r=json.loads((p/'real-rest-results.json').read_text())
+          assert r['upstreamPinnedSha']=='b7e3e92f25d2656caace50c0869aeef0d562dbf3'
+          assert r['sourceExecutedDirectly'] is True and len(r['results'])==6
+          print('VERIFIED_SIX_PINNED_NATIVE_EKZA_OUTPUTS')
+          PY
+      - name: Fetch checksum-verified Blender 4.5.3
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,tarfile,urllib.request,shutil
+          lock=json.loads(Path('rd-source/tools/match3d-v25-lab/remote/lock.json').read_text())
+          work=Path('oss-blender');work.mkdir(exist_ok=True)
+          tar=work/'blender.tar.xz'
+          with urllib.request.urlopen(lock['blenderUrl'],timeout=180) as inp,tar.open('wb') as out:shutil.copyfileobj(inp,out)
+          assert hashlib.sha256(tar.read_bytes()).hexdigest()==lock['blenderSha256']
+          with tarfile.open(tar) as f:f.extractall(work,filter='data')
+          assert (work/'blender-4.5.3-linux-x64/blender').exists()
+          PY
+      - name: Execute original Ekza quaternions on true Blender deforming skins
+        run: |
+          oss-blender/blender-4.5.3-linux-x64/blender --background --factory-startup --python-exit-code 1 \
+            --python research/oss-match3d-20261106/ekza_blender_bridge.py -- \
+            oss-bridge-in/real-rest-trs.json oss-bridge-in/real-rest-results.json oss-bridge-report
+      - name: Fail closed if three GLBs not deformed with correct target error
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          r=json.loads(pathlib.Path('oss-bridge-report/bridge-report.json').read_text())
+          assert r['status']=='REAL_EKZA_TO_BLENDER_STATIC_POSE_NOT_ANIMATION_QUALIFIED'
+          assert len(r['lods'])==3 and r['renderCount']==18
+          assert all(v['restFrameFitCm']<2 for v in r['lods'])
+          for l in r['lods']:
+            for x in l['details'].values():
+              assert x['footTargetErrorCm']<2
+              assert x['trueSkinnedFootCentroidShiftCm']>.1
+          print('EKZA_NATIVE_TO_BLENDER_3_LOD_STATIC_PASS_NON_ART_APPROVED')
+          PY
+      - name: Create SHA manifest (even on failure)
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          p=Path('oss-bridge-report');p.mkdir(exist_ok=True)
+          files=[x for x in p.iterdir() if x.is_file() and x.name!='sha256-manifest.json']
+          (p/'sha256-manifest.json').write_text(json.dumps([{
+            'name':x.name,'bytes':x.stat().st_size,'sha256':hashlib.sha256(x.read_bytes()).hexdigest()
+          } for x in files],indent=2)+'\n')
+          PY
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-oss-ekza-blender-bridge-${{ github.sha }}
+          path: oss-bridge-report/
+          retention-days: 14
+          if-no-files-found: warn

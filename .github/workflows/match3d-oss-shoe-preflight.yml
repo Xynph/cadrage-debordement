@@ -1,0 +1,76 @@
+name: MATCH 3D OSS — original three-LOD true-skinned shoes preflight
+on:
+  push:
+    branches: [research/match3d-oss-audit-ekza-bvh-ik-20261106]
+    paths:
+      - research/oss-match3d-20261106/preflight_shoe_skin.py
+      - .github/workflows/match3d-oss-shoe-preflight.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shoes-real-skinned:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: d6fbcb38438609c0ca461f54717655223b438b09
+          path: baseline
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 065589001fbef9641070218b6f85bb597da96a6a
+          path: rd-source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify immutable V25 baseline source
+        run: |
+          test "$(git -C baseline rev-parse HEAD)" = d6fbcb38438609c0ca461f54717655223b438b09
+          test "$(git -C rd-source rev-parse HEAD)" = 065589001fbef9641070218b6f85bb597da96a6a
+      - name: Download SHA-pinned Blender 4.5.3
+        run: |
+          python - <<'PY'
+          import hashlib,json,pathlib,tarfile,urllib.request,shutil
+          lock=json.loads(pathlib.Path('rd-source/tools/match3d-v25-lab/remote/lock.json').read_text())
+          dest=pathlib.Path('oss-blender');dest.mkdir(exist_ok=True)
+          archive=dest/'blender.tar.xz'
+          with urllib.request.urlopen(lock['blenderUrl'],timeout=180) as reader,archive.open('wb') as writer:
+            shutil.copyfileobj(reader,writer)
+          assert hashlib.sha256(archive.read_bytes()).hexdigest()==lock['blenderSha256']
+          with tarfile.open(archive,'r:xz') as f:f.extractall(dest,filter='data')
+          assert (dest/'blender-4.5.3-linux-x64/blender').is_file()
+          print('BLENDER_SHA256_VERIFIED')
+          PY
+      - name: Real Blender shoe rig and true-skin preflight
+        run: |
+          oss-blender/blender-4.5.3-linux-x64/blender --background --factory-startup --python-exit-code 1 \
+            --python research/oss-match3d-20261106/preflight_shoe_skin.py -- \
+            baseline rd-source/tools/match3d-v25-lab/remote/lock.json oss-shoe-report/real-shoes-preflight.json
+      - name: Create SHA manifest even if rejected
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          root=Path('oss-shoe-report');root.mkdir(exist_ok=True)
+          files=[p for p in root.iterdir() if p.is_file() and p.name!='sha256-manifest.json']
+          (root/'sha256-manifest.json').write_text(json.dumps([
+            {'name':p.name,'sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'bytes':p.stat().st_size}
+            for p in files],indent=2)+'\n')
+          PY
+      - name: Upload evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-oss-shoe-preflight-${{ github.sha }}
+          path: oss-shoe-report/
+          retention-days: 14
+          if-no-files-found: warn

@@ -1,0 +1,119 @@
+name: MATCH 3D OSS — true Ekza pins from authentic V25 nineteen frames
+on:
+  push:
+    branches: [research/match3d-oss-audit-ekza-bvh-ik-20261106]
+    paths:
+      - research/oss-match3d-20261106/ekza-v25-truepins.test.ts
+      - .github/workflows/match3d-oss-v25-native-pins.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-native-truepins:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      CD_EKZA_SHA: b7e3e92f25d2656caace50c0869aeef0d562dbf3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ekza-space/ekza-studio
+          ref: b7e3e92f25d2656caace50c0869aeef0d562dbf3
+          path: ekza-upstream
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: d6fbcb38438609c0ca461f54717655223b438b09
+          path: baseline
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 065589001fbef9641070218b6f85bb597da96a6a
+          path: rd-source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Obtain immutable original V25 nineteen-frame Blender observations
+        uses: actions/download-artifact@v4
+        with:
+          name: match3d-oss-original-19frames-b903331d31a6020ebd872265d91c64916eb03d6b
+          run-id: 42295487770
+          github-token: ${{ github.token }}
+          path: input-v25
+      - name: Verify original sample and pinned Ekza upstream
+        run: |
+          mkdir -p oss-native-v25-report
+          test "$(git -C ekza-upstream rev-parse HEAD)" = "$CD_EKZA_SHA"
+          test "$(git -C baseline rev-parse HEAD)" = d6fbcb38438609c0ca461f54717655223b438b09
+          python - <<'PY'
+          import pathlib,json,hashlib
+          root=pathlib.Path('input-v25')
+          manifest=json.loads((root/'sha256-manifest.json').read_text())
+          for file in manifest:
+            p=root/file['name']
+            assert p.exists() and p.stat().st_size==file['bytes']
+            assert hashlib.sha256(p.read_bytes()).hexdigest()==file['sha256']
+          summary=json.loads((root/'capture-summary.json').read_text())
+          assert summary['status']=='REAL_V25_TEMPORAL_INPUTS_CAPTURED_NOT_EKZA_ANIMATED'
+          assert summary['samples']==57 and summary['images']==171
+          assert summary['sourceRef']=='065589001fbef9641070218b6f85bb597da96a6a'
+          assert summary['sourceScriptSHA256']=='2f139c9c9903a8f1b52e9ef8af67a79db180e9d5b79e96d5e9fba089886707df'
+          assert summary['timeSampleSHA256']==hashlib.sha256((root/'actual-v25-frame-worlds.json').read_bytes()).hexdigest()
+          print('ORIGINAL_V25_INPUT_IMMUTABLE_AND_VERIFIED')
+          PY
+      - name: Extract true GLB rest hierarchy and humane mapping
+        run: |
+          python research/oss-match3d-20261106/extract-real-rest-ik.py baseline rd-source/tools/match3d-v25-lab/remote/lock.json oss-native-v25-report/glb-rest.json
+      - name: Exercise authentic Ekza channels on real V25 poses and real pin targets
+        run: |
+          npm install --global pnpm@10.32.1
+          cd ekza-upstream
+          pnpm install --frozen-lockfile
+          cp ../research/oss-match3d-20261106/ekza-v25-truepins.test.ts packages/rig/test/cd-v25-truepins.test.ts
+          export CD_GLB_REST="$GITHUB_WORKSPACE/oss-native-v25-report/glb-rest.json"
+          export CD_V25_REAL_FRAMES="$GITHUB_WORKSPACE/input-v25/actual-v25-frame-worlds.json"
+          export CD_NATIVE_OUT="$GITHUB_WORKSPACE/oss-native-v25-report/real-ekza-truepins.json"
+          pnpm --filter @ekza-studio/rig exec vitest run test/cd-v25-truepins.test.ts --reporter=verbose
+      - name: Require 114 real frame actor solves and no zero-test green
+        run: |
+          python - <<'PY'
+          import pathlib,json,math
+          p=pathlib.Path('oss-native-v25-report/real-ekza-truepins.json')
+          assert p.exists(),'No native Ekza V25 report; zero-test green disallowed'
+          r=json.loads(p.read_text())
+          assert r['status']=='NATIVE_EKZA_SOURCE_V25_TRUE_PINS_NUMERIC_ONLY_NOT_VISUAL'
+          a=r['samples']
+          assert len(a)==114 and {(x['lod'],x['frame'],x['actor']) for x in a}.__len__()==114
+          assert all(x['maxOriginalPoseReconstructionErrorM']<.015 and x['maxPinnedFootErrorM']<.008 for x in a)
+          assert sum(x['pinCount'] for x in a)>0
+          print('NATIVE_EKZA_V25_TRUEPINS_114_SAMPLES_PASS')
+          PY
+      - name: SHA256 all outputs even after test failure
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          p=Path('oss-native-v25-report');p.mkdir(exist_ok=True)
+          files=[f for f in p.iterdir() if f.is_file() and f.name!='sha256-manifest.json']
+          (p/'sha256-manifest.json').write_text(json.dumps([
+            {'name':f.name,'bytes':f.stat().st_size,'sha256':hashlib.sha256(f.read_bytes()).hexdigest()}
+            for f in files],indent=2)+'\n')
+          PY
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-oss-ekza-v25-truepins-${{ github.sha }}
+          path: oss-native-v25-report/
+          retention-days: 14
+          if-no-files-found: warn
