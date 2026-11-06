@@ -95,3 +95,17 @@ La réussite comptable de 360 saisons est nécessaire mais **insuffisante**. Ajo
 Ajout au lot E7 : moteur de décision d'un **directeur financier délégué** qui utilise les mêmes règles que les dirigeants IA, pas un script de subvention. Ajout au lot E9 : mode Accompagné par défaut, Manager et Expert comme niveaux d'interface/gestion sans triche sur les taux économiques. Ajout à E10 : simulations d'agents naïfs/proactifs/prudents et tests manuels Chromium du parcours d'un novice. Mesurer le nombre de décisions imposées, alertes, crises incompréhensibles et actions réellement disponibles.
 
 **Règle produit** : si le moteur économique est réaliste mais que le joueur débutant ne peut jamais améliorer son club, le lot est refusé. Si le jeu donne systématiquement les fonds pour acheter tout le monde, il est refusé aussi.
+
+
+## Gate « le jeu reste amusant » — obligatoire au même titre que la réconciliation
+
+En plus des tests comptables et des 15 saisons, mesurer :
+- **Agency** : proportion de clubs ayant une décision sportive ou structurelle effectivement finançable dès la saison 1 ; comparer selon profil, ne pas définir de perf artificielle par changement de solde ;
+- **Frustration** : périodes consécutives où le joueur n'a aucune action concrète disponible, coût/durée pour sortir de crise, nombre d'alertes répétitives ;
+- **Progression** : capacité d'un club modeste à améliorer son niveau sportif avec plusieurs stratégies (formation, recrutement judicieux, sponsors/stade) sur 3 à 5 saisons ;
+- **Conséquences** : décisions risquées qui peuvent payer ou coûter, avec explication mesurable plutôt que tirage arbitraire ;
+- **Équité** : pas de club immédiatement paralysé par un déficit initial sans voie raisonnable de redressement ; une saison compliquée peut rester jouable ;
+- **Charge cognitive** : utilisateur novice comprenant son cash, ses marges et le prochain risque, sans consulter 8 panneaux ;
+- **Différences de modes** : Accompagné/Manager/Expert ne doivent pas changer arbitrairement les finances de la ligue, seulement le pilotage et la présentation.
+
+Scénarios manuels Chromium + testeurs : joueur à l'aise, novice, petit club en difficulté, gros club ambitieux ; vérifier les 2 résolutions PC et les explications d'alertes. Une CI de 360 saisons techniquement verte ne suffit jamais à conclure « fun ». Les résultats restent ORANGE tant que le ressenti joueur et l'équilibrage n'ont pas été évalués.
