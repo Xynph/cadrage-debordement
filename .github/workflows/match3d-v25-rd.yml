@@ -12,7 +12,71 @@ concurrency:
   group: match3d-v25-rd-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+
+  sole-ik-blender:
+    # Publish the actual original-tackle sole-IK evidence independently from
+    # the general Ara/Chromium laboratory. Never gate its upload on Chromium.
+    if: ${{ contains(github.event.head_commit.message, '[sole-ik-only]') || contains(github.event.head_commit.message, '[original-only]') || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v5
+        with:
+          ref: d6fbcb38438609c0ca461f54717655223b438b09
+          path: baseline
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run pinned Blender on true skinned-sole IK probe
+        id: blender
+        run: python tools/match3d-v25-lab/remote/original_tackle_runner.py
+      - name: Verify 3 LOD x 6 phases x 2 views and emit SHA256 manifest
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,os
+          out=Path("rd-report/original-tackle")
+          out.mkdir(parents=True,exist_ok=True)
+          paths=sorted(p for p in out.rglob("*") if p.is_file() and p.name!="sole-ik-manifest.json")
+          png=[p for p in paths if p.suffix.lower()==".png"]
+          report=out/"original-tackle-report.json"
+          meta={"head":os.environ.get("GITHUB_SHA"),"run":os.environ.get("GITHUB_RUN_ID"),
+            "expectedViews":36,"actualViews":len(png),
+            "hasReport":report.exists(),
+            "status":"EVIDENCE_PRESENT_NOT_ART_APPROVED" if report.exists() and len(png)==36 else "INCOMPLETE",
+            "files":[{"path":p.relative_to(out).as_posix(),"bytes":p.stat().st_size,
+                "sha256":hashlib.sha256(p.read_bytes()).hexdigest()} for p in paths]}
+          if report.exists():
+            try:
+              r=json.loads(report.read_text())
+              meta["reportStatus"]=r.get("status")
+              meta["trueSoleIKCalibrationPresent"]=all(
+                "trueSoleIKCalibration" in lod for lod in r.get("lods",[]))
+              meta["lods"]=len(r.get("lods",[]))
+            except Exception as e: meta["reportParseError"]=str(e)
+          (out/"sole-ik-manifest.json").write_text(json.dumps(meta,indent=2)+"\n")
+          print(json.dumps({k:v for k,v in meta.items() if k!="files"},indent=2))
+          if meta["status"]=="INCOMPLETE" or meta.get("lods")!=3 or not meta.get("trueSoleIKCalibrationPresent"):
+            raise SystemExit("Missing true-sole IK evidence; artifact still uploads")
+          PY
+      - name: Upload standalone Blender evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3d-v25-sole-ik-${{ github.sha }}
+          path: rd-report/original-tackle/
+          retention-days: 14
+          compression-level: 6
+          if-no-files-found: warn
   external-engines:
+    if: ${{ !contains(github.event.head_commit.message, '[sole-ik-only]') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -68,7 +132,7 @@ jobs:
     # A dedicated physics probe does not need to rerun the full 55-minute
     # Blender/Ara/Chromium baseline, whose pinned job remains independently
     # available and runs for ordinary R&D commits.
-    if: ${{ !startsWith(github.event.head_commit.message, 'test(v25-external):') && !contains(github.event.head_commit.message, '[idle-only]') && !contains(github.event.head_commit.message, '[paired-only]') && !contains(github.event.head_commit.message, '[duo-only]') && !contains(github.event.head_commit.message, '[original-only]') }}
+    if: ${{ !startsWith(github.event.head_commit.message, 'test(v25-external):') && !contains(github.event.head_commit.message, '[idle-only]') && !contains(github.event.head_commit.message, '[paired-only]') && !contains(github.event.head_commit.message, '[duo-only]') && !contains(github.event.head_commit.message, '[original-only]') && !contains(github.event.head_commit.message, '[sole-ik-only]') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     steps:
