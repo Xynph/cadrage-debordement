@@ -97,9 +97,10 @@ test('Native paired games: 2/5 recruits, 2/5 losses and rotation vs 3 opponents'
  const lab=N.laboratory(live,'legacy');
  const rank=league=>lab.clubs.filter(c=>c.league===league&&full(lab,c))
    .sort((a,b)=>lab.quality(a)-lab.quality(b)||a.slug.localeCompare(b.slug));
- const top=rank('top14'),pro=rank('prod2'),donors=top.slice(2,-1);
+ const top=rank('top14'),pro=rank('prod2');
  const promoted=pro.at(-1),middle=top[Math.floor(top.length/2)],strong=top.at(-1),
   weak=top[0],proMid=pro[Math.floor(pro.length/2)];
+ const donors=top.filter(c=>![weak.slug,middle.slug,strong.slug].includes(c.slug));
  assert.ok(donors.length>=3);
  const recruit2=simpleMoves(lab,promoted,donors,2);
  const recruit5=simpleMoves(lab,promoted,donors,5);
