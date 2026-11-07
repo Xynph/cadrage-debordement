@@ -3,6 +3,7 @@ extends SceneTree
 var app: Control
 var failures: Array[String] = []
 var checks := 0
+var capture_index := 0
 
 func _initialize() -> void:
 	if OS.get_environment("CD_GODOT_DATA_DIR").is_empty():
@@ -23,12 +24,110 @@ func button(node: Node, label: String) -> Button:
 		if found != null: return found
 	return null
 
+func wait_response() -> void:
+	var deadline := Time.get_ticks_msec() + 30000
+	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
+	check(not app.waiting, "Commande terminée dans le délai borné")
+	check(app.bridge.last_response_ok, "Réponse native réussie : " + app.last_command + " / " + app.last_error)
+
+func press(label: String) -> void:
+	var control := button(app, label)
+	check(control != null and control.visible and not control.disabled, "Commande utilisable : " + label)
+	if control != null and not control.disabled: control.pressed.emit()
+
+func capture(label: String) -> void:
+	if DisplayServer.get_name() == "headless": return
+	var folder := OS.get_environment("CD_GODOT_PACK_QA_CAPTURES")
+	if folder.is_empty(): return
+	DirAccess.make_dir_recursive_absolute(folder)
+	await process_frame
+	await RenderingServer.frame_post_draw
+	var image := root.get_texture().get_image()
+	check(image.save_png(folder.path_join(label+".png")) == OK, "Capture graphique : " + label)
+	capture_index += 1
+
+func sports(state: Dictionary) -> String:
+	var copy := state.duplicate(true)
+	copy.erase("identityPack")
+	return JSON.stringify(copy)
+
+func integration() -> void:
+	var archive := OS.get_environment("CD_GODOT_PACK_ARCHIVE")
+	if archive.is_empty(): return
+	app.pack_manager.inspect(archive)
+	await wait_response()
+	var preview: Dictionary = app.model.get("packs", {}).get("preview", {})
+	check(not preview.is_empty(), "Analyse réelle du ZIP fourni")
+	if preview.is_empty(): return
+	check(int(preview.get("counts", {}).get("players", 0)) == 1592, "Aperçu des1592identités")
+	check(int(preview.get("counts", {}).get("synthetic", 0)) == 43, "Aperçu distingue les43illustrations IA")
+	check(not app._has_career(), "Analyse : aucune création implicite de carrière")
+	await capture("pack-analyse")
+	press("INSTALLER CE PACK")
+	await wait_response()
+	check(app.model.packs.installed.size() == 1, "Pack installé et listé")
+	if app.model.packs.installed.size() != 1: return
+	var pack_id: String = str(app.model.packs.installed[0].id)
+	press("UTILISER CE PACK  →")
+	await wait_response()
+	check(app.model.packs.creation == pack_id, "Choix du pack pour nouvelle carrière")
+	app.selected_club = 23
+	app.club_division = "accession"
+	press("← RETOUR")
+	await process_frame
+	check(app.route == "Création", "Retour à la sélection de club")
+	check(str(app.catalogue[23].name) == "SU Agen", "Noms réels visibles avant création")
+	await capture("creation-rugby-reel")
+	press("PRENDRE LES RÊNES DE " + str(app.catalogue[23].abbr) + "  →")
+	await wait_response()
+	check(app.model.meta.database.active and int(app.model.club.id) == 23, "Vraie carrière commune créée depuis le bouton")
+	if not app._has_career(): return
+	check(app.model.packs.career == pack_id, "Carrière hérite du pack choisi")
+	app._navigate("Effectif")
+	app.selected_player = "lnr:14090"
+	app._render()
+	await capture("effectif-illustration-ia")
+	var synthetic: Dictionary = {}
+	for player: Dictionary in app.model.squad:
+		if str(player.id) == "lnr:14090": synthetic = player
+	check(synthetic.get("portraitStatus", "") == "synthetic", "Portrait IA réellement lié au bon joueur par ID")
+	check(str(synthetic.get("name", "")) == "Camille GERMAIN", "Identité réelle du joueur illustré")
+	app.selected_player = "lnr:12453"
+	app._render()
+	await capture("effectif-photo-officielle")
+	app._command("export")
+	await wait_response()
+	var before: Dictionary = JSON.parse_string(app.model.meta.exportText)
+	app.settings()
+	press("Packs et identités")
+	await process_frame
+	check(app.route == "Packs" and app.pack_manager.scope == "career", "Paramètres : deuxième entrée fonctionnelle des packs")
+	press("UTILISER LA BASE ANONYMISÉE")
+	await wait_response()
+	check(app.model.packs.career == "base" and app.model.packs.creation == pack_id, "Choix carrière indépendant du choix de création")
+	app._command("export")
+	await wait_response()
+	var after: Dictionary = JSON.parse_string(app.model.meta.exportText)
+	check(sports(before.state) == sports(after.state), "Bascule : joueurs/attributs/contrats/résultats intégralement identiques")
+	press("UTILISER CE PACK  →")
+	await wait_response()
+	check(app.model.packs.career == pack_id, "Réactivation du pack en carrière")
+	await capture("pack-actif-carriere")
+	app.pack_manager.back()
+	await process_frame
+	await capture("effectif-reel-retour")
+
 func _run() -> void:
 	app = load("res://main.tscn").instantiate()
+	if DisplayServer.get_name() != "headless":
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
+		root.size = Vector2i(1440, 900)
 	root.add_child(app)
 	var deadline := Time.get_ticks_msec() + 15000
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
 	check(not app.model.is_empty(), "Moteur natif connecté")
+	app.timer.stop()
+	await capture("accueil-oval-legacy")
 	app._navigate("Création")
 	await process_frame
 	var import_button := button(app, "PACKS ET IDENTITÉS")
@@ -55,6 +154,8 @@ func _run() -> void:
 	official.free()
 	synthetic.free()
 	absent.free()
+	await capture("packs-creation")
+	if failures.is_empty(): await integration()
 	app.bridge.stop()
 	deadline = Time.get_ticks_msec() + 2500
 	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await process_frame

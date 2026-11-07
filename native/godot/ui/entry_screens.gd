@@ -94,6 +94,22 @@ static func creation(app: Control) -> Control:
 	var list := G.v(12)
 	G.fill(list, true, 1.2)
 	row.add_child(list)
+	var packs: Dictionary = app.model.get("packs", {})
+	var pack_name := "BASE ANONYMISÉE"
+	for pack: Dictionary in packs.get("installed", []):
+		if str(pack.get("id", "")) == str(packs.get("creation", "base")):
+			pack_name = str(pack.get("name", "Pack personnalisé")).to_upper()
+	list.add_child(G.wrap("IDENTITÉS  /  " + pack_name, 12, G.GOLD))
+	var pack_choice := OptionButton.new()
+	pack_choice.add_item("Base anonymisée")
+	var pack_ids: Array[String] = ["base"]
+	for pack: Dictionary in packs.get("installed", []):
+		pack_choice.add_item(str(pack.get("name", "Pack personnalisé")))
+		pack_ids.append(str(pack.id))
+	pack_choice.select(maxi(0, pack_ids.find(str(packs.get("creation", "base")))))
+	pack_choice.disabled = app.waiting
+	pack_choice.item_selected.connect(func(index: int): app._command("pack_select", {"id":pack_ids[index],"scope":"creation"}))
+	list.add_child(pack_choice)
 	var divisions := G.h(8)
 	list.add_child(divisions)
 	for item in [["elite", "ÉLITE  /  14 CLUBS"], ["accession", "ACCESSION  /  16 CLUBS"]]:

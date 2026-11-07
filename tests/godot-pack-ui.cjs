@@ -8,8 +8,9 @@ test('Godot : packs personnalisés à la création et en carrière',{
  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'cd-pack-ui-'));
  const image=path.join(directory,'image.webp');
  fs.copyFileSync(path.resolve(__dirname,'../native/godot/assets/editorial/portraits-0.webp'),image);
- const result=spawnSync(process.env.CD_GODOT_EXECUTABLE,['--headless','--max-fps','120','--path','native/godot','--script',path.resolve(__dirname,'godot-pack-ui.gd')],{
-  cwd:path.resolve(__dirname,'..'),env:{...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:directory,CD_GODOT_PACK_TEST_IMAGE:image},encoding:'utf8',timeout:45000,windowsHide:true,
+ const args=[...(process.env.CD_GODOT_PACK_GRAPHICS==='1'?['--position','-4000,-4000']:['--headless']),'--max-fps','120','--path','native/godot','--script',path.resolve(__dirname,'godot-pack-ui.gd')];
+ const result=spawnSync(process.env.CD_GODOT_EXECUTABLE,args,{
+  cwd:path.resolve(__dirname,'..'),env:{...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:directory,CD_GODOT_PACK_TEST_IMAGE:image},encoding:'utf8',timeout:150000,windowsHide:true,
  });
  const output=(result.stdout||'')+(result.stderr||'');
  console.log(output.trim());

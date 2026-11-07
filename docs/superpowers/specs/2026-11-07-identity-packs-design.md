@@ -30,7 +30,7 @@ Le modèle expose `meta.database` pour la base commune. Le gestionnaire de packs
 
 Commandes du worker : `pack_inspect {path}`, `pack_install {path,digest}`, `pack_select {id,scope:'creation'|'career'}` ; `id:'base'` retire la couche. L’analyse est en lecture seule ; l’installation exige l’empreinte analysée et reste atomique. La sélection de carrière enregistre sa seule liaison, avec rollback disque/état/RNG en cas d’échec. Une sélection de création ne modifie pas la carrière ouverte.
 
-ZIP : limites explicites (512 Mio compressés, 768 Mio décompressés, 5 000 entrées, 16 Mio par image, 4 Mio de manifeste, 20 millions de pixels par image), chemins et Unicode normalisés, doublons insensibles à la casse, traversal/liens/chiffrement/ZIP64 refusés, décompression bornée et contrôles taille/CRC/SHA. Répertoire de staging et fichiers finaux confinés au profil physique ; aucune écriture au chemin déclaré par le ZIP. Rejet visible et ancien pack/carrière conservés. Les textures ont un cache borné ; pas de chargement simultané des 1 622 images.
+ZIP : limites explicites (512 Mio compressés, 768 Mio décompressés, 5 000 entrées, 16 Mio par image, 4 Mio de manifeste, 40 millions de pixels par image), chemins et Unicode normalisés, doublons insensibles à la casse, traversal/liens/chiffrement/ZIP64 refusés, décompression bornée et contrôles taille/CRC/SHA. Répertoire de staging et fichiers finaux confinés au profil physique ; aucune écriture au chemin déclaré par le ZIP. Rejet visible et ancien pack/carrière conservés. Les textures ont un cache borné ; pas de chargement simultané des 1 622 images.
 
 ## Réception et limites
 
@@ -38,3 +38,4 @@ Comparer les 1 592 profils construits aux statistiques actives du mod. Vérifier
 
 ## Nouveau nom choisi pendant le chantier
 Léo a explicitement retenu **Oval Legacy — Rugby Manager**. Le titre principal est Oval Legacy, le sous-titre Rugby Manager. Appliquer à l'accueil, la fenêtre Windows, la marque OL, la signalétique du stade, l'exécutable et le raccourci. Garder les identifiants internes et les lecteurs de formats de sauvegarde existants ; le dépôt GitHub et le chemin de travail E:/Cadrage-Debordement ne sont pas renommés. Pas de prétention de disponibilité juridique de la marque ; la recherche exploratoire n'est pas une validation de marque. L'interface reste française dans ce lot, traduction anglaise à planifier pour l'objectif international.
+

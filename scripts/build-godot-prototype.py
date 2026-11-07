@@ -121,6 +121,26 @@ def build(args):
         "Format2026/27 ; lois de match existantes2025, couverture partielle.\n"
         "34 semaines fictives, monde fermé sans Nationale ; stade3D générique.\n"
         "Préalpha à tester ; publication Steam et finition commerciale à venir.\n", encoding="utf-8")
+    modding = app / "Packs"
+    modding.mkdir()
+    example = {"schema": "cd-identity-pack-v1", "id": "mon-club", "name": "Mon univers", "version": "1.0.0",
+               "databaseId": "rugby-common-2026-10-31-v1", "rightsStatus": "user-provided",
+               "clubs": [{"id": 0, "name": "Les Albatros XV"}],
+               "players": [{"id": "lnr:2399", "name": "Mon premier joueur"}], "assets": []}
+    with zipfile.ZipFile(modding / "Exemple-identites.zip", "w", zipfile.ZIP_DEFLATED) as example_zip:
+        example_zip.writestr("pack.json", json.dumps(example, ensure_ascii=False, indent=2))
+    (modding / "LIRE-MOI.txt").write_text(
+        "PACKS OVAL LEGACY\n\nCréation → Packs et identités → Importer un pack ZIP.\n"
+        "En carrière : Menu → Paramètres → Packs et identités.\n"
+        "Après analyse, installer puis sélectionner le pack. La base anonymisée reste disponible.\n\n"
+        "Exemple-identites.zip contient un pack de noms sans images. Décompresser, modifier\n"
+        "pack.json puis zipper ce fichier à la racine du ZIP. Les IDs sont stables ;\n"
+        "les noms et images peuvent être partiels. Aucune statistique ne change.\n"
+        "Pour les images PNG/JPEG/WebP, déclarer assets [{id,path,sha256,bytes}], puis\n"
+        "référencer leur id dans clubs[].logo ou players[].portrait.\n"
+        "players[].synthetic=true signale une illustration IA. Les chemins restent relatifs.\n"
+        "Les images réelles du mod Rugby Réel sont fournies séparément par leur pack privé.\n",
+        encoding="utf-8")
     files = {p.relative_to(app).as_posix(): {"sha256": digest(p), "bytes": p.stat().st_size}
              for p in sorted(app.rglob("*")) if p.is_file()}
     (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": "0.3.0", "mode": "common", "files": files}, indent=2), encoding="utf-8")

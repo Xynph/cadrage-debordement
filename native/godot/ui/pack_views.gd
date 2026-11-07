@@ -14,6 +14,7 @@ static func page(app: Control) -> Control:
 	G.fill(row, true)
 	page.add_child(row)
 	var intro := G.panel(row, 0.8)
+	var compatible: bool = app.pack_manager.scope == "creation" or app.model.get("meta", {}).get("database", {}).get("active", false)
 	intro.add_child(G.label("UNE BASE COMMUNE", 13, G.GOLD))
 	intro.add_child(G.label("30 CLUBS\n1 592 JOUEURS", 46, G.INK, true))
 	intro.add_child(G.wrap("Les mêmes joueurs. Les mêmes capacités. Une autre façon de les reconnaître.", 22, G.INK))
@@ -22,7 +23,7 @@ static func page(app: Control) -> Control:
 	intro.add_child(G.wrap("Les joueurs générés au fil des saisons restent fictifs. Les photos officielles et les illustrations IA sont distinguées sur les fiches.", 12))
 	intro.add_child(G.spacer())
 	var base := G.button("UTILISER LA BASE ANONYMISÉE", func(): app.pack_manager.select("base"))
-	base.disabled = app.waiting
+	base.disabled = app.waiting or not compatible
 	intro.add_child(base)
 	var content := G.panel(row, 1.6)
 	var commands := G.h()
@@ -36,9 +37,11 @@ static func page(app: Control) -> Control:
 	var packs: Dictionary = app.model.get("packs", {})
 	var selected := str(packs.get(app.pack_manager.scope, "base"))
 	content.add_child(G.wrap("Sélection pour la création uniquement : la carrière ouverte n’est pas modifiée." if app.pack_manager.scope == "creation" else "Cette sélection s’applique à la carrière ouverte et sera conservée dans ses sauvegardes.", 12))
+	if not compatible:
+		content.add_child(G.wrap("Cette ancienne carrière utilise des joueurs générés. Créez une carrière sur la base commune pour pouvoir changer ses identités. Vous pouvez déjà installer vos packs ici.", 13, Color("f1b6a9")))
 	var missing: Array = packs.get("missing", [])
 	if not missing.is_empty():
-		content.add_child(G.wrap("PACK MANQUANT · " + ", ".join(missing) + "\nLa base anonymisée est affichée. Réimportez votre pack pour retrouver ses images et ses noms.", 13, Color("f1b6a9")))
+		content.add_child(G.wrap("PACK MANQUANT · " + ", ".join(missing) + "\nLes identités concernées utilisent la base anonymisée. Réimportez le pack pour retrouver ses images et ses noms.", 13, Color("f1b6a9")))
 	var list := G.scroll(content)
 	var preview: Dictionary = packs.get("preview", {}) if packs.get("preview") is Dictionary else {}
 	if not preview.is_empty():
@@ -51,11 +54,13 @@ static func page(app: Control) -> Control:
 		var card := G.v(8)
 		list.add_child(card)
 		card.add_child(G.separator())
-		card.add_child(G.label(str(pack.get("name", "Pack personnalisé")), 27, G.INK, true))
+		var pack_title := G.label(str(pack.get("name", "Pack personnalisé")), 27, G.INK, true)
+		pack_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		card.add_child(pack_title)
 		card.add_child(G.wrap(_coverage(pack), 13))
 		var active: bool = str(pack.get("id", "")) == selected
 		var choice := G.button("PACK ACTIF" if active else "UTILISER CE PACK  →", func(): app.pack_manager.select(str(pack.id)), not active)
-		choice.disabled = active or app.waiting
+		choice.disabled = active or app.waiting or not compatible
 		card.add_child(choice)
 	if selected == "base": content.add_child(G.label("ACTUELLEMENT · BASE ANONYMISÉE", 11, G.GOLD))
 	if not app.last_error.is_empty(): content.add_child(G.wrap(app.last_error, 13, Color("f1b6a9")))
@@ -69,7 +74,9 @@ static func _coverage(pack: Dictionary) -> String:
 
 static func _preview(app: Control, parent: VBoxContainer, pack: Dictionary) -> void:
 	parent.add_child(G.label("PRÊT À INSTALLER", 12, G.GOLD))
-	parent.add_child(G.label(pack.get("name", "Pack personnalisé"), 30, G.INK, true))
+	var title := G.label(pack.get("name", "Pack personnalisé"), 30, G.INK, true)
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	parent.add_child(title)
 	parent.add_child(G.wrap(_coverage(pack), 14))
 	parent.add_child(G.wrap("L’installation ajoute le pack à votre profil. Vous pourrez ensuite le sélectionner ; votre carrière ne sera pas remplacée.", 12))
 	if pack.get("rightsStatus", "") == "not-cleared-for-public-distribution":
