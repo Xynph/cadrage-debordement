@@ -4,17 +4,18 @@ on:
     paths:
       - 'tests/rugby-real-zero-room-native-v15-20261107.cjs'
       - 'tests/rugby-real-zero-room-calibration-v15-20261107.cjs'
+      - 'tests/rugby-real-division-roster-sensitivity-v15-20261107.cjs'
       - 'docs/rugby-real-zero-room-native-v15-20261107.md'
       - '.github/workflows/rugby-real-zero-room-native-v15.yml'
   workflow_dispatch:
 jobs:
   zero-room-native:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Observe native TOP14 long careers and save roundtrips
-        run: node --test tests/rugby-real-zero-room-native-v15-20261107.cjs tests/rugby-real-zero-room-calibration-v15-20261107.cjs
+        run: node --test tests/rugby-real-zero-room-native-v15-20261107.cjs tests/rugby-real-zero-room-calibration-v15-20261107.cjs tests/rugby-real-division-roster-sensitivity-v15-20261107.cjs
