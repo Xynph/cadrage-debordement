@@ -62,7 +62,8 @@ function worldRecordResult(result){
   const id=result.pair[side],info=worldClub(id);
   if(!info)continue;
   const score=result.score[side],other=result.score[1-side];
-  info.consecutiveLosses=score<other?Math.min(20,info.consecutiveLosses+1):0;
+  const lost=typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)?CDFranceCompetition.outcome(result,id)<0:score<other;
+  info.consecutiveLosses=lost?Math.min(20,info.consecutiveLosses+1):0;
  }
  return true;
 }
@@ -76,7 +77,7 @@ function worldWeeklyEconomy(results){
   if(c.id===S.club){ledgerEntry(label()+' · Entretien des installations',-upkeep);continue}
   const home=results.find(r=>r.pair[0]===c.id&&!r.neutral);
   const own=results.find(r=>r.pair.includes(c.id));
-  const won=own?own.score[own.pair.indexOf(c.id)]>own.score[1-own.pair.indexOf(c.id)]:false;
+  const won=own?(typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)?CDFranceCompetition.outcome(own,c.id)>0:own.score[own.pair.indexOf(c.id)]>own.score[1-own.pair.indexOf(c.id)]):false;
   const wage=c.players.reduce((sum,p)=>sum+p.salary,0);
   // Même barème hebdomadaire de base que le club humain ; billetterie à 360 k€ fictifs.
   c.cash+=160000-wage+(home?360000:0)+(won?80000:0)-upkeep;
@@ -114,16 +115,17 @@ function worldEndSeason(){
   careerRecord('award','Distinction interne : '+p.name+' (note et minutes)',S.club,'world-award-'+S.season);
  }
  const standings=ranking.map((c,index)=>{
+  const division=S.franceMode?CDFranceCompetition.ranked(S,CDFranceCompetition.leagueId(S,c.id)):null,position=division?division.findIndex(x=>x.id===c.id)+1:index+1,leagueSize=division?division.length:14;
   const info=worldClub(c.id),next=CDReputation.update({
-   current:info.reputation,leagueFinish:S.franceMode?CDFranceCompetition.ranked(S,CDFranceCompetition.leagueId(S,c.id)).findIndex(x=>x.id===c.id)+1:index+1,leagueSize:S.franceMode?CDFranceCompetition.members(S,CDFranceCompetition.leagueId(S,c.id)).length:14,
+   current:info.reputation,leagueFinish:position,leagueSize,
    champion:c.id===(S.franceMode?S.franceMode.leagues[CDFranceCompetition.leagueId(S,c.id)].champion:winner),financeHealthy:c.cash>=0});
   info.reputation=next.next;
   const risk=CDCoachMarket.dismissalRisk({
    confidence:info.coachConfidence,consecutiveLosses:info.consecutiveLosses});
-  if(c.id!==S.club&&risk.critical&&index>=8){
+  if(c.id!==S.club&&risk.critical&&(division?position>leagueSize-6:index>=8)){
    info.coachConfidence=55;info.coachChanges++;
-  }else info.coachConfidence=clamp(info.coachConfidence+(index<6?4:-3),0,100);
-  return {id:c.id,position:S.franceMode?CDFranceCompetition.ranked(S,CDFranceCompetition.leagueId(S,c.id)).findIndex(x=>x.id===c.id)+1:index+1,cash:Math.round(c.cash),
+  }else info.coachConfidence=clamp(info.coachConfidence+((division?position<=6:index<6)?4:-3),0,100);
+  return {id:c.id,position,cash:Math.round(c.cash),
    reputation:info.reputation,facilities:info.facilities,debt:Math.round(info.debt),
    coachRisk:risk.risk};
  });

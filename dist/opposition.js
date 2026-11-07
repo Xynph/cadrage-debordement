@@ -4,7 +4,7 @@ const PENALTY_POLICIES={auto:'Selon le contexte',points:'Chercher les points',to
 function normalizeOppositionSnapshot(state){if(!state.difficulty)state.difficulty='classique';if(state.defence===undefined)state.defence='equilibre';for(let c of state.clubs){if(c.morale===undefined){let value=75;for(let f of c.form)value=clamp(value+(f==='V'?6:f==='D'?-5:1),25,98);c.morale=value}}return state}
 function setupOpposition(){if(S)normalizeOppositionSnapshot(S)}
 function clubMorale(ci){return ci===S.club?S.morale:(S.clubs[ci].morale??75)}
-function updateOppositionMorale(r){r.pair.forEach((ci,i)=>{if(ci===S.club)return;const diff=r.score[i]-r.score[1-i];S.clubs[ci].morale=clamp(clubMorale(ci)+(diff>0?6:diff<0?-5:1),25,98)})}
+function updateOppositionMorale(r){r.pair.forEach((ci,i)=>{if(ci===S.club)return;const diff=typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)?CDFranceCompetition.outcome(r,ci):r.score[i]-r.score[1-i];S.clubs[ci].morale=clamp(clubMorale(ci)+(diff>0?6:diff<0?-5:1),25,98)})}
 function difficultyLevel(l=null){return l?.aiLevel||S.difficulty||'classique'}
 function managerStyle(ci){return ['conquete','large','occupation','equilibre'][ci%4]}
 function sheetAverage(c,ids,key,filter=()=>true){let players=ids.map(id=>c.players.find(p=>p.id===id)).filter(p=>p&&filter(p));return players.length?mean(players.map(p=>skill(p,key,true))):25}

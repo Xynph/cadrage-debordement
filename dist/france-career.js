@@ -6,13 +6,36 @@ const CDFranceCareer=(()=>{
   CDFranceCompetition.beginSeason(S,true);setupOpposition();setupEconomy();setupDevelopment();club().players.forEach(ensureSatisfaction);v39Initialize();autoLineup();refreshMarket();setupManager();careerSetup();worldSetup();aiRosterYouthIntake();save();view='dashboard';entryScreen='game';
  }
  function context(pair){return CDFranceCompetition.currentFixtures(S).find(f=>f.pair[0]===pair[0]&&f.pair[1]===pair[1])||null;}
+ function ensureAISheet(c){
+  if(c.id===S.club)return;
+  let sh=buildSheet(c);
+  for(let slot=0;slot<23;slot++){
+   if(slot<15?sh.lineup[slot]:sh.bench[slot-15])continue;
+   if(c.players.length>=100)throw Error('Effectif IA '+c.abbr+' : plafond de 100 joueurs atteint, feuille qualifiée impossible.');
+   const target=slot<15?slot:[1,0,2,3,5,8,9,10][slot-15];
+   if(!aiRosterPromote(c,target,true)){
+    const ids=new Set([...S.clubs.flatMap(x=>x.players),...S.aiRoster.academies.flatMap(a=>a.players),...S.development.academy,...S.market,...S.economy.freeAgents].map(p=>p.id));let serial=500;
+    while(ids.has('youth-'+c.id+'-'+S.season+'-'+serial))serial++;
+    const p=academyPlayer(c.id,target,S.season,serial,true);
+    p.rating=clamp(c.base-15+seedHash(p.id)%9,54,82);delete p.skills;ensureSkills(p);delete p.dev;ensureDevelopment(p);
+    p.contractEnd=S.season+2;p.academy=false;c.players.push(p);aiRosterEvent(c.id,'emergency',p);
+   }
+   sh=buildSheet(c);
+  }
+  if([...sh.lineup,...sh.bench].filter(Boolean).length!==23)throw Error('Effectif IA '+c.abbr+' : aucun renfort qualifié disponible pour compléter les 23.');
+ }
  function result(l){return {pair:l.pair.slice(),score:l.score.slice(),tries:l.tries.slice(),stats:JSON.parse(JSON.stringify(l.stats)),weather:l.weather,duration:l.minute,...(l.franceContext.phase!=='league'?{winner:l.winner,decision:JSON.parse(JSON.stringify(l.decision))}:{})};}
  function simulate(f){const l=createRugbyMatch(f.pair,null,true);for(let n=0;!l.finished;n++){if(n>500)throw Error('Limite de simulation France atteinte.');l.paused=false;advanceRugby(l);}applyMatchInjuries(l);return result(l);}
+ function recordOwnOutcome(r){
+  if(!r)return false;const d=CDFranceCompetition.outcome(r,S.club),before=S.morale;
+  S.morale=clamp(S.morale+(d>0?6:d<0?-5:1),25,98);S.trust=clamp(S.trust+(d>0?3:d<0?-2:0),0,100);recordClubMorale(before,d);
+  news(`${d>0?'Victoire':d<0?'Défaite':'Match nul'} : ${S.clubs[r.pair[0]].abbr} ${r.score.join(' – ')} ${S.clubs[r.pair[1]].abbr}.`);return d>0;
+ }
  function finishWeek(){
   if(S.franceMode.week>=34||S.live&&!S.live.finished)throw Error('Semaine indisponible.');
   trainWeek();captureReport();const fixtures=CDFranceCompetition.currentFixtures(S),ownFixture=CDFranceCompetition.userFixture(S),results=[];
-  for(const f of fixtures){const r=S.live&&f.pair.includes(S.club)?result(S.live):simulate(f);updateOppositionMorale(r);CDFranceCompetition.record(S,r,f);worldRecordResult({...r,franceContext:f});results.push({...r,...f});}
-  const own=results.find(r=>r.pair.includes(S.club));let won=false;if(own){const i=own.pair.indexOf(S.club),d=own.score[i]-own.score[1-i];won=own.winner!==undefined?own.winner===S.club:d>0;const before=S.morale;S.morale=clamp(S.morale+(won?6:d<0?-5:1),25,98);S.trust=clamp(S.trust+(won?3:d<0?-2:0),0,100);recordClubMorale(before,d);news(`${won?'Victoire':d<0?'Défaite':'Match nul'} : ${S.clubs[own.pair[0]].abbr} ${own.score.join(' – ')} ${S.clubs[own.pair[1]].abbr}.`);}
+  for(const f of fixtures){const r=S.live&&f.pair.includes(S.club)?result(S.live):simulate(f);updateOppositionMorale({...r,...f});CDFranceCompetition.record(S,r,f);worldRecordResult({...r,franceContext:f});results.push({...r,...f});}
+  const own=results.find(r=>r.pair.includes(S.club)),won=recordOwnOutcome(own);
   financeWeek(ownFixture?.neutral?null:ownFixture?.pair,won);worldWeeklyEconomy(results);careerBoardWeekReview();recordSatisfactionRound(S.live);recordIndividualObjectivesRound(S.live);S.live=null;S.trained=false;CDFranceCompetition.closeWeek(S);
   if(S.phase==='ended'){for(const id of ['elite','accession'])careerRecord('trophy',id==='elite'?'Champion de l’élite':'Champion de la division accession',S.franceMode.leagues[id].champion,'france-'+id);S.worldManagement.champion=S.franceMode.leagues.elite.champion;news(S.ending);}
   refreshMarket();repairSheet();save();view='dashboard';
@@ -23,5 +46,5 @@ const CDFranceCareer=(()=>{
   for(const c of S.clubs){c.points=c.played=c.won=c.drawn=c.lost=c.pf=c.pa=c.bonus=0;c.form=[];c.morale=75;for(const p of c.players){p.condition=100;p.injury=0;p.managerLoad={minutes:0,streak:0};if(p.physicalLoad)p.physicalLoad.fatigue=0;}}
   ledgerEntry('Financement de début de saison',2500000);worldNewSeason();S.morale=75;beginDevelopmentSeason();resetSatisfactionSeason();v39SeasonReset();careerSeasonStart();autoLineup();if(sheetErrors().length)promoteCover();refreshMarket();managerMobilityOnSeasonStart();CDFranceCompetition.project(S);news(`Saison ${S.season} : les promotions et relégations ont été appliquées. Monde fermé sans Nationale.`);save();
  }
- return Object.freeze({start:startFrance,context,result,simulate,finishWeek,advance});
+ return Object.freeze({start:startFrance,context,ensureAISheet,result,simulate,recordOwnOutcome,finishWeek,advance});
 })();
