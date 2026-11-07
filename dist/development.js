@@ -92,6 +92,11 @@ function potentialAtRole(p){ensureDevelopment(p);return roleNote({...p,rating:p.
 function ageGrowth(p){return p.age<=22?1.4:p.age<=26?1:p.age<=29?.5:p.age<=31?.15:0}
 function growPlayer(p,xp,allowFocus=true){
  ensureDevelopment(p);
+ // V12: activity/training feeds the single annual V11 curve, not legacy rating XP.
+ if(p.lnrRatingsVersion===1){
+  if(Number.isFinite(xp)&&xp>0)p.dev.xp=clamp(p.dev.xp+xp,0,.99);
+  return 0;
+ }
  if(!Number.isFinite(xp)||xp<=0||p.rating>=p.dev.potential){
   if(p.rating>=p.dev.potential){p.dev.xp=0;if(p.dev.specialization)p.dev.specialization.xp=0}
   return 0;
@@ -120,7 +125,33 @@ function setupDevelopment(backup=false){if(!S)return;const fresh=!S.development;
 S.development=S.development||{version:1,academy:[],intakeSeason:0,rolledSeason:0,retired:[]};S.clubs.forEach(c=>c.players.forEach(ensureDevelopment));S.market.forEach(ensureDevelopment);S.economy.freeAgents.forEach(ensureDevelopment);if(fresh&&S.live)S.live.devBaseline=S.live.sheets.map(s=>({...s.minutes}));intakeYouth();if(fresh&&backup)news('Formation et carrières activées : niveaux, contrats et résultats conservés. Le suivi des minutes commence maintenant.')}
 function promoteYouth(id){if(economyLocked())return false;const d=S.development,p=d.academy.find(p=>p.id===id);if(!p||club().players.length>=42){toast('Promotion impossible : joueur indisponible ou effectif complet (42 joueurs).');return false}d.academy=d.academy.filter(p=>p.id!==id);p.academy=false;p.joinedSeason=S.season;p.joinedRound=S.round;p.contractEnd=contractBase()+1;club().players.push(p);if(satisfactionActive())ensureSatisfaction(p);careerPromoteYouth(p);transferEvent(`${p.name} signe son premier contrat professionnel jusqu’à la fin de la saison ${p.contractEnd}, à ${money(p.salary)} par semaine.`);save();render();toast('Le jeune est disponible dans votre effectif.');return true}
 function retirementSeason(p){ensureDevelopment(p);return S.season+Math.max(0,p.dev.retireAge-p.age-1)}
-function ageDevelopmentPlayer(p){ensureDevelopment(p);if(p.dev.lastYear===S.season)return;p.dev.lastYear=S.season;const d=p.dev;d.history.push({season:S.season,age:p.age,start:d.seasonStart,end:p.rating,minutes:d.minutes,appearances:d.appearances});d.history=d.history.slice(-12);p.age++;const threshold=p.fam<=3?34:32;const decline=p.age>=threshold?(p.age>=37?2:1):0;p.rating=clamp(p.rating-decline,45,99);d.potential=Math.max(p.rating,d.potential-decline);if(decline){p.skills.speed=clamp(p.skills.speed-decline,15,99);p.skills.stamina=clamp(p.skills.stamina-decline,15,99);p.skills.mental=clamp(p.skills.mental+decline,15,99)}d.decline=decline;d.seasonStart=p.rating;d.minutes=0;d.appearances=0;d.xp=0;if(d.specialization)d.specialization.xp=0;p.condition=100;p.injury=0}
+function ageDevelopmentPlayer(p){ensureDevelopment(p);if(p.dev.lastYear===S.season)return;
+ if(p.lnrRatingsVersion===1){
+  if(typeof LNR_V11_AGE==='undefined'||typeof lnrProjectV12!=='function')throw Error('Courbes V11 manquantes');
+  const d=p.dev,old=p.rating,oldSkills={...p.skills};
+  d.lastYear=S.season;
+  d.history.push({season:S.season,age:p.age,start:d.seasonStart,end:p.rating,minutes:d.minutes,appearances:d.appearances});
+  d.history=d.history.slice(-12);
+  // Virtual ceiling reconciles historical potential to the role-rating scale without
+  // overwriting the source potential, hidden traits, or initial attributes.
+  const virtualPotential=clamp(Math.max(p.rating,d.potential),20,97);
+  const input={...p,potential:virtualPotential};
+  const evolved=LNR_V11_AGE.step(input,{playerId:p.id,age:p.age,season:S.season,lastSeason:null},
+   {minutes:Math.min(3500,d.minutes),training:Math.min(1,d.xp*4),injuryWeeks:Math.min(52,p.injury||0),load:0});
+  p.attributesV2=evolved.player.attributesV2;
+  p.skills=lnrProjectV12(p);
+  p.age=evolved.state.age;
+  const skillBefore=Object.values(oldSkills).reduce((n,v)=>n+v,0)/11;
+  const skillAfter=Object.values(p.skills).reduce((n,v)=>n+v,0)/11;
+  p.rating=clamp(Math.round(old+skillAfter-skillBefore),20,97);
+  p.skillBase=p.rating; // Prevent skill() double counting the annual delta.
+  d.potential=Math.max(p.rating,d.potential);
+  d.decline=Math.max(0,Math.min(5,old-p.rating));d.seasonStart=p.rating;
+  d.minutes=0;d.appearances=0;d.xp=0;
+  if(d.specialization)d.specialization.xp=0;
+  p.condition=100;p.injury=0;
+  return;
+ }p.dev.lastYear=S.season;const d=p.dev;d.history.push({season:S.season,age:p.age,start:d.seasonStart,end:p.rating,minutes:d.minutes,appearances:d.appearances});d.history=d.history.slice(-12);p.age++;const threshold=p.fam<=3?34:32;const decline=p.age>=threshold?(p.age>=37?2:1):0;p.rating=clamp(p.rating-decline,45,99);d.potential=Math.max(p.rating,d.potential-decline);if(decline){p.skills.speed=clamp(p.skills.speed-decline,15,99);p.skills.stamina=clamp(p.skills.stamina-decline,15,99);p.skills.mental=clamp(p.skills.mental+decline,15,99)}d.decline=decline;d.seasonStart=p.rating;d.minutes=0;d.appearances=0;d.xp=0;if(d.specialization)d.specialization.xp=0;p.condition=100;p.injury=0}
 function rollDevelopmentYear(){const d=S.development;if(d.rolledSeason===S.season)return;d.rolledSeason=S.season;const retiredIds=new Set(),seen=new Set();const all=[...S.clubs.flatMap(c=>c.players),...S.economy.freeAgents,...d.academy];for(let p of all){if(seen.has(p.id))continue;seen.add(p.id);ageDevelopmentPlayer(p);if(p.age>=p.dev.retireAge){retiredIds.add(p.id);let owner=S.clubs.find(c=>c.players.some(x=>x.id===p.id));d.retired.unshift({name:p.name,id:p.id,age:p.age,season:S.season,club:owner?.name||p.formerClub||'Agent libre',minutes:p.dev.careerMinutes});if(owner?.id===S.club)transferEvent(`${p.name} prend sa retraite à ${p.age} ans. Son salaire ne sera plus versé.`);else aiRosterRetirement(p,owner)}}for(let c of S.clubs)c.players=c.players.filter(p=>!retiredIds.has(p.id));S.economy.freeAgents=S.economy.freeAgents.filter(p=>!retiredIds.has(p.id));S.market=S.market.filter(p=>!retiredIds.has(p.id));d.academy=d.academy.filter(p=>p.age<=21);S.lineup=S.lineup.map(id=>retiredIds.has(id)?null:id);S.reserves=S.reserves.map(id=>retiredIds.has(id)?null:id);d.retired=d.retired.slice(0,80)}
 function renewAIYouth(){if(aiRosterActive())return aiRosterYouthIntake();for(let c of S.clubs){if(c.id===S.club)continue;let sheet=buildSheet(c),serial=0;for(let i=0;i<23;i++){let isBench=i>=15,j=isBench?i-15:i,id=isBench?sheet.bench[j]:sheet.lineup[j];if(id)continue;const slot=isBench?[1,0,2,3,5,8,9,10][j]:j,p=academyPlayer(c.id,slot,S.season,100+serial++);p.rating=clamp(c.base-15+seedHash(p.id)%9,54,82);delete p.skills;ensureSkills(p);delete p.dev;ensureDevelopment(p);p.contractEnd=S.season+2;p.academy=false;c.players.push(p);sheet=buildSheet(c)}for(let i=0;i<2&&c.players.length<34;i++){let p=academyPlayer(c.id,(S.season+i*7+c.id)%15,S.season,i);p.contractEnd=S.season+2;p.academy=false;c.players.push(p)}}}
 function beginDevelopmentSeason(){intakeYouth();renewAIYouth()}
