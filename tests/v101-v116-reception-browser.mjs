@@ -37,7 +37,7 @@ try{
  const initial=await page.evaluate(()=>JSON.stringify(S));
  await page.evaluate(()=>nav('formation'));
  const youth=page.locator('.cd04-panel').filter({hasText:'V101–V104'});
- const formationDiagnostic=await page.evaluate(()=>({view:typeof view!=='undefined'?view:null,sections:[...document.querySelectorAll('.cd04-content,.cd04-panel,[data-da43-section="formation"]')].slice(0,12).map(el=>({tag:el.tagName,cls:el.className,text:el.textContent?.slice(0,90),hidden:el.hidden,display:getComputedStyle(el).display})),panels:document.querySelectorAll('.cd04-panel').length}));
+ const formationDiagnostic=await page.evaluate(()=>({view:typeof view!=='undefined'?view:null,sections:[...document.querySelectorAll('.cd04-content,.cd04-panel,[data-da43-section="formation"]')].map(el=>({tag:el.tagName,cls:el.className,text:el.textContent?.slice(0,90),hidden:el.hidden,display:getComputedStyle(el).display})),panels:document.querySelectorAll('.cd04-panel').length,ui:document.querySelectorAll('.cd04-panel').length,formationHeading:[...document.querySelectorAll('.cd04-panel h2')].map(x=>x.textContent),selected:[...document.querySelectorAll('[data-da42-page]')].map(x=>({p:x.getAttribute('data-da42-page'),display:getComputedStyle(x).display}))}));
  console.log('FORMATION_DIAGNOSTIC',JSON.stringify(formationDiagnostic));
  check('Formation : panneau visible dans la page native',await youth.count()===1&&await youth.isVisible());
  check('Formation : diagnostic present',await youth.getByText('Diagnostic de coherence').count()===1);
