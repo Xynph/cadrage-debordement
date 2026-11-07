@@ -1,6 +1,6 @@
 # Oval Legacy 27 — base commune et packs, Godot 0.3
 
-Réception Windows du 7 novembre 2026. Code de l'exécutable reçu : `d1a2788`, après intégration des tâches base commune, packs et interface. La documentation ultérieure ne change pas ce binaire. Publication et CI GitHub constituent des preuves distinctes ; aucun statut futur n'est compté réussi ici.
+Réception Windows du 7 novembre 2026. Code de l'exécutable reçu : `2b40e2d`, après intégration des tâches base commune, packs et interface. La documentation ultérieure ne change pas ce binaire. Publication et CI GitHub constituent des preuves distinctes ; aucun statut futur n'est compté réussi ici.
 
 ## Ce qui est livré
 
@@ -53,16 +53,16 @@ Machine : Windows 11, Godot 4.7.2 officiel, GL Compatibility/OpenGL 3.3, RTX 408
 | Installation du vrai ZIP | 1 622 images et leurs empreintes reçues ; sélection indépendante, identité après transfert, sauvegarde inchangée sauf liaison du pack |
 | Entrées hostiles et erreurs disque | Bornes ZIP, chemins, corruption, empreintes, source remplacée, staging et persistance refusés sans écraser l'installation précédente |
 | Décodage réel des images dans Godot | 1 622 décodages réussis, aucun échec ; maximum source 33 151 500 pixels ; 39,4 secondes pour la campagne séquentielle |
-| Parcours graphique de packs depuis le SDK Windows | **86/86 contrôles à 1440×900 et 86/86 à 1920×1080**, import fourni et second personnalisé par les vrais contrôles, création et paramètres, réel/base/réel, mention IA |
-| EXE release extrait et déplacé | **505/505 contrôles**, dix vues et deux résolutions, offre, renforts explicitement confirmés, matchs, saison complète, saison 2, export puis réimport |
+| Parcours graphique de packs depuis le SDK Windows | **167/167 contrôles à 1440×900 et 167/167 à 1920×1080**, import fourni et second personnalisé par les vrais contrôles, création et paramètres, réel/base/réel, mention IA |
+| EXE release extrait et déplacé | **502/502 contrôles**, dix vues et deux résolutions, offre, renforts explicitement confirmés, matchs, saison complète, saison 2, export puis réimport |
 | Autonomie de cette archive | 68 fichiers du manifeste vérifiés ; PATH sans Node installé, redémarrage avec le Node embarqué ; zéro connexion TCP observée, zéro processus orphelin |
 | Redémarrage en lecture | Club 29, saison 2, mode commun ; fichier de sauvegarde inchangé après snapshot |
 
-Le premier scénario de réception commun échouait avant le premier match car il omettait les renforts explicitement nécessaires à Valence. Le scénario a été corrigé pour utiliser le vrai bouton de composition et sa confirmation salariale ; aucun poste ni règle n'a été modifié pour faire passer le test. Un essai supplémentaire de lancer le script externe de test dans l'export release n'est pas une preuve : `--script` est réservé aux builds de développement. Il a été arrêté, sans modifier le produit. Les 86 contrôles de packs restent une preuve SDK distincte des 505 contrôles de l'EXE.
+Le premier scénario de réception commun échouait avant le premier match car il omettait les renforts explicitement nécessaires à Valence. Le scénario a été corrigé pour utiliser le vrai bouton de composition et sa confirmation salariale ; aucun poste ni règle n'a été modifié pour faire passer le test. Un essai supplémentaire de lancer le script externe de test dans l'export release n'est pas une preuve : `--script` est réservé aux builds de développement. Il a été arrêté, sans modifier le produit. Les 167 contrôles de packs restent une preuve SDK distincte des 502 contrôles de cet EXE. Le compteur dépend des actions nécessaires pendant la saison, notamment des promotions : les 505 contrôles du paquet précédent ne sont pas transférés au nouveau ZIP.
 
-Archive reçue : `OvalLegacy27-PrototypeGodot-Windows-x64.zip`, **179 295 315 octets**.
+Archive reçue : `OvalLegacy27-PrototypeGodot-Windows-x64.zip`, **179 296 914 octets**.
 
-SHA256 : `64c14b14548232e815735869ad2b6db4943a125abcb4fa1cf41310b6d440e32a`.
+SHA256 : `6f2eae1fdf7407e18db658a61817cbbfc187c62715ffedd2560c2a9c71ea6007`.
 
 Décompresser le dossier complet et lancer `OvalLegacy27.exe`. Aucun navigateur, Godot ni Node à installer. Le profil historique `%APPDATA%/CadrageDebordement/PrototypeGodot` reste distinct de l'exécutable ; sur le poste de Léo, sa jonction vise `E:/Cadrage-Debordement/donnees/PrototypeGodot`. Garder les erreurs d'écriture visibles ; aucun repli de stockage silencieux.
 
@@ -71,7 +71,7 @@ node scripts/build-rugby-common.cjs --check
 python scripts/build-godot-prototype.py --sdk SDK_GODOT_WINDOWS_4.7.2 --node NODE_WINDOWS --output NOUVEAU_DOSSIER
 ```
 
-Le constructeur inclut seulement les modules du worker, la compilation anonymisée et le module pur de progression déjà actif. Il refuse les autres fichiers LNR et une sortie déjà existante. Les licences du moteur, des fontes, du modèle et des photos accompagnent le ZIP. Les preuves privées sont sous `E:/Cadrage-Debordement/artefacts/` : `godot-native-qa/oval-legacy-27-final02`, `mod-packs-ui-logo-final-*` et `mod-packs-image-decode-report.json`. Aucun portrait officiel n'est publié ici par une capture d'écran.
+Le constructeur inclut seulement les modules du worker, la compilation anonymisée et le module pur de progression déjà actif. Il refuse les autres fichiers LNR et une sortie déjà existante. Les licences du moteur, des fontes, du modèle et des photos accompagnent le ZIP. Les preuves privées sont sous `E:/Cadrage-Debordement/artefacts/` : `godot-native-qa/oval-legacy-27-final03`, `oval-legacy-27-final-packs-*` et `mod-packs-image-decode-report.json`. Aucun portrait officiel n'est publié ici par une capture d'écran.
 
 ## Ce qui manque au mod, par priorité
 
@@ -82,3 +82,12 @@ Le constructeur inclut seulement les modules du worker, la compilation anonymis�
 5. **Préparer la commercialisation et l'international.** L'interface reste en français, le monde comprend trente clubs français sans Nationale ni ligues étrangères, et les corps/stades 3D sont génériques. Il reste à localiser le jeu et à tester d'autres configurations. La couverture des lois de match est partielle, profil historique 2025 ; aucune conformité complète 2026/27 n'est revendiquée.
 
 Pour Steam, il faut aussi établir les droits commerciaux des contenus retenus : la provenance officielle d'une photo ou l'anonymisation ne les garantit pas. Le pack privé ne fait pas partie du produit commercial reçu. Le logo et les illustrations originales générées nécessitent la déclaration de contenu IA applicable ; l'antériorité du nom n'est pas certifiée. Voir les exigences officielles de [droits de distribution Steam](https://partner.steamgames.com/doc/gettingstarted/onboarding) et le [questionnaire sur les contenus IA](https://partner.steamgames.com/doc/gettingstarted/contentsurvey). Aucune mise en vente Steam, signature de binaire ou fonctionnalité Steam Cloud n'est annoncée par ce lot.
+
+
+## Réception finale et installation locale
+
+La revue globale a fait corriger l’annonce d’un pack manquant dès accueil/reprise/import/création et l’aperçu périmé après analyse refusée. La sélection indisponible est explicite ; le choix Base est une action utilisateur. Le stockage canonique accepte la jonction racine du profil Windows vers E: et continue de refuser les liens sous cette racine. Une seule vague de corrections, revue bornée approuvée, tests Node privés et nouvelles réceptions graphiques/release réussis.
+
+Le ZIP final est installé sur E:, sous `livraison/jeu/OvalLegacy27-PrototypeGodot`. Le raccourci **Oval Legacy 27** vise cet EXE et l’icône transparente originale, décodée par Windows en 16/32/48/256 pixels. L’ancien fichier de carrière et le raccourci sont préservés dans `sauvegardes/avant-oval-legacy-27-20261107`, puis retirés de leur emplacement actif, comme demandé. Le profil neuf ne contient aucune carrière de test ; le pack privé est installé et la présentation de création par défaut reste Base anonymisée. Reprise via la vraie jonction AppData→E: et lancement natif sur le profil par défaut réussis, sans changement du fichier de données ni processus enfant restant.
+
+Choix retenus et conséquences : compilation anonymisée depuis les sources actives, donc recompilation obligatoire après une future mise à jour BDD ; progression V11 déjà active conservée, sans activer les propositions en brouillon ; plafond de 40 millions de pixels pour conserver le vrai portrait de 33,15 millions, avec pic de mémoire mesuré à 910 Mio pendant le test complet d’import ; retrait des anciennes carrières actives avec copie privée conservée sur E:, qui occupe encore de l’espace de sauvegarde. Les académies et renforts générés restent fictifs ; cette base n’est pas une collecte exhaustive des espoirs réels.
