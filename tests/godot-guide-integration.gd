@@ -1,0 +1,125 @@
+extends SceneTree
+var app: Control
+var checks := 0
+var failures: Array[String] = []
+func _initialize() -> void:
+	if OS.get_environment("CD_GODOT_DATA_DIR").is_empty(): quit(2); return
+	call_deferred("run")
+func check(value: bool, message: String) -> void:
+	checks += 1
+	if not value: failures.append(message); printerr("FAIL: ", message)
+func settle() -> void:
+	for i in 8: await process_frame
+func command(id: String, payload: Dictionary = {}) -> void:
+	app._command(id, payload)
+	var deadline := Time.get_ticks_msec() + 30000
+	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
+	check(not app.waiting and app.bridge.last_response_ok, "Commande réelle " + id)
+	await settle()
+func capture(id: String) -> void:
+	if DisplayServer.get_name() == "headless": return
+	await RenderingServer.frame_post_draw
+	var file := OS.get_environment("CD_GUIDE_INTEGRATION_CAPTURES").path_join(id + ".png")
+	check(root.get_texture().get_image().save_png(file) == OK, "Capture raccord " + id)
+func market_keyboard() -> void:
+	app._navigate("Recrutement"); await settle()
+	for expected in ["MarketDirection", "MarketReset"]:
+		var candidate: Button
+		for control in app.body.find_children("*", "Button", true, false):
+			if (expected == "MarketDirection" and ("Croissant" in control.text or "Décroissant" in control.text)) or (expected == "MarketReset" and control.text == "Réinitialiser"):
+				candidate = control; break
+		check(candidate != null, "Commande du marché présente " + expected)
+		if candidate == null: continue
+		candidate.grab_focus(); await settle()
+		var event := InputEventKey.new(); event.keycode = KEY_ENTER; event.pressed = true
+		Input.parse_input_event(event); await process_frame
+		event = InputEventKey.new(); event.keycode = KEY_ENTER; event.pressed = false
+		Input.parse_input_event(event); await settle()
+		var focused := root.gui_get_focus_owner()
+		check(focused != null and str(focused.name) == expected, "Focus conservé après Entrée " + expected)
+func profile_error() -> void:
+	DisplayServer.window_set_size(Vector2i(1280,800))
+	app._navigate("Match"); await settle()
+	var filename: String = str(app.model.meta.dataDir).path_join("guide.json")
+	var held := filename + ".reception-avant"
+	check(DirAccess.rename_absolute(filename, held) == OK, "Préférences de réception préservées")
+	check(DirAccess.make_dir_absolute(filename) == OK, "Échec réel préparé au chemin du guide")
+	app.coach.open_help(); await settle()
+	var error_label: Label = app.coach.find_child("GuideError", true, false)
+	check(error_label != null and error_label.is_visible_in_tree() and not app.coach.profile.last_error.is_empty(), "Erreur réelle visible sans Options")
+	check(app.body_scroll.get_global_rect().end.y <= app.coach.get_global_rect().position.y + 1, "Place réservée aussi au bandeau d'erreur")
+	await capture("coach-erreur-integre-1280")
+	app.coach.disable(); await settle()
+	check(app.coach.visible and not app.coach.expanded and not app.coach.speech.speaking, "Désactivation non persistée explique sa portée de session")
+	check(error_label.is_visible_in_tree(), "Erreur reste accessible après désactivation")
+	await capture("coach-erreur-desactivation-integree-1280")
+	check(DirAccess.remove_absolute(filename) == OK, "Obstacle temporaire retiré")
+	check(DirAccess.rename_absolute(held, filename) == OK, "Fichier de préférences conservé puis restauré")
+	app.coach.open_help(); await settle()
+	check(app.coach.profile.last_error.is_empty(), "Reprise d'écriture explicite après restauration du disque")
+	app.coach.close(); await settle()
+func run() -> void:
+	app = load("res://main.tscn").instantiate(); root.add_child(app)
+	var deadline := Time.get_ticks_msec() + 30000
+	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
+	app.timer.stop()
+	var has_coach: bool = app.get_property_list().any(func(p): return p.name == "coach")
+	check(has_coach, "Le coach est raccordé dans la vraie application")
+	if has_coach:
+		check(is_instance_valid(app.coach), "Une instance native de coach")
+		check(app.coach.portrait.texture is AtlasTexture and app.coach.portrait.texture.atlas != null, "Atlas original réellement chargé")
+		app.coach.speech.set_muted(true)
+		await command("new_career", {"mode":"common", "club":0})
+		await command("export")
+		var initial: String = app.model.meta.exportText
+		var filename: String = str(app.model.meta.dataDir).path_join("donnees.json")
+		var initial_hash := FileAccess.get_sha256(filename)
+		await market_keyboard()
+		for resolution in [Vector2i(1280,800), Vector2i(1440,900), Vector2i(1920,1080)]:
+			DisplayServer.window_set_size(resolution); await settle()
+			for route in ["Bureau","Effectif","Composition","Préparation","Recrutement","Finances","Club","Calendrier","Classements","Match","Accueil","Création","Packs"]:
+				app._navigate(route); await settle()
+				app.coach.open_help(); await settle()
+				check(app.coach.expanded, "Aide ouverte " + route)
+				check(app.coach.get_global_rect().end.y <= app.size.y + 1, "Guide dans la fenêtre " + route)
+				check(app.coach.get_global_rect().position.x >= 0, "Guide horizontal " + route)
+				var scroll: ScrollContainer = app.entry_scroll if route in ["Accueil","Création","Packs"] else app.body_scroll
+				check(is_instance_valid(scroll) and scroll.follow_focus, "Corps défilable " + route)
+				if is_instance_valid(scroll):
+					check(scroll.get_global_rect().end.y <= app.coach.get_global_rect().position.y + 1, "Aucune commande masquée par le coach " + route)
+				await capture(route.to_lower() + "-" + str(resolution.x))
+				app.coach.close(); await settle()
+		await profile_error()
+		await command("export")
+		check(app.model.meta.exportText == initial, "Visites et tailles sans mutation de carrière/RNG exporté")
+		check(FileAccess.get_sha256(filename) == initial_hash, "Visites sans écriture du profil sportif")
+		app._navigate("Match"); await settle()
+		await command("begin_match")
+		app.coach.open_help(); await settle()
+		check(not app.coach.expanded, "Pas d'aide développée pendant le direct")
+		await command("pause", {"paused":true})
+		app.coach.open_help(); await settle()
+		check(app.coach.expanded, "Aide explicitement ouverte en pause")
+		app.confirm("Vérification", "Dialogue réel de réception", func(): pass)
+		await settle()
+		check(not app.coach.expanded and not app.coach.speech.speaking, "Dialogue prioritaire et parole arrêtée")
+		app._clear_dialogs(); await settle()
+		app.coach.disable(); await settle()
+		check(not app.coach.visible, "Désactivation persistée sans erreur")
+		app.settings(); await settle()
+		var dialogs := app.find_children("*", "AcceptDialog", false, false)
+		var settings: AcceptDialog
+		for dialog in dialogs:
+			if dialog.visible: settings = dialog
+		check(settings != null, "Paramètres disponibles")
+		if settings != null: settings.custom_action.emit("coach")
+		await settle()
+		check(app.coach.visible and app.coach.expanded, "Réactivation depuis les paramètres")
+	print("RACCORD COACH : %d contrôles ; %d échec(s)" % [checks, failures.size()])
+	app.closing = true; app.timer.stop()
+	if has_coach and is_instance_valid(app.coach): app.coach.destroy()
+	app.bridge.stop()
+	deadline = Time.get_ticks_msec() + 3000
+	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await process_frame
+	app.queue_free(); await settle()
+	quit(0 if failures.is_empty() else 1)

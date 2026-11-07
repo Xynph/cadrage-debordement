@@ -154,7 +154,9 @@ static func _summary(parent: Node, app: Control) -> void:
 	for player: Dictionary in squad:
 		total += float(player.get("condition", 0))
 		if float(player.get("injury", 0)) > 0: injured += 1
-	for pair in [["%se / %s pts" % [G.n(app.model.club.get("rank", "—")), G.n(app.model.club.get("points", 0))], "Classement"], ["%d %%" % (total / maxf(1, squad.size())), "Condition du groupe"], [str(injured), "Blessés"], [G.n(app.model.meta.get("trust", "—")) + " %", "Confiance"], [G.euros(app.model.get("finance", {}).get("cash", app.model.club.get("cash", 0))), "Trésorerie fictive"]]:
+	var rank := G.n(app.model.club.get("rank", "—"))
+	var place := "—" if rank == "—" else rank + ("er" if rank == "1" else "e")
+	for pair in [["%s / %s pts" % [place, G.n(app.model.club.get("points", 0))], "Classement"], ["%d %%" % (total / maxf(1, squad.size())), "Condition du groupe"], [str(injured), "Blessés"], [G.n(app.model.meta.get("trust", "—")) + " %", "Confiance"], [G.euros(app.model.get("finance", {}).get("cash", app.model.club.get("cash", 0))), "Trésorerie fictive"]]:
 		var box := G.v(0)
 		G.fill(box)
 		row.add_child(box)

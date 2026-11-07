@@ -331,13 +331,16 @@ static func market(app:Control) -> Control:
 	var available:=_choice(controls,"MarketAvailability",["Tous","Disponibles"],state.available,"Offres")
 	var sort:=_choice(controls,"MarketSort",["Poste","Nom","Niveau","Âge","Salaire"],state.sort,"Trier par")
 	var direction:=G.button("↓ Décroissant" if state.descending else "↑ Croissant",func():state.descending=not state.descending;app._render())
+	direction.name="MarketDirection"
 	controls.add_child(direction)
 	var follow:=CheckBox.new()
 	follow.name="MarketFollowed"
 	follow.text="Suivis de session"
 	follow.button_pressed=state.followed
 	controls.add_child(follow)
-	controls.add_child(G.button("Réinitialiser",func():app.management_ui.market=U.defaults();app._render()))
+	var reset:=G.button("Réinitialiser",func():app.management_ui.market=U.defaults();app._render())
+	reset.name="MarketReset"
+	controls.add_child(reset)
 	var count:=G.label("",12,G.MUTED)
 	count.name="MarketCount"
 	workspace.add_child(count)

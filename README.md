@@ -24,7 +24,13 @@ Depuis la création d'une carrière ou ses paramètres : **Packs et identités �
 
 Le [rapport Godot 0.3 et packs](docs/rugby-real-native-packs-20261107.md) détaille la réception Windows, le format personnalisé et les lacunes des données. Le [rapport Godot 0.2](docs/godot-carriere-20261107.md) reste historique. La scène 3D est générique, les finances sont fictives, le monde est fermé sans Nationale et la cadence de 34 semaines est une abstraction. Le format de compétition 2026–2027 reste distinct des lois de match historiques partiellement couvertes. Cette préalpha prépare une version commerciale ; aucune publication Steam n'est annoncée.
 
-## Lot 1 effectifs — nouvelles carrières natives
+## Coach, prise en main et références des effectifs
+
+Le coach fictif présente quinze étapes et les écrans du jeu. Son portrait 2D change réellement de pose, parle et cligne des yeux ; la bulle reprend le texte prononcé. La voix française Windows est provisoire et sélectionnable : sans voix disponible, le mode texte reste utilisable. L'aide se réduit pendant le direct ou une décision et se réactive dans **Paramètres → Aide du coach**. Sa progression et ses préférences sont séparées des sauvegardes sportives. Voir le [guide natif](docs/coach-guide-20261107.md).
+
+Les nouvelles carrières communes utilisent le **registre effectifs v2 : 241 postes, 86 échéances et 9 statuts documentés** ; le reste est estimé explicitement. Les statistiques de la base active sont conservées. Les anciennes carrières v1 gardent leurs références sans migration, et les packs changent les identités sans remplacer les progrès. Voir les [sources et limites du lot2](docs/roster-foundation-lot2.md) et le [protocole de réception Windows](docs/oval-legacy-27-carnet-coach-20261108.md).
+
+## Lot 1 effectifs — étape historique
 
 Les 1 592 joueurs disposent désormais d’une référence initiale traçable : 12 postes précis corroborés, 20 échéances officielles dans les deux divisions et un contrat mixte espoir/professionnel confirmé. Les informations restantes sont des estimations de jeu explicites ; les salaires, 36 attributs, 11 compétences, notes, potentiels et traits restent ceux de la base active. La fiche distingue la référence contractuelle initiale du contrat courant après une signature. Les anciennes carrières restent inchangées, sans migration automatique. Voir [couverture, sources et limites](docs/roster-foundation-lot1.md), notamment la contradiction officielle sur Traini conservée en quarantaine. Aucune nouvelle règle de rugby ou de recrutement n’est introduite.
 

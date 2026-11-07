@@ -31,6 +31,7 @@ func _wait() -> void:
 func _command(command: String, payload: Dictionary = {}) -> void:
 	app._command(command, payload)
 	await _wait()
+	if not app.bridge.last_response_ok: print("COMMANDE REFUSÉE : ", command, " · ", app.last_error)
 
 func _dismiss_errors() -> void:
 	for child in app.get_children():

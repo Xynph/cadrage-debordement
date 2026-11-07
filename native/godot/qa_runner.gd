@@ -7,6 +7,7 @@ var failures:Array[String]=[]
 var checks:=0
 var captures:=""
 var engine_pid:=-1
+var coach_reception: Dictionary = {}
 
 func _ready() -> void:call_deferred("_run")
 
@@ -96,6 +97,56 @@ func _coverage() -> void:
 	_dismiss()
 	_check(app.model.get("selection",{}).get("valid",false),"Native promotions restore legal selection")
 
+func _coach_reception() -> void:
+	_check(is_instance_valid(app.coach), "Shipped executable contains the native coach")
+	if not is_instance_valid(app.coach): return
+	app._navigate("Bureau")
+	await _ask("export")
+	var before: String = app.model.meta.exportText
+	var profile: String = str(app.model.meta.dataDir).path_join("donnees.json")
+	var disk_before := FileAccess.get_sha256(profile)
+	var requests: Array[String] = []
+	var events := {"starts":0, "ends":0}
+	app.coach.speech.requested.connect(func(text: String): requests.append(text))
+	app.coach.speech.started.connect(func(_id: int): events.starts += 1)
+	app.coach.speech.ended.connect(func(_id: int): events.ends += 1)
+	# The real system TTS runs at volume zero during unattended reception.
+	# This leaves the player's sound settings untouched.
+	app.coach.speech.volume = 0
+	app.coach.open_help()
+	await _settle()
+	_check(app.coach.expanded, "Coach opens from the actual app")
+	_check(app.body_scroll.get_global_rect().end.y <= app.coach.get_global_rect().position.y + 1, "Coach reserves its workspace")
+	_check(app.coach.portrait.texture is AtlasTexture and app.coach.portrait.texture.atlas != null, "Exported atlas is loaded")
+	var available: bool = not app.coach.speech.voice_id.is_empty()
+	if OS.get_environment("CD_GODOT_REQUIRE_TTS") == "1": _check(available, "French TTS required for this Windows reception")
+	if available:
+		_check(not requests.is_empty() and requests.back() == app.coach.bubble.text, "Spoken text equals the actual bubble")
+		var deadline := Time.get_ticks_msec() + 8000
+		while events.starts == 0 and Time.get_ticks_msec() < deadline: await get_tree().process_frame
+		_check(events.starts > 0 and app.coach.speech.speaking, "Real exported TTS starts")
+		var frames := {}
+		deadline = Time.get_ticks_msec() + 650
+		while Time.get_ticks_msec() < deadline:
+			frames[str(app.coach.portrait.frame_texture.region)] = true
+			await get_tree().process_frame
+		_check(frames.size() >= 2, "Actual speaking portrait changes frames")
+		# A short reception-only phrase proves a real end callback in bounded time.
+		app.coach.bubble.text = "Bonjour."
+		app.coach.replay()
+		var previous_end: int = events.ends
+		deadline = Time.get_ticks_msec() + 8000
+		while events.ends == previous_end and Time.get_ticks_msec() < deadline: await get_tree().process_frame
+		_check(events.ends > previous_end and not app.coach.speech.speaking, "Real exported TTS finishes")
+		_check(requests.back() == app.coach.bubble.text, "Replay uses the same bubble")
+	app.coach.close()
+	app.coach.speech.volume = 75
+	_check(not app.coach.speech.speaking, "Closing the exported coach stops speech")
+	await _ask("export")
+	_check(app.model.meta.exportText == before and FileAccess.get_sha256(profile) == disk_before, "Coach leaves the actual career and its disk unchanged")
+	coach_reception = {"voice_available":available,"voice":app.coach.speech.voice_id,"starts":events.starts,"ends":events.ends,"test_volume":0,"separate_profile":FileAccess.file_exists(str(app.model.meta.dataDir).path_join("guide.json"))}
+	await _capture("coach-integre")
+
 func _run() -> void:
 	if OS.get_environment("CD_GODOT_DATA_DIR").is_empty():get_tree().quit(2);return
 	captures=OS.get_environment("CD_GODOT_QA_CAPTURES")
@@ -124,9 +175,11 @@ func _run() -> void:
 	await _wait()
 	_check(app.model.get("meta",{}).get("mode")=="common" and int(app.model.club.id)==29,"Actual common30-club career created through UI")
 	_check(app.model.get("meta",{}).get("database",{}).get("playerCount")==1592,"Shared source retains1592players")
+	_check(app.model.meta.get("rosterFoundation",{}).get("version") == 2, "Shipped registry initializes new careers in v2")
 	if not app._has_career():await _finish();return
 	_check(app.model.get("squad",[]).size()>=23,"Real squad for club29")
 	_check(app.model.get("leagues",[]).size()==2,"Both divisions projected")
+	await _coach_reception()
 	for resolution in [Vector2i(1440,900),Vector2i(1920,1080)]:
 		if DisplayServer.get_name()=="headless":get_tree().root.size=resolution
 		else:DisplayServer.window_set_size(resolution)
@@ -247,15 +300,34 @@ func _run() -> void:
 	await _wait()
 	_check(int(app.model.club.id)==29 and int(app.model.meta.season)==2,"UI import restores exact club and season")
 	_dismiss()
+	var legacy_fixture := OS.get_environment("CD_GODOT_QA_V1_FIXTURE")
+	if not legacy_fixture.is_empty():
+		var legacy: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(legacy_fixture))
+		app.import_mode = true
+		app._file_selected(legacy_fixture)
+		_confirm(); await _wait()
+		_check(app.bridge.last_response_ok and app.model.meta.get("rosterFoundation",{}).get("version") == 1, "Actual shipped UI imports the genuine v1 career without migration")
+		await _ask("export")
+		var observed: Dictionary = JSON.parse_string(app.model.meta.exportText)
+		_check(observed.state == legacy.state, "Actual v1 player profiles, contracts and progress remain exact")
+		_dismiss()
+		app.import_mode = true
+		app._file_selected(exported)
+		_confirm(); await _wait()
+		_check(app.bridge.last_response_ok and app.model.meta.get("rosterFoundation",{}).get("version") == 2, "Actual shipped UI restores its v2 season2 career")
+		_dismiss()
 	await _finish()
 
 func _finish() -> void:
+	app.closing = true
+	app.timer.stop()
+	if is_instance_valid(app.coach): app.coach.destroy()
 	app.bridge.stop()
 	var deadline:=Time.get_ticks_msec()+2500
 	while app.bridge.child_pid>0 and Time.get_ticks_msec()<deadline:await get_tree().process_frame
 	_check(app.bridge.child_pid<=0,"Owned worker stopped")
 	var final_club:Dictionary=app.model.club if app.model.get("club") is Dictionary else {}
-	var result:Dictionary={"passed":failures.is_empty(),"checks":checks,"failures":failures,"native_display":DisplayServer.get_name(),"captures":captures,"pid":OS.get_process_id(),"engine_pid":engine_pid,"executable":OS.get_executable_path(),"season":app.model.get("meta",{}).get("season"),"club":final_club.get("id")}
+	var result:Dictionary={"passed":failures.is_empty(),"checks":checks,"failures":failures,"native_display":DisplayServer.get_name(),"captures":captures,"pid":OS.get_process_id(),"engine_pid":engine_pid,"executable":OS.get_executable_path(),"season":app.model.get("meta",{}).get("season"),"club":final_club.get("id"),"coach":coach_reception}
 	if not captures.is_empty():
 		var file:=FileAccess.open(captures.path_join("report.json"),FileAccess.WRITE)
 		if file!=null:file.store_string(JSON.stringify(result,"\t"));file.close()

@@ -9,6 +9,7 @@ var voices: Array[Dictionary] = []
 var voice_id := ""
 var rate := 1.0
 var muted := false
+var volume := 75
 var speaking := false
 var status_text := "Mode texte · aucune voix française disponible sur ce PC."
 var _id := 0
@@ -41,7 +42,7 @@ func speak(text: String) -> void:
 	if muted or voice_id.is_empty() or text.is_empty(): return
 	_id += 1; _active = _id
 	requested.emit(text)
-	DisplayServer.tts_speak(text, voice_id, 75, 1.0, rate, _active, true)
+	DisplayServer.tts_speak(text, voice_id, clampi(volume, 0, 100), 1.0, rate, _active, true)
 func stop() -> void:
 	_active = -1
 	if _callbacks: DisplayServer.tts_stop()

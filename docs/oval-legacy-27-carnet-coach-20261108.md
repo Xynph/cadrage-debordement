@@ -1,0 +1,35 @@
+# Oval Legacy 27 — carnet, gestion et coach
+
+## Fonctionnalités et périmètre
+
+La direction artistique approuvée du Bureau est déclinée sur tous les menus, fiches et dialogues : anthracite, ivoire, accents du club, corps DM Sans et titres courts condensés. Les compositions changent selon leur usage ; elles ne reproduisent pas le portail FM. Les photos de villes et stades déjà autorisées, leurs crédits et les ressources originales restent embarqués. Le rendu 3D de l'enceinte reste générique.
+
+Recherche sans casse ni accents, filtres, tri, retour de lecture et comparaison par identifiants améliorent la gestion. Les suivis de recrutement sont explicitement limités à la session. Les offres distinguent coût immédiat et salaire hebdomadaire sans inventer un engagement annuel. Les archives françaises affichent jusqu'à quinze saisons réellement conservées ; le mode fiction14 n'a pas cette projection d'archives.
+
+Le coach original présente quinze étapes : accueil, choix du club, Bureau, effectif, feuille, entraînement, tactique, recrutement, premier match, résultat, calendrier, classements, finances, territoire et packs. L'ordre exact est dans `guide_content.gd`. Les gestes, bouche et clignement utilisent un atlas original à six poses. La synthèse vocale locale est provisoire ; aucune voix définitive enregistrée ou service externe n'est annoncé. La bulle utilise la même chaîne que la parole, avec réécoute, arrêt, muet, voix/débit et désactivation. Le guide n'envoie aucune décision sportive.
+
+`guide.json` est séparé de `donnees.json`, hors du programme. Lecture bornée, écriture atomique, corruption conservée et erreurs visibles. Une désactivation non persistée est explicitement limitée à la session. Le panneau réserve sa place ; les corps de page peuvent défiler pour garder les commandes accessibles. Options, erreurs et direct sont des états de réception distincts.
+
+Le registre initial v2 conserve les 1 592 identifiants, attributs, compétences, potentiels, traits et salaires de départ. Il documente 241 postes, 86 échéances et 9 statuts ; les anciennes références v1 sont résolues séparément. Dates, cas en quarantaine et limites sont décrits dans `roster-foundation-lot2.md`. Les corrections de poste peuvent changer une note calculée au poste ; elles ne recalibrent pas les attributs.
+
+## Preuves source et campagnes ciblées
+
+Les rapports de tâche et revues indépendantes du Bureau, de la DA, de la BDDv2, du coach et de la gestion sont conservés dans les espaces locaux `.superpowers/sdd/2026-11-07-*`. Les scripts de test suivis permettent de reproduire les assertions. Les compteurs d'une campagne antérieure ne valent pas preuve de validation d'un binaire ultérieur.
+
+- DA avant raccord : 2 199 contrôles Carnet et 89 packs, captures physiques 1280×800 / 1440×900 / 1920×1080 inspectées. Gestion : 8 suites ciblées, puis 245 contrôles graphiques.
+- Revue coach : erreur de profil cachée trouvée, corrigée puis relecture ciblée favorable ; 46 contrôles headless et 50 Windows du cas d'échec. Le guide isolé est reçu avec 188 contrôles graphiques, vrais début/fin TTS et choix de voix au clavier.
+- Raccord réel : `tests/godot-guide-integration.cjs/.gd` parcourt toutes les routes aux trois tailles, réserve l'espace de l'aide, ouvre la pause et les paramètres, provoque une erreur disque et vérifie le retour visible. 265 contrôles graphiques réussis dans la campagne de raccord. Le P2 de focus des commandes de tri/réinitialisation du marché est reproduit par de vraies touches puis corrigé par noms stables.
+- Sauvegardes : véritable fixture v1 saison 2, imports stricts et continuation/restart sans migration ; budgets 5 Mio et 650 000 nœuds inchangés. Deux parcours moteur de cinq saisons (club 0 et 29) : 20 checkpoints, export/import/restart et références immuables, pic de 3 990 022 octets et 266 060 nœuds. Ces parcours headless ne sont pas une preuve de conformité réglementaire exhaustive.
+- Réception intégrale source : SDK Godot Windows natif, 520 contrôles réussis, club 29 jusqu'à saison 2, export/import UI, import de la véritable v1 puis restauration v2, coach animé et TTS Paul. La voix s'exécute au volume 0 durant cette recette afin de laisser les réglages audio du joueur intacts. Cette preuve porte sur le SDK, pas sur le ZIP distribué.
+
+Une campagne combinée a exposé un défaut moteur historique : IA adverse à 22 joueurs après blessure dans certaines graines. Le correctif, revu indépendamment, réutilise la couverture IA existante avant les nouvelles rencontres, sans modifier le validateur ou soigner les blessés. Voir le [rapport moteur et ses limites](native-fiction-sheet-20261108.md). Les erreurs de la première campagne ne sont pas comptées comme des PASS ; la campagne de régressions suivante est verte.
+
+## Réception obligatoire de la distribution
+
+Après stabilisation et revue, construire dans un nouveau dossierE: avec `scripts/build-godot-prototype.py`, extraire le ZIP dans un autre chemin, contrôler toutes les empreintes du manifeste puis lancer le véritable EXE avec son Node embarqué et un PATH dépourvu de Node installé.
+
+La recette embarquée `qa_runner.gd` refuse un profil existant et exige un dossier de test explicite. Elle vérifie création, vrais menus et décisions, plusieurs matchs, saison2, export/import et arrêt du worker. Le coach est contrôlé dans le template exporté : atlas chargé, animation, mêmes textes, vrais événements TTS si voix disponible et arrêt. `CD_GODOT_REQUIRE_TTS=1` exige une voix française sur la machine de réception. `CD_GODOT_QA_V1_FIXTURE` permet en plus l'import UI de la véritable carrière v1 puis la restauration de la v2, sans migration.
+
+Le rapport JSON mentionne l'exécutable réellement lancé, la plateforme, les compteurs, les échecs et la disponibilité vocale. La réception du ZIP, les images finales, la CI du dernier SHA et le gate GitHub sont consignés par l'intégrateur dans la PR et #73 après exécution ; leur réussite ne se déduit pas des tests source ci-dessus.
+
+La livraison finale doit conserver le profil personnel et les packs privés, vérifier le redémarrage du moteur embarqué sans écriture, et pointer le raccourci bureau vers le nouveau dossierE:. Aucun pack officiel privé, photographie anatomique de référence ou publication Steam n'est inclus dans ce lot.
