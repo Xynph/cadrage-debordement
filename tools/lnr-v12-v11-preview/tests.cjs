@@ -53,7 +53,9 @@ test('vraie carrière LNR: feuille complète, 11 compétences, sauvegarde et mat
  assert.equal(g.run('sheetErrors().length'),0);
  assert.equal(g.run('S.clubs.every(c=>c.players.filter(p=>p.id.startsWith("lnr:")).every(p=>p.rating===p.skillBase && !!p.skills))'),true);
  assert.equal(g.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),true);
- const saved=JSON.parse(g.run('JSON.stringify(S)')),again=live(saved);
+ const doc=JSON.parse(g.run('JSON.stringify(createSaveDocument())'));
+ const again=live();again.ctx.__exportDoc=doc;
+ again.run('S=parseSaveDocument(JSON.stringify(__exportDoc)).state');
  assert.equal(again.run('S.lnrMode.snapshot'),'2026-10-31');
  assert.equal(again.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),true);
  assert.equal(again.run('S.clubs[0].players.filter(p=>p.lnrRatingsPreview).every(p=>p.rating===p.skillBase)'),true);
