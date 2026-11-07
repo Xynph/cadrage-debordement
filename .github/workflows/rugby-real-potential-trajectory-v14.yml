@@ -1,0 +1,20 @@
+name: Rugby Reel - potential trajectory V14 QA
+on:
+  pull_request:
+    paths:
+      - 'tests/rugby-real-potential-trajectory-v14-20261107.cjs'
+      - 'data/scouting/potential-trajectory-v14-20261107.json'
+      - 'docs/rugby-real-potential-trajectory-v14-20261107.md'
+      - '.github/workflows/rugby-real-potential-trajectory-v14.yml'
+  workflow_dispatch:
+jobs:
+  career-potential:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Rebase 1592 potentials and simulate 40 shadow trajectories
+        run: node --test tests/rugby-real-potential-trajectory-v14-20261107.cjs
