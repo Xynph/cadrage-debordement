@@ -25,11 +25,11 @@ func button(node: Node, label: String) -> Button:
 		if found != null: return found
 	return null
 
-func wait_response() -> void:
+func wait_response(expected_ok: bool = true) -> void:
 	var deadline := Time.get_ticks_msec() + 30000
 	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
 	check(not app.waiting, "Commande terminée dans le délai borné")
-	check(app.bridge.last_response_ok, "Réponse native réussie : " + app.last_command + " / " + app.last_error)
+	check(app.bridge.last_response_ok == expected_ok, "Réponse native attendue : " + app.last_command + " / " + app.last_error)
 
 func press(label: String) -> void:
 	var control := button(app, label)
@@ -52,14 +52,14 @@ func sports(state: Dictionary) -> String:
 	copy.erase("identityPack")
 	return JSON.stringify(copy)
 
-func import_archive(path: String) -> void:
+func import_archive(path: String, expected_ok: bool = true) -> void:
 	press("IMPORTER UN PACK ZIP")
 	await process_frame
 	check(app.pack_manager.picker.visible, "Vrai sélecteur de fichiers ZIP ouvert")
 	check("*.zip" in str(app.pack_manager.picker.filters), "Sélecteur limité aux archives ZIP")
 	app.pack_manager.picker.file_selected.emit(path)
 	app.pack_manager.picker.hide()
-	await wait_response()
+	await wait_response(expected_ok)
 
 func integration() -> void:
 	var archive := OS.get_environment("CD_GODOT_PACK_ARCHIVE")
@@ -148,6 +148,126 @@ func integration() -> void:
 	await process_frame
 	await capture("effectif-reel-retour")
 
+func text_visible(node: Node, part: String) -> bool:
+	if node is Label and part.to_lower() in node.text.to_lower() and node.is_visible_in_tree(): return true
+	for child in node.get_children():
+		if text_visible(child, part): return true
+	return false
+
+func option(node: Node) -> OptionButton:
+	if node is OptionButton: return node
+	for child in node.get_children():
+		var found := option(child)
+		if found != null: return found
+	return null
+
+func stop_app() -> void:
+	app.bridge.stop()
+	var deadline := Time.get_ticks_msec() + 2500
+	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await process_frame
+	check(app.bridge.child_pid <= 0, "Profil de test fermé proprement")
+	root.remove_child(app)
+	app.queue_free()
+	await process_frame
+
+func start_app(profile: String) -> void:
+	OS.set_environment("CD_GODOT_DATA_DIR", profile)
+	app = load("res://main.tscn").instantiate()
+	root.add_child(app)
+	var deadline := Time.get_ticks_msec() + 15000
+	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
+	check(not app.model.is_empty(), "Profil de test connecté")
+	app.timer.stop()
+
+func pack_edge_cases() -> void:
+	var profile := OS.get_environment("CD_GODOT_DATA_DIR").path_join("edgecases/PrototypeGodot")
+	var valid := OS.get_environment("CD_GODOT_PACK_EDGE_VALID")
+	await stop_app()
+	await start_app(profile)
+	app._navigate("Création")
+	press("PACKS ET IDENTITÉS")
+	await import_archive(valid)
+	var preview: Dictionary = app.model.packs.preview
+	check(button(app, "INSTALLER CE PACK") != null, "ZIP A valide : aperçu installable")
+	await import_archive(OS.get_environment("CD_GODOT_PACK_EDGE_INVALID"), false)
+	check(app.model.packs.preview == null, "ZIP B refusé : ancien aperçu effacé")
+	check(button(app, "INSTALLER CE PACK") == null and not text_visible(app, "PRÊT À INSTALLER"), "ZIP B refusé : aucun ancien contrôle installable")
+	app._clear_dialogs()
+	await process_frame
+	await import_archive(valid)
+	check(app.model.packs.preview.digest == preview.digest, "Nouvelle analyse A : empreinte correcte restaurée")
+	press("INSTALLER CE PACK")
+	await wait_response()
+	press("UTILISER CE PACK  →")
+	await wait_response()
+	press("← RETOUR")
+	press("PRENDRE LES RÊNES DE REC  →")
+	await wait_response()
+	app._command("export")
+	await wait_response()
+	var exported: String = app.model.meta.exportText
+	var before: Dictionary = JSON.parse_string(exported)
+	var pack_id: String = app.model.packs.career
+	var seed: Variant = JSON.parse_string(FileAccess.get_file_as_string(profile.path_join("donnees.json"))).seed
+	await stop_app()
+	check(DirAccess.rename_absolute(profile.path_join("packs"), profile.path_join("packs-held")) == OK, "Pack retiré après fermeture du profil")
+	await start_app(profile)
+	check(app.route == "Accueil" and text_visible(app, "pack de carrière absent"), "Redémarrage : repli annoncé dès l’accueil")
+	await capture("pack-manquant-accueil")
+	press("GÉRER LES PACKS")
+	check(app.route == "Packs" and app.pack_manager.scope == "career", "Avertissement accueil : accès au pack de carrière")
+	press("← RETOUR")
+	press("REPRENDRE LA CARRIÈRE  →")
+	check(app.route == "Bureau" and text_visible(app, "pack de carrière absent"), "Reprise : repli annoncé au Bureau")
+	check(app.model.packs.career == pack_id and app.model.packs.creation == pack_id, "Reprise : liaison et préférence absentes conservées")
+	for attempt in range(2):
+		app._command("snapshot")
+		await wait_response()
+	var visible_dialogs := 0
+	for child in app.get_children():
+		if child is AcceptDialog and child.visible: visible_dialogs += 1
+	check(visible_dialogs == 0, "Pack absent : snapshots répétés sans dialogue intrusif")
+	await capture("pack-manquant-bureau")
+	app._command("export")
+	await wait_response()
+	check(JSON.parse_string(app.model.meta.exportText).state == before.state, "Reprise sans pack : S intégralement conservé")
+	check(JSON.parse_string(FileAccess.get_file_as_string(profile.path_join("donnees.json"))).seed == seed, "Reprise sans pack : RNG conservé")
+	app._navigate("Création")
+	var choice := option(app)
+	check(choice != null and "indisponible" in choice.get_item_text(choice.selected).to_lower() and choice.is_item_disabled(choice.selected), "Création : préférence absente explicitement sélectionnée")
+	check(text_visible(app, "pack de création absent"), "Création : repli et choix nécessaire annoncés")
+	await capture("pack-manquant-creation")
+	check(button(app, "PRENDRE LES RÊNES DE " + str(app.catalogue[0].abbr) + "  →").disabled, "Création : démarrage bloqué jusqu’au choix effectif")
+	if choice != null:
+		choice.select(0)
+		choice.item_selected.emit(0)
+		await wait_response()
+	check(app.model.packs.creation == "base" and app.model.packs.career == pack_id, "Choix Base explicite : seule la préférence de création change")
+	app._command("export")
+	await wait_response()
+	check(JSON.parse_string(app.model.meta.exportText).state == before.state, "Choix Base création : S et liaison carrière conservés")
+	check(JSON.parse_string(FileAccess.get_file_as_string(profile.path_join("donnees.json"))).seed == seed, "Choix Base création : RNG conservé")
+	var save_path := profile.path_join("career.json")
+	var file := FileAccess.open(save_path, FileAccess.WRITE)
+	file.store_string(exported)
+	file.close()
+	await stop_app()
+	await start_app(profile.path_join("import-profile"))
+	press("IMPORTER UNE CARRIÈRE")
+	check(app.file_dialog.visible, "Import sans pack : vrai sélecteur ouvert")
+	app.file_dialog.hide()
+	app.file_dialog.file_selected.emit(save_path)
+	press("CONFIRMER")
+	await wait_response()
+	check(app.route == "Bureau" and text_visible(app, "pack de carrière absent"), "Import sans pack : repli annoncé à réception")
+	check(app.model.packs.career == pack_id, "Import sans pack : liaison conservée")
+	await capture("pack-manquant-import")
+	app._command("export")
+	await wait_response()
+	check(JSON.parse_string(app.model.meta.exportText).state == before.state, "Import sans pack : S conservé")
+	press("GÉRER LES PACKS")
+	check(app.route == "Packs" and app.pack_manager.scope == "career", "Avertissement import : accès aux packs")
+
 func _run() -> void:
 	app = load("res://main.tscn").instantiate()
 	if DisplayServer.get_name() != "headless":
@@ -188,6 +308,7 @@ func _run() -> void:
 	absent.free()
 	await capture("packs-creation")
 	if failures.is_empty(): await integration()
+	if failures.is_empty(): await pack_edge_cases()
 	app.bridge.stop()
 	deadline = Time.get_ticks_msec() + 2500
 	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await process_frame

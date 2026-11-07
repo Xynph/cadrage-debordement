@@ -236,6 +236,7 @@ func _render() -> void:
 	top.add_child(primary_button)
 	minibar = G.label("", 12, G.GOLD)
 	content.add_child(minibar)
+	PackViews.missing_warning(self, content, "career")
 	body = G.v(13)
 	G.fill(body, true)
 	content.add_child(body)

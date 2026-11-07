@@ -1,6 +1,19 @@
 extends RefCounted
 const G = preload("res://ui/game_skin.gd")
 
+static func missing_warning(app: Control, parent: Container, scope: String) -> void:
+	var messages: Array[String] = []
+	var career_missing := false
+	for warning: String in app.model.get("packs", {}).get("missing", []):
+		if warning.begins_with("Pack de carrière absent") and scope != "creation":
+			messages.append("Pack de carrière absent · Présentation de base anonymisée. Réimportez le pack pour retrouver vos identités.")
+			career_missing = true
+		elif warning.begins_with("Pack de création absent") and scope != "career":
+			messages.append("Pack de création absent · Présentation de base anonymisée. Réimportez le pack ou choisissez Base pour créer une carrière.")
+	if messages.is_empty(): return
+	parent.add_child(G.wrap("\n".join(messages), 12, Color("f1b6a9")))
+	parent.add_child(G.button("GÉRER LES PACKS", func(): app.pack_manager.open("career" if career_missing else "creation")))
+
 static func page(app: Control) -> Control:
 	var page := G.v(18)
 	var top := G.h(18)
