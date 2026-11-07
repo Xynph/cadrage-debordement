@@ -162,3 +162,48 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
   diagnosticOnly:true,noDataChanges:true
  }));
 });
+
+
+test('Optional native AI roster contracts, recruitment, rotation and signed saves over six seasons', {timeout:300000},()=>{
+ let g=boot();
+ g.run("start(0,'lnr')");
+ const initiallyActive=g.run('aiRosterActive()');
+ if(!initiallyActive)assert.equal(g.run('aiRosterEnable()'),true,'explicitly activate existing AI roster career mode');
+ assert.equal(g.run('aiRosterActive()'),true);
+ const seasons=[{season:1,clubs:teamRatings(g)}],events=[];
+ for(let year=1;year<=6;year++){
+  assert.equal(g.run('S.season'),year);
+  for(let round=0;round<26;round++){
+   assert.equal(g.run('S.round'),round);
+   g.run('finishRound()');
+  }
+  let guard=0;
+  while(g.run('S.phase')!=='ended'){
+   assert.ok(++guard<=4);g.run('finishRound()');
+  }
+  const end=read(g,'S.aiRoster.reports.filter(x=>x.season===S.season)');
+  events.push({year,reports:end.map(x=>({clubId:x.clubId,renewed:x.renewed,released:x.released,
+   recruited:x.recruited,promoted:x.promoted,emergency:x.emergency,retired:x.retired}))});
+  g.run('advanceSeason()');
+  g=roundtrip(g);
+  assert.equal(g.run('aiRosterActive()'),true,'AI roster state survives native save import');
+  seasons.push({season:year+1,clubs:teamRatings(g)});
+ }
+ const summarize=s=>{
+  const ai=s.clubs.slice(1),q=ai.map(c=>c.xv);
+  return {season:s.season,aiXvMean:+(q.reduce((a,b)=>a+b,0)/q.length).toFixed(2),
+   aiMin:Math.min(...q),aiMax:Math.max(...q),
+   aiOriginal:ai.reduce((sum,c)=>sum+c.lnr,0),
+   aiPlayers:ai.reduce((sum,c)=>sum+c.roster,0),
+   aiBenchMean:+(ai.reduce((sum,c)=>sum+c.bench,0)/ai.length).toFixed(2),
+   playerClubXV:s.clubs[0].xv};
+ };
+ const totals=events.flatMap(x=>x.reports).reduce((a,r)=>{
+  for(const k of ['renewed','released','recruited','promoted','emergency','retired'])a[k]+=r[k]||0;
+  return a;
+ },{renewed:0,released:0,recruited:0,promoted:0,emergency:0,retired:0});
+ console.log('RUGBY_REAL_V15_ADVANCED_AI_CAREER '+JSON.stringify({
+  aiRosterEnabled:true,alreadyEnabledAtStart:initiallyActive,seasons:6,saveImports:6,
+  totals,seasonSummary:seasons.map(summarize),events,
+  limitations:'Simulated TOP14 career, manager does not intervene; NO two-division promotion/relegation'}));
+});
