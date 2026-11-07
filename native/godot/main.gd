@@ -190,7 +190,7 @@ func _render() -> void:
 	add_child(root_content)
 	move_child(root_content, 0)
 	var bg := ColorRect.new()
-	bg.color = G.BG
+	bg.color = Color("161819") if route == "Bureau" else G.BG
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root_content.add_child(bg)
 	if route == "Accueil":
@@ -229,7 +229,10 @@ func _render() -> void:
 	header_date = G.label("", 11, G.MUTED)
 	titles.add_child(header_date)
 	_update_header_date()
-	heading = G.label({"Bureau":"LE CLUB, DEMAIN.","Effectif":"LES HOMMES DU PROJET","Composition":"VOTRE FEUILLE À 23","Préparation":"PRÉPARER LA RENCONTRE","Calendrier":"LE FIL DE LA SAISON","Classements":"LA COURSE AUX SOMMETS","Recrutement":"CONSTRUIRE L'EFFECTIF","Finances":"LES MOYENS DU PROJET","Club":"UN CLUB. UN TERRITOIRE.","Match":"LE JOUR DE MATCH"}.get(route, route.to_upper()), 35, G.INK, true)
+	heading = G.label({"Bureau":"Le club, cette semaine.","Effectif":"LES HOMMES DU PROJET","Composition":"VOTRE FEUILLE À 23","Préparation":"PRÉPARER LA RENCONTRE","Calendrier":"LE FIL DE LA SAISON","Classements":"LA COURSE AUX SOMMETS","Recrutement":"CONSTRUIRE L'EFFECTIF","Finances":"LES MOYENS DU PROJET","Club":"UN CLUB. UN TERRITOIRE.","Match":"LE JOUR DE MATCH"}.get(route, route.to_upper()), 35, G.INK, true)
+	if route == "Bureau":
+		heading.add_theme_font_override("font", G.T.BODY)
+		heading.add_theme_font_size_override("font_size", 31)
 	titles.add_child(heading)
 	top.add_child(G.button("SAUVEGARDER", func(): _command("save")))
 	primary_button = G.button(primary_text(), primary_action, true)
@@ -275,7 +278,18 @@ func _build_sidebar(parent: Node) -> void:
 	rail.add_child(margin)
 	var left := G.v(5)
 	margin.add_child(left)
-	var logo := G.button("OVAL LEGACY 27\nRUGBY MANAGER", pause_menu)
+	var logo := G.button("", pause_menu)
+	logo.tooltip_text = "Oval Legacy 27 — Menu et sauvegardes"
+	var bitmap := TextureRect.new()
+	bitmap.texture = load("res://branding/oval-legacy-27-logo.png")
+	bitmap.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bitmap.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	bitmap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bitmap.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var composite := ShaderMaterial.new()
+	composite.shader = load("res://branding/black_key.gdshader")
+	bitmap.material = composite
+	logo.add_child(bitmap)
 	logo.add_theme_font_override("font", G.T.DISPLAY)
 	logo.add_theme_font_size_override("font_size", 23)
 	logo.custom_minimum_size.y = 70

@@ -15,6 +15,16 @@ La PR #239 met à jour `AGENTS.md` et `docs/developpement-parallele.md` séparé
 
 **Protection serveur vérifiée le 2 novembre 2026 :** ruleset actif `main-ci-et-pr-obligatoires` (#26326518) : PR obligatoire, **0 approbation requise**, contrôle `Validation CI` requis avec branche à jour, aucune exception de contournement. La lecture détaillée de la protection de branche séparée renvoie 403 à l'intégration ; ne pas en déduire qu'elle est absente. Le gate `ci/chat-release.cjs` exige toujours une commande stricte `/cd-merge PR SHA` déposée par l'identité propriétaire sur l'issue #73, la CI complète du main exact et de la PR, puis la CI post-fusion. L'autorisation générale de Léo retire le frein humain organisationnel, **pas** ces étapes techniques. Pour une intégration entièrement autonome sans commentaire propriétaire, concevoir et tester séparément un déclenchement sécurisé sur événements/identité autorisés ; ne jamais supprimer la vérification de SHA ni les statuts requis.
 
+## 7 novembre 2026 — Bureau natif « Le carnet du club »
+
+Implémentation de la maquette v6 approuvée : journal et décisions ivoire, photo du prochain rendez-vous, calendrier de quatre rencontres, groupe avec cinq fiches par ID, résultats et classement natif de proximité sur huit lignes. En-tête « Le club, cette semaine. » et logo bitmap approuvé sur le bouton du menu. Les styles restent locaux à la vue du Bureau ; moteur, base, sauvegardes et autres vues de gestion ne sont pas modifiés.
+
+Données honnêtes : contrats arrivant d’ici la saison suivante, erreurs/postes vacants de la sélection, entraînement de la semaine, nouvelles sans staff ni heure inventés ; objectif, rang, forme, confiance, trésorerie et salaires issus du modèle. Les semaines abstraites restent affichées comme telles. Aucun graphique de classement historique ou prévision financière sans source.
+
+Réception ciblée Windows/Godot 4.7.2 : RED sur les dix sections absentes, puis 331 contrôles graphiques natifs sans échec, captures graphiques à 1280×800, 1440×900 et 1920×1080. Vraies carrières communes dans les deux divisions, France 30 et historique 14 ; vrais boutons, fiches et retour au direct ; état complet, RNG et octets du profil conservés par navigation. Les cas noms/nouvelles longs, terrain neutre, pack absent et intersaison sont des copies de projection clairement séparées des carrières réelles. Suites assets, gestion, packs et régressions natives : cinq tests réussis ; incidents d’écriture volontairement provoqués restent visibles.
+
+Publication et réception du ZIP complet prises en charge dans le lot d’intégration ; aucune fusion revendiquée ici. Détails, commandes et limites : `docs/bureau-carnet-20261107.md`. Suite demandée par Léo : décliner cette DA sur les autres écrans en autonomie, sans redemander écran par écran.
+
 ## État du projet
 
 Jeu de management de rugby à XV en français, jouable dans le navigateur sans compilation, avec une version Windows portable (lanceur Go sous `offline/`). Le code de jeu est dans `dist/`, les tests JavaScript dans `tests/` et la documentation dans `docs/`.
