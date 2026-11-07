@@ -1,0 +1,33 @@
+name: Management - decisions de rotation Chromium PC
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/manager-squad.js'
+      - 'tests/rotation-choices*'
+      - '.github/workflows/rotation-choices-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rotation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests natifs, feuille et sauvegardes
+        run: node tests/rotation-choices.cjs
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Installer Chromium
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Reception PC dans le jeu
+        run: python tests/rotation-choices-browser.py
