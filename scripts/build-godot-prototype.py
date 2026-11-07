@@ -99,17 +99,26 @@ def build(args):
     shutil.copytree(ROOT / "dist/match3d/assets", licenses / "modele3d",
                     ignore=shutil.ignore_patterns("*.glb", "*.gltf", "*.bin", "*.png", "*.jpg"))
     (app / "LISEZ-MOI.txt").write_text(
-        "CADRAGE DÉBORDEMENT — PROTOTYPE GODOT NATIF\n\n"
+        "CADRAGE DÉBORDEMENT — PRÉALPHA 0.2 / CARRIÈRE NATIVE\n\n"
         "Lancer CadrageDebordement.exe. Aucun navigateur, Godot ou Node à installer.\n"
         "Conserver le dossier complet avec runtime et engine. Windows x64.\n\n"
-        "Épreuve de direction artistique et du raccord avec la simulation historique14.\n"
-        "30 territoires consultables ; carrière30/deux divisions encore en chantier.\n"
+        "Nouvelle carrière : 30 clubs jouables, deux divisions reliées (14 et16).\n"
+        "Composition à23, entraînement, tactiques, recrutement et contrats.\n"
+        "Match3D, phases finales, montées/descentes et saisons suivantes.\n"
+        "Les anciennes carrières fictives14 restent importables et jouables.\n\n"
+        "Parcours : Nouvelle carrière → club → Composition → Préparation → Match.\n"
+        "Pause pour les changements ; Adjoint pour déléguer la fin du match.\n"
+        "Valider la journée après le résultat. Menu & sauvegardes pour exporter.\n"
+        "Les promotions du centre peuvent compléter une feuille incomplète ;\n"
+        "leur coût salarial est annoncé avant confirmation.\n\n"
         "Données fictives de carrière. Photos réelles d'archive : crédits dans Licences.\n"
         "Profil séparé : %APPDATA%/CadrageDebordement/PrototypeGodot.\n"
-        "Ce prototype n'est pas encore une publication Steam.\n", encoding="utf-8")
+        "Format2026/27 ; lois de match existantes2025, couverture partielle.\n"
+        "34 semaines fictives, monde fermé sans Nationale ; stade3D générique.\n"
+        "Préalpha à tester ; publication Steam et finition commerciale à venir.\n", encoding="utf-8")
     files = {p.relative_to(app).as_posix(): {"sha256": digest(p), "bytes": p.stat().st_size}
              for p in sorted(app.rglob("*")) if p.is_file()}
-    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "files": files}, indent=2), encoding="utf-8")
+    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": "0.2.0", "mode": "france30", "files": files}, indent=2), encoding="utf-8")
     archive = target / "CadrageDebordement-PrototypeGodot-Windows-x64.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as out:
         for path in sorted(app.rglob("*")):

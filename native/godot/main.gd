@@ -111,6 +111,10 @@ func _receive_model(value: Dictionary) -> void:
 		if last_command in ["recruit","extend_contract"] and model.get("meta",{}).get("negotiation") is Dictionary:
 			var offer: Dictionary = model.meta.negotiation
 			notice("La réponse du joueur", str(offer.get("message","La négociation est enregistrée.")))
+		if last_command=="promote_cover" and model.meta.get("coverage") is Dictionary:
+			notice("Les renforts du centre",str(model.meta.coverage.get("message","La feuille a été complétée.")))
+		if last_command=="recover_profile" and not str(model.meta.get("recoveryBackup","")).is_empty():
+			notice("Le profil d'origine est conservé","Copie de sécurité :\n"+str(model.meta.recoveryBackup)+"\n\nVous pouvez maintenant créer ou importer une carrière.")
 	if not queued_action.is_empty() and bridge.last_response_ok:
 		var next := queued_action.duplicate(true)
 		queued_action.clear()
@@ -138,6 +142,7 @@ func _failed(message: String) -> void:
 		status.text = "ACTION NON EFFECTUÉE · " + message
 		status.add_theme_color_override("font_color", Color("f1b6a9"))
 	if last_command == "tick": timer.stop()
+	_clear_dialogs()
 	var d := AcceptDialog.new()
 	d.title = "Votre décision n'a pas été appliquée"
 	d.dialog_text = message
@@ -285,6 +290,7 @@ func create_career(id: int) -> void:
 	else: action.call()
 
 func confirm(title: String, text: String, callback: Callable) -> void:
+	_clear_dialogs()
 	var d := ConfirmationDialog.new()
 	d.title = title
 	d.dialog_text = text
@@ -295,6 +301,7 @@ func confirm(title: String, text: String, callback: Callable) -> void:
 	d.popup_centered(Vector2i(650,180))
 
 func pause_menu() -> void:
+	_clear_dialogs()
 	if not _live().is_empty() and not _live().get("paused",false) and not _live().get("finished",false): _command("pause",{"paused":true})
 	var d := AcceptDialog.new()
 	d.title = "Votre carrière"
@@ -313,6 +320,7 @@ func pause_menu() -> void:
 	d.popup_centered(Vector2i(720,190))
 
 func settings() -> void:
+	_clear_dialogs()
 	var d := AcceptDialog.new()
 	d.title = "Affichage"
 	d.dialog_text = "Fenêtre redimensionnable · interface adaptée à votre écran."
@@ -366,12 +374,19 @@ func _write_export() -> bool:
 	return true
 
 func notice(title:String,text:String) -> void:
+	_clear_dialogs()
 	var d:=AcceptDialog.new()
 	d.title=title
 	d.dialog_text=text
 	add_child(d)
 	d.confirmed.connect(d.queue_free)
 	d.popup_centered(Vector2i(620,190))
+
+func _clear_dialogs() -> void:
+	for child in get_children():
+		if child is AcceptDialog and child!=file_dialog:
+			child.hide()
+			child.queue_free()
 
 func recover_profile() -> void:
 	confirm("Conserver et récupérer le profil", "Une copie du profil endommagé sera conservée avant sa récupération. Vous pourrez ensuite créer ou importer une carrière.",func(): _command("recover_profile",{"confirmed":true}))
@@ -390,6 +405,7 @@ func _update_match() -> void:
 	if is_instance_valid(match_screen): match_screen.update_frame(model)
 
 func _credits() -> void:
+	_clear_dialogs()
 	var d := AcceptDialog.new()
 	d.title = "Cadrage Débordement · Crédits"
 	d.dialog_text = "Photographies : auteurs, pages sources, licences et modifications dans le dossier Licences.\nModèle Quaternius : CC0. Portraits fictifs générés par IA.\nDM Sans et Barlow Condensed : SIL OFL. Godot : MIT. Node : notices incluses.\n\nLes clubs sont des identités de jeu originales. Les finances et les joueurs sont fictifs.\nLes villes et stades photographiés sont réels ; l'enceinte3D est générique."

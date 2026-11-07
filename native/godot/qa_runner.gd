@@ -53,6 +53,18 @@ func _press(text:String) -> void:
 			return
 	_check(false,"Control exists: "+text)
 
+func _keyboard_focus() -> void:
+	var buttons:Array=app.root_content.find_children("*","Button",true,false)
+	for button in buttons:
+		if button is Button and button.is_visible_in_tree() and not button.disabled:
+			button.grab_focus()
+			_check(button.has_focus(),"Keyboard focus reaches visible action")
+			var next:Control=button.find_next_valid_focus()
+			_check(next!=null and next.is_visible_in_tree(),"Keyboard traversal has next visible control")
+			if next!=null:next.grab_focus()
+			return
+	_check(false,"Keyboard accessible action exists")
+
 func _capture(name:String) -> void:
 	await _settle()
 	var logical:Vector2=Vector2(DisplayServer.window_get_size()) if DisplayServer.get_name()!="headless" else get_tree().root.size
@@ -70,15 +82,10 @@ func _capture(name:String) -> void:
 func _coverage() -> void:
 	await _ask("auto_lineup")
 	if app.model.get("selection",{}).get("valid",true):return
-	# The manager resolves real squad shortages through actual recruitment.
-	for slot in app.model.get("selection",{}).get("slots",[]).slice(0,3):
-		if slot.get("eligibleIds",[]).size()>1:continue
-		for p in app.model.get("market",[]):
-			if not p.get("available",false) or p.get("pos")!=slot.get("label"):continue
-			await _ask("recruit",{"playerId":p.id,"salary":int(p.salary)*2,"years":2,"confirmed":true},true)
-			_dismiss()
-			break
-	await _ask("auto_lineup")
+	# This real paid action repairs injuries and qualified bench shortages.
+	await _ask("promote_cover",{"confirmed":true})
+	_dismiss()
+	_check(app.model.get("selection",{}).get("valid",false),"Native promotions restore legal selection")
 
 func _run() -> void:
 	if OS.get_environment("CD_GODOT_DATA_DIR").is_empty():get_tree().quit(2);return
@@ -116,6 +123,28 @@ func _run() -> void:
 		for page in ["Bureau","Effectif","Composition","Préparation","Calendrier","Classements","Recrutement","Finances","Club","Match"]:
 			app._navigate(page)
 			await _capture(page.to_lower()+"-"+str(resolution.x))
+			_keyboard_focus()
+	# Submit a real offer through the contract dialog rather than a synthetic UI value.
+	app._navigate("Recrutement")
+	for candidate in app.model.get("market",[]):
+		if not candidate.get("available",false):continue
+		app.SquadViews.contract(app,candidate,true)
+		await _capture("offre-contrat")
+		var d:ConfirmationDialog=null
+		for child in app.get_children():
+			if child is ConfirmationDialog and child.visible:d=child
+		_check(d!=null,"Contract offer is explicit before signature")
+		if d!=null:
+			var fields:Array=d.find_children("*","SpinBox",true,false)
+			if not fields.is_empty():fields[0].value=minf(100000,float(candidate.salary)*2)
+			_confirm()
+			await _wait()
+			_check(app.bridge.last_response_ok,"Native negotiation returns through UI")
+			var signed:bool=app.model.get("squad",[]).any(func(p):return p.id==candidate.id)
+			var response:Dictionary=app.model.meta.get("negotiation",{})
+			_check(signed== (response.get("status")=="ready"),"Only accepted negotiation adds recruited player")
+			_dismiss()
+		break
 	app._navigate("Composition")
 	var selection:Dictionary=app.model.get("selection",{})
 	if not selection.get("slots",[]).is_empty():
@@ -133,7 +162,7 @@ func _run() -> void:
 			_check(app.model.tactics.attack==option.id,"Attack decision persisted")
 			break
 	app._navigate("Préparation")
-	_press("ÉQUILIBRÉE")
+	_press("CHARGE NORMALE")
 	await _wait()
 	_check(app.model.meta.trained,"Training performed via real control")
 	app._navigate("Match")
@@ -166,7 +195,7 @@ func _run() -> void:
 	_check(not app.pause_button.disabled,"Second kickoff reenabled")
 	_press("COUP D'ENVOI")
 	await _wait()
-	_check(app.model.live!=null,"Second actual match starts without navigating away")
+	_check(app.model.live!=null,"Second actual match starts without navigating away: "+app.last_error)
 	if app.model.live==null:await _finish();return
 	await _ask("delegate")
 	await _ask("finish_round")
@@ -181,6 +210,7 @@ func _run() -> void:
 		await _ask("finish_round")
 		rounds+=1
 	_check(app.model.meta.get("canAdvanceSeason",false),"Complete season reaches interseason")
+	if not app.model.meta.get("canAdvanceSeason",false):await _finish();return
 	await _capture("fin-saison")
 	if app.model.meta.get("canAdvanceSeason",false):
 		await _ask("next_season",{"confirmed":true})

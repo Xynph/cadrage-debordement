@@ -70,7 +70,8 @@ static func office(app: Control) -> Control:
 	journal.add_child(G.section("DANS LE VESTIAIRE", "Les nouvelles de votre carrière"))
 	var messages: Array = app.model.get("messages", [])
 	for message in messages.slice(0, 3):
-		journal.add_child(G.wrap(str(message), 13, G.INK))
+		var text:=str(message).replace("l’onglet Contrats","les fiches des joueurs dans Effectif").replace("l'onglet Contrats","les fiches des joueurs dans Effectif")
+		journal.add_child(G.wrap(text, 13, G.INK))
 		journal.add_child(G.separator())
 	return page
 

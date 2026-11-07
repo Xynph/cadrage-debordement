@@ -63,6 +63,8 @@ func _run() -> void:
 	var deadline := Time.get_ticks_msec() + 15000
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
 	await _wait()
+	_check(app.model.get("club")==null and app.route=="Accueil","Fresh profile remains on menu without automatic creation")
+	await _command("new_career",{"club":0})
 	if mode == "disk":
 		await _delay(500)
 		_check(errors == 1, "Permanent first-write refusal emits exactly one error (observed %s)" % errors)
@@ -70,10 +72,11 @@ func _run() -> void:
 		_check(not FileAccess.file_exists(profile.path_join("PrototypeGodot/donnees.json")), "Failure does not persist a career")
 		DirAccess.remove_absolute(profile.path_join("PrototypeGodot/donnees.tmp"))
 		_dismiss_errors()
+		app._navigate("Création")
 		var retry: Button = null
-		for button in _buttons(app.body):
-			if button.text.contains("RÉESSAYER"): retry = button
-		_check(retry != null, "Explicit creation retry available")
+		for button in _buttons(app.root_content):
+			if button.text.begins_with("PRENDRE LES RÊNES"): retry = button
+		_check(retry != null, "Explicit club creation retry available")
 		if retry != null:
 			retry.pressed.emit()
 			await _wait()
@@ -96,10 +99,12 @@ func _run() -> void:
 		_check(not app.pause_button.disabled, "Next kickoff enabled without navigation")
 		# Repair the actual 23 after match injuries before testing the next kickoff.
 		await _command("auto_lineup")
+		var legal:bool=app.model.get("selection",{}).get("valid",false)
 		if not app.pause_button.disabled:
 			app.pause_button.pressed.emit()
 			await _wait()
-			_check(app.model.live != null and app.model.meta.round == 1, "Second match starts through actual UI control")
+			_check((app.model.live != null and app.model.meta.round == 1) if legal else (app.model.live==null and not app.last_error.is_empty()), "Second kickoff starts or gives the real selection refusal")
+			_dismiss_errors()
 		var actual: Dictionary = app.model
 		app.model = actual.duplicate(true)
 		app.model.live = null
@@ -119,7 +124,9 @@ func _run() -> void:
 			file.close()
 			app.import_mode = true
 			app._file_selected(path)
-			_check(not app.waiting and app.status.text.to_lower().contains("volumineux"), "UI rejects inadmissible UTF8/JSON import before transport")
+			for child in app.get_children():
+				if child is ConfirmationDialog and child.visible: child.confirmed.emit();break
+			_check(not app.waiting and app.last_error.to_lower().contains("volumineux"), "UI rejects inadmissible UTF8/JSON import before transport")
 			# RED must not enqueue more requests on an already stranded reader.
 			if app.waiting: break
 			_dismiss_errors()

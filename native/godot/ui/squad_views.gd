@@ -87,7 +87,19 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	list.add_child(G.label(p.get("contractLabel",""),13))
 	list.add_child(G.label(G.euros(p.get("salary",0))+" / semaine",12,G.MUTED))
 	list.add_child(G.label("%s minutes · %s apparitions"%[G.n(p.get("minutes",0)),G.n(p.get("appearances",0))],12,G.MUTED))
-	list.add_child(G.button("PROPOSER UNE PROLONGATION",func(): contract(app,p,false)))
+	var renewal:Dictionary=p.get("renewal",{})
+	var extend:=G.button("PROPOSER UNE PROLONGATION",func(): contract(app,p,false))
+	extend.disabled=not renewal.get("available",false) or not app._live().is_empty()
+	extend.tooltip_text="Le contrat ne permet pas de prolongation supplémentaire dans la limite de trois saisons." if not renewal.get("available",false) else "Une offre sera soumise au joueur avant toute signature."
+	list.add_child(extend)
+	list.add_child(G.label("CHARGE INDIVIDUELLE",11,G.MUTED))
+	var load_plan:=OptionButton.new()
+	var modes:Array=["collective","repos","normal","intense"]
+	for text in ["Suivre le collectif","Récupération individuelle","Charge normale","Charge intense"]:load_plan.add_item(text)
+	load_plan.select(maxi(0,modes.find(p.get("loadPlan","collective"))))
+	load_plan.disabled=not app._live().is_empty()
+	load_plan.item_selected.connect(func(index:int):app._command("set_player_load",{"playerId":p.id,"mode":modes[index]}))
+	list.add_child(load_plan)
 	list.add_child(G.label("Portrait fictif généré par IA",9,G.MUTED))
 
 static func radar_setup(radar:Control,p:Dictionary,accent:Color) -> void:
@@ -129,6 +141,11 @@ static func lineup(app:Control) -> Control:
 	var auto:=G.button("SÉLECTION AUTOMATIQUE DU STAFF",func():app._command("auto_lineup"))
 	auto.disabled=not app._live().is_empty()
 	side.add_child(auto)
+	if not selection.get("valid",true):
+		var cover:=G.button("COMPLÉTER AVEC LE CENTRE DE FORMATION",func():app.confirm("Renforcer la feuille de match", "Le staff sélectionne d'abord les joueurs disponibles, puis promeut de vrais joueurs aux postes manquants. Chaque promotion ajoute 2 500 € de salaire par semaine. Confirmer ?",func():app._command("promote_cover",{"confirmed":true})))
+		cover.disabled=not app._live().is_empty() or app.model.meta.get("canAdvanceSeason",false)
+		cover.tooltip_text="Une solution de secours payante ; vous pouvez aussi composer votre groupe ou recruter."
+		side.add_child(cover)
 	var list:=G.scroll(side)
 	var eligible:Variant=selected.get("eligibleIds")
 	for p in app.model.get("squad",[]):
@@ -168,7 +185,7 @@ static func preparation(app:Control) -> Control:
 	panel.add_child(G.section("LA SÉANCE COLLECTIVE","La charge agit réellement sur la récupération et le développement"))
 	var choices:=G.h(10)
 	panel.add_child(choices)
-	for pair in [["repos","RÉCUPÉRATION"],["normal","ÉQUILIBRÉE"],["intense","INTENSIVE"]]:
+	for pair in [["repos","RÉCUPÉRATION"],["normal","CHARGE NORMALE"],["intense","INTENSIVE"]]:
 		var b:=G.button(pair[1],func():app._command("train",{"mode":pair[0]}))
 		G.fill(b)
 		b.disabled=app.model.meta.get("trained",false) or not app._live().is_empty()
@@ -206,19 +223,21 @@ static func contract(app:Control,p:Dictionary,recruiting:bool) -> void:
 	var fields:=G.v(8)
 	fields.add_child(G.wrap("Salaire hebdomadaire et durée proposés. Le joueur peut refuser ou faire une contre-offre.",13))
 	var salary:=SpinBox.new()
-	salary.min_value=1
-	salary.max_value=1000000
+	var quote:Dictionary=p if recruiting else p.get("renewal",{})
+	salary.min_value=1000
+	salary.max_value=100000
 	salary.step=100
-	salary.value=float(p.get("salary",5000))
+	salary.value=float(quote.get("salary",p.get("salary",5000)))
 	salary.suffix="€ / semaine"
 	fields.add_child(salary)
 	var years:=SpinBox.new()
-	years.min_value=1
-	years.max_value=3
-	years.value=2
+	years.min_value=quote.get("minYears",1)
+	years.max_value=quote.get("maxYears",3)
+	years.value=maxf(years.min_value,2)
 	years.suffix="saison(s)"
 	fields.add_child(years)
-	fields.add_child(G.label("Coût d'acquisition : "+G.euros(p.get("fee",0)) if recruiting else "Prolongation du contrat actuel",12,G.MUTED))
+	fields.add_child(G.label(("Coût d'acquisition : " if recruiting else "Prime de prolongation : ")+G.euros(quote.get("fee",0)),12,G.MUTED))
+	d.get_ok_button().text="SOUMETTRE L'OFFRE"
 	d.add_child(fields)
 	d.confirmed.connect(func():app._command("recruit" if recruiting else "extend_contract",{"playerId":p.id,"salary":int(salary.value),"years":int(years.value),"confirmed":true});d.queue_free())
 	d.canceled.connect(d.queue_free)

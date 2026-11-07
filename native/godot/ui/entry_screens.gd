@@ -40,8 +40,13 @@ static func home(app: Control) -> Control:
 		choices.add_child(G.label(G.club_name(club), 26, G.INK, true))
 		choices.add_child(G.label("Saison %s · %s" % [G.n(app.model.meta.get("season", 1)), app.model.meta.get("roundLabel", "Journée " + G.n(int(app.model.meta.get("round", 0)) + 1))], 12, G.MUTED))
 		choices.add_child(G.button("REPRENDRE LA CARRIÈRE  →", func(): app._navigate("Bureau"), true))
-	choices.add_child(G.button("NOUVELLE CARRIÈRE", func(): app._navigate("Création"), club.is_empty()))
-	choices.add_child(G.button("IMPORTER UNE CARRIÈRE", func(): app.open_file(true)))
+	var locked:bool=app.model.is_empty() or app.model.get("meta",{}).get("recoveryRequired",false)
+	var new_career:=G.button("NOUVELLE CARRIÈRE", func(): app._navigate("Création"), club.is_empty())
+	new_career.disabled=locked
+	choices.add_child(new_career)
+	var importing:=G.button("IMPORTER UNE CARRIÈRE", func(): app.open_file(true))
+	importing.disabled=locked
+	choices.add_child(importing)
 	choices.add_child(G.button("PARAMÈTRES", app.settings))
 	choices.add_child(G.button("QUITTER", app.request_quit))
 	var meta: Dictionary = app.model.get("meta", {})
