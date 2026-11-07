@@ -82,8 +82,11 @@ try{
      if(!root||typeof root!=='object')return;
      delete root.v101to104;delete root.v105to110;delete root.v111to116;
    }
-   omit(doc);omit(doc.state);omit(doc.game);
-   return !!parseSaveDocument(JSON.stringify(doc));
+   const old=JSON.parse(JSON.stringify(doc.state));
+   omit(old);
+   // Create a freshly checksummed export from the legacy state; never tamper with a signed file.
+   const signed=createSaveDocument(old);
+   return !!parseSaveDocument(JSON.stringify(signed));
  },saved));
  await page.reload();
  check('Jeu recharge sans erreur JS',await page.evaluate(()=>typeof start==='function'&&typeof parseSaveDocument==='function'));
