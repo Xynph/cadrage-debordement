@@ -67,3 +67,29 @@ test('Carrière fictive préexistante reste inchangée, pas de V12 ni évolution
  assert.equal(restored.run('S.clubs.every(c=>c.players.every(p=>p.lnrRatingsVersion===undefined))'),true);
  assert.equal(restored.run('S.clubs[0].players[0].rating'),before.clubs[0].players[0].rating);
 });
+
+test('Trois saisons completes TOP14: 26 journees, phases finales, 3 imports et declin reel',()=>{
+ let g=ready();g.run("start(0,'lnr')");
+ let seasons=0,fixtures=0,playoffs=0;
+ for(let season=1;season<=3;season++){
+  assert.equal(g.run('S.season'),season);
+  for(let round=0;round<26;round++){
+   assert.equal(g.run('S.phase'),'league');
+   assert.equal(g.run('S.round'),round);
+   const count=g.run('roundPairs().length');assert.equal(count,7);
+   g.run('finishRound()');fixtures+=count;
+  }
+  assert.equal(g.run('S.phase'),'barrage');
+  while(g.run('S.phase')!=='ended'){
+   const count=g.run('roundPairs().length');assert.ok(count>=1&&count<=2);
+   g.run('finishRound()');playoffs+=count;
+  }
+  assert.equal(g.run('S.clubs.every(c=>c.played===26)'),true);
+  assert.equal(g.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),true);
+  g.run('advanceSeason()');seasons++;
+  assert.equal(g.run('S.season'),season+1);
+  g=transfer(g);
+  assert.equal(g.run('S.clubs.every(c=>c.players.filter(p=>p.lnrRatingsVersion===1).every(p=>p.skillBase===p.rating))'),true);
+ }
+ assert.equal(seasons,3);assert.equal(fixtures,546);assert.equal(playoffs,15);
+});
