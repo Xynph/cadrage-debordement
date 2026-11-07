@@ -29,12 +29,12 @@ static func button(text: String, callback: Callable, primary: bool = false) -> B
 	var b := Button.new()
 	b.text = text
 	b.custom_minimum_size.y = 42
-	b.add_theme_font_size_override("font_size", 12)
+	b.add_theme_font_size_override("font_size", 14)
 	if primary:
 		b.add_theme_stylebox_override("normal", T.box(INK, 4))
 		b.add_theme_stylebox_override("hover", T.box(Color("d7d6c9"), 4))
 		b.add_theme_stylebox_override("pressed", T.box(Color("bec8ba"), 4))
-		for key in ["font_color", "font_hover_color", "font_pressed_color"]: b.add_theme_color_override(key, BG)
+		for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: b.add_theme_color_override(key, BG)
 	b.pressed.connect(callback)
 	return b
 
@@ -47,7 +47,7 @@ static func nav_button(text:String,callback:Callable,accent:Color,selected:bool)
 	var b:=button(text,callback)
 	b.alignment=HORIZONTAL_ALIGNMENT_LEFT
 	b.custom_minimum_size.y=34
-	b.add_theme_font_size_override("font_size",11)
+	b.add_theme_font_size_override("font_size",13)
 	var normal:=T.box(Color(accent,.18) if selected else Color.TRANSPARENT,3)
 	normal.content_margin_top=6
 	normal.content_margin_bottom=6

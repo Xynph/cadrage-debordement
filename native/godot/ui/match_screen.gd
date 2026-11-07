@@ -1,5 +1,5 @@
 extends VBoxContainer
-const G = preload("res://ui/game_skin.gd")
+const G = preload("res://ui/carnet_skin.gd")
 var app: Control
 var stage: Node3D
 var clock: Label
@@ -17,15 +17,19 @@ var presence_key := ""
 var model: Dictionary = {}
 
 func _ready() -> void:
+	name="CarnetMatch"
+	theme=G.T.paper()
 	size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	size_flags_vertical=Control.SIZE_EXPAND_FILL
 	add_theme_constant_override("separation",10)
+	var score_sheet:=G.panel(self)
 	var banner:=G.h(16)
-	add_child(banner)
+	score_sheet.add_child(banner)
 	clock=G.label("AVANT-MATCH",24,G.GOLD,true)
 	clock.custom_minimum_size.x=120
 	banner.add_child(clock)
-	home=G.label("",23,G.INK,true)
+	home=G.label("",22,G.INK,true)
+	home.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	home.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
 	G.fill(home)
 	banner.add_child(home)
@@ -33,7 +37,8 @@ func _ready() -> void:
 	score.custom_minimum_size.x=130
 	score.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 	banner.add_child(score)
-	away=G.label("",23,G.INK,true)
+	away=G.label("",22,G.INK,true)
+	away.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	G.fill(away)
 	banner.add_child(away)
 	play=G.button("COUP D'ENVOI",_act,true)
@@ -43,7 +48,7 @@ func _ready() -> void:
 	add_child(center)
 	var container:=SubViewportContainer.new()
 	container.stretch=true
-	container.custom_minimum_size=Vector2(560,330)
+	container.custom_minimum_size=Vector2(500,280)
 	G.fill(container,true)
 	center.add_child(container)
 	var viewport:=SubViewport.new()
@@ -55,19 +60,22 @@ func _ready() -> void:
 	stage=load("res://match_view.gd").new()
 	viewport.add_child(stage)
 	var panel:=G.panel(center)
-	panel.get_parent().get_parent().custom_minimum_size.x=240
-	panel.get_parent().get_parent().size_flags_horizontal=Control.SIZE_FILL
+	panel.get_parent().name="MatchNotebook"
+	panel.get_parent().custom_minimum_size.x=310
+	panel.get_parent().size_flags_horizontal=Control.SIZE_FILL
 	var tabs:=G.h(3)
 	panel.add_child(tabs)
 	for name in ["Direct","Banc","Stats"]:
 		var b:=G.button(name.to_upper(),func():tab=name;presence_key="";_side())
-		b.add_theme_font_size_override("font_size",10)
+		b.add_theme_font_size_override("font_size",13)
 		G.fill(b)
 		tabs.add_child(b)
 	side=G.scroll(panel)
+	var control_sheet:=G.panel(self)
 	var bottom:=G.h(8)
-	add_child(bottom)
-	bottom.add_child(G.button("CAMÉRA TV",func():stage.set_camera("tv")))
+	control_sheet.add_child(bottom)
+	var tv:=G.button("CAMÉRA TV",func():stage.set_camera("tv"))
+	bottom.add_child(tv)
 	bottom.add_child(G.button("VUE TACTIQUE",func():stage.set_camera("tactical")))
 	var speed:=OptionButton.new()
 	for text in ["Cadence ×1","Cadence ×4","Cadence ×12"]:speed.add_item(text)
@@ -75,17 +83,25 @@ func _ready() -> void:
 	speed.item_selected.connect(func(index:int):app.tick_steps=[1,4,12][index])
 	bottom.add_child(speed)
 	bottom.add_child(G.button("CONSIGNES",func():app._navigate("Préparation")))
-	bottom.add_child(G.button("ADJOINT",func():app.confirm("Confier la fin du match", "L'adjoint termine la rencontre avec le moteur actuel. Confirmer la délégation ?",func():app._command("delegate"))))
+	bottom.add_child(G.button("ADJOINT",func():app.confirm("Confier la fin du match", "L’adjoint prend en charge la fin de cette rencontre. Confirmer la délégation ?",func():app._command("delegate"))))
 	var spacer:=Control.new()
 	G.fill(spacer)
 	bottom.add_child(spacer)
 	finish=G.button("VALIDER LA JOURNÉE  →",func():app._command("finish_round"))
 	bottom.add_child(finish)
+	for control in bottom.get_children():
+		if control is Button:
+			control.add_theme_font_size_override("font_size",12)
+			for state in ["normal","hover","pressed","disabled"]:
+				var style:StyleBoxFlat=control.get_theme_stylebox(state).duplicate()
+				style.content_margin_left=10
+				style.content_margin_right=10
+				control.add_theme_stylebox_override(state,style)
 	app.match_view=stage
 	app.pause_button=play
 	app.match_finish=finish
 	app.match_clock=clock
-	add_child(G.label("Simulation de carrière · enceinte générique · caméra éloignée",10,G.MUTED))
+	add_child(G.label("Simulation de carrière · enceinte générique · caméra éloignée",12,G.WHITE))
 
 func update_frame(value:Dictionary) -> void:
 	model=value
@@ -141,7 +157,7 @@ func _side() -> void:
 		child.queue_free()
 	if live.is_empty():
 		side.add_child(G.section("L'AVANT-MATCH"))
-		side.add_child(G.wrap("Vérifiez votre composition à23 et vos consignes. Le coup d'envoi utilise les décisions du moteur.",14))
+		side.add_child(G.wrap("Vérifiez votre feuille à 23 et vos consignes avant le coup d’envoi.",14))
 		side.add_child(G.button("VÉRIFIER LA FEUILLE",func():app._navigate("Composition")))
 		return
 	match tab:
@@ -179,9 +195,11 @@ func _bench(live:Dictionary) -> void:
 		var p:Variant=players[slot]
 		var b:=G.button(str(p.get("name","Joueur")) if p is Dictionary else "%d · Poste vacant"%(slot+1),func():selected_slot=slot;presence_key="";_side())
 		b.alignment=HORIZONTAL_ALIGNMENT_LEFT
+		b.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+		b.tooltip_text=b.text
 		for option in live.get("substitutions",[]):
-			if option.get("slot")==slot:b.tooltip_text="%d · %s"%[slot+1,option.get("label","")]
-		if slot==selected_slot:b.add_theme_stylebox_override("normal",G.T.box(Color("493b2d"),4,G.GOLD))
+			if option.get("slot")==slot:b.tooltip_text="%s\n%d · %s"%[b.text,slot+1,option.get("label","")]
+		if slot==selected_slot:b.add_theme_stylebox_override("normal",G.T.box(Color("ddd1bc"),3,G.GOLD))
 		side.add_child(b)
 	if selected_slot<0 or selected_slot>=players.size():return
 	var allowed:Array=[]
@@ -194,6 +212,8 @@ func _bench(live:Dictionary) -> void:
 	for p in reserves:
 		if not p is Dictionary:continue
 		var b:=G.button(str(p.get("name","Joueur")),func():app._command("substitute",{"slot":selected_slot,"outId":out_id,"inId":p.id}))
+		b.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+		b.tooltip_text=str(p.get("name","Joueur"))
 		b.disabled=p.get("id") not in allowed or not live.get("paused",false) or live.get("finished",false)
 		side.add_child(b)
 

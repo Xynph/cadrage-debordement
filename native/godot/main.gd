@@ -57,6 +57,7 @@ func _ready() -> void:
 	timer.timeout.connect(_live_tick)
 	add_child(timer)
 	file_dialog = FileDialog.new()
+	file_dialog.theme=G.T.paper()
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	file_dialog.filters = PackedStringArray(["*.json ; Carrière Oval Legacy 27"])
 	file_dialog.file_selected.connect(_file_selected)
@@ -64,6 +65,7 @@ func _ready() -> void:
 	pack_manager = load("res://pack_manager.gd").new()
 	pack_manager.app = self
 	add_child(pack_manager)
+	pack_manager.picker.theme=G.T.paper()
 	bridge = load("res://engine_bridge.gd").new()
 	add_child(bridge)
 	bridge.model_changed.connect(_receive_model)
@@ -190,7 +192,7 @@ func _render() -> void:
 	add_child(root_content)
 	move_child(root_content, 0)
 	var bg := ColorRect.new()
-	bg.color = Color("161819") if route == "Bureau" else G.BG
+	bg.color = Color("191b1c")
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root_content.add_child(bg)
 	if route == "Accueil":
@@ -229,10 +231,9 @@ func _render() -> void:
 	header_date = G.label("", 11, G.MUTED)
 	titles.add_child(header_date)
 	_update_header_date()
-	heading = G.label({"Bureau":"Le club, cette semaine.","Effectif":"LES HOMMES DU PROJET","Composition":"VOTRE FEUILLE À 23","Préparation":"PRÉPARER LA RENCONTRE","Calendrier":"LE FIL DE LA SAISON","Classements":"LA COURSE AUX SOMMETS","Recrutement":"CONSTRUIRE L'EFFECTIF","Finances":"LES MOYENS DU PROJET","Club":"UN CLUB. UN TERRITOIRE.","Match":"LE JOUR DE MATCH"}.get(route, route.to_upper()), 35, G.INK, true)
-	if route == "Bureau":
-		heading.add_theme_font_override("font", G.T.BODY)
-		heading.add_theme_font_size_override("font_size", 31)
+	heading = G.label({"Bureau":"Le club, cette semaine.","Effectif":"Les hommes du projet.","Composition":"Votre feuille à 23.","Préparation":"Préparer la rencontre.","Calendrier":"Le fil de la saison.","Classements":"La course aux sommets.","Recrutement":"Construire l’effectif.","Finances":"Les moyens du projet.","Club":"Un club. Un territoire.","Match":"Le jour de match."}.get(route, route.to_upper()), 35, G.INK, true)
+	heading.add_theme_font_override("font", G.T.BODY)
+	heading.add_theme_font_size_override("font_size", 29)
 	titles.add_child(heading)
 	top.add_child(G.button("SAUVEGARDER", func(): _command("save")))
 	primary_button = G.button(primary_text(), primary_action, true)
@@ -272,7 +273,7 @@ func _update_header_date() -> void:
 func _build_sidebar(parent: Node) -> void:
 	var rail := PanelContainer.new()
 	rail.custom_minimum_size.x = 192
-	rail.add_theme_stylebox_override("panel", G.T.box(Color("111b22"), 0))
+	rail.add_theme_stylebox_override("panel", G.T.box(Color("141617"), 0))
 	parent.add_child(rail)
 	var margin := G.margin(2)
 	rail.add_child(margin)
@@ -298,6 +299,9 @@ func _build_sidebar(parent: Node) -> void:
 	left.add_child(G.crest(model.club, 60))
 	var name := G.label(G.club_name(model.club), 20, G.INK, true)
 	name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name.max_lines_visible=2
+	name.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+	name.tooltip_text=G.club_name(model.club)
 	left.add_child(name)
 	left.add_child(G.separator())
 	for group in [["LE CLUB",["Bureau","Effectif","Composition","Préparation","Recrutement","Finances","Club"]],["LA COMPÉTITION",["Calendrier","Classements","Match"]]]:
@@ -353,6 +357,7 @@ func confirm(title: String, text: String, callback: Callable) -> void:
 
 func _prepare_dialog(dialog: AcceptDialog, width: int) -> void:
 	# Configure wrapping before text/insertion can queue an oversized minimum.
+	dialog.theme = G.T.paper()
 	dialog.min_size = Vector2i(width, 0)
 	dialog.dialog_autowrap = true
 
@@ -383,7 +388,7 @@ func settings() -> void:
 	_prepare_dialog(d, 650)
 	d.title = "Affichage"
 	d.dialog_text = "Fenêtre redimensionnable · interface adaptée à votre écran."
-	d.add_button("Fenêtré1440×900",false,"window")
+	d.add_button("Fenêtré 1440×900",false,"window")
 	d.add_button("Plein écran",false,"full")
 	d.add_button("Packs et identités",false,"packs")
 	d.custom_action.connect(func(action: String):
