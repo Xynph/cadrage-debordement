@@ -32,7 +32,7 @@ PAGES = {
     'formation': ('passerelle', 'potentiel', 'dossiers'),
 }
 DOM = {
-    'dashboard': { 'pilotage': '.da42-command', 'calendrier': '.da4-calendar' },
+    'dashboard': { 'pilotage': '.ed-office', 'calendrier': '.da4-calendar' },
     'tactics': { 'condition': '.da42-fitness', 'analyse': '.da4-tactics-stage' },
     'finance': { 'tresorerie': '.da4-finance-chart', 'flux': '.da42-cash-stage' },
     'recruitment': { 'besoins': '.da4-recruit-stage', 'marche': '.da42-market' },
@@ -42,7 +42,7 @@ DOM = {
 
 try:
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(headless=True)
+        browser = pw.chromium.launch(headless=True, executable_path=os.environ.get('CD_BROWSER_EXECUTABLE'))
         page = browser.new_page(viewport={'width': 1440, 'height': 900}, color_scheme='dark',
                                 reduced_motion='reduce')
         page.set_default_timeout(12000)
@@ -170,8 +170,8 @@ try:
                         }"""))
                     if route == 'dashboard' and key == 'pilotage':
                         check(f'desktop command fills panel {width}', page.evaluate("""()=>{
-                          let a=document.querySelector('.da42-command-lead').getBoundingClientRect();
-                          let b=document.querySelector('.da42-command-rail').getBoundingClientRect();
+                          let a=document.querySelector('.ed-office-match').getBoundingClientRect();
+                          let b=document.querySelector('.ed-office-group').getBoundingClientRect();
                           return a.width>300 && b.width>190 && a.right<=b.left+2;
                         }"""))
                     page.locator('#toast').evaluate('e=>e.style.display="none"')
@@ -257,8 +257,11 @@ try:
         check('native academy tab still opens', page.locator('.cd04-player-link').count() > 0)
         page.evaluate("nav('dashboard')")
         page.locator('[data-da42-subpage="pilotage"]').click()
-        page.locator('.da42-command-cta').click()
-        check('command opens native tactics', page.evaluate("view==='tactics'"))
+        page.locator('.ed-office-primary').click()
+        check('command opens native match preparation', page.evaluate("view==='match'&&!S.live"))
+        page.evaluate("nav('dashboard')")
+        page.locator('[data-ed-office-route="team"][data-ed-office-tab="sheet"]').click()
+        check('office opens native match sheet', page.evaluate("view==='team'&&squadTab==='sheet'"))
         page.evaluate("nav('dashboard')")
         page.locator('[data-da42-subpage="calendrier"]').click()
         page.locator('.da4-fixture .da4-cta').click()

@@ -1,0 +1,41 @@
+name: Bureau Premium — parcours natif PC
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/premium-editorial.*'
+      - 'tests/premium-manager-office*'
+      - '.github/workflows/premium-manager-office.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: premium-manager-office-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  office:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Projections, échappement et match dédié
+        run: node --test tests/premium-manager-office.cjs tests/premium-editorial.cjs tests/premium-editorial-matchday.cjs
+      - name: Installer Chromium de qualification
+        run: |
+          npm install --prefix "$RUNNER_TEMP/office-browser" --no-audit --no-fund playwright@1.58.0
+          "$RUNNER_TEMP/office-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Carrières neuve et avancée, clics et fenêtres
+        env:
+          CD_PLAYWRIGHT_MODULE: ${{ runner.temp }}/office-browser/node_modules/playwright
+        run: node tests/premium-manager-office-browser.mjs
+      - name: Captures et résultats
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: premium-manager-office-native-pc
+          path: premium-manager-office-report/
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,153 @@
+{
+  "passed": true,
+  "checks": [
+    "Bureau connectÃ© aux contrats natifs",
+    "contrats : bon Ã©cran et bon onglet",
+    "feuille : destination native exacte",
+    "portrait : vrai dossier joueur",
+    "groupe : quitte le dossier pour le tableau",
+    "message : fenÃªtre native de lecture",
+    "message : vrai corps",
+    "message : Ã‰chap ferme",
+    "message : focus rendu",
+    "lecture : carriÃ¨re et disque invariants",
+    "survol : valeur rÃ©elle",
+    "clavier : valeur sÃ©lectionnÃ©e",
+    "analyste contraste des sept textes et commandes",
+    "analyste 1440 sans dÃ©filement global",
+    "analyste 1440 cinq panneaux entiÃ¨rement visibles",
+    "analyste 1440 contenu lisible .ed-office-position",
+    "analyste 1440 contenu lisible .ed-office-watch button",
+    "analyste 1440 contenu lisible .ed-office-match-actions",
+    "analyste 1920 sans dÃ©filement global",
+    "analyste 1920 cinq panneaux entiÃ¨rement visibles",
+    "analyste 1920 contenu lisible .ed-office-position",
+    "analyste 1920 contenu lisible .ed-office-watch button",
+    "analyste 1920 contenu lisible .ed-office-match-actions",
+    "tribune contraste des sept textes et commandes",
+    "tribune 1440 sans dÃ©filement global",
+    "tribune 1440 cinq panneaux entiÃ¨rement visibles",
+    "tribune 1440 contenu lisible .ed-office-position",
+    "tribune 1440 contenu lisible .ed-office-watch button",
+    "tribune 1440 contenu lisible .ed-office-match-actions",
+    "tribune 1920 sans dÃ©filement global",
+    "tribune 1920 cinq panneaux entiÃ¨rement visibles",
+    "tribune 1920 contenu lisible .ed-office-position",
+    "tribune 1920 contenu lisible .ed-office-watch button",
+    "tribune 1920 contenu lisible .ed-office-match-actions",
+    "consultation : aucun appel RNG",
+    "Dossiers : modules prÃ©cÃ©dents conservÃ©s",
+    "Calendrier : sous-page conservÃ©e",
+    "lecture : marquage mÃ©tier persistÃ©",
+    "carriÃ¨re avancÃ©e : quatre matchs vraiment enregistrÃ©s",
+    "scores : dernier vrai rÃ©sultat",
+    "rÃ©sultat : dÃ©tail au clic",
+    "avancÃ©e 1440 sans dÃ©filement global",
+    "avancÃ©e 1440 cinq panneaux entiÃ¨rement visibles",
+    "avancÃ©e 1440 contenu lisible .ed-office-position",
+    "avancÃ©e 1440 contenu lisible .ed-office-watch button",
+    "avancÃ©e 1440 contenu lisible .ed-office-match-actions",
+    "avancÃ©e 1440 contenu lisible .ed-office-result-strip button small",
+    "avancÃ©e 1440 contenu lisible .ed-office-results output",
+    "avancÃ©e 1920 sans dÃ©filement global",
+    "avancÃ©e 1920 cinq panneaux entiÃ¨rement visibles",
+    "avancÃ©e 1920 contenu lisible .ed-office-position",
+    "avancÃ©e 1920 contenu lisible .ed-office-watch button",
+    "avancÃ©e 1920 contenu lisible .ed-office-match-actions",
+    "avancÃ©e 1920 contenu lisible .ed-office-result-strip button small",
+    "avancÃ©e 1920 contenu lisible .ed-office-results output",
+    "consultation avancÃ©e : invariante",
+    "export et parseur natifs",
+    "nom long : ne recouvre pas les commandes",
+    "nom long : enjeux sportifs avant les commandes",
+    "message long : fenÃªtre et boutons dans lâ€™Ã©cran",
+    "LNR : aucun faux portrait",
+    "LNR 1440 sans dÃ©filement global",
+    "LNR 1440 cinq panneaux entiÃ¨rement visibles",
+    "LNR 1440 contenu lisible .ed-office-position",
+    "LNR 1440 contenu lisible .ed-office-watch button",
+    "LNR 1440 contenu lisible .ed-office-match-actions",
+    "LNR 1920 sans dÃ©filement global",
+    "LNR 1920 cinq panneaux entiÃ¨rement visibles",
+    "LNR 1920 contenu lisible .ed-office-position",
+    "LNR 1920 contenu lisible .ed-office-watch button",
+    "LNR 1920 contenu lisible .ed-office-match-actions",
+    "aucune erreur JavaScript",
+    "aucune ressource manquante"
+  ],
+  "screens": [
+    "message-1440.png",
+    "new-analyste-1440.png",
+    "new-analyste-1920.png",
+    "new-tribune-1440.png",
+    "new-tribune-1920.png",
+    "advanced-1440.png",
+    "advanced-1920.png",
+    "lnr-1440.png",
+    "lnr-1920.png"
+  ],
+  "errors": [],
+  "responses": [],
+  "contrast": {
+    "analyste": [
+      {
+        "selector": ".ed-office-group .ed-office-kicker",
+        "ratio": 7.675416571150112
+      },
+      {
+        "selector": ".ed-office-decision b",
+        "ratio": 10.423720822129141
+      },
+      {
+        "selector": ".ed-office-decision small",
+        "ratio": 6.7033351511564305
+      },
+      {
+        "selector": ".ed-office-message-body",
+        "ratio": 6.7033351511564305
+      },
+      {
+        "selector": ".ed-office-position strong",
+        "ratio": 10.113433708345292
+      },
+      {
+        "selector": ".ed-office-sport header button",
+        "ratio": 5.7265497978746085
+      },
+      {
+        "selector": ".ed-office-primary",
+        "ratio": 6.713822029798601
+      }
+    ],
+    "tribune": [
+      {
+        "selector": ".ed-office-group .ed-office-kicker",
+        "ratio": 5.729670173231025
+      },
+      {
+        "selector": ".ed-office-decision b",
+        "ratio": 9.984275396291224
+      },
+      {
+        "selector": ".ed-office-decision small",
+        "ratio": 5.033558960154786
+      },
+      {
+        "selector": ".ed-office-message-body",
+        "ratio": 5.033558960154786
+      },
+      {
+        "selector": ".ed-office-position strong",
+        "ratio": 10.113433708345292
+      },
+      {
+        "selector": ".ed-office-sport header button",
+        "ratio": 5.7265497978746085
+      },
+      {
+        "selector": ".ed-office-primary",
+        "ratio": 6.713822029798601
+      }
+    ]
+  }
+}
