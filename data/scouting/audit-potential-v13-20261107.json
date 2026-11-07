@@ -1,0 +1,502 @@
+{
+  "schema": "rugby-real-potential-age-audit-v13",
+  "asOf": "2026-07-01",
+  "baselineMain": "044e83d2a9f860d59c2aeac2a22df94235bf04c9",
+  "sourceActive": "dist/lnr-ratings-v12.js",
+  "sourceCandidate": "data/scouting/review-v12/candidate.json",
+  "policy": "DIAGNOSTIC ONLY; not a player data patch; potential and role rating may use non-equivalent scales",
+  "players": 1592,
+  "uniqueIds": 1592,
+  "flaggedHistorical": 520,
+  "activePotentialBelowRating": 393,
+  "activeBelowAmongFlagged": 328,
+  "activeBelowNotFlagged": 65,
+  "flaggedNotBelow": 192,
+  "activePotentialEqual": 84,
+  "activePotentialAbove": 1115,
+  "byDivision": {
+    "top14": {
+      "players": 805,
+      "below": 210,
+      "flagged": 278,
+      "meanRating": 74.352
+    },
+    "prod2": {
+      "players": 787,
+      "below": 183,
+      "flagged": 242,
+      "meanRating": 66.787
+    }
+  },
+  "byRole": {
+    "Ailier": {
+      "players": 129,
+      "belowPotential": 60,
+      "alerts": 68,
+      "negativeGapMean": -3.8
+    },
+    "Arrière": {
+      "players": 89,
+      "belowPotential": 33,
+      "alerts": 41,
+      "negativeGapMean": -5.33
+    },
+    "Centre": {
+      "players": 214,
+      "belowPotential": 24,
+      "alerts": 42,
+      "negativeGapMean": -3.42
+    },
+    "Demi de mêlée": {
+      "players": 111,
+      "belowPotential": 32,
+      "alerts": 37,
+      "negativeGapMean": -4.16
+    },
+    "Demi d’ouverture": {
+      "players": 119,
+      "belowPotential": 36,
+      "alerts": 46,
+      "negativeGapMean": -5.06
+    },
+    "Deuxième ligne": {
+      "players": 217,
+      "belowPotential": 54,
+      "alerts": 74,
+      "negativeGapMean": -3.72
+    },
+    "Numéro 8": {
+      "players": 93,
+      "belowPotential": 20,
+      "alerts": 28,
+      "negativeGapMean": -3
+    },
+    "Pilier droit": {
+      "players": 126,
+      "belowPotential": 31,
+      "alerts": 47,
+      "negativeGapMean": -3.52
+    },
+    "Pilier gauche": {
+      "players": 145,
+      "belowPotential": 14,
+      "alerts": 28,
+      "negativeGapMean": -2.79
+    },
+    "Talonneur": {
+      "players": 135,
+      "belowPotential": 27,
+      "alerts": 41,
+      "negativeGapMean": -3.59
+    },
+    "Troisième ligne": {
+      "players": 214,
+      "belowPotential": 62,
+      "alerts": 68,
+      "negativeGapMean": -3.58
+    }
+  },
+  "reviewPriority": [
+    {
+      "id": "lnr:2450",
+      "role": "Arrière",
+      "league": "top14",
+      "activeRating": 88,
+      "legacyPotential": 69,
+      "delta": -19,
+      "previousAlert": true,
+      "evidenceRecords": 4
+    },
+    {
+      "id": "lnr:2425",
+      "role": "Troisième ligne",
+      "league": "top14",
+      "activeRating": 89,
+      "legacyPotential": 71,
+      "delta": -18,
+      "previousAlert": true,
+      "evidenceRecords": 4
+    },
+    {
+      "id": "lnr:1893",
+      "role": "Troisième ligne",
+      "league": "top14",
+      "activeRating": 81,
+      "legacyPotential": 64,
+      "delta": -17,
+      "previousAlert": true,
+      "evidenceRecords": 1
+    },
+    {
+      "id": "lnr:25047",
+      "role": "Centre",
+      "league": "top14",
+      "activeRating": 88,
+      "legacyPotential": 72,
+      "delta": -16,
+      "previousAlert": true,
+      "evidenceRecords": 1
+    },
+    {
+      "id": "lnr:339",
+      "role": "Demi d’ouverture",
+      "league": "top14",
+      "activeRating": 90,
+      "legacyPotential": 74,
+      "delta": -16,
+      "previousAlert": true,
+      "evidenceRecords": 4
+    },
+    {
+      "id": "lnr:11716",
+      "role": "Centre",
+      "league": "top14",
+      "activeRating": 84,
+      "legacyPotential": 70,
+      "delta": -14,
+      "previousAlert": true,
+      "evidenceRecords": 4
+    },
+    {
+      "id": "lnr:1682",
+      "role": "Demi d’ouverture",
+      "league": "prod2",
+      "activeRating": 75,
+      "legacyPotential": 62,
+      "delta": -13,
+      "previousAlert": true,
+      "evidenceRecords": 2
+    },
+    {
+      "id": "lnr:2628",
+      "role": "Arrière",
+      "league": "top14",
+      "activeRating": 81,
+      "legacyPotential": 68,
+      "delta": -13,
+      "previousAlert": true,
+      "evidenceRecords": 3
+    },
+    {
+      "id": "lnr:895",
+      "role": "Ailier",
+      "league": "prod2",
+      "activeRating": 71,
+      "legacyPotential": 58,
+      "delta": -13,
+      "previousAlert": true,
+      "evidenceRecords": 3
+    },
+    {
+      "id": "lnr:2585",
+      "role": "Pilier droit",
+      "league": "top14",
+      "activeRating": 81,
+      "legacyPotential": 69,
+      "delta": -12,
+      "previousAlert": true,
+      "evidenceRecords": 2
+    },
+    {
+      "id": "lnr:4000",
+      "role": "Demi d’ouverture",
+      "league": "top14",
+      "activeRating": 80,
+      "legacyPotential": 69,
+      "delta": -11,
+      "previousAlert": true,
+      "evidenceRecords": 2
+    },
+    {
+      "id": "lnr:460",
+      "role": "Deuxième ligne",
+      "league": "top14",
+      "activeRating": 80,
+      "legacyPotential": 69,
+      "delta": -11,
+      "previousAlert": true,
+      "evidenceRecords": 2
+    },
+    {
+      "id": "lnr:808",
+      "role": "Demi d’ouverture",
+      "league": "prod2",
+      "activeRating": 73,
+      "legacyPotential": 62,
+      "delta": -11,
+      "previousAlert": true,
+      "evidenceRecords": 3
+    },
+    {
+      "id": "lnr:1081",
+      "role": "Demi d’ouverture",
+      "league": "top14",
+      "activeRating": 82,
+      "legacyPotential": 72,
+      "delta": -10,
+      "previousAlert": true,
+      "evidenceRecords": 5
+    },
+    {
+      "id": "lnr:1427",
+      "role": "Troisième ligne",
+      "league": "top14",
+      "activeRating": 81,
+      "legacyPotential": 71,
+      "delta": -10,
+      "previousAlert": true,
+      "evidenceRecords": 4
+    },
+    {
+      "id": "lnr:2449",
+      "role": "Demi de mêlée",
+      "league": "top14",
+      "activeRating": 89,
+      "legacyPotential": 79,
+      "delta": -10,
+      "previousAlert": true,
+      "evidenceRecords": 3
+    },
+    {
+      "id": "lnr:2503",
+      "role": "Ailier",
+      "league": "top14",
+      "activeRating": 83,
+      "legacyPotential": 73,
+      "delta": -10,
+      "previousAlert": true,
+      "evidenceRecords": 0
+    },
+    {
+      "id": "lnr:331",
+      "role": "Demi de mêlée",
+      "league": "top14",
+      "activeRating": 78,
+      "legacyPotential": 68,
+      "delta": -10,
+      "previousAlert": true,
+      "evidenceRecords": 1
+    },
+    {
+      "id": "lnr:888",
+      "role": "Deuxième ligne",
+      "league": "top14",
+      "activeRating": 79,
+      "legacyPotential": 69,
+      "delta": -10,
+      "previousAlert": true,
+      "evidenceRecords": 2
+    },
+    {
+      "id": "lnr:13459",
+      "role": "Deuxième ligne",
+      "league": "top14",
+      "activeRating": 79,
+      "legacyPotential": 70,
+      "delta": -9,
+      "previousAlert": true,
+      "evidenceRecords": 1
+    },
+    {
+      "id": "lnr:13735",
+      "role": "Arrière",
+      "league": "top14",
+      "activeRating": 76,
+      "legacyPotential": 67,
+      "delta": -9,
+      "previousAlert": true,
+      "evidenceRecords": 5
+    },
+    {
+      "id": "lnr:1417",
+      "role": "Arrière",
+      "league": "prod2",
+      "activeRating": 72,
+      "legacyPotential": 63,
+      "delta": -9,
+      "previousAlert": true,
+      "evidenceRecords": 1
+    },
+    {
+      "id": "lnr:2352",
+      "role": "Demi de mêlée",
+      "league": "top14",
+      "activeRating": 73,
+      "legacyPotential": 64,
+      "delta": -9,
+      "previousAlert": true,
+      "evidenceRecords": 2
+    },
+    {
+      "id": "lnr:25055",
+      "role": "Demi d’ouverture",
+      "league": "top14",
+      "activeRating": 72,
+      "legacyPotential": 63,
+      "delta": -9,
+      "previousAlert": true,
+      "evidenceRecords": 0
+    },
+    {
+      "id": "lnr:426",
+      "role": "Ailier",
+      "league": "prod2",
+      "activeRating": 80,
+      "legacyPotential": 71,
+      "delta": -9,
+      "previousAlert": true,
+      "evidenceRecords": 5
+    },
+    {
+      "id": "lnr:603",
+      "role": "Arrière",
+      "league": "top14",
+      "activeRating": 74,
+      "legacyPotential": 65,
+      "delta": -9,
+      "previousAlert": true,
+      "evidenceRecords": 2
+    },
+    {
+      "id": "lnr:894",
+      "role": "Arrière",
+      "league": "prod2",
+      "activeRating": 72,
+      "legacyPotential": 63,
+      "delta": -9,
+      "previousAlert": true,
+      "evidenceRecords": 0
+    },
+    {
+      "id": "lnr:985",
+      "role": "Troisième ligne",
+      "league": "top14",
+      "activeRating": 72,
+      "legacyPotential": 63,
+      "delta": -9,
+      "previousAlert": true,
+      "evidenceRecords": 4
+    },
+    {
+      "id": "lnr:11845",
+      "role": "Demi de mêlée",
+      "league": "top14",
+      "activeRating": 80,
+      "legacyPotential": 72,
+      "delta": -8,
+      "previousAlert": true,
+      "evidenceRecords": 2
+    },
+    {
+      "id": "lnr:12434",
+      "role": "Ailier",
+      "league": "prod2",
+      "activeRating": 73,
+      "legacyPotential": 65,
+      "delta": -8,
+      "previousAlert": true,
+      "evidenceRecords": 0
+    },
+    {
+      "id": "lnr:13699",
+      "role": "Deuxième ligne",
+      "league": "prod2",
+      "activeRating": 67,
+      "legacyPotential": 59,
+      "delta": -8,
+      "previousAlert": true,
+      "evidenceRecords": 1
+    },
+    {
+      "id": "lnr:13708",
+      "role": "Demi d’ouverture",
+      "league": "prod2",
+      "activeRating": 66,
+      "legacyPotential": 58,
+      "delta": -8,
+      "previousAlert": true,
+      "evidenceRecords": 2
+    },
+    {
+      "id": "lnr:1445",
+      "role": "Demi d’ouverture",
+      "league": "prod2",
+      "activeRating": 75,
+      "legacyPotential": 67,
+      "delta": -8,
+      "previousAlert": true,
+      "evidenceRecords": 0
+    },
+    {
+      "id": "lnr:1793",
+      "role": "Arrière",
+      "league": "top14",
+      "activeRating": 73,
+      "legacyPotential": 65,
+      "delta": -8,
+      "previousAlert": true,
+      "evidenceRecords": 5
+    },
+    {
+      "id": "lnr:2151",
+      "role": "Ailier",
+      "league": "top14",
+      "activeRating": 82,
+      "legacyPotential": 74,
+      "delta": -8,
+      "previousAlert": true,
+      "evidenceRecords": 2
+    },
+    {
+      "id": "lnr:2156",
+      "role": "Deuxième ligne",
+      "league": "top14",
+      "activeRating": 79,
+      "legacyPotential": 71,
+      "delta": -8,
+      "previousAlert": true,
+      "evidenceRecords": 2
+    },
+    {
+      "id": "lnr:415",
+      "role": "Demi de mêlée",
+      "league": "top14",
+      "activeRating": 81,
+      "legacyPotential": 73,
+      "delta": -8,
+      "previousAlert": true,
+      "evidenceRecords": 0
+    },
+    {
+      "id": "lnr:697",
+      "role": "Centre",
+      "league": "prod2",
+      "activeRating": 67,
+      "legacyPotential": 59,
+      "delta": -8,
+      "previousAlert": true,
+      "evidenceRecords": 0
+    },
+    {
+      "id": "lnr:981",
+      "role": "Demi de mêlée",
+      "league": "top14",
+      "activeRating": 72,
+      "legacyPotential": 64,
+      "delta": -8,
+      "previousAlert": true,
+      "evidenceRecords": 0
+    },
+    {
+      "id": "lnr:11002",
+      "role": "Ailier",
+      "league": "top14",
+      "activeRating": 84,
+      "legacyPotential": 77,
+      "delta": -7,
+      "previousAlert": true,
+      "evidenceRecords": 2
+    }
+  ],
+  "decision": "No automatic updates to potential, ratings, gameplay, or save schemas; investigate semantics and validate role-specific career impact first."
+}
