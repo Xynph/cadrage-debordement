@@ -32,7 +32,7 @@ const hypothesis={
  'lnr:429':['ballCarry','positioning'],
  'lnr:1426':['receiving','positioning'],
  'lnr:1793':['receiving','positioning'],
- 'lnr:862':['ballCarry','workRate'],
+ 'lnr:862':['ballHandling','workRate'],
  'lnr:11840':['ballCarry','workRate'],
  'lnr:2168':['ballCarry','positioning'],
  'lnr:555':['workRate','positioning']
