@@ -128,6 +128,10 @@ test('36 complete 36-attribute/11-skill shadow plans; stricter shortlisting and 
  console.log('RUGBY_REAL_V15_36_CANDIDATE_PLANS '+JSON.stringify({fullPlans:counterfactuals.length,
   eachPlanContains36AttributesAnd11Skills:true,nonDestructive:true,
   priorityCount:priority.length,matchedPlayers:matches.length,pairedMatches:matches.length*3*12*2,
-  plans:counterfactuals,matchPairs:matches,
+  plans:counterfactuals.map(x=>({id:x.id,name:x.name,club:x.club,confidence:x.confidence,eligible:x.eligible,
+   scenarios:x.plans.map(p=>({dose:p.dose,changedAttributes:Object.entries(p.deltaAttributes).filter(([,v])=>v!==0),
+    changedSkills:Object.entries(p.deltaSkills).filter(([,v])=>v!==0),noteBefore:p.noteBefore,noteAfter:p.noteAfter,
+    starter:p.starter,bench:p.bench,xvBefore:p.xvBefore,xvAfter:p.xvAfter}))})),
+  matchPairs:matches,
   verdict:'All doses are exploratory copies, never proposed production changes; qualitative evidence does not identify which precise attribute should move.'}));
 });
