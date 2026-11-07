@@ -70,11 +70,13 @@ function evidenceScreen(lab){
   const coverage=[valid?'minutes-and-matches':'missing-usage',Number.isFinite(tries)?'tries-observed':'no-tries',
    Number.isFinite(points)?'points-observed':'no-points',...corroboration];
   const score=positive?(median-note)+(minutes/400)+(roleMean-rolePeerMedian)/4:negative?(note-median)+Math.max(0,350-minutes)/200:0;
-  baseline.push({id:p.id,club:cl.slug,league:cl.league,role:p.gameplayPosition,age:p.ageApprox,
+  baseline.push({id:p.id,name:p.realName,club:cl.slug,league:cl.league,role:p.gameplayPosition,age:p.ageApprox,
    note,median,p25,p75,primaryMean:fixed(roleMean),peerPrimaryMedian:fixed(rolePeerMedian),
    usage:valid?{matches,minutes,minutesPerMatch:fixed(workload),tries,points}:null,
    squadState,positive,negative,score:fixed(score),coverage,independentSignals:corroboration,
-   historicalClub202526:recentHistory?.historicalClub||null,historySeasonCount:e.history.length});
+   historicalClub202526:recentHistory?.historicalClub||null,historySeasonCount:e.history.length,
+   evidenceSources:[...new Set([e.usage?.sourceUrl,e.attack?.sourceUrl,e.kicking?.sourceUrl,
+    ...e.honours.map(h=>h.sourceUrl),...e.assessments.map(h=>h.sourceUrl),...e.history.map(h=>h.sourceUrl)].filter(Boolean))].slice(0,6)});
  }
  const up=baseline.filter(x=>x.positive).sort((a,b)=>b.score-a.score||a.id.localeCompare(b.id));
  const down=baseline.filter(x=>x.negative).sort((a,b)=>b.score-a.score||a.id.localeCompare(b.id));
@@ -147,8 +149,8 @@ test('Individual evidence-based ±2 shadow calibration: club dispersion and nati
    xvBefore:rosterStats(lab,a).mean,xvAfter:rosterStats(cal,a2).mean,effect:effect(candidate,original)});
  }
  console.log('RUGBY_REAL_V15_EVIDENCE_SHADOW '+JSON.stringify({candidateCount:proposals.length,
-  proposalRows:proposals.map(({id,role,club,league,note,median,usage,squadState,delta,score,coverage})=>
-   ({id,role,club,league,note,median,usage,squadState,delta,score,coverage})),
+  proposalRows:proposals.map(({id,name,role,club,league,note,median,usage,squadState,delta,score,coverage,evidenceSources})=>
+   ({id,name,role,club,league,note,median,usage,squadState,delta,score,coverage,evidenceSources})),
   edits:shadow.edits.map(({id,role,club,change})=>({id,role,club,change})),
   dispersion:Object.fromEntries(['top14','prod2'].map(k=>[k,{before:before[k].sd,after:after[k].sd,
    gapBefore:before[k].mean,gapAfter:after[k].mean}])),
@@ -180,7 +182,7 @@ test('All 36 flags: 2025 historical context, line-up threshold and synchronized 
     bench:sheet.bench.some(p=>p.id===candidate.id),
     xv,xvDelta:fixed(xv-rosterStats(base,a).mean)});
   }
-  rows.push({id:candidate.id,club:candidate.club,league:candidate.league,role:candidate.role,
+  rows.push({id:candidate.id,name:candidate.name,club:candidate.club,league:candidate.league,role:candidate.role,
    age:candidate.age,screenNote:original,otherLineupRoleMin:weakestRelevant,
    squadState:candidate.squadState,historySeasonCount:candidate.historySeasonCount,
    historicalClub202526:candidate.historicalClub202526,
@@ -224,7 +226,7 @@ test('Native match sensitivity of evidence-flagged bench players at +2/+4: subst
     stillBench:sheet.bench.some(p=>p.id===x.id),selectedXV:sheet.all.some(p=>p.id===x.id),
     effect:effect(game(lab,clone,rival,24),before)};
   });
-  results.push({id:x.id,club:x.club,role:x.role,opponent:rival.slug,signal:x.independentSignals,
+  results.push({id:x.id,name:x.name,club:x.club,role:x.role,opponent:rival.slug,signal:x.independentSignals,
    scenarios});
  }
  console.log('RUGBY_REAL_V15_BENCH_SIGNAL_MATCH_QA '+JSON.stringify({
