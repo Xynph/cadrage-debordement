@@ -512,6 +512,7 @@ html:root[data-cd-theme][data-edition=editorial] .ed-office-results .ed-office-e
 html:root[data-cd-theme][data-edition=editorial] .ed-office-main>.heading .eyebrow{color:#d7ad73!important}
 html:root[data-cd-theme][data-edition=editorial] .ed-office-sport>.ed-office-local{justify-content:flex-start}
 html:root[data-cd-theme][data-edition=editorial] .ed-office-match h2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;flex-shrink:0}
+html:root[data-cd-theme][data-edition=editorial] .ed-office-match h2{padding-bottom:6px;margin-top:3px!important;margin-bottom:4px!important}
 html:root[data-cd-theme][data-edition=editorial] .ed-office-message-dialog[open]{display:grid;grid-template-rows:auto minmax(0,1fr) auto}
 html:root[data-cd-theme][data-edition=editorial] .ed-office-dialog-body{min-height:0}
 html:root[data-cd-theme][data-edition=editorial] .ed-office-match-actions button{min-height:44px!important}

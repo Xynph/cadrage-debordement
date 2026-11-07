@@ -96,7 +96,14 @@ try{
  await page.keyboard.press('Escape');
  await page.evaluate(text=>{S=JSON.parse(text);render();},advanced);
  await page.evaluate(()=>start(0,'lnr'));check('LNR : aucun faux portrait',await page.locator('.ed-office .ed-portrait').count()===0);
- for(const [width,height] of [[1440,900],[1920,1080]]){await page.setViewportSize({width,height});await geometry('LNR '+width);await capture('lnr-'+width);}
+ for(const [width,height] of [[1440,900],[1920,1080]]){
+  await page.setViewportSize({width,height});await geometry('LNR '+width);
+  check('LNR '+width+' lettres descendantes du titre entières',await page.locator('.ed-office-match h2').evaluate(e=>{
+   const style=getComputedStyle(e),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');ctx.font=style.fontStyle+' '+style.fontWeight+' '+style.fontSize+' '+style.fontFamily;
+   const descent=ctx.measureText(e.textContent).actualBoundingBoxDescent,probe=document.createElement('span');probe.style.cssText='display:inline-block;width:0;height:0;vertical-align:baseline';e.append(probe);
+   const visible=e.getBoundingClientRect().bottom-probe.getBoundingClientRect().top>=descent;probe.remove();return visible;
+  }));await capture('lnr-'+width);
+ }
  check('aucune erreur JavaScript',report.errors.length===0);check('aucune ressource manquante',report.responses.length===0);report.passed=true;
 }catch(error){report.errors.push(error.stack||String(error));if(page)await capture('failure').catch(()=>{});throw error;}
 finally{fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({passed:report.passed,checks:report.checks.length,screens:report.screens.length,errors:report.errors}));await browser?.close();await new Promise(r=>server.close(r));}

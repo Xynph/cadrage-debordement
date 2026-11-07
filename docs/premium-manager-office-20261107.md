@@ -84,14 +84,14 @@ Le thème clair est vérifié ; LNR utilise des monogrammes pour les joueurs. La
 
 ## Tests et revue
 
-- Nouveau parcours Bureau : **73 contrôles et 9 captures**, géométrie des cinq panneaux et de leur contenu, clics métier, messages, noms et textes très longs, quatre matchs natifs, LNR aux deux tailles, export relu, carrière/disque invariants en consultation et **zéro appel RNG**.
+- Nouveau parcours Bureau : **75 contrôles et 9 captures**, géométrie des cinq panneaux et de leur contenu, clics métier, messages, noms et textes très longs, quatre matchs natifs, LNR aux deux tailles, export relu, carrière/disque invariants en consultation et **zéro appel RNG**.
 - Quatorze échantillons de contraste texte/commande, minimum **5,03:1** dans les deux thèmes. Le calcul couvre les aplats composés ; les textes sur photographie ont été inspectés visuellement en complément.
 - Parcours éditorial historique : **315 contrôles**, 28 captures principales.
 - Match dédié : **284 contrôles** ; huit matchs appariés en tests Node, file de remplacements, pauses, fenêtres, vitesses, 2D/3D, délégation et sauvegardes.
 - Historiques V4 : **663** puis **725 contrôles** ; sélecteurs actualisés pour la vraie nouvelle composition, assertions de métier conservées. Exécutable Chrome configurable pour permettre la même réception sous Windows.
 - Tests Node ciblés : **18 sous-tests**, dont sauvegardes, manager, finance-planning, UI01, UI02 et rotation #382. Aucun échec restant.
 
-La revue indépendante a relu le diff et les captures, exécuté ses propres tests Node/Chromium et examiné la fin de saison, la destination d'un message, la disponibilité, le marquage lu et le clavier de la fenêtre. Deux corrections visuelles demandées, reproduites par tests rouges puis corrigées : détail d'un score rogné à 1440, enjeux sportifs sous nom très long empiétant sur les commandes. Les contrôles géométriques vérifient désormais les deux zones, pas seulement les cartes extérieures. Le premier accès au portrait avait également révélé une réinitialisation de sélection : réconciliation du contrôleur avant ouverture, parcours rouge puis vert.
+La revue indépendante a relu le diff et les captures, exécuté ses propres tests Node/Chromium et examiné la fin de saison, la destination d'un message, la disponibilité, le marquage lu et le clavier de la fenêtre. Deux corrections visuelles demandées, reproduites par tests rouges puis corrigées : détail d'un score rogné à 1440, enjeux sportifs sous nom très long empiétant sur les commandes. Les contrôles géométriques vérifient désormais les deux zones, pas seulement les cartes extérieures. La réception des PNG Linux a ensuite révélé des descendantes de titre coupées de 5 px : test des métriques réelles de police rouge puis vert aux deux tailles, avec 6 px de réserve et marges compensées. Le premier accès au portrait avait également révélé une réinitialisation de sélection : réconciliation du contrôleur avant ouverture, parcours rouge puis vert.
 
 ## Limites et suite
 
