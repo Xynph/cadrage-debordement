@@ -129,25 +129,57 @@ static func club_abbr(club: Dictionary) -> String:
 	return str(identity(club).get("abbr", "XV"))
 
 static func crest(club: Dictionary, width: int = 56) -> Control:
-	var w := W.new()
 	var c := identity(club)
+	var path := str(c.get("logoPath", club.get("logoPath", "")))
+	var texture := _pack_texture(path)
+	if texture != null:
+		var image := TextureRect.new()
+		image.texture = texture
+		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		image.custom_minimum_size = Vector2(width, width)
+		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		image.tooltip_text = "Blason fourni par le pack"
+		return image
+	var w := W.new()
 	w.initials = str(c.get("abbr", "XV"))
 	w.accent = Color(c.get("color", "#b94850"))
 	w.custom_minimum_size = Vector2(width, width)
 	w.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return w
 
-static func portrait(index: int, width: int = 60) -> TextureRect:
+static func _pack_texture(path: String) -> Texture2D:
+	if path.is_empty() or not path.is_absolute_path() or not FileAccess.file_exists(path): return null
+	if textures.has(path): return textures[path]
+	var image := Image.new()
+	if image.load(path) != OK: return null
+	var longest := maxi(image.get_width(), image.get_height())
+	if longest > 512:
+		var ratio := 512.0 / longest
+		image.resize(maxi(1, roundi(image.get_width() * ratio)), maxi(1, roundi(image.get_height() * ratio)), Image.INTERPOLATE_LANCZOS)
+	var texture := ImageTexture.create_from_image(image)
+	if textures.size() >= 48: textures.erase(textures.keys()[0])
+	textures[path] = texture
+	return texture
+
+static func portrait(index: int, width: int = 60, player: Dictionary = {}) -> TextureRect:
 	var r := TextureRect.new()
-	var atlas := AtlasTexture.new()
-	atlas.atlas = load("res://assets/editorial/portraits-%d.webp" % (index / 16))
-	var cell := atlas.atlas.get_size() / 4.0
-	atlas.region = Rect2(Vector2(index % 4, (index % 16) / 4) * cell, cell)
-	r.texture = atlas
+	var path := str(player.get("portraitPath", ""))
+	var texture := _pack_texture(path)
+	if texture != null:
+		r.texture = texture
+		r.tooltip_text = "Illustration IA · ressemblance non garantie" if player.get("portraitStatus", "") == "synthetic" else "Photo officielle · archive fournie par le pack"
+	else:
+		var atlas := AtlasTexture.new()
+		index = posmod(index, 32)
+		atlas.atlas = load("res://assets/editorial/portraits-%d.webp" % (index / 16))
+		var cell := atlas.atlas.get_size() / 4.0
+		atlas.region = Rect2(Vector2(index % 4, (index % 16) / 4) * cell, cell)
+		r.texture = atlas
+		r.tooltip_text = "Portrait décoratif fictif généré par IA" if path.is_empty() else "Image du pack indisponible · portrait fictif généré par IA"
 	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	r.custom_minimum_size = Vector2(width, width)
-	r.tooltip_text = "Portrait décoratif fictif généré par IA"
 	return r
 
 static func picture(slug: String, kind: String = "stadium", dark: bool = true) -> Control:

@@ -59,7 +59,8 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	var list:=G.scroll(parent)
 	var top:=G.h(12)
 	list.add_child(top)
-	top.add_child(G.portrait(int(p.get("portraitIndex",0)),90))
+	var portrait := G.portrait(int(p.get("portraitIndex",0)),90,p)
+	top.add_child(portrait)
 	var identity:=G.v(3)
 	G.fill(identity)
 	top.add_child(identity)
@@ -100,7 +101,7 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	load_plan.disabled=not app._live().is_empty()
 	load_plan.item_selected.connect(func(index:int):app._command("set_player_load",{"playerId":p.id,"mode":modes[index]}))
 	list.add_child(load_plan)
-	list.add_child(G.label("Portrait fictif généré par IA",9,G.MUTED))
+	list.add_child(G.wrap(portrait.tooltip_text,10,G.MUTED))
 
 static func radar_setup(radar:Control,p:Dictionary,accent:Color) -> void:
 	radar_mode(radar)

@@ -5,6 +5,7 @@ const Entry = preload("res://ui/entry_screens.gd")
 const ClubViews = preload("res://ui/club_views.gd")
 const SquadViews = preload("res://ui/squad_views.gd")
 const MatchUI = preload("res://ui/match_screen.gd")
+const PackViews = preload("res://ui/pack_views.gd")
 var model: Dictionary = {}
 var catalogue: Array = []
 var route := "Accueil"
@@ -42,6 +43,7 @@ var match_clock: Label
 var pause_button: Button
 var match_finish: Button
 var primary_button: Button
+var pack_manager: Node
 
 func _ready() -> void:
 	if OS.get_environment("CD_GODOT_SELF_TEST") == "1" and OS.get_environment("CD_GODOT_DATA_DIR").is_empty():
@@ -59,6 +61,9 @@ func _ready() -> void:
 	file_dialog.filters = PackedStringArray(["*.json ; Carrière Cadrage Débordement"])
 	file_dialog.file_selected.connect(_file_selected)
 	add_child(file_dialog)
+	pack_manager = load("res://pack_manager.gd").new()
+	pack_manager.app = self
+	add_child(pack_manager)
 	bridge = load("res://engine_bridge.gd").new()
 	add_child(bridge)
 	bridge.model_changed.connect(_receive_model)
@@ -85,6 +90,8 @@ func _live() -> Dictionary:
 
 func _receive_model(value: Dictionary) -> void:
 	model = value
+	if model.get("meta", {}).get("catalogue") is Array:
+		catalogue = model.meta.catalogue.duplicate(true)
 	waiting = false
 	connection_error = false
 	if _has_career(): accent = Color(G.identity(model.club).get("color", "#d43e47"))
@@ -194,6 +201,12 @@ func _render() -> void:
 		m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		root_content.add_child(m)
 		m.add_child(Entry.creation(self))
+		return
+	if route == "Packs":
+		var margin := G.margin(30)
+		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		root_content.add_child(margin)
+		margin.add_child(PackViews.page(self))
 		return
 	if not _has_career():
 		route = "Accueil"
@@ -306,7 +319,7 @@ func primary_action() -> void:
 	else: _navigate("Préparation")
 
 func create_career(id: int) -> void:
-	var action := func(): _command("new_career",{"club":id,"mode":"france"},"Bureau")
+	var action := func(): _command("new_career",{"club":id,"mode":"common"},"Bureau")
 	if _has_career(): confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Exportez-la depuis le menu pour la conserver séparément. Prendre les rênes de %s ?" % catalogue[id].name, action)
 	else: action.call()
 
@@ -357,7 +370,12 @@ func settings() -> void:
 	d.dialog_text = "Fenêtre redimensionnable · interface adaptée à votre écran."
 	d.add_button("Fenêtré1440×900",false,"window")
 	d.add_button("Plein écran",false,"full")
+	d.add_button("Packs et identités",false,"packs")
 	d.custom_action.connect(func(action: String):
+		if action == "packs":
+			d.hide(); d.queue_free()
+			pack_manager.open("career" if _has_career() else "creation")
+			return
 		if action == "full": DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 		else:
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
