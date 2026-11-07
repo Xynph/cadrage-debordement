@@ -210,3 +210,13 @@ Ce lot conserve le profil réglementaire fixé pour 2025/26. Les quatre zones, l
 ## Rapports et suivi des consignes — version 15
 
 Ce lot ne modifie aucune loi, disposition de compétition ou probabilité sportive. Les projections et recommandations sont des outils de gestion fictifs fondés sur les qualités de la carrière. Le suivi est observationnel, sans consommation de tirages aléatoires. Les résultats par plan sont attribués à la consigne effective au début de chaque minute simulée ; un changement de possession peut intervenir ensuite. Ils ne constituent ni une simulation physique détaillée ni une preuve de causalité. Le profil réglementaire 2025/26 et le comportement des matchs déjà commencés restent conservés.
+
+## Carrière native France30 — format 2026–2027, réception du 7 novembre 2026
+
+Le mode natif `france30` possède ses calendriers, classements et transitions propres. Le format retenu se réfère au [Livre II sportif LNR 2026–2027, version du 1er juillet 2026](https://assets.lnr.fr/3/0/4/6/9/8/LIVRE-2_Sportif-et-Comp%C3%A9titions_2627_V2_703069b00e686885076f1b627c8c5441.pdf), notamment aux articles 2005–2013, 2034 et 2085. La source et le schéma sont détaillés dans le plan France reliée ; les départages par groupes, les phases finales et les deux issues du barrage sont vérifiés dans les tests `france-rules`, `france-knockout` et `france-transitions`.
+
+Cette édition de compétition ne remplace pas le profil de lois de match `fr-pro-2025` du moteur existant. Les prolongations utilisent ce même moteur. Les drops et les exclusions de staff ne sont pas produits par la simulation actuelle ; leur présence dans un ordre de départage ne signifie pas que ces événements sont implémentés. Les tirs sont résolus atomiquement, avec buteurs choisis automatiquement ; pas de sauvegarde au milieu d'une tentative.
+
+Abstractions déclarées : monde fermé à trente clubs sans Nationale, cadence commune de 34 semaines et calendrier sans dates réelles. À égalité encore indiscernable après les critères disponibles, la convention de classement antérieur puis d'ID stable reste une convention du jeu. Aucun forfait administratif ni conformité intégrale du rugby 2026–2027 n'est annoncé. Le stade 3D conserve des dimensions de présentation ; il ne certifie ni une enceinte réelle ni sa conformité réglementaire.
+
+Le [rapport de réception natif](godot-carriere-20261107.md) distingue les tests moteur, les sauvegardes et la réception graphique Windows. Les modes historiques restent séparés : aucune conversion automatique fiction14/LNR14 vers France30.

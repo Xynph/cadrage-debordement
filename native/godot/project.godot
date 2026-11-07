@@ -2,8 +2,11 @@
 config_version=5
 
 [application]
-config/name="Cadrage Débordement — Prototype Godot"
-config/version="0.1.0"
+config/name="Cadrage Débordement"
+config/version="0.2.0"
+config/icon="res://icon.svg"
+boot_splash/show_image=false
+boot_splash/bg_color=Color(0.051, 0.075, 0.094, 1)
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/use_custom_user_dir=true

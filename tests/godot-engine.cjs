@@ -17,7 +17,7 @@ try{
  const b=bridge('main');
  for(const request of [null,{command:'snapshot'},{id:[],command:'snapshot'},{id:1,command:'eval',payload:{code:'process.exit()'}},{id:1,command:'snapshot',payload:[]}])assert.equal(b.handle(request).ok,false);
  assert.equal(good(b,'snapshot').club,null);
- const initial=good(b,'new_career',{club:0});assert.equal(initial.protocol,1);assert.equal(initial.league.length,14);assert.equal(initial.squad.length,30);assert.equal(initial.meta.catalogue.length,30);assert.equal(initial.meta.catalogue.filter(c=>c.playable).length,14);
+ const initial=good(b,'new_career',{club:0});assert.equal(initial.protocol,1);assert.equal(initial.league.length,14);assert.equal(initial.squad.length,30);assert.equal(initial.meta.catalogue.length,30);assert.equal(initial.meta.catalogue.filter(c=>c.playable).length,30);
  assert.equal(Object.keys(initial.squad[0].attributes).length,11);assert.ok(initial.squad[0].portraitIndex<32);
  assert.equal(initial.squad[0].portraitIndex,0,'Même index de portrait que CDEditorial pour les identifiants natifs');
  const direct=context();direct.run('start(0)');

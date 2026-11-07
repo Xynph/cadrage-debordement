@@ -1,0 +1,49 @@
+{
+  "base": "9044998e5334aee0c844c18e7d322b12f083db42",
+  "clock": 1700000000000,
+  "seed": 827381,
+  "captures": {
+    "fiction": {
+      "création": {
+        "hash": "25b0f5d02ec2f133184992f0fe915ec7459245ecd3e1d5b6dced3203eed3d7db",
+        "seed": 739376028
+      },
+      "match délégué": {
+        "hash": "3ec85f6b4a1ac53db050f798c693f46654b63fec052fdc23d6c4e4f3a1fcc035",
+        "seed": 3447649430
+      },
+      "saison": {
+        "hash": "c7d469c58819a06528dd210f1f506d60c733f0579b63334eb40d526d78208845",
+        "seed": 2965174150
+      },
+      "intersaison": {
+        "hash": "4de9aed5adf0cd1c14853bae814434a90cee558e77b3b8d2b4bd8d3849c4c0cf",
+        "seed": 3854733165
+      },
+      "export": {
+        "hash": "0569f3e3fb50ab45f5b714d83da2324bfc236c21cba153925c98d41b6a037eda"
+      }
+    },
+    "lnr": {
+      "création": {
+        "hash": "70d57c281bc76b912528aba3ec01d5960e77c361178dc3d2049c294b88bc4f84",
+        "seed": 4241169356
+      },
+      "match délégué": {
+        "hash": "e8a86727a1ebbdfd7a4463f41381ced0398f484a038bb1c1aecefca429c5cf49",
+        "seed": 900441515
+      },
+      "saison": {
+        "hash": "8a6f0c2833732f83eca290c01e771dc98e7566830d0512224b9b4e41b23b2f19",
+        "seed": 3995348352
+      },
+      "intersaison": {
+        "hash": "39603c2121e4bce9538a0f369f4ad6fba60d2a2428747039ac8ca04c425fbb2c",
+        "seed": 1942715167
+      },
+      "export": {
+        "hash": "41bd0fdfbffec239072c2dfd518e01946962d001e64596c13af6356d4bcbce85"
+      }
+    }
+  }
+}

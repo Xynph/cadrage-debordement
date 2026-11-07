@@ -82,7 +82,8 @@ function advanceFlowPlay(l){
  advanceCausalPlay(l);settleAdvantage(l);
 }
 function finishRugbyMatch(l){
- if(S.phase!=='league'&&l.score[0]===l.score[1]){const prob=clamp(.5+(unit(l,0,'mental')-unit(l,1,'mental'))*.008,.25,.75),side=Math.random()<prob?0:1;l.score[side]+=3;l.stats[side].goals++;l.stats[side].goalAttempts++;addEvent(l,`Prolongation simplifiée : ${S.clubs[l.pair[side]].abbr} passe la pénalité décisive.`,'goal',{kind:'goal',team:side,to:{x:attackingGoal(side),y:35}})}
+ if(l.franceContext){if(CDFranceKnockout.finish(l))return;}
+ else if(S.phase!=='league'&&l.score[0]===l.score[1]){const prob=clamp(.5+(unit(l,0,'mental')-unit(l,1,'mental'))*.008,.25,.75),side=Math.random()<prob?0:1;l.score[side]+=3;l.stats[side].goals++;l.stats[side].goalAttempts++;addEvent(l,`Prolongation simplifiée : ${S.clubs[l.pair[side]].abbr} passe la pénalité décisive.`,'goal',{kind:'goal',team:side,to:{x:attackingGoal(side),y:35}})}
  l.finished=true;l.paused=false;addEvent(l,'Coup de sifflet final.','end');
 }
 

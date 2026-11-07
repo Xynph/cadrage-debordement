@@ -2,9 +2,9 @@
 // Prototype bridge: local private stdio only. Never load browser UI, real roster
 // data, the test harness, a network server, or code supplied by protocol clients.
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),readline=require('node:readline'),{randomUUID}=require('node:crypto');
-const projection=require('./model.cjs');
-const MODULES=['storage.js','world-data.js','rugby.js','frontrow.js','restarts.js','matchflow.js','playbook.js','manager.js','manager-squad.js','tactical-plans.js','match-actions.js','match2d.js','match-v61-advisor.js','match-cockpit.js','economy.js','development.js','finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js','v39.js','manager-mobility.js','saves.js','opposition.js','match-preparation.js','france-clubs.js','match3d/scene-adapter.js','game.js'];
-const COMMANDS=new Set(['snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','finish_round','save','import','export','shutdown']);
+const projection=require('./model.cjs'),gestion=require('./gestion.cjs');
+const MODULES=['storage.js','world-data.js','rugby.js','frontrow.js','restarts.js','matchflow.js','playbook.js','manager.js','manager-squad.js','tactical-plans.js','match-actions.js','match2d.js','match-v61-advisor.js','match-cockpit.js','economy.js','development.js','finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js','v39.js','manager-mobility.js','saves.js','opposition.js','match-preparation.js','france-clubs.js','france-competition.js','france-knockout.js','france-career.js','france-save-validation.js','match3d/scene-adapter.js','game.js'];
+const COMMANDS=new Set(['snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','finish_round','save','import','export','shutdown','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile']);
 function applicationRoot(engineDirectory=__dirname){
  // The only supported layouts are repo/native/engine and bundle/engine/core.
  const isDevelopment=path.basename(path.dirname(engineDirectory))==='native'&&!fs.existsSync(path.join(engineDirectory,'core'));
@@ -60,12 +60,12 @@ function createBridge(options={}){
    fs.unlinkSync(lock);
   });}finally{fs.closeSync(lockFd);}
  };
- let ctx;
+ let ctx,profileError='',recoveryBackup=null;
  try{
   if(fs.existsSync(file)){
-   const saved=JSON.parse(fs.readFileSync(file,'utf8'));
+   try{const saved=JSON.parse(fs.readFileSync(file,'utf8'));
    if(saved.protocol!==1||!Number.isInteger(saved.seed)||!Number.isFinite(saved.clock)||!saved.store||typeof saved.store!=='object'||Array.isArray(saved.store))throw Error('Profil PrototypeGodot illisible ou incompatible.');
-   store=saved.store;seed=saved.seed>>>0;clock=saved.clock;
+   store=saved.store;seed=saved.seed>>>0;clock=saved.clock;}catch(e){profileError='Profil illisible : '+e.message;store={};}
   }
   const math=Object.create(Math);math.random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   class EngineDate extends Date{constructor(...args){super(...(args.length?args:[clock]));}static now(){return clock;}}
@@ -75,8 +75,9 @@ function createBridge(options={}){
   const run=source=>vm.runInContext(source,ctx,{timeout:15000});
   const dist=options.distDir?path.resolve(options.distDir):fs.existsSync(path.join(__dirname,'core'))?path.join(__dirname,'core'):path.resolve(__dirname,'../../dist');
   for(const name of MODULES)run(fs.readFileSync(path.join(dist,name),'utf8'));
-  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;if(loadSaveFailure)throw Error(loadSaveFailure);if(S){validateCareer(S);if(S.lnrMode||S.franceMode)throw Error('Ce prototype accepte uniquement les carrières historiques fictives à 14 clubs.');if(S.live&&!S.live.finished)S.live.paused=true;}const nativeModel=${projection.toString()};`);
-  const snapshot=()=>JSON.parse(run('JSON.stringify(nativeModel())'));
+  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const nativeModel=${projection.toString()};const nativeGestion=${gestion.toString()};`);
+  try{run("if(loadSaveFailure)throw Error(loadSaveFailure);if(S){validateCareer(S);if(S.lnrMode)throw Error('Les effectifs réels ne sont pas chargés dans le moteur natif.');if(S.live&&!S.live.finished)S.live.paused=true;}");}catch(e){profileError='Profil illisible : '+e.message;run('S=null;');}
+  const snapshot=()=>{const m=JSON.parse(run('JSON.stringify(nativeModel())'));m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;return m;};
   const persist=()=>{
    const text=JSON.stringify({protocol:1,seed,clock,store}),temp=path.join(dataDir,'donnees.tmp'),backup=path.join(dataDir,'donnees-precedentes.json'),backupTemp=path.join(dataDir,'donnees-precedentes.tmp');
    const write=(target,content)=>{const fd=fs.openSync(target,'w');try{fs.writeFileSync(fd,content);fs.fsyncSync(fd);}finally{fs.closeSync(fd);}};
@@ -84,7 +85,7 @@ function createBridge(options={}){
     write(temp,text);
     if(fs.existsSync(file)){write(backupTemp,fs.readFileSync(file));fs.renameSync(backupTemp,backup);}
     fs.renameSync(temp,file);
-   }catch(e){for(const p of [temp,backupTemp]){try{fs.unlinkSync(p);}catch{}}throw Error('Écriture de sauvegarde impossible : '+e.message);}
+   }catch(e){for(const p of [temp,backupTemp]){try{fs.unlinkSync(p);}catch{}}const failure=Error('Écriture de sauvegarde impossible : '+e.message);failure.storageFailure=true;throw failure;}
   };
   function handle(request){
    let id=null;
@@ -96,16 +97,17 @@ function createBridge(options={}){
     const payload=request.payload??{};if(typeof payload!=='object'||payload===null||Array.isArray(payload))throw Error('Paramètres de commande invalides.');
     const command=request.command;
     if(command==='snapshot')return {id,ok:true,model:snapshot()};
+    if(command==='recover_profile'){if(!profileError)throw Error('Aucun profil à récupérer.');if(payload.confirmed!==true)throw Error('Confirmation requise pour préserver puis remplacer le profil illisible.');const backup=path.join(dataDir,'donnees-endommagees-'+randomUUID()+'.json');fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);recoveryBackup=backup;profileError='';store={};run('S=null;loadSaveFailure="";lastSaveError=false;');return {id,ok:true,model:snapshot()};}
+    if(profileError&&!['snapshot','shutdown'].includes(command))throw Error(profileError+' Confirmez la récupération du profil.');
     if(command==='export'){const model=snapshot();model.meta.exportText=run('JSON.stringify(createSaveDocument())');return {id,ok:true,model};}
     if(command==='shutdown'){const model=snapshot();close();return {id,ok:true,model};}
-    const prior=run('JSON.stringify({state:S,playback:S?.live?playback(S.live):null})'),priorStore=JSON.stringify(store),priorSeed=seed,priorClock=clock;
+    const prior=run('JSON.stringify({state:S,playback:S?.live?playback(S.live):null,saveError:lastSaveError})'),priorStore=JSON.stringify(store),priorSeed=seed,priorClock=clock;
     try{
      if(options.now===undefined)clock=Date.now();
      ctx.nativePayload=JSON.parse(JSON.stringify(payload));
      if(command!=='new_career'&&command!=='import'&&!run('!!S'))throw Error('Créez ou importez une carrière.');
      if(command==='new_career'){
-      if(!Number.isInteger(payload.club)||payload.club<0||payload.club>13)throw Error('Club historique invalide (0 à 13).');
-      run("start(nativePayload.club,'fiction')");
+      const mode=payload.mode??'fiction';if(!['fiction','france'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(payload.club)||payload.club<0||payload.club>=(mode==='france'?30:14))throw Error('Club invalide pour ce mode.');run("start(nativePayload.club,nativePayload.mode??'fiction')");
      }else if(command==='train'){
       const mode=payload.mode??run('S.training');if(!['normal','repos','intense'].includes(mode))throw Error('Entraînement invalide.');
       if(run("!!S.live||S.phase==='ended'"))throw Error('Entraînement indisponible pendant le match ou après la saison.');
@@ -130,15 +132,16 @@ function createBridge(options={}){
      }else if(command==='import'){
       if(typeof payload.text!=='string')throw Error('Texte JSON d’import requis.');
       if(Buffer.byteLength(payload.text,'utf8')>5*1024*1024)throw Error('Fichier trop volumineux (5 Mio UTF-8 maximum).');
-      run("pendingSave=parseSaveDocument(nativePayload.text);if(pendingSave.state.lnrMode||pendingSave.state.franceMode)throw Error('Seules les carrières historiques fictives à 14 clubs sont acceptées.');if(!confirmSaveImport())throw Error('Import annulé : sauvegarde impossible.');");
+      run("pendingSave=parseSaveDocument(nativePayload.text);if(pendingSave.state.lnrMode)throw Error('Les effectifs réels ne sont pas chargés dans le moteur natif.');if(!confirmSaveImport())throw Error('Import annulé : sauvegarde impossible.');");
      }
+     let extra=null;if(['set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
      run('save();validateCareer(S)');
-     const model=snapshot();persist();return {id,ok:true,model};
+     const model=snapshot();if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));persist();return {id,ok:true,model};
     }catch(error){
-     seed=priorSeed;clock=priorClock;store=JSON.parse(priorStore);ctx.nativePrior=JSON.parse(prior);
-     run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=true;');
+     seed=priorSeed;clock=priorClock;store=JSON.parse(priorStore);ctx.nativePrior=JSON.parse(prior);ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
+     run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;');
      throw error;
-    }finally{delete ctx.nativePayload;delete ctx.nativePrior;delete ctx.nativeMode;}
+    }finally{delete ctx.nativePayload;delete ctx.nativePrior;delete ctx.nativeMode;delete ctx.nativeCommand;}
    }catch(error){return {id,ok:false,model:closed?null:snapshot(),error:error.message};}
   }
   return {handle,close};
@@ -147,7 +150,7 @@ function createBridge(options={}){
 module.exports={createBridge,applicationRoot,CORE_FILES:Object.freeze([...MODULES])};
 if(require.main===module){
  let bridge;
- try{const index=process.argv.indexOf('--data-dir');bridge=createBridge({dataDir:index>=0?process.argv[index+1]:path.join(process.env.LOCALAPPDATA||require('node:os').homedir(),'CadrageDebordement','PrototypeGodot')});}
+ try{const rawSeed=process.env.CD_GODOT_SEED;let seed;if(rawSeed!==undefined){seed=Number(rawSeed);if(!/^(0|[1-9]\d*)$/.test(rawSeed)||!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('CD_GODOT_SEED doit être un entier entre 0 et 4294967295.');}const index=process.argv.indexOf('--data-dir');bridge=createBridge({...(seed===undefined?{}:{seed}),dataDir:index>=0?process.argv[index+1]:path.join(process.env.LOCALAPPDATA||require('node:os').homedir(),'CadrageDebordement','PrototypeGodot')});}
  catch(e){process.stdout.write(JSON.stringify({id:null,ok:false,model:null,error:e.message})+'\n');process.exitCode=1;return;}
  const input=readline.createInterface({input:process.stdin,crlfDelay:Infinity});
  input.on('line',line=>{

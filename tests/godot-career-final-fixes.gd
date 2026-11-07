@@ -1,0 +1,151 @@
+extends SceneTree
+
+var app: Control
+var fixtures: Dictionary
+var failures: Array[String] = []
+var checks := 0
+
+func _initialize() -> void:
+	root.set_flag(Window.FLAG_NO_FOCUS, true)
+	if OS.get_environment("CD_GODOT_DATA_DIR").is_empty() or OS.get_environment("CD_GODOT_FIXTURES").is_empty():
+		quit(2)
+		return
+	fixtures = JSON.parse_string(FileAccess.get_file_as_string(OS.get_environment("CD_GODOT_FIXTURES")))
+	call_deferred("_run")
+
+func _check(ok: bool, message: String) -> void:
+	checks += 1
+	if not ok:
+		failures.append(message)
+		printerr("FAIL: ", message)
+
+func _wait() -> void:
+	var deadline := Time.get_ticks_msec() + 15000
+	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
+	_check(not app.waiting, "Native command completes")
+
+func _command(command: String, payload: Dictionary = {}) -> void:
+	app._command(command, payload)
+	await _wait()
+	_check(app.last_error.is_empty(), "Native command accepted: " + command)
+
+func _buttons(node: Node) -> Array[Button]:
+	var result: Array[Button] = []
+	if node is Button: result.append(node)
+	for child in node.get_children(): result.append_array(_buttons(child))
+	return result
+
+func _button(node: Node, text: String) -> Button:
+	for button in _buttons(node):
+		if button.text == text: return button
+	return null
+
+func _labels(node: Node) -> Array[Label]:
+	var result: Array[Label] = []
+	if node is Label: result.append(node)
+	for child in node.get_children(): result.append_array(_labels(child))
+	return result
+
+func _pick_slot(slot: int) -> bool:
+	var buttons := _buttons(app.match_screen.side)
+	_check(buttons.size() >= 15, "All fifteen native positions remain selectable, including vacancies")
+	if buttons.size() < 15: return false
+	buttons[slot].pressed.emit()
+	return true
+
+func _incoming_permissions(slot: int) -> void:
+	var live: Dictionary = app.model.live
+	var allowed: Array = live.substitutions[slot].inIds
+	for player in live.reserves:
+		if not player is Dictionary: continue
+		var button := _button(app.match_screen.side, player.name)
+		_check(button != null and button.disabled == (player.id not in allowed), "Entrant permission follows native slot: " + player.name)
+
+func _bench() -> void:
+	await _command("import", {"text":fixtures.before20.text})
+	app._navigate("Match")
+	var panel: Node = app.match_screen
+	panel.tab = "Banc"
+	panel.presence_key = ""
+	app._update_match()
+	if _pick_slot(8): _incoming_permissions(8)
+	await _command("import", {"text":fixtures.after20.text})
+	if _pick_slot(8):
+		_incoming_permissions(8)
+		var incoming: String = app.model.live.substitutions[8].inIds[0]
+		var name: String = ""
+		for player in app.model.live.reserves:
+			if player is Dictionary and player.id == incoming: name = player.name
+		var button := _button(panel.side, name)
+		button.grab_focus()
+		await _command("snapshot")
+		_check(_button(panel.side, name) == button and button.has_focus(), "Unchanged bench keeps actual controls and focus")
+		await _command("pause", {"paused":false})
+		_check(_button(panel.side, name).disabled, "Running match disables selected vacant entrant")
+		await _command("pause", {"paused":true})
+		_check(not _button(panel.side, name).disabled and panel.tab == "Banc", "Pause restores selected vacant slot permission and tab")
+		_button(panel.side, name).pressed.emit()
+		await _wait()
+		_check(app.last_error.is_empty() and app.model.live.lineup[8] is Dictionary and app.model.live.lineup[8].id == incoming, "Vacant bench button sends a successful real native change")
+	await _command("import", {"text":fixtures.twoVacancies.text})
+	if _pick_slot(6):
+		_incoming_permissions(6)
+		var incoming: String = app.model.live.substitutions[6].inIds[0]
+		var name: String = ""
+		for player in app.model.live.reserves:
+			if player is Dictionary and player.id == incoming: name = player.name
+		_button(panel.side, name).pressed.emit()
+		await _wait()
+		_check(app.last_error.is_empty() and app.model.live.lineup[5] == null and app.model.live.lineup[6] is Dictionary and app.model.live.lineup[6].id == incoming, "Second vacancy is filled through the UI without changing the first")
+
+func _clocks() -> void:
+	for pair in [["halftime","MI-TEMPS",true],["resumed","67 min",false],["tactical","67 min",true],["extraStart",str(int(fixtures.extraStart.model.live.minute)) + " min",false],["extraPause",str(int(fixtures.extraPause.model.live.minute)) + " min",true],["extraSecond",str(int(fixtures.extraSecond.model.live.minute)) + " min",false],["finished","TERMINÉ",true]]:
+		app.match_screen.update_frame(fixtures[pair[0]].model)
+		_check(app.match_screen.clock.text == pair[1], "Actual native clock state " + pair[0] + " displays " + pair[1])
+		_check(app.match_screen.stage._paused == pair[2], "Actual renderer motion follows current pause state: " + pair[0])
+
+func _offices() -> void:
+	for dimensions in [Vector2i(1440,900),Vector2i(1920,1080)]:
+		root.size = dimensions
+		for model in fixtures.offices:
+			app.model = model
+			app._navigate("Bureau")
+			for i in 5: await process_frame
+			var texts: Array[String] = []
+			for label in _labels(app.body): texts.append(label.text)
+			var text := "\n".join(texts)
+			var neutral: bool = model.next.neutral
+			var stadium: String = model.next.home.presentation.stadium
+			_check(text.contains("Terrain neutre") if neutral else text.contains(stadium), "Office identifies actual venue for " + model.next.phase + " " + model.next.leagueId)
+			if neutral:
+				_check(not text.contains(stadium) and text.contains("Territoire du club"), "Neutral venue does not claim the home club stadium and identifies the photo")
+			var image_path: String = "res://assets/club-atlas/%s-%s.webp" % [model.club.presentation.slug if neutral else model.next.home.presentation.slug,"city" if neutral else "stadium"]
+			var found := false
+			for image in app.body.find_children("*", "TextureRect", true, false):
+				if image.texture != null and image.texture.resource_path == image_path: found = true
+			_check(found, "Office uses honest territory or actual home-stadium photograph")
+			var client := Rect2(Vector2.ZERO, root.get_visible_rect().size)
+			for label in _labels(app.body):
+				if label.text.contains("Terrain neutre") or label.text == stadium:
+					_check(client.encloses(label.get_global_rect()) and label.get_minimum_size().x <= label.size.x + 1, "Venue caption remains visible at " + str(dimensions))
+			if DisplayServer.get_name() != "headless":
+				await RenderingServer.frame_post_draw
+				root.get_texture().get_image().save_png(OS.get_environment("CD_GODOT_DATA_DIR").path_join("office-%s-%s-%d.png" % [model.next.leagueId,model.next.phase,dimensions.x]))
+
+func _run() -> void:
+	app = load("res://main.tscn").instantiate()
+	root.add_child(app)
+	app.timer.stop()
+	var deadline := Time.get_ticks_msec() + 15000
+	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
+	await _wait()
+	await _bench()
+	_clocks()
+	await _offices()
+	var pid: int = app.bridge.child_pid
+	app.bridge.stop()
+	deadline = Time.get_ticks_msec() + 2500
+	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await process_frame
+	_check(app.bridge.child_pid <= 0 and not OS.is_process_running(pid), "Owned worker closes")
+	print(JSON.stringify({"checks":checks,"failures":failures,"passed":failures.is_empty()}))
+	quit(0 if failures.is_empty() else 1)
