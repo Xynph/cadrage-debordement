@@ -22,7 +22,7 @@ def history_card(index):
 routes=['dashboard','team','tactics','plans','staff','recruitment','match','league','history','market','formation','finance','saves','help']
 try:
  with sync_playwright() as pw:
-  browser=pw.chromium.launch(headless=True)
+  browser=pw.chromium.launch(headless=True,executable_path=os.environ.get('CD_BROWSER_EXECUTABLE'))
   page=browser.new_page(viewport={'width':1440,'height':1000},color_scheme='dark',reduced_motion='reduce')
   page.on('pageerror',lambda e:errors.append(str(e)))
   page.on('response',lambda r:bad.append(r.url) if r.status>=400 else None)
@@ -34,7 +34,7 @@ try:
   for theme in ('analyste','tribune'):
    page.locator('#ui01-theme').select_option(theme)
    page.evaluate("nav('dashboard')")
-   check('copper action '+theme,page.locator('.heading .primary').evaluate("e=>{let c=getComputedStyle(e).backgroundColor;return c!=='rgb(128, 102, 249)'&&c!=='rgb(112, 84, 232)'}"))
+   check('copper action '+theme,page.locator('.ed-office-primary').evaluate("e=>{let c=getComputedStyle(e).backgroundColor;return c!=='rgb(128, 102, 249)'&&c!=='rgb(112, 84, 232)'}"))
    for width in (1920,1440,1024,768,390,320):
     page.set_viewport_size({'width':width,'height':1000 if width>=1024 else 900})
     for route in routes:
@@ -49,9 +49,9 @@ try:
       page.screenshot(path=str(OUT/(route+'-'+theme+'-'+str(width)+'.png')),full_page=route!='dashboard')
   page.set_viewport_size({'width':1440,'height':1000});page.evaluate("nav('dashboard')")
   page.locator('[data-da42-subpage="pilotage"]').click()
-  check('panorama actually visible in office',page.locator('.da42-command-lead').evaluate("e=>getComputedStyle(e).backgroundImage.includes('assets/editorial/')"))
+  check('panorama actually visible in office',page.locator('.ed-office-match').evaluate("e=>getComputedStyle(e).backgroundImage.includes('assets/editorial/')"))
   check('panorama decodes locally',page.evaluate("async()=>{let i=new Image();i.src='assets/premium-v4-matchday.webp';await i.decode();return i.naturalWidth>=1500&&i.naturalHeight>600}"))
-  check('office visual columns do not overlap',page.evaluate("(()=>{const a=document.querySelector('.da42-command-lead').getBoundingClientRect(),b=document.querySelector('.da42-command-rail').getBoundingClientRect();return a.right<=b.left+2&&Math.abs(a.top-b.top)<2})()"))
+  check('office visual columns do not overlap',page.evaluate("(()=>{const a=document.querySelector('.ed-office-match').getBoundingClientRect(),b=document.querySelector('.ed-office-group').getBoundingClientRect();return a.right<=b.left+2&&Math.abs(a.top-b.top)<2})()"))
   # V4.6: real PC pre-match, both themes and widths; no match started here.
   page.evaluate("nav('dashboard')")
   for theme in ('analyste','tribune'):
@@ -220,13 +220,14 @@ try:
            page.locator('.ui01-primary-nav button').count()>0)
      if route=='dashboard':
       check('V4.8 native command deck '+theme+' '+str(width),
-            page.locator('.da42-command-lead').count()==1 and
-            page.locator('.da42-command-lead').evaluate(
+            page.locator('.ed-office-match').count()==1 and
+            page.locator('.ed-office-match').evaluate(
              "e=>getComputedStyle(e).backgroundImage.includes('assets/editorial/')"))
       check('V4.8 native decisions visible '+theme+' '+str(width),
-            page.locator('.da42-rail-item').count()>=2)
+            page.locator('.ed-office-decisions').is_visible() and
+            page.locator('.ed-office-decision').count()==page.evaluate('officeDecisions().length'))
       check('V4.8 command action hit area '+theme+' '+str(width),
-            page.locator('.da42-command-cta').first.evaluate(
+            page.locator('.ed-office-primary').first.evaluate(
              "e=>e.getBoundingClientRect().height>=44"))
      for item in page.locator('.cd02-header,.cd03-header,.cd04-header').all():
       check('V4.8 native center header '+route+' '+theme+' '+str(width),

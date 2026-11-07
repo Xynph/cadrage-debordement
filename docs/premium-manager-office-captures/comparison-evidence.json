@@ -1,0 +1,30 @@
+{
+  "fresh-before": {
+    "season": 1,
+    "round": 0,
+    "cash": 7500000,
+    "history": 0,
+    "checksum": "e7db0a5d"
+  },
+  "fresh-after": {
+    "season": 1,
+    "round": 0,
+    "cash": 7500000,
+    "history": 0,
+    "checksum": "e7db0a5d"
+  },
+  "advanced-before": {
+    "season": 1,
+    "round": 6,
+    "cash": 8222844,
+    "history": 42,
+    "checksum": "0f62a826"
+  },
+  "advanced-after": {
+    "season": 1,
+    "round": 6,
+    "cash": 8222844,
+    "history": 42,
+    "checksum": "0f62a826"
+  }
+}
