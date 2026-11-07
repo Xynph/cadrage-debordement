@@ -112,12 +112,77 @@ func tts_real() -> void:
 	await press("GuideStop")
 	check(not guide.speech.speaking and not guide.portrait.speaking, "Arrêter coupe parole et animation")
 	guide.bubble.text = saved_text
+func error_label(node: Node) -> Label:
+	if node is Label and node.is_visible_in_tree() and not guide.profile.last_error.is_empty() and node.text.contains(guide.profile.last_error): return node
+	for child in node.get_children():
+		var found := error_label(child)
+		if found != null: return found
+	return null
+func visible_error(context: String, capture_id: String = "") -> void:
+	for i in 3: await process_frame
+	var error := error_label(guide)
+	check(error != null, "Erreur de disque visible : " + context)
+	if error != null:
+		check(guide.get_global_rect().intersection(error.get_global_rect()).size == error.size, "Erreur entièrement contenue : " + context)
+		check(error.size.y >= error.get_line_height() * error.get_line_count(), "Toutes les lignes d'erreur lisibles : " + context)
+	if not capture_id.is_empty() and DisplayServer.get_name() != "headless":
+		await RenderingServer.frame_post_draw
+		check(root.get_texture().get_image().save_png(OS.get_environment("CD_GUIDE_CAPTURES").path_join(capture_id + ".png")) == OK, "Capture erreur " + capture_id)
+func write_error_cases() -> void:
+	await command("new_career", {"club":0,"mode":"common"})
+	root.content_scale_size = Vector2i(1280,800); root.size = Vector2i(1280,800)
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(Vector2i(1280,800))
+	app._navigate("Bureau"); attach(); guide.open_help(); guide.close()
+	var saved_guide: String = guide.profile.directory.path_join("guide.json")
+	var guide_bytes := FileAccess.get_file_as_bytes(saved_guide)
+	var before: Dictionary = await state_export()
+	var career_path: String = str(app.model.meta.dataDir).path_join("donnees.json")
+	var career_bytes := FileAccess.get_file_as_bytes(career_path)
+	var blocker: String = app._profile_path().path_join("profil-guide-bloque")
+	var file := FileAccess.open(blocker, FileAccess.WRITE); file.store_string("Fichier ordinaire : aucun sous-dossier possible."); file.close()
+	guide.profile.directory = blocker
+	guide.open_help()
+	check(not guide.profile.last_error.is_empty() and guide.expanded, "Échec disque réel lors de l'ouverture")
+	await visible_error("développé avec Options fermées", "coach-erreur-etendu-1280")
+	guide.close(); await visible_error("compact", "coach-erreur-compact-1280")
+	guide.open_help(); await press("GuideOptions"); await visible_error("Options ouvertes", "coach-erreur-options-1280")
+	await press("GuideDisable")
+	check(not guide.profile.data.enabled and not guide.expanded and not guide.speech.speaking, "Désactivation effective pour cette session malgré le refus d'écriture")
+	await visible_error("désactivation non persistée", "coach-erreur-desactivation-1280")
+	var error := error_label(guide)
+	check(error != null and error.text.contains("session") and error.text.contains("prochain démarrage"), "Désactivation non enregistrée expliquée explicitement")
+	for i in 10: guide.refresh(); await process_frame
+	await visible_error("après dix snapshots sans nouvelle modale")
+	check(app.get_children().filter(func(child):return child is AcceptDialog and child.visible).is_empty(), "Aucune modale répétée pour l'erreur")
+	guide.open_help(); check(guide.expanded, "Guide toujours utilisable après l'erreur")
+	check(guide_bytes == FileAccess.get_file_as_bytes(saved_guide), "Dernier guide enregistré conservé sans repli")
+	check(FileAccess.get_file_as_string(blocker) == "Fichier ordinaire : aucun sous-dossier possible.", "Obstacle disque conservé")
+	var after: Dictionary = await state_export()
+	check(before == after and career_bytes == FileAccess.get_file_as_bytes(career_path), "Erreur et désactivation ne modifient ni carrière ni RNG ni octets")
+	guide.destroy(); await process_frame
+	# A corrupted file blocks only persistence: the player can still open and silence the guide.
+	file = FileAccess.open(saved_guide, FileAccess.WRITE); file.store_string("{guide corrompu"); file.close()
+	var corrupt_bytes := FileAccess.get_file_as_bytes(saved_guide)
+	attach(); await visible_error("profil corrompu au démarrage compact")
+	guide.open_help(); await visible_error("profil corrompu développé")
+	check(guide.expanded, "Corruption : utilisation locale possible")
+	await press("GuideOptions"); await press("GuideDisable")
+	await visible_error("corruption et désactivation pour la session")
+	check(not guide.profile.data.enabled and corrupt_bytes == FileAccess.get_file_as_bytes(saved_guide), "Corruption jamais écrasée, désactivation locale possible")
+	guide.destroy(); await process_frame
+	app.bridge.stop()
+	var until := Time.get_ticks_msec() + 4000
+	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < until: await process_frame
+	app.queue_free(); for i in 6: await process_frame
+	print("COACH WRITE ERROR : ", checks, " contrôles ; ", failures.size(), " échec(s)")
+	quit(0 if failures.is_empty() else 1)
 func run() -> void:
 	check(ResourceLoader.exists("res://guide/coach_guide.gd"), "Contrôleur de guide disponible")
 	if not failures.is_empty(): print("COACH RED : contrôleur absent"); quit(1); return
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
 	await wait_model(); app.timer.stop()
+	if OS.get_environment("CD_GUIDE_CASE") == "write-error": await write_error_cases(); return
 	attach()
 	check(not guide.expanded and named(guide, "GuideTour") != null, "Invitation compacte sans ouverture ni parole automatiques")
 	await press("GuideTour")
