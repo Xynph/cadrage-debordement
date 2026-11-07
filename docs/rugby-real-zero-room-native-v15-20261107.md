@@ -257,3 +257,19 @@ Le XV titulaire reste inchangé dans ces quatre cas. Tous les intervalles recouv
 - Les fichiers d'effectifs, de données actives, de moteur et de sauvegardes restent **strictement intacts**. Ce cycle livre un banc d'audit fondé sur des preuves et des candidats non destructifs, pas une nouvelle notation intégrée.
 
 La qualification finale de cette extension doit être reçue sur le SHA terminal réel de la PR #389 ; un run SUCCESS d'un commit antérieur n'est pas preuve du commit de documentation final.
+
+
+### Dossiers nominatifs prioritaires vérifiables
+
+Le run spécialisé [#42377589806](https://github.com/Xynph/cadrage-debordement/actions/runs/42377589806) a validé **15/15 tests** après ajout des noms officiels du catalogue et URL de preuves aux diagnostics. Extraits de la liste de **36 signalements** :
+
+| Joueur actif 2026–27 | Club actuel / poste | Note au poste / médiane de poste et division | Minutes 2025–26 | Indices supplémentaires |
+| --- | --- | ---: | ---: | --- |
+| **Gabriel NGANDEBE** \`lnr:1444\` | Montpellier / ailier | 72 / 75 | 1 950 | deux saisons régulières documentées, 8 essais |
+| **Léo BARRÉ** \`lnr:1829\` | Paris / arrière | 72 / 75 | 1 901 | statistiques d'essais répertoriées |
+| **Steeve BLANC MAPPAZ** \`lnr:908\` | Vannes / n° 8 | 70 / 73 | 1 567 | plusieurs saisons régulières |
+| **Hugo TROUILLOUD** \`lnr:877\` | Grenoble / arrière | 65 / 67 | 1 930 | statistiques d'essais répertoriées |
+| **Iban HIRIART URRUTY** \`lnr:12085\` | Biarritz / talonneur | 60 / 63 | 1 335 | essais répertoriés |
+| **Barnabé MASSA** \`lnr:862\` | Clermont / talonneur | 70 / 72 | 1 310 | plusieurs saisons régulières, essais répertoriés |
+
+Ces différences entre note attribuée et exposition réelle **ne constituent pas un arbitrage de sous-notation** : le temps de jeu ne mesure pas toute la technique, l'opposition, les blessures ou le potentiel, et certaines statistiques historiques peuvent concerner un club différent de celui de 2026–2027. Les notes sont des estimations de jeu. Les URL officielles et identifiants sont conservés dans les traces \`RUGBY_REAL_V15_EVIDENCE_SCREEN\`; il faut les revoir joueur par joueur avant un ajustement, puis mettre à jour **ensemble** les attributs et les compétences dérivées sur une future branche autorisée si les preuves convergent. **Aucune mutation ici.**
