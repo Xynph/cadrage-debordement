@@ -66,3 +66,19 @@ jobs:
           name: rugby-real-v12-measured-comparison
           path: ${{ runner.temp }}/results/
           retention-days: 30
+
+  native-calibration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V12 profondeur et sensibilite - 1920 matchs natifs apparies
+        run: node tools/rugby-real-v12/calibration.cjs "$RUNNER_TEMP/v12-calibration.json" 64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rugby-real-v12-depth-calibration
+          path: ${{ runner.temp }}/v12-calibration.json
+          retention-days: 30
