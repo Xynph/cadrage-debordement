@@ -1,0 +1,375 @@
+{
+  "version": 1,
+  "snapshot": "2026-10-31",
+  "observed": "2026-11-07",
+  "sources": {
+    "p01": {
+      "url": "https://www.asm-rugby.com/actus/2024-06-11-bilan-et-officialisations",
+      "publisher": "club",
+      "published": "2024-06-11",
+      "evidence": "Akhaladze pilier gauche ; Massa talonneur."
+    },
+    "p02": {
+      "url": "https://www.asm-rugby.com/equipe/joueurs/giorgi-dzmanashvili-pilier",
+      "publisher": "club",
+      "published": null,
+      "evidence": "Pilier droit ; rotation à droite avec Cristian Ojovan."
+    },
+    "p03": {
+      "url": "https://www.asm-rugby.com/equipe/joueurs/matheo-frisach-pilier",
+      "publisher": "club",
+      "published": null,
+      "evidence": "Portrait club : spécialisation à gauche (audit PR389, page relue mais extraction intermittente)."
+    },
+    "p04": {
+      "url": "https://www.asm-rugby.com/equipe/joueurs/etienne-fourcade-talonneur",
+      "publisher": "club",
+      "published": null,
+      "evidence": "Talonneur."
+    },
+    "p05": {
+      "url": "https://www.asm-rugby.com/equipe/effectif",
+      "publisher": "club",
+      "published": null,
+      "evidence": "Massa, Fourcade, Narisia talonneurs."
+    },
+    "p06": {
+      "url": "https://www.abrugby.fr/equipe/effectif",
+      "publisher": "club",
+      "published": null,
+      "evidence": "Tatafu/Setiano droits ; Calles/Bordelai gauches ; Bosch talonneur."
+    },
+    "p07": {
+      "url": "https://www.asm-rugby.com/asm-omnisports/asm-rugby-academy",
+      "publisher": "club",
+      "published": null,
+      "evidence": "Noah Traini apparaît Pilier dans la page actuelle : contradiction du rapport PR389 talonneur, mapping quarantainé. Aucune preuve de côté."
+    },
+    "c01": {
+      "url": "https://rctoulon.com/decouvrez-les-premieres-recrues-et-dernieres-prolongations/",
+      "publisher": "club",
+      "published": "2025-07-07",
+      "evidence": "Garcia, Mercer, Tuifua, Le Bail, Ferté 2028 ; Brex 2027. Narmania une saison 2025-26 exclu car échéance passée ; Sinzelle durée relative non appliquée ; Ivaldi joker de quelques mois sans date exacte exclu."
+    },
+    "c02": {
+      "url": "https://rctoulon.com/esteban-abadie-toulonnais-jusquen-2028/",
+      "publisher": "club",
+      "published": "2025-02-04",
+      "evidence": "Échéance 2028."
+    },
+    "c03": {
+      "url": "https://rctoulon.com/swan-rebbadj-toulonnais-jusquen-2028/",
+      "publisher": "club",
+      "published": "2025-04-16",
+      "evidence": "Échéance juin 2028."
+    },
+    "c04": {
+      "url": "https://rctoulon.com/ben-white-toulonnais-jusquen-2028-3/",
+      "publisher": "club",
+      "published": "2025-11-14",
+      "evidence": "Échéance 2028."
+    },
+    "c05": {
+      "url": "https://rctoulon.com/setariki-tuicuvu-toulonnais-jusquen-2028/",
+      "publisher": "club",
+      "published": "2025-02-05",
+      "evidence": "Échéance 2028 ; polyvalence documentée non ajoutée au moteur dans ce lot."
+    },
+    "c06": {
+      "url": "https://rctoulon.com/dany-priso-toulonnais-jusquen-2028/",
+      "publisher": "club",
+      "published": "2025-02-03",
+      "evidence": "Échéance 2028."
+    },
+    "c07": {
+      "url": "https://fcgrugby.com/fr/articles/2026/03/27/c-est-signe-bastien-soury-prolonge-au-fcg-pour-deux-saisons-supplementaires",
+      "publisher": "club",
+      "published": "2026-03-27",
+      "evidence": "Bastien Soury jusqu’en 2028."
+    },
+    "c08": {
+      "url": "https://fcgrugby.com/fr/articles/2026/02/04/mael-navizet-prolonge-au-fcg",
+      "publisher": "club",
+      "published": "2026-02-04",
+      "evidence": "Maël Navizet : contrat mixte, espoir 2026-2028 puis professionnel 2028-2029. Référence initiale : aucune transition de statut automatique en jeu."
+    },
+    "c09": {
+      "url": "https://fcgrugby.com/fr/articles/2025/01/08/le-fcg-a-le-plaisir-d-annoncer-les-prolongations-de-9-de-ses-joueurs",
+      "publisher": "club",
+      "published": "2025-01-08",
+      "evidence": "Berruyer/Gauthier/Escande/Fusier/Couilloud 2027 ; Eglaine/Rossi/Davies 2028 ; prêt Ployet 2026 exclu. Seules échéances appliquées, autres postes hors de la liste précise de ce lot."
+    }
+  },
+  "positions": {
+    "lnr:862": {
+      "primary": "Talonneur",
+      "sources": [
+        "p01"
+      ]
+    },
+    "lnr:3233": {
+      "primary": "Pilier droit",
+      "sources": [
+        "p02"
+      ]
+    },
+    "lnr:184": {
+      "primary": "Pilier gauche",
+      "sources": [
+        "p01"
+      ]
+    },
+    "lnr:655": {
+      "primary": "Pilier gauche",
+      "sources": [
+        "p03"
+      ]
+    },
+    "lnr:657": {
+      "primary": "Talonneur",
+      "sources": [
+        "p04"
+      ]
+    },
+    "lnr:694": {
+      "primary": "Pilier droit",
+      "sources": [
+        "p02"
+      ]
+    },
+    "lnr:2176": {
+      "primary": "Talonneur",
+      "sources": [
+        "p05"
+      ]
+    },
+    "lnr:2674": {
+      "primary": "Pilier droit",
+      "sources": [
+        "p06"
+      ]
+    },
+    "lnr:1885": {
+      "primary": "Pilier gauche",
+      "sources": [
+        "p06"
+      ]
+    },
+    "lnr:2349": {
+      "primary": "Pilier droit",
+      "sources": [
+        "p06"
+      ]
+    },
+    "lnr:2565": {
+      "primary": "Pilier gauche",
+      "sources": [
+        "p06"
+      ]
+    },
+    "lnr:2658": {
+      "primary": "Talonneur",
+      "sources": [
+        "p06"
+      ]
+    }
+  },
+  "contracts": {
+    "lnr:11027": {
+      "endYear": 2028,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c01"
+      ]
+    },
+    "lnr:13528": {
+      "endYear": 2027,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c01"
+      ]
+    },
+    "lnr:1373": {
+      "endYear": 2028,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c01"
+      ]
+    },
+    "lnr:13641": {
+      "endYear": 2028,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c01"
+      ]
+    },
+    "lnr:395": {
+      "endYear": 2028,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c01"
+      ]
+    },
+    "lnr:431": {
+      "endYear": 2028,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c02"
+      ]
+    },
+    "lnr:2363": {
+      "endYear": 2028,
+      "precision": "month",
+      "optionEndYear": null,
+      "sources": [
+        "c03"
+      ],
+      "endMonth": 6
+    },
+    "lnr:11845": {
+      "endYear": 2028,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c04"
+      ]
+    },
+    "lnr:429": {
+      "endYear": 2028,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c05"
+      ]
+    },
+    "lnr:2365": {
+      "endYear": 2028,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c06"
+      ]
+    },
+    "lnr:235": {
+      "endYear": 2028,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c07"
+      ]
+    },
+    "lnr:12339": {
+      "endYear": 2029,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c08"
+      ]
+    },
+    "lnr:883": {
+      "endYear": 2027,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c09"
+      ]
+    },
+    "lnr:859": {
+      "endYear": 2027,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c09"
+      ]
+    },
+    "lnr:920": {
+      "endYear": 2028,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c09"
+      ]
+    },
+    "lnr:925": {
+      "endYear": 2028,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c09"
+      ]
+    },
+    "lnr:893": {
+      "endYear": 2027,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c09"
+      ]
+    },
+    "lnr:919": {
+      "endYear": 2027,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c09"
+      ]
+    },
+    "lnr:249": {
+      "endYear": 2027,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c09"
+      ]
+    },
+    "lnr:9423": {
+      "endYear": 2028,
+      "precision": "year",
+      "optionEndYear": null,
+      "sources": [
+        "c09"
+      ]
+    }
+  },
+  "quarantine": {
+    "lnr:13516": {
+      "reason": "Rapport PR389 talonneur contredit par page primaire actuelle Pilier, côté non établi. Conserver initialisation estimée.",
+      "sources": [
+        "p07"
+      ]
+    },
+    "lnr:13531": {
+      "reason": "Pilier sans côté officiel établi."
+    },
+    "lnr:13650": {
+      "reason": "Seulement secondaire."
+    },
+    "lnr:13711": {
+      "reason": "Seulement secondaire."
+    }
+  },
+  "exclusions": [
+    {
+      "name": "Clovis Le Bail",
+      "reason": "Contrat officiel 2028 mais absent de la base active 1592 : aucun nouvel ID inventé.",
+      "sources": [
+        "c01"
+      ]
+    }
+  ],
+  "statuses": {
+    "lnr:12339": {
+      "value": "espoir",
+      "professionalFromSeason": 3,
+      "sources": [
+        "c08"
+      ]
+    }
+  }
+}

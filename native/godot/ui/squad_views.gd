@@ -69,6 +69,26 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	identity.add_child(name)
 	identity.add_child(G.wrap("%s · %s ans"%[p.pos,G.n(p.age)],12))
 	identity.add_child(G.label(p.get("status",""),11,app.accent.lightened(.5)))
+	var roster:Dictionary=p.get("rosterProfile",{}) if p.get("rosterProfile")!=null else {}
+	if not roster.is_empty():
+		var position:Dictionary=roster.get("position",{})
+		var status:Dictionary=roster.get("status",{})
+		var initial:Dictionary=roster.get("contract",{})
+		var position_basis:String="poste officiel" if position.get("basis")=="official" else "poste estimé"
+		list.add_child(G.wrap("Poste principal : %s · %s"%[position.get("primary",p.pos),position_basis],11,G.MUTED))
+		list.add_child(G.wrap("Qualification initiale de jeu : %s"%", ".join(position.get("qualifications",[])),11,G.MUTED))
+		var status_basis:String="type de contrat officiel" if status.get("basis")=="official" else "estimation de jeu au 01/07/2026"
+		list.add_child(G.wrap("Statut initial : %s · %s"%[str(status.get("value","inconnu")).capitalize(),status_basis],11,G.MUTED))
+		if status.get("professionalFromSeason")!=null: list.add_child(G.wrap("Référence initiale : passage professionnel prévu en saison %s."%G.n(status.professionalFromSeason),10,G.MUTED))
+		var basis:String="échéance officielle publiée" if initial.get("basis")=="official" else "durée estimée de jeu"
+		var references:String=", ".join(initial.get("sources",[]))
+		list.add_child(G.wrap("Référence initiale au 31/10/2026 : %s · %s (fin saison %s)."%[basis,G.n(initial.get("endYear",0)),G.n(initial.get("endSeason",0))],11,G.MUTED))
+		if not references.is_empty():
+			var source_dates:Array[String]=[]
+			for source_id in initial.get("sources",[]):
+				var source:Dictionary=app.model.get("meta",{}).get("rosterSources",{}).get(source_id,{})
+				source_dates.append("%s · %s"%[source_id,source.get("published","date inconnue")])
+			list.add_child(G.wrap("Source officielle %s · référence initiale, indépendante des signatures en jeu."%", ".join(source_dates),10,G.MUTED))
 	list.add_child(G.separator())
 	var numbers:=G.h(16)
 	list.add_child(numbers)
@@ -85,8 +105,8 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	for pair in [["scrum","Mêlée"],["lineout","Touche"],["tackle","Plaquage"],["speed","Vitesse"],["pass","Passe"],["kick","Jeu au pied"],["goal","But"],["mental","Mental"],["discipline","Discipline"],["stamina","Endurance"],["power","Puissance"]]:
 		grid.add_child(G.label(pair[1]+"  "+G.n(p.get("attributes",{}).get(pair[0],"—")),12,G.MUTED))
 	list.add_child(G.separator())
-	list.add_child(G.label(p.get("contractLabel",""),13))
-	list.add_child(G.label(G.euros(p.get("salary",0))+" / semaine",12,G.MUTED))
+	list.add_child(G.label("Contrat courant : "+p.get("contractLabel",""),13))
+	list.add_child(G.label(G.euros(p.get("salary",0))+" / semaine · estimation de jeu",12,G.MUTED))
 	list.add_child(G.label("%s minutes · %s apparitions"%[G.n(p.get("minutes",0)),G.n(p.get("appearances",0))],12,G.MUTED))
 	var renewal:Dictionary=p.get("renewal",{})
 	var extend:=G.button("PROPOSER UNE PROLONGATION",func(): contract(app,p,false))
@@ -210,7 +230,7 @@ static func market(app:Control) -> Control:
 		row.add_child(identity)
 		identity.add_child(G.label(p.name,24,G.INK,true))
 		identity.add_child(G.label("%s · %s ans · niveau %s"%[p.pos,G.n(p.age),G.n(p.rating)],12,G.MUTED))
-		row.add_child(G.label(G.euros(p.get("salary",0))+" / semaine",13,G.GOLD))
+		row.add_child(G.label(G.euros(p.get("salary",0))+" / semaine · estimation de jeu",13,G.GOLD))
 		var b:=G.button("PROPOSER UN CONTRAT",func():contract(app,p,true))
 		b.disabled=not p.get("available",true) or not app._live().is_empty()
 		b.tooltip_text=p.get("reason","")
