@@ -38,7 +38,7 @@ function roster(g){
  })))`);
 }
 function teamRatings(g){
- return read(g,\`S.clubs.map(c=>{
+ return read(g,`S.clubs.map(c=>{
   const s=buildSheet(c),map=new Map(c.players.map(p=>[p.id,p]));
   const starters=s.lineup.filter(Boolean).map(id=>map.get(id));
   const bench=s.bench.filter(Boolean).map(id=>map.get(id));
@@ -46,7 +46,7 @@ function teamRatings(g){
   return {name:c.name,roster:c.players.length,lnr:c.players.filter(p=>p.lnrRatingsVersion===1).length,
    startingPlayers:starters.length,benchPlayers:bench.length,xv:avg(starters),bench:avg(bench),
    xvIds:starters.map(p=>p.id),rosterIds:c.players.map(p=>p.id)};
- })\`);
+ })`);
 }
 
 test('All 47 zero-room identifiers come from active V12 tuples, without altering them',()=>{
