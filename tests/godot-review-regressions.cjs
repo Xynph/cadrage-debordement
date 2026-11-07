@@ -1,7 +1,10 @@
 'use strict';
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {spawnSync}=require('node:child_process');
-if(!process.env.CD_GODOT_EXECUTABLE)throw Error('CD_GODOT_EXECUTABLE requis');
+const {test}=require('node:test');
+test('Régressions natives Godot : disque, UI, limites et transport',{
+ skip:!process.env.CD_GODOT_EXECUTABLE&&'SDK Godot absent : réception Windows exécutée séparément, définir CD_GODOT_EXECUTABLE pour ces 33 contrôles.',
+},()=>{
 let failed=false;
 for(const mode of ['disk','ui','limits','null-response']){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-godot-review-'+mode+'-'));
@@ -14,4 +17,5 @@ for(const mode of ['disk','ui','limits','null-response']){
  if(result.status!==0||/SCRIPT ERROR|Parse Error|ERROR:/.test(output))failed=true;
  fs.rmSync(dir,{recursive:true,force:true});
 }
-process.exitCode=failed?1:0;
+if(failed)throw Error('Régression native Godot échouée');
+});

@@ -5,6 +5,7 @@ var app: Control
 var failures: Array[String] = []
 var checks := 0
 var errors := 0
+var error_messages: Array[String] = []
 
 func _initialize() -> void:
 	if OS.get_environment("CD_GODOT_DATA_DIR").is_empty():
@@ -57,7 +58,7 @@ func _run() -> void:
 		DirAccess.make_dir_recursive_absolute(profile.path_join("PrototypeGodot/donnees.tmp"))
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
-	app.bridge.command_failed.connect(func(_message: String): errors += 1)
+	app.bridge.command_failed.connect(func(message: String): errors += 1; error_messages.append(message))
 	app.timer.stop()
 	var deadline := Time.get_ticks_msec() + 15000
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
@@ -93,6 +94,8 @@ func _run() -> void:
 		await _wait()
 		_check(app.match_page == page, "Round transition retains same Match panel")
 		_check(not app.pause_button.disabled, "Next kickoff enabled without navigation")
+		# Repair the actual 23 after match injuries before testing the next kickoff.
+		await _command("auto_lineup")
 		if not app.pause_button.disabled:
 			app.pause_button.pressed.emit()
 			await _wait()
@@ -142,5 +145,5 @@ func _run() -> void:
 	var close_deadline := Time.get_ticks_msec() + 2500
 	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < close_deadline: await process_frame
 	_check(app.bridge.child_pid <= 0 and (pid <= 0 or not OS.is_process_running(pid)), "Owned child closes within bounded deadline")
-	print(JSON.stringify({"mode": mode, "passed": failures.is_empty(), "checks": checks, "failures": failures, "errors": errors}))
+	print(JSON.stringify({"mode": mode, "passed": failures.is_empty(), "checks": checks, "failures": failures, "errors": errors, "error_messages": error_messages}))
 	quit(0 if failures.is_empty() else 1)

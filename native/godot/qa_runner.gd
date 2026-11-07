@@ -101,6 +101,7 @@ func _run() -> void:
 	var retained_match_page: Node = app.match_page
 	await _command("finish_round")
 	_check(app.model.meta.round == 1, "Round advanced")
+	await _command("auto_lineup")
 	_check(app.match_page == retained_match_page, "Same Match page after round validation")
 	_check(not app.pause_button.disabled, "Second kickoff available without navigation")
 	if not app.pause_button.disabled:
