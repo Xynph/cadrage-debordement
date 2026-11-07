@@ -1,5 +1,13 @@
 # Lot 1 — postes, qualifications, statuts et contrats initiaux
 
+## Réception Windows et livraison
+
+Code reçu `86a12001dcca8dd2f6c41e501eb1abcdf64915ff` ; les raccords documentaires, le test CI de compatibilité des âges et le raccord de la fondation ne changent pas ce code de jeu. Revue ciblée et revue globale favorables, sans correctif demandé.
+
+Le ZIP Windows extrait et déplacé a réussi **502 contrôles graphiques natifs**, deux résolutions, saison complète puis saison 2/club29, export/réimport et redémarrage avec Node embarqué, PATH sans Node installé. Ses **69 fichiers** ont été vérifiés contre le manifeste ; zéro connexion TCP observée et zéro processus orphelin. Un contrôle supplémentaire du moteur réellement livré confirme les 1 592 profils, douze postes et vingt échéances officiels. La fiche enrichie a passé 24 contrôles SDK Windows ; les captures ont été inspectées. Ces preuves restent distinctes de la CI GitHub.
+
+Archive : `Oval-Legacy-27-Lot1-Windows-x64.zip`, **179 314 998 octets**, SHA256 `abb2fd61de7a16466321344f749f4c854f15270a2fb51764897f01f3daf7044b`. Livraison sur E:, sous `livraison/lot1/OvalLegacy27-PrototypeGodot`, raccourci bureau mis à jour avec l'icône transparente. Aucun fichier de carrière n'a été remplacé. Les données ci-dessous s'appliquent à une **nouvelle carrière commune** ; le pack d'identité privé installé reste utilisable. Preuves locales : `artefacts/godot-native-qa/oval-roster-lot1-final01`, `lot1-ui-final.log`, `lot1-bundled-metadata.log` et `lot1-activation-receipt.json`.
+
 Données arrêtées au **31 octobre 2026**, saison simulée **2026–2027**. Recherche documentaire vérifiée le 7 novembre 2026. Ce lot s’applique exclusivement aux **nouvelles carrières natives de base commune**. Le pack d’identité privé et la présentation anonymisée utilisent les mêmes 1 592 identifiants ; le pack ne réimporte aucune statistique.
 
 ## Couverture et limites
