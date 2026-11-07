@@ -1,5 +1,22 @@
 # Premium P2 — manifeste artistique et provenance des assets
 
+## Reprise P3 du 7 novembre 2026
+
+Deux nouveaux assets photographiques IA propres, générés pour ce projet, sans texte ni interface incorporée :
+
+| Asset | Définition | Usage |
+| --- | --- | --- |
+| `portraits/players-atlas-p3.webp` | 1254 × 1254, grille 3 × 3 (418 × 418 par visage) | Neuf identités fictives, listes et dossiers avec le même cadrage CSS |
+| `backgrounds/stadium-night-p3.webp` | 1672 × 941 | Fond de stade nocturne avec deux joueurs à droite, Bureau et bandeau Recrutement |
+
+Sources PNG originales conservées séparément ; WebP transcodés en qualité 91 sans modification du contenu. Les assets P2 restent versionnés comme historique et repli. Les visages P3 sont entièrement fictifs ; aucune identité de sportif réel revendiquée.
+
+**Direction des prompts** : atlas 3×3 de portraits photographiques de rugbymen adultes fictifs, maillots vert forêt sans marque, fond vert encre, lumière douce et liseré cuivre, têtes entières ; stade de rugby de nuit sous la pluie, poteaux en H, espace sombre à gauche pour les textes HTML, deux joueurs de dos à droite, sans numéros, logos, texte ni interface.
+
+**Indices stables** : Gabriel 0, Noah 1, Mathis 2, Sacha 3, Eliott 4, Léo 5, Théo 6, Milan 7, Rayan 8. Aucune répétition d'identité entre ces neuf personnages. Les noms et statistiques de démonstration restent en HTML.
+
+Penpot : la passation P1 #73 commentaire 6698325202 décrit les pré-maquettes natives existantes. À cette reprise, le connecteur répond « No Penpot instance connected » : aucune modification ni synchronisation P3 de ces pré-maquettes n'est revendiquée.
+
 ## Objectif visuel
 
 Univers rugby éditorial premium : scènes de stade, badges de clubs et visages fictifs distincts des composants interactifs. Les textes, tableaux, sélections et statistiques doivent toujours être rendus par React et non intégrés dans une image générée.
