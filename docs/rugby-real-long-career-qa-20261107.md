@@ -25,3 +25,28 @@ Le jeu n'exécute pas encore une carrière senior native à deux divisions TOP 1
 `node --test --test-name-pattern="maturité distincte|profondeur: trois variantes" tests/rugby-real-full-ratings-v12.cjs`
 
 Le workflow déclenche aussi la calibration native. Si des résultats sont inattendus, STOP et diagnostic ; préserver les limites. La PR demeure DRAFT, **aucune fusion** en rôle producteur.
+
+## Diagnostic chiffré — ce qui est acquis et ce qui reste exploratoire
+
+**Preuve GitHub du premier HEAD `f4230d041b24b88f298383284d7d4ee26952c085` :** logs job `native-ten-seasons` du run #42366326511 : 2 tests PASS, 0 FAIL, 1 820 matchs de saison régulière, **50 rencontres de phases finales**, dix exports/imports réussis. Le nombre de profils marqués V12 dans les 14 clubs TOP14 évolue ainsi : saisons 1→10 = **805, 699, 608, 509, 441, 385, 353, 328, 310, 281**, soit 524 de moins (−65,1 %). **Cela ne démontre pas une perte de joueurs ou une erreur d'âge** : le renouvellement des effectifs, les retraites et les entrées de jeunes non V12 peuvent expliquer une partie du phénomène ; la distribution par cohortes et les départs individuels ne sont pas ici reconstitués.
+
+La version élargie mesure maintenant, à chaque fin de saison, les moyennes de vitesse, force, endurance et décisions sur les profils V12 *encore présents*, dans les tranches 18–23, 24–29, 30–34 et 35+ ans. **Biais de survivants explicite** : comparer les moyennes transversales ne prouve pas la trajectoire d'un même joueur. Le vieillissement V11 a déjà ses tests de contrat spécifiques et le lot actuel ne change aucune de ses règles.
+
+**Diagnostics issus de la campagne publiée V12 à 64 graines (avant PR #383)** :
+
+| Mesure de laboratoire | V12 |
+|---|---:|
+| PRO D2 moyen contre TOP14 moyen : victoires | 24,22 % |
+| Promu-proxy contre TOP14 moyen : victoires | 29,69 % |
+| Promu-proxy contre TOP14 le plus fort : victoires | 40,63 % |
+| Promu-proxy + 5 recrues contre TOP14 moyen | 31,25 % |
+| Relégué-proxy conservé contre PRO D2 moyen | 62,50 % |
+| Relégué-proxy avec 5 départs contre PRO D2 moyen | 65,63 % |
+| Relégué conservé : marge moyenne contre PRO D2 | +5,50 points |
+| Relégué après 5 départs : marge moyenne | +5,47 points |
+
+Source reproductible : `docs/rugby-real-v12/results.md` et `tools/rugby-real-v12/campaign.cjs` sur main, moteur natif à coefficient 0,004. **Anomalies de design possibles** : la variante "fort" donne une victoire trop fréquente au promu-proxy et la perte de cinq joueurs améliore paradoxalement son taux de victoires en petit échantillon ; la marge ne baisse que de 0,03 point. Ces clubs sont choisis par qualité d'effectif et ne sont pas des promus/relégués historiques. Le test 240 matchs et les trois sensibilités doivent analyser cette incohérence, sans en faire une vérité statistique sur la compétition.
+
+**Règles de lecture du nouveau test de 240 matchs :** 8 graines appariées, les deux domiciles, 5 scénarios, 3 coefficients hors production. Chaque taux par scénario et coefficient repose sur **16 matchs**, donc est très instable. Les variations de marge et les remplacements de titulaires doivent être lus en parallèle, jamais comme seuils définitifs de calibration ; une décision sportive exige une reproduction plus large à 64–128 graines et d'autres effectifs.
+
+**Validation :** aucun résultat du nouveau HEAD n'est déclaré réussi avant son workflow GitHub exact. La PR reste DRAFT, sans fusion.
