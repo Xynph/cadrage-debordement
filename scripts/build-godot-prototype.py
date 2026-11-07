@@ -61,12 +61,12 @@ def build(args):
     preset = (PROJECT / "windows-release.cfg").read_text(encoding="utf-8-sig")
     preset = preset.replace("{{RELEASE_TEMPLATE}}", template.as_posix())
     (source / "export_presets.cfg").write_text(preset, encoding="utf-8")
-    app = target / "CadrageDebordement-PrototypeGodot"
+    app = target / "OvalLegacy27-PrototypeGodot"
     app.mkdir()
     env = dict(os.environ, APPDATA=str(work / "profile"), LOCALAPPDATA=str(work / "profile-local"))
     Path(env["APPDATA"]).mkdir(parents=True)
     Path(env["LOCALAPPDATA"]).mkdir(parents=True)
-    executable = app / "CadrageDebordement.exe"
+    executable = app / "OvalLegacy27.exe"
     for name, tail in [("import", ["--import"]), ("export", ["--export-release", "Windows Desktop", str(executable)])]:
         cmd = [str(editor), "--headless", "--path", str(source)] + tail
         result = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -79,14 +79,16 @@ def build(args):
     shutil.copy2(args.node, app / "runtime/node.exe")
     engine = app / "engine"
     shutil.copytree(ROOT / "native/engine", engine)
-    # Only source modules loaded by the worker; no real BDD, HTML or web renderer.
+    # Only loaded core and anonymised common data; no real names/photos or web UI.
     core = engine / "core"
     core.mkdir()
     script = "process.stdout.write(JSON.stringify(require('./native/engine/worker.cjs').CORE_FILES))"
     sources = json.loads(subprocess.check_output([str(args.node), "-e", script], cwd=ROOT))
     for relative in sources:
         path = (ROOT / "dist" / relative).resolve()
-        if not path.is_relative_to((ROOT / "dist").resolve()) or "lnr-" in path.name:
+        # This one module contains active progression code, no roster identities.
+        allowed_progression = relative == path.name == "lnr-v11-aging.js"
+        if not path.is_relative_to((ROOT / "dist").resolve()) or ("lnr-" in path.name and not allowed_progression):
             raise ValueError("Module hors périmètre : " + relative)
         destination = core / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -99,10 +101,14 @@ def build(args):
     shutil.copytree(ROOT / "dist/match3d/assets", licenses / "modele3d",
                     ignore=shutil.ignore_patterns("*.glb", "*.gltf", "*.bin", "*.png", "*.jpg"))
     (app / "LISEZ-MOI.txt").write_text(
-        "CADRAGE DÉBORDEMENT — PRÉALPHA 0.2 / CARRIÈRE NATIVE\n\n"
-        "Lancer CadrageDebordement.exe. Aucun navigateur, Godot ou Node à installer.\n"
+        "OVAL LEGACY 27 — RUGBY MANAGER — PRÉALPHA 0.3\n\n"
+        "Lancer OvalLegacy27.exe. Aucun navigateur, Godot ou Node à installer.\n"
         "Conserver le dossier complet avec runtime et engine. Windows x64.\n\n"
         "Nouvelle carrière : 30 clubs jouables, deux divisions reliées (14 et16).\n"
+        "Base commune de1592joueurs aux identités anonymisées.\n"
+        "Importez un pack personnalisé depuis Packs et identités.\n"
+        "Disponible à la création et dans les paramètres de carrière.\n"
+        "Les packs changent les noms/images, pas les statistiques/progrès.\n"
         "Composition à23, entraînement, tactiques, recrutement et contrats.\n"
         "Match3D, phases finales, montées/descentes et saisons suivantes.\n"
         "Les anciennes carrières fictives14 restent importables et jouables.\n\n"
@@ -111,15 +117,36 @@ def build(args):
         "Valider la journée après le résultat. Menu & sauvegardes pour exporter.\n"
         "Les promotions du centre peuvent compléter une feuille incomplète ;\n"
         "leur coût salarial est annoncé avant confirmation.\n\n"
-        "Données fictives de carrière. Photos réelles d'archive : crédits dans Licences.\n"
+        "Capacités et finances de jeu, non officielles. Crédits atlas dans Licences.\n"
+        "Photos officielles et illustrations IA des packs signalées séparément.\n"
         "Profil séparé : %APPDATA%/CadrageDebordement/PrototypeGodot.\n"
         "Format2026/27 ; lois de match existantes2025, couverture partielle.\n"
         "34 semaines fictives, monde fermé sans Nationale ; stade3D générique.\n"
         "Préalpha à tester ; publication Steam et finition commerciale à venir.\n", encoding="utf-8")
+    modding = app / "Packs"
+    modding.mkdir()
+    example = {"schema": "cd-identity-pack-v1", "id": "mon-club", "name": "Mon univers", "version": "1.0.0",
+               "databaseId": "rugby-common-2026-10-31-v1", "rightsStatus": "user-provided",
+               "clubs": [{"id": 0, "name": "Les Albatros XV"}],
+               "players": [{"id": "lnr:2399", "name": "Mon premier joueur"}], "assets": []}
+    with zipfile.ZipFile(modding / "Exemple-identites.zip", "w", zipfile.ZIP_DEFLATED) as example_zip:
+        example_zip.writestr("pack.json", json.dumps(example, ensure_ascii=False, indent=2))
+    (modding / "LIRE-MOI.txt").write_text(
+        "PACKS OVAL LEGACY 27\n\nCréation → Packs et identités → Importer un pack ZIP.\n"
+        "En carrière : Menu → Paramètres → Packs et identités.\n"
+        "Après analyse, installer puis sélectionner le pack. La base anonymisée reste disponible.\n\n"
+        "Exemple-identites.zip contient un pack de noms sans images. Décompresser, modifier\n"
+        "pack.json puis zipper ce fichier à la racine du ZIP. Les IDs sont stables ;\n"
+        "les noms et images peuvent être partiels. Aucune statistique ne change.\n"
+        "Pour les images PNG/JPEG/WebP, déclarer assets [{id,path,sha256,bytes}], puis\n"
+        "référencer leur id dans clubs[].logo ou players[].portrait.\n"
+        "players[].synthetic=true signale une illustration IA. Les chemins restent relatifs.\n"
+        "Les images personnalisées sont fournies séparément dans les packs importés.\n",
+        encoding="utf-8")
     files = {p.relative_to(app).as_posix(): {"sha256": digest(p), "bytes": p.stat().st_size}
              for p in sorted(app.rglob("*")) if p.is_file()}
-    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": "0.2.0", "mode": "france30", "files": files}, indent=2), encoding="utf-8")
-    archive = target / "CadrageDebordement-PrototypeGodot-Windows-x64.zip"
+    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": "0.3.0", "name": "Oval Legacy 27", "edition": 27, "mode": "common", "files": files}, indent=2), encoding="utf-8")
+    archive = target / "OvalLegacy27-PrototypeGodot-Windows-x64.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as out:
         for path in sorted(app.rglob("*")):
             if path.is_file():

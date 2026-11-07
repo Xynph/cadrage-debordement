@@ -100,7 +100,7 @@ func update_frame(value:Dictionary) -> void:
 		clock.text="AVANT-MATCH"
 		play.text="COUP D'ENVOI"
 		play.disabled=next.is_empty()
-		var season_done:bool=value.meta.get("canAdvanceSeason",false) or (value.meta.get("mode")!="france30" and value.meta.get("phase")=="ended")
+		var season_done:bool=value.meta.get("canAdvanceSeason",false) or (value.meta.get("mode") not in ["france30","common"] and value.meta.get("phase")=="ended")
 		finish.disabled=not next.is_empty() or season_done
 		if next.is_empty():
 			clock.text="SAISON TERMINÉE" if season_done else "SANS RENCONTRE"

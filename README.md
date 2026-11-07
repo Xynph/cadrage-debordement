@@ -1,22 +1,22 @@
-# Cadrage Débordement
+# Oval Legacy 27 — Rugby Manager
 
-**Un jeu de management de rugby à XV, en français : préalpha Windows native Godot 0.2 et version web historique.**
+**Un jeu de management de rugby à XV, en français : préalpha Windows native Godot 0.3 et version web historique.**
 
 Dirigez votre club : composez les 23, préparez votre équipe, recrutez, gérez les contrats et suivez les rencontres.
 
 Ce dépôt contient le code du jeu, sa documentation et ses tests. Les carrières Windows restent dans un profil local indépendant de l'exécutable ; les parties web restent dans le navigateur. Aucune sauvegarde personnelle n'est stockée sur GitHub.
 
-## Préalpha Windows native Godot 0.2
+## Préalpha Windows native Godot 0.3
 
 Le jeu dispose d'un accueil photographique, d'une création de carrière par club et de dix vues de gestion : Bureau, Effectif, Composition, Préparation, Recrutement, Finances, Club, Calendrier, Classements et Match. L'interface associe anthracite, ivoire, couleurs du club, portraits fictifs et soixante photographies des trente territoires.
 
-Les trente clubs fictifs sont jouables dans deux divisions reliées de 14 et 16 clubs. Championnats, phases finales, barrage d'accession, montées/descentes et saisons suivantes emploient les vrais effectifs générés et le moteur existant. Composition à 23, entraînement, charges individuelles, tactiques, changements et offres de contrats ont des effets réels. Une promotion de secours peut compléter une feuille, après confirmation de son coût salarial.
+Les trente clubs sont jouables dans deux divisions reliées de 14 et 16 clubs. La nouvelle base commune conserve les 1 592 joueurs, identifiants et statistiques de la base active, avec des noms fictifs proches. Les packs personnalisés changent les identités et images ; progression, contrats, résultats et notes de la carrière restent les mêmes. Composition à 23, entraînement, charges individuelles, tactiques, changements et offres de contrats ont des effets réels. Une promotion de secours peut compléter une feuille, après confirmation de son coût salarial.
 
-Décompressez l'archive complète puis lancez `CadrageDebordement.exe`. Godot et Node sont embarqués : aucune installation supplémentaire ni navigateur n'est nécessaire. Le profil est conservé dans `%APPDATA%\CadrageDebordement\PrototypeGodot`. Le menu permet d'exporter, d'importer et de reprendre une ancienne carrière fictive à 14 clubs ; aucune conversion automatique en carrière à 30 clubs.
+Décompressez l'archive complète puis lancez `OvalLegacy27.exe`. Godot et Node sont embarqués : aucune installation supplémentaire ni navigateur n'est nécessaire. Le profil est conservé dans `%APPDATA%\CadrageDebordement\PrototypeGodot`, hors de l'exécutable. Le menu conserve export, import et reprise des anciennes carrières fictives à 14 ou 30 clubs ; elles ne sont pas converties automatiquement en base commune.
 
-La scène 3D est une enceinte générique avec caméras TV et tactique éloignées. Les identités, joueurs et finances de cette édition sont fictifs ; les photos de villes et de stades sont réelles et créditées. Le monde fermé sans Nationale et la cadence de 34 semaines sont des abstractions. Le format de compétition 2026–2027 reste distinct des lois de match historiques partiellement couvertes. La BDD Rugby Réel n'est pas chargée par ce lot natif.
+Depuis la création d'une carrière ou ses paramètres : **Packs et identités → Importez un pack personnalisé**. L'analyse annonce la couverture et distingue photos officielles et illustrations IA ; l'installation et la sélection sont explicites. Les images du pack fourni pour usage privé restent dans le profil, séparées du jeu de base. Un exemple de pack de noms est livré dans `Packs/`.
 
-Le [rapport de réception Godot 0.2](docs/godot-carriere-20261107.md) précise les contrôles Windows, les limites et la construction du ZIP. Cette préalpha est une étape vers la version commerciale ; aucune publication Steam n'est annoncée.
+Le [rapport Godot 0.3 et packs](docs/rugby-real-native-packs-20261107.md) détaille la réception Windows, le format personnalisé et les lacunes des données. Le [rapport Godot 0.2](docs/godot-carriere-20261107.md) reste historique. La scène 3D est générique, les finances sont fictives, le monde est fermé sans Nationale et la cadence de 34 semaines est une abstraction. Le format de compétition 2026–2027 reste distinct des lois de match historiques partiellement couvertes. Cette préalpha prépare une version commerciale ; aucune publication Steam n'est annoncée.
 
 ## Vous découvrez GitHub ?
 

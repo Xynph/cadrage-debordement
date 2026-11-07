@@ -1,5 +1,6 @@
 extends RefCounted
 const G = preload("res://ui/game_skin.gd")
+const Packs = preload("res://ui/pack_views.gd")
 
 static func home(app: Control) -> Control:
 	var club: Dictionary = app.model.get("club", {}) if app.model.get("club") is Dictionary else {}
@@ -21,17 +22,25 @@ static func home(app: Control) -> Control:
 	page.add_child(veil)
 	page.move_child(veil,2)
 	var over: VBoxContainer = page.get_meta("content")
-	over.add_child(G.label("CD  /  LE RUGBY SE DÉCIDE AUSSI ICI.", 14, G.GOLD))
+	over.add_child(G.label("OVAL LEGACY 27  /  BUILD YOUR CLUB. LEAVE YOUR MARK.", 14, G.GOLD))
 	over.add_child(G.spacer())
 	var row := G.h(70)
 	over.add_child(row)
 	var intro := G.v(4)
 	G.fill(intro)
 	row.add_child(intro)
-	intro.add_child(G.label("CADRAGE", 86, G.INK, true))
-	intro.add_child(G.label("DÉBORDEMENT", 86, G.INK, true))
+	var logo := TextureRect.new()
+	logo.texture = load("res://branding/oval-legacy-27-logo.png")
+	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	logo.custom_minimum_size = Vector2(650, 325)
+	logo.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	logo.tooltip_text = "Oval Legacy 27 — Rugby Manager"
+	var composite := ShaderMaterial.new()
+	composite.shader = load("res://branding/black_key.gdshader")
+	logo.material = composite
+	intro.add_child(logo)
 	intro.add_child(G.wrap("Un club. Un territoire.\nUne saison à écrire.", 23, G.INK))
-	intro.add_child(G.label("CARRIÈRE DE MANAGER  /  XV", 12, G.GOLD))
 	var choices := G.v(9)
 	choices.custom_minimum_size.x = 330
 	row.add_child(choices)
@@ -49,6 +58,7 @@ static func home(app: Control) -> Control:
 	choices.add_child(importing)
 	choices.add_child(G.button("PARAMÈTRES", app.settings))
 	choices.add_child(G.button("QUITTER", app.request_quit))
+	Packs.missing_warning(app, choices, "all")
 	var meta: Dictionary = app.model.get("meta", {})
 	if meta.get("recoveryRequired", false):
 		choices.add_child(G.wrap("Le profil ne peut pas être chargé. Sa copie sera conservée avant toute récupération.", 12, Color("f1b6a9")))
@@ -59,7 +69,7 @@ static func home(app: Control) -> Control:
 	over.add_child(G.spacer())
 	var footer := G.h()
 	over.add_child(footer)
-	var note := G.label("VERSION DE DÉVELOPPEMENT 0.2  ·  APPLICATION WINDOWS NATIVE", 11, G.MUTED)
+	var note := G.label("VERSION DE DÉVELOPPEMENT 0.3  ·  APPLICATION WINDOWS NATIVE", 11, G.MUTED)
 	G.fill(note)
 	footer.add_child(note)
 	footer.add_child(G.button("CRÉDITS", app._credits))
@@ -73,6 +83,8 @@ static func creation(app: Control) -> Control:
 	var title := G.label("CHOISISSEZ VOTRE HISTOIRE", 42, G.INK, true)
 	G.fill(title)
 	top.add_child(title)
+	top.add_child(G.button("PACKS ET IDENTITÉS", func(): app.pack_manager.open("creation")))
+	Packs.missing_warning(app, page, "creation")
 	var row := G.h(24)
 	G.fill(row, true)
 	page.add_child(row)
@@ -93,6 +105,30 @@ static func creation(app: Control) -> Control:
 	var list := G.v(12)
 	G.fill(list, true, 1.2)
 	row.add_child(list)
+	var packs: Dictionary = app.model.get("packs", {})
+	var pack_name := "BASE ANONYMISÉE"
+	for pack: Dictionary in packs.get("installed", []):
+		if str(pack.get("id", "")) == str(packs.get("creation", "base")):
+			pack_name = str(pack.get("name", "Pack personnalisé")).to_upper()
+
+	var pack_choice := OptionButton.new()
+	pack_choice.add_item("Base anonymisée")
+	var pack_ids: Array[String] = ["base"]
+	for pack: Dictionary in packs.get("installed", []):
+		pack_choice.add_item(str(pack.get("name", "Pack personnalisé")))
+		pack_ids.append(str(pack.id))
+	var selected_pack := pack_ids.find(str(packs.get("creation", "base")))
+	var unavailable := selected_pack < 0
+	if unavailable:
+		pack_name = "PACK INDISPONIBLE"
+		selected_pack = pack_choice.item_count
+		pack_choice.add_item("Pack indisponible · réimportez ou choisissez Base")
+		pack_choice.set_item_disabled(selected_pack, true)
+	pack_choice.select(selected_pack)
+	list.add_child(G.wrap("IDENTITÉS  /  " + pack_name, 12, G.GOLD))
+	pack_choice.disabled = app.waiting
+	pack_choice.item_selected.connect(func(index: int): app._command("pack_select", {"id":pack_ids[index],"scope":"creation"}))
+	list.add_child(pack_choice)
 	var divisions := G.h(8)
 	list.add_child(divisions)
 	for item in [["elite", "ÉLITE  /  14 CLUBS"], ["accession", "ACCESSION  /  16 CLUBS"]]:
@@ -121,6 +157,8 @@ static func creation(app: Control) -> Control:
 		line.add_child(names)
 		line.add_child(G.label("→", 24, G.GOLD))
 		items.add_child(b)
-	list.add_child(G.wrap("Effectifs et finances fictifs. Deux divisions dans un monde fermé à 30 clubs ; les photographies montrent les territoires réels.", 12))
-	list.add_child(G.button("PRENDRE LES RÊNES DE " + selected.abbr + "  →", func(): app.create_career(int(selected.id)), true))
+	list.add_child(G.wrap("Base commune de 1 592 joueurs · identités anonymisées ou personnalisées. Capacités et finances de simulation, non officielles. Deux divisions reliées ; monde fermé à 30 clubs.", 12))
+	var start := G.button("PRENDRE LES RÊNES DE " + selected.abbr + "  →", func(): app.create_career(int(selected.id)), true)
+	start.disabled = app.waiting or unavailable
+	list.add_child(start)
 	return page

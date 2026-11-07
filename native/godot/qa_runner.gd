@@ -122,7 +122,8 @@ func _run() -> void:
 		await _capture("creation-"+str(resolution.x))
 	_press("PRENDRE LES RÊNES DE VDX  →")
 	await _wait()
-	_check(app.model.get("meta",{}).get("mode")=="france30" and int(app.model.club.id)==29,"Actual30-clubcareer created through UI")
+	_check(app.model.get("meta",{}).get("mode")=="common" and int(app.model.club.id)==29,"Actual common30-club career created through UI")
+	_check(app.model.get("meta",{}).get("database",{}).get("playerCount")==1592,"Shared source retains1592players")
 	if not app._has_career():await _finish();return
 	_check(app.model.get("squad",[]).size()>=23,"Real squad for club29")
 	_check(app.model.get("leagues",[]).size()==2,"Both divisions projected")
@@ -164,6 +165,14 @@ func _run() -> void:
 				_check(app.model.lineup[0]==id,"Lineup decision really changes selected player")
 				break
 	await _ask("auto_lineup")
+	if not app.model.get("selection",{}).get("valid",true):
+		app._navigate("Composition")
+		_press("COMPLÉTER AVEC LE CENTRE DE FORMATION")
+		await _capture("renforts-confirmation")
+		_confirm()
+		await _wait()
+		_check(app.bridge.last_response_ok and app.model.selection.valid,"Explicit paid promotions restore initial source coverage")
+		_dismiss()
 	var tactics:Dictionary=app.model.get("tactics",{})
 	for option in tactics.get("attacks",[]):
 		if option.id!=tactics.get("attack"):
