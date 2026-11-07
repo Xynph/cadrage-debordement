@@ -312,3 +312,11 @@ Les fiches historiques LNR constituent la **preuve chiffrée principale** et les
 - **Fickou**, transfert et saison historique : https://top14.lnr.fr/joueur/2168-gael-fickou montre 2025-26 Racing 92 puis 2026-27 Toulon. La comparaison entre minutes chez Racing et concurrence au poste à Toulon ne prouve pas un mauvais niveau en 2026.
 
 Les quatre autres (Akhaladze, Tuicuvu, Bouthier, Arata) conservent leur **statut LNR multi-saisons uniquement** en l'absence ici de corroboration technique indépendante pour les attributs proposés. Toute correction effective doit être suspendue. L'âge, le changement de division, l'indisponibilité, la compétition intra-club, les rôles alternatifs et l'échantillonnage restent des hypothèses explicatives séparées du niveau de jeu.
+
+## V16 — réception approfondie, correction du protocole long
+
+La suite de cet audit est publiée dans `docs/rugby-real-calibration-v16-20261107.md` et le fichier de scénarios non actif `data/scouting/shadow-v16-20261107.json`. Les16 discordances sont reconstituées ; le rôle V12 n'est pas toujours juste (Fourcade, Traini, Frisach, Ojovan, Narisia). Treize mappings précis officiellement corroborés sont essayés sur copies, trois restent en quarantaine. Ne jamais recopier aveuglément V12 en production.
+
+Correction méthodologique déterminante : les anciens parcours longs enchaînaient `finishRound()` sans `trainWeek()`. Or la préparation native appelée par `rugbyBegin()` est également la routine de récupération/guérison. Les résultats sans préparation restent des contrôles négatifs ; ils ne prouvent pas une panne native de récupération ou de recrutement. V16 observe les véritables feuilles jouées (pas seulement `buildSheet`) et exécute six transitions appariées avec préparation native, deux graines et séparation13clubsIA/utilisateur sans gestion des contrats.
+
+Neuf dossiers,27scénarios signés36→11,7776matchs expérimentaux plus contrôles de répétition, positions, fatigue et compositions légales donnant une vraie exposition titulaire/banc. Les intervalles et limites figurent dans V16. Les notes, potentiels et1592fiches actives demeurent inchangés. PR389 DRAFT, aucune fusion ; réception CI exacte et passation dans#73.
