@@ -112,7 +112,6 @@ test('Shadow-only positional correction: inspect attributes-only versus synchron
  const edits=chosen.map(p=>({id:p.id,role:p.role,attributes:Object.fromEntries(roleKeys[p.role].map(k=>[k,5]))}));
  const just36=shadow(pro,edits.map(x=>({...x,sync:false})));
  const reconciled=shadow(pro,edits.map(x=>({...x,sync:true})));
- assert.equal(active.players.find(p=>p.id===chosen[0].id).attributesV2[roleKeys[chosen[0].role][0]],master.players.find(p=>p.id===chosen[0].id).attributesV2[roleKeys[chosen[0].role][0]]===undefined?active.players.find(p=>p.id===chosen[0].id).attributesV2[roleKeys[chosen[0].role][0]]:active.players.find(p=>p.id===chosen[0].id).attributesV2[roleKeys[chosen[0].role][0]]);
  const byId=c=>new Map(c.players.map(p=>[p.id,p]));
  const effects=chosen.map(p=>{const baseP=byId(pro).get(p.id),only=byId(just36).get(p.id),sync=byId(reconciled).get(p.id);
   return {id:p.id,role:p.role,originalNote:lab.note(baseP),only36Note:lab.note(only),
@@ -132,4 +131,30 @@ test('Shadow-only positional correction: inspect attributes-only versus synchron
   caution:'Illustrative estimated changes +5 on five primary attrs for five distinct role incumbents. Not evidence of player under/overrating.'};
  console.log('RUGBY_REAL_ROLE_SHADOW_CALIBRATION '+JSON.stringify(out));
  assert.equal(effects.length,5);
+});
+
+test('Dose response on three TOP14 opponents, 5 real individual candidates, +5/+10 shadow calibration', {timeout:420000},()=>{
+ const lab=N.laboratory(active,'legacy');
+ const rank=league=>lab.clubs.filter(c=>c.league===league&&complete(lab,c))
+  .sort((a,b)=>lab.quality(a)-lab.quality(b)||a.slug.localeCompare(b.slug));
+ const promoted=rank('prod2').at(-1),top=rank('top14');
+ const rivals=[top[0],top[Math.floor(top.length/2)],top.at(-1)];
+ const starters=details(lab,promoted).sort((a,b)=>a.note-b.note||a.id.localeCompare(b.id));
+ const targets=[],seen=new Set();
+ for(const p of starters){if(seen.has(p.role))continue;seen.add(p.role);targets.push(p);if(targets.length===5)break;}
+ assert.equal(targets.length,5);
+ const doses=[5,10],copies=doses.map(d=>shadow(promoted,targets.map(p=>({id:p.id,sync:true,
+  attributes:Object.fromEntries(roleKeys[p.role].map(k=>[k,d]))}))));
+ const q=team=>round(mean(details(lab,team).map(x=>x.note)));
+ const cases=[];
+ for(const rival of rivals){
+  const baseline=paired(lab,promoted,rival,32);
+  const results=copies.map((c,i)=>({dose:doses[i],xvDelta:round(q(c)-q(promoted)),
+   effect:effect(paired(lab,c,rival,32),baseline)}));
+  cases.push({opponent:rival.slug,opponentXV:q(rival),initialXV:q(promoted),
+   baselineMargin:round(mean(baseline)),results});
+ }
+ console.log('RUGBY_REAL_ROLE_DOSE_RESPONSE '+JSON.stringify({matches:3*3*32*2,
+  seedPairsPerScenario:32,candidates:targets.map(p=>({id:p.id,role:p.role,note:p.note})),
+  cases,notice:'+5/+10 primary attributes are synthetic stress tests only; nothing applied to the BDD'}));
 });
