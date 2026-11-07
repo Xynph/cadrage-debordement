@@ -264,3 +264,19 @@ html:root[data-cd-theme][data-edition=editorial] .da43-workspace .da42-page[data
 html:root[data-cd-theme][data-edition=editorial] :is(.cd03-header,.cd04-header){height:38px!important;min-height:38px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;padding:5px 14px!important;flex:none!important}
 html:root[data-cd-theme][data-edition=editorial] :is(.cd03-header,.cd04-header) p{display:none!important}
 html:root[data-cd-theme][data-edition=editorial] :is(.cd03-header,.cd04-header) h2{font-size:20px!important;margin:0!important}
+/* Preserve the existing narrow-window navigation without changing the PC composition. */
+@media(max-width:1100px){
+ html:root[data-cd-theme][data-edition=editorial] .layout:not(.live-layout){grid-template-columns:64px minmax(0,1fr)!important}
+ html:root[data-cd-theme][data-edition=editorial] .layout:not(.live-layout)>.sidebar{width:64px!important;padding:0 5px!important}
+ html:root[data-cd-theme][data-edition=editorial] .sidebar :is(.edition,.clubbox,.sidebottom,.wordmark>span,.ed-brand-ball){display:none!important}
+ html:root[data-cd-theme][data-edition=editorial] .sidebar .wordmark{font-size:0!important;padding:18px 0!important;text-align:center!important;letter-spacing:0!important;line-height:1!important}
+ html:root[data-cd-theme][data-edition=editorial] .sidebar .wordmark::after{content:'CD';font:600 italic 21px var(--ed-serif);color:#e1ba7d}
+ html:root[data-cd-theme][data-edition=editorial] .sidebar .nav{justify-content:center!important;min-height:39px!important}
+ html:root[data-cd-theme][data-edition=editorial] .sidebar .nav>span{display:none!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-team-overview{grid-template-columns:minmax(0,1fr)!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-player-preview{display:none!important}
+ html:root[data-cd-theme][data-edition=editorial] .main>.heading{height:125px!important;padding:12px!important}
+ html:root[data-cd-theme][data-edition=editorial] .heading h1{font-size:33px!important}
+ html:root[data-cd-theme][data-edition=editorial] .heading>div{max-width:95%!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-dashboard-grid{grid-template-columns:minmax(0,1fr)!important}
+}
