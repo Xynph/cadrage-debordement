@@ -36,6 +36,10 @@ var roster_offset := 0
 var closing := false
 
 func _ready() -> void:
+	if OS.get_environment("CD_GODOT_SELF_TEST") == "1" and OS.get_environment("CD_GODOT_DATA_DIR").is_empty():
+		printerr("Le test automatique exige un profil temporaire explicite.")
+		get_tree().quit(2)
+		return
 	theme = Art.make()
 	RenderingServer.set_default_clear_color(Art.BG)
 	catalogue = JSON.parse_string(FileAccess.get_file_as_string("res://assets/clubs.json"))
@@ -60,6 +64,10 @@ func _ready() -> void:
 	_show_loading()
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--qa-route="): route = arg.get_slice("=", 1)
+	if OS.get_environment("CD_GODOT_SELF_TEST") == "1":
+		var qa: Node = load("res://qa_runner.gd").new()
+		qa.app = self
+		add_child(qa)
 
 func _profile_path() -> String:
 	var explicit := OS.get_environment("CD_GODOT_DATA_DIR")
@@ -142,7 +150,8 @@ func _receive_model(value: Dictionary) -> void:
 		if exported.is_empty():
 			_failed("L'export du moteur est vide ; aucun fichier écrit.")
 			return
-		var file := FileAccess.open(destination, FileAccess.WRITE)
+		var temporary := destination + ".tmp-" + str(OS.get_process_id())
+		var file := FileAccess.open(temporary, FileAccess.WRITE)
 		if file == null:
 			_failed("Impossible d'écrire cet export : " + error_string(FileAccess.get_open_error()))
 			return
@@ -151,7 +160,13 @@ func _receive_model(value: Dictionary) -> void:
 		var write_error := file.get_error()
 		file.close()
 		if write_error != OK:
+			DirAccess.remove_absolute(temporary)
 			_failed("Écriture de l'export refusée : " + error_string(write_error))
+			return
+		var rename_error := DirAccess.rename_absolute(temporary, destination)
+		if rename_error != OK:
+			DirAccess.remove_absolute(temporary)
+			_failed("Remplacement de l'export refusé : " + error_string(rename_error))
 			return
 	var club: Dictionary = model.get("club", {})
 	var identity: Dictionary = club.get("presentation", {})
@@ -162,7 +177,7 @@ func _receive_model(value: Dictionary) -> void:
 	sidebar_club.text = str(identity.get("name", club.get("name", "Votre club")))
 	var meta: Dictionary = model.get("meta", {})
 	subtitle.text = "SAISON %s  /  JOURNÉE %s  /  CARRIÈRE FICTIVE" % [_number(meta.get("season", "—")), str(int(meta.get("round", 0)) + 1)]
-	status.text = "Simulation connectée · Profil prototype séparé · %s" % str(meta.get("dataDir", _profile_path()))
+	status.text = "Simulation locale · Sauvegarde automatique · Profil prototype indépendant"
 	status.modulate = Color.WHITE
 	if route == "Match" and is_instance_valid(match_page):
 		_update_match()
@@ -223,7 +238,7 @@ func _office_page() -> void:
 	var top := _h(16)
 	top.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_child(top)
-	var hero := _photo_card(_identity(club).get("slug", "toulouse"), "stadium")
+	var hero := _photo_card(_identity(next.get("home", club)).get("slug", "toulouse"), "stadium")
 	hero.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hero.size_flags_stretch_ratio = 2.2
 	top.add_child(hero)
@@ -312,7 +327,9 @@ func _club_page() -> void:
 		var space := Control.new()
 		space.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		overlay.add_child(space)
-		overlay.add_child(_label(c.city if kind == "city" else c.stadium, 34, Art.INK, true))
+		var caption := _label(c.city if kind == "city" else c.stadium, 34, Art.INK, true)
+		caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		overlay.add_child(caption)
 		overlay.add_child(_label("Photographie réelle d'archive · crédits accessibles", 11, Art.INK))
 	var info := _panel()
 	body.add_child(info)
@@ -472,7 +489,13 @@ func _match_page() -> void:
 	info.custom_minimum_size.x = 230
 	center.add_child(info)
 	var details := _v(14)
-	info.get_child(0).add_child(details)
+	var detail_scroll := ScrollContainer.new()
+	detail_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	detail_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	info.get_child(0).add_child(detail_scroll)
+	details.custom_minimum_size.x = 190
+	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	detail_scroll.add_child(details)
 	details.add_child(_label("LE DIRECT", 22, Art.INK, true))
 	match_stats = _label("", 13, Art.MUTED)
 	details.add_child(match_stats)
@@ -516,7 +539,7 @@ func _update_match() -> void:
 	var events: Array = live.get("events", [])
 	var lines: Array[String] = []
 	for e in events.slice(maxi(0, events.size() - 2)):
-		if e is Dictionary: lines.append("%s' · %s" % [_number(e.get("min", "")), str(e.get("text", e.get("message", "")))])
+		if e is Dictionary: lines.append("%s' · %s" % [_number(e.get("min", "")), _present_text(str(e.get("text", e.get("message", ""))))])
 		else: lines.append(str(e))
 	match_events.text = "\n\n".join(lines)
 	if is_instance_valid(match_view): match_view.apply_frame(live)
@@ -569,7 +592,7 @@ func _confirm_career(id: int) -> void:
 func _save_menu() -> void:
 	var d := AcceptDialog.new()
 	d.title = "Votre carrière de prototype"
-	d.dialog_text = "Le profil de ce prototype est indépendant de vos autres carrières."
+	d.dialog_text = "Le profil de ce prototype est indépendant de vos autres carrières.\nDossier : " + _profile_path()
 	d.add_button("Exporter JSON", false, "export")
 	d.add_button("Importer JSON", false, "import")
 	d.custom_action.connect(func(action: String):
@@ -583,6 +606,9 @@ func _save_menu() -> void:
 	d.popup_centered(Vector2i(560, 160))
 
 func _file_selected(path: String) -> void:
+	if waiting:
+		_failed("Une action est en cours. Réessayez après sa réponse.")
+		return
 	if import_mode:
 		var file := FileAccess.open(path, FileAccess.READ)
 		if file == null:
@@ -624,6 +650,17 @@ func _identity(club: Dictionary) -> Dictionary:
 func _number(value: Variant) -> String:
 	if value is float or value is int: return str(int(value))
 	return str(value)
+
+func _present_text(value: String) -> String:
+	for club in model.get("league", []):
+		var presentation: Dictionary = _identity(club)
+		value = value.replace(str(club.get("name", "")), str(presentation.get("name", club.get("name", ""))))
+		var native_abbr := str(club.get("abbr", ""))
+		if not native_abbr.is_empty():
+			var pattern := RegEx.new()
+			if pattern.compile("\\b" + native_abbr + "\\b") == OK:
+				value = pattern.sub(value, str(presentation.get("abbr", native_abbr)), true)
+	return value
 
 func _abbr(club: Dictionary) -> String:
 	return str(_identity(club).get("abbr", club.get("abbr", "XV")))
@@ -732,6 +769,9 @@ func _photo_card(slug: String, kind: String) -> PanelContainer:
 	var gradient := Gradient.new()
 	gradient.set_color(0, Color(0.02, 0.04, 0.05, 0.72))
 	gradient.set_color(1, Color(0.02, 0.04, 0.05, 0.96))
+	gradient.add_point(0.18, Color(0.02, 0.04, 0.05, 0.60))
+	gradient.add_point(0.42, Color(0.02, 0.04, 0.05, 0.13))
+	gradient.add_point(0.68, Color(0.02, 0.04, 0.05, 0.40))
 	var texture := GradientTexture2D.new()
 	texture.gradient = gradient
 	texture.fill_from = Vector2(0.5, 0)

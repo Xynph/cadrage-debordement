@@ -13,8 +13,8 @@
       "stadium_city": "Clermont-Ferrand",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 307838,
+      "mime_type": "image/webp",
+      "file_bytes": 246658,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/clermont/informations",
@@ -45,7 +45,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/clermont-stadium.webp",
-      "sha256": "f082b0903294c27c651fafe2d5b6f762b21f93912d2321ae3ce96f41d83df235"
+      "sha256": "f082b0903294c27c651fafe2d5b6f762b21f93912d2321ae3ce96f41d83df235",
+      "source_sha256": "918bfced29201276621dff75977fe193e45c7a9044c4e975e22a916fec158456",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 307838
     },
     {
       "id": "clermont:city",
@@ -58,8 +63,8 @@
       "stadium_city": "Clermont-Ferrand",
       "width": 1600,
       "height": 899,
-      "mime_type": "image/jpeg",
-      "file_bytes": 537989,
+      "mime_type": "image/webp",
+      "file_bytes": 280556,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/clermont/informations",
@@ -90,7 +95,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/clermont-city.webp",
-      "sha256": "2f110436ad887144329b715ecc204a89530cbbede1b51a3b83cdb76efec136a1"
+      "sha256": "2f110436ad887144329b715ecc204a89530cbbede1b51a3b83cdb76efec136a1",
+      "source_sha256": "9100a9a0824aa7598ac036bc069ed7ea6eefe5390b40b47d2522bbc6533ca2a7",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1920,
+      "source_height": 1079,
+      "source_file_bytes": 537989
     },
     {
       "id": "bayonne:stadium",
@@ -101,10 +111,10 @@
       "city": "Bayonne",
       "stadium": "Stade Jean Dauger",
       "stadium_city": "Bayonne",
-      "width": 1600,
-      "height": 591,
-      "mime_type": "image/jpeg",
-      "file_bytes": 1231357,
+      "width": 3247,
+      "height": 1200,
+      "mime_type": "image/webp",
+      "file_bytes": 657206,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/bayonne/informations",
@@ -135,7 +145,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/bayonne-stadium.webp",
-      "sha256": "27ed551c511a5d6dcb4bf2d8b3f9b32e57c2ac7f24d4f8f1113ae5a23269da75"
+      "sha256": "128019ed5d0d4ecae306666d436ce9eb4a27c57ca6ad5c5f913e991fc0bc1b5a",
+      "source_sha256": "b525e9049baec72a77dc3ed96a89a3d60e6e435a3788488203ee487774300700",
+      "source_mime_type": "image/jpeg",
+      "source_width": 3840,
+      "source_height": 1419,
+      "source_file_bytes": 1231357
     },
     {
       "id": "bayonne:city",
@@ -148,8 +163,8 @@
       "stadium_city": "Bayonne",
       "width": 1600,
       "height": 697,
-      "mime_type": "image/jpeg",
-      "file_bytes": 417057,
+      "mime_type": "image/webp",
+      "file_bytes": 229126,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/bayonne/informations",
@@ -180,7 +195,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/bayonne-city.webp",
-      "sha256": "6bf149bfc962a06d333bdb04fdedf12d782a6b7c8d9329626ee1d492ba0f7a51"
+      "sha256": "6bf149bfc962a06d333bdb04fdedf12d782a6b7c8d9329626ee1d492ba0f7a51",
+      "source_sha256": "5342e2a8c4cd2e4efcdc1bbe5ec5e555527e4bbc1526e0ca0dd718a3a41331e5",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1920,
+      "source_height": 836,
+      "source_file_bytes": 417057
     },
     {
       "id": "castres:stadium",
@@ -193,8 +213,8 @@
       "stadium_city": "Castres",
       "width": 1280,
       "height": 720,
-      "mime_type": "image/jpeg",
-      "file_bytes": 286772,
+      "mime_type": "image/webp",
+      "file_bytes": 256352,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/castres/informations",
@@ -225,7 +245,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/castres-stadium.webp",
-      "sha256": "74b09d2de332670905c87d5c02ab84530c4feb24645e7f5984f3fdcdcb90f2e6"
+      "sha256": "74b09d2de332670905c87d5c02ab84530c4feb24645e7f5984f3fdcdcb90f2e6",
+      "source_sha256": "9d6c53cfe53b43fa92d73acd062579d56170a3e490246d1230b98fa8b67ea017",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 720,
+      "source_file_bytes": 286772
     },
     {
       "id": "castres:city",
@@ -238,8 +263,8 @@
       "stadium_city": "Castres",
       "width": 1600,
       "height": 773,
-      "mime_type": "image/jpeg",
-      "file_bytes": 518341,
+      "mime_type": "image/webp",
+      "file_bytes": 288902,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/castres/informations",
@@ -270,7 +295,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/castres-city.webp",
-      "sha256": "6105f7815da6d547a4b1f7be10e5315289f349628d12475792789b7a9b042f25"
+      "sha256": "6105f7815da6d547a4b1f7be10e5315289f349628d12475792789b7a9b042f25",
+      "source_sha256": "ca3dfda26953969a20715981b08913ebc01764833fd6f2b3b0134e7246dda1ce",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1920,
+      "source_height": 928,
+      "source_file_bytes": 518341
     },
     {
       "id": "lyon:stadium",
@@ -283,8 +313,8 @@
       "stadium_city": "Lyon",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 379372,
+      "mime_type": "image/webp",
+      "file_bytes": 320966,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/lyon/informations",
@@ -315,7 +345,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/lyon-stadium.webp",
-      "sha256": "04b995afdf9c4bc9f431a095e46de455815ab184dd4a06bce913ddf7048c3958"
+      "sha256": "04b995afdf9c4bc9f431a095e46de455815ab184dd4a06bce913ddf7048c3958",
+      "source_sha256": "23f6b4957742707eeb4b47ef0a44089749a2e3efb40aabc2c272081dada22b69",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 379372
     },
     {
       "id": "lyon:city",
@@ -328,8 +363,8 @@
       "stadium_city": "Lyon",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 306808,
+      "mime_type": "image/webp",
+      "file_bytes": 247462,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/lyon/informations",
@@ -360,7 +395,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/lyon-city.webp",
-      "sha256": "43bd80feb3f303cecd28d4c21fa02a4defca51ad45f430f28ffd02a73103081a"
+      "sha256": "43bd80feb3f303cecd28d4c21fa02a4defca51ad45f430f28ffd02a73103081a",
+      "source_sha256": "8c35c948dbc7a42fa27a1f5dceda0704a526654e8a989ed97f649d1aa3c1dfbf",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 306808
     },
     {
       "id": "montpellier:stadium",
@@ -373,8 +413,8 @@
       "stadium_city": "Montpellier",
       "width": 1280,
       "height": 853,
-      "mime_type": "image/jpeg",
-      "file_bytes": 288607,
+      "mime_type": "image/webp",
+      "file_bytes": 223132,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/montpellier/informations",
@@ -405,7 +445,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/montpellier-stadium.webp",
-      "sha256": "79d2d2a4c76b159d87765d4aff3c5f1a56328fc42586bd931a0546e3f7a2872d"
+      "sha256": "79d2d2a4c76b159d87765d4aff3c5f1a56328fc42586bd931a0546e3f7a2872d",
+      "source_sha256": "9c03d6d31f2fcfb0681fc94e6fb8b73124a182c3e0c8ea7aea04172cf9d6adb0",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 853,
+      "source_file_bytes": 288607
     },
     {
       "id": "montpellier:city",
@@ -418,8 +463,8 @@
       "stadium_city": "Montpellier",
       "width": 1280,
       "height": 853,
-      "mime_type": "image/jpeg",
-      "file_bytes": 312663,
+      "mime_type": "image/webp",
+      "file_bytes": 257664,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/montpellier/informations",
@@ -450,7 +495,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/montpellier-city.webp",
-      "sha256": "4daafa9b06f0e93558de7afacda23480ee6221d17449e54845592f12f7c5035a"
+      "sha256": "4daafa9b06f0e93558de7afacda23480ee6221d17449e54845592f12f7c5035a",
+      "source_sha256": "91adebed1653066404c3d7d3c81a4f8e3e2d29fb5fefa6f2db3484c6c6484e2e",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 853,
+      "source_file_bytes": 312663
     },
     {
       "id": "toulon:stadium",
@@ -463,8 +513,8 @@
       "stadium_city": "Toulon",
       "width": 1280,
       "height": 853,
-      "mime_type": "image/jpeg",
-      "file_bytes": 255289,
+      "mime_type": "image/webp",
+      "file_bytes": 207276,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/toulon/informations",
@@ -495,7 +545,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/toulon-stadium.webp",
-      "sha256": "2b0e6d3d42acb71f835ab77bd88fbc1aeb233667e1e826f3b12d0b1352135759"
+      "sha256": "2b0e6d3d42acb71f835ab77bd88fbc1aeb233667e1e826f3b12d0b1352135759",
+      "source_sha256": "40c95bc579cd4e013547a6cc4732a5b299d166f72b73fc14c016c96f63a62ff4",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 853,
+      "source_file_bytes": 255289
     },
     {
       "id": "toulon:city",
@@ -508,8 +563,8 @@
       "stadium_city": "Toulon",
       "width": 1280,
       "height": 853,
-      "mime_type": "image/jpeg",
-      "file_bytes": 232459,
+      "mime_type": "image/webp",
+      "file_bytes": 180908,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/toulon/informations",
@@ -540,7 +595,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/toulon-city.webp",
-      "sha256": "243f789ee5015ab80f83343e6b07abf577b398ba7104e2bb0310c7eb8ba1c60a"
+      "sha256": "243f789ee5015ab80f83343e6b07abf577b398ba7104e2bb0310c7eb8ba1c60a",
+      "source_sha256": "a47a563f6814c8e89c9bb1c026cad4809271408d406d01da789c94307dacd38a",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 853,
+      "source_file_bytes": 232459
     },
     {
       "id": "vannes:stadium",
@@ -551,10 +611,10 @@
       "city": "Vannes",
       "stadium": "Stade de la Rabine",
       "stadium_city": "Vannes",
-      "width": 1600,
-      "height": 272,
-      "mime_type": "image/jpeg",
-      "file_bytes": 3754178,
+      "width": 4000,
+      "height": 680,
+      "mime_type": "image/webp",
+      "file_bytes": 416822,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/vannes/informations",
@@ -583,7 +643,12 @@
         "Crédit conservé pour la traçabilité ; dédicace CC0."
       ],
       "file": "assets/club-atlas/vannes-stadium.webp",
-      "sha256": "0894629d9d2592ea937ccb01b6a4ea4fa0d975a534a96b6719696c745f12c8cd"
+      "sha256": "de856fe54961e2c710f8703095cb3145b91615e3017c1eb04280182fa03668ae",
+      "source_sha256": "47a64f5bcaaf1d72be13cd1ca12cd099fe6483ea6821765730a8b614e19da68c",
+      "source_mime_type": "image/jpeg",
+      "source_width": 11808,
+      "source_height": 2008,
+      "source_file_bytes": 3754178
     },
     {
       "id": "vannes:city",
@@ -594,10 +659,10 @@
       "city": "Vannes",
       "stadium": "Stade de la Rabine",
       "stadium_city": "Vannes",
-      "width": 1600,
-      "height": 359,
-      "mime_type": "image/jpeg",
-      "file_bytes": 846336,
+      "width": 3840,
+      "height": 861,
+      "mime_type": "image/webp",
+      "file_bytes": 673806,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/vannes/informations",
@@ -628,7 +693,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/vannes-city.webp",
-      "sha256": "d30338f1b2ccc68f19518436cc35304ac9093cc292a73e199c8587fd0a4f3659"
+      "sha256": "6976421f2f86f8a43298f6e74cada9086abdfaf06fb49fc92f1e30d0d81ae835",
+      "source_sha256": "3f09fe9e13f002ff76f6023a8e50ab704b6607e42a6ba6fc18bf4067db4c9472",
+      "source_mime_type": "image/jpeg",
+      "source_width": 3840,
+      "source_height": 861,
+      "source_file_bytes": 846336
     },
     {
       "id": "racing-92:stadium",
@@ -641,8 +711,8 @@
       "stadium_city": "Nanterre",
       "width": 1280,
       "height": 853,
-      "mime_type": "image/jpeg",
-      "file_bytes": 375708,
+      "mime_type": "image/webp",
+      "file_bytes": 321842,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/racing-92/informations",
@@ -672,7 +742,12 @@
         "Indiquer les modifications éventuelles lors de l’intégration."
       ],
       "file": "assets/club-atlas/racing-92-stadium.webp",
-      "sha256": "8455d9ff715e26e0cfa2b700065e474ec7ffad275489b9c7210a72fdbfb2cbcf"
+      "sha256": "8455d9ff715e26e0cfa2b700065e474ec7ffad275489b9c7210a72fdbfb2cbcf",
+      "source_sha256": "ac87002265e739a5eecbf5b8b1eaf065c190207e8a6168e5a0195c4184b983d7",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 853,
+      "source_file_bytes": 375708
     },
     {
       "id": "racing-92:city",
@@ -685,8 +760,8 @@
       "stadium_city": "Nanterre",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 493071,
+      "mime_type": "image/webp",
+      "file_bytes": 434006,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/racing-92/informations",
@@ -717,7 +792,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/racing-92-city.webp",
-      "sha256": "4a991594d95460a7d78c0c9ccae7f74b4315f984289406897c51c48e06de7733"
+      "sha256": "4a991594d95460a7d78c0c9ccae7f74b4315f984289406897c51c48e06de7733",
+      "source_sha256": "7431ea8e0deff72135e94ef45e2b56446686d93f033862f5e1d194f371524b0d",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 493071
     },
     {
       "id": "pau:stadium",
@@ -730,8 +810,8 @@
       "stadium_city": "Pau",
       "width": 1600,
       "height": 738,
-      "mime_type": "image/jpeg",
-      "file_bytes": 387842,
+      "mime_type": "image/webp",
+      "file_bytes": 217080,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/pau/informations",
@@ -762,7 +842,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/pau-stadium.webp",
-      "sha256": "1b781eff9293f1806f0f727964fc7346558551037bc8655e905ddfb0cf519531"
+      "sha256": "1b781eff9293f1806f0f727964fc7346558551037bc8655e905ddfb0cf519531",
+      "source_sha256": "349e2baf14b41fb7a9d5df4091f5b8553338296c621f94ee1e265a9e54fee790",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1920,
+      "source_height": 886,
+      "source_file_bytes": 387842
     },
     {
       "id": "pau:city",
@@ -773,10 +858,10 @@
       "city": "Pau",
       "stadium": "Stade du Hameau",
       "stadium_city": "Pau",
-      "width": 1600,
-      "height": 352,
-      "mime_type": "image/jpeg",
-      "file_bytes": 770887,
+      "width": 3840,
+      "height": 844,
+      "mime_type": "image/webp",
+      "file_bytes": 581656,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/pau/informations",
@@ -807,7 +892,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/pau-city.webp",
-      "sha256": "52e0e3a1b0302ea9f4444314f80e17074a5a4729ff474ebb70d703a50634d98b"
+      "sha256": "ee20163cebe08ff302cebd38cc253481f9b8bc2b45c9dc4d8836b012b60bec95",
+      "source_sha256": "0ebe53c467e83d04c419c75578c246655551d8914fa30bd891d32d39751a0d9d",
+      "source_mime_type": "image/jpeg",
+      "source_width": 3840,
+      "source_height": 844,
+      "source_file_bytes": 770887
     },
     {
       "id": "paris:stadium",
@@ -820,8 +910,8 @@
       "stadium_city": "Paris",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 466367,
+      "mime_type": "image/webp",
+      "file_bytes": 403034,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/paris/informations",
@@ -852,7 +942,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/paris-stadium.webp",
-      "sha256": "4704931883f0e6de00f7c2a30f94c07eb3704535070d0e2b054ed80e6290ef79"
+      "sha256": "4704931883f0e6de00f7c2a30f94c07eb3704535070d0e2b054ed80e6290ef79",
+      "source_sha256": "a3c10e88ceb1e14c0bdb9926d126894d855a975fd2162c073a8c9acb37101670",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 466367
     },
     {
       "id": "paris:city",
@@ -863,10 +958,10 @@
       "city": "Paris",
       "stadium": "Stade Jean Bouin",
       "stadium_city": "Paris",
-      "width": 1600,
-      "height": 249,
-      "mime_type": "image/jpeg",
-      "file_bytes": 2424062,
+      "width": 4000,
+      "height": 622,
+      "mime_type": "image/webp",
+      "file_bytes": 439856,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/paris/informations",
@@ -897,7 +992,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/paris-city.webp",
-      "sha256": "182188d3dad200ef0445a56031dd39ac204b7cba5134808bc680855c79a238b3"
+      "sha256": "71a49b0f13bce6198fa568d3c92ee64b237f0e27628575478393f9e456c140d6",
+      "source_sha256": "bfe788696655e97584755a7c3108c29b6aa5125579493d2bae6960fd4575c727",
+      "source_mime_type": "image/jpeg",
+      "source_width": 6580,
+      "source_height": 1024,
+      "source_file_bytes": 2424062
     },
     {
       "id": "la-rochelle:stadium",
@@ -910,8 +1010,8 @@
       "stadium_city": "La Rochelle",
       "width": 1600,
       "height": 898,
-      "mime_type": "image/jpeg",
-      "file_bytes": 307261,
+      "mime_type": "image/webp",
+      "file_bytes": 159524,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/la-rochelle/informations",
@@ -942,7 +1042,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/la-rochelle-stadium.webp",
-      "sha256": "dd228853dbda6e3e6be7af5ce0a0f66dc240f0e145659e0e1e991bf4d25e916f"
+      "sha256": "dd228853dbda6e3e6be7af5ce0a0f66dc240f0e145659e0e1e991bf4d25e916f",
+      "source_sha256": "e9d3210e34dfebb443084cfcb7bf9b9a52c1c193331ff76684f95db5e630bb8c",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1920,
+      "source_height": 1077,
+      "source_file_bytes": 307261
     },
     {
       "id": "la-rochelle:city",
@@ -955,8 +1060,8 @@
       "stadium_city": "La Rochelle",
       "width": 1280,
       "height": 764,
-      "mime_type": "image/jpeg",
-      "file_bytes": 233917,
+      "mime_type": "image/webp",
+      "file_bytes": 189026,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/la-rochelle/informations",
@@ -985,7 +1090,12 @@
         "Crédit conservé pour la traçabilité ; dédicace CC0."
       ],
       "file": "assets/club-atlas/la-rochelle-city.webp",
-      "sha256": "04e19ce93c1b5ab96bfd2a7d361d57e3ef990d34a27052838106a7c955bd7840"
+      "sha256": "04e19ce93c1b5ab96bfd2a7d361d57e3ef990d34a27052838106a7c955bd7840",
+      "source_sha256": "6c26d9ababb21e869a7f555d8cb4caa92437ecd9d741bd274af548a4604c1f1e",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 764,
+      "source_file_bytes": 233917
     },
     {
       "id": "toulouse:stadium",
@@ -998,8 +1108,8 @@
       "stadium_city": "Toulouse",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 431002,
+      "mime_type": "image/webp",
+      "file_bytes": 375758,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/toulouse/informations",
@@ -1030,7 +1140,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/toulouse-stadium.webp",
-      "sha256": "27d5808364ed0e257450088c05b9720b6aa5660f99b40b9261da4c1d2f59cb1c"
+      "sha256": "27d5808364ed0e257450088c05b9720b6aa5660f99b40b9261da4c1d2f59cb1c",
+      "source_sha256": "70e63ec5171b2a87605f0050fb2d6ee50b7795b04c2e73230b71dba962f7acc1",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 431002
     },
     {
       "id": "toulouse:city",
@@ -1041,10 +1156,10 @@
       "city": "Toulouse",
       "stadium": "Stade Ernest Wallon",
       "stadium_city": "Toulouse",
-      "width": 1600,
-      "height": 597,
-      "mime_type": "image/jpeg",
-      "file_bytes": 5762155,
+      "width": 3217,
+      "height": 1200,
+      "mime_type": "image/webp",
+      "file_bytes": 583878,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/toulouse/informations",
@@ -1075,7 +1190,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/toulouse-city.webp",
-      "sha256": "e384b6488b21f2adced1f3b2a54e3362d5330fde1b263341dbf66c047ed185a4"
+      "sha256": "0f6745d4ca96661f5caf9c343c4f8dc9f6d84863aebf313aa0f81a6ac1ef38ff",
+      "source_sha256": "c80b049817d432ced0f55cf4f88e5cd5a37bda87faa53b75ce5cb33ee59c1797",
+      "source_mime_type": "image/jpeg",
+      "source_width": 4949,
+      "source_height": 1846,
+      "source_file_bytes": 5762155
     },
     {
       "id": "perpignan:stadium",
@@ -1086,10 +1206,10 @@
       "city": "Perpignan",
       "stadium": "Stade Aimé Giral",
       "stadium_city": "Perpignan",
-      "width": 1600,
-      "height": 518,
-      "mime_type": "image/jpeg",
-      "file_bytes": 1357063,
+      "width": 3704,
+      "height": 1200,
+      "mime_type": "image/webp",
+      "file_bytes": 1040880,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/perpignan/informations",
@@ -1120,7 +1240,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/perpignan-stadium.webp",
-      "sha256": "8db894effe48510cdbff0a0c3e803578687a0a6a63821492d91925d5782a1ba3"
+      "sha256": "1fcd4b8789319ac000a6501f865f80c2187110829666f192042b3066f9382cb7",
+      "source_sha256": "794058e92955128d123c783bef56432dc5458189a66cbd2abd3c152b74e1f3e9",
+      "source_mime_type": "image/jpeg",
+      "source_width": 3840,
+      "source_height": 1244,
+      "source_file_bytes": 1357063
     },
     {
       "id": "perpignan:city",
@@ -1133,8 +1258,8 @@
       "stadium_city": "Perpignan",
       "width": 1280,
       "height": 909,
-      "mime_type": "image/jpeg",
-      "file_bytes": 407596,
+      "mime_type": "image/webp",
+      "file_bytes": 342208,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/perpignan/informations",
@@ -1165,7 +1290,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/perpignan-city.webp",
-      "sha256": "18c04a229dca380b2f191bcf086ccd9b60d1529c5e0dd6bdfb054bb2179580b4"
+      "sha256": "18c04a229dca380b2f191bcf086ccd9b60d1529c5e0dd6bdfb054bb2179580b4",
+      "source_sha256": "8a412c65788990a538a5e08a740f5089c6a0208d0e5ac626f3a4676282c01605",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 909,
+      "source_file_bytes": 407596
     },
     {
       "id": "bordeaux-begles:stadium",
@@ -1176,10 +1306,10 @@
       "city": "Bordeaux",
       "stadium": "Stade Jacques Chaban Delmas",
       "stadium_city": "Bordeaux",
-      "width": 1600,
-      "height": 630,
-      "mime_type": "image/jpeg",
-      "file_bytes": 371001,
+      "width": 1920,
+      "height": 756,
+      "mime_type": "image/webp",
+      "file_bytes": 247708,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/bordeaux-begles/informations",
@@ -1210,7 +1340,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/bordeaux-begles-stadium.webp",
-      "sha256": "56ad90f77749ecc9402ee992a23f805e2582eaee493929e442d0f94128d59236"
+      "sha256": "2f6510b6c87f9eee38fe0f749a9600a5cc3348016476ecc531bfc511c9390ede",
+      "source_sha256": "0c7f6140c6907acccd8cd905b468777563c4c8d30734c95dce523a46e84bf7e4",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1920,
+      "source_height": 756,
+      "source_file_bytes": 371001
     },
     {
       "id": "bordeaux-begles:city",
@@ -1221,10 +1356,10 @@
       "city": "Bordeaux",
       "stadium": "Stade Jacques Chaban Delmas",
       "stadium_city": "Bordeaux",
-      "width": 1600,
-      "height": 375,
-      "mime_type": "image/jpeg",
-      "file_bytes": 684798,
+      "width": 3840,
+      "height": 899,
+      "mime_type": "image/webp",
+      "file_bytes": 543028,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://top14.lnr.fr/club/bordeaux-begles/informations",
@@ -1255,7 +1390,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/bordeaux-begles-city.webp",
-      "sha256": "740296a6821d369e1689348c94e387845fd92d5e837bba022b03268b3b0fa9a3"
+      "sha256": "ee69f1c2eb5fd1c02d657a0e66c3e459576818dd13c67245e4435e0029979f72",
+      "source_sha256": "e35a8556ab7b5700499f92a05612c8a777b0aa3b28a1614ef7d1e6831f0790c8",
+      "source_mime_type": "image/jpeg",
+      "source_width": 3840,
+      "source_height": 899,
+      "source_file_bytes": 684798
     },
     {
       "id": "beziers:stadium",
@@ -1268,8 +1408,8 @@
       "stadium_city": "Béziers",
       "width": 1481,
       "height": 781,
-      "mime_type": "image/jpeg",
-      "file_bytes": 199875,
+      "mime_type": "image/webp",
+      "file_bytes": 186350,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/beziers/informations",
@@ -1300,7 +1440,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/beziers-stadium.webp",
-      "sha256": "2ed19b5e97eea541580c897656340448dd9c1614a22e4e75a084531bb8f608ad"
+      "sha256": "2ed19b5e97eea541580c897656340448dd9c1614a22e4e75a084531bb8f608ad",
+      "source_sha256": "983bded61a4d6eb4d04162e20acc6e76eb8e3569961ced4ce54e50946cf163aa",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1481,
+      "source_height": 781,
+      "source_file_bytes": 199875
     },
     {
       "id": "beziers:city",
@@ -1311,10 +1456,10 @@
       "city": "Béziers",
       "stadium": "Stade Raoul Barrière",
       "stadium_city": "Béziers",
-      "width": 1600,
-      "height": 461,
-      "mime_type": "image/jpeg",
-      "file_bytes": 1360986,
+      "width": 3840,
+      "height": 1107,
+      "mime_type": "image/webp",
+      "file_bytes": 1188732,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/beziers/informations",
@@ -1345,7 +1490,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/beziers-city.webp",
-      "sha256": "674d90c0d54b6127ff001473a3ad9ee02c4e8e48605f42208f81bb239aec987a"
+      "sha256": "e570b360e0bd530501010118d34abe1c03f12d399f8418fd61c13557d573a77b",
+      "source_sha256": "cbe95c5d19d8a3cdf5cfe9198f1f8fc8b444dc9395046ecd85bc82fea3bb49cf",
+      "source_mime_type": "image/jpeg",
+      "source_width": 3840,
+      "source_height": 1107,
+      "source_file_bytes": 1360986
     },
     {
       "id": "biarritz:stadium",
@@ -1358,8 +1508,8 @@
       "stadium_city": "Biarritz",
       "width": 1600,
       "height": 806,
-      "mime_type": "image/jpeg",
-      "file_bytes": 383203,
+      "mime_type": "image/webp",
+      "file_bytes": 210082,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/biarritz/informations",
@@ -1390,7 +1540,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/biarritz-stadium.webp",
-      "sha256": "2d154670e270811a1c49bd9fc6879c0272d35bd554ac9bed620865443ad374ef"
+      "sha256": "2d154670e270811a1c49bd9fc6879c0272d35bd554ac9bed620865443ad374ef",
+      "source_sha256": "69f713c19ddb87baa97d2f0b9d3de557a5b3b2e942344386431ee4722c831ef1",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1920,
+      "source_height": 967,
+      "source_file_bytes": 383203
     },
     {
       "id": "biarritz:city",
@@ -1403,8 +1558,8 @@
       "stadium_city": "Biarritz",
       "width": 1280,
       "height": 857,
-      "mime_type": "image/jpeg",
-      "file_bytes": 322976,
+      "mime_type": "image/webp",
+      "file_bytes": 273688,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/biarritz/informations",
@@ -1435,7 +1590,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/biarritz-city.webp",
-      "sha256": "df2b2967709cad9d80ee8443d580ff72eed0704a05ff38afc0ebdecb81b69e7d"
+      "sha256": "df2b2967709cad9d80ee8443d580ff72eed0704a05ff38afc0ebdecb81b69e7d",
+      "source_sha256": "064ce3eda0bc731d16794d2a550272e2550914d91acce157b5db1482bb78ea8c",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 857,
+      "source_file_bytes": 322976
     },
     {
       "id": "brive:stadium",
@@ -1448,8 +1608,8 @@
       "stadium_city": "Brive-la-Gaillarde",
       "width": 1280,
       "height": 962,
-      "mime_type": "image/jpeg",
-      "file_bytes": 264147,
+      "mime_type": "image/webp",
+      "file_bytes": 207298,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/brive/informations",
@@ -1480,7 +1640,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/brive-stadium.webp",
-      "sha256": "c649f36e1f135fa01c02afd0204358f371109c3dfea5df7425b4b18c21814942"
+      "sha256": "c649f36e1f135fa01c02afd0204358f371109c3dfea5df7425b4b18c21814942",
+      "source_sha256": "443d757a6d3ec9b6d9dfa2b7477bc3f63d852a068a61d5d5cf589cdf3e4b08ba",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 962,
+      "source_file_bytes": 264147
     },
     {
       "id": "brive:city",
@@ -1493,8 +1658,8 @@
       "stadium_city": "Brive-la-Gaillarde",
       "width": 1280,
       "height": 854,
-      "mime_type": "image/jpeg",
-      "file_bytes": 337945,
+      "mime_type": "image/webp",
+      "file_bytes": 269104,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/brive/informations",
@@ -1525,7 +1690,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/brive-city.webp",
-      "sha256": "ef5f538d45ad5de6258d1056a522d0efbaa4de578de6bbb02ce41b0cf2179585"
+      "sha256": "ef5f538d45ad5de6258d1056a522d0efbaa4de578de6bbb02ce41b0cf2179585",
+      "source_sha256": "6a79fcce7a66e91bc7eace046eae05f3c4deefad190adb23ed8fae935b24b998",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 854,
+      "source_file_bytes": 337945
     },
     {
       "id": "colomiers:stadium",
@@ -1538,8 +1708,8 @@
       "stadium_city": "Colomiers",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 265430,
+      "mime_type": "image/webp",
+      "file_bytes": 193312,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/colomiers/informations",
@@ -1570,7 +1740,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/colomiers-stadium.webp",
-      "sha256": "d91ce6075c0b32579c907bfc95eed4ca319f523975f0671049e95eedefa6b13a"
+      "sha256": "d91ce6075c0b32579c907bfc95eed4ca319f523975f0671049e95eedefa6b13a",
+      "source_sha256": "08f1a72681ef75ebfdc475a7c09893286138893851b6d14f3a0cbf3579eead19",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 265430
     },
     {
       "id": "colomiers:city",
@@ -1583,8 +1758,8 @@
       "stadium_city": "Colomiers",
       "width": 1200,
       "height": 1200,
-      "mime_type": "image/jpeg",
-      "file_bytes": 465020,
+      "mime_type": "image/webp",
+      "file_bytes": 329228,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/colomiers/informations",
@@ -1615,7 +1790,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/colomiers-city.webp",
-      "sha256": "ac58cd0f269d37862689988ea1d0127b1fde6b81e00f1eb78403fe29dba4568b"
+      "sha256": "ac58cd0f269d37862689988ea1d0127b1fde6b81e00f1eb78403fe29dba4568b",
+      "source_sha256": "1587dde763a8cf2842cae59ff292514ed9877b9907ed10480fe5603d21001701",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 1280,
+      "source_file_bytes": 465020
     },
     {
       "id": "grenoble:stadium",
@@ -1628,8 +1808,8 @@
       "stadium_city": "Grenoble",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 288026,
+      "mime_type": "image/webp",
+      "file_bytes": 231068,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/grenoble/informations",
@@ -1660,7 +1840,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/grenoble-stadium.webp",
-      "sha256": "ba01def27a5d910d55fe23f7891d320a9dfc5dad71d5457cee58d7609279fb67"
+      "sha256": "ba01def27a5d910d55fe23f7891d320a9dfc5dad71d5457cee58d7609279fb67",
+      "source_sha256": "18163dd514333c35462d9fea268eb758785115540fb1b1681fa1062b97739138",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 288026
     },
     {
       "id": "grenoble:city",
@@ -1673,8 +1858,8 @@
       "stadium_city": "Grenoble",
       "width": 1280,
       "height": 724,
-      "mime_type": "image/jpeg",
-      "file_bytes": 245295,
+      "mime_type": "image/webp",
+      "file_bytes": 193856,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/grenoble/informations",
@@ -1703,7 +1888,12 @@
         "Crédit conservé pour la traçabilité ; dédicace CC0."
       ],
       "file": "assets/club-atlas/grenoble-city.webp",
-      "sha256": "40f7736931bc44b23ea88489b6bb5952ed89a3beee07c68424a4c9a2f174935b"
+      "sha256": "40f7736931bc44b23ea88489b6bb5952ed89a3beee07c68424a4c9a2f174935b",
+      "source_sha256": "667ca5b8a53993f8e1008371cc695ff1321a6156a7449e3cc0f7332832c6b93c",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 724,
+      "source_file_bytes": 245295
     },
     {
       "id": "nice:stadium",
@@ -1716,8 +1906,8 @@
       "stadium_city": "Nice",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 196027,
+      "mime_type": "image/webp",
+      "file_bytes": 193068,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/nice/informations",
@@ -1757,7 +1947,12 @@
         "Vue aérienne de remplacement : pas de photographie de terrain libre trouvée."
       ],
       "file": "assets/club-atlas/nice-stadium.webp",
-      "sha256": "487df8e346d361fdd9d000a5dbd49372197d38af266b8f4b657065bb79f075b9"
+      "sha256": "487df8e346d361fdd9d000a5dbd49372197d38af266b8f4b657065bb79f075b9",
+      "source_sha256": "4a68ed621a3ae11ad88bd49c7374fb58021689b9becd12c4115f6dbc11dfd88c",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 196027
     },
     {
       "id": "nice:city",
@@ -1768,10 +1963,10 @@
       "city": "Nice",
       "stadium": "Stade Marcel Volot",
       "stadium_city": "Nice",
-      "width": 1600,
-      "height": 541,
-      "mime_type": "image/jpeg",
-      "file_bytes": 1666653,
+      "width": 3547,
+      "height": 1200,
+      "mime_type": "image/webp",
+      "file_bytes": 1178904,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/nice/informations",
@@ -1802,7 +1997,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/nice-city.webp",
-      "sha256": "9aff03c1375c787aaa787206e89230b47bf200a9eb68a3dbfcb42cee8a35e946"
+      "sha256": "33b3c4d43aed7f0c11c79a5cdd188309012214952ca7cb6a88caee7044a54475",
+      "source_sha256": "37d1bf251f9a6da777083d38ef98188cf609f1d2354f3d0174367adcd0af76e0",
+      "source_mime_type": "image/jpeg",
+      "source_width": 3840,
+      "source_height": 1299,
+      "source_file_bytes": 1666653
     },
     {
       "id": "oyonnax:stadium",
@@ -1813,10 +2013,10 @@
       "city": "Oyonnax",
       "stadium": "Stade Charles Mathon",
       "stadium_city": "Oyonnax",
-      "width": 1600,
-      "height": 462,
-      "mime_type": "image/jpeg",
-      "file_bytes": 1315349,
+      "width": 3840,
+      "height": 1109,
+      "mime_type": "image/webp",
+      "file_bytes": 1143156,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/oyonnax/informations",
@@ -1847,7 +2047,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/oyonnax-stadium.webp",
-      "sha256": "67f7ba9e70dddd56ca4b10a28786c3d6e7c94e3ac8e327d5540ce2b0dc5f9fe4"
+      "sha256": "d47b1457d266ff05ed74488d56c4a5e4f58eabd9e906d29d717746862379a8fe",
+      "source_sha256": "aa6f9551758de0c485bf152455c85ffbb1ed7d897f735f2b147160dfd6077a77",
+      "source_mime_type": "image/jpeg",
+      "source_width": 3840,
+      "source_height": 1109,
+      "source_file_bytes": 1315349
     },
     {
       "id": "oyonnax:city",
@@ -1858,10 +2063,10 @@
       "city": "Oyonnax",
       "stadium": "Stade Charles Mathon",
       "stadium_city": "Oyonnax",
-      "width": 1600,
-      "height": 320,
-      "mime_type": "image/jpeg",
-      "file_bytes": 597042,
+      "width": 3000,
+      "height": 600,
+      "mime_type": "image/webp",
+      "file_bytes": 426030,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/oyonnax/informations",
@@ -1894,7 +2099,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/oyonnax-city.webp",
-      "sha256": "11d9e7765a047cf6ef0c301e6d723aa92f78ff0ff96a65520e5341399aad82e5"
+      "sha256": "174a8cac303edbf1123e7036401719fce01368b82a2f5c3b0a7b41251b941501",
+      "source_sha256": "a8f736ebec8c6522c1f433fd575221cfa7764a576ae8934730fe672ed4c0f705",
+      "source_mime_type": "image/jpeg",
+      "source_width": 3000,
+      "source_height": 600,
+      "source_file_bytes": 597042
     },
     {
       "id": "provence-rugby:stadium",
@@ -1907,8 +2117,8 @@
       "stadium_city": "Aix-en-Provence",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 295299,
+      "mime_type": "image/webp",
+      "file_bytes": 234360,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/provence-rugby/informations",
@@ -1939,7 +2149,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/provence-rugby-stadium.webp",
-      "sha256": "cdfb99fd994437308f94ce2fe9ebbcb809a7b559940d35f91960a7d114441d29"
+      "sha256": "cdfb99fd994437308f94ce2fe9ebbcb809a7b559940d35f91960a7d114441d29",
+      "source_sha256": "6035940991a6cb54d1c5ec1786aa9b699a8c791851548252ffde6892f633ac29",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 295299
     },
     {
       "id": "provence-rugby:city",
@@ -1952,8 +2167,8 @@
       "stadium_city": "Aix-en-Provence",
       "width": 1280,
       "height": 853,
-      "mime_type": "image/jpeg",
-      "file_bytes": 451790,
+      "mime_type": "image/webp",
+      "file_bytes": 414730,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/provence-rugby/informations",
@@ -1984,7 +2199,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/provence-rugby-city.webp",
-      "sha256": "3a1dae0348d54402bece11f4b39f17fa6aa63dd67d7332668ad0f0ce2f1ab9d5"
+      "sha256": "3a1dae0348d54402bece11f4b39f17fa6aa63dd67d7332668ad0f0ce2f1ab9d5",
+      "source_sha256": "7c2b7457050405daa2dcdccb01018b2c0ae71e0753cb4de05166d38ae66cd1a2",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 853,
+      "source_file_bytes": 451790
     },
     {
       "id": "narbonne:stadium",
@@ -1997,8 +2217,8 @@
       "stadium_city": "Narbonne",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 313869,
+      "mime_type": "image/webp",
+      "file_bytes": 246322,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/narbonne/informations",
@@ -2029,7 +2249,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/narbonne-stadium.webp",
-      "sha256": "2a0a5a3834cffc6b50feeaeef5a78f263da0c9ca01273c5f91ebf485ee5bb7a7"
+      "sha256": "2a0a5a3834cffc6b50feeaeef5a78f263da0c9ca01273c5f91ebf485ee5bb7a7",
+      "source_sha256": "81a5e4ac3a6a8f6060a0692412957d5002cf0fc316a98142924d9210a629d2c2",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 313869
     },
     {
       "id": "narbonne:city",
@@ -2042,8 +2267,8 @@
       "stadium_city": "Narbonne",
       "width": 1280,
       "height": 720,
-      "mime_type": "image/jpeg",
-      "file_bytes": 276694,
+      "mime_type": "image/webp",
+      "file_bytes": 228938,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/narbonne/informations",
@@ -2073,7 +2298,12 @@
         "Indiquer les modifications éventuelles lors de l’intégration."
       ],
       "file": "assets/club-atlas/narbonne-city.webp",
-      "sha256": "d957c93e07164145bd7b4db4412732803302026f36451e19bad37dadd9b800c8"
+      "sha256": "d957c93e07164145bd7b4db4412732803302026f36451e19bad37dadd9b800c8",
+      "source_sha256": "5508ae0e9d19326a1c791ffdc0e77a1e17f50c1888636fd0aeb084573ea64ce9",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 720,
+      "source_file_bytes": 276694
     },
     {
       "id": "agen:stadium",
@@ -2086,8 +2316,8 @@
       "stadium_city": "Agen",
       "width": 1280,
       "height": 723,
-      "mime_type": "image/jpeg",
-      "file_bytes": 329466,
+      "mime_type": "image/webp",
+      "file_bytes": 273766,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/agen/informations",
@@ -2116,7 +2346,12 @@
         "Crédit conservé pour la traçabilité ; dédicace CC0."
       ],
       "file": "assets/club-atlas/agen-stadium.webp",
-      "sha256": "b8735e80ea46022f2cc8ea27721add57d9df3a552893218a8223f3c19bd868c2"
+      "sha256": "b8735e80ea46022f2cc8ea27721add57d9df3a552893218a8223f3c19bd868c2",
+      "source_sha256": "d4f6a6528a71eb958ae824c97681003ab564f9569e02dec9d28ecbd56bc640f6",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 723,
+      "source_file_bytes": 329466
     },
     {
       "id": "agen:city",
@@ -2129,8 +2364,8 @@
       "stadium_city": "Agen",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 467796,
+      "mime_type": "image/webp",
+      "file_bytes": 399534,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/agen/informations",
@@ -2161,7 +2396,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/agen-city.webp",
-      "sha256": "89ad8d0918c07bce4b18cff922dc5bde316b9cfb573e0eb011b1402d00fd3825"
+      "sha256": "89ad8d0918c07bce4b18cff922dc5bde316b9cfb573e0eb011b1402d00fd3825",
+      "source_sha256": "30b0c04f8aeba9b418b80b47112c7953bf62f6262613c450b5916928a05078cd",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 467796
     },
     {
       "id": "angouleme:stadium",
@@ -2174,8 +2414,8 @@
       "stadium_city": "Angoulême",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 277206,
+      "mime_type": "image/webp",
+      "file_bytes": 216816,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/angouleme/informations",
@@ -2208,7 +2448,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/angouleme-stadium.webp",
-      "sha256": "bf08d26e4b803d018efa8960eabedbefb59f41bec4128b32935ded6e705e998d"
+      "sha256": "bf08d26e4b803d018efa8960eabedbefb59f41bec4128b32935ded6e705e998d",
+      "source_sha256": "2e285c10b35300f56a7d23a9d20dd1eeeaa1a64ab64ec6e774fa85374ced9216",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 277206
     },
     {
       "id": "angouleme:city",
@@ -2219,10 +2464,10 @@
       "city": "Angoulême",
       "stadium": "Stade Chanzy",
       "stadium_city": "Angoulême",
-      "width": 1600,
-      "height": 567,
-      "mime_type": "image/jpeg",
-      "file_bytes": 2041347,
+      "width": 3386,
+      "height": 1200,
+      "mime_type": "image/webp",
+      "file_bytes": 1378192,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/angouleme/informations",
@@ -2253,7 +2498,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/angouleme-city.webp",
-      "sha256": "18157b08385ed5c6bc07e34bec6b225c0fc32d3af048ea9a0e3d294fb8f4db3e"
+      "sha256": "d0e18b6c9105502aeddf982392d100933e424cf8ce6f8ec54e19a358adb7811f",
+      "source_sha256": "22ad1782658afff52b4fe73d27c9900c44006a1d40df06449bfb09395727e5ea",
+      "source_mime_type": "image/jpeg",
+      "source_width": 3840,
+      "source_height": 1361,
+      "source_file_bytes": 2041347
     },
     {
       "id": "aurillac:stadium",
@@ -2266,8 +2516,8 @@
       "stadium_city": "Aurillac",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 254116,
+      "mime_type": "image/webp",
+      "file_bytes": 193794,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/aurillac/informations",
@@ -2298,7 +2548,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/aurillac-stadium.webp",
-      "sha256": "6517f138494a5528654cea6b6e43a7883977a6b485b34f2260efd47e8d1a0c22"
+      "sha256": "6517f138494a5528654cea6b6e43a7883977a6b485b34f2260efd47e8d1a0c22",
+      "source_sha256": "a1e581c50bd6f9d3ff4f50de9ad872eabd6cab97d175f0f87f5b5661e7154964",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 254116
     },
     {
       "id": "aurillac:city",
@@ -2311,8 +2566,8 @@
       "stadium_city": "Aurillac",
       "width": 1280,
       "height": 853,
-      "mime_type": "image/jpeg",
-      "file_bytes": 475534,
+      "mime_type": "image/webp",
+      "file_bytes": 422558,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/aurillac/informations",
@@ -2343,7 +2598,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/aurillac-city.webp",
-      "sha256": "0e392a2213df4a4f47b779dab20fb441756eb31c69248cde923e098d447e8803"
+      "sha256": "0e392a2213df4a4f47b779dab20fb441756eb31c69248cde923e098d447e8803",
+      "source_sha256": "3cf13312142f47079f0cec1f40430f40446b0c0f022b30a2e96494d570a742f7",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 853,
+      "source_file_bytes": 475534
     },
     {
       "id": "dax:stadium",
@@ -2356,8 +2616,8 @@
       "stadium_city": "Dax",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 309976,
+      "mime_type": "image/webp",
+      "file_bytes": 235438,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/dax/informations",
@@ -2388,7 +2648,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/dax-stadium.webp",
-      "sha256": "56ea9a9b6e1659c7411ef0b139441fa2c722be239b7b4291e0e6322f0b7cd0c2"
+      "sha256": "56ea9a9b6e1659c7411ef0b139441fa2c722be239b7b4291e0e6322f0b7cd0c2",
+      "source_sha256": "2287a75b7e1f7052e350ccf0285b0532234dbdc0c589bc08d90666bc441f8305",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 309976
     },
     {
       "id": "dax:city",
@@ -2401,8 +2666,8 @@
       "stadium_city": "Dax",
       "width": 1600,
       "height": 687,
-      "mime_type": "image/jpeg",
-      "file_bytes": 514969,
+      "mime_type": "image/webp",
+      "file_bytes": 299444,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/dax/informations",
@@ -2433,7 +2698,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/dax-city.webp",
-      "sha256": "aaf3d5c3aedede4ace45bc14711115a796ee5e62f764449f50f15b98fac13545"
+      "sha256": "aaf3d5c3aedede4ace45bc14711115a796ee5e62f764449f50f15b98fac13545",
+      "source_sha256": "3e3f912f5416a223b99cf82b68a5f95f0773d2f0ac58be1439ce9889f712b4b0",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1920,
+      "source_height": 824,
+      "source_file_bytes": 514969
     },
     {
       "id": "montauban:stadium",
@@ -2446,8 +2716,8 @@
       "stadium_city": "Montauban",
       "width": 1280,
       "height": 720,
-      "mime_type": "image/jpeg",
-      "file_bytes": 288116,
+      "mime_type": "image/webp",
+      "file_bytes": 257900,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/montauban/informations",
@@ -2477,7 +2747,12 @@
         "Indiquer les modifications éventuelles lors de l’intégration."
       ],
       "file": "assets/club-atlas/montauban-stadium.webp",
-      "sha256": "d326e5247ccf70ccd80aa2ba4ebf8f1596f4a821cb2350454380edafe188de07"
+      "sha256": "d326e5247ccf70ccd80aa2ba4ebf8f1596f4a821cb2350454380edafe188de07",
+      "source_sha256": "7867f29dd71cb933d3ac5b7c7b11b6fc022d7e4a85668d9841c1f477b471ae1d",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 720,
+      "source_file_bytes": 288116
     },
     {
       "id": "montauban:city",
@@ -2490,8 +2765,8 @@
       "stadium_city": "Montauban",
       "width": 1280,
       "height": 937,
-      "mime_type": "image/jpeg",
-      "file_bytes": 363426,
+      "mime_type": "image/webp",
+      "file_bytes": 327048,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/montauban/informations",
@@ -2522,7 +2797,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/montauban-city.webp",
-      "sha256": "186cc5c59b20cc6111de9b95e25d85c4f88b8127f0894db30052d73461e1b593"
+      "sha256": "186cc5c59b20cc6111de9b95e25d85c4f88b8127f0894db30052d73461e1b593",
+      "source_sha256": "f3ece749dfd5961d0e841b1310249b71b6986614e94691a4699f2c87fe328585",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 937,
+      "source_file_bytes": 363426
     },
     {
       "id": "nevers:stadium",
@@ -2533,10 +2813,10 @@
       "city": "Nevers",
       "stadium": "Stade du Pré Fleuri",
       "stadium_city": "Sermoise-sur-Loire",
-      "width": 1600,
-      "height": 525,
-      "mime_type": "image/jpeg",
-      "file_bytes": 759296,
+      "width": 2608,
+      "height": 856,
+      "mime_type": "image/webp",
+      "file_bytes": 114462,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/nevers/informations",
@@ -2567,7 +2847,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/nevers-stadium.webp",
-      "sha256": "425438ef32fe32190cb1c226b2327be32297f2627df745c7b66b0f93292fa5fb"
+      "sha256": "1cefa01d9651abdd44c3b218c1e992f240829f2a6e33640fe2e164365a8e3910",
+      "source_sha256": "d4db9090350897d7db4ed5ebfe21a993e47babb8fcec35fff822bec60e0e515b",
+      "source_mime_type": "image/jpeg",
+      "source_width": 2608,
+      "source_height": 856,
+      "source_file_bytes": 759296
     },
     {
       "id": "nevers:city",
@@ -2580,8 +2865,8 @@
       "stadium_city": "Sermoise-sur-Loire",
       "width": 1280,
       "height": 853,
-      "mime_type": "image/jpeg",
-      "file_bytes": 328813,
+      "mime_type": "image/webp",
+      "file_bytes": 283114,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/nevers/informations",
@@ -2612,7 +2897,12 @@
         "Une adaptation de cette photo doit respecter la clause de partage dans les mêmes conditions de sa licence."
       ],
       "file": "assets/club-atlas/nevers-city.webp",
-      "sha256": "3df9421c71acac53acf7de27c53c7ac8a8e896f828329a3156b43a5381e7f37f"
+      "sha256": "3df9421c71acac53acf7de27c53c7ac8a8e896f828329a3156b43a5381e7f37f",
+      "source_sha256": "429c6bf9f381a03ae5576208ff6a49db44f631c6c4cd273183615ddf0df7e33f",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 853,
+      "source_file_bytes": 328813
     },
     {
       "id": "valence-romans:stadium",
@@ -2625,8 +2915,8 @@
       "stadium_city": "Valence",
       "width": 1280,
       "height": 960,
-      "mime_type": "image/jpeg",
-      "file_bytes": 219492,
+      "mime_type": "image/webp",
+      "file_bytes": 227048,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/valence-romans/informations",
@@ -2666,7 +2956,12 @@
         "Vue aérienne de remplacement : pas de photographie de terrain libre trouvée."
       ],
       "file": "assets/club-atlas/valence-romans-stadium.webp",
-      "sha256": "a846a8a7a2e788339d9c5b22fe3b82015263210e85ce467ee0905e7c118cf341"
+      "sha256": "a846a8a7a2e788339d9c5b22fe3b82015263210e85ce467ee0905e7c118cf341",
+      "source_sha256": "28fd220a8e3f033c2728532c356a223b930f798f27f22a4620f5d3342fafffb8",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 960,
+      "source_file_bytes": 219492
     },
     {
       "id": "valence-romans:city",
@@ -2679,8 +2974,8 @@
       "stadium_city": "Valence",
       "width": 1280,
       "height": 830,
-      "mime_type": "image/jpeg",
-      "file_bytes": 455285,
+      "mime_type": "image/webp",
+      "file_bytes": 411634,
       "visual_reviewed": true,
       "visual_review_date": "2026-11-07",
       "venue_source_url": "https://prod2.lnr.fr/club/valence-romans/informations",
@@ -2709,7 +3004,12 @@
         "Crédit conservé pour la traçabilité ; dédicace CC0."
       ],
       "file": "assets/club-atlas/valence-romans-city.webp",
-      "sha256": "f6678f9b4508431844b8e08e01f8da6365aecaf35ae2b264cb59c31ea7a0d440"
+      "sha256": "f6678f9b4508431844b8e08e01f8da6365aecaf35ae2b264cb59c31ea7a0d440",
+      "source_sha256": "5c790c3ec19992e4f56e42171fc393d3b6390bfd63506e42fd2e5beef1913c36",
+      "source_mime_type": "image/jpeg",
+      "source_width": 1280,
+      "source_height": 830,
+      "source_file_bytes": 455285
     }
   ],
   "notes": [],

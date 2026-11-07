@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-07",
+  "godot": "4.7.2.stable.official.ed1daf0bf",
+  "windows_native": true,
+  "checks": 111,
+  "resolutions": [
+    "1440x900",
+    "1920x1080"
+  ],
+  "zip_bytes": 177718338,
+  "zip_sha256": "7a2d2d3225250b01ce41d18db9e5ab270ad516b911360918d51d8b26b1a84146",
+  "processes": [
+    "CadrageDebordement.exe",
+    "runtime/node.exe"
+  ],
+  "tcp_connections_observed": 0,
+  "orphan_processes": 0,
+  "node_not_on_test_path": true,
+  "relocated_zip": true,
+  "renderer": "OpenGL3.3 / NVIDIA GeForce RTX4080SUPER",
+  "limits": [
+    "Prototype de presentation, pas de publication Steam",
+    "14 clubs historiques jouables, 30 territoires consultables",
+    "Enceinte et animations generiques",
+    "Performances non certifiees sur iGPU"
+  ]
+}

@@ -58,8 +58,8 @@ def build(args):
     work = target / "build"
     source = work / "project"
     shutil.copytree(PROJECT, source, ignore=shutil.ignore_patterns(".godot", "*.uid", "*.import", "export_presets.cfg"))
-    preset = (sdk / "windows-x64-export-presets.cfg").read_text(encoding="utf-8")
-    preset = preset.replace('include_filter=""', 'include_filter="*.json"')
+    preset = (PROJECT / "windows-release.cfg").read_text(encoding="utf-8-sig")
+    preset = preset.replace("{{RELEASE_TEMPLATE}}", template.as_posix())
     (source / "export_presets.cfg").write_text(preset, encoding="utf-8")
     app = target / "CadrageDebordement-PrototypeGodot"
     app.mkdir()
