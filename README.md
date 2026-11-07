@@ -18,6 +18,10 @@ Depuis la création d'une carrière ou ses paramètres : **Packs et identités �
 
 Le [rapport Godot 0.3 et packs](docs/rugby-real-native-packs-20261107.md) détaille la réception Windows, le format personnalisé et les lacunes des données. Le [rapport Godot 0.2](docs/godot-carriere-20261107.md) reste historique. La scène 3D est générique, les finances sont fictives, le monde est fermé sans Nationale et la cadence de 34 semaines est une abstraction. Le format de compétition 2026–2027 reste distinct des lois de match historiques partiellement couvertes. Cette préalpha prépare une version commerciale ; aucune publication Steam n'est annoncée.
 
+## Lot 1 effectifs — nouvelles carrières natives
+
+Les 1 592 joueurs disposent désormais d’une référence initiale traçable : 12 postes précis corroborés, 20 échéances officielles dans les deux divisions et un contrat mixte espoir/professionnel confirmé. Les informations restantes sont des estimations de jeu explicites ; les salaires, 36 attributs, 11 compétences, notes, potentiels et traits restent ceux de la base active. La fiche distingue la référence contractuelle initiale du contrat courant après une signature. Les anciennes carrières restent inchangées, sans migration automatique. Voir [couverture, sources et limites](docs/roster-foundation-lot1.md), notamment la contradiction officielle sur Traini conservée en quarantaine. Aucune nouvelle règle de rugby ou de recrutement n’est introduite.
+
 ## Vous découvrez GitHub ?
 
 Commencez par le [guide GitHub en français](docs/guide-github.md). Vous n’avez pas besoin de savoir programmer pour suivre l’avancement du projet.

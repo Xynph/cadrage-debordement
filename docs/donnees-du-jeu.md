@@ -2,11 +2,11 @@
 
 ## État courant — Oval Legacy 27, Godot 0.3 — 7 novembre 2026
 
-Les nouvelles carrières natives emploient `rugby-common-2026-10-31-v1` : 30 clubs et 1 592 joueurs compilés depuis les données actives, avec les mêmes IDs, âges, postes, attributs, compétences, potentiels et traits, sous des identités anonymisées. Cette compilation ne modifie aucune source BDD du producteur. Les notes restent des estimations de jeu, pas des mesures officielles.
+Les nouvelles carrières natives emploient `rugby-common-2026-10-31-v1` : 30 clubs et 1 592 joueurs compilés depuis les données actives, avec les mêmes IDs, âges, attributs, compétences, potentiels et traits, sous des identités anonymisées. Le [lot effectifs 1](roster-foundation-lot1.md) ajoute une couche versionnée : douze postes corroborés, vingt échéances officielles et des estimations explicites ailleurs. Aucune source BDD du producteur n'est modifiée. Les notes restent des estimations de jeu, pas des mesures officielles ; corriger un poste peut changer sa note calculée sans recalibrer ses attributs.
 
 Les packs importés à la création ou dans les paramètres d'une carrière commune projettent noms et images par ID. Ils ne remplacent ni statistiques ni progression. Le pack fourni à Léo reste privé, hors de l'exécutable et de GitHub : 30 logos, 1 549 photos officielles et 43 illustrations IA explicitement distinguées. Le [rapport 0.3](rugby-real-native-packs-20261107.md) décrit le format, la réception et les lacunes conservées.
 
-Contrats, salaires et trésoreries sont toujours fictifs. Le plafond de recrutement historique de 42, les effectifs source de 36 à 65 et les couvertures de poste incomplètes de cinq clubs restent documentés ; aucune correction de la PR389 en brouillon n'est activée. Les anciennes carrières générées à 14 ou 30 clubs restent lisibles sans conversion automatique. Les sections ci-dessous décrivent les étapes antérieures.
+Les nouvelles carrières communes utilisent les vingt échéances publiées retenues et des durées estimées déterministes pour les 1 572 autres joueurs. Un type de contrat initial est corroboré ; les 1 591 autres statuts sont estimés. Salaires et trésoreries restent fictifs. Les douze corrections précises de poste sont isolées de la PR389 ; ses calibrations candidates et les dossiers contradictoires restent exclus. Plafond de recrutement historique de 42 et effectifs source de 36 à 65 demeurent des limites documentées. Les anciennes carrières, y compris communes sans ce nouveau marqueur, restent lisibles et inchangées, sans conversion automatique. Les sections ci-dessous décrivent les étapes antérieures.
 
 ## État de la version 15
 
