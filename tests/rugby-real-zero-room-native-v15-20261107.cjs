@@ -63,6 +63,7 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
  const sourceSignature=JSON.stringify(data.players);
  let g=boot();
  g.run("start(0,'lnr')");
+ assert.equal(g.run("aiRosterActive()"),true,"native AI roster is already active at career start");
  const baseRoster=roster(g);
  const baseMap=new Map(baseRoster.map(p=>[p.id,p]));
  const seen=baseRoster.filter(p=>zeroIDs.includes(p.id));
@@ -73,6 +74,7 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
  const observations=new Map(topIDs.map(id=>[id,[]]));
  const seasons=[];
  const teamSnapshots=[{season:1,clubs:teamRatings(g)}];
+ const aiReports=[];
  let transfers=0,departures=0,retirements=0,otherExits=0;
  const exited=new Set();
  for(let year=1;year<=6;year++){
@@ -98,11 +100,15 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
     observations.get(id).push({season:year,phase:'end',...p});
    }else observations.get(id).push({season:year,phase:'absent'});
   }
+  const yearReports=read(g,'S.aiRoster.reports.filter(x=>x.season===S.season)');
+  aiReports.push({season:year,clubs:yearReports.map(x=>({clubId:x.clubId,renewed:x.renewed||0,released:x.released||0,
+   retired:x.retired||0,recruited:x.recruited||0,promoted:x.promoted||0,emergency:x.emergency||0}))});
   seasons.push({season:year,remaining:topIDs.filter(id=>seasonMap.has(id)).length,
    lnrPlayers:seasonPlayers.length});
   g.run('advanceSeason()');
   assert.equal(g.run('S.season'),year+1);
   g=roundtrip(g);
+  assert.equal(g.run('aiRosterActive()'),true,'native AI roster state preserved by signed save');
   teamSnapshots.push({season:year+1,clubs:teamRatings(g)});
   const next=roster(g),nextMap=new Map(next.map(p=>[p.id,p]));
   for(const id of topIDs){
@@ -135,7 +141,14 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
    rosterOutflow:prior?snapshot.clubs.reduce((s,c)=>s+prior.get(c.name).rosterIds.filter(id=>!c.rosterIds.includes(id)).length,0):0,
    incompleteSheets:snapshot.clubs.filter(c=>c.startingPlayers!==15||c.benchPlayers!==8).length};
  });
- console.log('RUGBY_REAL_V15_NATIVE_TOP14_SQUAD_EVOLUTION '+JSON.stringify({years:6,seasonSnapshots:trajectory,
+ const aiTotals=aiReports.flatMap(x=>x.clubs).reduce((a,r)=>{
+  for(const k of Object.keys(a))a[k]+=r[k]||0;return a;
+ },{renewed:0,released:0,retired:0,recruited:0,promoted:0,emergency:0});
+ console.log('RUGBY_REAL_V15_NATIVE_TOP14_SQUAD_EVOLUTION '+JSON.stringify({years:6,aiRosterEnabled:true,
+  aiTotals,annualAiTransactions:aiReports.map(x=>({season:x.season,recruited:x.clubs.reduce((n,r)=>n+r.recruited,0),
+   renewed:x.clubs.reduce((n,r)=>n+r.renewed,0),released:x.clubs.reduce((n,r)=>n+r.released,0),
+   promoted:x.clubs.reduce((n,r)=>n+r.promoted,0)})),
+  seasonSnapshots:trajectory,
   clubStartEnd:teamSnapshots[0].clubs.map(c=>{const last=teamSnapshots.at(-1).clubs.find(x=>x.name===c.name);
    return {club:c.name,initialXV:c.xv,lastXV:last.xv,xvDelta:+(last.xv-c.xv).toFixed(2),
     initialBench:c.bench,lastBench:last.bench,initialOriginal:c.lnr,lastOriginal:last.lnr};}),
@@ -163,47 +176,3 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
  }));
 });
 
-
-test('Optional native AI roster contracts, recruitment, rotation and signed saves over six seasons', {timeout:300000},()=>{
- let g=boot();
- g.run("start(0,'lnr')");
- const initiallyActive=g.run('aiRosterActive()');
- if(!initiallyActive)assert.equal(g.run('aiRosterEnable()'),true,'explicitly activate existing AI roster career mode');
- assert.equal(g.run('aiRosterActive()'),true);
- const seasons=[{season:1,clubs:teamRatings(g)}],events=[];
- for(let year=1;year<=6;year++){
-  assert.equal(g.run('S.season'),year);
-  for(let round=0;round<26;round++){
-   assert.equal(g.run('S.round'),round);
-   g.run('finishRound()');
-  }
-  let guard=0;
-  while(g.run('S.phase')!=='ended'){
-   assert.ok(++guard<=4);g.run('finishRound()');
-  }
-  const end=read(g,'S.aiRoster.reports.filter(x=>x.season===S.season)');
-  events.push({year,reports:end.map(x=>({clubId:x.clubId,renewed:x.renewed,released:x.released,
-   recruited:x.recruited,promoted:x.promoted,emergency:x.emergency,retired:x.retired}))});
-  g.run('advanceSeason()');
-  g=roundtrip(g);
-  assert.equal(g.run('aiRosterActive()'),true,'AI roster state survives native save import');
-  seasons.push({season:year+1,clubs:teamRatings(g)});
- }
- const summarize=s=>{
-  const ai=s.clubs.slice(1),q=ai.map(c=>c.xv);
-  return {season:s.season,aiXvMean:+(q.reduce((a,b)=>a+b,0)/q.length).toFixed(2),
-   aiMin:Math.min(...q),aiMax:Math.max(...q),
-   aiOriginal:ai.reduce((sum,c)=>sum+c.lnr,0),
-   aiPlayers:ai.reduce((sum,c)=>sum+c.roster,0),
-   aiBenchMean:+(ai.reduce((sum,c)=>sum+c.bench,0)/ai.length).toFixed(2),
-   playerClubXV:s.clubs[0].xv};
- };
- const totals=events.flatMap(x=>x.reports).reduce((a,r)=>{
-  for(const k of ['renewed','released','recruited','promoted','emergency','retired'])a[k]+=r[k]||0;
-  return a;
- },{renewed:0,released:0,recruited:0,promoted:0,emergency:0,retired:0});
- console.log('RUGBY_REAL_V15_ADVANCED_AI_CAREER '+JSON.stringify({
-  aiRosterEnabled:true,alreadyEnabledAtStart:initiallyActive,seasons:6,saveImports:6,
-  totals,seasonSummary:seasons.map(summarize),events,
-  limitations:'Simulated TOP14 career, manager does not intervene; NO two-division promotion/relegation'}));
-});
