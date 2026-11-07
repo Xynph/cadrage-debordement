@@ -1,0 +1,111 @@
+{
+  "passed": true,
+  "checks": [
+    "dix lignes complètes 1440",
+    "lignes visibles 1440 : 11",
+    "effectif 1440 sans défilement global",
+    "toutes les actions de l’aperçu visibles 1440",
+    "un seul radar 1440",
+    "fiche 1440 sans défilement global",
+    "dix lignes complètes 1920",
+    "lignes visibles 1920 : 13",
+    "effectif 1920 sans défilement global",
+    "toutes les actions de l’aperçu visibles 1920",
+    "un seul radar 1920",
+    "fiche 1920 sans défilement global",
+    "aperçu lié au joueur choisi",
+    "comparaison ouverte",
+    "comparaison maintenue après rendu",
+    "focus conservé après sélection",
+    "effacer garde le focus et la fenêtre",
+    "Échap ferme la comparaison",
+    "focus restitué",
+    "focus restitué à l’action d’origine",
+    "charges natives accessibles",
+    "filtre vide sans ancien joueur",
+    "présentation contrats native",
+    "filtre de poste natif",
+    "tri conserve l’aperçu par ID",
+    "colonnes sans nom : aperçu toujours accessible",
+    "onglet natif attributs",
+    "onglet natif contrat",
+    "onglet natif progression",
+    "onglet natif profil",
+    "couverture des postes native",
+    "feuille à 23 native",
+    "contrat du bon joueur",
+    "consultations : carrière et disque invariants",
+    "consultations sans tirage aléatoire",
+    "tribune sans défilement global",
+    "contraste des textes tribune",
+    "analyste sans défilement global",
+    "contraste des textes analyste",
+    "nom long sans recouvrement",
+    "carrière avancée native",
+    "fiche avancée",
+    "charges verrouillées après séance native",
+    "LNR sans faux portraits",
+    "fiche LNR sans faux portrait",
+    "aucune erreur navigateur"
+  ],
+  "screens": [
+    "after/effectif-1440.webp",
+    "after/fiche-1440.webp",
+    "after/effectif-1920.webp",
+    "after/fiche-1920.webp",
+    "after/comparaison-1440.webp",
+    "after/effectif-tribune-1440.webp",
+    "after/effectif-analyste-1440.webp",
+    "after/fiche-nom-long-1440.webp",
+    "after/effectif-avance-1440.webp",
+    "after/fiche-avance-1440.webp",
+    "after/fiche-lnr-1440.webp"
+  ],
+  "errors": [],
+  "contrast": {
+    "tribune": [
+      {
+        "selector": ".sq-preview .sq-kicker",
+        "ratio": 5.729670173231025
+      },
+      {
+        "selector": ".sq-grades b",
+        "ratio": 5.729670173231025
+      },
+      {
+        "selector": ".sq-facts dt",
+        "ratio": 5.172095942507735
+      },
+      {
+        "selector": ".sq-facts dd",
+        "ratio": 10.259069313543849
+      },
+      {
+        "selector": ".sq-preview .sq-primary",
+        "ratio": 9.984275396291224
+      }
+    ],
+    "analyste": [
+      {
+        "selector": ".sq-preview .sq-kicker",
+        "ratio": 7.675416571150112
+      },
+      {
+        "selector": ".sq-grades b",
+        "ratio": 7.675416571150112
+      },
+      {
+        "selector": ".sq-facts dt",
+        "ratio": 8.39300854884286
+      },
+      {
+        "selector": ".sq-facts dd",
+        "ratio": 13.051171692614597
+      },
+      {
+        "selector": ".sq-preview .sq-primary",
+        "ratio": 10.423720822129141
+      }
+    ]
+  }
+}
