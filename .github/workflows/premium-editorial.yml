@@ -28,7 +28,7 @@ jobs:
         run: |
           node --check dist/premium-editorial.js
           node --check tests/premium-editorial-browser.mjs
-          node --test tests/premium-editorial.cjs
+          node --test tests/premium-editorial.cjs tests/premium-editorial-matchday.cjs
       - name: Installer le navigateur de qualification
         run: |
           npm install --prefix "$RUNNER_TEMP/editorial-browser" --no-audit --no-fund playwright@1.58.0
