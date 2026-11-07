@@ -187,6 +187,9 @@ try:
         check("caméra TV active", page.evaluate("""() =>
           __cameraPositions.some(p=>p.y===48 && p.z===62)"""))
         setting(page, "camera", "tactical")
+        # La fermeture des réglages recrée la scène à la prochaine image.
+        page.wait_for_function("""() =>
+          __cameraPositions.some(p=>p.y===115 && p.z===0.01 && p.up[2]===-1)""")
         check("caméra tactique active", page.evaluate("""() =>
           __cameraPositions.some(p=>p.y===115 && p.z===0.01 && p.up[2]===-1)"""))
         # Contrat interne historique du renderer, sans exposer cette caméra dans l'UI.
@@ -199,6 +202,8 @@ try:
           return p.y===24 && p.z>=60 && p.z<=80 && Number.isFinite(p.x);
         }"""))
         setting(page, "camera", "tv")
+        page.wait_for_function("""() =>
+          __cameraPositions.filter(p=>p.y===48).length>=2""")
         check("retour caméra TV après latérale", page.evaluate("""() =>
           __cameraPositions.filter(p=>p.y===48).length>=2"""))
         page.evaluate("render()")

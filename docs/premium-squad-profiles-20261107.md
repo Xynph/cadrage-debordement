@@ -21,6 +21,8 @@ La première CI sur `b1da6f9` a confirmé le parcours Effectif Linux (46 contrô
 
 Corrections : clics sur les réglages/fenêtres visibles, vérification exacte des trois qualités projetées, CSS PC limité aux largeurs à partir de 1100 px. Réception locale après correction : **UI02 91**, **direction artistique 663**, **WebGL 49** contrôles réussis ; aucune assertion WebGL, sauvegarde, ressource locale ou repli retirée. Le stockage des seules préférences de présentation du match est distingué du stockage carrière. Les tests de caméras historiques internes restent des appels au renderer, sans les proposer dans l'interface ni modifier son code. Les chargements initiaux du serveur Python local ont échoué plusieurs fois par délai ; ces essais ne comptent pas comme réussis. Les parcours complets ont ensuite passé sur le même `dist/` servi par HTTP Node local. Les workflows Linux conservent leur serveur autonome.
 
+La réception Linux de `cfccbfe` a ensuite révélé une course du test caméra tactique : la fermeture des réglages recrée la scène par `requestAnimationFrame`, et l'assertion pouvait précéder sa création. Le test attend maintenant la position réelle attendue avec son délai borné existant, avant la même assertion ; aucun critère n'est assoupli. Le HEAD corrigé exige à nouveau sa CI complète.
+
 Les tests de densité et de visibilité des actions ont échoué avant correction, puis sont passés. Le parcours du workflow `premium-squad.yml` qualifie aussi Chromium Linux et publie ses captures. La CI complète et le gate sur le SHA final, puis les sept jobs du main fusionné, sont à recevoir dans #73 ; aucune réussite distante n'est anticipée ici.
 
 ## Captures comparables
