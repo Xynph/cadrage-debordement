@@ -142,7 +142,7 @@ func _run() -> void:
 			_check(app.bridge.last_response_ok,"Native negotiation returns through UI")
 			var signed:bool=app.model.get("squad",[]).any(func(p):return p.id==candidate.id)
 			var response:Dictionary=app.model.meta.get("negotiation",{})
-			_check(signed== (response.get("status")=="ready"),"Only accepted negotiation adds recruited player")
+			_check(signed== (response.get("status")=="signed"),"Only confirmed negotiation adds recruited player")
 			_dismiss()
 		break
 	app._navigate("Composition")
