@@ -37,6 +37,18 @@ function roster(g){
   decisions:p.attributesV2?.decisions,skillMean:Object.values(p.skills||{}).reduce((s,v)=>s+v,0)/11,condition:p.condition
  })))`);
 }
+function teamRatings(g){
+ return read(g,\`S.clubs.map(c=>{
+  const s=buildSheet(c),map=new Map(c.players.map(p=>[p.id,p]));
+  const starters=s.lineup.filter(Boolean).map(id=>map.get(id));
+  const bench=s.bench.filter(Boolean).map(id=>map.get(id));
+  const avg=arr=>arr.length?Math.round(arr.reduce((n,p)=>n+roleNote(p),0)/arr.length*100)/100:null;
+  return {name:c.name,roster:c.players.length,lnr:c.players.filter(p=>p.lnrRatingsVersion===1).length,
+   startingPlayers:starters.length,benchPlayers:bench.length,xv:avg(starters),bench:avg(bench),
+   xvIds:starters.map(p=>p.id),rosterIds:c.players.map(p=>p.id)};
+ })\`);
+}
+
 test('All 47 zero-room identifiers come from active V12 tuples, without altering them',()=>{
  assert.equal(Object.keys(data.players).length,1592);
  assert.equal(zeros.length,47);
@@ -60,6 +72,7 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
  const outside=zeroIDs.filter(id=>!baseMap.has(id));
  const observations=new Map(topIDs.map(id=>[id,[]]));
  const seasons=[];
+ const teamSnapshots=[{season:1,clubs:teamRatings(g)}];
  let transfers=0,departures=0,retirements=0,otherExits=0;
  const exited=new Set();
  for(let year=1;year<=6;year++){
@@ -90,6 +103,7 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
   g.run('advanceSeason()');
   assert.equal(g.run('S.season'),year+1);
   g=roundtrip(g);
+  teamSnapshots.push({season:year+1,clubs:teamRatings(g)});
   const next=roster(g),nextMap=new Map(next.map(p=>[p.id,p]));
   for(const id of topIDs){
    const before=seasonMap.get(id),after=nextMap.get(id);
@@ -107,6 +121,22 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
   }
  }
  assert.equal(JSON.stringify(data.players),sourceSignature,'V12 source must never mutate');
+ assert.equal(teamSnapshots.length,7);
+ const trajectory=teamSnapshots.map((snapshot,index)=>{
+  const q=snapshot.clubs.map(c=>c.xv),prior=index?new Map(teamSnapshots[index-1].clubs.map(c=>[c.name,c])):null;
+  return {season:snapshot.season,clubCount:snapshot.clubs.length,xvMean:+(q.reduce((a,b)=>a+b,0)/q.length).toFixed(2),
+   xvMin:Math.min(...q),xvMax:Math.max(...q),
+   originalPlayers:snapshot.clubs.reduce((s,c)=>s+c.lnr,0),
+   totalPlayers:snapshot.clubs.reduce((s,c)=>s+c.roster,0),
+   rosterInflow:prior?snapshot.clubs.reduce((s,c)=>s+c.rosterIds.filter(id=>!prior.get(c.name).rosterIds.includes(id)).length,0):0,
+   rosterOutflow:prior?snapshot.clubs.reduce((s,c)=>s+prior.get(c.name).rosterIds.filter(id=>!c.rosterIds.includes(id)).length,0):0,
+   incompleteSheets:snapshot.clubs.filter(c=>c.startingPlayers!==15||c.benchPlayers!==8).length};
+ });
+ console.log('RUGBY_REAL_V15_NATIVE_TOP14_SQUAD_EVOLUTION '+JSON.stringify({years:6,seasonSnapshots:trajectory,
+  clubStartEnd:teamSnapshots[0].clubs.map(c=>{const last=teamSnapshots.at(-1).clubs.find(x=>x.name===c.name);
+   return {club:c.name,initialXV:c.xv,lastXV:last.xv,xvDelta:+(last.xv-c.xv).toFixed(2),
+    initialBench:c.bench,lastBench:last.bench,initialOriginal:c.lnr,lastOriginal:last.lnr};}),
+  note:'Native TOP14 only, team quality after save roundtrips; no playable PRO D2 seasons'}));
  const profiles=topIDs.map(id=>{
   const history=observations.get(id);
   const first=baseMap.get(id);
