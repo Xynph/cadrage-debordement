@@ -251,3 +251,7 @@ Comparaison contrôlée : 80 matchs par cas, qualités uniformes à 75, côté t
 ## Limites actuelles
 
 Joueurs et finances fictifs. Départages du championnat et prolongations simplifiés. Pas de blessures en cours de rencontre, protocole commotion, génération de rouges directs, compétitions européennes, règles JIFF ou promotion/relégation. La polyvalence au-delà de la famille de poste n’est pas simulée. Le terrain 2D illustre les actions sans simulation physique complète. Les sauvegardes restent locales au navigateur pour la version web, ou au dossier de données pour la version Windows, sans synchronisation en ligne.
+
+### Épreuve Windows native Godot — novembre 2026
+
+Un prototype Godot autonome est désormais développé pour éprouver la direction artistique et le raccord avec la simulation avant le portage Steam : Bureau, Club avec60 photographies, Effectif/Fiche et scène de match native. Aucun navigateur nécessaire ; Godot et Node sont embarqués. Le catalogue présente30 territoires anonymisés, mais la carrière raccordée reste le mode historique à14 clubs. La carrière complète30 clubs/deux divisions et les montées/descentes conservent leur chantier distinct. Voir le [rapport illustré et les limites vérifiées](docs/godot-prototype-20261107.md). Cette épreuve ne constitue pas une publication Steam.
