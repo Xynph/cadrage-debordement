@@ -38,6 +38,8 @@ L'audit d'architecture moteur détermine les raccordements exacts avant tout cha
 
 ## Distribution et réception
 
+**Décision ultérieure prioritaire : version commerciale Steam.** Léo refuse une fenêtre Chrome/Edge et choisit par QCM un prototype Godot natif avant la poursuite du portage. Le ZIP Go/Edge audité reste une preuve technique de l'ancien lanceur, pas la cible de la version Steam. Les deux divisions complètes restent l'objectif de simulation ; leur implémentation attend la validation du prototype natif. Voir `2026-11-07-godot-native-prototype-design.md`. Aucune installation Blender demandée ; Godot est retenu pour l'épreuve native, sans promesse de publication Steam ou de migration complète déjà réalisée.
+
 ZIP Windows 10/11 x64 contenant un exécutable et toutes les ressources, sans Node/Python/Go à installer pour le joueur. Stockage utilisateur hors dossier exécutable, erreurs visibles, sauvegarde et reprise vérifiées sur Windows réel avec profil temporaire. Le lanceur existant est la base retenue ; sa fenêtre d'application et ses flux doivent être réellement réceptionnés. Aucun auto-release activé. Provenance et empreintes des ressources/ZIP conservées, licences des images livrées et consultables.
 
 Branches réservées et PR, CI sur HEAD exact, un intégrateur, gate officiel et sept jobs post-fusion avant annonce d'intégration. Revues indépendantes pour les changements importants. Les résultats en attente et les tests non exécutés restent explicitement identifiés.
