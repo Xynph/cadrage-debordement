@@ -80,3 +80,63 @@ Le banc a été étendu à `roleNote(p)`, le score effectivement calculé à par
 Sur les **13 profils** observés pendant une ou plusieurs intersaisons, `rating` interne reste constant mais la **note au poste diminue chez 8 joueurs**, les **5 autres restant stables** en note entière. Aucune progression de note au poste dans cette cohorte vieillissante. Exemple `lnr:13735` : `rating` 76→76, moyenne des 11 compétences −2,247, **note au poste −3**, vitesse −10,4 ; `lnr:603` : note au poste −2 en deux ans. **Le déclin influence donc réellement la force de l'équipe et les sélections** : le problème initial de « déclin absent » était une interprétation erronée de la seule variable `rating`. Reste uniquement un décalage numérique possible si un écran ou une évaluation exploite `rating` brut plutôt que `roleNote`. Aucune intervention du producteur BDD sur ce sujet réservé.
 
 **Verdict scientifique du lot :** aucun des 47 dossiers ne mérite une hausse arbitraire ; les simulations d'âge corroborent un déclin rapide du physique après 30 ans, une meilleure conservation mentale et des notes de poste qui évoluent en carrière. Les écarts TOP14/PRO D2 sont conservés, aucune BDD active réécrite. Le moteur à deux divisions n'existant pas en carrière jouable, aucune assertion de taux réel de montée/descente n'est formulée.
+
+
+---
+
+## Extension approfondie : véritable BDD active, recrutement, départs et hiérarchie sportive
+
+### Méthode distincte du candidat V12
+
+Le nouveau banc `tests/rugby-real-division-roster-sensitivity-v15-20261107.cjs` recharge les **1 592 profils de la BDD ACTIVE** `dist/lnr-ratings-v12.js` dans le laboratoire existant `tools/rugby-real-v12/native.cjs`. Pour chaque ID, il substitue les 36 attributs, **les 11 compétences réellement actives** et la note entière de production ; il ne réutilise pas le JSON candidat pour calculer les niveaux des équipes. Les 30 clubs et leurs identifiants restent inchangés. La fonction de feuille à 23 `buildSheet`, la note au poste `roleNote` et les rencontres `createRugbyMatch/advanceRugby` sont celles du jeu. Les transferts sont des **copies de laboratoire**, jamais des transferts réels de carrière. Donneurs exclus de l'opposition pour éviter qu'un joueur se retrouve des deux côtés ; postes respectés et 15 titulaires + 8 remplaçants contrôlés.
+
+**Premier run** [#42372718021](https://github.com/Xynph/cadrage-debordement/actions/runs/42372718021) : 7 tests PASS et **240 matchs** ; extension de robustesse [#42372855827](https://github.com/Xynph/cadrage-debordement/actions/runs/42372855827) : 7 tests PASS, **576 matchs**. Extension appariée [#42373101182](https://github.com/Xynph/cadrage-debordement/actions/runs/42373101182) : 8 tests PASS, **576 matchs de mouvements + 288 confrontations interdivision**. Ces essais sont des campagnes successives, pas 1 680 matchs indépendants ; les mêmes cas sont rejoués pour gagner en précision.
+
+### Ce que mesurent les compositions réelles
+
+| Cohorte de XV titulaires, calculée avec notes actives | Nombre de clubs complets | Moyenne | Minimum | Maximum |
+| --- | ---: | ---: | ---: | ---: |
+| TOP14 | 14 / 14 | **78,45** | 77,73 | 80,33 |
+| PRO D2 | 11 / 16 | **70,31** | 70,00 | 70,87 |
+| Écart des moyennes de XV | — | **8,14** | — | — |
+
+Les **cinq feuilles PRO D2 non complètes dans ce laboratoire** sont un problème de disponibilité par *poste simulé* (15+8), non une preuve que cinq effectifs officiels LNR manquent de joueurs. Les groupes de poste historiques sont approximatifs et il ne faut pas en profiter pour réécrire le master. Le TOP14 a des XV beaucoup plus resserrés entre clubs qu'une hiérarchie sportive forte ne le supposerait (écart max/min **2,60**), et la PRO D2 encore davantage (**0,87**) : **piste de calibration à examiner par poste et preuves**, pas permission de rajouter arbitrairement un bonus de club.
+
+### Recruter le bon niveau plutôt que gonfler toute la division
+
+Référence : équipe complète de PRO D2 la mieux notée dans le banc (Provence Rugby), 70,87 de moyenne XV. Recrues **ordinaires** plafonnées au 75e percentile de la distribution TOP14 du **même poste** ; recrues « très fortes » sans ce plafond pour mesurer une stratégie plus coûteuse, **sans coût salarial simulé**. Les joueurs proposés sont identifiés dans les logs et ne sont pas appliqués.
+
+| Composition du promu-proxy | Moyenne XV | Contre TOP14 médian : victoires | Marge |
+| --- | ---: | ---: | ---: |
+| Sans recrue | 70,87 | **20,83 %** | −6,02 |
+| +2 recrues ordinaires | 71,87 | 27,08 % | −4,46 |
+| +5 recrues ordinaires | 73,27 | 29,17 % | −4,27 |
+| +2 recrues très fortes | 72,67 | 29,17 % | −4,60 |
+| +5 recrues très fortes | 74,80 | 39,58 % | −1,08 |
+
+**Effets appariés sur 24 graines × deux domiciles** (IC exploratoires à 95 % regroupés par graine) : cinq ordinaires **+1,75** point de marge [−0,83 ; +4,33] ; cinq très fortes **+4,94** [**+1,92 ; +7,96**]. Cela soutient le comportement visé : un promu peut améliorer ses chances sans gagner mécaniquement contre le TOP14 moyen. L'effet statistique des recrues ordinaires est incertain ; ne pas présenter ces intervalles comme des garanties sur une saison complète.
+
+Le relégué-proxy (équipe TOP14 au XV le moins fort, Clermont) part de **77,73** points contre un adversaire médian PRO D2 : **70,83 % de victoires**, marge +6,33. Après cinq départs de titulaires : XV **76,00**, **60,42 % de victoires**, marge +4,21, soit delta apparié **−2,12** [−5,84 ; +1,59]. Après cinq départs de remplaçants : XV titulaire identique **77,73**, banc de 73,88 à 72,75, delta de marge **−0,23** [−1,02 ; +0,56]. Ce dernier scénario mesure une rencontre fraîche, **pas** les conséquences accumulées d'une rotation, fatigue ou blessure sur une saison entière ; les six saisons natives ci-dessous complètent mais ne remplacent pas un test de saison appariée après modification du banc.
+
+### Robustesse : 9 oppositions croisées, 288 matchs supplémentaires
+
+Trois PRO D2 de qualités distinctes (Agen, Angoulême, Provence) affrontent trois TOP14 (Clermont, Lyon, Toulouse) sur **16 graines × deux domiciles** chacune. Les neuf marges PRO D2 sont négatives (−2,59 à −6,97) : le niveau de division existe. Mais l'ordre des résultats n'est **pas monotone** selon la seule moyenne XV : face à ces trois adversaires, Toulouse (80,33) ne les écrase pas davantage que Lyon (78,33), malgré sa note de XV supérieure. Ce constat peut provenir des combinaisons d'attributs, postes, tactiques, hasard de graines et du poids du moteur ; **il ne prouve pas qu'un joueur toulousain ou lyonnais est mal noté**. Ce signal doit être étudié par un audit technique autorisé séparément du moteur ou par des échantillons plus vastes. Ne pas corriger des identités ou un club entier pour forcer le classement attendu.
+
+### Vraie carrière TOP14 : six saisons, renouvellement de l'effectif et sauvegardes
+
+Le test natif réutilise 26 journées × 7 rencontres × 6 saisons, soit **1 092 matchs réguliers**, plus phases finales ; six exports/imports de sauvegardes natives. Le jeu démarre déjà avec **`aiRosterActive()` actif** ; un test séparé qui le « réactivait » doublait inutilement la même campagne et a été retiré. Le test suit directement les rapports `S.aiRoster.reports` et les lectures **après l'intersaison**, étape pendant laquelle `settleContracts()` enregistre aussi les prolongations.
+
+Parmi les **13 clubs contrôlés par l'IA** (hors club du manager laissé sans décision), la moyenne XV est **78,44 au début et 78,70 après six intersaisons** ; la profondeur de banc moyenne évolue elle aussi. Le club du manager laissé sans renouvellement ni intervention passe séparément de XV **76,40 à 70,93** et de **50 à 23 joueurs** : **ne surtout pas assimiler cet effet de non-gestion à une dérive automatique de toute la BDD**. Globalement les 14 clubs conservent des feuilles complètes dans ce scénario. Les profils initiaux LNR encore présents passent de **805 à 349** au début de la septième saison, par renouvellement des générations, contrats, retraites et transferts ; leur disparition de la première liste n'est pas une perte d'identité du catalogue source.
+
+Les rapports IA comptent au moins sur les saisons suivies : **1 415 opérations de prolongation, 391 libérations, 35 retraites**, et les recrutements/promotions sont mesurés par saison. Ce sont des **événements**, pas autant de joueurs uniques. Les événements du début de S7 doivent être comptabilisés à part des six saisons achevées pour éviter toute incohérence. Le dernier run GitHub vérifie cette séparation.
+
+### Arbitrages retenus
+
+1. **Aucune augmentation de notes ou potentiels de production** : l'écart moyen entre divisions est déjà sensible ; ajouter un bonus TOP14/malus PRO D2 global serait arbitraire. Les cinq recrutements ordinaires renforcent le promu-proxy, les départs pénalisent le relégué-proxy dans le sens souhaité, mais les bandes de confiance limitent les conclusions causales.
+2. **Piste BDD prioritaire : diversité intra-division**, notamment PRO D2 et entre XI/XV titulaires et banc ; recueillir des preuves individuelles/postes et éviter d'imposer un classement par des bonus collectifs à tous les joueurs.
+3. **Piste gameplay distincte : concordance note XV / moteur** lorsque des équipes plus fortes sur le papier produisent des résultats non monotones. Hors du périmètre de ce producteur ; pas de modification moteur ni coefficient tactique.
+4. **Conserver les 1 592 profils et les contrats existants**. Les propositions de mouvements sont des cas de laboratoire, non des engagements sportifs réels, et ne modifient pas la composition du mod.
+
+Aucune carrière native senior à deux divisions avec montées/relégations n'existe sur la branche de référence ; aucune statistique de maintien ou remontée réelle n'est avancée. Le jeu repose sur des notes estimées, non des notations officielles. Les salaires et le coût des joueurs « recrutés » du laboratoire ne sont pas soumis aux règles de marché en carrière ; les rapports de recrutements IA natifs couvrent ce comportement séparément.
+
+**Périmètre de la PR #389 inchangé** : trois tests nouveaux, ce rapport et le workflow dédié. Aucun `dist/**`, master, LNR, identité, effectif, calendrier, moteur, sauvegarde, interface, MATCH3D ni autre branche modifié. DRAFT exclusivement, **aucune fusion**. Les verdicts du dernier HEAD doivent être reçus indépendamment de ceux cités ci-dessus.
