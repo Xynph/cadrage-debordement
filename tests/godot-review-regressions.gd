@@ -195,7 +195,7 @@ func _bench() -> void:
 	for player in app.model.live.reserves:
 		if player.id == option.inIds[0]: incoming = player; break
 	panel.tab = "Banc"
-	panel.selected_out = str(option.outId)
+	panel.selected_slot = int(option.slot)
 	panel.presence_key = ""
 	app._update_match()
 	_check(not _named_button(panel.side, incoming.name).disabled, "Paused bench enables a permitted entrant")
@@ -206,7 +206,7 @@ func _bench() -> void:
 	_check(_named_button(panel.side, incoming.name) == stable_button, "Unchanged running bench retains controls across ticks")
 	await _command("pause", {"paused":true})
 	_check(not _named_button(panel.side, incoming.name).disabled, "Pause re-enables entrant without a tab or selection click")
-	_check(panel.tab == "Banc" and panel.selected_out == str(option.outId), "Pause and resume retain the bench tab and selected outgoing player")
+	_check(panel.tab == "Banc" and panel.selected_slot == int(option.slot), "Pause and resume retain the bench tab and selected outgoing position")
 	# Permission-only projection change, keeping actual players and pause unchanged.
 	var actual: Dictionary = app.model
 	var restricted: Dictionary = actual.duplicate(true)
@@ -217,7 +217,7 @@ func _bench() -> void:
 	_check(not _named_button(panel.side, incoming.name).disabled, "Restored permission re-enables the entrant")
 	await _command("delegate")
 	_check(_named_button(panel.side, incoming.name).disabled, "Finished match disables entrant without another selection")
-	_check(panel.tab == "Banc" and panel.selected_out == str(option.outId), "Finish retains bench context")
+	_check(panel.tab == "Banc" and panel.selected_slot == int(option.slot), "Finish retains bench context")
 	await _command("finish_round")
 	_check(_date(app.root_content).text != initial_date and _date(app.root_content).text.contains("JOURNÉE 2"), "First round validation refreshes the header date in Match")
 	await _command("auto_lineup")
@@ -303,7 +303,7 @@ func _focus() -> void:
 	await _command("pause", {"paused":true})
 	var panel: Node = app.match_screen
 	panel.tab = "Banc"
-	panel.selected_out = str(app.model.live.substitutions[0].outId)
+	panel.selected_slot = int(app.model.live.substitutions[0].slot)
 	panel.presence_key = ""
 	app._update_match()
 	for i in 5: await process_frame

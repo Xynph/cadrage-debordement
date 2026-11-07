@@ -12,7 +12,7 @@ var events: Label
 var stats: Label
 var side: VBoxContainer
 var tab := "Direct"
-var selected_out := ""
+var selected_slot := -1
 var presence_key := ""
 var model: Dictionary = {}
 
@@ -113,7 +113,7 @@ func update_frame(value:Dictionary) -> void:
 		score.text="%s — %s"%[G.n(scores[0]),G.n(scores[1])]
 		clock.text="%s min"%G.n(live.get("minute",0))
 		if live.get("finished",false):clock.text="TERMINÉ"
-		elif live.get("halftime",false):clock.text="MI-TEMPS"
+		elif live.get("atBreak",false):clock.text="MI-TEMPS"
 		play.text="REPRENDRE" if live.get("paused",false) else "PAUSE"
 		play.disabled=live.get("finished",false)
 		finish.text="VALIDER LA JOURNÉE  →"
@@ -131,8 +131,9 @@ func _side() -> void:
 			var players:Array=[]
 			for player in group:
 				if player is Dictionary:players.append([player.get("id"),player.get("name")])
+				else:players.append(null)
 			identities.append(players)
-		var key:=JSON.stringify([identities,selected_out,live.get("paused",false),live.get("finished",false),live.get("substitutions",[])])
+		var key:=JSON.stringify([identities,selected_slot,live.get("paused",false),live.get("finished",false),live.get("substitutions",[])])
 		if key==presence_key:return
 		presence_key=key
 	for child in side.get_children():
@@ -174,21 +175,25 @@ func _bench(live:Dictionary) -> void:
 	if not live.get("paused",false):side.add_child(G.wrap("Mettez la rencontre en pause pour préparer le changement.",12,G.GOLD))
 	var players:Array=live.get("lineup",[])
 	var reserves:Array=live.get("reserves",[])
-	for p in players:
-		if not p is Dictionary:continue
-		var b:=G.button(str(p.get("name","Joueur")),func():selected_out=str(p.id);presence_key="";_side())
+	for slot in players.size():
+		var p:Variant=players[slot]
+		var b:=G.button(str(p.get("name","Joueur")) if p is Dictionary else "%d · Poste vacant"%(slot+1),func():selected_slot=slot;presence_key="";_side())
 		b.alignment=HORIZONTAL_ALIGNMENT_LEFT
-		if str(p.get("id",""))==selected_out:b.add_theme_stylebox_override("normal",G.T.box(Color("493b2d"),4,G.GOLD))
+		for option in live.get("substitutions",[]):
+			if option.get("slot")==slot:b.tooltip_text="%d · %s"%[slot+1,option.get("label","")]
+		if slot==selected_slot:b.add_theme_stylebox_override("normal",G.T.box(Color("493b2d"),4,G.GOLD))
 		side.add_child(b)
-	if selected_out.is_empty():return
+	if selected_slot<0 or selected_slot>=players.size():return
 	var allowed:Array=[]
 	for option in live.get("substitutions",[]):
-		if str(option.get("outId",""))==selected_out:allowed=option.get("inIds",[])
+		if option.get("slot")==selected_slot:allowed=option.get("inIds",[])
+	var out:Variant=players[selected_slot]
+	var out_id:Variant=out.get("id") if out is Dictionary else null
 	side.add_child(G.separator())
 	side.add_child(G.label("FAIRE ENTRER",12,G.GOLD))
 	for p in reserves:
 		if not p is Dictionary:continue
-		var b:=G.button(str(p.get("name","Joueur")),func():app._command("substitute",{"outId":selected_out,"inId":p.id}))
+		var b:=G.button(str(p.get("name","Joueur")),func():app._command("substitute",{"slot":selected_slot,"outId":out_id,"inId":p.id}))
 		b.disabled=p.get("id") not in allowed or not live.get("paused",false) or live.get("finished",false)
 		side.add_child(b)
 

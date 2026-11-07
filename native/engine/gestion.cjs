@@ -6,7 +6,7 @@ module.exports=function nativeGestion(command,p){
   requireThat(!S.live&&S.phase!=='ended','Composition indisponible.');requireThat(Number.isInteger(p.slot)&&p.slot>=0&&p.slot<23,'Poste invalide.');
   const eligible=(player,slot)=>slot<15?slotEligible(player,slot):benchEligible(player,slot-15),all=[...S.lineup,...S.reserves],candidate=p.playerId===null?null:player(p.playerId);
   requireThat(p.playerId===null||candidate&&!candidate.injury&&eligible(candidate,p.slot),'Joueur absent, blessé ou non qualifié.');
-  const previous=all.indexOf(p.playerId),out=all[p.slot];
+  const previous=p.playerId===null?-1:all.indexOf(p.playerId),out=all[p.slot];
   if(previous>=0&&previous!==p.slot){const old=player(out);all[previous]=old&&!old.injury&&eligible(old,previous)?out:null;}
   all[p.slot]=p.playerId;S.lineup=all.slice(0,15);S.reserves=all.slice(15);return;
  }
@@ -34,7 +34,14 @@ module.exports=function nativeGestion(command,p){
  }
  if(command==='next_season'){requireThat(p.confirmed===true&&S.phase==='ended'&&!S.live,'Confirmez le passage à la saison suivante après la fin des compétitions.');advanceSeason();return;}
  if(command==='substitute'){
-  const l=S.live;requireThat(l&&l.paused&&!l.finished&&!presentationPending(l),'Remplacement indisponible : mettez le match en pause.');const slot=l.sheets[l.userSide].on.indexOf(p.outId);requireThat(slot>=0&&eligibleChanges(l,l.userSide,slot).some(x=>x.id===p.inId),'Changement non autorisé pour ces joueurs.');requireThat(makeSub(l,l.userSide,slot,p.inId),'Remplacement refusé.');syncMatchPresentation(l);return;
+  const l=S.live;requireThat(l&&l.paused&&!l.finished&&!presentationPending(l),'Remplacement indisponible : mettez le match en pause.');
+  const on=l.sheets[l.userSide].on,explicitSlot=Object.hasOwn(p,'slot');
+  requireThat(explicitSlot||typeof p.outId==='string'&&p.outId.length>0,'Précisez le poste du remplacement.');
+  const slot=explicitSlot?p.slot:on.indexOf(p.outId);
+  requireThat(Number.isInteger(slot)&&slot>=0&&slot<15,'Poste de remplacement invalide.');
+  requireThat(!Object.hasOwn(p,'outId')||on[slot]===p.outId,'Le joueur de ce poste a changé.');
+  requireThat(eligibleChanges(l,l.userSide,slot).some(x=>x.id===p.inId),'Changement non autorisé pour ces joueurs.');
+  requireThat(makeSub(l,l.userSide,slot,p.inId),'Remplacement refusé.');syncMatchPresentation(l);return;
  }
  throw Error('Commande de gestion inconnue.');
 };

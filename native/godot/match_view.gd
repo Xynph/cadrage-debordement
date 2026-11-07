@@ -69,7 +69,7 @@ func apply_frame(live: Dictionary) -> void:
 			for entry: Dictionary in _actors.values():
 				if entry.side == side:
 					_recolor(entry.model, side)
-	_paused = live.get("paused", false) or live.get("finished", false) or live.get("halftime", false)
+	_paused = live.get("paused", false) or live.get("finished", false) or live.get("atBreak", false)
 	var present: Dictionary = {}
 	for player: Dictionary in scene.players:
 		var id := str(player.get("id", ""))
