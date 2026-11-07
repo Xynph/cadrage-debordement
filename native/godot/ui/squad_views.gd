@@ -172,7 +172,8 @@ static func preparation(app:Control) -> Control:
 		var list:=G.scroll(card)
 		for option in tactics.get(pair[1],[]):
 			var b:=G.button(str(option.label).to_upper(),func():
-				var data:Dictionary={"attack":tactics.get("attack","equilibre"),"defense":tactics.get("defense","equilibre")}
+				var current:Dictionary=app.model.get("tactics",{})
+				var data:Dictionary={"attack":current.get("attack","equilibre"),"defense":current.get("defense","equilibre")}
 				data[pair[0]]=option.id
 				app._command("set_tactics",data))
 			if tactics.get(pair[0])==option.id:b.add_theme_stylebox_override("normal",G.T.box(app.accent.darkened(.65),4,app.accent))
@@ -217,11 +218,14 @@ static func market(app:Control) -> Control:
 	return page
 
 static func contract(app:Control,p:Dictionary,recruiting:bool) -> void:
+	app._clear_dialogs()
 	var d:=ConfirmationDialog.new()
 	d.title="Offre à "+str(p.name)
 	d.dialog_text=""
 	var fields:=G.v(8)
-	fields.add_child(G.wrap("Salaire hebdomadaire et durée proposés. Le joueur peut refuser ou faire une contre-offre.",13))
+	# A zero-width autowrap label inflates the initial minimum height of Window.
+	# Two explicit lines give the dialog a bounded minimum before its first layout.
+	fields.add_child(G.label("Salaire hebdomadaire et durée proposés.\nLe joueur peut refuser ou faire une contre-offre.",13,G.MUTED))
 	var salary:=SpinBox.new()
 	var quote:Dictionary=p if recruiting else p.get("renewal",{})
 	salary.min_value=1000
@@ -238,6 +242,7 @@ static func contract(app:Control,p:Dictionary,recruiting:bool) -> void:
 	fields.add_child(years)
 	fields.add_child(G.label(("Coût d'acquisition : " if recruiting else "Prime de prolongation : ")+G.euros(quote.get("fee",0)),12,G.MUTED))
 	d.get_ok_button().text="SOUMETTRE L'OFFRE"
+	d.get_cancel_button().text="ANNULER"
 	d.add_child(fields)
 	d.confirmed.connect(func():app._command("recruit" if recruiting else "extend_contract",{"playerId":p.id,"salary":int(salary.value),"years":int(years.value),"confirmed":true});d.queue_free())
 	d.canceled.connect(d.queue_free)

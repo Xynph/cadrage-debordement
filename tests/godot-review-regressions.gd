@@ -51,10 +51,234 @@ func _speed(node: Node) -> OptionButton:
 		if found != null: return found
 	return null
 
+func _confirm() -> void:
+	for child in app.get_children():
+		if child is ConfirmationDialog and child.visible:
+			child.confirmed.emit()
+			return
+
+func _date(node: Node) -> Label:
+	if node is Label and node.text.begins_with("SAISON "): return node
+	for child in node.get_children():
+		var found := _date(child)
+		if found != null: return found
+	return null
+
+func _named_button(node: Node, text: String) -> Button:
+	for button in _buttons(node):
+		if button.text == text: return button
+	return null
+
+func _import_text(text: String) -> void:
+	var path := OS.get_environment("CD_GODOT_DATA_DIR").path_join("decision-import.json")
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(text)
+	file.close()
+	app.import_mode = true
+	app._file_selected(path)
+	_confirm()
+
+func _decisions() -> void:
+	app._navigate("Bureau")
+	app._command("save")
+	app.create_career(1)
+	_confirm()
+	_check(app.waiting and app.last_command == "save" and app.queued_action.is_empty(), "Business command refuses a second decision without clearing the active command")
+	_check(not app.last_error.is_empty() and app.status.text.contains("NON EFFECTUÉE"), "Business refusal is visible immediately")
+	_check(app.pending_route.is_empty(), "Refused creation cannot install a pending route")
+	await _wait()
+	_check(int(app.model.club.id) == 0, "Refused creation is never executed later")
+	_dismiss_errors()
+	app._navigate("Match")
+	await _command("begin_match")
+	app._command("tick", {"steps":1})
+	app._command("pause", {"paused":true})
+	var accepted: Dictionary = app.queued_action.duplicate(true)
+	_check(accepted.get("command") == "pause", "One human action is accepted behind a tick")
+	app._command("save")
+	_check(app.waiting and app.last_command == "tick" and app.queued_action == accepted, "Saturated queue preserves the tick and its accepted action")
+	_check(not app.last_error.is_empty() and app.status.text.contains("NON EFFECTUÉE"), "Saturated queue refuses the next action visibly")
+	await _wait()
+	_check(app.model.live.paused, "Accepted pause executes after the tick")
+	_dismiss_errors()
+	await _command("pause", {"paused":false})
+	var responses: Array = []
+	var observer := func(_value: Dictionary): responses.append(app.route)
+	app.bridge.model_changed.connect(observer)
+	app._command("tick", {"steps":1})
+	_import_text("{}")
+	_check(app.route == "Match" and app.pending_route.is_empty(), "Queued import does not install navigation before dispatch")
+	await _wait()
+	app.bridge.model_changed.disconnect(observer)
+	_check(responses.size() >= 2 and responses[0] == "Match", "Prior tick response cannot consume the queued import route")
+	_check(app.route == "Match" and app.pending_route.is_empty() and not app.last_error.is_empty(), "Refused queued import keeps the current route and clears only its pending navigation")
+	_dismiss_errors()
+	await _command("export")
+	var exported: String = app.model.meta.exportText
+	_import_text(exported)
+	_check(app.route == "Match", "Accepted import waits for its own response before navigation")
+	await _wait()
+	_check(app.route == "Bureau", "Successful import applies its own target route")
+
+func _tactics() -> void:
+	app._navigate("Préparation")
+	var tactics: Dictionary = app.model.tactics
+	var attack: Dictionary = {}
+	var defense: Dictionary = {}
+	for option in tactics.attacks:
+		if option.id != tactics.attack: attack = option; break
+	for option in tactics.defenses:
+		if option.id != tactics.defense: defense = option; break
+	var attack_button := _named_button(app.body, str(attack.label).to_upper())
+	var defense_button := _named_button(app.body, str(defense.label).to_upper())
+	_check(attack_button != null and defense_button != null, "Both tactical axes expose a real alternative")
+	attack_button.pressed.emit()
+	defense_button.pressed.emit()
+	_check(app.waiting and app.queued_action.is_empty() and not app.last_error.is_empty(), "Rapid second tactical axis is explicitly refused until the first acknowledgement")
+	await _wait()
+	_check(app.model.tactics.attack == attack.id and app.model.tactics.defense == tactics.defense, "Refused old tactical payload cannot overwrite either axis")
+	_dismiss_errors()
+	defense_button = _named_button(app.body, str(defense.label).to_upper())
+	defense_button.pressed.emit()
+	await _wait()
+	_check(app.model.tactics.attack == attack.id and app.model.tactics.defense == defense.id, "Fresh defense decision preserves the acknowledged attack")
+
+func _bench() -> void:
+	app._navigate("Match")
+	var panel: Node = app.match_screen
+	var viewport: Node = app.match_view.get_parent()
+	var initial_date: String = _date(app.root_content).text
+	await _command("begin_match")
+	await _command("pause", {"paused":true})
+	var option: Dictionary = {}
+	for choice in app.model.live.substitutions:
+		if not choice.inIds.is_empty(): option = choice; break
+	_check(not option.is_empty(), "Real match offers a qualified substitution")
+	if option.is_empty(): return
+	var incoming: Dictionary = {}
+	for player in app.model.live.reserves:
+		if player.id == option.inIds[0]: incoming = player; break
+	panel.tab = "Banc"
+	panel.selected_out = str(option.outId)
+	panel.presence_key = ""
+	app._update_match()
+	_check(not _named_button(panel.side, incoming.name).disabled, "Paused bench enables a permitted entrant")
+	await _command("pause", {"paused":false})
+	_check(_named_button(panel.side, incoming.name).disabled, "Resume disables entrant without a tab or selection click")
+	var stable_button := _named_button(panel.side, incoming.name)
+	await _command("tick", {"steps":1})
+	_check(_named_button(panel.side, incoming.name) == stable_button, "Unchanged running bench retains controls across ticks")
+	await _command("pause", {"paused":true})
+	_check(not _named_button(panel.side, incoming.name).disabled, "Pause re-enables entrant without a tab or selection click")
+	_check(panel.tab == "Banc" and panel.selected_out == str(option.outId), "Pause and resume retain the bench tab and selected outgoing player")
+	# Permission-only projection change, keeping actual players and pause unchanged.
+	var actual: Dictionary = app.model
+	var restricted: Dictionary = actual.duplicate(true)
+	restricted.live.substitutions = []
+	panel.update_frame(restricted)
+	_check(_named_button(panel.side, incoming.name).disabled, "Permission-only change immediately disables the entrant")
+	panel.update_frame(actual)
+	_check(not _named_button(panel.side, incoming.name).disabled, "Restored permission re-enables the entrant")
+	await _command("delegate")
+	_check(_named_button(panel.side, incoming.name).disabled, "Finished match disables entrant without another selection")
+	_check(panel.tab == "Banc" and panel.selected_out == str(option.outId), "Finish retains bench context")
+	await _command("finish_round")
+	_check(_date(app.root_content).text != initial_date and _date(app.root_content).text.contains("JOURNÉE 2"), "First round validation refreshes the header date in Match")
+	await _command("auto_lineup")
+	if not app.model.selection.valid: await _command("promote_cover", {"confirmed":true})
+	await _command("begin_match")
+	await _command("delegate")
+	await _command("finish_round")
+	_check(_date(app.root_content).text.contains("JOURNÉE 3"), "Second round validation refreshes the date again")
+	_check(app.match_screen == panel and app.match_view.get_parent() == viewport, "Both date changes retain the actual match SubViewport")
+
+func _modal() -> void:
+	app._navigate("Recrutement")
+	for dimensions in [Vector2i(1440,900),Vector2i(1920,1080)]:
+		root.size = dimensions
+		for i in 5: await process_frame
+		app.SquadViews.contract(app, app.model.market[0], true)
+		for i in 5: await process_frame
+		for child in app.get_children():
+			if child is ConfirmationDialog and child.visible:
+				var client := Rect2(Vector2.ZERO, root.get_visible_rect().size)
+				var rect := Rect2(Vector2(child.position),Vector2(child.size))
+				_check(client.encloses(rect), "Contract dialog fits client at " + str(dimensions))
+				for button in [child.get_ok_button(),child.get_cancel_button()]:
+					button.grab_focus()
+					_check(button.has_focus(), "Contract keyboard focus reaches confirmation/cancel")
+					var button_rect := Rect2(Vector2(child.position) + button.get_global_rect().position,button.size)
+					_check(button.is_visible_in_tree() and client.encloses(button_rect), "Contract confirmation/cancel is visible inside client at " + str(dimensions))
+				if DisplayServer.get_name() != "headless":
+					await RenderingServer.frame_post_draw
+					root.get_texture().get_image().save_png(OS.get_environment("CD_GODOT_DATA_DIR").path_join("contract-" + str(dimensions.x) + ".png"))
+		_dismiss_errors()
+		await process_frame
+		for kind in ["notice", "confirmation", "recovery", "credits", "settings", "menu"]:
+			match kind:
+				"notice": app.notice("Information", "Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessayez après sa réponse.")
+				"confirmation": app.confirm("Confirmer", "La carrière importée remplacera celle du profil. Le moteur la vérifiera avant de l'appliquer.", func(): pass)
+				"recovery": app.recover_profile()
+				"credits": app._credits()
+				"settings": app.settings()
+				"menu": app.pause_menu()
+			for i in 5: await process_frame
+			_dialog_bounds(kind + " " + str(dimensions))
+			_dismiss_errors()
+			await process_frame
+
+func _dialog_bounds(context: String) -> void:
+	var client := Rect2(Vector2.ZERO, root.get_visible_rect().size)
+	for child in app.get_children():
+		if child is AcceptDialog and child.visible and child != app.file_dialog:
+			_check(client.encloses(Rect2(Vector2(child.position),Vector2(child.size))), context + " dialog fits the client")
+			var text: Label = child.get_label()
+			_check(text.get_minimum_size().x <= text.size.x + 1, context + " message fits its label width")
+			for button in child.find_children("*", "Button", true, false):
+				if button.is_visible_in_tree():
+					_check(client.encloses(Rect2(Vector2(child.position) + button.get_global_rect().position,button.size)), context + " action button fits the client")
+
+func _scroll_focus(scroll: ScrollContainer, context: String) -> void:
+	scroll.scroll_vertical = 0
+	for i in 5: await process_frame
+	var target: Button = null
+	for button in _buttons(scroll):
+		if not button.disabled: target = button
+	_check(target != null, context + " has an accessible focus target")
+	if target == null: return
+	target.grab_focus()
+	for i in 5: await process_frame
+	_check(target.has_focus() and scroll.get_global_rect().encloses(target.get_global_rect()), context + " scrolls its offscreen focused action into view")
+	var previous := target.find_prev_valid_focus()
+	_check(previous != null, context + " has a keyboard traversal predecessor")
+	if previous != null:
+		previous.grab_focus()
+		for i in 5: await process_frame
+		_check(previous.has_focus(), context + " keyboard traversal changes focus")
+
+func _focus() -> void:
+	app._navigate("Effectif")
+	for i in 5: await process_frame
+	var scrolls: Array[Node] = app.body.find_children("*", "ScrollContainer", true, false).filter(func(node: Node): return node.get_child_count() > 0 and node.is_visible_in_tree())
+	_check(scrolls.size() == 2, "Squad list and player profile each have their own scroll viewport")
+	for scroll in scrolls: await _scroll_focus(scroll, "Squad/profile")
+	app._navigate("Match")
+	await _command("begin_match")
+	await _command("pause", {"paused":true})
+	var panel: Node = app.match_screen
+	panel.tab = "Banc"
+	panel.selected_out = str(app.model.live.substitutions[0].outId)
+	panel.presence_key = ""
+	app._update_match()
+	for i in 5: await process_frame
+	await _scroll_focus(panel.side.get_parent(), "Bench")
+
 func _run() -> void:
 	var mode := OS.get_environment("CD_GODOT_REGRESSION")
 	var profile := OS.get_environment("CD_GODOT_DATA_DIR")
 	if mode == "disk":
+		profile = profile.path_join("profil-au-chemin-explicite-et-suffisamment-long-pour-verifier-la-lisibilite-de-lerreur")
+		OS.set_environment("CD_GODOT_DATA_DIR", profile)
 		DirAccess.make_dir_recursive_absolute(profile.path_join("PrototypeGodot/donnees.tmp"))
 	if mode=="recovery":
 		DirAccess.make_dir_recursive_absolute(profile.path_join("PrototypeGodot"))
@@ -96,6 +320,7 @@ func _run() -> void:
 			_check(FileAccess.get_file_as_bytes(backup)==original,"New career preserves recovery backup")
 	elif mode == "disk":
 		await _delay(500)
+		_dialog_bounds("Real EISDIR failure")
 		_check(errors == 1, "Permanent first-write refusal emits exactly one error (observed %s)" % errors)
 		_check(app.model.get("club") == null and not app.waiting, "Failed creation leaves stable empty career")
 		_check(not FileAccess.file_exists(profile.path_join("PrototypeGodot/donnees.json")), "Failure does not persist a career")
@@ -145,6 +370,11 @@ func _run() -> void:
 		app._update_match()
 		_check(app.pause_button.disabled and app.match_finish.disabled and app.match_clock.text.contains("SAISON"), "Ended season clearly closes both match actions")
 		app.model = actual
+	elif mode == "decisions": await _decisions()
+	elif mode == "tactics": await _tactics()
+	elif mode == "bench": await _bench()
+	elif mode == "modal": await _modal()
+	elif mode == "focus": await _focus()
 	elif mode == "limits":
 		for text in ["a".repeat(5 * 1024 * 1024 + 1), "\"".repeat(4 * 1024 * 1024), "é".repeat(3 * 1024 * 1024)]:
 			var path := profile.path_join("oversized.json")

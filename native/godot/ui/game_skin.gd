@@ -189,6 +189,7 @@ static func spacer() -> Control:
 
 static func scroll(parent: Node) -> VBoxContainer:
 	var s := ScrollContainer.new()
+	s.follow_focus = true
 	s.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	s.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	s.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED

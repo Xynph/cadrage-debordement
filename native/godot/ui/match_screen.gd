@@ -124,7 +124,15 @@ func update_frame(value:Dictionary) -> void:
 func _side() -> void:
 	var live:Dictionary=model.live if model.get("live") is Dictionary else {}
 	if tab=="Banc":
-		var key:=JSON.stringify([live.get("lineup",[]),live.get("reserves",[]),selected_out])
+		# Fatigue/clock changes do not affect these controls. Keep focus across ticks,
+		# but rebuild when player identity or a replacement permission changes.
+		var identities:Array=[]
+		for group in [live.get("lineup",[]),live.get("reserves",[])]:
+			var players:Array=[]
+			for player in group:
+				if player is Dictionary:players.append([player.get("id"),player.get("name")])
+			identities.append(players)
+		var key:=JSON.stringify([identities,selected_out,live.get("paused",false),live.get("finished",false),live.get("substitutions",[])])
 		if key==presence_key:return
 		presence_key=key
 	for child in side.get_children():

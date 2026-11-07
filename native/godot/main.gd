@@ -20,6 +20,7 @@ var bridge: Node
 var timer: Timer
 var body: VBoxContainer
 var heading: Label
+var header_date: Label
 var status: Label
 var minibar: Label
 var waiting := false
@@ -102,6 +103,7 @@ func _receive_model(value: Dictionary) -> void:
 	else:
 		if route == "Match" and is_instance_valid(match_screen):
 			_update_live_bar()
+			_update_header_date()
 			match_screen.update_frame(model)
 		else: _render()
 	if bridge.last_response_ok:
@@ -118,19 +120,31 @@ func _receive_model(value: Dictionary) -> void:
 	if not queued_action.is_empty() and bridge.last_response_ok:
 		var next := queued_action.duplicate(true)
 		queued_action.clear()
-		_command(next.command, next.payload)
+		_command(next.command, next.payload, next.get("target_route", ""))
 
-func _command(command: String, payload: Dictionary = {}) -> void:
+func _command(command: String, payload: Dictionary = {}, target_route: String = "") -> void:
 	if closing: return
 	if waiting:
-		if command != "tick" and queued_action.is_empty():
-			queued_action = {"command":command,"payload":payload.duplicate(true)}
+		if command == "tick": return
+		if last_command == "tick" and queued_action.is_empty():
+			queued_action = {"command":command,"payload":payload.duplicate(true),"target_route":target_route}
 			if is_instance_valid(status): status.text = "Décision en attente de la réponse du moteur…"
+		else:
+			_refuse_action("Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessayez après sa réponse.")
 		return
 	waiting = true
 	last_command = command
+	pending_route = target_route
 	if is_instance_valid(status): status.text = "Traitement de votre décision…"
 	bridge.send(command, payload)
+
+func _refuse_action(message: String) -> void:
+	# A local refusal must not complete or discard the actual in-flight action.
+	last_error = message
+	if is_instance_valid(status):
+		status.text = "ACTION NON EFFECTUÉE · " + message
+		status.add_theme_color_override("font_color", Color("f1b6a9"))
+	notice("Votre décision n'a pas été appliquée", message)
 
 func _failed(message: String) -> void:
 	waiting = false
@@ -144,6 +158,7 @@ func _failed(message: String) -> void:
 	if last_command == "tick": timer.stop()
 	_clear_dialogs()
 	var d := AcceptDialog.new()
+	_prepare_dialog(d, 590)
 	d.title = "Votre décision n'a pas été appliquée"
 	d.dialog_text = message
 	add_child(d)
@@ -197,9 +212,9 @@ func _render() -> void:
 	var titles := G.v(0)
 	G.fill(titles)
 	top.add_child(titles)
-	var meta: Dictionary = model.get("meta", {})
-	var date := "SAISON %s  /  %s" % [G.n(meta.get("season", 1)),meta.get("roundLabel", "Journée " + G.n(int(meta.get("round", 0))+1))]
-	titles.add_child(G.label(date.to_upper(), 11, G.MUTED))
+	header_date = G.label("", 11, G.MUTED)
+	titles.add_child(header_date)
+	_update_header_date()
 	heading = G.label({"Bureau":"LE CLUB, DEMAIN.","Effectif":"LES HOMMES DU PROJET","Composition":"VOTRE FEUILLE À 23","Préparation":"PRÉPARER LA RENCONTRE","Calendrier":"LE FIL DE LA SAISON","Classements":"LA COURSE AUX SOMMETS","Recrutement":"CONSTRUIRE L'EFFECTIF","Finances":"LES MOYENS DU PROJET","Club":"UN CLUB. UN TERRITOIRE.","Match":"LE JOUR DE MATCH"}.get(route, route.to_upper()), 35, G.INK, true)
 	titles.add_child(heading)
 	top.add_child(G.button("SAUVEGARDER", func(): _command("save")))
@@ -230,6 +245,11 @@ func _render() -> void:
 			match_page = match_screen
 			match_screen.update_frame(model)
 	_update_live_bar()
+
+func _update_header_date() -> void:
+	if not is_instance_valid(header_date): return
+	var meta: Dictionary = model.get("meta", {})
+	header_date.text = ("SAISON %s  /  %s" % [G.n(meta.get("season", 1)),meta.get("roundLabel", "Journée " + G.n(int(meta.get("round", 0))+1))]).to_upper()
 
 func _build_sidebar(parent: Node) -> void:
 	var rail := PanelContainer.new()
@@ -285,25 +305,33 @@ func primary_action() -> void:
 	else: _navigate("Préparation")
 
 func create_career(id: int) -> void:
-	var action := func(): pending_route = "Bureau"; _command("new_career",{"club":id,"mode":"france"})
+	var action := func(): _command("new_career",{"club":id,"mode":"france"},"Bureau")
 	if _has_career(): confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Exportez-la depuis le menu pour la conserver séparément. Prendre les rênes de %s ?" % catalogue[id].name, action)
 	else: action.call()
 
 func confirm(title: String, text: String, callback: Callable) -> void:
 	_clear_dialogs()
 	var d := ConfirmationDialog.new()
+	_prepare_dialog(d, 650)
 	d.title = title
 	d.dialog_text = text
 	d.get_ok_button().text = "CONFIRMER"
+	d.get_cancel_button().text = "ANNULER"
 	add_child(d)
 	d.confirmed.connect(func(): callback.call(); d.queue_free())
 	d.canceled.connect(d.queue_free)
 	d.popup_centered(Vector2i(650,180))
 
+func _prepare_dialog(dialog: AcceptDialog, width: int) -> void:
+	# Configure wrapping before text/insertion can queue an oversized minimum.
+	dialog.min_size = Vector2i(width, 0)
+	dialog.dialog_autowrap = true
+
 func pause_menu() -> void:
 	_clear_dialogs()
 	if not _live().is_empty() and not _live().get("paused",false) and not _live().get("finished",false): _command("pause",{"paused":true})
 	var d := AcceptDialog.new()
+	_prepare_dialog(d, 720)
 	d.title = "Votre carrière"
 	d.dialog_text = "Sauvegarde automatique dans un profil indépendant.\n" + _profile_path()
 	for pair in [["Accueil","home"],["Exporter","export"],["Importer","import"],["Paramètres","settings"],["Quitter","quit"]]: d.add_button(pair[0],false,pair[1])
@@ -322,6 +350,7 @@ func pause_menu() -> void:
 func settings() -> void:
 	_clear_dialogs()
 	var d := AcceptDialog.new()
+	_prepare_dialog(d, 650)
 	d.title = "Affichage"
 	d.dialog_text = "Fenêtre redimensionnable · interface adaptée à votre écran."
 	d.add_button("Fenêtré1440×900",false,"window")
@@ -344,13 +373,13 @@ func open_file(importing: bool) -> void:
 func _file_selected(path: String) -> void:
 	if import_mode:
 		var f := FileAccess.open(path,FileAccess.READ)
-		if f == null: _failed("Le fichier ne peut pas être lu : " + error_string(FileAccess.get_open_error())); return
-		if f.get_length() > 5*1024*1024: f.close(); _failed("Fichier trop volumineux :5 Mio maximum."); return
+		if f == null: _refuse_action("Le fichier ne peut pas être lu : " + error_string(FileAccess.get_open_error())); return
+		if f.get_length() > 5*1024*1024: f.close(); _refuse_action("Fichier trop volumineux :5 Mio maximum."); return
 		var text := f.get_as_text()
 		f.close()
-		confirm("Reprendre cette carrière", "La carrière importée remplacera celle du profil. Le moteur la vérifiera avant de l'appliquer.",func(): pending_route = "Bureau"; _command("import",{"text":text}))
+		confirm("Reprendre cette carrière", "La carrière importée remplacera celle du profil. Le moteur la vérifiera avant de l'appliquer.",func(): _command("import",{"text":text},"Bureau"))
 	else:
-		if waiting: _failed("Une décision est en cours. Réessayez après sa réponse."); return
+		if waiting: _refuse_action("Une décision est en cours. Réessayez après sa réponse."); return
 		export_path = path
 		_command("export")
 
@@ -376,6 +405,7 @@ func _write_export() -> bool:
 func notice(title:String,text:String) -> void:
 	_clear_dialogs()
 	var d:=AcceptDialog.new()
+	_prepare_dialog(d, 620)
 	d.title=title
 	d.dialog_text=text
 	add_child(d)
@@ -407,6 +437,7 @@ func _update_match() -> void:
 func _credits() -> void:
 	_clear_dialogs()
 	var d := AcceptDialog.new()
+	_prepare_dialog(d, 760)
 	d.title = "Cadrage Débordement · Crédits"
 	d.dialog_text = "Photographies : auteurs, pages sources, licences et modifications dans le dossier Licences.\nModèle Quaternius : CC0. Portraits fictifs générés par IA.\nDM Sans et Barlow Condensed : SIL OFL. Godot : MIT. Node : notices incluses.\n\nLes clubs sont des identités de jeu originales. Les finances et les joueurs sont fictifs.\nLes villes et stades photographiés sont réels ; l'enceinte3D est générique."
 	add_child(d)

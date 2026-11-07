@@ -116,7 +116,9 @@ static func calendar(app: Control) -> Control:
 		var row := G.h(12)
 		var frame := G.panel(list)
 		frame.add_child(row)
-		row.add_child(G.cell(fixture.get("label", "Semaine " + G.n(fixture.get("week", 0))), 140, G.MUTED))
+		var label: String = fixture.get("label", "Semaine " + G.n(fixture.get("week", 0)))
+		label = {"barrage":"Barrage","semi":"Demi-finale","final":"Finale","access":"Barrage d’accession"}.get(label,label)
+		row.add_child(G.cell(label, 140, G.MUTED))
 		var home: Dictionary = fixture.get("home", {})
 		var away: Dictionary = fixture.get("away", {})
 		row.add_child(G.crest(home, 35))
@@ -142,6 +144,9 @@ static func tables(app: Control) -> Control:
 	var chosen: Dictionary = leagues[0]
 	for league in leagues:
 		if league.id == app.table_division: chosen = league
+	for pair in [["champion","CHAMPION"],["finalist","FINALISTE"]]:
+		if chosen.get(pair[0]) is Dictionary:
+			page.add_child(G.label(pair[1] + "  /  " + G.club_name(chosen[pair[0]]),16,G.GOLD))
 	var list := G.scroll(page)
 	var header := G.h(12)
 	list.add_child(header)
