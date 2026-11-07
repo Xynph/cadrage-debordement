@@ -78,6 +78,12 @@ func _import_text(text: String) -> void:
 	app._file_selected(path)
 	_confirm()
 
+func _dialogs() -> Array[AcceptDialog]:
+	var result: Array[AcceptDialog] = []
+	for child in app.get_children():
+		if child is AcceptDialog and child != app.file_dialog and not child.is_queued_for_deletion(): result.append(child)
+	return result
+
 func _decisions() -> void:
 	app._navigate("Bureau")
 	app._command("save")
@@ -91,6 +97,30 @@ func _decisions() -> void:
 	_dismiss_errors()
 	app._navigate("Match")
 	await _command("begin_match")
+	app._command("save")
+	app.pause_menu()
+	var dialogs := _dialogs()
+	_check(dialogs.size() == 1 and dialogs[0].visible and dialogs[0].title == "Votre décision n'a pas été appliquée", "Busy pause menu keeps only the explanatory refusal dialog")
+	_check(app.waiting and app.last_command == "save" and app.queued_action.is_empty(), "Refused menu pause preserves the in-flight save")
+	_check(not app.last_error.is_empty() and not app.model.live.paused, "Refused menu pause explicitly explains the still-running match")
+	await _wait()
+	_dismiss_errors()
+	app.pause_menu()
+	await _wait()
+	dialogs = _dialogs()
+	_check(app.model.live.paused and dialogs.size() == 1 and dialogs[0].visible and dialogs[0].title == "Votre carrière", "Menu retry pauses the real match and shows one usable career menu")
+	_dismiss_errors()
+	await _command("pause", {"paused":false})
+	app._command("tick", {"steps":1})
+	app._command("save")
+	var saved_queue: Dictionary = app.queued_action.duplicate(true)
+	app.pause_menu()
+	dialogs = _dialogs()
+	_check(app.waiting and app.last_command == "tick" and app.queued_action == saved_queue and saved_queue.get("command") == "save", "Refused menu pause preserves an action already accepted behind the tick")
+	_check(dialogs.size() == 1 and dialogs[0].visible and dialogs[0].title == "Votre décision n'a pas été appliquée", "Saturated menu pause also keeps one explanatory dialog")
+	await _wait()
+	_check(not app.model.live.paused, "Rejected saturated menu pause is not applied later")
+	_dismiss_errors()
 	app._command("tick", {"steps":1})
 	app._command("pause", {"paused":true})
 	var accepted: Dictionary = app.queued_action.duplicate(true)
@@ -119,6 +149,12 @@ func _decisions() -> void:
 	_check(app.route == "Match", "Accepted import waits for its own response before navigation")
 	await _wait()
 	_check(app.route == "Bureau", "Successful import applies its own target route")
+	app._navigate("Match")
+	await _command("pause", {"paused":false})
+	app.bridge.stop()
+	app.pause_menu()
+	dialogs = _dialogs()
+	_check(not app.waiting and dialogs.size() == 1 and dialogs[0].visible and dialogs[0].title == "Votre décision n'a pas été appliquée" and app.last_error.contains("fermé"), "Synchronous closed-transport refusal also prevents a second career modal")
 
 func _tactics() -> void:
 	app._navigate("Préparation")

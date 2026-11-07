@@ -122,21 +122,22 @@ func _receive_model(value: Dictionary) -> void:
 		queued_action.clear()
 		_command(next.command, next.payload, next.get("target_route", ""))
 
-func _command(command: String, payload: Dictionary = {}, target_route: String = "") -> void:
-	if closing: return
+func _command(command: String, payload: Dictionary = {}, target_route: String = "") -> bool:
+	if closing: return false
 	if waiting:
-		if command == "tick": return
+		if command == "tick": return false
 		if last_command == "tick" and queued_action.is_empty():
 			queued_action = {"command":command,"payload":payload.duplicate(true),"target_route":target_route}
 			if is_instance_valid(status): status.text = "Décision en attente de la réponse du moteur…"
-		else:
-			_refuse_action("Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessayez après sa réponse.")
-		return
+			return true
+		_refuse_action("Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessayez après sa réponse.")
+		return false
 	waiting = true
 	last_command = command
 	pending_route = target_route
 	if is_instance_valid(status): status.text = "Traitement de votre décision…"
 	bridge.send(command, payload)
+	return waiting
 
 func _refuse_action(message: String) -> void:
 	# A local refusal must not complete or discard the actual in-flight action.
@@ -329,7 +330,8 @@ func _prepare_dialog(dialog: AcceptDialog, width: int) -> void:
 
 func pause_menu() -> void:
 	_clear_dialogs()
-	if not _live().is_empty() and not _live().get("paused",false) and not _live().get("finished",false): _command("pause",{"paused":true})
+	if not _live().is_empty() and not _live().get("paused",false) and not _live().get("finished",false):
+		if not _command("pause",{"paused":true}): return
 	var d := AcceptDialog.new()
 	_prepare_dialog(d, 720)
 	d.title = "Votre carrière"
