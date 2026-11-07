@@ -69,5 +69,7 @@ jobs:
         env:
           CD_V11_ROOT: ${{ github.workspace }}/.deps/v11
         run: node --test tools/lnr-v12-v11-preview/tests.cjs
+      - name: Regressions sauvegardes, LNR et developpement historique
+        run: node --test tests/lnr-career.cjs tests/lnr-career-long.cjs tests/lnr-cross-season-recovery.cjs tests/lnr-loaded-birthyears-career.cjs tests/lnr-save-integrity-guards.cjs tests/lnr-save-import-rollback-stress.cjs tests/lnr-save-resume-continuation.cjs tests/development.cjs tests/saves.cjs
       - name: Historique et catalogue LNR invariants
         run: git diff --exit-code 37fd6eec38ab32959361d9b81e1c34341d41d710 -- modding/data06/rugby-master-2026-2027.json dist/lnr-rosters-data.js
