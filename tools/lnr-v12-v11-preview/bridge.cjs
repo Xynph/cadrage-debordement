@@ -15,7 +15,9 @@ function playerForNative(basePlayer,realPlayer){
  const [slot,fam]=N.SLOTS[realPlayer.gameplayPosition];
  const p=C.clone(basePlayer);
  // This is an explicitly estimated gameplay position, not a newly verified LNR role.
- p.pos=POS[slot];p.fam=fam;
+ // Preserve positions from the existing LNR generator; V12 exact positions are estimated
+ // and replacing them can invalidate front-row coverage and the 15+8 sheet.
+ p.pos=basePlayer.pos;p.fam=basePlayer.fam;
  p.skills=C.project(realPlayer);
  p.rating=realPlayer.ratingV12;
  p.skillBase=p.rating; // skill() must start at exact projected skills, never add an initial bonus
