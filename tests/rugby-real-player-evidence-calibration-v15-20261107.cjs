@@ -195,3 +195,40 @@ test('All 36 flags: 2025 historical context, line-up threshold and synchronized 
  console.log('RUGBY_REAL_V15_LINEUP_THRESHOLD '+JSON.stringify({flagged:rows.length,totals,rows,
   caveat:'2025/26 historical playing time does not require 2026/27 starter status. A +8 stress dose is not a recommended rating change.'}));
 });
+
+test('Native match sensitivity of evidence-flagged bench players at +2/+4: substitutions versus unchanged starting XV',{timeout:420000},()=>{
+ const lab=N.laboratory(ACTIVE,'legacy'),scr=evidenceScreen(lab);
+ const candidates=scr.up.filter(x=>x.squadState==='bench').slice(0,5);
+ assert.ok(candidates.length>=2,'at least two independently observed bench profiles');
+ function changed(c,who,dose){
+  const x=deep(c),p=x.players.find(p=>p.id===who.id);
+  const previous=C.project({...p,gameplayPosition:who.role});
+  for(const key of core[who.role])p.attributesV2[key]=Math.max(20,Math.min(97,p.attributesV2[key]+dose));
+  const after=C.project({...p,gameplayPosition:who.role});
+  for(const key of skills)p.skills[key]=Math.max(20,Math.min(97,+(p.skills[key]+after[key]-previous[key]).toFixed(2)));
+  return x;
+ }
+ const results=[];
+ for(const x of candidates){
+  const c=lab.clubs.find(c=>c.slug===x.club);
+  const alternatives=lab.clubs.filter(o=>o.league===c.league&&o.slug!==c.slug&&rosterStats(lab,o).complete)
+   .sort((a,b)=>Math.abs(rosterStats(lab,a).mean-rosterStats(lab,c).mean)-
+    Math.abs(rosterStats(lab,b).mean-rosterStats(lab,c).mean));
+  const rival=alternatives[0];assert.ok(rival);
+  const before=game(lab,c,rival,24),p0=c.players.find(p=>p.id===x.id);
+  const scenarios=[2,4].map(dose=>{
+   const clone=changed(c,x,dose),p1=clone.players.find(p=>p.id===x.id),sheet=lineup(lab,clone);
+   return {dose,roleNoteBefore:lab.note(p0),roleNoteAfter:lab.note(p1),
+    xvBefore:rosterStats(lab,c).mean,xvAfter:rosterStats(lab,clone).mean,
+    benchBefore:rosterStats(lab,c).benchMean,benchAfter:rosterStats(lab,clone).benchMean,
+    stillBench:sheet.bench.some(p=>p.id===x.id),selectedXV:sheet.all.some(p=>p.id===x.id),
+    effect:effect(game(lab,clone,rival,24),before)};
+  });
+  results.push({id:x.id,club:x.club,role:x.role,opponent:rival.slug,signal:x.independentSignals,
+   scenarios});
+ }
+ console.log('RUGBY_REAL_V15_BENCH_SIGNAL_MATCH_QA '+JSON.stringify({
+  candidates:candidates.length,matchCount:candidates.length*3*24*2,perCandidate:results,
+  caveat:'Two home sides and one healthy-match sample; bench impact must not be interpreted as accumulated season rotation.'
+ }));
+});
