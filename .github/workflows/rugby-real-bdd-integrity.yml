@@ -1,0 +1,22 @@
+name: Rugby Reel - active database integrity
+on:
+  pull_request:
+    paths:
+      - 'tests/rugby-real-bdd-integrity-20261107.cjs'
+      - 'docs/rugby-real-bdd-integrity-20261107.md'
+      - '.github/workflows/rugby-real-bdd-integrity.yml'
+      - 'dist/lnr-ratings-v12.js'
+      - 'dist/lnr-v11-aging.js'
+      - 'data/scouting/review-v12/candidate.json'
+  workflow_dispatch:
+jobs:
+  active-bdd:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Audit des 1592 joueurs et courbes d'age
+        run: node --test tests/rugby-real-bdd-integrity-20261107.cjs
