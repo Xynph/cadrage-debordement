@@ -1,0 +1,68 @@
+[
+  {
+    "file": "matchday.webp",
+    "width": 1817,
+    "height": 866,
+    "sha256": "14c852389b1ae42d37c5637de450ecde4f613dad21e631ecba13860764692039",
+    "source": "imagegen original, 7 novembre 2026",
+    "fictional": true
+  },
+  {
+    "file": "squad.webp",
+    "width": 1817,
+    "height": 866,
+    "sha256": "7699ed10a6fa95a6a7d8625e5e3a779d01af8b548cc58f8602d5363de5264d83",
+    "source": "imagegen original, 7 novembre 2026",
+    "fictional": true
+  },
+  {
+    "file": "academy.webp",
+    "width": 1817,
+    "height": 866,
+    "sha256": "d0d1fb0616e8a2b1506584f3c0fb059a1ce2e21b6bf879208f5a39706dd87d9a",
+    "source": "imagegen original, 7 novembre 2026",
+    "fictional": true
+  },
+  {
+    "file": "tactics.webp",
+    "width": 1817,
+    "height": 866,
+    "sha256": "703c42b4547b4fbcc7f599f3f610c7bde65563e165f3d57ac1cf65346c95d53f",
+    "source": "imagegen original, 7 novembre 2026",
+    "fictional": true
+  },
+  {
+    "file": "staff.webp",
+    "width": 1817,
+    "height": 866,
+    "sha256": "3375c0cadde974b192a4b3ea90f06d7f0f44ac95c128c7c2f90e79fc19d168e0",
+    "source": "imagegen original, 7 novembre 2026",
+    "fictional": true
+  },
+  {
+    "file": "clubhouse.webp",
+    "width": 1817,
+    "height": 866,
+    "sha256": "cc388d579b66835c2cd6b334e4b63ac476043cf759eea95f618c0a99ba4f949c",
+    "source": "imagegen original, 7 novembre 2026",
+    "fictional": true
+  },
+  {
+    "file": "portraits-0.webp",
+    "width": 1254,
+    "height": 1254,
+    "sha256": "a31ecf18d51b193d5945db9cf3c1618a07cc7bc4aa2bf19e9b71f16afd4cc506",
+    "fictional": true,
+    "source": "imagegen original, 7 novembre 2026",
+    "grid": "4x4"
+  },
+  {
+    "file": "portraits-1.webp",
+    "width": 1254,
+    "height": 1254,
+    "sha256": "41b49ad6ad5ec06d5e9c35c92e12dfc7a4d8d0430a7cd3d516c1b7ca8de9fce8",
+    "fictional": true,
+    "source": "imagegen original, 7 novembre 2026",
+    "grid": "4x4"
+  }
+]

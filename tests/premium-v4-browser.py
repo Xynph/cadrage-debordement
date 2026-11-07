@@ -13,6 +13,12 @@ checks=[];errors=[];bad=[];requests=[];success=False
 def check(name,condition):
  assert condition,name
  checks.append(name)
+def history_card(index):
+ # Les archives sont désormais des pages locales distinctes : les ouvrir avant
+ # de mesurer leur contenu évite de valider un panneau caché de hauteur nulle.
+ tabs=page.locator('.ed-section-tabs [role="tab"]')
+ if tabs.count(): tabs.nth(index).click()
+ return page.locator('.main .ed-section-panel>section.card').nth(index)
 routes=['dashboard','team','tactics','plans','staff','recruitment','match','league','history','market','formation','finance','saves','help']
 try:
  with sync_playwright() as pw:
@@ -43,7 +49,7 @@ try:
       page.screenshot(path=str(OUT/(route+'-'+theme+'-'+str(width)+'.png')),full_page=route!='dashboard')
   page.set_viewport_size({'width':1440,'height':1000});page.evaluate("nav('dashboard')")
   page.locator('[data-da42-subpage="pilotage"]').click()
-  check('panorama actually visible in office',page.locator('.da42-command-lead').evaluate("e=>getComputedStyle(e).backgroundImage.includes('premium-v4-matchday.webp')"))
+  check('panorama actually visible in office',page.locator('.da42-command-lead').evaluate("e=>getComputedStyle(e).backgroundImage.includes('assets/editorial/')"))
   check('panorama decodes locally',page.evaluate("async()=>{let i=new Image();i.src='assets/premium-v4-matchday.webp';await i.decode();return i.naturalWidth>=1500&&i.naturalHeight>600}"))
   check('office visual columns do not overlap',page.evaluate("(()=>{const a=document.querySelector('.da42-command-lead').getBoundingClientRect(),b=document.querySelector('.da42-command-rail').getBoundingClientRect();return a.right<=b.left+2&&Math.abs(a.top-b.top)<2})()"))
   # V4.6: real PC pre-match, both themes and widths; no match started here.
@@ -61,7 +67,7 @@ try:
           page.locator('.prematch-grid button.primary').count()>=1)
     check('V4.6 editorial match header '+theme+' '+str(width),
           page.locator('.main>.heading').evaluate(
-           "e=>getComputedStyle(e).backgroundImage.includes('premium-v4-matchday.webp')"))
+           "e=>getComputedStyle(e).backgroundImage.includes('assets/editorial/')"))
     check('V4.6 opponent preview preserved '+theme+' '+str(width),
           page.locator('.prematch-grid>.stack:last-child .card').count()>0)
     check('V4.6 prematch width '+theme+' '+str(width),
@@ -112,16 +118,16 @@ try:
             page.locator('.markettabs button').first.evaluate(
              "e=>e.getBoundingClientRect().height>=44"))
       check('V4.7 market richer hierarchy '+theme+' '+str(width),
-            page.locator('.main>.recruitment-intel').evaluate(
+            page.locator('.main .recruitment-intel').evaluate(
              "e=>getComputedStyle(e).borderTopWidth==='3px'"))
      if route=='history':
       check('V4.7 history native sections '+theme+' '+str(width),
-            page.locator('.main>section.card').count()==2)
+            page.locator('.main .ed-section-panel>section.card').count()==2)
       check('V4.7 history balanced cards '+theme+' '+str(width),
-            page.locator('.main>section.card').first.evaluate(
+            history_card(0).evaluate(
              "e=>e.getBoundingClientRect().height>=300"))
       check('V4.7 archives no fabricated entries '+theme+' '+str(width),
-            page.locator('.main>section.card').last.inner_text().strip()!='')
+            history_card(1).inner_text().strip()!='')
      if route=='saves':
       check('V4.7 native export/import '+theme+' '+str(width),
             page.locator('[onclick="exportCareer()"]').count()==1 and
@@ -135,7 +141,7 @@ try:
      # V4.7.1 second pass: structural and real-style checks on both desktop
      # resolutions and both themes; no native actions are invoked.
      if route=='market':
-      needs=page.locator('.main>.recruitment-intel .recruitment-needs-list')
+      needs=page.locator('.main .recruitment-intel .recruitment-needs-list')
       check('V4.7.1 market needs retained '+theme+' '+str(width),
             needs.count()==1 and needs.locator(':scope > .row').count()>=4)
       check('V4.7.1 market needs two columns '+theme+' '+str(width),
@@ -155,18 +161,18 @@ try:
             page.locator('.marketgrid>.marketplayer').first.locator('.row').count()>=1)
      if route=='history':
       check('V4.7.1 history chapters '+theme+' '+str(width),
-            page.locator('.main>section.card').first.evaluate(
+            history_card(0).evaluate(
              """e=>getComputedStyle(e,'::before').content.includes('CHAPITRE 01')""") and
-            page.locator('.main>section.card').last.evaluate(
+            history_card(1).evaluate(
              """e=>getComputedStyle(e,'::before').content.includes('CHAPITRE 02')"""))
       check('V4.7.1 history panels full content '+theme+' '+str(width),
-            page.locator('.main>section.card').first.evaluate(
+            history_card(0).evaluate(
              """e=>e.scrollHeight<=e.clientHeight+1""") and
-            page.locator('.main>section.card').last.evaluate(
+            history_card(1).evaluate(
              """e=>e.scrollHeight<=e.clientHeight+1"""))
      if route=='saves':
       check('V4.7.1 dark export panel '+theme+' '+str(width),
-            page.locator('.main>.grid>.stack:first-child>.card:first-child').evaluate(
+            page.locator('.main .grid>.stack:first-child>.card:first-child').evaluate(
              """e=>getComputedStyle(e).backgroundImage.includes('linear-gradient')&&
                getComputedStyle(e).borderTopWidth==='4px'"""))
       check('V4.7.1 export and import hit area '+theme+' '+str(width),
@@ -216,7 +222,7 @@ try:
       check('V4.8 native command deck '+theme+' '+str(width),
             page.locator('.da42-command-lead').count()==1 and
             page.locator('.da42-command-lead').evaluate(
-             "e=>getComputedStyle(e).backgroundImage.includes('premium-v4-matchday.webp')"))
+             "e=>getComputedStyle(e).backgroundImage.includes('assets/editorial/')"))
       check('V4.8 native decisions visible '+theme+' '+str(width),
             page.locator('.da42-rail-item').count()>=2)
       check('V4.8 command action hit area '+theme+' '+str(width),
@@ -276,7 +282,7 @@ try:
        width:innerWidth
    })""")
    check('V4.6 live highlight '+str(width)+' '+str(live_style),
-         'premium-v4-matchday.webp' in live_style['image'])
+         'assets/editorial/matchday.webp' in live_style['image'])
    check('V4.6 live width '+str(width),
          page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
    check('V4.6 live minute stable '+str(width),

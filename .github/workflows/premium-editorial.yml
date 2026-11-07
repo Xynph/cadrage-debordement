@@ -1,0 +1,47 @@
+name: Premium editorial — jeu natif PC
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/premium-editorial.*'
+      - 'dist/assets/editorial/**'
+      - 'dist/fonts/editorial/**'
+      - 'dist/index.html'
+      - 'tests/premium-editorial*'
+      - '.github/workflows/premium-editorial.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: premium-editorial-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  editorial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntaxe et projections sans mutation
+        run: |
+          node --check dist/premium-editorial.js
+          node --check tests/premium-editorial-browser.mjs
+          node --test tests/premium-editorial.cjs
+      - name: Installer le navigateur de qualification
+        run: |
+          npm install --prefix "$RUNNER_TEMP/editorial-browser" --no-audit --no-fund playwright@1.58.0
+          "$RUNNER_TEMP/editorial-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Parcours réels PC, dossiers, graphiques et stockage
+        env:
+          CD_PLAYWRIGHT_MODULE: ${{ runner.temp }}/editorial-browser/node_modules/playwright
+        run: node tests/premium-editorial-browser.mjs
+      - name: Captures et preuves natives
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: premium-editorial-native-pc
+          path: premium-editorial-report/
+          if-no-files-found: error
+          retention-days: 14
