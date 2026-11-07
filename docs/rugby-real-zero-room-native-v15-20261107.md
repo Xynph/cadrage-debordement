@@ -186,3 +186,74 @@ La direction des effets est **hétérogène** selon l'adversaire, y compris pour
 **Décision du PRODUCTEUR BDD : rejeter les propositions chiffrées +5/+10 comme retouches à publier**, car elles reposent sur une sensibilité et non sur des preuves d'écarts individuels à corriger. Garder les 1592 notes et profils intacts. Le véritable signal exploitable est (1) la compression structurelle des moyennes des XV entre clubs et (2) la nécessité d'une synchronisation déterministe des attributs détaillés et compétences effectivement consommées si l'on corrige plus tard une fiche individuelle sur la base d'une preuve sportive. La spécification de cette synchronisation touche au raccordement du moteur et appartient à l'intégrateur ou propriétaire, pas à cette PR de QA.
 
 Aucun artifice pour « garantir » la montée difficile ou la remontée facile n'est recommandé : conserver l'écart interdivision (+8,14 points de XV) déjà présent, demander une étude de cohérence sportive par poste/collectif avant tout écrasement des clubs par des bonus.
+
+
+---
+
+## V15 — Diagnostic individuel avec preuves publiques, 30 clubs, 1592 joueurs (complément)
+
+### Pourquoi l'ancien criblage était insuffisant et comment il a été corrigé
+
+Une première exécution utilisait les seuls \`performance2025_2026\` embarqués dans le master : **24 joueurs** avec minutes et rencontres exploitables, zéro candidat, et des moyennes de XV invalides. Le banc appelait par erreur \`lab.note\` sur des objets du master non instanciés, ce qui contamina son cache de notes par des valeurs non numériques. **Ces résultats ont été explicitement rejetés**, et jamais présentés comme diagnostic final.
+
+Le banc réparé \`tests/rugby-real-player-evidence-calibration-v15-20261107.cjs\` s'appuie sur les trois sources déjà validées par les tests V12 :
+- \`data/scouting/review-v12/season-evidence.json\`
+- \`data/scouting/review-v12/extra-evidence.json\`
+- \`data/scouting/review-v12/career-evidence.json\`
+
+\`review.cjs/buildEvidence()\` valide périodes, identités, provenance des statistiques et priorité entre sources chevauchantes. Pour la comparaison des notes, chaque joueur est pris **dans le vrai laboratoire natif**, avec les 11 compétences effectivement utilisées par \`roleNote\`, et non dans une fiche du master. Le score de l'équipe est recalculé sans masquer les postes manquants. Les tests GitHub corrigés ont réellement réussi [#42376963236](https://github.com/Xynph/cadrage-debordement/actions/runs/42376963236), **13/13**, et [#42377152107](https://github.com/Xynph/cadrage-debordement/actions/runs/42377152107), **14/14**.
+
+### Périmètre des preuves, sans inventer ce qui manque
+
+| Population / statut de preuve | Nombre |
+| --- | ---: |
+| Joueurs actifs TOP14 + PRO D2 | **1592** |
+| Joueurs avec temps de jeu (minutes et matchs) 2025–2026 exploitable | **621** |
+| Dont TOP14 / PRO D2 | **414 / 207** |
+| Joueurs rapprochés d'au moins une source validée (plus large que le temps de jeu) | **627** |
+| Carrières publiques examinées | **1592** |
+| Dossiers ayant des données 2025–2026 dans le jeu de carrières | **322** |
+| Profils nécessitant revue individualisée (hypothèse de sous-notation) | **36** |
+| Dont TOP14 / PRO D2 | **29 / 7** |
+| Déclassements individuels proposés | **0** |
+
+**Important :** les 36 sont une **liste de signalement, pas des corrections retenues**. Le tri requiert la combinaison : (1) au moins 900 minutes, 12 matchs et une exposition de 45 minutes/match en moyenne, (2) une note au poste inférieure d'au moins 2 points à la médiane **même division / même poste**, (3) des attributs centraux au poste non incohérents avec le médian, et (4) au moins un élément complémentaire tel qu'une deuxième saison régulière, essais par 80 min, jeu au pied, observation de plaquages, distinction officielle ou évaluation Six Nations. Le volume seul n'est pas une preuve d'habileté : aucune sanction pour absence de minutes, qui peut venir des blessures, prêts, choix du club ou contrats.
+
+Chaque profil signalé conserve dans les logs la référence LNR \`lnr:...\`, le poste, l'âge, le club actif, le statut XV/banc/profondeur, les minutes, la valeur de note au poste, les indicateurs et les sources retenues ; les noms et URL d'observation ont été ajoutés dans la version terminale du banc afin que les vérifications puissent être faites à la main.
+
+### Test de correction graduée ±2/4/8 : le rôle de la sélection automatique
+
+Sur les **36** profils signalés, sans aucune écriture en production, hausse **fictive** des cinq attributs principaux au poste et synchronisation proportionnelle des 11 compétences via \`C.project()\`. Les alternatives sont des **copies isolées**. Nombre de profils touchés :
+
+| Dose de stress test | Note au poste modifiée | Sélectionnés dans le XV | Sélectionnés sur le banc | XV moyen de leur club changé |
+| --- | ---: | ---: | ---: | ---: |
+| +2 | 32 / 36 | **0** | 5 | **0** |
+| +4 | 36 / 36 | **0** | 9 | **0** |
+| +8 (dose volontairement extrême) | 36 / 36 | **3** | 19 | **2** |
+
+**Deux enseignements :** d'abord, une petite hausse de note de joueur ne signifie pas que l'équipe gagne en valeur ou que ses chances de victoire augmentent. Elle modifie souvent seulement le banc ou la profondeur de l'effectif. Ensuite, une forte utilisation historique en 2025–2026 peut coexister avec une place de réserviste ou de remplaçant dans un effectif 2026–2027 différent ; les transferts historiques et la nouvelle concurrence au poste doivent être examinés avant d'affirmer un sous-classement. Exemple dans les historiques : \`lnr:2168\` est associé à Racing 92 en 2025–2026 et à Toulon dans le catalogue actuel ; \`lnr:241\` à Bayonne historiquement puis Clermont actuellement. Ce ne sont pas des erreurs de BDD démontrées.
+
+Le premier portefeuille de **six candidats +2**, répartis entre clubs, avait produit **0 changement de XV et 0 changement de score sur 192 matchs natifs appariés**. Ce zéro est **mécaniquement explicable** : ces six profils restent hors de la feuille de match. Les analyses à +8 ne sont pas des recommandations de correction, seulement un test du seuil d'entrée en équipe.
+
+### Le banc des remplaçants est-il sensible aux retouches ?
+
+Pour examiner les effets ignorés par la moyenne du XV, la campagne ciblée [#42377383096](https://github.com/Xynph/cadrage-debordement/actions/runs/42377383096) a terminé **15/15 tests** et **576 autres matchs natifs** (4 remplaçants, référence/+2/+4, 24 graines appariées, deux domiciles, adversaire même division). Quatre cas :
+
+| Joueur référence | Poste | Variation du banc moyen (dose +4) | Δ marge de score (dose +4), IC exploratoire 95 % |
+| --- | --- | ---: | ---: |
+| \`lnr:862\` Clermont | Talonneur | +0,25 | −0,063 [−0,493 ; +0,368] |
+| \`lnr:8\` Agen | Ailier | +0,25 | −0,021 [−1,158 ; +1,116] |
+| \`lnr:2352\` Toulon | Demi de mêlée | +0,25 | +0,229 [−0,367 ; +0,825] |
+| \`lnr:555\` Castres | Demi de mêlée | +0,25 | +0,104 [−0,100 ; +0,308] |
+
+Le XV titulaire reste inchangé dans ces quatre cas. Tous les intervalles recouvrent zéro ; les observations **ne justifient pas** une correction des notes pour améliorer les résultats. En revanche, elles montrent pourquoi une différence de réserve ne devient pas automatiquement visible en un seul match à joueurs frais. **Cette expérience ne remplace pas une carrière appariée avec fatigue et rotation**, qui relève d'un chantier gameplay séparé.
+
+### Décision produit après itérations
+
+- **0/1592 note et potentiel actifs modifiés** ; aucun malus collectif TOP14/PRO D2 ajouté. Les preuves de 2025–2026 sont réelles pour une partie des joueurs, mais le lien avec leur niveau exact 2026–2027, les minutes et l'impact des attributs doit rester prudent.
+- **36 profils en revue**, avec noms et sources validées ; la liste sert au prochain ciblage manuel d'estimations **individuelles**, pas à un patch automatisé des notes. Aucun dossier n'est désigné comme sur-noté sur la seule base de peu de temps de jeu.
+- La dispersion interclubs se maintient autour de **0,593** point d'écart-type des moyennes XV TOP14 et **0,248** PRO D2 pour 25 feuilles complètes, et **8,14 points** de différence entre les moyennes des deux divisions. Les cinq clubs PRO D2 à banc incomplet dans le laboratoire ne doivent pas être effacés du catalogue ni « corrigés » par ajout de joueurs fictifs ; ils exigent une analyse ultérieure de la disponibilité par poste.
+- Le frein au réalisme n'est **pas automatiquement une note individuelle trop basse**. Il concerne aussi l'utilisation des profils, le nombre de titulaires de même poste, la profondeur et les mécanismes de rotation. Une correction ciblée de ±2 sur des réservistes se voit rarement dans la moyenne XV ou sur un match frais.
+- Les fichiers d'effectifs, de données actives, de moteur et de sauvegardes restent **strictement intacts**. Ce cycle livre un banc d'audit fondé sur des preuves et des candidats non destructifs, pas une nouvelle notation intégrée.
+
+La qualification finale de cette extension doit être reçue sur le SHA terminal réel de la PR #389 ; un run SUCCESS d'un commit antérieur n'est pas preuve du commit de documentation final.
