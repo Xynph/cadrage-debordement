@@ -36,7 +36,20 @@ function snapshot(g){
       p.rating!==p.skillBase||!Number.isFinite(p.rating)||
       !p.dev||!Number.isFinite(p.dev.potential)
     )).length,
-    duplicateIds:(()=>{const ids=S.clubs.flatMap(c=>c.players).map(p=>p.id);return ids.length-new Set(ids).size})()
+    duplicateIds:(()=>{const ids=S.clubs.flatMap(c=>c.players).map(p=>p.id);return ids.length-new Set(ids).size})(),
+    ageGroups:(()=>{
+      const players=S.clubs.flatMap(c=>c.players).filter(p=>p.lnrRatingsVersion===1&&p.attributesV2);
+      const buckets={'18-23':[], '24-29':[], '30-34':[], '35+':[]};
+      for(const p of players){
+        const a=Number(p.age);
+        const group=a<=23?'18-23':a<=29?'24-29':a<=34?'30-34':'35+';
+        buckets[group].push(p);
+      }
+      return Object.fromEntries(Object.entries(buckets).map(([name,items])=>{
+        const avg=key=>items.length?Number((items.reduce((sum,p)=>sum+Number(p.attributesV2[key]),0)/items.length).toFixed(2)):null;
+        return [name,{count:items.length,speed:avg('topSpeed'),strength:avg('strength'),endurance:avg('endurance'),decisions:avg('decisions')}];
+      }));
+    })()
   })`));
 }
 
@@ -73,7 +86,7 @@ test('Dix saisons TOP14 completes, finale native, V12/V11 et dix exports/imports
     assert.equal(result.broken,0,'V12 player state remains valid');
     assert.equal(result.duplicateIds,0,'player ID must be unique across the league');
     assert.ok(result.players>100,'V12 roster still present');
-    rows.push({season:year,playoffs:playoffGuard,v12Players:result.players});
+    rows.push({season:year,playoffs:playoffGuard,v12Players:result.players,ageGroups:result.ageGroups});
     g.run('advanceSeason()');
     assert.equal(g.run('S.season'),year+1);
     g=roundTrip(g);
