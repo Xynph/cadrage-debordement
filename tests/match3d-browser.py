@@ -17,12 +17,23 @@ checks = []
 errors = []
 external = []
 pending_requests = set()
+failure_diagnostics = {}
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *_args):
         pass
 
 def check(label, predicate):
+    if not predicate:
+        try:
+            failure_diagnostics.update(page.evaluate("""() => ({
+              renderer: CDMatch3D.diagnostics(),
+              canvasConnected: !!document.querySelector('#cd3d-host canvas'),
+              cameras: (window.__cameraPositions || []).slice(-8),
+              rigScenes: [...(window.__rigScenes?.values() || [])]
+            })"""))
+        except Exception as error:
+            failure_diagnostics["captureError"] = str(error)
     assert predicate, label
     checks.append(label)
 
@@ -145,16 +156,18 @@ try:
         }""")
         page.evaluate("""() => {
           window.__rugbyBallCreated = false;
-          window.__premiumRigsAdded = 0;
-          window.__rigElbowsValid = true;
+          window.__rigScenes = new Map();
           const oldAdd = THREE.Scene.prototype.add;
           THREE.Scene.prototype.add = function(...objects) {
             if(objects.some(o => o.userData?.renderOnlyBall))window.__rugbyBallCreated = true;
             for(const o of objects)if(o.userData?.premiumAthleteRig) {
-              window.__premiumRigsAdded++;
+              // Les rendus des réglages peuvent recréer une scène complète.
+              const sample = window.__rigScenes.get(this) || {count:0, valid:true};
+              window.__rigScenes.set(this, sample);
+              sample.count++;
               const rig=o.userData.motionParts;
               if(!rig || rig.elbows?.length!==2 || rig.knees?.length!==2 ||
-                 rig.arms?.length!==2 || rig.legs?.length!==2)window.__rigElbowsValid=false;
+                 rig.arms?.length!==2 || rig.legs?.length!==2)sample.valid=false;
             }
             return oldAdd.apply(this, objects);
           };
@@ -170,9 +183,9 @@ try:
         check("vue 3D sélectionnée", page.evaluate("CDMatch3D.getMode() === '3d'"))
         check("ballon procédural ajouté à la scène réelle", page.evaluate("__rugbyBallCreated"))
         check("30 rigs aptes aux transitions de contact", page.evaluate(
-            "__premiumRigsAdded === 30 && __rigElbowsValid && typeof CDMatch3DContact.stunt === 'function'"))
+            "__rigScenes.size > 0 && [...__rigScenes.values()].every(s => s.count === 30 && s.valid) && typeof CDMatch3DContact.stunt === 'function'"))
         check("30 joueurs en 3D équipés du rig premium", page.evaluate(
-            "__premiumRigsAdded === 30 && __rigElbowsValid"))
+            "__rigScenes.size > 0 && [...__rigScenes.values()].every(s => s.count === 30 && s.valid)"))
         check("course et coudes animés hors moteur", page.evaluate("""() => {
           const input=Object.freeze({x:0,y:0});
           const target=Object.freeze({x:9,y:0});
@@ -194,6 +207,9 @@ try:
           __cameraPositions.some(p=>p.y===115 && p.z===0.01 && p.up[2]===-1)"""))
         # Contrat interne historique du renderer, sans exposer cette caméra dans l'UI.
         page.evaluate("CDMatch3D.setCamera('sideline')")
+        # L'historique tactique peut précéder le remontage de la scène courante.
+        page.wait_for_function("""() =>
+          __cameraPositions.some(p=>p.y===24 && p.z===69)""")
         check("caméra latérale activable", page.evaluate("""() =>
           __cameraPositions.some(p=>p.y===24 && p.z===69)"""))
         check("suivi de caméra latérale disponible", page.evaluate("""() => {
@@ -288,6 +304,7 @@ except Exception as error:
     (REPORT / "report.json").write_text(json.dumps({
         "passed": False, "checks": checks, "error": str(error),
         "pageErrors": errors, "pendingRequests": sorted(pending_requests),
+        "diagnostics": failure_diagnostics,
     }, ensure_ascii=False, indent=2) + "\n")
     raise
 finally:
