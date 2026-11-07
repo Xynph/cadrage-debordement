@@ -82,3 +82,19 @@ jobs:
           name: rugby-real-v12-depth-calibration
           path: ${{ runner.temp }}/v12-calibration.json
           retention-days: 30
+
+  depth-native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Experimentation profondeur V12 sur 1920 vrais matchs apparies
+        run: node tools/rugby-real-v12/depth-campaign.cjs "$RUNNER_TEMP/v12-depth.json" 64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rugby-real-v12-depth-rosters
+          path: ${{ runner.temp }}/v12-depth.json
+          retention-days: 30
