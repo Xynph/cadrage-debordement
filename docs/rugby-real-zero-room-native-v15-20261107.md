@@ -14,9 +14,50 @@ La carrière conserve les mêmes équipes, paramètres et lois que le jeu : aucu
 Ne proposer un ajustement individuel de potentiel que si le joueur présente une incohérence de progression **répétée et reproductible sur des saisons natives**, non expliquée par l'âge, l'absence de temps de jeu, l'évolution des 36 attributs, le départ du club ou la disparition à la retraite. Une marge de note nulle n'est pas un motif suffisant. Les 47 dossiers restent initialement `no-change / observation`. Les tests doivent être reçus sur le SHA final de la PR avant toute conclusion empirique.
 
 ## Gouvernance
-Base `main` au démarrage : `044e83d2a9f860d59c2aeac2a22df94235bf04c9`. PR DRAFT strictement diagnostique. Fichiers nouveaux exclusivement : ce rapport, le test dédié et son workflow. Aucun `dist/**`, master, DATA/LNR, effectif, identité, club, calendrier, interface, MATCH3D, moteur, sauvegarde ni autre PR modifié. Sans fusion.
+Base `main` au démarrage : `044e83d2a9f860d59c2aeac2a22df94235bf04c9`. PR DRAFT strictement diagnostique. Fichiers nouveaux exclusivement : ce rapport, deux tests dédiés et le workflow. Aucun `dist/**`, master, DATA/LNR, effectif, identité, club, calendrier, interface, MATCH3D, moteur, sauvegarde ni autre PR modifié. Sans fusion.
 
 ## Exécution
-`node --test tests/rugby-real-zero-room-native-v15-20261107.cjs`
+`node --test tests/rugby-real-zero-room-native-v15-20261107.cjs tests/rugby-real-zero-room-calibration-v15-20261107.cjs`
 
 Le workflow GitHub `Rugby Reel - zero-room native V15 QA` exécute la commande sur GitHub Actions. Ne pas revendiquer un résultat avant consultation des logs terminaux.
+
+## Réception réelle — campagnes GitHub
+
+**HEAD initial** `c4d984af5565026525b23b0939a12320f7dac269` : workflow spécialisé [#42371132248](https://github.com/Xynph/cadrage-debordement/actions/runs/42371132248) **SUCCESS (2 tests PASS)**, général [#42371132157](https://github.com/Xynph/cadrage-debordement/actions/runs/42371132157) **7/7 SUCCESS**. Exécution du vrai moteur de carrière, **6 saisons**, 6 cycles export/import. Cohorte initiale **22 joueurs TOP14** parmi 47 marges nulles, les **25 autres** PRO D2 ne sont pas instanciés dans les clubs de la carrière. Les présents fin de saison 1→6 : **22, 13, 10, 6, 6, 3**. **1 transfert de club observé** au sein de cette cohorte, **21 disparitions de l'effectif observé** après transitions (ne pas assimiler systématiquement aux retraites). L'âge initial des 22 présents s'étend de **29 à 39 ans** ; aucun n'a moins de 26 ans. La note globale reste constante dans les observations de ce banc, malgré le déclin d'attributs. Parmi les six suivis au moins trois années d'âge, la vitesse baisse en moyenne de **7,335 points** ; cette moyenne souffre d'un fort biais de survivants.
+
+**HEAD expérimental** `5f6a74e2438f9cfca1fa1ea809dd05420a96976c` : QA dédié [#42371578862](https://github.com/Xynph/cadrage-debordement/actions/runs/42371578862) **SUCCESS, cinq tests PASS**. Nouveau banc `tests/rugby-real-zero-room-calibration-v15-20261107.cjs` utilisant **les attributs de départ réels et les âges 2026 de la BDD**, sans fabriquer une jeunesse à 18 ans. Les **47 profils** sont répartis en 22 TOP14 + 25 PRO D2 ; âges de **29 à 39 ans** en TOP14 et **29 à 36** en PRO D2. Les **1 592** âges se répartissent en 889 joueurs de 25 ans ou moins, 395 de 26–29 ans et 308 de 30 ans et plus. Ce classement montre que les 47 marges nulles concernent des joueurs expérimentés, non des jeunes à fort développement attendu.
+
+### Comparaison de calibrations individuelles non destructives
+
+`LNR_V11_AGE.step` et `lnrProjectV12` sont appelées **sans aucune duplication des formules de progression**. Sur 47 joueurs × 6 ans × 4 variantes = **1 128 transitions** :
+- potentiel recalé **inchangé** vs bonus individuel **+2** vs **+4** ; exposition habituelle 1600 min/an, entraînement 100 %, sans blessure ni fatigue ;
+- potentiel inchangé et exposition nulle pour isoler l'effet de l'activité ;
+- **0/47 changement de note entière projetée** entre contrôle et +2, **0/47** entre contrôle et +4 ;
+- gain moyen de la moyenne des 11 compétences : seulement **+0,007** point avec +2, **+0,012** avec +4. La modification est pratiquement sans effet sur ces joueurs âgés et ne mérite **aucune hausse de potentiel** ;
+- perte de vitesse moyenne contrôlée sur six passages : **11,63 points**, également 11,63 avec zéro exposition. À cet âge, la courbe physique de déclin domine le développement par entraînement ;
+- gain moyen des décisions : **+0,175** point ; maintien relatif du mental comparé au physique.
+
+Le calcul de notation projetée ici est une **comparaison de scénarios sur copies**, et non une carrière native complète. Les joueurs ne sont pas maintenus artificiellement en activité dans la vraie carrière ; le banc contrôle ce que ferait le vieillissement *s'ils restaient* pendant six ans, sans simuler le marché ni les retraites.
+
+### Cohorte complète — progression par tranche d'âge et division
+
+Sur **1 592 × 4 ans × 3 scénarios = 19 104 transitions** (activité 1600 min, inactivité, potentiel candidat +3) :
+
+| Âge au départ 2026 | Joueurs | Δ note projetée après 4 ans, actif | Δ vitesse, actif | Δ décisions, actif |
+| --- | ---: | ---: | ---: | ---: |
+| ≤25 | 889 | +2,431 | +0,920 | +2,508 |
+| 26–29 | 395 | −0,190 | −3,716 | +1,067 |
+| 30–34 | 279 | −1,355 | −6,701 | +0,304 |
+| 35+ | 29 | −2,069 | −8,576 | −0,030 |
+
+Sur les **805 TOP14**, note moyenne projetée +1,154 sur quatre ans, vitesse −1,475 ; **787 PRO D2**, +0,914 et −2,009. Les moyennes de progression sont influencées par la distribution d'âges et ne doivent pas être interprétées comme une convergence des deux divisions ; les niveaux de départ gardent leur différence. Avec un potentiel candidat **+3**, seulement **5 TOP14 + 9 PRO D2** changent d'une unité entière de note projetée : gonfler globalement le potentiel ne règle pas la progression du jeu. Les 11 postes sont tracés dans le log du run #42371578862 ; leurs Δ moyens de note varient ici de **+0,698 (ailier)** à **+1,378 (demi d'ouverture)** sur quatre ans, mélanges d'âges non ajustés.
+
+### Problème structurel possible — note entière et variations cumulées
+
+Le code moteur lu dans `dist/development.js` applique après chaque saison `p.rating=Math.round(old+skillAfter-skillBefore)` et met à jour la base des compétences. Cela **pourrait effacer les pertes annuelles inférieures à 0,5 point**, même lorsqu'elles s'accumulent sur plusieurs saisons. Les notes globales inchangées dans la première campagne native, malgré des baisses visibles de vitesse, justifient de vérifier directement la dérive de la moyenne des 11 compétences au sein de chaque joueur (extension native actuelle). Toute correction de ce calcul relève cependant de `dist/development.js` : **moteur explicitement réservé, aucune intervention de ce lot**.
+
+## Décision de calibration
+
+**47/47 potentiels inchangés, aucune hausse individuelle retenue.** La cohorte ne montre aucun cas de jeune joueur à marge nulle. Le bonus +2/+4 ne résout pas l'évolution des profils âgés et ne doit pas être appliqué à la BDD 2026–2027. Les écarts TOP14/PRO D2 doivent être jugés par des vrais scénarios d'effectifs et de matchs, non corrigés indirectement via les potentiels. Les **240 matchs natifs** et les scénarios avec cinq recrues/départs existants dans `tests/rugby-real-long-career-qa.cjs` restent la référence complémentaire ; ils ne modélisent pas une vraie promotion/relégation dans une ligue TOP14/PRO D2.
+
+**Statut de la branche : DRAFT, aucun changement de données de production, aucune fusion.** Les résultats de l'extension finale devront être reçus sur son propre SHA : le vert des HEAD antérieurs ne qualifie pas rétroactivement un commit ultérieur.
