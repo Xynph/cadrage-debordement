@@ -97,3 +97,48 @@ test('V12 diagnostic de profondeur et sensibilité : même moteur, 15+8, cinq mo
  for(const name of Object.keys(r.rosters)){assert.equal(r.rosters[name].lineup.length,15);assert.equal(r.rosters[name].bench.length,8);}
  for(const v of r.variants)for(const s of Object.values(v.scenarios)){assert.equal(s.matches,4);assert.ok(Number.isFinite(s.margin));assert.ok(Number.isFinite(s.winPct));}
 });
+
+test('V12 profondeur: 1592 IDs invariants, 36 attributs, potentiel et six traits préservés',()=>{
+ const D=require('../tools/rugby-real-v12/depth.cjs');
+ const base=R.apply(master,require('../data/scouting/review-v12/candidate.json'));
+ const original=JSON.stringify(base);
+ const a=D.build(base,'mild'),b=D.build(base,'pronounced');
+ assert.equal(JSON.stringify(base),original);
+ for(const d of [a,b]){
+  assert.equal(d.changes.length,1592);
+  assert.equal(d.tiers.length,1592);
+  assert.equal(new Set(d.tiers.map(x=>x.id)).size,1592);
+  for(let i=0;i<base.players.length;i++){
+   const p=base.players[i],q=d.master.players[i];
+   for(const k of ['id','club','league','birthYear','potential','hiddenTraitsV2','gameplayPosition','ageApprox','rating'])assert.deepEqual(q[k],p[k]);
+   assert.equal(Object.keys(q.attributesV2).length,36);
+   assert.ok(Object.values(q.attributesV2).every(v=>Number.isInteger(v)&&v>=20&&v<=97));
+   assert.deepEqual(q.skills,R.project(q));
+   assert.equal(q.ratingV12,Math.round(R.ability(q.attributesV2,q.gameplayPosition)));
+   const changed=new Set(R.ROLES[p.gameplayPosition]);
+   for(const k of R.KEYS)if(!changed.has(k))assert.equal(q.attributesV2[k],p.attributesV2[k]);
+  }
+  assert.ok(d.audit.some(x=>x.eligible15x8));
+ }
+ assert.throws(()=>D.build(base,'invalid'),/variant/);
+});
+test('V12 profondeur: trois variantes, mouvements figés, 15+8 et vrai moteur déterministe',()=>{
+ const Q=require('../tools/rugby-real-v12/depth-campaign.cjs');
+ const r=Q.run({seeds:2});
+ assert.equal(r.matchCount,60);
+ assert.deepEqual(r.variants.map(x=>x.variant),['baseline','mild','pronounced']);
+ assert.equal(r.fixedRecruits.length,5);assert.equal(r.fixedDepartures.length,5);
+ for(const v of r.variants){
+  assert.equal(v.roster.promoted.lineup.length,15);
+  assert.equal(v.roster.promoted.bench.length,8);
+  assert.equal(v.roster.lost.lineup.length,15);
+  assert.equal(v.roster.lost.bench.length,8);
+  assert.equal(Object.keys(v.summary).length,5);
+  for(const s of Object.values(v.summary)){assert.equal(s.matches,4);assert.ok(Number.isFinite(s.margin));}
+ }
+ for(const name of ['mild','pronounced']){
+  assert.ok(r.tierAudits[name].roleAbilityMeanDelta.star>0);
+  assert.ok(r.tierAudits[name].roleAbilityMeanDelta.bench<0);
+  assert.ok(r.tierAudits[name].roleAbilityMeanDelta.rotation<0);
+ }
+});
