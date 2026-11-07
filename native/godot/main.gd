@@ -13,6 +13,7 @@ var body: VBoxContainer
 var heading: Label
 var subtitle: Label
 var sidebar_club: Label
+var sidebar_crest: Control
 var status: Label
 var nav_buttons: Dictionary = {}
 var waiting := false
@@ -30,6 +31,9 @@ var viewport: SubViewport
 var file_dialog: FileDialog
 var import_mode := false
 var export_path := ""
+var roster_scroll: ScrollContainer
+var roster_offset := 0
+var closing := false
 
 func _ready() -> void:
 	theme = Art.make()
@@ -79,7 +83,8 @@ func _build_shell() -> void:
 	left.add_child(_label("CD", 54, Art.INK, true))
 	left.add_child(_label("CADRAGE\nDÉBORDEMENT", 18, Art.INK, true))
 	left.add_child(_rule())
-	left.add_child(_crest("XV", accent, 62))
+	sidebar_crest = _crest("XV", accent, 62)
+	left.add_child(sidebar_crest)
 	sidebar_club = _label("VOTRE CLUB", 16, Art.INK, true)
 	sidebar_club.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	left.add_child(sidebar_club)
@@ -127,6 +132,9 @@ func _build_shell() -> void:
 func _receive_model(value: Dictionary) -> void:
 	model = value
 	waiting = false
+	if model.get("club") == null:
+		_command("new_career", {"club": 0})
+		return
 	if not export_path.is_empty():
 		var exported: String = str(model.get("meta", {}).get("exportText", ""))
 		var destination := export_path
@@ -148,9 +156,12 @@ func _receive_model(value: Dictionary) -> void:
 	var club: Dictionary = model.get("club", {})
 	var identity: Dictionary = club.get("presentation", {})
 	accent = Color(identity.get("color", "#d43e47"))
+	sidebar_crest.initials = str(identity.get("abbr", "XV"))
+	sidebar_crest.accent = accent
+	sidebar_crest.queue_redraw()
 	sidebar_club.text = str(identity.get("name", club.get("name", "Votre club")))
 	var meta: Dictionary = model.get("meta", {})
-	subtitle.text = "SAISON %s  /  JOURNÉE %s  /  CARRIÈRE FICTIVE" % [str(meta.get("season", "—")), str(int(meta.get("round", 0)) + 1)]
+	subtitle.text = "SAISON %s  /  JOURNÉE %s  /  CARRIÈRE FICTIVE" % [_number(meta.get("season", "—")), str(int(meta.get("round", 0)) + 1)]
 	status.text = "Simulation connectée · Profil prototype séparé · %s" % str(meta.get("dataDir", _profile_path()))
 	status.modulate = Color.WHITE
 	if route == "Match" and is_instance_valid(match_page):
@@ -180,6 +191,8 @@ func _navigate(name: String) -> void:
 	_render()
 
 func _clear_body() -> void:
+	if is_instance_valid(roster_scroll): roster_offset = roster_scroll.scroll_vertical
+	roster_scroll = null
 	for child in body.get_children():
 		body.remove_child(child)
 		child.queue_free()
@@ -237,9 +250,9 @@ func _office_page() -> void:
 	overlay.add_child(_button("PRÉPARER LE MATCH  →", func(): _navigate("Match"), true))
 	var side := _card_column(top, 1.0)
 	side.add_child(_label("CAP SUR LA SAISON", 20, Art.INK, true))
-	side.add_child(_metric(str(club.get("rank", "—")) + "e", "AU CLASSEMENT", accent.lightened(0.4)))
+	side.add_child(_metric(_number(club.get("rank", "—")) + "e", "AU CLASSEMENT", accent.lightened(0.4)))
 	side.add_child(_rule())
-	side.add_child(_metric(str(club.get("points", 0)), "POINTS"))
+	side.add_child(_metric(_number(club.get("points", 0)), "POINTS"))
 	side.add_child(_rule())
 	side.add_child(_label(str(club.get("goal", "Votre projet sportif")), 22, Art.INK, true))
 	side.add_child(_label("Objectif de votre carrière fictive", 11, Art.MUTED))
@@ -270,12 +283,12 @@ func _office_page() -> void:
 	table.add_child(_section("LA CONCURRENCE", "Championnat historique · 14 clubs"))
 	for row in model.get("league", []).slice(0, 5):
 		var line := _h(10)
-		line.add_child(_label(str(row.get("rank", "—")).pad_zeros(2), 14, Art.MUTED))
+		line.add_child(_label(_number(row.get("rank", "—")).pad_zeros(2), 14, Art.MUTED))
 		var name := _label(str(_identity(row).get("name", row.get("name", ""))), 14)
 		name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		line.add_child(name)
-		line.add_child(_label(str(row.get("points", 0)), 18, Art.INK, true))
+		line.add_child(_label(_number(row.get("points", 0)), 18, Art.INK, true))
 		table.add_child(line)
 
 func _club_page() -> void:
@@ -342,6 +355,8 @@ func _squad_page() -> void:
 		head.add_child(l)
 	table.add_child(head)
 	var scroll := ScrollContainer.new()
+	roster_scroll = scroll
+	scroll.set_deferred("scroll_vertical", roster_offset)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	table.add_child(scroll)
@@ -366,9 +381,10 @@ func _squad_page() -> void:
 		name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		line.add_child(name)
-		for pair in [[str(p.get("pos", "")), 100], [str(p.get("age", "")), 38], [str(p.get("rating", "")), 40], ["%d%%" % float(p.get("condition", 0)), 60]]:
+		for pair in [[str(p.get("pos", "")), 100], [_number(p.get("age", "")), 38], [_number(p.get("rating", "")), 40], ["%d%%" % float(p.get("condition", 0)), 60]]:
 			var l := _label(pair[0], 13, Art.MUTED)
 			l.custom_minimum_size.x = pair[1]
+			l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			line.add_child(l)
 		list.add_child(b)
 	var profile := _card_column(row, 1.0)
@@ -379,14 +395,14 @@ func _squad_page() -> void:
 	var n := _label(str(selected.name), 29, Art.INK, true)
 	n.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	identity.add_child(n)
-	identity.add_child(_label("%s · %s ans" % [str(selected.get("pos", "")), str(selected.get("age", ""))], 12, Art.MUTED))
+	identity.add_child(_label("%s · %s ans" % [str(selected.get("pos", "")), _number(selected.get("age", ""))], 12, Art.MUTED))
 	identity.add_child(_label(str(selected.get("status", "")), 12, accent.lightened(0.4)))
 	face_row.add_child(identity)
 	profile.add_child(face_row)
 	profile.add_child(_rule())
 	var metrics := _h(18)
-	metrics.add_child(_metric(str(selected.get("rating", "—")), "NIVEAU"))
-	metrics.add_child(_metric(str(selected.get("potential", "—")), "POTENTIEL"))
+	metrics.add_child(_metric(_number(selected.get("rating", "—")), "NIVEAU"))
+	metrics.add_child(_metric(_number(selected.get("potential", "—")), "POTENTIEL"))
 	metrics.add_child(_metric("%d%%" % float(selected.get("condition", 0)), "CONDITION", Art.GREEN))
 	profile.add_child(metrics)
 	var attrs: Dictionary = selected.get("attributes", {})
@@ -401,10 +417,10 @@ func _squad_page() -> void:
 	grid.add_theme_constant_override("h_separation", 18)
 	profile.add_child(grid)
 	for pair in [["power", "Puissance"], ["speed", "Vitesse"], ["pass", "Passe"], ["tackle", "Plaquage"], ["stamina", "Endurance"], ["mental", "Mental"]]:
-		grid.add_child(_label("%s   %s" % [pair[1], str(attrs.get(pair[0], "—"))], 12, Art.MUTED))
+		grid.add_child(_label("%s   %s" % [pair[1], _number(attrs.get(pair[0], "—"))], 12, Art.MUTED))
 	profile.add_child(_rule())
 	profile.add_child(_label(str(selected.get("contractLabel", "Contrat")), 14))
-	profile.add_child(_label("%s minutes · %s apparitions" % [str(selected.get("minutes", 0)), str(selected.get("appearances", 0))], 12, Art.MUTED))
+	profile.add_child(_label("%s minutes · %s apparitions" % [_number(selected.get("minutes", 0)), _number(selected.get("appearances", 0))], 12, Art.MUTED))
 	profile.add_child(_label("Portrait décoratif fictif généré par IA", 10, Art.MUTED))
 	profile.add_child(_button("11 COMPÉTENCES & CONTRAT", func(): _player_details(selected)))
 	profile.add_child(_button("COMPOSITION AUTOMATIQUE DU XV", func(): _command("auto_lineup")))
@@ -473,6 +489,7 @@ func _match_page() -> void:
 func _update_match() -> void:
 	var live: Dictionary = model.get("live", {}) if model.get("live") != null else {}
 	if live.is_empty():
+		if is_instance_valid(match_view): match_view.apply_frame({})
 		match_clock.text = "AVANT-MATCH"
 		var next: Dictionary = model.get("next", {}) if model.get("next") != null else {}
 		match_score.text = "%s  /  %s" % [_abbr(next.get("home", {})), _abbr(next.get("away", {}))]
@@ -484,22 +501,22 @@ func _update_match() -> void:
 		return
 	var score: Array = live.get("score", [0, 0])
 	var teams: Array = live.get("teams", [{}, {}])
-	match_clock.text = "%s min" % str(live.get("minute", 0))
+	match_clock.text = "%s min" % _number(live.get("minute", 0))
 	if live.get("finished", false): match_clock.text = "TERMINÉ"
 	elif live.get("halftime", false): match_clock.text = "MI-TEMPS"
-	match_score.text = "%s    %s — %s    %s" % [_abbr(teams[0]), str(score[0]), str(score[1]), _abbr(teams[1])]
+	match_score.text = "%s    %s — %s    %s" % [_abbr(teams[0]), _number(score[0]), _number(score[1]), _abbr(teams[1])]
 	pause_button.text = "TERMINÉ" if live.get("finished", false) else ("REPRENDRE" if live.get("paused", false) else "PAUSE")
 	pause_button.disabled = live.get("finished", false)
 	match_finish.disabled = not live.get("finished", false)
 	var tries: Array = live.get("tries", [0, 0])
-	var stat_lines: Array[String] = ["ESSAIS  %s — %s" % [str(tries[0]), str(tries[1])]]
+	var stat_lines: Array[String] = ["ESSAIS  %s — %s" % [_number(tries[0]), _number(tries[1])]]
 	for stat in live.get("statsRows", []).slice(0, 6):
-		stat_lines.append("%s\n%s — %s" % [str(stat.get("label", "")), str(stat.get("home", "—")), str(stat.get("away", "—"))])
+		stat_lines.append("%s\n%s — %s" % [str(stat.get("label", "")), _number(stat.get("home", "—")), _number(stat.get("away", "—"))])
 	match_stats.text = "\n\n".join(stat_lines)
 	var events: Array = live.get("events", [])
 	var lines: Array[String] = []
 	for e in events.slice(maxi(0, events.size() - 2)):
-		if e is Dictionary: lines.append("%s' · %s" % [str(e.get("min", "")), str(e.get("text", e.get("message", "")))])
+		if e is Dictionary: lines.append("%s' · %s" % [_number(e.get("min", "")), str(e.get("text", e.get("message", "")))])
 		else: lines.append(str(e))
 	match_events.text = "\n\n".join(lines)
 	if is_instance_valid(match_view): match_view.apply_frame(live)
@@ -531,7 +548,7 @@ func _player_details(player: Dictionary) -> void:
 	var lines: Array[String] = []
 	var attrs: Dictionary = player.get("attributes", {})
 	for pair in [["scrum", "Mêlée"], ["lineout", "Touche"], ["tackle", "Plaquage"], ["speed", "Vitesse"], ["pass", "Passe"], ["kick", "Jeu au pied"], ["goal", "But"], ["mental", "Mental"], ["discipline", "Discipline"], ["stamina", "Endurance"], ["power", "Puissance"]]:
-		lines.append("%s : %s / 100" % [pair[1], str(attrs.get(pair[0], "—"))])
+		lines.append("%s : %s / 100" % [pair[1], _number(attrs.get(pair[0], "—"))])
 	lines.append("\n%s · Salaire : %s €" % [str(player.get("contractLabel", "")), str(player.get("salary", "—"))])
 	lines.append("Charge physique : %s / 100 · Blessure : %s semaine(s)" % [str(player.get("physicalLoad", 0)), str(player.get("injury", 0))])
 	var d := AcceptDialog.new()
@@ -590,11 +607,23 @@ func _credits() -> void:
 	d.popup_centered(Vector2i(760, 300))
 
 func _close() -> void:
-	if is_instance_valid(bridge): bridge.stop()
+	if closing: return
+	closing = true
+	timer.stop()
+	status.text = "Fermeture de la simulation…"
+	if is_instance_valid(bridge):
+		bridge.stop()
+		var deadline := Time.get_ticks_msec() + 2300
+		while bridge.child_pid > 0 and Time.get_ticks_msec() < deadline:
+			await get_tree().process_frame
 	get_tree().quit()
 
 func _identity(club: Dictionary) -> Dictionary:
 	return club.get("presentation", club)
+
+func _number(value: Variant) -> String:
+	if value is float or value is int: return str(int(value))
+	return str(value)
 
 func _abbr(club: Dictionary) -> String:
 	return str(_identity(club).get("abbr", club.get("abbr", "XV")))
@@ -701,7 +730,7 @@ func _photo_card(slug: String, kind: String) -> PanelContainer:
 	image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	base.add_child(image)
 	var gradient := Gradient.new()
-	gradient.set_color(0, Color(0.02, 0.04, 0.05, 0.12))
+	gradient.set_color(0, Color(0.02, 0.04, 0.05, 0.72))
 	gradient.set_color(1, Color(0.02, 0.04, 0.05, 0.96))
 	var texture := GradientTexture2D.new()
 	texture.gradient = gradient

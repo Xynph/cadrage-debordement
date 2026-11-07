@@ -88,6 +88,9 @@ func _run() -> void:
 	_check(app.model.meta.round == 1, "Round advanced")
 	await _command("save")
 	app.bridge.stop()
+	for i in range(300):
+		if app.bridge.child_pid <= 0: break
+		await process_frame
 	app.queue_free()
 	await _settle()
 	print(JSON.stringify({"passed": failures.is_empty(), "failures": failures, "native_display": DisplayServer.get_name(), "captures": captures}))
