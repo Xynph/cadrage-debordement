@@ -1,29 +1,65 @@
 'use strict';
 // Prototype bridge: local private stdio only. Never load browser UI, real roster
 // data, the test harness, a network server, or code supplied by protocol clients.
-const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),readline=require('node:readline');
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),readline=require('node:readline'),{randomUUID}=require('node:crypto');
 const projection=require('./model.cjs');
 const MODULES=['storage.js','world-data.js','rugby.js','frontrow.js','restarts.js','matchflow.js','playbook.js','manager.js','manager-squad.js','tactical-plans.js','match-actions.js','match2d.js','match-v61-advisor.js','match-cockpit.js','economy.js','development.js','finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js','v39.js','manager-mobility.js','saves.js','opposition.js','match-preparation.js','france-clubs.js','match3d/scene-adapter.js','game.js'];
 const COMMANDS=new Set(['snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','finish_round','save','import','export','shutdown']);
+function applicationRoot(engineDirectory=__dirname){
+ // The only supported layouts are repo/native/engine and bundle/engine/core.
+ const isDevelopment=path.basename(path.dirname(engineDirectory))==='native'&&!fs.existsSync(path.join(engineDirectory,'core'));
+ return path.resolve(engineDirectory,isDevelopment?'../..':'..');
+}
+function physicalLocation(location){
+ const suffix=[];let existing=path.resolve(location);
+ while(!fs.existsSync(existing)){
+  const parent=path.dirname(existing);if(parent===existing)throw Error('Racine de stockage introuvable.');
+  suffix.unshift(path.basename(existing));existing=parent;
+ }
+ return path.resolve(fs.realpathSync.native(existing),...suffix);
+}
+function inside(root,target){const relative=path.relative(root,target);return relative===''||relative!=='..'&&!relative.startsWith('..'+path.sep)&&!path.isAbsolute(relative);}
 function createBridge(options={}){
  if(typeof options.dataDir!=='string'||!path.isAbsolute(options.dataDir))throw Error('Dossier de données absolu requis.');
  const dataDir=path.resolve(options.dataDir,path.basename(options.dataDir)==='PrototypeGodot'?'':'PrototypeGodot');
- const appRoot=path.resolve(__dirname,'../..'),relative=path.relative(appRoot,dataDir);
- if(relative===''||!relative.startsWith('..')&&!path.isAbsolute(relative))throw Error('Le profil PrototypeGodot doit être hors du dossier de l’application.');
+ const appRoot=physicalLocation(applicationRoot());
+ if(inside(appRoot,physicalLocation(dataDir)))throw Error('Le profil PrototypeGodot doit être hors du dossier de l’application.');
  fs.mkdirSync(dataDir,{recursive:true});
+ if(inside(appRoot,fs.realpathSync.native(dataDir)))throw Error('Le profil PrototypeGodot doit être hors du dossier de l’application.');
  const file=path.join(dataDir,'donnees.json'),lock=path.join(dataDir,'profil.lock');
- let lockFd;try{
-  try{lockFd=fs.openSync(lock,'wx');}catch(e){
-   if(e.code!=='EEXIST')throw e;
-   const priorPid=Number(fs.readFileSync(lock,'utf8'));let dead=false;
-   if(Number.isSafeInteger(priorPid)&&priorPid>0){try{process.kill(priorPid,0);}catch(probe){dead=probe.code==='ESRCH';}}
-   if(!dead)throw e;
-   fs.unlinkSync(lock);lockFd=fs.openSync(lock,'wx');
+ const gate=path.join(dataDir,'profil.acquisition'),gateOwner=path.join(gate,'owner');
+ // Every acquisition, stale recovery, and release uses the same independent
+ // exclusive gate. A crashed gate is deliberately refused, never reclaimed.
+ function exclusive(operation){
+  const token=randomUUID();fs.mkdirSync(gate);
+  fs.writeFileSync(gateOwner,token,{flag:'wx'});
+  try{return operation();}finally{
+   if(fs.readFileSync(gateOwner,'utf8')!==token)throw Error('Le garde d’acquisition n’appartient plus à ce processus.');
+   fs.unlinkSync(gateOwner);fs.rmdirSync(gate);
   }
-  fs.writeFileSync(lockFd,String(process.pid));
- }catch(e){throw Error('Profil déjà utilisé ou verrou indisponible : '+e.message);}
+ }
+ const ownership=JSON.stringify({pid:process.pid,owner:randomUUID()});let lockFd,identity;
+ try{exclusive(()=>{
+   try{lockFd=fs.openSync(lock,'wx');}catch(e){
+    if(e.code!=='EEXIST')throw e;
+    const prior=fs.readFileSync(lock,'utf8');let priorPid=Number(prior),dead=false;
+    if(!Number.isSafeInteger(priorPid)){try{priorPid=JSON.parse(prior).pid;}catch{}}
+    if(Number.isSafeInteger(priorPid)&&priorPid>0){try{process.kill(priorPid,0);}catch(probe){dead=probe.code==='ESRCH';}}
+    if(!dead)throw e;
+    fs.unlinkSync(lock);lockFd=fs.openSync(lock,'wx');
+   }
+   fs.writeFileSync(lockFd,ownership);identity=fs.fstatSync(lockFd);
+  });
+ }catch(e){if(lockFd!==undefined)fs.closeSync(lockFd);throw Error('Profil déjà utilisé ou verrou indisponible : '+e.message);}
  let closed=false,store={},seed=(options.seed??Math.floor(Math.random()*0xffffffff))>>>0,clock=options.now??Date.now();
- const close=()=>{if(closed)return;closed=true;fs.closeSync(lockFd);fs.unlinkSync(lock);};
+ const close=()=>{
+  if(closed)return;closed=true;
+  try{exclusive(()=>{
+   const current=fs.lstatSync(lock);
+   if(current.isSymbolicLink()||current.dev!==identity.dev||current.ino!==identity.ino||fs.readFileSync(lock,'utf8')!==ownership)throw Error('Le verrou de profil n’appartient plus à ce processus.');
+   fs.unlinkSync(lock);
+  });}finally{fs.closeSync(lockFd);}
+ };
  let ctx;
  try{
   if(fs.existsSync(file)){
@@ -107,7 +143,7 @@ function createBridge(options={}){
   return {handle,close};
  }catch(e){close();throw e;}
 }
-module.exports={createBridge,CORE_FILES:Object.freeze([...MODULES])};
+module.exports={createBridge,applicationRoot,CORE_FILES:Object.freeze([...MODULES])};
 if(require.main===module){
  let bridge;
  try{const index=process.argv.indexOf('--data-dir');bridge=createBridge({dataDir:index>=0?process.argv[index+1]:path.join(process.env.LOCALAPPDATA||require('node:os').homedir(),'CadrageDebordement','PrototypeGodot')});}

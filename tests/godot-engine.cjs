@@ -3,13 +3,16 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('nod
 const {spawn}=require('node:child_process');
 const workerPath=path.resolve(__dirname,'../native/engine/worker.cjs');
 assert.ok(fs.existsSync(workerPath),'Le worker Godot de production doit exister');
-const {createBridge}=require(workerPath),{context}=require('./harness.cjs');
+const {createBridge,CORE_FILES}=require(workerPath),{context}=require('./harness.cjs');
 assert.ok(fs.existsSync(path.resolve(__dirname,'../native/godot/engine_bridge.gd')),'Le pont Godot asynchrone doit exister');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-godot-test-'));
 let count=0;const bridges=[];
 function bridge(name,extra={}){const b=createBridge({dataDir:path.join(root,name),seed:827381,now:1700000000000,...extra});bridges.push(b);return b;}
 function call(b,command,payload={}){return b.handle({id:++count,command,payload});}
 function good(b,command,payload={}){const r=call(b,command,payload);assert.equal(r.ok,true,r.error);assert.equal(r.id,count);return r.model;}
+if(process.argv.includes('--storage-review')){
+ reviewStorage().then(()=>console.log('STORAGE_REVIEW_PASS')).catch(e=>{console.error(e);process.exitCode=1;});
+}else{
 try{
  const b=bridge('main');
  for(const request of [null,{command:'snapshot'},{id:[],command:'snapshot'},{id:1,command:'eval',payload:{code:'process.exit()'}},{id:1,command:'snapshot',payload:[]}])assert.equal(b.handle(request).ok,false);
@@ -54,6 +57,78 @@ try{
 (async()=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-godot-pipe-'));const child=spawn(process.execPath,[workerPath,'--data-dir',dir],{stdio:['pipe','pipe','pipe']});let stdout='',stderr='';child.stdout.on('data',d=>stdout+=d);child.stderr.on('data',d=>stderr+=d);child.stdin.end('invalid\n'+JSON.stringify({id:'a',command:'snapshot'})+'\n'+JSON.stringify({id:'z',command:'shutdown'})+'\n');const code=await new Promise((resolve,reject)=>{child.on('error',reject);child.on('exit',resolve);});assert.equal(code,0,stderr);const lines=stdout.trim().split('\n').map(JSON.parse);assert.equal(lines.length,3);assert.equal(lines[0].ok,false);assert.equal(lines[1].id,'a');assert.equal(lines[2].ok,true);assert.equal(stderr,'');fs.rmSync(dir,{recursive:true,force:true});console.log('JSON-lines process: PASS');
  if(process.env.CD_GODOT_EXECUTABLE)await godotTest();else console.log('Godot runtime: NON EXÉCUTÉ (CD_GODOT_EXECUTABLE absent)');
 })().catch(e=>{console.error(e);process.exitCode=1;});
+}
+
+async function reviewStorage(){
+ const temp=fs.mkdtempSync(path.join(os.tmpdir(),'cd-storage-review-')),exportRoot=path.join(temp,'app'),engine=path.join(exportRoot,'engine');
+ const children=[];
+ try{
+  fs.mkdirSync(path.join(engine,'core'),{recursive:true});
+  for(const name of ['worker.cjs','model.cjs'])fs.copyFileSync(path.join(path.dirname(workerPath),name),path.join(engine,name));
+  for(const name of CORE_FILES){const target=path.join(engine,'core',name);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(path.resolve(__dirname,'../dist',name),target);}
+  const exported=require(path.join(engine,'worker.cjs'));
+  const valid=exported.createBridge({dataDir:path.join(temp,'outside')});assert.equal(valid.handle({id:1,command:'snapshot'}).ok,true);valid.close();
+  const driveRoot=process.platform==='win32'?'C:\\app':'/app';
+  assert.equal(exported.applicationRoot(path.join(driveRoot,'engine')),driveRoot,'racine exportée au premier niveau du lecteur');
+  assert.equal(exported.applicationRoot(path.join(driveRoot,'native','engine')),driveRoot,'racine développement explicite');
+  assert.throws(()=>exported.createBridge({dataDir:path.join(exportRoot,'..profil')}),/hors du dossier/,'deux points dans un nom ne sont pas un chemin parent');
+  const junction=path.join(temp,'junction');fs.symlinkSync(exportRoot,junction,process.platform==='win32'?'junction':'dir');
+  assert.throws(()=>exported.createBridge({dataDir:path.join(junction,'hidden')}),/hors du dossier/,'jonction entrante dans le bundle refusée');
+  console.log('I1 PASS: exported layout + drive root + ..profil + physical junction containment');
+  // Force A to pause after observing the dead PID. B must be excluded from
+  // the entire stale-lock acquisition, not only its final open("wx").
+  const profile=path.join(temp,'race','PrototypeGodot'),release=path.join(temp,'release');fs.mkdirSync(profile,{recursive:true});fs.writeFileSync(path.join(profile,'profil.lock'),'2147483647');
+  const childSource=`const fs=require('fs');const realKill=process.kill.bind(process);let bridge;
+   if(process.env.PAUSE_STALE==='1')process.kill=(pid,signal)=>{try{return realKill(pid,signal)}catch(e){if(pid===2147483647&&e.code==='ESRCH'){process.send({type:'observed'});const end=Date.now()+10000;while(!fs.existsSync(process.env.RELEASE)){if(Date.now()>end)throw Error('barrier timeout');Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,5);}}throw e;}};
+   process.on('message',m=>{if(m==='exit'){try{if(bridge)bridge.close();process.send({type:'closed'});}catch(e){process.send({type:'closed',error:e.message});}process.exit();}else if(m==='write'){const r=bridge.handle({id:1,command:'new_career',payload:{club:0}});process.send({type:'write',ok:r.ok,error:r.error});}});
+   try{bridge=require(process.env.WORKER).createBridge({dataDir:process.env.PROFILE});process.send({type:'opened',ok:true});}catch(e){process.send({type:'opened',ok:false,error:e.message});}`;
+  const launch=pause=>{const child=spawn(process.execPath,['-e',childSource],{env:{...process.env,WORKER:workerPath,PROFILE:profile,RELEASE:release,PAUSE_STALE:pause?'1':'0'},stdio:['ignore','pipe','pipe','ipc']});children.push(child);child.received=[];child.on('message',m=>child.received.push(m));return child;};
+  const wait=async(child,type)=>{const end=Date.now()+10000;while(Date.now()<end){const result=child.received.find(m=>m.type===type);if(result)return result;await new Promise(resolve=>setTimeout(resolve,5));}throw Error('Timeout '+type);};
+  const a=launch(true);await wait(a,'observed');const b=launch(false);assert.equal((await wait(b,'opened')).ok,false,'B ne doit pas récupérer pendant l’acquisition A');
+  fs.writeFileSync(release,'go');assert.equal((await wait(a,'opened')).ok,true);const owned=fs.readFileSync(path.join(profile,'profil.lock'),'utf8');
+  b.send('exit');await wait(b,'closed');assert.equal(fs.readFileSync(path.join(profile,'profil.lock'),'utf8'),owned,'le perdant ne retire pas le verrou du gagnant');
+  const c=launch(false);assert.equal((await wait(c,'opened')).ok,false,'un troisième processus doit rester exclu');a.send('write');assert.equal((await wait(a,'write')).ok,true);assert.equal(fs.readFileSync(path.join(profile,'profil.lock'),'utf8'),owned);
+  console.log('I2 PASS: deterministic stale recovery race + loser cleanup + third writer refused + winner disk write');
+  const ownership=createBridge({dataDir:path.join(temp,'ownership')}),ownedPath=path.join(temp,'ownership','PrototypeGodot','profil.lock');fs.unlinkSync(ownedPath);fs.writeFileSync(ownedPath,'new-owner');assert.throws(()=>ownership.close(),/propriét|appart|verrou/i);assert.equal(fs.readFileSync(ownedPath,'utf8'),'new-owner','close ne supprime jamais un verrou remplacé');
+  console.log('I2 PASS: close preserves a lock whose ownership changed');
+  const abandoned=path.join(temp,'abandoned','PrototypeGodot','profil.acquisition');fs.mkdirSync(abandoned,{recursive:true});fs.writeFileSync(path.join(abandoned,'owner'),'abandoned');assert.throws(()=>createBridge({dataDir:path.join(temp,'abandoned')}),/verrou/);assert.equal(fs.readFileSync(path.join(abandoned,'owner'),'utf8'),'abandoned');
+  if(process.env.CD_GODOT_EXECUTABLE)await godotEofTest();
+ }finally{
+  for(const child of children){if(child.connected)child.send('exit');}
+  await Promise.all(children.map(child=>child.exitCode!==null?Promise.resolve():new Promise(resolve=>{const timeout=setTimeout(()=>{child.kill();resolve();},2000);child.once('exit',()=>{clearTimeout(timeout);resolve();});})));
+  fs.rmSync(temp,{recursive:true,force:true});fs.rmSync(root,{recursive:true,force:true});
+ }
+}
+
+async function godotEofTest(){
+ const temp=fs.mkdtempSync(path.join(os.tmpdir(),'cd-godot-eof-')),fake=path.join(temp,'exit.cjs');
+ fs.writeFileSync(fake,"process.stdin.once('data',()=>process.exit(0));");
+ fs.writeFileSync(path.join(temp,'project.godot'),'config_version=5\n[application]\nconfig/name="EOF test"\n[native_engine]\nworker_path='+JSON.stringify(fake.replaceAll('\\','/'))+'\n');
+ fs.copyFileSync(path.resolve(__dirname,'../native/godot/engine_bridge.gd'),path.join(temp,'engine_bridge.gd'));
+ fs.writeFileSync(path.join(temp,'test.gd'),`extends SceneTree
+var bridge: Node
+var failed := false
+var frames := 0
+func _initialize():
+ bridge = load("res://engine_bridge.gd").new()
+ root.add_child.call_deferred(bridge)
+ bridge.command_failed.connect(func(_message): failed = true)
+ _begin.call_deferred()
+func _begin():
+ bridge.start(${JSON.stringify(temp.replaceAll('\\','/')+'/profile')})
+func _process(_delta):
+ frames += 1
+ if failed and bridge.child_pid == -1:
+  print("GODOT_EOF_PASS")
+  quit(0)
+ if frames > 1000:
+  quit(1)
+ return false
+`);
+ const child=spawn(process.env.CD_GODOT_EXECUTABLE,['--headless','--path',temp,'--script','test.gd'],{env:{...process.env,CD_NODE_EXECUTABLE:process.execPath},stdio:['ignore','pipe','pipe']});let output='',errors='';child.stdout.on('data',d=>output+=d);child.stderr.on('data',d=>errors+=d);
+ const timer=setTimeout(()=>child.kill(),10000);const code=await new Promise((resolve,reject)=>{child.on('error',reject);child.on('exit',resolve);});clearTimeout(timer);
+ try{assert.equal(code,0,output+'\n'+errors);assert.match(output,/GODOT_EOF_PASS/);assert.doesNotMatch(errors,/SCRIPT ERROR|Parse Error|ERROR:/);console.log('EOF PASS: explicit command_failed, no Godot parser error, child terminated');}finally{fs.rmSync(temp,{recursive:true,force:true});}
+}
 
 async function godotTest(){
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'cd-godot-runtime-'));

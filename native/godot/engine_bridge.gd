@@ -96,7 +96,11 @@ func _io_loop() -> void:
 			return
 		# get_line and large writes may block this worker thread, never the UI.
 		var line := _stdio.get_line()
-		var response: Variant = JSON.parse_string(line)
+		var parser := JSON.new()
+		if line.is_empty() or parser.parse(line) != OK:
+			call_deferred("_transport_error", "Réponse du moteur local illisible ou processus arrêté.")
+			return
+		var response: Variant = parser.data
 		if not response is Dictionary:
 			call_deferred("_transport_error", "Réponse du moteur local illisible ou processus arrêté.")
 			return
