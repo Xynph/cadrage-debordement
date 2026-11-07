@@ -92,7 +92,7 @@ try:
         page.evaluate("squadTab='sheet';nav('team')")
         check('XV et huit remplaçants inchangés',page.evaluate('S.lineup.length===15&&S.reserves.length===8'))
         page.evaluate("nav('match');beginMatch();pauseMatch();render()")
-        check('cockpit V40',page.locator('.v40-cockpit').is_visible())
+        check('écran de match dédié',page.locator('.md-shell').is_visible())
         check('interface joueur masquée pendant match',page.locator('.cd02-player,.cd02-roster').count()==0)
         check('aucune erreur JavaScript de page',not errors)
         report['passed']=True

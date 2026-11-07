@@ -263,26 +263,26 @@ try:
    let n=e,b;while(n){b=rgb(getComputedStyle(n).backgroundColor);if(b.length===3||b[3]>.99)break;n=n.parentElement;}
    let a=lum(rgb(getComputedStyle(e).color)),z=lum(b);return(Math.max(a,z)+.05)/(Math.min(a,z)+.05)>=4.5;
   }'''
-  for selector in ('.commentary-feed .latest-event p','.auto-pause label','.full-pitch-label'):
+  for selector in ('.md-ticker span','.md-status','.md-stat small'):
    check('live text contrast '+selector,page.locator(selector).first.evaluate(contrast_js))
   # V4.6: the match is intentionally paused; screenshots do not advance time.
   paused_minute=page.evaluate('S.live.minute')
   for width,height in ((1440,900),(1920,1080)):
    page.set_viewport_size({'width':width,'height':height})
    check('V4.6 live native scoreboard '+str(width),
-         page.locator('.live-layout .match-scoreboard .score').count()==1)
+         page.locator('.live-layout .md-score').count()==1)
    check('V4.6 live actions preserved '+str(width),
-         page.locator('.live-layout .match-scoreboard .matchactions button').count()>=2)
+         page.locator('.live-layout .md-bench-actions button').count()>=2)
    check('V4.6 live rugby field '+str(width),
          page.locator('.live-layout .v40-field-center .match-field').count()==1)
-   live_style=page.locator('.live-layout .match-scoreboard').evaluate("""e=>({
+   live_style=page.locator('.live-layout .md-field').evaluate("""e=>({
        image:getComputedStyle(e).backgroundImage,
        theme:document.documentElement.dataset.cdTheme||'none',
        sheet:[...document.styleSheets].some(s=>s.href?.includes('premium-v4.css')&&!s.disabled),
        width:innerWidth
    })""")
    check('V4.6 live highlight '+str(width)+' '+str(live_style),
-         'assets/editorial/matchday.webp' in live_style['image'])
+         'gradient' in live_style['image'])
    check('V4.6 live width '+str(width),
          page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
    check('V4.6 live minute stable '+str(width),
