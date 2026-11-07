@@ -94,3 +94,40 @@ test('Univers fictif et anciennes sauvegardes: aucune conversion V12 automatique
   assert.equal(g.run('S.clubs.every(c=>c.players.every(p=>p.lnrRatingsVersion===undefined))'),true);
   assert.equal(g.run('S.lnrMode'),undefined);
 });
+
+test('V12 scénarios appariés: 240 matchs natifs, cinq recrues, cinq départs et sensibilités', {timeout:240000},()=>{
+  const {run}=require('../tools/rugby-real-v12/calibration.cjs');
+  const report=run({seeds:8});
+  assert.equal(report.matchCount,240);
+  assert.equal(report.selection.incoming.length,5);
+  assert.equal(report.selection.leaving.length,5);
+  assert.equal(report.change.recruited.replacementStarters.length,5);
+  assert.equal(report.change.departures.replacementStarters.length,5);
+  assert.deepEqual(report.variants.map(v=>v.coefficient),[.004,.008,.012]);
+  const rows=[];
+  for(const v of report.variants){
+    for(const s of Object.values(v.scenarios)){
+      assert.equal(s.matches,16);
+      assert.ok(Number.isFinite(s.winPct)&&s.winPct>=0&&s.winPct<=100);
+      assert.ok(Number.isFinite(s.margin));
+    }
+    const scenarios=v.scenarios;
+    rows.push({
+      coefficient:v.coefficient,
+      promotedStrong:scenarios.promoted_strong.winPct,
+      promotedMid:scenarios.promoted_mid.winPct,
+      promotedRecruited:scenarios.promoted_recruited_mid.winPct,
+      recruitmentMarginDelta:Number((scenarios.promoted_recruited_mid.margin-scenarios.promoted_mid.margin).toFixed(2)),
+      relegatedKeep:scenarios.relegated_keep_mid.winPct,
+      relegatedLoseFive:scenarios.relegated_lose5_mid.winPct,
+      departuresMarginDelta:Number((scenarios.relegated_lose5_mid.margin-scenarios.relegated_keep_mid.margin).toFixed(2)),
+      margins:Object.fromEntries(Object.entries(scenarios).map(([k,s])=>[k,s.margin]))
+    });
+  }
+  console.log('RUGBY_REAL_MOVEMENT_QA '+JSON.stringify({
+    matches:report.matchCount,seeds:8,
+    recruitment:report.change.recruited,
+    departures:report.change.departures,
+    rows
+  }));
+});
