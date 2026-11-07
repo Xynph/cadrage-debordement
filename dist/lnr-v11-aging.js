@@ -1,4 +1,5 @@
 'use strict';
+const LNR_V11_AGE=(()=>{
 // Candidate annual evolution of attributes on COPIES. Not connected to legacy rating growth.
 // Ages/rates below are game-design parameters, not measured physiological cutoffs.
 const C={clone:x=>JSON.parse(JSON.stringify(x)),mean:a=>a.reduce((n,v)=>n+v,0)/a.length,round:x=>Math.round(x*100)/100};
@@ -69,7 +70,8 @@ function trajectories(master){
   const peak=[...years].sort((a,b)=>b.overall-a.overall)[0];return {role,kind:'Controlled gameplay trajectory; NOT observed career',peakAge:peak.age,years};
  });
 }
-const LNR_V11_AGE=Object.freeze({CURVES,PHYSICAL,step});
+return Object.freeze({CURVES,PHYSICAL,step});
+})();
 
 // Exact V12 36 to 11 skill projector, including hooker and lock specialisation.
 const LNR_V12_PROJECTION={scrum:{scrumTechnique:.65,hooking:.15,strength:.2},lineout:{lineoutThrow:.2,lineoutJump:.25,lineoutLift:.2,jumping:.2,aerialAbility:.15},tackle:{tackling:.7,jackal:.15,positioning:.15},speed:{topSpeed:.4,acceleration:.25,agility:.15,evasion:.1,kickChase:.1},pass:{passing:.6,receiving:.15,offload:.1,ballHandling:.15},kick:{kickDistance:.45,kickAccuracy:.45,vision:.1},goal:{goalAccuracy:.9,composure:.1},mental:{decisions:.35,anticipation:.15,vision:.15,composure:.15,teamwork:.15,leadership:.05},discipline:{discipline:1},stamina:{endurance:.8,workRate:.2},power:{strength:.4,explosiveness:.2,ballCarry:.2,ruckClearout:.1,maul:.1}};
