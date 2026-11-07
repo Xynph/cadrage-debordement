@@ -5,7 +5,8 @@ on:
       - 'tests/rugby-real-zero-room-native-v15-20261107.cjs'
       - 'tests/rugby-real-zero-room-calibration-v15-20261107.cjs'
       - 'tests/rugby-real-division-roster-sensitivity-v15-20261107.cjs'
-      - 'tests/rugby-real-role-contribution-v15-20261107.cjs'
+      - 'tests/rugby-real-role-contribution-v15-20261107.cjs tests/rugby-real-player-evidence-calibration-v15-20261107.cjs'
+      - 'tests/rugby-real-player-evidence-calibration-v15-20261107.cjs'
       - 'docs/rugby-real-zero-room-native-v15-20261107.md'
       - '.github/workflows/rugby-real-zero-room-native-v15.yml'
   workflow_dispatch:
