@@ -1,6 +1,6 @@
 # Godot 0.2 — carrière et direction artistique
 
-Réception du 7 novembre 2026. Version Windows native de développement, construite depuis le code `6b3f7e2e1cd37520d385c7c4151d5642dba840c8`, sur le main qualifié `712d0254ef738c1367fda486f8428d5a2569d1a8`. La documentation ajoutée ensuite ne change pas l'exécutable reçu. La qualification GitHub du dernier HEAD reste une preuve distincte, à consulter sur la PR ; aucun résultat CI futur n'est compté réussi ici.
+Réception du 7 novembre 2026. Version Windows native de développement, construite depuis le code `33a696caa0f34781e5c38f9107a011f1e59abbdb`, sur le main qualifié `712d0254ef738c1367fda486f8428d5a2569d1a8`. La documentation ajoutée ensuite ne change pas l'exécutable reçu. La qualification GitHub du dernier HEAD reste une preuve distincte, à consulter sur la PR ; aucun résultat CI futur n'est compté réussi ici.
 
 ## Ce qui devient jouable
 
@@ -25,21 +25,24 @@ Machine de réception : Windows, Godot 4.7.2 officiel, GL Compatibility/OpenGL 3
 | Campagne moteur de dix saisons, avec validation et export/import aux transitions | 4 330 rencontres ; sauvegarde maximale 2 649 706 octets UTF-8 / 216 372 nœuds ; plafonds France 400 000 nœuds / 5 Mio |
 | UI Windows depuis le projet, après correction des contrôleurs | 488 contrôles réussis ; saison 2, club 29, offre signée, deuxième match et réimport reçus |
 | Régressions finales du SDK sur la source intégrée | 219 contrôles, dix modes, aucun skip : disque, UI, limites, transport, récupération, décisions rapides, tactiques, banc, modales, focus |
+| Cas ajoutés par la revue globale | 8 tests Node et 90 contrôles graphiques Windows : postes vacants après exclusion, deux vacances distinctes, retrait sans déplacement, vraie mi-temps/reprise/prolongations et animations, terrains neutres |
 | Ancien profil14 issu du ZIP précédent | 16 contrôles graphiques Windows ; match en cours repris jusqu'à la journée suivante, sans conversion ; original conservé |
 | Même profil14 dans le moteur réellement embarqué | Indice `round` 1 → 2 et export réussis avec le Node du ZIP, PATH sans Node installé |
 | Stade natif isolé | 127 contrôles graphiques Windows ; six cadrages, présence 30 → 29 → 0, ballon, couleurs et modèle ; déterminisme séparé réussi |
 | Cycle de scène utilisé par l'UI | Trois reconstructions consécutives, anciens conteneurs libérés, nouvelles présences exactes et journaux propres |
-| Exécutable release extrait et déplacé | **500/500 contrôles réussis**, deux résolutions 1440×900 / 1920×1080, saison 2 / club 29, export et réimport |
+| Exécutable release extrait et déplacé | **494/494 contrôles réussis**, deux résolutions 1440×900 / 1920×1080, saison 2 / club 29, export et réimport |
 | Autonomie du ZIP déplacé | 62 fichiers du manifeste vérifiés ; jeu + Node embarqué observés, zéro orphelin, zéro connexion TCP observée |
 | Redémarrage du moteur embarqué sur le profil France reçu | Club29 / saison2 / modeFrance30 retrouvés ; simple snapshot sans changement du fichier sauvegardé |
 
 Les premiers essais ayant échoué ne sont pas comptés verts : sélection IA incomplète après blessure, conséquences D2 ou éliminatoires, commandes rapides, cache du banc et dimensions des dialogues ont été reproduits puis corrigés avant cette réception. Les imports hostiles, écritures refusées et décisions périmées conservent les garanties de rollback ; le profil corrompu est copié octet pour octet avant récupération explicite.
 
+La revue globale a également fait corriger les retraits successifs de composition, l'adressage des remplacements de postes vacants et les deux consommateurs du marqueur historique de mi-temps. Les tests déclenchent les exclusions par le contrôleur natif, sans les présenter comme des événements aléatoires observés. `slot` et `atBreak` sont des projections, pas de nouveaux champs de sauvegarde. La revue ciblée de cette vague est favorable ; le ZIP a été reconstruit et reçu à nouveau. Son compteur dépend des actions réellement nécessaires dans la carrière, notamment des promotions ; les 500 contrôles du paquet de base restent une preuve historique distincte.
+
 ## Archive et construction
 
-Archive reçue : `CadrageDebordement-PrototypeGodot-Windows-x64.zip`, **177 788 180 octets**.
+Archive reçue : `CadrageDebordement-PrototypeGodot-Windows-x64.zip`, **177 788 488 octets**.
 
-SHA256 : `e11bcde4ff24c22b38aa966ae31b115cec7827e90e0fe624c338f406eaee44c5`.
+SHA256 : `cef95067baf04743907e10f4ca8bdd985ea510f22def2b0644abc3d29f36e241`.
 
 Décompresser le dossier complet puis lancer `CadrageDebordement.exe`. Les carrières sont dans `%APPDATA%\CadrageDebordement\PrototypeGodot`, indépendamment de l'exécutable. Le menu conserve import/export et reprise ; aucun lancement ne crée une carrière automatiquement. L'ancien profil fictif14 reste indépendant d'une nouvelle France30. Les crédits et licences des photos, polices, modèle, Godot et Node accompagnent l'archive.
 
@@ -51,7 +54,7 @@ python scripts/build-godot-prototype.py --sdk CHEMIN_SDK_GODOT_WINDOWS_4.7.2 --n
 
 Le script ne télécharge rien et refuse une sortie existante. Il importe le projet, exporte le PCK dans le .exe, copie les 43 modules et contrôleurs requis, le Node embarqué et les licences, puis calcule le manifeste et l'archive. `--stage-only` prépare uniquement les ressources du projet.
 
-Les preuves locales sont conservées dans le dossier de travail `CD` : `godot-native-qa/godot-career-v2-final01/` pour le ZIP, `v2-final-native-regressions.log`, `v2-legacy14-ui03/`, `v2-stadium-reception/run01/` et les rapports de revue du chantier. Les captures ci-dessus proviennent de l'exécutable exact reçu, pas d'une maquette.
+Les preuves locales sont conservées dans le dossier de travail `CD` : `godot-native-qa/godot-career-v2-final02/` pour le ZIP, `v2-final-native-regressions.log`, `v2-legacy14-ui04/`, `v2-stadium-reception/run01/` et les rapports de revue du chantier. Les captures ci-dessus proviennent de l'exécutable exact reçu, pas d'une maquette.
 
 ## Choix et limites
 

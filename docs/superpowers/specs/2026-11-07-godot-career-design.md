@@ -38,6 +38,8 @@ Création `new_career:{club:0..29,mode:'france'}` ; ancien mode fiction14 reste 
 
 ### Décisions du bâtisseur après contrôle
 
+La réception finale précise deux champs de présentation sans changer les sauvegardes : `live.atBreak` reprend la pause de mi-temps native, distincte du marqueur historique `halftime` ; chaque permission de remplacement porte `slot`, `label`, `outId` et `inIds`. La commande `substitute:{slot:0..14,inId,outId?}` adresse aussi un poste vacant. L'ancien payload avec un `outId` non nul encore présent reste accepté ; `outId:null` sans poste est refusé. L'occupant fourni et l'éligibilité native sont revalidés au moment d'appliquer la décision. Cela évite de confondre plusieurs places vides et ne modifie aucune règle d'exclusion.
+
 La revue de conception n'a identifié aucune question nécessitant de solliciter Léo. Je retiens : salaire explicite et confirmation de l'offre ; pas de choix de capitaine/buteur sans effet ; systèmes métier annoncés limités aux modules effectivement chargés par le manifeste natif. Le plan France web conserve sa valeur d'audit, mais n'impose pas de charger les modules Espoirs/supporters tardifs pour ce lot natif.
 
 Un profil corrompu doit laisser le menu stable et une explication, avec reprise explicite après réparation ou conservation d'une copie avant remplacement/import. La commande de récupération exige une confirmation utilisateur dans le jeu ; aucune carrière n'est créée ou écrasée automatiquement après refus de chargement. Cette reprise doit préserver les octets du profil endommagé. Le canal reste utilisable ou redémarre explicitement dans le même profil ; aucun changement silencieux de stockage.
