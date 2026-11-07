@@ -86,3 +86,14 @@ test('V12 maturité distincte : vitesse décline plus tôt que force, jeunes non
  assert.ok(f(32,'topSpeed')<f(28,'topSpeed'));assert.equal(f(32,'strength'),f(28,'strength'));
  assert.ok(f(37,'strength')<f(32,'strength'));assert.ok(f(37,'topSpeed')<f(37,'strength'));
 });
+
+test('V12 diagnostic de profondeur et sensibilité : même moteur, 15+8, cinq mouvements, deux domiciles',()=>{
+ const M=require('../tools/rugby-real-v12/calibration.cjs');
+ const r=M.run({seeds:2});assert.equal(r.matchCount,60);
+ assert.equal(r.variants.length,3);assert.deepEqual(r.variants.map(v=>v.coefficient),[.004,.008,.012]);
+ assert.equal(r.selection.incoming.length,5);assert.equal(r.selection.leaving.length,5);
+ assert.equal(r.change.departures.replacementStarters.length,5);
+ assert.equal(r.change.recruited.replacementStarters.length,5);
+ for(const name of Object.keys(r.rosters)){assert.equal(r.rosters[name].lineup.length,15);assert.equal(r.rosters[name].bench.length,8);}
+ for(const v of r.variants)for(const s of Object.values(v.scenarios)){assert.equal(s.matches,4);assert.ok(Number.isFinite(s.margin));assert.ok(Number.isFinite(s.winPct));}
+});
