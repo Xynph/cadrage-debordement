@@ -144,9 +144,8 @@
     if(!(typeof S!=='undefined'&&S.lnrMode)){
      main.querySelectorAll('[data-cd02-row]').forEach(row=>{const index=m.squad.findIndex(p=>p.id===row.dataset.cd02Row),link=row.querySelector('.cd02-player-link');if(link&&index>=0)link.prepend(node(portrait(portraitIndex(m.squad[index].id))));});
      const profile=main.querySelector('[data-cd02-player]'),p=profile?m.squad.find(p=>p.id===profile.dataset.cd02Player):null;
-     if(profile&&p){const avatar=profile.querySelector('.cd02-avatar');if(avatar){avatar.classList.add('ed-profile-face');avatar.innerHTML=portrait(portraitIndex(p.id),true);}const content=profile.querySelector('.cd02-player-content');if(content&&typeof ui02Tab!=='undefined'&&ui02Tab==='profil')content.prepend(node('<section class="ed-card ed-profile-radar"><h3>Le profil de jeu</h3>'+radar(p)+'</section>'));}
+     if(profile&&p){const avatar=profile.querySelector('.cd02-avatar');if(avatar){avatar.classList.add('ed-profile-face');avatar.innerHTML=portrait(portraitIndex(p.id),true);}}
     }
-    const roster=main.querySelector('.cd02-roster');if(roster){const p=m.squad.find(p=>p.id===(typeof S!=='undefined'?S.lineup?.[9]:null))||m.squad[0];if(p){const wrapper=node('<div class="ed-team-overview"></div>');roster.before(wrapper);wrapper.append(roster);wrapper.append(node('<aside class="ed-card ed-player-preview">'+(!(typeof S!=='undefined'&&S.lnrMode)?portrait(portraitIndex(p.id),true):'<div class="ed-monogram">'+esc(p.name.split(' ').map(x=>x[0]).join(''))+'</div>')+'<p class="ed-kicker">DANS VOTRE GROUPE</p><h2>'+esc(p.name)+'</h2><p>'+esc(p.position)+' · '+esc(p.age)+' ans</p><div class="ed-preview-stats"><span>Au poste <b>'+n(p.note)+'</b></span><span>Condition <b>'+n(p.condition)+'%</b></span></div>'+radar(p)+'<button type="button" data-ed-player="'+esc(p.id)+'">Ouvrir le dossier →</button></aside>'));}}
    }
    const content=node('<div class="ed-native-scroll" role="region" aria-label="Contenu de '+esc(routes[route].over)+'" tabindex="0"></div>');
    [...main.children].filter(el=>!el.matches('.ui01-appbar,.heading')).forEach(el=>content.append(el));main.append(content);

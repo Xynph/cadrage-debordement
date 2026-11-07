@@ -50,7 +50,7 @@ try:
         page.add_init_script(
             'let seed=82321;Math.random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;}'
         )
-        page.goto('http://127.0.0.1:%s/' % server.server_address[1])
+        page.goto(os.environ.get('CD_GAME_URL','http://127.0.0.1:%s/' % server.server_address[1]))
         page.locator('.cd3-nav').get_by_role('button', name='Nouvelle carrière').click()
         page.get_by_role('button', name='Univers fictif').click()
         page.locator('.clubchoice').first.click()
@@ -292,7 +292,15 @@ try:
                       page.locator('.cd02-player [role=tab]').count() == 4)
                 page.locator('[data-cd02-tab="profil"]').click()
                 check(f'V4.5 profile native strengths {width} {theme}',
-                      page.locator('.da4-profile-stage .da4-strength').count() == 3)
+                      page.evaluate("""()=>{
+                        const p=CDUI02Data.playerView(player(ui02ProfileId),ui02Deps(),ui02Ctx());
+                        const expected=Object.values(p.attributes).filter(a=>Number.isFinite(a.value))
+                          .sort((a,b)=>b.value-a.value).slice(0,3);
+                        const rows=[...document.querySelectorAll('.sq-strengths>div')];
+                        return rows.length===3&&rows.every((row,i)=>
+                          row.children[1].textContent===expected[i].label&&
+                          parseInt(row.querySelector('b').textContent,10)===expected[i].value);
+                      }"""))
                 page.screenshot(path=str(OUT / f'pc-v45-profil-{theme}-{width}x{height}.png'),
                                 full_page=False)
                 page.locator('[data-cd02-tab="contrat"]').click()

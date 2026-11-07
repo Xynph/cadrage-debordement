@@ -1,0 +1,44 @@
+name: Effectif Premium — parcours natif PC
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dist/premium-squad.*'
+      - 'dist/premium-editorial.*'
+      - 'dist/ui02-*'
+      - 'dist/index.html'
+      - 'tests/premium-squad*'
+      - '.github/workflows/premium-squad.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: premium-squad-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  squad:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Projections et régressions natives
+        run: node --test tests/premium-squad.cjs tests/premium-editorial.cjs tests/ui02-player-data.cjs tests/ui02-player-components.cjs tests/ui02-live-integration.cjs tests/rotation-choices.cjs
+      - name: Installer Chromium de qualification
+        run: |
+          npm install --prefix "$RUNNER_TEMP/squad-browser" --no-audit --no-fund playwright@1.58.0
+          "$RUNNER_TEMP/squad-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Effectif et fiches sur carrières neuve et avancée
+        env:
+          CD_PLAYWRIGHT_MODULE: ${{ runner.temp }}/squad-browser/node_modules/playwright
+        run: node tests/premium-squad-browser.mjs
+      - name: Captures et mesures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: premium-squad-native-pc
+          path: premium-squad-report/
+          if-no-files-found: error
+          retention-days: 14
