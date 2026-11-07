@@ -404,7 +404,7 @@ func _build_stadium() -> void:
 			var x := -56.0 + board * 16.0
 			_venue_box(Vector3(15.5, 1.05, 0.22), Vector3(x, 0.58, side * 41.2), anthracite)
 			_venue_box(Vector3(15.5, 0.06, 0.24), Vector3(x, 1.13, side * 41.2), ivory)
-			_stadium_label("CD  /  LE COLLECTIF" if board % 2 == 0 else "CADRAGE DÉBORDEMENT", Vector3(x, 0.65, side * 41.04), 0.017, PI if side > 0 else 0.0)
+			_stadium_label("OVAL LEGACY" if board % 2 == 0 else "RUGBY MANAGER", Vector3(x, 0.65, side * 41.04), 0.017, PI if side > 0 else 0.0)
 		# Modest end terraces leave both in-goals unobstructed.
 		for row in 7:
 			var height := 0.65 + row * 0.72
@@ -441,7 +441,7 @@ func _build_stadium() -> void:
 	_instance_batch("VenueSeats", seat_mesh, seat, seat_transforms)
 	_build_spectators(spectator_positions, spectator_rotations, rng)
 	_venue_box(Vector3(43, 3.8, 0.24), Vector3(0, 10.6, -54.8), anthracite)
-	_stadium_label("CADRAGE  /  DÉBORDEMENT", Vector3(0, 11.35, -54.6), 0.052)
+	_stadium_label("OVAL LEGACY  /  RUGBY MANAGER", Vector3(0, 11.35, -54.6), 0.052)
 	_stadium_label("LE RUGBY SE JOUE ENSEMBLE", Vector3(0, 9.4, -54.6), 0.018)
 
 

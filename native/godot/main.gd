@@ -58,7 +58,7 @@ func _ready() -> void:
 	add_child(timer)
 	file_dialog = FileDialog.new()
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
-	file_dialog.filters = PackedStringArray(["*.json ; Carrière Cadrage Débordement"])
+	file_dialog.filters = PackedStringArray(["*.json ; Carrière Oval Legacy"])
 	file_dialog.file_selected.connect(_file_selected)
 	add_child(file_dialog)
 	pack_manager = load("res://pack_manager.gd").new()
@@ -274,7 +274,7 @@ func _build_sidebar(parent: Node) -> void:
 	rail.add_child(margin)
 	var left := G.v(5)
 	margin.add_child(left)
-	var logo := G.button("CD  /  CADRAGE\nDÉBORDEMENT", pause_menu)
+	var logo := G.button("OVAL LEGACY\nRUGBY MANAGER", pause_menu)
 	logo.add_theme_font_override("font", G.T.DISPLAY)
 	logo.add_theme_font_size_override("font_size", 23)
 	logo.custom_minimum_size.y = 70
@@ -291,7 +291,7 @@ func _build_sidebar(parent: Node) -> void:
 			var b := G.nav_button(target.to_upper(),func():_navigate(target),accent,route==target)
 			left.add_child(b)
 	left.add_child(G.spacer())
-	left.add_child(G.label("PRÉALPHA 0.2  /  WINDOWS", 9, G.GOLD))
+	left.add_child(G.label("PRÉALPHA 0.3  /  WINDOWS", 9, G.GOLD))
 	left.add_child(G.button("MENU & SAUVEGARDES", pause_menu))
 
 func _update_live_bar() -> void:
@@ -387,7 +387,7 @@ func settings() -> void:
 func open_file(importing: bool) -> void:
 	import_mode = importing
 	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE if importing else FileDialog.FILE_MODE_SAVE_FILE
-	file_dialog.current_file = "" if importing else "Cadrage-Debordement.json"
+	file_dialog.current_file = "" if importing else "Oval-Legacy.json"
 	file_dialog.popup_centered_ratio(0.7)
 
 func _file_selected(path: String) -> void:
@@ -458,8 +458,8 @@ func _credits() -> void:
 	_clear_dialogs()
 	var d := AcceptDialog.new()
 	_prepare_dialog(d, 760)
-	d.title = "Cadrage Débordement · Crédits"
-	d.dialog_text = "Photographies : auteurs, pages sources, licences et modifications dans le dossier Licences.\nModèle Quaternius : CC0. Portraits fictifs générés par IA.\nDM Sans et Barlow Condensed : SIL OFL. Godot : MIT. Node : notices incluses.\n\nLes clubs sont des identités de jeu originales. Les finances et les joueurs sont fictifs.\nLes villes et stades photographiés sont réels ; l'enceinte3D est générique."
+	d.title = "Oval Legacy · Crédits"
+	d.dialog_text = "Photographies de territoires : auteurs, sources, licences et modifications dans Licences.\nModèle Quaternius : CC0. DM Sans et Barlow Condensed : SIL OFL.\nGodot : MIT. Node : notices incluses.\n\nBase commune de joueurs aux identités anonymisées. Capacités et finances de simulation, non officielles.\nLes images et noms des packs personnalisés restent séparés du jeu de base.\nLes portraits IA sont signalés ; l'enceinte3D est générique."
 	add_child(d)
 	d.popup_centered(Vector2i(760,260))
 	d.confirmed.connect(d.queue_free)

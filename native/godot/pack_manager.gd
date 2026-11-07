@@ -10,7 +10,7 @@ func _ready() -> void:
 	picker = FileDialog.new()
 	picker.access = FileDialog.ACCESS_FILESYSTEM
 	picker.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	picker.filters = PackedStringArray(["*.zip ; Pack d’identités Cadrage Débordement"])
+	picker.filters = PackedStringArray(["*.zip ; Pack d’identités Oval Legacy"])
 	picker.file_selected.connect(inspect)
 	add_child(picker)
 
