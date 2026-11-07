@@ -20,6 +20,7 @@ var _compact: HBoxContainer
 var _expanded: VBoxContainer
 var _title: Label
 var _notice: Label
+var _error: Label
 var _invitation: Label
 var _voice_state: Label
 var _progress: Label
@@ -147,19 +148,28 @@ func _build() -> void:
 	_notice = _label(_options, "", 11); _notice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_notice.name = "GuideStatus"
+	_error = _label(stack, "", 12); _error.name = "GuideError"
+	_error.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_error.add_theme_color_override("font_color", Color("ffbaa5"))
 
 func _status() -> void:
 	if not is_instance_valid(_notice): return
-	_notice.text = profile.last_error if not profile.last_error.is_empty() else speech.status_text
-	_notice.add_theme_color_override("font_color", Color("ffbaa5") if not profile.last_error.is_empty() else GOLD)
+	_notice.text = speech.status_text
+	_notice.add_theme_color_override("font_color", GOLD)
+	_error.visible = not profile.last_error.is_empty()
+	_error.text = profile.last_error
+	if _error.visible:
+		_error.text += "\nLes choix du guide restent actifs pour cette session, mais ne sont pas enregistrés." if profile.data.enabled else "\nCoach désactivé pour cette session. Ce choix n'est pas enregistré : il pourra revenir au prochain démarrage."
 	_mute.text = "Activer la voix" if speech.muted else "Muet"
 	_voice_state.text = "Mode texte" if speech.voices.is_empty() else ("Voix muette" if speech.muted else "Voix système")
-	_invitation.text = "LE COACH · " + profile.last_error if not profile.last_error.is_empty() else "LE COACH · Un coup de main ?"
+	_invitation.text = "LE COACH · Désactivé pour cette session" if not profile.data.enabled else "LE COACH · Un coup de main ?"
 	_invitation.tooltip_text = profile.last_error
 
-func _save() -> void:
-	profile.save_profile(profile.data)
+func _save() -> bool:
+	var saved: bool = profile.save_profile(profile.data)
 	_status()
+	_layout()
+	return saved
 
 func _blocked() -> bool:
 	if not is_instance_valid(app) or app.closing or app.waiting: return true
@@ -182,7 +192,7 @@ func _layout() -> void:
 	_compact.visible = not expanded
 	_expanded.visible = expanded
 	_options.visible = expanded and _settings_open
-	custom_minimum_size.y = (340 if _settings_open else 260) if expanded else 60
+	custom_minimum_size.y = ((340 if _settings_open else 260) if expanded else 60) + (64 if _error.visible else 0)
 	offset_top = -custom_minimum_size.y - 10
 	reserved_height_changed.emit(custom_minimum_size.y + 20 if visible else 0.0)
 
@@ -221,8 +231,10 @@ func close() -> void:
 	_layout()
 
 func disable() -> void:
-	close(); visible = false; profile.data.enabled = false
-	_save(); _layout()
+	close(); profile.data.enabled = false
+	# If persistence fails, keep only the compact explanation visible. No modal spam.
+	visible = not _save()
+	_layout()
 
 func _show_page(force: bool) -> void:
 	var id: String = profile.data.step if mode == "tour" else Content.for_route(app.route, app.model)
