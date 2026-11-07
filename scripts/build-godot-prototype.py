@@ -86,7 +86,9 @@ def build(args):
     sources = json.loads(subprocess.check_output([str(args.node), "-e", script], cwd=ROOT))
     for relative in sources:
         path = (ROOT / "dist" / relative).resolve()
-        if not path.is_relative_to((ROOT / "dist").resolve()) or "lnr-" in path.name:
+        # This one module contains active progression code, no roster identities.
+        allowed_progression = relative == path.name == "lnr-v11-aging.js"
+        if not path.is_relative_to((ROOT / "dist").resolve()) or ("lnr-" in path.name and not allowed_progression):
             raise ValueError("Module hors périmètre : " + relative)
         destination = core / relative
         destination.parent.mkdir(parents=True, exist_ok=True)

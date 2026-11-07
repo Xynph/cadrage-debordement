@@ -28,13 +28,18 @@ static func home(app: Control) -> Control:
 	var intro := G.v(4)
 	G.fill(intro)
 	row.add_child(intro)
-	intro.add_child(G.label("OVAL", 90, G.INK, true))
-	var edition := G.h(18)
-	intro.add_child(edition)
-	edition.add_child(G.label("LEGACY", 90, G.INK, true))
-	edition.add_child(G.label("27", 72, G.GOLD, true))
+	var logo := TextureRect.new()
+	logo.texture = load("res://branding/oval-legacy-27-logo.png")
+	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	logo.custom_minimum_size = Vector2(650, 325)
+	logo.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	logo.tooltip_text = "Oval Legacy 27 — Rugby Manager"
+	var composite := ShaderMaterial.new()
+	composite.shader = load("res://branding/black_key.gdshader")
+	logo.material = composite
+	intro.add_child(logo)
 	intro.add_child(G.wrap("Un club. Un territoire.\nUne saison à écrire.", 23, G.INK))
-	intro.add_child(G.label("RUGBY MANAGER", 18, G.GOLD))
 	var choices := G.v(9)
 	choices.custom_minimum_size.x = 330
 	row.add_child(choices)
