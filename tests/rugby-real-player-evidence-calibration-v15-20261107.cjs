@@ -169,13 +169,16 @@ test('All 36 flags: 2025 historical context, line-up threshold and synchronized 
   const weakestRelevant=relevant.length?Math.min(...relevant.map(p=>base.note(p))):null;
   const variants=[];
   for(const dose of [2,4,8]){
-   const mod=portfolio(ACTIVE,[{id:candidate.id,club:candidate.club,delta:dose}]);
-   const lab=N.laboratory(mod.cloned,'legacy'),club=lab.clubs.find(c=>c.slug===candidate.club);
-   const newP=club.players.find(p=>p.id===candidate.id),sheet=lineup(lab,club);
-   variants.push({dose,roleNote:lab.note(newP),deltaRoleNote:lab.note(newP)-original,
+   const club=deep(a),newP=club.players.find(p=>p.id===candidate.id);
+   const prior=C.project({...newP,gameplayPosition:candidate.role});
+   for(const k of core[candidate.role])newP.attributesV2[k]=Math.max(20,Math.min(97,newP.attributesV2[k]+dose));
+   const after=C.project({...newP,gameplayPosition:candidate.role});
+   for(const k of skills)newP.skills[k]=Math.max(20,Math.min(97,+(newP.skills[k]+after[k]-prior[k]).toFixed(2)));
+   const sheet=lineup(base,club),xv=rosterStats(base,club).mean;
+   variants.push({dose,roleNote:base.note(newP),deltaRoleNote:base.note(newP)-original,
     starters:sheet.all.some(p=>p.id===candidate.id),
     bench:sheet.bench.some(p=>p.id===candidate.id),
-    xv:rosterStats(lab,club).mean,xvDelta:fixed(rosterStats(lab,club).mean-rosterStats(base,a).mean)});
+    xv,xvDelta:fixed(xv-rosterStats(base,a).mean)});
   }
   rows.push({id:candidate.id,club:candidate.club,league:candidate.league,role:candidate.role,
    age:candidate.age,screenNote:original,otherLineupRoleMin:weakestRelevant,
