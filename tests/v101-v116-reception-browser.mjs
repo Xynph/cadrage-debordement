@@ -63,6 +63,8 @@ try{
  await director.getByRole('button',{name:'performance',exact:true}).click();
  check('Direction : bouton cliquable et decision persistee en memoire',await page.evaluate(()=>S.v105to110?.priority)==='performance');
  check('Direction : priorite changee',beforeDirection!=='performance');
+ // The manager choice re-renders the native workspace; reselect the Dossiers subpage.
+ await page.locator('[data-da43-section="dashboard"] [data-da42-subpage="dossiers"]').first().click();
  const beforeFans=await page.evaluate(()=>S.v111to116?.price);
  await fans.getByRole('button',{name:/premium · 30/}).click();
  check('Supporters : prix mis a jour par clic',await page.evaluate(()=>S.v111to116?.price)==='premium');
