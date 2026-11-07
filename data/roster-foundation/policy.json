@@ -1,9 +1,10 @@
 {
-  "version": 1,
+  "version": 2,
   "snapshot": "2026-10-31",
   "positionRule": "active-position-estimate-v1",
   "statusRule": "age-at-2026-07-01-le21-espoir-estimate-v1",
   "contractRule": "fnv1a-id-1-to-3-seasons-v1",
   "wageRule": "active-game-wage-v1",
-  "notice": "Statut espoir jusqu’à 21 ans inclus, professionnel ensuite : hypothèse de jeu, jamais preuve du contrat réel. Poste source précis conservé par défaut ; aucune double qualification de première ligne déduite de la famille LNR. Échéance estimée déterministe entre juin 2027 et juin 2029. Salaire actif inchangé, fictif. Les annonces officielles jusqu’en 2028 sont traduites en fin de saison 2 ; le jour de fin n’est pas inventé."
+  "notice": "Statut espoir jusqu’à 21 ans inclus, professionnel ensuite : hypothèse de jeu, jamais preuve du contrat réel. Poste source précis conservé par défaut ; aucune double qualification de première ligne déduite de la famille LNR. Échéance estimée déterministe entre juin 2027 et juin 2029. Salaire actif inchangé, fictif. Les annonces officielles jusqu’en 2028 sont traduites en fin de saison 2 ; le jour de fin n’est pas inventé. Les postes du lot 2 sont observés le 7 novembre 2026, sans preuve de leur validité historique au 31 octobre. Le mois reste inconnu hors source explicite.",
+  "positionObserved": "2026-11-07"
 }
