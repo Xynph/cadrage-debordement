@@ -68,7 +68,7 @@ try{
  await page.screenshot({path:path.join(out,'finance-light-1440.png')});
  await page.locator('#ui01-theme').selectOption('analyste');
  await page.evaluate(()=>{nav('match');beginMatch();pauseMatch();});
- for(const [width,height] of [[1440,900],[1920,1080]]){await page.setViewportSize({width,height});check('score natif lisible '+width,await page.locator('.match-scoreboard .live-score h3').first().evaluate(el=>getComputedStyle(el).color==='rgb(241, 234, 216)'));check('marque du direct compacte '+width,await page.locator('.live-layout .sidebar .wordmark').evaluate(el=>el.getBoundingClientRect().height<85));await page.screenshot({path:path.join(out,'live-'+width+'.png')});}
+ for(const [width,height] of [[1440,900],[1920,1080]]){await page.setViewportSize({width,height});check('score natif lisible '+width,await page.locator('.md-scoreboard .md-team b').first().evaluate(el=>getComputedStyle(el).color==='rgb(241, 232, 213)'));check('marque du direct compacte '+width,await page.locator('.md-wordmark').evaluate(el=>el.getBoundingClientRect().height<85));await page.screenshot({path:path.join(out,'live-'+width+'.png')});}
  await page.setViewportSize({width:1440,height:900});await page.evaluate(()=>nav('saves'));
  check('sauvegardes accessibles pendant un match en pause',await page.locator('.main[data-ed-route="saves"] .ed-native-scroll').isVisible());
  check('contenu de sauvegarde défilable en match',await page.locator('.ed-native-scroll').evaluate(el=>getComputedStyle(el).overflowY==='auto'));

@@ -80,7 +80,7 @@ try:
         check('sheet tab uses real 23 players', page.evaluate('squadTab === "sheet" && S.lineup.length === 15 && S.reserves.length === 8'))
         page.screenshot(path=str(OUT / 'feuille-390.png'))
         page.evaluate('nav("match");beginMatch();pauseMatch();render()')
-        check('V40 cockpit is visible', visible(page, '.v40-cockpit'))
+        check('dedicated match screen is visible', visible(page, '.md-shell'))
         check('new bar does not cover live cockpit', page.locator('.ui01-appbar').count() == 0)
         check('paused native match exports', page.evaluate('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'))
         page.set_viewport_size({'width': 1440, 'height': 1000})
