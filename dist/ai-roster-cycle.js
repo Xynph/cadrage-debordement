@@ -188,9 +188,10 @@ function aiRosterMarketProposals(clubs,pool){
  return proposals;
 }
 function aiRosterRecruitmentWeek(){
- if(!aiRosterActive()||S.live||S.phase!=='league'||![0,13].includes(S.round)||
-  S.season===1&&S.round===0)return 0;
- const key=S.season+':'+S.round,e=S.economy;
+ const week=S.franceMode?.week??S.round,windows=S.franceMode?[0,15]:[0,13];
+ if(!aiRosterActive()||S.live||S.phase!=='league'||!windows.includes(week)||
+  S.season===1&&week===0)return 0;
+ const key=S.season+':'+week,e=S.economy;
  if(e.aiRecruitmentWindow===key)return 0;
  e.aiRecruitmentWindow=key;S.aiRoster.lastRecruitment=key;
  const others=S.clubs.filter(c=>c.id!==S.club&&c.players.length<40)

@@ -1,0 +1,53 @@
+'use strict';
+const CDFranceSaveValidation=(()=>{
+ const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+ function scoring(r,check){
+  check(saveArray(r.stats,2)&&r.stats.length===2,'statistiques absentes.');
+  for(let i=0;i<2;i++){const st=r.stats[i];check(saveObject(st)&&['goals','goalAttempts','conversions','conversionAttempts'].every(k=>saveInt(st[k],0,1000))&&st.goals<=st.goalAttempts&&st.conversions<=st.conversionAttempts&&st.conversionAttempts===r.tries[i]&&r.score[i]===r.tries[i]*5+st.conversions*2+st.goals*3,'score incompatible avec les actions du moteur.');}
+ }
+ function decision(r,check){
+  const d=r.decision;check(saveObject(d)&&typeof d.extraTime==='boolean'&&Array.isArray(d.redCards)&&d.redCards.length===2&&d.redCards.every(n=>saveInt(n,0,23)),'décision incomplète.');
+  const criteria=[['score',r.score],['tries',r.tries],['penalties',r.stats.map(s=>s.goals)],['drops',r.stats.map(s=>s.drops||0)],['redCards',d.redCards.map(n=>-n)]];
+  const decisive=criteria.find(([,a])=>a[0]!==a[1]);
+  if(decisive){check(d.method===decisive[0]&&r.winner===r.pair[decisive[1][0]>decisive[1][1]?0:1],'critère ou vainqueur altéré.');check(d.method==='score'||d.extraTime,'départage sans prolongation.');check(d.shootout===undefined,'tirs superflus.');return;}
+  check(d.extraTime&&d.method==='shootout'&&saveObject(d.shootout),'égalité sans épreuve de tirs.');const sh=d.shootout;
+  check(saveInt(sh.first,0,1)&&saveInt(sh.end,0,1)&&saveArray(sh.kickers,2)&&sh.kickers.length===2&&sh.kickers.every(a=>saveArray(a,3)&&a.length===3&&new Set(a).size===3&&a.every(saveId))&&new Set(sh.kickers.flat()).size===6,'buteurs invalides.');
+  check(saveArray(sh.attempts,2000)&&sh.attempts.length>0,'séquence de tirs invalide.');const score=[0,0],counts=[0,0];let winner=null;
+  sh.attempts.forEach((a,index)=>{check(winner===null,'tir après décision.');const round=Math.floor(index/2),side=index%2?1-sh.first:sh.first,location=round<6?round+1:4;check(saveObject(a)&&a.side===side&&a.location===location&&a.playerId===sh.kickers[side][round%3]&&typeof a.made==='boolean','ordre des tirs invalide.');counts[side]++;if(a.made)score[side]++;if(round<6){if(score[0]>score[1]+6-counts[1])winner=0;if(score[1]>score[0]+6-counts[0])winner=1;}else if(index%2&&score[0]!==score[1])winner=score[0]>score[1]?0:1;});
+  check(winner!==null&&equal(score,sh.score)&&r.winner===r.pair[winner],'résultat des tirs incohérent.');
+ }
+ function validate(s){
+  const f=s.franceMode,C=CDFranceCompetition,check=(v,msg)=>saveCheck(v,'France30 : '+msg);
+  const keys=(o,list)=>saveObject(o)&&Object.keys(o).length===list.length&&list.every(k=>Object.hasOwn(o,k));
+  check(keys(f,['version','catalogue','competitionRules','matchRules','startSeason','week','leagues','accessMatch','movement','yearbook','previousRanks']),'métadonnées non reconnues.');
+  check(!Object.keys(s).some(k=>/^v(73|74|75|76|77|78|82|86|90|95|101)/.test(k)),'module Espoirs web incompatible.');
+  check(C.active(s)&&s.lnrMode===undefined,'marqueur incompatible.');
+  check(f.competitionRules==='fr-pro-2026-27'&&f.matchRules==='fr-pro-2025'&&f.startSeason===2026&&saveInt(f.week,0,34),'référentiel ou semaine invalide.');
+  check(keys(f.leagues,['elite','accession'])&&saveObject(f.previousRanks)&&saveArray(f.yearbook,15),'état de compétition invalide.');
+  check(f.yearbook.length===Math.min(15,s.season-1),'palmarès incomplet.');
+  const all=[];for(const id of ['elite','accession']){const l=f.leagues[id],n=id==='elite'?14:16;check(keys(l,['members','schedule','round','phase','playoff','champion','finalist'])&&Array.isArray(l.members)&&l.members.length===n&&l.members.every(i=>saveInt(i,0,29)),'partition invalide.');all.push(...l.members);check(equal(l.schedule,C.schedule(l.members)),'calendrier altéré.');}
+  check(new Set(all).size===30,'partition non disjointe.');
+  const replay={season:s.season,club:s.club,history:[],clubs:s.clubs.map(c=>({...c,points:0,played:0,won:0,drawn:0,lost:0,pf:0,pa:0,bonus:0,form:[]})),franceMode:JSON.parse(JSON.stringify(f))};
+  replay.franceMode.week=0;replay.franceMode.accessMatch=null;replay.franceMode.movement=null;
+  for(const id of ['elite','accession'])Object.assign(replay.franceMode.leagues[id],{round:0,phase:'league',playoff:null,champion:null,finalist:null});
+  check(s.history.length<=433,'trop de résultats.');for(const r of s.history){scoring(r,check);check(saveInt(r.duration,80,240),'durée de rencontre invalide.');}if(s.live)scoring(s.live,check);const seen=new Set();let cursor=0;
+  for(let w=0;w<f.week;w++){
+   const fixtures=C.currentFixtures(replay);
+   for(const expected of fixtures){const r=s.history[cursor++];check(saveObject(r)&&!seen.has(r.fixtureId),'résultat absent ou doublon.');seen.add(r.fixtureId);for(const k of Object.keys(expected))check(equal(r[k],expected[k]),'contexte de résultat incompatible : '+k);check(r.phase==='league'?r.winner===undefined:r.pair.includes(r.winner)&&saveObject(r.decision),'décision de rencontre invalide.');if(r.phase!=='league'){check(['score','tries','penalties','drops','redCards','shootout'].includes(r.decision.method)&&typeof r.decision.extraTime==='boolean','départage invalide.');if(r.score[0]!==r.score[1])check(r.winner===r.pair[r.score[0]>r.score[1]?0:1]&&r.decision.method==='score','vainqueur incompatible avec score.');else check(r.decision.extraTime&&r.decision.method!=='score','égalité sans prolongation.');}if(r.phase!=='league')decision(r,check);C.record(replay,r,expected);}
+   C.closeWeek(replay);
+  }
+  check(cursor===s.history.length,'résultat futur ou supplémentaire.');if(f.week===34)check(s.ending===replay.ending,'bilan de saison incohérent.');
+  for(const id of ['elite','accession'])check(equal(replay.franceMode.leagues[id],f.leagues[id]),'tableau ou champion incohérent.');
+  check(equal(replay.franceMode.accessMatch,f.accessMatch)&&equal(replay.franceMode.movement,f.movement),'accession incohérente.');
+  C.project(replay);for(const key of ['round','phase','schedule','playoff'])check(equal(s[key],replay[key]),'projection '+key+' altérée.');
+  for(let i=0;i<30;i++)for(const key of ['points','played','won','drawn','lost','pf','pa','bonus','form'])check(equal(s.clubs[i][key],replay.clubs[i][key]),'classement incompatible avec résultats.');
+  if(s.live){const l=s.live,expected=C.userFixture(s);check(expected&&equal(l.franceContext,expected)&&equal(l.pair,expected.pair),'match en cours hors calendrier.');if(l.knockout){const k=l.knockout;check(expected.phase!=='league'&&k.version===1&&[1,2].includes(k.period)&&saveInt(k.regulationEnd,l.flow.firstEnd+40,l.minute)&&(k.period===1?k.firstEnd===null:saveInt(k.firstEnd,k.regulationEnd+10,l.minute)),'prolongation incohérente.');}if(l.finished&&expected.phase!=='league'){check(l.pair.includes(l.winner)&&saveObject(l.decision),'match terminé sans vainqueur.');decision(l,check);if(l.decision.shootout)for(let side=0;side<2;side++)check(l.decision.shootout.kickers[side].every(id=>l.sheets[side].on.includes(id)&&!l.sheets[side].cards.some(c=>c.id===id&&c.until>l.minute)),'buteur absent au terme des prolongations.');}else check(l.winner===undefined&&l.decision===undefined,'décision avant fin de match.');}
+  for(const [id,rank] of Object.entries(f.previousRanks))check(/^\d+$/.test(id)&&saveInt(Number(id),0,29)&&saveInt(rank,1,16),'classement antérieur invalide.');
+  let year=0,priorMovement=null;for(const y of f.yearbook){check(keys(y,['season','champions','finalists','standings','movement'])&&saveArray(y.finalists,2)&&y.finalists.length===2&&y.finalists.every(i=>saveInt(i,0,29))&&saveInt(y.season,1,s.season-1)&&y.season===(year?year+1:s.season-f.yearbook.length)&&Array.isArray(y.champions)&&y.champions.length===2&&new Set(y.champions).size===2&&y.champions.every(i=>saveInt(i,0,29)),'palmarès invalide.');year=y.season;check(saveObject(y.standings)&&y.standings.elite?.length===14&&y.standings.accession?.length===16&&new Set([...y.standings.elite,...y.standings.accession]).size===30&&[...y.standings.elite,...y.standings.accession].every(id=>saveInt(id,0,29)),'classement archivé invalide.');const m=y.movement;check(saveObject(m)&&m.season===y.season&&m.elite?.length===14&&m.accession?.length===16&&new Set([...m.elite,...m.accession]).size===30&&[...m.elite,...m.accession].every(i=>saveInt(i,0,29)),'mouvement archivé invalide.');check(keys(m,['season','promoted','relegated','elite','accession'])&&saveArray(m.promoted,2)&&[1,2].includes(m.promoted.length)&&m.relegated?.length===m.promoted.length&&m.promoted[0]===y.champions[1]&&m.relegated[0]===y.standings.elite[13]&&y.champions.every((c,i)=>y.standings[['elite','accession'][i]].includes(c))&&y.finalists.every((c,i)=>c!==y.champions[i]&&y.standings[['elite','accession'][i]].includes(c)),'promotions archivées invalides.');if(m.promoted.length===2)check(m.promoted[1]===y.finalists[1]&&m.relegated[1]===y.standings.elite[12],'barrage archivé invalide.');for(const id of ['elite','accession']){const toRemove=id==='elite'?m.relegated:m.promoted,toAdd=id==='elite'?m.promoted:m.relegated,expected=y.standings[id].filter(c=>!toRemove.includes(c)).concat(toAdd);check(equal(expected.slice().sort((a,b)=>a-b),m[id].slice().sort((a,b)=>a-b)),'partition archivée incompatible.');if(priorMovement)check(equal(y.standings[id].slice().sort((a,b)=>a-b),priorMovement[id].slice().sort((a,b)=>a-b)),'palmarès discontinu.');}priorMovement=m;}
+  for(const id of ['elite','accession'])check(equal(f.leagues[id].members,priorMovement?priorMovement[id]:Array.from({length:id==='elite'?14:16},(_,i)=>i+(id==='elite'?0:14))),'partition de saison sans provenance.');
+  const previous=f.yearbook.at(-1);check(s.season===1?f.yearbook.length===0&&Object.keys(f.previousRanks).length===0:previous?.season===s.season-1&&equal(f.previousRanks,Object.fromEntries(['elite','accession'].flatMap(id=>previous.standings[id].map((club,i)=>[club,i+1])))),'classement précédent incohérent.');
+  const ids=new Set();for(const p of [...s.clubs.flatMap(c=>c.players),...s.development.academy,...s.aiRoster.academies.flatMap(a=>a.players)]){check(!Object.keys(p).some(k=>k.startsWith('lnr')),'données réelles incompatibles.');check(!ids.has(p.id),'joueur dupliqué entre effectifs.');ids.add(p.id);}const marketCopies=new Map();for(const p of [...s.market,...s.economy.freeAgents]){check(!Object.keys(p).some(k=>k.startsWith('lnr'))&&saveNumber(p.price,0,1e9),'prix ou données de marché incompatibles.');check(!ids.has(p.id),'joueur professionnel également au marché.');check(!marketCopies.has(p.id)||equal(marketCopies.get(p.id),p),'copies de joueur au marché divergentes.');marketCopies.set(p.id,p);}
+  return s;
+ }
+ return Object.freeze({validate});
+})();

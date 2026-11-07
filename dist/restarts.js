@@ -2,7 +2,7 @@
 // Atomic match sequences, pinned to the 2025 laws. The clock/advantage engine
 // remains separate; each restart has a cause, beneficiary and longitudinal mark.
 const RESTART_AUTH=new WeakMap();
-const RESTART_CAUSES={scrum:['knock-on','forward-pass','kick-dead-option','defender-grounded'],lineout:['carry-touch','indirect-touch','direct-touch','penalty-touch','50-22','missed-goal-touch'],kickoff:['start','second-half','score'],drop22:['missed-goal-dead','kick-dead'],goalLine:['held-up','attacking-kick-grounded','ingoal-knock-on']};
+const RESTART_CAUSES={scrum:['knock-on','forward-pass','kick-dead-option','defender-grounded'],lineout:['carry-touch','indirect-touch','direct-touch','penalty-touch','50-22','missed-goal-touch'],kickoff:['start','second-half','score','extra-first','extra-second'],drop22:['missed-goal-dead','kick-dead'],goalLine:['held-up','attacking-kick-grounded','ingoal-knock-on']};
 function restartRules(l){return l.restartVersion===1}
 function ownGoal(side){return side===0?0:100}
 function attackingGoal(side){return ownGoal(1-side)}
@@ -11,6 +11,7 @@ function own22(side,at){return side===0?at<=22:at>=78}
 function ballPossession(l,side,at=l.territory){l.possession=side;l.territory=at;if(restartRules(l))l.kickContext={team:side,halfEligible:ownHalf(side,at),twentyTwoEligible:own22(side,at)}}
 function initializeRestarts(l){l.restartVersion=1;l.restartLog=[];l.firstKickoff=l.possession;ballPossession(l,l.possession);addEvent(l,`Coup d’envoi. Météo : ${l.weather.toLowerCase()}.`);performKickRestart(l,'kickoff',l.firstKickoff,'start',1-l.firstKickoff)}
 function registerRestart(l,kind,team,at,cause,by,origin=l.territory){
+ if(['extra-first','extra-second'].includes(cause)&&!l.franceContext)return null;
  if(!restartRules(l)||l.finished||!Number.isFinite(origin)||origin<0||origin>100||!RESTART_CAUSES[kind]?.includes(cause)||![0,1].includes(team)||![0,1].includes(by)||!Number.isFinite(at)||at<0||at>100)return null;
  if(team!==(['penalty-touch','50-22'].includes(cause)?by:1-by))return null;
  if(!flowBeforeRestart(l,kind,cause,at))return null;

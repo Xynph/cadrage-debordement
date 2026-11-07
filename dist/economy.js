@@ -315,7 +315,7 @@ function contractBase(){return S.season+(S.phase==='ended'?1:0)}
 function contractYears(p){ensureContract(p);return Math.max(0,p.contractEnd-S.season+1)}
 function contractLabel(p){ensureContract(p);return `Fin saison ${p.contractEnd}${p.contractEnd===S.season?' · À prolonger':''}`}
 function totalWages(){return club().players.reduce((n,p)=>n+p.salary,0)}
-function futureWages(){return club().players.reduce((n,p)=>n+p.salary*(Math.max(0,29-S.round)+Math.max(0,p.contractEnd-S.season)*29),0)}
+function futureWages(){if(S.franceMode)return club().players.reduce((n,p)=>n+p.salary*(Math.max(0,34-S.franceMode.week)+Math.max(0,p.contractEnd-S.season)*34),0);return club().players.reduce((n,p)=>n+p.salary*(Math.max(0,29-S.round)+Math.max(0,p.contractEnd-S.season)*29),0)}
 function transferValue(p){ensureDevelopment(p);const ageFactor=p.age<25?1.2:p.age>31?.65:1;const term=p.contractEnd===S.season?.65:1;return Math.max(20000,Math.round((roleNote(p)-45)**2*330*ageFactor*term*(1+Math.min(.2,(p.dev.potential-p.rating)*.012))*(p.injury?.8:1)/10000)*10000)}
 function saleBlocked(p){if((p.id.startsWith('academy-')||p.id.startsWith('youth-'))&&p.age<20)return 'Espoir : disponible à la vente à partir de 20 ans.';if(p.joinedSeason===S.season&&S.round-(p.joinedRound||0)<3)return 'Nouvelle recrue : attendez trois journées avant de la revendre.';return ''}
 function talkKey(id,kind){return `${S.season}:${S.economy.week}:${kind}:${id}`}

@@ -183,7 +183,7 @@ function recruitmentEvidence(p,scouted=true){
  return {seen:false,stale:false,noteMin:clamp(center-10,0,100),noteMax:clamp(center+10,0,100),potentialMin:null,potentialMax:null,quality:center,label:'Fourchette indicative, non observé'};
 }
 function recruitmentFinance(c,p){
- const weeks=Math.max(6,29-S.round),wages=c.players.reduce((sum,q)=>sum+q.salary,0)+p.salary;
+ const weeks=Math.max(6,S.franceMode?34-S.franceMode.week:29-S.round),wages=c.players.reduce((sum,q)=>sum+q.salary,0)+p.salary;
  const fee=Math.max(0,p.price||0);
  const commitment=fee+p.salary*weeks;
  // Trésorerie fictive : projection indicative limitée aux partenaires

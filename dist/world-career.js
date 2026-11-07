@@ -54,7 +54,7 @@ function worldFacilityTraining(){
 }
 function worldRecordResult(result){
  if(!worldActive()||!result||!Array.isArray(result.pair)||!Array.isArray(result.score))return false;
- const [h,a]=result.pair,match={season:S.season,round:S.round,phase:S.phase,
+ const [h,a]=result.pair,match={season:S.season,round:result.franceContext?.round??S.round,phase:result.franceContext?.phase??S.phase,
   home:'club-'+h,away:'club-'+a,homeScore:result.score[0],awayScore:result.score[1]};
  S.worldManagement.matches.push(match);
  S.worldManagement.matches=S.worldManagement.matches.slice(-180);
@@ -68,13 +68,13 @@ function worldRecordResult(result){
 }
 function worldWeeklyEconomy(results){
  if(!worldActive())return false;
- const w=S.worldManagement,key=S.season+':'+S.phase+':'+S.round;
+ const w=S.worldManagement,key=S.season+':'+S.phase+':'+(S.franceMode?.week??S.round);
  if(w.lastFinance===key)return false;
  w.lastFinance=key;
  for(const c of S.clubs){
   const info=worldClub(c.id),upkeep=worldUpkeep(info.facilities);
   if(c.id===S.club){ledgerEntry(label()+' · Entretien des installations',-upkeep);continue}
-  const home=results.find(r=>r.pair[0]===c.id);
+  const home=results.find(r=>r.pair[0]===c.id&&!r.neutral);
   const own=results.find(r=>r.pair.includes(c.id));
   const won=own?own.score[own.pair.indexOf(c.id)]>own.score[1-own.pair.indexOf(c.id)]:false;
   const wage=c.players.reduce((sum,p)=>sum+p.salary,0);
@@ -103,7 +103,7 @@ function worldRecordChampion(id){
 }
 function worldEndSeason(){
  if(!worldActive()||S.phase!=='ended'||S.worldManagement.lastSeason>=S.season)return false;
- const w=S.worldManagement,ranking=ranked();
+ const w=S.worldManagement,ranking=typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)?['elite','accession'].flatMap(id=>CDFranceCompetition.ranked(S,id)):ranked();
  const winner=w.champion;
  const awards=CDRugbyWorld.awards(club().players.filter(p=>p.dev?.minutes>0)
   .map(p=>({id:p.id,rating:roleNote(p),minutes:p.dev.minutes,tries:0})));
@@ -115,15 +115,15 @@ function worldEndSeason(){
  }
  const standings=ranking.map((c,index)=>{
   const info=worldClub(c.id),next=CDReputation.update({
-   current:info.reputation,leagueFinish:index+1,leagueSize:14,
-   champion:c.id===winner,financeHealthy:c.cash>=0});
+   current:info.reputation,leagueFinish:S.franceMode?CDFranceCompetition.ranked(S,CDFranceCompetition.leagueId(S,c.id)).findIndex(x=>x.id===c.id)+1:index+1,leagueSize:S.franceMode?CDFranceCompetition.members(S,CDFranceCompetition.leagueId(S,c.id)).length:14,
+   champion:c.id===(S.franceMode?S.franceMode.leagues[CDFranceCompetition.leagueId(S,c.id)].champion:winner),financeHealthy:c.cash>=0});
   info.reputation=next.next;
   const risk=CDCoachMarket.dismissalRisk({
    confidence:info.coachConfidence,consecutiveLosses:info.consecutiveLosses});
   if(c.id!==S.club&&risk.critical&&index>=8){
    info.coachConfidence=55;info.coachChanges++;
   }else info.coachConfidence=clamp(info.coachConfidence+(index<6?4:-3),0,100);
-  return {id:c.id,position:index+1,cash:Math.round(c.cash),
+  return {id:c.id,position:S.franceMode?CDFranceCompetition.ranked(S,CDFranceCompetition.leagueId(S,c.id)).findIndex(x=>x.id===c.id)+1:index+1,cash:Math.round(c.cash),
    reputation:info.reputation,facilities:info.facilities,debt:Math.round(info.debt),
    coachRisk:risk.risk};
  });

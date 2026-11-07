@@ -11,13 +11,13 @@ function managerMobilityEnable(){
  save();render();return true;
 }
 function managerMobilityProfile(){
- const position=ranked().findIndex(c=>c.id===S.club)+1;
- return clamp(Math.round(worldClub(S.club).reputation*.6+S.trust*.2+(15-position)/14*20),0,100);
+ const position=ranked().findIndex(c=>c.id===S.club)+1,n=S.franceMode?ranked().length:14;
+ return clamp(Math.round(worldClub(S.club).reputation*.6+S.trust*.2+(n+1-position)/n*20),0,100);
 }
 function managerMobilityDecision(id){
  if(!managerMobilityWindow()||!Number.isInteger(id)||id<0||id>=S.clubs.length||id===S.club)return null;
  const c=S.clubs[id],w=worldClub(id),risk=CDCoachMarket.dismissalRisk({confidence:w.coachConfidence,consecutiveLosses:w.consecutiveLosses});
- const rank=ranked().findIndex(x=>x.id===id)+1,reputation=managerMobilityProfile(),budget=Math.max(0,c.cash-w.debt);
+ const rank=(S.franceMode?CDFranceCompetition.ranked(S,CDFranceCompetition.leagueId(S,id)):ranked()).findIndex(x=>x.id===id)+1,reputation=managerMobilityProfile(),budget=Math.max(0,c.cash-w.debt);
  // Affinite V48 reutilisee, sans inventer de remuneration ni paiement.
  const proposal=CDCoachMarket.jobOffers([{id:'club-'+id,vacant:true,budget,reputation:w.reputation}],{salary:0,reputation})[0];
  const reason=c.cash<0||w.debt>Math.max(c.cash,0)?'finances':risk.risk<35&&rank<8?'stable':reputation+15<w.reputation?'reputation':'offer';
@@ -89,25 +89,25 @@ function managerMobilityOnSeasonStart(){
 }
 function validateManagerMobility(s){
  if(s.managerMobilityVersion===undefined&&s.managerMobility===undefined)return;
- const m=s.managerMobility;
- saveCheck(s.managerMobilityVersion===1&&s.worldVersion===1&&s.integratedManagementVersion===1&&s.aiRosterVersion===1&&saveObject(m)&&m.version===1&&saveInt(m.originClub,0,13)&&saveInt(m.enabledSeason,1,s.season)&&saveInt(m.currentFrom,m.enabledSeason,s.season)&&saveArray(m.applications,39)&&saveArray(m.history,30)&&saveArray(m.archives,14));
+ const m=s.managerMobility,maxClub=s.franceMode?29:13;
+ saveCheck(s.managerMobilityVersion===1&&s.worldVersion===1&&s.integratedManagementVersion===1&&s.aiRosterVersion===1&&saveObject(m)&&m.version===1&&saveInt(m.originClub,0,maxClub)&&saveInt(m.enabledSeason,1,s.season)&&saveInt(m.currentFrom,m.enabledSeason,s.season)&&saveArray(m.applications,s.franceMode?87:39)&&saveArray(m.history,30)&&saveArray(m.archives,maxClub+1));
  const ids=new Set(),keys=new Set();
  for(const a of m.applications){
-  saveCheck(saveObject(a)&&saveId(a.id)&&a.id==='job-'+a.season+'-'+a.clubId&&saveInt(a.season,Math.max(m.enabledSeason,s.season-2),s.season)&&saveInt(a.fromClub,0,13)&&saveInt(a.clubId,0,13)&&a.clubId!==a.fromClub&&!ids.has(a.id)&&['offered','rejected','declined','accepted','cancelled','expired','completed'].includes(a.status)&&Object.prototype.hasOwnProperty.call(MOBILITY_REASONS,a.reason)&&saveInt(a.reputation,0,100)&&saveInt(a.risk,0,100)&&saveInt(a.affinity,0,100)&&saveInt(a.coachChanges,0,10000));
+  saveCheck(saveObject(a)&&saveId(a.id)&&a.id==='job-'+a.season+'-'+a.clubId&&saveInt(a.season,Math.max(m.enabledSeason,s.season-2),s.season)&&saveInt(a.fromClub,0,maxClub)&&saveInt(a.clubId,0,maxClub)&&a.clubId!==a.fromClub&&!ids.has(a.id)&&['offered','rejected','declined','accepted','cancelled','expired','completed'].includes(a.status)&&Object.prototype.hasOwnProperty.call(MOBILITY_REASONS,a.reason)&&saveInt(a.reputation,0,100)&&saveInt(a.risk,0,100)&&saveInt(a.affinity,0,100)&&saveInt(a.coachChanges,0,10000));
   if(['offered','accepted'].includes(a.status))saveCheck(a.season===s.season&&a.fromClub===s.club&&a.reason==='offer');
   if(a.status==='rejected')saveCheck(['stable','finances','reputation'].includes(a.reason));
   if(['declined','cancelled','expired','completed'].includes(a.status))saveCheck(a.reason===a.status);ids.add(a.id);
  }
  const accepted=m.applications.filter(a=>a.status==='accepted');
  if(m.pending===null)saveCheck(accepted.length===0);
- else{const p=m.pending;saveCheck(saveObject(p)&&s.phase==='ended'&&!s.live&&p.season===s.season&&p.fromClub===s.club&&saveInt(p.toClub,0,13)&&p.toClub!==s.club&&saveInt(p.coachChanges,0,10000)&&accepted.length===1&&accepted[0].id===p.offerId&&accepted[0].clubId===p.toClub)}
+ else{const p=m.pending;saveCheck(saveObject(p)&&s.phase==='ended'&&!s.live&&p.season===s.season&&p.fromClub===s.club&&saveInt(p.toClub,0,maxClub)&&p.toClub!==s.club&&saveInt(p.coachChanges,0,10000)&&accepted.length===1&&accepted[0].id===p.offerId&&accepted[0].clubId===p.toClub)}
  let last=null;
- for(const h of m.history){saveCheck(saveObject(h)&&saveInt(h.fromClub,0,13)&&saveInt(h.toClub,0,13)&&h.toClub!==h.fromClub&&saveInt(h.departureSeason,m.enabledSeason,s.season-1)&&h.arrivalSeason===h.departureSeason+1&&h.offerId==='job-'+h.departureSeason+'-'+h.toClub&&(!last||h.departureSeason>=last.arrivalSeason&&h.fromClub===last.toClub));last=h}
+ for(const h of m.history){saveCheck(saveObject(h)&&saveInt(h.fromClub,0,maxClub)&&saveInt(h.toClub,0,maxClub)&&h.toClub!==h.fromClub&&saveInt(h.departureSeason,m.enabledSeason,s.season-1)&&h.arrivalSeason===h.departureSeason+1&&h.offerId==='job-'+h.departureSeason+'-'+h.toClub&&(!last||h.departureSeason>=last.arrivalSeason&&h.fromClub===last.toClub));last=h}
  if(last)saveCheck(last.toClub===s.club&&last.arrivalSeason===m.currentFrom);else saveCheck(s.club===m.originClub&&m.currentFrom===m.enabledSeason);
  for(const a of m.archives){
-  saveCheck(saveObject(a)&&saveInt(a.clubId,0,13)&&!keys.has(a.clubId)&&saveInt(a.season,m.enabledSeason,s.season)&&CAREER_ACADEMY_LEVELS.includes(a.academyInvestment)&&saveArray(a.ledger,100)&&saveArray(a.boardHistory,24));keys.add(a.clubId);
+  saveCheck(saveObject(a)&&saveInt(a.clubId,0,maxClub)&&!keys.has(a.clubId)&&saveInt(a.season,m.enabledSeason,s.season)&&CAREER_ACADEMY_LEVELS.includes(a.academyInvestment)&&saveArray(a.ledger,100)&&saveArray(a.boardHistory,24));keys.add(a.clubId);
   for(const x of a.ledger)saveCheck(saveObject(x)&&typeof x.title==='string'&&saveNumber(x.amount));
-  for(const x of a.boardHistory)saveCheck(saveObject(x)&&saveInt(x.season,1,s.season)&&saveInt(x.round,0,26)&&['previous','after','results','finances','youth','score'].every(k=>saveInt(x[k],0,100)));
+  for(const x of a.boardHistory)saveCheck(saveObject(x)&&saveInt(x.season,1,s.season)&&saveInt(x.round,0,s.franceMode?34:26)&&['previous','after','results','finances','youth','score'].every(k=>saveInt(x[k],0,100)));
  }
 }
 function managerMobilityPanel(){
