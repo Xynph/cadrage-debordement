@@ -70,7 +70,16 @@ function matchPair(lab,a,b,seeds=10,opts={}){
   const r=lab.match(a,b,A.seed(i),{home,...opts});
   rows.push({seed:A.seed(i),home,...r});
  }
- return A.summarize(rows);
+ const out=A.summarize(rows);
+ out.seedMargins=Array.from({length:seeds},(_,i)=>((rows[i*2].score[0]-rows[i*2].score[1])+(rows[i*2+1].score[0]-rows[i*2+1].score[1]))/2);
+ return out;
+}
+function pairedEffect(after,before){
+ assert.equal(after.seedMargins.length,before.seedMargins.length);
+ const diffs=after.seedMargins.map((v,i)=>v-before.seedMargins[i]);
+ const avg=mean(diffs),std=Math.sqrt(diffs.reduce((s,v)=>s+(v-avg)**2,0)/(diffs.length-1));
+ const e=1.96*std/Math.sqrt(diffs.length);
+ return {meanDelta:rd(avg),ci95:[rd(avg-e),rd(avg+e)],seedPairs:diffs.length};
 }
 test('Active 1592 runtime scores, role-sorted complete teams and actual depth',()=>{
  assert.equal(live.players.length,1592);
@@ -133,7 +142,7 @@ test('Native paired games: ordinary/elite recruits, 2/5 losses, depth vs 3 oppon
  assert.ok(quality.recruited5.mean>quality.promoted.mean);
  assert.ok(quality.normal5.mean>quality.promoted.mean);
  assert.ok(quality.lost5.mean<quality.weak.mean);
- const diff=(a,b)=>rd(metrics[a].margin-metrics[b].margin);
+ const diff=(a,b)=>pairedEffect(metrics[a],metrics[b]);
  const effects={
   normal2Margin:diff('normal2_vs_mid','promoted_vs_mid'),
   normal5Margin:diff('normal5_vs_mid','promoted_vs_mid'),
@@ -153,4 +162,22 @@ test('Native paired games: ordinary/elite recruits, 2/5 losses, depth vs 3 oppon
    fatigue:v.fatigue,injuries:v.injuries}])),
   reminder:'Active V12 source tuple ratings and skills, hypothetical role-correct laboratory transfers, not an interdivision career'
  }));
+});
+
+test('Cross-division robustness: every weak/middle/strong opponent pairing on active data', {timeout:900000},()=>{
+ const lab=N.laboratory(live,'legacy');
+ const ranked=league=>lab.clubs.filter(c=>c.league===league&&full(lab,c))
+  .sort((a,b)=>lab.quality(a)-lab.quality(b)||a.slug.localeCompare(b.slug));
+ const top=ranked('top14'),pro=ranked('prod2');
+ const pick=a=>[a[0],a[Math.floor(a.length/2)],a.at(-1)];
+ const t=pick(top),p=pick(pro),rows=[];
+ for(const a of p)for(const b of t){
+  const x=matchPair(lab,a,b,16);
+  rows.push({pro:a.slug,top:b.slug,proQuality:rd(lab.quality(a)),topQuality:rd(lab.quality(b)),
+   ratingGap:rd(lab.quality(b)-lab.quality(a)),
+   winPct:x.winPct,margin:x.margin,win95:x.win95,drawPct:x.drawPct});
+ }
+ const means=Object.fromEntries(p.map(a=>[a.slug,rd(mean(rows.filter(x=>x.pro===a.slug).map(x=>x.margin)))]));
+ console.log('RUGBY_REAL_DIVISION_CROSS_MATCH_QA '+JSON.stringify({matches:rows.length*32,seedPairs:16,
+  perClubProMeans:means,matrix:rows,limitations:'Fixed rosters and native match engine; 9 proxy cross-division pairings, not league seasons'}));
 });
