@@ -63,7 +63,7 @@ jobs:
           }));
           NODE
       - name: Existing age maturity and V12 position contract
-        run: node --test --test-name-pattern="maturité distincte|profondeur: trois variantes" tests/rugby-real-full-ratings-v12.cjs
+        run: |\n          node --test --test-name-pattern="maturité distincte|profondeur: trois variantes" tests/rugby-real-full-ratings-v12.cjs
       - name: Verify master remains tracked and unchanged
         run: |
           git diff --exit-code -- modding/data06/rugby-master-2026-2027.json dist/lnr-career.js dist/development.js dist/saves.js
