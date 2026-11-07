@@ -36,12 +36,16 @@ jobs:
       - name: Parcours réels PC, dossiers, graphiques et stockage
         env:
           CD_PLAYWRIGHT_MODULE: ${{ runner.temp }}/editorial-browser/node_modules/playwright
-        run: node tests/premium-editorial-browser.mjs
+        run: |
+          node tests/premium-editorial-browser.mjs
+          node tests/premium-editorial-live.mjs
       - name: Captures et preuves natives
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: premium-editorial-native-pc
-          path: premium-editorial-report/
+          path: |
+            premium-editorial-report/
+            premium-matchroom-report/
           if-no-files-found: error
           retention-days: 14
