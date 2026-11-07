@@ -66,13 +66,15 @@ function evidenceScreen(lab){
    roleMean>=rolePeerMedian-4&&corroboration.length>0;
   // Low minutes can reflect injury, contracts or personal choice: NO DOWNGRADE without verified independent facts.
   const negative=false;
+  const recentHistory=e.history.find(h=>h.season==='2025-2026');
   const coverage=[valid?'minutes-and-matches':'missing-usage',Number.isFinite(tries)?'tries-observed':'no-tries',
    Number.isFinite(points)?'points-observed':'no-points',...corroboration];
   const score=positive?(median-note)+(minutes/400)+(roleMean-rolePeerMedian)/4:negative?(note-median)+Math.max(0,350-minutes)/200:0;
   baseline.push({id:p.id,club:cl.slug,league:cl.league,role:p.gameplayPosition,age:p.ageApprox,
    note,median,p25,p75,primaryMean:fixed(roleMean),peerPrimaryMedian:fixed(rolePeerMedian),
    usage:valid?{matches,minutes,minutesPerMatch:fixed(workload),tries,points}:null,
-   squadState,positive,negative,score:fixed(score),coverage,independentSignals:corroboration});
+   squadState,positive,negative,score:fixed(score),coverage,independentSignals:corroboration,
+   historicalClub202526:recentHistory?.historicalClub||null,historySeasonCount:e.history.length});
  }
  const up=baseline.filter(x=>x.positive).sort((a,b)=>b.score-a.score||a.id.localeCompare(b.id));
  const down=baseline.filter(x=>x.negative).sort((a,b)=>b.score-a.score||a.id.localeCompare(b.id));
@@ -154,4 +156,39 @@ test('Individual evidence-based ±2 shadow calibration: club dispersion and nati
   caveat:'Hypothesis testing, not individual player corrections. 2025-26 usage influenced by injuries, selection, position and club; all edits on copies.'
  }));
  assert.equal(master.players.length,1592);
+});
+
+test('All 36 flags: 2025 historical context, line-up threshold and synchronized +2/+4/+8 counterfactuals',()=>{
+ const base=N.laboratory(ACTIVE,'legacy'),scr=evidenceScreen(base);
+ const rows=[];
+ for(const candidate of scr.up){
+  const a=base.clubs.find(c=>c.slug===candidate.club);
+  const native=a.players.find(p=>p.id===candidate.id),first=lineup(base,a);
+  const original=base.note(native);
+  const relevant=first.all.filter(p=>p.pos===native.pos||p.fam===native.fam);
+  const weakestRelevant=relevant.length?Math.min(...relevant.map(p=>base.note(p))):null;
+  const variants=[];
+  for(const dose of [2,4,8]){
+   const mod=portfolio(ACTIVE,[{id:candidate.id,club:candidate.club,delta:dose}]);
+   const lab=N.laboratory(mod.cloned,'legacy'),club=lab.clubs.find(c=>c.slug===candidate.club);
+   const newP=club.players.find(p=>p.id===candidate.id),sheet=lineup(lab,club);
+   variants.push({dose,roleNote:lab.note(newP),deltaRoleNote:lab.note(newP)-original,
+    starters:sheet.all.some(p=>p.id===candidate.id),
+    bench:sheet.bench.some(p=>p.id===candidate.id),
+    xv:rosterStats(lab,club).mean,xvDelta:fixed(rosterStats(lab,club).mean-rosterStats(base,a).mean)});
+  }
+  rows.push({id:candidate.id,club:candidate.club,league:candidate.league,role:candidate.role,
+   age:candidate.age,screenNote:original,otherLineupRoleMin:weakestRelevant,
+   squadState:candidate.squadState,historySeasonCount:candidate.historySeasonCount,
+   historicalClub202526:candidate.historicalClub202526,
+   evidence:candidate.independentSignals,variants});
+ }
+ const totals=Object.fromEntries([2,4,8].map(d=>[d,{
+  noteChange:rows.filter(r=>r.variants.find(v=>v.dose===d).deltaRoleNote!==0).length,
+  starters:rows.filter(r=>r.variants.find(v=>v.dose===d).starters).length,
+  bench:rows.filter(r=>r.variants.find(v=>v.dose===d).bench).length,
+  xvChange:rows.filter(r=>r.variants.find(v=>v.dose===d).xvDelta!==0).length
+ }]));
+ console.log('RUGBY_REAL_V15_LINEUP_THRESHOLD '+JSON.stringify({flagged:rows.length,totals,rows,
+  caveat:'2025/26 historical playing time does not require 2026/27 starter status. A +8 stress dose is not a recommended rating change.'}));
 });
