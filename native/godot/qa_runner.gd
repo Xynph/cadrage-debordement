@@ -73,6 +73,15 @@ func _capture(name:String) -> void:
 	if is_instance_valid(app.body) and app.route not in ["Accueil","Création"]:
 		end=app.body.get_global_transform_with_canvas()*app.body.size
 		_check(end.x<=logical.x+1 and end.y<=logical.y+1,"Page fits client: "+name+" "+str(end))
+	for dialog in app.get_children():
+		if not dialog is AcceptDialog or not dialog.visible:continue
+		var client:Vector2=get_tree().root.get_visible_rect().size
+		_check(Vector2(dialog.size).x<=client.x and Vector2(dialog.size).y<=client.y,"Dialog fits client: "+name)
+		var ok:Button=dialog.get_ok_button()
+		_check(ok.is_visible_in_tree() and ok.get_global_rect().end.y<=dialog.size.y,"Dialog confirmation is visible: "+name)
+		if dialog is ConfirmationDialog:
+			var cancel:Button=dialog.get_cancel_button()
+			_check(cancel.is_visible_in_tree() and cancel.get_global_rect().end.y<=dialog.size.y,"Dialog cancel is visible: "+name)
 	if captures.is_empty() or DisplayServer.get_name()=="headless":return
 	await RenderingServer.frame_post_draw
 	var image:=get_tree().root.get_texture().get_image()
