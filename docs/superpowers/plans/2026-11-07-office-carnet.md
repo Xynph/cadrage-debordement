@@ -1,5 +1,5 @@
 # Bureau « Le carnet du club » — spécification et plan
-Léo valide explicitement la maquette v6. Implémenter dans Godot puis proposer trois visuels pour Effectif. Autonomie, aucune nouvelle approbation du même dessin. Tout surE: sauf raccourci bureau. Base1cf77f5, dépendance PR394 dont CI complète verte ; main d79 vérifié.
+Léo valide explicitement la maquette v6 puis autorise la déclinaison autonome sur tous les écrans, sans nouveaux choix par menu. Implémenter le Bureau puis suivre le plan global 2026-11-07-da-carnet.md. Tout surE: sauf raccourci bureau. Base1cf77f5, dépendance PR394 dont CI complète verte ; main d79 vérifié.
 ## Vision et contraintes
 Bureau asymétrique : journal ivoire à gauche, prochain match photographique au centre, chronologie de quatre rencontres et groupe en dessous, rail sportif ivoire à droite avec classement de proximité et confiance/moyens/préparation. Typographie ouverte et hiérarchie titres/texte/métadonnées, accents du club, logo ballon approuvé. Modèle réel uniquement ; chiffres et fonctions illustratifs de la maquette ne sont pas des données à coder.
 Pas de modification moteur/BDD/économie/format de sauvegarde. Aucune fausse date, projection financière ou trajectoire de classement sans données. Afficher journées/semaines réelles du modèle plutôt que calendrier inventé. Priorités dérivées des contrats et sélection ; nouvelles issues du modèle sans faux staff ni horodatage. Objectifs/rang/formes réels, pas de reconstruction parallèle du classement. Ne pas changer les autres menus, hors logo et habillage du shell partagé nécessaires.
@@ -10,4 +10,4 @@ Trois tailles à recevoir :1280×800,1440×900,1920×1080 ; lisibilité, scrolls
 - [ ] Tests SDK graphiques réels sur vrais modèles, boutons/fiches, rankingfenêtre8lignes/0premiermatch/messagelong, intersaison/live et navigation sans écriture S/RNG ; captures et revue visuelle.
 - [ ] Rapport source et commit ; revue ciblée puis globale ; une vague groupée si nécessaire.
 - [ ] Parent construit/reçoit ZIPWindows complet et raccorde raccourci sans modifier la carrière ; documentation, publication PR/CI/gate officiel si terminale verte sinon CIenattente/nonfusionnée ; passation73.
-- [ ] Parent produit trois maquettes originales Effectif cohérentes avec le style du Bureau pour le choix suivant ; ne pas implémenter Effectif sans choix.
+- [ ] Parent décline la DA sur les autres menus selon la dernière instruction utilisateur, sans nouvelles approbations par écran.
