@@ -1,0 +1,70 @@
+name: Rugby Reel - ten-season native career QA
+on:
+  push:
+    branches: [qa/rugby-real-long-career-20261107]
+    paths:
+      - 'tests/rugby-real-long-career-qa.cjs'
+      - '.github/workflows/rugby-real-long-career-qa.yml'
+      - 'docs/rugby-real-long-career-qa-20261107.md'
+  pull_request:
+    paths:
+      - 'tests/rugby-real-long-career-qa.cjs'
+      - '.github/workflows/rugby-real-long-career-qa.yml'
+      - 'docs/rugby-real-long-career-qa-20261107.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-ten-seasons:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Node syntax and complete native career acceptance
+        run: |
+          node --check tests/rugby-real-long-career-qa.cjs
+          node --test tests/rugby-real-long-career-qa.cjs
+      - name: Native recruitment departures and quality-sensitivity audit
+        run: |
+          node - <<'NODE'
+          const assert=require('node:assert/strict');
+          const {run}=require('./tools/rugby-real-v12/calibration.cjs');
+          const result=run({seeds:8});
+          assert.equal(result.matchCount,240);
+          assert.equal(result.selection.incoming.length,5);
+          assert.equal(result.selection.leaving.length,5);
+          assert.equal(result.change.recruited.replacementStarters.length,5);
+          assert.equal(result.change.departures.replacementStarters.length,5);
+          for(const variant of result.variants){
+            for(const [name,summary] of Object.entries(variant.scenarios)){
+              assert.equal(summary.matches,16);
+              assert.ok(Number.isFinite(summary.winPct)&&Number.isFinite(summary.margin));
+              assert.ok(summary.winPct>=0&&summary.winPct<=100);
+            }
+          }
+          console.log('RUGBY_REAL_MOVEMENT_QA '+JSON.stringify({
+            seeds:8,matches:result.matchCount,
+            recruitment:result.change.recruited,
+            departures:result.change.departures,
+            scenarios:result.variants.map(v=>({
+              coefficient:v.coefficient,
+              promotedStrong:v.scenarios.promoted_strong.winPct,
+              promotedMid:v.scenarios.promoted_mid.winPct,
+              promotedRecruited:v.scenarios.promoted_recruited_mid.winPct,
+              relegatedKeep:v.scenarios.relegated_keep_mid.winPct,
+              relegatedLose5:v.scenarios.relegated_lose5_mid.winPct,
+              margins:Object.fromEntries(Object.entries(v.scenarios).map(([k,s])=>[k,s.margin]))
+            }))
+          }));
+          NODE
+      - name: Existing age maturity and V12 position contract
+        run: |
+          node --test --test-name-pattern="maturité distincte|profondeur: trois variantes" tests/rugby-real-full-ratings-v12.cjs
+      - name: Verify master remains tracked and unchanged
+        run: |
+          git diff --exit-code -- modding/data06/rugby-master-2026-2027.json dist/lnr-career.js dist/development.js dist/saves.js
