@@ -49,9 +49,28 @@ function lnrGamePlayers(i,base){
   // Évaluation, âge, salaire et condition = PARAMÈTRES DE JEU SIMULÉS.
   const birthday=typeof LNR_BIRTHYEARS_DATA==='undefined'?{age:21+(seedHash(id)%14),ageEstimated:true}:lnrBirthAge(id);
   const seed=seedHash(id);const rating=clamp(base+(seed%15)-8,48,92);
-  return ensureSkills({id,name,pos:POS[position],fam:family,
+  const p=ensureSkills({id,name,pos:POS[position],fam:family,
    ...birthday,rating,condition:90+(seed%11),injury:0,
    salary:3500+(seed%18)*330,lnrGroup:group,lnrNationality:nationality||null});
+  // V12 is a NEW-CAREER initializer only. Never re-score players loaded from a save.
+  if(typeof LNR_V12_PLAYER_DATA==='undefined')return p;
+  const data=LNR_V12_PLAYER_DATA,entry=data.players[id];
+  if(data.version!==1||!entry||!Array.isArray(entry[3])||entry[3].length!==36||entry[4].length!==11)
+   throw Error('Profil V12 incomplet : '+id);
+  const [roleRating,oldRating,oldPotential,attributes,skills,role,traits]=entry;
+  const keys=['scrum','lineout','tackle','speed','pass','kick','goal','mental','discipline','stamina','power'];
+  const attrs=Object.fromEntries(data.attributeKeys.map((k,j)=>[k,attributes[j]]));
+  if(!Number.isInteger(roleRating)||roleRating<20||roleRating>97||!Number.isFinite(oldPotential))
+   throw Error('Profil V12 hors bornes : '+id);
+  p.rating=roleRating;p.skillBase=p.rating;
+  p.skills=Object.fromEntries(keys.map((k,j)=>[k,skills[j]]));
+  p.attributesV2=attrs;p.gameplayPosition=role;p.hiddenTraitsV2=JSON.parse(JSON.stringify(traits));
+  p.potential=oldPotential;
+  p.lnrRatingsVersion=1;
+  // Rebase only the remaining historical room, never the old absolute scale.
+  ensureDevelopment(p);
+  p.dev.potential=clamp(p.rating+Math.max(0,oldPotential-oldRating),p.rating,99);
+  return p;
  });
 }
 function lnrChooseMode(mode){
