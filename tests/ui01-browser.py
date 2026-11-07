@@ -58,12 +58,7 @@ try:
             for theme in ('tribune', 'analyste'):
                 page.locator('#ui01-theme').select_option(theme)
                 for route in routes:
-                    group = page.evaluate('(route)=>UI01_GROUPS.find(g=>g.routes.includes(route)).id', route)
-                    page.locator('.ui01-primary-nav button[onclick="nav(\'%s\')"]' % group).click()
-                    if route == 'team':
-                        page.locator('.ui01-secondary-nav button').first.click()
-                    else:
-                        page.locator('.ui01-secondary-nav button[onclick="nav(\'%s\')"]' % route).click()
+                    page.locator('.sidebar button[onclick="nav(\'%s\')"]' % route).click()
                     check('%s/%s/%s navigation' % (width, theme, route), page.evaluate('view') == route)
                     check('%s/%s/%s valid career' % (width, theme, route), page.evaluate('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'))
                     dims = page.evaluate('({width:innerWidth,scroll:document.documentElement.scrollWidth})')
@@ -81,7 +76,7 @@ try:
         check('navigation and themes do not mutate career', page.evaluate('JSON.stringify(S)') == snapshot)
         page.set_viewport_size({'width': 390, 'height': 844})
         page.evaluate('nav("team")')
-        page.locator('.ui01-secondary-nav button').nth(1).click()
+        page.locator('.squad-tabs button').filter(has_text='Feuille à 23').click()
         check('sheet tab uses real 23 players', page.evaluate('squadTab === "sheet" && S.lineup.length === 15 && S.reserves.length === 8'))
         page.screenshot(path=str(OUT / 'feuille-390.png'))
         page.evaluate('nav("match");beginMatch();pauseMatch();render()')

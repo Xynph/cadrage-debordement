@@ -47,6 +47,7 @@ try{
   }
  }
  await page.evaluate(()=>nav('tactics'));await page.locator('[data-da42-subpage="xv"]').click();check('quinze joueurs natifs sur le terrain',await page.locator('.ed-pitch-player[data-ed-player]').count()===15);const pitchState=await page.evaluate(()=>JSON.stringify(S));const pitchId=await page.locator('.ed-pitch-player[data-ed-player]').first().getAttribute('data-ed-player');await page.locator('.ed-pitch-player[data-ed-player]').first().click();check('terrain ouvre le vrai dossier',await page.locator('.cd02-player').getAttribute('data-cd02-player')===pitchId);check('lecture du terrain sans mutation',await page.evaluate(()=>JSON.stringify(S))===pitchState);
+ await page.evaluate(()=>nav('tactics'));await page.locator('.cd-matchday button').filter({hasText:'Disponibilité & rotation'}).click();check('navigation native rotation conservée',await page.evaluate(()=>view==='team'&&squadTab==='health'));await page.evaluate(()=>nav('tactics'));await page.locator('.cd-matchday button').filter({hasText:'Vérifier les 23'}).click();check('navigation native feuille conservée',await page.evaluate(()=>view==='team'&&squadTab==='sheet'));
  await page.evaluate(()=>nav('market'));await page.locator('.markettabs button').filter({hasText:'Contrats'}).click();check('onglet Contrats affiche ses commandes',await page.getByRole('heading',{name:'Les engagements du club',exact:true}).isVisible());await page.locator('.markettabs button').filter({hasText:'Mouvements'}).click();check('onglet Mouvements réellement actif',await page.evaluate(()=>marketTab)==='history');await page.locator('.markettabs button').filter({hasText:'Recruter'}).click();check('candidats natifs à nouveau accessibles',await page.locator('.marketgrid').isVisible());
  await page.setViewportSize({width:1440,height:900});await page.evaluate(()=>{squadTab='table';nav('team');});
  await page.locator('.ed-section-tabs button').first().click();
@@ -66,12 +67,14 @@ try{
  });check('contraste des chiffres et liens du thème clair',lightContrast>=4.5);
  await page.screenshot({path:path.join(out,'finance-light-1440.png')});
  await page.locator('#ui01-theme').selectOption('analyste');
- await page.evaluate(()=>{nav('match');beginMatch();pauseMatch();nav('saves');});
+ await page.evaluate(()=>{nav('match');beginMatch();pauseMatch();});
+ for(const [width,height] of [[1440,900],[1920,1080]]){await page.setViewportSize({width,height});check('score natif lisible '+width,await page.locator('.match-scoreboard .live-score h3').first().evaluate(el=>getComputedStyle(el).color==='rgb(241, 234, 216)'));check('marque du direct compacte '+width,await page.locator('.live-layout .sidebar .wordmark').evaluate(el=>el.getBoundingClientRect().height<85));await page.screenshot({path:path.join(out,'live-'+width+'.png')});}
+ await page.setViewportSize({width:1440,height:900});await page.evaluate(()=>nav('saves'));
  check('sauvegardes accessibles pendant un match en pause',await page.locator('.main[data-ed-route="saves"] .ed-native-scroll').isVisible());
  check('contenu de sauvegarde défilable en match',await page.locator('.ed-native-scroll').evaluate(el=>getComputedStyle(el).overflowY==='auto'));
  await page.screenshot({path:path.join(out,'saves-paused-match-1440.png')});
  // Nouvelle carrière LNR : les visages fictifs ne sont pas associés aux sportifs réels.
- await page.evaluate(()=>start(0,'lnr'));await page.evaluate(()=>{squadTab='table';nav('team');});check('aucun faux portrait de sportif réel',await page.locator('.ed-team-overview .ed-portrait').count()===0);
+ await page.evaluate(()=>start(0,'lnr'));await page.evaluate(()=>{squadTab='table';nav('team');});check('catalogue LNR toujours accessible',await page.locator('.lnr-catalogue').isVisible());check('cellule LNR toujours accessible',await page.locator('.lnr05-center').isVisible());check('aucun faux portrait de sportif réel',await page.locator('.ed-team-overview .ed-portrait').count()===0);
  check('aucune erreur JavaScript',report.errors.length===0);check('aucun asset manquant',report.badResponses.length===0);report.passed=true;
 }catch(error){report.errors.push(error.stack||String(error));throw error;}
 finally{fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({passed:report.passed,checks:report.checks.length,screens:report.screens.length,errors:report.errors.slice(-3)},null,2));if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}

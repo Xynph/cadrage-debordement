@@ -144,7 +144,7 @@ html:root[data-cd-theme][data-edition=editorial] .modalback{z-index:300!importan
 html:root[data-cd-theme][data-edition=editorial] .modal h2{font-family:var(--ed-serif)!important;font-size:32px!important}
 html:root[data-cd-theme][data-edition=editorial] :is(.welcome,.cd3-menu){background-image:linear-gradient(90deg,#06190feb,#06190f44),url('assets/editorial/tactics.webp')!important;background-size:cover!important;background-position:center!important;color:#f2e7cf!important}
 html:root[data-cd-theme][data-edition=editorial] .welcome h1,html:root[data-cd-theme][data-edition=editorial] .cd3-menu h1{font-family:var(--ed-serif)!important;font-style:italic!important;color:#f4e8cb!important}
-html:root[data-cd-theme][data-edition=editorial] .welcome .clubchoice{background:#0b251bd9!important;border:1px solid #b38b4c88!important;border-radius:7px!important;color:#e9dfc9!important}
+html:root[data-cd-theme][data-edition=editorial] .welcome .clubchoice{background:#102a21!important;border:1px solid #b38b4c88!important;border-radius:7px!important;color:#e9dfc9!important}
 @media(max-width:1600px){
  html:root[data-cd-theme][data-edition=editorial] .layout:not(.live-layout){grid-template-columns:184px minmax(0,1fr)!important}
  html:root[data-cd-theme][data-edition=editorial] .layout:not(.live-layout)>.sidebar{width:184px!important}
@@ -235,3 +235,32 @@ html:root[data-cd-theme][data-edition=editorial] .main :is(button.primary,.da42-
 html:root[data-cd-theme][data-edition=editorial] .da42-subtab{min-height:44px!important}
 /* The live score keeps its native controls, with the same photographic identity. */
 html:root[data-cd-theme][data-edition=editorial] .live-layout .match-scoreboard{background:linear-gradient(90deg,#09251af5 0%,#09251aec 60%,#09251a99),url('assets/editorial/matchday.webp') right 40%/cover!important;color:#f1ead8!important;border-color:#987648!important}
+html:root[data-cd-theme][data-edition=editorial] .live-layout .sidebar .wordmark{font-size:0!important;padding:16px 0!important;letter-spacing:0!important;text-align:center!important;line-height:1!important}
+html:root[data-cd-theme][data-edition=editorial] .live-layout .sidebar .wordmark span{display:none!important}
+html:root[data-cd-theme][data-edition=editorial] .live-layout .sidebar .wordmark::after{content:'CD';font:600 italic 23px var(--ed-serif);color:#e1ba7d}
+html:root[data-cd-theme][data-edition=editorial] .live-layout .match-scoreboard :is(h3,.live-score h3,.row.muted,.eyebrow){color:#f1ead8!important}
+html:root[data-cd-theme][data-edition=editorial] .live-layout .v61-advisor{background:#10271f!important;color:#f0e8d4!important;border-color:#98764888!important}
+html:root[data-cd-theme][data-edition=editorial] .live-layout .v61-advisor :is(h2,h3,p,small,.v61-advisor-state){color:#d5dfcc!important}
+
+html:root[data-cd-theme][data-edition=editorial] .da4-bar-row{min-height:24px!important;flex-shrink:0!important}
+html:root[data-edition=editorial][data-cd-theme=tribune] .office-decision span{color:#18372a!important}
+html:root[data-edition=editorial][data-cd-theme=tribune] .ui01-layout:not(.live-layout) .da4-decisions .office-decision{background:#f3edde!important;color:#18372a!important}
+html:root[data-edition=editorial][data-cd-theme=tribune] .da4-decisions .card{background:#f3edde!important}
+/* Live keeps a compact photographic header and scrolls within its own main pane. */
+html:root[data-edition=editorial]:has(.live-layout),html:root[data-edition=editorial] body:has(.live-layout){height:100dvh;overflow:hidden}
+html:root[data-edition=editorial] .live-layout{height:100dvh!important;min-height:0!important;overflow:hidden!important}
+html:root[data-edition=editorial] .live-layout>.main{height:100dvh!important;min-height:0!important;overflow:auto!important;overscroll-behavior:contain;padding:12px 20px!important}
+html:root[data-cd-theme][data-edition=editorial] .live-layout .main>.heading{height:92px!important;padding:10px 20px!important;background-size:auto,auto 160px!important;margin-bottom:10px!important}
+html:root[data-cd-theme][data-edition=editorial] .live-layout .heading h1{font-size:35px!important;margin:3px 0!important}
+html:root[data-cd-theme][data-edition=editorial] .live-layout .heading .eyebrow{font-size:10px!important}
+html:root[data-cd-theme][data-edition=editorial] .live-layout .heading p{font-size:14px!important}
+html:root[data-cd-theme][data-edition=editorial] .live-layout .match-scoreboard{min-height:125px!important;padding:12px 15px!important}
+html:root[data-cd-theme][data-edition=editorial] .live-layout .v61-advisor{padding:12px 15px!important}
+html:root[data-cd-theme][data-edition=editorial] .live-layout .v61-advisor-grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:18px!important}
+html:root[data-cd-theme][data-edition=editorial] .live-layout .v61-advisor :is(h2,h3){font-size:20px!important;margin:3px 0!important}
+html:root[data-cd-theme][data-edition=editorial] .live-layout .v61-advisor p{font-size:12px!important;margin:6px 0!important}
+html:root[data-cd-theme][data-edition=editorial] .da43-workspace .da42-page[data-da42-page=marche] .da42-market-composition{min-height:150px!important;gap:16px!important}
+
+html:root[data-cd-theme][data-edition=editorial] :is(.cd03-header,.cd04-header){height:38px!important;min-height:38px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;padding:5px 14px!important;flex:none!important}
+html:root[data-cd-theme][data-edition=editorial] :is(.cd03-header,.cd04-header) p{display:none!important}
+html:root[data-cd-theme][data-edition=editorial] :is(.cd03-header,.cd04-header) h2{font-size:20px!important;margin:0!important}
