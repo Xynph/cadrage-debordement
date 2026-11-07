@@ -1,0 +1,45 @@
+name: Reception management V101-V116 Chromium PC
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/v101-v116-reception-browser.mjs'
+      - '.github/workflows/v101-v116-reception.yml'
+      - 'dist/espoirs-coaching-v101-v104.js'
+      - 'dist/sporting-director-v105-v110.js'
+      - 'dist/fan-experience-v111-v116.js'
+      - 'dist/v101-v116-ui-bridge.js'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  management-chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests de contrats metier et syntaxe
+        run: |
+          node --check tests/v101-v116-reception-browser.mjs
+          node tests/v101-v104-espoirs-coaching.cjs
+          node tests/v105-v110-sporting-director.cjs
+          node tests/v111-v116-fan-experience.cjs
+      - name: Installer Chromium pour la reception reelle
+        run: |
+          npm install --prefix "$RUNNER_TEMP/management-browser" --no-audit --no-fund playwright@1.58.0
+          "$RUNNER_TEMP/management-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Parcours Chromium PC, clics, sauvegardes et compatibilite premium
+        env:
+          CD_PLAYWRIGHT_MODULE: ${{ runner.temp }}/management-browser/node_modules/playwright
+        run: node tests/v101-v116-reception-browser.mjs
+      - name: Recevoir les captures et preuves
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v101-v116-reception-chromium
+          path: v101-v116-reception-report/
+          if-no-files-found: error
+          retention-days: 14
