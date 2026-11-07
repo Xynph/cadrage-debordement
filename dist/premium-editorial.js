@@ -64,9 +64,42 @@
   function heading(main,route){const data=routes[route];let h=main.querySelector(':scope>.heading');if(!h){h=node('<div class="heading"><div><div class="eyebrow"></div><h1></h1><p></p></div></div>');const bar=main.querySelector('.ui01-appbar');if(bar)bar.after(h);else main.prepend(h);}h.dataset.edHero=route;h.style.setProperty('--ed-image','url(assets/editorial/'+data.image+'.webp)');h.querySelector('h1').textContent=data.title;const over=h.querySelector('.eyebrow');if(over)over.textContent=data.over;const p=h.querySelector('p');if(p)p.textContent=data.desc;}
   function overview(m){const own=m.standings.find(t=>t.mine),at=own?m.standings.indexOf(own):0,rows=m.standings.slice(Math.max(0,at-2),Math.max(0,at-2)+5);return '<div class="ed-dashboard-grid"><section class="ed-card">'+conditionChart(m)+'<button type="button" data-ed-route="team" class="ed-text-button">Voir le groupe →</button></section><section class="ed-card">'+resultsChart(m.results)+'<button type="button" data-ed-route="match" class="ed-text-button">Centre de match →</button></section><section class="ed-card"><div class="ed-chart-title"><h3>La course au classement</h3><span>'+n(own?.points)+' pts</span></div><table class="ed-mini-table"><tbody>'+rows.map(t=>'<tr class="'+(t.mine?'is-mine':'')+'"><td>'+n(t.rank)+'</td><td>'+esc(t.abbr)+'</td><td>'+n(t.points)+'</td></tr>').join('')+'</tbody></table><button type="button" class="ed-text-button" data-ed-route="league">Tout le championnat →</button></section></div>';}
   function sectionPages(container,route,groups){if(groups.length<2)return;const shell=node('<div class="ed-sectioned"><nav class="ed-section-tabs" role="tablist" aria-label="Dossiers de '+esc(routes[route].over)+'"></nav><div class="ed-section-panels"></div></div>'),tabs=shell.firstElementChild,panels=shell.lastElementChild;groups.forEach((g,i)=>{const id='ed-'+route+'-'+i,button=node('<button type="button" role="tab" id="'+id+'-tab" aria-controls="'+id+'" aria-selected="false">'+esc(g.name)+'</button>'),panel=node('<section class="ed-section-panel" id="'+id+'" role="tabpanel" aria-labelledby="'+id+'-tab"></section>');g.nodes.forEach(n=>panel.append(n));tabs.append(button);panels.append(panel);button.addEventListener('click',()=>activate(i));button.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?0:e.key==='End'?groups.length-1:(i+(e.key==='ArrowRight'?1:groups.length-1))%groups.length;activate(next);tabs.children[next].focus();}});});function activate(i){choices[route]=i;[...tabs.children].forEach((b,j)=>{b.setAttribute('aria-selected',String(i===j));b.tabIndex=i===j?0:-1;panels.children[j].hidden=i!==j;});}container.append(shell);activate(Math.min(choices[route]||0,groups.length-1));}
+  function enhanceLive(main,m){
+   if(main.dataset.edLiveReady)return;
+   const centre=main.querySelector('.match-centre'),cockpit=main.querySelector('.v40-cockpit'),arena=cockpit?.querySelector('.v40-arena'),tabs=cockpit?.querySelector('.v40-tabs');
+   if(!centre||!cockpit||!arena||!tabs)return;
+   main.dataset.edLiveReady='true';main.classList.add('ed-matchroom');
+   const focus=typeof matchCockpitFocus==='string'?matchCockpitFocus:'terrain';
+   const names={terrain:'Terrain et direct',effectif:'Effectif et banc',analyse:'Statistiques et lecture',tactique:'Consignes et décisions'};
+   const pages=node('<div class="ed-live-pages"></div>'),panels={};
+   for(const key of Object.keys(names)){
+    const panel=node('<section class="ed-live-page" data-ed-live-page="'+key+'" id="ed-live-'+key+'" role="tabpanel" aria-labelledby="ed-live-tab-'+key+'" tabindex="0"></section>');
+    panel.hidden=key!==focus;panels[key]=panel;pages.append(panel);
+   }
+   const bottom=cockpit.querySelector('.v40-bottom'),commentary=bottom?.querySelector('.match-commentary');
+   panels[focus==='effectif'?'effectif':'terrain'].append(arena);
+   if(commentary)panels.terrain.append(commentary);
+   for(const el of [...(bottom?.children||[])])panels[el.matches('.v40-tactics')?'tactique':'analyse'].append(el);
+   for(const el of [...cockpit.children]){
+    if(el===tabs||el===arena||el===bottom)continue;
+    panels[el.matches('.match-tactical-observatory,.v40-footnote')?'analyse':'tactique'].append(el);
+   }
+   bottom?.remove();
+   for(const el of [...centre.children])if(el!==cockpit&&!el.matches('.match-scoreboard'))panels.tactique.append(el);
+   cockpit.append(pages);tabs.setAttribute('role','tablist');
+   tabs.querySelectorAll('button.v40-tab').forEach((button,i)=>{
+    const key=Object.keys(names)[i];button.dataset.edLiveTab=key;button.id='ed-live-tab-'+key;button.setAttribute('role','tab');button.removeAttribute('aria-pressed');button.setAttribute('aria-controls','ed-live-'+key);button.setAttribute('aria-selected',String(key===focus));button.tabIndex=key===focus?0:-1;if(key==='terrain')button.textContent='Terrain et direct';if(key==='tactique'){const advice=panels.tactique.querySelectorAll('.v61-advisor button:not(:disabled)').length;button.textContent='Consignes et conseils'+(advice?' · '+advice:'');button.title='Conseiller du staff, consignes et décisions détaillées'+(advice?' : '+advice+' conseil(s) applicable(s)':'');}
+   });
+   if(typeof S!=='undefined'&&S.live&&!S.lnrMode){
+    arena.querySelectorAll(':scope>.v40-roster').forEach((roster,i)=>{
+     const side=i===0?S.live.userSide:1-S.live.userSide,ids=S.live.sheets[side].on;
+     roster.querySelectorAll('.v40-roster-row').forEach((row,slot)=>{const link=row.querySelector('.v40-player-link');if(link&&ids[slot]){const face=node(portrait(portraitIndex(ids[slot])));face.setAttribute('aria-hidden','true');link.prepend(face);}});
+    });
+   }
+  }
   function enhance(){
    const m=read();decorateCrests(m);const menuBrand=document.querySelector('.cd3-brand>span');if(menuBrand)menuBrand.innerHTML='Cadrage<br><b>Débordement</b><small>RUGBY MANAGER</small>';const main=document.querySelector('.layout>.main');if(!m||!main)return;
-   if(main.closest('.live-layout')){main.dataset.edLive='true';return;}
+   if(main.closest('.live-layout')){main.dataset.edLive='true';enhanceLive(main,m);return;}
    const route=typeof view==='string'&&routes[view]?view:'dashboard';if(main.dataset.edRoute)return;main.dataset.edRoute=route;
    topbar(main,m);heading(main,route);
    const wordmark=document.querySelector('.sidebar .wordmark');if(wordmark)wordmark.innerHTML='<svg class="ed-brand-ball" viewBox="0 0 80 34" aria-hidden="true"><ellipse cx="40" cy="17" rx="30" ry="11" transform="rotate(-22 40 17)"/><path d="M18 25Q40 4 64 10M33 20l14-6m-11 1 2 7m3-10 2 7"/></svg>Cadrage<br><span>Débordement</span>';
@@ -98,8 +131,14 @@
    }
   }
   document.addEventListener('click',event=>{const el=event.target.closest?.('button[data-ed-route],[data-ed-player],[data-ed-info]');if(!el)return;if(el.dataset.edRoute&&routes[el.dataset.edRoute]&&typeof nav==='function')nav(el.dataset.edRoute);else if(el.dataset.edPlayer&&typeof ui02ShowPlayer==='function')ui02ShowPlayer(el.dataset.edPlayer);else if(el.dataset.edInfo){const chart=el.closest('.ed-chart-group');if(chart){chart.querySelectorAll('[aria-pressed]').forEach(b=>b.setAttribute('aria-pressed',String(b===el)));const output=chart.querySelector('output');if(output)output.textContent=el.dataset.edInfo;}}});
+  document.addEventListener('click',event=>{const tab=event.target.closest?.('button[data-ed-live-tab]');if(tab)document.querySelector('[data-ed-live-tab="'+tab.dataset.edLiveTab+'"]')?.focus();});
+  document.addEventListener('keydown',event=>{
+   const tab=event.target.closest?.('button[data-ed-live-tab]');if(!tab||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+   event.preventDefault();const keys=['terrain','effectif','analyse','tactique'],at=keys.indexOf(tab.dataset.edLiveTab),next=event.key==='Home'?0:event.key==='End'?3:(at+(event.key==='ArrowRight'?1:3))%4;
+   if(typeof chooseMatchCockpitFocus==='function'){chooseMatchCockpitFocus(keys[next]);document.querySelector('[data-ed-live-tab="'+keys[next]+'"]')?.focus();}
+  });
   const readout=event=>{const el=event.target.closest?.('[data-ed-info]');if(el){const output=el.closest('.ed-chart-group')?.querySelector('output');if(output)output.textContent=el.dataset.edInfo;}};document.addEventListener('pointerover',readout);document.addEventListener('focusin',readout);
-  const original=root.render;root.render=function(){const result=original.apply(this,arguments);enhance();return result;};enhance();
+  const original=root.render;root.render=function(){const focusedTab=document.activeElement?.dataset?.edLiveTab;const result=original.apply(this,arguments);enhance();if(focusedTab)document.querySelector('[data-ed-live-tab="'+focusedTab+'"]')?.focus({preventScroll:true});return result;};enhance();
  }
  return {routes,esc,groupSummary,radarValues,crest,conditionChart,resultsChart,lineupView,portraitIndex,install};
 });

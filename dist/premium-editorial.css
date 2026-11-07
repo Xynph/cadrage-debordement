@@ -280,3 +280,97 @@ html:root[data-cd-theme][data-edition=editorial] :is(.cd03-header,.cd04-header) 
  html:root[data-cd-theme][data-edition=editorial] .heading>div{max-width:95%!important}
  html:root[data-cd-theme][data-edition=editorial] .ed-dashboard-grid{grid-template-columns:minmax(0,1fr)!important}
 }
+/* Salle de match : chaque section native devient une page, sans commandes clonées. */
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-pages{min-height:0;flex:1;overflow:hidden}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page{height:100%;min-height:0;overflow:auto;overscroll-behavior:contain;padding:2px 3px 6px;scrollbar-gutter:stable}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page[data-ed-live-page=terrain]:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr) 285px;gap:12px;align-items:stretch}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page[data-ed-live-page=terrain] .v40-arena{display:block;min-height:0;height:100%}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page[data-ed-live-page=terrain] .v40-roster{display:none!important}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page[data-ed-live-page=effectif] .v40-field-center{display:none!important}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page[data-ed-live-page=effectif] .v40-arena{grid-template-columns:1fr 1fr;min-height:0;height:100%;align-items:stretch}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page .v40-roster{max-height:none;min-height:0;overflow:auto;padding:12px 16px}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .v40-player-link{display:flex;align-items:center;gap:9px;font:600 17px var(--ed-serif)!important}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .v40-player-link .ed-portrait{width:30px;height:30px}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .v40-roster-row{min-height:48px;gap:10px}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .v40-roster-row select{width:150px;font-size:12px}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page[data-ed-live-page=analyse]:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.85fr);gap:14px;align-content:start}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page .match-tactical-observatory{grid-column:1/-1}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page .v40-footnote{grid-column:1/-1}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page[data-ed-live-page=tactique]:not([hidden]){display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:14px;align-content:start}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page[data-ed-live-page=tactique]>.match-management{grid-column:1/-1}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page .card{margin:0!important}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .match-commentary{height:100%;min-height:0;max-height:none;overflow:hidden;padding:14px;contain:none;background:#10271f!important;color:#f0e8d4!important}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .commentary-feed{height:0;min-height:100px;max-height:none;overflow:auto}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .commentary-filters{flex-wrap:wrap;margin-top:8px}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .commentary-heading{flex-wrap:wrap}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .commentary-heading h2{font-size:24px}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .commentary-feed .event p{color:#d6e2cc!important}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .v40-tabs .v40-tab[aria-selected=true]{background:linear-gradient(105deg,#9c6936,#614526)!important;color:#fff0d4!important;box-shadow:inset 0 1px #e7b573!important}
+@media(min-width:1200px){
+ html:root[data-cd-theme][data-edition=editorial] .live-layout>.main.ed-matchroom{display:flex!important;flex-direction:column;gap:8px;padding:10px 18px!important;overflow:hidden!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom>.match-menu-pause{position:absolute;top:12px;right:22px;z-index:12;min-height:30px!important;font-size:12px!important;padding:5px 12px!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom>.topbar{height:28px;min-height:28px;padding-right:160px;margin:0;flex:none}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom>.heading{height:65px!important;padding:7px 16px!important;margin:0!important;flex:none}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom>.heading h1{font-size:29px!important;margin:1px 0!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom>.heading p{font-size:12px!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom>.match-centre{display:flex;flex-direction:column;flex:1;min-height:0;gap:10px}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .match-scoreboard{position:relative;top:auto;flex:none;min-height:105px!important;padding:9px 14px!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .match-scoreboard .score{font-size:50px!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .scoreboard-progress>.row{margin:2px 0 0!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .v40-cockpit{display:flex;flex-direction:column;flex:1;min-height:0;gap:10px}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .v40-tabs{flex:none;padding:5px 8px;border-radius:5px}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .v40-tabs button{min-height:35px!important;padding:7px 14px!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .v40-field-center{height:100%;min-height:0;display:flex;flex-direction:column}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .v40-field-center>.match-2d{min-height:0;flex:1;height:auto!important;overflow:auto}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .match-2d-header{padding:7px 12px!important;flex:none}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .match-2d-header h2{font-size:20px!important;margin:0!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .match-2d-controls{padding:0 12px 6px!important;flex:none}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .auto-pause{margin:0 12px 6px!important;flex:none}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .stadium-stage{flex:1;min-height:230px;display:flex;align-items:center}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .match-field{width:100%;height:100%;max-height:360px!important;min-height:230px;object-fit:contain}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .field-caption{min-height:34px;padding:7px 12px;font-size:11px}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom :is(.field-legend,.field-plans){padding:5px 12px!important;font-size:10px!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .field-note{padding:4px 12px!important;font-size:9px!important}
+}
+@media(max-width:1199px){
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page{height:auto;max-height:70vh;overflow:auto}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page:not([hidden]){display:block!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page .v40-arena{display:block;min-height:0}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page .v40-roster{max-height:450px}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .match-commentary{min-height:260px;height:350px}
+}
+@media(min-width:1200px){
+ html:root[data-cd-theme][data-edition=editorial] .live-layout>.main.ed-matchroom>.heading{height:65px!important}
+ html:root[data-cd-theme][data-edition=editorial] .live-layout .ed-matchroom .match-scoreboard .live-score{min-height:55px!important;padding:0!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .cd3d-panel{display:flex!important;flex-direction:column;flex:1;min-height:0;height:100%;padding:8px!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .cd3d-toolbar{flex:none;margin:0 0 6px;font-size:11px}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .cd3d-toolbar button{min-height:29px!important;padding:4px 12px!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .cd3d-panel>.match-2d{display:flex!important;flex-direction:column;flex:1;min-height:0;height:0!important;overflow:auto;padding:0!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .cd3d-panel .stadium-stage{min-height:230px;flex:1}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .cd3d-panel .match-field{height:100%;max-height:360px!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom #cd3d-host{flex:1;min-height:230px;max-height:100%;aspect-ratio:auto}
+}
+/* Les pages défilent ; les cartes statistiques ne tronquent aucune ligne. */
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page[data-ed-live-page=analyse]{grid-auto-rows:max-content;align-items:start}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page[data-ed-live-page=analyse]>.card{max-height:none!important;overflow:visible!important}
+html:root[data-cd-theme=tribune][data-edition=editorial] .ed-matchroom .ed-live-page .card{background:#f3edde!important;color:#18372a!important}
+html:root[data-cd-theme=tribune][data-edition=editorial] .ed-matchroom .ed-live-page :is(p,small,label,.muted,.v40-data-note,.v40-stat-label,.v40-stats-head,.commentary-status,.commentary-hint,.event-kind,.latest-label){color:#435b4a!important}
+html:root[data-cd-theme=tribune][data-edition=editorial] .ed-matchroom .commentary-feed .event p{color:#18372a!important}
+html:root[data-cd-theme=tribune][data-edition=editorial] .ed-matchroom .ed-live-page :is(.v40-condition,.v40-shirt){color:#18372a!important}
+@media(min-width:1200px){
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .cd3d-panel .stadium-stage{min-height:330px!important}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .cd3d-panel .match-field{min-height:330px!important;max-height:430px!important}
+}
+html:root[data-cd-theme=tribune][data-edition=editorial] .ed-matchroom .v40-player-link{color:#18372a!important}
+html:root[data-cd-theme=tribune][data-edition=editorial] .ed-matchroom :is(select,input){background:#e2e3d3!important;color:#18372a!important}
+html:root[data-cd-theme=tribune][data-edition=editorial] .ed-matchroom .v40-shirt{background:#dedec8!important}
+html:root[data-cd-theme=tribune][data-edition=editorial] .ed-matchroom :is(.match-2d-header,.match-2d-controls,.auto-pause,.field-legend,.field-plans,.latest-event){background:#e2e3d3!important;color:#18372a!important}
+html:root[data-cd-theme=tribune][data-edition=editorial] .ed-matchroom :is(.full-pitch-label,.v40-roster header small){color:#435b4a!important}
+@media(min-width:1200px){
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .cd3d-panel{container-type:size}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom #cd3d-host{flex:none;align-self:center;width:min(100%,calc((100cqh - 86px)*16/9));height:auto;min-height:0;max-height:none;aspect-ratio:16/9}
+ html:root[data-cd-theme][data-edition=editorial] .ed-matchroom #cd3d-host canvas{width:100%!important;height:100%!important}
+}
+html:root[data-cd-theme=tribune][data-edition=editorial] .ed-matchroom .v40-metric-line span{color:#435b4a!important}
+html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page[data-ed-live-page=tactique]>.v40-advanced{grid-column:1/-1}
+html:root[data-cd-theme=tribune][data-edition=editorial] .ed-matchroom .ed-live-page .v61-advisor :is(h2,h3,.v61-advisor-state){color:#18372a!important}
