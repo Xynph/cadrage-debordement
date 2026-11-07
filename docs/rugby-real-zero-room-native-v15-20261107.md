@@ -169,3 +169,20 @@ Cinq titulaires de Provence Rugby, choisis parmi les notes de poste les plus bas
 Cette preuve pratique montre qu'une *simple édition des attributs* sur un profil déjà chargé avec \`skills\` ne modifie **pas** les notes de poste et les résultats de cette expérience de matchs, mais qu'une calibration cohérente doit conserver l'alignement entre les deux représentations. La hausse synchronisée donne de vraies notes au poste plus élevées, mais **ne démontre pas encore un bénéfice statistique en match**. Ne surtout pas corriger 1592 joueurs en doublant leurs compétences à l'aveugle ; il faut comprendre d'abord les conventions et les traitements de projection déjà installés.
 
 Les cinq cas ne prouvent **aucune sous-notation personnelle** : la correction est une sensibilité fictive, non une recommandation d'augmentation. Une dose plus élevée et plusieurs adversaires doivent être comparés avant conclusion ; la suite est dans le test spécialisé.
+
+
+### Réponse à la dose, adversaires différents : +5/+10 (scénario fictif, non applicable)
+
+Campagne GitHub dédiée [#42374480179](https://github.com/Xynph/cadrage-debordement/actions/runs/42374480179) **SUCCESS 11/11 tests** sur \`3a49b2f919ceffcdd3c37865f7f4654012617447\`. Sur trois adversaires TOP14, 32 graines × deux domiciles par opposition, trois variantes (référence, +5, +10) = **576 matchs natifs supplémentaires**. Les modifications restent limitées aux cinq mêmes joueurs ; les deux doses augmentent leurs cinq attributs prioritaires puis synchronisent les 11 compétences par différence de projection, sans modification du catalogue.
+
+| Adversaire TOP14 | Marge de référence PRO D2 | +5 (XV +0,80) : effet marge [IC95] | +10 (XV +1,53) : effet marge [IC95] |
+| --- | ---: | ---: | ---: |
+| Clermont, XV 77,73 | −4,59 | **+2,05** [+0,10 ; +4,00] | **+3,69** [+2,06 ; +5,32] |
+| Lyon, XV 78,33 | −4,78 | +0,30 [−1,09 ; +1,69] | +1,09 [−0,37 ; +2,56] |
+| Toulouse, XV 80,33 | −4,58 | +0,25 [−0,46 ; +0,96] | −0,28 [−1,50 ; +0,94] |
+
+La direction des effets est **hétérogène** selon l'adversaire, y compris pour une hausse nette du XV moyen. Les intervalles de Lyon et Toulouse recouvrent zéro. La hausse de cinq joueurs n'implique donc pas mécaniquement autant de points de score supplémentaires. Ce n'est pas une preuve d'erreur des identités ou des cinq profils ; l'échantillon ne distingue pas entièrement hasard, profils de poste, tactiques et structure du moteur. Les trois oppositions utilisent les mêmes graines : elles constituent des comparaisons **appariées**, pas 576 observations indépendantes. L'intervalle est un estimateur exploratoire par graine.
+
+**Décision du PRODUCTEUR BDD : rejeter les propositions chiffrées +5/+10 comme retouches à publier**, car elles reposent sur une sensibilité et non sur des preuves d'écarts individuels à corriger. Garder les 1592 notes et profils intacts. Le véritable signal exploitable est (1) la compression structurelle des moyennes des XV entre clubs et (2) la nécessité d'une synchronisation déterministe des attributs détaillés et compétences effectivement consommées si l'on corrige plus tard une fiche individuelle sur la base d'une preuve sportive. La spécification de cette synchronisation touche au raccordement du moteur et appartient à l'intégrateur ou propriétaire, pas à cette PR de QA.
+
+Aucun artifice pour « garantir » la montée difficile ou la remontée facile n'est recommandé : conserver l'écart interdivision (+8,14 points de XV) déjà présent, demander une étude de cohérence sportive par poste/collectif avant tout écrasement des clubs par des bonus.
