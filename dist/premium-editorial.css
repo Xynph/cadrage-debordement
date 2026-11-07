@@ -373,3 +373,4 @@ html:root[data-cd-theme=tribune][data-edition=editorial] .ed-matchroom :is(.full
 }
 html:root[data-cd-theme=tribune][data-edition=editorial] .ed-matchroom .v40-metric-line span{color:#435b4a!important}
 html:root[data-cd-theme][data-edition=editorial] .ed-matchroom .ed-live-page[data-ed-live-page=tactique]>.v40-advanced{grid-column:1/-1}
+html:root[data-cd-theme=tribune][data-edition=editorial] .ed-matchroom .ed-live-page .v61-advisor :is(h2,h3,.v61-advisor-state){color:#18372a!important}
