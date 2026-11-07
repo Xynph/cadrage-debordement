@@ -56,6 +56,11 @@ func _run() -> void:
 	var profile := OS.get_environment("CD_GODOT_DATA_DIR")
 	if mode == "disk":
 		DirAccess.make_dir_recursive_absolute(profile.path_join("PrototypeGodot/donnees.tmp"))
+	if mode=="recovery":
+		DirAccess.make_dir_recursive_absolute(profile.path_join("PrototypeGodot"))
+		var corrupt:=FileAccess.open(profile.path_join("PrototypeGodot/donnees.json"),FileAccess.WRITE)
+		corrupt.store_string("Profil endommagé — octets à conserver\n{broken")
+		corrupt.close()
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
 	app.bridge.command_failed.connect(func(message: String): errors += 1; error_messages.append(message))
@@ -64,8 +69,32 @@ func _run() -> void:
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
 	await _wait()
 	_check(app.model.get("club")==null and app.route=="Accueil","Fresh profile remains on menu without automatic creation")
-	await _command("new_career",{"club":0})
-	if mode == "disk":
+	if mode!="recovery":await _command("new_career",{"club":0})
+	if mode=="recovery":
+		var original:=FileAccess.get_file_as_bytes(profile.path_join("PrototypeGodot/donnees.json"))
+		_check(app.model.get("meta",{}).get("recoveryRequired",false),"Corrupt profile exposes explicit recovery")
+		var recover:Button=null
+		for button in _buttons(app.root_content):
+			if button.text=="NOUVELLE CARRIÈRE":_check(button.disabled,"Creation is locked before recovery")
+			if button.text=="RÉCUPÉRER LE PROFIL":recover=button
+		_check(recover!=null,"Recovery action exists")
+		if recover!=null:
+			recover.pressed.emit()
+			_check(FileAccess.get_file_as_bytes(profile.path_join("PrototypeGodot/donnees.json"))==original,"Recovery does not write before confirmation")
+			for child in app.get_children():
+				if child is ConfirmationDialog and child.visible:child.confirmed.emit();break
+			await _wait()
+			var backup:String=app.model.meta.get("recoveryBackup","")
+			_check(not backup.is_empty() and FileAccess.get_file_as_bytes(backup)==original,"Recovery keeps exact original bytes in backup")
+			_check(app.model.club==null and not app.model.meta.get("recoveryRequired",true),"Recovery returns usable menu without creating career")
+			_dismiss_errors()
+			app._navigate("Création")
+			for button in _buttons(app.root_content):
+				if button.text.begins_with("PRENDRE LES RÊNES"):button.pressed.emit();break
+			await _wait()
+			_check(app.model.club!=null,"Explicit new career works after recovery")
+			_check(FileAccess.get_file_as_bytes(backup)==original,"New career preserves recovery backup")
+	elif mode == "disk":
 		await _delay(500)
 		_check(errors == 1, "Permanent first-write refusal emits exactly one error (observed %s)" % errors)
 		_check(app.model.get("club") == null and not app.waiting, "Failed creation leaves stable empty career")
