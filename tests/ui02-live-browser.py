@@ -22,11 +22,11 @@ def check(label,value):
 
 server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(Handler,directory=str(ROOT/'dist')))
 threading.Thread(target=server.serve_forever,daemon=True).start()
-url='http://127.0.0.1:%s/' % server.server_address[1]
+url=os.environ.get('CD_GAME_URL','http://127.0.0.1:%s/' % server.server_address[1])
 report={'passed':False,'checks':results,'errors':errors,'limits':['Chromium Linux, sans validation Windows ou téléphone physique']}
 try:
     with sync_playwright() as pw:
-        browser=pw.chromium.launch(headless=True)
+        browser=pw.chromium.launch(headless=True,**({'executable_path':os.environ['CD_BROWSER_EXECUTABLE']} if os.environ.get('CD_BROWSER_EXECUTABLE') else {}))
         context=browser.new_context(viewport={'width':1440,'height':1000},color_scheme='dark')
         page=context.new_page()
         page.set_default_timeout(12000)
@@ -77,16 +77,18 @@ try:
         check('recherche vide',page.locator('.cd02-roster').get_by_text('Aucun joueur ne correspond aux critères.').count()==1)
         page.locator('input[data-cd02-action="search"]').fill('')
         check('focus conservé recherche',page.evaluate('document.activeElement.getAttribute("data-cd02-action")==="search"'))
+        page.locator('[data-sq-open="comparison"]').first.click()
         page.locator('[data-ui02-compare="0"]').select_option(player_ids[0])
         page.locator('[data-ui02-compare="1"]').select_option(player_ids[1])
         check('comparaison visible',page.locator('.cd02-comparison').is_visible())
         check('comparaison sans mutation',page.evaluate('JSON.stringify(S)')==snapshot)
+        page.keyboard.press('Escape')
         page.reload()
         page.get_by_role('button',name='Continuer ma carrière').click()
         page.evaluate("nav('team')")
         check('colonnes restaurées',page.locator('th button[data-cd02-sort="salary"]').count()==1)
         check('sauvegarde restaurable',page.evaluate('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'))
-        page.locator('details.cd02-training summary').click()
+        page.locator('[data-sq-open="training"]').click()
         page.locator('[data-ui02-training]').first.select_option('repos')
         check('entraînement physique natif',page.evaluate('physicalPlan(club().players[0])==="repos"'))
         page.evaluate("squadTab='sheet';nav('team')")

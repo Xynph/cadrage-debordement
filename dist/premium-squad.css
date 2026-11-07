@@ -1,4 +1,5 @@
 /* Cadre PC dédié à l'effectif ; aucun style appliqué au match ou au Bureau. */
+@media(min-width:1100px){
 html:root[data-cd-theme][data-edition=editorial] .sq-main>.heading{height:86px!important;padding:10px 20px!important;margin-bottom:10px!important;background-size:auto 190px!important;background-position:right 45%!important}
 html:root[data-cd-theme][data-edition=editorial] .sq-main>.heading h1{font-size:36px!important;line-height:1.05!important;padding-bottom:6px!important;margin:2px 0 -2px!important;max-width:100%!important;white-space:normal!important}
 html:root[data-cd-theme][data-edition=editorial] .sq-main>.heading .eyebrow{font-size:10px!important}
@@ -95,3 +96,4 @@ html:root[data-cd-theme][data-edition=editorial] .sq-dialog .cd02-table-scroll{m
 html:root[data-cd-theme][data-edition=editorial] .sq-dialog .cd02-comparison{margin:0!important}
 html:root[data-cd-theme][data-edition=editorial] .sq-main button:focus-visible,html:root[data-cd-theme][data-edition=editorial] .sq-dialog :focus-visible{outline:2px solid var(--ed-gold)!important;outline-offset:2px!important}
 @media(min-width:1700px){html:root[data-cd-theme][data-edition=editorial] .sq-main .sq-overview{grid-template-columns:minmax(0,1fr) 320px!important}html:root[data-cd-theme][data-edition=editorial] .sq-preview-identity{display:block;text-align:center}html:root[data-cd-theme][data-edition=editorial] .sq-main .sq-preview .ed-portrait.is-large{width:166px!important;height:166px!important;margin:0 auto 12px!important}html:root[data-cd-theme][data-edition=editorial] .sq-main .cd02-table td{height:44px!important;font-size:13px!important}html:root[data-cd-theme][data-edition=editorial] .sq-radar{height:280px;width:360px}}
+}

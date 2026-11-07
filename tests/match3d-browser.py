@@ -2,17 +2,21 @@
 import functools
 import http.server
 import json
+import os
+import platform
 import threading
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORT = ROOT / "match3d-browser-report"
+REPORT = Path(os.environ.get("CD_MATCH3D_REPORT_DIR", ROOT / "match3d-browser-report"))
 REPORT.mkdir(exist_ok=True)
 checks = []
 errors = []
 external = []
+pending_requests = set()
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *_args):
@@ -26,7 +30,8 @@ def snapshot(page):
     return page.evaluate("""() => ({
         state: JSON.stringify(S),
         storage: JSON.stringify(Object.fromEntries(
-          Object.keys(localStorage).sort().map(k => [k, localStorage.getItem(k)])
+          Object.keys(localStorage).filter(k => k !== 'bdt-matchday-preferences')
+            .sort().map(k => [k, localStorage.getItem(k)])
         )),
         save: JSON.stringify((({exportedAt, ...stable}) => stable)(createSaveDocument()))
     })""")
@@ -44,25 +49,38 @@ def enter_live(page):
     check("vue 2D activée par défaut", page.evaluate("CDMatch3D.getMode() === '2d'"))
     check("terrain 2D visible", page.locator(".match-2d .match-field").count() == 1)
 
+def setting(page, key, value):
+    """Cliquer les réglages visibles du match dédié, pas la barre historique masquée."""
+    page.locator('[data-md-key="settings"]').click()
+    page.locator('[data-md-key="%s"]' % key).select_option(value)
+    page.keyboard.press("Escape")
+
 server = http.server.ThreadingHTTPServer(
     ("127.0.0.1", 0), functools.partial(Handler, directory=str(ROOT / "dist"))
 )
 threading.Thread(target=server.serve_forever, daemon=True).start()
-url = "http://127.0.0.1:%d/index.html" % server.server_address[1]
+url = os.environ.get("CD_GAME_URL", "http://127.0.0.1:%d/index.html" % server.server_address[1])
 
 try:
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
             headless=True,
-            args=["--enable-webgl", "--use-gl=angle", "--use-angle=swiftshader",
-                  "--enable-unsafe-swiftshader"],
+            **({"executable_path": os.environ["CD_BROWSER_EXECUTABLE"]}
+               if os.environ.get("CD_BROWSER_EXECUTABLE") else {}),
+            args=(json.loads(Path(os.environ["CD_BROWSER_ARGS"]).read_text())
+                  if os.environ.get("CD_BROWSER_ARGS") else
+                  ["--enable-webgl", "--use-gl=angle", "--use-angle=swiftshader",
+                   "--enable-unsafe-swiftshader"]),
         )
         context = browser.new_context(viewport={"width": 1440, "height": 900})
         page = context.new_page()
         page.set_default_timeout(15000)
         page.on("pageerror", lambda error: errors.append(str(error)))
+        page.on("request", lambda request: pending_requests.add(request.url))
+        page.on("requestfinished", lambda request: pending_requests.discard(request.url))
+        page.on("requestfailed", lambda request: pending_requests.discard(request.url))
         page.on("request", lambda request: external.append(request.url)
-                if not request.url.startswith(url.split("/index.html")[0] + "/") else None)
+                if urlsplit(request.url)[:2] != urlsplit(url)[:2] else None)
         page.goto(url, wait_until="load")
         page.wait_for_function("typeof CDMatch3D !== 'undefined' && typeof THREE !== 'undefined'")
         enter_live(page)
@@ -141,7 +159,8 @@ try:
             return oldAdd.apply(this, objects);
           };
         }""")
-        page.locator(".cd3d-panel button").filter(has_text="3D").click()
+        setting(page, "camera", "tv")
+        setting(page, "display", "3d")
         page.locator("#cd3d-host canvas").wait_for()
         page.wait_for_function("document.querySelector('#cd3d-host canvas').width > 0")
         check("canvas WebGL effectif", page.evaluate("""() => {
@@ -167,10 +186,11 @@ try:
         }"""))
         check("caméra TV active", page.evaluate("""() =>
           __cameraPositions.some(p=>p.y===48 && p.z===62)"""))
-        page.locator(".cd3d-panel button").filter(has_text="Tactique").click()
+        setting(page, "camera", "tactical")
         check("caméra tactique active", page.evaluate("""() =>
           __cameraPositions.some(p=>p.y===115 && p.z===0.01 && p.up[2]===-1)"""))
-        page.locator(".cd3d-panel button").filter(has_text="Latérale").click()
+        # Contrat interne historique du renderer, sans exposer cette caméra dans l'UI.
+        page.evaluate("CDMatch3D.setCamera('sideline')")
         check("caméra latérale activable", page.evaluate("""() =>
           __cameraPositions.some(p=>p.y===24 && p.z===69)"""))
         check("suivi de caméra latérale disponible", page.evaluate("""() => {
@@ -178,7 +198,7 @@ try:
           const p=CDMatch3DCamera.sidelinePosition(f);
           return p.y===24 && p.z>=60 && p.z<=80 && Number.isFinite(p.x);
         }"""))
-        page.locator(".cd3d-panel button").filter(has_text="TV").click()
+        setting(page, "camera", "tv")
         check("retour caméra TV après latérale", page.evaluate("""() =>
           __cameraPositions.filter(p=>p.y===48).length>=2"""))
         page.evaluate("render()")
@@ -220,13 +240,13 @@ try:
             json.dumps(perf, ensure_ascii=False, indent=2) + "\n")
         page.screenshot(path=str(REPORT / "match3d-chromium.png"), full_page=True)
         page.locator("#cd3d-host canvas").screenshot(path=str(REPORT / "match3d-v23-tv-players-close.png"))
-        page.locator(".cd3d-panel button").filter(has_text="Immersive").click()
+        page.evaluate("CDMatch3D.setCamera('immersive')")
         check("caméra immersive disponible", page.evaluate("CDMatch3D.getMode() === '3d'"))
         page.wait_for_timeout(200)
         page.screenshot(path=str(REPORT / "match3d-immersive.png"), full_page=True)
         page.locator("#cd3d-host canvas").screenshot(path=str(REPORT / "match3d-v23-immersive-players-close.png"))
-        page.locator(".cd3d-panel button").filter(has_text="TV").click()
-        page.locator(".cd3d-panel button").filter(has_text="2D").click()
+        setting(page, "camera", "tv")
+        setting(page, "display", "2d")
         check("retour 2D avec terrain", page.locator(".match-2d .match-field").count()==1)
         check("canvas 3D supprimé", page.locator("#cd3d-host canvas").count()==0)
         check("aucune mutation par aller-retour", snapshot(page)==initial)
@@ -245,25 +265,31 @@ try:
         })();""")
         other = fallback.new_page()
         other.on("request", lambda request: external.append(request.url)
-                 if not request.url.startswith(url.split("/index.html")[0] + "/") else None)
+                 if urlsplit(request.url)[:2] != urlsplit(url)[:2] else None)
         other.goto(url, wait_until="load")
         enter_live(other)
         before = snapshot(other)
-        other.locator(".cd3d-panel button").filter(has_text="3D").click()
+        setting(other, "display", "3d")
         other.get_by_text("WebGL indisponible", exact=False).wait_for()
         check("message WebGL indisponible", "WebGL indisponible" in other.locator("#cd3d-host").inner_text())
-        other.locator(".cd3d-panel button").filter(has_text="2D").click()
+        setting(other, "display", "2d")
         check("repli 2D utilisable", other.locator(".match-2d .match-field").count()==1)
         check("repli ne modifie pas le match et la sauvegarde", snapshot(other)==before)
         fallback.close()
         check("aucune requête externe", not external)
         check("aucune exception JavaScript non gérée", not errors)
         browser.close()
+except Exception as error:
+    (REPORT / "report.json").write_text(json.dumps({
+        "passed": False, "checks": checks, "error": str(error),
+        "pageErrors": errors, "pendingRequests": sorted(pending_requests),
+    }, ensure_ascii=False, indent=2) + "\n")
+    raise
 finally:
     server.shutdown()
 
 report={"passed":True,"checks":checks,"pageErrors":errors,"externalRequests":external,
-        "limitations":["Chromium Linux; pas une validation Windows native",
+        "limitations":[f"Chromium {platform.system()} ; lanceur portable non certifié",
                        "Le rendu est schématique, aucune animation de rugby réelle attestée"]}
 (REPORT / "report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n")
 print(json.dumps(report,ensure_ascii=False))
