@@ -34,7 +34,7 @@ function roster(g){
   id:p.id,club:c.slug||c.name,age:p.age,rating:p.rating,potential:p.dev?.potential,
   minutes:p.dev?.careerMinutes??0,historyCount:p.dev?.history?.length??0,
   strength:p.attributesV2?.strength,topSpeed:p.attributesV2?.topSpeed,
-  decisions:p.attributesV2?.decisions,condition:p.condition
+  decisions:p.attributesV2?.decisions,skillMean:Object.values(p.skills||{}).reduce((s,v)=>s+v,0)/11,condition:p.condition
  })))`);
 }
 test('All 47 zero-room identifiers come from active V12 tuples, without altering them',()=>{
@@ -60,7 +60,8 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
  const outside=zeroIDs.filter(id=>!baseMap.has(id));
  const observations=new Map(topIDs.map(id=>[id,[]]));
  const seasons=[];
- let transfers=0,departures=0;
+ let transfers=0,departures=0,retirements=0,otherExits=0;
+ const exited=new Set();
  for(let year=1;year<=6;year++){
   assert.equal(g.run('S.season'),year);
   assert.equal(g.run('S.phase'),'league');
@@ -92,7 +93,11 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
   const next=roster(g),nextMap=new Map(next.map(p=>[p.id,p]));
   for(const id of topIDs){
    const before=seasonMap.get(id),after=nextMap.get(id);
-   if(before&&!after)departures++;
+   if(before&&!after){
+    departures++;exited.add(id);
+    const retired=read(g,'S.development.retired.map(p=>p.id)').includes(id);
+    if(retired)retirements++;else otherExits++;
+   }
    if(before&&after&&before.club!==after.club)transfers++;
    if(after){
     assert.ok(Number.isFinite(after.rating)&&Number.isFinite(after.potential));
@@ -108,15 +113,18 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
   const present=history.filter(p=>Number.isFinite(p.rating));
   const last=present.at(-1)||first;
   return {id,initialAge:first.age,initialRating:first.rating,initialPotential:first.potential,
-   initialSpeed:first.topSpeed,initialStrength:first.strength,initialDecisions:first.decisions,
+   initialSpeed:first.topSpeed,initialStrength:first.strength,initialDecisions:first.decisions,initialSkillMean:first.skillMean,
    lastAge:last.age,lastRating:last.rating,lastPotential:last.potential,
-   lastSpeed:last.topSpeed,lastStrength:last.strength,lastDecisions:last.decisions,
+   lastSpeed:last.topSpeed,lastStrength:last.strength,lastDecisions:last.decisions,lastSkillMean:last.skillMean,
    observations:history};
  });
  console.log('RUGBY_REAL_V15_NATIVE_ZERO_ROOM '+JSON.stringify({
   seasons:6,savesAndImports:6,initialTop14:topIDs.length,
   uninstantiatedInTop14:outside.length,players:profiles,
   seasonCounts:seasons,clubTransfersObserved:transfers,rosterExitsObserved:departures,
+  confirmedRetirements:retirements,otherExits,uniqueExitedPlayers:exited.size,
+  skillMeanDrift:profiles.filter(x=>x.lastAge>x.initialAge).map(x=>({id:x.id,ageYears:x.lastAge-x.initialAge,
+    ratingChange:x.lastRating-x.initialRating,skillMeanChange:+(x.lastSkillMean-x.initialSkillMean).toFixed(3)})),
   diagnosticOnly:true,noDataChanges:true
  }));
 });
