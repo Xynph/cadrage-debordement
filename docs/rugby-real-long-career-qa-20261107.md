@@ -50,3 +50,40 @@ Source reproductible : `docs/rugby-real-v12/results.md` et `tools/rugby-real-v12
 **Règles de lecture du nouveau test de 240 matchs :** 8 graines appariées, les deux domiciles, 5 scénarios, 3 coefficients hors production. Chaque taux par scénario et coefficient repose sur **16 matchs**, donc est très instable. Les variations de marge et les remplacements de titulaires doivent être lus en parallèle, jamais comme seuils définitifs de calibration ; une décision sportive exige une reproduction plus large à 64–128 graines et d'autres effectifs.
 
 **Validation :** aucun résultat du nouveau HEAD n'est déclaré réussi avant son workflow GitHub exact. La PR reste DRAFT, sans fusion.
+
+## Résultats vérifiés du workflow corrigé — SHA `6f25d6b2d86b7b007adbecf78f6b9b36d7a275f1`
+
+Run GitHub [#42367202003](https://github.com/Xynph/cadrage-debordement/actions/runs/42367202003), job `native-ten-seasons` **COMPLETED/SUCCESS**, 3 tests Node PASS / 0 FAIL, tous les steps SUCCESS (dix saisons, calibration, contrats d'âge et invariant master). La première version du workflow avait une erreur YAML ligne 66, corrigée uniquement sur le fichier CI réservé ; les exécutions rejetées sans jobs ne sont pas des tests sportifs rouges.
+
+**Carrière native :** 10 saisons TOP14, 1 820 matchs réguliers + 50 de finales, 10 imports réussis. Joueurs portant encore la marque V12 dans les 14 clubs : 805 en saison 1, 441 en saison 5, **281 en saison 10** (−65,09 %). Dans les profils V12 survivants, les 18–23 ans passent de 379 en saison 1 à **0** en saison 10 ; cela correspond à l'avancement des cohortes initiales, pas à une absence de nouveaux jeunes dans le jeu. Les effectifs V12 observés en saison 10 sont 181 joueurs de 24–29 ans, 91 de 30–34 ans, 9 de 35 ans et plus. Le petit groupe 35+ interdit toute conclusion populationnelle forte.
+
+**Moyennes d'attributs selon l'âge — coupes transversales de saison 10 :**
+
+| Âge | V12 survivants | Vitesse | Force | Endurance | Décisions |
+|---|---:|---:|---:|---:|---:|
+| 24–29 | 181 | 64,57 | 75,13 | 77,48 | 72,60 |
+| 30–34 | 91 | 61,85 | 74,11 | 75,49 | 75,16 |
+| 35+ | 9 | 48,65 | 73,37 | 68,89 | 70,43 |
+
+Comparaison : les survivants de 35+ ont une vitesse moyenne inférieure de **15,92 points** aux 24–29 ans (48,65 contre 64,57), et une force inférieure de **1,76 point** (73,37 contre 75,13). Ce sont des **moyennes de groupes de survivants**, pas une mesure longitudinale du déclin individuel ; les vrais contrats V11 de maturité ont été également testés avec succès.
+
+**Calibration native appariée :** 240 matchs, 8 graines × deux domiciles × 5 scénarios × 3 coefficients expérimentaux. Sélection figée de cinq recrutements et cinq départs, **10 titulaires conservés** dans chaque cas (5 remplacements).
+
+| Coefficient du laboratoire | Promu vs TOP14 fort : victoires | Promu vs TOP14 moyen | Après 5 recrues vs moyen | Gain de marge après recrues | Relégué conservé vs PRO D2 moyen | Relégué après 5 départs | Variation de marge après départs |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| **0,004 (production)** | 43,75 % | 25,00 % | 25,00 % | **+3,12 pts** | 68,75 % | 68,75 % | **−1,32 pt** |
+| 0,008 (hors production) | 18,75 % | 25,00 % | 18,75 % | +1,38 pt | 75,00 % | 81,25 % | +1,81 pt |
+| 0,012 (hors production) | 0,00 % | 25,00 % | 12,50 % | +4,69 pts | 75,00 % | 81,25 % | −0,32 pt |
+
+**Explication quantitative :** les cinq recrues relèvent la moyenne de notes des 15 titulaires de **+2,67 points** et celle du banc de **+0,38**. À l'inverse, cinq départs ne dégradent la moyenne des titulaires que de **−0,53 point** et celle du banc de **−1,00**, malgré cinq remplacements de titulaires. L'effectif de relégué testé possède donc encore une profondeur capable de compenser une partie des pertes ; ce test ne démontre pas que le moteur ignore les départs. Le taux de victoire après recrutements reste identique (25,00 %) sur 16 rencontres à coefficient 0,004, **mais la marge moyenne s'améliore de 3,12 points** : ne pas conclure à zéro effet en se fondant sur la seule proportion de victoires.
+
+La victoire du promu-proxy face au meilleur TOP14 (**43,75 %**) est incohérente avec l'intention de hiérarchie et renforce le signal déjà observé sur 64 graines (**40,63 %**) : étudier la composition des adversaires, la pondération qualitative et les effets tactiques avant toute modification. Les sensibilités `0,008` et `0,012` montrent de fortes variations parfois contradictoires sur 16 matchs par scénario, **elles ne justifient pas à elles seules un nouveau coefficient de production**.
+
+### Priorités après cette réception
+
+1. Répéter les scénarios avec au moins 64 graines par contexte et plusieurs effectifs complets, en gardant domiciles/graines appariés.
+2. Distinguer **pertes de titulaires clés, pertes de rotation et couverture du banc** : une politique uniforme de cinq départs n'est pas une mesure suffisante de vulnérabilité.
+3. Contrôler séparément les trajectoires longitudinales des mêmes joueurs V11 sur plusieurs saisons et le mécanisme de renouvellement de génération.
+4. Concevoir la compétition à deux divisions et ses transferts dans une PR gameplay **réservée séparément**, jamais dans cette PR de tests.
+
+L'ensemble est **QA**, non calibration déployée. Ne fusionner qu'après CI générale et gate validés par l'intégrateur.
