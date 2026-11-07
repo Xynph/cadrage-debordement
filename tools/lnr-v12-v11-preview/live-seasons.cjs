@@ -26,8 +26,8 @@ test('V12 live: asset offline 1592 IDs, 36 attributs, 11 compétences et nouveau
 });
 test('Trois saisons LNR reelles: moteur natif + progression unique + sauvegardes aller-retour',()=>{
  let g=ready();g.run("start(0,'lnr')");
- const starting=g.run('S.clubs[0].players.find(p=>p.lnrRatingsVersion===1).id');
- const initial=g.run('JSON.stringify(S.clubs[0].players.find(p=>p.id==='+JSON.stringify(starting)+'))');
+ const starting=g.run('S.clubs[0].players.find(p=>p.lnrRatingsVersion===1&&p.age<=25).id');
+ const initial=g.run('JSON.stringify(S.clubs.flatMap(c=>c.players).find(p=>p.id==='+JSON.stringify(starting)+'))');
  for(let season=1;season<=3;season++){
   assert.equal(g.run('S.season'),season);
   const outcome=g.run('(()=>{let l=createRugbyMatch([0,1],null,true),steps=0;while(!l.finished){if(++steps>5000)throw Error("Match timeout");l.paused=false;advanceRugby(l);}applyMatchInjuries(l);return l.score})()');
@@ -35,14 +35,15 @@ test('Trois saisons LNR reelles: moteur natif + progression unique + sauvegardes
   g.run('S.phase="ended";S.round=26;S.live=null;');
   g.run('advanceSeason()');
   assert.equal(g.run('S.season'),season+1);
-  const state=g.run('JSON.stringify(S.clubs[0].players.find(p=>p.id==='+JSON.stringify(starting)+'))');
-  if(state!=='null'){
+  const state=g.run('JSON.stringify(S.clubs.flatMap(c=>c.players).find(p=>p.id==='+JSON.stringify(starting)+'))');
+  if(state&&state!=='null'){
    const p=JSON.parse(state);
    assert.equal(p.age,JSON.parse(initial).age+season);
    assert.equal(p.dev.history.length,season);
    assert.equal(p.skillBase,p.rating);
    assert.equal(Object.keys(p.attributesV2).length,36);
   }
+  assert.ok(g.run('S.clubs.flatMap(c=>c.players).filter(p=>p.lnrRatingsVersion===1&&p.dev.history.length==='+season+').length')>20);
   g=transfer(g);
   assert.equal(g.run('S.season'),season+1);
   assert.equal(g.run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),true);
