@@ -165,6 +165,14 @@ func _run() -> void:
 				_check(app.model.lineup[0]==id,"Lineup decision really changes selected player")
 				break
 	await _ask("auto_lineup")
+	if not app.model.get("selection",{}).get("valid",true):
+		app._navigate("Composition")
+		_press("COMPLÉTER AVEC LE CENTRE DE FORMATION")
+		await _capture("renforts-confirmation")
+		_confirm()
+		await _wait()
+		_check(app.bridge.last_response_ok and app.model.selection.valid,"Explicit paid promotions restore initial source coverage")
+		_dismiss()
 	var tactics:Dictionary=app.model.get("tactics",{})
 	for option in tactics.get("attacks",[]):
 		if option.id!=tactics.get("attack"):
