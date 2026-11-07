@@ -129,6 +129,7 @@ function createBridge(options={}){
       if(!run("S.phase!=='ended'&&(S.live?.finished||!S.live&&!nextMatch())"))throw Error('Terminez le match avant de valider la journée.');run('finishRound()');
      }else if(command==='import'){
       if(typeof payload.text!=='string')throw Error('Texte JSON d’import requis.');
+      if(Buffer.byteLength(payload.text,'utf8')>5*1024*1024)throw Error('Fichier trop volumineux (5 Mio UTF-8 maximum).');
       run("pendingSave=parseSaveDocument(nativePayload.text);if(pendingSave.state.lnrMode||pendingSave.state.franceMode)throw Error('Seules les carrières historiques fictives à 14 clubs sont acceptées.');if(!confirmSaveImport())throw Error('Import annulé : sauvegarde impossible.');");
      }
      run('save();validateCareer(S)');

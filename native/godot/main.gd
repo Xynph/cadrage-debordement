@@ -34,6 +34,7 @@ var export_path := ""
 var roster_scroll: ScrollContainer
 var roster_offset := 0
 var closing := false
+var initial_model_received := false
 
 func _ready() -> void:
 	if OS.get_environment("CD_GODOT_SELF_TEST") == "1" and OS.get_environment("CD_GODOT_DATA_DIR").is_empty():
@@ -138,10 +139,14 @@ func _build_shell() -> void:
 	main.add_child(status)
 
 func _receive_model(value: Dictionary) -> void:
+	var first_model := not initial_model_received
+	initial_model_received = true
 	model = value
 	waiting = false
 	if model.get("club") == null:
-		_command("new_career", {"club": 0})
+		_render()
+		if first_model and bridge.last_response_ok:
+			_command("new_career", {"club": 0})
 		return
 	if not export_path.is_empty():
 		var exported: String = str(model.get("meta", {}).get("exportText", ""))
@@ -221,6 +226,11 @@ func _render() -> void:
 	heading.text = {"Bureau": "LE BUREAU", "Club": "UN CLUB. UN TERRITOIRE.", "Effectif": "LES HOMMES DU PROJET", "Match": "LE JOUR DE MATCH"}.get(route, route)
 	if model.is_empty():
 		_show_loading()
+		return
+	if model.get("club") == null:
+		body.add_child(_label("CARRIÈRE NON CRÉÉE", 32, Art.INK, true))
+		body.add_child(_label("Vérifiez l'accès au dossier du profil, puis réessayez explicitement.", 16, Art.MUTED))
+		body.add_child(_button("RÉESSAYER LA CRÉATION", func(): _command("new_career", {"club": 0}), true))
 		return
 	match route:
 		"Club": _club_page()
@@ -483,6 +493,7 @@ func _match_page() -> void:
 	controls.add_child(_button("VUE TACTIQUE", func(): match_view.set_camera("tactical")))
 	var speed := OptionButton.new()
 	for s in ["Cadence ×1", "Cadence ×4", "Cadence ×12"]: speed.add_item(s)
+	speed.select(maxi(0, [1, 4, 12].find(tick_steps)))
 	speed.item_selected.connect(func(i: int): tick_steps = [1, 4, 12][i])
 	controls.add_child(speed)
 	var info := _panel()
@@ -515,12 +526,22 @@ func _update_match() -> void:
 		if is_instance_valid(match_view): match_view.apply_frame({})
 		match_clock.text = "AVANT-MATCH"
 		var next: Dictionary = model.get("next", {}) if model.get("next") != null else {}
+		var ended: bool = model.get("meta", {}).get("phase") == "ended"
 		match_score.text = "%s  /  %s" % [_abbr(next.get("home", {})), _abbr(next.get("away", {}))]
 		pause_button.text = "COUP D'ENVOI"
+		pause_button.disabled = ended or next.is_empty()
 		match_events.text = "Votre XV et votre adversaire sont prêts.\n\nLe coup d'envoi lance le moteur de match existant."
 		match_stats.text = "LES DEUX CAMÉRAS SONT DISPONIBLES PENDANT LE MATCH."
 		match_stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		match_finish.disabled = true
+		match_finish.disabled = ended or not next.is_empty()
+		if ended:
+			match_clock.text = "SAISON TERMINÉE"
+			match_score.text = "Fin de la carrière de prototype"
+			match_events.text = "La saison suivante n'est pas disponible dans cette étape du prototype."
+		elif next.is_empty():
+			match_clock.text = "SANS RENCONTRE"
+			match_score.text = "Aucune affiche pour votre club à ce tour"
+			match_events.text = "Validez la journée pour poursuivre le calendrier."
 		return
 	var score: Array = live.get("score", [0, 0])
 	var teams: Array = live.get("teams", [{}, {}])
@@ -546,7 +567,8 @@ func _update_match() -> void:
 
 func _match_action() -> void:
 	var live: Dictionary = model.get("live", {}) if model.get("live") != null else {}
-	if live.is_empty(): _command("begin_match")
+	if live.is_empty():
+		if model.get("next") != null and model.get("meta", {}).get("phase") != "ended": _command("begin_match")
 	else: _command("pause", {"paused": not live.get("paused", false)})
 
 func _live_tick() -> void:
@@ -614,9 +636,9 @@ func _file_selected(path: String) -> void:
 		if file == null:
 			_failed("Impossible de lire cette carrière : " + error_string(FileAccess.get_open_error()))
 			return
-		if file.get_length() > 48 * 1024 * 1024:
+		if file.get_length() > NativeEngineBridge.IMPORT_LIMIT_BYTES:
 			file.close()
-			_failed("Fichier trop volumineux pour ce prototype.")
+			_failed("Fichier trop volumineux (5 Mio UTF-8 maximum).")
 			return
 		var text := file.get_as_text()
 		file.close()

@@ -61,6 +61,7 @@ func _run() -> void:
 	_check(app.catalogue.size() == 30, "Thirty territory catalogue")
 	for resolution in [Vector2i(1440, 900), Vector2i(1920, 1080)]:
 		DisplayServer.window_set_size(resolution)
+		if DisplayServer.get_name() == "headless": root.size = resolution
 		await _settle()
 		for page in ["Bureau", "Club", "Effectif", "Match"]:
 			app._navigate(page)
@@ -97,8 +98,17 @@ func _run() -> void:
 	await _command("delegate")
 	_check(app.model.live.finished, "Native match completed")
 	await _capture("match-result-1920")
+	var retained_match_page: Node = app.match_page
 	await _command("finish_round")
 	_check(app.model.meta.round == 1, "Round advanced")
+	_check(app.match_page == retained_match_page, "Same Match page after round validation")
+	_check(not app.pause_button.disabled, "Second kickoff available without navigation")
+	if not app.pause_button.disabled:
+		app.pause_button.pressed.emit()
+		await _wait_model()
+		_check(app.model.live != null and app.model.meta.round == 1, "Second match starts through native kickoff button")
+		await _command("pause", {"paused": true})
+		_check(app.model.live.paused, "Second match can pause through engine")
 	await _command("save")
 	var export_file := OS.get_environment("CD_GODOT_DATA_DIR").path_join("export-ui.json")
 	app.import_mode = false
