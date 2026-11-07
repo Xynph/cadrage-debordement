@@ -16,7 +16,7 @@ Deux seuls nouveaux mois sont connus : juin 2028 pour Vanverberghe et juin 2027 
 
 ## Deux versions, sans migration
 
-`data/roster-foundation/archive/v1/` conserve les octets exacts de la politique, des preuves et du module runtime v1 livré. Le manifeste SHA-256 est vérifié à chaque génération ; `.gitattributes` interdit les conversions de fin de ligne dans cette archive. Empreinte runtime v1 : `baf77c4a83517adb02358d11f177cd938cf86d356a13be119e8c0cae505fd398`.
+`data/roster-foundation/archive/v1/` conserve les octets de la copie de travail Windows de la politique, des preuves et du module runtime v1. Le manifeste SHA-256 est vérifié à chaque génération ; `.gitattributes` interdit les conversions de fin de ligne dans cette archive. Empreinte runtime archivé CRLF : `baf77c4a83517adb02358d11f177cd938cf86d356a13be119e8c0cae505fd398`. Le module de la distribution Windows lot1 utilise LF (SHA `8574fb78d79498f962dfaef0d1d916f536c2399ea39a8ad14703072c17675d75`) : comparaison réelle des deux fichiers identique après la seule normalisation CRLF/LF, et non égalité brute des octets. Aucun contenu de registre ne diffère.
 
 Le seul module runtime existant `dist/rugby-roster-foundation.js` contient le registre courant et l'archive anonymisée v1. `resolve(marker)` exige exactement les deux clés `id`, `version` et renvoie le registre de cette version, ou `null`. Les initialiseurs de nouvelles carrières utilisent v2 ; validations et sources du modèle utilisent le marqueur sauvegardé. `commonDatabase` reste inchangé à deux clés ; `rosterFoundation` reste distinct, à deux clés.
 
