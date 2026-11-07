@@ -22,4 +22,7 @@ assert.ok(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),'sauv
 run("squadTab='depth';nav('team')");
 assert.match(t.app.innerHTML,/Préparer la rotation/,'panneau natif');
 assert.ok(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),'sauvegarde après navigation');
+const legacy=run(`(function(){const old=JSON.parse(JSON.stringify(createSaveDocument().state));delete old.v101to104;delete old.v105to110;delete old.v111to116;return JSON.stringify(createSaveDocument(old));})()`);
+assert.equal(run(`!!parseSaveDocument(${JSON.stringify(legacy)})`),true,'ancien export rescellé sans modules V101-V116');
+
 console.log('rotation-choices: PASS (15 postes, titulaires fragiles, alternatives, interface et sauvegarde)');
