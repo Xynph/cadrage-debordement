@@ -15,7 +15,7 @@ if(exists){
  run('selected.injury=3');
  const data=run('squadDepthSnapshot().cards[0]');
  assert.ok(data.tiredStarters.some(p=>p.id===run('selected.id')),'titulaire blessé signalé');
- assert.ok(data.alternatives.every(p=>!S.lineup.includes(p.id)&&!S.reserves.includes(p.id)&&squadDepthReadiness(p).ready),'alternatives réellement disponibles');
+ assert.equal(run('squadDepthSnapshot().cards[0].alternatives.every(p=>!S.lineup.includes(p.id)&&!S.reserves.includes(p.id)&&squadDepthReadiness(p).ready)'),true,'alternatives réellement disponibles');
  assert.ok(data.alert,'alerte disponible même si deux autres joueurs prêts');
 }
 assert.ok(run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))'),'sauvegarde native');
