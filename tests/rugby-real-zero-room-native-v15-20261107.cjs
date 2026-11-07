@@ -140,11 +140,17 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
  // Read every preserved report after the SIXTH season transition: contract settlements
  // happen during advanceSeason(), so sampling before advance would miss renewals.
  const aiReports=read(g,'S.aiRoster.reports');
- const aiTotals=aiReports.reduce((a,r)=>{
+ const finishedAiReports=aiReports.filter(r=>r.season<=6);
+ const openingYear7=aiReports.filter(r=>r.season===7);
+ const aiTotals=finishedAiReports.reduce((a,r)=>{
   for(const k of Object.keys(a))a[k]+=r[k]||0;return a;
  },{renewed:0,released:0,retired:0,recruited:0,promoted:0,emergency:0});
  console.log('RUGBY_REAL_V15_NATIVE_TOP14_SQUAD_EVOLUTION '+JSON.stringify({years:6,aiRosterEnabled:true,
-  aiTotals,annualAiTransactions:Array.from({length:6},(_,i)=>{
+  aiTotals,openingSeason7Partial:{recruited:openingYear7.reduce((n,r)=>n+(r.recruited||0),0),
+   promoted:openingYear7.reduce((n,r)=>n+(r.promoted||0),0),
+   renewed:openingYear7.reduce((n,r)=>n+(r.renewed||0),0),
+   released:openingYear7.reduce((n,r)=>n+(r.released||0),0)},
+  annualAiTransactions:Array.from({length:6},(_,i)=>{
    const rows=aiReports.filter(r=>r.season===i+1);
    return {season:i+1,recruited:rows.reduce((n,r)=>n+(r.recruited||0),0),
     renewed:rows.reduce((n,r)=>n+(r.renewed||0),0),
