@@ -7,6 +7,11 @@ const C=require('../tools/rugby-real-v12/review.cjs');
 const A=require('../tools/rugby-real-v12/campaign.cjs');
 const root=path.resolve(__dirname,'..');
 const master=JSON.parse(fs.readFileSync(path.join(root,'modding/data06/rugby-master-2026-2027.json'),'utf8'));
+const observed=C.buildEvidence(master,
+ require('../data/scouting/review-v12/season-evidence.json'),
+ require('../data/scouting/review-v12/extra-evidence.json'),
+ require('../data/scouting/review-v12/career-evidence.json'));
+
 const tuples=vm.runInNewContext(fs.readFileSync(path.join(root,'dist/lnr-ratings-v12.js'),'utf8')+'\n;LNR_V12_PLAYER_DATA;');
 const keys=tuples.attributeKeys,skills=tuples.skillKeys,deep=x=>JSON.parse(JSON.stringify(x));
 const avg=x=>x.length?x.reduce((s,v)=>s+v,0)/x.length:null;
@@ -30,15 +35,16 @@ function stats(lab){
  }return divisions;
 }
 function evidenceScreen(lab){
- const m=new Map(ACTIVE.players.map(p=>[p.id,p]));
+ const nativePlayers=new Map(lab.clubs.flatMap(c=>c.players.map(p=>[p.id,p])));
+ assert.equal(nativePlayers.size,1592);
  const clubById=new Map(lab.clubs.flatMap(c=>c.players.map(p=>[p.id,{slug:c.slug,league:c.league}])));
  const peer=new Map();
  for(const p of ACTIVE.players){const k=p.league+'|'+p.gameplayPosition;if(!peer.has(k))peer.set(k,[]);peer.get(k).push(p);}
  const baseline=[];
  for(const p of ACTIVE.players){const cl=clubById.get(p.id);assert.ok(cl);
-  const group=peer.get(p.league+'|'+p.gameplayPosition),memo=group.map(q=>lab.note(q));
-  const note=lab.note(p),median=pctl(memo,.5),p25=pctl(memo,.25),p75=pctl(memo,.75);
-  const usage=p.performance2025_2026||null;
+  const group=peer.get(p.league+'|'+p.gameplayPosition),memo=group.map(q=>lab.note(nativePlayers.get(q.id)));
+  const note=lab.note(nativePlayers.get(p.id)),median=pctl(memo,.5),p25=pctl(memo,.25),p75=pctl(memo,.75);
+  const e=observed.byId.get(p.id),usage=e.usage?.stats||null;
   const minutes=usage?.minutes,matches=usage?.matches,tries=usage?.tries,points=usage?.points;
   const valid=Number.isFinite(minutes)&&Number.isFinite(matches)&&matches>0&&minutes>=0;
   const workload=valid?minutes/matches:null;
@@ -46,15 +52,27 @@ function evidenceScreen(lab){
   const rolePeerMedian=pctl(group.map(q=>avg(primary.map(k=>q.attributesV2[k]))),.5);
   const selected=lineup(lab,lab.clubs.find(c=>c.slug===cl.slug));
   const squadState=selected.all.some(x=>x.id===p.id)?'starter':selected.bench.some(x=>x.id===p.id)?'bench':'depth';
-  const positive=valid&&minutes>=1050&&matches>=16&&workload>=50&&note<=p25-2&&roleMean>=rolePeerMedian-3;
-  const negative=valid&&minutes<=350&&matches<=10&&note>=p75+2&&squadState==='depth';
+  const corroboration=[];
+  if(e.history.filter(h=>h.stats.minutes>=800).length>=2)corroboration.push('two-regular-seasons');
+  if(e.honours.length)corroboration.push('official-honours');
+  if(e.assessments.some(a=>a.observedPerformanceRating>=7.5))corroboration.push('six-nations-assessment');
+  if(e.attack&&e.attack.stats.minutes>=600&&e.attack.stats.tries*80/e.attack.stats.minutes>=.28)
+   corroboration.push('tries-per-80');
+  if(e.kicking&&e.kicking.attempted>=30&&e.kicking.made/e.kicking.attempted>=.78)
+   corroboration.push('conversion-success-observed');
+  if(e.observations.some(o=>o.stats.matches>=5&&o.stats.tacklesMade/o.stats.matches>=8))
+   corroboration.push('tackles-per-game');
+  const positive=valid&&minutes>=900&&matches>=12&&workload>=45&&note<=median-2&&
+   roleMean>=rolePeerMedian-4&&corroboration.length>0;
+  // Low minutes can reflect injury, contracts or personal choice: NO DOWNGRADE without verified independent facts.
+  const negative=false;
   const coverage=[valid?'minutes-and-matches':'missing-usage',Number.isFinite(tries)?'tries-observed':'no-tries',
-   Number.isFinite(points)?'points-observed':'no-points'].filter(Boolean);
+   Number.isFinite(points)?'points-observed':'no-points',...corroboration];
   const score=positive?(median-note)+(minutes/400)+(roleMean-rolePeerMedian)/4:negative?(note-median)+Math.max(0,350-minutes)/200:0;
   baseline.push({id:p.id,club:cl.slug,league:cl.league,role:p.gameplayPosition,age:p.ageApprox,
    note,median,p25,p75,primaryMean:fixed(roleMean),peerPrimaryMedian:fixed(rolePeerMedian),
    usage:valid?{matches,minutes,minutesPerMatch:fixed(workload),tries,points}:null,
-   squadState,positive,negative,score:fixed(score),coverage});
+   squadState,positive,negative,score:fixed(score),coverage,independentSignals:corroboration});
  }
  const up=baseline.filter(x=>x.positive).sort((a,b)=>b.score-a.score||a.id.localeCompare(b.id));
  const down=baseline.filter(x=>x.negative).sort((a,b)=>b.score-a.score||a.id.localeCompare(b.id));
@@ -100,7 +118,7 @@ test('Screen EVERY active 2026 player for independent 2025-26 usage, same-role p
    potentialOver:scr.down.filter(x=>x.league===div).length};
  }
  console.log('RUGBY_REAL_V15_EVIDENCE_SCREEN '+JSON.stringify({
-  total:1592,with202526MinutesAndMatches:scr.coverage,division:byDiv,
+  total:1592,with202526MinutesAndMatches:scr.coverage,validatedEvidenceSummary:observed.summary,division:byDiv,
   candidates:{up:scr.up.length,down:scr.down.length},
   prioritized:{up:scr.up.slice(0,24),down:scr.down.slice(0,24)},
   clubDispersion:leagues,
