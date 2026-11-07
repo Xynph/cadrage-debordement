@@ -20,6 +20,8 @@ function playerForNative(basePlayer,realPlayer){
  p.rating=realPlayer.ratingV12;
  p.skillBase=p.rating; // skill() must start at exact projected skills, never add an initial bonus
  p.attributesV2=C.clone(realPlayer.attributesV2);
+ p.gameplayPosition=realPlayer.gameplayPosition;
+ p.ageApprox=p.age;
  p.hiddenTraitsV2=C.clone(realPlayer.hiddenTraitsV2);
  p.potential=realPlayer.potential; // original historical scale remains untouched
  const historicalRoom=bound(realPlayer.potential-realPlayer.rating,0,99);
