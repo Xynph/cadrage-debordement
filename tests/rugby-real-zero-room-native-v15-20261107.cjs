@@ -123,9 +123,12 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
  assert.equal(JSON.stringify(data.players),sourceSignature,'V12 source must never mutate');
  assert.equal(teamSnapshots.length,7);
  const trajectory=teamSnapshots.map((snapshot,index)=>{
-  const q=snapshot.clubs.map(c=>c.xv),prior=index?new Map(teamSnapshots[index-1].clubs.map(c=>[c.name,c])):null;
+  const q=snapshot.clubs.map(c=>c.xv),ai=snapshot.clubs.slice(1),prior=index?new Map(teamSnapshots[index-1].clubs.map(c=>[c.name,c])):null;
   return {season:snapshot.season,clubCount:snapshot.clubs.length,xvMean:+(q.reduce((a,b)=>a+b,0)/q.length).toFixed(2),
    xvMin:Math.min(...q),xvMax:Math.max(...q),
+   aiXvMean:+(ai.reduce((s,c)=>s+c.xv,0)/ai.length).toFixed(2),
+   aiXvMin:Math.min(...ai.map(c=>c.xv)),aiXvMax:Math.max(...ai.map(c=>c.xv)),
+   playerClubXV:snapshot.clubs[0].xv,playerClubRoster:snapshot.clubs[0].roster,
    originalPlayers:snapshot.clubs.reduce((s,c)=>s+c.lnr,0),
    totalPlayers:snapshot.clubs.reduce((s,c)=>s+c.roster,0),
    rosterInflow:prior?snapshot.clubs.reduce((s,c)=>s+c.rosterIds.filter(id=>!prior.get(c.name).rosterIds.includes(id)).length,0):0,
@@ -136,7 +139,7 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
   clubStartEnd:teamSnapshots[0].clubs.map(c=>{const last=teamSnapshots.at(-1).clubs.find(x=>x.name===c.name);
    return {club:c.name,initialXV:c.xv,lastXV:last.xv,xvDelta:+(last.xv-c.xv).toFixed(2),
     initialBench:c.bench,lastBench:last.bench,initialOriginal:c.lnr,lastOriginal:last.lnr};}),
-  note:'Native TOP14 only, team quality after save roundtrips; no playable PRO D2 seasons'}));
+  note:'Native TOP14 only; 13 AI-managed clubs reported separately from unattended player-managed club; no playable PRO D2 seasons'}));
  const profiles=topIDs.map(id=>{
   const history=observations.get(id);
   const first=baseMap.get(id);
