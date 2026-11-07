@@ -1,0 +1,75 @@
+name: LNR V12 V11 - integration native multi seasons
+on:
+  push:
+    branches: [integration/lnr-v12-v11-live-20261107]
+  pull_request:
+    paths:
+      - 'dist/lnr-ratings-v12.js'
+      - 'dist/lnr-v11-aging.js'
+      - 'dist/lnr-career.js'
+      - 'dist/development.js'
+      - 'dist/saves.js'
+      - 'dist/index.html'
+      - 'tools/lnr-v12-v11-preview/**'
+      - '.github/workflows/lnr-v12-v11-live.yml'
+  workflow_dispatch:
+jobs:
+  build-offline-asset:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compiler les 1592 profils V12 doucement sans modifier le master
+        run: node tools/lnr-v12-v11-preview/export-live.cjs dist/lnr-ratings-v12.js
+      - name: Tester trois saisons et la compatibilite avant publication
+        run: node --test tools/lnr-v12-v11-preview/live-seasons.cjs
+      - name: Publier uniquement l'asset genere sur la branche d'integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- dist/lnr-ratings-v12.js
+          if ! git diff --cached --quiet; then
+            git commit -m "build(lnr): pin generated V12 mild ratings for offline careers"
+            git push origin HEAD:refs/heads/integration/lnr-v12-v11-live-20261107
+          fi
+  verify-native:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          ref: b099230c66641f9af06f40101fb67162db40b4b9
+          path: .deps/v11
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Asset reproductible a 1592 IDs
+        run: |
+          node tools/lnr-v12-v11-preview/export-live.cjs "$RUNNER_TEMP/lnr-ratings-v12.js"
+          cmp "$RUNNER_TEMP/lnr-ratings-v12.js" dist/lnr-ratings-v12.js
+      - name: Vraies saisons, matchs, sauvegardes et vieillissement
+        run: node --test tools/lnr-v12-v11-preview/live-seasons.cjs
+      - name: Contrats V12/V11 source
+        env:
+          CD_V11_ROOT: ${{ github.workspace }}/.deps/v11
+        run: node --test tools/lnr-v12-v11-preview/tests.cjs
+      - name: Regressions sauvegardes, LNR et developpement historique
+        run: node --test tests/lnr-career.cjs tests/lnr-career-long.cjs tests/lnr-cross-season-recovery.cjs tests/lnr-loaded-birthyears-career.cjs tests/lnr-save-integrity-guards.cjs tests/lnr-save-import-rollback-stress.cjs tests/lnr-save-resume-continuation.cjs tests/development.cjs tests/saves.cjs
+      - name: Historique et catalogue LNR invariants
+        run: git diff --exit-code 37fd6eec38ab32959361d9b81e1c34341d41d710 -- modding/data06/rugby-master-2026-2027.json dist/lnr-rosters-data.js
