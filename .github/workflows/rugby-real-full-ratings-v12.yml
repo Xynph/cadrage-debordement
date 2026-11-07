@@ -1,0 +1,100 @@
+name: Rugby Reel V12 - full ratings and native matches
+on:
+  push:
+    branches: [data/rugby-real-full-ratings-v12-20261107]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Revue exhaustive, integrite, sources et moteur natif
+        run: node --test tests/rugby-real-full-ratings-v12.cjs
+      - name: Export complet sans modifier le master
+        run: |
+          sha256sum modding/data06/rugby-master-2026-2027.json > "$RUNNER_TEMP/master.sha"
+          node tools/rugby-real-v12/export.cjs "$RUNNER_TEMP/ratings"
+          cmp "$RUNNER_TEMP/ratings/candidate.json" data/scouting/review-v12/candidate.json
+          sha256sum -c "$RUNNER_TEMP/master.sha"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rugby-real-v12-ratings
+          path: ${{ runner.temp }}/ratings/
+          retention-days: 30
+  native-matches:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [legacy, baseline, candidate]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 64 graines, deux domiciles, vrai moteur
+        run: node tools/rugby-real-v12/campaign.cjs "$RUNNER_TEMP/matches.json" 64 "${{ matrix.version }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rugby-real-v12-${{ matrix.version }}
+          path: ${{ runner.temp }}/matches.json
+          retention-days: 30
+  measured-comparison:
+    needs: [contracts, native-matches]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: rugby-real-v12-*
+          path: ${{ runner.temp }}/inputs
+      - name: Comparaison appairee et resultats complets
+        run: node tools/rugby-real-v12/report.cjs "$RUNNER_TEMP/inputs" "$RUNNER_TEMP/results"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rugby-real-v12-measured-comparison
+          path: ${{ runner.temp }}/results/
+          retention-days: 30
+
+  native-calibration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: V12 profondeur et sensibilite - 1920 matchs natifs apparies
+        run: node tools/rugby-real-v12/calibration.cjs "$RUNNER_TEMP/v12-calibration.json" 64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rugby-real-v12-depth-calibration
+          path: ${{ runner.temp }}/v12-calibration.json
+          retention-days: 30
+
+  depth-native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Experimentation profondeur V12 sur 1920 vrais matchs apparies
+        run: node tools/rugby-real-v12/depth-campaign.cjs "$RUNNER_TEMP/v12-depth.json" 64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rugby-real-v12-depth-rosters
+          path: ${{ runner.temp }}/v12-depth.json
+          retention-days: 30

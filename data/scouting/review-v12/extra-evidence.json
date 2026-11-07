@@ -1,0 +1,664 @@
+{
+  "schema": "rugby-real-v12-extra-observations",
+  "season": "2025-2026",
+  "performanceCutoff": "2026-07-01",
+  "lists": [
+    {
+      "league": "top14",
+      "season": "2025-2026",
+      "scope": "season-transformation-leaderboard",
+      "sourceUrl": "https://top14.lnr.fr/classement/joueurs/meilleurs-taux-de-transformation/2025-2026",
+      "retrievedAt": "2026-11-07T00:05:51.696082+00:00",
+      "sourceSha256": "19dca6e1beafebf9a88c030cd1506831ae9541a992a25022f2fecd2d050a5e23",
+      "rows": [
+        {
+          "lnrId": "11474",
+          "name": "David Patrick JACKSON",
+          "historicalClub": "LOU Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 1,
+          "observed": {
+            "nbConversionMadeRate": "100",
+            "nbConversionAttempted": "21",
+            "nbConversionMade": "21",
+            "nbConversionMissed": "0"
+          }
+        },
+        {
+          "lnrId": "2414",
+          "name": "Valentin DELPY",
+          "historicalClub": "Stade Toulousain",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 2,
+          "observed": {
+            "nbConversionMadeRate": "95,5",
+            "nbConversionAttempted": "22",
+            "nbConversionMade": "21",
+            "nbConversionMissed": "1"
+          }
+        },
+        {
+          "lnrId": "1334",
+          "name": "Jérôme BOSVIEL",
+          "historicalClub": "US Montauban",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 3,
+          "observed": {
+            "nbConversionMadeRate": "93,5",
+            "nbConversionAttempted": "46",
+            "nbConversionMade": "43",
+            "nbConversionMissed": "3"
+          }
+        },
+        {
+          "lnrId": "2291",
+          "name": "Marius DOMON",
+          "historicalClub": "RC Toulon",
+          "historicalPosition": "Arrière",
+          "rank": 4,
+          "observed": {
+            "nbConversionMadeRate": "92,9",
+            "nbConversionAttempted": "28",
+            "nbConversionMade": "26",
+            "nbConversionMissed": "2"
+          }
+        },
+        {
+          "lnrId": "2436",
+          "name": "Romain NTAMACK",
+          "historicalClub": "Stade Toulousain",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 5,
+          "observed": {
+            "nbConversionMadeRate": "89,4",
+            "nbConversionAttempted": "47",
+            "nbConversionMade": "42",
+            "nbConversionMissed": "5"
+          }
+        },
+        {
+          "lnrId": "2150",
+          "name": "Antoine GIBERT",
+          "historicalClub": "Racing 92",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 6,
+          "observed": {
+            "nbConversionMadeRate": "87,1",
+            "nbConversionAttempted": "70",
+            "nbConversionMade": "61",
+            "nbConversionMissed": "9"
+          }
+        },
+        {
+          "lnrId": "2196",
+          "name": "Nolann LE GARREC",
+          "historicalClub": "Stade Rochelais",
+          "historicalPosition": "Demi de mêlée",
+          "rank": 7,
+          "observed": {
+            "nbConversionMadeRate": "85,9",
+            "nbConversionAttempted": "64",
+            "nbConversionMade": "55",
+            "nbConversionMissed": "9"
+          }
+        },
+        {
+          "lnrId": "11987",
+          "name": "Hugo Domingo MIOTTI",
+          "historicalClub": "Montpellier Hérault Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 8,
+          "observed": {
+            "nbConversionMadeRate": "85,7",
+            "nbConversionAttempted": "119",
+            "nbConversionMade": "102",
+            "nbConversionMissed": "17"
+          }
+        },
+        {
+          "lnrId": "1460",
+          "name": "Léo COLY",
+          "historicalClub": "Montpellier Hérault Rugby",
+          "historicalPosition": "Demi de mêlée",
+          "rank": 9,
+          "observed": {
+            "nbConversionMadeRate": "84",
+            "nbConversionAttempted": "25",
+            "nbConversionMade": "21",
+            "nbConversionMissed": "4"
+          }
+        },
+        {
+          "lnrId": "611",
+          "name": "Jérémy FERNANDEZ",
+          "historicalClub": "Castres Olympique",
+          "historicalPosition": "Demi de mêlée",
+          "rank": 10,
+          "observed": {
+            "nbConversionMadeRate": "83,9",
+            "nbConversionAttempted": "31",
+            "nbConversionMade": "26",
+            "nbConversionMissed": "5"
+          }
+        },
+        {
+          "lnrId": "4000",
+          "name": "Joe SIMMONDS",
+          "historicalClub": "Section Paloise",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 11,
+          "observed": {
+            "nbConversionMadeRate": "83,8",
+            "nbConversionAttempted": "74",
+            "nbConversionMade": "62",
+            "nbConversionMissed": "12"
+          }
+        },
+        {
+          "lnrId": "12473",
+          "name": "Ugo SEUNES",
+          "historicalClub": "Racing 92",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 12,
+          "observed": {
+            "nbConversionMadeRate": "82,5",
+            "nbConversionAttempted": "80",
+            "nbConversionMade": "66",
+            "nbConversionMissed": "14"
+          }
+        },
+        {
+          "lnrId": "2450",
+          "name": "Thomas RAMOS",
+          "historicalClub": "Stade Toulousain",
+          "historicalPosition": "Arrière",
+          "rank": 13,
+          "observed": {
+            "nbConversionMadeRate": "82,5",
+            "nbConversionAttempted": "80",
+            "nbConversionMade": "66",
+            "nbConversionMissed": "14"
+          }
+        },
+        {
+          "lnrId": "1428",
+          "name": "Louis CARBONEL",
+          "historicalClub": "Stade Français Paris",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 14,
+          "observed": {
+            "nbConversionMadeRate": "82,3",
+            "nbConversionAttempted": "147",
+            "nbConversionMade": "121",
+            "nbConversionMissed": "26"
+          }
+        },
+        {
+          "lnrId": "13371",
+          "name": "Harrison PLUMMER",
+          "historicalClub": "ASM Clermont",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 15,
+          "observed": {
+            "nbConversionMadeRate": "82,2",
+            "nbConversionAttempted": "135",
+            "nbConversionMade": "111",
+            "nbConversionMissed": "24"
+          }
+        },
+        {
+          "lnrId": "1807",
+          "name": "Joris SEGONDS",
+          "historicalClub": "Aviron Bayonnais",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 16,
+          "observed": {
+            "nbConversionMadeRate": "82,1",
+            "nbConversionAttempted": "112",
+            "nbConversionMade": "92",
+            "nbConversionMissed": "20"
+          }
+        },
+        {
+          "lnrId": "2479",
+          "name": "Melvyn JAMINET",
+          "historicalClub": "RC Toulon",
+          "historicalPosition": "Arrière",
+          "rank": 17,
+          "observed": {
+            "nbConversionMadeRate": "82,1",
+            "nbConversionAttempted": "67",
+            "nbConversionMade": "55",
+            "nbConversionMissed": "12"
+          }
+        },
+        {
+          "lnrId": "1081",
+          "name": "Léo BERDEU",
+          "historicalClub": "LOU Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 18,
+          "observed": {
+            "nbConversionMadeRate": "81,7",
+            "nbConversionAttempted": "60",
+            "nbConversionMade": "49",
+            "nbConversionMissed": "11"
+          }
+        },
+        {
+          "lnrId": "997",
+          "name": "Antoine HASTOY",
+          "historicalClub": "Stade Rochelais",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 19,
+          "observed": {
+            "nbConversionMadeRate": "81,5",
+            "nbConversionAttempted": "54",
+            "nbConversionMade": "44",
+            "nbConversionMissed": "10"
+          }
+        },
+        {
+          "lnrId": "949",
+          "name": "Hugo REUS",
+          "historicalClub": "USA Perpignan",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 20,
+          "observed": {
+            "nbConversionMadeRate": "81,4",
+            "nbConversionAttempted": "59",
+            "nbConversionMade": "48",
+            "nbConversionMissed": "11"
+          }
+        }
+      ]
+    },
+    {
+      "league": "prod2",
+      "season": "2025-2026",
+      "scope": "season-transformation-leaderboard",
+      "sourceUrl": "https://prod2.lnr.fr/classement/joueurs/meilleurs-taux-de-transformation/2025-2026",
+      "retrievedAt": "2026-11-07T00:05:58.854545+00:00",
+      "sourceSha256": "d8d74628f188579e90f95d7682da7da9b055c338171429fc96461c77d0a1a563",
+      "rows": [
+        {
+          "lnrId": "2039",
+          "name": "John MCPHILLIPS",
+          "historicalClub": "US Carcassonnaise",
+          "historicalPosition": "Arrière",
+          "rank": 1,
+          "observed": {
+            "nbConversionMadeRate": "89,7",
+            "nbConversionAttempted": "58",
+            "nbConversionMade": "52",
+            "nbConversionMissed": "6"
+          }
+        },
+        {
+          "lnrId": "334",
+          "name": "Zack HOLMES",
+          "historicalClub": "Oyonnax Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 2,
+          "observed": {
+            "nbConversionMadeRate": "86,8",
+            "nbConversionAttempted": "38",
+            "nbConversionMade": "33",
+            "nbConversionMissed": "5"
+          }
+        },
+        {
+          "lnrId": "13690",
+          "name": "Craig WILLIS",
+          "historicalClub": "SU Agen",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 3,
+          "observed": {
+            "nbConversionMadeRate": "86,5",
+            "nbConversionAttempted": "96",
+            "nbConversionMade": "83",
+            "nbConversionMissed": "13"
+          }
+        },
+        {
+          "lnrId": "1930",
+          "name": "Thibault DEBAES",
+          "historicalClub": "RC Vannes",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 4,
+          "observed": {
+            "nbConversionMadeRate": "85,3",
+            "nbConversionAttempted": "61",
+            "nbConversionMade": "52",
+            "nbConversionMissed": "9"
+          }
+        },
+        {
+          "lnrId": "9158",
+          "name": "Lucas MERET",
+          "historicalClub": "Valence Romans",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 5,
+          "observed": {
+            "nbConversionMadeRate": "83,6",
+            "nbConversionAttempted": "152",
+            "nbConversionMade": "127",
+            "nbConversionMissed": "25"
+          }
+        },
+        {
+          "lnrId": "1426",
+          "name": "Anthony BOUTHIER",
+          "historicalClub": "RC Vannes",
+          "historicalPosition": "Arrière",
+          "rank": 6,
+          "observed": {
+            "nbConversionMadeRate": "83,3",
+            "nbConversionAttempted": "24",
+            "nbConversionMade": "20",
+            "nbConversionMissed": "4"
+          }
+        },
+        {
+          "lnrId": "2560",
+          "name": "Maxime LAFAGE",
+          "historicalClub": "RC Vannes",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 7,
+          "observed": {
+            "nbConversionMadeRate": "83,3",
+            "nbConversionAttempted": "90",
+            "nbConversionMade": "75",
+            "nbConversionMissed": "15"
+          }
+        },
+        {
+          "lnrId": "918",
+          "name": "Romain TROUILLOUD",
+          "historicalClub": "FC Grenoble Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 8,
+          "observed": {
+            "nbConversionMadeRate": "83,3",
+            "nbConversionAttempted": "78",
+            "nbConversionMade": "65",
+            "nbConversionMissed": "13"
+          }
+        },
+        {
+          "lnrId": "1234",
+          "name": "Christophe LOUSTALOT",
+          "historicalClub": "Stade Montois Rugby",
+          "historicalPosition": "Demi de mêlée",
+          "rank": 9,
+          "observed": {
+            "nbConversionMadeRate": "83,3",
+            "nbConversionAttempted": "48",
+            "nbConversionMade": "40",
+            "nbConversionMissed": "8"
+          }
+        },
+        {
+          "lnrId": "1682",
+          "name": "Jules SOULAN",
+          "historicalClub": "Provence Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 10,
+          "observed": {
+            "nbConversionMadeRate": "83,3",
+            "nbConversionAttempted": "24",
+            "nbConversionMade": "20",
+            "nbConversionMissed": "4"
+          }
+        },
+        {
+          "lnrId": "1356",
+          "name": "Tedo ABZHANDADZE",
+          "historicalClub": "Stade Aurillacois",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 11,
+          "observed": {
+            "nbConversionMadeRate": "82,5",
+            "nbConversionAttempted": "63",
+            "nbConversionMade": "52",
+            "nbConversionMissed": "11"
+          }
+        },
+        {
+          "lnrId": "13439",
+          "name": "Jake STRACHAN",
+          "historicalClub": "Stade Aurillacois",
+          "historicalPosition": "Demi de mêlée",
+          "rank": 12,
+          "observed": {
+            "nbConversionMadeRate": "82,4",
+            "nbConversionAttempted": "34",
+            "nbConversionMade": "28",
+            "nbConversionMissed": "6"
+          }
+        },
+        {
+          "lnrId": "12581",
+          "name": "Curwin BOSCH",
+          "historicalClub": "CA Brive",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 13,
+          "observed": {
+            "nbConversionMadeRate": "82,4",
+            "nbConversionAttempted": "17",
+            "nbConversionMade": "14",
+            "nbConversionMissed": "3"
+          }
+        },
+        {
+          "lnrId": "2366",
+          "name": "Thomas SALLES",
+          "historicalClub": "Provence Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 14,
+          "observed": {
+            "nbConversionMadeRate": "82,2",
+            "nbConversionAttempted": "45",
+            "nbConversionMade": "37",
+            "nbConversionMissed": "8"
+          }
+        },
+        {
+          "lnrId": "808",
+          "name": "Benjamin BOTICA",
+          "historicalClub": "Soyaux-Angoulême XV",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 15,
+          "observed": {
+            "nbConversionMadeRate": "81,3",
+            "nbConversionAttempted": "48",
+            "nbConversionMade": "39",
+            "nbConversionMissed": "9"
+          }
+        },
+        {
+          "lnrId": "2246",
+          "name": "Franck POURTEAU",
+          "historicalClub": "SU Agen",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 16,
+          "observed": {
+            "nbConversionMadeRate": "81,3",
+            "nbConversionAttempted": "32",
+            "nbConversionMade": "26",
+            "nbConversionMissed": "6"
+          }
+        },
+        {
+          "lnrId": "2414",
+          "name": "Valentin DELPY",
+          "historicalClub": "Colomiers Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 17,
+          "observed": {
+            "nbConversionMadeRate": "81,2",
+            "nbConversionAttempted": "101",
+            "nbConversionMade": "82",
+            "nbConversionMissed": "19"
+          }
+        },
+        {
+          "lnrId": "2478",
+          "name": "Edgar RETIERE",
+          "historicalClub": "Biarritz Olympique PB",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 18,
+          "observed": {
+            "nbConversionMadeRate": "81,0",
+            "nbConversionAttempted": "63",
+            "nbConversionMade": "51",
+            "nbConversionMissed": "12"
+          }
+        },
+        {
+          "lnrId": "13603",
+          "name": "Manuel PORTELA MORAIS VAREIRO",
+          "historicalClub": "Provence Rugby",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 19,
+          "observed": {
+            "nbConversionMadeRate": "80,8",
+            "nbConversionAttempted": "52",
+            "nbConversionMade": "42",
+            "nbConversionMissed": "10"
+          }
+        },
+        {
+          "lnrId": "1488",
+          "name": "Shaun REYNOLDS",
+          "historicalClub": "USON Nevers",
+          "historicalPosition": "Demi d'ouverture",
+          "rank": 20,
+          "observed": {
+            "nbConversionMadeRate": "80,6",
+            "nbConversionAttempted": "36",
+            "nbConversionMade": "29",
+            "nbConversionMissed": "7"
+          }
+        }
+      ]
+    }
+  ],
+  "unavailable": [],
+  "honours": [
+    {
+      "name": "Jack WILLIS",
+      "season": "2025-2026",
+      "type": "top14-player-of-season",
+      "publishedAt": "2026-09-28",
+      "scope": "retrospective-season-assessment",
+      "sourceUrl": "https://top14.lnr.fr/actualite/les-laureats-de-la-22eme-edition-de-la-nuit-du-rugby"
+    },
+    {
+      "name": "Setareki BITUNIYATA",
+      "season": "2025-2026",
+      "type": "prod2-player-of-season",
+      "publishedAt": "2026-09-28",
+      "scope": "retrospective-season-assessment",
+      "sourceUrl": "https://top14.lnr.fr/actualite/les-laureats-de-la-22eme-edition-de-la-nuit-du-rugby"
+    },
+    {
+      "name": "Louis BIELLE-BIARREY",
+      "season": "2025-2026",
+      "type": "french-international-player-of-season",
+      "publishedAt": "2026-09-28",
+      "scope": "retrospective-season-assessment",
+      "sourceUrl": "https://top14.lnr.fr/actualite/les-laureats-de-la-22eme-edition-de-la-nuit-du-rugby"
+    },
+    {
+      "name": "Fabien BRAU-BOIRIE",
+      "season": "2025-2026",
+      "type": "breakthrough-player-of-season",
+      "publishedAt": "2026-09-28",
+      "scope": "retrospective-season-assessment",
+      "sourceUrl": "https://top14.lnr.fr/actualite/les-laureats-de-la-22eme-edition-de-la-nuit-du-rugby"
+    }
+  ],
+  "knowledgeDate": "2026-11-07",
+  "notes": "Honours were announced after the career start, but concern the completed 2025-26 season. Used as retrospective sporting assessment, not as 2026-27 results. Do not claim these were knowable on 2026-07-01.",
+  "performanceAssessments": [
+    {
+      "name": "Antoine DUPONT",
+      "season": "2025-2026",
+      "scope": "six-nations-2026-five-rounds",
+      "publishedAt": "2026-03-24",
+      "sourceUrl": "https://www.sixnationsrugby.com/en/m6n/news/six-nations-2026-team-of-the-championship-stats-v-fans",
+      "ratingScale": [
+        0,
+        10
+      ],
+      "observedPerformanceRating": 8.2,
+      "kind": "Oval-Insights-performance-assessment-not-a-game-attribute"
+    },
+    {
+      "name": "Louis BIELLE-BIARREY",
+      "season": "2025-2026",
+      "scope": "six-nations-2026-five-rounds",
+      "publishedAt": "2026-03-24",
+      "sourceUrl": "https://www.sixnationsrugby.com/en/m6n/news/six-nations-2026-team-of-the-championship-stats-v-fans",
+      "ratingScale": [
+        0,
+        10
+      ],
+      "observedPerformanceRating": 8.5,
+      "kind": "Oval-Insights-performance-assessment-not-a-game-attribute"
+    },
+    {
+      "name": "Thomas RAMOS",
+      "season": "2025-2026",
+      "scope": "six-nations-2026-five-rounds",
+      "publishedAt": "2026-03-24",
+      "sourceUrl": "https://www.sixnationsrugby.com/en/m6n/news/six-nations-2026-team-of-the-championship-stats-v-fans",
+      "ratingScale": [
+        0,
+        10
+      ],
+      "observedPerformanceRating": 8.2,
+      "kind": "Oval-Insights-performance-assessment-not-a-game-attribute"
+    },
+    {
+      "name": "Matthieu JALIBERT",
+      "season": "2025-2026",
+      "scope": "six-nations-2026-five-rounds",
+      "publishedAt": "2026-03-24",
+      "sourceUrl": "https://www.sixnationsrugby.com/en/m6n/news/six-nations-2026-team-of-the-championship-stats-v-fans",
+      "ratingScale": [
+        0,
+        10
+      ],
+      "observedPerformanceRating": 7.9,
+      "kind": "Oval-Insights-performance-assessment-not-a-game-attribute"
+    },
+    {
+      "name": "Tommaso MENONCELLO",
+      "season": "2025-2026",
+      "scope": "six-nations-2026-five-rounds",
+      "publishedAt": "2026-03-24",
+      "sourceUrl": "https://www.sixnationsrugby.com/en/m6n/news/six-nations-2026-team-of-the-championship-stats-v-fans",
+      "ratingScale": [
+        0,
+        10
+      ],
+      "observedPerformanceRating": 7.9,
+      "kind": "Oval-Insights-performance-assessment-not-a-game-attribute"
+    },
+    {
+      "name": "Lorenzo CANNONE",
+      "season": "2025-2026",
+      "scope": "six-nations-2026-five-rounds",
+      "publishedAt": "2026-03-24",
+      "sourceUrl": "https://www.sixnationsrugby.com/en/m6n/news/six-nations-2026-team-of-the-championship-stats-v-fans",
+      "ratingScale": [
+        0,
+        10
+      ],
+      "observedPerformanceRating": 7.1,
+      "kind": "Oval-Insights-performance-assessment-not-a-game-attribute"
+    }
+  ]
+}
