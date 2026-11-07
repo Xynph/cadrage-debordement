@@ -11,4 +11,18 @@ test('dates exactes, âge 2026 au 1er juillet',()=>{const age=resolve();assert.e
 test('année seule conservatrice sans inventer une date',()=>{const age=resolve();const a=age('lnr:862');assert.equal(a.age,2026-a.birthYear-1);assert.equal(a.ageEstimated,true);assert.equal(a.birthDate,undefined);});
 test('seule la construction de nouveaux joueurs LNR change',()=>{assert(lnr.includes('...birthday,rating'));assert(lnr.includes("typeof LNR_BIRTHYEARS_DATA==='undefined'?{age:21+(seedHash(id)%14),ageEstimated:true}:lnrBirthAge(id)"));assert(html.includes('main-menu-v3.js'));});
 
-test('sauvegardes LNR acceptent 15 ans, fiction reste à 16 ans',()=>{const saves=fs.readFileSync(path.join(root,'saves.js'),'utf8');assert(saves.includes('saveInt(p.age,s.lnrMode!==undefined?15:16,60)'));});
+test('sauvegardes LNR acceptent 15 ans, fiction reste à 16 ans',()=>{
+ const {context}=require('./harness.cjs');
+ for(const [mode,minimum] of [['fiction',16],['lnr',15]]){
+  const g=context();
+  for(const file of ['lnr-rosters-data.js','lnr-career.js'])g.run(fs.readFileSync(path.join(root,file),'utf8'));
+  g.run(`start(0,${JSON.stringify(mode)})`);
+  const original=g.run('JSON.stringify(createSaveDocument())');
+  for(const age of [minimum-1,minimum,minimum+1]){
+   g.run(`globalThis.ageProbeDoc=JSON.parse(${JSON.stringify(original)});ageProbeDoc.state.clubs[0].players[0].age=${age};ageProbeDoc.checksum=saveChecksum(ageProbeDoc.state)`);
+   const parse=()=>g.run('parseSaveDocument(JSON.stringify(ageProbeDoc))');
+   if(age<minimum)assert.throws(parse,/incohérentes/,mode+' refuse un âge inférieur');
+   else assert.doesNotThrow(parse,mode+' accepte la borne et au-dessus');
+  }
+ }
+});
