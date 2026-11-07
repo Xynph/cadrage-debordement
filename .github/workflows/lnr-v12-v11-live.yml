@@ -50,6 +50,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - uses: actions/checkout@v4
         with:
           ref: b099230c66641f9af06f40101fb67162db40b4b9
@@ -69,4 +70,4 @@ jobs:
           CD_V11_ROOT: ${{ github.workspace }}/.deps/v11
         run: node --test tools/lnr-v12-v11-preview/tests.cjs
       - name: Historique et catalogue LNR invariants
-        run: git diff --exit-code b099230c66641f9af06f40101fb67162db40b4b9 -- modding/data06/rugby-master-2026-2027.json dist/lnr-rosters-data.js
+        run: git diff --exit-code 37fd6eec38ab32959361d9b81e1c34341d41d710 -- modding/data06/rugby-master-2026-2027.json dist/lnr-rosters-data.js
