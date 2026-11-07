@@ -1,4 +1,12 @@
-# Données du jeu et future intégration de données réelles
+# Données du jeu et intégration de données réelles
+
+## État courant — Oval Legacy 27, Godot 0.3 — 7 novembre 2026
+
+Les nouvelles carrières natives emploient `rugby-common-2026-10-31-v1` : 30 clubs et 1 592 joueurs compilés depuis les données actives, avec les mêmes IDs, âges, postes, attributs, compétences, potentiels et traits, sous des identités anonymisées. Cette compilation ne modifie aucune source BDD du producteur. Les notes restent des estimations de jeu, pas des mesures officielles.
+
+Les packs importés à la création ou dans les paramètres d'une carrière commune projettent noms et images par ID. Ils ne remplacent ni statistiques ni progression. Le pack fourni à Léo reste privé, hors de l'exécutable et de GitHub : 30 logos, 1 549 photos officielles et 43 illustrations IA explicitement distinguées. Le [rapport 0.3](rugby-real-native-packs-20261107.md) décrit le format, la réception et les lacunes conservées.
+
+Contrats, salaires et trésoreries sont toujours fictifs. Le plafond de recrutement historique de 42, les effectifs source de 36 à 65 et les couvertures de poste incomplètes de cinq clubs restent documentés ; aucune correction de la PR389 en brouillon n'est activée. Les anciennes carrières générées à 14 ou 30 clubs restent lisibles sans conversion automatique. Les sections ci-dessous décrivent les étapes antérieures.
 
 ## État de la version 15
 

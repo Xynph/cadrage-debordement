@@ -25,6 +25,14 @@ Le profil réglementaire documenté du moteur est **`fr-pro-2025` (saison 2025/2
 
 ## Derniers travaux vérifiés
 
+### 7 novembre 2026 — Oval Legacy 27, Godot 0.3 et packs d'identité
+
+Branche `feature/godot-identity-packs-20261107`, dépendance PR392. Commits de fonctions `b04d276` (base commune), `eb155fe` (packs), `c4fb729` (interface/édition27), `d8be95d` (logo validé), `d1a2788` (réception des renforts initiaux). Sources BDD du producteur inchangées ; les 1 592 statistiques actives sont compilées sous des noms anonymisés. Création et paramètres de carrière permettent d'importer un pack ; les identités suivent les IDs et le changement ne touche pas l'état sportif.
+
+Tests ciblés base/sauvegardes, ZIP hostile et réel, rollback disque/RNG et compatibilité historique réussis. Revue de chaque tâche approuvée. Parcours packs graphique SDK Windows : 86 contrôles à chaque résolution 1440/1920 ; décodage des 1 622 images réussi. ZIP release build04 reçu après extraction/déplacement : 505 contrôles, saison2/club29, export/import et redémarrage avec Node embarqué, 68 fichiers vérifiés, zéro TCP observé et zéro orphelin. SHA256 `64c14b14548232e815735869ad2b6db4943a125abcb4fa1cf41310b6d440e32a`. Les premières réceptions échouées ne sont pas comptées vertes. L'essai d'exécuter un script externe dans la release ne constitue pas un test réussi ; les scénarios UI de packs sont ceux du SDK.
+
+Nom annuel, logo au ballon et icône transparente choisis explicitement par Léo ; créations originales de cette session sans garantie juridique d'antériorité. Le pack fourni est réservé à son usage privé, hors Git et ZIP de base. Les anciennes carrières locales seront retirées du profil actif avec copie privée, comme demandé ; les lecteurs historiques restent disponibles. Installation et preuves sur E:, raccourci seul sur le bureau. Voir [rapport détaillé et priorités du mod](docs/rugby-real-native-packs-20261107.md). La revue globale, la CI de la nouvelle PR et l'intégration sont à vérifier sur leur HEAD exact ; aucun résultat futur n'est annoncé ici.
+
 | Date | Référence | Travaux | État |
 | --- | --- | --- | --- |
 | 30/10/2026 | `600ae6f` / PR #2 | V17 : géométrie des transformations, scène 2D, test `goalkicking.cjs`, workflow CI, README | Fusionnée sur `main` ; CI de la PR réussie (syntaxe + toutes suites `tests/*.cjs` hors harness) ; CI post-fusion à confirmer |
