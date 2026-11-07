@@ -140,3 +140,32 @@ Les rapports IA comptent au moins sur les saisons suivies : **1 415 opérations 
 Aucune carrière native senior à deux divisions avec montées/relégations n'existe sur la branche de référence ; aucune statistique de maintien ou remontée réelle n'est avancée. Le jeu repose sur des notes estimées, non des notations officielles. Les salaires et le coût des joueurs « recrutés » du laboratoire ne sont pas soumis aux règles de marché en carrière ; les rapports de recrutements IA natifs couvrent ce comportement séparément.
 
 **Périmètre de la PR #389 inchangé** : trois tests nouveaux, ce rapport et le workflow dédié. Aucun `dist/**`, master, LNR, identité, effectif, calendrier, moteur, sauvegarde, interface, MATCH3D ni autre branche modifié. DRAFT exclusivement, **aucune fusion**. Les verdicts du dernier HEAD doivent être reçus indépendamment de ceux cités ci-dessus.
+
+
+---
+
+## Extension V15 — audit des écarts de clubs par poste et du lien 36 attributs → 11 compétences
+
+### Analyse exhaustive sur la BDD active
+
+Le nouveau test \`tests/rugby-real-role-contribution-v15-20261107.cjs\` utilise les **1592 joueurs actifs** issus de \`dist/lnr-ratings-v12.js\`, les 36 attributs et 11 compétences réellement chargés, puis le \`roleNote\` natif pour les joueurs titularisés. La QA GitHub [#42374364955](https://github.com/Xynph/cadrage-debordement/actions/runs/42374364955) est **SUCCESS**, **10/10 tests** (y compris les tests préexistants de la PR). Les 36 attributs ne sont **pas** directement tous pondérés dans la note au poste : \`roleNote\` utilise les 11 compétences du joueur et les pondérations par famille de poste.
+
+**Compression statistique observée :**
+- Écart entre les clubs en écart type de moyenne XV, pour les feuilles 15+8 complètes : **0,593** point TOP14 (14 clubs), **0,248** point PRO D2 (11 clubs). Les plages de moyennes sont TOP14 **77,733 à 80,333**, PRO D2 **70,000 à 70,867**.
+- À l'intérieur d'un seul XV, écart-type des notes de poste des titulaires généralement **1,9 à 3,3** points (exception Toulouse **4,16**). Les variations entre joueurs existent et sont beaucoup plus larges que les moyennes *entre clubs* : composition poste par poste + sélection des meilleurs XV + moyenne arithmétique **lissent** les écarts collectifs.
+- Écart TOP14 moins PRO D2 des compétences chargées : **+8,61** pour \`pass\`, **+8,33** pour \`tackle\`, **+7,56** pour \`power\`, **+6,79** pour \`speed\`, mais seulement **+2,34** pour \`goal\` et **+1,23** pour \`discipline\`. Ce profil est hétérogène et peut influencer les séquences de match au-delà de la seule moyenne XV. Il n'existe donc aucune justification à ajouter un malus identique à toutes les compétences des 787 joueurs PRO D2.
+- Sur les 36 attributs, l'écart de division va de **+0,71 en leadership** à **+9,35 en ballCarry** ; l'incertitude sur les sources et la réalité de certaines notes exige de ne pas interpréter ces contrastes comme un étalonnage officiel.
+
+### Expérience de corrections individuelles sur copies
+
+Cinq titulaires de Provence Rugby, choisis parmi les notes de poste les plus basses et sur cinq rôles distincts : \`lnr:1415\` (centre), \`lnr:2058\` (deuxième ligne), \`lnr:13418\` (talonneur), \`lnr:13465\` (troisième ligne), \`lnr:1424\` (pilier gauche). Le scénario **purement expérimental** augmente de **+5** chacun de leurs cinq attributs dominants par poste, sans modifier les autres joueurs, sans transfert ni changer le moteur. Il compare (A) BDD active, (B) modification des seuls 36 attributs, (C) modification des 36 attributs **plus synchronisation des 11 compétences** par la différence de projection V12 du même individu.
+
+| Cas face au TOP14 médian Lyon, graines appariées | Moyenne XV | Effet de marge sur le score |
+| --- | ---: | ---: |
+| BDD active | **70,867** | référence (−5,75) |
+| +5 sur attributs seulement | **70,867** | **0,000** [0,000 ; 0,000] |
+| +5 attributs et compétences synchronisées | **71,667** | **−0,344** [−1,905 ; +1,218] |
+
+Cette preuve pratique montre qu'une *simple édition des attributs* sur un profil déjà chargé avec \`skills\` ne modifie **pas** les notes de poste et les résultats de cette expérience de matchs, mais qu'une calibration cohérente doit conserver l'alignement entre les deux représentations. La hausse synchronisée donne de vraies notes au poste plus élevées, mais **ne démontre pas encore un bénéfice statistique en match**. Ne surtout pas corriger 1592 joueurs en doublant leurs compétences à l'aveugle ; il faut comprendre d'abord les conventions et les traitements de projection déjà installés.
+
+Les cinq cas ne prouvent **aucune sous-notation personnelle** : la correction est une sensibilité fictive, non une recommandation d'augmentation. Une dose plus élevée et plusieurs adversaires doivent être comparés avant conclusion ; la suite est dans le test spécialisé.
