@@ -31,7 +31,7 @@ function sheetStats(lab,c){
   min:Math.min(...starters.map(lab.note)),max:Math.max(...starters.map(lab.note)),
   age:rd(mean(starters.map(p=>p.age)))};
 }
-function simpleMoves(lab,baseClub,donors,n,{diverse=true}={}){
+function simpleMoves(lab,baseClub,donors,n,{diverse=true,roleCaps=null}={}){
  const c=copy(baseClub),used=new Set(c.players.map(p=>p.id)),roles=new Set(),moves=[];
  for(let j=0;j<n;j++){
   const oldLine=lab.sheet(c).lineup.filter(Boolean).map(id=>c.players.find(p=>p.id===id));
@@ -39,6 +39,7 @@ function simpleMoves(lab,baseClub,donors,n,{diverse=true}={}){
   for(const old of oldLine){
    for(const donor of donors)for(const p of donor.players){
     if(used.has(p.id)||p.pos!==old.pos||donor.slug===baseClub.slug)continue;
+    if(roleCaps&&lab.note(p)>roleCaps.get(p.pos))continue;
     if(diverse&&roles.has(old.pos))continue;
     const gain=lab.note(p)-lab.note(old);
     if(gain>=2)opts.push({p,old,donor:donor.slug,gain,role:old.pos});
@@ -93,7 +94,7 @@ test('Active 1592 runtime scores, role-sorted complete teams and actual depth',(
   complete:{top14:rank.top14.length,prod2:rank.prod2.length},teamMeans:av,
   teamQualityGap:rd(av.top14-av.prod2),rank}));
 });
-test('Native paired games: 2/5 recruits, 2/5 losses and rotation vs 3 opponents', {timeout:420000},()=>{
+test('Native paired games: ordinary/elite recruits, 2/5 losses, depth vs 3 opponents', {timeout:900000},()=>{
  const lab=N.laboratory(live,'legacy');
  const rank=league=>lab.clubs.filter(c=>c.league===league&&full(lab,c))
    .sort((a,b)=>lab.quality(a)-lab.quality(b)||a.slug.localeCompare(b.slug));
@@ -102,29 +103,40 @@ test('Native paired games: 2/5 recruits, 2/5 losses and rotation vs 3 opponents'
   weak=top[0],proMid=pro[Math.floor(pro.length/2)];
  const donors=top.filter(c=>![weak.slug,middle.slug,strong.slug].includes(c.slug));
  assert.ok(donors.length>=3);
+ const roleCaps=new Map([...new Set(top.flatMap(c=>c.players.map(p=>p.pos)))].map(pos=>{
+  const pool=top.flatMap(c=>c.players.filter(p=>p.pos===pos).map(lab.note)).sort((a,b)=>a-b);
+  return [pos,pool[Math.floor(pool.length*.75)]];
+ }));
+ const normal2=simpleMoves(lab,promoted,donors,2,{roleCaps});
+ const normal5=simpleMoves(lab,promoted,donors,5,{roleCaps});
  const recruit2=simpleMoves(lab,promoted,donors,2);
  const recruit5=simpleMoves(lab,promoted,donors,5);
  const cut2=cut(lab,weak,2,'starter'),cut5=cut(lab,weak,5,'starter');
  const bench5=cut(lab,weak,5,'bench');
  assert.equal(recruit2.moves.length,2);assert.equal(recruit5.moves.length,5);
+ assert.equal(normal2.moves.length,2);assert.ok(normal5.moves.length>=4);
  assert.equal(cut2.removed.length,2);assert.equal(cut5.removed.length,5);
  assert.equal(bench5.removed.length,5);
  const scenarios=[
   ['promoted_vs_weak',promoted,weak],['promoted_vs_mid',promoted,middle],['promoted_vs_strong',promoted,strong],
+  ['normal2_vs_mid',normal2.club,middle],['normal5_vs_mid',normal5.club,middle],
   ['recruited2_vs_mid',recruit2.club,middle],['recruited5_vs_mid',recruit5.club,middle],
   ['recruited5_vs_strong',recruit5.club,strong],
   ['relegated_vs_pro_mid',weak,proMid],['lost2_vs_pro_mid',cut2.club,proMid],
   ['lost5_vs_pro_mid',cut5.club,proMid],['benchcut5_vs_pro_mid',bench5.club,proMid]
  ];
- const metrics={};for(const [name,a,b] of scenarios)metrics[name]=matchPair(lab,a,b,12);
- const quality={promoted:sheetStats(lab,promoted),recruited2:sheetStats(lab,recruit2.club),
+ const metrics={};for(const [name,a,b] of scenarios)metrics[name]=matchPair(lab,a,b,24);
+ const quality={promoted:sheetStats(lab,promoted),normal2:sheetStats(lab,normal2.club),normal5:sheetStats(lab,normal5.club),recruited2:sheetStats(lab,recruit2.club),
   recruited5:sheetStats(lab,recruit5.club),weak:sheetStats(lab,weak),
   lost2:sheetStats(lab,cut2.club),lost5:sheetStats(lab,cut5.club),
   benchcut5:sheetStats(lab,bench5.club)};
  assert.ok(quality.recruited5.mean>quality.promoted.mean);
+ assert.ok(quality.normal5.mean>quality.promoted.mean);
  assert.ok(quality.lost5.mean<quality.weak.mean);
  const diff=(a,b)=>rd(metrics[a].margin-metrics[b].margin);
  const effects={
+  normal2Margin:diff('normal2_vs_mid','promoted_vs_mid'),
+  normal5Margin:diff('normal5_vs_mid','promoted_vs_mid'),
   recruitment2Margin:diff('recruited2_vs_mid','promoted_vs_mid'),
   recruitment5Margin:diff('recruited5_vs_mid','promoted_vs_mid'),
   loss2Margin:diff('lost2_vs_pro_mid','relegated_vs_pro_mid'),
@@ -132,9 +144,10 @@ test('Native paired games: 2/5 recruits, 2/5 losses and rotation vs 3 opponents'
   benchLoss5Margin:diff('benchcut5_vs_pro_mid','relegated_vs_pro_mid')
  };
  console.log('RUGBY_REAL_ACTIVE_MOVEMENT_QA '+JSON.stringify({
-  seeds:12,matches:scenarios.length*24,referenceClub:{promoted:promoted.slug,weak:weak.slug,
+  seeds:24,matches:scenarios.length*48,referenceClub:{promoted:promoted.slug,weak:weak.slug,
    mid:middle.slug,strong:strong.slug,proMid:proMid.slug},
-  moves:{recruit2:recruit2.moves,recruit5:recruit5.moves,cut2:cut2.removed,
+  moves:{normal2:normal2.moves,normal5:normal5.moves,roleCaps:Object.fromEntries(roleCaps),
+   recruit2:recruit2.moves,recruit5:recruit5.moves,cut2:cut2.removed,
    cut5:cut5.removed,benchCut:bench5.removed},quality,effects,
   metrics:Object.fromEntries(Object.entries(metrics).map(([k,v])=>[k,{winPct:v.winPct,margin:v.margin,win95:v.win95,
    fatigue:v.fatigue,injuries:v.injuries}])),
