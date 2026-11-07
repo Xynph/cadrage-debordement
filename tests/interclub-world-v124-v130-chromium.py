@@ -42,6 +42,9 @@ try:
         assert 'Échos du championnat' in card.inner_text()
         page.evaluate("nav('league')")
         league=page.locator(native)
+        panel_id=league.evaluate('el=>el.closest("[role=tabpanel]")?.id||""')
+        if panel_id:
+            page.locator('[role="tab"][aria-controls="'+panel_id+'"]').click()
         assert league.count()==1 and league.is_visible(),'Native league page world panel missing'
         assert 'Réaction simulée' in league.inner_text()
         legacy=page.evaluate("""() => {
