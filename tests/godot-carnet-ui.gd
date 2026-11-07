@@ -114,17 +114,19 @@ func capture_dialog(id: String) -> void:
 	await capture(id)
 func reading_actions() -> void:
 	await render("Effectif")
-	var selectors := options(app.body)
-	check(selectors.size() == 3,"Filtres, tri et charge individuelle conservés")
-	selectors[0].item_selected.emit(2)
+	var family:OptionButton=named(app,"RosterFamily")
+	check(family!=null and named(app,"RosterSort")!=null and named(app,"PlayerLoad")!=null,"Filtres, tri et charge individuelle conservés")
+	family.select(2)
+	family.item_selected.emit(2)
 	await settle()
 	check(app.roster_filter=="Arrières","Filtre réel des arrières")
 	var shown: Array = app.body.find_children("SquadPlayer*","Button",true,false)
 	for row in shown:
 		var id: String = row.get_meta("player_id")
 		check(app.model.squad.any(func(p):return str(p.id)==id and float(p.fam)>3),"Filtre appliqué aux bons joueurs")
-	selectors=options(app.body)
-	selectors[1].item_selected.emit(1)
+	var sorting:OptionButton=named(app,"RosterSort")
+	for i in sorting.item_count:
+		if sorting.get_item_text(i)=="Niveau":sorting.select(i);sorting.item_selected.emit(i);break
 	await settle()
 	check(app.roster_sort=="Niveau","Tri réel par niveau")
 	shown=app.body.find_children("SquadPlayer*","Button",true,false)

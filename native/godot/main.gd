@@ -16,6 +16,7 @@ var club_division := "elite"
 var table_division := "elite"
 var roster_filter := "Tous"
 var roster_sort := "Poste"
+var management_ui: Dictionary = {}
 var accent := Color("d43e47")
 var bridge: Node
 var timer: Timer
@@ -91,7 +92,9 @@ func _live() -> Dictionary:
 	return model.live if model.get("live") is Dictionary else {}
 
 func _receive_model(value: Dictionary) -> void:
+	SquadViews.U.remember(self)
 	model = value
+	SquadViews.U.sync(self, bridge.last_response_ok and last_command in ["new_career","import","recover_profile"])
 	if model.get("meta", {}).get("catalogue") is Array:
 		catalogue = model.meta.catalogue.duplicate(true)
 	waiting = false
@@ -114,7 +117,7 @@ func _receive_model(value: Dictionary) -> void:
 			_update_live_bar()
 			_update_header_date()
 			match_screen.update_frame(model)
-		else: _render()
+		else: _render(false)
 	if bridge.last_response_ok:
 		if is_instance_valid(status):
 			status.text = "Sauvegarde automatique · Profil de carrière indépendant"
@@ -180,7 +183,9 @@ func _navigate(target: String) -> void:
 	route = target
 	_render()
 
-func _render() -> void:
+func _render(remember_ui: bool = true) -> void:
+	if remember_ui: SquadViews.U.remember(self)
+	SquadViews.U.sync(self)
 	if is_instance_valid(root_content):
 		remove_child(root_content)
 		root_content.queue_free()

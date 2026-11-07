@@ -75,6 +75,9 @@ static func tables(app: Control) -> Control:
 	var leagues: Array = app.model.get("leagues", [])
 	if leagues.is_empty(): leagues = [{"id":"elite","name":"Championnat historique","rows":app.model.get("league", [])}]
 	G.chapter(sheet,"07","La course du championnat","Le classement de votre carrière, dans l’ordre de la compétition.",app.accent)
+	var archives:=G.button("ARCHIVES DES SAISONS",func():season_archives(app))
+	archives.name="OpenArchives"
+	sheet.add_child(archives)
 	var tabs := G.h(10)
 	sheet.add_child(tabs)
 	for league in leagues:
@@ -115,6 +118,48 @@ static func tables(app: Control) -> Control:
 		row.add_child(points)
 	sheet.add_child(G.wrap("MJ : matchs joués · V / N / D : victoires, nuls, défaites · DIFF. : points marqués moins encaissés",12))
 	return page
+
+static func _archive_club(app:Control,id:Variant) -> String:
+	for league:Dictionary in app.model.get("leagues",[]):
+		for club:Dictionary in league.get("rows",[]):
+			if club.id==id:return G.club_name(club)
+	for club:Dictionary in app.catalogue:
+		if club.id==id:return G.club_name(club)
+	return "Club #"+str(id)
+
+static func season_archives(app:Control) -> void:
+	app._clear_dialogs()
+	var d:=AcceptDialog.new()
+	d.name="SeasonArchives"
+	app._prepare_dialog(d,820)
+	d.title="Le carnet des saisons"
+	d.get_ok_button().text="FERMER LES ARCHIVES"
+	var content:=G.v(10)
+	d.add_child(content)
+	content.add_child(G.label("15 dernières saisons terminées · identités du pack actuel.\nRang de phase régulière conservé ; points et scores historiques non enregistrés.",12,G.MUTED))
+	var list:=G.scroll(content)
+	list.get_parent().custom_minimum_size.y=360
+	var seasons:Array=app.model.get("archives",{}).get("seasons",[]).duplicate()
+	seasons.reverse()
+	if seasons.is_empty():
+		list.add_child(G.wrap("Aucune saison archivée. Le championnat français alimente ce carnet au passage à la saison suivante. Les archives de la ligue historique à 14 ne sont pas présentées ici.",16))
+	for year:Dictionary in seasons:
+		list.add_child(G.section("SAISON "+G.n(year.season)))
+		for winner:Dictionary in year.get("champions",[]):
+			list.add_child(G.wrap("Champion %s : %s"%["Élite" if winner.leagueId=="elite" else "Accession",_archive_club(app,winner.clubId)],17,G.INK))
+		for league_id in ["elite","accession"]:
+			var ranks:Array=year.get("standings",{}).get(league_id,[])
+			var position:=ranks.find(app.model.club.id)
+			if position>=0:list.add_child(G.wrap("Votre club actuel · %s · rang %d / %d en phase régulière"%["Élite" if league_id=="elite" else "Accession",position+1,ranks.size()],14,G.accent_ink(app.accent)))
+		for pair in [["promoted","Montée(s) vers l’Élite"],["relegated","Descente(s) en Accession"]]:
+			var names:Array[String]=[]
+			for id in year.get("movement",{}).get(pair[0],[]):names.append(_archive_club(app,id))
+			list.add_child(G.wrap(pair[1]+" : "+(", ".join(names) if not names.is_empty() else "aucune"),14,G.MUTED))
+		list.add_child(G.separator())
+	d.confirmed.connect(d.queue_free)
+	d.canceled.connect(d.queue_free)
+	app.add_child(d)
+	d.popup_centered(Vector2i(820,540))
 
 static func finance(app: Control) -> Control:
 	var page := G.h(14)

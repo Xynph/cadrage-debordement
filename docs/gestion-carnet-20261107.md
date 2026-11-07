@@ -1,0 +1,33 @@
+# Gestion du carnet — réception du 7 novembre 2026
+
+Le groupe et le recrutement disposent d’une recherche par nom ou poste, insensible à la casse, aux accents précomposés ou décomposés et aux ligatures françaises. La frappe actualise les résultats sans reconstruire la saisie ni le dossier lu à droite. Le nombre de résultats, l’état vide et la réinitialisation restent visibles.
+
+L’effectif combine groupe, poste exact, disponibilité hors blessure et échéance en fin de saison ou absence de contrat professionnel. La composition continue de vérifier séparément les qualifications. Les tris par poste, nom, niveau, condition, âge, salaire et échéance ont une direction explicite et départagent les égalités par identifiant. Le recrutement propose poste, disponibilité et tri, avec une liste de **suivis de session**.
+
+Recherche, filtres, tri, joueur sélectionné, focus, caret, sélection de texte et défilements sont conservés au retour des menus ou d’un dialogue. Cet état reste uniquement en mémoire de l’interface : il n’est pas ajouté à la carrière et disparaît à la fermeture. Une nouvelle carrière, un import ou un changement de club/mode le remet à zéro. Un changement d’identité conserve les IDs ; les joueurs et pistes disparus sont retirés des sélections et du suivi. La liste de suivi n’est pas une préférence durable.
+
+Le bouton **Comparer** ouvre deux dossiers côte à côte, modifiables et retirables via les deux sélecteurs. Identité, poste, âge, niveau, condition, salaire hebdomadaire, échéance et onze attributs proviennent des projections existantes. Les notes sont sur 100, la condition en pourcentage et le salaire par semaine. Aucun indice de supériorité ni attribut nouveau n’est calculé. Deux postes différents demandent une lecture par attribut.
+
+L’offre distingue le coût immédiat d’acquisition ou la prime de prolongation, le salaire proposé, l’ajout ou l’écart hebdomadaire, la durée et la trésorerie disponible. Le récapitulatif suit les champs de saisie. L’ouverture, la modification et l’annulation n’envoient aucune décision sportive ; seule la soumission utilise les commandes existantes. Une contre-offre ou un refus ne signe pas le joueur. Aucun engagement annuel garanti n’est extrapolé.
+
+La limite actuelle de 42 joueurs reste inchangée : une carrière commune comptant déjà 61 joueurs affiche **« Effectif complet (61/42) »** sur les offres refusées. Les vraies offres de réception ont été ouvertes dans une carrière France de Valence Romans, où le moteur les autorise. Aucune disponibilité n’a été fabriquée pour les captures.
+
+## Archives
+
+**Classements → Archives des saisons** présente le `franceMode.yearbook` déjà sauvegardé, dans la limite des 15 dernières saisons terminées : champions des deux divisions, division et rang de phase régulière du club actuellement dirigé, montées et descentes réellement enregistrées. Le modèle ajoute seulement une projection par IDs. Les identités sont résolues à l’affichage dans les classements du pack de carrière courant, avant le catalogue de création de secours. Le parcours générique du module de packs conserve les nombres et les IDs ; aucune identité historique n’est écrite dans la carrière.
+
+Les points et les scores historiques ne sont pas stockés dans cette archive et ne sont pas reconstruits. La nouvelle carrière et la ligue historique à 14 affichent un état vide explicite. Le passage à la saison suivante alimente l’archive française existante ; le format des sauvegardes, les règles et les transitions ne changent pas.
+
+## Validation
+
+SDK **Windows natif Godot 4.7.2**, ressources réelles, moteur Node et profils temporaires sur E:. Les tests de frappe utilisent `Input.parse_input_event` : accents, insertion au milieu, Tab, Entrée, retour de menu avec caret et sélection de texte. Les seules émissions de signaux des anciens tests ne constituent pas la preuve clavier du nouveau parcours.
+
+Lot ciblé final : **8 tests réussis**, dont Carnet 2 430 contrôles, Bureau 318, packs 89, gestion moteur, régressions natives, archives et compatibilité des effectifs v1/v2. La réception graphique de gestion a ensuite été enrichie et revérifiée : **245 contrôles, zéro échec**, captures et métadonnées finales produites. La CI distante et la réception du ZIP complet relèvent du raccord d’intégration ; elles ne sont pas revendiquées ici. La campagne globale et les simulations longues de cinq saisons n’ont pas été relancées pour cette projection en lecture seule.
+
+Les tests d’archives importent le vrai checkpoint livré `tests/fixtures/roster-foundation-v1-s2.json.gz` : saison 1 conservée, champions IDs 12 et 28, montée 28, descente 10. L’export complet de l’état et du RNG ainsi que les octets du fichier sportif sont identiques avant et après navigation, recherche, tri, comparaison, offres annulées et lecture des archives. Le checkpoint est réimporté sans migration. Les cas nom très long, identité de champion modifiée et joueur/piste disparu sont des projections UI explicitement séparées des vrais parcours moteur.
+
+Les premiers essais rouges ont signalé : absence de recherche/archives, placeholder trop clair, motif du refus marché invisible, accent décomposé non reconnu, reconstruction du dossier pendant la frappe et perte du défilement suivant une réponse `tick`. Chaque défaut a été corrigé et revérifié. Une tentative d’optimisation du dossier a aussi produit une erreur Godot de métadonnée absente ; le journal d’erreurs a fait échouer les tests malgré leurs contrôles métier verts, puis la valeur par défaut a été corrigée. Le test Carnet historique dépendait de l’ancien nombre/ordre des filtres : ses mêmes assertions métier utilisent désormais leurs noms de contrôle.
+
+Les captures physiques **1280×800, 1440×900 et 1920×1080** couvrent effectif, comparaison, recrutement et vraie offre ; les noms longs et l’archive réelle sont aussi capturés et inspectés. Le projet étire son canvas logique minimum de 1440×900 : une comparaison initiale du rectangle logique aux pixels physiques était une erreur du harnais, pas un débordement du produit. Un fichier JSON par capture consigne les dimensions physiques, celles du canvas logique et le caractère projeté du cas. Preuves locales : `E:/Cadrage-Debordement/artefacts/session-autonome-20261107/gestion-captures/`.
+
+Limites conservées : recherches et suivis locaux à la session, filtres de disponibilité limités aux données déjà exposées, absence de points historiques, archivage français uniquement, plafond d’effectif inchangé. Aucun changement des règles de rugby, des barèmes économiques, de la base, du renderer 3D ou du stockage personnel.
