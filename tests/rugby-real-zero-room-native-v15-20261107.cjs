@@ -31,7 +31,7 @@ const zeros=Object.entries(data.players).filter(([,t])=>t[2]<=t[1]).map(([id,t])
 const zeroIDs=zeros.map(x=>x.id);
 function roster(g){
  return read(g,`S.clubs.flatMap(c=>c.players.filter(p=>p.lnrRatingsVersion===1).map(p=>({
-  id:p.id,club:c.slug||c.name,age:p.age,rating:p.rating,potential:p.dev?.potential,
+  id:p.id,club:c.slug||c.name,age:p.age,rating:p.rating,roleNote:roleNote(p),potential:p.dev?.potential,
   minutes:p.dev?.careerMinutes??0,historyCount:p.dev?.history?.length??0,
   strength:p.attributesV2?.strength,topSpeed:p.attributesV2?.topSpeed,
   decisions:p.attributesV2?.decisions,skillMean:Object.values(p.skills||{}).reduce((s,v)=>s+v,0)/11,condition:p.condition
@@ -112,9 +112,9 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
   const first=baseMap.get(id);
   const present=history.filter(p=>Number.isFinite(p.rating));
   const last=present.at(-1)||first;
-  return {id,initialAge:first.age,initialRating:first.rating,initialPotential:first.potential,
+  return {id,initialAge:first.age,initialRating:first.rating,initialRoleNote:first.roleNote,initialPotential:first.potential,
    initialSpeed:first.topSpeed,initialStrength:first.strength,initialDecisions:first.decisions,initialSkillMean:first.skillMean,
-   lastAge:last.age,lastRating:last.rating,lastPotential:last.potential,
+   lastAge:last.age,lastRating:last.rating,lastRoleNote:last.roleNote,lastPotential:last.potential,
    lastSpeed:last.topSpeed,lastStrength:last.strength,lastDecisions:last.decisions,lastSkillMean:last.skillMean,
    observations:history};
  });
@@ -124,7 +124,8 @@ test('Native LNR seasons, signed save roundtrips and player movement: longitudin
   seasonCounts:seasons,clubTransfersObserved:transfers,rosterExitsObserved:departures,
   confirmedRetirements:retirements,otherExits,uniqueExitedPlayers:exited.size,
   skillMeanDrift:profiles.filter(x=>x.lastAge>x.initialAge).map(x=>({id:x.id,ageYears:x.lastAge-x.initialAge,
-    ratingChange:x.lastRating-x.initialRating,skillMeanChange:+(x.lastSkillMean-x.initialSkillMean).toFixed(3)})),
+    ratingChange:x.lastRating-x.initialRating,roleNoteChange:x.lastRoleNote-x.initialRoleNote,
+    skillMeanChange:+(x.lastSkillMean-x.initialSkillMean).toFixed(3)})),
   diagnosticOnly:true,noDataChanges:true
  }));
 });
