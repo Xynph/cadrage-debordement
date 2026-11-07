@@ -19,7 +19,8 @@ func check(value: bool, label: String) -> void:
 
 func button(node: Node, label: String) -> Button:
 	if node is Button and node.text == label: return node
-	for child in node.get_children():
+	# AcceptDialog owns native internal buttons; they are real user controls too.
+	for child in node.get_children(true):
 		var found := button(child, label)
 		if found != null: return found
 	return null
@@ -51,11 +52,19 @@ func sports(state: Dictionary) -> String:
 	copy.erase("identityPack")
 	return JSON.stringify(copy)
 
+func import_archive(path: String) -> void:
+	press("IMPORTER UN PACK ZIP")
+	await process_frame
+	check(app.pack_manager.picker.visible, "Vrai sélecteur de fichiers ZIP ouvert")
+	check("*.zip" in str(app.pack_manager.picker.filters), "Sélecteur limité aux archives ZIP")
+	app.pack_manager.picker.file_selected.emit(path)
+	app.pack_manager.picker.hide()
+	await wait_response()
+
 func integration() -> void:
 	var archive := OS.get_environment("CD_GODOT_PACK_ARCHIVE")
 	if archive.is_empty(): return
-	app.pack_manager.inspect(archive)
-	await wait_response()
+	await import_archive(archive)
 	var preview: Dictionary = app.model.get("packs", {}).get("preview", {})
 	check(not preview.is_empty(), "Analyse réelle du ZIP fourni")
 	if preview.is_empty(): return
@@ -82,6 +91,7 @@ func integration() -> void:
 	await wait_response()
 	check(app.model.meta.database.active and int(app.model.club.id) == 23, "Vraie carrière commune créée depuis le bouton")
 	if not app._has_career(): return
+	check("30 CLUBS" in app.minibar.text and not "14 CLUBS" in app.minibar.text, "En-tête de carrière : trente clubs annoncés")
 	check(app.model.packs.career == pack_id, "Carrière hérite du pack choisi")
 	app._navigate("Effectif")
 	app.selected_player = "lnr:14090"
@@ -113,6 +123,27 @@ func integration() -> void:
 	await wait_response()
 	check(app.model.packs.career == pack_id, "Réactivation du pack en carrière")
 	await capture("pack-actif-carriere")
+	var custom_path := OS.get_environment("CD_GODOT_CUSTOM_PACK")
+	if not custom_path.is_empty():
+		await import_archive(custom_path)
+		var custom: Dictionary = app.model.packs.get("preview", {})
+		check(custom.get("name", "") == "Mon univers", "Paramètres : analyse du pack personnalisé")
+		if not custom.is_empty():
+			press("INSTALLER CE PACK")
+			await wait_response()
+			check(app.model.packs.installed.size() == 2, "Deuxième import installé depuis les paramètres")
+			check(app.model.packs.career == pack_id, "Installer un pack ne remplace pas la carrière ni son choix")
+			press("UTILISER CE PACK  →")
+			await wait_response()
+			check(app.model.packs.career == custom.id and app.model.club.name == "Agen des Rives", "Pack personnalisé appliqué par le vrai bouton")
+			app._command("export")
+			await wait_response()
+			var personalized: Dictionary = JSON.parse_string(app.model.meta.exportText)
+			check(sports(before.state) == sports(personalized.state), "Personnalisation : progression et statistiques conservées")
+			await capture("pack-personnalise")
+			press("UTILISER CE PACK  →")
+			await wait_response()
+			check(app.model.packs.career == pack_id, "Retour réel après le pack personnalisé")
 	app.pack_manager.back()
 	await process_frame
 	await capture("effectif-reel-retour")
@@ -121,7 +152,8 @@ func _run() -> void:
 	app = load("res://main.tscn").instantiate()
 	if DisplayServer.get_name() != "headless":
 		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
-		root.size = Vector2i(1440, 900)
+		var width := int(OS.get_environment("CD_GODOT_PACK_QA_WIDTH"))
+		root.size = Vector2i(1920, 1080) if width == 1920 else Vector2i(1440, 900)
 	root.add_child(app)
 	var deadline := Time.get_ticks_msec() + 15000
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame

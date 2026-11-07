@@ -61,12 +61,12 @@ def build(args):
     preset = (PROJECT / "windows-release.cfg").read_text(encoding="utf-8-sig")
     preset = preset.replace("{{RELEASE_TEMPLATE}}", template.as_posix())
     (source / "export_presets.cfg").write_text(preset, encoding="utf-8")
-    app = target / "OvalLegacy-PrototypeGodot"
+    app = target / "OvalLegacy27-PrototypeGodot"
     app.mkdir()
     env = dict(os.environ, APPDATA=str(work / "profile"), LOCALAPPDATA=str(work / "profile-local"))
     Path(env["APPDATA"]).mkdir(parents=True)
     Path(env["LOCALAPPDATA"]).mkdir(parents=True)
-    executable = app / "OvalLegacy.exe"
+    executable = app / "OvalLegacy27.exe"
     for name, tail in [("import", ["--import"]), ("export", ["--export-release", "Windows Desktop", str(executable)])]:
         cmd = [str(editor), "--headless", "--path", str(source)] + tail
         result = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -99,12 +99,12 @@ def build(args):
     shutil.copytree(ROOT / "dist/match3d/assets", licenses / "modele3d",
                     ignore=shutil.ignore_patterns("*.glb", "*.gltf", "*.bin", "*.png", "*.jpg"))
     (app / "LISEZ-MOI.txt").write_text(
-        "OVAL LEGACY — RUGBY MANAGER — PRÉALPHA 0.3\n\n"
-        "Lancer OvalLegacy.exe. Aucun navigateur, Godot ou Node à installer.\n"
+        "OVAL LEGACY 27 — RUGBY MANAGER — PRÉALPHA 0.3\n\n"
+        "Lancer OvalLegacy27.exe. Aucun navigateur, Godot ou Node à installer.\n"
         "Conserver le dossier complet avec runtime et engine. Windows x64.\n\n"
         "Nouvelle carrière : 30 clubs jouables, deux divisions reliées (14 et16).\n"
         "Base commune de1592joueurs aux identités anonymisées.\n"
-        "Rugby Réel : importer le ZIP privé depuis Packs et identités.\n"
+        "Importez un pack personnalisé depuis Packs et identités.\n"
         "Disponible à la création et dans les paramètres de carrière.\n"
         "Les packs changent les noms/images, pas les statistiques/progrès.\n"
         "Composition à23, entraînement, tactiques, recrutement et contrats.\n"
@@ -130,7 +130,7 @@ def build(args):
     with zipfile.ZipFile(modding / "Exemple-identites.zip", "w", zipfile.ZIP_DEFLATED) as example_zip:
         example_zip.writestr("pack.json", json.dumps(example, ensure_ascii=False, indent=2))
     (modding / "LIRE-MOI.txt").write_text(
-        "PACKS OVAL LEGACY\n\nCréation → Packs et identités → Importer un pack ZIP.\n"
+        "PACKS OVAL LEGACY 27\n\nCréation → Packs et identités → Importer un pack ZIP.\n"
         "En carrière : Menu → Paramètres → Packs et identités.\n"
         "Après analyse, installer puis sélectionner le pack. La base anonymisée reste disponible.\n\n"
         "Exemple-identites.zip contient un pack de noms sans images. Décompresser, modifier\n"
@@ -139,12 +139,12 @@ def build(args):
         "Pour les images PNG/JPEG/WebP, déclarer assets [{id,path,sha256,bytes}], puis\n"
         "référencer leur id dans clubs[].logo ou players[].portrait.\n"
         "players[].synthetic=true signale une illustration IA. Les chemins restent relatifs.\n"
-        "Les images réelles du mod Rugby Réel sont fournies séparément par leur pack privé.\n",
+        "Les images personnalisées sont fournies séparément dans les packs importés.\n",
         encoding="utf-8")
     files = {p.relative_to(app).as_posix(): {"sha256": digest(p), "bytes": p.stat().st_size}
              for p in sorted(app.rglob("*")) if p.is_file()}
-    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": "0.3.0", "mode": "common", "files": files}, indent=2), encoding="utf-8")
-    archive = target / "OvalLegacy-PrototypeGodot-Windows-x64.zip"
+    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": "0.3.0", "name": "Oval Legacy 27", "edition": 27, "mode": "common", "files": files}, indent=2), encoding="utf-8")
+    archive = target / "OvalLegacy27-PrototypeGodot-Windows-x64.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as out:
         for path in sorted(app.rglob("*")):
             if path.is_file():

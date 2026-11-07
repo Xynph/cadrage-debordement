@@ -58,7 +58,7 @@ func _ready() -> void:
 	add_child(timer)
 	file_dialog = FileDialog.new()
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
-	file_dialog.filters = PackedStringArray(["*.json ; Carrière Oval Legacy"])
+	file_dialog.filters = PackedStringArray(["*.json ; Carrière Oval Legacy 27"])
 	file_dialog.file_selected.connect(_file_selected)
 	add_child(file_dialog)
 	pack_manager = load("res://pack_manager.gd").new()
@@ -274,7 +274,7 @@ func _build_sidebar(parent: Node) -> void:
 	rail.add_child(margin)
 	var left := G.v(5)
 	margin.add_child(left)
-	var logo := G.button("OVAL LEGACY\nRUGBY MANAGER", pause_menu)
+	var logo := G.button("OVAL LEGACY 27\nRUGBY MANAGER", pause_menu)
 	logo.add_theme_font_override("font", G.T.DISPLAY)
 	logo.add_theme_font_size_override("font_size", 23)
 	logo.custom_minimum_size.y = 70
@@ -301,7 +301,7 @@ func _update_live_bar() -> void:
 		var teams: Array = live.get("teams", [{},{}])
 		var score: Array = live.get("score", [0,0])
 		minibar.text = "%s  %s — %s  %s   ·   %s min%s" % [G.club_abbr(teams[0]),G.n(score[0]),G.n(score[1]),G.club_abbr(teams[1]),G.n(live.get("minute",0)),"  /  PAUSE" if live.get("paused",false) else ""]
-	else: minibar.text = "ÉLITE & ACCESSION  /  CARRIÈRE FICTIVE À 30 CLUBS" if model.meta.get("mode") == "france30" else "CARRIÈRE HISTORIQUE  /  14 CLUBS"
+	else: minibar.text = "ÉLITE & ACCESSION  /  30 CLUBS" if model.meta.get("mode") in ["france30", "common"] else "CARRIÈRE HISTORIQUE  /  14 CLUBS"
 	if is_instance_valid(primary_button): primary_button.text = primary_text()
 
 func primary_text() -> String:
@@ -387,7 +387,7 @@ func settings() -> void:
 func open_file(importing: bool) -> void:
 	import_mode = importing
 	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE if importing else FileDialog.FILE_MODE_SAVE_FILE
-	file_dialog.current_file = "" if importing else "Oval-Legacy.json"
+	file_dialog.current_file = "" if importing else "Oval-Legacy-27.json"
 	file_dialog.popup_centered_ratio(0.7)
 
 func _file_selected(path: String) -> void:
@@ -458,7 +458,7 @@ func _credits() -> void:
 	_clear_dialogs()
 	var d := AcceptDialog.new()
 	_prepare_dialog(d, 760)
-	d.title = "Oval Legacy · Crédits"
+	d.title = "Oval Legacy 27 · Crédits"
 	d.dialog_text = "Photographies de territoires : auteurs, sources, licences et modifications dans Licences.\nModèle Quaternius : CC0. DM Sans et Barlow Condensed : SIL OFL.\nGodot : MIT. Node : notices incluses.\n\nBase commune de joueurs aux identités anonymisées. Capacités et finances de simulation, non officielles.\nLes images et noms des packs personnalisés restent séparés du jeu de base.\nLes portraits IA sont signalés ; l'enceinte3D est générique."
 	add_child(d)
 	d.popup_centered(Vector2i(760,260))

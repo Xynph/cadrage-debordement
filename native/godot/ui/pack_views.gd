@@ -49,7 +49,7 @@ static func page(app: Control) -> Control:
 	var installed: Array = packs.get("installed", [])
 	if installed.is_empty():
 		list.add_child(G.label("VOTRE PREMIER PACK", 22, G.INK, true))
-		list.add_child(G.wrap("Importez Rugby_Reel.zip ou un pack personnalisé. Le jeu analysera le contenu avant de vous proposer son installation.", 16))
+		list.add_child(G.wrap("Importez un pack personnalisé", 16))
 	for pack: Dictionary in installed:
 		var card := G.v(8)
 		list.add_child(card)

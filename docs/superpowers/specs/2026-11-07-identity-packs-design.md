@@ -39,3 +39,5 @@ Comparer les 1 592 profils construits aux statistiques actives du mod. Vérifier
 ## Nouveau nom choisi pendant le chantier
 Léo a explicitement retenu **Oval Legacy — Rugby Manager**. Le titre principal est Oval Legacy, le sous-titre Rugby Manager. Appliquer à l'accueil, la fenêtre Windows, la marque OL, la signalétique du stade, l'exécutable et le raccourci. Garder les identifiants internes et les lecteurs de formats de sauvegarde existants ; le dépôt GitHub et le chemin de travail E:/Cadrage-Debordement ne sont pas renommés. Pas de prétention de disponibilité juridique de la marque ; la recherche exploratoire n'est pas une validation de marque. L'interface reste française dans ce lot, traduction anglaise à planifier pour l'objectif international.
 
+
+L’édition annuelle retenue ensuite par Léo est **Oval Legacy 27 — Rugby Manager**. Le numéro27 est marketing et ne modifie pas la date d’arrêt des effectifs ni la saison simulée. La phrase d’accueil de l’import doit être exactement **« Importez un pack personnalisé »**, sans mention d’un mod particulier dans les consignes. Les noms des packs installés restent fournis par leurs propres métadonnées.
