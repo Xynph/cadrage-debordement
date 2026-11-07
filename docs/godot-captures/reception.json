@@ -2,13 +2,13 @@
   "date": "2026-11-07",
   "godot": "4.7.2.stable.official.ed1daf0bf",
   "windows_native": true,
-  "checks": 111,
+  "checks": 115,
   "resolutions": [
     "1440x900",
     "1920x1080"
   ],
-  "zip_bytes": 177718338,
-  "zip_sha256": "7a2d2d3225250b01ce41d18db9e5ab270ad516b911360918d51d8b26b1a84146",
+  "zip_bytes": 177721025,
+  "zip_sha256": "78c6ae3580fdebbd5ec2ecb5aac67e24189469b87f223f0f085e8000de6e995f",
   "processes": [
     "CadrageDebordement.exe",
     "runtime/node.exe"
@@ -23,5 +23,10 @@
     "14 clubs historiques jouables, 30 territoires consultables",
     "Enceinte et animations generiques",
     "Performances non certifiees sur iGPU"
-  ]
+  ],
+  "manifest_verified_files": 57,
+  "bundled_engine_restart": true,
+  "snapshot_preserves_disk": true,
+  "targeted_runtime_checks": 32,
+  "import_boundary_checks": 6
 }
