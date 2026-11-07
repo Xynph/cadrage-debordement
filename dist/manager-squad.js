@@ -18,11 +18,13 @@ function squadDepthReadiness(p){
 }
 function depthAt(slot){return club().players.filter(p=>slotEligible(p,slot)).sort((a,b)=>Number(!!a.injury)-Number(!!b.injury)||fitScore(b,FAMILIES[slot])-fitScore(a,FAMILIES[slot]))}
 function squadDepthSnapshot(){
+ const lineup=typeof S==='object'&&S&&Array.isArray(S.lineup)?S.lineup:[];
+ const reserves=typeof S==='object'&&S&&Array.isArray(S.reserves)?S.reserves:[];
  const cards=POS.map((label,slot)=>{
   const choices=depthAt(slot);
   const ready=choices.filter(p=>squadDepthReadiness(p).ready);
-  const assigned=choices.filter(p=>S.lineup.includes(p.id));
-  const alternatives=ready.filter(p=>!S.lineup.includes(p.id)&&!S.reserves.includes(p.id))
+  const assigned=choices.filter(p=>lineup.includes(p.id));
+  const alternatives=ready.filter(p=>!lineup.includes(p.id)&&!reserves.includes(p.id))
    .sort((a,b)=>fitScore(b,FAMILIES[slot])-fitScore(a,FAMILIES[slot])||a.name.localeCompare(b.name,'fr'));
   const tiredStarters=assigned.filter(p=>!squadDepthReadiness(p).ready);
   return {label,slot,choices,ready,assigned,alternatives,tiredStarters,
