@@ -1,10 +1,22 @@
 # Cadrage Débordement
 
-**Un jeu de management de rugby à XV, en français, actuellement en version 16.**
+**Un jeu de management de rugby à XV, en français : préalpha Windows native Godot 0.2 et version web historique.**
 
-Dirigez votre club : composez les 23, préparez votre équipe, recrutez, gérez les contrats et suivez les rencontres sur un terrain 2D accompagné de commentaires synchronisés.
+Dirigez votre club : composez les 23, préparez votre équipe, recrutez, gérez les contrats et suivez les rencontres.
 
-Ce dépôt contient le code du jeu, sa documentation et ses tests. Les sauvegardes des parties restent dans votre navigateur ; elles ne sont pas stockées sur GitHub.
+Ce dépôt contient le code du jeu, sa documentation et ses tests. Les carrières Windows restent dans un profil local indépendant de l'exécutable ; les parties web restent dans le navigateur. Aucune sauvegarde personnelle n'est stockée sur GitHub.
+
+## Préalpha Windows native Godot 0.2
+
+Le jeu dispose d'un accueil photographique, d'une création de carrière par club et de dix vues de gestion : Bureau, Effectif, Composition, Préparation, Recrutement, Finances, Club, Calendrier, Classements et Match. L'interface associe anthracite, ivoire, couleurs du club, portraits fictifs et soixante photographies des trente territoires.
+
+Les trente clubs fictifs sont jouables dans deux divisions reliées de 14 et 16 clubs. Championnats, phases finales, barrage d'accession, montées/descentes et saisons suivantes emploient les vrais effectifs générés et le moteur existant. Composition à 23, entraînement, charges individuelles, tactiques, changements et offres de contrats ont des effets réels. Une promotion de secours peut compléter une feuille, après confirmation de son coût salarial.
+
+Décompressez l'archive complète puis lancez `CadrageDebordement.exe`. Godot et Node sont embarqués : aucune installation supplémentaire ni navigateur n'est nécessaire. Le profil est conservé dans `%APPDATA%\CadrageDebordement\PrototypeGodot`. Le menu permet d'exporter, d'importer et de reprendre une ancienne carrière fictive à 14 clubs ; aucune conversion automatique en carrière à 30 clubs.
+
+La scène 3D est une enceinte générique avec caméras TV et tactique éloignées. Les identités, joueurs et finances de cette édition sont fictifs ; les photos de villes et de stades sont réelles et créditées. Le monde fermé sans Nationale et la cadence de 34 semaines sont des abstractions. Le format de compétition 2026–2027 reste distinct des lois de match historiques partiellement couvertes. La BDD Rugby Réel n'est pas chargée par ce lot natif.
+
+Le [rapport de réception Godot 0.2](docs/godot-carriere-20261107.md) précise les contrôles Windows, les limites et la construction du ZIP. Cette préalpha est une étape vers la version commerciale ; aucune publication Steam n'est annoncée.
 
 ## Vous découvrez GitHub ?
 
@@ -21,7 +33,7 @@ Commencez par le [guide GitHub en français](docs/guide-github.md). Vous n’ave
 
 Les noms de fichiers, commandes et identifiants techniques restent identiques pour préserver les liens et le fonctionnement du projet. La documentation est rédigée en français.
 
-## Ce que propose la version actuelle
+## Fonctions de la version web historique
 
 - **Bureau du manager** : calendrier, messages, décisions et échéances du club.
 - **Effectif** : tableau triable, comparaison de joueurs, couverture des postes et feuille à 23.
@@ -34,7 +46,7 @@ Les noms de fichiers, commandes et identifiants techniques restent identiques po
 - **Carrière** : championnat, phases finales simplifiées, finances, contrats, formation, progression et retraite.
 - **Sauvegardes** : enregistrement local, export et import de la carrière.
 
-## Application Windows hors ligne
+## Ancien lanceur portable hors ligne
 
 Une version portable est maintenant prévue pour Windows 10/11 x64. Décompressez
 l’archive de livraison puis ouvrez `CadrageDebordement.exe`. Le jeu et les polices
@@ -52,7 +64,7 @@ et la fermeture ont été vérifiés avec le lanceur natif Linux et le navigateu
 
 ## Repères techniques
 
-Le jeu fonctionne dans le navigateur, sans étape de compilation. Le point d’entrée est `dist/index.html`.
+La version web fonctionne dans le navigateur, sans étape de compilation ; son point d'entrée est `dist/index.html`. Le projet Windows natif se trouve dans `native/godot/project.godot` et son export autonome est produit par `scripts/build-godot-prototype.py` avec un SDK Windows Godot explicite. Le moteur JavaScript partagé communique avec Godot par un processus Node embarqué et des pipes privés.
 
 Les modules principaux sont `dist/rugby.js` pour les attributs et la simulation, `dist/economy.js` pour les contrats et transferts, `dist/game.js` pour la carrière et l’interface, et `dist/style.css` pour la présentation. Les autres fichiers de `dist/` complètent les règles, les tactiques et la gestion.
 

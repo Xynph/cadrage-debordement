@@ -48,3 +48,13 @@ Pour l’instant, aucun vrai joueur ni budget réel n’a été ajouté. Les rap
 adverses utilisent les données de la carrière ouverte ; ils continueront ainsi à
 refléter ses transferts, sa progression et son calendrier, plutôt qu’une base
 extérieure qui évoluerait indépendamment de la partie.
+
+## Édition native fictive à trente clubs — 7 novembre 2026
+
+Le catalogue `dist/france-clubs.js` fournit trente identités de jeu originales, liées à des territoires réels. Il sert à créer une carrière `france30`, répartie en deux divisions fictives de 14 et 16 clubs. Les divisions initiales appartiennent à ce catalogue ; elles ne constituent pas une publication des effectifs ou de la situation officielle d'une saison réelle.
+
+Joueurs, compétences, contrats, objectifs et trésoreries sont générés ou calculés par le moteur fictif. Les salaires affichés sont hebdomadaires ; la saison France emploie 34 semaines comptables. Une promotion de secours humaine coûte 2 500 € par semaine et par joueur, après confirmation ; les renforts IA ont leurs contrats natifs propres. Aucun de ces montants ne représente le budget d'un club réel.
+
+Les soixante photos de villes/stades sont des archives réelles dont les auteurs, pages sources, licences et transformations sont conservés dans `club-atlas-credits.md` et le manifeste de l'atlas, également embarqués dans le ZIP. Les portraits de cette édition sont fictifs, générés par IA et explicitement légendés. Les blasons sont des créations de présentation du jeu. Aucun asset du skin Golden Boy n'est redistribué par cet export.
+
+Ce lot ne charge ni ne modifie la BDD Rugby Réel, ses identités, postes ou calibrations en cours chez l'autre producteur. Le worker natif accepte les carrières fictives historiques à 14 clubs et les nouvelles France30 ; l'import LNR n'est pas annoncé comme disponible dans cette édition. Les constats BDD de la PR389 restent un chantier distinct.
