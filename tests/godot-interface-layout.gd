@@ -49,10 +49,10 @@ func click_at(control:Control, fraction:float) -> void:
 	await settle()
 func run() -> void:
 	var initial:=int(OS.get_environment("CD_LAYOUT_INITIAL"))
-	root.size=Vector2i(1920,1080) if initial==1920 else (Vector2i(1600,900) if initial==1600 else Vector2i(1280,720))
+	root.size=Vector2i(2560,1440) if initial==2560 else (Vector2i(1920,1080) if initial==1920 else (Vector2i(1600,900) if initial==1600 else Vector2i(1280,720)))
 	DisplayServer.window_set_size(root.size)
 	app=load("res://main.tscn").instantiate();root.add_child(app);await worker()
-	check(root.content_scale_size==(Vector2i(1280,720) if initial not in [1600,1920] else Vector2i(1600,900)),"Référence physique correcte au démarrage")
+	check(root.content_scale_size==Vector2i(mini(root.size.x,1920),mini(root.size.y,1080)),"Référence physique correcte au démarrage")
 	await command("import",{"text":FileAccess.get_file_as_string(proof.path_join("career.json"))})
 	app._navigate("Composition");await settle();app.coach.close()
 	await command("export")
@@ -65,9 +65,9 @@ func run() -> void:
 	app._navigate("Composition");await settle();app.coach.close()
 	var original:Control=app.root_content
 	var guide_before:Dictionary=app.coach.profile.data.duplicate(true)
-	for resolution in [Vector2i(1920,1080),Vector2i(1280,720),Vector2i(1600,900),Vector2i(1600,720),Vector2i(1280,720)]:
+	for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720),Vector2i(1600,900),Vector2i(1600,720),Vector2i(1280,720)]:
 		await resize_to(resolution)
-		var expected:Vector2i=Vector2i(1600,900) if resolution.y>900 else resolution
+		var expected:=Vector2i(mini(resolution.x,1920),mini(resolution.y,1080))
 		check(root.content_scale_size==expected,"Référence physique "+str(resolution))
 		check(app.root_content==original,"Resize conserve les instances "+str(resolution))
 		for i in 15:

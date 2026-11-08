@@ -34,7 +34,8 @@ func run() -> void:
 				recorded += 1
 				check(speech.has_recording(str(fragment.text)), "Clip livré pour le texte exact " + str(fragment.id))
 				if first_recorded.is_empty(): first_recorded = str(fragment.text)
-	check(count_fragments == 74 and recorded == 38 and pending == 36 and speech.clips.size() == recorded, "Couverture mesurée : 38 enregistrements exacts, 36 textes en attente")
+	check(count_fragments == 74 and recorded == 15 and pending == 59 and speech.clips.size() == recorded, "Couverture après réécriture : 15 anciens textes exacts, 59 nouvelles prises attendues")
+	check(not speech.has_recording("La base anonymisée permet de jouer tout de suite. Et si tu remplaces une carrière, lis bien la confirmation : on ne range pas une histoire sans savoir où on la met."), "Une ancienne prise exclue ne reste pas disponible dans le lecteur")
 	check(speech.status_text.contains("Gabi") and not speech.status_text.contains("Mode texte"), "Disponibilité de la voix enregistrée annoncée correctement")
 	speech.volume = 0; speech.speak(first_recorded)
 	check(speech.player.playing and speech.player.stream.get_length() > 0.5, "Vrai clip Gabi livré effectivement lu")

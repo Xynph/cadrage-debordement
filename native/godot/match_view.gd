@@ -7,6 +7,7 @@ const ATHLETE := "res://assets/match3d/quaternius-rugby-athlete.glb"
 const BLEND_SECONDS := 0.55
 const STADIUM_FONT := "res://fonts/BarlowCondensed-SemiBold.ttf"
 const Presentation = preload("res://match_presentation.gd")
+const Motion = preload("res://match_motion.gd")
 const Kit = preload("res://match_kit.gd")
 var _players: Node3D
 var _ball: Node3D
@@ -20,8 +21,8 @@ var _camera_focus := Vector3.ZERO
 var _camera_framed := false
 var _camera_cut := true
 var _ball_from := Vector3.ZERO
+var _ball_from_basis := Basis.IDENTITY
 var _ball_target := Vector3.ZERO
-var _blend := 1.0
 var _camera_mode := "tv"
 var _paused := false
 var _pending: Dictionary = {}
@@ -32,6 +33,9 @@ var _kind := ""
 var _quality := "balanced"
 var _sun: DirectionalLight3D
 var _ball_marker: Node3D
+var _ball_attached := false
+var _ball_travel := 1.0
+var _grass: ShaderMaterial
 
 
 func _ready() -> void:
@@ -73,6 +77,7 @@ func apply_frame(live: Dictionary) -> void:
 		return
 	var ball_data: Dictionary = scene.get("ball", {})
 	var has_ball := ball_data.has("x") and ball_data.has("y")
+	var previous_carrier := _carrier_id
 	_carrier_id = Presentation.carrier_id(scene) if has_ball else ""
 	_kind = str(scene.get("kind", ""))
 	var teams: Array = live.get("teams", [])
@@ -103,8 +108,20 @@ func apply_frame(live: Dictionary) -> void:
 			_actors[id] = _make_actor(id, side, target)
 		var entry: Dictionary = _actors[id]
 		entry.holding = id == _carrier_id
-		entry.from = entry.node.position
-		entry.target = target
+		# A UI refresh is not a new sporting movement. Keep its current curve.
+		if not (entry.target as Vector3).is_equal_approx(target):
+			entry.from = entry.node.position
+			entry.target = target
+			entry.tangent = Motion.tangent(entry.velocity, target - entry.node.position, BLEND_SECONDS)
+			entry.elapsed = 0.0
+		if _paused:
+			entry.node.position = target
+			entry.from = target
+			entry.velocity = Vector3.ZERO
+			entry.tangent = Vector3.ZERO
+			entry.elapsed = BLEND_SECONDS
+			entry.feet.clear()
+			entry.grip = 1.0 if entry.holding else 0.0
 		if entry.side != side:
 			entry.side = side
 			_recolor(entry.model, side)
@@ -115,16 +132,25 @@ func apply_frame(live: Dictionary) -> void:
 			actor.queue_free()
 			_actors.erase(id)
 	if has_ball:
+		var next_target := _world(ball_data, 0.23)
+		var ball_changed := not _ball_target.is_equal_approx(next_target) or previous_carrier != _carrier_id
 		if not _ball.visible:
 			_camera_cut = true
-		_ball_from = _ball.position if _ball.visible else _world(ball_data, 0.23)
-		_ball_target = _world(ball_data, 0.23)
-		_ball.position = _ball_from
+		# The first snapshot is a pose, not an invented pass from ground level.
+		_ball_attached = not _carrier_id.is_empty() and (not _ball.visible or _paused or (previous_carrier == _carrier_id and _ball_attached))
+		var continuing_reception := not _carrier_id.is_empty() and previous_carrier == _carrier_id and not _ball_attached
+		if (ball_changed and not continuing_reception) or not _ball.visible:
+			_ball_from = _ball.position if _ball.visible else next_target
+			_ball_from_basis = _ball.global_basis
+			_ball_target = next_target
+			_ball_travel = 1.0 if _paused else 0.0
+		if _paused:
+			_ball_travel = 1.0
 		_ball.visible = true
 	else:
 		_ball.visible = false
+		_ball_attached = false
 		_camera_cut = true
-	_blend = 0.0
 
 
 func set_camera(mode: String) -> void:
@@ -136,43 +162,73 @@ func set_camera(mode: String) -> void:
 
 
 func _process(delta: float) -> void:
-	_blend = minf(1.0, _blend + delta / BLEND_SECONDS)
 	for entry: Dictionary in _actors.values():
 		var actor: Node3D = entry.node
 		var previous := actor.position
-		actor.position = (entry.from as Vector3).lerp(entry.target, _blend)
+		entry.elapsed = minf(BLEND_SECONDS, float(entry.elapsed) + delta)
+		var progress: float = entry.elapsed / BLEND_SECONDS
+		actor.position = Motion.position_at(entry.from, entry.target, entry.tangent, progress)
+		entry.velocity = Motion.velocity_at(entry.from, entry.target, entry.tangent, progress, BLEND_SECONDS)
 		var movement := actor.position - previous
-		var moving := movement.length_squared() > 0.00001 and not _paused
+		var speed := movement.length() / maxf(delta, 0.001)
+		var moving := speed > 0.035 and not _paused
+		var previous_heading := actor.rotation.y
 		if moving:
-			actor.rotation.y = lerp_angle(actor.rotation.y, atan2(movement.x, movement.z), minf(delta * 9.0, 1.0))
+			var change := angle_difference(actor.rotation.y, atan2(movement.x, movement.z))
+			actor.rotation.y += clampf(change, -7.2 * delta, 7.2 * delta)
 		var animation: AnimationPlayer = entry.animation
 		if animation:
-			var speed := movement.length() / maxf(delta, 0.001)
-			var clip: StringName = (entry.walk if speed < 2.5 else entry.run) if moving else entry.idle
+			# Hysteresis avoids changing support on every small speed fluctuation.
+			entry.running = speed > (2.5 if entry.running else 3.3) if moving else false
+			var clip: StringName = (entry.run if entry.running else entry.walk) if moving else entry.idle
 			if not clip.is_empty() and animation.current_animation != clip:
 				animation.play(clip, 0.18)
 			# Frame-owned animation prevents an AnimationPlayer update from overwriting
 			# the hand contact after the pose solver has run.
-			animation.speed_scale = clampf(speed / (1.5 if clip == entry.walk else 4.0), 0.65, 1.65) if moving else 1.0
-			animation.advance(0.0 if _paused else delta)
+			animation.speed_scale = 1.0
+			# Advance by travelled distance; no minimum cadence while the root creeps.
+			var pose_delta := movement.length() / (1.6 if clip == entry.walk else 4.0) if moving else delta
+			animation.advance(0.0 if _paused else pose_delta)
+		if entry.rig and not _paused:
+			Presentation.support_feet(actor, entry.rig, entry.feet, speed, angle_difference(previous_heading, actor.rotation.y))
+	_update_ball(delta)
+	# Resolve upper-body contact after every source-animation update and after the
+	# ball's continuous trajectory. A new receiver never pulls it across the pitch.
+	for entry: Dictionary in _actors.values():
+		var actor: Node3D = entry.node
 		var rig: Skeleton3D = entry.rig
-		entry.grip = move_toward(float(entry.grip), 1.0 if entry.holding else 0.0, delta * 6.0)
+		var center := Presentation.ball_anchor(actor, rig) if rig else Vector3.ZERO
+		var approaching: bool = entry.holding and _ball.visible and center.distance_to(_ball.global_position) < 0.38
+		var can_grip: bool = entry.holding and (_ball_attached or approaching)
+		entry.grip = move_toward(float(entry.grip), 1.0 if can_grip else 0.0, delta * 6.0)
 		if rig and entry.grip > 0.0:
-			var center: Vector3 = Presentation.ball_anchor(actor, rig)
+			if approaching and not _ball_attached:
+				center = _ball.global_position
 			Presentation.hold_ball(actor, rig, center, entry.grip)
-			if entry.holding:
-				_ball.global_position = center
-				_ball.global_basis = actor.global_basis
 	if _ball.visible:
-		if _carrier_id.is_empty() or not _actors.has(_carrier_id):
-			_ball.position = _ball_from.lerp(_ball_target, _blend)
-			# Only the existing kick kinds receive a visual flight arc.
-			if _kind in ["kick", "goal", "miss", "kickoff", "drop22", "goalLine"]:
-				_ball.position.y += sin(_blend * PI) * minf(6.0, _ball_from.distance_to(_ball_target) * 0.18)
 		_ball_marker.global_position = Vector3(_ball.global_position.x, 0.028, _ball.global_position.z)
 		_ball_marker.global_basis = Basis.IDENTITY
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
+
+
+func _update_ball(delta: float) -> void:
+	if not _ball.visible:
+		return
+	_ball_travel = minf(1.0, _ball_travel + delta / BLEND_SECONDS)
+	if not _carrier_id.is_empty() and _actors.has(_carrier_id) and _actors[_carrier_id].rig:
+		var entry: Dictionary = _actors[_carrier_id]
+		var anchor := Presentation.ball_anchor(entry.node, entry.rig)
+		if _ball_travel >= 1.0:
+			_ball_attached = true
+		_ball.global_position = anchor if _ball_attached else _ball_from.lerp(anchor, _ball_travel)
+		_ball.global_basis = entry.node.global_basis if _ball_attached else _ball_from_basis.slerp(entry.node.global_basis, _ball_travel)
+	else:
+		_ball_attached = false
+		_ball.position = _ball_from.lerp(_ball_target, _ball_travel)
+		# Only existing kick kinds receive an airborne arc; no inferred pass kind.
+		if _kind in ["kick", "goal", "miss", "kickoff", "drop22", "goalLine"]:
+			_ball.position.y += sin(_ball_travel * PI) * minf(6.0, _ball_from.distance_to(_ball_target) * 0.18)
 
 
 func set_quality(profile: String) -> void:
@@ -183,6 +239,8 @@ func set_quality(profile: String) -> void:
 	get_viewport().mesh_lod_threshold = {"economy": 4.0, "balanced": 2.0, "detail": 1.0}[_quality]
 	if is_instance_valid(_sun):
 		_sun.shadow_enabled = _quality != "economy"
+	if _grass:
+		_grass.set_shader_parameter("micro_detail", {"economy": 0.0, "balanced": 0.1, "detail": 0.16}[_quality])
 
 
 func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
@@ -231,6 +289,7 @@ func _clear_presence() -> void:
 	_actors.clear()
 	_ball.visible = false
 	_carrier_id = ""
+	_ball_attached = false
 	_camera_cut = true
 	_fit_camera(0.0, true)
 
@@ -282,6 +341,8 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 		if not idle.is_empty():
 			animation.play(idle)
 	return {"node": actor, "model": model, "side": side, "from": target, "target": target,
+		"elapsed": BLEND_SECONDS, "velocity": Vector3.ZERO, "tangent": Vector3.ZERO, "running": false,
+		"feet": {},
 		"animation": animation, "idle": idle, "run": run, "walk": walk, "rig": Presentation.rig_for(model), "holding": false, "grip": 0.0}
 
 
@@ -327,6 +388,9 @@ func _recolor(model: Node3D, side: int) -> void:
 					"Shirt2": material.albedo_color = _kits[side].detail
 					"Pants": material.albedo_color = Color("202b35") if side == 0 else Color("ede9dc")
 					"Socks": material.albedo_color = _kits[side].shirt
+					"Skin": material.roughness = 0.78
+					"Shoes": material.roughness = 0.72
+					"Eyes": material.roughness = 0.58
 				_materials[key] = material
 			mesh.set_surface_override_material(surface, _materials[key])
 
@@ -344,8 +408,8 @@ func _build_environment() -> void:
 	sky.sky_material = sky_material
 	settings.sky = sky
 	settings.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	settings.ambient_light_color = Color("c4cdd0")
-	settings.ambient_light_energy = 0.52
+	settings.ambient_light_color = Color("c6cfd1")
+	settings.ambient_light_energy = 0.43
 	settings.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	environment.environment = settings
 	add_child(environment)
@@ -353,13 +417,13 @@ func _build_environment() -> void:
 	_sun = sun
 	# Neutral art lighting, not an assertion about the match's time or weather.
 	sun.rotation_degrees = Vector3(-57, -24, 0)
-	sun.light_color = Color("fff4e2")
-	sun.light_energy = 0.78
+	sun.light_color = Color("fff6e9")
+	sun.light_energy = 0.92
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 230
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
 	sun.shadow_bias = 0.035
-	sun.shadow_normal_bias = 0.2
+	sun.shadow_normal_bias = 0.14
 	add_child(sun)
 
 
@@ -392,6 +456,7 @@ func _build_ground() -> void:
 	_box(Vector3(118, 0.1, 80), Vector3(0, -0.09, 0), _material(Color("284c31"))).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	# One original shader, no external texture or time-dependent grass noise.
 	var grass := ShaderMaterial.new()
+	_grass = grass
 	grass.shader = load("res://shaders/stadium_surface.gdshader") as Shader
 	_box(Vector3(110, 0.12, 70), Vector3(0, -0.07, 0), grass).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var paint := _material(Color("efefdf"))

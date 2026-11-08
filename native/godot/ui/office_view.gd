@@ -8,6 +8,46 @@ const MUTED = Color("746d63")
 const CHARCOAL = Color("191b1c")
 const RULE = Color("d5caba")
 
+# At 720p the decisions and sporting cap share one readable sheet. Reparenting
+# preserves all controls, local scroll state and keyboard focus during resize.
+class OfficeColumns extends HBoxContainer:
+	var decisions_sheet: Control
+	var main_sheet: Control
+	var sport_sheet: Control
+	var decisions_content: Control
+	var sport_scroll: ScrollContainer
+	var sport_content: Control
+	var sport_owner: Control
+	var expanded_sport_offset := 0
+	var compact := false
+	func _ready() -> void:
+		resized.connect(_adapt)
+		_adapt.call_deferred()
+	func _adapt() -> void:
+		if not is_inside_tree() or is_queued_for_deletion(): return
+		var next_compact := size.x < 1150
+		if next_compact == compact: return
+		compact = next_compact
+		var focus := get_viewport().gui_get_focus_owner()
+		var keep_focus := is_instance_valid(focus) and sport_content.is_ancestor_of(focus)
+		if compact:
+			expanded_sport_offset = sport_scroll.scroll_vertical
+			sport_scroll.reparent(decisions_content, false)
+			sport_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+			sport_scroll.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+			var journal := decisions_content.find_child("OfficeJournal", false, false)
+			if journal != null: decisions_content.move_child(sport_scroll, journal.get_index())
+			sport_sheet.hide()
+		else:
+			sport_scroll.reparent(sport_owner, false)
+			sport_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+			sport_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			sport_sheet.show()
+			if not keep_focus: sport_scroll.set_deferred("scroll_vertical", expanded_sport_offset)
+		decisions_sheet.size_flags_stretch_ratio = 1.05 if compact else .98
+		main_sheet.size_flags_stretch_ratio = 1.70 if compact else 1.72
+		if keep_focus: focus.grab_focus()
+
 static func _text(value: Variant, size: int = 14, color: Color = INK, title: bool = false) -> Label:
 	var label := G.wrap(value, size, color)
 	if title: label.add_theme_font_override("font", G.T.DISPLAY)
@@ -110,6 +150,9 @@ static func _journal(parent: Node, app: Control) -> void:
 static func _decisions(parent: Node, app: Control) -> void:
 	parent.name = "OfficeDecisions"
 	_heading(parent, "01", "À décider", app.accent)
+	var notebook := _link("Mon carnet personnel", func(): preload("res://ui/coach_notes_view.gd").open(app,"career"), app.accent)
+	notebook.name = "OpenCoachNotebook"
+	parent.add_child(notebook)
 	_line(parent)
 	var model: Dictionary = app.model
 	var contracts: Array = []
@@ -118,7 +161,7 @@ static func _decisions(parent: Node, app: Control) -> void:
 			contracts.append(p)
 	if not contracts.is_empty():
 		var first: Dictionary = contracts[0]
-		_decision(parent, "%d contrat%s à préparer" % [contracts.size(), "s" if contracts.size() > 1 else ""], "Échéances d’ici la saison %s. Consultez les contrats et les possibilités de prolongation." % G.n(int(model.meta.get("season", 1)) + 1), func(): _player(app, str(first.id)), app.accent, "OfficeContracts")
+		_decision(parent, "%d contrat%s" % [contracts.size(), "s" if contracts.size() > 1 else ""], "Échéances d’ici la saison %s. Consultez les contrats et les possibilités de prolongation." % G.n(int(model.meta.get("season", 1)) + 1), func(): _player(app, str(first.id)), app.accent, "OfficeContracts")
 	var selection: Dictionary = model.get("selection", {})
 	var vacant := 0
 	for slot: Dictionary in selection.get("slots", []):
@@ -141,7 +184,7 @@ static func _decisions(parent: Node, app: Control) -> void:
 	_journal(parent, app)
 
 static func _summary(parent: Node, app: Control) -> void:
-	var row := G.h(16)
+	var row := G.h(8)
 	row.name = "OfficeSummary"
 	parent.add_child(row)
 	var club := G.h(8)
@@ -159,10 +202,18 @@ static func _summary(parent: Node, app: Control) -> void:
 		if float(player.get("injury", 0)) > 0: injured += 1
 	var rank := G.n(app.model.club.get("rank", "—"))
 	var place := "—" if rank == "—" else rank + ("er" if rank == "1" else "e")
-	for pair in [["%s / %s pts" % [place, G.n(app.model.club.get("points", 0))], "Classement"], ["%d %%" % (total / maxf(1, squad.size())), "Condition du groupe"], [str(injured), "Blessés"], [G.n(app.model.meta.get("trust", "—")) + " %", "Confiance"], [G.euros(app.model.get("finance", {}).get("cash", app.model.club.get("cash", 0))), "Trésorerie fictive"]]:
+	for pair in [["%s / %s pts" % [place, G.n(app.model.club.get("points", 0))], "Classement"], ["%d %%" % (total / maxf(1, squad.size())), "Condition du groupe"], [str(injured), "Blessés"], [G.n(app.model.meta.get("trust", "—")) + " %", "Confiance"], [G.euros(app.model.get("finance", {}).get("cash", app.model.club.get("cash", 0))), "Trésorerie"]]:
+		var tile := PanelContainer.new()
+		tile.name = "OfficeSummaryTile%d" % row.get_child_count()
+		G.fill(tile)
+		var style := G.T.box(Color("252928"), 3, Color("424942"))
+		style.content_margin_left = 9; style.content_margin_right = 9
+		style.content_margin_top = 7; style.content_margin_bottom = 7
+		tile.add_theme_stylebox_override("panel", style)
+		row.add_child(tile)
 		var box := G.v(0)
 		G.fill(box)
-		row.add_child(box)
+		tile.add_child(box)
 		box.add_child(_text(pair[0], 23, G.INK, true))
 		box.add_child(_text(pair[1], 12, G.MUTED))
 
@@ -396,7 +447,6 @@ static func _means(parent: Node, app: Control) -> void:
 		row.add_child(metric)
 		metric.add_child(G.label(pair[0], 20, G.INK, true))
 		metric.add_child(_text(pair[1], 12, G.MUTED))
-	box.add_child(_text("Montants fictifs de votre carrière.", 12, G.MUTED))
 	var button := _link("Voir les finances  →", func(): _navigate(app, "Finances"), app.accent, false)
 	button.name = "OfficeFinanceAction"
 	box.add_child(button)
@@ -426,15 +476,18 @@ static func build(app: Control) -> Control:
 	G.fill(page, true)
 	_summary(page, app)
 	_line(page, false)
-	var columns := G.h(12)
+	var columns := OfficeColumns.new()
+	columns.name = "OfficeColumns"
+	columns.add_theme_constant_override("separation", 12)
 	G.fill(columns, true)
 	page.add_child(columns)
 	var journal := _panel(columns, PAPER, 16)
-	journal.get_parent().size_flags_stretch_ratio = .85
+	journal.get_parent().size_flags_stretch_ratio = .98
+	journal.get_parent().custom_minimum_size.x = 312
 	var journal_body := _scroll(journal)
 	_decisions(journal_body, app)
 	var center := G.v(10)
-	G.fill(center, true, 1.88)
+	G.fill(center, true, 1.72)
 	columns.add_child(center)
 	var center_body := _scroll(center)
 	_fixture(center_body, app)
@@ -442,11 +495,18 @@ static func build(app: Control) -> Control:
 	_group(center_body, app)
 	_results(center_body, app)
 	var sport := _panel(columns, PAPER, 14)
-	sport.get_parent().size_flags_stretch_ratio = 1.07
+	sport.get_parent().size_flags_stretch_ratio = 1.15
 	var sport_body := _scroll(sport)
 	sport_body.add_theme_constant_override("separation", 7)
 	_table(sport_body, app)
 	_line(sport_body)
 	_means(sport_body, app)
 	_preparation(sport_body, app)
+	columns.decisions_sheet = journal.get_parent()
+	columns.main_sheet = center
+	columns.sport_sheet = sport.get_parent()
+	columns.decisions_content = journal_body
+	columns.sport_scroll = sport_body.get_parent()
+	columns.sport_content = sport_body
+	columns.sport_owner = sport
 	return page

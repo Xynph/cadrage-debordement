@@ -10,6 +10,16 @@ Deux campagnes appariées complètes conservent 34 semaines, 30 rencontres et ne
 
 Les mesures proviennent de copies Windows isolées ; elles ne prouvent pas la réussite de la nouvelle CI Linux ni celle du futur paquet. La dernière tête de la PR398, le gate et les sept jobs post-fusion restent à recevoir. La publication utilise finalement un commit normal après gel de l'UI et changement de branche, sans index temporaire. Aucun fichier UI, BDD, règlement ou workflow modifié dans ce lot. Voir [les preuves et limites](docs/native06-performance-20261108.md).
 
+## 8 novembre 2026 — lot natif 0.6 en réception
+
+Source sur `feature/qualite-native06-20261108`, avant publication et réception du nouvel EXE. Typographie commune réduite, référence adaptative1920×1080, Bureau compact, listes paginées et sous-onglets. Réception de disposition293/0 sur plusieurs tailles ; garde de teardown du Bureau reproduite puis corrigée. Paramètres Confort/Son/Affichage, volumes interface/stade, sons procéduraux originaux et boutons carnet raccordés :208/0 en intégration. Ces preuves ne remplacent pas la réception visuelle Windows ni l'écoute du mix.
+
+Presse : relances issues des citations réellement archivées, cinq tons conservés. Recrutement : avis contextualisés et réserves explicites, sans accès aux attributs cachés. Carnet : notes Unicode avec identifiants de contexte et reçus explicites, conservation lors des imports/packs, refus d'écriture visible et brouillon conservé. Format optionnel strict, limites génériques inchangées ; tests ciblés worker/import/export/pack et revue indépendante favorables. Aucun changement des1 592profils ni des lois.
+
+Match : transitions continues et appuis corrigés, revue favorable et captures graphiques sur RTX4080SUPER. Le contact à deux corps reste partiel ; aucun plaquage inventé depuis les snapshots. Six WAV originaux et préférences sonores séparées de la carrière reçus sous pilote Dummy ; écoute réelle et paquet exporté encore à recevoir. Les coûts présentés avant décision viennent du moteur ; aucune nouvelle formule économique.
+
+Gabi : personnalité originale enrichie et74fragments réécrits pour l'immersion. Léo approuve l'essai privé ElevenLabs ; le souvenir de filets est remplacé par un bénévole qui installait les protections des poteaux. Aucun fichier ElevenLabs Free dans la distribution. Quinze anciens enregistrements restent textuellement exacts,59fragments sont déclarés en attente ; manifeste historique38prises conservé avec empreintes, validateur strict inchangé. La nouvelle interprétation complète n'est pas produite. Voir les rapports native06 liés dans le README.
+
 ## 8 novembre 2026 — coût de validation et empreintes des sauvegardes
 
 La CI post-fusion de la PR397, sur le main `6c38020a`, a réellement échoué : les campagnes `native-academy-integrated-long` et `native-club-support-season` atteignent chacune180secondes, alors que la CI de la tête PR était verte. Aucune installation supplémentaire n'est déclarée totalement reçue à ce stade.

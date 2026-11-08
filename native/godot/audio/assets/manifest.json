@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "origin": "Synthèse procédurale originale locale — Oval Legacy 27",
+  "generator": "scripts/build-native-sounds.cjs",
+  "generator_sha256": "bd1319a92503dcd4052e55f07f874fb630216e422200759749a4071cb01ad331",
+  "recordings": false,
+  "third_party_assets": false,
+  "voices": false,
+  "music": false,
+  "sample_rate": 24000,
+  "format": "PCM 16-bit little-endian",
+  "sounds": [
+    {
+      "file": "ui-tap.wav",
+      "bytes": 3164,
+      "channels": 1,
+      "duration_seconds": 0.065,
+      "sha256": "e473b39c14df83b5fffc2d9e6d767e3f2bfd5b95fa6161825e4d8e4f6fda0c3b"
+    },
+    {
+      "file": "ui-error.wav",
+      "bytes": 7004,
+      "channels": 1,
+      "duration_seconds": 0.145,
+      "sha256": "ce68674724c14e954c6fa90782b4db5d94e4c2a16218656161988702480d7958"
+    },
+    {
+      "file": "stadium-bed.wav",
+      "bytes": 768044,
+      "channels": 2,
+      "duration_seconds": 8,
+      "sha256": "12154e8d70b6fc7475aee4557b589061f824a2f9099910efc82e5afea04fbb0c"
+    },
+    {
+      "file": "stadium-try.wav",
+      "bytes": 148844,
+      "channels": 2,
+      "duration_seconds": 1.55,
+      "sha256": "178999973a8a8f1a9faafb739528b79a26d60f8aba7abade351331cc319b429e"
+    },
+    {
+      "file": "stadium-goal.wav",
+      "bytes": 100844,
+      "channels": 2,
+      "duration_seconds": 1.05,
+      "sha256": "ce86ba09fd297b3cec5846d1bb8c40ab03438269ccba2a28fddce505dc6f2074"
+    },
+    {
+      "file": "stadium-miss.wav",
+      "bytes": 67244,
+      "channels": 2,
+      "duration_seconds": 0.7,
+      "sha256": "ffbd067193e1dce5a7e3b747f56dde4d208969988b6ff508bdb9c209455e461e"
+    }
+  ]
+}

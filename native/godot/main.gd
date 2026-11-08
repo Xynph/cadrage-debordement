@@ -66,6 +66,9 @@ var match_finish: Button
 var primary_button: Button
 var pack_manager: Node
 var coach: Control
+var soundscape: Node
+var soundscape_ready := false
+var sound_profile_loaded := false
 var navigation_controller: Node
 var user_preferences: RefCounted
 var decision_feedback: RefCounted
@@ -116,6 +119,13 @@ func _ready() -> void:
 		add_child(coach)
 		coach.reserved_height_changed.connect(_reserve_coach_space)
 		coach.setup(self)
+	soundscape = preload("res://audio/soundscape.gd").new()
+	add_child(soundscape)
+	soundscape.error_changed.connect(_sound_error)
+	soundscape_ready = soundscape.setup(self)
+	if is_instance_valid(coach) and is_instance_valid(coach.speech):
+		coach.speech.speaking_changed.connect(soundscape.set_voice_active)
+		soundscape.set_voice_active(coach.speech.speaking)
 	resized.connect(func(): call_deferred("_layout_coach"))
 	_render()
 	bridge.start(_profile_path())
@@ -138,12 +148,16 @@ func _live() -> Dictionary:
 	return model.live if model.get("live") is Dictionary else {}
 
 func _receive_model(value: Dictionary) -> void:
+	# A queued action can replace last_command below; keep this response's identity.
+	var received_command := last_command
+	var response_ok: bool = bridge.last_response_ok
 	SquadViews.U.remember(self)
 	model = value
-	if decision_feedback != null: decision_feedback.complete(last_command, bridge.last_response_ok, model)
+	if decision_feedback != null: decision_feedback.complete(received_command, response_ok, model)
 	if not preferences_loaded and not str(model.get("meta", {}).get("dataDir", "")).is_empty():
 		preferences_loaded = true
 		user_preferences.load_profile(str(model.meta.dataDir))
+		if soundscape_ready: sound_profile_loaded = soundscape.load_profile(str(model.meta.dataDir))
 		_apply_user_preferences()
 	SquadViews.U.sync(self, bridge.last_response_ok and last_command in ["new_career","import","recover_profile"])
 	if bridge.last_response_ok and last_command in ["new_career","import","recover_profile"]:
@@ -155,7 +169,9 @@ func _receive_model(value: Dictionary) -> void:
 	waiting = false
 	connection_error = false
 	if _has_career(): accent = Color(G.identity(model.club).get("color", "#d43e47"))
-	if not export_path.is_empty() and not _write_export(): return
+	if not export_path.is_empty() and not _write_export():
+		if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
+		return
 	if bridge.last_response_ok: last_error = ""
 	if bridge.last_response_ok and not pending_route.is_empty():
 		route = pending_route
@@ -188,6 +204,7 @@ func _receive_model(value: Dictionary) -> void:
 		if last_command=="recover_profile" and not str(model.meta.get("recoveryBackup","")).is_empty():
 			notice("Le profil d'origine est conservé","Copie de sécurité :\n"+str(model.meta.recoveryBackup)+"\n\nVous pouvez maintenant créer ou importer une carrière.")
 	call_deferred("_refresh_coach")
+	if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
 	if not queued_action.is_empty() and bridge.last_response_ok:
 		var next := queued_action.duplicate(true)
 		queued_action.clear()
@@ -213,6 +230,7 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 
 func _refuse_action(message: String) -> void:
 	# A local refusal must not complete or discard the actual in-flight action.
+	if is_instance_valid(soundscape): soundscape.notify_error()
 	last_error = message
 	if is_instance_valid(status):
 		status.text = "ACTION NON EFFECTUÉE · " + message
@@ -220,6 +238,7 @@ func _refuse_action(message: String) -> void:
 	notice("Votre décision n'a pas été appliquée", message)
 
 func _failed(message: String) -> void:
+	if is_instance_valid(soundscape): soundscape.notify_error()
 	if decision_feedback != null: decision_feedback.complete(last_command, false, model)
 	waiting = false
 	queued_action.clear()
@@ -230,6 +249,9 @@ func _failed(message: String) -> void:
 		status.text = "ACTION NON EFFECTUÉE · " + message
 		status.add_theme_color_override("font_color", Color("f1b6a9"))
 	if last_command == "tick": timer.stop()
+	# A failed annotation must leave its editor and unsaved draft alive. The
+	# notebook listens to the same failure signal and presents the local refusal.
+	if last_command in ["coach_note_save","coach_note_remove"] and get_node_or_null("CoachNotebook") != null: return
 	_clear_dialogs()
 	var d := AcceptDialog.new()
 	_prepare_dialog(d, 590)
@@ -245,6 +267,23 @@ func _navigate(target: String, remember_ui: bool = true) -> void:
 	for chapter: Dictionary in NAV_CHAPTERS:
 		if target in chapter.routes: chapter_routes[chapter.label] = target
 	_render(remember_ui)
+	if is_instance_valid(soundscape): soundscape.refresh_visibility(route,_match_visible())
+
+func _match_visible() -> bool:
+	return route == "Match" and is_instance_valid(match_screen) and match_screen.is_visible_in_tree()
+
+func _sound_error(message: String) -> void:
+	# Local audio availability never marks a career decision as failed.
+	if is_instance_valid(status):
+		status.text = _settled_status_text()
+		status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
+	if not message.is_empty(): call_deferred("_show_sound_error",message)
+
+func _show_sound_error(message: String) -> void:
+	if not is_instance_valid(soundscape) or soundscape.last_error != message: return
+	var options := get_node_or_null("PreferencesDialog")
+	if options != null and not options.is_queued_for_deletion(): return # The options show their own reason.
+	notice("Réglages sonores indisponibles",message)
 
 func _build_subnavigation(parent: Container) -> void:
 	for chapter: Dictionary in NAV_CHAPTERS:
@@ -309,14 +348,14 @@ func _render(remember_ui: bool = true) -> void:
 	shell.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root_content.add_child(shell)
 	_build_sidebar(shell)
-	var inset := G.margin(22)
+	var inset := G.margin(14)
 	workspace_inset = inset
 	# Container sorting can happen after the deferred coach refresh. Reposition
 	# on its actual geometry, including the sidebar width, after every rebuild.
 	inset.item_rect_changed.connect(_layout_coach)
 	G.fill(inset, true)
 	shell.add_child(inset)
-	var content := G.v(9 if size.y <= 760 else 13)
+	var content := G.v(8 if size.y <= 760 else 9)
 	content.name = "CareerContent"
 	inset.add_child(content)
 	var top := G.h(12)
@@ -329,7 +368,7 @@ func _render(remember_ui: bool = true) -> void:
 	_update_header_date()
 	heading = G.label({"Bureau":"Le club, cette semaine.","Effectif":"Les hommes du projet.","Composition":"Votre feuille à 23.","Préparation":"Préparer la rencontre.","Calendrier":"Le fil de la saison.","Classements":"La course aux sommets.","Recrutement":"Construire l’effectif.","Finances":"Les moyens du projet.","Club":"Un club. Un territoire.","Match":"Le jour de match."}.get(route, route.to_upper()), 35, G.INK, true)
 	heading.add_theme_font_override("font", G.T.BODY)
-	heading.add_theme_font_size_override("font_size", 29)
+	heading.add_theme_font_size_override("font_size", 24)
 	titles.add_child(heading)
 	top.add_child(G.button("SAUVEGARDER", func(): _command("save")))
 	primary_button = G.button(primary_text(), primary_action, true)
@@ -338,7 +377,7 @@ func _render(remember_ui: bool = true) -> void:
 	content.add_child(minibar)
 	PackViews.missing_warning(self, content, "career")
 	_build_subnavigation(content)
-	body = G.v(13)
+	body = G.v(9)
 	G.fill(body, true)
 	body_scroll = ScrollContainer.new()
 	body_scroll.name = "CareerWorkspace"
@@ -417,11 +456,12 @@ func _settled_status_text() -> String:
 	if not last_error.is_empty(): return "ACTION NON EFFECTUÉE · " + last_error
 	if model.get("meta",{}).get("saveError",false): return "DERNIÈRE SAUVEGARDE IMPOSSIBLE · Vérifiez le stockage avant de poursuivre."
 	if user_preferences != null and not user_preferences.last_error.is_empty(): return "RÉGLAGES LOCAUX · " + user_preferences.last_error
+	if is_instance_valid(soundscape) and not soundscape.last_error.is_empty(): return "RÉGLAGES SONORES · " + soundscape.last_error
 	if decision_feedback != null and not decision_feedback.status_text().is_empty(): return decision_feedback.status_text()
 	return "Sauvegarde automatique · Profil de carrière indépendant"
 
 func _status_has_error() -> bool:
-	return not last_error.is_empty() or model.get("meta",{}).get("saveError",false) or (user_preferences != null and not user_preferences.last_error.is_empty())
+	return not last_error.is_empty() or model.get("meta",{}).get("saveError",false) or (user_preferences != null and not user_preferences.last_error.is_empty()) or (is_instance_valid(soundscape) and not soundscape.last_error.is_empty())
 
 func _apply_user_preferences() -> void:
 	if user_preferences == null: return
@@ -523,6 +563,12 @@ func create_career(id: int) -> void:
 	var action := func(): _command("new_career",{"club":id,"mode":"common"},"Bureau")
 	if _has_career(): confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Exportez-la depuis le menu pour la conserver séparément. Prendre les rênes de %s ?" % catalogue[id].name, action)
 	else: action.call()
+
+func confirm_decision(command: String, payload: Dictionary, title: String, text: String, callback: Callable) -> void:
+	var preview := preload("res://ui/decision_preview.gd")
+	var detail: Dictionary = preview.describe(command,payload,model)
+	if detail.is_empty(): confirm(title,text,callback)
+	else: preview.open(self,title,text,detail,callback)
 
 func confirm(title: String, text: String, callback: Callable) -> void:
 	_clear_dialogs()
@@ -656,6 +702,7 @@ func request_quit() -> void:
 func _close() -> void:
 	if closing: return
 	closing = true
+	if is_instance_valid(soundscape): soundscape.dispose()
 	if is_instance_valid(coach): coach.destroy()
 	timer.stop()
 	bridge.stop()

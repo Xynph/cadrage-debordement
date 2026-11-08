@@ -21,7 +21,7 @@ func _window_changed() -> void:
 	var physical := window.size
 	# Headless roots start at 64x64 before their fixture configures a real window.
 	if physical.x < 1280 or physical.y < 720: return
-	var reference := Vector2i(mini(physical.x,1600),mini(physical.y,900))
+	var reference := Vector2i(mini(physical.x,1920),mini(physical.y,1080))
 	if window.content_scale_size != reference: window.content_scale_size = reference
 	_revision += 1
 	_debounce.start()

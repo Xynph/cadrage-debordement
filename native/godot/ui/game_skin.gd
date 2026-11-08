@@ -11,10 +11,21 @@ const GOLD = Color("ddbd80")
 const GOOD = Color("a6d2ae")
 static var textures: Dictionary = {}
 
+# Dense carnet scale: explicit legacy sizes keep their role, without enlarging
+# every heading and number into a second page at native desktop resolutions.
+static func reading_size(requested: int) -> int:
+	if requested >= 44: return 30
+	if requested >= 34: return 24
+	if requested >= 27: return 22
+	if requested >= 23: return 20
+	if requested >= 18: return 16
+	if requested >= 15: return 14
+	return mini(requested, 13)
+
 static func label(text: Variant, size: int = 14, color: Color = INK, title: bool = false) -> Label:
 	var l := Label.new()
 	l.text = str(text)
-	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_font_size_override("font_size", reading_size(size))
 	l.add_theme_color_override("font_color", color)
 	if title: l.add_theme_font_override("font", T.DISPLAY)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -28,8 +39,8 @@ static func wrap(text: Variant, size: int = 14, color: Color = MUTED) -> Label:
 static func button(text: String, callback: Callable, primary: bool = false) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size.y = 42
-	b.add_theme_font_size_override("font_size", 14)
+	b.custom_minimum_size.y = 36
+	b.add_theme_font_size_override("font_size", 13)
 	if primary:
 		b.add_theme_stylebox_override("normal", T.box(INK, 4))
 		b.add_theme_stylebox_override("hover", T.box(Color("d7d6c9"), 4))
@@ -38,7 +49,7 @@ static func button(text: String, callback: Callable, primary: bool = false) -> B
 	b.pressed.connect(callback)
 	return b
 
-static func h(gap: int = 12) -> HBoxContainer:
+static func h(gap: int = 9) -> HBoxContainer:
 	var c := HBoxContainer.new()
 	c.add_theme_constant_override("separation", gap)
 	return c
@@ -61,7 +72,7 @@ static func nav_button(text:String,callback:Callable,accent:Color,selected:bool)
 	b.add_theme_stylebox_override("hover",hover)
 	return b
 
-static func v(gap: int = 12) -> VBoxContainer:
+static func v(gap: int = 9) -> VBoxContainer:
 	var c := VBoxContainer.new()
 	c.add_theme_constant_override("separation", gap)
 	return c
@@ -92,7 +103,7 @@ static func panel(parent: Node, ratio: float = 1.0, color: Color = PANEL) -> VBo
 static func section(title: String, subtitle: String = "") -> VBoxContainer:
 	var c := v(3)
 	c.add_child(label(title, 23, INK, true))
-	if not subtitle.is_empty(): c.add_child(label(subtitle, 11, MUTED))
+	if not subtitle.is_empty(): c.add_child(label(subtitle, 12, MUTED))
 	return c
 
 static func separator() -> HSeparator:
@@ -104,7 +115,7 @@ static func metric(number: Variant, caption: String, color: Color = INK) -> VBox
 	var c := v(0)
 	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	c.add_child(label(number, 37, color, true))
-	c.add_child(label(caption.to_upper(), 10, MUTED))
+	c.add_child(label(caption.to_upper(), 12, MUTED))
 	return c
 
 static func n(number: Variant) -> String:

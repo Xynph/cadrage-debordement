@@ -27,9 +27,19 @@ func load_manifest(source: String = "res://guide/assets/voice/manifest.json") ->
 	if FileAccess.file_exists(source):
 		var parsed = JSON.parse_string(FileAccess.get_file_as_string(source))
 		if parsed is Dictionary and parsed.get("clips") is Array:
+			var current: Dictionary = {}
+			var bundled := source == "res://guide/assets/voice/manifest.json"
+			if bundled:
+				var content: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://guide/dialogues.json"))
+				if content is Dictionary:
+					for page: Dictionary in content.get("pages",[]):
+						for fragment: Dictionary in page.get("fragments",[]):
+							if fragment.get("audioStatus") != "pending": current[str(fragment.id)] = str(fragment.text)
 			for clip in parsed.clips:
 				if not clip is Dictionary: continue
 				var text := str(clip.get("text", "")); var filename := str(clip.get("file", ""))
+				# Old WAVs remain archived; only the exact active line can be played.
+				if bundled and current.get(str(clip.get("id",""))) != text: continue
 				if text.is_empty() or str(clip.get("text_sha256", "")) != text.sha256_text(): continue
 				if filename != filename.get_file() or not filename.ends_with(".wav"): continue
 				var path := _voice_folder.path_join(filename)

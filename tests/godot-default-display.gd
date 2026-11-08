@@ -41,6 +41,10 @@ func run() -> void:
 	await capture("accueil-plein-ecran")
 	app.settings(); await settle()
 	var dialog: AcceptDialog = app.find_child("PreferencesDialog",true,false)
+	var tabs: TabContainer = dialog.find_child("PreferencesTabs",true,false)
+	check(tabs != null and tabs.get_tab_count() == 3,"Trois rubriques de paramètres accessibles")
+	if tabs != null: tabs.current_tab = 2
+	await settle()
 	var fullscreen: Button = dialog.find_child("PreferencesFullscreen",true,false)
 	var windowed: Button = dialog.find_child("PreferencesWindowed",true,false)
 	check(fullscreen != null and windowed != null,"Deux actions d'affichage identifiables")

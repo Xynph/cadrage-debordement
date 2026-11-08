@@ -23,8 +23,8 @@ static func label(text: Variant, size: int = 15, color: Color = INK, title: bool
 	return Base.label(text, size, color, title)
 static func wrap(text: Variant, size: int = 15, color: Color = MUTED) -> Label:
 	return Base.wrap(text, size, color)
-static func h(gap: int = 14) -> HBoxContainer: return Base.h(gap)
-static func v(gap: int = 14) -> VBoxContainer: return Base.v(gap)
+static func h(gap: int = 10) -> HBoxContainer: return Base.h(gap)
+static func v(gap: int = 10) -> VBoxContainer: return Base.v(gap)
 static func fill(c: Control, vertical: bool = false, ratio: float = 1.0) -> Control: return Base.fill(c, vertical, ratio)
 static func margin(padding: int = 20) -> MarginContainer: return Base.margin(padding)
 static func n(number: Variant) -> String: return Base.n(number)
@@ -41,8 +41,8 @@ static func scroll(parent: Node) -> VBoxContainer: return Base.scroll(parent)
 static func button(text: String, callback: Callable, primary: bool = false) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size.y = 44
-	b.add_theme_font_size_override("font_size", 14)
+	b.custom_minimum_size.y = 36
+	b.add_theme_font_size_override("font_size", 13)
 	var background := INK if primary else Color("e8dfce")
 	b.add_theme_stylebox_override("normal", T.box(background, 3, INK if primary else LINE))
 	b.add_theme_stylebox_override("hover", T.box(Color("3c403b") if primary else Color("ddd1bc"), 3, INK))
@@ -57,9 +57,32 @@ static func button(text: String, callback: Callable, primary: bool = false) -> B
 	return b
 
 static func selected(b: Button, accent: Color) -> void:
-	var style := T.box(PAPER.lerp(Color(accent,1), .12), 3, accent_ink(accent))
-	style.border_width_left = 4
-	b.add_theme_stylebox_override("normal", style)
+	# Keep the geometric marker when pointer/focus/press changes the state.
+	# Colour alone cannot identify the current player, club or tactic.
+	for state in ["normal", "hover", "pressed"]:
+		var strength := .12 if state == "normal" else .18 if state == "hover" else .23
+		var style := T.box(PAPER.lerp(Color(accent,1), strength), 3, accent_ink(accent))
+		style.border_width_left = 4
+		b.add_theme_stylebox_override(state, style)
+	b.set_meta("carnet_selected", true)
+
+static func clear_selection(b: Button) -> void:
+	for state in ["normal", "hover", "pressed"]: b.remove_theme_stylebox_override(state)
+	b.set_meta("carnet_selected", false)
+
+static func reading_button(b: Button, minimum_width: int = 92) -> Button:
+	# Reading tools fit short rows. Full text stays available for long French labels.
+	b.custom_minimum_size = Vector2(minimum_width, 34)
+	b.size_flags_vertical = Control.SIZE_SHRINK_END
+	b.clip_text = true
+	b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	b.tooltip_text = b.text
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var style: StyleBoxFlat = b.get_theme_stylebox(state).duplicate()
+		style.content_margin_top = 6; style.content_margin_bottom = 6
+		style.content_margin_left = 10; style.content_margin_right = 10
+		b.add_theme_stylebox_override(state, style)
+	return b
 
 static func panel(parent: Node, ratio: float = 1.0, color: Color = PANEL) -> VBoxContainer:
 	var p := PanelContainer.new()
@@ -67,7 +90,7 @@ static func panel(parent: Node, ratio: float = 1.0, color: Color = PANEL) -> VBo
 	p.theme = T.paper()
 	p.add_theme_stylebox_override("panel", T.box(color, 2, LINE))
 	parent.add_child(p)
-	var c := v(14)
+	var c := v(9)
 	p.add_child(c)
 	return c
 
@@ -99,7 +122,9 @@ static func separator() -> HSeparator:
 static func metric(number: Variant, caption: String, color: Color = INK) -> VBoxContainer:
 	var c := v(1)
 	fill(c)
-	c.add_child(label(number, 36, color, true))
+	var value := Base.wrap(number, 34, color)
+	value.add_theme_font_override("font", T.DISPLAY)
+	c.add_child(value)
 	c.add_child(Base.wrap(caption, 13, MUTED))
 	return c
 

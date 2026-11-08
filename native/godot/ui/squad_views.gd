@@ -56,16 +56,20 @@ static func squad(app: Control) -> Control:
 	var available:=_choice(filters,"RosterAvailability",["Tous","Disponibles","Blessés"],state.available,"Disponibilité")
 	var contract_filter:=_choice(filters,"RosterContract",["Tous","Fin de saison","Sans contrat"],state.contract,"Contrat")
 	var sorting:=G.h(6)
+	sorting.name="RosterTools"
 	table.add_child(sorting)
 	var sort:=_choice(sorting,"RosterSort",["Poste","Nom","Niveau","Condition","Âge","Salaire","Échéance"],state.sort,"Trier par")
 	var direction:=G.button("↓ Décroissant" if state.descending else "↑ Croissant",func():state.descending=not state.descending;app._render())
 	direction.name="RosterDirection"
+	G.reading_button(direction,105)
 	sorting.add_child(direction)
 	var compare:=G.button("COMPARER (%d/2)"%app.management_ui.compare.size(),func():comparison(app))
 	compare.name="OpenComparison"
+	G.reading_button(compare,130)
 	sorting.add_child(compare)
 	var reset:=G.button("Réinitialiser",func():app.management_ui.roster=U.defaults();app.roster_filter="Tous";app.roster_sort="Poste";app._render())
 	reset.name="RosterReset"
+	G.reading_button(reset,100)
 	sorting.add_child(reset)
 	var count:=G.label("",12,G.MUTED)
 	count.name="RosterCount"
@@ -75,14 +79,20 @@ static func squad(app: Control) -> Control:
 	for pair in [["JOUEUR",100],["POSTE",78],["ÂGE",30],["NIV.",34],["COND.",48]]: header.add_child(G.cell(pair[0],pair[1],G.MUTED,pair[0]=="JOUEUR"))
 	var list := G.scroll(table)
 	list.get_parent().name="SquadScroll"
+	var pagination := _pagination(table,"RosterPagination",state)
 	var profile := G.panel(page,1.05)
 	profile.name="PlayerDossier"
 	var refresh:=func():_squad_rows(app,list,profile,count,compare)
-	search.text_changed.connect(func(text:String):state.search=text;state.scroll=0;refresh.call())
-	family.item_selected.connect(func(index:int):state.family=family.get_item_text(index);app.roster_filter=state.family;state.scroll=0;refresh.call())
-	position.item_selected.connect(func(index:int):state.position=position.get_item_text(index);state.scroll=0;refresh.call())
-	available.item_selected.connect(func(index:int):state.available=available.get_item_text(index);state.scroll=0;refresh.call())
-	contract_filter.item_selected.connect(func(index:int):state.contract=contract_filter.get_item_text(index);state.scroll=0;refresh.call())
+	_bind_pagination(pagination,state,refresh)
+	list.get_parent().resized.connect(func():
+		var capacity:=maxi(1,int((list.get_parent().size.y+7)/47))
+		if capacity!=int(state.get("page_size",4)):
+			state.page_size=capacity;refresh.call_deferred())
+	search.text_changed.connect(func(text:String):state.search=text;state.scroll=0;state.page=0;refresh.call())
+	family.item_selected.connect(func(index:int):state.family=family.get_item_text(index);app.roster_filter=state.family;state.scroll=0;state.page=0;refresh.call())
+	position.item_selected.connect(func(index:int):state.position=position.get_item_text(index);state.scroll=0;state.page=0;refresh.call())
+	available.item_selected.connect(func(index:int):state.available=available.get_item_text(index);state.scroll=0;state.page=0;refresh.call())
+	contract_filter.item_selected.connect(func(index:int):state.contract=contract_filter.get_item_text(index);state.scroll=0;state.page=0;refresh.call())
 	sort.item_selected.connect(func(index:int):state.sort=sort.get_item_text(index);app.roster_sort=state.sort;state.descending=state.sort in ["Niveau","Condition"];state.scroll=0;app._render())
 	refresh.call()
 	U.restore(app,page,"roster")
@@ -90,6 +100,42 @@ static func squad(app: Control) -> Control:
 
 static func _empty(parent:Node) -> void:
 	for child in parent.get_children():parent.remove_child(child);child.queue_free()
+
+static func _pagination(parent:Node,id:String,state:Dictionary) -> HBoxContainer:
+	var row:=G.h(6)
+	row.name=id
+	parent.add_child(row)
+	var previous:=G.reading_button(G.button("← Précédent",func():pass),88)
+	previous.name=id+"Previous"
+	row.add_child(previous)
+	var info:=G.label("",12,G.MUTED)
+	info.name=id+"Info"
+	info.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	G.fill(info)
+	row.add_child(info)
+	var next:=G.reading_button(G.button("Suivant →",func():pass),88)
+	next.name=id+"Next"
+	row.add_child(next)
+	if not state.has("page"):state.page=0
+	return row
+
+static func _bind_pagination(row:HBoxContainer,state:Dictionary,refresh:Callable) -> void:
+	row.get_child(0).pressed.connect(func():
+		state.page=maxi(0,int(state.page)-1);state.scroll=0;refresh.call()
+		if not row.get_child(0).disabled:row.get_child(0).grab_focus()
+		elif not row.get_child(2).disabled:row.get_child(2).grab_focus())
+	row.get_child(2).pressed.connect(func():
+		state.page=int(state.page)+1;state.scroll=0;refresh.call()
+		if not row.get_child(2).disabled:row.get_child(2).grab_focus()
+		elif not row.get_child(0).disabled:row.get_child(0).grab_focus())
+
+static func _page_range(row:HBoxContainer,state:Dictionary,total:int,capacity:int) -> Vector2i:
+	var pages:=maxi(1,ceili(float(total)/capacity))
+	state.page=clampi(int(state.get("page",0)),0,pages-1)
+	row.get_child(0).disabled=int(state.page)==0
+	row.get_child(2).disabled=int(state.page)>=pages-1
+	row.get_child(1).text="Page %d / %d"%[int(state.page)+1,pages]
+	return Vector2i(int(state.page)*capacity,mini(total,(int(state.page)+1)*capacity))
 
 static func _search(parent:Node,id:String,state:Dictionary) -> LineEdit:
 	var search:=LineEdit.new()
@@ -114,10 +160,11 @@ static func _choice(parent:Node,id:String,values:Array,selected:Variant,caption:
 	var box:=G.v(2)
 	G.fill(box)
 	parent.add_child(box)
-	box.add_child(G.label(caption,11,G.MUTED))
+	box.add_child(G.label(caption,12,G.MUTED))
 	var choice:=OptionButton.new()
 	choice.name=id
 	choice.custom_minimum_size.y=34
+	G.reading_button(choice,64)
 	choice.fit_to_longest_item=false
 	choice.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	choice.tooltip_text=caption
@@ -127,22 +174,29 @@ static func _choice(parent:Node,id:String,values:Array,selected:Variant,caption:
 	return choice
 
 static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,count:Label,compare:Button) -> void:
+	var focus:=app.get_viewport().gui_get_focus_owner()
+	var focus_id:=str(focus.get_meta("player_id","")) if focus!=null and list.is_ancestor_of(focus) else ""
 	_empty(list)
 	var players:Array=U.players(app.model.get("squad",[]),app.management_ui.roster,int(app.model.meta.get("season",1)))
+	var state:Dictionary=app.management_ui.roster
+	var capacity:=maxi(1,int(state.get("page_size",4)))
+	if not focus_id.is_empty():
+		for i in players.size():
+			if str(players[i].id)==focus_id:state.page=i/capacity;break
+	var bounds:=_page_range(list.get_parent().get_parent().find_child("RosterPagination",false,false),state,players.size(),capacity)
 	count.text="%d / %d joueurs · lecture seule"%[players.size(),app.model.get("squad",[]).size()]
 	compare.text="COMPARER (%d/2)"%app.management_ui.compare.size()
 	if app.selected_player.is_empty() and not players.is_empty():app.selected_player=str(players[0].id)
 	if players.is_empty():list.add_child(G.wrap("Aucun joueur ne correspond. Modifiez la recherche ou réinitialisez les filtres.",15))
-	for p in players:
+	for p in players.slice(bounds.x,bounds.y):
 		var b := G.button("",func():
 			app.selected_player=str(p.id);app.management_ui.profile_scroll=0
 			for row:Button in list.get_children():
-				row.remove_theme_stylebox_override("normal")
-				row.add_theme_stylebox_override("normal",G.T.box(Color("e8dfce"),3,G.LINE))
+				G.clear_selection(row)
 				if str(row.get_meta("player_id",""))==str(p.id):G.selected(row,app.accent)
 			_show_profile(app,profile)
 			if app.has_method("_observe_navigation"): app._observe_navigation())
-		b.custom_minimum_size.y=48
+		b.custom_minimum_size.y=40
 		b.name="SquadPlayer"+str(p.id).replace(":","_")
 		b.set_meta("player_id",str(p.id))
 		b.tooltip_text=str(p.name)+" · "+str(p.pos)
@@ -160,6 +214,7 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 		row.add_child(G.cell(G.n(p.rating),34,G.GOLD))
 		row.add_child(G.cell(G.n(p.condition)+"%",48,G.GOOD))
 		list.add_child(b)
+		if str(p.id)==focus_id:b.grab_focus.call_deferred()
 	list.get_parent().set_deferred("scroll_vertical",int(app.management_ui.roster.scroll))
 	_show_profile(app,profile)
 
@@ -177,7 +232,7 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	list.get_parent().name="ProfileScroll"
 	var top:=G.h(12)
 	list.add_child(top)
-	var portrait := G.portrait(int(p.get("portraitIndex",0)),90,p)
+	var portrait := G.portrait(int(p.get("portraitIndex",0)),64,p)
 	top.add_child(portrait)
 	var identity:=G.v(3)
 	G.fill(identity)
@@ -194,21 +249,41 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	numbers.add_child(G.metric(G.n(p.rating),"Niveau"))
 	numbers.add_child(G.metric(G.n(p.potential),"Potentiel"))
 	numbers.add_child(G.metric(G.n(p.condition)+"%","Condition",G.GOOD))
+	var tabs:=TabContainer.new()
+	tabs.name="ProfileTabs"
+	tabs.theme=G.T.paper()
+	tabs.custom_minimum_size.y=248
+	G.fill(tabs,true)
+	list.add_child(tabs)
+	var overview:=G.scroll(tabs)
+	overview.get_parent().name="ProfileOverview"
+	var note:=G.button("MA NOTE SUR CE JOUEUR",func(): preload("res://ui/coach_notes_view.gd").open(app,str(p.id)))
+	note.name="OpenPlayerCoachNote"
+	overview.add_child(note)
+	var attributes:=G.scroll(tabs)
+	attributes.get_parent().name="ProfileAttributes"
+	var contracts:=G.scroll(tabs)
+	contracts.get_parent().name="ProfileContract"
+	var references_tab:=G.scroll(tabs)
+	references_tab.get_parent().name="ProfileReferences"
+	for i in 4:tabs.set_tab_title(i,["Aperçu","Attributs","Contrat","Repères"][i])
+	tabs.current_tab=clampi(int(app.management_ui.get("profile_tab",0)),0,3)
+	tabs.tab_changed.connect(func(index:int):app.management_ui.profile_tab=index)
 	var radar:=G.W.new()
 	radar_setup(radar,p,app.accent)
-	list.add_child(radar)
+	radar.custom_minimum_size=Vector2(110,110)
+	overview.add_child(radar)
 	var grid:=GridContainer.new()
 	grid.columns=2
 	grid.add_theme_constant_override("h_separation",20)
-	list.add_child(grid)
+	attributes.add_child(grid)
 	for pair in [["scrum","Mêlée"],["lineout","Touche"],["tackle","Plaquage"],["speed","Vitesse"],["pass","Passe"],["kick","Jeu au pied"],["goal","But"],["mental","Mental"],["discipline","Discipline"],["stamina","Endurance"],["power","Puissance"]]:
 		var value: Variant = p.get("attributes",{}).get(pair[0])
 		if value != null: G.gauge(grid, pair[1], float(value), 100, G.accent_ink(app.accent))
 		else: grid.add_child(G.label(pair[1]+"  —",14,G.MUTED))
-	list.add_child(G.separator())
-	list.add_child(G.label("Contrat courant : "+p.get("contractLabel",""),13))
-	list.add_child(G.label(G.euros(p.get("salary",0))+" / semaine · estimation de jeu",12,G.MUTED))
-	list.add_child(G.label("%s minutes · %s apparitions"%[G.n(p.get("minutes",0)),G.n(p.get("appearances",0))],12,G.MUTED))
+	contracts.add_child(G.wrap("Contrat courant : "+p.get("contractLabel",""),13))
+	contracts.add_child(G.wrap(G.euros(p.get("salary",0))+" / semaine",12,G.MUTED))
+	overview.add_child(G.label("%s minutes · %s apparitions"%[G.n(p.get("minutes",0)),G.n(p.get("appearances",0))],12,G.MUTED))
 	var compared:bool=str(p.id) in app.management_ui.compare
 	var compare:=G.button("RETIRER DE LA COMPARAISON" if compared else "AJOUTER À LA COMPARAISON",func():
 		if str(p.id) in app.management_ui.compare:app.management_ui.compare.erase(str(p.id))
@@ -217,14 +292,14 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	compare.name="CompareSelected"
 	compare.disabled=not compared and app.management_ui.compare.size()>=2
 	compare.tooltip_text="Deux joueurs maximum. Le dialogue Comparer permet de changer les deux dossiers."
-	list.add_child(compare)
+	overview.add_child(compare)
 	var renewal:Dictionary=p.get("renewal",{})
 	var extend:=G.button("PROPOSER UNE PROLONGATION",func(): contract(app,p,false))
 	extend.name="OfferRenewal"
 	extend.disabled=not renewal.get("available",false) or not app._live().is_empty()
 	extend.tooltip_text="Le contrat ne permet pas de prolongation supplémentaire dans la limite de trois saisons." if not renewal.get("available",false) else "Une offre sera soumise au joueur avant toute signature."
-	list.add_child(extend)
-	list.add_child(G.label("CHARGE INDIVIDUELLE",13,G.MUTED))
+	contracts.add_child(extend)
+	contracts.add_child(G.label("CHARGE INDIVIDUELLE",13,G.MUTED))
 	var load_plan:=OptionButton.new()
 	var modes:Array=["collective","repos","normal","intense"]
 	for text in ["Suivre le collectif","Récupération individuelle","Charge normale","Charge intense"]:load_plan.add_item(text)
@@ -232,30 +307,29 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	load_plan.select(maxi(0,modes.find(p.get("loadPlan","collective"))))
 	load_plan.disabled=not app._live().is_empty()
 	load_plan.item_selected.connect(func(index:int):app._command("set_player_load",{"playerId":p.id,"mode":modes[index]}))
-	list.add_child(load_plan)
-	list.add_child(G.separator())
-	list.add_child(G.section("Repères de départ","Origine et degré de vérification des données initiales"))
+	contracts.add_child(load_plan)
+	references_tab.add_child(G.section("Repères de départ","Origine et degré de vérification des données initiales"))
 	var roster:Dictionary=p.get("rosterProfile",{}) if p.get("rosterProfile")!=null else {}
 	if not roster.is_empty():
 		var position:Dictionary=roster.get("position",{})
 		var status:Dictionary=roster.get("status",{})
 		var initial:Dictionary=roster.get("contract",{})
 		var position_basis:String="poste officiel" if position.get("basis")=="official" else "poste estimé"
-		list.add_child(G.wrap("Poste principal : %s · %s"%[position.get("primary",p.pos),position_basis],13,G.MUTED))
-		list.add_child(G.wrap("Qualification initiale de jeu : %s"%", ".join(position.get("qualifications",[])),13,G.MUTED))
+		references_tab.add_child(G.wrap("Poste principal : %s · %s"%[position.get("primary",p.pos),position_basis],13,G.MUTED))
+		references_tab.add_child(G.wrap("Qualification initiale de jeu : %s"%", ".join(position.get("qualifications",[])),13,G.MUTED))
 		var status_basis:String="type de contrat officiel" if status.get("basis")=="official" else "estimation de jeu au 01/07/2026"
-		list.add_child(G.wrap("Statut initial : %s · %s"%[str(status.get("value","inconnu")).capitalize(),status_basis],13,G.MUTED))
-		if status.get("professionalFromSeason")!=null: list.add_child(G.wrap("Référence initiale : passage professionnel prévu en saison %s."%G.n(status.professionalFromSeason),12,G.MUTED))
+		references_tab.add_child(G.wrap("Statut initial : %s · %s"%[str(status.get("value","inconnu")).capitalize(),status_basis],13,G.MUTED))
+		if status.get("professionalFromSeason")!=null: references_tab.add_child(G.wrap("Référence initiale : passage professionnel prévu en saison %s."%G.n(status.professionalFromSeason),12,G.MUTED))
 		var basis:String="échéance officielle publiée" if initial.get("basis")=="official" else "durée estimée de jeu"
 		var references:String=", ".join(initial.get("sources",[]))
-		list.add_child(G.wrap("Référence initiale au 31/10/2026 : %s · %s (fin saison %s)."%[basis,G.n(initial.get("endYear",0)),G.n(initial.get("endSeason",0))],13,G.MUTED))
+		references_tab.add_child(G.wrap("Référence initiale au 31/10/2026 : %s · %s (fin saison %s)."%[basis,G.n(initial.get("endYear",0)),G.n(initial.get("endSeason",0))],13,G.MUTED))
 		if not references.is_empty():
 			var source_dates:Array[String]=[]
 			for source_id in initial.get("sources",[]):
 				var source:Dictionary=app.model.get("meta",{}).get("rosterSources",{}).get(source_id,{})
 				source_dates.append(str(source.get("published","date inconnue")))
-			list.add_child(G.wrap("Publication officielle : %s · les signatures en jeu restent indépendantes."%", ".join(source_dates),12,G.MUTED))
-	list.add_child(G.wrap(portrait.tooltip_text,12,G.MUTED))
+			references_tab.add_child(G.wrap("Publication officielle : %s · les signatures en jeu restent indépendantes."%", ".join(source_dates),12,G.MUTED))
+	references_tab.add_child(G.wrap(portrait.tooltip_text,12,G.MUTED))
 
 static func radar_setup(radar:Control,p:Dictionary,accent:Color) -> void:
 	radar_mode(radar)
@@ -338,8 +412,24 @@ static func market(app:Control) -> Control:
 	page.name="CarnetMarket"
 	G.fill(page,true)
 	var workspace:=G.panel(page)
-	G.chapter(workspace,"05","Les pistes de recrutement","Joueurs fictifs disponibles · une offre ouvre une négociation.",app.accent)
-	preload("res://ui/decision_views.gd").recruitment_summary(app,workspace)
+	G.chapter(workspace,"05","Les pistes de recrutement","Joueurs disponibles · une offre ouvre une négociation.",app.accent)
+	var tabs:=TabContainer.new()
+	tabs.name="MarketTabs"
+	tabs.theme=G.T.paper()
+	G.fill(tabs,true)
+	workspace.add_child(tabs)
+	var browse:=G.v(8)
+	browse.name="MarketBrowse"
+	G.fill(browse,true)
+	tabs.add_child(browse)
+	var staff:=G.scroll(tabs)
+	staff.get_parent().name="RecruitmentStaff"
+	preload("res://ui/decision_views.gd").recruitment_summary(app,staff)
+	tabs.set_tab_title(0,"Pistes")
+	tabs.set_tab_title(1,"Travail du staff")
+	tabs.current_tab=clampi(int(app.management_ui.get("market_tab",0)),0,1)
+	tabs.tab_changed.connect(func(index:int):app.management_ui.market_tab=index)
+	workspace=browse
 	var state:Dictionary=app.management_ui.market
 	var search:=_search(workspace,"MarketSearch",state)
 	var controls:=G.h(8)
@@ -363,12 +453,17 @@ static func market(app:Control) -> Control:
 	workspace.add_child(count)
 	var list:=G.scroll(workspace)
 	list.get_parent().name="MarketScroll"
+	var pagination:=_pagination(workspace,"MarketPagination",state)
 	var refresh:=func():_market_rows(app,list,count)
-	search.text_changed.connect(func(text:String):state.search=text;state.navigation_id="";state.scroll=0;refresh.call())
-	position.item_selected.connect(func(index:int):state.position=position.get_item_text(index);state.scroll=0;refresh.call())
-	available.item_selected.connect(func(index:int):state.available=available.get_item_text(index);state.scroll=0;refresh.call())
+	_bind_pagination(pagination,state,refresh)
+	page.resized.connect(func():
+		var capacity:=2 if app.size.y<=760 else 4 if app.size.y<=940 else 6
+		if int(state.get("page_size",0))!=capacity:state.page_size=capacity;refresh.call_deferred())
+	search.text_changed.connect(func(text:String):state.search=text;state.navigation_id="";state.scroll=0;state.page=0;refresh.call())
+	position.item_selected.connect(func(index:int):state.position=position.get_item_text(index);state.scroll=0;state.page=0;refresh.call())
+	available.item_selected.connect(func(index:int):state.available=available.get_item_text(index);state.scroll=0;state.page=0;refresh.call())
 	sort.item_selected.connect(func(index:int):state.sort=sort.get_item_text(index);state.descending=state.sort=="Niveau";state.scroll=0;app._render())
-	follow.toggled.connect(func(value:bool):state.followed=value;state.scroll=0;refresh.call())
+	follow.toggled.connect(func(value:bool):state.followed=value;state.scroll=0;state.page=0;refresh.call())
 	refresh.call()
 	U.restore(app,page,"market")
 	return page
@@ -376,23 +471,25 @@ static func market(app:Control) -> Control:
 static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 	_empty(list)
 	var players:Array=U.players(app.model.get("market",[]),app.management_ui.market,int(app.model.meta.get("season",1)),true,app.management_ui.shortlist)
+	var capacity:=2 if app.size.y<=760 else 4 if app.size.y<=940 else 6
+	app.management_ui.market.page_size=capacity
+	var bounds:=_page_range(list.get_parent().get_parent().find_child("MarketPagination",false,false),app.management_ui.market,players.size(),capacity)
 	count.text="%d / %d pistes · %d joueurs suivis dans votre carrière"%[players.size(),app.model.get("market",[]).size(),app.management_ui.shortlist.size()]
 	var grid:=GridContainer.new()
 	grid.columns=2
 	grid.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	grid.add_theme_constant_override("h_separation",18)
-	grid.add_theme_constant_override("v_separation",18)
+	grid.add_theme_constant_override("h_separation",10)
+	grid.add_theme_constant_override("v_separation",10)
 	list.add_child(grid)
-	for p in players:
+	for p in players.slice(bounds.x,bounds.y):
 		var card:=G.panel(grid)
-		G.person(card, p, p.name, p.pos.to_upper(), 58)
-		var summary:=G.h(18)
+		card.add_theme_constant_override("separation",7)
+		G.person(card, p, p.name, p.pos.to_upper(), 40)
+		var summary:=G.h(10)
 		card.add_child(summary)
-		summary.add_child(G.metric(G.n(p.age),"ans"))
-		summary.add_child(G.metric(G.n(p.rating),"niveau"))
-		card.add_child(G.separator())
-		card.add_child(G.label(G.euros(p.get("salary",0))+" / semaine",17,G.GOLD))
-		card.add_child(G.wrap("Rémunération estimée de jeu",12))
+		summary.add_child(G.label(G.n(p.age)+" ans",13))
+		summary.add_child(G.label("Niveau "+G.n(p.rating),13,G.GOLD))
+		card.add_child(G.wrap(G.euros(p.get("salary",0))+" / semaine · salaire demandé",13,G.MUTED))
 		var followed:bool=str(p.id) in app.management_ui.shortlist
 		var track:=G.button("RETIRER DU SUIVI" if followed else "SUIVRE CETTE PISTE",func():
 			var saved:Dictionary=app.model.get("clubLife",{}).get("managerCareer",{})
@@ -400,7 +497,6 @@ static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 		track.disabled=app.waiting or not app._live().is_empty() or app.model.meta.get("phase","")=="ended"
 		track.name="Follow"+str(p.id).replace(":","_")
 		track.set_meta("follow_id",str(p.id))
-		card.add_child(track)
 		var b:=G.button("PROPOSER UN CONTRAT",func():contract(app,p,true))
 		b.set_meta("player_id",str(p.id))
 		b.disabled=not p.get("available",true) or not app._live().is_empty()
@@ -409,7 +505,11 @@ static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 			var reason:String=p.reason
 			if reason=="Effectif complet":reason="Effectif complet (%d/%d)"%[app.model.get("squad",[]).size(),app.model.get("decisions",{}).get("recruitment",{}).get("capacity",42)]
 			card.add_child(G.wrap(reason,13,G.ALERT))
-		card.add_child(b)
+		var actions:=G.h(8)
+		card.add_child(actions)
+		G.fill(track);G.fill(b)
+		actions.add_child(track)
+		actions.add_child(b)
 	if players.is_empty():list.add_child(G.wrap("Aucune piste ne correspond. Modifiez la recherche, le filtre Suivis ou réinitialisez les filtres.",15))
 	list.get_parent().set_deferred("scroll_vertical",int(app.management_ui.market.scroll))
 
@@ -537,7 +637,7 @@ static func contract(app:Control,p:Dictionary,recruiting:bool) -> void:
 	fields.add_child(summary)
 	var refresh:=func():
 		var delta:=int(salary.value)-(0 if recruiting else int(p.get("salary",0)))
-		summary.text="IMMÉDIAT · %s : %s\nRÉCURRENT · %s / semaine · %s %s / semaine\nDurée : %s saison(s) · trésorerie actuelle : %s\nMontants fictifs ; débit uniquement si signature acceptée."%["acquisition" if recruiting else "prime de prolongation",G.euros(quote.get("fee",0)),G.euros(salary.value),"ajout" if recruiting else "écart",("+" if delta>=0 else "−")+G.euros(absi(delta)),G.n(years.value),G.euros(app.model.get("finance",{}).get("cash",0))]
+		summary.text="IMMÉDIAT · %s : %s\nRÉCURRENT · %s / semaine · %s %s / semaine\nDurée : %s saison(s) · trésorerie actuelle : %s\nPaiement à la signature, uniquement si l’offre est acceptée."%["acquisition" if recruiting else "prime de prolongation",G.euros(quote.get("fee",0)),G.euros(salary.value),"ajout" if recruiting else "écart",("+" if delta>=0 else "−")+G.euros(absi(delta)),G.n(years.value),G.euros(app.model.get("finance",{}).get("cash",0))]
 	salary.value_changed.connect(func(_value:float):refresh.call())
 	years.value_changed.connect(func(_value:float):refresh.call())
 	refresh.call()

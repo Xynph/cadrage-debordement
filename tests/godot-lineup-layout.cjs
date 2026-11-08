@@ -6,8 +6,8 @@ if(!godot||!fs.existsSync(godot)){console.log('SKIP godot-lineup-layout : SDK Go
 const dir=fs.mkdtempSync(path.join(process.env.CD_LINEUP_TEMP||os.tmpdir(),'cd-lineup-'));
 const source=path.resolve(__dirname,'../native/godot'),project=path.join(dir,'godot');fs.mkdirSync(project,{recursive:true});
 for(const name of fs.readdirSync(source)){const p=path.join(source,name);if(fs.statSync(p).isFile())fs.copyFileSync(p,path.join(project,name));}
-for(const name of ['ui','guide'])fs.cpSync(path.join(source,name),path.join(project,name),{recursive:true});
-const manifest={};for(const base of ['','ui','guide'])for(const name of fs.readdirSync(path.join(project,base))){const p=path.join(project,base,name);if(fs.statSync(p).isFile()&&/\.(gd|godot|tscn|json)$/.test(name))manifest[path.join(base,name)]=crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');}fs.writeFileSync(path.join(dir,'source-manifest.json'),JSON.stringify(manifest,null,2));
+for(const name of ['ui','guide','audio'])fs.cpSync(path.join(source,name),path.join(project,name),{recursive:true});
+const manifest={};for(const base of ['','ui','guide','audio'])for(const name of fs.readdirSync(path.join(project,base))){const p=path.join(project,base,name);if(fs.statSync(p).isFile()&&/\.(gd|godot|tscn|json)$/.test(name))manifest[path.join(base,name)]=crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');}fs.writeFileSync(path.join(dir,'source-manifest.json'),JSON.stringify(manifest,null,2));
 for(const name of ['assets','fonts','branding','shaders','.godot'])fs.symlinkSync(path.join(source,name),path.join(project,name),'junction');
 fs.symlinkSync(path.resolve(source,'../engine'),path.join(dir,'engine'),'junction');
 fs.writeFileSync(path.join(dir,'career.json'),JSON.stringify(JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(__dirname,'fixtures/france-long-career-s6.json.gz')))).checkpoint.save));

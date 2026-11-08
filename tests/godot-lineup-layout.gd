@@ -74,7 +74,7 @@ func run() -> void:
 	for mode in ["production","adaptive"]:
 		for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
 			root.size=resolution;DisplayServer.window_set_size(resolution)
-			root.content_scale_size=Vector2i(mini(resolution.x,1600),mini(resolution.y,900)) if mode=="adaptive" else Vector2i(1440,900)
+			root.content_scale_size=Vector2i(mini(resolution.x,1920),mini(resolution.y,1080)) if mode=="adaptive" else Vector2i(1440,900)
 			app._render();await settle();app.coach.close()
 			var field := board()
 			var overlaps := 0

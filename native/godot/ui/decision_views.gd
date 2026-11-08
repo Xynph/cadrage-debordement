@@ -125,18 +125,37 @@ static func recruitment(app: Control) -> void:
 	var data: Dictionary = app.model.get("decisions", {}).get("recruitment", {})
 	var view := dialog(app, "Construire l'effectif", "RecruitmentNeeds", 900)
 	var d: AcceptDialog = view[0]
-	var list: VBoxContainer = view[1]
-	list.add_child(G.section("Les postes à anticiper", "Aptitude actuelle, contrats durables et relève ; aucun recrutement automatique."))
+	var holder: VBoxContainer = view[1]
+	var tabs := TabContainer.new()
+	tabs.name = "ScoutTabs"
+	tabs.custom_minimum_size.y = 365
+	tabs.add_theme_font_size_override("font_size", 13)
+	G.fill(tabs, true)
+	holder.add_child(tabs)
+	var needs := G.v(6)
+	needs.name = "Besoins"
+	tabs.add_child(needs)
+	var missions := G.v(6)
+	missions.name = "Missions"
+	tabs.add_child(missions)
+	var reports := G.v(6)
+	reports.name = "Rapports"
+	tabs.add_child(reports)
+	var list: VBoxContainer = G.scroll(needs)
+	list.add_child(G.label("Les postes à anticiper", 18, G.INK, true))
+	list.add_child(G.wrap("Aptitude actuelle, contrats et relève. Vous gardez la décision.", 12))
 	for need: Dictionary in data.get("needs", []):
 		var row := G.h(10)
 		list.add_child(row)
-		var text := G.wrap("%s · %d apte(s) · %d durable(s)\n%s" % [need.pos, need.healthy, need.durable, ", ".join(need.reasons)], 13, G.ALERT if need.need else G.MUTED)
+		var text := G.wrap("%s · %d apte(s) · %d durable(s)\n%s" % [need.pos, need.healthy, need.durable, ", ".join(need.reasons)], 12, G.ALERT if need.need else G.MUTED)
 		G.fill(text)
 		row.add_child(text)
 		row.add_child(G.button("VOIR LES PISTES", func():
 			d.queue_free(); app.management_ui.market.position = need.pos; app._navigate("Recrutement")))
 		list.add_child(G.separator())
-	list.add_child(G.section("Confier une recherche", "5 000 € immédiatement · deux journées · une mission active et trois en attente."))
+	list = G.scroll(missions)
+	list.add_child(G.label("Confier une recherche", 18, G.INK, true))
+	list.add_child(G.wrap("5 000 € · deux journées · une mission active, trois en attente.", 12))
 	var fields := G.h(10)
 	list.add_child(fields)
 	var position := OptionButton.new()
@@ -154,10 +173,56 @@ static func recruitment(app: Control) -> void:
 	mission.disabled = not data.get("missionAvailable", false)
 	list.add_child(mission)
 	for job: Dictionary in data.get("missions", []): list.add_child(G.wrap("Mission %s · %s" % [job.id, "en cours, %s journée(s)" % G.n(job.remaining) if job.status == "active" else "en attente" if job.status == "queued" else "terminée"], 13))
-	list.add_child(G.section("Rapports disponibles"))
-	if data.get("reports", []).is_empty(): list.add_child(G.wrap("Les profils apparaîtront après le travail du recruteur. Les informations sont datées ; elles ne garantissent ni une signature ni un résultat.", 13))
-	for report: Dictionary in data.get("reports", []): list.add_child(G.wrap("%s · %s · %s ans · S%s, semaine%s\nNiveau %s / potentiel estimé %s · prime %s · salaire %s / sem." % [report.name, report.pos, G.n(report.age), G.n(report.season), G.n(report.week), G.n(report.note), G.n(report.potential), G.euros(report.price), G.euros(report.salary)], 14, G.INK))
+	var available_reports: Array = data.get("reports", [])
+	if available_reports.is_empty():
+		reports.add_child(G.wrap("Aucun rapport. Confiez une mission pour recevoir des profils datés.", 13))
+	else:
+		var picker := OptionButton.new()
+		picker.name = "ScoutReportPicker"
+		picker.custom_minimum_size.y = 34
+		G.fill(picker)
+		for report: Dictionary in available_reports:
+			picker.add_item(str(report.get("name", "Joueur non identifié")) + " · " + str(report.get("pos", "Poste inconnu")))
+			picker.set_item_tooltip(picker.item_count - 1, picker.get_item_text(picker.item_count - 1))
+		reports.add_child(picker)
+		var detail := G.scroll(reports)
+		var redraw := func(index: int):
+			for child in detail.get_children(): detail.remove_child(child); child.queue_free()
+			scout_report(detail, available_reports[index])
+		picker.item_selected.connect(redraw)
+		redraw.call(0)
 	d.popup_centered(Vector2i(900, 580))
+
+static func scout_report(parent: Container, report: Dictionary) -> void:
+	var card := G.card(parent)
+	card.name = "ScoutReport_" + str(report.get("id", "archive"))
+	card.add_theme_constant_override("separation", 6)
+	card.add_child(G.wrap(str(report.get("name", "Joueur non identifié")), 18, G.INK))
+	card.add_child(G.wrap(str(report.get("pos", "Poste non conservé")), 12))
+	var assessment: Dictionary = report.get("assessment", {})
+	var source := G.wrap(assessment.get("source", "Date du rapport non conservée"), 12, G.GOLD)
+	source.name = "ScoutSource"
+	card.add_child(source)
+	var fit := G.wrap(assessment.get("fit", "Besoins actuels à vérifier avant de décider."), 12, G.INK)
+	fit.name = "ScoutFit"
+	card.add_child(fit)
+	var evidence := TabContainer.new()
+	evidence.name = "ScoutEvidenceTabs"
+	evidence.add_theme_font_size_override("font_size", 12)
+	card.add_child(evidence)
+	for section: Array in [["ScoutObserved", "Faits relevés", "observed"], ["ScoutEstimates", "Avis", "estimates"], ["ScoutLimits", "À vérifier", "limits"]]:
+		var block := G.v(3)
+		block.name = section[1]
+		evidence.add_child(block)
+		var content := G.v(3)
+		content.name = section[0]
+		block.add_child(content)
+		var lines: Array = assessment.get(section[2], [])
+		if lines.is_empty(): content.add_child(G.wrap("Information non conservée.", 12))
+		for line: String in lines: content.add_child(G.wrap(line, 12))
+	card.add_child(G.separator())
+	card.add_child(G.wrap(assessment.get("availability", "Disponibilité actuelle non vérifiée."), 13, G.GOLD if assessment.get("available", false) else G.ALERT))
+	card.add_child(G.wrap(assessment.get("caution", "Avis daté ; aucune garantie de performance ou de signature."), 12))
 
 static func spin(parent: Container, title: String, minimum: float, maximum: float, value: float, step: float) -> SpinBox:
 	var box := G.v(3)

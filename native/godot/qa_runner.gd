@@ -11,6 +11,7 @@ var coach_reception: Dictionary = {}
 var layout_reception: Array[Dictionary] = []
 var systems_reception: Dictionary = {}
 var file_reception: Dictionary = {}
+var native06_reception: Dictionary = {}
 
 func _ready() -> void:call_deferred("_run")
 
@@ -34,7 +35,7 @@ func _resize_window(resolution: Vector2i) -> void:
 	await _settle()
 	window.size = resolution
 	DisplayServer.window_set_size(resolution)
-	var expected := Vector2i(mini(resolution.x,1600),mini(resolution.y,900))
+	var expected := Vector2i(mini(resolution.x,1920),mini(resolution.y,1080))
 	deadline = Time.get_ticks_msec() + 2000
 	while (window.size != resolution or window.content_scale_size != expected) and Time.get_ticks_msec() < deadline:
 		await get_tree().process_frame
@@ -52,6 +53,10 @@ func _display_reception() -> void:
 	app.settings()
 	await _settle()
 	var dialog: AcceptDialog = app.find_child("PreferencesDialog",true,false)
+	var tabs: TabContainer = dialog.find_child("PreferencesTabs",true,false)
+	_check(tabs != null and tabs.get_tab_count() == 3,"Bundled preferences contain all three sections")
+	if tabs != null: tabs.current_tab = 2
+	await _settle()
 	var windowed: Button = dialog.find_child("PreferencesWindowed",true,false)
 	var fullscreen: Button = dialog.find_child("PreferencesFullscreen",true,false)
 	_check(windowed != null and fullscreen != null,"Actual preferences expose both display modes")
@@ -198,8 +203,8 @@ func _coach_reception() -> void:
 			recordings += 1
 			if stream.get_length() < shortest_length:
 				shortest_length = stream.get_length(); shortest_text = text
-	_check(recordings == 38 and app.coach.speech.clips.size() == 38, "All 38 exported recordings received without relying on system TTS")
-	_check(pending == 36, "36 new texts explicitly await their approved recordings")
+	_check(recordings == 15 and app.coach.speech.clips.size() == 15, "All 15 still-exact legacy recordings received without relying on system TTS")
+	_check(pending == 59, "59 rewritten texts explicitly await new recordings")
 	var available: bool = recordings > 0 or not app.coach.speech.voice_id.is_empty()
 	if OS.get_environment("CD_GODOT_REQUIRE_TTS") == "1": _check(available, "French speech required for this Windows reception")
 	if available:
@@ -454,9 +459,10 @@ func _systems_reception() -> void:
 	# Exercise the actual relocated engine and resources, after the full season.
 	# These are real, visible decisions in the disposable S2 reception career.
 	var initial_failures := failures.size()
-	var domains := ["press","relationships","clubWorld","academyPathways","clubStrategy","clubSupport","managerCareer","playbook"]
+	var domains := ["press","relationships","clubWorld","academyPathways","clubStrategy","clubSupport","managerCareer","playbook","coachNotebook"]
 	for domain in domains:
 		_check(app.model.get("clubLife",{}).has(domain), "Bundled engine projects native domain: " + domain)
+	await _native06_reception()
 	var professional_ids: Array = app.model.squad.map(func(p: Dictionary): return str(p.id))
 	app._navigate("Centre")
 	_press("ACTIVER LES PARCOURS")
@@ -530,6 +536,7 @@ func _finish() -> void:
 	app.closing = true
 	app.timer.stop()
 	if is_instance_valid(app.coach): app.coach.destroy()
+	if is_instance_valid(app.soundscape): app.soundscape.dispose()
 	app.bridge.stop()
 	var deadline:=Time.get_ticks_msec()+2500
 	while app.bridge.child_pid>0 and Time.get_ticks_msec()<deadline:await get_tree().process_frame
@@ -538,8 +545,124 @@ func _finish() -> void:
 	var result:Dictionary={"passed":failures.is_empty(),"checks":checks,"failures":failures,"native_display":DisplayServer.get_name(),"captures":captures,"pid":OS.get_process_id(),"engine_pid":engine_pid,"executable":OS.get_executable_path(),"season":app.model.get("meta",{}).get("season"),"club":final_club.get("id"),"coach":coach_reception,"layout":layout_reception}
 	result.systems = systems_reception
 	result.files = file_reception
+	result.native06 = native06_reception
 	if not captures.is_empty():
 		var file:=FileAccess.open(captures.path_join("report.json"),FileAccess.WRITE)
 		if file!=null:file.store_string(JSON.stringify(result,"\t"));file.close()
 	print(JSON.stringify(result))
 	get_tree().quit(0 if failures.is_empty() else 1)
+
+func _key_action(control: Control) -> void:
+	_check(is_instance_valid(control) and control.is_visible_in_tree(), "Native06 keyboard target is visible")
+	if not is_instance_valid(control) or not control.is_visible_in_tree(): return
+	control.grab_focus()
+	await _settle()
+	_check(control.has_focus(), "Native06 action has keyboard focus: " + str(control.name))
+	var ancestor := control.get_parent()
+	while ancestor != null and ancestor != app:
+		if ancestor is ScrollContainer:
+			_check(ancestor.get_global_rect().encloses(control.get_global_rect()), "Native06 keyboard action fits its real scroll viewport: " + str(control.name))
+		ancestor = ancestor.get_parent()
+	for down in [true,false]:
+		var event := InputEventKey.new(); event.keycode = KEY_ENTER; event.pressed = down
+		Input.parse_input_event(event)
+		await get_tree().process_frame
+	await _settle()
+
+func _key_text(line: LineEdit, text: String) -> void:
+	line.grab_focus(); await _settle()
+	# Enter ends editing in Godot 4.7 while retaining focus. Re-enter by keyboard.
+	if not line.is_editing(): await _key_action(line)
+	line.select_all()
+	for character in text:
+		for down in [true,false]:
+			var event := InputEventKey.new()
+			event.keycode = character.unicode_at(0); event.unicode = character.unicode_at(0); event.pressed = down
+			Input.parse_input_event(event)
+			await get_tree().process_frame
+	await _settle()
+
+func _native06_reception() -> void:
+	var initial_failures := failures.size()
+	_check(is_instance_valid(app.soundscape) and app.soundscape_ready and app.sound_profile_loaded, "Native06 sound manager and actual profile are loaded")
+	if not is_instance_valid(app.soundscape): return
+	var assets: Array[String] = []
+	for id in app.soundscape.ASSETS:
+		var path: String = "res://audio/assets/" + str(app.soundscape.ASSETS[id])
+		var stream: AudioStreamWAV = AudioStreamWAV.load_from_file(path) if OS.has_feature("editor") and FileAccess.file_exists(path) else ResourceLoader.load(path) as AudioStreamWAV
+		_check(stream != null and stream.get_length() > 0, "Native06 exported WAV decodes: " + str(id))
+		if stream != null: assets.append(str(id))
+	_check(assets.size() == 6, "Native06 all six original WAVs received")
+	app._navigate("Bureau"); await _settle()
+	await _key_action(app.root_content.find_child("OpenCoachNotebook",true,false))
+	var popup: AcceptDialog = app.get_node_or_null("CoachNotebook")
+	_check(popup != null and popup.visible, "Native06 notebook opens from Bureau by keyboard")
+	if popup == null: return
+	var editor: TextEdit = popup.find_child("CoachNoteText",true,false)
+	editor.text = "Mon cap de réception : avancer ensemble. 😀"; editor.text_changed.emit()
+	await _key_action(popup.find_child("CoachNoteSave",true,false)); await _wait(); await _settle()
+	_check(app.bridge.last_response_ok and app.model.clubLife.coachNotebook.entries.any(func(row): return row.target == "career" and row.text == editor.text), "Native06 career note reaches the actual worker")
+	popup.hide(); popup.queue_free(); await _settle()
+	var player_id: String = str(app.model.squad[0].id)
+	app.selected_player = player_id
+	app.management_ui.profile_tab = 0
+	app._navigate("Effectif"); await _settle()
+	await _key_action(app.root_content.find_child("OpenPlayerCoachNote",true,false))
+	popup = app.get_node_or_null("CoachNotebook")
+	_check(popup != null and popup.visible, "Native06 player note opens from Overview by keyboard")
+	if popup == null: return
+	var picker: OptionButton = popup.find_child("CoachNoteTarget",true,false)
+	_check(str(picker.get_item_metadata(picker.selected)) == player_id, "Native06 player note uses the current stable ID")
+	editor = popup.find_child("CoachNoteText",true,false)
+	editor.text = "Mon repère personnel sur ce joueur."; editor.text_changed.emit()
+	await _key_action(popup.find_child("CoachNoteSave",true,false)); await _wait(); await _settle()
+	_check(app.bridge.last_response_ok and app.model.clubLife.coachNotebook.entries.any(func(row): return row.target == player_id and row.text == editor.text), "Native06 player note is persisted by ID")
+	popup.hide(); popup.queue_free(); await _settle()
+	await _ask("export")
+	var before: String = app.model.meta.exportText
+	var directory: String = str(app.model.meta.dataDir)
+	var private_before := FileAccess.get_file_as_bytes(directory.path_join("donnees.json"))
+	var interface_before := FileAccess.get_file_as_bytes(directory.path_join("interface.json")) if FileAccess.file_exists(directory.path_join("interface.json")) else PackedByteArray()
+	var master_gain := AudioServer.get_bus_volume_linear(0)
+	var master_mute := AudioServer.is_bus_mute(0)
+	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
+		await _resize_window(resolution)
+		app.settings(); await _settle()
+		var dialog: AcceptDialog = app.get_node("PreferencesDialog")
+		var tabs: TabContainer = dialog.find_child("PreferencesTabs",true,false)
+		_check(tabs != null and tabs.get_tab_count() == 3, "Native06 three compact settings tabs")
+		_check(dialog.size.x <= 720 and dialog.size.y <= 620 and Vector2(dialog.size).y <= get_tree().root.get_visible_rect().size.y, "Native06 settings fit the 720p client: " + str(dialog.size))
+		_check(dialog.find_child("PreferencesScroll",true,false) == null, "Native06 settings need no global scroll")
+		var groups := [["PreferencesVolume","PreferencesMotion","PreferencesCamera","PreferencesQuality","PreferencesReset"],["PreferencesInterfaceVolume","PreferencesStadiumVolume"],["PreferencesFullscreen","PreferencesWindowed"]]
+		for index in 3:
+			tabs.current_tab = index; await _settle()
+			for id: String in groups[index]:
+				var control: Control = dialog.find_child(id,true,false)
+				_check(control.is_visible_in_tree() and Rect2(Vector2.ZERO,Vector2(dialog.size)).encloses(control.get_global_rect()), "Native06 setting is entirely visible: " + id)
+			tabs.get_tab_bar().grab_focus()
+			_check(tabs.get_tab_bar().has_focus(), "Native06 tab bar accepts keyboard focus")
+			dialog.get_ok_button().grab_focus()
+			_check(dialog.get_ok_button().has_focus() and dialog.get_ok_button().is_visible_in_tree(), "Native06 settings can be closed from every tab")
+		tabs.current_tab = 1; await _settle()
+		var interface_volume: SpinBox = dialog.find_child("PreferencesInterfaceVolume",true,false)
+		var stadium_volume: SpinBox = dialog.find_child("PreferencesStadiumVolume",true,false)
+		for pair in [[interface_volume,"interface_volume"],[stadium_volume,"stadium_volume"]]:
+			var field: SpinBox = pair[0]
+			var line := field.get_line_edit()
+			var previous: int = app.soundscape.preferences.get_value(pair[1])
+			await _key_text(line,"0")
+			_check(app.soundscape.preferences.get_value(pair[1]) == previous, "Native06 sound typing does not write before commit")
+			await _key_action(line)
+			_check(app.soundscape.preferences.get_value(pair[1]) == 0 and int(field.value) == 0, "Native06 sound zero commits from keyboard")
+			_check(AudioServer.is_bus_mute(AudioServer.get_bus_index("Interface" if pair[1] == "interface_volume" else "Stade")), "Native06 zero really mutes its independent bus")
+			await _key_text(line,"36" if pair[1] == "interface_volume" else "26")
+			await _key_action(line)
+			_check(app.soundscape.preferences.get_value(pair[1]) == (36 if pair[1] == "interface_volume" else 26), "Native06 sound volume commits from keyboard: " + str(pair[1]) + "=" + str(app.soundscape.preferences.get_value(pair[1])) + ", text=" + line.text)
+		dialog.hide(); dialog.queue_free(); await _settle()
+	var reloaded = preload("res://audio/sound_preferences.gd").new()
+	_check(reloaded.load_profile(directory) and reloaded.get_value("interface_volume") == 36 and reloaded.get_value("stadium_volume") == 26, "Native06 sound.json reloads both persisted channels")
+	_check((FileAccess.get_file_as_bytes(directory.path_join("interface.json")) if FileAccess.file_exists(directory.path_join("interface.json")) else PackedByteArray()) == interface_before, "Native06 sound settings leave interface.json byte exact")
+	_check(is_equal_approx(AudioServer.get_bus_volume_linear(0),master_gain) and AudioServer.is_bus_mute(0) == master_mute, "Native06 sound settings preserve Master gain and mute")
+	await _ask("export")
+	_check(app.model.meta.exportText == before and FileAccess.get_file_as_bytes(directory.path_join("donnees.json")) == private_before, "Native06 local sound UI leaves career and RNG bytes exact")
+	native06_reception = {"passed":failures.size() == initial_failures,"assets":assets,"notes_by_id":true,"settings_tabs":3,"sound_independent":true,"sound_volumes":reloaded.data.duplicate(true)}

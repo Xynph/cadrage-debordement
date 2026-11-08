@@ -5,4 +5,6 @@ https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign
 https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base
 Direction : coach fictif Gaston Darroux (Gabi), sans imitation demandée de personne réelle.
 Lot pré-généré localement le 8 novembre 2026. Ni modèle ni moteur ne sont distribués avec ces WAV.
-Voir manifest.json pour révisions, empreintes, 38 textes exacts et limites. Les autres WAV présents hors manifeste sont des essais, exclus de ce lot.
+Voir manifest.json pour révisions, empreintes, 15 textes actifs exacts et limites. Les autres WAV présents hors manifeste sont des essais, exclus de ce lot.
+
+Les 38 WAV historiques restent conservés. Leurs métadonnées originales sont archivées dans docs/gabi-voix-archives-20261108.json. Seuls les 15 textes encore exacts appartiennent au manifeste actif ; 59 répliques attendent un nouvel enregistrement. Aucun essai ElevenLabs du plan Free n’est livré dans le programme.
