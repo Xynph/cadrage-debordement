@@ -73,6 +73,15 @@ func run() -> void:
 		check(contains_text(app.body, "15"), "Quinze espoirs réels au centre de simulation")
 		await capture("formation-" + str(size.x))
 		app._navigate("Préparation"); await settle()
+		var tactic_lists := {}
+		for button: Button in app.body.find_children("*", "Button", true, false):
+			if not button.has_meta("tactic_id"): continue
+			var ancestor: Node = button.get_parent()
+			while ancestor != null and not ancestor is ScrollContainer: ancestor = ancestor.get_parent()
+			if ancestor is ScrollContainer: tactic_lists[ancestor.get_instance_id()] = ancestor
+		check(tactic_lists.size() == 2, "Deux cahiers tactiques contiennent les vrais choix")
+		for scroll: ScrollContainer in tactic_lists.values():
+			check(scroll.size.y >= 150 and scroll.get_global_rect().intersects(app.body_scroll.get_global_rect()), "Choix tactiques lisibles dans leur zone de défilement")
 		var dossier: Button = app.body.find_child("OpenOppositionDossier", true, false)
 		check(dossier != null and not dossier.disabled, "Accès au dossier adverse")
 		dossier.pressed.emit(); await settle()
@@ -115,6 +124,15 @@ func run() -> void:
 	while app.waiting: await process_frame
 	check(app.model.squad.size() == old_count + 1 and app.model.finance.wage == old_wage + 2000, "Promotion UI : identité, groupe et salaire effectifs")
 	await capture("formation-promue")
+	await command("auto_lineup")
+	if not app.model.selection.valid: await command("promote_cover", {"confirmed":true})
+	await command("begin_match"); await command("delegate"); await command("finish_round")
+	check(app.model.decisions.report is Dictionary and not app.model.decisions.report.notes.is_empty(), "Rapport réel conservé après validation")
+	app._navigate("Match"); await settle()
+	check(contains_text(app.match_screen.side, "Dernière rencontre"), "Bilan du dernier match accessible après validation")
+	for note in app.model.decisions.report.notes:
+		check(contains_text(app.match_screen.side, str(note)), "Observation réelle visible après validation")
+	await capture("bilan-apres-validation")
 	var output := {"checks":checks, "failures":failures, "privatePack":not pack.is_empty()}
 	var report := FileAccess.open(OS.get_environment("CD_STAFF_CAPTURES").path_join("report.json"), FileAccess.WRITE)
 	report.store_string(JSON.stringify(output, "  ")); report.close()

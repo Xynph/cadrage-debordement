@@ -10,6 +10,7 @@ import json
 import os
 import shutil
 import subprocess
+import wave
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,6 +22,25 @@ def digest(path):
 
 
 def stage(node):
+    for compiler in ("build-staff-registry.cjs", "build-rugby-common.cjs"):
+        subprocess.run([str(node), str(ROOT / "scripts" / compiler), "--check"], cwd=ROOT, check=True)
+    voice = PROJECT / "guide/assets/voice"
+    recordings = json.loads((voice / "manifest.json").read_text(encoding="utf-8-sig"))
+    dialogues = json.loads((PROJECT / "guide/dialogues.json").read_text(encoding="utf-8-sig"))
+    expected = {fragment["id"]: fragment["text"] for page in dialogues["pages"] for fragment in page["fragments"]}
+    clips = recordings["clips"]
+    assert len(clips) == len(expected) == 38, "38 répliques et enregistrements requis"
+    assert len({clip["id"] for clip in clips}) == len(clips), "IDs vocaux uniques requis"
+    for clip in clips:
+        assert clip["text"] == expected[clip["id"]]
+        assert hashlib.sha256(clip["text"].encode("utf-8")).hexdigest() == clip["text_sha256"]
+        filename = clip["file"]
+        assert Path(filename).name == filename and filename.endswith(".wav"), "WAV relatif requis"
+        path = voice / filename
+        assert digest(path) == clip["sha256"], "Empreinte vocale différente : " + filename
+        with wave.open(str(path), "rb") as wav:
+            assert wav.getsampwidth() == 2 and wav.getnchannels() == 1 and wav.getnframes() > wav.getframerate() / 2
+    assert (voice / "CREDITS.txt").is_file() and list(voice.glob("LICENSE*.txt")), "Provenance et licences vocales requises"
     assets = PROJECT / "assets"
     assets.mkdir(exist_ok=True)
     atlas = ROOT / "dist/assets/club-atlas"
@@ -43,7 +63,7 @@ def stage(node):
     script = "process.stdout.write(JSON.stringify(require('./dist/france-clubs.js').clubs))"
     data = subprocess.check_output([str(node), "-e", script], cwd=ROOT)
     (assets / "clubs.json").write_bytes(data)
-    print("Staging vérifié : 60 photos, 30 territoires, portraits et modèle CC0.", flush=True)
+    print("Staging vérifié : registres anonymisés, 38 voix, 60 photos, 30 territoires, portraits et modèle CC0.", flush=True)
 
 
 def build(args):
@@ -98,11 +118,17 @@ def build(args):
     shutil.copytree(PROJECT / "fonts", licenses / "fontes", ignore=shutil.ignore_patterns("*.import"))
     shutil.copy2(ROOT / "docs/club-atlas-credits.md", licenses / "photos.md")
     shutil.copy2(PROJECT / "guide/assets/NOTICE.md", licenses / "coach-original.md")
+    shutil.copy2(PROJECT / "guide/assets/NOTICE-coach-poses.md", licenses / "coach-16-poses.md")
+    voice_licenses = licenses / "voix-coach"
+    voice_licenses.mkdir()
+    for document in (PROJECT / "guide/assets/voice").iterdir():
+        if document.suffix in (".txt", ".md"):
+            shutil.copy2(document, voice_licenses / document.name)
     shutil.copy2(ROOT / "dist/assets/club-atlas/manifest.json", licenses / "photos-manifest.json")
     shutil.copytree(ROOT / "dist/match3d/assets", licenses / "modele3d",
                     ignore=shutil.ignore_patterns("*.glb", "*.gltf", "*.bin", "*.png", "*.jpg"))
     (app / "LISEZ-MOI.txt").write_text(
-        "OVAL LEGACY 27 — RUGBY MANAGER — PRÉALPHA 0.3\n\n"
+        "OVAL LEGACY 27 — RUGBY MANAGER — PRÉALPHA 0.4\n\n"
         "Lancer OvalLegacy27.exe. Aucun navigateur, Godot ou Node à installer.\n"
         "Conserver le dossier complet avec runtime et engine. Windows x64.\n\n"
         "Nouvelle carrière : 30 clubs jouables, deux divisions reliées (14 et16).\n"
@@ -111,6 +137,8 @@ def build(args):
         "Disponible à la création et dans les paramètres de carrière.\n"
         "Les packs changent les noms/images, pas les statistiques/progrès.\n"
         "Composition à23, entraînement, tactiques, recrutement et contrats.\n"
+        "Staffs des30clubs, centre de formation, dossier adverse et besoins de recrutement.\n"
+        "Gabi : aide vocale locale, petites bulles et16poses illustrées.\n"
         "Match3D, phases finales, montées/descentes et saisons suivantes.\n"
         "Les anciennes carrières fictives14 restent importables et jouables.\n\n"
         "Parcours : Nouvelle carrière → club → Composition → Préparation → Match.\n"
@@ -132,6 +160,12 @@ def build(args):
                "players": [{"id": "lnr:2399", "name": "Mon premier joueur"}], "assets": []}
     with zipfile.ZipFile(modding / "Exemple-identites.zip", "w", zipfile.ZIP_DEFLATED) as example_zip:
         example_zip.writestr("pack.json", json.dumps(example, ensure_ascii=False, indent=2))
+    staff = json.loads((ROOT / "native/engine/staff-registry.json").read_text(encoding="utf-8-sig"))
+    staff_id = staff["clubs"][0]["members"][0]["id"]
+    example_v2 = dict(example, schema="cd-identity-pack-v2", id="mon-univers-staff", name="Mon univers avec staff",
+                      staff=[{"id": staff_id, "name": "Mon entraîneur"}])
+    with zipfile.ZipFile(modding / "Exemple-staff-identites.zip", "w", zipfile.ZIP_DEFLATED) as example_zip:
+        example_zip.writestr("pack.json", json.dumps(example_v2, ensure_ascii=False, indent=2))
     (modding / "LIRE-MOI.txt").write_text(
         "PACKS OVAL LEGACY 27\n\nCréation → Packs et identités → Importer un pack ZIP.\n"
         "En carrière : Menu → Paramètres → Packs et identités.\n"
@@ -142,11 +176,15 @@ def build(args):
         "Pour les images PNG/JPEG/WebP, déclarer assets [{id,path,sha256,bytes}], puis\n"
         "référencer leur id dans clubs[].logo ou players[].portrait.\n"
         "players[].synthetic=true signale une illustration IA. Les chemins restent relatifs.\n"
+        "Exemple-staff-identites.zip utilise cd-identity-pack-v2 : staff[] contient\n"
+        "id, name et éventuellement portrait/synthetic. Les IDs staff sont distincts\n"
+        "des joueurs ; consulter engine/staff-registry.json pour les correspondances.\n"
+        "Le format v1 reste accepté ; les statistiques ne sont pas importées.\n"
         "Les images personnalisées sont fournies séparément dans les packs importés.\n",
         encoding="utf-8")
     files = {p.relative_to(app).as_posix(): {"sha256": digest(p), "bytes": p.stat().st_size}
              for p in sorted(app.rglob("*")) if p.is_file()}
-    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": "0.3.0", "name": "Oval Legacy 27", "edition": 27, "mode": "common", "files": files}, indent=2), encoding="utf-8")
+    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": "0.4.0", "name": "Oval Legacy 27", "edition": 27, "mode": "common", "files": files}, indent=2), encoding="utf-8")
     archive = target / "OvalLegacy27-PrototypeGodot-Windows-x64.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as out:
         for path in sorted(app.rglob("*")):

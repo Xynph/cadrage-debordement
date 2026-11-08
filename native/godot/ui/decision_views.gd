@@ -173,7 +173,7 @@ static func match_notes(app: Control, parent: Container, model: Dictionary) -> v
 	var data: Dictionary = model.get("decisions", {})
 	var live: Dictionary = model.live if model.get("live") is Dictionary else {}
 	var advice: Variant = data.get("liveAdvice")
-	if not live.get("finished", false) and advice is Dictionary:
+	if not live.is_empty() and not live.get("finished", false) and advice is Dictionary:
 		parent.add_child(G.section("Le regard de l'adjoint"))
 		parent.add_child(G.wrap(advice.attackReason, 13))
 		parent.add_child(G.wrap(advice.defenceReason, 13))
@@ -183,8 +183,8 @@ static func match_notes(app: Control, parent: Container, model: Dictionary) -> v
 		parent.add_child(adopt)
 		parent.add_child(G.wrap("Conseil indicatif. Mise en pause requise ; les consignes locales gardent leur priorité.", 11))
 	var report: Variant = data.get("report")
-	if live.get("finished", false) and report is Dictionary:
-		parent.add_child(G.section("Vos choix, les faits"))
+	if (live.is_empty() or live.get("finished", false)) and report is Dictionary:
+		parent.add_child(G.section("Dernière rencontre · vos choix, les faits" if live.is_empty() else "Vos choix, les faits"))
 		for note in report.get("notes", []): parent.add_child(G.wrap(note, 13))
 		var plans: Variant = report.get("plans")
 		if plans is Dictionary:

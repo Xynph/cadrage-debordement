@@ -116,6 +116,8 @@ func _build() -> void:
 	portrait = Portrait.new(); portrait.position = Vector2(356, 16); portrait.size = Vector2(136,136); _body.add_child(portrait)
 	_balloon = Balloon.new(); _balloon.speaker = portrait; _balloon.size = Vector2(354,132); _body.add_child(_balloon)
 	var scroll := ScrollContainer.new(); scroll.name = "GuideTextScroll"
+	scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	scroll.get_v_scroll_bar().mouse_filter = Control.MOUSE_FILTER_IGNORE
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_balloon.add_child(scroll)
 	bubble = _label(scroll, "", 15); bubble.name = "GuideBubble"
@@ -229,8 +231,10 @@ func _priority_rects() -> Array[Rect2]:
 	if not is_instance_valid(app) or not is_instance_valid(app.root_content): return result
 	for button in app.root_content.find_children("*", "Button", true, false):
 		if not button.is_visible_in_tree() or button.disabled: continue
-		var text := str(button.text).to_upper()
-		if button != app.primary_button and not ["VALIDER", "CONTRAT PRO", "CONFIRMER", "SAUVEGARDER", "COUP D'ENVOI"].any(func(word): return text.contains(word)): continue
+		# Text-labelled commands include ordinary offers, filters and decisions.
+		# Empty buttons are large illustrated item selectors, not action bars;
+		# the descriptive balloon lets their clicks pass through.
+		if button.text.is_empty(): continue
 		var rect: Rect2 = button.get_global_rect().intersection(Rect2(Vector2.ZERO, app.size))
 		var ancestor: Node = button.get_parent()
 		while ancestor is Control:
@@ -257,6 +261,9 @@ func _covers_priority(rects: Array[Rect2]) -> bool:
 
 func _avoid_primary_controls() -> void:
 	if not visible or not is_instance_valid(app): return
+	# Voice settings are an explicitly opened popover. Keep it stable while
+	# interacting with its menus; persistent write errors must remain readable.
+	if _settings_open or _error_panel.visible: return
 	var rects := _priority_rects()
 	if rects.is_empty() or not _covers_priority(rects): return
 	var left: float = app.workspace_inset.get_global_rect().position.x + 12 if is_instance_valid(app.workspace_inset) else 208.0

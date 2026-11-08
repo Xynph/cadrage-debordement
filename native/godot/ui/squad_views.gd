@@ -292,6 +292,9 @@ static func preparation(app:Control) -> Control:
 		var card:=G.panel(row)
 		G.chapter(card,pair[2],pair[3],"Votre intention de jeu pour la rencontre",app.accent)
 		var list:=G.scroll(card)
+		# The new preparation sections can exceed the outer viewport. Preserve
+		# a real reading area for these inner lists instead of collapsing to zero.
+		list.get_parent().custom_minimum_size.y=190
 		for option in tactics.get(pair[1],[]):
 			var b:=G.button(str(option.label).to_upper(),func():
 				var current:Dictionary=app.model.get("tactics",{})

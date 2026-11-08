@@ -375,7 +375,7 @@ func _build_sidebar(parent: Node) -> void:
 			var b := G.nav_button(target.to_upper(),func():_navigate(target),accent,route==target)
 			left.add_child(b)
 	left.add_child(G.spacer())
-	left.add_child(G.label("PRÉALPHA 0.3  /  WINDOWS", 9, G.GOLD))
+	left.add_child(G.label("PRÉALPHA 0.4  /  WINDOWS", 9, G.GOLD))
 	left.add_child(G.button("MENU & SAUVEGARDES", pause_menu))
 
 func _update_live_bar() -> void:

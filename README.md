@@ -1,14 +1,14 @@
 # Oval Legacy 27 — Rugby Manager
 
-**Un jeu de management de rugby à XV, en français : préalpha Windows native Godot 0.3 et version web historique.**
+**Un jeu de management de rugby à XV, en français : préalpha Windows native Godot 0.4 et version web historique.**
 
 Dirigez votre club : composez les 23, préparez votre équipe, recrutez, gérez les contrats et suivez les rencontres.
 
 Ce dépôt contient le code du jeu, sa documentation et ses tests. Les carrières Windows restent dans un profil local indépendant de l'exécutable ; les parties web restent dans le navigateur. Aucune sauvegarde personnelle n'est stockée sur GitHub.
 
-## Préalpha Windows native Godot 0.3
+## Préalpha Windows native Godot 0.4
 
-Le jeu dispose d'un accueil photographique, d'une création de carrière par club et de dix vues de gestion : Bureau, Effectif, Composition, Préparation, Recrutement, Finances, Club, Calendrier, Classements et Match. L'interface associe anthracite, ivoire, couleurs du club, portraits fictifs et soixante photographies des trente territoires.
+Le jeu dispose d'un accueil photographique, d'une création de carrière par club et de douze vues de gestion : Bureau, Effectif, Composition, Préparation, Recrutement, Formation, Staff, Finances, Club, Calendrier, Classements et Match. L'interface associe anthracite, ivoire, couleurs du club, portraits fictifs et soixante photographies des trente territoires.
 
 Le Bureau **« Le carnet du club »** réunit un journal ivoire, les décisions de contrats et de sélection, le prochain rendez-vous photographique, quatre rencontres à venir, cinq fiches du groupe et un classement de proximité de huit clubs. Ses chiffres proviennent de la carrière ; les panneaux défilent localement pour garder une lecture confortable. Les boutons ouvrent les vraies fiches et les vues de préparation, calendrier, classement et finances. Voir [la réception du Bureau](docs/bureau-carnet-20261107.md).
 
@@ -18,6 +18,10 @@ L’effectif et le recrutement proposent recherche sans accents, filtres, tri ex
 
 Les trente clubs sont jouables dans deux divisions reliées de 14 et 16 clubs. La nouvelle base commune conserve les 1 592 joueurs, identifiants et statistiques de la base active, avec des noms fictifs proches. Les packs personnalisés changent les identités et images ; progression, contrats, résultats et notes de la carrière restent les mêmes. Composition à 23, entraînement, charges individuelles, tactiques, changements et offres de contrats ont des effets réels. Une promotion de secours peut compléter une feuille, après confirmation de son coût salarial.
 
+La Formation expose le centre de quinze espoirs par saison, les promotions payantes et la progression des professionnels. Préparation propose un dossier adverse argumenté ; Recrutement montre besoins, échéances et missions. Le bilan reste consultable après validation de la journée. La capacité du mode commun suit l'effectif initial du club + 6, minimum 42 et maximum 100 ; les modes historiques gardent 42. Voir les [décisions natives et leurs limites](docs/decisions-natives-20261108.md).
+
+Les trente staffs disposent de 428 références anonymisées. Un pack v2 peut présenter leurs identités et portraits sans modifier la simulation ; les packs v1 restent compatibles. Le relevé distingue les dates et références historiques. Le pack privé enrichi contient 324 photos officielles et reste séparé de la distribution de base. Voir la [couverture des staffs](docs/staff-20261108.md).
+
 Décompressez l'archive complète puis lancez `OvalLegacy27.exe`. Godot et Node sont embarqués : aucune installation supplémentaire ni navigateur n'est nécessaire. Le profil est conservé dans `%APPDATA%\CadrageDebordement\PrototypeGodot`, hors de l'exécutable. Le menu conserve export, import et reprise des anciennes carrières fictives à 14 ou 30 clubs ; elles ne sont pas converties automatiquement en base commune.
 
 Depuis la création d'une carrière ou ses paramètres : **Packs et identités → Importez un pack personnalisé**. L'analyse annonce la couverture et distingue photos officielles et illustrations IA ; l'installation et la sélection sont explicites. Les images du pack fourni pour usage privé restent dans le profil, séparées du jeu de base. Un exemple de pack de noms est livré dans `Packs/`.
@@ -26,7 +30,9 @@ Le [rapport Godot 0.3 et packs](docs/rugby-real-native-packs-20261107.md) détai
 
 ## Coach, prise en main et références des effectifs
 
-Le coach fictif présente quinze étapes et les écrans du jeu. Son portrait 2D change réellement de pose, parle et cligne des yeux ; la bulle reprend le texte prononcé. La voix française Windows est provisoire et sélectionnable : sans voix disponible, le mode texte reste utilisable. L'aide se réduit pendant le direct ou une décision et se réactive dans **Paramètres → Aide du coach**. Sa progression et ses préférences sont séparées des sauvegardes sportives. Voir le [guide natif](docs/coach-guide-20261107.md).
+Gaston Darroux, dit **Gabi**, présente son passé de pilier et d'entraîneur du Sud-Ouest. Son portrait illustré possède seize poses et expressions. Il guide dix-sept écrans avec 38 petites répliques dans une bulle flottante, sans panneau extérieur ni réduction de l'espace de jeu. Les fichiers vocaux locaux correspondent au texte exact ; la sélection du timbre et de l'accent est en cours. La voix française Windows reste un repli explicite pour un texte sans enregistrement. L'aide se réduit pendant le direct ou une décision et se réactive dans **Paramètres → Aide du coach**. Sa progression et ses préférences sont séparées des sauvegardes sportives. Le [guide initial](docs/coach-guide-20261107.md) reste historique.
+
+Le [récapitulatif des idées GitHub](docs/idees-github-20261108.md) confronte dix-huit familles au code réellement chargé. Presse, rivalités et formation avancée sont distinguées des raccordements déjà jouables ; les prototypes et branches supplantées ne sont pas présentés comme des fonctions natives intégrées.
 
 Les nouvelles carrières communes utilisent le **registre effectifs v2 : 241 postes, 86 échéances et 9 statuts documentés** ; le reste est estimé explicitement. Les statistiques de la base active sont conservées. Les anciennes carrières v1 gardent leurs références sans migration, et les packs changent les identités sans remplacer les progrès. Voir les [sources et limites du lot2](docs/roster-foundation-lot2.md) et le [protocole de réception Windows](docs/oval-legacy-27-carnet-coach-20261108.md).
 

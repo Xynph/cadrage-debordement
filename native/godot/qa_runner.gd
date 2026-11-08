@@ -76,8 +76,12 @@ func _capture(name:String) -> void:
 	layout_reception.append({"capture":name,"viewport":[logical.x,logical.y],"window":[DisplayServer.window_get_size().x,DisplayServer.window_get_size().y],"root_end":[end.x,end.y]})
 	_check(end.x<=logical.x+1 and end.y<=logical.y+1,"Root fits client: "+name)
 	if is_instance_valid(app.body) and app.route not in ["Accueil","Création"]:
-		end=app.body.get_global_transform_with_canvas()*app.body.size
+		# The page content may extend vertically inside CareerWorkspace. Check
+		# its visible viewport, while still refusing horizontal content clipping.
+		var workspace: Control = app.body_scroll if is_instance_valid(app.body_scroll) else app.body
+		end=workspace.get_global_transform_with_canvas()*workspace.size
 		_check(end.x<=logical.x+1 and end.y<=logical.y+1,"Page fits client: "+name+" "+str(end))
+		_check(app.body.size.x<=workspace.size.x+1,"Page content fits workspace width: "+name)
 	for dialog in app.get_children():
 		if not dialog is AcceptDialog or not dialog.visible:continue
 		var client:Vector2=get_tree().root.get_visible_rect().size
@@ -114,8 +118,7 @@ func _coach_reception() -> void:
 	app.coach.speech.requested.connect(func(text: String): requests.append(text))
 	app.coach.speech.started.connect(func(_id: int): events.starts += 1)
 	app.coach.speech.ended.connect(func(_id: int): events.ends += 1)
-	# The real system TTS runs at volume zero during unattended reception.
-	# This leaves the player's sound settings untouched.
+	# Audio runs at volume zero only in this disposable reception profile.
 	app.coach.speech.volume = 0
 	app.coach.open_help()
 	await _settle()
@@ -123,33 +126,50 @@ func _coach_reception() -> void:
 	_check(app.root_content.offset_bottom == 0 and app.coach.mouse_filter == Control.MOUSE_FILTER_IGNORE and app.coach.size.x <= 500, "Coach floats without reserving or intercepting the workspace")
 	_check(app.coach.portrait.texture is AtlasTexture and app.coach.portrait.texture.atlas != null, "Exported atlas is loaded")
 	await _capture("coach-developpe")
-	var available: bool = not app.coach.speech.voice_id.is_empty()
-	if OS.get_environment("CD_GODOT_REQUIRE_TTS") == "1": _check(available, "French TTS required for this Windows reception")
+	var content: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://guide/dialogues.json"))
+	var recordings := 0
+	var shortest_text := ""
+	var shortest_length := INF
+	for page: Dictionary in content.pages:
+		for fragment: Dictionary in page.fragments:
+			var text := str(fragment.text)
+			_check(app.coach.speech.has_recording(text), "Exact exported recording exists: " + str(fragment.id))
+			if not app.coach.speech.has_recording(text): continue
+			var stream := ResourceLoader.load(str(app.coach.speech.clips[text])) as AudioStreamWAV
+			_check(stream != null and stream.get_length() > 0.5, "Imported PCK audio decodes: " + str(fragment.id))
+			if stream == null: continue
+			recordings += 1
+			if stream.get_length() < shortest_length:
+				shortest_length = stream.get_length(); shortest_text = text
+	_check(recordings == 38 and app.coach.speech.clips.size() == 38, "All 38 exported recordings received without relying on system TTS")
+	var available: bool = recordings > 0 or not app.coach.speech.voice_id.is_empty()
+	if OS.get_environment("CD_GODOT_REQUIRE_TTS") == "1": _check(available, "French speech required for this Windows reception")
 	if available:
 		_check(not requests.is_empty() and requests.back() == app.coach.bubble.text, "Spoken text equals the actual bubble")
 		var deadline := Time.get_ticks_msec() + 8000
 		while events.starts == 0 and Time.get_ticks_msec() < deadline: await get_tree().process_frame
-		_check(events.starts > 0 and app.coach.speech.speaking, "Real exported TTS starts")
+		_check(events.starts > 0 and app.coach.speech.speaking, "Real exported speech starts")
+		_check(app.coach.speech.player.playing and app.coach.speech.player.stream is AudioStreamWAV, "Real local Gabi recording plays in the executable")
 		var frames := {}
 		deadline = Time.get_ticks_msec() + 650
 		while Time.get_ticks_msec() < deadline:
 			frames[str(app.coach.portrait.frame_texture.region)] = true
 			await get_tree().process_frame
 		_check(frames.size() >= 2, "Actual speaking portrait changes frames")
-		# A short reception-only phrase proves a real end callback in bounded time.
-		app.coach.bubble.text = "Bonjour."
+		# Play an actual shipped fragment through its natural end callback.
+		app.coach.bubble.text = shortest_text
 		app.coach.replay()
 		var previous_end: int = events.ends
-		deadline = Time.get_ticks_msec() + 8000
+		deadline = Time.get_ticks_msec() + int(shortest_length * 2000) + 3000
 		while events.ends == previous_end and Time.get_ticks_msec() < deadline: await get_tree().process_frame
-		_check(events.ends > previous_end and not app.coach.speech.speaking, "Real exported TTS finishes")
+		_check(events.ends > previous_end and not app.coach.speech.speaking, "Real exported recording finishes naturally")
 		_check(requests.back() == app.coach.bubble.text, "Replay uses the same bubble")
 	app.coach.close()
 	app.coach.speech.volume = 75
 	_check(not app.coach.speech.speaking, "Closing the exported coach stops speech")
 	await _ask("export")
 	_check(app.model.meta.exportText == before and FileAccess.get_sha256(profile) == disk_before, "Coach leaves the actual career and its disk unchanged")
-	coach_reception = {"voice_available":available,"voice":app.coach.speech.voice_id,"starts":events.starts,"ends":events.ends,"test_volume":0,"separate_profile":FileAccess.file_exists(str(app.model.meta.dataDir).path_join("guide.json"))}
+	coach_reception = {"voice_available":available,"recordings_decoded":recordings,"recording_played_to_end":shortest_text,"voice":app.coach.speech.voice_id,"starts":events.starts,"ends":events.ends,"test_volume":0,"separate_profile":FileAccess.file_exists(str(app.model.meta.dataDir).path_join("guide.json"))}
 	await _capture("coach-integre")
 
 func _run() -> void:
@@ -188,7 +208,7 @@ func _run() -> void:
 	for resolution in [Vector2i(1280,800),Vector2i(1440,900),Vector2i(1920,1080)]:
 		if DisplayServer.get_name()=="headless":get_tree().root.size=resolution
 		else:DisplayServer.window_set_size(resolution)
-		for page in ["Bureau","Effectif","Composition","Préparation","Calendrier","Classements","Recrutement","Finances","Club","Match"]:
+		for page in ["Bureau","Effectif","Composition","Préparation","Calendrier","Classements","Recrutement","Formation","Staff","Finances","Club","Match"]:
 			app._navigate(page)
 			await _capture(page.to_lower()+"-"+str(resolution.x))
 			_keyboard_focus()

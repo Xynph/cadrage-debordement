@@ -7,7 +7,7 @@ var _paper := StyleBoxFlat.new()
 
 func _ready() -> void:
 	name = "GuideSpeechBalloon"
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_theme_constant_override("margin_left", 15)
 	add_theme_constant_override("margin_right", 30)
 	add_theme_constant_override("margin_top", 12)

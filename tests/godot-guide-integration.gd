@@ -153,6 +153,25 @@ func market_keyboard() -> void:
 		Input.parse_input_event(event); await settle()
 		var focused := root.gui_get_focus_owner()
 		check(focused != null and str(focused.name) == expected, "Focus conservé après Entrée " + expected)
+func market_coach_click() -> void:
+	for resolution in [Vector2i(1280,800),Vector2i(1440,900),Vector2i(1920,1080)]:
+		root.size = resolution; DisplayServer.window_set_size(resolution); await settle()
+		app._navigate("Recrutement"); await settle()
+		app.coach.open_help(); await settle()
+		var candidates: Array[Button] = []
+		for button: Button in app.root_content.find_children("*", "Button", true, false):
+			if button.text == "PROPOSER UN CONTRAT" and button.is_visible_in_tree() and not button.disabled and app.body_scroll.get_global_rect().encloses(button.get_global_rect()): candidates.append(button)
+		check(candidates.size() >= 2, "Deux offres réellement visibles pour réception coach / " + str(resolution.x))
+		if candidates.size() < 2: continue
+		var target: Button = candidates[1]
+		check(not visible_paint_overlaps(target), "Offre de contrat hors de la peinture de Gabi / " + str(resolution.x))
+		var point := target.get_global_rect().get_center()
+		for pressed in [true, false]:
+			var event := InputEventMouseButton.new(); event.button_index = MOUSE_BUTTON_LEFT; event.position = point; event.global_position = point; event.pressed = pressed
+			root.push_input(event, true); await process_frame
+		await settle()
+		check(app.get_children().any(func(child): return child is ConfirmationDialog and child.visible and child.title.begins_with("Offre à ")), "Vraie offre ouverte à la souris avec Gabi / " + str(resolution.x))
+		app._clear_dialogs(); app.coach.close(); await settle()
 func profile_error() -> void:
 	DisplayServer.window_set_size(Vector2i(1280,800))
 	app._navigate("Match"); await settle()
@@ -196,6 +215,7 @@ func run() -> void:
 		var filename: String = str(app.model.meta.dataDir).path_join("donnees.json")
 		var initial_hash := FileAccess.get_sha256(filename)
 		await market_keyboard()
+		await market_coach_click()
 		for resolution in [Vector2i(1280,800), Vector2i(1440,900), Vector2i(1920,1080)]:
 			root.size = resolution
 			DisplayServer.window_set_size(resolution); await settle()

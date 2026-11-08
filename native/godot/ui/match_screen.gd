@@ -159,6 +159,7 @@ func _side() -> void:
 		side.add_child(G.section("L'AVANT-MATCH"))
 		side.add_child(G.wrap("Vérifiez votre feuille à 23 et vos consignes avant le coup d’envoi.",14))
 		side.add_child(G.button("VÉRIFIER LA FEUILLE",func():app._navigate("Composition")))
+		preload("res://ui/decision_views.gd").match_notes(app,side,model)
 		return
 	match tab:
 		"Stats":

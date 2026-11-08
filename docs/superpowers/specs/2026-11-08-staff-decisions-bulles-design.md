@@ -24,6 +24,15 @@ et photos du pack n'apportent aucun bonus caché et ne changent pas la sauvegard
 - Bulle ivoire avec contour et pointe vers le coach, texte sombre lisible ; la
   totalité du texte affiché est prononcée par le service vocal existant. Garder
   animation, défilement, clavier, arrêt, muet, relecture et garde des dialogues.
+- Précision ultérieure de Léo : petite bulle libre sans encadré extérieur,
+  plusieurs répliques par menu. Dix-sept pages, 38 fragments courts ; seize poses
+  originales et réserves d'espace nulles. Les commandes textuelles visibles
+  restent hors de sa peinture ; la bulle descriptive laisse passer les clics.
+  Les options vocales explicitement ouvertes et les erreurs restent stables.
+- Voix retenue : A sous Chatterbox, gratuite pour usage commercial, plus rapide
+  et avec accent du Sud-Ouest demandé. Le timbre est choisi ; la variante d'accent
+  reste à écouter. Vérifier l'accent séparément de l'ASR, qui prouve les mots.
+  Si la tentative échoue, rechercher une autre solution conservant la gratuité.
 - Registre de personnes du staff, IDs stables distincts des joueurs, club, rôle et
   provenance datée. Les sources publiées à une autre saison restent étiquetées.
   Page d'encadrement consultable pour les trente clubs, photos officielles privées
@@ -43,7 +52,9 @@ et photos du pack n'apportent aucun bonus caché et ne changent pas la sauvegard
 
 ## Contraintes
 
-Identités réelles et photographies hors distribution publique. Capacités/salaires
+Identités réelles et photographies hors runtime et distribution Windows de base.
+Les références documentaires datées et URLs restent dans le registre source du
+dépôt ; les fichiers photos et le pack réel restent privés sur E:. Capacités/salaires
 de simulation non officiels. Données LNR/recherches concurrentes non écrasées.
 Pas de changement des lois du match ni du format de carrière sans nécessité et
 validation renforcée. Saison de compétition2026/27 et lois historiques2025/26
