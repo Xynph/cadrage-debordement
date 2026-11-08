@@ -10,14 +10,17 @@ const marker='          # La PR temoin isolee #281 doit executer les cinq shards
 const end='          echo "documentation_only=$docs" >> "$GITHUB_OUTPUT"';
 const start=workflow.indexOf(marker),stop=workflow.indexOf(end,start);
 assert(start>=0&&stop>start,'Trial classifier block missing');
-const code=workflow.slice(start,stop).split('\n').map(s=>s.replace(/^          /,'')).join('\n');
+const code=workflow.slice(start,stop).split(/\r?\n/).map(s=>s.replace(/^          /,'')).join('\n');
+const bash=process.env.CD_BASH_EXECUTABLE||'bash';
+const bashPath=location=>process.platform==='win32'?path.resolve(location).replaceAll('\\','/').replace(/^([A-Za-z]):\//,(_,drive)=>'/'+drive.toLowerCase()+'/'):location;
 function classify({event='pull_request',pr='281',files=['docs/ci-auto-release-trial.md']}={}){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-trial-'));
  try{
   const list=path.join(dir,'modified.txt');
   fs.writeFileSync(list,files.join('\n')+(files.length?'\n':''));
   const script='set -euo pipefail\nEVENT_NAME="$1"\nRUNNER_TEMP="$2"\ndocs=true\n'+code.replaceAll('${{ github.event.pull_request.number }}',pr)+'\nprintf "%s" "$docs"\n';
-  const run=spawnSync('bash',['-c',script,'--',event,dir],{encoding:'utf8'});
+  const run=spawnSync(bash,['-c',script,'--',event,bashPath(dir)],{encoding:'utf8'});
+  assert.ifError(run.error);
   assert.equal(run.status,0,run.stderr);
   return run.stdout.trim().endsWith('false')?'false':'true';
  }finally{fs.rmSync(dir,{recursive:true,force:true});}

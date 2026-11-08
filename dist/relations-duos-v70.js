@@ -18,7 +18,7 @@
  function pairKey(a,b){return [a,b].sort().join('|')}
  function records(s){return Array.isArray(s?.v70Relations?.pairs)?s.v70Relations.pairs:[]}
  function leader(s){
-  const available=roster(s).filter(p=>!p.injury&&p.condition>=60&&p.satisfaction?.score>=55);
+  const available=roster(s).filter(p=>!p.injury&&p.condition>=60&&(p.satisfaction?.score??65)>=55);
   return available.sort((a,b)=>(b.skills?.mental??b.rating??50)-(a.skills?.mental??a.rating??50)||String(a.id).localeCompare(String(b.id)))[0]||null;
  }
  function rawRisk(a,b){
@@ -142,4 +142,4 @@
  }
  return Object.freeze({ACTIONS,roster,leader,rawRisk,relation,allowed,preview,perform,matchSnapshot,matchBonus,panel,install});
 });
-if(typeof document!=='undefined'&&typeof CDRelationsV70==='object')CDRelationsV70.install(globalThis);
+if(typeof CDNativeHeadless==='undefined'&&typeof document!=='undefined'&&typeof CDRelationsV70==='object')CDRelationsV70.install(globalThis);

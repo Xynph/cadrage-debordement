@@ -36,8 +36,9 @@
   const season=s.season+(s.phase==='ended'?1:0);
   const end=season+years-1;
   return {id:p.id,name:p.name,agent:archetype(p),years,policy,wage,minimum,fee,end,
-   deltaWeek:wage-p.salary,deltaSeason:(wage-p.salary)*29,
-   totalCommitment:wage*29*years+fee,
+   paidWeeks:s.franceMode?.version===1?34:29,
+   deltaWeek:wage-p.salary,deltaSeason:(wage-p.salary)*(s.franceMode?.version===1?34:29),
+   totalCommitment:wage*(s.franceMode?.version===1?34:29)*years+fee,
    cashAfter:s.clubs[s.club].cash-fee,affordable:s.clubs[s.club].cash>=fee,
    likely:wage>=minimum?'Accord de principe probable':'Contre-offre probable',
    attempts:s.economy.talks?.[String(s.season)+':'+String(s.economy.week)+':renew:'+id]?.attempts||0};
@@ -110,7 +111,7 @@
    (q?'<p><strong>'+escape(q.agent)+'</strong> · '+escape(POLICY[policy].detail)+'</p>'+
    '<div class="row"><span>Proposition / semaine</span><strong>'+fmt(q.wage)+'</strong></div>'+
    '<div class="row"><span>Ecart salarial hebdomadaire</span><strong>'+fmt(q.deltaWeek)+'</strong></div>'+
-   '<div class="row"><span>Variation sur 29 journees</span><strong>'+fmt(q.deltaSeason)+'</strong></div>'+
+   '<div class="row"><span>Variation sur '+q.paidWeeks+' semaines payées</span><strong>'+fmt(q.deltaSeason)+'</strong></div>'+
    '<div class="row"><span>Prime immediate en cas de signature</span><strong>'+fmt(q.fee)+'</strong></div>'+
    '<div class="row"><span>Engagement theorique ('+years+' saison(s))</span><strong>'+fmt(q.totalCommitment)+'</strong></div>'+
    '<p class="help">Lecture de l’offre : '+escape(q.likely)+'. '+q.attempts+'/3 tentative(s) cette journee. '+
@@ -154,4 +155,4 @@
  }
  return Object.freeze({POLICY,archetype,eligible,quote,perform,signed,panel,install});
 });
-if(typeof document!=='undefined'&&typeof CDAgentsV71==='object')CDAgentsV71.install(globalThis);
+if(!globalThis.CDNativeHeadless&&typeof document!=='undefined'&&typeof CDAgentsV71==='object')CDAgentsV71.install(globalThis);

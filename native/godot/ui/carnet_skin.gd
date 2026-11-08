@@ -73,7 +73,9 @@ static func panel(parent: Node, ratio: float = 1.0, color: Color = PANEL) -> VBo
 
 static func section(title: String, subtitle: String = "") -> VBoxContainer:
 	var c := v(4)
-	c.add_child(label(title, 27, INK, true))
+	var heading := Base.wrap(title, 27, INK)
+	heading.add_theme_font_override("font", T.DISPLAY)
+	c.add_child(heading)
 	if not subtitle.is_empty(): c.add_child(Base.wrap(subtitle, 13, MUTED))
 	return c
 
@@ -100,6 +102,76 @@ static func metric(number: Variant, caption: String, color: Color = INK) -> VBox
 	c.add_child(label(number, 36, color, true))
 	c.add_child(Base.wrap(caption, 13, MUTED))
 	return c
+
+# Editorial primitives: all quantities are supplied by the career projection.
+static func card(parent: Node, accent: Color = LINE) -> VBoxContainer:
+	var frame := PanelContainer.new()
+	var style := T.box(Color("faf6ed"), 3, LINE)
+	style.border_width_left = 3
+	style.border_color = accent
+	frame.add_theme_stylebox_override("panel", style)
+	parent.add_child(frame)
+	var content := v(10)
+	frame.add_child(content)
+	return content
+
+static func gauge(parent: Node, caption: String, value: float, maximum: float = 100.0, color: Color = GOOD) -> void:
+	var block := v(4)
+	fill(block)
+	parent.add_child(block)
+	var row := h(8)
+	block.add_child(row)
+	var name := Base.wrap(caption, 12, MUTED)
+	fill(name)
+	row.add_child(name)
+	row.add_child(label("%s / %s" % [n(value), n(maximum)], 15, color, true))
+	var bar := ProgressBar.new()
+	bar.show_percentage = false
+	bar.max_value = maxf(1, maximum)
+	bar.value = value
+	bar.custom_minimum_size.y = 5
+	for key in ["background", "fill"]:
+		var style := T.box(LINE if key == "background" else color, 1)
+		style.content_margin_left = 0; style.content_margin_right = 0
+		style.content_margin_top = 0; style.content_margin_bottom = 0
+		bar.add_theme_stylebox_override(key, style)
+	block.add_child(bar)
+
+static func photo_note(parent: Node, club: Dictionary, title: String, subtitle: String, kind: String = "stadium", height: int = 130) -> void:
+	var photo := picture(str(identity(club).get("slug", "toulouse")), kind)
+	photo.custom_minimum_size.y = height
+	parent.add_child(photo)
+	var content: VBoxContainer = photo.get_meta("content")
+	content.add_theme_constant_override("separation", 3)
+	for edge in ["left", "right", "top", "bottom"]: content.get_parent().add_theme_constant_override("margin_" + edge, 14)
+	content.add_child(Base.label(title.to_upper(), 12, Color("ddbd80")))
+	content.add_child(Base.spacer())
+	var caption := Base.wrap(subtitle, 25, WHITE)
+	caption.add_theme_font_override("font", T.DISPLAY)
+	content.add_child(caption)
+
+static func person(parent: Node, player: Dictionary, title: String, detail: String, width: int = 58) -> void:
+	var row := h(12)
+	parent.add_child(row)
+	row.add_child(portrait(int(player.get("portraitIndex", posmod(str(player.get("id", title)).hash(), 32))), width, player))
+	var text := v(3)
+	fill(text)
+	row.add_child(text)
+	var heading := Base.wrap(title, 25, INK)
+	heading.add_theme_font_override("font", T.DISPLAY)
+	text.add_child(heading)
+	text.add_child(Base.wrap(detail, 13, MUTED))
+
+static func trend(parent: Node, numbers: Array, caption: String, accent: Color) -> void:
+	if numbers.size() < 2: return
+	var chart := W.new()
+	chart.mode = "trend"
+	chart.values = numbers
+	chart.accent = accent_ink(accent)
+	chart.grid_color = LINE
+	chart.custom_minimum_size.y = 78
+	parent.add_child(chart)
+	parent.add_child(Base.wrap(caption, 12, MUTED))
 
 static func cell(text: Variant, width: int, color: Color = INK, expand: bool = false) -> Label:
 	var l := label(text, 14, color)

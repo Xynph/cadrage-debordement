@@ -67,5 +67,5 @@
  }
  return Object.freeze({diagnostic,panel,install});
 });
-if(typeof document!=='undefined'&&typeof CDStaffAdvisorV66==='object')
+if(!globalThis.CDNativeHeadless&&typeof document!=='undefined'&&typeof CDStaffAdvisorV66==='object')
  CDStaffAdvisorV66.install(globalThis,globalThis.CDStaffMeetingV65);

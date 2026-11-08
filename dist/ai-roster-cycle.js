@@ -92,7 +92,7 @@ function aiRosterAcademy(c){
  return S.aiRoster.academies.find(a=>a.clubId===c.id);
 }
 function aiRosterPromote(c,slot,emergency=false){
- if(c.players.length>=40)return false;
+ if((c.players.length>=40||professionalPlaces(c)<=0))return false;
  const a=aiRosterAcademy(c);if(!a)return false;
  const eligible=a.players.filter(p=>p.age>=18&&slotEligible(p,slot))
   .sort((x,y)=>fitScore(y,FAMILIES[slot])-fitScore(x,FAMILIES[slot])||x.id.localeCompare(y.id));
@@ -194,7 +194,7 @@ function aiRosterRecruitmentWeek(){
  const key=S.season+':'+week,e=S.economy;
  if(e.aiRecruitmentWindow===key)return 0;
  e.aiRecruitmentWindow=key;S.aiRoster.lastRecruitment=key;
- const others=S.clubs.filter(c=>c.id!==S.club&&c.players.length<40)
+ const others=S.clubs.filter(c=>c.id!==S.club&&c.players.length<40&&professionalPlaces(c)>0)
   .map(c=>({c,urgent:recruitmentNeeds(c)[0]}))
   .filter(x=>x.urgent&&x.urgent.score>=45)
   .sort((a,b)=>b.urgent.score-a.urgent.score||a.c.id-b.c.id);
@@ -220,7 +220,7 @@ function aiRosterRecruitmentWeek(){
   for(const {winner,competitors} of winners){
    if(count>=6)break;
    const {c,best}=winner,p=best.p;
-   if(aiRosterReport(c.id).recruited>=2||c.players.length>=40||
+   if(aiRosterReport(c.id).recruited>=2||(c.players.length>=40||professionalPlaces(c)<=0)||
     !pool.some(x=>x.id===p.id)||S.clubs.some(x=>x.players.some(y=>y.id===p.id))||
     c.cash-best.finance.fee<400000||
     aiRosterPayroll(c)+p.salary>aiRosterWageLimit(c))continue;

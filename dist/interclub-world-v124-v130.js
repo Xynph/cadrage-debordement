@@ -11,13 +11,14 @@
  const TONES=['Analytique','Prudent','Combattif','Protecteur','Exigeant'];
  const idOf=c=>Number.isInteger(c?.id)?c.id:null;
  const pairKey=(a,b)=>[a,b].sort((x,y)=>x-y).join(':');
- const stamp=(s,r)=>[s.season,s.phase,s.round,r.pair[0],r.pair[1]].join(':');
- const fresh=()=>({version:1,pairs:{},coaches:{},events:[],years:[],lastSeason:0});
+ const context=(s,r)=>r?.franceContext||{season:s?.season,phase:s?.phase,round:s?.round};
+ const stamp=(s,r)=>r.franceContext?.fixtureId?s.season+':'+r.franceContext.fixtureId:[s.season,s.phase,s.round,r.pair[0],r.pair[1]].join(':');
+ const fresh=()=>({version:1,pairs:{},coaches:{},events:[],years:[],lastSeason:0,observedSeason:0,seen:[],seasonMatches:0});
  const state=s=>s?.interclubWorld?.version===1&&s.interclubWorld.pairs&&
   Array.isArray(s.interclubWorld.events)&&Array.isArray(s.interclubWorld.years)?s.interclubWorld:fresh();
  function validMatch(s,r){
   if(!s||!Number.isInteger(s.season)||s.season<1||!Number.isInteger(s.round)||
-   !['league','barrage','semi','final'].includes(s.phase)||!Array.isArray(s.clubs))return false;
+   !['league','barrage','semi','final','access'].includes(context(s,r).phase)||!Array.isArray(s.clubs))return false;
   if(!r||!Array.isArray(r.pair)||r.pair.length!==2||!Array.isArray(r.score)||r.score.length!==2)return false;
   const [a,b]=r.pair;
   return Number.isInteger(a)&&Number.isInteger(b)&&a!==b&&s.clubs.some(c=>idOf(c)===a)&&s.clubs.some(c=>idOf(c)===b)&&
@@ -41,9 +42,11 @@
   if(!validMatch(s,r))return null;
   const a=r.pair[0],b=r.pair[1],first=s.clubs.find(c=>c.id===a),second=s.clubs.find(c=>c.id===b);
   const key=pairKey(a,b),tick=stamp(s,r),prior=state(s);
-  if(prior.events.some(e=>e.id===tick))return null;
+  if(prior.events.some(e=>e.id===tick)||prior.observedSeason===s.season&&prior.seen?.includes(tick))return null;
   const next=JSON.parse(JSON.stringify(prior)),p=next.pairs[key]||{a:Math.min(a,b),b:Math.max(a,b),games:0,winsA:0,winsB:0,draws:0,tension:20,years:[],lastWinner:null,lastSeason:0};
-  const h=r.score[0],away=r.score[1],diff=h-away,winner=diff===0?null:diff>0?a:b,loser=winner===a?b:a;
+  const ctx=context(s,r),h=r.score[0],away=r.score[1],diff=h-away,winner=ctx.phase!=='league'&&r.pair.includes(r.winner)?r.winner:diff===0?null:diff>0?a:b,loser=winner===a?b:a;
+  if(next.observedSeason!==s.season){next.observedSeason=s.season;next.seen=[];next.seasonMatches=0;}
+  next.seen.push(tick);next.seasonMatches++;
   const close=Math.abs(diff)<=7,switched=winner!==null&&p.lastWinner!==null&&p.lastWinner!==winner;
   p.games++;
   if(winner===null)p.draws++;else if(winner===p.a)p.winsA++;else p.winsB++;
@@ -61,10 +64,10 @@
   const targetLost=winner!==null&&clubId===loser;
   coach.pressure=clamp(coach.pressure+(targetLost?(close?4:9):-5)+(upset&&targetLost?5:0),0,100);
   coach.consecutiveLosses=targetLost?Math.min(20,coach.consecutiveLosses+1):0;
-  coach.season=s.season;coach.lastRound=s.round;
+  coach.season=s.season;coach.lastRound=ctx.round;
   coach.lastReaction=reaction(coach.style,!targetLost,Math.abs(diff),upset);
   next.coaches[String(clubId)]=coach;
-  const event={id:tick,season:s.season,round:s.round,phase:s.phase,a,b,home:h,away,
+  const event={id:tick,season:s.season,round:ctx.round,phase:ctx.phase,...(ctx.fixtureId?{fixtureId:ctx.fixtureId,week:ctx.week,leagueId:ctx.leagueId}:{}),a,b,home:h,away,
    winner,type,tension:p.tension,clubId,reaction:coach.lastReaction,pressure:coach.pressure,
    close,upset};
   next.events.push(event);
@@ -78,8 +81,8 @@
   if(!current||current.version!==1||current.lastSeason>=previousSeason)return false;
   const matches=current.events.filter(e=>e.season===previousSeason);
   const active=Object.values(current.pairs).filter(p=>p.lastSeason===previousSeason)
-   .sort((a,b)=>b.tension-a.tension||pairKey(a.a,a.b).localeCompare(pairKey(b.a,b)));
-  current.years.push({season:previousSeason,matches:matches.length,mostIntense:active[0]?pairKey(active[0].a,active[0].b):null,
+   .sort((a,b)=>b.tension-a.tension||pairKey(a.a,a.b).localeCompare(pairKey(b.a,b.b)));
+  current.years.push({season:previousSeason,matches:current.observedSeason===previousSeason?current.seasonMatches:matches.length,mostIntense:active[0]?pairKey(active[0].a,active[0].b):null,
    rivalries:active.filter(p=>p.tension>=55).length});
   current.years=current.years.slice(-20);current.lastSeason=previousSeason;
   for(const c of Object.values(current.coaches)){
@@ -152,4 +155,4 @@
  }
  return Object.freeze({profile,reaction,validMatch,accept,season,top,panel,state,install});
 });
-if(typeof document!=='undefined'&&typeof CDInterclubWorld==='object')CDInterclubWorld.install(globalThis);
+if(typeof CDNativeHeadless==='undefined'&&typeof document!=='undefined'&&typeof CDInterclubWorld==='object')CDInterclubWorld.install(globalThis);

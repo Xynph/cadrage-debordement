@@ -64,11 +64,11 @@ static func page(app: Control) -> Control:
 		_preview(app, list, preview)
 	var installed: Array = packs.get("installed", [])
 	if installed.is_empty():
-		list.add_child(G.label("VOTRE PREMIER PACK", 22, G.INK, true))
-		list.add_child(G.wrap("Importez un pack personnalisé", 16))
+		var empty := G.card(list, G.GOLD)
+		empty.add_child(G.label("01 / VOTRE PREMIER PACK", 26, G.INK, true))
+		empty.add_child(G.wrap("Importez un pack personnalisé pour retrouver noms, blasons et portraits dans toutes les fiches.", 17))
 	for pack: Dictionary in installed:
-		var card := G.v(8)
-		list.add_child(card)
+		var card := G.card(list, G.GOLD if str(pack.get("id", "")) == selected else G.LINE)
 		card.add_child(G.separator())
 		var pack_title := G.label(str(pack.get("name", "Pack personnalisé")), 27, G.INK, true)
 		pack_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -86,7 +86,9 @@ static func page(app: Control) -> Control:
 
 static func _coverage(pack: Dictionary) -> String:
 	var counts: Dictionary = pack.get("counts", {})
-	return "%s identités · %s blasons · %s photos officielles · %s illustrations IA" % [G.n(counts.get("players", 0)), G.n(counts.get("logos", 0)), G.n(counts.get("official", 0)), G.n(counts.get("synthetic", 0))]
+	var coverage := "%s joueurs · %s blasons · %s photos officielles · %s illustrations IA" % [G.n(counts.get("players", 0)), G.n(counts.get("logos", 0)), G.n(counts.get("official", 0)), G.n(counts.get("synthetic", 0))]
+	if counts.has("staff"): coverage += " · %s membres du staff, %s photos" % [G.n(counts.staff), G.n(counts.get("staffOfficial", 0))]
+	return coverage
 
 static func _preview(app: Control, parent: VBoxContainer, pack: Dictionary) -> void:
 	parent.add_child(G.label("PRÊT À INSTALLER", 12, G.GOLD))

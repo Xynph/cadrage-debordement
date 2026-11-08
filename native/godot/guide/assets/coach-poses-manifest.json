@@ -1,0 +1,330 @@
+{
+  "asset": "coach-atlas-16-anthracite.png",
+  "source": "image_gen intégré, PNG original non retouché",
+  "width": 1254,
+  "height": 1254,
+  "format": "RGB opaque",
+  "columns": 4,
+  "rows": 4,
+  "cellWidth": 313.5,
+  "cellHeight": 313.5,
+  "uvSize": [
+    0.25,
+    0.25
+  ],
+  "cornerRGB": [
+    [
+      35,
+      36,
+      41
+    ],
+    [
+      35,
+      36,
+      41
+    ],
+    [
+      37,
+      36,
+      42
+    ],
+    [
+      37,
+      37,
+      43
+    ]
+  ],
+  "backgroundTarget": "#242329",
+  "backgroundObserved": "Anthracite légèrement variable, pas aplat mathématiquement exact",
+  "sha256": "B4CB6B58401615C825B712A1C768535F53D84F59EBE73F60EB2BB5219B36F716",
+  "cells": [
+    {
+      "index": 0,
+      "name": "repos_ferme",
+      "row": 0,
+      "column": 0,
+      "uvRect": [
+        0,
+        0,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        0,
+        0,
+        313.5,
+        313.5
+      ]
+    },
+    {
+      "index": 1,
+      "name": "repos_parlant",
+      "row": 0,
+      "column": 1,
+      "uvRect": [
+        0.25,
+        0,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        313.5,
+        0,
+        313.5,
+        313.5
+      ]
+    },
+    {
+      "index": 2,
+      "name": "repos_clignement",
+      "row": 0,
+      "column": 2,
+      "uvRect": [
+        0.5,
+        0,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        627,
+        0,
+        313.5,
+        313.5
+      ]
+    },
+    {
+      "index": 3,
+      "name": "sourire_ferme",
+      "row": 0,
+      "column": 3,
+      "uvRect": [
+        0.75,
+        0,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        940.5,
+        0,
+        313.5,
+        313.5
+      ]
+    },
+    {
+      "index": 4,
+      "name": "sourire_parlant",
+      "row": 1,
+      "column": 0,
+      "uvRect": [
+        0,
+        0.25,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        0,
+        313.5,
+        313.5,
+        313.5
+      ]
+    },
+    {
+      "index": 5,
+      "name": "sourire_clignement",
+      "row": 1,
+      "column": 1,
+      "uvRect": [
+        0.25,
+        0.25,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        313.5,
+        313.5,
+        313.5,
+        313.5
+      ]
+    },
+    {
+      "index": 6,
+      "name": "paume_ferme",
+      "row": 1,
+      "column": 2,
+      "uvRect": [
+        0.5,
+        0.25,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        627,
+        313.5,
+        313.5,
+        313.5
+      ]
+    },
+    {
+      "index": 7,
+      "name": "paume_parlant",
+      "row": 1,
+      "column": 3,
+      "uvRect": [
+        0.75,
+        0.25,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        940.5,
+        313.5,
+        313.5,
+        313.5
+      ]
+    },
+    {
+      "index": 8,
+      "name": "index_ferme",
+      "row": 2,
+      "column": 0,
+      "uvRect": [
+        0,
+        0.5,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        0,
+        627,
+        313.5,
+        313.5
+      ]
+    },
+    {
+      "index": 9,
+      "name": "index_parlant",
+      "row": 2,
+      "column": 1,
+      "uvRect": [
+        0.25,
+        0.5,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        313.5,
+        627,
+        313.5,
+        313.5
+      ]
+    },
+    {
+      "index": 10,
+      "name": "reflexion_ferme",
+      "row": 2,
+      "column": 2,
+      "uvRect": [
+        0.5,
+        0.5,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        627,
+        627,
+        313.5,
+        313.5
+      ]
+    },
+    {
+      "index": 11,
+      "name": "reflexion_parlant",
+      "row": 2,
+      "column": 3,
+      "uvRect": [
+        0.75,
+        0.5,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        940.5,
+        627,
+        313.5,
+        313.5
+      ]
+    },
+    {
+      "index": 12,
+      "name": "ferme_calme_ferme",
+      "row": 3,
+      "column": 0,
+      "uvRect": [
+        0,
+        0.75,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        0,
+        940.5,
+        313.5,
+        313.5
+      ]
+    },
+    {
+      "index": 13,
+      "name": "ferme_calme_parlant",
+      "row": 3,
+      "column": 1,
+      "uvRect": [
+        0.25,
+        0.75,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        313.5,
+        940.5,
+        313.5,
+        313.5
+      ]
+    },
+    {
+      "index": 14,
+      "name": "encouragement_ferme",
+      "row": 3,
+      "column": 2,
+      "uvRect": [
+        0.5,
+        0.75,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        627,
+        940.5,
+        313.5,
+        313.5
+      ]
+    },
+    {
+      "index": 15,
+      "name": "encouragement_parlant",
+      "row": 3,
+      "column": 3,
+      "uvRect": [
+        0.75,
+        0.75,
+        0.25,
+        0.25
+      ],
+      "pixelRect": [
+        940.5,
+        940.5,
+        313.5,
+        313.5
+      ]
+    }
+  ]
+}

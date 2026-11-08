@@ -3,11 +3,48 @@ const G = preload("res://ui/carnet_skin.gd")
 const Board = preload("res://ui/lineup_board.gd")
 const U = preload("res://ui/management_state.gd")
 
+# Keep the bound dictionary when a career reset replaces management_ui. Retiring
+# controls can only update their former UI state, never the new career's state.
+class LineupReading extends HBoxContainer:
+	var state: Dictionary
+	var outer: ScrollContainer
+	var restoring := true
+	func _ready() -> void:
+		for control: Control in find_children("*","Control",true,false):
+			if control.focus_mode != Control.FOCUS_NONE:
+				control.focus_entered.connect(func():
+					if is_inside_tree() and not restoring: state.focus=str(control.name))
+		outer.get_v_scroll_bar().value_changed.connect(func(value:float):
+			if is_inside_tree() and not restoring:state.outer=int(value))
+		var list:ScrollContainer=find_child("LineupCandidatesScroll",true,false)
+		list.get_v_scroll_bar().value_changed.connect(func(value:float):
+			if is_inside_tree() and not restoring:state.list=int(value))
+		_restore.call_deferred()
+	func _restore() -> void:
+		if not is_inside_tree():return
+		var tree:=get_tree()
+		await tree.process_frame
+		await tree.process_frame
+		if not is_inside_tree() or not is_instance_valid(outer) or not outer.is_inside_tree():return
+		var control:Control=find_child(str(state.focus),true,false) if not str(state.focus).is_empty() else null
+		if control!=null and control.is_visible_in_tree() and (not control is BaseButton or not control.disabled):control.grab_focus()
+		await tree.process_frame
+		if not is_inside_tree() or not is_instance_valid(outer) or not outer.is_inside_tree():return
+		var list:ScrollContainer=find_child("LineupCandidatesScroll",true,false)
+		list.scroll_vertical=int(state.list)
+		outer.scroll_vertical=int(state.outer)
+		# The eligibility message may shrink after assignment and grow the list.
+		# Keep the closest valid offset when its previous bottom no longer exists.
+		state.list=list.scroll_vertical
+		state.outer=outer.scroll_vertical
+		restoring=false
+
 static func squad(app: Control) -> Control:
 	var page := G.h(14)
 	G.fill(page,true)
 	page.name="CarnetSquad"
 	var table := G.panel(page,1.65)
+	if app.size.y<=760:table.add_theme_constant_override("separation",7)
 	G.chapter(table,"01","Le groupe professionnel","Rechercher, consulter et comparer sans perdre votre place.",app.accent)
 	var state:Dictionary=app.management_ui.roster
 	state.family=app.roster_filter;state.sort=app.roster_sort
@@ -103,7 +140,8 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 				row.remove_theme_stylebox_override("normal")
 				row.add_theme_stylebox_override("normal",G.T.box(Color("e8dfce"),3,G.LINE))
 				if str(row.get_meta("player_id",""))==str(p.id):G.selected(row,app.accent)
-			_show_profile(app,profile))
+			_show_profile(app,profile)
+			if app.has_method("_observe_navigation"): app._observe_navigation())
 		b.custom_minimum_size.y=48
 		b.name="SquadPlayer"+str(p.id).replace(":","_")
 		b.set_meta("player_id",str(p.id))
@@ -145,6 +183,7 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	G.fill(identity)
 	top.add_child(identity)
 	var name:=G.label(p.name,25,G.INK)
+	name.add_theme_font_override("font",G.T.DISPLAY)
 	name.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	identity.add_child(name)
 	identity.add_child(G.wrap("%s · %s ans"%[p.pos,G.n(p.age)],12))
@@ -163,7 +202,9 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	grid.add_theme_constant_override("h_separation",20)
 	list.add_child(grid)
 	for pair in [["scrum","Mêlée"],["lineout","Touche"],["tackle","Plaquage"],["speed","Vitesse"],["pass","Passe"],["kick","Jeu au pied"],["goal","But"],["mental","Mental"],["discipline","Discipline"],["stamina","Endurance"],["power","Puissance"]]:
-		grid.add_child(G.label(pair[1]+"  "+G.n(p.get("attributes",{}).get(pair[0],"—")),14,G.MUTED))
+		var value: Variant = p.get("attributes",{}).get(pair[0])
+		if value != null: G.gauge(grid, pair[1], float(value), 100, G.accent_ink(app.accent))
+		else: grid.add_child(G.label(pair[1]+"  —",14,G.MUTED))
 	list.add_child(G.separator())
 	list.add_child(G.label("Contrat courant : "+p.get("contractLabel",""),13))
 	list.add_child(G.label(G.euros(p.get("salary",0))+" / semaine · estimation de jeu",12,G.MUTED))
@@ -229,10 +270,15 @@ static func radar_mode(radar:Control) -> void:
 	radar.mode="radar"
 
 static func lineup(app:Control) -> Control:
-	var page:=G.h(14)
+	var page:=LineupReading.new()
+	page.add_theme_constant_override("separation",14)
+	if not app.management_ui.get("lineup") is Dictionary:app.management_ui.lineup={"outer":0,"list":0,"focus":""}
+	page.state=app.management_ui.lineup
+	page.outer=app.body_scroll
 	G.fill(page,true)
 	page.name="CarnetLineup"
 	var pitch:=G.panel(page,1.15)
+	if app.size.y<=760:pitch.add_theme_constant_override("separation",3)
 	G.chapter(pitch,"02","La feuille de match","Titulaire ou remplaçant : choisissez un poste.",app.accent)
 	var board:=Board.new()
 	board.app=app
@@ -242,6 +288,7 @@ static func lineup(app:Control) -> Control:
 	for i in 8:
 		var slot:=15+i
 		var b:=G.button(str(slot+1),func():app.selected_slot=slot;app._render())
+		b.name="LineupSlot%02d"%(slot+1)
 		G.fill(b)
 		if app.selected_slot==slot: b.add_theme_stylebox_override("normal",G.T.box(Color("ddd1bc"),3,G.GOLD))
 		bench.add_child(b)
@@ -256,6 +303,7 @@ static func lineup(app:Control) -> Control:
 	if errors.is_empty():side.add_child(G.label("FEUILLE VALIDE",12,G.GOOD))
 	else:side.add_child(G.wrap("\n".join(errors),12,G.ALERT))
 	var auto:=G.button("SÉLECTION AUTOMATIQUE DU STAFF",func():app._command("auto_lineup"))
+	auto.name="LineupAutomatic"
 	auto.disabled=not app._live().is_empty()
 	side.add_child(auto)
 	if not selection.get("valid",true):
@@ -264,6 +312,7 @@ static func lineup(app:Control) -> Control:
 		cover.tooltip_text="Une solution de secours payante ; vous pouvez aussi composer votre groupe ou recruter."
 		side.add_child(cover)
 	var list:=G.scroll(side)
+	list.get_parent().name="LineupCandidatesScroll"
 	var eligible:Variant=selected.get("eligibleIds")
 	for p in app.model.get("squad",[]):
 		var b:=G.button("%s  ·  %s  ·  %s"%[p.name,p.pos,G.n(p.rating)],func():app._command("set_lineup",{"playerId":p.id,"slot":app.selected_slot}))
@@ -271,51 +320,18 @@ static func lineup(app:Control) -> Control:
 		b.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 		b.tooltip_text="%s · %s · niveau %s"%[p.name,p.pos,G.n(p.rating)]
 		b.set_meta("player_id",str(p.id))
+		b.name="LineupPlayer"+str(p.id).replace(":","_")
 		b.disabled=not app._live().is_empty() or float(p.get("injury",0))>0 or (eligible is Array and p.id not in eligible)
 		if b.disabled:b.tooltip_text="Indisponible ou qualification incompatible avec ce poste. Pendant un match, utilisez les remplacements."
 		list.add_child(b)
 	var remove:=G.button("LIBÉRER CE POSTE",func():app._command("set_lineup",{"playerId":null,"slot":app.selected_slot}))
+	remove.name="LineupRemove"
 	remove.disabled=not app._live().is_empty()
 	side.add_child(remove)
 	return page
 
 static func preparation(app:Control) -> Control:
-	var page:=G.v(14)
-	page.name="CarnetPreparation"
-	G.fill(page,true)
-	var tactics:Dictionary=app.model.get("tactics",{})
-	var row:=G.h(14)
-	G.fill(row,true)
-	page.add_child(row)
-	for pair in [["attack","attacks","03","Avec le ballon"],["defense","defenses","04","Sans le ballon"]]:
-		var card:=G.panel(row)
-		G.chapter(card,pair[2],pair[3],"Votre intention de jeu pour la rencontre",app.accent)
-		var list:=G.scroll(card)
-		for option in tactics.get(pair[1],[]):
-			var b:=G.button(str(option.label).to_upper(),func():
-				var current:Dictionary=app.model.get("tactics",{})
-				var data:Dictionary={"attack":current.get("attack","equilibre"),"defense":current.get("defense","equilibre")}
-				data[pair[0]]=option.id
-				app._command("set_tactics",data))
-			b.alignment=HORIZONTAL_ALIGNMENT_LEFT
-			b.set_meta("tactic_id",str(option.id))
-			if tactics.get(pair[0])==option.id:G.selected(b,app.accent)
-			b.disabled=not app._live().is_empty() and not app._live().get("paused",false)
-			list.add_child(b)
-			list.add_child(G.wrap(option.get("description",""),14))
-			list.add_child(G.separator())
-	var training:=G.panel(page)
-	training.add_child(G.section("Le travail de la semaine","La séance collective agit sur la récupération et le développement."))
-	var choices:=G.h(12)
-	training.add_child(choices)
-	for pair in [["repos","RÉCUPÉRATION"],["normal","CHARGE NORMALE"],["intense","INTENSIVE"]]:
-		var b:=G.button(pair[1],func():app._command("train",{"mode":pair[0]}))
-		G.fill(b)
-		b.disabled=app.model.meta.get("trained",false) or not app._live().is_empty()
-		choices.add_child(b)
-	if app.model.meta.get("trained",false):training.add_child(G.label("Séance déjà effectuée cette semaine.",14,G.GOOD))
-	training.add_child(G.button("ALLER AU JOUR DE MATCH  →",func():app._navigate("Match"),true))
-	return page
+	return preload("res://ui/preparation_view.gd").build(app)
 
 static func market(app:Control) -> Control:
 	var page:=G.h(14)
@@ -323,6 +339,7 @@ static func market(app:Control) -> Control:
 	G.fill(page,true)
 	var workspace:=G.panel(page)
 	G.chapter(workspace,"05","Les pistes de recrutement","Joueurs fictifs disponibles · une offre ouvre une négociation.",app.accent)
+	preload("res://ui/decision_views.gd").recruitment_summary(app,workspace)
 	var state:Dictionary=app.management_ui.market
 	var search:=_search(workspace,"MarketSearch",state)
 	var controls:=G.h(8)
@@ -335,7 +352,7 @@ static func market(app:Control) -> Control:
 	controls.add_child(direction)
 	var follow:=CheckBox.new()
 	follow.name="MarketFollowed"
-	follow.text="Suivis de session"
+	follow.text="Joueurs suivis"
 	follow.button_pressed=state.followed
 	controls.add_child(follow)
 	var reset:=G.button("Réinitialiser",func():app.management_ui.market=U.defaults();app._render())
@@ -347,7 +364,7 @@ static func market(app:Control) -> Control:
 	var list:=G.scroll(workspace)
 	list.get_parent().name="MarketScroll"
 	var refresh:=func():_market_rows(app,list,count)
-	search.text_changed.connect(func(text:String):state.search=text;state.scroll=0;refresh.call())
+	search.text_changed.connect(func(text:String):state.search=text;state.navigation_id="";state.scroll=0;refresh.call())
 	position.item_selected.connect(func(index:int):state.position=position.get_item_text(index);state.scroll=0;refresh.call())
 	available.item_selected.connect(func(index:int):state.available=available.get_item_text(index);state.scroll=0;refresh.call())
 	sort.item_selected.connect(func(index:int):state.sort=sort.get_item_text(index);state.descending=state.sort=="Niveau";state.scroll=0;app._render())
@@ -359,7 +376,7 @@ static func market(app:Control) -> Control:
 static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 	_empty(list)
 	var players:Array=U.players(app.model.get("market",[]),app.management_ui.market,int(app.model.meta.get("season",1)),true,app.management_ui.shortlist)
-	count.text="%d / %d pistes · %d suivies dans cette session"%[players.size(),app.model.get("market",[]).size(),app.management_ui.shortlist.size()]
+	count.text="%d / %d pistes · %d joueurs suivis dans votre carrière"%[players.size(),app.model.get("market",[]).size(),app.management_ui.shortlist.size()]
 	var grid:=GridContainer.new()
 	grid.columns=2
 	grid.size_flags_horizontal=Control.SIZE_EXPAND_FILL
@@ -368,9 +385,7 @@ static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 	list.add_child(grid)
 	for p in players:
 		var card:=G.panel(grid)
-		card.add_child(G.label(p.pos.to_upper(),13,G.accent_ink(app.accent)))
-		var name:=G.wrap(p.name,23,G.INK)
-		card.add_child(name)
+		G.person(card, p, p.name, p.pos.to_upper(), 58)
 		var summary:=G.h(18)
 		card.add_child(summary)
 		summary.add_child(G.metric(G.n(p.age),"ans"))
@@ -380,9 +395,9 @@ static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 		card.add_child(G.wrap("Rémunération estimée de jeu",12))
 		var followed:bool=str(p.id) in app.management_ui.shortlist
 		var track:=G.button("RETIRER DU SUIVI" if followed else "SUIVRE CETTE PISTE",func():
-			if str(p.id) in app.management_ui.shortlist:app.management_ui.shortlist.erase(str(p.id))
-			else:app.management_ui.shortlist.append(str(p.id))
-			app._render())
+			var saved:Dictionary=app.model.get("clubLife",{}).get("managerCareer",{})
+			app._command("manager_recruitment_watch",{"context":saved.context.duplicate(true),"playerId":str(p.id)}))
+		track.disabled=app.waiting or not app._live().is_empty() or app.model.meta.get("phase","")=="ended"
 		track.name="Follow"+str(p.id).replace(":","_")
 		track.set_meta("follow_id",str(p.id))
 		card.add_child(track)
@@ -392,7 +407,7 @@ static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 		b.tooltip_text=p.get("reason","")
 		if not str(p.get("reason","")).is_empty():
 			var reason:String=p.reason
-			if reason=="Effectif complet":reason="Effectif complet (%d/42)"%app.model.get("squad",[]).size()
+			if reason=="Effectif complet":reason="Effectif complet (%d/%d)"%[app.model.get("squad",[]).size(),app.model.get("decisions",{}).get("recruitment",{}).get("capacity",42)]
 			card.add_child(G.wrap(reason,13,G.ALERT))
 		card.add_child(b)
 	if players.is_empty():list.add_child(G.wrap("Aucune piste ne correspond. Modifiez la recherche, le filtre Suivis ou réinitialisez les filtres.",15))
@@ -459,6 +474,13 @@ static func _comparison_rows(app:Control,list:VBoxContainer,ids:Array) -> void:
 			if str(p.id)==id:found=p
 		players.append(found)
 	if ids[0]==ids[1] and not str(ids[0]).is_empty():list.add_child(G.wrap("Choisissez deux joueurs distincts.",14,G.ALERT));return
+	var dossiers := G.h(14)
+	list.add_child(dossiers)
+	for p: Dictionary in players:
+		var card := G.card(dossiers, G.accent_ink(app.accent))
+		G.fill(card.get_parent())
+		if not p.is_empty(): G.person(card, p, p.name, str(p.pos) + " · " + G.n(p.age) + " ans", 58)
+		else: card.add_child(G.wrap("Choisissez un dossier", 18, G.MUTED))
 	var columns:=GridContainer.new()
 	columns.columns=3
 	columns.size_flags_horizontal=Control.SIZE_EXPAND_FILL

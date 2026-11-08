@@ -10,8 +10,8 @@
     const m=move()?.ensure(s);if(!m)return [];
     return [...m.elite.map((id,slot)=>({id,division:'elite',slot})),...m.accession.map((id,slot)=>({id,division:'accession',slot}))];
   };
-  const own=s=>centers(s).find(c=>c.division==='elite'&&c.slot===s.club)||null;
-  function players(s,c){
+  const own=s=>root.CDNativeAcademy?.active(s)?root.CDNativeAcademy.own(s):centers(s).find(c=>c.division==='elite'&&c.slot===s.club)||null;
+  function players(s,c){if(root.CDNativeAcademy?.active(s))return c?root.CDNativeAcademy.roster(s,c.division,c.slot):[];
     if(!c)return [];
     const m=move()?.ensure(s),override=m?.rosters[c.id];
     if(Array.isArray(override))return override;
@@ -52,7 +52,7 @@
   }
   function canLeave(c,p,pool){
     if(!c||!p||pool.length<=15)return false;
-    if(c.division==='accession')return pool.filter(q=>q.slot===p.slot).length>=2;
+    if(c.division==='accession'&&!root.CDNativeHeadless)return pool.filter(q=>q.slot===p.slot).length>=2;
     const slots=typeof POS==='undefined'?[]:POS;
     const required=slots.filter(pos=>pos===p.pos).length;
     return required>0&&pool.filter(q=>q.pos===p.pos).length>required;
@@ -84,7 +84,7 @@
     const old=st.focus;st.focus=id;
     try{if(save&&save()===false)throw Error('save');return true}catch{st.focus=old;return false}
   }
-  function recruit(s,id,offer,save){
+  function recruit(s,id,offer,save){if(root.CDNativeAcademy?.active(s))return root.CDNativeAcademy.recruit(s,id,offer);
     const st=ensure(s),manager=own(s);
     if(!st||!manager||s.live||s.phase==='ended'||st.recruited.length>=3||!Number.isInteger(offer)||offer<0)return false;
     const source=centers(s).find(c=>c.id!==manager.id&&st.scouted.includes(c.id)&&players(s,c).some(p=>p.id===id));
@@ -179,5 +179,5 @@
   const api={centers,own,players,label,valid,ensure,available,price,scout,focus,recruit,panel,install};
   root.CDEspoirsScoutingV76=api;
   if(typeof module==='object'&&module.exports)module.exports=api;
-  if(typeof document!=='undefined')install(root);
+  if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root);
 })(typeof globalThis==='object'?globalThis:this);

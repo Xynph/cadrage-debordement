@@ -17,7 +17,7 @@
  function snapshot(players){
   return (Array.isArray(players)?players:[]).map(p=>({
    id:p.id,score:p.satisfaction?.score??65,
-   minutes:p.dev?.minutes??0,
+   minutes:Number.isFinite(p.satisfaction?.baseline)?p.satisfaction.baseline:Number.isFinite(p.dev?.minutes)?p.dev.minutes:null,
    promise:p.satisfaction?.promise?{...p.satisfaction.promise}:null,
    last:p.satisfaction?.history?.length??0,
    injury:!!p.injury
@@ -34,7 +34,7 @@
    const last=resolved?st.history?.[st.history.length-1]:null;
    // Ne pas punir un blesse ; la promesse V36 est alors suspendue.
    let delta=0;
-   if(!p.injury&&!old.injury&&!old.promise){
+   if(!p.injury&&!old.injury&&!old.promise&&Number.isFinite(old.minutes)&&Number.isFinite(p.dev?.minutes)){
     if(played>=40&&st.score<75)delta=1;
     else if(played===0&&st.score<60)delta=-1;
    }
@@ -128,4 +128,4 @@
  }
  return Object.freeze({snapshot,roundImpact,meetingImpact,status,panel,install});
 });
-if(typeof document!=='undefined'&&typeof CDVestiaireV64==='object')CDVestiaireV64.install(globalThis);
+if(typeof CDNativeHeadless==='undefined'&&typeof document!=='undefined'&&typeof CDVestiaireV64==='object')CDVestiaireV64.install(globalThis);

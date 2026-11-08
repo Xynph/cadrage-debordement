@@ -1,0 +1,20 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const root=path.resolve(__dirname,'..'),target=path.join(root,'native/engine/staff-registry.json');
+assert.ok(fs.existsSync(target),'Le registre anonymisé du staff doit être embarqué.');
+const compiler=require('../scripts/build-staff-registry.cjs'),source=require('../data/staff/verified.json');
+const a=compiler.build(),b=compiler.build();assert.deepEqual(a,b,'Compilation déterministe sans RNG.');
+assert.deepEqual(JSON.parse(fs.readFileSync(target,'utf8')),a,'Registre publié à jour.');
+assert.equal(a.clubs.length,30);assert.ok(a.clubs.every((c,i)=>c.id===i&&Array.isArray(c.members)));
+const people=a.clubs.flatMap(c=>c.members),ids=new Set(people.map(p=>p.id));
+assert.ok(people.length>=400);assert.equal(ids.size,people.length);
+const names=new Set(source.people.map(p=>p.name.normalize('NFKC').toLocaleLowerCase('fr'))),text=JSON.stringify(a);
+for(const p of people){assert.match(p.id,/^staff:\d{1,2}:[a-f0-9]{16}$/);assert.ok(!names.has(p.name.normalize('NFKC').toLocaleLowerCase('fr')));assert.ok(p.role&&p.observedAt);assert.equal(p.portraitStatus,'anonymous');}
+for(const p of source.people)assert.ok(!text.includes(JSON.stringify(p.name).slice(1,-1)),'Identité réelle absente : '+p.id);
+assert.doesNotMatch(text,/https?:|localPath|[A-Z]:[\\/]|portraitUrl|sourceUrl/,'Pas de lien ou média privé distribué.');
+assert.equal(people.length,source.people.filter(p=>p.importEligible).length);
+const staff=require('../native/engine/staff.cjs'),base={meta:{mode:'common',catalogue:[]},club:{id:0}},before=JSON.stringify(base);
+const projected=staff.project(base);assert.equal(projected.staff.teams.length,30);assert.equal(JSON.stringify(base),before,'Projection indépendante sans mutation de l’entrée.');
+assert.deepEqual(staff.project(base),projected);assert.ok(staff.ids.has(people[0].id));
+const legacy=staff.project({meta:{mode:'fictional14'},club:{id:0}});assert.deepEqual(legacy.staff.teams,[],'Pas de vrais staffs affectés à une ancienne base générée.');
+console.log('Staff : registre30clubs, identités anonymes, compilation et projection pure PASS ('+people.length+' personnes).');

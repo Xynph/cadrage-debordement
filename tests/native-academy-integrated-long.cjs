@@ -1,0 +1,34 @@
+'use strict';
+// Copy the production worker outside the repository. Only its finish_round UI
+// precondition is relaxed to call the real automatic France weekly simulation.
+// All commands, transactions, schemas, projections and disk writes remain real.
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),Module=require('node:module');
+const sourcePath=path.resolve(__dirname,'../native/engine/worker.cjs'),folder=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'native-academy-integrated-'));let source=fs.readFileSync(sourcePath,'utf8');
+const guard="S.phase!=='ended'&&(S.live?.finished||!S.live&&!nextMatch())";assert.ok(source.includes(guard));source=source.replace(guard,"S.phase!=='ended'&&!S.live");const mobility=process.env.CD_ACADEMY_MOBILITY==='1';
+if(mobility){source=source.replace("new Set([...SYSTEM_COMMANDS,","new Set(['academy_test_move',...SYSTEM_COMMANDS,");source=source.replace("}else if(command==='import'){",` }else if(command==='academy_test_move'){
+ run("if(!managerMobilityActive())managerMobilityEnable();{const target=(S.club+1)%30;let decision=managerMobilityDecision(target);if(!decision?.accepted){S.clubs[target].cash=Math.max(S.clubs[target].cash,10000000);worldClub(target).debt=0;worldClub(target).reputation=0;worldClub(target).coachConfidence=0;}if(!managerMobilityApply(target)||!managerMobilityAccept('job-'+S.season+'-'+target))throw Error('Mobilité annuelle de recette refusée.');}");
+ }else if(command==='import'){`);}
+fs.writeFileSync(path.join(folder,'worker-test-copy.cjs'),source);
+const resume=process.env.CD_ACADEMY_RESUME;if(resume)fs.cpSync(path.join(resume,'profile'),path.join(folder,'profile'),{recursive:true});
+const loaded=new Module(sourcePath,module);loaded.filename=sourcePath;loaded.paths=Module._nodeModulePaths(path.dirname(sourcePath));loaded._compile(source,sourcePath);const {createBridge,IMPORT_LIMIT_BYTES}=loaded.exports;
+let bridge=createBridge({dataDir:path.join(folder,'profile'),seed:13,now:1700000000000}),sequence=0,maxBytes=0,maxNodes=0;let model;
+function good(command,payload={}){const r=bridge.handle({id:++sequence,command,payload});assert.equal(r.ok,true,command+': '+r.error);model=r.model;return model;}
+function press(){const p=model.clubLife.press;if(p.conference.available)good('press_conference',{context:p.context,answers:p.conference.questions.map(q=>({questionId:q.id,answerId:'r1'}))});}
+function checkpoint(){const text=good('export').meta.exportText,doc=JSON.parse(text);let nodes=0;function count(x){nodes++;if(x&&typeof x==='object')Object.values(x).forEach(count)}count(doc.state);const bytes=Buffer.byteLength(text);maxBytes=Math.max(maxBytes,bytes);maxNodes=Math.max(maxNodes,nodes);assert.ok(bytes<=IMPORT_LIMIT_BYTES,bytes+' octets');assert.ok(nodes<650000,nodes+' nœuds');const row={season:doc.state.season,week:doc.state.franceMode.week,bytes,nodes,academy:Buffer.byteLength(JSON.stringify({nativeAcademy:doc.state.nativeAcademy,v73Espoirs:doc.state.v73Espoirs,v74Accession:doc.state.v74Accession})),press:doc.state.pressConference.history.length,world:doc.state.interclubWorld.events.length};console.log(JSON.stringify(row));fs.appendFileSync(path.join(folder,'checkpoints.jsonl'),JSON.stringify(row)+'\n');fs.writeFileSync(path.join(folder,'last-export.json'),text);good('import',{text});const again=good('export').meta.exportText;assert.equal(again,text,'import/export intégrés exacts');good('shutdown');bridge=createBridge({dataDir:path.join(folder,'profile'),now:1700000000000});assert.equal(good('export').meta.exportText,text,'reprise intégrée exacte');}
+try{if(resume)good('snapshot');else{good('new_career',{mode:'common',club:29});good('academy_activate',{...model.clubLife.academyPathways.context,confirmed:true});}const strategy=()=>model.clubLife.clubStrategy.context;
+ if(!resume){good('club_board_priority',{context:strategy(),key:'effectif'});good('club_fans_price',{context:strategy(),key:'accessible'});good('club_fans_campaign',{context:strategy(),key:'locale',confirmed:true});}
+ // Deux saisons intégrées en CI ; campagne longue explicite : CD_ACADEMY_YEARS=15.
+ const firstYear=model.meta.season,years=Number(process.env.CD_ACADEMY_YEARS||2);assert.ok(Number.isSafeInteger(years)&&years>=firstYear,'CD_ACADEMY_YEARS doit cibler une saison entière au moins égale à la saison de reprise.');let completedSeasons=0;for(let year=firstYear;year<=years;year++){
+  if(!resume||year!==firstYear)good('club_board_objective',{context:strategy(),type:'wins',target:5,deadline:34});
+  for(let w=model.clubLife.academyPathways.context.week;w<34;w++){
+   press();const rel=model.clubLife.relationships;if(rel.event?.available)good('locker_room_decision',{context:rel.context,eventKey:rel.event.key,choice:'ecouter'});
+   good('finish_round');if([10,20,34].includes(w+1))checkpoint();
+  }
+  assert.equal(model.meta.phase,'ended','Saison entièrement terminée avant intersaison');
+  if(mobility)good('academy_test_move');good('next_season',{confirmed:true});assert.equal(model.meta.season,year+1);if(mobility)assert.equal(model.club.id,(29+year)%30);completedSeasons++;
+ }
+ assert.equal(completedSeasons,years-firstYear+1,'Toutes les saisons demandées réellement terminées');assert.equal(model.meta.season,years+1);assert.ok(maxBytes>0&&maxNodes>0,'Checkpoints réels exécutés');
+ console.log(JSON.stringify({passed:true,completedSeasons,firstYear,years,mobility,resumedFrom:resume||null,maximumBytes:maxBytes,maximumNodes:maxNodes,profile:folder,proof:'Vrai worker copié : calendriers/moteur réels, domaines natifs actifs, conférences hebdomadaires, décisions vestiaire, objectifs/conseil/supporters, import/export/reprise aux checkpoints10/20/34.'}));
+}finally{bridge.close();}
+
+

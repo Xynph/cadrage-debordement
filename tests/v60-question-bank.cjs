@@ -13,7 +13,7 @@ assert.ok(bank.journalists.some(j=>j.name==='Renaud Bourel'&&j.outlet==='L\'Équ
 assert.ok(bank.journalists.some(j=>j.name==='Arnaud Beurdeley'));
 assert.equal(new Set(bank.questions.map(q=>q.id)).size,500);
 assert.equal(new Set(bank.questions.flatMap(q=>q.variants)).size,1500);
-for(const q of bank.questions){assert.equal(q.answers.length,4);assert.equal(new Set(q.answers.map(a=>a.text)).size,4);}
+for(const q of bank.questions){assert.equal(q.answers.length,5);assert.equal(new Set(q.answers.map(a=>a.text)).size,5);}
 const secondary=bank.questions.flatMap(q=>q.variants.slice(1));
 assert.equal(secondary.length,1000,'two alternative formulations per question');
 assert.equal(new Set(secondary).size,1000,'secondary formulations stay distinct across the 500 questions');
@@ -33,7 +33,7 @@ for(const q of bank.questions){
 }
 assert.equal(byTheme.size,25);
 assert.ok([...byTheme.values()].every(batch=>batch.length===20&&new Set(batch).size===20),'20 distinct lead questions per theme');
-assert.equal(new Set(bank.questions.flatMap(q=>q.answers.map(a=>a.id))).size,4,'answer IDs remain backward compatible');
+assert.equal(new Set(bank.questions.flatMap(q=>q.answers.map(a=>a.id))).size,5,'answer IDs remain backward compatible');
 const samples=Array.from({length:25},(_,week)=>bank.pick({season:3,week,count:4,seed:19}));
 const sampleTotal=samples.flat();
 assert.equal(sampleTotal.length,100);
@@ -47,5 +47,5 @@ const history=bank.appendHistory([],chosen[0],2,8,'r1');
 assert.ok(!bank.pick({season:2,week:9,count:4,context:{themes:['defaite','crise','vestiaire','direction']},history,seed:7}).some(q=>q.id===chosen[0].id));
 assert.ok(bank.pick({season:2,week:20,count:4,context:{themes:['defaite','crise','vestiaire','direction']},history,seed:7}).length===4);
 assert.throws(()=>bank.appendHistory([],chosen[0],2,8,'r9'));
-console.log('PASS V60 bank: 25 themes, 500 prompts, 1500 variants, 4 responses, 12-week exclusion');
+console.log('PASS V60 bank: 25 themes, 500 prompts, 1500 variants, 5 responses, 12-week exclusion');
 const conference=bank.pick({season:3,week:9,count:4,seed:5});assert.equal(new Set(conference.map(q=>q.journalist.outlet)).size,4,'one journalist per outlet at each conference');

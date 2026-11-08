@@ -1,7 +1,7 @@
 extends RefCounted
-# Session-only reading state. Nothing here is sent to the engine or exported.
+# Reading state remains local. The shortlist mirrors the engine's saved watchlist.
 static func defaults() -> Dictionary:
-	return {"search":"","family":"Tous","position":"Tous","available":"Tous","contract":"Tous","sort":"Poste","descending":false,"scroll":0,"focus":"","caret":0,"selection_from":-1,"selection_to":-1,"followed":false}
+	return {"search":"","family":"Tous","position":"Tous","available":"Tous","contract":"Tous","sort":"Poste","descending":false,"scroll":0,"focus":"","caret":0,"selection_from":-1,"selection_to":-1,"followed":false,"navigation_id":""}
 
 static func fold(text:Variant) -> String:
 	var result:=str(text).to_lower()
@@ -16,8 +16,11 @@ static func fold(text:Variant) -> String:
 static func players(source:Array,state:Dictionary,season:int,market:bool=false,followed:Array=[]) -> Array:
 	var result:Array=[]
 	var query:=fold(state.search).strip_edges()
+	var target_id := str(state.get("navigation_id", "")) if market else ""
 	for p:Dictionary in source:
-		if not query.is_empty() and not fold(str(p.get("name",""))+" "+str(p.get("pos",""))).contains(query):continue
+		if not target_id.is_empty():
+			if str(p.id) != target_id: continue
+		elif not query.is_empty() and not fold(str(p.get("name",""))+" "+str(p.get("pos",""))).contains(query):continue
 		if state.position!="Tous" and p.get("pos")!=state.position:continue
 		if market:
 			if state.get("followed",false) and str(p.id) not in followed:continue
@@ -51,7 +54,11 @@ static func sync(app:Control,reset:bool=false) -> void:
 	var squad_ids:Array=app.model.get("squad",[]).map(func(p):return str(p.id))
 	var market_ids:Array=app.model.get("market",[]).map(func(p):return str(p.id))
 	app.management_ui.compare=app.management_ui.compare.filter(func(id):return id in squad_ids).slice(0,2)
-	app.management_ui.shortlist=app.management_ui.shortlist.filter(func(id):return id in market_ids)
+	var career_data: Variant=app.model.get("clubLife",{}).get("managerCareer")
+	if career_data is Dictionary and career_data.get("watch") is Array:
+		app.management_ui.shortlist=career_data.watch.map(func(id):return str(id))
+	else:
+		app.management_ui.shortlist=app.management_ui.shortlist.filter(func(id):return id in market_ids)
 	if app.selected_player not in squad_ids:app.selected_player=""
 	for pair in [["roster","squad"],["market","market"]]:
 		var positions:Array=app.model.get(pair[1],[]).map(func(p):return str(p.pos))

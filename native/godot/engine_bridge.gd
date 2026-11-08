@@ -5,8 +5,8 @@ extends Node
 signal model_changed(model: Dictionary)
 signal command_failed(message: String)
 
-const IMPORT_LIMIT_BYTES := 5 * 1024 * 1024
-const REQUEST_LIMIT_BYTES := 6 * 1024 * 1024
+const IMPORT_LIMIT_BYTES := 8 * 1024 * 1024
+const REQUEST_LIMIT_BYTES := 17 * 1024 * 1024
 var model: Dictionary = {}
 var last_response_ok := false
 var child_pid: int = -1
@@ -73,13 +73,13 @@ func send(command: String, payload: Dictionary = {}) -> void:
 		return
 	_next_id += 1
 	var request := {"id": _next_id, "command": command, "payload": payload.duplicate(true)}
-	# The native parser accepts at most 5 MiB of import text. Escaping that
-	# text into JSON can exceed the private worker's separate 6 MiB envelope.
+	# Escaping 8 MiB of import text into JSON can double its encoded size.
+	# The bounded 17 MiB transport leaves room for that text and its envelope.
 	if command == "import" and str(payload.get("text", "")).to_utf8_buffer().size() > IMPORT_LIMIT_BYTES:
-		command_failed.emit("Fichier trop volumineux (5 Mio UTF-8 maximum).")
+		command_failed.emit("Fichier trop volumineux (8 Mio UTF-8 maximum).")
 		return
 	if JSON.stringify(request).to_utf8_buffer().size() > REQUEST_LIMIT_BYTES:
-		command_failed.emit("Message trop volumineux après encodage JSON (6 Mio maximum).")
+		command_failed.emit("Message trop volumineux après encodage JSON (17 Mio maximum).")
 		return
 	_mutex.lock()
 	_queue.append(request)

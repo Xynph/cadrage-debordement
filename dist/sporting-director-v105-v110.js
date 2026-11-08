@@ -195,5 +195,5 @@
  const api={valid,ensure,priority,delegate,invest,mitigate,readiness,closeSeason,rotate,panel,install};
  root.CDSportingDirectorV105V110=api;
  if(typeof module==='object'&&module.exports)module.exports=api;
- if(typeof document!=='undefined')install(root);
+ if(typeof document!=='undefined'&&!root.CDNativeHeadless)install(root);
 })(typeof globalThis==='object'?globalThis:this);

@@ -1,0 +1,544 @@
+{
+  "version": 1,
+  "coach": {
+    "name": "Gaston Darroux",
+    "nickname": "Gabi"
+  },
+  "pages": [
+    {
+      "id": "bienvenue",
+      "route": "Accueil",
+      "title": "Gaston, dit Gabi",
+      "text": "Moi, c'est Gaston Darroux. Mais appelle-moi Gabi. Quarante ans de rugby dans le Sud-Ouest : pilier, puis entraîneur. J'ai gardé les oreilles et le carnet. Ici, c'est toi qui entraînes ; moi, je t'aide à trouver tes repères. On fera les choses sérieusement, sans oublier de se régaler. Allez, bienvenue au club !",
+      "fragments": [
+        {
+          "id": "bienvenue-caractere",
+          "text": "Entre donc ! Moi, c'est Gabi. Ouvre un écran, je te donne un repère, puis je te laisse jouer. Même un ancien pilier sait faire une passe.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "bienvenue-01",
+          "text": "Moi, c'est Gaston Darroux. Mais appelle-moi Gabi. Quarante ans de rugby dans le Sud-Ouest : pilier, puis entraîneur. J'ai gardé les oreilles et le carnet."
+        },
+        {
+          "id": "bienvenue-02",
+          "text": "Ici, c'est toi qui entraînes ; moi, je t'aide à trouver tes repères. On fera les choses sérieusement, sans oublier de se régaler. Allez, bienvenue au club !"
+        }
+      ]
+    },
+    {
+      "id": "club",
+      "route": "Création",
+      "title": "Un club à faire grandir",
+      "text": "Choisir un club, c'est choisir les gens avec qui on va vivre la saison. Regarde la division et l'objectif avant de prendre les rênes. La base anonymisée permet de jouer tout de suite. Et si tu remplaces une carrière, lis bien la confirmation : on ne range pas une histoire sans savoir où on la met.",
+      "fragments": [
+        {
+          "id": "club-caractere",
+          "text": "Choisis d'abord la division et l'objectif. Le blason peut plaire, mais c'est toi qui tiendras la baraque quand novembre viendra taper au carreau.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "club-01",
+          "text": "Choisir un club, c'est choisir les gens avec qui on va vivre la saison. Regarde la division et l'objectif avant de prendre les rênes."
+        },
+        {
+          "id": "club-02",
+          "text": "La base anonymisée permet de jouer tout de suite. Et si tu remplaces une carrière, lis bien la confirmation : on ne range pas une histoire sans savoir où on la met."
+        }
+      ]
+    },
+    {
+      "id": "bureau",
+      "route": "Bureau",
+      "title": "On fait le point",
+      "text": "Viens, on pose le carnet. D'abord la prochaine rencontre, puis les décisions qui attendent. Les raccourcis t'emmènent directement au bon endroit. La carrière se sauvegarde toute seule ; le menu permet aussi d'en garder une copie. Mon vieux conseil : une chose après l'autre. Le club ne se construit pas en une matinée.",
+      "fragments": [
+        {
+          "id": "bureau-caractere",
+          "text": "Adiu ! La prochaine rencontre, puis les décisions en attente. Mon carnet est épais, mais on va le prendre feuille par feuille.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "bureau-01",
+          "text": "Viens, on pose le carnet. D'abord la prochaine rencontre, puis les décisions qui attendent. Les raccourcis t'emmènent directement au bon endroit."
+        },
+        {
+          "id": "bureau-02",
+          "text": "La carrière se sauvegarde toute seule ; le menu permet aussi d'en garder une copie. Mon vieux conseil : une chose après l'autre. Le club ne se construit pas en une matinée."
+        },
+        {
+          "id": "decision-saison",
+          "text": "La nouvelle saison est ouverte. Revois l'effectif, les contrats et le calendrier avant de foncer. On remet les crampons ; pas les œillères !",
+          "audioStatus": "pending",
+          "contextOnly": true
+        }
+      ]
+    },
+    {
+      "id": "effectif",
+      "route": "Effectif",
+      "title": "Des hommes, pas seulement des notes",
+      "text": "Avant de parler de tactique, connais ton groupe. Poste, condition, disponibilité : commence par là, puis ouvre une fiche. Un bon joueur fatigué reste un joueur fatigué. Les filtres t'aident à repérer blessés et joueurs hors groupe. Ne regarde pas seulement les quinze premiers : la saison se gagne avec tout le monde.",
+      "fragments": [
+        {
+          "id": "effectif-caractere",
+          "text": "Regarde la condition et les postes avant les notes. Les étoiles brillent ; les jambes, elles, doivent encore porter le bonhomme.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "effectif-01",
+          "text": "Avant de parler de tactique, connais ton groupe. Poste, condition, disponibilité : commence par là, puis ouvre une fiche. Un bon joueur fatigué reste un joueur fatigué."
+        },
+        {
+          "id": "effectif-02",
+          "text": "Les filtres t'aident à repérer blessés et joueurs hors groupe. Ne regarde pas seulement les quinze premiers : la saison se gagne avec tout le monde."
+        }
+      ]
+    },
+    {
+      "id": "composition",
+      "route": "Composition",
+      "title": "Chacun à sa place",
+      "text": "La première ligne, j'y ai laissé quelques oreilles : on ne bricole pas ses qualifications. Choisis un poste, regarde les joueurs autorisés et prépare aussi le banc. Vérifie toute la feuille avant de partir. Pendant le match, les changements se feront dans l'onglet Banc, en pause. Et le dernier mot reste le tien.",
+      "fragments": [
+        {
+          "id": "composition-caractere",
+          "text": "Vérifie les qualifications et le banc avant de valider ta feuille. Une mêlée, ça se prépare ; mon oreille gauche peut témoigner.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "composition-01",
+          "text": "La première ligne, j'y ai laissé quelques oreilles : on ne bricole pas ses qualifications. Choisis un poste, regarde les joueurs autorisés et prépare aussi le banc."
+        },
+        {
+          "id": "composition-02",
+          "text": "Vérifie toute la feuille avant de partir. Pendant le match, les changements se feront dans l'onglet Banc, en pause. Et le dernier mot reste le tien."
+        }
+      ]
+    },
+    {
+      "id": "entrainement",
+      "route": "Préparation",
+      "title": "Travailler juste",
+      "text": "Faire transpirer tout le monde, c'est facile. Faire progresser le groupe sans le mettre à plat, voilà le métier. Regarde la condition et la charge avant de choisir récupération, normal ou intensif. Une séance collective par semaine : une fois faite, elle est faite. Prépare-la avant le coup d'envoi, avec le prochain match en tête.",
+      "fragments": [
+        {
+          "id": "entrainement-caractere",
+          "text": "Lis la charge et la condition avant la séance. Faire suer, je sais faire ; encore faut-il garder des jambes pour samedi !",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "entrainement-01",
+          "text": "Faire transpirer tout le monde, c'est facile. Faire progresser le groupe sans le mettre à plat, voilà le métier."
+        },
+        {
+          "id": "entrainement-02",
+          "text": "Regarde la condition et la charge avant de choisir récupération, normal ou intensif. Une séance collective par semaine : une fois faite, elle est faite."
+        },
+        {
+          "id": "entrainement-03",
+          "text": "Prépare-la avant le coup d'envoi, avec le prochain match en tête."
+        }
+      ]
+    },
+    {
+      "id": "tactique",
+      "route": "Préparation",
+      "title": "Un plan qu'on comprend",
+      "text": "Un plan, il faut pouvoir l'expliquer simplement. Lis le dossier adverse, puis choisis ton attaque et ta défense. Le conseil du staff donne des raisons, pas une recette miracle. Regarde aussi qui peut réellement jouer. Tu pourras ajuster tes consignes en pause ; on s'adapte à ce qu'on voit, pas à ce qu'on espérait.",
+      "fragments": [
+        {
+          "id": "tactique-caractere",
+          "text": "Pars du dossier adverse, puis choisis tes consignes. Si ton plan exige trois tableaux et une échelle, reprends-le au calme.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "tactique-01",
+          "text": "Un plan, il faut pouvoir l'expliquer simplement. Lis le dossier adverse, puis choisis ton attaque et ta défense. Le conseil du staff donne des raisons, pas une recette miracle."
+        },
+        {
+          "id": "tactique-02",
+          "text": "Regarde aussi qui peut réellement jouer. Tu pourras ajuster tes consignes en pause ; on s'adapte à ce qu'on voit, pas à ce qu'on espérait."
+        }
+      ]
+    },
+    {
+      "id": "premier-match",
+      "route": "Match",
+      "title": "Allez, on y est",
+      "text": "Bon. La feuille, les consignes, un dernier regard au banc… et coup d'envoi. Direct pour suivre, Banc pour changer, Stats pour prendre du recul. Mets en pause quand tu veux décider tranquillement. Maintenant je te laisse le terrain. Je peux être bavard, mais je sais aussi me taire quand le ballon vit.",
+      "fragments": [
+        {
+          "id": "premier-match-caractere",
+          "text": "Pause pour décider, Direct pour regarder jouer. Je te laisse le ballon : même ma moustache sait se taire pendant une action.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "premier-match-01",
+          "text": "Bon. La feuille, les consignes, un dernier regard au banc… et coup d'envoi. Direct pour suivre, Banc pour changer, Stats pour prendre du recul."
+        },
+        {
+          "id": "premier-match-02",
+          "text": "Mets en pause quand tu veux décider tranquillement. Maintenant je te laisse le terrain. Je peux être bavard, mais je sais aussi me taire quand le ballon vit."
+        }
+      ]
+    },
+    {
+      "id": "resultat",
+      "route": "Match",
+      "title": "Le match après le match",
+      "text": "Le résultat est là. Gagné ou perdu, on prend le temps de comprendre. Regarde la conquête, la discipline et la réussite au but, puis les moments du match. Les chiffres donnent des pistes ; ils ne prouvent pas tout. Quand tu as fait ton bilan, valide la journée. Et demain, on retourne travailler. Sans s'emballer, sans baisser la tête.",
+      "fragments": [
+        {
+          "id": "resultat-caractere",
+          "text": "Lis le résultat, la conquête et la discipline avant de valider la journée. On débriefe à froid ; mon vieux carnet n'aime pas les conclusions à chaud.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "resultat-01",
+          "text": "Le résultat est là. Gagné ou perdu, on prend le temps de comprendre. Regarde la conquête, la discipline et la réussite au but, puis les moments du match."
+        },
+        {
+          "id": "resultat-02",
+          "text": "Les chiffres donnent des pistes ; ils ne prouvent pas tout. Quand tu as fait ton bilan, valide la journée. Et demain, on retourne travailler. Sans s'emballer, sans baisser la tête."
+        }
+      ]
+    },
+    {
+      "id": "calendrier",
+      "route": "Calendrier",
+      "title": "Garder un peu de réserve",
+      "text": "Une saison, c'est long. Regarde ce qui vient avant de demander encore un effort aux mêmes joueurs. Ici, tu retrouves les résultats et les rencontres à jouer. Les phases finales se précisent avec la compétition. Prépare le prochain rendez-vous, mais garde un œil sur celui d'après : les jambes ont une mémoire, elles aussi.",
+      "fragments": [
+        {
+          "id": "calendrier-caractere",
+          "text": "Regarde les deux prochains rendez-vous avant de tirer sur les mêmes joueurs. La saison est longue ; le banc n'est pas un porte-manteau.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "calendrier-01",
+          "text": "Une saison, c'est long. Regarde ce qui vient avant de demander encore un effort aux mêmes joueurs. Ici, tu retrouves les résultats et les rencontres à jouer."
+        },
+        {
+          "id": "calendrier-02",
+          "text": "Les phases finales se précisent avec la compétition. Prépare le prochain rendez-vous, mais garde un œil sur celui d'après : les jambes ont une mémoire, elles aussi."
+        }
+      ]
+    },
+    {
+      "id": "classements",
+      "route": "Classements",
+      "title": "Les pieds sur terre",
+      "text": "Le classement, on le regarde en face. Points, matchs joués, différence : vérifie tout avant de comparer. Les onglets montrent les deux divisions et les archives gardent les saisons terminées. Une victoire ne fait pas de nous des champions ; une défaite ne défait pas tout le travail. Continue à construire.",
+      "fragments": [
+        {
+          "id": "classements-caractere",
+          "text": "Compare aussi les matchs joués et la différence. Le classement donne une place, pas un permis de prendre le melon.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "classements-01",
+          "text": "Le classement, on le regarde en face. Points, matchs joués, différence : vérifie tout avant de comparer."
+        },
+        {
+          "id": "classements-02",
+          "text": "Les onglets montrent les deux divisions et les archives gardent les saisons terminées. Une victoire ne fait pas de nous des champions ; une défaite ne défait pas tout le travail."
+        },
+        {
+          "id": "classements-03",
+          "text": "Continue à construire."
+        }
+      ]
+    },
+    {
+      "id": "finances",
+      "route": "Finances",
+      "title": "La maison doit tenir",
+      "text": "Dans mon premier club, on comptait jusqu'aux ampoules du vestiaire. Ici aussi, regarde les moyens avant de promettre. La prime se paie tout de suite, les salaires reviennent chaque semaine de jeu. Le journal garde les mouvements. Ces montants sont fictifs : ils servent à gérer notre projet, pas à raconter les comptes des vrais clubs.",
+      "fragments": [
+        {
+          "id": "finances-caractere",
+          "text": "Commence par le solde et le journal, puis les prévisions. Ici les montants sont fictifs ; les additions, elles, savent toujours nous retrouver.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "finances-01",
+          "text": "Dans mon premier club, on comptait jusqu'aux ampoules du vestiaire. Ici aussi, regarde les moyens avant de promettre."
+        },
+        {
+          "id": "finances-02",
+          "text": "La prime se paie tout de suite, les salaires reviennent chaque semaine de jeu. Le journal garde les mouvements."
+        },
+        {
+          "id": "finances-03",
+          "text": "Ces montants sont fictifs : ils servent à gérer notre projet, pas à raconter les comptes des vrais clubs."
+        },
+        {
+          "id": "decision-tresorerie",
+          "text": "La trésorerie est négative. Regarde le journal et les engagements avant une nouvelle dépense. Même les poteaux ne tiennent pas une caisse à eux seuls.",
+          "audioStatus": "pending",
+          "contextOnly": true
+        }
+      ]
+    },
+    {
+      "id": "packs",
+      "route": "Packs",
+      "title": "À chacun son carnet",
+      "text": "Tu peux jouer avec la base anonymisée ou importer un pack personnalisé. Lis son aperçu, installe-le, puis sélectionne-le. Les identités changent, les progrès de ta carrière restent. Si un pack manque, réimporte-le depuis cette page. Le rugby reste le même ; chacun met ses couleurs sur le carnet.",
+      "fragments": [
+        {
+          "id": "packs-caractere",
+          "text": "Lis l'aperçu avant d'installer et de sélectionner un pack. On change les couleurs du carnet, pas les pages de ta carrière.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "packs-01",
+          "text": "Tu peux jouer avec la base anonymisée ou importer un pack personnalisé. Lis son aperçu, installe-le, puis sélectionne-le. Les identités changent, les progrès de ta carrière restent."
+        },
+        {
+          "id": "packs-02",
+          "text": "Si un pack manque, réimporte-le depuis cette page. Le rugby reste le même ; chacun met ses couleurs sur le carnet."
+        }
+      ]
+    },
+    {
+      "id": "recrutement",
+      "route": "Recrutement",
+      "title": "Le bon renfort, au bon endroit",
+      "text": "Avant de chercher un grand nom, cherche ce qui manque à ton équipe. Regarde la couverture des postes et les fins de contrat. Une piste te plaît ? Lis le salaire, la durée et le coût avant de proposer. Une contre-offre, ça se discute ; une promesse, ça se tient. Et une proposition n'est pas encore une signature.",
+      "fragments": [
+        {
+          "id": "recrutement-caractere",
+          "text": "Couvre tes postes avant de chercher une vedette. Lis salaire, durée et prime : on veut un renfort, pas une addition en crampons.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "recrutement-01",
+          "text": "Avant de chercher un grand nom, cherche ce qui manque à ton équipe. Regarde la couverture des postes et les fins de contrat. Une piste te plaît ?"
+        },
+        {
+          "id": "recrutement-02",
+          "text": "Lis le salaire, la durée et le coût avant de proposer. Une contre-offre, ça se discute ; une promesse, ça se tient. Et une proposition n'est pas encore une signature."
+        },
+        {
+          "id": "decision-contrat",
+          "text": "Le contrat est signé. Vérifie maintenant la couverture des postes et les engagements dans tes comptes. Voilà une ligne au carnet, pas encore un essai !",
+          "audioStatus": "pending",
+          "contextOnly": true
+        }
+      ]
+    },
+    {
+      "id": "territoire",
+      "route": "Club",
+      "title": "On joue pour quelque part",
+      "text": "Regarde un peu autour de nous. Un club, c'est une ville, un stade et des gens qui reviennent, même sous la pluie. Ces photos d'archive donnent un visage au territoire ; leurs crédits sont accessibles ici. Les murs ne gagnent pas les matchs, d'accord. Mais savoir pour qui on joue, ça compte.",
+      "fragments": [
+        {
+          "id": "territoire-caractere",
+          "text": "Le stade et la ville racontent pour qui tu joues. Va voir les crédits des images : même une vieille tribune mérite qu'on la présente.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "territoire-01",
+          "text": "Regarde un peu autour de nous. Un club, c'est une ville, un stade et des gens qui reviennent, même sous la pluie."
+        },
+        {
+          "id": "territoire-02",
+          "text": "Ces photos d'archive donnent un visage au territoire ; leurs crédits sont accessibles ici. Les murs ne gagnent pas les matchs, d'accord. Mais savoir pour qui on joue, ça compte."
+        }
+      ]
+    },
+    {
+      "id": "staff",
+      "route": "Staff",
+      "title": "Le collectif autour de toi",
+      "text": "Le rugby, ça ne se fait pas seul. L'adjoint peut préparer la feuille ; le préparateur, choisir la charge. Les délégations restent tes décisions. Ici, tu peux aussi consulter les visages et les fonctions des staffs de chaque club. Regarde leurs dates de référence : cet annuaire ne simule pas leurs changements de club.",
+      "fragments": [
+        {
+          "id": "staff-caractere",
+          "text": "Vérifie ce que tu délègues et garde un œil sur les choix du staff. L'adjoint porte un carnet, pas une boule de cristal.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "staff-01",
+          "text": "Le rugby, ça ne se fait pas seul. L'adjoint peut préparer la feuille ; le préparateur, choisir la charge. Les délégations restent tes décisions."
+        },
+        {
+          "id": "staff-02",
+          "text": "Ici, tu peux aussi consulter les visages et les fonctions des staffs de chaque club. Regarde leurs dates de référence : cet annuaire ne simule pas leurs changements de club."
+        }
+      ]
+    },
+    {
+      "id": "formation",
+      "route": "Formation",
+      "title": "Laisser une chance aux jeunes",
+      "text": "Quinze espoirs arrivent au centre chaque saison. Regarde leur poste, leur potentiel estimé et leur travail avant de promouvoir. Le salaire professionnel commence dès la promotion : lis le coût avant de confirmer. Chez les pros, les minutes et les saisons racontent la progression. Un jeune, ça se prépare ; ça ne se presse pas comme un citron.",
+      "fragments": [
+        {
+          "id": "formation-caractere",
+          "text": "Compare poste, potentiel estimé et coût avant de promouvoir. Un espoir, ça se prépare doucement ; ce n'est pas une conserve à ouvrir.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "formation-01",
+          "text": "Quinze espoirs arrivent au centre chaque saison. Regarde leur poste, leur potentiel estimé et leur travail avant de promouvoir."
+        },
+        {
+          "id": "formation-02",
+          "text": "Le salaire professionnel commence dès la promotion : lis le coût avant de confirmer. Chez les pros, les minutes et les saisons racontent la progression."
+        },
+        {
+          "id": "formation-03",
+          "text": "Un jeune, ça se prépare ; ça ne se presse pas comme un citron."
+        }
+      ]
+    },
+    {
+      "id": "plan-jeu",
+      "route": "Plan de jeu",
+      "title": "Un plan pour le terrain",
+      "text": "Les choix par zone et les propositions du staff sont ici. Compare-les avec tes joueurs disponibles avant de retenir une consigne.",
+      "fragments": [
+        {
+          "id": "plan-jeu-caractere",
+          "text": "Lis l'adversaire et les descriptions avant de choisir tes zones. Un plan clair, c'est déjà moins de grands gestes au bord de la touche.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "plan-jeu-01",
+          "text": "Les choix par zone et les propositions du staff sont ici. Compare-les avec tes joueurs disponibles avant de retenir une consigne.",
+          "audioStatus": "pending"
+        }
+      ]
+    },
+    {
+      "id": "vestiaire",
+      "route": "Vestiaire",
+      "title": "Des paroles qui engagent",
+      "text": "Lis les réactions et les échéances affichées. Si le suivi est inactif dans une ancienne carrière, son activation reste une décision volontaire.",
+      "fragments": [
+        {
+          "id": "vestiaire-caractere",
+          "text": "Écoute le vestiaire et relis tes engagements avant l'entretien. Une promesse, ce n'est pas un ballon qu'on peut discrètement sortir en touche.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "vestiaire-01",
+          "text": "Lis les réactions et les échéances affichées. Si le suivi est inactif dans une ancienne carrière, son activation reste une décision volontaire.",
+          "audioStatus": "pending"
+        }
+      ]
+    },
+    {
+      "id": "centre",
+      "route": "Centre",
+      "title": "Faire pousser le rugby",
+      "text": "Regarde les effectifs et les compétitions du centre. Vérifie la disponibilité et les conséquences affichées avant une dépense ou une promotion.",
+      "fragments": [
+        {
+          "id": "centre-caractere",
+          "text": "Lis les parcours et les coûts avant de décider au centre. Les jeunes pousses ont besoin de travail, pas qu'on leur tire sur les feuilles.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "centre-01",
+          "text": "Regarde les effectifs et les compétitions du centre. Vérifie la disponibilité et les conséquences affichées avant une dépense ou une promotion.",
+          "audioStatus": "pending"
+        }
+      ]
+    },
+    {
+      "id": "presse",
+      "route": "Presse",
+      "title": "Parler avec mesure",
+      "text": "Prépare tes réponses, relis-les, puis confirme la conférence. Les réactions affichées suivent tes choix ; une prévision n'est pas un fait accompli.",
+      "fragments": [
+        {
+          "id": "presse-caractere",
+          "text": "Lis les faits du journal avant de répondre à la presse. Une phrase peut voyager plus vite qu'un ailier ; choisis où tu veux l'envoyer.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "presse-01",
+          "text": "Prépare tes réponses, relis-les, puis confirme la conférence. Les réactions affichées suivent tes choix ; une prévision n'est pas un fait accompli.",
+          "audioStatus": "pending"
+        }
+      ]
+    },
+    {
+      "id": "rivalites",
+      "route": "Rivalités",
+      "title": "Une histoire à construire",
+      "text": "Les bilans rassemblent les rencontres réellement disputées dans cette carrière. Une page encore vide attend ses premiers matchs.",
+      "fragments": [
+        {
+          "id": "rivalites-caractere",
+          "text": "Regarde les confrontations déjà jouées avant de parler de rivalité. Le carnet se remplit sur le terrain, pas en gonflant le torse au portail.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "rivalites-01",
+          "text": "Les bilans rassemblent les rencontres réellement disputées dans cette carrière. Une page encore vide attend ses premiers matchs.",
+          "audioStatus": "pending"
+        }
+      ]
+    },
+    {
+      "id": "travail-club",
+      "route": "Travail du club",
+      "title": "Toute la semaine compte",
+      "text": "Lis les coûts et les disponibilités de chaque intervention. Un mandat ou une dépense doit répondre à un besoin du groupe.",
+      "fragments": [
+        {
+          "id": "travail-club-caractere",
+          "text": "Vérifie les tâches du staff, le médical et les mandats avant de décider. Le club travaille toute la semaine ; même la cafetière mérite une pause.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "travail-club-01",
+          "text": "Lis les coûts et les disponibilités de chaque intervention. Un mandat ou une dépense doit répondre à un besoin du groupe.",
+          "audioStatus": "pending"
+        }
+      ]
+    },
+    {
+      "id": "strategie",
+      "route": "Stratégie",
+      "title": "Garder la maison solide",
+      "text": "Compare les choix de direction et leurs conséquences affichées. Les prévisions aident à réfléchir ; elles ne remplissent pas la caisse.",
+      "fragments": [
+        {
+          "id": "strategie-caractere",
+          "text": "Lis les échéances et les coûts avant d'engager le club. On peut voir loin sans signer les yeux fermés ; j'ai essayé avec une nappe, c'était déjà risqué.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "strategie-01",
+          "text": "Compare les choix de direction et leurs conséquences affichées. Les prévisions aident à réfléchir ; elles ne remplissent pas la caisse.",
+          "audioStatus": "pending"
+        }
+      ]
+    },
+    {
+      "id": "carriere",
+      "route": "Carrière",
+      "title": "Savoir où poser son sac",
+      "text": "Les possibilités et leur échéance sont affichées ici. Relis la confirmation d'une prise de poste : comptes, joueurs et centres restent dans leur club.",
+      "fragments": [
+        {
+          "id": "carriere-caractere",
+          "text": "Regarde le poste, le calendrier et les dossiers avant de bouger. Changer de banc, ça se prépare ; mon sac est lourd, mais mes décisions aussi.",
+          "audioStatus": "pending"
+        },
+        {
+          "id": "carriere-01",
+          "text": "Les possibilités et leur échéance sont affichées ici. Relis la confirmation d'une prise de poste : comptes, joueurs et centres restent dans leur club.",
+          "audioStatus": "pending"
+        }
+      ]
+    }
+  ]
+}

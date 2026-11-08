@@ -66,7 +66,7 @@ function managerSeasonSnapshot(){
  const offers=S.economy?.offers||[];
  const reports=S.manager?.reports||[];
  const missions=S.manager?.missions||[];
- const available=42-players.length;
+ const available=professionalPlaces(team);
  const seasonClosed=S.phase==='ended';
  const lineupErrors=seasonClosed?[]:sheetErrors();
  const priorities=[];
@@ -195,7 +195,7 @@ function recruitmentTargets(c=club(),pool=null,scouted=c.id===S.club){
  const needs=recruitmentNeeds(c).filter(n=>n.need);
  const all=pool||managerPool(),out=[];
  for(const p of all){
-  if(c.players.some(q=>q.id===p.id)||c.players.length>=42||p.age>=p.dev.retireAge)continue;
+  if(c.players.some(q=>q.id===p.id)||professionalPlaces(c)<=0||p.age>=p.dev.retireAge)continue;
   const matches=needs.filter(n=>slotEligible(p,n.slot));
   if(!matches.length)continue;
   const best=matches[0],evidence=recruitmentEvidence(p,scouted),finance=recruitmentFinance(c,p);
@@ -307,7 +307,7 @@ function successionSimulate(s,actions=[],horizon=3){
   seen.add(act.id);
   if(act.kind==='youth'){
    const p=prospects.find(p=>p.id===act.id);
-   if(!p||people.length>=42)return {valid:false,error:'Espoir indisponible ou effectif complet.'};
+   if(!p||people.length+professionalLoanReservations(s.clubs[s.club],s).length>=professionalCapacity(s.clubs[s.club],s))return {valid:false,error:'Espoir indisponible ou effectif complet.'};
    prospects.splice(prospects.indexOf(p),1);
    const newcomer=successionPerson(p,'promoted');
    newcomer.contractEnd=base+1;newcomer.injury=0;people.push(newcomer);
@@ -326,7 +326,7 @@ function successionSimulate(s,actions=[],horizon=3){
     reasons.push('Prolongation : '+p.name+', salaire '+money(p.salary)+
      '/journée, prime '+money(quote.fee)+'.');
    }else{
-    if(people.length>=42)return {valid:false,error:'Effectif professionnel complet.'};
+    if(people.length+professionalLoanReservations(s.clubs[s.club],s).length>=professionalCapacity(s.clubs[s.club],s))return {valid:false,error:'Effectif professionnel complet.'};
     const p=successionPerson(source,'external');p.salary=term.salary;p.contractEnd=term.contractEnd;p.injury=0;
     people.push(p);
     reasons.push('Recrutement : '+p.name+', prime '+money(quote.fee)+', salaire '+money(p.salary)+

@@ -289,7 +289,7 @@
    }
    // The club's teaching identity has a bounded, observable annual effect.
    let styleProgress=0;
-   const backs=new Set(['9','10','11','12','13','14','15','DEMI','AILIER','ARRIERE']);
+   const backs=new Set(['DEMI DE MÊLÉE','DEMI D’OUVERTURE','AILIER','CENTRE','ARRIÈRE','9','10','11','12','13','14','15','DEMI','AILIER','ARRIERE']);
    for(const p of youth(s)){
     if(!p.dev||p.injury>0)continue;
     const isBack=backs.has(String(p.pos).toUpperCase());
@@ -319,7 +319,7 @@
    n.credits=n.credits.slice(-80);
    n.history=n.history.slice(-150);
    const graduates=(s.v77Promotions?.promotions||[]).length;
-   const completed=(s.v73Espoirs?.results||[]).filter(m=>Array.isArray(m.pair)&&m.pair.includes(s.club)).length;
+   const completed=(root.CDNativeAcademy?.active(s)&&root.CDNativeAcademy.own(s).division==='accession'?s.v74Accession.results:s.v73Espoirs?.results||[]).filter(m=>Array.isArray(m.pair)&&m.pair.includes(root.CDNativeAcademy?.active(s)?root.CDNativeAcademy.own(s).slot:s.club)).length;
    const performance=completed>0?Math.min(5,Math.round(completed/5)):0;
    st.cohesion=clamp(st.cohesion+(fulfilled-broken)*2-Math.ceil(overloaded/4),0,100);
    st.reputation=clamp(st.reputation+graduates*3+performance+Math.floor((st.cohesion-50)/12)-broken*2,0,100);
@@ -385,5 +385,5 @@
  const api={valid,ensure,network,model,watch,trial,partner,clearance,recruitFeeder,networkPanel,discover,recruit,meeting,load,ambition,identity,rankings,settle,panel,install};
  root.CDEspoirsStrategyV95V100=api;
  if(typeof module==='object'&&module.exports)module.exports=api;
- if(typeof document!=='undefined')install(root);
+ if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root);
 })(typeof globalThis==='object'?globalThis:this);

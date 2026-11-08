@@ -39,7 +39,7 @@
     const st=ensure(s),team=s?.clubs?.[s.club]?.players,p=academy(s).find(x=>x.id===id);
     if(!st||!Array.isArray(team)||!p||s.live||s.phase==='ended'||
        !Number.isInteger(years)||years<1||years>3||
-       st.promotions.length>=3||team.length>=42||
+       st.promotions.length>=3||(typeof professionalPlaces==='function'?professionalPlaces(s.clubs[s.club],s)<=0:team.length>=42)||
        st.promotions.some(x=>x.playerId===id)||!Number.isFinite(p.rating)||
        !Number.isFinite(p.dev?.potential)||!Number.isInteger(p.fam)||
        s.development.academy.filter(x=>x.id===id).length!==1)return false;
@@ -97,7 +97,7 @@
   }
   function panel(s){
     const st=ensure(s);if(!st)return '';
-    const locked=!!s.live||s.phase==='ended'||st.promotions.length>=3||s.clubs[s.club].players.length>=42;
+    const locked=!!s.live||s.phase==='ended'||st.promotions.length>=3||(typeof professionalPlaces==='function'?professionalPlaces(s.clubs[s.club],s)<=0:s.clubs[s.club].players.length>=42);
     const youths=academy(s).sort((a,b)=>(b.dev?.potential||0)-(a.dev?.potential||0)||b.rating-a.rating).slice(0,12);
     const rows=youths.map(p=>{
       const allow=!locked&&canPromote(s,p.id,1);
@@ -136,5 +136,5 @@
   const api={valid,ensure,academy,salary,canPromote,promote,panel,install};
   root.CDEspoirsProV77=api;
   if(typeof module==='object'&&module.exports)module.exports=api;
-  if(typeof document!=='undefined')install(root);
+  if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root);
 })(typeof globalThis==='object'?globalThis:this);

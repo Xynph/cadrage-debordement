@@ -200,5 +200,5 @@
   const api={valid,ensure,capacity,forecast,setPrice,campaign,community,service,record,closeSeason,rotate,panel,install};
   root.CDFanExperienceV111V116=api;
   if(typeof module==='object'&&module.exports)module.exports=api;
-  if(typeof document!=='undefined')install(root);
+  if(typeof document!=='undefined'&&!root.CDNativeHeadless)install(root);
 })(typeof globalThis==='object'?globalThis:this);

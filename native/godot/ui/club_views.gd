@@ -5,8 +5,29 @@ static func office(app: Control) -> Control:
 	return preload("res://ui/office_view.gd").build(app)
 
 static func club(app: Control) -> Control:
-	var page := G.v(14)
+	var page := G.v(10)
 	page.name = "CarnetClub"
+	G.fill(page, true)
+	var tabs := TabContainer.new()
+	tabs.name = "ClubTabs"
+	tabs.theme = G.T.paper()
+	tabs.custom_minimum_size.y = 420
+	G.fill(tabs, true)
+	page.add_child(tabs)
+	var territory := _territory(app)
+	territory.name = "ClubTerritory"
+	tabs.add_child(territory)
+	tabs.set_tab_title(0, "Territoire")
+	var memory: Control = preload("res://ui/club_memory_view.gd").build(app)
+	tabs.add_child(memory)
+	tabs.set_tab_title(1, "Histoire")
+	tabs.current_tab = clampi(int(app.management_ui.get("club_tab", 0)), 0, 1)
+	tabs.tab_changed.connect(func(index: int): app.management_ui.club_tab = index)
+	return page
+
+static func _territory(app: Control) -> Control:
+	var page := G.v(14)
+	page.name = "ClubTerritory"
 	G.fill(page, true)
 	var c := G.identity(app.model.club)
 	var photos := G.h(14)
@@ -20,6 +41,8 @@ static func club(app: Control) -> Control:
 		content.add_child(G.label("LE TERRITOIRE" if kind == "city" else "LE STADE", 14, G.WHITE))
 		content.add_child(G.spacer())
 		var title := G.wrap(c.get("city", "") if kind == "city" else c.get("stadium", ""), 34, G.WHITE)
+		title.add_theme_font_override("font", G.T.DISPLAY)
+		title.add_theme_font_size_override("font_size", 44)
 		content.add_child(title)
 		content.add_child(G.wrap("Photographie réelle d'archive · crédits accessibles", 12, G.WHITE))
 	var dossier := G.panel(page)
@@ -45,9 +68,10 @@ static func calendar(app: Control) -> Control:
 	var fixtures: Array = app.model.get("calendar", [])
 	if fixtures.is_empty(): list.add_child(G.wrap("Aucune rencontre programmée pour le moment.", 16))
 	for fixture in fixtures:
+		var tile := G.card(list, G.accent_ink(app.accent) if not fixture.get("played", false) and fixture.get("week", -1) == app.model.meta.get("week", -2) else G.LINE)
 		var row := G.h(12)
 		row.custom_minimum_size.y = 52
-		list.add_child(row)
+		tile.add_child(row)
 		var caption: String = fixture.get("label", "Semaine " + G.n(fixture.get("week", 0)))
 		caption = {"barrage":"Barrage","semi":"Demi-finale","final":"Finale","access":"Barrage d’accession"}.get(caption,caption)
 		row.add_child(G.cell(caption, 132, G.MUTED))
@@ -174,7 +198,11 @@ static func finance(app: Control) -> Control:
 	columns.add_child(G.cell("MONTANT",140,G.MUTED))
 	var list := G.scroll(journal)
 	var ledger: Array = info.get("ledger",app.model.get("ledger",[]))
-	if ledger.is_empty(): list.add_child(G.wrap("Le journal s’ouvrira avec les premières opérations : une journée jouée ou une décision financière.",17))
+	if ledger.is_empty():
+		var empty := G.card(list, G.GOLD)
+		empty.add_child(G.label("La première écriture reste à venir", 29, G.INK, true))
+		empty.add_child(G.wrap("Le journal s’ouvrira avec les premières opérations : une journée jouée ou une décision financière.",17))
+		empty.add_child(G.button("EXAMINER LES ENGAGEMENTS DU CLUB →", func(): app._navigate("Stratégie")))
 	for entry in ledger:
 		var line := G.h(12)
 		line.custom_minimum_size.y=40
@@ -184,12 +212,25 @@ static func finance(app: Control) -> Control:
 		list.add_child(G.separator())
 	var side := G.panel(page,.85)
 	var notes := G.scroll(side)
+	G.photo_note(notes, app.model.club, "Gestion du club", "Les moyens du projet", "stadium", 140)
 	notes.add_child(G.section("Les moyens du projet"))
 	notes.add_child(G.metric(G.euros(info.get("cash", app.model.club.get("cash",0))),"Trésorerie disponible",G.GOLD))
 	notes.add_child(G.separator())
 	var wage := 0.0
 	for p in app.model.get("squad", []): wage += float(p.get("salary",0))
 	notes.add_child(G.metric(G.euros(info.get("wage",wage)),"Salaires hebdomadaires"))
+	var recorded_income := 0.0
+	var recorded_expense := 0.0
+	for entry: Dictionary in ledger:
+		var amount := float(entry.get("amount", 0))
+		if amount >= 0: recorded_income += amount
+		else: recorded_expense -= amount
+	if not ledger.is_empty():
+		notes.add_child(G.separator())
+		notes.add_child(G.label("ÉCRITURES VISIBLES UNIQUEMENT", 12, G.GOLD))
+		notes.add_child(G.wrap("Entrées " + G.euros(recorded_income) + "\nSorties " + G.euros(recorded_expense), 16, G.INK))
+		G.gauge(notes, "Part des sorties dans les flux visibles (%)", 100 * recorded_expense / maxf(1, recorded_income + recorded_expense), 100, G.ALERT)
+		notes.add_child(G.wrap("Journal partiel : ces flux ne constituent pas un bilan de saison.", 12))
 	notes.add_child(G.separator())
 	notes.add_child(G.wrap(info.get("notice","Toutes les valeurs de cette carrière sont fictives. Elles ne représentent pas les budgets des clubs réels."),14))
 	notes.add_child(G.button("VOIR LES CONTRATS  →",func():app._navigate("Effectif")))

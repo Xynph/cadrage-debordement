@@ -95,4 +95,4 @@
  }
  return Object.freeze({PLANS,allowed,mode,preview,apply,panel,install});
 });
-if(typeof document!=='undefined'&&typeof CDTrainingPlansV67==='object')CDTrainingPlansV67.install(globalThis);
+if(!globalThis.CDNativeHeadless&&typeof document!=='undefined'&&typeof CDTrainingPlansV67==='object')CDTrainingPlansV67.install(globalThis);

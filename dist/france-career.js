@@ -11,9 +11,14 @@ const CDFranceCareer=(()=>{
  function ensureAISheet(c){
   if(c.id===S.club)return;
   let sh=buildSheet(c);
-  for(let slot=0;slot<23;slot++){
-   if(slot<15?sh.lineup[slot]:sh.bench[slot-15])continue;
+  while(true){
+   // Une recrue peut entrer dans le XV et déplacer un autre joueur sur le banc.
+   // Rechercher à nouveau le premier manque après chaque redistribution.
+   const slot=[...sh.lineup,...sh.bench].findIndex(id=>!id);
+   if(slot<0)break;
    if(c.players.length>=100)throw Error('Effectif IA '+c.abbr+' : plafond de 100 joueurs atteint, feuille qualifiée impossible.');
+   if(professionalLoanReservations(c).length&&professionalPlaces(c)<=0)throw Error('Effectif IA '+c.abbr+' : places réservées aux retours de prêt, renfort indisponible.');
+   const before=c.players.length;
    const target=slot<15?slot:[1,0,2,3,5,8,9,10][slot-15];
    if(!aiRosterPromote(c,target,true)){
     const ids=new Set([...S.clubs.flatMap(x=>x.players),...S.aiRoster.academies.flatMap(a=>a.players),...S.development.academy,...S.market,...S.economy.freeAgents].map(p=>p.id));let serial=500;
@@ -22,6 +27,7 @@ const CDFranceCareer=(()=>{
     p.rating=clamp(c.base-15+seedHash(p.id)%9,54,82);delete p.skills;ensureSkills(p);delete p.dev;ensureDevelopment(p);
     p.contractEnd=S.season+2;p.academy=false;c.players.push(p);aiRosterEvent(c.id,'emergency',p);
    }
+   if(c.players.length<=before)throw Error('Effectif IA '+c.abbr+' : aucun renfort qualifié disponible pour compléter les 23.');
    sh=buildSheet(c);
   }
   if([...sh.lineup,...sh.bench].filter(Boolean).length!==23)throw Error('Effectif IA '+c.abbr+' : aucun renfort qualifié disponible pour compléter les 23.');

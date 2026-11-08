@@ -82,4 +82,4 @@
  }
  return Object.freeze({OPTIONS,currentMeeting,eligible,available,preview,perform,panel,install});
 });
-if(typeof document!=='undefined'&&typeof CDStaffMeetingV65==='object')CDStaffMeetingV65.install(globalThis);
+if(!globalThis.CDNativeHeadless&&typeof document!=='undefined'&&typeof CDStaffMeetingV65==='object')CDStaffMeetingV65.install(globalThis);

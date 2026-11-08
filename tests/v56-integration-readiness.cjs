@@ -6,7 +6,7 @@ function check(name,fn){fn();tests.push({name,status:'pass'});}
 const save=sources['dist/saves.js'],world=sources['dist/world-career.js'],game=sources['dist/game.js'];
 check('sauvegardes natives: create/parse/validate',()=>{for(const f of ['createSaveDocument','parseSaveDocument','validateCareer','bootSavedCareer'])assert.match(save,new RegExp('function '+f+'\\('));});
 check('migrations natives presentes',()=>assert.match(save,/migrateGame\(\)/));
-check('format export et limite documentees',()=>{assert.match(save,/SAVE_FORMAT='cadrage-debordement-save'/);assert.match(save,/SAVE_LIMIT=5\*1024\*1024/);});
+check('format export et limite documentees',()=>{assert.match(save,/SAVE_FORMAT='cadrage-debordement-save'/);assert.match(save,/SAVE_LIMIT=8\*1024\*1024/);});
 check('echec de lecture non masque',()=>assert.match(save,/loadSaveFailure/));
 check('monde reel: historiques sportifs et finances',()=>{for(const f of ['worldRecordResult','worldWeeklyEconomy','worldRecordChampion','worldEndSeason'])assert.match(world,new RegExp('function '+f+'\\('));});
 check('monde reel: recrutement IA vs signature',()=>{assert.match(world,/function worldAIRecruitmentChoice\(/);assert.match(world,/négociations existantes restent seules décisionnaires/);});

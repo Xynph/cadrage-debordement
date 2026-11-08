@@ -6,13 +6,19 @@ extends Node3D
 const ATHLETE := "res://assets/match3d/quaternius-rugby-athlete.glb"
 const BLEND_SECONDS := 0.55
 const STADIUM_FONT := "res://fonts/BarlowCondensed-SemiBold.ttf"
+const Presentation = preload("res://match_presentation.gd")
+const Kit = preload("res://match_kit.gd")
 var _players: Node3D
 var _ball: Node3D
 var _camera: Camera3D
 var _athlete_scene: PackedScene
 var _actors: Dictionary = {}
 var _team_colors: Array[Color] = [Color("d43e47"), Color("6f9ac9")]
+var _kits: Array[Dictionary] = []
 var _materials: Dictionary = {}
+var _camera_focus := Vector3.ZERO
+var _camera_framed := false
+var _camera_cut := true
 var _ball_from := Vector3.ZERO
 var _ball_target := Vector3.ZERO
 var _blend := 1.0
@@ -21,11 +27,17 @@ var _paused := false
 var _pending: Dictionary = {}
 var _has_pending := false
 var _venue_batches: Dictionary = {}
+var _carrier_id := ""
+var _kind := ""
+var _quality := "balanced"
+var _sun: DirectionalLight3D
+var _ball_marker: Node3D
 
 
 func _ready() -> void:
 	name = "NativeMatchView"
 	_athlete_scene = load(ATHLETE) as PackedScene
+	_kits = Kit.resolve(_team_colors)
 	_build_environment()
 	_build_ground()
 	_build_stadium()
@@ -43,6 +55,7 @@ func _ready() -> void:
 	add_child(_camera)
 	_camera.current = true
 	set_camera(_camera_mode)
+	set_quality(_quality)
 	if _has_pending:
 		apply_frame(_pending)
 		_pending = {}
@@ -58,17 +71,25 @@ func apply_frame(live: Dictionary) -> void:
 	if scene.is_empty() or not scene.get("players", null) is Array:
 		_clear_presence()
 		return
+	var ball_data: Dictionary = scene.get("ball", {})
+	var has_ball := ball_data.has("x") and ball_data.has("y")
+	_carrier_id = Presentation.carrier_id(scene) if has_ball else ""
+	_kind = str(scene.get("kind", ""))
 	var teams: Array = live.get("teams", [])
+	var colors_changed := false
 	for side in mini(teams.size(), 2):
 		var club: Dictionary = teams[side]
 		var presentation: Dictionary = club.get("presentation", {})
 		var color := Color.from_string(str(presentation.get("color", club.get("color", "#eeeeee"))), _team_colors[side])
 		if color != _team_colors[side]:
 			_team_colors[side] = color
-			_materials.clear()
-			for entry: Dictionary in _actors.values():
-				if entry.side == side:
-					_recolor(entry.model, side)
+			colors_changed = true
+	if colors_changed:
+		# A home-colour change can also change the away contrast decision.
+		_kits = Kit.resolve(_team_colors)
+		_materials.clear()
+		for entry: Dictionary in _actors.values():
+			_recolor(entry.model, entry.side)
 	_paused = live.get("paused", false) or live.get("finished", false) or live.get("atBreak", false)
 	var present: Dictionary = {}
 	for player: Dictionary in scene.players:
@@ -81,6 +102,7 @@ func apply_frame(live: Dictionary) -> void:
 		if not _actors.has(id):
 			_actors[id] = _make_actor(id, side, target)
 		var entry: Dictionary = _actors[id]
+		entry.holding = id == _carrier_id
 		entry.from = entry.node.position
 		entry.target = target
 		if entry.side != side:
@@ -92,29 +114,28 @@ func apply_frame(live: Dictionary) -> void:
 			_players.remove_child(actor)
 			actor.queue_free()
 			_actors.erase(id)
-	var ball_data: Dictionary = scene.get("ball", {})
-	if ball_data.has("x") and ball_data.has("y"):
+	if has_ball:
+		if not _ball.visible:
+			_camera_cut = true
 		_ball_from = _ball.position if _ball.visible else _world(ball_data, 0.23)
 		_ball_target = _world(ball_data, 0.23)
 		_ball.position = _ball_from
 		_ball.visible = true
 	else:
 		_ball.visible = false
+		_camera_cut = true
 	_blend = 0.0
 
 
 func set_camera(mode: String) -> void:
-	_camera_mode = "tactical" if mode == "tactical" else "tv"
-	if not is_instance_valid(_camera):
-		return
-	_camera.position = Vector3(0, 150, 5) if _camera_mode == "tactical" else Vector3(0, 92, 125)
-	# A little headroom reveals the far grandstand without hiding an in-goal.
-	_camera.look_at(Vector3.ZERO if _camera_mode == "tactical" else Vector3(0, 3, -3))
-	_fit_camera()
+	var selected := mode if mode in ["tactical", "action"] else "tv"
+	var changed := selected != _camera_mode
+	_camera_mode = selected
+	if is_instance_valid(_camera) and (changed or not _camera_framed):
+		_fit_camera(0.0, true)
 
 
 func _process(delta: float) -> void:
-	_fit_camera()
 	_blend = minf(1.0, _blend + delta / BLEND_SECONDS)
 	for entry: Dictionary in _actors.values():
 		var actor: Node3D = entry.node
@@ -126,28 +147,77 @@ func _process(delta: float) -> void:
 			actor.rotation.y = lerp_angle(actor.rotation.y, atan2(movement.x, movement.z), minf(delta * 9.0, 1.0))
 		var animation: AnimationPlayer = entry.animation
 		if animation:
-			var clip: StringName = entry.run if moving else entry.idle
+			var speed := movement.length() / maxf(delta, 0.001)
+			var clip: StringName = (entry.walk if speed < 2.5 else entry.run) if moving else entry.idle
 			if not clip.is_empty() and animation.current_animation != clip:
 				animation.play(clip, 0.18)
-			animation.speed_scale = 1.0
+			# Frame-owned animation prevents an AnimationPlayer update from overwriting
+			# the hand contact after the pose solver has run.
+			animation.speed_scale = clampf(speed / (1.5 if clip == entry.walk else 4.0), 0.65, 1.65) if moving else 1.0
+			animation.advance(0.0 if _paused else delta)
+		var rig: Skeleton3D = entry.rig
+		entry.grip = move_toward(float(entry.grip), 1.0 if entry.holding else 0.0, delta * 6.0)
+		if rig and entry.grip > 0.0:
+			var center: Vector3 = Presentation.ball_anchor(actor, rig)
+			Presentation.hold_ball(actor, rig, center, entry.grip)
+			if entry.holding:
+				_ball.global_position = center
+				_ball.global_basis = actor.global_basis
 	if _ball.visible:
-		_ball.position = _ball_from.lerp(_ball_target, _blend)
+		if _carrier_id.is_empty() or not _actors.has(_carrier_id):
+			_ball.position = _ball_from.lerp(_ball_target, _blend)
+			# Only the existing kick kinds receive a visual flight arc.
+			if _kind in ["kick", "goal", "miss", "kickoff", "drop22", "goalLine"]:
+				_ball.position.y += sin(_blend * PI) * minf(6.0, _ball_from.distance_to(_ball_target) * 0.18)
+		_ball_marker.global_position = Vector3(_ball.global_position.x, 0.028, _ball.global_position.z)
+		_ball_marker.global_basis = Basis.IDENTITY
+	_fit_camera(delta, _camera_cut)
+	_camera_cut = false
 
 
-func _fit_camera() -> void:
+func set_quality(profile: String) -> void:
+	_quality = profile if profile in ["economy", "balanced", "detail"] else "balanced"
+	if not is_node_ready():
+		return
+	# Godot's imported geometry LODs remain shared by the thirty actors.
+	get_viewport().mesh_lod_threshold = {"economy": 4.0, "balanced": 2.0, "detail": 1.0}[_quality]
+	if is_instance_valid(_sun):
+		_sun.shadow_enabled = _quality != "economy"
+
+
+func _fit_camera(delta: float = 0.0, cut: bool = false) -> void:
 	if not is_instance_valid(_camera):
 		return
+	_camera_framed = true
+	if _camera_mode != "tactical":
+		var desired := _ball.global_position if _ball.visible else Vector3.ZERO
+		if cut:
+			_camera_focus = desired
+		else:
+			_camera_focus = _camera_focus.lerp(desired, 1.0 - exp(-5.0 * delta))
+			# Bound the follow delay during a long authored pass; the ball must
+			# stay in the comfortable middle area even at the in-goal corners.
+			var lag := _camera_focus - desired
+			_camera_focus = desired + lag.limit_length(3.0 if _camera_mode == "action" else 8.0)
+		var offset := Vector3(5.0, 12.0, 18.0) if _camera_mode == "action" else Vector3(0, 55, 75)
+		_camera.position = _camera_focus + offset
+		_camera.look_at(_camera_focus)
+		_camera.size = 16.0 if _camera_mode == "action" else 42.0
+		return
+	_camera_focus = Vector3.ZERO
+	_camera.position = Vector3(0, 150, 5)
+	_camera.look_at(Vector3.ZERO)
 	var viewport_size := get_viewport().get_visible_rect().size
 	if viewport_size.y <= 0:
 		return
 	var aspect := viewport_size.x / viewport_size.y
 	var half_height := 0.0
-	# Fit all four edges, including the five-metre presentation apron, at any UI ratio.
+	# Tactical retains the entire pitch and its five-metre presentation apron.
 	for x in [-56.0, 56.0]:
 		for z in [-41.0, 41.0]:
 			var point := _camera.to_local(Vector3(x, 0, z))
 			half_height = maxf(half_height, maxf(absf(point.y), absf(point.x) / aspect))
-	_camera.size = maxf(half_height * 2.16, 86.0 if _camera_mode == "tv" else 88.0)
+	_camera.size = maxf(half_height * 2.16, 88.0)
 
 
 func _world(point: Dictionary, height: float = 0.0) -> Vector3:
@@ -160,6 +230,9 @@ func _clear_presence() -> void:
 		entry.node.queue_free()
 	_actors.clear()
 	_ball.visible = false
+	_carrier_id = ""
+	_camera_cut = true
+	_fit_camera(0.0, true)
 
 
 func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
@@ -193,7 +266,9 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 	var animation := _find_animation(model)
 	var idle := StringName()
 	var run := StringName()
+	var walk := StringName()
 	if animation:
+		animation.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 		for clip: StringName in animation.get_animation_list():
 			if str(clip).ends_with("Man_Idle"):
 				idle = clip
@@ -201,10 +276,13 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 			if str(clip).ends_with("Man_Run"):
 				run = clip
 				animation.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
+			if str(clip).ends_with("Man_Walk"):
+				walk = clip
+				animation.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
 		if not idle.is_empty():
 			animation.play(idle)
 	return {"node": actor, "model": model, "side": side, "from": target, "target": target,
-		"animation": animation, "idle": idle, "run": run}
+		"animation": animation, "idle": idle, "run": run, "walk": walk, "rig": Presentation.rig_for(model), "holding": false, "grip": 0.0}
 
 
 func _model_bounds(node: Node3D, origin: Node3D) -> AABB:
@@ -232,7 +310,7 @@ func _find_animation(node: Node) -> AnimationPlayer:
 func _recolor(model: Node3D, side: int) -> void:
 	var marker := model.get_parent().get_node_or_null("TeamMarker") as MeshInstance3D
 	if marker:
-		marker.material_override = _material(_team_colors[side], true)
+		marker.material_override = _material(_kits[side].marker, true)
 	for child: Node in model.find_children("*", "MeshInstance3D", true, false):
 		var mesh := child as MeshInstance3D
 		for surface in mesh.mesh.get_surface_count():
@@ -245,10 +323,10 @@ func _recolor(model: Node3D, side: int) -> void:
 				material.metallic = 0.0
 				material.roughness = 0.9
 				match source.resource_name:
-					"Shirt": material.albedo_color = _team_colors[side]
-					"Shirt2": material.albedo_color = _team_colors[side].lightened(0.4)
+					"Shirt": material.albedo_color = _kits[side].shirt
+					"Shirt2": material.albedo_color = _kits[side].detail
 					"Pants": material.albedo_color = Color("202b35") if side == 0 else Color("ede9dc")
-					"Socks": material.albedo_color = _team_colors[side]
+					"Socks": material.albedo_color = _kits[side].shirt
 				_materials[key] = material
 			mesh.set_surface_override_material(surface, _materials[key])
 
@@ -272,6 +350,7 @@ func _build_environment() -> void:
 	environment.environment = settings
 	add_child(environment)
 	var sun := DirectionalLight3D.new()
+	_sun = sun
 	# Neutral art lighting, not an assertion about the match's time or weather.
 	sun.rotation_degrees = Vector3(-57, -24, 0)
 	sun.light_color = Color("fff4e2")
@@ -280,7 +359,7 @@ func _build_environment() -> void:
 	sun.directional_shadow_max_distance = 230
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
 	sun.shadow_bias = 0.035
-	sun.shadow_normal_bias = 0.65
+	sun.shadow_normal_bias = 0.2
 	add_child(sun)
 
 
@@ -311,24 +390,10 @@ func _build_ground() -> void:
 	_box(Vector3(220, 0.4, 180), Vector3(0, -0.45, 0), dark).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_box(Vector3(135, 0.2, 96), Vector3(0, -0.2, 0), _material(Color("464c49"))).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_box(Vector3(118, 0.1, 80), Vector3(0, -0.09, 0), _material(Color("284c31"))).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# One deterministic, mipmapped texture shared by both mowing directions.
-	var grain := Image.create(128, 128, false, Image.FORMAT_RGB8)
-	var turf_rng := RandomNumberGenerator.new()
-	turf_rng.seed = 80731
-	for y in 128:
-		for x in 128:
-			var shade := turf_rng.randf_range(0.84, 1.0)
-			grain.set_pixel(x, y, Color(shade, shade, shade))
-	grain.generate_mipmaps()
-	var turf_texture := ImageTexture.create_from_image(grain)
-	var grass_a := _material(Color("32633d"))
-	var grass_b := _material(Color("386c43"))
-	for grass: StandardMaterial3D in [grass_a, grass_b]:
-		grass.albedo_texture = turf_texture
-		grass.uv1_scale = Vector3(10, 60, 1)
-		grass.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	for stripe in 11:
-		_box(Vector3(10, 0.12, 70), Vector3(-50 + stripe * 10, -0.07, 0), grass_a if stripe % 2 == 0 else grass_b).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# One original shader, no external texture or time-dependent grass noise.
+	var grass := ShaderMaterial.new()
+	grass.shader = load("res://shaders/stadium_surface.gdshader") as Shader
+	_box(Vector3(110, 0.12, 70), Vector3(0, -0.07, 0), grass).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var paint := _material(Color("efefdf"))
 	for z in [-35.0, 35.0]:
 		_box(Vector3(110, 0.018, 0.16), Vector3(0, 0.008, z), paint)
@@ -548,18 +613,31 @@ func _build_ball() -> void:
 	shape.radial_segments = 20
 	shape.rings = 12
 	ball.mesh = shape
-	ball.scale = Vector3(1.7, 0.85, 0.85)
+	ball.scale = Vector3(0.87, 0.53, 0.53)
 	ball.material_override = _material(Color("f6ebc6"))
 	_ball.add_child(ball)
+	# Original dark seams give rotation and hand contact a readable reference.
+	for offset in [-0.095, 0.095]:
+		var seam := MeshInstance3D.new()
+		var stripe := TorusMesh.new()
+		stripe.inner_radius = 0.101
+		stripe.outer_radius = 0.108
+		stripe.rings = 16
+		stripe.ring_segments = 4
+		seam.mesh = stripe
+		seam.rotation.z = PI * 0.5
+		seam.position.x = offset
+		seam.material_override = _material(Color("263c43"))
+		_ball.add_child(seam)
 	# A flat presentation halo keeps the small oval legible at fullfield scale.
 	var halo := MeshInstance3D.new()
+	_ball_marker = halo
 	var ring := TorusMesh.new()
-	ring.inner_radius = 0.55
+	ring.inner_radius = 0.61
 	ring.outer_radius = 0.66
 	ring.rings = 20
 	ring.ring_segments = 6
 	halo.mesh = ring
-	halo.position.y = -0.19
 	halo.material_override = _material(Color("e9bf5a"), true)
 	_ball.add_child(halo)
 	_ball.visible = false

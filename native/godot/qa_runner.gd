@@ -9,6 +9,8 @@ var captures:=""
 var engine_pid:=-1
 var coach_reception: Dictionary = {}
 var layout_reception: Array[Dictionary] = []
+var systems_reception: Dictionary = {}
+var file_reception: Dictionary = {}
 
 func _ready() -> void:call_deferred("_run")
 
@@ -20,6 +22,56 @@ func _check(value:bool,message:String) -> void:
 
 func _settle() -> void:
 	for i in 5:await get_tree().process_frame
+
+func _resize_window(resolution: Vector2i) -> void:
+	var window := get_tree().root
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	var deadline := Time.get_ticks_msec() + 2000
+	if DisplayServer.get_name() != "headless":
+		while DisplayServer.window_get_mode() != DisplayServer.WINDOW_MODE_WINDOWED and Time.get_ticks_msec() < deadline:
+			await get_tree().process_frame
+		_check(DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_WINDOWED, "Windowed mode settled before resizing")
+	await _settle()
+	window.size = resolution
+	DisplayServer.window_set_size(resolution)
+	var expected := Vector2i(mini(resolution.x,1600),mini(resolution.y,900))
+	deadline = Time.get_ticks_msec() + 2000
+	while (window.size != resolution or window.content_scale_size != expected) and Time.get_ticks_msec() < deadline:
+		await get_tree().process_frame
+	_check(window.size == resolution and window.content_scale_size == expected, "Actual window and adaptive reference settled: " + str(resolution))
+	# The production controller debounces its container/focus update by 80 ms.
+	await get_tree().create_timer(.15).timeout
+	await _settle()
+
+func _display_reception() -> void:
+	if DisplayServer.get_name() != "Windows":
+		print("SKIP physical fullscreen/windowed reception: ",DisplayServer.get_name())
+		return
+	_check(DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN,"Windows starts in standard fullscreen before any resize")
+	await _capture("accueil-plein-ecran")
+	app.settings()
+	await _settle()
+	var dialog: AcceptDialog = app.find_child("PreferencesDialog",true,false)
+	var windowed: Button = dialog.find_child("PreferencesWindowed",true,false)
+	var fullscreen: Button = dialog.find_child("PreferencesFullscreen",true,false)
+	_check(windowed != null and fullscreen != null,"Actual preferences expose both display modes")
+	if windowed != null and fullscreen != null:
+		for button in [windowed,fullscreen]:
+			button.grab_focus()
+			for down in [true,false]:
+				var event := InputEventKey.new(); event.keycode = KEY_ENTER; event.pressed = down
+				Input.parse_input_event(event)
+				await get_tree().process_frame
+			await get_tree().create_timer(.2).timeout
+			await _settle()
+			var expected := DisplayServer.WINDOW_MODE_WINDOWED if button == windowed else DisplayServer.WINDOW_MODE_FULLSCREEN
+			_check(DisplayServer.window_get_mode() == expected,"Actual keyboard display action switches mode: " + str(button.name))
+			if button == windowed: _check(DisplayServer.window_get_size() == Vector2i(1440,900),"Actual windowed option is 1440x900")
+			_check(button.has_focus(),"Display action retains keyboard focus: " + str(button.name))
+			_check(button.is_visible_in_tree() and button.get_global_rect().end.y <= dialog.size.y,"Display action remains visible: " + str(button.name))
+			await _capture("parametres-fenetre" if button == windowed else "parametres-plein-ecran")
+	_dismiss()
+	await _settle()
 
 func _wait() -> bool:
 	var deadline:=Time.get_ticks_msec()+20000
@@ -76,8 +128,12 @@ func _capture(name:String) -> void:
 	layout_reception.append({"capture":name,"viewport":[logical.x,logical.y],"window":[DisplayServer.window_get_size().x,DisplayServer.window_get_size().y],"root_end":[end.x,end.y]})
 	_check(end.x<=logical.x+1 and end.y<=logical.y+1,"Root fits client: "+name)
 	if is_instance_valid(app.body) and app.route not in ["Accueil","Création"]:
-		end=app.body.get_global_transform_with_canvas()*app.body.size
+		# The page content may extend vertically inside CareerWorkspace. Check
+		# its visible viewport, while still refusing horizontal content clipping.
+		var workspace: Control = app.body_scroll if is_instance_valid(app.body_scroll) else app.body
+		end=workspace.get_global_transform_with_canvas()*workspace.size
 		_check(end.x<=logical.x+1 and end.y<=logical.y+1,"Page fits client: "+name+" "+str(end))
+		_check(app.body.size.x<=workspace.size.x+1,"Page content fits workspace width: "+name)
 	for dialog in app.get_children():
 		if not dialog is AcceptDialog or not dialog.visible:continue
 		var client:Vector2=get_tree().root.get_visible_rect().size
@@ -114,42 +170,68 @@ func _coach_reception() -> void:
 	app.coach.speech.requested.connect(func(text: String): requests.append(text))
 	app.coach.speech.started.connect(func(_id: int): events.starts += 1)
 	app.coach.speech.ended.connect(func(_id: int): events.ends += 1)
-	# The real system TTS runs at volume zero during unattended reception.
-	# This leaves the player's sound settings untouched.
+	# Audio runs at volume zero only in this disposable reception profile.
 	app.coach.speech.volume = 0
 	app.coach.open_help()
 	await _settle()
 	_check(app.coach.expanded, "Coach opens from the actual app")
-	_check(app.body_scroll.get_global_rect().end.y <= app.coach.get_global_rect().position.y + 1, "Coach reserves its workspace")
+	_check(app.root_content.offset_bottom == 0 and app.coach.mouse_filter == Control.MOUSE_FILTER_IGNORE and app.coach.size.x <= 500, "Coach floats without reserving or intercepting the workspace")
 	_check(app.coach.portrait.texture is AtlasTexture and app.coach.portrait.texture.atlas != null, "Exported atlas is loaded")
 	await _capture("coach-developpe")
-	var available: bool = not app.coach.speech.voice_id.is_empty()
-	if OS.get_environment("CD_GODOT_REQUIRE_TTS") == "1": _check(available, "French TTS required for this Windows reception")
+	var content: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://guide/dialogues.json"))
+	var recordings := 0
+	var pending := 0
+	var shortest_text := ""
+	var shortest_length := INF
+	for page: Dictionary in content.pages:
+		for fragment: Dictionary in page.fragments:
+			var text := str(fragment.text)
+			if fragment.get("audioStatus") == "pending":
+				pending += 1
+				_check(not app.coach.speech.has_recording(text), "Pending text never uses an old recording: " + str(fragment.id))
+				continue
+			_check(app.coach.speech.has_recording(text), "Exact exported recording exists: " + str(fragment.id))
+			if not app.coach.speech.has_recording(text): continue
+			var stream := ResourceLoader.load(str(app.coach.speech.clips[text])) as AudioStreamWAV
+			_check(stream != null and stream.get_length() > 0.5, "Imported PCK audio decodes: " + str(fragment.id))
+			if stream == null: continue
+			recordings += 1
+			if stream.get_length() < shortest_length:
+				shortest_length = stream.get_length(); shortest_text = text
+	_check(recordings == 38 and app.coach.speech.clips.size() == 38, "All 38 exported recordings received without relying on system TTS")
+	_check(pending == 36, "36 new texts explicitly await their approved recordings")
+	var available: bool = recordings > 0 or not app.coach.speech.voice_id.is_empty()
+	if OS.get_environment("CD_GODOT_REQUIRE_TTS") == "1": _check(available, "French speech required for this Windows reception")
 	if available:
+		# Newly written first bubbles can have no recording yet. Receive a real
+		# shipped clip explicitly, without claiming those new texts are recorded.
+		app.coach.bubble.text = shortest_text
+		app.coach.replay()
 		_check(not requests.is_empty() and requests.back() == app.coach.bubble.text, "Spoken text equals the actual bubble")
 		var deadline := Time.get_ticks_msec() + 8000
 		while events.starts == 0 and Time.get_ticks_msec() < deadline: await get_tree().process_frame
-		_check(events.starts > 0 and app.coach.speech.speaking, "Real exported TTS starts")
+		_check(events.starts > 0 and app.coach.speech.speaking, "Real exported speech starts")
+		_check(app.coach.speech.player.playing and app.coach.speech.player.stream is AudioStreamWAV, "Real local Gabi recording plays in the executable")
 		var frames := {}
 		deadline = Time.get_ticks_msec() + 650
 		while Time.get_ticks_msec() < deadline:
 			frames[str(app.coach.portrait.frame_texture.region)] = true
 			await get_tree().process_frame
 		_check(frames.size() >= 2, "Actual speaking portrait changes frames")
-		# A short reception-only phrase proves a real end callback in bounded time.
-		app.coach.bubble.text = "Bonjour."
+		# Play an actual shipped fragment through its natural end callback.
+		app.coach.bubble.text = shortest_text
 		app.coach.replay()
 		var previous_end: int = events.ends
-		deadline = Time.get_ticks_msec() + 8000
+		deadline = Time.get_ticks_msec() + int(shortest_length * 2000) + 3000
 		while events.ends == previous_end and Time.get_ticks_msec() < deadline: await get_tree().process_frame
-		_check(events.ends > previous_end and not app.coach.speech.speaking, "Real exported TTS finishes")
+		_check(events.ends > previous_end and not app.coach.speech.speaking, "Real exported recording finishes naturally")
 		_check(requests.back() == app.coach.bubble.text, "Replay uses the same bubble")
 	app.coach.close()
 	app.coach.speech.volume = 75
 	_check(not app.coach.speech.speaking, "Closing the exported coach stops speech")
 	await _ask("export")
 	_check(app.model.meta.exportText == before and FileAccess.get_sha256(profile) == disk_before, "Coach leaves the actual career and its disk unchanged")
-	coach_reception = {"voice_available":available,"voice":app.coach.speech.voice_id,"starts":events.starts,"ends":events.ends,"test_volume":0,"separate_profile":FileAccess.file_exists(str(app.model.meta.dataDir).path_join("guide.json"))}
+	coach_reception = {"voice_available":available,"voice_status":"provisional","recordings_pending":pending,"recordings_decoded":recordings,"recording_played_to_end":shortest_text,"voice":app.coach.speech.voice_id,"starts":events.starts,"ends":events.ends,"test_volume":0,"separate_profile":FileAccess.file_exists(str(app.model.meta.dataDir).path_join("guide.json"))}
 	await _capture("coach-integre")
 
 func _run() -> void:
@@ -166,10 +248,9 @@ func _run() -> void:
 		get_tree().quit(2)
 		return
 	_check(not app._has_career() and app.route=="Accueil","Fresh profile opens menu without creating career")
-	for resolution in [Vector2i(1280,800),Vector2i(1440,900),Vector2i(1920,1080)]:
-		if DisplayServer.get_name()=="headless":get_tree().root.size=resolution
-		else:DisplayServer.window_set_size(resolution)
-		await _settle()
+	await _display_reception()
+	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
+		await _resize_window(resolution)
 		app._navigate("Accueil")
 		await _capture("accueil-"+str(resolution.x))
 		app.club_division="accession"
@@ -185,10 +266,27 @@ func _run() -> void:
 	_check(app.model.get("squad",[]).size()>=23,"Real squad for club29")
 	_check(app.model.get("leagues",[]).size()==2,"Both divisions projected")
 	await _coach_reception()
-	for resolution in [Vector2i(1280,800),Vector2i(1440,900),Vector2i(1920,1080)]:
-		if DisplayServer.get_name()=="headless":get_tree().root.size=resolution
-		else:DisplayServer.window_set_size(resolution)
-		for page in ["Bureau","Effectif","Composition","Préparation","Calendrier","Classements","Recrutement","Finances","Club","Match"]:
+	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
+		await _resize_window(resolution)
+		var pages: Array[String] = []
+		app._navigate("Bureau")
+		_press("Chercher")
+		await _settle()
+		var palette: AcceptDialog = app.navigation_controller.get("_dialog")
+		_check(is_instance_valid(palette) and palette.visible, "Bundled navigation opens its real palette")
+		if is_instance_valid(palette) and palette.visible:
+			var bounds := Rect2(Vector2.ZERO, get_tree().root.get_visible_rect().size)
+			_check(bounds.encloses(Rect2(Vector2(palette.position),Vector2(palette.size))), "Palette position and size fit the actual client")
+			var confirmation := palette.get_ok_button()
+			var confirmation_rect := confirmation.get_global_rect()
+			confirmation_rect.position += Vector2(palette.position)
+			_check(confirmation.is_visible_in_tree() and bounds.encloses(confirmation_rect), "Palette OPEN action is entirely inside the client")
+			await _capture("recherche-"+str(resolution.x))
+			palette.hide()
+		for chapter: Dictionary in app.NAV_CHAPTERS:
+			for page: String in chapter.routes: pages.append(page)
+		_check(pages.size() == 20, "Every native career route is included in the executable reception")
+		for page in pages:
 			app._navigate(page)
 			await _capture(page.to_lower()+"-"+str(resolution.x))
 			_keyboard_focus()
@@ -238,6 +336,8 @@ func _run() -> void:
 			_check(app.model.tactics.attack==option.id,"Attack decision persisted")
 			break
 	app._navigate("Préparation")
+	_press("ENTRAÎNEMENT")
+	await _settle()
 	_press("CHARGE NORMALE")
 	await _wait()
 	_check(app.model.meta.trained,"Training performed via real control")
@@ -321,7 +421,110 @@ func _run() -> void:
 		_confirm(); await _wait()
 		_check(app.bridge.last_response_ok and app.model.meta.get("rosterFoundation",{}).get("version") == 2, "Actual shipped UI restores its v2 season2 career")
 		_dismiss()
+	await _systems_reception()
+	await _readonly_export_reception()
 	await _finish()
+
+func _readonly_export_reception() -> void:
+	var destination := OS.get_environment("CD_GODOT_QA_DENIED_EXPORT")
+	if destination.is_empty():
+		file_reception = {"executed":false}
+		return
+	_check(destination.is_absolute_path() and FileAccess.file_exists(destination), "Readonly export fixture is explicit and already exists")
+	if not destination.is_absolute_path() or not FileAccess.file_exists(destination): return
+	var original := FileAccess.get_file_as_bytes(destination)
+	var profile := str(app.model.meta.dataDir).path_join("donnees.json")
+	var before := FileAccess.get_sha256(profile)
+	app.import_mode = false
+	app._file_selected(destination)
+	await _wait()
+	await _settle()
+	var visible_refusal: bool = app.last_error.contains("refus") and is_instance_valid(app.status) and app.status.text.contains("ACTION NON EFFECTUÉE")
+	var original_preserved := FileAccess.get_file_as_bytes(destination) == original
+	var profile_preserved := FileAccess.get_sha256(profile) == before
+	_check(visible_refusal, "Bundled atomic replacement reports a real readonly refusal")
+	_check(original_preserved, "Readonly destination retains every original byte")
+	_check(profile_preserved, "Failed native UI export never changes the career profile")
+	await _capture("export-refuse")
+	file_reception = {"executed":true,"readonly_export":visible_refusal,"original_preserved":original_preserved,"profile_preserved":profile_preserved}
+	_dismiss()
+	await _ask("snapshot")
+
+func _systems_reception() -> void:
+	# Exercise the actual relocated engine and resources, after the full season.
+	# These are real, visible decisions in the disposable S2 reception career.
+	var initial_failures := failures.size()
+	var domains := ["press","relationships","clubWorld","academyPathways","clubStrategy","clubSupport","managerCareer","playbook"]
+	for domain in domains:
+		_check(app.model.get("clubLife",{}).has(domain), "Bundled engine projects native domain: " + domain)
+	var professional_ids: Array = app.model.squad.map(func(p: Dictionary): return str(p.id))
+	app._navigate("Centre")
+	_press("ACTIVER LES PARCOURS")
+	await _settle()
+	_confirm()
+	await _wait()
+	_check(app.model.clubLife.academyPathways.active, "Actual exported UI activates academy pathways")
+	_check(app.model.squad.map(func(p: Dictionary): return str(p.id)) == professional_ids, "Academy activation preserves the professional roster")
+	await _capture("centre-parcours-s2")
+	var press: Dictionary = app.model.clubLife.press
+	var five_tones: bool = press.conference.available
+	_check(press.people.size() == 30, "Bundled press retains all thirty journalists")
+	if press.conference.available:
+		var answers: Array = []
+		for question: Dictionary in press.conference.questions:
+			five_tones = five_tones and question.answers.size() == 5 and question.answers.any(func(a: Dictionary): return str(a.id) == "r4" and str(a.toneLabel) == "Humour")
+			_check(question.answers.size() == 5, "Every executable conference question offers five tones")
+			_check(question.answers.any(func(a: Dictionary): return str(a.id) == "r4" and str(a.toneLabel) == "Humour"), "The fifth response is the actual Humour tone")
+			answers.append({"questionId":question.id,"answerId":"r4"})
+		await _ask("press_conference", {"context":press.context,"answers":answers})
+		_check(app.model.clubLife.press.lastOutcome != null, "Bundled conference persists its actual outcome")
+	else:
+		_check(false, "S2 reception has a real conference available")
+	app._navigate("Presse")
+	var press_tabs: TabContainer = app.root_content.find_child("PressTabs",true,false)
+	_check(press_tabs != null and press_tabs.get_tab_count() == 4, "Exported press exposes Journal, Conference, History and Relations")
+	if press_tabs != null: press_tabs.current_tab = 3
+	await _capture("presse-relations-s2")
+	var support: Dictionary = app.model.clubLife.clubSupport
+	await _ask("staff_meeting", {"context":support.context,"plan":"cohesion"})
+	_check(app.model.clubLife.clubSupport.meeting.lastDecision != null, "Bundled staff meeting records its weekly decision")
+	var strategy: Dictionary = app.model.clubLife.clubStrategy
+	await _ask("club_board_priority", {"context":strategy.context,"key":"effectif"})
+	_check(app.model.clubLife.clubStrategy.board.priority == "effectif", "Bundled board priority is applied")
+	var playbook: Dictionary = app.model.clubLife.playbook
+	_check(playbook.zones.size() == 4, "Bundled playbook exposes four field zones")
+	var zone: String = str(playbook.zones[0].id)
+	var attack: String = str(playbook.attackOptions[1].id)
+	await _ask("playbook_set", {"context":playbook.context,"key":"attack","zone":zone,"value":attack})
+	_check(app.model.clubLife.playbook.zones[0].attack == attack, "Bundled local tactical instruction persists")
+	await _ask("export")
+	var before: String = app.model.meta.exportText
+	_check(app.user_preferences.set_value("volume",40), "Bundled atomic helper saves local volume")
+	_check(app.user_preferences.set_value("camera","action"), "Bundled atomic helper saves preferred camera")
+	_check(app.user_preferences.set_value("quality","economy"), "Bundled atomic helper saves visual quality")
+	app._navigate("Match")
+	await _settle()
+	_check(app.match_view._camera_mode == "action" and app.match_view._quality == "economy", "Exported scene applies the saved camera and quality")
+	_check(app.user_preferences.set_value("reduced_motion",true), "Bundled calm preference is saved")
+	_check(app.match_view._camera_mode == "tactical", "Exported calm mode uses a fixed tactical camera")
+	_check(app.user_preferences.set_value("reduced_motion",false), "Bundled calm mode can be disabled")
+	_check(app.match_view._camera_mode == "action", "Exported scene restores the preferred camera")
+	await _ask("export")
+	_check(app.model.meta.exportText == before, "Local comfort settings never change the career")
+	var before_document: Dictionary = JSON.parse_string(before)
+	var profile_path: String = str(app.model.meta.dataDir).path_join("donnees.json")
+	var private_before: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(profile_path))
+	await _ask("import", {"text":before})
+	await _ask("export")
+	var after_document: Dictionary = JSON.parse_string(app.model.meta.exportText)
+	# In the actual application, import advances the wall clock. Only the export
+	# envelope date changes; compare every career field and its checksum exactly.
+	var exact_import: bool = after_document.state == before_document.state and after_document.checksum == before_document.checksum and after_document.format == before_document.format and after_document.exportVersion == before_document.exportVersion
+	_check(exact_import and app.model.clubLife.academyPathways.active, "New native domains survive exact import in the executable")
+	var private_after: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(profile_path))
+	_check(private_after.seed == private_before.seed, "Executable import preserves the actual private RNG cursor")
+	_check(app.user_preferences.data.camera == "action" and app.user_preferences.data.volume == 40, "Career import preserves the independent local preferences")
+	systems_reception = {"passed":failures.size() == initial_failures,"domains":domains,"academy_active":app.model.clubLife.academyPathways.active,"press_five_tones":five_tones,"staff_decision":app.model.clubLife.clubSupport.meeting.lastDecision != null,"board_priority":app.model.clubLife.clubStrategy.board.priority,"atomic_preferences":app.user_preferences.data.camera == "action" and app.user_preferences.data.volume == 40,"exact_import":exact_import,"rng_preserved":private_after.seed == private_before.seed}
 
 func _finish() -> void:
 	app.closing = true
@@ -333,6 +536,8 @@ func _finish() -> void:
 	_check(app.bridge.child_pid<=0,"Owned worker stopped")
 	var final_club:Dictionary=app.model.club if app.model.get("club") is Dictionary else {}
 	var result:Dictionary={"passed":failures.is_empty(),"checks":checks,"failures":failures,"native_display":DisplayServer.get_name(),"captures":captures,"pid":OS.get_process_id(),"engine_pid":engine_pid,"executable":OS.get_executable_path(),"season":app.model.get("meta",{}).get("season"),"club":final_club.get("id"),"coach":coach_reception,"layout":layout_reception}
+	result.systems = systems_reception
+	result.files = file_reception
 	if not captures.is_empty():
 		var file:=FileAccess.open(captures.path_join("report.json"),FileAccess.WRITE)
 		if file!=null:file.store_string(JSON.stringify(result,"\t"));file.close()

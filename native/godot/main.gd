@@ -6,12 +6,32 @@ const ClubViews = preload("res://ui/club_views.gd")
 const SquadViews = preload("res://ui/squad_views.gd")
 const MatchUI = preload("res://ui/match_screen.gd")
 const PackViews = preload("res://ui/pack_views.gd")
+const StaffViews = preload("res://ui/staff_view.gd")
+const DevelopmentViews = preload("res://ui/development_view.gd")
+const PressViews = preload("res://ui/press_view.gd")
+const RelationshipsViews = preload("res://ui/relationships_view.gd")
+const WorldViews = preload("res://ui/world_view.gd")
+const StrategyViews = preload("res://ui/strategy_view.gd")
+const AcademyViews = preload("res://ui/academy_pathways_view.gd")
+const SupportViews = preload("res://ui/support_view.gd")
+const ManagerCareerViews = preload("res://ui/manager_career_view.gd")
+const PlaybookViews = preload("res://ui/playbook_view.gd")
+const NAV_CHAPTERS = [
+	{"label":"Bureau", "routes":["Bureau"]},
+	{"label":"Équipe", "routes":["Effectif","Composition","Préparation","Plan de jeu","Vestiaire","Match"]},
+	{"label":"Développement", "routes":["Recrutement","Formation","Centre"]},
+	{"label":"Club", "routes":["Club","Staff","Travail du club","Stratégie","Finances"]},
+	{"label":"Compétitions", "routes":["Calendrier","Classements","Presse","Rivalités"]},
+	{"label":"Carrière", "routes":["Carrière"]}
+]
 var model: Dictionary = {}
 var catalogue: Array = []
 var route := "Accueil"
+var chapter_routes: Dictionary = {}
 var selected_club := 0
 var selected_player := ""
 var selected_slot := 0
+var selected_staff_club := -1
 var club_division := "elite"
 var table_division := "elite"
 var roster_filter := "Tous"
@@ -46,10 +66,15 @@ var match_finish: Button
 var primary_button: Button
 var pack_manager: Node
 var coach: Control
+var navigation_controller: Node
+var user_preferences: RefCounted
+var decision_feedback: RefCounted
+var preferences_loaded := false
 var coach_reserved_height := 0.0
 var workspace_inset: MarginContainer
 var body_scroll: ScrollContainer
 var entry_scroll: ScrollContainer
+var interface_layout: Node
 
 func _ready() -> void:
 	if OS.get_environment("CD_GODOT_SELF_TEST") == "1" and OS.get_environment("CD_GODOT_DATA_DIR").is_empty():
@@ -57,6 +82,9 @@ func _ready() -> void:
 		get_tree().quit(2)
 		return
 	theme = G.T.make()
+	interface_layout = load("res://ui/interface_layout.gd").new()
+	add_child(interface_layout)
+	interface_layout.setup(self)
 	catalogue = JSON.parse_string(FileAccess.get_file_as_string("res://assets/clubs.json"))
 	timer = Timer.new()
 	timer.wait_time = 0.32
@@ -76,6 +104,13 @@ func _ready() -> void:
 	add_child(bridge)
 	bridge.model_changed.connect(_receive_model)
 	bridge.command_failed.connect(_failed)
+	navigation_controller = load("res://ui/navigation_controller.gd").new()
+	add_child(navigation_controller)
+	navigation_controller.setup(self)
+	user_preferences = load("res://ui/user_preferences.gd").new()
+	user_preferences.changed.connect(_apply_user_preferences)
+	decision_feedback = load("res://ui/decision_feedback.gd").new()
+	decision_feedback.setup(self)
 	if not (OS.has_feature("editor") and OS.get_environment("CD_GODOT_GUIDE_MODULE_TEST") == "1"):
 		coach = load("res://guide/coach_guide.gd").new()
 		add_child(coach)
@@ -105,7 +140,16 @@ func _live() -> Dictionary:
 func _receive_model(value: Dictionary) -> void:
 	SquadViews.U.remember(self)
 	model = value
+	if decision_feedback != null: decision_feedback.complete(last_command, bridge.last_response_ok, model)
+	if not preferences_loaded and not str(model.get("meta", {}).get("dataDir", "")).is_empty():
+		preferences_loaded = true
+		user_preferences.load_profile(str(model.meta.dataDir))
+		_apply_user_preferences()
 	SquadViews.U.sync(self, bridge.last_response_ok and last_command in ["new_career","import","recover_profile"])
+	if bridge.last_response_ok and last_command in ["new_career","import","recover_profile"]:
+		if is_instance_valid(navigation_controller): navigation_controller.reset()
+		for key in ["press_draft_context", "press_draft_choices"]:
+			if has_meta(key): remove_meta(key)
 	if model.get("meta", {}).get("catalogue") is Array:
 		catalogue = model.meta.catalogue.duplicate(true)
 	waiting = false
@@ -131,8 +175,11 @@ func _receive_model(value: Dictionary) -> void:
 		else: _render(false)
 	if bridge.last_response_ok:
 		if is_instance_valid(status):
-			status.text = "Sauvegarde automatique · Profil de carrière indépendant"
-			status.add_theme_color_override("font_color",G.MUTED)
+			status.text = _settled_status_text()
+			status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
+		if is_instance_valid(root_content) and decision_feedback != null:
+			var feedback_button: Button = root_content.find_child("DecisionFeedbackButton", true, false)
+			if feedback_button != null: feedback_button.disabled = decision_feedback.receipts().is_empty()
 		if last_command in ["recruit","extend_contract"] and model.get("meta",{}).get("negotiation") is Dictionary:
 			var offer: Dictionary = model.meta.negotiation
 			notice("La réponse du joueur", str(offer.get("message","La négociation est enregistrée.")))
@@ -140,6 +187,7 @@ func _receive_model(value: Dictionary) -> void:
 			notice("Les renforts du centre",str(model.meta.coverage.get("message","La feuille a été complétée.")))
 		if last_command=="recover_profile" and not str(model.meta.get("recoveryBackup","")).is_empty():
 			notice("Le profil d'origine est conservé","Copie de sécurité :\n"+str(model.meta.recoveryBackup)+"\n\nVous pouvez maintenant créer ou importer une carrière.")
+	call_deferred("_refresh_coach")
 	if not queued_action.is_empty() and bridge.last_response_ok:
 		var next := queued_action.duplicate(true)
 		queued_action.clear()
@@ -159,6 +207,7 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 	last_command = command
 	pending_route = target_route
 	if is_instance_valid(status): status.text = "Traitement de votre décision…"
+	if decision_feedback != null: decision_feedback.begin(command, payload, model)
 	bridge.send(command, payload)
 	return waiting
 
@@ -171,6 +220,7 @@ func _refuse_action(message: String) -> void:
 	notice("Votre décision n'a pas été appliquée", message)
 
 func _failed(message: String) -> void:
+	if decision_feedback != null: decision_feedback.complete(last_command, false, model)
 	waiting = false
 	queued_action.clear()
 	pending_route = ""
@@ -190,12 +240,32 @@ func _failed(message: String) -> void:
 	d.confirmed.connect(d.queue_free)
 	if route == "Accueil" or not _has_career(): _render()
 
-func _navigate(target: String) -> void:
+func _navigate(target: String, remember_ui: bool = true) -> void:
 	route = target
-	_render()
+	for chapter: Dictionary in NAV_CHAPTERS:
+		if target in chapter.routes: chapter_routes[chapter.label] = target
+	_render(remember_ui)
+
+func _build_subnavigation(parent: Container) -> void:
+	for chapter: Dictionary in NAV_CHAPTERS:
+		if route not in chapter.routes or chapter.routes.size() < 2: continue
+		var row := G.h(7)
+		row.name = "ChapterSubnavigation"
+		parent.add_child(row)
+		for target: String in chapter.routes:
+			var button := G.nav_button(target.to_upper(), func(): _navigate(target), accent, route == target)
+			button.name = "Section_" + target
+			button.custom_minimum_size.y = 34
+			button.add_theme_font_size_override("font_size", 12)
+			G.fill(button)
+			row.add_child(button)
+		return
 
 func _render(remember_ui: bool = true) -> void:
 	call_deferred("_refresh_coach")
+	call_deferred("_observe_navigation")
+	for chapter: Dictionary in NAV_CHAPTERS:
+		if route in chapter.routes: chapter_routes[chapter.label] = route
 	if remember_ui: SquadViews.U.remember(self)
 	SquadViews.U.sync(self)
 	if is_instance_valid(root_content):
@@ -246,7 +316,8 @@ func _render(remember_ui: bool = true) -> void:
 	inset.item_rect_changed.connect(_layout_coach)
 	G.fill(inset, true)
 	shell.add_child(inset)
-	var content := G.v(13)
+	var content := G.v(9 if size.y <= 760 else 13)
+	content.name = "CareerContent"
 	inset.add_child(content)
 	var top := G.h(12)
 	content.add_child(top)
@@ -266,6 +337,7 @@ func _render(remember_ui: bool = true) -> void:
 	minibar = G.label("", 12, G.GOLD)
 	content.add_child(minibar)
 	PackViews.missing_warning(self, content, "career")
+	_build_subnavigation(content)
 	body = G.v(13)
 	G.fill(body, true)
 	body_scroll = ScrollContainer.new()
@@ -275,9 +347,19 @@ func _render(remember_ui: bool = true) -> void:
 	G.fill(body_scroll, true)
 	content.add_child(body_scroll)
 	body_scroll.add_child(body)
-	status = G.label(last_error if not last_error.is_empty() else "Sauvegarde automatique · Profil de carrière indépendant", 10, G.MUTED)
+	var footer := G.h(8)
+	content.add_child(footer)
+	status = G.label(_settled_status_text(), 11, Color("f1b6a9") if _status_has_error() else G.MUTED)
 	status.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	content.add_child(status)
+	G.fill(status)
+	footer.add_child(status)
+	if decision_feedback != null: footer.add_child(decision_feedback.control())
+	var coach_dock := Control.new()
+	coach_dock.name = "CoachCompactDock"
+	coach_dock.custom_minimum_size = Vector2(144,34)
+	coach_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	coach_dock.visible = is_instance_valid(coach)
+	footer.add_child(coach_dock)
 	match route:
 		"Bureau": body.add_child(ClubViews.office(self))
 		"Club": body.add_child(ClubViews.club(self))
@@ -287,7 +369,17 @@ func _render(remember_ui: bool = true) -> void:
 		"Effectif": body.add_child(SquadViews.squad(self))
 		"Composition": body.add_child(SquadViews.lineup(self))
 		"Préparation": body.add_child(SquadViews.preparation(self))
+		"Plan de jeu": body.add_child(PlaybookViews.build(self))
 		"Recrutement": body.add_child(SquadViews.market(self))
+		"Staff": body.add_child(StaffViews.build(self))
+		"Formation": body.add_child(DevelopmentViews.build(self))
+		"Presse": body.add_child(PressViews.build(self))
+		"Vestiaire": body.add_child(RelationshipsViews.build(self))
+		"Rivalités": body.add_child(WorldViews.build(self))
+		"Stratégie": body.add_child(StrategyViews.build(self))
+		"Centre": body.add_child(AcademyViews.build(self))
+		"Travail du club": body.add_child(SupportViews.build(self))
+		"Carrière": body.add_child(ManagerCareerViews.build(self))
 		"Match":
 			match_screen = MatchUI.new()
 			match_screen.app = self
@@ -308,22 +400,44 @@ func _entry_workspace(page: Control) -> void:
 	G.fill(page, true)
 	entry_scroll.add_child(page)
 
-func _reserve_coach_space(height: float) -> void:
-	coach_reserved_height = height
+func _reserve_coach_space(_height: float) -> void:
+	coach_reserved_height = 0.0
 	_layout_coach()
 
 func _refresh_coach() -> void:
-	if is_instance_valid(coach): coach.refresh()
+	if is_instance_valid(coach):
+		coach.refresh()
+		coach.consider_context(route, model, last_command, bridge.last_response_ok)
 	_layout_coach()
+
+func _observe_navigation() -> void:
+	if is_instance_valid(navigation_controller): navigation_controller.observe(route, selected_player, selected_staff_club)
+
+func _settled_status_text() -> String:
+	if not last_error.is_empty(): return "ACTION NON EFFECTUÉE · " + last_error
+	if model.get("meta",{}).get("saveError",false): return "DERNIÈRE SAUVEGARDE IMPOSSIBLE · Vérifiez le stockage avant de poursuivre."
+	if user_preferences != null and not user_preferences.last_error.is_empty(): return "RÉGLAGES LOCAUX · " + user_preferences.last_error
+	if decision_feedback != null and not decision_feedback.status_text().is_empty(): return decision_feedback.status_text()
+	return "Sauvegarde automatique · Profil de carrière indépendant"
+
+func _status_has_error() -> bool:
+	return not last_error.is_empty() or model.get("meta",{}).get("saveError",false) or (user_preferences != null and not user_preferences.last_error.is_empty())
+
+func _apply_user_preferences() -> void:
+	if user_preferences == null: return
+	user_preferences.apply_audio()
+	if is_instance_valid(coach) and is_instance_valid(coach.speech):
+		coach.speech.set_global_volume(int(user_preferences.data.volume))
+	if is_instance_valid(coach) and is_instance_valid(coach.portrait):
+		coach.portrait.set_reduced_motion(bool(user_preferences.data.reduced_motion))
+	if is_instance_valid(match_screen) and match_screen.has_method("apply_preferences"):
+		match_screen.apply_preferences()
 
 func _layout_coach() -> void:
 	if not is_instance_valid(root_content) or not is_instance_valid(coach): return
-	var entry := route in ["Accueil", "Création", "Packs"] or not _has_career()
-	root_content.offset_bottom = -coach_reserved_height if entry else 0.0
+	root_content.offset_bottom = 0.0
 	if is_instance_valid(workspace_inset):
-		workspace_inset.add_theme_constant_override("margin_bottom", 22 + ceili(coach_reserved_height))
-	if is_instance_valid(coach):
-		coach.offset_left = 14 if entry else (workspace_inset.get_global_rect().position.x + 8 if is_instance_valid(workspace_inset) else 208)
+		workspace_inset.add_theme_constant_override("margin_bottom", 22)
 
 func _open_coach() -> void:
 	if is_instance_valid(coach): coach.open_help()
@@ -366,14 +480,19 @@ func _build_sidebar(parent: Node) -> void:
 	name.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	name.tooltip_text=G.club_name(model.club)
 	left.add_child(name)
+	if is_instance_valid(navigation_controller): left.add_child(navigation_controller.controls())
 	left.add_child(G.separator())
-	for group in [["LE CLUB",["Bureau","Effectif","Composition","Préparation","Recrutement","Finances","Club"]],["LA COMPÉTITION",["Calendrier","Classements","Match"]]]:
-		left.add_child(G.label(group[0], 9, G.MUTED))
-		for target in group[1]:
-			var b := G.nav_button(target.to_upper(),func():_navigate(target),accent,route==target)
-			left.add_child(b)
-	left.add_child(G.spacer())
-	left.add_child(G.label("PRÉALPHA 0.3  /  WINDOWS", 9, G.GOLD))
+	var navigation := G.scroll(left)
+	navigation.get_parent().name = "CareerNavigation"
+	navigation.add_child(G.label("VOTRE CARNET", 9, G.MUTED))
+	for chapter: Dictionary in NAV_CHAPTERS:
+		var active: bool = route in chapter.routes
+		var destination: String = str(route if active else chapter_routes.get(chapter.label, chapter.routes[0]))
+		var b := G.nav_button(str(chapter.label).to_upper(), func(): _navigate(destination), accent, active)
+		b.name = "Chapter_" + str(chapter.label)
+		b.custom_minimum_size.y = 44
+		navigation.add_child(b)
+	left.add_child(G.label("PRÉALPHA 0.5  /  WINDOWS", 9, G.GOLD))
 	left.add_child(G.button("MENU & SAUVEGARDES", pause_menu))
 
 func _update_live_bar() -> void:
@@ -423,6 +542,8 @@ func _prepare_dialog(dialog: AcceptDialog, width: int) -> void:
 	dialog.theme = G.T.paper()
 	dialog.min_size = Vector2i(width, 0)
 	dialog.dialog_autowrap = true
+	dialog.visibility_changed.connect(func():
+		if not dialog.visible: call_deferred("_refresh_coach"))
 
 func pause_menu() -> void:
 	_clear_dialogs()
@@ -446,31 +567,7 @@ func pause_menu() -> void:
 	d.popup_centered(Vector2i(720,190))
 
 func settings() -> void:
-	_clear_dialogs()
-	var d := AcceptDialog.new()
-	_prepare_dialog(d, 650)
-	d.title = "Affichage"
-	d.dialog_text = "Fenêtre redimensionnable · interface adaptée à votre écran."
-	d.add_button("Fenêtré 1440×900",false,"window")
-	d.add_button("Plein écran",false,"full")
-	d.add_button("Packs et identités",false,"packs")
-	d.add_button("Aide du coach",false,"coach")
-	d.custom_action.connect(func(action: String):
-		if action == "coach":
-			d.hide(); d.queue_free()
-			call_deferred("_open_coach")
-			return
-		if action == "packs":
-			d.hide(); d.queue_free()
-			pack_manager.open("career" if _has_career() else "creation")
-			return
-		if action == "full": DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-		else:
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-			DisplayServer.window_set_size(Vector2i(1440,900))
-		d.hide(); d.queue_free())
-	add_child(d)
-	d.popup_centered(Vector2i(650,180))
+	preload("res://ui/preferences_dialog.gd").open(self, user_preferences)
 
 func open_file(importing: bool) -> void:
 	import_mode = importing
@@ -482,7 +579,7 @@ func _file_selected(path: String) -> void:
 	if import_mode:
 		var f := FileAccess.open(path,FileAccess.READ)
 		if f == null: _refuse_action("Le fichier ne peut pas être lu : " + error_string(FileAccess.get_open_error())); return
-		if f.get_length() > 5*1024*1024: f.close(); _refuse_action("Fichier trop volumineux :5 Mio maximum."); return
+		if f.get_length() > NativeEngineBridge.IMPORT_LIMIT_BYTES: f.close(); _refuse_action("Fichier trop volumineux :8 Mio UTF-8 maximum."); return
 		var text := f.get_as_text()
 		f.close()
 		confirm("Reprendre cette carrière", "La carrière importée remplacera celle du profil. Le moteur la vérifiera avant de l'appliquer.",func(): _command("import",{"text":text},"Bureau"))
@@ -496,17 +593,17 @@ func _write_export() -> bool:
 	export_path = ""
 	var text := str(model.get("meta",{}).get("exportText",""))
 	if text.is_empty(): _failed("Le moteur n'a pas fourni d'export."); return false
-	var temporary := destination + ".tmp-" + str(OS.get_process_id())
+	var temporary := destination + ".tmp-" + str(OS.get_process_id()) + "-" + str(Time.get_ticks_usec())
 	var f := FileAccess.open(temporary,FileAccess.WRITE)
 	if f == null: _failed("L'export ne peut pas être écrit."); return false
 	f.store_string(text)
 	f.flush()
 	var error := f.get_error()
 	f.close()
-	if error == OK: error = DirAccess.rename_absolute(temporary,destination)
-	if error != OK:
+	var replacement_error := error_string(error) if error != OK else preload("res://atomic_file.gd").replace_staged(temporary, destination)
+	if not replacement_error.is_empty():
 		DirAccess.remove_absolute(temporary)
-		_failed("Écriture de l'export refusée : " + error_string(error))
+		_failed("Écriture de l'export refusée : " + replacement_error)
 		return false
 	return true
 
@@ -567,6 +664,9 @@ func _close() -> void:
 	get_tree().quit()
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if is_instance_valid(navigation_controller) and navigation_controller.handle_shortcut(event):
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("ui_cancel"):
 		if _has_career(): pause_menu()
 		else: _navigate("Accueil")
