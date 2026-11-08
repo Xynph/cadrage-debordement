@@ -5,6 +5,7 @@ const Content = preload("res://guide/guide_content.gd")
 const Profile = preload("res://guide/guide_profile.gd")
 const Speech = preload("res://guide/guide_speech.gd")
 const Portrait = preload("res://guide/coach_portrait.gd")
+const Balloon = preload("res://guide/coach_bubble.gd")
 const INK := Color("e9dec8")
 const GOLD := Color("d0b178")
 var app: Control
@@ -104,11 +105,17 @@ func _build() -> void:
 	var middle := HBoxContainer.new(); middle.size_flags_vertical = Control.SIZE_EXPAND_FILL; _expanded.add_child(middle)
 	var portrait_host := Control.new(); portrait_host.custom_minimum_size = Vector2(144, 128); middle.add_child(portrait_host)
 	portrait = Portrait.new(); portrait.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); portrait_host.add_child(portrait)
+	var balloon := Balloon.new()
+	balloon.speaker = portrait
+	balloon.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	balloon.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	middle.add_child(balloon)
 	var scroll := ScrollContainer.new(); scroll.name = "GuideTextScroll"
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL; scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	middle.add_child(scroll)
-	bubble = _label(scroll, "", 15); bubble.name = "GuideBubble"
+	balloon.add_child(scroll)
+	bubble = _label(scroll, "", 16); bubble.name = "GuideBubble"
+	bubble.add_theme_color_override("font_color", Color("29272b"))
 	bubble.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bubble.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var actions := HBoxContainer.new(); actions.add_theme_constant_override("separation", 6); _expanded.add_child(actions)

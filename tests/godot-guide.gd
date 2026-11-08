@@ -78,6 +78,14 @@ func profile_cases() -> void:
 func layout_and_capture(id: String) -> void:
 	for i in 5: await process_frame
 	var rect: Rect2 = guide.get_global_rect()
+	if guide.expanded:
+		var balloon: Control = guide.find_child("GuideSpeechBalloon", true, false)
+		check(balloon != null, "Vraie bulle BD distincte du panneau du coach : " + id)
+		if balloon != null:
+			check(balloon.is_ancestor_of(guide.bubble), "Texte prononcé contenu dans la bulle : " + id)
+			check(balloon.get_tail_points().size() == 3, "Pointe de dialogue vers le portrait : " + id)
+			check(balloon.get_global_rect().intersection(rect).size == balloon.size, "Bulle entièrement visible : " + id)
+			check(guide.bubble.get_theme_color("font_color").get_luminance() < 0.2, "Encre sombre lisible sur bulle ivoire : " + id)
 	print("LAYOUT ", id, " rect=", rect, " min=", guide.get_combined_minimum_size(), " app=", app.size)
 	check(rect.position.x >= 0 and rect.end.x <= app.size.x + 1 and rect.end.y <= app.size.y + 1, "Guide dans la fenêtre : " + id)
 	for key in (["GuideNext", "GuideClose", "GuideStop", "GuideReplay", "GuideOptions"] if guide.expanded else ["GuideTour", "GuideHelp"]):
