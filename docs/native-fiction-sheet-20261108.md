@@ -9,19 +9,34 @@ produisait ensuite un banc contenant `null` et seulement 22 joueurs désignés.
 Le validateur refusait correctement cet état ; le pont restaurait carrière,
 stockage et RNG. Ce refus bloquait la progression au début de J2.
 
-`dist/rugby.js` raccorde maintenant la couverture IA existante
-`CDFranceCareer.ensureAISheet` avant la construction d’une nouvelle rencontre
-historique dont `aiRosterActive()` est vrai. Les deux participants IA sont
-traités, y compris les rencontres simulées en arrière-plan. Le helper conserve
-son exclusion du club humain. Le parcours France, déjà raccordé, est conservé.
+Le premier raccord global de `createRugbyMatch` a aussi modifié les simulations
+historiques fiction/LNR : leur parité avec la version `9044998e` a échoué dans
+la CI de la PR #395. Le diagnostic isole la première divergence à J4 : deux
+événements `emergency` nouveaux pour les clubs 1 et 12, puis des résultats,
+états et tirages différents. Le golden reste inchangé. Le core
+`dist/rugby.js` retrouve donc son raccord **France uniquement**, tel qu’avant ce
+correctif. Les rencontres fiction/LNR du web et les simulations de fond
+conservent leur comportement historique.
 
-Les marqueurs de gestion IA ne sont ni créés ni activés implicitement. Un ancien
-format sans `aiRoster` conserve son comportement. Le nouveau raccord vérifie
-l’existence du module et de son helper ; leur absence dans un ancien contexte
-fiction ne provoque pas d’accès à `S.aiRoster.academies`. La conversion d’un
-match historique déjà commencé, signalée par `legacy`, ne déclenche pas le
-nouveau renfort. Le traitement antérieur de cette conversion en France reste
-conservé. Aucun format de sauvegarde ni validateur n’a changé.
+La commande `begin_match` du pont `native/engine/worker.cjs` réutilise désormais
+`CDFranceCareer.ensureAISheet` uniquement pour son nouveau live historique,
+lorsque `aiRosterActive()` est vrai. Elle intercepte localement la construction
+du match pendant l’appel synchrone à `beginMatch`, puis restaure la fonction
+d’origine dans un `finally`. La couverture a lieu après les contrôles de la
+feuille humaine et l’entraînement habituels, avant la création du live. Cela
+conserve le dossier établi avant entraînement et évite de recruter pour une
+blessure d’une semaine qui vient de guérir. Toute erreur reste dans le rollback
+existant de carrière, stockage, RNG et horloge.
+
+L’interception exclut `legacy`, les matchs automatisés, les paires sans club
+humain et les modes France déjà traités par le core. Le helper conserve son
+exclusion du club humain. Les autres IA ne reçoivent aucun renfort lors de ce
+coup d’envoi ou de `finish_round`. Aucun drapeau ni option de survie n’est ajouté
+à la sauvegarde. Les marqueurs IA ne sont ni créés ni activés implicitement.
+Un ancien format sans `aiRoster` conserve son comportement. Le raccord natif
+vérifie l’existence du module/helper. La conversion d’un match historique
+commencé et le traitement antérieur France restent conservés. Aucun format de
+sauvegarde ni validateur n’a changé.
 
 ## Effets de gestion et limites conservées
 
@@ -55,8 +70,10 @@ ce mécanisme ne certifie pas son admissibilité administrative ou médicale en
 Le test `tests/native-fiction-sheet.cjs` a d’abord échoué sur le code de base
 pour les deux graines, avec le refus d’incohérence attendu à J2. Un deuxième
 rouge a isolé la conversion `legacy` qui ajoutait un joueur après un premier
-raccord trop large ; la garde de création corrige cette frontière. Les quatorze
-groupes de vérification passent désormais :
+raccord trop large. Le rouge CI de `france-parity` a ensuite été reproduit sur
+la tête `2a43c898` : hash saison fiction réel `62b7aeb5…` contre `c7d469c5…`
+attendu. Après le déplacement dans la transaction native, les seize groupes de
+vérification passent :
 
 - vrais ponts graines 1/5 : profil J1 sain rouvert, J2 réellement lancée, J3
   atteinte avec une continuation identique d’état et de RNG ; cas minimal 5
@@ -65,9 +82,11 @@ groupes de vérification passent désormais :
   trésorerie immédiate ou d’historique ; salaire, contrat et événement vérifiés ;
 - allocation finale de `managerSheet` : 23 identifiants uniques, joueurs
   disponibles et postes de titulaires/remplaçants éligibles ;
-- deux participants IA couverts en arrière-plan, club humain exclu, promotion
-  d’un espoir existant avant génération, collisions évitées dans les clubs,
-  académies IA et humaine, marché et agents libres ;
+- vraie commande native : seul l’adversaire reçoit le renfort ; une autre IA
+  blessée et le club humain restent sans renfort, une feuille humaine invalide
+  entraîne le refus et le rollback ; promotion d’un espoir existant avant
+  génération, collisions évitées dans les clubs, académies IA et humaine,
+  marché et agents libres ;
 - bornes 39/40/99/100, refus à 100 et rollback natif ;
 - ancienne carrière inactive saine jouable sans migration, ancienne carrière
   carencée conservant son refus strict, conversion de live historique sans
@@ -77,7 +96,19 @@ groupes de vérification passent désormais :
 - export/import/redémarrage après renfort ; feuille falsifiée `null`/22 refusée
   malgré un checksum recalculé, sans mutation d’état, disque ou RNG ;
 - véritable échec d’écriture sur disque pendant le coup d’envoi : rollback du
-  renfort et de l’entraînement, erreur visible, puis reprise égale au contrôle.
+  renfort et de l’entraînement, erreur visible, puis reprise égale au contrôle ;
+- blessure d’une semaine guérie par l’entraînement : aucun renfort inutile ;
+- identité de la fonction restaurée après succès, refus humain, exception du
+  helper, panne disque et absence de rencontre humaine ; ce dernier cas simule
+  les autres IA sans les renforcer. Le test expose seulement une lecture de la
+  référence VM dans une copie instrumentée du worker ; aucun hook de test n’est
+  ajouté au produit. Une mutation jetable supprimant la restauration est bien
+  détectée.
+
+`tests/france-parity.cjs` et ses goldens n’ont pas été modifiés. Création, match
+délégué, saison, intersaison, export et RNG fiction **et** LNR sont à nouveau
+identiques à `9044998e`. Pour la saison fiction, le hash `c7d469c5…` et le RNG
+`2965174150` sont retrouvés.
 
 Les deux fichiers `diagnostic-banc/seed-{1,5}/before-failure-profile.json`
 conservés hors dépôt ont également été copiés et rouverts tels quels : le seul
@@ -85,14 +116,16 @@ conservés hors dépôt ont également été copiés et rouverts tels quels : le
 restent inchangés. Le rapport local `native-fiction-sheet-preserved-profiles.json`
 conserve leurs SHA-256 et les profils résultants.
 
-Suites existantes exécutées avec succès : `rugby`, `match-rules`, `frontrow`,
-`saves`, `v63-native-career-transactions`, `roster-foundation-versions` (véritable
-export v1 S2 et continuation/RNG) et `france-saves`. Le premier lancement de
-`france-saves` a échoué avant exécution parce que le dossier temporaire choisi
-n’existait pas ; sa relance dans un dossier E: existant a été effectuée.
+Suites existantes réexécutées avec succès après le correctif de parité :
+`france-parity`, `godot-engine`, `rugby`, `match-rules`, `frontrow`, `saves`,
+`v63-native-career-transactions`, `roster-foundation-versions` (véritable export
+v1 S2 et continuation/RNG) et `france-saves`. Lors du premier lot, un lancement
+de `france-saves` avait échoué avant exécution parce que le dossier temporaire
+choisi n’existait pas ; sa relance dans un dossier E: existant avait réussi.
 
 Ces vérifications utilisent Node sous Windows et le vrai pont moteur, ainsi que
 les harnais VM existants. Elles ne constituent pas une réception de l’interface
-Godot ni de son exécutable. La CI globale, la revue indépendante renforcée,
+Godot ni de son exécutable (`godot-engine` indique explicitement ce runtime non
+exécuté sans `CD_GODOT_EXECUTABLE`). La CI globale, la revue indépendante renforcée,
 l’intégration et la publication relèvent de l’intégrateur. Aucun push ou
 commentaire GitHub n’est effectué par ce lot local.

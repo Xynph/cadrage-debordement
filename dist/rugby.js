@@ -95,11 +95,7 @@ function revisedSubPanel(l){
 }
 
 function makeStats(){return{possession:0,territory:0,scrums:0,scrumsWon:0,lineouts:0,lineoutsWon:0,penalties:0,yellows:0,conversions:0,conversionAttempts:0,goalAttempts:0,goals:0}}
-function createRugbyMatch(pair,legacy=null,automated=false,preparation=null){
-// Reuse the existing AI cover without opting legacy careers into roster management.
-if(typeof CDFranceCareer!=='undefined'&&typeof CDFranceCareer.ensureAISheet==='function'&&
- (typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)||!legacy&&typeof aiRosterActive==='function'&&aiRosterActive()))for(const ci of pair)CDFranceCareer.ensureAISheet(S.clubs[ci]);
-const userSide=automated?-1:pair.indexOf(S.club);const sheets=pair.map((ci,s)=>{let c=S.clubs[ci],sel=ci===S.club?buildSheet(c,S.lineup,S.reserves):buildSheet(c);return{on:sel.lineup,bench:sel.bench,initial:[...sel.lineup],used:[...sel.lineup.filter(Boolean)],minutes:{},cards:[],yellowCounts:{},sentOff:[],subs:0}});
+function createRugbyMatch(pair,legacy=null,automated=false,preparation=null){if(typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S))for(const ci of pair)CDFranceCareer.ensureAISheet(S.clubs[ci]);const userSide=automated?-1:pair.indexOf(S.club);const sheets=pair.map((ci,s)=>{let c=S.clubs[ci],sel=ci===S.club?buildSheet(c,S.lineup,S.reserves):buildSheet(c);return{on:sel.lineup,bench:sel.bench,initial:[...sel.lineup],used:[...sel.lineup.filter(Boolean)],minutes:{},cards:[],yellowCounts:{},sentOff:[],subs:0}});
 const l={engine:2,pair:[...pair],minute:0,score:[0,0],tries:[0,0],events:[],finished:false,paused:false,halftime:false,userSide,sheets,stats:[makeStats(),makeStats()],tactics:pair.map(ci=>ci===S.club?S.tactic:['equilibre','large','conquete','occupation'][rand(0,3)]),weather:['Sec','Sec','Pluie','Vent'][rand(0,3)],possession:rand(0,1),territory:50,subs:[],pending:null};
 if(typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)){l.franceContext=CDFranceCareer.context(pair);if(!l.franceContext)throw Error('Rencontre hors du calendrier France.');}
 if(!legacy){if(S.developmentFocusVersion===1)l.developmentFocusVersion=1;if(S.physicalLoadVersion===1)l.physicalLoadVersion=1;initializeManagers(l,automated);initializeMatchRules(l);initializeMatchFlow(l);initializeTacticalPlans(l);initializePlaybooks(l);initializeCollectivePreparation(l);initializeRestarts(l);initializePreparation(l,preparation)}

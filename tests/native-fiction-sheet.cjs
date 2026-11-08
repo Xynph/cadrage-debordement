@@ -17,6 +17,13 @@ function allPlayers(s){return [...s.clubs.flatMap(c=>c.players),...s.aiRoster.ac
 function qualified(s){for(let side=0;side<2;side++){const sh=s.live.sheets[side],players=s.clubs[s.live.pair[side]].players,ids=[...sh.on,...sh.bench];assert.equal(ids.length,23);assert.equal(new Set(ids).size,23);assert.equal(sh.nominated.length,23);assert.ok(ids.every(id=>typeof id==='string'&&players.some(p=>p.id===id&&!p.injury)));}}
 function validateNative(b){const h=context();h.ctx.checked=state(b);h.run('validateCareer(checked)');qualified(state(b));}
 function check(label,fn){fn();checks.push(label);}
+// Read-only probe of the real worker's VM binding. Production has no test hook.
+function inspectedWorker(){
+ const Module=require('node:module'),filename=require.resolve('../native/engine/worker.cjs'),m=new Module(filename,module);
+ m.filename=filename;m.paths=Module._nodeModulePaths(path.dirname(filename));
+ m._compile(fs.readFileSync(filename,'utf8').replace('return {handle,close};',"return {handle,close,matchFactory:()=>run('createRugbyMatch')};"),filename);return m.exports.createBridge;
+}
+function inspected(name,persisted){fs.mkdirSync(path.dirname(file(name)),{recursive:true});fs.writeFileSync(file(name),JSON.stringify(persisted));const b=inspectedWorker()({dataDir:path.join(root,name),seed:0,now:1700000000000});bridges.push(b);return b;}
 function prepare(b,seed){
  good(b,'new_career',{club:0});good(b,'begin_match');
  good(b,'pause',{paused:true});good(b,'pause',{paused:false});good(b,'tick',{steps:1});good(b,'pause',{paused:true});
@@ -40,7 +47,7 @@ try{
   const saved=state(b),disk=fs.readFileSync(file('seed-'+seed));b.close();b=bridge('seed-'+seed,12345);
   assert.deepEqual(state(b),saved);assert.deepEqual(fs.readFileSync(file('seed-'+seed)),disk,'restart does not rewrite the saved profile');
   const control=copied('continuation-'+seed,profile('seed-'+seed));
-  for(const x of [b,control]){good(x,'delegate');good(x,'finish_round');good(x,'auto_lineup');if(!good(x,'snapshot').selection.valid)good(x,'promote_cover',{confirmed:true});good(x,'begin_match');validateNative(x);assert.equal(state(x).round,2);}
+  for(const x of [b,control]){const rosters=state(x).clubs.map(c=>c.players.map(p=>p.id));good(x,'delegate');good(x,'finish_round');assert.deepEqual(state(x).clubs.map(c=>c.players.map(p=>p.id)),rosters,'finish_round adds no historical AI cover');good(x,'auto_lineup');if(!good(x,'snapshot').selection.valid)good(x,'promote_cover',{confirmed:true});good(x,'begin_match');validateNative(x);assert.equal(state(x).round,2);}
   assert.deepEqual(state(b),state(control));assert.equal(profile('seed-'+seed).seed,profile('continuation-'+seed).seed,'true J3 continuation retains the RNG');
  });
  check('minimal seed 5 new/begin/delegate/finish/begin needs no UI or human cover',()=>{
@@ -60,12 +67,12 @@ try{
   // Eligibility is checked on managerSheet's final allocation, not just buildSheet.
   assert.equal(h.run('S.live.sheets.every((sh,side)=>sh.on.every((id,i)=>slotEligible(matchPlayer(S.live,side,id),i))&&sh.bench.every((id,i)=>benchEligible(matchPlayer(S.live,side,id),i)))'),true);
  });
- check('new background fixture covers both AI participants and never the human club',()=>{
+ check('native kickoff covers its opponent only; incomplete human sheet rolls back',()=>{
   const h=harness(fixtures.get(5));h.run('S.clubs[11].players.filter(p=>p.pos===POS[0]).slice(1).forEach(p=>p.injury=2)');
-  const before=h.state();h.run('var both=createRugbyMatch([11,12],null,true)');const after=h.state();
-  assert.equal(after.clubs[11].players.length,before.clubs[11].players.length+1);assert.equal(after.clubs[12].players.length,before.clubs[12].players.length+1);assert.deepEqual(after.clubs[0],before.clubs[0]);
-  h.run('validateCareer(S)');qualified({...h.state(),live:JSON.parse(h.run('JSON.stringify(both)'))});
-  const human=harness(fixtures.get(5));human.run('club().players.filter(p=>p.pos===POS[0]).forEach(p=>p.injury=2)');const roster=human.state().clubs[0].players;human.run('createRugbyMatch([0,12])');assert.deepEqual(human.state().clubs[0].players,roster);
+  const before=h.state(),persisted=clone(fixtures.get(5));persisted.store['bdt-v1']=JSON.stringify(before);const b=copied('outside-pair',persisted);good(b,'begin_match');validateNative(b);const after=state(b);
+  assert.deepEqual(after.clubs[11].players.map(p=>p.id),before.clubs[11].players.map(p=>p.id),'unrelated injured AI receives no reinforcement');assert.equal(after.clubs[12].players.length,before.clubs[12].players.length+1);assert.deepEqual(after.clubs[0].players.map(p=>p.id),before.clubs[0].players.map(p=>p.id));
+  const human=harness(fixtures.get(5));human.run('club().players.filter(p=>p.pos===POS[0]).forEach(p=>p.injury=2);validateCareer(S)');const invalid=clone(fixtures.get(5));invalid.store['bdt-v1']=JSON.stringify(human.state());const refused=inspected('invalid-human',invalid),factory=refused.matchFactory(),bytes=fs.readFileSync(file('invalid-human')),own=state(refused);
+  assert.equal(call(refused,'begin_match').ok,false);assert.equal(refused.matchFactory(),factory);assert.deepEqual(state(refused),own);assert.deepEqual(fs.readFileSync(file('invalid-human')),bytes);
  });
  check('existing eligible academy player is promoted before creating a new player',()=>{
   const h=harness(fixtures.get(5));h.run('var youth=academyPlayer(12,2,1,700);youth.age=18;youth.contractEnd=null;aiRosterAcademy(S.clubs[12]).players.push(youth);validateCareer(S)');
@@ -123,6 +130,22 @@ try{
   fs.renameSync(target,target+'.held');fs.mkdirSync(target);
   try{const rejected=call(b,'begin_match');assert.equal(rejected.ok,false);assert.match(rejected.error,/Écriture de sauvegarde impossible/);assert.deepEqual(state(b),before);assert.deepEqual(fs.readFileSync(target+'.held'),bytes);}finally{fs.rmdirSync(target);fs.renameSync(target+'.held',target);}
   assert.deepEqual(fs.readFileSync(target),bytes);good(b,'begin_match');good(control,'begin_match');assert.deepEqual(state(b),state(control));assert.equal(profile('disk-failure').seed,profile('disk-control').seed);
+ });
+ check('native coverage waits for scheduled recovery and adds no unnecessary player',()=>{
+  const persisted=clone(fixtures.get(5)),s=JSON.parse(persisted.store['bdt-v1']),injured=s.clubs[12].players.find(p=>p.id==='p12-2-1700000000000');injured.injury=1;persisted.store['bdt-v1']=JSON.stringify(s);
+  const b=copied('recover-first',persisted);good(b,'begin_match');validateNative(b);const after=state(b);assert.equal(after.clubs[12].players.find(p=>p.id===injured.id).injury,0);assert.equal(after.clubs[12].players.length,s.clubs[12].players.length);assert.deepEqual(after.aiRoster.events,s.aiRoster.events);
+ });
+ check('native match factory is restored after success, refusal, thrown cover, disk failure and no fixture',()=>{
+  const success=inspected('inspected-success',fixtures.get(5)),original=success.matchFactory();good(success,'begin_match');assert.equal(success.matchFactory(),original);assert.equal(call(success,'begin_match').ok,false);assert.equal(success.matchFactory(),original);
+  const h=harness(fixtures.get(5));h.run("while(S.clubs[12].players.length<100){var extra=JSON.parse(JSON.stringify(S.clubs[12].players[10]));extra.id='padding-'+S.clubs[12].players.length;S.clubs[12].players.push(extra);}validateCareer(S)");
+  const capped=clone(fixtures.get(5));capped.store['bdt-v1']=JSON.stringify(h.state());const fail=inspected('inspected-cover-error',capped),beforeFactory=fail.matchFactory(),before=state(fail),bytes=fs.readFileSync(file('inspected-cover-error'));
+  assert.match(call(fail,'begin_match').error,/plafond de 100/);assert.equal(fail.matchFactory(),beforeFactory);assert.deepEqual(state(fail),before);assert.deepEqual(fs.readFileSync(file('inspected-cover-error')),bytes);
+  const disk=inspected('inspected-disk-error',fixtures.get(5)),diskFactory=disk.matchFactory(),target=file('inspected-disk-error');fs.renameSync(target,target+'.held');fs.mkdirSync(target);
+  try{assert.match(call(disk,'begin_match').error,/Écriture de sauvegarde impossible/);assert.equal(disk.matchFactory(),diskFactory);}finally{fs.rmdirSync(target);fs.renameSync(target+'.held',target);}
+  const noMatch=context(5);noMatch.run('start(13);while(S.phase==="league")finishRound();validateCareer(S)');assert.equal(noMatch.run('!!nextMatch()'),false);assert.notEqual(noMatch.state().phase,'ended');
+  noMatch.run('var aiClub=S.clubs[roundPairs()[0][0]];aiClub.players.filter(p=>p.pos===POS[2]).slice(1).forEach(p=>p.injury=2);validateCareer(S)');
+  const idle=inspected('inspected-no-fixture',{protocol:1,seed:noMatch.seed(),clock:1700000000000,store:{'bdt-v1':JSON.stringify(noMatch.state())}}),idleFactory=idle.matchFactory(),rosters=state(idle).clubs.map(c=>c.players.map(p=>p.id));
+  good(idle,'begin_match');assert.equal(idle.matchFactory(),idleFactory);assert.deepEqual(state(idle).clubs.map(c=>c.players.map(p=>p.id)),rosters);assert.equal(state(idle).live,null);
  });
  const report={passed:true,seeds:[1,5],checks,limitations:['23 is the internal engine format, not a universal law','academy reinforcement remains a management abstraction','no Godot UI or Windows executable reception']};
  if(process.env.CD_NATIVE_SHEET_REPORT)fs.writeFileSync(process.env.CD_NATIVE_SHEET_REPORT,JSON.stringify(report,null,2)+'\n');
