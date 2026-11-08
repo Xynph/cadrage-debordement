@@ -2,6 +2,8 @@
 
 ## 8 novembre 2026 — finition PC, couleurs, voix complète et contacts visuels
 
+Le candidat Windows final01, construit depuis `e7ed132d`, reçoit ensuite1 450contrôles/0échec,103captures aux quatre tailles et120empreintes. Le vrai binaire relocalisé utilise son runtime embarqué, décode les74prises du PCK, reçoit lecture/fin, export refusé sur lecture seule et reprise sans changement de sauvegarde ; aucun TCP ni orphelin. Bureau/effectif/classements/staff2560regardés. Démarrage du premier worker28 222ms, dont l'essentiel avant `main.init` ; aucune cause système supposée comme acquise. Voir `docs/native07-reception-windows-20261108.md`. Dernier SHA distant, CI et installation encore à recevoir à cette étape.
+
 La PR398 est fusionnée par le gate officiel sur `f335fb76f038e6632be43540913b7b593b5f8395`. Sa CI exacte `42523056871` et sa CI post-fusion `42524247205` réussissent chacune les sept jobs ; les notes de diagnostic ci-dessous restent historiques. Aucun délai, garde de sauvegarde ni workflow n'a été contourné.
 
 Les menus adoptent une coque anthracite, une identité de club, six pictogrammes originaux, une sous-navigation distincte, des contrôles clairs et des tuiles compactes. Corps12px et référence2560×1440 conservés. Le Bureau sépare ses cartes, montre trois échéances ouvrant les bons dossiers et deux vues ville/stade. V/N/D disposent de lettres, légende et couleurs contrastées ; les valeurs absentes restent inconnues. La palette et l'historique révèlent le bon joueur à travers la pagination, sans annuler la page choisie manuellement. Aucun modèle, profil, export ou RNG changé.
