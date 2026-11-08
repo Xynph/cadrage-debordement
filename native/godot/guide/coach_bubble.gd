@@ -7,11 +7,11 @@ var _paper := StyleBoxFlat.new()
 
 func _ready() -> void:
 	name = "GuideSpeechBalloon"
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_theme_constant_override("margin_left", 40)
-	add_theme_constant_override("margin_right", 20)
-	add_theme_constant_override("margin_top", 14)
-	add_theme_constant_override("margin_bottom", 14)
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	add_theme_constant_override("margin_left", 15)
+	add_theme_constant_override("margin_right", 30)
+	add_theme_constant_override("margin_top", 12)
+	add_theme_constant_override("margin_bottom", 12)
 	_paper.bg_color = PAPER
 	_paper.border_color = EDGE
 	_paper.set_border_width_all(2)
@@ -27,11 +27,11 @@ func get_tail_points() -> PackedVector2Array:
 	if is_instance_valid(speaker):
 		mouth_y = speaker.get_global_rect().position.y + speaker.size.y * 0.42 - global_position.y
 	var y := clampf(mouth_y, 25.0, maxf(25.0, size.y - 25.0))
-	return PackedVector2Array([Vector2(19, y - 10), Vector2(1, y + 6), Vector2(19, y + 10)])
+	return PackedVector2Array([Vector2(size.x - 20, y - 9), Vector2(size.x - 1, y + 6), Vector2(size.x - 20, y + 9)])
 
 func _draw() -> void:
 	if size.x <= 20 or size.y <= 0: return
-	_paper.draw(get_canvas_item(), Rect2(Vector2(18, 0), Vector2(size.x - 18, size.y)))
+	_paper.draw(get_canvas_item(), Rect2(Vector2.ZERO, Vector2(size.x - 20, size.y)))
 	var points := get_tail_points()
 	draw_colored_polygon(points, PAPER)
 	draw_polyline(points, EDGE, 2.0, true)

@@ -120,7 +120,7 @@ func _coach_reception() -> void:
 	app.coach.open_help()
 	await _settle()
 	_check(app.coach.expanded, "Coach opens from the actual app")
-	_check(app.body_scroll.get_global_rect().end.y <= app.coach.get_global_rect().position.y + 1, "Coach reserves its workspace")
+	_check(app.root_content.offset_bottom == 0 and app.coach.mouse_filter == Control.MOUSE_FILTER_IGNORE and app.coach.size.x <= 500, "Coach floats without reserving or intercepting the workspace")
 	_check(app.coach.portrait.texture is AtlasTexture and app.coach.portrait.texture.atlas != null, "Exported atlas is loaded")
 	await _capture("coach-developpe")
 	var available: bool = not app.coach.speech.voice_id.is_empty()

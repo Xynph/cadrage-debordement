@@ -18,7 +18,24 @@ const PAGES := {
 	"recrutement": ["Recrutement", "Le bon renfort, au bon endroit", "Avant de chercher un grand nom, cherche ce qui manque à ton équipe. Regarde la couverture des postes et les fins de contrat. Une piste te plaît ? Lis le salaire, la durée et le coût avant de proposer. Une contre-offre, ça se discute ; une promesse, ça se tient. Et une proposition n'est pas encore une signature."],
 	"territoire": ["Club", "On joue pour quelque part", "Regarde un peu autour de nous. Un club, c'est une ville, un stade et des gens qui reviennent, même sous la pluie. Ces photos d'archive donnent un visage au territoire ; leurs crédits sont accessibles ici. Les murs ne gagnent pas les matchs, d'accord. Mais savoir pour qui on joue, ça compte."]
 }
+static func fragments(id: String) -> Array:
+	var content = JSON.parse_string(FileAccess.get_file_as_string("res://guide/dialogues.json"))
+	if content is Dictionary:
+		for page in content.get("pages", []):
+			if page.id == id: return page.fragments
+	return [{"id":id + "-01", "text":str(PAGES.get(id, PAGES.bienvenue)[2])}]
+
+static func page(id: String) -> Array:
+	if PAGES.has(id): return PAGES[id]
+	var content = JSON.parse_string(FileAccess.get_file_as_string("res://guide/dialogues.json"))
+	if content is Dictionary:
+		for item in content.get("pages", []):
+			if item.id == id: return [item.route, item.title, item.text]
+	return PAGES.bienvenue
+
 static func for_route(route: String, model: Dictionary) -> String:
+	if route == "Staff": return "staff"
+	if route == "Formation": return "formation"
 	if route == "Match":
 		var live: Dictionary = model.get("live", {}) if model.get("live") is Dictionary else {}
 		return "resultat" if live.get("finished", false) else "premier-match"

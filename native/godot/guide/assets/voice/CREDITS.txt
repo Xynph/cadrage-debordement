@@ -1,0 +1,8 @@
+Voix synthétique française par description originale : Qwen3-TTS-12Hz-1.7B-VoiceDesign.
+Continuité du même timbre synthétique : Qwen3-TTS-12Hz-1.7B-Base, conditionné uniquement sur notre propre audio synthétique. Aucun enregistrement humain de référence.
+Qwen3-TTS — Alibaba Qwen Team, 2026. Modèles et outil sous Apache-2.0.
+https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign
+https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base
+Direction : coach fictif Gaston Darroux (Gabi), sans imitation demandée de personne réelle.
+Lot pré-généré localement le 8 novembre 2026. Ni modèle ni moteur ne sont distribués avec ces WAV.
+Voir manifest.json pour révisions, empreintes, 38 textes exacts et limites. Les autres WAV présents hors manifeste sont des essais, exclus de ce lot.

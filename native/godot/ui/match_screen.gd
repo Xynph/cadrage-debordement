@@ -185,6 +185,7 @@ func _side() -> void:
 				if event is Dictionary:side.add_child(G.label(G.n(event.get("min",0))+"'",20,G.GOLD,true))
 				side.add_child(G.wrap(text,13,G.INK))
 				side.add_child(G.separator())
+			preload("res://ui/decision_views.gd").match_notes(app,side,model)
 
 func _bench(live:Dictionary) -> void:
 	side.add_child(G.section("LES CHANGEMENTS"))

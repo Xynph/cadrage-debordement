@@ -91,10 +91,42 @@ func layout_and_capture(id: String) -> void:
 	for key in (["GuideNext", "GuideClose", "GuideStop", "GuideReplay", "GuideOptions"] if guide.expanded else ["GuideTour", "GuideHelp"]):
 		var control: Control = named(guide, key)
 		if control.is_visible_in_tree(): check(control.get_global_rect().intersection(rect).size == control.size, "Bouton non coupé : " + key + " / " + id)
-	check(app.root_content.get_global_rect().end.y <= rect.position.y + 1, "Espace réellement réservé : " + id)
+	check(app.root_content.offset_bottom == 0, "Bulle flottante sans espace réservé : " + id)
+	check(guide.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Contour du coach traversable à la souris : " + id)
+	check(rect.size.x <= 500, "Coach discret de largeur bornée : " + id)
+	if guide.expanded and not guide._settings_open:
+		check(rect.size.y <= 220, "Coach et bulle sous 220 pixels : " + id)
+		var balloon: Control = named(guide, "GuideSpeechBalloon")
+		check(balloon.size.x <= 360 and balloon.size.y <= 140, "Petite bulle de lecture : " + id)
 	if DisplayServer.get_name() == "headless": return
 	await RenderingServer.frame_post_draw
 	check(root.get_texture().get_image().save_png(OS.get_environment("CD_GUIDE_CAPTURES").path_join(id + ".png")) == OK, "Capture " + id)
+func local_voice_cases() -> void:
+	check(guide.speech.has_method("load_manifest"), "Lecture locale exacte disponible")
+	if not guide.speech.has_method("load_manifest"): return
+	var folder: String = app._profile_path().path_join("voice-fixture")
+	DirAccess.make_dir_recursive_absolute(folder)
+	var wav := AudioStreamWAV.new(); wav.format = AudioStreamWAV.FORMAT_16_BITS; wav.mix_rate = 24000
+	var pcm := PackedByteArray(); pcm.resize(4800); wav.data = pcm
+	check(wav.save_to_wav(folder.path_join("essai.wav")) == OK, "WAV de réception locale créé")
+	var exact := "Une bulle, une voix."
+	var file := FileAccess.open(folder.path_join("manifest.json"), FileAccess.WRITE)
+	file.store_string(JSON.stringify({"clips":[{"id":"essai","text":exact,"text_sha256":exact.sha256_text(),"file":"essai.wav"}]})); file.close()
+	guide.speech.load_manifest(folder.path_join("manifest.json"))
+	check(guide.speech.has_recording(exact) and not guide.speech.has_recording(exact + " suite"), "Clip local lié au texte exact, aucune coupure de fragment")
+	var starts: Array[int] = []; var ends: Array[int] = []
+	guide.speech.started.connect(func(id: int): starts.append(id))
+	guide.speech.ended.connect(func(id: int): ends.append(id))
+	guide.speech.speak(exact)
+	var deadline := Time.get_ticks_msec() + 3000
+	while ends.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
+	check(starts.size() == 1 and ends == starts and not guide.portrait.speaking, "Lecture WAV réelle et signaux début/fin identiques")
+	guide.speech.speak(exact); guide.speech.stop()
+	check(not guide.speech.speaking and not guide.speech.player.playing, "Arrêter coupe le lecteur local")
+	guide.speech.set_muted(true); var count := spoken.size(); guide.speech.speak(exact)
+	check(not guide.speech.player.playing and spoken.size() == count, "Muet empêche aussi les clips enregistrés")
+	guide.speech.set_muted(false); guide.speech.load_manifest()
+
 func tts_real() -> void:
 	if guide.speech.voices.is_empty():
 		check(guide.speech.status_text.contains("texte"), "Absence de voix explicitement annoncée")
@@ -196,7 +228,7 @@ func run() -> void:
 	await press("GuideTour")
 	check(guide.expanded and app.route == "Accueil", "Visite ouverte sans navigation automatique")
 	await press("GuideNext")
-	check(app.route == "Accueil", "Suivant ne navigue pas")
+	check(app.route == "Accueil" and guide.current_id == "bienvenue" and guide.fragment_index == 1, "Suivant parcourt les petites bulles avant la page")
 	await press("GuidePrevious")
 	check(guide.profile.data.step == "bienvenue", "Précédent revient à l'étape stable")
 	await press("GuideOptions"); await press("GuideSkip"); await press("GuideOptions")
@@ -247,15 +279,16 @@ func run() -> void:
 	await press("GuideMute"); check(guide.profile.data.muted and not guide.speech.speaking, "Muet arrête immédiatement")
 	await press("GuideMute")
 	await press("GuideOptions")
-	var image := Image.load_from_file(ProjectSettings.globalize_path("res://guide/assets/coach-sprites.png"))
-	check(image.get_size() == Vector2i(1536,1024) and image.get_pixel(0,0).a == 0.0 and image.get_pixel(1535,1023).a == 0.0, "Atlas aux bonnes dimensions avec alpha réel aux coins")
+	var image := Image.load_from_file(ProjectSettings.globalize_path("res://guide/assets/coach-poses.png"))
+	check(image.get_size() == Vector2i(1254,1254) and guide.portrait.frame_texture.region.size == Vector2(313.5,313.5) and guide.portrait.material is ShaderMaterial, "Atlas original seize poses, cellules exactes et détourage matériel")
 	guide.portrait.set_speaking(true)
 	var first: Rect2 = guide.portrait.frame_texture.region
+	var portrait_position: Vector2 = guide.portrait.position
 	await create_timer(0.21).timeout
 	check(first != guide.portrait.frame_texture.region, "Parole : changement réel de frame atlas")
-	check(guide.portrait.position == Vector2.ZERO, "Portrait stable sans flottement")
+	check(guide.portrait.position == portrait_position, "Portrait stable sans flottement")
 	guide.portrait.set_speaking(false)
-	check(guide.portrait.frame_texture.region.position.y == 0, "Fin de parole : pose repos")
+	check(guide.portrait.pose_index == guide.portrait._rest, "Fin de parole : pose repos")
 	app.waiting = true; guide.refresh()
 	check(not guide.expanded and not guide.speech.speaking, "Commande en attente : aide réduite et parole arrêtée")
 	app.waiting = false
@@ -277,6 +310,7 @@ func run() -> void:
 	check(guide.bubble.text.contains("résultat"), "Explication du résultat terminé réel")
 	await command("finish_round")
 	app._navigate("Bureau"); guide.refresh(); guide.open_help()
+	await local_voice_cases()
 	await tts_real()
 	for resolution in [Vector2i(1280,800),Vector2i(1440,900),Vector2i(1920,1080)]:
 		root.content_scale_size = resolution

@@ -283,6 +283,7 @@ static func preparation(app:Control) -> Control:
 	var page:=G.v(14)
 	page.name="CarnetPreparation"
 	G.fill(page,true)
+	preload("res://ui/decision_views.gd").dossier_summary(app,page)
 	var tactics:Dictionary=app.model.get("tactics",{})
 	var row:=G.h(14)
 	G.fill(row,true)
@@ -314,6 +315,7 @@ static func preparation(app:Control) -> Control:
 		b.disabled=app.model.meta.get("trained",false) or not app._live().is_empty()
 		choices.add_child(b)
 	if app.model.meta.get("trained",false):training.add_child(G.label("Séance déjà effectuée cette semaine.",14,G.GOOD))
+	preload("res://ui/decision_views.gd").training(app,training)
 	training.add_child(G.button("ALLER AU JOUR DE MATCH  →",func():app._navigate("Match"),true))
 	return page
 
@@ -323,6 +325,7 @@ static func market(app:Control) -> Control:
 	G.fill(page,true)
 	var workspace:=G.panel(page)
 	G.chapter(workspace,"05","Les pistes de recrutement","Joueurs fictifs disponibles · une offre ouvre une négociation.",app.accent)
+	preload("res://ui/decision_views.gd").recruitment_summary(app,workspace)
 	var state:Dictionary=app.management_ui.market
 	var search:=_search(workspace,"MarketSearch",state)
 	var controls:=G.h(8)
@@ -392,7 +395,7 @@ static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 		b.tooltip_text=p.get("reason","")
 		if not str(p.get("reason","")).is_empty():
 			var reason:String=p.reason
-			if reason=="Effectif complet":reason="Effectif complet (%d/42)"%app.model.get("squad",[]).size()
+			if reason=="Effectif complet":reason="Effectif complet (%d/%d)"%[app.model.get("squad",[]).size(),app.model.get("decisions",{}).get("recruitment",{}).get("capacity",42)]
 			card.add_child(G.wrap(reason,13,G.ALERT))
 		card.add_child(b)
 	if players.is_empty():list.add_child(G.wrap("Aucune piste ne correspond. Modifiez la recherche, le filtre Suivis ou réinitialisez les filtres.",15))

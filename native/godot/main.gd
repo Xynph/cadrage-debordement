@@ -6,12 +6,15 @@ const ClubViews = preload("res://ui/club_views.gd")
 const SquadViews = preload("res://ui/squad_views.gd")
 const MatchUI = preload("res://ui/match_screen.gd")
 const PackViews = preload("res://ui/pack_views.gd")
+const StaffViews = preload("res://ui/staff_view.gd")
+const DevelopmentViews = preload("res://ui/development_view.gd")
 var model: Dictionary = {}
 var catalogue: Array = []
 var route := "Accueil"
 var selected_club := 0
 var selected_player := ""
 var selected_slot := 0
+var selected_staff_club := -1
 var club_division := "elite"
 var table_division := "elite"
 var roster_filter := "Tous"
@@ -288,6 +291,8 @@ func _render(remember_ui: bool = true) -> void:
 		"Composition": body.add_child(SquadViews.lineup(self))
 		"Préparation": body.add_child(SquadViews.preparation(self))
 		"Recrutement": body.add_child(SquadViews.market(self))
+		"Staff": body.add_child(StaffViews.build(self))
+		"Formation": body.add_child(DevelopmentViews.build(self))
 		"Match":
 			match_screen = MatchUI.new()
 			match_screen.app = self
@@ -308,8 +313,8 @@ func _entry_workspace(page: Control) -> void:
 	G.fill(page, true)
 	entry_scroll.add_child(page)
 
-func _reserve_coach_space(height: float) -> void:
-	coach_reserved_height = height
+func _reserve_coach_space(_height: float) -> void:
+	coach_reserved_height = 0.0
 	_layout_coach()
 
 func _refresh_coach() -> void:
@@ -318,12 +323,9 @@ func _refresh_coach() -> void:
 
 func _layout_coach() -> void:
 	if not is_instance_valid(root_content) or not is_instance_valid(coach): return
-	var entry := route in ["Accueil", "Création", "Packs"] or not _has_career()
-	root_content.offset_bottom = -coach_reserved_height if entry else 0.0
+	root_content.offset_bottom = 0.0
 	if is_instance_valid(workspace_inset):
-		workspace_inset.add_theme_constant_override("margin_bottom", 22 + ceili(coach_reserved_height))
-	if is_instance_valid(coach):
-		coach.offset_left = 14 if entry else (workspace_inset.get_global_rect().position.x + 8 if is_instance_valid(workspace_inset) else 208)
+		workspace_inset.add_theme_constant_override("margin_bottom", 22)
 
 func _open_coach() -> void:
 	if is_instance_valid(coach): coach.open_help()
@@ -367,7 +369,7 @@ func _build_sidebar(parent: Node) -> void:
 	name.tooltip_text=G.club_name(model.club)
 	left.add_child(name)
 	left.add_child(G.separator())
-	for group in [["LE CLUB",["Bureau","Effectif","Composition","Préparation","Recrutement","Finances","Club"]],["LA COMPÉTITION",["Calendrier","Classements","Match"]]]:
+	for group in [["LE CLUB",["Bureau","Effectif","Composition","Préparation","Recrutement","Formation","Staff","Finances","Club"]],["LA COMPÉTITION",["Calendrier","Classements","Match"]]]:
 		left.add_child(G.label(group[0], 9, G.MUTED))
 		for target in group[1]:
 			var b := G.nav_button(target.to_upper(),func():_navigate(target),accent,route==target)

@@ -2,6 +2,25 @@
 // Runs inside the native VM. Only explicit commands reach these controllers.
 module.exports=function nativeGestion(command,p){
  const requireThat=(ok,message)=>{if(!ok)throw Error(message);};
+ if(command==='set_collective_focus'){requireThat(setCollectiveFocus(p.focus),'Préparation collective indisponible : séance appliquée, match en cours ou option inconnue.');return;}
+ if(command==='set_opponent_level'){requireThat(!S.live&&S.phase!=='ended'&&Object.hasOwn(DIFFICULTIES,p.level),'Niveau adverse indisponible.');setDifficulty(p.level);return;}
+ if(command==='set_delegation'){requireThat(!S.live&&S.phase!=='ended'&&['lineup','training'].includes(p.key)&&typeof p.enabled==='boolean','Délégation indisponible ou invalide.');setDelegation(p.key,p.enabled);return;}
+ if(command==='set_development_focus'){
+  const target=club().players.find(x=>x.id===p.playerId)||S.development.academy.find(x=>x.id===p.playerId);
+  requireThat(target&&target.lnrRatingsVersion!==1,'Spécialisation indisponible sur ce profil à évolution annuelle.');
+  requireThat(setDevelopmentFocus(p.playerId,p.focus),'Objectif indisponible : séance appliquée, match en cours ou qualité inconnue.');return;
+ }
+ if(command==='promote_academy'){
+  requireThat(p.confirmed===true&&!S.live&&S.phase!=='ended','Confirmez le salaire et la promotion hors match.');
+  const target=S.development.academy.find(x=>x.id===p.playerId);
+  requireThat(target&&club().players.length<professionalCapacity(),'Espoir indisponible ou effectif complet.');
+  requireThat(promoteYouth(p.playerId),'Promotion refusée.');return;
+ }
+ if(command==='scout_mission'){
+  requireThat(p.confirmed===true&&!S.live&&S.phase!=='ended','Confirmez la mission à 5 000 € hors match.');
+  requireThat([p.family,p.maxAge,p.budget,p.maxWage].every(Number.isInteger),'Critères entiers requis.');
+  requireThat(createScoutMission(p.family,p.maxAge,p.budget,p.maxWage),'Mission refusée : critères, trésorerie ou quatre missions déjà en cours.');return;
+ }
  if(command==='set_lineup'){
   requireThat(!S.live&&S.phase!=='ended','Composition indisponible.');requireThat(Number.isInteger(p.slot)&&p.slot>=0&&p.slot<23,'Poste invalide.');
   const eligible=(player,slot)=>slot<15?slotEligible(player,slot):benchEligible(player,slot-15),all=[...S.lineup,...S.reserves],candidate=p.playerId===null?null:player(p.playerId);
@@ -26,7 +45,7 @@ module.exports=function nativeGestion(command,p){
  if(command==='recruit'||command==='extend_contract'){
   requireThat(p.confirmed===true,'Confirmez le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=1000&&p.salary<=100000&&[1,2,3].includes(p.years),'Offre invalide.');
   const kind=command==='recruit'?'recruit':'renew',target=talkPlayer(p.playerId,kind);requireThat(target,'Joueur indisponible ou offre périmée.');
-  requireThat(club().cash>=contractFee(target,kind),'Trésorerie insuffisante pour la prime.');requireThat(kind!=='recruit'||club().players.length<42,'Effectif complet.');
+  requireThat(club().cash>=contractFee(target,kind),'Trésorerie insuffisante pour la prime.');requireThat(kind!=='recruit'||club().players.length<professionalCapacity(),'Effectif complet.');
   requireThat(negotiateContract(p.playerId,kind,p.salary,p.years),'Offre refusée : durée, joueur ou négociation indisponible.');
   const key=talkKey(p.playerId,kind),talk=S.economy.talks[key];
   if(talk.status==='ready')requireThat(confirmContract(key),'Signature devenue indisponible.');

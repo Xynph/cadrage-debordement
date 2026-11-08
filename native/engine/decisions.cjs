@@ -1,0 +1,19 @@
+'use strict';
+// Executed in the game VM. Project facts, existing advice and bounded choices;
+// never call a renderer, setter, random generator or persistence operation here.
+module.exports=function nativeDecisions(){
+ if(!S)return null;
+ const own=club(),locked=!!S.live||S.phase==='ended',capacity=professionalCapacity(own);
+ function development(source){
+  const p=JSON.parse(JSON.stringify(source)),d=p.dev||{};
+  const available=!locked&&!S.trained&&p.lnrRatingsVersion!==1;
+  return {id:p.id,name:p.name,pos:p.pos,age:p.age,rating:p.rating,note:roleNote(p),potential:potentialAtRole(p),condition:p.condition,injury:p.injury,salary:p.salary,contractEnd:p.contractEnd??null,minutes:d.minutes||0,appearances:d.appearances||0,development:{focus:developmentFocusValue(p),available,reason:p.lnrRatingsVersion===1?'Évolution annuelle selon âge, entraînement et minutes ; spécialisation individuelle non active sur ce profil.':locked?'Match en cours ou saison terminée':S.trained?'Séance déjà effectuée':'',options:developmentFocusOptions(p).map(id=>({id,label:id==='equilibre'?'Équilibré':ATTR[id]})),history:(d.history||[]).slice(-6),retireAge:d.retireAge??null,seasonStart:d.seasonStart??p.rating}};
+ }
+ const d=!S.live?matchDossier():null;
+ const preparation=d?{opponent:{id:d.opponent.id,name:d.opponent.name},domains:DOSSIER_DOMAINS.map(x=>({key:x.key,label:x.label,slot:x.slot,own:Math.round(d.own[x.key]),opponent:Math.round(d.other[x.key])})),recent:d.recent.map(r=>({phase:r.phase,round:r.round,score:r.score,side:r.side,opponentId:r.opponent})),threats:d.threats,signals:dossierScoutSignals(d.recent),advice:d.advice,notice:'Votre XV sélectionné face à une projection adverse sur terrain sec. Les disponibilités, la météo et les choix adverses peuvent modifier ce rapport. Aucun bonus de résultat.'}:null;
+ const collective={active:S.collectivePrepVersion===1,selected:S.collectiveFocus||'aucune',available:!locked&&!S.trained&&S.collectivePrepVersion===1,options:Object.entries(COLLECTIVE_FOCI).map(([id,[label,description]])=>({id,label,description,cost:id==='aucune'?'Aucune charge additionnelle':'+4 de charge avant récupération pour les spécialistes concernés',effect:id==='conquete'?'Jusqu’à +4 points de conservation':id==='defence'?'Jusqu’à −2,5 points d’avancée adverse':id==='pied'?'Jusqu’à +3 m au dégagement':'Aucun bonus spécifique'}))};
+ const last=S.live?.finished?S.live:S.lastReport;
+ const side=last?.pair?.indexOf(S.club)??-1;
+ const report=last&&side>=0?{score:last.score,pair:last.pair,side,weather:last.weather||null,preparation:last.preparation||null,notes:debriefNotes(last,side),plans:last.planUsage||null,tacticalStats:last.tacticalStats||null,stats:last.stats||null,notice:'Observations de situations différentes. Ces compteurs ne prouvent pas qu’une consigne a causé le résultat.'}:null;
+ return {preparation,training:{advice:physicalStaffAdvice(),collective},difficulty:{selected:S.difficulty||'classique',available:!locked,options:Object.entries(DIFFICULTIES).map(([id,[label,description]])=>({id,label,description}))},delegation:{lineup:!!S.manager?.delegation.lineup,training:!!S.manager?.delegation.training},recruitment:{capacity,places:Math.max(0,capacity-own.players.length),needs:recruitmentNeeds().map(x=>({...x,qualityLabel:ATTR[x.quality]})),expiring:own.players.filter(p=>p.contractEnd===S.season).map(p=>({id:p.id,name:p.name,pos:p.pos,end:p.contractEnd})),missions:(S.manager?.missions||[]).map(x=>({...x})),reports:(S.manager?.reports||[]).map(x=>({...x})),missionAvailable:!locked&&own.cash>=5000&&(S.manager?.missions||[]).filter(x=>x.status!=='done').length<4},development:{academy:(S.development?.academy||[]).map(development),professionals:own.players.map(development),promotionAvailable:!locked&&own.players.length<capacity},liveAdvice:S.live?matchV61Advice(S.live):null,report};
+};

@@ -2,9 +2,9 @@
 // Prototype bridge: local private stdio only. Never load browser UI, the source
 // identity catalogue, the test harness, a network server, or protocol-supplied code.
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),readline=require('node:readline'),{randomUUID}=require('node:crypto');
-const projection=require('./model.cjs'),gestion=require('./gestion.cjs'),common=require('./common-rosters.cjs'),mediaPacks=require('./media-packs.cjs');
+const projection=require('./model.cjs'),gestion=require('./gestion.cjs'),common=require('./common-rosters.cjs'),mediaPacks=require('./media-packs.cjs'),staff=require('./staff.cjs'),decisions=require('./decisions.cjs');
 const MODULES=['storage.js','world-data.js','rugby.js','frontrow.js','restarts.js','matchflow.js','playbook.js','manager.js','manager-squad.js','tactical-plans.js','match-actions.js','match2d.js','match-v61-advisor.js','match-cockpit.js','economy.js','development.js','finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js','v39.js','manager-mobility.js','saves.js','opposition.js','match-preparation.js','france-clubs.js','rugby-common-rosters.js','rugby-roster-foundation.js','lnr-v11-aging.js','france-competition.js','france-knockout.js','france-career.js','france-save-validation.js','match3d/scene-adapter.js','game.js'];
-const COMMANDS=new Set(['snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','finish_round','save','import','export','shutdown','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select']);
+const COMMANDS=new Set(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','finish_round','save','import','export','shutdown','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select']);
 function applicationRoot(engineDirectory=__dirname){
  // The only supported layouts are repo/native/engine and bundle/engine/core.
  const isDevelopment=path.basename(path.dirname(engineDirectory))==='native'&&!fs.existsSync(path.join(engineDirectory,'core'));
@@ -75,11 +75,11 @@ function createBridge(options={}){
   const run=source=>vm.runInContext(source,ctx,{timeout:15000});
   const dist=options.distDir?path.resolve(options.distDir):fs.existsSync(path.join(__dirname,'core'))?path.join(__dirname,'core'):path.resolve(__dirname,'../../dist');
   for(const name of MODULES)run(fs.readFileSync(path.join(dist,name),'utf8'));
-  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const CDCommonCareer=(${common.toString()})();const nativeModel=${projection.toString()};const nativeGestion=${gestion.toString()};`);
+  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const CDCommonCareer=(${common.toString()})();const nativeModel=${projection.toString()};const nativeDecisions=${decisions.toString()};const nativeGestion=${gestion.toString()};`);
   try{run("if(loadSaveFailure)throw Error(loadSaveFailure);if(S){validateCareer(S);if(S.lnrMode)throw Error('Les effectifs réels ne sont pas chargés dans le moteur natif.');if(S.live&&!S.live.finished)S.live.paused=true;}");}catch(e){profileError='Profil illisible : '+e.message;run('S=null;');}
   const packs=mediaPacks.createStore(dataDir,JSON.parse(run('JSON.stringify(CDCommonRosters)')));
   const creation=()=>store['identity-pack-creation']||'base';
-  const snapshot=()=>{const m=JSON.parse(run('JSON.stringify(nativeModel())'));m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;return packs.project(m,JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation());};
+  const snapshot=()=>{const m=JSON.parse(run('JSON.stringify(nativeModel())'));m.decisions=JSON.parse(run('JSON.stringify(nativeDecisions())'));m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;return packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation());};
   const persist=()=>{
    const text=JSON.stringify({protocol:1,seed,clock,store}),temp=path.join(dataDir,'donnees.tmp'),backup=path.join(dataDir,'donnees-precedentes.json'),backupTemp=path.join(dataDir,'donnees-precedentes.tmp');
    const write=(target,content)=>{const fd=fs.openSync(target,'w');try{fs.writeFileSync(fd,content);fs.fsyncSync(fd);}finally{fs.closeSync(fd);}};
@@ -158,7 +158,7 @@ function createBridge(options={}){
       if(Buffer.byteLength(payload.text,'utf8')>5*1024*1024)throw Error('Fichier trop volumineux (5 Mio UTF-8 maximum).');
       run("pendingSave=parseSaveDocument(nativePayload.text);if(pendingSave.state.lnrMode)throw Error('Les effectifs réels ne sont pas chargés dans le moteur natif.');if(!confirmSaveImport())throw Error('Import annulé : sauvegarde impossible.');");
      }
-     let extra=null;if(['set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
+     let extra=null;if(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
      run('save();validateCareer(S)');
      const model=snapshot();if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));persist();return {id,ok:true,model};
     }catch(error){

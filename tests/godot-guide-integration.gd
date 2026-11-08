@@ -90,6 +90,53 @@ func ordinary_routes() -> void:
 	coach_geometry("snapshot replié")
 	await capture("bureau-coach-apres-snapshot-" + str(root.size.x))
 	app.coach.close(); await settle()
+func visible_paint_overlaps(control: Control) -> bool:
+	for node in app.coach.find_children("*", "Control", true, false):
+		if node.is_visible_in_tree() and (str(node.name) == "GuideSpeechBalloon" or node == app.coach.portrait or node is BaseButton):
+			if node.get_global_rect().intersects(control.get_global_rect()): return true
+	return false
+func priority_controls() -> void:
+	app._navigate("Match"); await settle()
+	await command("begin_match"); await command("delegate")
+	for resolution in [Vector2i(1280,800),Vector2i(1440,900),Vector2i(1920,1080)]:
+		root.size = resolution; DisplayServer.window_set_size(resolution); await settle()
+		app.coach.open_help(); await settle()
+		var finish: Button
+		for button in app.root_content.find_children("*", "Button", true, false):
+			if str(button.text).contains("VALIDER LA JOURNÉE"): finish = button
+		check(finish != null and not finish.disabled, "Validation finale réelle présente")
+		if finish != null: check(not visible_paint_overlaps(finish), "Bulle, portrait et boutons hors validation finale / " + str(resolution.x))
+		await capture("coach-resultat-validation-" + str(resolution.x))
+	# Real click on the finish action while the coach is open.
+	var finish: Button
+	for button in app.root_content.find_children("*", "Button", true, false):
+		if str(button.text).contains("VALIDER LA JOURNÉE"): finish = button
+	if finish != null:
+		var point := finish.get_global_rect().get_center()
+		for pressed in [true,false]:
+			var event := InputEventMouseButton.new(); event.button_index = MOUSE_BUTTON_LEFT; event.position = point; event.global_position = point; event.pressed = pressed
+			root.push_input(event,true); await process_frame
+		var deadline := Time.get_ticks_msec() + 30000
+		while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
+		await settle(); check(app._live().is_empty(), "Validation de la journée accessible à la souris avec Gabi ouvert")
+	await command("begin_match"); await command("delegate"); app.coach.open_help(); await settle()
+	finish = null
+	for button in app.root_content.find_children("*", "Button", true, false):
+		if str(button.text).contains("VALIDER LA JOURNÉE"): finish = button
+	if finish != null:
+		finish.grab_focus(); await process_frame
+		for pressed in [true,false]:
+			var event := InputEventKey.new(); event.keycode = KEY_ENTER; event.pressed = pressed
+			Input.parse_input_event(event); await process_frame
+		var deadline := Time.get_ticks_msec() + 30000
+		while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
+		await settle(); check(app._live().is_empty(), "Validation de la journée accessible au clavier avec Gabi ouvert")
+	app._navigate("Formation"); await settle(); app.coach.open_help(); await settle()
+	for button in app.root_content.find_children("*", "Button", true, false):
+		if str(button.text) == "PREMIER CONTRAT PRO" and button.get_global_rect().intersects(app.body_scroll.get_global_rect()):
+			check(not visible_paint_overlaps(button), "Promotion visible hors de la peinture du coach")
+	await capture("coach-formation-commandes-1920")
+	app.coach.close(); await settle()
 func market_keyboard() -> void:
 	app._navigate("Recrutement"); await settle()
 	for expected in ["MarketDirection", "MarketReset"]:
@@ -116,7 +163,7 @@ func profile_error() -> void:
 	app.coach.open_help(); await settle()
 	var error_label: Label = app.coach.find_child("GuideError", true, false)
 	check(error_label != null and error_label.is_visible_in_tree() and not app.coach.profile.last_error.is_empty(), "Erreur réelle visible sans Options")
-	check(app.body_scroll.get_global_rect().end.y <= app.coach.get_global_rect().position.y + 1, "Place réservée aussi au bandeau d'erreur")
+	check(app.coach.reserved_height_changed != null and app.coach.mouse_filter == Control.MOUSE_FILTER_IGNORE and app.coach.find_child("GuideError", true, false).is_visible_in_tree(), "Erreur visible sans bloquer l’espace autour du coach")
 	await capture("coach-erreur-integre-1280")
 	app.coach.disable(); await settle()
 	check(app.coach.visible and not app.coach.expanded and not app.coach.speech.speaking, "Désactivation non persistée explique sa portée de session")
@@ -153,7 +200,7 @@ func run() -> void:
 			root.size = resolution
 			DisplayServer.window_set_size(resolution); await settle()
 			await ordinary_routes()
-			for route in ["Bureau","Effectif","Composition","Préparation","Recrutement","Finances","Club","Calendrier","Classements","Match","Accueil","Création","Packs"]:
+			for route in ["Bureau","Effectif","Composition","Préparation","Recrutement","Finances","Club","Calendrier","Classements","Match","Accueil","Création","Packs","Staff","Formation"]:
 				app._navigate(route); await settle()
 				coach_geometry("navigation ordinaire " + route)
 				app.coach.open_help(); await settle()
@@ -163,13 +210,14 @@ func run() -> void:
 				var scroll: ScrollContainer = app.entry_scroll if route in ["Accueil","Création","Packs"] else app.body_scroll
 				check(is_instance_valid(scroll) and scroll.follow_focus, "Corps défilable " + route)
 				if is_instance_valid(scroll):
-					check(scroll.get_global_rect().end.y <= app.coach.get_global_rect().position.y + 1, "Aucune commande masquée par le coach " + route)
+					check(app.root_content.offset_bottom == 0 and app.coach.get_global_rect().size.x <= 500 and app.coach.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Bulle libre sans panneau interceptant la page " + route)
 				await capture(route.to_lower() + "-" + str(resolution.x))
 				app.coach.close(); await settle()
 		await profile_error()
 		await command("export")
 		check(app.model.meta.exportText == initial, "Visites et tailles sans mutation de carrière/RNG exporté")
 		check(FileAccess.get_sha256(filename) == initial_hash, "Visites sans écriture du profil sportif")
+		await priority_controls()
 		app._navigate("Match"); await settle()
 		await command("begin_match")
 		app.coach.open_help(); await settle()
