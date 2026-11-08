@@ -1,5 +1,11 @@
 # Journal de développement — Cadrage Débordement
 
+## 8 novembre 2026, 17:13 UTC — plein écran demandé par Léo
+
+Lancement en plein écran standard par défaut ; l'option **Fenêtré 1440×900** reste dans Paramètres et s'applique à la session. Aucun nouveau champ de préférence ni format de carrière. Les boutons d'affichage sont nommés, accessibles au clavier et présentent le plein écran en premier. La recette Windows vérifie le mode initial avant ses fixtures explicites en fenêtre, puis le vrai aller-retour des boutons.
+
+Source reçue : neuf contrôles ciblés sous Node22 et Node26, préférences159/0, parsing QA et diff-check verts. Les contrôles physiques sont explicitement ignorés sous headless : le nouvel EXE doit encore avoir sa propre réception Windows. La CI précédente f028ef61 est verte ; elle ne valide pas cette nouvelle tête. Le pack privé et le profil personnel restent préservés. Les essais vocaux ElevenLabs sont séparés du programme ; aucun achat ni abonnement autorisé.
+
 ## 8 novembre 2026, 16:34 UTC — réception consolidée native 0.5
 
 La [PR397](https://github.com/Xynph/cadrage-debordement/pull/397) remplace le lot brouillon396 et publie le portage sur `feature/portage-inventaire-20261108`. L'intégrateur unique conserve les protections et le gate officiels. L'état du dernier SHA, de sa CI, de la réception Windows et de l'intégration est consigné dans [#73](https://github.com/Xynph/cadrage-debordement/issues/73) ; les résultats initiaux ci-dessous restent historiques.

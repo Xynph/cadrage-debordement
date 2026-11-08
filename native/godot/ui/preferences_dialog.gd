@@ -20,7 +20,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	content.custom_minimum_size.x = 620
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(content)
-	content.add_child(G.wrap("Réglages locaux conservés entre les carrières. Aucun changement des règles ni du rythme du match.",14,G.INK))
+	content.add_child(G.wrap("Volume, caméra, qualité et mode calme conservés entre les carrières. Aucun changement des règles ni du rythme du match.",14,G.INK))
 	var volume_row := G.h(12); content.add_child(volume_row)
 	var volume_label := G.label("Volume global (%)",15); G.fill(volume_label); volume_row.add_child(volume_label)
 	var volume := SpinBox.new(); volume.name = "PreferencesVolume"; volume.min_value = 0; volume.max_value = 100; volume.step = 1
@@ -46,10 +46,16 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	var reset := G.button("Réinitialiser ces préférences",func(): profile.reset_defaults(); refresh.call())
 	reset.name = "PreferencesReset"; content.add_child(reset)
 	var display_row := G.h(8); content.add_child(display_row)
-	display_row.add_child(G.button("Fenêtré 1440×900",func():
+	var fullscreen := G.button("Plein écran",func(): DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN),true)
+	fullscreen.name = "PreferencesFullscreen"
+	fullscreen.tooltip_text = "Mode par défaut à chaque lancement du jeu."
+	display_row.add_child(fullscreen)
+	var windowed := G.button("Fenêtré 1440×900",func():
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		DisplayServer.window_set_size(Vector2i(1440,900))))
-	display_row.add_child(G.button("Plein écran",func(): DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)))
+		DisplayServer.window_set_size(Vector2i(1440,900)))
+	windowed.name = "PreferencesWindowed"
+	windowed.tooltip_text = "Option pour cette session : une fenêtre plus petite de 1440×900."
+	display_row.add_child(windowed)
 	var links := G.h(8); content.add_child(links)
 	links.add_child(G.button("Importez un pack personnalisé",func():
 		dialog.hide(); dialog.queue_free()

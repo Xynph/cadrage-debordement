@@ -25,15 +25,52 @@ func _settle() -> void:
 
 func _resize_window(resolution: Vector2i) -> void:
 	var window := get_tree().root
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+	var deadline := Time.get_ticks_msec() + 2000
+	if DisplayServer.get_name() != "headless":
+		while DisplayServer.window_get_mode() != DisplayServer.WINDOW_MODE_WINDOWED and Time.get_ticks_msec() < deadline:
+			await get_tree().process_frame
+		_check(DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_WINDOWED, "Windowed mode settled before resizing")
+	await _settle()
 	window.size = resolution
 	DisplayServer.window_set_size(resolution)
 	var expected := Vector2i(mini(resolution.x,1600),mini(resolution.y,900))
-	var deadline := Time.get_ticks_msec() + 2000
+	deadline = Time.get_ticks_msec() + 2000
 	while (window.size != resolution or window.content_scale_size != expected) and Time.get_ticks_msec() < deadline:
 		await get_tree().process_frame
 	_check(window.size == resolution and window.content_scale_size == expected, "Actual window and adaptive reference settled: " + str(resolution))
 	# The production controller debounces its container/focus update by 80 ms.
 	await get_tree().create_timer(.15).timeout
+	await _settle()
+
+func _display_reception() -> void:
+	if DisplayServer.get_name() != "Windows":
+		print("SKIP physical fullscreen/windowed reception: ",DisplayServer.get_name())
+		return
+	_check(DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN,"Windows starts in standard fullscreen before any resize")
+	await _capture("accueil-plein-ecran")
+	app.settings()
+	await _settle()
+	var dialog: AcceptDialog = app.find_child("PreferencesDialog",true,false)
+	var windowed: Button = dialog.find_child("PreferencesWindowed",true,false)
+	var fullscreen: Button = dialog.find_child("PreferencesFullscreen",true,false)
+	_check(windowed != null and fullscreen != null,"Actual preferences expose both display modes")
+	if windowed != null and fullscreen != null:
+		for button in [windowed,fullscreen]:
+			button.grab_focus()
+			for down in [true,false]:
+				var event := InputEventKey.new(); event.keycode = KEY_ENTER; event.pressed = down
+				Input.parse_input_event(event)
+				await get_tree().process_frame
+			await get_tree().create_timer(.2).timeout
+			await _settle()
+			var expected := DisplayServer.WINDOW_MODE_WINDOWED if button == windowed else DisplayServer.WINDOW_MODE_FULLSCREEN
+			_check(DisplayServer.window_get_mode() == expected,"Actual keyboard display action switches mode: " + str(button.name))
+			if button == windowed: _check(DisplayServer.window_get_size() == Vector2i(1440,900),"Actual windowed option is 1440x900")
+			_check(button.has_focus(),"Display action retains keyboard focus: " + str(button.name))
+			_check(button.is_visible_in_tree() and button.get_global_rect().end.y <= dialog.size.y,"Display action remains visible: " + str(button.name))
+			await _capture("parametres-fenetre" if button == windowed else "parametres-plein-ecran")
+	_dismiss()
 	await _settle()
 
 func _wait() -> bool:
@@ -211,6 +248,7 @@ func _run() -> void:
 		get_tree().quit(2)
 		return
 	_check(not app._has_career() and app.route=="Accueil","Fresh profile opens menu without creating career")
+	await _display_reception()
 	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
 		await _resize_window(resolution)
 		app._navigate("Accueil")
