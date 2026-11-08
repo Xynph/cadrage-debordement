@@ -229,6 +229,8 @@ static func _show_profile(app:Control,parent:VBoxContainer) -> void:
 
 static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	var list:=G.scroll(parent)
+	# Let the tabs share the actual dossier height inside its scroll viewport.
+	list.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	list.get_parent().name="ProfileScroll"
 	var top:=G.h(12)
 	list.add_child(top)

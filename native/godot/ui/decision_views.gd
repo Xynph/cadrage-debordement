@@ -92,7 +92,7 @@ static func training(app: Control, parent: Container) -> void:
 		choice.set_item_metadata(choice.item_count - 1, option.id)
 		if option.id == collective.get("selected"):
 			choice.select(choice.item_count - 1)
-			parent.add_child(G.wrap(option.description + " · " + option.cost + ". " + option.effect + ". Coefficients fictifs, effet réduit par la charge.", 12))
+			parent.add_child(G.wrap(option.description + " · " + option.cost + ". " + option.effect + ". Les effets sont réduits lorsque la charge est élevée.", 12))
 	choice.item_selected.connect(func(index: int): app._command("set_collective_focus", {"focus":choice.get_item_metadata(index)}))
 	parent.add_child(choice)
 	var difficulty: Dictionary = data.get("difficulty", {})

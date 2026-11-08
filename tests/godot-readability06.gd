@@ -35,6 +35,8 @@ func key(code: Key) -> void:
 	await settle()
 func capture(label: String) -> void:
 	if DisplayServer.get_name() == "headless": return
+	var requested := OS.get_environment("CD_READABILITY06_CAPTURE")
+	if not requested.is_empty() and label != requested: return
 	await RenderingServer.frame_post_draw
 	check(root.get_texture().get_image().save_png(proof.path_join(label + ".png")) == OK, "Capture " + label)
 func contrast(a: Color, b: Color) -> float:
@@ -125,10 +127,20 @@ func run() -> void:
 		var dossier_tabs := named("ProfileTabs")
 		check(dossier_tabs is TabContainer and dossier_tabs.get_tab_count() == 4,"Dossier réparti en quatre tuiles de lecture")
 		if dossier_tabs is TabContainer:
+			check(dossier_tabs.get_tab_title(2)=="Contrat","Contrat conserve le troisième onglet du dossier")
 			dossier_tabs.current_tab=2; await settle()
 			for id in ["OfferRenewal","PlayerLoad"]:
 				check(named(id).is_visible_in_tree() and named("ProfileScroll").get_global_rect().encloses(named(id).get_global_rect()),"Action du dossier visible directement "+id+" "+str(resolution))
+				check(named("ProfileContract").get_global_rect().encloses(named(id).get_global_rect()),"Action contrat contenue dans son vrai onglet "+id+" "+str(resolution))
 			dossier_tabs.current_tab=0; await settle()
+		var profile_scroll: ScrollContainer = named("ProfileScroll")
+		var overview: ScrollContainer = named("ProfileOverview")
+		var empty_below: float = profile_scroll.get_global_rect().end.y-dossier_tabs.get_global_rect().end.y
+		check(absf(empty_below)<=16,"Dossier : les onglets utilisent le bas du feuillet, vide="+str(empty_below)+" "+str(resolution))
+		for id in ["OpenPlayerCoachNote","CompareSelected"]:
+			check(named(id).is_visible_in_tree() and overview.get_global_rect().encloses(named(id).get_global_rect()) and profile_scroll.get_global_rect().encloses(named(id).get_global_rect()),"Action Aperçu entièrement visible dans son vrai viewport "+id+" "+str(resolution))
+		check(overview.get_v_scroll_bar().max_value<=overview.get_v_scroll_bar().page+1,"Aperçu : note, radar et comparaison tiennent sans défilement "+str(resolution))
+		print("PROFILE_GEOMETRY ",resolution," dossier=",profile_scroll.size.y," tabs=",dossier_tabs.size.y," overview=",overview.size.y," blank=",empty_below)
 		var rows := 0
 		for row: Button in roster.find_children("*","Button",true,false):
 			if roster.get_global_rect().encloses(row.get_global_rect()): rows += 1
@@ -138,7 +150,7 @@ func run() -> void:
 		if toolbar != null:
 			for button: Button in toolbar.find_children("*","Button",true,false):
 				check(button.size.y <= 42, "Commande compacte lisible " + str(button.name))
-		measurements.append({"window":str(resolution),"canvas":str(app.size),"roster_rows":rows,"roster_height":roster.size.y,"office_decisions_width":office_width,"office_summary_height":summary_height,"office_columns":2 if resolution.x == 1280 else 3})
+		measurements.append({"window":str(resolution),"canvas":str(app.size),"roster_rows":rows,"roster_height":roster.size.y,"office_decisions_width":office_width,"office_summary_height":summary_height,"office_columns":2 if resolution.x == 1280 else 3,"profile_height":profile_scroll.size.y,"profile_tabs_height":dossier_tabs.size.y,"profile_overview_height":overview.size.y,"profile_blank_below":empty_below})
 		await capture("effectif-" + str(resolution.x))
 		app._navigate("Finances"); await settle(); app.coach.close()
 		await capture("finances-" + str(resolution.x))

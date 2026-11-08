@@ -21,12 +21,12 @@ func fixture(x: float = 50, y: float = 35) -> Dictionary:
 		"teams": [{"color": "#a12f41"}, {"color": "#a73043"}]}
 
 func garment(view, id: String, name_: String) -> Color:
+	var parameters := {"Shirt": "jersey_color", "Shirt2": "trim_color", "Pants": "shorts_color", "Socks": "socks_color"}
 	for mesh in view._actors[id].model.find_children("*", "MeshInstance3D", true, false):
-		for surface in mesh.mesh.get_surface_count():
-			var source = mesh.mesh.surface_get_material(surface)
-			if source and source.resource_name == name_:
-				return mesh.get_surface_override_material(surface).albedo_color
-	check(false, "Garment surface present: " + name_)
+		var material := mesh.material_override as ShaderMaterial
+		if material and parameters.has(name_):
+			return material.get_shader_parameter(parameters[name_]) as Color
+	check(false, "Paramètre de tenue présent : " + name_)
 	return Color.MAGENTA
 
 func comfort(view, message: String) -> void:
@@ -87,6 +87,9 @@ func run() -> void:
 	var home_marker = view._actors["0-0"].node.get_node("TeamMarker").material_override.albedo_color
 	var away_marker = view._actors["1-0"].node.get_node("TeamMarker").material_override.albedo_color
 	check(home_marker != away_marker, "Team markers remain distinct")
+	check(garment(view, "0-0", "Pants") == Color("202b35"), "Home shorts retain their original anthracite palette")
+	check(garment(view, "1-0", "Pants") == Color("e5dfd1"), "Away shorts retain their original ivory palette")
+	check(garment(view, "0-0", "Socks") == home and garment(view, "1-0", "Socks") == away, "High socks follow contrasting team colours")
 	# A home-only pack change must also restore the away primary and refresh every material.
 	live.teams[0].color = "#153763"
 	view.apply_frame(live)

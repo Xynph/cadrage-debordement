@@ -532,7 +532,7 @@ func _build_sidebar(parent: Node) -> void:
 		b.name = "Chapter_" + str(chapter.label)
 		b.custom_minimum_size.y = 44
 		navigation.add_child(b)
-	left.add_child(G.label("PRÉALPHA 0.5  /  WINDOWS", 9, G.GOLD))
+	left.add_child(G.label("PRÉALPHA 0.6  /  WINDOWS", 9, G.GOLD))
 	left.add_child(G.button("MENU & SAUVEGARDES", pause_menu))
 
 func _update_live_bar() -> void:

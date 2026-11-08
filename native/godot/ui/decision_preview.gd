@@ -90,7 +90,6 @@ static func open(app: Control, title: String, question: String, detail: Dictiona
 	caution.name="DecisionUncertainty"
 	caution.custom_minimum_size.x=600
 	body.add_child(caution)
-	body.add_child(G.label("Montants fictifs · décision revérifiée par le moteur.",11,G.MUTED))
 	d.add_child(body)
 	d.get_ok_button().text="VALIDER L'ENGAGEMENT"
 	d.get_cancel_button().text="ANNULER"

@@ -9,6 +9,7 @@ const STADIUM_FONT := "res://fonts/BarlowCondensed-SemiBold.ttf"
 const Presentation = preload("res://match_presentation.gd")
 const Motion = preload("res://match_motion.gd")
 const Kit = preload("res://match_kit.gd")
+const Athlete = preload("res://match_athlete.gd")
 var _players: Node3D
 var _ball: Node3D
 var _camera: Camera3D
@@ -16,7 +17,6 @@ var _athlete_scene: PackedScene
 var _actors: Dictionary = {}
 var _team_colors: Array[Color] = [Color("d43e47"), Color("6f9ac9")]
 var _kits: Array[Dictionary] = []
-var _materials: Dictionary = {}
 var _camera_focus := Vector3.ZERO
 var _camera_framed := false
 var _camera_cut := true
@@ -92,7 +92,7 @@ func apply_frame(live: Dictionary) -> void:
 	if colors_changed:
 		# A home-colour change can also change the away contrast decision.
 		_kits = Kit.resolve(_team_colors)
-		_materials.clear()
+		Athlete.clear_palette()
 		for entry: Dictionary in _actors.values():
 			_recolor(entry.model, entry.side)
 	_paused = live.get("paused", false) or live.get("finished", false) or live.get("atBreak", false)
@@ -315,12 +315,14 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 	actor.add_child(marker)
 	var model := _athlete_scene.instantiate() as Node3D
 	actor.add_child(model)
+	model.set_meta("athlete_id", id)
 	# Imported source contains a 100x mesh transform; calibrate its real rest bounds.
 	var bounds := _model_bounds(model, model)
 	if bounds.size.y > 0.001:
 		var calibration := 1.9 / bounds.size.y
 		model.scale = Vector3.ONE * calibration
 		model.position.y = -bounds.position.y * calibration
+	Athlete.prepare(model)
 	_recolor(model, side)
 	var animation := _find_animation(model)
 	var idle := StringName()
@@ -372,28 +374,7 @@ func _recolor(model: Node3D, side: int) -> void:
 	var marker := model.get_parent().get_node_or_null("TeamMarker") as MeshInstance3D
 	if marker:
 		marker.material_override = _material(_kits[side].marker, true)
-	for child: Node in model.find_children("*", "MeshInstance3D", true, false):
-		var mesh := child as MeshInstance3D
-		for surface in mesh.mesh.get_surface_count():
-			var source := mesh.mesh.surface_get_material(surface) as StandardMaterial3D
-			if not source:
-				continue
-			var key := str(side) + ":" + source.resource_name
-			if not _materials.has(key):
-				var material := source.duplicate() as StandardMaterial3D
-				material.metallic = 0.0
-				material.roughness = 0.9
-				match source.resource_name:
-					"Shirt": material.albedo_color = _kits[side].shirt
-					"Shirt2": material.albedo_color = _kits[side].detail
-					"Pants": material.albedo_color = Color("202b35") if side == 0 else Color("ede9dc")
-					"Socks": material.albedo_color = _kits[side].shirt
-					"Skin": material.roughness = 0.78
-					"Shoes": material.roughness = 0.72
-					"Eyes": material.roughness = 0.58
-				_materials[key] = material
-			mesh.set_surface_override_material(surface, _materials[key])
-
+	Athlete.dress(model, _kits[side], str(model.get_meta("athlete_id", "")))
 
 func _build_environment() -> void:
 	var environment := WorldEnvironment.new()
