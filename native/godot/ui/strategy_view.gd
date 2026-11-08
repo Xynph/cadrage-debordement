@@ -8,7 +8,7 @@ static func _send(app: Control, command: String, payload: Dictionary, confirmati
 		app._command(command, values)
 	else:
 		values.confirmed = true
-		app.confirm("Engager le club", confirmation, func(): app._command(command, values))
+		app.confirm_decision(command, values, "Engager le club", confirmation, func(): app._command(command, values))
 
 static func _amount(parent: Container, label: String, value: String, color: Color = G.INK) -> void:
 	var column := G.v(2)

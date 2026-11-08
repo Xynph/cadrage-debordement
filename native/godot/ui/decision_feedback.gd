@@ -203,7 +203,7 @@ func _open() -> void:
 	content.add_theme_constant_override("separation",14)
 	scroll.add_child(content)
 	var note := Label.new()
-	note.text = "Dix dernières décisions de cette session uniquement.\nMontants fictifs du jeu ; les valeurs stables ne sont pas des bonus."
+	note.text = "Dix dernières décisions de cette session.\nRelisez les engagements et les suites annoncées pour chaque décision."
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note.add_theme_font_size_override("font_size",14)
 	content.add_child(note)

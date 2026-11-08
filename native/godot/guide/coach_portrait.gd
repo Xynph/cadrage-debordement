@@ -3,6 +3,7 @@ extends TextureRect
 var frame_texture := AtlasTexture.new()
 var speaking := false
 var reduced_motion := false
+var articulation := -1.0
 var _elapsed := 0.0
 var _idle_elapsed := 0.0
 var _rest := 3
@@ -27,19 +28,24 @@ func set_context(id: String) -> void:
 	elif id == "territoire": poses = [12,13,2]
 	elif id == "effectif": poses = [0,1,2]
 	_rest = poses[0]; _talk = poses[1]; _blink = poses[2]
-	_frame(_talk if speaking and not reduced_motion else _rest)
+	_frame(_talk if _mouth_can_open() else _rest)
 func set_reduced_motion(value: bool) -> void:
 	reduced_motion = value
 	_elapsed = 0.0; _idle_elapsed = 0.0
-	_frame(_talk if speaking and not reduced_motion else _rest)
+	_frame(_talk if _mouth_can_open() else _rest)
 func set_speaking(value: bool) -> void:
 	speaking = value; _elapsed = 0.0; _idle_elapsed = 0.0
-	_frame(_talk if value and not reduced_motion else _rest)
+	_frame(_talk if _mouth_can_open() else _rest)
+func set_articulation(value: float) -> void:
+	articulation = value
+	if speaking: _frame(_talk if _mouth_can_open() and int(_elapsed / 0.18) % 3 != 1 else _rest)
+func _mouth_can_open() -> bool:
+	return speaking and not reduced_motion and articulation != 0.0
 func _process(delta: float) -> void:
 	if not is_visible_in_tree() or reduced_motion: return
 	if speaking:
 		_elapsed += delta
-		_frame(_talk if int(_elapsed / 0.18) % 3 != 1 else _rest)
+		_frame(_talk if _mouth_can_open() and int(_elapsed / 0.18) % 3 != 1 else _rest)
 	else:
 		_idle_elapsed += delta
 		_frame(_blink if fmod(_idle_elapsed, 5.4) > 5.25 else _rest)

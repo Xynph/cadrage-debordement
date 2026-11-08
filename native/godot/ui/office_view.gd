@@ -2,11 +2,52 @@ extends RefCounted
 # Présentation du Bureau uniquement : aucune commande de carrière à l'affichage.
 const G = preload("res://ui/game_skin.gd")
 const Carnet = preload("res://ui/carnet_skin.gd")
-const PAPER = Color("f3eddf")
-const INK = Color("242321")
-const MUTED = Color("746d63")
+const Semantics = preload("res://ui/data_semantics.gd")
+const PAPER = Color("f0f1ec")
+const INK = Color("20282c")
+const MUTED = Color("5f6a6e")
 const CHARCOAL = Color("191b1c")
-const RULE = Color("d5caba")
+const RULE = Color("ccd2d0")
+
+# At 720p the decisions and sporting cap share one readable sheet. Reparenting
+# preserves all controls, local scroll state and keyboard focus during resize.
+class OfficeColumns extends HBoxContainer:
+	var decisions_sheet: Control
+	var main_sheet: Control
+	var sport_sheet: Control
+	var decisions_content: Control
+	var sport_scroll: ScrollContainer
+	var sport_content: Control
+	var sport_owner: Control
+	var expanded_sport_offset := 0
+	var compact := false
+	func _ready() -> void:
+		resized.connect(_adapt)
+		_adapt.call_deferred()
+	func _adapt() -> void:
+		if not is_inside_tree() or is_queued_for_deletion(): return
+		var next_compact := size.x < 1150
+		if next_compact == compact: return
+		compact = next_compact
+		var focus := get_viewport().gui_get_focus_owner()
+		var keep_focus := is_instance_valid(focus) and sport_content.is_ancestor_of(focus)
+		if compact:
+			expanded_sport_offset = sport_scroll.scroll_vertical
+			sport_scroll.reparent(decisions_content, false)
+			sport_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+			sport_scroll.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+			var journal := decisions_content.find_child("OfficeJournalCard", false, false)
+			if journal != null: decisions_content.move_child(sport_scroll, journal.get_index())
+			sport_sheet.hide()
+		else:
+			sport_scroll.reparent(sport_owner, false)
+			sport_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+			sport_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			sport_sheet.show()
+			if not keep_focus: sport_scroll.set_deferred("scroll_vertical", expanded_sport_offset)
+		decisions_sheet.size_flags_stretch_ratio = 1.05 if compact else .98
+		main_sheet.size_flags_stretch_ratio = 1.70 if compact else 1.72
+		if keep_focus: focus.grab_focus()
 
 static func _text(value: Variant, size: int = 14, color: Color = INK, title: bool = false) -> Label:
 	var label := G.wrap(value, size, color)
@@ -43,11 +84,27 @@ static func _scroll(parent: Node) -> VBoxContainer:
 	scroll.add_child(column)
 	return column
 
+static func _card(parent: Node, id: String, accent: Color = RULE) -> VBoxContainer:
+	var frame := PanelContainer.new()
+	frame.name = id
+	frame.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var style := G.T.box(Color("fcfcf8"),3,RULE)
+	style.border_width_left = 3
+	style.border_color = accent
+	style.content_margin_left = 12;style.content_margin_right = 12
+	style.content_margin_top = 11;style.content_margin_bottom = 11
+	frame.add_theme_stylebox_override("panel",style)
+	parent.add_child(frame)
+	var content := G.v(8)
+	frame.add_child(content)
+	return content
+
 static func _heading(parent: Node, number: String, text: String, accent: Color) -> void:
 	var row := G.h(8)
 	parent.add_child(row)
-	row.add_child(G.label(number + " /", 29, Carnet.accent_ink(accent), true))
-	var heading := _text(text, 29, INK, true)
+	row.add_child(G.label(number + " /", 24, Carnet.accent_ink(accent), true))
+	var heading := _text(text, 24, INK, true)
 	G.fill(heading)
 	row.add_child(heading)
 
@@ -78,22 +135,43 @@ static func _player(app: Control, id: String) -> void:
 	app.selected_player = id
 	app._navigate("Effectif")
 
-static func _decision(parent: Node, title: String, detail: String, callback: Callable, accent: Color, id: String) -> void:
-	var box := G.v(3)
+static func _decision(parent: Node, title: String, detail: String, callback: Callable, accent: Color, id: String) -> VBoxContainer:
+	var box := _card(parent,id+"Card",Carnet.accent_ink(accent))
 	box.name = id
-	parent.add_child(box)
-	box.add_child(_text(title, 25, INK, true))
+	box.add_child(_text(title, 24, INK, true))
 	box.add_child(_text(detail, 14))
 	var action := _link("Examiner  →", callback, accent)
 	action.name = id + "Action"
 	box.add_child(action)
-	_line(parent)
+	return box
+
+static func _contracts_preview(parent: VBoxContainer, app: Control, contracts: Array) -> void:
+	var preview := G.v(5)
+	preview.name = "OfficeContractPreview"
+	parent.add_child(preview)
+	parent.move_child(preview,2)
+	preview.add_child(_text("PREMIÈRES ÉCHÉANCES",11,MUTED))
+	for i in mini(3,contracts.size()):
+		var player: Dictionary=contracts[i]
+		var row := G.h(7)
+		preview.add_child(row)
+		row.add_child(G.portrait(int(player.get("portraitIndex",0)),24,player))
+		var profile := _link(str(player.name)+"  ↗",func():_player(app,str(player.id)),app.accent)
+		profile.name = "OfficeContractPlayer"+str(i)
+		profile.set_meta("player_id",str(player.id))
+		profile.clip_text = true
+		profile.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		profile.tooltip_text = str(player.name)+" · "+str(player.get("pos",""))
+		profile.custom_minimum_size.y = 27
+		profile.add_theme_font_size_override("font_size",13)
+		G.fill(profile)
+		row.add_child(profile)
+		row.add_child(G.label("Saison "+G.n(player.contractEnd),12,MUTED))
 
 static func _journal(parent: Node, app: Control) -> void:
-	var block := G.v(10)
+	var block := _card(parent,"OfficeJournalCard")
 	block.name = "OfficeJournal"
-	parent.add_child(block)
-	block.add_child(_text("Le journal du club", 26, INK, true))
+	block.add_child(_text("Le journal du club", 24, INK, true))
 	block.add_child(_text("Les nouvelles de votre carrière", 12, MUTED))
 	var messages: Array = app.model.get("messages", [])
 	if messages.is_empty(): block.add_child(_text("Le carnet s'ouvre. Les premières nouvelles du club apparaîtront ici.", 14))
@@ -109,16 +187,21 @@ static func _journal(parent: Node, app: Control) -> void:
 
 static func _decisions(parent: Node, app: Control) -> void:
 	parent.name = "OfficeDecisions"
-	_heading(parent, "01", "À décider", app.accent)
-	_line(parent)
+	var heading := _card(parent,"OfficeDecisionsHeader",Carnet.accent_ink(app.accent))
+	_heading(heading, "01", "À décider", app.accent)
+	var notebook := _link("Mon carnet personnel", func(): preload("res://ui/coach_notes_view.gd").open(app,"career"), app.accent)
+	notebook.name = "OpenCoachNotebook"
+	heading.add_child(notebook)
 	var model: Dictionary = app.model
 	var contracts: Array = []
 	for p: Dictionary in model.get("squad", []):
 		if p.get("contractEnd") != null and int(p.contractEnd) <= int(model.meta.get("season", 1)) + 1:
 			contracts.append(p)
+	contracts.sort_custom(func(a: Dictionary,b: Dictionary):return int(a.contractEnd)<int(b.contractEnd) if int(a.contractEnd)!=int(b.contractEnd) else str(a.id)<str(b.id))
 	if not contracts.is_empty():
 		var first: Dictionary = contracts[0]
-		_decision(parent, "%d contrat%s à préparer" % [contracts.size(), "s" if contracts.size() > 1 else ""], "Échéances d’ici la saison %s. Consultez les contrats et les possibilités de prolongation." % G.n(int(model.meta.get("season", 1)) + 1), func(): _player(app, str(first.id)), app.accent, "OfficeContracts")
+		var card := _decision(parent, "%d contrat%s" % [contracts.size(), "s" if contracts.size() > 1 else ""], "Échéances d’ici la saison %s. Consultez les contrats et les possibilités de prolongation." % G.n(int(model.meta.get("season", 1)) + 1), func(): _player(app, str(first.id)), app.accent, "OfficeContracts")
+		_contracts_preview(card,app,contracts)
 	var selection: Dictionary = model.get("selection", {})
 	var vacant := 0
 	for slot: Dictionary in selection.get("slots", []):
@@ -129,19 +212,14 @@ static func _decisions(parent: Node, app: Control) -> void:
 	if not model.meta.get("trained", false) and model.get("live") == null and not model.meta.get("canAdvanceSeason", false):
 		_decision(parent, "La semaine à préparer", "L'entraînement de cette semaine reste à effectuer. Choisissez le travail du groupe.", func(): _navigate(app, "Préparation"), app.accent, "OfficeTraining")
 	elif contracts.is_empty() and vacant == 0 and errors.is_empty():
-		parent.add_child(_text("Le groupe est en ordre", 25, INK, true))
-		parent.add_child(_text("Retrouvez vos choix de sélection et la préparation de la prochaine rencontre.", 14))
-		parent.add_child(_link("Voir la composition  →", func(): _navigate(app, "Composition"), app.accent))
-	var next: Dictionary = model.next if model.get("next") is Dictionary else {}
-	if not next.is_empty():
-		parent.add_child(_text("Le prochain rendez-vous", 22, INK, true))
-		parent.add_child(_text(str(next.get("label", model.meta.get("roundLabel", ""))), 13, MUTED))
-		parent.add_child(_link("Ouvrir le calendrier  →", func(): _navigate(app, "Calendrier"), app.accent))
-	_line(parent)
+		var ready := _card(parent,"OfficeReadyCard")
+		ready.add_child(_text("Le groupe est en ordre",24,INK,true))
+		ready.add_child(_text("Retrouvez vos choix de sélection et la préparation de la prochaine rencontre.",14))
+		ready.add_child(_link("Voir la composition  →",func():_navigate(app,"Composition"),app.accent))
 	_journal(parent, app)
 
 static func _summary(parent: Node, app: Control) -> void:
-	var row := G.h(16)
+	var row := G.h(8)
 	row.name = "OfficeSummary"
 	parent.add_child(row)
 	var club := G.h(8)
@@ -159,10 +237,18 @@ static func _summary(parent: Node, app: Control) -> void:
 		if float(player.get("injury", 0)) > 0: injured += 1
 	var rank := G.n(app.model.club.get("rank", "—"))
 	var place := "—" if rank == "—" else rank + ("er" if rank == "1" else "e")
-	for pair in [["%s / %s pts" % [place, G.n(app.model.club.get("points", 0))], "Classement"], ["%d %%" % (total / maxf(1, squad.size())), "Condition du groupe"], [str(injured), "Blessés"], [G.n(app.model.meta.get("trust", "—")) + " %", "Confiance"], [G.euros(app.model.get("finance", {}).get("cash", app.model.club.get("cash", 0))), "Trésorerie fictive"]]:
+	for pair in [["%s / %s pts" % [place, G.n(app.model.club.get("points", 0))], "Classement"], ["%d %%" % (total / maxf(1, squad.size())), "Condition du groupe"], [str(injured), "Blessés"], [G.n(app.model.meta.get("trust", "—")) + " %", "Confiance"], [G.euros(app.model.get("finance", {}).get("cash", app.model.club.get("cash", 0))), "Trésorerie"]]:
+		var tile := PanelContainer.new()
+		tile.name = "OfficeSummaryTile%d" % row.get_child_count()
+		G.fill(tile)
+		var style := G.T.box(Color("252928"), 3, Color("424942"))
+		style.content_margin_left = 9; style.content_margin_right = 9
+		style.content_margin_top = 7; style.content_margin_bottom = 7
+		tile.add_theme_stylebox_override("panel", style)
+		row.add_child(tile)
 		var box := G.v(0)
 		G.fill(box)
-		row.add_child(box)
+		tile.add_child(box)
 		box.add_child(_text(pair[0], 23, G.INK, true))
 		box.add_child(_text(pair[1], 12, G.MUTED))
 
@@ -352,16 +438,20 @@ static func _table(parent: Node, app: Control) -> void:
 	objective.add_child(_text("OBJECTIF DU CLUB", 12, MUTED))
 	objective.add_child(_text(app.model.club.get("goal", "Développer le club"), 17, Carnet.accent_ink(app.accent), true))
 	var grid := GridContainer.new()
-	grid.columns = 6
+	grid.name = "OfficeStandingsGrid"
+	grid.columns = 7
 	grid.add_theme_constant_override("h_separation", 5)
 	grid.add_theme_constant_override("v_separation", 0)
 	parent.add_child(grid)
-	for text in ["#", "Club", "J", "V", "N", "Pts"]:
+	for text in ["#", "Club", "J", "V", "N", "D", "Pts"]:
 		grid.add_child(G.label(text, 12, MUTED))
+	var columns := ["rank", "club", "played", "won", "drawn", "lost", "points"]
+	var outcomes := {"won":"V", "drawn":"N", "lost":"D"}
 	for club: Dictionary in standings_window(app.model):
 		var ours: bool = club.id == app.model.club.id
-		for value in [G.n(club.get("rank", "")), G.club_name(club), G.n(club.get("played", 0)), G.n(club.get("won", 0)), G.n(club.get("drawn", 0)), G.n(club.get("points", 0))]:
+		for key: String in columns:
 			var cell := PanelContainer.new()
+			cell.name = "OfficeStanding_%s_%s" % [str(club.id), key]
 			var style := G.T.box(PAPER.lerp(Color(app.accent, 1), .12) if ours else Color.TRANSPARENT, 0)
 			if ours:
 				style.border_color = Carnet.accent_ink(app.accent)
@@ -370,17 +460,24 @@ static func _table(parent: Node, app: Control) -> void:
 			style.content_margin_top = 4; style.content_margin_bottom = 4
 			cell.add_theme_stylebox_override("panel", style)
 			grid.add_child(cell)
-			var label := G.label(value, 14, INK)
-			if cell.get_index() % 6 == 1:
-				G.fill(cell)
-				label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-				cell.custom_minimum_size.x = 80
-				cell.tooltip_text = value
-			cell.add_child(label)
-	var form: Array = []
+			if outcomes.has(key):
+				cell.add_child(Semantics.count_badge(club.get(key), outcomes[key]))
+			else:
+				var value := G.club_name(club) if key == "club" else Semantics.number_text(club.get(key)) if key == "points" else Semantics.count_text(club.get(key))
+				var label := G.label(value, 14, INK)
+				if key == "club":
+					G.fill(cell)
+					label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+					cell.custom_minimum_size.x = 80
+					cell.tooltip_text = value
+				cell.add_child(label)
+	var form: Variant = null
 	for club: Dictionary in standings_window(app.model):
-		if club.id == app.model.club.id: form = club.get("form", [])
-	parent.add_child(_text("Forme · " + (" / ".join(form.slice(maxi(0, form.size() - 5))) if not form.is_empty() else "aucun match joué"), 12, MUTED))
+		if club.id == app.model.club.id: form = club.get("form")
+	parent.add_child(_text("Forme · championnat · ancien → récent", 12, MUTED))
+	parent.add_child(Semantics.recent_form(form))
+	parent.add_child(Semantics.legend())
+
 
 static func _means(parent: Node, app: Control) -> void:
 	var box := _panel(parent, CHARCOAL, 12)
@@ -396,7 +493,6 @@ static func _means(parent: Node, app: Control) -> void:
 		row.add_child(metric)
 		metric.add_child(G.label(pair[0], 20, G.INK, true))
 		metric.add_child(_text(pair[1], 12, G.MUTED))
-	box.add_child(_text("Montants fictifs de votre carrière.", 12, G.MUTED))
 	var button := _link("Voir les finances  →", func(): _navigate(app, "Finances"), app.accent, false)
 	button.name = "OfficeFinanceAction"
 	box.add_child(button)
@@ -420,33 +516,79 @@ static func _preparation(parent: Node, app: Control) -> void:
 	button.name = "OfficePreparationAction"
 	box.add_child(button)
 
+static func _identity(parent: Node, app: Control) -> void:
+	var content := _card(parent,"OfficeIdentity")
+	content.add_child(_text("Le territoire du club",22,INK,true))
+	var row := G.h(8)
+	content.add_child(row)
+	var identity := G.identity(app.model.club)
+	var slug := str(identity.get("slug",""))
+	for pair in [["city","LA VILLE","OfficeCityPreview"],["stadium","NOTRE STADE","OfficeStadiumPreview"]]:
+		var supplied: Variant=identity.get(pair[0])
+		var value := "—" if supplied==null or str(supplied).strip_edges().is_empty() else str(supplied)
+		var path := "res://assets/club-atlas/%s-%s.webp"%[slug,pair[0]]
+		var picture: Control
+		var over: VBoxContainer
+		if ResourceLoader.exists(path):
+			picture=G.picture(slug,pair[0])
+			over=picture.get_meta("content")
+		else:
+			var fallback := PanelContainer.new()
+			fallback.add_theme_stylebox_override("panel",G.T.box(CHARCOAL,2))
+			picture=fallback
+			over=G.v(4)
+			fallback.add_child(over)
+		picture.name=pair[2]
+		picture.custom_minimum_size.y=110
+		picture.tooltip_text=value
+		G.fill(picture)
+		row.add_child(picture)
+		over.add_child(G.spacer())
+		over.add_child(G.label(pair[1],10,G.GOLD))
+		var label := _text(value,13,G.INK,true)
+		label.max_lines_visible=2
+		label.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+		over.add_child(label)
+
 static func build(app: Control) -> Control:
 	var page := G.v(12)
 	page.name = "OfficeCarnet"
 	G.fill(page, true)
 	_summary(page, app)
 	_line(page, false)
-	var columns := G.h(12)
+	var columns := OfficeColumns.new()
+	columns.name = "OfficeColumns"
+	columns.add_theme_constant_override("separation", 12)
 	G.fill(columns, true)
 	page.add_child(columns)
-	var journal := _panel(columns, PAPER, 16)
-	journal.get_parent().size_flags_stretch_ratio = .85
+	var journal := G.v(0)
+	G.fill(journal,true,.98)
+	journal.custom_minimum_size.x=312
+	columns.add_child(journal)
 	var journal_body := _scroll(journal)
 	_decisions(journal_body, app)
 	var center := G.v(10)
-	G.fill(center, true, 1.88)
+	G.fill(center, true, 1.72)
 	columns.add_child(center)
 	var center_body := _scroll(center)
 	_fixture(center_body, app)
 	_timeline(center_body, app)
 	_group(center_body, app)
 	_results(center_body, app)
-	var sport := _panel(columns, PAPER, 14)
-	sport.get_parent().size_flags_stretch_ratio = 1.07
+	var sport := G.v(0)
+	G.fill(sport,true,1.15)
+	columns.add_child(sport)
 	var sport_body := _scroll(sport)
-	sport_body.add_theme_constant_override("separation", 7)
-	_table(sport_body, app)
-	_line(sport_body)
+	sport_body.add_theme_constant_override("separation", 12)
+	_table(_card(sport_body,"OfficeStandingsCard",Carnet.accent_ink(app.accent)), app)
 	_means(sport_body, app)
-	_preparation(sport_body, app)
+	_preparation(_card(sport_body,"OfficePreparationCard"), app)
+	_identity(sport_body,app)
+	columns.decisions_sheet = journal
+	columns.main_sheet = center
+	columns.sport_sheet = sport
+	columns.decisions_content = journal_body
+	columns.sport_scroll = sport_body.get_parent()
+	columns.sport_content = sport_body
+	columns.sport_owner = sport
 	return page

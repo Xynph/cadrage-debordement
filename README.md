@@ -1,12 +1,12 @@
 # Oval Legacy 27 — Rugby Manager
 
-**Un jeu de management de rugby à XV, en français : préalpha Windows native Godot 0.5 et version web historique.**
+**Un jeu de management de rugby à XV, en français : préalpha Windows native Godot 0.6 et version web historique.**
 
 Dirigez votre club : composez les 23, préparez votre équipe, recrutez, gérez les contrats et suivez les rencontres.
 
 Ce dépôt contient le code du jeu, sa documentation et ses tests. Les carrières Windows restent dans un profil local indépendant de l'exécutable ; les parties web restent dans le navigateur. Aucune sauvegarde personnelle n'est stockée sur GitHub.
 
-## Préalpha Windows native Godot 0.5
+## Préalpha Windows native Godot 0.6
 
 Le jeu dispose d'un accueil photographique, d'une création de carrière par club et de vingt écrans de carrière regroupés dans six rubriques : **Bureau, Équipe, Développement, Club, Compétitions et Carrière**. Chaque rubrique conserve son dernier sous-menu. L'interface associe anthracite, ivoire, couleurs du club, portraits fictifs et soixante photographies des trente territoires. Le [tableau de portage natif](docs/portage-natif-20261108.md) distingue les fonctionnalités reçues en source, les limites et la réception de la distribution.
 
@@ -34,11 +34,29 @@ Le [rapport Godot 0.3 et packs](docs/rugby-real-native-packs-20261107.md) détai
 
 Gaston Darroux, dit **Gabi**, présente son passé de pilier et d'entraîneur du Sud-Ouest. Bourru, chaleureux et drôle, il dispose de seize poses et de 74 fragments courts sur 25 pages. Premières visites et décisions importantes déclenchent un conseil, puis il reste discret. La petite bulle BD flotte sans panneau extérieur ni espace réservé ; une invitation garde accessible un conseil qui ne peut pas être montré sans masquer une commande. Aide et visite manuelles restent disponibles dans **Paramètres → Aide du coach**, avec des préférences séparées de la carrière.
 
-**La voix finale reste partielle.** Le timbre Algenib vieilli et éraillé a été approuvé ; 13 fichiers sur 74 sont préparés hors du jeu, avant un nouveau refus de quota. Le programme conserve explicitement ses 38 anciens clips provisoires et 36 nouveaux textes en attente. Un texte différent n'utilise jamais un ancien enregistrement ; il est lu par le repli système provisoire si disponible, sinon affiché. Aucune facturation ni substitution finale dissimulée. Le [guide initial](docs/coach-guide-20261107.md) reste historique.
+**Les 74 répliques finales sont enregistrées avec la voix ElevenLabs retenue**, après activation de Starter par Léo. Elles sont lues localement ; les essais Free restent hors de la distribution commerciale. Les 38 prises historiques et leurs empreintes restent intactes dans l'archive. La bouche respecte les silences du signal enregistré, avec un cache borné ; le mouvement réduit reste disponible. Le repli système intervient seulement si un enregistrement manque ou devient illisible. Voir la [production et les vérifications finales](docs/native07-gabi-finalisation.md). Le [guide initial](docs/coach-guide-20261107.md) reste historique.
 
 Les [preuves de production et conditions vérifiées](docs/voix-gabi-production-20261108.md) précisent cette limite, sans promettre de droits exclusifs ou de quotas futurs.
 
-Le [récapitulatif initial des idées GitHub](docs/idees-github-20261108.md) confronte dix-huit familles au code alors chargé. Son [tableau de réception actuel](docs/portage-natif-20261108.md) suit les 31 candidats : presse, rivalités et formation avancée sont maintenant portées ; le contact à deux corps et la voix finale restent partiels. Les branches déjà reprises ou supplantées ne sont pas refusionnées.
+## Lot natif 0.6 — en réception, non livré
+
+Léo a demandé une nouvelle passe de **densité PC pour le2560×1440** : référence native sans agrandissement depuis le1080p, corps12px, commandes28px, tableau plus riche et dossier réparti en petites tuiles. Cette disposition est en réception ; elle remplace la première passe présentée ci-dessous.
+
+La fiche en source affiche jusqu'à36joueurs par page en1440p, six panneaux de faits et quatre panneaux contextuels : **Concurrence au poste / Développement / Forme et prestations / Staff et carnet**. La progression annuelle provient des vrais bilans de carrière ; aucune série individuelle par match n'est inventée. Cette présentation a reçu ses contrôles de disposition et une capture Windows réelle ; son nouvel exécutable reste à recevoir.
+
+Ce lot réduit la typographie et les marges communes ; l'effectif, le marché, le calendrier et le classement utilisent des pages ou des onglets pour garder les commandes essentielles visibles. Les paramètres sont regroupés sous **Confort / Son / Affichage**. Le Bureau et les dossiers des joueurs ouvrent un **carnet du coach** : ses notes libres suivent la carrière et restent intactes lors des changements de pack. Voir [lisibilité](docs/native06-lisibilite-20261108.md), [carnet](docs/native06-carnet-20261108.md) et [raccordements](docs/native06-raccordements-20261108.md).
+
+La presse reprend une déclaration réellement archivée lors d'une relance du même journaliste. Les rapports de recrutement séparent faits, avis et réserves sans dévoiler les attributs cachés. Le match améliore les démarrages, rotations, appuis et transitions du ballon ; les contacts à deux corps restent incomplets. Six sons procéduraux originaux apportent une première ambiance, avec des volumes interface et stade distincts. Voir [presse et recrutement](docs/native06-presse-recrutement-20261108.md), [mouvement](docs/native06-match-20261108.md) et [son](docs/native06-son-20261108.md).
+
+Les joueurs 3D portent désormais maillot, short et chaussettes hautes, avec une carrure renforcée et des carnations et cheveux variés. Cette adaptation du modèle CC0 conserve ses articulations et animations. Les captures réelles du prototype montrent le résultat ; elles ne constituent pas une réception sur PC modeste. Voir [silhouettes, performances et limites](docs/native06-silhouettes-20261108.md).
+
+Les contrôles ciblés et revues de ces lots ont été exécutés. Le [nouveau candidat Windows](docs/native07-reception-windows-20261108.md) passe **1 450 contrôles**, reçoit **103 captures aux quatre résolutions** et décode les74répliques depuis son PCK. Le premier lancement dans le nouveau chemin reste à28,2secondes ; sa cause n'est pas entièrement isolée. L'[optimisation des sauvegardes](docs/native06-performance-20261108.md), isolée dans la PR398, est fusionnée : CI exacte et sept jobs post-fusion réussis sur `f335fb76`. La CI propre au lot graphique et son installation restent à contrôler.
+
+La finition des menus ajoute une coque anthracite, une identité de club, des pictogrammes originaux et des tuiles plus distinctes. Les classements présentent V/N/D en vert, ambre et rouge avec lettres et légende ; un indicateur absent reste inconnu. Le Bureau rassemble des cartes compactes, trois échéances réelles et les vues de la ville et du stade. La palette et l'historique rendent visible le joueur demandé même s'il se trouve sur une autre page. Voir [direction artistique](docs/direction-artistique-20261108.md), [menus](docs/native07-direction-menus.md) et [couleurs](docs/native06-couleurs-20261108.md).
+
+Le contact 3D reçoit une préparation debout et une protection du ballon lorsque les deux corps sont réellement proches. Ce rendu ne fabrique ni plaquage, chute, blessure ni décision sportive ; les trajectoires et la simulation restent inchangées. Les [mesures et limites](docs/native07-contacts.md) distinguent cette finition visuelle d'un futur système complet de contacts.
+
+Le [récapitulatif initial des idées GitHub](docs/idees-github-20261108.md) confronte dix-huit familles au code alors chargé. Son [tableau de réception](docs/portage-natif-20261108.md) suit les 31 candidats : presse, rivalités et formation avancée sont portées ; la voix finale est complète et les contacts à deux corps restent partiels. Les branches déjà reprises ou supplantées ne sont pas refusionnées.
 
 Les nouvelles carrières communes utilisent le **registre effectifs v2 : 241 postes, 86 échéances et 9 statuts documentés** ; le reste est estimé explicitement. Les statistiques de la base active sont conservées. Les anciennes carrières v1 gardent leurs références sans migration, et les packs changent les identités sans remplacer les progrès. Voir les [sources et limites du lot2](docs/roster-foundation-lot2.md) et le [protocole de réception Windows](docs/oval-legacy-27-carnet-coach-20261108.md).
 

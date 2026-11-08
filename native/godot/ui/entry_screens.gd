@@ -25,7 +25,7 @@ static func home(app: Control) -> Control:
 	var over: VBoxContainer = page.get_meta("content")
 	over.add_child(G.label("OVAL LEGACY 27  /  BUILD YOUR CLUB. LEAVE YOUR MARK.", 14, G.WHITE))
 	over.add_child(G.spacer())
-	var row := G.h(48)
+	var row := G.h(28)
 	over.add_child(row)
 	var intro := G.v(4)
 	G.fill(intro)
@@ -34,7 +34,7 @@ static func home(app: Control) -> Control:
 	logo.texture = load("res://branding/oval-legacy-27-logo.png")
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	logo.custom_minimum_size = Vector2(460, 230)
+	logo.custom_minimum_size = Vector2(360, 180)
 	logo.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	logo.tooltip_text = "Oval Legacy 27 — Rugby Manager"
 	var composite := ShaderMaterial.new()
@@ -43,7 +43,7 @@ static func home(app: Control) -> Control:
 	intro.add_child(logo)
 	intro.add_child(G.wrap("Un club. Un territoire.\nUne saison à écrire.", 26, G.WHITE))
 	var choices := G.panel(row)
-	choices.get_parent().custom_minimum_size.x=430
+	choices.get_parent().custom_minimum_size.x=380
 	choices.get_parent().size_flags_horizontal=Control.SIZE_SHRINK_END
 	choices.add_child(G.section("Ouvrir le carnet","Votre prochain chapitre commence ici."))
 	choices.add_child(G.separator())
@@ -57,7 +57,7 @@ static func home(app: Control) -> Control:
 		current.add_child(G.label("CARNET EN COURS", 11, G.GOLD))
 		current.add_child(G.wrap(str(G.identity(club).get("city", "Votre territoire")), 18, G.INK))
 		choices.add_child(G.label("VOTRE CARRIÈRE", 12, G.GOLD))
-		choices.add_child(G.label(G.club_name(club), 26, G.INK, true))
+		choices.add_child(G.wrap(G.club_name(club), 26, G.INK))
 		choices.add_child(G.label("Saison %s · %s" % [G.n(app.model.meta.get("season", 1)), app.model.meta.get("roundLabel", "Journée " + G.n(int(app.model.meta.get("round", 0)) + 1))], 12, G.MUTED))
 		choices.add_child(G.button("REPRENDRE LA CARRIÈRE  →", func(): app._navigate("Bureau"), true))
 	var locked:bool=app.model.is_empty() or app.model.get("meta",{}).get("recoveryRequired",false)
@@ -118,14 +118,14 @@ static func creation(app: Control) -> Control:
 	var list := G.panel(row,1.2)
 	G.chapter(list,"01","Prendre les rênes","Choisissez les identités puis votre club.",app.accent)
 	var packs: Dictionary = app.model.get("packs", {})
-	var pack_name := "BASE ANONYMISÉE"
+	var pack_name := "MONDE D’OVAL LEGACY 27"
 	for pack: Dictionary in packs.get("installed", []):
 		if str(pack.get("id", "")) == str(packs.get("creation", "base")):
 			pack_name = str(pack.get("name", "Pack personnalisé")).to_upper()
 
 	var pack_choice := OptionButton.new()
 	pack_choice.name="CreationPackChoice"
-	pack_choice.add_item("Base anonymisée")
+	pack_choice.add_item("Monde d’Oval Legacy 27")
 	var pack_ids: Array[String] = ["base"]
 	for pack: Dictionary in packs.get("installed", []):
 		pack_choice.add_item(str(pack.get("name", "Pack personnalisé")))
@@ -150,10 +150,20 @@ static func creation(app: Control) -> Control:
 		if app.club_division == item[0]: G.selected(b,app.accent)
 		divisions.add_child(b)
 	var items := G.scroll(list)
-	for club in app.catalogue:
-		if club.division != app.club_division: continue
+	var clubs:Array=app.catalogue.filter(func(club):return club.division==app.club_division)
+	var bounds:=preload("res://ui/club_views.gd")._paged(app,list,"CreationPagination",clubs.size(),8,"creation_"+str(app.club_division))
+	var grid:=GridContainer.new()
+	grid.columns=2
+	grid.add_theme_constant_override("h_separation",8)
+	grid.add_theme_constant_override("v_separation",8)
+	G.fill(grid)
+	items.add_child(grid)
+	for club in clubs.slice(bounds.x,bounds.y):
 		var b := G.button("", func(): app.selected_club = int(club.id); app._render())
-		b.custom_minimum_size.y = 64
+		b.custom_minimum_size.y = 52
+		b.name="CreationClub"+str(club.id)
+		b.tooltip_text=str(club.name)+" · "+str(club.city)
+		G.fill(b)
 		if club.id == app.selected_club: G.selected(b,Color(club.color))
 		var inset := G.margin(8)
 		inset.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -162,16 +172,17 @@ static func creation(app: Control) -> Control:
 		var line := G.h(16)
 		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		inset.add_child(line)
-		line.add_child(G.crest(club, 46))
+		line.add_child(G.crest(club, 32))
 		var names := G.v(0)
 		G.fill(names)
-		names.add_child(G.label(club.name, 19, G.INK))
-		names.add_child(G.label(club.city, 13, G.MUTED))
+		names.add_child(G.cell(club.name,60,G.INK,true))
+		names.add_child(G.cell(club.city,60,G.MUTED,true))
 		line.add_child(names)
 		line.add_child(G.label("→", 24, G.GOLD))
-		items.add_child(b)
-	list.add_child(G.wrap("Base commune de 1 592 joueurs · identités anonymisées ou personnalisées. Capacités et finances de simulation, non officielles. Deux divisions reliées ; monde fermé à 30 clubs.", 12))
+		grid.add_child(b)
+	list.add_child(G.wrap("1 592 joueurs · 30 clubs · deux divisions reliées. Choisissez votre club et préparez votre première saison.", 12))
 	var start := G.button("PRENDRE LES RÊNES DE " + selected.abbr + "  →", func(): app.create_career(int(selected.id)), true)
+	start.name="CreationStart"
 	start.disabled = app.waiting or unavailable
 	list.add_child(start)
 	return page

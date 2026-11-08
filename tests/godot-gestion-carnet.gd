@@ -130,21 +130,24 @@ func run() -> void:
 		var p:Dictionary=app.model.squad.filter(func(x):return str(x.id)==str(row.get_meta("player_id")))[0]
 		check(float(p.rating)<=previous,"Tri réel décroissant du niveau")
 		previous=float(p.rating)
+	await activate(named(app,"RosterPaginationNext"))
+	rows=app.body.find_children("SquadPlayer*","Button",true,false)
 	var last:Button=rows[-1]
 	var last_id:String=last.get_meta("player_id")
 	await activate(last)
 	var scroll:ScrollContainer=named(app,"SquadScroll")
 	var offset:=scroll.scroll_vertical
-	check(app.selected_player==last_id and offset>0,"Entrée ouvre le vrai dossier et conserve le défilement")
+	var roster_page:int=app.management_ui.roster.page
+	check(app.selected_player==last_id and roster_page>0 and offset==0,"Entrée ouvre un dossier hors première page sans défilement")
 	app._navigate("Finances");await settle();app._navigate("Effectif");await settle()
-	check(app.selected_player==last_id and app.roster_sort=="Niveau" and named(app,"SquadScroll").scroll_vertical==offset,"Retour menu : ID, tri et scroll conservés")
+	check(app.selected_player==last_id and app.roster_sort=="Niveau" and app.management_ui.roster.page==roster_page and named(app,"SquadScroll").scroll_vertical==offset,"Retour menu : ID, tri, page et focus conservés")
 	# UI-only projection of a timer response which updates the model without rendering.
 	app.last_command="tick";app._receive_model(app.model.duplicate(true));await settle()
 	scroll=named(app,"SquadScroll")
-	scroll.scroll_vertical=maxi(1,offset-31);await settle()
-	var after_tick_offset:=scroll.scroll_vertical
+	await activate(named(app,"RosterPaginationPrevious"))
+	var after_tick_page:int=app.management_ui.roster.page
 	app._navigate("Finances");await settle();app._navigate("Effectif");await settle()
-	check(named(app,"SquadScroll").scroll_vertical==after_tick_offset,"Défilement postérieur à un tick conservé au prochain menu")
+	check(app.management_ui.roster.page==after_tick_page and named(app,"SquadScroll").scroll_vertical==0,"Page postérieure à un tick conservée au prochain menu")
 	await activate(named(app,"CompareSelected"))
 	rows=app.body.find_children("SquadPlayer*","Button",true,false)
 	await activate(rows[0])
@@ -160,6 +163,8 @@ func run() -> void:
 	app._clear_dialogs();await settle()
 	app.selected_player=str(app.model.squad.filter(func(p):return p.renewal.available)[0].id)
 	app._render();await settle()
+	var profile_tabs:TabContainer=named(app,"ProfileTabs")
+	profile_tabs.current_tab=2;await settle()
 	await activate(named(app,"OfferRenewal"))
 	var offer:ConfirmationDialog=named(app,"ContractOffer")
 	check(offer!=null,"Offre de prolongation par clavier")
@@ -175,10 +180,14 @@ func run() -> void:
 	check(not available_players.is_empty(),"Des pistes réellement admissibles restent proposées")
 	var available_offer:Button
 	if not available_players.is_empty():
+		var target_search:LineEdit=named(app,"MarketSearch")
+		target_search.text=str(available_players[0].name)
+		target_search.text_changed.emit(target_search.text);await settle()
 		for candidate:Button in app.body.find_children("*","Button",true,false):
 			if str(candidate.get_meta("player_id",""))==str(available_players[0].id) and candidate.text=="PROPOSER UN CONTRAT":available_offer=candidate;break
 	check(available_offer!=null and not available_offer.disabled,"Le bouton de recrutement respecte la capacité commune reçue du moteur")
 	var market_search:LineEdit=named(app,"MarketSearch")
+	market_search.clear();market_search.text_changed.emit("");await settle()
 	market_search.grab_focus();await key(KEY_Z,122);await key(KEY_Z,122);await key(KEY_Z,122)
 	check(named(app,"MarketSearch")==market_search and market_search.has_focus() and texts(app.body).contains("Aucune piste"),"Recherche marché : frappe conservée et vide clair")
 	market_search.clear();market_search.text_changed.emit("");await settle()
@@ -221,7 +230,11 @@ func real_market_and_archives() -> void:
 	for resolution in [Vector2i(1280,800),Vector2i(1440,900),Vector2i(1920,1080)]:
 		root.size=resolution
 		if DisplayServer.get_name()!="headless":DisplayServer.window_set_size(resolution)
-		app._navigate("Recrutement");await settle();await capture("recrutement-disponible-"+str(resolution.x))
+		app._navigate("Recrutement");await settle()
+		var target_search:LineEdit=named(app,"MarketSearch")
+		target_search.text=str(candidate.name)
+		target_search.text_changed.emit(target_search.text);await settle()
+		await capture("recrutement-disponible-"+str(resolution.x))
 		var buttons:Array=app.body.find_children("*","Button",true,false).filter(func(b):return str(b.get_meta("player_id",""))==str(candidate.id))
 		await activate(buttons[0])
 		var dialog:ConfirmationDialog=named(app,"ContractOffer")

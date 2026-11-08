@@ -1,8 +1,16 @@
-Voix synthétique française par description originale : Qwen3-TTS-12Hz-1.7B-VoiceDesign.
-Continuité du même timbre synthétique : Qwen3-TTS-12Hz-1.7B-Base, conditionné uniquement sur notre propre audio synthétique. Aucun enregistrement humain de référence.
-Qwen3-TTS — Alibaba Qwen Team, 2026. Modèles et outil sous Apache-2.0.
-https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign
-https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base
-Direction : coach fictif Gaston Darroux (Gabi), sans imitation demandée de personne réelle.
-Lot pré-généré localement le 8 novembre 2026. Ni modèle ni moteur ne sont distribués avec ces WAV.
-Voir manifest.json pour révisions, empreintes, 38 textes exacts et limites. Les autres WAV présents hors manifeste sont des essais, exclus de ce lot.
+Gabi — Gaston Darroux, personnage original de Cadrage Débordement / Oval Legacy 27.
+Voix synthétique approuvée : ElevenLabs, voix Gabi xzXYWXH0dYPY9VdmuYZE, modèle Eleven v4.
+Stabilité 0,5 ; similarité 0,75. Aucun enregistrement humain ni imitation d'une personne réelle demandé.
+
+Les nouvelles prises finales sont générées le 8 novembre 2026 pendant l'abonnement Starter actif, constaté par le compte intégrateur après souscription de Léo. Le manifeste conserve texte exact, page/ID, SHA256, origine du MP3, date de génération et méthode de réception.
+Les essais antérieurs du plan Free restent privés et ne sont pas utilisés dans ce lot. Un paiement ultérieur n'a pas été traité comme une licence rétroactive.
+
+Les MP3 d'origine sont conservés hors du programme. Les WAV livrés sont leurs découpes et conversions locales PCM16 mono 24 kHz, sans modification de timbre ni de hauteur. Aucun accès réseau, abonnement joueur, clé API, modèle de synthèse ou moteur ElevenLabs n'est requis à l'exécution.
+
+Les usages commerciaux admissibles des créations produites pendant un abonnement payant restent soumis aux conditions ElevenLabs et aux droits nécessaires sur les contenus. Sources consultées le 8 novembre 2026 :
+https://elevenlabs.io/docs/help-center/legal/can-i-publish-the-content-i-generate-on-the-platform
+https://elevenlabs.io/service-specific-terms
+
+Réception automatique : ASR Whisper-small local horodaté, seconde transcription Whisper-base des écarts, contrôles de format, empreintes et silences aux bornes. Les éventuels homophones sont documentés ; aucune écoute humaine exhaustive n'est revendiquée.
+
+Archives historiques : les 38 anciens WAV Qwen sont conservés intacts, sans être les prises actives du manifeste final. Leur manifeste et la provenance des modèles Apache-2.0 sont archivés dans docs/gabi-voix-archives-20261108.json ; LICENSE-Qwen3-TTS-Apache-2.0.txt est conservé. Ces modèles et moteurs ne sont pas distribués.

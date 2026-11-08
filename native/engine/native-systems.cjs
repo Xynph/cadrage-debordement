@@ -1,7 +1,7 @@
 'use strict';
 // Closed production manifest. Each domain owns its rules and strict validator;
 // the worker remains the only disk transaction and save authority.
-const domains={press:require('./press.cjs'),relationships:require('./relationships.cjs'),clubWorld:require('./club-world.cjs'),academyPathways:require('./academy.cjs'),clubStrategy:require('./club-strategy.cjs'),clubSupport:require('./club-support.cjs'),managerCareer:require('./manager-career.cjs'),playbook:require('./playbook.cjs')};
+const domains={press:require('./press.cjs'),relationships:require('./relationships.cjs'),clubWorld:require('./club-world.cjs'),academyPathways:require('./academy.cjs'),clubStrategy:require('./club-strategy.cjs'),clubSupport:require('./club-support.cjs'),managerCareer:require('./manager-career.cjs'),playbook:require('./playbook.cjs'),coachNotebook:require('./coach-notes.cjs')};
 const files=Object.freeze([...new Set(Object.values(domains).flatMap(d=>d.files))]);
 const commands=Object.freeze(Object.values(domains).flatMap(d=>d.commands));
 if(new Set(commands).size!==commands.length)throw Error('Commandes natives de domaine en double.');

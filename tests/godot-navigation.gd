@@ -59,6 +59,26 @@ func search(text: String) -> void:
 	field.text_changed.emit(text)
 	await settle()
 
+func squad_row(id: String) -> Button:
+	for button: Button in app.body.find_children("SquadPlayer*", "Button", true, false):
+		if str(button.get_meta("player_id", "")) == id: return button
+	return null
+
+func find_squad_row(id: String) -> Button:
+	# The real roster is paginated. Reach the requested row through its actual
+	# keyboard controls instead of assuming every player is in the current page.
+	for step in 32:
+		var previous: Button = named(app, "RosterPaginationPrevious")
+		if previous.disabled: break
+		previous.grab_focus(); await key(KEY_ENTER)
+	for step in 32:
+		var row := squad_row(id)
+		if row != null: return row
+		var next: Button = named(app, "RosterPaginationNext")
+		if next.disabled: break
+		next.grab_focus(); await key(KEY_ENTER)
+	return null
+
 func palette_fits(label: String) -> void:
 	var dialog := palette()
 	var bounds := Rect2i(Vector2i.ZERO,root.size)
@@ -129,6 +149,18 @@ func run() -> void:
 	roster_search.text = "___aucun_joueur___"; roster_search.text_changed.emit(roster_search.text)
 	await key(KEY_K, true); await search(str(app.model.squad[0].name)); await key(KEY_ENTER)
 	check(app.selected_player == first_id and app.body.find_children("SquadPlayer*", "Button", true, false).any(func(button): return str(button.get_meta("player_id", "")) == first_id), "Palette depuis un effectif filtré : cible ID réellement visible")
+	var ordered: Array = load("res://ui/management_state.gd").players(app.model.squad, app.management_ui.roster, int(app.model.meta.season))
+	var last_id := str(ordered.back().id)
+	await key(KEY_K, true); await search("[" + last_id + "]"); await key(KEY_ENTER)
+	check(app.selected_player == last_id and app.body.find_children("SquadPlayer*", "Button", true, false).any(func(button): return str(button.get_meta("player_id", "")) == last_id), "Une cible au-delà de la première page devient réellement visible depuis la palette")
+	var target_page := int(app.management_ui.roster.page)
+	check(target_page > 0, "La cible finale exige réellement une page ultérieure du vrai effectif")
+	var previous_page: Button = named(app, "RosterPaginationPrevious")
+	previous_page.grab_focus(); await key(KEY_ENTER)
+	var manual_page := int(app.management_ui.roster.page)
+	check(manual_page == target_page - 1 and app.selected_player == last_id, "La pagination volontaire reste possible sans changer le dossier ouvert")
+	app._render(); await settle()
+	check(int(app.management_ui.roster.page) == manual_page, "Une reconstruction du menu conserve la page volontaire au lieu de forcer le dossier sélectionné")
 	var original: Dictionary = app.model.duplicate(true)
 	app.model.squad[0].name = "Éric Même"
 	app.model.squad[1].name = "Éric Même"
@@ -225,10 +257,9 @@ func run() -> void:
 	await visit("Effectif", first_id); await visit("Effectif", other_id)
 	app.get_viewport().gui_release_focus(); await key(KEY_LEFT, false, true)
 	check(app.selected_player == first_id, "Deux fiches d'un même écran restent deux entrées par ID")
-	var second_row: Button
-	for button: Button in app.body.find_children("SquadPlayer*", "Button", true, false):
-		if str(button.get_meta("player_id", "")) == other_id: second_row = button; break
-	check(second_row != null, "Deuxième dossier proposé dans le vrai effectif")
+	var second_row: Button = await find_squad_row(other_id)
+	check(second_row != null, "Deuxième dossier proposé dans le vrai effectif avec sa pagination clavier")
+	check(app.selected_player == first_id, "Parcourir les pages ne remplace pas le dossier avant sélection explicite")
 	if second_row != null:
 		second_row.grab_focus(); await key(KEY_ENTER)
 		check(app.selected_player == other_id and nav.history[nav.cursor].player == other_id, "Ouverture clavier d'une fiche sans reconstruction : historique observé")

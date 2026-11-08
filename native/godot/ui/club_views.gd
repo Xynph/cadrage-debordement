@@ -1,5 +1,71 @@
 extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
+const Semantics = preload("res://ui/data_semantics.gd")
+
+# Resize only the standings presentation, keeping the live career and navigation.
+class StandingsLayout extends HBoxContainer:
+	var table_frame: Control
+	var context: Control
+	var scroll: ScrollContainer
+	var list: VBoxContainer
+	var total := 0
+	var capacity := 6
+	var redraw: Callable
+	var pending := false
+	func _ready() -> void:
+		resized.connect(_schedule)
+		scroll.resized.connect(_schedule)
+		_schedule()
+	func _schedule() -> void:
+		if pending: return
+		pending = true
+		_adapt.call_deferred()
+	func _adapt() -> void:
+		pending = false
+		if not is_inside_tree() or scroll.size.y <= 0: return
+		var wide := size.x >= 1380
+		context.visible = wide
+		table_frame.custom_minimum_size.x = 1040 if wide else 0
+		table_frame.size_flags_horizontal = Control.SIZE_FILL if wide else Control.SIZE_EXPAND_FILL
+		var overhead := 36.0
+		var stride := 36.0
+		if list.get_child_count() >= 2:
+			overhead = list.get_child(0).get_combined_minimum_size().y + list.get_child(1).get_combined_minimum_size().y + 6
+		for child: Control in list.get_children().slice(2):
+			stride = maxf(stride,child.get_combined_minimum_size().y + 3)
+		var next_capacity := clampi(floori((scroll.size.y-overhead-4)/stride),1,maxi(1,total))
+		if next_capacity != capacity:
+			capacity = next_capacity
+			redraw.call(capacity)
+
+static func _page_turn(app:Control,id:String,state:Dictionary,page:int,button_index:int) -> void:
+	state.page=page
+	app._render()
+	var row:=app.find_child(id,true,false)
+	if row!=null:
+		var target:Button=row.get_child(button_index)
+		if target.disabled:target=row.get_child(2 if button_index==0 else 0)
+		if not target.disabled:target.grab_focus.call_deferred()
+
+static func _paged(app:Control,parent:Node,id:String,total:int,capacity:int,state_id:String="") -> Vector2i:
+	var key:=state_id if not state_id.is_empty() else id
+	if not app.management_ui.get(key) is Dictionary:app.management_ui[key]={"page":0}
+	var state:Dictionary=app.management_ui[key]
+	var pages:=maxi(1,ceili(float(total)/capacity))
+	state.page=clampi(int(state.page),0,pages-1)
+	var row:=G.h(8)
+	row.name=id
+	parent.add_child(row)
+	var previous:=G.reading_button(G.button("← Précédent",func():_page_turn(app,id,state,maxi(0,int(state.page)-1),0)),88)
+	previous.disabled=int(state.page)==0
+	row.add_child(previous)
+	var caption:=G.label("Page %d / %d"%[int(state.page)+1,pages],12,G.MUTED)
+	caption.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	G.fill(caption);row.add_child(caption)
+	var next:=G.reading_button(G.button("Suivant →",func():_page_turn(app,id,state,mini(pages-1,int(state.page)+1),2)),88)
+	next.disabled=int(state.page)>=pages-1
+	row.add_child(next)
+	return Vector2i(int(state.page)*capacity,mini(total,(int(state.page)+1)*capacity))
 
 static func office(app: Control) -> Control:
 	return preload("res://ui/office_view.gd").build(app)
@@ -42,7 +108,7 @@ static func _territory(app: Control) -> Control:
 		content.add_child(G.spacer())
 		var title := G.wrap(c.get("city", "") if kind == "city" else c.get("stadium", ""), 34, G.WHITE)
 		title.add_theme_font_override("font", G.T.DISPLAY)
-		title.add_theme_font_size_override("font_size", 44)
+		title.add_theme_font_size_override("font_size", 24)
 		content.add_child(title)
 		content.add_child(G.wrap("Photographie réelle d'archive · crédits accessibles", 12, G.WHITE))
 	var dossier := G.panel(page)
@@ -54,7 +120,7 @@ static func _territory(app: Control) -> Control:
 	row.add_child(text)
 	text.add_child(G.wrap(c.get("name", "Votre club"), 28, G.INK))
 	text.add_child(G.wrap("Un territoire, une identité, une saison à écrire.", 16, G.accent_ink(app.accent)))
-	text.add_child(G.wrap("Capacités et finances de simulation, non officielles. Les photos d’archive ne certifient pas la configuration actuelle des stades.", 13))
+	text.add_child(G.wrap("Retrouvez les archives du territoire et écrivez la suite de l’histoire du club.", 13))
 	row.add_child(G.button("CRÉDITS & LICENCES", app._credits))
 	return page
 
@@ -65,12 +131,14 @@ static func calendar(app: Control) -> Control:
 	var sheet := G.panel(page)
 	G.chapter(sheet,"06","Les rendez-vous du club","Résultats et rencontres à venir · les phases finales se précisent au fil de la saison.",app.accent)
 	var list := G.scroll(sheet)
+	list.get_parent().name="CalendarScroll"
 	var fixtures: Array = app.model.get("calendar", [])
+	var bounds:=_paged(app,sheet,"CalendarPagination",fixtures.size(),5)
 	if fixtures.is_empty(): list.add_child(G.wrap("Aucune rencontre programmée pour le moment.", 16))
-	for fixture in fixtures:
+	for fixture in fixtures.slice(bounds.x,bounds.y):
 		var tile := G.card(list, G.accent_ink(app.accent) if not fixture.get("played", false) and fixture.get("week", -1) == app.model.meta.get("week", -2) else G.LINE)
 		var row := G.h(12)
-		row.custom_minimum_size.y = 52
+		row.custom_minimum_size.y = 36
 		tile.add_child(row)
 		var caption: String = fixture.get("label", "Semaine " + G.n(fixture.get("week", 0)))
 		caption = {"barrage":"Barrage","semi":"Demi-finale","final":"Finale","access":"Barrage d’accession"}.get(caption,caption)
@@ -91,11 +159,97 @@ static func calendar(app: Control) -> Control:
 		list.add_child(G.separator())
 	return page
 
+static func _standings_rows(app: Control, list: VBoxContainer, rows: Array, bounds: Vector2i) -> void:
+	var header := G.h(12)
+	list.add_child(header)
+	for pair in [["RG",36],["CLUB",220],["MJ",40],["V",36],["N",36],["D",36],["DIFF.",66],["PTS",52],["FORME",136]]:
+		header.add_child(G.cell(pair[0],pair[1],G.MUTED,pair[0] == "CLUB"))
+	list.add_child(G.separator())
+	for club: Dictionary in rows.slice(bounds.x,bounds.y):
+		var frame := PanelContainer.new()
+		frame.name = "StandingsRow_" + str(club.id)
+		frame.custom_minimum_size.y = 32
+		frame.set_meta("club_id",club.id)
+		var own: bool = club.id == app.model.club.id
+		var style := G.T.box(Color(app.accent,.10) if own else Color.TRANSPARENT, 2)
+		if own:
+			style.border_color = G.accent_ink(app.accent)
+			style.border_width_bottom = 2
+		style.content_margin_left = 0
+		style.content_margin_right = 0
+		style.content_margin_top = 4
+		style.content_margin_bottom = 4
+		frame.add_theme_stylebox_override("panel", style)
+		list.add_child(frame)
+		var row := G.h(12)
+		frame.add_child(row)
+		row.add_child(G.cell(Semantics.count_text(club.get("rank")),36,G.accent_ink(app.accent) if own else G.MUTED))
+		row.add_child(G.cell(G.club_name(club),220,G.INK,true))
+		row.add_child(G.cell(Semantics.count_text(club.get("played")),40,G.MUTED))
+		for pair in [["won","V"],["drawn","N"],["lost","D"]]:
+			var badge := Semantics.count_badge(club.get(pair[0]), pair[1], 36)
+			badge.name = "StandingCount_" + pair[0]
+			row.add_child(badge)
+		row.add_child(G.cell(Semantics.difference_text(club.get("pf"),club.get("pa")),66))
+		var points := G.cell(Semantics.number_text(club.get("points")),52,G.GOLD)
+		points.add_theme_font_size_override("font_size",19)
+		row.add_child(points)
+		var form := Semantics.recent_form(club.get("form"))
+		form.custom_minimum_size.x = 136
+		row.add_child(form)
+
+static func _standings_context(app: Control, page: Control) -> Control:
+	var content := G.panel(page)
+	var frame: Control = content.get_parent()
+	frame.name = "StandingsContext"
+	frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var club: Dictionary = app.model.club
+	var division := ""
+	for league: Dictionary in app.model.get("leagues",[]):
+		for row: Dictionary in league.get("rows",[]):
+			if row.id == app.model.club.id:
+				club = row
+				division = str(league.get("name",""))
+	content.add_child(G.label("NOTRE CLUB",12,G.MUTED))
+	var identity := G.h(10)
+	content.add_child(identity)
+	identity.add_child(G.crest(app.model.club,48))
+	var name := G.wrap(G.club_name(app.model.club),22,G.INK)
+	name.name = "StandingsContextClubName"
+	G.fill(name)
+	identity.add_child(name)
+	if not division.is_empty():content.add_child(G.wrap(division,12))
+	content.add_child(G.separator())
+	var facts := GridContainer.new()
+	facts.columns = 2
+	facts.add_theme_constant_override("h_separation",16)
+	facts.add_theme_constant_override("v_separation",16)
+	content.add_child(facts)
+	for pair in [["rank","Rang"],["points","Points"],["played","Matchs joués"],["pf","Points marqués"],["pa","Points encaissés"]]:
+		var value := Semantics.number_text(club.get(pair[0])) if pair[0]=="points" else Semantics.count_text(club.get(pair[0]))
+		facts.add_child(G.metric(value,pair[1]))
+	content.add_child(G.separator())
+	content.add_child(G.label("BILAN DU CHAMPIONNAT",12,G.MUTED))
+	var record := G.h(10)
+	content.add_child(record)
+	for pair in [["won","V"],["drawn","N"],["lost","D"]]:
+		var result := G.v(3)
+		record.add_child(result)
+		result.add_child(Semantics.count_badge(club.get(pair[0]),pair[1],44))
+		result.add_child(G.label(Semantics.RESULTS[pair[1]].plural,12,G.MUTED))
+	content.add_child(G.label("Forme · championnat · ancien → récent",12,G.MUTED))
+	content.add_child(Semantics.recent_form(club.get("form")))
+	content.add_child(G.wrap("Chiffres du classement actuel. — : donnée ou résultat non renseigné.",12))
+	return frame
+
 static func tables(app: Control) -> Control:
-	var page := G.h(14)
+	var page := StandingsLayout.new()
+	page.add_theme_constant_override("separation",14)
 	page.name = "CarnetStandings"
 	G.fill(page, true)
 	var sheet := G.panel(page)
+	page.table_frame = sheet.get_parent()
+	page.table_frame.name = "StandingsTableFrame"
 	var leagues: Array = app.model.get("leagues", [])
 	if leagues.is_empty(): leagues = [{"id":"elite","name":"Championnat historique","rows":app.model.get("league", [])}]
 	G.chapter(sheet,"07","La course du championnat","Le classement de votre carrière, dans l’ordre de la compétition.",app.accent)
@@ -104,43 +258,44 @@ static func tables(app: Control) -> Control:
 	sheet.add_child(archives)
 	var tabs := G.h(10)
 	sheet.add_child(tabs)
-	for league in leagues:
+	for league: Dictionary in leagues:
 		var b := G.button(str(league.get("name", league.id)).to_upper(), func(): app.table_division = league.id; app._render())
+		b.name = "StandingsDivision_" + str(league.id)
 		G.fill(b)
 		if app.table_division == league.id: G.selected(b,app.accent)
 		tabs.add_child(b)
 	var chosen: Dictionary = leagues[0]
-	for league in leagues:
+	for league: Dictionary in leagues:
 		if league.id == app.table_division: chosen = league
 	for pair in [["champion","CHAMPION"],["finalist","FINALISTE"]]:
 		if chosen.get(pair[0]) is Dictionary:
 			sheet.add_child(G.label(pair[1] + "  /  " + G.club_name(chosen[pair[0]]),18,G.GOLD))
 	var list := G.scroll(sheet)
-	var header := G.h(12)
-	list.add_child(header)
-	for pair in [["RG",36],["CLUB",220],["MJ",40],["V",36],["N",36],["D",36],["DIFF.",66],["PTS",52]]:
-		header.add_child(G.cell(pair[0],pair[1],G.MUTED,pair[0] == "CLUB"))
-	list.add_child(G.separator())
-	for club in chosen.get("rows", []):
-		var frame := PanelContainer.new()
-		var own: bool = club.id == app.model.club.id
-		var style := G.T.box(Color(app.accent,.10) if own else Color.TRANSPARENT, 2)
-		style.content_margin_left = 0
-		style.content_margin_right = 0
-		style.content_margin_top = 8
-		style.content_margin_bottom = 8
-		frame.add_theme_stylebox_override("panel", style)
-		list.add_child(frame)
-		var row := G.h(12)
-		frame.add_child(row)
-		row.add_child(G.cell(G.n(club.get("rank", 0)),36,G.accent_ink(app.accent) if own else G.MUTED))
-		row.add_child(G.cell(G.club_name(club),220,G.INK,true))
-		for pair in [["played",40],["won",36],["drawn",36],["lost",36]]: row.add_child(G.cell(G.n(club.get(pair[0],0)),pair[1],G.MUTED))
-		row.add_child(G.cell(G.n(float(club.get("pf",0))-float(club.get("pa",0))),66))
-		var points := G.cell(G.n(club.get("points",0)),52,G.GOLD)
-		points.add_theme_font_size_override("font_size",19)
-		row.add_child(points)
-	sheet.add_child(G.wrap("MJ : matchs joués · V / N / D : victoires, nuls, défaites · DIFF. : points marqués moins encaissés",12))
+	var rows: Array=chosen.get("rows",[])
+	page.list = list
+	page.scroll = list.get_parent()
+	page.scroll.name="StandingsScroll"
+	page.total = rows.size()
+	list.add_theme_constant_override("separation",3)
+	var pager := G.v(0)
+	sheet.add_child(pager)
+	page.redraw = func(capacity: int):
+		var focus := app.get_viewport().gui_get_focus_owner()
+		var focus_index := focus.get_index() if focus != null and pager.is_ancestor_of(focus) else -1
+		for node in list.get_children():list.remove_child(node);node.queue_free()
+		for node in pager.get_children():pager.remove_child(node);node.queue_free()
+		var bounds := _paged(app,pager,"StandingsPagination",rows.size(),capacity,"standings_"+str(chosen.id))
+		pager.visible = rows.size()>capacity
+		_standings_rows(app,list,rows,bounds)
+		if focus_index in [0,2]:
+			var target: Button = pager.get_child(0).get_child(focus_index)
+			if target.disabled:target=pager.get_child(0).get_child(2 if focus_index==0 else 0)
+			if not target.disabled:target.grab_focus.call_deferred()
+	page.redraw.call(page.capacity)
+	sheet.add_child(Semantics.legend(false))
+	sheet.add_child(G.wrap("MJ : matchs joués · DIFF. : points marqués moins encaissés · Forme : 6 résultats de championnat conservés, ancien → récent · — : non renseigné",12))
+	page.context = _standings_context(app,page)
+	page.context.hide()
 	return page
 
 static func _archive_club(app:Control,id:Variant) -> String:
@@ -197,22 +352,24 @@ static func finance(app: Control) -> Control:
 	columns.add_child(G.cell("OPÉRATION",180,G.MUTED,true))
 	columns.add_child(G.cell("MONTANT",140,G.MUTED))
 	var list := G.scroll(journal)
+	list.get_parent().name="FinanceScroll"
 	var ledger: Array = info.get("ledger",app.model.get("ledger",[]))
+	var bounds:=_paged(app,journal,"FinancePagination",ledger.size(),6)
 	if ledger.is_empty():
 		var empty := G.card(list, G.GOLD)
 		empty.add_child(G.label("La première écriture reste à venir", 29, G.INK, true))
 		empty.add_child(G.wrap("Le journal s’ouvrira avec les premières opérations : une journée jouée ou une décision financière.",17))
 		empty.add_child(G.button("EXAMINER LES ENGAGEMENTS DU CLUB →", func(): app._navigate("Stratégie")))
-	for entry in ledger:
+	for entry in ledger.slice(bounds.x,bounds.y):
 		var line := G.h(12)
-		line.custom_minimum_size.y=40
+		line.custom_minimum_size.y=32
 		list.add_child(line)
 		line.add_child(G.cell(entry.get("title","Opération"),180,G.INK,true))
 		line.add_child(G.cell(G.euros(entry.get("amount",0)),140,G.GOOD if float(entry.get("amount",0)) >= 0 else G.ALERT))
 		list.add_child(G.separator())
 	var side := G.panel(page,.85)
 	var notes := G.scroll(side)
-	G.photo_note(notes, app.model.club, "Gestion du club", "Les moyens du projet", "stadium", 140)
+	G.photo_note(notes, app.model.club, "Gestion du club", "Les moyens du projet", "stadium", 96)
 	notes.add_child(G.section("Les moyens du projet"))
 	notes.add_child(G.metric(G.euros(info.get("cash", app.model.club.get("cash",0))),"Trésorerie disponible",G.GOLD))
 	notes.add_child(G.separator())
@@ -227,11 +384,12 @@ static func finance(app: Control) -> Control:
 		else: recorded_expense -= amount
 	if not ledger.is_empty():
 		notes.add_child(G.separator())
-		notes.add_child(G.label("ÉCRITURES VISIBLES UNIQUEMENT", 12, G.GOLD))
+		notes.add_child(G.label("ÉCRITURES DU JOURNAL · TOUTES LES PAGES", 12, G.GOLD))
 		notes.add_child(G.wrap("Entrées " + G.euros(recorded_income) + "\nSorties " + G.euros(recorded_expense), 16, G.INK))
 		G.gauge(notes, "Part des sorties dans les flux visibles (%)", 100 * recorded_expense / maxf(1, recorded_income + recorded_expense), 100, G.ALERT)
 		notes.add_child(G.wrap("Journal partiel : ces flux ne constituent pas un bilan de saison.", 12))
 	notes.add_child(G.separator())
-	notes.add_child(G.wrap(info.get("notice","Toutes les valeurs de cette carrière sont fictives. Elles ne représentent pas les budgets des clubs réels."),14))
-	notes.add_child(G.button("VOIR LES CONTRATS  →",func():app._navigate("Effectif")))
+	var financial_calendar:=str(info.get("notice","")).replace("Montants fictifs. ","").replace(" Monde fermé sans Nationale.","")
+	if not financial_calendar.is_empty():notes.add_child(G.wrap(financial_calendar,14))
+	side.add_child(G.button("VOIR LES CONTRATS  →",func():app._navigate("Effectif")))
 	return page

@@ -34,7 +34,12 @@ func run() -> void:
 				recorded += 1
 				check(speech.has_recording(str(fragment.text)), "Clip livré pour le texte exact " + str(fragment.id))
 				if first_recorded.is_empty(): first_recorded = str(fragment.text)
-	check(count_fragments == 74 and recorded == 38 and pending == 36 and speech.clips.size() == recorded, "Couverture mesurée : 38 enregistrements exacts, 36 textes en attente")
+	check(count_fragments == 74 and recorded == 74 and pending == 0 and speech.clips.size() == recorded, "Les 74 répliques finales ont chacune une prise locale exacte, sans attente masquée")
+	check(speech.has_method("has_complete_recordings"), "La disponibilité distingue une voix complète d'un lot partiel")
+	if speech.has_method("has_complete_recordings"):
+		check(speech.has_complete_recordings() == (pending == 0), "La voix complète exige réellement chaque texte courant")
+		if pending == 0: check(not speech.status_text.contains("provisoire") and not speech.status_text.contains("nouveaux textes"), "Une voix complète ne promet pas un repli pour des prises absentes")
+	check(not speech.has_recording("La base anonymisée permet de jouer tout de suite. Et si tu remplaces une carrière, lis bien la confirmation : on ne range pas une histoire sans savoir où on la met."), "Une ancienne prise exclue ne reste pas disponible dans le lecteur")
 	check(speech.status_text.contains("Gabi") and not speech.status_text.contains("Mode texte"), "Disponibilité de la voix enregistrée annoncée correctement")
 	speech.volume = 0; speech.speak(first_recorded)
 	check(speech.player.playing and speech.player.stream.get_length() > 0.5, "Vrai clip Gabi livré effectivement lu")
@@ -90,6 +95,76 @@ func run() -> void:
 			check(speech.player.playing and is_equal_approx(db_to_linear(speech.player.volume_db),0.75), "WAV conserve son gain propre sans double gain global " + str(gain))
 			check(speech.system_requests.size() == request_count, "WAV exact sans repli TTS")
 			speech.stop()
+	await check_articulation(folder)
 	speech.player.stream = null; speech.queue_free(); speech = null; wav = null; file = null; await create_timer(0.2).timeout
 	print("COACH VOIX LOCALE : %d contrôles ; %d échec(s)" % [checks, failures.size()])
 	call_deferred("quit", 0 if failures.is_empty() else 1)
+
+func at_position(speech: Node, seconds: float) -> void:
+	var limit := Time.get_ticks_msec() + 3000
+	while speech.player.playing and speech.player.get_playback_position() < seconds and Time.get_ticks_msec() < limit:
+		await process_frame
+	await process_frame
+
+func check_articulation(folder: String) -> void:
+	var speech = SpeechSpy.new(); root.add_child(speech); speech.setup("",1.0,false)
+	check(speech.has_signal("articulation_changed"), "L'articulation doit suivre le PCM, y compris ses silences")
+	if not speech.has_signal("articulation_changed"):
+		speech.queue_free(); return
+	var portrait = load("res://guide/coach_portrait.gd").new(); root.add_child(portrait)
+	speech.speaking_changed.connect(portrait.set_speaking)
+	speech.articulation_changed.connect(portrait.set_articulation)
+	var wav := AudioStreamWAV.new(); wav.format = AudioStreamWAV.FORMAT_16_BITS; wav.mix_rate = 24000
+	var pcm := PackedByteArray(); pcm.resize(24000 * 2 * 1.4)
+	for frame in int(pcm.size() / 2):
+		var time := float(frame) / 24000.0
+		pcm.encode_s16(frame * 2, int(14000.0 * sin(time * TAU * 220.0)) if time >= 0.4 and time < 0.8 else 0)
+	wav.data = pcm
+	check(wav.save_to_wav(folder.path_join("silence-parole.wav")) == OK, "Fixture réelle silence, parole, silence")
+	var text := "La bouche respecte les pauses."
+	speech.clips = {text:folder.path_join("silence-parole.wav"),"Une autre bulle.":folder.path_join("essai.wav")}
+	speech.speak(text)
+	check(portrait.pose_index == portrait._rest, "Un clip commençant par un silence ne produit pas même une frame bouche ouverte au départ")
+	await at_position(speech,0.12)
+	check(speech.speaking and speech.articulation == 0.0 and portrait.pose_index == portrait._rest, "La bouche reste fermée pendant le silence initial d'un clip en lecture")
+	await at_position(speech,0.54)
+	check(speech.articulation > 0.0, "La vraie portion PCM parlée ouvre l'articulation")
+	var frames: Dictionary = {}
+	while speech.player.playing and speech.player.get_playback_position() < 0.75:
+		frames[portrait.pose_index] = true; await process_frame
+	check(frames.has(portrait._talk) and frames.has(portrait._rest), "Le portrait articule réellement dans la portion parlée")
+	await at_position(speech,1.0)
+	check(speech.speaking and speech.articulation == 0.0 and portrait.pose_index == portrait._rest, "Le silence intérieur ferme la bouche sans annoncer une fin de phrase")
+	speech.rate = 1.5; speech.speak(text)
+	await at_position(speech,0.54)
+	check(speech.articulation > 0.0 and speech.player.pitch_scale == 1.5, "L'articulation suit la position source au débit accéléré")
+	portrait.set_reduced_motion(true)
+	check(portrait.pose_index == portrait._rest, "Mouvement réduit garde une pose fermée même sur la parole PCM")
+	portrait.set_reduced_motion(false)
+	var old_id: int = speech._active
+	speech.speak("Une autre bulle."); speech._ended(old_id)
+	check(speech._active != old_id and speech.speaking and speech.articulation == 0.0 and portrait.pose_index == portrait._rest, "Un changement rapide de bulle ne conserve ni la bouche ni le callback de l'ancienne phrase")
+	speech.stop()
+	check(not speech.speaking and speech.articulation == 0.0 and portrait.pose_index == portrait._rest, "Stop ferme la bouche et coupe la lecture")
+	speech.set_muted(true); speech.speak(text)
+	check(not speech.player.playing and not portrait.speaking and portrait.pose_index == portrait._rest, "Muet ne lance aucune articulation")
+	speech.set_muted(false); speech.voice_id = "spy-fr"; speech.speak("Repli système.")
+	check(speech.articulation == -1.0, "La voix système garde une animation de secours explicite sans PCM inventé")
+	speech._started(speech._active); speech.stop()
+	var stereo := AudioStreamWAV.new(); stereo.format = AudioStreamWAV.FORMAT_16_BITS; stereo.mix_rate = 24000; stereo.stereo = true
+	var stereo_pcm := PackedByteArray(); stereo_pcm.resize(24000 * 4)
+	for frame in 24000:
+		stereo_pcm.encode_s16(frame * 4 + 2, int(14000.0 * sin(float(frame) / 24000.0 * TAU * 220.0)))
+	stereo.data = stereo_pcm
+	var stereo_envelope: PackedFloat32Array = speech._recording_envelope("stereo",stereo)
+	check(not stereo_envelope.is_empty() and stereo_envelope[5] > 0.018, "Un canal gauche silencieux ne fait pas disparaître la parole du canal droit")
+	var unsupported := AudioStreamWAV.new(); unsupported.format = AudioStreamWAV.FORMAT_8_BITS; unsupported.mix_rate = 24000
+	unsupported.data = PackedByteArray([128,128,128,128])
+	check(speech._recording_envelope("eight-bit",unsupported).is_empty(), "Un format non PCM16 conserve le secours sans inventer une enveloppe")
+	for index in 11:
+		var copy_path := folder.path_join("cache-%d.wav" % index)
+		wav.save_to_wav(copy_path); speech.clips[text] = copy_path; speech.speak(text)
+	check(speech._envelope_cache.size() <= 8, "Onze nouvelles prises ne font pas croître le cache d'enveloppes au-delà de huit")
+	speech.load_manifest(folder.path_join("manifest.json"))
+	check(speech._envelope_cache.is_empty(), "Recharger le manifeste invalide toutes les anciennes enveloppes")
+	speech.stop(); speech.player.stream = null; speech.queue_free(); portrait.queue_free()

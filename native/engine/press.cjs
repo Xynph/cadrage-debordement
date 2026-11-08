@@ -45,6 +45,22 @@ function factory(){
   return true;
  }
  function measures(s){const p=s.pressRelations;return {morale:s.morale,trust:s.trust,mediaTrust:p?.mediaTrust??50,fanTrust:p?.fanTrust??50,boardPressure:p?.boardPressure??30};}
+ // A callback is a quotation from this saved career, never a reconstruction
+ // from a tone or the question bank. Its exact displayed text is archived below.
+ function prepareConference(s){
+  const questions=CDV60RichPress.prepare(s);if(!questions)return null;
+  const history=s.pressConference?.history||[],prefix='Lors de notre échange de saison ';
+  return questions.map(q=>{
+   const sources=history.filter(h=>h.journalist?.id===q.journalist.id&&h.club===s.club&&h.season===s.season&&int(h.week,0,weekOf(s)-1)&&CDPressQuestionBank.questions.some(source=>source.id===h.id&&source.theme===q.theme)&&text(h.questionText)&&text(h.answerText)&&!h.questionText.startsWith(prefix));
+   for(const h of sources.slice().reverse()){
+    const reminder=prefix+h.season+', semaine '+(h.week+1)+', pour ce club, vous aviez répondu : « '+h.answerText+' ». ';
+    if(history.some(p=>p.journalist?.id===q.journalist.id&&p.club===s.club&&p.season===s.season&&p.questionText?.startsWith(reminder)))continue;
+    const question=reminder+q.question;if(!text(question))continue;
+    return {...q,question,followUp:{context:{season:h.season,week:h.week,club:h.club},quote:h.answerText,question:h.questionText,label:'Déclaration archivée · saison '+h.season+' · semaine '+(h.week+1)+' · même club et même journaliste'}};
+   }
+   return q;
+  });
+ }
  function project(){
   if(!S)return null;
   const events=CDMediaNativeAdapter.collect(S),divisionIds=S.franceMode?.version===1?['elite','accession','access']:['historical'];
@@ -53,20 +69,21 @@ function factory(){
    const c=S.pressPeople?.contacts?.[j.id],score=c?.score??0,encounters=c?.encounters??0,style=CDPressRelations.dialogueStyles[j.style];
    return {...copy(j),identityLabel:j.fictional?'Personnage fictif':'Journaliste référencé',personality:style.personality,styleLabel:style.label,score,encounters,relationLabel:CDPressRelations.relationLabel(score,encounters),memory:(c?.memory||[]).map(e=>{const h=S.pressConference?.history?.find(h=>h.journalist?.id===j.id&&h.season===e.season&&h.week===e.week&&h.club===e.club&&h.id===e.questionId&&h.answerId===e.answerId);return {...copy(e),question:h?.questionText??null,answer:h?.answerText??null,toneLabel:CDPressRelations.dialogueTones[CDPressQuestionBank.questions.find(q=>q.id===e.questionId).answers.find(a=>a.id===e.answerId).tone]};})};
   });
-  const questions=CDV60RichPress.prepare(S),projected=questions?.map(q=>{
+  const questions=prepareConference(S),projected=questions?.map(q=>{
    const person=people.find(p=>p.id===q.journalist.id);
    return {...copy(q),journalist:{...copy(q.journalist),identityLabel:person.identityLabel,personality:person.personality,styleLabel:person.styleLabel},relation:{score:person.score,label:person.relationLabel,encounters:person.encounters},answers:q.answers.map(a=>{const effects=CDPressRelations.dialogueEffect(q.journalist,a.tone,q.theme,person.score),mod=['crise','direction'].includes(q.theme)?2:1;const applied={morale:effects.morale*mod,media:effects.media*mod,fans:effects.fans*mod,pressure:effects.pressure*mod,relation:Math.max(-100,Math.min(100,person.score+effects.relation))-person.score};const signed=n=>n>=0?'+'+n:String(n);return {...copy(a),toneLabel:CDPressRelations.dialogueTones[a.tone],effects:applied,consequence:'Moral '+signed(applied.morale)+' · médias '+signed(applied.media)+' · supporters '+signed(applied.fans)+' · pression '+signed(applied.pressure)+' · relation '+signed(applied.relation)};})};
   });
-  return {context:context(S),notice:'Dialogues et personnalités simulés. Catalogue de journalistes référencés et de personnages fictifs ; aucune citation réelle. Les relations sont personnelles au coach.',journal:{divisions},metrics:measures(S),people,conference:{available:!!questions,reason:S.live?'Conférence indisponible pendant un match.':questions?'':'Conférence déjà réalisée cette semaine.',questions:projected||[]},history:copy((S.pressConference?.history||[]).slice(-40)).map(h=>({...h,question:h.questionText??null,answer:h.answerText??null})),lastOutcome:copy(S.pressConference?.lastOutcome||null)};
+  return {context:context(S),notice:'Dialogues et personnalités simulés. Catalogue de journalistes référencés et de personnages fictifs ; aucune citation réelle. Les relations sont personnelles au coach.',journal:{divisions},metrics:measures(S),people,conference:{available:!!questions,reason:S.live?'Conférence indisponible pendant un match.':questions?'':'Conférence déjà réalisée cette semaine.',memoryNotice:'Une relance cite une déclaration archivée du même journaliste, du même club et de cette saison. Une archive absente ou déjà relancée ne devient pas un souvenir inventé.',questions:projected||[]},history:copy((S.pressConference?.history||[]).slice(-40)).map(h=>({...h,question:h.questionText??null,answer:h.answerText??null})),lastOutcome:copy(S.pressConference?.lastOutcome||null)};
  }
  function execute(command,payload){
   check(command==='press_conference','Commande de presse inconnue.');check(!!S,'Créez ou importez une carrière.');check(!S.live,'Conférence indisponible pendant un match.');validate(S);
   check(keys(payload,['context','answers'])&&keys(payload.context,['season','week','club'])&&Object.keys(payload.context).length===3&&Array.isArray(payload.answers),'Paramètres de conférence de presse invalides.');
   check(JSON.stringify(context(S))===JSON.stringify({season:payload.context.season,week:payload.context.week,club:payload.context.club}),'Préparation de conférence périmée.');
-  const questions=CDV60RichPress.prepare(S);check(!!questions,'Conférence déjà réalisée cette semaine.');check(payload.answers.length===questions.length,'Réponses de conférence incomplètes.');
+  const questions=prepareConference(S);check(!!questions,'Conférence déjà réalisée cette semaine.');check(payload.answers.length===questions.length,'Réponses de conférence incomplètes.');
   questions.forEach((q,i)=>check(keys(payload.answers[i],['questionId','answerId'])&&payload.answers[i].questionId===q.id&&q.answers.some(a=>a.id===payload.answers[i].answerId),'Question ou réponse de conférence périmée.'));
   const scores=questions.map(q=>({journalistId:q.journalist.id,before:S.pressPeople?.contacts?.[q.journalist.id]?.score??0}));
   const before=measures(S);check(CDV60RichPress.apply(S,payload.answers.map(a=>a.answerId))===true,'Conférence de presse refusée.');const after=measures(S),delta=Object.fromEntries(Object.keys(before).map(k=>[k,after[k]-before[k]]));
+  for(const q of questions){const archived=S.pressConference.history.find(h=>h.id===q.id&&h.season===S.season&&h.week===weekOf(S)&&h.club===S.club);check(!!archived,'Déclaration de conférence non archivée.');archived.questionText=q.question;}
   S.pressConference.lastOutcome={context:context(S),before,after,delta,exchanges:scores.map(e=>{const after=S.pressPeople.contacts[e.journalistId].score;return {...e,after,delta:after-e.before};})};validate(S);return {pressOutcome:copy(S.pressConference.lastOutcome)};
  }
  function installHooks(){
