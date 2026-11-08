@@ -21,7 +21,9 @@ func _window_changed() -> void:
 	var physical := window.size
 	# Headless roots start at 64x64 before their fixture configures a real window.
 	if physical.x < 1280 or physical.y < 720: return
-	var reference := Vector2i(mini(physical.x,1600),mini(physical.y,900))
+	# Native desktop canvas: 1440p gains working space instead of stretching a
+	# 1080p composition. Text is laid out and rasterised at the physical scale.
+	var reference := physical
 	if window.content_scale_size != reference: window.content_scale_size = reference
 	_revision += 1
 	_debounce.start()
@@ -35,13 +37,13 @@ func _settle_layout() -> void:
 	if not is_instance_valid(app) or not app.is_inside_tree() or revision != _revision: return
 	var compact := app.size.y <= 760
 	var content := app.find_child("CareerContent",true,false)
-	if content is BoxContainer: content.add_theme_constant_override("separation",9 if compact else 13)
+	if content is BoxContainer: content.add_theme_constant_override("separation",6 if compact else 8)
 	var search := app.find_child("RosterSearch",true,false)
 	if search != null and search.get_parent() is BoxContainer:
-		search.get_parent().add_theme_constant_override("separation",7 if compact else 14)
+		search.get_parent().add_theme_constant_override("separation",4)
 	var slot := app.find_child("LineupSlot01",true,false)
 	if slot != null and slot.get_parent().get_parent() is BoxContainer:
-		slot.get_parent().get_parent().add_theme_constant_override("separation",3 if compact else 14)
+		slot.get_parent().get_parent().add_theme_constant_override("separation",3 if compact else 8)
 	# Keep the live nodes (including generic field names, modal contents, drafts,
 	# camera and journal) instead of serializing/rebuilding their transient state.
 	await tree.process_frame

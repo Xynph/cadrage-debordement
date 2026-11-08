@@ -12,8 +12,8 @@ static func resolve(colors: Array[Color]) -> Array[Dictionary]:
 		var ivory := Color("f0ecdf")
 		var anthracite := Color("202b35")
 		away = ivory if _contrast(colors[0], ivory) > _contrast(colors[0], anthracite) else anthracite
-	return [{"shirt": colors[0], "detail": colors[0].lightened(0.4), "marker": colors[0]},
-		{"shirt": away, "detail": colors[1] if away != colors[1] else away.lightened(0.4), "marker": away}]
+	return [{"shirt": colors[0], "detail": colors[0].lightened(0.4), "shorts": Color("202b35"), "marker": colors[0]},
+		{"shirt": away, "detail": colors[1] if away != colors[1] else away.lightened(0.4), "shorts": Color("e5dfd1"), "marker": away}]
 
 static func _contrast(a: Color, b: Color) -> float:
 	var first := a.srgb_to_linear().get_luminance()

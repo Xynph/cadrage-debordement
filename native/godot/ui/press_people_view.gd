@@ -21,7 +21,7 @@ static func build(app: Control, data: Dictionary = {}) -> Control:
 	var page := G.v(10)
 	page.name = "Relations"
 	G.fill(page, true)
-	page.add_child(G.wrap("Vos relations personnelles suivent le coach, même après un changement de club. Les traits et dialogues ci-dessous appartiennent à la simulation.", 14))
+	page.add_child(G.wrap("Relations personnelles du coach, conservées après mobilité. Traits et dialogues simulés.", 12))
 	var people: Array = model.get("people", [])
 	if people.is_empty():
 		page.add_child(G.wrap("Aucun journaliste disponible.", 16))
@@ -44,7 +44,7 @@ static func build(app: Control, data: Dictionary = {}) -> Control:
 		var identity := G.section(str(person.name), str(person.outlet) + " · " + str(person.identityLabel))
 		G.fill(identity)
 		header.add_child(identity)
-		detail.add_child(G.wrap("Style de jeu : %s · %s" % [person.styleLabel, person.personality], 16, G.INK))
+		detail.add_child(G.wrap("Style d’entretien simulé : %s · %s" % [person.styleLabel, person.personality], 13, G.INK))
 		var specialties: Array[String] = []
 		for topic: String in person.specialties:
 			if not specialties.has(topic.replace("_", " ")): specialties.append(topic.replace("_", " "))
@@ -57,18 +57,22 @@ static func build(app: Control, data: Dictionary = {}) -> Control:
 			source.add_theme_color_override("font_focus_color", G.INK)
 			detail.add_child(source)
 		detail.add_child(G.separator())
-		detail.add_child(G.wrap("%s · relation %+.0f / 100 · %d échange(s)" % [person.relationLabel, person.score, person.encounters], 19, G.INK))
-		detail.add_child(G.wrap("Le score va de −100 à +100. Une réponse franche, prudente ou drôle ne produit pas le même accueil selon ce style et le sujet.", 13))
+		detail.add_child(G.wrap("%s · relation %+.0f / 100 · %d échange(s)" % [person.relationLabel, person.score, person.encounters], 13, G.INK))
+		detail.add_child(G.wrap("De −100 à +100. L’accueil dépend du style du journaliste, du ton et du sujet.", 12))
 		if person.memory.is_empty():
-			detail.add_child(G.wrap("Aucun échange individuel conservé. Les anciennes conférences sans identité de journaliste ne deviennent pas des souvenirs inventés.", 16))
+			detail.add_child(G.wrap("Aucun échange individuel conservé. Les anciennes conférences sans identité ne créent pas de souvenir.", 13))
 		else:
 			detail.add_child(G.section("Les trois derniers échanges"))
 			var memory: Array = person.memory.duplicate()
 			memory.reverse()
 			for exchange: Dictionary in memory:
-				detail.add_child(G.label("Saison %d · semaine %d · %s · relation %+.0f" % [exchange.season, int(exchange.week) + 1, exchange.toneLabel, exchange.delta], 12, G.GOLD))
-				detail.add_child(G.wrap(str(exchange.question) if exchange.question != null else "Question d’origine non conservée.", 16, G.INK))
-				detail.add_child(G.wrap(str(exchange.answer) if exchange.answer != null else "Réponse d’origine non conservée · choix " + str(exchange.answerId), 14))
+				var club_name := "Club non identifié dans le monde actuel"
+				for league: Dictionary in app.model.get("leagues", []):
+					for club: Dictionary in league.get("rows", []):
+						if int(club.id) == int(exchange.club): club_name = str(club.name)
+				detail.add_child(G.wrap("Saison %d · semaine %d · %s\n%s · relation %+.0f" % [exchange.season, int(exchange.week) + 1, club_name, exchange.toneLabel, exchange.delta], 12, G.GOLD))
+				detail.add_child(G.wrap(str(exchange.question) if exchange.question != null else "Question d’origine non conservée.", 13, G.INK))
+				detail.add_child(G.wrap(str(exchange.answer) if exchange.answer != null else "Réponse d’origine non conservée · choix " + str(exchange.answerId), 12))
 				detail.add_child(G.separator())
 	chooser.item_selected.connect(redraw)
 	var first := 0

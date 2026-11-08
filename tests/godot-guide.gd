@@ -129,7 +129,10 @@ func local_voice_cases() -> void:
 
 func tts_real() -> void:
 	if guide.speech.voices.is_empty():
-		check(guide.speech.status_text.contains("texte"), "Absence de voix explicitement annoncée")
+		if guide.speech.clips.is_empty():
+			check(guide.speech.status_text.begins_with("Mode texte"), "Absence de voix enregistrée et système explicitement annoncée")
+		else:
+			check(guide.speech.status_text.contains("Gabi") and not guide.speech.status_text.begins_with("Mode texte"), "Les WAV restent disponibles même sans voix système française")
 		print("TTS RÉEL NON EXÉCUTÉ : aucune voix française sur ", DisplayServer.get_name())
 		return
 	var starts: Array[int] = []; var ends: Array[int] = []
@@ -271,7 +274,8 @@ func run() -> void:
 	check(not speed.get_popup().visible and guide.expanded, "Choix du débit au clavier conserve l'aide")
 	check(guide.speech.rate == 1.25 and guide.profile.data.rate == 1.25, "Choix de débit appliqué et enregistré")
 	var voice: OptionButton = named(guide, "GuideVoice")
-	if not voice.disabled:
+	check(voice.visible != guide.speech.has_complete_recordings(), "La voix système de secours n'est proposée que si les prises locales sont incomplètes")
+	if voice.visible and not voice.disabled:
 		var previous_voice := voice.selected
 		var expected_voice := (previous_voice + 1) % voice.item_count
 		voice.grab_focus(); await key_press(KEY_SPACE)
@@ -285,11 +289,13 @@ func run() -> void:
 	await press("GuideOptions")
 	var image := Image.load_from_file(ProjectSettings.globalize_path("res://guide/assets/coach-poses.png"))
 	check(image.get_size() == Vector2i(1254,1254) and guide.portrait.frame_texture.region.size == Vector2(313.5,313.5) and guide.portrait.material is ShaderMaterial, "Atlas original seize poses, cellules exactes et détourage matériel")
+	guide.speech.stop()
+	guide.portrait.set_articulation(-1.0) # Explicit cosmetic fallback, not a silent PCM clip.
 	guide.portrait.set_speaking(true)
 	var first: Rect2 = guide.portrait.frame_texture.region
 	var portrait_position: Vector2 = guide.portrait.position
 	await create_timer(0.21).timeout
-	check(first != guide.portrait.frame_texture.region, "Parole : changement réel de frame atlas")
+	check(first != guide.portrait.frame_texture.region, "Cadence de secours : changement réel de frame atlas")
 	check(guide.portrait.position == portrait_position, "Portrait stable sans flottement")
 	guide.portrait.set_speaking(false)
 	check(guide.portrait.pose_index == guide.portrait._rest, "Fin de parole : pose repos")
@@ -311,7 +317,8 @@ func run() -> void:
 	await command("pause", {"paused":true}); guide.refresh(); guide.open_help()
 	check(guide.expanded, "Match en pause : aide explicite disponible")
 	await command("delegate"); guide.refresh(); guide.open_help()
-	check(guide.bubble.text.contains("résultat"), "Explication du résultat terminé réel")
+	var result_fragment: Dictionary = load("res://guide/guide_content.gd").fragments("resultat")[0]
+	check(guide.current_id == "resultat" and guide.fragment_id == result_fragment.id and guide.bubble.text == result_fragment.text, "Le match terminé ouvre le premier fragment exact de la page résultat")
 	await command("finish_round")
 	app._navigate("Bureau"); guide.refresh(); guide.open_help()
 	await local_voice_cases()

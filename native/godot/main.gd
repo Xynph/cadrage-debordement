@@ -66,6 +66,9 @@ var match_finish: Button
 var primary_button: Button
 var pack_manager: Node
 var coach: Control
+var soundscape: Node
+var soundscape_ready := false
+var sound_profile_loaded := false
 var navigation_controller: Node
 var user_preferences: RefCounted
 var decision_feedback: RefCounted
@@ -75,13 +78,24 @@ var workspace_inset: MarginContainer
 var body_scroll: ScrollContainer
 var entry_scroll: ScrollContainer
 var interface_layout: Node
+var _startup_trace := OS.get_environment("CD_GODOT_STARTUP_TRACE") == "1"
+var _startup_model_seen := false
+
+func _init() -> void:
+	_trace_startup("main.init")
+
+func _trace_startup(stage: String) -> void:
+	if _startup_trace:
+		print("CD_STARTUP ",JSON.stringify({"stage":stage,"pid":OS.get_process_id(),"engine_ms":Time.get_ticks_msec(),"unix_ms":int(Time.get_unix_time_from_system()*1000)}))
 
 func _ready() -> void:
+	_trace_startup("main.ready")
 	if OS.get_environment("CD_GODOT_SELF_TEST") == "1" and OS.get_environment("CD_GODOT_DATA_DIR").is_empty():
 		printerr("La réception exige un profil temporaire explicite.")
 		get_tree().quit(2)
 		return
 	theme = G.T.make()
+	_trace_startup("theme.ready")
 	interface_layout = load("res://ui/interface_layout.gd").new()
 	add_child(interface_layout)
 	interface_layout.setup(self)
@@ -96,14 +110,17 @@ func _ready() -> void:
 	file_dialog.filters = PackedStringArray(["*.json ; Carrière Oval Legacy 27"])
 	file_dialog.file_selected.connect(_file_selected)
 	add_child(file_dialog)
+	_trace_startup("file_dialog.ready")
 	pack_manager = load("res://pack_manager.gd").new()
 	pack_manager.app = self
 	add_child(pack_manager)
 	pack_manager.picker.theme=G.T.paper()
+	_trace_startup("pack_manager.ready")
 	bridge = load("res://engine_bridge.gd").new()
 	add_child(bridge)
 	bridge.model_changed.connect(_receive_model)
 	bridge.command_failed.connect(_failed)
+	_trace_startup("bridge.created")
 	navigation_controller = load("res://ui/navigation_controller.gd").new()
 	add_child(navigation_controller)
 	navigation_controller.setup(self)
@@ -111,14 +128,27 @@ func _ready() -> void:
 	user_preferences.changed.connect(_apply_user_preferences)
 	decision_feedback = load("res://ui/decision_feedback.gd").new()
 	decision_feedback.setup(self)
+	_trace_startup("guide.setup.begin")
 	if not (OS.has_feature("editor") and OS.get_environment("CD_GODOT_GUIDE_MODULE_TEST") == "1"):
 		coach = load("res://guide/coach_guide.gd").new()
 		add_child(coach)
 		coach.reserved_height_changed.connect(_reserve_coach_space)
 		coach.setup(self)
+	_trace_startup("guide.setup.end")
+	soundscape = preload("res://audio/soundscape.gd").new()
+	add_child(soundscape)
+	soundscape.error_changed.connect(_sound_error)
+	soundscape_ready = soundscape.setup(self)
+	if is_instance_valid(coach) and is_instance_valid(coach.speech):
+		coach.speech.speaking_changed.connect(soundscape.set_voice_active)
+		soundscape.set_voice_active(coach.speech.speaking)
 	resized.connect(func(): call_deferred("_layout_coach"))
+	_trace_startup("render.begin")
 	_render()
+	_trace_startup("render.end")
+	_trace_startup("bridge.start.begin")
 	bridge.start(_profile_path())
+	_trace_startup("bridge.start.end")
 	timer.start()
 	get_tree().auto_accept_quit = false
 	get_tree().root.close_requested.connect(request_quit)
@@ -138,12 +168,19 @@ func _live() -> Dictionary:
 	return model.live if model.get("live") is Dictionary else {}
 
 func _receive_model(value: Dictionary) -> void:
+	if _startup_trace and not _startup_model_seen:
+		_startup_model_seen = true
+		_trace_startup("model.first")
+	# A queued action can replace last_command below; keep this response's identity.
+	var received_command := last_command
+	var response_ok: bool = bridge.last_response_ok
 	SquadViews.U.remember(self)
 	model = value
-	if decision_feedback != null: decision_feedback.complete(last_command, bridge.last_response_ok, model)
+	if decision_feedback != null: decision_feedback.complete(received_command, response_ok, model)
 	if not preferences_loaded and not str(model.get("meta", {}).get("dataDir", "")).is_empty():
 		preferences_loaded = true
 		user_preferences.load_profile(str(model.meta.dataDir))
+		if soundscape_ready: sound_profile_loaded = soundscape.load_profile(str(model.meta.dataDir))
 		_apply_user_preferences()
 	SquadViews.U.sync(self, bridge.last_response_ok and last_command in ["new_career","import","recover_profile"])
 	if bridge.last_response_ok and last_command in ["new_career","import","recover_profile"]:
@@ -155,7 +192,9 @@ func _receive_model(value: Dictionary) -> void:
 	waiting = false
 	connection_error = false
 	if _has_career(): accent = Color(G.identity(model.club).get("color", "#d43e47"))
-	if not export_path.is_empty() and not _write_export(): return
+	if not export_path.is_empty() and not _write_export():
+		if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
+		return
 	if bridge.last_response_ok: last_error = ""
 	if bridge.last_response_ok and not pending_route.is_empty():
 		route = pending_route
@@ -188,6 +227,7 @@ func _receive_model(value: Dictionary) -> void:
 		if last_command=="recover_profile" and not str(model.meta.get("recoveryBackup","")).is_empty():
 			notice("Le profil d'origine est conservé","Copie de sécurité :\n"+str(model.meta.recoveryBackup)+"\n\nVous pouvez maintenant créer ou importer une carrière.")
 	call_deferred("_refresh_coach")
+	if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
 	if not queued_action.is_empty() and bridge.last_response_ok:
 		var next := queued_action.duplicate(true)
 		queued_action.clear()
@@ -213,6 +253,7 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 
 func _refuse_action(message: String) -> void:
 	# A local refusal must not complete or discard the actual in-flight action.
+	if is_instance_valid(soundscape): soundscape.notify_error()
 	last_error = message
 	if is_instance_valid(status):
 		status.text = "ACTION NON EFFECTUÉE · " + message
@@ -220,6 +261,7 @@ func _refuse_action(message: String) -> void:
 	notice("Votre décision n'a pas été appliquée", message)
 
 func _failed(message: String) -> void:
+	if is_instance_valid(soundscape): soundscape.notify_error()
 	if decision_feedback != null: decision_feedback.complete(last_command, false, model)
 	waiting = false
 	queued_action.clear()
@@ -230,6 +272,9 @@ func _failed(message: String) -> void:
 		status.text = "ACTION NON EFFECTUÉE · " + message
 		status.add_theme_color_override("font_color", Color("f1b6a9"))
 	if last_command == "tick": timer.stop()
+	# A failed annotation must leave its editor and unsaved draft alive. The
+	# notebook listens to the same failure signal and presents the local refusal.
+	if last_command in ["coach_note_save","coach_note_remove"] and get_node_or_null("CoachNotebook") != null: return
 	_clear_dialogs()
 	var d := AcceptDialog.new()
 	_prepare_dialog(d, 590)
@@ -245,17 +290,41 @@ func _navigate(target: String, remember_ui: bool = true) -> void:
 	for chapter: Dictionary in NAV_CHAPTERS:
 		if target in chapter.routes: chapter_routes[chapter.label] = target
 	_render(remember_ui)
+	if is_instance_valid(soundscape): soundscape.refresh_visibility(route,_match_visible())
+
+func _match_visible() -> bool:
+	return route == "Match" and is_instance_valid(match_screen) and match_screen.is_visible_in_tree()
+
+func _sound_error(message: String) -> void:
+	# Local audio availability never marks a career decision as failed.
+	if is_instance_valid(status):
+		status.text = _settled_status_text()
+		status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
+	if not message.is_empty(): call_deferred("_show_sound_error",message)
+
+func _show_sound_error(message: String) -> void:
+	if not is_instance_valid(soundscape) or soundscape.last_error != message: return
+	var options := get_node_or_null("PreferencesDialog")
+	if options != null and not options.is_queued_for_deletion(): return # The options show their own reason.
+	notice("Réglages sonores indisponibles",message)
 
 func _build_subnavigation(parent: Container) -> void:
 	for chapter: Dictionary in NAV_CHAPTERS:
 		if route not in chapter.routes or chapter.routes.size() < 2: continue
+		var band:=PanelContainer.new()
+		band.name="ChapterNavigationBand"
+		var band_style:=G.T.box(Color("1c262b"),3,Color("354249"))
+		band_style.content_margin_left=4;band_style.content_margin_right=4
+		band_style.content_margin_top=3;band_style.content_margin_bottom=3
+		band.add_theme_stylebox_override("panel",band_style)
+		parent.add_child(band)
 		var row := G.h(7)
 		row.name = "ChapterSubnavigation"
-		parent.add_child(row)
+		band.add_child(row)
 		for target: String in chapter.routes:
 			var button := G.nav_button(target.to_upper(), func(): _navigate(target), accent, route == target)
 			button.name = "Section_" + target
-			button.custom_minimum_size.y = 34
+			button.custom_minimum_size.y = 28
 			button.add_theme_font_size_override("font_size", 12)
 			G.fill(button)
 			row.add_child(button)
@@ -282,7 +351,7 @@ func _render(remember_ui: bool = true) -> void:
 	add_child(root_content)
 	move_child(root_content, 0)
 	var bg := ColorRect.new()
-	bg.color = Color("191b1c")
+	bg.color = G.BG
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root_content.add_child(bg)
 	if route == "Accueil":
@@ -290,13 +359,13 @@ func _render(remember_ui: bool = true) -> void:
 		_entry_workspace(home)
 		return
 	if route == "Création":
-		var m := G.margin(30)
+		var m := G.margin(12)
 		m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		_entry_workspace(m)
 		m.add_child(Entry.creation(self))
 		return
 	if route == "Packs":
-		var margin := G.margin(30)
+		var margin := G.margin(12)
 		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		_entry_workspace(margin)
 		margin.add_child(PackViews.page(self))
@@ -309,36 +378,63 @@ func _render(remember_ui: bool = true) -> void:
 	shell.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root_content.add_child(shell)
 	_build_sidebar(shell)
-	var inset := G.margin(22)
+	var inset := G.margin(8)
 	workspace_inset = inset
 	# Container sorting can happen after the deferred coach refresh. Reposition
 	# on its actual geometry, including the sidebar width, after every rebuild.
 	inset.item_rect_changed.connect(_layout_coach)
 	G.fill(inset, true)
 	shell.add_child(inset)
-	var content := G.v(9 if size.y <= 760 else 13)
+	var content := G.v(6 if size.y <= 760 else 8)
 	content.name = "CareerContent"
 	inset.add_child(content)
-	var top := G.h(12)
-	content.add_child(top)
+	var header:=PanelContainer.new()
+	header.name="CareerHeader"
+	var header_style:=G.T.box(Color("202a2e"),3,Color("3b494e"))
+	header_style.set_border_width_all(0)
+	header_style.border_width_top=3
+	header_style.border_color=accent
+	header_style.content_margin_left=10;header_style.content_margin_right=10
+	header_style.content_margin_top=5;header_style.content_margin_bottom=5
+	header.add_theme_stylebox_override("panel",header_style)
+	content.add_child(header)
+	var top := G.h(8)
+	header.add_child(top)
+	var chapter_label:="Bureau"
+	var chapter_number:=1
+	for i in NAV_CHAPTERS.size():
+		if route in NAV_CHAPTERS[i].routes:
+			chapter_label=NAV_CHAPTERS[i].label
+			chapter_number=i+1
+	var chapter_mark:=G.v(0)
+	chapter_mark.custom_minimum_size.x=30
+	top.add_child(chapter_mark)
+	chapter_mark.add_child(G.label("%02d"%chapter_number,27,G.INK,true))
+	chapter_mark.add_child(G.Art.glyph(chapter_label,G.MUTED,16))
 	var titles := G.v(0)
 	G.fill(titles)
 	top.add_child(titles)
+	var overline:=G.h(8)
+	titles.add_child(overline)
+	overline.add_child(G.label(chapter_label.to_upper(),11,G.INK))
 	header_date = G.label("", 11, G.MUTED)
-	titles.add_child(header_date)
+	overline.add_child(header_date)
 	_update_header_date()
 	heading = G.label({"Bureau":"Le club, cette semaine.","Effectif":"Les hommes du projet.","Composition":"Votre feuille à 23.","Préparation":"Préparer la rencontre.","Calendrier":"Le fil de la saison.","Classements":"La course aux sommets.","Recrutement":"Construire l’effectif.","Finances":"Les moyens du projet.","Club":"Un club. Un territoire.","Match":"Le jour de match."}.get(route, route.to_upper()), 35, G.INK, true)
 	heading.add_theme_font_override("font", G.T.BODY)
-	heading.add_theme_font_size_override("font_size", 29)
+	heading.add_theme_font_size_override("font_size", 20)
 	titles.add_child(heading)
-	top.add_child(G.button("SAUVEGARDER", func(): _command("save")))
+	var save_action:=G.button("SAUVEGARDER", func(): _command("save"))
+	save_action.size_flags_vertical=Control.SIZE_SHRINK_CENTER
+	top.add_child(save_action)
 	primary_button = G.button(primary_text(), primary_action, true)
+	primary_button.size_flags_vertical=Control.SIZE_SHRINK_CENTER
 	top.add_child(primary_button)
 	minibar = G.label("", 12, G.GOLD)
 	content.add_child(minibar)
 	PackViews.missing_warning(self, content, "career")
 	_build_subnavigation(content)
-	body = G.v(13)
+	body = G.v(6)
 	G.fill(body, true)
 	body_scroll = ScrollContainer.new()
 	body_scroll.name = "CareerWorkspace"
@@ -417,11 +513,12 @@ func _settled_status_text() -> String:
 	if not last_error.is_empty(): return "ACTION NON EFFECTUÉE · " + last_error
 	if model.get("meta",{}).get("saveError",false): return "DERNIÈRE SAUVEGARDE IMPOSSIBLE · Vérifiez le stockage avant de poursuivre."
 	if user_preferences != null and not user_preferences.last_error.is_empty(): return "RÉGLAGES LOCAUX · " + user_preferences.last_error
+	if is_instance_valid(soundscape) and not soundscape.last_error.is_empty(): return "RÉGLAGES SONORES · " + soundscape.last_error
 	if decision_feedback != null and not decision_feedback.status_text().is_empty(): return decision_feedback.status_text()
 	return "Sauvegarde automatique · Profil de carrière indépendant"
 
 func _status_has_error() -> bool:
-	return not last_error.is_empty() or model.get("meta",{}).get("saveError",false) or (user_preferences != null and not user_preferences.last_error.is_empty())
+	return not last_error.is_empty() or model.get("meta",{}).get("saveError",false) or (user_preferences != null and not user_preferences.last_error.is_empty()) or (is_instance_valid(soundscape) and not soundscape.last_error.is_empty())
 
 func _apply_user_preferences() -> void:
 	if user_preferences == null: return
@@ -437,7 +534,7 @@ func _layout_coach() -> void:
 	if not is_instance_valid(root_content) or not is_instance_valid(coach): return
 	root_content.offset_bottom = 0.0
 	if is_instance_valid(workspace_inset):
-		workspace_inset.add_theme_constant_override("margin_bottom", 22)
+		workspace_inset.add_theme_constant_override("margin_bottom", 8)
 
 func _open_coach() -> void:
 	if is_instance_valid(coach): coach.open_help()
@@ -449,12 +546,18 @@ func _update_header_date() -> void:
 
 func _build_sidebar(parent: Node) -> void:
 	var rail := PanelContainer.new()
-	rail.custom_minimum_size.x = 192
-	rail.add_theme_stylebox_override("panel", G.T.box(Color("141617"), 0))
+	rail.name="CareerRail"
+	rail.custom_minimum_size.x = 176
+	var rail_style:=G.T.box(Color("10181c"),0,Color("3b494e"))
+	rail_style.set_border_width_all(0)
+	rail_style.border_width_right=1
+	rail_style.content_margin_left=0;rail_style.content_margin_right=0
+	rail_style.content_margin_top=0;rail_style.content_margin_bottom=0
+	rail.add_theme_stylebox_override("panel",rail_style)
 	parent.add_child(rail)
-	var margin := G.margin(2)
+	var margin := G.margin(6)
 	rail.add_child(margin)
-	var left := G.v(5)
+	var left := G.v(4)
 	margin.add_child(left)
 	var logo := G.button("", pause_menu)
 	logo.tooltip_text = "Oval Legacy 27 — Menu et sauvegardes"
@@ -469,30 +572,48 @@ func _build_sidebar(parent: Node) -> void:
 	bitmap.material = composite
 	logo.add_child(bitmap)
 	logo.add_theme_font_override("font", G.T.DISPLAY)
-	logo.add_theme_font_size_override("font_size", 23)
-	logo.custom_minimum_size.y = 70
+	logo.add_theme_font_size_override("font_size", 18)
+	logo.custom_minimum_size.y = 48
+	logo.add_theme_stylebox_override("normal",G.T.box(Color("1d2a30"),3,Color("445259")))
 	left.add_child(logo)
 	left.add_child(G.separator())
-	left.add_child(G.crest(model.club, 60))
-	var name := G.label(G.club_name(model.club), 20, G.INK, true)
+	var club_frame:=PanelContainer.new()
+	club_frame.name="SidebarClubIdentity"
+	var club_style:=G.T.box(Color("202a2e").lerp(Color(accent,1),.12),3,Color("445259"))
+	club_style.set_border_width_all(0)
+	club_style.border_width_top=3;club_style.border_color=accent
+	club_style.content_margin_top=5;club_style.content_margin_bottom=6
+	club_frame.add_theme_stylebox_override("panel",club_style)
+	left.add_child(club_frame)
+	var club_identity:=G.v(2)
+	club_frame.add_child(club_identity)
+	var club_marks:=G.h(6)
+	club_identity.add_child(club_marks)
+	club_marks.add_child(G.crest(model.club,40))
+	var club_context:=G.v(0)
+	G.fill(club_context)
+	club_marks.add_child(club_context)
+	club_context.add_child(G.label(G.club_abbr(model.club),23,G.INK,true))
+	club_context.add_child(G.label("VOTRE CLUB",9,G.MUTED))
+	var name := G.label(G.club_name(model.club), 16, G.INK, true)
 	name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	name.max_lines_visible=2
 	name.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	name.tooltip_text=G.club_name(model.club)
-	left.add_child(name)
+	club_identity.add_child(name)
 	if is_instance_valid(navigation_controller): left.add_child(navigation_controller.controls())
 	left.add_child(G.separator())
 	var navigation := G.scroll(left)
 	navigation.get_parent().name = "CareerNavigation"
-	navigation.add_child(G.label("VOTRE CARNET", 9, G.MUTED))
+	navigation.add_child(G.label("CARNET DE L'ENTRAÎNEUR", 10, G.MUTED))
 	for chapter: Dictionary in NAV_CHAPTERS:
 		var active: bool = route in chapter.routes
 		var destination: String = str(route if active else chapter_routes.get(chapter.label, chapter.routes[0]))
-		var b := G.nav_button(str(chapter.label).to_upper(), func(): _navigate(destination), accent, active)
+		var b := G.nav_button(str(chapter.label).to_upper(), func(): _navigate(destination), accent, active,str(chapter.label))
 		b.name = "Chapter_" + str(chapter.label)
-		b.custom_minimum_size.y = 44
+		b.custom_minimum_size.y = 28
 		navigation.add_child(b)
-	left.add_child(G.label("PRÉALPHA 0.5  /  WINDOWS", 9, G.GOLD))
+	left.add_child(G.label("PRÉALPHA 0.6  /  WINDOWS", 9, G.GOLD))
 	left.add_child(G.button("MENU & SAUVEGARDES", pause_menu))
 
 func _update_live_bar() -> void:
@@ -523,6 +644,12 @@ func create_career(id: int) -> void:
 	var action := func(): _command("new_career",{"club":id,"mode":"common"},"Bureau")
 	if _has_career(): confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Exportez-la depuis le menu pour la conserver séparément. Prendre les rênes de %s ?" % catalogue[id].name, action)
 	else: action.call()
+
+func confirm_decision(command: String, payload: Dictionary, title: String, text: String, callback: Callable) -> void:
+	var preview := preload("res://ui/decision_preview.gd")
+	var detail: Dictionary = preview.describe(command,payload,model)
+	if detail.is_empty(): confirm(title,text,callback)
+	else: preview.open(self,title,text,detail,callback)
 
 func confirm(title: String, text: String, callback: Callable) -> void:
 	_clear_dialogs()
@@ -656,6 +783,7 @@ func request_quit() -> void:
 func _close() -> void:
 	if closing: return
 	closing = true
+	if is_instance_valid(soundscape): soundscape.dispose()
 	if is_instance_valid(coach): coach.destroy()
 	timer.stop()
 	bridge.stop()

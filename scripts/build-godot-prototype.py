@@ -45,7 +45,18 @@ def validate_voice_assets(project):
         with wave.open(str(path), "rb") as wav:
             assert wav.getsampwidth() == 2 and wav.getnchannels() == 1 and wav.getnframes() > wav.getframerate() / 2
     assert (voice / "CREDITS.txt").is_file() and list(voice.glob("LICENSE*.txt")), "Provenance et licences vocales requises"
-    return {"status": "provisional", "total": len(expected), "recorded": len(recorded), "pending": len(pending), "pendingIds": sorted(pending)}
+    return {"status": "provisional" if pending else "complete", "total": len(expected), "recorded": len(recorded), "pending": len(pending), "pendingIds": sorted(pending)}
+
+
+def voice_notice(coverage):
+    plural = "s" if coverage["recorded"] != 1 else ""
+    notice = f"Voix de Gabi : {coverage['recorded']} réplique{plural} enregistrée{plural} et lue{plural} localement.\n"
+    if coverage["pending"]:
+        plural = "s" if coverage["pending"] != 1 else ""
+        notice += f"{coverage['pending']} réplique{plural} en attente d'enregistrement.\n"
+    return (notice + "En cas d'enregistrement absent ou illisible, une voix système peut le remplacer\n"
+            "si elle est disponible. Le texte reste toujours affiché.\n"
+            "Crédits et licences des voix : Licences/voix-coach.\n")
 
 
 def stage(node):
@@ -90,6 +101,7 @@ def build(args):
     work = target / "build"
     source = work / "project"
     shutil.copytree(PROJECT, source, ignore=shutil.ignore_patterns(".godot", "*.uid", "*.import", "export_presets.cfg"))
+    voice_coverage = validate_voice_assets(source)
     preset = (PROJECT / "windows-release.cfg").read_text(encoding="utf-8-sig")
     preset = preset.replace("{{RELEASE_TEMPLATE}}", template.as_posix())
     (source / "export_presets.cfg").write_text(preset, encoding="utf-8")
@@ -140,7 +152,7 @@ def build(args):
     shutil.copytree(ROOT / "dist/match3d/assets", licenses / "modele3d",
                     ignore=shutil.ignore_patterns("*.glb", "*.gltf", "*.bin", "*.png", "*.jpg"))
     (app / "LISEZ-MOI.txt").write_text(
-        "OVAL LEGACY 27 — RUGBY MANAGER — PRÉALPHA 0.5\n\n"
+        "OVAL LEGACY 27 — RUGBY MANAGER — PRÉALPHA 0.6\n\n"
         "Lancer OvalLegacy27.exe. Aucun navigateur, Godot ou Node à installer.\n"
         "Conserver le dossier complet avec runtime et engine. Windows x64.\n\n"
         "Nouvelle carrière : 30 clubs jouables, deux divisions reliées (14 et16).\n"
@@ -155,11 +167,12 @@ def build(args):
         "Parcours de formation activables, prêts et mémoire des générations.\n"
         "Six rubriques et sous-menus ; Ctrl+K pour chercher, Alt+flèches pour revenir.\n"
         "Club → Histoire compare les saisons réellement archivées.\n"
+        "Carnet du coach : notes sur la carrière et les joueurs, conservées à l'import.\n"
         "Match → Journal permet de relire et filtrer les faits du match.\n"
-        "Volume, caméra, qualité et mouvement réduit dans Paramètres.\n"
+        "Paramètres : Confort / Son / Affichage ; volumes interface et stade séparés.\n"
+        "Plein écran au lancement ; mode fenêtré disponible dans Affichage.\n"
         "Gabi : aide vocale locale, petites bulles et16poses illustrées.\n"
-        "Voix encore provisoire : 38 fragments enregistrés ; 36 nouveaux textes\n"
-        "utilisent la voix système provisoire si disponible, sinon restent affichés.\n"
+        f"{voice_notice(voice_coverage)}"
         "Match3D, phases finales, montées/descentes et saisons suivantes.\n"
         "Les anciennes carrières fictives14 restent importables et jouables.\n\n"
         "Parcours : Nouvelle carrière → club → Composition → Préparation → Match.\n"
@@ -205,7 +218,7 @@ def build(args):
         encoding="utf-8")
     files = {p.relative_to(app).as_posix(): {"sha256": digest(p), "bytes": p.stat().st_size}
              for p in sorted(app.rglob("*")) if p.is_file()}
-    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": "0.5.0", "name": "Oval Legacy 27", "edition": 27, "mode": "common", "files": files}, indent=2), encoding="utf-8")
+    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": "0.6.0", "name": "Oval Legacy 27", "edition": 27, "mode": "common", "files": files}, indent=2), encoding="utf-8")
     archive = target / "OvalLegacy27-PrototypeGodot-Windows-x64.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as out:
         for path in sorted(app.rglob("*")):

@@ -79,7 +79,18 @@ class VoiceAssets(unittest.TestCase):
 
     def test_actual_shipped_coverage(self):
         coverage = build.validate_voice_assets(build.PROJECT)
-        self.assertEqual((coverage["recorded"], coverage["pending"], coverage["total"]), (38, 36, 74))
+        self.assertEqual((coverage["recorded"], coverage["pending"], coverage["total"]), (74, 0, 74))
+
+    def test_historical_recordings_remain_intact(self):
+        archive = json.loads((ROOT / "docs/gabi-voix-archives-20261108.json").read_text(encoding="utf-8"))
+        self.assertEqual(archive["status"], "historical-not-active")
+        clips = archive["originalManifest"]["clips"]
+        self.assertEqual(len(clips), 38)
+        self.assertEqual(len({clip["id"] for clip in clips}), 38)
+        voice = build.PROJECT / "guide/assets/voice"
+        for clip in clips:
+            self.assertEqual(build.digest(voice / clip["file"]), clip["sha256"])
+            self.assertEqual(hashlib.sha256(clip["text"].encode("utf-8")).hexdigest(), clip["text_sha256"])
 
 
 if __name__ == "__main__":

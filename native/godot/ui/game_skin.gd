@@ -2,19 +2,31 @@ extends RefCounted
 
 const T = preload("res://theme.gd")
 const W = preload("res://visual_widgets.gd")
-const BG = Color("0d1318")
-const PANEL = Color("172127")
-const LINE = Color("30404a")
-const INK = Color("f2eee3")
-const MUTED = Color("aab9bf")
+const Art = preload("res://ui/art_widgets.gd")
+const BG = Color("151b1f")
+const PANEL = Color("1d262b")
+const LINE = Color("445259")
+const INK = Color("f5f4ec")
+const MUTED = Color("bdc8c9")
 const GOLD = Color("ddbd80")
 const GOOD = Color("a6d2ae")
 static var textures: Dictionary = {}
 
+# Dense carnet scale: explicit legacy sizes keep their role, without enlarging
+# every heading and number into a second page at native desktop resolutions.
+static func reading_size(requested: int) -> int:
+	if requested >= 44: return 26
+	if requested >= 34: return 20
+	if requested >= 27: return 18
+	if requested >= 23: return 16
+	if requested >= 18: return 13
+	if requested >= 15: return 12
+	return mini(requested, 12)
+
 static func label(text: Variant, size: int = 14, color: Color = INK, title: bool = false) -> Label:
 	var l := Label.new()
 	l.text = str(text)
-	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_font_size_override("font_size", reading_size(size))
 	l.add_theme_color_override("font_color", color)
 	if title: l.add_theme_font_override("font", T.DISPLAY)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -28,8 +40,8 @@ static func wrap(text: Variant, size: int = 14, color: Color = MUTED) -> Label:
 static func button(text: String, callback: Callable, primary: bool = false) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size.y = 42
-	b.add_theme_font_size_override("font_size", 14)
+	b.custom_minimum_size.y = 28
+	b.add_theme_font_size_override("font_size", 12)
 	if primary:
 		b.add_theme_stylebox_override("normal", T.box(INK, 4))
 		b.add_theme_stylebox_override("hover", T.box(Color("d7d6c9"), 4))
@@ -38,32 +50,46 @@ static func button(text: String, callback: Callable, primary: bool = false) -> B
 	b.pressed.connect(callback)
 	return b
 
-static func h(gap: int = 12) -> HBoxContainer:
+static func h(gap: int = 6) -> HBoxContainer:
 	var c := HBoxContainer.new()
-	c.add_theme_constant_override("separation", gap)
+	c.add_theme_constant_override("separation", mini(gap, 8))
 	return c
 
-static func nav_button(text:String,callback:Callable,accent:Color,selected:bool) -> Button:
+static func nav_button(text:String,callback:Callable,accent:Color,selected:bool,chapter:String="") -> Button:
 	var b:=button(text,callback)
 	b.alignment=HORIZONTAL_ALIGNMENT_LEFT
-	b.custom_minimum_size.y=34
-	b.add_theme_font_size_override("font_size",13)
-	var normal:=T.box(Color(accent,.18) if selected else Color.TRANSPARENT,3)
-	normal.content_margin_top=6
-	normal.content_margin_bottom=6
-	normal.content_margin_left=14
+	b.custom_minimum_size.y=28
+	b.add_theme_font_size_override("font_size",12)
+	var normal:=T.box(Color("263238").lerp(Color(accent,1),.20) if selected else Color.TRANSPARENT,3)
+	normal.content_margin_top=4
+	normal.content_margin_bottom=4
+	normal.content_margin_left=34 if not chapter.is_empty() else 10
 	if selected:
 		normal.border_width_left=3
-		normal.border_color=accent.lightened(.15)
+		normal.border_color=accent.lightened(.3)
 	b.add_theme_stylebox_override("normal",normal)
 	var hover:=normal.duplicate()
-	hover.bg_color=Color("263740")
+	hover.bg_color=Color("344349").lerp(Color(accent,1),.12)
 	b.add_theme_stylebox_override("hover",hover)
+	var pressed:=normal.duplicate()
+	pressed.bg_color=Color("44575b").lerp(Color(accent,1),.16)
+	b.add_theme_stylebox_override("pressed",pressed)
+	var focus:=T.box(Color.TRANSPARENT,3,INK)
+	focus.set_border_width_all(2)
+	b.add_theme_stylebox_override("focus",focus)
+	for state in ["font_color","font_hover_color","font_pressed_color","font_focus_color"]:b.add_theme_color_override(state,INK if selected else MUTED)
+	if not chapter.is_empty():
+		var icon:=Art.glyph(chapter,INK if selected else MUTED,18)
+		icon.name="ChapterIcon"
+		b.add_child(icon)
+		icon.position=Vector2(10,5)
+		b.resized.connect(func():icon.position=Vector2(10,(b.size.y-18)*.5))
+		b.set_meta("art_icon",icon)
 	return b
 
-static func v(gap: int = 12) -> VBoxContainer:
+static func v(gap: int = 6) -> VBoxContainer:
 	var c := VBoxContainer.new()
-	c.add_theme_constant_override("separation", gap)
+	c.add_theme_constant_override("separation", mini(gap, 8))
 	return c
 
 static func fill(c: Control, vertical: bool = false, ratio: float = 1.0) -> Control:
@@ -72,7 +98,7 @@ static func fill(c: Control, vertical: bool = false, ratio: float = 1.0) -> Cont
 	c.size_flags_stretch_ratio = ratio
 	return c
 
-static func margin(padding: int = 20) -> MarginContainer:
+static func margin(padding: int = 8) -> MarginContainer:
 	var m := MarginContainer.new()
 	for edge in ["left", "right", "top", "bottom"]: m.add_theme_constant_override("margin_" + edge, padding)
 	return m
@@ -81,9 +107,13 @@ static func panel(parent: Node, ratio: float = 1.0, color: Color = PANEL) -> VBo
 	var p := PanelContainer.new()
 	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	p.size_flags_stretch_ratio = ratio
-	p.add_theme_stylebox_override("panel", T.box(color, 6, LINE))
+	var style:=T.box(color,3,LINE)
+	style.shadow_color=Color(0,0,0,.09)
+	style.shadow_size=2
+	style.shadow_offset=Vector2(0,1)
+	p.add_theme_stylebox_override("panel",style)
 	parent.add_child(p)
-	var m := margin(6)
+	var m := margin(4)
 	p.add_child(m)
 	var c := v()
 	m.add_child(c)
@@ -92,7 +122,7 @@ static func panel(parent: Node, ratio: float = 1.0, color: Color = PANEL) -> VBo
 static func section(title: String, subtitle: String = "") -> VBoxContainer:
 	var c := v(3)
 	c.add_child(label(title, 23, INK, true))
-	if not subtitle.is_empty(): c.add_child(label(subtitle, 11, MUTED))
+	if not subtitle.is_empty(): c.add_child(label(subtitle, 12, MUTED))
 	return c
 
 static func separator() -> HSeparator:
@@ -104,7 +134,7 @@ static func metric(number: Variant, caption: String, color: Color = INK) -> VBox
 	var c := v(0)
 	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	c.add_child(label(number, 37, color, true))
-	c.add_child(label(caption.to_upper(), 10, MUTED))
+	c.add_child(label(caption.to_upper(), 12, MUTED))
 	return c
 
 static func n(number: Variant) -> String:
@@ -206,7 +236,7 @@ static func picture(slug: String, kind: String = "stadium", dark: bool = true) -
 		shade.texture = texture
 		shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		base.add_child(shade)
-	var overlay := margin(24)
+	var overlay := margin(12)
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	base.add_child(overlay)
 	var content := v(8)

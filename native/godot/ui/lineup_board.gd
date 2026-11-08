@@ -8,7 +8,7 @@ var portraits: Array[Control] = []
 const POSITIONS = [Vector2(0,5),Vector2(.5,5),Vector2(1,5),Vector2(.3,4),Vector2(.7,4),Vector2(0,3),Vector2(1,3),Vector2(.5,3),Vector2(.3,2),Vector2(.7,2),Vector2(0,1),Vector2(1.0/3,1),Vector2(2.0/3,1),Vector2(1,1),Vector2(.5,0)]
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(434,420)
+	custom_minimum_size = Vector2(434,360)
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	for slot in 15:
@@ -18,7 +18,7 @@ func _ready() -> void:
 		var name := str(player.get("name", "À pourvoir"))
 		var b := G.button("", func(): app.selected_slot=slot; app._render())
 		b.name = "LineupSlot%02d" % (slot+1)
-		b.custom_minimum_size = Vector2(100,62)
+		b.custom_minimum_size = Vector2(100,50)
 		b.add_theme_font_size_override("font_size",11)
 		b.tooltip_text = name + " · poste %02d"%(slot+1)
 		if slot == app.selected_slot: G.selected(b,app.accent)
@@ -48,8 +48,8 @@ func _ready() -> void:
 	_layout()
 
 func _layout() -> void:
-	var height := minf(74, floorf((size.y-40)/6.0))
-	var portrait_size := minf(36,height-25)
+	var height := minf(66, floorf((size.y-40)/6.0))
+	var portrait_size := minf(30,height-24)
 	for i in tiles.size():
 		var point: Vector2 = POSITIONS[i]
 		tiles[i].position = Vector2(point.x*(size.x-110)+5,point.y*(size.y-height-10)/5.0+5)

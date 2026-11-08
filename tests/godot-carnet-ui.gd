@@ -197,7 +197,11 @@ func decisions() -> void:
 	var player_id: String = str(app.model.squad[0].id)
 	app.selected_player=player_id
 	await render("Effectif")
+	var profile_tabs:TabContainer=named(app,"ProfileTabs")
+	profile_tabs.current_tab=2
+	await settle()
 	var load_choice: OptionButton=named(app,"PlayerLoad")
+	check(load_choice.is_visible_in_tree(),"Charge accessible dans la tuile Contrat")
 	load_choice.item_selected.emit(1)
 	await wait_model()
 	check(app.model.squad.filter(func(p):return str(p.id)==player_id)[0].loadPlan=="repos","Charge individuelle réellement enregistrée")
@@ -234,6 +238,11 @@ func decisions() -> void:
 	check(not available.is_empty(),"Un vrai candidat est disponible dans cette carrière")
 	if not available.is_empty():
 		var candidate: Dictionary=available[0]
+		var market_search:LineEdit=named(app,"MarketSearch")
+		market_search.text=str(candidate.name)
+		market_search.text_changed.emit(market_search.text)
+		await settle()
+		check(named(app,"MarketSearch")==market_search,"Recherche du candidat hors page sans reconstruire le champ")
 		for b in app.body.find_children("*","Button",true,false):
 			if str(b.get_meta("player_id",""))==str(candidate.id): b.pressed.emit();break
 		await capture_dialog("offre-contrat-1440")
