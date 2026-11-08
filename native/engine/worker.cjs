@@ -123,7 +123,24 @@ function createBridge(options={}){
       if(run('!!S.live'))throw Error('Composition indisponible pendant un match.');run('autoLineup()');
      }else if(command==='begin_match'){
       if(run("!!S.live||S.phase==='ended'"))throw Error('Aucun nouveau match disponible.');
-      const hadFixture=run('!!nextMatch()');run('beginMatch()');if(hadFixture&&!run('!!S.live'))throw Error('Coup d’envoi refusé : vérifiez la feuille à 23 et le calendrier.');
+      const hadFixture=run('!!nextMatch()');
+      // The native live must pass strict save validation. Keep this cover out of
+      // historical web/background simulations, and run it after normal training.
+      const nativeCreate=ctx.createRugbyMatch;
+      try{run(`{
+       const nativeCreate=createRugbyMatch;
+       try{
+        createRugbyMatch=(pair,legacy=null,automated=false,preparation=null)=>{
+         if(!legacy&&!automated&&pair.includes(S.club)&&typeof CDFranceCareer!=='undefined'&&typeof CDFranceCareer.ensureAISheet==='function'&&typeof aiRosterActive==='function'&&aiRosterActive()&&!(typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)))for(const ci of pair)CDFranceCareer.ensureAISheet(S.clubs[ci]);
+         return nativeCreate(pair,legacy,automated,preparation);
+        };
+        beginMatch();
+       }finally{createRugbyMatch=nativeCreate;}
+      }`);}finally{
+       // VM timeouts skip its inner finally; restore without executing more VM code.
+       ctx.createRugbyMatch=nativeCreate;
+      }
+      if(hadFixture&&!run('!!S.live'))throw Error('Coup d’envoi refusé : vérifiez la feuille à 23 et le calendrier.');
      }else if(command==='tick'){
       if(!run('!!S.live'))throw Error('Aucun match en cours.');const steps=payload.steps??1;
       if(!Number.isInteger(steps)||steps<1||steps>120)throw Error('Nombre de pas invalide (1 à 120).');

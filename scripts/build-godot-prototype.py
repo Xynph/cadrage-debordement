@@ -97,6 +97,7 @@ def build(args):
     shutil.copytree(sdk / "licenses", licenses)
     shutil.copytree(PROJECT / "fonts", licenses / "fontes", ignore=shutil.ignore_patterns("*.import"))
     shutil.copy2(ROOT / "docs/club-atlas-credits.md", licenses / "photos.md")
+    shutil.copy2(PROJECT / "guide/assets/NOTICE.md", licenses / "coach-original.md")
     shutil.copy2(ROOT / "dist/assets/club-atlas/manifest.json", licenses / "photos-manifest.json")
     shutil.copytree(ROOT / "dist/match3d/assets", licenses / "modele3d",
                     ignore=shutil.ignore_patterns("*.glb", "*.gltf", "*.bin", "*.png", "*.jpg"))

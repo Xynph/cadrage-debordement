@@ -16,6 +16,7 @@ var club_division := "elite"
 var table_division := "elite"
 var roster_filter := "Tous"
 var roster_sort := "Poste"
+var management_ui: Dictionary = {}
 var accent := Color("d43e47")
 var bridge: Node
 var timer: Timer
@@ -44,6 +45,11 @@ var pause_button: Button
 var match_finish: Button
 var primary_button: Button
 var pack_manager: Node
+var coach: Control
+var coach_reserved_height := 0.0
+var workspace_inset: MarginContainer
+var body_scroll: ScrollContainer
+var entry_scroll: ScrollContainer
 
 func _ready() -> void:
 	if OS.get_environment("CD_GODOT_SELF_TEST") == "1" and OS.get_environment("CD_GODOT_DATA_DIR").is_empty():
@@ -57,6 +63,7 @@ func _ready() -> void:
 	timer.timeout.connect(_live_tick)
 	add_child(timer)
 	file_dialog = FileDialog.new()
+	file_dialog.theme=G.T.paper()
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	file_dialog.filters = PackedStringArray(["*.json ; Carrière Oval Legacy 27"])
 	file_dialog.file_selected.connect(_file_selected)
@@ -64,10 +71,17 @@ func _ready() -> void:
 	pack_manager = load("res://pack_manager.gd").new()
 	pack_manager.app = self
 	add_child(pack_manager)
+	pack_manager.picker.theme=G.T.paper()
 	bridge = load("res://engine_bridge.gd").new()
 	add_child(bridge)
 	bridge.model_changed.connect(_receive_model)
 	bridge.command_failed.connect(_failed)
+	if not (OS.has_feature("editor") and OS.get_environment("CD_GODOT_GUIDE_MODULE_TEST") == "1"):
+		coach = load("res://guide/coach_guide.gd").new()
+		add_child(coach)
+		coach.reserved_height_changed.connect(_reserve_coach_space)
+		coach.setup(self)
+	resized.connect(func(): call_deferred("_layout_coach"))
 	_render()
 	bridge.start(_profile_path())
 	timer.start()
@@ -89,7 +103,9 @@ func _live() -> Dictionary:
 	return model.live if model.get("live") is Dictionary else {}
 
 func _receive_model(value: Dictionary) -> void:
+	SquadViews.U.remember(self)
 	model = value
+	SquadViews.U.sync(self, bridge.last_response_ok and last_command in ["new_career","import","recover_profile"])
 	if model.get("meta", {}).get("catalogue") is Array:
 		catalogue = model.meta.catalogue.duplicate(true)
 	waiting = false
@@ -112,7 +128,7 @@ func _receive_model(value: Dictionary) -> void:
 			_update_live_bar()
 			_update_header_date()
 			match_screen.update_frame(model)
-		else: _render()
+		else: _render(false)
 	if bridge.last_response_ok:
 		if is_instance_valid(status):
 			status.text = "Sauvegarde automatique · Profil de carrière indépendant"
@@ -178,34 +194,41 @@ func _navigate(target: String) -> void:
 	route = target
 	_render()
 
-func _render() -> void:
+func _render(remember_ui: bool = true) -> void:
+	call_deferred("_refresh_coach")
+	if remember_ui: SquadViews.U.remember(self)
+	SquadViews.U.sync(self)
 	if is_instance_valid(root_content):
 		remove_child(root_content)
 		root_content.queue_free()
 	match_screen = null
 	match_view = null
 	match_page = null
+	workspace_inset = null
+	body_scroll = null
+	entry_scroll = null
 	root_content = Control.new()
 	root_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(root_content)
 	move_child(root_content, 0)
 	var bg := ColorRect.new()
-	bg.color = G.BG
+	bg.color = Color("191b1c")
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root_content.add_child(bg)
 	if route == "Accueil":
-		root_content.add_child(Entry.home(self))
+		var home := Entry.home(self)
+		_entry_workspace(home)
 		return
 	if route == "Création":
 		var m := G.margin(30)
 		m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		root_content.add_child(m)
+		_entry_workspace(m)
 		m.add_child(Entry.creation(self))
 		return
 	if route == "Packs":
 		var margin := G.margin(30)
 		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		root_content.add_child(margin)
+		_entry_workspace(margin)
 		margin.add_child(PackViews.page(self))
 		return
 	if not _has_career():
@@ -217,6 +240,10 @@ func _render() -> void:
 	root_content.add_child(shell)
 	_build_sidebar(shell)
 	var inset := G.margin(22)
+	workspace_inset = inset
+	# Container sorting can happen after the deferred coach refresh. Reposition
+	# on its actual geometry, including the sidebar width, after every rebuild.
+	inset.item_rect_changed.connect(_layout_coach)
 	G.fill(inset, true)
 	shell.add_child(inset)
 	var content := G.v(13)
@@ -229,7 +256,9 @@ func _render() -> void:
 	header_date = G.label("", 11, G.MUTED)
 	titles.add_child(header_date)
 	_update_header_date()
-	heading = G.label({"Bureau":"LE CLUB, DEMAIN.","Effectif":"LES HOMMES DU PROJET","Composition":"VOTRE FEUILLE À 23","Préparation":"PRÉPARER LA RENCONTRE","Calendrier":"LE FIL DE LA SAISON","Classements":"LA COURSE AUX SOMMETS","Recrutement":"CONSTRUIRE L'EFFECTIF","Finances":"LES MOYENS DU PROJET","Club":"UN CLUB. UN TERRITOIRE.","Match":"LE JOUR DE MATCH"}.get(route, route.to_upper()), 35, G.INK, true)
+	heading = G.label({"Bureau":"Le club, cette semaine.","Effectif":"Les hommes du projet.","Composition":"Votre feuille à 23.","Préparation":"Préparer la rencontre.","Calendrier":"Le fil de la saison.","Classements":"La course aux sommets.","Recrutement":"Construire l’effectif.","Finances":"Les moyens du projet.","Club":"Un club. Un territoire.","Match":"Le jour de match."}.get(route, route.to_upper()), 35, G.INK, true)
+	heading.add_theme_font_override("font", G.T.BODY)
+	heading.add_theme_font_size_override("font_size", 29)
 	titles.add_child(heading)
 	top.add_child(G.button("SAUVEGARDER", func(): _command("save")))
 	primary_button = G.button(primary_text(), primary_action, true)
@@ -239,7 +268,13 @@ func _render() -> void:
 	PackViews.missing_warning(self, content, "career")
 	body = G.v(13)
 	G.fill(body, true)
-	content.add_child(body)
+	body_scroll = ScrollContainer.new()
+	body_scroll.name = "CareerWorkspace"
+	body_scroll.follow_focus = true
+	body_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	G.fill(body_scroll, true)
+	content.add_child(body_scroll)
+	body_scroll.add_child(body)
 	status = G.label(last_error if not last_error.is_empty() else "Sauvegarde automatique · Profil de carrière indépendant", 10, G.MUTED)
 	status.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	content.add_child(status)
@@ -261,6 +296,38 @@ func _render() -> void:
 			match_screen.update_frame(model)
 	_update_live_bar()
 
+func _entry_workspace(page: Control) -> void:
+	entry_scroll = ScrollContainer.new()
+	entry_scroll.name = "EntryWorkspace"
+	entry_scroll.follow_focus = true
+	entry_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	entry_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root_content.add_child(entry_scroll)
+	page.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	page.custom_minimum_size.y = 720
+	G.fill(page, true)
+	entry_scroll.add_child(page)
+
+func _reserve_coach_space(height: float) -> void:
+	coach_reserved_height = height
+	_layout_coach()
+
+func _refresh_coach() -> void:
+	if is_instance_valid(coach): coach.refresh()
+	_layout_coach()
+
+func _layout_coach() -> void:
+	if not is_instance_valid(root_content) or not is_instance_valid(coach): return
+	var entry := route in ["Accueil", "Création", "Packs"] or not _has_career()
+	root_content.offset_bottom = -coach_reserved_height if entry else 0.0
+	if is_instance_valid(workspace_inset):
+		workspace_inset.add_theme_constant_override("margin_bottom", 22 + ceili(coach_reserved_height))
+	if is_instance_valid(coach):
+		coach.offset_left = 14 if entry else (workspace_inset.get_global_rect().position.x + 8 if is_instance_valid(workspace_inset) else 208)
+
+func _open_coach() -> void:
+	if is_instance_valid(coach): coach.open_help()
+
 func _update_header_date() -> void:
 	if not is_instance_valid(header_date): return
 	var meta: Dictionary = model.get("meta", {})
@@ -269,13 +336,24 @@ func _update_header_date() -> void:
 func _build_sidebar(parent: Node) -> void:
 	var rail := PanelContainer.new()
 	rail.custom_minimum_size.x = 192
-	rail.add_theme_stylebox_override("panel", G.T.box(Color("111b22"), 0))
+	rail.add_theme_stylebox_override("panel", G.T.box(Color("141617"), 0))
 	parent.add_child(rail)
 	var margin := G.margin(2)
 	rail.add_child(margin)
 	var left := G.v(5)
 	margin.add_child(left)
-	var logo := G.button("OVAL LEGACY 27\nRUGBY MANAGER", pause_menu)
+	var logo := G.button("", pause_menu)
+	logo.tooltip_text = "Oval Legacy 27 — Menu et sauvegardes"
+	var bitmap := TextureRect.new()
+	bitmap.texture = load("res://branding/oval-legacy-27-logo.png")
+	bitmap.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bitmap.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	bitmap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bitmap.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var composite := ShaderMaterial.new()
+	composite.shader = load("res://branding/black_key.gdshader")
+	bitmap.material = composite
+	logo.add_child(bitmap)
 	logo.add_theme_font_override("font", G.T.DISPLAY)
 	logo.add_theme_font_size_override("font_size", 23)
 	logo.custom_minimum_size.y = 70
@@ -284,6 +362,9 @@ func _build_sidebar(parent: Node) -> void:
 	left.add_child(G.crest(model.club, 60))
 	var name := G.label(G.club_name(model.club), 20, G.INK, true)
 	name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name.max_lines_visible=2
+	name.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+	name.tooltip_text=G.club_name(model.club)
 	left.add_child(name)
 	left.add_child(G.separator())
 	for group in [["LE CLUB",["Bureau","Effectif","Composition","Préparation","Recrutement","Finances","Club"]],["LA COMPÉTITION",["Calendrier","Classements","Match"]]]:
@@ -339,6 +420,7 @@ func confirm(title: String, text: String, callback: Callable) -> void:
 
 func _prepare_dialog(dialog: AcceptDialog, width: int) -> void:
 	# Configure wrapping before text/insertion can queue an oversized minimum.
+	dialog.theme = G.T.paper()
 	dialog.min_size = Vector2i(width, 0)
 	dialog.dialog_autowrap = true
 
@@ -369,10 +451,15 @@ func settings() -> void:
 	_prepare_dialog(d, 650)
 	d.title = "Affichage"
 	d.dialog_text = "Fenêtre redimensionnable · interface adaptée à votre écran."
-	d.add_button("Fenêtré1440×900",false,"window")
+	d.add_button("Fenêtré 1440×900",false,"window")
 	d.add_button("Plein écran",false,"full")
 	d.add_button("Packs et identités",false,"packs")
+	d.add_button("Aide du coach",false,"coach")
 	d.custom_action.connect(func(action: String):
+		if action == "coach":
+			d.hide(); d.queue_free()
+			call_deferred("_open_coach")
+			return
 		if action == "packs":
 			d.hide(); d.queue_free()
 			pack_manager.open("career" if _has_career() else "creation")
@@ -472,6 +559,7 @@ func request_quit() -> void:
 func _close() -> void:
 	if closing: return
 	closing = true
+	if is_instance_valid(coach): coach.destroy()
 	timer.stop()
 	bridge.stop()
 	var deadline := Time.get_ticks_msec()+2300

@@ -10,6 +10,12 @@ Ce dépôt contient le code du jeu, sa documentation et ses tests. Les carrière
 
 Le jeu dispose d'un accueil photographique, d'une création de carrière par club et de dix vues de gestion : Bureau, Effectif, Composition, Préparation, Recrutement, Finances, Club, Calendrier, Classements et Match. L'interface associe anthracite, ivoire, couleurs du club, portraits fictifs et soixante photographies des trente territoires.
 
+Le Bureau **« Le carnet du club »** réunit un journal ivoire, les décisions de contrats et de sélection, le prochain rendez-vous photographique, quatre rencontres à venir, cinq fiches du groupe et un classement de proximité de huit clubs. Ses chiffres proviennent de la carrière ; les panneaux défilent localement pour garder une lecture confortable. Les boutons ouvrent les vraies fiches et les vues de préparation, calendrier, classement et finances. Voir [la réception du Bureau](docs/bureau-carnet-20261107.md).
+
+La même direction artistique habille désormais tous les menus natifs : dossier joueur, feuille de sélection, cahier tactique, fiches de recrutement, journal financier et carnet de saison. Le terrain du match garde la priorité, accompagné d’un carnet Direct/Banc/Stats. L’accueil, la création, les packs et les dialogues partagent les surfaces papier et le focus clavier lisible. Voir [la déclinaison et sa réception native](docs/da-carnet-20261107.md).
+
+L’effectif et le recrutement proposent recherche sans accents, filtres, tri explicite et conservation de la lecture au retour. Deux joueurs se comparent par leurs vrais dossiers ; les offres distinguent coût immédiat et salaire hebdomadaire. Les suivis de recrutement restent propres à la session. Dans Classements, les archives françaises présentent jusqu’à 15 saisons conservées, champions, rang du club et mouvements réels, sans inventer de points historiques. Voir [l’ergonomie de gestion et ses limites](docs/gestion-carnet-20261107.md).
+
 Les trente clubs sont jouables dans deux divisions reliées de 14 et 16 clubs. La nouvelle base commune conserve les 1 592 joueurs, identifiants et statistiques de la base active, avec des noms fictifs proches. Les packs personnalisés changent les identités et images ; progression, contrats, résultats et notes de la carrière restent les mêmes. Composition à 23, entraînement, charges individuelles, tactiques, changements et offres de contrats ont des effets réels. Une promotion de secours peut compléter une feuille, après confirmation de son coût salarial.
 
 Décompressez l'archive complète puis lancez `OvalLegacy27.exe`. Godot et Node sont embarqués : aucune installation supplémentaire ni navigateur n'est nécessaire. Le profil est conservé dans `%APPDATA%\CadrageDebordement\PrototypeGodot`, hors de l'exécutable. Le menu conserve export, import et reprise des anciennes carrières fictives à 14 ou 30 clubs ; elles ne sont pas converties automatiquement en base commune.
@@ -18,7 +24,13 @@ Depuis la création d'une carrière ou ses paramètres : **Packs et identités �
 
 Le [rapport Godot 0.3 et packs](docs/rugby-real-native-packs-20261107.md) détaille la réception Windows, le format personnalisé et les lacunes des données. Le [rapport Godot 0.2](docs/godot-carriere-20261107.md) reste historique. La scène 3D est générique, les finances sont fictives, le monde est fermé sans Nationale et la cadence de 34 semaines est une abstraction. Le format de compétition 2026–2027 reste distinct des lois de match historiques partiellement couvertes. Cette préalpha prépare une version commerciale ; aucune publication Steam n'est annoncée.
 
-## Lot 1 effectifs — nouvelles carrières natives
+## Coach, prise en main et références des effectifs
+
+Le coach fictif présente quinze étapes et les écrans du jeu. Son portrait 2D change réellement de pose, parle et cligne des yeux ; la bulle reprend le texte prononcé. La voix française Windows est provisoire et sélectionnable : sans voix disponible, le mode texte reste utilisable. L'aide se réduit pendant le direct ou une décision et se réactive dans **Paramètres → Aide du coach**. Sa progression et ses préférences sont séparées des sauvegardes sportives. Voir le [guide natif](docs/coach-guide-20261107.md).
+
+Les nouvelles carrières communes utilisent le **registre effectifs v2 : 241 postes, 86 échéances et 9 statuts documentés** ; le reste est estimé explicitement. Les statistiques de la base active sont conservées. Les anciennes carrières v1 gardent leurs références sans migration, et les packs changent les identités sans remplacer les progrès. Voir les [sources et limites du lot2](docs/roster-foundation-lot2.md) et le [protocole de réception Windows](docs/oval-legacy-27-carnet-coach-20261108.md).
+
+## Lot 1 effectifs — étape historique
 
 Les 1 592 joueurs disposent désormais d’une référence initiale traçable : 12 postes précis corroborés, 20 échéances officielles dans les deux divisions et un contrat mixte espoir/professionnel confirmé. Les informations restantes sont des estimations de jeu explicites ; les salaires, 36 attributs, 11 compétences, notes, potentiels et traits restent ceux de la base active. La fiche distingue la référence contractuelle initiale du contrat courant après une signature. Les anciennes carrières restent inchangées, sans migration automatique. Voir [couverture, sources et limites](docs/roster-foundation-lot1.md), notamment la contradiction officielle sur Traini conservée en quarantaine. Aucune nouvelle règle de rugby ou de recrutement n’est introduite.
 

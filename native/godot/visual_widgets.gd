@@ -4,6 +4,8 @@ var mode := "crest"
 var accent := Color("d43e47")
 var initials := "XV"
 var values: Array = []
+var grid_color := Color("40515a")
+var data_color := Color.TRANSPARENT
 const DISPLAY = preload("res://fonts/BarlowCondensed-SemiBold.ttf")
 
 func _draw() -> void:
@@ -26,13 +28,13 @@ func _draw() -> void:
 			var poly := PackedVector2Array()
 			for i in range(6): poly.append(c + Vector2.from_angle(-PI / 2 + TAU * i / 6) * r * ring)
 			poly.append(poly[0])
-			draw_polyline(poly, Color("40515a"), 1, true)
+			draw_polyline(poly, grid_color, 1, true)
 		var data := PackedVector2Array()
 		for i in range(mini(6, values.size())):
 			var axis := Vector2.from_angle(-PI / 2 + TAU * i / 6)
-			draw_line(c, c + axis * r, Color("40515a"), 1)
+			draw_line(c, c + axis * r, grid_color, 1)
 			data.append(c + axis * r * clampf(float(values[i]) / 100.0, 0.0, 1.0))
 		if data.size() == 6:
 			draw_colored_polygon(data, Color(accent, 0.3))
 			data.append(data[0])
-			draw_polyline(data, accent.lightened(0.35), 2.5, true)
+			draw_polyline(data, data_color if data_color.a > 0 else accent.lightened(0.35), 2.5, true)

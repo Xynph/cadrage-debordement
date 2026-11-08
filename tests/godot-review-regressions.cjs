@@ -12,10 +12,11 @@ for(const mode of ['disk','ui','limits','null-response','recovery','decisions','
   cwd:path.resolve(__dirname,'..'),env:{...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:dir,CD_GODOT_REGRESSION:mode},encoding:'utf8',timeout:45000,windowsHide:true,
  });
  const output=(result.stdout||'')+(result.stderr||'');
+ fs.writeFileSync(path.join(dir,'godot.log'),output);
  console.log('MODE '+mode+' exit='+result.status+'\n'+output.trim());
  if(result.error)console.error(result.error);
- if(result.status!==0||/SCRIPT ERROR|Parse Error|ERROR:/.test(output))failed=true;
- fs.rmSync(dir,{recursive:true,force:true});
+ if(result.status!==0||/SCRIPT ERROR|Parse Error|ERROR:/.test(output)){failed=true;console.log('Profil de régression conservé : '+dir);}
+ else fs.rmSync(dir,{recursive:true,force:true});
 }
 if(failed)throw Error('Régression native Godot échouée');
 });

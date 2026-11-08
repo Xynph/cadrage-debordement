@@ -1,7 +1,7 @@
 extends RefCounted
-const G = preload("res://ui/game_skin.gd")
+const G = preload("res://ui/carnet_skin.gd")
 
-static func missing_warning(app: Control, parent: Container, scope: String) -> void:
+static func missing_warning(app: Control, parent: Container, scope: String, paper: bool = false) -> void:
 	var messages: Array[String] = []
 	var career_missing := false
 	for warning: String in app.model.get("packs", {}).get("missing", []):
@@ -11,25 +11,28 @@ static func missing_warning(app: Control, parent: Container, scope: String) -> v
 		elif warning.begins_with("Pack de création absent") and scope != "career":
 			messages.append("Pack de création absent · Présentation de base anonymisée. Réimportez le pack ou choisissez Base pour créer une carrière.")
 	if messages.is_empty(): return
-	parent.add_child(G.wrap("\n".join(messages), 12, Color("f1b6a9")))
+	parent.add_child(G.wrap("\n".join(messages), 13, G.ALERT if paper else Color("f1b6a9")))
 	parent.add_child(G.button("GÉRER LES PACKS", func(): app.pack_manager.open("career" if career_missing else "creation")))
 
 static func page(app: Control) -> Control:
 	var page := G.v(18)
+	page.name="CarnetPacks"
+	G.fill(page,true)
 	var top := G.h(18)
 	page.add_child(top)
 	top.add_child(G.button("← RETOUR", app.pack_manager.back))
-	var title := G.label("VOTRE RUGBY. VOS IDENTITÉS.", 40, G.INK, true)
+	var title := G.label("Votre rugby. Vos identités.", 36, G.WHITE, true)
 	G.fill(title)
 	top.add_child(title)
-	top.add_child(G.label("NOUVELLE CARRIÈRE" if app.pack_manager.scope == "creation" else "CARRIÈRE EN COURS", 12, G.GOLD))
+	top.add_child(G.label("NOUVELLE CARRIÈRE" if app.pack_manager.scope == "creation" else "CARRIÈRE EN COURS", 13, G.WHITE))
 	var row := G.h(24)
 	G.fill(row, true)
 	page.add_child(row)
-	var intro := G.panel(row, 0.8)
+	var intro_frame := G.panel(row, 0.85)
+	var intro := G.scroll(intro_frame)
 	var compatible: bool = app.pack_manager.scope == "creation" or app.model.get("meta", {}).get("database", {}).get("active", false)
 	intro.add_child(G.label("UNE BASE COMMUNE", 13, G.GOLD))
-	intro.add_child(G.label("30 CLUBS\n1 592 JOUEURS", 46, G.INK, true))
+	intro.add_child(G.label("30 CLUBS\n1 592 JOUEURS", 42, G.INK, true))
 	intro.add_child(G.wrap("Les mêmes joueurs. Les mêmes capacités. Une autre façon de les reconnaître.", 22, G.INK))
 	intro.add_child(G.separator())
 	intro.add_child(G.wrap("Le jeu de base utilise des identités fictives. Un pack personnalise les noms, les blasons et les portraits. Les résultats, les contrats et la progression restent ceux de votre carrière.", 15))
@@ -41,7 +44,7 @@ static func page(app: Control) -> Control:
 	var content := G.panel(row, 1.6)
 	var commands := G.h()
 	content.add_child(commands)
-	var heading := G.label("VOS PACKS", 25, G.INK, true)
+	var heading := G.label("Vos packs", 27, G.INK, true)
 	G.fill(heading)
 	commands.add_child(heading)
 	var importing := G.button("IMPORTER UN PACK ZIP", app.pack_manager.choose_file, true)
@@ -51,10 +54,10 @@ static func page(app: Control) -> Control:
 	var selected := str(packs.get(app.pack_manager.scope, "base"))
 	content.add_child(G.wrap("Sélection pour la création uniquement : la carrière ouverte n’est pas modifiée." if app.pack_manager.scope == "creation" else "Cette sélection s’applique à la carrière ouverte et sera conservée dans ses sauvegardes.", 12))
 	if not compatible:
-		content.add_child(G.wrap("Cette ancienne carrière utilise des joueurs générés. Créez une carrière sur la base commune pour pouvoir changer ses identités. Vous pouvez déjà installer vos packs ici.", 13, Color("f1b6a9")))
+		content.add_child(G.wrap("Cette ancienne carrière utilise des joueurs générés. Créez une carrière sur la base commune pour pouvoir changer ses identités. Vous pouvez déjà installer vos packs ici.", 13, G.ALERT))
 	var missing: Array = packs.get("missing", [])
 	if not missing.is_empty():
-		content.add_child(G.wrap("PACK MANQUANT · " + ", ".join(missing) + "\nLes identités concernées utilisent la base anonymisée. Réimportez le pack pour retrouver ses images et ses noms.", 13, Color("f1b6a9")))
+		content.add_child(G.wrap("PACK MANQUANT · " + ", ".join(missing) + "\nLes identités concernées utilisent la base anonymisée. Réimportez le pack pour retrouver ses images et ses noms.", 13, G.ALERT))
 	var list := G.scroll(content)
 	var preview: Dictionary = packs.get("preview", {}) if packs.get("preview") is Dictionary else {}
 	if not preview.is_empty():
@@ -76,8 +79,8 @@ static func page(app: Control) -> Control:
 		choice.disabled = active or app.waiting or not compatible
 		card.add_child(choice)
 	if selected == "base": content.add_child(G.label("ACTUELLEMENT · BASE ANONYMISÉE", 11, G.GOLD))
-	if not app.last_error.is_empty(): content.add_child(G.wrap(app.last_error, 13, Color("f1b6a9")))
-	app.status = G.label("Analyse en cours…" if app.waiting else "Installation locale · aucun téléchargement automatique", 11, G.MUTED)
+	if not app.last_error.is_empty(): content.add_child(G.wrap(app.last_error, 13, G.ALERT))
+	app.status = G.label("Analyse en cours…" if app.waiting else "Installation locale · aucun téléchargement automatique", 12, G.WHITE)
 	page.add_child(app.status)
 	return page
 
