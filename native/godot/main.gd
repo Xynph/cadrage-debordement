@@ -18,7 +18,7 @@ const SupportViews = preload("res://ui/support_view.gd")
 const ManagerCareerViews = preload("res://ui/manager_career_view.gd")
 const PlaybookViews = preload("res://ui/playbook_view.gd")
 const NAV_CHAPTERS = [
-	{"label":"Bureau", "routes":["Bureau"]},
+	{"label":"Bureau", "routes":["Bureau","Réception"]},
 	{"label":"Équipe", "routes":["Effectif","Composition","Préparation","Plan de jeu","Vestiaire","Match"]},
 	{"label":"Développement", "routes":["Recrutement","Formation","Centre"]},
 	{"label":"Club", "routes":["Club","Staff","Travail du club","Stratégie","Finances"]},

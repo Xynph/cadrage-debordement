@@ -12,6 +12,8 @@ const recipes=[
  ['mail-staff','02-reception.png',[1320,148,340,178]],
  ['mail-trainer','02-reception.png',[489,214,57,58]],
  ['mail-medical','02-reception.png',[489,295,57,58]],
+ ['mail-direction','02-reception.png',[490,596,52,55]],
+ ['mail-recruitment','02-reception.png',[490,452,52,55]],
  ['squad-portrait','03-effectif.png',[1205,146,158,228]],
  ['player-hero','04-fiche-joueur.png',[260,50,315,288]],
  ['tactics-briefing','05-tactique.png',[250,188,602,125]],

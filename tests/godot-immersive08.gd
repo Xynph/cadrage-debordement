@@ -33,6 +33,93 @@ func check(condition: bool, message: String) -> void:
 	checks += 1
 	if not condition: failures.append(message); printerr("FAIL: " + message)
 
+func click(control: Control) -> void:
+	var point := control.get_global_transform()*(control.size/2.0)
+	for down in [true,false]:
+		var event := InputEventMouseButton.new()
+		event.position=point
+		event.global_position=point
+		event.button_index=MOUSE_BUTTON_LEFT
+		event.pressed=down
+		root.push_input(event,true)
+		await process_frame
+
+func reception() -> void:
+	app._navigate("Bureau")
+	await settle()
+	var nav: Button = app.find_child("Nav_Réception", true, false)
+	check(nav != null, "Réception accessible depuis le rail")
+	if nav == null: return
+	await click(nav)
+	await settle()
+	var list: VBoxContainer = app.find_child("InboxMessageRows", true, false)
+	check(app.route == "Réception" and list != null, "La Réception ouvre un écran propre")
+	if list == null: return
+	check(list.get_child_count() == app.model.messages.size(), "Chaque message reçu du moteur est consultable")
+	check(app.find_child("Art_mail_staff", true, false) != null, "Illustration de la Réception chargée en jeu")
+	await capture("05-reception-2560x1440")
+	var first: Button = list.get_child(0)
+	var original: String = first.get_meta("message_text")
+	app.find_child("InboxFolder1", true, false).pressed.emit()
+	await settle()
+	list = app.find_child("InboxMessageRows", true, false)
+	var last: Button = list.get_child(list.get_child_count()-1)
+	var unread: String = last.get_meta("message_text")
+	last.pressed.emit()
+	await settle()
+	check(app.find_child("InboxMessageText", true, false).text == unread, "Un message sélectionné reste lisible dans les non lus")
+	app.find_child("InboxToggleRead", true, false).pressed.emit()
+	await settle()
+	list = app.find_child("InboxMessageRows", true, false)
+	check(list.get_child_count() == app.model.messages.size()-1, "Le marquage explicite retire le message des non lus")
+	app.find_child("InboxFolder0", true, false).pressed.emit()
+	await settle()
+	list = app.find_child("InboxMessageRows", true, false)
+	first = list.get_child(0)
+	first.pressed.emit()
+	await settle()
+	check(app.find_child("InboxMessageText", true, false).text == original, "La sélection affiche le texte complet reçu")
+	app.find_child("InboxToggleFavorite", true, false).pressed.emit()
+	app.find_child("InboxFolder2", true, false).pressed.emit()
+	await settle()
+	list = app.find_child("InboxMessageRows", true, false)
+	check(list.get_child_count() == 1, "Favoris limité au message épinglé")
+	app.find_child("InboxToggleArchive", true, false).pressed.emit()
+	app.find_child("InboxFolder3", true, false).pressed.emit()
+	await settle()
+	list = app.find_child("InboxMessageRows", true, false)
+	check(list.get_child_count() == 1 and list.get_child(0).get_meta("message_text") == original, "Le dossier Archives retrouve le message traité")
+	app.find_child("InboxToggleArchive", true, false).pressed.emit()
+	app.find_child("InboxFolder0", true, false).pressed.emit()
+	await settle()
+	list = app.find_child("InboxMessageRows", true, false)
+	check(list.get_child_count() == app.model.messages.size(), "Réouvrir restaure le message dans la boîte")
+	app.find_child("InboxOpenMessageAction", true, false).pressed.emit()
+	await settle()
+	check(app.route == "Effectif", "L'alerte contrat ouvre l'effectif réel")
+
+func resize_shell() -> void:
+	app._navigate("Bureau")
+	await settle()
+	var fixture: Control = app.find_child("OfficeFixture",true,false)
+	var journal: Control = app.find_child("OfficeJournal",true,false)
+	var timeline: Control = app.find_child("OfficeTimeline",true,false)
+	var action: Button = app.find_child("ImmersiveContinue",true,false)
+	var history: Array = app.navigation_controller.history.duplicate(true)
+	for size in [Vector2i(1920,1080),Vector2i(1600,900),Vector2i(1280,720),Vector2i(1440,900),Vector2i(2560,1440)]:
+		root.size = size
+		if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(size)
+		await create_timer(.16).timeout
+		await settle()
+		var screen := Rect2(Vector2.ZERO,Vector2(root.size))
+		check(root.size==size and app.size==Vector2(size),"Fenêtre et canvas natif redimensionnés à "+str(size))
+		check(app.find_child("OfficeFixture",true,false)==fixture and app.navigation_controller.history==history,"Le resize conserve contrôles et navigation à "+str(size))
+		for control: Control in [fixture,journal,timeline,action]:
+			var box := control.get_global_transform()*Rect2(Vector2.ZERO,control.size)
+			check(screen.grow(1).encloses(box),"%s entièrement visible à %s" % [control.name,str(size)])
+		if size in [Vector2i(1280,720),Vector2i(1440,900)]:
+			await capture("06-bureau-redimensionne-%dx%d" % [size.x,size.y])
+
 func run() -> void:
 	check(ResourceLoader.exists("res://ui/immersive08/components.gd"), "Composants natifs de la DA approuvée disponibles")
 	if not failures.is_empty():
@@ -176,6 +263,9 @@ func run() -> void:
 				check(app.route == pair[1], "Navigation : " + pair[0])
 		await command("export")
 		check(before == app.model.meta.exportText, "Rendu et navigation préservent état et RNG")
+		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office":
+			await reception()
+			await resize_shell()
 		check(bytes == FileAccess.get_file_as_bytes(disk), "Rendu et navigation ne modifient aucun octet du profil")
 		app._navigate("Composition")
 		await settle()

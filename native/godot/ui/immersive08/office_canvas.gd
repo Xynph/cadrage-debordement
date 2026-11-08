@@ -141,6 +141,7 @@ static func _standings(card: Panel, app: Control) -> void:
 	action.add_theme_color_override("font_color",C.GOLD)
 
 static func _journal(card: Panel, app: Control) -> void:
+	D.button(card,Rect2(350,14,178,33),"Tout le courrier",func():app._navigate("Réception"),false,"arrow",true,app.accent,"OfficeInboxAction")
 	var messages: Array = app.model.get("messages",[])
 	for i in mini(3,messages.size()):
 		var y := 79+i*116

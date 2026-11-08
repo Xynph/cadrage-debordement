@@ -123,6 +123,40 @@
       "synthetic": true
     },
     {
+      "id": "mail-direction",
+      "file": "mail-direction.png",
+      "source": "02-reception.png",
+      "source_sha256": "d54d17438ee3cdbd5851e32879d576b849fad0ca9850ec0d74916d942f0ed665",
+      "crop": [
+        490,
+        596,
+        52,
+        55
+      ],
+      "width": 52,
+      "height": 55,
+      "bytes": 7820,
+      "sha256": "885b3cf2dfb0bee98815bd3ebfb5567348ec833ff73dbd6afdb152400a60c8c6",
+      "synthetic": true
+    },
+    {
+      "id": "mail-recruitment",
+      "file": "mail-recruitment.png",
+      "source": "02-reception.png",
+      "source_sha256": "d54d17438ee3cdbd5851e32879d576b849fad0ca9850ec0d74916d942f0ed665",
+      "crop": [
+        490,
+        452,
+        52,
+        55
+      ],
+      "width": 52,
+      "height": 55,
+      "bytes": 7616,
+      "sha256": "278082483219f97945681d6d63a8807b7eeb1bcb66c8a8fdb25d26f48b390604",
+      "synthetic": true
+    },
+    {
       "id": "squad-portrait",
       "file": "squad-portrait.png",
       "source": "03-effectif.png",

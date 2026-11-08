@@ -6,6 +6,7 @@ const OfficeCanvas = preload("res://ui/immersive08/office_canvas.gd")
 const SquadCanvas = preload("res://ui/immersive08/squad_canvas.gd")
 const TacticsCanvas = preload("res://ui/immersive08/tactics_canvas.gd")
 const PlayerCanvas = preload("res://ui/immersive08/player_canvas.gd")
+const Reception = preload("res://ui/immersive08/reception_canvas.gd")
 const G = preload("res://ui/game_skin.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 
@@ -26,11 +27,11 @@ static func render(app: Control) -> bool:
 	if not app.model.get("club") is Dictionary or app.route in ["Accueil", "Création", "Packs"]: return false
 	var window := app.get_window()
 	var physical := window.size
-	# Les composants gèrent leur densité. Le canvas natif doit garder les pixels
-	# disponibles, indépendamment de la référence 1600p de l'ancien carnet.
+	# Une scène se construit aux pixels de la fenêtre. Les changements de taille
+	# suivants ajustent son emprise sans détruire les contrôles ni les brouillons.
 	window.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	if physical.x >= 1280 and physical.y >= 720:
-		window.content_scale_size = Vector2i(mini(physical.x, 2560), mini(physical.y, 1440))
+		window.content_scale_size = physical
 	C.configure(minf(physical.y,1440),minf(physical.x,2560))
 	if app.selected_player.is_empty():app.set_meta("immersive08_full_player",false)
 	if is_instance_valid(app.root_content):
@@ -50,9 +51,16 @@ static func render(app: Control) -> bool:
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	app.root_content.add_child(background)
+	var layout := Control.new()
+	layout.name = "ImmersiveLayout"
+	layout.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	app.root_content.add_child(layout)
+	var reference := Vector2(2560,1440)*C.density
+	_fit_layout(app.root_content,layout,reference)
+	app.root_content.resized.connect(_fit_layout.bind(app.root_content,layout,reference))
 	var shell := C.h(0)
 	shell.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	app.root_content.add_child(shell)
+	layout.add_child(shell)
 	_sidebar(shell, app)
 	var workspace := C.v(0)
 	C.fill(workspace, true)
@@ -89,13 +97,22 @@ static func render(app: Control) -> bool:
 	app.call_deferred("_observe_navigation")
 	return true
 
+static func _fit_layout(root: Control, layout: Control, reference: Vector2) -> void:
+	if root.size.x<=0 or root.size.y<=0: return
+	var factor := minf(root.size.x/reference.x, root.size.y/reference.y)
+	layout.scale = Vector2.ONE*factor
+	layout.size = root.size/factor
+
 static func _sidebar(parent: Node, app: Control) -> void:
 	var rail:=Control.new();rail.name="ImmersiveSidebar";rail.custom_minimum_size.x=C.px(248);rail.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	parent.add_child(rail)
 	var height:float=app.get_window().size.y/C.density
 	var background:=D.rect(rail,Rect2(0,0,248,height),Color("081b16"))
 	background.add_theme_stylebox_override("panel",D.surface(248,height,Color("081b16"),Color("071d18"),Color.TRANSPARENT,0,false))
-	D.line(rail,Vector2(247,0),Vector2(247,height))
+	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var border:=D.line(rail,Vector2(247,0),Vector2(247,height))
+	border.set_anchor(SIDE_BOTTOM,1,false)
+	border.offset_bottom=0
 	var logo:=D.button(rail,Rect2(17,20,214,93),"",app.pause_menu,false,"",false,app.accent,"ImmersiveMainMenu")
 	logo.tooltip_text="Menu, sauvegardes et paramètres"
 	logo.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
@@ -104,11 +121,11 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	var crest:=G.crest(app.model.club,C.px(126));rail.add_child(crest);D.place(crest,Rect2(61,151,126,147))
 	D.text(rail,124,331,G.club_name(app.model.club).to_upper(),23,C.IVORY,700,222,HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(rail,124,354,"SAISON "+G.n(app.model.meta.get("season",1)),16,C.GOLD,500,215,HORIZONTAL_ALIGNMENT_CENTER)
-	var names:Array=[["home","Bureau","Bureau"],["mail","Réception","Bureau"],["people","Effectif","Effectif"],["tactic","Tactique","Composition"],["train","Entraînement","Préparation"],["search","Recrutement","Recrutement"],["shield","Club","Club"],["money","Finances","Finances"],["trophy","Compétitions","Classements"],["school","Formation","Formation"]]
+	var names:Array=[["home","Bureau","Bureau"],["mail","Réception","Réception"],["people","Effectif","Effectif"],["tactic","Tactique","Composition"],["train","Entraînement","Préparation"],["search","Recrutement","Recrutement"],["shield","Club","Club"],["money","Finances","Finances"],["trophy","Compétitions","Classements"],["school","Formation","Formation"]]
 	for i in names.size():
 		var entry:Array=names[i]
 		var destination:String=entry[2]
-		var selected:bool=app.route==destination and i!=1
+		var selected:bool=app.route==destination
 		if i==3:selected=app.route in ["Composition","Plan de jeu"]
 		if i==6:selected=app.route in ["Club","Staff","Travail du club","Stratégie"]
 		if i==8:selected=app.route in ["Classements","Calendrier","Presse","Rivalités"]
@@ -126,27 +143,32 @@ static func _sidebar(parent: Node, app: Control) -> void:
 			var alternate:StyleBox=action.get_theme_stylebox(state).duplicate();alternate.content_margin_left=C.px(58);action.add_theme_stylebox_override(state,alternate)
 		if selected:D.rect(rail,Rect2(7,y,4,49),C.MINT)
 		var symbol:=C.icon(entry[0],25,C.IVORY if selected else Color("c8d0c6"));rail.add_child(symbol);D.place(symbol,Rect2(23,y+12,25,25))
-		if i==1 and not app.model.get("messages",[]).is_empty():
+		var unread: int = Reception.unread(app) if i==1 else 0
+		if unread>0:
 			D.rect(rail,Rect2(207,y+13,24,24),C.GOLD,4)
-			D.text(rail,219,y+31,str(app.model.messages.size()),18,Color("101511"),700,24,HORIZONTAL_ALIGNMENT_CENTER)
-	var bottom:=height-1440.0
-	D.photo(rail,"forest",Rect2(0,1254+bottom,247,158))
-	D.rect(rail,Rect2(0,1190+bottom,247,94),Color("0c1717"))
-	D.line(rail,Vector2(22,1190+bottom),Vector2(226,1190+bottom))
+			D.text(rail,219,y+31,unread,18,Color("101511"),700,24,HORIZONTAL_ALIGNMENT_CENTER)
+	var dock:=Control.new()
+	dock.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	rail.add_child(dock)
+	dock.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	dock.offset_top=-C.px(295)
+	D.photo(dock,"forest",Rect2(0,109,247,158))
+	D.rect(dock,Rect2(0,45,247,94),Color("0c1717"))
+	D.line(dock,Vector2(22,45),Vector2(226,45))
 	for i in 3:
 		var caption:String=["Carrière","Réglages","Sauvegarder"][i]
-		var y:float=[1145,1203,1245][i]+bottom
-		var action:=D.button(rail,Rect2(12,y,224,38),caption,func():
+		var y:float=[0,58,100][i]
+		var action:=D.button(dock,Rect2(12,y,224,38),caption,func():
 			if i==0:app._navigate("Carrière")
 			elif i==1:app.settings()
 			else:app._command("save"),false,"",false,app.accent,"ImmersiveSidebarAction"+str(i))
 		var style:=C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0);style.content_margin_left=C.px(53);action.add_theme_stylebox_override("normal",style)
 		action.add_theme_font_override("font",C.DISPLAY);action.add_theme_font_size_override("font_size",maxi(12,C.px(23)));action.add_theme_color_override("font_color",C.MUTED)
-		var symbol:=C.icon(["flag","settings","save"][i],24,C.MUTED);rail.add_child(symbol);D.place(symbol,Rect2(23,y+10,24,24))
-	D.rect(rail,Rect2(0,1365+bottom,247,75),Color("0b1614"))
-	D.rect(rail,Rect2(21,1390+bottom,8,8),C.ALERT if app._status_has_error() else C.MINT,4)
-	D.text(rail,39,1400+bottom,"Stockage à vérifier" if app._status_has_error() else "Sauvegarde automatique",17,C.MUTED,500,198)
-	D.text(rail,24,1426+bottom,G.club_abbr(app.model.club)+" · Carrière principale",17,C.FAINT,500,210)
+		var symbol:=C.icon(["flag","settings","save"][i],24,C.MUTED);dock.add_child(symbol);D.place(symbol,Rect2(23,y+10,24,24))
+	D.rect(dock,Rect2(0,220,247,75),Color("0b1614"))
+	D.rect(dock,Rect2(21,245,8,8),C.ALERT if app._status_has_error() else C.MINT,4)
+	D.text(dock,39,255,"Stockage à vérifier" if app._status_has_error() else "Sauvegarde automatique",17,C.MUTED,500,198)
+	D.text(dock,24,281,G.club_abbr(app.model.club)+" · Carrière principale",17,C.FAINT,500,210)
 
 static func _topbar(parent: Node, app: Control) -> void:
 	var panel := Control.new()
@@ -190,6 +212,12 @@ static func _heading(parent: Node, app: Control) -> void:
 	row.custom_minimum_size.y = C.px(91 if app.route=="Effectif" else 88 if app.route=="Composition" else 104)
 	C.fill(row)
 	parent.add_child(row)
+	if app.route=="Réception":
+		app.heading=Reception.heading(row,app)
+		app.minibar=C.label("",17,C.GOLD)
+		app.minibar.visible=false
+		parent.add_child(app.minibar)
+		return
 	D.text(row,1,19,{"Bureau":"LE BUREAU","Effectif":"LE GROUPE PROFESSIONNEL","Composition":"LE PLAN DE JEU"}.get(app.route,app.route.to_upper()),19,C.GOLD,600,1040)
 	app.heading = D.text(row,-1,76,TITLES.get(app.route,app.route),53,C.IVORY,700,1190)
 	var values := P.group(app.model)
@@ -256,6 +284,7 @@ static func _footer(parent: Node, app: Control) -> void:
 
 static func _existing_page(app: Control) -> void:
 	match app.route:
+		"Réception": app.body.add_child(Reception.build(app))
 		"Club": app.body.add_child(app.ClubViews.club(app))
 		"Calendrier": app.body.add_child(app.ClubViews.calendar(app))
 		"Classements": app.body.add_child(app.ClubViews.tables(app))
