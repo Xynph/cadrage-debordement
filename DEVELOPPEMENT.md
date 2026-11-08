@@ -1,5 +1,13 @@
 # Journal de développement — Cadrage Débordement
 
+## 8 novembre 2026 — coût de validation et empreintes des sauvegardes
+
+La CI post-fusion de la PR397, sur le main `6c38020a`, a réellement échoué : les campagnes `native-academy-integrated-long` et `native-club-support-season` atteignent chacune180secondes, alors que la CI de la tête PR était verte. Aucune installation supplémentaire n'est déclarée totalement reçue à ce stade.
+
+Le profilage Node22 isole le coût des accès globaux dans deux fonctions : `safeTree` lie localement les mêmes quatre helpers et `saveChecksum` le même `Math.imul`. Algorithmes, ordre des contrôles, messages, limites, format et transactions restent inchangés ; le worker et ses sérialisations ne sont pas modifiés. Le témoin conserve205checksums, un corpus hostile, les plafonds200000/400000/650000nœuds et l'ordre de lecture avant refus. Les deux suites passent sous Node22 et26 ; une revue indépendante confirme les corps historiques exacts et exécute le témoin sur une copie du main sans `.git` ni nouveautés0.6.
+
+Les deux campagnes complètes Node22 passent maintenant en113,796s et160,152s, sans hausse du délai180s ni retrait de semaine, match, reprise ou assertion. Sur deux échantillons réels, exports complets, fichiers `donnees.json`, seed et horloge sont identiques octet pour octet ; gains mesurés30,9% et22,6%. Les19,848s de marge locale de Support ne constituent pas une preuve CI Linux. La nouvelle tête devra recevoir sa propre CI et sa CI post-fusion avant toute annonce de validation distante. Voir [mesures et limites](docs/native06-performance-20261108.md).
+
 ## 8 novembre 2026, 17:13 UTC — plein écran demandé par Léo
 
 Lancement en plein écran standard par défaut ; l'option **Fenêtré 1440×900** reste dans Paramètres et s'applique à la session. Aucun nouveau champ de préférence ni format de carrière. Les boutons d'affichage sont nommés, accessibles au clavier et présentent le plein écran en premier. La recette Windows vérifie le mode initial avant ses fixtures explicites en fenêtre, puis le vrai aller-retour des boutons.
