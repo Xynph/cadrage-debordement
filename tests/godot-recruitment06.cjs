@@ -1,6 +1,8 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{spawnSync}=require('node:child_process');
-const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;if(!godot)throw Error('Godot requis pour ce test headless.');
+const {test}=require('node:test');
+const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;
+test('Recrutement et presse : présentations natives des rapports et relances', {skip:!godot&&'SDK Godot absent : réception non exécutée'},()=>{
 const root=fs.mkdtempSync(path.join(process.env.TEMP||require('node:os').tmpdir(),'cd-recruitment06-'));
 const {context}=require('./france-harness.cjs'),h=context(10606),decisions=require('../native/engine/decisions.cjs'),press=require('../native/engine/press.cjs');
 h.run(`start(0,'fiction');const nativeDecisions=${decisions.toString()};const nativePress=(${press.factory.toString()})();`);
@@ -76,3 +78,4 @@ func run() -> void:
 `);
 const result=spawnSync(godot,['--headless','--log-file',path.join(root,'godot-engine.log'),'--path',path.resolve(__dirname,'../native/godot'),'--script',script],{encoding:'utf8',windowsHide:true,timeout:60000,env:{...process.env,CD_RECRUITMENT06_ROOT:root}});
 const log=(result.stdout||'')+(result.stderr||'');fs.writeFileSync(path.join(root,'godot.log'),log);console.log(log);console.log('Preuves headless : '+root);if(result.error)throw result.error;assert.equal(result.status,0,log);assert.doesNotMatch(log,/SCRIPT ERROR|Parse Error|ERROR:/);
+});

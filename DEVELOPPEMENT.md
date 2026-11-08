@@ -2,6 +2,8 @@
 
 ## 8 novembre 2026 — finition PC, couleurs, voix complète et contacts visuels
 
+La première CI de PR399, tête73b12566, échoue sur trois témoins qui exigeaient Godot au chargement dans la CI Linux sans SDK : `godot-coach-notes06-app.cjs`, `godot-coach-notes06.cjs` et `godot-recruitment06.cjs`. Ils utilisent désormais `node:test` et un saut explicitement annoncé seulement lorsque le SDK n'est pas configuré. Tous les parcours, assertions, refus et délais60s sont conservés. Réception réelle des trois témoins sous Windows/Node22 puis26 : trois réussites sans saut ; environnement sans SDK : zéro réussite annoncée, trois sauts explicites. Aucun workflow ni garde du gate modifié. Le programme exporté reste strictement identique ; la nouvelle tête doit recevoir sa propre CI complète.
+
 Le candidat Windows final01, construit depuis `e7ed132d`, reçoit ensuite1 450contrôles/0échec,103captures aux quatre tailles et120empreintes. Le vrai binaire relocalisé utilise son runtime embarqué, décode les74prises du PCK, reçoit lecture/fin, export refusé sur lecture seule et reprise sans changement de sauvegarde ; aucun TCP ni orphelin. Bureau/effectif/classements/staff2560regardés. Démarrage du premier worker28 222ms, dont l'essentiel avant `main.init` ; aucune cause système supposée comme acquise. Voir `docs/native07-reception-windows-20261108.md`. Dernier SHA distant, CI et installation encore à recevoir à cette étape.
 
 La PR398 est fusionnée par le gate officiel sur `f335fb76f038e6632be43540913b7b593b5f8395`. Sa CI exacte `42523056871` et sa CI post-fusion `42524247205` réussissent chacune les sept jobs ; les notes de diagnostic ci-dessous restent historiques. Aucun délai, garde de sauvegarde ni workflow n'a été contourné.
