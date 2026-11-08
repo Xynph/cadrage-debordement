@@ -8,6 +8,7 @@ var checks:=0
 var captures:=""
 var engine_pid:=-1
 var coach_reception: Dictionary = {}
+var layout_reception: Array[Dictionary] = []
 
 func _ready() -> void:call_deferred("_run")
 
@@ -68,8 +69,11 @@ func _keyboard_focus() -> void:
 
 func _capture(name:String) -> void:
 	await _settle()
-	var logical:Vector2=Vector2(DisplayServer.window_get_size()) if DisplayServer.get_name()!="headless" else get_tree().root.size
+	# CanvasItem transforms end in logical viewport units, before window stretch.
+	# A 1280x800 window uses a 1440x900 viewport in this project's canvas_items mode.
+	var logical:Vector2=get_tree().root.get_visible_rect().size
 	var end:Vector2=app.root_content.get_global_transform_with_canvas()*app.root_content.size
+	layout_reception.append({"capture":name,"viewport":[logical.x,logical.y],"window":[DisplayServer.window_get_size().x,DisplayServer.window_get_size().y],"root_end":[end.x,end.y]})
 	_check(end.x<=logical.x+1 and end.y<=logical.y+1,"Root fits client: "+name)
 	if is_instance_valid(app.body) and app.route not in ["Accueil","Création"]:
 		end=app.body.get_global_transform_with_canvas()*app.body.size
@@ -328,7 +332,7 @@ func _finish() -> void:
 	while app.bridge.child_pid>0 and Time.get_ticks_msec()<deadline:await get_tree().process_frame
 	_check(app.bridge.child_pid<=0,"Owned worker stopped")
 	var final_club:Dictionary=app.model.club if app.model.get("club") is Dictionary else {}
-	var result:Dictionary={"passed":failures.is_empty(),"checks":checks,"failures":failures,"native_display":DisplayServer.get_name(),"captures":captures,"pid":OS.get_process_id(),"engine_pid":engine_pid,"executable":OS.get_executable_path(),"season":app.model.get("meta",{}).get("season"),"club":final_club.get("id"),"coach":coach_reception}
+	var result:Dictionary={"passed":failures.is_empty(),"checks":checks,"failures":failures,"native_display":DisplayServer.get_name(),"captures":captures,"pid":OS.get_process_id(),"engine_pid":engine_pid,"executable":OS.get_executable_path(),"season":app.model.get("meta",{}).get("season"),"club":final_club.get("id"),"coach":coach_reception,"layout":layout_reception}
 	if not captures.is_empty():
 		var file:=FileAccess.open(captures.path_join("report.json"),FileAccess.WRITE)
 		if file!=null:file.store_string(JSON.stringify(result,"\t"));file.close()
