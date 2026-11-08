@@ -127,6 +127,44 @@ func bounds() -> void:
 	for control in buttons(page):
 		check(control.focus_mode == Control.FOCUS_ALL, "Bouton accessible au clavier : " + str(control.name))
 		check(control.size.x > 0 and control.size.y >= 25, "Cible interactive lisible : " + str(control.name))
+func contrast(first: Color, second: Color) -> float:
+	var a := first.srgb_to_linear().get_luminance()
+	var b := second.srgb_to_linear().get_luminance()
+	return (maxf(a,b)+.05)/(minf(a,b)+.05)
+func palette() -> void:
+	var original: Color = app.accent
+	for color in [Color("cad0d3"), Color("ffdf00"), Color("050505")]:
+		app.accent = color
+		await render()
+		var standings: Node = named(app, "OfficeStandings")
+		var chapter: Label = standings.get_child(0).get_child(0)
+		var objective: Label = standings.get_child(2).get_child(1)
+		for label in [chapter, objective]:
+			check(contrast(label.get_theme_color("font_color"), Office.PAPER) >= 4.5, "Encre Bureau lisible " + color.to_html() + " " + label.text)
+		var grid: GridContainer = standings.get_child(3)
+		var rows := Office.standings_window(app.model)
+		for index in rows.size():
+			if rows[index].id != app.model.club.id: continue
+			for column in 6:
+				var cell: PanelContainer = grid.get_child(6 + index * 6 + column)
+				check(contrast(cell.get_child(0).get_theme_color("font_color"), cell.get_theme_stylebox("panel").bg_color) >= 4.5, "Classement sélectionné lisible " + color.to_html())
+		for id in ["OfficeStandingsAction", "OfficePreparationAction", "OfficeFinanceAction"]:
+			var button: Button = named(app, id)
+			var background := Office.CHARCOAL if id == "OfficeFinanceAction" else Office.PAPER
+			for state in [["normal", "font_color"], ["hover", "font_hover_color"], ["pressed", "font_pressed_color"]]:
+				var surface: Color = background.blend(button.get_theme_stylebox(state[0]).bg_color)
+				check(contrast(button.get_theme_color(state[1]), surface) >= 4.5, "Lien Bureau lisible " + color.to_html() + " " + id + " " + state[0])
+			check(contrast(button.get_theme_color("font_focus_color"), background) >= 4.5, "Texte focus Bureau " + id)
+			check(contrast(button.get_theme_stylebox("focus").border_color, background) >= 3, "Bordure focus Bureau " + color.to_html() + " " + id)
+		await capture("bureau-palette-" + color.to_html())
+	app.accent = original
+	await render()
+func money_lines() -> void:
+	var metrics: Node = named(app, "OfficeMeans").get_child(1)
+	for metric in metrics.get_children():
+		var value: Label = metric.get_child(0)
+		check(value.get_line_count() == 1, "Indicateur et unité sur une ligne : " + value.text + " / " + str(root.size.x))
+	check(texts(metrics).contains(Office.G.euros(app.model.finance.cash)), "Trésorerie exacte et unité conservées")
 func projections() -> void:
 	var base: Dictionary = app.model.duplicate(true)
 	var projected: Dictionary = base.duplicate(true)
@@ -183,6 +221,7 @@ func run() -> void:
 		for i in 5: await process_frame
 		await render()
 		bounds()
+		money_lines()
 		await capture("bureau-" + str(resolution.x))
 		var center: ScrollContainer = named(app, "OfficeFixture").get_parent().get_parent()
 		center.scroll_vertical = 10000
@@ -196,6 +235,19 @@ func run() -> void:
 		await command("new_career", {"club":setup[0],"mode":setup[1]})
 		await render()
 		check(int(app.model.club.id) == setup[0], "Vraie carrière : " + setup[1])
+		money_lines()
+		if setup[0] == 29:
+			check(app.accent == Color("cad0d3"), "Couleur identitaire réelle de Valence Romans conservée")
+			for resolution in [Vector2i(1280,800), Vector2i(1440,900), Vector2i(1920,1080)]:
+				root.size = resolution
+				if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(resolution)
+				for i in 5: await process_frame
+				await render()
+				bounds()
+				money_lines()
+				named(app, "OfficeStandings").get_parent().scroll_vertical = 10000
+				await capture("bureau-club29-moyens-" + str(resolution.x))
+			await palette()
 		sections()
 		ranking_edges()
 		await capture("bureau-" + str(setup[1]) + "-" + str(setup[0]))

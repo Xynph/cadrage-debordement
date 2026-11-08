@@ -10,8 +10,8 @@ func check(value: bool, message: String) -> void:
 	if not value: failures.append(message); printerr("FAIL: ", message)
 func settle() -> void:
 	for i in 8: await process_frame
-func command(id: String, payload: Dictionary = {}) -> void:
-	app._command(id, payload)
+func command(id: String, payload: Dictionary = {}, target: String = "") -> void:
+	app._command(id, payload, target)
 	var deadline := Time.get_ticks_msec() + 30000
 	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
 	check(not app.waiting and app.bridge.last_response_ok, "Commande réelle " + id)
@@ -21,6 +21,70 @@ func capture(id: String) -> void:
 	await RenderingServer.frame_post_draw
 	var file := OS.get_environment("CD_GUIDE_INTEGRATION_CAPTURES").path_join(id + ".png")
 	check(root.get_texture().get_image().save_png(file) == OK, "Capture raccord " + id)
+func menu_button() -> Button:
+	for control in app.root_content.find_children("*", "Button", true, false):
+		if control.text == "MENU & SAUVEGARDES": return control
+	return null
+func coach_geometry(context: String) -> void:
+	var menu := menu_button()
+	if menu == null: return
+	check(not menu.get_global_rect().intersects(app.coach.get_global_rect()), "Coach hors du menu bas après " + context + " / " + str(root.size.x))
+	check(app.coach.get_global_rect().position.x >= app.workspace_inset.get_global_rect().position.x, "Coach dans l'espace de travail après " + context)
+func menu_input(mouse: bool) -> void:
+	var menu := menu_button()
+	check(menu != null and menu.is_visible_in_tree() and not menu.disabled, "Menu bas visible et actif")
+	if menu == null: return
+	check(menu.get_global_rect().end.y <= app.size.y, "Menu bas dans la fenêtre")
+	if mouse:
+		var point := menu.get_global_rect().get_center()
+		var motion := InputEventMouseMotion.new(); motion.position = point; motion.global_position = point
+		# Rectangles use logical viewport coordinates, also when canvas_items stretches.
+		root.push_input(motion, true); await process_frame
+		for pressed in [true, false]:
+			var event := InputEventMouseButton.new(); event.button_index = MOUSE_BUTTON_LEFT
+			event.position = point; event.global_position = point; event.pressed = pressed
+			root.push_input(event, true); await process_frame
+	else:
+		menu.grab_focus(); await process_frame
+		check(menu.has_focus(), "Focus clavier du menu bas")
+		for pressed in [true, false]:
+			var event := InputEventKey.new(); event.keycode = KEY_ENTER; event.pressed = pressed
+			Input.parse_input_event(event); await process_frame
+	await settle()
+	check(app.get_children().any(func(child): return child is AcceptDialog and child.visible and child.title == "Votre carrière"), "Menu bas ouvert par " + ("souris" if mouse else "Entrée") + " / " + str(root.size.x))
+	app._clear_dialogs(); await settle()
+func ordinary_routes() -> void:
+	# No open_help between the render under test and geometry / input assertions.
+	app.coach.close()
+	app._navigate("Accueil"); await settle()
+	await command("snapshot")
+	for control in app.root_content.find_children("*", "Button", true, false):
+		if control.text == "REPRENDRE LA CARRIÈRE  →": control.pressed.emit(); break
+	await settle()
+	check(app.route == "Bureau", "Reprise réelle depuis l'accueil")
+	coach_geometry("reprise")
+	await capture("bureau-coach-compact-" + str(root.size.x))
+	await menu_input(true)
+	app._navigate("Effectif"); await settle()
+	coach_geometry("navigation compacte")
+	await menu_input(false)
+	app._navigate("Bureau"); await command("snapshot")
+	coach_geometry("snapshot compact")
+	app.coach.open_tour(); await settle()
+	app.coach.profile.data.step = "effectif"
+	app.coach.refresh()
+	app.coach._go(); await settle()
+	check(app.route == "Effectif", "Navigation réelle par le guide")
+	coach_geometry("navigation guide développé")
+	await menu_input(true)
+	app.coach.open_help(); await settle()
+	app._navigate("Bureau"); await settle()
+	coach_geometry("navigation développée")
+	await command("snapshot")
+	coach_geometry("snapshot développé")
+	await capture("bureau-coach-developpe-" + str(root.size.x))
+	await menu_input(false)
+	app.coach.close(); await settle()
 func market_keyboard() -> void:
 	app._navigate("Recrutement"); await settle()
 	for expected in ["MarketDirection", "MarketReset"]:
@@ -69,16 +133,24 @@ func run() -> void:
 		check(is_instance_valid(app.coach), "Une instance native de coach")
 		check(app.coach.portrait.texture is AtlasTexture and app.coach.portrait.texture.atlas != null, "Atlas original réellement chargé")
 		app.coach.speech.set_muted(true)
-		await command("new_career", {"mode":"common", "club":0})
+		for resolution in [Vector2i(1280,800), Vector2i(1440,900), Vector2i(1920,1080)]:
+			root.size = resolution
+			DisplayServer.window_set_size(resolution); await settle()
+			app._navigate("Création"); await settle()
+			await command("new_career", {"mode":"common", "club":29}, "Bureau")
+			coach_geometry("création")
 		await command("export")
 		var initial: String = app.model.meta.exportText
 		var filename: String = str(app.model.meta.dataDir).path_join("donnees.json")
 		var initial_hash := FileAccess.get_sha256(filename)
 		await market_keyboard()
 		for resolution in [Vector2i(1280,800), Vector2i(1440,900), Vector2i(1920,1080)]:
+			root.size = resolution
 			DisplayServer.window_set_size(resolution); await settle()
+			await ordinary_routes()
 			for route in ["Bureau","Effectif","Composition","Préparation","Recrutement","Finances","Club","Calendrier","Classements","Match","Accueil","Création","Packs"]:
 				app._navigate(route); await settle()
+				coach_geometry("navigation ordinaire " + route)
 				app.coach.open_help(); await settle()
 				check(app.coach.expanded, "Aide ouverte " + route)
 				check(app.coach.get_global_rect().end.y <= app.size.y + 1, "Guide dans la fenêtre " + route)

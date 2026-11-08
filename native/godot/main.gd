@@ -241,6 +241,9 @@ func _render(remember_ui: bool = true) -> void:
 	_build_sidebar(shell)
 	var inset := G.margin(22)
 	workspace_inset = inset
+	# Container sorting can happen after the deferred coach refresh. Reposition
+	# on its actual geometry, including the sidebar width, after every rebuild.
+	inset.item_rect_changed.connect(_layout_coach)
 	G.fill(inset, true)
 	shell.add_child(inset)
 	var content := G.v(13)

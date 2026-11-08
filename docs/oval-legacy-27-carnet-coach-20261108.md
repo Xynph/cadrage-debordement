@@ -24,11 +24,15 @@ Les rapports de tâche et revues indépendantes du Bureau, de la DA, de la BDDv2
 
 Une campagne combinée a exposé un défaut moteur historique : IA adverse à 22 joueurs après blessure dans certaines graines. Le correctif, revu indépendamment, réutilise la couverture IA existante avant les nouvelles rencontres, sans modifier le validateur ou soigner les blessés. Voir le [rapport moteur et ses limites](native-fiction-sheet-20261108.md). Les erreurs de la première campagne ne sont pas comptées comme des PASS ; la campagne de régressions suivante est verte.
 
+La dernière revue a reproduit puis corrigé le coach compact recouvrant le menu bas après reconstruction du shell, l'encre du Bureau avec l'accent clair réel du club 29 et les euros isolés dans « Confiance & moyens ». Le placement suit désormais la géométrie effective du conteneur ; le Bureau reprend `accent_ink`, une sélection pâle soulignée et un focus contrasté, avec montants complets empilés. Les harnais vérifient création, reprise, snapshots compact/développé et navigation sans réouverture réparatrice du coach, ainsi que l'ouverture du menu bas par touches et événements souris du viewport aux trois tailles. Réception source Windows : 536 contrôles Bureau et 432 de raccord sans échec, captures inspectées ; ces résultats ne valident pas un nouvel EXE distribué.
+
 ## Réception obligatoire de la distribution
 
 Après stabilisation et revue, construire dans un nouveau dossierE: avec `scripts/build-godot-prototype.py`, extraire le ZIP dans un autre chemin, contrôler toutes les empreintes du manifeste puis lancer le véritable EXE avec son Node embarqué et un PATH dépourvu de Node installé.
 
 La recette embarquée `qa_runner.gd` refuse un profil existant et exige un dossier de test explicite. Elle vérifie création, vrais menus et décisions, plusieurs matchs, saison2, export/import et arrêt du worker. Le coach est contrôlé dans le template exporté : atlas chargé, animation, mêmes textes, vrais événements TTS si voix disponible et arrêt. `CD_GODOT_REQUIRE_TTS=1` exige une voix française sur la machine de réception. `CD_GODOT_QA_V1_FIXTURE` permet en plus l'import UI de la véritable carrière v1 puis la restauration de la v2, sans migration.
+
+Ses boucles de réception couvrent désormais aussi 1280×800 avec 1440×900 et 1920×1080 ; une capture `coach-developpe.png` est prise avant réduction, en plus de `coach-integre.png` compact. Le script est vérifié par le parseur ; la nouvelle réception complète du binaire reste à exécuter par l'intégrateur.
 
 Le rapport JSON mentionne l'exécutable réellement lancé, la plateforme, les compteurs, les échecs et la disponibilité vocale. La réception du ZIP, les images finales, la CI du dernier SHA et le gate GitHub sont consignés par l'intégrateur dans la PR et #73 après exécution ; leur réussite ne se déduit pas des tests source ci-dessus.
 

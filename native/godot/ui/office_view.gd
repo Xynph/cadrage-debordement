@@ -1,6 +1,7 @@
 extends RefCounted
 # Présentation du Bureau uniquement : aucune commande de carrière à l'affichage.
 const G = preload("res://ui/game_skin.gd")
+const Carnet = preload("res://ui/carnet_skin.gd")
 const PAPER = Color("f3eddf")
 const INK = Color("242321")
 const MUTED = Color("746d63")
@@ -45,7 +46,7 @@ static func _scroll(parent: Node) -> VBoxContainer:
 static func _heading(parent: Node, number: String, text: String, accent: Color) -> void:
 	var row := G.h(8)
 	parent.add_child(row)
-	row.add_child(G.label(number + " /", 29, accent.darkened(.12), true))
+	row.add_child(G.label(number + " /", 29, Carnet.accent_ink(accent), true))
 	var heading := _text(text, 29, INK, true)
 	G.fill(heading)
 	row.add_child(heading)
@@ -63,9 +64,11 @@ static func _link(text: String, callback: Callable, accent: Color, paper: bool =
 	button.add_theme_stylebox_override("normal", style)
 	button.add_theme_stylebox_override("hover", G.T.box(Color(accent, .12), 2))
 	button.add_theme_stylebox_override("pressed", G.T.box(Color(accent, .2), 2))
-	button.add_theme_stylebox_override("focus", G.T.box(Color.TRANSPARENT, 2, accent.lightened(.2)))
+	var focus := G.T.box(Color.TRANSPARENT, 2, Carnet.accent_ink(accent) if paper else G.GOLD)
+	focus.set_border_width_all(2)
+	button.add_theme_stylebox_override("focus", focus)
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-		button.add_theme_color_override(key, accent.darkened(.18) if paper else G.INK)
+		button.add_theme_color_override(key, Carnet.accent_ink(accent) if paper else G.INK)
 	return button
 
 static func _navigate(app: Control, route: String) -> void:
@@ -334,7 +337,7 @@ static func _table(parent: Node, app: Control) -> void:
 	var objective := G.v(2)
 	parent.add_child(objective)
 	objective.add_child(_text("OBJECTIF DU CLUB", 12, MUTED))
-	objective.add_child(_text(app.model.club.get("goal", "Développer le club"), 17, app.accent, true))
+	objective.add_child(_text(app.model.club.get("goal", "Développer le club"), 17, Carnet.accent_ink(app.accent), true))
 	var grid := GridContainer.new()
 	grid.columns = 6
 	grid.add_theme_constant_override("h_separation", 5)
@@ -346,12 +349,15 @@ static func _table(parent: Node, app: Control) -> void:
 		var ours: bool = club.id == app.model.club.id
 		for value in [G.n(club.get("rank", "")), G.club_name(club), G.n(club.get("played", 0)), G.n(club.get("won", 0)), G.n(club.get("drawn", 0)), G.n(club.get("points", 0))]:
 			var cell := PanelContainer.new()
-			var style := G.T.box(app.accent if ours else Color.TRANSPARENT, 0)
+			var style := G.T.box(PAPER.lerp(Color(app.accent, 1), .12) if ours else Color.TRANSPARENT, 0)
+			if ours:
+				style.border_color = Carnet.accent_ink(app.accent)
+				style.border_width_bottom = 2
 			style.content_margin_left = 3; style.content_margin_right = 3
 			style.content_margin_top = 4; style.content_margin_bottom = 4
 			cell.add_theme_stylebox_override("panel", style)
 			grid.add_child(cell)
-			var label := G.label(value, 14, G.INK if ours else INK)
+			var label := G.label(value, 14, INK)
 			if cell.get_index() % 6 == 1:
 				G.fill(cell)
 				label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -368,13 +374,14 @@ static func _means(parent: Node, app: Control) -> void:
 	box.get_parent().size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	box.name = "OfficeMeans"
 	box.add_child(_text("Confiance & moyens", 25, G.INK, true))
-	var row := G.h(10)
+	# The narrow sport column cannot fit three monetary values side by side.
+	var row := G.v(8)
 	box.add_child(row)
 	for pair in [[G.n(app.model.meta.get("trust", "—")) + " %", "Confiance"], [G.euros(app.model.get("finance", {}).get("cash", app.model.club.get("cash", 0))), "Trésorerie"], [G.euros(app.model.get("finance", {}).get("wage", 0)), "Salaires / sem."]]:
 		var metric := G.v(2)
 		G.fill(metric)
 		row.add_child(metric)
-		metric.add_child(_text(pair[0], 20, G.INK, true))
+		metric.add_child(G.label(pair[0], 20, G.INK, true))
 		metric.add_child(_text(pair[1], 12, G.MUTED))
 	box.add_child(_text("Montants fictifs de votre carrière.", 12, G.MUTED))
 	var button := _link("Voir les finances  →", func(): _navigate(app, "Finances"), app.accent, false)

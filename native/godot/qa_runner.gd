@@ -118,6 +118,7 @@ func _coach_reception() -> void:
 	_check(app.coach.expanded, "Coach opens from the actual app")
 	_check(app.body_scroll.get_global_rect().end.y <= app.coach.get_global_rect().position.y + 1, "Coach reserves its workspace")
 	_check(app.coach.portrait.texture is AtlasTexture and app.coach.portrait.texture.atlas != null, "Exported atlas is loaded")
+	await _capture("coach-developpe")
 	var available: bool = not app.coach.speech.voice_id.is_empty()
 	if OS.get_environment("CD_GODOT_REQUIRE_TTS") == "1": _check(available, "French TTS required for this Windows reception")
 	if available:
@@ -161,7 +162,7 @@ func _run() -> void:
 		get_tree().quit(2)
 		return
 	_check(not app._has_career() and app.route=="Accueil","Fresh profile opens menu without creating career")
-	for resolution in [Vector2i(1440,900),Vector2i(1920,1080)]:
+	for resolution in [Vector2i(1280,800),Vector2i(1440,900),Vector2i(1920,1080)]:
 		if DisplayServer.get_name()=="headless":get_tree().root.size=resolution
 		else:DisplayServer.window_set_size(resolution)
 		await _settle()
@@ -180,7 +181,7 @@ func _run() -> void:
 	_check(app.model.get("squad",[]).size()>=23,"Real squad for club29")
 	_check(app.model.get("leagues",[]).size()==2,"Both divisions projected")
 	await _coach_reception()
-	for resolution in [Vector2i(1440,900),Vector2i(1920,1080)]:
+	for resolution in [Vector2i(1280,800),Vector2i(1440,900),Vector2i(1920,1080)]:
 		if DisplayServer.get_name()=="headless":get_tree().root.size=resolution
 		else:DisplayServer.window_set_size(resolution)
 		for page in ["Bureau","Effectif","Composition","Préparation","Calendrier","Classements","Recrutement","Finances","Club","Match"]:
