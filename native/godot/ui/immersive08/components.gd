@@ -39,8 +39,8 @@ class ArtTexture extends TextureRect:
 		atlas.region = Rect2(Vector2((source_size.x-crop.x)/2.0, 0), crop)
 		texture = atlas
 
-static func configure(height: float) -> void:
-	density = clampf(height / 1440.0, .64, 1.0)
+static func configure(height: float, width: float = 2560.0) -> void:
+	density = clampf(minf(height / 1440.0, width / 2560.0), .5, 1.0)
 
 static func px(value: float) -> int:
 	return roundi(value * density)

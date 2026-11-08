@@ -342,6 +342,278 @@
       "bytes": 101087,
       "sha256": "681a5f7f9398f29cf5676ba8a242e01b40247dc4eef67e2195bed2d493bce931",
       "synthetic": true
+    },
+    {
+      "id": "player-00",
+      "file": "player-00.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        298,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2757,
+      "sha256": "9cb9053ec376a19d07b0503805a295533ec686df1fcbf82efcb15ee780e8996d",
+      "synthetic": true
+    },
+    {
+      "id": "player-01",
+      "file": "player-01.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        326,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2826,
+      "sha256": "5acf79cf85d9f5bcd528bc44b9d16a420a9d8a3d43049ea10bc23f29d529a3dc",
+      "synthetic": true
+    },
+    {
+      "id": "player-02",
+      "file": "player-02.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        353,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2786,
+      "sha256": "6416a1cffc9c25b585a6bfc4ba226709f52569cb2f01168d4f46237824fe4656",
+      "synthetic": true
+    },
+    {
+      "id": "player-03",
+      "file": "player-03.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        381,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2821,
+      "sha256": "f5b98dd213f85ee6c9f5fee6dedb297b00fcafe297c63dd79cba57b28111ef0f",
+      "synthetic": true
+    },
+    {
+      "id": "player-04",
+      "file": "player-04.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        409,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2825,
+      "sha256": "6925189cd709fbbc3e27a8f08d94db608089fb6d4b9b1fce4fb3c3dc852883cc",
+      "synthetic": true
+    },
+    {
+      "id": "player-05",
+      "file": "player-05.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        437,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2848,
+      "sha256": "40005cff8fa8ed1ae7b820c57056185354c78a1747139e9710eeedbc808d6c69",
+      "synthetic": true
+    },
+    {
+      "id": "player-06",
+      "file": "player-06.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        464,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2828,
+      "sha256": "66651817bb05d9a1cbe31b1ad426166fbd52120b64d918b197bdc799450e2acd",
+      "synthetic": true
+    },
+    {
+      "id": "player-07",
+      "file": "player-07.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        493,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2783,
+      "sha256": "6865e4ea0fcceae074cc626b393f855a4bb92b3730e32ee434f8b0f7abff234f",
+      "synthetic": true
+    },
+    {
+      "id": "player-08",
+      "file": "player-08.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        551,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2762,
+      "sha256": "1c1377e1d67befab637fbc60bb970d25b8c9d5e1b8acfe542e9ca3fe7a9a4b93",
+      "synthetic": true
+    },
+    {
+      "id": "player-09",
+      "file": "player-09.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        580,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2844,
+      "sha256": "301ac6f08593ff13425d0e055f99aee909610d2a712e5d2a48f9fc798ce74e59",
+      "synthetic": true
+    },
+    {
+      "id": "player-10",
+      "file": "player-10.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        608,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2846,
+      "sha256": "0ef2f0f9b07aebbcdfe45416300ce88749950f93531c980f7095efd75872d7ea",
+      "synthetic": true
+    },
+    {
+      "id": "player-11",
+      "file": "player-11.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        636,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2820,
+      "sha256": "ee1cfcc5cc747de6e0d16e17ce2d0127a2bae1d1ea2d8959eb695055da46ef8e",
+      "synthetic": true
+    },
+    {
+      "id": "player-12",
+      "file": "player-12.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        664,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2861,
+      "sha256": "28209f173508b33bae24a0fab833e4a548f4e48a79863935ebcfd0fda947e144",
+      "synthetic": true
+    },
+    {
+      "id": "player-13",
+      "file": "player-13.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        692,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2879,
+      "sha256": "5ebb724ae400ffe5a0e6887e2819d5125000c9e9ca688007f36c225da6b9621a",
+      "synthetic": true
+    },
+    {
+      "id": "player-14",
+      "file": "player-14.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        720,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2839,
+      "sha256": "c712910fd38fb91821a48a8ed15221fe15f05c52ac76212a25baa249935fa5b5",
+      "synthetic": true
+    },
+    {
+      "id": "player-15",
+      "file": "player-15.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        747,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2780,
+      "sha256": "c76db3113704f05b7b8cb35256033d3da266e05b823ed221e6d7f2028a9de3c3",
+      "synthetic": true
     }
   ]
 }

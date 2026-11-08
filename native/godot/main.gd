@@ -1,6 +1,7 @@
 extends Control
 
 const G = preload("res://ui/game_skin.gd")
+const Immersive = preload("res://ui/immersive08/shell.gd")
 const Entry = preload("res://ui/entry_screens.gd")
 const ClubViews = preload("res://ui/club_views.gd")
 const SquadViews = preload("res://ui/squad_views.gd")
@@ -286,6 +287,7 @@ func _failed(message: String) -> void:
 	if route == "Accueil" or not _has_career(): _render()
 
 func _navigate(target: String, remember_ui: bool = true) -> void:
+	if target == "Effectif": set_meta("immersive08_full_player",false)
 	route = target
 	for chapter: Dictionary in NAV_CHAPTERS:
 		if target in chapter.routes: chapter_routes[chapter.label] = target
@@ -337,6 +339,7 @@ func _render(remember_ui: bool = true) -> void:
 		if route in chapter.routes: chapter_routes[chapter.label] = route
 	if remember_ui: SquadViews.U.remember(self)
 	SquadViews.U.sync(self)
+	if Immersive.render(self): return
 	if is_instance_valid(root_content):
 		remove_child(root_content)
 		root_content.queue_free()
@@ -624,7 +627,9 @@ func _update_live_bar() -> void:
 		var score: Array = live.get("score", [0,0])
 		minibar.text = "%s  %s — %s  %s   ·   %s min%s" % [G.club_abbr(teams[0]),G.n(score[0]),G.n(score[1]),G.club_abbr(teams[1]),G.n(live.get("minute",0)),"  /  PAUSE" if live.get("paused",false) else ""]
 	else: minibar.text = "ÉLITE & ACCESSION  /  30 CLUBS" if model.meta.get("mode") in ["france30", "common"] else "CARRIÈRE HISTORIQUE  /  14 CLUBS"
-	if is_instance_valid(primary_button): primary_button.text = primary_text()
+	if is_instance_valid(primary_button):
+		primary_button.text = "Continuer" if primary_button.name == "ImmersiveContinue" else primary_text()
+		primary_button.tooltip_text = primary_text()
 
 func primary_text() -> String:
 	var live := _live()

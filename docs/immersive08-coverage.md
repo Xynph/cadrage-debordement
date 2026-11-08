@@ -5,9 +5,9 @@ Base vérifiée : f335fb76, 8 novembre 2026. Références 1440p approuvées dans
 | Famille | Routes et sous-vues à recevoir | Graphisme | Interactions / preuve |
 |---|---|---|---|
 | Entrée | Accueil, Création, Packs, reprise/import/récupération | À faire | À tester |
-| Bureau | Synthèse, priorités, groupe, classement, journal, échéances | À faire | À tester |
-| Effectif | Vue générale, condition, contrats, développement, dossier, comparaison | À faire | À tester |
-| Tactique | Composition XV/banc, candidats, préparation, plan de jeu | À faire | À tester |
+| Bureau | Synthèse, priorités, groupe, classement, journal, échéances | Sept tuiles aux coordonnées 1440p approuvées, images originales, fontes et pictos exacts | Capturé en 1440p ; navigation et invariance intégrale export/disque ; replis à recevoir |
+| Effectif | Vue générale, condition, contrats, développement, dossier, comparaison | Tableau 13 colonnes, 24 lignes par page, portraits d'origine, fiche complète et six onglets | Capturé en 1440p ; recherche, identifiants, pagination, retour, présence des attributs et du carnet ; contrats/notes/replis à approfondir |
+| Tactique | Composition XV/banc, candidats, préparation, plan de jeu | Gabarit trois colonnes, briefing original, 15 maillots, banc, consignes et vigilance | Capturé en 1440p ; vrais choix attaque/défense, qualifications, affectation, charge, sauvegarde et reprise exacte ; autres sous-vues à refaire |
 | Développement | Recrutement, suivi, Formation, Centre | À faire | À tester |
 | Club | Club/Histoire, Staff, Travail du club, Stratégie, Finances | À faire | À tester |
 | Compétitions | Calendrier, Classements, Presse, Rivalités | À faire | À tester |
@@ -15,4 +15,6 @@ Base vérifiée : f335fb76, 8 novembre 2026. Références 1440p approuvées dans
 | Match | Pré-match, direct 3D, journal, résultat, statistiques | À faire | À tester |
 | Transversal | Recherche/navigation, préférences, confirmations, erreurs, coach | À faire | À tester |
 
-Les réservations natif07 sont respectées. Le raccordement partagé attend leur libération ; les nouveaux assets/composants sont développés sur des chemins disjoints. Aucun écran n'est déclaré reçu sur la seule présence d'un fichier ou d'un test statique.
+PR399 reçue à la tête `611065ae`, fusion locale de dépendance `26e6443`. Libération #73/6727978166, raccordement #73/6728276495 ; moteur, sauvegardes, guide et CI/gate restent exclus de l'écriture. Les nouveaux gabarits passent par l'application réelle, avec un profil jetable. Le contrôle Windows graphique du premier lot a donné 195 contrôles, 0 échec, ainsi que 38 images vérifiées ; les captures de travail sont dans `CD/output/oval-legacy-27/preuves-jeu-1440p`. Cela ne couvre ni les autres menus encore en cours, ni le paquet Windows final.
+
+Aucun écran n'est déclaré reçu sur la seule présence d'un fichier ou d'un test statique. Pour chaque prochaine famille, comparer la capture du jeu à son concept à résolution égale, contrôler les interactions et documenter les états vides et les replis.

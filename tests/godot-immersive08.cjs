@@ -3,6 +3,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const root=path.resolve(__dirname,'..'),art=path.join(root,'native/godot/art/immersive08');
 assert.ok(fs.existsSync(path.join(art,'manifest.json')),'Les illustrations approuvées doivent être intégrées comme assets indépendants');
 const manifest=JSON.parse(fs.readFileSync(path.join(art,'manifest.json'),'utf8'));
+for(const weight of ['Medium','SemiBold','Bold','ExtraBold'])assert.deepEqual(fs.readFileSync(path.join(root,'native/godot/ui/immersive08/fonts/BarlowCondensed-'+weight+'.ttf')),fs.readFileSync(path.join(root,'dist/fonts/BarlowCondensed-'+weight+'.ttf')),'Font exact de la référence : '+weight);
+assert.deepEqual(fs.readFileSync(path.join(root,'native/godot/fonts/DMSans.ttf')),fs.readFileSync(path.join(root,'dist/fonts/DMSans-Variable.ttf')),'DM Sans exact de la référence');
 const generated=fs.existsSync(path.join(art,'generated-manifest.json'))?JSON.parse(fs.readFileSync(path.join(art,'generated-manifest.json'),'utf8')).assets:[];
 assert.equal(manifest.schema,'oval-immersive-art-v1');
 assert.equal(manifest.assets.length,new Set(manifest.assets.map(a=>a.id)).size,'IDs uniques');
@@ -23,7 +25,8 @@ console.log(`Illustrations immersive08 : ${manifest.assets.length+generated.leng
 if(process.argv.includes('--art-only'))process.exit(0);
 const {spawnSync}=require('node:child_process'),os=require('node:os');
 const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;
-assert.ok(godot&&fs.existsSync(godot),'SDK Godot requis pour la réception native');
+if(!godot){require('node:test')('Réception native immersive08',{skip:'SDK Godot absent de cet environnement'},()=>{});return;}
+assert.ok(fs.existsSync(godot),'SDK Godot configuré mais introuvable');
 for(const script of ['components','shell'].filter(id=>fs.existsSync(path.join(root,'native/godot/ui/immersive08',id+'.gd')))){
  const parsed=spawnSync(godot,['--headless','--path',path.join(root,'native/godot'),'--check-only','--script','res://ui/immersive08/'+script+'.gd'],{encoding:'utf8',windowsHide:true,timeout:30000});
  assert.equal(parsed.status,0,(parsed.stdout||'')+(parsed.stderr||''));

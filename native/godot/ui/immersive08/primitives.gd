@@ -14,7 +14,8 @@ static func surface(width: float, height: float, top: Color, bottom: Color, bord
 	var key := str([w,h,top,bottom,border,radius,highlight])
 	if surfaces.has(key): return surfaces[key]
 	var shine := '<path d="M12 1H%d" stroke="#b0b8ad" stroke-opacity=".22"/>' % (w-12) if highlight else ""
-	var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#%s"/><stop offset="1" stop-color="#%s"/></linearGradient></defs><rect x=".5" y=".5" width="%d" height="%d" rx="%d" fill="url(#g)" stroke="#%s" stroke-opacity="%f"/>%s</svg>' % [w,h,top.to_html(false),bottom.to_html(false),w-1,h-1,C.px(radius),border.to_html(false),border.a,shine]
+	var middle := '<stop offset=".14" stop-color="#101719"/>' if top==Color("162022") and bottom==Color("0d1517") else ""
+	var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#%s"/>%s<stop offset="1" stop-color="#%s"/></linearGradient></defs><rect x=".5" y=".5" width="%d" height="%d" rx="%d" fill="url(#g)" stroke="#%s" stroke-opacity="%f"/>%s</svg>' % [w,h,top.to_html(false),middle,bottom.to_html(false),w-1,h-1,C.px(radius),border.to_html(false),border.a,shine]
 	var image := Image.new()
 	image.load_svg_from_string(svg)
 	var style := StyleBoxTexture.new()
@@ -33,7 +34,8 @@ static func panel(parent: Node, rectangle: Rect2, title: String = "", icon_id: S
 			var symbol := C.icon(icon_id, 24, C.GOLD)
 			control.add_child(symbol)
 			place(symbol, Rect2(19,17,24,24))
-		text(control, 55 if not icon_id.is_empty() else 20, 39, title.to_upper(), 26, C.IVORY, 700, rectangle.size.x-90)
+		var heading := text(control, 55 if not icon_id.is_empty() else 20, 39, title.to_upper(), 26, C.IVORY, 700, rectangle.size.x-90)
+		heading.name = "CardTitle"
 		line(control, Vector2(18,56), Vector2(rectangle.size.x-18,56), Color(C.LINE,.7))
 		if not badge.is_empty(): text(control, rectangle.size.x-20, 38, badge, 18, C.MUTED, 500, 200, HORIZONTAL_ALIGNMENT_RIGHT)
 	return control
@@ -96,7 +98,7 @@ static func button(parent: Node, rectangle: Rect2, caption: String, callback: Ca
 static func chip(parent: Node, rectangle: Rect2, caption: String, color: Color = C.MINT) -> Panel:
 	var shade := Color("4a2929") if color == C.ALERT else Color("43361c") if color == C.AMBER else Color("17313a") if color == C.BLUE else Color("123d2c")
 	var frame := rect(parent,rectangle,shade,5,Color(color,.7))
-	text(frame,rectangle.size.x/2,rectangle.size.y/2+7,caption,19,color,600,rectangle.size.x-12,HORIZONTAL_ALIGNMENT_CENTER)
+	text(frame,rectangle.size.x/2,rectangle.size.y/2+7,caption,19,color,600,rectangle.size.x-(4 if rectangle.size.x<=60 else 12),HORIZONTAL_ALIGNMENT_CENTER)
 	return frame
 
 static func bar(parent: Node, rectangle: Rect2, value: float, color: Color = C.MINT) -> void:

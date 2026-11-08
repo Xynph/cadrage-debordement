@@ -26,6 +26,7 @@ const recipes=[
  ['academy-training','11-formation.png',[912,49,407,174]],
  ['academy-player','11-formation.png',[1143,275,183,240]],
 ];
+for(const [index,center] of [312,340,367,395,423,451,478,507,565,594,622,650,678,706,734,761].entries())recipes.push(['player-'+String(index).padStart(2,'0'),'03-effectif.png',[309,center-14,31,30]]);
 const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
 (async()=>{
  if(!fs.existsSync(path.join(source,'01-bureau.png')))throw new Error('Dossier direction-b explicite requis');
