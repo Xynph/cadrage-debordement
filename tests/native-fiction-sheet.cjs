@@ -17,13 +17,15 @@ function allPlayers(s){return [...s.clubs.flatMap(c=>c.players),...s.aiRoster.ac
 function qualified(s){for(let side=0;side<2;side++){const sh=s.live.sheets[side],players=s.clubs[s.live.pair[side]].players,ids=[...sh.on,...sh.bench];assert.equal(ids.length,23);assert.equal(new Set(ids).size,23);assert.equal(sh.nominated.length,23);assert.ok(ids.every(id=>typeof id==='string'&&players.some(p=>p.id===id&&!p.injury)));}}
 function validateNative(b){const h=context();h.ctx.checked=state(b);h.run('validateCareer(checked)');qualified(state(b));}
 function check(label,fn){fn();checks.push(label);}
-// Read-only probe of the real worker's VM binding. Production has no test hook.
-function inspectedWorker(){
+// VM observation/fault injection stays in this test copy, never in production.
+function inspectedWorker(options={}){
  const Module=require('node:module'),filename=require.resolve('../native/engine/worker.cjs'),m=new Module(filename,module);
  m.filename=filename;m.paths=Module._nodeModulePaths(path.dirname(filename));
- m._compile(fs.readFileSync(filename,'utf8').replace('return {handle,close};',"return {handle,close,matchFactory:()=>run('createRugbyMatch')};"),filename);return m.exports.createBridge;
+ let source=fs.readFileSync(filename,'utf8');
+ if(options.kickoffTimeout)source=source.replace('const run=source=>vm.runInContext(source,ctx,{timeout:15000});',"const run=source=>vm.runInContext(source,ctx,{timeout:source.includes('const nativeCreate=createRugbyMatch;')?1000:15000});");
+ m._compile(source.replace('return {handle,close};',"return {handle,close,matchFactory:()=>run('createRugbyMatch'),probe:run};"),filename);return m.exports.createBridge;
 }
-function inspected(name,persisted){fs.mkdirSync(path.dirname(file(name)),{recursive:true});fs.writeFileSync(file(name),JSON.stringify(persisted));const b=inspectedWorker()({dataDir:path.join(root,name),seed:0,now:1700000000000});bridges.push(b);return b;}
+function inspected(name,persisted,options={}){fs.mkdirSync(path.dirname(file(name)),{recursive:true});fs.writeFileSync(file(name),JSON.stringify(persisted));const b=inspectedWorker(options)({dataDir:path.join(root,name),seed:0,now:1700000000000});bridges.push(b);return b;}
 function prepare(b,seed){
  good(b,'new_career',{club:0});good(b,'begin_match');
  good(b,'pause',{paused:true});good(b,'pause',{paused:false});good(b,'tick',{steps:1});good(b,'pause',{paused:true});
@@ -146,6 +148,13 @@ try{
   noMatch.run('var aiClub=S.clubs[roundPairs()[0][0]];aiClub.players.filter(p=>p.pos===POS[2]).slice(1).forEach(p=>p.injury=2);validateCareer(S)');
   const idle=inspected('inspected-no-fixture',{protocol:1,seed:noMatch.seed(),clock:1700000000000,store:{'bdt-v1':JSON.stringify(noMatch.state())}}),idleFactory=idle.matchFactory(),rosters=state(idle).clubs.map(c=>c.players.map(p=>p.id));
   good(idle,'begin_match');assert.equal(idle.matchFactory(),idleFactory);assert.deepEqual(state(idle).clubs.map(c=>c.players.map(p=>p.id)),rosters);assert.equal(state(idle).live,null);
+ });
+ check('real VM timeout restores the original factory and state; retry and next command retain RNG',()=>{
+  const b=inspected('vm-timeout',fixtures.get(5),{kickoffTimeout:true}),control=copied('vm-timeout-control',fixtures.get(5)),factory=b.matchFactory(),before=state(b),bytes=fs.readFileSync(file('vm-timeout'));
+  b.probe('var beforeTimeoutBegin=beginMatch;beginMatch=()=>{Math.random();S.morale=1;while(true){}}');
+  const refused=call(b,'begin_match');assert.equal(refused.ok,false);assert.match(refused.error,/Script execution timed out after 1000ms/);assert.deepEqual(state(b),before);assert.deepEqual(fs.readFileSync(file('vm-timeout')),bytes);assert.equal(b.matchFactory(),factory,'VM termination must not leak the interception');
+  b.probe('beginMatch=beforeTimeoutBegin');good(b,'snapshot');good(b,'begin_match');good(control,'begin_match');assert.equal(b.matchFactory(),factory);assert.deepEqual(state(b),state(control));assert.equal(profile('vm-timeout').seed,profile('vm-timeout-control').seed);
+  good(b,'delegate');good(control,'delegate');assert.equal(b.matchFactory(),factory);assert.deepEqual(state(b),state(control));assert.equal(profile('vm-timeout').seed,profile('vm-timeout-control').seed);
  });
  const report={passed:true,seeds:[1,5],checks,limitations:['23 is the internal engine format, not a universal law','academy reinforcement remains a management abstraction','no Godot UI or Windows executable reception']};
  if(process.env.CD_NATIVE_SHEET_REPORT)fs.writeFileSync(process.env.CD_NATIVE_SHEET_REPORT,JSON.stringify(report,null,2)+'\n');

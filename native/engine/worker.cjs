@@ -126,7 +126,8 @@ function createBridge(options={}){
       const hadFixture=run('!!nextMatch()');
       // The native live must pass strict save validation. Keep this cover out of
       // historical web/background simulations, and run it after normal training.
-      run(`{
+      const nativeCreate=ctx.createRugbyMatch;
+      try{run(`{
        const nativeCreate=createRugbyMatch;
        try{
         createRugbyMatch=(pair,legacy=null,automated=false,preparation=null)=>{
@@ -135,7 +136,10 @@ function createBridge(options={}){
         };
         beginMatch();
        }finally{createRugbyMatch=nativeCreate;}
-      }`);
+      }`);}finally{
+       // VM timeouts skip its inner finally; restore without executing more VM code.
+       ctx.createRugbyMatch=nativeCreate;
+      }
       if(hadFixture&&!run('!!S.live'))throw Error('Coup d’envoi refusé : vérifiez la feuille à 23 et le calendrier.');
      }else if(command==='tick'){
       if(!run('!!S.live'))throw Error('Aucun match en cours.');const steps=payload.steps??1;

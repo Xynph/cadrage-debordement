@@ -22,8 +22,11 @@ La commande `begin_match` du pont `native/engine/worker.cjs` réutilise désorma
 `CDFranceCareer.ensureAISheet` uniquement pour son nouveau live historique,
 lorsque `aiRosterActive()` est vrai. Elle intercepte localement la construction
 du match pendant l’appel synchrone à `beginMatch`, puis restaure la fonction
-d’origine dans un `finally`. La couverture a lieu après les contrôles de la
-feuille humaine et l’entraînement habituels, avant la création du live. Cela
+d’origine dans un `finally` **côté hôte**, directement par la référence
+`ctx.createRugbyMatch`. Le `finally` interne reste une défense supplémentaire,
+mais une interruption `vm.runInContext` peut le sauter. Le rétablissement hôte
+ne dépend donc d’aucune nouvelle exécution de VM. La couverture a lieu après les
+contrôles de la feuille humaine et l’entraînement habituels, avant la création du live. Cela
 conserve le dossier établi avant entraînement et évite de recruter pour une
 blessure d’une semaine qui vient de guérir. Toute erreur reste dans le rollback
 existant de carrière, stockage, RNG et horloge.
@@ -72,7 +75,7 @@ pour les deux graines, avec le refus d’incohérence attendu à J2. Un deuxièm
 rouge a isolé la conversion `legacy` qui ajoutait un joueur après un premier
 raccord trop large. Le rouge CI de `france-parity` a ensuite été reproduit sur
 la tête `2a43c898` : hash saison fiction réel `62b7aeb5…` contre `c7d469c5…`
-attendu. Après le déplacement dans la transaction native, les seize groupes de
+attendu. Après le déplacement dans la transaction native, les dix-sept groupes de
 vérification passent :
 
 - vrais ponts graines 1/5 : profil J1 sain rouvert, J2 réellement lancée, J3
@@ -100,10 +103,19 @@ vérification passent :
 - blessure d’une semaine guérie par l’entraînement : aucun renfort inutile ;
 - identité de la fonction restaurée après succès, refus humain, exception du
   helper, panne disque et absence de rencontre humaine ; ce dernier cas simule
-  les autres IA sans les renforcer. Le test expose seulement une lecture de la
-  référence VM dans une copie instrumentée du worker ; aucun hook de test n’est
-  ajouté au produit. Une mutation jetable supprimant la restauration est bien
-  détectée.
+  les autres IA sans les renforcer. L’observation se fait dans une copie
+  instrumentée du worker ; aucun hook de test n’est ajouté au produit ;
+- véritable timeout VM : l’ancien `finally` interne ne s’exécute pas et laisse
+  la fonction interceptée, même après une reprise réussie. Le test a échoué sur
+  `53ae9f7` avant le correctif hôte. Il interrompt réellement une boucle qui a
+  consommé un tirage et modifié la carrière, vérifie fonction d’origine,
+  état/disque, puis compare la reprise et la délégation suivante au contrôle,
+  RNG compris. Seule cette invocation de la copie de test reçoit un timeout
+  d’une seconde ; le délai produit de 15 000 ms n’a pas changé. La reproduction
+  indépendante au délai complet de quinze secondes a aussi été rejouée avant
+  puis après correction : identité, état/disque et reprise sont désormais
+  conservés. Ce travail bloquant est injecté pour tester la frontière ; aucune
+  carrière ordinaire lente n’est prétendue.
 
 `tests/france-parity.cjs` et ses goldens n’ont pas été modifiés. Création, match
 délégué, saison, intersaison, export et RNG fiction **et** LNR sont à nouveau
@@ -122,6 +134,9 @@ Suites existantes réexécutées avec succès après le correctif de parité :
 v1 S2 et continuation/RNG) et `france-saves`. Lors du premier lot, un lancement
 de `france-saves` avait échoué avant exécution parce que le dossier temporaire
 choisi n’existait pas ; sa relance dans un dossier E: existant avait réussi.
+Après la correction de timeout hôte, les dix-sept groupes natifs,
+`france-parity`, `v63-native-career-transactions` et le pont `godot-engine` ont été
+réexécutés avec succès.
 
 Ces vérifications utilisent Node sous Windows et le vrai pont moteur, ainsi que
 les harnais VM existants. Elles ne constituent pas une réception de l’interface
