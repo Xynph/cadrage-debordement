@@ -47,14 +47,41 @@ func click_at(control:Control, fraction:float) -> void:
 		event.position=point;event.global_position=point;event.button_index=MOUSE_BUTTON_LEFT;event.pressed=down
 		root.push_input(event,true);await process_frame
 	await settle()
+func density_contract() -> void:
+	# Catches the old 1080p cap: a 1440p desktop must gain canvas space,
+	# rather than enlarge the same controls by 4/3.
+	check(root.content_scale_size==root.size and app.size==Vector2(root.size),"Canvas PC natif sans agrandissement "+str(root.size))
+	var skin:Script=load("res://ui/carnet_skin.gd")
+	var sample:Label=skin.label("Une ligne de lecture courante",15)
+	app.add_child(sample)
+	check(sample.get_theme_font_size("font_size")==12,"Corps courant rendu à 12px")
+	sample.queue_free()
+	var action:Button=skin.button("Choisir",func():pass)
+	app.add_child(action)
+	check(action.get_combined_minimum_size().y<=28 and action.get_theme_font_size("font_size")==12,"Action dense lisible dans 28px")
+	action.queue_free()
+	var metric:VBoxContainer=skin.metric("125 000 €","Trésorerie")
+	app.add_child(metric)
+	check(metric.get_child(0).get_theme_font_size("font_size")<=20,"Métrique compacte au lieu d'une deuxième page")
+	metric.queue_free()
+	check(app.heading.get_theme_font_size("font_size")<=20,"Titre du shell PC compact")
+	check(named("Chapter_Bureau").get_combined_minimum_size().y<=30,"Navigation latérale compacte")
 func run() -> void:
 	var initial:=int(OS.get_environment("CD_LAYOUT_INITIAL"))
 	root.size=Vector2i(2560,1440) if initial==2560 else (Vector2i(1920,1080) if initial==1920 else (Vector2i(1600,900) if initial==1600 else Vector2i(1280,720)))
 	DisplayServer.window_set_size(root.size)
 	app=load("res://main.tscn").instantiate();root.add_child(app);await worker()
-	check(root.content_scale_size==Vector2i(mini(root.size.x,1920),mini(root.size.y,1080)),"Référence physique correcte au démarrage")
+	check(root.content_scale_size==root.size,"Référence physique correcte au démarrage")
 	await command("import",{"text":FileAccess.get_file_as_string(proof.path_join("career.json"))})
 	app._navigate("Composition");await settle();app.coach.close()
+	density_contract()
+	await capture("composition-native-"+str(root.size.x))
+	if OS.get_environment("CD_LAYOUT_DENSITY_PROBE")=="1":
+		print("PC_DENSITY ",JSON.stringify({"checks":checks,"failures":failures}))
+		app.closing=true;app.bridge.stop();app.queue_free()
+		await create_timer(.2).timeout
+		quit(0 if failures.is_empty() else 1)
+		return
 	await command("export")
 	var before: String=app.model.meta.exportText
 	var disk := OS.get_environment("CD_GODOT_DATA_DIR").path_join("donnees.json")
@@ -67,7 +94,7 @@ func run() -> void:
 	var guide_before:Dictionary=app.coach.profile.data.duplicate(true)
 	for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720),Vector2i(1600,900),Vector2i(1600,720),Vector2i(1280,720)]:
 		await resize_to(resolution)
-		var expected:=Vector2i(mini(resolution.x,1920),mini(resolution.y,1080))
+		var expected:Vector2i=resolution
 		check(root.content_scale_size==expected,"Référence physique "+str(resolution))
 		check(app.root_content==original,"Resize conserve les instances "+str(resolution))
 		for i in 15:
@@ -76,7 +103,7 @@ func run() -> void:
 	await capture("composition-1280")
 	await enter(named("LineupSlot23"))
 	check(app.selected_slot==22,"Sélection réelle du banc23")
-	for resolution in [Vector2i(1920,1080),Vector2i(1280,720),Vector2i(1600,900),Vector2i(1280,720)]:
+	for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720),Vector2i(1600,900),Vector2i(1280,720)]:
 		await resize_to(resolution)
 		check(named("LineupSlot23").has_focus(),"Focus banc23 conservé")
 		check(app.body_scroll.get_global_rect().encloses(named("LineupSlot23").get_global_rect()),"Banc23 réexposé après resize")
@@ -89,7 +116,7 @@ func run() -> void:
 	app._navigate("Effectif");await settle();app.coach.close()
 	var search:LineEdit=named("RosterSearch")
 	search.text="texte non envoyé";search.caret_column=5;search.select(2,5);search.grab_focus()
-	for resolution in [Vector2i(1920,1080),Vector2i(1280,720)]:await resize_to(resolution)
+	for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720)]:await resize_to(resolution)
 	check(named("RosterSearch")==search and search.text=="texte non envoyé" and search.caret_column==5 and search.has_selection(),"Champ, caret et sélection gardés")
 	check(search.has_focus(),"Focus saisie gardé")
 	search.text="";search.text_changed.emit("");await settle()
@@ -114,27 +141,27 @@ func run() -> void:
 	var confirmation:ConfirmationDialog
 	for c in app.get_children():
 		if c is ConfirmationDialog and c.visible:confirmation=c
-	for resolution in [Vector2i(1920,1080),Vector2i(1280,720)]:await resize_to(resolution)
+	for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720)]:await resize_to(resolution)
 	check(is_instance_valid(confirmation) and confirmation.visible,"Même confirmation exclusive intacte")
 	confirmation.hide();confirmation.queue_free();await settle()
 	load("res://ui/preferences_dialog.gd").open(app,app.user_preferences);await settle()
 	var preferences:Window=app.find_child("PreferencesDialog",true,false)
 	var volume:LineEdit=app.find_child("PreferencesVolume",true,false).get_line_edit()
 	volume.text="63";volume.caret_column=1
-	for resolution in [Vector2i(1920,1080),Vector2i(1280,720)]:await resize_to(resolution)
+	for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720)]:await resize_to(resolution)
 	check(is_instance_valid(preferences) and preferences.visible and volume.text=="63" and volume.caret_column==1,"Préférences non validées préservées")
 	preferences.hide();preferences.queue_free();await settle()
 	load("res://ui/squad_views.gd").contract(app,app.model.squad[0],false);await settle()
 	var offer:Window=app.find_child("ContractOffer",true,false)
 	var salary:LineEdit=offer.find_child("OfferSalary",true,false).get_line_edit()
 	salary.grab_focus();await settle();salary.text="12345";salary.caret_column=3
-	for resolution in [Vector2i(1920,1080),Vector2i(1280,720)]:await resize_to(resolution)
+	for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720)]:await resize_to(resolution)
 	check(is_instance_valid(offer) and offer.visible and salary.text=="12345" and salary.caret_column==3,"Brouillon contrat sur même dialogue")
 	offer.hide();offer.queue_free();await settle()
 	app._navigate("Préparation");await settle();app.coach.close()
 	await enter(named("PreparationTabEntrainement"))
 	var preparation:Control=named("CarnetPreparation")
-	for resolution in [Vector2i(1920,1080),Vector2i(1280,720)]:
+	for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720)]:
 		await resize_to(resolution)
 		check(named("CarnetPreparation")==preparation and app.management_ui.preparation.tab==2,"Onglet entraînement conservé")
 		for button in named("PreparationEntrainement").find_children("*","BaseButton",true,false):
@@ -147,7 +174,7 @@ func run() -> void:
 	if not answers.is_empty():
 		await enter(answers[0])
 		var draft:Variant=app.get_meta("press_draft_choices",{}).duplicate(true)
-		for resolution in [Vector2i(1920,1080),Vector2i(1280,720)]:await resize_to(resolution)
+		for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720)]:await resize_to(resolution)
 		check(app.get_meta("press_draft_choices",{})==draft and tabs.current_tab==1 and answers[0].button_pressed,"Brouillon et onglet Presse conservés")
 	else:check(false,"Fixture dispose de réponses Presse")
 	check(FileAccess.get_file_as_bytes(disk)==bytes,"Resize et lecture : disque inchangé")
@@ -182,7 +209,7 @@ func run() -> void:
 	journal.scroll.scroll_vertical=100
 	await settle()
 	var journal_scroll:int=journal.scroll.scroll_vertical
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(1280,720)]:
+	for resolution in [Vector2i(2560,1440),Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(1280,720)]:
 		await resize_to(resolution)
 		check(named("MatchJournal")==journal and app.match_screen.stage==stage,"Journal et caméra sur les mêmes instances")
 		check(journal_search.text=="e" and journal_search.caret_column==1 and journal_search.has_focus(),"Recherche Journal et caret conservés")

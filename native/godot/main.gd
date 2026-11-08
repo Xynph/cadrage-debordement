@@ -78,13 +78,24 @@ var workspace_inset: MarginContainer
 var body_scroll: ScrollContainer
 var entry_scroll: ScrollContainer
 var interface_layout: Node
+var _startup_trace := OS.get_environment("CD_GODOT_STARTUP_TRACE") == "1"
+var _startup_model_seen := false
+
+func _init() -> void:
+	_trace_startup("main.init")
+
+func _trace_startup(stage: String) -> void:
+	if _startup_trace:
+		print("CD_STARTUP ",JSON.stringify({"stage":stage,"pid":OS.get_process_id(),"engine_ms":Time.get_ticks_msec(),"unix_ms":int(Time.get_unix_time_from_system()*1000)}))
 
 func _ready() -> void:
+	_trace_startup("main.ready")
 	if OS.get_environment("CD_GODOT_SELF_TEST") == "1" and OS.get_environment("CD_GODOT_DATA_DIR").is_empty():
 		printerr("La réception exige un profil temporaire explicite.")
 		get_tree().quit(2)
 		return
 	theme = G.T.make()
+	_trace_startup("theme.ready")
 	interface_layout = load("res://ui/interface_layout.gd").new()
 	add_child(interface_layout)
 	interface_layout.setup(self)
@@ -99,14 +110,17 @@ func _ready() -> void:
 	file_dialog.filters = PackedStringArray(["*.json ; Carrière Oval Legacy 27"])
 	file_dialog.file_selected.connect(_file_selected)
 	add_child(file_dialog)
+	_trace_startup("file_dialog.ready")
 	pack_manager = load("res://pack_manager.gd").new()
 	pack_manager.app = self
 	add_child(pack_manager)
 	pack_manager.picker.theme=G.T.paper()
+	_trace_startup("pack_manager.ready")
 	bridge = load("res://engine_bridge.gd").new()
 	add_child(bridge)
 	bridge.model_changed.connect(_receive_model)
 	bridge.command_failed.connect(_failed)
+	_trace_startup("bridge.created")
 	navigation_controller = load("res://ui/navigation_controller.gd").new()
 	add_child(navigation_controller)
 	navigation_controller.setup(self)
@@ -114,11 +128,13 @@ func _ready() -> void:
 	user_preferences.changed.connect(_apply_user_preferences)
 	decision_feedback = load("res://ui/decision_feedback.gd").new()
 	decision_feedback.setup(self)
+	_trace_startup("guide.setup.begin")
 	if not (OS.has_feature("editor") and OS.get_environment("CD_GODOT_GUIDE_MODULE_TEST") == "1"):
 		coach = load("res://guide/coach_guide.gd").new()
 		add_child(coach)
 		coach.reserved_height_changed.connect(_reserve_coach_space)
 		coach.setup(self)
+	_trace_startup("guide.setup.end")
 	soundscape = preload("res://audio/soundscape.gd").new()
 	add_child(soundscape)
 	soundscape.error_changed.connect(_sound_error)
@@ -127,8 +143,12 @@ func _ready() -> void:
 		coach.speech.speaking_changed.connect(soundscape.set_voice_active)
 		soundscape.set_voice_active(coach.speech.speaking)
 	resized.connect(func(): call_deferred("_layout_coach"))
+	_trace_startup("render.begin")
 	_render()
+	_trace_startup("render.end")
+	_trace_startup("bridge.start.begin")
 	bridge.start(_profile_path())
+	_trace_startup("bridge.start.end")
 	timer.start()
 	get_tree().auto_accept_quit = false
 	get_tree().root.close_requested.connect(request_quit)
@@ -148,6 +168,9 @@ func _live() -> Dictionary:
 	return model.live if model.get("live") is Dictionary else {}
 
 func _receive_model(value: Dictionary) -> void:
+	if _startup_trace and not _startup_model_seen:
+		_startup_model_seen = true
+		_trace_startup("model.first")
 	# A queued action can replace last_command below; keep this response's identity.
 	var received_command := last_command
 	var response_ok: bool = bridge.last_response_ok
@@ -294,7 +317,7 @@ func _build_subnavigation(parent: Container) -> void:
 		for target: String in chapter.routes:
 			var button := G.nav_button(target.to_upper(), func(): _navigate(target), accent, route == target)
 			button.name = "Section_" + target
-			button.custom_minimum_size.y = 34
+			button.custom_minimum_size.y = 28
 			button.add_theme_font_size_override("font_size", 12)
 			G.fill(button)
 			row.add_child(button)
@@ -329,13 +352,13 @@ func _render(remember_ui: bool = true) -> void:
 		_entry_workspace(home)
 		return
 	if route == "Création":
-		var m := G.margin(30)
+		var m := G.margin(12)
 		m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		_entry_workspace(m)
 		m.add_child(Entry.creation(self))
 		return
 	if route == "Packs":
-		var margin := G.margin(30)
+		var margin := G.margin(12)
 		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		_entry_workspace(margin)
 		margin.add_child(PackViews.page(self))
@@ -348,17 +371,17 @@ func _render(remember_ui: bool = true) -> void:
 	shell.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root_content.add_child(shell)
 	_build_sidebar(shell)
-	var inset := G.margin(14)
+	var inset := G.margin(8)
 	workspace_inset = inset
 	# Container sorting can happen after the deferred coach refresh. Reposition
 	# on its actual geometry, including the sidebar width, after every rebuild.
 	inset.item_rect_changed.connect(_layout_coach)
 	G.fill(inset, true)
 	shell.add_child(inset)
-	var content := G.v(8 if size.y <= 760 else 9)
+	var content := G.v(6 if size.y <= 760 else 8)
 	content.name = "CareerContent"
 	inset.add_child(content)
-	var top := G.h(12)
+	var top := G.h(8)
 	content.add_child(top)
 	var titles := G.v(0)
 	G.fill(titles)
@@ -368,7 +391,7 @@ func _render(remember_ui: bool = true) -> void:
 	_update_header_date()
 	heading = G.label({"Bureau":"Le club, cette semaine.","Effectif":"Les hommes du projet.","Composition":"Votre feuille à 23.","Préparation":"Préparer la rencontre.","Calendrier":"Le fil de la saison.","Classements":"La course aux sommets.","Recrutement":"Construire l’effectif.","Finances":"Les moyens du projet.","Club":"Un club. Un territoire.","Match":"Le jour de match."}.get(route, route.to_upper()), 35, G.INK, true)
 	heading.add_theme_font_override("font", G.T.BODY)
-	heading.add_theme_font_size_override("font_size", 24)
+	heading.add_theme_font_size_override("font_size", 20)
 	titles.add_child(heading)
 	top.add_child(G.button("SAUVEGARDER", func(): _command("save")))
 	primary_button = G.button(primary_text(), primary_action, true)
@@ -377,7 +400,7 @@ func _render(remember_ui: bool = true) -> void:
 	content.add_child(minibar)
 	PackViews.missing_warning(self, content, "career")
 	_build_subnavigation(content)
-	body = G.v(9)
+	body = G.v(6)
 	G.fill(body, true)
 	body_scroll = ScrollContainer.new()
 	body_scroll.name = "CareerWorkspace"
@@ -477,7 +500,7 @@ func _layout_coach() -> void:
 	if not is_instance_valid(root_content) or not is_instance_valid(coach): return
 	root_content.offset_bottom = 0.0
 	if is_instance_valid(workspace_inset):
-		workspace_inset.add_theme_constant_override("margin_bottom", 22)
+		workspace_inset.add_theme_constant_override("margin_bottom", 8)
 
 func _open_coach() -> void:
 	if is_instance_valid(coach): coach.open_help()
@@ -489,12 +512,12 @@ func _update_header_date() -> void:
 
 func _build_sidebar(parent: Node) -> void:
 	var rail := PanelContainer.new()
-	rail.custom_minimum_size.x = 192
+	rail.custom_minimum_size.x = 164
 	rail.add_theme_stylebox_override("panel", G.T.box(Color("141617"), 0))
 	parent.add_child(rail)
 	var margin := G.margin(2)
 	rail.add_child(margin)
-	var left := G.v(5)
+	var left := G.v(4)
 	margin.add_child(left)
 	var logo := G.button("", pause_menu)
 	logo.tooltip_text = "Oval Legacy 27 — Menu et sauvegardes"
@@ -509,12 +532,12 @@ func _build_sidebar(parent: Node) -> void:
 	bitmap.material = composite
 	logo.add_child(bitmap)
 	logo.add_theme_font_override("font", G.T.DISPLAY)
-	logo.add_theme_font_size_override("font_size", 23)
-	logo.custom_minimum_size.y = 70
+	logo.add_theme_font_size_override("font_size", 18)
+	logo.custom_minimum_size.y = 48
 	left.add_child(logo)
 	left.add_child(G.separator())
-	left.add_child(G.crest(model.club, 60))
-	var name := G.label(G.club_name(model.club), 20, G.INK, true)
+	left.add_child(G.crest(model.club, 40))
+	var name := G.label(G.club_name(model.club), 18, G.INK, true)
 	name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	name.max_lines_visible=2
 	name.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -524,13 +547,13 @@ func _build_sidebar(parent: Node) -> void:
 	left.add_child(G.separator())
 	var navigation := G.scroll(left)
 	navigation.get_parent().name = "CareerNavigation"
-	navigation.add_child(G.label("VOTRE CARNET", 9, G.MUTED))
+	navigation.add_child(G.label("VOTRE CARNET", 11, G.MUTED))
 	for chapter: Dictionary in NAV_CHAPTERS:
 		var active: bool = route in chapter.routes
 		var destination: String = str(route if active else chapter_routes.get(chapter.label, chapter.routes[0]))
 		var b := G.nav_button(str(chapter.label).to_upper(), func(): _navigate(destination), accent, active)
 		b.name = "Chapter_" + str(chapter.label)
-		b.custom_minimum_size.y = 44
+		b.custom_minimum_size.y = 28
 		navigation.add_child(b)
 	left.add_child(G.label("PRÉALPHA 0.6  /  WINDOWS", 9, G.GOLD))
 	left.add_child(G.button("MENU & SAUVEGARDES", pause_menu))

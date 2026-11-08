@@ -14,13 +14,13 @@ static var textures: Dictionary = {}
 # Dense carnet scale: explicit legacy sizes keep their role, without enlarging
 # every heading and number into a second page at native desktop resolutions.
 static func reading_size(requested: int) -> int:
-	if requested >= 44: return 30
-	if requested >= 34: return 24
-	if requested >= 27: return 22
-	if requested >= 23: return 20
-	if requested >= 18: return 16
-	if requested >= 15: return 14
-	return mini(requested, 13)
+	if requested >= 44: return 26
+	if requested >= 34: return 20
+	if requested >= 27: return 18
+	if requested >= 23: return 16
+	if requested >= 18: return 13
+	if requested >= 15: return 12
+	return mini(requested, 12)
 
 static func label(text: Variant, size: int = 14, color: Color = INK, title: bool = false) -> Label:
 	var l := Label.new()
@@ -39,8 +39,8 @@ static func wrap(text: Variant, size: int = 14, color: Color = MUTED) -> Label:
 static func button(text: String, callback: Callable, primary: bool = false) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size.y = 36
-	b.add_theme_font_size_override("font_size", 13)
+	b.custom_minimum_size.y = 28
+	b.add_theme_font_size_override("font_size", 12)
 	if primary:
 		b.add_theme_stylebox_override("normal", T.box(INK, 4))
 		b.add_theme_stylebox_override("hover", T.box(Color("d7d6c9"), 4))
@@ -49,20 +49,20 @@ static func button(text: String, callback: Callable, primary: bool = false) -> B
 	b.pressed.connect(callback)
 	return b
 
-static func h(gap: int = 9) -> HBoxContainer:
+static func h(gap: int = 6) -> HBoxContainer:
 	var c := HBoxContainer.new()
-	c.add_theme_constant_override("separation", gap)
+	c.add_theme_constant_override("separation", mini(gap, 8))
 	return c
 
 static func nav_button(text:String,callback:Callable,accent:Color,selected:bool) -> Button:
 	var b:=button(text,callback)
 	b.alignment=HORIZONTAL_ALIGNMENT_LEFT
-	b.custom_minimum_size.y=34
-	b.add_theme_font_size_override("font_size",13)
+	b.custom_minimum_size.y=28
+	b.add_theme_font_size_override("font_size",12)
 	var normal:=T.box(Color(accent,.18) if selected else Color.TRANSPARENT,3)
-	normal.content_margin_top=6
-	normal.content_margin_bottom=6
-	normal.content_margin_left=14
+	normal.content_margin_top=4
+	normal.content_margin_bottom=4
+	normal.content_margin_left=10
 	if selected:
 		normal.border_width_left=3
 		normal.border_color=accent.lightened(.15)
@@ -72,9 +72,9 @@ static func nav_button(text:String,callback:Callable,accent:Color,selected:bool)
 	b.add_theme_stylebox_override("hover",hover)
 	return b
 
-static func v(gap: int = 9) -> VBoxContainer:
+static func v(gap: int = 6) -> VBoxContainer:
 	var c := VBoxContainer.new()
-	c.add_theme_constant_override("separation", gap)
+	c.add_theme_constant_override("separation", mini(gap, 8))
 	return c
 
 static func fill(c: Control, vertical: bool = false, ratio: float = 1.0) -> Control:
@@ -83,7 +83,7 @@ static func fill(c: Control, vertical: bool = false, ratio: float = 1.0) -> Cont
 	c.size_flags_stretch_ratio = ratio
 	return c
 
-static func margin(padding: int = 20) -> MarginContainer:
+static func margin(padding: int = 8) -> MarginContainer:
 	var m := MarginContainer.new()
 	for edge in ["left", "right", "top", "bottom"]: m.add_theme_constant_override("margin_" + edge, padding)
 	return m
@@ -94,7 +94,7 @@ static func panel(parent: Node, ratio: float = 1.0, color: Color = PANEL) -> VBo
 	p.size_flags_stretch_ratio = ratio
 	p.add_theme_stylebox_override("panel", T.box(color, 6, LINE))
 	parent.add_child(p)
-	var m := margin(6)
+	var m := margin(4)
 	p.add_child(m)
 	var c := v()
 	m.add_child(c)
@@ -217,7 +217,7 @@ static func picture(slug: String, kind: String = "stadium", dark: bool = true) -
 		shade.texture = texture
 		shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		base.add_child(shade)
-	var overlay := margin(24)
+	var overlay := margin(12)
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	base.add_child(overlay)
 	var content := v(8)

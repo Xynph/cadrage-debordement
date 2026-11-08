@@ -27,7 +27,7 @@ func resize_to(resolution: Vector2i) -> void:
 	root.size = resolution
 	DisplayServer.window_set_size(resolution)
 	await settle()
-	check(root.content_scale_size == Vector2i(mini(resolution.x,1920),mini(resolution.y,1080)), "Référence native conservée " + str(resolution))
+	check(root.content_scale_size == resolution, "Référence physique native conservée " + str(resolution))
 func key(code: Key) -> void:
 	for down in [true, false]:
 		var event := InputEventKey.new(); event.keycode = code; event.pressed = down
@@ -101,6 +101,10 @@ func run() -> void:
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
 	await worker()
 	await command("new_career", {"club":0,"mode":"common"})
+	var annotated_id:=str(app.model.squad[0].id)
+	var annotation:="Repère de recette du dossier — uniquement pour ce joueur."
+	await command("coach_note_save",{"context":app.model.clubLife.coachNotebook.context,"target":annotated_id,"text":annotation})
+	app.selected_player=annotated_id
 	app.coach.close(); await settle()
 	await command("export")
 	var before: String = app.model.meta.exportText
@@ -144,7 +148,59 @@ func run() -> void:
 		var rows := 0
 		for row: Button in roster.find_children("*","Button",true,false):
 			if roster.get_global_rect().encloses(row.get_global_rect()): rows += 1
-		check(rows >= 3, "Au moins trois joueurs entiers " + str(resolution))
+		var required_rows: int = 28 if resolution.y>=1440 else 20 if resolution.y>=1080 else 9
+		check(rows >= required_rows, "Effectif PC : au moins "+str(required_rows)+" lignes entières, reçu "+str(rows)+" "+str(resolution))
+		for row: Button in roster.find_children("*","Button",true,false):
+			check(row.size.y<=28,"Ligne de tableau PC compacte "+str(row.size.y))
+		var profile_tiles := app.find_children("ProfileTile*","PanelContainer",true,false)
+		check(profile_tiles.size()==6,"Aperçu PC : six vraies tuiles factuelles")
+		var player: Dictionary = app.model.squad.filter(func(p):return str(p.id)==app.selected_player)[0]
+		for pair in [["ProfileConditionValue",str(int(player.condition))+"%"],["ProfileRatingValue",str(int(player.rating))],["ProfilePotentialValue",str(int(player.potential))],["ProfileMinutesValue",str(int(player.minutes))],["ProfileAppearancesValue",str(int(player.appearances))],["ProfileContractValue",str(player.contractLabel)]]:
+			var label: Label = named(pair[0])
+			check(label!=null and label.text==pair[1],"Tuile issue du fait courant exact "+str(pair[0]))
+		var salary: Label = named("ProfileSalaryValue")
+		check(salary!=null and salary.text.replace(" €","").replace(" ","").to_int()==int(player.salary),"Salaire de la tuile identique à la projection")
+		var preview:Label=named("ProfileNotePreview")
+		check(preview!=null and preview.text==annotation,"Aperçu de la seule note réellement projetée pour ce joueur")
+		for attribute in ["scrum","lineout","tackle","speed","pass","kick","goal","mental","discipline","stamina","power"]:
+			var figure: Label=named("ProfileAttribute_"+attribute)
+			check(figure!=null and figure.text==str(int(player.attributes[attribute])),"Chiffre du radar issu de l’attribut exact "+attribute)
+			var bar: ProgressBar=named("ProfileAttributeBar_"+attribute)
+			check(bar!=null and is_equal_approx(bar.value,float(player.attributes[attribute])),"Petite barre issue de l’attribut exact "+attribute)
+		check(named("ProfilePlanValue")!=null,"Préparation actuelle exposée avec la charge")
+		var renewal:Label=named("ProfileRenewalValue")
+		check(renewal!=null and renewal.text==("Disponible" if player.renewal.available else "Indisponible"),"Disponibilité de prolongation issue du modèle actuel")
+		if not profile_tiles.is_empty():
+			for tile: Control in profile_tiles:
+				check(overview.get_global_rect().encloses(tile.get_global_rect()),"Tuile entièrement visible dans Aperçu "+str(tile.name))
+				var tile_body:Control=tile.get_child(0)
+				var last_fact:Control=tile_body.get_child(tile_body.get_child_count()-1)
+				check(tile.get_global_rect().end.y-last_fact.get_global_rect().end.y<=8,"Tuile à hauteur naturelle sans vide interne "+str(tile.name))
+			check(named("ProfileOverviewTiles").get_child_count()==2,"Six tuiles réparties en deux colonnes indépendantes")
+			check(overview.get_global_rect().end.y-named("ProfileOverviewActions").get_global_rect().end.y<=32,"Fiche PC sans grande surface vide réservée sous ses faits")
+		if resolution.x>=1920:
+			for id in ["RosterColumn_salary","RosterColumn_contractEnd","RosterColumn_minutes"]: check(named(id)!=null and named(id).is_visible_in_tree(),"Colonne manager visible "+id)
+			check(named("RosterColumn_name").size.x<=roster.size.x*.6,"La cellule Nom ne réserve pas une majorité du grand tableau")
+		var cohort:Control=named("ProfileContextCohort")
+		var peers:Control=named("ProfileContextPeers")
+		check(cohort!=null and peers!=null,"Deux contextes desktop distincts des six faits")
+		if cohort!=null and peers!=null:
+			check(cohort.is_visible_in_tree()==(resolution.y>=1000) and peers.is_visible_in_tree()==(resolution.y>=1000),"Contextes uniquement sur la hauteur desktop")
+			check(app.find_children("ProfileContext*","PanelContainer",true,false).size()==4,"Quatre panneaux desktop de contexte approuvés")
+			if resolution.y>=1000:
+				for field in ["rating","condition","age","salary"]:
+					var total:=0.0
+					for member:Dictionary in app.model.squad:total+=float(member[field])
+					var average:Label=named("ProfileMean_"+field)
+					var observed:=average.text.split(" / ")[1].replace(" €","").replace("%","").replace(" ans","").replace(" ","").replace(",",".").to_float()
+					check(absf(observed-total/app.model.squad.size())<=(.51 if field=="salary" else .051),"Moyenne publique exacte et explicitement comparative "+field)
+				var same_position:Array=app.model.squad.filter(func(member):return str(member.id)!=str(player.id) and member.pos==player.pos)
+				var peer_actions:=peers.find_children("ProfilePeerCompare*","Button",true,false).filter(func(action):return action.is_visible_in_tree())
+				check(peer_actions.size()==mini(5 if resolution.y>=1200 else 3,same_position.size()),"Jusqu’à cinq coéquipiers du même poste principal")
+				for action:Button in peer_actions:
+					check(same_position.any(func(member):return str(member.id)==str(action.get_meta("peer_id"))),"Cible du même poste actuel par ID")
+				var professional:Array=app.model.decisions.development.professionals.filter(func(person):return str(person.id)==str(player.id))
+				check(not professional.is_empty() and named("ProfileDevelopmentDelta").text.to_int()==int(professional[0].rating-professional[0].development.seasonStart),"Développement compare le niveau général au point de départ annuel")
 		var toolbar := named("RosterTools")
 		check(toolbar != null, "Barre de lecture dédiée")
 		if toolbar != null:
@@ -215,6 +271,17 @@ func run() -> void:
 	first.grab_focus(); await key(KEY_ENTER)
 	check(first.has_focus() and not app.selected_player.is_empty(), "Activation clavier du vrai dossier conserve le focus")
 	await capture("effectif-focus-" + str(root.size.x))
+	var second: Button
+	for candidate:Button in named("SquadScroll").find_children("*","Button",true,false):
+		if str(candidate.get_meta("player_id")) not in [app.selected_player,annotated_id]:second=candidate;break
+	var second_id:=str(second.get_meta("player_id"))
+	second.grab_focus();await key(KEY_ENTER)
+	check(app.selected_player==second_id and second.has_focus(),"Autre dossier choisi au clavier sans perdre le focus")
+	check(second_id!=annotated_id and named("ProfileNotePreview")==null,"Aucune note inventée pour un autre ID")
+	var selected_profile:=named("ProfileTabs")
+	for resolution in [Vector2i(1600,900),Vector2i(1280,720)]:
+		await resize_to(resolution)
+		check(named("ProfileTabs")==selected_profile and app.selected_player==second_id,"Dossier remplacé puis redimensionné sur les mêmes nœuds")
 	# A popup and its unsaved amount survive resize without committing anything.
 	preload("res://ui/squad_views.gd").contract(app,app.model.squad[0],false); await settle()
 	var offer: Window = app.find_child("ContractOffer",true,false)
@@ -226,6 +293,26 @@ func run() -> void:
 		check(is_instance_valid(offer) and offer.visible and salary.text == "12345" and salary.caret_column == 3,"Brouillon du même dialogue préservé " + str(resolution))
 		await capture("contrat-" + str(resolution.x))
 	offer.hide(); offer.queue_free(); await settle()
+	var note_button: Button=named("OpenPlayerCoachNote")
+	note_button.grab_focus();await key(KEY_ENTER)
+	var notebook:AcceptDialog=app.get_node("CoachNotebook")
+	var note_editor:TextEdit=notebook.find_child("CoachNoteText",true,false)
+	note_editor.text="Repère PC : garder ce brouillon 😀";note_editor.text_changed.emit()
+	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,900),Vector2i(1920,1080),Vector2i(2560,1440)]:
+		await resize_to(resolution)
+		check(app.get_node("CoachNotebook")==notebook and note_editor.text=="Repère PC : garder ce brouillon 😀","Même carnet et brouillon après redimensionnement physique "+str(resolution))
+		if named("ProfileContextCohort")!=null:check(named("ProfileContextCohort").is_visible_in_tree()==(resolution.y>=1000),"Contextes adaptés au seul changement de hauteur sans recréer le brouillon")
+	notebook.hide();notebook.queue_free();await settle()
+	var peer_action:Button=named("ProfileContextPeers").find_child("ProfilePeerCompare*",true,false) if named("ProfileContextPeers")!=null else null
+	check(peer_action!=null,"Comparaison desktop atteignable")
+	if peer_action!=null:
+		var requested_ids:Array=[app.selected_player,str(peer_action.get_meta("peer_id"))]
+		peer_action.grab_focus();await key(KEY_ENTER)
+		var comparison:AcceptDialog=app.get_node("PlayerComparison")
+		for slot in 2:
+			var choice:OptionButton=comparison.find_child("ComparisonPlayer"+str(slot),true,false)
+			check(str(choice.get_item_metadata(choice.selected))==str(requested_ids[slot]),"Vrai comparateur ouvre la cible ID "+str(slot))
+		comparison.get_ok_button().grab_focus();await key(KEY_ENTER)
 	check(FileAccess.get_file_as_bytes(disk) == bytes,"Consultation et resize : octets du profil inchangés")
 	await command("export")
 	check(app.model.meta.exportText == before,"Consultation et resize : état complet et RNG identiques")

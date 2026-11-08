@@ -1,68 +1,78 @@
-# Lisibilité et densité du carnet natif — lot 0.6
+# Densité PC du carnet natif — lot 0.6
 
-La consigne prioritaire de Léo pendant le lot est de réduire les écritures sur tous les écrans et de rendre les actions accessibles sans descendre dans la page. Le carnet conserve son identité anthracite, ivoire et couleur du club, ses six rubriques et ses données. Les listes longues utilisent des pages et les dossiers des sous-onglets, sans nouveau menu principal.
+La décision de Léo du 8 novembre privilégie un écran de gestion PC : davantage de lignes et de tuiles factuelles, des textes plus petits et une vraie surface native sur son écran2560×1440. Le carnet conserve ses six rubriques, son identité anthracite/ivoire/couleur du club et les mêmes faits du moteur.
 
-## Présentation retenue
+## Échelle et présentation courantes
 
-La correspondance centrale de `game_skin.gd` ramène les anciennes tailles explicites à une échelle cohérente : corps courant 13–14 pixels logiques, secondaire 12, titres 20–22, grands repères 24. Les anciens très grands titres sont plafonnés à 30 ; le titre du shell est réglé séparément par l'intégrateur. Les boutons courants mesurent 36 pixels de haut, les outils de lecture 34. Les marges standard passent à 12 horizontalement et 8 verticalement. Les couleurs, valeurs et faits ne changent pas.
+Les styles partagés ont été raccordés séparément : corps12, petits labels11, titres16–20, métriques20, boutons et outils28 ; paddings de l’ordre de8×4. Le shell réduit aussi son empreinte. La référence suit maintenant les dimensions physiques de la fenêtre, **sans plafond1920×1080** :1280×720,1600×900,1920×1080 et2560×1440 restent à1:1. Cela ne constitue pas une simulation du DPI Windows.
 
-L'interface utilise une référence native jusqu'à **1920×1080**, au lieu du plafond 1600×900. Les fenêtres 1280×720, 1600×900 et 1920×1080 sont donc à 1:1 ; à 2560×1440, le rapport est 4/3. Ce redimensionnement logique ne constitue pas un test de DPI Windows.
+### Effectif
 
-| Vue | Disposition et accès direct |
-|---|---|
-| Bureau | Cinq tuiles de repères distinctes, hautes de 54 pixels dans le témoin. Deux colonnes à 720p, trois aux formats plus larges. Le feuillet de décisions gagne une largeur utile de 359 pixels à 720p. Le cap sportif et son défilement sont déplacés en place en mode compact, sans reconstruction ni perte de focus. Le titre de contrat est raccourci, les échéances restent explicites. |
-| Effectif | Commandes compactes, filtres légendés, pagination calculée sur la hauteur disponible. Le même champ de recherche reste vivant pendant les changements de page et de taille. La fixture et le shell courant présentent 4, 7 puis 11 joueurs entiers aux références 720, 900 et 1080. |
-| Dossier joueur | Identité et trois valeurs en tête, puis **Aperçu / Attributs / Contrat / Repères**. La surface des onglets utilise toute la hauteur restante du feuillet. Note et comparaison tiennent dans le vrai viewport d’Aperçu dès720p ; prolongation et charge individuelle restent dans Contrat, troisième onglet. Les références longues gardent un défilement local de lecture. |
-| Recrutement | **Pistes / Travail du staff** séparent les cartes et la réunion existante. Pages de 2, 4 ou 6 joueurs selon la hauteur, avec âge, niveau, salaire demandé et actions sur une fiche compacte. Suivre et Proposer un contrat sont entièrement visibles. Les missions et rapports restent dans Travail du staff. |
-| Composition | Terrain minimal de 360 au lieu de 420 pixels, portraits adaptés et cartes distinctes ; quinze postes et banc conservés. |
-| Calendrier, classement, flux | Pages de 5, 6 et 6 entrées. Ces capacités stables conservent les bornes lors d'un redimensionnement. Le journal financier précise que ses totaux concernent toutes les pages et les mêmes écritures. Le lien des contrats est fixé sous le feuillet financier. |
-| Création et accueil | Marque plus compacte, nom de club enveloppé ; création par huit tuiles sur deux colonnes, pagination et validation directement visibles. |
+Le tableau utilise des lignes26pixels et un intervalle2pixels. Filtres légendés, recherche, tri, comparateur et pagination restent accessibles ; la capacité est calculée sur le vrai viewport disponible. Le champ de recherche, son caret, sa sélection et son focus restent vivants pendant les changements de page et de taille.
 
-Les sélections papier conservent leur barre géométrique dans les états normal, survolé et appuyé. La désélection la retire dans les trois états ; le focus garde son contour distinct. Le signal ne repose donc pas sur la seule couleur. Les grands montants peuvent revenir à la ligne sans élargir leur tuile.
+Les colonnes s’ajoutent selon la largeur réellement disponible : nom, poste, âge, niveau, condition, puis salaire courant par semaine/échéance, minutes/apparitions/charge et enfin potentiel/note au poste/sélection. Le grand tableau donne davantage de largeur au poste et conserve les noms complets lorsque la place le permet ; chaque ligne et chaque valeur tronquée gardent leur texte complet en infobulle. Le salaire est celui du modèle courant, pas un montant estimé par l’UI. «S3» désigne une saison de carrière.
 
-La consigne d'immersion reçue ensuite retire les avertissements de fabrication des flux ordinaires : Trésorerie, salaire courant, salaire demandé et paiement à la signature utilisent le vocabulaire du club. La création présente le monde d'Oval Legacy 27. Le calendrier financier conserve son nombre réel de semaines payées dans la carrière. Les références officielles, estimations et dates restent dans Repères ; les crédits et cette documentation conservent l'explication des données de simulation.
+| Fenêtre physique | Lignes entièrement visibles dans la fixture | Hauteur de liste |
+|---|---:|---:|
+|1280×720|10|294|
+|1600×900|16|466|
+|1920×1080|23|646|
+|2560×1440|36|1006|
 
-## Vérifications réellement exécutées
+Les minima de réception sont9lignes en720p,20en1080p et28en1440p. La répartition courante donne environ56% au tableau et44% au dossier.
 
-Le témoin `tests/godot-readability06.cjs` fige les scripts dans un projet temporaire, utilise le vrai worker et un profil jetable, puis contrôle les quatre tailles. La réception initiale comportait293contrôles verts ; elle ne détectait pas une action coupée à l’intérieur du sous-onglet Aperçu. Les contrôles renforcés après inspection visuelle passent à **321contrôles headless, zéro échec** : ils vérifient aussi le vrai viewport de chaque action du dossier et l’utilisation verticale du feuillet. Les vérifications précédentes restent présentes : huit vues sans défilement global, pages de calendrier/classement/flux sans défilement local, actions de recrutement et d’entraînement, création, pagination clavier, recherche Unicode, caret, sélection, confirmation et brouillon d’offre sur les mêmes instances. Les octets du profil et l’export complet, RNG compris, restent identiques après la lecture. Première preuve du correctif : `E:/Cadrage-Debordement/temp/cd-readability06-C7g2lu/report.json`.
+### Dossier joueur
 
-Suites complémentaires exécutées : Carnet **1 892**, Gestion **190**, Bureau **517**, Composition **536**, Interface adaptative **813** et Gabi contextuel **176** contrôles réussis, zéro échec. Les anciens parcours ouvrent le vrai onglet Contrat et recherchent un candidat hors page par MarketSearch. Les assertions métier et de focus sont conservées ; l'ancienne attente de défilement devient conservation de page et accès clavier. Les références physiques utilisent désormais 1920×1080, avec un cas 2560×1440. Ces preuves ne remplacent pas la réception du binaire final.
+Le nom mesure18pixels, le portrait48. Les quatre onglets restent **Aperçu / Attributs / Contrat / Repères**, avec Contrat à l’indice2. L’aperçu comporte six vrais panneaux, répartis sur **deux colonnes indépendantes à hauteurs naturelles**, sans étirer artificiellement les cartes :
 
-La revue croisée a reproduit un rappel `OfficeColumns._adapt` après retrait du root : `get_viewport()` n'existait plus. La reproduction dédiée a d'abord échoué, puis passe avec une garde de cycle de vie avant tout accès. Les rappels différés et signaux tardifs d'un Bureau sorti de l'arbre sont ignorés ; le test Gabi contextuel conserve son refus strict des erreurs de script.
+- Situation et préparation : condition, charge, statut de sélection et charge individuelle prévue.
+- Contrat courant : libellé et salaire exacts, disponibilité de prolongation et durée possible si le modèle la fournit.
+- Usage en saison : minutes, apparitions, numéro et note au poste.
+- Évaluation : niveau et potentiel déjà projetés.
+- Profil de jeu : les onze attributs avec petits chiffres/barres et radar compact. Les valeurs proviennent directement du modèle ; aucune statistique supposée n’est créée.
+- Postes : les postes conservés dans la référence de départ ; origine et détails restent dans Repères. Une note personnelle n’apparaît que si une entrée projetée existe déjà pour l’ID courant. Son aperçu est borné à quatre lignes avec texte complet en infobulle.
 
-## Correction visuelle du partage vertical du dossier — 8 novembre
+Les actions de note et de comparaison restent sur une ligne de28pixels sous ces faits. La prolongation et la charge demeurent dans Contrat. Attributs et Repères conservent les lectures détaillées et leur défilement local si nécessaire. La fiche courante mesure536pixels utiles dans la fixture ; elle s’ajuste au contenu et au budget du viewport, sans réserver une grande surface ivoire vide. Les noms, notes et données ne sont pas interprétés en BBCode.
 
-La capture réelle `cd-readability06-G6AwcW/effectif-1920.png` montrait un dossier haut de861pixels utiles, mais un onglet de248pixels et un viewport Aperçu de198pixels. La comparaison était partiellement coupée alors que476pixels restaient inutilisés sous les onglets. L’ancien test regardait seulement le scroll extérieur du dossier, qui contenait la comparaison dans ses coordonnées ; il ignorait le viewport intérieur qui la coupait.
+Le redimensionnement est porté par le ScrollContainer propre à chaque dossier, et ses appels différés utilisent des WeakRef. Un dossier remplacé ne conserve donc aucun rappel vers ses anciens widgets. La pagination, la recherche, la sélection et les popups gardent leurs instances/brouillons pendant les changements de taille.
 
-La cause est localisée : le VBox intérieur créé par `G.scroll` remplissait seulement sa hauteur minimale. Ses onglets extensibles ne recevaient donc aucun espace supplémentaire. `_profile` lui attribue désormais le remplissage vertical extensible ; les onglets partagent ainsi la hauteur réelle du dossier. Le style global, les dimensions du radar, les textes et les actions ne sont pas agrandis.
+## Quatre panneaux de contexte desktop
 
-| Fenêtre | Hauteur utile dossier | Onglets avant → après | Aperçu avant → après | Vide sous onglets après |
-|---|---:|---:|---:|---:|
-|1280×720|505|248 →368|198 →318|0|
-|1600×900|681|248 →544|198 →494|0|
-|1920×1080|861|248 →724|198 →674|0|
-|2560×1440, référence1920×1080|861|248 →724|198 →674|0|
+À partir de1000pixels de hauteur, une grille2×2 apparaît sous les six panneaux de faits, avec des hauteurs naturelles et des commandes visibles. Les fenêtres720/900 restent compactes. Les nœuds s’adaptent au seul changement de hauteur, même avec un brouillon de carnet ouvert.
 
-Avant toute modification de production, le nouveau contrôle a réellement échoué12fois aux quatre tailles : vide sous les onglets, comparaison hors du vrai viewport, défilement Aperçu nécessaire. Il contrôle maintenant note et comparaison dans les deux viewports imbriqués, actions Contrat dans leur onglet, position du bas des onglets et absence de défilement pour ce contenu d’Aperçu. Le refus strict des erreurs de script et toutes les assertions précédentes sont conservés.
+- **Concurrence au poste** : niveau, condition, âge et salaire sont comparés aux moyennes de tout l’effectif projeté, explicitement étiquetées «Joueur / moyenne de l’effectif». Jusqu’à cinq coéquipiers au même poste principal ouvrent le vrai comparateur avec deux IDs. Trois sont visibles aux hauteurs intermédiaires, cinq en1440p. Aucune couverture ni aptitude secondaire n’est supposée.
+- **Développement** : orientation, niveau général au début de saison et écart actuel, puis deux vrais bilans annuels au maximum. Le niveau général et la note au poste restent distincts. À vide : «Premier bilan annuel à venir». Aucune courbe passée n’est créée.
+- **Forme & prestations** : disponibilité et condition/charge actuelles ; minutes par apparition uniquement si le nombre d’apparitions est positif. Zéro minute et zéro apparition donnent «Première apparition à venir». Aucune série fictive de cinq matchs ou note individuelle de rencontre.
+- **Staff & carnet** : consigne collective explicitement nommée, éventuel avis individuel archivé et daté par ID, puis note personnelle. Le conseil de groupe ne devient pas une opinion individuelle. Le même aperçu est déplacé depuis Postes, sans duplication entre joueurs ni reconstruction du brouillon.
 
-Une réception SDK Windows graphique a ensuite réussi **322contrôles**, avec une seule capture conservée et inspectée : `E:/Cadrage-Debordement/temp/cd-readability06-Polel9/effectif-1920.png`. Elle montre la comparaison entièrement visible et la surface des onglets jusqu’au bas du feuillet. Le filtre facultatif `CD_READABILITY06_CAPTURE=effectif-1920` réduit les fichiers de capture sans retirer les contrôles ni les quatre tailles de la recette.
+Ces panneaux utilisent les projecteurs existants de développement, entraînement, recrutement et carnet. Aucun champ de carrière ni stockage supplémentaire. Le dossier compact mesure536pixels utiles dans la fixture, puis environ900à1080p et934à1440p avec les quatre contextes.
 
-Commande headless du témoin sous PowerShell, après chargement de l'environnement de recette :
+## Autres vues et immersion
 
-```powershell
-$env:CD_GODOT_EXECUTABLE=$env:CD_GODOT_EXE
-$env:CD_READABILITY06_TEMP='E:/Cadrage-Debordement/artefacts/native06-20261108'
+Le Bureau conserve ses cinq tuiles de repères et ses deux/trois colonnes ; le cap sportif est déplacé en place avec son focus. Composition garde quinze postes et le banc. Recrutement sépare Pistes/Travail du staff. Calendrier, classements et flux restent paginés. Création conserve ses tuiles, sa pagination et son action principale visibles. Les sélections papier gardent leur repère dans les états normal, survolé et appuyé et leur contour de focus distinct.
+
+Le vocabulaire courant présente Trésorerie, salaire et le monde d’Oval Legacy27. Les références officielles, estimations, dates et limites restent accessibles dans Repères/crédits/documentation. Le calendrier financier conserve son nombre réel de semaines payées. Aucun changement de règle, d’économie, de joueur ou de format de sauvegarde n’est introduit par cette présentation.
+
+## Réception et preuves
+
+`tests/godot-readability06.cjs` fige le projet et les scripts, isole tous les profils/APPDATA/LOCALAPPDATA/TEMP surE, puis vérifie le parsing avant de lancer le vrai shell/worker. Son timeout d’exécution reste inchangé. Les erreurs de script restent strictement refusées.
+
+La recette contrôle les quatre références physiques, les lignes réellement contenues, les colonnes, les six panneaux et la source exacte des chiffres/barres/contrat/salaire. Elle vérifie aussi les actions dans les vrais viewports imbriqués, les pages sans défilement global, la pagination clavier, la recherche Unicode/caret/sélection, le changement de joueur puis resize, et les brouillons d’offre et de carnet sur les mêmes fenêtres. Une note fictive est enregistrée dans le profil de fixture avant le point de comparaison ; sa projection est reçue uniquement pour son ID. Après cette préparation, les octets du profil et l’export/RNG restent exacts pendant la lecture.
+
+La première réception de densité était réellement rouge :5/13/20lignes aux formats720/1080/1440, lignes40pixels et absence des tuiles/colonnes. Le premier design à six résumés sur trois colonnes a ensuite été vu en capture1440 et rejeté pour son grand vide à droite. Le nouveau scénario changement de joueur/resize a aussi reproduit les anciennes captures libérées dans les callbacks ; ce résultat n’a pas été compté comme vert. Les rapports du lot conservent les chemins de ces preuves et des validations finales.
+
+La réception finale compte **650 contrôles headless, zéro échec**, avec les lignes10/16/23/36, les onze chiffres/barres, les quatre contextes, les moyennes, le comparateur aux deux IDs, les notes et les brouillons : `E:/Cadrage-Debordement/temp/cd-readability06-o75nGj/report.json`. La capture SDK Windows native2560×1440 a été produite et inspectée : `E:/Cadrage-Debordement/temp/pc-profile-v3-0f953b53/effectif-pc-2560-preview.png`. Détail des RED/GREEN et limites dans `densite-pc-profile.md`, dans le dossier d’artefacts du lot hors dépôt.
+
+Commandes, après chargement de `E:/Cadrage-Debordement/environnement.ps1` et `CD_GODOT_EXECUTABLE=CD_GODOT_EXE` :
+
+```text
 node --test --test-concurrency=1 tests/godot-readability06.cjs
 ```
 
-Le nouveau wrapper isole APPDATA, LOCALAPPDATA, TEMP, profil, logs et manifeste sur son répertoire de preuve. Pour les anciens wrappers, il faut aussi rediriger explicitement APPDATA et LOCALAPPDATA sur E: : le script d'environnement général ne le fait pas.
+`CD_READABILITY06_GRAPHICS=1` active le SDK Windows graphique. `CD_READABILITY06_CAPTURE=effectif-2560` ne garde que cette image ; aucun contrôle ni taille ne sont retirés. Les campagnes GPU/CPU et la réception du candidat déplacé sont sérialisées par l’intégrateur.
 
-## Réception graphique et DPI restant à recevoir
+## Historique utile et limites
 
-La correction du dossier dispose de la capture SDK Windows graphique1920×1080 décrite ci-dessus. La réception du vrai EXE, le DPI Windows125/150%, la4K et l’ultrawide restent à recevoir. Cette image et les quatre géométries contrôlées ne remplacent pas la réception visuelle du candidat exporté.
+La première version du lot utilisait une référence plafonnée1920 et des listes4/7/11lignes ; ces choix sont remplacés par la décision PC. Le défaut antérieur de dossier248pixels, avec comparaison coupée et476pixels inutilisés, avait été reproduit12fois puis corrigé. L’oracle insuffisant qui ne regardait que le scroll extérieur a été renforcé pour les viewports intérieurs.
 
-L'intégrateur peut définir `CD_READABILITY06_GRAPHICS=1` pour produire les captures comparables Bureau, Effectif, Finances, huit vues denses, création, focus et offre de contrat aux quatre tailles. Inspecter aussi les quatre onglets du dossier, Travail du staff, les derniers joueurs par pagination, les noms longs et les couleurs extrêmes. Les références lues sont les captures du vrai candidat02 déplacé, notamment Bureau/Effectif/Finances à 1280×720 ; elles ne sont pas attribuées à une nouvelle build.
-
-Pour recevoir 125/150 % sans toucher le bureau de Léo : utiliser une session ou machine Windows de recette déjà configurée, relever l'échelle effective avant lancement, puis les dimensions physiques et logiques ainsi que les DPI et l'échelle déclarés par Godot. Le harnais les enregistre en mode graphique tout en laissant `real_dpi_tested=false` tant que cette réception séparée n'est pas documentée. Un viewport différent n'est jamais une simulation du DPI réel.
-
-Aucune règle sportive, donnée de joueur, économie centrale ou format de sauvegarde n'est modifié. Les longues références et certains dossiers secondaires peuvent conserver un défilement local de lecture ; l'absence de tout défilement pour un contenu arbitrairement long n'est pas revendiquée.
+Une capture SDK Windows n’est pas une réception du binaire exporté. Le DPI réel125/150%, la4K et l’ultrawide restent des réceptions distinctes. Les longues références ou certains dossiers secondaires peuvent défiler localement ; aucune absence de tout défilement pour des textes arbitraires n’est promise. Aucun ancien enregistrement Gabi n’est substitué à un texte réécrit. Le parent garde la version, le journal de développement, le candidat EXE et la publication.

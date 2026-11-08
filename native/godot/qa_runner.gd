@@ -35,7 +35,7 @@ func _resize_window(resolution: Vector2i) -> void:
 	await _settle()
 	window.size = resolution
 	DisplayServer.window_set_size(resolution)
-	var expected := Vector2i(mini(resolution.x,1920),mini(resolution.y,1080))
+	var expected := resolution
 	deadline = Time.get_ticks_msec() + 2000
 	while (window.size != resolution or window.content_scale_size != expected) and Time.get_ticks_msec() < deadline:
 		await get_tree().process_frame
@@ -126,8 +126,8 @@ func _keyboard_focus() -> void:
 
 func _capture(name:String) -> void:
 	await _settle()
-	# CanvasItem transforms end in logical viewport units, before window stretch.
-	# A 1280x800 window uses a 1440x900 viewport in this project's canvas_items mode.
+	# Compare canvas units with the real viewport, including the native1440p
+	# reference; never infer its dimensions from a former stretch reference.
 	var logical:Vector2=get_tree().root.get_visible_rect().size
 	var end:Vector2=app.root_content.get_global_transform_with_canvas()*app.root_content.size
 	layout_reception.append({"capture":name,"viewport":[logical.x,logical.y],"window":[DisplayServer.window_get_size().x,DisplayServer.window_get_size().y],"root_end":[end.x,end.y]})
@@ -254,7 +254,7 @@ func _run() -> void:
 		return
 	_check(not app._has_career() and app.route=="Accueil","Fresh profile opens menu without creating career")
 	await _display_reception()
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
+	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]:
 		await _resize_window(resolution)
 		app._navigate("Accueil")
 		await _capture("accueil-"+str(resolution.x))
@@ -271,7 +271,7 @@ func _run() -> void:
 	_check(app.model.get("squad",[]).size()>=23,"Real squad for club29")
 	_check(app.model.get("leagues",[]).size()==2,"Both divisions projected")
 	await _coach_reception()
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
+	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]:
 		await _resize_window(resolution)
 		var pages: Array[String] = []
 		app._navigate("Bureau")

@@ -23,10 +23,10 @@ static func label(text: Variant, size: int = 15, color: Color = INK, title: bool
 	return Base.label(text, size, color, title)
 static func wrap(text: Variant, size: int = 15, color: Color = MUTED) -> Label:
 	return Base.wrap(text, size, color)
-static func h(gap: int = 10) -> HBoxContainer: return Base.h(gap)
-static func v(gap: int = 10) -> VBoxContainer: return Base.v(gap)
+static func h(gap: int = 6) -> HBoxContainer: return Base.h(gap)
+static func v(gap: int = 6) -> VBoxContainer: return Base.v(gap)
 static func fill(c: Control, vertical: bool = false, ratio: float = 1.0) -> Control: return Base.fill(c, vertical, ratio)
-static func margin(padding: int = 20) -> MarginContainer: return Base.margin(padding)
+static func margin(padding: int = 8) -> MarginContainer: return Base.margin(padding)
 static func n(number: Variant) -> String: return Base.n(number)
 static func euros(amount: Variant) -> String: return Base.euros(amount)
 static func identity(club: Dictionary) -> Dictionary: return Base.identity(club)
@@ -41,8 +41,8 @@ static func scroll(parent: Node) -> VBoxContainer: return Base.scroll(parent)
 static func button(text: String, callback: Callable, primary: bool = false) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size.y = 36
-	b.add_theme_font_size_override("font_size", 13)
+	b.custom_minimum_size.y = 28
+	b.add_theme_font_size_override("font_size", 12)
 	var background := INK if primary else Color("e8dfce")
 	b.add_theme_stylebox_override("normal", T.box(background, 3, INK if primary else LINE))
 	b.add_theme_stylebox_override("hover", T.box(Color("3c403b") if primary else Color("ddd1bc"), 3, INK))
@@ -72,15 +72,16 @@ static func clear_selection(b: Button) -> void:
 
 static func reading_button(b: Button, minimum_width: int = 92) -> Button:
 	# Reading tools fit short rows. Full text stays available for long French labels.
-	b.custom_minimum_size = Vector2(minimum_width, 34)
+	b.custom_minimum_size = Vector2(minimum_width, 28)
+	b.add_theme_font_size_override("font_size", 12)
 	b.size_flags_vertical = Control.SIZE_SHRINK_END
 	b.clip_text = true
 	b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	b.tooltip_text = b.text
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		var style: StyleBoxFlat = b.get_theme_stylebox(state).duplicate()
-		style.content_margin_top = 6; style.content_margin_bottom = 6
-		style.content_margin_left = 10; style.content_margin_right = 10
+		style.content_margin_top = 4; style.content_margin_bottom = 4
+		style.content_margin_left = 8; style.content_margin_right = 8
 		b.add_theme_stylebox_override(state, style)
 	return b
 
@@ -168,7 +169,8 @@ static func photo_note(parent: Node, club: Dictionary, title: String, subtitle: 
 	parent.add_child(photo)
 	var content: VBoxContainer = photo.get_meta("content")
 	content.add_theme_constant_override("separation", 3)
-	for edge in ["left", "right", "top", "bottom"]: content.get_parent().add_theme_constant_override("margin_" + edge, 14)
+	for edge in ["left", "right"]: content.get_parent().add_theme_constant_override("margin_" + edge, 8)
+	for edge in ["top", "bottom"]: content.get_parent().add_theme_constant_override("margin_" + edge, 4)
 	content.add_child(Base.label(title.to_upper(), 12, Color("ddbd80")))
 	content.add_child(Base.spacer())
 	var caption := Base.wrap(subtitle, 25, WHITE)

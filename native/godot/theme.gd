@@ -16,16 +16,16 @@ static func box(color: Color, radius: int = 8, border: Color = Color.TRANSPARENT
 	s.set_corner_radius_all(radius)
 	s.border_color = border
 	s.set_border_width_all(1 if border.a > 0 else 0)
-	s.content_margin_left = 12
-	s.content_margin_right = 12
-	s.content_margin_top = 8
-	s.content_margin_bottom = 8
+	s.content_margin_left = 8
+	s.content_margin_right = 8
+	s.content_margin_top = 4
+	s.content_margin_bottom = 4
 	return s
 
 static func make() -> Theme:
 	var t := Theme.new()
 	t.default_font = BODY
-	t.default_font_size = 13
+	t.default_font_size = 12
 	for kind in ["Label", "Button", "OptionButton", "CheckButton", "PopupMenu"]:
 		t.set_color("font_color", kind, INK)
 	t.set_color("font_disabled_color", "Button", Color("79878d"))
@@ -47,8 +47,8 @@ static func make() -> Theme:
 	t.set_color("selection_color","LineEdit",Color("586776"))
 	t.set_stylebox("panel","AcceptDialog",box(PANEL,6,LINE))
 	t.set_stylebox("panel","Window",box(PANEL,6,LINE))
-	t.set_constant("separation", "VBoxContainer", 12)
-	t.set_constant("separation", "HBoxContainer", 12)
+	t.set_constant("separation", "VBoxContainer", 8)
+	t.set_constant("separation", "HBoxContainer", 8)
 	t.set_stylebox("panel", "PanelContainer", box(PANEL))
 	t.set_stylebox("background", "ProgressBar", box(Color("34434c"), 2))
 	t.set_stylebox("fill", "ProgressBar", box(GREEN, 2))
@@ -56,7 +56,7 @@ static func make() -> Theme:
 
 static func paper() -> Theme:
 	var t := make()
-	t.default_font_size = 13
+	t.default_font_size = 12
 	var ink := Color("242321")
 	var muted := Color("69645c")
 	var paper := Color("f3eddf")
@@ -67,7 +67,7 @@ static func paper() -> Theme:
 		t.set_color("font_pressed_color", kind, ink)
 		t.set_color("font_focus_color", kind, ink)
 		t.set_color("font_disabled_color", kind, muted)
-		t.set_font_size("font_size", kind, 13)
+		t.set_font_size("font_size", kind, 12)
 	for kind in ["Button", "OptionButton"]:
 		t.set_stylebox("normal", kind, box(Color("e8dfce"), 3, line))
 		for state in ["icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_focus_color"]: t.set_color(state,kind,ink)
@@ -104,7 +104,7 @@ static func paper() -> Theme:
 		t.set_stylebox("tab_selected", kind, box(Color("faf6ed"), 2, line))
 		t.set_stylebox("tab_unselected", kind, box(Color("e3dac9"), 2, line))
 		t.set_stylebox("tab_hovered", kind, box(Color("eee5d5"), 2, ink))
-		t.set_font_size("font_size", kind, 13)
+		t.set_font_size("font_size", kind, 12)
 	t.set_stylebox("panel", "TabContainer", box(paper, 2, line))
 	for kind in ["CheckBox", "CheckButton"]:
 		t.set_color("font_color", kind, ink)

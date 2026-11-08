@@ -29,14 +29,21 @@ test('Lisibilité 0.6 : repères actifs, trois formats, clavier et brouillons in
   }
   fs.writeFileSync(path.join(dir, 'source-manifest.json'), JSON.stringify(manifest, null, 2));
   for (const name of ['AppData/Roaming', 'AppData/Local', 'tmp']) fs.mkdirSync(path.join(dir, name), { recursive: true });
+  const environment = { ...process.env, APPDATA: path.join(dir, 'AppData/Roaming'), LOCALAPPDATA: path.join(dir, 'AppData/Local'),
+    TEMP: path.join(dir, 'tmp'), TMP: path.join(dir, 'tmp'), CD_NODE_EXECUTABLE: process.execPath,
+    CD_GODOT_SELF_TEST: '0', CD_GODOT_DATA_DIR: path.join(dir, 'profile'), CD_READABILITY06_ARTIFACTS: dir };
+  const preflight = spawnSync(godot, ['--headless', '--audio-driver', 'Dummy', '--path', project,
+    '--check-only', '--script', path.join(project, 'main.gd')], { env: environment, encoding: 'utf8', windowsHide: true, timeout: 30000 });
+  const preflightOutput = (preflight.stdout || '') + (preflight.stderr || '');
+  fs.writeFileSync(path.join(dir, 'preflight.log'), preflightOutput);
+  if (preflight.error) throw preflight.error;
+  assert.equal(preflight.status, 0, preflightOutput);
+  assert.doesNotMatch(preflightOutput, /SCRIPT ERROR|Parse Error|ERROR:/);
   const result = spawnSync(godot, [
     ...(process.env.CD_READABILITY06_GRAPHICS === '1' ? [] : ['--headless']),
     '--audio-driver', 'Dummy', '--max-fps', '120', '--log-file', path.join(dir, 'runtime.log'), '--path', project,
     '--script', path.join(project, 'readability06-test.gd'),
-  ], { env: { ...process.env, APPDATA: path.join(dir, 'AppData/Roaming'), LOCALAPPDATA: path.join(dir, 'AppData/Local'),
-    TEMP: path.join(dir, 'tmp'), TMP: path.join(dir, 'tmp'), CD_NODE_EXECUTABLE: process.execPath,
-    CD_GODOT_SELF_TEST: '0', CD_GODOT_DATA_DIR: path.join(dir, 'profile'), CD_READABILITY06_ARTIFACTS: dir,
-  }, encoding: 'utf8', windowsHide: true, timeout: 180000 });
+  ], { env: environment, encoding: 'utf8', windowsHide: true, timeout: 180000 });
   const output = (result.stdout || '') + (result.stderr || '');
   fs.writeFileSync(path.join(dir, 'godot.log'), output);
   console.log(output.trim()); console.log('Preuves lisibilité06 : ' + dir);

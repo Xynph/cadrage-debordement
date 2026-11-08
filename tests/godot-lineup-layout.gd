@@ -71,12 +71,18 @@ func run() -> void:
 	var disk := OS.get_environment("CD_GODOT_DATA_DIR").path_join("donnees.json")
 	var bytes := FileAccess.get_file_as_bytes(disk)
 	check(not bytes.is_empty(),"Invariant disque sur un vrai profil non vide")
-	for mode in ["production","adaptive"]:
-		for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
+	# Two real resize traversals, without forcing a synthetic canvas or rebuilding
+	# controls. The second pass still receives all click/qualification regressions.
+	for mode in ["aller","retour"]:
+		for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]:
+			var previous_root:Control=app.root_content
+			var previous_field:Control=board()
 			root.size=resolution;DisplayServer.window_set_size(resolution)
-			root.content_scale_size=Vector2i(mini(resolution.x,1920),mini(resolution.y,1080)) if mode=="adaptive" else Vector2i(1440,900)
-			app._render();await settle();app.coach.close()
+			await create_timer(.15).timeout
+			await settle();app.coach.close()
 			var field := board()
+			check(root.content_scale_size==resolution and app.size==Vector2(resolution),"Composition en pixels natifs "+str(resolution))
+			check(app.root_content==previous_root and field==previous_field,"Resize Composition conserve les contrôles "+str(resolution))
 			var overlaps := 0
 			for i in 15:
 				var tile: Control=field.tiles[i]
@@ -85,8 +91,8 @@ func run() -> void:
 					if tile.get_global_rect().intersects(field.tiles[j].get_global_rect()):overlaps+=1
 			check(overlaps==0,"Zéro chevauchement %s %s (%d)"%[mode,resolution,overlaps])
 			measurements.append({"mode":mode,"resolution":str(resolution),"canvas":str(app.size),"field":str(field.size),"tile":str(field.tiles[0].size),"overlaps":overlaps})
-			if mode=="adaptive":await capture("composition-"+str(resolution.x))
-			if mode=="adaptive" and resolution.x==1280:
+			if mode=="retour":await capture("composition-"+str(resolution.x))
+			if mode=="retour" and resolution.x==1280:
 				for slot in 15:
 					check(app.body_scroll.get_global_rect().encloses(board().tiles[slot].get_global_rect()),"15 cartes entières avant défilement %d"%(slot+1))
 				for slot in 15:
