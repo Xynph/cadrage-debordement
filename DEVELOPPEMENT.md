@@ -1,5 +1,15 @@
 # Journal de développement — Cadrage Débordement
 
+## 8 novembre 2026 — délégation native et sauvegardes intermédiaires
+
+La première tête de la PR398 (`f88e16fd`) reste insuffisante : sa CI `42513824213` passe la campagne Academy en 164,11 s, mais Support atteint encore le plafond de 180 s. Le profilage du vrai parcours attribue environ 51 % du coût aux sauvegardes ; une délégation sérialise 88 fois la carrière, soit 293,8 Mo. Les délais, les scénarios et les assertions restent inchangés.
+
+Le worker diffère les seules sauvegardes mémoire intermédiaires de `delegate`, commande synchrone déjà transactionnelle. Toute lecture du storage pendant la tentative, même absorbée par le core, impose une restauration complète puis un rejeu historique avant réponse ou écriture disque. Le `finally` hôte restaure la fonction de sauvegarde après interruption VM. Validation et sauvegarde finales, persistance atomique, refus, rollback, formats et limites sont conservés. La garantie concerne le protocole JSON valide et le core chargé, sans promesse pour des callbacks JavaScript arbitraires injectés hors contrat ; aucune migration de carrière.
+
+Deux campagnes appariées complètes conservent 34 semaines, 30 rencontres et neuf reprises : Node22, 123,486 → 64,347 s ; Node26, 86,053 → 43,378 s. Les 265 réponses de chaque paire, soit 403 897 679 octets, les exports, les profils disque, le RNG et l'horloge sont comparés intégralement et identiques. Le nouveau témoin portable couvre onze cas et le vrai stdio sous Node22/26 : lectures inattendues, erreurs disque, import hostile, horloge, interruption VM et reprise. Les témoins historiques 14 clubs et 205 checksums passent aussi. Revue indépendante renforcée favorable dans ce contrat, sans P1/P2 établi.
+
+Les mesures proviennent de copies Windows isolées ; elles ne prouvent pas la réussite de la nouvelle CI Linux ni celle du futur paquet. La dernière tête de la PR398, le gate et les sept jobs post-fusion restent à recevoir. La publication utilise finalement un commit normal après gel de l'UI et changement de branche, sans index temporaire. Aucun fichier UI, BDD, règlement ou workflow modifié dans ce lot. Voir [les preuves et limites](docs/native06-performance-20261108.md).
+
 ## 8 novembre 2026 — coût de validation et empreintes des sauvegardes
 
 La CI post-fusion de la PR397, sur le main `6c38020a`, a réellement échoué : les campagnes `native-academy-integrated-long` et `native-club-support-season` atteignent chacune180secondes, alors que la CI de la tête PR était verte. Aucune installation supplémentaire n'est déclarée totalement reçue à ce stade.

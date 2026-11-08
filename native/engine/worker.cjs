@@ -64,6 +64,8 @@ function createBridge(options={}){
   });}finally{fs.closeSync(lockFd);}
  };
  let ctx,profileError='',recoveryBackup=null;
+ let deferredDelegateActive=false,deferredDelegateRead=false;
+ const deferredReadError=new Error('Lecture storage pendant une délégation différée.');
  try{
   if(fs.existsSync(file)){
    try{const saved=JSON.parse(fs.readFileSync(file,'utf8'));
@@ -72,7 +74,7 @@ function createBridge(options={}){
   }
   const math=Object.create(Math);math.random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   class EngineDate extends Date{constructor(...args){super(...(args.length?args:[clock]));}static now(){return clock;}}
-  const storage={offline:true,directory:dataDir,getItem:key=>store[key]??null,setItem:(key,value)=>{store[key]=String(value);},removeItem:key=>{delete store[key];}};
+  const storage={offline:true,directory:dataDir,getItem:key=>{if(deferredDelegateActive){deferredDelegateRead=true;throw deferredReadError;}return store[key]??null;},setItem:(key,value)=>{store[key]=String(value);},removeItem:key=>{delete store[key];}};
   const element={innerHTML:'',textContent:'',style:{}};
   ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
   const run=source=>vm.runInContext(source,ctx,{timeout:15000});
@@ -154,7 +156,19 @@ function createBridge(options={}){
       run(payload.paused===false?'continueMatch()':'pauseMatch()');
      }else if(command==='delegate'){
       if(!run('!!S.live'))throw Error('Aucun match à déléguer.');
-      run("for(let steps=0;!S.live.finished;steps++){if(steps>=3000)throw Error('Limite de délégation atteinte.');if(S.live.paused)continueMatch();else tick();}");
+      const delegateLoop="for(let steps=0;!S.live.finished;steps++){if(steps>=3000)throw Error('Limite de délégation atteinte.');if(S.live.paused)continueMatch();else tick();}";
+      const historicalSave=ctx.save,delegateClock=clock;
+      // Les saves intermédiaires restent privés à cette commande synchrone.
+      // Une lecture inattendue impose un rejeu historique, jamais un faux flush.
+      const deferredSave=run('(function(){if(S&&!validatingStartup)lastSaveError=false;})');
+      deferredDelegateRead=false;ctx.save=deferredSave;deferredDelegateActive=true;
+      try{run(delegateLoop);}catch(error){if(!deferredDelegateRead)throw error;}
+      finally{ctx.save=historicalSave;deferredDelegateActive=false;}
+      if(deferredDelegateRead){
+       deferredDelegateRead=false;seed=priorSeed;clock=delegateClock;store=JSON.parse(priorStore);ctx.nativePrior=JSON.parse(prior);
+       run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;');
+       run(delegateLoop);
+      }
      }else if(command==='finish_round'){
       if(!run("S.phase!=='ended'&&(S.live?.finished||!S.live&&!nextMatch())"))throw Error('Terminez le match avant de valider la journée.');run('finishRound()');
      }else if(command==='import'){
@@ -170,7 +184,7 @@ function createBridge(options={}){
      seed=priorSeed;clock=priorClock;store=JSON.parse(priorStore);ctx.nativePrior=JSON.parse(prior);ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
      run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;');
      throw error;
-    }finally{delete ctx.nativePayload;delete ctx.nativePrior;delete ctx.nativeMode;delete ctx.nativeCommand;delete ctx.nativeBinding;}
+    }finally{deferredDelegateActive=false;deferredDelegateRead=false;delete ctx.nativePayload;delete ctx.nativePrior;delete ctx.nativeMode;delete ctx.nativeCommand;delete ctx.nativeBinding;}
    }catch(error){return {id,ok:false,model:closed?null:snapshot(),error:error.message};}
   }
   return {handle,close};

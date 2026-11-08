@@ -1,55 +1,41 @@
-# Sauvegardes natives — coût de validation et d'empreinte
+# Sauvegardes et délégation native — performances et compatibilité
 
-Le post-fusion de la PR397, exécution GitHub `42507156072` sur `6c38020a`, a arrêté deux campagnes après 180 s : `native-academy-integrated-long` et `native-club-support-season`. Le succès antérieur de la CI de PR ne valide pas ce post-fusion. La présente modification conserve les scénarios et tous leurs contrôles.
+## Problème et périmètre
 
-## Modification bornée
+La CI post-fusion de la PR397, main `6c38020a`, dépassait180s sur deux campagnes. Une première optimisation des accès globaux du validateur et du checksum passe les contrôles de parité, mais sa CI `42513824213` reste rouge : Academy-integrated-long passe164,11s, Support-season atteint encore180s. Aucun délai ou scénario n'est réduit.
 
-Deux fonctions de `dist/saves.js` utilisent désormais des références locales, limitées à leur appel :
+Le profilage du vrai parcours Support isole ensuite `save()` : environ51% du coût. Une seule délégation construit88fois la représentation JSON de la carrière, soit293,8Mo, alors que la persistance disque et la réponse sont déjà transactionnelles par commande. Les optimisations supplémentaires des seuls helpers ou du JSON de la VM sont mesurées puis écartées, faute de gain substantiel.
 
-- `safeTree` lie `saveCheck`, `saveNumber`, `saveObject` et `Array.isArray` avant de parcourir l'arbre ; les mêmes fonctions sont appelées aux mêmes endroits.
-- `saveChecksum` lie `Math.imul` avant la boucle FNV existante.
+## Comportement final
 
-Aucun contrôle, message, ordre de visite, seuil de complexité, algorithme, empreinte ou format n'est modifié. Il n'y a ni cache persistant ni suppression de sérialisation. Les appels du worker, sauvegardes, validations, simulations, règles et RNG restent ceux du moteur courant. Les optimisations antérieures de `buildSheet` et `activePlayers` ne sont pas retouchées. `worker.cjs`, les scénarios de test, workflows, gates et délais restent inchangés par ce correctif.
+Les saves mémoire intermédiaires de la seule commande synchrone `delegate` sont différés. La validation finale, le dernier save, la persistance atomique, les limites, les formats et le rollback restent en place. Aucun effet de match, RNG, statistique ou règle de compétition n'est modifié.
 
-Le gain vient de la résolution de références répétées dans le contexte VM, pas d'un travail métier supprimé. Le diagnostic a également constaté le coût des sérialisations internes pendant une délégation ; aucune coalescence de sauvegarde n'est incluse ici.
+Toute lecture inattendue du storage pendant cette tentative active une barrière privée. L'état S, le playback, le store, le RNG et l'horloge sont restaurés au contexte initial de la commande, puis la délégation historique est rejouée une seule fois avant toute persistance ou réponse. La détection reste active même si le core absorbe l'exception. Le save original et les indicateurs sont restaurés par un finally hôte, y compris après interruption VM.
 
-## Mesures locales avant/après
+La garantie porte sur les données JSON valides du protocole/import et sur le core chargé. Elle ne promet pas l'équivalence générale de fonctions JS arbitraires injectées dans S : le nombre et l'instant des appels `toJSON` changeraient. Ce contre-exemple est documenté hors contrat ; il n'est pas compté comme test réussi. Les contrôles d'import et l'allowlist restent stricts. Aucune migration de carrière n'est nécessaire.
 
-Profils Node22 Windows isolés, mêmes commandes, données et seeds, avec V8 CPU profiling sur les deux versions. Les temps ci-dessous sont des observations locales uniques, pas une promesse de délai sur GitHub.
+## Mesures appariées reçues sous Windows
 
-| Échantillon réel | Avant | Après | Variation observée |
-| --- | ---: | ---: | ---: |
-| 10 semaines intégrées, checkpoint/import/reprise semaine 10 | 23,020 s | 15,897 s | −30,9 % |
-| 6 semaines Support, reprise du premier live | 33,074 s | 25,605 s | −22,6 % |
+Archive de référence exacte : `f88e16fdbbffec38c1259f21a156ac6217374b12`. Chaque campagne d'origine garde34semaines,30rencontres,9reprises et ses projections pures ; plafond180s par exécution.
 
-Temps attribués par les profils aux fonctions ciblées, tous leurs sites d'appel regroupés :
+| Runtime | Référence | Candidat | Réduction observée |
+|---|---:|---:|---:|
+| Node22.23.4 | 123,486s | 64,347s | 47,9% |
+| Node26.13.0 | 86,053s | 43,378s | 49,6% |
 
-| Fonction | Support avant → après | Intégré avant → après |
-| --- | ---: | ---: |
-| `safeTree`, inclusif | 5,045 → 1,609 s | 5,774 → 1,769 s |
-| `saveChecksum` | 2,250 → 0,306 s | 2,725 → 0,337 s |
+Chaque paire compare directement les403897679octets de ses265réponses JSON, sans normalisation. L'export3804713octets, le profil8655095octets, le seed et l'horloge sont aussi identiques. Les empreintes export/profil concordent entre les deux versions de Node. Les sources et le test d'origine sont empreintés avant/après. Les campagnes sont séquentielles ; la clôture de la campagne UI précédente a été vérifiée36,9s avant le lancement Node22. Ces temps locaux ne prédisent pas un temps garanti sur un runner Linux.
 
-Les exports complets et les fichiers `donnees.json` des deux échantillons sont identiques **octet par octet avant/après**. Seeds identiques : Support `2709369375`, intégré `2981339948` ; horloge fixée à `1700000000000`. Les projections pures conservent aussi le disque. Ces comparaisons sont distinctes des campagnes complètes suivantes.
+## Tests et revue
 
-## Campagnes complètes réellement exécutées
+- `native-delegate-transaction06.cjs` :11cas appariés complets et vrai stdio, réussis sous Node22 puis26, sans skip. Les checkpoints sont préparés par de vraies commandes jusqu'à72min, afin de cibler les contrats sans rejouer onze matchs entiers ; les campagnes longues originales restent inchangées.
+- Lectures après tick, mutation après save, lecture absorbée, autre clé, fautes de persistance réelles avec et sans repli, import invalide/prototype, texte `toJSON`, horloge dynamique, vraie interruption VM et reprise sont contrôlés. Réponses, exports et fichiers complets restent comparés.
+- Le témoin historique capture verbatim le seul ancien bloc delegate, avec SHA et origine ; il fonctionne sans Git ni archive externe, dans des fixtures jetables. Aucun commutateur runtime de désactivation n'est ajouté.
+- `godot-engine.cjs` conserve la compatibilité historique14clubs, délégation, RNG, refus disque, import/reprise et JSON-lines sous22/26.
+- `native-save-hotpaths06.cjs` conserve205checksums, corpus hostile, messages, limites200000/400000/650000nœuds et ordre des contrôles, sous22/26.
+- Revue indépendante du worker et du témoin final : aucun P1/P2 établi dans le contrat déclaré. Les premiers RED du harnais (timestamp numérique hors borne, préparation arrêtée avant72min) ont été corrigés dans les seules fixtures ; aucun validateur n'a été élargi.
 
-Les fichiers de test d'origine sont exécutés sans modification sous Node `v22.23.4`, successivement, avec un plafond externe de **180 000 ms conservé**. Le seul préchargement diagnostique recueille le temps CPU du processus à sa sortie et écrit les preuves hors dépôt.
+Worker reçu : SHA-256 `ec18d95e6ae1ab7a176f5b520e7423c55407577a91d252bad64ac1ebb1403d44`. Témoin reçu : `37e11a1f3d91b7bbf1f381081e36f79b2da08327faeb00d270ac0c28cb1e84ee`.
 
-| Campagne complète | Temps mural | CPU utilisateur | CPU système | Résultat |
-| --- | ---: | ---: | ---: | --- |
-| `native-academy-integrated-long` | 113,796 s | 118,562 s | 10,375 s | code 0, pas de timeout |
-| `native-club-support-season` | 160,152 s | 169,110 s | 11,969 s | code 0, pas de timeout |
+## Réception restante
 
-La campagne intégrée termine deux saisons, arrive en S3, conserve les six checkpoints 10/20/34 avec import/export et reprise exacts, conférences hebdomadaires, décisions vestiaire et domaines natifs actifs. Maximum observé : 4 940 124 octets et 315 944 nœuds.
-
-La campagne Support conserve ses 34 semaines, 30 briefings et matchs délégués, huit projections pures en semaines 27–34, neuf reprises exactes dont fin S1 et import S2, puis réunion et négociation en S2. Aucun match, semaine, assertion ou reprise n'a été retiré.
-
-**La marge Support n'est que de 19,848 s sur le plafond local.** Les deux résultats Windows ne remplacent pas une nouvelle CI Linux sur le SHA publié, puis sa validation post-fusion. Le post-fusion historique reste rouge ; aucune réussite distante future n'est acquise.
-
-## Compatibilité vérifiée
-
-`tests/native-save-hotpaths06.cjs` compare les fonctions courantes aux corps historiques réels de `safeTree` et `saveChecksum`, capturés de `54d67fa9` et confrontés à `6c38020a`. Il couvre 205 empreintes dont un état réel, Unicode, emoji, surrogate isolé et valeurs générées déterministiquement ; aucune mutation d'entrée. Le second contrôle compare acceptation et messages sur les textes/clés/types/nombres interdits, profondeur, tailles, les trois plafonds 200 000/400 000/650 000 nœuds et l'ordre de lecture de `Object.entries` avant un refus de clé.
-
-Les deux contrôles passent sous Node22 et Node26, sans assertion de performance murale en CI et sans dépendance aux nouveaux domaines natifs 0.6. Parsing Node et `git diff --check` reçus. Les fonctions optimisées n'ajoutent ni migration ni changement d'empreinte des anciennes sauvegardes ; les comparaisons avant/après et les allers-retours des campagnes conservent leurs résultats observés.
-
-Les rapports CPU, sorties, exports et empreintes de sources sont conservés hors dépôt dans `E:/Cadrage-Debordement/artefacts/native06-20261108/performance`. La réception de publication/CI appartient à l'intégrateur ; aucune fusion ou distribution nouvelle n'est annoncée par ce sous-lot.
+La nouvelle tête de la PR398 doit recevoir sa propre CI Linux, le gate officiel, puis les sept jobs post-fusion. La CI rouge de la première tête n'est pas effacée ni présentée comme un succès. Le prochain paquet Windows doit également intégrer cette tête et recevoir sa propre recette. Les preuves locales détaillées sont dans `E:/Cadrage-Debordement/artefacts/native06-20261108/perf-second/` et `revue-perf-delegate.md`.
