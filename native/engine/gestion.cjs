@@ -13,7 +13,7 @@ module.exports=function nativeGestion(command,p){
  if(command==='promote_academy'){
   requireThat(p.confirmed===true&&!S.live&&S.phase!=='ended','Confirmez le salaire et la promotion hors match.');
   const target=S.development.academy.find(x=>x.id===p.playerId);
-  requireThat(target&&club().players.length<professionalCapacity(),'Espoir indisponible ou effectif complet.');
+  requireThat(target&&professionalPlaces()>0,'Espoir indisponible ou effectif complet.');
   requireThat(promoteYouth(p.playerId),'Promotion refusée.');return;
  }
  if(command==='scout_mission'){
@@ -38,14 +38,14 @@ module.exports=function nativeGestion(command,p){
  if(command==='promote_cover'){
   requireThat(p.confirmed===true,'Confirmez la promotion à 2 500 € par semaine et par joueur.');requireThat(!S.live&&S.phase!=='ended','Promotion indisponible pendant le match ou après la saison.');
   repairSheet();const count=[...S.lineup,...S.reserves].filter(id=>!id).length;
-  requireThat(count>0,'La feuille de match est déjà complète.');requireThat(club().players.length+count<=100,'Effectif trop important pour promouvoir ces joueurs.');
+  requireThat(count>0,'La feuille de match est déjà complète.');requireThat(count<=professionalPlaces(),'Effectif trop important pour promouvoir ces joueurs.');
   promoteCover();requireThat(sheetErrors().length===0,'La promotion ne permet pas de compléter une feuille qualifiée.');
   return {coverage:{count,weeklySalary:2500,totalWeeklySalary:count*2500,message:`${count} espoir(s) promu(s) : ${count*2500} € de salaire hebdomadaire supplémentaire. Feuille à 23 complète.`}};
  }
  if(command==='recruit'||command==='extend_contract'){
   requireThat(p.confirmed===true,'Confirmez le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=1000&&p.salary<=100000&&[1,2,3].includes(p.years),'Offre invalide.');
   const kind=command==='recruit'?'recruit':'renew',target=talkPlayer(p.playerId,kind);requireThat(target,'Joueur indisponible ou offre périmée.');
-  requireThat(club().cash>=contractFee(target,kind),'Trésorerie insuffisante pour la prime.');requireThat(kind!=='recruit'||club().players.length<professionalCapacity(),'Effectif complet.');
+  requireThat(club().cash>=contractFee(target,kind),'Trésorerie insuffisante pour la prime.');requireThat(kind!=='recruit'||professionalPlaces()>0,'Effectif complet.');
   requireThat(negotiateContract(p.playerId,kind,p.salary,p.years),'Offre refusée : durée, joueur ou négociation indisponible.');
   const key=talkKey(p.playerId,kind),talk=S.economy.talks[key];
   if(talk.status==='ready')requireThat(confirmContract(key),'Signature devenue indisponible.');

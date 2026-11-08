@@ -48,7 +48,7 @@
     return st.targets.map(t=>{
       const p=persons(s).find(x=>x.id===t.id);
       const played=currentMinutes(s,t.id);
-      const elapsed=Math.max(0,Math.min(26,Math.floor(finite(s.round))));
+      const elapsed=Math.max(0,Math.min(26,root.CDNativeAcademy?.active(s)?root.CDNativeAcademy.target(s):Math.floor(finite(s.round))));
       const expected=t.minutes*elapsed/26;
       return {id:t.id,name:t.name,position:t.pos,target:t.minutes,played,
         remaining:Math.max(0,t.minutes-played),
@@ -75,7 +75,7 @@
     const st=ensure(s),p=own(s).find(x=>x.id===id);
     if(!st||!p||p.age>23||!root.CDEspoirsPathwaysV78V81?.eligiblePro(s).some(x=>x.id===id))return [];
     return (s.clubs||[]).map((club,to)=>{
-      if(to===s.club||!club?.players||club.players.length>=42)return null;
+      if(to===s.club||!club?.players||(typeof professionalPlaces==='function'?professionalPlaces(club,s)<=0:club.players.length>=42))return null;
       const competition=club.players.filter(x=>x.pos===p.pos).sort((a,b)=>finite(b.rating)-finite(a.rating));
       const stronger=competition.filter(x=>finite(x.rating)>=finite(p.rating)).length;
       const depth=competition.length;
@@ -177,5 +177,5 @@
   const api={valid,ensure,target,minutesReport,succession,loanOptions,career,record,panel,install};
   root.CDEspoirsFollowupV86V89=api;
   if(typeof module==='object'&&module.exports)module.exports=api;
-  if(typeof document!=='undefined')install(root);
+  if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root);
 })(typeof globalThis==='object'?globalThis:this);

@@ -16,7 +16,7 @@
  function canManage(s){return !!s&&!s.live&&!s.trained&&s.phase==='league'&&Array.isArray(s.clubs?.[s.club]?.players);}
  function treatment(p){return PROTOCOLS[p.medicalV68?.protocol]?p.medicalV68.protocol:'standard';}
  function isRecovering(p){return Number(p?.injury)>0;}
- function risk(s,p,salt){let hash=2166136261;const key=[s.season,s.round,p.id,salt].join('|');for(let i=0;i<key.length;i++){hash^=key.charCodeAt(i);hash=Math.imul(hash,16777619);}return (hash>>>0)/4294967296;}
+ function risk(s,p,salt){let hash=2166136261;const key=[s.season,s.franceMode?.version===1?s.franceMode.week:s.round,p.id,salt].join('|');for(let i=0;i<key.length;i++){hash^=key.charCodeAt(i);hash=Math.imul(hash,16777619);}return (hash>>>0)/4294967296;}
  function choose(s,id,protocol,{save,render}={}){
   const p=statePlayer(s,id);
   if(!canManage(s)||!p||!isRecovering(p)||!PROTOCOLS[protocol]||typeof save!=='function')return false;
@@ -145,4 +145,4 @@
  }
  return Object.freeze({PROTOCOLS,canManage,treatment,risk,choose,completeTraining,returnToPlay,panel,install});
 });
-if(typeof document!=='undefined'&&typeof CDMedicalV68==='object')CDMedicalV68.install(globalThis);
+if(!globalThis.CDNativeHeadless&&typeof document!=='undefined'&&typeof CDMedicalV68==='object')CDMedicalV68.install(globalThis);

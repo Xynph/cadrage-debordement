@@ -34,7 +34,7 @@ func load_manifest(source: String = "res://guide/assets/voice/manifest.json") ->
 				if not FileAccess.file_exists(path) and not ResourceLoader.exists(path): continue
 				if FileAccess.file_exists(path) and clip.has("sha256") and str(clip.sha256).to_lower() != FileAccess.get_sha256(path).to_lower(): continue
 				clips[text] = path
-			if not clips.is_empty(): recording_status = "Voix de Gabi enregistrée · " + str(clips.size()) + " bulles locales. Repli système pour les autres textes."
+			if not clips.is_empty(): recording_status = "Voix provisoire de Gabi · " + str(clips.size()) + " bulles locales. Les nouveaux textes utilisent la voix système provisoire si disponible."
 			else: recording_status = "Voix enregistrée invalide ou absente : repli sur la voix système."
 		else: recording_status = "Manifeste vocal illisible : repli sur la voix système."
 	_update_status()
@@ -67,7 +67,7 @@ func setup(preferred: String, speed: float, quiet: bool) -> void:
 func _update_status() -> void:
 	status_text = "Mode texte · aucune voix française disponible sur ce PC."
 	if not voice_id.is_empty(): status_text = "Voix système provisoire · " + ("muette" if muted else "prête")
-	if not clips.is_empty(): status_text = "Voix de Gabi enregistrée · " + ("muette" if muted else "prête")
+	if not clips.is_empty(): status_text = "Voix provisoire de Gabi · " + ("muette" if muted else "prête")
 	status_text += "\n" + recording_status
 	status_changed.emit()
 func speak(text: String) -> void:

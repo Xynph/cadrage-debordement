@@ -45,6 +45,7 @@ static func dossier(app: Control) -> void:
 	var view := dialog(app, "Le dossier adverse", "OppositionDossier", 900)
 	var d: AcceptDialog = view[0]
 	var list: VBoxContainer = view[1]
+	G.photo_note(list, data.opponent, "Dossier adverse", str(data.opponent.name), "stadium", 120)
 	list.add_child(G.section(str(data.opponent.name), "Les faits et le conseil du staff"))
 	list.add_child(G.wrap(data.get("notice", ""), 13))
 	var advice: Dictionary = data.get("advice", {})

@@ -241,13 +241,17 @@ func run() -> void:
 	var save_path: String = str(app.model.meta.dataDir).path_join("donnees.json")
 	var bytes := FileAccess.get_file_as_bytes(save_path)
 	for route in ["Bureau", "Effectif", "Composition", "Préparation", "Calendrier", "Classements", "Finances", "Recrutement", "Club", "Match", "Packs"]:
+		var previous_requests := spoken.size()
 		app._navigate(route); guide.refresh(); guide.open_help()
 		for i in 3: await process_frame
 		check(not guide.bubble.text.is_empty(), "Aide de la vraie route : " + route)
 		var count := spoken.size()
 		for i in 10: guide.refresh()
 		check(spoken.size() == count, "Pas de répétition sur les snapshots : " + route)
-		if not spoken.is_empty(): check(spoken.back() == guide.bubble.text, "Bulle identique à la chaîne TTS : " + route)
+		if spoken.size() > previous_requests:
+			check(spoken.back() == guide.bubble.text, "Bulle identique à la nouvelle chaîne TTS : " + route)
+		else:
+			check(guide.speech.voice_id.is_empty() and not guide.speech.has_recording(guide.bubble.text), "Bulle sans enregistrement : aucune ancienne prise réutilisée : " + route)
 	var after: Dictionary = await state_export()
 	check(before == after, "Guide et navigation préservent intégralement export et RNG moteur")
 	check(bytes == FileAccess.get_file_as_bytes(save_path), "Guide : aucun octet de carrière modifié")

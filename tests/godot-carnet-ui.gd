@@ -53,11 +53,25 @@ func bounds(route: String) -> void:
 	var page: Control = named(app, ROUTES[route])
 	check(page != null, "Vue carnet " + route)
 	if page == null: return
-	check(page.get_global_rect().end.x <= app.size.x + 1 and page.get_global_rect().end.y <= app.size.y + 1, "Vue dans la fenêtre " + route + " " + str(page.get_global_rect()))
+	if route == "Préparation":
+		var viewport: ScrollContainer = named(app, "CareerWorkspace")
+		check(viewport != null and viewport.get_global_rect().end.x <= app.size.x + 1 and viewport.get_global_rect().end.y <= app.size.y + 1, "Viewport réel de préparation borné dans la fenêtre")
+		check(page.get_global_rect().end.x <= viewport.get_global_rect().end.x + 1, "Préparation sans débordement horizontal")
+		for b: Button in page.find_children("*", "Button", true, false):
+			if b.is_visible_in_tree() and not b.disabled:
+				b.grab_focus()
+				viewport.ensure_control_visible(b)
+				check(b.has_focus(), "Préparation : commande réelle accessible par focus " + b.text)
+				# Inner lists have their own viewport; the outer viewport must reveal
+				# each whole command when that command belongs directly to this page.
+				if not b.has_meta("tactic_id"):
+					check(viewport.get_global_rect().encloses(b.get_global_rect()), "Préparation : commande révélée par défilement " + b.text)
+	else:
+		check(page.get_global_rect().end.x <= app.size.x + 1 and page.get_global_rect().end.y <= app.size.y + 1, "Vue dans la fenêtre " + route + " " + str(page.get_global_rect()))
 	for child in page.find_children("*", "ScrollContainer", true, false):
 		if child.is_visible_in_tree(): check(child.follow_focus, "Défilement suit le focus " + route)
 	for b in page.find_children("*", "Button", true, false):
-		if b is Button and not b.disabled:
+		if b is Button and not b.disabled and (route != "Préparation" or b.is_visible_in_tree()):
 			check(b.focus_mode == Control.FOCUS_ALL, "Commande clavier " + route)
 			check(b.size.y >= 30 and b.size.x >= 20, "Cible utilisable " + route + " " + b.text)
 func contrast(first: Color, second: Color) -> float:
@@ -160,7 +174,9 @@ func reading_actions() -> void:
 		check(app.table_division==leagues[1].id,"Changement réel de division")
 	app.settings()
 	await capture_dialog("parametres-1440")
-	await press("Packs et identités")
+	var packs_button: Button = button(app,"Importez un pack personnalisé")
+	check(packs_button != null and packs_button.is_visible_in_tree(),"Accès personnalisé aux packs visible dans les paramètres")
+	await press("Importez un pack personnalisé")
 	check(app.route=="Packs" and app.pack_manager.scope=="career","Paramètres ouvrent les packs de carrière")
 	await press("IMPORTER UN PACK ZIP")
 	check(app.pack_manager.picker.visible,"Vrai dialogue ZIP accessible")
@@ -202,10 +218,14 @@ func decisions() -> void:
 			if found: break
 		if found: break
 	await render("Préparation")
+	await press("CONSIGNES")
 	var attack: Dictionary=app.model.tactics.attacks.filter(func(t):return t.id!=app.model.tactics.attack)[0]
+	check(button(app,str(attack.label).to_upper()).is_visible_in_tree(),"Consigne visible dans son sous-onglet")
 	await press(str(attack.label).to_upper())
 	await wait_model()
 	check(app.model.tactics.attack==attack.id,"Consigne enregistrée via le bouton réel")
+	await press("ENTRAÎNEMENT")
+	check(button(app,"CHARGE NORMALE").is_visible_in_tree(),"Charge visible dans son sous-onglet")
 	await press("CHARGE NORMALE")
 	await wait_model()
 	check(app.model.meta.trained,"Séance collective réellement effectuée")
@@ -241,6 +261,7 @@ func decisions() -> void:
 	await render("Composition")
 	check(button(app,"SÉLECTION AUTOMATIQUE DU STAFF").disabled,"Sélection verrouillée pendant le direct")
 	await render("Préparation")
+	await press("ENTRAÎNEMENT")
 	check(button(app,"CHARGE NORMALE").disabled,"Séance verrouillée pendant le direct")
 	await render("Match")
 	await capture("match-pause-1440")

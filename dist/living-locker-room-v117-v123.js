@@ -82,15 +82,18 @@
   }
  }
  function settle(s,{message}={}){
-  const st=getState(s);if(!valid(s)||!st)return [];
+  const st=getState(s);if(!s?.manager||!s.economy||!Number.isInteger(s.season)||!Number.isInteger(s.economy.week)||!st)return [];
   const outcomes=[];
   for(const c of st.commitments){
    if(c.status!=='open')continue;
    if(c.originSeason!==s.season){c.status='expired';c.resolvedWeek=s.economy.week;continue;}
    if(s.economy.week<c.dueWeek)continue;
    const p=roster(s).find(x=>x.id===c.playerId);
-   const minutes=p?.dev?.minutes??0;
-   const honored=!!p&&(minutes-c.baseline>=c.target||!!p.injury);
+   const minutes=p?.dev?.minutes;
+   // Une mesure absente ne prouve pas un engagement rompu ; le suivi attend
+   // une mesure fiable ou clôture sans pénalité si le joueur a quitté le club.
+   if(!p||!Number.isFinite(minutes)){c.status='expired';c.resolvedWeek=s.economy.week;continue;}
+   const honored=minutes-c.baseline>=c.target||!!p.injury;
    c.status=honored?'honored':'broken';c.resolvedWeek=s.economy.week;
    if(p?.satisfaction&&Number.isFinite(p.satisfaction.score))
     p.satisfaction.score=cap(p.satisfaction.score+(honored?3:-6),20,95);
@@ -145,4 +148,4 @@
  }
  return Object.freeze({CHOICES,personality,weeklyEvent,allowed,state,apply,settle,panel,install});
 });
-if(typeof document!=='undefined'&&typeof CDLivingLockerRoom==='object')CDLivingLockerRoom.install(globalThis);
+if(typeof CDNativeHeadless==='undefined'&&typeof document!=='undefined'&&typeof CDLivingLockerRoom==='object')CDLivingLockerRoom.install(globalThis);

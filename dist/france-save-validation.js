@@ -20,7 +20,10 @@ const CDFranceSaveValidation=(()=>{
   const f=s.franceMode,C=CDFranceCompetition,check=(v,msg)=>saveCheck(v,'France30 : '+msg);
   const keys=(o,list)=>saveObject(o)&&Object.keys(o).length===list.length&&list.every(k=>Object.hasOwn(o,k));
   check(keys(f,['version','catalogue','competitionRules','matchRules','startSeason','week','leagues','accessMatch','movement','yearbook','previousRanks']),'métadonnées non reconnues.');
-  check(!Object.keys(s).some(k=>/^v(73|74|75|76|77|78|82|86|90|95|101)/.test(k)),'module Espoirs web incompatible.');
+  if(Object.keys(s).some(k=>/^v(73|74|75|76|77|78|82|86|90|95|101)/.test(k))){
+   check(s.nativeAcademy?.version===2&&typeof CDNativeAcademy==='object'&&typeof CDNativeAcademy.validate==='function','module Espoirs web incompatible.');
+   CDNativeAcademy.validate(s);
+  }
   check(C.active(s)&&s.lnrMode===undefined,'marqueur incompatible.');
   check(f.competitionRules==='fr-pro-2026-27'&&f.matchRules==='fr-pro-2025'&&f.startSeason===2026&&saveInt(f.week,0,34),'référentiel ou semaine invalide.');
   check(keys(f.leagues,['elite','accession'])&&saveObject(f.previousRanks)&&saveArray(f.yearbook,15),'état de compétition invalide.');

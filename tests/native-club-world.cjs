@@ -1,0 +1,11 @@
+'use strict';
+const assert=require('node:assert/strict');
+const world=require('../dist/interclub-world-v124-v130.js');
+const s={season:1,round:26,phase:'final',clubs:Array.from({length:30},(_,id)=>({id,base:70}))};
+const result=(n,a=0,b=29)=>({pair:[a,b],score:[18,18],winner:b,franceContext:{fixtureId:'s1-access-'+n,season:1,phase:'access',round:0,week:33,leagueId:'access'}});
+const e=world.accept(s,result(0));assert.ok(e,'Le barrage France30 doit être observé.');assert.equal(e.winner,29,'Le vainqueur du départage est le vainqueur réel.');
+for(let n=1;n<150;n++)world.accept(s,result(n,n%29,29));
+const count=s.interclubWorld.pairs['0:29'].games;
+assert.equal(world.accept(s,result(0)),null,'Déduplication après la troncature des 140 événements.');assert.equal(s.interclubWorld.pairs['0:29'].games,count);
+s.season=2;assert.equal(world.season(s,1),true);assert.equal(s.interclubWorld.years[0].matches,150,'Le bilan ne dépend pas du journal tronqué.');assert.equal(world.season(s,1),false);
+console.log('Monde natif : identité France30, départages, déduplication et archive exacte PASS.');

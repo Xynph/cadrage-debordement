@@ -1,0 +1,33 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const press=require('../native/engine/press.cjs');
+const ctx=vm.createContext({CDNativeHeadless:true,console,Math:Object.assign(Object.create(Math),{random(){throw Error('RNG interdit en lecture');}}),document:{addEventListener(){throw Error('Installation web interdite');}},save(){},render(){}});
+for(const file of press.files)vm.runInContext(fs.readFileSync(path.join(__dirname,'../dist',file),'utf8'),ctx);
+const run=s=>vm.runInContext(s,ctx);
+run(`S={season:1,round:0,club:29,morale:75,trust:70,live:null,phase:'league',clubs:Array.from({length:30},(_,id)=>({id,name:'Club '+id,points:id,played:0,pf:0,pa:0,players:[]})),history:[],franceMode:{version:1,week:34,leagues:{elite:{members:Array.from({length:14},(_,i)=>i)},accession:{members:Array.from({length:16},(_,i)=>i+14)}}}};const nativePress=(${press.factory.toString()})();`);
+const before=run('JSON.stringify(S)');const p=JSON.parse(run('JSON.stringify(nativePress.project())'));
+assert.equal(p.context.week,34);assert.equal(p.conference.questions.length>=2,true);assert.ok(p.conference.questions.every(q=>q.answers.length===5));
+assert.equal(run('JSON.stringify(S)'),before,'Projection pure sans initialisation');
+assert.equal(p.journal.divisions.length,2);assert.equal(p.journal.divisions[1].standings[0].clubId,29);
+ctx.payload={context:p.context,answers:p.conference.questions.map(q=>({questionId:q.id,answerId:'r0'}))};
+run("nativePress.execute('press_conference',payload);nativePress.validate(S)");
+assert.equal(run('S.pressRelations.week'),34);assert.ok(run('S.morale')>75);assert.ok(run('S.trust')<70);
+assert.throws(()=>run("nativePress.execute('press_conference',payload)"),/déjà|réalisée/);
+const saved=run('JSON.stringify(S)');
+for(const mutate of ["S.pressRelations.version=999","S.pressRelations.week=35","S.pressRelations.history=[{}]","S.pressRelations.used=['1:0:form','1:0:form']","S.pressConference.history[0].answerId='r9'","S.pressConference.history[0].week=35","S.pressConference.history.push({...S.pressConference.history[0]})"]){run('S='+saved);run(mutate);assert.throws(()=>run('nativePress.validate(S)'),/presse|conférence|Interview/i,mutate);}
+run('S='+before);ctx.payload.context.week=33;assert.throws(()=>run("nativePress.execute('press_conference',payload)"),/périm/);ctx.payload.context.week=34;
+run('S.live={}');assert.throws(()=>run("nativePress.execute('press_conference',payload)"),/match/);run('S.live=null');
+run("S.pressRelations=CDPressRelations.interview(CDPressRelations.create('club-29'),{season:1,week:34,topic:'form',tone:'honest'}).state");
+assert.equal(run('nativePress.project().conference.available'),false,'Ne pas cumuler conférence simple importée et conférence riche dans le même contexte.');
+run('delete S.pressRelations');
+run("S.history=[{season:2,week:0,pair:[0,1],score:[30,10]},{season:1,week:35,pair:[1,2],score:[10,0]},{season:1,week:33,pair:[28,29],score:[12,17],leagueId:'accession'}]");
+const facts=JSON.parse(run('JSON.stringify(nativePress.project().journal.divisions.flatMap(d=>d.results))'));assert.equal(facts.length,1);assert.deepEqual(facts[0].clubIds,[28,29]);assert.deepEqual(facts[0].score,[12,17]);assert.equal(facts[0].title,undefined);
+run("S.franceMode=null;S.clubs=S.clubs.slice(0,14);S.club=0;S.round=26;S.history=[]");const historic=JSON.parse(run('JSON.stringify(nativePress.project())'));assert.equal(historic.context.week,26);
+run("S.pressRelations=CDPressRelations.create('club-0');S.pressRelations.mediaTrust=20;function advanceSeason(){S.season++;S.round=0;return 'saison';}nativePress.installHooks();nativePress.installHooks();");
+assert.equal(run('advanceSeason()'),'saison');assert.equal(run('S.pressRelations.season'),2);assert.equal(run('S.pressRelations.mediaTrust'),25,'Rapprochement annuel une seule fois.');
+run("S.season=3;S.pressRelations=CDPressRelations.nextSeason(CDPressRelations.nextSeason(CDPressRelations.interview(CDPressRelations.create('club-0'),{topic:'form',tone:'honest',season:1,week:0}).state));");
+assert.doesNotThrow(()=>run('nativePress.validate(S)'),'Les anciennes histoires restent valides après expiration des clés anti-doublons.');
+run('S.pressRelations.stories.push({...S.pressRelations.stories[0]})');assert.throws(()=>run('nativePress.validate(S)'),/presse/i,'Une histoire ne doit pas apparaître deux fois.');
+run("S.pressRelations=CDPressRelations.interview(CDPressRelations.create('club-0'),{topic:'form',tone:'honest',season:1,week:2}).state;S.pressRelations.week=0");assert.throws(()=>run('nativePress.validate(S)'),/presse/i,'Les historiques ne doivent pas être postérieurs au namespace presse.');
+console.log('Presse native : lecture pure, semaines34/26, effets, contexte, historique strict, divisions et faits futurs exclus PASS.');
+

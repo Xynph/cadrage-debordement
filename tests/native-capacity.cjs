@@ -16,4 +16,14 @@ for(const mode of ['common','historical']){
 }
 const h=career('common');
 assert.equal(h.run("successionSimulate(S,[{kind:'youth',id:S.development.academy[0].id}],1).valid"),true,'Le plan de relève accepte une promotion sous la capacité commune.');
+// A pure capacity projection on a copied state also reads an archived club
+// office. The current manager and a duplicate historical reference must not
+// change how many contractual seats the originating club has reserved.
+const beforeReservations=h.state(),reservationSeed=h.seed();
+h.run("const capacityCopy=JSON.parse(JSON.stringify(S));const loanPerson=capacityCopy.clubs[0].players.shift();capacityCopy.clubs[1].players.push(loanPerson);const loanOffice={loans:[{id:loanPerson.id,from:0,to:1,season:capacityCopy.season}]};capacityCopy.nativeAcademy={offices:{0:{v78to81:loanOffice}}};capacityCopy.club=2;");
+assert.equal(h.run('professionalLoanReservations(capacityCopy.clubs[0],capacityCopy).length'),1,'Le bureau archivé conserve la place du club quitté.');
+assert.equal(h.run('professionalPlaces(capacityCopy.clubs[0],capacityCopy)'),h.run('professionalPlaces()'),'Prêter ne libère aucune admission supplémentaire.');
+h.run('capacityCopy.v78to81=loanOffice');
+assert.equal(h.run('professionalLoanReservations(capacityCopy.clubs[0],capacityCopy).length'),1,'Une référence répétée ne réserve pas deux places.');
+assert.deepEqual(h.state(),beforeReservations);assert.equal(h.seed(),reservationSeed,'Projection des réservations sans mutation ni RNG.');
 console.log('Capacité : borne commune/historique, offre périmée, promotion, aperçu et plan de relève cohérents PASS.');

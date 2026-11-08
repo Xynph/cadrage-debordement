@@ -1,7 +1,9 @@
 extends RefCounted
 const Content = preload("res://guide/guide_content.gd")
+const AtomicFileStore = preload("res://atomic_file.gd")
 const LIMIT := 65536
-var data: Dictionary = {"version":1,"enabled":true,"muted":false,"voice":"","rate":1.0,"step":"bienvenue","completed":[]}
+var data: Dictionary = {"version":1,"enabled":true,"muted":false,"voice":"","rate":1.0,"step":"bienvenue","completed":[],"seen":[],"events":[]}
+const EVENT_LIMIT := 128
 var last_error := ""
 var directory := ""
 var _blocked := false
@@ -22,6 +24,8 @@ func load_profile(path: String) -> void:
 	var parsed: Variant = parser.data
 	if not _valid(parsed): _fail("guide.json est invalide ; original conservé. Le guide fonctionne sans enregistrer sa progression."); return
 	data = parsed.duplicate(true)
+	if not data.has("seen"): data.seen = []
+	if not data.has("events"): data.events = []
 
 func _valid(value: Variant) -> bool:
 	if not value is Dictionary: return false
@@ -34,6 +38,18 @@ func _valid(value: Variant) -> bool:
 	var seen := {}
 	for id in value.completed:
 		if not id is String or id not in Content.TOUR or seen.has(id): return false
+		seen[id] = true
+	if not value.get("seen", []) is Array or value.get("seen", []).size() > Content.CONTEXT_PAGES.size(): return false
+	seen.clear()
+	for id in value.get("seen", []):
+		if not id is String or id not in Content.CONTEXT_PAGES or seen.has(id): return false
+		seen[id] = true
+	if not value.get("events", []) is Array or value.get("events", []).size() > EVENT_LIMIT: return false
+	seen.clear()
+	var pattern := RegEx.new()
+	pattern.compile("^(cash|signed|season):[0-9]{1,4}:[0-9]{1,6}:[0-9]{1,4}:[a-f0-9]{0,16}$")
+	for id in value.get("events", []):
+		if not id is String or id.length() > 64 or pattern.search(id) == null or seen.has(id): return false
 		seen[id] = true
 	return true
 
@@ -52,10 +68,10 @@ func save_profile(value: Dictionary) -> bool:
 	if file == null: last_error = "Écriture du guide refusée : " + error_string(FileAccess.get_open_error()); return false
 	file.store_string(JSON.stringify(value)); file.flush()
 	error = file.get_error(); file.close()
-	if error == OK: error = DirAccess.rename_absolute(temporary, filename)
-	if error != OK:
+	var replace_error := error_string(error) if error != OK else AtomicFileStore.replace_staged(temporary, filename)
+	if not replace_error.is_empty():
 		DirAccess.remove_absolute(temporary)
-		last_error = "Écriture atomique du guide refusée : " + error_string(error)
+		last_error = "Écriture atomique du guide refusée : " + replace_error
 		return false
 	data = value.duplicate(true)
 	last_error = ""

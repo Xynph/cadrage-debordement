@@ -9,7 +9,22 @@ var data_color := Color.TRANSPARENT
 const DISPLAY = preload("res://fonts/BarlowCondensed-SemiBold.ttf")
 
 func _draw() -> void:
-	if mode == "crest":
+	if mode == "trend":
+		if values.size() < 2: return
+		var low := float(values.min())
+		var high := float(values.max())
+		var span := maxf(1, high - low)
+		var points := PackedVector2Array()
+		for fraction in [0.0, 0.5, 1.0]:
+			var y: float = 8 + (size.y - 24) * fraction
+			draw_line(Vector2(8, y), Vector2(size.x - 8, y), grid_color, 1)
+		for i in values.size():
+			points.append(Vector2(10 + (size.x - 20) * i / (values.size() - 1), 8 + (size.y - 24) * (1 - (float(values[i]) - low) / span)))
+		draw_polyline(points, accent, 2.5, true)
+		for point in points: draw_circle(point, 3.5, accent)
+		draw_string(DISPLAY, Vector2(10, size.y - 1), str(values[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, accent)
+		draw_string(DISPLAY, Vector2(size.x - 40, size.y - 1), str(values[-1]), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, accent)
+	elif mode == "crest":
 		var c := size * 0.5
 		var r := minf(size.x, size.y) * 0.43
 		var p := PackedVector2Array([c + Vector2(-r, -r), c + Vector2(r, -r), c + Vector2(r * 0.88, r * 0.48), c + Vector2(0, r), c + Vector2(-r * 0.88, r * 0.48)])

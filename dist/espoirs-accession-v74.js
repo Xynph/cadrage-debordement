@@ -15,13 +15,13 @@ const hash=x=>{let h=2166136261;for(const c of String(x)){h^=c.charCodeAt(0);h=M
 const rand=(seed,mod)=>(hash(seed)%mod);
 const safe=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const ids=()=>Array.from({length:20},(_,i)=>i);
-const name=(s,id)=>{const base=(s.lnrMode?.version===1?REAL:FICTION)[Math.floor(id/10)]?.[id%10]||('Centre '+id);return root.CDEspoirsMovementV75?.name(s,'accession',id,base)||base};
+const name=(s,id)=>{if(root.CDNativeAcademy?.active(s))return root.CDNativeAcademy.name(s,'accession',id);const base=(s.lnrMode?.version===1?REAL:FICTION)[Math.floor(id/10)]?.[id%10]||('Centre '+id);return root.CDEspoirsMovementV75?.name(s,'accession',id,base)||base};
 function fixtures(groups){
  const schedule=groups.map(ids=>{const a=ids.slice(),out=[];for(let r=0;r<18;r++){const day=[];for(let i=0;i<5;i++){const x=a[i],y=a[9-i];day.push((r+i)%2?[y,x]:[x,y])}out.push(day);a.splice(1,0,a.pop())}return out});
  return Array.from({length:18},(_,i)=>[...schedule[0][i],...schedule[1][i]])}
 function prospects(season,club){return Array.from({length:22},(_,i)=>{const h=hash(season+':'+club+':'+i),rating=42+h%25;
  return {id:'a74-'+season+'-'+club+'-'+i,name:'Espoir '+(club+1)+'-'+(i+1),pos:POSITIONS[i%15],slot:i%15,age:17+rand(h+':age',5),rating,potential:clamp(rating+8+rand(h+':potential',17),rating,95),condition:100,minutes:0};})}
-function setup(s){if(!s||!s.development||!s.aiRoster?.academies)return null;
+function setup(s){if(root.CDNativeAcademy?.active(s))return root.CDNativeAcademy.setupAccession(s);if(!s||!s.development||!s.aiRoster?.academies)return null;
  if(s.v74Accession?.version===1&&s.v74Accession.season===s.season)return s.v74Accession;
  const previous=s.v74Accession,groups=[ids().slice(0,10),ids().slice(10)];
  s.v74Accession={version:1,season:s.season,round:0,stage:'poules',groups,fixtures:fixtures(groups),results:[],centers:ids().map(id=>({id,players:prospects(s.season,id)})),follow:previous?.follow??0,plan:'equilibre',history:previous?.history?.slice(0,4)||[],champion:null,finalists:[],playoffs:[]};
@@ -33,13 +33,13 @@ function standings(st,group){const rows=group.map(id=>({id,p:0,w:0,d:0,l:0,score
  for(const [row,side] of [[home,0],[away,1]]){row.p++;row.scored+=m.score[side];row.conceded+=m.score[1-side];const diff=m.score[side]-m.score[1-side];if(diff>0){row.w++;row.points+=4}else if(!diff){row.d++;row.points+=2}else row.l++;
  const bonus=(m.tries[side]-m.tries[1-side]>=3?1:0)+(diff<0&&diff>=-5?1:0);row.bonus+=bonus;row.points+=bonus}}
  return rows.sort((a,b)=>b.points-a.points||(b.scored-b.conceded)-(a.scored-a.conceded)||b.scored-a.scored||a.id-b.id)}
-function fifteen(st,id){const c=st.centers[id],mode=id===st.follow?st.plan:'equilibre';
- return Array.from({length:15},(_,slot)=>{const available=c.players.filter(p=>p.slot===slot);available.sort((a,b)=>{const power=p=>p.rating+(mode==='formation'?(p.potential-p.rating)*.65:0)+(mode==='repos'?(p.condition-100)*.7:0);return power(b)-power(a)||a.id.localeCompare(b.id)});return available[0]})}
+function fifteen(st,id){const used=new Set(),native=root.CDNativeAcademy?.stateFor(st),c=native?{players:root.CDNativeAcademy.roster(native,'accession',id)}:st.centers[id],mode=id===st.follow?st.plan:'equilibre';
+ return Array.from({length:15},(_,slot)=>{const available=c.players.filter(p=>!used.has(p.id)&&(native?p.pos===POS[slot]:p.slot===slot));available.sort((a,b)=>{const power=p=>p.rating+(mode==='formation'?(p.potential-p.rating)*.65:0)+(mode==='repos'?(p.condition-100)*.7:0);return power(b)-power(a)||a.id.localeCompare(b.id)});const chosen=available[0]||c.players.find(p=>!used.has(p.id));if(chosen)used.add(chosen.id);return chosen})}
 function play(st,pair,round,stage){const xi=pair.map(id=>fifteen(st,id)),quality=xi.map(ps=>ps.reduce((t,p)=>t+p.rating*p.condition/100,0)/15);
  const seed=st.season+':'+round+':'+stage+':'+pair.join('-'),delta=quality[0]-quality[1];
  const a=clamp(Math.round(21+delta*.55+rand(seed+':home',17)-6),3,60),b=clamp(Math.round(21-delta*.55+rand(seed+':away',17)-8),3,60);
  const result={pair:pair.slice(),round,stage,score:[a,b],tries:[Math.floor(a/7),Math.floor(b/7)],lineups:xi.map(ps=>ps.map(p=>p.id))};
- for(let side=0;side<2;side++)for(const p of xi[side]){p.minutes+=80;p.condition=clamp(p.condition-7,35,100);
+ for(let side=0;side<2;side++)for(const p of xi[side]){const native=root.CDNativeAcademy?.stateFor(st);if(native){root.CDNativeAcademy.registerAccession(native,p);continue}p.minutes+=80;p.condition=clamp(p.condition-7,35,100);
  if(p.rating<p.potential&&p.minutes%240===0)p.rating=Math.min(p.potential,p.rating+1)}
  st.results.push(result);return result}
 const winners=matches=>matches.map(m=>m.pair[m.score[0]>=m.score[1]?0:1]);
@@ -50,10 +50,10 @@ function apply(st,round){if(round!==st.round||round<0||round>=26)return false;
  const games=round<18?st.fixtures[round]:round<=20?st.playoffs:[];
  const stage=round<18?'poules':round===18?'quarts':round===19?'demies':round===20?'finale':'repos';
  for(const pair of games||[])play(st,pair,round,stage);
- for(const c of st.centers)for(const p of c.players)p.condition=clamp(p.condition+(round>=21?12:4),35,100);
+ for(const c of st.centers)for(const p of (root.CDNativeAcademy?.stateFor(st)?root.CDNativeAcademy.roster(root.CDNativeAcademy.stateFor(st),'accession',c.id):c.players))p.condition=clamp(p.condition+(round>=21?12:4),35,100);
  if(round===20){st.champion=winners(st.results.filter(m=>m.stage==='finale'))[0]??null;st.stage='terminee'}
  st.round++;return true}
-function advance(s){const st=read(s);if(!st)return false;const target=Math.min(26,s.phase==='league'?s.round:26);
+function advance(s){const st=read(s);if(!st)return false;const target=root.CDNativeAcademy?.active(s)?root.CDNativeAcademy.target(s):Math.min(26,s.phase==='league'?s.round:26);
  while(st.round<target)apply(st,st.round);return true}
 function closeSeason(s){const st=read(s);if(!st)return false;while(st.round<26)apply(st,st.round);
  if(!st.history.some(x=>x.season===st.season))st.history.unshift({season:st.season,champion:st.champion,finalists:st.finalists.slice(),follow:st.follow});
@@ -78,5 +78,5 @@ function install(g){if(!g||typeof g.finishRound!=='function'||typeof g.advanceSe
  const origRender=g.render;g.render=function(){const result=origRender.apply(this,arguments),s=get();if(s&&typeof view!=='undefined'&&view==='formation'&&typeof document!=='undefined'){const target=document.querySelector('.cd04-content [data-da42-page="dossiers"]');if(target)target.insertAdjacentHTML('beforeend',panel(s))}return result};
  g.v74Select=(field,value)=>{const ok=select(get(),field,value,save);if(ok)g.render();return ok};return true}
 const api={REAL,FICTION,name,fixtures,setup,read,standings,play,apply,advance,closeSeason,select,panel,install};
-if(typeof module==='object'&&module.exports)module.exports=api;root.CDEspoirsAccessionV74=api;if(typeof document!=='undefined')install(root)
+if(typeof module==='object'&&module.exports)module.exports=api;root.CDEspoirsAccessionV74=api;if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root)
 })(typeof globalThis==='object'?globalThis:this);

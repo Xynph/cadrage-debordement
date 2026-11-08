@@ -10,7 +10,8 @@ const fixture = fs.readFileSync(path.resolve(__dirname, 'ci-shard-profiles.cjs')
 const marker = 'const PROFILES=';
 const start = fixture.indexOf(marker);
 assert.ok(start >= 0, 'Historique CI absent');
-const end = fixture.indexOf(';\n', start);
+const terminator = /;\r?\n/.exec(fixture.slice(start));
+const end = terminator ? start + terminator.index : -1;
 assert.ok(end > start, 'Historique CI incomplet');
 const profiles = JSON.parse(fixture.slice(start + marker.length, end));
 assert.equal(profiles.length, 3, 'Trois traces completes attendues');

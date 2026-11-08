@@ -11,8 +11,10 @@ static func build(app: Control) -> Control:
 	var notes := G.panel(page, .68)
 	G.chapter(notes, "11", "La relève", "Faire une place aux générations suivantes.", app.accent)
 	var text := G.scroll(notes)
+	G.photo_note(text, app.model.club, "Le centre", "La prochaine génération", "stadium", 140)
 	text.add_child(G.metric(G.n(data.get("academy", []).size()), "espoirs au centre"))
-	text.add_child(G.wrap("Quinze nouveaux espoirs par saison. Au plus75 joueurs restent au centre ; il ne simule pas encore de championnat Espoirs dans cette version native.", 14))
+	text.add_child(G.wrap("Quinze nouveaux espoirs par saison. Au plus 75 joueurs restent au centre. Retrouvez les rencontres juniors, les trajectoires et les mentorats dans les parcours du centre.", 14))
+	text.add_child(G.button("PARCOURS DU CENTRE →", func(): app._navigate("Centre")))
 	text.add_child(G.separator())
 	for option in [["academy", "LE CENTRE DE FORMATION"], ["professional", "LES JEUNES PROFESSIONNELS"]]:
 		var b := G.button(option[1], func(): state.mode = option[0]; app._render())
@@ -28,11 +30,11 @@ static func build(app: Control) -> Control:
 	list.get_parent().name = "DevelopmentList"
 	if people.is_empty(): list.add_child(G.wrap("Aucun joueur dans cette catégorie.", 17))
 	for person: Dictionary in people:
-		var card := G.v(10)
+		var card := G.card(list, G.accent_ink(app.accent))
 		card.set_meta("development_id", person.id)
-		list.add_child(card)
 		var row := G.h(16)
 		card.add_child(row)
+		row.add_child(G.portrait(int(person.get("portraitIndex", people.find(person))), 48, person))
 		var identity := G.v(3)
 		G.fill(identity)
 		row.add_child(identity)
@@ -42,6 +44,10 @@ static func build(app: Control) -> Control:
 		row.add_child(G.metric(G.n(person.potential), "potentiel estimé"))
 		var development: Dictionary = person.get("development", {})
 		var history: Array = development.get("history", [])
+		var levels: Array = []
+		for year: Dictionary in history:
+			if year.get("end") is float or year.get("end") is int: levels.append(year.end)
+		G.trend(card, levels, "Niveau en fin de saison · historique conservé", app.accent)
 		if history.is_empty(): card.add_child(G.wrap("L'historique annuel apparaîtra à l'intersaison ; aucune courbe passée n'est inventée.", 12))
 		for year: Dictionary in history.slice(maxi(0, history.size() - 3)):
 			card.add_child(G.wrap("S%s · niveau %s → %s · %s minutes / %s apparitions" % [G.n(year.get("season", "—")), G.n(year.get("start", "—")), G.n(year.get("end", "—")), G.n(year.get("minutes", 0)), G.n(year.get("appearances", 0))], 13))

@@ -95,8 +95,15 @@ test('le CLI officiel refuse un nouveau HEAD même si sa propre CI est verte',()
   const log=path.join(dir,'calls');
   const pr={state:'open',base:{ref:'main'},head:{sha:c,repo:{full_name:repo}},draft:false,mergeable:true,mergeable_state:'clean'};
   const ci={id:1,name:'Tests JavaScript',event:'pull_request',head_sha:c,status:'completed',conclusion:'success',created_at:'2026-11-01T00:00:00Z'};
-  fs.writeFileSync(path.join(dir,'gh'),'#!/usr/bin/env node\nconst fs=require("fs");const args=process.argv.slice(2);fs.appendFileSync('+JSON.stringify(log)+',JSON.stringify(args)+"\\n");const url=args[3];console.log(JSON.stringify(url.endsWith("/merge")?{merged:true,sha:'+JSON.stringify(c)+'}:url.includes("/jobs?")?{jobs:[{name:"Validation CI",status:"completed",conclusion:"success"}]}:url.includes("/runs?")?{workflow_runs:['+JSON.stringify(ci)+']}:'+JSON.stringify(pr)+'));',{mode:0o755});
-  const r=spawnSync(process.execPath,[path.resolve(__dirname,'../ci/release-gate.cjs'),'198','--merge'],{env:{...process.env,PATH:dir+path.delimiter+process.env.PATH,CD_EXPECTED_HEAD_SHA:b},encoding:'utf8'});
+  const preload=path.join(dir,'fake-gh.cjs');
+  fs.writeFileSync(preload,`const fs=require('node:fs');
+require('node:child_process').execFileSync=(file,args)=>{
+ if(file!=='gh')throw Error('Exécutable inattendu dans le test : '+file);
+ fs.appendFileSync(${JSON.stringify(log)},JSON.stringify(args)+'\\n');
+ const url=args[3];
+ return JSON.stringify(url.endsWith('/merge')?{merged:true,sha:${JSON.stringify(c)}}:url.includes('/jobs?')?{jobs:[{name:'Validation CI',status:'completed',conclusion:'success'}]}:url.includes('/runs?')?{workflow_runs:[${JSON.stringify(ci)}]}:${JSON.stringify(pr)});
+};`);
+  const r=spawnSync(process.execPath,['--require',preload,path.resolve(__dirname,'../ci/release-gate.cjs'),'198','--merge'],{env:{...process.env,CD_EXPECTED_HEAD_SHA:b},encoding:'utf8'});
   assert.equal(r.status,1);assert.match(r.stderr,/SHA attendu/);assert(!fs.readFileSync(log,'utf8').includes('/merge'));
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });

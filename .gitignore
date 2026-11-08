@@ -8,5 +8,7 @@ native/godot/.godot/
 native/godot/assets/
 native/godot/export_presets.cfg
 native/godot/*.uid
+native/godot/**/*.uid
+native/godot/**/*.import
 native/godot/fonts/*.import
 native/out/

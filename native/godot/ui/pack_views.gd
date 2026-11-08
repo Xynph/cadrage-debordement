@@ -64,11 +64,11 @@ static func page(app: Control) -> Control:
 		_preview(app, list, preview)
 	var installed: Array = packs.get("installed", [])
 	if installed.is_empty():
-		list.add_child(G.label("VOTRE PREMIER PACK", 22, G.INK, true))
-		list.add_child(G.wrap("Importez un pack personnalisé", 16))
+		var empty := G.card(list, G.GOLD)
+		empty.add_child(G.label("01 / VOTRE PREMIER PACK", 26, G.INK, true))
+		empty.add_child(G.wrap("Importez un pack personnalisé pour retrouver noms, blasons et portraits dans toutes les fiches.", 17))
 	for pack: Dictionary in installed:
-		var card := G.v(8)
-		list.add_child(card)
+		var card := G.card(list, G.GOLD if str(pack.get("id", "")) == selected else G.LINE)
 		card.add_child(G.separator())
 		var pack_title := G.label(str(pack.get("name", "Pack personnalisé")), 27, G.INK, true)
 		pack_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

@@ -1,5 +1,7 @@
 # Idées GitHub à récupérer dans le jeu Windows Godot
 
+> Audit initial conservé comme référence. Les développements et réceptions intervenus ensuite sont suivis dans le [tableau de portage natif](portage-natif-20261108.md), qui distingue source reçue, fonctions partielles et future livraison Windows/GitHub.
+
 Audit du 8 novembre 2026 — [main 3fe6d160](https://github.com/Xynph/cadrage-debordement/commit/3fe6d160a34a9bf3b19005eaef003ac4b1e4ec21). **18 familles et 31 candidats**, aucun candidat neuf qualifié prêt. Lecture seule du dépôt : aucun commit, push, commentaire ou test produit exécuté.
 
 Les priorités explicites comprennent toute la presse, les rivalités et la formation. Le centre de 15 Espoirs est déjà actif mais caché ; la presse et plusieurs rivalités sont présentes dans le web mais exclues du worker. Le dossier adverse, les conseils/bilans tactiques, le recrutement et les décisions financières restent aussi des gains concrets. Le travail consiste surtout à donner à Godot un accès contrôlé à des fonctions éprouvées. Plusieurs anciennes PR ouvertes sont déjà reprises par d’autres intégrations : les fusionner à nouveau serait une erreur.

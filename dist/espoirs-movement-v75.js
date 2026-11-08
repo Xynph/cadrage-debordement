@@ -15,7 +15,7 @@
       st.names&&typeof st.names==='object'&&!Array.isArray(st.names)&&
       Array.isArray(st.history)&&st.history.length<=4;
   }
-  function ensure(s){
+  function ensure(s){if(root.CDNativeAcademy?.active(s))return s.v75Movement;
     if(!s||!Number.isInteger(s.season))return null;
     if(s.v75Movement!==undefined)return valid(s.v75Movement)?s.v75Movement:null;
     const st={version:1,season:s.season,elite:eliteIds(),accession:accessionIds(),rosters:{},names:{},history:[]};
@@ -25,11 +25,11 @@
     const st=ensure(s),list=st?.[division];
     return Array.isArray(list)&&Number.isInteger(slot)?list[slot]||null:null;
   }
-  function name(s,division,slot,legacy){
+  function name(s,division,slot,legacy){if(root.CDNativeAcademy?.active(s))return root.CDNativeAcademy.name(s,division,slot);
     const id=identity(s,division,slot);
     return id&&s.v75Movement.names[id]||legacy;
   }
-  function roster(s,division,slot,fallback){
+  function roster(s,division,slot,fallback){if(root.CDNativeAcademy?.active(s))return root.CDNativeAcademy.roster(s,division,slot);
     const id=identity(s,division,slot),mapped=!!id&&id!==division+':'+slot;
     if(!id)return fallback;
     return s.v75Movement.rosters[id]||(mapped?[]:fallback);
@@ -93,7 +93,7 @@
     if([...elite,...acc].some(x=>!x.id||!Array.isArray(x.players)||x.players.length<15))return null;
     return {elite,acc};
   }
-  function sync(s){
+  function sync(s){if(root.CDNativeAcademy?.active(s))return true;
     const st=ensure(s),acc=s?.v74Accession;
     if(!st||!acc||acc.season!==s.season)return false;
     for(let slot=0;slot<20;slot++){
@@ -197,5 +197,5 @@
   const api={valid,ensure,identity,name,roster,initialGroups,candidates,normalize,snapshot,sync,transfer,carry,panel,install};
   root.CDEspoirsMovementV75=api;
   if(typeof module==='object'&&module.exports)module.exports=api;
-  if(typeof document!=='undefined')install(root);
+  if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root);
 })(typeof globalThis==='object'?globalThis:this);

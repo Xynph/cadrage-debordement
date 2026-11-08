@@ -2,6 +2,7 @@ extends TextureRect
 ## Sixteen authored poses selected by context; cosmetic clock never touches engine RNG.
 var frame_texture := AtlasTexture.new()
 var speaking := false
+var reduced_motion := false
 var _elapsed := 0.0
 var _idle_elapsed := 0.0
 var _rest := 3
@@ -26,12 +27,16 @@ func set_context(id: String) -> void:
 	elif id == "territoire": poses = [12,13,2]
 	elif id == "effectif": poses = [0,1,2]
 	_rest = poses[0]; _talk = poses[1]; _blink = poses[2]
-	_frame(_talk if speaking else _rest)
+	_frame(_talk if speaking and not reduced_motion else _rest)
+func set_reduced_motion(value: bool) -> void:
+	reduced_motion = value
+	_elapsed = 0.0; _idle_elapsed = 0.0
+	_frame(_talk if speaking and not reduced_motion else _rest)
 func set_speaking(value: bool) -> void:
 	speaking = value; _elapsed = 0.0; _idle_elapsed = 0.0
-	_frame(_talk if value else _rest)
+	_frame(_talk if value and not reduced_motion else _rest)
 func _process(delta: float) -> void:
-	if not is_visible_in_tree(): return
+	if not is_visible_in_tree() or reduced_motion: return
 	if speaking:
 		_elapsed += delta
 		_frame(_talk if int(_elapsed / 0.18) % 3 != 1 else _rest)

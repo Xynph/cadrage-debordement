@@ -154,5 +154,5 @@ return true}
 const api={valid,ensure,revelations,offers,retain,specialize,interview,tally,seasonEnd,panel,install};
 root.CDEspoirsDynamicsV90V94=api;
 if(typeof module==='object'&&module.exports)module.exports=api;
-if(typeof document!=='undefined')install(root);
+if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root);
 })(typeof globalThis==='object'?globalThis:this);

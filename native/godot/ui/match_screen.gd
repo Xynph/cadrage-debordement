@@ -10,34 +10,52 @@ var play: Button
 var finish: Button
 var events: Label
 var stats: Label
+var journal: VBoxContainer
 var side: VBoxContainer
 var tab := "Direct"
 var selected_slot := -1
 var presence_key := ""
 var model: Dictionary = {}
+var _quality_control: OptionButton
+var _camera_controls: Array[Button] = []
+var _applied_camera := ""
+var _applied_quality := ""
+var _score_sheet: PanelContainer
+var _notebook: PanelContainer
+var _bottom_sheet: PanelContainer
+var _bottom_controls: HBoxContainer
+var _caption: Label
+var _tab_controls: Array[Button] = []
+var _styled_tab := ""
 
 func _ready() -> void:
 	name="CarnetMatch"
+	tab = str(app.management_ui.get("match_journal_tab", "Direct"))
 	theme=G.T.paper()
 	size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	size_flags_vertical=Control.SIZE_EXPAND_FILL
 	add_theme_constant_override("separation",10)
 	var score_sheet:=G.panel(self)
+	_score_sheet = score_sheet.get_parent()
+	var scoreboard_style := G.T.box(Color("222a29"), 3, Color("586354"))
+	scoreboard_style.border_width_bottom = 3
+	scoreboard_style.border_color = app.accent
+	score_sheet.get_parent().add_theme_stylebox_override("panel", scoreboard_style)
 	var banner:=G.h(16)
 	score_sheet.add_child(banner)
-	clock=G.label("AVANT-MATCH",24,G.GOLD,true)
+	clock=G.label("AVANT-MATCH",24,Color("ddbd80"),true)
 	clock.custom_minimum_size.x=120
 	banner.add_child(clock)
-	home=G.label("",22,G.INK,true)
+	home=G.label("",22,G.WHITE,true)
 	home.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	home.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
 	G.fill(home)
 	banner.add_child(home)
-	score=G.label("— / —",42,G.INK,true)
+	score=G.label("— / —",42,G.WHITE,true)
 	score.custom_minimum_size.x=130
 	score.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 	banner.add_child(score)
-	away=G.label("",22,G.INK,true)
+	away=G.label("",22,G.WHITE,true)
 	away.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	G.fill(away)
 	banner.add_child(away)
@@ -60,23 +78,44 @@ func _ready() -> void:
 	stage=load("res://match_view.gd").new()
 	viewport.add_child(stage)
 	var panel:=G.panel(center)
+	_notebook = panel.get_parent()
 	panel.get_parent().name="MatchNotebook"
 	panel.get_parent().custom_minimum_size.x=310
 	panel.get_parent().size_flags_horizontal=Control.SIZE_FILL
 	var tabs:=G.h(3)
 	panel.add_child(tabs)
-	for name in ["Direct","Banc","Stats"]:
-		var b:=G.button(name.to_upper(),func():tab=name;presence_key="";_side())
+	for name in ["Direct","Journal","Banc","Stats"]:
+		var b:=G.button(name.to_upper(),func():_select_tab(name))
 		b.add_theme_font_size_override("font_size",13)
+		b.set_meta("match_tab", name)
+		_tab_controls.append(b)
 		G.fill(b)
 		tabs.add_child(b)
 	side=G.scroll(panel)
+	journal=preload("res://ui/match_journal.gd").new()
+	journal.setup(app)
+	panel.add_child(journal)
+	journal.hide()
 	var control_sheet:=G.panel(self)
+	_bottom_sheet = control_sheet.get_parent()
 	var bottom:=G.h(8)
+	_bottom_controls = bottom
 	control_sheet.add_child(bottom)
-	var tv:=G.button("CAMÉRA TV",func():stage.set_camera("tv"))
+	var tv:=G.button("CAMÉRA TV",func():_choose_camera("tv"))
 	bottom.add_child(tv)
-	bottom.add_child(G.button("VUE TACTIQUE",func():stage.set_camera("tactical")))
+	var tactical := G.button("VUE TACTIQUE",func():_choose_camera("tactical"))
+	bottom.add_child(tactical)
+	var action := G.button("AU CONTACT",func():_choose_camera("action"))
+	bottom.add_child(action)
+	_camera_controls = [tv, tactical, action]
+	var quality := OptionButton.new()
+	_quality_control = quality
+	quality.name = "MatchQuality"
+	quality.tooltip_text = "Qualité visuelle du match · Économie réduit ombres et détails"
+	for text in ["Économie", "Équilibré", "Détail"]: quality.add_item(text)
+	quality.select(1)
+	quality.item_selected.connect(_choose_quality)
+	bottom.add_child(quality)
 	var speed:=OptionButton.new()
 	for text in ["Cadence ×1","Cadence ×4","Cadence ×12"]:speed.add_item(text)
 	speed.select([1,4,12].find(app.tick_steps))
@@ -101,7 +140,65 @@ func _ready() -> void:
 	app.pause_button=play
 	app.match_finish=finish
 	app.match_clock=clock
-	add_child(G.label("Simulation de carrière · enceinte générique · caméra éloignée",12,G.WHITE))
+	_caption = G.label("Simulation de carrière · enceinte générique · caméras TV, tactique et au contact",12,G.WHITE)
+	add_child(_caption)
+	get_viewport().size_changed.connect(_layout_short_height)
+	_layout_short_height()
+	apply_preferences()
+
+func _layout_short_height() -> void:
+	var compact := get_viewport_rect().size.y < 820
+	add_theme_constant_override("separation", 6 if compact else 10)
+	_notebook.custom_minimum_size.x = 380 if compact else 310
+	_caption.visible = not compact
+	score.add_theme_font_size_override("font_size", 32 if compact else 42)
+	clock.add_theme_font_size_override("font_size", 20 if compact else 24)
+	for label in [home, away]: label.add_theme_font_size_override("font_size", 18 if compact else 22)
+	for panel in [_score_sheet, _bottom_sheet]:
+		var style: StyleBox = panel.get_theme_stylebox("panel").duplicate()
+		style.content_margin_top = 6 if compact else 12
+		style.content_margin_bottom = 6 if compact else 12
+		panel.add_theme_stylebox_override("panel", style)
+	for control in _bottom_controls.get_children() + [play]:
+		if not control is BaseButton: continue
+		control.custom_minimum_size.y = 32 if compact else 44
+		for state in ["normal", "hover", "pressed", "disabled"]:
+			var style: StyleBox = control.get_theme_stylebox(state).duplicate()
+			style.content_margin_top = 5 if compact else 12
+			style.content_margin_bottom = 5 if compact else 12
+			control.add_theme_stylebox_override(state, style)
+
+func _choose_camera(mode: String) -> void:
+	var preferences: Variant = app.get("user_preferences")
+	if preferences == null: stage.set_camera(mode); return
+	if not preferences.set_value("camera", mode):
+		apply_preferences()
+		app.notice("Réglage non enregistré", preferences.last_error)
+
+func _choose_quality(index: int) -> void:
+	if index < 0 or index > 2: return
+	var quality: String = ["economy", "balanced", "detail"][index]
+	var preferences: Variant = app.get("user_preferences")
+	if preferences == null: stage.set_quality(quality); return
+	if not preferences.set_value("quality", quality):
+		apply_preferences()
+		app.notice("Réglage non enregistré", preferences.last_error)
+
+func apply_preferences() -> void:
+	var preferences: Variant = app.get("user_preferences")
+	if preferences == null or not is_instance_valid(stage): return
+	var quality: String = str(preferences.data.quality)
+	var camera: String = preferences.effective_camera()
+	if quality != _applied_quality:
+		_applied_quality = quality
+		stage.set_quality(quality)
+	if camera != _applied_camera:
+		_applied_camera = camera
+		stage.set_camera(camera)
+	if is_instance_valid(_quality_control): _quality_control.select(["economy", "balanced", "detail"].find(quality))
+	for button: Button in _camera_controls:
+		button.disabled = bool(preferences.data.reduced_motion)
+		button.tooltip_text = "Mode calme : caméra tactique fixe. Vous pouvez modifier ce réglage dans Paramètres." if button.disabled else "Choix conservé pour les prochains matchs."
 
 func update_frame(value:Dictionary) -> void:
 	model=value
@@ -137,8 +234,24 @@ func update_frame(value:Dictionary) -> void:
 		stage.apply_frame(live)
 	_side()
 
+func _select_tab(value: String) -> void:
+	tab = value
+	app.management_ui["match_journal_tab"] = value
+	presence_key = ""
+	_side()
+
 func _side() -> void:
+	if _styled_tab != tab:
+		_styled_tab = tab
+		for control in _tab_controls:
+			if control.get_meta("match_tab") == tab: G.selected(control, app.accent)
+			else: control.add_theme_stylebox_override("normal", G.T.box(Color("e8dfce"), 3, G.LINE))
 	var live:Dictionary=model.live if model.get("live") is Dictionary else {}
+	side.get_parent().visible = tab != "Journal"
+	journal.visible = tab == "Journal"
+	if tab == "Journal":
+		journal.update_frame(live)
+		return
 	if tab=="Banc":
 		# Fatigue/clock changes do not affect these controls. Keep focus across ticks,
 		# but rebuild when player identity or a replacement permission changes.
@@ -171,6 +284,9 @@ func _side() -> void:
 				row.add_child(G.label("/",20,G.MUTED,true))
 				row.add_child(G.label(G.n(stat.away),25,G.INK,true))
 				side.add_child(row)
+				var percentage := str(stat.home).trim_suffix("%")
+				if str(stat.home).ends_with("%") and percentage.is_valid_float():
+					G.gauge(side, "Domicile (%)", float(percentage), 100, G.GOLD)
 				side.add_child(G.separator())
 		"Banc":_bench(live)
 		_:

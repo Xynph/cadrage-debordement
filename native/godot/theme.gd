@@ -97,4 +97,18 @@ static func paper() -> Theme:
 	t.set_color("font_color", "ItemList", ink)
 	t.set_stylebox("background", "ProgressBar", box(Color("d5caba"), 2))
 	t.set_stylebox("fill", "ProgressBar", box(Color("38664b"), 2))
+	for kind in ["TabContainer", "TabBar"]:
+		t.set_color("font_selected_color", kind, ink)
+		t.set_color("font_unselected_color", kind, muted)
+		t.set_color("font_hovered_color", kind, ink)
+		t.set_stylebox("tab_selected", kind, box(Color("faf6ed"), 2, line))
+		t.set_stylebox("tab_unselected", kind, box(Color("e3dac9"), 2, line))
+		t.set_stylebox("tab_hovered", kind, box(Color("eee5d5"), 2, ink))
+		t.set_font_size("font_size", kind, 14)
+	t.set_stylebox("panel", "TabContainer", box(paper, 2, line))
+	for kind in ["CheckBox", "CheckButton"]:
+		t.set_color("font_color", kind, ink)
+		t.set_color("font_hover_color", kind, ink)
+		t.set_color("font_pressed_color", kind, ink)
+		t.set_color("font_disabled_color", kind, muted)
 	return t

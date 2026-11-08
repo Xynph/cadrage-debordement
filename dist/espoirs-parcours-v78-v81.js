@@ -11,7 +11,7 @@
       Array.isArray(st.contracts)&&st.contracts.length<=75&&
       Array.isArray(st.u20)&&st.u20.length<=5&&
       Array.isArray(st.history)&&st.history.length<=4&&
-      st.loans.every(x=>x&&typeof x.id==='string'&&Number.isInteger(x.to)&&x.to>=0&&x.to<14)&&
+      st.loans.every(x=>x&&typeof x.id==='string'&&Number.isInteger(x.to)&&x.to>=0&&x.to<30)&&
       st.contracts.every(x=>x&&typeof x.id==='string'&&Number.isInteger(x.expires))&&
       st.u20.every(x=>x&&typeof x.id==='string'&&Number.isFinite(x.gain));
   }
@@ -95,9 +95,9 @@
   function loan(s,id,to,save){
     const st=ensure(s);
     if(!st||s.live||s.phase==='ended'||st.loans.length>=3||
-       !Number.isInteger(to)||to<0||to>=14||to===s.club)return false;
+       !Number.isInteger(to)||to<0||to>=s.clubs.length||to===s.club)return false;
     const c=s.clubs[s.club],borrower=s.clubs[to],p=eligiblePro(s).find(x=>x.id===id);
-    if(!c||!borrower||!p||borrower.players.length>=42||
+    if(!c||!borrower||!p||(typeof professionalPlaces==='function'?professionalPlaces(borrower,s)<=0:borrower.players.length>=42)||
        borrower.players.some(x=>x.id===id)||st.loans.some(x=>x.id===id)||
        s.lineup.includes(id)||s.reserves.includes(id))return false;
     return transact(s,()=>{
@@ -108,7 +108,7 @@
       s.news=s.news.slice(0,100);return true;
     },save);
   }
-  function returnLoans(s){
+  function returnLoans(s){if(root.CDNativeAcademy?.active(s))return root.CDNativeAcademy.returnLoans(s);
     const st=s.v78to81;if(!valid(st))return false;
     for(const loaned of st.loans){
       const origin=s.clubs[loaned.from],destination=s.clubs[loaned.to];
@@ -197,5 +197,5 @@
   const api={valid,ensure,available,eligiblePro,contract,u20,upgrade,loan,returnLoans,year,panel,install};
   root.CDEspoirsPathwaysV78V81=api;
   if(typeof module==='object'&&module.exports)module.exports=api;
-  if(typeof document!=='undefined')install(root);
+  if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root);
 })(typeof globalThis==='object'?globalThis:this);

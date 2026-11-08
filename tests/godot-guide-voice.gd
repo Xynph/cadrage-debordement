@@ -12,17 +12,24 @@ func run() -> void:
 	if not speech.has_method("load_manifest"): quit(1); return
 	speech.setup("",1.25,false)
 	var content = JSON.parse_string(FileAccess.get_file_as_string("res://guide/dialogues.json"))
-	check(content.pages.size() == 17 and load("res://guide/guide_content.gd").TOUR.size() == 15, "17 pages et 15 identifiants historiques conservés")
-	var seen: Dictionary = {}; var count_fragments := 0
+	check(content.pages.size() == 25 and load("res://guide/guide_content.gd").TOUR.size() == 15, "25 pages et 15 identifiants historiques conservés")
+	var seen: Dictionary = {}; var count_fragments := 0; var recorded := 0; var pending := 0
+	var first_recorded := ""
 	for page in content.pages:
 		for fragment in page.fragments:
 			count_fragments += 1
 			check(not seen.has(fragment.id) and str(fragment.text).length() <= 181, "Fragment unique et court " + str(fragment.id))
 			seen[fragment.id] = true
-			check(speech.has_recording(str(fragment.text)), "Clip livré pour le texte exact " + str(fragment.id))
-	check(count_fragments == 38 and speech.clips.size() == 38, "38 fragments et 38 clips livrés effectivement chargés")
+			if fragment.get("audioStatus") == "pending":
+				pending += 1
+				check(not speech.has_recording(str(fragment.text)), "Nouvelle bulle en attente explicite, sans ancienne prise substituée " + str(fragment.id))
+			else:
+				recorded += 1
+				check(speech.has_recording(str(fragment.text)), "Clip livré pour le texte exact " + str(fragment.id))
+				if first_recorded.is_empty(): first_recorded = str(fragment.text)
+	check(count_fragments == 74 and recorded == 38 and pending == 36 and speech.clips.size() == recorded, "Couverture mesurée : 38 enregistrements exacts, 36 textes en attente")
 	check(speech.status_text.contains("Gabi") and not speech.status_text.contains("Mode texte"), "Disponibilité de la voix enregistrée annoncée correctement")
-	speech.volume = 0; speech.speak(str(content.pages[0].fragments[0].text))
+	speech.volume = 0; speech.speak(first_recorded)
 	check(speech.player.playing and speech.player.stream.get_length() > 0.5, "Vrai clip Gabi livré effectivement lu")
 	speech.stop()
 	var folder := OS.get_environment("CD_GUIDE_VOICE_TEST_DIR")

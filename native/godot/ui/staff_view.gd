@@ -81,9 +81,10 @@ static func build(app: Control) -> Control:
 	return page
 
 static func _person(parent: VBoxContainer, person: Dictionary) -> void:
+	var card := G.card(parent)
 	var row := G.h(16)
 	row.set_meta("staff_id", person.id)
-	parent.add_child(row)
+	card.add_child(row)
 	var path := str(person.get("portraitPath", ""))
 	if not path.is_empty() and G.Base._pack_texture(path) != null:
 		var photo := G.portrait(0, 82, person)
@@ -103,4 +104,4 @@ static func _person(parent: VBoxContainer, person: Dictionary) -> void:
 	var date := " · source du " + str(person.sourceDate) if person.get("sourceDate") != null else ""
 	text.add_child(G.wrap(("ARCHIVE · " if person.get("historical", false) else "RÉFÉRENCE · ") + season + date, 11, G.ALERT if person.get("historical", false) else G.MUTED))
 	text.add_child(G.wrap("Relevé le " + str(person.get("observedAt", "")) + " · " + ("photo officielle du pack" if person.get("portraitStatus") == "official" else "illustration IA du pack" if person.get("portraitStatus") == "synthetic" else "avatar neutre"), 11))
-	parent.add_child(G.separator())
+	card.add_child(G.separator())

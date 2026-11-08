@@ -1,6 +1,7 @@
 extends RefCounted
 ## Stable IDs are persisted separately from the career. Only UI navigation is offered.
 const TOUR := ["bienvenue", "club", "bureau", "effectif", "composition", "entrainement", "tactique", "premier-match", "resultat", "calendrier", "classements", "finances", "recrutement", "territoire", "packs"]
+const CONTEXT_PAGES := TOUR + ["staff", "formation", "plan-jeu", "vestiaire", "centre", "presse", "rivalites", "travail-club", "strategie", "carriere"]
 const PAGES := {
 	"bienvenue": ["Accueil", "Gaston, dit Gabi", "Moi, c'est Gaston Darroux. Mais appelle-moi Gabi. Quarante ans de rugby dans le Sud-Ouest : pilier, puis entraîneur. J'ai gardé les oreilles et le carnet. Ici, c'est toi qui entraînes ; moi, je t'aide à trouver tes repères. On fera les choses sérieusement, sans oublier de se régaler. Allez, bienvenue au club !"],
 	"club": ["Création", "Un club à faire grandir", "Choisir un club, c'est choisir les gens avec qui on va vivre la saison. Regarde la division et l'objectif avant de prendre les rênes. La base anonymisée permet de jouer tout de suite. Et si tu remplaces une carrière, lis bien la confirmation : on ne range pas une histoire sans savoir où on la met."],
@@ -22,8 +23,16 @@ static func fragments(id: String) -> Array:
 	var content = JSON.parse_string(FileAccess.get_file_as_string("res://guide/dialogues.json"))
 	if content is Dictionary:
 		for page in content.get("pages", []):
-			if page.id == id: return page.fragments
+			if page.id == id: return page.fragments.filter(func(item): return not item.get("contextOnly", false))
 	return [{"id":id + "-01", "text":str(PAGES.get(id, PAGES.bienvenue)[2])}]
+
+static func fragment(id: String) -> Dictionary:
+	var content = JSON.parse_string(FileAccess.get_file_as_string("res://guide/dialogues.json"))
+	if content is Dictionary:
+		for item in content.get("pages", []):
+			for part in item.fragments:
+				if part.id == id: return part
+	return {}
 
 static func page(id: String) -> Array:
 	if PAGES.has(id): return PAGES[id]
@@ -41,4 +50,8 @@ static func for_route(route: String, model: Dictionary) -> String:
 		return "resultat" if live.get("finished", false) else "premier-match"
 	for id in PAGES:
 		if PAGES[id][0] == route: return id
-	return "bienvenue"
+	var content = JSON.parse_string(FileAccess.get_file_as_string("res://guide/dialogues.json"))
+	if content is Dictionary:
+		for item in content.get("pages", []):
+			if item.route == route: return item.id
+	return ""

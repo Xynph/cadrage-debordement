@@ -43,10 +43,19 @@ static func home(app: Control) -> Control:
 	intro.add_child(logo)
 	intro.add_child(G.wrap("Un club. Un territoire.\nUne saison à écrire.", 26, G.WHITE))
 	var choices := G.panel(row)
-	choices.get_parent().custom_minimum_size.x=350
+	choices.get_parent().custom_minimum_size.x=430
+	choices.get_parent().size_flags_horizontal=Control.SIZE_SHRINK_END
 	choices.add_child(G.section("Ouvrir le carnet","Votre prochain chapitre commence ici."))
 	choices.add_child(G.separator())
 	if not club.is_empty():
+		var identity := G.h(12)
+		choices.add_child(identity)
+		identity.add_child(G.crest(club, 44))
+		var current := G.v(1)
+		G.fill(current)
+		identity.add_child(current)
+		current.add_child(G.label("CARNET EN COURS", 11, G.GOLD))
+		current.add_child(G.wrap(str(G.identity(club).get("city", "Votre territoire")), 18, G.INK))
 		choices.add_child(G.label("VOTRE CARRIÈRE", 12, G.GOLD))
 		choices.add_child(G.label(G.club_name(club), 26, G.INK, true))
 		choices.add_child(G.label("Saison %s · %s" % [G.n(app.model.meta.get("season", 1)), app.model.meta.get("roundLabel", "Journée " + G.n(int(app.model.meta.get("round", 0)) + 1))], 12, G.MUTED))
@@ -71,7 +80,7 @@ static func home(app: Control) -> Control:
 	over.add_child(G.spacer())
 	var footer := G.h()
 	over.add_child(footer)
-	var note := G.label("VERSION DE DÉVELOPPEMENT 0.4  ·  APPLICATION WINDOWS NATIVE", 12, G.WHITE)
+	var note := G.label("VERSION DE DÉVELOPPEMENT 0.5  ·  APPLICATION WINDOWS NATIVE", 12, G.WHITE)
 	G.fill(note)
 	footer.add_child(note)
 	footer.add_child(G.button("CRÉDITS", app._credits))

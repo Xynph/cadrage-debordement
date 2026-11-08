@@ -170,17 +170,35 @@ func run() -> void:
 	check(named(app,"OfferSummary").text!=old_summary and named(app,"OfferSummary").text.contains("écart") and named(app,"OfferSummary").text.contains("IMMÉDIAT"),"Récapitulatif réactif immédiat / hebdomadaire / écart")
 	await activate(offer.get_cancel_button())
 	app._navigate("Recrutement");await settle()
-	check(texts(app.body).contains("Effectif complet (61/42)"),"Refus actuel du marché explicite sans modifier le plafond")
+	check(int(app.model.decisions.recruitment.capacity)==67 and int(app.model.decisions.recruitment.places)==6,"Capacité commune : six admissions restent possibles pour61professionnels")
+	var available_players:Array=app.model.market.filter(func(p:Dictionary):return p.available)
+	check(not available_players.is_empty(),"Des pistes réellement admissibles restent proposées")
+	var available_offer:Button
+	if not available_players.is_empty():
+		for candidate:Button in app.body.find_children("*","Button",true,false):
+			if str(candidate.get_meta("player_id",""))==str(available_players[0].id) and candidate.text=="PROPOSER UN CONTRAT":available_offer=candidate;break
+	check(available_offer!=null and not available_offer.disabled,"Le bouton de recrutement respecte la capacité commune reçue du moteur")
 	var market_search:LineEdit=named(app,"MarketSearch")
 	market_search.grab_focus();await key(KEY_Z,122);await key(KEY_Z,122);await key(KEY_Z,122)
 	check(named(app,"MarketSearch")==market_search and market_search.has_focus() and texts(app.body).contains("Aucune piste"),"Recherche marché : frappe conservée et vide clair")
 	market_search.clear();market_search.text_changed.emit("");await settle()
+	check(before==await state(),"Recherche/tri/fiches/comparaison/offres annulées : S et RNG identiques")
+	check(bytes==FileAccess.get_file_as_bytes(filename),"Lectures de gestion sans écriture disque")
 	var tracks:Array=app.body.find_children("Follow*","Button",true,false)
 	check(not tracks.is_empty(),"Piste réelle à suivre")
 	var tracked_id:String=tracks[0].get_meta("follow_id")
 	await activate(tracks[0])
+	var follow_deadline:int=Time.get_ticks_msec()+30000
+	while app.waiting and Time.get_ticks_msec()<follow_deadline:await process_frame
+	await settle()
+	check(not app.waiting and app.bridge.last_response_ok,"Décision de suivi acceptée par le moteur")
+	var followed_state:Dictionary=await state()
+	check(followed_state.manager.watch==[tracked_id] and before.manager.watch.is_empty(),"Le vrai registre persistant contient le suivi choisi")
+	check(bytes!=FileAccess.get_file_as_bytes(filename),"La décision explicite de suivi est écrite sur disque")
+	before=followed_state
+	bytes=FileAccess.get_file_as_bytes(filename)
 	await activate(named(app,"MarketFollowed"))
-	check(app.management_ui.shortlist==[tracked_id] and app.management_ui.market.followed,"Suivi de session activé par Entrée")
+	check(app.management_ui.shortlist==[tracked_id] and app.management_ui.market.followed and tracked_id in app.model.clubLife.managerCareer.watch,"Suivi persistant activé par Entrée et reçu du moteur")
 	check(app.body.find_children("Follow*","Button",true,false).size()==1,"Filtre suivis réduit aux vrais IDs")
 	for resolution in [Vector2i(1280,800),Vector2i(1440,900),Vector2i(1920,1080)]:
 		root.size=resolution
@@ -189,8 +207,8 @@ func run() -> void:
 		await activate(named(app,"OpenComparison"));await capture("comparaison-"+str(resolution.x));app._clear_dialogs();await settle()
 		app._navigate("Recrutement");await settle();bounds("CarnetMarket");await capture("recrutement-"+str(resolution.x))
 	var after:Dictionary=await state()
-	check(before==after,"Recherche/tri/fiches/comparaison/offres annulées : S et RNG identiques")
-	check(bytes==FileAccess.get_file_as_bytes(filename),"Lectures de gestion sans écriture disque")
+	check(before==after,"Naviguer et filtrer après un suivi : S et RNG identiques")
+	check(bytes==FileAccess.get_file_as_bytes(filename),"Lectures après suivi sans nouvelle écriture disque")
 	await projections()
 	await real_market_and_archives()
 	finish()
@@ -253,7 +271,7 @@ func projections() -> void:
 	app._render();await settle()
 	check(removed not in app.management_ui.compare and app.selected_player!=removed,"Joueur disparu nettoyé avant affichage")
 	app.model.market=[];app._render();await settle()
-	check(app.management_ui.shortlist.is_empty(),"Piste sortie du marché retirée du suivi de session")
+	check(app.management_ui.shortlist==saved.clubLife.managerCareer.watch and app.body.find_children("Follow*","Button",true,false).is_empty(),"Piste indisponible : mémoire moteur conservée, aucune carte de marché inventée")
 	app.model=saved
 	app.SquadViews.U.sync(app,true)
 	app._navigate("Effectif");await settle()

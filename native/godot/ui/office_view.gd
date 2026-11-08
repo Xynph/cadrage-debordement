@@ -262,6 +262,7 @@ static func _group(parent: Node, app: Control) -> void:
 	for player: Dictionary in chosen:
 		var row := G.h(8)
 		block.add_child(row)
+		row.add_child(G.portrait(int(player.get("portraitIndex",0)), 28, player))
 		var profile := _link(str(player.name) + "  ↗", func(): _player(app, str(player.id)), app.accent, false)
 		profile.name = "OfficePlayer" + str(chosen.find(player))
 		profile.set_meta("player_id", str(player.id))
@@ -317,6 +318,18 @@ static func _results(parent: Node, app: Control) -> void:
 		tile.add_child(_text(("V" if own > other else "D" if own < other else "N") + "  " + G.n(own) + " — " + G.n(other), 18, G.GOOD if own > other else Color("e4ae9c") if own < other else G.GOLD, true))
 		tile.add_child(_text(G.club_name(opponent), 12, G.INK))
 		tile.add_child(_text(str(result.get("label", "")), 12, G.MUTED))
+	if results.size() >= 2:
+		var margins: Array = []
+		for result: Dictionary in results.slice(0, 8):
+			var scores: Array = result.score
+			margins.push_front(int(scores[0]) - int(scores[1]) if result.home.id == app.model.club.id else int(scores[1]) - int(scores[0]))
+		var chart := G.W.new()
+		chart.mode = "trend"
+		chart.values = margins
+		chart.accent = Color("a6d2ae")
+		chart.custom_minimum_size.y = 62
+		block.add_child(chart)
+		block.add_child(_text("Écart de score · rencontres conservées, de la plus ancienne à la plus récente", 12, G.MUTED))
 
 # The projection already ranks these rows, including competition tie-breakers.
 static func standings_window(model: Dictionary) -> Array:
