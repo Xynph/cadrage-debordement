@@ -24,7 +24,7 @@ if(process.platform==='win32'){
   fs.chmodSync(path.join(directory,'read-only','interface.json'),0o444);
 }
 const monitor=new Worker(__filename,{workerData:directory});
-const result=spawnSync(godot,[...(process.env.CD_PREFERENCES_GRAPHICS==='1'?[]:['--headless']),'--max-fps','120','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-preferences.gd')],{env:{...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(directory,'career'),CD_PREFERENCES_TEST_DIR:directory},encoding:'utf8',windowsHide:true,timeout:120000});
+const result=spawnSync(godot,[...(process.env.CD_PREFERENCES_GRAPHICS==='1'?[]:['--headless']),'--audio-driver','Dummy','--max-fps','120','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-preferences.gd')],{env:{...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(directory,'career'),CD_PREFERENCES_TEST_DIR:directory},encoding:'utf8',windowsHide:true,timeout:120000});
 const output=(result.stdout||'')+(result.stderr||'');
 if(process.platform==='win32')fs.chmodSync(path.join(directory,'read-only','interface.json'),0o666);
 fs.writeFileSync(path.join(directory,'monitor-stop'),'stop');

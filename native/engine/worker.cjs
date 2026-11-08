@@ -6,6 +6,7 @@ const projection=require('./model.cjs'),gestion=require('./gestion.cjs'),common=
 const MODULES=['storage.js','world-data.js','rugby.js','frontrow.js','restarts.js','matchflow.js','playbook.js','manager.js','manager-squad.js','tactical-plans.js','match-actions.js','match2d.js','match-v61-advisor.js','match-cockpit.js','economy.js','development.js','finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js','v39.js','manager-mobility.js','saves.js','opposition.js','match-preparation.js','france-clubs.js','rugby-common-rosters.js','rugby-roster-foundation.js','lnr-v11-aging.js','france-competition.js','france-knockout.js','france-career.js','france-save-validation.js','match3d/scene-adapter.js','game.js'];
 MODULES.splice(MODULES.indexOf('game.js'),0,...systems.files.filter(name=>!MODULES.includes(name)));
 const SYSTEM_COMMANDS=new Set(systems.commands);
+const IMPORT_LIMIT_BYTES=8*1024*1024,REQUEST_LIMIT_BYTES=17*1024*1024;
 const COMMANDS=new Set([...SYSTEM_COMMANDS,'set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','finish_round','save','import','export','shutdown','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select']);
 function applicationRoot(engineDirectory=__dirname){
  // The only supported layouts are repo/native/engine and bundle/engine/core.
@@ -158,7 +159,7 @@ function createBridge(options={}){
       if(!run("S.phase!=='ended'&&(S.live?.finished||!S.live&&!nextMatch())"))throw Error('Terminez le match avant de valider la journée.');run('finishRound()');
      }else if(command==='import'){
       if(typeof payload.text!=='string')throw Error('Texte JSON d’import requis.');
-      if(Buffer.byteLength(payload.text,'utf8')>5*1024*1024)throw Error('Fichier trop volumineux (5 Mio UTF-8 maximum).');
+      if(Buffer.byteLength(payload.text,'utf8')>IMPORT_LIMIT_BYTES)throw Error('Fichier trop volumineux (8 Mio UTF-8 maximum).');
       run("pendingSave=parseSaveDocument(nativePayload.text);if(pendingSave.state.lnrMode)throw Error('Les effectifs réels ne sont pas chargés dans le moteur natif.');if(!confirmSaveImport())throw Error('Import annulé : sauvegarde impossible.');");
      }
      let extra=null;if(SYSTEM_COMMANDS.has(command)){ctx.nativeCommand=command;extra=run('nativeSystems.execute(nativeCommand,nativePayload)');}
@@ -175,14 +176,14 @@ function createBridge(options={}){
   return {handle,close};
  }catch(e){close();throw e;}
 }
-module.exports={createBridge,applicationRoot,CORE_FILES:Object.freeze([...MODULES])};
+module.exports={createBridge,applicationRoot,IMPORT_LIMIT_BYTES,REQUEST_LIMIT_BYTES,CORE_FILES:Object.freeze([...MODULES])};
 if(require.main===module){
  let bridge;
  try{const rawSeed=process.env.CD_GODOT_SEED;let seed;if(rawSeed!==undefined){seed=Number(rawSeed);if(!/^(0|[1-9]\d*)$/.test(rawSeed)||!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('CD_GODOT_SEED doit être un entier entre 0 et 4294967295.');}const index=process.argv.indexOf('--data-dir');bridge=createBridge({...(seed===undefined?{}:{seed}),dataDir:index>=0?process.argv[index+1]:path.join(process.env.LOCALAPPDATA||require('node:os').homedir(),'CadrageDebordement','PrototypeGodot')});}
  catch(e){process.stdout.write(JSON.stringify({id:null,ok:false,model:null,error:e.message})+'\n');process.exitCode=1;return;}
  const input=readline.createInterface({input:process.stdin,crlfDelay:Infinity});
  input.on('line',line=>{
-  let result;try{if(Buffer.byteLength(line)>6*1024*1024)throw Error('Message trop volumineux.');result=bridge.handle(JSON.parse(line));}catch(e){result={id:null,ok:false,model:null,error:e.message};}
+  let result;try{if(Buffer.byteLength(line)>REQUEST_LIMIT_BYTES)throw Error('Message trop volumineux.');result=bridge.handle(JSON.parse(line));}catch(e){result={id:null,ok:false,model:null,error:e.message};}
   process.stdout.write(JSON.stringify(result)+'\n');if(result.ok&&line&&JSON.parse(line).command==='shutdown'){input.close();process.stdin.destroy();}
  });
  input.on('close',()=>bridge.close());process.on('exit',()=>bridge.close());

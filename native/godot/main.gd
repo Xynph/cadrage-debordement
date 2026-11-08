@@ -426,6 +426,8 @@ func _status_has_error() -> bool:
 func _apply_user_preferences() -> void:
 	if user_preferences == null: return
 	user_preferences.apply_audio()
+	if is_instance_valid(coach) and is_instance_valid(coach.speech):
+		coach.speech.set_global_volume(int(user_preferences.data.volume))
 	if is_instance_valid(coach) and is_instance_valid(coach.portrait):
 		coach.portrait.set_reduced_motion(bool(user_preferences.data.reduced_motion))
 	if is_instance_valid(match_screen) and match_screen.has_method("apply_preferences"):
@@ -577,7 +579,7 @@ func _file_selected(path: String) -> void:
 	if import_mode:
 		var f := FileAccess.open(path,FileAccess.READ)
 		if f == null: _refuse_action("Le fichier ne peut pas être lu : " + error_string(FileAccess.get_open_error())); return
-		if f.get_length() > 5*1024*1024: f.close(); _refuse_action("Fichier trop volumineux :5 Mio maximum."); return
+		if f.get_length() > NativeEngineBridge.IMPORT_LIMIT_BYTES: f.close(); _refuse_action("Fichier trop volumineux :8 Mio UTF-8 maximum."); return
 		var text := f.get_as_text()
 		f.close()
 		confirm("Reprendre cette carrière", "La carrière importée remplacera celle du profil. Le moteur la vérifiera avant de l'appliquer.",func(): _command("import",{"text":text},"Bureau"))

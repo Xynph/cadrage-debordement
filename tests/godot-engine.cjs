@@ -147,6 +147,8 @@ var bridge: Node
 var frames := 0
 var stage := 0
 var pid := -1
+var small_export := ""
+var large_export := ""
 func _initialize():
  bridge = load("res://engine_bridge.gd").new()
  root.add_child.call_deferred(bridge)
@@ -180,8 +182,37 @@ func _model(model):
    bridge.send("export")
   2:
    stage = 3
-   bridge.send("import", {"text": model.meta.exportText})
+   small_export = model.meta.exportText
+   var padding = JSON.stringify("\\\\".repeat(3*1024*1024))
+   var text = small_export.trim_suffix("}") + ',"padding":' + padding + "}"
+   text += " ".repeat(8*1024*1024-text.to_utf8_buffer().size())
+   bridge.send("import", {"text": text})
   3:
+   stage = 30
+   bridge.send("import", {"text": "x".repeat(8*1024*1024+1)})
+  31:
+   var fixture = OS.get_environment("CD_SAVE_LIMIT_REPRO_EXPORT")
+   if not fixture.is_empty():
+    large_export = FileAccess.get_file_as_string(fixture)
+    if large_export.to_utf8_buffer().size() <= 5*1024*1024:
+     _failed("Fixture longue réelle insuffisante")
+     return
+    stage = 32
+    bridge.send("import", {"text": large_export})
+   else:
+    stage = 4
+    bridge.send("begin_match")
+  32:
+   stage = 33
+   bridge.send("export")
+  33:
+   if JSON.parse_string(model.meta.exportText).state != JSON.parse_string(large_export).state:
+    _failed("Etat réelS28 altéré via pont Godot")
+    return
+   print("GODOT_S28_IMPORT_PASS bytes=",large_export.to_utf8_buffer().size())
+   stage = 34
+   bridge.send("import", {"text": small_export})
+  34:
    stage = 4
    bridge.send("begin_match")
   4:
@@ -191,10 +222,14 @@ func _model(model):
    stage = 5
    bridge.stop()
 func _failed(message):
+ if stage == 30 and message.contains("8 Mio"):
+  stage = 31
+  bridge.send("snapshot")
+  return
  push_error(message)
  quit(1)
 `);
- const child=spawn(process.env.CD_GODOT_EXECUTABLE,['--headless','--path',temp,'--script','test.gd'],{env:{...process.env,CD_NODE_EXECUTABLE:process.execPath},stdio:['ignore','pipe','pipe']});let output='',errors='';child.stdout.on('data',d=>output+=d);child.stderr.on('data',d=>errors+=d);
+ const child=spawn(process.env.CD_GODOT_EXECUTABLE,['--headless','--audio-driver','Dummy','--path',temp,'--script','test.gd'],{env:{...process.env,CD_NODE_EXECUTABLE:process.execPath},stdio:['ignore','pipe','pipe']});let output='',errors='';child.stdout.on('data',d=>output+=d);child.stderr.on('data',d=>errors+=d);
  const timer=setTimeout(()=>child.kill(),30000);const code=await new Promise((resolve,reject)=>{child.on('error',reject);child.on('exit',resolve);});clearTimeout(timer);
  try{assert.equal(code,0,output+'\n'+errors);assert.match(output,/GODOT_BRIDGE_PASS/);assert.doesNotMatch(errors,/SCRIPT ERROR|Parse Error|ERROR:/);console.log(output.trim());}finally{fs.rmSync(temp,{recursive:true,force:true});}
 }

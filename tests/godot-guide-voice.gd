@@ -1,4 +1,11 @@
 extends SceneTree
+class SpeechSpy extends "res://guide/guide_speech.gd":
+	var system_requests: Array[Dictionary] = []
+	var system_stops := 0
+	func _speak_system(text: String, gain: int, id: int) -> void:
+		system_requests.append({"text":text,"gain":gain,"id":id})
+	func _stop_system() -> void:
+		system_stops += 1
 var failures: Array[String] = []
 var checks := 0
 func check(value: bool, message: String) -> void:
@@ -7,7 +14,7 @@ func check(value: bool, message: String) -> void:
 func _initialize() -> void:
 	call_deferred("run")
 func run() -> void:
-	var speech = load("res://guide/guide_speech.gd").new(); root.add_child(speech)
+	var speech = SpeechSpy.new(); root.add_child(speech)
 	check(speech.has_method("load_manifest"), "Lecture locale des fragments disponible")
 	if not speech.has_method("load_manifest"): quit(1); return
 	speech.setup("",1.25,false)
@@ -60,6 +67,29 @@ func run() -> void:
 	check(not speech.player.playing and requests.size() == count, "Muet sans parole locale")
 	speech.load_manifest(folder.path_join("absent.json"))
 	check(speech.clips.is_empty() and speech.status_text.contains("repli"), "Repli système annoncé quand clips absents")
+	check(speech.has_method("set_global_volume"), "Le gain global doit aussi atteindre le repli TTS hors Master")
+	if speech.has_method("set_global_volume"):
+		speech.set_muted(false); speech.volume = 75; speech.voice_id = "spy-fr"
+		for item in [[0,0],[40,30],[100,75]]:
+			speech.set_global_volume(item[0]); speech.speak("Texte pending sans enregistrement")
+			check(speech.system_requests[-1].gain == item[1], "Argument réel TTS au volume global " + str(item[0]))
+			speech._started(speech._active)
+			check(speech.speaking, "La parole système garde ses signaux sans produire de son")
+		var stop_count: int = speech.system_stops
+		speech.set_global_volume(0)
+		check(speech.system_stops == stop_count + 1 and not speech.speaking, "Changer le gain coupe immédiatement la phrase système en cours")
+		speech.set_global_volume(40); speech.speak("Phrase suivante")
+		check(speech.system_requests[-1].gain == 30, "La prochaine phrase applique le nouveau gain")
+		speech.set_muted(true); var request_count: int = speech.system_requests.size()
+		speech.set_global_volume(100); speech.speak("Muet persistant")
+		check(speech.muted and speech.system_requests.size() == request_count, "Le gain global ne désactive jamais le mute propre à Gabi")
+		speech.set_muted(false); speech.load_manifest(folder.path_join("manifest.json"))
+		for gain in [0,40,100]:
+			AudioServer.set_bus_volume_linear(0,float(gain)/100.0)
+			speech.set_global_volume(gain); speech.speak(exact)
+			check(speech.player.playing and is_equal_approx(db_to_linear(speech.player.volume_db),0.75), "WAV conserve son gain propre sans double gain global " + str(gain))
+			check(speech.system_requests.size() == request_count, "WAV exact sans repli TTS")
+			speech.stop()
 	speech.player.stream = null; speech.queue_free(); speech = null; wav = null; file = null; await create_timer(0.2).timeout
 	print("COACH VOIX LOCALE : %d contrôles ; %d échec(s)" % [checks, failures.size()])
 	call_deferred("quit", 0 if failures.is_empty() else 1)

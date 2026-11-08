@@ -59,6 +59,15 @@ func search(text: String) -> void:
 	field.text_changed.emit(text)
 	await settle()
 
+func palette_fits(label: String) -> void:
+	var dialog := palette()
+	var bounds := Rect2i(Vector2i.ZERO,root.size)
+	check(bounds.encloses(Rect2i(dialog.position,dialog.size)),"Palette entièrement dans la fenêtre : " + label)
+	var ok: Button = dialog.get_ok_button()
+	var local := ok.get_global_rect()
+	check(Rect2(Vector2.ZERO,Vector2(dialog.size)).encloses(local) and bounds.encloses(Rect2i(Vector2i(local.position)+dialog.position,Vector2i(local.size))),"OUVRIR entièrement visible : " + label)
+	check(Rect2(Vector2.ZERO,Vector2(dialog.size)).encloses(results().get_global_rect()),"Liste sans découpe hors dialogue : " + label)
+
 func state() -> Dictionary:
 	await command("export")
 	return JSON.parse_string(app.model.meta.exportText).state
@@ -69,6 +78,7 @@ func finish() -> void:
 	quit(0 if failures.is_empty() else 1)
 
 func run() -> void:
+	root.size = Vector2i(1440,900)
 	if not ResourceLoader.exists("res://ui/navigation_controller.gd"):
 		check(false, "Ctrl+K, historique et palette natifs absents")
 		finish(); return
@@ -88,6 +98,8 @@ func run() -> void:
 	await key(KEY_ESCAPE)
 	check(not palette().visible and app.route == "Accueil", "Échap ferme la palette sans pause ni navigation")
 	await command("new_career", {"club":0, "mode":"common"})
+	# Reproduce a first opening with the populated career, without a pre-sized palette.
+	palette().queue_free(); await settle()
 	nav.reset()
 	await visit("Bureau")
 	var before: Dictionary = await state()
@@ -104,6 +116,7 @@ func run() -> void:
 	await key(KEY_RIGHT, false, true)
 	check(app.route == "Finances", "Alt droite restaure la route suivante")
 	await key(KEY_K, true)
+	palette_fits("première ouverture avec carrière à1440x900")
 	var palette_search: LineEdit = named(app, "NavigationSearch")
 	await key(KEY_E, false, false, 233); await key(KEY_R, false, false, 114)
 	check(named(app, "NavigationSearch") == palette_search and palette_search.has_focus() and palette_search.text == "ér", "Vraie frappe accentuée de la palette conserve saisie et focus")
@@ -122,9 +135,15 @@ func run() -> void:
 	app.model.squad[0].pos = "Pilier"
 	app.model.squad[1].pos = "Centre"
 	app.model.market.append(app.model.squad[0].duplicate(true))
-	for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080)]:
+	for resolution in [Vector2i(1280,720), Vector2i(1440,900), Vector2i(1600,900), Vector2i(1920,1080)]:
 		root.size = resolution
-		await settle(); await key(KEY_K, true); await search("E\u0301RIC MEME")
+		palette().queue_free(); await settle()
+		await settle(); await key(KEY_K, true)
+		palette_fits("résultats initiaux " + str(resolution))
+		await search("Formation"); palette_fits("un seul résultat " + str(resolution))
+		root.size = Vector2i(1280,720); await settle(); palette_fits("redimensionnement ouvert depuis " + str(resolution))
+		root.size = resolution; await settle(); palette_fits("retour taille ouverte " + str(resolution))
+		await search("E\u0301RIC MEME")
 		check(results().item_count == 2, "Homonymes distincts et ID squad/market dédoublonné " + str(resolution))
 		check(results().get_item_text(0) != results().get_item_text(1), "Postes et ID distinguent les homonymes " + str(resolution))
 		check(palette().size.x <= root.size.x and palette().size.y <= root.size.y, "Palette bornée au viewport " + str(resolution))
@@ -133,6 +152,16 @@ func run() -> void:
 		await key(KEY_DOWN)
 		await key(KEY_ENTER)
 		check(app.route == "Effectif" and app.selected_player == other_id, "Flèche puis Entrée ouvre le second ID " + str(resolution))
+		await key(KEY_K, true); await search("Formation")
+		var ok: Button = palette().get_ok_button()
+		var center := ok.get_global_rect().get_center() + Vector2(palette().position)
+		var motion := InputEventMouseMotion.new(); motion.position = center; motion.global_position = center
+		root.push_input(motion,true); await process_frame
+		for pressed in [true,false]:
+			var click := InputEventMouseButton.new(); click.position = center; click.global_position = center; click.button_index = MOUSE_BUTTON_LEFT; click.pressed = pressed
+			root.push_input(click,true); await process_frame
+		await settle()
+		check(app.route == "Formation" and not palette_visible(),"OUVRIR activé à la souris " + str(resolution))
 		await visit("Bureau")
 	app.model = original
 	var market_id := str(app.model.market[1].id)

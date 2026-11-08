@@ -11,7 +11,7 @@ test('Navigation native : clavier, identifiants, historique et lecture pure du w
 }, () => {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-navigation-'));
   const result = spawnSync(process.env.CD_GODOT_EXECUTABLE, [
-    '--headless', '--max-fps', '120', '--path', 'native/godot',
+    '--headless', '--audio-driver', 'Dummy', '--max-fps', '120', '--path', 'native/godot',
     '--script', path.resolve(__dirname, 'godot-navigation.gd'),
   ], {
     env: { ...process.env, CD_NODE_EXECUTABLE: process.execPath, CD_GODOT_SELF_TEST: '0', CD_GODOT_DATA_DIR: profile },

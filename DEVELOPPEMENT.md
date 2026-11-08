@@ -1,5 +1,19 @@
 # Journal de développement — Cadrage Débordement
 
+## 8 novembre 2026, 16:34 UTC — réception consolidée native 0.5
+
+La [PR397](https://github.com/Xynph/cadrage-debordement/pull/397) remplace le lot brouillon396 et publie le portage sur `feature/portage-inventaire-20261108`. L'intégrateur unique conserve les protections et le gate officiels. L'état du dernier SHA, de sa CI, de la réception Windows et de l'intégration est consigné dans [#73](https://github.com/Xynph/cadrage-debordement/issues/73) ; les résultats initiaux ci-dessous restent historiques.
+
+La revue globale et l'essai manuel ont conduit à une seule vague consolidée : cohérence temporelle du conseil courant et de ses archives, volume global appliqué au TTS de Gabi sans doubler le gain des WAV, première palette de recherche bornée avec son bouton visible. Un vrai profil S28 dépassait son propre plafond d'import de 6 964 octets : capacité explicite de 8 Mio UTF-8, enveloppe privée de 17 Mio, mêmes schémas et gardes de complexité. Le refus historique est conservé comme preuve ; le même profil passe ensuite le worker et le pont Godot. Les anciens formats, les refus sans mutation et la mobilité sont reçus par les tests ciblés.
+
+La prolongation sur copies atteint S31/semaine0, après 68 nouvelles semaines et six checkpoints exacts. Maximum observé : 5 350 444 octets, 399 626 nœuds ; 29 bureaux académie et 30 archives de mobilité. Ce parcours rassemble plusieurs révisions et facilite les offres dans sa fixture : aucune carrière infinie ni offre obtenue naturellement n'est annoncée. Les cinq [arbitrages et leurs coûts](docs/decisions-mission-20261108.md) sont conservés.
+
+La première CI réelle a échoué sur trois délais. La boucle de recrutement est répartie en appels VM hebdomadaires, sans relever ses 15 secondes ; état et RNG restent identiques. Deux optimisations mesurées sont locales à un seul appel : notes de tri de `buildSheet`, index du premier joueur par ID dans `activePlayers`. Aucun cache persistant, aucune validation retirée, aucun changement de loi rugby. Node22 Windows reçoit désormais les deux saisons intégrées en 124,394 s et la saison Support en 154,307 s, avec conférences hebdomadaires, 30 matchs, huit projections pures et neuf reprises conservés. La CI Linux de la nouvelle tête doit conclure séparément ; aucune extrapolation de ces durées en succès distant.
+
+Le candidat Windows déplacé avant cette vague avait 1 030 contrôles réussis, 72 captures et 118 empreintes reçues. Le harness final ajoute la première recherche aux trois tailles et un export vers un vrai fichier de test en lecture seule, avec original et profil intacts. Le nouveau paquet doit avoir sa propre réception. Les 1 592 profils compilés sont identiques ; seule l'empreinte de la source rugby optimisée est régénérée. Le pack privé et le profil personnel sont préservés, tout le travail restant sur E:.
+
+Voix : 13 prises Google sur 74 préparées hors jeu avant quota, sans nouvelle tentative. Le programme conserve 38 clips provisoires et 36 textes explicitement en attente. Contact 3D à deux corps, machines modestes et autres densités d'affichage restent à recevoir. Voir le [portage](docs/portage-natif-20261108.md), la [conciliation BDD](docs/conciliation-bdd-20261108.md) et le [journal de mission](docs/mission-autonome-20261108.md).
+
 ## 8 novembre 2026 — portage natif0.5, mission autonome en réception
 
 Branche `feature/portage-inventaire-20261108`, reprise du HEAD `2e0fff1042ae978d8676130785eb15291a8ded6a`, main distant `3fe6d160a34a9bf3b19005eaef003ac4b1e4ec21` encore vérifié à14:38UTC. Les développements ci-dessous ne sont pas encore fusionnés au moment de cette note. La PR396 brouillon contient le précédent lot staff dont cette branche descend ; ne pas fusionner les deux en doublon. Réservations et preuves publiées dans #73 ; un seul intégrateur.

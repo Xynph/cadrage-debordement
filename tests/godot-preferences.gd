@@ -1,4 +1,9 @@
 extends SceneTree
+class SpeechSpy extends "res://guide/guide_speech.gd":
+	var gains: Array[int] = []
+	var stops := 0
+	func _speak_system(_text: String, gain: int, _id: int) -> void: gains.append(gain)
+	func _stop_system() -> void: stops += 1
 var failures: Array[String] = []
 var checks := 0
 var directory := OS.get_environment("CD_PREFERENCES_TEST_DIR")
@@ -30,8 +35,42 @@ func run() -> void:
 		finish(); return
 	profile_script = load("res://ui/user_preferences.gd")
 	await profile_cases()
+	volume_routing_cases()
 	await dialog_cases()
 	finish()
+func volume_routing_cases() -> void:
+	# Real shell callback and profiles; replace only the OS TTS boundary (no sound).
+	var shell = load("res://main.gd").new()
+	var guide = load("res://guide/coach_guide.gd").new()
+	var speech = SpeechSpy.new(); guide.speech = speech; guide.add_child(speech)
+	shell.coach = guide; shell.add_child(guide)
+	var profile = profile_script.new(); shell.user_preferences = profile
+	profile.changed.connect(shell._apply_user_preferences)
+	var folder := directory.path_join("tts-routing")
+	for item in [[0,0],[40,30],[100,75]]:
+		write_profile_volume(folder,item[0])
+		check(profile.load_profile(folder),"Chargement initial du gain TTS " + str(item[0]))
+		speech.voice_id = "spy-fr"; speech.speak("Bulle système sans WAV")
+		check(not speech.gains.is_empty() and speech.gains[-1] == item[1],"Le vrai callback main raccorde le TTS après chargement " + str(item[0]))
+		var reloaded = profile_script.new(); shell.user_preferences = reloaded
+		reloaded.changed.connect(shell._apply_user_preferences)
+		check(reloaded.load_profile(folder),"Reprise du profil TTS " + str(item[0]))
+		speech.speak("Bulle après reprise")
+		check(speech.gains[-1] == item[1],"Gain système correct après reprise " + str(item[0]))
+		shell.user_preferences = profile
+	profile.set_value("volume",100); speech.speak("Phrase en cours"); speech._started(speech._active)
+	var stops: int = speech.stops
+	check(profile.set_value("volume",0) and speech.stops == stops + 1 and not speech.speaking,"Préférence zéro coupe le TTS déjà en cours via main")
+	speech.speak("Phrase silencieuse suivante")
+	check(speech.gains[-1] == 0,"Volume zéro réellement transmis au TTS après changement")
+	speech.set_muted(true); var count: int = speech.gains.size()
+	check(profile.set_value("volume",40),"Volume40 enregistré pendant mute Gabi")
+	speech.speak("Ne doit pas parler")
+	check(speech.muted and speech.gains.size() == count,"Mute propre à Gabi préservé par main")
+	shell.free()
+func write_profile_volume(folder: String, volume: int) -> void:
+	DirAccess.make_dir_recursive_absolute(folder)
+	write(folder.path_join("interface.json"),JSON.stringify({"version":1,"volume":volume,"reduced_motion":false,"quality":"balanced","camera":"tv"}))
 func finish() -> void:
 	write(directory.path_join("report.json"),JSON.stringify({"checks":checks,"failures":failures},"  "))
 	if app != null: app.closing = true; app.bridge.stop()
@@ -124,6 +163,7 @@ func dialog_cases() -> void:
 	check(not app.model.is_empty(),"Dialogue sur le vrai shell et son worker")
 	var p = app.user_preferences
 	check(app.preferences_loaded and p != null,"Le vrai shell charge une fois le dossier final du worker")
+	check(app.coach.speech.global_volume == p.data.volume,"Démarrage réel raccorde aussi le volume TTS de Gabi")
 	var helper = load("res://ui/preferences_dialog.gd")
 	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
 		root.size = resolution; DisplayServer.window_set_size(resolution)
@@ -220,6 +260,7 @@ func dialog_cases() -> void:
 	p = app.user_preferences
 	app._navigate("Match"); await settle()
 	check(p.data.volume == 39 and p.data.camera == "action" and p.data.quality == "economy" and p.data.reduced_motion,"Redémarrage complet du vrai shell recharge les préférences distinctes")
+	check(app.coach.speech.global_volume == 39,"Redémarrage réel réapplique aussi le gain global TTS")
 	check(app.match_view._camera_mode == "tactical" and app.match_view._quality == "economy" and app.coach.portrait.reduced_motion and is_equal_approx(AudioServer.get_bus_volume_linear(0),0.39),"Redémarrage réapplique scène, portrait et volume")
 	var confirmation := ConfirmationDialog.new(); app._prepare_dialog(confirmation,500); app.add_child(confirmation); confirmation.popup_centered(Vector2i(500,180)); await settle()
 	check(helper.open(app,p) == null and confirmation.visible and not confirmation.is_queued_for_deletion(),"Paramètres laissent la priorité à une confirmation ouverte")

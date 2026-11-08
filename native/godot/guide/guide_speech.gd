@@ -10,6 +10,8 @@ var voice_id := ""
 var rate := 1.0
 var muted := false
 var volume := 75
+var global_volume := 100
+var _system_active := false
 var speaking := false
 var status_text := "Mode texte · aucune voix française disponible sur ce PC."
 var _id := 0
@@ -86,11 +88,24 @@ func speak(text: String) -> void:
 	if voice_id.is_empty(): return
 	_id += 1; _active = _id
 	requested.emit(text)
-	DisplayServer.tts_speak(text, voice_id, clampi(volume, 0, 100), 1.0, rate, _active, true)
+	_system_active = true
+	_speak_system(text, roundi(float(clampi(volume, 0, 100)) * global_volume / 100.0), _active)
+func _speak_system(text: String, gain: int, id: int) -> void:
+	DisplayServer.tts_speak(text, voice_id, gain, 1.0, rate, id, true)
+func _stop_system() -> void:
+	DisplayServer.tts_stop()
+func set_global_volume(value: int) -> void:
+	var next := clampi(value, 0, 100)
+	if next == global_volume: return
+	# System TTS bypasses Master and cannot change gain during an utterance.
+	# Stop the old gain immediately; the visible bubble can be replayed normally.
+	if _system_active: stop()
+	global_volume = next
 func stop() -> void:
 	_active = -1
 	if is_instance_valid(player): player.stop()
-	if _callbacks: DisplayServer.tts_stop()
+	if _callbacks or _system_active: _stop_system()
+	_system_active = false
 	if speaking: speaking = false; speaking_changed.emit(false)
 func set_muted(value: bool) -> void:
 	stop(); muted = value; _update_status()
@@ -104,7 +119,7 @@ func _started(id: int) -> void:
 	speaking = true; speaking_changed.emit(true); started.emit(id)
 func _ended(id: int) -> void:
 	if id != _active: return
-	_active = -1; speaking = false; speaking_changed.emit(false); ended.emit(id)
+	_active = -1; _system_active = false; speaking = false; speaking_changed.emit(false); ended.emit(id)
 func _exit_tree() -> void:
 	stop()
 	if _callbacks:

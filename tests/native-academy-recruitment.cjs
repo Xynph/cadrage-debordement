@@ -1,6 +1,9 @@
 'use strict';
 const assert=require('node:assert/strict');const {make}=require('./native-academy.cjs');const t=make(29),r=t.run;
-r('A.execute("academy_activate",{season:1,week:0,club:29,confirmed:true});for(let w=0;w<34;w++)finishRound();advanceSeason();');
+r('A.execute("academy_activate",{season:1,week:0,club:29,confirmed:true})');
+// Keep the same34weeks; each real weekly call retains the normal15s VM guard.
+for(let week=0;week<34;week++)r('finishRound()');
+r('advanceSeason()');
 const act=(command,extra={})=>{t.ctx.payload=extra;return r('A.execute('+JSON.stringify(command)+',{season:S.season,week:S.franceMode.week,club:S.club,confirmed:true,...payload})')};
 const beforeCash=r('S.clubs[29].cash'),beforeBudget=r('A.project().recruitBudget');
 for(const sourceId of ['guest:0','club:28']){

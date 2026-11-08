@@ -10,6 +10,7 @@ var engine_pid:=-1
 var coach_reception: Dictionary = {}
 var layout_reception: Array[Dictionary] = []
 var systems_reception: Dictionary = {}
+var file_reception: Dictionary = {}
 
 func _ready() -> void:call_deferred("_run")
 
@@ -230,6 +231,20 @@ func _run() -> void:
 	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
 		await _resize_window(resolution)
 		var pages: Array[String] = []
+		app._navigate("Bureau")
+		_press("Chercher")
+		await _settle()
+		var palette: AcceptDialog = app.navigation_controller.get("_dialog")
+		_check(is_instance_valid(palette) and palette.visible, "Bundled navigation opens its real palette")
+		if is_instance_valid(palette) and palette.visible:
+			var bounds := Rect2(Vector2.ZERO, get_tree().root.get_visible_rect().size)
+			_check(bounds.encloses(Rect2(Vector2(palette.position),Vector2(palette.size))), "Palette position and size fit the actual client")
+			var confirmation := palette.get_ok_button()
+			var confirmation_rect := confirmation.get_global_rect()
+			confirmation_rect.position += Vector2(palette.position)
+			_check(confirmation.is_visible_in_tree() and bounds.encloses(confirmation_rect), "Palette OPEN action is entirely inside the client")
+			await _capture("recherche-"+str(resolution.x))
+			palette.hide()
 		for chapter: Dictionary in app.NAV_CHAPTERS:
 			for page: String in chapter.routes: pages.append(page)
 		_check(pages.size() == 20, "Every native career route is included in the executable reception")
@@ -369,7 +384,33 @@ func _run() -> void:
 		_check(app.bridge.last_response_ok and app.model.meta.get("rosterFoundation",{}).get("version") == 2, "Actual shipped UI restores its v2 season2 career")
 		_dismiss()
 	await _systems_reception()
+	await _readonly_export_reception()
 	await _finish()
+
+func _readonly_export_reception() -> void:
+	var destination := OS.get_environment("CD_GODOT_QA_DENIED_EXPORT")
+	if destination.is_empty():
+		file_reception = {"executed":false}
+		return
+	_check(destination.is_absolute_path() and FileAccess.file_exists(destination), "Readonly export fixture is explicit and already exists")
+	if not destination.is_absolute_path() or not FileAccess.file_exists(destination): return
+	var original := FileAccess.get_file_as_bytes(destination)
+	var profile := str(app.model.meta.dataDir).path_join("donnees.json")
+	var before := FileAccess.get_sha256(profile)
+	app.import_mode = false
+	app._file_selected(destination)
+	await _wait()
+	await _settle()
+	var visible_refusal: bool = app.last_error.contains("refus") and is_instance_valid(app.status) and app.status.text.contains("ACTION NON EFFECTUÉE")
+	var original_preserved := FileAccess.get_file_as_bytes(destination) == original
+	var profile_preserved := FileAccess.get_sha256(profile) == before
+	_check(visible_refusal, "Bundled atomic replacement reports a real readonly refusal")
+	_check(original_preserved, "Readonly destination retains every original byte")
+	_check(profile_preserved, "Failed native UI export never changes the career profile")
+	await _capture("export-refuse")
+	file_reception = {"executed":true,"readonly_export":visible_refusal,"original_preserved":original_preserved,"profile_preserved":profile_preserved}
+	_dismiss()
+	await _ask("snapshot")
 
 func _systems_reception() -> void:
 	# Exercise the actual relocated engine and resources, after the full season.
@@ -458,6 +499,7 @@ func _finish() -> void:
 	var final_club:Dictionary=app.model.club if app.model.get("club") is Dictionary else {}
 	var result:Dictionary={"passed":failures.is_empty(),"checks":checks,"failures":failures,"native_display":DisplayServer.get_name(),"captures":captures,"pid":OS.get_process_id(),"engine_pid":engine_pid,"executable":OS.get_executable_path(),"season":app.model.get("meta",{}).get("season"),"club":final_club.get("id"),"coach":coach_reception,"layout":layout_reception}
 	result.systems = systems_reception
+	result.files = file_reception
 	if not captures.is_empty():
 		var file:=FileAccess.open(captures.path_join("report.json"),FileAccess.WRITE)
 		if file!=null:file.store_string(JSON.stringify(result,"\t"));file.close()

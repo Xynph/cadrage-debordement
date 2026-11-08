@@ -21,6 +21,7 @@ func setup(owner_app: Control) -> void:
 	app = owner_app
 	name = "NavigationController"
 	set_process_input(true)
+	app.get_viewport().size_changed.connect(func(): call_deferred("_fit_palette"))
 
 func reset() -> void:
 	history.clear()
@@ -104,7 +105,16 @@ func open_palette() -> void:
 	_refresh_results("")
 	var viewport := app.get_viewport_rect().size
 	_dialog.popup_centered(Vector2i(mini(680, int(viewport.x) - 48), mini(520, int(viewport.y) - 64)))
+	call_deferred("_fit_palette")
 	_search.grab_focus()
+
+func _fit_palette() -> void:
+	if not is_instance_valid(_dialog) or not _dialog.visible: return
+	# Wrapping labels can briefly report their height before the first layout.
+	# AcceptDialog keeps that enlarged size even after their minimum has settled.
+	var viewport := app.get_viewport_rect().size
+	_dialog.size = Vector2i(mini(680, int(viewport.x) - 48), mini(520, int(viewport.y) - 64))
+	_dialog.position = (app.get_window().size - _dialog.size) / 2
 
 func _build_palette() -> void:
 	_dialog = AcceptDialog.new()
@@ -113,6 +123,7 @@ func _build_palette() -> void:
 	_dialog.title = "Votre carnet · accès rapide"
 	_dialog.get_ok_button().text = "OUVRIR"
 	var content := G.v(10)
+	content.custom_minimum_size.x = 620
 	_dialog.add_child(content)
 	content.add_child(G.wrap("Menus et joueurs · ↑ ↓ choisir · Entrée ouvrir · Échap fermer", 13))
 	_search = LineEdit.new()
