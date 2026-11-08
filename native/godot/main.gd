@@ -311,9 +311,16 @@ func _show_sound_error(message: String) -> void:
 func _build_subnavigation(parent: Container) -> void:
 	for chapter: Dictionary in NAV_CHAPTERS:
 		if route not in chapter.routes or chapter.routes.size() < 2: continue
+		var band:=PanelContainer.new()
+		band.name="ChapterNavigationBand"
+		var band_style:=G.T.box(Color("1c262b"),3,Color("354249"))
+		band_style.content_margin_left=4;band_style.content_margin_right=4
+		band_style.content_margin_top=3;band_style.content_margin_bottom=3
+		band.add_theme_stylebox_override("panel",band_style)
+		parent.add_child(band)
 		var row := G.h(7)
 		row.name = "ChapterSubnavigation"
-		parent.add_child(row)
+		band.add_child(row)
 		for target: String in chapter.routes:
 			var button := G.nav_button(target.to_upper(), func(): _navigate(target), accent, route == target)
 			button.name = "Section_" + target
@@ -344,7 +351,7 @@ func _render(remember_ui: bool = true) -> void:
 	add_child(root_content)
 	move_child(root_content, 0)
 	var bg := ColorRect.new()
-	bg.color = Color("191b1c")
+	bg.color = G.BG
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root_content.add_child(bg)
 	if route == "Accueil":
@@ -381,20 +388,47 @@ func _render(remember_ui: bool = true) -> void:
 	var content := G.v(6 if size.y <= 760 else 8)
 	content.name = "CareerContent"
 	inset.add_child(content)
+	var header:=PanelContainer.new()
+	header.name="CareerHeader"
+	var header_style:=G.T.box(Color("202a2e"),3,Color("3b494e"))
+	header_style.set_border_width_all(0)
+	header_style.border_width_top=3
+	header_style.border_color=accent
+	header_style.content_margin_left=10;header_style.content_margin_right=10
+	header_style.content_margin_top=5;header_style.content_margin_bottom=5
+	header.add_theme_stylebox_override("panel",header_style)
+	content.add_child(header)
 	var top := G.h(8)
-	content.add_child(top)
+	header.add_child(top)
+	var chapter_label:="Bureau"
+	var chapter_number:=1
+	for i in NAV_CHAPTERS.size():
+		if route in NAV_CHAPTERS[i].routes:
+			chapter_label=NAV_CHAPTERS[i].label
+			chapter_number=i+1
+	var chapter_mark:=G.v(0)
+	chapter_mark.custom_minimum_size.x=30
+	top.add_child(chapter_mark)
+	chapter_mark.add_child(G.label("%02d"%chapter_number,27,G.INK,true))
+	chapter_mark.add_child(G.Art.glyph(chapter_label,G.MUTED,16))
 	var titles := G.v(0)
 	G.fill(titles)
 	top.add_child(titles)
+	var overline:=G.h(8)
+	titles.add_child(overline)
+	overline.add_child(G.label(chapter_label.to_upper(),11,G.INK))
 	header_date = G.label("", 11, G.MUTED)
-	titles.add_child(header_date)
+	overline.add_child(header_date)
 	_update_header_date()
 	heading = G.label({"Bureau":"Le club, cette semaine.","Effectif":"Les hommes du projet.","Composition":"Votre feuille à 23.","Préparation":"Préparer la rencontre.","Calendrier":"Le fil de la saison.","Classements":"La course aux sommets.","Recrutement":"Construire l’effectif.","Finances":"Les moyens du projet.","Club":"Un club. Un territoire.","Match":"Le jour de match."}.get(route, route.to_upper()), 35, G.INK, true)
 	heading.add_theme_font_override("font", G.T.BODY)
 	heading.add_theme_font_size_override("font_size", 20)
 	titles.add_child(heading)
-	top.add_child(G.button("SAUVEGARDER", func(): _command("save")))
+	var save_action:=G.button("SAUVEGARDER", func(): _command("save"))
+	save_action.size_flags_vertical=Control.SIZE_SHRINK_CENTER
+	top.add_child(save_action)
 	primary_button = G.button(primary_text(), primary_action, true)
+	primary_button.size_flags_vertical=Control.SIZE_SHRINK_CENTER
 	top.add_child(primary_button)
 	minibar = G.label("", 12, G.GOLD)
 	content.add_child(minibar)
@@ -512,10 +546,16 @@ func _update_header_date() -> void:
 
 func _build_sidebar(parent: Node) -> void:
 	var rail := PanelContainer.new()
-	rail.custom_minimum_size.x = 164
-	rail.add_theme_stylebox_override("panel", G.T.box(Color("141617"), 0))
+	rail.name="CareerRail"
+	rail.custom_minimum_size.x = 176
+	var rail_style:=G.T.box(Color("10181c"),0,Color("3b494e"))
+	rail_style.set_border_width_all(0)
+	rail_style.border_width_right=1
+	rail_style.content_margin_left=0;rail_style.content_margin_right=0
+	rail_style.content_margin_top=0;rail_style.content_margin_bottom=0
+	rail.add_theme_stylebox_override("panel",rail_style)
 	parent.add_child(rail)
-	var margin := G.margin(2)
+	var margin := G.margin(6)
 	rail.add_child(margin)
 	var left := G.v(4)
 	margin.add_child(left)
@@ -534,24 +574,42 @@ func _build_sidebar(parent: Node) -> void:
 	logo.add_theme_font_override("font", G.T.DISPLAY)
 	logo.add_theme_font_size_override("font_size", 18)
 	logo.custom_minimum_size.y = 48
+	logo.add_theme_stylebox_override("normal",G.T.box(Color("1d2a30"),3,Color("445259")))
 	left.add_child(logo)
 	left.add_child(G.separator())
-	left.add_child(G.crest(model.club, 40))
-	var name := G.label(G.club_name(model.club), 18, G.INK, true)
+	var club_frame:=PanelContainer.new()
+	club_frame.name="SidebarClubIdentity"
+	var club_style:=G.T.box(Color("202a2e").lerp(Color(accent,1),.12),3,Color("445259"))
+	club_style.set_border_width_all(0)
+	club_style.border_width_top=3;club_style.border_color=accent
+	club_style.content_margin_top=5;club_style.content_margin_bottom=6
+	club_frame.add_theme_stylebox_override("panel",club_style)
+	left.add_child(club_frame)
+	var club_identity:=G.v(2)
+	club_frame.add_child(club_identity)
+	var club_marks:=G.h(6)
+	club_identity.add_child(club_marks)
+	club_marks.add_child(G.crest(model.club,40))
+	var club_context:=G.v(0)
+	G.fill(club_context)
+	club_marks.add_child(club_context)
+	club_context.add_child(G.label(G.club_abbr(model.club),23,G.INK,true))
+	club_context.add_child(G.label("VOTRE CLUB",9,G.MUTED))
+	var name := G.label(G.club_name(model.club), 16, G.INK, true)
 	name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	name.max_lines_visible=2
 	name.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	name.tooltip_text=G.club_name(model.club)
-	left.add_child(name)
+	club_identity.add_child(name)
 	if is_instance_valid(navigation_controller): left.add_child(navigation_controller.controls())
 	left.add_child(G.separator())
 	var navigation := G.scroll(left)
 	navigation.get_parent().name = "CareerNavigation"
-	navigation.add_child(G.label("VOTRE CARNET", 11, G.MUTED))
+	navigation.add_child(G.label("CARNET DE L'ENTRAÎNEUR", 10, G.MUTED))
 	for chapter: Dictionary in NAV_CHAPTERS:
 		var active: bool = route in chapter.routes
 		var destination: String = str(route if active else chapter_routes.get(chapter.label, chapter.routes[0]))
-		var b := G.nav_button(str(chapter.label).to_upper(), func(): _navigate(destination), accent, active)
+		var b := G.nav_button(str(chapter.label).to_upper(), func(): _navigate(destination), accent, active,str(chapter.label))
 		b.name = "Chapter_" + str(chapter.label)
 		b.custom_minimum_size.y = 28
 		navigation.add_child(b)

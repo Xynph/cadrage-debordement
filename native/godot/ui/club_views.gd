@@ -1,5 +1,42 @@
 extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
+const Semantics = preload("res://ui/data_semantics.gd")
+
+# Resize only the standings presentation, keeping the live career and navigation.
+class StandingsLayout extends HBoxContainer:
+	var table_frame: Control
+	var context: Control
+	var scroll: ScrollContainer
+	var list: VBoxContainer
+	var total := 0
+	var capacity := 6
+	var redraw: Callable
+	var pending := false
+	func _ready() -> void:
+		resized.connect(_schedule)
+		scroll.resized.connect(_schedule)
+		_schedule()
+	func _schedule() -> void:
+		if pending: return
+		pending = true
+		_adapt.call_deferred()
+	func _adapt() -> void:
+		pending = false
+		if not is_inside_tree() or scroll.size.y <= 0: return
+		var wide := size.x >= 1380
+		context.visible = wide
+		table_frame.custom_minimum_size.x = 1040 if wide else 0
+		table_frame.size_flags_horizontal = Control.SIZE_FILL if wide else Control.SIZE_EXPAND_FILL
+		var overhead := 36.0
+		var stride := 36.0
+		if list.get_child_count() >= 2:
+			overhead = list.get_child(0).get_combined_minimum_size().y + list.get_child(1).get_combined_minimum_size().y + 6
+		for child: Control in list.get_children().slice(2):
+			stride = maxf(stride,child.get_combined_minimum_size().y + 3)
+		var next_capacity := clampi(floori((scroll.size.y-overhead-4)/stride),1,maxi(1,total))
+		if next_capacity != capacity:
+			capacity = next_capacity
+			redraw.call(capacity)
 
 static func _page_turn(app:Control,id:String,state:Dictionary,page:int,button_index:int) -> void:
 	state.page=page
@@ -122,44 +159,22 @@ static func calendar(app: Control) -> Control:
 		list.add_child(G.separator())
 	return page
 
-static func tables(app: Control) -> Control:
-	var page := G.h(14)
-	page.name = "CarnetStandings"
-	G.fill(page, true)
-	var sheet := G.panel(page)
-	var leagues: Array = app.model.get("leagues", [])
-	if leagues.is_empty(): leagues = [{"id":"elite","name":"Championnat historique","rows":app.model.get("league", [])}]
-	G.chapter(sheet,"07","La course du championnat","Le classement de votre carrière, dans l’ordre de la compétition.",app.accent)
-	var archives:=G.button("ARCHIVES DES SAISONS",func():season_archives(app))
-	archives.name="OpenArchives"
-	sheet.add_child(archives)
-	var tabs := G.h(10)
-	sheet.add_child(tabs)
-	for league in leagues:
-		var b := G.button(str(league.get("name", league.id)).to_upper(), func(): app.table_division = league.id; app._render())
-		G.fill(b)
-		if app.table_division == league.id: G.selected(b,app.accent)
-		tabs.add_child(b)
-	var chosen: Dictionary = leagues[0]
-	for league in leagues:
-		if league.id == app.table_division: chosen = league
-	for pair in [["champion","CHAMPION"],["finalist","FINALISTE"]]:
-		if chosen.get(pair[0]) is Dictionary:
-			sheet.add_child(G.label(pair[1] + "  /  " + G.club_name(chosen[pair[0]]),18,G.GOLD))
-	var list := G.scroll(sheet)
-	var rows:Array=chosen.get("rows",[])
-	list.get_parent().name="StandingsScroll"
-	list.add_theme_constant_override("separation",3)
-	var bounds:=_paged(app,sheet,"StandingsPagination",rows.size(),6,"standings_"+str(chosen.id))
+static func _standings_rows(app: Control, list: VBoxContainer, rows: Array, bounds: Vector2i) -> void:
 	var header := G.h(12)
 	list.add_child(header)
-	for pair in [["RG",36],["CLUB",220],["MJ",40],["V",36],["N",36],["D",36],["DIFF.",66],["PTS",52]]:
+	for pair in [["RG",36],["CLUB",220],["MJ",40],["V",36],["N",36],["D",36],["DIFF.",66],["PTS",52],["FORME",136]]:
 		header.add_child(G.cell(pair[0],pair[1],G.MUTED,pair[0] == "CLUB"))
 	list.add_child(G.separator())
-	for club in rows.slice(bounds.x,bounds.y):
+	for club: Dictionary in rows.slice(bounds.x,bounds.y):
 		var frame := PanelContainer.new()
+		frame.name = "StandingsRow_" + str(club.id)
+		frame.custom_minimum_size.y = 32
+		frame.set_meta("club_id",club.id)
 		var own: bool = club.id == app.model.club.id
 		var style := G.T.box(Color(app.accent,.10) if own else Color.TRANSPARENT, 2)
+		if own:
+			style.border_color = G.accent_ink(app.accent)
+			style.border_width_bottom = 2
 		style.content_margin_left = 0
 		style.content_margin_right = 0
 		style.content_margin_top = 4
@@ -168,14 +183,119 @@ static func tables(app: Control) -> Control:
 		list.add_child(frame)
 		var row := G.h(12)
 		frame.add_child(row)
-		row.add_child(G.cell(G.n(club.get("rank", 0)),36,G.accent_ink(app.accent) if own else G.MUTED))
+		row.add_child(G.cell(Semantics.count_text(club.get("rank")),36,G.accent_ink(app.accent) if own else G.MUTED))
 		row.add_child(G.cell(G.club_name(club),220,G.INK,true))
-		for pair in [["played",40],["won",36],["drawn",36],["lost",36]]: row.add_child(G.cell(G.n(club.get(pair[0],0)),pair[1],G.MUTED))
-		row.add_child(G.cell(G.n(float(club.get("pf",0))-float(club.get("pa",0))),66))
-		var points := G.cell(G.n(club.get("points",0)),52,G.GOLD)
+		row.add_child(G.cell(Semantics.count_text(club.get("played")),40,G.MUTED))
+		for pair in [["won","V"],["drawn","N"],["lost","D"]]:
+			var badge := Semantics.count_badge(club.get(pair[0]), pair[1], 36)
+			badge.name = "StandingCount_" + pair[0]
+			row.add_child(badge)
+		row.add_child(G.cell(Semantics.difference_text(club.get("pf"),club.get("pa")),66))
+		var points := G.cell(Semantics.number_text(club.get("points")),52,G.GOLD)
 		points.add_theme_font_size_override("font_size",19)
 		row.add_child(points)
-	sheet.add_child(G.wrap("MJ : matchs joués · V / N / D : victoires, nuls, défaites · DIFF. : points marqués moins encaissés",12))
+		var form := Semantics.recent_form(club.get("form"))
+		form.custom_minimum_size.x = 136
+		row.add_child(form)
+
+static func _standings_context(app: Control, page: Control) -> Control:
+	var content := G.panel(page)
+	var frame: Control = content.get_parent()
+	frame.name = "StandingsContext"
+	frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var club: Dictionary = app.model.club
+	var division := ""
+	for league: Dictionary in app.model.get("leagues",[]):
+		for row: Dictionary in league.get("rows",[]):
+			if row.id == app.model.club.id:
+				club = row
+				division = str(league.get("name",""))
+	content.add_child(G.label("NOTRE CLUB",12,G.MUTED))
+	var identity := G.h(10)
+	content.add_child(identity)
+	identity.add_child(G.crest(app.model.club,48))
+	var name := G.wrap(G.club_name(app.model.club),22,G.INK)
+	name.name = "StandingsContextClubName"
+	G.fill(name)
+	identity.add_child(name)
+	if not division.is_empty():content.add_child(G.wrap(division,12))
+	content.add_child(G.separator())
+	var facts := GridContainer.new()
+	facts.columns = 2
+	facts.add_theme_constant_override("h_separation",16)
+	facts.add_theme_constant_override("v_separation",16)
+	content.add_child(facts)
+	for pair in [["rank","Rang"],["points","Points"],["played","Matchs joués"],["pf","Points marqués"],["pa","Points encaissés"]]:
+		var value := Semantics.number_text(club.get(pair[0])) if pair[0]=="points" else Semantics.count_text(club.get(pair[0]))
+		facts.add_child(G.metric(value,pair[1]))
+	content.add_child(G.separator())
+	content.add_child(G.label("BILAN DU CHAMPIONNAT",12,G.MUTED))
+	var record := G.h(10)
+	content.add_child(record)
+	for pair in [["won","V"],["drawn","N"],["lost","D"]]:
+		var result := G.v(3)
+		record.add_child(result)
+		result.add_child(Semantics.count_badge(club.get(pair[0]),pair[1],44))
+		result.add_child(G.label(Semantics.RESULTS[pair[1]].plural,12,G.MUTED))
+	content.add_child(G.label("Forme · championnat · ancien → récent",12,G.MUTED))
+	content.add_child(Semantics.recent_form(club.get("form")))
+	content.add_child(G.wrap("Chiffres du classement actuel. — : donnée ou résultat non renseigné.",12))
+	return frame
+
+static func tables(app: Control) -> Control:
+	var page := StandingsLayout.new()
+	page.add_theme_constant_override("separation",14)
+	page.name = "CarnetStandings"
+	G.fill(page, true)
+	var sheet := G.panel(page)
+	page.table_frame = sheet.get_parent()
+	page.table_frame.name = "StandingsTableFrame"
+	var leagues: Array = app.model.get("leagues", [])
+	if leagues.is_empty(): leagues = [{"id":"elite","name":"Championnat historique","rows":app.model.get("league", [])}]
+	G.chapter(sheet,"07","La course du championnat","Le classement de votre carrière, dans l’ordre de la compétition.",app.accent)
+	var archives:=G.button("ARCHIVES DES SAISONS",func():season_archives(app))
+	archives.name="OpenArchives"
+	sheet.add_child(archives)
+	var tabs := G.h(10)
+	sheet.add_child(tabs)
+	for league: Dictionary in leagues:
+		var b := G.button(str(league.get("name", league.id)).to_upper(), func(): app.table_division = league.id; app._render())
+		b.name = "StandingsDivision_" + str(league.id)
+		G.fill(b)
+		if app.table_division == league.id: G.selected(b,app.accent)
+		tabs.add_child(b)
+	var chosen: Dictionary = leagues[0]
+	for league: Dictionary in leagues:
+		if league.id == app.table_division: chosen = league
+	for pair in [["champion","CHAMPION"],["finalist","FINALISTE"]]:
+		if chosen.get(pair[0]) is Dictionary:
+			sheet.add_child(G.label(pair[1] + "  /  " + G.club_name(chosen[pair[0]]),18,G.GOLD))
+	var list := G.scroll(sheet)
+	var rows: Array=chosen.get("rows",[])
+	page.list = list
+	page.scroll = list.get_parent()
+	page.scroll.name="StandingsScroll"
+	page.total = rows.size()
+	list.add_theme_constant_override("separation",3)
+	var pager := G.v(0)
+	sheet.add_child(pager)
+	page.redraw = func(capacity: int):
+		var focus := app.get_viewport().gui_get_focus_owner()
+		var focus_index := focus.get_index() if focus != null and pager.is_ancestor_of(focus) else -1
+		for node in list.get_children():list.remove_child(node);node.queue_free()
+		for node in pager.get_children():pager.remove_child(node);node.queue_free()
+		var bounds := _paged(app,pager,"StandingsPagination",rows.size(),capacity,"standings_"+str(chosen.id))
+		pager.visible = rows.size()>capacity
+		_standings_rows(app,list,rows,bounds)
+		if focus_index in [0,2]:
+			var target: Button = pager.get_child(0).get_child(focus_index)
+			if target.disabled:target=pager.get_child(0).get_child(2 if focus_index==0 else 0)
+			if not target.disabled:target.grab_focus.call_deferred()
+	page.redraw.call(page.capacity)
+	sheet.add_child(Semantics.legend(false))
+	sheet.add_child(G.wrap("MJ : matchs joués · DIFF. : points marqués moins encaissés · Forme : 6 résultats de championnat conservés, ancien → récent · — : non renseigné",12))
+	page.context = _standings_context(app,page)
+	page.context.hide()
 	return page
 
 static func _archive_club(app:Control,id:Variant) -> String:

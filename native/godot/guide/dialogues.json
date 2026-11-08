@@ -13,18 +13,15 @@
       "fragments": [
         {
           "id": "bienvenue-caractere",
-          "text": "Adiu. Gaston Darroux, mais appelle-moi Gabi. Soixante-huit ans, ancien pilier. Entre donc, on ne va pas se parler depuis le parking.",
-          "audioStatus": "pending"
+          "text": "Adiu. Gaston Darroux, mais appelle-moi Gabi. Soixante-huit ans, ancien pilier. Entre donc, on ne va pas se parler depuis le parking."
         },
         {
           "id": "bienvenue-01",
-          "text": "J'étais menuisier, avant. Puis j'ai passé ma vie au bord des terrains. Les deux métiers se ressemblent : quand ça tient de travers, inutile de repeindre.",
-          "audioStatus": "pending"
+          "text": "J'étais menuisier, avant. Puis j'ai passé ma vie au bord des terrains. Les deux métiers se ressemblent : quand ça tient de travers, inutile de repeindre."
         },
         {
           "id": "bienvenue-02",
-          "text": "J'ai passé la main, c'est toi le coach. Je te montre la maison, puis je te laisse faire. Si je remets les chaises droites, laisse : ça me démange.",
-          "audioStatus": "pending"
+          "text": "J'ai passé la main, c'est toi le coach. Je te montre la maison, puis je te laisse faire. Si je remets les chaises droites, laisse : ça me démange."
         }
       ]
     },
@@ -36,8 +33,7 @@
       "fragments": [
         {
           "id": "club-caractere",
-          "text": "Regarde les moyens, l'effectif, ce qu'on attend de toi. Le blason, tu vas le porter aussi les lundis où personne n'a envie de sourire.",
-          "audioStatus": "pending"
+          "text": "Regarde les moyens, l'effectif, ce qu'on attend de toi. Le blason, tu vas le porter aussi les lundis où personne n'a envie de sourire."
         },
         {
           "id": "club-01",
@@ -45,8 +41,7 @@
         },
         {
           "id": "club-02",
-          "text": "Choisis un club dont tu as envie de connaître les gens. Les trophées, ça viendra peut-être. Le bonjour au gardien, ça commence demain matin.",
-          "audioStatus": "pending"
+          "text": "Choisis un club dont tu as envie de connaître les gens. Les trophées, ça viendra peut-être. Le bonjour au gardien, ça commence demain matin."
         }
       ]
     },
@@ -58,23 +53,19 @@
       "fragments": [
         {
           "id": "bureau-caractere",
-          "text": "Bon. Le prochain match, les blessés, les décisions en attente. On fait dans cet ordre. La cafetière peut attendre ; elle, elle n'a pas de contrat à renouveler.",
-          "audioStatus": "pending"
+          "text": "Bon. Le prochain match, les blessés, les décisions en attente. On fait dans cet ordre. La cafetière peut attendre ; elle, elle n'a pas de contrat à renouveler."
         },
         {
           "id": "bureau-01",
-          "text": "Pose ton carnet. On prépare la semaine avant qu'elle nous tombe dessus. J'ai longtemps fait l'inverse ; ça explique quelques cheveux blancs.",
-          "audioStatus": "pending"
+          "text": "Pose ton carnet. On prépare la semaine avant qu'elle nous tombe dessus. J'ai longtemps fait l'inverse ; ça explique quelques cheveux blancs."
         },
         {
           "id": "bureau-02",
-          "text": "Un dossier à la fois. Quand j'avais l'atelier, ceux qui couraient partout étaient rarement ceux qui terminaient une armoire droite.",
-          "audioStatus": "pending"
+          "text": "Un dossier à la fois. Quand j'avais l'atelier, ceux qui couraient partout étaient rarement ceux qui terminaient une armoire droite."
         },
         {
           "id": "decision-saison",
           "text": "Nouvelle saison. On revoit le groupe, les contrats, les déplacements. Et on vide les vieux sacs : certaines chaussettes ont fait leur carrière.",
-          "audioStatus": "pending",
           "contextOnly": true
         }
       ]
@@ -87,8 +78,7 @@
       "fragments": [
         {
           "id": "effectif-caractere",
-          "text": "Regarde les postes et les jambes avant les grandes réputations. Un nom ne se relève pas tout seul après trois plaquages.",
-          "audioStatus": "pending"
+          "text": "Regarde les postes et les jambes avant les grandes réputations. Un nom ne se relève pas tout seul après trois plaquages."
         },
         {
           "id": "effectif-01",
@@ -96,8 +86,7 @@
         },
         {
           "id": "effectif-02",
-          "text": "Va aussi voir ceux qui jouent moins. Quand tu auras besoin d'eux un soir de pluie, ils se souviendront si tu connaissais leur prénom.",
-          "audioStatus": "pending"
+          "text": "Va aussi voir ceux qui jouent moins. Quand tu auras besoin d'eux un soir de pluie, ils se souviendront si tu connaissais leur prénom."
         }
       ]
     },
@@ -109,13 +98,11 @@
       "fragments": [
         {
           "id": "composition-caractere",
-          "text": "La première ligne et le banc, d'abord. Je suis vieux, pas nostalgique des mêlées bricolées. Mon oreille droite a déjà assez donné.",
-          "audioStatus": "pending"
+          "text": "La première ligne et le banc, d'abord. Je suis vieux, pas nostalgique des mêlées bricolées. Mon oreille droite a déjà assez donné."
         },
         {
           "id": "composition-01",
-          "text": "Choisis des joueurs autorisés à tenir leur poste. Et prépare les remplaçants aussi sérieusement que les titulaires. Un banc, ce n'est pas une salle d'attente.",
-          "audioStatus": "pending"
+          "text": "Choisis des joueurs autorisés à tenir leur poste. Et prépare les remplaçants aussi sérieusement que les titulaires. Un banc, ce n'est pas une salle d'attente."
         },
         {
           "id": "composition-02",
@@ -131,8 +118,7 @@
       "fragments": [
         {
           "id": "entrainement-caractere",
-          "text": "Lis la charge et la condition. On veut du travail propre, pas vingt-trois gars qui descendent l'escalier de côté demain matin.",
-          "audioStatus": "pending"
+          "text": "Lis la charge et la condition. On veut du travail propre, pas vingt-trois gars qui descendent l'escalier de côté demain matin."
         },
         {
           "id": "entrainement-01",
@@ -140,8 +126,7 @@
         },
         {
           "id": "entrainement-02",
-          "text": "Récupération, normal ou intensif : choisis pour les jambes que tu as aujourd'hui. Une séance de trop, c'est rarement l'entraîneur qui la paie avec ses genoux.",
-          "audioStatus": "pending"
+          "text": "Récupération, normal ou intensif : choisis pour les jambes que tu as aujourd'hui. Une séance de trop, c'est rarement l'entraîneur qui la paie avec ses genoux."
         },
         {
           "id": "entrainement-03",
@@ -157,8 +142,7 @@
       "fragments": [
         {
           "id": "tactique-caractere",
-          "text": "Pars de l'adversaire et de nos joueurs. Si ton plan demande une conférence avant chaque remise en jeu, on va peut-être enlever deux ou trois flèches.",
-          "audioStatus": "pending"
+          "text": "Pars de l'adversaire et de nos joueurs. Si ton plan demande une conférence avant chaque remise en jeu, on va peut-être enlever deux ou trois flèches."
         },
         {
           "id": "tactique-01",
@@ -166,8 +150,7 @@
         },
         {
           "id": "tactique-02",
-          "text": "Moi, j'ai longtemps voulu tout régler devant. J'ai eu tort, parfois. Regarde ce que tes joueurs savent faire avant de défendre tes habitudes.",
-          "audioStatus": "pending"
+          "text": "Moi, j'ai longtemps voulu tout régler devant. J'ai eu tort, parfois. Regarde ce que tes joueurs savent faire avant de défendre tes habitudes."
         }
       ]
     },
@@ -179,18 +162,15 @@
       "fragments": [
         {
           "id": "premier-match-caractere",
-          "text": "Bon match, coach. Un œil sur le terrain, un sur le banc. Pour crier sur la touche, tu trouveras toujours du monde ; pour réfléchir, garde un peu d'air.",
-          "audioStatus": "pending"
+          "text": "Bon match, coach. Un œil sur le terrain, un sur le banc. Pour crier sur la touche, tu trouveras toujours du monde ; pour réfléchir, garde un peu d'air."
         },
         {
           "id": "premier-match-01",
-          "text": "La feuille, les consignes, le banc. C'est bon ? Alors on y va. J'ai beau avoir arrêté, juste avant le coup d'envoi, j'ai encore les mains moites.",
-          "audioStatus": "pending"
+          "text": "La feuille, les consignes, le banc. C'est bon ? Alors on y va. J'ai beau avoir arrêté, juste avant le coup d'envoi, j'ai encore les mains moites."
         },
         {
           "id": "premier-match-02",
-          "text": "Direct pour suivre, Banc pour changer, Stats pour faire le point. Mets en pause pour décider tranquillement. Moi, je me tais. Profites-en.",
-          "audioStatus": "pending"
+          "text": "Direct pour suivre, Banc pour changer, Stats pour faire le point. Mets en pause pour décider tranquillement. Moi, je me tais. Profites-en."
         }
       ]
     },
@@ -202,8 +182,7 @@
       "fragments": [
         {
           "id": "resultat-caractere",
-          "text": "On respire, puis on regarde le match. Le tableau d'affichage a donné son avis ; on va essayer d'avoir quelque chose de plus utile à dire aux gars.",
-          "audioStatus": "pending"
+          "text": "On respire, puis on regarde le match. Le tableau d'affichage a donné son avis ; on va essayer d'avoir quelque chose de plus utile à dire aux gars."
         },
         {
           "id": "resultat-01",
@@ -211,8 +190,7 @@
         },
         {
           "id": "resultat-02",
-          "text": "La victoire ne rend pas tout juste, la défaite ne rend pas tout mauvais. Choisis deux choses à travailler. Pour les vingt autres, on a encore lundi.",
-          "audioStatus": "pending"
+          "text": "La victoire ne rend pas tout juste, la défaite ne rend pas tout mauvais. Choisis deux choses à travailler. Pour les vingt autres, on a encore lundi."
         }
       ]
     },
@@ -224,8 +202,7 @@
       "fragments": [
         {
           "id": "calendrier-caractere",
-          "text": "Regarde les deux prochains rendez-vous. Quand on use toujours les mêmes, le calendrier finit par choisir l'équipe à notre place.",
-          "audioStatus": "pending"
+          "text": "Regarde les deux prochains rendez-vous. Quand on use toujours les mêmes, le calendrier finit par choisir l'équipe à notre place."
         },
         {
           "id": "calendrier-01",
@@ -233,8 +210,7 @@
         },
         {
           "id": "calendrier-02",
-          "text": "Les grands soirs se préparent les semaines ordinaires. Garde du monde frais. J'ai appris ça une demi-finale trop tard ; ça, je l'ai encore en travers.",
-          "audioStatus": "pending"
+          "text": "Les grands soirs se préparent les semaines ordinaires. Garde du monde frais. J'ai appris ça une demi-finale trop tard ; ça, je l'ai encore en travers."
         }
       ]
     },
@@ -246,8 +222,7 @@
       "fragments": [
         {
           "id": "classements-caractere",
-          "text": "Les matchs joués, les points, la différence. Lis toute la ligne. On a déjà vu des troisièmes faire plus les malins que des champions.",
-          "audioStatus": "pending"
+          "text": "Les matchs joués, les points, la différence. Lis toute la ligne. On a déjà vu des troisièmes faire plus les malins que des champions."
         },
         {
           "id": "classements-01",
@@ -255,8 +230,7 @@
         },
         {
           "id": "classements-02",
-          "text": "Si ça sourit, garde les pieds au sol. Si ça tourne mal, garde la tête levée. Les gars te regardent encore plus quand le classement fait mal.",
-          "audioStatus": "pending"
+          "text": "Si ça sourit, garde les pieds au sol. Si ça tourne mal, garde la tête levée. Les gars te regardent encore plus quand le classement fait mal."
         },
         {
           "id": "classements-03",
@@ -272,8 +246,7 @@
       "fragments": [
         {
           "id": "finances-caractere",
-          "text": "La caisse, les salaires, les engagements. Avant de signer, on fait les comptes. Le président peut aimer le rugby et savoir très bien lire une facture.",
-          "audioStatus": "pending"
+          "text": "La caisse, les salaires, les engagements. Avant de signer, on fait les comptes. Le président peut aimer le rugby et savoir très bien lire une facture."
         },
         {
           "id": "finances-01",
@@ -281,18 +254,15 @@
         },
         {
           "id": "finances-02",
-          "text": "La prime part à la signature, les salaires reviennent chaque semaine. Une recrue doit trouver sa place sur le terrain et dans les comptes.",
-          "audioStatus": "pending"
+          "text": "La prime part à la signature, les salaires reviennent chaque semaine. Une recrue doit trouver sa place sur le terrain et dans les comptes."
         },
         {
           "id": "finances-03",
-          "text": "Le journal dit où passe l'argent. Lis-le avant de promettre la lune. Chez nous, même les ampoules du vestiaire ont quelqu'un qui les paie.",
-          "audioStatus": "pending"
+          "text": "Le journal dit où passe l'argent. Lis-le avant de promettre la lune. Chez nous, même les ampoules du vestiaire ont quelqu'un qui les paie."
         },
         {
           "id": "decision-tresorerie",
           "text": "La caisse est dans le rouge. On pose le stylo, on regarde les engagements. Je peux prêter ma boîte à outils ; pour refaire la trésorerie, ça ne suffira pas.",
-          "audioStatus": "pending",
           "contextOnly": true
         }
       ]
@@ -305,18 +275,15 @@
       "fragments": [
         {
           "id": "packs-caractere",
-          "text": "Un club a ses couleurs, ses visages, sa mémoire. Prends le temps de regarder ce que tu choisis. Un écusson se porte autrement quand on sait ce qu'il raconte.",
-          "audioStatus": "pending"
+          "text": "Un club a ses couleurs, ses visages, sa mémoire. Prends le temps de regarder ce que tu choisis. Un écusson se porte autrement quand on sait ce qu'il raconte."
         },
         {
           "id": "packs-01",
-          "text": "Je reconnais un club à son accueil avant de regarder son blason. Les maillots changent, les gens restent. Pense à eux quand tu prends une décision.",
-          "audioStatus": "pending"
+          "text": "Je reconnais un club à son accueil avant de regarder son blason. Les maillots changent, les gens restent. Pense à eux quand tu prends une décision."
         },
         {
           "id": "packs-02",
-          "text": "Mon vieux carnet a changé trois fois de couverture. Les noms qu'il y a dedans comptent davantage. Et les bons souvenirs sentent encore le vestiaire mouillé.",
-          "audioStatus": "pending"
+          "text": "Mon vieux carnet a changé trois fois de couverture. Les noms qu'il y a dedans comptent davantage. Et les bons souvenirs sentent encore le vestiaire mouillé."
         }
       ]
     },
@@ -328,8 +295,7 @@
       "fragments": [
         {
           "id": "recrutement-caractere",
-          "text": "Cherche ce qui manque, pas ce qui brille. Un bon troisième pilier fait moins de bruit qu'une vedette ; il peut te sauver davantage de samedis.",
-          "audioStatus": "pending"
+          "text": "Cherche ce qui manque, pas ce qui brille. Un bon troisième pilier fait moins de bruit qu'une vedette ; il peut te sauver davantage de samedis."
         },
         {
           "id": "recrutement-01",
@@ -342,7 +308,6 @@
         {
           "id": "decision-contrat",
           "text": "C'est signé. Maintenant, trouve-lui sa place et explique-lui ce qu'on attend. Le stylo a fait son boulot ; à nous de faire le nôtre.",
-          "audioStatus": "pending",
           "contextOnly": true
         }
       ]
@@ -355,8 +320,7 @@
       "fragments": [
         {
           "id": "territoire-caractere",
-          "text": "Regarde la ville et le stade. C'est pour ces gens qu'on joue. Il y en a qui arrivent avant nous et qui restent après pour ramasser les gobelets.",
-          "audioStatus": "pending"
+          "text": "Regarde la ville et le stade. C'est pour ces gens qu'on joue. Il y en a qui arrivent avant nous et qui restent après pour ramasser les gobelets."
         },
         {
           "id": "territoire-01",
@@ -364,8 +328,7 @@
         },
         {
           "id": "territoire-02",
-          "text": "J'ai connu un bénévole qui mettait les protections des poteaux avant chaque match. Trente ans. Jamais sur la photo avec la coupe. Ces gens-là, tu les oublies pas.",
-          "audioStatus": "pending"
+          "text": "J'ai connu un bénévole qui mettait les protections des poteaux avant chaque match. Trente ans. Jamais sur la photo avec la coupe. Ces gens-là, tu les oublies pas."
         }
       ]
     },
@@ -377,18 +340,15 @@
       "fragments": [
         {
           "id": "staff-caractere",
-          "text": "L'adjoint, le préparateur, le médical : écoute-les. Tu n'es pas payé pour avoir toutes les réponses. Heureusement, sinon j'aurais dû rendre quelques salaires.",
-          "audioStatus": "pending"
+          "text": "L'adjoint, le préparateur, le médical : écoute-les. Tu n'es pas payé pour avoir toutes les réponses. Heureusement, sinon j'aurais dû rendre quelques salaires."
         },
         {
           "id": "staff-01",
-          "text": "Délègue clairement, puis regarde le travail. Si tu confies une tâche pour tout refaire derrière, tu n'as pas un adjoint ; tu as un témoin.",
-          "audioStatus": "pending"
+          "text": "Délègue clairement, puis regarde le travail. Si tu confies une tâche pour tout refaire derrière, tu n'as pas un adjoint ; tu as un témoin."
         },
         {
           "id": "staff-02",
-          "text": "Regarde qui fait quoi et connais ton entourage. Moi, je peux discuter mêlée pendant deux heures. Pour les autres sujets, j'ai appris à laisser une chaise aux gens compétents.",
-          "audioStatus": "pending"
+          "text": "Regarde qui fait quoi et connais ton entourage. Moi, je peux discuter mêlée pendant deux heures. Pour les autres sujets, j'ai appris à laisser une chaise aux gens compétents."
         }
       ]
     },
@@ -400,18 +360,15 @@
       "fragments": [
         {
           "id": "formation-caractere",
-          "text": "Regarde le poste, le travail et le coût avant de promouvoir. Un jeune a besoin d'une place dans le groupe, pas seulement d'un beau discours devant ses parents.",
-          "audioStatus": "pending"
+          "text": "Regarde le poste, le travail et le coût avant de promouvoir. Un jeune a besoin d'une place dans le groupe, pas seulement d'un beau discours devant ses parents."
         },
         {
           "id": "formation-01",
-          "text": "Va voir les jeunes. Celui qui parle le moins n'est pas forcément celui qui en veut le moins. J'en ai laissé un sur le banc trop longtemps ; je m'en souviens.",
-          "audioStatus": "pending"
+          "text": "Va voir les jeunes. Celui qui parle le moins n'est pas forcément celui qui en veut le moins. J'en ai laissé un sur le banc trop longtemps ; je m'en souviens."
         },
         {
           "id": "formation-02",
-          "text": "Passer professionnel, c'est un salaire pour le club et une nouvelle vie pour le gamin. Prépare les deux. Et trouve-lui quelqu'un à qui poser ses questions.",
-          "audioStatus": "pending"
+          "text": "Passer professionnel, c'est un salaire pour le club et une nouvelle vie pour le gamin. Prépare les deux. Et trouve-lui quelqu'un à qui poser ses questions."
         },
         {
           "id": "formation-03",
@@ -427,13 +384,11 @@
       "fragments": [
         {
           "id": "plan-jeu-caractere",
-          "text": "Lis le rapport adverse, puis choisis tes zones. Une consigne claire tient dans une phrase. Mes premières causeries tenaient dans un dimanche ; personne n'en était fier.",
-          "audioStatus": "pending"
+          "text": "Lis le rapport adverse, puis choisis tes zones. Une consigne claire tient dans une phrase. Mes premières causeries tenaient dans un dimanche ; personne n'en était fier."
         },
         {
           "id": "plan-jeu-01",
-          "text": "Les propositions du staff sont là pour t'aider à choisir. Compare-les à ton groupe. Je vais encore défendre le jeu devant ; tu as le droit de me contredire.",
-          "audioStatus": "pending"
+          "text": "Les propositions du staff sont là pour t'aider à choisir. Compare-les à ton groupe. Je vais encore défendre le jeu devant ; tu as le droit de me contredire."
         }
       ]
     },
@@ -445,13 +400,11 @@
       "fragments": [
         {
           "id": "vestiaire-caractere",
-          "text": "Avant de parler, écoute. Et si tu as promis quelque chose à un joueur, souviens-t'en. Les vestiaires ont des trous de mémoire très sélectifs, sauf pour ça.",
-          "audioStatus": "pending"
+          "text": "Avant de parler, écoute. Et si tu as promis quelque chose à un joueur, souviens-t'en. Les vestiaires ont des trous de mémoire très sélectifs, sauf pour ça."
         },
         {
           "id": "vestiaire-01",
-          "text": "Dis les choses franchement, sans humilier. On peut secouer un gars et lui laisser sa dignité. Celui qui te dit le contraire n'a jamais recollé un groupe.",
-          "audioStatus": "pending"
+          "text": "Dis les choses franchement, sans humilier. On peut secouer un gars et lui laisser sa dignité. Celui qui te dit le contraire n'a jamais recollé un groupe."
         }
       ]
     },
@@ -463,13 +416,11 @@
       "fragments": [
         {
           "id": "centre-caractere",
-          "text": "Le centre, ça se visite aussi sans appareil photo. Regarde les parcours, les prêts, les besoins. C'est là qu'on prépare ceux qu'on applaudira plus tard.",
-          "audioStatus": "pending"
+          "text": "Le centre, ça se visite aussi sans appareil photo. Regarde les parcours, les prêts, les besoins. C'est là qu'on prépare ceux qu'on applaudira plus tard."
         },
         {
           "id": "centre-01",
-          "text": "Avant une promotion ou un prêt, demande-toi où le jeune va jouer et avec qui. Un beau projet sans minutes, c'est un beau projet assis.",
-          "audioStatus": "pending"
+          "text": "Avant une promotion ou un prêt, demande-toi où le jeune va jouer et avec qui. Un beau projet sans minutes, c'est un beau projet assis."
         }
       ]
     },
@@ -481,13 +432,11 @@
       "fragments": [
         {
           "id": "presse-caractere",
-          "text": "Lis les faits avant de répondre. Un bon mot peut calmer la salle. Un mauvais reste dans le journal alors que toi, tu voulais juste rentrer manger.",
-          "audioStatus": "pending"
+          "text": "Lis les faits avant de répondre. Un bon mot peut calmer la salle. Un mauvais reste dans le journal alors que toi, tu voulais juste rentrer manger."
         },
         {
           "id": "presse-01",
-          "text": "Les journalistes ont un carnet eux aussi. Souviens-toi de ce que tu leur as dit. Pour les grands titres, méfie-toi surtout des jours où tu te trouves spirituel.",
-          "audioStatus": "pending"
+          "text": "Les journalistes ont un carnet eux aussi. Souviens-toi de ce que tu leur as dit. Pour les grands titres, méfie-toi surtout des jours où tu te trouves spirituel."
         }
       ]
     },
@@ -499,13 +448,11 @@
       "fragments": [
         {
           "id": "rivalites-caractere",
-          "text": "Un derby, ça se sent dès le lundi. Garde les gars concentrés. Les anciens auront assez d'énergie pour raconter les vingt dernières éditions à ta place.",
-          "audioStatus": "pending"
+          "text": "Un derby, ça se sent dès le lundi. Garde les gars concentrés. Les anciens auront assez d'énergie pour raconter les vingt dernières éditions à ta place."
         },
         {
           "id": "rivalites-01",
-          "text": "Regarde nos confrontations, puis parle de celle qui vient. Respecte l'adversaire. Ça n'empêche ni d'avoir envie de le battre ni de passer une mauvaise nuit avant.",
-          "audioStatus": "pending"
+          "text": "Regarde nos confrontations, puis parle de celle qui vient. Respecte l'adversaire. Ça n'empêche ni d'avoir envie de le battre ni de passer une mauvaise nuit avant."
         }
       ]
     },
@@ -517,13 +464,11 @@
       "fragments": [
         {
           "id": "travail-club-caractere",
-          "text": "Le club ne s'arrête pas quand les joueurs rentrent chez eux. Fais le point avec le staff, le médical et les agents. Ensuite seulement, on regarde l'heure.",
-          "audioStatus": "pending"
+          "text": "Le club ne s'arrête pas quand les joueurs rentrent chez eux. Fais le point avec le staff, le médical et les agents. Ensuite seulement, on regarde l'heure."
         },
         {
           "id": "travail-club-01",
-          "text": "Chaque intervention doit répondre à un besoin. Un gars à écouter, une charge à revoir, un contrat à préparer. Les grandes réunions sans décision, j'ai assez donné.",
-          "audioStatus": "pending"
+          "text": "Chaque intervention doit répondre à un besoin. Un gars à écouter, une charge à revoir, un contrat à préparer. Les grandes réunions sans décision, j'ai assez donné."
         }
       ]
     },
@@ -535,13 +480,11 @@
       "fragments": [
         {
           "id": "strategie-caractere",
-          "text": "Regarde loin, mais lis les échéances. J'ai déjà promis un nouvel atelier avec une caisse vide. Les gars m'en parlent encore ; le président aussi.",
-          "audioStatus": "pending"
+          "text": "Regarde loin, mais lis les échéances. J'ai déjà promis un nouvel atelier avec une caisse vide. Les gars m'en parlent encore ; le président aussi."
         },
         {
           "id": "strategie-01",
-          "text": "Choisis ce qui servira encore le club quand tu seras parti. C'est moins flatteur qu'une belle annonce, je sais. C'est souvent ce qui tient le mieux.",
-          "audioStatus": "pending"
+          "text": "Choisis ce qui servira encore le club quand tu seras parti. C'est moins flatteur qu'une belle annonce, je sais. C'est souvent ce qui tient le mieux."
         }
       ]
     },
@@ -553,13 +496,11 @@
       "fragments": [
         {
           "id": "carriere-caractere",
-          "text": "Un autre banc te tente ? Regarde le groupe, les moyens et ce qu'on attend de toi. La belle vue depuis le bureau ne fera pas la première séance.",
-          "audioStatus": "pending"
+          "text": "Un autre banc te tente ? Regarde le groupe, les moyens et ce qu'on attend de toi. La belle vue depuis le bureau ne fera pas la première séance."
         },
         {
           "id": "carriere-01",
-          "text": "Si tu pars, laisse la maison propre. Préviens les gens, tiens tes engagements. Les clubs se recroisent ; les histoires qu'on y laisse aussi.",
-          "audioStatus": "pending"
+          "text": "Si tu pars, laisse la maison propre. Préviens les gens, tiens tes engagements. Les clubs se recroisent ; les histoires qu'on y laisse aussi."
         }
       ]
     }

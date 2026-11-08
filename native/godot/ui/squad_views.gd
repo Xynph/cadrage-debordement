@@ -79,23 +79,27 @@ static func squad(app: Control) -> Control:
 	header.name="RosterHeader"
 	table.add_child(header)
 	var list := G.scroll(table)
+	# A dossier opened by ID may be beyond the first page. Keep that request
+	# through the initial container sizing, but never override voluntary paging.
+	list.set_meta("reveal_id", app.selected_player if str(state.get("visible_player", "")) != app.selected_player else "")
 	list.add_theme_constant_override("separation",2)
 	list.get_parent().name="SquadScroll"
 	var pagination := _pagination(table,"RosterPagination",state)
 	var profile := G.panel(page,1.1)
 	profile.name="PlayerDossier"
 	var refresh:=func():_squad_rows(app,list,profile,count,compare)
-	_bind_pagination(pagination,state,refresh)
+	var user_refresh:=func():list.set_meta("reveal_id", "");refresh.call()
+	_bind_pagination(pagination,state,user_refresh)
 	list.get_parent().resized.connect(func():
 		var capacity:=maxi(1,int((list.get_parent().size.y+2)/28))
 		var columns:=_roster_columns(list.get_parent().size.x).size()
 		if capacity!=int(state.get("page_size",4)) or columns!=int(list.get_meta("column_count",0)):
 			state.page_size=capacity;refresh.call_deferred())
-	search.text_changed.connect(func(text:String):state.search=text;state.scroll=0;state.page=0;refresh.call())
-	family.item_selected.connect(func(index:int):state.family=family.get_item_text(index);app.roster_filter=state.family;state.scroll=0;state.page=0;refresh.call())
-	position.item_selected.connect(func(index:int):state.position=position.get_item_text(index);state.scroll=0;state.page=0;refresh.call())
-	available.item_selected.connect(func(index:int):state.available=available.get_item_text(index);state.scroll=0;state.page=0;refresh.call())
-	contract_filter.item_selected.connect(func(index:int):state.contract=contract_filter.get_item_text(index);state.scroll=0;state.page=0;refresh.call())
+	search.text_changed.connect(func(text:String):state.search=text;state.scroll=0;state.page=0;user_refresh.call())
+	family.item_selected.connect(func(index:int):state.family=family.get_item_text(index);app.roster_filter=state.family;state.scroll=0;state.page=0;user_refresh.call())
+	position.item_selected.connect(func(index:int):state.position=position.get_item_text(index);state.scroll=0;state.page=0;user_refresh.call())
+	available.item_selected.connect(func(index:int):state.available=available.get_item_text(index);state.scroll=0;state.page=0;user_refresh.call())
+	contract_filter.item_selected.connect(func(index:int):state.contract=contract_filter.get_item_text(index);state.scroll=0;state.page=0;user_refresh.call())
 	sort.item_selected.connect(func(index:int):state.sort=sort.get_item_text(index);app.roster_sort=state.sort;state.descending=state.sort in ["Niveau","Condition"];state.scroll=0;app._render())
 	refresh.call()
 	U.restore(app,page,"roster")
@@ -191,16 +195,19 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 	var players:Array=U.players(app.model.get("squad",[]),app.management_ui.roster,int(app.model.meta.get("season",1)))
 	var state:Dictionary=app.management_ui.roster
 	var capacity:=maxi(1,int(state.get("page_size",4)))
-	if not focus_id.is_empty():
+	var reveal_id := focus_id if not focus_id.is_empty() else str(list.get_meta("reveal_id", ""))
+	if not reveal_id.is_empty():
 		for i in players.size():
-			if str(players[i].id)==focus_id:state.page=i/capacity;break
+			if str(players[i].id)==reveal_id:state.page=i/capacity;break
 	var bounds:=_page_range(list.get_parent().get_parent().find_child("RosterPagination",false,false),state,players.size(),capacity)
 	count.text="%d / %d joueurs · lecture seule"%[players.size(),app.model.get("squad",[]).size()]
 	compare.text="COMPARER (%d/2)"%app.management_ui.compare.size()
 	if app.selected_player.is_empty() and not players.is_empty():app.selected_player=str(players[0].id)
+	state.visible_player=app.selected_player
 	if players.is_empty():list.add_child(G.wrap("Aucun joueur ne correspond. Modifiez la recherche ou réinitialisez les filtres.",15))
 	for p in players.slice(bounds.x,bounds.y):
 		var b := G.button("",func():
+			list.set_meta("reveal_id", "")
 			app.selected_player=str(p.id);app.management_ui.profile_scroll=0
 			for row:Button in list.get_children():
 				G.clear_selection(row)
@@ -382,12 +389,14 @@ static func _profile_tile(parent:Node,id:String,caption:String,prefix:String="Pr
 	frame.name=prefix+id
 	G.fill(frame)
 	frame.size_flags_vertical=Control.SIZE_SHRINK_BEGIN
-	var style:=G.T.box(Color("faf6ed"),2,G.LINE)
+	var style:=G.T.box(Color("fcfcf8"),3,G.LINE)
+	style.shadow_color=Color(0,0,0,.07)
+	style.shadow_size=2;style.shadow_offset=Vector2(0,1)
 	style.content_margin_left=8;style.content_margin_right=8
-	style.content_margin_top=4;style.content_margin_bottom=4
+	style.content_margin_top=3;style.content_margin_bottom=3
 	frame.add_theme_stylebox_override("panel",style)
 	parent.add_child(frame)
-	var body:=G.v(3)
+	var body:=G.v(2)
 	frame.add_child(body)
 	body.add_child(G.label(caption.to_upper(),11,G.MUTED))
 	return body

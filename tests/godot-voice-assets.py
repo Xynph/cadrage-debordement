@@ -79,7 +79,7 @@ class VoiceAssets(unittest.TestCase):
 
     def test_actual_shipped_coverage(self):
         coverage = build.validate_voice_assets(build.PROJECT)
-        self.assertEqual((coverage["recorded"], coverage["pending"], coverage["total"]), (15, 59, 74))
+        self.assertEqual((coverage["recorded"], coverage["pending"], coverage["total"]), (74, 0, 74))
 
     def test_historical_recordings_remain_intact(self):
         archive = json.loads((ROOT / "docs/gabi-voix-archives-20261108.json").read_text(encoding="utf-8"))

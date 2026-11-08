@@ -10,6 +10,7 @@ const Presentation = preload("res://match_presentation.gd")
 const Motion = preload("res://match_motion.gd")
 const Kit = preload("res://match_kit.gd")
 const Athlete = preload("res://match_athlete.gd")
+const Contact = preload("res://match_contact.gd")
 var _players: Node3D
 var _ball: Node3D
 var _camera: Camera3D
@@ -36,6 +37,7 @@ var _ball_marker: Node3D
 var _ball_attached := false
 var _ball_travel := 1.0
 var _grass: ShaderMaterial
+var _contact_plan: Dictionary = {}
 
 
 func _ready() -> void:
@@ -131,6 +133,7 @@ func apply_frame(live: Dictionary) -> void:
 			_players.remove_child(actor)
 			actor.queue_free()
 			_actors.erase(id)
+	_contact_plan = Contact.plan(scene) if not _paused and has_ball else {}
 	if has_ball:
 		var next_target := _world(ball_data, 0.23)
 		var ball_changed := not _ball_target.is_equal_approx(next_target) or previous_carrier != _carrier_id
@@ -164,6 +167,8 @@ func set_camera(mode: String) -> void:
 func _process(delta: float) -> void:
 	for entry: Dictionary in _actors.values():
 		var actor: Node3D = entry.node
+		if entry.rig:
+			Presentation.restore_contact(entry.rig, entry.contact_base)
 		var previous := actor.position
 		entry.elapsed = minf(BLEND_SECONDS, float(entry.elapsed) + delta)
 		var progress: float = entry.elapsed / BLEND_SECONDS
@@ -191,6 +196,7 @@ func _process(delta: float) -> void:
 			animation.advance(0.0 if _paused else pose_delta)
 		if entry.rig and not _paused:
 			Presentation.support_feet(actor, entry.rig, entry.feet, speed, angle_difference(previous_heading, actor.rotation.y))
+	_update_contact(delta)
 	_update_ball(delta)
 	# Resolve upper-body contact after every source-animation update and after the
 	# ball's continuous trajectory. A new receiver never pulls it across the pitch.
@@ -210,6 +216,31 @@ func _process(delta: float) -> void:
 		_ball_marker.global_basis = Basis.IDENTITY
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
+
+
+func _update_contact(delta: float) -> void:
+	var carrier: String = _contact_plan.get("carrier", "")
+	var opponent: String = _contact_plan.get("opponent", "")
+	var active := _ball_attached and _actors.has(carrier) and _actors.has(opponent)
+	var strength := 0.0
+	if active:
+		strength = Contact.strength(_actors[carrier].node.position, _actors[opponent].node.position)
+	for id: String in _actors:
+		var entry: Dictionary = _actors[id]
+		# Clear immediately on an excluded action/pause/removal; fade only within
+		# the same eligible geometry. A stale pair must never keep an actor posed.
+		if not active or id not in [carrier, opponent]:
+			entry.contact_weight = 0.0
+			continue
+		entry.contact_weight = minf(strength, move_toward(float(entry.contact_weight), strength, delta * 5.0))
+	if not active: return
+	# Apply the carrier first so the opponent reads the same current chest pose,
+	# irrespective of insertion order in the transmitted presence list.
+	for id: String in [carrier, opponent]:
+		var entry: Dictionary = _actors[id]
+		var other: Dictionary = _actors[opponent if id == carrier else carrier]
+		if entry.rig and other.rig:
+			Presentation.brace_contact(entry.node, entry.rig, other.node, other.rig, entry.contact_weight, id == carrier, entry.contact_base)
 
 
 func _update_ball(delta: float) -> void:
@@ -289,6 +320,7 @@ func _clear_presence() -> void:
 	_actors.clear()
 	_ball.visible = false
 	_carrier_id = ""
+	_contact_plan = {}
 	_ball_attached = false
 	_camera_cut = true
 	_fit_camera(0.0, true)
@@ -345,6 +377,7 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 	return {"node": actor, "model": model, "side": side, "from": target, "target": target,
 		"elapsed": BLEND_SECONDS, "velocity": Vector3.ZERO, "tangent": Vector3.ZERO, "running": false,
 		"feet": {},
+		"contact_base": {}, "contact_weight": 0.0,
 		"animation": animation, "idle": idle, "run": run, "walk": walk, "rig": Presentation.rig_for(model), "holding": false, "grip": 0.0}
 
 

@@ -1,5 +1,21 @@
 # Journal de développement — Cadrage Débordement
 
+## 8 novembre 2026 — finition PC, couleurs, voix complète et contacts visuels
+
+La PR398 est fusionnée par le gate officiel sur `f335fb76f038e6632be43540913b7b593b5f8395`. Sa CI exacte `42523056871` et sa CI post-fusion `42524247205` réussissent chacune les sept jobs ; les notes de diagnostic ci-dessous restent historiques. Aucun délai, garde de sauvegarde ni workflow n'a été contourné.
+
+Les menus adoptent une coque anthracite, une identité de club, six pictogrammes originaux, une sous-navigation distincte, des contrôles clairs et des tuiles compactes. Corps12px et référence2560×1440 conservés. Le Bureau sépare ses cartes, montre trois échéances ouvrant les bons dossiers et deux vues ville/stade. V/N/D disposent de lettres, légende et couleurs contrastées ; les valeurs absentes restent inconnues. La palette et l'historique révèlent le bon joueur à travers la pagination, sans annuler la page choisie manuellement. Aucun modèle, profil, export ou RNG changé.
+
+Preuves source Windows : menus793/0 et interface832/0 ; deux matchs réels supplémentaires234/0 ; Bureau751/0 sous Node22 et26, réception Windows1102/0 ; sémantique53053/0 et navigation128/0. Revue indépendante favorable des menus/couleurs/navigation/contacts et métadonnées. Les anciennes attentes de navigation ont été reproduites avant correction ; les assertions de pagination, sélection et historique restent actives.
+
+Gabi : Léo souscrit lui-même à Starter et confirme son activation. Quatre lots sont ensuite produits avec la voix exacte retenue, modèle Eleven v4, pendant l'abonnement actif. Les74prises payantes sont reçues, découpées et actives, sans audio Free ;38archives intactes. Textes, pages, routes et identifiants restent identiques ; seuls59champs pending sont retirés. Les silences PCM commandent la bouche, sans lecture PCM par image, avec huit enveloppes en cache. Voix197/0, contexte176/0, guide263/0, refus disque46/0 et sept tests assets réussis. Signal et transcriptions indépendantes ne sont pas présentés comme une écoute humaine exhaustive. La notice du build calcule la couverture réelle ;13tests et74décodages Godot réussis.
+
+Les contacts visuels anticipent/protègent debout suivant la proximité réelle du porteur fourni et d'un adversaire. Aucun déplacement de racine ni fait sportif ajouté ; ballon et trajectoires conservés. Six suites ciblées Node22 réussissent ; reproduction des sept fragments réels identique sous Node26. Les mesures et le comparatif10s sont consignés dans `docs/native07-contacts.md`. Plaquages et chutes complets restent à développer.
+
+Ces preuves reçoivent le code source et les scènes de test. Le nouvel exécutable, son démarrage instrumenté, sa CI exacte et son installation doivent encore être reçus par l'intégrateur. Le pack privé et les carrières personnelles restent hors des fixtures. Léo demande en complément les104portraits de staff manquants : production originale séparée sur E,324photos existantes préservées, statut synthétique explicite ; aucune couverture complète annoncée avant réception du ZIP.
+
+Le contrôle combiné a ensuite révélé un débordement réel de23px du dossier en1080p. Des espacements internes de tuiles réduits d'un pixel conservent tous les faits et tailles de texte et rendent les deux actions visibles. Les minima de lignes étaient mesurés à tort sur la dernière page partielle révélée par ID : le témoin reçoit désormais le retour clavier vers la première page avant la mesure, sans réduire ses objectifs20/28lignes, puis le parcours des61joueurs. Réception source corrigée :654/0 ; navigation128/0. Le rouge et le diagnostic externe sont conservés. La QA embarquée contrôle désormais les74décodages PCK et zéro fragment en attente.
+
 ## 8 novembre 2026 — délégation native et sauvegardes intermédiaires
 
 La première tête de la PR398 (`f88e16fd`) reste insuffisante : sa CI `42513824213` passe la campagne Academy en 164,11 s, mais Support atteint encore le plafond de 180 s. Le profilage du vrai parcours attribue environ 51 % du coût aux sauvegardes ; une délégation sérialise 88 fois la carrière, soit 293,8 Mo. Les délais, les scénarios et les assertions restent inchangés.

@@ -45,7 +45,18 @@ def validate_voice_assets(project):
         with wave.open(str(path), "rb") as wav:
             assert wav.getsampwidth() == 2 and wav.getnchannels() == 1 and wav.getnframes() > wav.getframerate() / 2
     assert (voice / "CREDITS.txt").is_file() and list(voice.glob("LICENSE*.txt")), "Provenance et licences vocales requises"
-    return {"status": "provisional", "total": len(expected), "recorded": len(recorded), "pending": len(pending), "pendingIds": sorted(pending)}
+    return {"status": "provisional" if pending else "complete", "total": len(expected), "recorded": len(recorded), "pending": len(pending), "pendingIds": sorted(pending)}
+
+
+def voice_notice(coverage):
+    plural = "s" if coverage["recorded"] != 1 else ""
+    notice = f"Voix de Gabi : {coverage['recorded']} réplique{plural} enregistrée{plural} et lue{plural} localement.\n"
+    if coverage["pending"]:
+        plural = "s" if coverage["pending"] != 1 else ""
+        notice += f"{coverage['pending']} réplique{plural} en attente d'enregistrement.\n"
+    return (notice + "En cas d'enregistrement absent ou illisible, une voix système peut le remplacer\n"
+            "si elle est disponible. Le texte reste toujours affiché.\n"
+            "Crédits et licences des voix : Licences/voix-coach.\n")
 
 
 def stage(node):
@@ -90,6 +101,7 @@ def build(args):
     work = target / "build"
     source = work / "project"
     shutil.copytree(PROJECT, source, ignore=shutil.ignore_patterns(".godot", "*.uid", "*.import", "export_presets.cfg"))
+    voice_coverage = validate_voice_assets(source)
     preset = (PROJECT / "windows-release.cfg").read_text(encoding="utf-8-sig")
     preset = preset.replace("{{RELEASE_TEMPLATE}}", template.as_posix())
     (source / "export_presets.cfg").write_text(preset, encoding="utf-8")
@@ -160,8 +172,7 @@ def build(args):
         "Paramètres : Confort / Son / Affichage ; volumes interface et stade séparés.\n"
         "Plein écran au lancement ; mode fenêtré disponible dans Affichage.\n"
         "Gabi : aide vocale locale, petites bulles et16poses illustrées.\n"
-        "Voix encore provisoire : 15 fragments enregistrés ; 59 nouveaux textes\n"
-        "utilisent la voix système provisoire si disponible, sinon restent affichés.\n"
+        f"{voice_notice(voice_coverage)}"
         "Match3D, phases finales, montées/descentes et saisons suivantes.\n"
         "Les anciennes carrières fictives14 restent importables et jouables.\n\n"
         "Parcours : Nouvelle carrière → club → Composition → Préparation → Match.\n"

@@ -1,0 +1,17 @@
+NOTICE DE PROVENANCE DES SORTIES VOCALES
+
+Cette notice décrit la provenance des enregistrements, sans remplacer les conditions contractuelles du fournisseur.
+
+Service : ElevenLabs. Plan constaté actif à la génération : Starter.
+Créations finales générées le 8 novembre 2026 pour le personnage original Gaston Darroux, dit Gabi.
+Voix : xzXYWXH0dYPY9VdmuYZE ; modèle : eleven_v4.
+
+La page officielle « Can I publish the content I generate on the platform? », consultée le 8 novembre 2026, permet l'usage commercial admissible des créations produites pendant un abonnement payant, sous réserve des droits nécessaires et des conditions applicables. Elle exclut l'usage commercial des créations produites hors de cet abonnement et des Beta Services. Les anciens essais Free ne font pas partie des prises actives livrées.
+
+https://elevenlabs.io/docs/help-center/legal/can-i-publish-the-content-i-generate-on-the-platform
+https://elevenlabs.io/service-specific-terms
+https://elevenlabs.io/terms-of-use
+
+Le manifeste associe chaque fichier aux empreintes du texte et du WAV, à l'empreinte du MP3 d'origine et à la date de génération. Les observations de souscription et les originaux sont conservés hors du jeu pour la traçabilité.
+
+Les modèles, les clés, les accès au compte et la voix sous forme de modèle ne sont pas distribués ; ce lot contient des enregistrements préproduits. Aucun droit exclusif général ni certificat d'écoute humaine exhaustive n'est revendiqué.

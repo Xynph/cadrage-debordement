@@ -126,6 +126,13 @@ func run() -> void:
 		var summary_height := summary.size.y
 		await capture("bureau-" + str(resolution.x))
 		app._navigate("Effectif"); await settle(); app.coach.close()
+		# The selected ID can reveal a partially filled last page. Measure a
+		# complete first page through the actual controls, with unchanged targets.
+		for page_back in 60:
+			var previous:Button=named("RosterPaginationPrevious")
+			if previous.disabled:break
+			previous.grab_focus();await key(KEY_ENTER)
+		check(named("RosterPaginationPrevious").disabled,"Densité mesurée sur la première page complète "+str(resolution))
 		var roster: ScrollContainer = named("SquadScroll")
 		check(named("RosterPagination") != null,"Effectif paginé sans liste infinie")
 		var dossier_tabs := named("ProfileTabs")
@@ -236,6 +243,16 @@ func run() -> void:
 	await resize_to(Vector2i(1280,720))
 	app._navigate("Effectif");await settle();app.coach.close()
 	var stable_search:=named("RosterSearch")
+	var paged_player:String=app.selected_player
+	# ID navigation may correctly reveal a later page. Receive the backward
+	# keyboard path as well before checking that the forward path visits everyone.
+	for i in 60:
+		var previous:Button=named("RosterPaginationPrevious")
+		if previous.disabled:break
+		previous.grab_focus();await key(KEY_ENTER)
+		check(named("RosterSearch")==stable_search,"Retour de pagination ne reconstruit pas la recherche")
+	check(named("RosterPaginationPrevious").disabled,"Première page atteinte par les vrais boutons clavier")
+	check(app.selected_player==paged_player,"Parcourir les pages conserve le dossier explicitement sélectionné")
 	var seen:Array[String]=[]
 	for i in 60:
 		for row:Button in named("SquadScroll").find_children("*","Button",true,false):

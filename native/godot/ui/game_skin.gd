@@ -2,11 +2,12 @@ extends RefCounted
 
 const T = preload("res://theme.gd")
 const W = preload("res://visual_widgets.gd")
-const BG = Color("0d1318")
-const PANEL = Color("172127")
-const LINE = Color("30404a")
-const INK = Color("f2eee3")
-const MUTED = Color("aab9bf")
+const Art = preload("res://ui/art_widgets.gd")
+const BG = Color("151b1f")
+const PANEL = Color("1d262b")
+const LINE = Color("445259")
+const INK = Color("f5f4ec")
+const MUTED = Color("bdc8c9")
 const GOLD = Color("ddbd80")
 const GOOD = Color("a6d2ae")
 static var textures: Dictionary = {}
@@ -54,22 +55,36 @@ static func h(gap: int = 6) -> HBoxContainer:
 	c.add_theme_constant_override("separation", mini(gap, 8))
 	return c
 
-static func nav_button(text:String,callback:Callable,accent:Color,selected:bool) -> Button:
+static func nav_button(text:String,callback:Callable,accent:Color,selected:bool,chapter:String="") -> Button:
 	var b:=button(text,callback)
 	b.alignment=HORIZONTAL_ALIGNMENT_LEFT
 	b.custom_minimum_size.y=28
 	b.add_theme_font_size_override("font_size",12)
-	var normal:=T.box(Color(accent,.18) if selected else Color.TRANSPARENT,3)
+	var normal:=T.box(Color("263238").lerp(Color(accent,1),.20) if selected else Color.TRANSPARENT,3)
 	normal.content_margin_top=4
 	normal.content_margin_bottom=4
-	normal.content_margin_left=10
+	normal.content_margin_left=34 if not chapter.is_empty() else 10
 	if selected:
 		normal.border_width_left=3
-		normal.border_color=accent.lightened(.15)
+		normal.border_color=accent.lightened(.3)
 	b.add_theme_stylebox_override("normal",normal)
 	var hover:=normal.duplicate()
-	hover.bg_color=Color("263740")
+	hover.bg_color=Color("344349").lerp(Color(accent,1),.12)
 	b.add_theme_stylebox_override("hover",hover)
+	var pressed:=normal.duplicate()
+	pressed.bg_color=Color("44575b").lerp(Color(accent,1),.16)
+	b.add_theme_stylebox_override("pressed",pressed)
+	var focus:=T.box(Color.TRANSPARENT,3,INK)
+	focus.set_border_width_all(2)
+	b.add_theme_stylebox_override("focus",focus)
+	for state in ["font_color","font_hover_color","font_pressed_color","font_focus_color"]:b.add_theme_color_override(state,INK if selected else MUTED)
+	if not chapter.is_empty():
+		var icon:=Art.glyph(chapter,INK if selected else MUTED,18)
+		icon.name="ChapterIcon"
+		b.add_child(icon)
+		icon.position=Vector2(10,5)
+		b.resized.connect(func():icon.position=Vector2(10,(b.size.y-18)*.5))
+		b.set_meta("art_icon",icon)
 	return b
 
 static func v(gap: int = 6) -> VBoxContainer:
@@ -92,7 +107,11 @@ static func panel(parent: Node, ratio: float = 1.0, color: Color = PANEL) -> VBo
 	var p := PanelContainer.new()
 	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	p.size_flags_stretch_ratio = ratio
-	p.add_theme_stylebox_override("panel", T.box(color, 6, LINE))
+	var style:=T.box(color,3,LINE)
+	style.shadow_color=Color(0,0,0,.09)
+	style.shadow_size=2
+	style.shadow_offset=Vector2(0,1)
+	p.add_theme_stylebox_override("panel",style)
 	parent.add_child(p)
 	var m := margin(4)
 	p.add_child(m)

@@ -36,6 +36,43 @@ static func hold_ball(actor: Node3D, rig: Skeleton3D, center: Vector3, weight: f
 		var tangent := rig.global_basis.inverse() * actor.global_basis * Vector3(-sign_ * 0.6, 0.25, 0.8).normalized()
 		_orient(rig, palm, Basis(Quaternion(direction, tangent.normalized())) * pose.basis, weight)
 
+static func restore_contact(rig: Skeleton3D, base: Dictionary) -> void:
+	# Source clips need their original pose before the next layer is evaluated.
+	# In particular, advance(0) during a pause must never accumulate a lean.
+	for index: int in base:
+		rig.set_bone_pose_rotation(index, base[index])
+	base.clear()
+
+static func brace_contact(actor: Node3D, rig: Skeleton3D, other: Node3D, other_rig: Skeleton3D, weight: float, carrying: bool, base: Dictionary) -> void:
+	var direction := other.global_position - actor.global_position
+	direction.y = 0.0
+	if weight <= 0.0 or direction.length_squared() < 0.01: return
+	direction = direction.normalized()
+	var torso := rig.find_bone("Torso")
+	if torso < 0: return
+	base[torso] = rig.get_bone_pose_rotation(torso)
+	var pose := rig.get_bone_global_pose(torso)
+	var axis := (rig.global_basis.inverse() * Vector3.UP.cross(direction)).normalized()
+	# A compact upright brace, with no fall, root shift or knee-drop.
+	_orient(rig, torso, Basis(Quaternion(axis, (0.16 if carrying else 0.22) * weight)) * pose.basis, 1.0)
+	if carrying: return # The real ball and its grip are solved after this lean.
+	var chest := rig.to_global(rig.get_bone_global_pose(torso).origin)
+	var other_torso := other_rig.find_bone("Torso")
+	var other_chest := other_rig.to_global(other_rig.get_bone_global_pose(other_torso).origin)
+	var lateral := Vector3.UP.cross(direction).normalized()
+	var distance := actor.global_position.distance_to(other.global_position)
+	var surface := other_chest - direction * 0.24 + Vector3.UP * 0.25
+	# At anticipation distance keep hands in a reachable guard. Only interpolate
+	# towards the actual other chest when the two bodies are already close.
+	var close := 1.0 - smoothstep(0.9, 1.35, distance)
+	var target := (chest + direction * 0.42 + Vector3(0, -0.08, 0)).lerp(surface, close)
+	for side in ["L", "R"]:
+		var sign_ := 1.0 if side == "L" else -1.0
+		for bone in ["UpperArm.", "LowerArm."]:
+			var index := rig.find_bone(bone + side)
+			base[index] = rig.get_bone_pose_rotation(index)
+		_solve_arm(rig, side, target + lateral * sign_ * 0.26, lateral * sign_ * 0.6 + Vector3.DOWN * 0.85, weight)
+
 static func support_feet(actor: Node3D, rig: Skeleton3D, feet: Dictionary, speed: float, turn: float) -> void:
 	# A distant scene reformation is not a plausible stride. Never pin a leg
 	# across a sharp pivot or a long root translation, and never move the root.

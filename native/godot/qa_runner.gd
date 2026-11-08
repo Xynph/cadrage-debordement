@@ -203,13 +203,13 @@ func _coach_reception() -> void:
 			recordings += 1
 			if stream.get_length() < shortest_length:
 				shortest_length = stream.get_length(); shortest_text = text
-	_check(recordings == 15 and app.coach.speech.clips.size() == 15, "All 15 still-exact legacy recordings received without relying on system TTS")
-	_check(pending == 59, "59 rewritten texts explicitly await new recordings")
+	_check(recordings == 74 and app.coach.speech.clips.size() == 74 and app.coach.speech.has_complete_recordings(), "All 74 final recordings received without relying on system TTS")
+	_check(pending == 0, "All final texts have an exact received recording")
 	var available: bool = recordings > 0 or not app.coach.speech.voice_id.is_empty()
 	if OS.get_environment("CD_GODOT_REQUIRE_TTS") == "1": _check(available, "French speech required for this Windows reception")
 	if available:
-		# Newly written first bubbles can have no recording yet. Receive a real
-		# shipped clip explicitly, without claiming those new texts are recorded.
+		# Receive actual playback of a shipped clip in addition to decoding all
+		# final recordings from the exported PCK above.
 		app.coach.bubble.text = shortest_text
 		app.coach.replay()
 		_check(not requests.is_empty() and requests.back() == app.coach.bubble.text, "Spoken text equals the actual bubble")
@@ -236,7 +236,7 @@ func _coach_reception() -> void:
 	_check(not app.coach.speech.speaking, "Closing the exported coach stops speech")
 	await _ask("export")
 	_check(app.model.meta.exportText == before and FileAccess.get_sha256(profile) == disk_before, "Coach leaves the actual career and its disk unchanged")
-	coach_reception = {"voice_available":available,"voice_status":"provisional","recordings_pending":pending,"recordings_decoded":recordings,"recording_played_to_end":shortest_text,"voice":app.coach.speech.voice_id,"starts":events.starts,"ends":events.ends,"test_volume":0,"separate_profile":FileAccess.file_exists(str(app.model.meta.dataDir).path_join("guide.json"))}
+	coach_reception = {"voice_available":available,"voice_status":"complete" if app.coach.speech.has_complete_recordings() else "provisional","recordings_pending":pending,"recordings_decoded":recordings,"recording_played_to_end":shortest_text,"voice":app.coach.speech.voice_id,"starts":events.starts,"ends":events.ends,"test_volume":0,"separate_profile":FileAccess.file_exists(str(app.model.meta.dataDir).path_join("guide.json"))}
 	await _capture("coach-integre")
 
 func _run() -> void:

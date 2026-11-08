@@ -63,6 +63,7 @@ func setup(application: Control) -> void:
 	speech.setup(profile.data.voice, profile.data.rate, profile.data.muted)
 	_build()
 	speech.speaking_changed.connect(portrait.set_speaking)
+	speech.articulation_changed.connect(portrait.set_articulation)
 	speech.status_changed.connect(_status)
 	set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -194,7 +195,8 @@ func _status() -> void:
 	if _error.visible:
 		_error.text += "\nLes choix du guide restent actifs pour cette session, mais ne sont pas enregistrés." if profile.data.enabled else "\nCoach désactivé pour cette session. Ce choix n'est pas enregistré : il pourra revenir au prochain démarrage."
 	_mute.text = "Activer la voix" if speech.muted else "Muet"
-	_voice_state.text = "Voix muette" if speech.muted else ("Voix locale · repli système provisoire pour les nouveaux textes" if not speech.clips.is_empty() else ("Mode texte" if speech.voices.is_empty() else "Voix système provisoire"))
+	_voice.visible = not speech.has_complete_recordings()
+	_voice_state.text = "Voix muette" if speech.muted else ("Voix de Gabi enregistrée" if speech.has_complete_recordings() else ("Voix locale · repli système provisoire pour les nouveaux textes" if not speech.clips.is_empty() else ("Mode texte" if speech.voices.is_empty() else "Voix système provisoire")))
 	_invitation.text = "LE COACH · Désactivé pour cette session" if not profile.data.enabled else "LE COACH · Un coup de main ?"
 	_invitation.tooltip_text = profile.last_error
 	var help: Button = find_child("GuideHelp",true,false)

@@ -22,6 +22,12 @@ func texts(node: Node) -> String:
 	var result: String = node.text + "\n" if node is Label or node is Button else ""
 	for child in node.get_children(): result += texts(child)
 	return result
+func scroller(node: Node) -> ScrollContainer:
+	var parent:=node.get_parent()
+	while parent!=null:
+		if parent is ScrollContainer:return parent
+		parent=parent.get_parent()
+	return null
 func buttons(node: Node) -> Array[Button]:
 	var result: Array[Button] = []
 	if node is Button: result.append(node)
@@ -61,6 +67,21 @@ func state_export() -> Dictionary:
 func sections() -> void:
 	for id in ["OfficeCarnet", "OfficeDecisions", "OfficeJournal", "OfficeFixture", "OfficeTimeline", "OfficeGroup", "OfficeResults", "OfficeStandings", "OfficeMeans", "OfficePreparation"]:
 		check(named(app, id) != null, "Section carnet disponible : " + id)
+	for id in ["OfficeDecisionsHeader", "OfficeJournalCard", "OfficeStandingsCard", "OfficePreparationCard", "OfficeIdentity"]:
+		var card: Control=named(app,id)
+		check(card!=null,"Tuile éditoriale distincte : " + id)
+		if card!=null:check(card.size.y<=card.get_combined_minimum_size().y+2,"Surface de lecture limitée à son contenu : " + id)
+	var identity: Control=named(app,"OfficeIdentity")
+	if identity!=null:
+		var presentation: Dictionary=Office.G.identity(app.model.club)
+		for pair in [["OfficeCityPreview","city"],["OfficeStadiumPreview","stadium"]]:
+			var tile: Control=named(identity,pair[0])
+			check(tile!=null,"Vignette identitaire disponible : " + pair[0])
+			if tile!=null:
+				check(tile.custom_minimum_size.y<=120,"Vignette compacte")
+				var raw: Variant=presentation.get(pair[1])
+				var expected: String="—" if raw==null or str(raw).strip_edges().is_empty() else str(raw)
+				check(tile.tooltip_text==expected,"Libellé identitaire public exact")
 func navigation() -> void:
 	var before: Dictionary = await state_export()
 	var filename: String = str(app.model.meta.dataDir).path_join("donnees.json")
@@ -80,6 +101,17 @@ func navigation() -> void:
 		await press("OfficeContractsAction", "Effectif")
 		check(not app.selected_player.is_empty(), "Contrat : fiche sélectionnée")
 		await render()
+	var contract_ids: Array=[]
+	for player: Dictionary in app.model.squad:
+		if player.contractEnd!=null and int(player.contractEnd)<=int(app.model.meta.season)+1:contract_ids.append(str(player.id))
+	for i in mini(3,contract_ids.size()):
+		var link: Button=named(app,"OfficeContractPlayer"+str(i))
+		check(link!=null and str(link.get_meta("player_id")) in contract_ids,"Échéance issue d'un vrai ID")
+		if link!=null:
+			var id:=str(link.get_meta("player_id"))
+			await press(str(link.name),"Effectif")
+			check(app.selected_player==id,"Échéance ouvre la bonne fiche par ID")
+			await render()
 	var after_buttons: Dictionary = await state_export()
 	check(before == after_buttons, "Boutons et fiches préservent intégralement S/RNG")
 	check(bytes == FileAccess.get_file_as_bytes(filename), "Boutons et fiches : aucun octet de sauvegarde modifié")
@@ -145,9 +177,15 @@ func palette() -> void:
 		var rows := Office.standings_window(app.model)
 		for index in rows.size():
 			if rows[index].id != app.model.club.id: continue
-			for column in 6:
-				var cell: PanelContainer = grid.get_child(6 + index * 6 + column)
-				check(contrast(cell.get_child(0).get_theme_color("font_color"), cell.get_theme_stylebox("panel").bg_color) >= 4.5, "Classement sélectionné lisible " + color.to_html())
+			check(grid.columns == 7, "Classement Bureau : sept colonnes dont D")
+			for column in grid.columns:
+				var cell: PanelContainer = grid.get_child(grid.columns + index * grid.columns + column)
+				var content: Control = cell.get_child(0)
+				var label: Label = content.get_node("Value") if content is PanelContainer else content as Label
+				check(label != null, "Valeur de classement disponible : " + str(column))
+				if label == null: continue
+				var surface: Color = content.get_theme_stylebox("panel").bg_color if content is PanelContainer else cell.get_theme_stylebox("panel").bg_color
+				check(contrast(label.get_theme_color("font_color"), surface) >= 4.5, "Classement sélectionné lisible " + color.to_html())
 		for id in ["OfficeStandingsAction", "OfficePreparationAction", "OfficeFinanceAction"]:
 			var button: Button = named(app, id)
 			var background := Office.CHARCOAL if id == "OfficeFinanceAction" else Office.PAPER
@@ -196,6 +234,16 @@ func projections() -> void:
 	app.model = projected
 	await render()
 	check(texts(named(app,"OfficeFixture")).contains("Le travail continue"), "Semaine sans rencontre")
+	projected=base.duplicate(true)
+	projected.club.presentation.city=null
+	projected.club.presentation.stadium=null
+	projected.club.presentation.slug=""
+	app.model=projected
+	await render()
+	for id in ["OfficeCityPreview","OfficeStadiumPreview"]:
+		var tile: Control=named(app,id)
+		check(tile.tooltip_text=="—","Identité absente : aucune ville/enceinte inventée")
+		check(tile.find_children("*","TextureRect",true,false).is_empty(),"Identité absente : aucune photo d'un autre club substituée")
 	app.model = base
 	await render()
 func run() -> void:
@@ -215,7 +263,7 @@ func run() -> void:
 	check(texts(named(app, "OfficeContracts")).contains(str(real_contracts) + " contrat"), "Nombre de contrats issu du modèle réel")
 	ranking_edges()
 	await navigation()
-	for resolution in [Vector2i(1280,800), Vector2i(1440,900), Vector2i(1920,1080)]:
+	for resolution in [Vector2i(1280,720), Vector2i(1440,900), Vector2i(1920,1080), Vector2i(2560,1440)]:
 		root.size = resolution
 		if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(resolution)
 		for i in 5: await process_frame
@@ -228,7 +276,7 @@ func run() -> void:
 		await capture("bureau-" + str(resolution.x) + "-bas")
 		if resolution.x == 1440:
 			named(app, "OfficeDecisions").get_parent().scroll_vertical = 10000
-			named(app, "OfficeStandings").get_parent().scroll_vertical = 10000
+			scroller(named(app,"OfficeStandings")).scroll_vertical = 10000
 			await capture("bureau-1440-journal-preparation")
 	await projections()
 	for setup in [[29, "common"], [0, "france"], [0, "fiction"]]:
@@ -238,14 +286,14 @@ func run() -> void:
 		money_lines()
 		if setup[0] == 29:
 			check(app.accent == Color("cad0d3"), "Couleur identitaire réelle de Valence Romans conservée")
-			for resolution in [Vector2i(1280,800), Vector2i(1440,900), Vector2i(1920,1080)]:
+			for resolution in [Vector2i(1280,720), Vector2i(1440,900), Vector2i(1920,1080), Vector2i(2560,1440)]:
 				root.size = resolution
 				if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(resolution)
 				for i in 5: await process_frame
 				await render()
 				bounds()
 				money_lines()
-				named(app, "OfficeStandings").get_parent().scroll_vertical = 10000
+				scroller(named(app,"OfficeStandings")).scroll_vertical = 10000
 				await capture("bureau-club29-moyens-" + str(resolution.x))
 			await palette()
 		sections()
