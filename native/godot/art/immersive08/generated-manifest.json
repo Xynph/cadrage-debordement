@@ -1,0 +1,25 @@
+{
+  "schema": "oval-immersive-generated-v1",
+  "assets": [
+    {
+      "id": "press-room",
+      "file": "press-room.png",
+      "source": "exec-b8554306-6203-43a3-9202-fefe4d48ea70.png",
+      "sourceType": "generated",
+      "source_sha256": "6664a245a4b9d8597b80a537eee82d4be59f49b1b5aaedd4c6db2c950c0ba506",
+      "crop": [
+        0,
+        0,
+        1774,
+        887
+      ],
+      "width": 1774,
+      "height": 887,
+      "bytes": 1833133,
+      "sha256": "6664a245a4b9d8597b80a537eee82d4be59f49b1b5aaedd4c6db2c950c0ba506",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Create one premium cinematic photorealistic illustration for the PRESS submenu of a French rugby union management PC game, Oval Legacy 27. A single wide landscape photograph, approximately 2:1, no collage and no interface. An original fictional experienced male rugby head coach age 45, short dark hair and subtle stubble, in a charcoal training jacket with restrained dark forest green trim, sits at a press conference table, a composed thoughtful expression, looking slightly off camera to a journalist. Microphones, a glass of water, camera and journalist silhouettes at the very edges, softly lit forest-green and charcoal acoustic wall behind him, warm ivory overhead light, a hint of a rugby stadium through a rear window. Rich realistic skin and fabric detail, restrained warm gold light, deep blacks with readable shadow detail, atmospheric editorial sports photography, elegant immersive quality matching a dark anthracite, ivory and forest green rugby manager art direction. Subject on the right third, quieter dark negative space on the left for separately rendered native game text. No readable words, no names, no sponsor marks, no team logos, no watermark, no UI, no border. Natural anatomy, believable real professional rugby setting, cinematic yet grounded."
+    }
+  ]
+}

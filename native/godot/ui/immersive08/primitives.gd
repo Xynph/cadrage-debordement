@@ -1,0 +1,118 @@
+extends RefCounted
+## Composants natifs placés sur les gabarits approuvés (coordonnées 2560×1440).
+const C = preload("res://ui/immersive08/components.gd")
+static var surfaces: Dictionary = {}
+
+static func place(control: Control, rectangle: Rect2) -> Control:
+	control.position = rectangle.position * C.density
+	control.size = rectangle.size * C.density
+	return control
+
+static func surface(width: float, height: float, top: Color, bottom: Color, border: Color, radius: int = 8, highlight: bool = true) -> StyleBoxTexture:
+	var w := maxi(1, C.px(width))
+	var h := maxi(1, C.px(height))
+	var key := str([w,h,top,bottom,border,radius,highlight])
+	if surfaces.has(key): return surfaces[key]
+	var shine := '<path d="M12 1H%d" stroke="#b0b8ad" stroke-opacity=".22"/>' % (w-12) if highlight else ""
+	var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#%s"/><stop offset="1" stop-color="#%s"/></linearGradient></defs><rect x=".5" y=".5" width="%d" height="%d" rx="%d" fill="url(#g)" stroke="#%s" stroke-opacity="%f"/>%s</svg>' % [w,h,top.to_html(false),bottom.to_html(false),w-1,h-1,C.px(radius),border.to_html(false),border.a,shine]
+	var image := Image.new()
+	image.load_svg_from_string(svg)
+	var style := StyleBoxTexture.new()
+	style.texture = ImageTexture.create_from_image(image)
+	surfaces[key] = style
+	return style
+
+static func panel(parent: Node, rectangle: Rect2, title: String = "", icon_id: String = "", badge: String = "", id: String = "") -> Panel:
+	var control := Panel.new()
+	control.name = id if not id.is_empty() else "Tile"
+	control.add_theme_stylebox_override("panel", surface(rectangle.size.x, rectangle.size.y, Color("162022"), Color("0d1517"), C.LINE))
+	parent.add_child(control)
+	place(control, rectangle)
+	if not title.is_empty():
+		if not icon_id.is_empty():
+			var symbol := C.icon(icon_id, 24, C.GOLD)
+			control.add_child(symbol)
+			place(symbol, Rect2(19,17,24,24))
+		text(control, 55 if not icon_id.is_empty() else 20, 39, title.to_upper(), 26, C.IVORY, 700, rectangle.size.x-90)
+		line(control, Vector2(18,56), Vector2(rectangle.size.x-18,56), Color(C.LINE,.7))
+		if not badge.is_empty(): text(control, rectangle.size.x-20, 38, badge, 18, C.MUTED, 500, 200, HORIZONTAL_ALIGNMENT_RIGHT)
+	return control
+
+static func rect(parent: Node, rectangle: Rect2, color: Color, radius: int = 0, border: Color = Color.TRANSPARENT) -> Panel:
+	var control := Panel.new()
+	control.add_theme_stylebox_override("panel", C.box(color,border,radius,0))
+	parent.add_child(control)
+	place(control,rectangle)
+	control.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return control
+
+static func text(parent: Node, x: float, baseline: float, value: Variant, font_size: int = 22, color: Color = C.IVORY, weight: int = 600, width: float = 0, align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_LEFT, body: bool = false) -> Label:
+	var control := C.label(value,font_size,color,not body,weight)
+	control.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	control.horizontal_alignment = align
+	var chosen: Font = C.BODY if body else C.font(weight)
+	var pixels := maxi(12,C.px(font_size))
+	var left := x-width if align == HORIZONTAL_ALIGNMENT_RIGHT else x-width/2 if align == HORIZONTAL_ALIGNMENT_CENTER else x
+	parent.add_child(control)
+	control.position = Vector2(C.px(left),C.px(baseline)-chosen.get_ascent(pixels))
+	control.size = Vector2(C.px(width) if width > 0 else chosen.get_string_size(str(value),HORIZONTAL_ALIGNMENT_LEFT,-1,pixels).x,chosen.get_height(pixels))
+	control.tooltip_text = str(value)
+	return control
+
+static func line(parent: Node, from: Vector2, to: Vector2, color: Color = C.LINE, thickness: float = 1) -> ColorRect:
+	var control := ColorRect.new()
+	control.color = color
+	control.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(control)
+	place(control,Rect2(from,Vector2(maxf(thickness,to.x-from.x),maxf(thickness,to.y-from.y))))
+	return control
+
+static func photo(parent: Node, id: String, rectangle: Rect2) -> TextureRect:
+	var image := C.photo(id)
+	parent.add_child(image)
+	place(image,rectangle)
+	return image
+
+static func button(parent: Node, rectangle: Rect2, caption: String, callback: Callable, primary: bool = false, icon_id: String = "arrow", small: bool = false, accent: Color = Color("176e49"), id: String = "") -> Button:
+	var control := C.button(caption,callback,primary,accent)
+	control.name = id if not id.is_empty() else "Action"
+	control.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	control.clip_text = true
+	control.custom_minimum_size = Vector2.ZERO
+	control.add_theme_font_size_override("font_size",maxi(12,C.px(21 if small else 25)))
+	var style := surface(rectangle.size.x,rectangle.size.y,accent.lightened(.12) if primary else Color("121c1c"),accent.darkened(.45) if primary else Color("121c1c"),Color("74c992") if primary else Color("72817a"),6)
+	style.content_margin_left = C.px(18)
+	style.content_margin_right = C.px(18)
+	control.add_theme_stylebox_override("normal",style)
+	if not icon_id.is_empty():
+		control.icon = C.icon_texture(icon_id,C.IVORY if primary else C.MUTED)
+		control.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		control.expand_icon = true
+		control.add_theme_constant_override("icon_max_width",C.px(22))
+	parent.add_child(control)
+	place(control,rectangle)
+	return control
+
+static func chip(parent: Node, rectangle: Rect2, caption: String, color: Color = C.MINT) -> Panel:
+	var shade := Color("4a2929") if color == C.ALERT else Color("43361c") if color == C.AMBER else Color("17313a") if color == C.BLUE else Color("123d2c")
+	var frame := rect(parent,rectangle,shade,5,Color(color,.7))
+	text(frame,rectangle.size.x/2,rectangle.size.y/2+7,caption,19,color,600,rectangle.size.x-12,HORIZONTAL_ALIGNMENT_CENTER)
+	return frame
+
+static func bar(parent: Node, rectangle: Rect2, value: float, color: Color = C.MINT) -> void:
+	rect(parent,rectangle,Color("2b3936"),3)
+	var fill := rectangle
+	fill.size.x *= clampf(value/100.0,0,1)
+	if fill.size.x > 0: rect(parent,fill,color,3)
+
+static func words(value: String, characters: int = 45, count: int = 2) -> Array[String]:
+	var result: Array[String] = []
+	var current := ""
+	for word in value.split(" "):
+		if current.length()+word.length()+1 > characters and not current.is_empty():
+			result.append(current)
+			current = ""
+			if result.size() >= count: break
+		current += (" " if not current.is_empty() else "") + word
+	if result.size() < count and not current.is_empty(): result.append(current)
+	return result

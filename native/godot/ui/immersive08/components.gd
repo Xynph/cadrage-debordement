@@ -15,9 +15,29 @@ const AMBER = Color("e7bc63")
 const ALERT = Color("df897d")
 const BLUE = Color("62b9d4")
 const DISPLAY = preload("res://fonts/BarlowCondensed-SemiBold.ttf")
+const MEDIUM = preload("res://ui/immersive08/fonts/BarlowCondensed-Medium.ttf")
+const BOLD = preload("res://ui/immersive08/fonts/BarlowCondensed-Bold.ttf")
+const EXTRA_BOLD = preload("res://ui/immersive08/fonts/BarlowCondensed-ExtraBold.ttf")
 const BODY = preload("res://fonts/DMSans.ttf")
 static var density := 1.0
 static var _textures: Dictionary = {}
+
+class ArtTexture extends TextureRect:
+	var source: Texture2D
+	func _ready() -> void:
+		resized.connect(_fit)
+		_fit()
+	func _fit() -> void:
+		if source == null or size.x < 1 or size.y < 1 or stretch_mode != TextureRect.STRETCH_KEEP_ASPECT_COVERED: return
+		var source_size := source.get_size()
+		var ratio := size.x / size.y
+		var crop := source_size
+		if source_size.x / source_size.y < ratio: crop.y = source_size.x / ratio
+		else: crop.x = source_size.y * ratio
+		var atlas := AtlasTexture.new()
+		atlas.atlas = source
+		atlas.region = Rect2(Vector2((source_size.x-crop.x)/2.0, 0), crop)
+		texture = atlas
 
 static func configure(height: float) -> void:
 	density = clampf(height / 1440.0, .64, 1.0)
@@ -37,17 +57,23 @@ static func box(color: Color = PANEL, border: Color = LINE, radius: int = 8, pad
 	style.content_margin_bottom = px(padding)
 	return style
 
-static func label(text: Variant, font_size: int = 22, color: Color = IVORY, display: bool = true) -> Label:
+static func font(weight: int = 600) -> Font:
+	if weight >= 800: return EXTRA_BOLD
+	if weight >= 700: return BOLD
+	if weight >= 600: return DISPLAY
+	return MEDIUM
+
+static func label(text: Variant, font_size: int = 22, color: Color = IVORY, display: bool = true, weight: int = 600) -> Label:
 	var control := Label.new()
-	control.text = str(text)
-	control.add_theme_font_override("font", DISPLAY if display else BODY)
+	control.text = Base.n(text) if text is float or text is int else str(text)
+	control.add_theme_font_override("font", font(weight) if display else BODY)
 	control.add_theme_font_size_override("font_size", maxi(12, px(font_size)))
 	control.add_theme_color_override("font_color", color)
 	control.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return control
 
-static func wrap(text: Variant, font_size: int = 20, color: Color = MUTED, display: bool = false) -> Label:
-	var control := label(text, font_size, color, display)
+static func wrap(text: Variant, font_size: int = 20, color: Color = MUTED, display: bool = false, weight: int = 600) -> Label:
+	var control := label(text, font_size, color, display, weight)
 	control.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	return control
 
@@ -84,11 +110,11 @@ static func card(title: String = "", minimum: Vector2 = Vector2.ZERO) -> PanelCo
 	var frame := PanelContainer.new()
 	frame.custom_minimum_size = minimum * density
 	frame.add_theme_stylebox_override("panel", box())
-	var content := v(12)
+	var content := v(8)
 	frame.add_child(content)
 	frame.set_meta("content", content)
 	if not title.is_empty():
-		var heading := label(title.to_upper(), 26)
+		var heading := label(title.to_upper(), 26, IVORY, true, 700)
 		heading.name = "CardTitle"
 		content.add_child(heading)
 		content.add_child(rule())
@@ -101,12 +127,16 @@ static func button(text: String, callback: Callable, primary: bool = false, acce
 	var control := Button.new()
 	control.text = text
 	control.custom_minimum_size.y = px(46)
-	control.add_theme_font_override("font", DISPLAY)
-	control.add_theme_font_size_override("font_size", maxi(14, px(24)))
+	control.add_theme_font_override("font", BOLD)
+	control.add_theme_font_size_override("font_size", maxi(14, px(25)))
 	control.add_theme_stylebox_override("normal", box(accent.darkened(.2) if primary else PANEL, accent.lightened(.3) if primary else LINE, 5, 12))
 	control.add_theme_stylebox_override("hover", box(accent if primary else RAISED, MINT if primary else IVORY, 5, 12))
 	control.add_theme_stylebox_override("pressed", box(accent.darkened(.4) if primary else Color("244030"), MINT, 5, 12))
 	control.add_theme_stylebox_override("disabled", box(Color("17201e"), Color("35453e"), 5, 12))
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var style: StyleBoxFlat = control.get_theme_stylebox(state)
+		style.content_margin_top = px(7)
+		style.content_margin_bottom = px(7)
 	var focus := box(Color.TRANSPARENT, GOLD, 5, 12)
 	focus.set_border_width_all(2)
 	control.add_theme_stylebox_override("focus", focus)
@@ -114,6 +144,27 @@ static func button(text: String, callback: Callable, primary: bool = false, acce
 	control.add_theme_color_override("font_disabled_color", FAINT)
 	control.pressed.connect(callback)
 	return control
+
+static func icon_texture(id: String, color: Color = IVORY) -> Texture2D:
+	var key := "icon:" + id + ":" + color.to_html()
+	if _textures.has(key): return _textures[key]
+	var paths: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://ui/immersive08/icon-paths.json"))
+	if not paths.has(id): return null
+	var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24"><path d="%s" fill="none" stroke="#%s" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' % [paths[id], color.to_html(false)]
+	var image := Image.new()
+	if image.load_svg_from_string(svg) != OK: return null
+	var value := ImageTexture.create_from_image(image)
+	_textures[key] = value
+	return value
+
+static func icon(id: String, width: int = 25, color: Color = GOLD) -> TextureRect:
+	var image := TextureRect.new()
+	image.texture = icon_texture(id, color)
+	image.custom_minimum_size = Vector2(px(width), px(width))
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return image
 
 static func chip(text: String, color: Color = MINT) -> PanelContainer:
 	var frame := PanelContainer.new()
@@ -142,8 +193,9 @@ static func texture(id: String) -> Texture2D:
 	return value
 
 static func photo(id: String, minimum: Vector2 = Vector2.ZERO, cover: bool = true) -> TextureRect:
-	var control := TextureRect.new()
-	control.texture = texture(id)
+	var control := ArtTexture.new()
+	control.source = texture(id)
+	control.texture = control.source
 	control.name = "Art_" + id.replace("-", "_")
 	control.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	control.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED if cover else TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -156,8 +208,9 @@ static func photo(id: String, minimum: Vector2 = Vector2.ZERO, cover: bool = tru
 static func veil(parent: Control, horizontal: bool = true) -> TextureRect:
 	var gradient := Gradient.new()
 	gradient.set_color(0, Color(BG, 1.0))
-	gradient.set_color(1, Color(BG, .05))
-	gradient.add_point(.45, Color(BG, .95))
+	gradient.set_color(1, Color(BG, 0.0))
+	gradient.add_point(.48, Color(BG, .97))
+	gradient.add_point(.73, Color(BG, .4))
 	var image := GradientTexture2D.new()
 	image.gradient = gradient
 	image.fill_from = Vector2.ZERO
