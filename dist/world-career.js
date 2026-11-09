@@ -106,7 +106,7 @@ function worldRecordChampion(id){
 function worldEndSeason(){
  if(!worldActive()||S.phase!=='ended'||S.worldManagement.lastSeason>=S.season)return false;
  const international=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S);
- const w=S.worldManagement,ranking=international?['elite','accession','prem','urc','guest'].flatMap(id=>CDWorldCareer.ranked(S,id)):typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)?['elite','accession'].flatMap(id=>CDFranceCompetition.ranked(S,id)):ranked();
+ const w=S.worldManagement,ranking=international?[...CDWorldCareer.edition(S).leagueIds,'guest'].flatMap(id=>CDWorldCareer.ranked(S,id)):typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)?['elite','accession'].flatMap(id=>CDFranceCompetition.ranked(S,id)):ranked();
  const winner=w.champion;
  const awards=CDRugbyWorld.awards(club().players.filter(p=>p.dev?.minutes>0)
   .map(p=>({id:p.id,rating:roleNote(p),minutes:p.dev.minutes,tries:0})));

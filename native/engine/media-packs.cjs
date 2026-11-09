@@ -4,7 +4,6 @@
 const fs=require('node:fs'),path=require('node:path'),zlib=require('node:zlib'),crypto=require('node:crypto');
 const staffRegistry=require('./staff.cjs');
 const MiB=1024*1024,LIMITS=Object.freeze({archive:512*MiB,total:768*MiB,entries:5000,image:16*MiB,manifest:4*MiB,pixels:40000000});
-const WORLD_ID='rugby-world-2026-11-08-v1';
 const WORLD_LIMITS=Object.freeze({...LIMITS,archive:1024*MiB,total:1536*MiB,entries:9000});
 const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
 function check(ok,message){if(!ok)throw Error('Pack refusé : '+message);}
@@ -48,7 +47,7 @@ function imageInfo(b){
 }
 function textEntity(s){return s.replace(/&(#x[0-9a-f]+|#\d+|amp|quot|apos|lt|gt|nbsp);/gi,(_,e)=>{if(e[0]==='#'){const n=e[1].toLowerCase()==='x'?parseInt(e.slice(2),16):Number(e.slice(1));check(n>0&&n<=0x10ffff,'entité invalide.');return String.fromCodePoint(n);}return {amp:'&',quot:'"',apos:"'",lt:'<',gt:'>',nbsp:' '}[e.toLowerCase()];});}
 function analyse(file,database){
- const world=database.id===WORLD_ID,staffIds=world?staffRegistry.worldIds:staffRegistry.ids;
+ const world=staffRegistry.isWorld(database.id),staffIds=staffRegistry.forDatabase(database.id).ids;
  const zip=readZip(file,world?WORLD_LIMITS:LIMITS),{entries}=zip;let manifest,root='',custom=entries.has('pack.json');const readJson=n=>{const e=entries.get(n);check(e&&!e.dir,'manifeste absent.');return JSON.parse(utf8(e.read(LIMITS.manifest)));};
  if(custom)manifest=readJson('pack.json');else{check(!world,'base de données incompatible.');const found=[...entries.keys()].filter(n=>n.endsWith('/inventaire.json')||n==='inventaire.json');check(found.length===1,'un seul manifeste requis.');root=found[0].slice(0,-'inventaire.json'.length);const source=readJson(found[0]);check(source.schema==='rugby-real-unified-pack-v2'&&Array.isArray(source.entries),'format non pris en charge.');manifest={schema:'cd-identity-pack-v1',id:'rugby-reel',name:name(source.packName),version:name(source.season),databaseId:database.id,rightsStatus:'not-cleared-for-public-distribution',clubs:[],players:[],assets:[]};
   for(const entry of source.entries){check(object(entry)&&['logo','portrait'].includes(entry.kind)&&(entry.kind==='logo'||typeof entry.synthetic==='boolean')&&['downloaded','generated-ai'].includes(entry.status),'inventaire invalide.');const aid='asset-'+manifest.assets.length;manifest.assets.push({id:aid,path:root+entry.path,sha256:entry.sha256,bytes:entry.bytes});if(entry.kind==='logo'){const club=database.clubs.find(c=>c.slug===entry.id);check(club,'club inconnu.');const gallery=entries.get(root+'Photos/'+entry.id+'/index.html');check(gallery,'titre de club absent.');const title=/<title>([^<]{1,500})<\/title>/i.exec(utf8(gallery.read(LIMITS.manifest)));check(title,'titre de club invalide.');manifest.clubs.push({id:club.id,name:name(textEntity(title[1])),abbr:deriveAbbreviation(textEntity(title[1])),logo:aid});}else manifest.players.push({id:entry.id,name:name(entry.name),portrait:aid,synthetic:entry.synthetic});}
@@ -65,8 +64,8 @@ function analyse(file,database){
  const meta={id:manifest.id+'-'+zip.digest,name:manifest.name,version:manifest.version,digest:zip.digest,databaseId:manifest.databaseId,counts:{clubs:manifest.clubs.length,players:manifest.players.length,logos,official,synthetic,...(v2?{staff:manifest.staff.length,staffOfficial,staffSynthetic}:{})},rightsStatus:manifest.rightsStatus};
  return {meta,clubs:mappedClubs,players:mappedPlayers,staff:mappedStaff,files};
 }
-function createStore(dataDir,database,worldDatabase=null){
- const databases=new Map([[database.id,database],...(worldDatabase?[[worldDatabase.id,worldDatabase]]:[])]);
+function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null){
+ const databases=new Map([database,worldDatabase,pacificDatabase].filter(Boolean).map(db=>[db.id,db]));
  const databaseFor=id=>{const found=databases.get(id);check(found,'base de données incompatible.');return found;};
  const physical=fs.realpathSync.native(dataDir),root=path.join(physical,'packs');let preview=null,storageWarning=null;const cache=new Map();
  function confined(target){let p=path.resolve(target);while(!fs.existsSync(p))p=path.dirname(p);const real=fs.realpathSync.native(p),rel=path.relative(physical,real);check(rel===''||!rel.startsWith('..'+path.sep)&&rel!=='..'&&!path.isAbsolute(rel),'stockage hors du profil physique.');let ancestor=p;while(ancestor!==physical){check(!fs.lstatSync(ancestor).isSymbolicLink(),'lien de stockage interdit.');const parent=path.dirname(ancestor);if(parent===ancestor)break;ancestor=parent;}}
@@ -85,13 +84,13 @@ function createStore(dataDir,database,worldDatabase=null){
     // An unselected world pack only needs its already validated inventory for
     // the list. Selection, active projection and creation preview still check
     // the full media signature, and a changed manifest is always revalidated.
-    if(!verifyMedia&&cached.pack.meta.databaseId===WORLD_ID)return cached.pack;
+    if(!verifyMedia&&staffRegistry.isWorld(cached.pack.meta.databaseId))return cached.pack;
     if(mediaSignature(cached.pack,folder)===cached.mediaKey)return cached.pack;
    }
    cache.delete(id);const pack=JSON.parse(fs.readFileSync(file,'utf8'));
    check(pack.meta.id===id&&pack.meta.digest===id.slice(-64)&&databases.has(pack.meta.databaseId)&&object(pack.clubs)&&object(pack.players)&&(pack.staff===undefined||object(pack.staff)),'pack installé invalide.');
-   const edition=databaseFor(pack.meta.databaseId),world=edition.id===WORLD_ID;
-   const clubIds=new Set(edition.clubs.map(c=>String(c.id))),playerIds=new Set(edition.clubs.flatMap(c=>c.players.map(p=>p.id))),staffIds=world?staffRegistry.worldIds:staffRegistry.ids;
+   const edition=databaseFor(pack.meta.databaseId),world=staffRegistry.isWorld(edition.id);
+   const clubIds=new Set(edition.clubs.map(c=>String(c.id))),playerIds=new Set(edition.clubs.flatMap(c=>c.players.map(p=>p.id))),staffIds=staffRegistry.forDatabase(edition.id).ids;
    for(const [clubId,p]of Object.entries(pack.clubs)){check(clubIds.has(clubId),'club installé inconnu.');keys(p,['name','abbr','logo']);if(p.name!==undefined)name(p.name);if(p.abbr!==undefined)abbreviation(p.abbr);check(p.name!==undefined||p.abbr!==undefined||p.logo!==undefined,'identité club installée vide.');}
    for(const [group,allowed]of [[pack.players,playerIds],[pack.staff||{},staffIds]])for(const [playerId,p]of Object.entries(group)){
     check(allowed.has(playerId),'personne installée inconnue.');keys(p,['name','portrait','portraitStatus']);if(p.name!==undefined)name(p.name);check(p.name!==undefined||p.portrait!==undefined,'identité installée vide.');check(p.portrait!==undefined?['official','synthetic'].includes(p.portraitStatus):p.portraitStatus===undefined,'mention portrait installé invalide.');
@@ -128,21 +127,23 @@ function createStore(dataDir,database,worldDatabase=null){
  }
 
  function get(id){return id==='base'?null:read(id);}
- function project(model,binding,creation,worldCreation='base'){
+ function project(model,binding,creation,worldCreation='base',pacificCreation='base'){
   const memo=new Map(),getOnce=id=>{if(id==='base')return null;if(!memo.has(id))memo.set(id,read(id));return memo.get(id);};
-  const world=model.meta.mode==='world',edition=world?worldDatabase:database;
+  const world=model.meta.mode==='world',edition=world?databaseFor(model.meta.database?.id??worldDatabase.id):database;
+  const pacific=world&&edition.id===pacificDatabase?.id,staff=staffRegistry.forDatabase(edition.id);
   const compatible=(pack,id)=>pack?.meta.databaseId===id?pack:null;
   const active=binding?compatible(getOnce(binding.id),edition.id):null;
   const legacyCreation=compatible(getOnce(creation),database.id),internationalCreation=worldDatabase?compatible(getOnce(worldCreation),worldDatabase.id):null;
-  const preferred=world?worldCreation:creation,creationPack=world?internationalCreation:legacyCreation,missing=[];
+  const pacificPack=pacificDatabase?compatible(getOnce(pacificCreation),pacificDatabase.id):null;
+  const preferred=pacific?pacificCreation:world?worldCreation:creation,creationPack=pacific?pacificPack:world?internationalCreation:legacyCreation,missing=[];
   if(binding&&(!active||active.meta.digest!==binding.digest))missing.push('Pack de carrière absent : '+binding.id+'. Présentation de base ; réimportez le pack.');
   if(preferred!=='base'&&!creationPack)missing.push('Pack de création absent : '+preferred+'. Présentation de base.');
   const chosen=binding&&active?.meta.digest===binding.digest?active:null;
   const replacements=new Map();if(chosen){for(const c of edition.clubs){const cp=chosen.clubs[c.id];if(cp?.name)replacements.set(c.name,cp.name);for(const p of c.players){const pp=chosen.players[p.id];if(pp?.name)replacements.set(p.name,pp.name);}}for(const c of model.meta.catalogue){if(chosen.clubs[c.id]?.name)replacements.set(c.name,chosen.clubs[c.id].name);}}
-  if(chosen)for(const c of (world?staffRegistry.worldRegistry:staffRegistry.registry).clubs)for(const p of c.members){const custom=chosen.staff?.[p.id];if(custom?.name)replacements.set(p.name,custom.name);}
+  if(chosen)for(const c of staff.registry.clubs)for(const p of c.members){const custom=chosen.staff?.[p.id];if(custom?.name)replacements.set(p.name,custom.name);}
   const escaped=[...replacements.keys()].filter(Boolean).sort((a,b)=>b.length-a.length).map(s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));const pattern=escaped.length?new RegExp(escaped.join('|'),'gu'):null;
-  function walk(value,pack,replace){if(typeof value==='string')return replace&&pattern?value.replace(pattern,s=>replacements.get(s)):value;if(!value||typeof value!=='object')return value;if(Array.isArray(value))return value.map(x=>walk(x,pack,replace));const out={};for(const [k,v]of Object.entries(value))out[k]=k==='coachNotebook'?walk(v,pack,false):['id','playerId','outId','inIds','eligibleIds','captain','kicker','pair','slug','dataDir','database','exportText'].includes(k)?v:walk(v,pack,replace);if(pack){if(typeof value.playerId==='string'&&Object.hasOwn(value,'playerName')&&pack.players[value.playerId]?.name)out.playerName=pack.players[value.playerId].name;if(Number.isInteger(value.clubId)&&Object.hasOwn(value,'clubName')&&pack.clubs[value.clubId]?.name)out.clubName=pack.clubs[value.clubId].name;const item=typeof value.id==='number'?pack.clubs[value.id]:pack.players[value.id]||pack.staff?.[value.id];if(item){if(staffRegistry.worldIds.has(value.id)||staffRegistry.ids.has(value.id)){out.identityStatus='custom';if(!item.portrait)out.portraitStatus='missing';}if(item.name)out.name=item.name;if(item.abbr)out.abbr=item.abbr;if(item.logo)out.logoPath=path.join(pack.folder,item.logo);if(item.portrait){out.portraitPath=path.join(pack.folder,item.portrait);out.portraitStatus=item.portraitStatus;}}}return out;}
-  const catalogue=model.meta.catalogue,worldCatalogue=model.meta.worldCatalogue,legacyCatalogue=model.meta.legacyCatalogue;model=walk(model,chosen,true);model.meta.catalogue=walk(catalogue,creationPack,false);if(worldCatalogue){model.meta.worldCatalogue=walk(worldCatalogue,internationalCreation,false);model.meta.worldPackCreation=worldCreation;}if(legacyCatalogue){model.meta.legacyCatalogue=walk(legacyCatalogue,legacyCreation,false);model.meta.legacyPackCreation=creation;}const list=installed(id=>memo.has(id)?memo.get(id):read(id,false));if(storageWarning)missing.push(storageWarning);model.packs={installed:list,creation:preferred,career:binding?.id||'base',missing,preview};return model;
+  function walk(value,pack,replace){if(typeof value==='string')return replace&&pattern?value.replace(pattern,s=>replacements.get(s)):value;if(!value||typeof value!=='object')return value;if(Array.isArray(value))return value.map(x=>walk(x,pack,replace));const out={};for(const [k,v]of Object.entries(value))out[k]=k==='coachNotebook'?walk(v,pack,false):['id','playerId','outId','inIds','eligibleIds','captain','kicker','pair','slug','dataDir','database','exportText'].includes(k)?v:walk(v,pack,replace);if(pack){if(typeof value.playerId==='string'&&Object.hasOwn(value,'playerName')&&pack.players[value.playerId]?.name)out.playerName=pack.players[value.playerId].name;if(Number.isInteger(value.clubId)&&Object.hasOwn(value,'clubName')&&pack.clubs[value.clubId]?.name)out.clubName=pack.clubs[value.clubId].name;const item=typeof value.id==='number'?pack.clubs[value.id]:pack.players[value.id]||pack.staff?.[value.id];if(item){if(staff.ids.has(value.id)){out.identityStatus='custom';if(!item.portrait)out.portraitStatus='missing';}if(item.name)out.name=item.name;if(item.abbr)out.abbr=item.abbr;if(item.logo)out.logoPath=path.join(pack.folder,item.logo);if(item.portrait){out.portraitPath=path.join(pack.folder,item.portrait);out.portraitStatus=item.portraitStatus;}}}return out;}
+  const catalogue=model.meta.catalogue,worldCatalogue=model.meta.worldCatalogue,legacyCatalogue=model.meta.legacyCatalogue,pacificCatalogue=model.meta.pacificCatalogue;model=walk(model,chosen,true);model.meta.catalogue=walk(catalogue,creationPack,false);if(worldCatalogue){model.meta.worldCatalogue=walk(worldCatalogue,internationalCreation,false);model.meta.worldPackCreation=worldCreation;}if(legacyCatalogue){model.meta.legacyCatalogue=walk(legacyCatalogue,legacyCreation,false);model.meta.legacyPackCreation=creation;}if(pacificCatalogue){model.meta.pacificCatalogue=walk(pacificCatalogue,pacificPack,false);model.meta.pacificPackCreation=pacificCreation;}const list=installed(id=>memo.has(id)?memo.get(id):read(id,false));if(storageWarning)missing.push(storageWarning);model.packs={installed:list,creation:preferred,career:binding?.id||'base',missing,preview};return model;
  }
  return {inspect,install,get,project,installed};
 }

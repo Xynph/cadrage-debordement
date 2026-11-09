@@ -162,6 +162,11 @@ static func crest(club: Dictionary, width: int = 56) -> Control:
 	var c := identity(club)
 	var path := str(c.get("logoPath", club.get("logoPath", "")))
 	var texture := _pack_texture(path)
+	var provided := texture != null
+	if not provided:
+		var slug := str(c.get("slug", ""))
+		var badge := "res://art/pacific/badges/%s.svg" % slug
+		if slug.begins_with("srp-") and ResourceLoader.exists(badge): texture = load(badge) as Texture2D
 	if texture != null:
 		var image := TextureRect.new()
 		image.texture = texture
@@ -169,7 +174,7 @@ static func crest(club: Dictionary, width: int = 56) -> Control:
 		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		image.custom_minimum_size = Vector2(width, width)
 		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		image.tooltip_text = "Blason fourni par le pack"
+		image.tooltip_text = "Blason fourni par le pack" if provided else "Blason d’Oval Legacy 27"
 		return image
 	var w := W.new()
 	w.initials = str(c.get("abbr", "XV"))

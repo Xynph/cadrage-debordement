@@ -64,7 +64,7 @@ function factory(){
  }
  function project(){
   if(!S)return null;
-  const events=CDMediaNativeAdapter.collect(S),divisionIds=world(S)?['elite','accession','prem','urc','champions','challenge','access']:S.franceMode?.version===1?['elite','accession','access']:['historical'];
+  const events=CDMediaNativeAdapter.collect(S),divisionIds=world(S)?[...CDWorldCareer.edition(S).leagueIds,'champions','challenge','access']:S.franceMode?.version===1?['elite','accession','access']:['historical'];
   const divisions=divisionIds.map(id=>({id,label:({elite:'Élite',accession:'Accession',access:'Barrage d’accession',prem:'Premiership',urc:'United Rugby Championship',champions:'Coupe des champions',challenge:'Challenge européen',historical:'Championnat historique'})[id],standings:events.filter(e=>e.kind==='standing'&&e.facts.divisionId===id).map(e=>copy(e.facts)),results:events.filter(e=>e.kind==='result'&&e.facts.divisionId===id).slice(-24).reverse().map(e=>({id:e.id,season:e.season,week:e.week,...copy(e.facts)})),injuries:events.filter(e=>e.kind==='injury'&&e.facts.divisionId===id).map(e=>({...copy(e.facts),playerName:S.clubs.find(c=>c.id===e.facts.clubId)?.players?.find(p=>p.id===e.facts.playerId)?.name||String(e.facts.playerId)}))})).filter(d=>d.standings.length||d.results.length||d.injuries.length);
   const people=CDPressQuestionBank.journalists.map(j=>{
    const c=S.pressPeople?.contacts?.[j.id],score=c?.score??0,encounters=c?.encounters??0,style=CDPressRelations.dialogueStyles[j.style];

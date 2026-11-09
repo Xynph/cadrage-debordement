@@ -9,7 +9,20 @@ static func _cover(club: Dictionary) -> Control:
 		return G.picture(slug)
 	var cover := ColorRect.new()
 	cover.color = Color(identity.get("color", "#303c42")).darkened(.72)
-	var inset := G.margin(12)
+	var pacific := slug.begins_with("srp-")
+	if pacific:
+		var country := str(identity.get("country", "")).to_lower()
+		var art := "res://art/pacific/covers/%s.svg" % country
+		if country in ["nz","au","fj"] and ResourceLoader.exists(art):
+			cover.clip_contents = true
+			var backdrop := TextureRect.new()
+			backdrop.texture = load(art) as Texture2D
+			backdrop.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			backdrop.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+			backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			cover.add_child(backdrop)
+	var inset := G.margin(22 if pacific else 12)
 	inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	cover.add_child(inset)
 	var content := G.v(8)
@@ -18,7 +31,7 @@ static func _cover(club: Dictionary) -> Control:
 	return cover
 
 static func _territory(club: Dictionary) -> String:
-	return str(club.get("city", {"GB":"Royaume-Uni","IE":"Irlande","IT":"Italie","ZA":"Afrique du Sud","GE":"Géorgie","FR":"France"}.get(club.get("country"), "")))
+	return str(club.get("city", {"GB":"Royaume-Uni","IE":"Irlande","IT":"Italie","ZA":"Afrique du Sud","GE":"Géorgie","FR":"France","NZ":"Nouvelle-Zélande","AU":"Australie","FJ":"Fidji"}.get(club.get("country"), "")))
 
 static func home(app: Control) -> Control:
 	var club: Dictionary = app.model.get("club", {}) if app.model.get("club") is Dictionary else {}
@@ -129,23 +142,33 @@ static func creation(app: Control) -> Control:
 	top.add_child(title)
 	var meta: Dictionary = app.model.get("meta", {})
 	var mode: String = app.pack_manager.mode("creation")
-	var international := mode == "world"
+	var pacific := mode == "world-pacific"
+	var international := pacific or mode == "world"
 	if not meta.get("worldCatalogue", []).is_empty():
-		for item in [["world", "MONDE · 56 CLUBS"], ["common", "FRANCE · 30 CLUBS"]]:
+		var edition_row := top
+		var choices := [["world", "MONDE · 56 CLUBS"], ["common", "FRANCE · 30 CLUBS"]]
+		if not meta.get("pacificCatalogue", []).is_empty():
+			edition_row = G.h(8)
+			edition_row.name = "CreationEditionRow"
+			page.add_child(edition_row)
+			edition_row.add_child(G.label("ÉDITION DE CARRIÈRE", 13, G.GOLD, true))
+			choices.push_front(["world-pacific", "MONDE + PACIFIQUE · 66 CLUBS"])
+		for item in choices:
 			var choice := G.button(item[1], func(): app.pack_manager.creation_mode = item[0]; app._render())
 			choice.name = "CreationMode_" + item[0]
 			choice.disabled = app.waiting
 			if mode == item[0]: G.selected(choice, app.accent)
-			top.add_child(choice)
+			edition_row.add_child(choice)
 	top.add_child(G.button("PACKS ET IDENTITÉS", func(): app.pack_manager.open("creation")))
 	Packs.missing_warning(app, page, "creation")
-	var candidates: Array = meta.get("worldCatalogue", []) if international else meta.get("legacyCatalogue", app.catalogue)
+	var candidates: Array = meta.get("pacificCatalogue", []) if pacific else (meta.get("worldCatalogue", []) if international else meta.get("legacyCatalogue", app.catalogue))
 	var clubs: Array = candidates.filter(func(club: Dictionary): return club.get("playable", true))
 	if clubs.is_empty():
 		page.add_child(G.wrap("Le catalogue des clubs est en cours de chargement.", 15, G.WHITE))
 		return page
 	var division := str(app.club_division)
 	var divisions_data := [["elite", "ÉLITE"], ["accession", "ACCESSION"], ["prem", "PREM"], ["urc", "URC"]] if international else [["elite", "ÉLITE"], ["accession", "ACCESSION"]]
+	if pacific: divisions_data.append(["srp", "PACIFIQUE"])
 	if not clubs.any(func(club: Dictionary): return club.division == division): division = str(clubs[0].division)
 	app.club_division = division
 	var division_clubs: Array = clubs.filter(func(club: Dictionary): return club.division == division)
@@ -163,6 +186,10 @@ static func creation(app: Control) -> Control:
 	row.add_child(photo)
 	var over: VBoxContainer = photo.get_meta("content")
 	over.add_child(G.label("VOTRE FUTUR CLUB", 14, G.WHITE))
+	var is_srp := pacific and division == "srp"
+	if is_srp:
+		over.add_child(G.label("PACIFIQUE  /  SAISON 2027", 22, G.WHITE, true))
+		over.add_child(G.label(_territory(selected).to_upper(), 13, G.WHITE))
 	over.add_child(G.spacer())
 	over.add_child(G.crest(selected, 96))
 	var name := G.label(G.club_name(selected), 38, G.WHITE, true)
@@ -213,7 +240,16 @@ static func creation(app: Control) -> Control:
 		G.fill(b)
 		if app.club_division == item[0]: G.selected(b,app.accent)
 		divisions.add_child(b)
-	var bounds:=preload("res://ui/club_views.gd")._paged(app,list,"CreationPagination",division_clubs.size(),8,"creation_"+mode+"_"+division)
+	if is_srp:
+		var facts := G.h(8)
+		list.add_child(facts)
+		for fact in [["16", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["FÉV.–JUIN", "SAISON 2027"]]:
+			var tile := G.panel(facts, 1.0)
+			tile.add_child(G.label(fact[0], 20, G.INK, true))
+			tile.add_child(G.cell(fact[1], 45, G.MUTED, true))
+	var bounds := Vector2i(0, division_clubs.size())
+	if not is_srp:
+		bounds = preload("res://ui/club_views.gd")._paged(app,list,"CreationPagination",division_clubs.size(),8,"creation_"+mode+"_"+division)
 	var items := G.scroll(list)
 	items.get_parent().name = "CreationClubsScroll"
 	var grid:=GridContainer.new()
@@ -224,7 +260,7 @@ static func creation(app: Control) -> Control:
 	items.add_child(grid)
 	for club in division_clubs.slice(bounds.x,bounds.y):
 		var b := G.button("", func(): app.selected_club = int(club.id); app._render())
-		b.custom_minimum_size.y = 52
+		b.custom_minimum_size.y = clampf(app.get_viewport_rect().size.y * 0.045, 52.0, 66.0) if is_srp else 52.0
 		b.name="CreationClub"+str(int(club.id))
 		b.tooltip_text=G.club_name(club)+" · "+_territory(club)
 		G.fill(b)
@@ -245,6 +281,7 @@ static func creation(app: Control) -> Control:
 		line.add_child(G.label("→", 24, G.GOLD))
 		grid.add_child(b)
 	var notice := "%s joueurs · %d clubs jouables · 4 championnats et 2 coupes d’Europe." % [G.n(meta.get("worldDatabase", {}).get("playerCount", 0)), clubs.size()] if international else "1 592 joueurs · 30 clubs · deux divisions reliées. Choisissez votre club et préparez votre première saison."
+	if pacific: notice = "%s joueurs · %d clubs jouables · cinq championnats et deux coupes d’Europe." % [G.n(meta.get("pacificDatabase", {}).get("playerCount", 0)), clubs.size()]
 	list.add_child(G.wrap(notice, 12))
 	var start := G.button("PRENDRE LES RÊNES DE " + G.club_abbr(selected) + "  →", func(): _create(app, selected, mode), true)
 	start.name="CreationStart"

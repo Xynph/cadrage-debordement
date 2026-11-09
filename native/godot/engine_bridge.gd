@@ -32,9 +32,11 @@ static func import_preflight(text: String, byte_count: int) -> String:
 		if state is Dictionary:
 			var mode: Variant = state.get("worldMode")
 			var database: Variant = state.get("commonDatabase")
-			var id := "rugby-world-2026-11-08-v1"
-			if mode is Dictionary and database is Dictionary and mode.get("catalogue") == id and mode.get("version") == 1 and database.get("id") == id and database.get("version") == 1 and database.size() == 2 and not state.has("franceMode") and not state.has("lnrMode"):
-				return ""
+			if mode is Dictionary and database is Dictionary and database.size() == 2 and not state.has("franceMode") and not state.has("lnrMode"):
+				var id := str(database.get("id", ""))
+				var versions := {"rugby-world-2026-11-08-v1": 1, "rugby-world-2026-11-09-pacific-v2": 2}
+				if versions.has(id) and mode.get("catalogue") == id and mode.get("version") == versions[id] and database.get("version") == versions[id]:
+					return ""
 	return "Fichier trop volumineux (8 Mio UTF-8 maximum pour cette édition)."
 
 func start(data_dir: String) -> void:

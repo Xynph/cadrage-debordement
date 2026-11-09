@@ -1,21 +1,27 @@
 'use strict';
 module.exports=function worldModel(base){
- const W=CDWorldCareer,R=CDWorldRegistry,copy=x=>JSON.parse(JSON.stringify(x));
- const catalogue=()=>R.clubs.map(({players,...c})=>({...c,division:c.leagueId,playable:c.leagueId!=='guest'}));
+ const W=CDWorldCareer,copy=x=>JSON.parse(JSON.stringify(x));
+ const catalogue=R=>R.clubs.map(({players,...c})=>({...c,division:c.leagueId,playable:c.leagueId!=='guest'}));
+ const database=R=>({id:R.id,version:R.version,snapshot:R.snapshot,playerCount:R.playerCount,clubCount:R.clubCount});
  return function project(){
-  const m=base();m.meta.legacyCatalogue=m.meta.catalogue;m.meta.legacyDatabase=m.meta.database;m.meta.worldDatabase={id:R.id,version:R.version,snapshot:R.snapshot,playerCount:R.playerCount,clubCount:R.clubCount};
-  m.meta.worldCatalogue=catalogue();m.meta.availableModes=['fiction','france','common','world'];
+  const m=base(),old=CDWorldEditions.forMode('world').registry,pacific=CDWorldEditions.forMode('world-pacific')?.registry;
+  m.meta.legacyCatalogue=m.meta.catalogue;m.meta.legacyDatabase=m.meta.database;m.meta.worldDatabase=database(old);
+  m.meta.worldCatalogue=catalogue(old);m.meta.availableModes=['fiction','france','common','world'];
+  if(pacific){m.meta.pacificCatalogue=catalogue(pacific);m.meta.pacificDatabase=database(pacific);m.meta.availableModes.push('world-pacific');}
   if(!W.active(S))return m;
-  const tables=Object.fromEntries(['elite','accession','prem','urc','guest'].map(id=>[id,W.ranked(S,id)])),summaries=new Map();
+  const edition=W.edition(S),R=edition.registry,years=[2026+S.season-1,2027+S.season-1];
+  const tables=Object.fromEntries([...edition.leagueIds,'guest'].map(id=>[id,W.ranked(S,id)])),summaries=new Map();
   const clubSummary=id=>{if(!summaries.has(id)){const c=S.clubs[id],{players,...source}=R.clubs[id],table=tables[W.leagueId(S,id)];summaries.set(id,{id,name:c.name,abbr:c.abbr,color:c.color,stadium:c.stadium,cash:c.cash,goal:c.goal,points:c.points,rank:table.findIndex(x=>x.id===id)+1,presentation:source});}return summaries.get(id);};
   const tableRow=r=>({...clubSummary(r.id),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,pf:r.pf,pa:r.pa,bonus:r.bonus,points:r.points,form:r.form,unresolvedTie:!!r.unresolvedTie});
-  m.meta={...m.meta,mode:'world',engine:'native-rugby',catalogue:catalogue(),database:{...m.meta.worldDatabase,active:true},week:S.round,leagueId:W.leagueId(S),competitionRules:'Saison 2026–2027',rulesProfile:'world-pro-2026-27-v1',roundLabel:W.label(S),date:W.userFixture(S)?.date||null};
+  m.meta={...m.meta,mode:'world',engine:'native-rugby',catalogue:catalogue(R),database:{...database(R),active:true},week:S.round,leagueId:W.leagueId(S),competitionRules:edition.version===1?'Saison 2026–2027':'Saison '+years.join('–')+' · Pacifique '+years[1],rulesProfile:edition.rules,roundLabel:W.label(S),date:W.userFixture(S)?.date||null};
   m.club=clubSummary(S.club);m.league=tables[W.leagueId(S)].map(tableRow);
-  m.leagues=['elite','accession','prem','urc'].map(id=>{const l=S.worldMode.leagues[id];return{id,name:R.leagues.find(x=>x.id===id).name,phase:l.phase,champion:l.champion===null?null:clubSummary(l.champion),finalist:l.finalist===null?null:clubSummary(l.finalist),rows:tables[id].map(tableRow)};});
+  if(edition.version===2)m.meta.edition=edition.mode;
+  m.leagues=edition.leagueIds.map(id=>{const l=S.worldMode.leagues[id];return{id,name:R.leagues.find(x=>x.id===id).name,phase:l.phase,champion:l.champion===null?null:clubSummary(l.champion),finalist:l.finalist===null?null:clubSummary(l.finalist),rows:tables[id].map(tableRow)};});
   for(const [id,cup]of Object.entries(S.worldMode.europe)){const pools=W.cupTables(S,id).map((rows,i)=>({id:i,label:'Poule '+(i+1),rows:rows.map(r=>({...tableRow({...r,id:r.clubId,form:r.form.map(x=>({W:'V',L:'D',D:'N'})[x])}),rank:r.rank,poolId:i}))}));m.leagues.push({id,name:id==='champions'?'Coupe des champions':'Challenge européen',phase:cup.phase,champion:cup.champion===null?null:clubSummary(cup.champion),finalist:cup.finalist===null?null:clubSummary(cup.finalist),pools,rows:pools.flatMap(p=>p.rows),seeds:cup.seeds||[],transfers:cup.transfers||[]});}
-  const venue=f=>f.venueRegion==='Europe'?'Terrain désigné en Europe':f.venueDesignationPending||f.neutral?'Terrain désigné':S.clubs[f.homeId].stadium;
+  const venue=f=>f.venuePolicy==='centralised-super-round'?'Super Round · terrain commun':f.venueRegion==='Europe'?'Terrain désigné en Europe':f.venueDesignationPending||f.neutral?'Terrain désigné':S.clubs[f.homeId].stadium;
   m.calendar=S.worldMode.fixtures.filter(f=>f.homeId===S.club||f.awayId===S.club).map(f=>{const r=S.history.find(r=>r.fixtureId===f.id);return{id:f.id,label:(R.leagues.find(l=>l.id===f.competitionId)?.name||f.competitionId)+' · '+(f.phase==='league'||f.phase==='pool'?'J'+(f.round+1):f.phase),week:f.week,date:f.date,home:clubSummary(f.homeId),away:clubSummary(f.awayId),score:r?.score||null,played:!!r,phase:f.phase,leagueId:f.competitionId,competitionId:f.competitionId,neutral:f.neutral,competitionRound:f.round,venue:venue(f),winner:r?.winner??null};}).sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
   const f=W.userFixture(S);m.next=f?{pair:[f.homeId,f.awayId],home:clubSummary(f.homeId),away:clubSummary(f.awayId),label:W.label(S),round:f.round,week:S.round,date:f.date,neutral:f.neutral,phase:f.phase,leagueId:f.competitionId,competitionId:f.competitionId,venue:venue(f)}:null;
+  if(edition.version===2&&m.meta.leagueId==='srp'&&!m.next){const upcoming=m.calendar.find(x=>!x.played&&x.week>S.round);if(upcoming)m.meta.pacificPreparation={nextWeek:upcoming.week,nextDate:upcoming.date,weeksUntil:upcoming.week-S.round};}
   m.archives={limit:15,seasons:S.worldMode.yearbook.map(y=>({...copy(y),champions:Object.entries(y.champions).map(([leagueId,clubId])=>({leagueId,clubId}))}))};m.finance.notice='La saison couvre '+W.sizing(S).rounds+' semaines de gestion.';
   if(m.live)m.live.teams=m.live.pair.map(clubSummary);
   return m;
