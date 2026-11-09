@@ -118,6 +118,8 @@ func _generate() -> void:
 	_request({"action":"generate", "name":title_input.text.strip_edges(), "clubs":clubs, "doubleRound":double_round.button_pressed})
 
 func _validate() -> void:
+	if pending: return
+	_document_changed()
 	if json_input.text.to_utf8_buffer().size() > MAX_BYTES:
 		message.text = "Document trop volumineux : limite de 1 Mio."
 		return
@@ -200,6 +202,7 @@ func _choose_import() -> void:
 			message.text = "Document trop volumineux : limite de 1 Mio."
 		else:
 			json_input.text = file.get_as_text()
+			_document_changed()
 			file.close()
 			_validate()
 		chooser.queue_free())

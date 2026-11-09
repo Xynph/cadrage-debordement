@@ -45,7 +45,7 @@ function validate(doc){
  }
  check(pairs.size===n*(n-1)/2&&[...pairs.values()].every(c=>c===factor),'certaines confrontations sont absentes ou répétées');
  for(let r=1;r<=rounds;r++)check(counts.get(r)===Math.floor(n/2),'journée incomplète');
- return JSON.parse(JSON.stringify(doc));
+ return {format:FORMAT,version:1,kind:'fictional-preview',name:doc.name,doubleRound:doc.doubleRound,rounds:doc.rounds,clubs:doc.clubs.map(c=>({id:c.id,name:c.name})),fixtures:doc.fixtures.map(f=>({round:f.round,homeId:f.homeId,awayId:f.awayId}))};
 }
 function project(payload){
  check(object(payload),'requête invalide');let document;
