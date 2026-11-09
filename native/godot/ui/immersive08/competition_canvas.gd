@@ -357,7 +357,9 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 	var competition_id := _competition_id(fixture)
 	var dated_competition := competition_id in JAPAN_COMPETITIONS or competition_id in ["nationale","access-nationale","champ"]
 	var timing := P.fixture_date(fixture, true) + " · " + _dated_phase(fixture) if not date.is_empty() and dated_competition else period
-	row.accessibility_name = "%s · %s · %s · %s" % [timing,G.club_name(opponent),venue if not venue.is_empty() else _location(fixture),competition]
+	row.accessibility_name = "%s · %s · %s · %s" % [timing,G.club_name(opponent),_location(fixture),competition]
+	if not venue.is_empty() and venue != _location(fixture):
+		row.accessibility_name += " · " + venue
 	row.tooltip_text = row.accessibility_name
 	row.add_theme_stylebox_override("normal", C.box(Color("202519") if current else Color("101a1b"), Color.TRANSPARENT, 3, 0))
 	row.add_theme_stylebox_override("hover", C.box(Color("254035"), C.MINT, 3, 0))
@@ -389,7 +391,7 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 			opponent_name.size.y = C.px(line_height)
 	var place_x := 470 if compact else 720
 	var location_kind := _location_kind(fixture)
-	_icon(row, "flag" if location_kind == "neutral" else "home" if location_kind == "home" else "arrow", Rect2(place_x, (line_height - 18) / 2.0, 18, 18), C.IVORY)
+	_icon(row, C.fixture_location_icon(location_kind), Rect2(place_x, (line_height - 18) / 2.0, 18, 18), C.GOLD)
 	var venue_parts := venue.split(" · ",false,1)
 	if not compact and venue_parts.size() == 2:
 		D.text(row,place_x+25,middle-7,venue_parts[0],22,C.IVORY,600,204)
@@ -704,13 +706,7 @@ func _location(fixture: Dictionary, compact: bool = false) -> String:
 	return "—"
 
 func _location_kind(fixture: Dictionary) -> String:
-	if fixture.get("neutral", false): return "neutral"
-	var venue: Variant = fixture.get("venue")
-	if venue is Dictionary:
-		if venue.get("neutral", false): return "neutral"
-		venue = venue.get("kind", "")
-	if venue is String and venue.to_lower() in ["home", "away", "neutral"]: return venue.to_lower()
-	return ["home", "away"][_side(fixture, own.id)] if _side(fixture, own.id) >= 0 else ""
+	return P.fixture_location_kind(fixture, own.id)
 
 static func _venue_name(fixture: Dictionary) -> String:
 	var venue: Variant = fixture.get("venue")

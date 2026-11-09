@@ -1,5 +1,11 @@
 # Journal de développement — Cadrage Débordement
 
+## 9 novembre 2026 — repères de terrain dans le Bureau et le Calendrier
+
+Le fil de saison affiche une maison, un bus ou un drapeau à droite de l’adversaire. Il profite des fenêtres plus hautes pour afficher les stades et reprend son format compact si la place manque. Les deux rendus natifs du Calendrier distinguent les trois lieux. Le moteur et le format de sauvegarde restent hors du périmètre.
+
+Recette Godot Windows ciblée Bureau et navigation, en rendu graphique, avec 274 contrôles réussis. Captures vérifiées à 1440 × 900 et rendu compact contrôlé à 1280 × 720. Les maquettes de grille mensuelle et de grille sur deux semaines restent des propositions séparées.
+
 ## 9 novembre 2026 — provenance de la base commune après calendrier personnalisé
 
 La CI42667473754sur aede0e2a reçu quatre groupes verts et un groupe rouge : tests/godot-common-rosters.cjs refusait le SHA de dist/game.js enregistré dans dist/rugby-common-rosters.js, resté antérieur à la conservation du calendrier personnalisé. L’échec a été reproduit localement avant correction. La compilation standard scripts/build-rugby-common.cjs a été relancée ; la comparaison des objets complets hors champ sources confirme les1592profils/30clubs rigoureusement inchangés (digest SHA256de5a262f4d456d98211dff7966a56c398b4a81b20a3f317be1aa363b59a8a026). Seul le SHA de provenance game.js diffère.

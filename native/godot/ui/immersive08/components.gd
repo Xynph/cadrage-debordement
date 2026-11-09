@@ -178,6 +178,9 @@ static func icon(id: String, width: int = 25, color: Color = GOLD) -> TextureRec
 	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return image
 
+static func fixture_location_icon(kind: String) -> String:
+	return {"home": "home", "away": "bus", "neutral": "flag"}.get(kind, "calendar")
+
 static func chip(text: String, color: Color = MINT) -> PanelContainer:
 	var frame := PanelContainer.new()
 	frame.add_theme_stylebox_override("panel", box(Color(color, .10), color, 5, 8))

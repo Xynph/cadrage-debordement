@@ -1,6 +1,8 @@
 extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
 const Semantics = preload("res://ui/data_semantics.gd")
+const CalendarIcons = preload("res://ui/immersive08/components.gd")
+const CalendarProjection = preload("res://ui/immersive08/projection.gd")
 
 static func competition_name(id: String) -> String:
 	return {"elite":"Élite","accession":"Accession","prem":"Premiership","urc":"United Rugby Championship","srp":"Super Rugby Pacific","jlo-d1":"League One · Division 1","jlo-d2":"League One · Division 2","jlo-d1-d2":"Barrage Japon D1 / D2","nationale":"Nationale","champ":"Champ Rugby","access-nationale":"Barrage Pro D2 / Nationale","champions":"Coupe des champions","challenge":"Challenge européen","access":"Barrage d’accession"}.get(id, id)
@@ -225,6 +227,13 @@ static func calendar(app: Control) -> Control:
 			if not venue.is_empty(): details.add_child(G.wrap(venue, 11, G.MUTED))
 		else:
 			row.add_child(G.cell(caption, 132, G.MUTED))
+		var location := CalendarProjection.fixture_location_kind(fixture, app.model.club.id)
+		var marker := CalendarIcons.icon(CalendarIcons.fixture_location_icon(location),22,G.GOLD)
+		marker.name = "CalendarLocation"
+		marker.accessibility_name = {"home":"À domicile","away":"À l’extérieur","neutral":"Terrain neutre"}.get(location,"Terrain à confirmer")
+		marker.tooltip_text = marker.accessibility_name
+		marker.mouse_filter = Control.MOUSE_FILTER_PASS
+		row.add_child(marker)
 		var home: Dictionary = fixture.get("home", {})
 		var away: Dictionary = fixture.get("away", {})
 		row.add_child(G.crest(home, 36))

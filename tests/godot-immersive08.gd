@@ -551,6 +551,7 @@ func resize_shell() -> void:
 	var fixture: Control = app.find_child("OfficeFixture",true,false)
 	var journal: Control = app.find_child("OfficeJournal",true,false)
 	var timeline: Control = app.find_child("OfficeTimeline",true,false)
+	var ground: Label = app.find_child("OfficeTimelineGround0",true,false)
 	var action: Button = app.find_child("ImmersiveContinue",true,false)
 	var history: Array = app.navigation_controller.history.duplicate(true)
 	for size in [Vector2i(1920,1080),Vector2i(1600,900),Vector2i(1280,720),Vector2i(1440,900),Vector2i(2560,1440)]:
@@ -565,7 +566,22 @@ func resize_shell() -> void:
 			var box := control.get_global_transform()*Rect2(Vector2.ZERO,control.size)
 			check(screen.grow(1).encloses(box),"%s entièrement visible à %s" % [control.name,str(size)])
 		if size in [Vector2i(1280,720),Vector2i(1440,900)]:
+			check(ground != null and ground.is_visible_in_tree() == (size.y == 900),"Le terrain apparaît lorsque le fil de saison dispose d'assez de hauteur à "+str(size))
 			await capture("06-bureau-redimensionne-%dx%d" % [size.x,size.y])
+	root.size = Vector2i(1440,900)
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
+	await settle()
+	app._navigate("Calendrier")
+	await settle()
+	var locations: Array[String] = []
+	for marker: TextureRect in app.find_children("CalendarLocation","TextureRect",true,false):
+		locations.append(marker.accessibility_name)
+	check(locations.any(func(label): return "domicile" in label),"Le Calendrier identifie les matchs à domicile")
+	check(locations.any(func(label): return "extérieur" in label),"Le Calendrier identifie les déplacements")
+	await capture("14-calendrier-reperes-1440x900")
+	root.size = Vector2i(2560,1440)
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
+	await settle()
 
 const FAMILIES = [
 		["Recrutement","ImmersiveMarketRows","10-recrutement"],
@@ -1087,7 +1103,8 @@ func run() -> void:
 		check(before == app.model.meta.exportText, "Rendu et navigation préservent état et RNG")
 		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office":
 			await reception()
-			await resize_shell()
+		await resize_shell()
+		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office":
 			await families()
 			await desktop_1080()
 			await navigation_flow()
