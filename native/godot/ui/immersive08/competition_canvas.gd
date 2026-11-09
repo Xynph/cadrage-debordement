@@ -119,7 +119,7 @@ func _header() -> void:
 		var tab := D.button(self, Rect2(spec[0], 194, spec[1], 61), spec[2], func(): _switch(str(spec[3])), mode == spec[3], spec[4], false, app.accent, spec[5])
 		tab.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		tab.add_theme_font_size_override("font_size", maxi(12, C.px(31)))
-		tab.add_theme_stylebox_override("normal", _tab_style(int(spec[1]), mode == spec[3]))
+		tab.add_theme_stylebox_override("normal", _tab_style(int(spec[1]), mode == spec[3], app.accent))
 	var links: Array = [["Presse", "mail"], ["Rivalités", "shield"]]
 	for i in links.size():
 		var route: String = links[i][0]
@@ -848,10 +848,11 @@ static func _fade(parent: Node, area: Rect2) -> void:
 	parent.add_child(view)
 	D.place(view, area)
 
-static func _tab_style(width: int, selected: bool) -> StyleBoxTexture:
+static func _tab_style(width: int, selected: bool, accent: Color) -> StyleBoxTexture:
+	var tint := Color("11191e").lerp(accent,.39)
 	var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="122" viewBox="0 0 %d 61"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="%s"/><stop offset="1" stop-color="%s"/></linearGradient></defs><path d="M1 60L15 9Q19 1 27 1H%dQ%d 1 %d 9L%d 60Z" fill="url(#g)" stroke="%s"/></svg>' % [
-		width * 2, width, "#167648" if selected else "#202b2d", "#08472e" if selected else "#121c1d",
-		width - 24, width - 16, width - 13, width - 1, "#7acf8f" if selected else "#576966"
+		width * 2, width, "#" + C.readable_primary_fill(tint.lightened(.07)).to_html(false) if selected else "#202b2d", "#" + tint.to_html(false) if selected else "#121c1d",
+		width - 24, width - 16, width - 13, width - 1, "#" + accent.lightened(.38).to_html(false) if selected else "#576966"
 	]
 	var image := Image.new()
 	image.load_svg_from_string(svg)
