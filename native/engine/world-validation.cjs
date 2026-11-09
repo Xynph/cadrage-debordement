@@ -26,6 +26,8 @@ module.exports=function worldValidation(){
   check(winner!==null&&eq(tally,q.score)&&r.winner===r.pair[winner],'résultat des tirs incohérent.');
  }
  function result(r,f,live=null){
+  if(f.competitionId==='srp')return CDWorldSRPMatch.validateResult(r,f,live);
+  check(r.srpExtra===undefined,'preuve Pacific hors de sa compétition.');
   score(r);const knockout=!['league','pool'].includes(f.phase),d=r.decision;
   const duration=live?live.minute:r.duration;
   check(saveInt(duration,80,240)&&['Sec','Vent','Pluie'].includes(r.weather),'durée ou météo invalide.');
@@ -40,6 +42,8 @@ module.exports=function worldValidation(){
  }
  function live(l,f){
   check(!!f&&eq(l.worldContext,f)&&eq(l.pair,[f.homeId,f.awayId])&&l.franceContext===undefined,'match en cours hors calendrier.');
+  if(f.competitionId==='srp')return CDWorldSRPMatch.validateLive(l,f);
+  check(l.srpExtra===undefined,'preuve Pacific hors de sa compétition.');
   if(l.knockout){const k=l.knockout;check(!['league','pool'].includes(f.phase)&&keys(k,['version','period','regulationEnd','firstEnd'])&&k.version===1&&[1,2].includes(k.period)&&saveInt(k.regulationEnd,l.flow.firstEnd+40,l.minute)&&(k.period===1?k.firstEnd===null:saveInt(k.firstEnd,k.regulationEnd+10,l.minute)),'prolongation incohérente.');
    check(l.restartLog.filter(r=>r.cause==='extra-first').length===1&&l.restartLog.filter(r=>r.cause==='extra-second').length===(k.period===2?1:0),'reprises de prolongation absentes.');
    if(l.finished)check(k.period===2&&l.minute>=k.firstEnd+10,'prolongation inachevée.');

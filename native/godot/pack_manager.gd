@@ -2,7 +2,7 @@ extends Node
 ## Native file picker and commands. The worker alone validates and installs packs.
 var app: Control
 var scope := "creation"
-var creation_mode := "world"
+var creation_mode := "auto"
 var return_route := "Création"
 var source_path := ""
 var inspected_mode := ""
@@ -20,11 +20,13 @@ func mode(target_scope: String = "") -> String:
 	var effective_scope := scope if target_scope.is_empty() else target_scope
 	var meta: Dictionary = app.model.get("meta", {})
 	if effective_scope == "career":
-		return "world" if meta.get("mode") == "world" else "common"
-	return "world" if creation_mode == "world" and not meta.get("worldCatalogue", []).is_empty() else "common"
+		return str(meta.get("edition", "world")) if meta.get("mode") == "world" else "common"
+	if creation_mode in ["auto", "world-pacific"] and not meta.get("pacificCatalogue", []).is_empty(): return "world-pacific"
+	return "world" if creation_mode in ["auto", "world", "world-pacific"] and not meta.get("worldCatalogue", []).is_empty() else "common"
 
 func database(target_scope: String = "") -> Dictionary:
 	var meta: Dictionary = app.model.get("meta", {})
+	if mode(target_scope) == "world-pacific": return meta.get("pacificDatabase", {})
 	if mode(target_scope) == "world": return meta.get("worldDatabase", {})
 	if meta.has("legacyDatabase"): return meta.legacyDatabase
 	if meta.get("mode") != "world": return meta.get("database", {})
@@ -41,7 +43,7 @@ func selected_id(target_scope: String = "") -> String:
 	var effective_scope := scope if target_scope.is_empty() else target_scope
 	var packs: Dictionary = app.model.get("packs", {})
 	if effective_scope == "career": return str(packs.get("career", "base"))
-	var key := "worldPackCreation" if mode("creation") == "world" else "legacyPackCreation"
+	var key := str({"world-pacific":"pacificPackCreation", "world":"worldPackCreation"}.get(mode("creation"), "legacyPackCreation"))
 	return str(app.model.get("meta", {}).get(key, packs.get("creation", "base")))
 
 func preview() -> Dictionary:
