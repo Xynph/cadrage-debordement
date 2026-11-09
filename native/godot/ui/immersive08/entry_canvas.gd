@@ -6,6 +6,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const Entry = preload("res://ui/entry_screens.gd")
 const G = preload("res://ui/game_skin.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
+const Editorial = preload("res://ui/entry_editorial.gd")
 const GREEN = Color("176e49")
 
 static func _configure(app: Control) -> void:
@@ -145,6 +146,8 @@ static func _action(parent: Container, caption: String, callback: Callable, id: 
 static func workspace(app: Control, page: Control, creation: bool) -> Control:
 	_configure(app)
 	var size := app.get_window().size
+	if not creation or app.pack_manager.creation_mode == "auto":
+		return _editorial_workspace(app, page, creation, size)
 	var compact := size.y < 850
 	var column := C.v(8 if compact else 14)
 	column.name = "ImmersiveCreationWorkspace" if creation else "ImmersiveIdentityWorkspace"
@@ -188,11 +191,64 @@ static func workspace(app: Control, page: Control, creation: bool) -> Control:
 		if not compact:
 			_fit_club_cards(page)
 	if size.x >= 2240 and size.y >= 1250:
-		if creation:
-			if app.pack_manager.creation_mode != "auto": _career_context(app, page)
-		else: _pack_guide(app, page)
+		_career_context(app, page)
 	_observe_entry_size(app, column, size, creation)
 	return column
+
+static func _editorial_workspace(app: Control, page: Control, creation: bool, size: Vector2i) -> Control:
+	var shell := PanelContainer.new()
+	shell.name = "ImmersiveCreationWorkspace" if creation else "ImmersiveIdentityWorkspace"
+	Editorial.surface(shell, Editorial.INK, Color.TRANSPARENT, 0)
+	var column := C.v(0)
+	shell.add_child(column)
+	var masthead := PanelContainer.new()
+	Editorial.surface(masthead, Color("0f1719"), Color.TRANSPARENT, 0)
+	column.add_child(masthead)
+	var rail := C.h(24)
+	masthead.add_child(rail)
+	var inset := C.margin(18)
+	rail.add_child(inset)
+	inset.add_child(C.photo("brand", Vector2(162, 54), false))
+	Editorial.divider(rail)
+	var step_names := ["01  Réalité", "02  Club", "03  Carrière"]
+	for index in step_names.size():
+		var active := index == (1 if creation else 0)
+		var step := C.v(5)
+		step.alignment = BoxContainer.ALIGNMENT_CENTER
+		rail.add_child(step)
+		step.add_child(C.label(step_names[index], 23, C.IVORY if active else C.MUTED, true, 700 if active else 600))
+		var underline := ColorRect.new()
+		underline.color = Editorial.BRASS if active else Color.TRANSPARENT
+		underline.custom_minimum_size.y = 2
+		step.add_child(underline)
+	var banner := Control.new()
+	banner.custom_minimum_size.y = clampf(size.y * .105, 84, 152)
+	column.add_child(banner)
+	var photo := C.photo("entry-ground", Vector2.ZERO, true, .53)
+	banner.add_child(photo)
+	photo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	C.veil(banner)
+	var padding := C.margin(32)
+	banner.add_child(padding)
+	padding.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var heading := C.v(0)
+	heading.alignment = BoxContainer.ALIGNMENT_CENTER
+	padding.add_child(heading)
+	heading.add_child(C.label("VOTRE PREMIÈRE SAISON" if creation else "L’ATELIER DES IDENTITÉS", 20, Editorial.BRASS))
+	heading.add_child(C.label("Choisir son club" if creation else "Choisir sa réalité", 54, C.IVORY, true, 700))
+	column.add_child(C.rule())
+	var body := C.margin(27)
+	C.fill(body, true)
+	column.add_child(body)
+	body.add_child(page)
+	if creation:
+		var buttons := page.get_child(0).find_children("*", "Button", false, false)
+		if buttons.size() >= 2:
+			buttons.front().name = "CreationBackHome"
+			buttons.back().name = "CreationManagePacks"
+	Legacy.apply(page, Editorial.BRASS)
+	_observe_entry_size(app, shell, size, creation)
+	return shell
 
 static func _observe_entry_size(app: Control, workspace: Control, built_size: Vector2i, creation: bool) -> void:
 	var window := app.get_window()
@@ -332,26 +388,6 @@ static func _career_context(app: Control, page: Control) -> void:
 	var column := choices.get_parent()
 	column.add_child(context)
 	column.move_child(context, choices.get_index() + 1)
-
-static func _pack_guide(app: Control, page: Control) -> void:
-	if not app.pack_manager.installed().is_empty() or not app.pack_manager.preview().is_empty(): return
-	for node in page.find_children("*", "Button", true, false):
-		var importer := node as Button
-		if not importer.pressed.is_connected(app.pack_manager.choose_file): continue
-		var content := importer.get_parent().get_parent()
-		for child in content.get_children():
-			if child is ScrollContainer:
-				var guide := C.v(10)
-				guide.name = "EntryPackGuide"
-				child.get_child(0).add_child(guide)
-				guide.add_child(C.label("LE PARCOURS D’IMPORT", 24, C.GOLD, true, 700))
-				var tiles := C.h(14)
-				guide.add_child(tiles)
-				_tile(tiles, "01  ·  FICHIER", "Ouvrir le ZIP", "Choisissez le fichier du pack sur votre ordinateur.", "scouting", C.BLUE)
-				_tile(tiles, "02  ·  APERÇU", "Vérifier les identités", "Vérifiez les noms, blasons et portraits recensés dans l’aperçu.", "approved-club-crest", C.GOLD, false)
-				_tile(tiles, "03  ·  SÉLECTION", "Habiller votre carrière", "Installez le pack, puis sélectionnez-le dans l’édition affichée.", "player-hero", C.MINT, true, .12)
-				guide.add_child(C.wrap("Blason et portrait d’exemple · illustrations fictives", 17, C.MUTED))
-				return
 
 static func _tile(parent: HBoxContainer, label: String, title: String, copy: String, art: String, tint: Color, cover: bool = true, focus: float = .29) -> void:
 	var frame := C.card()

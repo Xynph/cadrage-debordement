@@ -1,6 +1,7 @@
 extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
+const Editorial = preload("res://ui/entry_editorial.gd")
 
 static func missing_warning(app: Control, parent: Container, scope: String, paper: bool = false) -> void:
 	var messages: Array[String] = []
@@ -23,7 +24,7 @@ static func _creation_missing(app: Control) -> bool:
 static func page(app: Control) -> Control:
 	var window_size := app.get_window().size
 	C.configure(window_size.y, window_size.x)
-	var page := C.v(20)
+	var page := C.v(15)
 	page.name = "CarnetPacks"
 	C.fill(page)
 	var creation: bool = app.pack_manager.scope == "creation"
@@ -34,18 +35,21 @@ static func page(app: Control) -> Control:
 	page.add_child(top)
 	var back := C.button("← RETOUR", app.pack_manager.back)
 	back.name = "PackBack"
+	Editorial.action(back)
 	top.add_child(back)
 	var heading := C.v(2)
 	C.fill(heading)
 	top.add_child(heading)
-	heading.add_child(C.label("Vos packs", 32, C.IVORY, true, 700))
-	heading.add_child(C.wrap(("NOUVELLE CARRIÈRE" if creation else "CARRIÈRE EN COURS") + "  /  " + edition, 19, C.GOLD, true))
+	heading.add_child(C.wrap(("NOUVELLE CARRIÈRE" if creation else "CARRIÈRE EN COURS") + "  /  " + edition, 23, Editorial.BRASS, true))
+	heading.add_child(C.wrap("Choisissez les identités de votre carrière.", 19))
 	var importing := C.button("IMPORTER UN PACK ZIP", app.pack_manager.choose_file, installed.is_empty() and preview.is_empty())
 	importing.name = "PackImportZip"
+	Editorial.action(importing, installed.is_empty() and preview.is_empty())
 	importing.disabled = app.waiting
 	top.add_child(importing)
 	var calendar := C.button("ATELIER CALENDRIER", func(): preload("res://ui/competition_editor_view.gd").open(app))
 	calendar.name = "OpenCompetitionEditor"
+	Editorial.action(calendar)
 	calendar.disabled = app.waiting
 	top.add_child(calendar)
 
@@ -62,10 +66,21 @@ static func page(app: Control) -> Control:
 
 	var inspected_id := str(preview.get("id", ""))
 	var inspected_installed := installed.any(func(pack: Dictionary): return str(pack.id) == inspected_id)
-	if not preview.is_empty() and not inspected_installed:
-		_preview(app, page, preview)
+	var layouts := C.h(20)
+	page.add_child(layouts)
+	var base_column := C.v(0)
+	C.fill(base_column, false, .39)
+	layouts.add_child(base_column)
+	var pack_column := C.v(14)
+	C.fill(pack_column, false, .61)
+	layouts.add_child(pack_column)
+	var picture_height := clampf(window_size.y * .25, 150, 340)
+	_catalogue(app, base_column, selected, compatible, picture_height)
+	var analysing := not preview.is_empty() and not inspected_installed
+	if analysing:
+		_preview(app, pack_column, preview)
 	elif installed.is_empty():
-		_empty(page)
+		_empty(pack_column, picture_height)
 	var featured: Dictionary = {}
 	if not installed.is_empty():
 		# After installation, surface the imported pack even if another pack is active.
@@ -75,70 +90,73 @@ static func page(app: Control) -> Control:
 			if str(pack.id) == spotlight_id:
 				featured = pack
 				break
-		_installed_card(app, page, featured, selected, compatible, creation, true)
+		_installed_card(app, pack_column, featured, selected, compatible, creation, true, 0 if analysing else picture_height)
 	if installed.size() > 1:
-		page.add_child(C.label("Autres packs installés", 28, C.IVORY, true, 700))
+		pack_column.add_child(C.label("Autres packs installés", 28, C.IVORY, true, 700))
 	for pack: Dictionary in installed:
 		if pack.id != featured.id:
-			_installed_card(app, page, pack, selected, compatible, creation, false)
+			_installed_card(app, pack_column, pack, selected, compatible, creation, false, 0)
 
-	_catalogue(app, page, selected, compatible)
 	app.status = C.wrap("Analyse en cours…" if app.waiting else "Installation locale · aucun téléchargement automatique", 19)
 	page.add_child(app.status)
 	return page
 
-static func _empty(parent: Container) -> void:
-	var frame := C.card()
-	parent.add_child(frame)
-	var content := C.content(frame)
-	content.add_child(C.label("Votre premier pack", 42, C.IVORY, true, 700))
-	content.add_child(C.wrap("Personnalisez les noms, les blasons et les portraits à partir d’un fichier ZIP sur votre ordinateur."))
-	var steps := C.h()
-	content.add_child(steps)
-	_metric(steps, "01", "Ouvrez le fichier ZIP", C.GOLD)
-	_metric(steps, "02", "Vérifiez l’inventaire", C.GOLD)
-	_metric(steps, "03", "Installez le pack dans votre profil", C.GOLD)
+static func _empty(parent: Container, picture_height: float) -> void:
+	var content := _section(parent, "IMPORT LOCAL", "Importer une autre réalité", false, "match-tunnel", picture_height)
+	for step in [["01", "Ouvrir le ZIP", "Choisissez une archive sur votre ordinateur."], ["02", "Vérifier le contenu", "Consultez les clubs, joueurs, compétitions et médias fournis."], ["03", "Installer", "Le pack devient disponible pour vos prochaines carrières."]]:
+		content.add_child(C.rule())
+		var line := C.h(14)
+		content.add_child(line)
+		line.add_child(C.label(step[0], 23, Editorial.BRASS))
+		var title := C.label(step[1], 23, C.IVORY, true, 700)
+		title.custom_minimum_size.x = C.px(190)
+		line.add_child(title)
+		var detail := C.wrap(step[2], 19)
+		C.fill(detail)
+		line.add_child(detail)
 
-static func _catalogue(app: Control, parent: Container, selected: String, compatible: bool) -> void:
-	var frame := C.card()
+static func _section(parent: Container, caption: String, title: String, active: bool, art: String = "", picture_height: float = 0) -> VBoxContainer:
+	var frame := PanelContainer.new()
+	Editorial.surface(frame, Editorial.PANEL, Editorial.BRASS if active else Editorial.LINE, 20)
 	parent.add_child(frame)
-	var content := C.content(frame)
-	var row := C.h(24)
-	content.add_child(row)
-	var info := C.v(4)
-	C.fill(info)
-	row.add_child(info)
-	info.add_child(C.label("Catalogue du jeu", 27, C.IVORY, true, 700))
+	var content := C.v(13)
+	frame.add_child(content)
+	if picture_height > 0: _picture(content, art, picture_height)
+	content.add_child(C.label(caption, 20, Editorial.BRASS))
+	content.add_child(C.wrap(title, 41, C.IVORY, true, 700))
+	return content
+
+static func _picture(parent: Container, art: String, height: float) -> void:
+	var photo := C.photo(art, Vector2.ZERO, true, .56)
+	photo.custom_minimum_size.y = height
+	parent.add_child(photo)
+
+static func _catalogue(app: Control, parent: Container, selected: String, compatible: bool, picture_height: float) -> void:
+	var content := _section(parent, "BASE ANONYMISÉE · ACTIVE" if selected == "base" else "BASE ANONYMISÉE", "Jeu de base", selected == "base", "nationale-ground", picture_height)
+	C.fill(content.get_parent(), true)
+	var facts := C.h(18)
+	content.add_child(facts)
 	var database: Dictionary = app.pack_manager.database()
-	if not database.is_empty():
-		info.add_child(C.wrap("%s clubs · %s joueurs dans cette édition" % [G.n(database.get("clubCount", 0)), G.n(database.get("playerCount", 0))]))
-	if selected == "base":
-		info.add_child(C.label("ACTUELLEMENT · BASE ANONYMISÉE", 19, C.GOLD))
+	Editorial.fact(facts, database.get("clubCount", 0), "Clubs")
+	Editorial.divider(facts)
+	Editorial.fact(facts, database.get("playerCount", 0), "Joueurs")
+	content.add_child(C.rule())
+	content.add_child(C.wrap("Clubs, joueurs et compétitions portent des identités fictives.", 22, C.IVORY))
+	content.add_child(C.wrap("Les packs changent les identités et les visuels. Le calendrier et les règles restent ceux du monde commun.", 19))
+	var space := Control.new()
+	space.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(space)
 	var base := C.button("UTILISER LA BASE ANONYMISÉE", func(): app.pack_manager.select("base"))
 	base.name = "PackUseBase"
 	base.disabled = app.waiting or not compatible
-	base.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(base)
-	content.add_child(C.wrap("Les packs personnalisent la présentation. Les joueurs générés gardent des identités fictives."))
-	content.add_child(C.wrap("Les packs installés et leurs médias sont stockés dans votre profil local.", 19))
+	Editorial.action(base)
+	content.add_child(base)
 
-static func _installed_card(app: Control, parent: Container, pack: Dictionary, selected: String, compatible: bool, creation: bool, featured: bool) -> void:
+static func _installed_card(app: Control, parent: Container, pack: Dictionary, selected: String, compatible: bool, creation: bool, featured: bool, picture_height: float) -> void:
 	var id := str(pack.id)
 	var active := id == selected
-	var frame := C.card()
-	parent.add_child(frame)
-	if active or featured:
-		var surface := C.box(C.RAISED, C.MINT if active else C.GOLD, 8, 22)
-		surface.border_width_left = maxi(3, C.px(6))
-		frame.add_theme_stylebox_override("panel", surface)
-	var content := C.content(frame)
-	content.add_child(C.label("PACK ACTIF" if active else "PACK INSTALLÉ", 21, C.MINT if active else C.GOLD, true, 700))
-	content.add_child(C.wrap(pack.get("name", "Pack personnalisé"), 58 if featured else 32, C.IVORY, true, 700))
+	var content := _section(parent, "PACK ACTIF" if active else "PACK INSTALLÉ", str(pack.get("name", "Pack personnalisé")), active, "pacific-ground", picture_height)
 	if featured:
-		var summary := "Ce pack est prêt à être utilisé."
-		if active:
-			summary = "Ce pack est sélectionné pour vos prochaines créations." if creation else "Ce pack habille la carrière ouverte."
-		content.add_child(C.wrap(summary))
 		_inventory(content, pack)
 		content.add_child(C.rule())
 	else:
@@ -150,20 +168,15 @@ static func _installed_card(app: Control, parent: Container, pack: Dictionary, s
 	if not active:
 		var choice := C.button("UTILISER CE PACK  →", func(): app.pack_manager.select(id), not creation)
 		choice.disabled = app.waiting or not compatible
+		Editorial.action(choice, not creation)
 		actions.add_child(choice)
 	if creation:
 		var start := C.button("Nouvelle carrière", _create_with_pack.bind(app, id), true)
 		start.name = "PackNewCareer" if featured else "PackNewCareer_" + id
 		start.disabled = app.waiting or app.model.get("meta", {}).get("recoveryRequired", false)
 		start.tooltip_text = "Choisir un club avec " + str(pack.get("name", "ce pack"))
-		start.custom_minimum_size = Vector2(maxi(260, C.px(480)), maxi(50, C.px(86)) if featured else 34)
-		start.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		if featured:
-			start.add_theme_font_size_override("font_size", maxi(22, C.px(34)))
-			actions.add_child(C.fill(Control.new()))
-			var next := C.label("Étape suivante · choisir votre club", 20, C.MUTED, false)
-			next.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			actions.add_child(next)
+		C.fill(start)
+		Editorial.action(start, true, false, maxi(42, C.px(66)) if featured else 42)
 		actions.add_child(start)
 
 static func _create_with_pack(app: Control, id: String) -> void:
@@ -175,46 +188,37 @@ static func _create_with_pack(app: Control, id: String) -> void:
 	else:
 		app._command("pack_select", {"id":id, "scope":"creation", "mode":app.pack_manager.mode("creation")}, "Création")
 
-static func _metric(parent: Container, value: Variant, caption: String, tint: Color = C.IVORY) -> void:
-	var tile := C.card()
-	C.fill(tile)
-	tile.add_theme_stylebox_override("panel", C.box(C.PANEL, C.LINE, 6, 13))
-	parent.add_child(tile)
-	var content := C.content(tile)
-	content.add_child(C.label(value, 40, tint, true, 700))
-	content.add_child(C.wrap(caption, 21))
-
 static func _inventory(parent: VBoxContainer, pack: Dictionary) -> void:
 	var counts: Dictionary = pack.get("counts", {})
 	parent.add_child(C.label("INVENTAIRE DU PACK", 21, C.GOLD, true, 700))
 	var tiles := C.h(12)
 	parent.add_child(tiles)
-	_metric(tiles, counts.get("clubs", 0), "Clubs personnalisés")
-	_metric(tiles, counts.get("players", 0), "Identités de joueurs")
-	_metric(tiles, counts.get("logos", 0), "Blasons de clubs")
+	Editorial.fact(tiles, counts.get("clubs", 0), "Clubs personnalisés")
+	Editorial.divider(tiles)
+	Editorial.fact(tiles, counts.get("players", 0), "Identités de joueurs")
+	Editorial.divider(tiles)
 	if counts.has("competitions"):
-		_metric(tiles, counts.competitions, "Compétitions personnalisées")
+		Editorial.fact(tiles, counts.competitions, "Compétitions")
+	else:
+		Editorial.fact(tiles, counts.get("logos", 0), "Blasons de clubs")
+	var media: Array[String] = ["%s blasons de clubs · %s photos de joueurs · %s portraits IA" % [G.n(counts.get("logos", 0)), G.n(counts.get("official", 0)), G.n(counts.get("synthetic", 0))]]
 	if counts.has("competitionLogos"):
-		_metric(tiles, counts.competitionLogos, "Logos de compétitions")
-	var media: Array[String] = ["Portraits de joueurs recensés dans le pack · %s photos officielles · %s illustrations IA" % [G.n(counts.get("official", 0)), G.n(counts.get("synthetic", 0))]]
+		media[0] += " · %s logos de compétitions" % G.n(counts.competitionLogos)
 	if counts.has("staff"):
 		media.append("Staff · %s identités · %s photos officielles · %s illustrations IA" % [G.n(counts.staff), G.n(counts.get("staffOfficial", 0)), G.n(counts.get("staffSynthetic", 0))])
 	if counts.has("cityPhotos") or counts.has("stadiumPhotos"):
 		media.append("Lieux · %s villes en photo · %s stades en photo" % [G.n(counts.get("cityPhotos", 0)), G.n(counts.get("stadiumPhotos", 0))])
 	for line: String in media:
-		parent.add_child(C.wrap(line, 21))
+		parent.add_child(C.wrap(line, 19))
 
 static func _preview(app: Control, parent: Container, pack: Dictionary) -> void:
-	var frame := C.card()
-	parent.add_child(frame)
-	var content := C.content(frame)
-	content.add_child(C.label("PRÊT À INSTALLER", 21, C.GOLD, true, 700))
-	content.add_child(C.wrap(pack.get("name", "Pack personnalisé"), 46, C.IVORY, true, 700))
+	var content := _section(parent, "PRÊT À INSTALLER", str(pack.get("name", "Pack personnalisé")), false)
 	_inventory(content, pack)
 	content.add_child(C.wrap("L’installation ajoute le pack à votre profil. Vous pourrez ensuite le sélectionner."))
 	if pack.get("rightsStatus", "") == "not-cleared-for-public-distribution":
 		content.add_child(C.wrap("Droits de redistribution publique des photos et logos à vérifier séparément."))
 	var install := C.button("INSTALLER CE PACK", app.pack_manager.install, true)
+	Editorial.action(install, true)
 	install.disabled = app.waiting
 	install.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	content.add_child(install)
