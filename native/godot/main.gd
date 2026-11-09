@@ -645,10 +645,19 @@ func _build_sidebar(parent: Node) -> void:
 func _update_live_bar() -> void:
 	if not is_instance_valid(minibar): return
 	var live := _live()
+	var office_status := minibar.name == "ImmersiveOfficeMatchStatus"
+	if office_status: minibar.visible = not live.is_empty()
 	if not live.is_empty():
 		var teams: Array = live.get("teams", [{},{}])
 		var score: Array = live.get("score", [0,0])
-		minibar.text = "%s  %s — %s  %s   ·   %s min%s" % [G.club_abbr(teams[0]),G.n(score[0]),G.n(score[1]),G.club_abbr(teams[1]),G.n(live.get("minute",0)),"  /  PAUSE" if live.get("paused",false) else ""]
+		var score_line := "%s  %s — %s  %s" % [G.club_abbr(teams[0]),G.n(score[0]),G.n(score[1]),G.club_abbr(teams[1])]
+		var minute := G.n(live.get("minute",0)) + " min"
+		if office_status:
+			var state := "MATCH TERMINÉ" if live.get("finished",false) else ("PAUSE" if live.get("paused",false) else "EN DIRECT")
+			minibar.text = score_line + "\n" + minute + "  ·  " + state
+			minibar.tooltip_text = minibar.text
+		else:
+			minibar.text = score_line + "   ·   " + minute + ("  /  PAUSE" if live.get("paused",false) else "")
 	else:
 		var meta: Dictionary = model.get("meta", {})
 		var club_count := int(meta.get("database", {}).get("clubCount", 0))
@@ -657,8 +666,11 @@ func _update_live_bar() -> void:
 			"france30", "common": minibar.text = "ÉLITE & ACCESSION  /  %s CLUBS" % G.n(club_count)
 			_: minibar.text = "CARRIÈRE HISTORIQUE  /  14 CLUBS"
 	if is_instance_valid(primary_button):
-		primary_button.text = "Continuer" if primary_button.name == "ImmersiveContinue" else primary_text()
-		primary_button.tooltip_text = primary_text()
+		var action := primary_text()
+		primary_button.text = "Continuer" if primary_button.name == "ImmersiveContinue" else action
+		if office_status and not live.is_empty():
+			primary_button.text = "Valider le résultat" if live.get("finished",false) else "Retour au direct"
+		primary_button.tooltip_text = action
 
 func primary_text() -> String:
 	var live := _live()
@@ -668,6 +680,7 @@ func primary_text() -> String:
 	return "PRÉPARER LE MATCH  →" if model.get("next") != null else "AVANCER LA SEMAINE  →"
 
 func primary_action() -> void:
+	if waiting and (last_command != "tick" or not queued_action.is_empty()): return
 	if not _live().is_empty():
 		if _live().get("finished",false): _command("finish_round")
 		else: _navigate("Match")

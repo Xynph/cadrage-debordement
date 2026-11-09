@@ -31,7 +31,7 @@ static func compact(app: Control) -> Control:
 	var dossier: Control = app.SquadViews.preparation(app)
 	var next: Variant = app.model.get("next")
 	if not SeasonPreparation.is_japan(app.model.meta):
-		if next is Dictionary and (next.has("venue") or next.get("neutral",false)):
+		if next is Dictionary and not next.is_empty():
 			var context := _compact_fixture(app,next)
 			dossier.add_child(context)
 			dossier.move_child(context,0)
@@ -113,7 +113,7 @@ func _heading() -> void:
 		context = World.preparation_note(preparation)
 		var advance := _button(hero, Rect2(1564, 83, 640, 53), app.primary_text().trim_suffix("  →"), app.primary_action, true, "arrow", "JapanPreparationDossierAdvance")
 		advance.disabled = app.waiting
-	elif not fixture.is_empty() and (fixture.has("venue") or fixture.get("neutral",false)):
+	elif not fixture.is_empty():
 		var location := D.panel(hero,Rect2(1392,76,812,77),"","","","PreparationFixtureLocation")
 		var venue_name := P.fixture_venue(fixture,false)
 		D.text(location,16,49 if venue_name.is_empty() else 29,_fixture_position(app,fixture,true),20,C.GOLD,700,780).name = "PreparationFixturePosition"

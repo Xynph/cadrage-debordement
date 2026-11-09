@@ -79,7 +79,8 @@ func _build() -> void:
 	if not opponent.is_empty():
 		var home: Dictionary = opponent.get("home", {})
 		var is_home: bool = home.get("id") == app.model.get("club", {}).get("id")
-		fixture = ("Réception · " if is_home else "Déplacement · ") + G.club_name(opponent.get("away", {}) if is_home else home)
+		var location := "Terrain neutre" if opponent.get("neutral", false) else ("Réception" if is_home else "Déplacement")
+		fixture = location + " · " + G.club_name(opponent.get("away", {}) if is_home else home)
 	D.text(self, 30, 142, "Semaine %s  ·  %s" % [G.n(int(meta.get("week", 0)) + 1), fixture], 27, C.IVORY, 500, 785)
 	_metrics(meta)
 	for i in TABS.size():

@@ -84,7 +84,7 @@ static func _fixture(card: Panel, app: Control) -> void:
 	D.place(calendar,Rect2(29,194,25,25))
 	var date := P.fixture_date(next, true)
 	if date.is_empty(): date = "SEMAINE %d" % [int(next.get("week",0))+1]
-	D.text(card,67,216,date+" · "+P.league_name(app.model),28,C.IVORY,600,680).name="OfficeFixtureDate"
+	D.text(card,67,216,date+" · "+Office.fixture_competition(app.model,next),28,C.IVORY,600,680).name="OfficeFixtureDate"
 	var venue_name := P.fixture_venue(next,false)
 	if not venue_name.is_empty():
 		var home := C.icon("home",23,C.MUTED)

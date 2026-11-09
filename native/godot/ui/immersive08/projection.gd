@@ -34,7 +34,8 @@ static func fixture_venue(fixture: Dictionary, neutral_fallback: bool = true) ->
 	if venue is String and not venue.is_empty() and venue.to_lower() not in ["home","away","neutral"]: return venue
 	if fixture.get("neutral",false): return "Terrain neutre" if neutral_fallback else ""
 	var home: Dictionary = fixture.get("home",{})
-	return str(G.identity(home).get("stadium",home.get("stadium","")))
+	var stadium: Variant = G.identity(home).get("stadium",home.get("stadium"))
+	return stadium if stadium is String else ""
 
 static func fixture_position(fixture: Dictionary, club_id: Variant) -> String:
 	if fixture.get("neutral",false): return "TERRAIN NEUTRE"

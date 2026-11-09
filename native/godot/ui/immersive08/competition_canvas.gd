@@ -269,9 +269,7 @@ func _next_match() -> void:
 				return
 			D.text(panel,36,130,"La préparation de League One" if japan else "La préparation du Pacifique",43,C.IVORY,800,810)
 			D.text(panel,37,179,World.preparation_note(preparation),29,C.IVORY,600,802)
-			D.button(panel,Rect2(166,247,589,60),"Ouvrir le dossier de préparation",func():
-				if japan: app.Immersive.open_preparation(app,0)
-				else: app._navigate("Rivalités"),true,"arrow",false,PRIMARY,"CompetitionJapanLink" if japan else "CompetitionPacificLink")
+			D.button(panel,Rect2(166,247,589,60),"Ouvrir le dossier de préparation",func(): app.Immersive.open_preparation(app,0),true,"arrow",false,PRIMARY,"CompetitionJapanLink" if japan else "CompetitionPacificLink")
 			return
 		D.text(panel, 36, 130, "Aucune rencontre programmée", 39, C.IVORY, 800, 810)
 		D.text(panel, 37, 174, app.model.meta.get("roundLabel", "Consultez le calendrier du club."), 27, C.MUTED, 500, 802)

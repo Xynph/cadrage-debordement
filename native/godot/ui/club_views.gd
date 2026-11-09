@@ -177,13 +177,14 @@ static func calendar(app: Control) -> Control:
 	G.chapter(sheet,"06","Les rendez-vous du club","Résultats et rencontres à venir · les phases finales se précisent au fil de la saison.",app.accent)
 	var season := preload("res://ui/immersive08/season_preparation.gd")
 	var meta: Dictionary = app.model.get("meta", {})
-	var preparation := season.data(meta) if season.is_japan(meta) else {}
+	var japan := season.is_japan(meta)
+	var preparation := season.data(meta) if japan or meta.get("leagueId")=="srp" else {}
 	if not preparation.is_empty():
 		var summary := G.h(12)
 		sheet.add_child(summary)
 		summary.add_child(G.fill(G.wrap("Prochain match le " + _calendar_date(preparation.nextDate), 13, G.GOLD)))
 		var prepare := G.reading_button(G.button("Ouvrir le dossier de préparation", func(): app.Immersive.open_preparation(app,0), true), 196)
-		prepare.name = "CalendarJapanPreparation"
+		prepare.name = "CalendarJapanPreparation" if japan else "CalendarPacificPreparation"
 		prepare.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		summary.add_child(prepare)
 	var list := G.scroll(sheet)

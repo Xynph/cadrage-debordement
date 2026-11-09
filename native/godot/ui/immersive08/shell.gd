@@ -28,6 +28,8 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const TACTICS_CANVAS_MIN_WIDTH := 1600
 
 const FOOTER_RISE := 14
+const TOPBAR_ACTION_LEFT := 2067
+const TOPBAR_MATCH_ACTION_LEFT := 2008
 
 const GROUPS = [
 	["Bureau", "Bureau", ["Bureau"]],
@@ -106,7 +108,10 @@ static func render(app: Control) -> bool:
 	if canvas_script!=null or immersive_match or (app.route=="Effectif" and app.get_meta("immersive08_full_player",false)):
 		app.heading=null
 		app.minibar=C.label("",17,C.GOLD);app.minibar.visible=false;content.add_child(app.minibar)
-	else:_heading(content, app)
+	else: _heading(content, app)
+	if app.route=="Bureau":
+		layout.set_meta("immersive_office_match_status",app.minibar)
+		_position_office_match_status(app.minibar,layout.scale.y)
 	_pack_warning(app,content,layout)
 	if canvas_script==null and not immersive_match: _subnavigation(content, app)
 	app.body_scroll = ScrollContainer.new()
@@ -146,6 +151,8 @@ static func _fit_layout(root: Control, layout: Control, reference: Vector2) -> v
 		_position_footer(footer)
 	if layout.has_meta("immersive_topbar"):
 		_position_topbar(layout)
+	if layout.has_meta("immersive_office_match_status"):
+		_position_office_match_status(layout.get_meta("immersive_office_match_status"),factor)
 	if layout.has_meta("immersive_pack_warning"):
 		_fit_pack_warning(layout.get_meta("immersive_pack_warning"),factor)
 
@@ -304,8 +311,10 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var history: Control = app.navigation_controller.controls(false)
 	panel.add_child(history)
 	D.place(history,Rect2(1155,19,91,42))
+	var office_live: bool = app.route=="Bureau" and not app._live().is_empty()
 	var search_caption := "Rechercher un joueur, un menu…" if app.model.get("staff",{}).get("teams",[]).is_empty() else "Rechercher un joueur, un club…"
-	var search := D.button(panel,Rect2(1264,19,475,42),search_caption,func():app.navigation_controller.open_palette(),false,"",true,app.accent,"ImmersiveSearch")
+	var search := D.button(panel,Rect2(1264,19,380 if office_live else 475,42),"Rechercher…" if office_live else search_caption,func():app.navigation_controller.open_palette(),false,"",true,app.accent,"ImmersiveSearch")
+	if office_live: search.tooltip_text = search_caption
 	search.add_theme_font_override("font",C.BODY)
 	search.add_theme_font_size_override("font_size",maxi(12,C.px(18)))
 	search.add_theme_color_override("font_color",C.MUTED)
@@ -316,16 +325,17 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var magnifier := C.icon("search",21,C.MUTED)
 	panel.add_child(magnifier)
 	D.place(magnifier,Rect2(1278,30,21,21))
-	var shortcut := D.chip(panel,Rect2(1677,29,48,23),"Ctrl K",C.MUTED)
+	var shortcut := D.chip(panel,Rect2(1582 if office_live else 1677,29,48,23),"Ctrl K",C.MUTED)
 	var calendar := C.icon("calendar",25,C.IVORY)
 	panel.add_child(calendar)
-	D.place(calendar,Rect2(1773,25,25,25))
+	D.place(calendar,Rect2(1680 if office_live else 1773,25,25,25))
 	app.header_date = D.text(panel,1814,48,"",24,C.IVORY,600,240)
 	app.header_date.mouse_filter = Control.MOUSE_FILTER_PASS
 	app._update_header_date()
-	app.primary_button = D.button(panel,Rect2(2067,17,211,45),"Continuer",app.primary_action,true,"arrow",false,app.accent,"ImmersiveContinue")
+	var action_left := TOPBAR_MATCH_ACTION_LEFT if office_live else TOPBAR_ACTION_LEFT
+	app.primary_button = D.button(panel,Rect2(action_left,17,2278-action_left,45),"Continuer",app.primary_action,true,"arrow",false,app.accent,"ImmersiveContinue")
 	app.primary_button.tooltip_text = app.primary_text()
-	layout.set_meta("immersive_topbar",[app.header_date,app.primary_button,shortcut,calendar])
+	layout.set_meta("immersive_topbar",[app.header_date,app.primary_button,shortcut,calendar,action_left])
 	_position_topbar(layout)
 
 static func _position_topbar(layout: Control) -> void:
@@ -340,17 +350,23 @@ static func _position_topbar(layout: Control) -> void:
 	elements[3].visible=not compact
 	var date_px := maxi(C.px(24),ceili(14.0/factor))
 	var date_font := date.get_theme_font("font")
-	var date_left := 1750 if compact else 1814
+	var action_left: int = elements[4]
+	var office_live := action_left == TOPBAR_MATCH_ACTION_LEFT
+	var date_left := (1655 if compact else 1720) if office_live else (1750 if compact else 1814)
 	date.add_theme_font_size_override("font_size",date_px)
 	date.position=Vector2(C.px(date_left),C.px(48)-date_font.get_ascent(date_px))
-	var date_width := C.px(2054-date_left)
+	var date_width := C.px(action_left-13-date_left)
 	date.set_deferred("size",Vector2(date_width,date_font.get_height(date_px)))
-	if compact and date.tooltip_text.is_empty() and date_font.get_string_size(date.text,HORIZONTAL_ALIGNMENT_LEFT,-1,date_px).x>date_width:
+	if (compact or office_live) and date.tooltip_text.is_empty() and date_font.get_string_size(date.text,HORIZONTAL_ALIGNMENT_LEFT,-1,date_px).x>date_width:
 		date.tooltip_text=date.text
 	var height := maxf(45.0*C.density,26.0/factor)
 	action.add_theme_font_size_override("font_size",maxi(C.px(25),ceili(14.0/factor)))
 	action.position.y=(79.0*C.density-height)/2.0
 	action.size.y=height
+
+static func _position_office_match_status(status: Label, factor: float) -> void:
+	if factor<=0: return
+	status.add_theme_font_size_override("font_size",maxi(C.px(25),ceili(14.0/factor)))
 
 static func _heading(parent: Node, app: Control) -> void:
 	var row := Control.new()
@@ -393,9 +409,15 @@ static func _heading(parent: Node, app: Control) -> void:
 			row.add_child(symbol)
 			D.place(symbol,Rect2(x+16,32,25,25))
 			D.text(row,x+53,54,item[0],25,item[2],600,179)
-	app.minibar = C.label("", 17, C.GOLD)
-	app.minibar.visible = false
-	parent.add_child(app.minibar)
+	if app.route=="Bureau":
+		app.minibar = D.text(row,590,49,"",25,C.GOLD,700,630)
+		app.minibar.name = "ImmersiveOfficeMatchStatus"
+		app.minibar.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		D.place(app.minibar,Rect2(590,3,630,91))
+	else:
+		app.minibar = C.label("",17,C.GOLD)
+		parent.add_child(app.minibar)
+	app.minibar.hide()
 
 static func _subnavigation(parent: Node, app: Control) -> void:
 	if (app.route=="Composition" and app.get_window().size.x>=TACTICS_CANVAS_MIN_WIDTH) or (app.route=="Effectif" and app.get_window().size.x>=1600): return

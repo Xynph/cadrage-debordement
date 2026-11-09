@@ -151,7 +151,7 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 		names.add_child(C.wrap(G.club_name(next.get("away", {})), 30, C.IVORY, true))
 		var date := P.fixture_date(next, true)
 		if date.is_empty(): date = "SEMAINE %d" % [int(next.get("week",0))+1]
-		var timing := C.wrap(date+" · "+P.league_name(app.model),25,C.IVORY,true)
+		var timing := C.wrap(date+" · "+fixture_competition(app.model,next),25,C.IVORY,true)
 		timing.name="OfficeFixtureDate"
 		left.add_child(timing)
 		var venue_name := P.fixture_venue(next,false)
@@ -310,6 +310,13 @@ static func _recruitment(parent: VBoxContainer, app: Control) -> void:
 		parent.add_child(C.wrap(G.euros(player.get("fee", 0)) + " · " + G.euros(player.get("salary", 0)) + " / sem.", 24, C.IVORY, true))
 		parent.add_child(C.wrap(player.get("reason", "Consultez les disponibilités et les modalités avant une offre."), 18))
 	_link(parent, "OfficeMarketAction", "Lire le dossier complet  →", app, "Recrutement")
+
+static func fixture_competition(model: Dictionary, fixture: Dictionary) -> String:
+	var competition := str(fixture.get("competitionId",""))
+	if competition.is_empty(): return P.league_name(model)
+	for league: Dictionary in model.get("leagues",[]):
+		if league.get("id")==competition: return str(league.get("name","Championnat"))
+	return str(fixture.get("label","Championnat")).get_slice(" · ",0)
 
 static func short_fixture_label(model: Dictionary, fixture: Dictionary) -> String:
 	var label := str(fixture.get("label","Rencontre"))
