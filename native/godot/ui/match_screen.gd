@@ -233,6 +233,7 @@ func update_frame(value:Dictionary) -> void:
 		play.disabled=live.get("finished",false)
 		finish.text="VALIDER LA JOURNÉE  →"
 		finish.disabled=not live.get("finished",false)
+		stage.set_live_cadence(app.tick_steps)
 		stage.apply_frame(live)
 	_side()
 
