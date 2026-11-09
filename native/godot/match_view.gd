@@ -11,6 +11,7 @@ const Motion = preload("res://match_motion.gd")
 const Kit = preload("res://match_kit.gd")
 const Athlete = preload("res://match_athlete.gd")
 const Contact = preload("res://match_contact.gd")
+const Cut = preload("res://match_cut.gd")
 var _players: Node3D
 var _ball: Node3D
 var _camera: Camera3D
@@ -98,6 +99,9 @@ func apply_frame(live: Dictionary) -> void:
 		for entry: Dictionary in _actors.values():
 			_recolor(entry.model, entry.side)
 	_paused = live.get("paused", false) or live.get("finished", false) or live.get("atBreak", false)
+	_contact_plan = Contact.plan(scene) if not _paused and has_ball else {}
+	var carry_cut := (not _paused and _kind == "carry" and has_ball and _ball_attached
+		and _carrier_id == previous_carrier and _contact_plan.is_empty())
 	var present: Dictionary = {}
 	for player: Dictionary in scene.players:
 		var id := str(player.get("id", ""))
@@ -110,8 +114,18 @@ func apply_frame(live: Dictionary) -> void:
 			_actors[id] = _make_actor(id, side, target)
 		var entry: Dictionary = _actors[id]
 		entry.holding = id == _carrier_id
+		var can_cut: bool = carry_cut and entry.holding
+		if not can_cut:
+			entry.cut_direction = 0
+			entry.cut_plant.clear()
 		# A UI refresh is not a new sporting movement. Keep its current curve.
 		if not (entry.target as Vector3).is_equal_approx(target):
+			var incoming: Vector3 = entry.velocity
+			if can_cut and incoming.is_zero_approx() and entry.cut_idle <= 0.3:
+				incoming = (entry.target - entry.from) / BLEND_SECONDS
+			entry.cut_direction = Cut.direction(incoming, target - entry.node.position, BLEND_SECONDS) if can_cut else 0
+			entry.cut_plant.clear()
+			entry.cut_idle = 0.0
 			entry.from = entry.node.position
 			entry.target = target
 			entry.tangent = Motion.tangent(entry.velocity, target - entry.node.position, BLEND_SECONDS)
@@ -122,6 +136,7 @@ func apply_frame(live: Dictionary) -> void:
 			entry.velocity = Vector3.ZERO
 			entry.tangent = Vector3.ZERO
 			entry.elapsed = BLEND_SECONDS
+			entry.cut_idle = BLEND_SECONDS
 			entry.feet.clear()
 			entry.grip = 1.0 if entry.holding else 0.0
 		if entry.side != side:
@@ -133,7 +148,6 @@ func apply_frame(live: Dictionary) -> void:
 			_players.remove_child(actor)
 			actor.queue_free()
 			_actors.erase(id)
-	_contact_plan = Contact.plan(scene) if not _paused and has_ball else {}
 	if has_ball:
 		var next_target := _world(ball_data, 0.23)
 		var ball_changed := not _ball_target.is_equal_approx(next_target) or previous_carrier != _carrier_id
@@ -169,7 +183,10 @@ func _process(delta: float) -> void:
 		var actor: Node3D = entry.node
 		if entry.rig:
 			Presentation.restore_contact(entry.rig, entry.contact_base)
+			Cut.restore(entry.rig, entry.cut_pose)
 		var previous := actor.position
+		if entry.elapsed >= BLEND_SECONDS:
+			entry.cut_idle = minf(BLEND_SECONDS, entry.cut_idle + delta)
 		entry.elapsed = minf(BLEND_SECONDS, float(entry.elapsed) + delta)
 		var progress: float = entry.elapsed / BLEND_SECONDS
 		actor.position = Motion.position_at(entry.from, entry.target, entry.tangent, progress)
@@ -196,6 +213,8 @@ func _process(delta: float) -> void:
 			animation.advance(0.0 if _paused else pose_delta)
 		if entry.rig and not _paused:
 			Presentation.support_feet(actor, entry.rig, entry.feet, speed, angle_difference(previous_heading, actor.rotation.y))
+			if entry.cut_direction != 0 and progress < 1.0:
+				Cut.apply(actor, entry.rig, entry.cut_direction, progress, entry.cut_pose, entry.cut_plant)
 	_update_contact(delta)
 	_update_ball(delta)
 	# Resolve upper-body contact after every source-animation update and after the
@@ -376,7 +395,7 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 			animation.play(idle)
 	return {"node": actor, "model": model, "side": side, "from": target, "target": target,
 		"elapsed": BLEND_SECONDS, "velocity": Vector3.ZERO, "tangent": Vector3.ZERO, "running": false,
-		"feet": {},
+		"feet": {}, "cut_direction": 0, "cut_idle": BLEND_SECONDS, "cut_pose": {}, "cut_plant": {},
 		"contact_base": {}, "contact_weight": 0.0,
 		"animation": animation, "idle": idle, "run": run, "walk": walk, "rig": Presentation.rig_for(model), "holding": false, "grip": 0.0}
 
