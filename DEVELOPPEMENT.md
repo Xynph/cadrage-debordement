@@ -1,5 +1,13 @@
 # Journal de développement — Cadrage Débordement
 
+## 9 novembre 2026 — réception des accès immersifs des six parcours
+
+La réception de la PR424 a constaté deux raccordements absents : les achats sous contrat existaient dans Recrutement classique mais pas dans le canvas immersif ; le panneau d’analyses ajouté à l’historique classique était contourné par l’historique Monde immersif. Les deux vues métier sont désormais réutilisées dans ces parcours, sans nouvelle commande, mutation de sauvegarde ou règle de jeu. Les analyses adoptent le style immersif et la liste reste défilable.
+
+La recette du vrai main/worker vérifie les routes Club/Histoire Monde, Staff, Formation et Packs, leurs entrées et dialogues à1280×720 et1920×1080 :24contrôles, zéroéchec, export/carrière/RNG et profil disque inchangés. Le marché a passé58contrôles distincts par clics souris réels, avec vérification des libellés, du non-chevauchement et de l’ordre de dessin du voile décoratif. Les échecs initiaux de routage sont conservés dans les journaux locaux de réception. La revue indépendante du raccordement analyses est reçue. Les recettes détaillées de relecture des matchs de la première livraison restent applicables : ce correctif ne touche pas le Journal.
+
+L’ancienne CI de la PR424 (HEAD8089776) reste verte mais ne valide pas ces nouveaux raccordements : une nouvelle CI doit être reçue sur la nouvelle tête. Pas de fusion ni de réception Windows.
+
 ## 9 novembre 2026 — six développements parallèles issus du comparatif concurrentiel
 
 Six agents ont produit des lots disjoints depuis main `e38a79f`, réunis sur `feature/parallel-six-cloud-20261109`. Les vues sont accessibles dans Godot : achat sous contrat depuis Effectif/Recrutement, mentorat depuis Staff, analyses depuis le carnet du club, bilans depuis Développement, relecture depuis Journal et atelier de calendriers depuis Packs. Les nouveaux domaines sont manifestés dans le worker de production ; la commande consultative de calendrier conserve son dialogue et son brouillon après succès comme refus.
