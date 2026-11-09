@@ -243,6 +243,8 @@ static func _sidebar(parent: Node, app: Control) -> void:
 		style.content_margin_left=C.px(58);action.add_theme_stylebox_override("normal",style)
 		for state in ["hover","pressed","disabled"]:
 			var alternate:StyleBox=action.get_theme_stylebox(state).duplicate();alternate.content_margin_left=C.px(58);action.add_theme_stylebox_override(state,alternate)
+		var focus := action.get_theme_stylebox("focus") as StyleBoxFlat
+		focus.set_expand_margin_all(2)
 		if selected:D.rect(rail,Rect2(7,y,4,49),C.MINT)
 		var symbol:=C.icon(entry[0],25,C.IVORY if selected else Color("c8d0c6"));rail.add_child(symbol);D.place(symbol,Rect2(23,y+12,25,25))
 		var unread: int = Reception.unread(app) if i==1 else 0

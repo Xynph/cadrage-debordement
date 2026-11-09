@@ -211,14 +211,15 @@ static func workspace(app: Control, page: Control, creation: bool) -> Control:
 			_fit_japan_clubs(page)
 		if not compact:
 			_fit_club_cards(page)
-		_observe_creation_size(app, column, size)
 	if size.x >= 2240 and size.y >= 1250:
 		if creation: _career_context(app, page)
 		else: _pack_guide(app, page)
+	_observe_entry_size(app, column, size, creation)
 	return column
 
-static func _observe_creation_size(app: Control, workspace: Control, built_size: Vector2i) -> void:
+static func _observe_entry_size(app: Control, workspace: Control, built_size: Vector2i, creation: bool) -> void:
 	var window := app.get_window()
+	var picker: FileDialog = null if creation else app.pack_manager.picker
 	var timer := Timer.new()
 	timer.one_shot = true
 	timer.wait_time = .08
@@ -226,15 +227,25 @@ static func _observe_creation_size(app: Control, workspace: Control, built_size:
 	var resized := func():
 		if workspace.is_inside_tree() and window.size != built_size: timer.start()
 	window.size_changed.connect(resized)
-	workspace.tree_exiting.connect(func(): window.size_changed.disconnect(resized), CONNECT_ONE_SHOT)
+	if picker != null: picker.visibility_changed.connect(resized)
+	workspace.tree_exiting.connect(func():
+		window.size_changed.disconnect(resized)
+		if is_instance_valid(picker): picker.visibility_changed.disconnect(resized), CONNECT_ONE_SHOT)
 	timer.timeout.connect(func():
 		if window.size == built_size or window.size.x < 1280 or window.size.y < 720 or app.waiting: return
-		_refresh_creation_size(app, workspace))
+		if picker != null and picker.visible: return
+		_refresh_entry_size(app, workspace, creation))
 
-static func _refresh_creation_size(app: Control, workspace: Control) -> void:
-	if app.route != "Création" or not app.root_content.is_ancestor_of(workspace): return
+static func _refresh_entry_size(app: Control, workspace: Control, creation: bool) -> void:
+	if app.route != ("Création" if creation else "Packs") or not app.root_content.is_ancestor_of(workspace): return
 	var focus := app.get_viewport().gui_get_focus_owner()
 	var focus_id := str(focus.name) if focus != null and workspace.is_ancestor_of(focus) else ""
+	# Les commandes de l’atelier sont anonymes. Leur ordre est stable à toutes les tailles.
+	var pack_focus := workspace.find_children("*", "Button", true, false).find(focus) if not creation else -1
+	var pack_scrolls: Array[int] = []
+	if not creation:
+		for panel: ScrollContainer in workspace.find_children("*", "ScrollContainer", true, false):
+			pack_scrolls.append(panel.scroll_vertical)
 	var list := workspace.find_child("CreationClubsScroll", true, false) as ScrollContainer
 	var list_scroll := list.scroll_vertical if list != null else 0
 	var page_scroll: int = app.entry_scroll.scroll_vertical
@@ -246,8 +257,14 @@ static func _refresh_creation_size(app: Control, workspace: Control) -> void:
 	new_scroll.scroll_vertical = page_scroll
 	list = new_scroll.find_child("CreationClubsScroll", true, false) as ScrollContainer
 	if list != null: list.scroll_vertical = list_scroll
-	if focus_id.is_empty(): return
-	var target := new_scroll.find_child(focus_id, true, false) as Control
+	if not pack_scrolls.is_empty():
+		var panels := new_scroll.find_children("*", "ScrollContainer", true, false)
+		for i in mini(pack_scrolls.size(), panels.size()):
+			panels[i].scroll_vertical = pack_scrolls[i]
+	var target := new_scroll.find_child(focus_id, true, false) as Control if not focus_id.is_empty() else null
+	if pack_focus >= 0:
+		var buttons := new_scroll.find_children("*", "Button", true, false)
+		if pack_focus < buttons.size(): target = buttons[pack_focus]
 	if target != null and target.is_visible_in_tree(): target.grab_focus()
 
 static func _illustrate_preview(page: Control) -> void:
