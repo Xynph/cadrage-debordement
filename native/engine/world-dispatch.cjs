@@ -22,7 +22,7 @@ module.exports=function worldDispatcher(editions,makeCareer){
   sourcePlayerKnown:id=>edition(S)!==null&&current(S).sourcePlayerKnown(id),
   sourcePlayer:(s,id)=>current(s).sourcePlayer(id),
   sizing:onState('sizing'),leagueId:onState('leagueId'),ranked:onState('ranked'),rows:onState('rows'),
-  cupTables:onState('cupTables'),fixtures:onState('fixtures'),userFixture:onState('userFixture'),
+  cupTables:onState('cupTables'),fixtures:onState('fixtures'),userFixture:onState('userFixture'),calendarToday:onState('calendarToday'),
   label:onState('label'),validate:onState('validate'),finishWeek:()=>current(S).finishWeek(),
  });
 };

@@ -5,7 +5,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/management_state.gd")
 
-const CATEGORIES = ["Tous", "Staff", "Médical", "Direction", "Recrutement"]
+const CATEGORIES = ["Tous", "Staff", "Médical", "Direction", "Recrutement", "Compétitions"]
 const ICONS = {"Staff":"train", "Médical":"heart", "Direction":"shield", "Recrutement":"search", "Formation":"school", "Compétitions":"trophy", "Club":"mail"}
 const COLORS = {"Staff":C.MINT, "Médical":C.ALERT, "Direction":C.GOLD, "Recrutement":C.BLUE, "Formation":C.MINT, "Compétitions":C.GOLD, "Club":C.MUTED}
 const ROUTES = {"Staff":"Préparation", "Médical":"Effectif", "Direction":"Club", "Recrutement":"Recrutement", "Formation":"Formation", "Compétitions":"Calendrier", "Club":"Bureau"}
@@ -33,6 +33,24 @@ static func _messages(app: Control) -> Array[Dictionary]:
 		if category == "Direction" and "contrat" in folded: destination = "Effectif"
 		if category == "Direction" and ("tresorerie" in folded or "billetterie" in folded): destination = "Finances"
 		messages.push_front({"id":id, "text":clean, "category":category, "route":destination, "position":source.size()-index})
+	var notices: Array = app.model.get("calendarMail", [])
+	for index in notices.size():
+		var notice: Dictionary = notices[index]
+		var previous_date := P.fixture_date({"date":notice.fromDate})
+		var new_date := P.fixture_date({"date":notice.toDate})
+		var opponent := str(notice.opponent)
+		var fixture := "Votre rencontre" if opponent.is_empty() else "Votre rencontre contre " + opponent
+		var text := "%s, initialement prévue le %s, aura lieu le %s." % [fixture, previous_date, new_date]
+		match notice.status:
+			"pending": text += "\n\nVous pouvez recaler les séances à venir sur la nouvelle date ou conserver la préparation prévue."
+			"recalibrated": text += "\n\nLa préparation a été recalée."
+			"kept": text += "\n\nLa préparation prévue a été conservée."
+			"superseded": text += "\n\nUn courrier plus récent indique la nouvelle date."
+			"expired": text += "\n\nCette rencontre ne permet plus de modifier la préparation."
+		messages.push_front({
+			"id":notice.id, "subject":"Changement de date", "text":text, "category":"Compétitions",
+			"route":"Calendrier", "position":source.size()+index+1, "calendar_notice":notice
+		})
 	return messages
 
 static func _category(message: String) -> String:
@@ -67,7 +85,7 @@ static func heading(row: Control, app: Control) -> Label:
 	D.chip(row,Rect2(773,36,199,52),"%d non lus" % unread(app),C.MINT)
 	D.chip(row,Rect2(991,36,204,52),"%d décisions" % _tasks(app).size(),C.AMBER)
 	var x := 1230
-	var widths := [125,160,170,185,234]
+	var widths := [95,140,145,154,196,196]
 	for i in CATEGORIES.size():
 		var category: String = CATEGORIES[i]
 		var name := "InboxCategory"+str(i)
@@ -166,7 +184,7 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 		elif mark.get("favorite",false): _icon(row,"star",Rect2(14,38,23,23),C.GOLD)
 		var image: String = PORTRAITS.get(message.category,"mail-trainer")
 		D.photo(row,image,Rect2(57,12,83,79))
-		D.text(row,160,40,message.category,29,C.IVORY,700,380)
+		D.text(row,160,40,message.get("subject",message.category),29,C.IVORY,700,380)
 		D.text(row,160,76,message.text,22,C.IVORY,500,525)
 		D.chip(row,Rect2(544,13,150,31),"Message %02d" % message.position,COLORS[message.category])
 	scroll.set_deferred("scroll_vertical",int(state.scroll))
@@ -189,7 +207,7 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	D.text(card,52,68,category.to_upper(),39,C.IVORY,800,780)
 	_icon(card,ICONS[category],Rect2(53,87,27,27),COLORS[category])
 	D.text(card,92,110,"Journal du club" if message.is_empty() else "Journal du club · Message %02d" % message.position,24,C.IVORY,500,690)
-	var title := "Le courrier du club" if message.is_empty() else _subject(message.text)
+	var title := "Le courrier du club" if message.is_empty() else str(message.get("subject",_subject(message.text)))
 	D.text(card,32,303,title,44,C.IVORY,700,1097)
 	var body := C.wrap(message.get("text","Aucun message à afficher dans ce dossier."),23,C.IVORY)
 	body.name = "InboxMessageText"
@@ -214,7 +232,7 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 			else: app._navigate(task[1]),false,"arrow",true,app.accent,"InboxRecommendation"+str(index))
 		action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
 	var next: Variant = app.model.get("next")
-	if next is Dictionary and not next.is_empty():
+	if not message.has("calendar_notice") and next is Dictionary and not next.is_empty():
 		var fixture := D.button(card,Rect2(26,801,1112,69),"Dossier de préparation · "+str(next.get("label","Prochain match")),func():app._navigate("Préparation"),false,"tactic",false,app.accent,"InboxPreparation")
 		fixture.tooltip_text = "Ouvrir l’analyse de la prochaine rencontre"
 	if not message.is_empty(): _actions(card,app,state,message)
@@ -233,12 +251,20 @@ static func _art_fade(parent: Node, area: Rect2, horizontal: bool = true) -> Gra
 
 static func _actions(card: Panel, app: Control, state: Dictionary, message: Dictionary) -> void:
 	var mark: Dictionary = state.marks.get(message.id,{})
-	D.button(card,Rect2(26,890,545,62),"Ouvrir · "+str(message.route),func():app._navigate(message.route),true,"arrow",false,app.accent,"InboxOpenMessageAction")
-	D.button(card,Rect2(589,890,549,62),"Réouvrir le message" if mark.get("archived",false) else "Marquer comme traité",func():
-		mark.archived=not mark.get("archived",false)
-		mark.read=true
-		state.marks[message.id]=mark
-		_redraw(app,"InboxFolder"+str(state.folder)),false,"check",false,app.accent,"InboxToggleArchive")
+	if message.get("calendar_notice", {}).get("status") == "pending":
+		var recalibrate := D.button(card,Rect2(26,890,545,62),"Recaler la préparation",
+			_choose_calendar_preparation.bind(app,card,message.id,"recalibrate"),true,"calendar",false,app.accent,"InboxRecalibratePreparation")
+		var keep := D.button(card,Rect2(589,890,549,62),"Ne rien faire",
+			_choose_calendar_preparation.bind(app,card,message.id,"keep"),false,"check",false,app.accent,"InboxKeepPreparation")
+		recalibrate.disabled = app.waiting
+		keep.disabled = app.waiting
+	else:
+		D.button(card,Rect2(26,890,545,62),"Ouvrir · "+str(message.route),func():app._navigate(message.route),true,"arrow",false,app.accent,"InboxOpenMessageAction")
+		D.button(card,Rect2(589,890,549,62),"Réouvrir le message" if mark.get("archived",false) else "Marquer comme traité",func():
+			mark.archived=not mark.get("archived",false)
+			mark.read=true
+			state.marks[message.id]=mark
+			_redraw(app,"InboxFolder"+str(state.folder)),false,"check",false,app.accent,"InboxToggleArchive")
 	D.button(card,Rect2(26,966,300,44),"Retirer des favoris" if mark.get("favorite",false) else "Ajouter aux favoris",func():
 		mark.favorite=not mark.get("favorite",false)
 		state.marks[message.id]=mark
@@ -248,6 +274,12 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 			mark.read=not mark.get("read",false)
 			state.marks[message.id]=mark
 			_redraw(app,"InboxToggleRead"),false,"mail",true,app.accent,"InboxToggleRead")
+
+static func _choose_calendar_preparation(app: Control, card: Panel, id: String, choice: String) -> void:
+	if app._command("calendar_mail_decide",{"id":id, "choice":choice}):
+		for name in ["InboxRecalibratePreparation", "InboxKeepPreparation"]:
+			var action := card.get_node_or_null(name) as Button
+			if action != null: action.disabled = true
 
 static func _subject(message: String) -> String:
 	var colon := message.find(":")
