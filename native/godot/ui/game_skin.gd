@@ -218,7 +218,8 @@ static func picture(slug: String, kind: String = "stadium", dark: bool = true) -
 	base.custom_minimum_size = Vector2(0, 140)
 	var image := TextureRect.new()
 	var path := "res://assets/club-atlas/%s-%s.webp" % [slug, kind]
-	image.texture = load(path)
+	if ResourceLoader.exists(path):
+		image.texture = load(path)
 	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
