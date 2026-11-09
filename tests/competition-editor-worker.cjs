@@ -14,7 +14,7 @@ test('Atelier accessible avant création de carrière, document vérifiable sans
  const f=fixture(t),before=f.good('snapshot');
  const result=f.good('competition_editor_preview',request).competitionEditor;
  assert.equal(result.summary.matches,6);assert.equal(result.summary.rounds,6);assert.equal(result.summary.byesPerClub,2);
- assert.match(result.notice,/ne lance pas encore une carrière/);
+ assert.match(result.notice,/autres restent des documents échangeables/);
  assert.deepEqual(f.good('snapshot'),before,'le brouillon ne persiste pas dans le modèle');
  const validated=f.good('competition_editor_preview',{action:'validate',document:JSON.parse(result.exportText)}).competitionEditor;
  assert.deepEqual(validated,result);

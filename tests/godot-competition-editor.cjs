@@ -14,8 +14,10 @@ test('Atelier calendrier : vrai worker, refus conserv√©, import/export et carri√
  }
  // Local pre-integration runs can use the coordinator's staged base and hooks.
  for(const file of ['ui/competition_editor_view.gd','ui/pack_views.gd'])fs.copyFileSync(path.join(source,file),path.join(project,file));
- fs.cpSync(path.resolve(source,'../engine'),engine,{recursive:true});
- fs.symlinkSync(path.resolve(source,'../../dist'),path.join(dir,'dist'),'junction');
+ const engineBase=process.env.CD_EDITOR_WORKER?path.dirname(process.env.CD_EDITOR_WORKER):path.resolve(source,'../engine');
+ fs.cpSync(engineBase,engine,{recursive:true});
+ for(const file of ['custom-competition.cjs','competition-editor.cjs'])fs.copyFileSync(path.resolve(source,'../engine',file),path.join(engine,file));
+ fs.symlinkSync(path.resolve(engineBase,'../../dist'),path.join(dir,'dist'),'junction');
  if(process.env.CD_EDITOR_WORKER)fs.copyFileSync(process.env.CD_EDITOR_WORKER,path.join(engine,'worker.cjs'));
  fs.copyFileSync(path.join(__dirname,'godot-competition-editor.gd'),path.join(project,'calendar-test.gd'));
  const env={...process.env,CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_SELF_TEST:'0',CD_GODOT_DATA_DIR:dir+'-profile',CD_EDITOR_UI_ARTIFACTS:dir,XDG_DATA_HOME:path.join(dir,'xdg-data'),XDG_CONFIG_HOME:path.join(dir,'xdg-config'),XDG_CACHE_HOME:path.join(dir,'xdg-cache')};

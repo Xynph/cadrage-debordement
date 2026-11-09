@@ -60,6 +60,7 @@ static func page(app: Control) -> Control:
 	importing.disabled = app.waiting
 	commands.add_child(importing)
 	var calendar := G.button("ATELIER CALENDRIER", func(): preload("res://ui/competition_editor_view.gd").open(app))
+	calendar.name = "OpenCompetitionEditor"
 	calendar.disabled = app.waiting
 	commands.add_child(calendar)
 	var packs: Dictionary = app.model.get("packs", {})

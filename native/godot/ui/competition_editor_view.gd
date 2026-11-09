@@ -15,6 +15,9 @@ var message: Label
 var generate_button: Button
 var validate_button: Button
 var export_button: Button
+var launch_button: Button
+var launch_notice: Label
+var play_club: OptionButton
 var copy_button: Button
 var preview: Dictionary = {}
 var pending := false
@@ -45,7 +48,7 @@ func _build() -> void:
 	var body := G.v(10)
 	body.custom_minimum_size.x = width - 54
 	scroll.add_child(body)
-	body.add_child(G.wrap("Créez et échangez un calendrier tous contre tous. Cet atelier ne lance pas encore de carrière personnalisée et ne modifie aucune compétition officielle.", 17))
+	body.add_child(G.wrap("Créez et échangez un calendrier. Les formats 14 clubs aller-retour permettent de lancer une carrière fictive ; les autres restent échangeables. Aucune compétition officielle n’est modifiée.", 17))
 	title_input = LineEdit.new()
 	title_input.name = "CompetitionEditorTitle"
 	title_input.text = "Ma ligue fictive"
@@ -64,6 +67,7 @@ func _build() -> void:
 	generate_button = G.button("GÉNÉRER LE CALENDRIER", _generate, true)
 	generate_button.name = "CompetitionEditorGenerate"
 	body.add_child(generate_button)
+	body.add_child(G.button("MODÈLE JOUABLE · 14 CLUBS", _playable_template))
 	body.add_child(G.label("Document JSON · modifiable et échangeable", 14))
 	json_input = TextEdit.new()
 	json_input.name = "CompetitionEditorJson"
@@ -86,6 +90,17 @@ func _build() -> void:
 	message = G.wrap("Votre brouillon reste dans cette fenêtre jusqu’à sa fermeture. Exportez-le pour le conserver.", 14)
 	message.name = "CompetitionEditorMessage"
 	body.add_child(message)
+	launch_notice = G.wrap("Vérifiez le calendrier pour connaître son format jouable.", 14)
+	launch_notice.name = "CustomCompetitionSupport"
+	body.add_child(launch_notice)
+	play_club = OptionButton.new()
+	play_club.name = "CustomCompetitionClub"
+	play_club.disabled = true
+	body.add_child(play_club)
+	launch_button = G.button("CRÉER UNE CARRIÈRE FICTIVE", _launch)
+	launch_button.name = "CustomCompetitionLaunch"
+	launch_button.disabled = true
+	body.add_child(launch_button)
 	round_choice = OptionButton.new()
 	round_choice.item_selected.connect(func(_index: int): _show_round())
 	body.add_child(round_choice)
@@ -103,6 +118,8 @@ func _build() -> void:
 func _document_changed() -> void:
 	if editing: return
 	validated_text = ""
+	launch_button.disabled = true
+	play_club.disabled = true
 	export_button.disabled = true
 	copy_button.disabled = true
 	fixture_output.text = "Document modifié : vérifiez-le pour actualiser l’aperçu."
@@ -138,6 +155,8 @@ func _request(payload: Dictionary) -> void:
 	validate_button.disabled = true
 	export_button.disabled = true
 	copy_button.disabled = true
+	launch_button.disabled = true
+	play_club.disabled = true
 	json_input.editable = false
 	message.text = "Contrôle du calendrier…"
 	if not app._command("competition_editor_preview", payload):
@@ -150,6 +169,10 @@ func _finish() -> void:
 	json_input.editable = true
 	export_button.disabled = validated_text.is_empty()
 	copy_button.disabled = validated_text.is_empty()
+	var has_match: bool = app.model.get("live") is Dictionary and not app.model.live.is_empty()
+	var playable: bool = not has_match and not validated_text.is_empty() and bool(preview.get("launch", {}).get("playable", false))
+	launch_button.disabled = not playable
+	play_club.disabled = not playable
 
 func _on_model(value: Dictionary) -> void:
 	if not pending or not app.bridge.last_response_ok or app.last_command != "competition_editor_preview": return
@@ -160,6 +183,9 @@ func _on_model(value: Dictionary) -> void:
 	editing = true
 	json_input.text = validated_text
 	editing = false
+	play_club.clear()
+	for club: Dictionary in preview.get("document", {}).get("clubs", []): play_club.add_item(str(club.get("name", "Club")))
+	launch_notice.text = str(preview.get("launch", {}).get("reason", "Format non jouable."))
 	_finish()
 	var summary: Dictionary = preview.get("summary", {})
 	message.text = "%d clubs · %d journées · %d rencontres · %d repos par club. %s" % [int(summary.get("clubs", 0)), int(summary.get("rounds", 0)), int(summary.get("matches", 0)), int(summary.get("byesPerClub", 0)), str(preview.get("notice", ""))]
@@ -247,3 +273,36 @@ func _copy() -> void:
 	if validated_text.is_empty() or pending: return
 	DisplayServer.clipboard_set(validated_text)
 	message.text = "Calendrier fictif copié. Il ne modifie aucune carrière."
+
+func _playable_template() -> void:
+	if pending: return
+	var names := PackedStringArray()
+	for i in range(14): names.append("Club des vallées " + str(i + 1))
+	names_input.text = "\n".join(names)
+	double_round.button_pressed = true
+	_generate()
+
+func _launch() -> void:
+	if app.model.get("live") is Dictionary and not app.model.live.is_empty():
+		message.text = "Terminez et validez le match avant de créer une autre carrière."
+		return
+	if pending or app.waiting or validated_text.is_empty() or not preview.get("launch", {}).get("playable", false): return
+	if validated_text != json_input.text:
+		_document_changed()
+		message.text = "Vérifiez votre document modifié avant de créer une carrière."
+		return
+	var confirmation := ConfirmationDialog.new()
+	confirmation.name = "CustomCompetitionConfirmation"
+	confirmation.title = "Nouvelle carrière fictive"
+	confirmation.dialog_text = "Prendre la direction de %s ?\nLa carrière courante sera remplacée. Exportez-la avant de poursuivre si vous souhaitez la conserver.\n14 clubs fictifs, 26 journées et phases finales historiques ; couleurs, budgets et niveaux des emplacements fictifs conservés." % play_club.get_item_text(play_club.selected)
+	confirmation.get_ok_button().text = "CRÉER ET REMPLACER"
+	confirmation.get_cancel_button().text = "GARDER LE BROUILLON"
+	app._prepare_dialog(confirmation, mini(760, app.get_window().size.x - 96))
+	var chosen := play_club.selected
+	var document: Dictionary = preview.get("document", {}).duplicate(true)
+	confirmation.confirmed.connect(func():
+		app._command("new_career", {"mode":"custom", "club":chosen, "document":document, "confirmed":true}, "Bureau")
+		confirmation.queue_free())
+	confirmation.canceled.connect(confirmation.queue_free)
+	add_child(confirmation)
+	Dialogs.show_centered(confirmation, Vector2i(mini(760, app.get_window().size.x - 96), 300))
