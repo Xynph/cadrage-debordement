@@ -54,3 +54,6 @@ Chaque agent lit l’existant, écrit son design/plan, reproduit une absence/err
 
 ## Verdict local final
 Tous les domaines et correctifs de revue intégrés. Profondeurfictionb0c7f6→0845b41, transportstaffda22c5a→ecd58f7 reçus et relus ; historique23/équipe et vraieUIe02019e→855506d ; draftsjeunesd36f1fa→77b03af. Root57testsbackendPASS et12recettesGodotPASS sansskip. Testcroisécustom+salaires+mentorat+jeunes+enchère+historique+reprise/importPASS. Revueséditeur,staff,marché,analytics,jeunesse,match etinterfacesroot reçues sans blocage restant. CI complète exacte finale à recevoir après publication, sans arrêt anticipé.
+
+## Correctif de CI identifié
+Run42667473754 : quatre groupesPASS, seul tests/godot-common-rosters.cjsFAIL (SHA sourcegame.js non régénéré). Standardbuild relancé, égalitédonnéescomplèteshorssources vérifiée parSHA256, recettecomplètecommune et compilation --check désormaisPASS. Sourceprofils inchangés, aucun testaffabli. Publiercecorrectif puisrecevoirnouvelleCIcomplète/gateavantclôture.

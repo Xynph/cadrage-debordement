@@ -1,5 +1,11 @@
 # Journal de développement — Cadrage Débordement
 
+## 9 novembre 2026 — provenance de la base commune après calendrier personnalisé
+
+La CI42667473754sur aede0e2a reçu quatre groupes verts et un groupe rouge : tests/godot-common-rosters.cjs refusait le SHA de dist/game.js enregistré dans dist/rugby-common-rosters.js, resté antérieur à la conservation du calendrier personnalisé. L’échec a été reproduit localement avant correction. La compilation standard scripts/build-rugby-common.cjs a été relancée ; la comparaison des objets complets hors champ sources confirme les1592profils/30clubs rigoureusement inchangés (digest SHA256de5a262f4d456d98211dff7966a56c398b4a81b20a3f317be1aa363b59a8a026). Seul le SHA de provenance game.js diffère.
+
+Après régénération, la recette commune passe : parité des profils actifs, positions officielles documentées, pseudonymes, hashes source,34semaines et intersaison, export/import/reprise, refus disque/état/RNG, bornes de complexité et anciennes fictions/France. La compilation --check est reçue. Aucun seuil de test ni donnée sportive n’a été modifié pour contourner l’échec. Nouvelle CI complète à recevoir sur le correctif publié ; ne pas invoquer le run précédent rouge comme validation finale.
+
 ## 9 novembre 2026 — approfondissement reçu des six modules de management
 
 Les six domaines ont été approfondis puis relus indépendamment, sans fusion. Le marché accepte des indemnités/salaires saisis, affiche les refus et contre-propositions et arbitre des offres concurrentes IA sur besoins/finances publics ; la clôture recalcule le devis et transfère réellement le joueur et l’argent. Les contrats trop chers ne peuvent plus être attribués sous la demande du joueur. La fiction historique/personnalisée à30joueurs possède une garde locale de libération28, distincte de la garde37des bases de référence ; aucune cible globale de population IA n’a été diminuée.
