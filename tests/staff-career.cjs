@@ -85,3 +85,23 @@ test('Registre complet : texte compatible sauvegarde, pages bornées et annuaire
  assert.equal(JSON.stringify(teams),before);assert(saved.length<3000000);
  console.log(JSON.stringify({staffRegistrySmoke:true,people:state.people.flat().length,pages:state.people.length,bytes:Buffer.byteLength(saved)}));
 });
+test('Import : une horloge individuelle gelée ou une transition globale manquante sont refusées',()=>{
+ const h=fixture();h.run('CDStaffCareer.initialize(S);S.season=2;CDStaffCareer.advance(S,1)');
+ const good=JSON.stringify(h.ctx.S);
+ const p=h.ctx.S.staffCareer.people.flat()[0];p.age--;p.ageSeason--;
+ assert.throws(()=>h.run('CDStaffCareer.validate(S)'),/horloge/);
+ h.ctx.S=JSON.parse(good);h.ctx.S.staffCareer.lastAdvancedSeason=0;
+ assert.throws(()=>h.run('CDStaffCareer.validate(S)'),/horloge/);
+ h.ctx.S=JSON.parse(good);assert.equal(h.run('CDStaffCareer.validate(S)'),true);
+});
+test('Un nom de joueur hérité avec guillemets ou esperluette ne bloque pas la retraite',()=>{
+ const h=fixture();h.run('CDStaffCareer.initialize(S)');let converted=false;
+ for(let n=0;n<100&&!converted;n++){
+  h.ctx.player={id:'player:quoted:'+n,name:'Ancien "Joueur" & coach',age:38,rating:78,fam:5,skills:{mental:75},dev:{careerMinutes:3000}};
+  const original=JSON.stringify(h.ctx.player);
+  converted=h.run('CDStaffCareer.captureRetirement(S,player,0)');
+  assert.equal(JSON.stringify(h.ctx.player),original,'aucun nettoyage du joueur source');
+ }
+ assert(converted);assert(h.model().candidates.some(p=>p.sourcePlayerId&&p.name.includes(' et ')));
+ assert.equal(h.run('CDStaffCareer.validate(S)'),true);
+});

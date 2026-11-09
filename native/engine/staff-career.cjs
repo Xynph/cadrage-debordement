@@ -93,7 +93,7 @@ function factory(){
  }
  function captureRetirement(s,p,ownerId=null){
   if(!active(s))return false;
-  check(identity(p?.id)&&name(p.name)&&int(p.age,16,120),'joueur retraité invalide');
+  check(identity(p?.id)&&typeof p.name==='string'&&p.name.trim().length>0&&p.name.length<=6000&&int(p.age,16,120),'joueur retraité invalide');
   const st=s.staffCareer;
   if(st.captured.some(e=>e.playerId===p.id)||people(st).some(e=>e.sourcePlayerId===p.id))return false;
   st.captured.push({playerId:p.id,season:s.season});
@@ -141,13 +141,14 @@ function factory(){
  function validate(s){
   if(!s||s.staffCareer===undefined)return true;
   const st=s.staffCareer;check(shape(st,['version','policy','financialPolicy','activatedSeason','lastAdvancedSeason','serial','people','targets','history','captured'])&&st.version===1&&st.policy===POLICY&&st.financialPolicy===FINANCE,'version ou champs inconnus');
-  check(int(st.activatedSeason,1,s.season)&&int(st.lastAdvancedSeason,st.activatedSeason-1,s.season-1)&&int(st.serial,0,1000000),'horloge ou compteur invalide');
+  check(int(st.activatedSeason,1,s.season)&&st.lastAdvancedSeason===s.season-1&&int(st.serial,0,1000000),'horloge ou compteur invalide');
   check(Array.isArray(st.people)&&st.people.length<=32&&st.people.every(page=>Array.isArray(page)&&page.length<=256)&&people(st).length<=6000&&people(st).filter(p=>p.clubId===null).length<=192,'effectif de staff excessif');
   const source=sourceTeams(s)||[],references=new Map(source.flatMap(c=>c.members.map(p=>[p.id,p])));
   const ids=new Set(),players=new Set(),activePlayerIds=new Set([...s.clubs.flatMap(c=>c.players||[]),...(s.market||[]),...(s.economy?.freeAgents||[]),...(s.development?.academy||[]),...(s.aiRoster?.academies||[]).flatMap(a=>a.players||[])].map(p=>p.id));
   for(const p of people(st)){
    check(shape(p,PERSON)&&identity(p.id)&&!ids.has(p.id)&&name(p.name)&&name(p.roleLabel)&&ROLES.includes(p.role),'identité ou rôle invalide');ids.add(p.id);
    check(p.appearanceAge===p.ageAtEntry&&int(p.ageAtEntry,18,300)&&int(p.entrySeason,st.activatedSeason,s.season+1)&&int(p.ageSeason,p.entrySeason,s.season+1)&&p.age===p.ageAtEntry+p.ageSeason-p.entrySeason&&int(p.age,18,300)&&p.retireAge===68+hash(p.id+':retire')%13&&p.age<p.retireAge,'âge de carrière invalide');
+   check(p.ageSeason===s.season||(p.sourceKind==='retired-player'&&p.entrySeason===s.season+1&&p.ageSeason===p.entrySeason&&p.conversion?.retiredSeason===s.season),'horloge personnelle invalide');
    check(['estimated','published-derived','player-career'].includes(p.ageBasis)&&int(p.level,40,85)&&p.salary===0,'estimation ou coût invalide');
    check((p.clubId===null&&p.contractEnd===null)||(int(p.clubId,0,s.clubs.length-1)&&int(p.contractEnd,s.season,Math.min(9999,s.season+3))),'contrat invalide');
    check(identity(p.appearanceId),'apparence invalide');
