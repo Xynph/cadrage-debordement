@@ -2,7 +2,9 @@
 // Test-only registration is the exact one-line manifest change reserved to root.
 const assert=require('node:assert/strict'),{test}=require('node:test'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const domain=require('../native/engine/staff-employment.cjs'),systems=require('../native/engine/native-systems.cjs'),bootstrap=systems.bootstrap;
+if(!systems.commands.includes('staff_employment_enable')){
 systems.commands=[...systems.commands,...domain.commands];systems.bootstrap=()=>bootstrap().replace('const domains={','const domains={staffEmployment:('+domain.factory.toString()+')(),').replace('return {\n   domain',''+domain.commands.map(c=>'owners.set('+JSON.stringify(c)+',domains.staffEmployment);').join('')+'\nreturn {\n   domain');
+}
 const {createBridge}=require('../native/engine/worker.cjs');
 function fixture(seed=27,root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-deepen-staff-'))){let bridge=createBridge({dataDir:root,seed,now:1700000000000}),n=0;const raw=(command,payload={})=>bridge.handle({id:++n,command,payload});const good=(c,p={})=>{const r=raw(c,p);assert.equal(r.ok,true,c+':'+r.error);return r.model;};return {root,raw,good,close:()=>bridge.close(),reopen:()=>{bridge.close();bridge=createBridge({dataDir:root});},get bridge(){return bridge;}};}
 function checksum(state){let h=2166136261;for(const c of JSON.stringify(state)){h=Math.imul(h^c.charCodeAt(0),16777619);}return (h>>>0).toString(16).padStart(8,'0');}
