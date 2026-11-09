@@ -123,8 +123,9 @@ static func _territory(app: Control) -> Control:
 	page.add_child(photos)
 	for kind in ["city", "stadium"]:
 		var slug: String = c.get("slug", "")
-		var archive_available := ResourceLoader.exists("res://assets/club-atlas/%s-%s.webp" % [slug, kind])
-		var picture := G.picture(slug, kind)
+		var photo: Dictionary = c.get("photos", {}).get(kind, {})
+		var picture := G.picture(slug, kind, true, str(photo.get("path", "")))
+		var archive_available: bool = picture.get_meta("has_photo", false)
 		if not archive_available:
 			var backing := ColorRect.new()
 			backing.color = Color(c.get("color", "#303c42")).darkened(.28)
@@ -140,7 +141,14 @@ static func _territory(app: Control) -> Control:
 		title.add_theme_font_override("font", G.T.DISPLAY)
 		title.add_theme_font_size_override("font_size", 24)
 		content.add_child(title)
-		content.add_child(G.wrap("Photo d’archive · crédits accessibles" if archive_available else "Aucune photo d’archive disponible", 12, G.WHITE))
+		if picture.get_meta("photo_from_pack", false):
+			var credit := G.wrap("Photo · " + str(photo.get("credit", "")), 12, G.WHITE)
+			credit.name = "VenuePhotoCredit_" + kind
+			credit.mouse_filter = Control.MOUSE_FILTER_STOP
+			credit.tooltip_text = "Source : %s\nLicence : %s" % [photo.get("source", ""), photo.get("license", "")]
+			content.add_child(credit)
+		else:
+			content.add_child(G.wrap("Photo d’archive · crédits accessibles" if archive_available else "Aucune photo d’archive disponible", 12, G.WHITE))
 	var dossier := G.panel(page)
 	var row := G.h(20)
 	dossier.add_child(row)

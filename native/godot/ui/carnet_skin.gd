@@ -41,7 +41,7 @@ static func club_name(club: Dictionary) -> String: return Base.club_name(club)
 static func club_abbr(club: Dictionary) -> String: return Base.club_abbr(club)
 static func crest(club: Dictionary, width: int = 56) -> Control: return Base.crest(club, width)
 static func portrait(index: int, width: int = 60, player: Dictionary = {}) -> TextureRect: return Base.portrait(index, width, player)
-static func picture(slug: String, kind: String = "stadium", dark: bool = true) -> Control: return Base.picture(slug, kind, dark)
+static func picture(slug: String, kind: String = "stadium", dark: bool = true, external_path: String = "") -> Control: return Base.picture(slug, kind, dark, external_path)
 static func spacer() -> Control: return Base.spacer()
 static func scroll(parent: Node) -> VBoxContainer: return Base.scroll(parent)
 

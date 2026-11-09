@@ -76,6 +76,14 @@ test('photos de territoire : import, attribution, détachement et refus sans mod
  assert.equal(request('pack_inspect',{mode:'world-nationale',path:pack(prior)}).ok,false);
  bridge.close();bridge=createBridge({dataDir:profile,seed:999,now:1788134400000});
  assert.equal(ok('snapshot').club.presentation.photos.city.credit,cityPhoto.credit);
+ const corrupted=Buffer.from(city);corrupted[corrupted.length-5]^=255;
+ fs.writeFileSync(projection.city.path,corrupted);
+ const invalid=ok('snapshot');
+ assert.equal(invalid.club.presentation.photos,undefined);
+ assert.ok(invalid.packs.missing.some(w=>w.includes(preview.id)));
+ assert.equal(exportBytes(),beforeBytes,'une photo endommagée ne réécrit pas la carrière');
+ fs.writeFileSync(projection.city.path,city);
+ assert.equal(ok('snapshot').club.presentation.photos.city.credit,cityPhoto.credit);
  assert.equal(exportBytes(),beforeBytes);
  assert.equal(ok('pack_select',{mode,scope:'career',id:'base'}).club.presentation.photos,undefined);
  assert.deepEqual(exportState(),state);

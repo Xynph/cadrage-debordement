@@ -98,6 +98,8 @@ static func _coverage(pack: Dictionary) -> String:
 	var counts: Dictionary = pack.get("counts", {})
 	var coverage := "%s joueurs · %s blasons · %s photos officielles · %s illustrations IA" % [G.n(counts.get("players", 0)), G.n(counts.get("logos", 0)), G.n(counts.get("official", 0)), G.n(counts.get("synthetic", 0))]
 	if counts.has("staff"): coverage += " · %s membres du staff, %s photos" % [G.n(counts.staff), G.n(counts.get("staffOfficial", 0))]
+	if counts.has("cityPhotos") or counts.has("stadiumPhotos"):
+		coverage += " · %s villes, %s stades en photo" % [G.n(counts.get("cityPhotos", 0)), G.n(counts.get("stadiumPhotos", 0))]
 	return coverage
 
 static func _preview(app: Control, parent: VBoxContainer, pack: Dictionary) -> void:
