@@ -19,7 +19,10 @@ test('Nationale presentation fields apply in creation and career without changin
  try{
   let m=good('new_career',{mode,club:88});
   const before=state(),coach=m.staff.teams.find(t=>t.id===88).members[0];
-  const manifest={schema:'cd-identity-pack-v2',id:'temoin-nationale',name:'Témoin Nationale',version:'1',databaseId:m.meta.nationaleDatabase.id,rightsStatus:'test-local',clubs:[{id:88,city:'Ville témoin',stadium:'Parc témoin'}],players:[],staff:[{id:coach.id,role:'Mêlée et conquête'}],assets:[]};
+  assert.equal(typeof coach.sourceStaffId,'string');
+  assert.notEqual(coach.id,coach.sourceStaffId);
+  const manifest={schema:'cd-identity-pack-v2',id:'temoin-nationale',name:'Témoin Nationale',version:'1',databaseId:m.meta.nationaleDatabase.id,rightsStatus:'test-local',clubs:[{id:88,city:'Ville témoin',stadium:'Parc témoin'}],players:[],staff:[{id:coach.sourceStaffId,role:'Mêlée et conquête'}],assets:[]};
+  assert.equal(raw('pack_inspect',{path:archive({...manifest,staff:[{id:coach.id,role:'Mêlée et conquête'}]}),mode}).ok,false,'Un ID de commande de carrière ne remplace pas une référence du pack');
   const zip=archive(manifest),preview=good('pack_inspect',{path:zip,mode}).packs.preview;
   good('pack_install',{path:zip,digest:preview.digest,mode});
   m=good('pack_select',{scope:'creation',id:preview.id,mode});
@@ -29,7 +32,9 @@ test('Nationale presentation fields apply in creation and career without changin
   m=good('pack_select',{scope:'career',id:preview.id,mode});
   assert.equal(m.club.stadium,'Parc témoin');
   assert.equal(m.club.presentation.city,'Ville témoin');
-  assert.equal(m.staff.teams.find(t=>t.id===88).members[0].role,'Mêlée et conquête');
+  assert.equal(m.staff.teams.find(t=>t.id===88).members[0].identity.role,'Mêlée et conquête');
+  assert.equal(m.staff.teams.find(t=>t.id===88).members[0].roleLabel,'Mêlée et conquête');
+  assert.equal(m.staff.teams.find(t=>t.id===88).members[0].role,coach.role);
   assert.equal(m.calendar.find(f=>f.home.id===88).venue,'Parc témoin');
   const after=state();delete after.identityPack;assert.deepEqual(after,before);
   const wrong={...manifest,databaseId:m.meta.japanDatabase.id,clubs:[{id:68,city:'Interdit sur v3'}],staff:[]};
@@ -39,10 +44,13 @@ test('Nationale presentation fields apply in creation and career without changin
   for(const value of ['<b>Unsafe</b>','X'.repeat(121),'   ']){
    const bad={...manifest,clubs:[{id:88,stadium:value}]};
    assert.equal(raw('pack_inspect',{path:archive(bad),mode}).ok,false);
+   const badRole={...manifest,staff:[{id:coach.sourceStaffId,role:value}]};
+   assert.equal(raw('pack_inspect',{path:archive(badRole),mode}).ok,false,'Rôle cosmétique invalide refusé');
   }
   assert.equal(state().identityPack.id,preview.id);
   m=good('pack_select',{scope:'career',id:'base',mode});
   assert.equal(m.staff.teams.find(t=>t.id===88).members[0].role,coach.role);
+  assert.equal(m.staff.teams.find(t=>t.id===88).members[0].roleLabel,coach.roleLabel);
   assert.deepEqual(state(),before);
  }finally{b.close();}
 });
