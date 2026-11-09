@@ -51,7 +51,7 @@ function auditEdition(input={}){
  if(openingStatus==='missing')warn('opening-register-missing');
  if(openingStatus==='invalid'){add('invalid-opening-register');warn('opening-register-unusable');}
  const clubs=registry.clubs,byClub=new Map(),players=new Map(),staffIds=new Set();
- const counts={catalogueClubs:clubs.length,playableClubs:0,players:0,prospectiveActivePlayers:0,staffMembers:0,staffHistorical:0,staffHistoryUnknown:0,staffCurrentDeclared:0,contractOfficialDeclared:0,contractEstimated:0,contractUnknown:0,openingExact:0,openingMinimum:0,inactiveAliases:0,aliasCrossClub:0,openingActiveTerms:0,openingChanges:0};
+ const counts={catalogueClubs:clubs.length,playableClubs:0,players:0,legacyAliasPlayers:0,playersIncludingLegacyAliases:0,catalogueInactiveAliases:0,prospectiveActivePlayers:0,staffMembers:0,staffHistorical:0,staffHistoryUnknown:0,staffCurrentDeclared:0,contractOfficialDeclared:0,contractEstimated:0,contractUnknown:0,openingExact:0,openingMinimum:0,inactiveAliases:0,aliasCrossClub:0,openingActiveTerms:0,openingChanges:0};
  const clubReports=[];
  for(const c of clubs){
   if(!object(c)||!Number.isSafeInteger(c.id)||c.id<0){add('invalid-club');continue;}
@@ -96,6 +96,25 @@ function auditEdition(input={}){
  const terms=openingApplies&&openingHeaderValid?opening.players:{};
  const aliases=openingApplies&&openingHeaderValid?opening.inactiveAliases:{};
  const openingErrorsBefore=errors.length;
+ // Removed catalogue rows remain available only through the explicit production
+ // compatibility source. Never invent an owner from the opening mapping alone.
+ const legacyOwners=new Map(),legacy=registry.compatibilityAliases;
+ const legacyErrorsBefore=errors.length;
+ if(Object.hasOwn(registry,'compatibilityAliases')){
+  if(!openingApplies||!object(legacy))add('invalid-compatibility-aliases');
+  else for(const [id,row] of Object.entries(legacy)){
+   if(!opaque(id)||!object(row)||Object.keys(row).length!==4||!['clubId','canonicalId','player','worldProfile'].every(k=>Object.hasOwn(row,k))||!object(row.player)||row.player.id!==id||!object(row.worldProfile))add('invalid-compatibility-alias',row?.clubId,id);
+   const ownerClub=byClub.get(row?.clubId),canonical=players.get(row?.canonicalId),mapping=aliases[id];
+   if(!ownerClub||ownerClub.leagueId!=='champ'||openingHeaderValid&&(!object(mapping)||mapping.clubId!==row?.clubId))add('compatibility-alias-club-mismatch',row?.clubId,id);
+   if(!canonical||id===row?.canonicalId||object(legacy)&&Object.hasOwn(legacy,row?.canonicalId))add('dangling-compatibility-canonical',row?.clubId,id);
+   if(openingHeaderValid&&(!object(mapping)||mapping.canonicalId!==row?.canonicalId))add('compatibility-alias-mapping-mismatch',row?.clubId,id);
+   if(players.has(id))add('compatibility-alias-still-active',row?.clubId,id);
+   if(ownerClub&&object(row?.player))legacyOwners.set(id,{club:ownerClub,player:row.player});
+  }
+ }
+ const legacyValid=errors.length===legacyErrorsBefore;
+ counts.legacyAliasPlayers=legacyValid?legacyOwners.size:null;
+ counts.playersIncludingLegacyAliases=legacyValid?counts.players+legacyOwners.size:null;
  if(openingApplies&&openingHeaderValid){
   for(const [id,term] of Object.entries(terms)){
    const owner=players.get(id);
@@ -115,7 +134,8 @@ function auditEdition(input={}){
   }
   for(const [id,alias] of Object.entries(aliases)){
    counts.inactiveAliases++;
-   const owner=players.get(id),canonical=players.get(alias?.canonicalId);
+   const catalogueOwner=players.get(id),owner=catalogueOwner||legacyOwners.get(id),canonical=players.get(alias?.canonicalId);
+   if(catalogueOwner)counts.catalogueInactiveAliases++;
    if(!owner||!canonical)add('dangling-inactive-alias',alias?.clubId,id);
    if(!object(alias)||owner?.club.id!==alias.clubId||owner?.club.leagueId!=='champ')add('alias-club-mismatch',alias?.clubId,id);
    if(id===alias?.canonicalId||Object.hasOwn(aliases,alias?.canonicalId))add('inactive-alias-chain',alias?.clubId,id);
@@ -150,7 +170,7 @@ function auditEdition(input={}){
  }
  const openingUnknown=['unknown','missing','invalid'].includes(openingStatus);
  if(openingUnknown){
-  for(const key of ['prospectiveActivePlayers','openingExact','openingMinimum','inactiveAliases','aliasCrossClub','openingActiveTerms','openingChanges'])counts[key]=null;
+  for(const key of ['prospectiveActivePlayers','legacyAliasPlayers','playersIncludingLegacyAliases','catalogueInactiveAliases','openingExact','openingMinimum','inactiveAliases','aliasCrossClub','openingActiveTerms','openingChanges'])counts[key]=null;
   for(const club of clubReports)club.prospectiveActivePlayers=null;
  }
  const status=errors.length?'invalid':openingUnknown?'unknown':'valid';
