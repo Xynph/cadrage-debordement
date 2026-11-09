@@ -52,3 +52,21 @@ test('mobility does not apply a former-club plan or reveal transferred players',
  assert.equal(r('CDYouthDevelopment.project(S).players.find(x=>x.id===id).tracked'),true);
  assert.equal(r('CDYouthDevelopment.growthShare(S,p,true)'),null,'old club plan requires a fresh local decision');
 });
+
+test('chosen plans have distinct measurable steps and integration counts new real minutes only',()=>{
+ const h=setup(),r=h.run;r('p.dev.careerMinutes=600;promoteYouth(p.id);CDYouthDevelopment.enable(S);CDYouthDevelopment.setPlan(S,p.id,"general",null)');
+ assert.equal(r('CDYouthDevelopment.project(S).players.find(x=>x.id===p.id).nextSteps.some(x=>x.key==="generalProgress")'),true);
+ r('CDYouthDevelopment.setPlan(S,p.id,"specialist","scrum")');
+ assert.equal(r('CDYouthDevelopment.project(S).players.find(x=>x.id===p.id).nextSteps.some(x=>x.key==="qualityProgress")'),true);
+ r('CDYouthDevelopment.setPlan(S,p.id,"integration","scrum")');
+ assert.equal(r('CDYouthDevelopment.project(S).players.find(x=>x.id===p.id).nextSteps.find(x=>x.key==="minutes").done'),false);
+ r('p.dev.careerMinutes+=240');
+ assert.equal(r('CDYouthDevelopment.project(S).players.find(x=>x.id===p.id).nextSteps.find(x=>x.key==="minutes").done'),true);
+});
+
+test('a professional with no baseline never gets invented zero minutes since a reference',()=>{
+ const h=setup(),r=h.run;r('promoteYouth(p.id);p.dev.careerMinutes=600');
+ const detail=r('CDYouthDevelopment.project(S).players.find(x=>x.id===p.id).nextSteps.find(x=>x.key==="minutes").detail');
+ assert.match(detail,/référence.*suivi|suivi.*référence/i);
+ assert.doesNotMatch(detail,/^0 minutes/);
+});

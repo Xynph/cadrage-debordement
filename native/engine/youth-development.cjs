@@ -109,15 +109,17 @@ function factory(){
   }
   return true;
  }
- function steps(s,p,stage,current){
+ function steps(s,p,stage,current,row){
   const result=[];
   if(p.injury>0||current.fatigue>=55||p.condition<65)result.push({key:'recover',label:'Récupérer avant de charger',done:false,detail:'Blessure, condition et charge sont celles du joueur ; aucun gain automatique de repos n’est ajouté.'});
-  if(stage==='academy'){
+  if(row?.plan==='general')result.push({key:'generalProgress',label:'Consolider le niveau général',done:current.rating-row.baseline.rating>=1,detail:(current.rating-row.baseline.rating)+' point(s) réel(s) depuis la référence ; repère de +1, sans récompense.'});
+  if(row?.plan==='specialist'&&row.focus)result.push({key:'qualityProgress',label:'Améliorer '+LABELS[row.focus],done:current.attributes[row.focus]-row.baseline.attributes[row.focus]>=1,detail:(current.attributes[row.focus]-row.baseline.attributes[row.focus])+' point(s) réel(s) depuis la référence ; repère de +1, sans récompense.'});
+  if((!row?.plan||row.plan==='integration')&&stage==='academy'){
    result.push({key:'age',label:'Âge du premier passage professionnel',done:p.age>=18,detail:'Repère de simulation à 18 ans, pas une homologation de compétition.'});
    const places=typeof professionalPlaces==='function'?professionalPlaces(s.clubs[s.club],s):null;
    result.push({key:'place',label:'Vérifier une place professionnelle',done:places!==null&&places>0,detail:places===null?'Consulter la capacité contractuelle.':places+' place(s) contractuelle(s) disponible(s).'});
    result.push({key:'promotion',label:'Décider du premier contrat',done:false,detail:'Promotion manuelle avec salaire réel ; ce suivi ne signe aucun contrat.'});
-  }else result.push({key:'minutes',label:'Construire les premières minutes professionnelles',done:current.careerMinutes>=240,detail:Math.round(current.careerMinutes)+' minutes réellement jouées ; repère de suivi de 240 minutes, sans récompense.'});
+  }else if(!row?.plan||row.plan==='integration'){const minutes=row?current.careerMinutes-row.baseline.careerMinutes:null;result.push({key:'minutes',label:'Construire de nouvelles minutes professionnelles',done:minutes!==null&&minutes>=240,detail:minutes===null?'Créer une référence de suivi avant de mesurer de nouvelles minutes.':Math.round(minutes)+' minutes réelles depuis la référence ; repère de 240 nouvelles minutes, sans récompense.'});}
   result.push({key:'growth',label:current.model==='annual-v11'?'Observer le bilan annuel':'Développer sans dépasser le potentiel',done:p.rating>=p.dev.potential,detail:current.model==='annual-v11'?'Les activités et minutes alimentent la courbe annuelle existante.':'Le même budget est partagé ; le potentiel et les plafonds de qualité restent actifs.'});
   return result;
  }
@@ -130,7 +132,7 @@ function factory(){
    return {id:p.id,name:p.name,pos:p.pos,age:p.age,stage,model:current.model,rating:p.rating,potential:current.potential,potentialBasis:'role-estimate',condition:p.condition,injury:p.injury,fatigue:current.fatigue,careerMinutes:current.careerMinutes,
     tracked:!!row,plan:row?.plan||null,focus:row?.focus||null,canPlan:enabled&&!locked,planReason:mismatch?'Objectif individuel ou club modifié : réviser le plan pour appliquer sa répartition.':source?'Progression annuelle : les étapes suivent les expositions réelles, sans supplément de croissance.':'Le plan partage le budget régulier déjà gagné, sans bonus supplémentaire.',
     availablePlans:source?['general','integration']:PLANS.map(p=>p.key),focusOptions:source?[]:focusOptions(p).map(key=>({key,label:LABELS[key]})),defaultFocus:source?null:defaultFocus(p),
-    baseline:row?copy(row.baseline):null,current,deltas:row?delta(current,row.baseline):null,observations:row?copy(row.observations):[],nextSteps:steps(s,p,stage,current)};
+    baseline:row?copy(row.baseline):null,current,deltas:row?delta(current,row.baseline):null,observations:row?copy(row.observations):[],nextSteps:steps(s,p,stage,current,row)};
   });
   return {available:true,enabled,canEnable:!enabled&&!s.live&&s.phase==='league',locked,reason:enabled?'':'Activer le suivi pour commencer des références réelles, sans reconstruire le passé.',context:context(s),plans:copy(PLANS),limits:{minAge:15,maxAge:24,maxTracked:MAX_ROWS,maxObservations:MAX_OBSERVATIONS,attributeBonus:4,totalBonus:8},players};
  }

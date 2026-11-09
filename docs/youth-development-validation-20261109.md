@@ -4,7 +4,7 @@ Source fonctionnelle : `014aa19df07d91a2ea04725878388df1f0205eea`, depuis l'int�
 
 ## Mesures vérifiées sous Node 22
 
-- **Treize tests nouveaux** : sept sur les choix, six sur les observations. Le premier test a échoué avec 0,20 XP générale au lieu de 0,30, avant le hook d'intégration ; il passe avec 0,30 générale +0,10 ciblée pour le même budget de 0,40. Général : 0,40 +0 ; spécialiste : 0,20 +0,20. Les seuils V29 restent de 1 XP par point général et 0,5 par point ciblé, avec +4 par attribut et +8 au total.
+- **Quinze tests nouveaux** : sept sur les choix, huit sur les observations. Le premier test a échoué avec 0,20 XP générale au lieu de 0,30, avant le hook d'intégration ; il passe avec 0,30 générale +0,10 ciblée pour le même budget de 0,40. Général : 0,40 +0 ; spécialiste : 0,20 +0,20. Les seuils V29 restent de 1 XP par point général et 0,5 par point ciblé, avec +4 par attribut et +8 au total.
 - Choisir, consulter, réviser et observer ne donne aucun point ni argent. Une qualité inchangée conserve l'XP partielle ; changer de qualité suit l'annulation V29 déjà existante. Les points de qualité acquis restent conservés.
 - Sans programme explicite, les mêmes appels produisent exactement les mêmes données et le même prochain tirage RNG. Les blessures bloquent toujours la séance, la charge freine l'apprentissage et le potentiel reste contraignant.
 - Le potentiel public est l'estimation au poste déjà exposée par le modèle natif, calculée sur une copie. Un test a d'abord constaté la révélation du plafond brut 94 contre l'estimation publique 89 ; le DTO et les baselines utilisent désormais 89 avec `potentialBasis=role-estimate`.
@@ -21,3 +21,5 @@ Le backend enregistre le domaine `youthDevelopment`, crée l'alias `CDYouthDevel
 Les états anciens sans domaine restent inactifs. L'activation est explicite et ne reconstruit aucun passé ; la projection et la validation n'initialisent, ne récompensent et ne réparent rien. Les baselines ne contiennent ni nom copié ni portrait, seulement des identifiants, contextes numériques et énumérations. Les identités et images sont reprises depuis l'ID actuel.
 
 Le raccord worker, les refus d'écriture, les imports et la réception Godot sont des vérifications d'intégration pilotées par leurs auteurs. Ce reçu décrit les tests du lot de progression, sans présenter leur statut comme une CI complète ou une réception Windows.
+
+Les objectifs projetés distinguent effectivement les plans : +1 niveau général depuis la baseline, +1 qualité choisie, ou passage professionnel puis 240 nouvelles minutes depuis cette même baseline. Ils restent des repères sans récompense. Une projection sans baseline ne montre jamais « 0 minutes depuis la référence » ; elle demande de créer une vraie référence. Ces corrections de projection ont été testées rouge puis vert, sans modifier le budget ni la persistance.
