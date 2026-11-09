@@ -31,8 +31,7 @@ func _data() -> Dictionary:
 func _build() -> void:
 	name = "YouthDevelopment"; title = "Accompagner les jeunes"; get_ok_button().text = "FERMER"
 	app._prepare_dialog(self,360)
-	if not app.management_ui.get("youth_development") is Dictionary: app.management_ui.youth_development = {"page":0,"query":"","stage":0,"review":false}
-	state = app.management_ui.youth_development
+	_sync_drafts()
 	scroll = ScrollContainer.new(); scroll.name = "YouthDevelopmentScroll"; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; scroll.follow_focus = true; add_child(scroll)
 	body = G.v(10); G.fill(body,true); scroll.add_child(body)
 	body.add_child(G.section("Des objectifs, puis des faits", "Académie et jeunes professionnels · club courant"))
@@ -57,7 +56,10 @@ func _build() -> void:
 	page_label = G.label("",12); paging.add_child(page_label)
 	next = G.button("SUIVANT →",func(): state.page += 1; _redraw()); next.name = "YouthDevelopmentNext"; paging.add_child(next)
 	confirmed.connect(queue_free); canceled.connect(queue_free); app.add_child(self)
-	app.bridge.model_changed.connect(func(_model: Dictionary): if app.bridge.last_response_ok: _redraw())
+	app.bridge.model_changed.connect(func(_model: Dictionary):
+		if not app.bridge.last_response_ok: return
+		if app.last_command in ["new_career","import","recover_profile"]: queue_free()
+		else: _redraw())
 	app.get_window().size_changed.connect(_fit)
 	_redraw(); _fit()
 	get_tree().process_frame.connect(_initial_focus.bind(search),CONNECT_ONE_SHOT | CONNECT_DEFERRED)
@@ -73,7 +75,27 @@ func _fit() -> void:
 	body.custom_minimum_size.x = width-48; scroll.custom_minimum_size.y = mini(600,host.y-160)
 	Dialogs.show_centered(self,Vector2i(width,mini(780,host.y-80)))
 
+# Only UI memory: U.sync discards it on new career/import, including equal IDs.
+# A week/season/club change also makes an unconfirmed choice obsolete.
+func _sync_drafts() -> void:
+	if not app.management_ui.get("youth_development") is Dictionary:
+		app.management_ui.youth_development = {"page":0,"query":"","stage":0,"review":false}
+	state = app.management_ui.youth_development
+	var context: Dictionary = _data().get("context",{}).duplicate(true)
+	context.career = app.management_ui.get("career","")
+	if state.get("draft_context",{}) != context:
+		var previous: Dictionary = state.get("drafts",{})
+		state.draft_notice = "Les choix locaux ont été réinitialisés : la semaine, la saison ou le club a changé. Relisez le contexte avant de confirmer." if not previous.is_empty() else ""
+		state.drafts = {}
+		state.draft_context = context
+	if not state.get("drafts") is Dictionary: state.drafts = {}
+
+func _remember_draft(player_id: String, plan: String, focus: Variant) -> void:
+	_sync_drafts()
+	state.drafts[player_id] = {"plan":plan,"focus":focus}
+
 func _redraw() -> void:
+	_sync_drafts()
 	for child in list.get_children(): list.remove_child(child); child.queue_free()
 	var query := U.fold(str(state.query)).strip_edges()
 	var source: Array = _data().get("players",[])
@@ -84,6 +106,7 @@ func _redraw() -> void:
 	for person: Dictionary in people.slice(start,start+PAGE_SIZE): _person(person)
 	if people.is_empty(): list.add_child(G.wrap("Aucun jeune dans cette sélection.",14))
 	counter.text = "%d jeunes · %s" % [people.size(),"suivi actif" if _data().get("enabled",false) else "suivi à démarrer"]
+	if not str(state.get("draft_notice","")).is_empty(): counter.text += "\n"+str(state.draft_notice)
 	if _data().get("locked",false): counter.text += "\nObjectifs verrouillés : révisez-les avant la séance, hors match et pendant la saison régulière."
 	previous.disabled = start==0; next.disabled = start+PAGE_SIZE>=people.size()
 	page_label.text = "%d / %d" % [int(state.page)+1,maxi(1,ceili(float(people.size())/PAGE_SIZE))]
@@ -116,15 +139,16 @@ func _person(person: Dictionary) -> void:
 		info.add_child(G.wrap("S%s · semaine %s · %s · niveau %s · minutes %s" % [G.n(observation.get("season","—")),G.n(observation.get("week","—")),REASONS.get(str(observation.get("reason","")),"Observation"),_signed(observation.get("ratingDelta",0)),_signed(observation.get("minutesDelta",0))],12))
 	for step: Dictionary in person.get("nextSteps",[]): info.add_child(G.wrap(("✓ " if step.get("done",false) else "À préparer · ")+str(step.get("label",""))+" · "+str(step.get("detail","")),12))
 	if not str(person.get("planReason","")).is_empty(): info.add_child(G.wrap(str(person.planReason),13,G.ALERT))
+	var draft: Dictionary = state.drafts.get(str(person.id),{})
 	var options := HFlowContainer.new(); card.add_child(options)
 	var plan := OptionButton.new(); plan.name = "YouthPlan"; plan.set_meta("player_id",str(person.id)); options.add_child(plan)
 	var available: Array = person.get("availablePlans",[])
 	for entry: Dictionary in _data().get("plans",[]):
 		if str(entry.key) not in available: continue
 		plan.add_item(str(entry.label)); plan.set_item_metadata(plan.item_count-1,str(entry.key)); plan.set_item_tooltip(plan.item_count-1,"Objectif de suivi uniquement : aucune modification de la progression annuelle ou du temps de jeu." if annual else str(entry.get("description","")))
-		if entry.key==person.get("plan"): plan.select(plan.item_count-1)
+		if entry.key==draft.get("plan",person.get("plan")): plan.select(plan.item_count-1)
 	var focus := OptionButton.new(); focus.name = "YouthFocus"; options.add_child(focus)
-	var selected_focus: Variant = person.get("focus")
+	var selected_focus: Variant = draft.get("focus",person.get("focus"))
 	if selected_focus == null: selected_focus = person.get("defaultFocus")
 	for entry: Dictionary in person.get("focusOptions",[]):
 		focus.add_item(str(entry.label)); focus.set_item_metadata(focus.item_count-1,str(entry.key))
@@ -137,7 +161,14 @@ func _person(person: Dictionary) -> void:
 			if entry.key==chosen:
 				description.text = "Objectif de suivi uniquement : aucune modification de la courbe annuelle ou du temps de jeu." if annual else str(entry.get("description",""))
 				if not annual: description.text += " · répartition du budget : %d %% générale / %d %% ciblée" % [roundi(float(entry.get("generalShare",0))*100),roundi(float(entry.get("targetShare",0))*100)]
-	plan.item_selected.connect(func(_index: int): update_focus.call()); update_focus.call()
+	var remember := func():
+		if plan.item_count==0: return
+		var key := str(plan.get_item_metadata(plan.selected))
+		var selected: Variant = str(focus.get_item_metadata(focus.selected)) if key in ["specialist","integration"] and focus.item_count>0 else null
+		_remember_draft(str(person.id),key,selected)
+	plan.item_selected.connect(func(_index: int): update_focus.call(); remember.call())
+	focus.item_selected.connect(func(_index: int): remember.call())
+	update_focus.call()
 	var save := G.button("CONFIRMER CET OBJECTIF",func():
 		var key := str(plan.get_item_metadata(plan.selected))
 		var target: Variant = str(focus.get_item_metadata(focus.selected)) if key in ["specialist","integration"] and focus.item_count>0 else null
@@ -148,7 +179,7 @@ func _person(person: Dictionary) -> void:
 	if suggested != null and str(suggested) in available and str(suggested) != str(person.get("plan","")):
 		var prepare := G.button("PRÉPARER LA RÉORIENTATION CONSEILLÉE",func():
 			for i in plan.item_count:
-				if str(plan.get_item_metadata(i))==str(suggested): plan.select(i); update_focus.call(); save.grab_focus())
+				if str(plan.get_item_metadata(i))==str(suggested): plan.select(i); update_focus.call(); remember.call(); save.grab_focus())
 		prepare.name = "YouthReviewPrepare"; prepare.disabled = save.disabled; card.add_child(prepare)
 		card.add_child(G.wrap("Préparer ne modifie rien : relisez la répartition, puis confirmez l’objectif choisi.",12))
 
@@ -220,6 +251,7 @@ func _enable() -> void:
 	app.confirm("Démarrer le suivi des jeunes","Une référence sera conservée à partir d’aujourd’hui. Aucun gain immédiat ni observation passée inventée. Confirmer ?",Callable(app,"_command").bind("youth_development_enable",payload))
 
 func _confirm_plan(person: Dictionary,plan: String,focus: Variant) -> void:
+	_remember_draft(str(person.id),plan,focus)
 	var payload := {"confirmed":true,"context":_data().get("context",{}).duplicate(true),"playerId":str(person.id),"plan":plan,"focus":focus}
 	var detail := "Cet objectif sert uniquement au suivi : il ne change ni la courbe annuelle, ni le temps de jeu." if str(person.get("model",""))=="annual-v11" else "Le plan répartit le futur budget XP existant, sans bonus immédiat."
 	if str(person.get("model",""))!="annual-v11":
