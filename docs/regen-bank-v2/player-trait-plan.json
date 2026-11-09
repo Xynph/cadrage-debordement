@@ -1,0 +1,4083 @@
+{
+  "schema": "regen200-player-trait-plan-v1",
+  "createdFor": "art/regen-200-assets-cloud-20261109",
+  "baseRevision": "a895d03abf8bd079bb7b5844c3285295929be8fd",
+  "policy": "128 new original AI-generated adult male player sources; 32 existing player sources unchanged; requested traits are not guaranteed observations",
+  "plannedSheetSize": "square >=1024; 4x4; cell >=256",
+  "commonPrompt": "Create one original photorealistic studio rugby portrait ATLAS, a perfectly square high-resolution image, ideally 2048x2048 or larger, at least 1024x1024. Exactly SIXTEEN DIFFERENT fictional adult men arranged as an EXACT 4-column by 4-row equal-cell contact sheet. Each cell is one complete independent front-facing head-and-shoulders portrait, eyes looking at camera, natural neutral expression. Uniform documentary photography, 85mm portrait lens, natural skin pores, consistent soft frontal studio illumination, plain neutral light grey studio background. Every man wears the same plain dark navy rugby jersey, no brand, sponsor, badge, writing, numbers, jewellery, hats or glasses. Heads and hair must fit COMPLETELY within their own cell with a little breathing room inside the cell; shoulders stop at the cell edges. No person may overlap an adjacent cell. Cells touch directly: NO visible grid, NO borders, NO page margin, NO gutters, NO captions, NO collage-style tilt. Equal framing and scale in all 16 cells. Distinct believable rugby adults, not celebrity likenesses, not variations of one face. IMPORTANT visible differences in face geometry, skin tone, hair length, beard length, iris colour, and neck/shoulder build. Heavyset means a genuinely full soft face and thick soft neck; slender means visibly narrow neck and shoulders; powerful means visibly muscular thick neck. Render the following 16 people in strict row-major order, left to right then top to bottom. Do not print the descriptions or cell labels.",
+  "boards": [
+    {
+      "file": "players-02.png",
+      "layout": {
+        "columns": 4,
+        "rows": 4,
+        "order": "row-major"
+      },
+      "status": "generated-and-visually-inspected",
+      "cells": [
+        {
+          "cell": 0,
+          "row": 1,
+          "column": 1,
+          "sourceIndex": 32,
+          "planned": {
+            "age": 26,
+            "skin": "very fair skin",
+            "hairCategory": "bald",
+            "hair": "clean-shaven scalp",
+            "hairColor": null,
+            "eyes": "brown",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "long angular face, prominent ears, narrow high nose bridge and small healed left-eyebrow scar"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "none",
+            "build": "slender",
+            "skinTone": "fair",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "prominent-ears",
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 1,
+          "row": 1,
+          "column": 2,
+          "sourceIndex": 33,
+          "planned": {
+            "age": 23,
+            "skin": "warm olive skin",
+            "hairCategory": "short",
+            "hair": "a very short buzz cut",
+            "hairColor": "light brown",
+            "eyes": "hazel",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "square jaw, short flat-tipped nose, slightly uneven ears and a faint healed chin scar"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "short",
+            "build": "average",
+            "skinTone": "tan",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "thick-brows"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 2,
+          "row": 1,
+          "column": 3,
+          "sourceIndex": 34,
+          "planned": {
+            "age": 28,
+            "skin": "deep brown skin",
+            "hairCategory": "medium",
+            "hair": "medium loose curls",
+            "hairColor": "reddish brown",
+            "eyes": "blue",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "soft round face, narrow nose bridge, flared nostrils and a faint thin healed cheek scar"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "none",
+            "build": "powerful",
+            "skinTone": "brown",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 3,
+          "row": 1,
+          "column": 4,
+          "sourceIndex": 35,
+          "planned": {
+            "age": 33,
+            "skin": "light peach skin",
+            "hairCategory": "long",
+            "hair": "long straight hair reaching the shoulders",
+            "hairColor": "dark brown",
+            "eyes": "green",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "oval face, broad forehead, short straight nose, delicate brows and light freckles"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "short",
+            "build": "heavyset",
+            "skinTone": "fair",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 4,
+          "row": 2,
+          "column": 1,
+          "sourceIndex": 36,
+          "planned": {
+            "age": 30,
+            "skin": "light brown skin",
+            "hairCategory": "bald",
+            "hair": "naturally bald smooth crown",
+            "hairColor": null,
+            "eyes": "grey",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "high cheekbones and soft jaw, small curved nose, widely spaced brows and light freckles"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "long",
+            "build": "average",
+            "skinTone": "brown",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 5,
+          "row": 2,
+          "column": 2,
+          "sourceIndex": 37,
+          "planned": {
+            "age": 25,
+            "skin": "very deep brown skin",
+            "hairCategory": "short",
+            "hair": "short tight coils",
+            "hairColor": "dark brown",
+            "eyes": "brown",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "fine long face, small narrow nose, high thin brows and a visible small temple mole"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "stubble",
+            "build": "powerful",
+            "skinTone": "deep",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "forehead-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 6,
+          "row": 2,
+          "column": 3,
+          "sourceIndex": 38,
+          "planned": {
+            "age": 31,
+            "skin": "fair freckled skin",
+            "hairCategory": "medium",
+            "hair": "medium wavy swept-back hair",
+            "hairColor": "medium brown",
+            "eyes": "hazel",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "soft oval face, broad low nose, large detached earlobes and a faint chin scar"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "long",
+            "build": "heavyset",
+            "skinTone": "fair",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 7,
+          "row": 2,
+          "column": 4,
+          "sourceIndex": 39,
+          "planned": {
+            "age": 35,
+            "skin": "medium brown skin",
+            "hairCategory": "long",
+            "hair": "long shoulder-length loose waves",
+            "hairColor": "natural auburn",
+            "eyes": "blue",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "heart-shaped face, slightly crooked nose, thin arched brows and prominent earlobes"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "stubble",
+            "build": "slender",
+            "skinTone": "tan",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "prominent-ears"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 8,
+          "row": 3,
+          "column": 1,
+          "sourceIndex": 40,
+          "planned": {
+            "age": 34,
+            "skin": "very fair skin",
+            "hairCategory": "bald",
+            "hair": "completely shaved head with visible scalp texture",
+            "hairColor": null,
+            "eyes": "green",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "diamond-shaped face, hooked nose bridge, uneven dense brows and a small mole below one eye"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "short",
+            "build": "powerful",
+            "skinTone": "fair",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 9,
+          "row": 3,
+          "column": 2,
+          "sourceIndex": 41,
+          "planned": {
+            "age": 27,
+            "skin": "warm olive skin",
+            "hairCategory": "short",
+            "hair": "a short straight crew cut",
+            "hairColor": "light brown",
+            "eyes": "grey",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "square head, narrow long nose, strong flat brows and a faint small forehead scar"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "none",
+            "build": "heavyset",
+            "skinTone": "light",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "eyebrow-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 10,
+          "row": 3,
+          "column": 3,
+          "sourceIndex": 42,
+          "planned": {
+            "age": 32,
+            "skin": "deep brown skin",
+            "hairCategory": "medium",
+            "hair": "a medium rounded afro",
+            "hairColor": "reddish brown",
+            "eyes": "brown",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "long chin, medium straight nose, large ears and a few scattered forehead freckles"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "short",
+            "build": "slender",
+            "skinTone": "brown",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 11,
+          "row": 3,
+          "column": 4,
+          "sourceIndex": 43,
+          "planned": {
+            "age": 19,
+            "skin": "light peach skin",
+            "hairCategory": "long",
+            "hair": "long natural locs to the shoulders",
+            "hairColor": "dark brown",
+            "eyes": "hazel",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "wide oval face, low nose bridge, fleshy ears and scattered cheek freckles"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "none",
+            "build": "average",
+            "skinTone": "light",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 12,
+          "row": 4,
+          "column": 1,
+          "sourceIndex": 44,
+          "planned": {
+            "age": 28,
+            "skin": "light brown skin",
+            "hairCategory": "bald",
+            "hair": "bald crown and very short side hair",
+            "hairColor": null,
+            "eyes": "blue",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "short angular face, asymmetrical short nose, small ears and a little mole above the lip"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "stubble",
+            "build": "heavyset",
+            "skinTone": "tan",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "chin-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 13,
+          "row": 4,
+          "column": 2,
+          "sourceIndex": 45,
+          "planned": {
+            "age": 29,
+            "skin": "very deep brown skin",
+            "hairCategory": "short",
+            "hair": "short wavy cropped hair",
+            "hairColor": "dark brown",
+            "eyes": "green",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "round broad face, blunt rounded nose, low straight eyebrows and one small cheek mole"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "long",
+            "build": "slender",
+            "skinTone": "deep",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 14,
+          "row": 4,
+          "column": 3,
+          "sourceIndex": 46,
+          "planned": {
+            "age": 34,
+            "skin": "fair freckled skin",
+            "hairCategory": "medium",
+            "hair": "medium straight shaggy hair",
+            "hairColor": "medium brown",
+            "eyes": "grey",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "elongated face, high cheekbones, bulbous nose tip and fine eyebrows with temple freckles"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "stubble",
+            "build": "average",
+            "skinTone": "fair",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 15,
+          "row": 4,
+          "column": 4,
+          "sourceIndex": 47,
+          "planned": {
+            "age": 30,
+            "skin": "medium brown skin",
+            "hairCategory": "long",
+            "hair": "long curly hair to the shoulders",
+            "hairColor": "natural auburn",
+            "eyes": "brown",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "long angular face, short broad nose, high forehead and ears that protrude slightly"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "long",
+            "build": "powerful",
+            "skinTone": "brown",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "eyebrow-gap"
+            ],
+            "faceComplete": true
+          }
+        }
+      ]
+    },
+    {
+      "file": "players-03.png",
+      "layout": {
+        "columns": 4,
+        "rows": 4,
+        "order": "row-major"
+      },
+      "status": "generated-and-visually-inspected",
+      "cells": [
+        {
+          "cell": 0,
+          "row": 1,
+          "column": 1,
+          "sourceIndex": 48,
+          "planned": {
+            "age": 25,
+            "skin": "fair freckled skin",
+            "hairCategory": "short",
+            "hair": "a short straight crew cut",
+            "hairColor": "dark brown",
+            "eyes": "blue",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "broad round face, short upturned nose, dimples and a subtle closed scar near the jaw"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "stubble",
+            "build": "average",
+            "skinTone": "fair",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles",
+              "cheek-dimples"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 1,
+          "row": 1,
+          "column": 2,
+          "sourceIndex": 49,
+          "planned": {
+            "age": 30,
+            "skin": "medium brown skin",
+            "hairCategory": "medium",
+            "hair": "a medium rounded afro",
+            "hairColor": "natural blond",
+            "eyes": "green",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "broad trapezoid face, long slender nose, low thick brows and scattered nose freckles"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "long",
+            "build": "powerful",
+            "skinTone": "brown",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 2,
+          "row": 1,
+          "column": 3,
+          "sourceIndex": 50,
+          "planned": {
+            "age": 35,
+            "skin": "very fair skin",
+            "hairCategory": "long",
+            "hair": "long natural locs to the shoulders",
+            "hairColor": "dark brown",
+            "eyes": "grey",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "asymmetrical jaw, broad straight nose, coarse arched brows and a small healed brow scar"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "stubble",
+            "build": "slender",
+            "skinTone": "tan",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "eyebrow-gap"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 3,
+          "row": 1,
+          "column": 4,
+          "sourceIndex": 51,
+          "planned": {
+            "age": 30,
+            "skin": "warm olive skin",
+            "hairCategory": "bald",
+            "hair": "completely shaved head with visible scalp texture",
+            "hairColor": null,
+            "eyes": "brown",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "narrow triangular face, long nose, close-set brows and a small nose-side mole"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "long",
+            "build": "average",
+            "skinTone": "tan",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 4,
+          "row": 2,
+          "column": 1,
+          "sourceIndex": 52,
+          "planned": {
+            "age": 27,
+            "skin": "deep brown skin",
+            "hairCategory": "short",
+            "hair": "short wavy cropped hair",
+            "hairColor": "natural auburn",
+            "eyes": "hazel",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "long broad face, pronounced nose bridge, bushy eyebrows and a tiny scar crossing one brow"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "none",
+            "build": "heavyset",
+            "skinTone": "brown",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "forehead-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 5,
+          "row": 2,
+          "column": 2,
+          "sourceIndex": 53,
+          "planned": {
+            "age": 32,
+            "skin": "light peach skin",
+            "hairCategory": "medium",
+            "hair": "medium straight shaggy hair",
+            "hairColor": "black",
+            "eyes": "blue",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "long angular face, prominent ears, narrow high nose bridge and small healed left-eyebrow scar"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "short",
+            "build": "slender",
+            "skinTone": "fair",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 6,
+          "row": 2,
+          "column": 3,
+          "sourceIndex": 54,
+          "planned": {
+            "age": 19,
+            "skin": "light brown skin",
+            "hairCategory": "long",
+            "hair": "long curly hair to the shoulders",
+            "hairColor": "light brown",
+            "eyes": "green",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "square jaw, short flat-tipped nose, slightly uneven ears and a faint healed chin scar"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "none",
+            "build": "average",
+            "skinTone": "light",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 7,
+          "row": 2,
+          "column": 4,
+          "sourceIndex": 55,
+          "planned": {
+            "age": 34,
+            "skin": "very deep brown skin",
+            "hairCategory": "bald",
+            "hair": "bald crown and very short side hair",
+            "hairColor": null,
+            "eyes": "grey",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "soft round face, narrow nose bridge, flared nostrils and a faint thin healed cheek scar"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "short",
+            "build": "powerful",
+            "skinTone": "deep",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 8,
+          "row": 3,
+          "column": 1,
+          "sourceIndex": 56,
+          "planned": {
+            "age": 34,
+            "skin": "fair freckled skin",
+            "hairCategory": "short",
+            "hair": "a short textured crop",
+            "hairColor": "dark brown",
+            "eyes": "brown",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "oval face, broad forehead, short straight nose, delicate brows and light freckles"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "long",
+            "build": "slender",
+            "skinTone": "fair",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 9,
+          "row": 3,
+          "column": 2,
+          "sourceIndex": 57,
+          "planned": {
+            "age": 34,
+            "skin": "medium brown skin",
+            "hairCategory": "medium",
+            "hair": "medium natural twists",
+            "hairColor": "natural blond",
+            "eyes": "hazel",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "high cheekbones and soft jaw, small curved nose, widely spaced brows and light freckles"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "stubble",
+            "build": "average",
+            "skinTone": "brown",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 10,
+          "row": 3,
+          "column": 3,
+          "sourceIndex": 58,
+          "planned": {
+            "age": 26,
+            "skin": "very fair skin",
+            "hairCategory": "long",
+            "hair": "long hair gathered in a low ponytail",
+            "hairColor": "dark brown",
+            "eyes": "blue",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "fine long face, small narrow nose, high thin brows and a visible small temple mole"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "long",
+            "build": "powerful",
+            "skinTone": "fair",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "temple-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 11,
+          "row": 3,
+          "column": 4,
+          "sourceIndex": 59,
+          "planned": {
+            "age": 28,
+            "skin": "warm olive skin",
+            "hairCategory": "bald",
+            "hair": "clean-shaven scalp",
+            "hairColor": null,
+            "eyes": "green",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "soft oval face, broad low nose, large detached earlobes and a faint chin scar"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "stubble",
+            "build": "heavyset",
+            "skinTone": "tan",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "thick-brows"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 12,
+          "row": 4,
+          "column": 1,
+          "sourceIndex": 60,
+          "planned": {
+            "age": 31,
+            "skin": "deep brown skin",
+            "hairCategory": "short",
+            "hair": "a short rounded afro",
+            "hairColor": "natural auburn",
+            "eyes": "grey",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "heart-shaped face, slightly crooked nose, thin arched brows and prominent earlobes"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "short",
+            "build": "average",
+            "skinTone": "deep",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 13,
+          "row": 4,
+          "column": 2,
+          "sourceIndex": 61,
+          "planned": {
+            "age": 18,
+            "skin": "light peach skin",
+            "hairCategory": "medium",
+            "hair": "medium side-parted wavy hair",
+            "hairColor": "black",
+            "eyes": "brown",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "diamond-shaped face, hooked nose bridge, uneven dense brows and a small mole below one eye"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "none",
+            "build": "powerful",
+            "skinTone": "light",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "prominent-ears"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 14,
+          "row": 4,
+          "column": 3,
+          "sourceIndex": 62,
+          "planned": {
+            "age": 23,
+            "skin": "light brown skin",
+            "hairCategory": "long",
+            "hair": "long thick braids to the shoulders",
+            "hairColor": "light brown",
+            "eyes": "hazel",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "square head, narrow long nose, strong flat brows and a faint small forehead scar"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "short",
+            "build": "heavyset",
+            "skinTone": "brown",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "forehead-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 15,
+          "row": 4,
+          "column": 4,
+          "sourceIndex": 63,
+          "planned": {
+            "age": 32,
+            "skin": "very deep brown skin",
+            "hairCategory": "bald",
+            "hair": "naturally bald smooth crown",
+            "hairColor": null,
+            "eyes": "blue",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "long chin, medium straight nose, large ears and a few scattered forehead freckles"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "none",
+            "build": "slender",
+            "skinTone": "deep",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        }
+      ]
+    },
+    {
+      "file": "players-04.png",
+      "layout": {
+        "columns": 4,
+        "rows": 4,
+        "order": "row-major"
+      },
+      "status": "generated-and-visually-inspected",
+      "cells": [
+        {
+          "cell": 0,
+          "row": 1,
+          "column": 1,
+          "sourceIndex": 64,
+          "planned": {
+            "age": 32,
+            "skin": "light brown skin",
+            "hairCategory": "medium",
+            "hair": "medium natural twists",
+            "hairColor": "medium brown",
+            "eyes": "grey",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "sharp cheekbones, wide broad nose, large visible ears and a dark mole near the temple"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "short",
+            "build": "slender",
+            "skinTone": "tan",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "temple-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 1,
+          "row": 1,
+          "column": 2,
+          "sourceIndex": 65,
+          "planned": {
+            "age": 19,
+            "skin": "very deep brown skin",
+            "hairCategory": "long",
+            "hair": "long hair gathered in a low ponytail",
+            "hairColor": "natural auburn",
+            "eyes": "brown",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "short wide face, deeply set eyes, rounded nose tip and a mole beside the left jaw"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "none",
+            "build": "powerful",
+            "skinTone": "deep",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "chin-mole",
+              "forehead-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 2,
+          "row": 1,
+          "column": 3,
+          "sourceIndex": 66,
+          "planned": {
+            "age": 30,
+            "skin": "fair freckled skin",
+            "hairCategory": "bald",
+            "hair": "clean-shaven scalp",
+            "hairColor": null,
+            "eyes": "hazel",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "deep-set eyes, broad square chin, slightly curved nose and a tiny healed cheek line"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "short",
+            "build": "heavyset",
+            "skinTone": "fair",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 3,
+          "row": 1,
+          "column": 4,
+          "sourceIndex": 67,
+          "planned": {
+            "age": 29,
+            "skin": "medium brown skin",
+            "hairCategory": "short",
+            "hair": "a short textured crop",
+            "hairColor": "light brown",
+            "eyes": "blue",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "broad diamond face, strong high bridge nose, thick brows and freckles on the nose"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "none",
+            "build": "powerful",
+            "skinTone": "tan",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 4,
+          "row": 2,
+          "column": 1,
+          "sourceIndex": 68,
+          "planned": {
+            "age": 34,
+            "skin": "very fair skin",
+            "hairCategory": "medium",
+            "hair": "medium side-parted wavy hair",
+            "hairColor": "reddish brown",
+            "eyes": "green",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "rectangular face, wide nose tip, small ears and light freckles over the cheeks"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "stubble",
+            "build": "average",
+            "skinTone": "fair",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 5,
+          "row": 2,
+          "column": 2,
+          "sourceIndex": 69,
+          "planned": {
+            "age": 32,
+            "skin": "warm olive skin",
+            "hairCategory": "long",
+            "hair": "long thick braids to the shoulders",
+            "hairColor": "dark brown",
+            "eyes": "grey",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "broad round face, short upturned nose, dimples and a subtle closed scar near the jaw"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "long",
+            "build": "powerful",
+            "skinTone": "brown",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "neck-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 6,
+          "row": 2,
+          "column": 3,
+          "sourceIndex": 70,
+          "planned": {
+            "age": 34,
+            "skin": "deep brown skin",
+            "hairCategory": "bald",
+            "hair": "naturally bald smooth crown",
+            "hairColor": null,
+            "eyes": "brown",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "broad trapezoid face, long slender nose, low thick brows and scattered nose freckles"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "stubble",
+            "build": "heavyset",
+            "skinTone": "deep",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 7,
+          "row": 2,
+          "column": 4,
+          "sourceIndex": 71,
+          "planned": {
+            "age": 34,
+            "skin": "light peach skin",
+            "hairCategory": "short",
+            "hair": "a short rounded afro",
+            "hairColor": "dark brown",
+            "eyes": "hazel",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "asymmetrical jaw, broad straight nose, coarse arched brows and a small healed brow scar"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "long",
+            "build": "slender",
+            "skinTone": "tan",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "eyebrow-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 8,
+          "row": 3,
+          "column": 1,
+          "sourceIndex": 72,
+          "planned": {
+            "age": 18,
+            "skin": "light brown skin",
+            "hairCategory": "medium",
+            "hair": "a medium curly mullet",
+            "hairColor": "medium brown",
+            "eyes": "blue",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "narrow triangular face, long nose, close-set brows and a small nose-side mole"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "none",
+            "build": "slender",
+            "skinTone": "light",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 9,
+          "row": 3,
+          "column": 2,
+          "sourceIndex": 73,
+          "planned": {
+            "age": 23,
+            "skin": "very deep brown skin",
+            "hairCategory": "long",
+            "hair": "long loose curly hair tied loosely back",
+            "hairColor": "natural auburn",
+            "eyes": "green",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "long broad face, pronounced nose bridge, bushy eyebrows and a tiny scar crossing one brow"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "short",
+            "build": "heavyset",
+            "skinTone": "brown",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 10,
+          "row": 3,
+          "column": 3,
+          "sourceIndex": 74,
+          "planned": {
+            "age": 28,
+            "skin": "fair freckled skin",
+            "hairCategory": "bald",
+            "hair": "completely shaved head with visible scalp texture",
+            "hairColor": null,
+            "eyes": "grey",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "long angular face, prominent ears, narrow high nose bridge and small healed left-eyebrow scar"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "none",
+            "build": "slender",
+            "skinTone": "fair",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "eyebrow-line",
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 11,
+          "row": 3,
+          "column": 4,
+          "sourceIndex": 75,
+          "planned": {
+            "age": 33,
+            "skin": "medium brown skin",
+            "hairCategory": "short",
+            "hair": "short neat curls",
+            "hairColor": "light brown",
+            "eyes": "brown",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "square jaw, short flat-tipped nose, slightly uneven ears and a faint healed chin scar"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "short",
+            "build": "average",
+            "skinTone": "tan",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "thick-brows"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 12,
+          "row": 4,
+          "column": 1,
+          "sourceIndex": 76,
+          "planned": {
+            "age": 29,
+            "skin": "very fair skin",
+            "hairCategory": "medium",
+            "hair": "medium textured thick hair",
+            "hairColor": "reddish brown",
+            "eyes": "hazel",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "soft round face, narrow nose bridge, flared nostrils and a faint thin healed cheek scar"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "long",
+            "build": "heavyset",
+            "skinTone": "fair",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-line",
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 13,
+          "row": 4,
+          "column": 2,
+          "sourceIndex": 77,
+          "planned": {
+            "age": 25,
+            "skin": "warm olive skin",
+            "hairCategory": "long",
+            "hair": "long wavy hair tied in a low bun",
+            "hairColor": "dark brown",
+            "eyes": "blue",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "oval face, broad forehead, short straight nose, delicate brows and light freckles"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "stubble",
+            "build": "slender",
+            "skinTone": "tan",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 14,
+          "row": 4,
+          "column": 3,
+          "sourceIndex": 78,
+          "planned": {
+            "age": 32,
+            "skin": "deep brown skin",
+            "hairCategory": "bald",
+            "hair": "bald crown and very short side hair",
+            "hairColor": null,
+            "eyes": "green",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "high cheekbones and soft jaw, small curved nose, widely spaced brows and light freckles"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "long",
+            "build": "average",
+            "skinTone": "deep",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 15,
+          "row": 4,
+          "column": 4,
+          "sourceIndex": 79,
+          "planned": {
+            "age": 35,
+            "skin": "light peach skin",
+            "hairCategory": "short",
+            "hair": "a short low fade",
+            "hairColor": "dark brown",
+            "eyes": "grey",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "fine long face, small narrow nose, high thin brows and a visible small temple mole"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "short",
+            "build": "powerful",
+            "skinTone": "fair",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "temple-mole"
+            ],
+            "faceComplete": true
+          }
+        }
+      ]
+    },
+    {
+      "file": "players-05.png",
+      "layout": {
+        "columns": 4,
+        "rows": 4,
+        "order": "row-major"
+      },
+      "status": "generated-and-visually-inspected",
+      "cells": [
+        {
+          "cell": 0,
+          "row": 1,
+          "column": 1,
+          "sourceIndex": 80,
+          "planned": {
+            "age": 28,
+            "skin": "deep brown skin",
+            "hairCategory": "long",
+            "hair": "long loose curly hair tied loosely back",
+            "hairColor": "light brown",
+            "eyes": "hazel",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "heavy lower jaw, prominent wide nose, thick straight brows and a thin healed temple scar"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "long",
+            "build": "powerful",
+            "skinTone": "tan",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "forehead-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 1,
+          "row": 1,
+          "column": 2,
+          "sourceIndex": 81,
+          "planned": {
+            "age": 30,
+            "skin": "light peach skin",
+            "hairCategory": "bald",
+            "hair": "completely shaved head with visible scalp texture",
+            "hairColor": null,
+            "eyes": "blue",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "round cheeks, wide blunt nose, slightly raised ears and sparse freckles"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "stubble",
+            "build": "heavyset",
+            "skinTone": "fair",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 2,
+          "row": 1,
+          "column": 3,
+          "sourceIndex": 82,
+          "planned": {
+            "age": 31,
+            "skin": "light brown skin",
+            "hairCategory": "short",
+            "hair": "short neat curls",
+            "hairColor": "dark brown",
+            "eyes": "green",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "narrow high forehead, wide jaw, a long rounded nose and one cheek mole"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "long",
+            "build": "slender",
+            "skinTone": "tan",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 3,
+          "row": 1,
+          "column": 4,
+          "sourceIndex": 83,
+          "planned": {
+            "age": 18,
+            "skin": "very deep brown skin",
+            "hairCategory": "medium",
+            "hair": "a medium curly mullet",
+            "hairColor": "natural blond",
+            "eyes": "grey",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "oval face, broad nose bridge, heavy curved brows and a tiny mole beside the mouth"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "stubble",
+            "build": "average",
+            "skinTone": "brown",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 4,
+          "row": 2,
+          "column": 1,
+          "sourceIndex": 84,
+          "planned": {
+            "age": 23,
+            "skin": "fair freckled skin",
+            "hairCategory": "long",
+            "hair": "long wavy hair tied in a low bun",
+            "hairColor": "dark brown",
+            "eyes": "brown",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "oblong face, long nose with rounded tip, long ear lobes and a freckled forehead"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "short",
+            "build": "heavyset",
+            "skinTone": "fair",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 5,
+          "row": 2,
+          "column": 2,
+          "sourceIndex": 85,
+          "planned": {
+            "age": 34,
+            "skin": "medium brown skin",
+            "hairCategory": "bald",
+            "hair": "bald crown and very short side hair",
+            "hairColor": null,
+            "eyes": "hazel",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "sharp cheekbones, wide broad nose, large visible ears and a dark mole near the temple"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "none",
+            "build": "slender",
+            "skinTone": "tan",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "forehead-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 6,
+          "row": 2,
+          "column": 3,
+          "sourceIndex": 86,
+          "planned": {
+            "age": 33,
+            "skin": "very fair skin",
+            "hairCategory": "short",
+            "hair": "a short low fade",
+            "hairColor": "natural auburn",
+            "eyes": "blue",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "short wide face, deeply set eyes, rounded nose tip and a mole beside the left jaw"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "short",
+            "build": "average",
+            "skinTone": "fair",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles",
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 7,
+          "row": 2,
+          "column": 4,
+          "sourceIndex": 87,
+          "planned": {
+            "age": 20,
+            "skin": "warm olive skin",
+            "hairCategory": "medium",
+            "hair": "medium textured thick hair",
+            "hairColor": "black",
+            "eyes": "green",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "deep-set eyes, broad square chin, slightly curved nose and a tiny healed cheek line"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "none",
+            "build": "powerful",
+            "skinTone": "tan",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "thick-brows"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 8,
+          "row": 3,
+          "column": 1,
+          "sourceIndex": 88,
+          "planned": {
+            "age": 25,
+            "skin": "deep brown skin",
+            "hairCategory": "long",
+            "hair": "long straight hair reaching the shoulders",
+            "hairColor": "light brown",
+            "eyes": "grey",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "broad diamond face, strong high bridge nose, thick brows and freckles on the nose"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "stubble",
+            "build": "average",
+            "skinTone": "brown",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 9,
+          "row": 3,
+          "column": 2,
+          "sourceIndex": 89,
+          "planned": {
+            "age": 30,
+            "skin": "light peach skin",
+            "hairCategory": "bald",
+            "hair": "clean-shaven scalp",
+            "hairColor": null,
+            "eyes": "brown",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "rectangular face, wide nose tip, small ears and light freckles over the cheeks"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "long",
+            "build": "powerful",
+            "skinTone": "fair",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 10,
+          "row": 3,
+          "column": 3,
+          "sourceIndex": 90,
+          "planned": {
+            "age": 35,
+            "skin": "light brown skin",
+            "hairCategory": "short",
+            "hair": "a very short buzz cut",
+            "hairColor": "dark brown",
+            "eyes": "hazel",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "broad round face, short upturned nose, dimples and a subtle closed scar near the jaw"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "short",
+            "build": "heavyset",
+            "skinTone": "tan",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "round-cheeks"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 11,
+          "row": 3,
+          "column": 4,
+          "sourceIndex": 91,
+          "planned": {
+            "age": 29,
+            "skin": "very deep brown skin",
+            "hairCategory": "medium",
+            "hair": "medium loose curls",
+            "hairColor": "natural blond",
+            "eyes": "blue",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "broad trapezoid face, long slender nose, low thick brows and scattered nose freckles"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "long",
+            "build": "powerful",
+            "skinTone": "brown",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 12,
+          "row": 4,
+          "column": 1,
+          "sourceIndex": 92,
+          "planned": {
+            "age": 27,
+            "skin": "fair freckled skin",
+            "hairCategory": "long",
+            "hair": "long shoulder-length loose waves",
+            "hairColor": "dark brown",
+            "eyes": "green",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "asymmetrical jaw, broad straight nose, coarse arched brows and a small healed brow scar"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "none",
+            "build": "slender",
+            "skinTone": "fair",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "eyebrow-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 13,
+          "row": 4,
+          "column": 2,
+          "sourceIndex": 93,
+          "planned": {
+            "age": 32,
+            "skin": "medium brown skin",
+            "hairCategory": "bald",
+            "hair": "naturally bald smooth crown",
+            "hairColor": null,
+            "eyes": "grey",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "narrow triangular face, long nose, close-set brows and a small nose-side mole"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "short",
+            "build": "average",
+            "skinTone": "tan",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 14,
+          "row": 4,
+          "column": 3,
+          "sourceIndex": 94,
+          "planned": {
+            "age": 19,
+            "skin": "very fair skin",
+            "hairCategory": "short",
+            "hair": "short tight coils",
+            "hairColor": "natural auburn",
+            "eyes": "brown",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "long broad face, pronounced nose bridge, bushy eyebrows and a tiny scar crossing one brow"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "none",
+            "build": "heavyset",
+            "skinTone": "fair",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "eyebrow-gap"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 15,
+          "row": 4,
+          "column": 4,
+          "sourceIndex": 95,
+          "planned": {
+            "age": 24,
+            "skin": "warm olive skin",
+            "hairCategory": "medium",
+            "hair": "medium wavy swept-back hair",
+            "hairColor": "black",
+            "eyes": "hazel",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "long angular face, prominent ears, narrow high nose bridge and small healed left-eyebrow scar"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "short",
+            "build": "slender",
+            "skinTone": "tan",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "eyebrow-line"
+            ],
+            "faceComplete": true
+          }
+        }
+      ]
+    },
+    {
+      "file": "players-06.png",
+      "layout": {
+        "columns": 4,
+        "rows": 4,
+        "order": "row-major"
+      },
+      "status": "generated-and-visually-inspected",
+      "cells": [
+        {
+          "cell": 0,
+          "row": 1,
+          "column": 1,
+          "sourceIndex": 96,
+          "planned": {
+            "age": 30,
+            "skin": "very fair skin",
+            "hairCategory": "bald",
+            "hair": "clean-shaven scalp",
+            "hairColor": null,
+            "eyes": "green",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "short angular face, asymmetrical short nose, small ears and a little mole above the lip"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "none",
+            "build": "slender",
+            "skinTone": "fair",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "mouth-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 1,
+          "row": 1,
+          "column": 2,
+          "sourceIndex": 97,
+          "planned": {
+            "age": 33,
+            "skin": "warm olive skin",
+            "hairCategory": "short",
+            "hair": "a very short buzz cut",
+            "hairColor": "dark brown",
+            "eyes": "grey",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "round broad face, blunt rounded nose, low straight eyebrows and one small cheek mole"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "short",
+            "build": "average",
+            "skinTone": "tan",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 2,
+          "row": 1,
+          "column": 3,
+          "sourceIndex": 98,
+          "planned": {
+            "age": 20,
+            "skin": "deep brown skin",
+            "hairCategory": "medium",
+            "hair": "medium loose curls",
+            "hairColor": "medium brown",
+            "eyes": "brown",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "elongated face, high cheekbones, bulbous nose tip and fine eyebrows with temple freckles"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "none",
+            "build": "powerful",
+            "skinTone": "brown",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 3,
+          "row": 1,
+          "column": 4,
+          "sourceIndex": 99,
+          "planned": {
+            "age": 25,
+            "skin": "light peach skin",
+            "hairCategory": "long",
+            "hair": "long straight hair reaching the shoulders",
+            "hairColor": "natural auburn",
+            "eyes": "hazel",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "long angular face, short broad nose, high forehead and ears that protrude slightly"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "short",
+            "build": "heavyset",
+            "skinTone": "fair",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 4,
+          "row": 2,
+          "column": 1,
+          "sourceIndex": 100,
+          "planned": {
+            "age": 34,
+            "skin": "light brown skin",
+            "hairCategory": "bald",
+            "hair": "naturally bald smooth crown",
+            "hairColor": null,
+            "eyes": "blue",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "wide forehead and narrow chin, broad nose tip, rounded small ears and a tiny cheek mole"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "long",
+            "build": "average",
+            "skinTone": "tan",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 5,
+          "row": 2,
+          "column": 2,
+          "sourceIndex": 101,
+          "planned": {
+            "age": 35,
+            "skin": "very deep brown skin",
+            "hairCategory": "short",
+            "hair": "short tight coils",
+            "hairColor": "light brown",
+            "eyes": "green",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "heavy lower jaw, prominent wide nose, thick straight brows and a thin healed temple scar"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "stubble",
+            "build": "powerful",
+            "skinTone": "deep",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "forehead-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 6,
+          "row": 2,
+          "column": 3,
+          "sourceIndex": 102,
+          "planned": {
+            "age": 25,
+            "skin": "fair freckled skin",
+            "hairCategory": "medium",
+            "hair": "medium wavy swept-back hair",
+            "hairColor": "reddish brown",
+            "eyes": "grey",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "round cheeks, wide blunt nose, slightly raised ears and sparse freckles"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "long",
+            "build": "heavyset",
+            "skinTone": "fair",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 7,
+          "row": 2,
+          "column": 4,
+          "sourceIndex": 103,
+          "planned": {
+            "age": 27,
+            "skin": "medium brown skin",
+            "hairCategory": "long",
+            "hair": "long shoulder-length loose waves",
+            "hairColor": "dark brown",
+            "eyes": "brown",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "narrow high forehead, wide jaw, a long rounded nose and one cheek mole"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "stubble",
+            "build": "slender",
+            "skinTone": "tan",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 8,
+          "row": 3,
+          "column": 1,
+          "sourceIndex": 104,
+          "planned": {
+            "age": 32,
+            "skin": "very fair skin",
+            "hairCategory": "bald",
+            "hair": "completely shaved head with visible scalp texture",
+            "hairColor": null,
+            "eyes": "hazel",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "oval face, broad nose bridge, heavy curved brows and a tiny mole beside the mouth"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "short",
+            "build": "powerful",
+            "skinTone": "fair",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "round-cheeks"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 9,
+          "row": 3,
+          "column": 2,
+          "sourceIndex": 105,
+          "planned": {
+            "age": 19,
+            "skin": "warm olive skin",
+            "hairCategory": "short",
+            "hair": "a short straight crew cut",
+            "hairColor": "dark brown",
+            "eyes": "blue",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "oblong face, long nose with rounded tip, long ear lobes and a freckled forehead"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "none",
+            "build": "heavyset",
+            "skinTone": "light",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 10,
+          "row": 3,
+          "column": 3,
+          "sourceIndex": 106,
+          "planned": {
+            "age": 24,
+            "skin": "deep brown skin",
+            "hairCategory": "medium",
+            "hair": "a medium rounded afro",
+            "hairColor": "medium brown",
+            "eyes": "green",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "sharp cheekbones, wide broad nose, large visible ears and a dark mole near the temple"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "short",
+            "build": "slender",
+            "skinTone": "brown",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "temple-mole",
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 11,
+          "row": 3,
+          "column": 4,
+          "sourceIndex": 107,
+          "planned": {
+            "age": 29,
+            "skin": "light peach skin",
+            "hairCategory": "long",
+            "hair": "long natural locs to the shoulders",
+            "hairColor": "natural auburn",
+            "eyes": "grey",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "short wide face, deeply set eyes, rounded nose tip and a mole beside the left jaw"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "none",
+            "build": "average",
+            "skinTone": "fair",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "chin-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 12,
+          "row": 4,
+          "column": 1,
+          "sourceIndex": 108,
+          "planned": {
+            "age": 34,
+            "skin": "light brown skin",
+            "hairCategory": "bald",
+            "hair": "bald crown and very short side hair",
+            "hairColor": null,
+            "eyes": "brown",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "deep-set eyes, broad square chin, slightly curved nose and a tiny healed cheek line"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "stubble",
+            "build": "heavyset",
+            "skinTone": "tan",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 13,
+          "row": 4,
+          "column": 2,
+          "sourceIndex": 109,
+          "planned": {
+            "age": 32,
+            "skin": "very deep brown skin",
+            "hairCategory": "short",
+            "hair": "short wavy cropped hair",
+            "hairColor": "light brown",
+            "eyes": "hazel",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "broad diamond face, strong high bridge nose, thick brows and freckles on the nose"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "long",
+            "build": "slender",
+            "skinTone": "deep",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 14,
+          "row": 4,
+          "column": 3,
+          "sourceIndex": 110,
+          "planned": {
+            "age": 26,
+            "skin": "fair freckled skin",
+            "hairCategory": "medium",
+            "hair": "medium straight shaggy hair",
+            "hairColor": "reddish brown",
+            "eyes": "blue",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "rectangular face, wide nose tip, small ears and light freckles over the cheeks"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "stubble",
+            "build": "average",
+            "skinTone": "fair",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "eyebrow-gap"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 15,
+          "row": 4,
+          "column": 4,
+          "sourceIndex": 111,
+          "planned": {
+            "age": 34,
+            "skin": "medium brown skin",
+            "hairCategory": "long",
+            "hair": "long curly hair to the shoulders",
+            "hairColor": "dark brown",
+            "eyes": "green",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "broad round face, short upturned nose, dimples and a subtle closed scar near the jaw"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "long",
+            "build": "powerful",
+            "skinTone": "brown",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        }
+      ]
+    },
+    {
+      "file": "players-07.png",
+      "layout": {
+        "columns": 4,
+        "rows": 4,
+        "order": "row-major"
+      },
+      "status": "generated-and-visually-inspected",
+      "cells": [
+        {
+          "cell": 0,
+          "row": 1,
+          "column": 1,
+          "sourceIndex": 112,
+          "planned": {
+            "age": 35,
+            "skin": "fair freckled skin",
+            "hairCategory": "short",
+            "hair": "a short straight crew cut",
+            "hairColor": "natural auburn",
+            "eyes": "brown",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "heart-shaped face, slightly crooked nose, thin arched brows and prominent earlobes"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "stubble",
+            "build": "average",
+            "skinTone": "fair",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 1,
+          "row": 1,
+          "column": 2,
+          "sourceIndex": 113,
+          "planned": {
+            "age": 31,
+            "skin": "medium brown skin",
+            "hairCategory": "medium",
+            "hair": "a medium rounded afro",
+            "hairColor": "black",
+            "eyes": "hazel",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "diamond-shaped face, hooked nose bridge, uneven dense brows and a small mole below one eye"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "long",
+            "build": "powerful",
+            "skinTone": "brown",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 2,
+          "row": 1,
+          "column": 3,
+          "sourceIndex": 114,
+          "planned": {
+            "age": 27,
+            "skin": "very fair skin",
+            "hairCategory": "long",
+            "hair": "long natural locs to the shoulders",
+            "hairColor": "light brown",
+            "eyes": "blue",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "square head, narrow long nose, strong flat brows and a faint small forehead scar"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "stubble",
+            "build": "slender",
+            "skinTone": "light",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "forehead-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 3,
+          "row": 1,
+          "column": 4,
+          "sourceIndex": 115,
+          "planned": {
+            "age": 34,
+            "skin": "warm olive skin",
+            "hairCategory": "bald",
+            "hair": "completely shaved head with visible scalp texture",
+            "hairColor": null,
+            "eyes": "green",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "long chin, medium straight nose, large ears and a few scattered forehead freckles"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "long",
+            "build": "average",
+            "skinTone": "brown",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 4,
+          "row": 2,
+          "column": 1,
+          "sourceIndex": 116,
+          "planned": {
+            "age": 19,
+            "skin": "deep brown skin",
+            "hairCategory": "short",
+            "hair": "short wavy cropped hair",
+            "hairColor": "dark brown",
+            "eyes": "grey",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "wide oval face, low nose bridge, fleshy ears and scattered cheek freckles"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "none",
+            "build": "heavyset",
+            "skinTone": "brown",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 5,
+          "row": 2,
+          "column": 2,
+          "sourceIndex": 117,
+          "planned": {
+            "age": 24,
+            "skin": "light peach skin",
+            "hairCategory": "medium",
+            "hair": "medium straight shaggy hair",
+            "hairColor": "natural blond",
+            "eyes": "brown",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "short angular face, asymmetrical short nose, small ears and a little mole above the lip"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "short",
+            "build": "slender",
+            "skinTone": "fair",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 6,
+          "row": 2,
+          "column": 3,
+          "sourceIndex": 118,
+          "planned": {
+            "age": 29,
+            "skin": "light brown skin",
+            "hairCategory": "long",
+            "hair": "long curly hair to the shoulders",
+            "hairColor": "dark brown",
+            "eyes": "hazel",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "round broad face, blunt rounded nose, low straight eyebrows and one small cheek mole"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "none",
+            "build": "average",
+            "skinTone": "tan",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 7,
+          "row": 2,
+          "column": 4,
+          "sourceIndex": 119,
+          "planned": {
+            "age": 34,
+            "skin": "very deep brown skin",
+            "hairCategory": "bald",
+            "hair": "bald crown and very short side hair",
+            "hairColor": null,
+            "eyes": "blue",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "elongated face, high cheekbones, bulbous nose tip and fine eyebrows with temple freckles"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "short",
+            "build": "powerful",
+            "skinTone": "deep",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 8,
+          "row": 3,
+          "column": 1,
+          "sourceIndex": 120,
+          "planned": {
+            "age": 28,
+            "skin": "fair freckled skin",
+            "hairCategory": "short",
+            "hair": "a short textured crop",
+            "hairColor": "natural auburn",
+            "eyes": "green",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "long angular face, short broad nose, high forehead and ears that protrude slightly"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "long",
+            "build": "slender",
+            "skinTone": "fair",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 9,
+          "row": 3,
+          "column": 2,
+          "sourceIndex": 121,
+          "planned": {
+            "age": 26,
+            "skin": "medium brown skin",
+            "hairCategory": "medium",
+            "hair": "medium natural twists",
+            "hairColor": "black",
+            "eyes": "grey",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "wide forehead and narrow chin, broad nose tip, rounded small ears and a tiny cheek mole"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "stubble",
+            "build": "average",
+            "skinTone": "brown",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 10,
+          "row": 3,
+          "column": 3,
+          "sourceIndex": 122,
+          "planned": {
+            "age": 31,
+            "skin": "very fair skin",
+            "hairCategory": "long",
+            "hair": "long hair gathered in a low ponytail",
+            "hairColor": "light brown",
+            "eyes": "brown",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "heavy lower jaw, prominent wide nose, thick straight brows and a thin healed temple scar"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "long",
+            "build": "powerful",
+            "skinTone": "fair",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "forehead-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 11,
+          "row": 3,
+          "column": 4,
+          "sourceIndex": 123,
+          "planned": {
+            "age": 32,
+            "skin": "warm olive skin",
+            "hairCategory": "bald",
+            "hair": "clean-shaven scalp",
+            "hairColor": null,
+            "eyes": "hazel",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "round cheeks, wide blunt nose, slightly raised ears and sparse freckles"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "stubble",
+            "build": "heavyset",
+            "skinTone": "tan",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "round-cheeks"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 12,
+          "row": 4,
+          "column": 1,
+          "sourceIndex": 124,
+          "planned": {
+            "age": 23,
+            "skin": "deep brown skin",
+            "hairCategory": "short",
+            "hair": "a short rounded afro",
+            "hairColor": "dark brown",
+            "eyes": "blue",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "narrow high forehead, wide jaw, a long rounded nose and one cheek mole"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "short",
+            "build": "average",
+            "skinTone": "deep",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 13,
+          "row": 4,
+          "column": 2,
+          "sourceIndex": 125,
+          "planned": {
+            "age": 28,
+            "skin": "light peach skin",
+            "hairCategory": "medium",
+            "hair": "medium side-parted wavy hair",
+            "hairColor": "natural blond",
+            "eyes": "green",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "oval face, broad nose bridge, heavy curved brows and a tiny mole beside the mouth"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "none",
+            "build": "powerful",
+            "skinTone": "fair",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 14,
+          "row": 4,
+          "column": 3,
+          "sourceIndex": 126,
+          "planned": {
+            "age": 33,
+            "skin": "light brown skin",
+            "hairCategory": "long",
+            "hair": "long thick braids to the shoulders",
+            "hairColor": "dark brown",
+            "eyes": "grey",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "oblong face, long nose with rounded tip, long ear lobes and a freckled forehead"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "short",
+            "build": "heavyset",
+            "skinTone": "tan",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 15,
+          "row": 4,
+          "column": 4,
+          "sourceIndex": 127,
+          "planned": {
+            "age": 26,
+            "skin": "very deep brown skin",
+            "hairCategory": "bald",
+            "hair": "naturally bald smooth crown",
+            "hairColor": null,
+            "eyes": "brown",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "sharp cheekbones, wide broad nose, large visible ears and a dark mole near the temple"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "none",
+            "build": "slender",
+            "skinTone": "deep",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "temple-mole"
+            ],
+            "faceComplete": true
+          }
+        }
+      ]
+    },
+    {
+      "file": "players-08.png",
+      "layout": {
+        "columns": 4,
+        "rows": 4,
+        "order": "row-major"
+      },
+      "status": "generated-and-visually-inspected",
+      "cells": [
+        {
+          "cell": 0,
+          "row": 1,
+          "column": 1,
+          "sourceIndex": 128,
+          "planned": {
+            "age": 24,
+            "skin": "light brown skin",
+            "hairCategory": "medium",
+            "hair": "medium natural twists",
+            "hairColor": "reddish brown",
+            "eyes": "blue",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "soft round face, narrow nose bridge, flared nostrils and a faint thin healed cheek scar"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "short",
+            "build": "slender",
+            "skinTone": "brown",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-line",
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 1,
+          "row": 1,
+          "column": 2,
+          "sourceIndex": 129,
+          "planned": {
+            "age": 29,
+            "skin": "very deep brown skin",
+            "hairCategory": "long",
+            "hair": "long hair gathered in a low ponytail",
+            "hairColor": "dark brown",
+            "eyes": "green",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "oval face, broad forehead, short straight nose, delicate brows and light freckles"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "none",
+            "build": "powerful",
+            "skinTone": "deep",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 2,
+          "row": 1,
+          "column": 3,
+          "sourceIndex": 130,
+          "planned": {
+            "age": 34,
+            "skin": "fair freckled skin",
+            "hairCategory": "bald",
+            "hair": "clean-shaven scalp",
+            "hairColor": null,
+            "eyes": "grey",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "high cheekbones and soft jaw, small curved nose, widely spaced brows and light freckles"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "short",
+            "build": "heavyset",
+            "skinTone": "fair",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 3,
+          "row": 1,
+          "column": 4,
+          "sourceIndex": 131,
+          "planned": {
+            "age": 21,
+            "skin": "medium brown skin",
+            "hairCategory": "short",
+            "hair": "a short textured crop",
+            "hairColor": "dark brown",
+            "eyes": "brown",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "fine long face, small narrow nose, high thin brows and a visible small temple mole"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "none",
+            "build": "powerful",
+            "skinTone": "tan",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "temple-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 4,
+          "row": 2,
+          "column": 1,
+          "sourceIndex": 132,
+          "planned": {
+            "age": 26,
+            "skin": "very fair skin",
+            "hairCategory": "medium",
+            "hair": "medium side-parted wavy hair",
+            "hairColor": "medium brown",
+            "eyes": "hazel",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "soft oval face, broad low nose, large detached earlobes and a faint chin scar"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "stubble",
+            "build": "average",
+            "skinTone": "fair",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "chin-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 5,
+          "row": 2,
+          "column": 2,
+          "sourceIndex": 133,
+          "planned": {
+            "age": 31,
+            "skin": "warm olive skin",
+            "hairCategory": "long",
+            "hair": "long thick braids to the shoulders",
+            "hairColor": "natural auburn",
+            "eyes": "blue",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "heart-shaped face, slightly crooked nose, thin arched brows and prominent earlobes"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "long",
+            "build": "powerful",
+            "skinTone": "fair",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 6,
+          "row": 2,
+          "column": 3,
+          "sourceIndex": 134,
+          "planned": {
+            "age": 28,
+            "skin": "deep brown skin",
+            "hairCategory": "bald",
+            "hair": "naturally bald smooth crown",
+            "hairColor": null,
+            "eyes": "green",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "diamond-shaped face, hooked nose bridge, uneven dense brows and a small mole below one eye"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "stubble",
+            "build": "heavyset",
+            "skinTone": "deep",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 7,
+          "row": 2,
+          "column": 4,
+          "sourceIndex": 135,
+          "planned": {
+            "age": 28,
+            "skin": "light peach skin",
+            "hairCategory": "short",
+            "hair": "a short rounded afro",
+            "hairColor": "light brown",
+            "eyes": "grey",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "square head, narrow long nose, strong flat brows and a faint small forehead scar"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "long",
+            "build": "slender",
+            "skinTone": "light",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 8,
+          "row": 3,
+          "column": 1,
+          "sourceIndex": 136,
+          "planned": {
+            "age": 28,
+            "skin": "light brown skin",
+            "hairCategory": "medium",
+            "hair": "a medium curly mullet",
+            "hairColor": "reddish brown",
+            "eyes": "brown",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "long chin, medium straight nose, large ears and a few scattered forehead freckles"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "none",
+            "build": "slender",
+            "skinTone": "light",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 9,
+          "row": 3,
+          "column": 2,
+          "sourceIndex": 137,
+          "planned": {
+            "age": 33,
+            "skin": "very deep brown skin",
+            "hairCategory": "long",
+            "hair": "long loose curly hair tied loosely back",
+            "hairColor": "dark brown",
+            "eyes": "hazel",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "wide oval face, low nose bridge, fleshy ears and scattered cheek freckles"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "short",
+            "build": "heavyset",
+            "skinTone": "brown",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 10,
+          "row": 3,
+          "column": 3,
+          "sourceIndex": 138,
+          "planned": {
+            "age": 32,
+            "skin": "fair freckled skin",
+            "hairCategory": "bald",
+            "hair": "completely shaved head with visible scalp texture",
+            "hairColor": null,
+            "eyes": "blue",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "short angular face, asymmetrical short nose, small ears and a little mole above the lip"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "none",
+            "build": "slender",
+            "skinTone": "fair",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "mouth-mole",
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 11,
+          "row": 3,
+          "column": 4,
+          "sourceIndex": 139,
+          "planned": {
+            "age": 25,
+            "skin": "medium brown skin",
+            "hairCategory": "short",
+            "hair": "short neat curls",
+            "hairColor": "dark brown",
+            "eyes": "green",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "round broad face, blunt rounded nose, low straight eyebrows and one small cheek mole"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "short",
+            "build": "average",
+            "skinTone": "tan",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "thick-brows"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 12,
+          "row": 4,
+          "column": 1,
+          "sourceIndex": 140,
+          "planned": {
+            "age": 33,
+            "skin": "very fair skin",
+            "hairCategory": "medium",
+            "hair": "medium textured thick hair",
+            "hairColor": "medium brown",
+            "eyes": "grey",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "elongated face, high cheekbones, bulbous nose tip and fine eyebrows with temple freckles"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "long",
+            "build": "heavyset",
+            "skinTone": "fair",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 13,
+          "row": 4,
+          "column": 2,
+          "sourceIndex": 141,
+          "planned": {
+            "age": 35,
+            "skin": "warm olive skin",
+            "hairCategory": "long",
+            "hair": "long wavy hair tied in a low bun",
+            "hairColor": "natural auburn",
+            "eyes": "brown",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "long angular face, short broad nose, high forehead and ears that protrude slightly"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "stubble",
+            "build": "slender",
+            "skinTone": "tan",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 14,
+          "row": 4,
+          "column": 3,
+          "sourceIndex": 142,
+          "planned": {
+            "age": 26,
+            "skin": "deep brown skin",
+            "hairCategory": "bald",
+            "hair": "bald crown and very short side hair",
+            "hairColor": null,
+            "eyes": "hazel",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "wide forehead and narrow chin, broad nose tip, rounded small ears and a tiny cheek mole"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "long",
+            "build": "average",
+            "skinTone": "deep",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 15,
+          "row": 4,
+          "column": 4,
+          "sourceIndex": 143,
+          "planned": {
+            "age": 27,
+            "skin": "light peach skin",
+            "hairCategory": "short",
+            "hair": "a short low fade",
+            "hairColor": "light brown",
+            "eyes": "blue",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "heavy lower jaw, prominent wide nose, thick straight brows and a thin healed temple scar"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "short",
+            "build": "powerful",
+            "skinTone": "fair",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "forehead-line"
+            ],
+            "faceComplete": true
+          }
+        }
+      ]
+    },
+    {
+      "file": "players-09.png",
+      "layout": {
+        "columns": 4,
+        "rows": 4,
+        "order": "row-major"
+      },
+      "status": "generated-and-visually-inspected",
+      "cells": [
+        {
+          "cell": 0,
+          "row": 1,
+          "column": 1,
+          "sourceIndex": 144,
+          "planned": {
+            "age": 32,
+            "skin": "deep brown skin",
+            "hairCategory": "long",
+            "hair": "long loose curly hair tied loosely back",
+            "hairColor": "dark brown",
+            "eyes": "grey",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "asymmetrical jaw, broad straight nose, coarse arched brows and a small healed brow scar"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "long",
+            "build": "powerful",
+            "skinTone": "brown",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "eyebrow-gap"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 1,
+          "row": 1,
+          "column": 2,
+          "sourceIndex": 145,
+          "planned": {
+            "age": 34,
+            "skin": "light peach skin",
+            "hairCategory": "bald",
+            "hair": "completely shaved head with visible scalp texture",
+            "hairColor": null,
+            "eyes": "brown",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "narrow triangular face, long nose, close-set brows and a small nose-side mole"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "stubble",
+            "build": "heavyset",
+            "skinTone": "fair",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 2,
+          "row": 1,
+          "column": 3,
+          "sourceIndex": 146,
+          "planned": {
+            "age": 34,
+            "skin": "light brown skin",
+            "hairCategory": "short",
+            "hair": "short neat curls",
+            "hairColor": "natural auburn",
+            "eyes": "hazel",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "long broad face, pronounced nose bridge, bushy eyebrows and a tiny scar crossing one brow"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "long",
+            "build": "slender",
+            "skinTone": "fair",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 3,
+          "row": 1,
+          "column": 4,
+          "sourceIndex": 147,
+          "planned": {
+            "age": 28,
+            "skin": "very deep brown skin",
+            "hairCategory": "medium",
+            "hair": "a medium curly mullet",
+            "hairColor": "black",
+            "eyes": "blue",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "long angular face, prominent ears, narrow high nose bridge and small healed left-eyebrow scar"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "stubble",
+            "build": "average",
+            "skinTone": "brown",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "thick-brows"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 4,
+          "row": 2,
+          "column": 1,
+          "sourceIndex": 148,
+          "planned": {
+            "age": 33,
+            "skin": "fair freckled skin",
+            "hairCategory": "long",
+            "hair": "long wavy hair tied in a low bun",
+            "hairColor": "light brown",
+            "eyes": "green",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "square jaw, short flat-tipped nose, slightly uneven ears and a faint healed chin scar"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "short",
+            "build": "heavyset",
+            "skinTone": "fair",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 5,
+          "row": 2,
+          "column": 2,
+          "sourceIndex": 149,
+          "planned": {
+            "age": 28,
+            "skin": "medium brown skin",
+            "hairCategory": "bald",
+            "hair": "bald crown and very short side hair",
+            "hairColor": null,
+            "eyes": "grey",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "soft round face, narrow nose bridge, flared nostrils and a faint thin healed cheek scar"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "none",
+            "build": "slender",
+            "skinTone": "tan",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "forehead-line"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 6,
+          "row": 2,
+          "column": 3,
+          "sourceIndex": 150,
+          "planned": {
+            "age": 25,
+            "skin": "very fair skin",
+            "hairCategory": "short",
+            "hair": "a short low fade",
+            "hairColor": "dark brown",
+            "eyes": "brown",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "oval face, broad forehead, short straight nose, delicate brows and light freckles"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "short",
+            "build": "average",
+            "skinTone": "fair",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 7,
+          "row": 2,
+          "column": 4,
+          "sourceIndex": 151,
+          "planned": {
+            "age": 30,
+            "skin": "warm olive skin",
+            "hairCategory": "medium",
+            "hair": "medium textured thick hair",
+            "hairColor": "natural blond",
+            "eyes": "hazel",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "high cheekbones and soft jaw, small curved nose, widely spaced brows and light freckles"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "none",
+            "build": "powerful",
+            "skinTone": "light",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 8,
+          "row": 3,
+          "column": 1,
+          "sourceIndex": 152,
+          "planned": {
+            "age": 35,
+            "skin": "deep brown skin",
+            "hairCategory": "long",
+            "hair": "long straight hair reaching the shoulders",
+            "hairColor": "dark brown",
+            "eyes": "blue",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "fine long face, small narrow nose, high thin brows and a visible small temple mole"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "stubble",
+            "build": "average",
+            "skinTone": "brown",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "temple-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 9,
+          "row": 3,
+          "column": 2,
+          "sourceIndex": 153,
+          "planned": {
+            "age": 32,
+            "skin": "light peach skin",
+            "hairCategory": "bald",
+            "hair": "clean-shaven scalp",
+            "hairColor": null,
+            "eyes": "green",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "soft oval face, broad low nose, large detached earlobes and a faint chin scar"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "long",
+            "build": "powerful",
+            "skinTone": "fair",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 10,
+          "row": 3,
+          "column": 3,
+          "sourceIndex": 154,
+          "planned": {
+            "age": 27,
+            "skin": "light brown skin",
+            "hairCategory": "short",
+            "hair": "a very short buzz cut",
+            "hairColor": "natural auburn",
+            "eyes": "grey",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "stubble",
+            "beard": "visible even dark stubble",
+            "features": "heart-shaped face, slightly crooked nose, thin arched brows and prominent earlobes"
+          },
+          "observed": {
+            "hairCategory": "short",
+            "beardCategory": "stubble",
+            "build": "heavyset",
+            "skinTone": "tan",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "wide-nose"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 11,
+          "row": 3,
+          "column": 4,
+          "sourceIndex": 155,
+          "planned": {
+            "age": 33,
+            "skin": "very deep brown skin",
+            "hairCategory": "medium",
+            "hair": "medium loose curls",
+            "hairColor": "black",
+            "eyes": "brown",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "long",
+            "beard": "a long dense natural beard extending below the chin",
+            "features": "diamond-shaped face, hooked nose bridge, uneven dense brows and a small mole below one eye"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "long",
+            "build": "powerful",
+            "skinTone": "deep",
+            "eyes": "brown",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "cheek-mole"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 12,
+          "row": 4,
+          "column": 1,
+          "sourceIndex": 156,
+          "planned": {
+            "age": 19,
+            "skin": "fair freckled skin",
+            "hairCategory": "long",
+            "hair": "long shoulder-length loose waves",
+            "hairColor": "light brown",
+            "eyes": "hazel",
+            "build": "average",
+            "body": "an average neck and shoulders with natural medium build",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "square head, narrow long nose, strong flat brows and a faint small forehead scar"
+          },
+          "observed": {
+            "hairCategory": "long",
+            "beardCategory": "none",
+            "build": "slender",
+            "skinTone": "fair",
+            "eyes": "hazel",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "forehead-line",
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 13,
+          "row": 4,
+          "column": 2,
+          "sourceIndex": 157,
+          "planned": {
+            "age": 26,
+            "skin": "medium brown skin",
+            "hairCategory": "bald",
+            "hair": "naturally bald smooth crown",
+            "hairColor": null,
+            "eyes": "blue",
+            "build": "powerful",
+            "body": "a thick powerful muscular neck and broad strong shoulders",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "long chin, medium straight nose, large ears and a few scattered forehead freckles"
+          },
+          "observed": {
+            "hairCategory": "bald",
+            "beardCategory": "short",
+            "build": "average",
+            "skinTone": "brown",
+            "eyes": "blue",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 14,
+          "row": 4,
+          "column": 3,
+          "sourceIndex": 158,
+          "planned": {
+            "age": 29,
+            "skin": "very fair skin",
+            "hairCategory": "short",
+            "hair": "short tight coils",
+            "hairColor": "dark brown",
+            "eyes": "green",
+            "build": "heavyset",
+            "body": "a visibly heavyset soft thick neck, rounded full face and broad stocky shoulders",
+            "beardCategory": "none",
+            "beard": "clean shaven with no beard or moustache",
+            "features": "wide oval face, low nose bridge, fleshy ears and scattered cheek freckles"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "none",
+            "build": "heavyset",
+            "skinTone": "fair",
+            "eyes": "green",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        },
+        {
+          "cell": 15,
+          "row": 4,
+          "column": 4,
+          "sourceIndex": 159,
+          "planned": {
+            "age": 34,
+            "skin": "warm olive skin",
+            "hairCategory": "medium",
+            "hair": "medium wavy swept-back hair",
+            "hairColor": "natural blond",
+            "eyes": "grey",
+            "build": "slender",
+            "body": "a slender fine neck, narrow shoulders and lean face",
+            "beardCategory": "short",
+            "beard": "a distinct neatly kept short full beard",
+            "features": "short angular face, asymmetrical short nose, small ears and a little mole above the lip"
+          },
+          "observed": {
+            "hairCategory": "medium",
+            "beardCategory": "short",
+            "build": "slender",
+            "skinTone": "light",
+            "eyes": "grey",
+            "eyeConfidence": "visual-estimate",
+            "features": [
+              "freckles"
+            ],
+            "faceComplete": true
+          }
+        }
+      ]
+    }
+  ],
+  "observationsPolicy": {
+    "method": "Inspection humaine des images originales complètes, sans détection biométrique automatique ni retouche.",
+    "limits": "Les couleurs d’yeux et les morphologies sont des estimations visuelles. Une ligne claire peut suggérer une cicatrice guérie ; sa nature exacte ne peut pas être garantie. Les âges exacts sont des intentions du prompt, pas une mesure. Les archétypes récurrents ne garantissent pas une unicité perceptuelle absolue.",
+    "framing": "Toutes les têtes/visages sont contenus. Quelques coiffures touchent presque la limite haute de leur cellule ; conserver la cellule complète et éviter un zoom additionnel qui rognerait les cheveux.",
+    "observedVersusRequested": "planned conserve la demande originale. observed est une annotation visuelle indépendante ; aucune égalité automatique entre les deux."
+  },
+  "additionalPromptForSheets04To09": "Laisser une bande de fond gris visible au-dessus des cheveux dans chaque cellule ; quelques cicatrices guéries de sourcil ou joue lisibles, sans blessure ni sang ; sans bordure extérieure."
+}

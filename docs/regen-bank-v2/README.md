@@ -1,0 +1,15 @@
+# Sources photographiques de la banque 200
+
+Ce lot ajoute 128 sources joueurs originales dans huit planches de 16 portraits et les 24 sources staff produites séparément par l’intégrateur. Les 48 sources précédentes restent intactes : la cible du catalogue est donc 160 joueurs et 40 membres du staff. Le moteur de sélection et le catalogue sont livrés dans un autre lot.
+
+Chaque PNG est une copie **exacte**, sans redimensionnement, recadrage, composition ni retouche, du résultat original de `image_gen.imagegen`. Les huit générations joueurs ont été lancées sans image de référence, deux au maximum simultanément. La génération de chaque planche a réussi ; aucune image de remplacement dessinée par script n’a été utilisée.
+
+Les planches joueurs `players-02.png` à `players-09.png` mesurent chacune **1254 × 1254**, avec quatre colonnes et quatre lignes. Chaque cellule mesure donc 313,5 pixels sur l’image source : le rendu doit calculer ses bornes par fractions et éviter une hypothèse de taille entière fixe. L’ordre des cellules est ligne par ligne ; les indices joueurs sont 32 à 159, après les 32 sources antérieures. La planche staff `staff-01.png` mesure **1536 × 1024**, six colonnes par quatre lignes, soit 256 × 256 pixels par cellule et 24 nouveaux indices après les 16 anciens.
+
+`asset-receipt.json` contient dimensions, tailles, SHA256 et chemins des originaux de chaque fichier. `generation-prompts.json` conserve les huit prompts joueurs exacts. `player-trait-plan.json` sépare les 16 descriptions prévues pour chaque planche et les annotations visuelles réellement observées, avec les indices de chaque cellule. Les couleurs d’yeux et les morphologies observées sont des estimations visuelles, pas des mesures ; l’âge précis reste une intention du prompt.
+
+Les 128 nouveaux portraits joueurs et les 24 nouveaux portraits staff ont été inspectés sur les images complètes. La revue indépendante de `urc_pacific_audit` a également examiné les 48 anciens, soit les 200 sources au total : aucun visage coupé, texte, logo ou doublon visuellement certain ne nécessite une régénération. Des cicatrices guéries discrètes, grains de beauté et taches de rousseur sont visibles sur plusieurs portraits ; leur nature précise ne peut pas être garantie à partir d’une image.
+
+Quelques cheveux bouclés ou longs restent très proches de la limite haute de leur cellule. Conserver la cellule entière et éviter un zoom supplémentaire qui couperait les cheveux. Les formes de visage, teints, cheveux, barbes, yeux et cous/épaules varient visiblement, mais certains archétypes reviennent ; cette revue ne garantit pas une unicité perceptuelle absolue entre toutes les identités. Le code de rendu doit encore vérifier les 200 découpes dans son propre lot.
+
+Les originaux sont conservés dans `/workspace/generated_images` pour la traçabilité locale ; ces chemins ne constituent pas une dépendance du jeu. La banque est utilisable hors ligne et n’appelle aucun service payant à l’exécution. Ce lot n’altère ni le moteur de croissance, ni les règles, ni les sauvegardes, ni les constructeurs des profils.
