@@ -14,7 +14,7 @@ function saveNumber(v,min=-1e12,max=1e12){return typeof v==='number'&&Number.isF
 function saveInt(v,min=0,max=1e9){return Number.isInteger(v)&&v>=min&&v<=max}
 function saveId(v){return typeof v==='string'&&/^[A-Za-z0-9:_-]{1,180}$/.test(v)}
 function worldCareerActive(s){return typeof CDWorldCareer!=='undefined'&&typeof CDWorldCareer.active==='function'&&CDWorldCareer.active(s)===true;}
-function worldSaveSizing(s){const z=CDWorldCareer.sizing(s);saveCheck(saveObject(z)&&saveInt(z.clubCount,58,68)&&saveInt(z.maxRound,1,52)&&saveInt(z.rounds,1,z.maxRound),'Dimensions mondiales invalides.');return z;}
+function worldSaveSizing(s){const z=CDWorldCareer.sizing(s);saveCheck(saveObject(z)&&[58,68,88].includes(z.clubCount)&&saveInt(z.maxRound,1,52)&&saveInt(z.rounds,1,z.maxRound),'Dimensions mondiales invalides.');return z;}
 function saveRoundLimit(s){return worldCareerActive(s)?worldSaveSizing(s).maxRound:s?.franceMode?34:26;}
 function commonDatabaseActive(s){if(worldCareerActive(s))return true;return typeof CDCommonRosters!=='undefined'&&s?.commonDatabase?.id===CDCommonRosters.id&&s.commonDatabase.version===1&&Object.keys(s.commonDatabase).length===2&&typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(s)&&s.lnrMode===undefined;}
 let commonPlayerIndex=null;
@@ -83,13 +83,15 @@ function validateMatchRules(l,s){
 function validateRestartState(l,s=null){
  const pacific=typeof CDWorldSRPMatch!=='undefined'&&CDWorldSRPMatch.applies(l,s);
  saveCheck(l.srpExtra===undefined||pacific,'Prolongation Pacific hors de son édition.');
+ const japan=typeof CDWorldJapanMatch!=='undefined'&&CDWorldJapanMatch.applies(l,s);
+ saveCheck(l.japanExtra===undefined||japan,'Prolongation Japon hors de son édition.');
  if(l.restartVersion===undefined)return;
  saveCheck(l.restartVersion===1,'Cette version des reprises de jeu n’est pas prise en charge.');
  saveCheck(l.rulesProfile===MATCH_RULES&&saveInt(l.firstKickoff,0,1)&&saveArray(l.restartLog,300));
  const c=l.kickContext;saveCheck(saveObject(c)&&c.team===l.possession&&typeof c.halfEligible==='boolean'&&typeof c.twentyTwoEligible==='boolean');
  let previous=0;
  for(const r of l.restartLog){
-  saveCheck(saveObject(r)&&(RESTART_CAUSES[r.kind]?.includes(r.cause)||pacific&&CDWorldSRPMatch.restartAllowed(r,l))&&saveInt(r.team,0,1)&&saveInt(r.by,0,1)&&saveNumber(r.at,0,100)&&saveNumber(r.origin,0,100)&&saveNumber(r.minute,previous,l.minute));previous=r.minute;
+  saveCheck(saveObject(r)&&(RESTART_CAUSES[r.kind]?.includes(r.cause)||pacific&&CDWorldSRPMatch.restartAllowed(r,l)||japan&&CDWorldJapanMatch.restartAllowed(r,l))&&saveInt(r.team,0,1)&&saveInt(r.by,0,1)&&saveNumber(r.at,0,100)&&saveNumber(r.origin,0,100)&&saveNumber(r.minute,previous,l.minute));previous=r.minute;
   saveCheck(r.team===(['penalty-touch','50-22'].includes(r.cause)?r.by:1-r.by));
   if(r.kind==='scrum'||r.kind==='lineout')saveCheck(r.at>=5&&r.at<=95);
   else saveCheck(r.at===(r.kind==='kickoff'?50:r.kind==='drop22'?(r.team===0?22:78):ownGoal(r.team)));
@@ -106,10 +108,13 @@ function validateFlowState(l,s=null){
  const f=l.flow;saveCheck(saveObject(f)&&[1,2].includes(f.period)&&typeof f.atBreak==='boolean'&&typeof f.ballDead==='boolean'&&f.resolvingAward===false);
  const pacific=typeof CDWorldSRPMatch!=='undefined'&&CDWorldSRPMatch.applies(l,s);
  saveCheck(l.srpExtra===undefined||pacific&&f.period===2&&l.knockout===undefined,'Prolongation Pacific incompatible avec le déroulement.');
+ const japan=typeof CDWorldJapanMatch!=='undefined'&&CDWorldJapanMatch.applies(l,s);
+ saveCheck(l.japanExtra===undefined||japan&&f.period===2&&l.knockout===undefined&&l.srpExtra===undefined,'Prolongation Japon incompatible avec le déroulement.');
  if(f.period===1){saveCheck(f.fullEnd===null);if(f.atBreak)saveCheck(f.firstEnd===l.minute&&l.minute>=40&&l.paused&&l.halftime&&!l.finished&&f.ballDead);else saveCheck(f.firstEnd===null&&!l.finished)}
+ else if(l.japanExtra!==undefined)saveCheck(saveInt(f.firstEnd,40,200)&&f.firstEnd<=l.minute&&f.fullEnd===CDWorldJapanMatch.flowBoundary(l)&&!f.atBreak&&l.halftime);
  else if(l.srpExtra!==undefined)saveCheck(saveInt(f.firstEnd,40,200)&&f.firstEnd<=l.minute&&f.fullEnd===CDWorldSRPMatch.flowBoundary(l)&&!f.atBreak&&l.halftime);
  else saveCheck(saveInt(f.firstEnd,40,200)&&f.firstEnd<=l.minute&&(l.knockout?(l.franceContext||worldCareerActive(s)&&l.worldContext)&&f.fullEnd===(l.knockout.period===1?l.knockout.regulationEnd:l.knockout.firstEnd)+10:f.fullEnd===f.firstEnd+40)&&!f.atBreak&&l.halftime);
- if(l.finished)saveCheck(f.period===2&&(l.minute>=f.fullEnd||pacific&&CDWorldSRPMatch.earlyFinish(l))&&f.ballDead&&f.advantage===null);
+ if(l.finished)saveCheck(f.period===2&&(l.minute>=f.fullEnd||pacific&&CDWorldSRPMatch.earlyFinish(l)||japan&&CDWorldJapanMatch.earlyFinish(l))&&f.ballDead&&f.advantage===null);
  if(f.advantage!==null){const a=f.advantage;saveCheck(saveObject(a)&&['scrum','penalty'].includes(a.kind)&&saveInt(a.team,0,1)&&a.offender===1-a.team&&saveNumber(a.at,0,100)&&saveInt(a.started,0,l.minute)&&saveInt(a.phases,0,2)&&l.possession===a.team&&!f.atBreak&&!l.finished)}
 }
 
@@ -167,7 +172,7 @@ if(s.worldManagement!==undefined){
   saveInt(x.facilities,1,10)&&saveNumber(x.debt,0,1e12)&&saveInt(x.coachConfidence,0,100)&&
   saveInt(x.consecutiveLosses,0,20)&&saveInt(x.coachChanges,0,10000)));
  for(const m of w.matches)saveCheck(saveObject(m)&&saveInt(m.season,1,s.season)&&saveInt(m.round,0,maxRound)&&
-  (world?['league','pool','r16','quarter','semi','final','access','barrage',...(worldRegistry.version===2?['elimination']:[])]:france?['league','barrage','semi','final','access']:['league','barrage','semi','final']).includes(m.phase)&&clubPattern.test(m.home)&&
+  (world?['league','pool','r16','quarter','semi','final','access','barrage',...(worldRegistry.version>=2?['elimination']:[]),...(worldRegistry.version===3?['third-place','promotion']:[])]:france?['league','barrage','semi','final','access']:['league','barrage','semi','final']).includes(m.phase)&&clubPattern.test(m.home)&&
   clubPattern.test(m.away)&&m.home!==m.away&&
   saveNumber(m.homeScore,0,1000)&&saveNumber(m.awayScore,0,1000));
  for(const y of w.yearbook){
@@ -271,7 +276,7 @@ const own=new Set(s.clubs[s.club].players.map(p=>p.id));function refs(a,n,ids=ow
 function pair(p){saveCheck(saveArray(p,2)&&p.length===2&&p.every(x=>saveInt(x,0,maxClub))&&p[0]!==p[1])}saveCheck(saveArray(s.schedule,rounds)&&s.schedule.length===rounds);if(world){for(const round of s.schedule){saveCheck(saveArray(round,1199));round.forEach(pair);}}else{const fixtures=new Set();for(let round of s.schedule){saveCheck(saveArray(round,leagueSize/2)&&round.length===leagueSize/2);const clubs=new Set();round.forEach(p=>{pair(p);p.forEach(i=>clubs.add(i));fixtures.add(p.join('-'))});saveCheck(clubs.size===leagueSize,'Le calendrier est incohérent.')}saveCheck(fixtures.size===rounds*leagueSize/2,'Le calendrier contient des doublons.');}
 function result(r){saveCheck(saveObject(r));pair(r.pair);for(let k of ['score','tries'])saveCheck(saveArray(r[k],2)&&r[k].length===2&&r[k].every(n=>saveInt(n,0,1000)));saveCheck(r.tries.every((n,i)=>n*5<=r.score[i]))}
 function stats(a){saveCheck(saveArray(a,2)&&a.length===2);a.forEach(st=>{saveCheck(saveObject(st));Object.keys(makeStats()).forEach(k=>saveCheck(saveNumber(st[k],0,1e7)))})}
-saveCheck(saveArray(s.history,world?1200:france?433:187));s.history.forEach(r=>{result(r);saveCheck(saveInt(r.round,0,maxRound)&&(world?['league','pool','r16','quarter','semi','final','access','barrage',...(worldRegistry.version===2?['elimination']:[])]:france?['league','barrage','semi','final','access']:['league','barrage','semi','final']).includes(r.phase));if(r.stats)stats(r.stats)});saveCheck(saveArray(s.news,100)&&s.news.every(x=>typeof x==='string'));saveCheck(saveArray(s.ledger,100)&&s.ledger.every(x=>saveObject(x)&&typeof x.title==='string'&&saveNumber(x.amount)));players(s.market,100);
+saveCheck(saveArray(s.history,world?1200:france?433:187));s.history.forEach(r=>{result(r);saveCheck(saveInt(r.round,0,maxRound)&&(world?['league','pool','r16','quarter','semi','final','access','barrage',...(worldRegistry.version>=2?['elimination']:[]),...(worldRegistry.version===3?['third-place','promotion']:[])]:france?['league','barrage','semi','final','access']:['league','barrage','semi','final']).includes(r.phase));if(r.stats)stats(r.stats)});saveCheck(saveArray(s.news,100)&&s.news.every(x=>typeof x==='string'));saveCheck(saveArray(s.ledger,100)&&s.ledger.every(x=>saveObject(x)&&typeof x.title==='string'&&saveNumber(x.amount)));players(s.market,100);
 if(!world&&s.phase!=='league'){saveCheck(saveObject(s.playoff)&&saveArray(s.playoff.pairs,2)&&saveArray(s.playoff.seeds,6)&&s.playoff.seeds.length===6&&new Set(s.playoff.seeds).size===6&&s.playoff.seeds.every(i=>saveInt(i,0,maxClub))&&saveArray(s.playoff.log,5));s.playoff.pairs.forEach(pair);saveCheck(s.playoff.log.every(x=>typeof x==='string'));if(s.phase==='ended')saveCheck(typeof s.ending==='string')}
 const e=s.economy,d=s.development;if(e.aiRecruitmentWindow!==undefined){saveCheck(typeof e.aiRecruitmentWindow==='string'&&(france?/^\d{1,5}:(0|15)$/:/^\d{1,5}:(0|13)$/).test(e.aiRecruitmentWindow));const [y,round]=e.aiRecruitmentWindow.split(':').map(Number);saveCheck(y<=s.season&&y>=1&&(france?[0,15]:[0,13]).includes(round))}saveCheck(saveObject(e)&&e.version===1&&saveInt(e.week)&&saveInt(e.settled)&&saveObject(e.talks)&&saveObject(e.listings)&&saveArray(e.offers,100)&&saveArray(e.transfers,80));players(e.freeAgents,60);if(e.objectives!==undefined||e.objectiveHistory!==undefined){
  saveCheck(s.objectivesVersion===1&&saveArray(e.objectives,42)&&saveArray(e.objectiveHistory,80));

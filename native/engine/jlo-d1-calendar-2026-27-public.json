@@ -1,0 +1,1335 @@
+{
+  "schema": "jlo-d1-calendar-v1",
+  "season": 2026,
+  "clubKeys": [
+    "jlo:slot-68",
+    "jlo:slot-69",
+    "jlo:slot-70",
+    "jlo:slot-71",
+    "jlo:slot-72",
+    "jlo:slot-73",
+    "jlo:slot-74",
+    "jlo:slot-75",
+    "jlo:slot-76",
+    "jlo:slot-77",
+    "jlo:slot-78",
+    "jlo:slot-79"
+  ],
+  "regular": [
+    {
+      "id": "jlo:2026-27:d1:r01:m01",
+      "roundNumber": 1,
+      "slot": 1,
+      "homeKey": "jlo:slot-69",
+      "awayKey": "jlo:slot-76",
+      "date": "2026-12-12",
+      "dateOptions": [
+        "2026-12-12"
+      ],
+      "kickoffUtc": "2026-12-12T05:35:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r01:m02",
+      "roundNumber": 1,
+      "slot": 2,
+      "homeKey": "jlo:slot-73",
+      "awayKey": "jlo:slot-78",
+      "date": "2026-12-12",
+      "dateOptions": [
+        "2026-12-12"
+      ],
+      "kickoffUtc": "2026-12-12T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r01:m03",
+      "roundNumber": 1,
+      "slot": 3,
+      "homeKey": "jlo:slot-71",
+      "awayKey": "jlo:slot-74",
+      "date": "2026-12-13",
+      "dateOptions": [
+        "2026-12-13"
+      ],
+      "kickoffUtc": "2026-12-13T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r01:m04",
+      "roundNumber": 1,
+      "slot": 4,
+      "homeKey": "jlo:slot-75",
+      "awayKey": "jlo:slot-68",
+      "date": "2026-12-12",
+      "dateOptions": [
+        "2026-12-12"
+      ],
+      "kickoffUtc": "2026-12-12T06:05:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r01:m05",
+      "roundNumber": 1,
+      "slot": 5,
+      "homeKey": "jlo:slot-70",
+      "awayKey": "jlo:slot-77",
+      "date": "2026-12-12",
+      "dateOptions": [
+        "2026-12-12"
+      ],
+      "kickoffUtc": "2026-12-12T03:00:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r01:m06",
+      "roundNumber": 1,
+      "slot": 6,
+      "homeKey": "jlo:slot-72",
+      "awayKey": "jlo:slot-79",
+      "date": "2026-12-13",
+      "dateOptions": [
+        "2026-12-13"
+      ],
+      "kickoffUtc": "2026-12-13T04:40:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r02:m01",
+      "roundNumber": 2,
+      "slot": 1,
+      "homeKey": "jlo:slot-76",
+      "awayKey": "jlo:slot-73",
+      "date": "2026-12-19",
+      "dateOptions": [
+        "2026-12-19"
+      ],
+      "kickoffUtc": "2026-12-19T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r02:m02",
+      "roundNumber": 2,
+      "slot": 2,
+      "homeKey": "jlo:slot-77",
+      "awayKey": "jlo:slot-71",
+      "date": "2026-12-19",
+      "dateOptions": [
+        "2026-12-19"
+      ],
+      "kickoffUtc": "2026-12-19T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r02:m03",
+      "roundNumber": 2,
+      "slot": 3,
+      "homeKey": "jlo:slot-78",
+      "awayKey": "jlo:slot-69",
+      "date": "2026-12-20",
+      "dateOptions": [
+        "2026-12-20"
+      ],
+      "kickoffUtc": "2026-12-20T05:05:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r02:m04",
+      "roundNumber": 2,
+      "slot": 4,
+      "homeKey": "jlo:slot-79",
+      "awayKey": "jlo:slot-75",
+      "date": "2026-12-20",
+      "dateOptions": [
+        "2026-12-20"
+      ],
+      "kickoffUtc": "2026-12-20T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r02:m05",
+      "roundNumber": 2,
+      "slot": 5,
+      "homeKey": "jlo:slot-74",
+      "awayKey": "jlo:slot-72",
+      "date": "2026-12-20",
+      "dateOptions": [
+        "2026-12-20"
+      ],
+      "kickoffUtc": "2026-12-20T04:00:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r02:m06",
+      "roundNumber": 2,
+      "slot": 6,
+      "homeKey": "jlo:slot-68",
+      "awayKey": "jlo:slot-70",
+      "date": "2026-12-20",
+      "dateOptions": [
+        "2026-12-20"
+      ],
+      "kickoffUtc": "2026-12-20T04:00:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r03:m01",
+      "roundNumber": 3,
+      "slot": 1,
+      "homeKey": "jlo:slot-73",
+      "awayKey": "jlo:slot-77",
+      "date": "2026-12-26",
+      "dateOptions": [
+        "2026-12-26"
+      ],
+      "kickoffUtc": "2026-12-26T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r03:m02",
+      "roundNumber": 3,
+      "slot": 2,
+      "homeKey": "jlo:slot-71",
+      "awayKey": "jlo:slot-78",
+      "date": "2026-12-26",
+      "dateOptions": [
+        "2026-12-26"
+      ],
+      "kickoffUtc": "2026-12-26T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r03:m03",
+      "roundNumber": 3,
+      "slot": 3,
+      "homeKey": "jlo:slot-69",
+      "awayKey": "jlo:slot-79",
+      "date": "2026-12-27",
+      "dateOptions": [
+        "2026-12-27"
+      ],
+      "kickoffUtc": "2026-12-27T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r03:m04",
+      "roundNumber": 3,
+      "slot": 4,
+      "homeKey": "jlo:slot-72",
+      "awayKey": "jlo:slot-76",
+      "date": "2026-12-27",
+      "dateOptions": [
+        "2026-12-27"
+      ],
+      "kickoffUtc": "2026-12-27T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r03:m05",
+      "roundNumber": 3,
+      "slot": 5,
+      "homeKey": "jlo:slot-75",
+      "awayKey": "jlo:slot-70",
+      "date": "2026-12-27",
+      "dateOptions": [
+        "2026-12-27"
+      ],
+      "kickoffUtc": "2026-12-27T04:00:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r03:m06",
+      "roundNumber": 3,
+      "slot": 6,
+      "homeKey": "jlo:slot-74",
+      "awayKey": "jlo:slot-68",
+      "date": "2026-12-27",
+      "dateOptions": [
+        "2026-12-27"
+      ],
+      "kickoffUtc": "2026-12-27T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r04:m01",
+      "roundNumber": 4,
+      "slot": 1,
+      "homeKey": "jlo:slot-76",
+      "awayKey": "jlo:slot-75",
+      "date": "2027-01-09",
+      "dateOptions": [
+        "2027-01-09"
+      ],
+      "kickoffUtc": "2027-01-09T05:00:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r04:m02",
+      "roundNumber": 4,
+      "slot": 2,
+      "homeKey": "jlo:slot-79",
+      "awayKey": "jlo:slot-74",
+      "date": "2027-01-09",
+      "dateOptions": [
+        "2027-01-09"
+      ],
+      "kickoffUtc": "2027-01-09T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r04:m03",
+      "roundNumber": 4,
+      "slot": 3,
+      "homeKey": "jlo:slot-73",
+      "awayKey": "jlo:slot-72",
+      "date": "2027-01-09",
+      "dateOptions": [
+        "2027-01-09"
+      ],
+      "kickoffUtc": "2027-01-09T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r04:m04",
+      "roundNumber": 4,
+      "slot": 4,
+      "homeKey": "jlo:slot-78",
+      "awayKey": "jlo:slot-68",
+      "date": "2027-01-09",
+      "dateOptions": [
+        "2027-01-09"
+      ],
+      "kickoffUtc": "2027-01-09T03:00:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r04:m05",
+      "roundNumber": 4,
+      "slot": 5,
+      "homeKey": "jlo:slot-77",
+      "awayKey": "jlo:slot-69",
+      "date": "2027-01-09",
+      "dateOptions": [
+        "2027-01-09"
+      ],
+      "kickoffUtc": "2027-01-09T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r04:m06",
+      "roundNumber": 4,
+      "slot": 6,
+      "homeKey": "jlo:slot-70",
+      "awayKey": "jlo:slot-71",
+      "date": "2027-01-10",
+      "dateOptions": [
+        "2027-01-10"
+      ],
+      "kickoffUtc": "2027-01-10T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r05:m01",
+      "roundNumber": 5,
+      "slot": 1,
+      "homeKey": "jlo:slot-68",
+      "awayKey": "jlo:slot-69",
+      "date": "2027-01-16",
+      "dateOptions": [
+        "2027-01-16"
+      ],
+      "kickoffUtc": "2027-01-16T04:00:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r05:m02",
+      "roundNumber": 5,
+      "slot": 2,
+      "homeKey": "jlo:slot-74",
+      "awayKey": "jlo:slot-78",
+      "date": "2027-01-16",
+      "dateOptions": [
+        "2027-01-16"
+      ],
+      "kickoffUtc": "2027-01-16T04:00:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r05:m03",
+      "roundNumber": 5,
+      "slot": 3,
+      "homeKey": "jlo:slot-77",
+      "awayKey": "jlo:slot-76",
+      "date": "2027-01-16",
+      "dateOptions": [
+        "2027-01-16"
+      ],
+      "kickoffUtc": "2027-01-16T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r05:m04",
+      "roundNumber": 5,
+      "slot": 4,
+      "homeKey": "jlo:slot-70",
+      "awayKey": "jlo:slot-79",
+      "date": "2027-01-16",
+      "dateOptions": [
+        "2027-01-16"
+      ],
+      "kickoffUtc": "2027-01-16T03:05:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r05:m05",
+      "roundNumber": 5,
+      "slot": 5,
+      "homeKey": "jlo:slot-75",
+      "awayKey": "jlo:slot-73",
+      "date": "2027-01-16",
+      "dateOptions": [
+        "2027-01-16"
+      ],
+      "kickoffUtc": "2027-01-16T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r05:m06",
+      "roundNumber": 5,
+      "slot": 6,
+      "homeKey": "jlo:slot-71",
+      "awayKey": "jlo:slot-72",
+      "date": "2027-01-16",
+      "dateOptions": [
+        "2027-01-16"
+      ],
+      "kickoffUtc": "2027-01-16T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r06:m01",
+      "roundNumber": 6,
+      "slot": 1,
+      "homeKey": "jlo:slot-78",
+      "awayKey": "jlo:slot-70",
+      "date": "2027-01-22",
+      "dateOptions": [
+        "2027-01-22"
+      ],
+      "kickoffUtc": "2027-01-22T10:00:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r06:m02",
+      "roundNumber": 6,
+      "slot": 2,
+      "homeKey": "jlo:slot-73",
+      "awayKey": "jlo:slot-71",
+      "date": "2027-01-23",
+      "dateOptions": [
+        "2027-01-23"
+      ],
+      "kickoffUtc": "2027-01-23T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r06:m03",
+      "roundNumber": 6,
+      "slot": 3,
+      "homeKey": "jlo:slot-79",
+      "awayKey": "jlo:slot-77",
+      "date": "2027-01-23",
+      "dateOptions": [
+        "2027-01-23"
+      ],
+      "kickoffUtc": "2027-01-23T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r06:m04",
+      "roundNumber": 6,
+      "slot": 4,
+      "homeKey": "jlo:slot-69",
+      "awayKey": "jlo:slot-75",
+      "date": "2027-01-24",
+      "dateOptions": [
+        "2027-01-24"
+      ],
+      "kickoffUtc": "2027-01-24T05:35:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r06:m05",
+      "roundNumber": 6,
+      "slot": 5,
+      "homeKey": "jlo:slot-76",
+      "awayKey": "jlo:slot-74",
+      "date": "2027-01-24",
+      "dateOptions": [
+        "2027-01-24"
+      ],
+      "kickoffUtc": "2027-01-24T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r06:m06",
+      "roundNumber": 6,
+      "slot": 6,
+      "homeKey": "jlo:slot-72",
+      "awayKey": "jlo:slot-68",
+      "date": "2027-01-24",
+      "dateOptions": [
+        "2027-01-24"
+      ],
+      "kickoffUtc": "2027-01-24T04:40:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r07:m01",
+      "roundNumber": 7,
+      "slot": 1,
+      "homeKey": "jlo:slot-78",
+      "awayKey": "jlo:slot-75",
+      "date": "2027-02-05",
+      "dateOptions": [
+        "2027-02-05"
+      ],
+      "kickoffUtc": "2027-02-05T10:05:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r07:m02",
+      "roundNumber": 7,
+      "slot": 2,
+      "homeKey": "jlo:slot-71",
+      "awayKey": "jlo:slot-79",
+      "date": "2027-02-06",
+      "dateOptions": [
+        "2027-02-06"
+      ],
+      "kickoffUtc": "2027-02-06T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r07:m03",
+      "roundNumber": 7,
+      "slot": 3,
+      "homeKey": "jlo:slot-68",
+      "awayKey": "jlo:slot-76",
+      "date": "2027-02-06",
+      "dateOptions": [
+        "2027-02-06"
+      ],
+      "kickoffUtc": "2027-02-06T04:00:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r07:m04",
+      "roundNumber": 7,
+      "slot": 4,
+      "homeKey": "jlo:slot-74",
+      "awayKey": "jlo:slot-73",
+      "date": "2027-02-06",
+      "dateOptions": [
+        "2027-02-06"
+      ],
+      "kickoffUtc": "2027-02-06T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r07:m05",
+      "roundNumber": 7,
+      "slot": 5,
+      "homeKey": "jlo:slot-70",
+      "awayKey": "jlo:slot-69",
+      "date": "2027-02-06",
+      "dateOptions": [
+        "2027-02-06"
+      ],
+      "kickoffUtc": "2027-02-06T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r07:m06",
+      "roundNumber": 7,
+      "slot": 6,
+      "homeKey": "jlo:slot-77",
+      "awayKey": "jlo:slot-72",
+      "date": "2027-02-07",
+      "dateOptions": [
+        "2027-02-07"
+      ],
+      "kickoffUtc": "2027-02-07T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r08:m01",
+      "roundNumber": 8,
+      "slot": 1,
+      "homeKey": "jlo:slot-75",
+      "awayKey": "jlo:slot-77",
+      "date": "2027-02-13",
+      "dateOptions": [
+        "2027-02-13"
+      ],
+      "kickoffUtc": "2027-02-13T04:00:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r08:m02",
+      "roundNumber": 8,
+      "slot": 2,
+      "homeKey": "jlo:slot-79",
+      "awayKey": "jlo:slot-68",
+      "date": "2027-02-13",
+      "dateOptions": [
+        "2027-02-13"
+      ],
+      "kickoffUtc": "2027-02-13T03:00:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r08:m03",
+      "roundNumber": 8,
+      "slot": 3,
+      "homeKey": "jlo:slot-70",
+      "awayKey": "jlo:slot-73",
+      "date": "2027-02-13",
+      "dateOptions": [
+        "2027-02-13"
+      ],
+      "kickoffUtc": "2027-02-13T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r08:m04",
+      "roundNumber": 8,
+      "slot": 4,
+      "homeKey": "jlo:slot-76",
+      "awayKey": "jlo:slot-71",
+      "date": "2027-02-13",
+      "dateOptions": [
+        "2027-02-13"
+      ],
+      "kickoffUtc": "2027-02-13T04:00:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r08:m05",
+      "roundNumber": 8,
+      "slot": 5,
+      "homeKey": "jlo:slot-69",
+      "awayKey": "jlo:slot-74",
+      "date": "2027-02-14",
+      "dateOptions": [
+        "2027-02-14"
+      ],
+      "kickoffUtc": "2027-02-14T05:35:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r08:m06",
+      "roundNumber": 8,
+      "slot": 6,
+      "homeKey": "jlo:slot-72",
+      "awayKey": "jlo:slot-78",
+      "date": "2027-02-14",
+      "dateOptions": [
+        "2027-02-14"
+      ],
+      "kickoffUtc": "2027-02-14T04:40:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r09:m01",
+      "roundNumber": 9,
+      "slot": 1,
+      "homeKey": "jlo:slot-78",
+      "awayKey": "jlo:slot-76",
+      "date": "2027-02-20",
+      "dateOptions": [
+        "2027-02-20"
+      ],
+      "kickoffUtc": "2027-02-20T05:05:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r09:m02",
+      "roundNumber": 9,
+      "slot": 2,
+      "homeKey": "jlo:slot-73",
+      "awayKey": "jlo:slot-79",
+      "date": "2027-02-20",
+      "dateOptions": [
+        "2027-02-20"
+      ],
+      "kickoffUtc": "2027-02-20T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r09:m03",
+      "roundNumber": 9,
+      "slot": 3,
+      "homeKey": "jlo:slot-71",
+      "awayKey": "jlo:slot-69",
+      "date": "2027-02-20",
+      "dateOptions": [
+        "2027-02-20"
+      ],
+      "kickoffUtc": "2027-02-20T05:30:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r09:m04",
+      "roundNumber": 9,
+      "slot": 4,
+      "homeKey": "jlo:slot-68",
+      "awayKey": "jlo:slot-77",
+      "date": "2027-02-20",
+      "dateOptions": [
+        "2027-02-20"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r09:m05",
+      "roundNumber": 9,
+      "slot": 5,
+      "homeKey": "jlo:slot-72",
+      "awayKey": "jlo:slot-70",
+      "date": "2027-02-21",
+      "dateOptions": [
+        "2027-02-21"
+      ],
+      "kickoffUtc": "2027-02-21T03:00:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r09:m06",
+      "roundNumber": 9,
+      "slot": 6,
+      "homeKey": "jlo:slot-75",
+      "awayKey": "jlo:slot-74",
+      "date": "2027-02-21",
+      "dateOptions": [
+        "2027-02-21"
+      ],
+      "kickoffUtc": "2027-02-21T04:35:00Z"
+    },
+    {
+      "id": "jlo:2026-27:d1:r10:m01",
+      "roundNumber": 10,
+      "slot": 1,
+      "homeKey": "jlo:slot-68",
+      "awayKey": "jlo:slot-73",
+      "date": "2027-02-27",
+      "dateOptions": [
+        "2027-02-27"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r10:m02",
+      "roundNumber": 10,
+      "slot": 2,
+      "homeKey": "jlo:slot-77",
+      "awayKey": "jlo:slot-78",
+      "date": "2027-02-27",
+      "dateOptions": [
+        "2027-02-27"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r10:m03",
+      "roundNumber": 10,
+      "slot": 3,
+      "homeKey": "jlo:slot-69",
+      "awayKey": "jlo:slot-72",
+      "date": "2027-02-28",
+      "dateOptions": [
+        "2027-02-28"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r10:m04",
+      "roundNumber": 10,
+      "slot": 4,
+      "homeKey": "jlo:slot-70",
+      "awayKey": "jlo:slot-74",
+      "date": "2027-02-28",
+      "dateOptions": [
+        "2027-02-28"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r10:m05",
+      "roundNumber": 10,
+      "slot": 5,
+      "homeKey": "jlo:slot-79",
+      "awayKey": "jlo:slot-76",
+      "date": "2027-02-28",
+      "dateOptions": [
+        "2027-02-28"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r10:m06",
+      "roundNumber": 10,
+      "slot": 6,
+      "homeKey": "jlo:slot-75",
+      "awayKey": "jlo:slot-71",
+      "date": null,
+      "dateOptions": [
+        "2027-02-27",
+        "2027-02-28"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r11:m01",
+      "roundNumber": 11,
+      "slot": 1,
+      "homeKey": "jlo:slot-78",
+      "awayKey": "jlo:slot-79",
+      "date": "2027-03-12",
+      "dateOptions": [
+        "2027-03-12"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r11:m02",
+      "roundNumber": 11,
+      "slot": 2,
+      "homeKey": "jlo:slot-73",
+      "awayKey": "jlo:slot-69",
+      "date": "2027-03-13",
+      "dateOptions": [
+        "2027-03-13"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r11:m03",
+      "roundNumber": 11,
+      "slot": 3,
+      "homeKey": "jlo:slot-71",
+      "awayKey": "jlo:slot-68",
+      "date": "2027-03-13",
+      "dateOptions": [
+        "2027-03-13"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r11:m04",
+      "roundNumber": 11,
+      "slot": 4,
+      "homeKey": "jlo:slot-76",
+      "awayKey": "jlo:slot-70",
+      "date": "2027-03-13",
+      "dateOptions": [
+        "2027-03-13"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r11:m05",
+      "roundNumber": 11,
+      "slot": 5,
+      "homeKey": "jlo:slot-74",
+      "awayKey": "jlo:slot-77",
+      "date": "2027-03-13",
+      "dateOptions": [
+        "2027-03-13"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r11:m06",
+      "roundNumber": 11,
+      "slot": 6,
+      "homeKey": "jlo:slot-72",
+      "awayKey": "jlo:slot-75",
+      "date": "2027-03-14",
+      "dateOptions": [
+        "2027-03-14"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r12:m01",
+      "roundNumber": 12,
+      "slot": 1,
+      "homeKey": "jlo:slot-69",
+      "awayKey": "jlo:slot-70",
+      "date": "2027-03-20",
+      "dateOptions": [
+        "2027-03-20"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r12:m02",
+      "roundNumber": 12,
+      "slot": 2,
+      "homeKey": "jlo:slot-79",
+      "awayKey": "jlo:slot-71",
+      "date": "2027-03-20",
+      "dateOptions": [
+        "2027-03-20"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r12:m03",
+      "roundNumber": 12,
+      "slot": 3,
+      "homeKey": "jlo:slot-75",
+      "awayKey": "jlo:slot-78",
+      "date": "2027-03-20",
+      "dateOptions": [
+        "2027-03-20"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r12:m04",
+      "roundNumber": 12,
+      "slot": 4,
+      "homeKey": "jlo:slot-77",
+      "awayKey": "jlo:slot-73",
+      "date": "2027-03-20",
+      "dateOptions": [
+        "2027-03-20"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r12:m05",
+      "roundNumber": 12,
+      "slot": 5,
+      "homeKey": "jlo:slot-76",
+      "awayKey": "jlo:slot-72",
+      "date": "2027-03-21",
+      "dateOptions": [
+        "2027-03-21"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r12:m06",
+      "roundNumber": 12,
+      "slot": 6,
+      "homeKey": "jlo:slot-68",
+      "awayKey": "jlo:slot-74",
+      "date": "2027-03-21",
+      "dateOptions": [
+        "2027-03-21"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r13:m01",
+      "roundNumber": 13,
+      "slot": 1,
+      "homeKey": "jlo:slot-71",
+      "awayKey": "jlo:slot-76",
+      "date": "2027-03-27",
+      "dateOptions": [
+        "2027-03-27"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r13:m02",
+      "roundNumber": 13,
+      "slot": 2,
+      "homeKey": "jlo:slot-78",
+      "awayKey": "jlo:slot-73",
+      "date": "2027-03-27",
+      "dateOptions": [
+        "2027-03-27"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r13:m03",
+      "roundNumber": 13,
+      "slot": 3,
+      "homeKey": "jlo:slot-74",
+      "awayKey": "jlo:slot-69",
+      "date": "2027-03-27",
+      "dateOptions": [
+        "2027-03-27"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r13:m04",
+      "roundNumber": 13,
+      "slot": 4,
+      "homeKey": "jlo:slot-72",
+      "awayKey": "jlo:slot-77",
+      "date": "2027-03-27",
+      "dateOptions": [
+        "2027-03-27"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r13:m05",
+      "roundNumber": 13,
+      "slot": 5,
+      "homeKey": "jlo:slot-70",
+      "awayKey": "jlo:slot-75",
+      "date": "2027-03-27",
+      "dateOptions": [
+        "2027-03-27"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r13:m06",
+      "roundNumber": 13,
+      "slot": 6,
+      "homeKey": "jlo:slot-68",
+      "awayKey": "jlo:slot-79",
+      "date": "2027-03-28",
+      "dateOptions": [
+        "2027-03-28"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r14:m01",
+      "roundNumber": 14,
+      "slot": 1,
+      "homeKey": "jlo:slot-69",
+      "awayKey": "jlo:slot-71",
+      "date": "2027-04-02",
+      "dateOptions": [
+        "2027-04-02"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r14:m02",
+      "roundNumber": 14,
+      "slot": 2,
+      "homeKey": "jlo:slot-73",
+      "awayKey": "jlo:slot-70",
+      "date": "2027-04-03",
+      "dateOptions": [
+        "2027-04-03"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r14:m03",
+      "roundNumber": 14,
+      "slot": 3,
+      "homeKey": "jlo:slot-77",
+      "awayKey": "jlo:slot-68",
+      "date": "2027-04-03",
+      "dateOptions": [
+        "2027-04-03"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r14:m04",
+      "roundNumber": 14,
+      "slot": 4,
+      "homeKey": "jlo:slot-79",
+      "awayKey": "jlo:slot-72",
+      "date": "2027-04-04",
+      "dateOptions": [
+        "2027-04-04"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r14:m05",
+      "roundNumber": 14,
+      "slot": 5,
+      "homeKey": "jlo:slot-74",
+      "awayKey": "jlo:slot-75",
+      "date": null,
+      "dateOptions": [
+        "2027-04-03",
+        "2027-04-04"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r14:m06",
+      "roundNumber": 14,
+      "slot": 6,
+      "homeKey": "jlo:slot-76",
+      "awayKey": "jlo:slot-78",
+      "date": null,
+      "dateOptions": [
+        "2027-04-02",
+        "2027-04-03",
+        "2027-04-04"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r15:m01",
+      "roundNumber": 15,
+      "slot": 1,
+      "homeKey": "jlo:slot-69",
+      "awayKey": "jlo:slot-77",
+      "date": "2027-04-17",
+      "dateOptions": [
+        "2027-04-17"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r15:m02",
+      "roundNumber": 15,
+      "slot": 2,
+      "homeKey": "jlo:slot-75",
+      "awayKey": "jlo:slot-76",
+      "date": "2027-04-17",
+      "dateOptions": [
+        "2027-04-17"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r15:m03",
+      "roundNumber": 15,
+      "slot": 3,
+      "homeKey": "jlo:slot-72",
+      "awayKey": "jlo:slot-73",
+      "date": "2027-04-17",
+      "dateOptions": [
+        "2027-04-17"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r15:m04",
+      "roundNumber": 15,
+      "slot": 4,
+      "homeKey": "jlo:slot-74",
+      "awayKey": "jlo:slot-79",
+      "date": "2027-04-17",
+      "dateOptions": [
+        "2027-04-17"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r15:m05",
+      "roundNumber": 15,
+      "slot": 5,
+      "homeKey": "jlo:slot-71",
+      "awayKey": "jlo:slot-70",
+      "date": null,
+      "dateOptions": [
+        "2027-04-16",
+        "2027-04-17",
+        "2027-04-18"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r15:m06",
+      "roundNumber": 15,
+      "slot": 6,
+      "homeKey": "jlo:slot-68",
+      "awayKey": "jlo:slot-78",
+      "date": null,
+      "dateOptions": [
+        "2027-04-16",
+        "2027-04-17",
+        "2027-04-18"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r16:m01",
+      "roundNumber": 16,
+      "slot": 1,
+      "homeKey": "jlo:slot-73",
+      "awayKey": "jlo:slot-74",
+      "date": "2027-04-24",
+      "dateOptions": [
+        "2027-04-24"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r16:m02",
+      "roundNumber": 16,
+      "slot": 2,
+      "homeKey": "jlo:slot-79",
+      "awayKey": "jlo:slot-69",
+      "date": "2027-04-24",
+      "dateOptions": [
+        "2027-04-24"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r16:m03",
+      "roundNumber": 16,
+      "slot": 3,
+      "homeKey": "jlo:slot-77",
+      "awayKey": "jlo:slot-75",
+      "date": "2027-04-24",
+      "dateOptions": [
+        "2027-04-24"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r16:m04",
+      "roundNumber": 16,
+      "slot": 4,
+      "homeKey": "jlo:slot-76",
+      "awayKey": "jlo:slot-68",
+      "date": "2027-04-25",
+      "dateOptions": [
+        "2027-04-25"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r16:m05",
+      "roundNumber": 16,
+      "slot": 5,
+      "homeKey": "jlo:slot-78",
+      "awayKey": "jlo:slot-71",
+      "date": null,
+      "dateOptions": [
+        "2027-04-24",
+        "2027-04-25"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r16:m06",
+      "roundNumber": 16,
+      "slot": 6,
+      "homeKey": "jlo:slot-70",
+      "awayKey": "jlo:slot-72",
+      "date": null,
+      "dateOptions": [
+        "2027-04-24",
+        "2027-04-25"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r17:m01",
+      "roundNumber": 17,
+      "slot": 1,
+      "homeKey": "jlo:slot-69",
+      "awayKey": "jlo:slot-78",
+      "date": "2027-05-01",
+      "dateOptions": [
+        "2027-05-01"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r17:m02",
+      "roundNumber": 17,
+      "slot": 2,
+      "homeKey": "jlo:slot-75",
+      "awayKey": "jlo:slot-79",
+      "date": "2027-05-01",
+      "dateOptions": [
+        "2027-05-01"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r17:m03",
+      "roundNumber": 17,
+      "slot": 3,
+      "homeKey": "jlo:slot-71",
+      "awayKey": "jlo:slot-77",
+      "date": "2027-05-01",
+      "dateOptions": [
+        "2027-05-01"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r17:m04",
+      "roundNumber": 17,
+      "slot": 4,
+      "homeKey": "jlo:slot-72",
+      "awayKey": "jlo:slot-74",
+      "date": "2027-05-01",
+      "dateOptions": [
+        "2027-05-01"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r17:m05",
+      "roundNumber": 17,
+      "slot": 5,
+      "homeKey": "jlo:slot-70",
+      "awayKey": "jlo:slot-68",
+      "date": "2027-05-01",
+      "dateOptions": [
+        "2027-05-01"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r17:m06",
+      "roundNumber": 17,
+      "slot": 6,
+      "homeKey": "jlo:slot-73",
+      "awayKey": "jlo:slot-76",
+      "date": "2027-05-02",
+      "dateOptions": [
+        "2027-05-02"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r18:m01",
+      "roundNumber": 18,
+      "slot": 1,
+      "homeKey": "jlo:slot-78",
+      "awayKey": "jlo:slot-72",
+      "date": "2027-05-07",
+      "dateOptions": [
+        "2027-05-07"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r18:m02",
+      "roundNumber": 18,
+      "slot": 2,
+      "homeKey": "jlo:slot-68",
+      "awayKey": "jlo:slot-75",
+      "date": "2027-05-08",
+      "dateOptions": [
+        "2027-05-08"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r18:m03",
+      "roundNumber": 18,
+      "slot": 3,
+      "homeKey": "jlo:slot-74",
+      "awayKey": "jlo:slot-71",
+      "date": "2027-05-08",
+      "dateOptions": [
+        "2027-05-08"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r18:m04",
+      "roundNumber": 18,
+      "slot": 4,
+      "homeKey": "jlo:slot-77",
+      "awayKey": "jlo:slot-70",
+      "date": "2027-05-08",
+      "dateOptions": [
+        "2027-05-08"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r18:m05",
+      "roundNumber": 18,
+      "slot": 5,
+      "homeKey": "jlo:slot-79",
+      "awayKey": "jlo:slot-73",
+      "date": "2027-05-09",
+      "dateOptions": [
+        "2027-05-09"
+      ],
+      "kickoffUtc": null
+    },
+    {
+      "id": "jlo:2026-27:d1:r18:m06",
+      "roundNumber": 18,
+      "slot": 6,
+      "homeKey": "jlo:slot-76",
+      "awayKey": "jlo:slot-69",
+      "date": "2027-05-09",
+      "dateOptions": [
+        "2027-05-09"
+      ],
+      "kickoffUtc": null
+    }
+  ],
+  "playoffs": {
+    "from": "2027-05-22",
+    "to": "2027-06-06",
+    "final": "2027-06-06"
+  },
+  "promotion": {
+    "from": "2027-05-21",
+    "to": "2027-05-30"
+  }
+}

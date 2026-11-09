@@ -64,8 +64,8 @@ function analyse(file,database){
  const meta={id:manifest.id+'-'+zip.digest,name:manifest.name,version:manifest.version,digest:zip.digest,databaseId:manifest.databaseId,counts:{clubs:manifest.clubs.length,players:manifest.players.length,logos,official,synthetic,...(v2?{staff:manifest.staff.length,staffOfficial,staffSynthetic}:{})},rightsStatus:manifest.rightsStatus};
  return {meta,clubs:mappedClubs,players:mappedPlayers,staff:mappedStaff,files};
 }
-function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null){
- const databases=new Map([database,worldDatabase,pacificDatabase].filter(Boolean).map(db=>[db.id,db]));
+function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null,japanDatabase=null){
+ const databases=new Map([database,worldDatabase,pacificDatabase,japanDatabase].filter(Boolean).map(db=>[db.id,db]));
  const databaseFor=id=>{const found=databases.get(id);check(found,'base de données incompatible.');return found;};
  const physical=fs.realpathSync.native(dataDir),root=path.join(physical,'packs');let preview=null,storageWarning=null;const cache=new Map();
  function confined(target){let p=path.resolve(target);while(!fs.existsSync(p))p=path.dirname(p);const real=fs.realpathSync.native(p),rel=path.relative(physical,real);check(rel===''||!rel.startsWith('..'+path.sep)&&rel!=='..'&&!path.isAbsolute(rel),'stockage hors du profil physique.');let ancestor=p;while(ancestor!==physical){check(!fs.lstatSync(ancestor).isSymbolicLink(),'lien de stockage interdit.');const parent=path.dirname(ancestor);if(parent===ancestor)break;ancestor=parent;}}
@@ -127,15 +127,16 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null){
  }
 
  function get(id){return id==='base'?null:read(id);}
- function project(model,binding,creation,worldCreation='base',pacificCreation='base'){
+ function project(model,binding,creation,worldCreation='base',pacificCreation='base',japanCreation='base'){
   const memo=new Map(),getOnce=id=>{if(id==='base')return null;if(!memo.has(id))memo.set(id,read(id));return memo.get(id);};
   const world=model.meta.mode==='world',edition=world?databaseFor(model.meta.database?.id??worldDatabase.id):database;
-  const pacific=world&&edition.id===pacificDatabase?.id,staff=staffRegistry.forDatabase(edition.id);
+  const japan=world&&edition.id===japanDatabase?.id,pacific=world&&edition.id===pacificDatabase?.id,staff=staffRegistry.forDatabase(edition.id);
   const compatible=(pack,id)=>pack?.meta.databaseId===id?pack:null;
   const active=binding?compatible(getOnce(binding.id),edition.id):null;
   const legacyCreation=compatible(getOnce(creation),database.id),internationalCreation=worldDatabase?compatible(getOnce(worldCreation),worldDatabase.id):null;
   const pacificPack=pacificDatabase?compatible(getOnce(pacificCreation),pacificDatabase.id):null;
-  const preferred=pacific?pacificCreation:world?worldCreation:creation,creationPack=pacific?pacificPack:world?internationalCreation:legacyCreation,missing=[];
+  const japanPack=japanDatabase?compatible(getOnce(japanCreation),japanDatabase.id):null;
+  const preferred=japan?japanCreation:pacific?pacificCreation:world?worldCreation:creation,creationPack=japan?japanPack:pacific?pacificPack:world?internationalCreation:legacyCreation,missing=[];
   if(binding&&(!active||active.meta.digest!==binding.digest))missing.push('Pack de carrière absent : '+binding.id+'. Présentation de base ; réimportez le pack.');
   if(preferred!=='base'&&!creationPack)missing.push('Pack de création absent : '+preferred+'. Présentation de base.');
   const chosen=binding&&active?.meta.digest===binding.digest?active:null;
@@ -143,7 +144,7 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null){
   if(chosen)for(const c of staff.registry.clubs)for(const p of c.members){const custom=chosen.staff?.[p.id];if(custom?.name)replacements.set(p.name,custom.name);}
   const escaped=[...replacements.keys()].filter(Boolean).sort((a,b)=>b.length-a.length).map(s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));const pattern=escaped.length?new RegExp(escaped.join('|'),'gu'):null;
   function walk(value,pack,replace){if(typeof value==='string')return replace&&pattern?value.replace(pattern,s=>replacements.get(s)):value;if(!value||typeof value!=='object')return value;if(Array.isArray(value))return value.map(x=>walk(x,pack,replace));const out={};for(const [k,v]of Object.entries(value))out[k]=k==='coachNotebook'?walk(v,pack,false):['id','playerId','outId','inIds','eligibleIds','captain','kicker','pair','slug','dataDir','database','exportText'].includes(k)?v:walk(v,pack,replace);if(pack){if(typeof value.playerId==='string'&&Object.hasOwn(value,'playerName')&&pack.players[value.playerId]?.name)out.playerName=pack.players[value.playerId].name;if(Number.isInteger(value.clubId)&&Object.hasOwn(value,'clubName')&&pack.clubs[value.clubId]?.name)out.clubName=pack.clubs[value.clubId].name;const item=typeof value.id==='number'?pack.clubs[value.id]:pack.players[value.id]||pack.staff?.[value.id];if(item){if(staff.ids.has(value.id)){out.identityStatus='custom';if(!item.portrait)out.portraitStatus='missing';}if(item.name)out.name=item.name;if(item.abbr)out.abbr=item.abbr;if(item.logo)out.logoPath=path.join(pack.folder,item.logo);if(item.portrait){out.portraitPath=path.join(pack.folder,item.portrait);out.portraitStatus=item.portraitStatus;}}}return out;}
-  const catalogue=model.meta.catalogue,worldCatalogue=model.meta.worldCatalogue,legacyCatalogue=model.meta.legacyCatalogue,pacificCatalogue=model.meta.pacificCatalogue;model=walk(model,chosen,true);model.meta.catalogue=walk(catalogue,creationPack,false);if(worldCatalogue){model.meta.worldCatalogue=walk(worldCatalogue,internationalCreation,false);model.meta.worldPackCreation=worldCreation;}if(legacyCatalogue){model.meta.legacyCatalogue=walk(legacyCatalogue,legacyCreation,false);model.meta.legacyPackCreation=creation;}if(pacificCatalogue){model.meta.pacificCatalogue=walk(pacificCatalogue,pacificPack,false);model.meta.pacificPackCreation=pacificCreation;}const list=installed(id=>memo.has(id)?memo.get(id):read(id,false));if(storageWarning)missing.push(storageWarning);model.packs={installed:list,creation:preferred,career:binding?.id||'base',missing,preview};return model;
+  const catalogue=model.meta.catalogue,worldCatalogue=model.meta.worldCatalogue,legacyCatalogue=model.meta.legacyCatalogue,pacificCatalogue=model.meta.pacificCatalogue,japanCatalogue=model.meta.japanCatalogue;model=walk(model,chosen,true);model.meta.catalogue=walk(catalogue,creationPack,false);if(worldCatalogue){model.meta.worldCatalogue=walk(worldCatalogue,internationalCreation,false);model.meta.worldPackCreation=worldCreation;}if(legacyCatalogue){model.meta.legacyCatalogue=walk(legacyCatalogue,legacyCreation,false);model.meta.legacyPackCreation=creation;}if(pacificCatalogue){model.meta.pacificCatalogue=walk(pacificCatalogue,pacificPack,false);model.meta.pacificPackCreation=pacificCreation;}if(japanCatalogue){model.meta.japanCatalogue=walk(japanCatalogue,japanPack,false);model.meta.japanPackCreation=japanCreation;}const list=installed(id=>memo.has(id)?memo.get(id):read(id,false));if(storageWarning)missing.push(storageWarning);model.packs={installed:list,creation:preferred,career:binding?.id||'base',missing,preview};return model;
  }
  return {inspect,install,get,project,installed};
 }

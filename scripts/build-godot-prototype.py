@@ -8,6 +8,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import wave
@@ -15,6 +16,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "native/godot"
+BUILD_VERSION = "0.7.2"
 
 
 def digest(path):
@@ -101,6 +103,10 @@ def build(args):
     work = target / "build"
     source = work / "project"
     shutil.copytree(PROJECT, source, ignore=shutil.ignore_patterns(".godot", "*.uid", "*.import", "export_presets.cfg"))
+    project_file = source / "project.godot"
+    config, replacements = re.subn(r'^config/version="[^"]+"$', f'config/version="{BUILD_VERSION}"', project_file.read_text(encoding="utf-8"), flags=re.MULTILINE)
+    assert replacements == 1, "Version du projet absente ou ambiguë"
+    project_file.write_text(config, encoding="utf-8")
     voice_coverage = validate_voice_assets(source)
     preset = (PROJECT / "windows-release.cfg").read_text(encoding="utf-8-sig")
     preset = preset.replace("{{RELEASE_TEMPLATE}}", template.as_posix())
@@ -152,10 +158,10 @@ def build(args):
     shutil.copytree(ROOT / "dist/match3d/assets", licenses / "modele3d",
                     ignore=shutil.ignore_patterns("*.glb", "*.gltf", "*.bin", "*.png", "*.jpg"))
     (app / "LISEZ-MOI.txt").write_text(
-        "OVAL LEGACY 27 — RUGBY MANAGER — PRÉALPHA 0.7\n\n"
+        f"OVAL LEGACY 27 — RUGBY MANAGER — PRÉALPHA {BUILD_VERSION}\n\n"
         "Lancer OvalLegacy27.exe. Aucun navigateur, Godot ou Node à installer.\n"
         "Conserver le dossier complet avec runtime et engine. Windows x64.\n\n"
-        "Nouvelle carrière : Monde + Pacifique (66 clubs), Monde (56) ou France (30).\n"
+        "Nouvelle carrière : Monde + Japon (86 clubs), Pacifique (66), Monde (56) ou France (30).\n"
         "Chaque édition partage ses joueurs et statistiques entre les packs.\n"
         "Importez un pack personnalisé à la création ou dans les paramètres.\n"
         "Disponible à la création et dans les paramètres de carrière.\n"
@@ -175,7 +181,9 @@ def build(args):
         f"{voice_notice(voice_coverage)}"
         "Match3D, phases finales, montées/descentes françaises et saisons suivantes.\n"
         "Monde + Pacifique : 68 clubs, 66 jouables, cinq championnats et deux coupes d’Europe.\n"
-        "Le Monde 56 et les carrières France restent disponibles séparément.\n"
+        "Monde + Japon : 88 clubs, 86 jouables ; D1/D2 japonaises et barrages aller-retour.\n"
+        "La frontière japonaise D2–D3 est fermée et les feuilles se jouent à 23.\n"
+        "Les éditions Monde 56, Pacifique 66 et France restent disponibles séparément.\n"
         "Les anciennes carrières 14/30 restent importables et jouables.\n\n"
         "Parcours : Nouvelle carrière → club → Composition → Préparation → Match.\n"
         "Pause pour les changements ; Adjoint pour déléguer la fin du match.\n"
@@ -215,6 +223,14 @@ def build(args):
     assert [c["id"] for c in pacific_staff["clubs"]] == list(range(58,68))
     assert all(c["members"] for c in pacific_staff["clubs"])
     pacific_count = world["playerCount"] + sum(len(c["players"]) for c in pacific["clubs"])
+    japan = json.loads((ROOT / "native/engine/world-japan-extension.json").read_text(encoding="utf-8"))
+    japan_staff = json.loads((ROOT / "native/engine/world-japan-staff-extension.json").read_text(encoding="utf-8"))
+    assert japan["baseId"] == pacific["id"] == japan_staff["baseId"]
+    assert japan["id"] == japan_staff["databaseId"] and japan["version"] == 3
+    assert [c["id"] for c in japan["clubs"]] == [c["id"] for c in japan_staff["clubs"]] == list(range(68, 88))
+    assert all(c["members"] for c in japan_staff["clubs"])
+    assert all(c["key"] == f'jlo:slot-{c["id"]}' for c in japan["clubs"])
+    japan_count = pacific_count + sum(len(c["players"]) for c in japan["clubs"])
     example_world = dict(example_v2, id="mon-univers-monde", name="Mon univers mondial", databaseId=world["id"],
                          clubs=[{"id": 30, "name": "Les Albatros XV"}],
                          players=[{"id": world["clubs"][30]["players"][0]["id"], "name": "Mon premier joueur"}],
@@ -227,6 +243,12 @@ def build(args):
                            staff=[{"id": pacific_staff["clubs"][0]["members"][0]["id"], "name": "Mon entraîneur"}])
     with zipfile.ZipFile(modding / "Exemple-identites-pacifique.zip", "w", zipfile.ZIP_DEFLATED) as example_zip:
         example_zip.writestr("pack.json", json.dumps(example_pacific, ensure_ascii=False, indent=2))
+    example_japan = dict(example_v2, id="mon-univers-japon", name="Mon univers Japon", databaseId=japan["id"],
+                         clubs=[{"id": 68, "name": "Mon club du Japon"}],
+                         players=[{"id": japan["clubs"][0]["players"][0]["id"], "name": "Mon premier joueur"}],
+                         staff=[{"id": japan_staff["clubs"][0]["members"][0]["id"], "name": "Mon entraîneur"}])
+    with zipfile.ZipFile(modding / "Exemple-identites-japon.zip", "w", zipfile.ZIP_DEFLATED) as example_zip:
+        example_zip.writestr("pack.json", json.dumps(example_japan, ensure_ascii=False, indent=2))
     (modding / "LIRE-MOI.txt").write_text(
         "PACKS OVAL LEGACY 27\n\nÀ la création, ouvrir la page des packs puis Importer un pack ZIP.\n"
         "En carrière : Menu → Paramètres → Importez un pack personnalisé.\n"
@@ -246,11 +268,13 @@ def build(args):
         "correspondante avant d’importer ; les préférences sont séparées.\n"
         "Exemple-identites-pacifique.zip cible Monde + Pacifique ; les IDs supplémentaires\n"
         "sont dans engine/world-pacific-extension.json et world-pacific-staff-extension.json.\n"
+        "Exemple-identites-japon.zip cible Monde + Japon ; ses nouveaux IDs sont dans\n"
+        "engine/world-japan-extension.json et world-japan-staff-extension.json.\n"
         "Les images personnalisées sont fournies séparément dans les packs importés.\n",
         encoding="utf-8")
     files = {p.relative_to(app).as_posix(): {"sha256": digest(p), "bytes": p.stat().st_size}
              for p in sorted(app.rglob("*")) if p.is_file()}
-    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": "0.7.1", "name": "Oval Legacy 27", "edition": 27, "mode": "world-pacific", "database": pacific["id"], "clubs": 68, "players": pacific_count, "compatibleEditions": [world["id"]], "files": files}, indent=2), encoding="utf-8")
+    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": BUILD_VERSION, "name": "Oval Legacy 27", "edition": 27, "mode": "world-japan", "database": japan["id"], "clubs": 88, "players": japan_count, "compatibleEditions": [world["id"], pacific["id"]], "files": files}, indent=2), encoding="utf-8")
     archive = target / "OvalLegacy27-PrototypeGodot-Windows-x64.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as out:
         for path in sorted(app.rglob("*")):

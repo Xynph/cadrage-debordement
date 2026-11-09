@@ -21,11 +21,13 @@ func mode(target_scope: String = "") -> String:
 	var meta: Dictionary = app.model.get("meta", {})
 	if effective_scope == "career":
 		return str(meta.get("edition", "world")) if meta.get("mode") == "world" else "common"
-	if creation_mode in ["auto", "world-pacific"] and not meta.get("pacificCatalogue", []).is_empty(): return "world-pacific"
-	return "world" if creation_mode in ["auto", "world", "world-pacific"] and not meta.get("worldCatalogue", []).is_empty() else "common"
+	if creation_mode == "world-japan" and not meta.get("japanCatalogue", []).is_empty(): return "world-japan"
+	if creation_mode in ["auto", "world-pacific", "world-japan"] and not meta.get("pacificCatalogue", []).is_empty(): return "world-pacific"
+	return "world" if creation_mode in ["auto", "world", "world-pacific", "world-japan"] and not meta.get("worldCatalogue", []).is_empty() else "common"
 
 func database(target_scope: String = "") -> Dictionary:
 	var meta: Dictionary = app.model.get("meta", {})
+	if mode(target_scope) == "world-japan": return meta.get("japanDatabase", {})
 	if mode(target_scope) == "world-pacific": return meta.get("pacificDatabase", {})
 	if mode(target_scope) == "world": return meta.get("worldDatabase", {})
 	if meta.has("legacyDatabase"): return meta.legacyDatabase
@@ -43,7 +45,7 @@ func selected_id(target_scope: String = "") -> String:
 	var effective_scope := scope if target_scope.is_empty() else target_scope
 	var packs: Dictionary = app.model.get("packs", {})
 	if effective_scope == "career": return str(packs.get("career", "base"))
-	var key := str({"world-pacific":"pacificPackCreation", "world":"worldPackCreation"}.get(mode("creation"), "legacyPackCreation"))
+	var key := str({"world-japan":"japanPackCreation", "world-pacific":"pacificPackCreation", "world":"worldPackCreation"}.get(mode("creation"), "legacyPackCreation"))
 	return str(app.model.get("meta", {}).get(key, packs.get("creation", "base")))
 
 func preview() -> Dictionary:

@@ -20,14 +20,16 @@ static func build(app: Control) -> Control:
 	var left := G.panel(page, 1.0)
 	G.chapter(left, "13", "Les confrontations", "La mémoire des rencontres suivies dans cette carrière.", app.accent)
 	var preparation: Dictionary = meta.get("pacificPreparation", {})
+	var japan_preparation := preparation.is_empty() and meta.has("japanPreparation")
+	if japan_preparation: preparation = meta.get("japanPreparation", {})
 	if not preparation.is_empty():
 		var next_date := str(preparation.get("nextDate", ""))
 		var weeks := int(preparation.get("weeksUntil", 0))
 		var block := G.card(left, G.accent_ink(app.accent))
-		block.add_child(G.section("Préparation du Pacifique"))
+		block.add_child(G.section("Préparation de League One" if japan_preparation else "Préparation du Pacifique"))
 		block.add_child(G.wrap("Prochain match le %s · %d semaine(s)." % [next_date, weeks], 15))
-		var advance := G.button("AVANCER DE %d SEMAINE(S)  →" % mini(weeks, 4), func(): app._command("advance_pacific_preparation", {"fromWeek":int(meta.get("week", 0))}))
-		advance.name = "PacificPreparationAdvance"
+		var advance := G.button("AVANCER DE %d SEMAINE(S)  →" % mini(weeks, 4), func(): app._command("advance_japan_preparation" if japan_preparation else "advance_pacific_preparation", {"fromWeek":int(meta.get("week", 0))}))
+		advance.name = "JapanPreparationAdvance" if japan_preparation else "PacificPreparationAdvance"
 		advance.disabled = app.waiting
 		advance.tooltip_text = "Les semaines sont simulées une par une. L’avance s’arrête au prochain match."
 		block.add_child(advance)
