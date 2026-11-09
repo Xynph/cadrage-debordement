@@ -3,7 +3,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const {context}=require('./harness.cjs');
 const clone=x=>JSON.parse(JSON.stringify(x));
 function fixture(){
- const h=context();h.run('start(0)');const s=JSON.parse(h.run('JSON.stringify(S)'));
+ const h=context();h.run('var setupV2=aiRosterSetup;aiRosterSetup=function(){var result=setupV2();S.aiRosterVersion=1;S.aiRoster.version=1;delete S.aiRoster.population;return result};start(0)');const s=JSON.parse(h.run('JSON.stringify(S)'));
  for(const key of ['aiRoster','aiRosterVersion','worldManagement','worldVersion'])delete s[key];
  const original=clone(s.clubs);
  s.clubs=Array.from({length:58},(_,id)=>{const c=clone(original[id%14]);c.id=id;c.name='Club Monde '+id;c.abbr='M'+id;c.color='#123456';c.stadium='Stade '+id;c.form=[];c.players.forEach((p,n)=>{if(id>=14)p.id='foreign:'+id+':'+n;});return c;});
