@@ -64,6 +64,8 @@ func _run() -> void:
 		"Consultation et images préservent le fichier et le générateur aléatoire")
 	await _coach_reception()
 	await _match_and_save()
+	var world_fixture := OS.get_environment("CD_GODOT_QA_PUBLIC_WORLD")
+	if not world_fixture.is_empty(): await _world_save(world_fixture)
 	await _finish()
 
 func _verify_assets() -> void:
@@ -152,3 +154,36 @@ func _match_and_save() -> void:
 	_check(before == after, "Le paquet relit intégralement la carrière exportée, checksum et RNG compris")
 	_check(not app.model.get("finance", {}).get("ledger", []).is_empty(), "Le journal financier de la carrière jouée contient des écritures")
 	await _visit("Finances", "FinanceLedgerPlot", "finance-hospitality", "19-finances-apres-match")
+
+func _world_save(path: String) -> void:
+	var fixture := FileAccess.open(path, FileAccess.READ)
+	_check(fixture != null, "Le vrai fichier de recette Monde est lisible")
+	if fixture == null: return
+	var bytes := fixture.get_length()
+	fixture.close()
+	_check(bytes > 8 * 1024 * 1024, "L’export Monde dépasse l’ancienne limite de 8 Mio")
+	app.open_file(true)
+	await _settle()
+	_check(app.file_dialog.visible, "Le paquet ouvre son sélecteur d’import")
+	app.file_dialog.file_selected.emit(path)
+	await _settle()
+	_confirm()
+	if not await _wait(): return
+	var meta: Dictionary = app.model.get("meta", {})
+	var imported: bool = app.bridge.last_response_ok and meta.get("mode") == "world"
+	_check(imported and not app.file_dialog.visible, "Le sélecteur importe la vraie carrière Monde et se ferme")
+	if not imported: return
+	var competitions: Array = app.model.get("leagues", []).map(func(league: Dictionary): return str(league.id))
+	var results: int = app.model.get("history", []).size()
+	_check(competitions.has("prem") and competitions.has("urc") and competitions.has("champions") and competitions.has("challenge") and results > 0,
+		"Championnat, coupes et résultats de la carrière sont projetés dans le paquet")
+	await _visit("Bureau", "OfficeFixture", "office-hero", "20-bureau-monde")
+	await _visit("Classements", "StandingsRows", "", "21-classements-monde")
+	if await _activate("StandingsDivision_champions"): await _capture("22-poules-europe")
+	if meta.get("canAdvanceSeason", false):
+		var season := int(meta.season)
+		if await _ask("next_season", {"confirmed": true}):
+			_check(int(app.model.meta.season) == season + 1, "Le paquet ouvre la saison suivante de la vraie carrière Monde")
+			await _visit("Club", "ImmersiveClub", "", "23-club-monde")
+			if await _activate("ClubTab_history"): await _capture("24-palmares-monde")
+	systems_reception["immersive_world"] = {"file_bytes": bytes, "imported_results": results, "competitions": competitions, "season": app.model.meta.season}

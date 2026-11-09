@@ -37,7 +37,13 @@ const GROUPS = [
 	["Carrière", "Carrière", ["Carrière"]]
 ]
 const TITLES = {"Bureau":"Votre semaine commence ici.", "Effectif":"Les hommes du projet.", "Composition":"Le XV de départ.", "Préparation":"La semaine se gagne ici.", "Plan de jeu":"Votre identité de jeu.", "Vestiaire":"Un groupe, une ambition.", "Recrutement":"Le prochain renfort.", "Club":"Un club. Un territoire.", "Finances":"Garder une longueur d’avance.", "Classements":"Chaque point compte.", "Calendrier":"Le fil de votre saison.", "Formation":"Le futur porte nos couleurs.", "Centre":"Les chemins de la progression.", "Staff":"Le collectif derrière le collectif.", "Travail du club":"Des décisions qui engagent.", "Stratégie":"Construire dans la durée.", "Presse":"La voix du club.", "Rivalités":"Votre place dans le rugby.", "Carrière":"Une carrière à écrire.", "Match":"Le jour de match."}
-const COMPACT_ART = {"Finances":"finance-hospitality", "Calendrier":"stadium", "Formation":"academy-training", "Plan de jeu":"lineout-analysis", "Centre":"academy-training"}
+const COMPACT_ART = {
+	"Finances":"finance-hospitality", "Calendrier":"stadium", "Formation":"academy-training",
+	"Plan de jeu":"lineout-analysis", "Centre":"academy-training", "Préparation":"analysis-room",
+	"Recrutement":"scouting", "Classements":"trophy", "Club":"club-forest", "Staff":"mail-staff",
+	"Travail du club":"analysis-room", "Stratégie":"club-forest", "Presse":"press-room",
+	"Rivalités":"trophy", "Vestiaire":"lockerroom", "Carrière":"entry-ground",
+}
 
 static func render(app: Control) -> bool:
 	if not app.model.get("club") is Dictionary or app.route in ["Accueil", "Création", "Packs"]: return false
@@ -92,7 +98,7 @@ static func render(app: Control) -> bool:
 	content.name = "CareerContent"
 	inset.add_child(content)
 	var canvas_script := _dedicated_page(app,physical)
-	var immersive_match: bool = app.route=="Match" and physical.x>=2240
+	var immersive_match: bool = app.route=="Match" and physical.x>=1920 and physical.y>=1080
 	if canvas_script!=null or immersive_match or (app.route=="Effectif" and app.get_meta("immersive08_full_player",false)):
 		app.heading=null
 		app.minibar=C.label("",17,C.GOLD);app.minibar.visible=false;content.add_child(app.minibar)
@@ -115,7 +121,7 @@ static func render(app: Control) -> bool:
 		app.body.add_child(canvas)
 		canvas_script.build(app,canvas)
 	elif app.route == "Bureau": app.body.add_child(OfficeCanvas.build(app) if physical.x >= 1600 else Office.build(app))
-	else: _existing_page(app)
+	else: _existing_page(app,immersive_match)
 	_footer(content, app, layout)
 	app._update_live_bar()
 	app.call_deferred("_refresh_coach")
@@ -370,7 +376,7 @@ static func _position_footer(row: Control) -> void:
 	var shortcuts: Label = row.get_node_or_null("ImmersiveShortcuts")
 	if shortcuts!=null: shortcuts.visible=row.size.x*factor>=1650
 
-static func _existing_page(app: Control) -> void:
+static func _existing_page(app: Control, immersive_match: bool) -> void:
 	match app.route:
 		"Réception": app.body.add_child(Reception.build(app))
 		"Club": app.body.add_child(app.ClubViews.club(app))
@@ -380,7 +386,11 @@ static func _existing_page(app: Control) -> void:
 		"Effectif":
 			var player:=P.player(app.model,app.selected_player)
 			if app.get_meta("immersive08_full_player",false) and not player.is_empty():app.body.add_child(PlayerCanvas.build(app,player))
-			else:app.body.add_child(SquadCanvas.build(app) if app.get_window().size.x>=1600 else app.SquadViews.squad(app))
+			elif app.get_window().size.x>=1600:app.body.add_child(SquadCanvas.build(app))
+			else:
+				var roster: Control = app.SquadViews.squad(app)
+				app.body.add_child(roster)
+				Legacy.apply(roster, app.accent)
 		"Composition": app.body.add_child(TacticsCanvas.build(app) if app.get_window().size.x>=1600 else app.SquadViews.lineup(app))
 		"Préparation": app.body.add_child(app.SquadViews.preparation(app))
 		"Plan de jeu": app.body.add_child(app.PlaybookViews.build(app))
@@ -395,10 +405,9 @@ static func _existing_page(app: Control) -> void:
 		"Travail du club": app.body.add_child(app.SupportViews.build(app))
 		"Carrière": app.body.add_child(app.ManagerCareerViews.build(app))
 		"Match":
-			app.match_screen = MatchCanvas.new() if app.get_window().size.x>=2240 else app.MatchUI.new()
+			app.match_screen = MatchCanvas.new() if immersive_match else app.MatchUI.new()
 			app.match_screen.app = app
 			app.body.add_child(app.match_screen)
 			app.match_page = app.match_screen
 			app.match_screen.update_frame(app.model)
-	if COMPACT_ART.has(app.route):
-		Legacy.apply(app.body.get_child(0), app.accent)
+	if COMPACT_ART.has(app.route): Legacy.apply(app.body.get_child(0), app.accent)

@@ -125,11 +125,13 @@ func _ready() -> void:
 	file_dialog.filters = PackedStringArray(["*.json ; Carrière Oval Legacy 27"])
 	file_dialog.file_selected.connect(_file_selected)
 	add_child(file_dialog)
+	ImmersiveDialogs.watch_file_picker(file_dialog)
 	_trace_startup("file_dialog.ready")
 	pack_manager = load("res://pack_manager.gd").new()
 	pack_manager.app = self
 	add_child(pack_manager)
 	pack_manager.picker.theme=ImmersiveStyle.theme(accent)
+	ImmersiveDialogs.watch_file_picker(pack_manager.picker)
 	_trace_startup("pack_manager.ready")
 	bridge = load("res://engine_bridge.gd").new()
 	add_child(bridge)
@@ -744,6 +746,10 @@ func _file_selected(path: String) -> void:
 			return
 		var text := f.get_buffer(byte_count).get_string_from_utf8()
 		f.close()
+		var control_characters := RegEx.create_from_string("[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]")
+		if control_characters.search(text) != null:
+			_refuse_action("Le fichier JSON contient un caractère de contrôle non échappé.")
+			return
 		var refusal := NativeEngineBridge.import_preflight(text, byte_count)
 		if not refusal.is_empty():
 			_refuse_action(refusal)

@@ -92,6 +92,7 @@ static func _priorities(card: Panel, app: Control) -> void:
 		action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
 		D.text(card,89,y+64,tasks[i][1],19,C.MUTED,400,530,HORIZONTAL_ALIGNMENT_LEFT,true)
 		D.chip(card,Rect2(645,y+25,188,34),tasks[i][2],C.AMBER)
+	D.button(card,Rect2(578,382,274,30),"Mon carnet personnel",func():Office.open_notebook(app),false,"arrow",true,app.accent,"OpenCoachNotebook")
 
 static func _group(card: Panel, app: Control) -> void:
 	var group := P.group(app.model)

@@ -3,8 +3,6 @@ extends Control
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
-const Legacy = preload("res://ui/immersive08/legacy_style.gd")
-const DARK = preload("res://theme.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const TABS = ["Dossier", "Consignes", "Entrainement"]
 const GREEN = Color("63e994")
@@ -96,8 +94,10 @@ func _observe(node: Node) -> void:
 
 func _restore() -> void:
 	if not is_inside_tree(): return
-	await get_tree().process_frame
-	await get_tree().process_frame
+	var tree := get_tree()
+	await tree.process_frame
+	if not is_inside_tree(): return
+	await tree.process_frame
 	if not is_inside_tree(): return
 	for pair: Array in [["PreparationAttackScroll", "attack"], ["PreparationDefenseScroll", "defense"]]:
 		var scroll := find_child(pair[0], true, false) as ScrollContainer
@@ -169,9 +169,7 @@ func _open_dossier() -> void:
 	Decisions.dossier(app)
 	var dialog := app.get_node_or_null("OppositionDossier") as AcceptDialog
 	if dialog == null: return
-	dialog.theme = DARK.make()
-	for child in dialog.get_children():
-		if child is VBoxContainer: Legacy.apply(child, app.accent)
+	dialog.set_meta("immersive_dialog_size", Vector2i(900, 580))
 
 func _recent(section: Control) -> void:
 	var panel := D.panel(section, Rect2(0, 614, 1344, 352), "Les faits récents", "calendar", "", "PreparationRecent")

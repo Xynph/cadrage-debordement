@@ -2,6 +2,7 @@ extends Control
 ## Tableau des pistes, dossiers datés et décisions de recrutement de la carrière.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
+const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const G = preload("res://ui/game_skin.gd")
 const U = preload("res://ui/management_state.gd")
 const Decisions = preload("res://ui/decision_views.gd")
@@ -416,16 +417,7 @@ func _needs() -> void:
 		var role := str(need.get("pos", "Poste inconnu"))
 		var tint: Color = [C.ALERT, WARM, GREEN][i]
 		var card := D.button(self, Rect2(i * 755, 1095, 738, 126), "", func():
-			state.position = role
-			state.immersive_tab = 1
-			state.followed = false
-			state.search = ""
-			state.navigation_id = ""
-			state.available = "Tous"
-			state.age_filter = "Tous"
-			state.budget_filter = "Toutes"
-			state.page = 0
-			app._render(false), false, "", false, app.accent, "MarketNeed_" + str(i))
+			Decisions.open_market_position(app, role), false, "", false, app.accent, "MarketNeed_" + str(i))
 		card.add_theme_stylebox_override("normal", D.surface(738, 126, Color("372326") if i == 0 else Color("2e281c") if i == 1 else Color("112c22"), Color("141a1b"), tint, 10, false))
 		_icon(card, ["people", "shield", "flag"][i], Rect2(26, 27, 55, 55), tint)
 		D.text(card, 109, 40, role.to_upper(), 36, C.IVORY, 800, 430)
@@ -437,7 +429,9 @@ func _needs() -> void:
 
 func _staff(index: int, role: String = "") -> void:
 	Decisions.recruitment(app)
-	var dialog: Node = app.get_child(app.get_child_count() - 1)
+	var dialog := app.get_child(app.get_child_count() - 1) as AcceptDialog
+	if dialog == null: return
+	dialog.set_meta("immersive_dialog_size", Vector2i(900, 580))
 	var tabs := dialog.find_child("ScoutTabs", true, false) as TabContainer
 	if tabs == null: return
 	tabs.current_tab = index
@@ -451,12 +445,11 @@ func _staff(index: int, role: String = "") -> void:
 func _report_dialog(report: Dictionary) -> void:
 	var view := Decisions.dialog(app, "Rapport d’observation", "RecruitmentReport", 920)
 	Decisions.scout_report(view[1], report)
-	view[0].popup_centered(Vector2i(920, 565))
+	Dialogs.show_centered(view[0], Vector2i(920, 565))
 
 func _compare() -> void:
 	var players: Array = app.model.get("market", [])
 	var view := Decisions.dialog(app, "Comparer deux pistes", "MarketComparison", 1020)
-	view[0].theme = G.T.make()
 	var content: VBoxContainer = view[1]
 	content.add_child(C.wrap("Valeurs du marché au jour de la consultation. Le potentiel provient d’un rapport daté lorsqu’il existe.", 20, C.MUTED))
 	var choices := C.h(14)
@@ -480,7 +473,7 @@ func _compare() -> void:
 	var update := func(_index: int): _comparison_rows(facts, picks, players)
 	for picker in picks: picker.item_selected.connect(update)
 	update.call(0)
-	view[0].popup_centered(Vector2i(1020, 620))
+	Dialogs.show_centered(view[0], Vector2i(1020, 620))
 
 func _comparison_rows(parent: VBoxContainer, picks: Array[OptionButton], players: Array) -> void:
 	_clear(parent)

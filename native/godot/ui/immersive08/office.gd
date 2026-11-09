@@ -21,6 +21,9 @@ static func _open_player(app: Control, id: String) -> void:
 	app.selected_player = id
 	app._navigate("Effectif")
 
+static func open_notebook(app: Control) -> void:
+	preload("res://ui/coach_notes_view.gd").open(app, "career")
+
 static func build(app: Control) -> Control:
 	var page := C.v(16)
 	page.name = "ImmersiveOffice"
@@ -128,6 +131,10 @@ static func _priorities(parent: VBoxContainer, app: Control) -> void:
 		var detail := C.label(choice.detail, 17, C.MUTED, false)
 		detail.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		text.add_child(detail)
+	var notebook := C.button("Mon carnet personnel", func(): open_notebook(app), false, app.accent)
+	notebook.name = "OpenCoachNotebook"
+	notebook.custom_minimum_size.y = maxi(30, C.px(40))
+	parent.add_child(notebook)
 
 static func _group(parent: VBoxContainer, app: Control) -> void:
 	var group := P.group(app.model)

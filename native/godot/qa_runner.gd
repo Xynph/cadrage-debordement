@@ -113,8 +113,9 @@ func _press(text:String) -> void:
 			return
 	_check(false,"Control exists: "+text)
 
-func _press_named(control_name: String) -> bool:
-	var button := app.root_content.find_child(control_name,true,false) as Button
+func _press_named(control_name: String, parent: Node = null) -> bool:
+	var scope: Node = parent if parent != null else app.root_content
+	var button := scope.find_child(control_name,true,false) as Button
 	var available := button != null and button.is_visible_in_tree() and not button.disabled
 	_check(available,"Visible action: " + control_name)
 	if available: button.pressed.emit()
@@ -289,7 +290,7 @@ func _run() -> void:
 		await _resize_window(resolution)
 		var pages: Array[String] = []
 		app._navigate("Bureau")
-		_press("Chercher")
+		_press_named("ImmersiveSearch")
 		await _settle()
 		var palette: AcceptDialog = app.navigation_controller.get("_dialog")
 		_check(is_instance_valid(palette) and palette.visible, "Bundled navigation opens its real palette")
@@ -304,7 +305,7 @@ func _run() -> void:
 			palette.hide()
 		for chapter: Dictionary in app.NAV_CHAPTERS:
 			for page: String in chapter.routes: pages.append(page)
-		_check(pages.size() == 20, "Every native career route is included in the executable reception")
+		_check(pages.size() == 21 and pages.has("Réception"), "Every native career route, including the inbox, is included in the executable reception")
 		for page in pages:
 			app._navigate(page)
 			await _capture(page.to_lower()+"-"+str(resolution.x))
@@ -355,9 +356,13 @@ func _run() -> void:
 			_check(app.model.tactics.attack==option.id,"Attack decision persisted")
 			break
 	app._navigate("Préparation")
-	_press("ENTRAÎNEMENT")
+	_press_named("Nav_Entraînement")
 	await _settle()
-	_press("CHARGE NORMALE")
+	_press_named("TrainingValidateWeek")
+	await _settle()
+	var session: AcceptDialog = app.get_node_or_null("TrainingSessionDialog")
+	_check(session != null and session.visible, "Weekly training requires an explicit load choice")
+	if session != null: _press_named("PreparationTrain_normal", session)
 	await _wait()
 	_check(app.model.meta.trained,"Training performed via real control")
 	app._navigate("Match")
@@ -709,6 +714,10 @@ func _native06_reception() -> void:
 	app.selected_player = player_id
 	app.management_ui.profile_tab = 0
 	app._navigate("Effectif"); await _settle()
+	var full_profile := app.root_content.find_child("OpenPlayerFull",true,false) as Button
+	if full_profile != null:
+		await _key_action(full_profile)
+		await _settle()
 	await _key_action(app.root_content.find_child("OpenPlayerCoachNote",true,false))
 	popup = app.get_node_or_null("CoachNotebook")
 	_check(popup != null and popup.visible, "Native06 player note opens from Overview by keyboard")
@@ -733,7 +742,9 @@ func _native06_reception() -> void:
 		var dialog: AcceptDialog = app.get_node("PreferencesDialog")
 		var tabs: TabContainer = dialog.find_child("PreferencesTabs",true,false)
 		_check(tabs != null and tabs.get_tab_count() == 3, "Native06 three compact settings tabs")
-		_check(dialog.size.x <= 720 and dialog.size.y <= 620 and Vector2(dialog.size).y <= get_tree().root.get_visible_rect().size.y, "Native06 settings fit the 720p client: " + str(dialog.size))
+		var client := Rect2i(Vector2i.ZERO, Vector2i(get_tree().root.get_visible_rect().size))
+		var dialog_bounds := Rect2i(dialog.position, dialog.size)
+		_check(dialog.visible and client.encloses(dialog_bounds), "Native06 settings fit the actual client: " + str(dialog_bounds))
 		_check(dialog.find_child("PreferencesScroll",true,false) == null, "Native06 settings need no global scroll")
 		var groups := [["PreferencesVolume","PreferencesMotion","PreferencesCamera","PreferencesQuality","PreferencesReset"],["PreferencesInterfaceVolume","PreferencesStadiumVolume"],["PreferencesFullscreen","PreferencesWindowed"]]
 		for index in 3:

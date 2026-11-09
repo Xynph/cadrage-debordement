@@ -4,6 +4,7 @@ extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Paper = preload("res://ui/carnet_skin.gd")
+const TEXT_CONTRAST = 4.6
 
 static func apply(root: Control, accent: Color) -> void:
 	root.theme = theme(accent)
@@ -44,6 +45,7 @@ static func theme(accent: Color) -> Theme:
 	theme.set_font("title_font","Window",C.BOLD)
 	theme.set_font_size("title_font_size","Window",maxi(17,C.px(25)))
 	theme.set_color("title_color","Window",C.IVORY)
+	theme.set_stylebox("panel","TabContainer",Paper.T.box(C.PANEL,2,C.LINE))
 	for kind in ["TabContainer","TabBar"]:
 		theme.set_font("font",kind,C.DISPLAY)
 		for state in ["font_selected_color","font_hovered_color"]: theme.set_color(state,kind,C.IVORY)
@@ -60,13 +62,23 @@ static func _style(node: Node, accent: Color) -> void:
 		var color: Color = node.get_theme_color("font_color")
 		var font: Font = node.get_theme_font("font")
 		var height: int = node.get_theme_font_size("font_size")
-		if color.a > 0: node.add_theme_color_override("font_color",C.IVORY if color==Color("303f44") else _ink(color))
+		if color.a > 0: node.add_theme_color_override("font_color",C.IVORY if color==Color("303f44") else _ink(color,accent))
 		if font==Paper.T.DISPLAY:
 			node.add_theme_font_override("font",C.font(700 if height>=17 else 600))
 		else: node.add_theme_font_override("font",C.BODY)
 		node.add_theme_font_size_override("font_size",maxi(12,C.px(float(height)*1.36)))
 	elif node is Button and not node is CheckButton and not node is CheckBox:
 		_button(node,accent)
+	elif node is LinkButton:
+		node.focus_mode = Control.FOCUS_ALL
+		node.add_theme_font_override("font",C.BODY)
+		node.add_theme_color_override("font_color",C.GOLD)
+		for state in ["font_hover_color","font_pressed_color","font_focus_color"]:
+			node.add_theme_color_override(state,C.IVORY)
+		var focus := C.box(Color.TRANSPARENT,C.GOLD,4,2)
+		node.add_theme_stylebox_override("focus",focus)
+	elif node is CheckBox or node is CheckButton:
+		node.custom_minimum_size.y = maxf(25,node.custom_minimum_size.y)
 	elif node is LineEdit or node is TextEdit:
 		node.add_theme_font_override("font",C.BODY)
 		node.add_theme_color_override("font_color",C.IVORY)
@@ -118,30 +130,50 @@ static func _button(button: Button, accent: Color) -> void:
 	button.add_theme_font_override("font",C.BOLD if primary else C.DISPLAY)
 	button.add_theme_font_size_override("font_size",maxi(12,C.px(20)))
 	button.custom_minimum_size.y = maxf(button.custom_minimum_size.y,C.px(36))
-	for state in ["normal","hover","pressed","disabled"]:
-		var old := button.get_theme_stylebox(state)
-		var emphasis := selected or primary
-		var fill := accent.darkened(.48) if emphasis else C.PANEL
-		if state=="hover": fill=fill.lightened(.13)
-		if state=="pressed": fill=fill.darkened(.16)
-		if state=="disabled": fill=C.BG
-		var style := C.box(fill,P.safe_accent(accent) if emphasis else C.LINE,5,10)
-		for side in [SIDE_LEFT,SIDE_RIGHT,SIDE_TOP,SIDE_BOTTOM]:
-			style.set_content_margin(side,old.get_content_margin(side))
-		if selected: style.border_width_left=maxi(2,C.px(4))
-		button.add_theme_stylebox_override(state,style)
+	var paint := _button_surfaces.bind(accent,primary)
+	button.set_meta("carnet_selection_skin",paint)
+	paint.call(button,selected)
 	var focus := C.box(Color.TRANSPARENT,C.GOLD,5,0)
 	focus.set_border_width_all(2)
 	button.add_theme_stylebox_override("focus",focus)
-	for key in ["font_color","font_hover_color","font_pressed_color","font_focus_color"]: button.add_theme_color_override(key,C.IVORY)
+	for key in ["font_color","font_hover_color","font_pressed_color","font_hover_pressed_color","font_focus_color"]: button.add_theme_color_override(key,C.IVORY)
 	button.add_theme_color_override("font_disabled_color",C.MUTED)
 
-static func _ink(color: Color) -> Color:
+static func _button_surfaces(button: Button, selected: bool, accent: Color, primary: bool) -> void:
+	var emphasis := selected or primary
+	var border := P.safe_accent(accent) if emphasis else C.LINE
+	var text_limit := (_luminance(C.IVORY)+.05)/TEXT_CONTRAST-.05
+	var focus_limit := (_luminance(C.GOLD)+.05)/3.1-.05
+	var maximum_fill := minf(text_limit,focus_limit)
+	for state in ["normal","hover","pressed","hover_pressed","disabled"]:
+		var old := button.get_theme_stylebox("pressed" if state=="hover_pressed" else state)
+		var pressed: bool = state=="pressed" or state=="hover_pressed"
+		var group_choice: bool = pressed and button.toggle_mode and button.button_group!=null
+		var fill := accent.darkened(.48) if emphasis or group_choice else C.PANEL
+		if state=="hover": fill=fill.lightened(.13)
+		if pressed: fill=fill.darkened(.16)
+		if state=="disabled": fill=C.BG
+		while _luminance(fill)>maximum_fill: fill=fill.darkened(.10)
+		var style := C.box(fill,C.GOLD if group_choice else border,5,10)
+		for side in [SIDE_LEFT,SIDE_RIGHT,SIDE_TOP,SIDE_BOTTOM]:
+			style.set_content_margin(side,old.get_content_margin(side))
+		if selected or group_choice: style.border_width_left=maxi(2,C.px(4))
+		button.add_theme_stylebox_override(state,style)
+
+static func _luminance(color: Color) -> float:
+	return color.srgb_to_linear().get_luminance()
+
+static func _ink(color: Color, accent: Color = Color.TRANSPARENT) -> Color:
 	if color==Paper.INK: return C.IVORY
 	if color==Paper.MUTED: return C.MUTED
 	if color==Paper.GOLD: return C.GOLD
 	if color==Paper.ALERT: return C.ALERT
 	if color==Paper.GOOD: return C.MINT
+	if accent.a>0 and color==Paper.accent_ink(accent):
+		var minimum_ink := (_luminance(C.PANEL.lerp(accent,.10))+.05)*TEXT_CONTRAST-.05
+		var ink := accent
+		while _luminance(ink)<minimum_ink: ink=ink.lightened(.10)
+		return ink
 	if color.get_luminance()>=.31: return color
 	if color.s<.28: return C.MUTED
 	return P.safe_accent(color)

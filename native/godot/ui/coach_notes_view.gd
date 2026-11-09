@@ -1,6 +1,7 @@
 extends AcceptDialog
 ## Plain personal text; only a matching worker receipt means it was saved.
 const G = preload("res://ui/carnet_skin.gd")
+const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 var _app: Control
 var _data: Dictionary = {}
 var _target := "career"
@@ -18,13 +19,13 @@ static func open(app: Control, target: String = "career") -> AcceptDialog:
 	var existing: Node = app.get_node_or_null("CoachNotebook")
 	if existing != null and not existing.is_queued_for_deletion():
 		existing._request_target(target)
-		existing.popup_centered(Vector2i(820, 500))
+		Dialogs.show_centered(existing, Vector2i(820, 500))
 		return existing
 	app._clear_dialogs()
 	var popup: AcceptDialog = load("res://ui/coach_notes_view.gd").new()
 	popup._setup(app, target)
 	app.add_child(popup)
-	popup.popup_centered(Vector2i(820, 500))
+	Dialogs.show_centered(popup, Vector2i(820, 500))
 	return popup
 
 func _setup(app: Control, target: String) -> void:
@@ -169,6 +170,7 @@ func _confirm_remove() -> void:
 	if _remove_button.disabled: return
 	var confirmation := ConfirmationDialog.new()
 	confirmation.name = "CoachNoteDeleteConfirm"
+	_app._prepare_dialog(confirmation, 520)
 	confirmation.title = "Supprimer cette note ?"
 	confirmation.dialog_text = "La note de ce dossier sera supprimée de cette carrière. Confirmer ?"
 	confirmation.get_ok_button().text = "SUPPRIMER"
@@ -177,7 +179,7 @@ func _confirm_remove() -> void:
 	confirmation.confirmed.connect(func():
 		confirmation.queue_free()
 		_send("coach_note_remove", {"context":_data.context.duplicate(true),"target":_target,"confirmed":true}))
-	confirmation.popup_centered(Vector2i(520, 160))
+	Dialogs.show_centered(confirmation, Vector2i(520, 160))
 
 func _on_model(model: Dictionary) -> void:
 	if _app.bridge.last_response_ok and _app.last_command in ["new_career", "import", "recover_profile"]:

@@ -12,6 +12,11 @@ static func prepare(dialog: AcceptDialog, width: int, accent: Color) -> void:
 	dialog.visibility_changed.connect(_dress.bind(dialog,accent))
 	dialog.tree_entered.connect(_watch_host.bind(dialog))
 
+static func watch_file_picker(dialog: FileDialog) -> void:
+	dialog.visibility_changed.connect(func():
+		if dialog.visible: _fit.call_deferred(dialog))
+	_watch_host(dialog)
+
 static func show_centered(dialog: AcceptDialog, requested: Vector2i) -> void:
 	dialog.set_meta("immersive_dialog_size",requested)
 	dialog.popup_centered(requested)
@@ -50,13 +55,16 @@ static func _fit(dialog: AcceptDialog) -> void:
 	if not is_instance_valid(dialog) or not dialog.is_inside_tree() or not dialog.visible: return
 	var screen := Vector2i(dialog.get_parent().get_viewport().get_visible_rect().size)
 	if screen.x<720 or screen.y<520: return
+	var file_picker := dialog is FileDialog
 	var target: Vector2i = dialog.get_meta("immersive_dialog_size",dialog.size)
+	# Les sélecteurs peuvent se replier à leur minimum avant le layout de leur liste.
+	if file_picker: target = Vector2i((Vector2(screen) * .7).round())
 	target.x=min(target.x,screen.x-28)
 	target.y=min(target.y,screen.y-68)
 	if target!=dialog.size: dialog.size=target
 	var available := screen-dialog.size
 	if available.x<0 or available.y<30: return
-	if dialog.has_meta("immersive_dialog_size") or dialog.position.x<0 or dialog.position.y<30 or dialog.position.x>available.x or dialog.position.y>available.y:
+	if file_picker or dialog.has_meta("immersive_dialog_size") or dialog.position.x<0 or dialog.position.y<30 or dialog.position.x>available.x or dialog.position.y>available.y:
 		dialog.position=available/2
 
 static func pause_content(dialog: AcceptDialog, app: Control) -> void:

@@ -121,6 +121,27 @@ static func recruitment_summary(app: Control, parent: Container) -> void:
 	button.name = "OpenRecruitmentNeeds"
 	row.add_child(button)
 
+static func open_market_position(app: Control, position: String) -> void:
+	var filters: Dictionary = app.management_ui.market
+	filters.merge({
+		"position": position,
+		"immersive_tab": 1,
+		"followed": false,
+		"search": "",
+		"navigation_id": "",
+		"available": "Tous",
+		"age_filter": "Tous",
+		"budget_filter": "Toutes",
+		"page": 0,
+		"scroll": 0,
+		"focus": "MarketSearch",
+		"caret": 0,
+		"selection_from": -1,
+		"selection_to": -1
+	}, true)
+	app.management_ui.market_tab = 0
+	app._navigate("Recrutement", false)
+
 static func recruitment(app: Control) -> void:
 	var data: Dictionary = app.model.get("decisions", {}).get("recruitment", {})
 	var view := dialog(app, "Construire l'effectif", "RecruitmentNeeds", 900)
@@ -151,7 +172,8 @@ static func recruitment(app: Control) -> void:
 		G.fill(text)
 		row.add_child(text)
 		row.add_child(G.button("VOIR LES PISTES", func():
-			d.queue_free(); app.management_ui.market.position = need.pos; app._navigate("Recrutement")))
+			d.queue_free()
+			open_market_position(app, str(need.pos))))
 		list.add_child(G.separator())
 	list = G.scroll(missions)
 	list.add_child(G.label("Confier une recherche", 18, G.INK, true))

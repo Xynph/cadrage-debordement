@@ -255,9 +255,11 @@ func _render(position: int, follow: bool) -> void:
 
 func _restore(position: int, follow: bool, revision: int) -> void:
 	# Containers lay out after deferred calls; wait for their real scrollbar range.
-	await get_tree().process_frame
-	await get_tree().process_frame
-	if revision != _revision: return
+	if not is_inside_tree() or revision != _revision: return
+	var tree := get_tree()
+	for frame in 2:
+		await tree.process_frame
+		if not is_inside_tree() or revision != _revision: return
 	scroll.scroll_vertical = int(scroll.get_v_scroll_bar().max_value) if follow else position
 	_following = follow
 	_updating = false

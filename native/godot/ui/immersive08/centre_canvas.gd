@@ -101,9 +101,10 @@ func _style_tabs(tabs: TabContainer) -> void:
 
 func _restore(scrolls: Dictionary) -> void:
 	if not is_inside_tree(): return
-	await get_tree().process_frame
-	await get_tree().process_frame
-	if not is_inside_tree(): return
+	var tree := get_tree()
+	for frame in 2:
+		await tree.process_frame
+		if not is_inside_tree(): return
 	for key: String in scrolls:
 		var scroll: ScrollContainer = scrolls[key]
 		scroll.scroll_vertical = int(state.scroll.get(key, 0))

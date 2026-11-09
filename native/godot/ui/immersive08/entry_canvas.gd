@@ -53,10 +53,19 @@ static func home(app: Control) -> Control:
 	D.text(content,112,851,"Prenez les rênes. Préparez le XV, faites grandir le club et vivez la saison.",29,C.IVORY,400,1400,HORIZONTAL_ALIGNMENT_LEFT,true)
 	var meta: Dictionary = app.model.get("meta",{})
 	var database: Dictionary = meta.get("database",{})
-	if not app.catalogue.is_empty():
-		D.chip(content,Rect2(112,895,249,52),"%d clubs jouables" % app.catalogue.size(),C.GOLD)
+	var france: Array = meta.get("legacyCatalogue", app.catalogue)
+	var world: Array = meta.get("worldCatalogue", [])
+	var next_chip := 112
+	if not france.is_empty():
+		var count := france.filter(func(item: Dictionary): return item.get("playable", true)).size()
+		D.chip(content,Rect2(next_chip,895,249,52),"France · %d clubs" % count,C.GOLD).name="EntryFranceCount"
+		next_chip+=263
+	if not world.is_empty():
+		var count := world.filter(func(item: Dictionary): return item.get("playable", true)).size()
+		D.chip(content,Rect2(next_chip,895,249,52),"Monde · %d clubs" % count,C.BLUE).name="EntryWorldCount"
+		next_chip+=263
 	if int(database.get("playerCount",0))>0:
-		D.chip(content,Rect2(375,895,288,52),G.n(database.playerCount)+" joueurs de base",C.MINT)
+		D.chip(content,Rect2(next_chip,895,305,52),G.n(database.playerCount)+" joueurs · base active",C.MINT)
 	var club: Dictionary = app.model.get("club") if app.model.get("club") is Dictionary else {}
 	var accent: Color = GREEN if club.is_empty() else app.accent
 	_choices(D.panel(content,Rect2(1642,248,827,1008),"","","","EntryCareerCard"),app,club,meta,accent)

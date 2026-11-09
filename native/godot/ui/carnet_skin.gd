@@ -64,6 +64,7 @@ static func button(text: String, callback: Callable, primary: bool = false) -> B
 	return b
 
 static func selected(b: Button, accent: Color) -> void:
+	if _paint_selection(b, true): return
 	# Keep the geometric marker when pointer/focus/press changes the state.
 	# Colour alone cannot identify the current player, club or tactic.
 	for state in ["normal", "hover", "pressed"]:
@@ -71,11 +72,17 @@ static func selected(b: Button, accent: Color) -> void:
 		var style := T.box(PAPER.lerp(Color(accent,1), strength), 3, accent_ink(accent))
 		style.border_width_left = 4
 		b.add_theme_stylebox_override(state, style)
-	b.set_meta("carnet_selected", true)
 
 static func clear_selection(b: Button) -> void:
+	if _paint_selection(b, false): return
 	for state in ["normal", "hover", "pressed"]: b.remove_theme_stylebox_override(state)
-	b.set_meta("carnet_selected", false)
+
+static func _paint_selection(b: Button, active: bool) -> bool:
+	b.set_meta("carnet_selected", active)
+	var paint: Callable = b.get_meta("carnet_selection_skin", Callable())
+	if not paint.is_valid(): return false
+	paint.call(b, active)
+	return true
 
 static func reading_button(b: Button, minimum_width: int = 92) -> Button:
 	# Reading tools fit short rows. Full text stays available for long French labels.
@@ -207,7 +214,15 @@ static func photo_note(parent: Node, club: Dictionary, title: String, subtitle: 
 	content.add_theme_constant_override("separation", 3)
 	for edge in ["left", "right"]: content.get_parent().add_theme_constant_override("margin_" + edge, 8)
 	for edge in ["top", "bottom"]: content.get_parent().add_theme_constant_override("margin_" + edge, 4)
-	content.add_child(Base.label(title.to_upper(), 12, Color("ddbd80")))
+	var overline := Base.label(title.to_upper(), 12, Color("ddbd80"))
+	var shade := StyleBoxFlat.new()
+	shade.bg_color = Color(0.02, 0.04, 0.06, .60)
+	shade.expand_margin_top = 4
+	shade.expand_margin_left = 8
+	shade.expand_margin_right = 8
+	for side in [SIDE_LEFT, SIDE_RIGHT, SIDE_TOP, SIDE_BOTTOM]: shade.set_content_margin(side, 0)
+	overline.add_theme_stylebox_override("normal", shade)
+	content.add_child(overline)
 	content.add_child(Base.spacer())
 	var caption := Base.wrap(subtitle, 25, WHITE)
 	caption.add_theme_font_override("font", T.DISPLAY)

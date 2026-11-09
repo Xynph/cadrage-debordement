@@ -33,6 +33,14 @@ func check(condition: bool, message: String) -> void:
 	checks += 1
 	if not condition: failures.append(message); printerr("FAIL: " + message)
 
+func reference_rects(expected: Dictionary) -> void:
+	for id: String in expected:
+		var node := app.find_child(id,true,false) as Control
+		var actual := node.get_global_transform()*Rect2(Vector2.ZERO,node.size) if node!=null else Rect2()
+		var source: Rect2 = expected[id]
+		check(node!=null and actual.position.distance_to(source.position)<=1.5 and actual.size.distance_to(source.size)<=1.5,
+			"Rectangle du gabarit approuvé · %s · %s / %s" % [id,str(actual),str(source)])
+
 func click(control: Control, fraction: Vector2 = Vector2(.5,.5)) -> void:
 	var point := control.get_global_transform()*(control.size*fraction)
 	var motion := InputEventMouseMotion.new()
@@ -63,6 +71,11 @@ func entry() -> void:
 	var art: TextureRect = app.find_child("Art_entry_ground",true,false)
 	check(art!=null and art.texture!=null,"Le nouveau stade IA est chargé dans l’accueil")
 	check(app.find_child("EntryResume",true,false)==null,"Aucune reprise proposée sans carrière")
+	var world: Array = app.model.get("meta",{}).get("worldCatalogue",[])
+	if not world.is_empty():
+		var world_chip: Panel = app.find_child("EntryWorldCount",true,false)
+		var playable := world.filter(func(club: Dictionary): return club.get("playable",true)).size()
+		check(world_chip!=null and world_chip.get_child(0).text=="Monde · %d clubs" % playable,"Accueil distingue les clubs jouables des clubs invités")
 	await capture("00-accueil-2560x1440")
 	var new_career: Button = app.find_child("EntryNewCareer",true,false)
 	if new_career==null: return
@@ -241,16 +254,26 @@ func desktop_1080() -> void:
 	await settle()
 	check(app.find_child("ImmersiveTraining",true,false)!=null,"Entraînement ouvre son gabarit à 1080p")
 	await capture("09-entrainement-1920x1080")
+	app._navigate("Match")
+	await settle()
+	var pitch: Control = app.find_child("ImmersiveMatchPitch",true,false)
+	var tunnel: TextureRect = app.find_child("Art_match_tunnel",true,false)
+	check(pitch!=null and tunnel!=null and tunnel.texture!=null and tunnel.is_visible_in_tree(),"Le jour de match conserve son visuel et la scène à 1080p")
+	if pitch!=null:
+		check(Rect2(Vector2.ZERO,Vector2(root.size)).grow(1).encloses(pitch.get_global_transform()*Rect2(Vector2.ZERO,pitch.size)),"Terrain directement accessible en 1080p")
+	await capture("27-avant-match-1920x1080")
 	root.size=Vector2i(1280,720)
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
 	await settle()
-	for route: String in ["Finances","Calendrier","Formation","Plan de jeu","Centre"]:
+	for route: String in ["Finances","Calendrier","Formation","Plan de jeu","Centre","Préparation","Recrutement",
+		"Classements","Club","Staff","Travail du club","Stratégie","Presse","Rivalités","Vestiaire","Carrière"]:
 		app._navigate(route)
 		await settle()
 		var art: Control = app.find_child("CompactRouteArt",true,false)
 		var photo: TextureRect = art.get_child(0) as TextureRect if art!=null else null
 		check(photo!=null and photo.texture!=null and art.is_visible_in_tree(),"Illustration visible dans le repli à 720p · "+route)
 		check(app.body.get_child(0).get_meta("immersive_style_applied",false),"Les vraies actions de la page utilisent la DA compacte · "+route)
+		check(app.body.size.x<=app.body_scroll.size.x+1,"Le repli ne rogne pas la largeur utile · "+route)
 		if route=="Finances": await capture("12-finances-1280x720")
 	root.size=Vector2i(2560,1440)
 	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
@@ -298,6 +321,31 @@ func navigation_flow() -> void:
 func dialogs() -> void:
 	app._navigate("Bureau")
 	await settle()
+	var open_notebook: Button = app.find_child("OpenCoachNotebook",true,false)
+	check(open_notebook!=null,"Le Bureau donne accès au carnet personnel")
+	if open_notebook!=null:
+		await click(open_notebook)
+		await settle()
+		var notebook: AcceptDialog = app.get_node_or_null("CoachNotebook")
+		check(notebook!=null and notebook.visible and notebook.find_child("CoachNoteText",true,false)!=null,
+			"Le carnet du Bureau ouvre le vrai éditeur de notes")
+		if notebook!=null:
+			await capture("39-carnet-coach-2560x1440")
+			var editor := notebook.find_child("CoachNoteText",true,false) as TextEdit
+			editor.grab_focus()
+			editor.insert_text_at_caret("Repère de recette")
+			root.size=Vector2i(1280,720)
+			if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+			await create_timer(.17).timeout
+			await settle()
+			check(Rect2i(Vector2i.ZERO,root.size).encloses(Rect2i(notebook.position,notebook.size))
+				and absi(notebook.position.x*2+notebook.size.x-root.size.x)<=2
+				and editor.text=="Repère de recette" and editor.has_focus(),"Carnet centré après resize sans perdre la saisie ni le focus")
+			await capture("40-carnet-coach-1280x720")
+			app._clear_dialogs()
+			root.size=Vector2i(2560,1440)
+			if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+			await settle()
 	await key(KEY_K,true)
 	var palette: AcceptDialog = app.get_node_or_null("NavigationPalette")
 	check(palette!=null and palette.visible,"Ctrl K ouvre la palette native")
@@ -475,10 +523,10 @@ func run() -> void:
 			check(tile.size.x >= 300, "Largeur utile en 1440p : " + id)
 			check(tile.get_global_rect().end.y <= app.body_scroll.get_global_rect().end.y + 1, "Tuile entièrement visible en 1440p : " + id)
 		check(app.find_child("Art_office_hero", true, false) != null, "Image originale présente dans le Bureau réel")
-		var positions := {"OfficeFixture":Vector2(280,220), "OfficeDecisions":Vector2(1656,220), "OfficeGroup":Vector2(280,654), "OfficeStandings":Vector2(718,654), "OfficeJournal":Vector2(1418,654), "OfficeRecruitment":Vector2(1982,654), "OfficeTimeline":Vector2(280,1118)}
-		for id in positions:
-			var tile: Control = app.find_child(id,true,false)
-			check(tile != null and tile.global_position.distance_to(positions[id]) <= 1.5, "Coordonnées exactes du gabarit : " + id + " " + str(tile.global_position if tile != null else Vector2.ZERO))
+		reference_rects({"OfficeFixture":Rect2(280,220,1360,418), "OfficeDecisions":Rect2(1656,220,872,418),
+			"OfficeGroup":Rect2(280,654,422,448), "OfficeStandings":Rect2(718,654,684,448),
+			"OfficeJournal":Rect2(1418,654,548,448), "OfficeRecruitment":Rect2(1982,654,546,448),
+			"OfficeTimeline":Rect2(280,1118,2248,226)})
 		await capture("01-bureau-2560x1440")
 		app._navigate("Effectif")
 		shell.render(app)
@@ -486,6 +534,9 @@ func run() -> void:
 		var roster: Control = app.find_child("ImmersiveRosterTable", true, false)
 		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": check(roster != null, "Table Effectif dense de la référence 1440p")
 		if roster != null:
+			reference_rects({"ImmersiveRosterTable":Rect2(280,267,1704,1068), "PlayerDossier":Rect2(2000,207,528,1128),
+				"RosterTab0":Rect2(280,207,199,42), "RosterSearch":Rect2(298,283,355,40), "RosterSearchGlyph":Rect2(311,293,21,21),
+				"SelectedPlayerCard":Rect2(2000,207,528,432), "OpenPlayerFull":Rect2(2019,587,489,36)})
 			var list: VBoxContainer = app.find_child("ImmersiveRosterRows", true, false)
 			var row_buttons: Array = list.get_children().filter(func(node:Node):return node is Button)
 			check(row_buttons.size() == mini(24,app.model.squad.size()), "24 lignes du gabarit approuvé, pagination des joueurs supplémentaires")
@@ -546,6 +597,11 @@ func run() -> void:
 		var tactics: Control = app.find_child("ImmersiveTactics",true,false)
 		check(tactics != null,"Tactique native du gabarit approuvé")
 		if tactics != null:
+			reference_rects({"TacticsPitch":Rect2(280,264,1070,906), "TacticsIdentity":Rect2(1366,264,548,906),
+				"TacticsBench":Rect2(1930,264,598,529), "TacticsSelectedPlayer":Rect2(1930,809,598,361),
+				"TacticsMatchup0":Rect2(280,1186,546,158), "TacticsMatchup1":Rect2(842,1186,546,158),
+				"TacticsMatchup2":Rect2(1404,1186,546,158), "TacticsVigilance":Rect2(1966,1186,562,158),
+				"TacticsSave":Rect2(1983,121,248,48), "TacticsValidate":Rect2(2247,121,281,48)})
 			for slot in 23:
 				var jersey: Button = app.find_child("LineupSlot%02d" % (slot+1),true,false)
 				check(jersey != null,"Poste réel disponible : "+str(slot+1))

@@ -24,7 +24,10 @@ func button(node: Node, text: String) -> Button:
 func page_for(route: String) -> Control:
 	var page := named(app,ROUTES[route]) as Control
 	if page!=null:return page
-	var alternatives := {"Composition":["ImmersiveTactics"],"Préparation":["ImmersivePreparation","ImmersiveTraining"]}
+	var alternatives := {
+		"Composition":["ImmersiveTactics"], "Préparation":["ImmersivePreparation","ImmersiveTraining"],
+		"Finances":["ImmersiveFinance"], "Club":["ImmersiveClub"],
+	}
 	for id: String in alternatives.get(route,[]):
 		page=named(app,id) as Control
 		if page!=null:return page
