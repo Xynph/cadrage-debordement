@@ -33,8 +33,8 @@ func check(condition: bool, message: String) -> void:
 	checks += 1
 	if not condition: failures.append(message); printerr("FAIL: " + message)
 
-func click(control: Control) -> void:
-	var point := control.get_global_transform()*(control.size/2.0)
+func click(control: Control, fraction: Vector2 = Vector2(.5,.5)) -> void:
+	var point := control.get_global_transform()*(control.size*fraction)
 	for down in [true,false]:
 		var event := InputEventMouseButton.new()
 		event.position=point
@@ -43,6 +43,37 @@ func click(control: Control) -> void:
 		event.pressed=down
 		root.push_input(event,true)
 		await process_frame
+
+func key(code: Key, ctrl: bool = false) -> void:
+	var event := InputEventKey.new()
+	event.keycode=code
+	event.ctrl_pressed=ctrl
+	event.pressed=true
+	root.push_input(event,true)
+	await settle()
+
+func entry() -> void:
+	check(app.find_child("ImmersiveWelcome",true,false)!=null,"L’accueil natif utilise la composition immersive")
+	var art: TextureRect = app.find_child("Art_entry_ground",true,false)
+	check(art!=null and art.texture!=null,"Le nouveau stade IA est chargé dans l’accueil")
+	check(app.find_child("EntryResume",true,false)==null,"Aucune reprise proposée sans carrière")
+	await capture("00-accueil-2560x1440")
+	var new_career: Button = app.find_child("EntryNewCareer",true,false)
+	if new_career==null: return
+	await click(new_career)
+	await settle()
+	check(app.route=="Création" and app.find_child("CreationStart",true,false)!=null,"Nouvelle carrière ouvre le vrai catalogue et l’action de création")
+	await capture("07-creation-2560x1440")
+	app._navigate("Accueil")
+	await settle()
+	var packs: Button = app.find_child("EntryPacks",true,false)
+	await click(packs)
+	await settle()
+	check(app.route=="Packs" and app.pack_manager.scope=="creation" and app.find_child("CarnetPacks",true,false)!=null,"L’atelier des identités conserve le gestionnaire de packs de création")
+	await capture("08-packs-2560x1440")
+	app.pack_manager.back()
+	await settle()
+	check(app.route=="Accueil","Retour depuis l’atelier conserve le parcours d’entrée")
 
 func reception() -> void:
 	app._navigate("Bureau")
@@ -120,6 +151,165 @@ func resize_shell() -> void:
 		if size in [Vector2i(1280,720),Vector2i(1440,900)]:
 			await capture("06-bureau-redimensionne-%dx%d" % [size.x,size.y])
 
+func families() -> void:
+	var training: Button = app.find_child("Nav_Entraînement",true,false)
+	await click(training)
+	await settle()
+	var week: Control = app.find_child("ImmersiveTraining",true,false)
+	check(week!=null and app.management_ui.preparation.tab==2,"Rail Entraînement raccordé à la vraie préparation")
+	if week!=null:
+		await capture("09-entrainement-2560x1440")
+		await click(week.find_child("TrainingBackToPreparation",true,false))
+		await settle()
+		check(app.route=="Préparation" and app.management_ui.preparation.tab==0,"Retour au dossier de préparation")
+	for item: Array in [
+		["Recrutement","ImmersiveMarketRows","10-recrutement"],
+		["Club","ClubStadium","11-club"],
+		["Finances","FinanceLedgerPlot","12-finances"],
+		["Classements","StandingsRows","13-competitions"],
+		["Calendrier","CarnetCalendar","14-calendrier"],
+		["Formation","AcademyImmersiveRows","15-formation"],
+		["Staff","CarnetStaff","16-staff"],
+		["Travail du club","CarnetSupport","17-travail-du-club"],
+		["Stratégie","CarnetStrategie","18-strategie"],
+		["Préparation","ImmersivePreparation","20-preparation"],
+		["Plan de jeu","ImmersivePlaybook","21-plan-de-jeu"],
+		["Centre","ImmersiveCentre","22-centre"],
+		["Presse","PressDeskTitle","23-presse"],
+		["Rivalités","RivalryWorkspace","24-rivalites"],
+		["Vestiaire","ImmersiveLockerRoom","25-vestiaire"],
+		["Carrière","ImmersiveManagerCareer","26-carriere"]
+	]:
+		app._navigate(item[0])
+		await settle()
+		var view: Control = app.find_child(item[1],true,false)
+		check(view!=null and view.is_visible_in_tree(),"Gabarit raccordé au vrai parcours · "+str(item[0]))
+		if view!=null: await capture(item[2]+"-2560x1440")
+	app._navigate("Finances")
+	await settle()
+	var wages: Button = app.find_child("FinanceTab_wages",true,false)
+	check(wages!=null,"Onglet des salaires actif en Finances")
+	if wages!=null:
+		await click(wages)
+		await settle()
+		check(app.find_child("FinanceLedgerPlot",true,false)==null,"Les salaires ont leur propre composition")
+		await capture("19-finances-salaires-2560x1440")
+	app._navigate("Classements")
+	await settle()
+	var calendar: Button = app.find_child("Section_Calendrier",true,false)
+	if calendar!=null: await click(calendar)
+	await settle()
+	check(app.route=="Calendrier","Compétitions ouvre le calendrier avec son onglet")
+	app._navigate("Composition")
+	await settle()
+	var set_piece: Button = app.find_child("TacticsTab2",true,false)
+	if set_piece!=null: await click(set_piece)
+	await settle()
+	check(app.route=="Plan de jeu" and app.find_child("PlaybookTabs",true,false).current_tab==1,"Phases arrêtées ouvre la bonne sous-vue tactique")
+
+func dialogs() -> void:
+	app._navigate("Bureau")
+	await settle()
+	await key(KEY_K,true)
+	var palette: AcceptDialog = app.get_node_or_null("NavigationPalette")
+	check(palette!=null and palette.visible,"Ctrl K ouvre la palette native")
+	if palette!=null and palette.visible:
+		await capture("31-recherche-2560x1440")
+		var search: LineEdit = palette.find_child("NavigationSearch",true,false)
+		search.text="entrainement"
+		search.text_changed.emit(search.text)
+		await key(KEY_ENTER)
+		check(app.route=="Préparation" and app.find_child("ImmersiveTraining",true,false)!=null,"Recherche et Entrée ouvrent le véritable menu Entraînement")
+	app.settings()
+	await settle()
+	var preferences: AcceptDialog = app.get_node_or_null("PreferencesDialog")
+	check(preferences!=null and preferences.visible and preferences.find_child("PreferencesMotion",true,false)!=null,"Paramètres natifs et mode calme disponibles")
+	if preferences!=null and preferences.visible:
+		await capture("32-parametres-2560x1440")
+		var tabs: TabContainer = preferences.find_child("PreferencesTabs",true,false)
+		tabs.current_tab=1
+		await settle()
+		check(tabs.find_child("PreferencesInterfaceVolume",true,false).is_visible_in_tree() and tabs.find_child("PreferencesStadiumVolume",true,false).is_visible_in_tree(),"L’onglet Son conserve les deux volumes indépendants")
+		preferences.canceled.emit()
+		await settle()
+	app.pause_menu()
+	await settle()
+	var pause: AcceptDialog = app.get_node_or_null("ImmersivePauseMenu")
+	check(pause!=null and pause.visible,"Menu carrière et sauvegardes ouvrable")
+	if pause!=null and pause.visible:
+		await capture("33-menu-carriere-2560x1440")
+		pause.custom_action.emit("export")
+		await settle()
+		check(app.file_dialog.visible and not app.import_mode,"Exporter ouvre le vrai choix du fichier")
+		app.file_dialog.hide()
+		await settle()
+	await key(KEY_F1)
+	check(app.coach.expanded,"F1 ouvre l’aide du coach")
+	app.coach.close()
+	await key(KEY_S,true)
+	await worker()
+	check(app.last_command=="save" and app.bridge.last_response_ok,"Ctrl S sauvegarde via le moteur")
+
+func footer_feedback() -> void:
+	root.size=Vector2i(1280,720)
+	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+	await create_timer(.26).timeout
+	await settle()
+	var button: Button = app.find_child("DecisionFeedbackButton",true,false)
+	var dock: Control = app.find_child("CoachCompactDock",true,false)
+	check(dock!=null and dock.get_global_rect().size.x>=100,"Place physique pour Gabi en 720p")
+	check(button!=null and not button.disabled and not dock.get_global_rect().intersects(button.get_global_rect()),"Le reçu et le coach ont des cibles distinctes en 720p")
+	if button!=null:
+		await click(button)
+		await settle()
+		var feedback: AcceptDialog = app.get_node_or_null("DecisionFeedbackDialog")
+		check(feedback!=null and feedback.visible,"Le premier clic réel ouvre le reçu, même avec Gabi")
+		if feedback!=null: feedback.queue_free()
+	root.size=Vector2i(2560,1440)
+	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+	await settle()
+
+func match_flow() -> void:
+	app._navigate("Match")
+	await settle()
+	var frame: Control = app.find_child("ImmersiveMatchPitch",true,false)
+	check(frame!=null and app.find_child("Art_match_tunnel",true,false)!=null,"Avant-match illustré dans le vrai écran de rencontre")
+	if frame==null: return
+	var scene: Node3D = app.match_view
+	var match_ui: Control = app.match_screen
+	await capture("27-avant-match-2560x1440")
+	await click(app.pause_button)
+	await worker()
+	check(app.model.live is Dictionary and app.match_view==scene and not match_ui.opening.visible,"Coup d’envoi réel conserve la scène et retire l’ouverture")
+	if not app.model.live is Dictionary: return
+	await command("tick",{"steps":12})
+	await command("pause",{"paused":true})
+	check(match_ui.broadcast.visible and app.model.live.paused,"Bandeau du direct reflète la vraie pause")
+	await capture("28-match-direct-2560x1440")
+	var journal_tab: Button
+	for button: Button in match_ui._tab_controls:
+		if button.get_meta("match_tab")=="Journal": journal_tab=button; break
+	if journal_tab!=null: await click(journal_tab)
+	await settle()
+	check(match_ui.journal.visible,"Le journal du match reste accessible au clic")
+	var score_before: Array = app.model.live.score.duplicate()
+	root.size=Vector2i(1280,720)
+	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+	await create_timer(.16).timeout
+	await settle()
+	check(app.match_screen==match_ui and app.match_view==scene and match_ui.journal.visible and app.model.live.score==score_before,"Resize du direct préserve scène, onglet et score")
+	check(Rect2(Vector2.ZERO,Vector2(root.size)).grow(1).encloses(frame.get_global_transform()*Rect2(Vector2.ZERO,frame.size)),"Terrain visible en 720p après resize")
+	await capture("29-journal-direct-1280x720")
+	root.size=Vector2i(2560,1440)
+	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+	await settle()
+	await command("delegate")
+	check(app.model.live.finished and match_ui.result_strip.visible and not app.match_finish.disabled,"La fin du vrai match expose résultat et validation")
+	await capture("30-resultat-2560x1440")
+	await click(app.match_finish)
+	await worker()
+	check(app.model.live==null and not app.model.history.is_empty(),"La validation du résultat alimente l’historique de carrière")
+
 func run() -> void:
 	check(ResourceLoader.exists("res://ui/immersive08/components.gd"), "Composants natifs de la DA approuvée disponibles")
 	if not failures.is_empty():
@@ -153,6 +343,7 @@ func run() -> void:
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
 	await worker()
+	if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await entry()
 	await command("new_career", {"club":0, "mode":"fiction"})
 	app._navigate("Bureau")
 	await settle()
@@ -266,8 +457,16 @@ func run() -> void:
 		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office":
 			await reception()
 			await resize_shell()
+			await families()
 		check(bytes == FileAccess.get_file_as_bytes(disk), "Rendu et navigation ne modifient aucun octet du profil")
+		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await dialogs()
 		app._navigate("Composition")
+		await settle()
+		var fly_half: Button=app.find_child("LineupSlot10",true,false)
+		await click(fly_half,Vector2(.97,.92))
+		await settle()
+		check(app.selected_slot==9 and app.find_child("LineupCandidates",true,false)!=null,"Le bas du maillot 10 ouvre son poste malgré l’enveloppe voisine")
+		app._clear_dialogs()
 		await settle()
 		var original_defense:String=app.model.tactics.defense
 		var attack:Button=app.find_child("TacticsAttack_occupation",true,false)
@@ -275,6 +474,7 @@ func run() -> void:
 		await worker()
 		check(app.bridge.last_response_ok and app.model.tactics.attack=="occupation","Le bouton d’attaque commande réellement le moteur")
 		check(app.model.tactics.defense==original_defense,"Changer l’attaque conserve la défense")
+		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await footer_feedback()
 		app.find_child("TacticsSummary1",true,false).pressed.emit()
 		await settle()
 		var pressure:Button=app.find_child("TacticsDefense_pression",true,false)
@@ -312,6 +512,7 @@ func run() -> void:
 		await worker()
 		await command("export")
 		check(saved==app.model.meta.exportText,"Reprise native : choix tactiques, composition et charge exactement conservés")
+		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await match_flow()
 	app.queue_free()
 	await settle()
 	print("immersive08 : ", checks, " contrôles, ", failures.size(), " échecs")

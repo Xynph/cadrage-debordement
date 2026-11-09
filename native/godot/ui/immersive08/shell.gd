@@ -7,6 +7,20 @@ const SquadCanvas = preload("res://ui/immersive08/squad_canvas.gd")
 const TacticsCanvas = preload("res://ui/immersive08/tactics_canvas.gd")
 const PlayerCanvas = preload("res://ui/immersive08/player_canvas.gd")
 const Reception = preload("res://ui/immersive08/reception_canvas.gd")
+const Training = preload("res://ui/immersive08/training_canvas.gd")
+const Academy = preload("res://ui/immersive08/academy_canvas.gd")
+const Recruitment = preload("res://ui/immersive08/recruitment_canvas.gd")
+const Competition = preload("res://ui/immersive08/competition_canvas.gd")
+const ClubCanvas = preload("res://ui/immersive08/club_canvas.gd")
+const FinanceCanvas = preload("res://ui/immersive08/finance_canvas.gd")
+const Preparation = preload("res://ui/immersive08/preparation_canvas.gd")
+const Playbook = preload("res://ui/immersive08/playbook_canvas.gd")
+const Centre = preload("res://ui/immersive08/centre_canvas.gd")
+const Press = preload("res://ui/immersive08/press_canvas.gd")
+const Rivalry = preload("res://ui/immersive08/rivalry_canvas.gd")
+const Locker = preload("res://ui/immersive08/locker_canvas.gd")
+const Career = preload("res://ui/immersive08/career_canvas.gd")
+const MatchCanvas = preload("res://ui/immersive08/match_canvas.gd")
 const G = preload("res://ui/game_skin.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 
@@ -75,11 +89,14 @@ static func render(app: Control) -> bool:
 	var content := C.v(16)
 	content.name = "CareerContent"
 	inset.add_child(content)
-	if app.route=="Effectif" and app.get_meta("immersive08_full_player",false):
+	var canvas_script := _dedicated_page(app,physical.x)
+	var immersive_match: bool = app.route=="Match" and physical.x>=2240
+	if canvas_script!=null or immersive_match or (app.route=="Effectif" and app.get_meta("immersive08_full_player",false)):
+		app.heading=null
 		app.minibar=C.label("",17,C.GOLD);app.minibar.visible=false;content.add_child(app.minibar)
 	else:_heading(content, app)
 	app.PackViews.missing_warning(app,content,"career")
-	_subnavigation(content, app)
+	if canvas_script==null and not immersive_match: _subnavigation(content, app)
 	app.body_scroll = ScrollContainer.new()
 	app.body_scroll.name = "CareerWorkspace"
 	app.body_scroll.follow_focus = true
@@ -89,9 +106,15 @@ static func render(app: Control) -> bool:
 	app.body = C.v(16)
 	C.fill(app.body, true)
 	app.body_scroll.add_child(app.body)
-	if app.route == "Bureau": app.body.add_child(OfficeCanvas.build(app) if physical.x >= 1600 else Office.build(app))
+	if canvas_script!=null:
+		var canvas := Control.new()
+		canvas.custom_minimum_size=Vector2(2248,1244)*C.density
+		C.fill(canvas,true)
+		app.body.add_child(canvas)
+		canvas_script.build(app,canvas)
+	elif app.route == "Bureau": app.body.add_child(OfficeCanvas.build(app) if physical.x >= 1600 else Office.build(app))
 	else: _existing_page(app)
-	_footer(content, app)
+	_footer(content, app, layout)
 	app._update_live_bar()
 	app.call_deferred("_refresh_coach")
 	app.call_deferred("_observe_navigation")
@@ -100,8 +123,42 @@ static func render(app: Control) -> bool:
 static func _fit_layout(root: Control, layout: Control, reference: Vector2) -> void:
 	if root.size.x<=0 or root.size.y<=0: return
 	var factor := minf(root.size.x/reference.x, root.size.y/reference.y)
+	var base_footer := C.px(44)
+	if base_footer*factor<38.0 and root.size.y>38.0:
+		factor=minf(factor,(root.size.y-38.0)/(reference.y-base_footer))
 	layout.scale = Vector2.ONE*factor
 	layout.size = root.size/factor
+	if layout.has_meta("immersive_footer"):
+		var footer: Control = layout.get_meta("immersive_footer")
+		footer.custom_minimum_size.y=maxf(base_footer,38.0/factor)
+		_position_footer(footer)
+
+static func _is_training(app: Control) -> bool:
+	return app.route=="Préparation" and app.management_ui.get("preparation",{}).get("tab",0)==2
+
+static func open_training(app: Control) -> void:
+	if not app.management_ui.get("preparation") is Dictionary:
+		app.management_ui.preparation={"tab":2,"outer":[0,0,0],"attack":0,"defense":0,"focus":["","",""]}
+	else: app.management_ui.preparation.tab=2
+	app._navigate("Préparation")
+
+static func _dedicated_page(app: Control, width: int) -> Script:
+	if width<2240: return null
+	if _is_training(app): return Training
+	match app.route:
+		"Préparation": return Preparation
+		"Plan de jeu": return Playbook
+		"Formation": return Academy
+		"Centre": return Centre
+		"Recrutement": return Recruitment
+		"Classements", "Calendrier": return Competition
+		"Presse": return Press
+		"Rivalités": return Rivalry
+		"Club", "Staff", "Travail du club", "Stratégie": return ClubCanvas
+		"Finances": return FinanceCanvas
+		"Vestiaire": return Locker
+		"Carrière": return Career
+	return null
 
 static func _sidebar(parent: Node, app: Control) -> void:
 	var rail:=Control.new();rail.name="ImmersiveSidebar";rail.custom_minimum_size.x=C.px(248);rail.size_flags_vertical=Control.SIZE_EXPAND_FILL
@@ -126,16 +183,15 @@ static func _sidebar(parent: Node, app: Control) -> void:
 		var entry:Array=names[i]
 		var destination:String=entry[2]
 		var selected:bool=app.route==destination
-		if i==3:selected=app.route in ["Composition","Plan de jeu"]
+		if i==3:selected=app.route in ["Composition","Plan de jeu","Match"] or (app.route=="Préparation" and not _is_training(app))
+		if i==4:selected=_is_training(app)
 		if i==6:selected=app.route in ["Club","Staff","Travail du club","Stratégie"]
 		if i==8:selected=app.route in ["Classements","Calendrier","Presse","Rivalités"]
 		if i==9:selected=app.route in ["Formation","Centre"]
 		var y:=394+i*57
 		var action:=D.button(rail,Rect2(7,y,234,49),entry[1],func():
-			if destination=="Préparation":
-				if not app.management_ui.get("preparation") is Dictionary:app.management_ui.preparation={"tab":2,"outer":[0,0,0],"attack":0,"defense":0,"focus":["","",""]}
-				else:app.management_ui.preparation.tab=2
-			app._navigate(destination),selected,"",false,app.accent,"Nav_"+entry[1])
+			if destination=="Préparation": open_training(app)
+			else: app._navigate(destination),selected,"",false,app.accent,"Nav_"+entry[1])
 		action.add_theme_font_override("font",C.DISPLAY);action.add_theme_font_size_override("font_size",maxi(12,C.px(26)))
 		var style:StyleBox=action.get_theme_stylebox("normal").duplicate() if selected else C.box(Color.TRANSPARENT,Color.TRANSPARENT,4,0)
 		style.content_margin_left=C.px(58);action.add_theme_stylebox_override("normal",style)
@@ -185,6 +241,7 @@ static func _topbar(parent: Node, app: Control) -> void:
 	D.text(panel,103,48,G.club_name(app.model.club),24,C.MUTED,500,170)
 	D.text(panel,278,48,"›",26,C.MUTED)
 	var route_caption:String="Tactique" if app.route=="Composition" else app.route
+	if _is_training(app): route_caption="Entraînement"
 	if app.route=="Effectif" and app.get_meta("immersive08_full_player",false):route_caption="Fiche joueur : "+str(P.player(app.model,app.selected_player).get("name",""))
 	D.text(panel,307,48,route_caption,25,C.IVORY,700,660)
 	var search := D.button(panel,Rect2(1264,19,475,42),"Rechercher un joueur, un club…",func():app.navigation_controller.open_palette(),false,"",true,app.accent,"ImmersiveSearch")
@@ -224,6 +281,7 @@ static func _heading(parent: Node, app: Control) -> void:
 	var rank := G.n(app.model.club.get("rank", "—"))
 	var metrics: Array = [[rank+("er" if rank=="1" else "e")+" · "+G.n(app.model.club.get("points",0))+" pts","trophy",C.GOLD],[str(values.available)+" disponibles","people",C.MINT],[str(values.injured)+" blessés","heart",C.ALERT],["3 décisions","calendar",C.AMBER]]
 	if app.route=="Effectif": metrics=[[str(values.total)+" joueurs","people",C.GOLD],metrics[1],metrics[2],["Niveau moyen "+str(values.rating),"star",C.GOLD]]
+	elif app.route not in ["Bureau","Composition"]: metrics=[]
 	if app.route=="Composition":
 		var selected:int=app.model.get("selection",{}).get("slots",[]).filter(func(slot:Dictionary):return slot.get("playerId")!=null).size()
 		D.chip(row,Rect2(1140,21,288,48),str(selected)+" joueurs sélectionnés",C.MINT)
@@ -248,7 +306,7 @@ static func _heading(parent: Node, app: Control) -> void:
 	parent.add_child(app.minibar)
 
 static func _subnavigation(parent: Node, app: Control) -> void:
-	if app.route in ["Effectif","Composition"]: return
+	if app.route=="Composition" or (app.route=="Effectif" and app.get_window().size.x>=1600): return
 	for group: Array in GROUPS:
 		if app.route not in group[2] or group[2].size() < 2: continue
 		var row := C.h(8)
@@ -262,25 +320,43 @@ static func _subnavigation(parent: Node, app: Control) -> void:
 			row.add_child(action)
 		return
 
-static func _footer(parent: Node, app: Control) -> void:
+static func _footer(parent: Node, app: Control, layout: Control) -> void:
 	var row := Control.new()
-	row.custom_minimum_size.y = C.px(44)
+	row.name = "ImmersiveFooter"
+	row.custom_minimum_size.y = maxf(C.px(44),38.0/layout.scale.y)
 	C.fill(row)
 	parent.add_child(row)
+	layout.set_meta("immersive_footer",row)
 	D.line(row,Vector2.ZERO,Vector2(2248,0),Color(C.LINE,.7))
 	app.status = D.text(row,2,36,app._settled_status_text(),17,C.ALERT if app._status_has_error() else C.MUTED,500,900)
-	if app.get_window().size.x>=1900: D.text(row,782,36,"Ctrl S  Sauvegarder     ·     Ctrl K  Rechercher     ·     F1  Aide",17,C.FAINT,400,800,HORIZONTAL_ALIGNMENT_LEFT,true)
+	var shortcuts := D.text(row,782,36,"Ctrl S  Sauvegarder     ·     Ctrl K  Rechercher     ·     F1  Aide",17,C.FAINT,400,800,HORIZONTAL_ALIGNMENT_LEFT,true)
+	shortcuts.name="ImmersiveShortcuts"
 	if app.decision_feedback != null:
-		var feedback: Control = app.decision_feedback.control()
+		var feedback: Button = app.decision_feedback.control()
+		feedback.add_theme_font_override("font",C.DISPLAY)
 		row.add_child(feedback)
-		D.place(feedback,Rect2(1900,9,180,34))
 	var dock := Control.new()
 	dock.name = "CoachCompactDock"
-	dock.custom_minimum_size = Vector2(C.px(144), C.px(34))
 	dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dock.visible = is_instance_valid(app.coach)
 	row.add_child(dock)
-	D.place(dock,Rect2(2104,9,144,34))
+	row.resized.connect(_position_footer.bind(row))
+	_position_footer(row)
+
+static func _position_footer(row: Control) -> void:
+	var factor := row.get_global_transform().get_scale().x
+	if factor<=0 or row.size.x<=0: return
+	var dock: Control = row.get_node_or_null("CoachCompactDock")
+	if dock==null: return
+	dock.size=Vector2(144,34)/factor
+	dock.position=Vector2(row.size.x-dock.size.x,row.size.y-dock.size.y-1.0/factor)
+	var feedback: Button = row.get_node_or_null("DecisionFeedbackButton")
+	if feedback!=null:
+		feedback.size=Vector2(maxf(C.px(180),146.0/factor),maxf(C.px(34),30.0/factor))
+		feedback.position=Vector2(dock.position.x-feedback.size.x-maxf(C.px(24),12.0/factor),row.size.y-feedback.size.y-1.0/factor)
+		feedback.add_theme_font_size_override("font_size",maxi(C.px(17),roundi(13.0/factor)))
+	var shortcuts: Label = row.get_node_or_null("ImmersiveShortcuts")
+	if shortcuts!=null: shortcuts.visible=row.size.x*factor>=1650
 
 static func _existing_page(app: Control) -> void:
 	match app.route:
@@ -307,7 +383,7 @@ static func _existing_page(app: Control) -> void:
 		"Travail du club": app.body.add_child(app.SupportViews.build(app))
 		"Carrière": app.body.add_child(app.ManagerCareerViews.build(app))
 		"Match":
-			app.match_screen = app.MatchUI.new()
+			app.match_screen = MatchCanvas.new() if app.get_window().size.x>=2240 else app.MatchUI.new()
 			app.match_screen.app = app
 			app.body.add_child(app.match_screen)
 			app.match_page = app.match_screen

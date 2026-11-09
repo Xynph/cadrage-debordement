@@ -2,6 +2,7 @@ extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
+const S = preload("res://ui/data_semantics.gd")
 
 static func _card(parent: Node, id: String, title: String, height: int, ratio: float = 1.0) -> PanelContainer:
 	var frame := C.card(title, Vector2(0, height))
@@ -165,7 +166,9 @@ static func _standings(parent: VBoxContainer, app: Control) -> void:
 		var own: bool = club.get("id") == app.model.club.id
 		tile.add_theme_stylebox_override("panel", C.box(Color(app.accent, .22) if own else Color.TRANSPARENT, Color.TRANSPARENT, 3, 4))
 		parent.add_child(tile)
+		tile.add_child(standing_action(app,club))
 		var row := C.h(8)
+		row.mouse_filter=Control.MOUSE_FILTER_IGNORE
 		tile.add_child(row)
 		var values: Array = [G.n(club.get("rank", "—")), G.club_name(club), G.n(club.get("played", 0)), "%+d" % (int(club.get("pf", 0))-int(club.get("pa", 0))), G.n(club.get("points", 0))]
 		for i in values.size():
@@ -177,6 +180,23 @@ static func _standings(parent: VBoxContainer, app: Control) -> void:
 			row.add_child(cell)
 	if rows.is_empty(): parent.add_child(C.wrap("Le classement sera disponible lorsque le championnat sera ouvert.", 20))
 	_link(parent, "OfficeStandingsAction", "Classement complet  →", app, "Classements")
+
+static func standing_action(app: Control, club: Dictionary) -> Button:
+	var action := Button.new()
+	action.name="OfficeStandingRow_"+G.n(club.get("id",""))
+	action.flat=true
+	action.set_meta("club_id",club.get("id"))
+	for key in ["won","drawn","lost"]: action.set_meta(key,S.count_text(club.get(key)))
+	action.tooltip_text="%s\nVictoires %s  ·  Nuls %s  ·  Défaites %s\nOuvrir le classement complet" % [G.club_name(club),action.get_meta("won"),action.get_meta("drawn"),action.get_meta("lost")]
+	action.accessibility_name=action.tooltip_text.replace("\n"," · ")
+	var focus := C.box(Color(C.MINT,.07),C.GOLD,4,0)
+	focus.set_border_width_all(2)
+	action.add_theme_stylebox_override("focus",focus)
+	action.add_theme_stylebox_override("hover",C.box(Color(C.MINT,.07),Color(C.MINT,.68),4,0))
+	action.pressed.connect(func():
+		app.table_division=str(app.model.meta.get("leagueId",app.table_division))
+		app._navigate("Classements"))
+	return action
 
 static func _journal(parent: VBoxContainer, app: Control) -> void:
 	var messages: Array = app.model.get("messages", [])

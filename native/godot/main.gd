@@ -2,6 +2,9 @@ extends Control
 
 const G = preload("res://ui/game_skin.gd")
 const Immersive = preload("res://ui/immersive08/shell.gd")
+const ImmersiveEntry = preload("res://ui/immersive08/entry_canvas.gd")
+const ImmersiveDialogs = preload("res://ui/immersive08/dialogs.gd")
+const ImmersiveStyle = preload("res://ui/immersive08/legacy_style.gd")
 const Entry = preload("res://ui/entry_screens.gd")
 const ClubViews = preload("res://ui/club_views.gd")
 const SquadViews = preload("res://ui/squad_views.gd")
@@ -106,7 +109,7 @@ func _ready() -> void:
 	timer.timeout.connect(_live_tick)
 	add_child(timer)
 	file_dialog = FileDialog.new()
-	file_dialog.theme=G.T.paper()
+	file_dialog.theme=ImmersiveStyle.theme(accent)
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	file_dialog.filters = PackedStringArray(["*.json ; Carrière Oval Legacy 27"])
 	file_dialog.file_selected.connect(_file_selected)
@@ -115,7 +118,7 @@ func _ready() -> void:
 	pack_manager = load("res://pack_manager.gd").new()
 	pack_manager.app = self
 	add_child(pack_manager)
-	pack_manager.picker.theme=G.T.paper()
+	pack_manager.picker.theme=ImmersiveStyle.theme(accent)
 	_trace_startup("pack_manager.ready")
 	bridge = load("res://engine_bridge.gd").new()
 	add_child(bridge)
@@ -357,20 +360,13 @@ func _render(remember_ui: bool = true) -> void:
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root_content.add_child(bg)
 	if route == "Accueil":
-		var home := Entry.home(self)
-		_entry_workspace(home)
+		_entry_workspace(ImmersiveEntry.home(self))
 		return
 	if route == "Création":
-		var m := G.margin(12)
-		m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		_entry_workspace(m)
-		m.add_child(Entry.creation(self))
+		_entry_workspace(ImmersiveEntry.workspace(self,Entry.creation(self),true))
 		return
 	if route == "Packs":
-		var margin := G.margin(12)
-		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		_entry_workspace(margin)
-		margin.add_child(PackViews.page(self))
+		_entry_workspace(ImmersiveEntry.workspace(self,PackViews.page(self),false))
 		return
 	if not _has_career():
 		route = "Accueil"
@@ -681,9 +677,7 @@ func confirm(title: String, text: String, callback: Callable) -> void:
 
 func _prepare_dialog(dialog: AcceptDialog, width: int) -> void:
 	# Configure wrapping before text/insertion can queue an oversized minimum.
-	dialog.theme = G.T.paper()
-	dialog.min_size = Vector2i(width, 0)
-	dialog.dialog_autowrap = true
+	ImmersiveDialogs.prepare(dialog,width,accent)
 	dialog.visibility_changed.connect(func():
 		if not dialog.visible: call_deferred("_refresh_coach"))
 
@@ -692,9 +686,10 @@ func pause_menu() -> void:
 	if not _live().is_empty() and not _live().get("paused",false) and not _live().get("finished",false):
 		if not _command("pause",{"paused":true}): return
 	var d := AcceptDialog.new()
-	_prepare_dialog(d, 720)
+	d.name = "ImmersivePauseMenu"
+	_prepare_dialog(d, 820)
 	d.title = "Votre carrière"
-	d.dialog_text = "Sauvegarde automatique dans un profil indépendant.\n" + _profile_path()
+	ImmersiveDialogs.pause_content(d,self)
 	for pair in [["Accueil","home"],["Exporter","export"],["Importer","import"],["Paramètres","settings"],["Quitter","quit"]]: d.add_button(pair[0],false,pair[1])
 	d.custom_action.connect(func(action: String):
 		d.hide(); d.queue_free()
@@ -706,7 +701,9 @@ func pause_menu() -> void:
 			"quit": request_quit()
 	)
 	add_child(d)
-	d.popup_centered(Vector2i(720,190))
+	d.confirmed.connect(d.queue_free)
+	d.canceled.connect(d.queue_free)
+	d.popup_centered(Vector2i(820,370))
 
 func settings() -> void:
 	preload("res://ui/preferences_dialog.gd").open(self, user_preferences)

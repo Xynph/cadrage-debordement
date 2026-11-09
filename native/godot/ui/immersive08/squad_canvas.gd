@@ -39,6 +39,7 @@ func _build() -> void:
 			state.page=0
 			app.roster_sort=state.sort
 			app._render(),int(state.get("immersive_tab",0))==i,"",true,app.accent,"RosterTab"+str(i))
+	D.button(self,Rect2(1258,0,184,42),"Vestiaire",func():app._navigate("Vestiaire"),false,"people",true,app.accent,"RosterOpenLocker")
 	compare = D.button(self,Rect2(1460,0,244,42),"Comparer la sélection",func():app.SquadViews.comparison(app),false,"",true,app.accent,"OpenComparison")
 	var table := D.panel(self,Rect2(0,60,1704,1068),"","","","ImmersiveRosterTable")
 	var search := LineEdit.new()

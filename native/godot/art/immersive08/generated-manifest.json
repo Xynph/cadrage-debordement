@@ -40,6 +40,66 @@
       "synthetic": true,
       "tool": "built-in image_gen",
       "prompt": "One wide 2:1 cinematic photorealistic editorial sports photograph for the MEDICAL / RECOVERY submenu of a French rugby union management PC game. Original fictional professional rugby club treatment room at dusk, elegant but practical, charcoal and dark forest green fixtures, warm ivory task lighting, subtle gold highlights. A fictional female sports physiotherapist around 40 in a dark green polo calmly checks a seated adult male rugby player's knee mobility, fully clothed in charcoal shorts and a plain dark green training shirt. No injury, blood or distress, a routine recovery session. Ice compression equipment, neatly folded towels, resistance bands, no readable labels. Background window shows an empty rugby training pitch and pine trees in soft rain. Subjects on the right half, quieter darker space on left for separately rendered native game text. Rich realistic anatomy, hands, skin, cloth and interior detail, natural human expressions, premium immersive sports photography. No words, letters, logos, watermark, border, UI or collage. Restrained cinematic anthracite, ivory, forest green palette, plausible professional rugby environment."
+    },
+    {
+      "id": "entry-ground",
+      "file": "entry-ground.png",
+      "source": "exec-d45fc755-a450-4950-af51-0e0f5a1e541d.png",
+      "sourceType": "generated",
+      "source_sha256": "05f8d6c56270effb97ea8d4293580fa44b71dd6771d4c209841bb6bab420ad0b",
+      "crop": [
+        0,
+        0,
+        1672,
+        941
+      ],
+      "width": 1672,
+      "height": 941,
+      "bytes": 2064734,
+      "sha256": "05f8d6c56270effb97ea8d4293580fa44b71dd6771d4c209841bb6bab420ad0b",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Create a wide 16:9, cinematic yet photorealistic establishing photograph for Oval Legacy 27, a fictional professional French rugby union management game. This is an image asset only: no text, no interface, no icons, no visible signs or legible sponsors, no overlays, no mockup. Visual direction: atmospheric dark anthracite editorial sports photography, slightly warm ivory stadium floodlights, pine green and subdued aged gold, grounded French rugby culture. Camera inside a small traditional rugby ground in a mountainous pine valley in southern France, early dawn fog, lush natural pitch with clearly recognizable H-shaped rugby posts, stands lit from beneath, restrained atmosphere. The left third and bottom left should be naturally dark, with open space and soft mist for cream game title readability; the strongest light and the main rugby architecture on the center-right, without bright flare through the far right side where native action cards may overlay. Professional high-contrast sports photo, mist but sharp midground, subtle grain, premium and real, no visible person in foreground, natural perspective. This is a new image."
+    },
+    {
+      "id": "lockerroom",
+      "file": "lockerroom.png",
+      "source": "exec-78960250-04dc-45de-a3d8-898dde86b9de.png",
+      "sourceType": "generated",
+      "source_sha256": "f34d2c009ff046aa5442e4897875cf8b52a33f6958aa1de2f67fec885d728ff3",
+      "crop": [
+        0,
+        0,
+        1774,
+        887
+      ],
+      "width": 1774,
+      "height": 887,
+      "bytes": 1953417,
+      "sha256": "f34d2c009ff046aa5442e4897875cf8b52a33f6958aa1de2f67fec885d728ff3",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "New original wide cinematic 2:1 editorial photograph for the locker-room management submenu of Oval Legacy 27, a fictional French rugby union sports management game. A real-looking professional French XV rugby club dressing room before training, athletes fully clothed in understated dark green and charcoal gear quietly listening to their captain on the right side, pre-session tape and boots neatly on benches, wood lockers and a few non-branded emerald jerseys hung behind. Dark anthracite, forest green, warm ivory task lights and aged gold accents, realistic faces and natural rugby athletes' builds, subtle grain. Composition places the story and players in the right two-thirds and dark negative space on the left for native text. No readable text, logos, numbers, watermark, collage or UI. Elevated sober sports reportage, calm focus and group trust."
+    },
+    {
+      "id": "match-tunnel",
+      "file": "match-tunnel.png",
+      "source": "exec-43a23583-67ac-4864-980c-55222ff25a20.png",
+      "sourceType": "generated",
+      "source_sha256": "da3ab064c6d908c3d79e28035a4b6a333a18c34bb8c209a0527766dce7fd2c03",
+      "crop": [
+        0,
+        0,
+        1774,
+        887
+      ],
+      "width": 1774,
+      "height": 887,
+      "bytes": 2254319,
+      "sha256": "da3ab064c6d908c3d79e28035a4b6a333a18c34bb8c209a0527766dce7fd2c03",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "New standalone cinematic ultrawide 2:1 photorealistic sports photograph for a French rugby union XV PC management game's pre-match page. Seen from behind, a professional fictional XV rugby team in charcoal and dark green warm-up jackets is in the stadium tunnel, about to emerge into warm ivory floodlights and fine rain over the pitch. Several athletic adult players on the right, no discernible faces, no visible numbers or logos. Rich shadows, muted forest and antique-gold details, cold air, authentic French stadium atmosphere, realistic scale. Space on the left is dark concrete with subtle atmospheric detail and open composition to place separately rendered native game text. No UI, words, readable signs, logos, watermarks or border."
     }
   ]
 }

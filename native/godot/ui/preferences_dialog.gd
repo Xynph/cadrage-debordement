@@ -1,5 +1,6 @@
 extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
+const C = preload("res://ui/immersive08/components.gd")
 
 static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	for child in app.get_children():
@@ -7,34 +8,46 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	app._clear_dialogs()
 	var dialog := AcceptDialog.new()
 	dialog.name = "PreferencesDialog"
-	app._prepare_dialog(dialog,720)
+	var width := 880 if app.get_window().size.x>=1920 else 740
+	app._prepare_dialog(dialog,width)
 	dialog.title = "Paramètres"
 	dialog.get_ok_button().text = "FERMER"
-	var content := G.v(8)
-	content.custom_minimum_size = Vector2(660,430)
+	var content := C.v(12)
+	content.custom_minimum_size = Vector2(width-62,436)
 	dialog.add_child(content)
+	var introduction := C.card("")
+	content.add_child(introduction)
+	var masthead := C.h(16)
+	C.content(introduction).add_child(masthead)
+	var description := C.v(5)
+	C.fill(description)
+	masthead.add_child(description)
+	description.add_child(C.label("VOTRE POSTE DE MANAGER",18,C.GOLD,true,700))
+	description.add_child(C.label("Confort de jeu",38,C.IVORY,true,700))
+	description.add_child(C.wrap("Les préférences locales suivent votre profil.",18,C.MUTED))
+	masthead.add_child(C.photo("club-forest",Vector2(230,95)))
 	var tabs := TabContainer.new()
 	tabs.name = "PreferencesTabs"
-	tabs.theme = G.T.paper()
 	G.fill(tabs,true)
 	content.add_child(tabs)
 	var comfort := G.v(9); comfort.name = "Confort"; tabs.add_child(comfort)
 	var sound := G.v(10); sound.name = "Son"; tabs.add_child(sound)
 	var display := G.v(10); display.name = "Affichage"; tabs.add_child(display)
-	comfort.add_child(G.label("Vos préférences sont conservées entre les carrières.",13,G.INK))
+	comfort.add_child(C.label("CAMÉRA ET ACCESSIBILITÉ",20,C.GOLD,true,700))
 	var volume := _volume(comfort,"Volume global","PreferencesVolume")
 	var motion := CheckButton.new()
 	motion.name = "PreferencesMotion"; motion.text = "Mouvement réduit · mode calme"; motion.custom_minimum_size.y = 36
 	comfort.add_child(motion)
-	comfort.add_child(G.label("Caméra tactique fixe et animations décoratives de Gabi figées.\nLes joueurs, les sons et les bulles restent disponibles.",12))
+	comfort.add_child(C.wrap("Le mode calme garde une caméra tactique fixe. Les joueurs, les sons et les bulles restent disponibles.",17,C.MUTED))
 	var camera := _choice(comfort,"Caméra préférée",["TV","Tactique","Action"],"PreferencesCamera")
 	var quality := _choice(comfort,"Qualité de la scène",["Économie","Équilibrée","Détaillée"],"PreferencesQuality")
 	var sound_profile: RefCounted = app.soundscape.preferences if is_instance_valid(app.soundscape) else null
-	sound.add_child(G.label("Réglez séparément les sons d’interface et l’ambiance du stade.\nLe volume global et la voix de Gabi gardent leurs réglages.",13,G.INK))
+	sound.add_child(C.label("MIXAGE DE L’INTERFACE ET DU STADE",20,C.GOLD,true,700))
+	sound.add_child(C.wrap("Les sons d’interface et l’ambiance du stade ont chacun leur volume.",18,C.IVORY))
 	var interface_volume := _volume(sound,"Sons d’interface","PreferencesInterfaceVolume")
 	var stadium_volume := _volume(sound,"Ambiance du stade","PreferencesStadiumVolume")
-	sound.add_child(G.label("0 coupe le canal. L’ambiance accompagne uniquement le direct visible.\nAucune réaction n’est rejouée au retour d’une page.",12))
-	var error := G.wrap("",12,G.ALERT)
+	sound.add_child(C.wrap("0 coupe le canal. L’ambiance accompagne le direct visible. Le volume global et la voix de Gabi gardent leurs réglages.",17,C.MUTED))
+	var error := C.wrap("",18,C.ALERT)
 	error.name = "PreferencesError"
 	error.max_lines_visible = 3
 	error.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -70,7 +83,8 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		refresh.call())
 	var reset := G.button("Réinitialiser ces préférences",func(): profile.reset_defaults(); refresh.call())
 	reset.name = "PreferencesReset"; comfort.add_child(reset)
-	display.add_child(G.label("Choisissez le mode de cette session.",13,G.INK))
+	display.add_child(C.label("TAILLE DE LA FENÊTRE",20,C.GOLD,true,700))
+	display.add_child(C.wrap("Le mode d’affichage s’applique à cette session.",18,C.IVORY))
 	var display_row := G.h(8); display.add_child(display_row)
 	var fullscreen := G.button("Plein écran",func(): DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN),true)
 	fullscreen.name = "PreferencesFullscreen"
@@ -94,7 +108,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	dialog.canceled.connect(dialog.queue_free)
 	app.add_child(dialog)
 	refresh.call()
-	dialog.popup_centered(Vector2i(720,540))
+	dialog.popup_centered(Vector2i(width,600))
 	volume.get_line_edit().call_deferred("grab_focus")
 	return dialog
 

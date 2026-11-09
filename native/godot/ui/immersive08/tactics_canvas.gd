@@ -3,6 +3,12 @@ const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
+
+class JerseyButton extends Button:
+	var density := 1.0
+	func _has_point(point: Vector2) -> bool:
+		var location := point/density
+		return Rect2(50,2,68,55).has_point(location) or Rect2(2,57,164,28).has_point(location)
 static var shirts: Dictionary = {}
 
 class Pitch extends Control:
@@ -49,8 +55,12 @@ static func build(app:Control) -> Control:
 		var captions: Array=["Composition","Consignes","Phases arrêtées","Analyse adverse"]
 		D.button(page,Rect2(i*218,0,206,42),captions[i],func():
 			if i==0:return
+			if i==2:
+				app.management_ui.playbook_tab=1
+				app._navigate("Plan de jeu")
+				return
 			if not app.management_ui.get("preparation") is Dictionary:app.management_ui.preparation={"tab":0,"outer":[0,0,0],"attack":0,"defense":0,"focus":["","",""]}
-			app.management_ui.preparation.tab=0 if i==3 else 2 if i==2 else 1
+			app.management_ui.preparation.tab=0 if i==3 else 1
 			app._navigate("Préparation"),i==0,"",true,app.accent,"TacticsTab"+str(i))
 	var next:Dictionary=app.model.next if app.model.get("next") is Dictionary else {}
 	D.text(page,2248,30,(G.club_name(next.get("home",{}))+" – "+G.club_name(next.get("away",{}))+" · "+str(next.get("label",""))).to_upper(),22,C.MUTED,500,1100,HORIZONTAL_ALIGNMENT_RIGHT)
@@ -66,9 +76,11 @@ static func build(app:Control) -> Control:
 		var slot:int=position[2]-1
 		var person:=_player(app,slot)
 		var selected:bool=app.selected_slot==slot
-		var button:=Button.new()
+		var button:=JerseyButton.new()
+		button.density=C.density
 		button.name="LineupSlot%02d" % (slot+1)
 		button.tooltip_text="Poste %02d · %s · choisir un joueur" % [slot+1,person.get("name","À pourvoir")]
+		button.accessibility_name=button.tooltip_text
 		button.add_theme_stylebox_override("normal",StyleBoxEmpty.new())
 		button.add_theme_stylebox_override("hover",C.box(Color(C.MINT,.1),Color.TRANSPARENT,4,0))
 		button.add_theme_stylebox_override("focus",C.box(Color.TRANSPARENT,C.GOLD,4,0))

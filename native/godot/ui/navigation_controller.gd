@@ -2,6 +2,7 @@ extends Node
 # Session-only reading history. This controller never calls the engine bridge.
 const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/carnet_skin.gd")
+const C = preload("res://ui/immersive08/components.gd")
 const HISTORY_LIMIT := 60
 const RESULT_LIMIT := 12
 var app: Control
@@ -87,6 +88,12 @@ func handle_shortcut(event: InputEvent) -> bool:
 		if event.ctrl_pressed and code == KEY_K: return true
 		return false
 	if _blocked(): return false
+	if code==KEY_S and event.ctrl_pressed and not event.alt_pressed and app._has_career():
+		app._command("save")
+		return true
+	if code==KEY_F1 and not event.ctrl_pressed and not event.alt_pressed:
+		app._open_coach()
+		return true
 	if code == KEY_K and event.ctrl_pressed and not event.alt_pressed:
 		open_palette()
 		return true
@@ -103,8 +110,7 @@ func open_palette() -> void:
 	if not is_instance_valid(_dialog) or _dialog.is_queued_for_deletion(): _build_palette()
 	_search.clear()
 	_refresh_results("")
-	var viewport := app.get_viewport_rect().size
-	_dialog.popup_centered(Vector2i(mini(680, int(viewport.x) - 48), mini(520, int(viewport.y) - 64)))
+	_dialog.popup_centered(_palette_size())
 	call_deferred("_fit_palette")
 	_search.grab_focus()
 
@@ -112,40 +118,48 @@ func _fit_palette() -> void:
 	if not is_instance_valid(_dialog) or not _dialog.visible: return
 	# Wrapping labels can briefly report their height before the first layout.
 	# AcceptDialog keeps that enlarged size even after their minimum has settled.
-	var viewport := app.get_viewport_rect().size
-	_dialog.size = Vector2i(mini(680, int(viewport.x) - 48), mini(520, int(viewport.y) - 64))
+	_dialog.size = _palette_size()
 	_dialog.position = (app.get_window().size - _dialog.size) / 2
+
+func _palette_size() -> Vector2i:
+	var viewport := app.get_viewport_rect().size
+	var desktop := viewport.x>=1920
+	return Vector2i(mini(840 if desktop else 680,int(viewport.x)-48),mini(566 if desktop else 520,int(viewport.y)-64))
 
 func _build_palette() -> void:
 	_dialog = AcceptDialog.new()
 	_dialog.name = "NavigationPalette"
-	app._prepare_dialog(_dialog, mini(680, int(app.get_viewport_rect().size.x) - 48))
+	app._prepare_dialog(_dialog,_palette_size().x)
 	_dialog.title = "Votre carnet · accès rapide"
 	_dialog.get_ok_button().text = "OUVRIR"
-	var content := G.v(10)
-	content.custom_minimum_size.x = 620
+	var content := C.v(12)
+	content.custom_minimum_size.x = _palette_size().x-60
 	_dialog.add_child(content)
-	content.add_child(G.wrap("Menus et joueurs · ↑ ↓ choisir · Entrée ouvrir · Échap fermer", 13))
+	var heading := C.h(11)
+	content.add_child(heading)
+	heading.add_child(C.icon("search",27,C.GOLD))
+	heading.add_child(C.label("ACCÈS RAPIDE",26,C.GOLD,true,700))
+	content.add_child(C.wrap("Menus et joueurs · ↑ ↓ choisir · Entrée ouvrir · Échap fermer",19,C.MUTED))
 	_search = LineEdit.new()
 	_search.name = "NavigationSearch"
 	_search.placeholder_text = "Rechercher un menu, un nom ou un poste…"
 	_search.accessibility_name = "Rechercher un menu ou un joueur"
-	_search.add_theme_color_override("font_placeholder_color", G.MUTED)
-	_search.custom_minimum_size.y = 38
+	_search.add_theme_color_override("font_placeholder_color",C.MUTED)
+	_search.custom_minimum_size.y = maxi(38,C.px(46))
 	content.add_child(_search)
 	_results = ItemList.new()
 	_results.name = "NavigationResults"
 	_results.custom_minimum_size = Vector2(0, 310)
 	_results.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_results.add_theme_font_size_override("font_size", 14)
+	_results.add_theme_font_size_override("font_size",maxi(14,C.px(18)))
 	_results.add_theme_constant_override("v_separation", 8)
-	_results.add_theme_color_override("font_color", G.INK)
-	_results.add_theme_stylebox_override("panel", G.T.box(G.PAPER, 3, G.LINE))
-	_results.add_theme_stylebox_override("selected", G.T.box(Color("dcd0bb"), 3, G.GOLD))
-	_results.add_theme_stylebox_override("selected_focus", G.T.box(Color("dcd0bb"), 3, G.GOLD))
-	_results.add_theme_color_override("font_selected_color", G.INK)
+	_results.add_theme_color_override("font_color",C.IVORY)
+	_results.add_theme_stylebox_override("panel",C.box(C.BG,C.LINE,6,9))
+	_results.add_theme_stylebox_override("selected",C.box(app.accent.darkened(.53),C.GOLD,4,6))
+	_results.add_theme_stylebox_override("selected_focus",C.box(app.accent.darkened(.41),C.GOLD,4,6))
+	_results.add_theme_color_override("font_selected_color",C.IVORY)
 	content.add_child(_results)
-	_count = G.label("", 12, G.MUTED)
+	_count = C.label("",18,C.MUTED)
 	_count.name = "NavigationCount"
 	content.add_child(_count)
 	app.add_child(_dialog)
@@ -168,6 +182,7 @@ func _refresh_results(query: String) -> void:
 		for chapter: Dictionary in app.NAV_CHAPTERS:
 			for route: String in chapter.routes:
 				candidates.append({"kind":"menu", "route":route, "label":"Menu · " + route + " · " + str(chapter.label)})
+		candidates.append({"kind":"training","route":"Préparation","label":"Menu · Entraînement · Équipe"})
 		var seen := {}
 		for source in ["squad", "market"]:
 			var people: Variant = app.model.get(source, [])
@@ -198,6 +213,10 @@ func _activate_selected() -> void:
 	if selected.is_empty(): return
 	var entry: Dictionary = _matches[selected[0]]
 	if not _allowed_route(entry.route): return
+	if entry.kind=="training":
+		_dialog.hide()
+		app.Immersive.open_training(app)
+		return
 	if entry.kind == "squad":
 		if _person("squad", entry.id).is_empty():
 			_refresh_results(_search.text); return

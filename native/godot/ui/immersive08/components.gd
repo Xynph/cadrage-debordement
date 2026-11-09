@@ -70,6 +70,7 @@ static func label(text: Variant, font_size: int = 22, color: Color = IVORY, disp
 	control.add_theme_font_size_override("font_size", maxi(12, px(font_size)))
 	control.add_theme_color_override("font_color", color)
 	control.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	control.set_meta("immersive_style_applied",true)
 	return control
 
 static func wrap(text: Variant, font_size: int = 20, color: Color = MUTED, display: bool = false, weight: int = 600) -> Label:
@@ -108,6 +109,7 @@ static func rule() -> HSeparator:
 
 static func card(title: String = "", minimum: Vector2 = Vector2.ZERO) -> PanelContainer:
 	var frame := PanelContainer.new()
+	frame.set_meta("immersive_style_applied",true)
 	frame.custom_minimum_size = minimum * density
 	frame.add_theme_stylebox_override("panel", box())
 	var content := v(8)
@@ -125,6 +127,7 @@ static func content(frame: Control) -> VBoxContainer:
 
 static func button(text: String, callback: Callable, primary: bool = false, accent: Color = Color("176e49")) -> Button:
 	var control := Button.new()
+	control.set_meta("immersive_style_applied",true)
 	control.text = text
 	control.custom_minimum_size.y = px(46)
 	control.add_theme_font_override("font", BOLD)

@@ -1,7 +1,8 @@
 extends RefCounted
 ## Composants natifs placés sur les gabarits approuvés (coordonnées 2560×1440).
 const C = preload("res://ui/immersive08/components.gd")
-static var surfaces: Dictionary = {}
+const SURFACE_CACHE_LIMIT := 192
+static var surface_textures: Dictionary = {}
 
 static func place(control: Control, rectangle: Rect2) -> Control:
 	control.position = rectangle.position * C.density
@@ -11,16 +12,29 @@ static func place(control: Control, rectangle: Rect2) -> Control:
 static func surface(width: float, height: float, top: Color, bottom: Color, border: Color, radius: int = 8, highlight: bool = true) -> StyleBoxTexture:
 	var w := maxi(1, C.px(width))
 	var h := maxi(1, C.px(height))
-	var key := str([w,h,top,bottom,border,radius,highlight])
-	if surfaces.has(key): return surfaces[key]
-	var shine := '<path d="M12 1H%d" stroke="#b0b8ad" stroke-opacity=".22"/>' % (w-12) if highlight else ""
-	var middle := '<stop offset=".14" stop-color="#101719"/>' if top==Color("162022") and bottom==Color("0d1517") else ""
-	var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#%s"/>%s<stop offset="1" stop-color="#%s"/></linearGradient></defs><rect x=".5" y=".5" width="%d" height="%d" rx="%d" fill="url(#g)" stroke="#%s" stroke-opacity="%f"/>%s</svg>' % [w,h,top.to_html(false),middle,bottom.to_html(false),w-1,h-1,C.px(radius),border.to_html(false),border.a,shine]
-	var image := Image.new()
-	image.load_svg_from_string(svg)
+	var r := C.px(radius)
+	# Les pixels horizontaux du dégradé sont constants entre les deux bords.
+	# Garder les coins et les extrémités du reflet à leur résolution d’origine.
+	var edge := maxi(r + 2, 13 if highlight else 2)
+	var strip_width := edge * 2 + 3
+	var source_width := mini(w, strip_width)
+	var key := str([source_width, h, top, bottom, border, r, highlight])
+	if not surface_textures.has(key):
+		var shine := '<path d="M12 1H%d" stroke="#b0b8ad" stroke-opacity=".22"/>' % (source_width - 12) if highlight else ""
+		var middle := '<stop offset=".14" stop-color="#101719"/>' if top == Color("162022") and bottom == Color("0d1517") else ""
+		var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#%s"/>%s<stop offset="1" stop-color="#%s"/></linearGradient></defs><rect x=".5" y=".5" width="%d" height="%d" rx="%d" fill="url(#g)" stroke="#%s" stroke-opacity="%f"/>%s</svg>' % [source_width, h, top.to_html(false), middle, bottom.to_html(false), source_width - 1, h - 1, r, border.to_html(false), border.a, shine]
+		var image := Image.new()
+		image.load_svg_from_string(svg)
+		if surface_textures.size() >= SURFACE_CACHE_LIMIT: surface_textures.erase(surface_textures.keys()[0])
+		surface_textures[key] = ImageTexture.create_from_image(image)
 	var style := StyleBoxTexture.new()
-	style.texture = ImageTexture.create_from_image(image)
-	surfaces[key] = style
+	style.texture = surface_textures[key]
+	if w >= strip_width:
+		style.set_texture_margin(SIDE_LEFT, edge)
+		style.set_texture_margin(SIDE_RIGHT, edge)
+		# Les bandes de texture ne modifient ni la taille minimale, ni les marges.
+		style.content_margin_left = 0
+		style.content_margin_right = 0
 	return style
 
 static func panel(parent: Node, rectangle: Rect2, title: String = "", icon_id: String = "", badge: String = "", id: String = "") -> Panel:

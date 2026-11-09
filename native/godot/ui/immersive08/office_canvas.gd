@@ -4,6 +4,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
+const Office = preload("res://ui/immersive08/office.gd")
 
 static func _card(page: Control, rectangle: Rect2, title: String, icon: String, id: String) -> Panel:
 	var local := rectangle
@@ -122,6 +123,9 @@ static func _standings(card: Panel, app: Control) -> void:
 		var y := 105+i*42
 		var own: bool = club.get("id")==app.model.club.id
 		if own: D.rect(card,Rect2(17,y-4,650,40),Color(app.accent,.32),4)
+		var hit := Office.standing_action(app,club)
+		card.add_child(hit)
+		D.place(hit,Rect2(17,y-4,650,40))
 		D.text(card,36,y+23,G.n(club.get("rank","—")),25,C.MINT if own else C.IVORY,600,30,HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(card,80,y+23,G.club_name(club),23,C.IVORY,600,357)
 		D.text(card,461,y+23,G.n(club.get("played",0)),22,C.MUTED,500,32,HORIZONTAL_ALIGNMENT_CENTER)
