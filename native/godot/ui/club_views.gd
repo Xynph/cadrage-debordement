@@ -137,7 +137,10 @@ static func _territory(app: Control) -> Control:
 		var content: VBoxContainer = picture.get_meta("content")
 		content.add_child(G.label("LE TERRITOIRE" if kind == "city" else "LE STADE", 14, G.WHITE))
 		content.add_child(G.spacer())
-		var title := G.wrap(c.get("city", "") if kind == "city" else c.get("stadium", ""), 34, G.WHITE)
+		var supplied: Variant = c.get(kind)
+		var place := str(supplied).strip_edges() if supplied != null else ""
+		if place.is_empty(): place = "Ville à préciser" if kind == "city" else "Stade à préciser"
+		var title := G.wrap(place, 34, G.WHITE)
 		title.add_theme_font_override("font", G.T.DISPLAY)
 		title.add_theme_font_size_override("font_size", 24)
 		content.add_child(title)
