@@ -27,6 +27,7 @@ func adoption_confirmation() -> ConfirmationDialog:
 	if view != null: check(view.dialog_text.contains("500") and view.dialog_text.contains("engagement restant"),"Devis salaire et engagement visibles avant adoption")
 	return view
 func run() -> void:
+	if OS.has_environment("CD_STAFF_REAL_WORKER"): ProjectSettings.set_setting("native_engine/worker_path",OS.get_environment("CD_STAFF_REAL_WORKER"))
 	root.size = Vector2i(1920,1080)
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
 	await command("snapshot"); await command("new_career",{"mode":"fiction","club":0})

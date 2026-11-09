@@ -122,6 +122,14 @@ static func _contract(app: Control, person: Dictionary, data: Dictionary, renew:
 	var list: VBoxContainer = view[1]
 	list.add_child(G.section(person.name, person.get("roleLabel", person.get("role", "Staff"))))
 	var employment: Dictionary = app.model.get("clubLife", {}).get("staffEmployment", {})
+	var context_key := JSON.stringify(data.get("context",{}))
+	if app.management_ui.get("staff_contract_context","") != context_key:
+		app.management_ui.staff_contract_context = context_key
+		app.management_ui.staff_contract_drafts = {}
+	var drafts: Dictionary = app.management_ui.get("staff_contract_drafts",{})
+	var draft_key := str(person.id) + (":renew" if renew else ":hire")
+	var draft: Dictionary = drafts.get(draft_key,{})
+	if draft.get("status","") == "submitted" and not app.get("waiting"): draft.status = "refused"
 	var paid: bool = employment.get("enabled", false)
 	var person_finance := _employment_person(app, str(person.id))
 	list.add_child(G.wrap("Salaire de jeu : %s €/semaine, sans prime de signature. Les autres charges du club continuent." % G.n(person_finance.get("salary",0)) if paid else "Contrat descriptif : salaires et prime 0 €. Le contrat fixe la durée de présence dans le club.", 14))
@@ -129,7 +137,19 @@ static func _contract(app: Control, person: Dictionary, data: Dictionary, renew:
 	years.name = "StaffContractYears"
 	for n in range(int(person.get("minYears", 1)), int(person.get("maxYears", data.get("maxYears", 3))) + 1):
 		years.add_item("%d saison%s" % [n, "s" if n > 1 else ""]); years.set_item_metadata(years.item_count - 1, n)
+	for index in years.item_count:
+		if int(years.get_item_metadata(index)) == int(draft.get("years",-1)): years.select(index)
 	list.add_child(years)
+	if draft.get("status","") == "refused":
+		var retry := G.wrap("Le contrat n’a pas été appliqué. Votre durée est conservée ; vérifiez le devis puis réessayez.",14,G.ALERT)
+		retry.name = "StaffContractRetryNotice"
+		list.add_child(retry)
+	var remember := func():
+		if years.selected < 0: return
+		if not drafts.has(draft_key) and drafts.size() >= 32: drafts.erase(drafts.keys()[0])
+		draft.years = int(years.get_item_metadata(years.selected))
+		drafts[draft_key] = draft
+		app.management_ui.staff_contract_drafts = drafts
 	var commitment := G.wrap("", 14)
 	commitment.name = "StaffEmploymentCommitment"
 	list.add_child(commitment)
@@ -138,14 +158,24 @@ static func _contract(app: Control, person: Dictionary, data: Dictionary, renew:
 		var duration := int(years.get_item_metadata(years.selected))
 		var payments := int(employment.get("remainingCurrentSeason",0)) + (duration - 1) * int(employment.get("weeksPerSeason",29))
 		commitment.text = "Engagement projeté : %s € sur %d paies. Réserve 50 000 € et provision de huit paies du staff requises." % [G.n(payments * int(person_finance.get("salary",0))),payments]
-	years.item_selected.connect(func(_i: int): refresh_cost.call())
+	years.item_selected.connect(func(_i: int): remember.call(); refresh_cost.call())
 	refresh_cost.call()
 	var sign := G.button("CONFIRMER LE CONTRAT", func():
 		var payload := {"confirmed":true,"context":data.context.duplicate(true),"years":int(years.get_item_metadata(years.selected))}
 		payload["staffId" if renew else "candidateId"] = str(person.id)
 		if paid: payload.salary = int(person_finance.get("salary",0)); payload.context = employment.context.duplicate(true)
-		dialog.queue_free(); app._command(("staff_employment_renew" if renew else "staff_employment_hire") if paid else ("staff_renew" if renew else "staff_hire"), payload), true)
+		remember.call()
+		draft.status = "submitted"
+		var command := ("staff_employment_renew" if renew else "staff_employment_hire") if paid else ("staff_renew" if renew else "staff_hire")
+		var bridge: Variant = app.get("bridge")
+		if bridge != null:
+			bridge.model_changed.connect(func(_model: Dictionary):
+				if str(app.last_command) != command: return
+				if bridge.last_response_ok: drafts.erase(draft_key)
+				else: draft.status = "refused", CONNECT_ONE_SHOT)
+		dialog.queue_free(); app._command(command,payload), true)
 	sign.name = "StaffContractConfirm"
+	if draft.get("status","") == "refused": sign.text = "RÉESSAYER LE CONTRAT"
 	sign.disabled = years.item_count == 0
 	list.add_child(sign)
 	dialog.popup_centered()

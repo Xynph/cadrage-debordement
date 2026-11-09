@@ -2,6 +2,7 @@ extends SceneTree
 const Career = preload("res://ui/staff_career_view.gd")
 class App extends Control:
 	var model := {}
+	var management_ui := {}
 	var last_command := ""
 	var last_payload := {}
 	func _clear_dialogs() -> void:
