@@ -1,5 +1,7 @@
 # Atelier de calendrier fictif — 9 novembre 2026
 
+Historique de la première tranche. Le lancement jouable14clubs est désormais décrit dans [deepen-editor.md](deepen-editor.md) ; les limites de lancement ci-dessous documentent la livraison initiale.
+
 ## Intention et conception
 Depuis la page Packs, créer un calendrier tous contre tous (2–32 clubs), en aller simple ou aller-retour, le modifier en JSON, le contrôler et l'échanger localement. Un nombre impair de clubs produit des journées de repos. Identifiants stables distincts des noms affichés ; aucune identité ou compétition officielle n'est réécrite.
 

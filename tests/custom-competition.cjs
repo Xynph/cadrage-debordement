@@ -15,4 +15,6 @@ for(const mutate of [s=>s.clubs[0].name='Autre',s=>s.customCompetition.version=2
 yes(vm.runInContext('worldNewSeason()',ctx)==='preserved','hook préserve résultat');yes(call('validate',ctx.S),'calendrier restauré au nouveau départ');
 ctx.S.live={};const old=JSON.stringify(ctx.S);assert.throws(()=>call('create',payload),/match/i);yes(JSON.stringify(ctx.S)===old,'match interdit sans mutation');
 yes(call('validate',{season:1,clubs:[]})===true,'ancienne carrière intacte sans marqueur');
+const long=structuredClone(document);long.clubs[0].name='X'.repeat(80);yes(domain.support(long).playable,'nom de 80 caractères accepté');long.clubs[0].name+='X';yes(!domain.support(long).playable,'nom de 81 caractères refusé');
+const reserved=structuredClone(document);reserved.name='Club & amis';yes(!domain.support(reserved).playable,'balisage réservé non jouable');
 console.log(checks+' contrôles compétition personnalisée réussis');
