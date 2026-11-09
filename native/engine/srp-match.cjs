@@ -22,7 +22,7 @@ module.exports = function srpMatchFactory(rules) {
   const playerId = id => typeof id === 'string' && /^[A-Za-z0-9:_-]{1,180}$/.test(id);
 
   function applies(l, s = S) {
-    return !!l && l.worldContext?.competitionId === 'srp' && [2,3].includes(s?.worldMode?.version)
+    return !!l && l.worldContext?.competitionId === 'srp' && [2,3,4].includes(s?.worldMode?.version)
       && typeof CDWorldCareer !== 'undefined' && CDWorldCareer.active(s) === true;
   }
 

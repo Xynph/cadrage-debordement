@@ -28,7 +28,7 @@ function factory(eligibility){
   const before=count(active,'A-1'),minimum=next.length===15?8:incoming&&out!==null?Math.min(8,before):Math.max(0,next.length-7);
   return a>=minimum;
  }
- const edition=s=>typeof CDWorldCareer!=='undefined'&&CDWorldCareer.edition(s)?.version===3?CDWorldCareer.edition(s):null;
+ const edition=s=>typeof CDWorldCareer!=='undefined'&&[3,4].includes(CDWorldCareer.edition(s)?.version)?CDWorldCareer.edition(s):null;
  const activeClub=(s,id)=>edition(s)&&leagueIds.some(k=>s.worldMode.leagues[k].members.includes(id));
  const activeMatch=(s,l)=>edition(s)&&['jlo-d1','jlo-d2','jlo-d1-d2'].includes(l?.worldContext?.competitionId);
  function classified(s,p){

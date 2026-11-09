@@ -1,0 +1,1465 @@
+{
+  "schema": "nationale-calendar-geometry-v1",
+  "season": 2026,
+  "clubCount": 14,
+  "anchor": "2026-08-17",
+  "timezone": "Europe/Paris",
+  "fixtures": [
+    {
+      "competitionRound": 0,
+      "slot": 0,
+      "home": 4,
+      "away": 12,
+      "date": "2026-08-21",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 0,
+      "slot": 1,
+      "home": 7,
+      "away": 6,
+      "date": "2026-08-21",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 0,
+      "slot": 2,
+      "home": 10,
+      "away": 2,
+      "date": "2026-08-21",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 0,
+      "slot": 3,
+      "home": 13,
+      "away": 9,
+      "date": "2026-08-21",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 0,
+      "slot": 4,
+      "home": 0,
+      "away": 8,
+      "date": "2026-08-22",
+      "kickoffLocal": "17:00"
+    },
+    {
+      "competitionRound": 0,
+      "slot": 5,
+      "home": 5,
+      "away": 11,
+      "date": "2026-08-22",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 0,
+      "slot": 6,
+      "home": 1,
+      "away": 3,
+      "date": "2026-08-22",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 1,
+      "slot": 0,
+      "home": 8,
+      "away": 1,
+      "date": "2026-08-28",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 1,
+      "slot": 1,
+      "home": 9,
+      "away": 10,
+      "date": "2026-08-28",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 1,
+      "slot": 2,
+      "home": 11,
+      "away": 0,
+      "date": "2026-08-28",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 1,
+      "slot": 3,
+      "home": 12,
+      "away": 13,
+      "date": "2026-08-28",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 1,
+      "slot": 4,
+      "home": 3,
+      "away": 7,
+      "date": "2026-08-28",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 1,
+      "slot": 5,
+      "home": 6,
+      "away": 4,
+      "date": "2026-08-28",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 1,
+      "slot": 6,
+      "home": 2,
+      "away": 5,
+      "date": "2026-08-29",
+      "kickoffLocal": "18:30"
+    },
+    {
+      "competitionRound": 2,
+      "slot": 0,
+      "home": 4,
+      "away": 3,
+      "date": "2026-09-04",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 2,
+      "slot": 1,
+      "home": 7,
+      "away": 8,
+      "date": "2026-09-04",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 2,
+      "slot": 2,
+      "home": 10,
+      "away": 12,
+      "date": "2026-09-04",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 2,
+      "slot": 3,
+      "home": 13,
+      "away": 6,
+      "date": "2026-09-04",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 2,
+      "slot": 4,
+      "home": 5,
+      "away": 0,
+      "date": "2026-09-05",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 2,
+      "slot": 5,
+      "home": 2,
+      "away": 9,
+      "date": "2026-09-05",
+      "kickoffLocal": "18:30"
+    },
+    {
+      "competitionRound": 2,
+      "slot": 6,
+      "home": 1,
+      "away": 11,
+      "date": "2026-09-05",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 3,
+      "slot": 0,
+      "home": 9,
+      "away": 5,
+      "date": "2026-09-11",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 3,
+      "slot": 1,
+      "home": 11,
+      "away": 7,
+      "date": "2026-09-11",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 3,
+      "slot": 2,
+      "home": 12,
+      "away": 2,
+      "date": "2026-09-11",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 3,
+      "slot": 3,
+      "home": 3,
+      "away": 13,
+      "date": "2026-09-11",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 3,
+      "slot": 4,
+      "home": 6,
+      "away": 10,
+      "date": "2026-09-11",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 3,
+      "slot": 5,
+      "home": 8,
+      "away": 4,
+      "date": "2026-09-12",
+      "kickoffLocal": "17:00"
+    },
+    {
+      "competitionRound": 3,
+      "slot": 6,
+      "home": 0,
+      "away": 1,
+      "date": "2026-09-12",
+      "kickoffLocal": "18:30"
+    },
+    {
+      "competitionRound": 4,
+      "slot": 0,
+      "home": 4,
+      "away": 11,
+      "date": "2026-09-25",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 4,
+      "slot": 1,
+      "home": 7,
+      "away": 0,
+      "date": "2026-09-25",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 4,
+      "slot": 2,
+      "home": 9,
+      "away": 12,
+      "date": "2026-09-25",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 4,
+      "slot": 3,
+      "home": 10,
+      "away": 3,
+      "date": "2026-09-25",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 4,
+      "slot": 4,
+      "home": 13,
+      "away": 8,
+      "date": "2026-09-25",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 4,
+      "slot": 5,
+      "home": 5,
+      "away": 1,
+      "date": "2026-09-26",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 4,
+      "slot": 6,
+      "home": 2,
+      "away": 6,
+      "date": "2026-09-26",
+      "kickoffLocal": "18:30"
+    },
+    {
+      "competitionRound": 5,
+      "slot": 0,
+      "home": 8,
+      "away": 10,
+      "date": "2026-10-02",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 5,
+      "slot": 1,
+      "home": 11,
+      "away": 13,
+      "date": "2026-10-02",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 5,
+      "slot": 2,
+      "home": 12,
+      "away": 5,
+      "date": "2026-10-02",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 5,
+      "slot": 3,
+      "home": 3,
+      "away": 2,
+      "date": "2026-10-02",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 5,
+      "slot": 4,
+      "home": 6,
+      "away": 9,
+      "date": "2026-10-02",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 5,
+      "slot": 5,
+      "home": 0,
+      "away": 4,
+      "date": "2026-10-03",
+      "kickoffLocal": "17:00"
+    },
+    {
+      "competitionRound": 5,
+      "slot": 6,
+      "home": 1,
+      "away": 7,
+      "date": "2026-10-03",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 6,
+      "slot": 0,
+      "home": 9,
+      "away": 3,
+      "date": "2026-10-09",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 6,
+      "slot": 1,
+      "home": 10,
+      "away": 11,
+      "date": "2026-10-09",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 6,
+      "slot": 2,
+      "home": 12,
+      "away": 6,
+      "date": "2026-10-09",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 6,
+      "slot": 3,
+      "home": 13,
+      "away": 0,
+      "date": "2026-10-09",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 6,
+      "slot": 4,
+      "home": 4,
+      "away": 1,
+      "date": "2026-10-09",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 6,
+      "slot": 5,
+      "home": 5,
+      "away": 7,
+      "date": "2026-10-10",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 6,
+      "slot": 6,
+      "home": 2,
+      "away": 8,
+      "date": "2026-10-10",
+      "kickoffLocal": "18:30"
+    },
+    {
+      "competitionRound": 7,
+      "slot": 0,
+      "home": 1,
+      "away": 13,
+      "date": "2026-10-16",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 7,
+      "slot": 1,
+      "home": 7,
+      "away": 4,
+      "date": "2026-10-16",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 7,
+      "slot": 2,
+      "home": 11,
+      "away": 2,
+      "date": "2026-10-16",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 7,
+      "slot": 3,
+      "home": 3,
+      "away": 12,
+      "date": "2026-10-16",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 7,
+      "slot": 4,
+      "home": 6,
+      "away": 5,
+      "date": "2026-10-16",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 7,
+      "slot": 5,
+      "home": 0,
+      "away": 10,
+      "date": "2026-10-17",
+      "kickoffLocal": "17:00"
+    },
+    {
+      "competitionRound": 7,
+      "slot": 6,
+      "home": 8,
+      "away": 9,
+      "date": "2026-10-17",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 8,
+      "slot": 0,
+      "home": 9,
+      "away": 11,
+      "date": "2026-10-30",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 8,
+      "slot": 1,
+      "home": 10,
+      "away": 1,
+      "date": "2026-10-30",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 8,
+      "slot": 2,
+      "home": 12,
+      "away": 8,
+      "date": "2026-10-30",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 8,
+      "slot": 3,
+      "home": 13,
+      "away": 7,
+      "date": "2026-10-30",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 8,
+      "slot": 4,
+      "home": 6,
+      "away": 3,
+      "date": "2026-10-30",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 8,
+      "slot": 5,
+      "home": 5,
+      "away": 4,
+      "date": "2026-10-31",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 8,
+      "slot": 6,
+      "home": 2,
+      "away": 0,
+      "date": "2026-10-31",
+      "kickoffLocal": "18:30"
+    },
+    {
+      "competitionRound": 9,
+      "slot": 0,
+      "home": 8,
+      "away": 6,
+      "date": "2026-11-06",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 9,
+      "slot": 1,
+      "home": 7,
+      "away": 10,
+      "date": "2026-11-06",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 9,
+      "slot": 2,
+      "home": 11,
+      "away": 12,
+      "date": "2026-11-06",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 9,
+      "slot": 3,
+      "home": 4,
+      "away": 13,
+      "date": "2026-11-06",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 9,
+      "slot": 4,
+      "home": 0,
+      "away": 9,
+      "date": "2026-11-07",
+      "kickoffLocal": "16:00"
+    },
+    {
+      "competitionRound": 9,
+      "slot": 5,
+      "home": 3,
+      "away": 5,
+      "date": "2026-11-07",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 9,
+      "slot": 6,
+      "home": 1,
+      "away": 2,
+      "date": "2026-11-07",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 10,
+      "slot": 0,
+      "home": 6,
+      "away": 11,
+      "date": "2026-11-13",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 10,
+      "slot": 1,
+      "home": 9,
+      "away": 1,
+      "date": "2026-11-13",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 10,
+      "slot": 2,
+      "home": 10,
+      "away": 4,
+      "date": "2026-11-13",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 10,
+      "slot": 3,
+      "home": 12,
+      "away": 0,
+      "date": "2026-11-13",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 10,
+      "slot": 4,
+      "home": 2,
+      "away": 7,
+      "date": "2026-11-14",
+      "kickoffLocal": "17:00"
+    },
+    {
+      "competitionRound": 10,
+      "slot": 5,
+      "home": 3,
+      "away": 8,
+      "date": "2026-11-14",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 10,
+      "slot": 6,
+      "home": 5,
+      "away": 13,
+      "date": "2026-11-14",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 11,
+      "slot": 0,
+      "home": 8,
+      "away": 5,
+      "date": "2026-11-20",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 11,
+      "slot": 1,
+      "home": 7,
+      "away": 9,
+      "date": "2026-11-20",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 11,
+      "slot": 2,
+      "home": 11,
+      "away": 3,
+      "date": "2026-11-20",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 11,
+      "slot": 3,
+      "home": 13,
+      "away": 10,
+      "date": "2026-11-20",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 11,
+      "slot": 4,
+      "home": 0,
+      "away": 6,
+      "date": "2026-11-21",
+      "kickoffLocal": "16:00"
+    },
+    {
+      "competitionRound": 11,
+      "slot": 5,
+      "home": 4,
+      "away": 2,
+      "date": "2026-11-21",
+      "kickoffLocal": "17:00"
+    },
+    {
+      "competitionRound": 11,
+      "slot": 6,
+      "home": 1,
+      "away": 12,
+      "date": "2026-11-21",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 12,
+      "slot": 0,
+      "home": 8,
+      "away": 11,
+      "date": "2026-12-04",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 12,
+      "slot": 1,
+      "home": 9,
+      "away": 4,
+      "date": "2026-12-04",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 12,
+      "slot": 2,
+      "home": 12,
+      "away": 7,
+      "date": "2026-12-04",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 12,
+      "slot": 3,
+      "home": 6,
+      "away": 1,
+      "date": "2026-12-04",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 12,
+      "slot": 4,
+      "home": 3,
+      "away": 0,
+      "date": "2026-12-05",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 12,
+      "slot": 5,
+      "home": 5,
+      "away": 10,
+      "date": "2026-12-05",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 12,
+      "slot": 6,
+      "home": 2,
+      "away": 13,
+      "date": "2026-12-05",
+      "kickoffLocal": "18:30"
+    },
+    {
+      "competitionRound": 13,
+      "slot": 0,
+      "home": 8,
+      "away": 0,
+      "date": "2026-12-11",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 13,
+      "slot": 1,
+      "home": 9,
+      "away": 13,
+      "date": "2026-12-11",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 13,
+      "slot": 2,
+      "home": 11,
+      "away": 5,
+      "date": "2026-12-11",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 13,
+      "slot": 3,
+      "home": 12,
+      "away": 4,
+      "date": "2026-12-11",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 13,
+      "slot": 4,
+      "home": 6,
+      "away": 7,
+      "date": "2026-12-11",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 13,
+      "slot": 5,
+      "home": 3,
+      "away": 1,
+      "date": "2026-12-12",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 13,
+      "slot": 6,
+      "home": 2,
+      "away": 10,
+      "date": "2026-12-12",
+      "kickoffLocal": "18:30"
+    },
+    {
+      "competitionRound": 14,
+      "slot": 0,
+      "home": 4,
+      "away": 6,
+      "date": "2027-01-08",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 14,
+      "slot": 1,
+      "home": 7,
+      "away": 3,
+      "date": "2027-01-08",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 14,
+      "slot": 2,
+      "home": 10,
+      "away": 9,
+      "date": "2027-01-08",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 14,
+      "slot": 3,
+      "home": 13,
+      "away": 12,
+      "date": "2027-01-08",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 14,
+      "slot": 4,
+      "home": 0,
+      "away": 11,
+      "date": "2027-01-09",
+      "kickoffLocal": "16:00"
+    },
+    {
+      "competitionRound": 14,
+      "slot": 5,
+      "home": 5,
+      "away": 2,
+      "date": "2027-01-09",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 14,
+      "slot": 6,
+      "home": 1,
+      "away": 8,
+      "date": "2027-01-09",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 15,
+      "slot": 0,
+      "home": 8,
+      "away": 7,
+      "date": "2027-01-15",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 15,
+      "slot": 1,
+      "home": 9,
+      "away": 2,
+      "date": "2027-01-15",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 15,
+      "slot": 2,
+      "home": 11,
+      "away": 1,
+      "date": "2027-01-15",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 15,
+      "slot": 3,
+      "home": 12,
+      "away": 10,
+      "date": "2027-01-15",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 15,
+      "slot": 4,
+      "home": 6,
+      "away": 13,
+      "date": "2027-01-15",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 15,
+      "slot": 5,
+      "home": 0,
+      "away": 5,
+      "date": "2027-01-16",
+      "kickoffLocal": "16:00"
+    },
+    {
+      "competitionRound": 15,
+      "slot": 6,
+      "home": 3,
+      "away": 4,
+      "date": "2027-01-16",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 16,
+      "slot": 0,
+      "home": 4,
+      "away": 8,
+      "date": "2027-01-22",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 16,
+      "slot": 1,
+      "home": 7,
+      "away": 11,
+      "date": "2027-01-22",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 16,
+      "slot": 2,
+      "home": 10,
+      "away": 6,
+      "date": "2027-01-22",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 16,
+      "slot": 3,
+      "home": 13,
+      "away": 3,
+      "date": "2027-01-22",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 16,
+      "slot": 4,
+      "home": 5,
+      "away": 9,
+      "date": "2027-01-23",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 16,
+      "slot": 5,
+      "home": 2,
+      "away": 12,
+      "date": "2027-01-23",
+      "kickoffLocal": "18:30"
+    },
+    {
+      "competitionRound": 16,
+      "slot": 6,
+      "home": 1,
+      "away": 0,
+      "date": "2027-01-23",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 17,
+      "slot": 0,
+      "home": 8,
+      "away": 13,
+      "date": "2027-01-29",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 17,
+      "slot": 1,
+      "home": 11,
+      "away": 4,
+      "date": "2027-01-29",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 17,
+      "slot": 2,
+      "home": 12,
+      "away": 9,
+      "date": "2027-01-29",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 17,
+      "slot": 3,
+      "home": 6,
+      "away": 2,
+      "date": "2027-01-29",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 17,
+      "slot": 4,
+      "home": 0,
+      "away": 7,
+      "date": "2027-01-30",
+      "kickoffLocal": "16:00"
+    },
+    {
+      "competitionRound": 17,
+      "slot": 5,
+      "home": 3,
+      "away": 10,
+      "date": "2027-01-30",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 17,
+      "slot": 6,
+      "home": 1,
+      "away": 5,
+      "date": "2027-01-30",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 18,
+      "slot": 0,
+      "home": 4,
+      "away": 0,
+      "date": "2027-02-12",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 18,
+      "slot": 1,
+      "home": 7,
+      "away": 1,
+      "date": "2027-02-12",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 18,
+      "slot": 2,
+      "home": 9,
+      "away": 6,
+      "date": "2027-02-12",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 18,
+      "slot": 3,
+      "home": 10,
+      "away": 8,
+      "date": "2027-02-12",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 18,
+      "slot": 4,
+      "home": 13,
+      "away": 11,
+      "date": "2027-02-12",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 18,
+      "slot": 5,
+      "home": 5,
+      "away": 12,
+      "date": "2027-02-13",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 18,
+      "slot": 6,
+      "home": 2,
+      "away": 3,
+      "date": "2027-02-13",
+      "kickoffLocal": "18:30"
+    },
+    {
+      "competitionRound": 19,
+      "slot": 0,
+      "home": 7,
+      "away": 5,
+      "date": "2027-02-19",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 19,
+      "slot": 1,
+      "home": 11,
+      "away": 10,
+      "date": "2027-02-19",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 19,
+      "slot": 2,
+      "home": 6,
+      "away": 12,
+      "date": "2027-02-19",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 19,
+      "slot": 3,
+      "home": 0,
+      "away": 13,
+      "date": "2027-02-20",
+      "kickoffLocal": "16:00"
+    },
+    {
+      "competitionRound": 19,
+      "slot": 4,
+      "home": 3,
+      "away": 9,
+      "date": "2027-02-20",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 19,
+      "slot": 5,
+      "home": 1,
+      "away": 4,
+      "date": "2027-02-20",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 19,
+      "slot": 6,
+      "home": 8,
+      "away": 2,
+      "date": "2027-02-20",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 20,
+      "slot": 0,
+      "home": 4,
+      "away": 7,
+      "date": "2027-02-26",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 20,
+      "slot": 1,
+      "home": 9,
+      "away": 8,
+      "date": "2027-02-26",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 20,
+      "slot": 2,
+      "home": 10,
+      "away": 0,
+      "date": "2027-02-26",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 20,
+      "slot": 3,
+      "home": 12,
+      "away": 3,
+      "date": "2027-02-26",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 20,
+      "slot": 4,
+      "home": 13,
+      "away": 1,
+      "date": "2027-02-26",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 20,
+      "slot": 5,
+      "home": 5,
+      "away": 6,
+      "date": "2027-02-27",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 20,
+      "slot": 6,
+      "home": 2,
+      "away": 11,
+      "date": "2027-02-27",
+      "kickoffLocal": "18:30"
+    },
+    {
+      "competitionRound": 21,
+      "slot": 0,
+      "home": 4,
+      "away": 5,
+      "date": "2027-03-05",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 21,
+      "slot": 1,
+      "home": 7,
+      "away": 13,
+      "date": "2027-03-05",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 21,
+      "slot": 2,
+      "home": 11,
+      "away": 9,
+      "date": "2027-03-05",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 21,
+      "slot": 3,
+      "home": 3,
+      "away": 6,
+      "date": "2027-03-05",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 21,
+      "slot": 4,
+      "home": 0,
+      "away": 2,
+      "date": "2027-03-06",
+      "kickoffLocal": "16:00"
+    },
+    {
+      "competitionRound": 21,
+      "slot": 5,
+      "home": 1,
+      "away": 10,
+      "date": "2027-03-06",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 21,
+      "slot": 6,
+      "home": 8,
+      "away": 12,
+      "date": "2027-03-06",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 22,
+      "slot": 0,
+      "home": 9,
+      "away": 0,
+      "date": "2027-03-19",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 22,
+      "slot": 1,
+      "home": 10,
+      "away": 7,
+      "date": "2027-03-19",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 22,
+      "slot": 2,
+      "home": 12,
+      "away": 11,
+      "date": "2027-03-19",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 22,
+      "slot": 3,
+      "home": 13,
+      "away": 4,
+      "date": "2027-03-19",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 22,
+      "slot": 4,
+      "home": 6,
+      "away": 8,
+      "date": "2027-03-19",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 22,
+      "slot": 5,
+      "home": 5,
+      "away": 3,
+      "date": "2027-03-20",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 22,
+      "slot": 6,
+      "home": 2,
+      "away": 1,
+      "date": "2027-03-20",
+      "kickoffLocal": "18:30"
+    },
+    {
+      "competitionRound": 23,
+      "slot": 0,
+      "home": 4,
+      "away": 10,
+      "date": "2027-03-26",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 23,
+      "slot": 1,
+      "home": 8,
+      "away": 3,
+      "date": "2027-03-26",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 23,
+      "slot": 2,
+      "home": 11,
+      "away": 6,
+      "date": "2027-03-26",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 23,
+      "slot": 3,
+      "home": 13,
+      "away": 5,
+      "date": "2027-03-26",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 23,
+      "slot": 4,
+      "home": 0,
+      "away": 12,
+      "date": "2027-03-27",
+      "kickoffLocal": "16:00"
+    },
+    {
+      "competitionRound": 23,
+      "slot": 5,
+      "home": 7,
+      "away": 2,
+      "date": "2027-03-27",
+      "kickoffLocal": "17:00"
+    },
+    {
+      "competitionRound": 23,
+      "slot": 6,
+      "home": 1,
+      "away": 9,
+      "date": "2027-03-27",
+      "kickoffLocal": "19:00"
+    },
+    {
+      "competitionRound": 24,
+      "slot": 0,
+      "home": 9,
+      "away": 7,
+      "date": "2027-04-09",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 24,
+      "slot": 1,
+      "home": 10,
+      "away": 13,
+      "date": "2027-04-09",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 24,
+      "slot": 2,
+      "home": 12,
+      "away": 1,
+      "date": "2027-04-09",
+      "kickoffLocal": "19:30"
+    },
+    {
+      "competitionRound": 24,
+      "slot": 3,
+      "home": 3,
+      "away": 11,
+      "date": "2027-04-09",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 24,
+      "slot": 4,
+      "home": 6,
+      "away": 0,
+      "date": "2027-04-09",
+      "kickoffLocal": "20:00"
+    },
+    {
+      "competitionRound": 24,
+      "slot": 5,
+      "home": 5,
+      "away": 8,
+      "date": "2027-04-10",
+      "kickoffLocal": "18:00"
+    },
+    {
+      "competitionRound": 24,
+      "slot": 6,
+      "home": 2,
+      "away": 4,
+      "date": "2027-04-10",
+      "kickoffLocal": "18:30"
+    },
+    {
+      "competitionRound": 25,
+      "slot": 0,
+      "home": 0,
+      "away": 3,
+      "date": "2027-04-17",
+      "kickoffLocal": "17:00"
+    },
+    {
+      "competitionRound": 25,
+      "slot": 1,
+      "home": 1,
+      "away": 6,
+      "date": "2027-04-17",
+      "kickoffLocal": "17:00"
+    },
+    {
+      "competitionRound": 25,
+      "slot": 2,
+      "home": 4,
+      "away": 9,
+      "date": "2027-04-17",
+      "kickoffLocal": "17:00"
+    },
+    {
+      "competitionRound": 25,
+      "slot": 3,
+      "home": 7,
+      "away": 12,
+      "date": "2027-04-17",
+      "kickoffLocal": "17:00"
+    },
+    {
+      "competitionRound": 25,
+      "slot": 4,
+      "home": 10,
+      "away": 5,
+      "date": "2027-04-17",
+      "kickoffLocal": "17:00"
+    },
+    {
+      "competitionRound": 25,
+      "slot": 5,
+      "home": 11,
+      "away": 8,
+      "date": "2027-04-17",
+      "kickoffLocal": "17:00"
+    },
+    {
+      "competitionRound": 25,
+      "slot": 6,
+      "home": 13,
+      "away": 2,
+      "date": "2027-04-17",
+      "kickoffLocal": "17:00"
+    }
+  ]
+}
