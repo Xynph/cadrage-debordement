@@ -1,5 +1,9 @@
 # Réception UI-01 — PR producteur #79
 
+Cette réception documente le lot UI-01 historique. Pour un chantier actuel,
+consigner les tests et la prochaine action dans la description de sa PR,
+selon le [cycle de développement](developpement-parallele.md).
+
 Base : main `d3afa283359b13d9e393eb90d305d7411bf638c7`, producteur `967de0bef4b6ae6854406a1615323097cfa73f43`. Les six fichiers UI-01 sont repris sur `integration/ui01-reviewed` sans modifier la branche du producteur ; les tests de carrières #80 restent présents.
 
 ## Défauts reproduits à la revue
