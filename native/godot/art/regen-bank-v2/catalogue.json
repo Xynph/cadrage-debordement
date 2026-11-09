@@ -1,7 +1,7 @@
 {
   "schema": "regen-portrait-bank-v2",
   "bankVersion": 2,
-  "status": "awaiting-player-assets",
+  "status": "verified-offline-linux",
   "total": 200,
   "players": 160,
   "staff": 40,
@@ -40,9 +40,11 @@
         4
       ],
       "cells": 16,
-      "sha256": null,
+      "sha256": "4835b7c6c6ed0d498bb49e984e4c2c4b3051a83175ee95075351340ffeab640d",
       "provenance": "imagegen-original",
-      "fictional": true
+      "fictional": true,
+      "width": 1254,
+      "height": 1254
     },
     {
       "id": "players-03",
@@ -52,9 +54,11 @@
         4
       ],
       "cells": 16,
-      "sha256": null,
+      "sha256": "98577728b5708ce5e7f92cd14b4760018c12918e364fd31221f04c4197449f1b",
       "provenance": "imagegen-original",
-      "fictional": true
+      "fictional": true,
+      "width": 1254,
+      "height": 1254
     },
     {
       "id": "players-04",
@@ -64,9 +68,11 @@
         4
       ],
       "cells": 16,
-      "sha256": null,
+      "sha256": "83a859dfedfb0dcdfa637656d4b7fbcf0ac184084dba0db1d0e6df85124facf0",
       "provenance": "imagegen-original",
-      "fictional": true
+      "fictional": true,
+      "width": 1254,
+      "height": 1254
     },
     {
       "id": "players-05",
@@ -76,9 +82,11 @@
         4
       ],
       "cells": 16,
-      "sha256": null,
+      "sha256": "0bc496462ce19bb63aba58f552e394731d229bbb5a601e44973915d0322a201e",
       "provenance": "imagegen-original",
-      "fictional": true
+      "fictional": true,
+      "width": 1254,
+      "height": 1254
     },
     {
       "id": "players-06",
@@ -88,9 +96,11 @@
         4
       ],
       "cells": 16,
-      "sha256": null,
+      "sha256": "a5fb0e34ce8f50cafd341da0bf700caf2df38041e561829bcb0262c5a7688e1e",
       "provenance": "imagegen-original",
-      "fictional": true
+      "fictional": true,
+      "width": 1254,
+      "height": 1254
     },
     {
       "id": "players-07",
@@ -100,9 +110,11 @@
         4
       ],
       "cells": 16,
-      "sha256": null,
+      "sha256": "0fd150b385e42418a37322f190023012ed05aa530b6d44a9e9287526e30ef62f",
       "provenance": "imagegen-original",
-      "fictional": true
+      "fictional": true,
+      "width": 1254,
+      "height": 1254
     },
     {
       "id": "players-08",
@@ -112,9 +124,11 @@
         4
       ],
       "cells": 16,
-      "sha256": null,
+      "sha256": "453689f79cb842d5fd3b5f2cd8ffa59f4a8862a117e0f7bee571d01fca652af5",
       "provenance": "imagegen-original",
-      "fictional": true
+      "fictional": true,
+      "width": 1254,
+      "height": 1254
     },
     {
       "id": "players-09",
@@ -124,9 +138,11 @@
         4
       ],
       "cells": 16,
-      "sha256": null,
+      "sha256": "4164b7a2579b901c495ceff8e60abab2d71e4fc1f86c029420255f018d70a8d6",
       "provenance": "imagegen-original",
-      "fictional": true
+      "fictional": true,
+      "width": 1254,
+      "height": 1254
     },
     {
       "id": "staff-00",
@@ -150,7 +166,9 @@
       "cells": 24,
       "sha256": "7ec04612d094823c2837418d6c8aa1e27a3293b50e7f2ba70834b3bccbfc8189",
       "provenance": "imagegen-original",
-      "fictional": true
+      "fictional": true,
+      "width": 1536,
+      "height": 1024
     }
   ],
   "bases": [
@@ -350,769 +368,2589 @@
       "id": "players:032",
       "kind": "player",
       "asset": "players-02",
-      "cell": 0
+      "cell": 0,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "none",
+        "build": "slender",
+        "skinTone": "fair",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "prominent-ears",
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:033",
       "kind": "player",
       "asset": "players-02",
-      "cell": 1
+      "cell": 1,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "short",
+        "build": "average",
+        "skinTone": "tan",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "thick-brows"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:034",
       "kind": "player",
       "asset": "players-02",
-      "cell": 2
+      "cell": 2,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "none",
+        "build": "powerful",
+        "skinTone": "brown",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:035",
       "kind": "player",
       "asset": "players-02",
-      "cell": 3
+      "cell": 3,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "short",
+        "build": "heavyset",
+        "skinTone": "fair",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:036",
       "kind": "player",
       "asset": "players-02",
-      "cell": 4
+      "cell": 4,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "long",
+        "build": "average",
+        "skinTone": "brown",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:037",
       "kind": "player",
       "asset": "players-02",
-      "cell": 5
+      "cell": 5,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "stubble",
+        "build": "powerful",
+        "skinTone": "deep",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "forehead-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:038",
       "kind": "player",
       "asset": "players-02",
-      "cell": 6
+      "cell": 6,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "long",
+        "build": "heavyset",
+        "skinTone": "fair",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:039",
       "kind": "player",
       "asset": "players-02",
-      "cell": 7
+      "cell": 7,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "stubble",
+        "build": "slender",
+        "skinTone": "tan",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "prominent-ears"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:040",
       "kind": "player",
       "asset": "players-02",
-      "cell": 8
+      "cell": 8,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "short",
+        "build": "powerful",
+        "skinTone": "fair",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:041",
       "kind": "player",
       "asset": "players-02",
-      "cell": 9
+      "cell": 9,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "none",
+        "build": "heavyset",
+        "skinTone": "light",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "eyebrow-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:042",
       "kind": "player",
       "asset": "players-02",
-      "cell": 10
+      "cell": 10,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "short",
+        "build": "slender",
+        "skinTone": "brown",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:043",
       "kind": "player",
       "asset": "players-02",
-      "cell": 11
+      "cell": 11,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "none",
+        "build": "average",
+        "skinTone": "light",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:044",
       "kind": "player",
       "asset": "players-02",
-      "cell": 12
+      "cell": 12,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "stubble",
+        "build": "heavyset",
+        "skinTone": "tan",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "chin-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:045",
       "kind": "player",
       "asset": "players-02",
-      "cell": 13
+      "cell": 13,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "long",
+        "build": "slender",
+        "skinTone": "deep",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:046",
       "kind": "player",
       "asset": "players-02",
-      "cell": 14
+      "cell": 14,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "stubble",
+        "build": "average",
+        "skinTone": "fair",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:047",
       "kind": "player",
       "asset": "players-02",
-      "cell": 15
+      "cell": 15,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "long",
+        "build": "powerful",
+        "skinTone": "brown",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "eyebrow-gap"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:048",
       "kind": "player",
       "asset": "players-03",
-      "cell": 0
+      "cell": 0,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "stubble",
+        "build": "average",
+        "skinTone": "fair",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles",
+          "cheek-dimples"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:049",
       "kind": "player",
       "asset": "players-03",
-      "cell": 1
+      "cell": 1,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "long",
+        "build": "powerful",
+        "skinTone": "brown",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:050",
       "kind": "player",
       "asset": "players-03",
-      "cell": 2
+      "cell": 2,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "stubble",
+        "build": "slender",
+        "skinTone": "tan",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "eyebrow-gap"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:051",
       "kind": "player",
       "asset": "players-03",
-      "cell": 3
+      "cell": 3,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "long",
+        "build": "average",
+        "skinTone": "tan",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:052",
       "kind": "player",
       "asset": "players-03",
-      "cell": 4
+      "cell": 4,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "none",
+        "build": "heavyset",
+        "skinTone": "brown",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "forehead-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:053",
       "kind": "player",
       "asset": "players-03",
-      "cell": 5
+      "cell": 5,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "short",
+        "build": "slender",
+        "skinTone": "fair",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:054",
       "kind": "player",
       "asset": "players-03",
-      "cell": 6
+      "cell": 6,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "none",
+        "build": "average",
+        "skinTone": "light",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:055",
       "kind": "player",
       "asset": "players-03",
-      "cell": 7
+      "cell": 7,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "short",
+        "build": "powerful",
+        "skinTone": "deep",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:056",
       "kind": "player",
       "asset": "players-03",
-      "cell": 8
+      "cell": 8,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "long",
+        "build": "slender",
+        "skinTone": "fair",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:057",
       "kind": "player",
       "asset": "players-03",
-      "cell": 9
+      "cell": 9,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "stubble",
+        "build": "average",
+        "skinTone": "brown",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:058",
       "kind": "player",
       "asset": "players-03",
-      "cell": 10
+      "cell": 10,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "long",
+        "build": "powerful",
+        "skinTone": "fair",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "temple-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:059",
       "kind": "player",
       "asset": "players-03",
-      "cell": 11
+      "cell": 11,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "stubble",
+        "build": "heavyset",
+        "skinTone": "tan",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "thick-brows"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:060",
       "kind": "player",
       "asset": "players-03",
-      "cell": 12
+      "cell": 12,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "short",
+        "build": "average",
+        "skinTone": "deep",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:061",
       "kind": "player",
       "asset": "players-03",
-      "cell": 13
+      "cell": 13,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "none",
+        "build": "powerful",
+        "skinTone": "light",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "prominent-ears"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:062",
       "kind": "player",
       "asset": "players-03",
-      "cell": 14
+      "cell": 14,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "short",
+        "build": "heavyset",
+        "skinTone": "brown",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "forehead-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:063",
       "kind": "player",
       "asset": "players-03",
-      "cell": 15
+      "cell": 15,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "none",
+        "build": "slender",
+        "skinTone": "deep",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:064",
       "kind": "player",
       "asset": "players-04",
-      "cell": 0
+      "cell": 0,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "short",
+        "build": "slender",
+        "skinTone": "tan",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "temple-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:065",
       "kind": "player",
       "asset": "players-04",
-      "cell": 1
+      "cell": 1,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "none",
+        "build": "powerful",
+        "skinTone": "deep",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "chin-mole",
+          "forehead-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:066",
       "kind": "player",
       "asset": "players-04",
-      "cell": 2
+      "cell": 2,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "short",
+        "build": "heavyset",
+        "skinTone": "fair",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:067",
       "kind": "player",
       "asset": "players-04",
-      "cell": 3
+      "cell": 3,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "none",
+        "build": "powerful",
+        "skinTone": "tan",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:068",
       "kind": "player",
       "asset": "players-04",
-      "cell": 4
+      "cell": 4,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "stubble",
+        "build": "average",
+        "skinTone": "fair",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:069",
       "kind": "player",
       "asset": "players-04",
-      "cell": 5
+      "cell": 5,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "long",
+        "build": "powerful",
+        "skinTone": "brown",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "neck-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:070",
       "kind": "player",
       "asset": "players-04",
-      "cell": 6
+      "cell": 6,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "stubble",
+        "build": "heavyset",
+        "skinTone": "deep",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:071",
       "kind": "player",
       "asset": "players-04",
-      "cell": 7
+      "cell": 7,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "long",
+        "build": "slender",
+        "skinTone": "tan",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "eyebrow-line",
+          "scar-like-healed-mark"
+        ],
+        "faceComplete": true,
+        "scarLikeMark": {
+          "confidence": "visual-estimate",
+          "description": "Trait ros\u00e9 oblique interrompant le sourcil c\u00f4t\u00e9 droit de l\u2019image.",
+          "limit": "Aspect visuel \u00e9voquant une marque cicatricielle gu\u00e9rie ; aucune blessure r\u00e9elle, cause ou histoire m\u00e9dicale n\u2019est affirm\u00e9e."
+        }
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:072",
       "kind": "player",
       "asset": "players-04",
-      "cell": 8
+      "cell": 8,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "none",
+        "build": "slender",
+        "skinTone": "light",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:073",
       "kind": "player",
       "asset": "players-04",
-      "cell": 9
+      "cell": 9,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "short",
+        "build": "heavyset",
+        "skinTone": "brown",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:074",
       "kind": "player",
       "asset": "players-04",
-      "cell": 10
+      "cell": 10,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "none",
+        "build": "slender",
+        "skinTone": "fair",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "eyebrow-line",
+          "freckles",
+          "scar-like-healed-mark"
+        ],
+        "faceComplete": true,
+        "scarLikeMark": {
+          "confidence": "visual-estimate",
+          "description": "Petit trait ros\u00e9 oblique au bord sup\u00e9rieur du sourcil c\u00f4t\u00e9 droit de l\u2019image.",
+          "limit": "Aspect visuel \u00e9voquant une marque cicatricielle gu\u00e9rie ; aucune blessure r\u00e9elle, cause ou histoire m\u00e9dicale n\u2019est affirm\u00e9e."
+        }
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:075",
       "kind": "player",
       "asset": "players-04",
-      "cell": 11
+      "cell": 11,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "short",
+        "build": "average",
+        "skinTone": "tan",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "thick-brows"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:076",
       "kind": "player",
       "asset": "players-04",
-      "cell": 12
+      "cell": 12,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "long",
+        "build": "heavyset",
+        "skinTone": "fair",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-line",
+          "freckles",
+          "scar-like-healed-mark"
+        ],
+        "faceComplete": true,
+        "scarLikeMark": {
+          "confidence": "visual-estimate",
+          "description": "Fine ligne p\u00e2le ros\u00e9e diagonale sur la joue c\u00f4t\u00e9 droit de l\u2019image.",
+          "limit": "Aspect visuel \u00e9voquant une marque cicatricielle gu\u00e9rie ; aucune blessure r\u00e9elle, cause ou histoire m\u00e9dicale n\u2019est affirm\u00e9e."
+        }
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:077",
       "kind": "player",
       "asset": "players-04",
-      "cell": 13
+      "cell": 13,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "stubble",
+        "build": "slender",
+        "skinTone": "tan",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:078",
       "kind": "player",
       "asset": "players-04",
-      "cell": 14
+      "cell": 14,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "long",
+        "build": "average",
+        "skinTone": "deep",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:079",
       "kind": "player",
       "asset": "players-04",
-      "cell": 15
+      "cell": 15,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "short",
+        "build": "powerful",
+        "skinTone": "fair",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "temple-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:080",
       "kind": "player",
       "asset": "players-05",
-      "cell": 0
+      "cell": 0,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "long",
+        "build": "powerful",
+        "skinTone": "tan",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "forehead-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:081",
       "kind": "player",
       "asset": "players-05",
-      "cell": 1
+      "cell": 1,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "stubble",
+        "build": "heavyset",
+        "skinTone": "fair",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:082",
       "kind": "player",
       "asset": "players-05",
-      "cell": 2
+      "cell": 2,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "long",
+        "build": "slender",
+        "skinTone": "tan",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:083",
       "kind": "player",
       "asset": "players-05",
-      "cell": 3
+      "cell": 3,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "stubble",
+        "build": "average",
+        "skinTone": "brown",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:084",
       "kind": "player",
       "asset": "players-05",
-      "cell": 4
+      "cell": 4,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "short",
+        "build": "heavyset",
+        "skinTone": "fair",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:085",
       "kind": "player",
       "asset": "players-05",
-      "cell": 5
+      "cell": 5,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "none",
+        "build": "slender",
+        "skinTone": "tan",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "forehead-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:086",
       "kind": "player",
       "asset": "players-05",
-      "cell": 6
+      "cell": 6,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "short",
+        "build": "average",
+        "skinTone": "fair",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles",
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:087",
       "kind": "player",
       "asset": "players-05",
-      "cell": 7
+      "cell": 7,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "none",
+        "build": "powerful",
+        "skinTone": "tan",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "thick-brows"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:088",
       "kind": "player",
       "asset": "players-05",
-      "cell": 8
+      "cell": 8,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "stubble",
+        "build": "average",
+        "skinTone": "brown",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:089",
       "kind": "player",
       "asset": "players-05",
-      "cell": 9
+      "cell": 9,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "long",
+        "build": "powerful",
+        "skinTone": "fair",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:090",
       "kind": "player",
       "asset": "players-05",
-      "cell": 10
+      "cell": 10,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "short",
+        "build": "heavyset",
+        "skinTone": "tan",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "round-cheeks"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:091",
       "kind": "player",
       "asset": "players-05",
-      "cell": 11
+      "cell": 11,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "long",
+        "build": "powerful",
+        "skinTone": "brown",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:092",
       "kind": "player",
       "asset": "players-05",
-      "cell": 12
+      "cell": 12,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "none",
+        "build": "slender",
+        "skinTone": "fair",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "eyebrow-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:093",
       "kind": "player",
       "asset": "players-05",
-      "cell": 13
+      "cell": 13,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "short",
+        "build": "average",
+        "skinTone": "tan",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:094",
       "kind": "player",
       "asset": "players-05",
-      "cell": 14
+      "cell": 14,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "none",
+        "build": "heavyset",
+        "skinTone": "fair",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "eyebrow-gap"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:095",
       "kind": "player",
       "asset": "players-05",
-      "cell": 15
+      "cell": 15,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "short",
+        "build": "slender",
+        "skinTone": "tan",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "eyebrow-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:096",
       "kind": "player",
       "asset": "players-06",
-      "cell": 0
+      "cell": 0,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "none",
+        "build": "slender",
+        "skinTone": "fair",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "mouth-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:097",
       "kind": "player",
       "asset": "players-06",
-      "cell": 1
+      "cell": 1,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "short",
+        "build": "average",
+        "skinTone": "tan",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:098",
       "kind": "player",
       "asset": "players-06",
-      "cell": 2
+      "cell": 2,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "none",
+        "build": "powerful",
+        "skinTone": "brown",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:099",
       "kind": "player",
       "asset": "players-06",
-      "cell": 3
+      "cell": 3,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "short",
+        "build": "heavyset",
+        "skinTone": "fair",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:100",
       "kind": "player",
       "asset": "players-06",
-      "cell": 4
+      "cell": 4,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "long",
+        "build": "average",
+        "skinTone": "tan",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:101",
       "kind": "player",
       "asset": "players-06",
-      "cell": 5
+      "cell": 5,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "stubble",
+        "build": "powerful",
+        "skinTone": "deep",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "forehead-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:102",
       "kind": "player",
       "asset": "players-06",
-      "cell": 6
+      "cell": 6,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "long",
+        "build": "heavyset",
+        "skinTone": "fair",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:103",
       "kind": "player",
       "asset": "players-06",
-      "cell": 7
+      "cell": 7,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "stubble",
+        "build": "slender",
+        "skinTone": "tan",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:104",
       "kind": "player",
       "asset": "players-06",
-      "cell": 8
+      "cell": 8,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "short",
+        "build": "powerful",
+        "skinTone": "fair",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "round-cheeks"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:105",
       "kind": "player",
       "asset": "players-06",
-      "cell": 9
+      "cell": 9,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "none",
+        "build": "heavyset",
+        "skinTone": "light",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:106",
       "kind": "player",
       "asset": "players-06",
-      "cell": 10
+      "cell": 10,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "short",
+        "build": "slender",
+        "skinTone": "brown",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "temple-mole",
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:107",
       "kind": "player",
       "asset": "players-06",
-      "cell": 11
+      "cell": 11,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "none",
+        "build": "average",
+        "skinTone": "fair",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "chin-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:108",
       "kind": "player",
       "asset": "players-06",
-      "cell": 12
+      "cell": 12,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "stubble",
+        "build": "heavyset",
+        "skinTone": "tan",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:109",
       "kind": "player",
       "asset": "players-06",
-      "cell": 13
+      "cell": 13,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "long",
+        "build": "slender",
+        "skinTone": "deep",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:110",
       "kind": "player",
       "asset": "players-06",
-      "cell": 14
+      "cell": 14,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "stubble",
+        "build": "average",
+        "skinTone": "fair",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "eyebrow-gap"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:111",
       "kind": "player",
       "asset": "players-06",
-      "cell": 15
+      "cell": 15,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "long",
+        "build": "powerful",
+        "skinTone": "brown",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:112",
       "kind": "player",
       "asset": "players-07",
-      "cell": 0
+      "cell": 0,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "stubble",
+        "build": "average",
+        "skinTone": "fair",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:113",
       "kind": "player",
       "asset": "players-07",
-      "cell": 1
+      "cell": 1,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "long",
+        "build": "powerful",
+        "skinTone": "brown",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:114",
       "kind": "player",
       "asset": "players-07",
-      "cell": 2
+      "cell": 2,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "stubble",
+        "build": "slender",
+        "skinTone": "light",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "forehead-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:115",
       "kind": "player",
       "asset": "players-07",
-      "cell": 3
+      "cell": 3,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "long",
+        "build": "average",
+        "skinTone": "brown",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:116",
       "kind": "player",
       "asset": "players-07",
-      "cell": 4
+      "cell": 4,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "none",
+        "build": "heavyset",
+        "skinTone": "brown",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:117",
       "kind": "player",
       "asset": "players-07",
-      "cell": 5
+      "cell": 5,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "short",
+        "build": "slender",
+        "skinTone": "fair",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:118",
       "kind": "player",
       "asset": "players-07",
-      "cell": 6
+      "cell": 6,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "none",
+        "build": "average",
+        "skinTone": "tan",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:119",
       "kind": "player",
       "asset": "players-07",
-      "cell": 7
+      "cell": 7,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "short",
+        "build": "powerful",
+        "skinTone": "deep",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:120",
       "kind": "player",
       "asset": "players-07",
-      "cell": 8
+      "cell": 8,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "long",
+        "build": "slender",
+        "skinTone": "fair",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:121",
       "kind": "player",
       "asset": "players-07",
-      "cell": 9
+      "cell": 9,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "stubble",
+        "build": "average",
+        "skinTone": "brown",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:122",
       "kind": "player",
       "asset": "players-07",
-      "cell": 10
+      "cell": 10,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "long",
+        "build": "powerful",
+        "skinTone": "fair",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "forehead-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:123",
       "kind": "player",
       "asset": "players-07",
-      "cell": 11
+      "cell": 11,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "stubble",
+        "build": "heavyset",
+        "skinTone": "tan",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "round-cheeks"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:124",
       "kind": "player",
       "asset": "players-07",
-      "cell": 12
+      "cell": 12,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "short",
+        "build": "average",
+        "skinTone": "deep",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:125",
       "kind": "player",
       "asset": "players-07",
-      "cell": 13
+      "cell": 13,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "none",
+        "build": "powerful",
+        "skinTone": "fair",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:126",
       "kind": "player",
       "asset": "players-07",
-      "cell": 14
+      "cell": 14,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "short",
+        "build": "heavyset",
+        "skinTone": "tan",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:127",
       "kind": "player",
       "asset": "players-07",
-      "cell": 15
+      "cell": 15,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "none",
+        "build": "slender",
+        "skinTone": "deep",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "temple-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:128",
       "kind": "player",
       "asset": "players-08",
-      "cell": 0
+      "cell": 0,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "short",
+        "build": "slender",
+        "skinTone": "brown",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-line",
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:129",
       "kind": "player",
       "asset": "players-08",
-      "cell": 1
+      "cell": 1,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "none",
+        "build": "powerful",
+        "skinTone": "deep",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:130",
       "kind": "player",
       "asset": "players-08",
-      "cell": 2
+      "cell": 2,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "short",
+        "build": "heavyset",
+        "skinTone": "fair",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:131",
       "kind": "player",
       "asset": "players-08",
-      "cell": 3
+      "cell": 3,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "none",
+        "build": "powerful",
+        "skinTone": "tan",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "temple-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:132",
       "kind": "player",
       "asset": "players-08",
-      "cell": 4
+      "cell": 4,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "stubble",
+        "build": "average",
+        "skinTone": "fair",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "chin-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:133",
       "kind": "player",
       "asset": "players-08",
-      "cell": 5
+      "cell": 5,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "long",
+        "build": "powerful",
+        "skinTone": "fair",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:134",
       "kind": "player",
       "asset": "players-08",
-      "cell": 6
+      "cell": 6,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "stubble",
+        "build": "heavyset",
+        "skinTone": "deep",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:135",
       "kind": "player",
       "asset": "players-08",
-      "cell": 7
+      "cell": 7,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "long",
+        "build": "slender",
+        "skinTone": "light",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:136",
       "kind": "player",
       "asset": "players-08",
-      "cell": 8
+      "cell": 8,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "none",
+        "build": "slender",
+        "skinTone": "light",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:137",
       "kind": "player",
       "asset": "players-08",
-      "cell": 9
+      "cell": 9,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "short",
+        "build": "heavyset",
+        "skinTone": "brown",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:138",
       "kind": "player",
       "asset": "players-08",
-      "cell": 10
+      "cell": 10,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "none",
+        "build": "slender",
+        "skinTone": "fair",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "mouth-mole",
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:139",
       "kind": "player",
       "asset": "players-08",
-      "cell": 11
+      "cell": 11,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "short",
+        "build": "average",
+        "skinTone": "tan",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "thick-brows"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:140",
       "kind": "player",
       "asset": "players-08",
-      "cell": 12
+      "cell": 12,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "long",
+        "build": "heavyset",
+        "skinTone": "fair",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:141",
       "kind": "player",
       "asset": "players-08",
-      "cell": 13
+      "cell": 13,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "stubble",
+        "build": "slender",
+        "skinTone": "tan",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:142",
       "kind": "player",
       "asset": "players-08",
-      "cell": 14
+      "cell": 14,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "long",
+        "build": "average",
+        "skinTone": "deep",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:143",
       "kind": "player",
       "asset": "players-08",
-      "cell": 15
+      "cell": 15,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "short",
+        "build": "powerful",
+        "skinTone": "fair",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "forehead-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:144",
       "kind": "player",
       "asset": "players-09",
-      "cell": 0
+      "cell": 0,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "long",
+        "build": "powerful",
+        "skinTone": "brown",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "eyebrow-gap"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:145",
       "kind": "player",
       "asset": "players-09",
-      "cell": 1
+      "cell": 1,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "stubble",
+        "build": "heavyset",
+        "skinTone": "fair",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:146",
       "kind": "player",
       "asset": "players-09",
-      "cell": 2
+      "cell": 2,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "long",
+        "build": "slender",
+        "skinTone": "fair",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:147",
       "kind": "player",
       "asset": "players-09",
-      "cell": 3
+      "cell": 3,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "stubble",
+        "build": "average",
+        "skinTone": "brown",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "thick-brows"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:148",
       "kind": "player",
       "asset": "players-09",
-      "cell": 4
+      "cell": 4,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "short",
+        "build": "heavyset",
+        "skinTone": "fair",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:149",
       "kind": "player",
       "asset": "players-09",
-      "cell": 5
+      "cell": 5,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "none",
+        "build": "slender",
+        "skinTone": "tan",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "forehead-line"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:150",
       "kind": "player",
       "asset": "players-09",
-      "cell": 6
+      "cell": 6,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "short",
+        "build": "average",
+        "skinTone": "fair",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:151",
       "kind": "player",
       "asset": "players-09",
-      "cell": 7
+      "cell": 7,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "none",
+        "build": "powerful",
+        "skinTone": "light",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:152",
       "kind": "player",
       "asset": "players-09",
-      "cell": 8
+      "cell": 8,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "stubble",
+        "build": "average",
+        "skinTone": "brown",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "temple-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:153",
       "kind": "player",
       "asset": "players-09",
-      "cell": 9
+      "cell": 9,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "long",
+        "build": "powerful",
+        "skinTone": "fair",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:154",
       "kind": "player",
       "asset": "players-09",
-      "cell": 10
+      "cell": 10,
+      "observedTraits": {
+        "hairCategory": "short",
+        "beardCategory": "stubble",
+        "build": "heavyset",
+        "skinTone": "tan",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "wide-nose"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:155",
       "kind": "player",
       "asset": "players-09",
-      "cell": 11
+      "cell": 11,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "long",
+        "build": "powerful",
+        "skinTone": "deep",
+        "eyes": "brown",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "cheek-mole"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:156",
       "kind": "player",
       "asset": "players-09",
-      "cell": 12
+      "cell": 12,
+      "observedTraits": {
+        "hairCategory": "long",
+        "beardCategory": "none",
+        "build": "slender",
+        "skinTone": "fair",
+        "eyes": "hazel",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "forehead-line",
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:157",
       "kind": "player",
       "asset": "players-09",
-      "cell": 13
+      "cell": 13,
+      "observedTraits": {
+        "hairCategory": "bald",
+        "beardCategory": "short",
+        "build": "average",
+        "skinTone": "brown",
+        "eyes": "blue",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:158",
       "kind": "player",
       "asset": "players-09",
-      "cell": 14
+      "cell": 14,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "none",
+        "build": "heavyset",
+        "skinTone": "fair",
+        "eyes": "green",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "players:159",
       "kind": "player",
       "asset": "players-09",
-      "cell": 15
+      "cell": 15,
+      "observedTraits": {
+        "hairCategory": "medium",
+        "beardCategory": "short",
+        "build": "slender",
+        "skinTone": "light",
+        "eyes": "grey",
+        "eyeConfidence": "visual-estimate",
+        "features": [
+          "freckles"
+        ],
+        "faceComplete": true
+      },
+      "traitSource": "docs/regen-bank-v2/player-trait-plan.json",
+      "traitConfidence": "visual-estimate"
     },
     {
       "id": "staff:000",
@@ -1394,5 +3232,18 @@
       "cell": 23,
       "ageBand": 70
     }
-  ]
+  ],
+  "qualification": {
+    "dateUTC": "2026-11-09",
+    "godot": "4.7.2",
+    "renderer": "gl_compatibility / Mesa llvmpipe",
+    "cataloguedBases": 200,
+    "exactCropComparisons": 200,
+    "graphicsChecks": 6004,
+    "uiContinuityChecks": 35,
+    "assetCommit": "359147e42dba459bd7d1da048d1f7f183e57851e",
+    "traitReviewCommit": "85b61d8582408edeb46e6c998b47cbcf8e8abffc",
+    "runtimeInference": false,
+    "windowsNativeTested": false
+  }
 }

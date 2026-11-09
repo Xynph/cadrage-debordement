@@ -28,3 +28,9 @@ test('The200-base catalogue counts original files, cells and exact immutable ass
  for(const asset of m.assets){const bytes=fs.readFileSync(path.resolve(__dirname,'..',asset.file));a.equal(crypto.createHash('sha256').update(bytes).digest('hex'),asset.sha256);if(asset.file.endsWith('.png')){a.equal(bytes.subarray(1,4).toString(),'PNG');a(bytes.readUInt32BE(16)/asset.grid[0]>=256);a(bytes.readUInt32BE(20)/asset.grid[1]>=256);}}
  for(const b of m.bases){const asset=m.assets.find(x=>x.id===b.asset);a(asset);a(b.cell>=0&&b.cell<asset.grid[0]*asset.grid[1]);}
 });
+test('Visual trait receipts separate observations from prompts and retain uncertainty for eye colours',{skip:process.env.CD_REGEN_ASSETS_PENDING==='1'&&'trait receipts not delivered yet'},()=>{
+ const m=require('../native/godot/art/regen-bank-v2/catalogue.json'),rows=m.bases.filter(b=>b.kind==='player'&&Number(b.id.split(':')[1])>=32);a.equal(rows.length,128);
+ for(const row of rows){a(row.observedTraits);a.equal(row.observedTraits.eyeConfidence,'visual-estimate');a.equal(row.observedTraits.faceComplete,true);a.equal(row.traitConfidence,'visual-estimate');}
+ for(const [key,values] of Object.entries({hairCategory:['bald','short','medium','long'],beardCategory:['none','stubble','short','long'],build:['slender','average','powerful','heavyset']})){const actual=new Set(rows.map(r=>r.observedTraits[key]));for(const value of values)a(actual.has(value));}
+ const features=rows.flatMap(r=>r.observedTraits.features).join(' ');a.match(features,/mole/);a.match(features,/scar/);
+});
