@@ -44,7 +44,7 @@ function evaluate({pr,main,collection,jobs=[],reads=0}){
   pr:pr.number,head:pr.head.sha,main,reads,ciRun:ci?.id||null,
   workflows:runs.map(r=>({id:r.id,name:r.name,status:r.status,conclusion:r.conclusion})),
   blockers,pending,
-  disclaimer:'Bilan non atomique, purement consultatif. Gate, CI main, protections et autorisation expresse restent obligatoires.'};
+  disclaimer:'Bilan consultatif et non atomique. Appliquer les exigences du gate officiel en production.'};
 }
 function inspect(num,api){
  need(Number.isSafeInteger(num)&&num>0,'Numéro de PR positif exigé');
@@ -69,7 +69,7 @@ function render(s,handoff=false){
   s.blockers.length?'Blocages : '+s.blockers.join('; '):'',
   s.pending.length?'En attente : '+s.pending.join('; '):'',
   s.disclaimer,
-  'AGENTS.md et issue #73 font autorité. Aucune permission de fusion implicite.'];
+  'Les consignes d’AGENTS.md et les descriptions de PR font référence.'];
  return lines.filter(Boolean).join('\n')+'\n';
 }
 function ghRead(endpoint){

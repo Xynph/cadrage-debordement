@@ -1,20 +1,36 @@
-# Développement parallèle — cycle court
+# Développement parallèle
 
-**Décision de Léo du 2 novembre 2026** : deux comptes producteurs peuvent écrire simultanément sur branches et chemins compatibles. Un seul intégrateur gère les fusions. Le propriétaire donne une autorisation générale pour les **fusions ordinaires**, sans demande répétée à chaque PR.
+1. Consulter `main` et les PR pertinentes sur GitHub. Partir d’une base vérifiée
+   sur une branche dédiée.
+2. En cas de travail simultané, comparer les chemins et les interfaces avec
+   les chantiers actifs. Ouvrir ou actualiser la PR en brouillon avant de
+   modifier un périmètre partagé. Signaler le recouvrement ou la dépendance
+   dans sa description et suspendre les écritures concernées jusqu’à
+   résolution. Poursuivre sur les parties indépendantes.
+3. Exécuter les tests ciblés. Vérifier la rétrocompatibilité des sauvegardes
+   si le format, l’import ou la reprise change. Renforcer les validations
+   pour les migrations, la sécurité, les règles du rugby, les finances
+   sensibles, l’architecture et les données réelles.
+4. Publier la branche et vérifier son HEAD sur GitHub. Actualiser la
+   description de la même PR avec les résultats et l’état de la livraison.
+5. L’intégrateur vérifie l’absence de conflit, le `main` courant, le HEAD exact,
+   les contrôles exigés et les protections serveur. Il utilise le gate
+   officiel en production selon [sa procédure](chat-release-gate.md), y compris
+   si une autorisation spécifique est exigée. En cas de contrôle rouge,
+   manquant ou en attente, indiquer le blocage dans la PR. Vérifier la CI du
+   commit fusionné avant d’annoncer la livraison validée.
 
-## Cycle de travail par lot
+## Passation dans la description de la PR
 
-1. Consulter une fois le main et l'issue #73 ; signaler les chemins réservés seulement en cas de travail simultané ou d'interface partagée.
-2. Développer un lot fonctionnel sur une branche dédiée, sans toucher aux DATA ou aux fichiers réservés par l'autre chantier.
-3. Exécuter les tests ciblés. Préserver les sauvegardes : tests de rétrocompatibilité en cas de changement de schéma/import. Ne jamais présenter « non exécuté » comme « réussi ».
-4. Publier une PR avec HEAD et résultats vérifiés, puis transmettre une passation courte. Éviter de relire plusieurs fois les mêmes workflows.
-5. L'intégrateur juge l'utilité, écarte les doublons, vérifie l'absence de conflits et applique le chemin de fusion techniquement autorisé. Aucune revue externe n'est exigée comme condition **interne** nouvelle.
-6. Après livraison, bilan concis : fonctionnalité, tests, commit de main, risque éventuel. Si la CI obligatoire ou les protections refusent la fusion, STOP technique documenté.
+- **Périmètre** — résultat attendu, chemins concernés et HEAD vérifié.
+- **Collisions** — uniquement si plusieurs chantiers se recoupent. Indiquer la
+  PR concernée, les chemins ou interfaces partagés et la décision à prendre.
+- **Tests** — résultats effectivement observés, échecs, contrôles non exécutés
+  et lien GitHub pour la CI du HEAD. Indiquer si la CI est en attente.
+- **Prochaine action** — geste précis pour reprendre, intégrer ou lever un
+  blocage, avec l’état de la fusion si elle a eu lieu.
 
-## Déploiement du nouveau régime
-
-Ce fichier et AGENTS.md fixent la **politique humaine voulue**. Ils ne modifient pas les protections serveur ni `ci/release-gate.cjs` : le gate historique peut encore exiger une autorisation spécifique ou une CI complète. Une PR séparée devra adapter le gate et ses tests de sécurité pour autoriser le cycle de fusion autonome sur les travaux ordinaires. Ne pas utiliser d'API directe ou de bypass pour esquiver un refus de ce gate avant cette adaptation.
-
-## Exceptions
-
-Renforcer les validations pour migration de sauvegardes, sécurité, règles du rugby, finances sensibles, changements d'architecture et données réelles. Ne pas fusionner deux branches concurrentes sans résoudre leurs dépendances. Pas de push direct vers main ; ne pas effacer les preuves d'intégration.
+La passation vit dans la PR du brouillon à la livraison. L’[issue #73](https://github.com/Xynph/cadrage-debordement/issues/73)
+et le [journal de développement](../DEVELOPPEMENT.md) restent des archives de
+coordination. Mettre à jour le journal seulement si une décision durable ou
+une information de référence change.

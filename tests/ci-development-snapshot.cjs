@@ -24,7 +24,10 @@ test('snapshot quatre GET, sans mutation, passation concise',()=>{
  const s=inspect(207,api);
  assert.equal(s.status,'CONTROLE_POSSIBLE');assert.equal(s.reads,4);assert.equal(calls.length,4);
  assert(calls.every(p=>!/(?:\/merge|\/dispatches|\/comments|\/rerun)/.test(p)));
- assert.match(render(s,true),/PASSATION CANDIDATE/);
+ const handoff=render(s,true);
+ assert.match(handoff,/PASSATION CANDIDATE/);
+ assert.match(handoff,/descriptions de PR/);
+ assert.doesNotMatch(handoff,/#73/);
  assert(!render(s).includes('/cd-merge'));
 });
 test('dernière CI rouge prime sur ancienne CI verte',()=>{
