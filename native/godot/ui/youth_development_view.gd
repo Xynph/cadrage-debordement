@@ -158,17 +158,62 @@ func _review(parent: Container,person: Dictionary) -> void:
 	var label := G.wrap(str(review.get("label","Bilan intermédiaire")),16,G.INK); label.name = "YouthReviewLabel"; parent.add_child(label)
 	var objective: Variant = review.get("objective")
 	if objective is Dictionary:
-		var line := str(objective.get("label","Objectif"))
+		var line := "Repère historique · "+str(objective.get("label","Objectif"))
 		if objective.get("value") != null and objective.get("target") != null: line += " · %s / %s %s depuis la référence" % [_decimal(objective.value),_decimal(objective.target),str(objective.get("unit",""))]
 		if objective.get("achieved",false): line += " · repère atteint"
 		parent.add_child(G.wrap(line,13))
 	parent.add_child(G.wrap(str(review.get("basis","")),12))
+	var recent: Dictionary = review.get("recent",{})
+	var recent_line := G.wrap("",13)
+	recent_line.name = "YouthRecentReview"
+	if recent.get("available",false):
+		recent_line.text = "Période récente observée · S%s semaine %s → semaine %s · %s semaines · %s minutes · niveau %s. Fenêtre visée : quatre semaines, bornes réelles conservées." % [G.n(recent.from.season),G.n(recent.from.week),G.n(recent.to.week),G.n(recent.weeks),_signed(recent.minutesDelta),_signed(recent.ratingDelta)]
+	else:
+		var reasons := {"untracked":"Démarrer le suivi.","insufficient":"Attendre deux mesures comparables de cette saison et de ce stade.","club":"Référence provenant d’un autre club.","counter":"Continuité du compteur à vérifier.","context":"Continuité du parcours à vérifier."}
+		recent_line.text = "Bilan récent indisponible · "+str(reasons.get(str(recent.get("reason","insufficient")),"Observations comparables insuffisantes."))
+	parent.add_child(recent_line)
+	if recent.get("available",false):
+		var changes: Array[String] = []
+		for key in ATTRIBUTES:
+			var amount: float = float(recent.get("attributeDeltas",{}).get(key,0))
+			if not is_zero_approx(amount): changes.append(str(ATTRIBUTES[key])+" "+_signed(amount))
+		parent.add_child(G.wrap("Qualités sur cette période · "+(" · ".join(changes) if not changes.is_empty() else "aucun changement observé"),12))
+
+	var short: Variant = review.get("shortTermObjective")
+	if short is Dictionary:
+		var line := "Décision S%s semaine %s · %s · " % [G.n(short.from.season),G.n(short.from.week),str(short.label)]
+		line += "réexamen au bilan annuel S%s" % G.n(short.due.season) if short.due.week == null else "réexamen S%s semaine %s" % [G.n(short.due.season),G.n(short.due.week)]
+		if short.get("value") != null and short.get("target") != null: line += " · %s / %s %s depuis cette décision" % [_decimal(short.value),_decimal(short.target),str(short.unit)]
+		elif short.get("coverage")=="unavailable": line += " · mesure depuis cette décision indisponible : son observation n’est plus conservée ou son contexte a changé"
+		if short.get("expired",false): line += " · échéance de réexamen atteinte"
+		line += ". Repère consultatif, sans gain ajouté ni effet causal attribué au plan."
+		var dated := G.wrap(line,13)
+		dated.name = "YouthShortTermObjective"
+		parent.add_child(dated)
+
 	var advice: Dictionary = review.get("recommendation",{})
 	var detail := G.wrap(str(advice.get("label",""))+" · "+str(advice.get("detail","")),13); detail.name = "YouthReviewAdvice"; parent.add_child(detail)
 	var destination: Variant = advice.get("destination")
 	if destination != null:
 		var navigate := G.button("EXAMINER LE PARCOURS →" if str(destination)=="Centre" else "EXAMINER L’EFFECTIF →",func(): app._clear_dialogs(); app.selected_player = str(person.id); app._navigate(str(destination)))
 		navigate.name = "YouthReviewNavigate"; parent.add_child(navigate)
+	if str(advice.get("key","")) == "promotion":
+		var promote := G.button("EXAMINER LE PREMIER CONTRAT DE CE JOUEUR →",func():
+			app._clear_dialogs()
+			app.selected_player = str(person.id)
+			app._navigate("Formation")
+			preload("res://ui/development_view.gd").open_player(app,str(person.id)))
+		promote.name = "YouthReviewPromotion"
+		parent.add_child(promote)
+	elif str(advice.get("key","")) == "loan":
+		var loan := G.button("EXAMINER LE PRÊT DE CE JOUEUR →",func():
+			app._clear_dialogs()
+			app.selected_player = str(person.id)
+			app._navigate("Centre")
+			preload("res://ui/academy_pathways_view.gd").open_professional(app,str(person.id)))
+		loan.name = "YouthReviewLoan"
+		parent.add_child(loan)
+
 
 func _enable() -> void:
 	var payload := {"confirmed":true,"context":_data().get("context",{}).duplicate(true)}
@@ -179,7 +224,7 @@ func _confirm_plan(person: Dictionary,plan: String,focus: Variant) -> void:
 	var detail := "Cet objectif sert uniquement au suivi : il ne change ni la courbe annuelle, ni le temps de jeu." if str(person.get("model",""))=="annual-v11" else "Le plan répartit le futur budget XP existant, sans bonus immédiat."
 	if str(person.get("model",""))!="annual-v11":
 		detail += " Si la qualité ciblée change, l’XP ciblée partielle non dépensée est remise à zéro ; les qualités déjà gagnées sont conservées."
-	app.confirm("Adapter l’objectif de "+str(person.name),detail+" Les minutes, la fatigue et les blessures restent prises en compte. Confirmer ?",Callable(app,"_command").bind("youth_development_plan",payload))
+	app.confirm("Adapter l’objectif de "+str(person.name),detail+" Confirmer date une nouvelle période de suivi à partir d’aujourd’hui, même si le plan reste identique. Les minutes, la fatigue et les blessures restent prises en compte. Confirmer ?",Callable(app,"_command").bind("youth_development_plan",payload))
 
 static func _decimal(value: Variant) -> String: return "%.2f" % float(value)
 static func _signed(value: Variant) -> String: return ("+" if float(value)>0 else "")+_decimal(value)

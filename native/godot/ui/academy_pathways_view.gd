@@ -207,14 +207,17 @@ static func _network(list: VBoxContainer, app: Control, data: Dictionary) -> voi
 		if p.union != "FR": _action(list, app, data, "ENREGISTRER L’AUTORISATION SIMULÉE", "academy_clearance", {"playerId":p.id}, -1, p.age < 18 or not p.trial or p.get("clearanceRecorded",false))
 		_action(list, app, data, "PROPOSER LE PROJET · 8 000 € SI ACCEPTÉ", "academy_feeder_recruit", {"playerId":p.id}, 8000, p.scouted < 2 or not p.trial or p.age < 16)
 
-static func _professionals(list: VBoxContainer, app: Control, data: Dictionary) -> void:
+static func _professionals(list: VBoxContainer, app: Control, data: Dictionary, player_id: String = "") -> void:
 	list.add_child(G.section("Prêter un jeune professionnel", "Un déplacement réel du joueur vers un autre effectif. Retour à l’intersaison ; le club d’origine doit conserver une place."))
 	for p: Dictionary in data.seniors:
-		if not p.loanEligible: continue
+		if not p.loanEligible or (not player_id.is_empty() and str(p.id)!=player_id): continue
 		var options: Array = [[-1,"Choisir le club d’accueil"]]
 		for club: Dictionary in data.loanClubs: options.append([club.id,club.name])
-		_choice(list, p.name, options, func(value):
-			if int(value) >= 0: _send(app,data,"academy_loan",{"playerId":p.id,"to":value},"Confirmer le prêt",p.name + " sera transféré dans l’effectif choisi jusqu’à l’intersaison.")).disabled = data.locked
+		var choice := _choice(list, p.name, options, func(value):
+			if int(value) >= 0: _send(app,data,"academy_loan",{"playerId":p.id,"to":value},"Confirmer le prêt",p.name + " sera transféré dans l’effectif choisi jusqu’à l’intersaison."))
+		choice.name = "YouthPathwayLoanClub"
+		choice.set_meta("player_id",p.id)
+		choice.disabled = data.locked or app.waiting
 	for loan: Dictionary in data.loans: list.add_child(G.wrap("Prêt en cours · %s → club %d" % [loan.name,loan.to],15))
 	if data.loans.is_empty(): list.add_child(G.wrap("Aucun prêt en cours. Les joueurs de la feuille de 23 doivent d’abord être retirés de la sélection.",15))
 
@@ -226,3 +229,32 @@ static func _history(list: VBoxContainer, data: Dictionary) -> void:
 		for p: Dictionary in generation.players:
 			list.add_child(G.wrap("%s · %s · %d/%d · %d minutes · %s" % [p.name,p.pos,p.rating,p.potential,p.minutes,p.strategy],14))
 		list.add_child(G.separator())
+
+static func open_professional(app: Control, player_id: String) -> AcceptDialog:
+	app._clear_dialogs()
+	var dialog := AcceptDialog.new()
+	dialog.name = "YouthLoanPathway"
+	dialog.title = "Examiner le prêt du jeune professionnel"
+	dialog.get_ok_button().text = "FERMER"
+	app._prepare_dialog(dialog,760)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	dialog.add_child(scroll)
+	var list := G.v(12)
+	G.fill(list,true)
+	scroll.add_child(list)
+	var data: Dictionary = app.model.get("clubLife",{}).get("academyPathways",{})
+	if not data.get("available",false): list.add_child(G.wrap(str(data.get("reason","Parcours indisponible dans cette édition.")),16))
+	elif not data.get("active",false):
+		list.add_child(G.wrap("Le prêt nécessite les parcours du centre. Leur activation est une décision distincte ; revenez ensuite à ce joueur pour choisir son club d’accueil.",16))
+		_action(list,app,data,"ACTIVER LES PARCOURS","academy_activate",{},0)
+	else:
+		var eligible: Array = data.get("seniors",[]).filter(func(p: Dictionary): return str(p.id)==player_id and p.get("loanEligible",false))
+		if eligible.is_empty(): list.add_child(G.wrap("Ce joueur n’est plus éligible au prêt dans le contexte actuel. Vérifiez notamment sa présence sur la feuille de 23 et son contrat.",16))
+		else: _professionals(list,app,data,player_id)
+	dialog.confirmed.connect(dialog.queue_free)
+	dialog.canceled.connect(dialog.queue_free)
+	app.add_child(dialog)
+	preload("res://ui/immersive08/dialogs.gd").show_centered(dialog,Vector2i(760,400))
+	return dialog
