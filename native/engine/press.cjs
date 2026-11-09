@@ -4,8 +4,9 @@ const commands=Object.freeze(['press_conference']);
 function factory(){
  const copy=x=>JSON.parse(JSON.stringify(x)),obj=x=>!!x&&typeof x==='object'&&!Array.isArray(x),int=(x,a,b)=>Number.isInteger(x)&&x>=a&&x<=b,num=(x,a,b)=>Number.isFinite(x)&&x>=a&&x<=b;
  const check=(ok,message='État de presse invalide.')=>{if(!ok)throw Error(message);};
+ const world=s=>typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s);
  const weekOf=s=>s.franceMode?.version===1?s.franceMode.week:s.round;
- const maxWeek=s=>s.franceMode?.version===1?34:26;
+ const maxWeek=s=>world(s)?CDWorldCareer.sizing(s).maxRound:s.franceMode?.version===1?34:26;
  const context=s=>({season:s.season,week:weekOf(s),club:s.club});
  const keys=(value,allowed)=>obj(value)&&Object.keys(value).every(k=>allowed.includes(k));
  const text=t=>typeof t==='string'&&t.length>0&&t.length<=600&&!/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(t);
@@ -63,8 +64,8 @@ function factory(){
  }
  function project(){
   if(!S)return null;
-  const events=CDMediaNativeAdapter.collect(S),divisionIds=S.franceMode?.version===1?['elite','accession','access']:['historical'];
-  const divisions=divisionIds.map(id=>({id,label:({elite:'Élite',accession:'Accession',access:'Barrage d’accession',historical:'Championnat historique'})[id],standings:events.filter(e=>e.kind==='standing'&&e.facts.divisionId===id).map(e=>copy(e.facts)),results:events.filter(e=>e.kind==='result'&&e.facts.divisionId===id).slice(-24).reverse().map(e=>({id:e.id,season:e.season,week:e.week,...copy(e.facts)})),injuries:events.filter(e=>e.kind==='injury'&&e.facts.divisionId===id).map(e=>({...copy(e.facts),playerName:S.clubs.find(c=>c.id===e.facts.clubId)?.players?.find(p=>p.id===e.facts.playerId)?.name||String(e.facts.playerId)}))})).filter(d=>d.standings.length||d.results.length||d.injuries.length);
+  const events=CDMediaNativeAdapter.collect(S),divisionIds=world(S)?['elite','accession','prem','urc','champions','challenge','access']:S.franceMode?.version===1?['elite','accession','access']:['historical'];
+  const divisions=divisionIds.map(id=>({id,label:({elite:'Élite',accession:'Accession',access:'Barrage d’accession',prem:'Premiership',urc:'United Rugby Championship',champions:'Coupe des champions',challenge:'Challenge européen',historical:'Championnat historique'})[id],standings:events.filter(e=>e.kind==='standing'&&e.facts.divisionId===id).map(e=>copy(e.facts)),results:events.filter(e=>e.kind==='result'&&e.facts.divisionId===id).slice(-24).reverse().map(e=>({id:e.id,season:e.season,week:e.week,...copy(e.facts)})),injuries:events.filter(e=>e.kind==='injury'&&e.facts.divisionId===id).map(e=>({...copy(e.facts),playerName:S.clubs.find(c=>c.id===e.facts.clubId)?.players?.find(p=>p.id===e.facts.playerId)?.name||String(e.facts.playerId)}))})).filter(d=>d.standings.length||d.results.length||d.injuries.length);
   const people=CDPressQuestionBank.journalists.map(j=>{
    const c=S.pressPeople?.contacts?.[j.id],score=c?.score??0,encounters=c?.encounters??0,style=CDPressRelations.dialogueStyles[j.style];
    return {...copy(j),identityLabel:j.fictional?'Personnage fictif':'Journaliste référencé',personality:style.personality,styleLabel:style.label,score,encounters,relationLabel:CDPressRelations.relationLabel(score,encounters),memory:(c?.memory||[]).map(e=>{const h=S.pressConference?.history?.find(h=>h.journalist?.id===j.id&&h.season===e.season&&h.week===e.week&&h.club===e.club&&h.id===e.questionId&&h.answerId===e.answerId);return {...copy(e),question:h?.questionText??null,answer:h?.answerText??null,toneLabel:CDPressRelations.dialogueTones[CDPressQuestionBank.questions.find(q=>q.id===e.questionId).answers.find(a=>a.id===e.answerId).tone]};})};

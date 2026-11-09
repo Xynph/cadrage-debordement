@@ -60,7 +60,7 @@ def voice_notice(coverage):
 
 
 def stage(node):
-    for compiler in ("build-staff-registry.cjs", "build-rugby-common.cjs"):
+    for compiler in ("build-staff-registry.cjs", "build-rugby-common.cjs", "build-world-registry.cjs"):
         subprocess.run([str(node), str(ROOT / "scripts" / compiler), "--check"], cwd=ROOT, check=True)
     voice_coverage = validate_voice_assets(PROJECT)
     assets = PROJECT / "assets"
@@ -152,19 +152,19 @@ def build(args):
     shutil.copytree(ROOT / "dist/match3d/assets", licenses / "modele3d",
                     ignore=shutil.ignore_patterns("*.glb", "*.gltf", "*.bin", "*.png", "*.jpg"))
     (app / "LISEZ-MOI.txt").write_text(
-        "OVAL LEGACY 27 — RUGBY MANAGER — PRÉALPHA 0.6\n\n"
+        "OVAL LEGACY 27 — RUGBY MANAGER — PRÉALPHA 0.7\n\n"
         "Lancer OvalLegacy27.exe. Aucun navigateur, Godot ou Node à installer.\n"
         "Conserver le dossier complet avec runtime et engine. Windows x64.\n\n"
-        "Nouvelle carrière : 30 clubs jouables, deux divisions reliées (14 et16).\n"
-        "Base commune de1592joueurs aux identités anonymisées.\n"
+        "Nouvelle carrière : Monde (56 clubs jouables) ou France (30 clubs).\n"
+        "Chaque édition partage ses joueurs et statistiques entre les packs.\n"
         "Importez un pack personnalisé à la création ou dans les paramètres.\n"
         "Disponible à la création et dans les paramètres de carrière.\n"
         "Les packs changent les noms/images, pas les statistiques/progrès.\n"
         "Composition à23, entraînement, tactiques, recrutement et contrats.\n"
-        "Staffs des30clubs, centre de formation, dossier adverse et besoins de recrutement.\n"
+        "Staffs par club, centre de formation, dossier adverse et besoins de recrutement.\n"
         "Presse : 500 questions, cinq réponses dont Humour et relations avec les journalistes.\n"
         "Vestiaire, rivalités, sponsors, projets, supporters et mobilité du manager.\n"
-        "Parcours de formation activables, prêts et mémoire des générations.\n"
+        "Formation de base dans le monde ; réseau Espoirs avancé dans l’édition France.\n"
         "Six rubriques et sous-menus ; Ctrl+K pour chercher, Alt+flèches pour revenir.\n"
         "Club → Histoire compare les saisons réellement archivées.\n"
         "Carnet du coach : notes sur la carrière et les joueurs, conservées à l'import.\n"
@@ -173,8 +173,9 @@ def build(args):
         "Plein écran au lancement ; mode fenêtré disponible dans Affichage.\n"
         "Gabi : aide vocale locale, petites bulles et16poses illustrées.\n"
         f"{voice_notice(voice_coverage)}"
-        "Match3D, phases finales, montées/descentes et saisons suivantes.\n"
-        "Les anciennes carrières fictives14 restent importables et jouables.\n\n"
+        "Match3D, phases finales, montées/descentes françaises et saisons suivantes.\n"
+        "Monde : 58 clubs, 56 jouables, quatre championnats et deux coupes d’Europe.\n"
+        "Les anciennes carrières 14/30 restent importables et jouables.\n\n"
         "Parcours : Nouvelle carrière → club → Composition → Préparation → Match.\n"
         "Pause pour les changements ; Adjoint pour déléguer la fin du match.\n"
         "Valider la journée après le résultat. Menu & sauvegardes pour exporter.\n"
@@ -184,7 +185,8 @@ def build(args):
         "Photos officielles et illustrations IA des packs signalées séparément.\n"
         "Profil séparé : %APPDATA%/CadrageDebordement/PrototypeGodot.\n"
         "Format2026/27 ; lois de match existantes2025, couverture partielle.\n"
-        "34 semaines fictives, monde fermé sans Nationale ; stade3D générique.\n"
+        "Monde : 46 semaines de gestion, calendriers sourcés et générés identifiés.\n"
+        "France historique : 34 semaines, sans Nationale ; stade3D générique.\n"
         "Préalpha à tester ; publication Steam et finition commerciale à venir.\n", encoding="utf-8")
     modding = app / "Packs"
     modding.mkdir()
@@ -200,6 +202,16 @@ def build(args):
                       staff=[{"id": staff_id, "name": "Mon entraîneur"}])
     with zipfile.ZipFile(modding / "Exemple-staff-identites.zip", "w", zipfile.ZIP_DEFLATED) as example_zip:
         example_zip.writestr("pack.json", json.dumps(example_v2, ensure_ascii=False, indent=2))
+    world = json.loads((ROOT / "native/engine/world-registry.json").read_text(encoding="utf-8"))
+    world_staff = json.loads((ROOT / "native/engine/world-staff-registry.json").read_text(encoding="utf-8"))
+    assert world["clubCount"] == len(world["clubs"]) == len(world_staff["clubs"]) == 58
+    assert sum(len(c["players"]) for c in world["clubs"]) == world["playerCount"]
+    example_world = dict(example_v2, id="mon-univers-monde", name="Mon univers mondial", databaseId=world["id"],
+                         clubs=[{"id": 30, "name": "Les Albatros XV"}],
+                         players=[{"id": world["clubs"][30]["players"][0]["id"], "name": "Mon premier joueur"}],
+                         staff=[{"id": world_staff["clubs"][30]["members"][0]["id"], "name": "Mon entraîneur"}])
+    with zipfile.ZipFile(modding / "Exemple-identites-monde.zip", "w", zipfile.ZIP_DEFLATED) as example_zip:
+        example_zip.writestr("pack.json", json.dumps(example_world, ensure_ascii=False, indent=2))
     (modding / "LIRE-MOI.txt").write_text(
         "PACKS OVAL LEGACY 27\n\nÀ la création, ouvrir la page des packs puis Importer un pack ZIP.\n"
         "En carrière : Menu → Paramètres → Importez un pack personnalisé.\n"
@@ -214,11 +226,14 @@ def build(args):
         "id, name et éventuellement portrait/synthetic. Les IDs staff sont distincts\n"
         "des joueurs ; consulter engine/staff-registry.json pour les correspondances.\n"
         "Le format v1 reste accepté ; les statistiques ne sont pas importées.\n"
+        "Exemple-identites-monde.zip cible la nouvelle édition Monde. Ses IDs sont dans\n"
+        "engine/world-registry.json et engine/world-staff-registry.json. Choisir l’édition\n"
+        "correspondante avant d’importer ; les préférences sont séparées.\n"
         "Les images personnalisées sont fournies séparément dans les packs importés.\n",
         encoding="utf-8")
     files = {p.relative_to(app).as_posix(): {"sha256": digest(p), "bytes": p.stat().st_size}
              for p in sorted(app.rglob("*")) if p.is_file()}
-    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": "0.6.0", "name": "Oval Legacy 27", "edition": 27, "mode": "common", "files": files}, indent=2), encoding="utf-8")
+    (app / "manifest-build.json").write_text(json.dumps({"prototype": True, "version": "0.7.0", "name": "Oval Legacy 27", "edition": 27, "mode": "world", "database": world["id"], "clubs": world["clubCount"], "players": world["playerCount"], "files": files}, indent=2), encoding="utf-8")
     archive = target / "OvalLegacy27-PrototypeGodot-Windows-x64.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as out:
         for path in sorted(app.rglob("*")):

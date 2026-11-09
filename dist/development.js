@@ -93,7 +93,7 @@ function ageGrowth(p){return p.age<=22?1.4:p.age<=26?1:p.age<=29?.5:p.age<=31?.1
 function growPlayer(p,xp,allowFocus=true){
  ensureDevelopment(p);
  // V12: activity/training feeds the single annual V11 curve, not legacy rating XP.
- if(p.lnrRatingsVersion===1){
+ if(p.lnrRatingsVersion===1||p.worldRatingsVersion===1&&typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S)&&CDWorldCareer.sourcePlayerKnown(p.id)){
   if(Number.isFinite(xp)&&xp>0)p.dev.xp=clamp(p.dev.xp+xp,0,.99);
   return 0;
  }
@@ -126,7 +126,7 @@ S.development=S.development||{version:1,academy:[],intakeSeason:0,rolledSeason:0
 function promoteYouth(id){if(economyLocked())return false;const d=S.development,p=d.academy.find(p=>p.id===id);if(!p||professionalPlaces()<=0){toast('Promotion impossible : joueur indisponible ou effectif complet.');return false}d.academy=d.academy.filter(p=>p.id!==id);p.academy=false;p.joinedSeason=S.season;p.joinedRound=S.round;p.contractEnd=contractBase()+1;club().players.push(p);if(satisfactionActive())ensureSatisfaction(p);careerPromoteYouth(p);transferEvent(`${p.name} signe son premier contrat professionnel jusqu’à la fin de la saison ${p.contractEnd}, à ${money(p.salary)} par semaine.`);save();render();toast('Le jeune est disponible dans votre effectif.');return true}
 function retirementSeason(p){ensureDevelopment(p);return S.season+Math.max(0,p.dev.retireAge-p.age-1)}
 function ageDevelopmentPlayer(p){ensureDevelopment(p);if(p.dev.lastYear===S.season)return;
- if(p.lnrRatingsVersion===1){
+ if(p.lnrRatingsVersion===1||p.worldRatingsVersion===1&&typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S)&&CDWorldCareer.sourcePlayerKnown(p.id)){
   if(typeof LNR_V11_AGE==='undefined'||typeof lnrProjectV12!=='function')throw Error('Courbes V11 manquantes');
   const d=p.dev,old=p.rating,oldSkills={...p.skills};
   d.lastYear=S.season;

@@ -1,5 +1,15 @@
 # Journal de développement — Cadrage Débordement
 
+## 9 novembre 2026 — carrière européenne et profils compatibles
+
+L'édition `rugby-world-2026-11-08-v1` ajoute le mode Monde sans convertir les anciennes carrières. Le registre compilé reprend les 1 592 objets France à l'identique et ajoute PREM, URC et deux invités européens. Les dates de départ sourcées, les règles et leurs éditions figurent dans la [documentation des compétitions](docs/world-competition-rules-20261109.md). Les calendriers futurs et les invitations du monde fermé suivent des décisions de jeu explicites, sans importer de scores réels.
+
+Le worker utilise le moteur de match natif pour les rencontres humaines et IA. Les archives, phases finales, promotions et qualifications sont vérifiées à l'import à partir du calendrier, des résultats et des tirages conservés. La limite de 16 Mio concerne uniquement cette édition. Le lecteur des packs garde les éditions, photos et préférences de création séparées. Les noms présentés ne sont pas écrits dans les états de simulation.
+
+La revue a reproduit une perte du point de retour en cas de refus de la publication finale de la sauvegarde. Le worker protège désormais la copie précédente pendant la transaction, puis la restaure si la publication échoue. Les témoins France et Monde vérifient état, horloge, primaire et copie de secours. Le budget PREM de départ et les renouvellements ont été ajustés sur des campagnes mesurées ; les niveaux sportifs et profils France n'ont pas été recalculés.
+
+Suivre [la matrice de réception](docs/mission-database-20261109.md) pour distinguer les preuves moteur, les tests du paquet Windows et l'installation. Le ZIP privé de données et les sauvegardes de réception restent hors dépôt.
+
 ## 8 novembre 2026 — finition PC, couleurs, voix complète et contacts visuels
 
 La première CI de PR399, tête73b12566, échoue sur trois témoins qui exigeaient Godot au chargement dans la CI Linux sans SDK : `godot-coach-notes06-app.cjs`, `godot-coach-notes06.cjs` et `godot-recruitment06.cjs`. Ils utilisent désormais `node:test` et un saut explicitement annoncé seulement lorsque le SDK n'est pas configuré. Tous les parcours, assertions, refus et délais60s sont conservés. Réception réelle des trois témoins sous Windows/Node22 puis26 : trois réussites sans saut ; environnement sans SDK : zéro réussite annoncée, trois sauts explicites. Aucun workflow ni garde du gate modifié. Le programme exporté reste strictement identique ; la nouvelle tête doit recevoir sa propre CI complète.

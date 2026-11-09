@@ -54,7 +54,8 @@ function worldFacilityTraining(){
 }
 function worldRecordResult(result){
  if(!worldActive()||!result||!Array.isArray(result.pair)||!Array.isArray(result.score))return false;
- const [h,a]=result.pair,match={season:S.season,round:result.franceContext?.round??S.round,phase:result.franceContext?.phase??S.phase,
+ const international=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S);
+ const [h,a]=result.pair,match={season:S.season,round:result.franceContext?.round??S.round,phase:international?result.phase:result.franceContext?.phase??S.phase,
   home:'club-'+h,away:'club-'+a,homeScore:result.score[0],awayScore:result.score[1]};
  S.worldManagement.matches.push(match);
  S.worldManagement.matches=S.worldManagement.matches.slice(-180);
@@ -62,7 +63,7 @@ function worldRecordResult(result){
   const id=result.pair[side],info=worldClub(id);
   if(!info)continue;
   const score=result.score[side],other=result.score[1-side];
-  const lost=typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)?CDFranceCompetition.outcome(result,id)<0:score<other;
+  const lost=typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)?CDFranceCompetition.outcome(result,id)<0:international&&Number.isInteger(result.winner)?result.winner!==id:score<other;
   info.consecutiveLosses=lost?Math.min(20,info.consecutiveLosses+1):0;
  }
  return true;
@@ -104,7 +105,8 @@ function worldRecordChampion(id){
 }
 function worldEndSeason(){
  if(!worldActive()||S.phase!=='ended'||S.worldManagement.lastSeason>=S.season)return false;
- const w=S.worldManagement,ranking=typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)?['elite','accession'].flatMap(id=>CDFranceCompetition.ranked(S,id)):ranked();
+ const international=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S);
+ const w=S.worldManagement,ranking=international?['elite','accession','prem','urc','guest'].flatMap(id=>CDWorldCareer.ranked(S,id)):typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)?['elite','accession'].flatMap(id=>CDFranceCompetition.ranked(S,id)):ranked();
  const winner=w.champion;
  const awards=CDRugbyWorld.awards(club().players.filter(p=>p.dev?.minutes>0)
   .map(p=>({id:p.id,rating:roleNote(p),minutes:p.dev.minutes,tries:0})));
@@ -115,10 +117,11 @@ function worldEndSeason(){
   careerRecord('award','Distinction interne : '+p.name+' (note et minutes)',S.club,'world-award-'+S.season);
  }
  const standings=ranking.map((c,index)=>{
-  const division=S.franceMode?CDFranceCompetition.ranked(S,CDFranceCompetition.leagueId(S,c.id)):null,position=division?division.findIndex(x=>x.id===c.id)+1:index+1,leagueSize=division?division.length:14;
+  const worldLeague=international?CDWorldCareer.leagueId(S,c.id):null;
+  const division=international?CDWorldCareer.ranked(S,worldLeague):S.franceMode?CDFranceCompetition.ranked(S,CDFranceCompetition.leagueId(S,c.id)):null,position=division?division.findIndex(x=>x.id===c.id)+1:index+1,leagueSize=division?division.length:14;
   const info=worldClub(c.id),next=CDReputation.update({
    current:info.reputation,leagueFinish:position,leagueSize,
-   champion:c.id===(S.franceMode?S.franceMode.leagues[CDFranceCompetition.leagueId(S,c.id)].champion:winner),financeHealthy:c.cash>=0});
+   champion:c.id===(international?S.worldMode.leagues[worldLeague]?.champion:S.franceMode?S.franceMode.leagues[CDFranceCompetition.leagueId(S,c.id)].champion:winner),financeHealthy:c.cash>=0});
   info.reputation=next.next;
   const risk=CDCoachMarket.dismissalRisk({
    confidence:info.coachConfidence,consecutiveLosses:info.consecutiveLosses});
@@ -133,7 +136,18 @@ function worldEndSeason(){
  w.yearbook=w.yearbook.slice(-15);w.lastSeason=S.season;
  return true;
 }
-function worldNewSeason(){
+function worldPrepareRenewalLiquidity(){
+ if(typeof CDWorldCareer==='undefined'||!CDWorldCareer.active(S)||S.phase!=='ended')throw Error('Financement international hors intersaison.');
+ for(const c of S.clubs){
+  if(c.id===S.club)continue;
+  const info=worldClub(c.id);
+  if(c.cash<0){info.debt+=-c.cash;c.cash=0;}
+  // Same annual allocation, available for decisions that take place before
+  // the new season opens. It is not paid again by worldNewSeason.
+  c.cash+=2500000;
+ }
+}
+function worldNewSeason(fundingAlreadyPaid=false){
  if(!worldActive())return false;
  const w=S.worldManagement;
  w.champion=null;w.lastFinance=null;
@@ -142,8 +156,11 @@ function worldNewSeason(){
   const info=worldClub(c.id);
   // Une année économique couvre uniquement l'allocation d'intersaison : 4 % d'intérêt annuel.
   if(c.cash<0){info.debt+=-c.cash;c.cash=0}
+  const international=fundingAlreadyPaid===true&&typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S);
+  const reserve=international?Math.max(500000,8*c.players.reduce((sum,p)=>sum+p.salary,0)):0;
+  const repayment=international?Math.min(1500000,info.debt*1.04,Math.max(0,c.cash-reserve)):Math.min(250000,info.debt);
   const outcome=CDFinancialRecovery.annual({cash:c.cash,debt:info.debt,wageRoom:100000},
-   {revenue:2500000,baseCosts:0,repayment:Math.min(250000,info.debt)});
+   {revenue:international?0:2500000,baseCosts:0,repayment});
   c.cash=outcome.cash;info.debt=outcome.debt;
   if(info.facilities<7&&info.debt===0&&c.cash>4500000&&
    w.yearbook.at(-1)?.standings.find(x=>x.id===c.id)?.position<=7){

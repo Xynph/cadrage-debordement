@@ -47,7 +47,7 @@ static func build(app: Control) -> Control:
 	G.fill(paper, true)
 	G.chapter(paper, "21", "Les parcours de formation", "Une place, un objectif, une génération.", app.accent)
 	if not data.get("available", false):
-		paper.add_child(G.wrap("Le centre est disponible dans une carrière active.", 18))
+		paper.add_child(G.wrap(data.get("reason", "Le centre est disponible dans une carrière active."), 18))
 		return page
 	paper.add_child(G.wrap(data.description, 13))
 	if not data.get("active", false):
