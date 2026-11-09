@@ -1,0 +1,224 @@
+{
+  "schema": "progression-baseline-receipts-v1",
+  "baseline": "26235845331964d233ee1cc0659883948954f542",
+  "frozenBench": "70e998b5a7b1ad276e28de597b5bad1d67add01d",
+  "aggregateSha256": "b2c2fde07aa53ad33706483fc3438c1ce67687683f2981411af0fa6073e8df8b",
+  "runs": [
+    {
+      "seed": 827381,
+      "policy": "minimal",
+      "sha256": "76b2e11cfd96af70bf57f0d638d270d018615f8bd9d5fcf79bdab800148c2988",
+      "sources": {
+        "commit": "70e998b5a7b1ad276e28de597b5bad1d67add01d",
+        "digest": "1642620984190917d52057cb38311667697533c9add4d9eba68a96a26d4c217f",
+        "runnerHash": "9dbef00ae5bb9fd033b2cdba2134f8988a00da52465821f9f78f6aef8facd80b",
+        "policiesHash": "e336aaf51a6f29d33848e182ccd6cf6f10e2a3ffb467ee0c4cfd5f76915bd78b"
+      },
+      "initialHash": "0edecf7844910ac794d320ea5fd046d1485191cc00eb7cb2a154785a8ee79a36",
+      "initialProfileHash": "45de300d7708cca41c033bd3e4d6869dd3ff3ea8cef55b473b45bed95070bec8",
+      "restarts": [
+        {
+          "label": "end-S1",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "8704524c64744b3c8f64aee5a2fc496ca8e21da990b183896e23110bf3729733",
+          "profileHash": "e419e3b71a9e314b09c8fc2dac410df6946c8bd3fb8efefbae95b1160d13d0fe"
+        },
+        {
+          "label": "end-S2",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "fe231c8395cd090971c059338885cbd40d388cb1a060b218f333270149bf9e25",
+          "profileHash": "ed3a4dd032e9a2bc99e1aa77a319b95f25841e94791c1a0e446a984c69ef5ffe"
+        },
+        {
+          "label": "opening-S3",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "cb28bf18d4e6dfc92d79015650f2fb0c24df547b883711271468cbb4de598faf",
+          "profileHash": "247044f4cc93a08ddfc5bce0e4f82508b7e1f4a40786751c361c49f308266e9a"
+        }
+      ]
+    },
+    {
+      "seed": 827381,
+      "policy": "attentive",
+      "sha256": "45da834d760986464aebf092291a9c3a181e5564a884c3e434191b46c4754a5f",
+      "sources": {
+        "commit": "70e998b5a7b1ad276e28de597b5bad1d67add01d",
+        "digest": "1642620984190917d52057cb38311667697533c9add4d9eba68a96a26d4c217f",
+        "runnerHash": "9dbef00ae5bb9fd033b2cdba2134f8988a00da52465821f9f78f6aef8facd80b",
+        "policiesHash": "e336aaf51a6f29d33848e182ccd6cf6f10e2a3ffb467ee0c4cfd5f76915bd78b"
+      },
+      "initialHash": "0edecf7844910ac794d320ea5fd046d1485191cc00eb7cb2a154785a8ee79a36",
+      "initialProfileHash": "45de300d7708cca41c033bd3e4d6869dd3ff3ea8cef55b473b45bed95070bec8",
+      "restarts": [
+        {
+          "label": "end-S1",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "d5e922f372d330e489c9d0f1f03d422dbdb9dc6f53099cbdbe5c2053a200c96f",
+          "profileHash": "495a154510aaf1bad4f9dd2d8ed58819c868400e37f6d539e3955f46fbe6d07e"
+        },
+        {
+          "label": "end-S2",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "70d8dc5d8b6bf890cefced9bb3beefebdbca00722407164ad9302182997179f0",
+          "profileHash": "47cbc3cc9c27644486bcc9d655e318784de3a2630e86c83475eedaa2c474a3a5"
+        },
+        {
+          "label": "opening-S3",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "30e19dc1e6e2187c15477ff2b6fb226d27d53f01fb9f42a8f9b8cb62d5110ad2",
+          "profileHash": "81611799f00704250cdcea8ef3721b92c0f7d8972bed8b8298c0affb2d9a363b"
+        }
+      ]
+    },
+    {
+      "seed": 318,
+      "policy": "minimal",
+      "sha256": "f8a597125bbd634f41cd903669697a181757b9e04165fc7519ee0c820f61276b",
+      "sources": {
+        "commit": "70e998b5a7b1ad276e28de597b5bad1d67add01d",
+        "digest": "1642620984190917d52057cb38311667697533c9add4d9eba68a96a26d4c217f",
+        "runnerHash": "9dbef00ae5bb9fd033b2cdba2134f8988a00da52465821f9f78f6aef8facd80b",
+        "policiesHash": "e336aaf51a6f29d33848e182ccd6cf6f10e2a3ffb467ee0c4cfd5f76915bd78b"
+      },
+      "initialHash": "db940ece7475595a0dc8fb61398339b4d453531990fefa9092ea03193504ae93",
+      "initialProfileHash": "8d51306d2099c20777afdb4406788f032214812c73d64a99d7aa0d44efdb224d",
+      "restarts": [
+        {
+          "label": "end-S1",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "e820f928277349aa96777ed7b6507512dda6ac793565300e07855a2ec02185c0",
+          "profileHash": "10b3e1d90bccb8d6eec7d242fc3dd28d71a16c94d2b32534ae121bdafa150062"
+        },
+        {
+          "label": "end-S2",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "6283f46e79bc05bf99d6e85a992e49949e5276cbefd16b58ac44b75963e877a8",
+          "profileHash": "fd1d32b8e42b1076a24c8b71db26fca118318e2d9fb02e7d8bfd720daf2ec604"
+        },
+        {
+          "label": "opening-S3",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "da1008f680f2e36b85e41bd23b8f906e0d779c2b0e7f19dfad62a4a91a185154",
+          "profileHash": "cda11b9274d97e81eb7b71ee11c1f0b609213859141708ab1d41c0690df1cc3a"
+        }
+      ]
+    },
+    {
+      "seed": 318,
+      "policy": "attentive",
+      "sha256": "c72e9f08ecd3ed1433e5d1b8615dd6a82d0439cf87f1c94976d6a89ddf9baec5",
+      "sources": {
+        "commit": "70e998b5a7b1ad276e28de597b5bad1d67add01d",
+        "digest": "1642620984190917d52057cb38311667697533c9add4d9eba68a96a26d4c217f",
+        "runnerHash": "9dbef00ae5bb9fd033b2cdba2134f8988a00da52465821f9f78f6aef8facd80b",
+        "policiesHash": "e336aaf51a6f29d33848e182ccd6cf6f10e2a3ffb467ee0c4cfd5f76915bd78b"
+      },
+      "initialHash": "db940ece7475595a0dc8fb61398339b4d453531990fefa9092ea03193504ae93",
+      "initialProfileHash": "8d51306d2099c20777afdb4406788f032214812c73d64a99d7aa0d44efdb224d",
+      "restarts": [
+        {
+          "label": "end-S1",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "77c8ea4346d79e0e95a60e502cb7f26d27c0b9cbdea829ad1e55f3f77d63df75",
+          "profileHash": "07d9785c7aaf4299f0e71058e667f0ddae457d7ad93a74de4ff149a655518229"
+        },
+        {
+          "label": "end-S2",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "9a9df9a01a58581e2b8d51e86bd20ab142b19f61f5cf40a344db176e671b238b",
+          "profileHash": "b42802efde213caef77893d6e2f8224b1626aca046fc1f76fc5ab703ab62b035"
+        },
+        {
+          "label": "opening-S3",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "5eb448b34795039a9a9a41f1da22a4927007ccd2ba9e2dff1b0f0734dc4dbe8e",
+          "profileHash": "b8944d9d363b6c788755a125b562131f500da1fd6ed852dd959385c611ae46a0"
+        }
+      ]
+    },
+    {
+      "seed": 52602,
+      "policy": "minimal",
+      "sha256": "9ca464850ff68e145ccb86e5f60f6721c0354251f561fd9d48de7184d9168666",
+      "sources": {
+        "commit": "70e998b5a7b1ad276e28de597b5bad1d67add01d",
+        "digest": "1642620984190917d52057cb38311667697533c9add4d9eba68a96a26d4c217f",
+        "runnerHash": "9dbef00ae5bb9fd033b2cdba2134f8988a00da52465821f9f78f6aef8facd80b",
+        "policiesHash": "e336aaf51a6f29d33848e182ccd6cf6f10e2a3ffb467ee0c4cfd5f76915bd78b"
+      },
+      "initialHash": "173a97515f02db3ae2c883dd07297be788f2b5d2547773d5707a3c719ac45a5e",
+      "initialProfileHash": "71a0fbdc300af3e9b58eb14caebb94a64081554405eb2c9ec477a6f19dc37f69",
+      "restarts": [
+        {
+          "label": "end-S1",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "c255a4a3dee9d84425043e3b3d86f7f8fc1914d000847573bd6e30d6e30b58ef",
+          "profileHash": "b5eae45664df98ce8b44c0c935b4c7b1e292cb4a149ba26c5a0905e530893ac7"
+        },
+        {
+          "label": "end-S2",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "d4e79525e801341bfbfd7c833f06c8bdccd08a972b7377e6ccb3457c792c2502",
+          "profileHash": "a108344b3cb633503d4ba4543da4a6addd4960011db48f44731be60faeb52c1e"
+        },
+        {
+          "label": "opening-S3",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "4a78f32f51d1c090d12baa5ce4c7bd703115f3a358c7a9cef2b8e395d5d7d46c",
+          "profileHash": "81061066f01252fc7e7472bf6d81de3a69ac86ace599c2ca31c38b9d384a77a2"
+        }
+      ]
+    },
+    {
+      "seed": 52602,
+      "policy": "attentive",
+      "sha256": "4c441c1947758e89826bb47f3b8b1c04f3945acb2833b2cf94b3e92a461df94f",
+      "sources": {
+        "commit": "70e998b5a7b1ad276e28de597b5bad1d67add01d",
+        "digest": "1642620984190917d52057cb38311667697533c9add4d9eba68a96a26d4c217f",
+        "runnerHash": "9dbef00ae5bb9fd033b2cdba2134f8988a00da52465821f9f78f6aef8facd80b",
+        "policiesHash": "e336aaf51a6f29d33848e182ccd6cf6f10e2a3ffb467ee0c4cfd5f76915bd78b"
+      },
+      "initialHash": "173a97515f02db3ae2c883dd07297be788f2b5d2547773d5707a3c719ac45a5e",
+      "initialProfileHash": "71a0fbdc300af3e9b58eb14caebb94a64081554405eb2c9ec477a6f19dc37f69",
+      "restarts": [
+        {
+          "label": "end-S1",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "9b6f4ea74f2509425ced79f8edf33a92d8e4cc409fe8daebf66931049294580c",
+          "profileHash": "14eaaba05f8f7cf45b5370b75a1886a009906f68480c5c5a687aa0ba6a77adad"
+        },
+        {
+          "label": "end-S2",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "ccf0a5c1ef508f3b8b13f2d27c8d1c51709054d04fe2d5608e8c651470ab3c28",
+          "profileHash": "025442d1d474e620fb9b4619fee847600d5c4d755b82baf0fa62c3c7b0f19a4c"
+        },
+        {
+          "label": "opening-S3",
+          "publicExact": true,
+          "privateExact": true,
+          "stateHash": "5e5f63b2cf126f2787d1e68e03c19654876343c87300072b54d9c11113669164",
+          "profileHash": "de52e3cdd01fcb6522d562fa31debbdb07754ea617c629b28a857a9dbe62c94d"
+        }
+      ]
+    }
+  ]
+}
