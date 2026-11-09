@@ -36,9 +36,11 @@ static func _player(app:Control,slot:int) -> Dictionary:
 		if int(assignment.get("slot",-1))==slot:return P.player(app.model,str(assignment.get("playerId","")))
 	return {}
 
-static func _short(value:String) -> String:
-	var parts:=value.split(" ")
-	return parts[0].left(1)+". "+" ".join(parts.slice(1)) if parts.size()>1 else value
+static func _slot_name(player:Dictionary) -> String:
+	if player.is_empty(): return "À pourvoir"
+	var name := str(player.name)
+	var parts := name.split(" ")
+	return parts[0].left(1)+". "+" ".join(parts.slice(1)) if parts.size()>1 else name
 
 static func _shirt(selected:bool) -> Texture2D:
 	if shirts.has(selected):return shirts[selected]
@@ -73,9 +75,11 @@ static func build(app:Control) -> Control:
 	D.photo(composition,"tactics-briefing",Rect2(23,72,1024,160))
 	var pitch:=Pitch.new();composition.add_child(pitch);D.place(pitch,Rect2(24,245,1022,626))
 	var positions:Array=[[435,565,1],[815,565,2],[1195,565,3],[623,656,4],[1003,656,5],[435,744,6],[815,744,8],[1195,744,7],[695,831,9],[905,893,10],[397,1003,11],[632,958,12],[1030,958,13],[1231,1003,14],[815,1069,15]]
+	var starters := 0
 	for position:Array in positions:
 		var slot:int=position[2]-1
 		var person:=_player(app,slot)
+		if not person.is_empty(): starters += 1
 		var selected:bool=app.selected_slot==slot
 		var button:=JerseyButton.new()
 		button.density=C.density
@@ -91,13 +95,13 @@ static func build(app:Control) -> Control:
 		button.add_child(shirt);D.place(shirt,Rect2(50,2,68,55))
 		D.text(button,84,39,str(slot+1),28,C.IVORY,700,55,HORIZONTAL_ALIGNMENT_CENTER)
 		D.rect(button,Rect2(2,57,164,28),Color("26a45e") if selected else Color("0b201a"),4,C.MINT if selected else Color("728777"))
-		D.text(button,84,78,_short(str(person.get("name","À pourvoir"))),22,Color("081d12") if selected else C.IVORY,600,158,HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(button,84,78,_slot_name(person),22,Color("081d12") if selected else C.IVORY,600,158,HORIZONTAL_ALIGNMENT_CENTER)
 		button.pressed.connect(func():app.selected_slot=slot;app._render();_candidates(app,slot))
 	var group:=P.group(app.model)
 	D.text(composition,25,891,"Condition du groupe : %d %%" % group.condition,19,C.MUTED,500,480)
-	D.text(composition,1046,891,"15 titulaires · 8 remplaçants",19,C.MUTED,500,440,HORIZONTAL_ALIGNMENT_RIGHT)
 	_identity(_card(page,Rect2(1366,264,548,906),"IDENTITÉ DE JEU","flag","TacticsIdentity"),app)
-	_bench(_card(page,Rect2(1930,264,598,529),"LE BANC","people","TacticsBench"),app)
+	var reserves := _bench(_card(page,Rect2(1930,264,598,529),"LE BANC","people","TacticsBench"),app)
+	D.text(composition,1046,891,"%d titulaires · %d remplaçants" % [starters,reserves],19,C.MUTED,500,440,HORIZONTAL_ALIGNMENT_RIGHT)
 	_selected(_card(page,Rect2(1930,809,598,361),"JOUEUR SÉLECTIONNÉ","","TacticsSelectedPlayer"),app)
 	var domains:Array=app.model.get("decisions",{}).get("preparation",{}).get("domains",[])
 	for i in 3:
@@ -161,36 +165,48 @@ static func _identity(card:Panel,app:Control) -> void:
 	if not app.model.get("selection",{}).get("valid",false):D.button(card,Rect2(22,855,504,34),"Compléter avec le centre",func():app.confirm("Renforcer la feuille de match","Le staff sélectionne les joueurs disponibles, puis promeut de vrais joueurs aux postes manquants. Chaque promotion ajoute 2 500 € de salaire par semaine. Confirmer ?",func():app._command("promote_cover",{"confirmed":true})),false,"school",true,app.accent,"LineupCover")
 	else:D.text(card,23,884,"Indicateurs projetés · choix enregistrés immédiatement",18,C.GOLD,500,502)
 
-static func _bench(card:Panel,app:Control) -> void:
+static func _bench(card:Panel,app:Control) -> int:
 	for pair in [["N°",23],["JOUEUR",72],["POSTE",323],["COND.",522]]:D.text(card,pair[1],87,pair[0],18,C.MUTED,500,100)
+	var filled := 0
 	for i in 8:
 		var slot:=15+i
 		var person:=_player(app,slot)
+		if not person.is_empty(): filled += 1
 		var y:=104+i*47
 		var action:=D.button(card,Rect2(20,y,558,43),"",func():app.selected_slot=slot;app._render();_candidates(app,slot),false,"",true,app.accent,"LineupSlot%02d" % (slot+1))
 		action.add_theme_stylebox_override("normal",C.box(Color("14201e") if i%2 else Color("10181a"),Color.TRANSPARENT,3,0))
 		D.chip(action,Rect2(8,7,34,28),str(slot+1),C.IVORY)
-		D.text(action,56,29,_short(str(person.get("name","À pourvoir"))),24,C.IVORY,600,239)
+		D.text(action,56,29,_slot_name(person),24,C.IVORY,600,239)
 		D.text(action,304,29,str(person.get("pos","—")),22,C.MUTED,500,170)
-		D.text(action,550,29,G.n(person.get("condition","—"))+"%",25,C.MINT,600,70,HORIZONTAL_ALIGNMENT_RIGHT)
+		var condition := "—" if person.is_empty() else G.n(person.get("condition","—"))+"%"
+		D.text(action,550,29,condition,25,C.MUTED if person.is_empty() else C.MINT,600,70,HORIZONTAL_ALIGNMENT_RIGHT)
+	D.text(card,578,38,"%d / 8" % filled,18,C.MUTED,500,100,HORIZONTAL_ALIGNMENT_RIGHT)
 	D.text(card,22,512,"Feuille complète et valide" if app.model.get("selection",{}).get("valid",false) else "Des points restent à traiter dans la feuille.",19,C.MUTED,500,554)
+	return filled
 
 static func _selected(card:Panel,app:Control) -> void:
 	var player:=_player(app,app.selected_slot)
 	D.text(card,578,38,"N°"+str(app.selected_slot+1),18,C.MUTED,500,120,HORIZONTAL_ALIGNMENT_RIGHT)
+	if player.is_empty():
+		D.rect(card,Rect2(20,75,170,213),Color("101719"),5,C.LINE)
+		var symbol := C.icon("people",48,C.MUTED)
+		card.add_child(symbol)
+		D.place(symbol,Rect2(81,157,48,48))
+		D.text(card,209,104,"POSTE À POURVOIR",34,C.IVORY,700,369)
+		D.text(card,209,137,"Choisissez un joueur qualifié.",24,C.MUTED,600,369)
+		D.button(card,Rect2(20,311,558,33),"Choisir un joueur",func():_candidates(app,app.selected_slot),false,"arrow",true,app.accent,"TacticsChoosePlayer")
+		return
 	if not str(player.get("portraitPath","")).is_empty():
 		var image:=G.portrait(int(player.get("portraitIndex",0)),C.px(170),player);card.add_child(image);D.place(image,Rect2(20,75,170,213))
 	else:D.photo(card,"squad-portrait",Rect2(20,75,170,213))
-	D.text(card,209,104,str(player.get("name","POSTE À POURVOIR")).to_upper(),34,C.IVORY,700,369)
-	D.text(card,209,137,str(player.get("pos","Choisissez un joueur")),24,C.GOLD,600,369)
+	D.text(card,209,104,str(player.name).to_upper(),34,C.IVORY,700,369)
+	D.text(card,209,137,str(player.get("pos","—")),24,C.GOLD,600,369)
 	D.text(card,209,208,G.n(player.get("note","—")),68,C.MINT,700,105)
 	D.text(card,323,198,G.n(player.get("condition","—"))+" %",44,C.MINT,600,240)
 	D.text(card,211,237,"NOTE AU POSTE",17,C.MUTED,500,145)
 	D.text(card,326,237,"CONDITION",17,C.MUTED,500,180)
-	D.chip(card,Rect2(208,258,368,34),str(player.get("status","Sélection à compléter")),C.MINT)
-	D.button(card,Rect2(20,311,558,33),"Ouvrir les consignes individuelles",func():
-		if player.is_empty():_candidates(app,app.selected_slot)
-		else:_individual(app,player),false,"arrow",true,app.accent,"TacticsChoosePlayer")
+	D.chip(card,Rect2(208,258,368,34),str(player.get("status","—")),C.MINT)
+	D.button(card,Rect2(20,311,558,33),"Ouvrir les consignes individuelles",func():_individual(app,player),false,"arrow",true,app.accent,"TacticsChoosePlayer")
 
 static func _candidates(app:Control,slot:int) -> void:
 	app._clear_dialogs()

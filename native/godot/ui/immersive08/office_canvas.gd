@@ -5,6 +5,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
 const Office = preload("res://ui/immersive08/office.gd")
+const World = preload("res://ui/immersive08/world_archive.gd")
 
 static func _card(page: Control, rectangle: Rect2, title: String, icon: String, id: String) -> Panel:
 	var local := rectangle
@@ -32,12 +33,20 @@ static func build(app: Control) -> Control:
 
 static func _fixture(card: Panel, app: Control) -> void:
 	card.clip_contents = true
-	D.photo(card,"office-hero",Rect2(694,1,665,416))
+	var pacific: bool = app.model.meta.get("leagueId")=="srp"
+	D.photo(card,"pacific-ground" if pacific else "office-hero",Rect2(694,1,665,416),.53 if pacific else 0.0)
 	C.veil(card)
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
 	if next.is_empty():
-		D.text(card,27,100,"La saison se termine." if app.model.meta.get("canAdvanceSeason",false) else "Le travail continue.",42,C.IVORY,700,740)
-		D.text(card,27,156,"Retrouvez les résultats et préparez la suite du projet.",21,C.MUTED,400,740,HORIZONTAL_ALIGNMENT_LEFT,true)
+		var preparation: Dictionary = app.model.meta.get("pacificPreparation",{})
+		if preparation.is_empty():
+			D.text(card,27,100,"La saison se termine." if app.model.meta.get("canAdvanceSeason",false) else "Le travail continue.",42,C.IVORY,700,740)
+			D.text(card,27,156,"Retrouvez les résultats et préparez la suite du projet.",21,C.MUTED,400,740,HORIZONTAL_ALIGNMENT_LEFT,true)
+		else:
+			D.chip(card,Rect2(24,22,281,29),"SUPER RUGBY PACIFIC",C.GOLD)
+			D.text(card,27,121,"La préparation du Pacifique.",58,C.IVORY,800,920)
+			D.text(card,27,183,World.preparation_note(preparation),30,C.IVORY,600,720)
+			D.text(card,27,223,"Avancez de quatre semaines au plus, jusqu’à la prochaine rencontre.",21,C.MUTED,400,735,HORIZONTAL_ALIGNMENT_LEFT,true)
 		D.button(card,Rect2(27,354,420,45),app.primary_text(),app.primary_action,true,"arrow",false,app.accent,"OfficePreparationAction")
 		return
 	D.chip(card,Rect2(24,22,281,29),str(next.get("label",P.league_name(app.model))).to_upper(),C.MUTED)
@@ -51,12 +60,13 @@ static func _fixture(card: Panel, app: Control) -> void:
 	var calendar := C.icon("calendar",25,C.GOLD)
 	card.add_child(calendar)
 	D.place(calendar,Rect2(29,194,25,25))
-	D.text(card,67,216,"SEMAINE %d · %s" % [int(next.get("week",0))+1,P.league_name(app.model)],28,C.IVORY,600,680)
+	var date := P.fixture_date(next)
+	if date.is_empty(): date = "SEMAINE %d" % [int(next.get("week",0))+1]
+	D.text(card,67,216,date+" · "+P.league_name(app.model),28,C.IVORY,600,680).name="OfficeFixtureDate"
 	var home := C.icon("home",23,C.MUTED)
 	card.add_child(home)
 	D.place(home,Rect2(29,235,23,23))
-	var venue: Dictionary = next.get("home",{})
-	D.text(card,67,255,"Terrain neutre" if next.get("neutral",false) else str(G.identity(venue).get("stadium",venue.get("stadium",""))),21,C.MUTED,400,650,HORIZONTAL_ALIGNMENT_LEFT,true)
+	D.text(card,67,255,P.fixture_venue(next),21,C.MUTED,400,650,HORIZONTAL_ALIGNMENT_LEFT,true).name="OfficeFixtureVenue"
 	for i in 2:
 		var club: Dictionary = next.get("home",{}) if i==0 else next.get("away",{})
 		var rank := G.n(club.get("rank","—"))

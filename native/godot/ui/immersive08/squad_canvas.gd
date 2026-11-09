@@ -284,5 +284,6 @@ func _advanced() -> void:
 	reset.name="RosterReset"
 	fields.add_child(reset)
 	dialog.confirmed.connect(dialog.queue_free)
+	dialog.canceled.connect(dialog.queue_free)
 	app.add_child(dialog)
 	dialog.popup_centered(Vector2i(600,280))

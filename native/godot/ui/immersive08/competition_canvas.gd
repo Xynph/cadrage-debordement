@@ -16,7 +16,7 @@ const WIN := Color("54de81")
 const DRAW := Color("a9b2b0")
 const LOSS := Color("ef8477")
 const PRIMARY := Color("106d43")
-const LABELS := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession", "cup": "Coupe", "ended":"Compétition terminée"}
+const LABELS := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "elimination": "Match de barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession", "cup": "Coupe", "ended":"Compétition terminée"}
 const SHORT_NAMES := {"prem":"PREM", "urc":"URC", "champions":"Coupe des champions", "challenge":"Challenge européen"}
 const RESULT_TINTS := {"V": WIN, "N": DRAW, "D": LOSS}
 const TABLE_COLUMNS := [
@@ -88,7 +88,8 @@ func _header() -> void:
 	scenery.clip_contents = true
 	add_child(scenery)
 	D.place(scenery, Rect2(1066, 0, 1182, 253))
-	D.photo(scenery, "stadium", Rect2(0, 0, 784, 253))
+	var pacific: bool = league.id=="srp"
+	D.photo(scenery, "pacific-ground" if pacific else "stadium", Rect2(0, 0, 784, 253),.5 if pacific else 0.0)
 	var trophy := D.photo(scenery, "trophy", Rect2(475, 0, 707, 253))
 	var blend := Shader.new()
 	blend.code = "shader_type canvas_item; void fragment() { vec4 art = texture(TEXTURE, UV); COLOR = vec4(art.rgb, art.a * smoothstep(0.0, 0.23, UV.x)); }"
@@ -242,9 +243,16 @@ func _next_match() -> void:
 	banner.clip_contents = true
 	panel.add_child(banner)
 	D.place(banner, Rect2(4, 50, RIGHT - 8, 280))
-	D.photo(banner, "stadium", Rect2(218, 0, RIGHT - 226, 280))
+	var pacific: bool = app.model.meta.get("leagueId")=="srp"
+	D.photo(banner, "pacific-ground" if pacific else "stadium", Rect2(218, 0, RIGHT - 226, 280),.51 if pacific else 0.0)
 	_fade(banner, Rect2(215, 0, RIGHT - 241, 280))
 	if next_fixture.is_empty():
+		var preparation: Dictionary = app.model.meta.get("pacificPreparation",{})
+		if not preparation.is_empty():
+			D.text(panel,36,130,"La préparation du Pacifique",43,C.IVORY,800,810)
+			D.text(panel,37,179,World.preparation_note(preparation),29,C.IVORY,600,802)
+			D.button(panel,Rect2(166,247,589,60),"Ouvrir le dossier de préparation",func(): app._navigate("Rivalités"),true,"arrow",false,PRIMARY,"CompetitionPacificLink")
+			return
 		D.text(panel, 36, 130, "Aucune rencontre programmée", 39, C.IVORY, 800, 810)
 		D.text(panel, 37, 174, app.model.meta.get("roundLabel", "Consultez le calendrier du club."), 27, C.MUTED, 500, 802)
 		D.button(panel, Rect2(166, 247, 589, 60), "Voir le calendrier du club", func(): _switch("calendar"), true, "calendar", false, PRIMARY, "CompetitionCalendarLink")
@@ -490,7 +498,6 @@ func _turn(key: String, direction: int, id: String) -> void:
 
 func _club_detail(club: Dictionary) -> void:
 	var view := Decisions.dialog(app, G.club_name(club), "CompetitionClubDetails", 880)
-	view[0].theme = G.T.make()
 	var content: VBoxContainer = view[1]
 	content.add_child(C.label("%s · Rang %s · %s points" % [_league_short(league), S.count_text(club.get("rank")), S.number_text(club.get("points"))], 28, C.IVORY, true, 700))
 	var summary := "%s V  ·  %s N  ·  %s D  ·  %s points marqués  ·  %s encaissés" % [S.count_text(club.get("won")), S.count_text(club.get("drawn")), S.count_text(club.get("lost")), S.count_text(club.get("pf")), S.count_text(club.get("pa"))]
@@ -507,7 +514,6 @@ func _club_detail(club: Dictionary) -> void:
 func _fixture_detail(fixture: Dictionary) -> void:
 	var heading := _competition_name(fixture)+" · "+_dated_phase(fixture) if international else _fixture_label(fixture)
 	var view := Decisions.dialog(app, heading, "CompetitionFixtureDetails", 880)
-	view[0].theme = G.T.make()
 	var content: VBoxContainer = view[1]
 	content.add_child(C.label("%s  —  %s" % [G.club_name(fixture.get("home", {})), G.club_name(fixture.get("away", {}))], 30, C.IVORY, true, 700))
 	var place := _location(fixture)

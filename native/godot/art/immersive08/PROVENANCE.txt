@@ -1,6 +1,6 @@
 OVAL LEGACY 27 — ILLUSTRATIONS IMMERSIVES
 
-Illustrations originales générées par IA et approuvées par le propriétaire dans le chat de conception.
+Extraits des maquettes approuvées par le propriétaire, complétés par des illustrations originales générées pour le jeu.
 Extraction de photographies décoratives : aucun écran complet ne sert d’interface.
 Les personnes et lieux représentés sont fictifs. Les photos/noms de packs privés restent prioritaires.
 Le manifeste conserve pour chaque extrait le fichier source, son SHA-256, le rectangle et l’empreinte de sortie.

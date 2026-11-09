@@ -1,5 +1,19 @@
 extends RefCounted
 ## Présentation calculée depuis le modèle reçu ; aucune commande ou état global.
+const Club = preload("res://ui/club_views.gd")
+const G = preload("res://ui/game_skin.gd")
+
+static func fixture_date(fixture: Dictionary) -> String:
+	var date: Variant = fixture.get("date")
+	return Club._calendar_date(date) if date is String else ""
+
+static func fixture_venue(fixture: Dictionary) -> String:
+	var venue: Variant = fixture.get("venue")
+	if venue is Dictionary: venue = venue.get("name")
+	if venue is String and not venue.is_empty() and venue.to_lower() not in ["home","away","neutral"]: return venue
+	if fixture.get("neutral",false): return "Terrain neutre"
+	var home: Dictionary = fixture.get("home",{})
+	return str(G.identity(home).get("stadium",home.get("stadium","")))
 
 static func group(model: Dictionary) -> Dictionary:
 	var squad: Array = model.get("squad", [])

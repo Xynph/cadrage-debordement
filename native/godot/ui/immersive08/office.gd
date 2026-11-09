@@ -3,6 +3,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
 const S = preload("res://ui/data_semantics.gd")
+const World = preload("res://ui/immersive08/world_archive.gd")
 
 static func _card(parent: Node, id: String, title: String, height: int, ratio: float = 1.0) -> PanelContainer:
 	var frame := C.card(title, Vector2(0, height))
@@ -49,7 +50,8 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	frame.add_child(backdrop)
 	frame.move_child(backdrop, 0)
-	var image := C.photo("office-hero")
+	var pacific: bool = app.model.meta.get("leagueId")=="srp"
+	var image := C.photo("pacific-ground" if pacific else "office-hero",Vector2.ZERO,true,.53 if pacific else 0.0)
 	backdrop.add_child(image)
 	image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	image.anchor_left = .51
@@ -65,10 +67,16 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 	C.fill(space, false, 1.0)
 	row.add_child(space)
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
+	var preparation: Dictionary = app.model.meta.get("pacificPreparation",{})
 	if next.is_empty():
-		left.add_child(C.label("LE PROCHAIN CHAPITRE", 21, C.GOLD))
-		left.add_child(C.wrap("La saison se termine." if app.model.meta.get("canAdvanceSeason", false) else "Le travail continue.", 42, C.IVORY, true))
-		left.add_child(C.wrap("Retrouvez les résultats et préparez la suite du projet.", 20))
+		if preparation.is_empty():
+			left.add_child(C.label("LE PROCHAIN CHAPITRE", 21, C.GOLD))
+			left.add_child(C.wrap("La saison se termine." if app.model.meta.get("canAdvanceSeason", false) else "Le travail continue.", 42, C.IVORY, true))
+			left.add_child(C.wrap("Retrouvez les résultats et préparez la suite du projet.", 20))
+		else:
+			left.add_child(C.label("SUPER RUGBY PACIFIC",21,C.GOLD))
+			left.add_child(C.wrap("La préparation du Pacifique.",42,C.IVORY,true))
+			left.add_child(C.wrap(World.preparation_note(preparation),20))
 	else:
 		var tags := C.h(12)
 		left.add_child(tags)
@@ -85,16 +93,26 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 		teams.add_child(names)
 		names.add_child(C.wrap(G.club_name(next.get("home", {})), 32, C.IVORY, true))
 		names.add_child(C.wrap(G.club_name(next.get("away", {})), 30, C.IVORY, true))
-		left.add_child(C.label("SEMAINE %d  ·  %s" % [int(next.get("week", 0))+1, P.league_name(app.model)], 25))
-		var venue: Dictionary = next.get("home", {})
-		left.add_child(C.wrap("Terrain neutre" if next.get("neutral", false) else str(G.identity(venue).get("stadium", venue.get("stadium", ""))), 18))
+		var date := P.fixture_date(next)
+		if date.is_empty(): date = "SEMAINE %d" % [int(next.get("week",0))+1]
+		var timing := C.wrap(date+" · "+P.league_name(app.model),25,C.IVORY,true)
+		timing.name="OfficeFixtureDate"
+		left.add_child(timing)
+		var venue := C.wrap(P.fixture_venue(next),18)
+		venue.name="OfficeFixtureVenue"
+		left.add_child(venue)
 		left.add_child(C.wrap("Préparez votre XV et confirmez vos choix de jeu.", 19))
 	var spacer := Control.new()
 	C.fill(spacer, true)
 	left.add_child(spacer)
 	var actions := C.h(12)
 	left.add_child(actions)
-	C.fill(_link(actions, "OfficePreparationAction", "PRÉPARER LE MATCH  →", app, "Préparation", true))
+	if next.is_empty():
+		var primary := C.button(app.primary_text(),app.primary_action,true,app.accent)
+		primary.name="OfficePreparationAction"
+		actions.add_child(primary)
+		C.fill(primary)
+	else: C.fill(_link(actions, "OfficePreparationAction", "PRÉPARER LE MATCH  →", app, "Préparation", true))
 	C.fill(_link(actions, "OfficeSelectionAction", "Vérifier les 23", app, "Composition"))
 
 static func _priorities(parent: VBoxContainer, app: Control) -> void:

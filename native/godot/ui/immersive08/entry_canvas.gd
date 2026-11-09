@@ -56,6 +56,7 @@ static func home(app: Control) -> Control:
 	var database: Dictionary = meta.get("database",{})
 	var france: Array = meta.get("legacyCatalogue", app.catalogue)
 	var world: Array = meta.get("worldCatalogue", [])
+	var pacific: Array = meta.get("pacificCatalogue", [])
 	var next_chip := 112
 	if not france.is_empty():
 		var count := france.filter(func(item: Dictionary): return item.get("playable", true)).size()
@@ -64,6 +65,10 @@ static func home(app: Control) -> Control:
 	if not world.is_empty():
 		var count := world.filter(func(item: Dictionary): return item.get("playable", true)).size()
 		D.chip(content,Rect2(next_chip,895,249,52),"Monde · %d clubs" % count,C.BLUE).name="EntryWorldCount"
+		next_chip+=263
+	if not pacific.is_empty():
+		var count := pacific.filter(func(item: Dictionary): return item.get("playable", true)).size()
+		D.chip(content,Rect2(next_chip,895,249,52),"Pacifique · %d clubs" % count,C.MINT).name="EntryPacificCount"
 		next_chip+=263
 	if int(database.get("playerCount",0))>0:
 		D.chip(content,Rect2(next_chip,895,305,52),G.n(database.playerCount)+" joueurs · base active",C.MINT)
@@ -148,29 +153,36 @@ static func _action(parent: Container, caption: String, callback: Callable, id: 
 
 static func workspace(app: Control, page: Control, creation: bool) -> Control:
 	_configure(app)
-	var column := C.v(14)
+	var size := app.get_window().size
+	var compact := size.y < 850
+	var column := C.v(8 if compact else 14)
 	column.name = "ImmersiveCreationWorkspace" if creation else "ImmersiveIdentityWorkspace"
 	var banner := Control.new()
-	banner.custom_minimum_size.y = C.px(186)
+	var height := 104 if compact else 186
+	banner.custom_minimum_size.y = C.px(height)
 	column.add_child(banner)
-	D.rect(banner,Rect2(0,0,2560,186),C.PANEL)
-	D.photo(banner,"entry-ground" if creation else "club-forest",Rect2(1250,0,1310,186))
+	D.rect(banner,Rect2(0,0,2560,height),C.PANEL)
+	var pacific: bool = app.pack_manager.mode("creation" if creation else "") == "world-pacific"
+	var art := "pacific-ground" if pacific else "entry-ground" if creation else "club-forest"
+	D.photo(banner,art,Rect2(1250,0,1310,height),.47 if pacific else 0.0)
 	var fade := Control.new()
 	banner.add_child(fade)
-	D.place(fade,Rect2(0,0,1870,186))
+	D.place(fade,Rect2(0,0,1870,height))
 	C.veil(fade)
-	D.photo(banner,"brand",Rect2(41,34,252,110))
-	D.line(banner,Vector2(327,35),Vector2(327,147),Color(C.GOLD,.75))
-	D.text(banner,365,67,"VOTRE PREMIÈRE SAISON" if creation else "L’ATELIER DES IDENTITÉS",24,C.GOLD,700,1040)
-	D.text(banner,363,131,"Prendre les rênes" if creation else "Habiller votre rugby",57,C.IVORY,700,1050)
-	D.line(banner,Vector2(0,185),Vector2(2560,185),C.LINE)
+	var divider := 236 if compact else 327
+	D.photo(banner,"brand",Rect2(41,16,162,71) if compact else Rect2(41,34,252,110))
+	D.line(banner,Vector2(divider,19 if compact else 35),Vector2(divider,height-(19 if compact else 39)),Color(C.GOLD,.75))
+	D.text(banner,divider+38,34 if compact else 67,"VOTRE PREMIÈRE SAISON" if creation else "L’ATELIER DES IDENTITÉS",22 if compact else 24,C.GOLD,700,1040)
+	D.text(banner,divider+36,80 if compact else 131,"Prendre les rênes" if creation else "Habiller votre rugby",44 if compact else 57,C.IVORY,700,1050)
+	D.line(banner,Vector2(0,height-1),Vector2(2560,height-1),C.LINE)
 	var inset := C.margin(38)
-	inset.add_theme_constant_override("margin_top",C.px(14))
+	inset.add_theme_constant_override("margin_top",C.px(6 if compact else 14))
+	if compact: inset.add_theme_constant_override("margin_bottom",C.px(18))
 	C.fill(inset,true)
 	column.add_child(inset)
 	inset.add_child(page)
 	Legacy.apply(page,GREEN if not app.model.get("club") is Dictionary else app.accent)
-	if app.get_window().size.x >= 2240 and app.get_window().size.y >= 1250:
+	if size.x >= 2240 and size.y >= 1250:
 		if creation: _career_context(app, page)
 		else: _pack_guide(app, page)
 	return column
@@ -200,7 +212,7 @@ static func _career_context(app: Control, page: Control) -> void:
 	var ground := str(selected.get("stadium", ""))
 	var objective := str(selected.get("goal", ""))
 	_tile(tiles, "01  ·  PROJET SPORTIF", "Votre feuille de route", objective if not objective.is_empty() else "Consultez les objectifs du club dans le Bureau après la prise de poste.", "training-session", C.MINT)
-	_tile(tiles, "02  ·  TERRAIN", "Jouer à domicile", ground if not ground.is_empty() else "Retrouvez les installations du club dans le carnet de carrière.", "stadium", C.GOLD)
+	_tile(tiles, "02  ·  TERRAIN", "Jouer à domicile", ground if not ground.is_empty() else "Retrouvez les installations du club dans le carnet de carrière.", "entry-ground", C.GOLD)
 	_tile(tiles, "03  ·  COMPÉTITION", Club.competition_name(division), "%s clubs jouables dans cette division" % G.n(rivals), "trophy", C.BLUE)
 	var column := choices.get_parent()
 	column.add_child(context)
@@ -222,16 +234,16 @@ static func _pack_guide(app: Control, page: Control) -> void:
 				guide.add_child(tiles)
 				_tile(tiles, "01  ·  FICHIER", "Ouvrir le ZIP", "Choisissez le fichier du pack sur votre ordinateur.", "scouting", C.BLUE)
 				_tile(tiles, "02  ·  APERÇU", "Vérifier les identités", "Vérifiez les noms, blasons et portraits recensés dans l’aperçu.", "approved-club-crest", C.GOLD, false)
-				_tile(tiles, "03  ·  SÉLECTION", "Habiller votre carrière", "Installez le pack, puis sélectionnez-le dans l’édition affichée.", "player-hero", C.MINT)
+				_tile(tiles, "03  ·  SÉLECTION", "Habiller votre carrière", "Installez le pack, puis sélectionnez-le dans l’édition affichée.", "player-hero", C.MINT, true, .12)
 				guide.add_child(C.wrap("Blason et portrait d’exemple · illustrations fictives", 17, C.MUTED))
 				return
 
-static func _tile(parent: HBoxContainer, label: String, title: String, copy: String, art: String, tint: Color, cover: bool = true) -> void:
+static func _tile(parent: HBoxContainer, label: String, title: String, copy: String, art: String, tint: Color, cover: bool = true, focus: float = .29) -> void:
 	var frame := C.card()
 	C.fill(frame)
 	parent.add_child(frame)
 	var content := C.content(frame)
-	content.add_child(C.photo(art, Vector2(0, 133), cover, .29))
+	content.add_child(C.photo(art, Vector2(0, 133), cover, focus))
 	content.add_child(C.label(label, 18, tint, true, 700))
 	content.add_child(C.wrap(title, 26, C.IVORY, true, 700))
 	content.add_child(C.wrap(copy, 17, C.MUTED))

@@ -11,7 +11,7 @@ const WIDTH := 2248
 const LEFT := 1410
 const RIGHT := 822
 const PRIMARY := Color("106d43")
-const PHASES := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession"}
+const PHASES := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "elimination": "Match de barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession"}
 const TABS := ["Confrontations", "Échos des clubs", "Palmarès", "Carnet complet"]
 
 var app: Control
@@ -54,7 +54,8 @@ func _build() -> void:
 func _hero() -> void:
 	var hero := D.panel(self, Rect2(0, 0, WIDTH, 312), "", "", "", "RivalryHero")
 	hero.clip_contents = true
-	D.photo(hero, "stadium", Rect2(938, 0, 1310, 312))
+	var pacific: bool = app.model.meta.get("leagueId")=="srp"
+	D.photo(hero, "pacific-ground" if pacific else "stadium", Rect2(938, 0, 1310, 312),.48 if pacific else 0.0)
 	C.veil(hero)
 	D.text(hero, 26, 49, "LES TERRITOIRES DU RUGBY", 32, C.GOLD, 800, 364)
 	D.line(hero, Vector2(404, 37), Vector2(547, 37), C.GOLD, 2)
@@ -70,6 +71,14 @@ func _hero() -> void:
 		D.text(tile, 64, 29, ["Duels suivis", "Duels du club", "Saisons archivées"][i], 24, C.MUTED, 600, 169)
 		var number: int = [pairs.size(), club_pairs.size(), data.get("archives", []).size()][i]
 		D.text(tile, 290, 53, str(number) if not data.is_empty() else "—", 44, C.IVORY, 800, 76, HORIZONTAL_ALIGNMENT_RIGHT)
+	var preparation: Dictionary = app.model.meta.get("pacificPreparation",{})
+	if not preparation.is_empty():
+		var card := D.panel(hero,Rect2(1484,28,735,256),"Préparation du Pacifique","calendar","","PacificPreparation")
+		D.text(card,24,110,World.preparation_note(preparation),33,C.IVORY,700,685)
+		D.text(card,24,155,"Les semaines sont simulées jusqu’à la prochaine rencontre.",22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
+		var weeks := mini(int(preparation.get("weeksUntil",0)),4)
+		var advance := D.button(card,Rect2(24,182,687,53),"AVANCER DE %d SEMAINE%s" % [weeks,"S" if weeks>1 else ""],app.primary_action,true,"arrow",false,app.accent,"PacificPreparationAdvance")
+		advance.disabled = app.waiting
 
 func _navigation() -> void:
 	for i in TABS.size():
@@ -218,7 +227,6 @@ func _echoes() -> void:
 
 func _echo_detail(event: Dictionary) -> void:
 	var view := Decisions.dialog(app, "Les échos des clubs", "RivalryEchoDetail", 940)
-	view[0].theme = G.T.make()
 	var list: VBoxContainer = view[1]
 	list.add_child(C.wrap("%s  %s – %s  %s" % [_club(event.get("a")), S.count_text(event.get("home")), S.count_text(event.get("away")), _club(event.get("b"))], 35, C.IVORY, true, 700))
 	if event.get("winner") != null and event.get("home") == event.get("away"):

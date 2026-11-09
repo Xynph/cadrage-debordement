@@ -1,7 +1,12 @@
 extends RefCounted
 const Club = preload("res://ui/club_views.gd")
-const DOMESTIC = ["elite", "accession", "prem", "urc"]
-const LABELS = {"elite":"Élite", "accession":"Accession", "prem":"Premiership", "urc":"United Rugby Championship", "champions":"Coupe des champions", "challenge":"Challenge européen", "access":"Barrage d’accession"}
+const DOMESTIC = ["elite", "accession", "prem", "urc", "srp"]
+const LABELS = {"elite":"Élite", "accession":"Accession", "prem":"Premiership", "urc":"United Rugby Championship", "srp":"Super Rugby Pacific", "champions":"Coupe des champions", "challenge":"Challenge européen", "access":"Barrage d’accession"}
+
+static func preparation_note(preparation: Dictionary) -> String:
+	var date := Club._calendar_date(str(preparation.get("nextDate","")))
+	var weeks := int(preparation.get("weeksUntil",0))
+	return "Prochain match le %s · %d semaine%s" % [date,weeks,"s" if weeks>1 else ""]
 
 static func name_for(model: Dictionary, id: String) -> String:
 	for competition: Dictionary in model.get("leagues",[]):

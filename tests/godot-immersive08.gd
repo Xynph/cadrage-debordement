@@ -116,6 +116,101 @@ func entry() -> void:
 	await settle()
 	check(app.route=="Accueil","Retour depuis l’atelier conserve le parcours d’entrée")
 
+func pacific() -> void:
+	check(app.pack_manager.mode("creation")=="world-pacific","Le nouveau catalogue par défaut est celui du Pacifique")
+	var catalogue: Array = app.model.meta.get("pacificCatalogue", [])
+	var count := catalogue.filter(func(club: Dictionary): return club.get("playable",true)).size()
+	var badge := app.find_child("EntryPacificCount",true,false) as Panel
+	check(badge!=null and badge.get_child(0).text=="Pacifique · %d clubs" % count,"Accueil indique le vrai nombre de clubs jouables au Pacifique")
+	await click(app.find_child("EntryNewCareer",true,false))
+	await settle()
+	var division := app.find_child("CreationDivision_srp",true,false) as Button
+	check(division!=null,"Le vrai choix de division Pacifique est présent")
+	if division==null: return
+	await click(division)
+	await settle()
+	var choices := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
+	var last := app.find_child("CreationClub67",true,false) as Button
+	check(choices!=null and last!=null and choices.get_global_rect().encloses(last.get_global_rect()),"Les dix clubs du Pacifique restent visibles dans Création en 1440p")
+	var ground := app.find_child("Art_pacific_ground",true,false) as TextureRect
+	check(ground!=null and ground.texture!=null,"Le terrain côtier original est importé dans la création Pacifique")
+	await capture("43-pacifique-creation-2560x1440")
+	root.size=Vector2i(1280,720)
+	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+	await settle()
+	app._render()
+	await settle()
+	choices=app.find_child("CreationClubsScroll",true,false)
+	last=app.find_child("CreationClub67",true,false)
+	check(choices!=null and last!=null and choices.get_global_rect().grow(1).encloses(last.get_global_rect()),"Les dix clubs du Pacifique restent visibles dans Création en 720p")
+	await capture("49-pacifique-creation-1280x720")
+	root.size=Vector2i(2560,1440)
+	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+	await settle()
+	app._render()
+	await settle()
+	await click(app.find_child("CreationClub58",true,false))
+	await settle()
+	await click(app.find_child("CreationStart",true,false))
+	await worker()
+	check(app.bridge.last_response_ok and app.model.meta.get("edition")=="world-pacific" and app.model.club.id==58,"Le vrai club Pacifique est créé par son bouton")
+	if not app.bridge.last_response_ok: return
+	var preparation: Dictionary = app.model.meta.get("pacificPreparation",{})
+	check(not preparation.is_empty() and app.model.next==null,"Le moteur fournit l’attente du premier match")
+	var office := app.find_child("OfficePreparationAction",true,false) as Button
+	check(office!=null and office.text.contains("PRÉPARATION"),"Le Bureau expose la préparation avant le premier match")
+	await capture("44-pacifique-bureau-2560x1440")
+	app._navigate("Calendrier")
+	await settle()
+	var calendar := app.find_child("CompetitionPacificLink",true,false) as Button
+	check(calendar!=null,"Le calendrier signale la préparation Pacifique")
+	await capture("45-pacifique-calendrier-2560x1440")
+	if calendar!=null: await click(calendar)
+	else: app._navigate("Rivalités")
+	await settle()
+	check(app.route=="Rivalités","Le calendrier ouvre le dossier de préparation")
+	var advance := app.find_child("PacificPreparationAdvance",true,false) as Button
+	check(advance!=null,"La commande officielle est accessible dans Rivalités en 1440p")
+	await capture("46-pacifique-preparation-2560x1440")
+	if advance==null or preparation.is_empty(): return
+	var start := int(app.model.meta.week)
+	await click(advance)
+	await worker()
+	check(app.bridge.last_response_ok and int(app.model.meta.week)==start+mini(4,int(preparation.weeksUntil)),"Le clic effectue au plus quatre semaines réelles")
+	app._navigate("Bureau")
+	await settle()
+	office=app.find_child("OfficePreparationAction",true,false)
+	start=int(app.model.meta.week)
+	await click(office)
+	await worker()
+	check(app.bridge.last_response_ok and int(app.model.meta.week)>start,"Le Bureau fait avancer la même préparation")
+	app._navigate("Rivalités")
+	await settle()
+	for i in 6:
+		if app.model.next is Dictionary: break
+		advance=app.find_child("PacificPreparationAdvance",true,false)
+		if advance==null: break
+		await click(advance)
+		await worker()
+	check(app.model.next is Dictionary and app.model.next.get("date")=="2027-02-13" and app.model.next.get("competitionId")=="srp","La préparation s’arrête sur le vrai premier match Pacifique")
+	app._navigate("Bureau")
+	await settle()
+	var date := app.find_child("OfficeFixtureDate",true,false) as Label
+	var venue := app.find_child("OfficeFixtureVenue",true,false) as Label
+	check(date!=null and date.text.begins_with("13/02/2027"),"Bureau 1440p : date réelle du prochain match")
+	check(venue!=null and venue.text=="Terrain désigné","Bureau 1440p : terrain encore à désigner")
+	await capture("47-pacifique-premier-match-2560x1440")
+	root.size=Vector2i(1280,720)
+	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+	await settle()
+	app._navigate("Calendrier")
+	app._navigate("Bureau")
+	await settle()
+	date=app.find_child("OfficeFixtureDate",true,false) as Label
+	venue=app.find_child("OfficeFixtureVenue",true,false) as Label
+	check(date!=null and date.text.begins_with("13/02/2027") and venue!=null and venue.text=="Terrain désigné","Bureau 720p : date et terrain sont préservés")
+	await capture("48-pacifique-premier-match-1280x720")
+
 func reception() -> void:
 	app._navigate("Bureau")
 	await settle()
@@ -526,6 +621,13 @@ func run() -> void:
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
 	await worker()
+	if OS.get_environment("CD_IMMERSIVE_SCOPE")=="pacific":
+		await pacific()
+		app.queue_free()
+		await settle()
+		print("immersive08 Pacifique : ", checks, " contrôles, ", failures.size(), " échecs")
+		quit(0 if failures.is_empty() else 1)
+		return
 	if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await entry()
 	await command("new_career", {"club":0, "mode":"fiction"})
 	app._navigate("Bureau")

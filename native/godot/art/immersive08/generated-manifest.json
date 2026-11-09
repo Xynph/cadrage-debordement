@@ -140,6 +140,26 @@
       "synthetic": true,
       "tool": "built-in image_gen",
       "prompt": "Create one wide panoramic photorealistic editorial sports photo around 2.4:1, for a premium native PC game about French elite rugby union XV. Tactical set-piece rehearsal in early evening under soft training-ground floodlights. A compact lineout drill framed from pitch-side at mid-distance: three adult teammates in dark forest-green and muted ivory training kits, two lifting a teammate safely at thigh level, the jumper reaches for a clearly oval ivory rugby ball just above the group, with authentic H-shaped rugby goalposts, clipped grass and shadowy club buildings in the distance. Show the relationship of jumpers and lifters clearly, centered-right, strong horizontal composition, top 60% keeps ball, hands and heads visible for a narrow crop. The left third is negative space with dark blurred trees and pitch lines. Palette rich charcoal, forest greens, muted brass light and ivory. Realistic faces and anatomy, documentary camera realism, gentle haze, early evening glow, polished cinematic mood. No graphic diagram, no UI, no lettering, no numbers, no crest, no watermark, no image borders."
+    },
+    {
+      "id": "pacific-ground",
+      "file": "pacific-ground.png",
+      "source": "exec-c14dfd8f-da73-4101-9e3d-1e402183c09b.png",
+      "sourceType": "generated",
+      "source_sha256": "fc61d5fb134ed528f1c8d957f7d193be8b838cf213df218e62667c5d3cdd2620",
+      "crop": [
+        0,
+        0,
+        1672,
+        941
+      ],
+      "width": 1672,
+      "height": 941,
+      "bytes": 2442736,
+      "sha256": "fc61d5fb134ed528f1c8d957f7d193be8b838cf213df218e62667c5d3cdd2620",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Generate one high-end photoreal editorial photograph for the PC rugby management game Oval Legacy 27. Landscape wide 16:9, image only, no text, no logo, no writing, no scoreboards with lettering, no UI. An invented small professional rugby ground on the volcanic coastline of Aotearoa New Zealand, editorial sports photography. The green rugby pitch is immediately recognizable by exactly two sets of tall white rugby H-posts at each far end of the long field, thin white touch lines, a low unbranded stand and modest floodlights, grass with crisp textured mowing patterns. Perspective from slightly above and off a sideline, bleachers foreground, ocean and two dark distant headlands at far right. Early morning, light mist, gray-blue sky in subdued charcoal and pale ivory with a little warm gold light and sea green. Detailed tactile natural surfaces, restrained cinematic contrast like an immersive 2027 premium rugby manager game. The main rugby posts and recognizable turf are centrally framed and slightly right of center so wide crops 3:1 and 4:1 remain readable, the left side may be darkened by later game overlays. Important: a fictional local ground, no resemblance to a specific official venue and no people close up. High editorial quality, authentic Aotearoa coastal topography, no saturated oversharpened effects."
     }
   ]
 }

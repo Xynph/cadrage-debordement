@@ -635,7 +635,7 @@ func _build_sidebar(parent: Node) -> void:
 		b.name = "Chapter_" + str(chapter.label)
 		b.custom_minimum_size.y = 28
 		navigation.add_child(b)
-	left.add_child(G.label("PRÉALPHA 0.6  /  WINDOWS", 9, G.GOLD))
+	left.add_child(G.label("PRÉALPHA %s  /  WINDOWS" % ProjectSettings.get_setting("application/config/version"), 9, G.GOLD))
 	left.add_child(G.button("MENU & SAUVEGARDES", pause_menu))
 
 func _update_live_bar() -> void:
@@ -660,6 +660,7 @@ func primary_text() -> String:
 	var live := _live()
 	if not live.is_empty(): return "VALIDER LE RÉSULTAT  →" if live.get("finished",false) else "RETOUR AU DIRECT  →"
 	if model.get("meta",{}).get("canAdvanceSeason",false): return "SAISON SUIVANTE  →"
+	if not model.get("meta",{}).get("pacificPreparation",{}).is_empty(): return "AVANCER LA PRÉPARATION  →"
 	return "PRÉPARER LE MATCH  →" if model.get("next") != null else "AVANCER LA SEMAINE  →"
 
 func primary_action() -> void:
@@ -667,6 +668,7 @@ func primary_action() -> void:
 		if _live().get("finished",false): _command("finish_round")
 		else: _navigate("Match")
 	elif model.meta.get("canAdvanceSeason",false): confirm("Une nouvelle saison", "Les contrats arrivés à échéance sont réglés et les mouvements de division sont appliqués. Commencer la saison suivante ?", func(): _command("next_season",{"confirmed":true}))
+	elif not model.meta.get("pacificPreparation",{}).is_empty(): _command("advance_pacific_preparation",{"fromWeek":int(model.meta.get("week",0))})
 	elif model.get("next") == null: _command("finish_round")
 	else: _navigate("Préparation")
 
