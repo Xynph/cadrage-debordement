@@ -37,3 +37,15 @@ La texture source est recadrée une seule fois par cellule via les opérations n
 Après le staging officiel et l’import des assets, `CD_GODOT_EXECUTABLE=/chemin/Godot_4.7.2 node --test tests/godot-regen-portraits.cjs` compare les descripteurs Node/Godot, vérifie de vrais crops et matériaux, la même base joueur/staff, le tooltip et les bornes du cache après 220 identités.
 
 Réception Linux Node 22.23.4, Godot 4.7.2 sans fenêtre : **376 contrôles réussis, zéro échec**. La qualification headless vérifie les ressources et paramètres ; elle ne remplace pas l’examen graphique du shader sur une fenêtre native ni la réception Windows. Le nouvel atlas staff et les deux atlas joueurs ont été examinés visuellement comme sources ; aucune promesse de vieillissement photoréaliste individuel n’en découle.
+
+## Qualification graphique réelle
+
+Une seconde réception utilise une fenêtre X11 sous Xvfb et Mesa/llvmpipe logiciel, avec le pilote audio Dummy : **379 contrôles réussis, zéro échec**. Le scénario graphique trouve deux identités ayant volontairement la même cellule source, applique leurs matériaux distincts, capture les pixels réels du viewport et vérifie que les rendus diffèrent. La composition ne se limite donc pas à des paramètres stockés ou à un numéro d’atlas.
+
+```bash
+DISPLAY=:99 LIBGL_ALWAYS_SOFTWARE=1 CD_REGEN_GRAPHICS=1 CD_GODOT_EXECUTABLE=/chemin/Godot_4.7.2 node --test tests/godot-regen-portraits.cjs
+```
+
+`scripts/capture-regen-portraits.gd` permet de produire une planche de qualification de 16 portraits en 1280 × 1400. Définir `CD_REGEN_CONTACT_SHEET` vers un PNG de sortie absolu et lancer Godot avec `--display-driver x11 --rendering-method gl_compatibility --audio-driver Dummy --path native/godot --script /chemin/absolu/scripts/capture-regen-portraits.gd`. Le script ne déclenche aucune génération IA ou requête réseau. La planche a été examinée visuellement : composition propre, continuité du visage joueur→staff, diversité des bases et âges illustratifs des nouveaux staffs. Le traitement d’âge d’un ancien joueur reste discret, sans prétendre reproduire une photographie exacte à 53 ans.
+
+Cette réception graphique Linux complète la réception headless ; elle ne certifie pas les pilotes ou le rendu Windows du PC personnel. Les captures volumineuses restent des artefacts de qualification générables, non une dépendance du jeu.
