@@ -30,7 +30,7 @@ static func page(app: Control) -> Control:
 	G.fill(title)
 	top.add_child(title)
 	var creation: bool = app.pack_manager.scope == "creation"
-	var edition := str({"world-nationale":"MONDE + NATIONALE", "world-japan":"MONDE + JAPON", "world-pacific":"MONDE + PACIFIQUE", "world":"MONDE"}.get(app.pack_manager.mode(), "FRANCE 30"))
+	var edition := str({"world-champ":"MONDE + CHAMP", "world-nationale":"MONDE + NATIONALE", "world-japan":"MONDE + JAPON", "world-pacific":"MONDE + PACIFIQUE", "world":"MONDE"}.get(app.pack_manager.mode(), "FRANCE 30"))
 	top.add_child(G.label(("NOUVELLE CARRIÈRE" if creation else "CARRIÈRE EN COURS") + " · " + edition, 13, G.WHITE))
 	var row := G.h(24)
 	G.fill(row, true)

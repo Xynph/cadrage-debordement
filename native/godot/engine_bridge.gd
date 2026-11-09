@@ -9,8 +9,9 @@ const IMPORT_LIMIT_BYTES := 8 * 1024 * 1024
 const WORLD_IMPORT_LIMIT_BYTES := 16 * 1024 * 1024
 const REQUEST_LIMIT_BYTES := 17 * 1024 * 1024
 const WORLD_REQUEST_LIMIT_BYTES := 34 * 1024 * 1024
-const EXTENDED_IMPORT_LIMIT_BYTES := 20 * 1024 * 1024
-const EXTENDED_REQUEST_LIMIT_BYTES := 42 * 1024 * 1024
+const NATIONALE_IMPORT_LIMIT_BYTES := 20 * 1024 * 1024
+const EXTENDED_IMPORT_LIMIT_BYTES := 24 * 1024 * 1024
+const EXTENDED_REQUEST_LIMIT_BYTES := 50 * 1024 * 1024
 var model: Dictionary = {}
 var last_response_ok := false
 var child_pid: int = -1
@@ -27,7 +28,7 @@ var _stop_deadline_ms: int = 0
 
 static func import_preflight(text: String, byte_count: int) -> String:
 	if byte_count <= IMPORT_LIMIT_BYTES: return ""
-	if byte_count > EXTENDED_IMPORT_LIMIT_BYTES: return "Fichier trop volumineux (20 Mio UTF-8 maximum)."
+	if byte_count > EXTENDED_IMPORT_LIMIT_BYTES: return "Fichier trop volumineux (24 Mio UTF-8 maximum)."
 	var parser := JSON.new()
 	if parser.parse(text) == OK and parser.data is Dictionary:
 		var state: Variant = parser.data.get("state")
@@ -36,10 +37,11 @@ static func import_preflight(text: String, byte_count: int) -> String:
 			var database: Variant = state.get("commonDatabase")
 			if mode is Dictionary and database is Dictionary and database.size() == 2 and not state.has("franceMode") and not state.has("lnrMode"):
 				var id := str(database.get("id", ""))
-				var versions := {"rugby-world-2026-11-08-v1": 1, "rugby-world-2026-11-09-pacific-v2": 2, "rugby-world-2026-11-09-japan-v3": 3, "rugby-world-2026-11-09-nationale-v4": 4}
+				var versions := {"rugby-world-2026-11-08-v1": 1, "rugby-world-2026-11-09-pacific-v2": 2, "rugby-world-2026-11-09-japan-v3": 3, "rugby-world-2026-11-09-nationale-v4": 4, "rugby-world-2026-11-09-champ-v5": 5}
 				if versions.has(id) and mode.get("catalogue") == id and mode.get("version") == versions[id] and database.get("version") == versions[id]:
-					var cap := EXTENDED_IMPORT_LIMIT_BYTES if int(versions[id]) == 4 else WORLD_IMPORT_LIMIT_BYTES
-					return "" if byte_count <= cap else "Fichier trop volumineux (16 Mio UTF-8 maximum pour cette édition)."
+					var version := int(versions[id])
+					var cap := EXTENDED_IMPORT_LIMIT_BYTES if version == 5 else (NATIONALE_IMPORT_LIMIT_BYTES if version == 4 else WORLD_IMPORT_LIMIT_BYTES)
+					return "" if byte_count <= cap else "Fichier trop volumineux (%d Mio UTF-8 maximum pour cette édition)." % int(float(cap) / 1048576.0)
 	return "Fichier trop volumineux (8 Mio UTF-8 maximum pour cette édition)."
 
 func start(data_dir: String) -> void:
@@ -94,7 +96,7 @@ func send(command: String, payload: Dictionary = {}) -> void:
 		return
 	_next_id += 1
 	var request := {"id": _next_id, "command": command, "payload": payload.duplicate(true)}
-	# The reader applies the edition-specific 8/16 MiB save limits. Only imports
+	# The reader applies the edition-specific 8/16/20/24 MiB save limits. Only imports
 	# can use the larger bounded envelope for escaped world save text.
 	if command == "import":
 		var text := str(payload.get("text", ""))

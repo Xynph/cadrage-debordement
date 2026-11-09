@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 110"><path d="M16 24l32-13 32 13v39q0 22-32 37Q16 85 16 63Z" fill="#1c2427" stroke="#4b7c73" stroke-width="4"/>
+ <path d="M21 26h54v44H21z" fill="#4b7c73" opacity=".62"/>
+ <path d="M22 70h52M29 68V55l19-19 19 19v13M40 68V58h16v10" fill="none" stroke="#eadbbd" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+ <text x="48" y="86" text-anchor="middle" font-family="sans-serif" font-size="9.5" font-weight="700" fill="#f2e4c9">TWA</text></svg>
