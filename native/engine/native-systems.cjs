@@ -1,7 +1,7 @@
 'use strict';
 // Closed production manifest. Each domain owns its rules and strict validator;
 // the worker remains the only disk transaction and save authority.
-const domains={press:require('./press.cjs'),relationships:require('./relationships.cjs'),clubWorld:require('./club-world.cjs'),academyPathways:require('./academy.cjs'),clubStrategy:require('./club-strategy.cjs'),clubSupport:require('./club-support.cjs'),managerCareer:require('./manager-career.cjs'),playbook:require('./playbook.cjs'),coachNotebook:require('./coach-notes.cjs'),staffCareer:require('./staff-career.cjs')};
+const domains={press:require('./press.cjs'),relationships:require('./relationships.cjs'),clubWorld:require('./club-world.cjs'),academyPathways:require('./academy.cjs'),clubStrategy:require('./club-strategy.cjs'),clubSupport:require('./club-support.cjs'),managerCareer:require('./manager-career.cjs'),playbook:require('./playbook.cjs'),coachNotebook:require('./coach-notes.cjs'),staffCareer:require('./staff-career.cjs'),regenScouting:require('./regen-scouting.cjs'),youthDevelopment:require('./youth-development.cjs')};
 const files=Object.freeze([...new Set(Object.values(domains).flatMap(d=>d.files))]);
 const commands=Object.freeze(Object.values(domains).flatMap(d=>d.commands));
 if(new Set(commands).size!==commands.length)throw Error('Commandes natives de domaine en double.');
@@ -27,6 +27,7 @@ function bootstrap(){
   };
  })();
  const CDStaffCareer=nativeSystems.domain('staffCareer');
+ const CDYouthDevelopment=nativeSystems.domain('youthDevelopment');
  const nativeBaseValidator=validateCareer;
  validateCareer=state=>{const result=nativeBaseValidator(state);nativeSystems.validate(state);return result;};
  nativeSystems.installHooks();
@@ -38,6 +39,13 @@ function bootstrap(){
   return result;
  };
  const staffBaseAdvance=advanceSeason;
- advanceSeason=function(){const state=S,completed=S?.season;const prior=nativeStaffTransition;nativeStaffTransition={state,completed};try{const result=staffBaseAdvance();if(S===state&&S?.season===completed+1)CDStaffCareer.advance(S,completed);return result;}finally{nativeStaffTransition=prior;}};`;
+ advanceSeason=function(){const state=S,completed=S?.season;const prior=nativeStaffTransition;nativeStaffTransition={state,completed};try{const result=staffBaseAdvance();if(S===state&&S?.season===completed+1)CDStaffCareer.advance(S,completed);return result;}finally{nativeStaffTransition=prior;}};
+ // Measure only completed native operations, outside import and validation.
+ // Preserve existing academy/staff wrappers, their results and hook markers.
+ for(const name of ['trainWeek','recordDevelopmentMatch','rollDevelopmentYear','advanceSeason','promoteYouth','managerMobilityOnSeasonStart']){
+  const original=globalThis[name];if(typeof original!=='function')continue;
+  const observed=function(){const result=original.apply(this,arguments);if(typeof S!=='undefined'&&S)CDYouthDevelopment.observe(S,name);return result;};
+  Object.assign(observed,original);globalThis[name]=observed;
+ }`;
 }
 module.exports={files,commands,bootstrap};
