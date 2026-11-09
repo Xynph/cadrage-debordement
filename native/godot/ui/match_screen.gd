@@ -121,7 +121,7 @@ func _ready() -> void:
 	speed.select([1,4,12].find(app.tick_steps))
 	speed.item_selected.connect(func(index:int):app.tick_steps=[1,4,12][index])
 	bottom.add_child(speed)
-	bottom.add_child(G.button("CONSIGNES",func():app._navigate("Préparation")))
+	bottom.add_child(G.button("CONSIGNES",func():app.Immersive.open_preparation(app,1)))
 	bottom.add_child(G.button("ADJOINT",func():app.confirm("Confier la fin du match", "L’adjoint prend en charge la fin de cette rencontre. Confirmer la délégation ?",func():app._command("delegate"))))
 	var spacer:=Control.new()
 	G.fill(spacer)

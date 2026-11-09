@@ -96,7 +96,9 @@ static func button(parent: Node, rectangle: Rect2, caption: String, callback: Ca
 	control.clip_text = true
 	control.custom_minimum_size = Vector2.ZERO
 	control.add_theme_font_size_override("font_size",maxi(12,C.px(21 if small else 25)))
-	var style := surface(rectangle.size.x,rectangle.size.y,accent.lightened(.12) if primary else Color("121c1c"),accent.darkened(.45) if primary else Color("121c1c"),Color("74c992") if primary else Color("72817a"),6)
+	var top := C.readable_primary_fill(accent.lightened(.12)) if primary else Color("121c1c")
+	var bottom := C.readable_primary_fill(accent).darkened(.45) if primary else Color("121c1c")
+	var style := surface(rectangle.size.x,rectangle.size.y,top,bottom,Color("74c992") if primary else Color("72817a"),6)
 	style.content_margin_left = C.px(18)
 	style.content_margin_right = C.px(18)
 	control.add_theme_stylebox_override("normal",style)

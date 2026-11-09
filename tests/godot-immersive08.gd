@@ -341,6 +341,7 @@ func families() -> void:
 		if item[0]=="Recrutement":
 			check(caption_fits(app.find_child("MarketSort_Niveau",true,false)),"Le libellé de tri par niveau reste entier en 1440p")
 		if view!=null: await capture(item[2]+"-2560x1440")
+		if item[0]=="Presse" and view!=null: await press_panes()
 	app._navigate("Finances")
 	await settle()
 	var wages: Button = app.find_child("FinanceTab_wages",true,false)
@@ -365,6 +366,26 @@ func families() -> void:
 	var lineout: TextureRect = app.find_child("Art_lineout_analysis",true,false)
 	check(lineout!=null and lineout.texture!=null and lineout.is_visible_in_tree(),"La photo de touche apparaît dans les phases arrêtées")
 	await capture("38-plan-de-jeu-phases-2560x1440")
+
+func press_panes() -> void:
+	var tabs := app.find_child("PressTabs",true,false) as TabContainer
+	check(tabs!=null and tabs.get_tab_count()==4 and tabs.get_tab_control(1).get_child_count()==0,"Presse ouvre le journal sans construire les onglets masqués")
+	if tabs==null: return
+	await click(app.find_child("PressCanvasTab1",true,false))
+	await settle()
+	var conference := tabs.get_tab_control(1).get_child(0) as Control
+	check(conference!=null and tabs.current_tab==1 and conference.is_visible_in_tree(),"Le clic monte le contenu réel de la conférence")
+	await capture("50-presse-conference-2560x1440")
+	await click(app.find_child("PressCanvasTab3",true,false))
+	await settle()
+	var people := tabs.find_child("PressPersonPicker",true,false) as OptionButton
+	check(tabs.current_tab==3 and people!=null and people.item_count>0,"Le carnet de portraits charge le vrai annuaire de Presse")
+	await capture("51-presse-portraits-2560x1440")
+	await click(app.find_child("PressCanvasTab1",true,false))
+	await settle()
+	check(tabs.get_tab_control(1).get_child(0)==conference,"Revenir à la conférence réutilise les mêmes contrôles")
+	await click(app.find_child("PressCanvasTab0",true,false))
+	await settle()
 
 func desktop_1080() -> void:
 	root.size=Vector2i(1920,1080)

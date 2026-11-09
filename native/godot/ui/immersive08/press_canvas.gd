@@ -88,18 +88,35 @@ func _desk() -> void:
 	tabs.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	card.add_child(tabs)
 	D.place(tabs, Rect2(17, 66, LEFT - 34, 736))
-	Press._journal(tabs, app, data)
-	Press._conference(tabs, app, data)
-	Press._history(tabs, app, data)
-	tabs.add_child(People.build(app, data))
+	if data.conference.get("available",false): Press._conference_draft(app,data)
+	for title in ["Journal","Conférence","Historique","Relations"]:
+		var slot := Control.new()
+		slot.name = title
+		tabs.add_child(slot)
 	tabs.current_tab = active
+	Legacy.apply(tabs, PRIMARY)
+	_mount(active)
 	tabs.tab_changed.connect(func(index: int):
 		active = index
 		app.management_ui.press_tab = index
+		_mount(index)
 		headline.text = _heading(index)
 		_mark_tabs())
-	Legacy.apply(tabs, PRIMARY)
-	for answer: Button in tabs.find_children("PressAnswer_*", "Button", true, false):
+
+func _mount(index: int) -> void:
+	var slot := tabs.get_tab_control(index)
+	if slot.get_child_count() != 0: return
+	var page: Control
+	match index:
+		0: page = Press._journal(app,data)
+		1: page = Press._conference(app,data)
+		2: page = Press._history(app,data)
+		3: page = People.build(app,data)
+		_: return
+	slot.add_child(page)
+	page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	Legacy.apply(page, PRIMARY)
+	for answer: Button in page.find_children("PressAnswer_*", "Button", true, false):
 		answer.pressed.connect(_update_draft)
 
 func _sidebar() -> void:
@@ -141,7 +158,7 @@ func _mark_tabs() -> void:
 
 func _update_draft() -> void:
 	if draft_status == null: return
-	var draft: Dictionary = app.get_meta("press_draft_choices", {})
+	var draft: Dictionary = app.get_meta("press_draft_choices", {}) if data.conference.get("available",false) else {}
 	draft_status.text = "%d réponse(s) en brouillon" % draft.size() if not draft.is_empty() else ""
 
 static func _heading(index: int) -> String:

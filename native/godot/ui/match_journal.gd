@@ -2,6 +2,7 @@ extends VBoxContainer
 # Read-only journal. Categories use captureMatchAction().kind, never prose.
 const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/carnet_skin.gd")
+const MIN_EVENT_PIXELS = 12
 const CATEGORIES = ["Tous", "Scores", "Discipline", "Changements", "Conquête"]
 const KINDS = {
 	"message":"Jeu courant", "carry":"Progression", "turnover":"Récupération",
@@ -33,6 +34,10 @@ var _updating := false
 var _revision := 0
 var _started := false
 var _ui_state: Dictionary = {}
+var _event_font_floor := MIN_EVENT_PIXELS
+
+func _ready() -> void:
+	get_viewport().size_changed.connect(_resize_event_fonts, CONNECT_DEFERRED)
 
 func setup(owner_app: Control) -> void:
 	app = owner_app
@@ -251,15 +256,53 @@ func _render(position: int, follow: bool) -> void:
 	empty.text = "Aucun événement pour ces filtres." if not _events.is_empty() else "Le journal se remplira après le coup d’envoi."
 	latest.disabled = visible_events.is_empty()
 	_notice()
+	_event_font_floor = _reading_font_floor()
+	_apply_event_fonts.call_deferred()
 	_restore.call_deferred(position, follow, revision)
 
-func _restore(position: int, follow: bool, revision: int) -> void:
+func _reading_font_floor() -> int:
+	var scale := get_global_transform().get_scale().y
+	return ceili(MIN_EVENT_PIXELS / maxf(.1, scale))
+
+func _apply_event_fonts() -> void:
+	for entry in rows.get_children():
+		for child in entry.get_children():
+			if not child is Label: continue
+			var current: int = child.get_theme_font_size("font_size")
+			var original: int = child.get_meta("journal_font_size", current)
+			var resized := maxi(original, _event_font_floor)
+			if resized == current: continue
+			child.set_meta("journal_font_size", original)
+			child.add_theme_font_size_override("font_size", resized)
+
+func _resize_event_fonts() -> void:
+	if not is_inside_tree() or not is_instance_valid(scroll): return
+	var minimum := _reading_font_floor()
+	if minimum == _event_font_floor: return
+	_event_font_floor = minimum
+	var position := scroll.scroll_vertical
+	var anchor: Control
+	var fraction := 0.0
+	if not _following:
+		for entry: Control in rows.get_children():
+			if entry.position.y + entry.size.y <= position: continue
+			anchor = entry
+			fraction = (position - entry.position.y) / maxf(1.0, entry.size.y)
+			break
+	_updating = true
+	_revision += 1
+	_apply_event_fonts()
+	_restore.call_deferred(position, _following, _revision, anchor, fraction)
+
+func _restore(position: int, follow: bool, revision: int, anchor: Control = null, fraction: float = 0.0) -> void:
 	# Containers lay out after deferred calls; wait for their real scrollbar range.
 	if not is_inside_tree() or revision != _revision: return
 	var tree := get_tree()
 	for frame in 2:
 		await tree.process_frame
 		if not is_inside_tree() or revision != _revision: return
+	if is_instance_valid(anchor):
+		position = roundi(anchor.position.y + clampf(fraction * anchor.size.y, 0.0, maxf(0.0, anchor.size.y - 1.0)))
 	scroll.scroll_vertical = int(scroll.get_v_scroll_bar().max_value) if follow else position
 	_following = follow
 	_updating = false

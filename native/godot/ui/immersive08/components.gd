@@ -126,6 +126,12 @@ static func card(title: String = "", minimum: Vector2 = Vector2.ZERO) -> PanelCo
 static func content(frame: Control) -> VBoxContainer:
 	return frame.get_meta("content")
 
+static func readable_primary_fill(color: Color) -> Color:
+	var limit := (IVORY.srgb_to_linear().get_luminance() + .05) / 4.6 - .05
+	while color.srgb_to_linear().get_luminance() > limit:
+		color = color.darkened(.05)
+	return color
+
 static func button(text: String, callback: Callable, primary: bool = false, accent: Color = Color("176e49")) -> Button:
 	var control := Button.new()
 	control.set_meta("immersive_style_applied",true)
@@ -133,9 +139,10 @@ static func button(text: String, callback: Callable, primary: bool = false, acce
 	control.custom_minimum_size.y = px(46)
 	control.add_theme_font_override("font", BOLD)
 	control.add_theme_font_size_override("font_size", maxi(14, px(25)))
-	control.add_theme_stylebox_override("normal", box(accent.darkened(.2) if primary else PANEL, accent.lightened(.3) if primary else LINE, 5, 12))
-	control.add_theme_stylebox_override("hover", box(accent if primary else RAISED, MINT if primary else IVORY, 5, 12))
-	control.add_theme_stylebox_override("pressed", box(accent.darkened(.4) if primary else Color("244030"), MINT, 5, 12))
+	var fill := readable_primary_fill(accent) if primary else accent
+	control.add_theme_stylebox_override("normal", box(fill.darkened(.2) if primary else PANEL, accent.lightened(.3) if primary else LINE, 5, 12))
+	control.add_theme_stylebox_override("hover", box(fill if primary else RAISED, MINT if primary else IVORY, 5, 12))
+	control.add_theme_stylebox_override("pressed", box(fill.darkened(.4) if primary else Color("244030"), MINT, 5, 12))
 	control.add_theme_stylebox_override("disabled", box(Color("17201e"), Color("35453e"), 5, 12))
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		var style: StyleBoxFlat = control.get_theme_stylebox(state)
@@ -143,6 +150,7 @@ static func button(text: String, callback: Callable, primary: bool = false, acce
 		style.content_margin_bottom = px(7)
 	var focus := box(Color.TRANSPARENT, GOLD, 5, 12)
 	focus.set_border_width_all(2)
+	if primary: focus.set_expand_margin_all(2)
 	control.add_theme_stylebox_override("focus", focus)
 	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: control.add_theme_color_override(state, IVORY)
 	control.add_theme_color_override("font_disabled_color", FAINT)

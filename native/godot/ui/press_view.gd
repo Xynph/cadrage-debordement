@@ -29,9 +29,9 @@ static func build(app: Control) -> Control:
 	tabs.add_theme_color_override("font_unselected_color", G.MUTED)
 	G.fill(tabs, true)
 	paper.add_child(tabs)
-	_journal(tabs, app, data)
-	_conference(tabs, app, data)
-	_history(tabs, app, data)
+	tabs.add_child(_journal(app, data))
+	tabs.add_child(_conference(app, data))
+	tabs.add_child(_history(app, data))
 	tabs.add_child(People.build(app, data))
 	return page
 
@@ -41,10 +41,9 @@ static func _club(app: Control, id: Variant) -> String:
 			if int(row.id) == int(id): return G.club_name(row)
 	return "Club %s" % id
 
-static func _journal(tabs: TabContainer, app: Control, data: Dictionary) -> void:
+static func _journal(app: Control, data: Dictionary) -> Control:
 	var tab := G.v(12)
 	tab.name = "Journal"
-	tabs.add_child(tab)
 	var divisions: Array = data.journal.divisions
 	var chooser := OptionButton.new()
 	chooser.name = "PressDivision"
@@ -90,14 +89,18 @@ static func _journal(tabs: TabContainer, app: Control, data: Dictionary) -> void
 				if player.id == injury.playerId: identity = player.name
 			list.add_child(G.wrap("%s · %s · %d semaine(s)" % [identity, _club(app, injury.clubId), injury.weeks], 12))
 	chooser.item_selected.connect(redraw)
-	redraw.call(0)
+	var initial := 0
 	for index in divisions.size():
-		if divisions[index].id == app.model.meta.get("leagueId", "historical"): chooser.select(index); redraw.call(index); break
+		if divisions[index].id == app.model.meta.get("leagueId", "historical"):
+			initial = index
+			break
+	if not divisions.is_empty(): chooser.select(initial)
+	redraw.call(initial)
+	return tab
 
-static func _conference(tabs: TabContainer, app: Control, data: Dictionary) -> void:
+static func _conference(app: Control, data: Dictionary) -> Control:
 	var tab := G.v(12)
 	tab.name = "Conférence"
-	tabs.add_child(tab)
 	var list := G.scroll(tab)
 	var outcome: Variant = data.get("lastOutcome")
 	if outcome is Dictionary:
@@ -119,26 +122,12 @@ static func _conference(tabs: TabContainer, app: Control, data: Dictionary) -> v
 	var conference: Dictionary = data.conference
 	if not conference.available:
 		list.add_child(G.wrap(conference.reason, 13, G.INK))
-		return
+		return tab
 	list.add_child(G.wrap("Cinq tons. Tabulation pour parcourir les choix, Espace pour sélectionner. Publier valide toutes vos réponses.", 12, G.INK))
 	var memory_notice := G.wrap(conference.get("memoryNotice", ""), 12)
 	memory_notice.name = "PressMemoryNotice"
 	list.add_child(memory_notice)
-	var draft_key := "%d:%d:%d" % [data.context.season, data.context.week, data.context.club]
-	if app.get_meta("press_draft_context", "") != draft_key:
-		app.set_meta("press_draft_context", draft_key)
-		app.set_meta("press_draft_choices", {})
-	# This reversible draft belongs only to the UI, never to the saved career.
-	var choices: Dictionary = app.get_meta("press_draft_choices", {})
-	var current_ids: Array = []
-	for question: Dictionary in conference.questions: current_ids.append(question.id)
-	for id: Variant in choices.keys():
-		if not current_ids.has(id): choices.erase(id)
-	for question: Dictionary in conference.questions:
-		var valid := false
-		for answer: Dictionary in question.answers:
-			if choices.get(question.id, "") == answer.id: valid = true
-		if not valid: choices.erase(question.id)
+	var choices := _conference_draft(app, data)
 	var submit := G.button("PUBLIER MES RÉPONSES", func():
 		var answers: Array = []
 		for question: Dictionary in conference.questions: answers.append({"questionId":question.id, "answerId":choices[question.id]})
@@ -184,11 +173,24 @@ static func _conference(tabs: TabContainer, app: Control, data: Dictionary) -> v
 			option.button_pressed = choices.get(question.id, "") == answer.id
 			interview.add_child(option)
 	list.add_child(submit)
+	return tab
 
-static func _history(tabs: TabContainer, app: Control, data: Dictionary) -> void:
+static func _conference_draft(app: Control, data: Dictionary) -> Dictionary:
+	var draft_key := "%d:%d:%d" % [data.context.season, data.context.week, data.context.club]
+	if app.get_meta("press_draft_context", "") != draft_key:
+		app.set_meta("press_draft_context", draft_key)
+		app.set_meta("press_draft_choices", {})
+	var choices: Dictionary = app.get_meta("press_draft_choices", {})
+	var allowed := {}
+	for question: Dictionary in data.conference.questions:
+		allowed[question.id] = question.answers.map(func(answer: Dictionary): return answer.id)
+	for id: Variant in choices.keys():
+		if choices[id] not in allowed.get(id, []): choices.erase(id)
+	return choices
+
+static func _history(app: Control, data: Dictionary) -> Control:
 	var tab := G.v(12)
 	tab.name = "Historique"
-	tabs.add_child(tab)
 	var list := G.scroll(tab)
 	if data.history.is_empty(): list.add_child(G.wrap("Vous n’avez encore publié aucune conférence.", 13))
 	var rows: Array = data.history.duplicate()
@@ -202,3 +204,4 @@ static func _history(tabs: TabContainer, app: Control, data: Dictionary) -> void
 		list.add_child(G.wrap(row.question if row.question != null else "Question d’origine non conservée dans cette ancienne conférence.", 13, G.INK))
 		list.add_child(G.wrap(row.answer if row.answer != null else "Texte de la réponse non conservé · choix enregistré : " + str(row.answerId), 12))
 		list.add_child(G.separator())
+	return tab

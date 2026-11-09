@@ -69,8 +69,12 @@ func run() -> void:
     if option.button_pressed: option.button_pressed = false
     await press_space(option)
     check(option.button_pressed and option.has_focus(), "Cinquième réponse sélectionnée au clavier")
-    var visible_area: Rect2 = option.get_parent().get_parent().get_parent().get_parent().get_global_rect()
-    check(option.get_global_rect().intersection(visible_area).size.y >= option.size.y - 1, "Focus clavier défile vers la cinquième réponse entière")
+    var ancestor := option.get_parent()
+    while ancestor != null and not ancestor is ScrollContainer: ancestor = ancestor.get_parent()
+    var scroll := ancestor as ScrollContainer
+    var option_area := option.get_global_transform()*Rect2(Vector2.ZERO,option.size)
+    var visible_area := scroll.get_global_transform()*Rect2(Vector2.ZERO,scroll.size) if scroll != null else Rect2()
+    check(scroll != null and visible_area.grow(1).encloses(option_area), "Focus clavier défile vers la cinquième réponse entière")
     check(option.size.x <= tabs.size.x + 2, "Réponse contenue dans la largeur")
   check(not submit.disabled, "Publication active après toutes les réponses")
   await capture("conference-" + str(dimensions.x))

@@ -103,7 +103,7 @@ static func render(app: Control) -> bool:
 		app.heading=null
 		app.minibar=C.label("",17,C.GOLD);app.minibar.visible=false;content.add_child(app.minibar)
 	else:_heading(content, app)
-	app.PackViews.missing_warning(app,content,"career")
+	_pack_warning(app,content,layout)
 	if canvas_script==null and not immersive_match: _subnavigation(content, app)
 	app.body_scroll = ScrollContainer.new()
 	app.body_scroll.name = "CareerWorkspace"
@@ -140,14 +140,50 @@ static func _fit_layout(root: Control, layout: Control, reference: Vector2) -> v
 		var footer: Control = layout.get_meta("immersive_footer")
 		footer.custom_minimum_size.y=maxf(base_footer,38.0/factor)
 		_position_footer(footer)
+	if layout.has_meta("immersive_pack_warning"):
+		_fit_pack_warning(layout.get_meta("immersive_pack_warning"),factor)
+
+static func _pack_warning(app: Control, parent: Container, layout: Control) -> void:
+	var row := C.h(16)
+	app.PackViews.missing_warning(app,row,"career")
+	if row.get_child_count()==0:
+		row.free()
+		return
+	var banner := PanelContainer.new()
+	banner.name = "ImmersivePackWarning"
+	banner.add_theme_stylebox_override("panel",C.box(C.RAISED,C.ALERT,5,8))
+	parent.add_child(banner)
+	banner.add_child(row)
+	Legacy.apply(row,app.accent)
+	for child in row.get_children():
+		if child is Control: child.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		if child is Label:
+			C.fill(child)
+			child.add_theme_color_override("font_color",C.ALERT)
+	layout.set_meta("immersive_pack_warning",row)
+	_fit_pack_warning(row,layout.scale.y)
+
+static func _fit_pack_warning(row: HBoxContainer, factor: float) -> void:
+	var minimum_font := ceili(14.0/factor)
+	for child in row.get_children():
+		if child is Label:
+			child.add_theme_font_size_override("font_size",maxi(C.px(20),minimum_font))
+		elif child is Button:
+			child.add_theme_font_size_override("font_size",maxi(C.px(22),minimum_font))
+			child.custom_minimum_size.y = maxf(C.px(44),36.0/factor)
+			var focus := child.get_theme_stylebox("focus") as StyleBoxFlat
+			if focus!=null: focus.set_border_width_all(maxi(2,ceili(2.0/factor)))
 
 static func _is_training(app: Control) -> bool:
 	return app.route=="Préparation" and app.management_ui.get("preparation",{}).get("tab",0)==2
 
 static func open_training(app: Control) -> void:
+	open_preparation(app,2)
+
+static func open_preparation(app: Control, tab: int) -> void:
 	if not app.management_ui.get("preparation") is Dictionary:
-		app.management_ui.preparation={"tab":2,"outer":[0,0,0],"attack":0,"defense":0,"focus":["","",""]}
-	else: app.management_ui.preparation.tab=2
+		app.management_ui.preparation={"tab":tab,"outer":[0,0,0],"attack":0,"defense":0,"focus":["","",""]}
+	else: app.management_ui.preparation.tab=tab
 	app._navigate("Préparation",true,true)
 
 static func _dedicated_page(app: Control, size: Vector2i) -> Script:

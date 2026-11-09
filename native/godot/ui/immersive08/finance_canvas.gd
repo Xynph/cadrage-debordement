@@ -348,13 +348,18 @@ static func _budget(app: Control, canvas: Control, finance: Dictionary) -> void:
 	var decisions := D.panel(canvas, Rect2(850,346,1398,783), "Engagements et investissements", "money", "", "FinanceCommitments")
 	D.text(decisions, 25, 125, "Des choix pour le projet du club", 47, C.IVORY, 700, 1348)
 	D.text(decisions, 25, 173, "%d semaines restantes sur %d" % [int(finance.get("remainingWeeks",0)),int(finance.get("weeksPerSeason",0))], 28, C.GOLD, 600, 1348)
-	var cards := [["Formation","school","Investissement par séance",finance.get("academyInvestment")],["Installations","settings","Devis du prochain niveau",null],["Partenaires","shield","Recettes hebdomadaires du modèle",finance.get("weeklyIncome")]]
+	var cards := [["Formation","school","Investissement par séance",finance.get("academyInvestment")],["Installations","settings","Niveau indisponible",null],["Partenaires","shield","Recettes hebdomadaires du modèle",finance.get("weeklyIncome")]]
 	var facility: Variant = finance.get("facility")
-	if facility is Dictionary: cards[1][3] = facility.cost
+	if facility is Dictionary:
+		cards[1][2] = "Niveau actuel %s / 10 · devis suivant" % G.n(facility.level)
+		cards[1][3] = facility.cost
 	for i in cards.size():
 		var item: Array = cards[i]
 		var tile := D.panel(decisions, Rect2(25+i*448,217,436,205), item[0], item[1])
-		D.text(tile, 22, 116, U.amount(item[3]), 47, C.MINT, 700, 392)
+		if i == 1 and not facility is Dictionary:
+			D.text(tile, 22, 116, "Aucun devis disponible", 31, C.IVORY, 700, 392)
+		else:
+			D.text(tile, 22, 116, U.amount(item[3]), 47, C.MINT, 700, 392)
 		D.text(tile, 22, 158, item[2], 23, C.MUTED, 500, 392)
 	D.text(decisions, 25, 488, "Les montants appartiennent à la simulation.", 26, C.MUTED, 500, 1348)
 	D.text(decisions, 25, 529, "Les devis et conditions de signature sont détaillés dans les décisions du club.", 26, C.MUTED, 500, 1348)
