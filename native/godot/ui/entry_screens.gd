@@ -366,7 +366,7 @@ static func _dossier_honours(app: Control, parent: VBoxContainer, results: Array
 	parent.add_child(C.label("PALMARÈS", 19, Editorial.RAIL_GOLD, true, 700))
 	var honours := GridContainer.new()
 	honours.name = "CreationHonours"
-	var dense := compact and results.size() > 4
+	var dense := app.get_window().size.y < 1080 and results.size() > 4
 	honours.columns = 3 if results.size() == 3 or (results.size() > 4 and not dense) else 2
 	honours.add_theme_constant_override("h_separation", C.px(6))
 	honours.add_theme_constant_override("v_separation", C.px(4))
@@ -392,7 +392,7 @@ static func _dossier_honours(app: Control, parent: VBoxContainer, results: Array
 		var label := _history_competition(app, competition)
 		var year := int(result.get("year", 0))
 		var record := "%d titre%s" % [count, "s" if count > 1 else ""] if count > 0 else _history_placement(result)
-		if compact and count > 0 and year > 0: record += " · %d" % year
+		if (compact or dense) and count > 0 and year > 0: record += " · %d" % year
 		if dense:
 			var caption := C.wrap("%s · %s" % [label, record], 16, C.IVORY, true, 700)
 			caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER

@@ -131,7 +131,7 @@ func check_creation_geometry() -> void:
 		{"competition":"champ", "finish":"semi", "year":2014},
 		{"competition":"nationale", "rank":3, "year":2009},
 	])
-	for resolution in [Vector2i(1280, 720), Vector2i(2560, 1440)]:
+	for resolution in [Vector2i(1280, 720), Vector2i(1440, 900), Vector2i(2560, 1440)]:
 		root.size = resolution
 		await create_timer(0.15).timeout
 		var dossiers := 0
