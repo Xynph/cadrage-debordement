@@ -10,6 +10,11 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const WEIGHTS_SECONDS = Object.freeze({
+  // Profils #409 et #412 du 9 novembre 2026. Maximum mesuré et marge de 15 %.
+  // Le temps mesuré sur #412 complète la mesure interrompue de world-worker-season.
+  'tests/native-academy-integrated-long.cjs': 199,
+  'tests/native-delegate-transaction06.cjs': 180,
+  'tests/world-worker-season.cjs': 159,
   'tests/v63-2-stress-native.cjs': 150,
   'tests/v63-1-long-career.cjs': 91,
   'tests/ai-roster-cycle.cjs': 87,
