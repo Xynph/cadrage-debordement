@@ -82,7 +82,10 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 	else:
 		var tags := C.h(12)
 		left.add_child(tags)
-		tags.add_child(C.chip(str(next.get("label", "Prochain match")), C.MINT))
+		var match_label := str(next.get("label", "Prochain match"))
+		var competition := C.chip(short_fixture_label(app.model,next) if japan else match_label,C.MINT)
+		if japan: describe_fixture(competition,match_label)
+		tags.add_child(competition)
 		var location: String = "NEUTRE" if next.get("neutral", false) else "À DOMICILE" if next.get("home", {}).get("id") == app.model.club.id else "À L’EXTÉRIEUR"
 		tags.add_child(C.chip(location, C.GOLD))
 		var teams := C.h(16)
@@ -255,7 +258,22 @@ static func _recruitment(parent: VBoxContainer, app: Control) -> void:
 		parent.add_child(C.wrap(player.get("reason", "Consultez les disponibilités et les modalités avant une offre."), 18))
 	_link(parent, "OfficeMarketAction", "Lire le dossier complet  →", app, "Recrutement")
 
+static func short_fixture_label(model: Dictionary, fixture: Dictionary) -> String:
+	var label := str(fixture.get("label","Rencontre"))
+	if not fixture.has("competitionId"): return label
+	var id := str(fixture.competitionId)
+	var competition := World.name_for(model,id)
+	if label.begins_with(competition+" · "):
+		return World.short_name(id,competition)+label.trim_prefix(competition)
+	return label
+
+static func describe_fixture(node: Control, detail: String) -> void:
+	node.mouse_filter = Control.MOUSE_FILTER_PASS
+	node.tooltip_text = detail
+	node.accessibility_name = detail.replace("\n"," · ")
+
 static func _timeline(parent: VBoxContainer, app: Control) -> void:
+	var japan := SeasonPreparation.is_japan(app.model.meta)
 	var row := C.h(12)
 	parent.add_child(row)
 	var fixtures := P.upcoming(app.model)
@@ -273,7 +291,12 @@ static func _timeline(parent: VBoxContainer, app: Control) -> void:
 		var name := C.label(G.club_name(opponent), 24)
 		name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		list.add_child(name)
-		list.add_child(C.label(str(fixture.get("label", "Rencontre")), 19, C.MUTED))
+		var label := str(fixture.get("label","Rencontre"))
+		list.add_child(C.label(short_fixture_label(app.model,fixture) if japan else label,19,C.MUTED))
+		if japan:
+			var place := "Neutre" if fixture.get("neutral",false) else "Domicile" if fixture.get("home",{}).get("id")==app.model.club.id else "Extérieur"
+			list.add_child(C.label(place,18,C.MUTED))
+			describe_fixture(tile,"\n".join([G.club_name(opponent),label,place,P.fixture_venue(fixture)]).strip_edges())
 	var action := _link(parent, "OfficeCalendarAction", "Tout le calendrier  →", app, "Calendrier")
 	var title: Label = parent.find_child("CardTitle", true, false)
 	parent.remove_child(title)

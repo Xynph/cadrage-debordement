@@ -156,6 +156,17 @@ static func calendar(app: Control) -> Control:
 	G.fill(page, true)
 	var sheet := G.panel(page)
 	G.chapter(sheet,"06","Les rendez-vous du club","Résultats et rencontres à venir · les phases finales se précisent au fil de la saison.",app.accent)
+	var season := preload("res://ui/immersive08/season_preparation.gd")
+	var meta: Dictionary = app.model.get("meta", {})
+	var preparation := season.data(meta) if season.is_japan(meta) else {}
+	if not preparation.is_empty():
+		var summary := G.h(12)
+		sheet.add_child(summary)
+		summary.add_child(G.fill(G.wrap("Prochain match le " + _calendar_date(preparation.nextDate), 13, G.GOLD)))
+		var prepare := G.reading_button(G.button("Ouvrir le dossier de préparation", func(): app.Immersive.open_preparation(app,0), true), 196)
+		prepare.name = "CalendarJapanPreparation"
+		prepare.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		summary.add_child(prepare)
 	var list := G.scroll(sheet)
 	list.get_parent().name="CalendarScroll"
 	var fixtures: Array = app.model.get("calendar", [])
@@ -170,17 +181,26 @@ static func calendar(app: Control) -> Control:
 		tile.add_child(row)
 		var caption: String = fixture.get("label", "Semaine " + G.n(fixture.get("week", 0)))
 		caption = {"barrage":"Barrage","semi":"Demi-finale","final":"Finale","access":"Barrage d’accession"}.get(caption,caption)
+		var competition_id := str(fixture.get("competitionId", ""))
+		var japanese := competition_id in ["jlo-d1", "jlo-d2", "jlo-d1-d2"]
+		var fixture_title := ""
 		if international:
 			var details := G.v(1)
 			details.custom_minimum_size.x = 174
 			row.add_child(details)
-			var competition := competition_name(str(fixture.get("competitionId", "")))
+			var competition := competition_name(competition_id)
 			var date := G.label(_calendar_date(str(fixture.get("date", ""))), 13, G.GOLD)
 			date.name = "CalendarFixtureDate"
 			details.add_child(date)
 			var phase := str(fixture.get("phase", ""))
 			var stage := "J%d · %s" % [int(fixture.get("competitionRound", 0)) + 1, "Poules" if phase == "pool" else "Championnat"] if phase in ["league", "pool"] else phase_name(phase)
-			details.add_child(G.wrap(competition + " · " + stage, 12, G.INK))
+			if competition_id == "jlo-d1-d2":
+				var leg: Variant = fixture.get("leg")
+				if leg is int or leg is float: stage = "Manche %d" % int(leg)
+			elif competition_id == "jlo-d1" and phase == "quarter":
+				stage = "Barrage D1"
+			fixture_title = competition + " · " + stage
+			details.add_child(G.wrap(fixture_title, 12, G.INK))
 			var venue := str(fixture.get("venue", ""))
 			if not venue.is_empty(): details.add_child(G.wrap(venue, 11, G.MUTED))
 		else:
@@ -198,11 +218,60 @@ static func calendar(app: Control) -> Control:
 		opponent.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		row.add_child(opponent)
 		row.add_child(G.crest(away, 36))
+		if japanese:
+			var detail := G.reading_button(G.button("Détail", func(): _japan_calendar_detail(app, fixture, fixture_title)), 72)
+			detail.name = "CalendarFixtureOpen_" + str(fixture.id).replace(":", "_")
+			detail.accessibility_name = "Détail · %s · %s – %s" % [_calendar_date(fixture.date), G.club_name(home), G.club_name(away)]
+			detail.tooltip_text = detail.accessibility_name
+			detail.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			row.add_child(detail)
 		var winner: Variant = fixture.get("winner")
 		if international and score is Array and score[0] == score[1] and winner != null:
 			tile.add_child(G.wrap("Qualifié après départage · " + G.club_name(home if home.get("id") == winner else away), 12, G.GOLD))
 		list.add_child(G.separator())
 	return page
+
+static func _japan_calendar_detail(app: Control, fixture: Dictionary, title: String) -> void:
+	var style := preload("res://ui/immersive08/components.gd")
+	var view := preload("res://ui/decision_views.gd").dialog(app, title, "CompetitionFixtureDetails", 760)
+	var body: VBoxContainer = view[1]
+	var home: Dictionary = fixture.get("home", {})
+	var away: Dictionary = fixture.get("away", {})
+	body.add_child(style.wrap("%s  —  %s" % [G.club_name(home), G.club_name(away)], 38, style.IVORY, true, 700))
+	var date := _calendar_date(str(fixture.get("date", "")))
+	if not date.is_empty(): body.add_child(style.wrap(date, 32, style.GOLD, true, 700))
+	for note: String in japan_date_notes(fixture): body.add_child(style.wrap(note, 28, style.MUTED))
+	var venue := str(fixture.get("venue", ""))
+	if fixture.get("neutral", false) and venue != "Terrain neutre":
+		venue = "Terrain neutre" if venue.is_empty() else "Terrain neutre · " + venue
+	if not venue.is_empty(): body.add_child(style.wrap(venue, 30, style.IVORY))
+	var score: Variant = fixture.get("score")
+	if score is Array and score.size() == 2:
+		body.add_child(style.wrap("Score · %s — %s" % [G.n(score[0]), G.n(score[1])], 36, style.IVORY, true, 700))
+	else:
+		var status := "Score non renseigné" if fixture.get("played", false) else "Match à jouer"
+		body.add_child(style.wrap(status, 30, style.GOLD, true, 700))
+	var winner: Variant = fixture.get("winner")
+	if winner != null and winner in [home.get("id"), away.get("id")]:
+		body.add_child(style.wrap("Vainqueur · " + G.club_name(home if home.get("id") == winner else away), 28, style.MUTED))
+	app.ImmersiveDialogs.show_centered(view[0], Vector2i(760, 520))
+
+static func japan_date_notes(fixture: Dictionary) -> Array[String]:
+	var notes: Array[String] = []
+	var source: String = {
+		"published": "Date publiée",
+		"simulation-earliest-option": "Date retenue parmi les options publiées",
+		"simulation-window": "Date simulée dans la fenêtre publiée",
+		"simulation-future-calendar": "Date générée pour cette saison",
+	}.get(fixture.get("dateSource", ""), "")
+	if not source.is_empty(): notes.append(source)
+	var window: Array = fixture.get("dateWindow", [])
+	var options: Array = fixture.get("dateOptions", [])
+	if window.size() == 2:
+		notes.append("Fenêtre du %s au %s" % [_calendar_date(window[0]), _calendar_date(window[1])])
+	elif options.size() > 1:
+		notes.append("Dates possibles · " + " · ".join(options.map(_calendar_date)))
+	return notes
 
 static func _standings_rows(app: Control, list: VBoxContainer, rows: Array, bounds: Vector2i) -> void:
 	var header := G.h(12)

@@ -75,6 +75,17 @@ static func build(app:Control) -> Control:
 	auto.add_theme_stylebox_override("normal",C.box(Color("101719"),Color.TRANSPARENT,0,0))
 	D.photo(composition,"tactics-briefing",Rect2(23,72,1024,160))
 	var pitch:=Pitch.new();composition.add_child(pitch);D.place(pitch,Rect2(24,245,1022,626))
+	if app.model.get("tactics",{}).get("attack")=="occupation":
+		var overlay := TextureRect.new()
+		overlay.name = "TacticsOccupationOverlay"
+		overlay.texture = preload("res://art/immersive08/tactics-occupation.svg")
+		overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		overlay.stretch_mode = TextureRect.STRETCH_SCALE
+		overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		overlay.focus_mode = Control.FOCUS_NONE
+		pitch.add_child(overlay)
+		overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		D.text(composition,535,891,"Schéma du plan d’occupation",18,C.MUTED,500,330,HORIZONTAL_ALIGNMENT_CENTER)
 	var positions:Array=[[435,565,1],[815,565,2],[1195,565,3],[623,656,4],[1003,656,5],[435,744,6],[815,744,8],[1195,744,7],[695,831,9],[905,893,10],[397,1003,11],[632,958,12],[1030,958,13],[1231,1003,14],[815,1069,15]]
 	var starters := 0
 	for position:Array in positions:

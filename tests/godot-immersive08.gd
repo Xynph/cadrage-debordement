@@ -948,10 +948,14 @@ func run() -> void:
 		await settle()
 		var original_defense:String=app.model.tactics.defense
 		var attack:Button=app.find_child("TacticsAttack_occupation",true,false)
-		attack.pressed.emit()
+		await click(attack)
 		await worker()
 		check(app.bridge.last_response_ok and app.model.tactics.attack=="occupation","Le bouton d’attaque commande réellement le moteur")
 		check(app.model.tactics.defense==original_defense,"Changer l’attaque conserve la défense")
+		var paths := app.find_child("TacticsOccupationOverlay",true,false) as TextureRect
+		check(paths!=null and paths.texture!=null and paths.mouse_filter==Control.MOUSE_FILTER_IGNORE and paths.focus_mode==Control.FOCUS_NONE,"Les trajectoires Occupation sont un calque natif transparent aux actions")
+		reference_rects({"TacticsOccupationOverlay":Rect2(304,509,1022,626)})
+		await capture("03b-tactique-occupation-2560x1440")
 		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await footer_feedback()
 		app.find_child("TacticsSummary1",true,false).pressed.emit()
 		await settle()

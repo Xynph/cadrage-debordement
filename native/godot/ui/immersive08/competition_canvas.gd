@@ -19,12 +19,6 @@ const LOSS := Color("ef8477")
 const PRIMARY := Color("106d43")
 const LABELS := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "elimination": "Match de barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession", "cup": "Coupe", "ended":"Compétition terminée"}
 const JAPAN_COMPETITIONS := ["jlo-d1", "jlo-d2", "jlo-d1-d2"]
-const JAPAN_DATE_SOURCES := {
-	"published": "Date publiée",
-	"simulation-earliest-option": "Date retenue parmi les options publiées",
-	"simulation-window": "Date simulée dans la fenêtre publiée",
-	"simulation-future-calendar": "Date générée pour cette saison",
-}
 const RESULT_TINTS := {"V": WIN, "N": DRAW, "D": LOSS}
 const TABLE_COLUMNS := [
 	["#", 41, 58, "rank"], ["J", 488, 52, "played"], ["V", 549, 50, "won"],
@@ -550,7 +544,8 @@ func _fixture_detail(fixture: Dictionary) -> void:
 	if not venue.is_empty(): place += "  ·  " + venue
 	var date := _date(fixture)
 	if not date.is_empty(): content.add_child(C.label(date + "  ·  " + _competition_name(fixture),25,WARM))
-	if _competition_id(fixture) in JAPAN_COMPETITIONS: _japan_date_details(content, fixture)
+	if _competition_id(fixture) in JAPAN_COMPETITIONS:
+		for note: String in Club.japan_date_notes(fixture): content.add_child(C.wrap(note, 20, C.MUTED))
 	content.add_child(C.label(_phase(fixture) + "  ·  " + place, 24, C.MUTED))
 	if fixture.get("played", false):
 		var code := _fixture_outcome(fixture)
@@ -565,16 +560,6 @@ func _fixture_detail(fixture: Dictionary) -> void:
 			var prepare := C.button("Rejoindre le match" if live else "Préparer le match", func(): view[0].queue_free(); app._navigate("Match" if live else "Préparation"), true, app.accent)
 			content.add_child(prepare)
 	view[0].popup_centered(Vector2i(880, 520))
-
-func _japan_date_details(content: VBoxContainer, fixture: Dictionary) -> void:
-	var source := str(JAPAN_DATE_SOURCES.get(fixture.get("dateSource", ""), ""))
-	if not source.is_empty(): content.add_child(C.wrap(source, 20, C.MUTED))
-	var window: Array = fixture.get("dateWindow", [])
-	var options: Array = fixture.get("dateOptions", [])
-	if window.size() == 2:
-		content.add_child(C.wrap("Fenêtre du %s au %s" % [Club._calendar_date(window[0]), Club._calendar_date(window[1])], 20, C.MUTED))
-	elif options.size() > 1:
-		content.add_child(C.wrap("Dates possibles · " + " · ".join(options.map(Club._calendar_date)), 20, C.MUTED))
 
 func _fixture_outcome(fixture: Dictionary) -> String:
 	if not fixture.get("played", false): return "—"

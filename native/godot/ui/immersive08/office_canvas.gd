@@ -51,7 +51,10 @@ static func _fixture(card: Panel, app: Control) -> void:
 			D.text(card,27,223,"Avancez de quatre semaines au plus, jusqu’à la prochaine rencontre.",21,C.MUTED,400,735,HORIZONTAL_ALIGNMENT_LEFT,true)
 		D.button(card,Rect2(27,354,420,45),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,app.accent,"OfficePreparationAction")
 		return
-	D.chip(card,Rect2(24,22,281,29),str(next.get("label",P.league_name(app.model))).to_upper(),C.MUTED)
+	var match_label := str(next.get("label",P.league_name(app.model)))
+	var competition := Office.short_fixture_label(app.model,next) if japan else match_label
+	var chip := D.chip(card,Rect2(24,22,281,29),competition.to_upper(),C.MUTED)
+	if japan: Office.describe_fixture(chip,match_label)
 	var location := "NEUTRE" if next.get("neutral",false) else "À DOMICILE" if next.get("home",{}).get("id")==app.model.club.id else "EXTÉRIEUR"
 	D.chip(card,Rect2(323,22,147,29),location,C.GOLD)
 	_crest(card,next.get("home",{}),Rect2(32,70,91,98))
@@ -208,12 +211,7 @@ static func _timeline(card: Panel, app: Control) -> void:
 		D.text(card,x+16,103,"SEM. %02d" % (int(fixture.get("week",0))+1),21,C.IVORY,700,270)
 		D.line(card,Vector2(x+14,118),Vector2(x+290,118))
 		D.text(card,x+16,151,G.club_name(opponent),25,C.IVORY,600,272)
-		var label := str(fixture.get("label","Rencontre"))
-		if fixture.has("competitionId"):
-			var id := str(fixture.competitionId)
-			var competition := World.name_for(app.model,id)
-			if label.begins_with(competition+" · "):
-				label = World.short_name(id,competition)+label.trim_prefix(competition)
+		var label := Office.short_fixture_label(app.model,fixture)
 		D.text(card,x+16,184,label+" · "+("Neutre" if fixture.get("neutral",false) else "Domicile" if fixture.get("home",{}).get("id")==app.model.club.id else "Extérieur"),21,C.MUTED,500,272)
 	if fixtures.is_empty(): D.text(card,25,130,"Aucune rencontre programmée pour le moment.",25,C.MUTED,500,1500)
 	var action := D.button(card,Rect2(1888,15,335,32),"Tout le calendrier",func():app._navigate("Calendrier"),false,"arrow",true,app.accent,"OfficeCalendarAction")

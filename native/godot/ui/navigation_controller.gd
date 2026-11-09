@@ -30,7 +30,7 @@ func reset() -> void:
 	if is_instance_valid(_dialog): _dialog.hide()
 	_refresh_controls()
 
-func observe(route: String, player_id: String = "", staff_club: int = -1) -> void:
+func observe(route: String, player_id: String = "", staff_club: int = -1, roster_lookup: bool = false) -> void:
 	if app == null or _restoring or not _allowed_route(route):
 		_refresh_controls()
 		return
@@ -38,14 +38,24 @@ func observe(route: String, player_id: String = "", staff_club: int = -1) -> voi
 	if route == "Effectif": entry.full_player = app.get_meta("immersive08_full_player", false)
 	if route == "Préparation": entry.preparation_tab = int(app.management_ui.get("preparation", {}).get("tab", 0))
 	if route == "Recrutement": entry.market = str(app.management_ui.get("market", {}).get("navigation_id", ""))
-	if cursor >= 0 and history[cursor] == entry:
-		_refresh_controls()
-		return
+	if cursor >= 0:
+		var previous := history[cursor]
+		var same_location := entry.keys().all(func(key: String): return previous.get(key) == entry[key])
+		if same_location and (not roster_lookup or previous.roster == app.management_ui.roster):
+			_refresh_controls()
+			return
+		if not roster_lookup: _store_roster_reading(previous)
 	history = history.slice(0, cursor + 1)
+	_store_roster_reading(entry)
 	history.append(entry)
 	if history.size() > HISTORY_LIMIT: history.pop_front()
 	cursor = history.size() - 1
 	_refresh_controls()
+
+func _store_roster_reading(entry: Dictionary) -> void:
+	if entry.route != "Effectif": return
+	entry.roster = app.management_ui.roster.duplicate(true)
+	entry.profile_scroll = app.management_ui.profile_scroll
 
 func controls(show_search: bool = true) -> Control:
 	var row := G.h(5 if show_search else C.px(5))
@@ -225,9 +235,12 @@ func _activate_selected() -> void:
 		_dialog.hide()
 		app.Immersive.open_training(app)
 		return
-	if entry.kind == "squad":
+	var roster_lookup: bool = entry.kind == "squad"
+	if roster_lookup:
 		if _person("squad", entry.id).is_empty():
 			_refresh_results(_search.text); return
+		U.remember(app)
+		if cursor >= 0: _store_roster_reading(history[cursor])
 		app.management_ui.roster = U.defaults()
 		app.roster_filter = "Tous"; app.roster_sort = "Poste"
 		app.selected_player = entry.id
@@ -243,8 +256,8 @@ func _activate_selected() -> void:
 			_refresh_results(_search.text); return
 		app.selected_staff_club = entry.id
 	_dialog.hide()
-	app._navigate(entry.route)
-	observe(app.route, app.selected_player, app.selected_staff_club)
+	app._navigate(entry.route, not roster_lookup)
+	observe(app.route, app.selected_player, app.selected_staff_club, roster_lookup)
 
 func _person(source: String, id: String) -> Dictionary:
 	var people: Variant = app.model.get(source, [])
@@ -282,14 +295,18 @@ func _travel(direction: int) -> void:
 	if _blocked(): return
 	var next := _destination(direction)
 	if next < 0: return
+	U.remember(app)
+	_store_roster_reading(history[cursor])
 	var entry: Dictionary = history[next]
 	_restoring = true
 	cursor = next
 	if entry.route == "Effectif":
 		app.selected_player = entry.player
 		app.set_meta("immersive08_full_player", entry.get("full_player", false))
-		app.management_ui.roster = U.defaults()
-		app.roster_filter = "Tous"; app.roster_sort = "Poste"
+		app.management_ui.roster = entry.roster.duplicate(true)
+		app.management_ui.profile_scroll = entry.profile_scroll
+		app.roster_filter = entry.roster.family
+		app.roster_sort = entry.roster.sort
 	if entry.route == "Préparation" and app.management_ui.get("preparation") is Dictionary:
 		app.management_ui.preparation.tab = entry.get("preparation_tab", 0)
 	if entry.route == "Staff": app.selected_staff_club = int(entry.staff)
