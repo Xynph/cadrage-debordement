@@ -6,6 +6,8 @@ const {createBridge}=require('../native/engine/worker.cjs');
 function trajectory(modern){
  const h=context(5093);h.ctx.modern=modern;
  h.run([
+  // Keep this regression about v1 aging only; v2 promotes depth proactively.
+  'var setupV2=aiRosterSetup;aiRosterSetup=function(){var result=setupV2();S.aiRosterVersion=1;S.aiRoster.version=1;delete S.aiRoster.population;return result};',
   'start(0);var team=S.clubs[1],a=aiRosterAcademy(team);',
   'S.season=3;S.aiRoster.lastIntake=2;',
   'if(modern)S.aiRoster.academyAgingVersion=1;',

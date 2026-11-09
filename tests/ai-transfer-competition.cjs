@@ -21,7 +21,7 @@ assert.equal(run('aiRosterRecruitmentWeek()'),0,'first day season one excluded')
 assert.equal(run('JSON.stringify(S)'),JSON.stringify(base),'excluded window does not mutate');
 run('S.round=13;var beforeCash=club().cash;var beforeIds=S.clubs.flatMap(c=>c.players.map(p=>p.id));var available=S.market.length+S.economy.freeAgents.length;');
 const count=run('aiRosterRecruitmentWeek()');
-assert.ok(count>=0&&count<=6);
+assert.ok(count>=0&&count<=run('S.clubs.length*2'));
 assert.equal(run('aiRosterRecruitmentWeek()'),0,'same window idempotent');
 assert.equal(run('S.economy.aiRecruitmentWindow'),'1:13');
 assert.equal(run('club().cash'),run('beforeCash'),'no human club cash mutation');

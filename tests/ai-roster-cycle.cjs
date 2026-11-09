@@ -1,6 +1,8 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {context}=require('./harness.cjs');
+const {context:gameContext}=require('./harness.cjs');
+// This suite is the frozen v1 policy contract; v2 has its own population suite.
+function context(saved){const h=gameContext(saved);if(!saved)h.run('var setupV2=aiRosterSetup;aiRosterSetup=function(){var result=setupV2();S.aiRosterVersion=1;S.aiRoster.version=1;delete S.aiRoster.population;return result}');return h;}
 let validationIndex=0;
 const valid=run=>{validationIndex++;try{return run('!!parseSaveDocument(JSON.stringify(createSaveDocument()))')}catch(e){throw new Error('Sauvegarde invalide au contrôle '+validationIndex+' : '+e.message,{cause:e})}};
 const t=context(),r=t.run;
