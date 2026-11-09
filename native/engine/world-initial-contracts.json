@@ -1,0 +1,452 @@
+{
+  "schema": "world-initial-contracts-v1",
+  "databaseId": "rugby-world-2026-11-09-champ-v5",
+  "asOf": "2026-11-08",
+  "players": {
+    "world:prem:103033": {
+      "clubId": 39,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:prem:111662": {
+      "clubId": 30,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:prem:112684": {
+      "clubId": 30,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:prem:123738": {
+      "clubId": 36,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:prem:128750": {
+      "clubId": 32,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:prem:130283": {
+      "clubId": 30,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:prem:153804": {
+      "clubId": 36,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:prem:154219": {
+      "clubId": 30,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:prem:157863": {
+      "clubId": 30,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:prem:160272": {
+      "clubId": 30,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:prem:166601": {
+      "clubId": 36,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:prem:175011": {
+      "clubId": 30,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:prem:179563": {
+      "clubId": 30,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:prem:195208": {
+      "clubId": 30,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:prem:196415": {
+      "clubId": 30,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:prem:203166": {
+      "clubId": 32,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:prem:203360": {
+      "clubId": 30,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:prem:212707": {
+      "clubId": 38,
+      "endSeason": 3,
+      "endType": "season-end"
+    },
+    "world:prem:216255": {
+      "clubId": 36,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:prem:241156": {
+      "clubId": 32,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:108496": {
+      "clubId": 43,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:110905": {
+      "clubId": 52,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:113444": {
+      "clubId": 40,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:120191": {
+      "clubId": 50,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:120984": {
+      "clubId": 45,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:126623": {
+      "clubId": 45,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:126800": {
+      "clubId": 40,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:136457": {
+      "clubId": 41,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:139876": {
+      "clubId": 46,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:141193": {
+      "clubId": 43,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:144180": {
+      "clubId": 44,
+      "endSeason": 2,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:144726": {
+      "clubId": 45,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:145361": {
+      "clubId": 40,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:146480": {
+      "clubId": 44,
+      "endSeason": 2,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:147251": {
+      "clubId": 40,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:147291": {
+      "clubId": 41,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:148023": {
+      "clubId": 43,
+      "endSeason": 1,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:150303": {
+      "clubId": 45,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:152379": {
+      "clubId": 41,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:153525": {
+      "clubId": 44,
+      "endSeason": 2,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:153902": {
+      "clubId": 53,
+      "endSeason": 3,
+      "endType": "season-end"
+    },
+    "world:urc:157030": {
+      "clubId": 50,
+      "endSeason": 3,
+      "endType": "season-end"
+    },
+    "world:urc:157406": {
+      "clubId": 43,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:159599": {
+      "clubId": 44,
+      "endSeason": 2,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:174208": {
+      "clubId": 50,
+      "endSeason": 4,
+      "endType": "season-end"
+    },
+    "world:urc:174824": {
+      "clubId": 50,
+      "endSeason": 3,
+      "endType": "season-end"
+    },
+    "world:urc:176354": {
+      "clubId": 42,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:180675": {
+      "clubId": 49,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:180778": {
+      "clubId": 44,
+      "endSeason": 1,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:180856": {
+      "clubId": 43,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:182313": {
+      "clubId": 45,
+      "endSeason": 2,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:187820": {
+      "clubId": 44,
+      "endSeason": 2,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:191713": {
+      "clubId": 44,
+      "endSeason": 2,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:191796": {
+      "clubId": 42,
+      "endSeason": 1,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:192476": {
+      "clubId": 50,
+      "endSeason": 3,
+      "endType": "season-end"
+    },
+    "world:urc:193282": {
+      "clubId": 44,
+      "endSeason": 2,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:193737": {
+      "clubId": 50,
+      "endSeason": 3,
+      "endType": "season-end"
+    },
+    "world:urc:197246": {
+      "clubId": 42,
+      "endSeason": 2,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:197335": {
+      "clubId": 50,
+      "endSeason": 3,
+      "endType": "season-end"
+    },
+    "world:urc:202850": {
+      "clubId": 42,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:203381": {
+      "clubId": 40,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:207013": {
+      "clubId": 44,
+      "endSeason": 3,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:208272": {
+      "clubId": 50,
+      "endSeason": 3,
+      "endType": "season-end"
+    },
+    "world:urc:209634": {
+      "clubId": 42,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:211240": {
+      "clubId": 40,
+      "endSeason": 3,
+      "endType": "season-end"
+    },
+    "world:urc:212114": {
+      "clubId": 46,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:216173": {
+      "clubId": 40,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:218240": {
+      "clubId": 50,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:219771": {
+      "clubId": 53,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:219828": {
+      "clubId": 40,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:222867": {
+      "clubId": 45,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:223413": {
+      "clubId": 40,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:235189": {
+      "clubId": 52,
+      "endSeason": 3,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:236573": {
+      "clubId": 50,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:237231": {
+      "clubId": 50,
+      "endSeason": 3,
+      "endType": "season-end"
+    },
+    "world:urc:240478": {
+      "clubId": 44,
+      "endSeason": 2,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:240668": {
+      "clubId": 50,
+      "endSeason": 3,
+      "endType": "season-end"
+    },
+    "world:urc:241710": {
+      "clubId": 44,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:241715": {
+      "clubId": 45,
+      "endSeason": 2,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:242778": {
+      "clubId": 45,
+      "endSeason": 2,
+      "endType": "minimum-season-end"
+    },
+    "world:urc:243947": {
+      "clubId": 50,
+      "endSeason": 3,
+      "endType": "season-end"
+    },
+    "world:urc:244037": {
+      "clubId": 41,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:244039": {
+      "clubId": 43,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:244719": {
+      "clubId": 43,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:244754": {
+      "clubId": 50,
+      "endSeason": 4,
+      "endType": "season-end"
+    },
+    "world:urc:246808": {
+      "clubId": 41,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:urc:248403": {
+      "clubId": 45,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:249955": {
+      "clubId": 41,
+      "endSeason": 2,
+      "endType": "season-end"
+    },
+    "world:urc:252532": {
+      "clubId": 44,
+      "endSeason": 2,
+      "endType": "minimum-season-end"
+    }
+  }
+}

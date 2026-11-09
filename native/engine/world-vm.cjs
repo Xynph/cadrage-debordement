@@ -4,6 +4,7 @@ const competitions=require('./world-competitions.cjs');
 const validation=require('./world-validation.cjs');
 const knockout=require('./world-knockout.cjs');
 const career=require('./world-career.cjs');
+const initialContracts=require('./world-initial-contracts.json');
 const dispatch=require('./world-dispatch.cjs');
 const pacificRules=require('./super-rugby-pacific.cjs');
 const pacificCalendar=require('./srp-calendar-2027.json');
@@ -37,7 +38,8 @@ function bootstrap(){
   `const CDWorldCompetitions=(${competitions.factory.toString()})();`,
   `const CDWorldValidation=(${validation.toString()})();`,
   `const CDWorldKnockout=(${knockout.toString()})();`,
-  `const CDWorldCareer=(${dispatch.toString()})(CDWorldEditions,${career.toString()});`,
+  `const CDWorldInitialContracts=${JSON.stringify(initialContracts)};`,
+  `const CDWorldCareer=(${dispatch.toString()})(CDWorldEditions,(edition,active)=>(${career.toString()})(edition,active,CDWorldInitialContracts));`,
   `CDWorldCareer.installHooks();if(CDWorldPacificRegistry)CDWorldSRPMatch.installHooks();if(CDWorldJapanRegistry){CDWorldJapanMatch.installHooks();CDWorldJapanQuota.installHooks();}if(CDWorldNationaleRegistry)(${nationaleSquad.toString()})();`,
  ].join('');
 }
