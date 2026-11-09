@@ -839,6 +839,8 @@ func reconnect() -> void:
 
 func _live_tick() -> void:
 	if waiting or closing: return
+	if _match_visible() and is_instance_valid(match_screen.stage) and match_screen.stage.is_presenting_extended_pass():
+		return
 	var live := _live()
 	if not live.is_empty() and not live.get("paused",false) and not live.get("finished",false): _command("tick",{"steps":tick_steps})
 
