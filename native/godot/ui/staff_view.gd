@@ -1,6 +1,7 @@
 extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
 const U = preload("res://ui/management_state.gd")
+const ImmersiveUI = preload("res://ui/immersive08/club_ui.gd")
 
 class Avatar extends Control:
 	func _draw() -> void:
@@ -49,7 +50,10 @@ static func build(app: Control) -> Control:
 		chooser.add_item(str(team.name))
 		chooser.set_item_metadata(chooser.item_count - 1, int(team.id))
 		if int(team.id) == app.selected_staff_club: chooser.select(chooser.item_count - 1)
-	chooser.item_selected.connect(func(index: int): app.selected_staff_club = int(chooser.get_item_metadata(index)); app._render())
+	chooser.item_selected.connect(func(index: int):
+		app.selected_staff_club = int(chooser.get_item_metadata(index))
+		app._render()
+		ImmersiveUI.focus(app,"StaffClub"))
 	right.add_child(chooser)
 	var people: Array = []
 	for team: Dictionary in teams:

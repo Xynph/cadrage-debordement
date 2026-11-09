@@ -1,0 +1,7 @@
+OVAL LEGACY 27 — ILLUSTRATIONS IMMERSIVES
+
+Extraits des maquettes approuvées par le propriétaire, complétés par des illustrations originales générées pour le jeu.
+Extraction de photographies décoratives : aucun écran complet ne sert d’interface.
+Les personnes et lieux représentés sont fictifs. Les photos/noms de packs privés restent prioritaires.
+Le manifeste conserve pour chaque extrait le fichier source, son SHA-256, le rectangle et l’empreinte de sortie.
+Les sources de conception sont conservées dans CD/output/oval-legacy-27/direction-b.

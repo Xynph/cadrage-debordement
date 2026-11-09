@@ -28,6 +28,40 @@ func contains_text(node: Node, needle: String) -> bool:
 func menu_geometry() -> void:
 	for button in app.root_content.find_children("*", "Button", true, false):
 		if button.text == "MENU & SAUVEGARDES": check(button.get_global_rect().end.y <= app.size.y + 1, "Menu principal dans la fenêtre avec nouveaux écrans")
+func click(button: BaseButton) -> bool:
+	if button == null or button.disabled or not button.is_visible_in_tree(): return false
+	var viewport := button.get_viewport()
+	var point := button.get_global_transform() * (button.size * .5)
+	if viewport != root and viewport is Window and viewport.is_embedded():
+		point += Vector2(viewport.position)
+		viewport = root
+	var move := InputEventMouseMotion.new()
+	move.position = point
+	move.global_position = point
+	viewport.push_input(move, true)
+	for down: bool in [true, false]:
+		var event := InputEventMouseButton.new()
+		event.button_index = MOUSE_BUTTON_LEFT
+		event.position = point
+		event.global_position = point
+		event.pressed = down
+		event.button_mask = MOUSE_BUTTON_MASK_LEFT if down else 0
+		viewport.push_input(event, true)
+		await settle()
+	return true
+
+func training_option(id: String, step: int, decision: Dictionary) -> bool:
+	var compact := app.body.find_child(id, true, false) as OptionButton
+	if compact != null: return compact.is_visible_in_tree() and not compact.disabled
+	if not await click(app.body.find_child("TrainingStep" + str(step), true, false) as Button): return false
+	if not await click(app.body.find_child("TrainingEditSelected", true, false) as Button): return false
+	var dialog := app.find_child("TrainingChoices", true, false) as AcceptDialog
+	if dialog == null or not dialog.visible: return false
+	var option := dialog.find_child(id + "_" + str(decision.get("selected")), true, false) as Button
+	var available := option != null and option.is_visible_in_tree() and not option.disabled
+	await click(dialog.get_ok_button())
+	return available
+
 func run() -> void:
 	root.size = Vector2i(1440, 900)
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
@@ -69,29 +103,33 @@ func run() -> void:
 				await capture("staff-portraits-" + str(size.x))
 		await capture("staff-" + str(size.x))
 		app._navigate("Formation"); await settle(); menu_geometry()
-		check(app.body.find_child("CarnetDevelopment", true, false) != null, "Écran formation natif")
+		check(app.body.find_child("CarnetDevelopment", true, false) != null or app.body.find_child("ImmersiveAcademy", true, false) != null, "Écran formation natif")
 		check(contains_text(app.body, "15"), "Quinze espoirs réels au centre de simulation")
 		await capture("formation-" + str(size.x))
 		app._navigate("Préparation"); await settle()
+		check(await click(app.body.find_child("PreparationTabConsignes", true, false) as Button), "Ouvrir les consignes")
 		var tactic_lists := {}
 		for button: Button in app.body.find_children("*", "Button", true, false):
-			if not button.has_meta("tactic_id"): continue
+			if not button.is_visible_in_tree() or not button.has_meta("tactic_id"): continue
 			var ancestor: Node = button.get_parent()
 			while ancestor != null and not ancestor is ScrollContainer: ancestor = ancestor.get_parent()
 			if ancestor is ScrollContainer: tactic_lists[ancestor.get_instance_id()] = ancestor
 		check(tactic_lists.size() == 2, "Deux cahiers tactiques contiennent les vrais choix")
 		for scroll: ScrollContainer in tactic_lists.values():
 			check(scroll.size.y >= 150 and scroll.get_global_rect().intersects(app.body_scroll.get_global_rect()), "Choix tactiques lisibles dans leur zone de défilement")
+		check(await click(app.body.find_child("PreparationTabDossier", true, false) as Button), "Revenir au dossier")
 		var dossier: Button = app.body.find_child("OpenOppositionDossier", true, false)
 		check(dossier != null and not dossier.disabled, "Accès au dossier adverse")
-		dossier.pressed.emit(); await settle()
+		if not await click(dossier): quit(1); return
 		var dialog: AcceptDialog = app.find_child("OppositionDossier", true, false)
 		check(dialog != null and dialog.visible and contains_text(dialog, "Joueurs pressentis"), "Vrai dossier avec menaces et limites")
+		if dialog == null or not dialog.visible: quit(1); return
 		check(dialog.get_visible_rect().size.y <= app.size.y + 2, "Dossier dans la fenêtre")
 		await capture("dossier-" + str(size.x))
 		app._clear_dialogs(); await settle()
-		check(app.body.find_child("CollectiveFocus", true, false) != null, "Préparation spécifique disponible")
-		check(app.body.find_child("OpponentLevel", true, false) != null, "Choix du comportement adverse")
+		check(await click(app.body.find_child("PreparationTabEntrainement", true, false) as Button), "Ouvrir l’entraînement")
+		check(await training_option("CollectiveFocus", 1, app.model.decisions.training.collective), "Préparation spécifique disponible")
+		check(await training_option("OpponentLevel", 9, app.model.decisions.difficulty), "Choix du comportement adverse")
 		app._navigate("Recrutement"); await settle()
 		var needs: Button = app.body.find_child("OpenRecruitmentNeeds", true, false)
 		check(needs != null, "Besoins et missions accessibles")
@@ -108,18 +146,24 @@ func run() -> void:
 	while app.waiting: await process_frame
 	check(app.model.decisions.delegation.lineup, "Contrôle UI réellement transmis au moteur")
 	app._navigate("Formation"); await settle()
+	var promotion_scope: Node = app.body
+	var integration := app.body.find_child("AcademyPrepareIntegration", true, false) as Button
+	if integration != null:
+		check(await click(integration), "Ouvrir le dossier d’intégration")
+		promotion_scope = app.find_child("AcademyIntegrationDialog", true, false)
 	var promote: Button
-	for button: Button in app.body.find_children("*", "Button", true, false):
-		if button.has_meta("promote_id"): promote = button; break
+	if promotion_scope != null:
+		for button: Button in promotion_scope.find_children("*", "Button", true, false):
+			if button.has_meta("promote_id"): promote = button; break
 	check(promote != null and not promote.disabled, "Promotion disponible au centre")
 	var old_count: int = app.model.squad.size()
 	var old_wage: float = app.model.finance.wage
-	promote.pressed.emit(); await settle()
+	if not await click(promote): quit(1); return
 	var confirmation: ConfirmationDialog
 	for child in app.get_children():
 		if child is ConfirmationDialog and child.visible: confirmation = child; break
 	check(confirmation != null, "Promotion exige confirmation du salaire")
-	if confirmation != null: confirmation.confirmed.emit()
+	if confirmation != null: await click(confirmation.get_ok_button())
 	await settle()
 	while app.waiting: await process_frame
 	check(app.model.squad.size() == old_count + 1 and app.model.finance.wage == old_wage + 2000, "Promotion UI : identité, groupe et salaire effectifs")

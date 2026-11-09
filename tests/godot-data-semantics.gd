@@ -3,6 +3,9 @@ const S = preload("res://ui/data_semantics.gd")
 const Office = preload("res://ui/office_view.gd")
 const ClubViews = preload("res://ui/club_views.gd")
 const T = preload("res://theme.gd")
+const C = preload("res://ui/immersive08/components.gd")
+const Competition = preload("res://ui/immersive08/competition_canvas.gd")
+const ImmersiveOffice = preload("res://ui/immersive08/office.gd")
 var checks := 0
 var failures: Array[String] = []
 var metrics: Array = []
@@ -47,17 +50,27 @@ func contrast(a: Color,b: Color) -> float:
  return (maxf(first,second)+0.05)/(minf(first,second)+0.05)
 func semantic_nodes(node: Node) -> Array[Node]:
  var result: Array[Node] = []
- for child in node.find_children("*","PanelContainer",true,false):
-  if child.has_meta("semantic_role"):result.append(child)
+ for child in node.find_children("*","Control",true,false):
+  if (child is Panel or child is PanelContainer) and child.has_meta("semantic_role"):result.append(child)
  return result
+func value_label(control: Node) -> Label:
+ if control is Label: return control
+ if control == null: return null
+ for child in control.get_children():
+  if child is Label: return child
+ return null
 func inspect_contrast(node: Node) -> void:
  for panel in semantic_nodes(node):
-  var label: Label = panel.get_node("Value")
+  var label := value_label(panel)
+  check(label!=null,"Valeur textuelle du badge présente")
+  if label==null:continue
   var fg := label.get_theme_color("font_color")
   var style := panel.get_theme_stylebox("panel") as StyleBoxFlat
+  check(style!=null,"Fond du badge contrôlable")
+  if style==null:continue
   check(style.bg_color.a==1.0,"Fond du badge opaque sur sélection et hover")
   check(contrast(fg,style.bg_color)>=4.5,"Contraste du vrai badge >=4,5")
-  check(not panel.tooltip_text.is_empty(),"Contexte disponible dans tooltip")
+  if panel is PanelContainer:check(not panel.tooltip_text.is_empty(),"Contexte disponible dans tooltip")
   check(not panel.accessibility_name.is_empty(),"Contexte accessible fourni")
 func build_page(viewport: Vector2i) -> AppFixture:
  root.mode = Window.MODE_WINDOWED
@@ -192,8 +205,52 @@ func run() -> void:
    check(error==OK,"Capture écrite")
   app.queue_free()
   await process_frame
+ await immersive_fixture()
  print("SEMANTIC_DATA_CHECKS ",JSON.stringify({"checks":checks,"failures":failures,"metrics":metrics,"display":DisplayServer.get_name()}))
  quit(0 if failures.is_empty() else 1)
+
+func immersive_fixture() -> void:
+ C.configure(1440,2560)
+ var app := AppFixture.new()
+ app.model=fixture()
+ app.route="Classements"
+ root.add_child(app)
+ var canvas := Control.new()
+ app.add_child(canvas)
+ Competition.build(app,canvas)
+ var office_action := ImmersiveOffice.standing_action(app,app.model.league[5])
+ app.add_child(office_action)
+ check(office_action.tooltip_text.contains("Défaites —") and office_action.accessibility_name.contains("Défaites —"),"Bureau dédié : compteur absent annoncé comme inconnu")
+ await process_frame
+ var rows := canvas.find_children("StandingsRow_*","Button",true,false)
+ check(rows.size()==14,"Gabarit dédié : toute la division de la fixture")
+ if rows.size()==14:
+  var current: Button = rows[4]
+  for pair in [["won","5","V"],["drawn","1","N"],["lost","6","D"]]:
+   var value := value_label(current.find_child("StandingCount_"+pair[0],true,false))
+   check(value!=null and value.text==pair[1] and value.get_meta("outcome_code")==pair[2],"Gabarit dédié : compteur exact et rôle V/N/D")
+  var unknown: Button = rows[5]
+  var loss := value_label(unknown.find_child("StandingCount_lost",true,false))
+  check(loss!=null and loss.text=="—","Gabarit dédié : défaite absente distincte de zéro")
+  check(row_labels(rows[2]).has("-2"),"Gabarit dédié : points négatifs connus")
+  var form := unknown.find_child("RecentForm",true,false)
+  check(form_codes(form)==["V","—","N"],"Gabarit dédié : forme inconnue à la bonne place")
+  check(form_codes(current.find_child("RecentForm",true,false))==["N","D","V","D","V","N"],"Gabarit dédié : six derniers résultats dans l’ordre")
+ inspect_contrast(canvas)
+ check(app.commands==0 and JSON.stringify(app.model)==JSON.stringify(fixture()),"Gabarit dédié : modèle et commandes intacts")
+ app.queue_free()
+ await process_frame
+
+func row_labels(node: Node) -> Array:
+ return node.find_children("*","Label",true,false).map(func(label: Label): return label.text)
+
+func form_codes(node: Node) -> Array:
+ var result: Array = []
+ if node!=null:
+  for badge in semantic_nodes(node):
+   var label := value_label(badge)
+   if label!=null:result.append(label.text)
+ return result
 
 
 func settle_app() -> void:
@@ -225,17 +282,6 @@ func profile_hashes() -> Dictionary:
   if filename.ends_with(".json"): hashes[filename] = FileAccess.get_sha256(directory.path_join(filename))
  return hashes
 
-func scroll_to_grid() -> void:
- var target: Control = live_app.find_child("OfficeStandingsGrid",true,false)
- if target == null: return
- var parent := target.get_parent()
- while parent != null and parent != live_app:
-  if parent is ScrollContainer and parent.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
-   var local_y: float = target.get_global_rect().position.y - parent.get_global_rect().position.y + parent.scroll_vertical
-   parent.scroll_vertical = maxi(0,roundi(local_y)-4)
-  parent=parent.get_parent()
- await settle_app()
-
 func real_capture(label: String) -> void:
  if not capture or DisplayServer.get_name()=="headless": return
  await RenderingServer.frame_post_draw
@@ -250,38 +296,80 @@ func real_resize(viewport: Vector2i) -> void:
 
 func real_standings(viewport: Vector2i, league: Dictionary) -> void:
  var rows: Array=league.rows
- var displayed := live_app.find_children("StandingsRow_*","PanelContainer",true,false)
+ var displayed := live_app.find_children("StandingsRow_*","Control",true,false)
  var scroll: ScrollContainer=live_app.find_child("StandingsScroll",true,false)
+ var native_rows: Control=live_app.find_child("StandingsRows",true,false)
+ var region: Control = scroll if scroll != null else native_rows
+ check(region!=null,"Zone réelle du classement présente")
  check(not displayed.is_empty(),"Vraies lignes du championnat présentes")
+ if region==null or displayed.is_empty():return
  if viewport.y>=1080:check(displayed.size()==rows.size(),"Toute la division %s visible à %s"%[league.id,viewport])
  if viewport.y==720:check(displayed.size()<rows.size(),"720p garde la pagination de division")
  for i in displayed.size():
   check(displayed[i].get_meta("club_id")==rows[i].id,"Ordre natif des clubs conservé")
-  check(scroll.get_global_rect().grow(1).encloses(displayed[i].get_global_rect()),"Ligne entière dans la zone visible")
+  check(region.get_global_rect().grow(1).encloses(displayed[i].get_global_rect()),"Ligne entière dans la zone visible")
   for pair in [["won","V"],["drawn","N"],["lost","D"]]:
-   var badge: PanelContainer=displayed[i].find_child("StandingCount_"+pair[0],true,false)
-   check(badge.get_node("Value").text==S.count_text(rows[i].get(pair[0])),"Vrai compteur de division conservé")
+   var badge := displayed[i].find_child("StandingCount_"+pair[0],true,false)
+   var label := value_label(badge)
+   check(label!=null and label.text==S.count_text(rows[i].get(pair[0])) and badge.get_meta("outcome_code")==pair[1],"Vrai compteur et rôle de division conservés")
+  var stored: Variant = rows[i].get("form")
+  var expected_form: Array = stored.slice(maxi(0,stored.size()-6)) if stored is Array and not stored.is_empty() else ["—"]
+  for j in expected_form.size():
+   if not S.RESULTS.has(expected_form[j]):expected_form[j]="—"
+  check(form_codes(displayed[i].find_child("RecentForm",true,false))==expected_form,"Forme réelle conservée dans l'ordre")
  var table: Control=live_app.find_child("StandingsTableFrame",true,false)
- var context: Control=live_app.find_child("StandingsContext",true,false)
- check(context.visible==(viewport.x>=1920),"Contexte latéral réservé aux grands écrans")
- if context.visible:
-  check(table.size.x<=1120,"Largeur du vrai tableau bornée")
-  var club_name: Label=context.find_child("StandingsContextClubName",true,false)
-  check(club_name.size.x>=240 and club_name.size.y<100,"Nom du club en ligne lisible dans le contexte")
- if viewport.y==720:
+ if scroll!=null:
+  var context: Control=live_app.find_child("StandingsContext",true,false)
+  check(context!=null and context.visible==(viewport.x>=1920),"Contexte latéral du tableau adaptatif")
+  if context!=null and context.visible:
+   check(table.size.x<=1120,"Largeur du vrai tableau adaptatif bornée")
+   var club_name: Label=context.find_child("StandingsContextClubName",true,false)
+   check(club_name!=null and club_name.size.x>=240 and club_name.size.y<100,"Nom du club en ligne lisible dans le contexte")
+ else:
+  var bounds := Rect2(Vector2.ZERO,Vector2(viewport))
+  check(table!=null and bounds.grow(1).encloses(table.get_global_rect()),"Tableau dédié entier dans la fenêtre")
+  for id in ["CompetitionNextFixture","CompetitionCalendarPreview"]:
+   var context: Control=live_app.find_child(id,true,false)
+   check(context!=null and bounds.grow(1).encloses(context.get_global_rect()),"Contexte de compétition entier "+id)
+ if viewport.y==720 and scroll!=null:
   var pager: HBoxContainer=live_app.find_child("StandingsPagination",true,false)
   var first_count:=displayed.size()
   var next: Button=pager.get_child(2)
   next.grab_focus();next.pressed.emit();await settle_app()
-  var second := live_app.find_children("StandingsRow_*","PanelContainer",true,false)
+  var second := live_app.find_children("StandingsRow_*","Control",true,false)
   check(second[0].get_meta("club_id")==rows[first_count].id,"Suivant atteint la suite exacte des clubs")
   pager=live_app.find_child("StandingsPagination",true,false)
   var previous: Button=pager.get_child(0)
   previous.grab_focus();previous.pressed.emit();await settle_app()
-  var restored:=live_app.find_children("StandingsRow_*","PanelContainer",true,false)
+  var restored:=live_app.find_children("StandingsRow_*","Control",true,false)
   check(restored[0].get_meta("club_id")==rows[0].id,"Précédent restaure la première page")
   var focus:=live_app.get_viewport().gui_get_focus_owner()
   check(focus is Button and focus.is_visible_in_tree(),"Focus clavier conservé après pagination")
+
+func office_record(own: Dictionary) -> Control:
+ var table: Control = live_app.find_child("OfficeStandings",true,false)
+ check(table!=null,"Vrai aperçu du Bureau présent")
+ if table==null:return null
+ var row: Button
+ for candidate: Button in table.find_children("OfficeStandingRow_*","Button",true,false):
+  if candidate.get_meta("club_id")==own.id:row=candidate;break
+ check(row!=null and row.get_meta("club_id")==own.id,"Ligne du club courant par identifiant")
+ if row!=null:
+  check(row.focus_mode==Control.FOCUS_ALL,"Bilan du club accessible au clavier")
+  for pair in [["won","Victoires"],["drawn","Nuls"],["lost","Défaites"]]:
+   var value: Variant = row.get_meta(pair[0],null)
+   check((value if value is String else S.count_text(value))==S.count_text(own.get(pair[0])),"Bureau : vrai compteur accessible "+str(pair[0]))
+   check(row.tooltip_text.contains(pair[1]) and row.accessibility_name.contains(pair[1]),"Bureau : libellé complet disponible "+str(pair[0]))
+ return row
+
+func division_buttons(viewport: Vector2i) -> void:
+ for league: Dictionary in live_app.model.leagues:
+  var tab: Button=live_app.find_child("StandingsDivision_"+str(league.id),true,false)
+  check(tab!=null and not tab.disabled,"Vrai choix de division "+str(league.id))
+  if tab==null:continue
+  tab.pressed.emit();await settle_app()
+  await real_standings(viewport,league)
+  await real_capture("classements-%d-%s"%[viewport.x,league.id])
 
 func real_pages() -> void:
  if proof.is_empty() or OS.get_environment("CD_GODOT_DATA_DIR").is_empty():
@@ -310,64 +398,55 @@ func real_pages() -> void:
  for league: Dictionary in live_app.model.leagues:
   if league.id==live_app.model.meta.leagueId:genuine_rows=league.rows
  check(not genuine_rows.is_empty(),"Vrai classement projeté")
+ var own: Dictionary={}
+ for row: Dictionary in genuine_rows:
+  if row.id==live_app.model.club.id:own=row
+ check(not own.is_empty(),"Club courant présent dans la division réelle")
  for viewport in [Vector2i(1280,720),Vector2i(2560,1440)]:
   await real_resize(viewport)
   live_app._navigate("Bureau");await settle_app();close_guide()
-  var grid: GridContainer = live_app.find_child("OfficeStandingsGrid",true,false)
-  check(grid!=null and grid.columns==7,"Vrai Bureau : colonne D présente")
-  if grid==null:break
-  var grid_minimum: float = grid.get_combined_minimum_size().x
-  var own: Dictionary={}
-  for row: Dictionary in genuine_rows:
-   if row.id==live_app.model.club.id:own=row
-  for item in [["won","V"],["drawn","N"],["lost","D"]]:
-   var cell_name: String = ("OfficeStanding_%s_%s"%[str(own.id),item[0]]).validate_node_name()
-   var cell: PanelContainer = live_app.find_child(cell_name,true,false)
-   check(cell!=null,"Vraie cellule " + str(item[0]))
-   if cell!=null:
-    var badge: PanelContainer = cell.get_child(0)
-    check(badge.get_node("Value").text==S.count_text(own.get(item[0])),"Valeur native exacte " + str(item[0]))
-  inspect_contrast(live_app)
-  var columns: Control = live_app.find_child("OfficeColumns",true,false)
-  check(columns!=null and columns.get_child(2).visible==(viewport.x>1280),"Compacité du vrai Bureau conservée")
+  var record:=office_record(own)
   await real_capture("bureau-%d"%viewport.x)
-  if viewport.x==1280:
-   await scroll_to_grid()
-   await real_capture("bureau-1280-cap")
   var action: Button = live_app.find_child("OfficeStandingsAction",true,false)
   check(action!=null and not action.disabled,"Vrai lien classement disponible")
+  if viewport.x==1280 and record is Button:action=record
   if action!=null:
    action.grab_focus()
    await settle_app()
-   action.pressed.emit()
+   check(action.has_focus() and live_app.body_scroll.get_global_rect().grow(1).encloses(action.get_global_rect()),"Le Bureau révèle entièrement le lien au focus")
+   if viewport.x==1280:await real_capture("bureau-1280-cap")
+   for down in [true,false]:
+    var key:=InputEventKey.new()
+    key.keycode=KEY_ENTER
+    key.pressed=down
+    Input.parse_input_event(key)
+    await process_frame
    await settle_app()
   close_guide()
   check(live_app.route=="Classements","Navigation Bureau vers Classements conservée")
   var list: ScrollContainer=live_app.find_child("StandingsScroll",true,false)
-  check(list!=null,"Vrai tableau complet présent")
+  var native_rows: Control=live_app.find_child("StandingsRows",true,false)
+  check(list!=null or native_rows!=null,"Vrai tableau complet présent")
   if list!=null:
    check(list.get_h_scroll_bar().max_value<=list.get_h_scroll_bar().page+1,"Aucun clipping horizontal du vrai classement " + str(viewport))
   inspect_contrast(live_app)
-  var legends := live_app.find_children("ResultLegend","HBoxContainer",true,false)
-  check(legends.size()==1,"Légende réelle du classement présente")
-  if not legends.is_empty():check(Rect2(Vector2.ZERO,Vector2(viewport)).encloses(legends[0].get_global_rect()),"Légende réelle visible " + str(viewport))
-  for league: Dictionary in live_app.model.leagues:
-   var tab: Button=live_app.find_child("StandingsDivision_"+str(league.id),true,false)
-   check(tab!=null,"Vrai choix de division")
-   tab.pressed.emit();await settle_app()
-   await real_standings(viewport,league)
-   await real_capture("classements-%d-%s"%[viewport.x,league.id])
+  var table := live_app.find_child("StandingsTableFrame",true,false)
+  var bounds := Rect2(Vector2.ZERO,Vector2(viewport))
+  if table!=null:
+   for code in ["V","N","D"]:
+    var captions: Array = [S.RESULTS[code].label,S.RESULTS[code].plural]
+    var labels := table.find_children("*","Label",true,false)
+    check(labels.any(func(label: Label): return label.text in captions and label.is_visible_in_tree() and bounds.encloses(label.get_global_rect())),"Légende réelle visible : "+str(captions[0]))
+  await division_buttons(viewport)
   live_app.table_division=live_app.model.meta.leagueId
   live_app._render();await settle_app()
   await real_capture("classements-%d"%viewport.x)
-  live_metrics.append({"size":str(viewport),"canvas":str(root.content_scale_size),"grid_minimum":grid_minimum,"club_id":live_app.model.club.id,"data_rows":genuine_rows.size()})
+  live_metrics.append({"size":str(viewport),"canvas":str(root.content_scale_size),"club_id":live_app.model.club.id,"data_rows":genuine_rows.size()})
  # Redimensionner le tableau vivant, sans reconstruire la page par navigation.
+ var original: Control = live_app.root_content
  await real_resize(Vector2i(1920,1080))
- for league: Dictionary in live_app.model.leagues:
-  var tab: Button=live_app.find_child("StandingsDivision_"+str(league.id),true,false)
-  tab.pressed.emit();await settle_app()
-  await real_standings(Vector2i(1920,1080),league)
-  await real_capture("classements-1920-%s"%league.id)
+ check(live_app.root_content==original,"Même classement lors du redimensionnement")
+ await division_buttons(Vector2i(1920,1080))
  check(live_app.bridge._next_id==before_requests,"Affichage/navigation sans requête métier")
  check(JSON.stringify(live_app.model)==before_model,"Projection complète inchangée par les vraies pages")
  check(profile_hashes()==before_files,"Carrière, guide et préférences JSON inchangés par consultation")

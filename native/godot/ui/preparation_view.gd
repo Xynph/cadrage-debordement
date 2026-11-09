@@ -135,6 +135,8 @@ func _show_tab() -> void:
 		if i == int(state.tab):
 			G.selected(tabs[i], app.accent)
 			tabs[i].add_theme_stylebox_override("pressed", tabs[i].get_theme_stylebox("normal"))
+		elif tabs[i].has_meta("carnet_selection_skin"):
+			G.clear_selection(tabs[i])
 		else:
 			tabs[i].add_theme_stylebox_override("normal", tab_style)
 			tabs[i].add_theme_stylebox_override("pressed", tab_pressed_style)

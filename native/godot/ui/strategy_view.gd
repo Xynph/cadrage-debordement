@@ -79,6 +79,10 @@ static func _finance(app: Control, page: Container, data: Dictionary, locked: bo
 	_amount(amounts, "SALAIRES / SEMAINE", G.euros(f.weeklyWages))
 	_amount(amounts, "PROJECTION DES ENGAGEMENTS", G.euros(f.baseForecast), G.GOLD)
 	card.add_child(G.wrap("%d semaines restantes sur %d · %s" % [f.remainingWeeks, f.weeksPerSeason, f.notice], 12))
+	if not f.facility is Dictionary:
+		var notice := G.wrap("Installations · Aucun devis disponible", 22, G.MUTED)
+		notice.add_theme_font_size_override("font_size", 22)
+		card.add_child(notice)
 	var columns := G.h(16)
 	page.add_child(columns)
 	var investments := G.v(14)

@@ -1,5 +1,6 @@
 extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
+const PAGE_SIZE := 6
 
 static func build(app: Control) -> Control:
 	var page := G.h(16)
@@ -8,28 +9,38 @@ static func build(app: Control) -> Control:
 	var data: Dictionary = app.model.get("decisions", {}).get("development", {})
 	if not app.management_ui.has("development"): app.management_ui.development = {"mode":"academy"}
 	var state: Dictionary = app.management_ui.development
+	var mode := str(state.mode)
 	var notes := G.panel(page, .68)
 	G.chapter(notes, "11", "La relève", "Faire une place aux générations suivantes.", app.accent)
 	var text := G.scroll(notes)
 	G.photo_note(text, app.model.club, "Le centre", "La prochaine génération", "stadium", 140)
 	text.add_child(G.metric(G.n(data.get("academy", []).size()), "espoirs au centre"))
-	text.add_child(G.wrap("Quinze nouveaux espoirs par saison. Au plus 75 joueurs restent au centre. Retrouvez les rencontres juniors, les trajectoires et les mentorats dans les parcours du centre.", 14))
+	var pathways: Dictionary = app.model.get("clubLife", {}).get("academyPathways", {})
+	var follow_up := "Retrouvez les rencontres juniors, les trajectoires et les mentorats dans les parcours du centre." if pathways.get("available", false) else "Le suivi individuel des Espoirs reste disponible ici."
+	text.add_child(G.wrap("Quinze nouveaux espoirs par saison. Au plus 75 joueurs restent au centre. " + follow_up, 14))
 	text.add_child(G.button("PARCOURS DU CENTRE →", func(): app._navigate("Centre")))
 	text.add_child(G.separator())
 	for option in [["academy", "LE CENTRE DE FORMATION"], ["professional", "LES JEUNES PROFESSIONNELS"]]:
-		var b := G.button(option[1], func(): state.mode = option[0]; app._render())
-		b.name = "Development" + option[0].capitalize()
-		if state.mode == option[0]: G.selected(b, app.accent)
+		var id: String = "Development" + option[0].capitalize()
+		var b := G.button(option[1], func():
+			state.mode = option[0]
+			app._render()
+			preload("res://ui/immersive08/club_ui.gd").focus(app,id))
+		b.name = id
+		if mode == option[0]: G.selected(b, app.accent)
 		text.add_child(b)
 	text.add_child(G.wrap("Le potentiel est une estimation de simulation. La promotion ne garantit ni le temps de jeu ni la progression. Les courbes annuelles des profils communs et les gains graduels des joueurs générés sont distingués.", 13))
 	text.add_child(G.button("CONSULTER L'EFFECTIF →", func(): app._navigate("Effectif")))
 	var body := G.panel(page, 1.95)
 	G.chapter(body, "12", "Ouvrir des perspectives", "Poste, travail et minutes réellement disputées.", app.accent)
-	var people: Array = data.get("academy", []) if state.mode == "academy" else data.get("professionals", []).filter(func(p: Dictionary): return p.age <= 23)
+	var people: Array = data.get("academy", []) if mode == "academy" else data.get("professionals", []).filter(func(p: Dictionary): return p.age <= 23)
 	var list := G.scroll(body)
 	list.get_parent().name = "DevelopmentList"
 	if people.is_empty(): list.add_child(G.wrap("Aucun joueur dans cette catégorie.", 17))
-	for person: Dictionary in people:
+	var bounds := Vector2i(0, people.size())
+	if people.size() > PAGE_SIZE:
+		bounds = app.ClubViews._paged(app, body, "DevelopmentPagination", people.size(), PAGE_SIZE, "development_" + mode)
+	for person: Dictionary in people.slice(bounds.x, bounds.y):
 		var card := G.card(list, G.accent_ink(app.accent))
 		card.set_meta("development_id", person.id)
 		var row := G.h(16)
@@ -64,7 +75,7 @@ static func build(app: Control) -> Control:
 		focus.tooltip_text = "Changer la spécialisation remet à zéro son XP partiel non dépensé. Les qualités déjà gagnées sont conservées."
 		focus.item_selected.connect(func(index: int): app._command("set_development_focus", {"playerId":person.id, "focus":focus.get_item_metadata(index)}))
 		controls.add_child(focus)
-		if state.mode == "academy":
+		if mode == "academy":
 			var promote := G.button("PREMIER CONTRAT PRO", func(): app.confirm("Promouvoir " + str(person.name), "%s rejoindra l'effectif professionnel et ajoutera %s de salaire par semaine de jeu. Son contrat court jusqu'à la fin de la saison%s. Confirmer ?" % [person.name, G.euros(person.salary), G.n(int(app.model.meta.season) + (2 if app.model.meta.phase == "ended" else 1))], func(): app._command("promote_academy", {"playerId":person.id, "confirmed":true})))
 			promote.set_meta("promote_id", person.id)
 			promote.disabled = not data.get("promotionAvailable", false)

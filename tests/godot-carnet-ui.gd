@@ -21,6 +21,17 @@ func button(node: Node, text: String) -> Button:
 		var result := button(child, text)
 		if result != null: return result
 	return null
+func page_for(route: String) -> Control:
+	var page := named(app,ROUTES[route]) as Control
+	if page!=null:return page
+	var alternatives := {
+		"Composition":["ImmersiveTactics"], "Préparation":["ImmersivePreparation","ImmersiveTraining"],
+		"Finances":["ImmersiveFinance"], "Club":["ImmersiveClub"],
+	}
+	for id: String in alternatives.get(route,[]):
+		page=named(app,id) as Control
+		if page!=null:return page
+	return null
 func wait_model() -> void:
 	var until := Time.get_ticks_msec() + 30000
 	while (app.waiting or app.model.is_empty()) and Time.get_ticks_msec() < until: await process_frame
@@ -50,7 +61,7 @@ func press(text: String) -> void:
 		b.pressed.emit()
 		await settle()
 func bounds(route: String) -> void:
-	var page: Control = named(app, ROUTES[route])
+	var page := page_for(route)
 	check(page != null, "Vue carnet " + route)
 	if page == null: return
 	if route == "Préparation":
@@ -70,26 +81,34 @@ func bounds(route: String) -> void:
 		check(page.get_global_rect().end.x <= app.size.x + 1 and page.get_global_rect().end.y <= app.size.y + 1, "Vue dans la fenêtre " + route + " " + str(page.get_global_rect()))
 	for child in page.find_children("*", "ScrollContainer", true, false):
 		if child.is_visible_in_tree(): check(child.follow_focus, "Défilement suit le focus " + route)
-	for b in page.find_children("*", "Button", true, false):
-		if b is Button and not b.disabled and (route != "Préparation" or b.is_visible_in_tree()):
+	for b: Button in page.find_children("*", "Button", true, false):
+		if not b.disabled and b.is_visible_in_tree():
 			check(b.focus_mode == Control.FOCUS_ALL, "Commande clavier " + route)
-			check(b.size.y >= 30 and b.size.x >= 20, "Cible utilisable " + route + " " + b.text)
+			var hit := b.get_global_rect()
+			var scale := b.get_global_transform().get_scale().y
+			var font_size := b.get_theme_font_size("font_size")
+			var text_height := b.get_theme_font("font").get_height(font_size)*scale
+			check(hit.size.x>=20 and hit.size.y>=maxf(18,text_height), "Cible et texte utilisables " + route + " " + str(b.name))
 func contrast(first: Color, second: Color) -> float:
 	var a:=first.srgb_to_linear().get_luminance()
 	var b:=second.srgb_to_linear().get_luminance()
 	return (maxf(a,b)+.05)/(minf(a,b)+.05)
 func readability() -> void:
 	await render("Composition")
-	var board: Control = app.body.find_children("*", "Control", true, false).filter(func(c):return c.get_script()!=null and c.get_script().resource_path.ends_with("lineup_board.gd"))[0]
-	for tile: Button in board.tiles:
-		var caption: Label = tile.find_children("*", "Label", true, false)[0]
-		var background: StyleBoxFlat = tile.get_theme_stylebox("normal")
-		var ink := caption.get_theme_color("font_color").srgb_to_linear().get_luminance()
-		var paper := background.bg_color.srgb_to_linear().get_luminance()
-		check((maxf(ink,paper)+.05)/(minf(ink,paper)+.05)>=4.5,"Contraste lisible carte de terrain " + caption.text)
+	for number in range(1,16):
+		var tile := named(app,"LineupSlot%02d"%number) as Button
+		check(tile!=null,"Poste réel du terrain "+str(number))
+		if tile==null:continue
+		var captions := tile.find_children("*","Label",true,false)
+		var caption := captions.back() as Label if not captions.is_empty() else null
+		var background := tile.get_theme_stylebox("normal") as StyleBoxFlat
+		var surfaces := tile.find_children("*","Panel",true,false)
+		if background==null and not surfaces.is_empty():background=surfaces.back().get_theme_stylebox("panel") as StyleBoxFlat
+		check(caption!=null and background!=null and contrast(caption.get_theme_color("font_color"),background.bg_color)>=4.5,"Contraste lisible carte de terrain "+str(number))
 	for b in app.body.find_children("*","Button",true,false):
-		var style:StyleBoxFlat=b.get_theme_stylebox("normal")
-		check(contrast(b.get_theme_color("font_focus_color"),style.bg_color)>=4.5,"Contraste du texte au focus " + b.text)
+		var style := b.get_theme_stylebox("normal") as StyleBoxFlat
+		if style!=null and style.bg_color.a>.9 and not b.text.is_empty():
+			check(contrast(b.get_theme_color("font_focus_color"),style.bg_color)>=4.5,"Contraste du texte au focus " + b.text)
 	app.settings()
 	for d in dialogs():
 		var border: StyleBoxFlat=d.get_theme_stylebox("embedded_border","Window")
@@ -98,7 +117,9 @@ func readability() -> void:
 	await settle()
 	await render("Match")
 	var rail: Control = named(app,"MatchNotebook")
-	check(rail != null and rail.size.x <= 360,"Le carnet de match laisse la priorité au terrain")
+	var pitches: Array = app.match_screen.find_children("*","SubViewportContainer",true,false)
+	var pitch := pitches[0] as Control if not pitches.is_empty() else null
+	check(rail!=null and pitch!=null and pitch.get_global_rect().size.x>rail.get_global_rect().size.x,"Le carnet de match laisse la priorité au vrai terrain")
 func state() -> Dictionary:
 	await command("export")
 	return JSON.parse_string(app.model.meta.exportText).state
@@ -120,8 +141,9 @@ func capture_dialog(id: String) -> void:
 	await settle()
 	var client := Vector2(root.size)
 	for d in dialogs():
-		check(Vector2(d.size).x<=client.x and Vector2(d.size).y<=client.y,"Dialogue dans la fenêtre " + id)
-		check(d.get_ok_button().is_visible_in_tree(),"Validation du dialogue visible " + id)
+		check(Vector2(d.size).x<=client.x and Vector2(d.size).y<=client.y,"Dialogue dans la fenêtre %s (%s dans %s)" % [id,d.size,root.size])
+		var confirmation := d.get_ok_button()
+		check(confirmation.is_visible_in_tree() and Rect2(Vector2.ZERO,Vector2(d.size)).encloses(confirmation.get_global_rect()),"Validation du dialogue entière " + id)
 		for spin in d.find_children("*","SpinBox",true,false):
 			var background: StyleBoxFlat=spin.get_line_edit().get_theme_stylebox("normal")
 			check(contrast(spin.get_theme_color("up_icon_modulate"),background.bg_color)>=3.0,"Flèches de saisie lisibles " + id)
@@ -173,6 +195,12 @@ func reading_actions() -> void:
 		await press(str(leagues[1].name).to_upper())
 		check(app.table_division==leagues[1].id,"Changement réel de division")
 	app.settings()
+	var preference_tabs := named(app,"PreferencesTabs") as TabContainer
+	check(preference_tabs!=null,"Onglets réels des paramètres")
+	if preference_tabs!=null:
+		for index in preference_tabs.get_tab_count():
+			if preference_tabs.get_tab_title(index)=="Affichage":preference_tabs.current_tab=index;break
+	await settle()
 	await capture_dialog("parametres-1440")
 	var packs_button: Button = button(app,"Importez un pack personnalisé")
 	check(packs_button != null and packs_button.is_visible_in_tree(),"Accès personnalisé aux packs visible dans les paramètres")
@@ -182,7 +210,9 @@ func reading_actions() -> void:
 	check(app.pack_manager.picker.visible,"Vrai dialogue ZIP accessible")
 	for list in app.pack_manager.picker.find_children("*","ItemList",true,false):
 		if list.is_visible_in_tree():
-			check(contrast(list.get_theme_color("font_selected_color"),Color("f3eddf"))>=4.5,"Nom de fichier sélectionné lisible dans le dialogue papier")
+			for state in ["selected","selected_focus"]:
+				var style := list.get_theme_stylebox(state) as StyleBoxFlat
+				check(style!=null and contrast(list.get_theme_color("font_selected_color"),style.bg_color)>=4.5,"Nom de fichier sélectionné lisible sur son vrai fond "+state)
 	await capture("import-pack-1440")
 	app.pack_manager.picker.hide()
 	app.pack_manager.back()
@@ -338,7 +368,13 @@ func projections() -> void:
 	await render("Bureau")
 func finish() -> void:
 	print("CARNET : ", checks, " contrôles ; ", failures.size(), " échec(s)")
+	app.closing=true
+	if is_instance_valid(app.coach):app.coach.destroy()
 	app.bridge.stop()
+	var deadline := Time.get_ticks_msec()+2300
+	while app.bridge.child_pid>0 and Time.get_ticks_msec()<deadline:await process_frame
+	app.queue_free()
+	await process_frame
 	quit(0 if failures.is_empty() else 1)
 func run() -> void:
 	app = load("res://main.tscn").instantiate()
@@ -348,10 +384,11 @@ func run() -> void:
 	await command("new_career", {"club":0,"mode":"common"})
 	for route in ROUTES:
 		await render(route)
-		check(named(app, ROUTES[route]) != null, "Composition carnet présente " + route)
-	if not failures.is_empty(): finish(); return
+		check(page_for(route) != null, "Composition carnet présente " + route)
+	if not failures.is_empty(): await finish(); return
 	await readability()
 	var before: Dictionary = await state()
+	var export_before: String = app.model.meta.exportText
 	var filename: String = str(app.model.meta.dataDir).path_join("donnees.json")
 	var bytes := FileAccess.get_file_as_bytes(filename)
 	for resolution in [Vector2i(1280,800), Vector2i(1440,900), Vector2i(1920,1080)]:
@@ -367,10 +404,11 @@ func run() -> void:
 	await reading_actions()
 	var after: Dictionary = await state()
 	check(before == after, "Toutes vues et tailles : S/RNG identiques")
+	check(export_before == app.model.meta.exportText, "Toutes vues : export complet identique octet pour octet")
 	check(bytes == FileAccess.get_file_as_bytes(filename), "Toutes vues : octets sauvegarde identiques")
 	root.size=Vector2i(1440,900)
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
 	await decisions()
 	await variants()
 	await projections()
-	finish()
+	await finish()

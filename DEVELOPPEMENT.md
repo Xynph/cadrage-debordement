@@ -1,5 +1,31 @@
 # Journal de développement — Cadrage Débordement
 
+## 9 novembre 2026 — réception immersive, Japon, Nationale et Champ Rugby
+
+La branche `feature/immersive-1440p-20261108` adapte les vues natives de la PR400 à la tête `8ebf575` de `main`. Les wrappers de création, préparation, Bureau et compétitions exploitent les commandes et projections de cette version. Les dates et deux manches de barrages japonais s’affichent dans le calendrier et dans les archives. Le nouveau terrain fictif d’origine porte la bibliothèque à 48 PNG. La matrice [de réception immersive](docs/immersive08-coverage.md) distingue tests source, paquets Windows et finitions restantes. Les profils d’essai et packs de réception restent hors dépôt.
+
+Après l’intégration de la Nationale sur `ebef33b`, la branche reprend les 14 clubs, leurs dates et lieux, le bulletin de qualification FFR et les résultats de la phase finale. Le nouveau terrain fictif porte la bibliothèque à 49 PNG. Les archives séparent la finale de Nationale et le barrage Pro D2. Les vérifications source couvrent les vrais exports de saisons 2 et 3 et leurs transitions, aux trois définitions. Les captures Windows à 1440p et à 720p proviennent des menus natifs. Le moteur, les formats et les packs restent ceux de `main`.
+
+La recette du premier ZIP Nationale a révélé cinq défauts de redimensionnement à l’entrée. Le gabarit Création s’adapte aux quatre définitions testées et conserve le club choisi. La photo originale de tunnel porte le total à 50 PNG. Les fiches et sélecteurs Staff adoptent le thème sombre et Formation reprend l’état réel des parcours juniors. Les preuves source figurent dans la matrice immersive.
+
+Le ZIP Windows `a675dc4` passe 141 contrôles avec le pack Nationale et 233 contrôles avec le pack Pacifique après extraction et déplacement. La branche reprend ensuite le Champ Rugby sur `a378ef2` avec son illustration de terrain, les 14 clubs, les actions de préparation et la source des dates et heures. Le classement compact conserve le focus sur chacun de ses onze onglets. La recette source Champ avec pack complet reprend la saison 2. La [matrice immersive](docs/immersive08-coverage.md) détaille les preuves par version.
+
+Le ZIP Champ `5480f9c` passe 145 contrôles avec son pack complet et 445 dans la recette Windows générale. Le raccord Atlas sur `96ffca2` donne la priorité aux photos et crédits sur le Bureau et dans Club. Le scénario officiel Atlas passe en source sans fenêtre. Réception compose deux extraits de la même maquette approuvée, ce qui porte la bibliothèque à 52 PNG. La fiche joueur utilise les données de disponibilité et conserve le portrait d’origine entier.
+
+Le paquet Windows Atlas `2761850` passe 177 contrôles avec le pack complet et 233 contrôles Pacifique après relocalisation. La réception retrouve la saison 2 sur le runtime embarqué. L’Atelier adapte ensuite son bandeau au changement de définition en préservant la saisie, le focus et l’aperçu du pack.
+
+La branche reprend le moteur 0.7.7 sur `7ea396f`. La recette source du Champ et de l’Atlas passe 125 contrôles avec les poules et lieux européens. Le témoin du rail vérifie les couleurs des boutons et les contours de focus à 720p, 1080p et 1440p.
+
+La recette historique de ce même paquet Atlas passe 1 513 contrôles sous Windows. Sur le raccord Formation, Calendrier permet d’ouvrir le détail des rencontres européennes à 720p. Le sélecteur refuse un octet NUL brut dans un fichier d’import, y compris après un JSON complet. La recette embarquée vérifie aussi les entrées masquées du dossier de test et s’arrête si une carrière est déjà chargée.
+
+Le lot immersif 0.7.8 reprend le main 462efce. Les gabarits ont été mesurés à 1440p et la recette source passe 498 contrôles sous Windows. Le vestiaire conserve son repère, les onglets tactiques restent accessibles à 720p et la fiche distingue blessure, reprise et sélection. Le Calendrier ouvre le détail du lieu depuis la ligne de la rencontre. Le paquet 0.7.7 précédent a été reçu avec l’Atlas, les anciennes carrières et un déplacement du paquet Pacifique.
+
+La revue du parcours à 1080p et 1440p rétablit l’accès direct au jour de match depuis Préparation. Le scénario embarqué passe par les trois boutons du trajet depuis le Bureau, jusqu’au coup d’envoi.
+
+Le lot de suivi affiche le direct et sa véritable commande sur le Bureau, corrige les libellés de compétition et de terrain, et relie le Calendrier Pacifique à Préparation. Le double appui pendant une avance garde une seule commande.
+
+Le raccord des PR400 et 411 sur af62a98 regroupe l’interface et les nouvelles données de départ du Champ Rugby. La recette du premier assemblage Windows passe 455 contrôles et restaure les 791 résultats d’une carrière Monde. Deux corrections ciblées suivent cette recette. Le bouton de navigation depuis Consignes reste actif pendant le tick et le Dossier reprend la date connue du Calendrier Pacifique en présaison.
+
 ## 9 novembre 2026 — carrière européenne et profils compatibles
 
 L'édition `rugby-world-2026-11-08-v1` ajoute le mode Monde sans convertir les anciennes carrières. Le registre compilé reprend les 1 592 objets France à l'identique et ajoute PREM, URC et deux invités européens. Les dates de départ sourcées, les règles et leurs éditions figurent dans la [documentation des compétitions](docs/world-competition-rules-20261109.md). Les calendriers futurs et les invitations du monde fermé suivent des décisions de jeu explicites, sans importer de scores réels.

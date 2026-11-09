@@ -37,7 +37,7 @@ static func _tab(tabs: TabContainer, label: String) -> VBoxContainer:
 	tabs.add_child(tab)
 	return G.scroll(tab)
 
-static func build(app: Control) -> Control:
+static func build(app: Control, initial_tab: String = "") -> Control:
 	var page := G.v(12)
 	page.name = "CarnetAcademyPathways"
 	G.fill(page, true)
@@ -68,12 +68,33 @@ static func build(app: Control) -> Control:
 	tabs.add_theme_color_override("font_unselected_color", G.MUTED)
 	G.fill(tabs, true)
 	paper.add_child(tabs)
-	_center(_tab(tabs, "Centre"), app, data)
-	_players(_tab(tabs, "Parcours"), app, data)
-	_scouting(_tab(tabs, "Centres"), app, data)
-	_network(_tab(tabs, "Filières"), app, data)
-	_professionals(_tab(tabs, "Passerelle pro"), app, data)
-	_history(_tab(tabs, "Générations"), data)
+	var builders := {
+		"Centre": _center.bind(app, data),
+		"Parcours": _players.bind(app, data),
+		"Centres": _scouting.bind(app, data),
+		"Filières": _network.bind(app, data),
+		"Passerelle pro": _professionals.bind(app, data),
+		"Générations": _history.bind(data),
+	}
+	var lists: Array[VBoxContainer] = []
+	var selected := 0
+	for title: String in builders:
+		if title == initial_tab: selected = lists.size()
+		lists.append(_tab(tabs, title))
+	var mounted := {}
+	var open_tab := func(index: int):
+		if mounted.has(index): return
+		mounted[index] = true
+		var list := lists[index]
+		var scroll := list.get_parent()
+		# Construire hors de l’arbre avant d’ajouter le contenu et son thème.
+		scroll.remove_child(list)
+		var builder: Callable = builders[str(tabs.get_tab_control(index).name)]
+		builder.call(list)
+		scroll.add_child(list)
+	tabs.current_tab = selected
+	open_tab.call(selected)
+	tabs.tab_changed.connect(open_tab)
 	return page
 
 static func _center(list: VBoxContainer, app: Control, data: Dictionary) -> void:
@@ -128,8 +149,13 @@ static func _player(parent: Node, app: Control, data: Dictionary, p: Dictionary)
 	card.add_child(G.wrap("%d minutes juniors · objectif %d · parcours %s" % [p.minutes, p.target, p.path], 15))
 	var detail := VBoxContainer.new()
 	detail.visible = false
-	card.add_child(G.button("OUVRIR LE PARCOURS INDIVIDUEL", func(): detail.visible = not detail.visible))
+	card.add_child(G.button("OUVRIR LE PARCOURS INDIVIDUEL", func():
+		if detail.get_child_count() == 0: _player_details(detail, app, data, p)
+		detail.visible = not detail.visible))
 	card.add_child(detail)
+	card.add_child(G.separator())
+
+static func _player_details(detail: VBoxContainer, app: Control, data: Dictionary, p: Dictionary) -> void:
 	_choice(detail, "Trajectoire choisie", [["equilibre","Équilibre"],["minutes","Donner des minutes"],["progression","Développer le potentiel"],["professionnel","Préparer le passage pro"]], func(value): _send(app, data, "academy_path", {"playerId":p.id,"strategy":value})).disabled = data.locked
 	_choice(detail, "Objectif de minutes", [[480,"480 minutes"],[960,"960 minutes"],[1440,"1 440 minutes"]], func(value): _send(app, data, "academy_target", {"playerId":p.id,"minutes":value})).disabled = data.locked
 	_choice(detail, "Objectif individuel · trois joueurs maximum", [["minutes","Temps de jeu"],["progression","Progression"],["regularite","Régularité"]], func(value): _send(app, data, "academy_plan", {"playerId":p.id,"target":value})).disabled = data.locked
@@ -154,7 +180,6 @@ static func _player(parent: Node, app: Control, data: Dictionary, p: Dictionary)
 		var b := G.button("PREMIER CONTRAT PRO %d AN(S) · %s/SEM." % [year, G.euros(salary)], func(): _send(app, data, "academy_promote", {"playerId":p.id,"years":year}, "Premier contrat professionnel", "%s quittera le centre et ajoutera %s par semaine à la masse salariale pour %d saison(s). Confirmer ?" % [p.name,G.euros(salary),year]))
 		b.disabled = data.locked or not data.promotionAvailable
 		detail.add_child(b)
-	card.add_child(G.separator())
 
 static func _scouting(list: VBoxContainer, app: Control, data: Dictionary) -> void:
 	list.add_child(G.section("Observer les autres centres", "Enveloppe junior distincte de la trésorerie senior. Le centre cédant conserve au moins 15 joueurs et ses postes."))
