@@ -200,7 +200,11 @@ static func gauge(parent: Node, caption: String, value: float, maximum: float = 
 	block.add_child(bar)
 
 static func photo_note(parent: Node, club: Dictionary, title: String, subtitle: String, kind: String = "stadium", height: int = 130) -> void:
-	var photo := picture(str(identity(club).get("slug", "toulouse")), kind)
+	var c := identity(club)
+	var supplied: Dictionary = c.get("photos", {}).get(kind, {})
+	var photo := picture(str(c.get("slug", "")), kind, true, str(supplied.get("path", "")))
+	if photo.get_meta("photo_from_pack", false):
+		photo.tooltip_text = str(supplied.get("credit", ""))
 	photo.custom_minimum_size.y = height
 	parent.add_child(photo)
 	var content: VBoxContainer = photo.get_meta("content")

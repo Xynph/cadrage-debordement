@@ -18,7 +18,7 @@ function credit(value){
  return value.normalize('NFC').trim();
 }
 function https(value){
- ensure(typeof value==='string'&&value===value.trim()&&value.length<=512&&!/[\s<>\x00-\x1f\x7f]/u.test(value),'photo de territoire : adresse de source ou licence invalide.');
+ ensure(typeof value==='string'&&value===value.trim()&&value.startsWith('https://')&&value.length<=512&&!/[\s\\<>\x00-\x1f\x7f]/u.test(value),'photo de territoire : adresse de source ou licence invalide.');
  let url;
  try{url=new URL(value);}catch{}
  ensure(url?.protocol==='https:'&&url.hostname&&!url.username&&!url.password,'photo de territoire : source ou licence HTTPS requise.');

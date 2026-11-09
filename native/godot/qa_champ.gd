@@ -170,6 +170,12 @@ func _receive_atlas() -> void:
 		var credit := app.find_child("VenuePhotoCredit_"+key,true,false) as Label
 		_check(credit != null and credit.is_visible_in_tree() and credit.text.contains(photos[key].credit) and credit.tooltip_text.contains(photos[key].source),"crédit visible dans l’EXE : "+key)
 	await _capture("atlas-prem-territoire-2560")
+	app._navigate("Bureau")
+	await _settle()
+	for id in ["OfficeCityPreview","OfficeStadiumPreview"]:
+		var tile := app.find_child(id,true,false) as Control
+		_check(tile != null and tile.get_meta("photo_from_pack",false),"aperçu photo dans le Bureau : "+id)
+	await _capture("atlas-prem-bureau-2560")
 	if not await _ask("pack_select",{"id":"base","scope":"career","mode":mode},"Club"): return
 	await _settle()
 	_check(app.model.club.presentation.get("photos",{}).is_empty() and app.find_child("VenuePhotoCredit_city",true,false)==null,"retrait du pack et repli sans photo étrangère")
