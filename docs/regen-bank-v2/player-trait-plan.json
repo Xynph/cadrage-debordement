@@ -1275,9 +1275,15 @@
             "eyes": "hazel",
             "eyeConfidence": "visual-estimate",
             "features": [
-              "eyebrow-line"
+              "eyebrow-line",
+              "scar-like-healed-mark"
             ],
-            "faceComplete": true
+            "faceComplete": true,
+            "scarLikeMark": {
+              "confidence": "visual-estimate",
+              "description": "Trait rosé oblique interrompant le sourcil côté droit de l’image.",
+              "limit": "Aspect visuel évoquant une marque cicatricielle guérie ; aucune blessure réelle, cause ou histoire médicale n’est affirmée."
+            }
           }
         },
         {
@@ -1369,9 +1375,15 @@
             "eyeConfidence": "visual-estimate",
             "features": [
               "eyebrow-line",
-              "freckles"
+              "freckles",
+              "scar-like-healed-mark"
             ],
-            "faceComplete": true
+            "faceComplete": true,
+            "scarLikeMark": {
+              "confidence": "visual-estimate",
+              "description": "Petit trait rosé oblique au bord supérieur du sourcil côté droit de l’image.",
+              "limit": "Aspect visuel évoquant une marque cicatricielle guérie ; aucune blessure réelle, cause ou histoire médicale n’est affirmée."
+            }
           }
         },
         {
@@ -1432,9 +1444,15 @@
             "eyeConfidence": "visual-estimate",
             "features": [
               "cheek-line",
-              "freckles"
+              "freckles",
+              "scar-like-healed-mark"
             ],
-            "faceComplete": true
+            "faceComplete": true,
+            "scarLikeMark": {
+              "confidence": "visual-estimate",
+              "description": "Fine ligne pâle rosée diagonale sur la joue côté droit de l’image.",
+              "limit": "Aspect visuel évoquant une marque cicatricielle guérie ; aucune blessure réelle, cause ou histoire médicale n’est affirmée."
+            }
           }
         },
         {
@@ -4077,7 +4095,8 @@
     "method": "Inspection humaine des images originales complètes, sans détection biométrique automatique ni retouche.",
     "limits": "Les couleurs d’yeux et les morphologies sont des estimations visuelles. Une ligne claire peut suggérer une cicatrice guérie ; sa nature exacte ne peut pas être garantie. Les âges exacts sont des intentions du prompt, pas une mesure. Les archétypes récurrents ne garantissent pas une unicité perceptuelle absolue.",
     "framing": "Toutes les têtes/visages sont contenus. Quelques coiffures touchent presque la limite haute de leur cellule ; conserver la cellule complète et éviter un zoom additionnel qui rognerait les cheveux.",
-    "observedVersusRequested": "planned conserve la demande originale. observed est une annotation visuelle indépendante ; aucune égalité automatique entre les deux."
+    "observedVersusRequested": "planned conserve la demande originale. observed est une annotation visuelle indépendante ; aucune égalité automatique entre les deux.",
+    "targetedHealedMarkReview": "Relecture ciblée de players-04 par regen_population, epcr_ui et urc_pacific_audit : aspect cicatriciel guéri visuellement défendable pour sources 71 (L2C4), 74 (L3C3), 76 (L4C1) seulement. Les tags de localisation eyebrow-line/cheek-line restent conservés. Aucun retag automatique des autres lignes ou interruptions de sourcil."
   },
   "additionalPromptForSheets04To09": "Laisser une bande de fond gris visible au-dessus des cheveux dans chaque cellule ; quelques cicatrices guéries de sourcil ou joue lisibles, sans blessure ni sang ; sans bordure extérieure."
 }

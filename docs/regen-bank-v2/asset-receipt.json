@@ -205,7 +205,29 @@
     "hairMarginCaveat": "Toutes les têtes/visages sont contenus. Quelques coiffures touchent presque la limite haute de leur cellule ; conserver la cellule complète et éviter un zoom additionnel qui rognerait les cheveux.",
     "requestedTraitsFile": "docs/regen-bank-v2/player-trait-plan.json",
     "independentReviewer": "urc_pacific_audit",
-    "independentScope": "160 joueurs et 40 membres du staff, y compris les 48 anciens, examinés sans défaut certain imposant une régénération."
+    "independentScope": "160 joueurs et 40 membres du staff, y compris les 48 anciens, examinés sans défaut certain imposant une régénération.",
+    "targetedHealedMarkReview": {
+      "file": "native/godot/art/regen-bank-v2/players-04.png",
+      "sha256": "83a859dfedfb0dcdfa637656d4b7fbcf0ac184084dba0db1d0e6df85124facf0",
+      "sourceIndices": [
+        71,
+        74,
+        76
+      ],
+      "cells": [
+        "L2C4",
+        "L3C3",
+        "L4C1"
+      ],
+      "observedTag": "scar-like-healed-mark",
+      "confidence": "visual-estimate",
+      "reviewers": [
+        "regen_population",
+        "epcr_ui",
+        "urc_pacific_audit"
+      ],
+      "limit": "Description d’apparence visuelle seulement, sans diagnostic ni histoire de blessure ; aucun PNG modifié, aucune conversion automatique de toutes les lignes ou gaps en cicatrices."
+    }
   },
   "integration": "Lot d’assets seulement. Aucun moteur, catalogue, constructeur, sauvegarde, CI ou ancien PNG modifié. Le raccord catalogue/version2 est un lot distinct."
 }
