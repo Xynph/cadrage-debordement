@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 106" aria-label="Estuaires Boréals">
+ <path d="M13 8h70l8 11v36c0 19-19 37-43 46C24 92 5 74 5 55V19z" fill="#182126" stroke="#ede6d4" stroke-width="3.4"/>
+ <path d="M18 16h60l5 7v31c0 15-15 30-35 39-20-9-35-24-35-39V23z" fill="#5b7b9f" fill-opacity=".44" stroke="#5b7b9f" stroke-width="2.1"/>
+ <g fill="none" stroke="#f5eee0" stroke-width="3.7" stroke-linecap="round" stroke-linejoin="round"><path d="M27 33c1 16 12 18 21 24m21-24c-1 16-12 18-21 24m-17-5c5 7 10 10 17 14m17-14c-5 7-10 10-17 14m0-9v20"/><path d="M43 78h10"/></g>
+ <path d="m44 88 4 3 4-3-4-3z" fill="#e5bb67"/>
+ </svg>

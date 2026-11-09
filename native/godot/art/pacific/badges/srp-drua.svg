@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 106" aria-label="Pirogues du Lagon">
+ <path d="M13 8h70l8 11v36c0 19-19 37-43 46C24 92 5 74 5 55V19z" fill="#182126" stroke="#ede6d4" stroke-width="3.4"/>
+ <path d="M18 16h60l5 7v31c0 15-15 30-35 39-20-9-35-24-35-39V23z" fill="#328b86" fill-opacity=".44" stroke="#328b86" stroke-width="2.1"/>
+ <g fill="none" stroke="#f5eee0" stroke-width="3.7" stroke-linecap="round" stroke-linejoin="round"><path d="M24 58q19 10 48-3-10 16-31 15-11-2-17-12Zm14-4 16-20 7 17-23 3ZM33 77q7-4 15 0t15 0"/><path d="M59 30v9"/></g>
+ <path d="m44 88 4 3 4-3-4-3z" fill="#e5bb67"/>
+ </svg>

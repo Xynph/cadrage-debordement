@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 106" aria-label="Bastion Austral">
+ <path d="M13 8h70l8 11v36c0 19-19 37-43 46C24 92 5 74 5 55V19z" fill="#182126" stroke="#ede6d4" stroke-width="3.4"/>
+ <path d="M18 16h60l5 7v31c0 15-15 30-35 39-20-9-35-24-35-39V23z" fill="#4f7190" fill-opacity=".44" stroke="#4f7190" stroke-width="2.1"/>
+ <g fill="none" stroke="#f5eee0" stroke-width="3.7" stroke-linecap="round" stroke-linejoin="round"><path d="M27 64h42M31 64V42l9-7 8 7 8-7 9 7v22M38 63v-8m20 8v-8M44 64V53h8v11"/><path d="M28 73h40"/></g>
+ <path d="m44 88 4 3 4-3-4-3z" fill="#e5bb67"/>
+ </svg>

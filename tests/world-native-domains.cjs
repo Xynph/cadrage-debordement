@@ -3,7 +3,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const {context}=require('./france-harness.cjs'),systems=require('../native/engine/native-systems.cjs');
 function world(){
  const h=context();h.ctx.nativeWorldRegistryText=JSON.stringify(require('../native/engine/world-registry.json'));
- h.run(`const CDWorldRegistry=JSON.parse(nativeWorldRegistryText);const CDWorldCompetitions=(${require('../native/engine/world-competitions.cjs').factory.toString()})();const CDWorldKnockout=(${require('../native/engine/world-knockout.cjs').toString()})();const CDWorldValidation=(${require('../native/engine/world-validation.cjs').toString()})();const CDWorldCareer=(${require('../native/engine/world-career.cjs').toString()})();CDWorldCareer.installHooks();`);
+ h.run(require('../native/engine/world-vm.cjs').bootstrap());
  h.run(systems.bootstrap());
  h.run('CDWorldCareer.start(30);');
  return h;

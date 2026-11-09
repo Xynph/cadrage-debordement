@@ -3,12 +3,17 @@
 // identity catalogue, the test harness, a network server, or protocol-supplied code.
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),readline=require('node:readline'),{randomUUID}=require('node:crypto');
 const projection=require('./model.cjs'),gestion=require('./gestion.cjs'),common=require('./common-rosters.cjs'),mediaPacks=require('./media-packs.cjs'),staff=require('./staff.cjs'),decisions=require('./decisions.cjs'),systems=require('./native-systems.cjs');
-const worldValidation=require('./world-validation.cjs'),worldKnockout=require('./world-knockout.cjs'),worldCareer=require('./world-career.cjs'),worldModel=require('./world-model.cjs'),worldCompetitions=require('./world-competitions.cjs'),worldRegistry=require('./world-registry.json');
+const worldVm=require('./world-vm.cjs'),worldModel=require('./world-model.cjs'),worldRegistry=require('./world-registry.json');
+const {createWorldEditions}=require('./world-editions.cjs');
+const {extendWorldRegistry}=require('./world-pacific-registry.cjs');
+const pacificSource=path.join(__dirname,'world-pacific-extension.json');
+const pacificRegistry=extendWorldRegistry(worldRegistry,fs.existsSync(pacificSource)?JSON.parse(fs.readFileSync(pacificSource,'utf8')):null);
+const worldEditions=createWorldEditions(worldRegistry,pacificRegistry);
 const MODULES=['storage.js','world-data.js','rugby.js','frontrow.js','restarts.js','matchflow.js','playbook.js','manager.js','manager-squad.js','tactical-plans.js','match-actions.js','match2d.js','match-v61-advisor.js','match-cockpit.js','economy.js','development.js','finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js','v39.js','manager-mobility.js','saves.js','opposition.js','match-preparation.js','france-clubs.js','rugby-common-rosters.js','rugby-roster-foundation.js','lnr-v11-aging.js','france-competition.js','france-knockout.js','france-career.js','france-save-validation.js','match3d/scene-adapter.js','game.js'];
 MODULES.splice(MODULES.indexOf('game.js'),0,...systems.files.filter(name=>!MODULES.includes(name)));
 const SYSTEM_COMMANDS=new Set(systems.commands);
 const IMPORT_LIMIT_BYTES=8*1024*1024,WORLD_IMPORT_LIMIT_BYTES=16*1024*1024,REQUEST_LIMIT_BYTES=17*1024*1024,WORLD_REQUEST_LIMIT_BYTES=34*1024*1024;
-const COMMANDS=new Set([...SYSTEM_COMMANDS,'set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','finish_round','save','import','export','shutdown','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select']);
+const COMMANDS=new Set([...SYSTEM_COMMANDS,'set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','finish_round','advance_pacific_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select']);
 function applicationRoot(engineDirectory=__dirname){
  // The only supported layouts are repo/native/engine and bundle/engine/core.
  const isDevelopment=path.basename(path.dirname(engineDirectory))==='native'&&!fs.existsSync(path.join(engineDirectory,'core'));
@@ -82,15 +87,16 @@ function createBridge(options={}){
   const dist=options.distDir?path.resolve(options.distDir):fs.existsSync(path.join(__dirname,'core'))?path.join(__dirname,'core'):path.resolve(__dirname,'../../dist');
   for(const name of MODULES)run(fs.readFileSync(path.join(dist,name),'utf8'));
   ctx.nativeWorldRegistryText=JSON.stringify(worldRegistry);
-  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const CDCommonCareer=(${common.toString()})();const CDWorldRegistry=JSON.parse(nativeWorldRegistryText);const CDWorldCompetitions=(${worldCompetitions.factory.toString()})();const CDWorldValidation=(${worldValidation.toString()})();const CDWorldKnockout=(${worldKnockout.toString()})();const CDWorldCareer=(${worldCareer.toString()})();CDWorldCareer.installHooks();const nativeBaseModel=${projection.toString()};const nativeModel=(${worldModel.toString()})(nativeBaseModel);const nativeDecisions=${decisions.toString()};const nativeGestion=${gestion.toString()};`);
+  if(pacificRegistry)ctx.nativeWorldPacificRegistryText=JSON.stringify(pacificRegistry);
+  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const CDCommonCareer=(${common.toString()})();${worldVm.bootstrap()}const nativeBaseModel=${projection.toString()};const nativeModel=(${worldModel.toString()})(nativeBaseModel);const nativeDecisions=${decisions.toString()};const nativeGestion=${gestion.toString()};`);
   run(systems.bootstrap());
   try{run("if(loadSaveFailure)throw Error(loadSaveFailure);if(S){validateCareer(S);if(S.lnrMode)throw Error('Les effectifs réels ne sont pas chargés dans le moteur natif.');if(S.live&&!S.live.finished)S.live.paused=true;}");}catch(e){profileError='Profil illisible : '+e.message;run('S=null;');}
-  const legacyDatabase=JSON.parse(run('JSON.stringify(CDCommonRosters)')),packs=mediaPacks.createStore(dataDir,legacyDatabase,worldRegistry);
-  const creationKey=mode=>mode==='world'?'identity-pack-world-creation':'identity-pack-creation';
+  const legacyDatabase=JSON.parse(run('JSON.stringify(CDCommonRosters)')),packs=mediaPacks.createStore(dataDir,legacyDatabase,worldRegistry,pacificRegistry);
+  const creationKey=mode=>mode==='world-pacific'?'identity-pack-pacific-creation':mode==='world'?'identity-pack-world-creation':'identity-pack-creation';
   const creation=(mode='common')=>store[creationKey(mode)]||'base';
-  const edition=mode=>{if(!['common','world'].includes(mode))throw Error('Édition de pack invalide.');return mode==='world'?worldRegistry.id:legacyDatabase.id;};
-  const currentEdition=()=>run('CDWorldCareer.active(S)')?'world':'common';
-  const snapshot=()=>{const m=JSON.parse(run('JSON.stringify(nativeModel())'));m.decisions=JSON.parse(run('JSON.stringify(nativeDecisions())'));m.clubLife=JSON.parse(run('JSON.stringify(nativeSystems.project())'));m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;return packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'));};
+  const edition=mode=>{if(mode==='common')return legacyDatabase.id;const e=worldEditions.forMode(mode);if(!e)throw Error('Édition de pack invalide.');return e.id;};
+  const currentEdition=()=>run("CDWorldCareer.edition(S)?.mode||'common'");
+  const snapshot=()=>{const m=JSON.parse(run('JSON.stringify(nativeModel())'));m.decisions=JSON.parse(run('JSON.stringify(nativeDecisions())'));m.clubLife=JSON.parse(run('JSON.stringify(nativeSystems.project())'));m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;return packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'));};
   const persist=()=>{
    const token=randomUUID(),text=JSON.stringify({protocol:1,seed,clock,store}),temp=path.join(dataDir,'donnees.tmp-'+token),backup=path.join(dataDir,'donnees-precedentes.json'),backupTemp=path.join(dataDir,'donnees-precedentes.tmp-'+token),rollback=path.join(dataDir,'donnees-precedentes.rollback-'+token);
    const write=(target,content)=>{const fd=fs.openSync(target,'wx');try{fs.writeFileSync(fd,content);fs.fsyncSync(fd);}finally{fs.closeSync(fd);}};
@@ -138,7 +144,7 @@ function createBridge(options={}){
      if(command==='pack_select'){
       if(payload.scope!=='career'||!run('!!S?.commonDatabase'))throw Error('Sélection réservée à une carrière de base commune.');const pack=payload.id==='base'?null:packs.get(payload.id);if(payload.id!=='base'&&!pack)throw Error('Pack non installé.');if(pack&&pack.meta.databaseId!==run('S.commonDatabase.id'))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding=pack?{id:pack.meta.id,digest:pack.meta.digest}:null;run('if(nativeBinding)S.identityPack=nativeBinding;else delete S.identityPack');
      }else if(command==='new_career'){
-      const mode=payload.mode??'fiction';if(!['fiction','france','common','world'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(payload.club)||payload.club<0||payload.club>=(mode==='world'?56:mode==='fiction'?14:30))throw Error('Club invalide pour ce mode.');run("if(nativePayload.mode==='world')CDWorldCareer.start(nativePayload.club);else if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction')");if(['common','world'].includes(mode)&&creation(mode)!=='base'){const selected=packs.get(creation(mode));if(!selected)throw Error('Pack de création absent ; réimportez-le ou choisissez Base.');if(selected.meta.databaseId!==edition(mode))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding={id:selected.meta.id,digest:selected.meta.digest};run('S.identityPack=nativeBinding');}
+      const mode=payload.mode??'fiction',worldEdition=worldEditions.forMode(mode);if(!worldEdition&&!['fiction','france','common'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(payload.club)||payload.club<0||(worldEdition?!worldEdition.playable.includes(payload.club):payload.club>=(mode==='fiction'?14:30)))throw Error('Club invalide pour ce mode.');if(worldEdition)run('CDWorldCareer.start(nativePayload.club,nativePayload.mode)');else run("if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction')");if((worldEdition||mode==='common')&&creation(mode)!=='base'){const selected=packs.get(creation(mode));if(!selected)throw Error('Pack de création absent ; réimportez-le ou choisissez Base.');if(selected.meta.databaseId!==edition(mode))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding={id:selected.meta.id,digest:selected.meta.digest};run('S.identityPack=nativeBinding');}
      }else if(command==='train'){
       const mode=payload.mode??run('S.training');if(!['normal','repos','intense'].includes(mode))throw Error('Entraînement invalide.');
       if(run("!!S.live||S.phase==='ended'"))throw Error('Entraînement indisponible pendant le match ou après la saison.');
@@ -189,6 +195,13 @@ function createBridge(options={}){
       }
      }else if(command==='finish_round'){
       if(!run("S.phase!=='ended'&&(S.live?.finished||!S.live&&!nextMatch())"))throw Error('Terminez le match avant de valider la journée.');run('finishRound()');
+     }else if(command==='advance_pacific_preparation'){
+      if(!Number.isInteger(payload.fromWeek)||payload.fromWeek<0||payload.fromWeek>=46)throw Error('Semaine de préparation invalide.');
+      const eligible=run("CDWorldCareer.edition(S)?.mode==='world-pacific'&&CDWorldCareer.leagueId(S)==='srp'&&S.round===nativePayload.fromWeek&&S.phase!=='ended'&&!S.live&&!nextMatch()&&S.worldMode.fixtures.some(f=>f.week>S.round&&(f.homeId===S.club||f.awayId===S.club))");
+      if(!eligible)throw Error('Préparation Pacifique indisponible à cette semaine.');
+      // Replay ordinary weekly actions, with one atomic publication. Stop as
+      // soon as a match is ready, even if the originally planned one changed.
+      for(let i=0;i<4&&run("S.phase!=='ended'&&!S.live&&!nextMatch()");i++)run('finishRound()');
      }else if(command==='import'){
       if(typeof payload.text!=='string')throw Error('Texte JSON d’import requis.');
       if(Buffer.byteLength(payload.text,'utf8')>WORLD_IMPORT_LIMIT_BYTES)throw Error('Fichier trop volumineux (16 Mio UTF-8 maximum).');
@@ -217,7 +230,7 @@ if(require.main===module){
  catch(e){process.stdout.write(JSON.stringify({id:null,ok:false,model:null,error:e.message})+'\n');process.exitCode=1;return;}
  const input=readline.createInterface({input:process.stdin,crlfDelay:Infinity});
  input.on('line',line=>{
-  let result;try{const bytes=Buffer.byteLength(line);if(bytes>WORLD_REQUEST_LIMIT_BYTES)throw Error('Message trop volumineux.');const request=JSON.parse(line);if(bytes>REQUEST_LIMIT_BYTES){if(request.command!=='import'||typeof request.payload?.text!=='string'||Buffer.byteLength(request.payload.text)>WORLD_IMPORT_LIMIT_BYTES)throw Error('Message trop volumineux.');const state=JSON.parse(request.payload.text)?.state;if(state?.worldMode?.catalogue!==worldRegistry.id||state?.worldMode?.version!==1||state.commonDatabase?.id!==worldRegistry.id||state.commonDatabase?.version!==worldRegistry.version||state.franceMode!==undefined||state.lnrMode!==undefined)throw Error('Message trop volumineux.');}result=bridge.handle(request);}catch(e){result={id:null,ok:false,model:null,error:e.message};}
+  let result;try{const bytes=Buffer.byteLength(line);if(bytes>WORLD_REQUEST_LIMIT_BYTES)throw Error('Message trop volumineux.');const request=JSON.parse(line);if(bytes>REQUEST_LIMIT_BYTES){if(request.command!=='import'||typeof request.payload?.text!=='string'||Buffer.byteLength(request.payload.text)>WORLD_IMPORT_LIMIT_BYTES)throw Error('Message trop volumineux.');const state=JSON.parse(request.payload.text)?.state;if(!worldEditions.forState(state))throw Error('Message trop volumineux.');}result=bridge.handle(request);}catch(e){result={id:null,ok:false,model:null,error:e.message};}
   process.stdout.write(JSON.stringify(result)+'\n');if(result.ok&&line&&JSON.parse(line).command==='shutdown'){input.close();process.stdin.destroy();}
  });
  input.on('close',()=>bridge.close());process.on('exit',()=>bridge.close());

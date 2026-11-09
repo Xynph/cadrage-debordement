@@ -3,10 +3,10 @@ const G = preload("res://ui/carnet_skin.gd")
 const Semantics = preload("res://ui/data_semantics.gd")
 
 static func competition_name(id: String) -> String:
-	return {"elite":"Élite","accession":"Accession","prem":"Premiership","urc":"United Rugby Championship","champions":"Coupe des champions","challenge":"Challenge européen","access":"Barrage d’accession"}.get(id, id)
+	return {"elite":"Élite","accession":"Accession","prem":"Premiership","urc":"United Rugby Championship","srp":"Super Rugby Pacific","champions":"Coupe des champions","challenge":"Challenge européen","access":"Barrage d’accession"}.get(id, id)
 
 static func phase_name(phase: String) -> String:
-	return {"league":"Phase régulière","pool":"Phase de poules","barrage":"Barrage","r16":"Huitième de finale","quarter":"Quart de finale","semi":"Demi-finale","final":"Finale","access":"Barrage d’accession","ended":"Compétition terminée"}.get(phase, phase)
+	return {"league":"Phase régulière","pool":"Phase de poules","barrage":"Barrage","elimination":"Match de barrage","r16":"Huitième de finale","quarter":"Quart de finale","semi":"Demi-finale","final":"Finale","access":"Barrage d’accession","ended":"Compétition terminée"}.get(phase, phase)
 
 static func _calendar_date(iso: String) -> String:
 	var parts := iso.split("-")

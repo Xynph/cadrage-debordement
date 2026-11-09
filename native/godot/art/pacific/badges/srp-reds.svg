@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 106" aria-label="Terrasses d’Ocre XV">
+ <path d="M13 8h70l8 11v36c0 19-19 37-43 46C24 92 5 74 5 55V19z" fill="#182126" stroke="#ede6d4" stroke-width="3.4"/>
+ <path d="M18 16h60l5 7v31c0 15-15 30-35 39-20-9-35-24-35-39V23z" fill="#a14856" fill-opacity=".44" stroke="#a14856" stroke-width="2.1"/>
+ <g fill="none" stroke="#f5eee0" stroke-width="3.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 69h49M27 60h43M34 51h37M42 42h29M50 33h21"/><path d="m22 70 28-37m-9 48h14"/></g>
+ <path d="m44 88 4 3 4-3-4-3z" fill="#e5bb67"/>
+ </svg>

@@ -263,6 +263,10 @@ func _run() -> void:
 		return
 	_check(not app._has_career() and app.route=="Accueil","Fresh profile opens menu without creating career")
 	await _display_reception()
+	if OS.get_environment("CD_GODOT_QA_PACIFIC") == "1":
+		await _pacific_reception()
+		await _finish()
+		return
 	if OS.get_environment("CD_GODOT_QA_WORLD") == "1":
 		await _world_reception()
 		await _finish()
@@ -560,7 +564,7 @@ func _world_match(expected_competition: String) -> bool:
 	if not next is Dictionary or next.get("competitionId") != expected_competition: return false
 	if not app.model.selection.valid:
 		await _ask("auto_lineup")
-		if not app.model.selection.valid: await _ask("promote_cover")
+		if not app.model.selection.valid and not await _ask("promote_cover",{"confirmed":true}): return false
 	if not await _ask("begin_match"): return false
 	app.timer.stop()
 	app._navigate("Match")
@@ -572,10 +576,10 @@ func _world_match(expected_competition: String) -> bool:
 	_check(recorded,"Competition-specific result and match statistics recorded")
 	return recorded
 
-func _world_creation(club_id: int, league: String) -> bool:
+func _world_creation(club_id: int, league: String, edition: String = "world") -> bool:
 	app._navigate("Création")
 	await _settle()
-	if not _press_named("CreationMode_world"): return false
+	if not _press_named("CreationMode_" + edition): return false
 	await _settle()
 	if not _press_named("CreationDivision_" + league): return false
 	await _settle()
@@ -587,7 +591,7 @@ func _world_creation(club_id: int, league: String) -> bool:
 		await _settle()
 		_confirm()
 	await _wait()
-	var created: bool = app.model.get("club") is Dictionary and int(app.model.club.id) == club_id and app.model.meta.mode == "world"
+	var created: bool = app.model.get("club") is Dictionary and int(app.model.club.id) == club_id and app.model.meta.mode == "world" and app.model.meta.get("edition","world") == edition
 	_check(created,"World career created through actual club picker")
 	return created
 
@@ -637,6 +641,87 @@ func _world_reception() -> void:
 	app._navigate("Classements")
 	await _capture("monde-intersaison-2560")
 	world_reception={"passed":failures.is_empty(),"pack":preview.counts,"competitions_played":["prem","urc","champions"],"season_export_bytes":final_size,"second_season":int(app.model.meta.season)}
+
+func _pacific_reception() -> void:
+	var pack := OS.get_environment("CD_GODOT_PACIFIC_PACK")
+	var final_doc := OS.get_environment("CD_GODOT_PACIFIC_FINAL_EXPORT")
+	var complete := OS.get_environment("CD_GODOT_PACIFIC_EXPECT_COMPLETE") == "1"
+	_check(FileAccess.file_exists(pack) and FileAccess.file_exists(final_doc), "Pack and completed Pacific career supplied")
+	if not FileAccess.file_exists(pack) or not FileAccess.file_exists(final_doc): return
+	app._navigate("Création")
+	await _settle()
+	_check(app.pack_manager.mode("creation") == "world-pacific", "Pacific edition is the new career default")
+	app.pack_manager.open("creation")
+	await _settle()
+	app.pack_manager.picker.file_selected.emit(pack)
+	if not await _wait(): return
+	var preview: Dictionary = app.pack_manager.preview()
+	_check(not preview.is_empty(), "File picker inspects the Pacific archive in its own edition")
+	if preview.is_empty(): return
+	var counts: Dictionary = preview.counts
+	_check(int(counts.clubs) == 68 and int(counts.logos) == 68 and int(counts.players) == 3589 and int(counts.staff) == 947, "Pacific pack has the exact merged catalogues")
+	if complete:
+		_check(int(counts.official + counts.synthetic) == 3589 and int(counts.staffOfficial + counts.staffSynthetic) == 947, "All player and staff portraits resolve in the release pack")
+	app.pack_manager.install()
+	if not await _wait() or not app.bridge.last_response_ok:
+		_check(false,"Pacific pack installs through the native pack page")
+		return
+	app.pack_manager.select(preview.id,"creation")
+	if not await _wait() or not app.bridge.last_response_ok:
+		_check(false,"Pacific pack is selected for creation")
+		return
+	if not await _world_creation(58,"srp","world-pacific"): return
+	_check(app.model.meta.worldCatalogue.size() == 58 and app.model.meta.pacificCatalogue.size() == 68 and app.model.leagues.size() == 7, "Both editions and five domestic leagues stay distinct")
+	_check(app.model.packs.career == preview.id and FileAccess.file_exists(app.model.club.get("logoPath","")) and app.model.staff.teams.size() == 68, "Real club identity and staff are attached to the career")
+	_check(app.model.squad.any(func(p): return FileAccess.file_exists(p.get("portraitPath",""))), "Squad has decoded pack portraits")
+	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]:
+		await _resize_window(resolution)
+		for route_name in ["Création","Bureau","Effectif","Calendrier","Classements","Rivalités","Staff"]:
+			app._navigate(route_name)
+			await _capture("pacifique-" + route_name.to_lower() + "-" + str(resolution.x))
+			if route_name == "Création":
+				var list := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
+				var last := app.find_child("CreationClub67",true,false) as Button
+				_check(last != null and list != null and list.get_global_rect().encloses(last.get_global_rect()), "All ten Pacific clubs are visible without changing page at " + str(resolution.x))
+	app._navigate("Rivalités")
+	await _settle()
+	for i in 6:
+		if app.model.get("next") is Dictionary: break
+		if not _press_named("PacificPreparationAdvance"): return
+		if not await _wait() or not app.bridge.last_response_ok:
+			_check(false, "Pacific preparation progresses from the real button")
+			return
+	_check(int(app.model.meta.week) == 23 and app.model.next is Dictionary and app.model.next.date == "2027-02-13", "Preparation stops before the first official match of the selected Pacific club")
+	if not await _world_match("srp"): return
+	var file := FileAccess.open(final_doc,FileAccess.READ)
+	if file == null:
+		_check(false, "Pacific checkpoint readable")
+		return
+	var final_size := file.get_length()
+	file.close()
+	_check(final_size > 8 * 1024 * 1024 and final_size <= 16 * 1024 * 1024,"Pacific checkpoint uses the world transport limit")
+	app.open_file(true)
+	app.file_dialog.hide()
+	app.file_dialog.file_selected.emit(final_doc)
+	await _settle()
+	_confirm()
+	await _wait()
+	_check(app.bridge.last_response_ok and app.model.meta.canAdvanceSeason and app.model.meta.edition == "world-pacific", "Native file picker loads the completed Pacific season")
+	if not app.model.meta.canAdvanceSeason: return
+	if not await _ask("next_season",{"confirmed":true}): return
+	_check(int(app.model.meta.season) == 2 and app.model.archives.seasons.size() == 1 and app.model.leagues.size() == 7, "Pacific season two and annual European qualification are live")
+	if not await _ask("export"): return
+	var before: Dictionary = JSON.parse_string(app.model.meta.exportText).state
+	before.erase("identityPack")
+	if not await _ask("pack_select",{"id":preview.id,"scope":"career","mode":"world-pacific"}): return
+	_check(app.model.packs.career == preview.id, "Pacific pack can be attached in an existing career")
+	if not await _ask("export"): return
+	var after: Dictionary = JSON.parse_string(app.model.meta.exportText).state
+	after.erase("identityPack")
+	_check(before == after, "Changing presentation keeps all simulation state")
+	app._navigate("Classements")
+	await _capture("pacifique-intersaison-2560")
+	world_reception = {"passed":failures.is_empty(),"edition":"world-pacific","pack":counts,"pack_complete_requested":complete,"competitions_played":["srp"],"season_export_bytes":final_size,"second_season":int(app.model.meta.season)}
 
 func _finish() -> void:
 	app.closing = true
