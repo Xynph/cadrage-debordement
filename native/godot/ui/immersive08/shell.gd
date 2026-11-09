@@ -1,4 +1,5 @@
 extends RefCounted
+const CLUB_CHROME := Color("11191e")
 const C = preload("res://ui/immersive08/components.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -223,8 +224,10 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	var rail:=Control.new();rail.name="ImmersiveSidebar";rail.custom_minimum_size.x=C.px(248);rail.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	parent.add_child(rail)
 	var height:float=app.get_window().size.y/C.density
-	var background:=D.rect(rail,Rect2(0,0,248,height),Color("081b16"))
-	background.add_theme_stylebox_override("panel",D.surface(248,height,Color("081b16"),Color("071d18"),Color.TRANSPARENT,0,false))
+	var club_accent: Color = app.accent
+	var club_edge := club_accent.lightened(.38)
+	var background:=D.rect(rail,Rect2(0,0,248,height),CLUB_CHROME)
+	background.add_theme_stylebox_override("panel",D.surface(248,height,CLUB_CHROME.lerp(club_accent,.40),CLUB_CHROME,Color.TRANSPARENT,0,false))
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var border:=D.line(rail,Vector2(247,0),Vector2(247,height))
 	border.set_anchor(SIDE_BOTTOM,1,false)
@@ -234,6 +237,8 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	logo.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
 	var bitmap:=C.photo("brand",Vector2.ZERO,false);logo.add_child(bitmap);D.place(bitmap,Rect2(0,0,214,93))
 	D.line(rail,Vector2(24,128),Vector2(224,128),Color(C.GOLD,.55))
+	D.rect(rail,Rect2(18,143,212,224),CLUB_CHROME.lerp(club_accent,.24),12,Color(club_edge,.46))
+	D.line(rail,Vector2(75,367),Vector2(173,367),club_edge,3)
 	var crest:=G.crest(app.model.club,C.px(126));rail.add_child(crest);D.place(crest,Rect2(61,151,126,147))
 	D.text(rail,124,331,G.club_name(app.model.club).to_upper(),23,C.IVORY,700,222,HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(rail,124,354,"SAISON "+G.n(app.model.meta.get("season",1)),16,C.GOLD,500,215,HORIZONTAL_ALIGNMENT_CENTER)
@@ -252,6 +257,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 		var action:=D.button(rail,Rect2(7,y,234,49),entry[1],func():
 			if destination=="Préparation": open_training(app)
 			else: app._navigate(destination),selected,"",false,app.accent,"Nav_"+entry[1])
+		if selected: _club_button(action,CLUB_CHROME.lerp(club_accent,.46),club_edge)
 		action.add_theme_font_override("font",C.DISPLAY);action.add_theme_font_size_override("font_size",maxi(12,C.px(26)))
 		var style:StyleBox=action.get_theme_stylebox("normal").duplicate() if selected else C.box(Color.TRANSPARENT,Color.TRANSPARENT,4,0)
 		style.content_margin_left=C.px(58);action.add_theme_stylebox_override("normal",style)
@@ -259,7 +265,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 			var alternate:StyleBox=action.get_theme_stylebox(state).duplicate();alternate.content_margin_left=C.px(58);action.add_theme_stylebox_override(state,alternate)
 		var focus := action.get_theme_stylebox("focus") as StyleBoxFlat
 		focus.set_expand_margin_all(2)
-		if selected:D.rect(rail,Rect2(7,y,4,49),C.MINT)
+		if selected:D.rect(rail,Rect2(7,y,4,49),club_edge)
 		var symbol:=C.icon(entry[0],25,C.IVORY if selected else Color("c8d0c6"));rail.add_child(symbol);D.place(symbol,Rect2(23,y+12,25,25))
 		var unread: int = Reception.unread(app) if i==1 else 0
 		if unread>0:
@@ -296,6 +302,8 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	parent.add_child(panel)
 	D.rect(panel,Rect2(0,0,2312,78),Color("0e1618"))
 	D.line(panel,Vector2(0,77),Vector2(2312,77))
+	var club_edge: Color = app.accent.lightened(.38)
+	D.line(panel,Vector2(33,76),Vector2(430,76),Color(club_edge,.83),2)
 	var home := C.icon("home",25,C.IVORY)
 	panel.add_child(home)
 	D.place(home,Rect2(34,24,25,25))
@@ -334,9 +342,19 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	app._update_header_date()
 	var action_left := TOPBAR_MATCH_ACTION_LEFT if office_live else TOPBAR_ACTION_LEFT
 	app.primary_button = D.button(panel,Rect2(action_left,17,2278-action_left,45),"Continuer",app.primary_action,true,"arrow",false,app.accent,"ImmersiveContinue")
+	_club_button(app.primary_button,CLUB_CHROME.lerp(app.accent,.69),club_edge)
 	app.primary_button.tooltip_text = app.primary_text()
 	layout.set_meta("immersive_topbar",[app.header_date,app.primary_button,shortcut,calendar,action_left])
 	_position_topbar(layout)
+
+static func _club_button(button: Button, fill: Color, edge: Color) -> void:
+	for state in ["normal","hover","pressed"]:
+		var previous := button.get_theme_stylebox(state)
+		var color := fill.lightened(.07) if state == "hover" else fill.darkened(.1) if state == "pressed" else fill
+		var style := C.box(C.readable_primary_fill(color),edge,5,0)
+		for side in [SIDE_LEFT,SIDE_TOP,SIDE_RIGHT,SIDE_BOTTOM]:
+			style.set_content_margin(side,previous.get_content_margin(side))
+		button.add_theme_stylebox_override(state,style)
 
 static func _position_topbar(layout: Control) -> void:
 	var factor := layout.scale.y
@@ -379,7 +397,7 @@ static func _heading(parent: Node, app: Control) -> void:
 		app.minibar.visible=false
 		parent.add_child(app.minibar)
 		return
-	D.text(row,1,19,{"Bureau":"LE BUREAU","Effectif":"LE GROUPE PROFESSIONNEL","Composition":"LE PLAN DE JEU"}.get(app.route,app.route.to_upper()),19,C.GOLD,600,1040)
+	D.text(row,1,19,{"Bureau":"LE BUREAU","Effectif":"LE GROUPE PROFESSIONNEL","Composition":"LE PLAN DE JEU"}.get(app.route,app.route.to_upper()),19,app.accent.lightened(.48),600,1040)
 	app.heading = D.text(row,-1,76,TITLES.get(app.route,app.route),53,C.IVORY,700,1190)
 	if COMPACT_ART.has(app.route):
 		var image := D.panel(row,Rect2(1438,6,810,89),"","","","CompactRouteArt")

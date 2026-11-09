@@ -162,7 +162,9 @@ static func icon_texture(id: String, color: Color = IVORY) -> Texture2D:
 	if _textures.has(key): return _textures[key]
 	var paths: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://ui/immersive08/icon-paths.json"))
 	if not paths.has(id): return null
-	var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24"><path d="%s" fill="none" stroke="#%s" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' % [paths[id], color.to_html(false)]
+	var ink := "#" + color.to_html(false)
+	var paint := 'fill="%s" fill-rule="evenodd"' % ink if id.ends_with("-solid") else 'fill="none" stroke="%s" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"' % ink
+	var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24"><path d="%s" %s/></svg>' % [paths[id], paint]
 	var image := Image.new()
 	if image.load_svg_from_string(svg) != OK: return null
 	var value := ImageTexture.create_from_image(image)
@@ -177,6 +179,11 @@ static func icon(id: String, width: int = 25, color: Color = GOLD) -> TextureRec
 	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return image
+
+static func fixture_location_icon(kind: String, solid: bool = false) -> String:
+	var id: String = {"home": "home", "away": "bus", "neutral": "flag"}.get(kind, "")
+	if id.is_empty(): return "calendar"
+	return id + "-solid" if solid else id
 
 static func chip(text: String, color: Color = MINT) -> PanelContainer:
 	var frame := PanelContainer.new()
