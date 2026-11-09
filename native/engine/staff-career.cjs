@@ -144,6 +144,7 @@ function factory(){
   check(int(st.activatedSeason,1,s.season)&&st.lastAdvancedSeason===s.season-1&&int(st.serial,0,1000000),'horloge ou compteur invalide');
   check(Array.isArray(st.people)&&st.people.length<=32&&st.people.every(page=>Array.isArray(page)&&page.length<=256)&&people(st).length<=6000&&people(st).filter(p=>p.clubId===null).length<=192,'effectif de staff excessif');
   const source=sourceTeams(s)||[],references=new Map(source.flatMap(c=>c.members.map(p=>[p.id,p])));
+  const referenceRoleCounts=new Map(source.map(c=>{const counts=Object.fromEntries(ROLES.map(r=>[r,0]));for(const p of c.members)if(p.historical!==true)counts[canonical(p.role)]++;return[c.id,counts];}));
   const ids=new Set(),players=new Set(),activePlayerIds=new Set([...s.clubs.flatMap(c=>c.players||[]),...(s.market||[]),...(s.economy?.freeAgents||[]),...(s.development?.academy||[]),...(s.aiRoster?.academies||[]).flatMap(a=>a.players||[])].map(p=>p.id));
   for(const p of people(st)){
    check(shape(p,PERSON)&&identity(p.id)&&!ids.has(p.id)&&name(p.name)&&name(p.roleLabel)&&ROLES.includes(p.role),'identité ou rôle invalide');ids.add(p.id);
@@ -161,7 +162,7 @@ function factory(){
    }
    else check(p.sourceKind==='generated'&&p.id.startsWith('staff-career:generated:')&&p.sourceStaffId===null&&p.sourcePlayerId===null&&p.appearanceId===p.id&&p.ageBasis==='estimated'&&p.conversion===null&&p.level===45+hash(p.id+':level')%31&&p.ageAtEntry===30+hash(p.id+':age')%20,'profil fictif invalide');
   }
-  check(Array.isArray(st.targets)&&st.targets.length===s.clubs.length&&new Set(st.targets.map(t=>t.clubId)).size===st.targets.length&&st.targets.every(t=>shape(t,['clubId','roles'])&&int(t.clubId,0,s.clubs.length-1)&&shape(t.roles,ROLES)&&ROLES.every(r=>int(t.roles[r],CORE.includes(r)?1:0,100))),'objectifs de rôles invalides');
+  check(Array.isArray(st.targets)&&st.targets.length===s.clubs.length&&new Set(st.targets.map(t=>t.clubId)).size===st.targets.length&&st.targets.every(t=>shape(t,['clubId','roles'])&&int(t.clubId,0,s.clubs.length-1)&&shape(t.roles,ROLES)&&ROLES.every(r=>t.roles[r]===Math.max(CORE.includes(r)?1:0,referenceRoleCounts.get(t.clubId)?.[r]||0))),'objectifs de rôles invalides');
   check(Array.isArray(st.history)&&st.history.length<=512&&st.history.every(e=>shape(e,['season','kind','id','clubId','name','role','appearanceId','appearanceAge','age','sourcePlayerId','amount'])&&int(e.season,st.activatedSeason,s.season)&&['reference-already-retired','player-conversion','retirement','voluntary-retirement','contract-ended','ai-renewal','ai-hire','hire','renew','release'].includes(e.kind)&&identity(e.id)&&name(e.name)&&ROLES.includes(e.role)&&identity(e.appearanceId)&&int(e.appearanceAge,18,300)&&int(e.age,18,300)&&(e.sourcePlayerId===null||(identity(e.sourcePlayerId)&&e.appearanceId===e.sourcePlayerId))&&(e.clubId===null||int(e.clubId,0,s.clubs.length-1))&&e.amount===0),'historique invalide');
   check(Array.isArray(st.captured)&&st.captured.length<=1900&&new Set(st.captured.map(e=>e.playerId)).size===st.captured.length&&st.captured.every(e=>shape(e,['playerId','season'])&&identity(e.playerId)&&int(e.season,Math.max(st.activatedSeason,s.season-2),s.season)),'captures de retraite invalides');
   return true;

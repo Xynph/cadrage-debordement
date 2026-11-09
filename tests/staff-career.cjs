@@ -119,3 +119,23 @@ test('Fiction et France sans catalogue : activation de CORE fictifs sans référ
   assert.equal(vm.runInContext('CDStaffCareer.validate(S)',ctx),true);
  }
 });
+test('Import : cibles IA exactes dérivées des références, sans inflation ni perte de rôles',()=>{
+ const h=fixture();
+ h.teams[1].members.push({id:'staff:analyst-two',name:'Autre analyste',role:'Analyste'},
+  {id:'staff:historical-scout',name:'Ancien recruteur',role:'Recruteur',historical:true});
+ h.run('CDStaffCareer.initialize(S);Math.random=()=>{throw Error("Validation consumed RNG")};');
+ const good=JSON.stringify(h.ctx.S),sources=JSON.stringify(h.teams);
+ const target=h.ctx.S.staffCareer.targets.find(t=>t.clubId===1);
+ assert.equal(target.roles.analyst,2);assert.equal(target.roles.scout,1);
+ for(const [club,role,value] of [[1,'scout',100],[1,'analyst',1],[1,'medical',1],[0,'coach',2]]){
+  h.ctx.S=JSON.parse(good);h.ctx.S.staffCareer.targets.find(t=>t.clubId===club).roles[role]=value;
+  const before=JSON.stringify(h.ctx.S);
+  assert.throws(()=>h.run('CDStaffCareer.validate(S)'),/objectifs de rôles/);
+  assert.equal(JSON.stringify(h.ctx.S),before,'refus sans modification de carrière');
+ }
+ h.ctx.S=JSON.parse(good);assert.equal(h.run('CDStaffCareer.validate(S)'),true);
+ assert.equal(JSON.stringify(h.ctx.S),good);assert.equal(JSON.stringify(h.teams),sources);
+ h.ctx.S.staffCareer.targets.reverse();assert.equal(h.run('CDStaffCareer.validate(S)'),true,'ordre sans effet sur les cibles légitimes');
+ delete h.ctx.S.staffCareer;const legacy=JSON.stringify(h.ctx.S);
+ assert.equal(h.run('CDStaffCareer.validate(S)'),true);assert.equal(JSON.stringify(h.ctx.S),legacy,'ancienne sauvegarde sans activation inchangée');
+});
