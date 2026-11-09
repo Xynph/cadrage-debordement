@@ -3,7 +3,9 @@
 // alter its identities, membership, ratings, calendar or results.
 module.exports=function worldCareer(edition,active,initialContracts=null){
  const C=CDWorldCompetitions,REG=edition.registry,SOURCES=new Map(REG.clubs.flatMap(c=>c.players.map(p=>[p.id,p]))),IDS=edition.leagueIds,WEEKS=46;
- const startingTerms=edition.version===5&&edition.mode==='world-champ'&&initialContracts?.databaseId===REG.id&&initialContracts?.schema==='world-initial-contracts-v1'?initialContracts.players:null;
+ const opening=edition.version===5&&edition.mode==='world-champ'&&initialContracts?.databaseId===REG.id&&initialContracts?.schema==='world-initial-contracts-v1'?initialContracts:null;
+ const startingTerms=opening?.players;
+ const inactiveAliases=opening?.inactiveAliases;
  const EUROPE_LEAGUES=['elite','prem','urc'],playable=new Set(edition.playable),SRP=IDS.includes("srp")?CDWorldSRP:null,JP=IDS.includes('jlo-d1')?CDWorldJapan:null,N=IDS.includes('nationale')?CDWorldNationale:null,CH=IDS.includes('champ')?CDWorldChamp:null;
  const srpSeason=s=>2027+s.season-1;
  const japanYear=s=>2026+s.season-1,japanAnchor=s=>new Date(referenceStart(s)).toISOString().slice(0,10);
@@ -212,16 +214,22 @@ module.exports=function worldCareer(edition,active,initialContracts=null){
   if(profile){p.rosterProfile=copy(profile);p.pos=profile.position.primary;p.fam=FAMILIES[POS.indexOf(p.pos)];if(profile.position.basis==='official')p.gameplayPosition=p.pos;p.contractEnd=profile.contract.endSeason;}
   if(REG.worldProfiles[p.id])p.worldProfile=copy(REG.worldProfiles[p.id]);if(REG.nationaleQualifications?.[p.id])p.nationaleQualifications=REG.nationaleQualifications[p.id].roles.slice();return p;
  }
+ function initialRoster(c){
+  if(c.leagueId!=='champ'||!inactiveAliases)return c.players.map(sourcePlayer);
+  // Keep the registry intact for old saves and presentation packs. Only a
+  // new Champ career omits aliases attested by independent club and RFU data.
+  return c.players.filter(p=>inactiveAliases[p.id]?.clubId!==c.id).map(sourcePlayer);
+ }
  function start(id){
   check(playable.has(id),'club jouable invalide.');
   S={version:2,commonDatabase:copy(REG.marker),rosterFoundation:copy(CDRosterFoundation.marker),club:id,season:1,round:0,
-   clubs:REG.clubs.map(c=>({id:c.id,name:c.name,abbr:c.abbr,color:c.color,base:c.base,cash:c.cashMillions*1e6,goal:c.goal||'Développer le projet sportif',stadium:c.stadium,points:0,played:0,won:0,drawn:0,lost:0,pf:0,pa:0,bonus:0,form:[],players:c.players.map(sourcePlayer)})),
+   clubs:REG.clubs.map(c=>({id:c.id,name:c.name,abbr:c.abbr,color:c.color,base:c.base,cash:c.cashMillions*1e6,goal:c.goal||'Développer le projet sportif',stadium:c.stadium,points:0,played:0,won:0,drawn:0,lost:0,pf:0,pa:0,bonus:0,form:[],players:initialRoster(c)})),
    schedule:[],lineup:[],reserves:[],tactic:'equilibre',training:'normal',physicalLoadVersion:1,collectivePrepVersion:1,collectiveFocus:'aucune',developmentFocusVersion:1,recruitmentIntelVersion:1,salaryDemandVersion:1,satisfactionVersion:1,relationsVersion:1,objectivesVersion:1,v39Version:1,integratedManagementVersion:1,worldVersion:1,morale:75,trust:70,history:[],news:['Le vestiaire vous attend. À vous de donner le cap pour cette nouvelle saison.'],market:[],marketWeek:-1,phase:'league',playoff:null,live:null,lastReport:null,ledger:[],trained:false};
   if(startingTerms)for(const club of S.clubs){
-   if(!['prem','urc'].includes(REG.clubs[club.id].leagueId))continue;
+   if(!['prem','urc','champ'].includes(REG.clubs[club.id].leagueId))continue;
    for(const player of club.players){
     const term=startingTerms[player.id];
-    if(!player.id.startsWith('world:')||term?.clubId!==club.id||!Number.isInteger(term.endSeason)||term.endSeason<1||term.endSeason>6)continue;
+    if(term?.clubId!==club.id||!Number.isInteger(term.endSeason)||term.endSeason<1||term.endSeason>6)continue;
     if(term.endType==='season-end')player.contractEnd=term.endSeason;
     if(term.endType==='minimum-season-end')player.contractEnd=Math.max(player.contractEnd,term.endSeason);
    }
