@@ -20,6 +20,7 @@ static func build(app: Control) -> Control:
 	var summary: Dictionary = data.get("summary", {})
 	var count: int = int(summary.get("played", 0))
 	panel.add_child(G.wrap(str(data.get("notice", "")), 12))
+	_individual(app, panel)
 	if count == 0:
 		panel.add_child(G.wrap("Aucune rencontre conservée pour ce club cette saison. Le bilan apparaîtra après les premiers matchs.", 16, G.INK))
 		return panel
@@ -53,3 +54,60 @@ static func build(app: Control) -> Control:
 		var decision: String = " · après départage" if bool(match.get("decidedAfterTie",false)) else ""
 		panel.add_child(G.wrap("%s · %s · %s · %d — %d contre %s%s" % [date, where, str(match.outcome), int(match.pointsFor), int(match.pointsAgainst), str(match.opponentName), decision], 14, G.INK))
 	return panel
+
+static func _value(value: Variant) -> String:
+	return "inconnu" if value == null else str(int(value))
+
+static func _individual(app: Control, panel: Container) -> void:
+	var data: Dictionary = app.model.get("clubLife", {}).get("playerMatchHistory", {})
+	if not data.get("available", false): return
+	panel.add_child(G.separator())
+	panel.add_child(G.section("Performances individuelles mesurées", "Cinq dernières feuilles conservées par joueur · registre limité à 40 rencontres."))
+	panel.add_child(G.wrap(str(data.get("notice", "")), 12))
+	if not data.get("enabled", false):
+		var enable := G.button("ACTIVER LE SUIVI INDIVIDUEL", func():
+			app.confirm("Conserver les performances individuelles", "Seules les prochaines rencontres jouées seront conservées, dans cette carrière. Aucun passé ne sera inventé.", func(): app._command("player_match_history_enable", {"context":data.context.duplicate(true),"confirmed":true})))
+		enable.name = "PlayerMatchHistoryEnable"
+		enable.disabled = not data.get("canEnable", false)
+		panel.add_child(enable)
+		return
+	panel.add_child(G.wrap("%d / 40 rencontres conservées. Les archives survivent aux changements de saison et de club." % int(data.get("recordedMatches",0)), 13))
+	var players: Array = data.get("players", [])
+	if players.is_empty():
+		panel.add_child(G.wrap("Aucun joueur dans l’effectif actuel.", 14))
+		return
+	var choice := OptionButton.new()
+	choice.name = "PerformancePlayerChoice"
+	choice.fit_to_longest_item = false
+	choice.custom_minimum_size.y = 40
+	choice.get_popup().max_size.y = 320
+	G.fill(choice)
+	for player: Dictionary in players:
+		choice.add_item("%s · %s · %d feuille(s)" % [str(player.name), str(player.pos), player.get("matches",[]).size()])
+	panel.add_child(choice)
+	var details := G.v(8)
+	details.name = "PerformancePlayerDetail"
+	G.fill(details)
+	panel.add_child(details)
+	var draw := func(index: int):
+		for child in details.get_children():
+			details.remove_child(child)
+			child.queue_free()
+		if index < 0 or index >= players.size(): return
+		var player: Dictionary = players[index]
+		var matches: Array = player.get("matches", [])
+		details.add_child(G.wrap(str(player.name), 17, G.INK))
+		if matches.is_empty():
+			details.add_child(G.wrap("Aucune feuille conservée pour ce joueur. Les anciennes apparitions ne sont pas reconstruites.", 14))
+			return
+		details.add_child(G.wrap("%s minutes connues · couverture %d / %d feuilles" % [_value(player.get("minutes")), int(player.get("measuredMatches",0)), matches.size()], 14))
+		for metric: Array in [["tries","Essais"],["penaltyGoals","Pénalités réussies"],["penaltyMisses","Tirs de pénalité manqués"]]:
+			var m: Dictionary = player.get("metrics",{}).get(metric[0],{})
+			var ratio := "inconnu"
+			if m.get("per80") != null: ratio = ("%.2f" % float(m.per80)).replace(".", ",")
+			details.add_child(G.wrap("%s · total connu %s sur %d / %d feuilles · par 80 min : %s (%d feuilles, %s minutes)" % [str(metric[1]), _value(m.get("total")), int(m.get("matches",0)), matches.size(), ratio, int(m.get("ratioMatches",0)), _value(m.get("minutes"))], 14))
+		for appearance: Dictionary in matches:
+			details.add_child(G.wrap("Saison %d · semaine %d · club #%d contre #%d · %s minutes · essais %s · pénalités réussies %s / manquées %s" % [int(appearance.season), int(appearance.week)+1, int(appearance.clubId), int(appearance.opponent), _value(appearance.get("minutes")), _value(appearance.get("tries")), _value(appearance.get("penaltyGoals")), _value(appearance.get("penaltyMisses"))], 13))
+	choice.item_selected.connect(draw)
+	choice.select(0)
+	draw.call(0)
