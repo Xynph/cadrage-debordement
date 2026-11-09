@@ -119,6 +119,8 @@ func _heading() -> void:
 	integration = _action(hero, Rect2(1709, 160, 519, 65), "Préparer une intégration", _integration_dialog, true, "arrow", "AcademyPrepareIntegration")
 	integration.add_theme_font_size_override("font_size", C.px(35))
 	_update_integration()
+	D.text(hero,1100,151,"Objectifs et gains réellement observés",23,C.IVORY,600,580)
+	D.button(hero,Rect2(1100,170,580,55),"Suivre la progression des jeunes →",func(): preload("res://ui/youth_development_view.gd").open(app),false,"arrow",false,app.accent,"OpenYouthDevelopment")
 	for i in TABS.size():
 		var tab := U.tab(self, Rect2(3 + i * 282, 247, 271, 56), TABS[i], i == active_tab, func(): _open_tab(i), "AcademyImmersiveTab" + str(i))
 		tab.toggle_mode = true

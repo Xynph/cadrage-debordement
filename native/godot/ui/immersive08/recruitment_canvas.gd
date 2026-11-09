@@ -89,6 +89,7 @@ func _header() -> void:
 		D.text(card, 77, 46 if item[4] == "" else 27, item[3], 30 if item[4] == "" else 22, C.IVORY, 600, w - 86)
 		if item[4] != "": D.text(card, 77, 59, item[4], 31, C.IVORY, 700, w - 86)
 	D.photo(self, "scouting", Rect2(0, 130, 634, 156))
+	D.button(self, Rect2(24, 223, 558, 48), "Repérer la relève →", func(): preload("res://ui/regen_scouting_view.gd").open(app), false, "search", false, PRIMARY, "OpenRegenScouting")
 	var fade := Control.new()
 	fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(fade)
