@@ -1,26 +1,39 @@
 extends RefCounted
-## Chorégraphie de présentation sur une passe explicitement identifiée.
-## Le journal courant ne transmet pas encore ces deux participants.
+## Chorégraphie de présentation sur deux participants de la scène.
 
 const Presentation = preload("res://match_presentation.gd")
 const RELEASE := 0.28
 const CATCH := 0.76
 const MIN_SPAN := 0.60
+const LIVE_SECONDS := 0.30
+const PREP_SECONDS := 0.10
 
 
 static func _number(value: Variant) -> bool:
 	return (value is int or value is float) and is_finite(float(value))
 
 
+static func _pitch_point(value: Variant) -> Vector2:
+	if not value is Dictionary or not _number(value.get("x")) or not _number(value.get("y")):
+		return Vector2.INF
+	if value.x < 1.5 or value.x > 98.5 or value.y < 2.0 or value.y > 68.0:
+		return Vector2.INF
+	return Vector2(value.x, value.y)
+
+
 static func plan(scene: Dictionary) -> Dictionary:
+	var kind: Variant = scene.get("kind")
 	var key: Variant = scene.get("key")
 	var transfer: Variant = scene.get("pass")
 	var ball: Variant = scene.get("ball")
 	var team: Variant = scene.get("possession")
 	var players: Variant = scene.get("players")
-	if scene.get("kind") != "pass" or not key is String or key.strip_edges().is_empty():
+	if kind not in ["pass", "carry"] or not key is String or key.strip_edges().is_empty():
 		return {}
-	if not transfer is Dictionary or not players is Array or not _number(team) or team not in [0, 1]:
+	if not transfer is Dictionary or not players is Array or not _number(team):
+		return {}
+	var attacking_side := float(team)
+	if attacking_side != 0.0 and attacking_side != 1.0:
 		return {}
 	if not ball is Dictionary or not _number(ball.get("x")) or not _number(ball.get("y")):
 		return {}
@@ -36,12 +49,23 @@ static func plan(scene: Dictionary) -> Dictionary:
 			continue
 		var id: String = player.id
 		var side: Variant = player.get("side")
-		if present.has(id) or not _number(side) or side != team:
+		if present.has(id) or not _number(side) or float(side) != attacking_side:
+			return {}
+		if kind == "carry" and id == receiver and player.get("featured") != true:
 			return {}
 		present[id] = true
 	if present.size() != 2:
 		return {}
-	return {"key": key, "passer": sender, "receiver": receiver}
+	var result := {"key": key, "passer": sender, "receiver": receiver}
+	if kind == "carry":
+		var origin := _pitch_point(transfer.get("from"))
+		var catch_point := _pitch_point(transfer.get("catch"))
+		var direction := 1.0 if attacking_side == 0.0 else -1.0
+		if not origin.is_finite() or not catch_point.is_finite() or (origin.x - catch_point.x) * direction < MIN_SPAN:
+			return {}
+		result["origin"] = origin
+		result["catch_point"] = catch_point
+	return result
 
 
 static func sample(progress: float, passer_anchor: Vector3, receiver_anchor: Vector3) -> Dictionary:

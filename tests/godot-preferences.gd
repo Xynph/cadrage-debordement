@@ -81,7 +81,7 @@ func profile_cases() -> void:
 	check(not p.set_value("volume",10) and not p.last_error.is_empty(),"Écriture sans chargement refusée visiblement")
 	var folder := directory.path_join("valid")
 	check(p.load_profile(folder),"Dossier absolu neuf accepté")
-	check(p.data == {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":-1},"Valeurs par défaut sans carrière")
+	check(p.data == {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":-1,"stadium":"day"},"Valeurs par défaut sans carrière")
 	check(not FileAccess.file_exists(folder.path_join("interface.json")),"Lire un profil absent ne crée pas de fichier")
 	check(not p.load_profile("relative-folder") and not p.last_error.is_empty(),"Chemin relatif refusé visiblement")
 	check(p.load_profile(folder),"Retour au dossier absolu")
@@ -91,24 +91,36 @@ func profile_cases() -> void:
 	check(p.set_value("reduced_motion",false) and p.effective_camera() == "action","Sortie du mode calme restaure caméra")
 	check(p.set_value("quality","detail"),"Qualité enregistrée")
 	check(p.set_value("display_screen",1),"Écran secondaire enregistré")
+	check(p.set_value("stadium","evening") and p.data.display_screen == 1,"L’éclairage est enregistré sans modifier l’écran choisi")
 	var raw := FileAccess.get_file_as_string(folder.path_join("interface.json"))
 	var q = profile_script.new()
 	check(q.load_profile(folder) and q.data.volume == 42 and q.data.quality == "detail" and q.data.camera == "action","Redémarrage relit les effets choisis")
 	check(q.data.get("display_screen") == 1,"Redémarrage relit l’écran choisi")
-	for item in [["volume",-1],["volume",101],["volume",5.5],["volume",true],["quality","ultra"],["camera","orbit"],["reduced_motion",1],["secret","x"],["version",2],["display_screen",-2],["display_screen",1.5],["display_screen",true],["display_screen","1"],["display_screen",2147483648]]:
+	check(q.data.get("stadium") == "evening","Redémarrage relit l’éclairage choisi")
+	for item in [["volume",-1],["volume",101],["volume",5.5],["volume",true],["quality","ultra"],["camera","orbit"],["reduced_motion",1],["secret","x"],["version",2],["display_screen",-2],["display_screen",1.5],["display_screen",true],["display_screen","1"],["display_screen",2147483648],["stadium","night"],["stadium",true]]:
 		check(not p.set_value(item[0],item[1]) and not p.last_error.is_empty(),"Réglage invalide refusé : "+str(item))
 		check(FileAccess.get_file_as_string(folder.path_join("interface.json")) == raw,"Refus conserve octets originaux")
 	var legacy_folder := directory.path_join("legacy-display")
 	write_profile_volume(legacy_folder,40)
 	var legacy_path := legacy_folder.path_join("interface.json")
 	var legacy_bytes := FileAccess.get_file_as_bytes(legacy_path)
-	check(q.load_profile(legacy_folder) and q.data.display_screen == -1 and q.data.volume == 40,"Ancien profil complet relu avec écran automatique")
+	check(q.load_profile(legacy_folder) and q.data.display_screen == -1 and q.data.get("stadium") == "day" and q.data.volume == 40,"Ancien profil sans écran relu avec les réglages par défaut")
 	check(FileAccess.get_file_as_bytes(legacy_path) == legacy_bytes,"La lecture de l’ancien profil conserve ses octets")
+	var screen_only := {"version":1,"volume":40,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":1}
+	write(legacy_path,JSON.stringify(screen_only))
+	legacy_bytes = FileAccess.get_file_as_bytes(legacy_path)
+	check(q.load_profile(legacy_folder) and q.data.display_screen == 1 and q.data.get("stadium") == "day","Profil avec écran seul relu en mode jour")
+	check(FileAccess.get_file_as_bytes(legacy_path) == legacy_bytes,"La reprise du profil avec écran seul conserve ses octets")
+	screen_only["stadium"] = "night"
+	write(legacy_path,JSON.stringify(screen_only))
+	legacy_bytes = FileAccess.get_file_as_bytes(legacy_path)
+	check(not q.load_profile(legacy_folder) and not q.last_error.is_empty(),"Profil avec éclairage invalide refusé visiblement")
+	check(FileAccess.get_file_as_bytes(legacy_path) == legacy_bytes,"Le refus d’éclairage invalide conserve ses octets")
 	AudioServer.set_bus_mute(0,true)
 	p.apply_audio()
 	check(is_equal_approx(AudioServer.get_bus_volume_linear(0),0.42) and AudioServer.is_bus_mute(0),"Volume Master appliqué sans supprimer le mute externe")
 	check(p.set_value("volume",0) and AudioServer.get_bus_volume_linear(0) == 0.0 and AudioServer.is_bus_mute(0),"Zéro réellement silencieux, mute préservé")
-	check(p.reset_defaults() and p.data.volume == 75 and p.data.camera == "tv" and p.data.quality == "balanced" and not p.data.reduced_motion and p.data.display_screen == -1,"Reset limité au profil UI, écran automatique inclus")
+	check(p.reset_defaults() and p.data.volume == 75 and p.data.camera == "tv" and p.data.quality == "balanced" and not p.data.reduced_motion and p.data.display_screen == -1 and p.data.get("stadium") == "day","Reset limité au profil UI, écran automatique et stade de jour")
 	var bads := ["{",'{"version":2,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv"}','{"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","rng":1}','{"version":1,"volume":75.25,"reduced_motion":false,"quality":"balanced","camera":"tv"}','{"version":1,"volume":75,"reduced_motion":false,"quality":"balanced"}','{"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":1.5}'," ".repeat(16385)]
 	for i in bads.size():
 		var bad_dir := directory.path_join("bad-"+str(i)); DirAccess.make_dir_recursive_absolute(bad_dir)
@@ -216,12 +228,13 @@ func dialog_cases() -> void:
 			check(p.set_value("volume",p.data.volume),"Une décision après correction du dossier efface l'erreur")
 		d.hide(); d.queue_free(); await settle()
 	check(p.set_value("volume",39),"Profil local réel préparé avant mutations carrière")
+	check(p.set_value("display_screen",1),"Écran de droite conservé dans le profil du vrai match")
 	var local_path: String = str(app.model.meta.dataDir).path_join("interface.json")
 	var local_bytes := FileAccess.get_file_as_bytes(local_path)
 	await command("new_career",{"club":0,"mode":"common"})
 	await command("export")
 	var career_text: String = app.model.meta.exportText
-	check(not career_text.contains("reduced_motion") and not career_text.contains('"quality"') and not career_text.contains('"volume"'),"Export carrière sans préférences locales")
+	check(not career_text.contains("reduced_motion") and not career_text.contains('"quality"') and not career_text.contains('"volume"') and not career_text.contains('"display_screen"'),"Export carrière sans préférences locales")
 	await command("new_career",{"club":1,"mode":"common"})
 	await command("import",{"text":career_text})
 	check(FileAccess.get_file_as_bytes(local_path) == local_bytes,"Créations et import de carrière conservent exactement le profil local")
@@ -236,13 +249,33 @@ func dialog_cases() -> void:
 	var stage: Node3D = app.match_view
 	check(is_instance_valid(stage) and stage._actors.size() == 30,"Vrai match natif avec trente joueurs")
 	var engine_before := JSON.stringify(app.model.live)
+	var day_energy: float = stage._sun.light_energy
+	check(stage.get_node_or_null("StadiumEvening") == null,"Le match de jour ne construit pas les projecteurs")
+	await capture_stadium("stade-jour-match")
+	app.settings(); await settle()
+	var display_dialog: AcceptDialog = app.find_child("PreferencesDialog",true,false)
+	var display_tabs: TabContainer = display_dialog.find_child("PreferencesTabs",true,false)
+	display_tabs.current_tab = 2; await settle()
+	var stadium: OptionButton = display_dialog.find_child("PreferencesStadiumLighting",true,false)
+	check(stadium != null and stadium.is_visible_in_tree() and stadium.get_item_text(0) == "Jour" and stadium.get_item_text(1) == "Soirée","Éclairage accessible dans Paramètres / Affichage")
+	var display_screen: int = p.data.display_screen
+	if stadium != null:
+		stadium.grab_focus(); await key(KEY_SPACE); await key(KEY_DOWN); await key(KEY_ENTER)
+		check(p.data.get("stadium") == "evening" and stadium.selected == 1 and p.data.display_screen == display_screen,"Soirée choisie au clavier sans changer le moniteur")
+	await capture_stadium("stade-reglage")
+	display_dialog.hide(); display_dialog.queue_free(); await settle()
+	var evening_kit: Node3D = stage.get_node_or_null("StadiumEvening")
+	check(evening_kit != null and evening_kit.visible and stage._sun.light_energy < day_energy and stage._actors.size() == 30,"Soirée appliquée au vrai match avec trente joueurs")
+	await capture_stadium("stade-soiree-match")
+	check(p.set_value("stadium","day") and evening_kit != null and not evening_kit.visible and is_equal_approx(stage._sun.light_energy,day_energy),"Retour au jour restaure l’éclairage d’origine")
+	check(p.set_value("stadium","evening") and stage.get_node_or_null("StadiumEvening") == evening_kit,"Basculer de nouveau réutilise les projecteurs")
 	check(p.set_value("quality","economy") and stage._quality == "economy" and not stage._sun.shadow_enabled,"Qualité économie applique réellement le budget d'ombres")
 	check(p.set_value("camera","action") and stage._camera_mode == "action","Préférence action appliquée à la scène réelle")
 	await settle()
 	var camera_before: Transform3D = stage._camera.transform
 	check(p.set_value("volume",39) and stage._camera.transform == camera_before,"Volume seul conserve la position de caméra sans réinitialisation")
 	app.coach.portrait.set_speaking(true)
-	check(p.set_value("reduced_motion",true) and stage._camera_mode == "tactical" and app.coach.portrait.reduced_motion,"Mode calme raccordé à la scène et au vrai portrait")
+	check(p.set_value("reduced_motion",true) and stage._camera_mode == "tactical" and not stage._action_motion and app.coach.portrait.reduced_motion,"Mode calme raccordé à la scène et au vrai portrait")
 	var fixed_camera: Transform3D = stage._camera.transform
 	var fixed_pose: int = app.coach.portrait.pose_index
 	app.coach.portrait._process(2.0)
@@ -255,10 +288,12 @@ func dialog_cases() -> void:
 		root.get_texture().get_image().save_png(directory.path_join("preferences-match-calme.png"))
 		var calm_dialog: AcceptDialog = app.find_child("PreferencesDialog",true,false)
 		calm_dialog.hide(); calm_dialog.queue_free(); await settle()
-	check(p.set_value("reduced_motion",false) and stage._camera_mode == "action" and not app.coach.portrait.reduced_motion,"Désactiver calme restaure caméra action et animation portrait")
+	check(p.set_value("reduced_motion",false) and stage._camera_mode == "action" and stage._action_motion and not app.coach.portrait.reduced_motion,"Désactiver calme restaure caméra action et animation portrait")
 	var stage_id := stage.get_instance_id()
 	app._navigate("Bureau"); await settle(); app._navigate("Match"); await settle()
 	check(app.match_view.get_instance_id() != stage_id and app.match_view._camera_mode == "action" and app.match_view._quality == "economy","Écran match reconstruit conserve caméra et qualité")
+	var rebuilt_stadium: Node3D = app.match_view.get_node_or_null("StadiumEvening")
+	check(rebuilt_stadium != null and rebuilt_stadium.visible,"Le retour dans Match conserve l’éclairage de soirée")
 	check(p.set_value("reduced_motion",true),"Mode calme enregistré avant redémarrage")
 	app.closing = true; app.bridge.stop(); app.queue_free(); await settle()
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
@@ -270,6 +305,8 @@ func dialog_cases() -> void:
 	check(p.data.volume == 39 and p.data.camera == "action" and p.data.quality == "economy" and p.data.reduced_motion,"Redémarrage complet du vrai shell recharge les préférences distinctes")
 	check(app.coach.speech.global_volume == 39,"Redémarrage réel réapplique aussi le gain global TTS")
 	check(app.match_view._camera_mode == "tactical" and app.match_view._quality == "economy" and app.coach.portrait.reduced_motion and is_equal_approx(AudioServer.get_bus_volume_linear(0),0.39),"Redémarrage réapplique scène, portrait et volume")
+	var restarted_stadium: Node3D = app.match_view.get_node_or_null("StadiumEvening")
+	check(p.data.get("stadium") == "evening" and p.data.display_screen == 1 and restarted_stadium != null and restarted_stadium.visible,"Redémarrage réapplique l’éclairage de soirée et conserve le moniteur")
 	var confirmation := ConfirmationDialog.new(); app._prepare_dialog(confirmation,500); app.add_child(confirmation); confirmation.popup_centered(Vector2i(500,180)); await settle()
 	check(helper.open(app,p) == null and confirmation.visible and not confirmation.is_queued_for_deletion(),"Paramètres laissent la priorité à une confirmation ouverte")
 	confirmation.hide(); confirmation.queue_free(); await settle()
@@ -278,3 +315,13 @@ func dialog_cases() -> void:
 	var error: Label = error_dialog.find_child("PreferencesError",true,false)
 	check(error != null and error.visible and not error.text.is_empty(),"Erreur du profil réellement visible dans Paramètres")
 	error_dialog.hide(); error_dialog.queue_free(); await settle()
+
+func capture_stadium(label: String) -> void:
+	if OS.get_environment("CD_PREFERENCES_GRAPHICS") != "1":
+		return
+	var expected_x := OS.get_environment("CD_PREFERENCES_SCREEN_X")
+	if expected_x.is_valid_int():
+		var screen := DisplayServer.window_get_current_screen()
+		check(DisplayServer.screen_get_position(screen).x == expected_x.to_int(),"Capture sur l’écran demandé " + label)
+	await RenderingServer.frame_post_draw
+	check(root.get_texture().get_image().save_png(directory.path_join(label + ".png")) == OK,"Capture du match " + label)

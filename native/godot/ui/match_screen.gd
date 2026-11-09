@@ -189,6 +189,8 @@ func apply_preferences() -> void:
 	if preferences == null or not is_instance_valid(stage): return
 	var quality: String = str(preferences.data.quality)
 	var camera: String = preferences.effective_camera()
+	stage.set_stadium_evening(preferences.data.stadium == "evening")
+	stage.set_action_motion(not bool(preferences.data.reduced_motion))
 	if quality != _applied_quality:
 		_applied_quality = quality
 		stage.set_quality(quality)

@@ -12,6 +12,9 @@ const Kit = preload("res://match_kit.gd")
 const Athlete = preload("res://match_athlete.gd")
 const Contact = preload("res://match_contact.gd")
 const Cut = preload("res://match_cut.gd")
+const Pass = preload("res://match_pass.gd")
+const CUT_SECONDS := 0.30
+const STADIUM_EVENING_SCRIPT := "res://match_stadium_evening.gd"
 var _players: Node3D
 var _ball: Node3D
 var _camera: Camera3D
@@ -39,6 +42,12 @@ var _ball_attached := false
 var _ball_travel := 1.0
 var _grass: ShaderMaterial
 var _contact_plan: Dictionary = {}
+var _action_key := ""
+var _action_motion := true
+var _pass_plan: Dictionary = {}
+var _pass_elapsed := 0.0
+var _stadium_evening := false
+var _stadium_kit: Node3D
 
 
 func _ready() -> void:
@@ -63,10 +72,34 @@ func _ready() -> void:
 	_camera.current = true
 	set_camera(_camera_mode)
 	set_quality(_quality)
+	set_stadium_evening(_stadium_evening)
 	if _has_pending:
 		apply_frame(_pending)
 		_pending = {}
 		_has_pending = false
+
+
+func set_stadium_evening(enabled: bool) -> void:
+	_stadium_evening = enabled
+	if not is_node_ready():
+		return
+	if enabled and not is_instance_valid(_stadium_kit):
+		_stadium_kit = load(STADIUM_EVENING_SCRIPT).new()
+		_stadium_kit.attach(self)
+	if is_instance_valid(_stadium_kit):
+		_stadium_kit.set_evening(enabled)
+
+
+func set_action_motion(enabled: bool) -> void:
+	if enabled == _action_motion:
+		return
+	_action_motion = enabled
+	if not enabled:
+		_stop_live_pass()
+		for entry: Dictionary in _actors.values():
+			entry.cut_direction = 0
+			entry.cut_beat = -1.0
+			entry.cut_plant.clear()
 
 
 func apply_frame(live: Dictionary) -> void:
@@ -99,9 +132,25 @@ func apply_frame(live: Dictionary) -> void:
 		for entry: Dictionary in _actors.values():
 			_recolor(entry.model, entry.side)
 	_paused = live.get("paused", false) or live.get("finished", false) or live.get("atBreak", false)
+	var key := str(scene.get("key", ""))
+	var new_action := key != _action_key
+	var play_action := (_action_motion and not _paused and has_ball and _ball.visible
+		and not _action_key.is_empty() and not key.is_empty())
+	_action_key = key
+	if not play_action or new_action:
+		_stop_live_pass()
+		_pass_plan = Pass.plan(scene) if play_action and _kind == "carry" else {}
+		_pass_elapsed = 0.0
 	_contact_plan = Contact.plan(scene) if not _paused and has_ball else {}
-	var carry_cut := (not _paused and _kind == "carry" and has_ball and _ball_attached
-		and _carrier_id == previous_carrier and _contact_plan.is_empty())
+	var cut_allowed := (_action_motion and not _paused and _kind == "carry" and has_ball
+		and _contact_plan.is_empty() and _pass_plan.is_empty())
+	var carry_cut := cut_allowed and _ball_attached and _carrier_id == previous_carrier
+	var declared_cut: Variant = scene.get("cut")
+	var cut_side := 0
+	if cut_allowed and play_action and new_action and declared_cut is Dictionary:
+		var side: Variant = declared_cut.get("side")
+		if declared_cut.get("carrier") == _carrier_id and (side is float or side is int) and absf(float(side)) == 1.0:
+			cut_side = int(side)
 	var present: Dictionary = {}
 	for player: Dictionary in scene.players:
 		var id := str(player.get("id", ""))
@@ -115,7 +164,12 @@ func apply_frame(live: Dictionary) -> void:
 		var entry: Dictionary = _actors[id]
 		entry.holding = id == _carrier_id
 		var can_cut: bool = carry_cut and entry.holding
-		if not can_cut:
+		if not cut_allowed or not entry.holding or new_action:
+			if entry.cut_beat >= 0.0:
+				entry.cut_direction = 0
+				entry.cut_plant.clear()
+			entry.cut_beat = -1.0
+		if not can_cut and entry.cut_beat < 0.0:
 			entry.cut_direction = 0
 			entry.cut_plant.clear()
 		# A UI refresh is not a new sporting movement. Keep its current curve.
@@ -123,13 +177,18 @@ func apply_frame(live: Dictionary) -> void:
 			var incoming: Vector3 = entry.velocity
 			if can_cut and incoming.is_zero_approx() and entry.cut_idle <= 0.3:
 				incoming = (entry.target - entry.from) / BLEND_SECONDS
-			entry.cut_direction = Cut.direction(incoming, target - entry.node.position, BLEND_SECONDS) if can_cut else 0
-			entry.cut_plant.clear()
+			if entry.cut_beat < 0.0:
+				entry.cut_direction = Cut.direction(incoming, target - entry.node.position, BLEND_SECONDS) if can_cut else 0
+				entry.cut_plant.clear()
 			entry.cut_idle = 0.0
 			entry.from = entry.node.position
 			entry.target = target
 			entry.tangent = Motion.tangent(entry.velocity, target - entry.node.position, BLEND_SECONDS)
 			entry.elapsed = 0.0
+		if entry.holding and cut_side != 0:
+			entry.cut_direction = cut_side
+			entry.cut_beat = 0.0
+			entry.cut_plant.clear()
 		if _paused:
 			entry.node.position = target
 			entry.from = target
@@ -148,13 +207,19 @@ func apply_frame(live: Dictionary) -> void:
 			_players.remove_child(actor)
 			actor.queue_free()
 			_actors.erase(id)
+	if not _pass_plan.is_empty():
+		if new_action:
+			_stage_live_pass()
+		elif not _actors.has(_pass_plan.passer) or not _actors.has(_pass_plan.receiver):
+			_stop_live_pass()
 	if has_ball:
 		var next_target := _world(ball_data, 0.23)
 		var ball_changed := not _ball_target.is_equal_approx(next_target) or previous_carrier != _carrier_id
 		if not _ball.visible:
 			_camera_cut = true
 		# The first snapshot is a pose, not an invented pass from ground level.
-		_ball_attached = not _carrier_id.is_empty() and (not _ball.visible or _paused or (previous_carrier == _carrier_id and _ball_attached))
+		_ball_attached = (_pass_plan.is_empty() and not _carrier_id.is_empty()
+			and (not _ball.visible or _paused or cut_side != 0 or (previous_carrier == _carrier_id and _ball_attached)))
 		var continuing_reception := not _carrier_id.is_empty() and previous_carrier == _carrier_id and not _ball_attached
 		if (ball_changed and not continuing_reception) or not _ball.visible:
 			_ball_from = _ball.position if _ball.visible else next_target
@@ -179,23 +244,34 @@ func set_camera(mode: String) -> void:
 
 
 func _process(delta: float) -> void:
-	for entry: Dictionary in _actors.values():
+	if not _pass_plan.is_empty():
+		_pass_elapsed = minf(Pass.LIVE_SECONDS, _pass_elapsed + delta)
+	var preparation := smoothstep(0.0, Pass.PREP_SECONDS, _pass_elapsed)
+	for id: String in _actors:
+		var entry: Dictionary = _actors[id]
 		var actor: Node3D = entry.node
 		if entry.rig:
 			Presentation.restore_contact(entry.rig, entry.contact_base)
 			Cut.restore(entry.rig, entry.cut_pose)
 		var previous := actor.position
-		if entry.elapsed >= BLEND_SECONDS:
-			entry.cut_idle = minf(BLEND_SECONDS, entry.cut_idle + delta)
-		entry.elapsed = minf(BLEND_SECONDS, float(entry.elapsed) + delta)
+		var previous_heading := actor.rotation.y
+		var in_pass := _is_pass_player(id)
+		if in_pass:
+			var staging: Dictionary = _pass_plan.staging[id]
+			actor.position = (staging.from as Vector3).lerp(staging.mark, preparation)
+			actor.rotation.y = lerp_angle(staging.heading, staging.facing, preparation)
+		else:
+			if entry.elapsed >= BLEND_SECONDS:
+				entry.cut_idle = minf(BLEND_SECONDS, entry.cut_idle + delta)
+			entry.elapsed = minf(BLEND_SECONDS, float(entry.elapsed) + delta)
 		var progress: float = entry.elapsed / BLEND_SECONDS
-		actor.position = Motion.position_at(entry.from, entry.target, entry.tangent, progress)
-		entry.velocity = Motion.velocity_at(entry.from, entry.target, entry.tangent, progress, BLEND_SECONDS)
+		if not in_pass:
+			actor.position = Motion.position_at(entry.from, entry.target, entry.tangent, progress)
+			entry.velocity = Motion.velocity_at(entry.from, entry.target, entry.tangent, progress, BLEND_SECONDS)
 		var movement := actor.position - previous
 		var speed := movement.length() / maxf(delta, 0.001)
 		var moving := speed > 0.035 and not _paused
-		var previous_heading := actor.rotation.y
-		if moving:
+		if moving and not in_pass:
 			var change := angle_difference(actor.rotation.y, atan2(movement.x, movement.z))
 			actor.rotation.y += clampf(change, -7.2 * delta, 7.2 * delta)
 		var animation: AnimationPlayer = entry.animation
@@ -213,13 +289,24 @@ func _process(delta: float) -> void:
 			animation.advance(0.0 if _paused else pose_delta)
 		if entry.rig and not _paused:
 			Presentation.support_feet(actor, entry.rig, entry.feet, speed, angle_difference(previous_heading, actor.rotation.y))
-			if entry.cut_direction != 0 and progress < 1.0:
-				Cut.apply(actor, entry.rig, entry.cut_direction, progress, entry.cut_pose, entry.cut_plant)
+			var cut_progress := progress
+			if entry.cut_beat >= 0.0:
+				entry.cut_beat = minf(CUT_SECONDS, float(entry.cut_beat) + delta)
+				cut_progress = entry.cut_beat / CUT_SECONDS
+				if cut_progress >= 1.0:
+					entry.cut_beat = -1.0
+					entry.cut_direction = 0
+					entry.cut_plant.clear()
+			if entry.cut_direction != 0 and cut_progress < 1.0:
+				Cut.apply(actor, entry.rig, entry.cut_direction, cut_progress, entry.cut_pose, entry.cut_plant)
 	_update_contact(delta)
 	_update_ball(delta)
 	# Resolve upper-body contact after every source-animation update and after the
 	# ball's continuous trajectory. A new receiver never pulls it across the pitch.
-	for entry: Dictionary in _actors.values():
+	for id: String in _actors:
+		if _is_pass_player(id):
+			continue
+		var entry: Dictionary = _actors[id]
 		var actor: Node3D = entry.node
 		var rig: Skeleton3D = entry.rig
 		var center := Presentation.ball_anchor(actor, rig) if rig else Vector3.ZERO
@@ -230,11 +317,83 @@ func _process(delta: float) -> void:
 			if approaching and not _ball_attached:
 				center = _ball.global_position
 			Presentation.hold_ball(actor, rig, center, entry.grip)
+	if _pass_elapsed >= Pass.LIVE_SECONDS:
+		_stop_live_pass(true)
 	if _ball.visible:
 		_ball_marker.global_position = Vector3(_ball.global_position.x, 0.028, _ball.global_position.z)
 		_ball_marker.global_basis = Basis.IDENTITY
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
+
+
+func _is_pass_player(id: String) -> bool:
+	return not _pass_plan.is_empty() and (id == _pass_plan.passer or id == _pass_plan.receiver)
+
+
+func _stage_live_pass() -> void:
+	for id: String in [_pass_plan.passer, _pass_plan.receiver]:
+		if not _actors.has(id) or not is_instance_valid(_actors[id].rig):
+			_pass_plan.clear()
+			return
+	var release: Vector2 = _pass_plan.origin
+	var catch_point: Vector2 = _pass_plan.catch_point
+	_pass_plan.ball_from = _ball.global_position
+	_pass_plan.ball_basis = _ball.global_basis
+	_pass_plan.staging = {}
+	_contact_plan.clear()
+	for id: String in [_pass_plan.passer, _pass_plan.receiver]:
+		var sending: bool = id == _pass_plan.passer
+		var point := release if sending else catch_point
+		var facing := catch_point - release if sending else release - catch_point
+		var entry: Dictionary = _actors[id]
+		_pass_plan.staging[id] = {"from": entry.node.position, "mark": Vector3(point.x - 50.0, 0.0, point.y - 35.0),
+			"heading": entry.node.rotation.y, "facing": atan2(facing.x, facing.y)}
+		entry.elapsed = 0.0
+		entry.tangent = Vector3.ZERO
+		entry.velocity = Vector3.ZERO
+		entry.feet.clear()
+		entry.grip = 0.0
+
+
+func _stop_live_pass(completed: bool = false) -> void:
+	if _pass_plan.is_empty():
+		return
+	for id: String in [_pass_plan.passer, _pass_plan.receiver]:
+		if _actors.has(id):
+			_actors[id].from = _actors[id].node.position
+	if not completed:
+		_ball_from = _ball.global_position
+		_ball_from_basis = _ball.global_basis
+		_ball_travel = 0.0
+	_pass_plan.clear()
+	_pass_elapsed = 0.0
+
+
+func _update_live_pass() -> bool:
+	var passer: Dictionary = _actors[_pass_plan.passer]
+	var receiver: Dictionary = _actors[_pass_plan.receiver]
+	var passer_anchor := Presentation.ball_anchor(passer.node, passer.rig)
+	if _pass_elapsed < Pass.PREP_SECONDS:
+		var preparation := smoothstep(0.0, Pass.PREP_SECONDS, _pass_elapsed)
+		_ball.global_position = (_pass_plan.ball_from as Vector3).lerp(passer_anchor, preparation)
+		_ball.global_basis = (_pass_plan.ball_basis as Basis).slerp(passer.node.global_basis, preparation)
+		Pass.pose(passer.node, passer.rig, _ball.global_position, preparation, passer.contact_base)
+		return true
+	var progress := inverse_lerp(Pass.PREP_SECONDS, Pass.LIVE_SECONDS, _pass_elapsed)
+	var sample := Pass.sample(progress, passer_anchor,
+		Presentation.ball_anchor(receiver.node, receiver.rig))
+	if sample.is_empty():
+		_stop_live_pass()
+		return false
+	_ball.global_position = sample.ball
+	_ball.global_basis = receiver.node.global_basis if sample.stage == "received" else passer.node.global_basis
+	Pass.pose(passer.node, passer.rig, sample.passer_target, sample.passer_weight, passer.contact_base)
+	Pass.pose(receiver.node, receiver.rig, sample.receiver_target, sample.receiver_weight, receiver.contact_base)
+	if _pass_elapsed >= Pass.LIVE_SECONDS:
+		_ball_attached = true
+		_ball_travel = 1.0
+		receiver.grip = 1.0
+	return true
 
 
 func _update_contact(delta: float) -> void:
@@ -265,6 +424,8 @@ func _update_contact(delta: float) -> void:
 func _update_ball(delta: float) -> void:
 	if not _ball.visible:
 		return
+	if not _pass_plan.is_empty() and _update_live_pass():
+		return
 	_ball_travel = minf(1.0, _ball_travel + delta / BLEND_SECONDS)
 	if not _carrier_id.is_empty() and _actors.has(_carrier_id) and _actors[_carrier_id].rig:
 		var entry: Dictionary = _actors[_carrier_id]
@@ -276,7 +437,7 @@ func _update_ball(delta: float) -> void:
 	else:
 		_ball_attached = false
 		_ball.position = _ball_from.lerp(_ball_target, _ball_travel)
-		# Only existing kick kinds receive an airborne arc; no inferred pass kind.
+		# Seuls les coups de pied existants utilisent cet arc générique.
 		if _kind in ["kick", "goal", "miss", "kickoff", "drop22", "goalLine"]:
 			_ball.position.y += sin(_ball_travel * PI) * minf(6.0, _ball_from.distance_to(_ball_target) * 0.18)
 
@@ -339,6 +500,9 @@ func _clear_presence() -> void:
 	_actors.clear()
 	_ball.visible = false
 	_carrier_id = ""
+	_action_key = ""
+	_pass_plan.clear()
+	_pass_elapsed = 0.0
 	_contact_plan = {}
 	_ball_attached = false
 	_camera_cut = true
@@ -395,7 +559,7 @@ func _make_actor(id: String, side: int, target: Vector3) -> Dictionary:
 			animation.play(idle)
 	return {"node": actor, "model": model, "side": side, "from": target, "target": target,
 		"elapsed": BLEND_SECONDS, "velocity": Vector3.ZERO, "tangent": Vector3.ZERO, "running": false,
-		"feet": {}, "cut_direction": 0, "cut_idle": BLEND_SECONDS, "cut_pose": {}, "cut_plant": {},
+		"feet": {}, "cut_direction": 0, "cut_idle": BLEND_SECONDS, "cut_beat": -1.0, "cut_pose": {}, "cut_plant": {},
 		"contact_base": {}, "contact_weight": 0.0,
 		"animation": animation, "idle": idle, "run": run, "walk": walk, "rig": Presentation.rig_for(model), "holding": false, "grip": 0.0}
 
