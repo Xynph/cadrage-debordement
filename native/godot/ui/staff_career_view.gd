@@ -168,12 +168,13 @@ static func _contract(app: Control, person: Dictionary, data: Dictionary, renew:
 		draft.status = "submitted"
 		var command := ("staff_employment_renew" if renew else "staff_employment_hire") if paid else ("staff_renew" if renew else "staff_hire")
 		var bridge: Variant = app.get("bridge")
-		if bridge != null:
-			bridge.model_changed.connect(func(_model: Dictionary):
-				if str(app.last_command) != command: return
-				if bridge.last_response_ok: drafts.erase(draft_key)
-				else: draft.status = "refused", CONNECT_ONE_SHOT)
-		dialog.queue_free(); app._command(command,payload), true)
+		var expected_end := int(payload.context.season) + int(payload.years) - 1
+		if not paid and app.model.get("meta",{}).get("phase","") == "ended": expected_end += 1
+		dialog.queue_free()
+		var sent: Variant = app._command(command,payload)
+		if sent == true and bridge != null:
+			_observe_contract(app,bridge,drafts,draft_key,draft,command,str(person.id),payload.context.duplicate(true),expected_end,paid,int(payload.get("salary",0)))
+		else: draft.status = "refused", true)
 	sign.name = "StaffContractConfirm"
 	if draft.get("status","") == "refused": sign.text = "RÉESSAYER LE CONTRAT"
 	sign.disabled = years.item_count == 0
@@ -291,3 +292,54 @@ static func _employment(app: Control, parent: Container) -> void:
 			dialog.popup_centered())
 		budget.name = "StaffEmploymentBudgetOpen"
 		parent.add_child(budget)
+
+# One in-flight observer per app, with paired cleanup on model OR transport error.
+static func _forget_contract_observer(app: Control) -> void:
+	if not app.has_meta("staff_contract_observer"): return
+	var observer: Dictionary = app.get_meta("staff_contract_observer")
+	app.remove_meta("staff_contract_observer")
+	var bridge: Variant = observer.bridge.get_ref()
+	if bridge == null: return
+	if bridge.is_connected("model_changed",observer.model): bridge.disconnect("model_changed",observer.model)
+	if bridge.is_connected("command_failed",observer.error): bridge.disconnect("command_failed",observer.error)
+
+static func _contract_ack(model: Dictionary,command: String,staff_id: String,context: Dictionary,end_season: int,paid: bool,salary: int) -> bool:
+	var action: Dictionary = model.get("meta",{}).get("staffEmploymentAction" if paid else "staffCareerAction",{})
+	if str(action.get("command","")) != command: return false
+	if not paid and str(action.get("staffId","")) != staff_id: return false
+	var career: Dictionary = model.get("clubLife",{}).get("staffCareer",{})
+	var data: Dictionary = model.get("clubLife",{}).get("staffEmployment",{}) if paid else career
+	if data.get("context",{}) != context: return false
+	var witnessed := false
+	for team: Dictionary in career.get("teams",[]):
+		if int(team.id) != int(context.club): continue
+		for person: Dictionary in team.get("members",[]):
+			if str(person.id) == staff_id and int(person.get("clubId",-1)) == int(context.club) and int(person.get("contractEnd",-1)) == end_season: witnessed = true
+	if not witnessed: return false
+	if paid:
+		for person: Dictionary in data.get("own",[]):
+			if str(person.id) == staff_id and person.get("employed",false) and int(person.get("paidSalary",-1)) == salary and int(person.get("contractEnd",-1)) == end_season: return true
+		return false
+	return true
+
+static func _observe_contract(app: Control,bridge: Object,drafts: Dictionary,key: String,draft: Dictionary,command: String,staff_id: String,context: Dictionary,end_season: int,paid: bool,salary: int) -> void:
+	_forget_contract_observer(app)
+	var app_ref: WeakRef = weakref(app)
+	var bridge_ref: WeakRef = weakref(bridge)
+	var token := RefCounted.new()
+	var on_model := func(model: Dictionary):
+		var host: Control = app_ref.get_ref()
+		var source: Object = bridge_ref.get_ref()
+		if host == null or source == null or host.get_meta("staff_contract_observer",{}).get("token") != token: return
+		var accepted: bool = source.get("last_response_ok") == true and _contract_ack(model,command,staff_id,context,end_season,paid,salary)
+		_forget_contract_observer(host)
+		if accepted: drafts.erase(key)
+		else: draft.status = "refused"
+	var on_error := func(_message: String):
+		var host: Control = app_ref.get_ref()
+		if host == null or host.get_meta("staff_contract_observer",{}).get("token") != token: return
+		_forget_contract_observer(host)
+		draft.status = "refused"
+	app.set_meta("staff_contract_observer",{"bridge":bridge_ref,"model":on_model,"error":on_error,"token":token})
+	bridge.connect("model_changed",on_model)
+	bridge.connect("command_failed",on_error)
