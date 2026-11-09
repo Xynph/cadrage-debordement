@@ -103,7 +103,9 @@ function growPlayer(p,xp,allowFocus=true){
  }
  ensureSkills(p);
  const s=p.dev.specialization,focused=allowFocus&&focusedGrowthAllowed(p);
- const before=p.rating,share=focused?DEVELOPMENT_FOCUS_SHARE:0;
+ const before=p.rating;
+ const planned=allowFocus&&typeof CDYouthDevelopment!=='undefined'&&typeof CDYouthDevelopment.growthShare==='function'?CDYouthDevelopment.growthShare(S,p,allowFocus):null;
+ const share=focused?([0,.25,.5].includes(planned)?planned:DEVELOPMENT_FOCUS_SHARE):0;
  // Conservateur : 1 XP total = (1-share) XP général + share XP ciblé.
  p.dev.xp+=xp*(1-share);
  if(focused)s.xp+=xp*share;
