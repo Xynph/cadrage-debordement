@@ -92,6 +92,74 @@ func enumerate_clubs() -> void:
 		seen.merge(members)
 	check(seen.size() == 56 and not seen.has(56) and not seen.has(57), "56 clubs jouables et deux invités exclus du sélecteur")
 
+func creation_grid_fits(expected: int, context: String) -> void:
+	var list := named("CreationClubsScroll") as ScrollContainer
+	var grid := named("CreationClubGrid") as GridContainer
+	if list == null or grid == null:
+		check(false, "Grille présente · " + context)
+		return
+	var bounds := list.get_global_rect().grow(1).intersection(root.get_visible_rect().grow(1))
+	var cards_fit := grid.get_children().all(func(card: Control): return bounds.encloses(card.get_global_rect()))
+	check(grid.columns == 3 and grid.get_child_count() == expected and scroll_fits("CreationClubsScroll") and cards_fit,
+		"Grille complète sans défilement · %s · %s dans %s" % [context, grid.size, list.size])
+
+func creation_dossier_fits(expected: int, context: String) -> void:
+	var dossier := named("CreationDossier") as Control
+	var honours := named("CreationHonours") as Control
+	var action := named("CreationStart") as Control
+	if dossier == null or honours == null or action == null:
+		check(false, "Dossier, palmarès et action présents · " + context)
+		return
+	var viewport := root.get_visible_rect().grow(1)
+	var bounds := dossier.get_global_rect().grow(1)
+	var content_fits := viewport.encloses(bounds.grow(-1)) and bounds.encloses(honours.get_global_rect()) and bounds.encloses(action.get_global_rect())
+	check(content_fits and honours.get_child_count() == expected and honours.get_global_rect().end.y <= action.get_global_rect().position.y and dossier.find_children("*", "ScrollContainer", true, false).is_empty() and scroll_fits("EntryWorkspace"),
+		"Dossier complet sans défilement · %s · dossier %s, palmarès %s, action %s, fenêtre %s" % [context, dossier.get_global_rect(), honours.get_global_rect(), action.get_global_rect(), viewport])
+
+func check_creation_geometry() -> void:
+	var groups := {"FR":["elite", "accession", "nationale"], "GB":["prem", "champ"], "JP":["jlo-d1", "jlo-d2"], "international":["urc", "srp"]}
+	var catalogue: Array = app.pack_manager.creation_catalogue()
+	var witness: Dictionary = catalogue[0]
+	var original: Dictionary = witness.history
+	witness.history = original.duplicate(true)
+	witness.history.results.append_array([
+		{"competition":"urc", "rank":2, "year":2024},
+		{"competition":"challenge", "finish":"final", "year":2023},
+		{"competition":"accession", "titles":2, "year":2010},
+		{"competition":"champ", "finish":"semi", "year":2014},
+		{"competition":"nationale", "rank":3, "year":2009},
+	])
+	for resolution in [Vector2i(1280, 720), Vector2i(2560, 1440)]:
+		root.size = resolution
+		await create_timer(0.15).timeout
+		var dossiers := 0
+		for country: String in groups:
+			await press(named("CreationCountry_" + country))
+			for division: String in groups[country]:
+				await press(named("CreationDivision_" + division))
+				var clubs := catalogue.filter(func(club: Dictionary): return club.playable and club.division == division)
+				creation_grid_fits(clubs.size(), "%s · %s" % [division, resolution])
+				if division == "prem":
+					await press(named("CreationClub30"))
+					var city := named("CreationCity") as Control
+					if resolution.y == 1440:
+						check(city != null and city.visible and root.get_visible_rect().encloses(city.get_global_rect()), "La ville utilise l’espace libre du dossier en 1440p")
+					else:
+						check(city == null, "La ville ne réduit pas l’espace du dossier en 720p")
+				for club: Dictionary in clubs:
+					var results: Array = club.get("history", {}).get("results", [])
+					if results.size() < 5: continue
+					await press(named("CreationClub%d" % int(club.id)))
+					creation_dossier_fits(results.size(), "club %d · %s" % [int(club.id), resolution])
+					creation_grid_fits(clubs.size(), "club %d · %s" % [int(club.id), resolution])
+					dossiers += 1
+		check(dossiers > 0, "Dossiers à cinq résultats ou plus · %s" % resolution)
+	witness.history = original
+	root.size = Vector2i(1280, 720)
+	await create_timer(0.15).timeout
+	await press(named("CreationCountry_FR"))
+	await press(named("CreationDivision_elite"))
+
 func import_pack(path: String, expected := true) -> void:
 	await press(button("Importer une autre réalité"))
 	check(app.pack_manager.picker.visible, "Sélecteur ZIP natif ouvert")
@@ -188,27 +256,21 @@ func _run() -> void:
 	check(named("CreationPagination") == null and app.find_children("CreationClub*", "Button", true, false).size() == 14, "Toute l’Élite est présente dans une seule liste")
 	check(text_present(app, "26 matchs par club") and text_present(app, "Le 13e dispute un barrage"), "Le résumé décrit le format et le barrage simulés")
 	var grid := named("CreationClubGrid") as GridContainer
-	check(grid != null and grid.columns == 2, "La liste compacte utilise deux colonnes")
-	root.size = Vector2i(1920, 1080)
-	await create_timer(0.15).timeout
-	await settle()
-	grid = named("CreationClubGrid") as GridContainer
-	check(grid != null and grid.columns == 3 and grid.get_child_count() == 14, "La même liste passe à trois colonnes sur un écran large")
-	root.size = Vector2i(1280, 720)
-	await create_timer(0.15).timeout
-	await settle()
+	check(grid != null and grid.columns == 3 and scroll_fits("CreationClubsScroll"), "La liste compacte affiche toute la grille en trois colonnes")
 	await press(named("CreationClub0"))
 	check(named("CreationClubTitle") != null and named("CreationCompetitionSummary") == null and not (named("CreationStart") as Button).disabled, "Choisir un club révèle sa fiche et active la prise de poste")
-	check(named("CreationStadium") != null and text_present(app, "Trésorerie de départ") and not text_present(app, "Montant fictif du jeu"), "La fiche présente le stade et la trésorerie de départ")
+	check(named("CreationStadium") != null and text_present(app, "Trésorerie de départ simulée"), "La fiche présente le stade et la trésorerie de départ simulée")
 	check(text_present(app, "Stade Ernest Wallon") and text_present(app, "jeu de mouvement") and named("CreationClubPresentation") != null, "La présentation raconte l’histoire du club choisi et indique son stade")
 	check(named("CreationClubFounded") != null and text_present(app, "Fondé en 1907") and text_present(app, "25 titres") and text_present(app, "6 titres"), "La fiche affiche la fondation et les titres du club anonymisé")
+	creation_dossier_fits(app.pack_manager.creation_catalogue()[0].history.results.size(), "club 0 · 1280 × 720")
 	var roster_summary := named("CreationRosterSummary")
 	check(roster_summary != null and text_present(roster_summary, "Note moyenne") and not text_present(roster_summary, "Avants") and not text_present(roster_summary, "Trois-quarts"), "La note moyenne reste dans la fiche sans les compteurs par ligne")
-	check(text_present(app, "Atout actuel") and text_present(app, "Point à renforcer") and text_present(app, "Meilleure note") and text_present(app, "poste chez les adversaires") and text_present(app, "ce niveau"), "La fiche détaille les postes et compare leur niveau aux autres clubs de la division")
+	check(text_present(app, "Atout actuel") and text_present(app, "Point à renforcer") and text_present(app, "Meilleure note") and text_present(app, "Adversaires du même poste") and text_present(app, "ce niveau"), "La fiche détaille les postes et compare leur niveau aux autres clubs de la division")
 	check("Note moyenne" in named("CreationClub0").tooltip_text, "La grille permet de comparer les notes moyennes avant de choisir un club")
 	check(app.pack_manager.mode("creation") == "world-champ" and app.model.meta.champCatalogue.size() == 116, "La création ouvre directement le Monde complet")
 	check(named("CreationEditionRow") == null and named("CreationMode_common") == null, "Les éditions intermédiaires sont absentes du parcours normal")
 	check(app.model.meta.champDatabase.playerCount == 5878 and app.model.meta.champCatalogue.filter(func(c: Dictionary): return c.playable).size() == 114, "5 878 joueurs et 114 clubs jouables")
+	await check_creation_geometry()
 	for code in ["FR", "GB", "JP"]:
 		var country := named("CreationCountry_" + code) as Button
 		check(country != null and country.icon != null, "Drapeau visible · " + code)

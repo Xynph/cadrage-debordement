@@ -41,7 +41,7 @@ static func club_name(club: Dictionary) -> String: return Base.club_name(club)
 static func club_abbr(club: Dictionary) -> String: return Base.club_abbr(club)
 static func crest(club: Dictionary, width: int = 56) -> Control: return Base.crest(club, width)
 static func portrait(index: int, width: int = 60, player: Dictionary = {}) -> TextureRect: return Base.portrait(index, width, player)
-static func picture(slug: String, kind: String = "stadium", dark: bool = true, external_path: String = "") -> Control: return Base.picture(slug, kind, dark, external_path)
+static func club_picture(club: Dictionary, kind: String = "stadium", dark: bool = true) -> Control: return Base.club_picture(club, kind, dark)
 static func spacer() -> Control: return Base.spacer()
 static func scroll(parent: Node) -> VBoxContainer: return Base.scroll(parent)
 
@@ -207,11 +207,7 @@ static func gauge(parent: Node, caption: String, value: float, maximum: float = 
 	block.add_child(bar)
 
 static func photo_note(parent: Node, club: Dictionary, title: String, subtitle: String, kind: String = "stadium", height: int = 130) -> void:
-	var c := identity(club)
-	var supplied: Dictionary = c.get("photos", {}).get(kind, {})
-	var photo := picture(str(c.get("slug", "")), kind, true, str(supplied.get("path", "")))
-	if photo.get_meta("photo_from_pack", false):
-		photo.tooltip_text = str(supplied.get("credit", ""))
+	var photo := club_picture(club, kind)
 	photo.custom_minimum_size.y = height
 	parent.add_child(photo)
 	var content: VBoxContainer = photo.get_meta("content")

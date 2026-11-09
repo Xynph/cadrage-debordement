@@ -8,38 +8,10 @@ const CREATION_SELECTION := "creation_selection"
 
 static func _cover(club: Dictionary) -> Control:
 	var identity := G.identity(club)
-	var slug := str(identity.get("slug", "perpignan"))
-	var supplied: Dictionary = identity.get("photos", {}).get("stadium", {})
-	var stadium_path := str(supplied.get("path", ""))
-	if not stadium_path.is_empty():
-		var picture := G.picture(slug, "stadium", true, stadium_path)
-		if picture.get_meta("has_photo", false):
-			if picture.get_meta("photo_from_pack", false): picture.tooltip_text = str(supplied.get("credit", ""))
-			return picture
-		picture.free()
-	if ResourceLoader.exists("res://assets/club-atlas/%s-stadium.webp" % slug):
-		return G.picture(slug)
+	if not club.is_empty(): return G.club_picture(club)
 	var cover := ColorRect.new()
 	cover.color = Color(identity.get("color", "#303c42")).darkened(.72)
-	var pacific := slug.begins_with("srp-")
-	var japan := slug.begins_with("jlo-")
-	var nationale := slug.begins_with("nat-")
-	var champ: bool = slug.begins_with("champ-") or identity.get("country") == "GB"
-	if pacific or japan or nationale or champ:
-		var country := str(identity.get("country", "")).to_lower()
-		var region := str(identity.get("region", ""))
-		var art := "res://art/pacific/covers/%s.svg" % country if pacific else (("res://art/nationale/covers/%s.svg" if nationale else "res://art/japan/covers/%s.svg") % region)
-		if champ: art = "res://art/champ/covers/champ-england.svg"
-		if ResourceLoader.exists(art):
-			cover.clip_contents = true
-			var backdrop := TextureRect.new()
-			backdrop.texture = load(art) as Texture2D
-			backdrop.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			backdrop.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-			backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			cover.add_child(backdrop)
-	var inset := G.margin(22 if pacific or japan or nationale or champ else 12)
+	var inset := G.margin(12)
 	inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	cover.add_child(inset)
 	var content := G.v(8)
@@ -241,85 +213,101 @@ static func _creation_crest(club: Dictionary, width: int, use_mockup: bool) -> C
 		return crest
 	return G.crest(club, width)
 
-static func _club_preview(app: Control, parent: VBoxContainer, club: Dictionary, championship: String, photo_height: float, base_identity: bool) -> void:
-	var illustration := base_identity and int(club.id) == 0
+static func _club_preview(app: Control, parent: VBoxContainer, club: Dictionary, championship: String, base_identity: bool) -> void:
+	var toulouse := base_identity and int(club.id) == 0
+	var compact := app.get_window().size.y < 850
 	var history: Dictionary = club.get("history", {})
-	var identity := C.h(30)
-	parent.add_child(identity)
-	identity.add_child(_creation_crest(club, C.px(194), base_identity))
-	var copy := C.v(3)
+	var results: Array = history.get("results", [])
+	var hero := C.h(16)
+	parent.add_child(hero)
+	var identity := C.h(12)
+	hero.add_child(C.fill(identity, false, .53))
+	var crest := _creation_crest(club, C.px(105), base_identity)
+	crest.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	identity.add_child(crest)
+	var copy := C.v(2)
 	copy.alignment = BoxContainer.ALIGNMENT_CENTER
 	G.fill(copy)
 	identity.add_child(copy)
-	var title_text := "Toulouse\nCapitole XV" if illustration else G.club_name(club)
-	var title := C.wrap(title_text, 62, C.IVORY, true, 800)
+	var title_text := "Toulouse\nCapitole XV" if toulouse else G.club_name(club)
+	var title := C.wrap(title_text, 42, C.IVORY, true, 800)
 	title.name = "CreationClubTitle"
 	title.uppercase = true
-	title.add_theme_constant_override("line_spacing", -C.px(8))
+	title.add_theme_constant_override("line_spacing", -C.px(5))
 	copy.add_child(title)
-	copy.add_child(C.wrap(_territory(club), 28, C.IVORY))
+	copy.add_child(C.wrap(_territory(club), 20, C.IVORY))
 	if history.has("founded"):
-		var founded := C.label("Fondé en %d" % int(history.founded), 22, Editorial.RAIL_GOLD, true, 700)
+		var founded := C.label("Fondé en %d" % int(history.founded), 19, Editorial.RAIL_GOLD, true, 700)
 		founded.name = "CreationClubFounded"
 		copy.add_child(founded)
-	var underline := ColorRect.new()
-	underline.color = Editorial.RAIL_GOLD
-	underline.custom_minimum_size = Vector2(C.px(106), 2)
-	underline.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	copy.add_child(underline)
-	var photo: Control = C.photo("maquette-onglets-stadium", Vector2.ZERO, true, .5) if illustration else _cover(club)
+	var photo := G.club_picture(club, "stadium", false)
 	photo.name = "CreationStadium"
-	photo.custom_minimum_size.y = photo_height
+	photo.custom_minimum_size.y = C.px(118 if compact else 154)
 	photo.mouse_filter = Control.MOUSE_FILTER_PASS
+	photo.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var venue := str(club.get("stadium", ""))
-	if illustration: photo.tooltip_text = "%s · Illustration de stade" % venue
-	elif photo.tooltip_text.is_empty(): photo.tooltip_text = venue
-	elif not venue.is_empty(): photo.tooltip_text = "%s · %s" % [venue, photo.tooltip_text]
-	parent.add_child(photo)
+	if photo.tooltip_text.is_empty(): photo.tooltip_text = venue
+	elif not venue.is_empty(): photo.tooltip_text = "%s\n%s" % [venue, photo.tooltip_text]
+	var stadium := C.v(2)
+	hero.add_child(C.fill(stadium, false, .47))
+	stadium.add_child(photo)
+	if not venue.is_empty(): stadium.add_child(C.wrap(venue, 16, C.MUTED))
 	var roster: Dictionary = club.get("startingRoster", {})
+	if not compact: parent.add_child(C.rule())
+	var metrics := C.h(12)
+	parent.add_child(metrics)
 	if not roster.is_empty():
-		var metrics := C.h(16)
-		metrics.name = "CreationRosterSummary"
-		parent.add_child(metrics)
-		var note := C.label(_rating(roster), 42, C.IVORY, true, 800)
-		metrics.add_child(note)
-		var caption := C.label("Note moyenne", 22, C.IVORY, false)
-		caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		metrics.add_child(caption)
+		var summary := _dossier_fact(metrics, "Note moyenne", _rating(roster), compact)
+		summary.name = "CreationRosterSummary"
+	_dossier_fact(metrics, "Objectif du conseil", str(club.get("goal", "Développer le projet sportif")), compact)
+	if club.has("cashMillions"):
+		_dossier_fact(metrics, "Trésorerie de départ", G.euros(roundi(float(club.cashMillions) * 1_000_000)), compact)
 	parent.add_child(C.rule())
-	parent.add_child(C.label("LE CLUB", 22, Editorial.RAIL_GOLD, true, 700))
+	parent.add_child(C.label("LE CLUB", 19, Editorial.RAIL_GOLD, true, 700))
 	var city := str(club.get("city", "")).strip_edges()
 	var introduction := str(history.get("bio", ""))
-	var documented := not introduction.is_empty()
 	if introduction.is_empty():
 		introduction = "%s débute la saison en %s." % [G.club_name(club), championship]
 		if not city.is_empty() and not venue.is_empty():
 			introduction += " À %s, ses matchs à domicile se jouent à « %s »." % [city, venue]
-	var presentation := C.wrap(introduction, 21, C.IVORY)
+	var presentation := C.wrap(introduction, 19, C.IVORY)
 	presentation.name = "CreationClubPresentation"
 	parent.add_child(presentation)
-	if documented and not venue.is_empty(): parent.add_child(C.wrap("Domicile · " + venue, 18, C.MUTED))
-	parent.add_child(C.rule())
+	if not compact: parent.add_child(C.rule())
 	if not str(roster.get("strengths", "")).is_empty():
 		var comparison := C.h(18)
+		comparison.name = "CreationComparison"
 		parent.add_child(comparison)
 		var strength: Dictionary = roster.strengthDetail
 		var positive: bool = strength.divisionAverage == null or float(strength.average) >= float(strength.divisionAverage)
-		_dossier_position(comparison, "Atout actuel" if positive else "Poste le plus compétitif", str(roster.strengths), strength)
+		_dossier_position(comparison, "Atout actuel" if positive else "Poste le plus compétitif", str(roster.strengths), strength, compact)
 		if not str(roster.get("needs", "")).is_empty():
 			Editorial.divider(comparison)
 			var weakness: Dictionary = roster.weaknessDetail
 			var negative: bool = weakness.divisionAverage == null or float(weakness.average) < float(weakness.divisionAverage)
-			_dossier_position(comparison, "Point à renforcer" if negative else "Marge de progression", str(roster.needs), weakness)
+			_dossier_position(comparison, "Point à renforcer" if negative else "Marge de progression", str(roster.needs), weakness, compact)
 		parent.add_child(C.rule())
-	var results: Array = history.get("results", [])
 	if not results.is_empty():
-		parent.add_child(C.label("PALMARÈS", 22, Editorial.RAIL_GOLD, true, 700))
+		parent.add_child(C.label("PALMARÈS", 19, Editorial.RAIL_GOLD, true, 700))
+		var honours := GridContainer.new()
+		honours.name = "CreationHonours"
+		honours.columns = 3 if compact and results.size() > 4 else 2
+		honours.add_theme_constant_override("h_separation", C.px(16))
+		honours.add_theme_constant_override("v_separation", C.px(4))
+		parent.add_child(honours)
 		for result: Dictionary in results:
-			_dossier_line(parent, _history_competition(app, str(result.competition)), _history_result(result))
-	_dossier_line(parent, "Objectif du conseil", str(club.get("goal", "Développer le projet sportif")), true)
-	if club.has("cashMillions"):
-		_dossier_line(parent, "Trésorerie de départ", G.euros(roundi(float(club.cashMillions) * 1_000_000)))
+			_dossier_fact(honours, _history_competition(app, str(result.competition)), _history_result(result), compact)
+	if app.get_window().size.y >= 1200:
+		var spare := Control.new()
+		spare.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		parent.add_child(C.fill(spare, true))
+		var city_picture := G.club_picture(club, "city", false)
+		city_picture.name = "CreationCity"
+		city_picture.custom_minimum_size = Vector2.ZERO
+		city_picture.hide()
+		spare.add_child(city_picture)
+		city_picture.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		spare.resized.connect(func(): city_picture.visible = spare.size.y >= spare.size.x * .18)
 
 static func _history_competition(app: Control, id: String) -> String:
 	var historical := {
@@ -348,34 +336,38 @@ static func _history_result(result: Dictionary) -> String:
 	if rank > 0: finish = "%s place" % ("1re" if rank == 1 else "%de" % rank)
 	return finish + (" · %d" % year if year > 0 else "")
 
-static func _dossier_position(parent: Container, heading: String, position: String, detail: Dictionary) -> void:
-	var column := C.v(4)
+static func _dossier_position(parent: Container, heading: String, position: String, detail: Dictionary, compact: bool) -> void:
+	var column := C.v(2)
 	parent.add_child(C.fill(column))
-	column.add_child(C.wrap(heading, 21, C.IVORY))
-	column.add_child(C.wrap(position, 25, Editorial.RAIL_GOLD, true, 700))
+	if compact:
+		column.add_child(C.wrap(heading + " · " + position, 22, Editorial.RAIL_GOLD, true, 700))
+	else:
+		column.add_child(C.wrap(heading, 17, C.IVORY))
+		column.add_child(C.wrap(position, 23, Editorial.RAIL_GOLD, true, 700))
 	var count := int(detail.count)
-	column.add_child(C.wrap("%s de moyenne · Meilleure note %s" % [_rating(detail), _rating({"average":detail.best})], 20, C.IVORY))
+	column.add_child(C.wrap("Moyenne %s · Meilleure note %s" % [_rating(detail), _rating({"average":detail.best})], 17, C.IVORY, compact))
 	if detail.get("divisionAverage") != null:
 		var benchmark := _rating({"average":detail.divisionAverage})
 		var difference := roundi((float(detail.average) - float(detail.divisionAverage)) * 10.0)
-		var comparison := "Dans la moyenne du poste chez les adversaires (%s)." % benchmark
-		if difference != 0:
-			var gap := String.num(absf(difference / 10.0), 1).replace(".", ",")
-			comparison = "%s %s %s de la moyenne du poste chez les adversaires (%s)." % [gap, "point" if absi(difference) < 20 else "points", "au-dessus" if difference > 0 else "en dessous", benchmark]
-		column.add_child(C.wrap(comparison, 20, C.MUTED))
+		var sign := "+" if difference > 0 else ("−" if difference < 0 else "")
+		var gap := sign + String.num(absf(difference / 10.0), 1).replace(".", ",")
+		column.add_child(C.wrap("Adversaires du même poste %s · Écart %s pt" % [benchmark, gap], 17, C.MUTED, compact))
 		var at_level := int(detail.atLevel)
-		column.add_child(C.wrap("%d sur %d %s ce niveau." % [at_level, count, "atteint" if at_level == 1 else "atteignent"], 20, C.MUTED))
+		column.add_child(C.wrap("%d sur %d %s ce niveau." % [at_level, count, "atteint" if at_level == 1 else "atteignent"], 17, C.MUTED, compact))
 	else:
-		column.add_child(C.wrap("%d %s à ce poste." % [count, "joueur" if count == 1 else "joueurs"], 20, C.MUTED))
+		column.add_child(C.wrap("%d %s à ce poste." % [count, "joueur" if count == 1 else "joueurs"], 17, C.MUTED))
 
-static func _dossier_line(parent: Container, caption: String, detail: String, accent: bool = false) -> void:
-	var line := C.h(16)
-	parent.add_child(line)
-	var title := C.wrap(caption, 23, C.IVORY)
-	line.add_child(C.fill(title, false, .41))
-	var value := C.wrap(detail, 24, Editorial.RAIL_GOLD if accent else C.IVORY, true, 700)
-	line.add_child(C.fill(value, false, .59))
-	parent.add_child(C.rule())
+static func _dossier_fact(parent: Container, caption: String, detail: String, compact: bool = false) -> VBoxContainer:
+	var fact := C.v(0)
+	parent.add_child(C.fill(fact))
+	fact.add_child(C.wrap(caption, 17, C.MUTED, compact))
+	fact.add_child(C.wrap(detail, 23, C.IVORY, true, 700))
+	return fact
+
+static func _fit_creation_grid(view: ScrollContainer, grid: GridContainer, rows: int) -> void:
+	var gaps := grid.get_theme_constant("v_separation") * (rows - 1)
+	var height := clampi(floori((view.size.y - gaps - 1) / rows), 0, C.px(144))
+	for card: Button in grid.get_children(): card.custom_minimum_size.y = height
 
 static func _connected_country(tabs: HBoxContainer, button: Button, active: bool, last: bool) -> void:
 	var group := C.v(0)
@@ -427,7 +419,7 @@ static func creation(app: Control) -> Control:
 	var screen := app.get_window().size
 	C.configure(screen.y, screen.x)
 	var modern: bool = app.pack_manager.creation_mode == "auto"
-	var page := G.v(10 if modern else 16)
+	var page := C.v(10) if modern else G.v(16)
 	page.name="CarnetCreation"
 	G.fill(page,true)
 	var top := G.h()
@@ -489,16 +481,18 @@ static func creation(app: Control) -> Control:
 	var is_champ := champ and division == "champ"
 	var dossier: VBoxContainer
 	if modern:
-		dossier = G.panel(row, .34)
+		var dossier_width := .38 if screen.y < 850 else .34
+		dossier = G.panel(row, dossier_width)
+		dossier.name = "CreationDossier"
+		dossier.add_theme_constant_override("separation", C.px(7))
 		Editorial.surface(dossier.get_parent(), Color("142020"), Editorial.LINE, 14)
-		var preview := G.scroll(dossier)
-		preview.get_parent().name = "CreationPreviewScroll"
-		preview.add_theme_constant_override("separation", C.px(6))
+		var preview := C.v(3 if screen.y < 850 else 5)
+		dossier.add_child(C.fill(preview, true))
 		var photo_height := clampf(screen.y * .181, 124, 262)
 		if selected.is_empty(): _competition_summary(app, preview, division, division_clubs.size(), photo_height)
 		else:
 			var championship := str(_competition_identity(app, division).get("name", Club.competition_name(division)))
-			_club_preview(app, preview, selected, championship, clampf(screen.y * .126, 100, 181), preferred == "base")
+			_club_preview(app, preview, selected, championship, preferred == "base")
 	else:
 		var photo := _cover(selected)
 		G.fill(photo, true, 0.95)
@@ -524,7 +518,7 @@ static func creation(app: Control) -> Control:
 		over.add_child(G.wrap(selected.get("stadium", ""), 14, G.WHITE))
 		var goal := str(selected.get("goal", ""))
 		if not goal.is_empty(): over.add_child(G.label("OBJECTIF  /  " + goal.to_upper(), 14, G.WHITE))
-	var list := G.panel(row, .66 if modern else 1.2)
+	var list := G.panel(row, (.62 if screen.y < 850 else .66) if modern else 1.2)
 	if modern:
 		Editorial.surface(list.get_parent(), Color.TRANSPARENT, Color.TRANSPARENT, 0)
 	else:
@@ -675,11 +669,12 @@ static func creation(app: Control) -> Control:
 	if not modern and not is_srp and not is_japan and not is_nationale and not is_champ:
 		bounds = Club._paged(app,list,"CreationPagination",division_clubs.size(),8,"creation_"+mode+"_"+division)
 	var items := G.scroll(list)
-	items.get_parent().name = "CreationClubsScroll"
+	var list_scroll := items.get_parent() as ScrollContainer
+	list_scroll.name = "CreationClubsScroll"
 	var grid:=GridContainer.new()
 	grid.name = "CreationClubGrid"
 	if modern:
-		grid.columns = 3 if app.get_window().size.x >= 1660 else 2
+		grid.columns = 3
 	else:
 		grid.columns = 3 if is_nationale or is_champ or (is_japan and app.get_viewport_rect().size.x >= 1660) else 2
 	grid.add_theme_constant_override("h_separation", C.px(9) if modern else 8)
@@ -687,7 +682,6 @@ static func creation(app: Control) -> Control:
 	G.fill(grid)
 	items.add_child(grid)
 	var grid_rows := ceili(float(division_clubs.size()) / grid.columns)
-	var modern_tile_height := clampi(floori((screen.y * .48 - (15 if screen.x >= 1480 else 36)) / grid_rows), 60, 144)
 	for club in division_clubs.slice(bounds.x,bounds.y):
 		var b := G.button("", func(): _select_club(app, int(club.id), modern))
 		b.custom_minimum_size.y = clampf(app.get_viewport_rect().size.y * 0.045, 52.0, 66.0) if is_srp else (44.0 if is_japan or is_nationale or is_champ else 52.0)
@@ -695,7 +689,7 @@ static func creation(app: Control) -> Control:
 		b.tooltip_text=G.club_name(club)+" · "+_territory(club)
 		G.fill(b)
 		if modern:
-			Editorial.action(b, false, club.get("id") == selected.get("id"), modern_tile_height, true)
+			Editorial.action(b, false, club.get("id") == selected.get("id"), C.px(106), true)
 			if club.get("id") == selected.get("id"):
 				for state in ["normal", "hover", "pressed"]:
 					var style := b.get_theme_stylebox(state) as StyleBoxFlat
@@ -703,11 +697,11 @@ static func creation(app: Control) -> Control:
 					style.set_border_width_all(maxi(2, C.px(3)))
 					style.bg_color = Color("302d22") if state == "normal" else Color("403724")
 		elif club.get("id") == selected.get("id"): G.selected(b,Color(club.color))
-		var inset := G.margin(8)
+		var inset := G.margin(C.px(8) if modern else 8)
 		inset.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		b.add_child(inset)
-		var line := G.h(16)
+		var line := C.h(14) if modern else G.h(16)
 		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		inset.add_child(line)
 		line.add_child(_creation_crest(club, clampi(C.px(84), 30, 84) if modern else 32, modern and preferred == "base"))
@@ -717,6 +711,8 @@ static func creation(app: Control) -> Control:
 		if modern:
 			names.alignment = BoxContainer.ALIGNMENT_CENTER
 			var name := C.wrap(G.club_name(club), 30, C.IVORY, true, 700)
+			name.max_lines_visible = 2
+			name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			names.add_child(name)
 			var roster: Dictionary = club.get("startingRoster", {})
 			var subtitle := C.label(_territory(club), 22, C.IVORY, false)
@@ -736,6 +732,7 @@ static func creation(app: Control) -> Control:
 			names.add_child(G.cell(_territory(club),60,G.MUTED,true))
 			line.add_child(G.label("→", 24, G.GOLD))
 		grid.add_child(b)
+	if modern: list_scroll.resized.connect(_fit_creation_grid.bind(list_scroll, grid, grid_rows))
 	var database: Dictionary = app.pack_manager.database("creation")
 	var world_info := "%s joueurs · %d clubs jouables" % [G.n(database.get("playerCount", 0)), playable.size()]
 	if not modern: list.add_child(G.wrap(world_info, 12))

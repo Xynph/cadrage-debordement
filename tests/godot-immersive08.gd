@@ -981,7 +981,9 @@ func run() -> void:
 			check(tile.get_global_rect().end.x <= app.size.x + 1, "Tuile dans la largeur : " + id)
 			check(tile.size.x >= 300, "Largeur utile en 1440p : " + id)
 			check(tile.get_global_rect().end.y <= app.body_scroll.get_global_rect().end.y + 1, "Tuile entièrement visible en 1440p : " + id)
-		check(app.find_child("Art_office_hero", true, false) != null, "Image originale présente dans le Bureau réel")
+		var city := app.find_child("OfficeCityPreview", true, false)
+		var stadium := app.find_child("OfficeStadiumPreview", true, false)
+		check(city != null and city.get_meta("photo_kind", "") == "generated" and stadium != null and stadium.get_meta("photo_kind", "") == "generated", "Le Bureau de base affiche les illustrations de ville et de stade")
 		reference_rects({"OfficeFixture":Rect2(280,220,1360,418), "OfficeDecisions":Rect2(1656,220,872,418),
 			"OfficeGroup":Rect2(280,654,422,448), "OfficeStandings":Rect2(718,654,684,448),
 			"OfficeJournal":Rect2(1418,654,548,448), "OfficeRecruitment":Rect2(1982,654,546,448),

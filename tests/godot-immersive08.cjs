@@ -26,6 +26,19 @@ for(const a of [...manifest.assets,...generated]){
 }
 assert.equal(sources.size,13,'Les deux nouvelles maquettes complètent les onze références précédentes');
 console.log(`Illustrations immersive08 : ${manifest.assets.length+generated.length} PNG vérifiés, treize références, empreintes et provenance.`);
+const territory=path.join(root,'native/godot/art/territories');
+const territoryAssets=JSON.parse(fs.readFileSync(path.join(territory,'provenance.json'),'utf8')).assets;
+const territorySlots=[];
+for(const asset of territoryAssets){
+ assert.ok(asset.prompt.length>100,'Prompt de '+asset.file);
+ const data=fs.readFileSync(path.join(territory,asset.file));
+ assert.equal(crypto.createHash('sha256').update(data).digest('hex'),asset.sha256,'Empreinte de '+asset.file);
+ if(asset.clubs){
+  for(const id of asset.clubs)territorySlots.push(id+'-city',id+'-stadium');
+ }else territorySlots.push(path.basename(asset.file,'.png'));
+}
+const expectedSlots=Array.from({length:116},(_,id)=>[id+'-city',id+'-stadium']).flat();
+assert.deepEqual(territorySlots.sort(),expectedSlots.sort(),'Une illustration de ville et de stade pour les 116 clubs');
 if(process.argv.includes('--art-only'))process.exit(0);
 const {spawnSync}=require('node:child_process'),os=require('node:os');
 const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;

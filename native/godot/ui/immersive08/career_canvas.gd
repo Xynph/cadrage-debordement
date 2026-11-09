@@ -26,15 +26,9 @@ static func build(app: Control, canvas: Control) -> void:
 static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 	var hero := D.panel(canvas,Rect2(0,0,2248,227),"","","","CareerHero")
 	hero.clip_contents = true
-	var identity := G.identity(app.model.club)
-	var city_art := str(identity.get("cityImage",""))
-	var has_archive := not city_art.is_empty() and ResourceLoader.exists("res://"+city_art)
-	if has_archive:
-		var picture := G.picture(str(identity.get("slug","")),"city",false)
-		hero.add_child(picture)
-		D.place(picture,Rect2(980,1,1267,225))
-	else:
-		D.photo(hero,"club-forest",Rect2(980,1,1267,225))
+	var picture := G.club_picture(app.model.club, "city", false)
+	hero.add_child(picture)
+	D.place(picture,Rect2(980,1,1267,225))
 	U.art_fade(hero,Rect2(980,1,1267,225))
 	var crest := G.crest(app.model.club,C.px(124))
 	hero.add_child(crest)
@@ -46,8 +40,11 @@ static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 	D.text(hero,211,178,G.club_name(app.model.club)+"  ·  "+P.league_name(app.model),26,C.IVORY,500,1248)
 	var since: Variant = data.get("currentFrom",app.model.meta.get("season",1))
 	D.chip(hero,Rect2(211,190,242,27),"MANDAT DEPUIS S"+G.n(since),C.GOLD)
-	if has_archive:
-		D.chip(hero,Rect2(2015,17,211,31),"PHOTO D’ARCHIVE",C.GOLD)
+	var source := str({"pack":"PHOTO DU PACK", "archive":"PHOTO D’ARCHIVE"}.get(picture.get_meta("photo_kind"), "ILLUSTRATION IA"))
+	var credit := D.chip(hero,Rect2(2015,17,211,31),source,C.GOLD)
+	credit.mouse_filter = Control.MOUSE_FILTER_PASS
+	credit.tooltip_text = picture.tooltip_text
+	credit.accessibility_name = credit.tooltip_text.replace("\n", " · ")
 
 	var metrics := [
 		["Places occupées","people","%s / %s" % [G.n(data.get("occupied","—")),G.n(data.get("capacity","—"))],C.IVORY],

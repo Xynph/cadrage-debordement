@@ -33,11 +33,17 @@ L’activation ou le retrait ne change ni les identifiants, ni la progression,
 ni les résultats. Une photo altérée rend le pack indisponible et la carrière
 reste chargeable dans sa présentation de base.
 
-Club → Territoire affiche les crédits et les adresses au survol du crédit ;
-les deux aperçus du Bureau reprennent les photos disponibles. L’atlas intégré
-des 30 clubs français reste le repli. Hors atlas, la fiche indique qu’aucune
-photo d’archive n’est disponible. Les dates d’une photo et du calendrier de
-stade peuvent différer ; les manifestes privés gardent le détail.
+Le jeu de base utilise des illustrations photoréalistes générées pour les stades
+et les villes. Leur [provenance](../native/godot/art/territories/provenance.json)
+donne les prompts, les empreintes et l’ordre des clubs dans les planches.
+
+Les photos du pack actif prennent la priorité à la création, dans Club →
+Territoire et dans les aperçus du Bureau. Club → Territoire affiche les crédits,
+les pages sources et les licences. Le ZIP privé Rugby Réel complet fournit les
+deux photos pour chacun des 116 clubs. L’ancienne version qui omettait les
+30 premiers clubs retrouve leurs photographies dans l’atlas d’archives intégré
+uniquement quand Rugby Réel est actif. Une vue d’archive peut précéder des travaux
+ou le déménagement d’un club. Les manifestes privés en gardent le détail.
 
 `tests/world-venue-media.cjs` couvre la projection, le retrait, la reprise,
 les refus et l’altération d’une photo. Les contrôles Windows utilisent un
