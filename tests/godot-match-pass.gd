@@ -44,6 +44,36 @@ func check_contract(scene: Dictionary) -> void:
 	check(Pass.plan(duplicate).is_empty(), "Un identifiant en double est ambigu")
 
 
+func check_live_contract(demo: Dictionary) -> void:
+	for team in [0, 1]:
+		var scene := demo.duplicate(true)
+		var direction := 1 if team == 0 else -1
+		scene.kind = "carry"
+		scene.possession = team
+		scene.players[0].side = team
+		scene.players[1].side = team
+		scene.players[1].featured = true
+		scene.players[2].side = 1 - team
+		scene.pass.from = {"x": 50 + direction * 2, "y": 34}
+		scene.pass["catch"] = {"x": 50, "y": 39}
+		var plan := Pass.plan(scene)
+		check(plan.get("passer") == "porteur" and plan.get("receiver") == "soutien"
+			and plan.get("origin") == Vector2(50 + direction * 2, 34)
+			and plan.get("catch_point") == Vector2(50, 39), "La progression au large transporte deux points et deux rôles")
+		var invalid := scene.duplicate(true)
+		invalid.players[1].featured = false
+		check(Pass.plan(invalid).is_empty(), "La passe vise le porteur canonique")
+		invalid = scene.duplicate(true)
+		invalid.pass["catch"].x = 50 + direction * 3
+		check(Pass.plan(invalid).is_empty(), "Le repère absolu refuse une passe vers l’avant pour chaque équipe")
+		invalid = scene.duplicate(true)
+		invalid.pass["catch"].y = INF
+		check(Pass.plan(invalid).is_empty(), "Les coordonnées doivent rester finies et sur le terrain")
+		invalid = scene.duplicate(true)
+		invalid.erase("pass")
+		check(Pass.plan(invalid).is_empty(), "Un portage sans paire explicite conserve le rendu normal")
+
+
 func draw_pass(view: NativeMatchView, progress: float, pass_plan: Dictionary) -> Dictionary:
 	var sender: Dictionary = view._actors[pass_plan.passer]
 	var receiver: Dictionary = view._actors[pass_plan.receiver]
@@ -60,6 +90,7 @@ func draw_pass(view: NativeMatchView, progress: float, pass_plan: Dictionary) ->
 func run() -> void:
 	var scene := fixture()
 	check_contract(scene)
+	check_live_contract(scene)
 	var pass_plan := Pass.plan(scene)
 	if pass_plan.is_empty():
 		quit(1)
