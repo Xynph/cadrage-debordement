@@ -8,10 +8,12 @@ function saveUtf8Bytes(text){let bytes=0;for(let i=0;i<text.length;i++){const c=
 let pendingSave=null,saveReadToken=0,lastSaveError=false,validatingStartup=true,loadedSaveText=null,loadSaveFailure='';
 function saveError(message){throw new Error(message)}
 function saveCheck(ok,message='Le fichier contient des données de carrière incohérentes.'){if(!ok)saveError(message)}
-function saveObject(v){return v!==null&&typeof v==='object'&&!Array.isArray(v)}
-function saveArray(v,max=1000){return Array.isArray(v)&&v.length<=max}
-function saveNumber(v,min=-1e12,max=1e12){return typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max}
-function saveInt(v,min=0,max=1e9){return Number.isInteger(v)&&v>=min&&v<=max}
+// Stable intrinsic references avoid repeated global lookups in the VM hot path.
+const nativeSaveFinite=Number.isFinite,nativeSaveInteger=Number.isInteger,nativeSaveIsArray=Array.isArray;
+function saveObject(v){return v!==null&&typeof v==='object'&&!nativeSaveIsArray(v)}
+function saveArray(v,max=1000){return nativeSaveIsArray(v)&&v.length<=max}
+function saveNumber(v,min=-1e12,max=1e12){return typeof v==='number'&&nativeSaveFinite(v)&&v>=min&&v<=max}
+function saveInt(v,min=0,max=1e9){return nativeSaveInteger(v)&&v>=min&&v<=max}
 function saveId(v){return typeof v==='string'&&/^[A-Za-z0-9:_-]{1,180}$/.test(v)}
 function worldCareerActive(s){return typeof CDWorldCareer!=='undefined'&&typeof CDWorldCareer.active==='function'&&CDWorldCareer.active(s)===true;}
 function worldSaveLimits(s){return worldCareerActive(s)&&typeof CDWorldCareer.edition==="function"?CDWorldCareer.edition(s)?.limits:null;}

@@ -6,7 +6,9 @@ const LEGACY_TREE="function safeTree(root){const maxNodes=commonDatabaseActive(r
 const LEGACY_CHECKSUM="function saveChecksum(state){const text=JSON.stringify(state);let h=2166136261;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(16).padStart(8,'0')}";
 const lines=fs.readFileSync(path.join(__dirname,'../dist/saves.js'),'utf8').split(/\r?\n/);
 const currentTree=lines.find(line=>line.startsWith('function safeTree(')),currentChecksum=lines.find(line=>line.startsWith('function saveChecksum('));
-const helpers=['saveError','saveCheck','saveObject','saveNumber'].map(name=>lines.find(line=>line.startsWith('function '+name+'('))).join('\n');
+// Standalone helper compilation includes the same stable intrinsic bindings as production.
+const numericIntrinsics=lines.find(line=>line.startsWith('const nativeSaveFinite='));assert.equal(typeof numericIntrinsics,'string');
+const helpers=[numericIntrinsics,...['saveError','saveCheck','saveObject','saveNumber'].map(name=>lines.find(line=>line.startsWith('function '+name+'(')))].join('\n');
 function pair(){return [[LEGACY_TREE,LEGACY_CHECKSUM],[currentTree,currentChecksum]].map(source=>{const ctx=vm.createContext({JSON,Math:Object.create(Math)});vm.runInContext(helpers+"\nfunction commonDatabaseActive(root){return root?.common===true}\nconst CDFranceCompetition={active:root=>root?.france===true};\n"+source.join('\n'),ctx);return ctx;});}
 function result(ctx,expression,value){ctx.candidate=value;try{return {value:vm.runInContext(expression,ctx)};}catch(error){return {error:error.name+':'+error.message};}}
 test('Sauvegardes : 205 checksums strictement identiques à la fonction historique, sans mutation',()=>{
