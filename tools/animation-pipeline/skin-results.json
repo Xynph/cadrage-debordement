@@ -1,0 +1,703 @@
+{
+  "units": "raw GLB world units, not gameplay metres",
+  "source_points": 3981,
+  "candidate_points": 4031,
+  "mapping": "fixed rest skinned position + material name + semantic joint names/weights",
+  "mapping_epsilon": 1e-05,
+  "weight_epsilon": 1e-05,
+  "unmatched": 0,
+  "ambiguous_equivalent_duplicates": 3969,
+  "max_rest_distance": 4.1673104683615935e-06,
+  "max_weight_difference": 1.1920928955078125e-07,
+  "threshold": 0.0001,
+  "samples": [
+    {
+      "clip": "HumanArmature|Man_Clapping",
+      "t": 0.0,
+      "max": 4.8363416111006775e-06,
+      "thumb_max": 2.7570297122702685e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Clapping",
+      "t": 0.2083333283662796,
+      "max": 1.2106325976683947e-05,
+      "thumb_max": 1.039888223821829e-05
+    },
+    {
+      "clip": "HumanArmature|Man_Clapping",
+      "t": 0.4166666567325592,
+      "max": 1.1062956285794195e-05,
+      "thumb_max": 9.361679356874789e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Clapping",
+      "t": 0.6249999850988388,
+      "max": 1.0734890541523498e-05,
+      "thumb_max": 9.74653041303255e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Clapping",
+      "t": 0.8333333134651184,
+      "max": 1.1255735053213436e-05,
+      "thumb_max": 9.565367788205428e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Clapping",
+      "t": 1.041666641831398,
+      "max": 1.1709995791539202e-05,
+      "thumb_max": 1.043223843217796e-05
+    },
+    {
+      "clip": "HumanArmature|Man_Clapping",
+      "t": 1.2499999701976776,
+      "max": 1.0236959492196541e-05,
+      "thumb_max": 9.553266394313384e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Clapping",
+      "t": 1.4583332985639572,
+      "max": 1.1590506916935925e-05,
+      "thumb_max": 1.0475921174053141e-05
+    },
+    {
+      "clip": "HumanArmature|Man_Clapping",
+      "t": 1.6665666269302368,
+      "max": 4.836275049765842e-06,
+      "thumb_max": 2.752787298328078e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Clapping",
+      "t": 1.6666666269302368,
+      "max": 4.836341611106826e-06,
+      "thumb_max": 2.757029714108283e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Death",
+      "t": 0.0,
+      "max": 4.708881197948343e-06,
+      "thumb_max": 3.371405292700584e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Death",
+      "t": 0.2604166567325592,
+      "max": 4.598899502740309e-06,
+      "thumb_max": 3.2969491940963823e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Death",
+      "t": 0.5208333134651184,
+      "max": 5.234991047152398e-06,
+      "thumb_max": 2.294185889014495e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Death",
+      "t": 0.7812499701976776,
+      "max": 5.4194128975732616e-06,
+      "thumb_max": 3.2374923818401187e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Death",
+      "t": 1.0416666269302368,
+      "max": 6.550191969540531e-06,
+      "thumb_max": 5.262535996735502e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Death",
+      "t": 1.302083283662796,
+      "max": 6.478081667418041e-06,
+      "thumb_max": 5.633831140628142e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Death",
+      "t": 1.5624999403953552,
+      "max": 6.315357877922311e-06,
+      "thumb_max": 5.383823664835635e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Death",
+      "t": 1.8229165971279144,
+      "max": 6.556365933397488e-06,
+      "thumb_max": 5.742763731476483e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Death",
+      "t": 2.0832332538604734,
+      "max": 6.04641414777685e-06,
+      "thumb_max": 5.425363010610568e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Death",
+      "t": 2.0833332538604736,
+      "max": 6.046260090271047e-06,
+      "thumb_max": 5.425674559046375e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Idle",
+      "t": 0.0,
+      "max": 4.16490047080892e-06,
+      "thumb_max": 1.9890340441597913e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Idle",
+      "t": 0.5208333134651184,
+      "max": 4.567565225546338e-06,
+      "thumb_max": 2.2250801217974865e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Idle",
+      "t": 1.0416666269302368,
+      "max": 4.067825278354408e-06,
+      "thumb_max": 2.4136745975917727e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Idle",
+      "t": 1.5624999403953552,
+      "max": 4.590475891562431e-06,
+      "thumb_max": 1.9650516362721732e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Idle",
+      "t": 2.0833332538604736,
+      "max": 4.287869205653938e-06,
+      "thumb_max": 1.8384071301387398e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Idle",
+      "t": 2.604166567325592,
+      "max": 4.020246715767589e-06,
+      "thumb_max": 1.940932262046543e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Idle",
+      "t": 3.1249998807907104,
+      "max": 4.563099042610379e-06,
+      "thumb_max": 2.2529913016027215e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Idle",
+      "t": 3.645833194255829,
+      "max": 4.598269770807441e-06,
+      "thumb_max": 2.0079084915869276e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Idle",
+      "t": 4.1665665077209475,
+      "max": 4.165530106994293e-06,
+      "thumb_max": 1.988440368684513e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Idle",
+      "t": 4.166666507720947,
+      "max": 4.164900472445717e-06,
+      "thumb_max": 1.989034044649356e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Jump",
+      "t": 0.0,
+      "max": 4.709033837460003e-06,
+      "thumb_max": 3.4055068060911134e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Jump",
+      "t": 0.1302083283662796,
+      "max": 4.377111288812538e-06,
+      "thumb_max": 2.3170382799402723e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Jump",
+      "t": 0.2604166567325592,
+      "max": 4.137016638610189e-06,
+      "thumb_max": 2.3714698074697682e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Jump",
+      "t": 0.3906249850988388,
+      "max": 1.168575086987848e-05,
+      "thumb_max": 1.1157545927389424e-05
+    },
+    {
+      "clip": "HumanArmature|Man_Jump",
+      "t": 0.5208333134651184,
+      "max": 1.2196069346300717e-05,
+      "thumb_max": 1.1571130278481962e-05
+    },
+    {
+      "clip": "HumanArmature|Man_Jump",
+      "t": 0.651041641831398,
+      "max": 1.1978316970913671e-05,
+      "thumb_max": 1.1548956315473114e-05
+    },
+    {
+      "clip": "HumanArmature|Man_Jump",
+      "t": 0.7812499701976776,
+      "max": 4.8881187374935554e-06,
+      "thumb_max": 3.893918051292944e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Jump",
+      "t": 0.9114582985639572,
+      "max": 4.181825796951574e-06,
+      "thumb_max": 3.069125904534777e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Jump",
+      "t": 1.0415666269302368,
+      "max": 4.708944258803718e-06,
+      "thumb_max": 3.4041683092922053e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Jump",
+      "t": 1.0416666269302368,
+      "max": 4.710014164838899e-06,
+      "thumb_max": 3.405506808001543e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Punch",
+      "t": 0.0,
+      "max": 6.096072792054249e-06,
+      "thumb_max": 5.306306104564809e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Punch",
+      "t": 0.1145833358168602,
+      "max": 6.068387625719519e-06,
+      "thumb_max": 4.869216901261212e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Punch",
+      "t": 0.2291666716337204,
+      "max": 6.050106323790554e-06,
+      "thumb_max": 3.869306626627287e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Punch",
+      "t": 0.3437500074505806,
+      "max": 6.606559864110288e-06,
+      "thumb_max": 3.901951914416891e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Punch",
+      "t": 0.4583333432674408,
+      "max": 8.476413199590293e-06,
+      "thumb_max": 4.880177084494075e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Punch",
+      "t": 0.572916679084301,
+      "max": 7.976095449939175e-06,
+      "thumb_max": 4.738020738256626e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Punch",
+      "t": 0.6875000149011612,
+      "max": 7.194389619306922e-06,
+      "thumb_max": 4.035759802874474e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Punch",
+      "t": 0.8020833507180214,
+      "max": 6.25637446964554e-06,
+      "thumb_max": 5.530960524426624e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Punch",
+      "t": 0.9165666865348816,
+      "max": 6.095644761896481e-06,
+      "thumb_max": 5.320355882910065e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Punch",
+      "t": 0.9166666865348816,
+      "max": 6.096072792036923e-06,
+      "thumb_max": 5.319576115155841e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Run",
+      "t": 0.0,
+      "max": 4.37845641610987e-06,
+      "thumb_max": 2.173409931946374e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Run",
+      "t": 0.109375,
+      "max": 4.311792476132439e-06,
+      "thumb_max": 2.029732543400833e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Run",
+      "t": 0.21875,
+      "max": 4.002802258374697e-06,
+      "thumb_max": 4.002802258374697e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Run",
+      "t": 0.328125,
+      "max": 6.850545903753522e-06,
+      "thumb_max": 5.901819388308948e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Run",
+      "t": 0.4375,
+      "max": 8.641231642464929e-06,
+      "thumb_max": 7.5232299948382284e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Run",
+      "t": 0.546875,
+      "max": 7.239387842257875e-06,
+      "thumb_max": 6.122591749155716e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Run",
+      "t": 0.65625,
+      "max": 4.931710264078897e-06,
+      "thumb_max": 4.268654915620704e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Run",
+      "t": 0.765625,
+      "max": 4.1490284125039335e-06,
+      "thumb_max": 2.8864202400922886e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Run",
+      "t": 0.8749,
+      "max": 4.376995625029197e-06,
+      "thumb_max": 2.1749898703632067e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Run",
+      "t": 0.875,
+      "max": 4.37845641739993e-06,
+      "thumb_max": 2.1734099328773464e-06
+    },
+    {
+      "clip": "HumanArmature|Man_RunningJump",
+      "t": 0.0,
+      "max": 4.37845641610987e-06,
+      "thumb_max": 2.173409931946374e-06
+    },
+    {
+      "clip": "HumanArmature|Man_RunningJump",
+      "t": 0.15625,
+      "max": 4.1307876544967634e-06,
+      "thumb_max": 2.6550125672214144e-06
+    },
+    {
+      "clip": "HumanArmature|Man_RunningJump",
+      "t": 0.3125,
+      "max": 6.497880783875309e-06,
+      "thumb_max": 5.5537949848574494e-06
+    },
+    {
+      "clip": "HumanArmature|Man_RunningJump",
+      "t": 0.46875,
+      "max": 8.969524967529794e-06,
+      "thumb_max": 7.772824446386848e-06
+    },
+    {
+      "clip": "HumanArmature|Man_RunningJump",
+      "t": 0.625,
+      "max": 8.802699516370684e-06,
+      "thumb_max": 7.558613769909795e-06
+    },
+    {
+      "clip": "HumanArmature|Man_RunningJump",
+      "t": 0.78125,
+      "max": 7.99328703919127e-06,
+      "thumb_max": 6.585960127576812e-06
+    },
+    {
+      "clip": "HumanArmature|Man_RunningJump",
+      "t": 0.9375,
+      "max": 5.926085727604497e-06,
+      "thumb_max": 5.078042075298214e-06
+    },
+    {
+      "clip": "HumanArmature|Man_RunningJump",
+      "t": 1.09375,
+      "max": 4.356877708317369e-06,
+      "thumb_max": 3.945128105082568e-06
+    },
+    {
+      "clip": "HumanArmature|Man_RunningJump",
+      "t": 1.2499,
+      "max": 4.378052846419546e-06,
+      "thumb_max": 2.1749662660533573e-06
+    },
+    {
+      "clip": "HumanArmature|Man_RunningJump",
+      "t": 1.25,
+      "max": 4.37845641739993e-06,
+      "thumb_max": 2.1734099328773464e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Sitting",
+      "t": 0.0,
+      "max": 4.707895311552275e-06,
+      "thumb_max": 3.366392191135026e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Sitting",
+      "t": 1.0416666269302368,
+      "max": 3.924795672864544e-06,
+      "thumb_max": 3.734871977308234e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Sitting",
+      "t": 2.0833332538604736,
+      "max": 4.169840582107063e-06,
+      "thumb_max": 3.3262154983871526e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Sitting",
+      "t": 3.1249998807907104,
+      "max": 3.945186264261287e-06,
+      "thumb_max": 3.010712363597629e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Sitting",
+      "t": 4.166666507720947,
+      "max": 3.733431115363395e-06,
+      "thumb_max": 3.3355282181160293e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Sitting",
+      "t": 5.208333134651184,
+      "max": 4.534651824350414e-06,
+      "thumb_max": 3.5744643661826855e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Sitting",
+      "t": 6.249999761581421,
+      "max": 4.029990757864225e-06,
+      "thumb_max": 3.1056812388187163e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Sitting",
+      "t": 7.291666388511658,
+      "max": 4.076619780163645e-06,
+      "thumb_max": 3.049694533139911e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Sitting",
+      "t": 8.333233015441895,
+      "max": 4.063605060137858e-06,
+      "thumb_max": 3.821829436186081e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Sitting",
+      "t": 8.333333015441895,
+      "max": 4.06314407175885e-06,
+      "thumb_max": 3.821010265444107e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Standing",
+      "t": 0.0,
+      "max": 4.27156063580606e-06,
+      "thumb_max": 3.9649652414469485e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Standing",
+      "t": 0.1041666641831398,
+      "max": 3.8697376853783635e-06,
+      "thumb_max": 2.938988609552804e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Standing",
+      "t": 0.2083333283662796,
+      "max": 4.692291726993099e-06,
+      "thumb_max": 2.6349191419413317e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Standing",
+      "t": 0.3124999925494194,
+      "max": 4.202817955418215e-06,
+      "thumb_max": 2.9018015662826196e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Standing",
+      "t": 0.4166666567325592,
+      "max": 4.8223233295048314e-06,
+      "thumb_max": 2.431088298094955e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Standing",
+      "t": 0.520833320915699,
+      "max": 4.366285664844771e-06,
+      "thumb_max": 2.5143363785645663e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Standing",
+      "t": 0.6249999850988388,
+      "max": 4.838046964874642e-06,
+      "thumb_max": 2.6406310011431345e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Standing",
+      "t": 0.7291666492819786,
+      "max": 4.278303149064829e-06,
+      "thumb_max": 2.6051149605578113e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Standing",
+      "t": 0.8332333134651184,
+      "max": 4.722155065441916e-06,
+      "thumb_max": 3.2637759775144446e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Standing",
+      "t": 0.8333333134651184,
+      "max": 4.7227866618925835e-06,
+      "thumb_max": 3.2656056574951617e-06
+    },
+    {
+      "clip": "HumanArmature|Man_SwordSlash",
+      "t": 0.0,
+      "max": 4.232888039211073e-06,
+      "thumb_max": 2.699359135940858e-06
+    },
+    {
+      "clip": "HumanArmature|Man_SwordSlash",
+      "t": 0.1302083283662796,
+      "max": 7.006727562876113e-06,
+      "thumb_max": 6.273602079849029e-06
+    },
+    {
+      "clip": "HumanArmature|Man_SwordSlash",
+      "t": 0.2604166567325592,
+      "max": 8.24541361053033e-06,
+      "thumb_max": 7.672617613616544e-06
+    },
+    {
+      "clip": "HumanArmature|Man_SwordSlash",
+      "t": 0.3906249850988388,
+      "max": 1.0572259542961013e-05,
+      "thumb_max": 1.0197652937038823e-05
+    },
+    {
+      "clip": "HumanArmature|Man_SwordSlash",
+      "t": 0.5208333134651184,
+      "max": 6.906819594280964e-06,
+      "thumb_max": 6.177922832230034e-06
+    },
+    {
+      "clip": "HumanArmature|Man_SwordSlash",
+      "t": 0.651041641831398,
+      "max": 8.564095965246381e-06,
+      "thumb_max": 7.91039745166705e-06
+    },
+    {
+      "clip": "HumanArmature|Man_SwordSlash",
+      "t": 0.7812499701976776,
+      "max": 7.049025024227123e-06,
+      "thumb_max": 6.325902056639619e-06
+    },
+    {
+      "clip": "HumanArmature|Man_SwordSlash",
+      "t": 0.9114582985639572,
+      "max": 4.59274669601861e-06,
+      "thumb_max": 3.2304607222580633e-06
+    },
+    {
+      "clip": "HumanArmature|Man_SwordSlash",
+      "t": 1.0415666269302368,
+      "max": 4.233635193294318e-06,
+      "thumb_max": 2.7007730075134985e-06
+    },
+    {
+      "clip": "HumanArmature|Man_SwordSlash",
+      "t": 1.0416666269302368,
+      "max": 4.2328880393065786e-06,
+      "thumb_max": 2.6993591360767263e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Walk",
+      "t": 0.0,
+      "max": 4.103673060257553e-06,
+      "thumb_max": 2.3892689800341408e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Walk",
+      "t": 0.1302083283662796,
+      "max": 4.468056497241251e-06,
+      "thumb_max": 2.9521036137979825e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Walk",
+      "t": 0.2604166567325592,
+      "max": 4.257374371411481e-06,
+      "thumb_max": 2.6764754894668215e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Walk",
+      "t": 0.3906249850988388,
+      "max": 4.461476407479045e-06,
+      "thumb_max": 3.3181128405672927e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Walk",
+      "t": 0.5208333134651184,
+      "max": 4.203023460157505e-06,
+      "thumb_max": 2.90680488151739e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Walk",
+      "t": 0.651041641831398,
+      "max": 4.229658314542398e-06,
+      "thumb_max": 3.4238029178534078e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Walk",
+      "t": 0.7812499701976776,
+      "max": 4.024142230699088e-06,
+      "thumb_max": 2.4788967094743024e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Walk",
+      "t": 0.9114582985639572,
+      "max": 4.041497065554265e-06,
+      "thumb_max": 2.038837960864862e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Walk",
+      "t": 1.0415666269302368,
+      "max": 4.104265176894014e-06,
+      "thumb_max": 2.3890402252695526e-06
+    },
+    {
+      "clip": "HumanArmature|Man_Walk",
+      "t": 1.0416666269302368,
+      "max": 4.103673061547868e-06,
+      "thumb_max": 2.389268981384897e-06
+    }
+  ],
+  "passed": true,
+  "oriented_faces_equal": true,
+  "corner_normals_equal": true,
+  "source_face_count": 1854,
+  "candidate_face_count": 1854,
+  "matched_geometry_faces": 1854,
+  "matched_normal_faces": 1854,
+  "unmatched_normal_candidate_faces": [],
+  "unmatched_normal_source_faces": [],
+  "max_matched_corner_normal_angle_rad": 2.580956827951785e-08,
+  "face_mapping": "one-to-one oriented triangles at rest; normal bound applies to each corresponding corner",
+  "candidate_unmatched": 0,
+  "topology_counts_equal": true,
+  "clip_contract_equal": true,
+  "normal_basis_equal": true,
+  "max_normal_angle_rad": 2.580956827951785e-08,
+  "normal_threshold_rad": 0.001,
+  "normals_passed": true,
+  "sampled_poses": 110,
+  "compared_vertices_per_pose": 3981,
+  "clips_compared": 11,
+  "all_source_clips_compared": true,
+  "max_skinned_distance": 1.2196069346300717e-05,
+  "input_sha256": {
+    "/workspace/work/animation-pipeline/dist/match3d/assets/quaternius-rugby-athlete.glb": "7fd28255c484e19ba5086d9cf815128e21dfcb677d262a88b237a5f5af081c5f",
+    "/workspace/work/animation-diagnosis/export/received-verified.glb": "d9139eddc66f7c407107b4d68b3d1503ca07e4256432a9a9a1528fd0fe74afbb"
+  },
+  "inputs_unchanged": true
+}

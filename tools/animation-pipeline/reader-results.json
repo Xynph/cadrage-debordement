@@ -1,85 +1,86 @@
 {
-	"display_server": "headless",
-	"engine": "4.7.2-stable (official)",
-	"failures": [],
-	"limits": [
-		"Fixtures authored, no sporting causality validated",
-		"No Windows or graphical performance reception",
-		"Only existing athlete, no replacement asset accepted"
-	],
-	"metrics": {
-		"bones": 31,
-		"clips": [
-			{
-				"length_seconds": 1.66666662693024,
-				"loop_mode": 0,
-				"name": "HumanArmature|Man_Clapping",
-				"tracks": 33
-			},
-			{
-				"length_seconds": 2.08333325386047,
-				"loop_mode": 0,
-				"name": "HumanArmature|Man_Death",
-				"tracks": 33
-			},
-			{
-				"length_seconds": 4.16666650772095,
-				"loop_mode": 1,
-				"name": "HumanArmature|Man_Idle",
-				"tracks": 33
-			},
-			{
-				"length_seconds": 1.04166662693024,
-				"loop_mode": 0,
-				"name": "HumanArmature|Man_Jump",
-				"tracks": 33
-			},
-			{
-				"length_seconds": 0.916666686534882,
-				"loop_mode": 0,
-				"name": "HumanArmature|Man_Punch",
-				"tracks": 33
-			},
-			{
-				"length_seconds": 0.875,
-				"loop_mode": 1,
-				"name": "HumanArmature|Man_Run",
-				"tracks": 33
-			},
-			{
-				"length_seconds": 1.25,
-				"loop_mode": 0,
-				"name": "HumanArmature|Man_RunningJump",
-				"tracks": 33
-			},
-			{
-				"length_seconds": 8.33333301544189,
-				"loop_mode": 0,
-				"name": "HumanArmature|Man_Sitting",
-				"tracks": 33
-			},
-			{
-				"length_seconds": 0.833333313465118,
-				"loop_mode": 0,
-				"name": "HumanArmature|Man_Standing",
-				"tracks": 33
-			},
-			{
-				"length_seconds": 1.04166662693024,
-				"loop_mode": 0,
-				"name": "HumanArmature|Man_SwordSlash",
-				"tracks": 33
-			},
-			{
-				"length_seconds": 1.04166662693024,
-				"loop_mode": 1,
-				"name": "HumanArmature|Man_Walk",
-				"tracks": 33
-			}
-		],
-		"contact_restored_bones": 5,
-		"pause_clip_time": 0.3
-	},
-	"passed": 79,
-	"schema": "oval-animation-reader/v1"
+  "display_server": "headless",
+  "engine": "4.7.2-stable (official)",
+  "failures": [],
+  "limits": [
+    "Fixtures authored, no sporting causality validated",
+    "No Windows or graphical performance reception",
+    "Only staged athlete checked; its hash identifies the tested asset, not an acceptance for distribution"
+  ],
+  "metrics": {
+    "bones": 31,
+    "clips": [
+      {
+        "length_seconds": 1.66666662693024,
+        "loop_mode": 0,
+        "name": "HumanArmature|Man_Clapping",
+        "tracks": 33
+      },
+      {
+        "length_seconds": 2.08333325386047,
+        "loop_mode": 0,
+        "name": "HumanArmature|Man_Death",
+        "tracks": 33
+      },
+      {
+        "length_seconds": 4.16666650772095,
+        "loop_mode": 1,
+        "name": "HumanArmature|Man_Idle",
+        "tracks": 33
+      },
+      {
+        "length_seconds": 1.04166662693024,
+        "loop_mode": 0,
+        "name": "HumanArmature|Man_Jump",
+        "tracks": 33
+      },
+      {
+        "length_seconds": 0.916666686534882,
+        "loop_mode": 0,
+        "name": "HumanArmature|Man_Punch",
+        "tracks": 33
+      },
+      {
+        "length_seconds": 0.875,
+        "loop_mode": 1,
+        "name": "HumanArmature|Man_Run",
+        "tracks": 33
+      },
+      {
+        "length_seconds": 1.25,
+        "loop_mode": 0,
+        "name": "HumanArmature|Man_RunningJump",
+        "tracks": 33
+      },
+      {
+        "length_seconds": 8.33333301544189,
+        "loop_mode": 0,
+        "name": "HumanArmature|Man_Sitting",
+        "tracks": 33
+      },
+      {
+        "length_seconds": 0.833333313465118,
+        "loop_mode": 0,
+        "name": "HumanArmature|Man_Standing",
+        "tracks": 33
+      },
+      {
+        "length_seconds": 1.04166662693024,
+        "loop_mode": 0,
+        "name": "HumanArmature|Man_SwordSlash",
+        "tracks": 33
+      },
+      {
+        "length_seconds": 1.04166662693024,
+        "loop_mode": 1,
+        "name": "HumanArmature|Man_Walk",
+        "tracks": 33
+      }
+    ],
+    "contact_restored_bones": 5,
+    "loaded_asset_sha256": "7fd28255c484e19ba5086d9cf815128e21dfcb677d262a88b237a5f5af081c5f",
+    "pause_clip_time": 0.3
+  },
+  "passed": 81,
+  "schema": "oval-animation-reader/v1"
 }

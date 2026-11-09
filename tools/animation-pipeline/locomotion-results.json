@@ -1,0 +1,1010 @@
+{
+  "candidate": {
+    "additional_end_sample": "duration minus 0.0001 seconds, then exact endpoint (may wrap)",
+    "available_clips": [
+      "HumanArmature|Man_Clapping",
+      "HumanArmature|Man_Death",
+      "HumanArmature|Man_Idle",
+      "HumanArmature|Man_Jump",
+      "HumanArmature|Man_Punch",
+      "HumanArmature|Man_Run",
+      "HumanArmature|Man_RunningJump",
+      "HumanArmature|Man_Sitting",
+      "HumanArmature|Man_Standing",
+      "HumanArmature|Man_SwordSlash",
+      "HumanArmature|Man_Walk"
+    ],
+    "bones": 31,
+    "bounds": "not measured: static mesh AABB is not skinned bounds",
+    "clips": 3,
+    "complete_clip_coverage": false,
+    "distance_units": "raw imported Godot units, not calibrated gameplay metres",
+    "engine": "4.7.2-stable (official)",
+    "errors": [
+      "position_units exceeds threshold: 0.254772991 > 0.000100000",
+      "rotation_rad exceeds threshold: 0.655454443 > 0.001000000",
+      "scale exceeds threshold: 0.001037598 > 0.000100000"
+    ],
+    "global_manifest_checks": "bone names/order, clip names/order, all durations and loop modes",
+    "max_error": {
+      "position_units": 0.254772990942001,
+      "rotation_rad": 0.655454442997437,
+      "scale": 0.00103759765625
+    },
+    "passed": false,
+    "per_clip": {
+      "HumanArmature|Man_Idle": {
+        "duration_candidate_seconds": 4.16666650772095,
+        "duration_source_seconds": 4.16666650772095,
+        "errors": [],
+        "feet": {
+          "L": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.0,
+              "pre_end_gap_units": 0.0,
+              "sampled_path_length_units": 0.0,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.0,
+              "pre_end_gap_units": 0.0,
+              "sampled_path_length_units": 0.0,
+              "samples": 34
+            }
+          },
+          "R": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.0,
+              "pre_end_gap_units": 0.0,
+              "sampled_path_length_units": 0.0,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.0,
+              "pre_end_gap_units": 0.0,
+              "sampled_path_length_units": 0.0,
+              "samples": 34
+            }
+          }
+        },
+        "loop_candidate": 0,
+        "loop_source": 0,
+        "max_error": {
+          "position_units": 0.254772990942001,
+          "rotation_rad": 0.655454442997437,
+          "scale": 0.00103759765625
+        },
+        "passed": false,
+        "sample_times_seconds": [
+          0.0,
+          0.13020832836628,
+          0.260416656732559,
+          0.390624985098839,
+          0.520833313465118,
+          0.651041641831398,
+          0.781249970197678,
+          0.911458298563957,
+          1.04166662693024,
+          1.17187495529652,
+          1.3020832836628,
+          1.43229161202908,
+          1.56249994039536,
+          1.69270826876163,
+          1.82291659712791,
+          1.95312492549419,
+          2.08333325386047,
+          2.21354158222675,
+          2.34374991059303,
+          2.47395823895931,
+          2.60416656732559,
+          2.73437489569187,
+          2.86458322405815,
+          2.99479155242443,
+          3.12499988079071,
+          3.25520820915699,
+          3.38541653752327,
+          3.51562486588955,
+          3.64583319425583,
+          3.77604152262211,
+          3.90624985098839,
+          4.03645817935467,
+          4.16656650772095,
+          4.16666650772095
+        ],
+        "sampled_poses": 34,
+        "within_pose_thresholds": false,
+        "worst_location": {
+          "position_units": {
+            "bone_or_root": "Thumb2.R",
+            "label": "HumanArmature|Man_Idle@4.166567:Thumb2.R:world",
+            "space": "world",
+            "time_seconds": 4.16656650772095
+          },
+          "rotation_rad": {
+            "bone_or_root": "Thumb1.R",
+            "label": "HumanArmature|Man_Idle@2.343750:Thumb1.R:world",
+            "space": "world",
+            "time_seconds": 2.34374991059303
+          },
+          "scale": {
+            "bone_or_root": "UpperLeg.L",
+            "label": "HumanArmature|Man_Idle@3.255208:UpperLeg.L:world",
+            "space": "world",
+            "time_seconds": 3.25520820915699
+          }
+        }
+      },
+      "HumanArmature|Man_Run": {
+        "duration_candidate_seconds": 0.875,
+        "duration_source_seconds": 0.875,
+        "errors": [],
+        "feet": {
+          "L": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.443864762783051,
+              "pre_end_gap_units": 0.000544099835678935,
+              "sampled_path_length_units": 7.15925186383538,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.443864703178406,
+              "pre_end_gap_units": 0.000544099835678935,
+              "sampled_path_length_units": 7.15925345080905,
+              "samples": 34
+            }
+          },
+          "R": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.543822705745697,
+              "pre_end_gap_units": 0.000164125391165726,
+              "sampled_path_length_units": 7.55488137928478,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.543822944164276,
+              "pre_end_gap_units": 0.000164010940352455,
+              "sampled_path_length_units": 7.55488164853887,
+              "samples": 34
+            }
+          }
+        },
+        "loop_candidate": 0,
+        "loop_source": 0,
+        "max_error": {
+          "position_units": 0.0857314467430115,
+          "rotation_rad": 0.527436710709514,
+          "scale": 0.0010223388671875
+        },
+        "passed": false,
+        "sample_times_seconds": [
+          0.0,
+          0.02734375,
+          0.0546875,
+          0.08203125,
+          0.109375,
+          0.13671875,
+          0.1640625,
+          0.19140625,
+          0.21875,
+          0.24609375,
+          0.2734375,
+          0.30078125,
+          0.328125,
+          0.35546875,
+          0.3828125,
+          0.41015625,
+          0.4375,
+          0.46484375,
+          0.4921875,
+          0.51953125,
+          0.546875,
+          0.57421875,
+          0.6015625,
+          0.62890625,
+          0.65625,
+          0.68359375,
+          0.7109375,
+          0.73828125,
+          0.765625,
+          0.79296875,
+          0.8203125,
+          0.84765625,
+          0.8749,
+          0.875
+        ],
+        "sampled_poses": 34,
+        "within_pose_thresholds": false,
+        "worst_location": {
+          "position_units": {
+            "bone_or_root": "Thumb2.R",
+            "label": "HumanArmature|Man_Run@0.437500:Thumb2.R:world",
+            "space": "world",
+            "time_seconds": 0.4375
+          },
+          "rotation_rad": {
+            "bone_or_root": "Thumb1.R",
+            "label": "HumanArmature|Man_Run@0.000000:Thumb1.R:local",
+            "space": "local",
+            "time_seconds": 0.0
+          },
+          "scale": {
+            "bone_or_root": "LowerLeg.L",
+            "label": "HumanArmature|Man_Run@0.218750:LowerLeg.L:world",
+            "space": "world",
+            "time_seconds": 0.21875
+          }
+        }
+      },
+      "HumanArmature|Man_Walk": {
+        "duration_candidate_seconds": 1.04166662693024,
+        "duration_source_seconds": 1.04166662693024,
+        "errors": [],
+        "feet": {
+          "L": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.28749006986618,
+              "pre_end_gap_units": 0.000591709278523922,
+              "sampled_path_length_units": 4.6839134125039,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.287490099668503,
+              "pre_end_gap_units": 0.000591679767239839,
+              "sampled_path_length_units": 4.68391505937325,
+              "samples": 34
+            }
+          },
+          "R": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.333667278289795,
+              "pre_end_gap_units": 0.00040349832852371,
+              "sampled_path_length_units": 4.54634093496134,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.333667278289795,
+              "pre_end_gap_units": 0.000403496902436018,
+              "sampled_path_length_units": 4.54634172888473,
+              "samples": 34
+            }
+          }
+        },
+        "loop_candidate": 0,
+        "loop_source": 0,
+        "max_error": {
+          "position_units": 0.0831057950854301,
+          "rotation_rad": 0.527436710709514,
+          "scale": 0.00103759765625
+        },
+        "passed": false,
+        "sample_times_seconds": [
+          0.0,
+          0.0325520820915699,
+          0.0651041641831398,
+          0.0976562462747097,
+          0.13020832836628,
+          0.16276041045785,
+          0.195312492549419,
+          0.227864574640989,
+          0.260416656732559,
+          0.292968738824129,
+          0.325520820915699,
+          0.358072903007269,
+          0.390624985098839,
+          0.423177067190409,
+          0.455729149281979,
+          0.488281231373549,
+          0.520833313465118,
+          0.553385395556688,
+          0.585937477648258,
+          0.618489559739828,
+          0.651041641831398,
+          0.683593723922968,
+          0.716145806014538,
+          0.748697888106108,
+          0.781249970197678,
+          0.813802052289248,
+          0.846354134380817,
+          0.878906216472387,
+          0.911458298563957,
+          0.944010380655527,
+          0.976562462747097,
+          1.00911454483867,
+          1.04156662693024,
+          1.04166662693024
+        ],
+        "sampled_poses": 34,
+        "within_pose_thresholds": false,
+        "worst_location": {
+          "position_units": {
+            "bone_or_root": "Thumb2.R",
+            "label": "HumanArmature|Man_Walk@0.878906:Thumb2.R:world",
+            "space": "world",
+            "time_seconds": 0.878906216472387
+          },
+          "rotation_rad": {
+            "bone_or_root": "Thumb1.R",
+            "label": "HumanArmature|Man_Walk@0.000000:Thumb1.R:local",
+            "space": "local",
+            "time_seconds": 0.0
+          },
+          "scale": {
+            "bone_or_root": "UpperLeg.L",
+            "label": "HumanArmature|Man_Walk@0.944010:UpperLeg.L:world",
+            "space": "world",
+            "time_seconds": 0.944010380655527
+          }
+        }
+      }
+    },
+    "root_motion": "bone world transforms compared; no gameplay displacement applied",
+    "sampled_poses": 102,
+    "samples_per_clip": 33,
+    "sampling": "fresh scene pair at every sample, manual animation evaluation; reset poses",
+    "schema": 1,
+    "selected_clips": [
+      "HumanArmature|Man_Idle",
+      "HumanArmature|Man_Walk",
+      "HumanArmature|Man_Run"
+    ],
+    "thresholds": {
+      "position_units": 0.0001,
+      "rotation_rad": 0.001,
+      "scale": 0.0001
+    },
+    "transform_comparisons": 6528,
+    "validation_scope": "selected clips only; not global asset acceptance",
+    "worst_location": {
+      "position_units": "HumanArmature|Man_Idle@4.166567:Thumb2.R:world",
+      "rotation_rad": "HumanArmature|Man_Idle@2.343750:Thumb1.R:world",
+      "scale": "HumanArmature|Man_Idle@3.255208:UpperLeg.L:world"
+    },
+    "source_sha256": "7fd28255c484e19ba5086d9cf815128e21dfcb677d262a88b237a5f5af081c5f",
+    "candidate_sha256": "c113121f2a0a92a10a2bffa4a22a7bd1ea0bff0a583c1f4166a762ab11137ee8"
+  },
+  "identity": {
+    "additional_end_sample": "duration minus 0.0001 seconds, then exact endpoint (may wrap)",
+    "available_clips": [
+      "HumanArmature|Man_Clapping",
+      "HumanArmature|Man_Death",
+      "HumanArmature|Man_Idle",
+      "HumanArmature|Man_Jump",
+      "HumanArmature|Man_Punch",
+      "HumanArmature|Man_Run",
+      "HumanArmature|Man_RunningJump",
+      "HumanArmature|Man_Sitting",
+      "HumanArmature|Man_Standing",
+      "HumanArmature|Man_SwordSlash",
+      "HumanArmature|Man_Walk"
+    ],
+    "bones": 31,
+    "bounds": "not measured: static mesh AABB is not skinned bounds",
+    "clips": 3,
+    "complete_clip_coverage": false,
+    "distance_units": "raw imported Godot units, not calibrated gameplay metres",
+    "engine": "4.7.2-stable (official)",
+    "errors": [],
+    "global_manifest_checks": "bone names/order, clip names/order, all durations and loop modes",
+    "max_error": {
+      "position_units": 0.0,
+      "rotation_rad": 0.0,
+      "scale": 0.0
+    },
+    "passed": true,
+    "per_clip": {
+      "HumanArmature|Man_Idle": {
+        "duration_candidate_seconds": 4.16666650772095,
+        "duration_source_seconds": 4.16666650772095,
+        "errors": [],
+        "feet": {
+          "L": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.0,
+              "pre_end_gap_units": 0.0,
+              "sampled_path_length_units": 0.0,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.0,
+              "pre_end_gap_units": 0.0,
+              "sampled_path_length_units": 0.0,
+              "samples": 34
+            }
+          },
+          "R": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.0,
+              "pre_end_gap_units": 0.0,
+              "sampled_path_length_units": 0.0,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.0,
+              "pre_end_gap_units": 0.0,
+              "sampled_path_length_units": 0.0,
+              "samples": 34
+            }
+          }
+        },
+        "loop_candidate": 0,
+        "loop_source": 0,
+        "max_error": {
+          "position_units": 0.0,
+          "rotation_rad": 0.0,
+          "scale": 0.0
+        },
+        "passed": true,
+        "sample_times_seconds": [
+          0.0,
+          0.13020832836628,
+          0.260416656732559,
+          0.390624985098839,
+          0.520833313465118,
+          0.651041641831398,
+          0.781249970197678,
+          0.911458298563957,
+          1.04166662693024,
+          1.17187495529652,
+          1.3020832836628,
+          1.43229161202908,
+          1.56249994039536,
+          1.69270826876163,
+          1.82291659712791,
+          1.95312492549419,
+          2.08333325386047,
+          2.21354158222675,
+          2.34374991059303,
+          2.47395823895931,
+          2.60416656732559,
+          2.73437489569187,
+          2.86458322405815,
+          2.99479155242443,
+          3.12499988079071,
+          3.25520820915699,
+          3.38541653752327,
+          3.51562486588955,
+          3.64583319425583,
+          3.77604152262211,
+          3.90624985098839,
+          4.03645817935467,
+          4.16656650772095,
+          4.16666650772095
+        ],
+        "sampled_poses": 34,
+        "within_pose_thresholds": true,
+        "worst_location": {}
+      },
+      "HumanArmature|Man_Run": {
+        "duration_candidate_seconds": 0.875,
+        "duration_source_seconds": 0.875,
+        "errors": [],
+        "feet": {
+          "L": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.443864703178406,
+              "pre_end_gap_units": 0.000544099835678935,
+              "sampled_path_length_units": 7.15925345080905,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.443864703178406,
+              "pre_end_gap_units": 0.000544099835678935,
+              "sampled_path_length_units": 7.15925345080905,
+              "samples": 34
+            }
+          },
+          "R": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.543822944164276,
+              "pre_end_gap_units": 0.000164010940352455,
+              "sampled_path_length_units": 7.55488164853887,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.543822944164276,
+              "pre_end_gap_units": 0.000164010940352455,
+              "sampled_path_length_units": 7.55488164853887,
+              "samples": 34
+            }
+          }
+        },
+        "loop_candidate": 0,
+        "loop_source": 0,
+        "max_error": {
+          "position_units": 0.0,
+          "rotation_rad": 0.0,
+          "scale": 0.0
+        },
+        "passed": true,
+        "sample_times_seconds": [
+          0.0,
+          0.02734375,
+          0.0546875,
+          0.08203125,
+          0.109375,
+          0.13671875,
+          0.1640625,
+          0.19140625,
+          0.21875,
+          0.24609375,
+          0.2734375,
+          0.30078125,
+          0.328125,
+          0.35546875,
+          0.3828125,
+          0.41015625,
+          0.4375,
+          0.46484375,
+          0.4921875,
+          0.51953125,
+          0.546875,
+          0.57421875,
+          0.6015625,
+          0.62890625,
+          0.65625,
+          0.68359375,
+          0.7109375,
+          0.73828125,
+          0.765625,
+          0.79296875,
+          0.8203125,
+          0.84765625,
+          0.8749,
+          0.875
+        ],
+        "sampled_poses": 34,
+        "within_pose_thresholds": true,
+        "worst_location": {}
+      },
+      "HumanArmature|Man_Walk": {
+        "duration_candidate_seconds": 1.04166662693024,
+        "duration_source_seconds": 1.04166662693024,
+        "errors": [],
+        "feet": {
+          "L": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.287490099668503,
+              "pre_end_gap_units": 0.000591679767239839,
+              "sampled_path_length_units": 4.68391505937325,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.287490099668503,
+              "pre_end_gap_units": 0.000591679767239839,
+              "sampled_path_length_units": 4.68391505937325,
+              "samples": 34
+            }
+          },
+          "R": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.333667278289795,
+              "pre_end_gap_units": 0.000403496902436018,
+              "sampled_path_length_units": 4.54634172888473,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.333667278289795,
+              "pre_end_gap_units": 0.000403496902436018,
+              "sampled_path_length_units": 4.54634172888473,
+              "samples": 34
+            }
+          }
+        },
+        "loop_candidate": 0,
+        "loop_source": 0,
+        "max_error": {
+          "position_units": 0.0,
+          "rotation_rad": 0.0,
+          "scale": 0.0
+        },
+        "passed": true,
+        "sample_times_seconds": [
+          0.0,
+          0.0325520820915699,
+          0.0651041641831398,
+          0.0976562462747097,
+          0.13020832836628,
+          0.16276041045785,
+          0.195312492549419,
+          0.227864574640989,
+          0.260416656732559,
+          0.292968738824129,
+          0.325520820915699,
+          0.358072903007269,
+          0.390624985098839,
+          0.423177067190409,
+          0.455729149281979,
+          0.488281231373549,
+          0.520833313465118,
+          0.553385395556688,
+          0.585937477648258,
+          0.618489559739828,
+          0.651041641831398,
+          0.683593723922968,
+          0.716145806014538,
+          0.748697888106108,
+          0.781249970197678,
+          0.813802052289248,
+          0.846354134380817,
+          0.878906216472387,
+          0.911458298563957,
+          0.944010380655527,
+          0.976562462747097,
+          1.00911454483867,
+          1.04156662693024,
+          1.04166662693024
+        ],
+        "sampled_poses": 34,
+        "within_pose_thresholds": true,
+        "worst_location": {}
+      }
+    },
+    "root_motion": "bone world transforms compared; no gameplay displacement applied",
+    "sampled_poses": 102,
+    "samples_per_clip": 33,
+    "sampling": "fresh scene pair at every sample, manual animation evaluation; reset poses",
+    "schema": 1,
+    "selected_clips": [
+      "HumanArmature|Man_Idle",
+      "HumanArmature|Man_Walk",
+      "HumanArmature|Man_Run"
+    ],
+    "thresholds": {
+      "position_units": 0.0001,
+      "rotation_rad": 0.001,
+      "scale": 0.0001
+    },
+    "transform_comparisons": 6528,
+    "validation_scope": "selected clips only; not global asset acceptance",
+    "worst_location": {},
+    "source_sha256": "7fd28255c484e19ba5086d9cf815128e21dfcb677d262a88b237a5f5af081c5f",
+    "candidate_sha256": "7fd28255c484e19ba5086d9cf815128e21dfcb677d262a88b237a5f5af081c5f"
+  },
+  "negative_control": {
+    "additional_end_sample": "duration minus 0.0001 seconds, then exact endpoint (may wrap)",
+    "available_clips": [
+      "HumanArmature|Man_Clapping",
+      "HumanArmature|Man_Death",
+      "HumanArmature|Man_Idle",
+      "HumanArmature|Man_Jump",
+      "HumanArmature|Man_Punch",
+      "HumanArmature|Man_Run",
+      "HumanArmature|Man_RunningJump",
+      "HumanArmature|Man_Sitting",
+      "HumanArmature|Man_Standing",
+      "HumanArmature|Man_SwordSlash",
+      "HumanArmature|Man_Walk"
+    ],
+    "bones": 31,
+    "bounds": "not measured: static mesh AABB is not skinned bounds",
+    "clips": 3,
+    "complete_clip_coverage": false,
+    "distance_units": "raw imported Godot units, not calibrated gameplay metres",
+    "engine": "4.7.2-stable (official)",
+    "errors": [
+      "position_units exceeds threshold: 5.000000000 > 0.000100000"
+    ],
+    "global_manifest_checks": "bone names/order, clip names/order, all durations and loop modes",
+    "max_error": {
+      "position_units": 5.0,
+      "rotation_rad": 0.0,
+      "scale": 0.0
+    },
+    "passed": false,
+    "per_clip": {
+      "HumanArmature|Man_Idle": {
+        "duration_candidate_seconds": 4.16666650772095,
+        "duration_source_seconds": 4.16666650772095,
+        "errors": [],
+        "feet": {
+          "L": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.0,
+              "pre_end_gap_units": 0.0,
+              "sampled_path_length_units": 0.0,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.0,
+              "pre_end_gap_units": 0.0,
+              "sampled_path_length_units": 0.0,
+              "samples": 34
+            }
+          },
+          "R": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.0,
+              "pre_end_gap_units": 0.0,
+              "sampled_path_length_units": 0.0,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.0,
+              "pre_end_gap_units": 0.0,
+              "sampled_path_length_units": 0.0,
+              "samples": 34
+            }
+          }
+        },
+        "loop_candidate": 0,
+        "loop_source": 0,
+        "max_error": {
+          "position_units": 5.0,
+          "rotation_rad": 0.0,
+          "scale": 0.0
+        },
+        "passed": false,
+        "sample_times_seconds": [
+          0.0,
+          0.13020832836628,
+          0.260416656732559,
+          0.390624985098839,
+          0.520833313465118,
+          0.651041641831398,
+          0.781249970197678,
+          0.911458298563957,
+          1.04166662693024,
+          1.17187495529652,
+          1.3020832836628,
+          1.43229161202908,
+          1.56249994039536,
+          1.69270826876163,
+          1.82291659712791,
+          1.95312492549419,
+          2.08333325386047,
+          2.21354158222675,
+          2.34374991059303,
+          2.47395823895931,
+          2.60416656732559,
+          2.73437489569187,
+          2.86458322405815,
+          2.99479155242443,
+          3.12499988079071,
+          3.25520820915699,
+          3.38541653752327,
+          3.51562486588955,
+          3.64583319425583,
+          3.77604152262211,
+          3.90624985098839,
+          4.03645817935467,
+          4.16656650772095,
+          4.16666650772095
+        ],
+        "sampled_poses": 34,
+        "within_pose_thresholds": false,
+        "worst_location": {
+          "position_units": {
+            "bone_or_root": "LowerLeg.L",
+            "label": "HumanArmature|Man_Idle@0.000000:LowerLeg.L:world",
+            "space": "world",
+            "time_seconds": 0.0
+          }
+        }
+      },
+      "HumanArmature|Man_Run": {
+        "duration_candidate_seconds": 0.875,
+        "duration_source_seconds": 0.875,
+        "errors": [],
+        "feet": {
+          "L": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.443864703178406,
+              "pre_end_gap_units": 0.000544099835678935,
+              "sampled_path_length_units": 7.15925345080905,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.443864703178406,
+              "pre_end_gap_units": 0.000544099835678935,
+              "sampled_path_length_units": 7.15925345080905,
+              "samples": 34
+            }
+          },
+          "R": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.543822944164276,
+              "pre_end_gap_units": 0.000164010940352455,
+              "sampled_path_length_units": 7.55488164853887,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.543822944164276,
+              "pre_end_gap_units": 0.000164010940352455,
+              "sampled_path_length_units": 7.55488164853887,
+              "samples": 34
+            }
+          }
+        },
+        "loop_candidate": 0,
+        "loop_source": 0,
+        "max_error": {
+          "position_units": 0.0,
+          "rotation_rad": 0.0,
+          "scale": 0.0
+        },
+        "passed": true,
+        "sample_times_seconds": [
+          0.0,
+          0.02734375,
+          0.0546875,
+          0.08203125,
+          0.109375,
+          0.13671875,
+          0.1640625,
+          0.19140625,
+          0.21875,
+          0.24609375,
+          0.2734375,
+          0.30078125,
+          0.328125,
+          0.35546875,
+          0.3828125,
+          0.41015625,
+          0.4375,
+          0.46484375,
+          0.4921875,
+          0.51953125,
+          0.546875,
+          0.57421875,
+          0.6015625,
+          0.62890625,
+          0.65625,
+          0.68359375,
+          0.7109375,
+          0.73828125,
+          0.765625,
+          0.79296875,
+          0.8203125,
+          0.84765625,
+          0.8749,
+          0.875
+        ],
+        "sampled_poses": 34,
+        "within_pose_thresholds": true,
+        "worst_location": {}
+      },
+      "HumanArmature|Man_Walk": {
+        "duration_candidate_seconds": 1.04166662693024,
+        "duration_source_seconds": 1.04166662693024,
+        "errors": [],
+        "feet": {
+          "L": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.287490099668503,
+              "pre_end_gap_units": 0.000591679767239839,
+              "sampled_path_length_units": 4.68391505937325,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.287490099668503,
+              "pre_end_gap_units": 0.000591679767239839,
+              "sampled_path_length_units": 4.68391505937325,
+              "samples": 34
+            }
+          },
+          "R": {
+            "candidate": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.333667278289795,
+              "pre_end_gap_units": 0.000403496902436018,
+              "sampled_path_length_units": 4.54634172888473,
+              "samples": 34
+            },
+            "source": {
+              "endpoint_gap_units": 0.0,
+              "max_sample_step_units": 0.333667278289795,
+              "pre_end_gap_units": 0.000403496902436018,
+              "sampled_path_length_units": 4.54634172888473,
+              "samples": 34
+            }
+          }
+        },
+        "loop_candidate": 0,
+        "loop_source": 0,
+        "max_error": {
+          "position_units": 0.0,
+          "rotation_rad": 0.0,
+          "scale": 0.0
+        },
+        "passed": true,
+        "sample_times_seconds": [
+          0.0,
+          0.0325520820915699,
+          0.0651041641831398,
+          0.0976562462747097,
+          0.13020832836628,
+          0.16276041045785,
+          0.195312492549419,
+          0.227864574640989,
+          0.260416656732559,
+          0.292968738824129,
+          0.325520820915699,
+          0.358072903007269,
+          0.390624985098839,
+          0.423177067190409,
+          0.455729149281979,
+          0.488281231373549,
+          0.520833313465118,
+          0.553385395556688,
+          0.585937477648258,
+          0.618489559739828,
+          0.651041641831398,
+          0.683593723922968,
+          0.716145806014538,
+          0.748697888106108,
+          0.781249970197678,
+          0.813802052289248,
+          0.846354134380817,
+          0.878906216472387,
+          0.911458298563957,
+          0.944010380655527,
+          0.976562462747097,
+          1.00911454483867,
+          1.04156662693024,
+          1.04166662693024
+        ],
+        "sampled_poses": 34,
+        "within_pose_thresholds": true,
+        "worst_location": {}
+      }
+    },
+    "root_motion": "bone world transforms compared; no gameplay displacement applied",
+    "sampled_poses": 102,
+    "samples_per_clip": 33,
+    "sampling": "fresh scene pair at every sample, manual animation evaluation; reset poses",
+    "schema": 1,
+    "selected_clips": [
+      "HumanArmature|Man_Idle",
+      "HumanArmature|Man_Walk",
+      "HumanArmature|Man_Run"
+    ],
+    "thresholds": {
+      "position_units": 0.0001,
+      "rotation_rad": 0.001,
+      "scale": 0.0001
+    },
+    "transform_comparisons": 6528,
+    "validation_scope": "selected clips only; not global asset acceptance",
+    "worst_location": {
+      "position_units": "HumanArmature|Man_Idle@0.000000:LowerLeg.L:world"
+    },
+    "source_sha256": "7fd28255c484e19ba5086d9cf815128e21dfcb677d262a88b237a5f5af081c5f",
+    "candidate_sha256": "81cb796f53cb97762860b16ff48f14837820d651f456d77a1b8113eea14d2545"
+  },
+  "self_test_passed": true,
+  "inputs_unchanged": true
+}

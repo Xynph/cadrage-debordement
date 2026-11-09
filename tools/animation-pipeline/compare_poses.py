@@ -20,7 +20,7 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def negative_glb(source, destination):
+def negative_glb(source, destination, clips=None):
     """Alter real translation keys by +5cm, keeping valid GLB layout/accessors."""
     raw = Path(source).read_bytes()
     magic, version, total = struct.unpack_from('<III', raw)
@@ -36,6 +36,8 @@ def negative_glb(source, destination):
     binary = next(data for kind, data in chunks if kind == 0x004E4942)
     changed = False
     for animation in doc.get('animations', []):
+        if clips and animation.get('name') not in clips:
+            continue
         for channel in animation['channels']:
             if channel['target']['path'] != 'translation':
                 continue
@@ -67,7 +69,7 @@ def negative_glb(source, destination):
     Path(destination).write_bytes(struct.pack('<III', magic, version, 12 + len(data)) + data)
 
 
-def compare(godot, source, candidate, samples, thresholds):
+def compare(godot, source, candidate, samples, thresholds, clips=None):
     with tempfile.TemporaryDirectory(prefix='oval-pose-') as td:
         p = Path(td)
         (p / 'project.godot').write_text('config_version=5\n[application]\nconfig/name="Isolated pose comparison"\n[rendering]\nrenderer/rendering_method="gl_compatibility"\n')
@@ -78,7 +80,7 @@ def compare(godot, source, candidate, samples, thresholds):
         for name in ('XDG_DATA_HOME', 'XDG_CONFIG_HOME', 'XDG_CACHE_HOME'):
             env[name] = str(p / name.lower())
         command = [godot, '--headless', '--path', str(p), '--script', str(script), '--',
-                   str(source), str(candidate), str(output), str(samples), *map(str, thresholds)]
+                   str(source), str(candidate), str(output), str(samples), *map(str, thresholds), json.dumps(clips or [])]
         process = subprocess.run(command, capture_output=True, text=True, timeout=120, env=env)
         logs = process.stdout + '\n' + process.stderr
         if any(marker in logs for marker in ('SCRIPT ERROR:', 'Parse Error:', 'ERROR:')):
@@ -104,24 +106,32 @@ def main():
     ap.add_argument('--rotation-rad', type=float, default=0.001)
     ap.add_argument('--scale', type=float, default=0.0001)
     ap.add_argument('--self-test', action='store_true')
+    ap.add_argument('--clip', action='append', default=[], help='Exact clip name; repeat for an explicitly partial comparison')
     args = ap.parse_args()
     if args.samples < 2 or not all(math.isfinite(x) and x > 0 for x in (args.position_units, args.rotation_rad, args.scale)):
         ap.error('samples >= 2 and positive thresholds required')
+    if any(not name.strip() for name in args.clip) or len(set(args.clip)) != len(args.clip):
+        ap.error('clip names must be nonempty and unique')
     source = args.source.resolve(strict=True)
     candidate = args.candidate.resolve(strict=True)
     output = args.out.resolve()
     if any(output == p or (output.exists() and output.samefile(p)) for p in (source, candidate)):
         ap.error('output must not alias source or candidate')
+    if output.suffix.lower() != '.json':
+        ap.error('output must use .json extension')
     before = {p: sha(p) for p in (source, candidate)}
     limits = (args.position_units, args.rotation_rad, args.scale)
-    report = {'candidate': compare(args.godot, source, candidate, args.samples, limits)}
-    if args.self_test:
-        report['identity'] = compare(args.godot, source, source, args.samples, limits)
+    report = {'candidate': compare(args.godot, source, candidate, args.samples, limits, args.clip)}
+    if args.self_test and not any('Requested clip missing' in e for e in report['candidate']['errors']):
+        report['identity'] = compare(args.godot, source, source, args.samples, limits, args.clip)
         with tempfile.TemporaryDirectory(prefix='oval-negative-') as td:
             negative = Path(td) / 'negative.glb'
-            negative_glb(source, negative)
-            report['negative_control'] = compare(args.godot, source, negative, args.samples, limits)
+            negative_glb(source, negative, args.clip)
+            report['negative_control'] = compare(args.godot, source, negative, args.samples, limits, args.clip)
         report['self_test_passed'] = report['identity']['passed'] and not report['negative_control']['passed']
+    if args.self_test and 'self_test_passed' not in report:
+        report['self_test_passed'] = False
+        report['self_test_error'] = 'Requested clip missing; controls not run'
     if any(sha(p) != digest for p, digest in before.items()):
         raise RuntimeError('An input changed during comparison')
     report['inputs_unchanged'] = True

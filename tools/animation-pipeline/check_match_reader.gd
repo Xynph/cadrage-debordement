@@ -37,7 +37,7 @@ func same_poses(rig: Skeleton3D, before: Array[Transform3D]) -> bool:
 func finish() -> void:
 	var result := {"schema": "oval-animation-reader/v1", "passed": passed, "failures": failures,
 		"engine": Engine.get_version_info().string, "display_server": DisplayServer.get_name(), "metrics": metrics,
-		"limits": ["Fixtures authored, no sporting causality validated", "No Windows or graphical performance reception", "Only existing athlete, no replacement asset accepted"]}
+		"limits": ["Fixtures authored, no sporting causality validated", "No Windows or graphical performance reception", "Only staged athlete checked; its hash identifies the tested asset, not an acceptance for distribution"]}
 	var output := OS.get_environment("CD_ANIMATION_READER_RESULTS")
 	if output.is_empty():
 		output = ProjectSettings.globalize_path("res://../../tools/animation-pipeline/reader-results.json")
@@ -66,7 +66,20 @@ func finish() -> void:
 
 func run() -> void:
 	var source := "res://assets/match3d/quaternius-rugby-athlete.glb"
+	metrics.loaded_asset_sha256 = FileAccess.get_sha256(ProjectSettings.globalize_path(source))
 	check(ResourceLoader.exists(source), "Existing athlete imported and available")
+	var import_config := ConfigFile.new()
+	var import_ok := import_config.load(source + ".import") == OK
+	var imported_path: String = str(import_config.get_value("remap", "path", "")) if import_ok else ""
+	var md5_path := imported_path.get_basename() + ".md5"
+	var cache_values: Dictionary = {}
+	if import_ok and FileAccess.file_exists(md5_path):
+		for line in FileAccess.get_file_as_string(md5_path).split("\n"):
+			var parts := line.split("=", true, 1)
+			if parts.size() == 2:
+				cache_values[parts[0].strip_edges()] = parts[1].strip_edges().trim_prefix("\"").trim_suffix("\"")
+	check(cache_values.get("source_md5", "") == FileAccess.get_md5(source), "Import cache matches staged GLB content")
+	check(not imported_path.is_empty() and cache_values.get("dest_md5", "") == FileAccess.get_md5(imported_path), "Imported scene cache is intact")
 	if not failures.is_empty():
 		finish()
 		return
