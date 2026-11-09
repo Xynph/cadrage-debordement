@@ -19,6 +19,7 @@ var category: OptionButton
 var search: LineEdit
 var count: Label
 var new_events: Label
+var review: Button
 var latest: Button
 var scroll: ScrollContainer
 var rows: VBoxContainer
@@ -92,6 +93,13 @@ func setup(owner_app: Control) -> void:
 	status.add_child(count)
 	new_events = G.wrap("", 12, G.GOLD)
 	status.add_child(new_events)
+	review = G.button("RELIRE", _review)
+	review.name = "MatchJournalReview"
+	review.tooltip_text = "Relire un instantané des faits filtrés et leurs positions enregistrées"
+	review.custom_minimum_size.y = 32
+	review.add_theme_font_size_override("font_size",12)
+	navigation.add_child(review)
+	_compact_control(review)
 	latest = G.button("DERNIER ÉVÉNEMENT ↓", _latest)
 	latest.custom_minimum_size.y = 32
 	latest.add_theme_font_size_override("font_size", 12)
@@ -140,6 +148,10 @@ static func _compact_control(control: Control) -> void:
 		control.add_theme_stylebox_override(key, style)
 
 func _bind_current_context() -> void:
+	var old_review := find_child("MatchActionReview",true,false)
+	if old_review != null:
+		old_review.hide()
+		old_review.queue_free()
 	_ui_state = app.management_ui
 	_revision += 1
 	_started = false
@@ -254,6 +266,7 @@ func _render(position: int, follow: bool) -> void:
 	count.text = "%d / %d faits" % [visible_events.size(), _events.size()]
 	empty.visible = visible_events.is_empty()
 	empty.text = "Aucun événement pour ces filtres." if not _events.is_empty() else "Le journal se remplira après le coup d’envoi."
+	review.disabled = visible_events.is_empty()
 	latest.disabled = visible_events.is_empty()
 	_notice()
 	_event_font_floor = _reading_font_floor()
@@ -320,3 +333,8 @@ func _latest() -> void:
 	scroll.scroll_vertical = int(scroll.get_v_scroll_bar().max_value)
 	_notice()
 	_store()
+
+func _review() -> void:
+	# Local owned dialog is discarded with this journal on import/navigation.
+	if find_child("MatchActionReview",true,false) != null: return
+	load("res://match_action_review.gd").open(self,visible_events,_live.get("teams",[]))
