@@ -526,9 +526,19 @@ func _leader(area: Rect2, title: String, icon_id: String, metric: String, captio
 		elif club[metric] == best[metric]:
 			tied += 1
 	if not best.is_empty(): _crest(panel, best, Rect2(16, 82, 74, 74))
-	D.text(panel, 105, 94, "Donnée à venir" if best.is_empty() else G.club_name(best), 29, C.IVORY, 700, 252)
-	D.text(panel, 105, 151, S.count_text(best.get(metric)), 56, C.IVORY, 800, 235)
-	D.text(panel, 105, 183, caption + (" · %d ex æquo" % tied if tied > 1 else ""), 23, C.MUTED, 500, 252)
+	var club_name := D.text(panel, 105, 94, "Donnée à venir" if best.is_empty() else G.club_name(best), 29, C.IVORY, 700, 252)
+	var font := club_name.get_theme_font("font")
+	var wrap_name := font.get_string_size(club_name.text, HORIZONTAL_ALIGNMENT_LEFT, -1, club_name.get_theme_font_size("font_size")).x > club_name.size.x
+	if wrap_name:
+		club_name.add_theme_font_size_override("font_size", maxi(12, C.px(24)))
+		club_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		club_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		club_name.max_lines_visible = 2
+		club_name.add_theme_constant_override("line_spacing", 0)
+		club_name.position.y = C.px(57)
+		club_name.size.y = C.px(60)
+	D.text(panel, 105, 166 if wrap_name else 151, S.count_text(best.get(metric)), 48 if wrap_name else 56, C.IVORY, 800, 235)
+	D.text(panel, 105, 201 if wrap_name else 183, caption + (" · %d ex æquo" % tied if tied > 1 else ""), 23, C.MUTED, 500, 252)
 
 func _division_choices(parent: Node, x: float, y: float) -> void:
 	var gap := 8 if international else 13

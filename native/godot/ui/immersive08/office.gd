@@ -26,6 +26,40 @@ static func _open_player(app: Control, id: String) -> void:
 static func open_notebook(app: Control) -> void:
 	preload("res://ui/coach_notes_view.gd").open(app, "career")
 
+static func territory_art(club: Dictionary) -> VBoxContainer:
+	var identity := G.identity(club)
+	var photos: Dictionary = identity.get("photos", {})
+	if photos.is_empty(): return null
+	var cards := C.v(6)
+	cards.name = "OfficeTerritoryPreviews"
+	cards.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for info in [["city","VILLE DU CLUB","OfficeCityPreview"],["stadium","STADE DU CLUB","OfficeStadiumPreview"]]:
+		var kind: String = info[0]
+		var photo: Dictionary = photos.get(kind, {})
+		if photo.is_empty(): continue
+		var picture := G.picture(str(identity.get("slug", "")),kind,true,str(photo.get("path", "")))
+		if not picture.get_meta("photo_from_pack", false):
+			picture.free()
+			continue
+		picture.name = info[2]
+		picture.custom_minimum_size = Vector2.ZERO
+		C.fill(picture, true)
+		cards.add_child(picture)
+		var content: VBoxContainer = picture.get_meta("content")
+		content.add_theme_constant_override("separation", C.px(3))
+		content.add_child(G.spacer())
+		var title := C.label(info[1] + " · " + str(identity.get(kind, "—")), 20, C.IVORY, true, 700)
+		title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		content.add_child(title)
+		var credit := C.label(photo.get("credit", ""), 17, C.MUTED)
+		credit.name = "OfficePhotoCredit"
+		credit.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		content.add_child(credit)
+		describe_fixture(credit, "\n".join([title.text, credit.text, str(photo.get("source", "")), str(photo.get("license", ""))]))
+	if cards.get_child_count() > 0: return cards
+	cards.free()
+	return null
+
 static func build(app: Control) -> Control:
 	var page := C.v(16)
 	page.name = "ImmersiveOffice"
@@ -47,27 +81,33 @@ static func build(app: Control) -> Control:
 
 static func _fixture(frame: PanelContainer, app: Control) -> void:
 	frame.clip_contents = true
-	var backdrop := Control.new()
-	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	frame.add_child(backdrop)
-	frame.move_child(backdrop, 0)
 	var japan := SeasonPreparation.is_japan(app.model.meta)
-	var ground := P.fixture_ground(app.model.meta,"office-hero")
-	var image := C.photo(ground,Vector2.ZERO,true,.53 if ground != "office-hero" else 0.0)
-	backdrop.add_child(image)
-	image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	image.anchor_left = .51
-	C.veil(backdrop)
+	var territory := territory_art(app.model.club)
+	if territory == null:
+		var backdrop := Control.new()
+		backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		frame.add_child(backdrop)
+		frame.move_child(backdrop, 0)
+		var ground := P.fixture_ground(app.model.meta,"office-hero")
+		var image := C.photo(ground,Vector2.ZERO,true,.53 if ground != "office-hero" else 0.0)
+		backdrop.add_child(image)
+		image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		image.anchor_left = .51
+		C.veil(backdrop)
 	var row := C.h(0)
 	C.fill(row, true)
 	C.content(frame).add_child(row)
 	var left := C.v(8)
 	C.fill(left, true, 1.1)
 	row.add_child(left)
-	var space := Control.new()
-	space.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	C.fill(space, false, 1.0)
-	row.add_child(space)
+	if territory != null:
+		C.fill(territory, true)
+		row.add_child(territory)
+	else:
+		var space := Control.new()
+		space.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		C.fill(space)
+		row.add_child(space)
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
 	var preparation := SeasonPreparation.data(app.model.meta)
 	if next.is_empty():

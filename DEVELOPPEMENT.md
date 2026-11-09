@@ -10,6 +10,8 @@ La recette du premier ZIP Nationale a révélé cinq défauts de redimensionneme
 
 Le ZIP Windows `a675dc4` passe 141 contrôles avec le pack Nationale et 233 contrôles avec le pack Pacifique après extraction et déplacement. La branche reprend ensuite le Champ Rugby sur `a378ef2` avec son illustration de terrain, les 14 clubs, les actions de préparation et la source des dates et heures. Le classement compact conserve le focus sur chacun de ses onze onglets. La recette source Champ avec pack complet reprend la saison 2. La [matrice immersive](docs/immersive08-coverage.md) détaille les preuves par version.
 
+Le ZIP Champ `5480f9c` passe 145 contrôles avec son pack complet et 445 dans la recette Windows générale. Le raccord Atlas sur `96ffca2` donne la priorité aux photos et crédits sur le Bureau et dans Club. Le scénario officiel Atlas passe en source sans fenêtre. Réception compose deux extraits de la même maquette approuvée, ce qui porte la bibliothèque à 52 PNG. La fiche joueur utilise les données de disponibilité et conserve le portrait d’origine entier.
+
 ## 9 novembre 2026 — carrière européenne et profils compatibles
 
 L'édition `rugby-world-2026-11-08-v1` ajoute le mode Monde sans convertir les anciennes carrières. Le registre compilé reprend les 1 592 objets France à l'identique et ajoute PREM, URC et deux invités européens. Les dates de départ sourcées, les règles et leurs éditions figurent dans la [documentation des compétitions](docs/world-competition-rules-20261109.md). Les calendriers futurs et les invitations du monde fermé suivent des décisions de jeu explicites, sans importer de scores réels.

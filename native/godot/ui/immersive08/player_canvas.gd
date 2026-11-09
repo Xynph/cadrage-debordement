@@ -3,6 +3,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const Tactics = preload("res://ui/immersive08/tactics_canvas.gd")
+const Training = preload("res://ui/immersive08/training_canvas.gd")
 const Notes = preload("res://ui/coach_notes_view.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
@@ -50,9 +51,16 @@ class PositionPitch extends Control:
 static func build(app:Control,player:Dictionary) -> Control:
 	var page:=Control.new();page.name="ImmersivePlayerFull";page.custom_minimum_size=Vector2(2248,1236)*C.density;C.fill(page,true)
 	var hero:=D.panel(page,Rect2(0,0,2248,350),"","","","FullPlayerHero")
+	var portrait: TextureRect
 	if not str(player.get("portraitPath","")).is_empty():
-		var image:=G.portrait(int(player.get("portraitIndex",0)),C.px(482),player);hero.add_child(image);D.place(image,Rect2(1,1,482,348));hero.tooltip_text=image.tooltip_text
-	else:D.photo(hero,"player-hero",Rect2(1,1,482,348));hero.tooltip_text="Portrait décoratif fictif généré par IA"
+		portrait = G.portrait(int(player.get("portraitIndex",0)),0,player)
+	else:
+		portrait = C.photo("player-hero",Vector2.ZERO,false)
+		portrait.tooltip_text = "Portrait décoratif fictif généré par IA"
+	hero.add_child(portrait)
+	# Le portrait occupe aussi la marge à gauche des onglets.
+	D.place(portrait,Rect2(1,1,469,429))
+	hero.tooltip_text = portrait.tooltip_text
 	var number:=G.n(player.shirtNumber) if player.get("shirtNumber")!=null else "—"
 	var shirt := _slanted_badge(hero,Rect2(510,41,140,102),Color("102724"),Color(C.IVORY,.78))
 	ClubUI.italic(D.text(shirt,70,82,number,82,C.IVORY,800,110,HORIZONTAL_ALIGNMENT_CENTER),800).name="FullPlayerNumber"
@@ -175,9 +183,30 @@ static func _health(card:Panel,app:Control,player:Dictionary) -> void:
 	D.text(card,300,112,G.n(player.get("physicalLoad",0)),62,C.GOLD,700,235)
 	D.text(card,300,149,"FATIGUE",22,C.MUTED,500,235)
 	D.bar(card,Rect2(24,171,514,8),float(player.get("condition",0)))
-	D.text(card,24,222,"Indisponible · "+G.n(player.get("injury",0))+" sem." if float(player.get("injury",0))>0 else "Disponible pour le groupe",29,C.ALERT if float(player.get("injury",0))>0 else C.MINT,700,514)
-	D.photo(card,"medical-recovery",Rect2(24,245,514,174))
+	var injury: float = player.get("injury",0)
+	var medical: Array = app.model.get("clubLife",{}).get("clubSupport",{}).get("medical",{}).get("players",[])
+	var recovering := medical.any(func(record: Dictionary): return record.get("id")==player.id and record.get("stage")=="reprise")
+	var available := "Disponible pour le groupe"
+	if injury > 0: available = "Indisponible · "+G.n(injury)+" sem."
+	elif recovering: available = "En reprise"
+	D.text(card,24,222,available,29,C.ALERT if injury>0 else C.GOLD if recovering else C.MINT,700,514).name = "PlayerAvailability"
+	var show_medical := injury > 0 or recovering
+	if show_medical: D.photo(card,"medical-recovery",Rect2(306,245,232,174))
+	var satisfaction: Variant = null
+	for member: Dictionary in app.model.get("clubLife",{}).get("relationships",{}).get("players",[]):
+		if member.get("id") == player.id:
+			satisfaction = member.get("score")
+			break
+	var width := 266 if show_medical else 514
+	_health_fact(card,245,width,"SATISFACTION DU JOUEUR",G.n(satisfaction)+" / 100" if satisfaction!=null else "Non renseignée","PlayerSatisfaction")
+	var plan: String = Training.INDIVIDUAL.get(player.get("loadPlan",""),"Non renseigné")
+	_health_fact(card,335,width,"PLAN DE CHARGE",plan,"PlayerTrainingLoadPlan")
 	D.button(card,Rect2(24,447,514,45),"Régler la charge individuelle",func():Tactics._individual(app,player),false,"arrow",true,app.accent,"PlayerLoad")
+
+static func _health_fact(card: Panel, y: int, width: int, caption: String, value: String, id: String) -> void:
+	var fact := D.rect(card,Rect2(24,y,width,80),Color("121c1c"),5,C.LINE)
+	D.text(fact,14,29,caption,20,C.MUTED,600,width-28)
+	D.text(fact,14,61,value,28,C.IVORY,600,width-28).name = id
 
 static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
 	var stats:Array=[[G.n(player.get("appearances",0)),"APPARITIONS"],[G.n(player.get("minutes",0)),"MINUTES"],[G.n(player.get("note","—")),"NOTE AU POSTE"]]

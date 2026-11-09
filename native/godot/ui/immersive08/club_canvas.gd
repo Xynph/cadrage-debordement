@@ -91,23 +91,54 @@ static func _overview(app: Control, canvas: Control) -> void:
 	_fans(D.panel(canvas, Rect2(1452,632,796,427), "Vie du club", "mail", "", "ClubLife"), app, strategy)
 	_footer(D.panel(canvas, Rect2(0,1075,2248,169), "", "", "", "ClubBoardAndBudget"), app, finance, board)
 
+static func _venue_picture(identity: Dictionary, kind: String, allow_archive: bool = true) -> Control:
+	var photo: Dictionary = identity.get("photos", {}).get(kind, {})
+	var slug := str(identity.get("slug", "")) if allow_archive else ""
+	return G.picture(slug, kind, false, str(photo.get("path", "")))
+
+static func _venue_credit(control: Control, photo: Dictionary) -> void:
+	control.mouse_filter = Control.MOUSE_FILTER_STOP
+	control.tooltip_text = "%s\nSource : %s\nLicence : %s" % [photo.get("credit", ""), photo.get("source", ""), photo.get("license", "")]
+	control.accessibility_name = control.tooltip_text
+
+static func _overview_city(card: Panel, identity: Dictionary) -> void:
+	var photo: Dictionary = identity.get("photos", {}).get("city", {})
+	if photo.is_empty(): return
+	var picture := _venue_picture(identity, "city", false)
+	if not picture.get_meta("photo_from_pack", false):
+		picture.free()
+		return
+	var preview := D.panel(card, Rect2(696,16,217,290), "", "", "", "ClubOverviewCity")
+	preview.clip_contents = true
+	preview.add_child(picture)
+	D.place(picture, Rect2(1,1,215,202))
+	D.text(preview, 10, 225, "VILLE DU CLUB", 16, C.GOLD, 700, 197)
+	var place: Variant = identity.get("city")
+	if place is String and not place.is_empty(): D.text(preview, 10, 251, place, 24, C.IVORY, 700, 197)
+	var credit := D.text(preview, 10, 275, photo.get("credit", ""), 17, C.MUTED, 500, 197)
+	credit.name = "VenuePhotoCredit_city"
+	_venue_credit(credit, photo)
+
 static func _stadium(card: Panel, app: Control, fans: Dictionary) -> void:
 	card.clip_contents = true
 	var identity := G.identity(app.model.club)
 	var stadium_art := str(identity.get("stadiumImage",""))
 	var pack_id := str(app.model.get("packs",{}).get("career","base"))
-	var archive := pack_id != "base" and not stadium_art.is_empty() and ResourceLoader.exists("res://"+stadium_art)
-	if archive:
-		var picture := G.picture(str(identity.get("slug","")),"stadium",false)
+	var allow_archive := pack_id != "base" and not stadium_art.is_empty() and ResourceLoader.exists("res://"+stadium_art)
+	var picture := _venue_picture(identity, "stadium", allow_archive)
+	var has_photo: bool = picture.get_meta("has_photo", false)
+	var from_pack: bool = picture.get_meta("photo_from_pack", false)
+	if has_photo:
 		card.add_child(picture)
 		D.place(picture, Rect2(1,1,932,386))
 	else:
+		picture.free()
 		var illustration := C.photo("stadium", Vector2.ZERO, false)
 		card.add_child(illustration)
 		D.place(illustration, Rect2(1,1,932,345))
 	var gradient := Gradient.new()
 	# Le raccord de l’illustration à son cartouche se trouve sous le fondu opaque.
-	gradient.offsets = PackedFloat32Array([0.0, .46, .86] if archive else [0.0, .37, .54])
+	gradient.offsets = PackedFloat32Array([0.0, .46, .86] if has_photo else [0.0, .37, .54])
 	gradient.colors = PackedColorArray([Color("0c181700"), Color("0c1817d9"), Color("0c1817")])
 	var texture := GradientTexture2D.new()
 	texture.gradient = gradient
@@ -119,7 +150,16 @@ static func _stadium(card: Panel, app: Control, fans: Dictionary) -> void:
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(shade)
 	D.place(shade, Rect2(1,278,932,123))
-	D.chip(card, Rect2(21,16,175,27), "PHOTO D’ARCHIVE" if archive else "ILLUSTRATION", C.GOLD)
+	var media_label := "PHOTO DU PACK" if from_pack else "PHOTO D’ARCHIVE" if has_photo else "ILLUSTRATION"
+	var media_chip := D.chip(card, Rect2(21,16,175,27), media_label, C.GOLD)
+	if from_pack:
+		var photo: Dictionary = identity.photos.stadium
+		_venue_credit(media_chip, photo)
+		var backing := D.rect(card, Rect2(205,16,472,27), Color("14211d"), 5, C.LINE)
+		var credit := D.text(backing, 10, 19, photo.get("credit", ""), 17, C.MUTED, 500, 452)
+		credit.name = "VenuePhotoCredit_stadium"
+		_venue_credit(credit, photo)
+	_overview_city(card, identity)
 	D.text(card, 23, 348, str(G.identity(app.model.club).get("stadium", "Le stade du club")), 41, C.IVORY, 700, 598)
 	U.icon(card, "people", Vector2(24,363), C.MUTED, 24)
 	var attendance := "Affluence prévue " + G.n(fans.expectedAttendance) if fans.has("expectedAttendance") else "Affluence indisponible"
@@ -164,21 +204,32 @@ static func _goals(card: Panel, app: Control, board: Dictionary) -> void:
 	for league: Dictionary in app.model.get("leagues",[]):
 		if league.get("id") == app.model.meta.get("leagueId"): division_size = league.get("rows",[]).size()
 	U.icon(card, "trophy", Vector2(22,76), C.GOLD, 32)
-	D.text(card, 72, 103, app.model.club.get("goal", "Projet sportif"), 30, C.IVORY, 700, 400)
-	D.text(card, 72, 139, "Classement actuel", 23, C.MUTED, 500, 279)
+	var objective := D.text(card, 72, 103, app.model.club.get("goal", "Projet sportif"), 30, C.IVORY, 700, 400)
+	var font := objective.get_theme_font("font")
+	var offset := 0
+	if font.get_string_size(objective.text, HORIZONTAL_ALIGNMENT_LEFT, -1, objective.get_theme_font_size("font_size")).x > objective.size.x:
+		objective.add_theme_font_size_override("font_size", maxi(12, C.px(26)))
+		objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		objective.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		objective.max_lines_visible = 2
+		objective.add_theme_constant_override("line_spacing", 0)
+		objective.position.y = C.px(64)
+		objective.size.y = C.px(65)
+		offset = 20
+	D.text(card, 72, 139 + offset, "Classement actuel", 23, C.MUTED, 500, 279)
 	if rank != null:
 		var position := "%s%s" % [G.n(rank),"er" if int(rank) == 1 else "e"]
 		if division_size > 0:
 			position += " / %d" % division_size
-			D.bar(card, Rect2(72,145,263,6), 100.0*(division_size-int(rank)+1)/division_size)
-		D.chip(card, Rect2(355,111,120,33), position, C.MINT)
-	D.line(card, Vector2(19,158), Vector2(480,158))
+			D.bar(card, Rect2(72,145 + offset,263,6), 100.0*(division_size-int(rank)+1)/division_size)
+		D.chip(card, Rect2(355,111 + offset,120,33), position, C.MINT)
+	D.line(card, Vector2(19,158 + offset), Vector2(480,158 + offset))
 	for i in mini(2, goals.size()):
 		var goal: Dictionary = goals[i]
 		var kind := str(goal.get("type",""))
 		var status := str(goal.get("status","pending"))
 		var hue := C.MINT if status == "met" else C.ALERT if status == "missed" else C.AMBER
-		var y := 169 + i * 84
+		var y := 169 + offset + i * 84
 		U.icon(card, "flag", Vector2(23,y+15), hue, 25)
 		D.text(card, 72, y+28, GOALS.get(kind,"Jalon du conseil"), 25, C.IVORY, 700, 252)
 		var target: Variant = goal.get("target")
@@ -189,9 +240,9 @@ static func _goals(card: Panel, app: Control, board: Dictionary) -> void:
 			D.bar(card, Rect2(72,y+63,263,6), 100.0*float(metrics[kind])/float(target), hue)
 		D.line(card, Vector2(19,y+75), Vector2(480,y+75), Color(C.LINE,.65))
 	if goals.is_empty():
-		U.icon(card, "flag", Vector2(23,179), C.GOLD, 25)
-		D.text(card, 72, 201, "Aucun jalon enregistré", 26, C.IVORY, 600, 405)
-		D.text(card, 72, 238, "Fixez une échéance avec la direction.", 22, C.MUTED, 500, 400)
+		U.icon(card, "flag", Vector2(23,179 + offset), C.GOLD, 25)
+		D.text(card, 72, 201 + offset, "Aucun jalon enregistré", 26, C.IVORY, 600, 405)
+		D.text(card, 72, 238 + offset, "Fixez une échéance avec la direction.", 22, C.MUTED, 500, 400)
 	D.button(card, Rect2(21,351,457,36), "Suivre les objectifs", func(): _open_strategy(app, 1), false, "arrow", true, U.GREEN, "ClubBoardGoals")
 
 static func _locker(card: Panel, app: Control) -> void:
@@ -485,21 +536,25 @@ static func _territory(app: Control, canvas: Control) -> void:
 	canvas.add_child(page)
 	D.place(page, Rect2(0,214,2248,1030))
 	var identity := G.identity(app.model.club)
-	var slug := str(identity.get("slug",""))
 	for i in 2:
 		var kind := "stadium" if i == 0 else "city"
 		var panel := D.panel(page, Rect2(i*1132,0,1116,821), "Le stade" if i == 0 else "Le territoire", "home")
-		var archive_path := "res://assets/club-atlas/%s-%s.webp" % [slug,kind]
+		var picture := _venue_picture(identity, kind)
+		var from_pack: bool = picture.get_meta("photo_from_pack", false)
 		var caption := "Photographie d’archive · crédits accessibles"
-		if ResourceLoader.exists(archive_path):
-			var picture := G.picture(slug,kind,false)
+		if picture.get_meta("has_photo", false):
 			panel.add_child(picture)
 			D.place(picture, Rect2(16,68,1084,642))
 		else:
+			picture.free()
 			D.photo(panel, "stadium" if i == 0 else "club-forest", Rect2(16,68,1084,642))
 			caption = "Illustration fictive"
 		D.text(panel, 24, 760, identity.get("stadium",app.model.club.get("stadium","Le stade")) if i == 0 else identity.get("city","Le territoire"), 43, C.IVORY, 700, 1064)
-		D.text(panel, 24, 798, caption, 23, C.MUTED, 500, 1064)
+		var photo: Dictionary = identity.get("photos", {}).get(kind, {})
+		var credit := D.text(panel, 24, 798, "Photo · " + str(photo.get("credit", "")) if from_pack else caption, 23, C.MUTED, 500, 1064)
+		if from_pack:
+			credit.name = "VenuePhotoCredit_" + kind
+			_venue_credit(credit, photo)
 	var links := D.panel(page, Rect2(0,837,2248,193), "Un territoire, une identité", "shield")
 	D.text(links, 24, 116, "Retrouvez les archives du territoire et écrivez la suite de l’histoire du club.", 31, C.IVORY, 600, 1360)
 	D.button(links, Rect2(1415,80,373,59), "Crédits et licences", app._credits, false, "info", false, U.GREEN, "ClubAtlasCredits")

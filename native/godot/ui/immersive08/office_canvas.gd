@@ -35,9 +35,14 @@ static func build(app: Control) -> Control:
 static func _fixture(card: Panel, app: Control) -> void:
 	card.clip_contents = true
 	var japan := SeasonPreparation.is_japan(app.model.meta)
-	var ground := P.fixture_ground(app.model.meta,"office-hero")
-	D.photo(card,ground,Rect2(694,1,665,416),.53 if ground != "office-hero" else 0.0)
-	C.veil(card)
+	var territory := Office.territory_art(app.model.club)
+	if territory != null:
+		card.add_child(territory)
+		D.place(territory,Rect2(694,1,665,416))
+	else:
+		var ground := P.fixture_ground(app.model.meta,"office-hero")
+		D.photo(card,ground,Rect2(694,1,665,416),.53 if ground != "office-hero" else 0.0)
+		C.veil(card)
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
 	if next.is_empty():
 		var preparation := SeasonPreparation.data(app.model.meta)
@@ -91,7 +96,8 @@ static func _fixture(card: Panel, app: Control) -> void:
 	D.text(card,29,330,"Votre XV et votre plan de jeu pour la prochaine rencontre.",19,C.MUTED,400,660,HORIZONTAL_ALIGNMENT_LEFT,true)
 	D.button(card,Rect2(27,354,304,45),"PRÉPARER LE MATCH",func():app._navigate("Préparation"),true,"arrow",false,app.accent,"OfficePreparationAction")
 	D.button(card,Rect2(345,354,226,45),"Vérifier les 23",func():app._navigate("Composition"),false,"",false,app.accent,"OfficeSelectionAction")
-	D.chip(card,Rect2(1118,371,218,26),"FEUILLE À PRÉPARER" if not app.model.get("selection",{}).get("valid",false) else "FEUILLE COMPLÈTE",C.GOLD)
+	var badge := Rect2(1118,371,218,26) if territory==null else Rect2(432,277,218,26)
+	D.chip(card,badge,"FEUILLE À PRÉPARER" if not app.model.get("selection",{}).get("valid",false) else "FEUILLE COMPLÈTE",C.GOLD)
 
 static func _priorities(card: Panel, app: Control) -> void:
 	var contracts := P.contracts(app.model)

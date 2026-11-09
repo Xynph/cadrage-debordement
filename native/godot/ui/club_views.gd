@@ -440,7 +440,10 @@ static func tables(app: Control) -> Control:
 		G.reading_button(pool_choice, 104)
 		for pool: Dictionary in pools: pool_choice.add_item(str(pool.label))
 		pool_choice.select(selected_pool)
-		pool_choice.item_selected.connect(func(index: int): app.management_ui[pool_key] = index; app._render())
+		pool_choice.item_selected.connect(func(index: int):
+			app.management_ui[pool_key] = index
+			app._render()
+			preload("res://ui/immersive08/club_ui.gd").focus(app,"StandingsPoolChoice"))
 		toolbar.add_child(pool_choice)
 		toolbar.add_child(G.label(phase_name(str(chosen.get("phase", "pool"))), 12, G.MUTED))
 		rows = pools[selected_pool].rows
