@@ -40,3 +40,10 @@ test('A refused disk publication rolls back a youth plan and the exact request c
 test('Forged youth clocks, impossible metrics and duplicate tracked IDs are rejected atomically',t=>{
  const f=fixture(t);activated(f);const before=f.export();for(const mutate of [s=>s.youthDevelopment.rows[0].latest.season=s.season+1,s=>s.youthDevelopment.rows[0].latest.rating=999,s=>s.youthDevelopment.rows.push(JSON.parse(JSON.stringify(s.youthDevelopment.rows[0])))])unchangedRefusal(f,'import',{text:documentWith(before,mutate)});
 });
+
+test('A real recruit arriving after opt-in keeps the first training variation against its pre-session baseline',t=>{
+ const f=fixture(t);activated(f);let m=f.go('snapshot');const candidate=m.clubLife.regenScouting.candidates.find(p=>p.available&&p.age<=24);a.ok(candidate);
+ m=f.go('recruit',{playerId:candidate.id,salary:100000,years:1,confirmed:true});a.equal(m.meta.negotiation.status,'signed');const before=m.clubLife.youthDevelopment.players.find(p=>p.id===candidate.id);a.ok(before);a.equal(before.tracked,false);a.equal(before.baseline,null,'joining does not invent prior observations');
+ m=f.go('train',{mode:'normal'});const after=m.clubLife.youthDevelopment.players.find(p=>p.id===candidate.id);a.equal(after.baseline.generalXP,before.current.generalXP,'baseline is captured before the first real session');a.ok(after.deltas.generalXP>0,'first earned XP must remain observable');a.ok(after.observations.some(o=>o.reason==='trainWeek'));
+ const exact=f.export(),disk=bytes(f);f.restart();a.equal(f.export(),exact);a.deepEqual(bytes(f),disk);
+});

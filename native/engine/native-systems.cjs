@@ -40,11 +40,12 @@ function bootstrap(){
  };
  const staffBaseAdvance=advanceSeason;
  advanceSeason=function(){const state=S,completed=S?.season;const prior=nativeStaffTransition;nativeStaffTransition={state,completed};try{const result=staffBaseAdvance();if(S===state&&S?.season===completed+1)CDStaffCareer.advance(S,completed);return result;}finally{nativeStaffTransition=prior;}};
- // Measure only completed native operations, outside import and validation.
+ // Capture entrants before their first operation, then measure actual changes.
+ // Both observations remain outside import and validation.
  // Preserve existing academy/staff wrappers, their results and hook markers.
  for(const name of ['trainWeek','recordDevelopmentMatch','rollDevelopmentYear','advanceSeason','promoteYouth','managerMobilityOnSeasonStart']){
   const original=globalThis[name];if(typeof original!=='function')continue;
-  const observed=function(){const result=original.apply(this,arguments);if(typeof S!=='undefined'&&S)CDYouthDevelopment.observe(S,name);return result;};
+  const observed=function(){if(typeof S!=='undefined'&&S)CDYouthDevelopment.observe(S,name);const result=original.apply(this,arguments);if(typeof S!=='undefined'&&S)CDYouthDevelopment.observe(S,name);return result;};
   Object.assign(observed,original);globalThis[name]=observed;
  }`;
 }

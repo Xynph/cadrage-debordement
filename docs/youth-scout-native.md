@@ -6,7 +6,7 @@ Le raccord conserve le worker comme unique autorité de transaction et de public
 
 - `clubLife.regenScouting` : candidats majeurs de population v2, origines connues, fourchettes datées de recrutement, besoins, shortlist et conditions contractuelles existantes. `regen_shortlist` modifie seulement le suivi existant ; missions à 5 000 € et négociations passent par `scout_mission` et `recruit`.
 - `clubLife.youthDevelopment` : suivi explicitement activé par `youth_development_enable`, puis objectifs `general`, `specialist` ou `integration` par `youth_development_plan`. Les deux commandes demandent `confirmed:true` et le contexte exact `{season,week,club}`. Aucune activation à la lecture, à l'import ou à la création d'une carrière.
-- `CDYouthDevelopment` désigne exactement l'instance du domaine. Les observations suivent les fonctions natives `trainWeek`, `recordDevelopmentMatch`, `rollDevelopmentYear`, `advanceSeason`, `promoteYouth` et `managerMobilityOnSeasonStart`, après leurs wrappers préexistants. Elles ne donnent aucun point, minute, argent ou gain supplémentaire.
+- `CDYouthDevelopment` désigne exactement l'instance du domaine. Les observations suivent les fonctions natives `trainWeek`, `recordDevelopmentMatch`, `rollDevelopmentYear`, `advanceSeason`, `promoteYouth` et `managerMobilityOnSeasonStart`, autour de leurs wrappers préexistants (avant pour amorcer les nouveaux entrants, puis après pour mesurer les changements). Elles ne donnent aucun point, minute, argent ou gain supplémentaire.
 - La spécialisation active répartit le budget existant pour les regens selon le module auteur. Les profils annuels V11 ne reçoivent pas cette allocation : `specialist` est refusé. Les règles et limites détaillées appartiennent aux documents des domaines.
 
 ## Plan d'intégration
@@ -27,3 +27,9 @@ Les quinze tests courts de `tests/youth-scout-native.cjs`, `tests/youth-developm
 Le témoin de détection a d’abord échoué sur le registre absent, puis passé après raccord. Le même scénario d’XP échoue aussi dans une copie isolée privée de l’alias et des observations : il reçoit le partage de repli 50/50. Cela vérifie que l’instance du domaine actif pilote bien le vrai moteur. Les sources de production ne sont pas modifiées pour ce contre-test.
 
 Les huit tests de détection et les régressions systèmes/décisions ont également passé avant le raccord jeunes (26,1 s). La recette de saison réelle et la recette Godot sont encore à recevoir au moment de ce commit ; aucun succès de campagne longue, paquet Windows ou CI complète n’est déduit de ces tests courts.
+
+## Assemblage sur la tête de la PR423
+
+Le raccord suivant capture aussi les références avant chaque opération observée. Un test vrai worker reproduit le défaut initial : après recrutement postérieur à l’activation, la première séance devenait sa propre référence et masquait 0,077 XP. La référence pré-séance vaut maintenant 0, la première variation réelle reste visible, et la reprise conserve ce suivi. L’amorçage est limité au suivi déjà explicitement actif ; il ne s’exécute jamais pendant une lecture, l’import ou la validation.
+
+La réception d’intégration complète et les limites sont dans `docs/youth-scout-integration-20261109.md`. Le reçu de saison historique reste distinct ; aucune nouvelle campagne longue n’est assimilée à ce correctif.
