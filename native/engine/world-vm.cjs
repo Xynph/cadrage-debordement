@@ -13,13 +13,16 @@ const japanD1=require('./jlo-d1-calendar-2026-27-public.json'),japanD2=require('
 const nationaleMatch=require('./nationale-match.cjs'),nationaleSquad=require('./nationale-squad.cjs'),nationaleCards=require('./nationale-qualification.cjs'); const nationale=require('./nationale.cjs'),nationaleCalendar=require('./nationale-calendar-2026-27.json');
 const japanMatch=require('./japan-match.cjs'),japanEligibility=require('./japan-eligibility.cjs'),japanQuota=require('./japan-quota-runtime.cjs');
 
+const champRules=require('./champ-rugby.cjs'),champCalendar=require('./champ-calendar-2026-27.json'),champMatch=require('./champ-match.cjs');
+
 function bootstrap(){
  return [
   'const CDWorldRegistry=JSON.parse(nativeWorldRegistryText);',
   'const CDWorldPacificRegistry=typeof nativeWorldPacificRegistryText==="undefined"?null:JSON.parse(nativeWorldPacificRegistryText);',
   'const CDWorldJapanRegistry=typeof nativeWorldJapanRegistryText==="undefined"?null:JSON.parse(nativeWorldJapanRegistryText);',
   'const CDWorldNationaleRegistry=typeof nativeWorldNationaleRegistryText==="undefined"?null:JSON.parse(nativeWorldNationaleRegistryText);',
-  `const CDWorldEditions=(${createWorldEditions.toString()})(CDWorldRegistry,CDWorldPacificRegistry,CDWorldJapanRegistry,CDWorldNationaleRegistry);`,
+  'const CDWorldChampRegistry=typeof nativeWorldChampRegistryText==="undefined"?null:JSON.parse(nativeWorldChampRegistryText);',
+  `const CDWorldEditions=(${createWorldEditions.toString()})(CDWorldRegistry,CDWorldPacificRegistry,CDWorldJapanRegistry,CDWorldNationaleRegistry,CDWorldChampRegistry);`,
   `const CDWorldSRP=(${pacificRules.factory.toString()})(${JSON.stringify(pacificCalendar)});`,
   `const CDWorldSRPMatch=(${pacificMatch.toString()})(CDWorldSRP);`,
   `const CDWorldJapanRules=(${japanRules.factory.toString()})(${JSON.stringify(japanD1)});`,
@@ -29,6 +32,8 @@ function bootstrap(){
   `const CDWorldNationale=(${nationale.factory.toString()})(${JSON.stringify(nationaleCalendar)});`,
   `const CDWorldNationaleMatch=(${nationaleMatch.toString()})(CDWorldNationale);`,
   `const CDWorldNationaleCards=(${nationaleCards.factory.toString()})();`,
+  `const CDWorldChamp=(${champRules.factory.toString()})(${JSON.stringify(champCalendar)});`,
+  `const CDWorldChampMatch=(${champMatch.toString()})(CDWorldChamp);`,
   `const CDWorldCompetitions=(${competitions.factory.toString()})();`,
   `const CDWorldValidation=(${validation.toString()})();`,
   `const CDWorldKnockout=(${knockout.toString()})();`,
