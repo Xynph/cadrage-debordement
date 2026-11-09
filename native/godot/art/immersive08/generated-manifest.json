@@ -242,64 +242,105 @@
       "prompt": "Generate one original fictional rugby editorial photograph in wide 16:9 for the PC rugby management game Oval Legacy 27. An intimate English second-tier rugby ground under a light evening drizzle, dark wet evergreen turf with proper rugby pitch markings and one H-shaped set of rugby posts right of centre, small corrugated covered terraces and a low dark-red brick clubhouse on the right, distant town chimneys and hedgerows in soft mist. Rich blue-charcoal shadows, muted burgundy brick, restrained warm amber floodlights with natural haze, understated low-key cinematic sports editorial photography, subtly textured realism. A few very distant silhouettes can imply a match night but no visible faces or foreground people. Keep the left half dark and unobstructed for ivory game interface text, with the interesting visual detail mainly in the right two thirds and within the middle 60 percent vertically for very wide header crops. Show a distinct English atmosphere and modest scale, with no specific real ground. Full bleed frame, no border, no interface, no typography, no markings with letters, no logos, no watermark."
     },
     {
-      "id": "maquette-club-banner",
-      "file": "maquette-club-banner.png",
-      "source": "exec-f555d6c0-ae90-4490-8d7b-6c55132fd61f.png",
+      "id": "maquette-onglets-banner",
+      "file": "maquette-onglets-banner.png",
+      "source": "exec-526ce08d-aa08-4059-bc04-b046310e7a27.png",
       "sourceType": "mockup",
-      "source_sha256": "0005479bbd028ffc2d3a0e3c2ea80b28c2d04cade5ff5f4dcfce9db956b4a4ba",
+      "source_sha256": "def45280059439529c6a41dbd3e1f35ef8687806ca59249a7ad4a9e3f9f71c85",
       "crop": [
-        399,
-        45,
-        1272,
-        131
+        321,
+        57,
+        1350,
+        126
       ],
-      "width": 1272,
-      "height": 131,
-      "bytes": 326577,
-      "sha256": "d384981d67a67a579049d87d13df5b0019ba5ded301056bbb081b64f99e6b2dd",
+      "width": 1350,
+      "height": 126,
+      "bytes": 406092,
+      "sha256": "0451ba4d32d834a98b89181ae02ef405247d04ef4ab115ae9054ec49b6b60543",
       "synthetic": true,
       "tool": "built-in image_gen",
-      "prompt": "Render one single full-screen authentic 2560x1440 16:9 widescreen PC screenshot of a redesigned French rugby management game's “Nouvelle carrière” page for OVAL LEGACY 27. Desktop UI at 80% zoom, pulled back, comfortably high information density, like a restrained editorial sports database or professional sports management simulator. A mature sober visual evolution of the existing Oval Legacy art direction: graphite charcoal #151b1e, dark slate-green ink #121c1d, a little olive, dirty ivory #eee8d8 text, old brass #b89b62 only for the active marker and understated action accents. ABSOLUTELY NO neon green, no acid lime, no saturated button, no glossy mobile game, no heroic oversized text, no pill shapes, no rounded bubbly cards. Square or 3px-radius edges, thin lines, readable restrained warm Barlow Condensed headings and neutral readable sans for content. Screen flush to edges, 32px gutters, no device mockup, no diptych, no margins outside the UI. Compact horizontal top rail: OVAL LEGACY 27 existing white understated wordmark at far left, discreet “01 Réalité   02 Club   03 Carrière” with small brass underline on Club. Under it a shallow 130px wide stadium banner at dusk, naturally atmospheric muted photo on the right, gradient into ink at left, small kicker “VOTRE PREMIÈRE SAISON”, title “Choisir son club” 40px max. Then full-width compact horizontal filter controls “France”, “Angleterre”, “Japon”, “International” with small flags, second row of narrow divisions including “Élite”, “Accession”, “Fédérale”. Central aligned full width content split 39:61. Left: one continuous editorial dossier with muted natural photo of an actual rugby stadium, left-aligned club name “Toulouse Capitole XV” and a restrained fictional maroon crest, tightly set three stats in a row “75,0 Note moyenne”, “34 Avants”, “27 Trois-quarts”, two precise lines “Objectif du conseil”, “Trésorerie simulée”, and small two-column line of roster strengths and needs. Right: a grid of ALL 14 clubs over THREE columns and FIVE rows, consistent horizontal tiles with small crest, French fictional club name and city, fine separators, small arrow, subtle brass vertical mark on selected tile. Medium restrained heading “Clubs du championnat”, note small text. Let main panels breathe without leaving any huge empty region, use panel height for real information, aligned content ends, compact bottom action bar with muted brass cream CTA “Prendre les rênes →”. Real and tactile, editorial, elegant, clear game hierarchy. At normal scale the typography looks like a PC management app, no text size over 40px."
+      "prompt": "Create ONE single full-screen, high fidelity 16:9 desktop PC game UI concept screenshot for the French rugby management sim OVAL LEGACY 27. One screen, no collage, no extra screenshots, no device frame, no surrounding border. This concept is one of three distinct ways of clearly nesting championships inside the selected country. Match the existing Oval Legacy 27 adult editorial sports-management art direction: dark slate charcoal / muted ink-green (#121c1e), ivory typography, sparing antique brass (#c5a76e), square fine borders and clean grid, realistic rugby ground photos at dusk, Barlow Condensed bold for headings, neutral DM Sans for the body. Compact zoomed-out PC layout, many visible rows, no bright lime or blue, no pills, no heavy ornament, no mobile appearance. Compact top bar wordmark “OVAL LEGACY 27” and progression “01 Réalité   02 Club   03 Carrière”, small shallow stadium banner titled “Choisir son club”. French user-facing typography, readable and accurate. Display “France”, “Angleterre”, “Japon” each with a small accurate flag, and a separate “International” with a globe. France is active. Its only visible divisions are “Élite · 14”, “Accession · 16”, “Fédérale · 14”. Élite selected. Keep the full 14 clubs of the selected championship in one three-column grid, 5 rows, no pagination, compact rows with restrained fictional badges, names, cities, ratings, roster counts; first row Toulouse Capitole XV, Bordeaux Estuaire Rugby, La Rochelle Océan XV. Include a club dossier for selected Toulouse Capitole XV with a realistic stadium photograph, fictional maroon crest, compact stats “75,0 Note moyenne”, “34 Avants”, “27 Trois-quarts”, “Objectif du conseil · Jouer le titre”, “Trésorerie simulée · 7 500 000 €”, “Points forts · Arrières”, “Besoins · Piliers”. Brass button “Prendre les rênes →” bottom right. This is the base game with fictional names, so no Top 14, no Rugby Réel tile or logo, no real team badges, no invented settings or tabs beyond those specified. Make the country → championship → club relationship immediately legible at a glance. Make it visually rich using real layout and composition, photography and strong hierarchy, not oversized boxes or typography.\n\nLAYOUT DIRECTION:\nPlace a compact horizontal country strip immediately under the masthead, aligned to the screen grid. The active France tab has a solid brass bottom edge and connects without a gap to the division drawer below. Show a short brass vertical rule continuing down from the France tab into its drawer, making the attachment visually obvious. The drawer is a single thin-bordered inset row labeled with the French flag and “Championnats de France”, then the three divisions as horizontal tabs. Inactive countries sit one step higher visually and have no visible divisions. Below, use a 39:61 split, left club dossier and right grid. Main grid title “France / Élite française” with small “14 clubs”. Wide stadium dusk crop and cream letters, controlled editorial visual language. The connected drawer, not a row of unrelated filters, is the signature of this option."
     },
     {
-      "id": "maquette-club-stadium",
-      "file": "maquette-club-stadium.png",
-      "source": "exec-f555d6c0-ae90-4490-8d7b-6c55132fd61f.png",
+      "id": "maquette-onglets-stadium",
+      "file": "maquette-onglets-stadium.png",
+      "source": "exec-526ce08d-aa08-4059-bc04-b046310e7a27.png",
       "sourceType": "mockup",
-      "source_sha256": "0005479bbd028ffc2d3a0e3c2ea80b28c2d04cade5ff5f4dcfce9db956b4a4ba",
+      "source_sha256": "def45280059439529c6a41dbd3e1f35ef8687806ca59249a7ad4a9e3f9f71c85",
       "crop": [
-        23,
-        264,
-        614,
-        188
+        17,
+        506,
+        540,
+        157
       ],
-      "width": 614,
-      "height": 188,
-      "bytes": 287026,
-      "sha256": "d16e06f60c89a8d1c4c45c0603125cfa4063836b58ba53c32617c42894297e69",
+      "width": 540,
+      "height": 157,
+      "bytes": 219178,
+      "sha256": "90bbaf8121d098b11f24cb6884a8ea7f1154ca7283174e05f68a17c2aca2ddd9",
       "synthetic": true,
       "tool": "built-in image_gen",
-      "prompt": "Render one single full-screen authentic 2560x1440 16:9 widescreen PC screenshot of a redesigned French rugby management game's “Nouvelle carrière” page for OVAL LEGACY 27. Desktop UI at 80% zoom, pulled back, comfortably high information density, like a restrained editorial sports database or professional sports management simulator. A mature sober visual evolution of the existing Oval Legacy art direction: graphite charcoal #151b1e, dark slate-green ink #121c1d, a little olive, dirty ivory #eee8d8 text, old brass #b89b62 only for the active marker and understated action accents. ABSOLUTELY NO neon green, no acid lime, no saturated button, no glossy mobile game, no heroic oversized text, no pill shapes, no rounded bubbly cards. Square or 3px-radius edges, thin lines, readable restrained warm Barlow Condensed headings and neutral readable sans for content. Screen flush to edges, 32px gutters, no device mockup, no diptych, no margins outside the UI. Compact horizontal top rail: OVAL LEGACY 27 existing white understated wordmark at far left, discreet “01 Réalité   02 Club   03 Carrière” with small brass underline on Club. Under it a shallow 130px wide stadium banner at dusk, naturally atmospheric muted photo on the right, gradient into ink at left, small kicker “VOTRE PREMIÈRE SAISON”, title “Choisir son club” 40px max. Then full-width compact horizontal filter controls “France”, “Angleterre”, “Japon”, “International” with small flags, second row of narrow divisions including “Élite”, “Accession”, “Fédérale”. Central aligned full width content split 39:61. Left: one continuous editorial dossier with muted natural photo of an actual rugby stadium, left-aligned club name “Toulouse Capitole XV” and a restrained fictional maroon crest, tightly set three stats in a row “75,0 Note moyenne”, “34 Avants”, “27 Trois-quarts”, two precise lines “Objectif du conseil”, “Trésorerie simulée”, and small two-column line of roster strengths and needs. Right: a grid of ALL 14 clubs over THREE columns and FIVE rows, consistent horizontal tiles with small crest, French fictional club name and city, fine separators, small arrow, subtle brass vertical mark on selected tile. Medium restrained heading “Clubs du championnat”, note small text. Let main panels breathe without leaving any huge empty region, use panel height for real information, aligned content ends, compact bottom action bar with muted brass cream CTA “Prendre les rênes →”. Real and tactile, editorial, elegant, clear game hierarchy. At normal scale the typography looks like a PC management app, no text size over 40px."
+      "prompt": "Create ONE single full-screen, high fidelity 16:9 desktop PC game UI concept screenshot for the French rugby management sim OVAL LEGACY 27. One screen, no collage, no extra screenshots, no device frame, no surrounding border. This concept is one of three distinct ways of clearly nesting championships inside the selected country. Match the existing Oval Legacy 27 adult editorial sports-management art direction: dark slate charcoal / muted ink-green (#121c1e), ivory typography, sparing antique brass (#c5a76e), square fine borders and clean grid, realistic rugby ground photos at dusk, Barlow Condensed bold for headings, neutral DM Sans for the body. Compact zoomed-out PC layout, many visible rows, no bright lime or blue, no pills, no heavy ornament, no mobile appearance. Compact top bar wordmark “OVAL LEGACY 27” and progression “01 Réalité   02 Club   03 Carrière”, small shallow stadium banner titled “Choisir son club”. French user-facing typography, readable and accurate. Display “France”, “Angleterre”, “Japon” each with a small accurate flag, and a separate “International” with a globe. France is active. Its only visible divisions are “Élite · 14”, “Accession · 16”, “Fédérale · 14”. Élite selected. Keep the full 14 clubs of the selected championship in one three-column grid, 5 rows, no pagination, compact rows with restrained fictional badges, names, cities, ratings, roster counts; first row Toulouse Capitole XV, Bordeaux Estuaire Rugby, La Rochelle Océan XV. Include a club dossier for selected Toulouse Capitole XV with a realistic stadium photograph, fictional maroon crest, compact stats “75,0 Note moyenne”, “34 Avants”, “27 Trois-quarts”, “Objectif du conseil · Jouer le titre”, “Trésorerie simulée · 7 500 000 €”, “Points forts · Arrières”, “Besoins · Piliers”. Brass button “Prendre les rênes →” bottom right. This is the base game with fictional names, so no Top 14, no Rugby Réel tile or logo, no real team badges, no invented settings or tabs beyond those specified. Make the country → championship → club relationship immediately legible at a glance. Make it visually rich using real layout and composition, photography and strong hierarchy, not oversized boxes or typography.\n\nLAYOUT DIRECTION:\nPlace a compact horizontal country strip immediately under the masthead, aligned to the screen grid. The active France tab has a solid brass bottom edge and connects without a gap to the division drawer below. Show a short brass vertical rule continuing down from the France tab into its drawer, making the attachment visually obvious. The drawer is a single thin-bordered inset row labeled with the French flag and “Championnats de France”, then the three divisions as horizontal tabs. Inactive countries sit one step higher visually and have no visible divisions. Below, use a 39:61 split, left club dossier and right grid. Main grid title “France / Élite française” with small “14 clubs”. Wide stadium dusk crop and cream letters, controlled editorial visual language. The connected drawer, not a row of unrelated filters, is the signature of this option."
     },
     {
-      "id": "maquette-club-wordmark",
-      "file": "maquette-club-wordmark.png",
-      "source": "exec-f555d6c0-ae90-4490-8d7b-6c55132fd61f.png",
+      "id": "maquette-onglets-wordmark",
+      "file": "maquette-onglets-wordmark.png",
+      "source": "exec-526ce08d-aa08-4059-bc04-b046310e7a27.png",
       "sourceType": "mockup",
-      "source_sha256": "0005479bbd028ffc2d3a0e3c2ea80b28c2d04cade5ff5f4dcfce9db956b4a4ba",
+      "source_sha256": "def45280059439529c6a41dbd3e1f35ef8687806ca59249a7ad4a9e3f9f71c85",
       "crop": [
-        32,
-        6,
-        187,
-        30
+        28,
+        7,
+        247,
+        44
       ],
-      "width": 187,
-      "height": 30,
-      "bytes": 13041,
-      "sha256": "672308f1b8d8a4c6e65c1856ba4fcc3d529773b27308a66985604f4953b6ca99",
+      "width": 247,
+      "height": 44,
+      "bytes": 27015,
+      "sha256": "26f5fd28c53ec6fae620b778267385f2356e1d5691b74a65ff583ba0b208c3ac",
       "synthetic": true,
       "tool": "built-in image_gen",
-      "prompt": "Render one single full-screen authentic 2560x1440 16:9 widescreen PC screenshot of a redesigned French rugby management game's “Nouvelle carrière” page for OVAL LEGACY 27. Desktop UI at 80% zoom, pulled back, comfortably high information density, like a restrained editorial sports database or professional sports management simulator. A mature sober visual evolution of the existing Oval Legacy art direction: graphite charcoal #151b1e, dark slate-green ink #121c1d, a little olive, dirty ivory #eee8d8 text, old brass #b89b62 only for the active marker and understated action accents. ABSOLUTELY NO neon green, no acid lime, no saturated button, no glossy mobile game, no heroic oversized text, no pill shapes, no rounded bubbly cards. Square or 3px-radius edges, thin lines, readable restrained warm Barlow Condensed headings and neutral readable sans for content. Screen flush to edges, 32px gutters, no device mockup, no diptych, no margins outside the UI. Compact horizontal top rail: OVAL LEGACY 27 existing white understated wordmark at far left, discreet “01 Réalité   02 Club   03 Carrière” with small brass underline on Club. Under it a shallow 130px wide stadium banner at dusk, naturally atmospheric muted photo on the right, gradient into ink at left, small kicker “VOTRE PREMIÈRE SAISON”, title “Choisir son club” 40px max. Then full-width compact horizontal filter controls “France”, “Angleterre”, “Japon”, “International” with small flags, second row of narrow divisions including “Élite”, “Accession”, “Fédérale”. Central aligned full width content split 39:61. Left: one continuous editorial dossier with muted natural photo of an actual rugby stadium, left-aligned club name “Toulouse Capitole XV” and a restrained fictional maroon crest, tightly set three stats in a row “75,0 Note moyenne”, “34 Avants”, “27 Trois-quarts”, two precise lines “Objectif du conseil”, “Trésorerie simulée”, and small two-column line of roster strengths and needs. Right: a grid of ALL 14 clubs over THREE columns and FIVE rows, consistent horizontal tiles with small crest, French fictional club name and city, fine separators, small arrow, subtle brass vertical mark on selected tile. Medium restrained heading “Clubs du championnat”, note small text. Let main panels breathe without leaving any huge empty region, use panel height for real information, aligned content ends, compact bottom action bar with muted brass cream CTA “Prendre les rênes →”. Real and tactile, editorial, elegant, clear game hierarchy. At normal scale the typography looks like a PC management app, no text size over 40px."
+      "prompt": "Create ONE single full-screen, high fidelity 16:9 desktop PC game UI concept screenshot for the French rugby management sim OVAL LEGACY 27. One screen, no collage, no extra screenshots, no device frame, no surrounding border. This concept is one of three distinct ways of clearly nesting championships inside the selected country. Match the existing Oval Legacy 27 adult editorial sports-management art direction: dark slate charcoal / muted ink-green (#121c1e), ivory typography, sparing antique brass (#c5a76e), square fine borders and clean grid, realistic rugby ground photos at dusk, Barlow Condensed bold for headings, neutral DM Sans for the body. Compact zoomed-out PC layout, many visible rows, no bright lime or blue, no pills, no heavy ornament, no mobile appearance. Compact top bar wordmark “OVAL LEGACY 27” and progression “01 Réalité   02 Club   03 Carrière”, small shallow stadium banner titled “Choisir son club”. French user-facing typography, readable and accurate. Display “France”, “Angleterre”, “Japon” each with a small accurate flag, and a separate “International” with a globe. France is active. Its only visible divisions are “Élite · 14”, “Accession · 16”, “Fédérale · 14”. Élite selected. Keep the full 14 clubs of the selected championship in one three-column grid, 5 rows, no pagination, compact rows with restrained fictional badges, names, cities, ratings, roster counts; first row Toulouse Capitole XV, Bordeaux Estuaire Rugby, La Rochelle Océan XV. Include a club dossier for selected Toulouse Capitole XV with a realistic stadium photograph, fictional maroon crest, compact stats “75,0 Note moyenne”, “34 Avants”, “27 Trois-quarts”, “Objectif du conseil · Jouer le titre”, “Trésorerie simulée · 7 500 000 €”, “Points forts · Arrières”, “Besoins · Piliers”. Brass button “Prendre les rênes →” bottom right. This is the base game with fictional names, so no Top 14, no Rugby Réel tile or logo, no real team badges, no invented settings or tabs beyond those specified. Make the country → championship → club relationship immediately legible at a glance. Make it visually rich using real layout and composition, photography and strong hierarchy, not oversized boxes or typography.\n\nLAYOUT DIRECTION:\nPlace a compact horizontal country strip immediately under the masthead, aligned to the screen grid. The active France tab has a solid brass bottom edge and connects without a gap to the division drawer below. Show a short brass vertical rule continuing down from the France tab into its drawer, making the attachment visually obvious. The drawer is a single thin-bordered inset row labeled with the French flag and “Championnats de France”, then the three divisions as horizontal tabs. Inactive countries sit one step higher visually and have no visible divisions. Below, use a 39:61 split, left club dossier and right grid. Main grid title “France / Élite française” with small “14 clubs”. Wide stadium dusk crop and cream letters, controlled editorial visual language. The connected drawer, not a row of unrelated filters, is the signature of this option."
+    },
+    {
+      "id": "maquette-onglets-ink",
+      "file": "maquette-onglets-ink.png",
+      "source": "exec-526ce08d-aa08-4059-bc04-b046310e7a27.png",
+      "sourceType": "mockup",
+      "source_sha256": "def45280059439529c6a41dbd3e1f35ef8687806ca59249a7ad4a9e3f9f71c85",
+      "crop": [
+        1110,
+        871,
+        300,
+        62
+      ],
+      "width": 300,
+      "height": 62,
+      "bytes": 18383,
+      "sha256": "6e52eccde1b2e150d14e29066f8874ab6fa21086030e0e695def7a9708dd8796",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Create ONE single full-screen, high fidelity 16:9 desktop PC game UI concept screenshot for the French rugby management sim OVAL LEGACY 27. One screen, no collage, no extra screenshots, no device frame, no surrounding border. This concept is one of three distinct ways of clearly nesting championships inside the selected country. Match the existing Oval Legacy 27 adult editorial sports-management art direction: dark slate charcoal / muted ink-green (#121c1e), ivory typography, sparing antique brass (#c5a76e), square fine borders and clean grid, realistic rugby ground photos at dusk, Barlow Condensed bold for headings, neutral DM Sans for the body. Compact zoomed-out PC layout, many visible rows, no bright lime or blue, no pills, no heavy ornament, no mobile appearance. Compact top bar wordmark “OVAL LEGACY 27” and progression “01 Réalité   02 Club   03 Carrière”, small shallow stadium banner titled “Choisir son club”. French user-facing typography, readable and accurate. Display “France”, “Angleterre”, “Japon” each with a small accurate flag, and a separate “International” with a globe. France is active. Its only visible divisions are “Élite · 14”, “Accession · 16”, “Fédérale · 14”. Élite selected. Keep the full 14 clubs of the selected championship in one three-column grid, 5 rows, no pagination, compact rows with restrained fictional badges, names, cities, ratings, roster counts; first row Toulouse Capitole XV, Bordeaux Estuaire Rugby, La Rochelle Océan XV. Include a club dossier for selected Toulouse Capitole XV with a realistic stadium photograph, fictional maroon crest, compact stats “75,0 Note moyenne”, “34 Avants”, “27 Trois-quarts”, “Objectif du conseil · Jouer le titre”, “Trésorerie simulée · 7 500 000 €”, “Points forts · Arrières”, “Besoins · Piliers”. Brass button “Prendre les rênes →” bottom right. This is the base game with fictional names, so no Top 14, no Rugby Réel tile or logo, no real team badges, no invented settings or tabs beyond those specified. Make the country → championship → club relationship immediately legible at a glance. Make it visually rich using real layout and composition, photography and strong hierarchy, not oversized boxes or typography.\n\nLAYOUT DIRECTION:\nPlace a compact horizontal country strip immediately under the masthead, aligned to the screen grid. The active France tab has a solid brass bottom edge and connects without a gap to the division drawer below. Show a short brass vertical rule continuing down from the France tab into its drawer, making the attachment visually obvious. The drawer is a single thin-bordered inset row labeled with the French flag and “Championnats de France”, then the three divisions as horizontal tabs. Inactive countries sit one step higher visually and have no visible divisions. Below, use a 39:61 split, left club dossier and right grid. Main grid title “France / Élite française” with small “14 clubs”. Wide stadium dusk crop and cream letters, controlled editorial visual language. The connected drawer, not a row of unrelated filters, is the signature of this option."
+    },
+    {
+      "id": "maquette-onglets-toulouse",
+      "file": "maquette-onglets-toulouse.png",
+      "source": "exec-526ce08d-aa08-4059-bc04-b046310e7a27.png",
+      "sourceType": "mockup",
+      "source_sha256": "def45280059439529c6a41dbd3e1f35ef8687806ca59249a7ad4a9e3f9f71c85",
+      "crop": [
+        46,
+        340,
+        135,
+        172
+      ],
+      "width": 135,
+      "height": 172,
+      "bytes": 42850,
+      "sha256": "381b0484bb7027f8c3bce55a02c987772f7c159feae2b145444a3ebb0bcaca2a",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Create ONE single full-screen, high fidelity 16:9 desktop PC game UI concept screenshot for the French rugby management sim OVAL LEGACY 27. One screen, no collage, no extra screenshots, no device frame, no surrounding border. This concept is one of three distinct ways of clearly nesting championships inside the selected country. Match the existing Oval Legacy 27 adult editorial sports-management art direction: dark slate charcoal / muted ink-green (#121c1e), ivory typography, sparing antique brass (#c5a76e), square fine borders and clean grid, realistic rugby ground photos at dusk, Barlow Condensed bold for headings, neutral DM Sans for the body. Compact zoomed-out PC layout, many visible rows, no bright lime or blue, no pills, no heavy ornament, no mobile appearance. Compact top bar wordmark “OVAL LEGACY 27” and progression “01 Réalité   02 Club   03 Carrière”, small shallow stadium banner titled “Choisir son club”. French user-facing typography, readable and accurate. Display “France”, “Angleterre”, “Japon” each with a small accurate flag, and a separate “International” with a globe. France is active. Its only visible divisions are “Élite · 14”, “Accession · 16”, “Fédérale · 14”. Élite selected. Keep the full 14 clubs of the selected championship in one three-column grid, 5 rows, no pagination, compact rows with restrained fictional badges, names, cities, ratings, roster counts; first row Toulouse Capitole XV, Bordeaux Estuaire Rugby, La Rochelle Océan XV. Include a club dossier for selected Toulouse Capitole XV with a realistic stadium photograph, fictional maroon crest, compact stats “75,0 Note moyenne”, “34 Avants”, “27 Trois-quarts”, “Objectif du conseil · Jouer le titre”, “Trésorerie simulée · 7 500 000 €”, “Points forts · Arrières”, “Besoins · Piliers”. Brass button “Prendre les rênes →” bottom right. This is the base game with fictional names, so no Top 14, no Rugby Réel tile or logo, no real team badges, no invented settings or tabs beyond those specified. Make the country → championship → club relationship immediately legible at a glance. Make it visually rich using real layout and composition, photography and strong hierarchy, not oversized boxes or typography.\n\nLAYOUT DIRECTION:\nPlace a compact horizontal country strip immediately under the masthead, aligned to the screen grid. The active France tab has a solid brass bottom edge and connects without a gap to the division drawer below. Show a short brass vertical rule continuing down from the France tab into its drawer, making the attachment visually obvious. The drawer is a single thin-bordered inset row labeled with the French flag and “Championnats de France”, then the three divisions as horizontal tabs. Inactive countries sit one step higher visually and have no visible divisions. Below, use a 39:61 split, left club dossier and right grid. Main grid title “France / Élite française” with small “14 clubs”. Wide stadium dusk crop and cream letters, controlled editorial visual language. The connected drawer, not a row of unrelated filters, is the signature of this option.",
+      "mask": "Silhouette du blason, transparence hors de son contour"
     },
     {
       "id": "maquette-reality-banner",

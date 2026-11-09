@@ -199,6 +199,11 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 	var shell := PanelContainer.new()
 	shell.name = "ImmersiveCreationWorkspace" if creation else "ImmersiveIdentityWorkspace"
 	Editorial.surface(shell, Editorial.INK, Color.TRANSPARENT, 0)
+	if creation:
+		var ink := C.photo("maquette-onglets-ink", Vector2.ZERO, false)
+		ink.stretch_mode = TextureRect.STRETCH_SCALE
+		ink.modulate.a = .32
+		shell.add_child(ink)
 	var column := C.v(0)
 	shell.add_child(column)
 	var masthead := PanelContainer.new()
@@ -208,7 +213,7 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 	masthead.add_child(rail)
 	var inset := C.margin(13)
 	rail.add_child(inset)
-	inset.add_child(C.photo("maquette-club-wordmark" if creation else "maquette-reality-wordmark", Vector2(280, 44), false))
+	inset.add_child(C.photo("maquette-onglets-wordmark" if creation else "maquette-reality-wordmark", Vector2(354 if creation else 280, 48), false))
 	Editorial.divider(rail)
 	var step_names := ["01  Réalité", "02  Club", "03  Carrière"]
 	for index in step_names.size():
@@ -216,7 +221,7 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 		var step := C.v(5)
 		step.alignment = BoxContainer.ALIGNMENT_CENTER
 		rail.add_child(step)
-		step.add_child(C.label(step_names[index], 25, C.IVORY if active else C.MUTED, creation, 700 if active else 600))
+		step.add_child(C.label(step_names[index], 29 if creation else 25, Editorial.RAIL_GOLD if creation and active else C.IVORY, creation, 700 if active else 600))
 		var underline := ColorRect.new()
 		underline.color = Editorial.BRASS if active else Color.TRANSPARENT
 		underline.custom_minimum_size.y = 2
@@ -224,13 +229,13 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 	var banner := Control.new()
 	banner.custom_minimum_size.y = clampf(size.y * (.128 if creation else .15), 88, 215)
 	column.add_child(banner)
-	var photo := C.photo("maquette-club-banner" if creation else "maquette-reality-banner", Vector2.ZERO, true, .5)
+	var photo := C.photo("maquette-onglets-banner" if creation else "maquette-reality-banner", Vector2.ZERO, true, .5)
 	banner.add_child(photo)
 	photo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	photo.anchor_left = .19 if creation else .31
+	photo.anchor_left = 0.0 if creation else .31
 	var gradient := Gradient.new()
-	gradient.colors = PackedColorArray([Editorial.INK, Editorial.INK, Color(Editorial.INK, 0.0)])
-	gradient.offsets = PackedFloat32Array([0.0, .25 if creation else .32, .48 if creation else .56])
+	gradient.colors = PackedColorArray([Color(Editorial.INK, .72), Color(Editorial.INK, .44), Color(Editorial.INK, 0.0)]) if creation else PackedColorArray([Editorial.INK, Editorial.INK, Color(Editorial.INK, 0.0)])
+	gradient.offsets = PackedFloat32Array([0.0, .16 if creation else .32, .43 if creation else .56])
 	var shade_texture := GradientTexture2D.new()
 	shade_texture.gradient = gradient
 	var shade := TextureRect.new()
@@ -239,29 +244,34 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	banner.add_child(shade)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var padding := C.margin(48)
+	var padding := C.margin(57 if creation else 48)
 	padding.add_theme_constant_override("margin_top", C.px(30))
 	padding.add_theme_constant_override("margin_bottom", C.px(30))
 	banner.add_child(padding)
 	padding.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var header := C.h(29)
 	padding.add_child(header)
-	var marker := ColorRect.new()
-	marker.color = Editorial.BRASS
-	marker.custom_minimum_size.x = maxi(2, C.px(4))
-	header.add_child(marker)
+	if not creation:
+		var marker := ColorRect.new()
+		marker.color = Editorial.BRASS
+		marker.custom_minimum_size.x = maxi(2, C.px(4))
+		header.add_child(marker)
 	var heading := C.v(0)
 	heading.alignment = BoxContainer.ALIGNMENT_CENTER
 	C.fill(heading)
 	header.add_child(heading)
 	if creation:
-		heading.add_child(C.label("V O T R E   P R E M I È R E   S A I S O N", 21, C.IVORY))
-		heading.add_child(C.label("Choisir son club", 64, C.IVORY, true, 700))
+		heading.add_child(C.label("Choisir son club", 74, C.IVORY, true, 700))
+		var underline := ColorRect.new()
+		underline.color = Editorial.RAIL_GOLD
+		underline.custom_minimum_size = Vector2(C.px(100), C.px(5))
+		underline.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		heading.add_child(underline)
 	else:
 		heading.add_child(Editorial.sans_heading("Choisir sa réalité", 53))
 		heading.add_child(C.wrap("Sélectionnez la réalité de jeu pour votre prochaine carrière.", 25, C.IVORY))
 	column.add_child(C.rule())
-	var body := C.margin(27)
+	var body := C.margin(21 if creation else 27)
 	C.fill(body, true)
 	column.add_child(body)
 	body.add_child(page)

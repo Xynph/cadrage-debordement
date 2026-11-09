@@ -5,6 +5,7 @@ const INK = Color("121c1e")
 const PANEL = Color("172223")
 const LINE = Color("75817c")
 const BRASS = Color("c5a76e")
+const RAIL_GOLD = Color("e2b971")
 static var _sans_heading: FontVariation
 
 static func sans_bold() -> Font:
@@ -62,3 +63,23 @@ static func divider(parent: Container) -> void:
 	line.custom_minimum_size.x = 1
 	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(line)
+
+static func route_tab(button: Button, selected: bool, country: bool) -> void:
+	action(button, false, selected, maxi(30, C.px(58 if country else 45)))
+	button.add_theme_font_size_override("font_size", maxi(15, C.px(32)))
+	button.add_theme_font_override("font", C.BOLD if selected or country else C.DISPLAY)
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var style := button.get_theme_stylebox(state) as StyleBoxFlat
+		style.set_border_width_all(0)
+		var fill := Color("80683f") if selected and not country else Color.TRANSPARENT
+		if state == "hover": fill = fill.lerp(Color("4b4935"), .65)
+		if state == "pressed": fill = Color("524a33")
+		style.bg_color = fill
+	if country:
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.expand_icon = true
+		button.add_theme_constant_override("icon_max_width", C.px(55))
+		button.add_theme_constant_override("h_separation", C.px(20))
+		for state in ["normal", "hover", "pressed", "disabled"]:
+			var style := button.get_theme_stylebox(state) as StyleBoxFlat
+			style.content_margin_left = C.px(32)

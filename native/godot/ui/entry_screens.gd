@@ -206,7 +206,7 @@ static func _competition_identity(app: Control, id: String) -> Dictionary:
 static func _competition_summary(app: Control, parent: VBoxContainer, division: String, club_count: int, photo_height: float) -> void:
 	var identity := _competition_identity(app, division)
 	var title := str(identity.get("name", Club.competition_name(division)))
-	var illustration := C.photo("maquette-club-stadium", Vector2.ZERO, true, .5)
+	var illustration := C.photo("maquette-onglets-stadium", Vector2.ZERO, true, .5)
 	illustration.custom_minimum_size.y = photo_height
 	parent.add_child(illustration)
 	var row := C.h(14)
@@ -233,61 +233,120 @@ static func _competition_summary(app: Control, parent: VBoxContainer, division: 
 static func _rating(roster: Dictionary) -> String:
 	return String.num(float(roster.get("average", 0)), 1).replace(".", ",")
 
+static func _creation_crest(club: Dictionary, width: int, use_mockup: bool) -> Control:
+	if use_mockup and int(club.id) == 0:
+		var crest := C.photo("maquette-onglets-toulouse", Vector2.ZERO, false)
+		crest.custom_minimum_size = Vector2(width, width)
+		crest.tooltip_text = G.club_name(club)
+		return crest
+	return G.crest(club, width)
+
 static func _club_preview(parent: VBoxContainer, club: Dictionary, photo_height: float, base_identity: bool) -> void:
 	var illustration := base_identity and int(club.id) == 0
-	var photo: Control = C.photo("maquette-club-stadium", Vector2.ZERO, true, .5) if illustration else _cover(club)
-	photo.name = "CreationStadium"
-	photo.custom_minimum_size.y = photo_height
-	parent.add_child(photo)
-	var identity := C.h(18)
+	var identity := C.h(30)
 	parent.add_child(identity)
-	identity.add_child(G.crest(club, C.px(125)))
-	Editorial.divider(identity)
-	var copy := C.v(2)
+	identity.add_child(_creation_crest(club, C.px(215), base_identity))
+	var copy := C.v(3)
+	copy.alignment = BoxContainer.ALIGNMENT_CENTER
 	G.fill(copy)
 	identity.add_child(copy)
-	var title := C.wrap(G.club_name(club), 48, C.IVORY, true, 700)
+	var title_text := "Toulouse\nCapitole XV" if illustration else G.club_name(club)
+	var title := C.wrap(title_text, 62, C.IVORY, true, 800)
 	title.name = "CreationClubTitle"
+	title.uppercase = true
+	title.add_theme_constant_override("line_spacing", -C.px(8))
 	copy.add_child(title)
-	copy.add_child(C.wrap("%s  ·  %s" % [_territory(club), club.get("stadium", "")], 21))
-	if illustration: copy.add_child(C.wrap("Illustration de stade", 17))
+	copy.add_child(C.wrap(_territory(club), 28, C.IVORY))
+	var underline := ColorRect.new()
+	underline.color = Editorial.RAIL_GOLD
+	underline.custom_minimum_size = Vector2(C.px(106), 2)
+	underline.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	copy.add_child(underline)
+	var photo: Control = C.photo("maquette-onglets-stadium", Vector2.ZERO, true, .5) if illustration else _cover(club)
+	photo.name = "CreationStadium"
+	photo.custom_minimum_size.y = photo_height
+	photo.mouse_filter = Control.MOUSE_FILTER_PASS
+	var venue := str(club.get("stadium", ""))
+	if illustration: photo.tooltip_text = "%s · Illustration de stade" % venue
+	elif photo.tooltip_text.is_empty(): photo.tooltip_text = venue
+	elif not venue.is_empty(): photo.tooltip_text = "%s · %s" % [venue, photo.tooltip_text]
+	parent.add_child(photo)
 	var roster: Dictionary = club.get("startingRoster", {})
 	if not roster.is_empty():
-		copy.add_child(C.rule())
-		var metrics := C.h(18)
+		var metrics := C.h(13)
 		metrics.name = "CreationRosterSummary"
-		copy.add_child(metrics)
-		Editorial.fact(metrics, _rating(roster), "Note moyenne")
+		parent.add_child(metrics)
+		_dossier_metric(metrics, _rating(roster), "Note moyenne")
 		Editorial.divider(metrics)
-		Editorial.fact(metrics, roster.get("forwards", 0), "Avants")
+		_dossier_metric(metrics, roster.get("forwards", 0), "Avants")
 		Editorial.divider(metrics)
-		Editorial.fact(metrics, roster.get("backs", 0), "Trois-quarts")
+		_dossier_metric(metrics, roster.get("backs", 0), "Trois-quarts")
 	parent.add_child(C.rule())
-	_dossier_line(parent, "Objectif du conseil", str(club.get("goal", "Développer le projet sportif")))
+	_dossier_line(parent, "Objectif du conseil", str(club.get("goal", "Développer le projet sportif")), true)
 	if club.has("cashMillions"):
-		_dossier_line(parent, "Trésorerie de départ simulée", G.euros(roundi(float(club.cashMillions) * 1_000_000)))
+		_dossier_line(parent, "Trésorerie simulée", G.euros(roundi(float(club.cashMillions) * 1_000_000)))
 	if not roster.is_empty():
-		parent.add_child(C.rule())
-		var balance := C.h(18)
-		parent.add_child(balance)
-		for item in [["POINTS FORTS", "strengths"], ["BESOINS PRIORITAIRES", "needs"]]:
-			if item[1] == "needs": Editorial.divider(balance)
-			var column := C.v(3)
-			C.fill(column)
-			balance.add_child(column)
-			column.add_child(C.label(item[0], 21, Editorial.BRASS))
-			column.add_child(C.wrap(str(roster.get(item[1], "")), 23, C.IVORY))
+		_dossier_line(parent, "Points forts", str(roster.get("strengths", "")), true)
+		_dossier_line(parent, "Besoins", str(roster.get("needs", "")), true)
 
-static func _dossier_line(parent: Container, caption: String, detail: String) -> void:
+static func _dossier_metric(parent: Container, value: Variant, caption: String) -> void:
+	var column := C.v(0)
+	parent.add_child(C.fill(column))
+	var number := C.label(value, 49, C.IVORY, true, 800)
+	number.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(number)
+	var title := C.wrap(caption, 20, C.IVORY)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(title)
+
+static func _dossier_line(parent: Container, caption: String, detail: String, accent: bool = false) -> void:
 	var line := C.h(16)
 	parent.add_child(line)
-	var title := C.label(caption, 23, C.IVORY)
-	title.custom_minimum_size.x = C.px(190)
-	line.add_child(title)
-	Editorial.divider(line)
-	var value := C.wrap(detail, 22)
-	C.fill(value)
+	var title := C.wrap(caption, 23, C.IVORY)
+	line.add_child(C.fill(title, false, .52))
+	var value := C.wrap(detail, 24, Editorial.RAIL_GOLD if accent else C.IVORY, true, 700)
+	C.fill(value, false, .48)
 	line.add_child(value)
+	parent.add_child(C.rule())
+
+static func _connected_country(tabs: HBoxContainer, button: Button, active: bool, last: bool) -> void:
+	var group := C.v(0)
+	tabs.add_child(C.fill(group))
+	group.add_child(button)
+	var line := ColorRect.new()
+	line.color = Editorial.RAIL_GOLD if active else Color.TRANSPARENT
+	line.custom_minimum_size.y = maxi(2, C.px(5))
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	group.add_child(line)
+	var bridge := Control.new()
+	bridge.custom_minimum_size.y = C.px(23)
+	bridge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	group.add_child(bridge)
+	if active:
+		var stem := ColorRect.new()
+		stem.name = "CreationCountryConnector"
+		stem.color = Editorial.RAIL_GOLD
+		stem.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bridge.add_child(stem)
+		stem.anchor_bottom = 1
+		stem.offset_left = C.px(62)
+		stem.offset_right = stem.offset_left + maxi(2, C.px(4))
+		var joint := ColorRect.new()
+		joint.color = Editorial.RAIL_GOLD
+		joint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bridge.add_child(joint)
+		joint.anchor_top = 1
+		joint.anchor_bottom = 1
+		joint.offset_top = -C.px(5)
+		joint.offset_left = C.px(56)
+		joint.offset_right = C.px(72)
+	if not last:
+		var separator := ColorRect.new()
+		separator.color = Editorial.LINE
+		separator.custom_minimum_size = Vector2(1, C.px(44))
+		separator.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		separator.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tabs.add_child(separator)
 
 static func _create(app: Control, selected: Dictionary, mode: String) -> void:
 	var action := func(): app._command("new_career", {"club":int(selected.id),"mode":mode}, "Bureau")
@@ -353,20 +412,21 @@ static func creation(app: Control) -> Control:
 			selected = club
 			break
 	if not modern: app.selected_club = int(selected.id)
-	var row := C.h(22) if modern else G.h(24)
+	var row := C.h(21) if modern else G.h(24)
 	G.fill(row, true)
 	if not modern: page.add_child(row)
 	var is_srp := pacific and division == "srp"
 	var is_japan := japan and division in ["jlo-d1", "jlo-d2"]
 	var is_nationale := nationale and division == "nationale"
 	var is_champ := champ and division == "champ"
+	var dossier: VBoxContainer
 	if modern:
-		var panel := G.panel(row, 0.39)
-		Editorial.surface(panel.get_parent(), Editorial.PANEL, Editorial.LINE, 13)
-		var preview := G.scroll(panel)
+		dossier = G.panel(row, .34)
+		Editorial.surface(dossier.get_parent(), Color("142020"), Editorial.LINE, 14)
+		var preview := G.scroll(dossier)
 		preview.get_parent().name = "CreationPreviewScroll"
-		preview.add_theme_constant_override("separation", C.px(12))
-		var photo_height := clampf(screen.y * .225, 138, 318)
+		preview.add_theme_constant_override("separation", C.px(6))
+		var photo_height := clampf(screen.y * .181, 124, 262)
 		if selected.is_empty(): _competition_summary(app, preview, division, division_clubs.size(), photo_height)
 		else: _club_preview(preview, selected, photo_height, preferred == "base")
 	else:
@@ -394,9 +454,9 @@ static func creation(app: Control) -> Control:
 		over.add_child(G.wrap(selected.get("stadium", ""), 14, G.WHITE))
 		var goal := str(selected.get("goal", ""))
 		if not goal.is_empty(): over.add_child(G.label("OBJECTIF  /  " + goal.to_upper(), 14, G.WHITE))
-	var list := G.panel(row, 0.61 if modern else 1.2)
+	var list := G.panel(row, .66 if modern else 1.2)
 	if modern:
-		Editorial.surface(list.get_parent(), Editorial.INK, Color.TRANSPARENT, 0)
+		Editorial.surface(list.get_parent(), Color.TRANSPARENT, Color.TRANSPARENT, 0)
 	else:
 		G.chapter(list,"01","Prendre les rênes","Choisissez les identités puis votre club.",app.accent)
 	var installed: Array = app.pack_manager.installed("creation")
@@ -427,7 +487,7 @@ static func creation(app: Control) -> Control:
 		Editorial.action(import_button, false, false, 34)
 	var filters: Container = list
 	if modern:
-		filters = C.v(5)
+		filters = C.v(0)
 		page.add_child(filters)
 	if countries.size() > 1:
 		var tabs := G.h(8)
@@ -450,26 +510,36 @@ static func creation(app: Control) -> Control:
 			tab.disabled = app.waiting
 			G.fill(tab)
 			if modern:
-				Editorial.action(tab, false, country == group, maxi(32, C.px(47)))
-			elif country == group: G.selected(tab, app.accent)
-			tabs.add_child(tab)
+				if group == "international": tab.icon = C.icon_texture("globe", C.IVORY)
+				Editorial.route_tab(tab, country == group, true)
+				_connected_country(tabs, tab, country == group, group == groups.back())
+			else:
+				if country == group: G.selected(tab, app.accent)
+				tabs.add_child(tab)
 	var divisions := G.h(8)
 	if modern:
 		var scope := PanelContainer.new()
-		Editorial.surface(scope, Editorial.PANEL, Editorial.LINE, 9)
+		Editorial.surface(scope, Color("152020"), Editorial.BRASS, 9)
 		var scope_style := scope.get_theme_stylebox("panel") as StyleBoxFlat
-		scope_style.border_width_left = maxi(3, C.px(4))
-		scope_style.border_color = Editorial.BRASS
+		scope_style.content_margin_left = C.px(44)
+		scope_style.border_color = Editorial.RAIL_GOLD
 		filters.add_child(scope)
 		var competition_row := C.h(15)
 		scope.add_child(competition_row)
-		var country_heading := C.label(CREATION_COUNTRY_SCOPES.get(country, "Championnats"), 25, C.IVORY, true, 700)
+		var icon := TextureRect.new()
+		icon.texture = CREATION_COUNTRIES.get(country, ["", null])[1]
+		if country == "international": icon.texture = C.icon_texture("globe", C.IVORY)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.custom_minimum_size = Vector2(C.px(58), C.px(35))
+		competition_row.add_child(icon)
+		var country_heading := C.label(CREATION_COUNTRY_SCOPES.get(country, "Championnats"), 32, C.IVORY, true, 700)
 		country_heading.name = "CreationChampionshipsScope"
-		country_heading.custom_minimum_size.x = C.px(305)
+		country_heading.custom_minimum_size.x = C.px(325)
 		country_heading.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		competition_row.add_child(country_heading)
 		Editorial.divider(competition_row)
-		competition_row.add_child(C.fill(divisions))
+		competition_row.add_child(divisions)
 	else:
 		filters.add_child(divisions)
 	for item: Array in divisions_data:
@@ -486,30 +556,37 @@ static func creation(app: Control) -> Control:
 			b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			b.tooltip_text = caption
 		b.disabled = app.waiting
-		G.fill(b)
 		if modern:
-			Editorial.action(b, false, app.club_division == item[0], maxi(31, C.px(41)))
-		elif app.club_division == item[0]: G.selected(b, app.accent)
+			if divisions.get_child_count() > 0: Editorial.divider(divisions)
+			b.custom_minimum_size.x = C.px(235)
+			Editorial.route_tab(b, app.club_division == item[0], false)
+		else:
+			G.fill(b)
+			if app.club_division == item[0]: G.selected(b, app.accent)
 		divisions.add_child(b)
 	if modern:
-		page.add_child(C.rule())
 		page.add_child(row)
+		list.add_child(C.rule())
 		var intro := C.h(12)
 		list.add_child(intro)
-		intro.add_child(C.label("CLUBS DU CHAMPIONNAT", 36, C.IVORY, true, 700))
-		Editorial.divider(intro)
 		var identity := _competition_identity(app, division)
+		var country_name := str(CREATION_COUNTRIES.get(country, [country, null])[0])
+		var name := str(identity.get("name", Club.competition_name(division)))
 		var logo := str(identity.get("logoPath", ""))
 		if not logo.is_empty(): intro.add_child(G.crest({"logoPath":logo, "name":identity.name}, C.px(48)))
-		var heading := C.wrap("%s  ·  %d clubs" % [identity.get("name", Club.competition_name(division)), division_clubs.size()], 21)
+		var heading := C.wrap("%s / %s" % [country_name, name], 52, C.IVORY, true, 800)
+		heading.name = "CreationDivisionHeading"
 		heading.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		C.fill(heading)
 		intro.add_child(heading)
-		if screen.x >= 1550:
-			var key := C.label("NOTE MOYENNE · EFFECTIF DE DÉPART", 18, Editorial.BRASS)
-			key.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			intro.add_child(key)
-		list.add_child(C.rule())
+		var count := C.label("%d clubs" % division_clubs.size(), 28, C.IVORY, false)
+		count.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		intro.add_child(count)
+		var rule := ColorRect.new()
+		rule.color = Editorial.RAIL_GOLD
+		rule.custom_minimum_size = Vector2(C.px(310), 2)
+		rule.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		list.add_child(rule)
 	if not modern and (is_srp or is_japan or is_nationale or is_champ):
 		var facts := G.h(8)
 		list.add_child(facts)
@@ -535,12 +612,12 @@ static func creation(app: Control) -> Control:
 		grid.columns = 3 if app.get_window().size.x >= 1660 else 2
 	else:
 		grid.columns = 3 if is_nationale or is_champ or (is_japan and app.get_viewport_rect().size.x >= 1660) else 2
-	grid.add_theme_constant_override("h_separation",8)
-	grid.add_theme_constant_override("v_separation",8)
+	grid.add_theme_constant_override("h_separation", C.px(9) if modern else 8)
+	grid.add_theme_constant_override("v_separation", C.px(11) if modern else 8)
 	G.fill(grid)
 	items.add_child(grid)
 	var grid_rows := ceili(float(division_clubs.size()) / grid.columns)
-	var modern_tile_height := clampi(floori((screen.y * .66 - (148 if screen.x >= 1480 else 173)) / grid_rows), 60, 148)
+	var modern_tile_height := clampi(floori((screen.y * .48 - (15 if screen.x >= 1480 else 36)) / grid_rows), 60, 144)
 	for club in division_clubs.slice(bounds.x,bounds.y):
 		var b := G.button("", func(): _select_club(app, int(club.id), modern))
 		b.custom_minimum_size.y = clampf(app.get_viewport_rect().size.y * 0.045, 52.0, 66.0) if is_srp else (44.0 if is_japan or is_nationale or is_champ else 52.0)
@@ -549,6 +626,12 @@ static func creation(app: Control) -> Control:
 		G.fill(b)
 		if modern:
 			Editorial.action(b, false, club.get("id") == selected.get("id"), modern_tile_height, true)
+			if club.get("id") == selected.get("id"):
+				for state in ["normal", "hover", "pressed"]:
+					var style := b.get_theme_stylebox(state) as StyleBoxFlat
+					style.border_color = Editorial.RAIL_GOLD
+					style.set_border_width_all(maxi(2, C.px(3)))
+					style.bg_color = Color("302d22") if state == "normal" else Color("403724")
 		elif club.get("id") == selected.get("id"): G.selected(b,Color(club.color))
 		var inset := G.margin(8)
 		inset.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -557,28 +640,31 @@ static func creation(app: Control) -> Control:
 		var line := G.h(16)
 		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		inset.add_child(line)
-		line.add_child(G.crest(club, clampi(C.px(59), 30, 55) if modern else 32))
+		line.add_child(_creation_crest(club, clampi(C.px(84), 30, 84) if modern else 32, modern and preferred == "base"))
 		var names := G.v(0)
 		G.fill(names)
 		line.add_child(names)
 		if modern:
 			names.alignment = BoxContainer.ALIGNMENT_CENTER
-			var name := C.wrap(G.club_name(club), 26, C.IVORY, true, 700)
+			var name := C.wrap(G.club_name(club), 30, C.IVORY, true, 700)
 			names.add_child(name)
 			var roster: Dictionary = club.get("startingRoster", {})
-			var detail := _territory(club)
-			if not roster.is_empty():
-				detail += "  ·  %s joueurs" % G.n(int(roster.get("forwards", 0)) + int(roster.get("backs", 0)))
-				b.tooltip_text += " · Note moyenne " + _rating(roster)
-			var subtitle := C.label(detail, 18, C.MUTED, false)
+			var subtitle := C.label(_territory(club), 22, C.IVORY, false)
 			subtitle.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			names.add_child(subtitle)
 			if not roster.is_empty():
-				line.add_child(C.label(_rating(roster), 27, Editorial.BRASS, true, 700))
+				var roster_count := int(roster.get("forwards", 0)) + int(roster.get("backs", 0))
+				b.tooltip_text += " · Note moyenne %s · %d joueurs" % [_rating(roster), roster_count]
+				Editorial.divider(line)
+				var figures := C.v(0)
+				figures.alignment = BoxContainer.ALIGNMENT_CENTER
+				line.add_child(figures)
+				figures.add_child(C.label(_rating(roster), 32, C.IVORY, true, 700))
+				figures.add_child(C.label("%d j." % roster_count, 23, C.IVORY))
 		else:
 			names.add_child(G.cell(G.club_name(club),60,G.INK,true))
 			names.add_child(G.cell(_territory(club),60,G.MUTED,true))
-		line.add_child(G.label("→", 24, G.GOLD))
+			line.add_child(G.label("→", 24, G.GOLD))
 		grid.add_child(b)
 	var database: Dictionary = app.pack_manager.database("creation")
 	var world_info := "%s joueurs · %d clubs jouables" % [G.n(database.get("playerCount", 0)), playable.size()]
@@ -590,19 +676,11 @@ static func creation(app: Control) -> Control:
 	start.name="CreationStart"
 	start.disabled = app.waiting or unavailable or selected.is_empty()
 	if modern:
-		page.add_child(C.rule())
-		var footer := C.h(20)
-		page.add_child(footer)
-		var status := C.label(world_info, 21, C.MUTED, false)
-		status.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		C.fill(status)
-		footer.add_child(status)
-		start.custom_minimum_size.x = C.px(440)
-		Editorial.action(start, true, false, maxi(40, C.px(62)))
-		footer.add_child(start)
-		var safe_space := Control.new()
-		safe_space.custom_minimum_size.x = 142
-		footer.add_child(safe_space)
+		Editorial.action(start, true, false, maxi(40, C.px(72)))
+		start.add_theme_font_size_override("font_size", maxi(20, C.px(41)))
+		dossier.add_child(start)
+		var status := C.label(world_info, 18, C.MUTED, false)
+		list.add_child(status)
 	elif japan:
 		var actions := G.h(8)
 		list.add_child(actions)
