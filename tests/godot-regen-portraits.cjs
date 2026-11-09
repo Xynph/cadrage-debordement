@@ -1,0 +1,10 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{spawnSync}=require('node:child_process');
+const {describe}=require('../native/engine/portraits.cjs'),godot=process.env.CD_GODOT_EXECUTABLE||process.env.CD_GODOT_EXE;
+test('Portraits hors ligne : profils partagés, continuité joueur/staff, cache borné et vrais crops',{skip:!godot&&'SDK Godot requis'},()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-regen-portraits-')),people=[{id:'abc',age:23},{id:'young:1',appearanceId:'shared:1',age:21},{id:'staff:1',portraitRole:'staff',appearanceAge:54,age:70},{id:'staff:origin:1',sourcePlayerId:'abc',portraitRole:'staff',appearanceAge:23,age:49},{id:'staff:unknown',role:'Coach'},{id:'équipe:α',age:30},{}];
+ const fixtures=path.join(dir,'profiles.json');fs.writeFileSync(fixtures,JSON.stringify(people.map(person=>({person,expected:describe(person)}))));
+ const result=spawnSync(godot,['--headless','--path','native/godot','--script',path.resolve(__dirname,'godot-regen-portraits.gd')],{cwd:path.resolve(__dirname,'..'),env:{...process.env,CD_REGEN_FIXTURES:fixtures},encoding:'utf8',timeout:30000});
+ const output=(result.stdout||'')+(result.stderr||'');fs.writeFileSync(path.join(dir,'godot.log'),output);console.log(output.trim());console.log('Preuves portraits : '+dir);
+ if(result.error)throw result.error;assert.equal(result.status,0,output);assert.doesNotMatch(output,/SCRIPT ERROR|Parse Error|ERROR:|instances were leaked/);
+});
