@@ -43,3 +43,12 @@ test('import rejects a tracked focus outside the actual player role and a baseli
  r('S.youthDevelopment=JSON.parse(original);S.youthDevelopment.rows.find(x=>x.id===p.id).baseline.week=0');
  assert.throws(()=>r('CDYouthDevelopment.validate(S)'));
 });
+
+test('mobility does not apply a former-club plan or reveal transferred players',()=>{
+ const h=setup(),r=h.run;r('CDYouthDevelopment.enable(S);CDYouthDevelopment.setPlan(S,p.id,"integration","scrum");var id=p.id;S.development.academy=S.development.academy.filter(x=>x.id!==id);p.academy=false;S.clubs[1].players.push(p);CDYouthDevelopment.observe(S,"managerMobilityOnSeasonStart");CDYouthDevelopment.validate(S)');
+ assert.equal(r('CDYouthDevelopment.project(S).players.some(x=>x.id===id)'),false);
+ assert.equal(r('CDYouthDevelopment.growthShare(S,p,true)'),null);
+ r('S.club=1;CDYouthDevelopment.observe(S,"managerMobilityOnSeasonStart");CDYouthDevelopment.validate(S)');
+ assert.equal(r('CDYouthDevelopment.project(S).players.find(x=>x.id===id).tracked'),true);
+ assert.equal(r('CDYouthDevelopment.growthShare(S,p,true)'),null,'old club plan requires a fresh local decision');
+});

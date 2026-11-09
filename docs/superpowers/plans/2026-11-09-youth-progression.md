@@ -44,5 +44,5 @@
 
 - [x] Écrire les cas rouges baseline/delta/projection pure et sérialisation falsifiée.
 - [x] Stocker les mesures numériques et observations bornées, préserver la baseline lors d'une révision/promotion.
-- [ ] Vérifier observation répétée, transition annuelle et mobilité sans mutation de validation.
-- [ ] Exécuter les nouvelles suites, V29, V72 et développement ; enregistrer le commit et le contrat de raccord.
+- [x] Vérifier observation répétée, transition annuelle et mobilité sans mutation de validation.
+- [x] Exécuter les nouvelles suites, V29, V72 et développement ; enregistrer le commit et le contrat de raccord.
