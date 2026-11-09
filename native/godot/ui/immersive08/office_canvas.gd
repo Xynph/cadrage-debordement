@@ -246,10 +246,19 @@ static func _timeline(card: Panel, app: Control, recent: PanelContainer) -> void
 		var local_date := P.fixture_date(fixture, true)
 		if not local_date.is_empty(): Office.describe_fixture(period, local_date)
 		D.line(card,Vector2(x+14,118),Vector2(x+290,118))
-		var name := D.text(card,x+16,151,G.club_name(opponent),25,C.IVORY,600,218)
+		var crest := Office.opponent_crest(opponent,42)
+		crest.name += str(i)
+		card.add_child(crest)
+		D.place(crest,Rect2(x+16,122,42,42))
+		var name := D.text(card,x+64,151,G.club_name(opponent),23,C.IVORY,600,170)
+		name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		name.max_lines_visible = 2
+		name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		name.add_theme_constant_override("line_spacing",-C.px(2))
+		D.place(name,Rect2(x+64,119,170,50))
 		Office.describe_fixture(name, name.text + " · " + place)
 		var label := Office.short_fixture_label(app.model,fixture)
-		D.text(card,x+16,184,label+" · "+place,21,C.MUTED,500,272)
+		D.text(card,x+16,196,label+" · "+place,20,C.MUTED,500,272)
 		var venue := P.fixture_venue(fixture, false)
 		var ground := D.text(card,x+16,232,venue if not venue.is_empty() else "Terrain à confirmer",22,C.MUTED,500,272)
 		ground.name = "OfficeTimelineGround%d" % i

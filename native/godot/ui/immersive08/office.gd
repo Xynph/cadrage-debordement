@@ -112,8 +112,13 @@ static func recent_results(app: Control) -> PanelContainer:
 		var tile := C.card()
 		tile.add_theme_stylebox_override("panel",C.box(Color("142022"),C.LINE,5,8))
 		row.add_child(C.fill(tile))
-		var details := C.content(tile)
-		details.add_theme_constant_override("separation",0)
+		var matchup := C.h(12)
+		C.content(tile).add_child(matchup)
+		var crest := opponent_crest(opponent,48)
+		crest.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		matchup.add_child(crest)
+		var details := C.v(0)
+		matchup.add_child(C.fill(details))
 		var line := C.h(8)
 		details.add_child(line)
 		var points := C.label("%s – %s" % [G.n(score[side]),G.n(score[1-side])],29,tint,true,700)
@@ -129,6 +134,13 @@ static func recent_results(app: Control) -> PanelContainer:
 	for index in range(played.size(),5):
 		row.add_child(C.fill(Control.new()))
 	return panel
+
+static func opponent_crest(opponent: Dictionary, width: int) -> Control:
+	var crest := G.crest(opponent,C.px(width))
+	crest.name = "OfficeOpponentCrest"
+	crest.set_meta("opponent_id",opponent.get("id"))
+	crest.accessibility_name = "Blason · " + G.club_name(opponent)
+	return crest
 
 static func _fixture(frame: PanelContainer, app: Control) -> void:
 	frame.clip_contents = true
@@ -412,6 +424,9 @@ static func _timeline(parent: VBoxContainer, app: Control) -> void:
 		name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		var matchup := C.h(6)
 		list.add_child(matchup)
+		var crest := opponent_crest(opponent,36)
+		crest.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		matchup.add_child(crest)
 		matchup.add_child(C.fill(name))
 		var location := P.fixture_location_kind(fixture, app.model.club.id)
 		var marker := C.icon(C.fixture_location_icon(location,true),46,C.GOLD)

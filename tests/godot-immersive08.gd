@@ -604,6 +604,10 @@ func recent_office_results() -> void:
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
 	await settle()
 	var results: Control = app.find_child("OfficeRecentResults",true,false)
+	var timeline: Control = app.find_child("OfficeTimeline",true,false)
+	var upcoming_crests := timeline.find_children("OfficeOpponentCrest*","Control",true,false)
+	var next_opponent: Dictionary = fixtures[6].away if fixtures[6].home.id == app.model.club.id else fixtures[6].home
+	check(upcoming_crests.size()==7 and upcoming_crests[0].get_meta("opponent_id")==next_opponent.id,"Les sept prochaines rencontres affichent les blasons adverses")
 	var markers := app.find_children("OfficeVenueIcon*","TextureRect",true,false)
 	var icons := markers.map(func(marker): return marker.texture)
 	check(icons.size() >= 3 and icons[0] != null and icons[1] != null and icons[2] != null
@@ -611,6 +615,9 @@ func recent_office_results() -> void:
 	if results != null:
 		var scores := results.find_children("OfficeRecentScore","Label",true,false)
 		check(scores.size()==5 and scores[0].text=="20 – 21","Cinq résultats du plus récent au plus ancien, score du club à gauche")
+		var crests := results.find_children("OfficeOpponentCrest","Control",true,false)
+		var last_opponent: Dictionary = fixtures[5].away if fixtures[5].home.id == app.model.club.id else fixtures[5].home
+		check(crests.size()==5 and crests[0].get_meta("opponent_id")==last_opponent.id,"Les cinq derniers résultats affichent les blasons adverses")
 		var viewport: Control = app.body_scroll
 		check(viewport.get_global_rect().grow(1).encloses(results.get_global_rect()),"Cinq résultats entièrement visibles à 1440 × 900")
 	check(results!=null,"La bande des résultats apparaît après des matchs joués")
