@@ -48,7 +48,8 @@ module.exports=function worldCareer(edition,active){
  function newSeason(s,initial=false){
   const old=s.worldMode,previous=initial?null:old,partition=initial?Object.fromEntries(IDS.map(id=>[id,REG.clubs.filter(c=>c.leagueId===id).map(c=>c.id)])):Object.fromEntries(IDS.map(id=>[id,(previous.nationale?.movement?.[id]||previous.movement?.[id]||previous.japan?.movement?.[id]||previous.leagues[id].members).slice()]));
   const previousTables=initial?{}:Object.fromEntries(IDS.map(id=>[id,rows(s,id,s.season-1)]));
-  const yearbook=initial?[]:previous.yearbook.concat({season:s.season-1,standings:Object.fromEntries(IDS.map(id=>[id,previousTables[id].map(c=>c.clubId)])),champions:Object.fromEntries(IDS.map(id=>[id,previous.leagues[id].champion])),finalists:Object.fromEntries(IDS.map(id=>[id,previous.leagues[id].finalist])),movement:copy(previous.movement),europe:copy(previous.europe||{}),draws:copy(previous.draws),...(JP?{japan:{...copy(previous.japan),members:Object.fromEntries(JP.leagues.map(id=>[id,previous.leagues[id].members.slice()]))}}:{}),...(N?{nationale:{...copy(previous.nationale),members:frenchMembers(previous)}}:{}),...(CH?{champ:champBoundary()}: {})}).slice(-15);
+  const priorChallengeDraw=previous?.qualification?.challengeDrawPolicy?{policy:previous.qualification.challengeDrawPolicy,startSeason:previous.qualification.challengeDrawStartSeason,order:previous.qualification.drawOrders.challenge}:null;
+  const yearbook=initial?[]:previous.yearbook.concat({season:s.season-1,...(priorChallengeDraw?{challengeDraw:copy(priorChallengeDraw)}:{}),standings:Object.fromEntries(IDS.map(id=>[id,previousTables[id].map(c=>c.clubId)])),champions:Object.fromEntries(IDS.map(id=>[id,previous.leagues[id].champion])),finalists:Object.fromEntries(IDS.map(id=>[id,previous.leagues[id].finalist])),movement:copy(previous.movement),europe:copy(previous.europe||{}),draws:copy(previous.draws),...(JP?{japan:{...copy(previous.japan),members:Object.fromEntries(JP.leagues.map(id=>[id,previous.leagues[id].members.slice()]))}}:{}),...(N?{nationale:{...copy(previous.nationale),members:frenchMembers(previous)}}:{}),...(CH?{champ:champBoundary()}: {})}).slice(-15);
   const annual=initial?null:annualEurope(s,previous,partition,previousTables);
   s.worldMode={version:edition.version,catalogue:REG.id,rules:edition.rules,startYear:2026,week:0,leagues:Object.fromEntries(IDS.map(id=>[id,{members:partition[id],phase:'league',champion:null,finalist:null}])),fixtures:[],yearbook,movement:null,europe:{},draws:{},previousRanks:initial?{}:previousRanksFor(yearbook.at(-1).standings,partition),qualification:annual?.qualification||null,...(JP?{japan:null}:{}),...(N?{nationale:null}:{}),...(CH?{champ:champBoundary()}: {})};
   const pools=initial?REG.initialEurope:annual.pools;
@@ -75,7 +76,7 @@ module.exports=function worldCareer(edition,active){
  function shuffled(ids){const out=ids.slice();for(let i=out.length-1;i>0;i--){const j=rand(0,i);[out[i],out[j]]=[out[j],out[i]];}return out;}
  function draw(s,key,ids,allowDraw=true){const prior=s.worldMode.draws[key];if(prior){check(eq(prior.clubIds,ids),'participants du tirage modifiés.');return prior.ranks;}check(allowDraw,'tirage requis absent.');const order=shuffled(ids),item={clubIds:ids.slice(),order,ranks:Object.fromEntries(order.map((id,i)=>[id,i+1]))};s.worldMode.draws[key]=item;return item.ranks;}
  function currentClubs(s,partition=null){return REG.clubs.map(c=>({...c,leagueId:IDS.find(id=>(partition?.[id]||s.worldMode.leagues[id].members).includes(c.id))||'guest'}));}
- function annualEurope(s,previous,partition,tables,storedOrders=null){
+ function annualEurope(s,previous,partition,tables,storedOrders=null,challengeDrawPolicy=storedOrders?null:C.CHALLENGE_DRAW_POLICY,challengeDrawStartSeason=storedOrders?null:(previous.qualification?.challengeDrawStartSeason??s.season)){
   const clubs=currentClubs(s,partition).filter(c=>['elite','accession','prem','urc','guest'].includes(c.leagueId)),eligible=partition.elite;
   const elite=tables.elite.filter(r=>eligible.includes(r.clubId)).concat(tables.accession.filter(r=>eligible.includes(r.clubId)));
   // This closed world takes an explicit organiser decision each year. It does
@@ -84,9 +85,18 @@ module.exports=function worldCareer(edition,active){
   const qualification=C.qualifyEurope({tables:{elite,prem:tables.prem,urc:tables.urc},clubs,titles:{champions:previous.europe.champions.champion,challenge:previous.europe.challenge.champion,urc:previous.leagues.urc.champion,prem:previous.leagues.prem.champion,premFinalist:previous.leagues.prem.finalist},season:2026+s.season-1,invitations});
   qualification.organiserRulings=qualification.unresolved.map(x=>({...x,policy:'closed-world-quota-and-invitations-maintained'}));
   qualification.invitationPolicy='closed-world-annual-organiser-decision';
+  if(challengeDrawPolicy!==null){qualification.challengeDrawPolicy=challengeDrawPolicy;qualification.challengeDrawStartSeason=challengeDrawStartSeason;qualification.provenance.challengeDraw={status:'game-model'};}
   const pools={},orders={};
-  for(const competitionId of ['champions','challenge']){const participants=qualification[competitionId],order=storedOrders?storedOrders[competitionId]:shuffled(participants);check(Array.isArray(order),'ordre de tirage annuel absent.');orders[competitionId]=order;const protectedIds=competitionId==='champions'?[...new Set([...EUROPE_LEAGUES.map(id=>previous.leagues[id].champion),previous.europe.champions.champion])].filter(id=>participants.includes(id)):[];if(competitionId==='champions'&&protectedIds.length<4&&participants.includes(previous.europe.champions.finalist)&&!protectedIds.includes(previous.europe.champions.finalist))protectedIds.push(previous.europe.champions.finalist);pools[competitionId]=C.drawPools({clubs,competitionId,participants,protectedIds,order});}
+  for(const competitionId of ['champions','challenge']){const participants=qualification[competitionId],order=storedOrders?storedOrders[competitionId]:shuffled(participants);check(Array.isArray(order),'ordre de tirage annuel absent.');orders[competitionId]=order;const protectedIds=competitionId==='champions'?[...new Set([...EUROPE_LEAGUES.map(id=>previous.leagues[id].champion),previous.europe.champions.champion])].filter(id=>participants.includes(id)):[];if(competitionId==='champions'&&protectedIds.length<4&&participants.includes(previous.europe.champions.finalist)&&!protectedIds.includes(previous.europe.champions.finalist))protectedIds.push(previous.europe.champions.finalist);pools[competitionId]=C.drawPools({clubs,competitionId,participants,protectedIds,order,...(competitionId==='challenge'?{challengeDrawPolicy}:{})});}
   qualification.drawOrders=orders;return{qualification,pools};
+ }
+ function validateArchivedChallenge(s,y,participants,startSeason){
+  const proof=y.challengeDraw,required=startSeason!==null&&y.season>=startSeason;
+  check((proof!==undefined)===required,'preuve archivée incompatible avec l’ère du tirage Challenge.');
+  if(!required)return;
+  check(CDWorldValidation.keys(proof,['policy','startSeason','order'])&&proof.policy===C.CHALLENGE_DRAW_POLICY&&proof.startSeason===startSeason,'tirage Challenge archivé invalide.');
+  const expected=C.drawPools({competitionId:'challenge',clubs:currentClubs(s,y.standings),participants,order:proof.order,challengeDrawPolicy:proof.policy});
+  check(eq(expected,y.europe.challenge.pools),'tirage Challenge archivé modifié.');
  }
  function cupTables(s,id){const cup=s.worldMode.europe[id];return cup.pools.map((ids,poolId)=>C.table(ids,s.history.map(asResult),id,{season:2026+s.season-1,phase:'pool',poolId,tieBreaks:{drawOrder:s.worldMode.draws['pool:'+id]?.ranks}}));}
  function appendKnockouts(s,id,state,phases){
@@ -249,10 +259,12 @@ module.exports=function worldCareer(edition,active){
   check(members.length===playable.size&&new Set(members).size===playable.size&&members.every(id=>playable.has(id)),'appartenance de division invalide.');
   const partition=Object.fromEntries(IDS.map(id=>[id,w.leagues[id].members])),initialPartition=Object.fromEntries(IDS.map(id=>[id,REG.clubs.filter(c=>c.leagueId===id).map(c=>c.id)]));
   for(const id of IDS.filter(k=>k!=='elite'&&k!=='accession'&&!japanLeague(k)&&!nationallyMutable(k)))check(eq(partition[id],initialPartition[id]),'changement de championnat non autorisé.');
+  const challengeDrawPolicy=w.qualification?.challengeDrawPolicy??null,challengeDrawStartSeason=w.qualification?.challengeDrawStartSeason??null;
+  check(challengeDrawPolicy===null?challengeDrawStartSeason===null:challengeDrawPolicy===C.CHALLENGE_DRAW_POLICY&&saveInt(challengeDrawStartSeason,2,s.season),'ère du tirage Challenge inconnue.');
   check(saveArray(w.yearbook,15)&&w.yearbook.length===Math.min(15,s.season-1),'palmarès incomplet.');
   let prior=null;
   for(const [i,y]of w.yearbook.entries()){
-   check(V.keys(y,['season','standings','champions','finalists','movement','europe','draws',...(JP?['japan']:[]),...(N?['nationale']:[]),...(CH?['champ']:[])])&&y.season===s.season-w.yearbook.length+i&&V.keys(y.standings,IDS)&&V.keys(y.champions,IDS)&&V.keys(y.finalists,IDS),'archive de saison invalide.');
+   check(V.keys(y,['season','standings','champions','finalists','movement','europe','draws',...(y?.challengeDraw===undefined?[]:['challengeDraw']),...(JP?['japan']:[]),...(N?['nationale']:[]),...(CH?['champ']:[])])&&y.season===s.season-w.yearbook.length+i&&V.keys(y.standings,IDS)&&V.keys(y.champions,IDS)&&V.keys(y.finalists,IDS),'archive de saison invalide.');
    if(CH){
     check(eq(y.champ,champBoundary()),'frontières du Champ archivées modifiées.');
     const seeds=y.standings.champ?.slice(0,6);
@@ -307,6 +319,7 @@ module.exports=function worldCareer(edition,active){
     V.draw(y.draws['pool:'+id],ids);return[id,ids];
    }));
    check(new Set([...pastPools.champions,...pastPools.challenge]).size===42,'club dans deux phases de poules archivées.');
+   validateArchivedChallenge(s,y,pastPools.challenge,challengeDrawStartSeason);
    for(const id of IDS){const d=y.draws['league:'+id];check(d&&Array.isArray(d.clubIds)&&d.clubIds.length===y.standings[id].length&&new Set(d.clubIds).size===d.clubIds.length&&d.clubIds.every(cid=>y.standings[id].includes(cid)),'tirage de championnat archivé invalide.');V.draw(d,d.clubIds);}
    check(Object.keys(y.draws).length===IDS.length+2,'tirages archivés non reconnus.');
    prior=y;
@@ -315,7 +328,7 @@ module.exports=function worldCareer(edition,active){
   if(JP)for(const id of JP.leagues)check(eq(partition[id],prior?prior.japan.movement[id]:initialPartition[id]),'partition japonaise sans provenance.');
   check(eq(w.previousRanks,prior?previousRanksFor(prior.standings,partition):{}),'classements précédents incohérents.');
   const pools=Object.fromEntries(['champions','challenge'].map(id=>[id,w.europe[id].pools]));
-  if(prior){const previous={europe:prior.europe,leagues:Object.fromEntries(IDS.map(id=>[id,{champion:prior.champions[id],finalist:prior.finalists[id]}]))},tables=Object.fromEntries(IDS.map(id=>[id,prior.standings[id].map(clubId=>({clubId}))]));check(saveObject(w.qualification?.drawOrders),'qualification annuelle absente.');const expected=annualEurope(s,previous,partition,tables,w.qualification.drawOrders);check(eq(w.qualification,expected.qualification)&&eq(pools,expected.pools),'qualification ou poules annuelles modifiées.');}
+  if(prior){const previous={europe:prior.europe,leagues:Object.fromEntries(IDS.map(id=>[id,{champion:prior.champions[id],finalist:prior.finalists[id]}]))},tables=Object.fromEntries(IDS.map(id=>[id,prior.standings[id].map(clubId=>({clubId}))]));check(saveObject(w.qualification?.drawOrders),'qualification annuelle absente.');const expected=annualEurope(s,previous,partition,tables,w.qualification.drawOrders,challengeDrawPolicy,challengeDrawStartSeason);check(eq(w.qualification,expected.qualification)&&eq(pools,expected.pools),'qualification ou poules annuelles modifiées.');}
   else check(w.qualification===null&&eq(pools,REG.initialEurope),'poules initiales modifiées.');
   check(saveObject(w.draws),'registre de tirages invalide.');
   for(const [k,d]of Object.entries(w.draws)){const [kind,id]=k.split(':'),list=kind==='league'?partition[id]:kind==='pool'?pools[id]?.flat():null;check(k===kind+':'+id&&Array.isArray(list),'tirage inconnu.');V.draw(d,list);}

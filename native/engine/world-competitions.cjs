@@ -331,7 +331,57 @@ function factory() {
     const challenge=[...lists.elite.filter(id=>!championSet.has(id)),...lists.prem.filter(id=>!championSet.has(id)),...lists.urc.filter(id=>!championSet.has(id)),...guests];
     return {season,champions,challenge,byLeague:selected,invitations:guests.slice(),unresolved,ineligibleTitles,provenance:{status:'published-quota-with-game-assumptions',quotaSource:SOURCES.calendar,urcTitleHolderAllocation:{url:SOURCES.urcTitleHolder,edition:'qualification-2026/27',status:'confirmed'},premFinalistPriority:{url:SOURCES.prem,section:'3.1(c)',edition:'qualification-2027/28',status:'confirmed'},caveat:'Official URC 2026/27 qualification confirms European title-holder displacement within eight places and protection of the URC champion. Later seasons reuse this model; a complete rule for invited winners or every cross-league exception was not located.'}};
   }
-  function drawPools({clubs,competitionId,participants,protectedIds=[],order}) {
+  const CHALLENGE_DRAW_POLICY='balanced-challenge-v1';
+  function drawBalancedChallenge(arranged,byId) {
+    const from=league=>arranged.filter(id=>byId.get(id).leagueId===league);
+    const elite=from('elite'),prem=from('prem'),urc=from('urc'),guests=from('guest');
+    assert(elite.length===6&&prem.length===2&&urc.length===8&&guests.length===2,'balanced Challenge requires 6 TOP 14, 2 PREM, 8 URC and 2 guests');
+
+    // Game model. Only the Scottish-Italian shield spans two federations.
+    const federation=c=>c.shield==='scotland-italy'?c.country:c.shield;
+    const orderIndex=new Map(arranged.map((id,index)=>[id,index]));
+    const pools=[[],[],[]];
+    const poolOrder=id=>[0,1,2].map(i=>(i+orderIndex.get(id))%3);
+    let best=null,bestShields=Infinity,bestCountries=Infinity;
+    function placeURC(index,shields,countries) {
+      if(shields>bestShields||shields===bestShields&&countries>=bestCountries)return;
+      if(index===urc.length){
+        best=pools.map(pool=>pool.slice());bestShields=shields;bestCountries=countries;
+        return;
+      }
+      const id=urc[index],c=byId.get(id),country=federation(c);
+      for(const p of poolOrder(id)){
+        const pool=pools[p];if(pool.length===3)continue;
+        const neighbors=pool.map(other=>byId.get(other));
+        pool.push(id);
+        placeURC(index+1,shields+neighbors.filter(x=>c.shield&&c.shield===x.shield).length,
+          countries+neighbors.filter(x=>country&&country===federation(x)).length);
+        pool.pop();
+      }
+    }
+    placeURC(0,0,0);
+    assert(best,'no balanced Challenge pool allocation');
+    elite.forEach((id,i)=>best[(i+orderIndex.get(elite[0]))%3].push(id));
+
+    // The 3/3/2 URC split leaves 1/1/2 places. Each of the other leagues
+    // contributes one club to the two-seat pool and one to a distinct pool.
+    const others=arranged.filter(id=>['prem','guest'].includes(byId.get(id).leagueId));
+    function placeOthers(index){
+      if(index===others.length)return true;
+      const id=others[index],league=byId.get(id).leagueId;
+      for(const p of poolOrder(id)){
+        const pool=best[p];
+        if(pool.length===6||pool.some(other=>byId.get(other).leagueId===league))continue;
+        pool.push(id);if(placeOthers(index+1))return true;pool.pop();
+      }
+      return false;
+    }
+    assert(placeOthers(0),'no balanced Challenge pool allocation');
+    return best.map(pool=>pool.sort((a,b)=>orderIndex.get(a)-orderIndex.get(b)));
+  }
+
+
+  function drawPools({clubs,competitionId,participants,protectedIds=[],order,challengeDrawPolicy=null}) {
     const p=rules(competitionId), byId=validateClubs(clubs), entrants=ids(participants);
     assert(p.pools && entrants.length===p.clubs && entrants.every(id=>byId.has(id)), 'incorrect European entrants');
     const arranged=ids(order===undefined?entrants:order);
@@ -340,10 +390,15 @@ function factory() {
     assert(protectedSet.size<=p.pools && [...protectedSet].every(id=>entrants.includes(id)), 'invalid protected champions');
     const pools=Array.from({length:p.pools},()=>[]);
     if(competitionId==='challenge') {
+      if(challengeDrawPolicy!==null){
+        assert(challengeDrawPolicy===CHALLENGE_DRAW_POLICY,'unknown Challenge draw policy');
+        return drawBalancedChallenge(arranged,byId);
+      }
       // Open game draw: callers supply the persisted shuffled order. No same-
       // league prohibition exists here, unlike the Champions competition.
       arranged.forEach((id,i)=>pools[i%p.pools].push(id));return pools;
     }
+    assert(challengeDrawPolicy===null,'Challenge draw policy on another competition');
     assert(competitionId==='champions' && ['elite','prem','urc'].every(l=>entrants.filter(id=>byId.get(id).leagueId===l).length===8), 'Champions requires eight entrants per league');
     assert(entrants.filter(id=>byId.get(id).leagueId==='urc').every(id=>typeof byId.get(id).shield==='string'), 'URC shield required for draw');
     const protectedOrder=arranged.filter(id=>protectedSet.has(id));
@@ -447,6 +502,6 @@ function factory() {
     }
     return fixturesFor(phase);
   }
-  return {rules,regularFixtures,table,europeanWeeks,weekKey,poolStage,poolQualifiers,qualifyEurope,drawPools,knockoutWinner,knockoutFixtures};
+  return {CHALLENGE_DRAW_POLICY,rules,regularFixtures,table,europeanWeeks,weekKey,poolStage,poolQualifiers,qualifyEurope,drawPools,knockoutWinner,knockoutFixtures};
 }
 module.exports = { factory };
