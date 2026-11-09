@@ -11,6 +11,12 @@ const JAPAN=Object.freeze({
  leagues:[{id:'jlo-d1',name:'Japan Rugby League One · Division 1',country:'JP'},{id:'jlo-d2',name:'Japan Rugby League One · Division 2',country:'JP'}],
 });
 
+const NATIONALE=Object.freeze({
+ id:'rugby-world-2026-11-09-nationale-v4',version:4,baseId:JAPAN.id,baseCount:88,count:14,
+ label:'Nationale',prefix:'nat:slot-',group:()=> 'nationale',provenance:'nationaleExtension',
+ leagues:[{id:'nationale',name:'Nationale',country:'FR'}],
+});
+
 function compose(base,extension,variant){
  if(extension===null||extension===undefined)return null;
  const {id,version,baseId,baseCount,count,prefix,group}=variant;
@@ -44,6 +50,13 @@ function compose(base,extension,variant){
   clubs[to].players.push(clubs[from].players.splice(i,1)[0]);
   moves.add(pid);
  }
+ if(version===4&&extension.nationaleQualifications!==undefined){
+  const position=extension.nationaleQualifications,expected=new Set([...newIds,...moves]);
+  const roles=['Pilier gauche','Talonneur','Pilier droit','Deuxième ligne','Troisième ligne','Numéro 8','Demi de mêlée','Demi d’ouverture','Centre','Ailier','Arrière'];
+  check(object(position)&&Object.entries(position).every(([pid,item])=>expected.has(pid)&&object(item)&&Object.keys(item).length===2&&
+   Array.isArray(item.roles)&&item.roles.length>=1&&new Set(item.roles).size===item.roles.length&&item.roles.every(x=>roles.includes(x))&&
+   Array.isArray(item.sources)&&item.sources.length>=1&&item.sources.every(x=>/^nat-source-[0-9a-f]{16}$/.test(x))),'qualifications de la Nationale');
+ }
  if(version===3&&extension.japanCategories!==undefined){
   const categories=extension.japanCategories,expected=new Set([...newIds,...moves]);
   check(object(categories)&&Object.keys(categories).length===expected.size&&Object.entries(categories).every(([pid,item])=>expected.has(pid)&&object(item)&&Object.keys(item).length===3&&['A-1','A-2','B','C'].includes(item.category)&&['official-2026-27','derived-official-criteria','estimated'].includes(item.basis)&&typeof item.reason==='string'&&/^[a-z0-9-]{1,80}$/.test(item.reason)),'qualifications japonaises');
@@ -53,9 +66,11 @@ function compose(base,extension,variant){
   clubs,leagues:[...base.leagues,...variant.leagues],
   worldProfiles:{...base.worldProfiles,...extension.worldProfiles},
   ...(version===3&&extension.japanCategories?{japanCategories:extension.japanCategories}:{}),
+  ...(version===4&&extension.nationaleQualifications?{nationaleQualifications:extension.nationaleQualifications}:{}),
   provenance:{...base.provenance,[variant.provenance]:extension.provenance??null},
  };
 }
 const extendWorldRegistry=(base,extension)=>compose(base,extension,PACIFIC);
 const extendJapanRegistry=(pacific,extension)=>compose(pacific,extension,JAPAN);
-module.exports={extendWorldRegistry,extendJapanRegistry};
+const extendNationaleRegistry=(japan,extension)=>compose(japan,extension,NATIONALE);
+module.exports={extendWorldRegistry,extendJapanRegistry,extendNationaleRegistry};

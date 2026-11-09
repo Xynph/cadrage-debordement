@@ -27,6 +27,9 @@ module.exports=function worldValidation(){
  }
  function result(r,f,live=null){
   const japan=typeof CDWorldJapanMatch!=='undefined'&&CDWorldJapanMatch.isFixture(f);
+  const nationale=typeof CDWorldNationaleMatch!=='undefined'&&CDWorldNationaleMatch.isFixture(f);
+  check(r.nationaleExtra===undefined||nationale,'preuve Nationale hors de sa competition.');
+  if(nationale)return CDWorldNationaleMatch.validateResult(r,f,live);
   check(r.japanExtra===undefined||japan,'preuve Japon hors de sa compétition.');
   if(japan)return CDWorldJapanMatch.validateResult(r,f,live);
   if(f.competitionId==='srp')return CDWorldSRPMatch.validateResult(r,f,live);
@@ -38,7 +41,7 @@ module.exports=function worldValidation(){
   check(saveObject(d)&&typeof d.extraTime==='boolean'&&saveArray(d.redCards,2)&&d.redCards.length===2&&d.redCards.every(n=>saveInt(n,0,23))&&r.pair.includes(r.winner),'décision éliminatoire incomplète.');
   check(keys(d,d.method==='shootout'?['method','extraTime','redCards','shootout']:['method','extraTime','redCards']),'métadonnées de décision non reconnues.');
   check(d.extraTime?duration>=100:r.score[0]!==r.score[1],'départage sans prolongation.');
-  const computed=CDWorldCompetitions.knockoutWinner({...r,duration,afterExtraTime:d.extraTime,penalties:r.stats.map(x=>x.goals),drops:r.stats.map(x=>x.drops||0),redCards:d.redCards},f.competitionId);
+  const computed=CDWorldCompetitions.knockoutWinner({...r,duration,afterExtraTime:d.extraTime,penalties:r.stats.map(x=>x.goals),drops:r.stats.map(x=>x.drops||0),redCards:d.redCards},f.competitionId==='access-nationale'?'access':f.competitionId);
   check(computed.winner===r.winner&&computed.method===d.method,'vainqueur ou critère incohérent.');
   if(d.method==='shootout')shootout(r,live);
   if(live)check(d.extraTime===!!live.knockout&&eq(d.redCards,live.sheets.map(sh=>sh.redCards.length)),'décision incompatible avec les feuilles.');
@@ -46,6 +49,9 @@ module.exports=function worldValidation(){
  function live(l,f){
   check(!!f&&eq(l.worldContext,f)&&eq(l.pair,[f.homeId,f.awayId])&&l.franceContext===undefined,'match en cours hors calendrier.');
   const japan=typeof CDWorldJapanMatch!=='undefined'&&CDWorldJapanMatch.isFixture(f);
+  const nationale=typeof CDWorldNationaleMatch!=='undefined'&&CDWorldNationaleMatch.isFixture(f);
+  check(l.nationaleExtra===undefined||nationale,'preuve Nationale hors de sa competition.');
+  if(nationale)return CDWorldNationaleMatch.validateLive(l,f);
   check(l.japanExtra===undefined||japan,'preuve Japon hors de sa compétition.');
   if(japan)return CDWorldJapanMatch.validateLive(l,f);
   if(f.competitionId==='jlo-d1-d2'&&f.phase==='promotion')check(l.knockout===undefined,'prolongation interdite dans une manche de barrage Japon.');

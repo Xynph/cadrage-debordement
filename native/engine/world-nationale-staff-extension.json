@@ -1,0 +1,1784 @@
+{
+  "schema": "oval-anonymous-staff-v1",
+  "version": 1,
+  "baseId": "rugby-world-2026-11-09-japan-v3",
+  "databaseId": "rugby-world-2026-11-09-nationale-v4",
+  "observedAt": "2026-11-09",
+  "clubs": [
+    {
+      "id": 88,
+      "members": [
+        {
+          "id": "world:staff:nat:0418838e086fc23fa760",
+          "clubId": 88,
+          "name": "Simon Casaur",
+          "role": "Entraîneur principal",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 89,
+      "members": [
+        {
+          "id": "world:staff:nat:e5f34349a049ec7f1117",
+          "clubId": 89,
+          "name": "Jérémy Jeanloey",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:29a59eebc9e187f01e34",
+          "clubId": 89,
+          "name": "Nicolas Joffou",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:15315399ad1478486709",
+          "clubId": 89,
+          "name": "Simon Painet",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:a6dffe70a94f553ec92d",
+          "clubId": 89,
+          "name": "Enzo Danoux",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:d189b7fefcc680d823e5",
+          "clubId": 89,
+          "name": "Yann Valenur",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:6dcde4e579f0dfc48277",
+          "clubId": 89,
+          "name": "Romain Yanneau",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:5e2c55f41d6bd72378d9",
+          "clubId": 89,
+          "name": "Jules Edent",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:d65151f3023d3ef4cffb",
+          "clubId": 89,
+          "name": "Axel Paot",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:35cff80d61400d7c6fbe",
+          "clubId": 89,
+          "name": "Yann Auréiac",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:71424dd7e7a59b61869e",
+          "clubId": 89,
+          "name": "Mattéo Aurélou",
+          "role": "Entraîneur des avants",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:d8d4988958150b02003f",
+          "clubId": 89,
+          "name": "Jules Stépharel",
+          "role": "Entraîneur des arrières",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:2b1ee71e9b4fc8f23d66",
+          "clubId": 89,
+          "name": "Tanguy Olivin",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:78cfaae9ea76bba74936",
+          "clubId": 89,
+          "name": "Victor Olivier",
+          "role": "Kinésithérapeute",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:7f5607c140a29e362536",
+          "clubId": 89,
+          "name": "Mathis Maxard",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:9fac9bc2e304b0b02031",
+          "clubId": 89,
+          "name": "Jérémy Alix",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:d45ab21e0c2455ddca67",
+          "clubId": 89,
+          "name": "Gaël Pasu",
+          "role": "Directeur sportif",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:772e874d589993e8b337",
+          "clubId": 89,
+          "name": "Loïc Jeanclaand",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:4b8cbbaa7e080c736847",
+          "clubId": 89,
+          "name": "Félix Vincell",
+          "role": "Entraîneur des avants",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:626e4a30966b2403ce38",
+          "clubId": 89,
+          "name": "Thomas Bastin",
+          "role": "Entraîneur des arrières",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:0431208542a078898fb2",
+          "clubId": 89,
+          "name": "Isaac Alil",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:33147d4f4e347bcab883",
+          "clubId": 89,
+          "name": "Thomas Rour",
+          "role": "Kinésithérapeute",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 90,
+      "members": [
+        {
+          "id": "world:staff:nat:2778dc517cf184b69237",
+          "clubId": 90,
+          "name": "Alexis Ogell",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:51b895d48d018ae634b2",
+          "clubId": 90,
+          "name": "Adrien Hernanet",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:54519d297fd18a9ee19b",
+          "clubId": 90,
+          "name": "Baptiste Viot",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:c6273cc23e490ee9dae7",
+          "clubId": 90,
+          "name": "Mattéo Ramion",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:b7534d9cff4bc670f647",
+          "clubId": 90,
+          "name": "Léo Almeay",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:7b175ed796567eb0c6fc",
+          "clubId": 90,
+          "name": "Adrien Imbail",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:92a53313a0fb10f421ff",
+          "clubId": 90,
+          "name": "Nicolas Groy",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:4ed05ed20312a8b153e3",
+          "clubId": 90,
+          "name": "Marin Mahiac",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:9ede222e97f02099f386",
+          "clubId": 90,
+          "name": "Gaël Franard",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:e48c57cf8291d1473ca0",
+          "clubId": 90,
+          "name": "Jules Bouvell",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 91,
+      "members": [
+        {
+          "id": "world:staff:nat:5803b44e88317eee4c8f",
+          "clubId": 91,
+          "name": "Jérémy Champaot",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:c9082b5ff58dac21f152",
+          "clubId": 91,
+          "name": "Rémi Dubeau",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:d9837cbdbff0ae916555",
+          "clubId": 91,
+          "name": "Simon Duat",
+          "role": "Entraîneur des avants",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 92,
+      "members": [
+        {
+          "id": "world:staff:nat:86bba7a0746ab0beecf6",
+          "clubId": 92,
+          "name": "Joris Guu",
+          "role": "Entraîneur des avants",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:1e5f6ac57722fd800559",
+          "clubId": 92,
+          "name": "Naël Abbael",
+          "role": "Entraîneur des avants",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:2bc8124aec8f76c4f796",
+          "clubId": 92,
+          "name": "Arthur Delcoudet",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:d286c8f344f4f4f1b328",
+          "clubId": 92,
+          "name": "Isaac Pellegeau",
+          "role": "Entraîneur de la mêlée",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:6c2ad65f1d0099f0f02f",
+          "clubId": 92,
+          "name": "Gabriel Cabanus",
+          "role": "Entraîneur principal",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:ab9df3f0e6ce3d64a00e",
+          "clubId": 92,
+          "name": "Arthur Ayestaoux",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:d9907cfe90fac96e0e1b",
+          "clubId": 92,
+          "name": "Cyril Teeau",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:f11fea8eaabc85d3c09a",
+          "clubId": 92,
+          "name": "Pablo Lakaarel",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 93,
+      "members": [
+        {
+          "id": "world:staff:nat:853342b58d8a14d4d081",
+          "clubId": 93,
+          "name": "Nicolas Gonzaell",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:ae2b3bcf8f2845311796",
+          "clubId": 93,
+          "name": "Simon Calet",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:f75d38e375ea371a3fac",
+          "clubId": 93,
+          "name": "Yanis Motus",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:9887f01f3aac2530fec4",
+          "clubId": 93,
+          "name": "Valentin Vainet",
+          "role": "Intendant",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:ad8e9f001b86dbe30338",
+          "clubId": 93,
+          "name": "Nicolas Courtinet",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:ceced7d3feafed08cdcd",
+          "clubId": 93,
+          "name": "Gabriel Gallouu",
+          "role": "Encadrement de la formation",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 94,
+      "members": [
+        {
+          "id": "world:staff:nat:6464545151b31d25970c",
+          "clubId": 94,
+          "name": "Romain Otur",
+          "role": "Intendant",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:5a024bea24d7f0b05e3b",
+          "clubId": 94,
+          "name": "Enzo Quenard",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:6ccf34467d9a27b212e2",
+          "clubId": 94,
+          "name": "Hugo Yanney",
+          "role": "Entraîneur principal",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:72ea28029c9b864370a9",
+          "clubId": 94,
+          "name": "Hector Mélaot",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:e51c37c36d34d3b63876",
+          "clubId": 94,
+          "name": "Naël Didinet",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:1695a7fecfe16fd6a68c",
+          "clubId": 94,
+          "name": "Esteban Daard",
+          "role": "Entraîneur des avants",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:b752ab3a887368f1880c",
+          "clubId": 94,
+          "name": "Jules Luon",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:8376d6f0ed742c270555",
+          "clubId": 94,
+          "name": "Pablo Quenard",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:2fe4841c775ef2b9c9c8",
+          "clubId": 94,
+          "name": "Romain Matiac",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 95,
+      "members": [
+        {
+          "id": "world:staff:nat:b8e40d3710fe8ceeaf54",
+          "clubId": 95,
+          "name": "Maxence Groux",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:ab9d2ceca6fcdbee93d4",
+          "clubId": 95,
+          "name": "Joris Moraarel",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:db7d2544d000110bf34c",
+          "clubId": 95,
+          "name": "Florent Toley",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:500fbaaccc40cf64f1c1",
+          "clubId": 95,
+          "name": "Joris Soeau",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:d31ea372e7304a290606",
+          "clubId": 95,
+          "name": "Gaël Leon",
+          "role": "Entraîneur de la mêlée",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:8ab1597b0cd89a7693e4",
+          "clubId": 95,
+          "name": "Tristan Bolusier",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:52f39d31ac59c2a47f52",
+          "clubId": 95,
+          "name": "Tom Bajus",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:fb4bcef528b42d4947e0",
+          "clubId": 95,
+          "name": "Kylian Kaand",
+          "role": "Kinésithérapeute",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:5c066a17dcc9cb78bd50",
+          "clubId": 95,
+          "name": "Gabin Quenaard",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:5959f95cb0517965d770",
+          "clubId": 95,
+          "name": "Jules Staqay",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 96,
+      "members": [
+        {
+          "id": "world:staff:nat:f5db933276cf81a82ed4",
+          "clubId": 96,
+          "name": "Hector Negrey",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:e0cb1d7cfdcf053673f6",
+          "clubId": 96,
+          "name": "Lucien Gioux",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:6a44f627a2e6ce626add",
+          "clubId": 96,
+          "name": "Yann Ouchell",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:d8df805d7439af8738e3",
+          "clubId": 96,
+          "name": "Paul Cainet",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:e61a9be699c8df58536e",
+          "clubId": 96,
+          "name": "Samuel Zeitiac",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:7e7fb0a120738aa49b93",
+          "clubId": 96,
+          "name": "Mattéo Rochconard",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:a69ddbf2e780888fc97e",
+          "clubId": 96,
+          "name": "Valentin Delclell",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:2e59145924047abc270f",
+          "clubId": 96,
+          "name": "Arthur Suou",
+          "role": "Intendant",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:02c341a3e4503cc4e1c0",
+          "clubId": 96,
+          "name": "Victor Vivis",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:46be37ae419b3392d8f7",
+          "clubId": 96,
+          "name": "Maël Navaent",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:4aba8f53c3f4502b9e5a",
+          "clubId": 96,
+          "name": "Noé Pontagnoux",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:884a8fd4d045c85aae6d",
+          "clubId": 96,
+          "name": "Tristan Clemou",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:1e954007145a07c9cdbd",
+          "clubId": 96,
+          "name": "Mathis Jeat",
+          "role": "Encadrement de la formation",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:367ab29c25b3a8020cf1",
+          "clubId": 96,
+          "name": "Axel Lecuoy",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:ed7bd3f60e4e65478258",
+          "clubId": 96,
+          "name": "Valentin Ghiringheot",
+          "role": "Directeur sportif",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:7371fe86419b02f7e0e3",
+          "clubId": 96,
+          "name": "Romain Faucand",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:cfeb455ad796beda445a",
+          "clubId": 96,
+          "name": "Félix Paarel",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:dc22998f5d4ece563426",
+          "clubId": 96,
+          "name": "Lilouan Martius",
+          "role": "Kinésithérapeute",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:5bbfb014e9950fe7ca6c",
+          "clubId": 96,
+          "name": "Mattéo Lauoux",
+          "role": "Encadrement de la formation",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:611e94fdc5cfc546341d",
+          "clubId": 96,
+          "name": "Elliot Fasqarel",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:2817889b312a8f5accc6",
+          "clubId": 96,
+          "name": "Hector Antou",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:0410441973acdc1638ff",
+          "clubId": 96,
+          "name": "Samuel Bastay",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:7ec1945742c978189f4e",
+          "clubId": 96,
+          "name": "Romain Denoyeoy",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:a46d82d3a8769a68a281",
+          "clubId": 96,
+          "name": "Victor Duinet",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:c77f8164849e029a2790",
+          "clubId": 96,
+          "name": "Bastien Tiil",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:20c1123e35901f6dba4c",
+          "clubId": 96,
+          "name": "Louis Hein",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 97,
+      "members": [
+        {
+          "id": "world:staff:nat:03c35adb4fc4d07f8a9a",
+          "clubId": 97,
+          "name": "Oscar Jéret",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:75f87d76f73dba07557a",
+          "clubId": 97,
+          "name": "Jules Thier",
+          "role": "Entraîneur des arrières",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:ee2bda23f4346be5118d",
+          "clubId": 97,
+          "name": "Manu Alou",
+          "role": "Intendant",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:e7f188d7d66200aa2678",
+          "clubId": 97,
+          "name": "Axel Romix",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:de5972ab5bcac8549d75",
+          "clubId": 97,
+          "name": "Mathis Kéix",
+          "role": "Entraîneur principal",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:c333b41b87f06f0b8909",
+          "clubId": 97,
+          "name": "Mathieu Floril",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:b4b094892fd139881c74",
+          "clubId": 97,
+          "name": "Léo Jéréell",
+          "role": "Entraîneur de la mêlée",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:8aa75808f84a29f9ddb7",
+          "clubId": 97,
+          "name": "Joris Floris",
+          "role": "Entraîneur des avants",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:98405dc7699688718a25",
+          "clubId": 97,
+          "name": "Marin Daon",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:a0cdea68806203a64ff8",
+          "clubId": 97,
+          "name": "Thomas Patro",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:39296abeb048b11d2fb7",
+          "clubId": 97,
+          "name": "Jérémy Clémoux",
+          "role": "Kinésithérapeute",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:5c981835abd0b0977ff4",
+          "clubId": 97,
+          "name": "Marin Pauliac",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:fb51b88f1dbe16318f5e",
+          "clubId": 97,
+          "name": "Lilouan Lilat",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:31e6746ce49ed572d6e0",
+          "clubId": 97,
+          "name": "Dorian Thoarel",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:594dc146fb30057b2166",
+          "clubId": 97,
+          "name": "Rémi Leus",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:cc827140510b88fbee55",
+          "clubId": 97,
+          "name": "Alban Thibaot",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:1959de1e872cf928dadc",
+          "clubId": 97,
+          "name": "Sacha Carolat",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:74113490266246634d47",
+          "clubId": 97,
+          "name": "Mathis Nicoen",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 98,
+      "members": [
+        {
+          "id": "world:staff:nat:685885d1bd1ab1db84a1",
+          "clubId": 98,
+          "name": "Robin Dupaud",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:627f6856c2759b75c6c5",
+          "clubId": 98,
+          "name": "Manu Cailoux",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:f2acb8dfde4527168d6c",
+          "clubId": 98,
+          "name": "Lucien Tardien",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:3e1f449117800146ea34",
+          "clubId": 98,
+          "name": "Esteban Cazeell",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:ea121d617fee462326b3",
+          "clubId": 98,
+          "name": "Lilouan Siu",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:0e9a2664b28106e1ecff",
+          "clubId": 98,
+          "name": "Théo Carrey",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:f82b394f92ef2a3ce8df",
+          "clubId": 98,
+          "name": "Loïc Garon",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:4b4f40945a1e2161477b",
+          "clubId": 98,
+          "name": "Loris Geret",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:c6ad2b50b4b837a6f82c",
+          "clubId": 98,
+          "name": "Noé Fourtoy",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:314b9d73946cad6bf0b2",
+          "clubId": 98,
+          "name": "Valentin Marçent",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:4acecc52b53680f4235f",
+          "clubId": 98,
+          "name": "Adrien Enjalinet",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:266bc81db90664599fde",
+          "clubId": 98,
+          "name": "Florent Laustrat",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:3c174ef66fd9efbe4cf1",
+          "clubId": 98,
+          "name": "Félix Buell",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:293a4c121afc88ea9618",
+          "clubId": 98,
+          "name": "Yanis Cabanen",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:7436b12f71afad494f9e",
+          "clubId": 98,
+          "name": "Mathieu Lesburgueet",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:2b38c854ae938fa153a3",
+          "clubId": 98,
+          "name": "Joan Birenbarel",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 99,
+      "members": [
+        {
+          "id": "world:staff:nat:c2d15b1d2c5e08073dcc",
+          "clubId": 99,
+          "name": "Victor Marur",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 100,
+      "members": [
+        {
+          "id": "world:staff:nat:e731b93b3d2b9c7dff7c",
+          "clubId": 100,
+          "name": "Mathis Devecent",
+          "role": "Entraîneur des arrières",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:0b8f4146cc2f37a39856",
+          "clubId": 100,
+          "name": "Théo Caccou",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:1a21ecc16afa88c0ad60",
+          "clubId": 100,
+          "name": "Bastien Grapand",
+          "role": "Entraîneur de la mêlée",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:edbe5b27dd59708dc3da",
+          "clubId": 100,
+          "name": "Sacha Smeyier",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:736903f69238679ee583",
+          "clubId": 100,
+          "name": "Gaël Esposay",
+          "role": "Intendant",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:1945120aac5c5c85bf00",
+          "clubId": 100,
+          "name": "Yanis Beon",
+          "role": "Entraîneur des avants",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:c0ea05eb5cb83b26097f",
+          "clubId": 100,
+          "name": "Nicolas Waqaseduaand",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:083d2c20c8bf55ebaf5c",
+          "clubId": 100,
+          "name": "Milo Saand",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:1f5609e5c676a881e301",
+          "clubId": 100,
+          "name": "Jérémy Zaragarel",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:fdd6de10d12321be9e3b",
+          "clubId": 100,
+          "name": "Tom Dutrat",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:95391c4bc8cd27f25a16",
+          "clubId": 100,
+          "name": "Bastien Rocet",
+          "role": "Intendant",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:88a61df716f24118e390",
+          "clubId": 100,
+          "name": "Manu Vaet",
+          "role": "Intendant",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:f84c78047c6e905a2ebe",
+          "clubId": 100,
+          "name": "Robin Chiey",
+          "role": "Kinésithérapeute",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:1f480bbbc236f9013f56",
+          "clubId": 100,
+          "name": "Arthur Gherien",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:840fe33e3c7a594b06f2",
+          "clubId": 100,
+          "name": "Elliot Philipus",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 101,
+      "members": [
+        {
+          "id": "world:staff:nat:46497ee412a8c005ee43",
+          "clubId": 101,
+          "name": "Félix Graviac",
+          "role": "Entraîneur principal",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:5f8fd377257cb9bd83a3",
+          "clubId": 101,
+          "name": "Alexis Serau",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:66f068f41b575ef558e4",
+          "clubId": 101,
+          "name": "Milo Bartand",
+          "role": "Kinésithérapeute",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:bf17338adbbcb4388ed9",
+          "clubId": 101,
+          "name": "Gabriel Maro",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:aa2b1177a23abe8efd07",
+          "clubId": 101,
+          "name": "Oscar Osmiac",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:07568a9ce47b1436bfda",
+          "clubId": 101,
+          "name": "Enzo Ramio",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:50d34cd622aa86e2b30f",
+          "clubId": 101,
+          "name": "Manu Dalloy",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:bedd08c26cd90ddbb1d5",
+          "clubId": 101,
+          "name": "Louis Roey",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:74908f5fbca97653e955",
+          "clubId": 101,
+          "name": "Louis Tidjel",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:775a0202f21568022a24",
+          "clubId": 101,
+          "name": "Théo Charou",
+          "role": "Entraîneur de la mêlée",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:nat:78432b96fd9b1e8496ad",
+          "clubId": 101,
+          "name": "Loïc Montserarel",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    }
+  ]
+}

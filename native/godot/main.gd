@@ -703,7 +703,7 @@ func settings() -> void:
 func open_file(importing: bool) -> void:
 	import_mode = importing
 	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE if importing else FileDialog.FILE_MODE_SAVE_FILE
-	file_dialog.title = "Importer une carrière · 8 Mio France et anciennes éditions · 16 Mio Monde" if importing else "Exporter une carrière"
+	file_dialog.title = "Importer une carrière · 8 Mio France · 16 Mio Monde · 20 Mio Nationale" if importing else "Exporter une carrière"
 	file_dialog.current_file = "" if importing else "Oval-Legacy-27.json"
 	file_dialog.popup_centered_ratio(0.7)
 
@@ -713,9 +713,9 @@ func _file_selected(path: String) -> void:
 		var f := FileAccess.open(path,FileAccess.READ)
 		if f == null: _refuse_action("Le fichier ne peut pas être lu : " + error_string(FileAccess.get_open_error())); return
 		var byte_count := f.get_length()
-		if byte_count > NativeEngineBridge.WORLD_IMPORT_LIMIT_BYTES:
+		if byte_count > NativeEngineBridge.EXTENDED_IMPORT_LIMIT_BYTES:
 			f.close()
-			_refuse_action("Fichier trop volumineux (16 Mio UTF-8 maximum).")
+			_refuse_action("Fichier trop volumineux (20 Mio UTF-8 maximum pour Monde + Nationale).")
 			return
 		var text := f.get_buffer(byte_count).get_string_from_utf8()
 		f.close()

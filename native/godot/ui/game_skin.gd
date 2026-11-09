@@ -165,7 +165,7 @@ static func crest(club: Dictionary, width: int = 56) -> Control:
 	var provided := texture != null
 	if not provided:
 		var slug := str(c.get("slug", ""))
-		var badge := "res://art/pacific/badges/%s.svg" % slug if slug.begins_with("srp-") else "res://art/japan/badges/%s.svg" % slug if slug.begins_with("jlo-") else ""
+		var badge := "res://art/pacific/badges/%s.svg" % slug if slug.begins_with("srp-") else "res://art/japan/badges/%s.svg" % slug if slug.begins_with("jlo-") else "res://art/nationale/badges/%s.svg" % slug if slug.begins_with("nat-") else ""
 		if not badge.is_empty() and ResourceLoader.exists(badge): texture = load(badge) as Texture2D
 	if texture != null:
 		var image := TextureRect.new()

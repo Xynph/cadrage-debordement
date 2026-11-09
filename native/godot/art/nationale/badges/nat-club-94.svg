@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 108">
+ <path d="M10 12h76l-3 59c-5 14-15 23-35 32C28 94 18 85 13 71z" fill="#1a2227" stroke="#975c58" stroke-width="4"/>
+ <path d="M17 18h62l-3 49c-2 6-5 11-9 16H29c-4-5-7-10-9-16z" fill="#975c58" opacity=".68"/>
+ <g stroke="#efe2c1" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" fill="none"><path d="M17 62c7 0 7-12 15-12s8 12 16 12 8-12 16-12 8 12 15 12M17 72c7 0 7-6 15-6s8 6 16 6 8-6 16-6 8 6 15 6M25 43l23-19 23 19z"/></g>
+ <text x="48" y="90" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="#efe2c1">RSR</text></svg>

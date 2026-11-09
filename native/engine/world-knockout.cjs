@@ -6,7 +6,7 @@ module.exports=function worldKnockout(){
   if(!l.knockout&&l.score[0]===l.score[1]){l.knockout={version:1,period:1,regulationEnd:l.minute,firstEnd:null};l.flow.fullEnd=l.minute+10;l.flow.ballDead=false;addEvent(l,'Prolongation : deux périodes de dix minutes.','break');performKickRestart(l,'kickoff',l.firstKickoff,'extra-first',1-l.firstKickoff);return true;}
   if(l.knockout?.period===1){l.knockout.period=2;l.knockout.firstEnd=l.minute;l.flow.fullEnd=l.minute+10;l.flow.ballDead=false;addEvent(l,'Changement de camp : seconde période de prolongation.','break');performKickRestart(l,'kickoff',1-l.firstKickoff,'extra-second',l.firstKickoff);return true;}
   let side=l.score[0]>l.score[1]?0:l.score[1]>l.score[0]?1:null,method='score';
-  const criteria=['elite','accession','access'].includes(l.worldContext.competitionId)?[['tries',l.tries],['penalties',l.stats.map(s=>s.goals)],['drops',l.stats.map(s=>s.drops||0)],['redCards',l.sheets.map(s=>-s.redCards.length)]]:[['tries',l.tries]];
+  const criteria=['elite','accession','access','access-nationale'].includes(l.worldContext.competitionId)?[['tries',l.tries],['penalties',l.stats.map(s=>s.goals)],['drops',l.stats.map(s=>s.drops||0)],['redCards',l.sheets.map(s=>-s.redCards.length)]]:[['tries',l.tries]];
   if(side===null)for(const [key,values] of criteria){if(values[0]!==values[1]){side=values[0]>values[1]?0:1;method=key;break;}}
   let shootout=null;
   if(side===null){
