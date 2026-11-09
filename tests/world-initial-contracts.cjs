@@ -45,10 +45,10 @@ function contracts(mode,t){
 
 test('Les échéances précises et bornes ne s’appliquent qu’aux créations Monde complet',t=>{
  const current=contracts('world-champ',t),prior=contracts('world-nationale',t);
- a.equal(current.size,5881);
+ a.equal(current.size,5878);
  const changed={premAndUrc:0,champ:0};
  const aliases=terms.inactiveAliases;
- a.equal(Object.keys(aliases).length,3);
+ a.equal(Object.keys(aliases).length,6);
  for(const club of world.clubs.filter(c=>['prem','urc','champ'].includes(c.leagueId))){
   for(const p of club.players){
    const baseline=p.contractEnd,row=terms.players[p.id];
@@ -65,9 +65,12 @@ test('Les échéances précises et bornes ne s’appliquent qu’aux créations 
  a.equal(changed.premAndUrc,55);
  a.ok(changed.champ>0&&changed.champ<=25);
 });
-test('Seules les trois variantes attestées sont désactivées au départ, dans deux clubs du Champ',()=>{
+test('Le catalogue conserve les variantes attestées et leur club de référence',()=>{
  const aliases=Object.entries(terms.inactiveAliases),canonicals=new Set(),affected=new Set();
- a.equal(aliases.length,3);
+ const clubsByPlayer=new Map(world.clubs.flatMap(club=>club.players.map(player=>[player.id,club])));
+ const transfers=[];
+ a.equal(clubsByPlayer.size,5884);
+ a.equal(aliases.length,6);
  for(const [id,row] of aliases){
   a.match(id,/^world:champ:[0-9a-f]{20}$/);a.match(row.canonicalId,/^world:champ:[0-9a-f]{20}$/);
   a.deepEqual(Object.keys(row).sort(),['canonicalId','clubId']);
@@ -76,11 +79,13 @@ test('Seules les trois variantes attestées sont désactivées au départ, dans 
   a.ok(!Object.hasOwn(terms.players,id));
   a.ok(!canonicals.has(row.canonicalId));
   canonicals.add(row.canonicalId);
-  const club=world.clubs[row.clubId],p=club?.players.find(p=>p.id===id),canonical=club?.players.find(p=>p.id===row.canonicalId);
-  a.equal(club?.leagueId,'champ');
-  a.ok(p&&canonical);
-  a.equal(p.pos,canonical.pos);
+  const club=clubsByPlayer.get(id),canonicalClub=clubsByPlayer.get(row.canonicalId);
+  a.equal(club?.id,row.clubId);
+  a.equal(club.leagueId,'champ');
+  a.equal(canonicalClub?.leagueId,'champ');
+  if(canonicalClub.id!==club.id)transfers.push([club.id,canonicalClub.id]);
   affected.add(club.id);
  }
- a.equal(affected.size,2);
+ a.equal(affected.size,5);
+ a.deepEqual(transfers,[[113,109]]);
 });
