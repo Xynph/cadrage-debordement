@@ -11,6 +11,7 @@ import struct
 import sys
 import unicodedata
 import zipfile
+import zlib
 
 MIB = 1024 * 1024
 MAX_ARCHIVE = 1024 * MIB
@@ -172,7 +173,7 @@ def audit_pack(path, verify_assets=False):
                             hash_ok = sha.hexdigest() == digest
                             issues['assetHashMismatch'] += int(not hash_ok)
                             verified = metadata and actual == size == entry.file_size and hash_ok
-                        except (zipfile.BadZipFile, RuntimeError, OSError, EOFError):
+                        except (zipfile.BadZipFile, zlib.error, RuntimeError, OSError, EOFError):
                             issues['assetReadFailures'] += 1
                         counts['verified'] += int(verified)
                 assets[aid] = {'present': present, 'verified': verified, 'digest': digest}
@@ -270,7 +271,7 @@ def main(argv=None):
         code = 2 if any(result['issues'].values()) else 0
     except AuditError as error:
         result, code = {'schema': 'identity-pack-inventory-v1', 'status': 'unavailable', 'errorCode': str(error)}, 1
-    except (OSError, zipfile.BadZipFile, UnicodeError, ValueError, TypeError, RecursionError, RuntimeError, EOFError):
+    except (OSError, zipfile.BadZipFile, zlib.error, UnicodeError, ValueError, TypeError, RecursionError, RuntimeError, EOFError):
         result, code = {'schema': 'identity-pack-inventory-v1', 'status': 'unavailable', 'errorCode': 'unreadable_or_invalid_archive'}, 1
     print(json.dumps(result, ensure_ascii=True, indent=2, sort_keys=True))
     return code

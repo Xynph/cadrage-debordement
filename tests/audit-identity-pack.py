@@ -167,6 +167,28 @@ class InventoryTest(unittest.TestCase):
             z.writestr('pack.json', '{"secret":"' + SECRET + '","secret":2}')
         self.assertEqual(self.cli(self.path)[1]['errorCode'], 'duplicate_json_key')
 
+    def test_deflate_errors_keep_the_json_protocol_for_asset_and_manifest(self):
+        for target in ('private/one.webp', 'pack.json'):
+            with self.subTest(target=target):
+                m = manifest(); a = asset('one'); m['assets'] = [a]
+                m['players'] = [{'id': SECRET, 'portrait': 'one', 'synthetic': True}]
+                self.archive(m, {a['path']: PHOTO})
+                with zipfile.ZipFile(self.path) as z:
+                    offset = z.getinfo(target).header_offset
+                raw = bytearray(self.path.read_bytes())
+                name_len, extra_len = struct.unpack_from('<HH', raw, offset + 26)
+                raw[offset + 30 + name_len + extra_len] = 7  # Invalid deflate BTYPE.
+                self.path.write_bytes(raw)
+                before = self.path.read_bytes()
+                code, r = self.cli(self.path, '--verify-assets')
+                self.assertEqual(self.path.read_bytes(), before)
+                if target == 'pack.json':
+                    self.assertEqual((code, r['errorCode']), (1, 'unreadable_or_invalid_archive'))
+                else:
+                    self.assertEqual(code, 2)
+                    self.assertEqual(r['issues']['assetReadFailures'], 1)
+                    self.assertEqual(r['players']['verified'], 0)
+
     def test_crc_failure_is_quantified_and_manifest_crc_failure_is_redacted(self):
         m = manifest(); a = asset('one'); m['assets'] = [a]
         m['players'] = [{'id': 'a', 'portrait': 'one', 'synthetic': False}]
