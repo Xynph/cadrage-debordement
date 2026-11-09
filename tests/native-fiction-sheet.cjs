@@ -16,7 +16,12 @@ function harness(persisted,options={}){const h=context(persisted.seed,options);h
 function allPlayers(s){return [...s.clubs.flatMap(c=>c.players),...s.aiRoster.academies.flatMap(a=>a.players),...s.development.academy,...s.market,...s.economy.freeAgents];}
 function qualified(s){for(let side=0;side<2;side++){const sh=s.live.sheets[side],players=s.clubs[s.live.pair[side]].players,ids=[...sh.on,...sh.bench];assert.equal(ids.length,23);assert.equal(new Set(ids).size,23);assert.equal(sh.nominated.length,23);assert.ok(ids.every(id=>typeof id==='string'&&players.some(p=>p.id===id&&!p.injury)));}}
 function validateNative(b){const h=context();h.ctx.checked=state(b);h.run('validateCareer(checked)');qualified(state(b));}
-function check(label,fn){fn();checks.push(label);}
+function check(label,fn){
+ // Each scenario owns its workers. Keep persisted fixture data, not the VMs
+ // (which retain a separate copy of every supported world registry).
+ try{fn();checks.push(label);}
+ finally{for(const b of bridges.splice(0))b.close();}
+}
 // VM observation/fault injection stays in this test copy, never in production.
 function inspectedWorker(options={}){
  const Module=require('node:module'),filename=require.resolve('../native/engine/worker.cjs'),m=new Module(filename,module);

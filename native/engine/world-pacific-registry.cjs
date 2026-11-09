@@ -17,6 +17,12 @@ const NATIONALE=Object.freeze({
  leagues:[{id:'nationale',name:'Nationale',country:'FR'}],
 });
 
+const CHAMP=Object.freeze({
+ id:'rugby-world-2026-11-09-champ-v5',version:5,baseId:NATIONALE.id,baseCount:102,count:14,
+ label:'Champ Rugby',prefix:'champ:slot-',group:()=> 'champ',provenance:'champExtension',
+ leagues:[{id:'champ',name:'Champ Rugby',country:'ENG'}],
+});
+
 function compose(base,extension,variant){
  if(extension===null||extension===undefined)return null;
  const {id,version,baseId,baseCount,count,prefix,group}=variant;
@@ -73,4 +79,5 @@ function compose(base,extension,variant){
 const extendWorldRegistry=(base,extension)=>compose(base,extension,PACIFIC);
 const extendJapanRegistry=(pacific,extension)=>compose(pacific,extension,JAPAN);
 const extendNationaleRegistry=(japan,extension)=>compose(japan,extension,NATIONALE);
-module.exports={extendWorldRegistry,extendJapanRegistry,extendNationaleRegistry};
+const extendChampRegistry=(nationale,extension)=>compose(nationale,extension,CHAMP);
+module.exports={extendWorldRegistry,extendJapanRegistry,extendNationaleRegistry,extendChampRegistry};

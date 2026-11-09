@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 110"><path d="M11 22l12-9h50l12 9v43q0 18-37 34Q11 83 11 65Z" fill="#1c2427" stroke="#477366" stroke-width="4"/>
+ <path d="M21 26h54v44H21z" fill="#477366" opacity=".62"/>
+ <path d="M23 51l25-20 25 20-13 15H36zM38 46l10 8 10-8" fill="none" stroke="#eadbbd" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+ <text x="48" y="86" text-anchor="middle" font-family="sans-serif" font-size="9.5" font-weight="700" fill="#f2e4c9">WMT</text></svg>

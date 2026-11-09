@@ -262,6 +262,12 @@ func _run() -> void:
 		return
 	_check(not app._has_career() and app.route=="Accueil","Fresh profile opens menu without creating career")
 	await _display_reception()
+	if OS.get_environment("CD_GODOT_QA_CHAMP") == "1":
+		var champ: Node = preload("res://qa_champ.gd").new()
+		add_child(champ)
+		await champ.run(self)
+		await _finish()
+		return
 	if OS.get_environment("CD_GODOT_QA_NATIONALE") == "1":
 		var nationale: Node = preload("res://qa_nationale.gd").new()
 		add_child(nationale)

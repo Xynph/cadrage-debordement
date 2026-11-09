@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 110"><path d="M16 24l32-13 32 13v39q0 22-32 37Q16 85 16 63Z" fill="#1c2427" stroke="#4e68a0" stroke-width="4"/>
+ <path d="M21 26h54v44H21z" fill="#4e68a0" opacity=".62"/>
+ <path d="M22 58l26-29 26 29-26 11zM29 58h38m-19-23v29" fill="none" stroke="#eadbbd" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+ <text x="48" y="86" text-anchor="middle" font-family="sans-serif" font-size="9.5" font-weight="700" fill="#f2e4c9">SCX</text></svg>

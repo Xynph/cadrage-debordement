@@ -1,0 +1,1685 @@
+{
+  "schema": "oval-anonymous-staff-v1",
+  "version": 1,
+  "baseId": "rugby-world-2026-11-09-nationale-v4",
+  "databaseId": "rugby-world-2026-11-09-champ-v5",
+  "observedAt": "2026-11-09",
+  "clubs": [
+    {
+      "id": 102,
+      "members": [
+        {
+          "id": "world:staff:champ:37aac48d22b41ca378f1",
+          "clubId": 102,
+          "name": "Oscar Sherwood",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:d83c086a329c8f8758d4",
+          "clubId": 102,
+          "name": "Connor Hartburn",
+          "role": "Entraîneur principal",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:fc24ec2676dc20e2d57a",
+          "clubId": 102,
+          "name": "Nathan Porterwood",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:aee9202febb91b15eb06",
+          "clubId": 102,
+          "name": "Morgan Hartholm",
+          "role": "Entraîneur principal",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:1863af3f6287c5e372e2",
+          "clubId": 102,
+          "name": "Sonny Silverridge",
+          "role": "Entraîneur de l’attaque",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:e4cf4809dd89ee2c49cc",
+          "clubId": 102,
+          "name": "Owen Starpark",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:6fdd7c4487e5cf5080e1",
+          "clubId": 102,
+          "name": "Jules Huntland",
+          "role": "Directeur sportif",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:1a9b1d574c6c30c4a2b6",
+          "clubId": 102,
+          "name": "Max Wynnness",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:a50c438c0afce65257a9",
+          "clubId": 102,
+          "name": "Nathan Beckholm",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:3df28ec80f46362bf7f6",
+          "clubId": 102,
+          "name": "Felix Starland",
+          "role": "Responsable d’équipe",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:1fd532059ed36cbe52f9",
+          "clubId": 102,
+          "name": "Ezra Glenward",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 103,
+      "members": [
+        {
+          "id": "world:staff:champ:636dc6affb7d7e5f20f0",
+          "clubId": 103,
+          "name": "Nathan Silverpark",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:39a814569069b04a76f4",
+          "clubId": 103,
+          "name": "Adrian Eastside",
+          "role": "Entraîneur des avants",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:896dff19b2efc7cf3393",
+          "clubId": 103,
+          "name": "Hamish Trentvale",
+          "role": "Intendant",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:cfe5a9776f299083702c",
+          "clubId": 103,
+          "name": "Sonny Woodburn",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:beb4a45b8be8fa6151c2",
+          "clubId": 103,
+          "name": "Will Woodward",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:91129f4485be765a0e76",
+          "clubId": 103,
+          "name": "Lachlan Hartstone",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:aa95562cdaa335a7b75e",
+          "clubId": 103,
+          "name": "Carl Carrhill",
+          "role": "Directeur sportif",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:67e31640143dcced3add",
+          "clubId": 103,
+          "name": "Blake Stoneley",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:2a429a96434c685e2635",
+          "clubId": 103,
+          "name": "Arthur Flintham",
+          "role": "Responsable d’équipe",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:9969d5b75ee09ef9f17c",
+          "clubId": 103,
+          "name": "Francis Daleridge",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 104,
+      "members": [
+        {
+          "id": "world:staff:champ:728cdf040e4cd7b03d88",
+          "clubId": 104,
+          "name": "Theo Glenmoor",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:c711a571c0216369c40e",
+          "clubId": 104,
+          "name": "Corey Pikewater",
+          "role": "Entraîneur principal",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:fa151eafdeb34b6524dc",
+          "clubId": 104,
+          "name": "Victor Frostmoor",
+          "role": "Entraîneur des arrières",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:efa2f515157e5f2d9d6c",
+          "clubId": 104,
+          "name": "Connor Ridgeness",
+          "role": "Entraîneur de la mêlée",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 105,
+      "members": [
+        {
+          "id": "world:staff:champ:a64b2783a46bf8144f5c",
+          "clubId": 105,
+          "name": "Seth Fordholm",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:9d525f691ca3d8b8161d",
+          "clubId": 105,
+          "name": "Francis Greenham",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:6e51b0592a437082f426",
+          "clubId": 105,
+          "name": "Morgan Heathmoor",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:ec19f688827d631eb946",
+          "clubId": 105,
+          "name": "Hugo Lakemill",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:6b255f720a5a81b0c0e1",
+          "clubId": 105,
+          "name": "Owen Aldermill",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:16e27bd34f8c2587a1bd",
+          "clubId": 105,
+          "name": "Finley Halethorne",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:3b77602c13341d1ad3d5",
+          "clubId": 105,
+          "name": "Joel Silverhill",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:eeb90534937950e634b3",
+          "clubId": 105,
+          "name": "Rhys Goldwick",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:56e595c45d371717fd00",
+          "clubId": 105,
+          "name": "Carl Huntholm",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:92d5dc9eb8ae5a13d5f5",
+          "clubId": 105,
+          "name": "Jack Goldland",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:62dae9058a46da10d50c",
+          "clubId": 105,
+          "name": "Gabriel Southstead",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 106,
+      "members": [
+        {
+          "id": "world:staff:champ:7aaa33ae0e70f23b4fac",
+          "clubId": 106,
+          "name": "Adrian Clarkemoor",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:41a8a21ccdf9c009c828",
+          "clubId": 106,
+          "name": "Dylan Northberry",
+          "role": "Entraîneur principal",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:d7d1a78b1e61d9a6a3d9",
+          "clubId": 106,
+          "name": "Morgan Irvland",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:523c2e91ed0ff1e05d28",
+          "clubId": 106,
+          "name": "Cameron Bellberry",
+          "role": "Directeur sportif",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:53af613d8c7f495e160a",
+          "clubId": 106,
+          "name": "Chris Ridgemill",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:901dd1ba7f8063d98797",
+          "clubId": 106,
+          "name": "Seth Wynnholm",
+          "role": "Responsable d’équipe",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:d9726a3d8da43b45d45a",
+          "clubId": 106,
+          "name": "Jack Buckbyridge",
+          "role": "Intendant",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 107,
+      "members": [
+        {
+          "id": "world:staff:champ:8889dad39235b6f31ab8",
+          "clubId": 107,
+          "name": "Jack Thornland",
+          "role": "Entraîneur principal",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:a1657eb6ade88a11aeb5",
+          "clubId": 107,
+          "name": "Sonny Starwell",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:00fb0cd4c7e04fcfe8b8",
+          "clubId": 107,
+          "name": "Max Greymill",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:ecc5a935c9db0a42dc09",
+          "clubId": 107,
+          "name": "Will Ridgeton",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:6dbc157108f7362ec4be",
+          "clubId": 107,
+          "name": "Oliver Daleley",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:eb9d7a8f152e2cc3c739",
+          "clubId": 107,
+          "name": "Jules Nashbrook",
+          "role": "Entraîneur principal",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:b0acec5c3a7a289bfe06",
+          "clubId": 107,
+          "name": "Charlie Copeburn",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:0bef27b23af77c99ba50",
+          "clubId": 107,
+          "name": "Milo Sherdale",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:c0f2c186da39ded6e15d",
+          "clubId": 107,
+          "name": "Jacob Mayford",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:0ac4821ffbdde1a418e2",
+          "clubId": 107,
+          "name": "Ellis Roseden",
+          "role": "Entraîneur des avants",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:a0318fb6e5aa96efcff9",
+          "clubId": 107,
+          "name": "Lachlan Holtmore",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:0f28d6cada841222c3b8",
+          "clubId": 107,
+          "name": "Josh Hartmoor",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:77381c7229ce2621302c",
+          "clubId": 107,
+          "name": "Brett Blackmoor",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:e5503db813f6332782a6",
+          "clubId": 107,
+          "name": "Isaac Fencroft",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:1f44ecc274d961066075",
+          "clubId": 107,
+          "name": "Arthur Strandford",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:6486c5626ade4e978344",
+          "clubId": 107,
+          "name": "Marcus Blythemore",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:803cd8d259400c6e2b76",
+          "clubId": 107,
+          "name": "Reuben Blythemill",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:43bb3667b61685402f3e",
+          "clubId": 107,
+          "name": "Toby Marshbrook",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:4a8ef49f3b51ecaf4d44",
+          "clubId": 107,
+          "name": "Caspar Bellmore",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:590ff9cc0e10de8d9d66",
+          "clubId": 107,
+          "name": "Archie Farham",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:eb8712765f74141a84f3",
+          "clubId": 107,
+          "name": "Gareth Oxmill",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:9bb596e5edc66a0a2085",
+          "clubId": 107,
+          "name": "Archie Alderstone",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:e6d5beaf08d241f9f07a",
+          "clubId": 107,
+          "name": "Cameron Hallham",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:183caf84b6a4cd1bec59",
+          "clubId": 107,
+          "name": "Noah Aldervale",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:349287796811ac23f937",
+          "clubId": 107,
+          "name": "Aidan Ryestead",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:9881c1ca8879d6e82588",
+          "clubId": 107,
+          "name": "Lachlan Fendell",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:c4cfc37f46821bca0991",
+          "clubId": 107,
+          "name": "Archie Shawland",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:1560dd9b0d66b005fbf4",
+          "clubId": 107,
+          "name": "Ryan Hallford",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:066aea27c96130b3c030",
+          "clubId": 107,
+          "name": "Cameron Hartshore",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:cbd69fb59a2f5677faea",
+          "clubId": 107,
+          "name": "Simon Glenward",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:c2b5940dc0f854064ac0",
+          "clubId": 107,
+          "name": "Kai Lakevale",
+          "role": "Responsable d’équipe",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 108,
+      "members": [
+        {
+          "id": "world:staff:champ:e85db9220b8e3f91f406",
+          "clubId": 108,
+          "name": "Elliot Harcliff",
+          "role": "Encadrement de la formation",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:fea58767b92899e603aa",
+          "clubId": 108,
+          "name": "Brett Woodcliff",
+          "role": "Entraîneur principal",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:b750244c2576facb4fa5",
+          "clubId": 108,
+          "name": "Jacob Rosedell",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:aee04deb2e7e79995629",
+          "clubId": 108,
+          "name": "Victor Huntbridge",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:209f70b20518d9c85a1b",
+          "clubId": 108,
+          "name": "Andre Penridge",
+          "role": "Intendant",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:b320b17780d5917fdc77",
+          "clubId": 108,
+          "name": "Chris Whitmoor",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:b5796da5b5fabcaf06cc",
+          "clubId": 108,
+          "name": "Louis Lakedell",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:f1269aff201d608d64f5",
+          "clubId": 108,
+          "name": "Kieran Rainwell",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:da86b8e341a72815a2d6",
+          "clubId": 108,
+          "name": "Elliot Meredale",
+          "role": "Entraîneur des arrières",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:1713c4faec068482a017",
+          "clubId": 108,
+          "name": "Austin Thorncroft",
+          "role": "Intendant",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:43056fa0895a1ebbc9ef",
+          "clubId": 108,
+          "name": "Sam Southridge",
+          "role": "Encadrement de la formation",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:83dba0285372774bf7d5",
+          "clubId": 108,
+          "name": "Gareth Grantland",
+          "role": "Intendant",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:9c5124f536e962c69757",
+          "clubId": 108,
+          "name": "Sonny Farpark",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:f0d6eaef1ab456360bc8",
+          "clubId": 108,
+          "name": "Hamish Strandham",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:bfc32ca579d64a4d66e3",
+          "clubId": 108,
+          "name": "Milo Valecliff",
+          "role": "Encadrement de la formation",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 109,
+      "members": [
+        {
+          "id": "world:staff:champ:3888dd8cdc91585543ef",
+          "clubId": 109,
+          "name": "Kai Heathstone",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:5d8ac5350110bfecf79c",
+          "clubId": 109,
+          "name": "Morgan Kencroft",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:453ae284044d3f4c5573",
+          "clubId": 109,
+          "name": "Isaac Wildward",
+          "role": "Directeur sportif",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:e089aa406f658f893450",
+          "clubId": 109,
+          "name": "Anton Sladewood",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:8f9356a3267cb9748818",
+          "clubId": 109,
+          "name": "Jacob Millwater",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:2e716ffd53d1f49ac3f8",
+          "clubId": 109,
+          "name": "Freddie Oxwick",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:bb838500adce4f0d61fb",
+          "clubId": 109,
+          "name": "Toby Rosegrove",
+          "role": "Responsable d’équipe",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:77372593a439703d81d8",
+          "clubId": 109,
+          "name": "Andre Wildridge",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:0edfbb4694171b359786",
+          "clubId": 109,
+          "name": "Alastair Warddell",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:264d944ff9587d2870df",
+          "clubId": 109,
+          "name": "Evan Parkwood",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 110,
+      "members": [
+        {
+          "id": "world:staff:champ:0fd301eaba6f62de12c9",
+          "clubId": 110,
+          "name": "Isaac Nashshore",
+          "role": "Directeur sportif",
+          "sourceSeason": "2026-27",
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 111,
+      "members": [
+        {
+          "id": "world:staff:champ:98d9d3bad1f93aa953a7",
+          "clubId": 111,
+          "name": "Harvey Millmore",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:0ebe3b1cdcfaf03afd54",
+          "clubId": 111,
+          "name": "Brandon Brookley",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:5d828ab8fc5860559bf8",
+          "clubId": 111,
+          "name": "Nathan Kenford",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:78c17499c47505dc862d",
+          "clubId": 111,
+          "name": "Jamie Wildstone",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:955942f6bfd388ff1895",
+          "clubId": 111,
+          "name": "Rowan Stargrove",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:92620df341708fc9a2f8",
+          "clubId": 111,
+          "name": "Will Brookland",
+          "role": "Entraîneur principal",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:e7c3378e31a2a9b2f1d5",
+          "clubId": 111,
+          "name": "Max Oakgrove",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:cf256c912f1c26168cc3",
+          "clubId": 111,
+          "name": "Theo Blythevale",
+          "role": "Entraîneur des arrières",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:8673e0f2d71dbf5b489a",
+          "clubId": 111,
+          "name": "Jacob Hopethorne",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:3990d9859a5f7ba15986",
+          "clubId": 111,
+          "name": "Aidan Westton",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:4f5466c7d1e9492c7f76",
+          "clubId": 111,
+          "name": "Simon Reedberry",
+          "role": "Entraîneur de la mêlée",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:5a01f27fd1dd60baf9ee",
+          "clubId": 111,
+          "name": "Alec Southdell",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 112,
+      "members": [
+        {
+          "id": "world:staff:champ:956c0348f9a8aaf84cd3",
+          "clubId": 112,
+          "name": "Adrian Wynnmill",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:77d09c5440bfb5019c90",
+          "clubId": 112,
+          "name": "Caspar Heathford",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:630ad2b230a6f884a05f",
+          "clubId": 112,
+          "name": "Dylan Hallpark",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:a546fb7903babf6e630f",
+          "clubId": 112,
+          "name": "Arthur Clarkeberry",
+          "role": "Entraîneur principal",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:8c29b87cf6ddb0c83d8f",
+          "clubId": 112,
+          "name": "Oliver Goldland",
+          "role": "Entraîneur des arrières",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:c4fd32cf90e4ebbaa30f",
+          "clubId": 112,
+          "name": "Evan Harrowley",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:9d08a55d594d6e988675",
+          "clubId": 112,
+          "name": "Brandon Frostlock",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:4d2ed6404805713723e8",
+          "clubId": 112,
+          "name": "Arthur Dalemore",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:6e92969c55b565a380f7",
+          "clubId": 112,
+          "name": "Gareth Harrowden",
+          "role": "Entraîneur des buteurs",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:3bf890155e5764f631c9",
+          "clubId": 112,
+          "name": "Jacob Carrwood",
+          "role": "Entraîneur de la mêlée",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 113,
+      "members": [
+        {
+          "id": "world:staff:champ:a523cad43e5bb7614bbb",
+          "clubId": 113,
+          "name": "Owen Trentridge",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:d6608d2bc8dc0e986ce7",
+          "clubId": 113,
+          "name": "Max Stoneshore",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:92156730da70afff5317",
+          "clubId": 113,
+          "name": "Miles Waterdell",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:b897f559c18130feca74",
+          "clubId": 113,
+          "name": "Charlie Lanemore",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:2626078f696caa507c73",
+          "clubId": 113,
+          "name": "Aidan Goldgrove",
+          "role": "Responsable d’équipe",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:dd5a423dcea9136781cc",
+          "clubId": 113,
+          "name": "Marcus Shercroft",
+          "role": "Entraîneur des avants",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:64255e05250b42563e16",
+          "clubId": 113,
+          "name": "Tom Valehaven",
+          "role": "Entraîneur principal",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 114,
+      "members": [
+        {
+          "id": "world:staff:champ:80a1f9acb89e61af2857",
+          "clubId": 114,
+          "name": "Aidan Bellford",
+          "role": "Analyste",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:b19ffc8481ad2f1f822b",
+          "clubId": 114,
+          "name": "Dylan Deanmere",
+          "role": "Entraîneur de l’attaque",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:c8093a57c742d7ee2f5f",
+          "clubId": 114,
+          "name": "Miles Blackford",
+          "role": "Préparateur physique",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:1af3d594dcf33796edfe",
+          "clubId": 114,
+          "name": "Finley Wardhaven",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:789f11a82fd9cdd55de2",
+          "clubId": 114,
+          "name": "Hugo Whitmere",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:258a889aa980e3735acf",
+          "clubId": 114,
+          "name": "Archie Haledale",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:803058913afda0b317f1",
+          "clubId": 114,
+          "name": "Bailey Alderwick",
+          "role": "Directeur sportif",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:c5276557c45f559afdda",
+          "clubId": 114,
+          "name": "Bailey Rowthorne",
+          "role": "Médecin",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:5d014fca8879624c907f",
+          "clubId": 114,
+          "name": "Adam Shawbrook",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:691403ef843d2f8dbc87",
+          "clubId": 114,
+          "name": "Victor Reedstead",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:079a60ea601bab0e63eb",
+          "clubId": 114,
+          "name": "Rowan Rosewater",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:f5da3bc937a65a930af8",
+          "clubId": 114,
+          "name": "Cameron Sherworth",
+          "role": "Entraîneur adjoint",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:22d52485546467ca7b71",
+          "clubId": 114,
+          "name": "Taylor Fairgate",
+          "role": "Encadrement du club",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:f1d0795e6b2e711e2345",
+          "clubId": 114,
+          "name": "Oscar Halldale",
+          "role": "Équipe paramédicale",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:fa074c3344d4aa830956",
+          "clubId": 114,
+          "name": "Felix Merebank",
+          "role": "Intendant",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        },
+        {
+          "id": "world:staff:champ:65d0069b98d6d5ed8af2",
+          "clubId": 114,
+          "name": "Aidan Haleshore",
+          "role": "Responsable d’équipe",
+          "sourceSeason": null,
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    },
+    {
+      "id": 115,
+      "members": [
+        {
+          "id": "world:staff:champ:3e6908da7e8a1f4c66c0",
+          "clubId": 115,
+          "name": "Felix Daleby",
+          "role": "Entraîneur principal",
+          "sourceSeason": "2026-27",
+          "sourceDate": null,
+          "historical": false,
+          "observedAt": "2026-11-09",
+          "portraitStatus": "anonymous"
+        }
+      ]
+    }
+  ]
+}
