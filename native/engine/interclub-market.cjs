@@ -7,6 +7,15 @@ function factory(){
  const integer=(n,min,max)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
  const week=()=>S.worldMode?.week??S.franceMode?.week??S.round;
  const context=()=>({season:S.season,week:week(),club:S.club});
+ // Local transfer safety for the canonical historical 30-player fiction.
+ // aiRosterVersion is shared by fiction and reference universes; it is not a
+ // roster-size provenance marker. Never alter the global AI population floor.
+ function releasePolicy(s){
+  const reference=['commonDatabase','worldMode','franceMode','lnrMode','rosterFoundation','identityPack'].some(k=>s[k]!==undefined);
+  const fiction=!reference&&s.version===2&&s.worldVersion===1&&s.integratedManagementVersion===1&&s.clubs?.length===14&&s.clubs.every((c,i)=>c.id===i)&&
+   (s.customCompetition===undefined||s.customCompetition?.version===1&&s.customCompetition?.clubs?.length===14);
+  return {kind:fiction?'historical-fiction-30':'reference-or-unknown',minimum:fiction?28:37,notice:fiction?'Garde de jeu fictive : 28 professionnels après départ (23 de feuille et cinq couvertures), deux joueurs par famille et deux piliers de chaque côté.':'Garde conservatrice : 37 professionnels après départ, deux joueurs par famille et deux piliers de chaque côté.'};
+ }
  const loans=()=>[S.v78to81,...Object.values(S.nativeAcademy?.offices||{}).map(o=>o.v78to81)].flatMap(o=>o?.loans||[]).filter(l=>l.season===S.season);
  function quote(c,p,loanIds=new Set(loans().map(l=>l.id))){
   const own=S.clubs[S.club],weeks=wageForecastWeeks(S),sourceSalary=p.salary,contractEnd=p.contractEnd;
@@ -17,19 +26,20 @@ function factory(){
   else if(!integer(p.age,18,60)||!integer(contractEnd,S.season,9999))reason='Joueur majeur sous contrat requis';
   else if(loanIds.has(p.id))reason='Joueur concerné par un prêt';
   else if(saleBlocked(p))reason=saleBlocked(p);
-  else if(c.players.length<=37)reason='Le vendeur conserve au moins 37 professionnels';
+  else if(c.players.length<=releasePolicy(S).minimum)reason='Le vendeur conserve au moins '+releasePolicy(S).minimum+' professionnels';
   else if((p.fam===0&&c.players.filter(q=>q.id!==p.id&&q.pos===p.pos).length<2)||c.players.filter(q=>q.id!==p.id&&q.fam===p.fam).length<2)reason='Le vendeur doit conserver deux joueurs de cette famille de poste';
   const releaseReason=reason;
   if(!reason&&professionalPlaces(own,S)<=0)reason='Effectif acheteur complet';
   else if(own.cash<fee+400000)reason='Réserve de trésorerie de 400 000 € requise après indemnité';
   else if(salary>100000)reason='La demande salariale dépasse le plafond de 100 000 € par semaine';
   else if(own.cash-fee-400000<salary*Math.min(8,Math.max(0,weeks-week())))reason='Trésorerie insuffisante pour provisionner les huit prochaines semaines du nouveau salaire';
-  return {id:p.id,name:p.name,clubId:c.id,club:c.name,pos:p.pos,age:p.age,contractEnd,sourceSalary,fee,salary,available:!reason,reason,releaseReason};
+  return {id:p.id,name:p.name,clubId:c.id,club:c.name,pos:p.pos,family:p.fam,age:p.age,contractEnd,sourceSalary,fee,salary,available:!reason,reason,releaseReason};
  }
  function project(){
   const available=typeof S!=='undefined'&&!!S?.economy&&!!S.clubs?.[S.club];
-  const base={available,context:available?context():null,candidates:[],notice:'Accord de libération anticipée fictif. Indemnité intégralement versée au club vendeur ; salaire proposé +5 % (minimum 1 000 €/semaine), échéance conservée. Le vendeur garde 37 professionnels et deux joueurs de la famille. Réserve de 400 000 € et provision des huit prochaines semaines du nouveau salaire ; aucune inscription réglementaire automatique.'};
+  const base={available,releasePolicy:available?releasePolicy(S):null,context:available?context():null,candidates:[],notice:'Accord de libération anticipée fictif. Indemnité intégralement versée au club vendeur ; salaire proposé +5 % (minimum 1 000 €/semaine), échéance conservée. La profondeur de libération dépend de l’univers et reste affichée ; deux joueurs de la famille et deux piliers de chaque côté sont conservés. Réserve de 400 000 € et provision des huit prochaines semaines du nouveau salaire ; aucune inscription réglementaire automatique.'};
   if(!available)return base;
+  base.notice+=' '+base.releasePolicy.notice;
   const loanIds=new Set(loans().map(l=>l.id));
   base.candidates=S.clubs.filter(c=>c.id!==S.club).flatMap(c=>c.players.map(p=>quote(c,p,loanIds))).sort((a,b)=>a.clubId-b.clubId||a.contractEnd-b.contractEnd||a.name.localeCompare(b.name));
   return base;
