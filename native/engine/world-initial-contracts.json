@@ -586,6 +586,18 @@
     "world:champ:3c3b80e0f9597c98651f": {
       "clubId": 109,
       "canonicalId": "world:champ:f7fc757633765b1e925e"
+    },
+    "world:champ:22df93e82174027f0b2c": {
+      "clubId": 102,
+      "canonicalId": "world:champ:7c8b8a958fb0522bb063"
+    },
+    "world:champ:724a9a498090dffad81a": {
+      "clubId": 108,
+      "canonicalId": "world:champ:021410b35826722cb7df"
+    },
+    "world:champ:a6d42bfb1fbfb50d91f5": {
+      "clubId": 113,
+      "canonicalId": "world:champ:dfa7f4a1b41a97e7f0a8"
     }
   }
 }
