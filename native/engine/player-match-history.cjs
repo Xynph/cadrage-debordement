@@ -35,6 +35,7 @@ function factory(){
    check(Array.isArray(m.players)&&m.players.length<=46&&Array.isArray(m.events)&&m.events.length<=1000&&Array.isArray(m.totals)&&m.totals.length===2,'feuille ou événements invalides');
    const people=new Map();
    for(const p of m.players){check(shape(p,['id','name','clubId','minutes'])&&id(p.id)&&!people.has(p.id)&&typeof p.name==='string'&&p.name.length>0&&p.name.length<=120&&!/[\u0000-\u001f\u007f]/.test(p.name)&&m.pair.includes(p.clubId)&&(p.minutes===null||num(p.minutes,0,m.duration)),'joueur ou minutes invalides');people.set(p.id,p);}
+   for(const ci of m.pair)check(m.players.filter(p=>p.clubId===ci).length<=23,'plus de 23 joueurs pour une équipe');
    const eventIds=new Set();let prior=-1;
    for(const e of m.events){const p=people.get(e.playerId);check(shape(e,['index','minute','kind','playerId','clubId'])&&int(e.index,0,999)&&e.index>prior&&!eventIds.has(e.index)&&num(e.minute,0,m.duration)&&KINDS.includes(e.kind)&&p&&p.clubId===e.clubId,'événement sans acteur/équipe ou index répété');prior=e.index;eventIds.add(e.index);}
    const clubs=new Set();for(const t of m.totals){check(shape(t,['clubId','tries','penaltyGoals','penaltyMisses'])&&m.pair.includes(t.clubId)&&!clubs.has(t.clubId)&&Object.keys(kinds).every(k=>t[k]===null||int(t[k],0,1000)),'totaux collectifs invalides');clubs.add(t.clubId);for(const [field,kind]of Object.entries(kinds))check(t[field]===null||m.events.filter(e=>e.clubId===t.clubId&&e.kind===kind).length<=t[field],'attribution supérieure au total collectif');}
