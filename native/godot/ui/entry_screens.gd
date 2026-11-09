@@ -24,7 +24,7 @@ static func _cover(club: Dictionary) -> Control:
 	var pacific := slug.begins_with("srp-")
 	var japan := slug.begins_with("jlo-")
 	var nationale := slug.begins_with("nat-")
-	var champ := slug.begins_with("champ-")
+	var champ: bool = slug.begins_with("champ-") or identity.get("country") == "GB"
 	if pacific or japan or nationale or champ:
 		var country := str(identity.get("country", "")).to_lower()
 		var region := str(identity.get("region", ""))
@@ -241,8 +241,9 @@ static func _creation_crest(club: Dictionary, width: int, use_mockup: bool) -> C
 		return crest
 	return G.crest(club, width)
 
-static func _club_preview(parent: VBoxContainer, club: Dictionary, championship: String, photo_height: float, base_identity: bool) -> void:
+static func _club_preview(app: Control, parent: VBoxContainer, club: Dictionary, championship: String, photo_height: float, base_identity: bool) -> void:
 	var illustration := base_identity and int(club.id) == 0
+	var history: Dictionary = club.get("history", {})
 	var identity := C.h(30)
 	parent.add_child(identity)
 	identity.add_child(_creation_crest(club, C.px(194), base_identity))
@@ -257,6 +258,10 @@ static func _club_preview(parent: VBoxContainer, club: Dictionary, championship:
 	title.add_theme_constant_override("line_spacing", -C.px(8))
 	copy.add_child(title)
 	copy.add_child(C.wrap(_territory(club), 28, C.IVORY))
+	if history.has("founded"):
+		var founded := C.label("Fondé en %d" % int(history.founded), 22, Editorial.RAIL_GOLD, true, 700)
+		founded.name = "CreationClubFounded"
+		copy.add_child(founded)
 	var underline := ColorRect.new()
 	underline.color = Editorial.RAIL_GOLD
 	underline.custom_minimum_size = Vector2(C.px(106), 2)
@@ -284,45 +289,84 @@ static func _club_preview(parent: VBoxContainer, club: Dictionary, championship:
 	parent.add_child(C.rule())
 	parent.add_child(C.label("LE CLUB", 22, Editorial.RAIL_GOLD, true, 700))
 	var city := str(club.get("city", "")).strip_edges()
-	var introduction := "Le club évolue dans le championnat %s." % championship
-	if not city.is_empty():
-		introduction = "Basé à %s, le club évolue dans le championnat %s." % [city, championship]
-	if not venue.is_empty():
-		introduction += " Il reçoit ses adversaires dans l’enceinte « %s »." % venue
+	var introduction := str(history.get("bio", ""))
+	var documented := not introduction.is_empty()
+	if introduction.is_empty():
+		introduction = "%s débute la saison en %s." % [G.club_name(club), championship]
+		if not city.is_empty() and not venue.is_empty():
+			introduction += " À %s, ses matchs à domicile se jouent à « %s »." % [city, venue]
 	var presentation := C.wrap(introduction, 21, C.IVORY)
 	presentation.name = "CreationClubPresentation"
 	parent.add_child(presentation)
+	if documented and not venue.is_empty(): parent.add_child(C.wrap("Domicile · " + venue, 18, C.MUTED))
 	parent.add_child(C.rule())
-	_dossier_line(parent, "Objectif du conseil", str(club.get("goal", "Développer le projet sportif")), true)
-	if club.has("cashMillions"):
-		_dossier_line(parent, "Trésorerie de départ", G.euros(roundi(float(club.cashMillions) * 1_000_000)))
 	if not str(roster.get("strengths", "")).is_empty():
 		var comparison := C.h(18)
 		parent.add_child(comparison)
-		var average := float(roster.average)
-		_dossier_position(comparison, "Points forts", str(roster.strengths), _position_detail(roster.get("strengthDetail"), average))
+		var strength: Dictionary = roster.strengthDetail
+		var positive: bool = strength.divisionAverage == null or float(strength.average) >= float(strength.divisionAverage)
+		_dossier_position(comparison, "Atout actuel" if positive else "Poste le plus compétitif", str(roster.strengths), strength)
 		if not str(roster.get("needs", "")).is_empty():
 			Editorial.divider(comparison)
-			_dossier_position(comparison, "Points faibles", str(roster.needs), _position_detail(roster.get("weaknessDetail"), average))
+			var weakness: Dictionary = roster.weaknessDetail
+			var negative: bool = weakness.divisionAverage == null or float(weakness.average) < float(weakness.divisionAverage)
+			_dossier_position(comparison, "Point à renforcer" if negative else "Marge de progression", str(roster.needs), weakness)
+		parent.add_child(C.rule())
+	var results: Array = history.get("results", [])
+	if not results.is_empty():
+		parent.add_child(C.label("PALMARÈS", 22, Editorial.RAIL_GOLD, true, 700))
+		for result: Dictionary in results:
+			_dossier_line(parent, _history_competition(app, str(result.competition)), _history_result(result))
+	_dossier_line(parent, "Objectif du conseil", str(club.get("goal", "Développer le projet sportif")), true)
+	if club.has("cashMillions"):
+		_dossier_line(parent, "Trésorerie de départ", G.euros(roundi(float(club.cashMillions) * 1_000_000)))
 
-static func _dossier_position(parent: Container, heading: String, position: String, detail: String) -> void:
-	var column := C.v(0)
+static func _history_competition(app: Control, id: String) -> String:
+	var historical := {
+		"eng-third": "Troisième division anglaise",
+		"jlo-d3": "Troisième division japonaise",
+		"jp-top-league": "Ancienne élite japonaise",
+		"jp-company": "Championnat national des entreprises",
+		"jp-national": "Championnat national du Japon",
+		"jp-top-challenge": "Ancienne deuxième division japonaise",
+		"sr-au": "Championnat australien 2020–21",
+		"sr-nz": "Championnat néo-zélandais 2020–21",
+		"sr-trans-tasman": "Championnat trans-tasman 2021",
+	}
+	var label := str(_competition_identity(app, id).get("name", historical.get(id, Club.competition_name(id))))
+	if id == "elite" and label.to_lower() == "top 14": return "Championnat de France"
+	return label
+
+static func _history_result(result: Dictionary) -> String:
+	var count := int(result.get("titles", 0))
+	var year := int(result.get("year", 0))
+	if count > 0:
+		var record := "%d titre%s" % [count, "s" if count > 1 else ""]
+		return record + (" · Dernier en %d" % year if count > 1 else " · %d" % year) if year > 0 else record
+	var rank := int(result.get("rank", 0))
+	var finish := str({"final":"Finaliste", "semi":"Demi-finaliste", "quarter":"Quart de finaliste"}.get(result.get("finish"), ""))
+	if rank > 0: finish = "%s place" % ("1re" if rank == 1 else "%de" % rank)
+	return finish + (" · %d" % year if year > 0 else "")
+
+static func _dossier_position(parent: Container, heading: String, position: String, detail: Dictionary) -> void:
+	var column := C.v(4)
 	parent.add_child(C.fill(column))
 	column.add_child(C.wrap(heading, 21, C.IVORY))
 	column.add_child(C.wrap(position, 25, Editorial.RAIL_GOLD, true, 700))
-	if not detail.is_empty():
-		var stats := C.wrap(detail, 19, C.MUTED)
-		stats.mouse_filter = Control.MOUSE_FILTER_PASS
-		stats.tooltip_text = "Écart par rapport à la note moyenne de l’effectif."
-		column.add_child(stats)
-
-static func _position_detail(detail: Variant, club_average: float) -> String:
-	if not detail is Dictionary: return ""
 	var count := int(detail.count)
-	var difference := roundi((float(detail.average) - club_average) * 10.0)
-	var gap := String.num(absf(difference / 10.0), 1).replace(".", ",")
-	var sign := "+" if difference > 0 else ("−" if difference < 0 else "")
-	return "%d %s · moy. %s · %s%s pt%s vs club" % [count, "joueur" if count == 1 else "joueurs", _rating(detail), sign, gap, "s" if absi(difference) >= 20 else ""]
+	column.add_child(C.wrap("%s de moyenne · Meilleure note %s" % [_rating(detail), _rating({"average":detail.best})], 20, C.IVORY))
+	if detail.get("divisionAverage") != null:
+		var benchmark := _rating({"average":detail.divisionAverage})
+		var difference := roundi((float(detail.average) - float(detail.divisionAverage)) * 10.0)
+		var comparison := "Dans la moyenne du poste chez les adversaires (%s)." % benchmark
+		if difference != 0:
+			var gap := String.num(absf(difference / 10.0), 1).replace(".", ",")
+			comparison = "%s %s %s de la moyenne du poste chez les adversaires (%s)." % [gap, "point" if absi(difference) < 20 else "points", "au-dessus" if difference > 0 else "en dessous", benchmark]
+		column.add_child(C.wrap(comparison, 20, C.MUTED))
+		var at_level := int(detail.atLevel)
+		column.add_child(C.wrap("%d sur %d %s ce niveau." % [at_level, count, "atteint" if at_level == 1 else "atteignent"], 20, C.MUTED))
+	else:
+		column.add_child(C.wrap("%d %s à ce poste." % [count, "joueur" if count == 1 else "joueurs"], 20, C.MUTED))
 
 static func _dossier_line(parent: Container, caption: String, detail: String, accent: bool = false) -> void:
 	var line := C.h(16)
@@ -454,7 +498,7 @@ static func creation(app: Control) -> Control:
 		if selected.is_empty(): _competition_summary(app, preview, division, division_clubs.size(), photo_height)
 		else:
 			var championship := str(_competition_identity(app, division).get("name", Club.competition_name(division)))
-			_club_preview(preview, selected, championship, clampf(screen.y * .144, 108, 208), preferred == "base")
+			_club_preview(app, preview, selected, championship, clampf(screen.y * .126, 100, 181), preferred == "base")
 	else:
 		var photo := _cover(selected)
 		G.fill(photo, true, 0.95)

@@ -1,0 +1,2689 @@
+{
+  "0": {
+    "founded": 1907,
+    "bio": "Pierre Villepreux et Jean-Claude Skrela ont fait du jeu de mouvement la marque de fabrique du club. La génération suivante a prolongé cet héritage avec quatre titres nationaux d’affilée, de 1994 à 1997.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 25,
+        "year": 2026
+      },
+      {
+        "competition": "champions",
+        "titles": 6,
+        "year": 2024
+      }
+    ],
+    "sources": [
+      "https://www.ccomptes.fr/sites/default/files/2024-07/OCR2024-29.pdf",
+      "https://www.stadetoulousain.fr/le-stade-toulousain-se-raconte",
+      "https://www.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://historical-stats.epcrugby.com/champions-cup/history/roll-of-honour/",
+      "https://archives.toulouse.fr/creation-du-stade-toulousain/",
+      "https://www.stadetoulousain.fr/media/video/12364-notre-histoire-secrit-ensemble-stade-toulousain-x-actual",
+      "https://top14.lnr.fr/actualite/finale-top-14-le-stade-toulousain-est-champion-de-france-pour-la-quatrieme-fois-de-suite",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://www.epcrugby.com/champions-cup/content/30-years-of-the-champions-cup-multiple-winners",
+      "https://www.epcrugby.com/fr/champions-cup/contenu/le-stade-toulousain-soffre-une-sixieme-couronne"
+    ]
+  },
+  "1": {
+    "founded": 2006,
+    "bio": "Deux traditions girondines se rejoignent en 2006. Le nouveau club s’invite en finale du Brennus en 2024, puis gagne deux coupes d’Europe de suite.",
+    "results": [
+      {
+        "competition": "elite",
+        "finish": "final",
+        "year": 2025
+      },
+      {
+        "competition": "champions",
+        "titles": 2,
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://www.ubbrugby.com/club/notre-histoire.html",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby"
+    ]
+  },
+  "2": {
+    "founded": 1896,
+    "bio": "Le rugby s’est enraciné sur le littoral sous l’impulsion d’un consul américain. Plus d’un siècle après ses débuts, le club gagne deux coupes d’Europe de suite.",
+    "results": [
+      {
+        "competition": "elite",
+        "finish": "final",
+        "year": 2023
+      },
+      {
+        "competition": "champions",
+        "titles": 2,
+        "year": 2023
+      },
+      {
+        "competition": "challenge",
+        "finish": "final",
+        "year": 2019
+      }
+    ],
+    "sources": [
+      "https://www.staderochelais.com/club/histoire/histoire-du-club",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://www.epcrugby.com/champions-cup/content/30-years-of-the-champions-cup-multiple-winners",
+      "https://www.epcrugby.com/fr/champions-cup/contenu/les-cinq-annees-de-domination-des-clubs-francais-en-champions-cup",
+      "https://tournamentguides.epcrugby.com/challenge-cup/statistics/records-copy/"
+    ]
+  },
+  "3": {
+    "founded": 1908,
+    "bio": "Félix Mayol a donné au club son port d’attache. Dans les années 2010, trois couronnes européennes d’affilée ont ajouté un chapitre à la légende des Rouge et Noir.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 4,
+        "year": 2014
+      },
+      {
+        "competition": "accession",
+        "titles": 2,
+        "year": 2008
+      },
+      {
+        "competition": "champions",
+        "titles": 3,
+        "year": 2015
+      },
+      {
+        "competition": "challenge",
+        "titles": 1,
+        "year": 2023
+      }
+    ],
+    "sources": [
+      "https://rctoulon.com/histoire/",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://rctoulon.com/palmares/",
+      "https://www.epcrugby.com/champions-cup/content/30-years-of-the-champions-cup-multiple-winners",
+      "https://tournamentguides.epcrugby.com/challenge-cup/statistics/records-copy/"
+    ]
+  },
+  "4": {
+    "founded": 1902,
+    "bio": "L’équipe béarnaise est née dans le sillage d’un médecin qui voulait éduquer par le sport. En 1964, le Vert et Blanc décroche son troisième Brennus.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 3,
+        "year": 1964
+      },
+      {
+        "competition": "accession",
+        "titles": 1,
+        "year": 2015
+      },
+      {
+        "competition": "champions",
+        "finish": "semi",
+        "year": 1998
+      },
+      {
+        "competition": "challenge",
+        "titles": 1,
+        "year": 2000
+      }
+    ],
+    "sources": [
+      "https://www.section-paloise.com/presentation/historique",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://www.epcrugby.com/european-professional-club-rugby/content/heineken-cup-semi-final-trivia",
+      "https://tournamentguides.epcrugby.com/challenge-cup/statistics/records-copy/"
+    ]
+  },
+  "5": {
+    "founded": 1906,
+    "bio": "Le premier Brennus basque arrive en 1913. L’équipe réitère en 1934, puis gagne en 1943 une finale qui se joue à trois points.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 3,
+        "year": 1943
+      },
+      {
+        "competition": "accession",
+        "titles": 2,
+        "year": 2022
+      }
+    ],
+    "sources": [
+      "https://www.assoabrugby.fr/association/",
+      "https://top14.lnr.fr/club/bayonne/informations",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://prod2.lnr.fr/actualite/pro-d2-l-aviron-bayonnais-champion-2019",
+      "https://prod2.lnr.fr/calendrier-et-resultats/2021-2022/finale"
+    ]
+  },
+  "6": {
+    "founded": 1911,
+    "bio": "Dix finales avaient échappé au club auvergnat avant que la onzième ne lui offre le Brennus. Il soulève de nouveau le bouclier en 2017.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 2,
+        "year": 2017
+      },
+      {
+        "competition": "champions",
+        "finish": "final",
+        "year": 2017
+      },
+      {
+        "competition": "challenge",
+        "titles": 3,
+        "year": 2019
+      }
+    ],
+    "sources": [
+      "https://top14.lnr.fr/actualite/stade-de-france-saint-denis-29-mai-2010",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://www.epcrugby.com/european-professional-club-rugby/content/clermont-aim-to-go-one-better",
+      "https://tournamentguides.epcrugby.com/statistics/winners-2/",
+      "https://tournamentguides.epcrugby.com/challenge-cup/statistics/records-copy/",
+      "https://top14.lnr.fr/actualite/michalak-empereur-invincibilite-rochelaise-clermont-patron-les-stats-des-coupes-deurope",
+      "https://top14.lnr.fr/club/clermont/informations"
+    ]
+  },
+  "7": {
+    "founded": 1896,
+    "bio": "Des lycéens ont donné l’impulsion à un club qui conquiert deux Brennus dans les années 1930. La victoire européenne de 2022 remet les Rouge et Noir au premier plan.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 2,
+        "year": 1933
+      },
+      {
+        "competition": "accession",
+        "titles": 3,
+        "year": 2016
+      },
+      {
+        "competition": "challenge",
+        "titles": 1,
+        "year": 2022
+      }
+    ],
+    "sources": [
+      "https://www.lourugby.fr/histoire-du-lou/",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby"
+    ]
+  },
+  "8": {
+    "founded": 1986,
+    "bio": "La fusion de deux équipes en 1986 donne naissance au club à la fleur de ciste. Le premier Brennus arrive en 2022 et une troisième couronne dans la petite coupe d’Europe suit en 2026.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 1,
+        "year": 2022
+      },
+      {
+        "competition": "accession",
+        "titles": 1,
+        "year": 2003
+      },
+      {
+        "competition": "champions",
+        "finish": "quarter",
+        "year": 2022
+      },
+      {
+        "competition": "challenge",
+        "titles": 3,
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://www.montpellier-rugby.com/club/histoire-du-club",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://www.epcrugby.com/challenge-cup/content/live-epcr-challenge-cup-final-montpellier-herault-rugby-vs-ulster-rugby",
+      "https://www.montpellier-rugby.com/news/champions-cup-un-crunch-en-ouverture"
+    ]
+  },
+  "9": {
+    "founded": 1906,
+    "bio": "Né autour d’une table au Café Holmière, le club gagne deux Brennus de suite au tournant des années 1950. Son cinquième bouclier arrive en 2018.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 5,
+        "year": 2018
+      },
+      {
+        "competition": "champions",
+        "finish": "semi",
+        "year": 2002
+      },
+      {
+        "competition": "challenge",
+        "finish": "final",
+        "year": 2000
+      }
+    ],
+    "sources": [
+      "https://castres-olympique.com/club/historique/",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://tournamentguides.epcrugby.com/challenge-cup/statistics/records-copy/",
+      "https://www.epcrugby.com/european-professional-club-rugby/content/in-focus-castres-olympique"
+    ]
+  },
+  "10": {
+    "founded": 1882,
+    "bio": "Le Ciel et Blanc remporte la toute première finale du championnat de France en 1892. En 2016, il retrouve le Brennus vingt-six ans après son précédent sacre.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 6,
+        "year": 2016
+      },
+      {
+        "competition": "accession",
+        "titles": 1,
+        "year": 2009
+      },
+      {
+        "competition": "champions",
+        "finish": "final",
+        "year": 2020
+      }
+    ],
+    "sources": [
+      "https://racingclubdefrance.fr/fr/rugby",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://www.racing92.fr/article/rendez-vous-chez-henry/38823/",
+      "https://tournamentguides.epcrugby.com/statistics/winners-2/"
+    ]
+  },
+  "11": {
+    "founded": 1883,
+    "bio": "Le club parisien ouvre son palmarès national dès 1893. En 2015, un quatorzième Brennus vient couronner une nouvelle génération.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 14,
+        "year": 2015
+      },
+      {
+        "competition": "champions",
+        "finish": "final",
+        "year": 2005
+      },
+      {
+        "competition": "challenge",
+        "titles": 1,
+        "year": 2017
+      }
+    ],
+    "sources": [
+      "https://top14.lnr.fr/club/paris/informations",
+      "https://www.stade.fr/palmares/",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby"
+    ]
+  },
+  "12": {
+    "founded": 1902,
+    "bio": "Du blanc au bleu horizon, puis au sang et or, les couleurs racontent la mémoire du club catalan. Le Brennus revient en 2009 après cinquante-quatre ans d’attente.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 7,
+        "year": 2009
+      },
+      {
+        "competition": "accession",
+        "titles": 2,
+        "year": 2021
+      },
+      {
+        "competition": "champions",
+        "finish": "final",
+        "year": 2003
+      }
+    ],
+    "sources": [
+      "https://top14.lnr.fr/actualite/histoire-de-blason-usa-perpignan-de-sang-et-dor",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://prod2.lnr.fr/actualite/choc-des-extremes-malediction-du-leader-et-duel-dartificiers-place-a-la-finale-de-prod2",
+      "https://tournamentguides.epcrugby.com/statistics/winners-2/"
+    ]
+  },
+  "13": {
+    "founded": 1950,
+    "bio": "Le titre de 2024 ouvre les portes de l’élite au rugby breton. Relégués un an plus tard, les Vannetais reconquièrent le bouclier de deuxième division en 2026.",
+    "results": [
+      {
+        "competition": "accession",
+        "titles": 2,
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://top14.lnr.fr/club/vannes/informations",
+      "https://prod2.lnr.fr/actualite/finale-pro-d2-mission-reconquete-reussie-par-les-vannetais-sacres-champions"
+    ]
+  },
+  "14": {
+    "founded": 1911,
+    "bio": "Le jeu d’avants a fait la réputation des Rouge et Bleu. Sous Raoul Barrière puis après son départ, le club a remporté dix Brennus entre 1971 et 1984.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 11,
+        "year": 1984
+      },
+      {
+        "competition": "accession",
+        "titles": 1,
+        "year": 2000
+      }
+    ],
+    "sources": [
+      "https://prod2.lnr.fr/club/beziers/informations",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://www.asbh.net/lhistoire-de-lasbh/"
+    ]
+  },
+  "15": {
+    "founded": 1913,
+    "bio": "Les Rouge et Blanc ont connu deux âges d’or, dans les années 1930 puis au début des années 2000. Les grandes soirées européennes ont prolongé l’histoire écrite à Aguiléra.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 5,
+        "year": 2006
+      },
+      {
+        "competition": "accession",
+        "finish": "final",
+        "year": 2021
+      },
+      {
+        "competition": "champions",
+        "finish": "final",
+        "year": 2010
+      },
+      {
+        "competition": "challenge",
+        "titles": 1,
+        "year": 2012
+      }
+    ],
+    "sources": [
+      "https://www.bo-pb.com/notre-histoire",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://prod2.lnr.fr/actualite/usa-perpignan-biarritz-olympique-affiche-historique-pour-le",
+      "https://www.epcrugby.com/european-professional-club-rugby/content/heineken-cup-2011-and-2012-finals",
+      "https://tournamentguides.epcrugby.com/statistics/winners-2/",
+      "https://tournamentguides.epcrugby.com/challenge-cup/statistics/records-copy/"
+    ]
+  },
+  "16": {
+    "founded": 1910,
+    "bio": "Le club corrézien perd quatre finales nationales avant de soulever la coupe d’Europe en 1997. Cette couronne reste le point culminant de l’épopée des Noir et Blanc.",
+    "results": [
+      {
+        "competition": "elite",
+        "finish": "final",
+        "year": 1996
+      },
+      {
+        "competition": "accession",
+        "finish": "final",
+        "year": 2019
+      },
+      {
+        "competition": "champions",
+        "titles": 1,
+        "year": 1997
+      },
+      {
+        "competition": "challenge",
+        "finish": "semi",
+        "year": 2012
+      }
+    ],
+    "sources": [
+      "https://prod2.lnr.fr/club/brive/informations",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://prod2.lnr.fr/feuille-de-match/2018-2019/finale/8973-brive-bayonne",
+      "https://top14.lnr.fr/actualite/michalak-empereur-invincibilite-rochelaise-clermont-patron-les-stats-des-coupes-deurope",
+      "https://historical-stats.epcrugby.com/la-champions-cup/historique/palmares/",
+      "https://www.epcrugby.com/european-professional-club-rugby/content/european-rugby-challenge-cup-spotlight-brive"
+    ]
+  },
+  "17": {
+    "founded": 1963,
+    "bio": "Une poignée d’anciens et de jeunes joueurs relance le club en 1963. La Colombe gagne une coupe d’Europe en 1998 et atteint la finale du Brennus deux ans plus tard.",
+    "results": [
+      {
+        "competition": "elite",
+        "finish": "final",
+        "year": 2000
+      },
+      {
+        "competition": "accession",
+        "finish": "semi",
+        "year": 2026
+      },
+      {
+        "competition": "champions",
+        "finish": "final",
+        "year": 1999
+      },
+      {
+        "competition": "challenge",
+        "titles": 1,
+        "year": 1998
+      }
+    ],
+    "sources": [
+      "https://colomiers-rugby.com/notre-histoire/",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://prod2.lnr.fr/calendrier-et-resultats/2025-2026/demi-finale",
+      "https://prod2.lnr.fr/actualite/histoire-de-blason-colomiers-la-colombe-a-pris-son-envol",
+      "https://tournamentguides.epcrugby.com/statistics/winners-2/",
+      "https://www.epcrugby.com/european-professional-club-rugby/content/colomiers-put-agen-to-the-sword-on-this-day-in-1998"
+    ]
+  },
+  "18": {
+    "founded": 1911,
+    "bio": "Trois clubs se réunissent en 1911 pour donner corps au rugby grenoblois. Le quinze alpin décroche le Brennus en 1954 et retrouve la finale en 1993.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 1,
+        "year": 1954
+      },
+      {
+        "competition": "accession",
+        "titles": 1,
+        "year": 2012
+      },
+      {
+        "competition": "challenge",
+        "finish": "semi",
+        "year": 2016
+      }
+    ],
+    "sources": [
+      "https://fcgrugby.com/fr/club",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://entreprises.fcgrugby.com/articles/2025/07/02/merci-kappa-pour-ces-17-ans-d-emotions",
+      "https://historical-stats.epcrugby.com/report/report-roberts-sets-quins-on-victory-march-to-lyon/"
+    ]
+  },
+  "19": {
+    "founded": 2012,
+    "bio": "Le club actuel relance le rugby niçois après la disparition de son prédécesseur. Il remporte son premier titre du troisième échelon en 2024.",
+    "results": [
+      {
+        "competition": "nationale",
+        "titles": 1,
+        "year": 2024
+      }
+    ],
+    "sources": [
+      "https://nissarugby.fr/notre-histoire",
+      "https://prod2.lnr.fr/actualite/stade-nicois-quand-les-aigles-rattaquent"
+    ]
+  },
+  "20": {
+    "founded": 1909,
+    "bio": "En 2013, les Oyomen prennent la tête de la deuxième division dès la quatrième journée et la gardent jusqu’au titre. Ce parcours ouvre au club les portes de l’élite pour la première fois.",
+    "results": [
+      {
+        "competition": "elite",
+        "finish": "quarter",
+        "year": 2015
+      },
+      {
+        "competition": "accession",
+        "titles": 3,
+        "year": 2023
+      }
+    ],
+    "sources": [
+      "https://oyonnaxrugby.com/histoire-des-oyomen-oyonnax-rugby",
+      "https://prod2.lnr.fr/actualite/victoires-consecutives-records-de-points-et-dessais-les-stats-marquantes-de-prod2",
+      "https://prod2.lnr.fr/actualite/pro-d2-i-oyonnax-remporte-le-titre-et-le-derby"
+    ]
+  },
+  "21": {
+    "founded": 1970,
+    "bio": "Le club aixois a gardé le nom de son fondateur, Maurice David, sur la façade du stade. En 2026, le quinze provençal dispute sa première finale pour le titre de deuxième division.",
+    "results": [
+      {
+        "competition": "accession",
+        "finish": "final",
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://www.provencerugby.com/notre-histoire/",
+      "https://prod2.lnr.fr/actualite/finale-pro-d2-mission-reconquete-reussie-par-les-vannetais-sacres-champions"
+    ]
+  },
+  "22": {
+    "founded": 1907,
+    "bio": "Né du rapprochement de deux équipes après un match-défi, le club décroche deux Brennus. Didier Codorniou porte ensuite ses couleurs jusque dans le XV vainqueur des All Blacks à Auckland en 1979.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 2,
+        "year": 1979
+      },
+      {
+        "competition": "nationale",
+        "titles": 1,
+        "year": 2026
+      },
+      {
+        "competition": "challenge",
+        "finish": "final",
+        "year": 2001
+      }
+    ],
+    "sources": [
+      "https://www.rcnarbonnais.fr/notre-histoire/",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://monclubhouse.ffr.fr/actualites/nationale-narbonne-retrouve-la-pro-d2"
+    ]
+  },
+  "23": {
+    "founded": 1908,
+    "bio": "Le stade porte le nom d’Alfred Armandie, un dentiste qui introduisit le rugby dans la ville. Le premier des huit Brennus arrive en 1930.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 8,
+        "year": 1988
+      },
+      {
+        "competition": "accession",
+        "titles": 1,
+        "year": 2010
+      },
+      {
+        "competition": "challenge",
+        "finish": "final",
+        "year": 1998
+      }
+    ],
+    "sources": [
+      "https://prod2.lnr.fr/actualite/armandie-le-stade-qui-fait-rimer-memoire-et-ambition-pour-le-su-agen",
+      "https://prod2.lnr.fr/club/agen/informations",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://prod2.lnr.fr/actualite/le-su-agen-champion-de-france-et-en-rugby-top-14-orange",
+      "https://www.epcrugby.com/european-professional-club-rugby/content/colomiers-put-agen-to-the-sword-on-this-day-in-1998"
+    ]
+  },
+  "24": {
+    "founded": 2010,
+    "bio": "Le violet et le parme réunissent les deux clubs charentais à l’origine du projet. Le canon du blason rappelle ceux restaurés pour la frégate Hermione.",
+    "results": [
+      {
+        "competition": "accession",
+        "rank": 5,
+        "year": 2025
+      },
+      {
+        "competition": "nationale",
+        "finish": "final",
+        "year": 2022
+      }
+    ],
+    "sources": [
+      "https://prod2.lnr.fr/actualite/histoire-de-blason-soyaux-angouleme-xv-le-coup-de-canon",
+      "https://prod2.lnr.fr/calendrier-et-resultats/2024-2025/barrage",
+      "https://api.ligueidf.ffr.fr/wp-content/uploads/2023/03/2122-proces-verbal-13eme-assemblee-generale-ordinaire-18-06-22.pdf"
+    ]
+  },
+  "25": {
+    "founded": 1904,
+    "bio": "Au pied des volcans du Cantal, le club a bâti sa réputation en formant des joueurs qui ont ensuite rejoint l’élite. Les tribunes de Jean-Alric ont accompagné ce travail sur plusieurs générations.",
+    "results": [
+      {
+        "competition": "accession",
+        "finish": "final",
+        "year": 2016
+      }
+    ],
+    "sources": [
+      "https://www.stade-aurillacois.fr/club/",
+      "https://prod2.lnr.fr/actualite/la-finale-d-accession-guichets-fermes",
+      "https://prod2.lnr.fr/actualite/pro-d2-l-historique-des-finales-d-accession"
+    ]
+  },
+  "26": {
+    "founded": 1904,
+    "bio": "Le mariage d’un club de cyclisme et d’une équipe de rugby a lancé l’aventure. Cinq finales du Brennus ont suivi, dont un derby landais perdu de trois points en 1963.",
+    "results": [
+      {
+        "competition": "elite",
+        "finish": "final",
+        "year": 1973
+      },
+      {
+        "competition": "accession",
+        "finish": "final",
+        "year": 2007
+      },
+      {
+        "competition": "nationale",
+        "finish": "final",
+        "year": 2023
+      }
+    ],
+    "sources": [
+      "https://www.usdaxomnisports.fr/notre-histoire/",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://prod2.lnr.fr/actualite/pro-d2-l-historique-des-finales-d-accession",
+      "https://api.ligueaura.ffr.fr/wp-content/uploads/2024/05/pv-ago-08-07-23-riom-es-montagnes.pdf"
+    ]
+  },
+  "27": {
+    "founded": 1903,
+    "bio": "Le noir a remplacé le blanc sur le maillot en hommage aux morts de la Grande Guerre. Le Brennus de 1967 a inscrit le Vert et Noir au palmarès national.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 1,
+        "year": 1967
+      },
+      {
+        "competition": "accession",
+        "titles": 3,
+        "year": 2025
+      }
+    ],
+    "sources": [
+      "https://prod2.lnr.fr/actualite/histoire-de-blason-us-montauban-le-noir-du-souvenir-et-le-vert-de-lespoir",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://prod2.lnr.fr/actualite/victoires-consecutives-records-de-points-et-dessais-les-stats-marquantes-de-prod2"
+    ]
+  },
+  "28": {
+    "founded": 1903,
+    "bio": "Le rugby nivernais s’organise dès 1903 autour de l’union sportive locale. Plus d’un siècle après, une victoire contre Chambéry ouvre enfin l’accès au rugby professionnel.",
+    "results": [
+      {
+        "competition": "accession",
+        "finish": "semi",
+        "year": 2022
+      }
+    ],
+    "sources": [
+      "https://www.usonneversrugby.com/notre-histoire",
+      "https://prod2.lnr.fr/calendrier-et-resultats/2021-2022/demi-finales"
+    ]
+  },
+  "29": {
+    "founded": 2016,
+    "bio": "Les Damiers ont conservé le signe distinctif de leurs maillots au moment de l’union drômoise. Le titre de 2023 a donné à ce jeune club sa première grande réussite commune.",
+    "results": [
+      {
+        "competition": "accession",
+        "rank": 5,
+        "year": 2026
+      },
+      {
+        "competition": "nationale",
+        "titles": 1,
+        "year": 2023
+      }
+    ],
+    "sources": [
+      "https://prod2.lnr.fr/actualite/histoire-de-blason-valence-romans-le-rugissement-des-damiers",
+      "https://prod2.lnr.fr/calendrier-et-resultats/2025-2026/barrage"
+    ]
+  },
+  "30": {
+    "founded": 1865,
+    "bio": "Il a fallu vingt-neuf ans pour que le trophée national revienne à Bath. Le titre de 2025 renoue avec l’époque où le club dominait l’Angleterre, à la veille du professionnalisme.",
+    "results": [
+      {
+        "competition": "prem",
+        "titles": 7,
+        "year": 2025
+      },
+      {
+        "competition": "champions",
+        "titles": 1,
+        "year": 1998
+      },
+      {
+        "competition": "challenge",
+        "titles": 2,
+        "year": 2025
+      }
+    ],
+    "sources": [
+      "https://www.bathrugby.com/club/honours-board",
+      "https://www.bathrugby.com/content/bath-rugby-unique-player-numbers",
+      "https://historical-stats.epcrugby.com/champions-cup/history/roll-of-honour/",
+      "https://historical-stats.epcrugby.com/challenge-cup/history/roll-of-honour/",
+      "https://www.bathrugby.com/content/match-highlights-bath-rugby-v-leicester-tigers-gallagher-premiership-final",
+      "https://www.epcrugby.com/challenge-cup/content/official-investec-champions-cup-and-epcr-challenge-pools-confirmed-for-202627-season",
+      "https://www.quins.co.uk/bath-rugby-club"
+    ]
+  },
+  "31": {
+    "founded": 1888,
+    "bio": "Issu de la fusion de deux clubs de quartier, ce XV de l’ouest anglais a décroché son premier trophée européen en 2020.",
+    "results": [
+      {
+        "competition": "challenge",
+        "titles": 1,
+        "year": 2020
+      },
+      {
+        "competition": "champ",
+        "titles": 4,
+        "year": 2018
+      },
+      {
+        "competition": "prem",
+        "finish": "semi",
+        "year": 2025
+      }
+    ],
+    "sources": [
+      "https://bristolrugbycombination.co.uk/history",
+      "https://historical-stats.epcrugby.com/challenge-cup/history/roll-of-honour/",
+      "https://www.premrugby.com/clubs/bristol-bears/fixtures-results",
+      "https://www.bathrugby.com/content/match-roundup-bath-rugby-34-20-bristol-bears-gp-play-off",
+      "https://shura.shu.ac.uk/32542/1/Catlin_2022_PhD_ProfessionalisationAndCompetitiveBalance.pdf"
+    ]
+  },
+  "32": {
+    "founded": 1872,
+    "bio": "Promu dans l’élite en 2010, ce XV du Devon a conquis son premier titre national sept ans plus tard. En 2020, il a remporté le championnat et la grande coupe d’Europe.",
+    "results": [
+      {
+        "competition": "prem",
+        "titles": 2,
+        "year": 2020
+      },
+      {
+        "competition": "champ",
+        "titles": 1,
+        "year": 2010
+      },
+      {
+        "competition": "champions",
+        "titles": 1,
+        "year": 2020
+      },
+      {
+        "competition": "challenge",
+        "finish": "semi",
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://www.exeterchiefs.co.uk/club/history",
+      "https://premrugby.com/content/premiership-final-records-2003-2020",
+      "https://www.exeterchiefs.co.uk/match-center/northampton-saints-v-exeter-chiefs-prem-final",
+      "https://historical-stats.epcrugby.com/champions-cup/history/roll-of-honour/",
+      "https://www.epcrugby.com/challenge-cup/content/ulster-rugby-book-bilbao-spot-after-dominant-semi-final"
+    ]
+  },
+  "33": {
+    "founded": 1873,
+    "bio": "L’histoire du club commence par une réunion d’hôtel et un match face à un collège. Son terrain est devenu un haut lieu du rugby local et ses deux trophées européens ont été remportés à neuf ans d’intervalle.",
+    "results": [
+      {
+        "competition": "prem",
+        "finish": "final",
+        "year": 2007
+      },
+      {
+        "competition": "challenge",
+        "titles": 2,
+        "year": 2015
+      },
+      {
+        "competition": "champions",
+        "finish": "semi",
+        "year": 2001
+      }
+    ],
+    "sources": [
+      "https://www.gloucesterrugby.co.uk/club",
+      "https://www.gloucestershire.gov.uk/archives/learning-for-all/online-exhibitions/kingsholm-gloucester-centurions-and-kings/",
+      "https://premrugby.com/content/premiership-final-records-2003-2020",
+      "https://historical-stats.epcrugby.com/challenge-cup/history/roll-of-honour/",
+      "https://www.gloucesterrugbyheritage.org.uk/content/people/player_profiles/tony-windo",
+      "https://www.gloucesterrugbyheritage.org.uk/content/people/player_profiles/andy_hazell"
+    ]
+  },
+  "34": {
+    "founded": 1866,
+    "bio": "Né à Hampstead, ce club londonien a écrit un chapitre mémorable en 2021 en remontant un retard de 28 points en demi-finale, avant de remporter le championnat.",
+    "results": [
+      {
+        "competition": "prem",
+        "titles": 2,
+        "year": 2021
+      },
+      {
+        "competition": "challenge",
+        "titles": 3,
+        "year": 2011
+      },
+      {
+        "competition": "champions",
+        "finish": "semi",
+        "year": 2024
+      },
+      {
+        "competition": "champ",
+        "titles": 1,
+        "year": 2006
+      }
+    ],
+    "sources": [
+      "https://worldrugbymuseum.com/from-the-vaults/museum-collection/fromthevaults-harlequins-cap-1920-21",
+      "https://premrugby.com/content/greatest-comebacks-in-premiership-rugby-history",
+      "https://premrugby.com/content/premiership-rugby-final-stat-attack",
+      "https://historical-stats.epcrugby.com/challenge-cup/history/roll-of-honour/",
+      "https://www.epcrugby.com/champions-cup/matches/276408/match-report",
+      "https://premrugby.com/content/bt-sport-to-showcase-rugbys-stories",
+      "https://shura.shu.ac.uk/32542/1/Catlin_2022_PhD_ProfessionalisationAndCompetitiveBalance.pdf"
+    ]
+  },
+  "35": {
+    "founded": 1880,
+    "bio": "Trois clubs se sont réunis dans un hôtel pour former ce XV des Midlands. Un siècle plus tard, il a gagné deux grandes finales européennes de suite, à Paris puis à Cardiff.",
+    "results": [
+      {
+        "competition": "prem",
+        "titles": 11,
+        "year": 2022
+      },
+      {
+        "competition": "champions",
+        "titles": 2,
+        "year": 2002
+      },
+      {
+        "competition": "challenge",
+        "finish": "final",
+        "year": 2021
+      }
+    ],
+    "sources": [
+      "https://www.leicestertigers.com/club/history",
+      "https://www.premrugby.com/content/play-off-preview-leicester-tigers-v-sale-sharks",
+      "https://www.premrugby.com/match-centre/267747/season-stats",
+      "https://historical-stats.epcrugby.com/champions-cup/history/roll-of-honour/",
+      "https://historical-stats.epcrugby.com/challenge-cup/history/roll-of-honour/",
+      "https://www.bathrugby.com/content/match-highlights-bath-rugby-v-leicester-tigers-gallagher-premiership-final"
+    ]
+  },
+  "36": {
+    "founded": 1877,
+    "bio": "L’équipe du nord-est a ses racines dans un club créé par d’anciens élèves de Durham. Elle a remporté le championnat anglais dès sa première saison de retour dans l’élite professionnelle.",
+    "results": [
+      {
+        "competition": "prem",
+        "titles": 1,
+        "year": 1998
+      },
+      {
+        "competition": "champ",
+        "titles": 3,
+        "year": 2020
+      },
+      {
+        "competition": "challenge",
+        "finish": "semi",
+        "year": 2018
+      },
+      {
+        "competition": "champions",
+        "finish": "quarter",
+        "year": 2005
+      }
+    ],
+    "sources": [
+      "https://www.premrugby.com/clubs/newcastle-redbulls/squad",
+      "https://research.ncl.ac.uk/decte/toon/photo.html?src=.%2Fassets%2Fimages%2Fthemes%2Fsport%2Fdectepicf201.jpg",
+      "https://premrugby.com/content/a-statistical-look-back-through-the-premiership-rugby-archives",
+      "https://d2eq6t2r9q1quu.cloudfront.net/wp-content/uploads/2022/12/20221112_GRH.pdf",
+      "https://premrugby.com/content/four-more-years-for-captain-will-welch-at-newcastle-falcons",
+      "https://tournamentguides.epcrugby.com/gallery/",
+      "https://shura.shu.ac.uk/32542/1/Catlin_2022_PhD_ProfessionalisationAndCompetitiveBalance.pdf",
+      "https://www.quins.co.uk/newcastle-falcons-rugby-club",
+      "https://www.epcrugby.com/european-professional-club-rugby/content/heineken-champions-cup-spotlight-pool-5"
+    ]
+  },
+  "37": {
+    "founded": 1880,
+    "bio": "Le projet d’un pasteur pour les jeunes de sa paroisse a donné naissance à ce XV des Midlands. Sa première grande finale européenne s’est jouée à un point, en sa faveur.",
+    "results": [
+      {
+        "competition": "prem",
+        "titles": 3,
+        "year": 2026
+      },
+      {
+        "competition": "champions",
+        "titles": 1,
+        "year": 2000
+      },
+      {
+        "competition": "challenge",
+        "titles": 2,
+        "year": 2014
+      },
+      {
+        "competition": "champ",
+        "titles": 3,
+        "year": 2008
+      }
+    ],
+    "sources": [
+      "https://www.northamptonsaintsfoundation.org/heritage",
+      "https://www.northamptonsaints.co.uk/sites/default/files/2025-07/saints-accounts-2014.pdf",
+      "https://www.northamptonsaints.co.uk/news/george-furbank-named-northampton-saints-new-club-captain",
+      "https://www.exeterchiefs.co.uk/match-center/northampton-saints-v-exeter-chiefs-prem-final",
+      "https://historical-stats.epcrugby.com/champions-cup/history/roll-of-honour/",
+      "https://historical-stats.epcrugby.com/challenge-cup/history/roll-of-honour/",
+      "https://www.northamptonsaints.co.uk/club/history/all-time-records",
+      "https://www.northamptonsaints.co.uk/news/an-audience-with-bruce-reihana",
+      "https://www.quins.co.uk/northampton-saints-rugby-club"
+    ]
+  },
+  "38": {
+    "founded": 1861,
+    "bio": "Cette équipe professionnelle a grandi à partir d’un club du Grand Manchester fondé par des sportifs locaux. Deux victoires européennes ont précédé son premier titre de champion d’Angleterre.",
+    "results": [
+      {
+        "competition": "prem",
+        "titles": 1,
+        "year": 2006
+      },
+      {
+        "competition": "challenge",
+        "titles": 2,
+        "year": 2005
+      },
+      {
+        "competition": "champ",
+        "titles": 1,
+        "year": 1994
+      },
+      {
+        "competition": "champions",
+        "finish": "quarter",
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://www.salesharks.com/25-years-of-sale-sharks/history-3/",
+      "https://www.salefc.com/about-us",
+      "https://premrugby.com/content/premiership-final-records-2003-2020",
+      "https://saracens.com/famous-fixtures-saracens-see-off-sale-for-premiership-title/",
+      "https://historical-stats.epcrugby.com/challenge-cup/history/roll-of-honour/",
+      "https://www.salesharks.com/about-history/",
+      "https://www.epcrugby.com/champions-cup/matches/288419/season-stats"
+    ]
+  },
+  "39": {
+    "founded": 1876,
+    "bio": "D’anciens élèves de Marylebone ont créé ce XV du nord de Londres. Entre 2016 et 2019, il a remporté trois fois la principale coupe européenne.",
+    "results": [
+      {
+        "competition": "prem",
+        "titles": 6,
+        "year": 2023
+      },
+      {
+        "competition": "champ",
+        "titles": 3,
+        "year": 2021
+      },
+      {
+        "competition": "champions",
+        "titles": 3,
+        "year": 2019
+      },
+      {
+        "competition": "challenge",
+        "finish": "semi",
+        "year": 2022
+      }
+    ],
+    "sources": [
+      "https://saracens.com/early-days/",
+      "https://saracens.com/famous-fixtures-saracens-see-off-sale-for-premiership-title/",
+      "https://saracens.com/saracens-confirm-departing-players/",
+      "https://historical-stats.epcrugby.com/champions-cup/history/roll-of-honour/",
+      "https://historical-stats.epcrugby.com/report/toulon-edge-out-london-irish-to-book-saracens-semi-final/"
+    ]
+  },
+  "40": {
+    "founded": 1879,
+    "bio": "La province de Dublin a remporté la première édition du championnat transfrontalier. Elle a porté son record à dix titres en conservant le trophée en 2026 à Croke Park.",
+    "results": [
+      {
+        "competition": "urc",
+        "titles": 10,
+        "year": 2026
+      },
+      {
+        "competition": "champions",
+        "titles": 4,
+        "year": 2018
+      },
+      {
+        "competition": "challenge",
+        "titles": 1,
+        "year": 2013
+      }
+    ],
+    "sources": [
+      "https://www.irishrugby.ie/2005/09/02/celtic-league-2005-06-leinster",
+      "https://www.leinsterrugby.ie/teams/stats/",
+      "https://stats.unitedrugby.com/match-centre/table/2025-26"
+    ]
+  },
+  "41": {
+    "founded": 1879,
+    "bio": "Entre Limerick et Cork, cette province a construit son palmarès européen dans les années 2000. Elle a renoué avec un titre de ligue en allant gagner la finale 2023 au Cap.",
+    "results": [
+      {
+        "competition": "urc",
+        "titles": 4,
+        "year": 2023
+      },
+      {
+        "competition": "champions",
+        "titles": 2,
+        "year": 2008
+      }
+    ],
+    "sources": [
+      "https://www.munsterrugby.ie/timeline/1879/",
+      "https://www.munsterrugby.ie/the-club/about-munster-rugby/history-timeline/",
+      "https://www.munsterrugby.ie/report/report-munster-win-incredible-urc-decider/"
+    ]
+  },
+  "42": {
+    "founded": 1879,
+    "bio": "Installée à Belfast, cette province représente neuf comtés. Sacrée dans la grande coupe européenne en 1999, elle a disputé la finale du deuxième tournoi continental en 2026.",
+    "results": [
+      {
+        "competition": "urc",
+        "titles": 1,
+        "year": 2006
+      },
+      {
+        "competition": "champions",
+        "titles": 1,
+        "year": 1999
+      },
+      {
+        "competition": "challenge",
+        "finish": "final",
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://www.irishrugby.ie/2005/09/02/celtic-league-2005-06-ulster/amp/",
+      "https://ulster.rugby/rugby-in-ulster/ulster-branch/about-us",
+      "https://historical-stats.epcrugby.com/challenge-cup/history/roll-of-honour/"
+    ]
+  },
+  "43": {
+    "founded": 1885,
+    "bio": "Six clubs se sont réunis en 1885 pour structurer le rugby de l’ouest irlandais. La province a connu son premier sacre de ligue en 2016, après avoir frôlé la disparition en 2003.",
+    "results": [
+      {
+        "competition": "urc",
+        "titles": 1,
+        "year": 2016
+      },
+      {
+        "competition": "challenge",
+        "finish": "semi",
+        "year": 2010
+      }
+    ],
+    "sources": [
+      "https://www.connachtrugby.ie/about/history/272/",
+      "https://www.irishrugby.ie/2010/04/29/amlin-challenge-cup-preview-connacht-v-toulon/"
+    ]
+  },
+  "44": {
+    "founded": 1872,
+    "bio": "Née comme sélection de district, l’équipe prolonge une rivalité entre les deux grandes villes écossaises qui remonte à 1872. Elle a remporté son deuxième titre de ligue en 2024 et disputé une finale européenne en 2023.",
+    "results": [
+      {
+        "competition": "urc",
+        "titles": 2,
+        "year": 2024
+      },
+      {
+        "competition": "challenge",
+        "finish": "final",
+        "year": 2023
+      },
+      {
+        "competition": "champions",
+        "finish": "quarter",
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://glasgowwarriors.org/about-us/history/",
+      "https://glasgowwarriors.org/about-us/",
+      "https://historical-stats.epcrugby.com/challenge-cup/history/roll-of-honour/",
+      "https://www.epcrugby.com/champions-cup/matches/288418/news"
+    ]
+  },
+  "45": {
+    "founded": 1872,
+    "bio": "La sélection de la capitale écossaise a disputé son premier derby de district en 1872. Elle a atteint le dernier carré de la grande coupe européenne en 2012 puis une finale continentale en 2015.",
+    "results": [
+      {
+        "competition": "urc",
+        "rank": 2,
+        "year": 2009
+      },
+      {
+        "competition": "champions",
+        "finish": "semi",
+        "year": 2012
+      },
+      {
+        "competition": "challenge",
+        "finish": "final",
+        "year": 2015
+      }
+    ],
+    "sources": [
+      "https://edinburghrugby.org/about-us/history/",
+      "https://www.epcrugby.com/european-professional-club-rugby/content/heineken-champions-cup-spotlight-pool-5",
+      "https://historical-stats.epcrugby.com/challenge-cup/history/roll-of-honour/",
+      "https://www.irishrugby.ie/2009/05/18/magners-league-round-18-review-2"
+    ]
+  },
+  "46": {
+    "founded": 1876,
+    "bio": "Issu de la fusion de deux clubs en 1876, le XV de la capitale galloise a porté une identité régionale à partir de 2003 avant de reprendre son nom historique. Il a soulevé deux fois le deuxième trophée européen.",
+    "results": [
+      {
+        "competition": "urc",
+        "rank": 2,
+        "year": 2007
+      },
+      {
+        "competition": "challenge",
+        "titles": 2,
+        "year": 2018
+      },
+      {
+        "competition": "champions",
+        "finish": "final",
+        "year": 1996
+      }
+    ],
+    "sources": [
+      "https://www.cardiffrugby.wales/about-us/",
+      "https://www.cardiffrugby.wales/news/reintroducing-cardiff-rugby/",
+      "https://historical-stats.epcrugby.com/challenge-cup/history/roll-of-honour/",
+      "https://www.irishrugby.ie/2007/05/14/magners-league-review",
+      "https://www.epcrugby.com/european-professional-club-rugby/content/heineken-cup-still-the-ultimate-prize-15-years-on"
+    ]
+  },
+  "47": {
+    "founded": 2003,
+    "bio": "L’équipe représente le sud-est du pays de Galles depuis la régionalisation de 2003. Elle a rejoint le dernier carré du deuxième tournoi européen en 2026.",
+    "results": [
+      {
+        "competition": "urc",
+        "rank": 3,
+        "year": 2004
+      },
+      {
+        "competition": "challenge",
+        "finish": "semi",
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://www.dragonsrfc.wales/about.html",
+      "https://www.epcrugby.com/challenge-cup/content/official-investec-champions-cup-and-epcr-challenge-pools-confirmed-for-202627-season",
+      "https://www.irishrugby.ie/2007/05/14/magners-league-review"
+    ]
+  },
+  "48": {
+    "founded": 2003,
+    "bio": "Cette équipe a réuni les forces de Neath et de Swansea à la création des régions galloises. Elle a remporté quatre fois le championnat transfrontalier, la dernière en 2012.",
+    "results": [
+      {
+        "competition": "urc",
+        "titles": 4,
+        "year": 2012
+      },
+      {
+        "competition": "champions",
+        "finish": "quarter",
+        "year": 2010
+      },
+      {
+        "competition": "challenge",
+        "finish": "quarter",
+        "year": 2025
+      }
+    ],
+    "sources": [
+      "https://www.ospreysrugby.com/club/our-story",
+      "https://cdn.ospreysrugby.com/news/ospreys-through-years-successes-throughout-our-history",
+      "https://www.epcrugby.com/european-professional-club-rugby/content/can-you-name-ospreys-starting-xv-from-the-2010-heineken-cup-quarter-final",
+      "https://www.epcrugby.com/challenge-cup/matches/282784/news"
+    ]
+  },
+  "49": {
+    "founded": 2003,
+    "bio": "L’équipe régionale du pays de Galles occidental a gagné le championnat dès sa première saison puis en 2017. Son parcours européen de 2018 l’a menée jusqu’en demi-finale.",
+    "results": [
+      {
+        "competition": "urc",
+        "titles": 2,
+        "year": 2017
+      },
+      {
+        "competition": "champions",
+        "finish": "semi",
+        "year": 2018
+      }
+    ],
+    "sources": [
+      "https://www.scarlets.wales/article/150-years-of-scarlets-the-2003-04-title-showdown/",
+      "https://www.scarlets.wales/article/once-a-scarlet-always-a-scarlet-club-expands-former-players-programme/",
+      "https://www.epcrugby.com/european-professional-club-rugby/content/on-this-day-scarlets-29-la-rochelle-17",
+      "https://www.scarlets.wales/article/scarlets-statement-llanelli-rfc/"
+    ]
+  },
+  "50": {
+    "founded": 1932,
+    "bio": "Né à Trévise dans le sport étudiant, le club a grandi jusqu’à recevoir et gagner la finale du tournoi transfrontalier de transition en 2021. Il est devenu en 2023 le premier représentant italien en demi-finale d’une coupe européenne de clubs.",
+    "results": [
+      {
+        "competition": "urc",
+        "finish": "quarter",
+        "year": 2024
+      },
+      {
+        "competition": "challenge",
+        "finish": "semi",
+        "year": 2024
+      }
+    ],
+    "sources": [
+      "https://benettonrugby.it/club/la-storia/",
+      "https://benettonrugby.it/21665-2/",
+      "https://benettonrugby.it/a-pretoria-dei-leoni-gladiatori-sfiorano-l%E2%80%B2impresa-30-23-per-i-bulls/",
+      "https://www.epcrugby.com/champions-cup/content/cardiff-crash-out-at-benetton",
+      "https://www.epcrugby.com/challenge-cup/content/epcr-challenge-cup-confirmed-semi-final-matches-details-venues-dates-times"
+    ]
+  },
+  "51": {
+    "founded": 2012,
+    "bio": "La fédération italienne a installé cette franchise à Parme en 2012. Les Émiliens ont disputé un huitième de finale européen à Durban en 2024.",
+    "results": [
+      {
+        "competition": "urc",
+        "rank": 16,
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://www.zebreparma.it/en-ww/who-we-are.aspx",
+      "https://www.epcrugby.com/challenge-cup/content/round-of-16-dates-kick-off-times",
+      "https://saru-umbraco.azurewebsites.net/tournaments/vodacom-united-rugby-championship/"
+    ]
+  },
+  "52": {
+    "founded": 1998,
+    "bio": "La franchise du Cap est issue du passage au système des franchises sud-africaines. Finaliste du championnat de l’hémisphère sud en 2010, elle a remporté le championnat transfrontalier dès sa première saison en 2022.",
+    "results": [
+      {
+        "competition": "urc",
+        "titles": 1,
+        "year": 2022
+      },
+      {
+        "competition": "srp",
+        "finish": "final",
+        "year": 2010
+      },
+      {
+        "competition": "champions",
+        "finish": "quarter",
+        "year": 2023
+      }
+    ],
+    "sources": [
+      "https://stormers.co.za/our-history/",
+      "https://stormers.co.za/fixtures-announced-for-dhl-stormers-vodacom-urc-title-defence/",
+      "https://www.epcrugby.com/champions-cup/content/dhl-stormers-too-good-for-quins"
+    ]
+  },
+  "53": {
+    "founded": 1997,
+    "bio": "La franchise de Pretoria a pris son identité professionnelle en 1997. Trois fois championne dans l’hémisphère sud, elle a de nouveau atteint la finale du championnat transfrontalier en 2026.",
+    "results": [
+      {
+        "competition": "srp",
+        "titles": 3,
+        "year": 2010
+      },
+      {
+        "competition": "urc",
+        "finish": "final",
+        "year": 2026
+      },
+      {
+        "competition": "champions",
+        "finish": "quarter",
+        "year": 2024
+      }
+    ],
+    "sources": [
+      "https://bullsrugby.co.za/1997-british-irish-lions-tamers/",
+      "https://super.rugby/superrugby/about-super-rugby/past-winners/",
+      "https://stats.unitedrugby.com/match-centre/table/2025-26",
+      "https://www.epcrugby.com/champions-cup/matches/276406/news"
+    ]
+  },
+  "54": {
+    "bio": "L’équipe de Durban a disputé plusieurs finales dans l’hémisphère sud, dont celle de 2012. En 2024, elle est devenue la première formation sud-africaine à remporter une coupe organisée par les instances européennes.",
+    "results": [
+      {
+        "competition": "srp",
+        "finish": "final",
+        "year": 2012
+      },
+      {
+        "competition": "urc",
+        "finish": "semi",
+        "year": 2025
+      },
+      {
+        "competition": "challenge",
+        "titles": 1,
+        "year": 2024
+      },
+      {
+        "competition": "champions",
+        "finish": "quarter",
+        "year": 2023
+      }
+    ],
+    "sources": [
+      "https://sharksrugby.co.za/pages/about",
+      "https://sharksrugby.co.za/blogs/news/when-the-odds-were-against-us-ten-great-sharks-underdog-wins",
+      "https://www.epcrugby.com/challenge-cup/content/penalty-pandemonium-at-hollywoodbets-sharks-munster-as-urc-and-prem-semis-take-shape",
+      "https://historical-stats.epcrugby.com/challenge-cup/history/roll-of-honour/",
+      "https://sharksrugby.co.za/blogs/news/global-partnerships-continue-for-the-sharks",
+      "https://historical-stats.epcrugby.com/report/le-stade-toulousain-retrouve-le-leinster-en-demi-finale/"
+    ],
+    "founded": 1995
+  },
+  "55": {
+    "bio": "Devenue une franchise distincte en 2006, l’équipe de Johannesburg a disputé trois finales consécutives dans l’hémisphère sud de 2016 à 2018. Elle a atteint les quarts de finale du championnat transfrontalier en 2026.",
+    "results": [
+      {
+        "competition": "srp",
+        "finish": "final",
+        "year": 2018
+      },
+      {
+        "competition": "urc",
+        "finish": "quarter",
+        "year": 2026
+      },
+      {
+        "competition": "challenge",
+        "finish": "quarter",
+        "year": 2023
+      }
+    ],
+    "sources": [
+      "https://lionsrugby.co.za/about-us",
+      "https://stats.unitedrugby.com/match-centre/table/2025-26",
+      "https://www.epcrugby.com/challenge-cup/content/epcr-challenge-cup-final-to-see-new-winner-crowned",
+      "https://www.fscheetahs.co.za/news/toyota-cheetahs-sailing-into-unchartered-waters-20130718",
+      "https://super.rugby/superrugby/news/grand-finalists-the-following-season/"
+    ],
+    "founded": 2006
+  },
+  "56": {
+    "founded": 2006,
+    "bio": "Le centre de l’Afrique du Sud dispose de sa propre franchise dans le championnat austral depuis 2006. L’équipe de Bloemfontein a atteint les phases finales au sud comme au nord avant de poursuivre son parcours européen sur invitation.",
+    "results": [
+      {
+        "competition": "srp",
+        "finish": "quarter",
+        "year": 2013
+      },
+      {
+        "competition": "urc",
+        "finish": "quarter",
+        "year": 2018
+      }
+    ],
+    "sources": [
+      "https://www.fscheetahs.co.za/news/beserings-balbesit-en-verdediging-pla-toyota-cheetahs-20140311",
+      "https://www.fscheetahs.co.za/news/toyota-cheetahs-out-of-vodacom-super-rugby-qualifiers-review-20130722",
+      "https://www.fscheetahs.co.za/news/a-special-milestone-for-oupa-mohoje-20230426",
+      "https://www.epcrugby.com/challenge-cup/content/black-lion-and-toyota-cheetahs-to-continue-challenge-cup-participation"
+    ]
+  },
+  "57": {
+    "founded": 2021,
+    "bio": "Cette équipe professionnelle de Tbilissi s’est imposée dans les quatre premières éditions de la compétition européenne créée pour les fédérations émergentes. Elle a rejoint le deuxième tournoi continental sur invitation en 2023.",
+    "results": [],
+    "sources": [
+      "https://www.epcrugby.com/challenge-cup/content/black-lion-georgian-rugby-epcr-challenge-cup-levan-ghvaberidze-interview",
+      "https://www.rugbyeurope.eu/news/black-lion-win-fourth-super-cup-title",
+      "https://www.rugbyeurope.eu/news/two-exciting-match-ups-as-pool-a-of-the-re-super-cup-gets-underway"
+    ]
+  },
+  "58": {
+    "founded": 1996,
+    "bio": "La franchise d’Auckland a gagné les deux premières éditions de l’ère professionnelle. Elle a retrouvé le sommet de la compétition principale en 2024, trois ans après un titre dans le tournoi entre l’Australie et la Nouvelle-Zélande.",
+    "results": [
+      {
+        "competition": "srp",
+        "titles": 4,
+        "year": 2024
+      },
+      {
+        "competition": "sr-trans-tasman",
+        "titles": 1,
+        "year": 2021
+      }
+    ],
+    "sources": [
+      "https://www.blues.rugby/who-we-are",
+      "https://super.rugby/superrugby/about-super-rugby/past-winners/"
+    ]
+  },
+  "59": {
+    "founded": 1996,
+    "bio": "Canberra a disputé sa première finale dès sa deuxième saison. Le club a ensuite remporté deux titres intercontinentaux et le tournoi australien organisé en 2020.",
+    "results": [
+      {
+        "competition": "srp",
+        "titles": 2,
+        "year": 2004
+      },
+      {
+        "competition": "sr-au",
+        "titles": 1,
+        "year": 2020
+      }
+    ],
+    "sources": [
+      "https://brumbies.rugby/about/about-us/history",
+      "https://brumbies.rugby/news/2020/09/21/brumbies-claim-super-rugby-title",
+      "https://super.rugby/superrugby/about-super-rugby/past-winners/"
+    ]
+  },
+  "60": {
+    "founded": 1996,
+    "bio": "Basée à Hamilton, la franchise rassemble six unions provinciales du centre de l’île du Nord. Ses deux titres consécutifs de 2012 et 2013 restent ses sommets, malgré un nouveau retour en finale en 2026.",
+    "results": [
+      {
+        "competition": "srp",
+        "titles": 2,
+        "year": 2013
+      },
+      {
+        "competition": "sr-nz",
+        "finish": "final",
+        "year": 2021
+      }
+    ],
+    "sources": [
+      "https://chiefs.co.nz/about-us",
+      "https://super.rugby/superrugby/about-super-rugby/past-winners/",
+      "https://super.rugby/superrugby/about-super-rugby/",
+      "https://super.rugby/superrugby/news/hurricanes-claim-2026-super-rugby-pacific-title-with-record-victory-over-chiefs/"
+    ]
+  },
+  "61": {
+    "founded": 1995,
+    "bio": "Dernière de la saison inaugurale, la franchise de Christchurch a remporté trois titres de suite entre 1998 et 2000. Son treizième sacre dans la compétition principale est arrivé en 2025.",
+    "results": [
+      {
+        "competition": "srp",
+        "titles": 13,
+        "year": 2025
+      },
+      {
+        "competition": "sr-nz",
+        "titles": 2,
+        "year": 2021
+      }
+    ],
+    "sources": [
+      "https://www.crusaders.co.nz/about/our-legacy",
+      "https://super.rugby/superrugby/about-super-rugby/past-winners/",
+      "https://super.rugby/superrugby/competition-stats/all-time-records/"
+    ]
+  },
+  "62": {
+    "founded": 2017,
+    "bio": "L’équipe fidjienne a fait ses armes dans le championnat australien des provinces, qu’elle a remporté en 2018. Après son arrivée dans le tournoi du Pacifique en 2022, elle a joué les quarts de finale deux années de suite.",
+    "results": [
+      {
+        "competition": "srp",
+        "finish": "quarter",
+        "year": 2024
+      }
+    ],
+    "sources": [
+      "https://www.rugby.com.au/news/2017/09/30/perth-brisbane-nrc-match",
+      "https://drua.rugby/content/the-sledgehammer-returns-to-the-drua",
+      "https://super.rugby/superrugby/about-super-rugby/tournament-format/",
+      "https://super.rugby/superrugby/news/drua-seal-super-rugby-finals-berth-as-reds-wilt-in-fiji/",
+      "https://super.rugby/superrugby/news/2024-super-rugby-pacific-semi-finals-confirmed/"
+    ]
+  },
+  "63": {
+    "founded": 1995,
+    "bio": "Depuis Dunedin, cette équipe représente l’extrémité sud de la Nouvelle-Zélande. Elle a remporté le titre en 2015, puis retrouvé une finale dans le tournoi opposant les franchises néo-zélandaises et australiennes en 2021.",
+    "results": [
+      {
+        "competition": "srp",
+        "titles": 1,
+        "year": 2015
+      },
+      {
+        "competition": "sr-trans-tasman",
+        "finish": "final",
+        "year": 2021
+      }
+    ],
+    "sources": [
+      "https://thehighlanders.co.nz/club/heritage-and-history/",
+      "https://super.rugby/superrugby/about-super-rugby/past-winners/",
+      "https://super.rugby/superrugby/fixtures/archives/2021-super-rugby-trans-tasman/"
+    ]
+  },
+  "64": {
+    "founded": 1995,
+    "bio": "Neuf unions se sont associées autour de Wellington pour la première saison professionnelle. L’équipe a remporté son premier titre en 2016 et le second dix ans plus tard avec un écart de 55 points en finale.",
+    "results": [
+      {
+        "competition": "srp",
+        "titles": 2,
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://www.hurricanes.co.nz/about-us/history",
+      "https://super.rugby/superrugby/about-super-rugby/past-winners/",
+      "https://super.rugby/superrugby/news/hurricanes-claim-2026-super-rugby-pacific-title-with-record-victory-over-chiefs/"
+    ]
+  },
+  "65": {
+    "founded": 1882,
+    "bio": "La sélection du Queensland joue contre son voisin du sud depuis 1882 et s’est professionnalisée en 1996. Elle a gagné à Brisbane le titre intercontinental de 2011 puis le tournoi australien de 2021.",
+    "results": [
+      {
+        "competition": "srp",
+        "titles": 1,
+        "year": 2011
+      },
+      {
+        "competition": "sr-au",
+        "titles": 1,
+        "year": 2021
+      }
+    ],
+    "sources": [
+      "https://reds.rugby/about/history/queensland-reds-history",
+      "https://reds.rugby/about/history",
+      "https://reds.rugby/about/history/super-rugby-history",
+      "https://super.rugby/superrugby/about-super-rugby/past-winners/"
+    ]
+  },
+  "66": {
+    "founded": 1882,
+    "bio": "La sélection de Nouvelle-Galles du Sud dispute son derby d’État depuis 1882. Engagée dès la première saison professionnelle, elle a remporté le titre en 2014.",
+    "results": [
+      {
+        "competition": "srp",
+        "titles": 1,
+        "year": 2014
+      }
+    ],
+    "sources": [
+      "https://waratahs.rugby/news/nsw-waratahs-ready-to-live-up-to-the-history-pride-and-stakes-of-queensland-reds-derby-2025313",
+      "https://www.rugby.com.au/news/waratahs-and-wallabies-great-tim-gavin-inducted-into-hall-of-champions-2024109",
+      "https://super.rugby/superrugby/about-super-rugby/past-winners/"
+    ]
+  },
+  "67": {
+    "founded": 2005,
+    "bio": "Créée pour représenter l’Australie-Occidentale, la franchise de Perth a attiré plus de 37 000 spectateurs pour son premier match en 2006. Elle a atteint pour la première fois les phases finales du tournoi australien en 2021.",
+    "results": [
+      {
+        "competition": "srp",
+        "rank": 7,
+        "year": 2026
+      },
+      {
+        "competition": "sr-au",
+        "finish": "semi",
+        "year": 2021
+      }
+    ],
+    "sources": [
+      "https://westernforce.rugby/news/force-celebrate-20th-anniversary-brumbies-game-202557",
+      "https://westernforce.rugby/news/special-message-from-the-ceo",
+      "https://super.rugby/superrugby/competition-stats/",
+      "https://brumbies.rugby/news/2021/05/01/super-rugby-au-brumbies-match-report-western-force-semi-final"
+    ]
+  },
+  "68": {
+    "founded": 1953,
+    "bio": "Deux couronnes nationales au début des années 1970 ont fait passer cette ancienne équipe d’atelier au premier plan. Reléguée en 2008, elle retrouve l’élite dès la saison suivante.",
+    "results": [
+      {
+        "competition": "jlo-d1",
+        "rank": 5,
+        "year": 2026
+      },
+      {
+        "competition": "jp-national",
+        "titles": 2,
+        "year": 1973
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2025",
+      "https://league-one.jp/news/2671"
+    ]
+  },
+  "69": {
+    "founded": 1960,
+    "bio": "Des collègues de l’usine de Suzuka montent leur équipe en 1960. Presque cinquante ans plus tard, le club découvre l’élite et entame une série d’allers-retours entre les deux premières divisions.",
+    "results": [
+      {
+        "competition": "jlo-d1",
+        "rank": 8,
+        "year": 2026
+      },
+      {
+        "competition": "jlo-d2",
+        "rank": 2,
+        "year": 2023
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2022",
+      "https://league-one.jp/standings/?year=2025"
+    ]
+  },
+  "70": {
+    "founded": 1928,
+    "bio": "Sept couronnes nationales de suite et 71 matchs sans défaite ont fait la réputation du club de Kobe. En 2026, il a ouvert un nouveau chapitre en remportant son premier titre dans la ligue actuelle.",
+    "results": [
+      {
+        "competition": "jlo-d1",
+        "titles": 1,
+        "year": 2026
+      },
+      {
+        "competition": "jp-top-league",
+        "titles": 2,
+        "year": 2019
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2025",
+      "https://league-one.jp/en/news/181",
+      "https://www.rugby-japan.jp/news/49617"
+    ]
+  },
+  "71": {
+    "founded": 1978,
+    "bio": "Une poignée de volontaires lance l’équipe en 1978. En 2023, elle prend sa revanche sur des années passées derrière les grandes équipes d’entreprise et remporte la finale à Tokyo.",
+    "results": [
+      {
+        "competition": "jlo-d1",
+        "titles": 1,
+        "year": 2023
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2022"
+    ]
+  },
+  "72": {
+    "founded": 1971,
+    "bio": "L’équipe de l’usine de Sagamihara découvre l’élite pour la première fois en 2007. Elle retrouve ce niveau en 2022 en gagnant son barrage malgré une troisième place en deuxième division.",
+    "results": [
+      {
+        "competition": "jlo-d1",
+        "rank": 9,
+        "year": 2025
+      },
+      {
+        "competition": "jlo-d2",
+        "rank": 3,
+        "year": 2022
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2021",
+      "https://league-one.jp/standings/?year=2024",
+      "https://www.mhi.com/dynaboars/jp/team.html"
+    ]
+  },
+  "73": {
+    "founded": 1960,
+    "bio": "Quatre finales perdues ont précédé la première couronne, remportée sans défaite en 2011. Le club a ensuite remporté la première édition de la nouvelle ligue japonaise en 2022.",
+    "results": [
+      {
+        "competition": "jlo-d1",
+        "titles": 1,
+        "year": 2022
+      },
+      {
+        "competition": "jp-top-league",
+        "titles": 5,
+        "year": 2021
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2021"
+    ]
+  },
+  "74": {
+    "founded": 1982,
+    "bio": "Vingt-six salariés lancent l’équipe en 1982. Deux décennies plus tard, elle participe à la première édition de la ligue nationale, puis remporte la coupe du Japon en 2015.",
+    "results": [
+      {
+        "competition": "jlo-d1",
+        "rank": 5,
+        "year": 2025
+      },
+      {
+        "competition": "jp-national",
+        "titles": 1,
+        "year": 2015
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2024"
+    ]
+  },
+  "75": {
+    "founded": 1980,
+    "bio": "Les saisons parfaites de 2012–13 et 2016–17 ont marqué l’ascension de cette équipe de Fuchū. Elle compte cinq couronnes dans l’ancienne élite japonaise.",
+    "results": [
+      {
+        "competition": "jlo-d1",
+        "finish": "final",
+        "year": 2022
+      },
+      {
+        "competition": "jp-top-league",
+        "titles": 5,
+        "year": 2018
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2021"
+    ]
+  },
+  "76": {
+    "founded": 1948,
+    "bio": "Le premier des deux sacres de 2024 et 2025 met fin à quatorze ans d’attente. Il prolonge une histoire de domination qui avait déjà donné cinq titres au club dans l’ancienne élite.",
+    "results": [
+      {
+        "competition": "jlo-d1",
+        "titles": 2,
+        "year": 2025
+      },
+      {
+        "competition": "jp-top-league",
+        "titles": 5,
+        "year": 2010
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2023",
+      "https://league-one.jp/standings/?year=2024"
+    ]
+  },
+  "77": {
+    "founded": 1941,
+    "bio": "Fondée à l’usine en 1941, l’équipe a dominé à quinze reprises la première division régionale du Kansai. Trois couronnes nationales, réparties sur trois décennies, ont ensuite inscrit son nom au palmarès japonais.",
+    "results": [
+      {
+        "competition": "jlo-d1",
+        "rank": 5,
+        "year": 2022
+      },
+      {
+        "competition": "jp-national",
+        "titles": 3,
+        "year": 1987
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2021"
+    ]
+  },
+  "78": {
+    "founded": 2022,
+    "bio": "Née d’une réorganisation du rugby d’entreprise en 2022, la nouvelle structure a remporté deux titres de deuxième division d’affilée. Le deuxième lui a enfin ouvert les portes de l’élite.",
+    "results": [
+      {
+        "competition": "jlo-d1",
+        "rank": 11,
+        "year": 2026
+      },
+      {
+        "competition": "jlo-d2",
+        "titles": 2,
+        "year": 2024
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2022",
+      "https://league-one.jp/standings/?year=2023",
+      "https://league-one.jp/standings/?year=2025",
+      "https://league-one.jp/news/1551"
+    ]
+  },
+  "79": {
+    "founded": 1980,
+    "bio": "Partie du quatrième échelon régional du Kantō, l’équipe a gravi les divisions après cinq titres régionaux d’affilée. En 2023, elle termine sur le podium de l’élite.",
+    "results": [
+      {
+        "competition": "jlo-d1",
+        "rank": 3,
+        "year": 2023
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2022"
+    ]
+  },
+  "80": {
+    "founded": 1985,
+    "bio": "L’équipe change de nom et de propriétaire en 2026, après quatre décennies dans le rugby d’entreprise. Elle conserve l’héritage sportif du club qui avait atteint le podium de l’ancienne ligue.",
+    "results": [
+      {
+        "competition": "jlo-d1",
+        "rank": 11,
+        "year": 2023
+      },
+      {
+        "competition": "jlo-d2",
+        "rank": 3,
+        "year": 2025
+      },
+      {
+        "competition": "jp-top-league",
+        "rank": 3,
+        "year": 2011
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2022",
+      "https://league-one.jp/standings/?year=2024",
+      "https://league-one.jp/news/6012",
+      "https://league-one.jp/en/news/200"
+    ]
+  },
+  "81": {
+    "founded": 1927,
+    "bio": "Les premiers matchs remontent à 1927. Cette équipe de cheminots a ensuite remporté huit championnats nationaux d’entreprise et six championnats du Japon, avant de connaître les allers-retours entre les divisions.",
+    "results": [
+      {
+        "competition": "jlo-d1",
+        "rank": 12,
+        "year": 2024
+      },
+      {
+        "competition": "jlo-d2",
+        "titles": 1,
+        "year": 2022
+      },
+      {
+        "competition": "jp-company",
+        "titles": 8,
+        "year": 1975
+      },
+      {
+        "competition": "jp-national",
+        "titles": 6
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2021",
+      "https://league-one.jp/standings/?year=2023"
+    ]
+  },
+  "82": {
+    "founded": 1976,
+    "bio": "L’équipe d’un groupe de construction a longtemps joué dans les ligues régionales. Son titre régional de 2019 marque un tournant sur le chemin de sa deuxième place en Division 2 en 2026.",
+    "results": [
+      {
+        "competition": "jlo-d2",
+        "rank": 2,
+        "year": 2026
+      },
+      {
+        "competition": "jlo-d3",
+        "rank": 2,
+        "year": 2024
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2023",
+      "https://league-one.jp/standings/?year=2025"
+    ]
+  },
+  "83": {
+    "founded": 1951,
+    "bio": "Formée sous sa structure actuelle en 1951, l’équipe de la compagnie électrique gagne très tôt le championnat des entreprises. Sa remontée vers la deuxième division en 2023 ouvre un nouveau chapitre.",
+    "results": [
+      {
+        "competition": "jlo-d2",
+        "rank": 5,
+        "year": 2026
+      },
+      {
+        "competition": "jlo-d3",
+        "rank": 2,
+        "year": 2023
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2022",
+      "https://league-one.jp/standings/?year=2025",
+      "https://www.kyudenvoltex.com/special/37",
+      "https://www.kyudenvoltex.com/backnumber/voltex/history/1953/"
+    ]
+  },
+  "84": {
+    "founded": 1993,
+    "bio": "Il a fallu moins d’une décennie à cette équipe née à Osaka pour passer du quatrième au premier échelon régional. Reléguée au moment de la réorganisation du club, elle remonte en gagnant la troisième division en 2023.",
+    "results": [
+      {
+        "competition": "jlo-d1",
+        "rank": 11,
+        "year": 2022
+      },
+      {
+        "competition": "jlo-d2",
+        "rank": 4,
+        "year": 2025
+      },
+      {
+        "competition": "jlo-d3",
+        "titles": 1,
+        "year": 2023
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2021",
+      "https://league-one.jp/standings/?year=2022",
+      "https://league-one.jp/standings/?year=2024"
+    ]
+  },
+  "85": {
+    "founded": 1985,
+    "bio": "Membre de la première édition de l’ancienne ligue d’élite en 2003, le club a ensuite passé quatorze ans dans les ligues régionales. Sa deuxième place de 2026 lui offre un barrage de montée qu’il remporte.",
+    "results": [
+      {
+        "competition": "jlo-d3",
+        "rank": 2,
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2025"
+    ]
+  },
+  "86": {
+    "founded": 1984,
+    "bio": "Le titre de troisième division en 2022 a lancé la remontée du club d’Aichi. Deux titres de deuxième division consécutifs en 2025 et 2026 ont confirmé ce retour au premier plan.",
+    "results": [
+      {
+        "competition": "jlo-d2",
+        "titles": 2,
+        "year": 2026
+      },
+      {
+        "competition": "jlo-d3",
+        "titles": 1,
+        "year": 2022
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2021",
+      "https://league-one.jp/standings/?year=2024",
+      "https://league-one.jp/standings/?year=2025",
+      "https://league-one.jp/news/6010"
+    ]
+  },
+  "87": {
+    "bio": "Après des décennies dans les ligues d’entreprise de l’ouest du Japon, cette équipe d’Hiroshima s’offre deux titres de troisième division de suite. Le second, en 2026, lui vaut une montée en deuxième division.",
+    "results": [
+      {
+        "competition": "jlo-d2",
+        "rank": 6,
+        "year": 2022
+      },
+      {
+        "competition": "jlo-d3",
+        "titles": 2,
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://league-one.jp/lp/pdf-viewer/web/file/2024-25_media_guide.pdf",
+      "https://league-one.jp/standings/?year=2021",
+      "https://league-one.jp/standings/?year=2024",
+      "https://league-one.jp/standings/?year=2025",
+      "https://www.mazda.com/ja/about/sports/",
+      "https://newsroom.mazda.com/ja/publicity/release/2021/202110/211004a.html"
+    ]
+  },
+  "88": {
+    "founded": 1901,
+    "bio": "Deux titres dans les groupes B puis A2, en 1993 et 1998, ont marqué l’âge d’or du club périgourdin. Il a ensuite reconstruit son parcours dans le rugby fédéral.",
+    "results": [
+      {
+        "competition": "nationale",
+        "rank": 6,
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://monclubhouse.ffr.fr/clubs/c-a-perigourdin",
+      "https://perigueux.fr/fileadmin/user_upload/fichiers/02-MA-MAIRIE-PRATIQUE/02-03-les-conseils-municipaux/PDF/2025/D2025-081-ConvMAD-Filature-CAPRugby.pdf",
+      "https://monclubhouse.ffr.fr/nationales/nationale/qualification-44286/classements"
+    ]
+  },
+  "89": {
+    "founded": 1906,
+    "bio": "En 1997, le club isérois dispute trois finales et remporte la petite coupe d’Europe. Il retrouve la finale de cette coupe douze ans plus tard.",
+    "results": [
+      {
+        "competition": "elite",
+        "finish": "final",
+        "year": 1997
+      },
+      {
+        "competition": "accession",
+        "titles": 3,
+        "year": 1973
+      },
+      {
+        "competition": "nationale",
+        "rank": 8,
+        "year": 2024
+      },
+      {
+        "competition": "challenge",
+        "titles": 1,
+        "year": 1997
+      }
+    ],
+    "sources": [
+      "https://csbj-rugby.fr/le-club/notre-histoire/",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://prod2.lnr.fr/actualite/victoires-consecutives-records-de-points-et-dessais-les-stats-marquantes-de-prod2",
+      "https://monclubhouse.ffr.fr/nationales/nationale/qualification-38190/classements"
+    ]
+  },
+  "90": {
+    "founded": 1899,
+    "bio": "Des collégiens ont lancé l’aventure au bord du Rhône. En 1937, les Bleu et Blanc battent Montferrand en finale et rapportent le Brennus.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 1,
+        "year": 1937
+      },
+      {
+        "competition": "nationale",
+        "rank": 13,
+        "year": 2024
+      }
+    ],
+    "sources": [
+      "https://csvienne-rugby.com/histoire/",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://monclubhouse.ffr.fr/nationales/nationale/qualification-38190/classements"
+    ]
+  },
+  "91": {
+    "founded": 1971,
+    "bio": "Tout a commencé par une équipe privée de terrain qui a trouvé refuge de l’autre côté de la métropole lilloise. Une école de rugby a ouvert dès l’année suivante.",
+    "results": [
+      {
+        "competition": "nationale",
+        "rank": 12,
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://www.omrugby.com/histoire-du-club/",
+      "https://monclubhouse.ffr.fr/nationales/nationale/qualification-44286/classements"
+    ]
+  },
+  "92": {
+    "founded": 1966,
+    "bio": "Le club a gravi les échelons jusqu’à affronter les grandes équipes des années 1980. En 1993, il gagne le championnat du groupe B2 et la Coupe du Président.",
+    "results": [],
+    "sources": [
+      "https://rugbycluborleans.com/le-club/histoire-palmares/"
+    ]
+  },
+  "93": {
+    "founded": 1961,
+    "bio": "Née dans le monde étudiant, l’équipe se transforme en club civil et ouvre son école de rugby en 1986. Deux titres fédéraux, en 2022 et 2025, jalonnent son ascension récente.",
+    "results": [
+      {
+        "competition": "nationale",
+        "rank": 11,
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://www.rennes-rugby.bzh/vie-du-club/plus-de-50-ans-de-passion",
+      "https://monclubhouse.ffr.fr/nationales/nationale/qualification-44286/classements"
+    ]
+  },
+  "94": {
+    "founded": 2009,
+    "bio": "Relancé par des passionnés, le rugby rouennais conquiert sa place chez les professionnels en 2019. En finale, il renverse onze points de retard face aux Drômois.",
+    "results": [
+      {
+        "competition": "nationale",
+        "finish": "semi",
+        "year": 2025
+      }
+    ],
+    "sources": [
+      "https://rouennormandierugby.fr/le-club/",
+      "https://amp.ligueoccitanie.ffr.fr/actualites/nationale-la-finale-en-direct-sur-france-rugby"
+    ]
+  },
+  "95": {
+    "founded": 1973,
+    "bio": "L’école de Léon Dussert et les White Harriers sont à l’origine du club. Sur le blason, une grappe de raisin rappelle les vendanges auxquelles participaient les joueurs.",
+    "results": [
+      {
+        "competition": "nationale",
+        "rank": 5,
+        "year": 2024
+      }
+    ],
+    "sources": [
+      "https://www.rcsuresnes.fr/presentation-du-rugby-club-suresnes/",
+      "https://monclubhouse.ffr.fr/nationales/nationale/qualification-38190/classements"
+    ]
+  },
+  "96": {
+    "founded": 1971,
+    "bio": "Le lion des Bleu et Noir accompagne une identité de club formateur. L’équipe première a suivi la même voie ascendante jusqu’au rugby professionnel.",
+    "results": [
+      {
+        "competition": "nationale",
+        "titles": 1,
+        "year": 2022
+      }
+    ],
+    "sources": [
+      "https://www.rcmessonne.com/notre-histoire/",
+      "https://api.ligueidf.ffr.fr/wp-content/uploads/2023/03/2122-proces-verbal-13eme-assemblee-generale-ordinaire-18-06-22.pdf"
+    ]
+  },
+  "97": {
+    "founded": 1906,
+    "bio": "Né comme club omnisports, le Sporting gagne son premier grand titre régional en 1926 en battant les Toulousains. Le rugby à XV s’impose ensuite durablement sous ses couleurs.",
+    "results": [
+      {
+        "competition": "accession",
+        "finish": "final",
+        "year": 2011
+      },
+      {
+        "competition": "nationale",
+        "finish": "semi",
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://www.sca-albi.fr/histoire-du-club/",
+      "https://monclubhouse.ffr.fr/nationales/nationale/phase-finale-47803",
+      "https://prod2.lnr.fr/actualite/pro-d2-l-historique-des-finales-d-accession"
+    ]
+  },
+  "98": {
+    "founded": 1908,
+    "bio": "Les passes croisées des frères Boniface ont donné au jeu landais une signature. Le Brennus de 1963 en reste le trophée le plus marquant.",
+    "results": [
+      {
+        "competition": "elite",
+        "titles": 1,
+        "year": 1963
+      },
+      {
+        "competition": "accession",
+        "titles": 2,
+        "year": 2002
+      }
+    ],
+    "sources": [
+      "https://www.stademontoisrugby.fr/club/la-sasp/historique.html",
+      "https://top14.lnr.fr/actualite/palmares-top-14-tous-les-champions-du-championnat-de-france-de-rugby",
+      "https://prod2.lnr.fr/actualite/histoire-de-blason-mont-de-marsan-des-couleurs-originales-et-inimitables",
+      "https://www.stademontoisrugby.fr/actualites/toutes-les-actualites/pros/6474-un-peuple-un-maillot-une-histoire.html"
+    ]
+  },
+  "99": {
+    "founded": 1896,
+    "bio": "Le club savoyard a grandi au pied des montagnes. Son parcours jusqu’à la finale de 2025 l’a rapproché d’une première accession chez les professionnels.",
+    "results": [
+      {
+        "competition": "nationale",
+        "finish": "final",
+        "year": 2025
+      }
+    ],
+    "sources": [
+      "https://soc-rugby.com/manifesto/",
+      "https://monclubhouse.ffr.fr/actualites/les-champions-2025",
+      "https://prod2.lnr.fr/actualite/carcassonne-sacre-champion-de-nationale-retrouve-la-prod2"
+    ]
+  },
+  "100": {
+    "founded": 1902,
+    "bio": "La première édition du championnat créé entre les rangs professionnels et fédéraux se termine par un titre pour les Bressans en 2021. Cinq ans plus tard, leur stade accueille la finale.",
+    "results": [
+      {
+        "competition": "accession",
+        "titles": 3,
+        "year": 1966
+      },
+      {
+        "competition": "nationale",
+        "titles": 1,
+        "year": 2021
+      }
+    ],
+    "sources": [
+      "https://monclubhouse.ffr.fr/clubs/u-s-bressane",
+      "https://monclubhouse.ffr.fr/actualites/nationale-la-finale-a-bourg-en-bresse",
+      "https://usbparugby.com/wp-content/uploads/PLAQUETTE-SEMINAIRE-2.pdf",
+      "https://prod2.lnr.fr/actualite/victoires-consecutives-records-de-points-et-dessais-les-stats-marquantes-de-prod2"
+    ]
+  },
+  "101": {
+    "founded": 1899,
+    "bio": "Le titre fédéral de 2010 lance une longue période chez les professionnels. Le centre de formation a ouvert un an plus tôt, cent dix ans après les débuts du club.",
+    "results": [
+      {
+        "competition": "accession",
+        "rank": 5,
+        "year": 2022
+      },
+      {
+        "competition": "nationale",
+        "titles": 1,
+        "year": 2025
+      }
+    ],
+    "sources": [
+      "https://www.uscarcassonne.com/historique/",
+      "https://prod2.lnr.fr/actualite/carcassonne-sacre-champion-de-nationale-retrouve-la-prod2",
+      "https://www.uscarcassonne.com/2025/05/20/le-bouclier-presente-a-la-cite-medievale/"
+    ]
+  },
+  "102": {
+    "founded": 1881,
+    "bio": "Le premier capitaine était le neveu du fondateur d’une célèbre distillerie de gin. Après avoir frôlé la disparition dans les années 1950, le club a gravi cinq échelons entre 2006 et 2019.",
+    "results": [
+      {
+        "competition": "eng-third",
+        "titles": 1,
+        "year": 2019
+      },
+      {
+        "competition": "champ",
+        "rank": 5,
+        "year": 2020
+      }
+    ],
+    "sources": [
+      "https://www.ampthillrufc.com/from-tanqueray-to-the-championship/",
+      "https://www.ampthillrufc.com/wp-content/uploads/2020/03/1stXV_Nottingham_12102019.pdf"
+    ]
+  },
+  "103": {
+    "founded": 1886,
+    "bio": "Ce XV du Bedfordshire a soulevé la coupe nationale à Twickenham en 1975. Il a retrouvé une finale de deuxième division à domicile en 2026.",
+    "results": [
+      {
+        "competition": "champ",
+        "titles": 1,
+        "year": 1998
+      },
+      {
+        "competition": "eng-third",
+        "titles": 1,
+        "year": 1995
+      }
+    ],
+    "sources": [
+      "https://bedfordrugby.co.uk/club",
+      "https://bedfordrugby.co.uk/news/2020/04/rfu-club-competition-victory-45-years",
+      "https://bedfordrugby.co.uk/news/2026/05/report-heartbreak-champ-final",
+      "https://ealingtrailfinders.com/table/championship-2025-2026/",
+      "https://bedfordrugby.co.uk/news/2025/04/30-years-courage-league-three-success"
+    ]
+  },
+  "104": {
+    "founded": 1858,
+    "bio": "Ce club de pionniers a participé à la création de la fédération anglaise. Après avoir terminé deuxième du troisième échelon en 2026, il a gagné sa place au niveau supérieur en barrage.",
+    "results": [
+      {
+        "competition": "eng-third",
+        "rank": 2,
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://blackheathrugby.co.uk/our-history/",
+      "https://nationalleaguerugby.com/round-26-rotherham-and-bury-st-edmunds-clinch-titles-on-breathless-final-day/",
+      "https://nationalleaguerugby.com/the-previews-national-one/",
+      "https://blackheathrugby.co.uk/a-welcome-message-from-our-president/"
+    ]
+  },
+  "105": {
+    "founded": 1924,
+    "bio": "Fondé par des anciens élèves sur la péninsule de Wirral, ce club a mis près d’un siècle à rejoindre la deuxième division. Il a décroché la montée au terme d’un duel serré en 2022.",
+    "results": [
+      {
+        "competition": "eng-third",
+        "titles": 1,
+        "year": 2022
+      },
+      {
+        "competition": "champ",
+        "rank": 11,
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://caldyrugbyclub.com/about-caldy-rfc/",
+      "https://nationalleaguerugby.com/caldy-are-championship-material-and-hull-hit-historic-heights/",
+      "https://ealingtrailfinders.com/table/championship-2025-2026/"
+    ]
+  },
+  "106": {
+    "founded": 1962,
+    "bio": "Une réunion dans un pub de l’Oxfordshire a donné naissance à ce club. En 2024, il a décroché son premier titre au troisième échelon du rugby anglais.",
+    "results": [
+      {
+        "competition": "eng-third",
+        "titles": 1,
+        "year": 2024
+      },
+      {
+        "competition": "champ",
+        "finish": "quarter",
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://www.chinnor-rfc.com/news/champions-2845160.html",
+      "https://nationalleaguerugby.com/a-champion-weekend-chinnor-esher-and-dings-claim-promotion-but-for-some-it-all-rests-on-the-final-day/",
+      "https://warriors.co.uk/news/warriors-victorious-at-sixways-in-champ-quarter-final/",
+      "https://www.chinnor-rfc.com/news/welcome-to-the-bird-in-hand-2606683.html"
+    ]
+  },
+  "107": {
+    "founded": 1945,
+    "bio": "Deux clubs de Cornouailles ont uni leurs forces à la sortie de la guerre. Leur équipe première a atteint deux finales de deuxième division de suite, en 2011 et 2012.",
+    "results": [
+      {
+        "competition": "champ",
+        "finish": "final",
+        "year": 2012
+      },
+      {
+        "competition": "eng-third",
+        "titles": 1,
+        "year": 2003
+      }
+    ],
+    "sources": [
+      "https://cornish-pirates.com/about-us/our-history/",
+      "https://www.pirates-rfc.co.uk/honours/league_cup_honours.htm",
+      "https://ealingtrailfinders.com/table/championship-2023-2024/"
+    ]
+  },
+  "108": {
+    "founded": 1874,
+    "bio": "Des joueurs de cricket ont participé au premier match de rugby organisé dans la ville. Après des années difficiles, le club a relancé son ascension par un titre de troisième division en 2018.",
+    "results": [
+      {
+        "competition": "eng-third",
+        "rank": 1,
+        "year": 2018
+      },
+      {
+        "competition": "champ",
+        "finish": "semi",
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://coventryrugby.co.uk/our-club/heritage",
+      "https://www.drfc.co.uk/clubs/coventry/",
+      "https://coventryrugby.co.uk/news/coventry%E2%80%99s-play-off-journey-ends-at-goldington-road"
+    ]
+  },
+  "109": {
+    "founded": 1875,
+    "bio": "Huit promotions en quinze saisons ont porté ce club du Yorkshire jusqu’aux portes de l’élite. Il a disputé la finale de deuxième division en 2016.",
+    "results": [
+      {
+        "competition": "champ",
+        "finish": "final",
+        "year": 2016
+      },
+      {
+        "competition": "eng-third",
+        "titles": 2,
+        "year": 2014
+      }
+    ],
+    "sources": [
+      "https://www.drfc.co.uk/history/",
+      "https://www.drfc.co.uk/our-heritage/",
+      "https://www.drfc.co.uk/wp-content/uploads/2023/04/Commercial-Brochure.pdf",
+      "https://ealingtrailfinders.com/table/championship-2024-2025/"
+    ]
+  },
+  "110": {
+    "founded": 1871,
+    "bio": "Ce club de l’ouest londonien a remporté trois titres de deuxième division en quatre ans. En 2026, il a gagné tous ses matchs de saison régulière avant de céder en demi-finale.",
+    "results": [
+      {
+        "competition": "champ",
+        "titles": 3,
+        "year": 2025
+      },
+      {
+        "competition": "eng-third",
+        "titles": 2,
+        "year": 2015
+      }
+    ],
+    "sources": [
+      "https://ealingtrailfinders.com/product/trailfinders-est-1871-nike-express-hoodie/",
+      "https://ealingtrailfinders.com/event/caldy-vs-ealing-trailfinders-4/",
+      "https://ealingtrailfinders.com/tag/2025-26/",
+      "https://ealingtrailfinders.com/event/ealing-trailfinders-semi-final/",
+      "https://ealingtrailfinders.com/event/2176/",
+      "https://ealingtrailfinders.com/table/championship-2025-2026/",
+      "https://www.drfc.co.uk/clubs/ealing-trailfinders/",
+      "https://ealingtrailfinders.com/thank-you-to-our-2023-2024-leavers/"
+    ]
+  },
+  "111": {
+    "founded": 2004,
+    "bio": "Né d’une académie de rugby universitaire ouverte en 2000, ce XV a gagné ses trente matchs de troisième division en 2016–17. Cette saison parfaite lui a ouvert la deuxième division.",
+    "results": [
+      {
+        "competition": "eng-third",
+        "titles": 1,
+        "year": 2017
+      },
+      {
+        "competition": "champ",
+        "finish": "quarter",
+        "year": 2026
+      }
+    ],
+    "sources": [
+      "https://www.hartpury.ac.uk/rugby/the-hartpury-rfc-story/",
+      "https://www.hartpury.ac.uk/rugby/hartpury-rfc-match-reports-news/hartpury-rfc-vs-coventry-a-champ-quarter-final-match-report-28-25/"
+    ]
+  },
+  "112": {
+    "founded": 1877,
+    "bio": "En 1966, ce club des Midlands a été le premier club anglais à nommer officiellement un entraîneur. Ses couleurs vert et blanc remontent à 1886.",
+    "results": [
+      {
+        "competition": "champ",
+        "finish": "semi",
+        "year": 2013
+      }
+    ],
+    "sources": [
+      "https://www.nottinghamrugby.co.uk/150-years-of-nottingham-rugby",
+      "https://www.drfc.co.uk/clubs/nottingham-rugby/",
+      "https://bedfordrugby.co.uk/download_file/force/502/2055"
+    ]
+  },
+  "113": {
+    "founded": 1861,
+    "bio": "Ce pionnier du rugby anglais a redémarré au neuvième échelon après ses difficultés financières. Il a enchaîné 83 victoires en championnat au cours de sa remontée.",
+    "results": [
+      {
+        "competition": "eng-third",
+        "rank": 1,
+        "year": 2025
+      },
+      {
+        "competition": "champ",
+        "titles": 1,
+        "year": 1997
+      }
+    ],
+    "sources": [
+      "https://www.richmondfc.co.uk/news/welcome-to-richmond-rugby-rugbys-original-2982839.html",
+      "https://ramsrugby.com/news/the-history-of-richmond/",
+      "https://www.richmondfc.co.uk/a/club-history-60700.html?page=1",
+      "https://shura.shu.ac.uk/32542/1/Catlin_2022_PhD_ProfessionalisationAndCompetitiveBalance.pdf",
+      "https://www.richmondfc.co.uk/news/back-where-we-want-to-be-richmond-promoted-to-the-championship-2911343.html"
+    ]
+  },
+  "114": {
+    "founded": 1923,
+    "bio": "Premier club du Yorkshire à atteindre l’élite en 2000, ce XV a connu plusieurs relégations avant de remporter le troisième échelon en 2026 et de retrouver la deuxième division.",
+    "results": [
+      {
+        "competition": "eng-third",
+        "titles": 1,
+        "year": 2026
+      },
+      {
+        "competition": "champ",
+        "titles": 3,
+        "year": 2003
+      }
+    ],
+    "sources": [
+      "https://ramsrugby.com/news/the-history-of-rotherham-titans/",
+      "https://titans-rugby.com/match-reports/titans-34-sale-fc-26/",
+      "https://titans-rugby.com/news/team-news-titans-vs-bedford-blues/",
+      "https://shura.shu.ac.uk/32542/1/Catlin_2022_PhD_ProfessionalisationAndCompetitiveBalance.pdf"
+    ]
+  },
+  "115": {
+    "founded": 1871,
+    "bio": "La nouvelle structure professionnelle, admise en 2025 comme nouvel entrant, revendique l’héritage du club fondé en 1871. Elle a remporté la deuxième division dès sa première saison de retour.",
+    "results": [
+      {
+        "competition": "champ",
+        "titles": 4,
+        "year": 2026
+      },
+      {
+        "competition": "challenge",
+        "finish": "final",
+        "year": 2008
+      }
+    ],
+    "sources": [
+      "https://warriors.co.uk/about/club-history/",
+      "https://warriors.co.uk/news/worcester-warriors-return-to-professional-rugby/",
+      "https://warriors.co.uk/news/chairmans-end-of-season-statement-2026/",
+      "https://cornish-pirates.com/about-us/our-history/",
+      "https://historical-stats.epcrugby.com/challenge-cup/history/roll-of-honour/",
+      "https://premrugby.com/content/worcester-warriors-legend-chris-pennell-to-leave-sixways",
+      "https://shura.shu.ac.uk/32542/1/Catlin_2022_PhD_ProfessionalisationAndCompetitiveBalance.pdf"
+    ]
+  }
+}

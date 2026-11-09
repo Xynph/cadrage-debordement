@@ -101,6 +101,10 @@ test('identités de compétition : dossier de création, affichage et retour à 
  const initial=ok('snapshot'),overview=initial.meta.champCatalogue.find(c=>c.id===30).startingRoster;
  assert.ok(overview.average>0&&overview.forwards>0&&overview.backs>0);
  assert.ok(overview.strengthDetail?.count>0&&overview.weaknessDetail?.count>0);
+ const toulouse=initial.meta.champCatalogue.find(c=>c.id===0);
+ assert.equal(toulouse.history.founded,1907);
+ assert.ok(toulouse.history.bio.includes('jeu de mouvement'));
+ assert.ok(toulouse.history.results.some(row=>row.competition==='elite'&&row.titles===25&&row.year===2026));
  assert.equal(initial.meta.creationCompetitions[mode].prem.name,'Élite anglaise');
  const photo=png(),file=path.join(root,'identites.zip');
  const manifest={schema:'cd-identity-pack-v4',id:'ligue-temoin',name:'Ligues témoins',version:'1',databaseId:initial.meta.champDatabase.id,rightsStatus:'test-local',
@@ -118,6 +122,7 @@ test('identités de compétition : dossier de création, affichage et retour à 
  assert.equal(identity.name,'Championnat témoin');
  assert.equal(digest(fs.readFileSync(identity.logoPath)),digest(photo));
  assert.equal(creation.meta.champCatalogue.find(c=>c.id===30).photos.stadium.path,identity.logoPath);
+ assert.deepEqual(creation.meta.champCatalogue.find(c=>c.id===0).history,toulouse.history);
  const career=ok('new_career',{mode,club:30});
  assert.equal(career.leagues.find(l=>l.id==='prem').name,identity.name);
  assert.equal(career.leagues.find(l=>l.id==='prem').logoPath,identity.logoPath);
@@ -133,9 +138,15 @@ test('identités de compétition : dossier de création, affichage et retour à 
  };
  for(const [group,detail] of [[overview.strengths,overview.strengthDetail],[overview.needs,overview.weaknessDetail]]){
   const members=players.filter(p=>positions[group].includes(p.pos));
-  assert.deepEqual(detail,{count:members.length,average:Math.round(members.reduce((n,p)=>n+p.rating,0)/members.length*10)/10});
+  const peers=initial.meta.champCatalogue.filter(c=>c.division==='prem'&&c.id!==30).flatMap(c=>state.clubs[c.id].players)
+   .filter(p=>positions[group].includes(p.pos));
+  const mean=peers.reduce((n,p)=>n+p.rating,0)/peers.length;
+  assert.deepEqual(detail,{
+   count:members.length,average:Math.round(members.reduce((n,p)=>n+p.rating,0)/members.length*10)/10,
+   best:Math.max(...members.map(p=>p.rating)),divisionAverage:Math.round(mean*10)/10,atLevel:members.filter(p=>p.rating>=mean).length,
+  });
  }
- assert.ok(overview.strengthDetail.average>=overview.average&&overview.weaknessDetail.average<=overview.average);
+ assert.ok(overview.strengthDetail.average-overview.strengthDetail.divisionAverage>=overview.weaknessDetail.average-overview.weaknessDetail.divisionAverage);
  const base=ok('pack_select',{mode,scope:'career',id:'base'});
  assert.equal(base.leagues.find(l=>l.id==='prem').name,'Élite anglaise');
  assert.equal(base.leagues.find(l=>l.id==='prem').logoPath,undefined);
