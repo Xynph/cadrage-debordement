@@ -217,14 +217,31 @@ static func portrait(index: int, width: int = 60, player: Dictionary = {}) -> Te
 	r.custom_minimum_size = Vector2(width, width)
 	return r
 
-static func picture(slug: String, kind: String = "stadium", dark: bool = true) -> Control:
+static var venue_textures: Dictionary = {}
+
+static func _venue_texture(path: String) -> Texture2D:
+	if path.is_empty() or not path.is_absolute_path() or not FileAccess.file_exists(path): return null
+	if venue_textures.has(path): return venue_textures[path]
+	var image := Image.new()
+	if image.load(path) != OK or image.is_empty(): return null
+	var texture := ImageTexture.create_from_image(image)
+	if venue_textures.size() >= 6: venue_textures.erase(venue_textures.keys()[0])
+	venue_textures[path] = texture
+	return texture
+
+static func picture(slug: String, kind: String = "stadium", dark: bool = true, external_path: String = "") -> Control:
 	var base := Control.new()
 	base.clip_contents = true
 	base.custom_minimum_size = Vector2(0, 140)
 	var image := TextureRect.new()
 	var path := "res://assets/club-atlas/%s-%s.webp" % [slug, kind]
-	if ResourceLoader.exists(path):
+	image.texture = _venue_texture(external_path)
+	var from_pack := image.texture != null
+	if not from_pack and ResourceLoader.exists(path):
 		image.texture = load(path)
+	base.set_meta("has_photo", image.texture != null)
+	base.set_meta("photo_from_pack", from_pack)
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

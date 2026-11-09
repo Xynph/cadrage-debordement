@@ -16,11 +16,42 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "native/godot"
-BUILD_VERSION = "0.7.4"
+BUILD_VERSION = "0.7.6"
 
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def verified_node_notices(node, directory):
+    version = subprocess.check_output(
+        [str(node.resolve()), "--version"], encoding="ascii", timeout=10,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    ).strip()
+    if not re.fullmatch(r"v\d+\.\d+\.\d+", version):
+        raise ValueError("Version de distribution Node stable requise")
+    license_file = directory / f"Node-{version}-LICENSE.txt"
+    shasums_file = directory / f"Node-{version}-SHASUMS256.txt"
+    if not license_file.is_file() or not license_file.stat().st_size or not shasums_file.is_file():
+        raise ValueError(f"Fournir les notices Node {version} de la distribution officielle dans {directory}")
+    expected = re.findall(
+        r"^([a-fA-F0-9]{64})[ \t]+\*?win-x64/node\.exe[ \t]*$",
+        shasums_file.read_text(encoding="ascii"),
+        flags=re.MULTILINE,
+    )
+    runtime_sha = digest(node)
+    if [value.lower() for value in expected] != [runtime_sha]:
+        raise ValueError(f"Empreinte Node {version} win-x64 absente, ambiguë ou différente du runtime fourni")
+    return (license_file, shasums_file), runtime_sha
+
+
+def copy_build_licenses(sdk_licenses, destination, node_notices):
+    shutil.copytree(
+        sdk_licenses, destination,
+        ignore=shutil.ignore_patterns("Node-v*-LICENSE.txt", "Node-v*-SHASUMS256.txt"),
+    )
+    for notice in node_notices:
+        shutil.copy2(notice, destination / notice.name)
 
 
 def validate_voice_assets(project):
@@ -99,6 +130,9 @@ def build(args):
     editor = sdk / "editor/4.7.2-stable/Godot_v4.7.2-stable_win64_console.exe"
     template = sdk / "templates/4.7.2-stable/windows_release_x86_64.exe"
     assert editor.is_file() and template.is_file(), "SDK Windows4.7.2 requis"
+    sdk_licenses = sdk / "licenses"
+    node_notices, node_sha = verified_node_notices(args.node, args.node_notices or sdk_licenses)
+    stage(args.node)
     target.mkdir(parents=True)
     work = target / "build"
     source = work / "project"
@@ -130,7 +164,10 @@ def build(args):
         if result.returncode or "ERROR:" in result.stdout or "SCRIPT ERROR" in result.stdout:
             raise RuntimeError(f"Godot {name} échoué ; consulter {work / (name + '.log')}")
     (app / "runtime").mkdir()
-    shutil.copy2(args.node, app / "runtime/node.exe")
+    runtime = app / "runtime/node.exe"
+    shutil.copy2(args.node, runtime)
+    if digest(runtime) != node_sha:
+        raise ValueError("Le runtime Node a changé depuis la vérification des notices")
     engine = app / "engine"
     shutil.copytree(ROOT / "native/engine", engine)
     # Only loaded core and anonymised common data; no real names/photos or web UI.
@@ -148,7 +185,7 @@ def build(args):
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(path, destination)
     licenses = app / "Licences"
-    shutil.copytree(sdk / "licenses", licenses)
+    copy_build_licenses(sdk_licenses, licenses, node_notices)
     shutil.copytree(PROJECT / "fonts", licenses / "fontes", ignore=shutil.ignore_patterns("*.import"))
     shutil.copy2(ROOT / "docs/club-atlas-credits.md", licenses / "photos.md")
     shutil.copy2(PROJECT / "guide/assets/NOTICE.md", licenses / "coach-original.md")
@@ -326,14 +363,16 @@ def build(args):
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--node", type=Path, default=Path(os.environ.get("CD_NODE_EXECUTABLE", r"C:\Program Files\nodejs\node.exe")))
+    p.add_argument("--node-notices", type=Path, help="Dossier LICENSE et SHASUMS256 de la version Node fournie (défaut : licences du SDK)")
     p.add_argument("--stage-only", action="store_true")
     p.add_argument("--sdk", type=Path)
     p.add_argument("--output", type=Path)
     options = p.parse_args()
     if not options.node.is_file():
         p.error("Runtime Node explicite introuvable")
-    stage(options.node)
-    if not options.stage_only:
+    if options.stage_only:
+        stage(options.node)
+    else:
         if not options.sdk or not options.output:
             p.error("--sdk et --output sont requis pour exporter")
         build(options)

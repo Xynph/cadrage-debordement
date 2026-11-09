@@ -122,17 +122,36 @@ static func _territory(app: Control) -> Control:
 	G.fill(photos, true)
 	page.add_child(photos)
 	for kind in ["city", "stadium"]:
-		var picture := G.picture(c.get("slug", "toulouse"), kind)
+		var slug: String = c.get("slug", "")
+		var photo: Dictionary = c.get("photos", {}).get(kind, {})
+		var picture := G.picture(slug, kind, true, str(photo.get("path", "")))
+		var archive_available: bool = picture.get_meta("has_photo", false)
+		if not archive_available:
+			var backing := ColorRect.new()
+			backing.color = Color(c.get("color", "#303c42")).darkened(.28)
+			backing.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			picture.add_child(backing)
+			picture.move_child(backing, 0)
 		G.fill(picture, true, 1.2 if kind == "city" else 1.0)
 		photos.add_child(picture)
 		var content: VBoxContainer = picture.get_meta("content")
 		content.add_child(G.label("LE TERRITOIRE" if kind == "city" else "LE STADE", 14, G.WHITE))
 		content.add_child(G.spacer())
-		var title := G.wrap(c.get("city", "") if kind == "city" else c.get("stadium", ""), 34, G.WHITE)
+		var supplied: Variant = c.get(kind)
+		var place := str(supplied).strip_edges() if supplied != null else ""
+		if place.is_empty(): place = "Ville à préciser" if kind == "city" else "Stade à préciser"
+		var title := G.wrap(place, 34, G.WHITE)
 		title.add_theme_font_override("font", G.T.DISPLAY)
 		title.add_theme_font_size_override("font_size", 24)
 		content.add_child(title)
-		content.add_child(G.wrap("Photographie réelle d'archive · crédits accessibles", 12, G.WHITE))
+		if picture.get_meta("photo_from_pack", false):
+			var credit := G.wrap("Photo · " + str(photo.get("credit", "")), 12, G.WHITE)
+			credit.name = "VenuePhotoCredit_" + kind
+			credit.mouse_filter = Control.MOUSE_FILTER_STOP
+			credit.tooltip_text = "Source : %s\nLicence : %s" % [photo.get("source", ""), photo.get("license", "")]
+			content.add_child(credit)
+		else:
+			content.add_child(G.wrap("Photo d’archive · crédits accessibles" if archive_available else "Aucune photo d’archive disponible", 12, G.WHITE))
 	var dossier := G.panel(page)
 	var row := G.h(20)
 	dossier.add_child(row)
@@ -142,7 +161,7 @@ static func _territory(app: Control) -> Control:
 	row.add_child(text)
 	text.add_child(G.wrap(c.get("name", "Votre club"), 28, G.INK))
 	text.add_child(G.wrap("Un territoire, une identité, une saison à écrire.", 16, G.accent_ink(app.accent)))
-	text.add_child(G.wrap("Retrouvez les archives du territoire et écrivez la suite de l’histoire du club.", 13))
+	text.add_child(G.wrap("Retrouvez les repères du territoire et l’histoire du club.", 13))
 	row.add_child(G.button("CRÉDITS & LICENCES", app._credits))
 	return page
 

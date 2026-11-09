@@ -526,13 +526,14 @@ static func _identity(parent: Node, app: Control) -> void:
 	for pair in [["city","LA VILLE","OfficeCityPreview"],["stadium","NOTRE STADE","OfficeStadiumPreview"]]:
 		var supplied: Variant=identity.get(pair[0])
 		var value := "—" if supplied==null or str(supplied).strip_edges().is_empty() else str(supplied)
-		var path := "res://assets/club-atlas/%s-%s.webp"%[slug,pair[0]]
-		var picture: Control
+		var kind: String = pair[0]
+		var photo: Dictionary = identity.get("photos", {}).get(kind, {})
+		var picture := G.picture(slug, kind, true, str(photo.get("path", "")))
 		var over: VBoxContainer
-		if ResourceLoader.exists(path):
-			picture=G.picture(slug,pair[0])
+		if picture.get_meta("has_photo", false):
 			over=picture.get_meta("content")
 		else:
+			picture.free()
 			var fallback := PanelContainer.new()
 			fallback.add_theme_stylebox_override("panel",G.T.box(CHARCOAL,2))
 			picture=fallback
@@ -540,7 +541,7 @@ static func _identity(parent: Node, app: Control) -> void:
 			fallback.add_child(over)
 		picture.name=pair[2]
 		picture.custom_minimum_size.y=110
-		picture.tooltip_text=value
+		picture.tooltip_text=value + (" · " + str(photo.get("credit", "")) if picture.get_meta("photo_from_pack", false) else "")
 		G.fill(picture)
 		row.add_child(picture)
 		over.add_child(G.spacer())
