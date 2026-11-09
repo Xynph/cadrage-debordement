@@ -59,6 +59,9 @@ static func page(app: Control) -> Control:
 	var importing := G.button("IMPORTER UN PACK ZIP", app.pack_manager.choose_file, true)
 	importing.disabled = app.waiting
 	commands.add_child(importing)
+	var calendar := G.button("ATELIER CALENDRIER", func(): preload("res://ui/competition_editor_view.gd").open(app))
+	calendar.disabled = app.waiting
+	commands.add_child(calendar)
 	var packs: Dictionary = app.model.get("packs", {})
 	var selected: String = app.pack_manager.selected_id()
 	content.add_child(G.wrap("Choix enregistré pour vos prochaines créations dans cette édition." if creation else "Cette sélection s’applique à la carrière ouverte et sera conservée dans ses sauvegardes.", 12))
