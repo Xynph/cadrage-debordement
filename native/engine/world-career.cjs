@@ -1,11 +1,11 @@
 'use strict';
 // Factory executed in the same VM as the rugby engine. Presentation packs never
 // alter its identities, membership, ratings, calendar or results.
-module.exports=function worldCareer(){
- const C=CDWorldCompetitions,REG=CDWorldRegistry,SOURCES=new Map(CDWorldRegistry.clubs.flatMap(c=>c.players.map(p=>[p.id,p]))),IDS=['elite','accession','prem','urc'],WEEKS=46;
+module.exports=function worldCareer(edition,active){
+ const C=CDWorldCompetitions,REG=edition.registry,SOURCES=new Map(REG.clubs.flatMap(c=>c.players.map(p=>[p.id,p]))),IDS=edition.leagueIds,WEEKS=46;
+ const EUROPE_LEAGUES=['elite','prem','urc'],playable=new Set(edition.playable);
  const copy=x=>JSON.parse(JSON.stringify(x)),eq=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
  const check=(yes,message)=>{if(!yes)throw Error('Monde international : '+message);};
- const active=s=>s?.worldMode?.version===1&&s.worldMode.catalogue===REG.id&&s.commonDatabase?.id===REG.id&&s.commonDatabase.version===REG.version&&Object.keys(s.commonDatabase).length===2&&s.franceMode===undefined&&s.lnrMode===undefined;
  const leagueId=(s,id=s.club)=>IDS.find(k=>s.worldMode.leagues[k].members.includes(id))||'guest';
  const sizing=()=>({clubCount:REG.clubs.length,maxRound:WEEKS,rounds:WEEKS});
  const seasonStart=s=>{const t=Date.UTC(2026+s.season-1,7,31),d=new Date(t).getUTCDay();return t-((d+6)%7)*86400000;};
@@ -17,7 +17,7 @@ module.exports=function worldCareer(){
  const userFixture=s=>fixtures(s).find(f=>f.homeId===s.club||f.awayId===s.club)||null;
  const previousRanksFor=(standings,partition)=>Object.fromEntries(IDS.flatMap(id=>standings[id].map((cid,i)=>[cid,i+1]).filter(([cid])=>partition[id].includes(cid))));
  const asResult=r=>({...r,season:2026+r.season-1,round:r.competitionRound??r.round,afterExtraTime:r.decision?.extraTime===true,penalties:r.stats?.map(x=>x.goals),drops:r.stats?.map(x=>x.drops||0),redCards:r.decision?.redCards});
- function rows(s,id,season=s.season){if(id==='guest')return [56,57].map(clubId=>({clubId,points:0,played:0,won:0,drawn:0,lost:0,pf:0,pa:0,bonus:0,form:[]}));const ids=s.worldMode.leagues[id]?.members;if(!ids)return[];return C.table(ids,s.history.map(asResult),id,{season:2026+season-1,phase:'league',tieBreaks:{previousRank:s.worldMode.previousRanks||{},drawOrder:s.worldMode.draws?.['league:'+id]?.ranks}}).map(r=>({...r,form:r.form.map(x=>({W:'V',L:'D',D:'N'})[x])}));}
+ function rows(s,id,season=s.season){if(id==='guest')return edition.guests.map(clubId=>({clubId,points:0,played:0,won:0,drawn:0,lost:0,pf:0,pa:0,bonus:0,form:[]}));const ids=s.worldMode.leagues[id]?.members;if(!ids)return[];return C.table(ids,s.history.map(asResult),id,{season:2026+season-1,phase:'league',tieBreaks:{previousRank:s.worldMode.previousRanks||{},drawOrder:s.worldMode.draws?.['league:'+id]?.ranks}}).map(r=>({...r,form:r.form.map(x=>({W:'V',L:'D',D:'N'})[x])}));}
  const worldRanked=(s,id=leagueId(s))=>rows(s,id).map(r=>({...s.clubs[r.clubId],...r,id:r.clubId}));
  function worldLabel(s){if(s.phase==='ended')return'Saison terminée';const f=userFixture(s);return f?`${REG.leagues.find(l=>l.id===f.competitionId)?.name||({champions:'Coupe des champions',challenge:'Challenge européen',access:'Barrage d’accession'})[f.competitionId]||f.competitionId} · ${f.phase==='league'||f.phase==='pool'?'Journée '+(f.round+1):({barrage:'Barrages',quarter:'Quarts de finale',semi:'Demi-finales',final:'Finale',r16:'Huitièmes de finale',access:'Barrage d’accession'})[f.phase]||f.phase}`:'Semaine '+(s.round+1)+' · Préparation';}
  function installFixture(s,f){
@@ -38,7 +38,7 @@ module.exports=function worldCareer(){
   const previousTables=initial?{}:Object.fromEntries(IDS.map(id=>[id,rows(s,id,s.season-1)]));
   const yearbook=initial?[]:previous.yearbook.concat({season:s.season-1,standings:Object.fromEntries(IDS.map(id=>[id,previousTables[id].map(c=>c.clubId)])),champions:Object.fromEntries(IDS.map(id=>[id,previous.leagues[id].champion])),finalists:Object.fromEntries(IDS.map(id=>[id,previous.leagues[id].finalist])),movement:copy(previous.movement),europe:copy(previous.europe||{}),draws:copy(previous.draws)}).slice(-15);
   const annual=initial?null:annualEurope(s,previous,partition,previousTables);
-  s.worldMode={version:1,catalogue:REG.id,rules:'world-pro-2026-27-v1',startYear:2026,week:0,leagues:Object.fromEntries(IDS.map(id=>[id,{members:partition[id],phase:'league',champion:null,finalist:null}])),fixtures:[],yearbook,movement:null,europe:{},draws:{},previousRanks:initial?{}:previousRanksFor(yearbook.at(-1).standings,partition),qualification:annual?.qualification||null};
+  s.worldMode={version:edition.version,catalogue:REG.id,rules:edition.rules,startYear:2026,week:0,leagues:Object.fromEntries(IDS.map(id=>[id,{members:partition[id],phase:'league',champion:null,finalist:null}])),fixtures:[],yearbook,movement:null,europe:{},draws:{},previousRanks:initial?{}:previousRanksFor(yearbook.at(-1).standings,partition),qualification:annual?.qualification||null};
   const pools=initial?REG.initialEurope:annual.pools;
   for(const id of ['champions','challenge'])s.worldMode.europe[id]={pools:copy(pools[id]),phase:'pool',champion:null,finalist:null};
   for(const f of baseFixtures(s,partition,pools))installFixture(s,f);
@@ -67,7 +67,7 @@ module.exports=function worldCareer(){
   qualification.organiserRulings=qualification.unresolved.map(x=>({...x,policy:'closed-world-quota-and-invitations-maintained'}));
   qualification.invitationPolicy='closed-world-annual-organiser-decision';
   const pools={},orders={};
-  for(const competitionId of ['champions','challenge']){const participants=qualification[competitionId],order=storedOrders?storedOrders[competitionId]:shuffled(participants);check(Array.isArray(order),'ordre de tirage annuel absent.');orders[competitionId]=order;const protectedIds=competitionId==='champions'?[...new Set([...IDS.filter(id=>id!=='accession').map(id=>previous.leagues[id].champion),previous.europe.champions.champion])].filter(id=>participants.includes(id)):[];if(competitionId==='champions'&&protectedIds.length<4&&participants.includes(previous.europe.champions.finalist)&&!protectedIds.includes(previous.europe.champions.finalist))protectedIds.push(previous.europe.champions.finalist);pools[competitionId]=C.drawPools({clubs,competitionId,participants,protectedIds,order});}
+  for(const competitionId of ['champions','challenge']){const participants=qualification[competitionId],order=storedOrders?storedOrders[competitionId]:shuffled(participants);check(Array.isArray(order),'ordre de tirage annuel absent.');orders[competitionId]=order;const protectedIds=competitionId==='champions'?[...new Set([...EUROPE_LEAGUES.map(id=>previous.leagues[id].champion),previous.europe.champions.champion])].filter(id=>participants.includes(id)):[];if(competitionId==='champions'&&protectedIds.length<4&&participants.includes(previous.europe.champions.finalist)&&!protectedIds.includes(previous.europe.champions.finalist))protectedIds.push(previous.europe.champions.finalist);pools[competitionId]=C.drawPools({clubs,competitionId,participants,protectedIds,order});}
   qualification.drawOrders=orders;return{qualification,pools};
  }
  function cupTables(s,id){const cup=s.worldMode.europe[id];return cup.pools.map((ids,poolId)=>C.table(ids,s.history.map(asResult),id,{season:2026+s.season-1,phase:'pool',poolId,tieBreaks:{drawOrder:s.worldMode.draws['pool:'+id]?.ranks}}));}
@@ -103,7 +103,7 @@ module.exports=function worldCareer(){
   if(REG.worldProfiles[p.id])p.worldProfile=copy(REG.worldProfiles[p.id]);return p;
  }
  function start(id){
-  check(Number.isInteger(id)&&id>=0&&id<56,'club jouable invalide.');
+  check(playable.has(id),'club jouable invalide.');
   S={version:2,commonDatabase:copy(REG.marker),rosterFoundation:copy(CDRosterFoundation.marker),club:id,season:1,round:0,
    clubs:REG.clubs.map(c=>({id:c.id,name:c.name,abbr:c.abbr,color:c.color,base:c.base,cash:c.cashMillions*1e6,goal:c.goal||'Développer le projet sportif',stadium:c.stadium,points:0,played:0,won:0,drawn:0,lost:0,pf:0,pa:0,bonus:0,form:[],players:c.players.map(sourcePlayer)})),
    schedule:[],lineup:[],reserves:[],tactic:'equilibre',training:'normal',physicalLoadVersion:1,collectivePrepVersion:1,collectiveFocus:'aucune',developmentFocusVersion:1,recruitmentIntelVersion:1,salaryDemandVersion:1,satisfactionVersion:1,relationsVersion:1,objectivesVersion:1,v39Version:1,integratedManagementVersion:1,worldVersion:1,morale:75,trust:70,history:[],news:['Le vestiaire vous attend. À vous de donner le cap pour cette nouvelle saison.'],market:[],marketWeek:-1,phase:'league',playoff:null,live:null,lastReport:null,ledger:[],trained:false};
@@ -138,21 +138,21 @@ module.exports=function worldCareer(){
  function validate(s){
   check(active(s),'édition de base inconnue.');const w=s.worldMode,V=CDWorldValidation;
   check(V.keys(w,['version','catalogue','rules','startYear','week','leagues','fixtures','yearbook','movement','europe','draws','previousRanks','qualification',...(w.access===undefined?[]:['access'])]),'métadonnées de compétition non reconnues.');
-  check(w.rules==='world-pro-2026-27-v1'&&w.startYear===2026,'profil de règles inconnu.');
+  check(w.rules===edition.rules&&w.startYear===2026,'profil de règles inconnu.');
   check(saveInt(s.season,1,175)&&saveInt(s.club,0,55)&&s.playoff===null&&rosterFoundationActive(s),'saison, club ou fondation de base invalide.');
   check(Number.isInteger(w.week)&&w.week>=0&&w.week<=WEEKS&&s.round===w.week&&s.phase===(w.week===WEEKS?'ended':'league'),'horloge incohérente.');
   check(Array.isArray(s.clubs)&&s.clubs.length===REG.clubs.length,'catalogue incomplet.');
   check(V.keys(w.leagues,IDS)&&V.keys(w.europe,['champions','challenge']),'compétitions incomplètes.');
-  const members=IDS.flatMap(id=>{const l=w.leagues?.[id];check(l&&Array.isArray(l.members)&&l.members.length===({elite:14,accession:16,prem:10,urc:16})[id],'division incomplète.');return l.members;});
-  check(members.length===56&&new Set(members).size===56&&members.every(id=>Number.isInteger(id)&&id>=0&&id<56),'appartenance de division invalide.');
+  const members=IDS.flatMap(id=>{const l=w.leagues?.[id];check(l&&Array.isArray(l.members)&&l.members.length===edition.members[id],'division incomplète.');return l.members;});
+  check(members.length===playable.size&&new Set(members).size===playable.size&&members.every(id=>playable.has(id)),'appartenance de division invalide.');
   const partition=Object.fromEntries(IDS.map(id=>[id,w.leagues[id].members])),initialPartition=Object.fromEntries(IDS.map(id=>[id,REG.clubs.filter(c=>c.leagueId===id).map(c=>c.id)]));
-  for(const id of ['prem','urc'])check(eq(partition[id],initialPartition[id]),'changement de championnat non autorisé.');
+  for(const id of IDS.filter(k=>k!=='elite'&&k!=='accession'))check(eq(partition[id],initialPartition[id]),'changement de championnat non autorisé.');
   check(saveArray(w.yearbook,15)&&w.yearbook.length===Math.min(15,s.season-1),'palmarès incomplet.');
   let prior=null;
   for(const [i,y]of w.yearbook.entries()){
    check(V.keys(y,['season','standings','champions','finalists','movement','europe','draws'])&&y.season===s.season-w.yearbook.length+i&&V.keys(y.standings,IDS)&&V.keys(y.champions,IDS)&&V.keys(y.finalists,IDS),'archive de saison invalide.');
-   const all=IDS.flatMap(id=>y.standings[id]);check(all.length===56&&new Set(all).size===56&&all.every(id=>saveInt(id,0,55)),'classements archivés incomplets.');
-   for(const id of IDS){const st=y.standings[id],expected=prior?.movement[id]||initialPartition[id];check(Array.isArray(st)&&st.length===initialPartition[id].length&&st.includes(y.champions[id])&&st.includes(y.finalists[id])&&y.champions[id]!==y.finalists[id],'finalistes archivés invalides.');if(prior||y.season===1||['prem','urc'].includes(id))check(st.every(cid=>expected.includes(cid)),'appartenance archivée discontinue.');}
+   const all=IDS.flatMap(id=>y.standings[id]);check(all.length===playable.size&&new Set(all).size===playable.size&&all.every(id=>playable.has(id)),'classements archivés incomplets.');
+   for(const id of IDS){const st=y.standings[id],expected=prior?.movement[id]||initialPartition[id];check(Array.isArray(st)&&st.length===initialPartition[id].length&&st.includes(y.champions[id])&&st.includes(y.finalists[id])&&y.champions[id]!==y.finalists[id],'finalistes archivés invalides.');if(prior||y.season===1||id!=='elite'&&id!=='accession')check(st.every(cid=>expected.includes(cid)),'appartenance archivée discontinue.');}
    const m=y.movement;check(V.keys(m,['promoted','relegated','elite','accession'])&&saveArray(m.promoted,2)&&[1,2].includes(m.promoted.length)&&m.relegated?.length===m.promoted.length&&m.promoted[0]===y.champions.accession&&m.relegated[0]===y.standings.elite.at(-1),'mouvements archivés invalides.');
    if(m.promoted.length===2)check(m.promoted[1]===y.finalists.accession&&m.relegated[1]===y.standings.elite[12],'barrage archivé invalide.');
    for(const id of ['elite','accession']){const out=id==='elite'?m.relegated:m.promoted,up=id==='elite'?m.promoted:m.relegated,expected=y.standings[id].filter(cid=>!out.includes(cid)).concat(up);check(Array.isArray(m[id])&&m[id].length===expected.length&&new Set(m[id]).size===expected.length&&m[id].every(cid=>expected.includes(cid)),'partition archivée invalide.');}
@@ -167,7 +167,7 @@ module.exports=function worldCareer(){
    }));
    check(new Set([...pastPools.champions,...pastPools.challenge]).size===42,'club dans deux phases de poules archivées.');
    for(const id of IDS){const d=y.draws['league:'+id];check(d&&Array.isArray(d.clubIds)&&d.clubIds.length===y.standings[id].length&&new Set(d.clubIds).size===d.clubIds.length&&d.clubIds.every(cid=>y.standings[id].includes(cid)),'tirage de championnat archivé invalide.');V.draw(d,d.clubIds);}
-   check(Object.keys(y.draws).length===6,'tirages archivés non reconnus.');
+   check(Object.keys(y.draws).length===IDS.length+2,'tirages archivés non reconnus.');
    prior=y;
   }
   for(const id of ['elite','accession'])check(eq(partition[id],prior?prior.movement[id]:initialPartition[id]),'partition française sans provenance.');
@@ -179,7 +179,7 @@ module.exports=function worldCareer(){
   for(const [k,d]of Object.entries(w.draws)){const [kind,id]=k.split(':'),list=kind==='league'?partition[id]:kind==='pool'?pools[id]?.flat():null;check(k===kind+':'+id&&Array.isArray(list),'tirage inconnu.');V.draw(d,list);}
   check(Array.isArray(w.fixtures)&&w.fixtures.length<=1200,'calendrier invalide.');
   const seen=new Set(),played=new Set(),occupied=new Set();
-  for(const f of w.fixtures){check(typeof f.id==='string'&&!seen.has(f.id)&&f.fixtureId===f.id&&f.season===s.season,'identifiant de rencontre invalide.');seen.add(f.id);check(Number.isInteger(f.week)&&f.week>=0&&f.week<WEEKS&&weekOf(s,f.date)===f.week,'date de rencontre invalide.');check([f.homeId,f.awayId].every(id=>Number.isInteger(id)&&id>=0&&id<58)&&f.homeId!==f.awayId,'équipes invalides.');for(const id of[f.homeId,f.awayId]){const key=f.week+':'+id;check(!occupied.has(key),'deux rencontres dans une semaine.');occupied.add(key);}}
+  for(const f of w.fixtures){check(typeof f.id==='string'&&!seen.has(f.id)&&f.fixtureId===f.id&&f.season===s.season,'identifiant de rencontre invalide.');seen.add(f.id);check(Number.isInteger(f.week)&&f.week>=0&&f.week<WEEKS&&weekOf(s,f.date)===f.week,'date de rencontre invalide.');check([f.homeId,f.awayId].every(id=>Number.isInteger(id)&&id>=0&&id<REG.clubCount)&&f.homeId!==f.awayId,'équipes invalides.');for(const id of[f.homeId,f.awayId]){const key=f.week+':'+id;check(!occupied.has(key),'deux rencontres dans une semaine.');occupied.add(key);}}
   const byFixture=new Map(w.fixtures.map(f=>[f.id,f]));
   for(const r of s.history){const f=byFixture.get(r.fixtureId);check(f&&!played.has(r.fixtureId),'résultat sans rencontre unique.');played.add(r.fixtureId);check(f.week<s.round&&eq(r.pair,[f.homeId,f.awayId])&&r.season===s.season&&r.competitionId===f.competitionId&&r.leagueId===f.competitionId&&r.phase===f.phase&&r.competitionRound===f.round&&r.round===f.week&&r.week===f.week&&r.date===f.date&&r.poolId===(f.poolId??null)&&r.neutral===f.neutral,'résultat incompatible avec le calendrier.');V.result(r,f);}
   check(w.fixtures.filter(f=>f.week<s.round).every(f=>played.has(f.id)),'rencontres passées manquantes.');
@@ -222,5 +222,5 @@ module.exports=function worldCareer(){
   createRugbyMatch=function(pair,legacy=null,automated=false,preparation=null){const l=oldCreate(pair,legacy,automated,preparation);if(active(S))l.worldContext=context(pair);return l;};
  }
  // Aliases prevent named inner functions shadowing the globals they replace.
- return Object.freeze({active,sizing,sourcePlayerKnown:id=>SOURCES.has(id),leagueId,ranked:worldRanked,rows,cupTables,fixtures,userFixture,label:worldLabel,context,start,finishWeek,advance,validate,installFixture,sync,newSeason,planStages,installHooks});
+ return Object.freeze({active,sizing,sourcePlayerKnown:id=>SOURCES.has(id),sourcePlayer:id=>SOURCES.get(id)||null,leagueId,ranked:worldRanked,rows,cupTables,fixtures,userFixture,label:worldLabel,context,start,finishWeek,advance,validate,installFixture,sync,newSeason,planStages,installHooks});
 };
