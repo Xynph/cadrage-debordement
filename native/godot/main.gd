@@ -287,7 +287,7 @@ func _failed(message: String) -> void:
 	var epcr_dialog := get_node_or_null("EpcrPreparationDialog") if last_command == "epcr_preview" else null
 	# A consultation refusal belongs to its report, never to the career decision
 	# status. Preserve an existing business error and the unsaved list.
-	if epcr_dialog != null and not connection_error:
+	if last_command == "epcr_preview" and not connection_error:
 		if is_instance_valid(status):
 			status.text = _settled_status_text()
 			status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)

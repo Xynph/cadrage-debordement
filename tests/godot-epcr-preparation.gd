@@ -83,7 +83,31 @@ func run() -> void:
 	await press(verify);await wait_preview(dialog)
 	check(app.last_error==previous_error,"Un succès de consultation n’efface pas l’erreur métier antérieure")
 	check(app.decision_feedback.receipts()==receipts_before,"Les consultations ne créent aucun reçu de décision métier")
+	# Close synchronously after submission, before any deferred worker response.
+	# The refusal must remain a dismissed consultation, not a career decision.
+	dialog.choices[0].set_meta("player_id","foreign-closed-draft")
+	dialog.selected.erase(original_id);dialog.selected["foreign-closed-draft"] = true
+	var previous_status: String = app._settled_status_text()
+	dialog._verify()
+	check(app.waiting and dialog.pending,"Requête réelle en attente avant fermeture volontaire")
+	dialog.hide();dialog.queue_free()
+	var closed_deadline := Time.get_ticks_msec()+20000
+	while app.waiting and Time.get_ticks_msec()<closed_deadline: await process_frame
+	await settle()
+	check(not app.waiting and not app.bridge.last_response_ok and not is_instance_valid(dialog),"Le vrai refus arrive après destruction volontaire du brouillon")
+	check(app.last_error==previous_error and app._settled_status_text()==previous_status and not app.connection_error,"Le refus d’un brouillon fermé ne crée aucune erreur globale ou métier")
+	check(app.decision_feedback.receipts()==receipts_before,"Le refus après fermeture ne crée aucun reçu métier")
+	check(FileAccess.get_file_as_bytes(career_file)==disk,"La fermeture en attente et son refus conservent le profil exact")
+	var unexpected_dialogs := 0
+	for child in app.get_children():
+		if child is AcceptDialog and child.visible: unexpected_dialogs += 1
+	check(unexpected_dialogs==0,"Aucune fenêtre d’erreur de décision n’est ouverte pour le brouillon fermé")
 	app.last_error=original_error
+	await press(app.root_content.find_child("OpenEpcrPreparation",true,false))
+	dialog=app.get_node_or_null("EpcrPreparationDialog")
+	verify=dialog.find_child("EpcrVerify",true,false)
+	count=dialog.find_child("EpcrPreparationCount",true,false)
+	check(dialog.selected.size()==dialog.choices.size(),"La nouvelle ouverture repart d’un brouillon propre après le refus fermé")
 	await press(dialog.choices[0])
 	check(dialog.selected.size()==dialog.choices.size()-1 and count.text.begins_with(str(dialog.selected.size())),"Le clavier retire réellement un joueur et actualise le compteur")
 	check(dialog.result.text.contains("relancez"),"Un brouillon modifié invalide le rapport précédent")

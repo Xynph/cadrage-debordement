@@ -31,3 +31,7 @@ Un refus réel de `epcr_preview` conserve le dialogue et les choix ; sa raison r
 La fermeture réelle du moteur est distincte d’un refus de liste. Dans ce cas, le dialogue conserve également le brouillon, et la panne demeure signalée dans le statut global. Aucune consultation ne crée de reçu de décision métier. Les tests utilisent un identifiant étranger envoyé au vrai worker puis une coupe non participante, vérifient la préservation des choix et le réessai, enfin arrêtent réellement le processus avant de tenter une nouvelle vérification. Les exports et les octets du profil restent inchangés.
 
 Réception renforcée après correction du refus consultatif : **110 contrôles réussis, zéro échec**, Node 22.23.4 et Godot 4.7.2 Linux sans fenêtre. Le témoin rouge initial reproduisait la destruction du brouillon par le gestionnaire d’erreur global ; le scénario conserve maintenant la même instance, ses choix et un éventuel message métier antérieur.
+
+La même séparation s’applique si le manager ferme volontairement le brouillon pendant la requête : un refus ultérieur ne rouvre pas une fenêtre d’erreur de décision, ne modifie pas le statut métier précédent et ne crée pas de reçu. Les pannes de connexion restent globales, même lorsque le brouillon a été fermé.
+
+Réception finale avec fermeture pendant une requête réellement refusée : **121 contrôles réussis, zéro échec**, Node 22.23.4 et Godot 4.7.2 Linux. Aucune attente de réponse n’est simulée : la fermeture est exécutée immédiatement après l’envoi au worker, avant de rendre la main à la boucle d’événements.
