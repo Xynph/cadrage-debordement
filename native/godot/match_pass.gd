@@ -5,7 +5,8 @@ const Presentation = preload("res://match_presentation.gd")
 const RELEASE := 0.28
 const CATCH := 0.76
 const MIN_SPAN := 0.60
-const LIVE_SECONDS := 0.30
+const LIVE_SECONDS := 0.52
+const FAST_LIVE_SECONDS := 0.30
 const PREP_SECONDS := 0.10
 
 

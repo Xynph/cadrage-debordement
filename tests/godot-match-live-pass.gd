@@ -91,26 +91,41 @@ func run() -> void:
 		and receiver.node.position.distance_to(previous_receiver) > 0.001
 		and receiver.node.position.distance_to(receipt) > 0.001
 		and view._ball.global_position.distance_to(previous_ball) > 0.001, "Les joueurs et le ballon convergent sur les premières images.")
-	advance(view, 0.09)
+	advance(view, 0.14)
 	check(hand_gap(sender, view._ball.global_position) < 0.39, "Avant le lâcher, le ballon est près des mains du passeur.")
 	await capture(view, scene, "avant")
-	advance(view, 0.07)
+	advance(view, 0.14)
 	var airborne := view._ball.global_position
 	check(airborne.y > 0.9 and airborne.distance_to(anchor(sender)) > 0.65
 		and airborne.distance_to(anchor(receiver)) > 0.65, "Le ballon traverse l’espace entre les deux squelettes.")
+	check(not view.get("_pass_plan").is_empty() and not view._ball_attached,
+		"En cadence normale, le premier tick de 0,32 s tombe pendant le vol.")
 	await capture(view, scene, "vol")
 	var elapsed: float = view.get("_pass_elapsed")
 	view.apply_frame({"scene": scene})
 	check(is_equal_approx(float(view.get("_pass_elapsed")), elapsed), "La même action n’est pas rejouée après actualisation.")
-	advance(view, 0.08)
-	check(hand_gap(receiver, view._ball.global_position) < 0.39, "La réception a lieu avant la prochaine commande du direct.")
+	view.set_live_cadence(4)
+	advance(view, 0.13)
+	check(not view.get("_pass_plan").is_empty() and hand_gap(receiver, view._ball.global_position) < 0.39,
+		"Le receveur garde la prise à l’écran, même si la cadence change pendant la passe.")
 	await capture(view, scene, "prise")
-	advance(view, 0.025)
+	advance(view, 0.08)
 	check(view._ball_attached and view._ball.global_position.distance_to(anchor(receiver)) < 0.45,
 		"Le porteur reprend la tenue normale après la passe.")
 	advance(view, 0.6)
 	var final_position := Vector3(float(scene.ball.x) - 50.0, 0.0, float(scene.ball.y) - 35.0)
 	check(receiver.node.position.is_equal_approx(final_position), "Le porteur termine au point canonique du moteur.")
+
+	# La cadence accélérée conserve le transfert court et la même destination.
+	var fast_scene := scene.duplicate(true)
+	fast_scene.key = "passe-cadence-acceleree"
+	view.apply_frame({"scene": fast_scene})
+	advance(view, 0.25)
+	check(not view.get("_pass_plan").is_empty() and not view._ball_attached, "La passe accélérée reste visible avant 0,30 s.")
+	view.set_live_cadence(1)
+	advance(view, 0.06)
+	check(view.get("_pass_plan").is_empty() and view._ball_attached,
+		"Une passe accélérée finit après 0,30 s malgré un retour à la cadence normale.")
 
 	# Un nouveau modèle qui passe en pause se fige sur la situation canonique.
 	var next_scene := scene.duplicate(true)
