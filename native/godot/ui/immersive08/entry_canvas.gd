@@ -57,6 +57,7 @@ static func home(app: Control) -> Control:
 	var france: Array = meta.get("legacyCatalogue", app.catalogue)
 	var world: Array = meta.get("worldCatalogue", [])
 	var pacific: Array = meta.get("pacificCatalogue", [])
+	var japan: Array = meta.get("japanCatalogue", [])
 	var next_chip := 112
 	if not france.is_empty():
 		var count := france.filter(func(item: Dictionary): return item.get("playable", true)).size()
@@ -69,6 +70,10 @@ static func home(app: Control) -> Control:
 	if not pacific.is_empty():
 		var count := pacific.filter(func(item: Dictionary): return item.get("playable", true)).size()
 		D.chip(content,Rect2(next_chip,895,249,52),"Pacifique · %d clubs" % count,C.MINT).name="EntryPacificCount"
+		next_chip+=263
+	if not japan.is_empty():
+		var count := japan.filter(func(item: Dictionary): return item.get("playable", true)).size()
+		D.chip(content,Rect2(next_chip,895,249,52),"Japon · %d clubs" % count,C.GOLD).name="EntryJapanCount"
 		next_chip+=263
 	if int(database.get("playerCount",0))>0:
 		D.chip(content,Rect2(next_chip,895,305,52),G.n(database.playerCount)+" joueurs · base active",C.MINT)
@@ -162,9 +167,11 @@ static func workspace(app: Control, page: Control, creation: bool) -> Control:
 	banner.custom_minimum_size.y = C.px(height)
 	column.add_child(banner)
 	D.rect(banner,Rect2(0,0,2560,height),C.PANEL)
-	var pacific: bool = app.pack_manager.mode("creation" if creation else "") == "world-pacific"
-	var art := "pacific-ground" if pacific else "entry-ground" if creation else "club-forest"
-	D.photo(banner,art,Rect2(1250,0,1310,height),.47 if pacific else 0.0)
+	var mode: String = app.pack_manager.mode("creation" if creation else "")
+	var art := "entry-ground" if creation else "club-forest"
+	if mode == "world-pacific": art = "pacific-ground"
+	if mode == "world-japan": art = "japan-ground"
+	D.photo(banner,art,Rect2(1250,0,1310,height),.47 if mode in ["world-pacific","world-japan"] else 0.0)
 	var fade := Control.new()
 	banner.add_child(fade)
 	D.place(fade,Rect2(0,0,1870,height))
@@ -182,11 +189,21 @@ static func workspace(app: Control, page: Control, creation: bool) -> Control:
 	column.add_child(inset)
 	inset.add_child(page)
 	Legacy.apply(page,GREEN if not app.model.get("club") is Dictionary else app.accent)
-	if creation: _fit_pagination(page)
+	if creation:
+		_fit_pagination(page)
+		if compact and app.pack_manager.mode("creation") == "world-japan":
+			_fit_japan_clubs(page)
 	if size.x >= 2240 and size.y >= 1250:
 		if creation: _career_context(app, page)
 		else: _pack_guide(app, page)
 	return column
+
+static func _fit_japan_clubs(page: Control) -> void:
+	var choices := page.find_child("CreationClubsScroll", true, false)
+	if choices == null: return
+	var grids := choices.find_children("*", "GridContainer", true, false)
+	if not grids.is_empty() and grids[0].get_child_count() > 8:
+		grids[0].columns = 3
 
 static func _fit_pagination(page: Control) -> void:
 	var pagination := page.find_child("CreationPagination", true, false)
@@ -204,7 +221,7 @@ static func _career_context(app: Control, page: Control) -> void:
 	if choices == null: return
 	var meta: Dictionary = app.model.get("meta", {})
 	var mode: String = app.pack_manager.mode("creation")
-	var catalogue_key: String = {"world": "worldCatalogue", "world-pacific": "pacificCatalogue"}.get(mode, "legacyCatalogue")
+	var catalogue_key: String = {"world": "worldCatalogue", "world-pacific": "pacificCatalogue", "world-japan": "japanCatalogue"}.get(mode, "legacyCatalogue")
 	var catalogue: Array = meta.get(catalogue_key, app.catalogue)
 	var selected := {}
 	for club: Dictionary in catalogue:

@@ -135,8 +135,10 @@ func _run() -> void:
 		quit(1)
 		return
 	app.timer.stop()
-	await press(button("NOUVELLE CARRIÈRE"))
-	check(app.route == "Création" and app.pack_manager.mode("creation") == "world", "Monde proposé par défaut")
+	await press(named("EntryNewCareer"))
+	check(app.route == "Création" and named("CreationMode_world") != null, "Édition Monde disponible depuis l’accueil")
+	await press(named("CreationMode_world"))
+	check(app.pack_manager.mode("creation") == "world", "Le sélecteur ouvre le catalogue de l’édition Monde")
 	await enumerate_clubs()
 	await press(named("CreationDivision_prem"))
 	await press(button("PACKS ET IDENTITÉS"))

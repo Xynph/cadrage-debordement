@@ -5,6 +5,7 @@ const Immersive = preload("res://ui/immersive08/shell.gd")
 const ImmersiveEntry = preload("res://ui/immersive08/entry_canvas.gd")
 const ImmersiveDialogs = preload("res://ui/immersive08/dialogs.gd")
 const ImmersiveStyle = preload("res://ui/immersive08/legacy_style.gd")
+const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const Entry = preload("res://ui/entry_screens.gd")
 const ClubViews = preload("res://ui/club_views.gd")
 const SquadViews = preload("res://ui/squad_views.gd")
@@ -661,7 +662,7 @@ func primary_text() -> String:
 	var live := _live()
 	if not live.is_empty(): return "VALIDER LE RÉSULTAT  →" if live.get("finished",false) else "RETOUR AU DIRECT  →"
 	if model.get("meta",{}).get("canAdvanceSeason",false): return "SAISON SUIVANTE  →"
-	if not model.get("meta",{}).get("pacificPreparation",{}).is_empty(): return "AVANCER LA PRÉPARATION  →"
+	if not SeasonPreparation.data(model.get("meta",{})).is_empty(): return "AVANCER LA PRÉPARATION  →"
 	return "PRÉPARER LE MATCH  →" if model.get("next") != null else "AVANCER LA SEMAINE  →"
 
 func primary_action() -> void:
@@ -669,7 +670,7 @@ func primary_action() -> void:
 		if _live().get("finished",false): _command("finish_round")
 		else: _navigate("Match")
 	elif model.meta.get("canAdvanceSeason",false): confirm("Une nouvelle saison", "Les contrats arrivés à échéance sont réglés et les mouvements de division sont appliqués. Commencer la saison suivante ?", func(): _command("next_season",{"confirmed":true}))
-	elif not model.meta.get("pacificPreparation",{}).is_empty(): _command("advance_pacific_preparation",{"fromWeek":int(model.meta.get("week",0))})
+	elif not SeasonPreparation.data(model.meta).is_empty(): _command(SeasonPreparation.command(model.meta),{"fromWeek":int(model.meta.get("week",0))})
 	elif model.get("next") == null: _command("finish_round")
 	else: _navigate("Préparation")
 

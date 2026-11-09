@@ -4,6 +4,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
 const S = preload("res://ui/data_semantics.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
+const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 
 static func _card(parent: Node, id: String, title: String, height: int, ratio: float = 1.0) -> PanelContainer:
 	var frame := C.card(title, Vector2(0, height))
@@ -50,8 +51,9 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	frame.add_child(backdrop)
 	frame.move_child(backdrop, 0)
-	var pacific: bool = app.model.meta.get("leagueId")=="srp"
-	var image := C.photo("pacific-ground" if pacific else "office-hero",Vector2.ZERO,true,.53 if pacific else 0.0)
+	var japan := SeasonPreparation.is_japan(app.model.meta)
+	var ground := SeasonPreparation.ground(app.model.meta,"office-hero")
+	var image := C.photo(ground,Vector2.ZERO,true,.53 if ground != "office-hero" else 0.0)
 	backdrop.add_child(image)
 	image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	image.anchor_left = .51
@@ -67,15 +69,15 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 	C.fill(space, false, 1.0)
 	row.add_child(space)
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
-	var preparation: Dictionary = app.model.meta.get("pacificPreparation",{})
+	var preparation := SeasonPreparation.data(app.model.meta)
 	if next.is_empty():
 		if preparation.is_empty():
 			left.add_child(C.label("LE PROCHAIN CHAPITRE", 21, C.GOLD))
 			left.add_child(C.wrap("La saison se termine." if app.model.meta.get("canAdvanceSeason", false) else "Le travail continue.", 42, C.IVORY, true))
 			left.add_child(C.wrap("Retrouvez les résultats et préparez la suite du projet.", 20))
 		else:
-			left.add_child(C.label("SUPER RUGBY PACIFIC",21,C.GOLD))
-			left.add_child(C.wrap("La préparation du Pacifique.",42,C.IVORY,true))
+			left.add_child(C.label("JAPAN RUGBY LEAGUE ONE" if japan else "SUPER RUGBY PACIFIC",21,C.GOLD))
+			left.add_child(C.wrap("La préparation de League One." if japan else "La préparation du Pacifique.",42,C.IVORY,true))
 			left.add_child(C.wrap(World.preparation_note(preparation),20))
 	else:
 		var tags := C.h(12)

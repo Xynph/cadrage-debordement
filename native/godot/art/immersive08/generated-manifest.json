@@ -160,6 +160,26 @@
       "synthetic": true,
       "tool": "built-in image_gen",
       "prompt": "Generate one high-end photoreal editorial photograph for the PC rugby management game Oval Legacy 27. Landscape wide 16:9, image only, no text, no logo, no writing, no scoreboards with lettering, no UI. An invented small professional rugby ground on the volcanic coastline of Aotearoa New Zealand, editorial sports photography. The green rugby pitch is immediately recognizable by exactly two sets of tall white rugby H-posts at each far end of the long field, thin white touch lines, a low unbranded stand and modest floodlights, grass with crisp textured mowing patterns. Perspective from slightly above and off a sideline, bleachers foreground, ocean and two dark distant headlands at far right. Early morning, light mist, gray-blue sky in subdued charcoal and pale ivory with a little warm gold light and sea green. Detailed tactile natural surfaces, restrained cinematic contrast like an immersive 2027 premium rugby manager game. The main rugby posts and recognizable turf are centrally framed and slightly right of center so wide crops 3:1 and 4:1 remain readable, the left side may be darkened by later game overlays. Important: a fictional local ground, no resemblance to a specific official venue and no people close up. High editorial quality, authentic Aotearoa coastal topography, no saturated oversharpened effects."
+    },
+    {
+      "id": "japan-ground",
+      "file": "japan-ground.png",
+      "source": "exec-15d64796-a246-43d5-babd-8ccd86e34eed.png",
+      "sourceType": "generated",
+      "source_sha256": "eaa2501d3db7b2c730e143bbab6ce50db94fc4b69cf49390251a7ba034197fad",
+      "crop": [
+        0,
+        0,
+        1672,
+        941
+      ],
+      "width": 1672,
+      "height": 941,
+      "bytes": 2510515,
+      "sha256": "eaa2501d3db7b2c730e143bbab6ce50db94fc4b69cf49390251a7ba034197fad",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "A single photorealistic premium editorial photograph, 16:9 landscape, for the Japanese rugby edition of Oval Legacy 27, an immersive native PC rugby management game. An invented professional rugby union training stadium on a crisp overcast December evening in a Japanese valley on the edge of a city. Pitch-level slightly elevated side view, unmistakable full-size H-shaped white rugby goalposts, precisely marked green natural turf, modest Japanese architecture with a low charcoal covered grandstand, slatted timber detail, floodlight masts, dark wooded hills with pines and subtle winter maples, distant urban silhouettes and pale hills, documentary sports realism. Warm ivory stadium lights in cold air, muted graphite, fern green, graphite-blue winter mist and restrained amber. The main H-post and low stand centered toward the right, clearly readable when cropped to a wide 4:1 menu strip; left side visually darker, atmospheric, appropriate for text applied separately by the game. A distinct invented location, not a depiction of any real club, athlete, brand or specific venue. No readable text, no signage, no scoreboard numerals, no logos, no watermarks, no UI, no frame. Tactile elegant imagery like the photo cutaways in a high-end sports management game."
     }
   ]
 }

@@ -1,5 +1,9 @@
 # Journal de développement — Cadrage Débordement
 
+## 9 novembre 2026 — réception immersive et raccord Japon
+
+La branche `feature/immersive-1440p-20261108` adapte les vues natives de la PR400 à la tête `8ebf575` de `main`. Les wrappers de création, préparation, Bureau et compétitions exploitent les commandes et projections de cette version. Les dates et deux manches de barrages japonais s’affichent dans le calendrier et dans les archives. Le nouveau terrain fictif d’origine porte la bibliothèque à 48 PNG. La matrice [de réception immersive](docs/immersive08-coverage.md) distingue tests source, paquets Windows et finitions restantes. Les profils d’essai et packs de réception restent hors dépôt.
+
 ## 9 novembre 2026 — carrière européenne et profils compatibles
 
 L'édition `rugby-world-2026-11-08-v1` ajoute le mode Monde sans convertir les anciennes carrières. Le registre compilé reprend les 1 592 objets France à l'identique et ajoute PREM, URC et deux invités européens. Les dates de départ sourcées, les règles et leurs éditions figurent dans la [documentation des compétitions](docs/world-competition-rules-20261109.md). Les calendriers futurs et les invitations du monde fermé suivent des décisions de jeu explicites, sans importer de scores réels.

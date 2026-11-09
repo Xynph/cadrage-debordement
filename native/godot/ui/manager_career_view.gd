@@ -82,6 +82,11 @@ static func build(app: Control) -> Control:
 	career.add_child(G.section("Les archives des clubs"))
 	for archive: Dictionary in data.get("archives", []):
 		career.add_child(G.wrap("%s · S%s · %s écritures conservées · %s bilans du conseil" % [_club(app, archive.clubId), int(archive.season), archive.ledger.size(), archive.boardHistory.size()], 14))
+	var seasons: Array = app.model.get("archives",{}).get("seasons",[])
+	if seasons.any(func(year: Dictionary): return year.get("japan") is Dictionary and not year.japan.get("pairs",[]).is_empty()):
+		var archives := G.button("Archives des saisons · barrages du Japon",func(): app.ClubViews.season_archives(app))
+		archives.name = "CareerJapanSeasonArchives"
+		career.add_child(archives)
 	var right := G.panel(page, 1.2)
 	G.chapter(right, "20", "Construire la suite", "Suivis persistants et engagements connus.", app.accent)
 	var recruitment := G.scroll(right)

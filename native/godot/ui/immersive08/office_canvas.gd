@@ -6,6 +6,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
 const Office = preload("res://ui/immersive08/office.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
+const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 
 static func _card(page: Control, rectangle: Rect2, title: String, icon: String, id: String) -> Panel:
 	var local := rectangle
@@ -33,21 +34,22 @@ static func build(app: Control) -> Control:
 
 static func _fixture(card: Panel, app: Control) -> void:
 	card.clip_contents = true
-	var pacific: bool = app.model.meta.get("leagueId")=="srp"
-	D.photo(card,"pacific-ground" if pacific else "office-hero",Rect2(694,1,665,416),.53 if pacific else 0.0)
+	var japan := SeasonPreparation.is_japan(app.model.meta)
+	var ground := SeasonPreparation.ground(app.model.meta,"office-hero")
+	D.photo(card,ground,Rect2(694,1,665,416),.53 if ground != "office-hero" else 0.0)
 	C.veil(card)
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
 	if next.is_empty():
-		var preparation: Dictionary = app.model.meta.get("pacificPreparation",{})
+		var preparation := SeasonPreparation.data(app.model.meta)
 		if preparation.is_empty():
 			D.text(card,27,100,"La saison se termine." if app.model.meta.get("canAdvanceSeason",false) else "Le travail continue.",42,C.IVORY,700,740)
 			D.text(card,27,156,"Retrouvez les résultats et préparez la suite du projet.",21,C.MUTED,400,740,HORIZONTAL_ALIGNMENT_LEFT,true)
 		else:
-			D.chip(card,Rect2(24,22,281,29),"SUPER RUGBY PACIFIC",C.GOLD)
-			D.text(card,27,121,"La préparation du Pacifique.",58,C.IVORY,800,920)
+			D.chip(card,Rect2(24,22,322 if japan else 281,29),"JAPAN RUGBY LEAGUE ONE" if japan else "SUPER RUGBY PACIFIC",C.GOLD)
+			D.text(card,27,121,"La préparation de League One." if japan else "La préparation du Pacifique.",58,C.IVORY,800,920)
 			D.text(card,27,183,World.preparation_note(preparation),30,C.IVORY,600,720)
 			D.text(card,27,223,"Avancez de quatre semaines au plus, jusqu’à la prochaine rencontre.",21,C.MUTED,400,735,HORIZONTAL_ALIGNMENT_LEFT,true)
-		D.button(card,Rect2(27,354,420,45),app.primary_text(),app.primary_action,true,"arrow",false,app.accent,"OfficePreparationAction")
+		D.button(card,Rect2(27,354,420,45),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,app.accent,"OfficePreparationAction")
 		return
 	D.chip(card,Rect2(24,22,281,29),str(next.get("label",P.league_name(app.model))).to_upper(),C.MUTED)
 	var location := "NEUTRE" if next.get("neutral",false) else "À DOMICILE" if next.get("home",{}).get("id")==app.model.club.id else "EXTÉRIEUR"

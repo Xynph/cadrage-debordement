@@ -402,14 +402,21 @@ static func season_archives(app:Control) -> void:
 	d.get_ok_button().text="FERMER LES ARCHIVES"
 	var content:=G.v(10)
 	d.add_child(content)
-	content.add_child(G.label("15 dernières saisons terminées · identités du pack actuel.\nRang de phase régulière conservé ; points et scores historiques non enregistrés.",12,G.MUTED))
+	var japanese: bool = app.model.get("meta",{}).get("edition") == "world-japan"
+	var notice := "Le carnet conserve le rang de phase régulière."
+	if japanese: notice = "Rangs de phase régulière et scores des barrages japonais conservés."
+	content.add_child(G.wrap("15 dernières saisons terminées · identités du pack actuel.\n"+notice,12,G.MUTED))
 	var list:=G.scroll(content)
 	list.get_parent().custom_minimum_size.y=360
 	var seasons:Array=app.model.get("archives",{}).get("seasons",[]).duplicate()
 	seasons.reverse()
 	var international: bool = app.model.get("meta", {}).get("mode") == "world"
+	var world = load("res://ui/immersive08/world_archive.gd")
 	if seasons.is_empty():
-		list.add_child(G.wrap("Aucune saison archivée. Les championnats et les coupes d’Europe alimentent ce carnet au passage à la saison suivante." if international else "Aucune saison archivée. Le championnat français alimente ce carnet au passage à la saison suivante. Les archives de la ligue historique à 14 ne sont pas présentées ici.",16))
+		var empty := "Aucune saison archivée. Le championnat français alimente ce carnet au passage à la saison suivante. Les archives de la ligue historique à 14 ne sont pas présentées ici."
+		if international: empty = "Aucune saison archivée. Les championnats et les coupes d’Europe alimentent ce carnet au passage à la saison suivante."
+		if japanese: empty = "Aucune saison archivée. Les manches des barrages japonais sont conservées au passage à la saison suivante."
+		list.add_child(G.wrap(empty,16))
 	for year:Dictionary in seasons:
 		list.add_child(G.section("SAISON "+G.n(year.season)))
 		for winner:Dictionary in archive_titles(year):
@@ -420,10 +427,16 @@ static func season_archives(app:Control) -> void:
 			var ranks: Array = standings.get(league_id,[])
 			var position:=ranks.find(app.model.club.id)
 			if position>=0:list.add_child(G.wrap("Votre club actuel · %s · rang %d / %d en phase régulière"%[competition_name(league_id),position+1,ranks.size()],14,G.accent_ink(app.accent)))
+		var barrages: Array = world.japan_barrages(year)
+		if not barrages.is_empty(): list.add_child(G.section("MOUVEMENTS FRANÇAIS"))
 		for pair in [["promoted","Montée(s) vers l’Élite"],["relegated","Descente(s) en Accession"]]:
 			var names:Array[String]=[]
 			for id in year.get("movement",{}).get(pair[0],[]):names.append(_archive_club(app,id))
-			list.add_child(G.wrap(pair[1]+" : "+(", ".join(names) if not names.is_empty() else "aucune"),14,G.MUTED))
+			list.add_child(G.wrap(pair[1]+" · "+(", ".join(names) if not names.is_empty() else "aucune"),14,G.MUTED))
+		if not barrages.is_empty():
+			list.add_child(G.section("BARRAGES DU JAPON"))
+			for barrage: Dictionary in barrages:
+				for line: String in world.japan_lines(app,barrage): list.add_child(G.wrap(line,16,G.INK))
 		list.add_child(G.separator())
 	d.confirmed.connect(d.queue_free)
 	d.canceled.connect(d.queue_free)

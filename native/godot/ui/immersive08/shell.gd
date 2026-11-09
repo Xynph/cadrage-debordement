@@ -384,6 +384,7 @@ static func _footer(parent: Node, app: Control, layout: Control) -> void:
 	layout.set_meta("immersive_footer",row)
 	D.line(row,Vector2.ZERO,Vector2(2248,0),Color(C.LINE,.7))
 	app.status = D.text(row,2,36,app._settled_status_text(),17,C.ALERT if app._status_has_error() else C.MUTED,500,900)
+	app.status.name = "ImmersiveSaveStatus"
 	var shortcuts := D.text(row,782,36,"Ctrl S  Sauvegarder     ·     Ctrl K  Rechercher     ·     F1  Aide",17,C.FAINT,400,800,HORIZONTAL_ALIGNMENT_LEFT,true)
 	shortcuts.name="ImmersiveShortcuts"
 	if app.decision_feedback != null:
@@ -410,8 +411,21 @@ static func _position_footer(row: Control) -> void:
 		feedback.size=Vector2(maxf(C.px(180),146.0/factor),maxf(C.px(34),30.0/factor))
 		feedback.position=Vector2(dock.position.x-feedback.size.x-maxf(C.px(24),12.0/factor),row.size.y-feedback.size.y-1.0/factor)
 		feedback.add_theme_font_size_override("font_size",maxi(C.px(17),roundi(13.0/factor)))
+	var status: Label = row.get_node_or_null("ImmersiveSaveStatus")
+	if status==null: return
+	var gap := maxf(C.px(16),8.0/factor)
+	var right := (feedback.position.x if feedback!=null else dock.position.x)-gap
 	var shortcuts: Label = row.get_node_or_null("ImmersiveShortcuts")
-	if shortcuts!=null: shortcuts.visible=row.size.x*factor>=1650
+	if shortcuts!=null:
+		shortcuts.visible = row.size.x*factor>=1650
+		if shortcuts.visible:
+			shortcuts.position.x = maxf(C.px(782),630.0/factor)
+			right = minf(right,shortcuts.position.x-gap)
+	var pixels := maxi(C.px(17),ceili(14.0/factor))
+	var font := status.get_theme_font("font")
+	status.add_theme_font_size_override("font_size",pixels)
+	status.position.y = row.size.y-C.px(8)-font.get_ascent(pixels)
+	status.size = Vector2(maxf(0.0,right-status.position.x),font.get_height(pixels))
 
 static func _existing_page(app: Control, immersive_match: bool) -> void:
 	match app.route:
@@ -429,7 +443,7 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 				app.body.add_child(roster)
 				Legacy.apply(roster, app.accent)
 		"Composition": app.body.add_child(TacticsCanvas.build(app) if app.get_window().size.x>=1600 else app.SquadViews.lineup(app))
-		"Préparation": app.body.add_child(app.SquadViews.preparation(app))
+		"Préparation": app.body.add_child(Preparation.compact(app))
 		"Plan de jeu": app.body.add_child(app.PlaybookViews.build(app))
 		"Recrutement": app.body.add_child(app.SquadViews.market(app))
 		"Staff": app.body.add_child(app.StaffViews.build(app))

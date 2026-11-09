@@ -7,6 +7,7 @@ const S = preload("res://ui/data_semantics.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
+const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const WIDTH := 2248
 const LEFT := 1410
 const RIGHT := 822
@@ -55,8 +56,9 @@ func _build() -> void:
 func _hero() -> void:
 	var hero := D.panel(self, Rect2(0, 0, WIDTH, 312), "", "", "", "RivalryHero")
 	hero.clip_contents = true
-	var pacific: bool = app.model.meta.get("leagueId")=="srp"
-	D.photo(hero, "pacific-ground" if pacific else "stadium", Rect2(938, 0, 1310, 312),.48 if pacific else 0.0)
+	var japan := SeasonPreparation.is_japan(app.model.meta)
+	var ground := SeasonPreparation.ground(app.model.meta,"stadium")
+	D.photo(hero, ground, Rect2(938, 0, 1310, 312),.48 if ground != "stadium" else 0.0)
 	C.veil(hero)
 	D.text(hero, 26, 49, "LES TERRITOIRES DU RUGBY", 32, C.GOLD, 800, 364)
 	D.line(hero, Vector2(404, 37), Vector2(547, 37), C.GOLD, 2)
@@ -72,13 +74,15 @@ func _hero() -> void:
 		D.text(tile, 64, 29, ["Duels suivis", "Duels du club", "Saisons archivées"][i], 24, C.MUTED, 600, 169)
 		var number: int = [pairs.size(), club_pairs.size(), data.get("archives", []).size()][i]
 		D.text(tile, 290, 53, str(number) if not data.is_empty() else "—", 44, C.IVORY, 800, 76, HORIZONTAL_ALIGNMENT_RIGHT)
-	var preparation: Dictionary = app.model.meta.get("pacificPreparation",{})
+	var preparation := SeasonPreparation.data(app.model.meta)
 	if not preparation.is_empty():
-		var card := D.panel(hero,Rect2(1484,28,735,256),"Préparation du Pacifique","calendar","","PacificPreparation")
+		var title := "Préparation de League One" if japan else "Préparation du Pacifique"
+		var section := "JapanPreparation" if japan else "PacificPreparation"
+		var card := D.panel(hero,Rect2(1484,28,735,256),title,"calendar","",section)
 		D.text(card,24,110,World.preparation_note(preparation),33,C.IVORY,700,685)
 		D.text(card,24,155,"Les semaines sont simulées jusqu’à la prochaine rencontre.",22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
 		var weeks := mini(int(preparation.get("weeksUntil",0)),4)
-		var advance := D.button(card,Rect2(24,182,687,53),"AVANCER DE %d SEMAINE%s" % [weeks,"S" if weeks>1 else ""],app.primary_action,true,"arrow",false,app.accent,"PacificPreparationAdvance")
+		var advance := D.button(card,Rect2(24,182,687,53),"AVANCER DE %d SEMAINE%s" % [weeks,"S" if weeks>1 else ""],app.primary_action,true,"arrow",false,app.accent,section+"Advance")
 		advance.disabled = app.waiting
 
 func _navigation() -> void:

@@ -3,6 +3,9 @@ extends Control
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
+const P = preload("res://ui/immersive08/projection.gd")
+const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
+const World = preload("res://ui/immersive08/world_archive.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const TABS = ["Dossier", "Consignes", "Entrainement"]
 const GREEN = Color("63e994")
@@ -24,6 +27,38 @@ static func build(application: Control, canvas: Control) -> void:
 	D.place(page, Rect2(0, 0, 2248, 1230))
 	page._build()
 
+static func compact(app: Control) -> Control:
+	var dossier: Control = app.SquadViews.preparation(app)
+	if not SeasonPreparation.is_japan(app.model.meta): return dossier
+	var next: Variant = app.model.get("next")
+	var preparation := SeasonPreparation.data(app.model.meta)
+	if preparation.is_empty() and not next is Dictionary: return dossier
+	var page := C.v(10)
+	C.fill(page,true)
+	var card := C.card()
+	page.add_child(card)
+	var row := C.h(20)
+	C.content(card).add_child(row)
+	var summary := C.v(4)
+	C.fill(summary)
+	row.add_child(summary)
+	summary.add_child(C.wrap("PRÉPARATION DE LEAGUE ONE",30,C.GOLD,true,700))
+	if not preparation.is_empty():
+		summary.add_child(C.wrap(World.preparation_note(preparation),29,C.IVORY))
+		var advance := C.button(app.primary_text(),app.primary_action,true,app.accent)
+		advance.name = "JapanPreparationDossierAdvance"
+		advance.disabled = app.waiting
+		row.add_child(advance)
+	else:
+		summary.add_child(C.wrap(_japan_match_note(next),29,C.IVORY))
+	page.add_child(dossier)
+	return page
+
+static func _japan_match_note(next: Dictionary) -> String:
+	var date := P.fixture_date(next)
+	var venue := P.fixture_venue(next)
+	return date + " · " + venue if not date.is_empty() and not venue.is_empty() else date + venue
+
 func _build() -> void:
 	if not app.management_ui.get("preparation") is Dictionary:
 		app.management_ui.preparation = {"tab":0,"outer":[0,0,0],"attack":0,"defense":0,"focus":["","",""]}
@@ -43,16 +78,25 @@ func _build() -> void:
 func _heading() -> void:
 	var hero := D.panel(self, Rect2(0, 0, 2248, 167), "", "", "", "PreparationHero")
 	hero.clip_contents = true
-	D.photo(hero, "tactics-briefing", Rect2(1095, 1, 1151, 165))
+	var japan := SeasonPreparation.is_japan(app.model.meta)
+	var preparation := SeasonPreparation.data(app.model.meta) if japan else {}
+	D.photo(hero, "japan-ground" if japan else "tactics-briefing", Rect2(1095, 1, 1151, 165), .5 if japan else 0.0)
 	var shadow := Control.new()
 	D.place(shadow, Rect2(1013, 0, 635, 167))
 	hero.add_child(shadow)
 	C.veil(shadow)
-	D.text(hero, 28, 36, "PRÉPARATION DE MATCH", 27, GOLD, 700, 680)
-	app.heading = D.text(hero, 26, 103, "Préparer la prochaine rencontre.", 66, C.IVORY, 800, 1355)
+	D.text(hero, 28, 36, "PRÉPARATION DE LEAGUE ONE" if japan else "PRÉPARATION DE MATCH", 27, GOLD, 700, 680)
+	var heading := "Préparer la saison de League One." if not preparation.is_empty() else "Préparer la prochaine rencontre."
+	app.heading = D.text(hero, 26, 103, heading, 66, C.IVORY, 800, 1355)
 	var context := "Aucune rencontre annoncée"
 	if not fixture.is_empty():
 		context = "%s – %s  ·  %s" % [G.club_name(fixture.get("home", {})), G.club_name(fixture.get("away", {})), fixture.get("label", "")]
+	if not preparation.is_empty():
+		context = World.preparation_note(preparation)
+		var advance := _button(hero, Rect2(1564, 83, 640, 53), app.primary_text().trim_suffix("  →"), app.primary_action, true, "arrow", "JapanPreparationDossierAdvance")
+		advance.disabled = app.waiting
+	elif japan and not fixture.is_empty():
+		D.chip(hero,Rect2(1469,100,735,43),_japan_match_note(fixture),C.GOLD)
 	D.text(hero, 29, 143, context, 25, C.IVORY, 500, 1220)
 	var tabbar := Control.new()
 	tabbar.name = "PreparationTabs"

@@ -234,6 +234,95 @@ func pacific() -> void:
 	press_division=app.find_child("PressDivision",true,false) as OptionButton
 	check(press_division!=null and press_division.selected>=0 and press_division.get_item_text(press_division.selected)=="Super Rugby Pacific","Le vrai nom du Pacifique est conservé dans le journal compact")
 
+func japan_action(id: String) -> bool:
+	var button := app.find_child(id,true,false) as Button
+	var available := button!=null and button.is_visible_in_tree() and not button.disabled
+	check(available,"Commande japonaise utilisable · " + id)
+	if not available: return false
+	var parent := button.get_parent()
+	while parent!=null:
+		if parent is ScrollContainer: parent.ensure_control_visible(button)
+		parent=parent.get_parent()
+	await settle()
+	await click(button)
+	await settle()
+	return true
+
+func japan(compact: bool) -> void:
+	var division := "jlo-d2" if compact else "jlo-d1"
+	var dimensions := "1280x720" if compact else "2560x1440"
+	if compact:
+		root.size=Vector2i(1280,720)
+		if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+		await settle()
+		app._render()
+		await settle()
+	var catalogue: Array = app.model.meta.get("japanCatalogue",[])
+	var playable := catalogue.filter(func(club: Dictionary): return club.get("playable",true)).size()
+	var badge := app.find_child("EntryJapanCount",true,false) as Panel
+	check(badge!=null and badge.get_child(0).text=="Japon · %d clubs" % playable,"Accueil compte les vrais clubs jouables du catalogue Japon")
+	if not await japan_action("EntryNewCareer"): return
+	if not await japan_action("CreationMode_world-japan"): return
+	if not await japan_action("CreationDivision_"+division): return
+	var first := 80 if compact else 68
+	var last := 88 if compact else 80
+	var scroll := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
+	for club_id in range(first,last):
+		var club := app.find_child("CreationClub%d" % club_id,true,false) as Button
+		check(scroll!=null and club!=null and scroll.get_global_rect().grow(1).encloses(club.get_global_rect()),"Club Japon %d dans le sélecteur à %s" % [club_id,dimensions])
+	var ground := app.find_child("Art_japan_ground",true,false) as TextureRect
+	var texture: Texture2D = ground.texture if ground!=null else null
+	if texture is AtlasTexture: texture=texture.atlas
+	check(texture!=null and texture.resource_path.ends_with("japan-ground.png"),"Le PNG original est décodé et cadré dans le jeu")
+	await capture(("54" if compact else "53")+"-japon-creation-"+dimensions)
+	var club_id := 80 if compact else 72
+	if not await japan_action("CreationClub%d" % club_id): return
+	if not await japan_action("CreationStart"): return
+	await worker()
+	var meta: Dictionary = app.model.meta
+	check(app.bridge.last_response_ok and meta.get("edition")=="world-japan" and meta.get("mode")=="world" and meta.get("leagueId")==division and app.model.get("club",{}).get("id")==club_id,"Création de la vraie carrière dans la division sélectionnée")
+	if not app.bridge.last_response_ok: return
+	check(app.model.next==null and meta.get("japanPreparation",{}).get("nextDate")=="2026-12-13","Premier match annoncé par le moteur pendant l’attente")
+	await capture(("58" if compact else "55")+"-japon-bureau-"+dimensions)
+	var actions := ["OfficePreparationAction","JapanPreparationAdvance","JapanPreparationDossierAdvance","ImmersiveContinue"]
+	for i in actions.size():
+		match i:
+			1:
+				app._navigate("Rivalités")
+				await settle()
+				await capture(("59" if compact else "56")+"-japon-rivalites-"+dimensions)
+			2:
+				if compact: app._navigate("Préparation")
+				else:
+					app._navigate("Calendrier")
+					await settle()
+					if not await japan_action("CompetitionJapanLink"): return
+				check(app.route=="Préparation","Le calendrier ouvre la préparation japonaise")
+			3: app._navigate("Bureau")
+		await settle()
+		var week := int(app.model.meta.week)
+		var limit := int(app.model.meta.get("japanPreparation",{}).get("weeksUntil",0))
+		if not await japan_action(actions[i]): return
+		await worker()
+		check(app.bridge.last_response_ok and int(app.model.meta.week)==week+mini(4,limit),"Avance réelle jusqu’à la semaine du match · " + str(actions[i]))
+	var next: Variant = app.model.next
+	check(next is Dictionary and next.get("competitionId")==division and next.get("date")=="2026-12-13","L’avance s’arrête au vrai premier match de la division")
+	if not next is Dictionary: return
+	var date := app.find_child("OfficeFixtureDate",true,false) as Label
+	var venue := app.find_child("OfficeFixtureVenue",true,false) as Label
+	var projection := preload("res://ui/immersive08/projection.gd")
+	check(date!=null and date.text.begins_with("13/12/2026") and venue!=null and venue.text==projection.fixture_venue(next),"Le Bureau montre la date et le lieu réels à " + dimensions)
+	await capture(("60" if compact else "57")+"-japon-premier-match-"+dimensions)
+	if not await japan_action("OfficePreparationAction"): return
+	check(app.route=="Préparation" and app.find_child("JapanPreparationDossierAdvance",true,false)==null,"Le vrai dossier de match a remplacé l’avance")
+	app._navigate("Match")
+	await settle()
+	check(app.model.get("selection",{}).get("valid",false),"La feuille de match réelle est valide")
+	if app.pause_button==null: return
+	await click(app.pause_button)
+	await worker()
+	check(app.bridge.last_response_ok and app.model.live is Dictionary and app.model.live.get("pair")==next.get("pair"),"Coup d’envoi des deux vraies équipes japonaises")
+
 func reception() -> void:
 	app._navigate("Bureau")
 	await settle()
@@ -676,11 +765,13 @@ func run() -> void:
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
 	await worker()
-	if OS.get_environment("CD_IMMERSIVE_SCOPE")=="pacific":
-		await pacific()
+	var scope := OS.get_environment("CD_IMMERSIVE_SCOPE")
+	if scope in ["pacific", "japan", "japan-d2"]:
+		if scope=="pacific": await pacific()
+		else: await japan(scope=="japan-d2")
 		app.queue_free()
 		await settle()
-		print("immersive08 Pacifique : ", checks, " contrôles, ", failures.size(), " échecs")
+		print("immersive08 ", scope, " : ", checks, " contrôles, ", failures.size(), " échecs")
 		quit(0 if failures.is_empty() else 1)
 		return
 	if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await entry()

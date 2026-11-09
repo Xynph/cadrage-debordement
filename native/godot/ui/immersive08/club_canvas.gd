@@ -395,7 +395,7 @@ static func _world_history(app: Control, canvas: Control, data: Dictionary) -> v
 	list.add_child(C.wrap("Saisons archivées et rencontres conservées dans cette carrière. Les rangs concernent la phase régulière.",22,C.MUTED,true))
 	if years.size() >= 2: _world_comparison(app,list,years)
 	if years.is_empty(): list.add_child(C.wrap("Aucune saison archivée pour ce club.",26,C.IVORY,true,700))
-	for year: Dictionary in years: list.add_child(_world_year(app.model,year))
+	for year: Dictionary in years: list.add_child(_world_year(app,year))
 	list.add_child(C.rule())
 	list.add_child(C.label("LES RENCONTRES CONSERVÉES",27,C.GOLD,true,700))
 	if data.events.is_empty(): list.add_child(C.wrap("Aucun résultat de ce club dans le registre récent.",22,C.MUTED,true))
@@ -415,16 +415,18 @@ static func _world_history(app: Control, canvas: Control, data: Dictionary) -> v
 	for move: Dictionary in data.manager_history:
 		list.add_child(C.wrap("Saison %s · %s  →  %s" % [G.n(move.get("arrivalSeason","—")),move.from_name,move.to_name],23,C.IVORY,true))
 
-static func _world_year(model: Dictionary, year: Dictionary) -> PanelContainer:
+static func _world_year(app: Control, year: Dictionary) -> PanelContainer:
 	var card := C.card("Saison "+G.n(year.season))
 	C.fill(card)
 	var content := C.content(card)
-	var rank := "%s · rang %s / %s" % [World.name_for(model,str(year.league_id)),G.n(year.rank),G.n(year.division_size)] if year.rank != null else "Rang de phase régulière indisponible"
+	var rank := "%s · rang %s / %s" % [World.name_for(app.model,str(year.league_id)),G.n(year.rank),G.n(year.division_size)] if year.rank != null else "Rang de phase régulière indisponible"
 	content.add_child(C.wrap(rank,25,C.IVORY,true,600))
 	for id: String in year.titles:
-		content.add_child(C.wrap("Champion · "+World.name_for(model,id),23,C.MINT,true,600))
+		content.add_child(C.wrap("Champion · "+World.name_for(app.model,id),23,C.MINT,true,600))
 	if year.promoted: content.add_child(C.label("Montée en Élite",22,C.MINT))
 	if year.relegated: content.add_child(C.label("Descente en Accession",22,C.AMBER))
+	for barrage: Dictionary in year.japan_barrages:
+		for line: String in World.japan_lines(app,barrage): content.add_child(C.wrap(line,22,C.IVORY))
 	return card
 
 static func _world_comparison(app: Control, list: VBoxContainer, years: Array) -> void:
@@ -440,7 +442,7 @@ static func _world_comparison(app: Control, list: VBoxContainer, years: Array) -
 		for child in comparison.get_children():
 			comparison.remove_child(child)
 			child.queue_free()
-		for index: int in indexes: comparison.add_child(_world_year(app.model,years[index]))
+		for index: int in indexes: comparison.add_child(_world_year(app,years[index]))
 	for i in 2:
 		var key := "club_memory_season_a" if i == 0 else "club_memory_season_b"
 		var selector := OptionButton.new()

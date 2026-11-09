@@ -1,7 +1,8 @@
 extends RefCounted
 # Lecture des projections canoniques uniquement. Aucun état moteur ni fichier modifié.
 const G = preload("res://ui/carnet_skin.gd")
-const DIVISIONS = {"elite":"Élite", "accession":"Accession"}
+const World = preload("res://ui/immersive08/world_archive.gd")
+const DIVISIONS = {"elite":"Élite", "accession":"Accession", "jlo-d1":"League One · Division 1", "jlo-d2":"League One · Division 2"}
 
 static func _id_index(ids: Array, club_id: int) -> int:
 	# JSON.parse_string représente les nombres par des flottants : Array.find
@@ -73,13 +74,17 @@ static func _movement(year: Dictionary) -> String:
 static func _rank(year: Dictionary) -> String:
 	return "Rang de phase régulière non conservé" if year.rank == null else "Dans sa division · %s · rang %d / %d" % [_division(year.league_id), int(year.rank), int(year.division_size)]
 
-static func _season(parent: Node, year: Dictionary, accent: Color) -> void:
-	var card := G.card(parent, G.accent_ink(accent))
+static func _season(parent: Node, year: Dictionary, app: Control) -> void:
+	var card := G.card(parent, G.accent_ink(app.accent))
 	G.fill(card.get_parent())
 	card.add_child(G.section("Saison " + str(int(year.season))))
 	card.add_child(G.wrap(_rank(year), 17, G.INK))
 	card.add_child(G.wrap(_titles(year), 15, G.GOLD))
-	card.add_child(G.wrap(_movement(year), 14))
+	var barrages: Array = year.get("japan_barrages",[])
+	if barrages.is_empty() and str(year.league_id) not in ["jlo-d1","jlo-d2"]:
+		card.add_child(G.wrap(_movement(year),14))
+	for barrage: Dictionary in barrages:
+		for line: String in World.japan_lines(app,barrage): card.add_child(G.wrap(line,16,G.INK))
 
 static func _choice(parent: Node, app: Control, seasons: Array, key: String, label: String, fallback: int, draw: Callable) -> void:
 	var block := G.v(5)
@@ -105,7 +110,7 @@ static func _choice(parent: Node, app: Control, seasons: Array, key: String, lab
 	block.add_child(selector)
 
 static func _comparison(parent: Node, app: Control, seasons: Array) -> void:
-	parent.add_child(G.section("Comparer deux saisons", "Rangs dans leur propre division, sans équivalence automatique entre Élite et Accession."))
+	parent.add_child(G.section("Comparer deux saisons", "Chaque rang correspond à la division de la saison."))
 	if seasons.size() < 2:
 		parent.add_child(G.wrap("Il faut deux saisons archivées pour ouvrir la comparaison. Les premières pages s’écrivent au passage à la saison suivante.", 16))
 		return
@@ -122,7 +127,7 @@ static func _comparison(parent: Node, app: Control, seasons: Array) -> void:
 			return
 		for chosen: int in [a, b]:
 			for year: Dictionary in seasons:
-				if int(year.season) == chosen: _season(result, year, app.accent)
+				if int(year.season) == chosen: _season(result, year, app)
 	_choice(selectors, app, seasons, "club_memory_season_a", "PREMIÈRE SAISON", int(seasons[0].season), draw)
 	_choice(selectors, app, seasons, "club_memory_season_b", "DEUXIÈME SAISON", int(seasons[1].season), draw)
 	parent.add_child(result)
@@ -143,17 +148,21 @@ static func build(app: Control) -> Control:
 	var sheet := G.panel(page)
 	G.fill(sheet.get_parent(), true)
 	var data := project(app.model, int(app.model.get("club", {}).get("id", -1)))
+	var japanese: bool = app.model.get("meta",{}).get("edition") == "world-japan"
+	if japanese: data.seasons = World.club_seasons(app.model,data.club_id)
 	G.chapter(sheet, "21", "L’histoire de " + data.club_name, "Les faits conservés pour ce club, quelle que soit la carrière de son coach.", app.accent)
 	var list := G.scroll(sheet)
 	list.get_parent().name = "ClubMemoryScroll"
-	list.add_child(G.wrap("Identités du pack actuel · 15 dernières saisons archivées au maximum. Points, scores de saisons, affluence, finances et évolution des attributs ne sont pas conservés dans ces archives.", 13))
+	var notice := "Points, scores de saisons, affluence, finances et évolution des attributs ne sont pas conservés dans ces archives."
+	if japanese: notice = "Les rangs de phase régulière et les scores des barrages japonais sont conservés."
+	list.add_child(G.wrap("Identités du pack actuel · 15 dernières saisons archivées au maximum. "+notice,13))
 	_comparison(list, app, data.seasons)
 	list.add_child(G.separator())
 	list.add_child(G.section("La chronologie du club"))
 	if data.seasons.is_empty():
 		list.add_child(G.wrap("Aucune saison archivée pour ce club. Aucun passé n’est inventé.", 17, G.INK))
 		if data.historical: list.add_child(G.wrap("Les saisons de la ligue historique à 14 ne sont pas conservées dans ce carnet par division.", 14))
-	for year: Dictionary in data.seasons: _season(list, year, app.accent)
+	for year: Dictionary in data.seasons: _season(list, year, app)
 	list.add_child(G.separator())
 	list.add_child(G.section("Les rencontres conservées", "Uniquement les rencontres impliquant ce club. Ce registre récent n’est pas un historique exhaustif."))
 	if data.events.is_empty(): list.add_child(G.wrap("Aucune rencontre de ce club n’est conservée dans le registre récent.", 16))
