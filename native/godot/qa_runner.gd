@@ -674,6 +674,10 @@ func _pacific_reception() -> void:
 		for route_name in ["Création","Bureau","Effectif","Calendrier","Classements","Rivalités","Staff"]:
 			app._navigate(route_name)
 			await _capture("pacifique-" + route_name.to_lower() + "-" + str(resolution.x))
+			if route_name == "Création":
+				var list := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
+				var last := app.find_child("CreationClub67",true,false) as Button
+				_check(last != null and list != null and list.get_global_rect().encloses(last.get_global_rect()), "All ten Pacific clubs are visible without changing page at " + str(resolution.x))
 	app._navigate("Rivalités")
 	await _settle()
 	for i in 6:

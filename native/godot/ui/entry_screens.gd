@@ -9,7 +9,20 @@ static func _cover(club: Dictionary) -> Control:
 		return G.picture(slug)
 	var cover := ColorRect.new()
 	cover.color = Color(identity.get("color", "#303c42")).darkened(.72)
-	var inset := G.margin(12)
+	var pacific := slug.begins_with("srp-")
+	if pacific:
+		var country := str(identity.get("country", "")).to_lower()
+		var art := "res://art/pacific/covers/%s.svg" % country
+		if country in ["nz","au","fj"] and ResourceLoader.exists(art):
+			cover.clip_contents = true
+			var backdrop := TextureRect.new()
+			backdrop.texture = load(art) as Texture2D
+			backdrop.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			backdrop.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+			backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			cover.add_child(backdrop)
+	var inset := G.margin(22 if pacific else 12)
 	inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	cover.add_child(inset)
 	var content := G.v(8)
@@ -173,6 +186,10 @@ static func creation(app: Control) -> Control:
 	row.add_child(photo)
 	var over: VBoxContainer = photo.get_meta("content")
 	over.add_child(G.label("VOTRE FUTUR CLUB", 14, G.WHITE))
+	var is_srp := pacific and division == "srp"
+	if is_srp:
+		over.add_child(G.label("PACIFIQUE  /  SAISON 2027", 22, G.WHITE, true))
+		over.add_child(G.label(_territory(selected).to_upper(), 13, G.WHITE))
 	over.add_child(G.spacer())
 	over.add_child(G.crest(selected, 96))
 	var name := G.label(G.club_name(selected), 38, G.WHITE, true)
@@ -223,7 +240,16 @@ static func creation(app: Control) -> Control:
 		G.fill(b)
 		if app.club_division == item[0]: G.selected(b,app.accent)
 		divisions.add_child(b)
-	var bounds:=preload("res://ui/club_views.gd")._paged(app,list,"CreationPagination",division_clubs.size(),8,"creation_"+mode+"_"+division)
+	if is_srp:
+		var facts := G.h(8)
+		list.add_child(facts)
+		for fact in [["16", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["FÉV.–JUIN", "SAISON 2027"]]:
+			var tile := G.panel(facts, 1.0)
+			tile.add_child(G.label(fact[0], 20, G.INK, true))
+			tile.add_child(G.cell(fact[1], 45, G.MUTED, true))
+	var bounds := Vector2i(0, division_clubs.size())
+	if not is_srp:
+		bounds = preload("res://ui/club_views.gd")._paged(app,list,"CreationPagination",division_clubs.size(),8,"creation_"+mode+"_"+division)
 	var items := G.scroll(list)
 	items.get_parent().name = "CreationClubsScroll"
 	var grid:=GridContainer.new()
@@ -234,7 +260,7 @@ static func creation(app: Control) -> Control:
 	items.add_child(grid)
 	for club in division_clubs.slice(bounds.x,bounds.y):
 		var b := G.button("", func(): app.selected_club = int(club.id); app._render())
-		b.custom_minimum_size.y = 52
+		b.custom_minimum_size.y = clampf(app.get_viewport_rect().size.y * 0.045, 52.0, 66.0) if is_srp else 52.0
 		b.name="CreationClub"+str(int(club.id))
 		b.tooltip_text=G.club_name(club)+" · "+_territory(club)
 		G.fill(b)

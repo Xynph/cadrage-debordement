@@ -17,6 +17,8 @@ function fixture(){
  h.run(`globalThis.CDWorldCareer={
  active(s){return !!s&&s.worldMode?.version===1&&s.worldMode.catalogue===CDWorldRegistry.id&&s.commonDatabase?.id===CDWorldRegistry.id&&s.commonDatabase.version===1&&Object.keys(s.commonDatabase).length===2;},
  sizing(){return {clubCount:58,maxRound:46,rounds:46};},
+ edition(s){return this.active(s)?{registry:CDWorldRegistry,mode:'world',leagueIds:['elite','accession','prem','urc']}:null;},
+ sourcePlayer(s,id){return this.active(s)?CDWorldRegistry.clubs.flatMap(c=>c.players).find(p=>p.id===id)||null:null;},
  leagueId(s,id=s.club){return id<14?'elite':id<30?'accession':id<40?'prem':'urc';},
  ranked(s,id){return s.worldMode.leagues[id].members.map(i=>s.clubs[i]);},
  validate(s){worldValidationCalls++;if(s.worldMode.rules!=='world-pro-2026-27-v1'||s.worldMode.week!==s.round||s.worldMode.fixtures.length>=1200||s.schedule.length!==46)throw Error('Monde incohérent');if(s.live?.worldContext?.fixtureId==='hostile'||s.live?.knockout?.period===9)throw Error('Contexte mondial invalide');for(const c of s.clubs)for(const p of c.players){const source=CDWorldRegistry.clubs.flatMap(c=>c.players).find(q=>q.id===p.id);if(p.worldProfile!==undefined&&JSON.stringify(p.worldProfile)!==JSON.stringify(source?.worldProfile))throw Error('Profil monde invalide');}}
