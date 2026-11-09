@@ -22,9 +22,12 @@ const Rivalry = preload("res://ui/immersive08/rivalry_canvas.gd")
 const Locker = preload("res://ui/immersive08/locker_canvas.gd")
 const Career = preload("res://ui/immersive08/career_canvas.gd")
 const MatchCanvas = preload("res://ui/immersive08/match_canvas.gd")
+const MatchCompact = preload("res://ui/immersive08/match_compact.gd")
 const G = preload("res://ui/game_skin.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const TACTICS_CANVAS_MIN_WIDTH := 1600
+
+const FOOTER_RISE := 14
 
 const GROUPS = [
 	["Bureau", "Bureau", ["Bureau"]],
@@ -88,7 +91,7 @@ static func render(app: Control) -> bool:
 	var workspace := C.v(0)
 	C.fill(workspace, true)
 	shell.add_child(workspace)
-	_topbar(workspace, app)
+	_topbar(workspace, app, layout)
 	var inset := C.margin(32)
 	app.workspace_inset = inset
 	inset.add_theme_constant_override("margin_top", C.px(22))
@@ -141,6 +144,8 @@ static func _fit_layout(root: Control, layout: Control, reference: Vector2) -> v
 		var footer: Control = layout.get_meta("immersive_footer")
 		footer.custom_minimum_size.y=maxf(base_footer,38.0/factor)
 		_position_footer(footer)
+	if layout.has_meta("immersive_topbar"):
+		_position_topbar(layout)
 	if layout.has_meta("immersive_pack_warning"):
 		_fit_pack_warning(layout.get_meta("immersive_pack_warning"),factor)
 
@@ -276,7 +281,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	D.text(dock,39,255,"Stockage à vérifier" if app._status_has_error() else "Sauvegarde automatique",17,C.MUTED,500,198)
 	D.text(dock,24,281,G.club_abbr(app.model.club)+" · Carrière principale",17,C.FAINT,500,210)
 
-static func _topbar(parent: Node, app: Control) -> void:
+static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var panel := Control.new()
 	panel.name = "ImmersiveTopbar"
 	panel.custom_minimum_size.y = C.px(78)
@@ -311,7 +316,7 @@ static func _topbar(parent: Node, app: Control) -> void:
 	var magnifier := C.icon("search",21,C.MUTED)
 	panel.add_child(magnifier)
 	D.place(magnifier,Rect2(1278,30,21,21))
-	D.chip(panel,Rect2(1677,29,48,23),"Ctrl K",C.MUTED)
+	var shortcut := D.chip(panel,Rect2(1677,29,48,23),"Ctrl K",C.MUTED)
 	var calendar := C.icon("calendar",25,C.IVORY)
 	panel.add_child(calendar)
 	D.place(calendar,Rect2(1773,25,25,25))
@@ -320,6 +325,32 @@ static func _topbar(parent: Node, app: Control) -> void:
 	app._update_header_date()
 	app.primary_button = D.button(panel,Rect2(2067,17,211,45),"Continuer",app.primary_action,true,"arrow",false,app.accent,"ImmersiveContinue")
 	app.primary_button.tooltip_text = app.primary_text()
+	layout.set_meta("immersive_topbar",[app.header_date,app.primary_button,shortcut,calendar])
+	_position_topbar(layout)
+
+static func _position_topbar(layout: Control) -> void:
+	var factor := layout.scale.y
+	if factor<=0: return
+	var elements: Array = layout.get_meta("immersive_topbar")
+	var date: Label = elements[0]
+	var action: Button = elements[1]
+	var compact := C.px(24)*factor<14.0
+	# En petit format, les raccourcis sont regroupés dans le pied.
+	elements[2].visible=not compact
+	elements[3].visible=not compact
+	var date_px := maxi(C.px(24),ceili(14.0/factor))
+	var date_font := date.get_theme_font("font")
+	var date_left := 1750 if compact else 1814
+	date.add_theme_font_size_override("font_size",date_px)
+	date.position=Vector2(C.px(date_left),C.px(48)-date_font.get_ascent(date_px))
+	var date_width := C.px(2054-date_left)
+	date.set_deferred("size",Vector2(date_width,date_font.get_height(date_px)))
+	if compact and date.tooltip_text.is_empty() and date_font.get_string_size(date.text,HORIZONTAL_ALIGNMENT_LEFT,-1,date_px).x>date_width:
+		date.tooltip_text=date.text
+	var height := maxf(45.0*C.density,26.0/factor)
+	action.add_theme_font_size_override("font_size",maxi(C.px(25),ceili(14.0/factor)))
+	action.position.y=(79.0*C.density-height)/2.0
+	action.size.y=height
 
 static func _heading(parent: Node, app: Control) -> void:
 	var row := Control.new()
@@ -388,10 +419,10 @@ static func _footer(parent: Node, app: Control, layout: Control) -> void:
 	C.fill(row)
 	parent.add_child(row)
 	layout.set_meta("immersive_footer",row)
-	D.line(row,Vector2.ZERO,Vector2(2248,0),Color(C.LINE,.7))
+	D.line(row,Vector2(0,-FOOTER_RISE),Vector2(2248,-FOOTER_RISE),Color(C.LINE,.7))
 	app.status = D.text(row,2,36,app._settled_status_text(),17,C.ALERT if app._status_has_error() else C.MUTED,500,900)
 	app.status.name = "ImmersiveSaveStatus"
-	var shortcuts := D.text(row,782,36,"Ctrl S  Sauvegarder     ·     Ctrl K  Rechercher     ·     F1  Aide",17,C.FAINT,400,800,HORIZONTAL_ALIGNMENT_LEFT,true)
+	var shortcuts := D.text(row,782,36-FOOTER_RISE,"Ctrl S  Sauvegarder     ·     Ctrl K  Rechercher     ·     F1  Aide",17,C.FAINT,400,800,HORIZONTAL_ALIGNMENT_LEFT,true)
 	shortcuts.name="ImmersiveShortcuts"
 	if app.decision_feedback != null:
 		var feedback: Button = app.decision_feedback.control()
@@ -422,16 +453,29 @@ static func _position_footer(row: Control) -> void:
 	var gap := maxf(C.px(16),8.0/factor)
 	var right := (feedback.position.x if feedback!=null else dock.position.x)-gap
 	var shortcuts: Label = row.get_node_or_null("ImmersiveShortcuts")
-	if shortcuts!=null:
-		shortcuts.visible = row.size.x*factor>=1650
-		if shortcuts.visible:
-			shortcuts.position.x = maxf(C.px(782),630.0/factor)
-			right = minf(right,shortcuts.position.x-gap)
+	var compact := C.px(24)*factor<14.0
+	var side_by_side := not compact and row.size.x*factor>=1650
+	var shortcuts_x := maxf(C.px(782),630.0/factor)
+	if side_by_side: right = minf(right,shortcuts_x-gap)
 	var pixels := maxi(C.px(17),ceili(14.0/factor))
 	var font := status.get_theme_font("font")
 	status.add_theme_font_size_override("font_size",pixels)
-	status.position.y = row.size.y-C.px(8)-font.get_ascent(pixels)
+	status.position.y = row.size.y-C.px(8+FOOTER_RISE)-font.get_ascent(pixels)
 	status.size = Vector2(maxf(0.0,right-status.position.x),font.get_height(pixels))
+	if shortcuts==null: return
+	shortcuts.visible=compact or side_by_side
+	var shortcut_font := C.MEDIUM if compact else C.BODY
+	var shortcut_px := pixels if compact else maxi(12,C.px(17))
+	var shortcut_height := shortcut_font.get_height(shortcut_px)
+	shortcuts.add_theme_font_override("font",shortcut_font)
+	shortcuts.add_theme_font_size_override("font_size",shortcut_px)
+	shortcuts.add_theme_color_override("font_color",C.MUTED if compact else C.FAINT)
+	if compact:
+		shortcuts.position=Vector2(status.position.x,status.position.y-shortcut_height-1.0/factor)
+		shortcuts.size=Vector2(status.size.x,shortcut_height)
+	else:
+		shortcuts.position=Vector2(shortcuts_x,C.px(36-FOOTER_RISE)-shortcut_font.get_ascent(shortcut_px))
+		shortcuts.size=Vector2(C.px(800),shortcut_height)
 
 static func _existing_page(app: Control, immersive_match: bool) -> void:
 	match app.route:
@@ -474,7 +518,7 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 		"Travail du club": app.body.add_child(app.SupportViews.build(app))
 		"Carrière": app.body.add_child(app.ManagerCareerViews.build(app))
 		"Match":
-			app.match_screen = MatchCanvas.new() if immersive_match else app.MatchUI.new()
+			app.match_screen = MatchCanvas.new() if immersive_match else MatchCompact.new()
 			app.match_screen.app = app
 			app.body.add_child(app.match_screen)
 			app.match_page = app.match_screen

@@ -11,6 +11,7 @@ const JOURNAL_CATEGORY_PIXELS = 104
 var opening: Control
 var opening_title: Label
 var opening_context: Label
+var opening_position: Label
 var opening_status: Label
 var result_strip: PanelContainer
 var result_title: Label
@@ -121,7 +122,11 @@ func _add_pitch_overlays() -> void:
 	opening_title=C.wrap("Avant le coup d’envoi",64,C.IVORY,true,800)
 	lines.add_child(opening_title)
 	opening_context=C.wrap("",25,C.IVORY)
+	opening_context.name="MatchFixtureVenue"
 	lines.add_child(opening_context)
+	opening_position=C.label("",21,C.GOLD,true,700)
+	opening_position.name="MatchFixturePosition"
+	lines.add_child(opening_position)
 	opening_status=C.wrap("",23,C.MINT,true,700)
 	lines.add_child(opening_status)
 	var actions := C.h(12)
@@ -180,8 +185,10 @@ func update_frame(value: Dictionary) -> void:
 		var next_title := "Avant le coup d’envoi"
 		if fixture.is_empty(): next_title="Saison terminée" if value.meta.get("canAdvanceSeason",false) else "En attente de rencontre"
 		opening_title.text=next_title
-		var venue := str(fixture.get("venue",GameSkin.identity(fixture.get("home",{})).get("stadium","")))
+		var venue := Present.fixture_venue(fixture,false) if not fixture.is_empty() else ""
 		opening_context.text="  ·  ".join([str(fixture.get("label","Calendrier du club")),venue].filter(func(item:String):return not item.is_empty()))
+		opening_position.visible=not fixture.is_empty()
+		if opening_position.visible: opening_position.text=Present.fixture_position(fixture,value.get("club",{}).get("id"))
 		var ready: bool = value.get("selection",{}).get("valid",false)
 		opening_status.text="FEUILLE VALIDÉE" if ready else "COMPOSITION À VÉRIFIER"
 		opening_status.visible=not fixture.is_empty()

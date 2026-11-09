@@ -154,9 +154,11 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 		var timing := C.wrap(date+" · "+P.league_name(app.model),25,C.IVORY,true)
 		timing.name="OfficeFixtureDate"
 		left.add_child(timing)
-		var venue := C.wrap(P.fixture_venue(next),18)
-		venue.name="OfficeFixtureVenue"
-		left.add_child(venue)
+		var venue_name := P.fixture_venue(next,false)
+		if not venue_name.is_empty():
+			var venue := C.wrap(venue_name,18)
+			venue.name="OfficeFixtureVenue"
+			left.add_child(venue)
 		left.add_child(C.wrap("Préparez votre XV et confirmez vos choix de jeu.", 19))
 	var spacer := Control.new()
 	C.fill(spacer, true)

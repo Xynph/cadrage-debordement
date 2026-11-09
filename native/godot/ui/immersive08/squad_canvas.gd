@@ -4,6 +4,8 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
 const U = preload("res://ui/management_state.gd")
+const ROW_HEIGHT := 33
+const GROUP_HEIGHT := 29
 const Training = preload("res://ui/immersive08/training_canvas.gd")
 var app: Control
 var state: Dictionary
@@ -95,7 +97,11 @@ func _build() -> void:
 	scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_AUTO
 	table.add_child(scroll)
 	D.place(scroll,Rect2(18,116,1668,908))
+	# Réserver la place de deux intertitres sur une page pleine.
+	var full_page := capacity*C.px(ROW_HEIGHT)+2*C.px(GROUP_HEIGHT)
+	var gap := floori((scroll.size.y-full_page)/float(capacity+1))
 	rows=C.v(2)
+	rows.add_theme_constant_override("separation",clampi(gap,0,C.px(2)))
 	rows.name="ImmersiveRosterRows"
 	rows.custom_minimum_size.x=C.px(1668)
 	C.fill(rows)
@@ -105,12 +111,15 @@ func _build() -> void:
 	page_info=D.text(table,1366,1054,"",19,C.MUTED,500,190,HORIZONTAL_ALIGNMENT_CENTER)
 	page_info.name="RosterPaginationInfo"
 	next=D.button(table,Rect2(1480,1030,190,30),"Suivant →",func():state.page=int(state.page)+1;_refresh(false),false,"",true,app.accent,"RosterPaginationNext")
+	var pager_height := maxf(25.0,C.px(30))
+	var pager_max_top := table.size.y-pager_height-C.px(2)
 	for button: Button in [previous,next]:
 		for mode in ["hover","pressed","disabled"]:
 			var style := button.get_theme_stylebox(mode)
 			style.content_margin_top=0
 			style.content_margin_bottom=0
-		button.set_deferred("size",Vector2(button.size.x,maxf(25.0,C.px(30))))
+		button.position.y=minf(button.position.y,pager_max_top)
+		button.set_deferred("size",Vector2(button.size.x,pager_height))
 	dossier=Control.new()
 	dossier.name="PlayerDossier"
 	add_child(dossier)
@@ -166,9 +175,9 @@ func _refresh(reveal: bool) -> void:
 		if state.sort=="Poste" and group!=family:
 			family=group
 			var banner:=Control.new()
-			banner.custom_minimum_size=Vector2(C.px(1668),C.px(29))
+			banner.custom_minimum_size=Vector2(C.px(1668),C.px(GROUP_HEIGHT))
 			rows.add_child(banner)
-			D.rect(banner,Rect2(0,0,1668,29),Color("122421"),2)
+			D.rect(banner,Rect2(0,0,1668,GROUP_HEIGHT),Color("122421"),2)
 			var total:int=app.model.get("squad",[]).filter(func(p:Dictionary):return (float(p.get("fam",0))<=3)==(group=="AVANTS")).size()
 			D.text(banner,14,22,group+" · "+str(total)+" JOUEURS",19,C.GOLD,700,900)
 		_row(player,i)
@@ -182,7 +191,7 @@ func _row(player:Dictionary,index:int) -> void:
 	var row:=Button.new()
 	row.name="SquadPlayer"+str(player.id).replace(":","_")
 	row.set_meta("player_id",str(player.id))
-	row.custom_minimum_size=Vector2(C.px(1668),C.px(33))
+	row.custom_minimum_size=Vector2(C.px(1668),C.px(ROW_HEIGHT))
 	row.clip_contents=true
 	row.tooltip_text=str(player.name)+" · "+str(player.pos)
 	row.add_theme_stylebox_override("normal",C.box(Color("155f3e") if str(player.id)==app.selected_player else Color("141d1f") if index%2==0 else Color.TRANSPARENT,Color.TRANSPARENT,3,0))

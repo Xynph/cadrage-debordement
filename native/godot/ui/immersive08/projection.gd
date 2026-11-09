@@ -28,13 +28,17 @@ static func next_scheduled_fixture(model: Dictionary) -> Dictionary:
 		if not fixture.get("played", false) and int(fixture.get("week", 0)) > week: return fixture
 	return {}
 
-static func fixture_venue(fixture: Dictionary) -> String:
+static func fixture_venue(fixture: Dictionary, neutral_fallback: bool = true) -> String:
 	var venue: Variant = fixture.get("venue")
 	if venue is Dictionary: venue = venue.get("name")
 	if venue is String and not venue.is_empty() and venue.to_lower() not in ["home","away","neutral"]: return venue
-	if fixture.get("neutral",false): return "Terrain neutre"
+	if fixture.get("neutral",false): return "Terrain neutre" if neutral_fallback else ""
 	var home: Dictionary = fixture.get("home",{})
 	return str(G.identity(home).get("stadium",home.get("stadium","")))
+
+static func fixture_position(fixture: Dictionary, club_id: Variant) -> String:
+	if fixture.get("neutral",false): return "TERRAIN NEUTRE"
+	return "À DOMICILE" if fixture.get("home",{}).get("id")==club_id else "À L’EXTÉRIEUR"
 
 static func group(model: Dictionary) -> Dictionary:
 	var squad: Array = model.get("squad", [])

@@ -18,6 +18,8 @@ La branche reprend le moteur 0.7.7 sur `7ea396f`. La recette source du Champ et 
 
 La recette historique de ce même paquet Atlas passe 1 513 contrôles sous Windows. Sur le raccord Formation, Calendrier permet d’ouvrir le détail des rencontres européennes à 720p. Le sélecteur refuse un octet NUL brut dans un fichier d’import, y compris après un JSON complet. La recette embarquée vérifie aussi les entrées masquées du dossier de test et s’arrête si une carrière est déjà chargée.
 
+Le lot immersif 0.7.8 reprend le main 462efce. Les gabarits ont été mesurés à 1440p et la recette source passe 498 contrôles sous Windows. Le vestiaire conserve son repère, les onglets tactiques restent accessibles à 720p et la fiche distingue blessure, reprise et sélection. Le Calendrier ouvre le détail du lieu depuis la ligne de la rencontre. Le paquet 0.7.7 précédent a été reçu avec l’Atlas, les anciennes carrières et un déplacement du paquet Pacifique.
+
 ## 9 novembre 2026 — carrière européenne et profils compatibles
 
 L'édition `rugby-world-2026-11-08-v1` ajoute le mode Monde sans convertir les anciennes carrières. Le registre compilé reprend les 1 592 objets France à l'identique et ajoute PREM, URC et deux invités européens. Les dates de départ sourcées, les règles et leurs éditions figurent dans la [documentation des compétitions](docs/world-competition-rules-20261109.md). Les calendriers futurs et les invitations du monde fermé suivent des décisions de jeu explicites, sans importer de scores réels.

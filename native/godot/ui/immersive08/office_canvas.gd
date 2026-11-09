@@ -85,10 +85,12 @@ static func _fixture(card: Panel, app: Control) -> void:
 	var date := P.fixture_date(next, true)
 	if date.is_empty(): date = "SEMAINE %d" % [int(next.get("week",0))+1]
 	D.text(card,67,216,date+" · "+P.league_name(app.model),28,C.IVORY,600,680).name="OfficeFixtureDate"
-	var home := C.icon("home",23,C.MUTED)
-	card.add_child(home)
-	D.place(home,Rect2(29,235,23,23))
-	D.text(card,67,255,P.fixture_venue(next),21,C.MUTED,400,650,HORIZONTAL_ALIGNMENT_LEFT,true).name="OfficeFixtureVenue"
+	var venue_name := P.fixture_venue(next,false)
+	if not venue_name.is_empty():
+		var home := C.icon("home",23,C.MUTED)
+		card.add_child(home)
+		D.place(home,Rect2(29,235,23,23))
+		D.text(card,67,255,venue_name,21,C.MUTED,400,650,HORIZONTAL_ALIGNMENT_LEFT,true).name="OfficeFixtureVenue"
 	for i in 2:
 		var club: Dictionary = next.get("home",{}) if i==0 else next.get("away",{})
 		var rank := G.n(club.get("rank","—"))

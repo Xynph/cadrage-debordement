@@ -29,8 +29,13 @@ static func build(application: Control, canvas: Control) -> void:
 
 static func compact(app: Control) -> Control:
 	var dossier: Control = app.SquadViews.preparation(app)
-	if not SeasonPreparation.is_japan(app.model.meta): return dossier
 	var next: Variant = app.model.get("next")
+	if not SeasonPreparation.is_japan(app.model.meta):
+		if next is Dictionary and (next.has("venue") or next.get("neutral",false)):
+			var context := _compact_fixture(app,next)
+			dossier.add_child(context)
+			dossier.move_child(context,0)
+		return dossier
 	var preparation := SeasonPreparation.data(app.model.meta)
 	if preparation.is_empty() and not next is Dictionary: return dossier
 	var page := C.v(10)
@@ -50,14 +55,27 @@ static func compact(app: Control) -> Control:
 		advance.disabled = app.waiting
 		row.add_child(advance)
 	else:
-		summary.add_child(C.wrap(_japan_match_note(next),29,C.IVORY))
+		summary.add_child(_compact_fixture(app,next,true))
 	page.add_child(dossier)
 	return page
 
-static func _japan_match_note(next: Dictionary) -> String:
-	var date := P.fixture_date(next)
-	var venue := P.fixture_venue(next)
-	return date + " · " + venue if not date.is_empty() and not venue.is_empty() else date + venue
+static func _fixture_position(app: Control, next: Dictionary, show_date: bool) -> String:
+	var position := P.fixture_position(next,app.model.club.get("id"))
+	var date := P.fixture_date(next,true) if show_date else ""
+	return position if date.is_empty() else position+"  ·  "+date
+
+static func _compact_fixture(app: Control, next: Dictionary, show_date: bool = false) -> HBoxContainer:
+	var row := C.h(16)
+	var position := C.label(_fixture_position(app,next,show_date),26,C.GOLD,true,700)
+	position.name = "PreparationFixturePosition"
+	row.add_child(position)
+	var venue_name := P.fixture_venue(next,false)
+	if not venue_name.is_empty():
+		var venue := C.wrap(venue_name,26,C.IVORY,true,600)
+		venue.name = "PreparationFixtureVenue"
+		C.fill(venue)
+		row.add_child(venue)
+	return row
 
 func _build() -> void:
 	if not app.management_ui.get("preparation") is Dictionary:
@@ -95,8 +113,12 @@ func _heading() -> void:
 		context = World.preparation_note(preparation)
 		var advance := _button(hero, Rect2(1564, 83, 640, 53), app.primary_text().trim_suffix("  →"), app.primary_action, true, "arrow", "JapanPreparationDossierAdvance")
 		advance.disabled = app.waiting
-	elif japan and not fixture.is_empty():
-		D.chip(hero,Rect2(1469,100,735,43),_japan_match_note(fixture),C.GOLD)
+	elif not fixture.is_empty() and (fixture.has("venue") or fixture.get("neutral",false)):
+		var location := D.panel(hero,Rect2(1392,76,812,77),"","","","PreparationFixtureLocation")
+		var venue_name := P.fixture_venue(fixture,false)
+		D.text(location,16,49 if venue_name.is_empty() else 29,_fixture_position(app,fixture,true),20,C.GOLD,700,780).name = "PreparationFixturePosition"
+		if not venue_name.is_empty():
+			D.text(location,16,61,venue_name,24,C.IVORY,600,780).name = "PreparationFixtureVenue"
 	D.text(hero, 29, 143, context, 25, C.IVORY, 500, 1220)
 	var tabbar := Control.new()
 	tabbar.name = "PreparationTabs"
