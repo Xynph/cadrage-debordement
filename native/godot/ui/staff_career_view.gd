@@ -16,8 +16,9 @@ static func build(app: Control, parent: Container, data: Dictionary) -> void:
 	var overview := G.v(8)
 	overview.name = "StaffCareerOverview"
 	parent.add_child(overview)
-	overview.add_child(G.wrap(data.get("notice", ""), 13))
+	overview.add_child(G.wrap("Les contrats descriptifs restent gratuits. Les contrats rémunérés volontaires figurent dans le budget staff ; ils n’accordent aucun bonus de match." if app.model.get("clubLife", {}).get("staffEmployment", {}).get("enabled", false) else data.get("notice", ""), 13))
 	_mentoring(app, overview)
+	_employment(app, overview)
 	var teams: Array = app.model.get("staff", {}).get("teams", data.get("teams", []))
 	var chooser := OptionButton.new()
 	chooser.name = "StaffClub"
@@ -73,7 +74,7 @@ static func build(app: Control, parent: Container, data: Dictionary) -> void:
 	tabs.item_selected.connect(func(_i: int): local.page = 0; redraw.call())
 	search.text_changed.connect(func(_q: String): local.page = 0; redraw.call())
 	redraw.call()
-	parent.add_child(G.wrap("Les âges et contrats sont ceux de la carrière simulée. Les identités n’accordent aucun bonus de match. Salaires et primes de staff : 0 € dans cette version.", 12))
+	parent.add_child(G.wrap("Les âges et contrats sont ceux de la carrière simulée. Les identités n’accordent aucun bonus de match. Les engagements rémunérés sont indiqués séparément ; les autres contrats restent descriptifs.", 12))
 
 static func _person(app: Control, parent: Container, person: Dictionary, data: Dictionary, own: bool) -> void:
 	var card := G.card(parent)
@@ -91,8 +92,17 @@ static func _person(app: Control, parent: Container, person: Dictionary, data: D
 	text.add_child(G.wrap("%s ans · %s" % [G.n(person.get("age", 0)), "âge de carrière estimé" if estimated else "âge de carrière"], 12))
 	if person.get("contractEnd") != null: text.add_child(G.wrap("Contrat jusqu’à la saison %s" % G.n(person.contractEnd), 12))
 	if person.get("sourcePlayerId") != null: text.add_child(G.wrap("Ancien joueur · reconversion dans l’encadrement", 12, G.GOOD))
+	var employment := _employment_person(app, str(person.id))
+	if employment.get("employed", false): text.add_child(G.wrap("Contrat rémunéré · %s €/semaine · %s paies restantes · rupture %s €" % [G.n(employment.paidSalary), G.n(employment.remainingPayments), G.n(employment.severance)], 12, G.GOLD))
 	var actions := G.h(6)
 	card.add_child(actions)
+	if own and not employment.is_empty() and not employment.get("employed", false) and app.model.get("clubLife", {}).get("staffEmployment", {}).get("enabled", false):
+		var adopt := G.button("ADOPTER LE CONTRAT RÉMUNÉRÉ", func():
+			var data_finance: Dictionary = app.model.clubLife.staffEmployment
+			app.confirm("Rémunérer " + str(person.name), "%s €/semaine, engagement restant %s €. Les autres dépenses du club continuent. Confirmer l’adoption volontaire ?" % [G.n(employment.salary),G.n(employment.adoptionCommitment)], func(): app._command("staff_employment_adopt", {"confirmed":true,"context":data_finance.context.duplicate(true),"staffId":str(person.id),"salary":int(employment.salary)})))
+		adopt.name = "StaffEmploymentAdopt"
+		adopt.disabled = app.model.clubLife.staffEmployment.get("locked", true)
+		actions.add_child(adopt)
 	if person.get("canHire", false):
 		var hire := G.button("RECRUTER →", func(): _contract(app, person, data, false))
 		hire.name = "StaffHire"
@@ -111,16 +121,30 @@ static func _contract(app: Control, person: Dictionary, data: Dictionary, renew:
 	var dialog: AcceptDialog = view[0]
 	var list: VBoxContainer = view[1]
 	list.add_child(G.section(person.name, person.get("roleLabel", person.get("role", "Staff"))))
-	list.add_child(G.wrap("Salaires et prime : 0 € dans cette version. Le contrat fixe la durée de présence dans le club.", 14))
+	var employment: Dictionary = app.model.get("clubLife", {}).get("staffEmployment", {})
+	var paid: bool = employment.get("enabled", false)
+	var person_finance := _employment_person(app, str(person.id))
+	list.add_child(G.wrap("Salaire de jeu : %s €/semaine, sans prime de signature. Les autres charges du club continuent." % G.n(person_finance.get("salary",0)) if paid else "Contrat descriptif : salaires et prime 0 €. Le contrat fixe la durée de présence dans le club.", 14))
 	var years := OptionButton.new()
 	years.name = "StaffContractYears"
 	for n in range(int(person.get("minYears", 1)), int(person.get("maxYears", data.get("maxYears", 3))) + 1):
 		years.add_item("%d saison%s" % [n, "s" if n > 1 else ""]); years.set_item_metadata(years.item_count - 1, n)
 	list.add_child(years)
+	var commitment := G.wrap("", 14)
+	commitment.name = "StaffEmploymentCommitment"
+	list.add_child(commitment)
+	var refresh_cost := func():
+		if not paid or years.selected < 0: return
+		var duration := int(years.get_item_metadata(years.selected))
+		var payments := int(employment.get("remainingCurrentSeason",0)) + (duration - 1) * int(employment.get("weeksPerSeason",29))
+		commitment.text = "Engagement projeté : %s € sur %d paies. Réserve 50 000 € et provision de huit paies du staff requises." % [G.n(payments * int(person_finance.get("salary",0))),payments]
+	years.item_selected.connect(func(_i: int): refresh_cost.call())
+	refresh_cost.call()
 	var sign := G.button("CONFIRMER LE CONTRAT", func():
 		var payload := {"confirmed":true,"context":data.context.duplicate(true),"years":int(years.get_item_metadata(years.selected))}
 		payload["staffId" if renew else "candidateId"] = str(person.id)
-		dialog.queue_free(); app._command("staff_renew" if renew else "staff_hire", payload), true)
+		if paid: payload.salary = int(person_finance.get("salary",0)); payload.context = employment.context.duplicate(true)
+		dialog.queue_free(); app._command(("staff_employment_renew" if renew else "staff_employment_hire") if paid else ("staff_renew" if renew else "staff_hire"), payload), true)
 	sign.name = "StaffContractConfirm"
 	sign.disabled = years.item_count == 0
 	list.add_child(sign)
@@ -129,7 +153,15 @@ static func _contract(app: Control, person: Dictionary, data: Dictionary, renew:
 static func _departure(app: Control, parent: Container, person: Dictionary, data: Dictionary, command: String, title: String, detail: String) -> void:
 	var button := G.button(title, func():
 		var payload := {"confirmed":true,"context":data.context.duplicate(true),"staffId":str(person.id)}
-		app.confirm(title + " · " + str(person.name), detail, func(): app._command(command, payload)))
+		var employment := _employment_person(app, str(person.id))
+		var destination := command
+		var message := detail
+		if employment.get("employed",false):
+			payload.severance = int(employment.severance)
+			payload.context = app.model.clubLife.staffEmployment.context.duplicate(true)
+			destination = "staff_employment_retire" if command == "staff_retire" else "staff_employment_release"
+			message += " Indemnité de rupture : %s €, au plus deux paies." % G.n(employment.severance)
+		app.confirm(title + " · " + str(person.name), message, func(): app._command(destination, payload)))
 	button.name = "StaffRelease" if command == "staff_release" else "StaffRetire"
 	button.set_meta("staff_id", person.id)
 	parent.add_child(button)
@@ -205,3 +237,27 @@ static func _mentor_dialog(app: Control, data: Dictionary) -> void:
 	confirm.name = "StaffMentorConfirm"
 	list.add_child(confirm)
 	dialog.popup_centered()
+
+static func _employment_person(app: Control, staff_id: String) -> Dictionary:
+	var data: Dictionary = app.model.get("clubLife", {}).get("staffEmployment", {})
+	for person: Dictionary in data.get("own", []) + data.get("candidates", []):
+		if str(person.id) == staff_id: return person
+	return {}
+
+static func _employment(app: Control, parent: Container) -> void:
+	var data: Dictionary = app.model.get("clubLife", {}).get("staffEmployment", {})
+	if not data.get("available", false): return
+	if not data.get("enabled", false):
+		var activate := G.button("ACTIVER LES CONTRATS RÉMUNÉRÉS",func(): app.confirm("Rémunération nominative du staff", "Activation gratuite, sans adoption des contrats en poste. Les futurs recrutements de ce club seront rémunérés selon un barème fictif visible avant signature ; aucun bonus de match ajouté.",func():app._command("staff_employment_enable",{"confirmed":true,"context":data.context.duplicate(true)})))
+		activate.name = "StaffEmploymentEnable"; activate.disabled = not data.get("canEnable", false)
+		parent.add_child(activate)
+	else:
+		var budget := G.button("BUDGET STAFF · %s €/SEMAINE →" % G.n(data.get("weeklyWages",0)),func():
+			var view := Dialogs.dialog(app,"Engagements du staff","StaffEmploymentBudget",700)
+			var dialog: AcceptDialog = view[0]
+			var list: VBoxContainer = view[1]
+			list.add_child(G.wrap(str(data.get("notice","")),14))
+			list.add_child(G.wrap("Trésorerie : %s € · engagements staff : %s € · solde après ces seuls engagements : %s €. Autres recettes et dépenses exclues." % [G.n(data.cash),G.n(data.knownCommitment),G.n(data.forecastAfterKnownStaff)],15))
+			dialog.popup_centered())
+		budget.name = "StaffEmploymentBudgetOpen"
+		parent.add_child(budget)
