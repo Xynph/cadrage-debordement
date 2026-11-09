@@ -25,3 +25,11 @@ L'inventaire public Atlas reste30villes+30stades présents et vérifiés. Le re�
 ## Intégration
 
 La dernière CI complète devra être verte sur le SHA publié exact, suivie du gate officiel et du contrôle post-fusion. Les runs antérieurs ne valent pas validation de cette tête. Le timeout antérieur du test intégré académie a été comparé aux logs et reproduit localement : variance de durée, sans divergence logique démontrée ; aucun plafond n'est relevé pour le masquer.
+
+### Corrections après la CI de 66d6225
+
+L'auditeur des contrats cherchait encore les six alias dans les effectifs actifs. Il vérifie maintenant la source de compatibilité séparée et distingue 5 878 fiches actives, six alias historiques et 5 884 IDs lisibles ; toutes les gardes de rattachement restent actives. Dix tests ciblés et l'audit CLI de production passent, avec les mêmes 114 échéances et 71 modifications relevées.
+
+Les trois campagnes France de référence précèdent les métadonnées de portraits. Leurs contextes de test reproduisent explicitement ces anciennes naissances, sans filtrer l'état final ou changer les SHA attendus. Les dix saisons et leurs 4 330 résultats retrouvent les documents, empreintes et curseurs de hasard d'origine. Les naissances actuelles de banque2 restent couvertes séparément par sept tests de vrais workers et de persistance.
+
+Le [cache des prédicats natifs](native-save-predicate-cache-20261109.md) réduit ensuite le coût de validation sans retirer de contrôle. Les mêmes fonctions `Number.isFinite`, `Number.isInteger` et `Array.isArray` sont mémorisées au chargement. Sur le même parcours complet, le témoin frais66d prend118,247s et la version retenue98,364s, soit16,81% de gain mural ; exports, six checkpoints et deux fichiers de profil restent identiques à l'octet. Le plafond reste180s. Le contrat des types, coercitions, proxies et limites ainsi que les régressions de sauvegarde sont reçus ; le staging et le pont Godot sont vérifiés à nouveau après intégration. La CI du nouveau SHA demeure nécessaire.
