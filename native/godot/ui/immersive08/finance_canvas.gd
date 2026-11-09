@@ -72,10 +72,11 @@ static func build(app: Control, canvas: Control) -> void:
 static func _header(app: Control, canvas: Control, tab: String) -> void:
 	D.photo(canvas, "finance-hospitality", Rect2(1370,0,878,185))
 	U.art_fade(canvas, Rect2(1370,0,185,185))
+	D.chip(canvas, Rect2(2005,11,147,26), "ILLUSTRATION", C.GOLD).name = "FinanceHospitalityIllustration"
 	D.text(canvas, 2, 38, "L’ÉQUILIBRE DU PROJET", 31, C.GOLD, 700, 400)
 	D.line(canvas, Vector2(329,23), Vector2(650,23), Color(C.GOLD,.65))
 	U.italic(D.text(canvas, 7, 106, "Garder une longueur d’avance.", 76, C.IVORY, 800, 1280), 800)
-	var period := D.rect(canvas, Rect2(1164,36,408,76), Color("101c19"), 5, Color(C.MINT,.7))
+	var period := D.rect(canvas, Rect2(940,36,408,76), Color("101c19"), 5, Color(C.MINT,.7))
 	U.icon(period, "calendar", Vector2(18,19), C.GOLD, 28)
 	var week := int(app.model.meta.get("week",0)) + 1
 	var stage := "BILAN" if app.model.meta.get("phase","") == "ended" else "SEM. %d" % week

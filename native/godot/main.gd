@@ -565,6 +565,7 @@ func _update_header_date() -> void:
 		header_date.tooltip_text = round_label
 	else:
 		var short_round := round_label.get_slice(" · ",0) if round_label.begins_with("Semaine ") else round_label
+		if round_label == "Saison terminée": short_round = "Terminée"
 		header_date.text = ("SAISON %s  /  %s" % [G.n(meta.get("season", 1)),short_round]).to_upper()
 		header_date.tooltip_text = round_label if short_round!=round_label else ""
 

@@ -310,7 +310,7 @@ func _calendar() -> void:
 	D.text(panel, 1288, 88, "%d rencontre(s)" % visible.size(), 23, C.MUTED, 500, 200, HORIZONTAL_ALIGNMENT_RIGHT)
 	var header := D.rect(panel, Rect2(1, 111, LEFT - 2, 39), Color("172426"), 3)
 	var period := "DATE / PHASE" if international else "JOURNÉE / PHASE"
-	for spec: Array in [[19, period, 230], [296, "ADVERSAIRE", 430], [720, "LIEU", 210], [929, "COMPÉTITION", 200], [1142, "RÉSULTAT", 154]]:
+	for spec: Array in [[19, period, 230], [296, "ADVERSAIRE", 430], [720, "LIEU", 228], [954, "COMPÉTITION", 185], [1142, "RÉSULTAT", 154]]:
 		D.text(header, spec[0], 27, spec[1], 23, C.MUTED, 600, spec[2])
 	var bounds := _pager(panel, "CalendarPagination", "CalendarPagination", visible.size(), 11, 683, 822)
 	for i in range(bounds.x, bounds.y):
@@ -358,11 +358,11 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 	_icon(row, "flag" if location_kind == "neutral" else "home" if location_kind == "home" else "arrow", Rect2(place_x, (line_height - 18) / 2.0, 18, 18), C.IVORY)
 	var venue_parts := venue.split(" · ",false,1)
 	if not compact and venue_parts.size() == 2:
-		D.text(row,place_x+25,middle-7,venue_parts[0],22,C.IVORY,600,177)
-		D.text(row,place_x+25,middle+11,venue_parts[1],17,C.MUTED,500,177)
+		D.text(row,place_x+25,middle-7,venue_parts[0],22,C.IVORY,600,204)
+		D.text(row,place_x+25,middle+11,venue_parts[1],17,C.MUTED,500,204)
 	else:
-		D.text(row,place_x+25,middle,venue if not venue.is_empty() and not compact else _location(fixture,compact),22,C.IVORY,500,85 if compact else 177)
-	D.text(row,589 if compact else 929,middle,World.short_name(_competition_id(fixture),competition),22,C.MUTED,500,185)
+		D.text(row,place_x+25,middle,venue if not venue.is_empty() and not compact else _location(fixture,compact),22,C.IVORY,500,85 if compact else 204)
+	D.text(row,589 if compact else 954,middle,World.short_name(_competition_id(fixture),competition),22,C.MUTED,500,185)
 	var result_x := width - (140 if compact else 157)
 	var code := _fixture_outcome(fixture)
 	var score := _score(fixture, own.id)
@@ -455,6 +455,8 @@ func _bottom() -> void:
 	_leader(Rect2(1373, 1013, 376, 211), "MEILLEURE DÉFENSE", "shield", "pa", "Points encaissés", false)
 	var scorer := _panel(self, Rect2(1765, 1013, 483, 211), "MEILLEUR RÉALISATEUR", "ball", "CompetitionScoring")
 	D.photo(scorer, "player-hero", Rect2(6, 51, 158, 155))
+	var caption := D.rect(scorer, Rect2(6, 181, 158, 25), Color("101819e8"), 3)
+	D.text(caption, 0, 18, "ILLUSTRATION", 16, C.IVORY, 700, 158, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(scorer, 180, 89, "Donnée indisponible", 26, C.IVORY, 700, 280)
 	D.text(scorer, 180, 123, "Points individuels", 22, C.MUTED, 500, 280)
 	D.text(scorer, 180, 150, "non conservés par la carrière.", 22, C.MUTED, 500, 287)

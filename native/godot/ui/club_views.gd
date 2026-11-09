@@ -314,11 +314,18 @@ static func tables(app: Control) -> Control:
 	if not international: sheet.add_child(archives)
 	var tabs := G.h(10)
 	sheet.add_child(tabs)
+	var abbreviations := {"prem":"PREM","urc":"URC","champions":"CHAMPIONS","challenge":"CHALLENGE"}
+	if app.model.meta.get("edition") == "world-japan":
+		abbreviations.merge({"accession":"ACCESSION","jlo-d1":"JAPON D1","jlo-d2":"JAPON D2"})
 	for league: Dictionary in leagues:
 		var label := str(league.get("name", league.id))
-		var short := str({"prem":"PREM","urc":"URC","champions":"CHAMPIONS","challenge":"CHALLENGE"}.get(league.id, label.to_upper())) if international else label.to_upper()
-		var b := G.button(short, func(): app.table_division = league.id; app._render())
-		b.name = "StandingsDivision_" + str(league.id)
+		var short := str(abbreviations.get(league.id, label.to_upper())) if international else label.to_upper()
+		var id := "StandingsDivision_" + str(league.id)
+		var b := G.button(short, func():
+			app.table_division = league.id
+			app._render()
+			preload("res://ui/immersive08/club_ui.gd").focus(app,id))
+		b.name = id
 		if international: G.reading_button(b, 82)
 		b.tooltip_text = label
 		G.fill(b)

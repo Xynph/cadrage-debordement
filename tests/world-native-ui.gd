@@ -35,6 +35,32 @@ func press(control: BaseButton) -> void:
 	if control != null and not control.disabled: control.pressed.emit()
 	await settle()
 
+func click_action(control: BaseButton) -> bool:
+	var available := control != null and control.is_visible_in_tree() and not control.disabled
+	check(available,"Action de création visible et active")
+	if not available: return false
+	var point := control.get_global_transform_with_canvas() * (control.size / 2.0)
+	var motion := InputEventMouseMotion.new()
+	motion.position = point
+	motion.global_position = point
+	root.push_input(motion,true)
+	await process_frame
+	var hovered := root.gui_get_hovered_control()
+	var hit := hovered != null and (hovered == control or control.is_ancestor_of(hovered))
+	check(hit,"Gabi laisse le centre de l’action de création accessible")
+	if not hit: return false
+	for down in [true,false]:
+		var event := InputEventMouseButton.new()
+		event.position = point
+		event.global_position = point
+		event.button_index = MOUSE_BUTTON_LEFT
+		event.button_mask = MOUSE_BUTTON_MASK_LEFT if down else 0
+		event.pressed = down
+		root.push_input(event,true)
+		await process_frame
+	await settle()
+	return true
+
 func named(id: String) -> Node:
 	return app.find_child(id, true, false)
 
@@ -123,6 +149,17 @@ func check_competitions() -> void:
 	await settle()
 	check(text_present(app, "Les compétitions Espoirs ne sont pas encore disponibles") and button("ACTIVER LES PARCOURS") == null, "Centre mondial · raison visible et activation absente")
 
+func finish() -> void:
+	app.bridge.stop()
+	var deadline := Time.get_ticks_msec() + 4000
+	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await process_frame
+	check(app.bridge.child_pid <= 0, "Moteur de test arrêté")
+	root.remove_child(app)
+	app.queue_free()
+	await settle()
+	print("WORLD_NATIVE_UI_CHECKS ", JSON.stringify({"checks":checks,"failures":failures,"display":DisplayServer.get_name(),"visible_pool_rows":visible_pool_rows}))
+	quit(0 if failures.is_empty() else 1)
+
 func _run() -> void:
 	root.size = Vector2i(1280,720)
 	root.content_scale_size = root.size
@@ -150,7 +187,14 @@ func _run() -> void:
 	check(app.model.meta.worldPackCreation != "base" and app.model.meta.legacyPackCreation == "base", "Préférence Monde isolée")
 	await press(button("← RETOUR"))
 	check(named("CreationClubTitle").text == "Bath témoin", "Identité Monde appliquée avant création")
-	await press(named("CreationStart"))
+	check(is_instance_valid(app.coach),"Guide présent dans le formulaire")
+	if is_instance_valid(app.coach):
+		app.coach.open_help()
+		await settle()
+		check(app.coach.expanded,"Aide de création ouverte pendant le test au clic")
+	if not await click_action(named("CreationStart")):
+		await finish()
+		return
 	await response()
 	check(app.model.meta.mode == "world" and int(app.model.club.id) == 30 and app.model.club.name == "Bath témoin", "Vraie carrière mondiale PREM créée avec son pack")
 	await check_competitions()
@@ -179,12 +223,4 @@ func _run() -> void:
 	await press(button("CONFIRMER"))
 	await response()
 	check(app.model.meta.mode == "common" and int(app.model.club.id) == 0 and app.model.club.name == "Toulouse témoin", "France 30 créée après confirmation et liaison de son pack")
-	app.bridge.stop()
-	deadline = Time.get_ticks_msec() + 4000
-	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await process_frame
-	check(app.bridge.child_pid <= 0, "Moteur de test arrêté")
-	root.remove_child(app)
-	app.queue_free()
-	await settle()
-	print("WORLD_NATIVE_UI_CHECKS ", JSON.stringify({"checks":checks,"failures":failures,"display":DisplayServer.get_name(),"visible_pool_rows":visible_pool_rows}))
-	quit(0 if failures.is_empty() else 1)
+	await finish()

@@ -264,6 +264,10 @@ func _footer_top() -> float:
 	var dock := _compact_dock()
 	return dock.get_parent().get_global_rect().position.y if _dock_ready(dock) else app.size.y - 10.0
 
+func _left_edge() -> float:
+	if is_instance_valid(app.workspace_inset): return app.workspace_inset.get_global_rect().position.x + 12.0
+	return 18.0 if app.route == "Création" else 208.0
+
 func _layout() -> void:
 	if not is_instance_valid(_compact): return
 	var dock := _compact_dock()
@@ -293,7 +297,7 @@ func _layout() -> void:
 	custom_minimum_size = Vector2.ZERO
 	size = Vector2(width, height)
 	anchor_left = 0.0 if _corner_left else 1.0; anchor_right = anchor_left
-	offset_left = (app.workspace_inset.get_global_rect().position.x + 12 if is_instance_valid(app.workspace_inset) else 208.0) if _corner_left else -width - 18.0
+	offset_left = _left_edge() if _corner_left else -width - 18.0
 	offset_right = offset_left + width
 	offset_top = -height - 18; offset_bottom = -18
 	_compact.position = Vector2(0, extra); _compact.size = Vector2(width,34)
@@ -326,7 +330,7 @@ func _priority_rects() -> Array[Rect2]:
 		# player selectors must not force a passive balloon up into page headings.
 		# The balloon itself lets their mouse input pass through.
 		var label: String = button.text.to_lower()
-		var principal: bool = str(button.name) in ["OfficePrimaryAction","PreparationMatch","DecisionFeedbackButton"]
+		var principal: bool = str(button.name) in ["OfficePrimaryAction","PreparationMatch","DecisionFeedbackButton","CreationStart"]
 		for action in ["confirmer","valider","proposer","signer","recruter","prolonger","pause","reprendre","coup d’envoi","coup d'envoi","remplacer","terminer la"]:
 			if label.contains(action): principal = true
 		if button.text.is_empty() or not principal: continue
@@ -363,9 +367,9 @@ func _avoid_primary_controls() -> void:
 		return
 	# Voice settings are an explicitly opened popover. Keep it stable while
 	# interacting with its menus; persistent write errors must remain readable.
-	if _settings_open or _error_panel.visible: return
+	if (_settings_open or _error_panel.visible) and app.route != "Création": return
 	var rects := _priority_rects()
-	var left: float = app.workspace_inset.get_global_rect().position.x + 12 if is_instance_valid(app.workspace_inset) else 208.0
+	var left := _left_edge()
 	var right := app.size.x - size.x - 18
 	var bottom := (_footer_top() - 8.0 if _dock_ready(dock) else app.size.y - 18.0) - size.y
 	var key := str(app.route) + ":" + str(app.size) + ":" + str(size) + ":" + str(_corner_left) + ":" + str(bottom)

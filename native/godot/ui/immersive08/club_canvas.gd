@@ -101,9 +101,12 @@ static func _stadium(card: Panel, app: Control, fans: Dictionary) -> void:
 		card.add_child(picture)
 		D.place(picture, Rect2(1,1,932,386))
 	else:
-		D.photo(card, "stadium", Rect2(1,1,932,386))
+		var illustration := C.photo("stadium", Vector2.ZERO, false)
+		card.add_child(illustration)
+		D.place(illustration, Rect2(1,1,932,345))
 	var gradient := Gradient.new()
-	gradient.offsets = PackedFloat32Array([0.0, .46, .86])
+	# Le raccord de l’illustration à son cartouche se trouve sous le fondu opaque.
+	gradient.offsets = PackedFloat32Array([0.0, .46, .86] if archive else [0.0, .37, .54])
 	gradient.colors = PackedColorArray([Color("0c181700"), Color("0c1817d9"), Color("0c1817")])
 	var texture := GradientTexture2D.new()
 	texture.gradient = gradient
