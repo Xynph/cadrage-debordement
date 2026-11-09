@@ -44,10 +44,15 @@ function compose(base,extension,variant){
   clubs[to].players.push(clubs[from].players.splice(i,1)[0]);
   moves.add(pid);
  }
+ if(version===3&&extension.japanCategories!==undefined){
+  const categories=extension.japanCategories,expected=new Set([...newIds,...moves]);
+  check(object(categories)&&Object.keys(categories).length===expected.size&&Object.entries(categories).every(([pid,item])=>expected.has(pid)&&object(item)&&Object.keys(item).length===3&&['A-1','A-2','B','C'].includes(item.category)&&['official-2026-27','derived-official-criteria','estimated'].includes(item.basis)&&typeof item.reason==='string'&&/^[a-z0-9-]{1,80}$/.test(item.reason)),'qualifications japonaises');
+ }
  return {
   ...base,id,version,marker:{id,version},snapshot:extension.snapshot,clubCount:clubs.length,playerCount:playerClub.size+newIds.size,
   clubs,leagues:[...base.leagues,...variant.leagues],
   worldProfiles:{...base.worldProfiles,...extension.worldProfiles},
+  ...(version===3&&extension.japanCategories?{japanCategories:extension.japanCategories}:{}),
   provenance:{...base.provenance,[variant.provenance]:extension.provenance??null},
  };
 }

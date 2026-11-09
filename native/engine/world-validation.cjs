@@ -26,9 +26,12 @@ module.exports=function worldValidation(){
   check(winner!==null&&eq(tally,q.score)&&r.winner===r.pair[winner],'résultat des tirs incohérent.');
  }
  function result(r,f,live=null){
+  const japan=typeof CDWorldJapanMatch!=='undefined'&&CDWorldJapanMatch.isFixture(f);
+  check(r.japanExtra===undefined||japan,'preuve Japon hors de sa compétition.');
+  if(japan)return CDWorldJapanMatch.validateResult(r,f,live);
   if(f.competitionId==='srp')return CDWorldSRPMatch.validateResult(r,f,live);
   check(r.srpExtra===undefined,'preuve Pacific hors de sa compétition.');
-  score(r);const knockout=!['league','pool'].includes(f.phase),d=r.decision;
+  score(r);const knockout=!['league','pool'].includes(f.phase)&&!(f.competitionId==='jlo-d1-d2'&&f.phase==='promotion'),d=r.decision;
   const duration=live?live.minute:r.duration;
   check(saveInt(duration,80,240)&&['Sec','Vent','Pluie'].includes(r.weather),'durée ou météo invalide.');
   if(!knockout){check(r.winner===undefined&&d===undefined&&live?.knockout===undefined,'départage hors phase finale.');return;}
@@ -42,6 +45,10 @@ module.exports=function worldValidation(){
  }
  function live(l,f){
   check(!!f&&eq(l.worldContext,f)&&eq(l.pair,[f.homeId,f.awayId])&&l.franceContext===undefined,'match en cours hors calendrier.');
+  const japan=typeof CDWorldJapanMatch!=='undefined'&&CDWorldJapanMatch.isFixture(f);
+  check(l.japanExtra===undefined||japan,'preuve Japon hors de sa compétition.');
+  if(japan)return CDWorldJapanMatch.validateLive(l,f);
+  if(f.competitionId==='jlo-d1-d2'&&f.phase==='promotion')check(l.knockout===undefined,'prolongation interdite dans une manche de barrage Japon.');
   if(f.competitionId==='srp')return CDWorldSRPMatch.validateLive(l,f);
   check(l.srpExtra===undefined,'preuve Pacific hors de sa compétition.');
   if(l.knockout){const k=l.knockout;check(!['league','pool'].includes(f.phase)&&keys(k,['version','period','regulationEnd','firstEnd'])&&k.version===1&&[1,2].includes(k.period)&&saveInt(k.regulationEnd,l.flow.firstEnd+40,l.minute)&&(k.period===1?k.firstEnd===null:saveInt(k.firstEnd,k.regulationEnd+10,l.minute)),'prolongation incohérente.');

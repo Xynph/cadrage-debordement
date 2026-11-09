@@ -10,10 +10,12 @@ static func _cover(club: Dictionary) -> Control:
 	var cover := ColorRect.new()
 	cover.color = Color(identity.get("color", "#303c42")).darkened(.72)
 	var pacific := slug.begins_with("srp-")
-	if pacific:
+	var japan := slug.begins_with("jlo-")
+	if pacific or japan:
 		var country := str(identity.get("country", "")).to_lower()
-		var art := "res://art/pacific/covers/%s.svg" % country
-		if country in ["nz","au","fj"] and ResourceLoader.exists(art):
+		var region := str(identity.get("region", ""))
+		var art := "res://art/pacific/covers/%s.svg" % country if pacific else "res://art/japan/covers/%s.svg" % region
+		if ResourceLoader.exists(art):
 			cover.clip_contents = true
 			var backdrop := TextureRect.new()
 			backdrop.texture = load(art) as Texture2D
@@ -22,7 +24,7 @@ static func _cover(club: Dictionary) -> Control:
 			backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 			cover.add_child(backdrop)
-	var inset := G.margin(22 if pacific else 12)
+	var inset := G.margin(22 if pacific or japan else 12)
 	inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	cover.add_child(inset)
 	var content := G.v(8)
@@ -31,6 +33,7 @@ static func _cover(club: Dictionary) -> Control:
 	return cover
 
 static func _territory(club: Dictionary) -> String:
+	if club.get("country") == "JP": return str({"kanto":"Kantō, Japon", "chubu":"Chūbu, Japon", "kansai":"Kansai, Japon", "ouest":"Ouest du Japon"}.get(club.get("region", ""), "Japon"))
 	return str(club.get("city", {"GB":"Royaume-Uni","IE":"Irlande","IT":"Italie","ZA":"Afrique du Sud","GE":"Géorgie","FR":"France","NZ":"Nouvelle-Zélande","AU":"Australie","FJ":"Fidji"}.get(club.get("country"), "")))
 
 static func home(app: Control) -> Control:
@@ -142,7 +145,8 @@ static func creation(app: Control) -> Control:
 	top.add_child(title)
 	var meta: Dictionary = app.model.get("meta", {})
 	var mode: String = app.pack_manager.mode("creation")
-	var pacific := mode == "world-pacific"
+	var japan := mode == "world-japan"
+	var pacific := mode in ["world-pacific", "world-japan"]
 	var international := pacific or mode == "world"
 	if not meta.get("worldCatalogue", []).is_empty():
 		var edition_row := top
@@ -153,6 +157,8 @@ static func creation(app: Control) -> Control:
 			page.add_child(edition_row)
 			edition_row.add_child(G.label("ÉDITION DE CARRIÈRE", 13, G.GOLD, true))
 			choices.push_front(["world-pacific", "MONDE + PACIFIQUE · 66 CLUBS"])
+		if not meta.get("japanCatalogue", []).is_empty():
+			choices.push_front(["world-japan", "MONDE + JAPON · 86 CLUBS"])
 		for item in choices:
 			var choice := G.button(item[1], func(): app.pack_manager.creation_mode = item[0]; app._render())
 			choice.name = "CreationMode_" + item[0]
@@ -161,7 +167,8 @@ static func creation(app: Control) -> Control:
 			edition_row.add_child(choice)
 	top.add_child(G.button("PACKS ET IDENTITÉS", func(): app.pack_manager.open("creation")))
 	Packs.missing_warning(app, page, "creation")
-	var candidates: Array = meta.get("pacificCatalogue", []) if pacific else (meta.get("worldCatalogue", []) if international else meta.get("legacyCatalogue", app.catalogue))
+	var catalogue_key := "japanCatalogue" if japan else ("pacificCatalogue" if pacific else ("worldCatalogue" if international else "legacyCatalogue"))
+	var candidates: Array = meta.get(catalogue_key, app.catalogue)
 	var clubs: Array = candidates.filter(func(club: Dictionary): return club.get("playable", true))
 	if clubs.is_empty():
 		page.add_child(G.wrap("Le catalogue des clubs est en cours de chargement.", 15, G.WHITE))
@@ -169,6 +176,7 @@ static func creation(app: Control) -> Control:
 	var division := str(app.club_division)
 	var divisions_data := [["elite", "ÉLITE"], ["accession", "ACCESSION"], ["prem", "PREM"], ["urc", "URC"]] if international else [["elite", "ÉLITE"], ["accession", "ACCESSION"]]
 	if pacific: divisions_data.append(["srp", "PACIFIQUE"])
+	if japan: divisions_data.append_array([["jlo-d1", "JAPON D1"], ["jlo-d2", "JAPON D2"]])
 	if not clubs.any(func(club: Dictionary): return club.division == division): division = str(clubs[0].division)
 	app.club_division = division
 	var division_clubs: Array = clubs.filter(func(club: Dictionary): return club.division == division)
@@ -187,9 +195,12 @@ static func creation(app: Control) -> Control:
 	var over: VBoxContainer = photo.get_meta("content")
 	over.add_child(G.label("VOTRE FUTUR CLUB", 14, G.WHITE))
 	var is_srp := pacific and division == "srp"
+	var is_japan := japan and division in ["jlo-d1", "jlo-d2"]
 	if is_srp:
 		over.add_child(G.label("PACIFIQUE  /  SAISON 2027", 22, G.WHITE, true))
 		over.add_child(G.label(_territory(selected).to_upper(), 13, G.WHITE))
+	if is_japan:
+		over.add_child(G.label("LEAGUE ONE  /  " + ("DIVISION 1" if division == "jlo-d1" else "DIVISION 2"), 22, G.WHITE, true))
 	over.add_child(G.spacer())
 	over.add_child(G.crest(selected, 96))
 	var name := G.label(G.club_name(selected), 38, G.WHITE, true)
@@ -231,7 +242,11 @@ static func creation(app: Control) -> Control:
 	list.add_child(pack_choice)
 	var divisions := G.h(8)
 	list.add_child(divisions)
-	for item in divisions_data:
+	for division_index in range(divisions_data.size()):
+		if japan and division_index == 4:
+			divisions = G.h(8)
+			list.add_child(divisions)
+		var item: Array = divisions_data[division_index]
 		var members: Array = clubs.filter(func(club: Dictionary): return club.division == item[0])
 		var caption := "%s · %d" % [item[1], members.size()] if international else "%s  /  %d CLUBS" % [item[1], members.size()]
 		var b := G.button(caption, func(): _division(app, item[0], members, mode))
@@ -240,27 +255,30 @@ static func creation(app: Control) -> Control:
 		G.fill(b)
 		if app.club_division == item[0]: G.selected(b,app.accent)
 		divisions.add_child(b)
-	if is_srp:
+	if is_srp or is_japan:
 		var facts := G.h(8)
 		list.add_child(facts)
-		for fact in [["16", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["FÉV.–JUIN", "SAISON 2027"]]:
+		var fact_data := [["16", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["FÉV.–JUIN", "SAISON 2027"]]
+		if is_japan:
+			fact_data = [["18", "MATCHS PAR CLUB"], ["6", "QUALIFIÉS POUR LES FINALES"], ["DÉC.–JUIN", "SAISON 2026–27"]] if division == "jlo-d1" else [["14", "MATCHS PAR CLUB"], ["2", "PLACES EN BARRAGES"], ["DÉC.–MAI", "SAISON 2026–27"]]
+		for fact in fact_data:
 			var tile := G.panel(facts, 1.0)
 			tile.add_child(G.label(fact[0], 20, G.INK, true))
 			tile.add_child(G.cell(fact[1], 45, G.MUTED, true))
 	var bounds := Vector2i(0, division_clubs.size())
-	if not is_srp:
+	if not is_srp and not is_japan:
 		bounds = preload("res://ui/club_views.gd")._paged(app,list,"CreationPagination",division_clubs.size(),8,"creation_"+mode+"_"+division)
 	var items := G.scroll(list)
 	items.get_parent().name = "CreationClubsScroll"
 	var grid:=GridContainer.new()
-	grid.columns=2
+	grid.columns=3 if is_japan and app.get_viewport_rect().size.x >= 1660 else 2
 	grid.add_theme_constant_override("h_separation",8)
 	grid.add_theme_constant_override("v_separation",8)
 	G.fill(grid)
 	items.add_child(grid)
 	for club in division_clubs.slice(bounds.x,bounds.y):
 		var b := G.button("", func(): app.selected_club = int(club.id); app._render())
-		b.custom_minimum_size.y = clampf(app.get_viewport_rect().size.y * 0.045, 52.0, 66.0) if is_srp else 52.0
+		b.custom_minimum_size.y = clampf(app.get_viewport_rect().size.y * 0.045, 52.0, 66.0) if is_srp else (44.0 if is_japan else 52.0)
 		b.name="CreationClub"+str(int(club.id))
 		b.tooltip_text=G.club_name(club)+" · "+_territory(club)
 		G.fill(b)
@@ -282,9 +300,19 @@ static func creation(app: Control) -> Control:
 		grid.add_child(b)
 	var notice := "%s joueurs · %d clubs jouables · 4 championnats et 2 coupes d’Europe." % [G.n(meta.get("worldDatabase", {}).get("playerCount", 0)), clubs.size()] if international else "1 592 joueurs · 30 clubs · deux divisions reliées. Choisissez votre club et préparez votre première saison."
 	if pacific: notice = "%s joueurs · %d clubs jouables · cinq championnats et deux coupes d’Europe." % [G.n(meta.get("pacificDatabase", {}).get("playerCount", 0)), clubs.size()]
+	if japan: notice = "%s joueurs · %d clubs jouables · sept championnats et deux coupes d’Europe." % [G.n(meta.get("japanDatabase", {}).get("playerCount", 0)), clubs.size()]
 	list.add_child(G.wrap(notice, 12))
 	var start := G.button("PRENDRE LES RÊNES DE " + G.club_abbr(selected) + "  →", func(): _create(app, selected, mode), true)
 	start.name="CreationStart"
 	start.disabled = app.waiting or unavailable
-	list.add_child(start)
+	if japan:
+		var actions := G.h(8)
+		list.add_child(actions)
+		actions.add_child(start)
+		G.fill(start)
+		var safe_space := Control.new()
+		safe_space.custom_minimum_size.x = 152
+		actions.add_child(safe_space)
+	else:
+		list.add_child(start)
 	return page

@@ -24,9 +24,10 @@ function recordFrontMove(l,side,out,incoming,reason){
  if(!returning)sh.used.push(incoming);sh.subs++;
  l.subs.push({minute:l.minute,side,out,in:incoming,reason,returning});
 }
-function frontDonor(l,side){
+function matchQuotaAllows(l,side,out,incoming,target=-1){return typeof CDWorldJapanQuota==='undefined'||CDWorldJapanQuota.matchChange(S,l,side,out,incoming,target);}
+function frontDonor(l,side,incoming=null,target=-1){
  const sh=l.sheets[side];
- return sh.on.map((id,slot)=>({id,slot,p:matchPlayer(l,side,id)})).filter(x=>x.slot>=3&&x.p&&frontAvailable(l,side,x.id)).sort((a,b)=>fitScore(a.p)-fitScore(b.p))[0];
+ return sh.on.map((id,slot)=>({id,slot,p:matchPlayer(l,side,id)})).filter(x=>x.slot>=3&&x.p&&frontAvailable(l,side,x.id)&&matchQuotaAllows(l,side,x.id,incoming,target)).sort((a,b)=>fitScore(a.p)-fitScore(b.p))[0];
 }
 function frontRed(l,side,e){return l.sheets[side].redCards.find(c=>c.id===e.id&&c.slot===e.slot)}
 function reconcileFrontRow(l,side,prepare=false){
@@ -46,12 +47,12 @@ function reconcileFrontRow(l,side,prepare=false){
  if(!f.prepared)return;
  for(let slot=0;slot<3;slot++){
   if(sh.on[slot]&&frontAvailable(l,side,sh.on[slot])&&slotEligible(matchPlayer(l,side,sh.on[slot]),slot))continue;
-  const candidate=sh.bench.map(id=>matchPlayer(l,side,id)).filter(p=>p&&frontAvailable(l,side,p.id)&&slotEligible(p,slot)).sort((a,b)=>fitScore(b)-fitScore(a))[0];
-  if(!candidate)continue;
   const red=sh.redCards.find(c=>c.slot===slot&&!c.filled&&c.until!==null&&c.until<=l.minute);
+  const candidate=sh.bench.map(id=>matchPlayer(l,side,id)).filter(p=>p&&frontAvailable(l,side,p.id)&&slotEligible(p,slot)&&(red?matchQuotaAllows(l,side,null,p.id,slot):frontDonor(l,side,p.id,slot))).sort((a,b)=>fitScore(b)-fitScore(a))[0];
+  if(!candidate)continue;
   // An expired red may be filled directly, without sacrificing another player.
   if(red){sh.on[slot]=candidate.id;sh.bench=sh.bench.filter(id=>id!==candidate.id);red.filled=true;recordFrontMove(l,side,red.id,candidate.id,'red20');addEvent(l,`${candidate.name} entre après les vingt minutes d’exclusion collective et permet de disputer les mêlées.`,'sub');continue}
-  const donor=frontDonor(l,side);if(!donor)continue;
+  const donor=frontDonor(l,side,candidate.id,slot);if(!donor)continue;
   const caseIndex=f.exclusions.map((e,i)=>({e,i})).filter(x=>x.e.slot===slot&&!x.e.closed).at(-1)?.i;
   if(caseIndex===undefined)continue;
   sh.on[donor.slot]=null;sh.bench=sh.bench.filter(id=>id!==candidate.id);sh.bench.push(donor.id);sh.on[slot]=candidate.id;
@@ -70,7 +71,7 @@ function reconcileFrontRow(l,side,prepare=false){
   if(activePlayers(l,side).length>=target)break;
   const source=f.exclusions[red.frontCase],vacancies=[source.releaseSlot,...sh.on.map((id,i)=>id===null?i:null)].filter((slot,i,a)=>Number.isInteger(slot)&&sh.on[slot]===null&&a.indexOf(slot)===i&&!f.held.some(h=>h.slot===slot&&frontCaseActive(l,f.exclusions[h.caseIndex],'yellow')));
   for(const slot of vacancies){
-   const candidate=sh.bench.map(id=>matchPlayer(l,side,id)).filter(p=>p&&frontAvailable(l,side,p.id)&&slotEligible(p,slot)&&!f.held.some(h=>h.id===p.id&&frontCaseActive(l,f.exclusions[h.caseIndex],'yellow'))).sort((a,b)=>fitScore(b)-fitScore(a))[0];
+   const candidate=sh.bench.map(id=>matchPlayer(l,side,id)).filter(p=>p&&frontAvailable(l,side,p.id)&&slotEligible(p,slot)&&!f.held.some(h=>h.id===p.id&&frontCaseActive(l,f.exclusions[h.caseIndex],'yellow'))&&matchQuotaAllows(l,side,null,p.id,slot)).sort((a,b)=>fitScore(b)-fitScore(a))[0];
    if(!candidate)continue;
    sh.on[slot]=candidate.id;sh.bench=sh.bench.filter(id=>id!==candidate.id);f.held=f.held.filter(h=>h.slot!==slot&&h.id!==candidate.id);red.filled=true;
    recordFrontMove(l,side,red.id,candidate.id,'red20');addEvent(l,`${candidate.name} entre après les vingt minutes d’exclusion collective. Le joueur exclu ne revient pas.`,'sub');break;
@@ -85,6 +86,7 @@ function reconcileFrontRow(l,side,prepare=false){
   const redReady=red&&!red.filled&&red.until!==null&&red.until<=l.minute;
   if(h.mode==='cover'&&e.kind!=='yellow'&&!redReady)continue;
   if(h.mode==='carence'&&f.uncontested&&!redReady)continue;
+  if(!matchQuotaAllows(l,side,null,h.id,h.slot))continue;
   sh.bench=sh.bench.filter(id=>id!==h.id);sh.on[h.slot]=h.id;f.held=f.held.filter(x=>x!==h);
   if(redReady)red.filled=true;
   recordFrontMove(l,side,e.id,h.id,redReady?'red20':'frontrelease');
