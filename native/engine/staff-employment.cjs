@@ -43,8 +43,8 @@ function factory(){
     check(type==='hire'?person.clubId===null:person.clubId===s.club,'appartenance incompatible');check(type!=='adopt'||!current,'contrat déjà adopté');
     const end=type==='adopt'?person.contractEnd:s.season+p.years-1;check(int(end,s.season,s.season+2),'échéance invalide');
     const c={staffId,clubId:s.club,role:person.role,salary,startSeason:s.season,startWeek:week(s),endSeason:end};
-    const total=st.contracts.filter(c=>validContract(s,c)&&c.clubId===s.club&&c.staffId!==staffId).reduce((n,c)=>n+c.salary,0)+salary;
-    const provision=total*Math.min(8,Math.max(0,seasonWeeks(s)-week(s)));check(s.clubs[s.club].cash>=RESERVE+provision,'réserve de 50 000 € et provision de huit paies requises');
+    const commitments=st.contracts.filter(c=>validContract(s,c)&&c.clubId===s.club&&c.staffId!==staffId).concat(c);
+    const provision=commitments.reduce((sum,contract)=>sum+contract.salary*Math.min(8,remaining(s,contract)),0);check(s.clubs[s.club].cash>=RESERVE+provision,'réserve de 50 000 € et provision de huit paies requises');
     check(st.contracts.filter(c=>validContract(s,c)&&c.staffId!==staffId).length<512,'capacité contractuelle atteinte');
     if(type==='hire')withCareer('staff_hire',{context:p.context,confirmed:true,candidateId:staffId,years:p.years});
     else if(type==='renew')withCareer('staff_renew',{context:p.context,confirmed:true,staffId,years:p.years});
