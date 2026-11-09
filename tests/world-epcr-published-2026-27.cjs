@@ -47,3 +47,16 @@ test('Les 84 rencontres de poules reprennent le stade publié ou la mention à c
  a.equal(awayFromHome.length,2);
  a.ok(awayFromHome.every(f=>venue(f,1)==="St Helen's"));
 });
+
+test('le vrai calendrier de carrière montre le déplacement à Swansea',t=>{
+ const fs=require('node:fs'),path=require('node:path'),os=require('node:os');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-epcr-venue-'));
+ const b=require('../native/engine/worker.cjs').createBridge({dataDir:dir,seed:403,now:1788134400000});
+ t.after(()=>{b.close();fs.rmSync(dir,{recursive:true,force:true});});
+ const reply=b.handle({id:1,command:'new_career',payload:{mode:'world-champ',club:47}});
+ a.equal(reply.ok,true,reply.error);
+ const row=reply.model.calendar.find(f=>f.competitionId==='challenge'&&f.home.id===56);
+ a.ok(row);
+ a.equal(row.phase,'pool');
+ a.equal(row.venue,"St Helen's");
+});
