@@ -7,12 +7,14 @@ var pack_id := ""
 var counts: Dictionary = {}
 var completed_champ_season := false
 var atlas_verified := false
+var calendars_verified := false
+var contracts_verified := false
 
 func run(runner: Node) -> void:
 	qa = runner
 	app = runner.app
 	await _reception()
-	qa.world_reception = {"edition":mode,"pack":counts,"pack_id":pack_id,"season":app.model.get("meta",{}).get("season"),"champ_season2":completed_champ_season,"atlas_verified":atlas_verified}
+	qa.world_reception = {"edition":mode,"pack":counts,"pack_id":pack_id,"season":app.model.get("meta",{}).get("season"),"champ_season2":completed_champ_season,"atlas_verified":atlas_verified,"calendars_verified":calendars_verified,"contracts_verified":contracts_verified}
 
 
 func _check(ok: bool, why: String) -> bool:
@@ -159,6 +161,8 @@ func _reception() -> void:
 		await _receive_atlas()
 	if OS.get_environment("CD_GODOT_CHAMP_EXPECT_077") == "1":
 		await _receive_077_venue()
+	if OS.get_environment("CD_GODOT_CHAMP_EXPECT_078") == "1":
+		await _receive_078_calendars()
 
 func _receive_atlas() -> void:
 	var club_id := 30
@@ -175,6 +179,11 @@ func _receive_atlas() -> void:
 	for key in ["city","stadium"]:
 		var credit := app.find_child("VenuePhotoCredit_"+key,true,false) as Label
 		_check(credit != null and credit.is_visible_in_tree() and credit.text.contains(photos[key].credit) and credit.tooltip_text.contains(photos[key].source),"crédit visible dans l’EXE : "+key)
+	if OS.get_environment("CD_GODOT_CHAMP_EXPECT_078") == "1":
+		var terms: Array = app.model.squad.filter(func(p):return p.id=="world:prem:112684" or p.id=="world:prem:130283")
+		contracts_verified = _check(terms.size()==2 and terms.all(func(p):return int(p.contractEnd)==1),"deux échéances PREM documentées à la création de carrière")
+		var postponed: Array = app.model.calendar.filter(func(f):return f.competitionId=="prem" and int(f.home.id)==30 and f.venue=="Stade à confirmer")
+		_check(postponed.size()==2,"les deux rencontres déplacées ne sont pas annoncées au stade habituel")
 	await _capture("atlas-prem-territoire-2560")
 	app._navigate("Bureau")
 	await _settle()
@@ -207,3 +216,35 @@ func _receive_077_venue() -> void:
 	if not await _ask("new_career",{"mode":mode,"club":47},"Calendrier"): return
 	var alternate: Array = app.model.calendar.filter(func(f): return f.competitionId == "challenge" and int(f.home.id) == 56)
 	_check(alternate.size()==1 and str(alternate[0].venue)=="St Helen's","le déplacement européen à Swansea garde son stade publié")
+
+
+func _calendar_contains(label: String) -> bool:
+	for child in app.find_children("*","Label",true,false):
+		if child.is_visible_in_tree() and child.text.contains(label): return true
+	return false
+
+
+func _receive_078_calendars() -> void:
+	if not await _ask("new_career",{"mode":mode,"club":61},"Calendrier"): return
+	var pacific: Array = app.model.calendar.filter(func(f):return f.competitionId=="srp")
+	var shared: Array = pacific.filter(func(f):return f.neutral)
+	var nz := "One New Zealand Stadium · Christchurch"
+	var good := _check(pacific.size()==16 and str(pacific[0].venue)==nz and not pacific[0].neutral,"première journée du Pacifique sur son terrain publié")
+	good = _check(shared.size()==1 and str(shared[0].venue)==nz and shared[0].date=="2027-04-02","Super Round de Christchurch conservé sur terrain neutre") and good
+	_check(_calendar_contains(nz),"enceinte du Pacifique affichée dans le vrai calendrier")
+	await _capture("pacifique-calendrier-2560")
+	if not await _ask("new_career",{"mode":mode,"club":85},"Calendrier"): return
+	var sayama := "SECOM RUGBY STADIUM · Sayama"
+	var jp: Array = app.model.calendar.filter(func(f):return f.competitionId=="jlo-d2")
+	var first_home: Array = jp.filter(func(f):return int(f.home.id)==85 and f.date=="2026-12-27")
+	good = _check(jp.size()==14 and first_home.size()==1 and first_home[0].venue==sayama,"premier match à domicile au stade de Sayama") and good
+	good = _check(jp.any(func(f):return int(f.home.id)==85 and str(f.venue).contains("Kawagoe Sports Park")),"enceinte secondaire de Kawagoe distincte du stade principal") and good
+	_check(_calendar_contains(sayama),"enceinte japonaise affichée dans le vrai calendrier")
+	await _capture("japon-calendrier-2560")
+	app._navigate("Club")
+	await _settle()
+	var credit := app.find_child("VenuePhotoCredit_stadium",true,false) as Label
+	var photo: Dictionary = app.model.club.presentation.get("photos",{}).get("stadium",{})
+	good = _check(int(counts.get("stadiumPhotos",0))==86 and FileAccess.file_exists(photo.get("path","")) and credit!=null and credit.is_visible_in_tree() and credit.text.contains("en construction"),"photo officielle du stade de Sayama, crédit visible") and good
+	await _capture("atlas-japon-sayama-2560")
+	calendars_verified = good

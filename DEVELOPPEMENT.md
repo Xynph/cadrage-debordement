@@ -1030,3 +1030,11 @@ La première CI de la PR #392 (HEAD1120ba3) échouait sur un test web qui suppos
 À la demande de Léo, sources/worktrees, outils, caches, temporaires, jeu et profils de ce chantier sont déplacés sous E:\Cadrage-Debordement. Les six états Git (HEAD, index, modifications, non suivis) sont identiques avant/après ; les62 fichiers de distribution et le ZIP cef95067 sont vérifiés. Le raccourci « Cadrage Débordement » du bureau cible l'exécutable sur E: et porte l'icône originale du jeu. Le chemin AppData est une jonction vers les données sur E:, hors dossier de l'exécutable ; la carrière existante est conservée. Un démarrage headless depuis E: réussit sur profil jetable, sans modifier cette carrière. Les preuves Windows graphiques494/494 du paquet restent celles de la réception précédente ; ce démarrage de migration ne constitue pas un nouveau parcours graphique complet. Les données du producteur Rugby Réel restent intactes. La PR #392 demeure non fusionnée tant que sa CI exacte et le gate officiel ne sont pas reçus.
 
 Reception finale lot effectifs1 : code86a1200, revues ciblee/globale favorables ; ZIP abb2fd61de7a16466321344f749f4c854f15270a2fb51764897f01f3daf7044b,179314998octets. EXE deplace502 controles Windows jusqu'enS2/export/import/restart,69hashes,0TCPobserve/0orphelin ; SDK24 controles fiche et test supplementaire des1592/12/20 dans le moteur livre. Raccourci bureau vers livraison/lot1 ; aucune carriere remplacee, nouvelle carriere necessaire. Fondation PR393 fusionnee d79e5164f34285a0b933065de139ffc7f687000e apres CI b96 verte et gate officiel ; post-CI a recevoir separement. Publication/CI du nouveau lot a constater sur sa tete finale, sans compter un resultat futur reussi.
+
+
+### Monde 0.7.8 — terrains de match et fins de contrat
+
+Les calendriers de saison 1 distinguent désormais 440 lieux nommés et 38 à confirmer
+sur 478 rencontres PREM, URC, Pacifique et Japon. Le lot de 89 échéances documentées
+s’applique seulement à la création d’un Monde complet. Voir
+[le relevé des sources, tests et limites](docs/terrains-et-contrats-monde-20261109.md).

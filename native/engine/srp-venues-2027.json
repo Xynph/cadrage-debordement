@@ -1,0 +1,648 @@
+{
+  "schema": "published-domestic-venues-v1",
+  "season": "2027",
+  "source": "https://super.rugby/sites/sanzar/assets/2027/Fixtures/Fixtures_SRP_2027.pdf",
+  "drawSha256": "2c856a450525ca14c8eed482413698c20c2cd136e61805626a697b6cb583a34a",
+  "venues": {
+    "srp:2027:league:r01:m01": {
+      "competitionId": "srp",
+      "date": "2027-02-12",
+      "homeId": 61,
+      "awayId": 65,
+      "neutral": false,
+      "venue": "One New Zealand Stadium · Christchurch"
+    },
+    "srp:2027:league:r01:m02": {
+      "competitionId": "srp",
+      "date": "2027-02-12",
+      "homeId": 59,
+      "awayId": 66,
+      "neutral": false,
+      "venue": "GIO Stadium · Canberra"
+    },
+    "srp:2027:league:r01:m03": {
+      "competitionId": "srp",
+      "date": "2027-02-13",
+      "homeId": 62,
+      "awayId": 63,
+      "neutral": false,
+      "venue": "Four R Stadium · Ba"
+    },
+    "srp:2027:league:r01:m04": {
+      "competitionId": "srp",
+      "date": "2027-02-13",
+      "homeId": 58,
+      "awayId": 64,
+      "neutral": false,
+      "venue": "Eden Park · Auckland"
+    },
+    "srp:2027:league:r01:m05": {
+      "competitionId": "srp",
+      "date": "2027-02-13",
+      "homeId": 67,
+      "awayId": 60,
+      "neutral": false,
+      "venue": "HBF Park · Perth"
+    },
+    "srp:2027:league:r02:m01": {
+      "competitionId": "srp",
+      "date": "2027-02-19",
+      "homeId": 61,
+      "awayId": 64,
+      "neutral": false,
+      "venue": "One New Zealand Stadium · Christchurch"
+    },
+    "srp:2027:league:r02:m02": {
+      "competitionId": "srp",
+      "date": "2027-02-19",
+      "homeId": 67,
+      "awayId": 59,
+      "neutral": false,
+      "venue": "HBF Park · Perth"
+    },
+    "srp:2027:league:r02:m03": {
+      "competitionId": "srp",
+      "date": "2027-02-20",
+      "homeId": 63,
+      "awayId": 58,
+      "neutral": false,
+      "venue": "Forsyth Barr Stadium · Dunedin"
+    },
+    "srp:2027:league:r02:m04": {
+      "competitionId": "srp",
+      "date": "2027-02-20",
+      "homeId": 66,
+      "awayId": 62,
+      "neutral": false,
+      "venue": "Allianz Stadium · Sydney"
+    },
+    "srp:2027:league:r02:m05": {
+      "competitionId": "srp",
+      "date": "2027-02-21",
+      "homeId": 65,
+      "awayId": 60,
+      "neutral": false,
+      "venue": "Suncorp Stadium · Brisbane"
+    },
+    "srp:2027:league:r03:m01": {
+      "competitionId": "srp",
+      "date": "2027-02-26",
+      "homeId": 64,
+      "awayId": 67,
+      "neutral": false,
+      "venue": "Hnry Stadium · Wellington"
+    },
+    "srp:2027:league:r03:m02": {
+      "competitionId": "srp",
+      "date": "2027-02-27",
+      "homeId": 62,
+      "awayId": 65,
+      "neutral": false,
+      "venue": "HFC Bank Stadium · Suva"
+    },
+    "srp:2027:league:r03:m03": {
+      "competitionId": "srp",
+      "date": "2027-02-27",
+      "homeId": 60,
+      "awayId": 66,
+      "neutral": false,
+      "venue": "FMG Stadium Waikato · Hamilton"
+    },
+    "srp:2027:league:r03:m04": {
+      "competitionId": "srp",
+      "date": "2027-02-27",
+      "homeId": 59,
+      "awayId": 63,
+      "neutral": false,
+      "venue": "GIO Stadium · Canberra"
+    },
+    "srp:2027:league:r03:m05": {
+      "competitionId": "srp",
+      "date": "2027-02-28",
+      "homeId": 58,
+      "awayId": 61,
+      "neutral": false,
+      "venue": "Eden Park · Auckland"
+    },
+    "srp:2027:league:r04:m01": {
+      "competitionId": "srp",
+      "date": "2027-03-05",
+      "homeId": 63,
+      "awayId": 67,
+      "neutral": false,
+      "venue": "Rugby Park · Invercargill"
+    },
+    "srp:2027:league:r04:m02": {
+      "competitionId": "srp",
+      "date": "2027-03-05",
+      "homeId": 66,
+      "awayId": 64,
+      "neutral": false,
+      "venue": "Allianz Stadium · Sydney"
+    },
+    "srp:2027:league:r04:m03": {
+      "competitionId": "srp",
+      "date": "2027-03-06",
+      "homeId": 58,
+      "awayId": 65,
+      "neutral": false,
+      "venue": "Eden Park · Auckland"
+    },
+    "srp:2027:league:r04:m04": {
+      "competitionId": "srp",
+      "date": "2027-03-06",
+      "homeId": 61,
+      "awayId": 60,
+      "neutral": false,
+      "venue": "One New Zealand Stadium · Christchurch"
+    },
+    "srp:2027:league:r04:m05": {
+      "competitionId": "srp",
+      "date": "2027-03-06",
+      "homeId": 59,
+      "awayId": 62,
+      "neutral": false,
+      "venue": "GIO Stadium · Canberra"
+    },
+    "srp:2027:league:r05:m01": {
+      "competitionId": "srp",
+      "date": "2027-03-12",
+      "homeId": 61,
+      "awayId": 63,
+      "neutral": false,
+      "venue": "One New Zealand Stadium · Christchurch"
+    },
+    "srp:2027:league:r05:m02": {
+      "competitionId": "srp",
+      "date": "2027-03-12",
+      "homeId": 67,
+      "awayId": 65,
+      "neutral": false,
+      "venue": "HBF Park · Perth"
+    },
+    "srp:2027:league:r05:m03": {
+      "competitionId": "srp",
+      "date": "2027-03-13",
+      "homeId": 64,
+      "awayId": 62,
+      "neutral": false,
+      "venue": "Hnry Stadium · Wellington"
+    },
+    "srp:2027:league:r05:m04": {
+      "competitionId": "srp",
+      "date": "2027-03-13",
+      "homeId": 60,
+      "awayId": 58,
+      "neutral": false,
+      "venue": "FMG Stadium Waikato · Hamilton"
+    },
+    "srp:2027:league:r05:m05": {
+      "competitionId": "srp",
+      "date": "2027-03-13",
+      "homeId": 66,
+      "awayId": 59,
+      "neutral": false,
+      "venue": "Allianz Stadium · Sydney"
+    },
+    "srp:2027:league:r06:m01": {
+      "competitionId": "srp",
+      "date": "2027-03-19",
+      "homeId": 64,
+      "awayId": 61,
+      "neutral": false,
+      "venue": "Hnry Stadium · Wellington"
+    },
+    "srp:2027:league:r06:m02": {
+      "competitionId": "srp",
+      "date": "2027-03-19",
+      "homeId": 59,
+      "awayId": 67,
+      "neutral": false,
+      "venue": "Corroboree Group Oval · Canberra"
+    },
+    "srp:2027:league:r06:m03": {
+      "competitionId": "srp",
+      "date": "2027-03-20",
+      "homeId": 62,
+      "awayId": 58,
+      "neutral": false,
+      "venue": "Churchill Park · Lautoka"
+    },
+    "srp:2027:league:r06:m04": {
+      "competitionId": "srp",
+      "date": "2027-03-20",
+      "homeId": 63,
+      "awayId": 60,
+      "neutral": false,
+      "venue": "Forsyth Barr Stadium · Dunedin"
+    },
+    "srp:2027:league:r06:m05": {
+      "competitionId": "srp",
+      "date": "2027-03-20",
+      "homeId": 65,
+      "awayId": 66,
+      "neutral": false,
+      "venue": "Suncorp Stadium · Brisbane"
+    },
+    "srp:2027:league:r07:m01": {
+      "competitionId": "srp",
+      "date": "2027-03-26",
+      "homeId": 61,
+      "awayId": 58,
+      "neutral": false,
+      "venue": "One New Zealand Stadium · Christchurch"
+    },
+    "srp:2027:league:r07:m02": {
+      "competitionId": "srp",
+      "date": "2027-03-27",
+      "homeId": 63,
+      "awayId": 59,
+      "neutral": false,
+      "venue": "Forsyth Barr Stadium · Dunedin"
+    },
+    "srp:2027:league:r07:m03": {
+      "competitionId": "srp",
+      "date": "2027-03-27",
+      "homeId": 67,
+      "awayId": 66,
+      "neutral": false,
+      "venue": "HBF Park · Perth"
+    },
+    "srp:2027:league:r07:m04": {
+      "competitionId": "srp",
+      "date": "2027-03-28",
+      "homeId": 60,
+      "awayId": 64,
+      "neutral": false,
+      "venue": "Stadium Taranaki · New Plymouth"
+    },
+    "srp:2027:league:r07:m05": {
+      "competitionId": "srp",
+      "date": "2027-03-28",
+      "homeId": 65,
+      "awayId": 62,
+      "neutral": false,
+      "venue": "Suncorp Stadium · Brisbane"
+    },
+    "srp:2027:league:r08:m01": {
+      "competitionId": "srp",
+      "date": "2027-04-02",
+      "homeId": 61,
+      "awayId": 59,
+      "neutral": true,
+      "venue": "One New Zealand Stadium · Christchurch"
+    },
+    "srp:2027:league:r08:m02": {
+      "competitionId": "srp",
+      "date": "2027-04-03",
+      "homeId": 60,
+      "awayId": 67,
+      "neutral": true,
+      "venue": "One New Zealand Stadium · Christchurch"
+    },
+    "srp:2027:league:r08:m03": {
+      "competitionId": "srp",
+      "date": "2027-04-03",
+      "homeId": 58,
+      "awayId": 66,
+      "neutral": true,
+      "venue": "One New Zealand Stadium · Christchurch"
+    },
+    "srp:2027:league:r08:m04": {
+      "competitionId": "srp",
+      "date": "2027-04-04",
+      "homeId": 63,
+      "awayId": 62,
+      "neutral": true,
+      "venue": "One New Zealand Stadium · Christchurch"
+    },
+    "srp:2027:league:r08:m05": {
+      "competitionId": "srp",
+      "date": "2027-04-04",
+      "homeId": 64,
+      "awayId": 65,
+      "neutral": true,
+      "venue": "One New Zealand Stadium · Christchurch"
+    },
+    "srp:2027:league:r09:m01": {
+      "competitionId": "srp",
+      "date": "2027-04-09",
+      "homeId": 58,
+      "awayId": 60,
+      "neutral": false,
+      "venue": "Eden Park · Auckland"
+    },
+    "srp:2027:league:r09:m02": {
+      "competitionId": "srp",
+      "date": "2027-04-10",
+      "homeId": 62,
+      "awayId": 67,
+      "neutral": false,
+      "venue": "Four R Stadium · Ba"
+    },
+    "srp:2027:league:r09:m03": {
+      "competitionId": "srp",
+      "date": "2027-04-10",
+      "homeId": 64,
+      "awayId": 63,
+      "neutral": false,
+      "venue": "Hnry Stadium · Wellington"
+    },
+    "srp:2027:league:r09:m04": {
+      "competitionId": "srp",
+      "date": "2027-04-10",
+      "homeId": 59,
+      "awayId": 65,
+      "neutral": false,
+      "venue": "Corroboree Group Oval · Canberra"
+    },
+    "srp:2027:league:r09:m05": {
+      "competitionId": "srp",
+      "date": "2027-04-11",
+      "homeId": 66,
+      "awayId": 61,
+      "neutral": false,
+      "venue": "Allianz Stadium · Sydney"
+    },
+    "srp:2027:league:r10:m01": {
+      "competitionId": "srp",
+      "date": "2027-04-16",
+      "homeId": 60,
+      "awayId": 62,
+      "neutral": false,
+      "venue": "FMG Stadium Waikato · Hamilton"
+    },
+    "srp:2027:league:r10:m02": {
+      "competitionId": "srp",
+      "date": "2027-04-16",
+      "homeId": 59,
+      "awayId": 64,
+      "neutral": false,
+      "venue": "GIO Stadium · Canberra"
+    },
+    "srp:2027:league:r10:m03": {
+      "competitionId": "srp",
+      "date": "2027-04-17",
+      "homeId": 63,
+      "awayId": 66,
+      "neutral": false,
+      "venue": "Forsyth Barr Stadium · Dunedin"
+    },
+    "srp:2027:league:r10:m04": {
+      "competitionId": "srp",
+      "date": "2027-04-17",
+      "homeId": 67,
+      "awayId": 61,
+      "neutral": false,
+      "venue": "HBF Park · Perth"
+    },
+    "srp:2027:league:r11:m01": {
+      "competitionId": "srp",
+      "date": "2027-04-24",
+      "homeId": 65,
+      "awayId": 58,
+      "neutral": false,
+      "venue": "Suncorp Stadium · Brisbane"
+    },
+    "srp:2027:league:r12:m01": {
+      "competitionId": "srp",
+      "date": "2027-04-30",
+      "homeId": 62,
+      "awayId": 64,
+      "neutral": false,
+      "venue": "HFC Bank Stadium · Suva"
+    },
+    "srp:2027:league:r12:m02": {
+      "competitionId": "srp",
+      "date": "2027-05-01",
+      "homeId": 60,
+      "awayId": 61,
+      "neutral": false,
+      "venue": "FMG Stadium Waikato · Hamilton"
+    },
+    "srp:2027:league:r12:m03": {
+      "competitionId": "srp",
+      "date": "2027-05-01",
+      "homeId": 58,
+      "awayId": 59,
+      "neutral": false,
+      "venue": "Eden Park · Auckland"
+    },
+    "srp:2027:league:r12:m04": {
+      "competitionId": "srp",
+      "date": "2027-05-01",
+      "homeId": 65,
+      "awayId": 63,
+      "neutral": false,
+      "venue": "Suncorp Stadium · Brisbane"
+    },
+    "srp:2027:league:r12:m05": {
+      "competitionId": "srp",
+      "date": "2027-05-02",
+      "homeId": 66,
+      "awayId": 67,
+      "neutral": false,
+      "venue": "Allianz Stadium · Sydney"
+    },
+    "srp:2027:league:r13:m01": {
+      "competitionId": "srp",
+      "date": "2027-05-07",
+      "homeId": 58,
+      "awayId": 62,
+      "neutral": false,
+      "venue": "Eden Park · Auckland"
+    },
+    "srp:2027:league:r13:m02": {
+      "competitionId": "srp",
+      "date": "2027-05-07",
+      "homeId": 59,
+      "awayId": 61,
+      "neutral": false,
+      "venue": "GIO Stadium · Canberra"
+    },
+    "srp:2027:league:r13:m03": {
+      "competitionId": "srp",
+      "date": "2027-05-08",
+      "homeId": 64,
+      "awayId": 60,
+      "neutral": false,
+      "venue": "McLean Park · Napier"
+    },
+    "srp:2027:league:r13:m04": {
+      "competitionId": "srp",
+      "date": "2027-05-08",
+      "homeId": 66,
+      "awayId": 65,
+      "neutral": false,
+      "venue": "Allianz Stadium · Sydney"
+    },
+    "srp:2027:league:r13:m05": {
+      "competitionId": "srp",
+      "date": "2027-05-09",
+      "homeId": 67,
+      "awayId": 63,
+      "neutral": false,
+      "venue": "HBF Park · Perth"
+    },
+    "srp:2027:league:r14:m01": {
+      "competitionId": "srp",
+      "date": "2027-05-14",
+      "homeId": 60,
+      "awayId": 65,
+      "neutral": false,
+      "venue": "FMG Stadium Waikato · Hamilton"
+    },
+    "srp:2027:league:r14:m02": {
+      "competitionId": "srp",
+      "date": "2027-05-15",
+      "homeId": 62,
+      "awayId": 59,
+      "neutral": false,
+      "venue": "Churchill Park · Lautoka"
+    },
+    "srp:2027:league:r14:m03": {
+      "competitionId": "srp",
+      "date": "2027-05-15",
+      "homeId": 61,
+      "awayId": 66,
+      "neutral": false,
+      "venue": "One New Zealand Stadium · Christchurch"
+    },
+    "srp:2027:league:r14:m04": {
+      "competitionId": "srp",
+      "date": "2027-05-15",
+      "homeId": 67,
+      "awayId": 58,
+      "neutral": false,
+      "venue": "HBF Park · Perth"
+    },
+    "srp:2027:league:r14:m05": {
+      "competitionId": "srp",
+      "date": "2027-05-16",
+      "homeId": 63,
+      "awayId": 64,
+      "neutral": false,
+      "venue": "Forsyth Barr Stadium · Dunedin"
+    },
+    "srp:2027:league:r15:m01": {
+      "competitionId": "srp",
+      "date": "2027-05-21",
+      "homeId": 62,
+      "awayId": 61,
+      "neutral": false,
+      "venue": "HFC Bank Stadium · Suva"
+    },
+    "srp:2027:league:r15:m02": {
+      "competitionId": "srp",
+      "date": "2027-05-21",
+      "homeId": 65,
+      "awayId": 67,
+      "neutral": false,
+      "venue": "Suncorp Stadium · Brisbane"
+    },
+    "srp:2027:league:r15:m03": {
+      "competitionId": "srp",
+      "date": "2027-05-22",
+      "homeId": 60,
+      "awayId": 63,
+      "neutral": false,
+      "venue": "FMG Stadium Waikato · Hamilton"
+    },
+    "srp:2027:league:r15:m04": {
+      "competitionId": "srp",
+      "date": "2027-05-22",
+      "homeId": 64,
+      "awayId": 59,
+      "neutral": false,
+      "venue": "Hnry Stadium · Wellington"
+    },
+    "srp:2027:league:r15:m05": {
+      "competitionId": "srp",
+      "date": "2027-05-22",
+      "homeId": 66,
+      "awayId": 58,
+      "neutral": false,
+      "venue": "Allianz Stadium · Sydney"
+    },
+    "srp:2027:league:r16:m01": {
+      "competitionId": "srp",
+      "date": "2027-05-28",
+      "homeId": 61,
+      "awayId": 67,
+      "neutral": false,
+      "venue": "One New Zealand Stadium · Christchurch"
+    },
+    "srp:2027:league:r16:m02": {
+      "competitionId": "srp",
+      "date": "2027-05-28",
+      "homeId": 59,
+      "awayId": 60,
+      "neutral": false,
+      "venue": "GIO Stadium · Canberra"
+    },
+    "srp:2027:league:r16:m03": {
+      "competitionId": "srp",
+      "date": "2027-05-29",
+      "homeId": 62,
+      "awayId": 66,
+      "neutral": false,
+      "venue": "Four R Stadium · Ba"
+    },
+    "srp:2027:league:r16:m04": {
+      "competitionId": "srp",
+      "date": "2027-05-29",
+      "homeId": 58,
+      "awayId": 63,
+      "neutral": false,
+      "venue": "Eden Park · Auckland"
+    },
+    "srp:2027:league:r16:m05": {
+      "competitionId": "srp",
+      "date": "2027-05-29",
+      "homeId": 65,
+      "awayId": 64,
+      "neutral": false,
+      "venue": "Suncorp Stadium · Brisbane"
+    },
+    "srp:2027:league:r17:m01": {
+      "competitionId": "srp",
+      "date": "2027-06-04",
+      "homeId": 64,
+      "awayId": 58,
+      "neutral": false,
+      "venue": "Hnry Stadium · Wellington"
+    },
+    "srp:2027:league:r17:m02": {
+      "competitionId": "srp",
+      "date": "2027-06-04",
+      "homeId": 65,
+      "awayId": 59,
+      "neutral": false,
+      "venue": "Suncorp Stadium · Brisbane"
+    },
+    "srp:2027:league:r17:m03": {
+      "competitionId": "srp",
+      "date": "2027-06-04",
+      "homeId": 67,
+      "awayId": 62,
+      "neutral": false,
+      "venue": "HBF Park · Perth"
+    },
+    "srp:2027:league:r17:m04": {
+      "competitionId": "srp",
+      "date": "2027-06-05",
+      "homeId": 63,
+      "awayId": 61,
+      "neutral": false,
+      "venue": "Forsyth Barr Stadium · Dunedin"
+    },
+    "srp:2027:league:r17:m05": {
+      "competitionId": "srp",
+      "date": "2027-06-05",
+      "homeId": 66,
+      "awayId": 60,
+      "neutral": false,
+      "venue": "Allianz Stadium · Sydney"
+    }
+  }
+}

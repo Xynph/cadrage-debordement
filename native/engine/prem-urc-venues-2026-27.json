@@ -1,0 +1,2122 @@
+{
+  "schema": "published-domestic-venues-v1",
+  "season": "2026/27",
+  "sources": {
+    "urc": {
+      "url": "https://stats.unitedrugby.com/match-centre/2026-27/",
+      "sourceSha256": "e8c709d56a0e596c009c6b122c6316276094e50dbabd6a3a8cbb02971b1d1b2b"
+    },
+    "prem": {
+      "url": "https://www.premrugby.com/fixtures-results",
+      "sourceSha256": "8bcebb7c4a9eba93d4de3e33aff81050a4d4559368972083ea5eceaf73517661"
+    }
+  },
+  "venues": {
+    "urc:2026:league:0:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292584,
+      "date": "2026-09-25",
+      "homeId": 50,
+      "awayId": 47,
+      "neutral": false,
+      "venue": "Stadio Monigo"
+    },
+    "urc:2026:league:0:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292585,
+      "date": "2026-09-25",
+      "homeId": 43,
+      "awayId": 52,
+      "neutral": false,
+      "venue": "Dexcom Stadium"
+    },
+    "urc:2026:league:0:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292586,
+      "date": "2026-09-25",
+      "homeId": 42,
+      "awayId": 45,
+      "neutral": false,
+      "venue": "Affidea Stadium"
+    },
+    "urc:2026:league:0:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292587,
+      "date": "2026-09-26",
+      "homeId": 55,
+      "awayId": 40,
+      "neutral": false,
+      "venue": "10bet Ellis Park"
+    },
+    "urc:2026:league:0:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292588,
+      "date": "2026-09-26",
+      "homeId": 54,
+      "awayId": 48,
+      "neutral": false,
+      "venue": "Hollywoodbets Kings Park"
+    },
+    "urc:2026:league:0:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292589,
+      "date": "2026-09-26",
+      "homeId": 41,
+      "awayId": 44,
+      "neutral": false,
+      "venue": "Thomond Park"
+    },
+    "urc:2026:league:0:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292590,
+      "date": "2026-09-26",
+      "homeId": 51,
+      "awayId": 53,
+      "neutral": false,
+      "venue": "Stadio Sergio Lanfranchi"
+    },
+    "urc:2026:league:0:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292591,
+      "date": "2026-09-26",
+      "homeId": 49,
+      "awayId": 46,
+      "neutral": false,
+      "venue": "Parc y Scarlets"
+    },
+    "urc:2026:league:1:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292592,
+      "date": "2026-10-02",
+      "homeId": 46,
+      "awayId": 51,
+      "neutral": false,
+      "venue": "Cardiff Arms Park"
+    },
+    "urc:2026:league:1:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292593,
+      "date": "2026-10-02",
+      "homeId": 45,
+      "awayId": 52,
+      "neutral": false,
+      "venue": "Hive Stadium"
+    },
+    "urc:2026:league:1:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292594,
+      "date": "2026-10-02",
+      "homeId": 50,
+      "awayId": 43,
+      "neutral": false,
+      "venue": "Stadio Monigo"
+    },
+    "urc:2026:league:1:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292595,
+      "date": "2026-10-03",
+      "homeId": 55,
+      "awayId": 48,
+      "neutral": false,
+      "venue": "10bet Ellis Park"
+    },
+    "urc:2026:league:1:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292596,
+      "date": "2026-10-03",
+      "homeId": 47,
+      "awayId": 49,
+      "neutral": false,
+      "venue": "Rodney Parade"
+    },
+    "urc:2026:league:1:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292597,
+      "date": "2026-10-03",
+      "homeId": 54,
+      "awayId": 40,
+      "neutral": false,
+      "venue": "Hollywoodbets Kings Park"
+    },
+    "urc:2026:league:1:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292598,
+      "date": "2026-10-03",
+      "homeId": 41,
+      "awayId": 53,
+      "neutral": false,
+      "venue": "Thomond Park"
+    },
+    "urc:2026:league:1:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292599,
+      "date": "2026-10-03",
+      "homeId": 44,
+      "awayId": 42,
+      "neutral": false,
+      "venue": "Scotstoun Stadium"
+    },
+    "urc:2026:league:2:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292600,
+      "date": "2026-10-09",
+      "homeId": 44,
+      "awayId": 43,
+      "neutral": false,
+      "venue": "Scotstoun Stadium"
+    },
+    "urc:2026:league:2:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292601,
+      "date": "2026-10-09",
+      "homeId": 47,
+      "awayId": 48,
+      "neutral": false,
+      "venue": "Rodney Parade"
+    },
+    "urc:2026:league:2:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292602,
+      "date": "2026-10-10",
+      "homeId": 53,
+      "awayId": 55,
+      "neutral": false,
+      "venue": "Loftus Versfeld"
+    },
+    "urc:2026:league:2:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292603,
+      "date": "2026-10-10",
+      "homeId": 52,
+      "awayId": 54,
+      "neutral": false,
+      "venue": "DHL Stadium"
+    },
+    "urc:2026:league:2:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292604,
+      "date": "2026-10-10",
+      "homeId": 51,
+      "awayId": 45,
+      "neutral": false,
+      "venue": "Stadio Sergio Lanfranchi"
+    },
+    "urc:2026:league:2:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292605,
+      "date": "2026-10-10",
+      "homeId": 49,
+      "awayId": 50,
+      "neutral": false,
+      "venue": "Parc y Scarlets"
+    },
+    "urc:2026:league:2:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292606,
+      "date": "2026-10-10",
+      "homeId": 42,
+      "awayId": 41,
+      "neutral": false,
+      "venue": "Affidea Stadium"
+    },
+    "urc:2026:league:2:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292607,
+      "date": "2026-10-10",
+      "homeId": 40,
+      "awayId": 46,
+      "neutral": false,
+      "venue": "Laya Arena"
+    },
+    "urc:2026:league:3:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292608,
+      "date": "2026-10-23",
+      "homeId": 46,
+      "awayId": 54,
+      "neutral": false,
+      "venue": "Cardiff Arms Park"
+    },
+    "urc:2026:league:3:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292609,
+      "date": "2026-10-23",
+      "homeId": 43,
+      "awayId": 51,
+      "neutral": false,
+      "venue": "Dexcom Stadium"
+    },
+    "urc:2026:league:3:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292610,
+      "date": "2026-10-23",
+      "homeId": 45,
+      "awayId": 55,
+      "neutral": false,
+      "venue": "Hive Stadium"
+    },
+    "urc:2026:league:3:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292611,
+      "date": "2026-10-24",
+      "homeId": 53,
+      "awayId": 42,
+      "neutral": false,
+      "venue": "Loftus Versfeld"
+    },
+    "urc:2026:league:3:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292612,
+      "date": "2026-10-24",
+      "homeId": 52,
+      "awayId": 49,
+      "neutral": false,
+      "venue": "DHL Stadium"
+    },
+    "urc:2026:league:3:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292613,
+      "date": "2026-10-24",
+      "homeId": 50,
+      "awayId": 44,
+      "neutral": false,
+      "venue": "Stadio Monigo"
+    },
+    "urc:2026:league:3:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292614,
+      "date": "2026-10-24",
+      "homeId": 40,
+      "awayId": 41,
+      "neutral": false,
+      "venue": "Aviva Stadium"
+    },
+    "urc:2026:league:3:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292615,
+      "date": "2026-10-24",
+      "homeId": 48,
+      "awayId": 47,
+      "neutral": false,
+      "venue": "St Helen's"
+    },
+    "urc:2026:league:4:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292616,
+      "date": "2026-10-30",
+      "homeId": 43,
+      "awayId": 40,
+      "neutral": false,
+      "venue": "Dexcom Stadium"
+    },
+    "urc:2026:league:4:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292617,
+      "date": "2026-10-30",
+      "homeId": 44,
+      "awayId": 55,
+      "neutral": false,
+      "venue": "Scotstoun Stadium"
+    },
+    "urc:2026:league:4:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292618,
+      "date": "2026-10-31",
+      "homeId": 52,
+      "awayId": 42,
+      "neutral": false,
+      "venue": "DHL Stadium"
+    },
+    "urc:2026:league:4:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292619,
+      "date": "2026-10-31",
+      "homeId": 53,
+      "awayId": 49,
+      "neutral": false,
+      "venue": "Loftus Versfeld"
+    },
+    "urc:2026:league:4:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292620,
+      "date": "2026-10-31",
+      "homeId": 50,
+      "awayId": 45,
+      "neutral": false,
+      "venue": "Stadio Monigo"
+    },
+    "urc:2026:league:4:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292621,
+      "date": "2026-10-31",
+      "homeId": 41,
+      "awayId": 54,
+      "neutral": false,
+      "venue": "Thomond Park"
+    },
+    "urc:2026:league:4:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292622,
+      "date": "2026-10-31",
+      "homeId": 47,
+      "awayId": 51,
+      "neutral": false,
+      "venue": "Rodney Parade"
+    },
+    "urc:2026:league:4:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292623,
+      "date": "2026-10-31",
+      "homeId": 48,
+      "awayId": 46,
+      "neutral": false,
+      "venue": "St Helen's"
+    },
+    "urc:2026:league:5:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292624,
+      "date": "2026-12-04",
+      "homeId": 48,
+      "awayId": 40,
+      "neutral": false,
+      "venue": "St Helen's"
+    },
+    "urc:2026:league:5:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292625,
+      "date": "2026-12-04",
+      "homeId": 45,
+      "awayId": 47,
+      "neutral": false,
+      "venue": "Hive Stadium"
+    },
+    "urc:2026:league:5:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292626,
+      "date": "2026-12-05",
+      "homeId": 55,
+      "awayId": 53,
+      "neutral": false,
+      "venue": "10bet Ellis Park"
+    },
+    "urc:2026:league:5:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292627,
+      "date": "2026-12-05",
+      "homeId": 54,
+      "awayId": 52,
+      "neutral": false,
+      "venue": "Hollywoodbets Kings Park"
+    },
+    "urc:2026:league:5:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292628,
+      "date": "2026-12-05",
+      "homeId": 46,
+      "awayId": 42,
+      "neutral": false,
+      "venue": "Cardiff Arms Park"
+    },
+    "urc:2026:league:5:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292629,
+      "date": "2026-12-05",
+      "homeId": 49,
+      "awayId": 43,
+      "neutral": false,
+      "venue": "Parc y Scarlets"
+    },
+    "urc:2026:league:5:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292630,
+      "date": "2026-12-05",
+      "homeId": 44,
+      "awayId": 50,
+      "neutral": false,
+      "venue": "Scotstoun Stadium"
+    },
+    "urc:2026:league:5:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292631,
+      "date": "2026-12-05",
+      "homeId": 51,
+      "awayId": 41,
+      "neutral": false,
+      "venue": "Stadio Sergio Lanfranchi"
+    },
+    "urc:2026:league:6:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292632,
+      "date": "2026-12-18",
+      "homeId": 42,
+      "awayId": 48,
+      "neutral": false,
+      "venue": "Affidea Stadium"
+    },
+    "urc:2026:league:6:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292633,
+      "date": "2026-12-18",
+      "homeId": 41,
+      "awayId": 49,
+      "neutral": false,
+      "venue": "Virgin Media Park"
+    },
+    "urc:2026:league:6:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292634,
+      "date": "2026-12-19",
+      "homeId": 51,
+      "awayId": 50,
+      "neutral": false,
+      "venue": "Stadio Sergio Lanfranchi"
+    },
+    "urc:2026:league:6:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292635,
+      "date": "2026-12-19",
+      "homeId": 52,
+      "awayId": 55,
+      "neutral": false,
+      "venue": "DHL Stadium"
+    },
+    "urc:2026:league:6:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292636,
+      "date": "2026-12-19",
+      "homeId": 46,
+      "awayId": 47,
+      "neutral": false,
+      "venue": "Cardiff Arms Park"
+    },
+    "urc:2026:league:6:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292637,
+      "date": "2026-12-19",
+      "homeId": 54,
+      "awayId": 53,
+      "neutral": false,
+      "venue": "Hollywoodbets Kings Park"
+    },
+    "urc:2026:league:6:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292638,
+      "date": "2026-12-19",
+      "homeId": 40,
+      "awayId": 44,
+      "neutral": false,
+      "venue": "Laya Arena"
+    },
+    "urc:2026:league:6:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292639,
+      "date": "2026-12-19",
+      "homeId": 43,
+      "awayId": 45,
+      "neutral": false,
+      "venue": "Dexcom Stadium"
+    },
+    "urc:2026:league:7:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292640,
+      "date": "2026-12-26",
+      "homeId": 47,
+      "awayId": 46,
+      "neutral": false,
+      "venue": "Rodney Parade"
+    },
+    "urc:2026:league:7:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292641,
+      "date": "2026-12-26",
+      "homeId": 48,
+      "awayId": 49,
+      "neutral": false,
+      "venue": "St Helen's"
+    },
+    "urc:2026:league:7:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292642,
+      "date": "2026-12-27",
+      "homeId": 50,
+      "awayId": 51,
+      "neutral": false,
+      "venue": "Stadio Monigo"
+    },
+    "urc:2026:league:7:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292643,
+      "date": "2026-12-27",
+      "homeId": 45,
+      "awayId": 44,
+      "neutral": false,
+      "venue": "Scottish Gas Murrayfield"
+    },
+    "urc:2026:league:7:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292644,
+      "date": "2026-12-27",
+      "homeId": 42,
+      "awayId": 43,
+      "neutral": false,
+      "venue": "Affidea Stadium"
+    },
+    "urc:2026:league:7:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292645,
+      "date": "2026-12-27",
+      "homeId": 41,
+      "awayId": 40,
+      "neutral": false,
+      "venue": "Thomond Park"
+    },
+    "urc:2026:league:7:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292670,
+      "date": "2027-02-20",
+      "homeId": 55,
+      "awayId": 54,
+      "neutral": false,
+      "venue": "10bet Ellis Park"
+    },
+    "urc:2026:league:7:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292671,
+      "date": "2027-02-21",
+      "homeId": 53,
+      "awayId": 52,
+      "neutral": false,
+      "venue": "Loftus Versfeld"
+    },
+    "urc:2026:league:8:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292646,
+      "date": "2027-01-02",
+      "homeId": 54,
+      "awayId": 55,
+      "neutral": false,
+      "venue": "Hollywoodbets Kings Park"
+    },
+    "urc:2026:league:8:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292647,
+      "date": "2027-01-02",
+      "homeId": 51,
+      "awayId": 44,
+      "neutral": false,
+      "venue": "Stadio Sergio Lanfranchi"
+    },
+    "urc:2026:league:8:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292648,
+      "date": "2027-01-02",
+      "homeId": 49,
+      "awayId": 47,
+      "neutral": false,
+      "venue": "Parc y Scarlets"
+    },
+    "urc:2026:league:8:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292649,
+      "date": "2027-01-02",
+      "homeId": 43,
+      "awayId": 41,
+      "neutral": false,
+      "venue": "Dexcom Stadium"
+    },
+    "urc:2026:league:8:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292650,
+      "date": "2027-01-02",
+      "homeId": 45,
+      "awayId": 50,
+      "neutral": false,
+      "venue": "Hive Stadium"
+    },
+    "urc:2026:league:8:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292651,
+      "date": "2027-01-02",
+      "homeId": 46,
+      "awayId": 48,
+      "neutral": false,
+      "venue": "Cardiff Arms Park"
+    },
+    "urc:2026:league:8:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292652,
+      "date": "2027-01-02",
+      "homeId": 40,
+      "awayId": 42,
+      "neutral": false,
+      "venue": "Laya Arena"
+    },
+    "urc:2026:league:8:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292653,
+      "date": "2027-01-03",
+      "homeId": 52,
+      "awayId": 53,
+      "neutral": false,
+      "venue": "DHL Stadium"
+    },
+    "urc:2026:league:9:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292654,
+      "date": "2027-01-22",
+      "homeId": 44,
+      "awayId": 49,
+      "neutral": false,
+      "venue": "Scotstoun Stadium"
+    },
+    "urc:2026:league:9:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292655,
+      "date": "2027-01-22",
+      "homeId": 42,
+      "awayId": 54,
+      "neutral": false,
+      "venue": "Affidea Stadium"
+    },
+    "urc:2026:league:9:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292656,
+      "date": "2027-01-23",
+      "homeId": 55,
+      "awayId": 51,
+      "neutral": false,
+      "venue": "10bet Ellis Park"
+    },
+    "urc:2026:league:9:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292657,
+      "date": "2027-01-23",
+      "homeId": 52,
+      "awayId": 46,
+      "neutral": false,
+      "venue": "DHL Stadium"
+    },
+    "urc:2026:league:9:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292658,
+      "date": "2027-01-23",
+      "homeId": 48,
+      "awayId": 45,
+      "neutral": false,
+      "venue": "St Helen's"
+    },
+    "urc:2026:league:9:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292659,
+      "date": "2027-01-23",
+      "homeId": 50,
+      "awayId": 53,
+      "neutral": false,
+      "venue": "Stadio Monigo"
+    },
+    "urc:2026:league:9:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292660,
+      "date": "2027-01-23",
+      "homeId": 40,
+      "awayId": 47,
+      "neutral": false,
+      "venue": "Laya Arena"
+    },
+    "urc:2026:league:9:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292661,
+      "date": "2027-01-23",
+      "homeId": 41,
+      "awayId": 43,
+      "neutral": false,
+      "venue": "Thomond Park"
+    },
+    "urc:2026:league:10:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292662,
+      "date": "2027-01-29",
+      "homeId": 47,
+      "awayId": 41,
+      "neutral": false,
+      "venue": "Rodney Parade"
+    },
+    "urc:2026:league:10:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292663,
+      "date": "2027-01-29",
+      "homeId": 44,
+      "awayId": 48,
+      "neutral": false,
+      "venue": "Scotstoun Stadium"
+    },
+    "urc:2026:league:10:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292664,
+      "date": "2027-01-30",
+      "homeId": 55,
+      "awayId": 46,
+      "neutral": false,
+      "venue": "10bet Ellis Park"
+    },
+    "urc:2026:league:10:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292665,
+      "date": "2027-01-30",
+      "homeId": 52,
+      "awayId": 51,
+      "neutral": false,
+      "venue": "DHL Stadium"
+    },
+    "urc:2026:league:10:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292666,
+      "date": "2027-01-30",
+      "homeId": 49,
+      "awayId": 45,
+      "neutral": false,
+      "venue": "Parc y Scarlets"
+    },
+    "urc:2026:league:10:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292667,
+      "date": "2027-01-30",
+      "homeId": 40,
+      "awayId": 53,
+      "neutral": false,
+      "venue": "Laya Arena"
+    },
+    "urc:2026:league:10:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292668,
+      "date": "2027-01-30",
+      "homeId": 50,
+      "awayId": 54,
+      "neutral": false,
+      "venue": "Stadio Monigo"
+    },
+    "urc:2026:league:10:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292669,
+      "date": "2027-01-30",
+      "homeId": 43,
+      "awayId": 42,
+      "neutral": false,
+      "venue": "Dexcom Stadium"
+    },
+    "urc:2026:league:11:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292672,
+      "date": "2027-02-26",
+      "homeId": 41,
+      "awayId": 50,
+      "neutral": false,
+      "venue": "Virgin Media Park"
+    },
+    "urc:2026:league:11:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292673,
+      "date": "2027-02-26",
+      "homeId": 47,
+      "awayId": 42,
+      "neutral": false,
+      "venue": "Rodney Parade"
+    },
+    "urc:2026:league:11:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292674,
+      "date": "2027-02-27",
+      "homeId": 55,
+      "awayId": 52,
+      "neutral": false,
+      "venue": "10bet Ellis Park"
+    },
+    "urc:2026:league:11:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292675,
+      "date": "2027-02-27",
+      "homeId": 53,
+      "awayId": 54,
+      "neutral": false,
+      "venue": "Loftus Versfeld"
+    },
+    "urc:2026:league:11:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292676,
+      "date": "2027-02-27",
+      "homeId": 46,
+      "awayId": 44,
+      "neutral": false,
+      "venue": "Cardiff Arms Park"
+    },
+    "urc:2026:league:11:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292677,
+      "date": "2027-02-27",
+      "homeId": 51,
+      "awayId": 49,
+      "neutral": false,
+      "venue": "Stadio Sergio Lanfranchi"
+    },
+    "urc:2026:league:11:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292678,
+      "date": "2027-02-27",
+      "homeId": 48,
+      "awayId": 43,
+      "neutral": false,
+      "venue": "St Helen's"
+    },
+    "urc:2026:league:11:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292679,
+      "date": "2027-02-27",
+      "homeId": 45,
+      "awayId": 40,
+      "neutral": false,
+      "venue": "Hive Stadium"
+    },
+    "urc:2026:league:12:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292680,
+      "date": "2027-03-19",
+      "homeId": 54,
+      "awayId": 45,
+      "neutral": false,
+      "venue": "Hollywoodbets Kings Park"
+    },
+    "urc:2026:league:12:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292681,
+      "date": "2027-03-19",
+      "homeId": 44,
+      "awayId": 52,
+      "neutral": false,
+      "venue": "Scotstoun Stadium"
+    },
+    "urc:2026:league:12:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292682,
+      "date": "2027-03-19",
+      "homeId": 43,
+      "awayId": 46,
+      "neutral": false,
+      "venue": "Dexcom Stadium"
+    },
+    "urc:2026:league:12:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292683,
+      "date": "2027-03-20",
+      "homeId": 42,
+      "awayId": 51,
+      "neutral": false,
+      "venue": "Affidea Stadium"
+    },
+    "urc:2026:league:12:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292684,
+      "date": "2027-03-20",
+      "homeId": 53,
+      "awayId": 47,
+      "neutral": false,
+      "venue": "Loftus Versfeld"
+    },
+    "urc:2026:league:12:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292685,
+      "date": "2027-03-20",
+      "homeId": 41,
+      "awayId": 48,
+      "neutral": false,
+      "venue": "Thomond Park"
+    },
+    "urc:2026:league:12:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292686,
+      "date": "2027-03-20",
+      "homeId": 49,
+      "awayId": 55,
+      "neutral": false,
+      "venue": "Parc y Scarlets"
+    },
+    "urc:2026:league:12:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292687,
+      "date": "2027-03-20",
+      "homeId": 40,
+      "awayId": 50,
+      "neutral": false,
+      "venue": "Laya Arena"
+    },
+    "urc:2026:league:13:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292688,
+      "date": "2027-03-26",
+      "homeId": 44,
+      "awayId": 51,
+      "neutral": false,
+      "venue": "Scotstoun Stadium"
+    },
+    "urc:2026:league:13:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292689,
+      "date": "2027-03-26",
+      "homeId": 49,
+      "awayId": 40,
+      "neutral": false,
+      "venue": "Parc y Scarlets"
+    },
+    "urc:2026:league:13:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292690,
+      "date": "2027-03-27",
+      "homeId": 53,
+      "awayId": 45,
+      "neutral": false,
+      "venue": "Loftus Versfeld"
+    },
+    "urc:2026:league:13:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292691,
+      "date": "2027-03-27",
+      "homeId": 43,
+      "awayId": 55,
+      "neutral": false,
+      "venue": "Dexcom Stadium"
+    },
+    "urc:2026:league:13:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292692,
+      "date": "2027-03-27",
+      "homeId": 54,
+      "awayId": 47,
+      "neutral": false,
+      "venue": "Hollywoodbets Kings Park"
+    },
+    "urc:2026:league:13:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292693,
+      "date": "2027-03-27",
+      "homeId": 46,
+      "awayId": 41,
+      "neutral": false,
+      "venue": "Cardiff Arms Park"
+    },
+    "urc:2026:league:13:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292694,
+      "date": "2027-03-27",
+      "homeId": 50,
+      "awayId": 42,
+      "neutral": false,
+      "venue": "Stadio Monigo"
+    },
+    "urc:2026:league:13:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292695,
+      "date": "2027-03-27",
+      "homeId": 48,
+      "awayId": 52,
+      "neutral": false,
+      "venue": "St Helen's"
+    },
+    "urc:2026:league:14:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292696,
+      "date": "2027-04-16",
+      "homeId": 47,
+      "awayId": 44,
+      "neutral": false,
+      "venue": "Rodney Parade"
+    },
+    "urc:2026:league:14:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292697,
+      "date": "2027-04-16",
+      "homeId": 45,
+      "awayId": 46,
+      "neutral": false,
+      "venue": "Hive Stadium"
+    },
+    "urc:2026:league:14:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292698,
+      "date": "2027-04-17",
+      "homeId": 55,
+      "awayId": 41,
+      "neutral": false,
+      "venue": "10bet Ellis Park"
+    },
+    "urc:2026:league:14:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292699,
+      "date": "2027-04-17",
+      "homeId": 52,
+      "awayId": 50,
+      "neutral": false,
+      "venue": "DHL Stadium"
+    },
+    "urc:2026:league:14:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292700,
+      "date": "2027-04-17",
+      "homeId": 48,
+      "awayId": 53,
+      "neutral": false,
+      "venue": "St Helen's"
+    },
+    "urc:2026:league:14:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292701,
+      "date": "2027-04-17",
+      "homeId": 40,
+      "awayId": 43,
+      "neutral": false,
+      "venue": "Laya Arena"
+    },
+    "urc:2026:league:14:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292702,
+      "date": "2027-04-17",
+      "homeId": 42,
+      "awayId": 49,
+      "neutral": false,
+      "venue": "Affidea Stadium"
+    },
+    "urc:2026:league:14:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292703,
+      "date": "2027-04-16",
+      "homeId": 51,
+      "awayId": 54,
+      "neutral": false,
+      "venue": "Stadio Sergio Lanfranchi"
+    },
+    "urc:2026:league:15:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292704,
+      "date": "2027-04-23",
+      "homeId": 51,
+      "awayId": 48,
+      "neutral": false,
+      "venue": "Stadio Sergio Lanfranchi"
+    },
+    "urc:2026:league:15:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292705,
+      "date": "2027-04-23",
+      "homeId": 42,
+      "awayId": 40,
+      "neutral": false,
+      "venue": "Affidea Stadium"
+    },
+    "urc:2026:league:15:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292706,
+      "date": "2027-04-23",
+      "homeId": 46,
+      "awayId": 53,
+      "neutral": false,
+      "venue": "Cardiff Arms Park"
+    },
+    "urc:2026:league:15:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292707,
+      "date": "2027-04-24",
+      "homeId": 55,
+      "awayId": 50,
+      "neutral": false,
+      "venue": "10bet Ellis Park"
+    },
+    "urc:2026:league:15:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292708,
+      "date": "2027-04-24",
+      "homeId": 49,
+      "awayId": 54,
+      "neutral": false,
+      "venue": "Parc y Scarlets"
+    },
+    "urc:2026:league:15:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292709,
+      "date": "2027-04-24",
+      "homeId": 52,
+      "awayId": 41,
+      "neutral": false,
+      "venue": "DHL Stadium"
+    },
+    "urc:2026:league:15:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292710,
+      "date": "2027-04-24",
+      "homeId": 44,
+      "awayId": 45,
+      "neutral": false,
+      "venue": "Hampden Park"
+    },
+    "urc:2026:league:15:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292711,
+      "date": "2027-04-24",
+      "homeId": 43,
+      "awayId": 47,
+      "neutral": false,
+      "venue": "Dexcom Stadium"
+    },
+    "urc:2026:league:16:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292712,
+      "date": "2027-05-07",
+      "homeId": 47,
+      "awayId": 55,
+      "neutral": false,
+      "venue": "Rodney Parade"
+    },
+    "urc:2026:league:16:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292713,
+      "date": "2027-05-07",
+      "homeId": 45,
+      "awayId": 51,
+      "neutral": false,
+      "venue": "Hive Stadium"
+    },
+    "urc:2026:league:16:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292714,
+      "date": "2027-05-08",
+      "homeId": 54,
+      "awayId": 43,
+      "neutral": false,
+      "venue": "Hollywoodbets Kings Park"
+    },
+    "urc:2026:league:16:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292715,
+      "date": "2027-05-08",
+      "homeId": 53,
+      "awayId": 44,
+      "neutral": false,
+      "venue": "Loftus Versfeld"
+    },
+    "urc:2026:league:16:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292716,
+      "date": "2027-05-08",
+      "homeId": 41,
+      "awayId": 42,
+      "neutral": false,
+      "venue": "Thomond Park"
+    },
+    "urc:2026:league:16:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292717,
+      "date": "2027-05-08",
+      "homeId": 49,
+      "awayId": 48,
+      "neutral": false,
+      "venue": "Parc y Scarlets"
+    },
+    "urc:2026:league:16:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292718,
+      "date": "2027-05-08",
+      "homeId": 40,
+      "awayId": 52,
+      "neutral": false,
+      "venue": "Laya Arena"
+    },
+    "urc:2026:league:16:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292719,
+      "date": "2027-05-08",
+      "homeId": 50,
+      "awayId": 46,
+      "neutral": false,
+      "venue": "Stadio Monigo"
+    },
+    "urc:2026:league:17:0": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292720,
+      "date": "2027-05-14",
+      "homeId": 48,
+      "awayId": 50,
+      "neutral": false,
+      "venue": "St Helen's"
+    },
+    "urc:2026:league:17:1": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292721,
+      "date": "2027-05-14",
+      "homeId": 42,
+      "awayId": 55,
+      "neutral": false,
+      "venue": "Affidea Stadium"
+    },
+    "urc:2026:league:17:2": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292722,
+      "date": "2027-05-14",
+      "homeId": 45,
+      "awayId": 41,
+      "neutral": false,
+      "venue": "Hive Stadium"
+    },
+    "urc:2026:league:17:3": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292723,
+      "date": "2027-05-15",
+      "homeId": 53,
+      "awayId": 43,
+      "neutral": false,
+      "venue": "Loftus Versfeld"
+    },
+    "urc:2026:league:17:4": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292724,
+      "date": "2027-05-15",
+      "homeId": 46,
+      "awayId": 49,
+      "neutral": false,
+      "venue": "Cardiff Arms Park"
+    },
+    "urc:2026:league:17:5": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292725,
+      "date": "2027-05-15",
+      "homeId": 54,
+      "awayId": 44,
+      "neutral": false,
+      "venue": "Hollywoodbets Kings Park"
+    },
+    "urc:2026:league:17:6": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292726,
+      "date": "2027-05-15",
+      "homeId": 47,
+      "awayId": 52,
+      "neutral": false,
+      "venue": "Rodney Parade"
+    },
+    "urc:2026:league:17:7": {
+      "competitionId": "urc",
+      "sourceFixtureId": 292727,
+      "date": "2027-05-15",
+      "homeId": 51,
+      "awayId": 40,
+      "neutral": false,
+      "venue": "Stadio Sergio Lanfranchi"
+    },
+    "prem:2026:league:0:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294908,
+      "date": "2026-09-25",
+      "homeId": 34,
+      "awayId": 30,
+      "neutral": false,
+      "venue": "Twickenham Stoop"
+    },
+    "prem:2026:league:0:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294909,
+      "date": "2026-09-25",
+      "homeId": 37,
+      "awayId": 36,
+      "neutral": false,
+      "venue": "DPD Stadium at Franklin's Gardens"
+    },
+    "prem:2026:league:0:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294910,
+      "date": "2026-09-26",
+      "homeId": 32,
+      "awayId": 33,
+      "neutral": false,
+      "venue": "Sandy Park"
+    },
+    "prem:2026:league:0:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294911,
+      "date": "2026-09-26",
+      "homeId": 38,
+      "awayId": 31,
+      "neutral": false,
+      "venue": "CorpAcq Stadium"
+    },
+    "prem:2026:league:0:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294912,
+      "date": "2026-09-27",
+      "homeId": 35,
+      "awayId": 39,
+      "neutral": false,
+      "venue": "Mattioli Woods Welford Road"
+    },
+    "prem:2026:league:1:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294913,
+      "date": "2026-10-02",
+      "homeId": 30,
+      "awayId": 32,
+      "neutral": false,
+      "venue": "The Rec"
+    },
+    "prem:2026:league:1:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294914,
+      "date": "2026-10-03",
+      "homeId": 31,
+      "awayId": 37,
+      "neutral": false,
+      "venue": "Ashton Gate"
+    },
+    "prem:2026:league:1:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294915,
+      "date": "2026-10-03",
+      "homeId": 33,
+      "awayId": 34,
+      "neutral": false,
+      "venue": "Kingsholm Stadium"
+    },
+    "prem:2026:league:1:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294916,
+      "date": "2026-10-03",
+      "homeId": 36,
+      "awayId": 35,
+      "neutral": false,
+      "venue": "Kingston Park"
+    },
+    "prem:2026:league:1:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294917,
+      "date": "2026-10-04",
+      "homeId": 39,
+      "awayId": 38,
+      "neutral": false,
+      "venue": "StoneX Stadium"
+    },
+    "prem:2026:league:2:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294918,
+      "date": "2026-10-09",
+      "homeId": 35,
+      "awayId": 33,
+      "neutral": false,
+      "venue": "Mattioli Woods Welford Road"
+    },
+    "prem:2026:league:2:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294919,
+      "date": "2026-10-10",
+      "homeId": 37,
+      "awayId": 30,
+      "neutral": false,
+      "venue": "DPD Stadium at Franklin's Gardens"
+    },
+    "prem:2026:league:2:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294920,
+      "date": "2026-10-10",
+      "homeId": 39,
+      "awayId": 31,
+      "neutral": false,
+      "venue": "StoneX Stadium"
+    },
+    "prem:2026:league:2:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294921,
+      "date": "2026-10-11",
+      "homeId": 38,
+      "awayId": 34,
+      "neutral": false,
+      "venue": "CorpAcq Stadium"
+    },
+    "prem:2026:league:2:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294922,
+      "date": "2026-10-11",
+      "homeId": 32,
+      "awayId": 36,
+      "neutral": false,
+      "venue": "Sandy Park"
+    },
+    "prem:2026:league:3:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294923,
+      "date": "2026-10-23",
+      "homeId": 33,
+      "awayId": 30,
+      "neutral": false,
+      "venue": "Kingsholm Stadium"
+    },
+    "prem:2026:league:3:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294924,
+      "date": "2026-10-23",
+      "homeId": 36,
+      "awayId": 38,
+      "neutral": false,
+      "venue": "Kingston Park"
+    },
+    "prem:2026:league:3:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294925,
+      "date": "2026-10-24",
+      "homeId": 35,
+      "awayId": 37,
+      "neutral": false,
+      "venue": "Mattioli Woods Welford Road"
+    },
+    "prem:2026:league:3:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294926,
+      "date": "2026-10-24",
+      "homeId": 31,
+      "awayId": 32,
+      "neutral": false,
+      "venue": "Ashton Gate"
+    },
+    "prem:2026:league:3:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294927,
+      "date": "2026-10-25",
+      "homeId": 34,
+      "awayId": 39,
+      "neutral": false,
+      "venue": "Twickenham Stoop"
+    },
+    "prem:2026:league:4:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294928,
+      "date": "2026-10-30",
+      "homeId": 31,
+      "awayId": 35,
+      "neutral": false,
+      "venue": "Ashton Gate"
+    },
+    "prem:2026:league:4:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294929,
+      "date": "2026-10-31",
+      "homeId": 32,
+      "awayId": 34,
+      "neutral": false,
+      "venue": "Sandy Park"
+    },
+    "prem:2026:league:4:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294930,
+      "date": "2026-10-31",
+      "homeId": 39,
+      "awayId": 36,
+      "neutral": false,
+      "venue": "StoneX Stadium"
+    },
+    "prem:2026:league:4:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294931,
+      "date": "2026-10-31",
+      "homeId": 30,
+      "awayId": 38,
+      "neutral": false,
+      "venue": "The Rec"
+    },
+    "prem:2026:league:4:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294932,
+      "date": "2026-10-31",
+      "homeId": 37,
+      "awayId": 33,
+      "neutral": false,
+      "venue": "DPD Stadium at Franklin's Gardens"
+    },
+    "prem:2026:league:5:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294933,
+      "date": "2026-12-04",
+      "homeId": 30,
+      "awayId": 31,
+      "neutral": false,
+      "venue": "The Rec"
+    },
+    "prem:2026:league:5:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294934,
+      "date": "2026-12-05",
+      "homeId": 39,
+      "awayId": 37,
+      "neutral": false,
+      "venue": "StoneX Stadium"
+    },
+    "prem:2026:league:5:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294935,
+      "date": "2026-12-05",
+      "homeId": 33,
+      "awayId": 36,
+      "neutral": false,
+      "venue": "Kingsholm Stadium"
+    },
+    "prem:2026:league:5:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294936,
+      "date": "2026-12-05",
+      "homeId": 34,
+      "awayId": 35,
+      "neutral": false,
+      "venue": "Twickenham Stoop"
+    },
+    "prem:2026:league:5:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294937,
+      "date": "2026-12-06",
+      "homeId": 38,
+      "awayId": 32,
+      "neutral": false,
+      "venue": "CorpAcq Stadium"
+    },
+    "prem:2026:league:6:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294938,
+      "date": "2026-12-18",
+      "homeId": 36,
+      "awayId": 30,
+      "neutral": false,
+      "venue": "Kingston Park"
+    },
+    "prem:2026:league:6:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294939,
+      "date": "2026-12-19",
+      "homeId": 33,
+      "awayId": 39,
+      "neutral": false,
+      "venue": "Kingsholm Stadium"
+    },
+    "prem:2026:league:6:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294940,
+      "date": "2026-12-19",
+      "homeId": 35,
+      "awayId": 38,
+      "neutral": false,
+      "venue": "Mattioli Woods Welford Road"
+    },
+    "prem:2026:league:6:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294941,
+      "date": "2026-12-19",
+      "homeId": 37,
+      "awayId": 32,
+      "neutral": false,
+      "venue": "DPD Stadium at Franklin's Gardens"
+    },
+    "prem:2026:league:6:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294942,
+      "date": "2026-12-20",
+      "homeId": 31,
+      "awayId": 34,
+      "neutral": false,
+      "venue": "Ashton Gate"
+    },
+    "prem:2026:league:7:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294943,
+      "date": "2026-12-27",
+      "homeId": 30,
+      "awayId": 35,
+      "neutral": false,
+      "venue": "The Rec"
+    },
+    "prem:2026:league:7:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294944,
+      "date": "2026-12-26",
+      "homeId": 31,
+      "awayId": 36,
+      "neutral": false,
+      "venue": "Ashton Gate"
+    },
+    "prem:2026:league:7:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294945,
+      "date": "2026-12-26",
+      "homeId": 38,
+      "awayId": 33,
+      "neutral": false,
+      "venue": "CorpAcq Stadium"
+    },
+    "prem:2026:league:7:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294946,
+      "date": "2026-12-27",
+      "homeId": 32,
+      "awayId": 39,
+      "neutral": false,
+      "venue": "Sandy Park"
+    },
+    "prem:2026:league:7:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294947,
+      "date": "2026-12-27",
+      "homeId": 34,
+      "awayId": 37,
+      "neutral": false,
+      "venue": "Allianz Stadium"
+    },
+    "prem:2026:league:8:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294948,
+      "date": "2027-01-01",
+      "homeId": 33,
+      "awayId": 31,
+      "neutral": false,
+      "venue": "Kingsholm Stadium"
+    },
+    "prem:2026:league:8:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294949,
+      "date": "2027-01-02",
+      "homeId": 39,
+      "awayId": 30,
+      "neutral": false,
+      "venue": "StoneX Stadium"
+    },
+    "prem:2026:league:8:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294950,
+      "date": "2027-01-02",
+      "homeId": 35,
+      "awayId": 32,
+      "neutral": false,
+      "venue": "Mattioli Woods Welford Road"
+    },
+    "prem:2026:league:8:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294951,
+      "date": "2027-01-02",
+      "homeId": 36,
+      "awayId": 34,
+      "neutral": false,
+      "venue": "Kingston Park"
+    },
+    "prem:2026:league:8:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294952,
+      "date": "2027-01-03",
+      "homeId": 37,
+      "awayId": 38,
+      "neutral": false,
+      "venue": "DPD Stadium at Franklin's Gardens"
+    },
+    "prem:2026:league:9:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294953,
+      "date": "2027-01-23",
+      "homeId": 30,
+      "awayId": 37,
+      "neutral": false,
+      "venue": "The Rec"
+    },
+    "prem:2026:league:9:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294954,
+      "date": "2027-01-23",
+      "homeId": 32,
+      "awayId": 31,
+      "neutral": false,
+      "venue": "Sandy Park"
+    },
+    "prem:2026:league:9:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294955,
+      "date": "2027-01-23",
+      "homeId": 34,
+      "awayId": 33,
+      "neutral": false,
+      "venue": "Twickenham Stoop"
+    },
+    "prem:2026:league:9:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294956,
+      "date": "2027-01-23",
+      "homeId": 36,
+      "awayId": 39,
+      "neutral": false,
+      "venue": "Kingston Park"
+    },
+    "prem:2026:league:9:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294957,
+      "date": "2027-01-23",
+      "homeId": 38,
+      "awayId": 35,
+      "neutral": false,
+      "venue": "CorpAcq Stadium"
+    },
+    "prem:2026:league:10:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294958,
+      "date": "2027-03-20",
+      "homeId": 30,
+      "awayId": 33,
+      "neutral": false,
+      "venue": "The Rec"
+    },
+    "prem:2026:league:10:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294959,
+      "date": "2027-03-20",
+      "homeId": 31,
+      "awayId": 38,
+      "neutral": false,
+      "venue": "Ashton Gate"
+    },
+    "prem:2026:league:10:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294960,
+      "date": "2027-03-20",
+      "homeId": 32,
+      "awayId": 37,
+      "neutral": false,
+      "venue": "Sandy Park"
+    },
+    "prem:2026:league:10:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294961,
+      "date": "2027-03-20",
+      "homeId": 35,
+      "awayId": 36,
+      "neutral": false,
+      "venue": "Mattioli Woods Welford Road"
+    },
+    "prem:2026:league:10:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294962,
+      "date": "2027-03-20",
+      "homeId": 39,
+      "awayId": 34,
+      "neutral": false,
+      "venue": "Tottenham Hotspur Stadium"
+    },
+    "prem:2026:league:11:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294963,
+      "date": "2027-03-27",
+      "homeId": 33,
+      "awayId": 35,
+      "neutral": false,
+      "venue": "Kingsholm Stadium"
+    },
+    "prem:2026:league:11:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294964,
+      "date": "2027-03-27",
+      "homeId": 34,
+      "awayId": 32,
+      "neutral": false,
+      "venue": "Twickenham Stoop"
+    },
+    "prem:2026:league:11:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294965,
+      "date": "2027-03-27",
+      "homeId": 36,
+      "awayId": 31,
+      "neutral": false,
+      "venue": "Kingston Park"
+    },
+    "prem:2026:league:11:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294966,
+      "date": "2027-03-27",
+      "homeId": 37,
+      "awayId": 39,
+      "neutral": false,
+      "venue": "DPD Stadium at Franklin's Gardens"
+    },
+    "prem:2026:league:11:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294967,
+      "date": "2027-03-27",
+      "homeId": 38,
+      "awayId": 30,
+      "neutral": false,
+      "venue": "CorpAcq Stadium"
+    },
+    "prem:2026:league:12:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294968,
+      "date": "2027-04-17",
+      "homeId": 30,
+      "awayId": 36,
+      "neutral": false,
+      "venue": "The Rec"
+    },
+    "prem:2026:league:12:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294969,
+      "date": "2027-04-17",
+      "homeId": 31,
+      "awayId": 33,
+      "neutral": false,
+      "venue": "Principality Stadium"
+    },
+    "prem:2026:league:12:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294970,
+      "date": "2027-04-17",
+      "homeId": 32,
+      "awayId": 38,
+      "neutral": false,
+      "venue": "Sandy Park"
+    },
+    "prem:2026:league:12:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294971,
+      "date": "2027-04-17",
+      "homeId": 37,
+      "awayId": 34,
+      "neutral": false,
+      "venue": "DPD Stadium at Franklin's Gardens"
+    },
+    "prem:2026:league:12:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294972,
+      "date": "2027-04-17",
+      "homeId": 39,
+      "awayId": 35,
+      "neutral": false,
+      "venue": "StoneX Stadium"
+    },
+    "prem:2026:league:13:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294973,
+      "date": "2027-04-24",
+      "homeId": 33,
+      "awayId": 37,
+      "neutral": false,
+      "venue": "Kingsholm Stadium"
+    },
+    "prem:2026:league:13:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294974,
+      "date": "2027-04-24",
+      "homeId": 34,
+      "awayId": 31,
+      "neutral": false,
+      "venue": "Twickenham Stoop"
+    },
+    "prem:2026:league:13:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294975,
+      "date": "2027-04-24",
+      "homeId": 35,
+      "awayId": 30,
+      "neutral": false,
+      "venue": "Mattioli Woods Welford Road"
+    },
+    "prem:2026:league:13:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294976,
+      "date": "2027-04-24",
+      "homeId": 36,
+      "awayId": 32,
+      "neutral": false,
+      "venue": "Kingston Park"
+    },
+    "prem:2026:league:13:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294977,
+      "date": "2027-04-24",
+      "homeId": 38,
+      "awayId": 39,
+      "neutral": false,
+      "venue": "CorpAcq Stadium"
+    },
+    "prem:2026:league:14:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294978,
+      "date": "2027-05-08",
+      "homeId": 31,
+      "awayId": 39,
+      "neutral": false,
+      "venue": "Ashton Gate"
+    },
+    "prem:2026:league:14:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294979,
+      "date": "2027-05-08",
+      "homeId": 32,
+      "awayId": 30,
+      "neutral": false,
+      "venue": "Sandy Park"
+    },
+    "prem:2026:league:14:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294980,
+      "date": "2027-05-08",
+      "homeId": 33,
+      "awayId": 38,
+      "neutral": false,
+      "venue": "Kingsholm Stadium"
+    },
+    "prem:2026:league:14:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294981,
+      "date": "2027-05-08",
+      "homeId": 34,
+      "awayId": 36,
+      "neutral": false,
+      "venue": "Allianz Stadium"
+    },
+    "prem:2026:league:14:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294982,
+      "date": "2027-05-08",
+      "homeId": 37,
+      "awayId": 35,
+      "neutral": false,
+      "venue": "DPD Stadium at Franklin's Gardens"
+    },
+    "prem:2026:league:15:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294983,
+      "date": "2027-05-15",
+      "homeId": 30,
+      "awayId": 34,
+      "neutral": false,
+      "venue": null
+    },
+    "prem:2026:league:15:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294984,
+      "date": "2027-05-15",
+      "homeId": 35,
+      "awayId": 31,
+      "neutral": false,
+      "venue": "Mattioli Woods Welford Road"
+    },
+    "prem:2026:league:15:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294985,
+      "date": "2027-05-15",
+      "homeId": 36,
+      "awayId": 33,
+      "neutral": false,
+      "venue": "Kingston Park"
+    },
+    "prem:2026:league:15:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294986,
+      "date": "2027-05-15",
+      "homeId": 38,
+      "awayId": 37,
+      "neutral": false,
+      "venue": "CorpAcq Stadium"
+    },
+    "prem:2026:league:15:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294987,
+      "date": "2027-05-15",
+      "homeId": 39,
+      "awayId": 32,
+      "neutral": false,
+      "venue": "StoneX Stadium"
+    },
+    "prem:2026:league:16:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294988,
+      "date": "2027-05-29",
+      "homeId": 31,
+      "awayId": 30,
+      "neutral": false,
+      "venue": "Ashton Gate"
+    },
+    "prem:2026:league:16:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294989,
+      "date": "2027-05-29",
+      "homeId": 32,
+      "awayId": 35,
+      "neutral": false,
+      "venue": "Sandy Park"
+    },
+    "prem:2026:league:16:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294990,
+      "date": "2027-05-29",
+      "homeId": 34,
+      "awayId": 38,
+      "neutral": false,
+      "venue": "Twickenham Stoop"
+    },
+    "prem:2026:league:16:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294991,
+      "date": "2027-05-29",
+      "homeId": 36,
+      "awayId": 37,
+      "neutral": false,
+      "venue": "Kingston Park"
+    },
+    "prem:2026:league:16:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294992,
+      "date": "2027-05-29",
+      "homeId": 39,
+      "awayId": 33,
+      "neutral": false,
+      "venue": "StoneX Stadium"
+    },
+    "prem:2026:league:17:0": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294993,
+      "date": "2027-06-05",
+      "homeId": 30,
+      "awayId": 39,
+      "neutral": false,
+      "venue": null
+    },
+    "prem:2026:league:17:1": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294994,
+      "date": "2027-06-05",
+      "homeId": 33,
+      "awayId": 32,
+      "neutral": false,
+      "venue": "Kingsholm Stadium"
+    },
+    "prem:2026:league:17:2": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294995,
+      "date": "2027-06-05",
+      "homeId": 35,
+      "awayId": 34,
+      "neutral": false,
+      "venue": "Mattioli Woods Welford Road"
+    },
+    "prem:2026:league:17:3": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294996,
+      "date": "2027-06-05",
+      "homeId": 37,
+      "awayId": 31,
+      "neutral": false,
+      "venue": "DPD Stadium at Franklin's Gardens"
+    },
+    "prem:2026:league:17:4": {
+      "competitionId": "prem",
+      "sourceFixtureId": 294997,
+      "date": "2027-06-05",
+      "homeId": 38,
+      "awayId": 36,
+      "neutral": false,
+      "venue": "CorpAcq Stadium"
+    }
+  }
+}
