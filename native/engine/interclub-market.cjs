@@ -11,7 +11,7 @@ function factory(){
  function quote(c,p,loanIds=new Set(loans().map(l=>l.id))){
   const own=S.clubs[S.club],weeks=wageForecastWeeks(S),sourceSalary=p.salary,contractEnd=p.contractEnd;
   const fee=Math.max(20000,Math.ceil(sourceSalary*weeks*Math.max(1,contractEnd-S.season+1)/20000)*10000);
-  const salary=Math.ceil(sourceSalary*1.05/100)*100;
+  const salary=Math.max(1000,Math.ceil(sourceSalary*1.05/100)*100);
   let reason='';
   if(S.live||S.phase!=='league')reason='Accords disponibles hors match en saison régulière';
   else if(!integer(p.age,18,60)||!integer(contractEnd,S.season,9999))reason='Joueur majeur sous contrat requis';
@@ -26,7 +26,7 @@ function factory(){
  }
  function project(){
   const available=typeof S!=='undefined'&&!!S?.economy&&!!S.clubs?.[S.club];
-  const base={available,context:available?context():null,candidates:[],notice:'Accord de libération anticipée fictif. Indemnité intégralement versée au club vendeur ; salaire proposé +5 %, échéance conservée. Le vendeur garde 37 professionnels et deux joueurs de la famille. Réserve de 400 000 € et provision des huit prochaines semaines du nouveau salaire ; aucune inscription réglementaire automatique.'};
+  const base={available,context:available?context():null,candidates:[],notice:'Accord de libération anticipée fictif. Indemnité intégralement versée au club vendeur ; salaire proposé +5 % (minimum 1 000 €/semaine), échéance conservée. Le vendeur garde 37 professionnels et deux joueurs de la famille. Réserve de 400 000 € et provision des huit prochaines semaines du nouveau salaire ; aucune inscription réglementaire automatique.'};
   if(!available)return base;
   const loanIds=new Set(loans().map(l=>l.id));
   base.candidates=S.clubs.filter(c=>c.id!==S.club).flatMap(c=>c.players.map(p=>quote(c,p,loanIds))).sort((a,b)=>a.clubId-b.clubId||a.contractEnd-b.contractEnd||a.name.localeCompare(b.name));

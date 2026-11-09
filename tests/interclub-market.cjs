@@ -38,3 +38,8 @@ test('deux achats consécutifs vérifient à nouveau fonds et unicité dans le m
 });
 
 test('Monde: achat sous contrat reçu par le vrai worker',t=>{const h=workerFixture(t,'world'),m=h.model(),p=m.candidates.find(p=>p.available);a(p,'un achat doit être accessible');h.go('interclub_transfer',{playerId:p.id,sellerId:p.clubId,fee:p.fee,salary:p.salary,sourceSalary:p.sourceSalary,contractEnd:p.contractEnd,context:m.context,confirmed:true});const saved=h.export();h.restart();a.equal(h.export(),saved);});
+test('un contrat source à salaire nul valide reçoit un devis au minimum de recrutement',()=>{
+ const h=office(),p=candidate(h);h.ctx.id=p.id;h.ctx.seller=p.clubId;
+ h.run('S.clubs[seller].players.find(p=>p.id===id).salary=0;validateCareer(S)');
+ const quote=h.project().candidates.find(q=>q.id===p.id);a.equal(quote.available,true);a.equal(quote.salary,1000);h.execute(bid(h,quote));a.equal(h.run('S.clubs[0].players.find(p=>p.id===id).salary'),1000);a.equal(h.run('validateCareer(S);true'),true);
+});
