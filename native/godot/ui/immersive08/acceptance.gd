@@ -129,12 +129,24 @@ func _find_club() -> void:
 	_check(app.route == "Staff" and app.selected_staff_club == int(target.id), "La recherche ouvre l’annuaire du club demandé")
 
 func _match_and_save() -> void:
-	await _visit("Match", "MatchOpening", "match-tunnel", "16-avant-match")
 	await _coverage()
-	if not await _ask("begin_match"): return
-	app.timer.stop()
-	app._navigate("Match")
+	app._navigate("Bureau")
 	await _settle()
+	if not await _activate("ImmersiveContinue"): return
+	_check(app.route == "Préparation", "Continuer mène du Bureau au dossier de match")
+	await _capture("15b-preparation-du-match")
+	if not await _activate("PreparationGoMatch"): return
+	var opening := app.root_content.find_child("MatchOpening", true, false) as Control
+	_check(app.route == "Match" and opening != null and opening.is_visible_in_tree(), "Le dossier ouvre l’avant-match")
+	_assert_art("match-tunnel")
+	await _capture("16-avant-match")
+	var kickoff: Button = app.match_screen.play if is_instance_valid(app.match_screen) else null
+	var ready := kickoff != null and kickoff.is_visible_in_tree() and not kickoff.disabled
+	_check(ready, "Le vrai bouton de coup d’envoi est disponible")
+	if not ready: return
+	kickoff.pressed.emit()
+	if not await _wait(): return
+	app.timer.stop()
 	_check(is_instance_valid(app.match_view) and app.model.live is Dictionary, "Le vrai match 3D reçoit le direct")
 	await _capture("17-direct")
 	if not await _ask("delegate"): return

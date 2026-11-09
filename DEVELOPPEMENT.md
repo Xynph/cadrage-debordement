@@ -20,6 +20,8 @@ La recette historique de ce même paquet Atlas passe 1 513 contrôles sous Win
 
 Le lot immersif 0.7.8 reprend le main 462efce. Les gabarits ont été mesurés à 1440p et la recette source passe 498 contrôles sous Windows. Le vestiaire conserve son repère, les onglets tactiques restent accessibles à 720p et la fiche distingue blessure, reprise et sélection. Le Calendrier ouvre le détail du lieu depuis la ligne de la rencontre. Le paquet 0.7.7 précédent a été reçu avec l’Atlas, les anciennes carrières et un déplacement du paquet Pacifique.
 
+La revue du parcours à 1080p et 1440p rétablit l’accès direct au jour de match depuis Préparation. Le scénario embarqué passe par les trois boutons du trajet depuis le Bureau, jusqu’au coup d’envoi.
+
 ## 9 novembre 2026 — carrière européenne et profils compatibles
 
 L'édition `rugby-world-2026-11-08-v1` ajoute le mode Monde sans convertir les anciennes carrières. Le registre compilé reprend les 1 592 objets France à l'identique et ajoute PREM, URC et deux invités européens. Les dates de départ sourcées, les règles et leurs éditions figurent dans la [documentation des compétitions](docs/world-competition-rules-20261109.md). Les calendriers futurs et les invitations du monde fermé suivent des décisions de jeu explicites, sans importer de scores réels.

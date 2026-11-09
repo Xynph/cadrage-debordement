@@ -134,8 +134,16 @@ func _heading() -> void:
 			if event is InputEventKey and event.pressed and event.keycode in [KEY_LEFT, KEY_RIGHT]:
 				button.accept_event()
 				_choose(posmod(i + (1 if event.keycode == KEY_RIGHT else -1), TABS.size())))
-	_button(tabbar, Rect2(1528, 0, 337, 53), "Revoir la composition", func(): app._navigate("Composition"), false, "people", "PreparationComposition")
-	_button(tabbar, Rect2(1883, 0, 365, 53), "Carnet de jeu", func(): app._navigate("Plan de jeu"), true, "arrow", "PreparationOpenPlaybook")
+	var live: Dictionary = app._live()
+	var show_match := not live.is_empty() or (not fixture.is_empty() and SeasonPreparation.data(app.model.meta).is_empty())
+	var match_space := 385 if show_match else 0
+	_button(tabbar, Rect2(1528 - match_space, 0, 337, 53), "Revoir la composition", func(): app._navigate("Composition"), false, "people", "PreparationComposition")
+	_button(tabbar, Rect2(1883 - match_space, 0, 365, 53), "Carnet de jeu", func(): app._navigate("Plan de jeu"), not show_match, "arrow", "PreparationOpenPlaybook")
+	if show_match:
+		var caption := "Aller au jour de match"
+		if not live.is_empty(): caption = "Voir le résultat" if live.get("finished", false) else "Reprendre le match"
+		var match_button := _button(tabbar, Rect2(1883, 0, 365, 53), caption, func(): app._navigate("Match"), true, "arrow", "PreparationGoMatch")
+		match_button.disabled = app.waiting
 	D.line(self, Vector2(0, 241), Vector2(2248, 241), Color(C.LINE, .85))
 
 func _choose(index: int) -> void:
