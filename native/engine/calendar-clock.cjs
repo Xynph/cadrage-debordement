@@ -31,6 +31,9 @@ function calendarContext(model) {
   }
 
   if (meta.mode === 'world') {
+    if (dated(meta.calendarToday)) {
+      return {fixtures,today:model.live && dated(meta.date) ? meta.date : meta.calendarToday,simulatedDates:false};
+    }
     const anchors = fixtures.filter(fixture => dated(fixture.date) && weekIndex(fixture) !== null);
     anchors.sort((a,b) => Math.abs(a.week-week)-Math.abs(b.week-week) || a.date.localeCompare(b.date));
     const anchor = anchors[0];
@@ -45,8 +48,9 @@ function calendarContext(model) {
   const year = 2025 + season;
   if (year > 9998) return {fixtures,today:null,simulatedDates:false};
   const firstSeptember = `${year}-09-01`;
-  const firstSaturday = shift(firstSeptember,(6-new Date(firstSeptember+'T00:00:00Z').getUTCDay()+7)%7);
-  const start = shift(firstSaturday,-5);
+  const openingMonday = monday(firstSeptember);
+  const start = openingMonday < firstSeptember ? shift(openingMonday,7) : openingMonday;
+  const firstSaturday = shift(start,5);
   const simulated = fixtures.map(fixture => {
     if (dated(fixture.date) || weekIndex(fixture) === null) return fixture;
     const key = [season,fixture.week,fixture.phase,fixture.home?.id,fixture.away?.id].join(':');

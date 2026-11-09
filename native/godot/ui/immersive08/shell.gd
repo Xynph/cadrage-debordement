@@ -13,6 +13,7 @@ const Training = preload("res://ui/immersive08/training_canvas.gd")
 const Academy = preload("res://ui/immersive08/academy_canvas.gd")
 const Recruitment = preload("res://ui/immersive08/recruitment_canvas.gd")
 const Competition = preload("res://ui/immersive08/competition_canvas.gd")
+const MonthCalendar = preload("res://ui/immersive08/month_calendar.gd")
 const ClubCanvas = preload("res://ui/immersive08/club_canvas.gd")
 const FinanceCanvas = preload("res://ui/immersive08/finance_canvas.gd")
 const Preparation = preload("res://ui/immersive08/preparation_canvas.gd")
@@ -106,7 +107,8 @@ static func render(app: Control) -> bool:
 	inset.add_child(content)
 	var canvas_script := _dedicated_page(app,physical)
 	var immersive_match: bool = app.route=="Match" and physical.x>=1920 and physical.y>=1080
-	if canvas_script!=null or immersive_match or (app.route=="Effectif" and app.get_meta("immersive08_full_player",false)):
+	var monthly_calendar: bool = app.route=="Calendrier" and not app.get_meta("calendar_table",false)
+	if canvas_script!=null or immersive_match or monthly_calendar or (app.route=="Effectif" and app.get_meta("immersive08_full_player",false)):
 		app.heading=null
 		app.minibar=C.label("",17,C.GOLD);app.minibar.visible=false;content.add_child(app.minibar)
 	else: _heading(content, app)
@@ -130,6 +132,8 @@ static func render(app: Control) -> bool:
 		C.fill(canvas,true)
 		app.body.add_child(canvas)
 		canvas_script.build(app,canvas)
+		if app.route == "Calendrier":
+			D.button(canvas,Rect2(1830,147,395,40),"Vue mensuelle",_calendar_table.bind(app,false),false,"calendar",true,app.accent,"CalendarShowMonth")
 	elif app.route == "Bureau": app.body.add_child(OfficeCanvas.build(app) if physical.x >= 1600 else Office.build(app))
 	else: _existing_page(app,immersive_match)
 	_footer(content, app, layout)
@@ -201,6 +205,7 @@ static func open_preparation(app: Control, tab: int) -> void:
 	app._navigate("Préparation",true,true)
 
 static func _dedicated_page(app: Control, size: Vector2i) -> Script:
+	if app.route == "Calendrier" and not app.get_meta("calendar_table",false): return null
 	if app.route=="Calendrier" and size.x>=1280 and size.y>=720 and app.model.meta.get("leagueId") in ["nationale","champ"]: return Competition
 	if size.x<1920 or size.y<1080:
 		return Rivalry if app.route=="Rivalités" and size.x>=1280 and size.y>=720 else null
@@ -517,11 +522,20 @@ static func _position_footer(row: Control) -> void:
 		shortcuts.position=Vector2(shortcuts_x,C.px(36-FOOTER_RISE)-shortcut_font.get_ascent(shortcut_px))
 		shortcuts.size=Vector2(C.px(800),shortcut_height)
 
+static func _calendar_table(app: Control, show_table: bool) -> void:
+	app.set_meta("calendar_table",show_table)
+	app._render(false)
+
 static func _existing_page(app: Control, immersive_match: bool) -> void:
 	match app.route:
 		"Réception": app.body.add_child(Reception.build(app))
 		"Club": app.body.add_child(app.ClubViews.club(app))
-		"Calendrier": app.body.add_child(app.ClubViews.calendar(app))
+		"Calendrier":
+			if app.get_meta("calendar_table",false):
+				D.button(app.heading.get_parent(),Rect2(1050,16,340,52),"Vue mensuelle",_calendar_table.bind(app,false),false,"calendar",true,app.accent,"CalendarShowMonth")
+				app.body.add_child(app.ClubViews.calendar(app))
+			else:
+				app.body.add_child(MonthCalendar.build(app,_calendar_table.bind(app,true)))
 		"Classements": app.body.add_child(app.ClubViews.tables(app))
 		"Finances": app.body.add_child(app.ClubViews.finance(app))
 		"Effectif":
