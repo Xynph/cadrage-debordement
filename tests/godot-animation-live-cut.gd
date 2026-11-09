@@ -1,6 +1,7 @@
 extends SceneTree
 
 const MatchView = preload("res://match_view.gd")
+const Cut = preload("res://match_cut.gd")
 const Motion = preload("res://match_motion.gd")
 const Presentation = preload("res://match_presentation.gd")
 
@@ -52,9 +53,23 @@ func run() -> void:
 		check(view._actors.size() == 30, "Présence des trente joueurs")
 		check(view._carrier_id == plan.carrier and view._ball_attached, "Ballon attaché au porteur déclaré")
 		check(carrier.cut_direction == int(plan.side), "Sens déclaré appliqué au porteur")
-		step(view, 15)
 		var actor: Node3D = carrier.node
 		var rig: Skeleton3D = carrier.rig
+		var foot := rig.find_bone("Foot.R" if int(plan.side) > 0 else "Foot.L")
+		var planted_frames := 0
+		var max_slip := 0.0
+		var max_height := 0.0
+		for _frame in 23:
+			step(view, 1)
+			if carrier.cut_beat < 0.096 or carrier.cut_beat > 0.168:
+				continue
+			if carrier.cut_pose.has(foot) and carrier.cut_plant.has("world"):
+				var position := rig.to_global(rig.get_bone_global_pose(foot).origin)
+				planted_frames += 1
+				max_slip = maxf(max_slip, position.distance_to(carrier.cut_plant.world))
+				max_height = maxf(max_height, position.y)
+		check(planted_frames >= 8 and max_slip < 0.04 and max_height < 0.075,
+			"Appui extérieur stable au sol pendant au moins huit images à 120 Hz")
 		var torso := rig.find_bone("Torso")
 		var lean := 0.0
 		var lateral := 0.0
@@ -68,8 +83,8 @@ func run() -> void:
 			lateral = (posed - baseline).dot(right)
 		check(lean > 0.10 and lateral * int(plan.side) > 0.06, "Inclinaison du buste dans le sens déclaré")
 		var expected := Motion.position_at(carrier.from, carrier.target, carrier.tangent,
-			float(carrier.elapsed) / MatchView.BLEND_SECONDS)
-		check(actor.position.is_equal_approx(expected), "Trajectoire de l’acteur inchangée par la pose")
+			Cut.live_travel(float(carrier.elapsed) / MatchView.BLEND_SECONDS))
+		check(actor.position.is_equal_approx(expected), "L’appui reste sur le trajet de la phase")
 		var anchor := Presentation.ball_anchor(actor, rig)
 		var gap := anchor.distance_to(view._ball.global_position)
 		check(gap < 0.001, "Le ballon suit la poitrine sans trajet séparé")
@@ -91,14 +106,17 @@ func run() -> void:
 			step(view, 1)
 			check(carrier.cut_direction == 0 and carrier.cut_pose.is_empty(), "La reprise de la même action ne rejoue pas l’appui")
 		else:
-			step(view, 23)
+			step(view, 15)
 			check(carrier.cut_pose.is_empty(), "Retour à la pose source avant le prochain tick moteur")
 			view.apply_frame(after)
 			step(view, 1)
 			check(carrier.cut_pose.is_empty(), "Un rafraîchissement tardif ne rejoue pas l’appui")
+			step(view, 28)
+			check(actor.position.is_equal_approx(carrier.target), "Le porteur rejoint le point d’arrivée dans le délai habituel")
 
 		measurements.append({"minute": sample.event.min, "side": plan.side, "torso_angle_rad": lean,
-			"lateral_lean": lateral, "ball_gap_m": gap})
+			"lateral_lean": lateral, "ball_gap_m": gap, "planted_frames_120hz": planted_frames,
+			"max_slip_m": max_slip, "max_height_m": max_height})
 		view.queue_free()
 		await process_frame
 
