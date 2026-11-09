@@ -77,6 +77,9 @@ Le comparateur utilise des unités de transformation GLB/Godot ; l’asset compo
 Les CLI Python reçues inventorient le GLB et lancent le comparateur Godot dans un projet temporaire isolé. `--self-test` vérifie aussi un témoin source/source et un vrai GLB dont des clés de translation ont été modifiées de +0,05 sur une composante locale (sans prétention de distance physique en mètres) ; ce contrôle doit être rejeté. Les seuils ci-dessous sont des seuils d’essai d’aller-retour, pas des tolérances sportives ou une garantie perceptuelle ; ils doivent correspondre à ceux reçus dans la PR.
 
 ```powershell
+python tools/animation-pipeline/test_compare_cli.py 2>&1 |
+    Tee-Object -FilePath "$Proof\compare-cli-guards.log"
+if ($LASTEXITCODE -ne 0) { throw 'Protections CLI échouées.' }
 if (-not (Test-Path -LiteralPath $Candidate -PathType Leaf)) { throw 'Candidat GLB absent.' }
 python tools/animation-pipeline/inventory.py "$Proof\source.glb" --output "$Proof\source-inventory.json"
 if ($LASTEXITCODE -ne 0) { throw 'Inventaire source échoué.' }
@@ -106,9 +109,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Staging natif échoué.' }
 & $GodotExe --headless --path native/godot --editor --import --quit 2>&1 |
     Tee-Object -FilePath "$Proof\source-import.log"
 if ($LASTEXITCODE -ne 0) { throw 'Import natif échoué.' }
-python tools/animation-pipeline/test_compare_cli.py 2>&1 |
-    Tee-Object -FilePath "$Proof\compare-cli-guards.log"
-if ($LASTEXITCODE -ne 0) { throw 'Protections CLI échouées.' }
 $env:CD_GODOT_EXE = $GodotExe
 $env:CD_ANIMATION_READER_RESULTS = Join-Path $Proof 'reader-results.json'
 & $GodotExe --headless --path native/godot --script ../../tools/animation-pipeline/check_match_reader.gd 2>&1 |
