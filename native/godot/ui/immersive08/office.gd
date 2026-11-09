@@ -5,6 +5,8 @@ const G = preload("res://ui/game_skin.gd")
 const S = preload("res://ui/data_semantics.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
+const UPCOMING_TILE = Color("26231b")
+const UPCOMING_BORDER = Color("706042")
 
 static func _card(parent: Node, id: String, title: String, height: int, ratio: float = 1.0) -> PanelContainer:
 	var frame := C.card(title, Vector2(0, height))
@@ -75,8 +77,78 @@ static func build(app: Control) -> Control:
 	_standings(C.content(_card(middle, "OfficeStandings", "♜  Classement · " + P.league_name(app.model), 448, 1.25)), app)
 	_journal(C.content(_card(middle, "OfficeJournal", "✉  Dans votre Bureau", 448)), app)
 	_recruitment(C.content(_card(middle, "OfficeRecruitment", "⌕  Le profil à suivre", 448)), app)
-	_timeline(C.content(_card(page, "OfficeTimeline", "▦  Le fil de votre saison", 226)), app)
+	_timeline(C.content(_card(page, "OfficeTimeline", "▦  Prochains matchs", 226)), app)
+	var results := recent_results(app)
+	if results != null: page.add_child(results)
 	return page
+
+static func recent_results(app: Control) -> PanelContainer:
+	var played: Array = app.model.get("calendar", []).filter(func(fixture: Dictionary):
+		var score: Variant = fixture.get("score")
+		return fixture.get("played", false) and score is Array and score.size() == 2
+	)
+	if played.is_empty(): return null
+	played.reverse()
+	var panel := C.card()
+	panel.name = "OfficeRecentResults"
+	panel.add_theme_stylebox_override("panel",C.box(Color("121c27"),Color("61798f"),6,10))
+	var content := C.content(panel)
+	var header := C.h(8)
+	content.add_child(header)
+	header.add_child(C.icon("check",22,C.BLUE))
+	header.add_child(C.label("RÉSULTATS · CINQ DERNIERS MATCHS",24,C.BLUE,true,700))
+	var row := C.h(12)
+	content.add_child(row)
+	var club_id: Variant = app.model.club.id
+	for fixture: Dictionary in played.slice(0,5):
+		var side := 0 if fixture.home.get("id") == club_id else 1
+		var opponent: Dictionary = fixture.away if side == 0 else fixture.home
+		var score: Array = fixture.score
+		var outcome: Variant = fixture.get("winner")
+		var result := "Nul"
+		var tint := C.GOLD
+		if score[side] != score[1-side] or outcome != null:
+			var won: bool = (outcome == club_id) if score[side] == score[1-side] else score[side] > score[1-side]
+			result = "Victoire" if won else "Défaite"
+			tint = C.MINT if won else C.ALERT
+		var location := P.fixture_location_kind(fixture, club_id)
+		var place: String = {"home":"Domicile","away":"Extérieur","neutral":"Terrain neutre"}.get(location,"")
+		var tile := C.card()
+		tile.add_theme_stylebox_override("panel",C.box(Color("1a2936"),Color("52677d"),5,8))
+		row.add_child(C.fill(tile))
+		var matchup := C.h(12)
+		C.content(tile).add_child(matchup)
+		var points := C.label("%s – %s" % [G.n(score[side]),G.n(score[1-side])],29,tint,true,700)
+		points.name = "OfficeRecentScore"
+		points.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var score_card := PanelContainer.new()
+		score_card.custom_minimum_size = Vector2(C.px(102),C.px(50))
+		score_card.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		score_card.add_theme_stylebox_override("panel",C.box(Color("101a23").lerp(tint,.12),tint,5,4))
+		score_card.add_child(points)
+		matchup.add_child(score_card)
+		var crest := opponent_crest(opponent,48)
+		crest.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		matchup.add_child(crest)
+		var details := C.v(0)
+		matchup.add_child(C.fill(details))
+		var name := C.label(G.club_name(opponent),23)
+		name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		details.add_child(name)
+		var description := C.label(result + (" · " + place if not place.is_empty() else ""),19,C.MUTED)
+		description.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		details.add_child(description)
+		describe_fixture(tile," · ".join([timeline_period(fixture),name.text,points.text,description.text]))
+	for index in range(played.size(),5):
+		row.add_child(C.fill(Control.new()))
+	return panel
+
+static func opponent_crest(opponent: Dictionary, width: int) -> Control:
+	var crest := G.crest(opponent,C.px(width))
+	crest.name = "OfficeOpponentCrest"
+	crest.set_meta("opponent_id",opponent.get("id"))
+	crest.accessibility_name = "Blason · " + G.club_name(opponent)
+	return crest
 
 static func _fixture(frame: PanelContainer, app: Control) -> void:
 	frame.clip_contents = true
@@ -344,6 +416,7 @@ static func _timeline(parent: VBoxContainer, app: Control) -> void:
 		parent.add_child(C.wrap("Aucune rencontre programmée. Retrouvez les résultats dans le calendrier.", 21))
 	for fixture: Dictionary in fixtures:
 		var tile := C.card()
+		tile.add_theme_stylebox_override("panel",C.box(UPCOMING_TILE,UPCOMING_BORDER,6,12))
 		C.fill(tile)
 		row.add_child(tile)
 		var list := C.content(tile)
@@ -358,7 +431,16 @@ static func _timeline(parent: VBoxContainer, app: Control) -> void:
 		var opponent: Dictionary = fixture.get("away", {}) if fixture.get("home", {}).get("id") == app.model.club.id else fixture.get("home", {})
 		var name := C.label(G.club_name(opponent), 24)
 		name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		list.add_child(name)
+		var matchup := C.h(6)
+		list.add_child(matchup)
+		var crest := opponent_crest(opponent,36)
+		crest.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		matchup.add_child(crest)
+		matchup.add_child(C.fill(name))
+		var location := P.fixture_location_kind(fixture, app.model.club.id)
+		var marker := C.icon(C.fixture_location_icon(location,true),46,C.GOLD)
+		marker.name = "OfficeVenueIcon"
+		matchup.add_child(marker)
 		var label := str(fixture.get("label","Rencontre"))
 		list.add_child(C.label(short_fixture_label(app.model,fixture) if japan else label,19,C.MUTED))
 		if japan:

@@ -37,6 +37,17 @@ static func fixture_venue(fixture: Dictionary, neutral_fallback: bool = true) ->
 	var stadium: Variant = G.identity(home).get("stadium",home.get("stadium"))
 	return stadium if stadium is String else ""
 
+static func fixture_location_kind(fixture: Dictionary, club_id: Variant) -> String:
+	if fixture.get("neutral", false): return "neutral"
+	var venue: Variant = fixture.get("venue")
+	if venue is Dictionary:
+		if venue.get("neutral", false): return "neutral"
+		venue = venue.get("kind", "")
+	if venue is String and venue.to_lower() in ["home", "away", "neutral"]: return venue.to_lower()
+	if club_id != null and fixture.get("home", {}).get("id") == club_id: return "home"
+	if club_id != null and fixture.get("away", {}).get("id") == club_id: return "away"
+	return ""
+
 static func fixture_position(fixture: Dictionary, club_id: Variant) -> String:
 	if fixture.get("neutral",false): return "TERRAIN NEUTRE"
 	return "À DOMICILE" if fixture.get("home",{}).get("id")==club_id else "À L’EXTÉRIEUR"

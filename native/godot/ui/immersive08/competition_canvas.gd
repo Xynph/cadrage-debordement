@@ -131,7 +131,7 @@ func _header() -> void:
 		var tab := D.button(self, Rect2(spec[0], 194, spec[1], 61), spec[2], func(): _switch(str(spec[3])), mode == spec[3], spec[4], false, app.accent, spec[5])
 		tab.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		tab.add_theme_font_size_override("font_size", maxi(12, C.px(31)))
-		tab.add_theme_stylebox_override("normal", _tab_style(int(spec[1]), mode == spec[3]))
+		tab.add_theme_stylebox_override("normal", _tab_style(int(spec[1]), mode == spec[3], app.accent))
 	var links: Array = [["Presse", "mail"], ["Rivalités", "shield"]]
 	for i in links.size():
 		var route: String = links[i][0]
@@ -369,7 +369,9 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 	var competition_id := _competition_id(fixture)
 	var dated_competition := competition_id in JAPAN_COMPETITIONS or competition_id in ["nationale","access-nationale","champ"]
 	var timing := P.fixture_date(fixture, true) + " · " + _dated_phase(fixture) if not date.is_empty() and dated_competition else period
-	row.accessibility_name = "%s · %s · %s · %s" % [timing,G.club_name(opponent),venue if not venue.is_empty() else _location(fixture),competition]
+	row.accessibility_name = "%s · %s · %s · %s" % [timing,G.club_name(opponent),_location(fixture),competition]
+	if not venue.is_empty() and venue != _location(fixture):
+		row.accessibility_name += " · " + venue
 	row.tooltip_text = row.accessibility_name
 	row.add_theme_stylebox_override("normal", C.box(Color("202519") if current else Color("101a1b"), Color.TRANSPARENT, 3, 0))
 	row.add_theme_stylebox_override("hover", C.box(Color("254035"), C.MINT, 3, 0))
@@ -401,7 +403,7 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 			opponent_name.size.y = C.px(line_height)
 	var place_x := 470 if compact else 720
 	var location_kind := _location_kind(fixture)
-	_icon(row, "flag" if location_kind == "neutral" else "home" if location_kind == "home" else "arrow", Rect2(place_x, (line_height - 18) / 2.0, 18, 18), C.IVORY)
+	_icon(row, C.fixture_location_icon(location_kind), Rect2(place_x, (line_height - 18) / 2.0, 18, 18), C.GOLD)
 	var venue_parts := venue.split(" · ",false,1)
 	if not compact and venue_parts.size() == 2:
 		D.text(row,place_x+25,middle-7,venue_parts[0],22,C.IVORY,600,204)
@@ -716,13 +718,7 @@ func _location(fixture: Dictionary, compact: bool = false) -> String:
 	return "—"
 
 func _location_kind(fixture: Dictionary) -> String:
-	if fixture.get("neutral", false): return "neutral"
-	var venue: Variant = fixture.get("venue")
-	if venue is Dictionary:
-		if venue.get("neutral", false): return "neutral"
-		venue = venue.get("kind", "")
-	if venue is String and venue.to_lower() in ["home", "away", "neutral"]: return venue.to_lower()
-	return ["home", "away"][_side(fixture, own.id)] if _side(fixture, own.id) >= 0 else ""
+	return P.fixture_location_kind(fixture, own.id)
 
 static func _venue_name(fixture: Dictionary) -> String:
 	var venue: Variant = fixture.get("venue")
@@ -863,10 +859,11 @@ static func _fade(parent: Node, area: Rect2) -> void:
 	parent.add_child(view)
 	D.place(view, area)
 
-static func _tab_style(width: int, selected: bool) -> StyleBoxTexture:
+static func _tab_style(width: int, selected: bool, accent: Color) -> StyleBoxTexture:
+	var tint := Color("11191e").lerp(accent,.39)
 	var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="122" viewBox="0 0 %d 61"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop stop-color="%s"/><stop offset="1" stop-color="%s"/></linearGradient></defs><path d="M1 60L15 9Q19 1 27 1H%dQ%d 1 %d 9L%d 60Z" fill="url(#g)" stroke="%s"/></svg>' % [
-		width * 2, width, "#167648" if selected else "#202b2d", "#08472e" if selected else "#121c1d",
-		width - 24, width - 16, width - 13, width - 1, "#7acf8f" if selected else "#576966"
+		width * 2, width, "#" + C.readable_primary_fill(tint.lightened(.07)).to_html(false) if selected else "#202b2d", "#" + tint.to_html(false) if selected else "#121c1d",
+		width - 24, width - 16, width - 13, width - 1, "#" + accent.lightened(.38).to_html(false) if selected else "#576966"
 	]
 	var image := Image.new()
 	image.load_svg_from_string(svg)
