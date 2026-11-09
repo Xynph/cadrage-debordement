@@ -80,7 +80,18 @@ func persistence_refusals() -> void:
 	var reason: Label = dialog.find_child("PreferencesError",true,false)
 	check(int(volume.value) == old_value and app.soundscape.preferences.get_value("interface_volume") == old_value,"Refus sonore restaure la valeur active et affichée")
 	check(reason.visible and not reason.text.is_empty() and is_instance_valid(dialog),"Refus sonore visible sans détruire les options")
-	check(dialog.size.x <= 720 and dialog.size.y <= 620 and Rect2(Vector2.ZERO,Vector2(dialog.size)).encloses(dialog.get_ok_button().get_global_rect()),"Refus sonore garde fenêtre et fermeture entièrement visibles")
+	# La refonte immersive adapte la largeur ; mesurer la visibilité réelle,
+	# sans réimposer les dimensions de l'ancien dialogue.
+	var original_size := root.size
+	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]:
+		root.size = resolution; await settle()
+		var window_rect := Rect2(Vector2(dialog.position),Vector2(dialog.size))
+		var client_rect := Rect2(Vector2.ZERO,Vector2(dialog.size))
+		var scroll: ScrollContainer = reason.get_parent().get_parent()
+		check(Rect2(Vector2.ZERO,Vector2(root.size)).encloses(window_rect),"Refus sonore : fenêtre entière à " + str(resolution))
+		check(dialog.get_ok_button().is_visible_in_tree() and client_rect.encloses(dialog.get_ok_button().get_global_rect()),"Refus sonore : fermeture entière à " + str(resolution))
+		check(reason.is_visible_in_tree() and client_rect.encloses(reason.get_global_rect()) and scroll.get_global_rect().encloses(reason.get_global_rect()),"Refus sonore : erreur entière sans défilement à " + str(resolution))
+	root.size = original_size; await settle()
 	check(app.last_error == last_error and not app._settled_status_text().begins_with("ACTION NON EFFECTUÉE"),"Refus sonore distinct d’une décision métier échouée")
 	check(FileAccess.get_file_as_bytes(sound_file) == sound_before,"Refus sonore conserve tous les octets")
 	DirAccess.remove_absolute(blocker)

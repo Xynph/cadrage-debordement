@@ -1,5 +1,11 @@
 # Journal de développement — Cadrage Débordement
 
+## 9 novembre 2026 — réception Cloud du refus sonore Godot
+
+Sur main `e2f111a2`, le test de raccordements natifs06 échoue à cause de son ancien plafond de largeur de 720 px. Après la refonte immersive, les paramètres mesurent légitimement 880 × 600 sur une fenêtre 1920 × 1080 ; le message de refus et Fermer sont entièrement contenus. Le correctif remplace ce plafond par des contrôles géométriques du dialogue dans la fenêtre hôte, du bouton Fermer dans le dialogue et du message dans le dialogue et sa zone de défilement, aux quatre définitions 1280 × 720, 1600 × 900, 1920 × 1080 et 2560 × 1440. Le refus disque réel, la restauration du volume, les octets conservés et le réessai restent contrôlés.
+
+Réception Linux sans fenêtre, Node 22.23.4 et Godot 4.7.2 : **237 contrôles, zéro échec**. L'exécutable Cloud par défaut `godot` pointe vers 4.6.3, incompatible avec les scripts 4.7 du projet ; sélectionner explicitement `/workspace/.cloud-setup/tools/godot472/Godot_v4.7.2-stable_linux.x86_64` via `CD_GODOT_EXECUTABLE`. Aucun code de jeu, sauvegarde ou asset changé. Aucun test Windows ni écoute physique ; le résultat Cloud ne remplace pas la recette locale. Publication sur branche dédiée et PR, sans fusion ; CI distante à recevoir.
+
 ## 9 novembre 2026 — réception immersive, Japon, Nationale et Champ Rugby
 
 La branche `feature/immersive-1440p-20261108` adapte les vues natives de la PR400 à la tête `8ebf575` de `main`. Les wrappers de création, préparation, Bureau et compétitions exploitent les commandes et projections de cette version. Les dates et deux manches de barrages japonais s’affichent dans le calendrier et dans les archives. Le nouveau terrain fictif d’origine porte la bibliothèque à 48 PNG. La matrice [de réception immersive](docs/immersive08-coverage.md) distingue tests source, paquets Windows et finitions restantes. Les profils d’essai et packs de réception restent hors dépôt.
