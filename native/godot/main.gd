@@ -201,9 +201,8 @@ func _receive_model(value: Dictionary) -> void:
 		route = pending_route
 		pending_route = ""
 	if bridge.last_response_ok and last_command in ["new_career","next_season","import"] and _has_career():
-		for league in model.get("leagues",[]):
-			for club in league.get("rows",[]):
-				if club.id == model.club.id: table_division=league.id
+		var league_id := str(model.meta.get("leagueId",""))
+		if not league_id.is_empty(): table_division=league_id
 	if last_command == "tick" and route not in ["Accueil", "Création"]:
 		_update_live_bar()
 		if is_instance_valid(match_screen): match_screen.update_frame(model)
@@ -545,7 +544,16 @@ func _open_coach() -> void:
 func _update_header_date() -> void:
 	if not is_instance_valid(header_date): return
 	var meta: Dictionary = model.get("meta", {})
-	header_date.text = ("SAISON %s  /  %s" % [G.n(meta.get("season", 1)),meta.get("roundLabel", "Journée " + G.n(int(meta.get("round", 0))+1))]).to_upper()
+	var round_label := str(meta.get("roundLabel", "Journée " + G.n(int(meta.get("round", 0))+1)))
+	var date := str(meta.get("date",""))
+	var parts := date.split("-")
+	if parts.size()==3 and parts[1].is_valid_int() and int(parts[1]) in range(1,13):
+		var months := ["JANV.","FÉVR.","MARS","AVR.","MAI","JUIN","JUIL.","AOÛT","SEPT.","OCT.","NOV.","DÉC."]
+		header_date.text = "%s %s %s" % [parts[2],months[int(parts[1])-1],parts[0]]
+		header_date.tooltip_text = round_label
+	else:
+		header_date.text = ("SAISON %s  /  %s" % [G.n(meta.get("season", 1)),round_label]).to_upper()
+		header_date.tooltip_text = ""
 
 func _build_sidebar(parent: Node) -> void:
 	var rail := PanelContainer.new()
@@ -626,6 +634,8 @@ func _update_live_bar() -> void:
 		var teams: Array = live.get("teams", [{},{}])
 		var score: Array = live.get("score", [0,0])
 		minibar.text = "%s  %s — %s  %s   ·   %s min%s" % [G.club_abbr(teams[0]),G.n(score[0]),G.n(score[1]),G.club_abbr(teams[1]),G.n(live.get("minute",0)),"  /  PAUSE" if live.get("paused",false) else ""]
+	elif model.meta.get("mode")=="world":
+		minibar.text = "MONDE PROFESSIONNEL  /  %s CLUBS" % G.n(model.meta.get("database",{}).get("clubCount","—"))
 	else: minibar.text = "ÉLITE & ACCESSION  /  30 CLUBS" if model.meta.get("mode") in ["france30", "common"] else "CARRIÈRE HISTORIQUE  /  14 CLUBS"
 	if is_instance_valid(primary_button):
 		primary_button.text = "Continuer" if primary_button.name == "ImmersiveContinue" else primary_text()
@@ -711,9 +721,19 @@ func _file_selected(path: String) -> void:
 	if import_mode:
 		var f := FileAccess.open(path,FileAccess.READ)
 		if f == null: _refuse_action("Le fichier ne peut pas être lu : " + error_string(FileAccess.get_open_error())); return
-		if f.get_length() > NativeEngineBridge.IMPORT_LIMIT_BYTES: f.close(); _refuse_action("Fichier trop volumineux :8 Mio UTF-8 maximum."); return
-		var text := f.get_as_text()
+		var maximum := NativeEngineBridge.IMPORT_LIMIT_BYTES
+		if bridge.has_method("import_preflight"):
+			maximum = int(bridge.get_script().get_script_constant_map().get("WORLD_IMPORT_LIMIT_BYTES",maximum))
+		var length := f.get_length()
+		if length > maximum:
+			f.close()
+			_refuse_action("Fichier trop volumineux (%d Mio UTF-8 maximum)." % (maximum/(1024*1024)))
+			return
+		var text := f.get_buffer(length).get_string_from_utf8()
 		f.close()
+		if length>NativeEngineBridge.IMPORT_LIMIT_BYTES:
+			var preflight := str(bridge.call("import_preflight",text,length))
+			if not preflight.is_empty(): _refuse_action(preflight); return
 		confirm("Reprendre cette carrière", "La carrière importée remplacera celle du profil. Le moteur la vérifiera avant de l'appliquer.",func(): _command("import",{"text":text},"Bureau"))
 	else:
 		if waiting: _refuse_action("Une décision est en cours. Réessayez après sa réponse."); return
