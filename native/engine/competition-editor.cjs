@@ -1,7 +1,8 @@
 'use strict';
 // Atelier indépendant des carrières : aucune loi sportive ou donnée officielle.
 const FORMAT='oval-legacy-fictional-calendar',LIMIT=32;
-const NOTICE='Calendrier fictif à échanger et préparer. Ce document ne lance pas encore une carrière et ne modifie aucune compétition officielle.';
+const customCompetition=require('./custom-competition.cjs');
+const NOTICE='Calendrier fictif personnalisé. Les formats 14 clubs aller-retour permettent une carrière ; les autres restent des documents échangeables, sans modification des compétitions officielles.';
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const check=(ok,message)=>{if(!ok)throw Error('Atelier calendrier : '+message+'.');};
 const shape=(x,keys)=>object(x)&&Object.keys(x).length===keys.length&&keys.every(k=>Object.hasOwn(x,k));
@@ -53,6 +54,6 @@ function project(payload){
   check(shape(payload,['action','name','clubs','doubleRound']),'paramètres de génération invalides');
   document=generate({name:payload.name,clubs:payload.clubs,doubleRound:payload.doubleRound});
  }else{check(payload.action==='validate'&&shape(payload,['action','document']),'action inconnue ou paramètres invalides');document=validate(payload.document);}
- return {document,notice:NOTICE,summary:{clubs:document.clubs.length,rounds:document.rounds,matches:document.fixtures.length,byesPerClub:document.clubs.length%2?(document.doubleRound?2:1):0},exportText:JSON.stringify(document,null,2)+'\n'};
+ return {document,notice:NOTICE,launch:customCompetition.support(document),summary:{clubs:document.clubs.length,rounds:document.rounds,matches:document.fixtures.length,byesPerClub:document.clubs.length%2?(document.doubleRound?2:1):0},exportText:JSON.stringify(document,null,2)+'\n'};
 }
 module.exports={generate,validate,project};
