@@ -69,3 +69,9 @@ Une égalité en phase finale ouvre deux périodes de dix minutes. L’intervall
 L’édition conserve les 14 clubs du Champ d’une saison à l’autre tant que la National 1 reste hors périmètre. Ce choix de jeu est enregistré dans l’archive. Le règlement 2026–27 exclut une promotion en PREM. Les affectations PREM et EPCR suivent leurs parcours existants. [Règlement RFU, § 3.2](https://rfu.widen.net/s/x2dmh2dxjn/champ-rugby-league-competition-regulations-2026-27)
 
 La limite v5 est de 1 600 résultats, 24 Mio d’export UTF-8 et 50 Mio pour une requête d’import. Le registre, les préférences de packs et les champs de validation se sélectionnent à partir du marqueur exact de l’édition.
+
+## Compétitions européennes de cette édition
+
+Les finales de l’édition de départ indiquent le terrain neutre publié : OL Stadium, Lyon, le 21 mai 2027 pour le Challenge et le 22 mai pour la Champions Cup. Les saisons générées gardent leur terrain à désigner. Les contraintes de la composition initiale des poules Challenge sont vérifiées. [Programme et tirage de l’EPCR](https://www.epcrugby.com/european-professional-club-rugby/content/epcr-pool-draws-for-202627-season)
+
+Le texte détaillé URC 2026–27 n’a pas été retrouvé. Le profil de repli v5 applique l’annexe 3 du [règlement URC 2025–26](https://d19fc3vd0ojo3m.cloudfront.net/irfu/wp-content/uploads/2025/09/26090041/001.-Championship-Rules-25_26__CLEAN.pdf) : six séries complètes avant verdict, puis paires complètes en mort subite. Les preuves plus courtes des éditions v1 à v4 gardent leur règle de lecture. Le jeu ne déduit pas une suspension décidée en commission d’un carton du match.
