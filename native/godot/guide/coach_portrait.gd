@@ -1,5 +1,9 @@
 extends TextureRect
 ## Sixteen authored poses selected by context; cosmetic clock never touches engine RNG.
+const NOD_DELAY := 0.32
+const NOD_DURATION := 0.32
+const NOD_DEPTH := 0.045
+
 var frame_texture := AtlasTexture.new()
 var speaking := false
 var reduced_motion := false
@@ -9,6 +13,8 @@ var _idle_elapsed := 0.0
 var _rest := 3
 var _talk := 4
 var _blink := 5
+var _context := ""
+var _composition_nod := false
 var pose_index := 3
 func _ready() -> void:
 	frame_texture.atlas = load("res://guide/assets/coach-poses.png")
@@ -18,8 +24,14 @@ func _ready() -> void:
 	stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var matte := ShaderMaterial.new(); matte.shader = load("res://guide/coach_matte.gdshader"); material = matte
+	visibility_changed.connect(_on_visibility_changed)
 	_frame(_rest)
 func set_context(id: String) -> void:
+	if id != _context:
+		_cancel_composition_nod()
+		_context = id
+		_composition_nod = id == "composition" and not reduced_motion
+		if _composition_nod: _idle_elapsed = 0.0
 	var poses := [3,4,5]
 	if id in ["composition","premier-match"]: poses = [8,9,2]
 	elif id in ["entrainement","tactique","staff"]: poses = [6,7,2]
@@ -31,9 +43,11 @@ func set_context(id: String) -> void:
 	_frame(_talk if _mouth_can_open() else _rest)
 func set_reduced_motion(value: bool) -> void:
 	reduced_motion = value
+	if value or _idle_elapsed > NOD_DELAY: _cancel_composition_nod()
 	_elapsed = 0.0; _idle_elapsed = 0.0
 	_frame(_talk if _mouth_can_open() else _rest)
 func set_speaking(value: bool) -> void:
+	if value and _idle_elapsed > NOD_DELAY: _cancel_composition_nod()
 	speaking = value; _elapsed = 0.0; _idle_elapsed = 0.0
 	_frame(_talk if _mouth_can_open() else _rest)
 func set_articulation(value: float) -> void:
@@ -48,7 +62,25 @@ func _process(delta: float) -> void:
 		_frame(_talk if _mouth_can_open() and int(_elapsed / 0.18) % 3 != 1 else _rest)
 	else:
 		_idle_elapsed += delta
+		if _composition_nod:
+			var phase := clampf((_idle_elapsed - NOD_DELAY) / NOD_DURATION, 0.0, 1.0)
+			if phase < 1.0:
+				# Animate the existing closed-mouth atlas cell around the shoulders.
+				pivot_offset = size * Vector2(0.5, 0.8)
+				scale.y = 1.0 - NOD_DEPTH * sin(PI * phase)
+				_frame(_rest)
+				return
+			_cancel_composition_nod()
 		_frame(_blink if fmod(_idle_elapsed, 5.4) > 5.25 else _rest)
+
+func _on_visibility_changed() -> void:
+	if not is_visible_in_tree() and _idle_elapsed > NOD_DELAY: _cancel_composition_nod()
+
+func _cancel_composition_nod() -> void:
+	if not _composition_nod: return
+	_composition_nod = false
+	scale.y = 1.0
+
 func _frame(index: int) -> void:
 	pose_index = index
 	frame_texture.region = Rect2((index % 4) * 313.5, int(index / 4) * 313.5, 313.5, 313.5)

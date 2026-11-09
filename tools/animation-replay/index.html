@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ralenti tactique · Oval Legacy 27</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cellipse cx='8' cy='8' rx='6' ry='4' fill='%23f1d876'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="replay.css">
+  <script src="fixture.js" defer></script>
+  <script src="replay.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">OVAL LEGACY 27 <span>·</span> LABORATOIRE TACTIQUE</p>
+      <h1>De l’essai au renvoi</h1>
+      <p>Quatre arrêts sur image pour suivre le porteur, le score puis la remise en jeu.</p>
+    </header>
+    <div class="layout">
+      <section class="board" aria-label="Terrain et commandes">
+        <div class="scoreboard">
+          <span><i class="legend home"></i><span id="home"></span></span>
+          <strong id="score" aria-label="Score">0 – 0</strong>
+          <span><i class="legend away"></i><span id="away"></span></span>
+        </div>
+        <svg id="pitch" viewBox="-7 -4 114 78" role="img" aria-label="Vue tactique du terrain et position du ballon">
+          <rect x="-5" y="0" width="110" height="70" rx="1" class="grass"/>
+          <path d="M-5 0h5v70h-5zM100 0h5v70h-5z" class="in-goal"/>
+          <path d="M0 0H100V70H0ZM50 0V70M22 0V70M78 0V70" class="line"/>
+          <path d="M5 0V70M95 0V70M40 0V70M60 0V70M0 5H100M0 65H100" class="dashed"/>
+          <path d="M-1 32v6M101 32v6M48 35h4" class="line"/>
+          <g id="players"></g>
+          <g id="ball">
+            <circle r="3" class="ball-ring"/>
+            <ellipse rx="1.45" ry="1.05" class="ball-dot"/>
+          </g>
+        </svg>
+        <div class="controls" aria-label="Commandes du ralenti">
+          <button id="previous" type="button">← Précédent</button>
+          <button id="play" type="button" class="primary">Lire</button>
+          <button id="next" type="button">Suivant →</button>
+        </div>
+      </section>
+      <section class="panel" aria-labelledby="phase-title">
+        <p class="eyebrow" id="progress"></p>
+        <h2 id="phase-title"></h2>
+        <p id="annotation"></p>
+        <blockquote id="commentary"></blockquote>
+        <nav aria-label="Phases de l’action" id="timeline"></nav>
+        <p class="keys"><kbd>←</kbd> <kbd>→</kbd> par phase <span>·</span> <kbd>Espace</kbd> lecture ou pause</p>
+        <span id="announcement" class="sr-only" role="status"></span>
+      </section>
+    </div>
+    <footer>Scénario fictif enregistré à partir du moteur d’Oval Legacy 27. Les arrêts sur image reproduisent ses positions. Les transitions courtes sont interpolées pour la lecture.</footer>
+  </main>
+</body>
+</html>
