@@ -34,6 +34,12 @@ func sign_contract() -> void:
 	var confirm := button("StaffContractConfirm")
 	check(confirm != null, "Confirmation du contrat disponible")
 	if confirm != null: confirm.pressed.emit(); await response("contrat staff")
+func confirmation(accept: bool) -> void:
+	var dialogs := app.find_children("*", "ConfirmationDialog", true, false).filter(func(d): return d.visible)
+	check(not dialogs.is_empty(), "Confirmation explicite d’activation")
+	if dialogs.is_empty(): return
+	if accept: dialogs[0].confirmed.emit(); await response("activation")
+	else: dialogs[0].canceled.emit(); await settle()
 func run() -> void:
 	root.size = Vector2i(1280, 800)
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
@@ -102,6 +108,45 @@ func run() -> void:
 		var id := str(hire.get_meta("staff_id"))
 		hire.pressed.emit(); await settle(); await sign_contract()
 		check(own_staff().any(func(p: Dictionary): return str(p.id) == id), "Candidat engagé dans le vrai état de carrière")
+	# Build/import a real v1 career through its historical initializer; no v2
+	# players or provenance fields are removed to fake a legacy document.
+	var legacy := FileAccess.get_file_as_string(OS.get_environment("CD_LIFECYCLE_LEGACY"))
+	await command("import", {"text":legacy})
+	check(not app.model.meta.population.active and not app.model.clubLife.staffCareer.active, "Import ancien sans activation silencieuse")
+	await command("export")
+	var old_export: String = app.model.meta.exportText
+	var old_clubs: String = JSON.stringify(JSON.parse_string(old_export).state.clubs)
+	var old_profile: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(profile))
+	root.size = Vector2i(1280, 800)
+	app._navigate("Staff"); await settle()
+	var enable_staff := button("EnableStaffCareer")
+	check(enable_staff != null, "Ancienne carrière propose le staff sans l’imposer")
+	if enable_staff != null: enable_staff.pressed.emit(); await settle(); await confirmation(false)
+	await command("export")
+	check(app.model.meta.exportText == old_export, "Annuler l’activation conserve exactement l’ancienne carrière")
+	enable_staff = button("EnableStaffCareer")
+	if enable_staff != null: enable_staff.pressed.emit(); await settle(); await confirmation(true)
+	check(app.model.clubLife.staffCareer.active and not app.model.meta.population.active, "Activation staff indépendante depuis le vrai bouton")
+	app._navigate("Recrutement"); await settle()
+	var old_tabs := app.body.find_child("MarketTabs", true, false) as TabContainer
+	if old_tabs != null:
+		for i in old_tabs.get_tab_count():
+			if str(old_tabs.get_tab_control(i).name) == "RecruitmentStaff": old_tabs.current_tab = i
+		await settle()
+	var open_needs := button("OpenRecruitmentNeeds")
+	if open_needs == null: open_needs = button("OpenScoutMission")
+	check(open_needs != null, "Accès au renouvellement de l’ancienne population")
+	if open_needs != null: open_needs.pressed.emit(); await settle()
+	var old_scout_tabs := app.find_child("ScoutTabs", true, false) as TabContainer
+	if old_scout_tabs != null: old_scout_tabs.current_tab = 0; await settle()
+	var enable_population := button("EnablePopulation")
+	check(enable_population != null, "Bouton d’activation du renouvellement disponible")
+	if enable_population != null: enable_population.pressed.emit(); await settle(); await confirmation(true)
+	check(app.model.meta.population.active and app.model.clubLife.staffCareer.active, "Vivier activé en conservant le staff déjà actif")
+	await command("export")
+	check(JSON.stringify(JSON.parse_string(app.model.meta.exportText).state.clubs) == old_clubs, "Activations sans changer joueurs, clubs et trésoreries")
+	var final_profile: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(profile))
+	check(final_profile.seed == old_profile.seed, "Activations sans consommer le RNG sportif")
 	print(JSON.stringify({"checks":checks,"failures":failures}))
 	app.queue_free(); await process_frame
 	quit(0 if failures.is_empty() else 1)

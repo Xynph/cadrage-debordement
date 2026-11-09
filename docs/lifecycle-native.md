@@ -26,7 +26,7 @@ Après le changement réel de saison, le staff avance une fois. Si un moteur his
 
 ## Réception ciblée
 
-Les tests `tests/lifecycle-native.cjs` couvrent nouvelles carrières sur cinq modes, lecture d'un document d'ancien format sans activation, deux ordres d'activation indépendants, RNG/horloge/cash conservés à l'activation, commandes staff et refus périmés/étrangers, véritable refus disque avec rollback et réessai, imports d'horloge/source falsifiés, retraite volontaire et identité présentée sans changement d'ID.
+Les huit tests `tests/lifecycle-native.cjs` couvrent nouvelles carrières sur cinq modes, lecture d'un document d'ancien format sans activation, deux ordres d'activation indépendants, RNG/horloge/cash conservés à l'activation, commandes staff et refus périmés/étrangers, véritable refus disque avec rollback et réessai, imports d'horloge/source falsifiés, retraite volontaire et identité présentée sans changement d'ID.
 
 `tests/staff-packs.cjs` conserve sa recette v1/v2, portraits, bascule/reprise, corruption et refus ; les recherches d'identité de référence acceptent maintenant `sourceStaffId` pour les nouveaux membres dynamiques, avec assertions supplémentaires sur l'ID de commande et l'identité projetée dans `clubLife`.
 
@@ -39,6 +39,8 @@ Les commandes staff sont disponibles dans Staff : annuaire des clubs, recherche,
 
 Les portraits fournis par un pack restent prioritaires, y compris une identité source imbriquée d’ancien joueur reconverti. À défaut, le jeu compose localement des portraits à partir de 48 visages fictifs IA prégénérés. Aucun réseau, abonnement, clé ou facturation à l’usage. Les variations et le vieillissement restent illustratifs ; des ressemblances sont possibles. Les aperçus du club et les deux versions de l’annuaire utilisent ce même rendu.
 
-Réception Godot 4.7.2 Linux X11/Mesa : 39 contrôles réels réussis sur 1280×800, 1440×900 et 1920×1080, avec signatures, prolongation, libération, identité source officielle prioritaire et conservation état/RNG/disque pendant la navigation. 379 contrôles graphiques distincts qualifient les portraits et les variations visibles sur une même cellule source. Le poste utilise un écran virtuel et une voix TTS factice locale pour initialiser les API ; aucune synthèse audible ni recette Windows n’est revendiquée.
+Réception Godot 4.7.2 Linux X11/Mesa : 57 contrôles réels réussis sur 1280×800, 1440×900 et 1920×1080, avec signatures, prolongation, libération, identité source officielle prioritaire et conservation état/RNG/disque pendant la navigation. 379 contrôles graphiques distincts qualifient les portraits et les variations visibles sur une même cellule source. Le poste utilise un écran virtuel et une voix TTS factice locale pour initialiser les API ; aucune synthèse audible ni recette Windows n’est revendiquée.
 
 Quatre fixtures de capacité réellement importées avec le staff actif conservent les limites existantes : pool généré World 11 347 791 octets / 16 Mio, Champ 21 544 857 / 24 Mio ; pool de professionnels source libérés avec douze historiques chacun World 12 503 075 / 16 Mio et Champ 23 754 693 / 24 Mio. Ce sont des fixtures de taille, sans prétendre avoir joué douze années sur ces états.
+
+La recette UI étendue vérifie aussi l’import d’une vraie initialisation v1, l’annulation sans mutation, l’activation indépendante du staff puis du vivier, les joueurs/trésoreries conservés et le RNG sportif inchangé. Les neuf tests du cycle staff refusent désormais les cibles IA augmentées ou diminuées par rapport aux sources immuables ; les ordres des clés et des équipes restent libres.
