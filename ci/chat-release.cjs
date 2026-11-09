@@ -29,7 +29,7 @@ async function execute(cmd,event,d){
  const api=d.api,head=()=>api('git/ref/heads/main').object.sha;
  if(cmd.commentId===undefined){
    // Réservé au lanceur de main qui valide l'événement GitHub et les fichiers PR.
-   need(d.autoAuthorized===true && cmd.mode==='merge' && /^[0-9a-f]{40}$/.test(cmd.expected),
+   need(d.autoAuthorized===true && ['check','merge'].includes(cmd.mode) && /^[0-9a-f]{40}$/.test(cmd.expected),
      'Fusion automatique non autorisée');
  } else {
    const fresh=api('issues/comments/'+cmd.commentId);
@@ -134,4 +134,4 @@ async function main(){
  if(error)throw error;console.log(JSON.stringify(result));
 }
 if(require.main===module)main().catch(e=>{console.error(e.message);process.exitCode=1;});
-module.exports={validateEvent,fullCI,latestCI,latestPushCI,execute};
+module.exports={validateEvent,fullCI,latestCI,latestPushCI,execute,JOBS};

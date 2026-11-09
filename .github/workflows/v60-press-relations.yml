@@ -1,7 +1,6 @@
 name: V60 relations presse hors match
 on:
-  pull_request:
-    branches: [main]
+  # La suite est déjà incluse dans les cinq shards JavaScript complets.
   workflow_dispatch:
 permissions:
   contents: read

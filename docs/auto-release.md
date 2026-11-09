@@ -1,21 +1,29 @@
-# Intégration automatique des PR ordinaires — prototype désactivé
+# Fusion ordinaire contrôlée
 
-Le gate historique et ses protections restent inchangés. Le nouveau workflow n'agit que si la variable de dépôt CD_AUTO_RELEASE_ENABLED vaut true ; cette variable n'est pas activée par la PR.
+L’intégrateur désigné utilise le compte GitHub **Xynph**. Après arbitrage des réservations actives et revue du diff, il sélectionne **une PR et son SHA HEAD complet** dans Actions → **Fusion ordinaire contrôlée** → Run workflow, sur la branche `main`. Le lancement sélectionne une livraison au titre de l’accord général de Léo.
 
-Conditions : événement workflow_run JavaScript terminé avec succès, une seule PR propriétaire ouverte et non DRAFT, SHA exact, base main actualisée et mergeable_state clean, diff intégral (maximum 12 fichiers) limité à documentation, tests Node, feuilles CSS et modules UI uiXX-/vXX- testés. Tout changement de moteur, sécurité, CI, sauvegarde, DATA/LNR ou workflows est rejeté.
+```sh
+gh workflow run auto-release.yml -R Xynph/cadrage-debordement --ref main \
+  -f pr=NUMERO -f sha=SHA_HEAD_COMPLET -f mode=check
+```
 
-Les sept jobs JavaScript doivent être verts ; tous les derniers workflows PR visibles sur le même HEAD doivent être terminés et verts. Le code de main est exécuté sur un checkout épinglé sans identifiants persistants. Le moteur existant ci/chat-release.cjs pilote le gate ci/release-gate.cjs, vérifie main, bloque les SHA périmés, fusionne par squash sous protection serveur et réceptionne les sept jobs post-fusion. Même groupe de concurrence que le gate Chat.
+`check` vérifie la sélection en lecture seule. `merge` demande un squash immédiat si les contrôles sont verts. Attendre le verdict terminal de la CI de la PR avant de lancer la commande. Le résumé GitHub Actions indique le résultat et, après une fusion validée, le lien vers la CI du commit fusionné. Une relance du run est refusée. Si une tête, une base ou une CI change, revoir la sélection et lancer une nouvelle demande.
 
-Avant activation : CI complète de cette PR, revue des permissions GitHub Actions, essais à blanc/contrôles de refus et preuve réelle d'une fusion témoin. Une CI d'une PR sensible peut finir avant les autres workflows : l'auto-release refuse alors la fusion, sans relance automatique ; l'intégrateur utilise le gate historique. Aucun bypass.
+## Périmètre initial
 
-Le contrôleur compare les fichiers de la PR avec ceux de toutes les autres PR ouvertes et refuse un chevauchement (réservations des deux producteurs). Si la liste est trop longue/incomplète, il échoue fermé.
+La PR doit être prête, ouverte par Xynph depuis le même dépôt, à jour sur `main` et fusionnable. Le diff complet comporte au plus 12 ajouts ou modifications de fichiers réguliers. Le périmètre couvre les chemins suivants.
 
-La politique exige les workflows JS, V60 et V61 sur chaque HEAD ; tout changement sous dist/ exige aussi UI Chromium. Si un contrôle attendu n'apparaît pas (même pas démarré), son absence bloque automatiquement. Un run rouge, annulé, en cours ou des résultats paginés/ambigus bloquent également.
+- Documentation de présentation dans `docs/ui-presentation-*.md` et modifications des quatre guides UI listés dans le contrôleur.
+- Modifications des feuilles de style existantes `dist/style.css`, `dist/main-menu-v3.css`, `dist/ui01-integration.css`, `dist/ui02-player-components.css`, `dist/ui03-scout-components.css` et `dist/ui04-academy-components.css`.
 
-Les fichiers de tests et documentation de sécurité (`tests/auto-release.cjs`, `tests/chat-release.cjs`, `docs/auto-release.md`, `docs/chat-release-gate.md`, etc.) sont explicitement exclus de l'auto-intégration ; revue manuelle obligatoire pour ces chemins.
+La voie sensible reste celle du [gate officiel](chat-release-gate.md). La fusion ordinaire refuse les recouvrements avec les PR prêtes ouvertes vers `main`, y compris l’ancien chemin d’un renommage. Elle parcourt les pages, avec refus si la liste ou un diff dépasse la limite vérifiable ou change en cours de contrôle. L’intégrateur arbitre les brouillons actifs et travaux réservés avant le dispatch. Cette vérification observe des instantanés GitHub successifs.
 
-## Sécurisation supplémentaire du témoin (03/11/2026)
+## Contrôles et activation
 
-Le contrôleur reste **inactif** sans `CD_AUTO_RELEASE_ENABLED=true`. Même avec ce flag, toute fusion est maintenant refusée à moins que `CD_AUTO_RELEASE_MODE=trial`, `CD_AUTO_RELEASE_TEST_PR` (numéro exact) et `CD_AUTO_RELEASE_TEST_SHA` (HEAD complet exact) ne correspondent à un unique événement CI. Les valeurs manquantes, périmées ou un autre mode sont rejetés sans appel au gate. Un témoin ne peut contenir qu'un seul fichier ajouté : `docs/ci-auto-release-trial.md`. **Il n'existe volontairement aucun mode de fusion générale dans ce correctif.**
+Le workflow exécute exclusivement le code du SHA de `main` à l’origine du dispatch. Il exige le ruleset de PR avec `Validation CI` stricte émise par GitHub Actions et la CI du HEAD exact. Une PR documentaire peut avoir la matrice JS ignorée si `classification` et `Validation CI` réussissent. Une PR CSS exige les sept jobs JavaScript verts et le job Chromium mutualisé réussi. Le dernier run de chaque autre workflow de PR visible sur la même tête doit aussi réussir.
 
-Avant un vrai essai, l'intégrateur doit contrôler les réservations de #73 et les PR concurrentes, les droits effectifs du token, l'état initial des variables et la possibilité de restauration immédiate. Les variables de témoin doivent être posées en premier, contrôlées, puis le flag activé seulement dans une fenêtre maîtrisée. Déclencher une CI fraîche sur le HEAD témoin, inspecter l'événement et le passage par le gate officiel, la fusion protégée, puis les 7/7 jobs du nouveau main. Désactiver ensuite le flag et effacer les variables du témoin. En cas de doute : STOP, ne jamais affirmer une fusion automatique réussie. Une activation générale nécessitera un changement distinct et un contrôle fiable des réservations de l'issue #73, non couvertes par le simple recoupement des PR ouvertes.
+Avant le squash, le gate officiel vérifie de nouveau le HEAD, la base et le run JS, tentative comprise. GitHub applique les protections serveur et compare le SHA au moment du squash. Le workflow exige sept jobs verts sur le `main` initial puis sur le commit fusionné. Si GitHub ne crée pas le run `push` après la fusion au `GITHUB_TOKEN`, le gate déclenche une seule CI de secours sur `main` et en vérifie le SHA. Un échec après squash demande une inspection du commit et de sa CI avant la demande suivante.
+
+L’intégration de ce code ouvre le mode `check`. Le mode `merge` exige la variable de dépôt `CD_ORDINARY_MERGE_ENABLED=true`. Avant de l’activer, vérifier les protections de `main` sans bypass, les permissions effectives du `GITHUB_TOKEN` pour le squash et le dispatch de CI, puis exécuter `check` sur une PR témoin isolée sous `docs/ui-presentation-*.md` et sur un cas de refus. Activer le flag pour la fusion témoin, puis vérifier le reçu GitHub et la CI complète du SHA fusionné. Retirer le flag si le témoin échoue. L’activation ne nécessite aucun changement de l’auto-merge natif de GitHub.
+
+Le dispatch remplace la fusion par étiquette `cd-integrate` et le prototype déclenché par fin de CI. Les variables de l’ancien prototype n’ont plus d’effet.
