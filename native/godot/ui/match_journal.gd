@@ -248,7 +248,16 @@ func _render(position: int, follow: bool) -> void:
 		var minute := "Minute non renseignée"
 		if event is Dictionary and (event.get("min") is int or event.get("min") is float): minute = _number(event.min) + " min"
 		var caption: String = KINDS.get(kind, "Type non renseigné" if kind.is_empty() else "Type inconnu (« %s »)" % kind)
-		entry.add_child(G.wrap(minute + " · " + caption, 13, G.GOLD))
+		var event_link := G.wrap(minute + " · " + caption + " ↗",13,G.GOLD)
+		event_link.name = "JournalActionLink"
+		event_link.tooltip_text = "Relire ce fait et sa position enregistrée · Entrée ou clic"
+		event_link.focus_mode = Control.FOCUS_ALL
+		event_link.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		event_link.focus_entered.connect(func(): event_link.add_theme_color_override("font_color",G.WHITE))
+		event_link.focus_exited.connect(func(): event_link.add_theme_color_override("font_color",G.GOLD))
+		event_link.mouse_filter = Control.MOUSE_FILTER_STOP
+		event_link.gui_input.connect(_review_input.bind(visible_events.size()-1))
+		entry.add_child(event_link)
 		entry.add_child(G.wrap(str(event.get("text", "Texte non renseigné")) if event is Dictionary else str(event), 14, G.INK))
 		if event is Dictionary and event.get("scene") is Dictionary:
 			var scene: Dictionary = event.scene
@@ -334,7 +343,15 @@ func _latest() -> void:
 	_notice()
 	_store()
 
-func _review() -> void:
+func _review_input(event: InputEvent, visible_index: int) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT:
+		_review(visible_index)
+		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo and event.keycode in [KEY_ENTER,KEY_KP_ENTER,KEY_SPACE]:
+		_review(visible_index)
+		get_viewport().set_input_as_handled()
+
+func _review(start_index: int = -1) -> void:
 	# Local owned dialog is discarded with this journal on import/navigation.
 	if find_child("MatchActionReview",true,false) != null: return
-	load("res://match_action_review.gd").open(self,visible_events,_live.get("teams",[]))
+	load("res://match_action_review.gd").open(self,visible_events,_live.get("teams",[]),start_index)
