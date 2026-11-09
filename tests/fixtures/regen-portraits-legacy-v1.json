@@ -1,0 +1,208 @@
+[
+  {
+    "person": {},
+    "profile": {
+      "version": 1,
+      "appearanceId": "anonymous",
+      "seed": 1926879790,
+      "origin": "player",
+      "atlas": "players",
+      "cell": 14,
+      "ageBasis": "illustrative",
+      "referenceAge": null,
+      "ageBand": null,
+      "maturity": 0,
+      "faceWidth": 0.998389160707593,
+      "eyeSpacing": 0.006151077314279973,
+      "noseWidth": -0.01158267990499735,
+      "jawWidth": 0.006413659946992993,
+      "zoom": 1.0110977071698288,
+      "cropX": 0.00704055617377162,
+      "cropY": -0.001532667933963239,
+      "saturation": 0.9847665710095316,
+      "exposure": 1.0107965677464381,
+      "shirt": 0.5935814522672445,
+      "mirror": false
+    }
+  },
+  {
+    "person": {
+      "id": "abc",
+      "age": 23
+    },
+    "profile": {
+      "version": 1,
+      "appearanceId": "abc",
+      "seed": 440920331,
+      "origin": "player",
+      "atlas": "players",
+      "cell": 11,
+      "ageBasis": "current-age",
+      "referenceAge": null,
+      "ageBand": null,
+      "maturity": 0,
+      "faceWidth": 0.9682061386294663,
+      "eyeSpacing": 0.009988066400401294,
+      "noseWidth": 0.0012297022081911562,
+      "jawWidth": -0.007195602301508189,
+      "zoom": 1.015138672235189,
+      "cropX": -0.007024058852344752,
+      "cropY": 0.00016028254665434363,
+      "saturation": 1.0494843117147683,
+      "exposure": 1.0211778714926913,
+      "shirt": 0.3950797913130373,
+      "mirror": false
+    }
+  },
+  {
+    "person": {
+      "id": "équipe:α",
+      "age": 31
+    },
+    "profile": {
+      "version": 1,
+      "appearanceId": "équipe:α",
+      "seed": 475817692,
+      "origin": "player",
+      "atlas": "players",
+      "cell": 28,
+      "ageBasis": "current-age",
+      "referenceAge": null,
+      "ageBand": null,
+      "maturity": 0.02,
+      "faceWidth": 1.000122288747225,
+      "eyeSpacing": -0.005907391677610577,
+      "noseWidth": -0.004510354874655604,
+      "jawWidth": -0.008898049525916576,
+      "zoom": 1.014126990562072,
+      "cropX": -0.005622713748365641,
+      "cropY": 0.0027055267067626117,
+      "saturation": 0.9811200828198343,
+      "exposure": 1.0112753924028948,
+      "shirt": 0.2032967407722026,
+      "mirror": true
+    }
+  },
+  {
+    "person": {
+      "id": "staff:fixed",
+      "portraitRole": "staff",
+      "appearanceAge": 54,
+      "age": 75
+    },
+    "profile": {
+      "version": 1,
+      "appearanceId": "staff:fixed",
+      "seed": 4291638709,
+      "origin": "staff",
+      "atlas": "staff",
+      "cell": 5,
+      "ageBasis": "current-age",
+      "referenceAge": 54,
+      "ageBand": 1,
+      "maturity": 0.9,
+      "faceWidth": 0.9972790767066181,
+      "eyeSpacing": -0.004633565777912736,
+      "noseWidth": -0.008161000896245241,
+      "jawWidth": -0.00470975256152451,
+      "zoom": 1.0147139944380614,
+      "cropX": 0.000360641092061997,
+      "cropY": -0.004174472889862954,
+      "saturation": 1.059402480861172,
+      "exposure": 1.0110268543614074,
+      "shirt": 0.7858425257727504,
+      "mirror": true
+    }
+  },
+  {
+    "person": {
+      "id": "staff:unknown",
+      "role": "Coach"
+    },
+    "profile": {
+      "version": 1,
+      "appearanceId": "staff:unknown",
+      "seed": 3624922541,
+      "origin": "staff",
+      "atlas": "staff",
+      "cell": 5,
+      "ageBasis": "illustrative",
+      "referenceAge": null,
+      "ageBand": 1,
+      "maturity": 0.5,
+      "faceWidth": 1.0051800310984254,
+      "eyeSpacing": -0.0050672900723293425,
+      "noseWidth": 0.0038161629494279613,
+      "jawWidth": 0.0005911106709390879,
+      "zoom": 1.0060482026962563,
+      "cropX": -0.006505650881677866,
+      "cropY": 0.0013060258682817223,
+      "saturation": 1.0481943295523524,
+      "exposure": 0.9818761436734348,
+      "shirt": 0.7002676138654351,
+      "mirror": true
+    }
+  },
+  {
+    "person": {
+      "id": "staff:converted",
+      "sourcePlayerId": "abc",
+      "portraitRole": "staff",
+      "appearanceAge": 23,
+      "age": 49
+    },
+    "profile": {
+      "version": 1,
+      "appearanceId": "abc",
+      "seed": 440920331,
+      "origin": "player",
+      "atlas": "players",
+      "cell": 11,
+      "ageBasis": "current-age",
+      "referenceAge": 23,
+      "ageBand": null,
+      "maturity": 0.38,
+      "faceWidth": 0.9682061386294663,
+      "eyeSpacing": 0.009988066400401294,
+      "noseWidth": 0.0012297022081911562,
+      "jawWidth": -0.007195602301508189,
+      "zoom": 1.015138672235189,
+      "cropX": -0.007024058852344752,
+      "cropY": 0.00016028254665434363,
+      "saturation": 1.0494843117147683,
+      "exposure": 1.0211778714926913,
+      "shirt": 0.3950797913130373,
+      "mirror": false
+    }
+  },
+  {
+    "person": {
+      "id": "old:marker",
+      "appearanceId": "base:other",
+      "age": 19
+    },
+    "profile": {
+      "version": 1,
+      "appearanceId": "base:other",
+      "seed": 457288820,
+      "origin": "player",
+      "atlas": "players",
+      "cell": 20,
+      "ageBasis": "current-age",
+      "referenceAge": null,
+      "ageBand": null,
+      "maturity": 0,
+      "faceWidth": 1.0325821603205987,
+      "eyeSpacing": -0.00024943180382251684,
+      "noseWidth": 0.0020622446537017815,
+      "jawWidth": 0.011027720371261238,
+      "zoom": 1.0171552251453977,
+      "cropX": -0.004795417521148921,
+      "cropY": -0.005723406133241952,
+      "saturation": 0.9561534166522323,
+      "exposure": 0.9992858885740861,
+      "shirt": 0.385117627447471,
+      "mirror": true
+    }
+  }
+]

@@ -1,0 +1,1398 @@
+{
+  "schema": "regen-portrait-bank-v2",
+  "bankVersion": 2,
+  "status": "awaiting-player-assets",
+  "total": 200,
+  "players": 160,
+  "staff": 40,
+  "runtimeInference": false,
+  "visualUniquenessGuaranteed": false,
+  "assets": [
+    {
+      "id": "players-00",
+      "file": "dist/assets/editorial/portraits-0.webp",
+      "grid": [
+        4,
+        4
+      ],
+      "cells": 16,
+      "sha256": "a31ecf18d51b193d5945db9cf3c1618a07cc7bc4aa2bf19e9b71f16afd4cc506",
+      "provenance": "imagegen-original",
+      "fictional": true
+    },
+    {
+      "id": "players-01",
+      "file": "dist/assets/editorial/portraits-1.webp",
+      "grid": [
+        4,
+        4
+      ],
+      "cells": 16,
+      "sha256": "41b49ad6ad5ec06d5e9c35c92e12dfc7a4d8d0430a7cd3d516c1b7ca8de9fce8",
+      "provenance": "imagegen-original",
+      "fictional": true
+    },
+    {
+      "id": "players-02",
+      "file": "native/godot/art/regen-bank-v2/players-02.png",
+      "grid": [
+        4,
+        4
+      ],
+      "cells": 16,
+      "sha256": null,
+      "provenance": "imagegen-original",
+      "fictional": true
+    },
+    {
+      "id": "players-03",
+      "file": "native/godot/art/regen-bank-v2/players-03.png",
+      "grid": [
+        4,
+        4
+      ],
+      "cells": 16,
+      "sha256": null,
+      "provenance": "imagegen-original",
+      "fictional": true
+    },
+    {
+      "id": "players-04",
+      "file": "native/godot/art/regen-bank-v2/players-04.png",
+      "grid": [
+        4,
+        4
+      ],
+      "cells": 16,
+      "sha256": null,
+      "provenance": "imagegen-original",
+      "fictional": true
+    },
+    {
+      "id": "players-05",
+      "file": "native/godot/art/regen-bank-v2/players-05.png",
+      "grid": [
+        4,
+        4
+      ],
+      "cells": 16,
+      "sha256": null,
+      "provenance": "imagegen-original",
+      "fictional": true
+    },
+    {
+      "id": "players-06",
+      "file": "native/godot/art/regen-bank-v2/players-06.png",
+      "grid": [
+        4,
+        4
+      ],
+      "cells": 16,
+      "sha256": null,
+      "provenance": "imagegen-original",
+      "fictional": true
+    },
+    {
+      "id": "players-07",
+      "file": "native/godot/art/regen-bank-v2/players-07.png",
+      "grid": [
+        4,
+        4
+      ],
+      "cells": 16,
+      "sha256": null,
+      "provenance": "imagegen-original",
+      "fictional": true
+    },
+    {
+      "id": "players-08",
+      "file": "native/godot/art/regen-bank-v2/players-08.png",
+      "grid": [
+        4,
+        4
+      ],
+      "cells": 16,
+      "sha256": null,
+      "provenance": "imagegen-original",
+      "fictional": true
+    },
+    {
+      "id": "players-09",
+      "file": "native/godot/art/regen-bank-v2/players-09.png",
+      "grid": [
+        4,
+        4
+      ],
+      "cells": 16,
+      "sha256": null,
+      "provenance": "imagegen-original",
+      "fictional": true
+    },
+    {
+      "id": "staff-00",
+      "file": "native/godot/art/regen-staff-atlas.png",
+      "grid": [
+        4,
+        4
+      ],
+      "cells": 16,
+      "sha256": "de52651fe1f17edc530ca88eab8b2695ffe76287fcff38704f89548aa1d1c429",
+      "provenance": "imagegen-original",
+      "fictional": true
+    },
+    {
+      "id": "staff-01",
+      "file": "native/godot/art/regen-bank-v2/staff-01.png",
+      "grid": [
+        6,
+        4
+      ],
+      "cells": 24,
+      "sha256": "7ec04612d094823c2837418d6c8aa1e27a3293b50e7f2ba70834b3bccbfc8189",
+      "provenance": "imagegen-original",
+      "fictional": true
+    }
+  ],
+  "bases": [
+    {
+      "id": "players:000",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 0
+    },
+    {
+      "id": "players:001",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 1
+    },
+    {
+      "id": "players:002",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 2
+    },
+    {
+      "id": "players:003",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 3
+    },
+    {
+      "id": "players:004",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 4
+    },
+    {
+      "id": "players:005",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 5
+    },
+    {
+      "id": "players:006",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 6
+    },
+    {
+      "id": "players:007",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 7
+    },
+    {
+      "id": "players:008",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 8
+    },
+    {
+      "id": "players:009",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 9
+    },
+    {
+      "id": "players:010",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 10
+    },
+    {
+      "id": "players:011",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 11
+    },
+    {
+      "id": "players:012",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 12
+    },
+    {
+      "id": "players:013",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 13
+    },
+    {
+      "id": "players:014",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 14
+    },
+    {
+      "id": "players:015",
+      "kind": "player",
+      "asset": "players-00",
+      "cell": 15
+    },
+    {
+      "id": "players:016",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 0
+    },
+    {
+      "id": "players:017",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 1
+    },
+    {
+      "id": "players:018",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 2
+    },
+    {
+      "id": "players:019",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 3
+    },
+    {
+      "id": "players:020",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 4
+    },
+    {
+      "id": "players:021",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 5
+    },
+    {
+      "id": "players:022",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 6
+    },
+    {
+      "id": "players:023",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 7
+    },
+    {
+      "id": "players:024",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 8
+    },
+    {
+      "id": "players:025",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 9
+    },
+    {
+      "id": "players:026",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 10
+    },
+    {
+      "id": "players:027",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 11
+    },
+    {
+      "id": "players:028",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 12
+    },
+    {
+      "id": "players:029",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 13
+    },
+    {
+      "id": "players:030",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 14
+    },
+    {
+      "id": "players:031",
+      "kind": "player",
+      "asset": "players-01",
+      "cell": 15
+    },
+    {
+      "id": "players:032",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 0
+    },
+    {
+      "id": "players:033",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 1
+    },
+    {
+      "id": "players:034",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 2
+    },
+    {
+      "id": "players:035",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 3
+    },
+    {
+      "id": "players:036",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 4
+    },
+    {
+      "id": "players:037",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 5
+    },
+    {
+      "id": "players:038",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 6
+    },
+    {
+      "id": "players:039",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 7
+    },
+    {
+      "id": "players:040",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 8
+    },
+    {
+      "id": "players:041",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 9
+    },
+    {
+      "id": "players:042",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 10
+    },
+    {
+      "id": "players:043",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 11
+    },
+    {
+      "id": "players:044",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 12
+    },
+    {
+      "id": "players:045",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 13
+    },
+    {
+      "id": "players:046",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 14
+    },
+    {
+      "id": "players:047",
+      "kind": "player",
+      "asset": "players-02",
+      "cell": 15
+    },
+    {
+      "id": "players:048",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 0
+    },
+    {
+      "id": "players:049",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 1
+    },
+    {
+      "id": "players:050",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 2
+    },
+    {
+      "id": "players:051",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 3
+    },
+    {
+      "id": "players:052",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 4
+    },
+    {
+      "id": "players:053",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 5
+    },
+    {
+      "id": "players:054",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 6
+    },
+    {
+      "id": "players:055",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 7
+    },
+    {
+      "id": "players:056",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 8
+    },
+    {
+      "id": "players:057",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 9
+    },
+    {
+      "id": "players:058",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 10
+    },
+    {
+      "id": "players:059",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 11
+    },
+    {
+      "id": "players:060",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 12
+    },
+    {
+      "id": "players:061",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 13
+    },
+    {
+      "id": "players:062",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 14
+    },
+    {
+      "id": "players:063",
+      "kind": "player",
+      "asset": "players-03",
+      "cell": 15
+    },
+    {
+      "id": "players:064",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 0
+    },
+    {
+      "id": "players:065",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 1
+    },
+    {
+      "id": "players:066",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 2
+    },
+    {
+      "id": "players:067",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 3
+    },
+    {
+      "id": "players:068",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 4
+    },
+    {
+      "id": "players:069",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 5
+    },
+    {
+      "id": "players:070",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 6
+    },
+    {
+      "id": "players:071",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 7
+    },
+    {
+      "id": "players:072",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 8
+    },
+    {
+      "id": "players:073",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 9
+    },
+    {
+      "id": "players:074",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 10
+    },
+    {
+      "id": "players:075",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 11
+    },
+    {
+      "id": "players:076",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 12
+    },
+    {
+      "id": "players:077",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 13
+    },
+    {
+      "id": "players:078",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 14
+    },
+    {
+      "id": "players:079",
+      "kind": "player",
+      "asset": "players-04",
+      "cell": 15
+    },
+    {
+      "id": "players:080",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 0
+    },
+    {
+      "id": "players:081",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 1
+    },
+    {
+      "id": "players:082",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 2
+    },
+    {
+      "id": "players:083",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 3
+    },
+    {
+      "id": "players:084",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 4
+    },
+    {
+      "id": "players:085",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 5
+    },
+    {
+      "id": "players:086",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 6
+    },
+    {
+      "id": "players:087",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 7
+    },
+    {
+      "id": "players:088",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 8
+    },
+    {
+      "id": "players:089",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 9
+    },
+    {
+      "id": "players:090",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 10
+    },
+    {
+      "id": "players:091",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 11
+    },
+    {
+      "id": "players:092",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 12
+    },
+    {
+      "id": "players:093",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 13
+    },
+    {
+      "id": "players:094",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 14
+    },
+    {
+      "id": "players:095",
+      "kind": "player",
+      "asset": "players-05",
+      "cell": 15
+    },
+    {
+      "id": "players:096",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 0
+    },
+    {
+      "id": "players:097",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 1
+    },
+    {
+      "id": "players:098",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 2
+    },
+    {
+      "id": "players:099",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 3
+    },
+    {
+      "id": "players:100",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 4
+    },
+    {
+      "id": "players:101",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 5
+    },
+    {
+      "id": "players:102",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 6
+    },
+    {
+      "id": "players:103",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 7
+    },
+    {
+      "id": "players:104",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 8
+    },
+    {
+      "id": "players:105",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 9
+    },
+    {
+      "id": "players:106",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 10
+    },
+    {
+      "id": "players:107",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 11
+    },
+    {
+      "id": "players:108",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 12
+    },
+    {
+      "id": "players:109",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 13
+    },
+    {
+      "id": "players:110",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 14
+    },
+    {
+      "id": "players:111",
+      "kind": "player",
+      "asset": "players-06",
+      "cell": 15
+    },
+    {
+      "id": "players:112",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 0
+    },
+    {
+      "id": "players:113",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 1
+    },
+    {
+      "id": "players:114",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 2
+    },
+    {
+      "id": "players:115",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 3
+    },
+    {
+      "id": "players:116",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 4
+    },
+    {
+      "id": "players:117",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 5
+    },
+    {
+      "id": "players:118",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 6
+    },
+    {
+      "id": "players:119",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 7
+    },
+    {
+      "id": "players:120",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 8
+    },
+    {
+      "id": "players:121",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 9
+    },
+    {
+      "id": "players:122",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 10
+    },
+    {
+      "id": "players:123",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 11
+    },
+    {
+      "id": "players:124",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 12
+    },
+    {
+      "id": "players:125",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 13
+    },
+    {
+      "id": "players:126",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 14
+    },
+    {
+      "id": "players:127",
+      "kind": "player",
+      "asset": "players-07",
+      "cell": 15
+    },
+    {
+      "id": "players:128",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 0
+    },
+    {
+      "id": "players:129",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 1
+    },
+    {
+      "id": "players:130",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 2
+    },
+    {
+      "id": "players:131",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 3
+    },
+    {
+      "id": "players:132",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 4
+    },
+    {
+      "id": "players:133",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 5
+    },
+    {
+      "id": "players:134",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 6
+    },
+    {
+      "id": "players:135",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 7
+    },
+    {
+      "id": "players:136",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 8
+    },
+    {
+      "id": "players:137",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 9
+    },
+    {
+      "id": "players:138",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 10
+    },
+    {
+      "id": "players:139",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 11
+    },
+    {
+      "id": "players:140",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 12
+    },
+    {
+      "id": "players:141",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 13
+    },
+    {
+      "id": "players:142",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 14
+    },
+    {
+      "id": "players:143",
+      "kind": "player",
+      "asset": "players-08",
+      "cell": 15
+    },
+    {
+      "id": "players:144",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 0
+    },
+    {
+      "id": "players:145",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 1
+    },
+    {
+      "id": "players:146",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 2
+    },
+    {
+      "id": "players:147",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 3
+    },
+    {
+      "id": "players:148",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 4
+    },
+    {
+      "id": "players:149",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 5
+    },
+    {
+      "id": "players:150",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 6
+    },
+    {
+      "id": "players:151",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 7
+    },
+    {
+      "id": "players:152",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 8
+    },
+    {
+      "id": "players:153",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 9
+    },
+    {
+      "id": "players:154",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 10
+    },
+    {
+      "id": "players:155",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 11
+    },
+    {
+      "id": "players:156",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 12
+    },
+    {
+      "id": "players:157",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 13
+    },
+    {
+      "id": "players:158",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 14
+    },
+    {
+      "id": "players:159",
+      "kind": "player",
+      "asset": "players-09",
+      "cell": 15
+    },
+    {
+      "id": "staff:000",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 0,
+      "ageBand": 40
+    },
+    {
+      "id": "staff:001",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 1,
+      "ageBand": 40
+    },
+    {
+      "id": "staff:002",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 2,
+      "ageBand": 40
+    },
+    {
+      "id": "staff:003",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 3,
+      "ageBand": 40
+    },
+    {
+      "id": "staff:004",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 0,
+      "ageBand": 40
+    },
+    {
+      "id": "staff:005",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 1,
+      "ageBand": 40
+    },
+    {
+      "id": "staff:006",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 2,
+      "ageBand": 40
+    },
+    {
+      "id": "staff:007",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 3,
+      "ageBand": 40
+    },
+    {
+      "id": "staff:008",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 4,
+      "ageBand": 40
+    },
+    {
+      "id": "staff:009",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 5,
+      "ageBand": 40
+    },
+    {
+      "id": "staff:010",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 4,
+      "ageBand": 50
+    },
+    {
+      "id": "staff:011",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 5,
+      "ageBand": 50
+    },
+    {
+      "id": "staff:012",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 6,
+      "ageBand": 50
+    },
+    {
+      "id": "staff:013",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 7,
+      "ageBand": 50
+    },
+    {
+      "id": "staff:014",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 6,
+      "ageBand": 50
+    },
+    {
+      "id": "staff:015",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 7,
+      "ageBand": 50
+    },
+    {
+      "id": "staff:016",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 8,
+      "ageBand": 50
+    },
+    {
+      "id": "staff:017",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 9,
+      "ageBand": 50
+    },
+    {
+      "id": "staff:018",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 10,
+      "ageBand": 50
+    },
+    {
+      "id": "staff:019",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 11,
+      "ageBand": 50
+    },
+    {
+      "id": "staff:020",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 8,
+      "ageBand": 60
+    },
+    {
+      "id": "staff:021",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 9,
+      "ageBand": 60
+    },
+    {
+      "id": "staff:022",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 10,
+      "ageBand": 60
+    },
+    {
+      "id": "staff:023",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 11,
+      "ageBand": 60
+    },
+    {
+      "id": "staff:024",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 12,
+      "ageBand": 60
+    },
+    {
+      "id": "staff:025",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 13,
+      "ageBand": 60
+    },
+    {
+      "id": "staff:026",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 14,
+      "ageBand": 60
+    },
+    {
+      "id": "staff:027",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 15,
+      "ageBand": 60
+    },
+    {
+      "id": "staff:028",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 16,
+      "ageBand": 60
+    },
+    {
+      "id": "staff:029",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 17,
+      "ageBand": 60
+    },
+    {
+      "id": "staff:030",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 12,
+      "ageBand": 70
+    },
+    {
+      "id": "staff:031",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 13,
+      "ageBand": 70
+    },
+    {
+      "id": "staff:032",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 14,
+      "ageBand": 70
+    },
+    {
+      "id": "staff:033",
+      "kind": "staff",
+      "asset": "staff-00",
+      "cell": 15,
+      "ageBand": 70
+    },
+    {
+      "id": "staff:034",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 18,
+      "ageBand": 70
+    },
+    {
+      "id": "staff:035",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 19,
+      "ageBand": 70
+    },
+    {
+      "id": "staff:036",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 20,
+      "ageBand": 70
+    },
+    {
+      "id": "staff:037",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 21,
+      "ageBand": 70
+    },
+    {
+      "id": "staff:038",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 22,
+      "ageBand": 70
+    },
+    {
+      "id": "staff:039",
+      "kind": "staff",
+      "asset": "staff-01",
+      "cell": 23,
+      "ageBand": 70
+    }
+  ]
+}

@@ -81,7 +81,9 @@ static func describe(person: Dictionary = {}) -> Dictionary:
 	var reference := _age(person.get("appearanceAge"))
 	var current := _age(person.get("age"))
 	var band := (int((seed >> 8) % 4) if reference < 0 else clampi(int(floor((reference-40)/10.0)),0,3)) if origin=="staff" else -1
-	var cell := band*4+seed%4 if origin=="staff" else seed%32
+	var requested_bank: Variant = person.get("appearanceBankVersion")
+	var bank: int = 2 if (requested_bank is int or requested_bank is float) and requested_bank==2 else 1
+	var cell := band*(10 if bank==2 else 4)+seed%(10 if bank==2 else 4) if origin=="staff" else seed%(160 if bank==2 else 32)
 	var face_width := .965+_next(state)*.07
 	var eye_spacing := -.010+_next(state)*.020
 	var nose_width := -.012+_next(state)*.024
@@ -94,13 +96,19 @@ static func describe(person: Dictionary = {}) -> Dictionary:
 	var shirt := _next(state)
 	var mirror := _next(state)>=.5
 	var visual_age := current if current>=0 else reference if reference>=0 else 45+band*10 if origin=="staff" else 25
-	return {"version":VERSION,"appearanceId":appearance_id,"seed":seed,"origin":origin,"atlas":"staff" if origin=="staff" else "players","cell":cell,"ageBasis":"current-age" if current>=0 else "appearance-reference" if reference>=0 else "illustrative","referenceAge":reference if reference>=0 else null,"ageBand":band if band>=0 else null,"maturity":clampf((visual_age-30)/50.0,0,1),"faceWidth":face_width,"eyeSpacing":eye_spacing,"noseWidth":nose_width,"jawWidth":jaw_width,"zoom":zoom,"cropX":crop_x,"cropY":crop_y,"saturation":saturation,"exposure":exposure,"shirt":shirt,"mirror":mirror}
+	var result := {"version":VERSION,"appearanceId":appearance_id,"seed":seed,"origin":origin,"atlas":"staff" if origin=="staff" else "players","cell":cell,"ageBasis":"current-age" if current>=0 else "appearance-reference" if reference>=0 else "illustrative","referenceAge":reference if reference>=0 else null,"ageBand":band if band>=0 else null,"maturity":clampf((visual_age-30)/50.0,0,1),"faceWidth":face_width,"eyeSpacing":eye_spacing,"noseWidth":nose_width,"jawWidth":jaw_width,"zoom":zoom,"cropX":crop_x,"cropY":crop_y,"saturation":saturation,"exposure":exposure,"shirt":shirt,"mirror":mirror}
+	if bank==2:
+		var within := cell%10
+		var new_staff := origin=="staff" and within>=4
+		var path: String = ("res://assets/editorial/portraits-%d.webp" % (cell/16) if cell<32 else "res://art/regen-bank-v2/players-%02d.png" % (cell/16)) if origin=="player" else "res://art/regen-bank-v2/staff-01.png" if new_staff else "res://art/regen-staff-atlas.png"
+		result.merge({"version":2,"bankVersion":2,"baseId":"%s:%03d" % [result.atlas,cell],"assetPath":path,"columns":6 if new_staff else 4,"rows":4,"assetCell":cell%16 if origin=="player" else band*(6 if new_staff else 4)+(within-4 if new_staff else within)},true)
+	return result
 
 static func texture(person: Dictionary = {}) -> Texture2D:
 	var profile := describe(person)
-	var cache_key := "%s:%d" % [profile.atlas,profile.cell]
+	var cache_key := "%s:%s:%d" % [profile.get("bankVersion",1),profile.atlas,profile.cell]
 	if _textures.has(cache_key): return _textures[cache_key]
-	var path := "res://art/regen-staff-atlas.png" if profile.atlas=="staff" else "res://assets/editorial/portraits-%d.webp" % (int(profile.cell)/16)
+	var path: String = profile.get("assetPath","res://art/regen-staff-atlas.png" if profile.atlas=="staff" else "res://assets/editorial/portraits-%d.webp" % (int(profile.cell)/16))
 	if not ResourceLoader.exists(path): return null
 	var source := load(path) as Texture2D
 	if source==null: return null
@@ -108,13 +116,15 @@ static func texture(person: Dictionary = {}) -> Texture2D:
 	# atlas. Crop/resize are native Image operations, once per base cell.
 	var image := source.get_image()
 	if image==null or image.is_empty(): return null
-	var index := int(profile.cell)%16
-	var column := index%4
-	var row := int(index/4)
-	var left := int(floor(image.get_width()*column/4.0))
-	var top := int(floor(image.get_height()*row/4.0))
-	var right := int(floor(image.get_width()*(column+1)/4.0))
-	var bottom := int(floor(image.get_height()*(row+1)/4.0))
+	var index: int = int(profile.get("assetCell",int(profile.cell)%16))
+	var columns: int = int(profile.get("columns",4))
+	var rows: int = int(profile.get("rows",4))
+	var column := index%columns
+	var row := int(index/columns)
+	var left := int(floor(image.get_width()*column/float(columns)))
+	var top := int(floor(image.get_height()*row/float(rows)))
+	var right := int(floor(image.get_width()*(column+1)/float(columns)))
+	var bottom := int(floor(image.get_height()*(row+1)/float(rows)))
 	var face := image.get_region(Rect2i(left,top,right-left,bottom-top))
 	face.resize(256,256,Image.INTERPOLATE_LANCZOS)
 	var crop := ImageTexture.create_from_image(face)
