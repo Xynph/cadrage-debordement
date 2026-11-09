@@ -106,13 +106,15 @@ function aiRosterPromote(c,slot,emergency=false){
 function aiRosterYouthIntake(){
  if(!aiRosterActive()||S.aiRoster.lastIntake===S.season)return false;
  S.aiRoster.lastIntake=S.season;
+ // L’accueil suit le changement d’année, mais le vieillissement clôt la saison précédente.
+ const completedSeason=S.aiRoster.academyAgingVersion===1?S.season-1:S.season;
  for(const c of S.clubs){
   if(c.id===S.club)continue;
   const a=aiRosterAcademy(c),info=worldActive()?worldClub(c.id):null;
   // Les 15 postes recoivent chaque annee un nouvel Espoir. Les profils precedents
   // conservent leur suivi jusqu'a 21 ans, sauf promotion professionnelle.
   for(const p of a.players){
-   ageDevelopmentPlayer(p);
+   ageDevelopmentPlayer(p,completedSeason);
    growPlayer(p,(.65+Math.max(0,(info?.facilities||2)-2)*.08)*ageGrowth(p),false);
   }
   a.players=a.players.filter(p=>p.age<=21&&p.age<p.dev.retireAge);

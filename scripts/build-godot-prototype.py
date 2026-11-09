@@ -16,7 +16,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "native/godot"
-BUILD_VERSION = "0.7.6"
+BUILD_VERSION = "0.7.7"
 
 
 def digest(path):

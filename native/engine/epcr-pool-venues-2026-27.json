@@ -1,0 +1,609 @@
+{
+  "schema": "epcr-published-pool-venues-v1",
+  "season": "2026-27",
+  "sources": {
+    "champions": {
+      "url": "https://www.epcrugby.com/champions-cup/matches",
+      "collectedAt": "2026-11-08T23:29:47.425222+00:00",
+      "sha256": "5fd5de0ec3089d3706562a3d84cec53dbb1dc5282359c166ad08ef2d63cd0f52"
+    },
+    "challenge": {
+      "url": "https://www.epcrugby.com/challenge-cup/matches",
+      "collectedAt": "2026-11-08T23:29:47.425222+00:00",
+      "sha256": "87b48f4eba89aa12ec15f59653ca6fe0842b21b420ce31b81f70ae1574d7d8b5"
+    }
+  },
+  "venues": {
+    "champions:2026:league:2:0:0": {
+      "sourceFixtureId": 293317,
+      "date": "2026-10-16",
+      "homeId": 33,
+      "awayId": 1,
+      "venue": "Kingsholm Stadium"
+    },
+    "champions:2026:league:0:0:0": {
+      "sourceFixtureId": 293318,
+      "date": "2026-10-17",
+      "homeId": 6,
+      "awayId": 40,
+      "venue": "Stade Marcel-Michelin"
+    },
+    "champions:2026:league:0:0:1": {
+      "sourceFixtureId": 293319,
+      "date": "2026-10-17",
+      "homeId": 38,
+      "awayId": 44,
+      "venue": "CorpAcq Stadium"
+    },
+    "champions:2026:league:1:0:0": {
+      "sourceFixtureId": 293320,
+      "date": "2026-10-17",
+      "homeId": 43,
+      "awayId": 39,
+      "venue": "Dexcom Stadium"
+    },
+    "champions:2026:league:1:0:1": {
+      "sourceFixtureId": 293321,
+      "date": "2026-10-17",
+      "homeId": 2,
+      "awayId": 55,
+      "venue": "Stade Marcel Deflandre"
+    },
+    "champions:2026:league:2:0:1": {
+      "sourceFixtureId": 293322,
+      "date": "2026-10-17",
+      "homeId": 52,
+      "awayId": 31,
+      "venue": "DHL Stadium"
+    },
+    "champions:2026:league:2:0:2": {
+      "sourceFixtureId": 293323,
+      "date": "2026-10-17",
+      "homeId": 41,
+      "awayId": 10,
+      "venue": "SuperValu Páirc Uí Chaoimh"
+    },
+    "champions:2026:league:3:0:0": {
+      "sourceFixtureId": 293324,
+      "date": "2026-10-17",
+      "homeId": 30,
+      "awayId": 8,
+      "venue": "The Rec"
+    },
+    "champions:2026:league:3:0:1": {
+      "sourceFixtureId": 293325,
+      "date": "2026-10-17",
+      "homeId": 53,
+      "awayId": 11,
+      "venue": "Loftus Versfeld"
+    },
+    "champions:2026:league:0:0:2": {
+      "sourceFixtureId": 293326,
+      "date": "2026-10-18",
+      "homeId": 4,
+      "awayId": 35,
+      "venue": "Stade du Hameau"
+    },
+    "champions:2026:league:1:0:2": {
+      "sourceFixtureId": 293327,
+      "date": "2026-10-18",
+      "homeId": 0,
+      "awayId": 32,
+      "venue": "Stadium de Toulouse"
+    },
+    "champions:2026:league:3:0:2": {
+      "sourceFixtureId": 293328,
+      "date": "2026-10-18",
+      "homeId": 37,
+      "awayId": 46,
+      "venue": "DPD Stadium at Franklin's Gardens"
+    },
+    "champions:2026:league:0:1:0": {
+      "sourceFixtureId": 293329,
+      "date": "2026-12-11",
+      "homeId": 44,
+      "awayId": 4,
+      "venue": "Scotstoun Stadium"
+    },
+    "champions:2026:league:3:1:0": {
+      "sourceFixtureId": 293330,
+      "date": "2026-12-11",
+      "homeId": 11,
+      "awayId": 37,
+      "venue": "Stade Jean Bouin"
+    },
+    "champions:2026:league:0:1:1": {
+      "sourceFixtureId": 293331,
+      "date": "2026-12-12",
+      "homeId": 35,
+      "awayId": 6,
+      "venue": "Mattioli Woods Welford Road"
+    },
+    "champions:2026:league:0:1:2": {
+      "sourceFixtureId": 293332,
+      "date": "2026-12-12",
+      "homeId": 40,
+      "awayId": 38,
+      "venue": "Laya Arena"
+    },
+    "champions:2026:league:1:1:0": {
+      "sourceFixtureId": 293333,
+      "date": "2026-12-12",
+      "homeId": 39,
+      "awayId": 2,
+      "venue": "StoneX Stadium"
+    },
+    "champions:2026:league:1:1:1": {
+      "sourceFixtureId": 293334,
+      "date": "2026-12-12",
+      "homeId": 55,
+      "awayId": 0,
+      "venue": "10bet Ellis Park"
+    },
+    "champions:2026:league:2:1:0": {
+      "sourceFixtureId": 293335,
+      "date": "2026-12-12",
+      "homeId": 31,
+      "awayId": 41,
+      "venue": "Ashton Gate"
+    },
+    "champions:2026:league:3:1:1": {
+      "sourceFixtureId": 293336,
+      "date": "2026-12-12",
+      "homeId": 46,
+      "awayId": 30,
+      "venue": "Cardiff Arms Park"
+    },
+    "champions:2026:league:3:1:2": {
+      "sourceFixtureId": 293337,
+      "date": "2026-12-12",
+      "homeId": 8,
+      "awayId": 53,
+      "venue": "Septeo Stadium"
+    },
+    "champions:2026:league:1:1:2": {
+      "sourceFixtureId": 293338,
+      "date": "2026-12-13",
+      "homeId": 32,
+      "awayId": 43,
+      "venue": "Sandy Park"
+    },
+    "champions:2026:league:2:1:1": {
+      "sourceFixtureId": 293339,
+      "date": "2026-12-13",
+      "homeId": 10,
+      "awayId": 33,
+      "venue": "Plenitude Arena"
+    },
+    "champions:2026:league:2:1:2": {
+      "sourceFixtureId": 293340,
+      "date": "2026-12-13",
+      "homeId": 1,
+      "awayId": 52,
+      "venue": "Stade Chaban-Delmas"
+    },
+    "champions:2026:league:0:2:0": {
+      "sourceFixtureId": 293341,
+      "date": "2027-01-08",
+      "homeId": 44,
+      "awayId": 35,
+      "venue": "Scotstoun Stadium"
+    },
+    "champions:2026:league:0:2:1": {
+      "sourceFixtureId": 293342,
+      "date": "2027-01-09",
+      "homeId": 40,
+      "awayId": 4,
+      "venue": "Laya Arena"
+    },
+    "champions:2026:league:1:2:0": {
+      "sourceFixtureId": 293343,
+      "date": "2027-01-09",
+      "homeId": 43,
+      "awayId": 0,
+      "venue": "Dexcom Stadium"
+    },
+    "champions:2026:league:1:2:1": {
+      "sourceFixtureId": 293344,
+      "date": "2027-01-09",
+      "homeId": 32,
+      "awayId": 2,
+      "venue": "Sandy Park"
+    },
+    "champions:2026:league:2:2:0": {
+      "sourceFixtureId": 293345,
+      "date": "2027-01-09",
+      "homeId": 33,
+      "awayId": 52,
+      "venue": "Kingsholm Stadium"
+    },
+    "champions:2026:league:3:2:0": {
+      "sourceFixtureId": 293346,
+      "date": "2027-01-09",
+      "homeId": 8,
+      "awayId": 37,
+      "venue": "Septeo Stadium"
+    },
+    "champions:2026:league:3:2:1": {
+      "sourceFixtureId": 293347,
+      "date": "2027-01-09",
+      "homeId": 11,
+      "awayId": 46,
+      "venue": "Stade Jean Bouin"
+    },
+    "champions:2026:league:3:2:2": {
+      "sourceFixtureId": 293348,
+      "date": "2027-01-09",
+      "homeId": 53,
+      "awayId": 30,
+      "venue": "Loftus Versfeld"
+    },
+    "champions:2026:league:0:2:2": {
+      "sourceFixtureId": 293349,
+      "date": "2027-01-10",
+      "homeId": 38,
+      "awayId": 6,
+      "venue": "CorpAcq Stadium"
+    },
+    "champions:2026:league:1:2:2": {
+      "sourceFixtureId": 293350,
+      "date": "2027-01-10",
+      "homeId": 39,
+      "awayId": 55,
+      "venue": "StoneX Stadium"
+    },
+    "champions:2026:league:2:2:1": {
+      "sourceFixtureId": 293351,
+      "date": "2027-01-10",
+      "homeId": 10,
+      "awayId": 31,
+      "venue": null
+    },
+    "champions:2026:league:2:2:2": {
+      "sourceFixtureId": 293352,
+      "date": "2027-01-10",
+      "homeId": 1,
+      "awayId": 41,
+      "venue": "Stade Chaban-Delmas"
+    },
+    "champions:2026:league:3:3:0": {
+      "sourceFixtureId": 293353,
+      "date": "2027-01-15",
+      "homeId": 37,
+      "awayId": 53,
+      "venue": "DPD Stadium at Franklin's Gardens"
+    },
+    "champions:2026:league:3:3:1": {
+      "sourceFixtureId": 293354,
+      "date": "2027-01-15",
+      "homeId": 46,
+      "awayId": 8,
+      "venue": "Cardiff Arms Park"
+    },
+    "champions:2026:league:0:3:0": {
+      "sourceFixtureId": 293355,
+      "date": "2027-01-16",
+      "homeId": 6,
+      "awayId": 44,
+      "venue": "Stade Marcel-Michelin"
+    },
+    "champions:2026:league:0:3:1": {
+      "sourceFixtureId": 293356,
+      "date": "2027-01-16",
+      "homeId": 35,
+      "awayId": 40,
+      "venue": "Mattioli Woods Welford Road"
+    },
+    "champions:2026:league:0:3:2": {
+      "sourceFixtureId": 293357,
+      "date": "2027-01-16",
+      "homeId": 4,
+      "awayId": 38,
+      "venue": "Stade du Hameau"
+    },
+    "champions:2026:league:1:3:0": {
+      "sourceFixtureId": 293358,
+      "date": "2027-01-16",
+      "homeId": 2,
+      "awayId": 43,
+      "venue": "Stade Marcel Deflandre"
+    },
+    "champions:2026:league:1:3:1": {
+      "sourceFixtureId": 293359,
+      "date": "2027-01-16",
+      "homeId": 55,
+      "awayId": 32,
+      "venue": "10bet Ellis Park"
+    },
+    "champions:2026:league:2:3:0": {
+      "sourceFixtureId": 293360,
+      "date": "2027-01-16",
+      "homeId": 41,
+      "awayId": 33,
+      "venue": "Thomond Park"
+    },
+    "champions:2026:league:2:3:1": {
+      "sourceFixtureId": 293361,
+      "date": "2027-01-16",
+      "homeId": 31,
+      "awayId": 1,
+      "venue": "Ashton Gate"
+    },
+    "champions:2026:league:2:3:2": {
+      "sourceFixtureId": 293362,
+      "date": "2027-01-16",
+      "homeId": 52,
+      "awayId": 10,
+      "venue": "DHL Stadium"
+    },
+    "champions:2026:league:1:3:2": {
+      "sourceFixtureId": 293363,
+      "date": "2027-01-17",
+      "homeId": 0,
+      "awayId": 39,
+      "venue": "Stade Ernest Wallon"
+    },
+    "champions:2026:league:3:3:2": {
+      "sourceFixtureId": 293364,
+      "date": "2027-01-17",
+      "homeId": 30,
+      "awayId": 11,
+      "venue": "The Rec"
+    },
+    "challenge:2026:league:0:0:0": {
+      "sourceFixtureId": 293380,
+      "date": "2026-10-16",
+      "homeId": 47,
+      "awayId": 12,
+      "venue": "Rodney Parade"
+    },
+    "challenge:2026:league:2:0:0": {
+      "sourceFixtureId": 293381,
+      "date": "2026-10-16",
+      "homeId": 45,
+      "awayId": 3,
+      "venue": "Hive Stadium"
+    },
+    "challenge:2026:league:0:0:1": {
+      "sourceFixtureId": 293382,
+      "date": "2026-10-17",
+      "homeId": 51,
+      "awayId": 42,
+      "venue": "Stadio Sergio Lanfranchi"
+    },
+    "challenge:2026:league:1:0:0": {
+      "sourceFixtureId": 293383,
+      "date": "2026-10-17",
+      "homeId": 49,
+      "awayId": 36,
+      "venue": "Parc y Scarlets"
+    },
+    "challenge:2026:league:1:0:1": {
+      "sourceFixtureId": 293384,
+      "date": "2026-10-17",
+      "homeId": 7,
+      "awayId": 54,
+      "venue": "Matmut Stadium"
+    },
+    "challenge:2026:league:2:0:1": {
+      "sourceFixtureId": 293385,
+      "date": "2026-10-17",
+      "homeId": 57,
+      "awayId": 48,
+      "venue": "Avchala Stadium"
+    },
+    "challenge:2026:league:0:0:2": {
+      "sourceFixtureId": 293386,
+      "date": "2026-10-18",
+      "homeId": 5,
+      "awayId": 56,
+      "venue": "Stade Jean Dauger"
+    },
+    "challenge:2026:league:1:0:2": {
+      "sourceFixtureId": 293387,
+      "date": "2026-10-18",
+      "homeId": 9,
+      "awayId": 50,
+      "venue": "Stade Pierre-Fabre"
+    },
+    "challenge:2026:league:2:0:2": {
+      "sourceFixtureId": 293388,
+      "date": "2026-10-18",
+      "homeId": 34,
+      "awayId": 13,
+      "venue": "Twickenham Stoop"
+    },
+    "challenge:2026:league:0:1:0": {
+      "sourceFixtureId": 293389,
+      "date": "2026-12-12",
+      "homeId": 42,
+      "awayId": 5,
+      "venue": "Affidea Stadium"
+    },
+    "challenge:2026:league:1:1:0": {
+      "sourceFixtureId": 293390,
+      "date": "2026-12-12",
+      "homeId": 50,
+      "awayId": 7,
+      "venue": "Stadio Monigo"
+    },
+    "challenge:2026:league:1:1:1": {
+      "sourceFixtureId": 293391,
+      "date": "2026-12-12",
+      "homeId": 54,
+      "awayId": 49,
+      "venue": "Hollywoodbets Kings Park"
+    },
+    "challenge:2026:league:1:1:2": {
+      "sourceFixtureId": 293392,
+      "date": "2026-12-12",
+      "homeId": 36,
+      "awayId": 9,
+      "venue": "Kingston Park"
+    },
+    "challenge:2026:league:2:1:0": {
+      "sourceFixtureId": 293393,
+      "date": "2026-12-12",
+      "homeId": 3,
+      "awayId": 57,
+      "venue": "Stade Felix Mayol"
+    },
+    "challenge:2026:league:2:1:1": {
+      "sourceFixtureId": 293394,
+      "date": "2026-12-12",
+      "homeId": 48,
+      "awayId": 34,
+      "venue": "St Helen's"
+    },
+    "challenge:2026:league:0:1:1": {
+      "sourceFixtureId": 293395,
+      "date": "2026-12-13",
+      "homeId": 56,
+      "awayId": 47,
+      "venue": "St Helen's"
+    },
+    "challenge:2026:league:0:1:2": {
+      "sourceFixtureId": 293396,
+      "date": "2026-12-13",
+      "homeId": 12,
+      "awayId": 51,
+      "venue": "Stade Aimé Giral"
+    },
+    "challenge:2026:league:2:1:2": {
+      "sourceFixtureId": 293397,
+      "date": "2026-12-13",
+      "homeId": 13,
+      "awayId": 45,
+      "venue": "Stade de la Rabine"
+    },
+    "challenge:2026:league:0:2:0": {
+      "sourceFixtureId": 293398,
+      "date": "2027-01-08",
+      "homeId": 47,
+      "awayId": 5,
+      "venue": "Rodney Parade"
+    },
+    "challenge:2026:league:1:2:0": {
+      "sourceFixtureId": 293399,
+      "date": "2027-01-08",
+      "homeId": 36,
+      "awayId": 50,
+      "venue": "Kingston Park"
+    },
+    "challenge:2026:league:1:2:1": {
+      "sourceFixtureId": 293400,
+      "date": "2027-01-09",
+      "homeId": 49,
+      "awayId": 7,
+      "venue": "Parc y Scarlets"
+    },
+    "challenge:2026:league:1:2:2": {
+      "sourceFixtureId": 293401,
+      "date": "2027-01-09",
+      "homeId": 54,
+      "awayId": 9,
+      "venue": "Hollywoodbets Kings Park"
+    },
+    "challenge:2026:league:2:2:0": {
+      "sourceFixtureId": 293402,
+      "date": "2027-01-09",
+      "homeId": 45,
+      "awayId": 34,
+      "venue": "Hive Stadium"
+    },
+    "challenge:2026:league:2:2:1": {
+      "sourceFixtureId": 293403,
+      "date": "2027-01-09",
+      "homeId": 3,
+      "awayId": 48,
+      "venue": "Stade Felix Mayol"
+    },
+    "challenge:2026:league:0:2:1": {
+      "sourceFixtureId": 293404,
+      "date": "2027-01-10",
+      "homeId": 51,
+      "awayId": 56,
+      "venue": "Stadio Sergio Lanfranchi"
+    },
+    "challenge:2026:league:0:2:2": {
+      "sourceFixtureId": 293405,
+      "date": "2027-01-10",
+      "homeId": 12,
+      "awayId": 42,
+      "venue": "Stade Aimé Giral"
+    },
+    "challenge:2026:league:2:2:2": {
+      "sourceFixtureId": 293406,
+      "date": "2027-01-10",
+      "homeId": 13,
+      "awayId": 57,
+      "venue": "Stade de la Rabine"
+    },
+    "challenge:2026:league:2:3:0": {
+      "sourceFixtureId": 293407,
+      "date": "2027-01-15",
+      "homeId": 34,
+      "awayId": 3,
+      "venue": "Twickenham Stoop"
+    },
+    "challenge:2026:league:0:3:0": {
+      "sourceFixtureId": 293408,
+      "date": "2027-01-16",
+      "homeId": 5,
+      "awayId": 51,
+      "venue": "Stade Jean Dauger"
+    },
+    "challenge:2026:league:0:3:1": {
+      "sourceFixtureId": 293409,
+      "date": "2027-01-16",
+      "homeId": 42,
+      "awayId": 47,
+      "venue": "Affidea Stadium"
+    },
+    "challenge:2026:league:1:3:0": {
+      "sourceFixtureId": 293410,
+      "date": "2027-01-16",
+      "homeId": 50,
+      "awayId": 54,
+      "venue": "Stadio Monigo"
+    },
+    "challenge:2026:league:1:3:1": {
+      "sourceFixtureId": 293411,
+      "date": "2027-01-16",
+      "homeId": 9,
+      "awayId": 49,
+      "venue": "Stade Pierre-Fabre"
+    },
+    "challenge:2026:league:2:3:1": {
+      "sourceFixtureId": 293412,
+      "date": "2027-01-16",
+      "homeId": 48,
+      "awayId": 13,
+      "venue": "St Helen's"
+    },
+    "challenge:2026:league:0:3:2": {
+      "sourceFixtureId": 293413,
+      "date": "2027-01-17",
+      "homeId": 56,
+      "awayId": 12,
+      "venue": "St Helen's"
+    },
+    "challenge:2026:league:1:3:2": {
+      "sourceFixtureId": 293414,
+      "date": "2027-01-17",
+      "homeId": 7,
+      "awayId": 36,
+      "venue": "Matmut Stadium"
+    },
+    "challenge:2026:league:2:3:2": {
+      "sourceFixtureId": 293415,
+      "date": "2027-01-17",
+      "homeId": 57,
+      "awayId": 45,
+      "venue": "Avchala Stadium"
+    }
+  },
+  "missing": [
+    "champions:2026:league:2:2:1"
+  ]
+}

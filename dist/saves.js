@@ -243,6 +243,7 @@ if(s.aiRoster!==undefined){
   (a.lastRecruitment===null||typeof a.lastRecruitment==='string'&&(france?/^\d{1,5}:(0|15)$/:/^\d{1,5}:(0|13)$/).test(a.lastRecruitment))&&
   saveArray(a.events,AI_ROSTER_MAX_EVENTS)&&saveArray(a.reports,AI_ROSTER_MAX_REPORTS)&&
   saveArray(a.academies,maxClub)&&a.academies.length===maxClub);
+ saveCheck(a.academyAgingVersion===undefined||(world&&a.academyAgingVersion===1),'Version du vieillissement des centres invalide.');
  const reportKeys=new Set();
  for(const r of a.reports){
   const key=r.season+':'+r.clubId;
