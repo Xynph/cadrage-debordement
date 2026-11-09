@@ -26,3 +26,6 @@ La concurrence est déclenchée explicitement dans l'atelier de négociation et 
 - Aucun test Windows ni nouveau règlement officiel revendiqué. Aucun nouveau champ de sauvegarde : consultations et négociations ne migrent pas les anciennes parties.
 
 La recette UI historique `tests/native-interclub-market.gd` ciblait le premier parcours à achat direct (confirmation dès le clic Approcher). Ce nouveau parcours passe par les champs et un devis ; `tests/deepen-market-ui.gd` reçoit désormais le dialogue réel et le vrai worker.
+
+## Correction de la borne salariale après revue indépendante
+Un salaire source de 100 000 €/semaine provoque une demande à105 000€. Le plafonnement des offres IA à100 000€ ne doit jamais faire accepter une offre inférieure à cette demande. Les IA sont désormais exclues si leur offre plafonnée reste sous le seuil du joueur ; le devis humain annonce clairement l'impossibilité au-delà du plafond. Tests de sources100 000 et95 239€ : aucune offre ni gagnant et clôture refusée sans mutation. À95 238€, demande100 000€ : une IA solvable peut encore signer réellement au plafond, avec débit/crédit et contrat valides. Suite finale ciblée :17/17 tests Node réussis.

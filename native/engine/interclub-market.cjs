@@ -22,7 +22,8 @@ function factory(){
   const releaseReason=reason;
   if(!reason&&professionalPlaces(own,S)<=0)reason='Effectif acheteur complet';
   else if(own.cash<fee+400000)reason='Réserve de trésorerie de 400 000 € requise après indemnité';
-  else if(salary>100000||own.cash-fee-400000<salary*Math.min(8,Math.max(0,weeks-week())))reason='Trésorerie insuffisante pour provisionner les huit prochaines semaines du nouveau salaire';
+  else if(salary>100000)reason='La demande salariale dépasse le plafond de 100 000 € par semaine';
+  else if(own.cash-fee-400000<salary*Math.min(8,Math.max(0,weeks-week())))reason='Trésorerie insuffisante pour provisionner les huit prochaines semaines du nouveau salaire';
   return {id:p.id,name:p.name,clubId:c.id,club:c.name,pos:p.pos,age:p.age,contractEnd,sourceSalary,fee,salary,available:!reason,reason,releaseReason};
  }
  function project(){
@@ -57,11 +58,11 @@ function factory(){
    if(c.id===S.club||c.id===seller.id)continue;
    const need=publicNeed(c,player);if(need<=0)continue;
    const fee=Math.ceil(q.fee*(1+Math.min(5,need)*.04)/1000)*1000,salary=Math.min(100000,Math.ceil(q.salary*(1+Math.min(5,need)*.025)/100)*100);
-   if(!affordable(c,fee,salary,true))continue;
+   if(salary<q.salary||!affordable(c,fee,salary,true))continue;
    offers.push({clubId:c.id,club:c.name,fee,salary,need,human:false});
   }
   offers.sort((a,b)=>b.salary-a.salary||b.fee-a.fee||b.need-a.need||a.clubId-b.clubId);
-  return {playerId:player.id,sellerId:seller.id,context:now,seller:sellerResponse,player:playerResponse,humanReady,humanReason:humanReady?'Offre recevable.':!affordable(S.clubs[S.club],p.fee,p.salary)?'Effectif ou provision financière insuffisants.':'Indemnité ou salaire refusé.',offers,winner:offers[0]||null,notice:'Offres fictives recalculées à la clôture : salaire, indemnité, besoin public et identifiant départagent les clubs. Aucune transaction avant confirmation.'};
+  return {playerId:player.id,sellerId:seller.id,context:now,seller:sellerResponse,player:playerResponse,humanReady,humanReason:humanReady?'Offre recevable.':q.salary>100000?'La demande du joueur dépasse le plafond salarial de 100 000 € ; aucun accord possible.':!affordable(S.clubs[S.club],p.fee,p.salary)?'Effectif ou provision financière insuffisants.':'Indemnité ou salaire refusé.',offers,winner:offers[0]||null,notice:'Offres fictives recalculées à la clôture : salaire, indemnité, besoin public et identifiant départagent les clubs. Aucune transaction avant confirmation.'};
  }
  function auction(p){
   check(shape(p,['playerId','sellerId','fee','salary','sourceSalary','contractEnd','context','expectedWinner','expectedFee','expectedSalary','confirmed'])&&p.confirmed===true&&integer(p.expectedWinner,0,S.clubs.length-1)&&integer(p.expectedFee,20000,1000000000)&&integer(p.expectedSalary,1000,100000),'clôture invalide');

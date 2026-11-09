@@ -16,3 +16,17 @@ test('un rival devenu insolvable rend le devis concurrent périmé sans transact
  h.run('const rival2=S.clubs.find(c=>c.id!==S.club&&c.id!==seller);rival2.cash=100000000;rival2.players.forEach(q=>q.salary=1000);rival2.players.filter(q=>q.fam===S.clubs[seller].players.find(p=>p.id===id).fam).forEach(q=>q.contractEnd=S.season);');
  const q=h.go('interclub_negotiate',r).interclubNegotiation;a.notEqual(q.winner.clubId,0);h.ctx.rivalId=q.winner.clubId;h.run('S.clubs[rivalId].cash=0');const before=h.run('JSON.stringify(S)'),rng=h.randomState();a.throws(()=>h.go('interclub_auction',{...r,expectedWinner:q.winner.clubId,expectedFee:q.winner.fee,expectedSalary:q.winner.salary,confirmed:true}),/périmé/);a.equal(h.run('JSON.stringify(S)'),before);a.deepEqual(h.randomState(),rng);
 });
+test('plafond salarial: aucune IA ne gagne sous la demande du joueur',()=>{
+ for(const source of [100000,95239]){
+  const h=office(),p=target(h);h.ctx.id=p.id;h.ctx.seller=p.clubId;h.ctx.source=source;
+  h.run('S.clubs[seller].players.find(p=>p.id===id).salary=source;const rich=S.clubs.find(c=>c.id!==S.club&&c.id!==seller);rich.cash=100000000;rich.players.forEach(q=>q.salary=1000);rich.players.filter(q=>q.fam===S.clubs[seller].players.find(p=>p.id===id).fam).forEach(q=>q.contractEnd=S.season);validateCareer(S)');
+  const q0=h.project().candidates.find(q=>q.id===p.id),r={...request(h,q0),salary:100000},before=h.run('JSON.stringify(S)'),q=h.go('interclub_negotiate',r).interclubNegotiation;
+  a.equal(q.player.accepted,false);a.equal(q.offers.length,0);a.equal(q.winner,null);a.match(q.humanReason,/plafond/);
+  a.throws(()=>h.go('interclub_auction',{...r,expectedWinner:1,expectedFee:q0.fee,expectedSalary:100000,confirmed:true}));a.equal(h.run('JSON.stringify(S)'),before);
+ }
+});
+test('juste sous la borne: une IA solvable peut offrir 100000 et payer réellement',()=>{
+ const h=office(),p=target(h);h.ctx.id=p.id;h.ctx.seller=p.clubId;
+ h.run('S.clubs[seller].players.find(p=>p.id===id).salary=95238;const rich2=S.clubs.find(c=>c.id!==S.club&&c.id!==seller);rich2.cash=100000000;rich2.players.forEach(q=>q.salary=1000);rich2.players.filter(q=>q.fam===S.clubs[seller].players.find(p=>p.id===id).fam).forEach(q=>q.contractEnd=S.season);validateCareer(S)');
+ const q0=h.project().candidates.find(q=>q.id===p.id),r=request(h,q0),q=h.go('interclub_negotiate',r).interclubNegotiation;a(q.winner);a(q.winner.salary>=q.player.counter);const before=JSON.parse(h.run('JSON.stringify(S.clubs.map(c=>c.cash))'));h.go('interclub_auction',{...r,expectedWinner:q.winner.clubId,expectedFee:q.winner.fee,expectedSalary:q.winner.salary,confirmed:true});a.equal(h.run('S.clubs['+q.winner.clubId+'].cash'),before[q.winner.clubId]-q.winner.fee);a.equal(h.run('S.clubs['+q.winner.clubId+'].players.find(p=>p.id===id).salary'),100000);a.equal(h.run('validateCareer(S);true'),true);
+});
