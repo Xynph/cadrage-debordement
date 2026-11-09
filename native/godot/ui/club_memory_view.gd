@@ -172,6 +172,8 @@ static func build(app: Control) -> Control:
 	if nationale: notice = "Les rangs de phase régulière, les mouvements et le barrage Pro D2 / Nationale sont conservés."
 	if champ: notice = "Les rangs de phase régulière, les titres et les mouvements archivés sont présentés ici."
 	list.add_child(G.wrap("Identités du pack actuel · 15 dernières saisons archivées au maximum. "+notice,13))
+	list.add_child(preload("res://ui/performance_analysis_view.gd").build(app))
+	list.add_child(G.separator())
 	_comparison(list, app, data.seasons)
 	list.add_child(G.separator())
 	list.add_child(G.section("La chronologie du club"))
