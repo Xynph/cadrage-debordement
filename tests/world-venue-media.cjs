@@ -100,7 +100,7 @@ test('identités de compétition : dossier de création, affichage et retour à 
  const ok=(command,payload={})=>{const r=request(command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;};
  const initial=ok('snapshot'),overview=initial.meta.champCatalogue.find(c=>c.id===30).startingRoster;
  assert.ok(overview.average>0&&overview.forwards>0&&overview.backs>0);
- assert.ok(overview.strengthDetail?.count>0&&overview.weaknessDetail?.count>0);
+ assert.ok(overview.strengthDetail?.starters.rank>0&&overview.weaknessDetail?.reserves.rank>0);
  const toulouse=initial.meta.champCatalogue.find(c=>c.id===0);
  assert.equal(toulouse.history.founded,1907);
  assert.ok(toulouse.history.bio.includes('jeu de mouvement'));
@@ -132,21 +132,31 @@ test('identités de compétition : dossier de création, affichage et retour à 
  assert.equal(overview.forwards+overview.backs,players.length);
  assert.equal(overview.average,Math.round(players.reduce((n,p)=>n+p.rating,0)/players.length*10)/10);
  const positions={
-  Piliers:['Pilier gauche','Pilier droit'],Talonneurs:['Talonneur'],'Deuxièmes lignes':['Deuxième ligne'],
-  'Troisièmes lignes':['Troisième ligne','Numéro 8'],'Demis de mêlée':['Demi de mêlée'],
-  'Demis d’ouverture':['Demi d’ouverture'],Ailiers:['Ailier'],Centres:['Centre'],Arrières:['Arrière'],
+  Piliers:[[1,'Pilier gauche'],[1,'Pilier droit']],Talonneurs:[[1,'Talonneur']],'Deuxièmes lignes':[[2,'Deuxième ligne']],
+  'Troisièmes lignes':[[3,'Troisième ligne','Numéro 8']],'Demis de mêlée':[[1,'Demi de mêlée']],
+  'Demis d’ouverture':[[1,'Demi d’ouverture']],Ailiers:[[2,'Ailier']],Centres:[[2,'Centre']],Arrières:[[1,'Arrière']],
  };
+ const clubs=initial.meta.champCatalogue.filter(c=>c.division==='prem');
  for(const [group,detail] of [[overview.strengths,overview.strengthDetail],[overview.needs,overview.weaknessDetail]]){
-  const members=players.filter(p=>positions[group].includes(p.pos));
-  const peers=initial.meta.champCatalogue.filter(c=>c.division==='prem'&&c.id!==30).flatMap(c=>state.clubs[c.id].players)
-   .filter(p=>positions[group].includes(p.pos));
-  const mean=peers.reduce((n,p)=>n+p.rating,0)/peers.length;
-  assert.deepEqual(detail,{
-   count:members.length,average:Math.round(members.reduce((n,p)=>n+p.rating,0)/members.length*10)/10,
-   best:Math.max(...members.map(p=>p.rating)),divisionAverage:Math.round(mean*10)/10,atLevel:members.filter(p=>p.rating>=mean).length,
-  });
+  assert.equal(detail.clubs,clubs.length);
+  const lanes=positions[group];
+  for(const [line,offset] of [['starters',0],['reserves',1]]){
+   const entries=clubs.map(({id})=>{
+    const squad=state.clubs[id].players;
+    const picked=lanes.flatMap(([size,...roles])=>squad.filter(p=>roles.includes(p.pos))
+     .sort((a,b)=>b.rating-a.rating).slice(offset*size,(offset+1)*size));
+    return {id,filled:picked.length,score:picked.reduce((sum,p)=>sum+p.rating,0)};
+   });
+   entries.sort((a,b)=>b.filled-a.filled||b.score-a.score);
+   const team=entries.find(entry=>entry.id===30);
+   const matches=entries.filter(entry=>entry.filled===team.filled&&entry.score===team.score);
+   assert.deepEqual(detail[line],{
+    rank:entries.indexOf(matches[0])+1,tied:matches.length>1,filled:team.filled,
+    expected:lanes.reduce((sum,[size])=>sum+size,0),
+   });
+  }
  }
- assert.ok(overview.strengthDetail.average-overview.strengthDetail.divisionAverage>=overview.weaknessDetail.average-overview.weaknessDetail.divisionAverage);
+ assert.deepEqual(creation.meta.champCatalogue.find(c=>c.id===30).startingRoster,overview);
  const base=ok('pack_select',{mode,scope:'career',id:'base'});
  assert.equal(base.leagues.find(l=>l.id==='prem').name,'Élite anglaise');
  assert.equal(base.leagues.find(l=>l.id==='prem').logoPath,undefined);

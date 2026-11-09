@@ -269,11 +269,11 @@ func _run() -> void:
 	check(named("CreationClubFounded") != null and text_present(app, "Fondé en 1907") and text_present(app, "25 titres") and text_present(app, "6 titres"), "La fiche affiche la fondation et les titres du club anonymisé")
 	var trophy := named("CreationTrophy_elite") as TextureRect
 	check(trophy != null and trophy.texture is AtlasTexture, "La victoire a un visuel de trophée IA dédié")
-	check(app.find_children("CreationRatingRail", "Control", true, false).size() == 3 and app.find_children("CreationDepth", "Control", true, false).size() == 2, "Les notes et la profondeur de l’effectif sont visualisées")
+	check(app.find_children("CreationRatingRail", "Control", true, false).size() == 1 and app.find_children("CreationPositionRank_*", "Control", true, false).size() == 4, "Quatre pistes visualisent les rangs des titulaires et des remplaçants")
 	creation_dossier_fits(app.pack_manager.creation_catalogue()[0].history.results.size(), "club 0 · 1280 × 720")
 	var roster_summary := named("CreationRosterSummary")
 	check(roster_summary != null and text_present(roster_summary, "Note moyenne") and not text_present(roster_summary, "Avants") and not text_present(roster_summary, "Trois-quarts"), "La note moyenne reste dans la fiche sans les compteurs par ligne")
-	check(text_present(app, "Atout actuel") and text_present(app, "Point à renforcer") and text_present(app, "Meilleure note") and text_present(app, "Adversaires du même poste") and text_present(app, "ce niveau"), "La fiche détaille les postes et compare leur niveau aux autres clubs de la division")
+	check(text_present(app, "Atout actuel") and text_present(app, "Marge de progression") and text_present(app, "Titulaires") and text_present(app, "Remplaçants") and text_present(app, "/ 14 clubs"), "La fiche sépare les rangs à ce poste dans le championnat")
 	check("Note moyenne" in named("CreationClub0").tooltip_text, "La grille permet de comparer les notes moyennes avant de choisir un club")
 	check(app.pack_manager.mode("creation") == "world-champ" and app.model.meta.champCatalogue.size() == 116, "La création ouvre directement le Monde complet")
 	check(named("CreationEditionRow") == null and named("CreationMode_common") == null, "Les éditions intermédiaires sont absentes du parcours normal")

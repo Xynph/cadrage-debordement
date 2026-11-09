@@ -3,36 +3,60 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
  const W=CDWorldCareer,copy=x=>JSON.parse(JSON.stringify(x));
  const catalogues=new WeakMap();
  const positions=['Piliers','Talonneurs','Deuxièmes lignes','Troisièmes lignes','Demis de mêlée','Demis d’ouverture','Ailiers','Centres','Arrières'];
+ const starterSlots=positions.map((_,family)=>FAMILIES.filter(slot=>slot===family).length);
+ const round=value=>Math.round(value*10)/10;
+ function rankLine(lanes,depth){
+  let filled=0,expected=0,points=0;
+  for(const lane of lanes){
+   const selected=lane.ratings.slice(depth*lane.slots,(depth+1)*lane.slots);
+   filled+=selected.length;
+   expected+=lane.slots;
+   points+=selected.reduce((sum,rating)=>sum+rating,0);
+  }
+  return {filled,expected,points};
+ }
  function rosterProfile(players,profiles){
-  const byPosition=positions.map(name=>({name,ratings:[],points:0}));
+  const groups=positions.map((_,family)=>family===0
+   ?[{position:POS[0],slots:1,ratings:[]},{position:POS[2],slots:1,ratings:[]}]
+   :[{slots:starterSlots[family],ratings:[]}]);
   let forwards=0,backs=0,points=0;
   for(const player of players){
    const position=profiles?.players[player.id]?.position.primary??player.pos;
    const family=FAMILIES[POS.indexOf(position)];
    if(family<4)forwards++;else backs++;
    points+=player.rating;
-   const group=byPosition[family];
-   if(group){group.ratings.push(player.rating);group.points+=player.rating;}
+   const lane=groups[family]?.find(row=>row.position===undefined||row.position===position);
+   if(lane)lane.ratings.push(player.rating);
   }
+  const byPosition=groups.map(lanes=>{
+   for(const lane of lanes)lane.ratings.sort((a,b)=>b-a);
+   return {starters:rankLine(lanes,0),reserves:rankLine(lanes,1)};
+  });
   return {average:players.length?round(points/players.length):null,forwards,backs,byPosition};
  }
- const round=value=>Math.round(value*10)/10;
+ const compareLine=(a,b)=>b.filled-a.filled||b.points-a.points;
+ function leagueRank(line,peers){
+  const rank=1+peers.filter(peer=>compareLine(peer,line)<0).length;
+  const tied=peers.filter(peer=>compareLine(peer,line)===0).length>1;
+  return {rank,tied,filled:line.filled,expected:line.expected};
+ }
  function startingRoster({average,forwards,backs,byPosition},division){
-  const positions=byPosition.flatMap((group,index)=>{
-   const count=group.ratings.length;
-   if(!count)return [];
-   const peers=division[index],otherCount=peers.count-count;
-   const benchmark=otherCount>0?(peers.points-group.points)/otherCount:null;
-   const average=group.points/count;
-   return [{name:group.name,gap:average-(benchmark??0),detail:{
-    count,average:round(average),best:Math.max(...group.ratings),
-    divisionAverage:benchmark===null?null:round(benchmark),
-    atLevel:benchmark===null?null:group.ratings.filter(rating=>rating>=benchmark).length,
-   }}];
+  const ordered=byPosition.map((group,index)=>{
+   const peers=division.map(roster=>roster.byPosition[index]);
+   return {name:positions[index],detail:{
+    clubs:peers.length,
+    starters:leagueRank(group.starters,peers.map(peer=>peer.starters)),
+    reserves:leagueRank(group.reserves,peers.map(peer=>peer.reserves)),
+   }};
   });
-  const compared=positions.filter(row=>row.detail.divisionAverage!==null);
-  const ordered=compared.length>1?compared.sort((a,b)=>b.gap-a.gap):positions.sort((a,b)=>b.detail.average-a.detail.average);
-  const strongest=ordered[0],weakest=ordered.length>1?ordered.at(-1):null;
+  ordered.sort((a,b)=>{
+   const left=a.detail,right=b.detail;
+   const missing=line=>line.expected-line.filled;
+   return missing(left.starters)-missing(right.starters)
+    || (2*left.starters.rank+left.reserves.rank)-(2*right.starters.rank+right.reserves.rank)
+    || left.starters.rank-right.starters.rank;
+  });
+  const strongest=ordered[0],weakest=ordered.at(-1);
   return {
    average,forwards,backs,
    strengths:strongest?.name??'',strengthDetail:strongest?.detail??null,
@@ -44,12 +68,8 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
    const profiles=CDRosterFoundation.resolve(CDRosterFoundation.marker);
    const rosters=R.clubs.map(({players})=>rosterProfile(players,profiles)),divisions=new Map();
    R.clubs.forEach((club,index)=>{
-    if(!divisions.has(club.leagueId))divisions.set(club.leagueId,positions.map(()=>({count:0,points:0})));
-    const division=divisions.get(club.leagueId);
-    rosters[index].byPosition.forEach((row,position)=>{
-     division[position].count+=row.ratings.length;
-     division[position].points+=row.points;
-    });
+    if(!divisions.has(club.leagueId))divisions.set(club.leagueId,[]);
+    divisions.get(club.leagueId).push(rosters[index]);
    });
    catalogues.set(R,R.clubs.map(({players,...c},index)=>{
     const history=clubHistory[c.id];

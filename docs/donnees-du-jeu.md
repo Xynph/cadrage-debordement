@@ -12,7 +12,7 @@ Les nouvelles carrières communes utilisent les 86 échéances publiées retenue
 
 Le catalogue de création présente une accroche historique originale par club. Le dossier associe l'année de fondation et les meilleurs résultats documentés, jusqu'à la saison 2025–2026, au même identifiant dans la base et dans le pack Rugby Réel. Le jeu emploie les noms de compétitions de l'identité sélectionnée. Le fichier [club-history.json](../native/engine/club-history.json) conserve les sources publiques et privilégie les titres sur le meilleur rang ou le stade atteint en phases finales. Le relevé couvre les compétitions dont les archives ont été vérifiées. Les totaux historiques incertains et les années contradictoires restent absents.
 
-Les atouts et points à renforcer viennent des notes de l'effectif de départ, groupées par poste principal. Le dossier indique la moyenne et la meilleure note du groupe, puis le compare aux joueurs du même poste dans les autres clubs de la division. Cette comparaison pondère chaque joueur de la même façon.
+Les atouts et points à renforcer viennent des notes de l’effectif de départ au poste principal. Le dossier compare deux rangs par poste dans le même championnat. Les titulaires correspondent aux joueurs les mieux notés pour le nombre de places dans le XV. Les remplaçants correspondent au groupe suivant, de même taille. Les piliers gauche et droit sont comptés séparément. Une ligne complète passe devant une ligne incomplète. À couverture égale, la somme des notes décide du rang et les égalités partagent la même place. Pour choisir les deux postes affichés, les places manquantes dans le XV priment et le rang des titulaires pèse deux fois celui des remplaçants.
 
 ## État de la version 15
 

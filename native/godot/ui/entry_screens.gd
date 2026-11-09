@@ -10,15 +10,24 @@ const ARCHIVE_TROPHIES := ["eng-third", "jp-national", "jp-top-league", "jp-comp
 
 class RatingRail extends Control:
 	var value: float
-	var benchmark: float
 	var tint: Color
 
 	func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, size), Color("384440"))
 		draw_rect(Rect2(0, 0, size.x * clampf(value / 100.0, 0.0, 1.0), size.y), tint)
-		if benchmark >= 0:
-			var marker := size.x * clampf(benchmark / 100.0, 0.0, 1.0)
-			draw_line(Vector2(marker, 0), Vector2(marker, size.y), C.IVORY, 2.0)
+
+class PositionRank extends Control:
+	var rank: int
+	var clubs: int
+	var tint: Color
+
+	func _draw() -> void:
+		var step := size.x / maxf(1, clubs)
+		var gap := minf(3, step * .2)
+		for index in clubs:
+			var active := index + 1 == rank
+			var height := size.y if active else size.y * .42
+			draw_rect(Rect2(index * step, (size.y - height) / 2, step - gap, height), tint if active else Color("3c4944"))
 
 static func _cover(club: Dictionary) -> Control:
 	var identity := G.identity(club)
@@ -273,7 +282,7 @@ static func _club_preview(app: Control, parent: VBoxContainer, club: Dictionary,
 	if not roster.is_empty():
 		var summary := _dossier_fact(metrics, "Note moyenne", _rating(roster), "rating", compact)
 		summary.name = "CreationRosterSummary"
-		_rating_rail(summary, float(roster.average), -1.0, Editorial.RAIL_GOLD)
+		_rating_rail(summary, float(roster.average), Editorial.RAIL_GOLD)
 	_dossier_fact(metrics, "Objectif du conseil", str(club.get("goal", "Développer le projet sportif")), "target", compact)
 	if club.has("cashMillions"):
 		_dossier_fact(metrics, "Trésorerie de départ", G.euros(roundi(float(club.cashMillions) * 1_000_000)), "money", compact)
@@ -297,13 +306,11 @@ static func _club_preview(app: Control, parent: VBoxContainer, club: Dictionary,
 		comparison.name = "CreationComparison"
 		parent.add_child(comparison)
 		var strength: Dictionary = roster.strengthDetail
-		var positive: bool = strength.divisionAverage == null or float(strength.average) >= float(strength.divisionAverage)
-		_dossier_position(comparison, "Atout actuel" if positive else "Poste le plus compétitif", str(roster.strengths), strength, Color("8fb386"), compact)
+		_dossier_position(comparison, str(roster.strengths), strength, true, compact)
 		if not str(roster.get("needs", "")).is_empty():
 			Editorial.divider(comparison)
 			var weakness: Dictionary = roster.weaknessDetail
-			var negative: bool = weakness.divisionAverage == null or float(weakness.average) < float(weakness.divisionAverage)
-			_dossier_position(comparison, "Point à renforcer" if negative else "Marge de progression", str(roster.needs), weakness, Color("c38970"), compact)
+			_dossier_position(comparison, str(roster.needs), weakness, false, compact)
 	if app.get_window().size.y >= 1200:
 		var spare := Control.new()
 		spare.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -402,48 +409,81 @@ static func _dossier_honours(app: Control, parent: VBoxContainer, results: Array
 		else:
 			copy.add_child(C.wrap(record, 18, C.MUTED, true, 700))
 
-static func _rating_rail(parent: Container, value: float, benchmark: float, tint: Color) -> void:
+static func _rating_rail(parent: Container, value: float, tint: Color) -> void:
 	var rail := RatingRail.new()
 	rail.name = "CreationRatingRail"
 	rail.value = value
-	rail.benchmark = benchmark
 	rail.tint = tint
 	rail.custom_minimum_size.y = maxi(2, C.px(5))
 	rail.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rail.resized.connect(rail.queue_redraw)
 	parent.add_child(rail)
 
-static func _dossier_position(parent: Container, heading: String, position: String, detail: Dictionary, tint: Color, compact: bool) -> void:
+static func _dossier_position(parent: Container, position: String, detail: Dictionary, strength: bool, compact: bool) -> void:
+	var starters: Dictionary = detail.starters
+	var reserves: Dictionary = detail.reserves
+	var clubs := int(detail.clubs)
+	var starter_rank := int(starters.rank)
+	var reserve_rank := int(reserves.rank)
+	var starter_gap := int(starters.expected) - int(starters.filled)
+	var reserve_gap := int(reserves.expected) - int(reserves.filled)
+	var mid_table := ceili(clubs / 2.0)
+	var complete := starter_gap == 0 and reserve_gap == 0
+	var heading := "Atout actuel" if strength else ("Marge de progression" if complete and maxi(starter_rank, reserve_rank) <= mid_table else "Point à renforcer")
+	var tint := Color("a5c78f") if strength else Color("d79a7a")
 	var column := C.v(2)
 	parent.add_child(C.fill(column))
 	if compact:
 		column.add_child(C.wrap(heading + " · " + position, 22, Editorial.RAIL_GOLD, true, 700))
 	else:
 		column.add_child(C.wrap(heading, 17, C.IVORY))
-		column.add_child(C.wrap(position, 23, Editorial.RAIL_GOLD, true, 700))
-	var count := int(detail.count)
-	column.add_child(C.wrap("Moyenne %s · Meilleure note %s" % [_rating(detail), _rating({"average":detail.best})], 17, C.IVORY, compact))
-	var division_average: Variant = detail.get("divisionAverage")
-	_rating_rail(column, float(detail.average), float(division_average) if division_average != null else -1.0, tint)
-	if division_average != null:
-		var benchmark := _rating({"average":detail.divisionAverage})
-		var difference := roundi((float(detail.average) - float(detail.divisionAverage)) * 10.0)
-		var sign := "+" if difference > 0 else ("−" if difference < 0 else "")
-		var gap := sign + String.num(absf(difference / 10.0), 1).replace(".", ",")
-		column.add_child(C.wrap("Adversaires du même poste %s · Écart %s pt" % [benchmark, gap], 17, C.MUTED, compact))
-		var at_level := int(detail.atLevel)
-		column.add_child(C.wrap("%d sur %d %s ce niveau." % [at_level, count, "atteint" if at_level == 1 else "atteignent"], 17, C.MUTED, compact))
-		var depth := C.h(3)
-		depth.name = "CreationDepth"
-		column.add_child(depth)
-		for index in count:
-			var tick := ColorRect.new()
-			tick.color = tint if index < at_level else Color("384440")
-			tick.custom_minimum_size = Vector2(C.px(13), maxi(2, C.px(5)))
-			tick.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			depth.add_child(tick)
+		column.add_child(C.wrap(position, 24, tint, true, 700))
+	_position_rank(column, "Titulaires", starters, clubs, tint)
+	_position_rank(column, "Remplaçants", reserves, clubs, tint)
+	var insight := "Titulaires et remplaçants au même rang."
+	if starter_gap > 0:
+		insight = "%d %s à couvrir dans le XV." % [starter_gap, "place" if starter_gap == 1 else "places"]
+	elif reserve_gap > 0:
+		insight = "Il manque %d %s." % [reserve_gap, "remplaçant" if reserve_gap == 1 else "remplaçants"]
+	elif strength:
+		if maxi(starter_rank, reserve_rank) <= ceili(clubs / 3.0):
+			insight = "Un poste solide jusque sur le banc."
+		elif starter_rank < reserve_rank:
+			insight = "L’avantage vient du XV de départ."
+		elif reserve_rank < starter_rank:
+			insight = "Les remplaçants font la différence."
+	elif maxi(starter_rank, reserve_rank) <= mid_table:
+		insight = "Le XV peut progresser." if starter_rank >= reserve_rank else "De la marge chez les remplaçants."
+	elif starter_rank >= reserve_rank:
+		insight = "Chercher un titulaire à ce poste."
 	else:
-		column.add_child(C.wrap("%d %s à ce poste." % [count, "joueur" if count == 1 else "joueurs"], 17, C.MUTED))
+		insight = "Renforcer le niveau des remplaçants."
+	var summary := C.h(5)
+	column.add_child(summary)
+	var icon := C.icon("check" if strength else "search", 17, tint)
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	summary.add_child(icon)
+	summary.add_child(C.fill(C.wrap(insight, 17, C.IVORY, compact)))
+
+static func _position_rank(parent: Container, caption: String, line: Dictionary, clubs: int, tint: Color) -> void:
+	var row := C.h(8)
+	parent.add_child(row)
+	row.add_child(C.fill(C.wrap(caption, 17, C.MUTED, true, 700)))
+	var rank := int(line.rank)
+	var ordinal := "%d%s" % [rank, "er" if rank == 1 else "e"]
+	var label := C.label("%s%s / %d clubs" % [ordinal, " ex æquo" if line.tied else "", clubs], 21, tint, true, 700)
+	row.add_child(label)
+	var track := PositionRank.new()
+	track.name = "CreationPositionRank_" + caption
+	track.rank = rank
+	track.clubs = clubs
+	track.tint = tint
+	track.custom_minimum_size.y = maxi(4, C.px(9))
+	track.accessibility_name = caption + " · " + label.text + " à ce poste"
+	track.mouse_filter = Control.MOUSE_FILTER_PASS
+	track.tooltip_text = "Rang à ce poste dans le championnat, selon les notes et les places couvertes."
+	track.resized.connect(track.queue_redraw)
+	parent.add_child(track)
 
 static func _dossier_fact(parent: Container, caption: String, detail: String, icon: String, compact: bool) -> VBoxContainer:
 	var row := C.h(6)
