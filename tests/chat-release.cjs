@@ -197,3 +197,12 @@ test('commande de récupération refuse un run nommé différent du dernier',asy
  await assert.rejects(()=>execute(f.cmd,f.e,f.deps));
  assert(!f.calls.includes('gate'));
 });
+
+test('contrôle du dispatch autorisé avec le gate officiel, sans squash ni CI de secours',async()=>{
+ const f=fixture();
+ const cmd={pr:f.cmd.pr,expected:f.cmd.expected,mode:'check'};
+ const result=await execute(cmd,{}, {...f.deps,autoAuthorized:true});
+ assert.equal(result.ready,true);
+ assert.deepEqual(f.calls.find(x=>x.gate),{gate:true,pr:cmd.pr,expected:cmd.expected,merge:false});
+ assert(!f.calls.some(x=>x.method==='POST'||x.method==='PUT'||x.watch));
+});
