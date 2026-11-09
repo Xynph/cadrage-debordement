@@ -1,13 +1,18 @@
 # Données de départ du Champ Rugby, saison 2026–27
 
-Le registre reste inchangé pour valider les anciens exports et lire les packs d'identités.
-Une nouvelle carrière **Monde + Champ** démarre avec six entrées historiques masquées
-dans ses effectifs de départ. Les rapprochements s'appuient sur les clubs, les rencontres
+Le catalogue actif et les nouvelles carrières **Monde + Champ** contiennent désormais
+5 878 joueurs. Les six variantes attestées sont retirées du catalogue de joueurs et de
+ses profils actifs ; leurs copies exactes sont isolées dans `world-legacy-aliases.json`,
+consulté uniquement par les lecteurs de compatibilité des anciennes carrières et packs.
+Les rapprochements s'appuient sur les clubs, les rencontres
 et les numéros de maillot, ou sur une annonce de transfert suivie d'une feuille de match.
 Les deux nouveaux diminutifs gardent la fiche de club avec un portrait officiel. Le transfert
 garde la fiche du club d'arrivée. Les IDs déjà présents dans une carrière restent valides,
-ainsi que ses fiches, statistiques et médias. La base embarquée conserve 5 884 IDs de
-catalogue, dont 5 878 actifs au départ.
+ainsi que ses fiches, statistiques et médias. Un ancien export conserve son état exact,
+y compris ses éventuelles variantes ; aucun historique ou contrat n'est fusionné à son
+insu. Les packs historiques restent lisibles. La présentation privilégie le canonique,
+avec la photo de l'alias en repli si aucune photo canonique n'est fournie. Aucun fichier
+photo extérieur n'est supprimé. Voir [la réception détaillée](world-catalogue-dedup-20261109.md).
 
 Vingt-cinq échéances annoncées par cinq clubs alimentent le terme de fin de saison 1.
 Les annonces dont la durée reste imprécise ne changent rien au jeu. Les échéances PREM et

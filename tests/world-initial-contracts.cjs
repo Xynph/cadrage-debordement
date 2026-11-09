@@ -65,11 +65,11 @@ test('Les échéances précises et bornes ne s’appliquent qu’aux créations 
  a.equal(changed.premAndUrc,55);
  a.ok(changed.champ>0&&changed.champ<=25);
 });
-test('Le catalogue conserve les variantes attestées et leur club de référence',()=>{
- const aliases=Object.entries(terms.inactiveAliases),canonicals=new Set(),affected=new Set();
+test('Le lecteur de compatibilité conserve les variantes attestées hors du catalogue actif',()=>{
+ const aliases=Object.entries(terms.inactiveAliases),legacy=require(engine+'world-legacy-aliases.json').aliases,canonicals=new Set(),affected=new Set();
  const clubsByPlayer=new Map(world.clubs.flatMap(club=>club.players.map(player=>[player.id,club])));
  const transfers=[];
- a.equal(clubsByPlayer.size,5884);
+ a.equal(clubsByPlayer.size,5878);
  a.equal(aliases.length,6);
  for(const [id,row] of aliases){
   a.match(id,/^world:champ:[0-9a-f]{20}$/);a.match(row.canonicalId,/^world:champ:[0-9a-f]{20}$/);
@@ -79,7 +79,8 @@ test('Le catalogue conserve les variantes attestées et leur club de référence
   a.ok(!Object.hasOwn(terms.players,id));
   a.ok(!canonicals.has(row.canonicalId));
   canonicals.add(row.canonicalId);
-  const club=clubsByPlayer.get(id),canonicalClub=clubsByPlayer.get(row.canonicalId);
+  a.equal(clubsByPlayer.has(id),false);
+  const club=world.clubs[legacy[id].clubId],canonicalClub=clubsByPlayer.get(row.canonicalId);
   a.equal(club?.id,row.clubId);
   a.equal(club.leagueId,'champ');
   a.equal(canonicalClub?.leagueId,'champ');

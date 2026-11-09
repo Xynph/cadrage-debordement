@@ -1,4 +1,5 @@
 'use strict';
+const legacyAliases=require('./world-legacy-aliases.json');
 
 const PACIFIC=Object.freeze({
  id:'rugby-world-2026-11-09-pacific-v2',version:2,baseId:'rugby-world-2026-11-08-v1',baseCount:58,count:10,
@@ -67,10 +68,17 @@ function compose(base,extension,variant){
   const categories=extension.japanCategories,expected=new Set([...newIds,...moves]);
   check(object(categories)&&Object.keys(categories).length===expected.size&&Object.entries(categories).every(([pid,item])=>expected.has(pid)&&object(item)&&Object.keys(item).length===3&&['A-1','A-2','B','C'].includes(item.category)&&['official-2026-27','derived-official-criteria','estimated'].includes(item.basis)&&typeof item.reason==='string'&&/^[a-z0-9-]{1,80}$/.test(item.reason)),'qualifications japonaises');
  }
+ const compatibilityAliases=version===5?legacyAliases.aliases:null;
+ if(compatibilityAliases){
+  check(legacyAliases.schema==='world-legacy-aliases-v1'&&legacyAliases.databaseId===id,'édition de compatibilité');
+  const activeIds=new Set(clubs.flatMap(c=>c.players.map(p=>p.id)));
+  for(const [alias,row]of Object.entries(compatibilityAliases))check(!activeIds.has(alias)&&activeIds.has(row.canonicalId)&&row.player.id===alias&&!extension.worldProfiles[alias]&&clubs[row.clubId]?.leagueId==='champ','alias historique incohérent');
+ }
  return {
   ...base,id,version,marker:{id,version},snapshot:extension.snapshot,clubCount:clubs.length,playerCount:playerClub.size+newIds.size,
   clubs,leagues:[...base.leagues,...variant.leagues],
   worldProfiles:{...base.worldProfiles,...extension.worldProfiles},
+  ...(compatibilityAliases?{compatibilityAliases}:{}),
   ...(version===3&&extension.japanCategories?{japanCategories:extension.japanCategories}:{}),
   ...(version===4&&extension.nationaleQualifications?{nationaleQualifications:extension.nationaleQualifications}:{}),
   provenance:{...base.provenance,[variant.provenance]:extension.provenance??null},

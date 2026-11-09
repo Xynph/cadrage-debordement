@@ -1,0 +1,952 @@
+{
+  "schema": "world-legacy-aliases-v1",
+  "databaseId": "rugby-world-2026-11-09-champ-v5",
+  "aliases": {
+    "world:champ:13c1a3ff3ff86c5e2c36": {
+      "clubId": 112,
+      "canonicalId": "world:champ:8a3d1b00165633022e1a",
+      "player": {
+        "id": "world:champ:13c1a3ff3ff86c5e2c36",
+        "name": "Adam Reedfield",
+        "pos": "Ailier",
+        "fam": 6,
+        "age": 27,
+        "birthYear": 1999,
+        "ageEstimated": true,
+        "rating": 73,
+        "condition": 94,
+        "injury": 0,
+        "salary": 5060,
+        "contractEnd": 3,
+        "skillBase": 73,
+        "skills": {
+          "scrum": 28.2,
+          "lineout": 36.7,
+          "tackle": 58.95,
+          "speed": 78.35,
+          "pass": 65.2,
+          "kick": 48.25,
+          "goal": 31.3,
+          "mental": 68.05,
+          "discipline": 66,
+          "stamina": 71.2,
+          "power": 58.9
+        },
+        "attributesV2": {
+          "passing": 63,
+          "receiving": 74,
+          "offload": 58,
+          "tackling": 60,
+          "jackal": 43,
+          "ruckClearout": 46,
+          "ballCarry": 69,
+          "evasion": 76,
+          "kickDistance": 46,
+          "kickAccuracy": 47,
+          "goalAccuracy": 27,
+          "ballHandling": 70,
+          "decisions": 66,
+          "anticipation": 75,
+          "vision": 64,
+          "positioning": 70,
+          "composure": 70,
+          "discipline": 66,
+          "teamwork": 70,
+          "leadership": 62,
+          "workRate": 68,
+          "acceleration": 77,
+          "topSpeed": 80,
+          "agility": 78,
+          "explosiveness": 70,
+          "strength": 61,
+          "endurance": 72,
+          "jumping": 52,
+          "scrumTechnique": 20,
+          "hooking": 20,
+          "lineoutThrow": 20,
+          "lineoutJump": 26,
+          "lineoutLift": 22,
+          "maul": 21,
+          "kickChase": 78,
+          "aerialAbility": 76
+        },
+        "gameplayPosition": "Ailier",
+        "hiddenTraitsV2": {
+          "professionalism": 48,
+          "consistency": 63,
+          "bigMatches": 53,
+          "injuryResistance": 68,
+          "ambition": 53,
+          "adaptability": 63
+        },
+        "potential": 76,
+        "worldRatingsVersion": 1,
+        "dev": {
+          "potential": 76,
+          "xp": 0,
+          "seasonStart": 73,
+          "minutes": 0,
+          "appearances": 0,
+          "careerMinutes": 0,
+          "history": [],
+          "retireAge": 36,
+          "lastYear": 0,
+          "decline": 0
+        }
+      },
+      "worldProfile": {
+        "version": 1,
+        "position": {
+          "primary": "Ailier",
+          "basis": "official",
+          "rule": "dominant-unique-shirt-evidence",
+          "qualifications": [
+            "Ailier"
+          ]
+        },
+        "age": {
+          "value": 27,
+          "birthYear": 1999,
+          "basis": "estimated",
+          "rule": "french-position-age-prior"
+        },
+        "rosterTier": "sheet_observed_rfu_only",
+        "rating": {
+          "value": 73,
+          "basis": "estimated",
+          "confidence": "low",
+          "rule": "champ-fictional-estimates-2026-27-v1",
+          "reference": "french-role-and-age-prior-second-tier-fixture-calibration",
+          "exposure": {
+            "minutes": null,
+            "matches": null,
+            "per80Allowed": false,
+            "status": "unknown"
+          },
+          "metricsUsed": [],
+          "axisWeights": {
+            "exposure": 0,
+            "attack": 0,
+            "defence": 0,
+            "kicking": 0
+          },
+          "squadSelectionsObserved": 2,
+          "startsObserved": 1
+        },
+        "potential": {
+          "value": 76,
+          "basis": "estimated",
+          "confidence": "low",
+          "rule": "world-positional-age-headroom-v1",
+          "range": [
+            73,
+            81
+          ]
+        },
+        "contract": {
+          "endSeason": 3,
+          "basis": "estimated",
+          "rule": "world-fictional-contract-1-to-3-seasons-v1",
+          "endYear": 2029
+        },
+        "sourceRefs": [
+          "champ-source-6d16615278f769a9",
+          "champ-source-6834a024d3b1c24a"
+        ],
+        "factConflicts": [],
+        "financialBasis": "fictional-game-parameter"
+      }
+    },
+    "world:champ:2e0362b3d347ff05eefe": {
+      "clubId": 112,
+      "canonicalId": "world:champ:02dad2e791f224c3284d",
+      "player": {
+        "id": "world:champ:2e0362b3d347ff05eefe",
+        "name": "Leo Thornlock",
+        "pos": "Ailier",
+        "fam": 6,
+        "age": 26,
+        "birthYear": 2000,
+        "ageEstimated": true,
+        "rating": 72,
+        "condition": 94,
+        "injury": 0,
+        "salary": 4840,
+        "contractEnd": 1,
+        "skillBase": 72,
+        "skills": {
+          "scrum": 27.6,
+          "lineout": 35.4,
+          "tackle": 56.95,
+          "speed": 76.95,
+          "pass": 63.8,
+          "kick": 48.5,
+          "goal": 31.6,
+          "mental": 64.55,
+          "discipline": 65,
+          "stamina": 67.6,
+          "power": 56.8
+        },
+        "attributesV2": {
+          "passing": 61,
+          "receiving": 74,
+          "offload": 56,
+          "tackling": 58,
+          "jackal": 42,
+          "ruckClearout": 40,
+          "ballCarry": 69,
+          "evasion": 72,
+          "kickDistance": 50,
+          "kickAccuracy": 44,
+          "goalAccuracy": 28,
+          "ballHandling": 70,
+          "decisions": 64,
+          "anticipation": 68,
+          "vision": 62,
+          "positioning": 67,
+          "composure": 64,
+          "discipline": 65,
+          "teamwork": 68,
+          "leadership": 57,
+          "workRate": 70,
+          "acceleration": 77,
+          "topSpeed": 80,
+          "agility": 76,
+          "explosiveness": 69,
+          "strength": 58,
+          "endurance": 67,
+          "jumping": 51,
+          "scrumTechnique": 20,
+          "hooking": 20,
+          "lineoutThrow": 20,
+          "lineoutJump": 26,
+          "lineoutLift": 21,
+          "maul": 20,
+          "kickChase": 71,
+          "aerialAbility": 70
+        },
+        "gameplayPosition": "Ailier",
+        "hiddenTraitsV2": {
+          "professionalism": 57,
+          "consistency": 61,
+          "bigMatches": 66,
+          "injuryResistance": 70,
+          "ambition": 65,
+          "adaptability": 64
+        },
+        "potential": 78,
+        "worldRatingsVersion": 1,
+        "dev": {
+          "potential": 78,
+          "xp": 0,
+          "seasonStart": 72,
+          "minutes": 0,
+          "appearances": 0,
+          "careerMinutes": 0,
+          "history": [],
+          "retireAge": 39,
+          "lastYear": 0,
+          "decline": 0
+        }
+      },
+      "worldProfile": {
+        "version": 1,
+        "position": {
+          "primary": "Ailier",
+          "basis": "official",
+          "rule": "dominant-unique-shirt-evidence",
+          "qualifications": [
+            "Ailier"
+          ]
+        },
+        "age": {
+          "value": 26,
+          "birthYear": 2000,
+          "basis": "estimated",
+          "rule": "french-position-age-prior"
+        },
+        "rosterTier": "sheet_observed_rfu_only",
+        "rating": {
+          "value": 72,
+          "basis": "estimated",
+          "confidence": "low",
+          "rule": "champ-fictional-estimates-2026-27-v1",
+          "reference": "french-role-and-age-prior-second-tier-fixture-calibration",
+          "exposure": {
+            "minutes": null,
+            "matches": null,
+            "per80Allowed": false,
+            "status": "unknown"
+          },
+          "metricsUsed": [],
+          "axisWeights": {
+            "exposure": 0,
+            "attack": 0,
+            "defence": 0,
+            "kicking": 0
+          },
+          "squadSelectionsObserved": 6,
+          "startsObserved": 6
+        },
+        "potential": {
+          "value": 78,
+          "basis": "estimated",
+          "confidence": "low",
+          "rule": "world-positional-age-headroom-v1",
+          "range": [
+            72,
+            83
+          ]
+        },
+        "contract": {
+          "endSeason": 1,
+          "basis": "estimated",
+          "rule": "world-fictional-contract-1-to-3-seasons-v1",
+          "endYear": 2027
+        },
+        "sourceRefs": [
+          "champ-source-6d16615278f769a9",
+          "champ-source-1b1ac229f534d969",
+          "champ-source-235ef90f5a04dcea",
+          "champ-source-d5018b450e22ffea",
+          "champ-source-965fd8fe5d41e190",
+          "champ-source-6b36ded009a00a12"
+        ],
+        "factConflicts": [],
+        "financialBasis": "fictional-game-parameter"
+      }
+    },
+    "world:champ:3c3b80e0f9597c98651f": {
+      "clubId": 109,
+      "canonicalId": "world:champ:f7fc757633765b1e925e",
+      "player": {
+        "id": "world:champ:3c3b80e0f9597c98651f",
+        "name": "Will Goldcroft",
+        "pos": "Ailier",
+        "fam": 6,
+        "age": 27,
+        "birthYear": 1999,
+        "ageEstimated": true,
+        "rating": 68,
+        "condition": 94,
+        "injury": 0,
+        "salary": 4034,
+        "contractEnd": 1,
+        "skillBase": 68,
+        "skills": {
+          "scrum": 26.8,
+          "lineout": 33.5,
+          "tackle": 56.8,
+          "speed": 72.65,
+          "pass": 60.15,
+          "kick": 44.8,
+          "goal": 30.2,
+          "mental": 64.8,
+          "discipline": 65,
+          "stamina": 65,
+          "power": 55.1
+        },
+        "attributesV2": {
+          "passing": 57,
+          "receiving": 67,
+          "offload": 54,
+          "tackling": 58,
+          "jackal": 41,
+          "ruckClearout": 43,
+          "ballCarry": 66,
+          "evasion": 73,
+          "kickDistance": 48,
+          "kickAccuracy": 38,
+          "goalAccuracy": 26,
+          "ballHandling": 70,
+          "decisions": 62,
+          "anticipation": 70,
+          "vision": 61,
+          "positioning": 67,
+          "composure": 68,
+          "discipline": 65,
+          "teamwork": 69,
+          "leadership": 58,
+          "workRate": 65,
+          "acceleration": 74,
+          "topSpeed": 72,
+          "agility": 73,
+          "explosiveness": 70,
+          "strength": 54,
+          "endurance": 65,
+          "jumping": 48,
+          "scrumTechnique": 20,
+          "hooking": 20,
+          "lineoutThrow": 20,
+          "lineoutJump": 21,
+          "lineoutLift": 20,
+          "maul": 20,
+          "kickChase": 71,
+          "aerialAbility": 71
+        },
+        "gameplayPosition": "Ailier",
+        "hiddenTraitsV2": {
+          "professionalism": 63,
+          "consistency": 69,
+          "bigMatches": 68,
+          "injuryResistance": 56,
+          "ambition": 58,
+          "adaptability": 57
+        },
+        "potential": 71,
+        "worldRatingsVersion": 1,
+        "dev": {
+          "potential": 71,
+          "xp": 0,
+          "seasonStart": 68,
+          "minutes": 0,
+          "appearances": 0,
+          "careerMinutes": 0,
+          "history": [],
+          "retireAge": 36,
+          "lastYear": 0,
+          "decline": 0
+        }
+      },
+      "worldProfile": {
+        "version": 1,
+        "position": {
+          "primary": "Ailier",
+          "basis": "official",
+          "rule": "dominant-unique-shirt-evidence",
+          "qualifications": [
+            "Ailier"
+          ]
+        },
+        "age": {
+          "value": 27,
+          "birthYear": 1999,
+          "basis": "estimated",
+          "rule": "french-position-age-prior"
+        },
+        "rosterTier": "sheet_observed_rfu_only",
+        "rating": {
+          "value": 68,
+          "basis": "estimated",
+          "confidence": "low",
+          "rule": "champ-fictional-estimates-2026-27-v1",
+          "reference": "french-role-and-age-prior-second-tier-fixture-calibration",
+          "exposure": {
+            "minutes": null,
+            "matches": null,
+            "per80Allowed": false,
+            "status": "unknown"
+          },
+          "metricsUsed": [],
+          "axisWeights": {
+            "exposure": 0,
+            "attack": 0,
+            "defence": 0,
+            "kicking": 0
+          },
+          "squadSelectionsObserved": 6,
+          "startsObserved": 2
+        },
+        "potential": {
+          "value": 71,
+          "basis": "estimated",
+          "confidence": "low",
+          "rule": "world-positional-age-headroom-v1",
+          "range": [
+            68,
+            76
+          ]
+        },
+        "contract": {
+          "endSeason": 1,
+          "basis": "estimated",
+          "rule": "world-fictional-contract-1-to-3-seasons-v1",
+          "endYear": 2027
+        },
+        "sourceRefs": [
+          "champ-source-10c74c3d7920c4b0",
+          "champ-source-d5160dab255943da",
+          "champ-source-e644f68b6f044f91",
+          "champ-source-f97ff7ff2f84293e",
+          "champ-source-0f48f55848b2f7ee",
+          "champ-source-a479da50aa833105"
+        ],
+        "factConflicts": [],
+        "financialBasis": "fictional-game-parameter"
+      }
+    },
+    "world:champ:22df93e82174027f0b2c": {
+      "clubId": 102,
+      "canonicalId": "world:champ:7c8b8a958fb0522bb063",
+      "player": {
+        "id": "world:champ:22df93e82174027f0b2c",
+        "name": "George Hopestone",
+        "pos": "Troisième ligne",
+        "fam": 3,
+        "age": 28,
+        "birthYear": 1998,
+        "ageEstimated": true,
+        "rating": 72,
+        "condition": 94,
+        "injury": 0,
+        "salary": 4840,
+        "contractEnd": 2,
+        "skillBase": 72,
+        "skills": {
+          "scrum": 46,
+          "lineout": 59.9,
+          "tackle": 74.45,
+          "speed": 66.05,
+          "pass": 62.25,
+          "kick": 40.55,
+          "goal": 29.4,
+          "mental": 69.95,
+          "discipline": 73,
+          "stamina": 75.2,
+          "power": 74.8
+        },
+        "attributesV2": {
+          "passing": 62,
+          "receiving": 61,
+          "offload": 60,
+          "tackling": 74,
+          "jackal": 78,
+          "ruckClearout": 74,
+          "ballCarry": 74,
+          "evasion": 62,
+          "kickDistance": 42,
+          "kickAccuracy": 35,
+          "goalAccuracy": 25,
+          "ballHandling": 66,
+          "decisions": 71,
+          "anticipation": 74,
+          "vision": 59,
+          "positioning": 73,
+          "composure": 69,
+          "discipline": 73,
+          "teamwork": 75,
+          "leadership": 71,
+          "workRate": 76,
+          "acceleration": 69,
+          "topSpeed": 68,
+          "agility": 64,
+          "explosiveness": 76,
+          "strength": 77,
+          "endurance": 75,
+          "jumping": 67,
+          "scrumTechnique": 42,
+          "hooking": 22,
+          "lineoutThrow": 30,
+          "lineoutJump": 68,
+          "lineoutLift": 68,
+          "maul": 66,
+          "kickChase": 58,
+          "aerialAbility": 66
+        },
+        "gameplayPosition": "Troisième ligne",
+        "hiddenTraitsV2": {
+          "professionalism": 58,
+          "consistency": 66,
+          "bigMatches": 59,
+          "injuryResistance": 72,
+          "ambition": 49,
+          "adaptability": 52
+        },
+        "potential": 78,
+        "worldRatingsVersion": 1,
+        "dev": {
+          "potential": 78,
+          "xp": 0,
+          "seasonStart": 72,
+          "minutes": 0,
+          "appearances": 0,
+          "careerMinutes": 0,
+          "history": [],
+          "retireAge": 38,
+          "lastYear": 0,
+          "decline": 0
+        }
+      },
+      "worldProfile": {
+        "version": 1,
+        "position": {
+          "primary": "Troisième ligne",
+          "basis": "official",
+          "rule": "dominant-unique-shirt-evidence",
+          "qualifications": [
+            "Troisième ligne"
+          ]
+        },
+        "age": {
+          "value": 28,
+          "birthYear": 1998,
+          "basis": "estimated",
+          "rule": "french-position-age-prior"
+        },
+        "rosterTier": "sheet_observed_rfu_only",
+        "rating": {
+          "value": 72,
+          "basis": "estimated",
+          "confidence": "low",
+          "rule": "champ-fictional-estimates-2026-27-v1",
+          "reference": "french-role-and-age-prior-second-tier-fixture-calibration",
+          "exposure": {
+            "minutes": null,
+            "matches": null,
+            "per80Allowed": false,
+            "status": "unknown"
+          },
+          "metricsUsed": [],
+          "axisWeights": {
+            "exposure": 0,
+            "attack": 0,
+            "defence": 0,
+            "kicking": 0
+          },
+          "squadSelectionsObserved": 5,
+          "startsObserved": 4
+        },
+        "potential": {
+          "value": 78,
+          "basis": "estimated",
+          "confidence": "low",
+          "rule": "world-positional-age-headroom-v1",
+          "range": [
+            72,
+            83
+          ]
+        },
+        "contract": {
+          "endSeason": 2,
+          "basis": "estimated",
+          "rule": "world-fictional-contract-1-to-3-seasons-v1",
+          "endYear": 2028
+        },
+        "sourceRefs": [
+          "champ-source-085697e65fc4d22c",
+          "champ-source-1b1ac229f534d969",
+          "champ-source-4358386c2f02cf1e",
+          "champ-source-f97ff7ff2f84293e",
+          "champ-source-9cbc01e7990ff09e"
+        ],
+        "factConflicts": [],
+        "financialBasis": "fictional-game-parameter"
+      }
+    },
+    "world:champ:724a9a498090dffad81a": {
+      "clubId": 108,
+      "canonicalId": "world:champ:021410b35826722cb7df",
+      "player": {
+        "id": "world:champ:724a9a498090dffad81a",
+        "name": "Jacob Watergrove",
+        "pos": "Centre",
+        "fam": 7,
+        "age": 28,
+        "birthYear": 1998,
+        "ageEstimated": true,
+        "rating": 65,
+        "condition": 94,
+        "injury": 0,
+        "salary": 3504,
+        "contractEnd": 2,
+        "skillBase": 65,
+        "skills": {
+          "scrum": 29.8,
+          "lineout": 34.1,
+          "tackle": 63.95,
+          "speed": 68.8,
+          "pass": 67.4,
+          "kick": 51.8,
+          "goal": 33,
+          "mental": 66.15,
+          "discipline": 67,
+          "stamina": 69.8,
+          "power": 64.5
+        },
+        "attributesV2": {
+          "passing": 67,
+          "receiving": 69,
+          "offload": 62,
+          "tackling": 65,
+          "jackal": 57,
+          "ruckClearout": 56,
+          "ballCarry": 66,
+          "evasion": 65,
+          "kickDistance": 51,
+          "kickAccuracy": 49,
+          "goalAccuracy": 29,
+          "ballHandling": 71,
+          "decisions": 63,
+          "anticipation": 64,
+          "vision": 68,
+          "positioning": 66,
+          "composure": 69,
+          "discipline": 67,
+          "teamwork": 70,
+          "leadership": 69,
+          "workRate": 69,
+          "acceleration": 70,
+          "topSpeed": 70,
+          "agility": 70,
+          "explosiveness": 72,
+          "strength": 69,
+          "endurance": 70,
+          "jumping": 46,
+          "scrumTechnique": 20,
+          "hooking": 20,
+          "lineoutThrow": 20,
+          "lineoutJump": 26,
+          "lineoutLift": 30,
+          "maul": 37,
+          "kickChase": 63,
+          "aerialAbility": 56
+        },
+        "gameplayPosition": "Centre",
+        "hiddenTraitsV2": {
+          "professionalism": 60,
+          "consistency": 54,
+          "bigMatches": 61,
+          "injuryResistance": 58,
+          "ambition": 61,
+          "adaptability": 59
+        },
+        "potential": 71,
+        "worldRatingsVersion": 1,
+        "dev": {
+          "potential": 71,
+          "xp": 0,
+          "seasonStart": 65,
+          "minutes": 0,
+          "appearances": 0,
+          "careerMinutes": 0,
+          "history": [],
+          "retireAge": 39,
+          "lastYear": 0,
+          "decline": 0
+        }
+      },
+      "worldProfile": {
+        "version": 1,
+        "position": {
+          "primary": "Centre",
+          "basis": "official",
+          "rule": "dominant-unique-shirt-evidence",
+          "qualifications": [
+            "Centre",
+            "Demi d’ouverture"
+          ]
+        },
+        "age": {
+          "value": 28,
+          "birthYear": 1998,
+          "basis": "estimated",
+          "rule": "french-position-age-prior"
+        },
+        "rosterTier": "sheet_observed_rfu_only",
+        "rating": {
+          "value": 65,
+          "basis": "estimated",
+          "confidence": "low",
+          "rule": "champ-fictional-estimates-2026-27-v1",
+          "reference": "french-role-and-age-prior-second-tier-fixture-calibration",
+          "exposure": {
+            "minutes": null,
+            "matches": null,
+            "per80Allowed": false,
+            "status": "unknown"
+          },
+          "metricsUsed": [],
+          "axisWeights": {
+            "exposure": 0,
+            "attack": 0,
+            "defence": 0,
+            "kicking": 0
+          },
+          "squadSelectionsObserved": 6,
+          "startsObserved": 5
+        },
+        "potential": {
+          "value": 71,
+          "basis": "estimated",
+          "confidence": "low",
+          "rule": "world-positional-age-headroom-v1",
+          "range": [
+            65,
+            76
+          ]
+        },
+        "contract": {
+          "endSeason": 2,
+          "basis": "estimated",
+          "rule": "world-fictional-contract-1-to-3-seasons-v1",
+          "endYear": 2028
+        },
+        "sourceRefs": [
+          "champ-source-eef9a37a996ac165",
+          "champ-source-8d9786ad2a26f90f",
+          "champ-source-235ef90f5a04dcea",
+          "champ-source-ef050e11062d2f69",
+          "champ-source-0f48f55848b2f7ee",
+          "champ-source-59de1983ed8a67e3"
+        ],
+        "factConflicts": [],
+        "financialBasis": "fictional-game-parameter"
+      }
+    },
+    "world:champ:a6d42bfb1fbfb50d91f5": {
+      "clubId": 113,
+      "canonicalId": "world:champ:dfa7f4a1b41a97e7f0a8",
+      "player": {
+        "id": "world:champ:a6d42bfb1fbfb50d91f5",
+        "name": "Rowan Holtdale",
+        "pos": "Centre",
+        "fam": 7,
+        "age": 21,
+        "birthYear": 2005,
+        "ageEstimated": true,
+        "rating": 62,
+        "condition": 94,
+        "injury": 0,
+        "salary": 3040,
+        "contractEnd": 1,
+        "skillBase": 62,
+        "skills": {
+          "scrum": 28.8,
+          "lineout": 33,
+          "tackle": 63.65,
+          "speed": 66.85,
+          "pass": 61.65,
+          "kick": 51.3,
+          "goal": 36.8,
+          "mental": 63.4,
+          "discipline": 67,
+          "stamina": 68.6,
+          "power": 60.7
+        },
+        "attributesV2": {
+          "passing": 61,
+          "receiving": 63,
+          "offload": 60,
+          "tackling": 65,
+          "jackal": 51,
+          "ruckClearout": 52,
+          "ballCarry": 66,
+          "evasion": 66,
+          "kickDistance": 51,
+          "kickAccuracy": 49,
+          "goalAccuracy": 34,
+          "ballHandling": 64,
+          "decisions": 62,
+          "anticipation": 67,
+          "vision": 63,
+          "positioning": 70,
+          "composure": 62,
+          "discipline": 67,
+          "teamwork": 64,
+          "leadership": 66,
+          "workRate": 67,
+          "acceleration": 71,
+          "topSpeed": 65,
+          "agility": 68,
+          "explosiveness": 67,
+          "strength": 64,
+          "endurance": 69,
+          "jumping": 45,
+          "scrumTechnique": 20,
+          "hooking": 20,
+          "lineoutThrow": 20,
+          "lineoutJump": 23,
+          "lineoutLift": 30,
+          "maul": 33,
+          "kickChase": 63,
+          "aerialAbility": 55
+        },
+        "gameplayPosition": "Centre",
+        "hiddenTraitsV2": {
+          "professionalism": 51,
+          "consistency": 61,
+          "bigMatches": 55,
+          "injuryResistance": 62,
+          "ambition": 54,
+          "adaptability": 53
+        },
+        "potential": 73,
+        "worldRatingsVersion": 1,
+        "dev": {
+          "potential": 73,
+          "xp": 0,
+          "seasonStart": 62,
+          "minutes": 0,
+          "appearances": 0,
+          "careerMinutes": 0,
+          "history": [],
+          "retireAge": 35,
+          "lastYear": 0,
+          "decline": 0
+        }
+      },
+      "worldProfile": {
+        "version": 1,
+        "position": {
+          "primary": "Centre",
+          "basis": "official",
+          "rule": "explicit-club-position",
+          "qualifications": [
+            "Centre"
+          ]
+        },
+        "age": {
+          "value": 21,
+          "birthYear": 2005,
+          "basis": "estimated",
+          "rule": "french-position-age-prior"
+        },
+        "rosterTier": "club_directory_only",
+        "rating": {
+          "value": 62,
+          "basis": "estimated",
+          "confidence": "low",
+          "rule": "champ-fictional-estimates-2026-27-v1",
+          "reference": "french-role-and-age-prior-second-tier-fixture-calibration",
+          "exposure": {
+            "minutes": null,
+            "matches": null,
+            "per80Allowed": false,
+            "status": "unknown"
+          },
+          "metricsUsed": [],
+          "axisWeights": {
+            "exposure": 0,
+            "attack": 0,
+            "defence": 0,
+            "kicking": 0
+          },
+          "squadSelectionsObserved": 0,
+          "startsObserved": 0
+        },
+        "potential": {
+          "value": 73,
+          "basis": "estimated",
+          "confidence": "low",
+          "rule": "world-positional-age-headroom-v1",
+          "range": [
+            62,
+            78
+          ]
+        },
+        "contract": {
+          "endSeason": 1,
+          "basis": "estimated",
+          "rule": "world-fictional-contract-1-to-3-seasons-v1",
+          "endYear": 2027
+        },
+        "sourceRefs": [
+          "champ-source-dd819ea36afd2382",
+          "champ-source-1f8a1b1abb9919fd"
+        ],
+        "factConflicts": [],
+        "financialBasis": "fictional-game-parameter"
+      }
+    }
+  }
+}
