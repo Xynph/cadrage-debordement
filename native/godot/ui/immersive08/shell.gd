@@ -187,6 +187,7 @@ static func open_preparation(app: Control, tab: int) -> void:
 	app._navigate("Préparation",true,true)
 
 static func _dedicated_page(app: Control, size: Vector2i) -> Script:
+	if app.route=="Calendrier" and size.x>=1280 and size.y>=720 and app.model.meta.get("leagueId")=="nationale": return Competition
 	if size.x<1920 or size.y<1080:
 		return Rivalry if app.route=="Rivalités" and size.x>=1280 and size.y>=720 else null
 	if _is_training(app): return Training
@@ -443,7 +444,19 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 				var roster: Control = app.SquadViews.squad(app)
 				app.body.add_child(roster)
 				Legacy.apply(roster, app.accent)
-		"Composition": app.body.add_child(TacticsCanvas.build(app) if app.get_window().size.x>=1600 else app.SquadViews.lineup(app))
+		"Composition":
+			if app.get_window().size.x>=1600:
+				app.body.add_child(TacticsCanvas.build(app))
+			else:
+				var lineup: Control = app.SquadViews.lineup(app)
+				var remove := lineup.find_child("LineupRemove",true,false) as Button
+				var candidates := lineup.find_child("LineupCandidatesScroll",true,false) as ScrollContainer
+				# La libération reste au-dessus de la liste, à l’écart du dock de Gabi.
+				remove.get_parent().move_child(remove,candidates.get_index())
+				var selected := lineup.find_child("LineupSlot%02d" % (app.selected_slot+1),true,false) as Button
+				if selected != null: selected.set_meta("carnet_selected",true)
+				app.body.add_child(lineup)
+				Legacy.apply(lineup,app.accent)
 		"Préparation": app.body.add_child(Preparation.compact(app))
 		"Plan de jeu": app.body.add_child(app.PlaybookViews.build(app))
 		"Recrutement": app.body.add_child(app.SquadViews.market(app))

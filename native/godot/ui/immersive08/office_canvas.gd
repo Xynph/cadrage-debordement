@@ -35,13 +35,19 @@ static func build(app: Control) -> Control:
 static func _fixture(card: Panel, app: Control) -> void:
 	card.clip_contents = true
 	var japan := SeasonPreparation.is_japan(app.model.meta)
-	var ground := SeasonPreparation.ground(app.model.meta,"office-hero")
+	var ground := P.fixture_ground(app.model.meta,"office-hero")
 	D.photo(card,ground,Rect2(694,1,665,416),.53 if ground != "office-hero" else 0.0)
 	C.veil(card)
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
 	if next.is_empty():
 		var preparation := SeasonPreparation.data(app.model.meta)
-		if preparation.is_empty():
+		var upcoming := P.next_nationale_fixture(app.model)
+		if not upcoming.is_empty():
+			D.chip(card,Rect2(24,22,281,29),"NATIONALE",C.GOLD)
+			D.text(card,27,121,"Pas de match cette semaine.",58,C.IVORY,800,920)
+			D.text(card,27,183,"Prochain match · " + P.fixture_date(upcoming),30,C.IVORY,600,720)
+			D.text(card,27,223,P.fixture_venue(upcoming),21,C.MUTED,400,735,HORIZONTAL_ALIGNMENT_LEFT,true)
+		elif preparation.is_empty():
 			D.text(card,27,100,"La saison se termine." if app.model.meta.get("canAdvanceSeason",false) else "Le travail continue.",42,C.IVORY,700,740)
 			D.text(card,27,156,"Retrouvez les résultats et préparez la suite du projet.",21,C.MUTED,400,740,HORIZONTAL_ALIGNMENT_LEFT,true)
 		else:

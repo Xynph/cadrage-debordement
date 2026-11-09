@@ -52,7 +52,7 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 	frame.add_child(backdrop)
 	frame.move_child(backdrop, 0)
 	var japan := SeasonPreparation.is_japan(app.model.meta)
-	var ground := SeasonPreparation.ground(app.model.meta,"office-hero")
+	var ground := P.fixture_ground(app.model.meta,"office-hero")
 	var image := C.photo(ground,Vector2.ZERO,true,.53 if ground != "office-hero" else 0.0)
 	backdrop.add_child(image)
 	image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -71,7 +71,13 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
 	var preparation := SeasonPreparation.data(app.model.meta)
 	if next.is_empty():
-		if preparation.is_empty():
+		var upcoming := P.next_nationale_fixture(app.model)
+		if not upcoming.is_empty():
+			left.add_child(C.label("NATIONALE", 21, C.GOLD))
+			left.add_child(C.wrap("Pas de match cette semaine.", 42, C.IVORY, true))
+			left.add_child(C.wrap("Prochain match · " + P.fixture_date(upcoming), 25, C.IVORY, true))
+			left.add_child(C.wrap(P.fixture_venue(upcoming), 18))
+		elif preparation.is_empty():
 			left.add_child(C.label("LE PROCHAIN CHAPITRE", 21, C.GOLD))
 			left.add_child(C.wrap("La saison se termine." if app.model.meta.get("canAdvanceSeason", false) else "Le travail continue.", 42, C.IVORY, true))
 			left.add_child(C.wrap("Retrouvez les résultats et préparez la suite du projet.", 20))

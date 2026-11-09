@@ -3,6 +3,7 @@ extends Control
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
+const P = preload("res://ui/immersive08/projection.gd")
 const S = preload("res://ui/data_semantics.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Decisions = preload("res://ui/decision_views.gd")
@@ -57,7 +58,7 @@ func _hero() -> void:
 	var hero := D.panel(self, Rect2(0, 0, WIDTH, 312), "", "", "", "RivalryHero")
 	hero.clip_contents = true
 	var japan := SeasonPreparation.is_japan(app.model.meta)
-	var ground := SeasonPreparation.ground(app.model.meta,"stadium")
+	var ground := P.fixture_ground(app.model.meta,"stadium")
 	D.photo(hero, ground, Rect2(938, 0, 1310, 312),.48 if ground != "stadium" else 0.0)
 	C.veil(hero)
 	D.text(hero, 26, 49, "LES TERRITOIRES DU RUGBY", 32, C.GOLD, 800, 364)

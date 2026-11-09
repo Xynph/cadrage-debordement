@@ -384,7 +384,7 @@ static func tables(app: Control) -> Control:
 	var tabs := G.h(10)
 	sheet.add_child(tabs)
 	var abbreviations := {"prem":"PREM","urc":"URC","champions":"CHAMPIONS","challenge":"CHALLENGE"}
-	if app.model.meta.get("edition") == "world-japan":
+	if app.model.meta.get("edition") in ["world-japan", "world-nationale"]:
 		abbreviations.merge({"accession":"ACCESSION","jlo-d1":"JAPON D1","jlo-d2":"JAPON D2"})
 	for league: Dictionary in leagues:
 		var label := str(league.get("name", league.id))
@@ -488,6 +488,7 @@ static func season_archives(app:Control) -> void:
 	seasons.reverse()
 	var international: bool = app.model.get("meta", {}).get("mode") == "world"
 	var world = load("res://ui/immersive08/world_archive.gd")
+	var nationale = load("res://ui/immersive08/nationale_archive.gd")
 	if seasons.is_empty():
 		var empty := "Aucune saison archivée. Le championnat français alimente ce carnet au passage à la saison suivante. Les archives de la ligue historique à 14 ne sont pas présentées ici."
 		if international: empty = "Aucune saison archivée. Les championnats et les coupes d’Europe alimentent ce carnet au passage à la saison suivante."
@@ -509,6 +510,10 @@ static func season_archives(app:Control) -> void:
 			var names:Array[String]=[]
 			for id in year.get("movement",{}).get(pair[0],[]):names.append(_archive_club(app,id))
 			list.add_child(G.wrap(pair[1]+" · "+(", ".join(names) if not names.is_empty() else "aucune"),14,G.MUTED))
+		var nationale_lines: Array[String] = nationale.lines(app, year)
+		if not nationale_lines.is_empty():
+			list.add_child(G.section("NATIONALE ET ACCESSION"))
+			for line: String in nationale_lines: list.add_child(G.wrap(line,16,G.INK))
 		if not barrages.is_empty():
 			list.add_child(G.section("BARRAGES DU JAPON"))
 			for barrage: Dictionary in barrages:

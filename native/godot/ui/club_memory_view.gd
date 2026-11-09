@@ -2,7 +2,8 @@ extends RefCounted
 # Lecture des projections canoniques uniquement. Aucun état moteur ni fichier modifié.
 const G = preload("res://ui/carnet_skin.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
-const DIVISIONS = {"elite":"Élite", "accession":"Accession", "jlo-d1":"League One · Division 1", "jlo-d2":"League One · Division 2"}
+const Nationale = preload("res://ui/immersive08/nationale_archive.gd")
+const DIVISIONS = {"elite":"Élite", "accession":"Accession", "nationale":"Nationale", "prem":"Premiership", "urc":"United Rugby Championship", "srp":"Super Rugby Pacific", "jlo-d1":"League One · Division 1", "jlo-d2":"League One · Division 2"}
 
 static func _id_index(ids: Array, club_id: int) -> int:
 	# JSON.parse_string représente les nombres par des flottants : Array.find
@@ -57,6 +58,15 @@ static func project(model: Dictionary, club_id: int) -> Dictionary:
 		history.append(entry)
 	return {"club_id":club_id, "club_name":_name(model, club_id), "seasons":seasons, "events":events, "manager_history":history, "manager_current_from":manager.get("currentFrom"), "historical":model.get("meta", {}).get("engine", "") == "historical"}
 
+static func world_seasons(app: Control, club_id: int) -> Array:
+	var years := World.club_seasons(app.model, club_id)
+	var nationale_by_season := {}
+	for year: Dictionary in app.model.get("archives", {}).get("seasons", []):
+		if year.has("nationale"): nationale_by_season[int(year.season)] = Nationale.lines(app, year, club_id)
+	for year: Dictionary in years:
+		year.nationale_lines = nationale_by_season.get(year.season, [])
+	return years
+
 static func _division(id: String) -> String:
 	return DIVISIONS.get(id, "Division non conservée")
 
@@ -81,8 +91,10 @@ static func _season(parent: Node, year: Dictionary, app: Control) -> void:
 	card.add_child(G.wrap(_rank(year), 17, G.INK))
 	card.add_child(G.wrap(_titles(year), 15, G.GOLD))
 	var barrages: Array = year.get("japan_barrages",[])
-	if barrages.is_empty() and str(year.league_id) not in ["jlo-d1","jlo-d2"]:
+	var nationale_lines: Array = year.get("nationale_lines", [])
+	if barrages.is_empty() and str(year.league_id) not in ["jlo-d1","jlo-d2"] and (nationale_lines.is_empty() or year.promoted or year.relegated):
 		card.add_child(G.wrap(_movement(year),14))
+	for line: String in nationale_lines: card.add_child(G.wrap(line,16,G.INK))
 	for barrage: Dictionary in barrages:
 		for line: String in World.japan_lines(app,barrage): card.add_child(G.wrap(line,16,G.INK))
 
@@ -149,12 +161,14 @@ static func build(app: Control) -> Control:
 	G.fill(sheet.get_parent(), true)
 	var data := project(app.model, int(app.model.get("club", {}).get("id", -1)))
 	var japanese: bool = app.model.get("meta",{}).get("edition") == "world-japan"
-	if japanese: data.seasons = World.club_seasons(app.model,data.club_id)
+	var nationale: bool = app.model.get("meta",{}).get("edition") == "world-nationale"
+	if japanese or nationale: data.seasons = world_seasons(app,data.club_id)
 	G.chapter(sheet, "21", "L’histoire de " + data.club_name, "Les faits conservés pour ce club, quelle que soit la carrière de son coach.", app.accent)
 	var list := G.scroll(sheet)
 	list.get_parent().name = "ClubMemoryScroll"
 	var notice := "Points, scores de saisons, affluence, finances et évolution des attributs ne sont pas conservés dans ces archives."
 	if japanese: notice = "Les rangs de phase régulière et les scores des barrages japonais sont conservés."
+	if nationale: notice = "Les rangs de phase régulière, les mouvements et le barrage Pro D2 / Nationale sont conservés."
 	list.add_child(G.wrap("Identités du pack actuel · 15 dernières saisons archivées au maximum. "+notice,13))
 	_comparison(list, app, data.seasons)
 	list.add_child(G.separator())

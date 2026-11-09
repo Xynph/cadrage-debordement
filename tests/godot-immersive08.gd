@@ -234,10 +234,10 @@ func pacific() -> void:
 	press_division=app.find_child("PressDivision",true,false) as OptionButton
 	check(press_division!=null and press_division.selected>=0 and press_division.get_item_text(press_division.selected)=="Super Rugby Pacific","Le vrai nom du Pacifique est conservé dans le journal compact")
 
-func japan_action(id: String) -> bool:
+func edition_action(id: String) -> bool:
 	var button := app.find_child(id,true,false) as Button
 	var available := button!=null and button.is_visible_in_tree() and not button.disabled
-	check(available,"Commande japonaise utilisable · " + id)
+	check(available,"Commande utilisable · " + id)
 	if not available: return false
 	var parent := button.get_parent()
 	while parent!=null:
@@ -261,9 +261,9 @@ func japan(compact: bool) -> void:
 	var playable := catalogue.filter(func(club: Dictionary): return club.get("playable",true)).size()
 	var badge := app.find_child("EntryJapanCount",true,false) as Panel
 	check(badge!=null and badge.get_child(0).text=="Japon · %d clubs" % playable,"Accueil compte les vrais clubs jouables du catalogue Japon")
-	if not await japan_action("EntryNewCareer"): return
-	if not await japan_action("CreationMode_world-japan"): return
-	if not await japan_action("CreationDivision_"+division): return
+	if not await edition_action("EntryNewCareer"): return
+	if not await edition_action("CreationMode_world-japan"): return
+	if not await edition_action("CreationDivision_"+division): return
 	var first := 80 if compact else 68
 	var last := 88 if compact else 80
 	var scroll := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
@@ -276,8 +276,8 @@ func japan(compact: bool) -> void:
 	check(texture!=null and texture.resource_path.ends_with("japan-ground.png"),"Le PNG original est décodé et cadré dans le jeu")
 	await capture(("54" if compact else "53")+"-japon-creation-"+dimensions)
 	var club_id := 80 if compact else 72
-	if not await japan_action("CreationClub%d" % club_id): return
-	if not await japan_action("CreationStart"): return
+	if not await edition_action("CreationClub%d" % club_id): return
+	if not await edition_action("CreationStart"): return
 	await worker()
 	var meta: Dictionary = app.model.meta
 	check(app.bridge.last_response_ok and meta.get("edition")=="world-japan" and meta.get("mode")=="world" and meta.get("leagueId")==division and app.model.get("club",{}).get("id")==club_id,"Création de la vraie carrière dans la division sélectionnée")
@@ -296,13 +296,13 @@ func japan(compact: bool) -> void:
 				else:
 					app._navigate("Calendrier")
 					await settle()
-					if not await japan_action("CompetitionJapanLink"): return
+					if not await edition_action("CompetitionJapanLink"): return
 				check(app.route=="Préparation","Le calendrier ouvre la préparation japonaise")
 			3: app._navigate("Bureau")
 		await settle()
 		var week := int(app.model.meta.week)
 		var limit := int(app.model.meta.get("japanPreparation",{}).get("weeksUntil",0))
-		if not await japan_action(actions[i]): return
+		if not await edition_action(actions[i]): return
 		await worker()
 		check(app.bridge.last_response_ok and int(app.model.meta.week)==week+mini(4,limit),"Avance réelle jusqu’à la semaine du match · " + str(actions[i]))
 	var next: Variant = app.model.next
@@ -313,7 +313,7 @@ func japan(compact: bool) -> void:
 	var projection := preload("res://ui/immersive08/projection.gd")
 	check(date!=null and date.text.begins_with("13/12/2026") and venue!=null and venue.text==projection.fixture_venue(next),"Le Bureau montre la date et le lieu réels à " + dimensions)
 	await capture(("60" if compact else "57")+"-japon-premier-match-"+dimensions)
-	if not await japan_action("OfficePreparationAction"): return
+	if not await edition_action("OfficePreparationAction"): return
 	check(app.route=="Préparation" and app.find_child("JapanPreparationDossierAdvance",true,false)==null,"Le vrai dossier de match a remplacé l’avance")
 	app._navigate("Match")
 	await settle()
@@ -322,6 +322,86 @@ func japan(compact: bool) -> void:
 	await click(app.pause_button)
 	await worker()
 	check(app.bridge.last_response_ok and app.model.live is Dictionary and app.model.live.get("pair")==next.get("pair"),"Coup d’envoi des deux vraies équipes japonaises")
+
+func nationale(compact: bool) -> void:
+	var dimensions := "1280x720" if compact else "2560x1440"
+	if compact:
+		root.size=Vector2i(1280,720)
+		if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+		await settle()
+		app._render()
+		await settle()
+	var catalogue: Array = app.model.meta.get("nationaleCatalogue",[])
+	var playable := catalogue.filter(func(club: Dictionary): return club.get("playable",true)).size()
+	var badge := app.find_child("EntryNationaleCount",true,false) as Panel
+	check(badge!=null and badge.get_child(0).text=="Nationale · %d clubs" % playable,"Accueil compte les vrais clubs jouables de l’édition Nationale")
+	if not await edition_action("EntryNewCareer"): return
+	if not await edition_action("CreationMode_world-nationale"): return
+	if not await edition_action("CreationDivision_nationale"): return
+	var scroll := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
+	for club_id in range(88,102):
+		var club := app.find_child("CreationClub%d" % club_id,true,false) as Button
+		check(scroll!=null and club!=null and scroll.get_global_rect().grow(1).encloses(club.get_global_rect()),"Club de Nationale %d visible à %s" % [club_id,dimensions])
+		if club!=null:
+			for label: Label in club.find_children("*","Label",true,false):
+				check(club.get_global_rect().grow(1).encloses(label.get_global_rect()),"Le libellé %s tient dans la carte de club" % label.text)
+	var picture := app.find_child("Art_nationale_ground",true,false) as TextureRect
+	var texture: Texture2D = picture.texture if picture!=null else null
+	if texture is AtlasTexture: texture=texture.atlas
+	check(texture!=null and texture.resource_path.ends_with("nationale-ground.png"),"Illustration originale Nationale décodée dans Création")
+	await capture(("63" if compact else "62")+"-nationale-creation-"+dimensions)
+	var club_id := 101 if compact else 100
+	if not await edition_action("CreationClub%d" % club_id): return
+	if not await edition_action("CreationStart"): return
+	await worker()
+	var meta: Dictionary = app.model.meta
+	check(app.bridge.last_response_ok and meta.get("edition")=="world-nationale" and meta.get("leagueId")=="nationale" and app.model.get("club",{}).get("id")==club_id,"La carrière et le club sélectionnés sont confirmés par le moteur")
+	var fixture: Variant = app.model.get("next")
+	check(fixture is Dictionary and fixture.get("date")=="2026-08-21" and fixture.get("kickoffLocal")=="19:30","Le moteur annonce la date et l’heure locales de la première journée")
+	if not fixture is Dictionary: return
+	var date := app.find_child("OfficeFixtureDate",true,false) as Label
+	var venue := app.find_child("OfficeFixtureVenue",true,false) as Label
+	var projection := preload("res://ui/immersive08/projection.gd")
+	check(date!=null and date.text.contains("21/08/2026 · 19:30") and venue!=null and venue.text==projection.fixture_venue(fixture),"Le Bureau affiche l’heure et le terrain projetés à " + dimensions)
+	await capture(("65" if compact else "64")+"-nationale-bureau-"+dimensions)
+	app._navigate("Calendrier")
+	await settle()
+	var next_date := app.find_child("CompetitionNextDate",true,false) as Label
+	var next_venue := app.find_child("CompetitionNextVenue",true,false) as Label
+	check(next_date!=null and next_date.text==projection.fixture_date(fixture) and next_venue!=null and next_venue.text==projection.fixture_venue(fixture),"La tuile Calendrier garde la date et le terrain réels")
+	if next_date!=null and next_venue!=null:
+		check(next_date.get_global_rect().end.x < next_venue.get_global_rect().position.x,"La date reste dans la partie gauche sombre du prochain rendez-vous")
+	await capture(("67" if compact else "66")+"-nationale-calendrier-"+dimensions)
+	var fixture_id := ""
+	for listed: Dictionary in app.model.calendar:
+		if listed.date==fixture.date and listed.competitionId==fixture.competitionId and [listed.home.id,listed.away.id]==fixture.pair:
+			fixture_id = str(listed.id)
+			break
+	var rows := app.find_children("CalendarFixture_*","Button",true,false)
+	var first := rows.find_custom(func(row: Node): return row.get_meta("fixture_id", "")==fixture_id)
+	check(first>=0,"Le premier match s’ouvre depuis sa vraie ligne de calendrier")
+	if first>=0:
+		await click(rows[first])
+		await settle()
+		var detail := app.get_node_or_null("CompetitionFixtureDetails") as AcceptDialog
+		check(detail!=null and detail.visible,"Le détail de la rencontre est visible")
+		if detail!=null:
+			var texts := detail.find_children("*","Label",true,false).map(func(label: Label): return label.text)
+			check("Date publiée" in texts and "Heure locale · Europe/Paris" in texts,"Le détail distingue la date publiée et le fuseau du match")
+			await key(KEY_ESCAPE)
+	if not await edition_action("CompetitionPrepareMatch"): return
+	check(app.route=="Préparation" and app.model.next is Dictionary and app.model.next.pair==fixture.pair and app.model.next.date==fixture.date,"Le calendrier ouvre le vrai dossier du match")
+	app._navigate("Composition")
+	await settle()
+	check(app.find_child("NationaleLicenceNotice",true,false)!=null,"La feuille de match affiche l’avis de qualification projeté")
+	await capture(("69" if compact else "68")+"-nationale-tactique-"+dimensions)
+	app._navigate("Match")
+	await settle()
+	check(app.pause_button!=null and app.model.get("selection",{}).get("valid",false),"Le coup d’envoi est disponible sur la feuille de match réelle")
+	if app.pause_button==null: return
+	await click(app.pause_button)
+	await worker()
+	check(app.bridge.last_response_ok and app.model.live is Dictionary and app.model.live.get("pair")==fixture.get("pair"),"Le match de Nationale démarre avec les deux vrais clubs")
 
 func reception() -> void:
 	app._navigate("Bureau")
@@ -774,9 +854,11 @@ func run() -> void:
 	root.add_child(app)
 	await worker()
 	var scope := OS.get_environment("CD_IMMERSIVE_SCOPE")
-	if scope in ["pacific", "japan", "japan-d2"]:
-		if scope=="pacific": await pacific()
-		else: await japan(scope=="japan-d2")
+	if scope in ["pacific", "japan", "japan-d2", "nationale", "nationale-compact"]:
+		match scope:
+			"pacific": await pacific()
+			"japan", "japan-d2": await japan(scope=="japan-d2")
+			_: await nationale(scope=="nationale-compact")
 		app.queue_free()
 		await settle()
 		print("immersive08 ", scope, " : ", checks, " contrôles, ", failures.size(), " échecs")

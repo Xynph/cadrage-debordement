@@ -4,6 +4,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const G = preload("res://ui/game_skin.gd")
+const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const History = preload("res://ui/club_memory_view.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const Strategy = preload("res://ui/strategy_view.gd")
@@ -127,17 +128,19 @@ static func _stadium(card: Panel, app: Control, fans: Dictionary) -> void:
 	D.button(card, Rect2(697,337,216,48), "Voir le stade", func(): _tab(app, "territory"), false, "arrow", false, U.GREEN, "ClubSeeStadium")
 
 static func _trust(card: Panel, app: Control, finance: Dictionary) -> void:
+	var width := card.size.x / C.density
+	var inset := (width - 443.0) * .5
 	var trust: Variant = app.model.meta.get("trust")
 	var dial := TrustDial.new()
 	dial.name = "ClubTrustDial"
 	dial.trust = float(trust) if trust != null else 0.0
 	dial.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(dial)
-	D.place(dial, Rect2(55,60,332,174))
+	D.place(dial, Rect2(55+inset,60,332,174))
 	var trust_text := G.n(trust) if trust != null else "—"
 	var value_width := C.EXTRA_BOLD.get_string_size(trust_text,HORIZONTAL_ALIGNMENT_LEFT,-1,C.px(76)).x/C.density
-	D.text(card, 205, 222, trust_text, 76, C.IVORY, 800, 165, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(card, 210+value_width/2, 221, "/100", 31, C.MUTED, 600, 80)
+	D.text(card, 205+inset, 222, trust_text, 76, C.IVORY, 800, 165, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(card, 210+inset+value_width/2, 221, "/100", 31, C.MUTED, 600, 80)
 	var history: Array = finance.get("boardHistory", [])
 	var recent: Dictionary = history[0] if not history.is_empty() else {}
 	var caption := "Premier bilan à venir"
@@ -146,12 +149,12 @@ static func _trust(card: Panel, app: Control, finance: Dictionary) -> void:
 		var delta := int(recent.after) - int(recent.previous)
 		caption = "%+d pts · dernier bilan" % delta
 		change_color = C.MINT if delta >= 0 else C.ALERT
-	D.text(card, 221, 270, caption, 26, change_color, 600, 400, HORIZONTAL_ALIGNMENT_CENTER)
-	D.line(card, Vector2(20,291), Vector2(423,291))
+	D.text(card, 221+inset, 270, caption, 26, change_color, 600, 400, HORIZONTAL_ALIGNMENT_CENTER)
+	D.line(card, Vector2(20,291), Vector2(width-20,291))
 	U.icon(card, "info", Vector2(22,306), C.GOLD, 23)
-	D.text(card, 57, 328, "Confiance du président", 23, C.IVORY, 600, 355)
+	D.text(card, 57, 328, "Confiance du président", 23, C.IVORY, 600, width-88)
 	var source := "Saison %s · journée %s" % [G.n(recent.season), G.n(recent.round)] if not recent.is_empty() else "Le conseil suit les résultats du club."
-	D.text(card, 57, 363, source, 22, C.MUTED, 500, 350)
+	D.text(card, 57, 363, source, 22, C.MUTED, 500, width-93)
 
 static func _goals(card: Panel, app: Control, board: Dictionary) -> void:
 	var goals: Array = board.get("objectives", [])
@@ -332,7 +335,7 @@ static func _open_strategy(app: Control, index: int) -> void:
 static func _direction(app: Control, canvas: Control) -> void:
 	var data := U.strategy(app.model)
 	var finance: Dictionary = data.get("finance",{})
-	_trust(D.panel(canvas, Rect2(0,214,443,402), "La confiance du conseil", "shield"), app, finance)
+	_trust(D.panel(canvas, Rect2(0,214,499,402), "La confiance du conseil", "shield"), app, finance)
 	_goals(D.panel(canvas, Rect2(0,632,499,402), "Objectifs de la saison", "trophy"), app, data.get("board",{}))
 	D.button(canvas, Rect2(0,1050,499,57), "Ouvrir les finances", func(): app._navigate("Finances"), false, "arrow", false, U.GREEN, "ClubDirectionFinance")
 	var detail: Control = app.StrategyViews.build(app)
@@ -341,6 +344,7 @@ static func _direction(app: Control, canvas: Control) -> void:
 		tabs.current_tab = clampi(int(app.management_ui.get("immersive08_strategy_tab",1)), 0, 2)
 		tabs.tab_changed.connect(func(index: int): app.management_ui.immersive08_strategy_tab = index)
 	U.place_detail(canvas, Rect2(515,214,1733,1030), detail)
+	Legacy.apply(detail, app.accent)
 
 static func _staff_detail(app: Control, canvas: Control) -> void:
 	_staff(D.panel(canvas, Rect2(0,214,708,427), "L’encadrement", "people"), app)
@@ -364,13 +368,14 @@ static func _staff_detail(app: Control, canvas: Control) -> void:
 		tabs.current_tab = clampi(int(app.management_ui.get("immersive08_support_tab",0)), 0, 2)
 		tabs.tab_changed.connect(func(index: int): app.management_ui.immersive08_support_tab = index)
 	U.place_detail(canvas, Rect2(724,214,1524,1030), detail)
+	if app.route == "Travail du club": Legacy.apply(detail, app.accent)
 
 static func _history(app: Control, canvas: Control) -> void:
 	var card := D.panel(canvas, Rect2(0,214,610,612), "Les archives du club", "trophy", "", "ClubHistorySummary")
 	D.photo(card, "club-forest", Rect2(20,69,570,164))
 	var data := History.project(app.model,int(app.model.club.id))
 	var international: bool = app.model.meta.get("mode") == "world"
-	if international: data.seasons = World.club_seasons(app.model,int(app.model.club.id))
+	if international: data.seasons = History.world_seasons(app,int(app.model.club.id))
 	var titles := 0
 	for year: Dictionary in data.seasons: titles += year.get("titles",[]).size()
 	var rows := [["Saisons archivées",data.seasons.size()],["Titres conservés",titles],["Rencontres au registre récent",data.events.size()]]
@@ -428,6 +433,7 @@ static func _world_year(app: Control, year: Dictionary) -> PanelContainer:
 		content.add_child(C.wrap("Champion · "+World.name_for(app.model,id),23,C.MINT,true,600))
 	if year.promoted: content.add_child(C.label("Montée en Élite",22,C.MINT))
 	if year.relegated: content.add_child(C.label("Descente en Accession",22,C.AMBER))
+	for line: String in year.get("nationale_lines",[]): content.add_child(C.wrap(line,22,C.IVORY))
 	for barrage: Dictionary in year.japan_barrages:
 		for line: String in World.japan_lines(app,barrage): content.add_child(C.wrap(line,22,C.IVORY))
 	return card

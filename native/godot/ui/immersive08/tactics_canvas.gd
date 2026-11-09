@@ -75,6 +75,7 @@ static func build(app:Control) -> Control:
 	auto.add_theme_stylebox_override("normal",C.box(Color("101719"),Color.TRANSPARENT,0,0))
 	D.photo(composition,"tactics-briefing",Rect2(23,72,1024,160),.5)
 	var pitch:=Pitch.new();composition.add_child(pitch);D.place(pitch,Rect2(24,245,1022,626))
+	_nationale_qualification(composition,app.model.get("selection",{}))
 	if app.model.get("tactics",{}).get("attack")=="occupation":
 		var overlay := TextureRect.new()
 		overlay.name = "TacticsOccupationOverlay"
@@ -134,6 +135,20 @@ static func build(app:Control) -> Control:
 	D.text(vigilance,24,94,"Aucune alerte physique" if watched.is_empty() else str(watched[0].name)+" · Charge "+G.n(watched[0].get("physicalLoad",0))+" %",27,C.MINT if watched.is_empty() else C.AMBER,600,514)
 	D.text(vigilance,24,131,"Consulter l’effectif pour ajuster les charges individuelles.",19,C.MUTED,400,514,HORIZONTAL_ALIGNMENT_LEFT,true)
 	return page
+
+static func _nationale_qualification(parent: Panel, selection: Dictionary) -> void:
+	var qualification: Dictionary = selection.get("nationaleQualification",{})
+	var notice: Dictionary = qualification.get("notice",{})
+	if notice.is_empty(): return
+	var alert: bool = notice.get("tone") == "alert"
+	var panel := D.rect(parent,Rect2(40,84,732,136),Color("101819",.94),5,C.ALERT if alert else C.LINE)
+	panel.name = "NationaleLicenceNotice"
+	D.text(panel,17,32,notice.get("title",""),26,C.GOLD,700,698).name = "NationaleQualificationTitle"
+	D.text(panel,17,64,notice.get("summary",""),28,C.ALERT if alert else C.IVORY,700,698).name = "NationaleQualificationSummary"
+	D.text(panel,17,93,notice.get("detail",""),24,C.MUTED,500,698,HORIZONTAL_ALIGNMENT_LEFT,true).name = "NationaleQualificationDetail"
+	var estimates: Variant = notice.get("estimates")
+	if estimates is String and not estimates.is_empty():
+		D.text(panel,17,122,estimates,24,C.MUTED,500,698,HORIZONTAL_ALIGNMENT_LEFT,true).name = "NationaleQualificationEstimates"
 
 static func _identity(card:Panel,app:Control,domains:Array) -> void:
 	for i in 3:
