@@ -5,6 +5,20 @@ const Club = preload("res://ui/club_views.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const Editorial = preload("res://ui/entry_editorial.gd")
 const CREATION_SELECTION := "creation_selection"
+const TROPHIES := ["elite", "accession", "nationale", "prem", "champ", "champions", "challenge", "urc", "srp", "jlo-d1", "jlo-d2", "jlo-d3"]
+const ARCHIVE_TROPHIES := ["eng-third", "jp-national", "jp-top-league", "jp-company", "sr-au", "sr-nz", "sr-trans-tasman", "other"]
+
+class RatingRail extends Control:
+	var value: float
+	var benchmark: float
+	var tint: Color
+
+	func _draw() -> void:
+		draw_rect(Rect2(Vector2.ZERO, size), Color("384440"))
+		draw_rect(Rect2(0, 0, size.x * clampf(value / 100.0, 0.0, 1.0), size.y), tint)
+		if benchmark >= 0:
+			var marker := size.x * clampf(benchmark / 100.0, 0.0, 1.0)
+			draw_line(Vector2(marker, 0), Vector2(marker, size.y), C.IVORY, 2.0)
 
 static func _cover(club: Dictionary) -> Control:
 	var identity := G.identity(club)
@@ -257,11 +271,12 @@ static func _club_preview(app: Control, parent: VBoxContainer, club: Dictionary,
 	var metrics := C.h(12)
 	parent.add_child(metrics)
 	if not roster.is_empty():
-		var summary := _dossier_fact(metrics, "Note moyenne", _rating(roster), compact)
+		var summary := _dossier_fact(metrics, "Note moyenne", _rating(roster), "rating", compact)
 		summary.name = "CreationRosterSummary"
-	_dossier_fact(metrics, "Objectif du conseil", str(club.get("goal", "Développer le projet sportif")), compact)
+		_rating_rail(summary, float(roster.average), -1.0, Editorial.RAIL_GOLD)
+	_dossier_fact(metrics, "Objectif du conseil", str(club.get("goal", "Développer le projet sportif")), "target", compact)
 	if club.has("cashMillions"):
-		_dossier_fact(metrics, "Trésorerie de départ", G.euros(roundi(float(club.cashMillions) * 1_000_000)), compact)
+		_dossier_fact(metrics, "Trésorerie de départ", G.euros(roundi(float(club.cashMillions) * 1_000_000)), "money", compact)
 	parent.add_child(C.rule())
 	parent.add_child(C.label("LE CLUB", 19, Editorial.RAIL_GOLD, true, 700))
 	var city := str(club.get("city", "")).strip_edges()
@@ -274,29 +289,21 @@ static func _club_preview(app: Control, parent: VBoxContainer, club: Dictionary,
 	presentation.name = "CreationClubPresentation"
 	parent.add_child(presentation)
 	if not compact: parent.add_child(C.rule())
+	if not results.is_empty():
+		_dossier_honours(app, parent, results, compact)
+		parent.add_child(C.rule())
 	if not str(roster.get("strengths", "")).is_empty():
 		var comparison := C.h(18)
 		comparison.name = "CreationComparison"
 		parent.add_child(comparison)
 		var strength: Dictionary = roster.strengthDetail
 		var positive: bool = strength.divisionAverage == null or float(strength.average) >= float(strength.divisionAverage)
-		_dossier_position(comparison, "Atout actuel" if positive else "Poste le plus compétitif", str(roster.strengths), strength, compact)
+		_dossier_position(comparison, "Atout actuel" if positive else "Poste le plus compétitif", str(roster.strengths), strength, Color("8fb386"), compact)
 		if not str(roster.get("needs", "")).is_empty():
 			Editorial.divider(comparison)
 			var weakness: Dictionary = roster.weaknessDetail
 			var negative: bool = weakness.divisionAverage == null or float(weakness.average) < float(weakness.divisionAverage)
-			_dossier_position(comparison, "Point à renforcer" if negative else "Marge de progression", str(roster.needs), weakness, compact)
-		parent.add_child(C.rule())
-	if not results.is_empty():
-		parent.add_child(C.label("PALMARÈS", 19, Editorial.RAIL_GOLD, true, 700))
-		var honours := GridContainer.new()
-		honours.name = "CreationHonours"
-		honours.columns = 3 if compact and results.size() > 4 else 2
-		honours.add_theme_constant_override("h_separation", C.px(16))
-		honours.add_theme_constant_override("v_separation", C.px(4))
-		parent.add_child(honours)
-		for result: Dictionary in results:
-			_dossier_fact(honours, _history_competition(app, str(result.competition)), _history_result(result), compact)
+			_dossier_position(comparison, "Point à renforcer" if negative else "Marge de progression", str(roster.needs), weakness, Color("c38970"), compact)
 	if app.get_window().size.y >= 1200:
 		var spare := Control.new()
 		spare.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -325,18 +332,88 @@ static func _history_competition(app: Control, id: String) -> String:
 	if id == "elite" and label.to_lower() == "top 14": return "Championnat de France"
 	return label
 
-static func _history_result(result: Dictionary) -> String:
-	var count := int(result.get("titles", 0))
+static func _history_placement(result: Dictionary) -> String:
 	var year := int(result.get("year", 0))
-	if count > 0:
-		var record := "%d titre%s" % [count, "s" if count > 1 else ""]
-		return record + (" · Dernier en %d" % year if count > 1 else " · %d" % year) if year > 0 else record
 	var rank := int(result.get("rank", 0))
 	var finish := str({"final":"Finaliste", "semi":"Demi-finaliste", "quarter":"Quart de finaliste"}.get(result.get("finish"), ""))
 	if rank > 0: finish = "%s place" % ("1re" if rank == 1 else "%de" % rank)
 	return finish + (" · %d" % year if year > 0 else "")
 
-static func _dossier_position(parent: Container, heading: String, position: String, detail: Dictionary, compact: bool) -> void:
+static func _trophy_texture(competition: String) -> Texture2D:
+	var index := TROPHIES.find(competition)
+	var current := index >= 0
+	if not current:
+		index = ARCHIVE_TROPHIES.find(competition)
+		if index < 0: index = ARCHIVE_TROPHIES.size() - 1
+	var path := "res://art/trophies/competitions.png" if current else "res://art/trophies/archives.png"
+	if not ResourceLoader.exists(path): return C.icon_texture("trophy", Editorial.RAIL_GOLD)
+	var source := load(path) as Texture2D
+	var cell := source.get_size() / Vector2(4, 3 if current else 2)
+	var tile := AtlasTexture.new()
+	tile.atlas = source
+	tile.region = Rect2(Vector2(index % 4, floori(index / 4.0)) * cell, cell)
+	tile.filter_clip = true
+	return tile
+
+static func _dossier_honours(app: Control, parent: VBoxContainer, results: Array, compact: bool) -> void:
+	parent.add_child(C.label("PALMARÈS", 19, Editorial.RAIL_GOLD, true, 700))
+	var honours := GridContainer.new()
+	honours.name = "CreationHonours"
+	var dense := compact and results.size() > 4
+	honours.columns = 3 if results.size() == 3 or (results.size() > 4 and not dense) else 2
+	honours.add_theme_constant_override("h_separation", C.px(6))
+	honours.add_theme_constant_override("v_separation", C.px(4))
+	parent.add_child(honours)
+	for result: Dictionary in results:
+		var competition := str(result.competition)
+		var count := int(result.get("titles", 0))
+		var frame := PanelContainer.new()
+		frame.add_theme_stylebox_override("panel", C.box(Color("182322"), C.LINE, 3, 1 if dense else 3))
+		honours.add_child(C.fill(frame))
+		var row := C.h(5)
+		frame.add_child(row)
+		if count > 0:
+			var trophy := TextureRect.new()
+			trophy.name = "CreationTrophy_" + competition
+			trophy.texture = _trophy_texture(competition)
+			trophy.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			trophy.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			var edge := C.px(32 if dense else 42 if compact else 72)
+			trophy.custom_minimum_size = Vector2(edge, edge)
+			trophy.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			row.add_child(trophy)
+		var label := _history_competition(app, competition)
+		var year := int(result.get("year", 0))
+		var record := "%d titre%s" % [count, "s" if count > 1 else ""] if count > 0 else _history_placement(result)
+		if compact and count > 0 and year > 0: record += " · %d" % year
+		if dense:
+			var caption := C.wrap("%s · %s" % [label, record], 16, C.IVORY, true, 700)
+			caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			row.add_child(C.fill(caption))
+			continue
+		var copy := C.v(0)
+		copy.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.add_child(C.fill(copy))
+		copy.add_child(C.wrap(label, 17, C.IVORY, true, 700))
+		if count > 0:
+			copy.add_child(C.wrap(record, 25, Editorial.RAIL_GOLD, true, 800))
+			if not compact and year > 0:
+				copy.add_child(C.wrap("Dernier en %d" % year if count > 1 else str(year), 16, C.MUTED, true))
+		else:
+			copy.add_child(C.wrap(record, 18, C.MUTED, true, 700))
+
+static func _rating_rail(parent: Container, value: float, benchmark: float, tint: Color) -> void:
+	var rail := RatingRail.new()
+	rail.name = "CreationRatingRail"
+	rail.value = value
+	rail.benchmark = benchmark
+	rail.tint = tint
+	rail.custom_minimum_size.y = maxi(2, C.px(5))
+	rail.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rail.resized.connect(rail.queue_redraw)
+	parent.add_child(rail)
+
+static func _dossier_position(parent: Container, heading: String, position: String, detail: Dictionary, tint: Color, compact: bool) -> void:
 	var column := C.v(2)
 	parent.add_child(C.fill(column))
 	if compact:
@@ -346,7 +423,9 @@ static func _dossier_position(parent: Container, heading: String, position: Stri
 		column.add_child(C.wrap(position, 23, Editorial.RAIL_GOLD, true, 700))
 	var count := int(detail.count)
 	column.add_child(C.wrap("Moyenne %s · Meilleure note %s" % [_rating(detail), _rating({"average":detail.best})], 17, C.IVORY, compact))
-	if detail.get("divisionAverage") != null:
+	var division_average: Variant = detail.get("divisionAverage")
+	_rating_rail(column, float(detail.average), float(division_average) if division_average != null else -1.0, tint)
+	if division_average != null:
 		var benchmark := _rating({"average":detail.divisionAverage})
 		var difference := roundi((float(detail.average) - float(detail.divisionAverage)) * 10.0)
 		var sign := "+" if difference > 0 else ("−" if difference < 0 else "")
@@ -354,12 +433,26 @@ static func _dossier_position(parent: Container, heading: String, position: Stri
 		column.add_child(C.wrap("Adversaires du même poste %s · Écart %s pt" % [benchmark, gap], 17, C.MUTED, compact))
 		var at_level := int(detail.atLevel)
 		column.add_child(C.wrap("%d sur %d %s ce niveau." % [at_level, count, "atteint" if at_level == 1 else "atteignent"], 17, C.MUTED, compact))
+		var depth := C.h(3)
+		depth.name = "CreationDepth"
+		column.add_child(depth)
+		for index in count:
+			var tick := ColorRect.new()
+			tick.color = tint if index < at_level else Color("384440")
+			tick.custom_minimum_size = Vector2(C.px(13), maxi(2, C.px(5)))
+			tick.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			depth.add_child(tick)
 	else:
 		column.add_child(C.wrap("%d %s à ce poste." % [count, "joueur" if count == 1 else "joueurs"], 17, C.MUTED))
 
-static func _dossier_fact(parent: Container, caption: String, detail: String, compact: bool = false) -> VBoxContainer:
+static func _dossier_fact(parent: Container, caption: String, detail: String, icon: String, compact: bool) -> VBoxContainer:
+	var row := C.h(6)
+	parent.add_child(C.fill(row))
+	var pictogram := C.icon(icon, 19 if compact else 25, Editorial.RAIL_GOLD)
+	pictogram.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(pictogram)
 	var fact := C.v(0)
-	parent.add_child(C.fill(fact))
+	row.add_child(C.fill(fact))
 	fact.add_child(C.wrap(caption, 17, C.MUTED, compact))
 	fact.add_child(C.wrap(detail, 23, C.IVORY, true, 700))
 	return fact

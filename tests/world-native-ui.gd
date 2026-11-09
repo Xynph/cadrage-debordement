@@ -112,6 +112,8 @@ func creation_dossier_fits(expected: int, context: String) -> void:
 		return
 	var viewport := root.get_visible_rect().grow(1)
 	var bounds := dossier.get_global_rect().grow(1)
+	var comparison := named("CreationComparison") as Control
+	check(comparison != null and honours.get_global_rect().end.y <= comparison.get_global_rect().position.y, "Le palmarès précède l’analyse de l’effectif · " + context)
 	var content_fits := viewport.encloses(bounds.grow(-1)) and bounds.encloses(honours.get_global_rect()) and bounds.encloses(action.get_global_rect())
 	check(content_fits and honours.get_child_count() == expected and honours.get_global_rect().end.y <= action.get_global_rect().position.y and dossier.find_children("*", "ScrollContainer", true, false).is_empty() and scroll_fits("EntryWorkspace"),
 		"Dossier complet sans défilement · %s · dossier %s, palmarès %s, action %s, fenêtre %s" % [context, dossier.get_global_rect(), honours.get_global_rect(), action.get_global_rect(), viewport])
@@ -265,6 +267,9 @@ func _run() -> void:
 	check(named("CreationStadium") != null and text_present(app, "Trésorerie de départ") and not text_present(app, "Trésorerie de départ simulée"), "La fiche présente le stade et la trésorerie de départ")
 	check(text_present(app, "Stade Ernest Wallon") and text_present(app, "jeu de mouvement") and named("CreationClubPresentation") != null, "La présentation raconte l’histoire du club choisi et indique son stade")
 	check(named("CreationClubFounded") != null and text_present(app, "Fondé en 1907") and text_present(app, "25 titres") and text_present(app, "6 titres"), "La fiche affiche la fondation et les titres du club anonymisé")
+	var trophy := named("CreationTrophy_elite") as TextureRect
+	check(trophy != null and trophy.texture is AtlasTexture, "La victoire a un visuel de trophée IA dédié")
+	check(app.find_children("CreationRatingRail", "Control", true, false).size() == 3 and app.find_children("CreationDepth", "Control", true, false).size() == 2, "Les notes et la profondeur de l’effectif sont visualisées")
 	creation_dossier_fits(app.pack_manager.creation_catalogue()[0].history.results.size(), "club 0 · 1280 × 720")
 	var roster_summary := named("CreationRosterSummary")
 	check(roster_summary != null and text_present(roster_summary, "Note moyenne") and not text_present(roster_summary, "Avants") and not text_present(roster_summary, "Trois-quarts"), "La note moyenne reste dans la fiche sans les compteurs par ligne")
