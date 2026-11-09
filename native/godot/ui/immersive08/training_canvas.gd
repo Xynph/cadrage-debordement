@@ -4,6 +4,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
+const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 const DARK = preload("res://theme.gd")
 const TABS = ["Semaine", "Groupes", "Individuel", "Staff"]
 const MODES = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
@@ -83,8 +84,14 @@ func _build() -> void:
 	D.text(self, 30, 142, "Semaine %s  ·  %s" % [G.n(int(meta.get("week", 0)) + 1), fixture], 27, C.IVORY, 500, 785)
 	_metrics(meta)
 	for i in TABS.size():
-		var tab := _action(self, Rect2(4 + i * 249, 169, 238, 58), TABS[i], func(): _open_tab(i), i == active_tab, "", "TrainingTab" + str(i))
+		var tab := ClubUI.tab(self, Rect2(4 + i * 249, 169, 238, 58), TABS[i], i == active_tab, func(): _open_tab(i), "TrainingTab" + str(i))
 		tab.add_theme_font_size_override("font_size", C.px(30))
+		var shape := tab.get_theme_stylebox("normal")
+		tab.add_theme_stylebox_override("pressed", shape)
+		var hover := shape.duplicate() as StyleBoxTexture
+		if hover != null:
+			hover.modulate_color = Color(1.08, 1.08, 1.08)
+			for key in ["hover", "hover_pressed"]: tab.add_theme_stylebox_override(key, hover)
 		tab.toggle_mode = true
 		tab.set_pressed_no_signal(i == active_tab)
 	var dossier := _action(self, Rect2(1002, 169, 294, 58), "Dossier & consignes", func():
@@ -368,7 +375,9 @@ func _staff_tab() -> void:
 
 func _open_tab(index: int) -> void:
 	state.tab = index
-	app._render()
+	var owner := app
+	owner._render()
+	ClubUI.focus(owner, "TrainingTab" + str(index))
 
 func _open_slot(index: int) -> void:
 	match index:

@@ -99,11 +99,23 @@ static func _stadium(card: Panel, app: Control, fans: Dictionary) -> void:
 	if archive:
 		var picture := G.picture(str(identity.get("slug","")),"stadium",false)
 		card.add_child(picture)
-		D.place(picture, Rect2(1,1,932,316))
+		D.place(picture, Rect2(1,1,932,386))
 	else:
-		D.photo(card, "stadium", Rect2(1,1,932,316))
+		D.photo(card, "stadium", Rect2(1,1,932,386))
+	var gradient := Gradient.new()
+	gradient.offsets = PackedFloat32Array([0.0, .46, .86])
+	gradient.colors = PackedColorArray([Color("0c181700"), Color("0c1817d9"), Color("0c1817")])
+	var texture := GradientTexture2D.new()
+	texture.gradient = gradient
+	texture.fill_to = Vector2.DOWN
+	var shade := TextureRect.new()
+	shade.name = "StadiumCaptionShade"
+	shade.texture = texture
+	shade.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(shade)
+	D.place(shade, Rect2(1,278,932,123))
 	D.chip(card, Rect2(21,16,175,27), "PHOTO D’ARCHIVE" if archive else "ILLUSTRATION", C.GOLD)
-	D.rect(card, Rect2(1,303,932,98), Color("0c1817"))
 	D.text(card, 23, 348, str(G.identity(app.model.club).get("stadium", "Le stade du club")), 41, C.IVORY, 700, 598)
 	U.icon(card, "people", Vector2(24,363), C.MUTED, 24)
 	var attendance := "Affluence prévue " + G.n(fans.expectedAttendance) if fans.has("expectedAttendance") else "Affluence indisponible"

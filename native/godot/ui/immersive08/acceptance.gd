@@ -50,10 +50,11 @@ func _run() -> void:
 		await _capture("09-entrainement")
 		if await _activate("ImmersiveContinue"):
 			_check(app.find_child("ImmersivePreparation", true, false) != null, "Continuer ouvre le dossier de match")
+			_assert_art("analysis-room")
 			await _activate("NavigationBack")
 			_check(app.find_child("ImmersiveTraining", true, false) != null, "Le retour retrouve l’entraînement")
 	await _visit("Club", "ClubStadium", "", "10-club")
-	await _visit("Finances", "FinanceLedgerPlot", "", "11-finances")
+	await _visit("Finances", "FinanceLedgerPlot", "finance-hospitality", "11-finances")
 	await _visit("Recrutement", "ImmersiveMarketRows", "", "12-recrutement")
 	await _visit("Formation", "AcademyImmersiveRows", "", "13-formation")
 	await _visit("Classements", "StandingsRows", "", "14-classements")
@@ -149,3 +150,5 @@ func _match_and_save() -> void:
 			"L’horodatage de l’export est valide")
 		document.erase("exportedAt")
 	_check(before == after, "Le paquet relit intégralement la carrière exportée, checksum et RNG compris")
+	_check(not app.model.get("finance", {}).get("ledger", []).is_empty(), "Le journal financier de la carrière jouée contient des écritures")
+	await _visit("Finances", "FinanceLedgerPlot", "finance-hospitality", "19-finances-apres-match")

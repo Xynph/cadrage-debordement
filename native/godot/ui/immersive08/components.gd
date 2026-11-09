@@ -24,6 +24,7 @@ static var _textures: Dictionary = {}
 
 class ArtTexture extends TextureRect:
 	var source: Texture2D
+	var vertical_focus := 0.0
 	func _ready() -> void:
 		resized.connect(_fit)
 		_fit()
@@ -36,7 +37,7 @@ class ArtTexture extends TextureRect:
 		else: crop.x = source_size.y * ratio
 		var atlas := AtlasTexture.new()
 		atlas.atlas = source
-		atlas.region = Rect2(Vector2((source_size.x-crop.x)/2.0, 0), crop)
+		atlas.region = Rect2(Vector2((source_size.x-crop.x)/2.0, (source_size.y-crop.y)*vertical_focus), crop)
 		texture = atlas
 
 static func configure(height: float, width: float = 2560.0) -> void:
@@ -195,9 +196,10 @@ static func texture(id: String) -> Texture2D:
 	if value != null: _textures[id] = value
 	return value
 
-static func photo(id: String, minimum: Vector2 = Vector2.ZERO, cover: bool = true) -> TextureRect:
+static func photo(id: String, minimum: Vector2 = Vector2.ZERO, cover: bool = true, vertical_focus: float = 0.0) -> TextureRect:
 	var control := ArtTexture.new()
 	control.source = texture(id)
+	control.vertical_focus = clampf(vertical_focus, 0.0, 1.0)
 	control.texture = control.source
 	control.name = "Art_" + id.replace("-", "_")
 	control.expand_mode = TextureRect.EXPAND_IGNORE_SIZE

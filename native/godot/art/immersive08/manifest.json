@@ -327,6 +327,23 @@
       "synthetic": true
     },
     {
+      "id": "finance-hospitality",
+      "file": "finance-hospitality.png",
+      "source": "09-finances.png",
+      "source_sha256": "7843d9006e15bf74c8b1b0bd4fb50f75a052d57ae77b51a71ebff8aa2098a498",
+      "crop": [
+        1083,
+        58,
+        589,
+        126
+      ],
+      "width": 589,
+      "height": 126,
+      "bytes": 186005,
+      "sha256": "47c4078948b3c8c9bd6866b5ecbc64982e15b6395bbc15c9983e81c6b1edb5b5",
+      "synthetic": true
+    },
+    {
       "id": "trophy",
       "file": "trophy.png",
       "source": "10-competitions.png",

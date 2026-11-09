@@ -70,8 +70,8 @@ static func build(app: Control, canvas: Control) -> void:
 	_footer(app, canvas, finance)
 
 static func _header(app: Control, canvas: Control, tab: String) -> void:
-	D.photo(canvas, "hospitality", Rect2(1554,0,694,181))
-	U.art_fade(canvas, Rect2(1554,0,694,181))
+	D.photo(canvas, "finance-hospitality", Rect2(1370,0,878,185))
+	U.art_fade(canvas, Rect2(1370,0,185,185))
 	D.text(canvas, 2, 38, "L’ÉQUILIBRE DU PROJET", 31, C.GOLD, 700, 400)
 	D.line(canvas, Vector2(329,23), Vector2(650,23), Color(C.GOLD,.65))
 	U.italic(D.text(canvas, 7, 106, "Garder une longueur d’avance.", 76, C.IVORY, 800, 1280), 800)

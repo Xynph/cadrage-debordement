@@ -118,7 +118,7 @@ func _dossier() -> void:
 		D.text(empty, 29, 124, "Aucun dossier disponible pour cette rencontre.", 31, C.IVORY, 600, 1350)
 		D.text(empty, 29, 174, "Consultez le calendrier ou reprenez le match en cours.", 25, C.MUTED, 500, 1350)
 		_button(empty, Rect2(28, 209, 520, 58), "Calendrier", func(): app._navigate("Calendrier"), false, "calendar", "PreparationOpenCalendar")
-		D.photo(section, "tactics-briefing", Rect2(0, 455, 2248, 444))
+		D.photo(section, "analysis-room", Rect2(0, 455, 2248, 444), .48)
 		return
 	var comparison := D.panel(section, Rect2(0, 0, 1344, 596), "Rapport de force", "tactic", "", "PreparationComparison")
 	var opponent := _opponent()
@@ -149,7 +149,7 @@ func _dossier() -> void:
 
 func _recommended(section: Control) -> void:
 	var panel := D.panel(section, Rect2(1361, 0, 887, 596), "Le conseil du staff", "flag", "", "PreparationRecommendation")
-	D.photo(panel, "tactics-briefing", Rect2(16, 67, 855, 159))
+	D.photo(panel, "analysis-room", Rect2(16, 67, 855, 159), .51)
 	var advice: Dictionary = reports.get("advice", {})
 	var tactics: Dictionary = app.model.get("tactics", {})
 	_summary_line(panel, 243, "AVEC LE BALLON", _tactic_label(tactics.get("attacks", []), advice.get("attack", "")), str(advice.get("attackReason", "")), GREEN)

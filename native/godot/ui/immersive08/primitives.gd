@@ -83,8 +83,8 @@ static func line(parent: Node, from: Vector2, to: Vector2, color: Color = C.LINE
 	place(control,Rect2(from,Vector2(maxf(thickness,to.x-from.x),maxf(thickness,to.y-from.y))))
 	return control
 
-static func photo(parent: Node, id: String, rectangle: Rect2) -> TextureRect:
-	var image := C.photo(id)
+static func photo(parent: Node, id: String, rectangle: Rect2, vertical_focus: float = 0.0) -> TextureRect:
+	var image := C.photo(id, Vector2.ZERO, true, vertical_focus)
 	parent.add_child(image)
 	place(image,rectangle)
 	return image

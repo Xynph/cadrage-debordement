@@ -164,7 +164,13 @@ func _phases() -> void:
 			var lines := D.words(str(option.get("description", "")), 72, 2)
 			for j in lines.size(): D.text(tile, 37, y + 57 + j * 25, lines[j], 22, C.MUTED, 500, 643)
 			y += 103
-	D.photo(phase_page, "tactics-briefing", Rect2(16, 698, 2213, 153))
+	var intentions := D.panel(phase_page, Rect2(16, 698, 1022, 153), "Repères retenus", "flag")
+	for i in mini(3, phases.size()):
+		var phase: Dictionary = phases[i]
+		var y := 71 + i * 29
+		D.text(intentions, 24, y, phase.get("label", "Phase"), 23, C.MUTED, 500, 355)
+		D.text(intentions, 388, y, _option_title(phase.get("options", []), str(phase.get("selected", ""))), 25, C.IVORY, 700, 610)
+	D.photo(phase_page, "lineout-analysis", Rect2(1056, 698, 1173, 153))
 	_notice(phase_page, 872)
 
 func _advice() -> void:
@@ -180,7 +186,7 @@ func _advice() -> void:
 	Rules._advice(app, content, data, available)
 	Legacy.apply(content, Color("09673e"))
 	var scene := D.panel(advice_page, Rect2(1476, 16, 755, 826), "Lecture du rapport de force", "tactic", "", "PlaybookAdviceContext")
-	D.photo(scene, "tactics-briefing", Rect2(14, 67, 727, 200))
+	D.photo(scene, "analysis-room", Rect2(14, 67, 727, 200), .50)
 	var general: Dictionary = data.get("general", {})
 	_metric(scene, Rect2(21, 288, 709, 55), "Attaque principale", general.get("attackLabel", "—"), GREEN)
 	_metric(scene, Rect2(21, 355, 709, 55), "Défense principale", general.get("defenceLabel", "—"), GOLD)

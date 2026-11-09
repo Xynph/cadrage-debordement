@@ -24,6 +24,7 @@ const recipes=[
  ['stadium','08-club.png',[248,200,584,216]],
  ['club-forest','08-club.png',[946,49,716,86]],
  ['hospitality','09-finances.png',[1264,50,406,132]],
+ ['finance-hospitality','09-finances.png',[1083,58,589,126]],
  ['trophy','10-competitions.png',[1208,49,462,176]],
  ['academy-training','11-formation.png',[912,49,407,174]],
  ['academy-player','11-formation.png',[1143,275,183,240]],

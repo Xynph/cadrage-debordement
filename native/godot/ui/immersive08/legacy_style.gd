@@ -54,7 +54,7 @@ static func theme(accent: Color) -> Theme:
 	return theme
 
 static func _style(node: Node, accent: Color) -> void:
-	if not node is Control or node.get_meta("immersive_style_applied",false): return
+	if not node is Control or node.get_meta("immersive_style_applied",false) or node.has_meta("semantic_role"): return
 	node.set_meta("immersive_style_applied",true)
 	if node is Label:
 		var color: Color = node.get_theme_color("font_color")

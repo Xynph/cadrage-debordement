@@ -1,5 +1,6 @@
 extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
+const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Office = preload("res://ui/immersive08/office.gd")
 const OfficeCanvas = preload("res://ui/immersive08/office_canvas.gd")
@@ -36,6 +37,7 @@ const GROUPS = [
 	["Carrière", "Carrière", ["Carrière"]]
 ]
 const TITLES = {"Bureau":"Votre semaine commence ici.", "Effectif":"Les hommes du projet.", "Composition":"Le XV de départ.", "Préparation":"La semaine se gagne ici.", "Plan de jeu":"Votre identité de jeu.", "Vestiaire":"Un groupe, une ambition.", "Recrutement":"Le prochain renfort.", "Club":"Un club. Un territoire.", "Finances":"Garder une longueur d’avance.", "Classements":"Chaque point compte.", "Calendrier":"Le fil de votre saison.", "Formation":"Le futur porte nos couleurs.", "Centre":"Les chemins de la progression.", "Staff":"Le collectif derrière le collectif.", "Travail du club":"Des décisions qui engagent.", "Stratégie":"Construire dans la durée.", "Presse":"La voix du club.", "Rivalités":"Votre place dans le rugby.", "Carrière":"Une carrière à écrire.", "Match":"Le jour de match."}
+const COMPACT_ART = {"Finances":"finance-hospitality", "Calendrier":"stadium", "Formation":"academy-training", "Plan de jeu":"lineout-analysis", "Centre":"academy-training"}
 
 static func render(app: Control) -> bool:
 	if not app.model.get("club") is Dictionary or app.route in ["Accueil", "Création", "Packs"]: return false
@@ -89,7 +91,7 @@ static func render(app: Control) -> bool:
 	var content := C.v(16)
 	content.name = "CareerContent"
 	inset.add_child(content)
-	var canvas_script := _dedicated_page(app,physical.x)
+	var canvas_script := _dedicated_page(app,physical)
 	var immersive_match: bool = app.route=="Match" and physical.x>=2240
 	if canvas_script!=null or immersive_match or (app.route=="Effectif" and app.get_meta("immersive08_full_player",false)):
 		app.heading=null
@@ -142,8 +144,8 @@ static func open_training(app: Control) -> void:
 	else: app.management_ui.preparation.tab=2
 	app._navigate("Préparation",true,true)
 
-static func _dedicated_page(app: Control, width: int) -> Script:
-	if width<2240: return null
+static func _dedicated_page(app: Control, size: Vector2i) -> Script:
+	if size.x<1920 or size.y<1080: return null
 	if _is_training(app): return Training
 	match app.route:
 		"Préparation": return Preparation
@@ -238,12 +240,14 @@ static func _topbar(parent: Node, app: Control) -> void:
 	panel.add_child(home)
 	D.place(home,Rect2(34,24,25,25))
 	D.text(panel,77,48,"›",26,C.MUTED)
-	D.text(panel,103,48,G.club_name(app.model.club),24,C.MUTED,500,170)
-	D.text(panel,278,48,"›",26,C.MUTED)
+	var club_name := G.club_name(app.model.club)
+	var name_width := clampf(C.MEDIUM.get_string_size(club_name,HORIZONTAL_ALIGNMENT_LEFT,-1,C.px(24)).x/C.density+8,170,320)
+	D.text(panel,103,48,club_name,24,C.MUTED,500,name_width)
+	D.text(panel,108+name_width,48,"›",26,C.MUTED)
 	var route_caption:String="Tactique" if app.route=="Composition" else app.route
 	if _is_training(app): route_caption="Entraînement"
 	if app.route=="Effectif" and app.get_meta("immersive08_full_player",false):route_caption="Fiche joueur : "+str(P.player(app.model,app.selected_player).get("name",""))
-	D.text(panel,307,48,route_caption,25,C.IVORY,700,660)
+	D.text(panel,137+name_width,48,route_caption,25,C.IVORY,700,660)
 	var history: Control = app.navigation_controller.controls(false)
 	panel.add_child(history)
 	D.place(history,Rect2(1155,19,91,42))
@@ -281,6 +285,10 @@ static func _heading(parent: Node, app: Control) -> void:
 		return
 	D.text(row,1,19,{"Bureau":"LE BUREAU","Effectif":"LE GROUPE PROFESSIONNEL","Composition":"LE PLAN DE JEU"}.get(app.route,app.route.to_upper()),19,C.GOLD,600,1040)
 	app.heading = D.text(row,-1,76,TITLES.get(app.route,app.route),53,C.IVORY,700,1190)
+	if COMPACT_ART.has(app.route):
+		var image := D.panel(row,Rect2(1438,6,810,89),"","","","CompactRouteArt")
+		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		D.photo(image,COMPACT_ART[app.route],Rect2(2,2,806,85),.16)
 	var values := P.group(app.model)
 	var rank := G.n(app.model.club.get("rank", "—"))
 	var metrics: Array = [[rank+("er" if rank=="1" else "e")+" · "+G.n(app.model.club.get("points",0))+" pts","trophy",C.GOLD],[str(values.available)+" disponibles","people",C.MINT],[str(values.injured)+" blessés","heart",C.ALERT],["3 priorités","calendar",C.AMBER]]
@@ -392,3 +400,5 @@ static func _existing_page(app: Control) -> void:
 			app.body.add_child(app.match_screen)
 			app.match_page = app.match_screen
 			app.match_screen.update_frame(app.model)
+	if COMPACT_ART.has(app.route):
+		Legacy.apply(app.body.get_child(0), app.accent)

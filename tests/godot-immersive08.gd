@@ -152,18 +152,7 @@ func resize_shell() -> void:
 		if size in [Vector2i(1280,720),Vector2i(1440,900)]:
 			await capture("06-bureau-redimensionne-%dx%d" % [size.x,size.y])
 
-func families() -> void:
-	var training: Button = app.find_child("Nav_Entraînement",true,false)
-	await click(training)
-	await settle()
-	var week: Control = app.find_child("ImmersiveTraining",true,false)
-	check(week!=null and app.management_ui.preparation.tab==2,"Rail Entraînement raccordé à la vraie préparation")
-	if week!=null:
-		await capture("09-entrainement-2560x1440")
-		await click(week.find_child("TrainingBackToPreparation",true,false))
-		await settle()
-		check(app.route=="Préparation" and app.management_ui.preparation.tab==0,"Retour au dossier de préparation")
-	for item: Array in [
+const FAMILIES = [
 		["Recrutement","ImmersiveMarketRows","10-recrutement"],
 		["Club","ClubStadium","11-club"],
 		["Finances","FinanceLedgerPlot","12-finances"],
@@ -180,7 +169,20 @@ func families() -> void:
 		["Rivalités","RivalryWorkspace","24-rivalites"],
 		["Vestiaire","ImmersiveLockerRoom","25-vestiaire"],
 		["Carrière","ImmersiveManagerCareer","26-carriere"]
-	]:
+]
+
+func families() -> void:
+	var training: Button = app.find_child("Nav_Entraînement",true,false)
+	await click(training)
+	await settle()
+	var week: Control = app.find_child("ImmersiveTraining",true,false)
+	check(week!=null and app.management_ui.preparation.tab==2,"Rail Entraînement raccordé à la vraie préparation")
+	if week!=null:
+		await capture("09-entrainement-2560x1440")
+		await click(week.find_child("TrainingBackToPreparation",true,false))
+		await settle()
+		check(app.route=="Préparation" and app.management_ui.preparation.tab==0,"Retour au dossier de préparation")
+	for item: Array in FAMILIES:
 		app._navigate(item[0])
 		await settle()
 		var view: Control = app.find_child(item[1],true,false)
@@ -207,6 +209,41 @@ func families() -> void:
 	if set_piece!=null: await click(set_piece)
 	await settle()
 	check(app.route=="Plan de jeu" and app.find_child("PlaybookTabs",true,false).current_tab==1,"Phases arrêtées ouvre la bonne sous-vue tactique")
+	var lineout: TextureRect = app.find_child("Art_lineout_analysis",true,false)
+	check(lineout!=null and lineout.texture!=null and lineout.is_visible_in_tree(),"La photo de touche apparaît dans les phases arrêtées")
+	await capture("38-plan-de-jeu-phases-2560x1440")
+
+func desktop_1080() -> void:
+	root.size=Vector2i(1920,1080)
+	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+	await settle()
+	for item: Array in FAMILIES:
+		app._navigate(item[0])
+		await settle()
+		var view: Control = app.find_child("ImmersiveFinance" if item[0]=="Finances" else item[1],true,false)
+		check(view!=null and view.is_visible_in_tree(),"Vue immersive ouverte directement en 1080p · "+str(item[0]))
+		var work: ScrollContainer = app.body_scroll
+		var bar := work.get_v_scroll_bar()
+		check(app.body.size.x<=work.size.x+1 and bar.max_value<=bar.page+1,"Gabarit contenu dans la surface 1080p · "+str(item[0]))
+		if item[0] in ["Club","Recrutement"]: await capture(item[2]+"-1920x1080")
+	app.Immersive.open_training(app)
+	await settle()
+	check(app.find_child("ImmersiveTraining",true,false)!=null,"Entraînement ouvre son gabarit à 1080p")
+	await capture("09-entrainement-1920x1080")
+	root.size=Vector2i(1280,720)
+	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+	await settle()
+	for route: String in ["Finances","Calendrier","Formation","Plan de jeu","Centre"]:
+		app._navigate(route)
+		await settle()
+		var art: Control = app.find_child("CompactRouteArt",true,false)
+		var photo: TextureRect = art.get_child(0) as TextureRect if art!=null else null
+		check(photo!=null and photo.texture!=null and art.is_visible_in_tree(),"Illustration visible dans le repli à 720p · "+route)
+		check(app.body.get_child(0).get_meta("immersive_style_applied",false),"Les vraies actions de la page utilisent la DA compacte · "+route)
+		if route=="Finances": await capture("12-finances-1280x720")
+	root.size=Vector2i(2560,1440)
+	if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+	await settle()
 
 func navigation_flow() -> void:
 	app._navigate("Bureau")
@@ -329,9 +366,14 @@ func match_flow() -> void:
 	var scene: Node3D = app.match_view
 	var match_ui: Control = app.match_screen
 	await capture("27-avant-match-2560x1440")
-	await click(app.pause_button)
+	var kickoff: Button = app.pause_button
+	var event_seen := {"pressed":false}
+	kickoff.pressed.connect(func(): event_seen.pressed=true,CONNECT_ONE_SHOT)
+	await click(kickoff)
 	await worker()
-	check(app.model.live is Dictionary and app.match_view==scene and not match_ui.opening.visible,"Coup d’envoi réel conserve la scène et retire l’ouverture")
+	check(app.model.live is Dictionary and app.match_view==scene and not match_ui.opening.visible,
+		"Coup d’envoi réel conserve la scène et retire l’ouverture · clic=%s, commande=%s, erreur=%s, contrôle=%s"
+		% [str(event_seen.pressed), app.last_command, app.last_error, str(kickoff.get_global_rect())])
 	if not app.model.live is Dictionary: return
 	await command("tick",{"steps":12})
 	await command("pause",{"paused":true})
@@ -514,6 +556,7 @@ func run() -> void:
 			await reception()
 			await resize_shell()
 			await families()
+			await desktop_1080()
 			await navigation_flow()
 		check(bytes == FileAccess.get_file_as_bytes(disk), "Rendu et navigation ne modifient aucun octet du profil")
 		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await dialogs()

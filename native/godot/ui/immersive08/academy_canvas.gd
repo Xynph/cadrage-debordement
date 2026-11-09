@@ -3,6 +3,7 @@ extends Control
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
+const U = preload("res://ui/immersive08/club_ui.gd")
 const DARK = preload("res://theme.gd")
 const TABS = ["Effectif U21", "Effectif U18", "Progression", "Passerelles", "Encadrement"]
 const PAGE_SIZE = 12
@@ -92,11 +93,24 @@ func _build() -> void:
 func _heading() -> void:
 	var hero := D.panel(self, Rect2(0, 0, 2248, 279), "", "", "", "AcademyHero")
 	hero.clip_contents = true
-	D.photo(hero, "club-forest", Rect2(1278, 1, 968, 276))
-	D.photo(hero, "academy-training", Rect2(714, 1, 963, 276))
-	_veil(hero, Rect2(616, 1, 550, 276), [Color("101719"), Color("101719"), Color("101719", .50), Color("101719", .0)], [0.0, .23, .50, 1.0])
-	_veil(hero, Rect2(1425, 1, 253, 276), [Color("101719", .0), Color("101719")], [0.0, 1.0])
-	_veil(hero, Rect2(1677, 1, 199, 276), [Color("101719"), Color("101719", .0)], [0.0, 1.0])
+	D.photo(hero, "club-forest", Rect2(1450, 1, 796, 276))
+	var training_art := D.photo(hero, "academy-training", Rect2(1056, 1, 780, 276))
+	var blend := Shader.new()
+	# La coordonnée locale reste continue quelle que soit la découpe de l’atlas.
+	blend.code = """
+shader_type canvas_item;
+uniform float photo_width = 1.0;
+varying float local_x;
+void vertex() { local_x = VERTEX.x; }
+void fragment() {
+	float x = local_x / photo_width;
+	COLOR.a *= smoothstep(0.0, 0.21, x) * (1.0 - smoothstep(0.78, 1.0, x));
+}
+"""
+	var material := ShaderMaterial.new()
+	material.shader = blend
+	material.set_shader_parameter("photo_width", training_art.size.x)
+	training_art.material = material
 	D.text(hero, 29, 36, "LA RELÈVE SE CONSTRUIT", 28, GOLD, 700, 615)
 	app.heading = D.text(hero, 26, 102, "Le futur porte nos couleurs.", 69, C.IVORY, 800, 1010)
 	D.text(hero, 30, 140, "Académie · " + G.club_name(app.model.club) + "  ·  U18 / U21", 26, C.IVORY, 500, 1000)
@@ -121,10 +135,10 @@ func _heading() -> void:
 	integration.add_theme_font_size_override("font_size", C.px(35))
 	_update_integration()
 	for i in TABS.size():
-		var tab := _action(self, Rect2(3 + i * 282, 247, 271, 56), TABS[i], func(): _open_tab(i), i == active_tab, "", "AcademyImmersiveTab" + str(i))
+		var tab := U.tab(self, Rect2(3 + i * 282, 247, 271, 56), TABS[i], i == active_tab, func(): _open_tab(i), "AcademyImmersiveTab" + str(i))
 		tab.toggle_mode = true
 		tab.set_pressed_no_signal(i == active_tab)
-		tab.add_theme_font_size_override("font_size", C.px(27))
+		tab.add_theme_stylebox_override("pressed", tab.get_theme_stylebox("normal"))
 		if i < 2: tab.tooltip_text = "Espoirs de 19 à 21 ans" if i == 0 else "Espoirs jusqu’à 18 ans"
 	D.line(self, Vector2(1, 304), Vector2(2248, 304), Color(C.LINE, .90))
 

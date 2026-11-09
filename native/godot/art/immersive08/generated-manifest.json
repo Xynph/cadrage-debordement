@@ -100,6 +100,46 @@
       "synthetic": true,
       "tool": "built-in image_gen",
       "prompt": "New standalone cinematic ultrawide 2:1 photorealistic sports photograph for a French rugby union XV PC management game's pre-match page. Seen from behind, a professional fictional XV rugby team in charcoal and dark green warm-up jackets is in the stadium tunnel, about to emerge into warm ivory floodlights and fine rain over the pitch. Several athletic adult players on the right, no discernible faces, no visible numbers or logos. Rich shadows, muted forest and antique-gold details, cold air, authentic French stadium atmosphere, realistic scale. Space on the left is dark concrete with subtle atmospheric detail and open composition to place separately rendered native game text. No UI, words, readable signs, logos, watermarks or border."
+    },
+    {
+      "id": "analysis-room",
+      "file": "analysis-room.png",
+      "source": "exec-d01e747e-e331-453a-b647-fe7e8e227edd.png",
+      "sourceType": "generated",
+      "source_sha256": "2d2021431a8f8c4ba0a0c8602b123d4657d83ec5fab288a360350e6b7ca0b989",
+      "crop": [
+        0,
+        0,
+        1942,
+        809
+      ],
+      "width": 1942,
+      "height": 809,
+      "bytes": 1836650,
+      "sha256": "2d2021431a8f8c4ba0a0c8602b123d4657d83ec5fab288a360350e6b7ca0b989",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Create a single photorealistic cinematic sports-management videogame illustration for Oval Legacy 27, French elite rugby union XV. Deliver a very wide panoramic landscape photo, around 2.4:1. A quiet, sophisticated rugby opposition analysis room before an evening match. On the right half of the frame a middle-aged male assistant coach in an unbranded dark forest-green knit and a female analyst in an ivory shirt study video on a huge softly glowing screen, seen in side silhouette from behind the last row of dark seats. The screen shows tiny authentic rugby players in dark green and ivory moving around oval-ball play on a natural grass rugby pitch, tasteful abstract chalk markings with no readable characters. Warm brass desk lamps, charcoal architectural panels, slightly cold stadium light, muted ivory highlights, deep forest greens, premium European rugby club, subtle realistic film grain. Key action and heads are toward upper right, clear enough at a narrow panoramic crop. Left third mostly dark shadow and atmospheric negative space. Focus on editorial documentary photography, a real club at work. One photo, no UI, no typography, no captions, no letters, no digits, no sponsor logos, no borders."
+    },
+    {
+      "id": "lineout-analysis",
+      "file": "lineout-analysis.png",
+      "source": "exec-93536fb6-b251-47a2-9be8-d3fb07311586.png",
+      "sourceType": "generated",
+      "source_sha256": "aa968a79278d0ffe62a44349e805119d315a24b3269db0c223152058c5e24b4f",
+      "crop": [
+        0,
+        0,
+        1937,
+        812
+      ],
+      "width": 1937,
+      "height": 812,
+      "bytes": 1890849,
+      "sha256": "aa968a79278d0ffe62a44349e805119d315a24b3269db0c223152058c5e24b4f",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Create one wide panoramic photorealistic editorial sports photo around 2.4:1, for a premium native PC game about French elite rugby union XV. Tactical set-piece rehearsal in early evening under soft training-ground floodlights. A compact lineout drill framed from pitch-side at mid-distance: three adult teammates in dark forest-green and muted ivory training kits, two lifting a teammate safely at thigh level, the jumper reaches for a clearly oval ivory rugby ball just above the group, with authentic H-shaped rugby goalposts, clipped grass and shadowy club buildings in the distance. Show the relationship of jumpers and lifters clearly, centered-right, strong horizontal composition, top 60% keeps ball, hands and heads visible for a narrow crop. The left third is negative space with dark blurred trees and pitch lines. Palette rich charcoal, forest greens, muted brass light and ivory. Realistic faces and anatomy, documentary camera realism, gentle haze, early evening glow, polished cinematic mood. No graphic diagram, no UI, no lettering, no numbers, no crest, no watermark, no image borders."
     }
   ]
 }
