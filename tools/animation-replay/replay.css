@@ -1,0 +1,58 @@
+:root {
+  color-scheme: dark;
+  --ink: #edf4ee;
+  --muted: #a4b9ad;
+  --accent: #f1d876;
+  --surface: #14251f;
+  --edge: #365048;
+  font-family: system-ui, sans-serif;
+  background: #0b1815;
+  color: var(--ink);
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 1160px; margin: 0 auto; padding: clamp(16px, 4vw, 48px); }
+header { margin-bottom: 26px; }
+h1 { margin: 7px 0; font-size: clamp(2.2rem, 6vw, 4rem); line-height: 1.03; letter-spacing: -.05em; }
+h2 { margin: 4px 0 10px; font-size: clamp(1.7rem, 3vw, 2.4rem); line-height: 1.05; }
+p { line-height: 1.55; margin: 0; }
+header > p:last-child, footer, .keys { color: var(--muted); }
+.eyebrow { color: var(--accent); font-size: .75rem; letter-spacing: .14em; font-weight: 750; }
+.eyebrow span, .keys span { margin: 0 .2em; }
+.layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; }
+.board, .panel { border: 1px solid var(--edge); border-radius: 16px; background: var(--surface); min-width: 0; }
+.board { padding: clamp(10px, 2vw, 18px); }
+.panel { padding: clamp(16px, 3vw, 26px); }
+.scoreboard { display: flex; justify-content: center; align-items: center; gap: clamp(14px, 4vw, 30px); margin: 2px 0 9px; }
+.scoreboard > span { display: flex; align-items: center; gap: .45em; font-size: .85rem; font-weight: 750; }
+.scoreboard strong { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+.legend { width: .7em; height: .7em; border-radius: 50%; }
+.home { background: #ff8990; fill: #ff8990; }
+.away { background: #86cfff; fill: #86cfff; }
+#pitch { display: block; width: 100%; height: auto; background: #17382d; border-radius: 8px; }
+.grass { fill: #326348; }
+.in-goal { fill: #244a39; }
+.line, .dashed { fill: none; stroke: #c7e5ce; stroke-width: .28; }
+.dashed { stroke-dasharray: 1.5 1.8; opacity: .65; }
+.marker { stroke: #152820; stroke-width: .33; }
+.featured { stroke: #fff; stroke-width: .45; }
+.ball-ring { fill: #14251fa8; stroke: #f1d876; stroke-width: .43; }
+.ball-dot { fill: #fff4bc; }
+.controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-top: 12px; }
+button { font: inherit; color: var(--ink); background: #1e352c; border: 1px solid #4c6658; border-radius: 8px; min-height: 44px; padding: 6px; cursor: pointer; }
+button.primary { background: var(--accent); color: #162619; font-weight: 760; }
+button:disabled { cursor: default; opacity: .55; }
+button:focus-visible { outline: 2px solid #fff4bc; outline-offset: 3px; }
+blockquote { color: #d8e5db; background: #1a3028; border-left: 3px solid var(--accent); padding: 10px 13px; margin: 18px 0; line-height: 1.42; }
+#timeline { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#timeline button[aria-current="step"] { background: #3b4631; border-color: var(--accent); font-weight: 750; }
+.keys { margin-top: 14px; font-size: .83rem; }
+kbd { border: 1px solid var(--edge); border-radius: 4px; padding: 1px 5px; }
+footer { margin-top: 20px; font-size: .84rem; line-height: 1.5; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 720px) {
+  .layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 370px) {
+  .controls button, #timeline button { font-size: .85rem; }
+}

@@ -30,8 +30,13 @@ func capture(label: String) -> void:
 func run() -> void:
 	# Removing the startup mode or accidentally choosing exclusive fullscreen breaks this contract.
 	check(ProjectSettings.get_setting("display/window/size/mode") == Window.MODE_FULLSCREEN,"Le lancement configure le plein écran standard")
+	var launch_screen := -1
 	if native:
 		check(DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN,"Le vrai lancement Windows ouvre en plein écran")
+		launch_screen = DisplayServer.window_get_current_screen()
+		var expected_x := OS.get_environment("CD_DEFAULT_DISPLAY_SCREEN_X")
+		if not expected_x.is_empty():
+			check(DisplayServer.screen_get_position(launch_screen).x == int(expected_x),"Le jeu démarre sur l’écran physique demandé")
 	else: print("SKIP réception physique plein écran/fenêtré : DisplayServer ",DisplayServer.get_name())
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
 	var deadline := Time.get_ticks_msec() + 30000
@@ -47,6 +52,19 @@ func run() -> void:
 	await settle()
 	var fullscreen: Button = dialog.find_child("PreferencesFullscreen",true,false)
 	var windowed: Button = dialog.find_child("PreferencesWindowed",true,false)
+	var screen: OptionButton = dialog.find_child("PreferencesDisplayScreen",true,false)
+	var screen_count := DisplayServer.get_screen_count() if native else 0
+	check(screen != null and screen.is_visible_in_tree() and screen.item_count == screen_count + 1 and screen.selected == 0,"Sélecteur visible avec Automatique et les écrans disponibles")
+	if screen != null and native:
+		check(screen.get_item_text(DisplayServer.get_primary_screen()+1).contains("principal"),"Écran principal identifié dans la liste")
+		screen.grab_focus(); await settle(); await key(KEY_SPACE)
+		for index in range(launch_screen+1): await key(KEY_DOWN)
+		await key(KEY_ENTER)
+		var profile = app.user_preferences
+		check(screen.selected == launch_screen+1 and profile.data.display_screen == launch_screen,"Choix d’écran accessible au clavier et enregistré")
+		check(DisplayServer.window_get_current_screen() == launch_screen and DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN,"Le choix conserve le mode plein écran sur l’écran sélectionné")
+		var reloaded = preload("res://ui/user_preferences.gd").new()
+		check(reloaded.load_profile(str(app.model.meta.dataDir)) and reloaded.data.display_screen == launch_screen,"Le dossier de profil conserve le moniteur pour le prochain lancement")
 	check(fullscreen != null and windowed != null,"Deux actions d'affichage identifiables")
 	if fullscreen != null and windowed != null:
 		check(fullscreen.get_index() < windowed.get_index(),"Plein écran proposé avant le mode fenêtré")
@@ -54,9 +72,11 @@ func run() -> void:
 		if native:
 			windowed.grab_focus(); await settle(); await key(KEY_ENTER)
 			check(DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_WINDOWED and DisplayServer.window_get_size() == Vector2i(1440,900),"Vrai bouton clavier ouvre la fenêtre 1440×900")
+			check(DisplayServer.window_get_current_screen() == launch_screen,"Fenêtré conserve l’écran choisi")
 			geometry(dialog,windowed,"fenêtré"); await capture("preferences-fenetre")
 			fullscreen.grab_focus(); await settle(); await key(KEY_ENTER)
 			check(DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN,"Vrai bouton clavier rétablit le plein écran standard")
+			check(DisplayServer.window_get_current_screen() == launch_screen,"Plein écran conserve l’écran choisi")
 			geometry(dialog,fullscreen,"plein écran"); await capture("preferences-plein-ecran")
 	check(not FileAccess.file_exists(str(app.model.meta.dataDir).path_join("donnees.json")),"Changer l'affichage ne crée pas de carrière")
 	dialog.hide(); dialog.queue_free(); await settle()
@@ -65,8 +85,11 @@ func run() -> void:
 		await resize_probe._resize_window(resolution)
 	checks += resize_probe.checks; failures.append_array(resize_probe.failures)
 	resize_probe.queue_free()
-	var file := FileAccess.open(directory.path_join("report.json"),FileAccess.WRITE)
-	file.store_string(JSON.stringify({"checks":checks,"failures":failures,"native_display":DisplayServer.get_name(),"physical_modes_tested":native},"  ")); file.close()
 	app.closing = true; app.bridge.stop()
+	deadline = Time.get_ticks_msec() + 3000
+	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await process_frame
+	var file := FileAccess.open(directory.path_join("report.json"),FileAccess.WRITE)
+	var screen_x := DisplayServer.screen_get_position(launch_screen).x if native else -1
+	file.store_string(JSON.stringify({"checks":checks,"failures":failures,"native_display":DisplayServer.get_name(),"physical_modes_tested":native,"screen_index":launch_screen,"screen_x":screen_x},"  ")); file.close()
 	print("Affichage par défaut : ",checks," contrôles ; ",failures.size()," échec(s)")
 	quit(0 if failures.is_empty() else 1)

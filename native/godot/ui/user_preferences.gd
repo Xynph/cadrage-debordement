@@ -2,7 +2,9 @@ extends RefCounted
 ## Préférences d'interface locales. Aucun état de carrière ni moteur sportif.
 signal changed
 const Atomic = preload("res://atomic_file.gd")
-const DEFAULTS := {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv"}
+const AUTOMATIC_SCREEN := -1
+const MAX_SCREEN_INDEX := 2147483647
+const DEFAULTS := {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":AUTOMATIC_SCREEN}
 const MAX_BYTES := 16 * 1024
 var data: Dictionary = DEFAULTS.duplicate(true)
 var last_error := ""
@@ -14,11 +16,11 @@ func _fail(message: String) -> bool:
 	return false
 
 func _validated(candidate: Variant) -> Dictionary:
-	if not candidate is Dictionary or candidate.size() != DEFAULTS.size():
+	if not candidate is Dictionary or candidate.size() != DEFAULTS.size() - int(not candidate.has("display_screen")):
 		_fail("Préférences refusées : champs absents ou inconnus. Le fichier original est conservé.")
 		return {}
 	for key in DEFAULTS:
-		if not candidate.has(key):
+		if key != "display_screen" and not candidate.has(key):
 			_fail("Préférences refusées : champ absent « %s ». Le fichier original est conservé." % key)
 			return {}
 	var version: Variant = candidate.version
@@ -32,7 +34,11 @@ func _validated(candidate: Variant) -> Dictionary:
 	if not candidate.reduced_motion is bool or not candidate.quality is String or not candidate.camera is String or not candidate.quality in ["economy","balanced","detail"] or not candidate.camera in ["tv","tactical","action"]:
 		_fail("Préférences refusées : type ou choix invalide. Le fichier original est conservé.")
 		return {}
-	return {"version":1,"volume":int(volume),"reduced_motion":candidate.reduced_motion,"quality":candidate.quality,"camera":candidate.camera}
+	var screen: Variant = candidate.get("display_screen",AUTOMATIC_SCREEN)
+	if not (typeof(screen) in [TYPE_INT,TYPE_FLOAT]) or not is_finite(float(screen)) or screen < AUTOMATIC_SCREEN or screen > MAX_SCREEN_INDEX or float(screen) != floor(float(screen)):
+		_fail("Écran refusé : choisissez Automatique ou un numéro d’écran valide.")
+		return {}
+	return {"version":1,"volume":int(volume),"reduced_motion":candidate.reduced_motion,"quality":candidate.quality,"camera":candidate.camera,"display_screen":int(screen)}
 
 func load_profile(directory: String) -> bool:
 	_available = false
@@ -62,6 +68,7 @@ func load_profile(directory: String) -> bool:
 	_available = true
 	last_error = ""
 	apply_audio()
+	_apply_screen()
 	changed.emit()
 	return true
 
@@ -84,9 +91,11 @@ func _save(candidate: Dictionary) -> bool:
 	if not replacement_error.is_empty():
 		DirAccess.remove_absolute(temporary)
 		return _fail("Enregistrement des préférences impossible : " + replacement_error + " Les réglages précédents et le fichier original sont conservés.")
+	var screen_changed: bool = data.display_screen != candidate.display_screen
 	data = candidate
 	last_error = ""
 	apply_audio()
+	if screen_changed: _apply_screen()
 	changed.emit()
 	return true
 
@@ -111,3 +120,9 @@ func apply_audio() -> void:
 	if master >= 0:
 		# Respecter le mute de réception/de l'application ; ne jamais toucher à Gabi.
 		AudioServer.set_bus_volume_linear(master,float(data.volume)/100.0)
+
+func _apply_screen() -> void:
+	var screen: int = data.display_screen
+	# Automatique et écran débranché conservent l'écran choisi au lancement.
+	if screen >= 0 and DisplayServer.get_name() != "headless" and screen < DisplayServer.get_screen_count():
+		DisplayServer.window_set_current_screen(screen)

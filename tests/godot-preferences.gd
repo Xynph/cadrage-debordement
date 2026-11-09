@@ -81,7 +81,7 @@ func profile_cases() -> void:
 	check(not p.set_value("volume",10) and not p.last_error.is_empty(),"Écriture sans chargement refusée visiblement")
 	var folder := directory.path_join("valid")
 	check(p.load_profile(folder),"Dossier absolu neuf accepté")
-	check(p.data == {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv"},"Valeurs par défaut sans carrière")
+	check(p.data == {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":-1},"Valeurs par défaut sans carrière")
 	check(not FileAccess.file_exists(folder.path_join("interface.json")),"Lire un profil absent ne crée pas de fichier")
 	check(not p.load_profile("relative-folder") and not p.last_error.is_empty(),"Chemin relatif refusé visiblement")
 	check(p.load_profile(folder),"Retour au dossier absolu")
@@ -90,18 +90,26 @@ func profile_cases() -> void:
 	check(p.set_value("reduced_motion",true) and p.effective_camera() == "tactical" and p.data.camera == "action","Mode calme fixe tactique sans perdre le choix")
 	check(p.set_value("reduced_motion",false) and p.effective_camera() == "action","Sortie du mode calme restaure caméra")
 	check(p.set_value("quality","detail"),"Qualité enregistrée")
+	check(p.set_value("display_screen",1),"Écran secondaire enregistré")
 	var raw := FileAccess.get_file_as_string(folder.path_join("interface.json"))
 	var q = profile_script.new()
 	check(q.load_profile(folder) and q.data.volume == 42 and q.data.quality == "detail" and q.data.camera == "action","Redémarrage relit les effets choisis")
-	for item in [["volume",-1],["volume",101],["volume",5.5],["volume",true],["quality","ultra"],["camera","orbit"],["reduced_motion",1],["secret","x"],["version",2]]:
+	check(q.data.get("display_screen") == 1,"Redémarrage relit l’écran choisi")
+	for item in [["volume",-1],["volume",101],["volume",5.5],["volume",true],["quality","ultra"],["camera","orbit"],["reduced_motion",1],["secret","x"],["version",2],["display_screen",-2],["display_screen",1.5],["display_screen",true],["display_screen","1"],["display_screen",2147483648]]:
 		check(not p.set_value(item[0],item[1]) and not p.last_error.is_empty(),"Réglage invalide refusé : "+str(item))
 		check(FileAccess.get_file_as_string(folder.path_join("interface.json")) == raw,"Refus conserve octets originaux")
+	var legacy_folder := directory.path_join("legacy-display")
+	write_profile_volume(legacy_folder,40)
+	var legacy_path := legacy_folder.path_join("interface.json")
+	var legacy_bytes := FileAccess.get_file_as_bytes(legacy_path)
+	check(q.load_profile(legacy_folder) and q.data.display_screen == -1 and q.data.volume == 40,"Ancien profil complet relu avec écran automatique")
+	check(FileAccess.get_file_as_bytes(legacy_path) == legacy_bytes,"La lecture de l’ancien profil conserve ses octets")
 	AudioServer.set_bus_mute(0,true)
 	p.apply_audio()
 	check(is_equal_approx(AudioServer.get_bus_volume_linear(0),0.42) and AudioServer.is_bus_mute(0),"Volume Master appliqué sans supprimer le mute externe")
 	check(p.set_value("volume",0) and AudioServer.get_bus_volume_linear(0) == 0.0 and AudioServer.is_bus_mute(0),"Zéro réellement silencieux, mute préservé")
-	check(p.reset_defaults() and p.data.volume == 75 and p.data.camera == "tv" and p.data.quality == "balanced" and not p.data.reduced_motion,"Reset limité au profil UI")
-	var bads := ["{",'{"version":2,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv"}','{"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","rng":1}','{"version":1,"volume":75.25,"reduced_motion":false,"quality":"balanced","camera":"tv"}','{"version":1,"volume":75,"reduced_motion":false,"quality":"balanced"}'," ".repeat(16385)]
+	check(p.reset_defaults() and p.data.volume == 75 and p.data.camera == "tv" and p.data.quality == "balanced" and not p.data.reduced_motion and p.data.display_screen == -1,"Reset limité au profil UI, écran automatique inclus")
+	var bads := ["{",'{"version":2,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv"}','{"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","rng":1}','{"version":1,"volume":75.25,"reduced_motion":false,"quality":"balanced","camera":"tv"}','{"version":1,"volume":75,"reduced_motion":false,"quality":"balanced"}','{"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":1.5}'," ".repeat(16385)]
 	for i in bads.size():
 		var bad_dir := directory.path_join("bad-"+str(i)); DirAccess.make_dir_recursive_absolute(bad_dir)
 		var path := bad_dir.path_join("interface.json"); write(path,bads[i])
