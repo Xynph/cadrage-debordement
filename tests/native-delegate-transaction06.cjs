@@ -1,4 +1,5 @@
 'use strict';
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 // Witness: delegate branch captured verbatim from worker.cjs at f88e16fd.
 // Only disposable worker fixtures are rewritten; no runtime optimisation switch.
 const {test}=require('node:test'),assert=require('node:assert/strict');
@@ -88,8 +89,8 @@ test('Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts
    assert.equal(good('snapshot').live.finished,false);
    const before=exportNow(),file=path.join(profile,'PrototypeGodot/donnees.json'),disk=fs.readFileSync(file);
    if(name.startsWith('persist_fault')){
-    const blocked=path.join(profile,'PrototypeGodot/donnees.tmp');fs.mkdirSync(blocked);
-    assert.equal(request('delegate').ok,false);assert.equal(exportNow(),before);assert.deepEqual(fs.readFileSync(file),disk);fs.rmdirSync(blocked);
+    assert.equal(refuseSavePublication(file,()=>request('delegate')).ok,false);
+    assert.equal(exportNow(),before);assert.deepEqual(fs.readFileSync(file),disk);
    }
    const delegated=request('delegate');
    if(name==='vm_timeout'){

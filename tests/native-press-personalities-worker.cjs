@@ -1,4 +1,5 @@
 'use strict';
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs'),root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'cd-press-personalities-worker-'));let bridge,seq=0;
 const open=()=>bridge=createBridge({dataDir:root,seed:13,now:1700000000000});
@@ -25,9 +26,9 @@ try{
  const c=m.clubLife.managerCareer,target=c.opportunities.find(o=>o.clubId>=14&&o.accepted);assert.ok(target);
  good('manager_career_apply',{context:c.context,clubId:target.clubId});good('manager_career_accept',{context:c.context,offerId:'job-1-'+target.clubId,confirmed:true});
  const memoryBefore=JSON.parse(exported()).state.pressPeople;m=good('next_season',{confirmed:true});assert.equal(JSON.parse(exported()).state.club,target.clubId);assert.deepEqual(JSON.parse(exported()).state.pressPeople,memoryBefore,'Mémoire du coach conservée lors de la vraie mobilité');
- const payload=choose(m),rollback=exported(),prior=fs.readFileSync(disk),originalOpen=fs.openSync;
- fs.openSync=function(target,...args){if(target===path.join(path.dirname(disk),'donnees.tmp'))throw Error('Disque presse refusé');return originalOpen.call(this,target,...args);};
- try{const r=call('press_conference',payload);assert.equal(r.ok,false);assert.match(r.error,/sauvegarde impossible/);}finally{fs.openSync=originalOpen;}
+ const payload=choose(m),rollback=exported(),prior=fs.readFileSync(disk);
+ const refused=refuseSavePublication(disk,()=>call('press_conference',payload));
+ assert.equal(refused.ok,false);assert.match(refused.error,/sauvegarde impossible/);
  assert.equal(exported(),rollback);assert.deepEqual(fs.readFileSync(disk),prior);m=good('press_conference',payload);
  const namespace=JSON.parse(exported()).state.pressPeople;assert.ok(Buffer.byteLength(JSON.stringify(namespace))<30000);assert.ok(Object.values(namespace.contacts).every(c=>c.memory.length<=3));
  // The worst supported contact count remains compact; these are explicit test exchanges.

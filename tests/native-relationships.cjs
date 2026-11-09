@@ -1,4 +1,5 @@
 'use strict';
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'native-relationships-'));
@@ -33,8 +34,10 @@ try{
   const doc=JSON.parse(saved);alter(doc.state);const r=bad('import',{text:JSON.stringify(doc)});assert.match(r.error,/vestiaire/i);assert.equal(good('export').meta.exportText,saved);
  }
  good('shutdown');b=createBridge({dataDir:root});assert.equal(good('export').meta.exportText,saved,'Reprise fidèle.');m=good('snapshot');
- fs.mkdirSync(path.join(m.meta.dataDir,'donnees.tmp'));const disk=fs.readFileSync(path.join(m.meta.dataDir,'donnees.json'));
- const rollback=good('export').meta.exportText;bad('relationship_conversation',{context:ctx(),playerId:rel().players[2].id,choice:'ecouter'});assert.equal(good('export').meta.exportText,rollback);assert.deepEqual(fs.readFileSync(path.join(m.meta.dataDir,'donnees.json')),disk);fs.rmdirSync(path.join(m.meta.dataDir,'donnees.tmp'));
+ const profileFile=path.join(m.meta.dataDir,'donnees.json'),disk=fs.readFileSync(profileFile);
+ const rollback=good('export').meta.exportText;
+ refuseSavePublication(profileFile,()=>bad('relationship_conversation',{context:ctx(),playerId:rel().players[2].id,choice:'ecouter'}));
+ assert.equal(good('export').meta.exportText,rollback);assert.deepEqual(fs.readFileSync(profileFile),disk);
  good('train');bad('relationship_duo',{context:ctx(),mode:'duo',a:a.id,b:bb.id});good('auto_lineup');good('begin_match');bad('relationship_conversation',{context:ctx(),playerId:rel().players[2].id,choice:'ecouter'});good('delegate');m=good('finish_round');
  assert.ok(m.clubLife.clubWorld.events.length>=15,'France30 : observation des quinze vraies rencontres.');
  const afterMatch=good('export').meta.exportText;

@@ -1,4 +1,5 @@
 'use strict';
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{spawnSync}=require('node:child_process');
 const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;
 if(!godot){console.log('SKIP godot-decision-feedback : SDK Godot absent ; aucune réception native exécutée.');process.exit(0);}
@@ -20,8 +21,8 @@ try{
  act('set_tactics',{attack:model.tactics.attack,defense:model.tactics.defense},true,false);
  act('snapshot',{},true,false);act('export',{},true,false);act('invalid_command',{},false);act('import',{text:'invalid'},false);
  // Une erreur disque réelle est annulée transactionnellement par le worker.
- const blocker=path.join(root,'profile','PrototypeGodot','donnees.tmp');fs.mkdirSync(blocker);
- act('set_tactics',{attack:model.tactics.attacks.find(o=>o.id!==model.tactics.attack).id,defense:model.tactics.defense},false);fs.rmdirSync(blocker);
+ const profileFile=path.join(root,'profile','PrototypeGodot','donnees.json');
+ refuseSavePublication(profileFile,()=>act('set_tactics',{attack:model.tactics.attacks.find(o=>o.id!==model.tactics.attack).id,defense:model.tactics.defense},false));
  act('new_career',{club:0,mode:'common'});
  for(let i=0;i<12;i++)act('set_tactics',{attack:model.tactics.attacks[(i+1)%model.tactics.attacks.length].id,defense:model.tactics.defense});
  const ctx=model.clubLife.clubSupport.context;

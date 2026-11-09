@@ -1,4 +1,5 @@
 'use strict';
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(process.env.TEMP||require('node:os').tmpdir(),'cd-press-followups06-'));let b,seq=0;
 const open=()=>b=createBridge({dataDir:root,seed:10606,now:1700000000000});
@@ -25,8 +26,8 @@ try{
  fs.writeFileSync(path.join(root,'avant-conference.json'),before);
  for(let i=0;i<3;i++)good('snapshot');assert.equal(good('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(disk),bytes);
  const payload={context:m.clubLife.press.context,answers:m.clubLife.press.conference.questions.map(q=>({questionId:q.id,answerId:'r4'}))};
- const original=fs.openSync;fs.openSync=function(target,...args){if(target===path.join(path.dirname(disk),'donnees.tmp'))throw Error('Disque presse06 refusé');return original.call(this,target,...args);};
- try{assert.equal(call('press_conference',payload).ok,false);}finally{fs.openSync=original;}
+ const refused=refuseSavePublication(disk,()=>call('press_conference',payload));
+ assert.equal(refused.ok,false);
  assert.equal(good('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(disk),bytes,'Refus disque atomique');
  m=good('press_conference',payload);assert.equal(m.clubLife.press.history.find(h=>h.id===follow.id&&h.week===payload.context.week).question,follow.question);
  const text=good('export').meta.exportText,expected=m.clubLife.press.history,reports=m.decisions.recruitment.reports;

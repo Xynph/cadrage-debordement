@@ -29,7 +29,11 @@ func run() -> void:
 	editor.text = text;editor.text_changed.emit()
 	var file: String = str(app.model.meta.dataDir).path_join("donnees.json")
 	var before := FileAccess.get_file_as_bytes(file)
-	var blocked: String = str(app.model.meta.dataDir).path_join("donnees.tmp")
+	var blocked: String = str(app.model.meta.dataDir).path_join("donnees-precedentes.json")
+	var preserved := blocked + ".fixture-original"
+	var has_backup := FileAccess.file_exists(blocked)
+	var original_backup := FileAccess.get_file_as_bytes(blocked) if has_backup else PackedByteArray()
+	if has_backup: check(DirAccess.rename_absolute(blocked, preserved) == OK,"Original secondaire mis à l’abri")
 	check(blocked.begins_with(OS.get_environment("CD_GODOT_DATA_DIR")),"Fixture disque dans le seul profil temporaire")
 	check(DirAccess.make_dir_absolute(blocked) == OK,"Échec d’écriture réel préparé")
 	save.pressed.emit();await wait_response()
@@ -37,6 +41,9 @@ func run() -> void:
 	check(FileAccess.get_file_as_bytes(file) == before,"Sauvegarde disque précédente préservée")
 	check(is_instance_valid(popup) and is_instance_valid(editor),"Le vrai main ne détruit pas le carnet lors du refus")
 	check(DirAccess.remove_absolute(blocked) == OK,"Fixture refus disque levée")
+	if has_backup:
+		check(DirAccess.rename_absolute(preserved, blocked) == OK,"Original secondaire remis en place")
+		check(FileAccess.get_file_as_bytes(blocked) == original_backup,"Secondaire restauré octet pour octet")
 	if not is_instance_valid(popup) or not is_instance_valid(editor): finish();return
 	check(editor.text == text,"Brouillon Unicode conservé après vrai refus du worker")
 	var status: Label = popup.find_child("CoachNoteStatus",true,false)
