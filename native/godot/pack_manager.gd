@@ -2,8 +2,10 @@ extends Node
 ## Native file picker and commands. The worker alone validates and installs packs.
 var app: Control
 var scope := "creation"
+var creation_mode := "world"
 var return_route := "Création"
 var source_path := ""
+var inspected_mode := ""
 var picker: FileDialog
 
 func _ready() -> void:
@@ -13,6 +15,40 @@ func _ready() -> void:
 	picker.filters = PackedStringArray(["*.zip ; Pack d’identités Oval Legacy 27"])
 	picker.file_selected.connect(inspect)
 	add_child(picker)
+
+func mode(target_scope: String = "") -> String:
+	var effective_scope := scope if target_scope.is_empty() else target_scope
+	var meta: Dictionary = app.model.get("meta", {})
+	if effective_scope == "career":
+		return "world" if meta.get("mode") == "world" else "common"
+	return "world" if creation_mode == "world" and not meta.get("worldCatalogue", []).is_empty() else "common"
+
+func database(target_scope: String = "") -> Dictionary:
+	var meta: Dictionary = app.model.get("meta", {})
+	if mode(target_scope) == "world": return meta.get("worldDatabase", {})
+	if meta.has("legacyDatabase"): return meta.legacyDatabase
+	if meta.get("mode") != "world": return meta.get("database", {})
+	return {}
+
+func _matches_edition(pack: Dictionary, target_scope: String = "") -> bool:
+	var database_id := str(database(target_scope).get("id", ""))
+	return not database_id.is_empty() and str(pack.get("databaseId", "")) == database_id
+
+func installed(target_scope: String = "") -> Array:
+	return app.model.get("packs", {}).get("installed", []).filter(func(pack: Dictionary): return _matches_edition(pack, target_scope))
+
+func selected_id(target_scope: String = "") -> String:
+	var effective_scope := scope if target_scope.is_empty() else target_scope
+	var packs: Dictionary = app.model.get("packs", {})
+	if effective_scope == "career": return str(packs.get("career", "base"))
+	var key := "worldPackCreation" if mode("creation") == "world" else "legacyPackCreation"
+	return str(app.model.get("meta", {}).get(key, packs.get("creation", "base")))
+
+func preview() -> Dictionary:
+	var value: Variant = app.model.get("packs", {}).get("preview")
+	if value is Dictionary and not source_path.is_empty() and inspected_mode == mode() and _matches_edition(value):
+		return value
+	return {}
 
 func open(target_scope: String) -> void:
 	if app.waiting:
@@ -37,15 +73,17 @@ func inspect(path: String) -> void:
 		app._refuse_action("Une analyse est déjà en cours. Réessayez après sa réponse.")
 		return
 	source_path = path
-	app._command("pack_inspect", {"path":path})
+	inspected_mode = mode()
+	app._command("pack_inspect", {"path":path,"mode":inspected_mode})
 
 func install() -> void:
-	var preview: Dictionary = app.model.get("packs", {}).get("preview", {})
-	if preview.is_empty() or source_path.is_empty(): return
-	app._command("pack_install", {"path":source_path,"digest":preview.get("digest", "")})
+	var inspected := preview()
+	if inspected.is_empty(): return
+	app._command("pack_install", {"path":source_path,"digest":inspected.get("digest", "")})
 
-func select(id: String) -> void:
-	app._command("pack_select", {"id":id,"scope":scope})
+func select(id: String, target_scope: String = "") -> void:
+	var effective_scope := scope if target_scope.is_empty() else target_scope
+	app._command("pack_select", {"id":id,"scope":effective_scope,"mode":mode(effective_scope)})
 
 func back() -> void:
 	if app.waiting:

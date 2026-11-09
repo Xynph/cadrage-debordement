@@ -1,4 +1,5 @@
 'use strict';
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'cd-support-'));let b=createBridge({dataDir:root,seed:408,now:1700000000000}),n=0;
 const good=(command,payload={})=>{const r=b.handle({id:++n,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
@@ -18,8 +19,9 @@ try{
  for(const change of [s=>s.v69Briefing.version=99,s=>s.v71AgentDesk.history[0].policy='faux',s=>s.v71AgentDesk.history[0].id='\n',s=>s.clubs[29].players[0].medicalV68={version:99,protocol:'standard',stage:'blesse'}]){const doc=JSON.parse(text);change(doc.state);bad('import',{text:JSON.stringify(doc)});assert.equal(good('export').meta.exportText,text);}
  m=good('train');bad('staff_meeting',{context,plan:'exigence'});bad('training_plan',{context,plan:'relever'});
  m=good('begin_match');bad('medical_protocol',{context,id:offer.id,protocol:'standard'});good('delegate');m=good('finish_round');context=m.clubLife.clubSupport.context;
- text=good('export').meta.exportText;bytes=fs.readFileSync(file);const open=fs.openSync;fs.openSync=function(target,...args){if(target===path.join(root,'PrototypeGodot','donnees.tmp'))throw Error('refus disque recette support');return open.call(this,target,...args);};
- try{assert.match(bad('staff_meeting',{context,plan:'recuperation'}).error,/sauvegarde impossible/);}finally{fs.openSync=open;}
+ text=good('export').meta.exportText;bytes=fs.readFileSync(file);
+ const refused=refuseSavePublication(file,()=>bad('staff_meeting',{context,plan:'recuperation'}));
+ assert.match(refused.error,/sauvegarde impossible/);
  assert.equal(good('export').meta.exportText,text);assert.deepEqual(fs.readFileSync(file),bytes);
  console.log('Support vrai worker : staff/plans/briefing/agents, contexte, doublons, 34 semaines, reprise/import, hostile et rollback PASS. '+root);
 }finally{b.close();}

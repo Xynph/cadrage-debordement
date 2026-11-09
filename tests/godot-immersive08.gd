@@ -35,14 +35,19 @@ func check(condition: bool, message: String) -> void:
 
 func click(control: Control, fraction: Vector2 = Vector2(.5,.5)) -> void:
 	var point := control.get_global_transform()*(control.size*fraction)
+	var motion := InputEventMouseMotion.new()
+	motion.position=point
+	motion.global_position=point
+	root.push_input(motion,true)
 	for down in [true,false]:
 		var event := InputEventMouseButton.new()
 		event.position=point
 		event.global_position=point
 		event.button_index=MOUSE_BUTTON_LEFT
+		event.button_mask=MOUSE_BUTTON_MASK_LEFT if down else 0
 		event.pressed=down
 		root.push_input(event,true)
-		await process_frame
+	await process_frame
 
 func key(code: Key, ctrl: bool = false, alt: bool = false) -> void:
 	var event := InputEventKey.new()
@@ -63,6 +68,12 @@ func entry() -> void:
 	if new_career==null: return
 	await click(new_career)
 	await settle()
+	var france: Button = app.find_child("CreationMode_common",true,false)
+	if france!=null:
+		check(app.find_child("CreationMode_world",true,false)!=null,"Les deux éditions sont accessibles dans la création")
+		await capture("07-creation-editions-2560x1440")
+		await click(france)
+		await settle()
 	check(app.route=="Création" and app.find_child("CreationStart",true,false)!=null,"Nouvelle carrière ouvre le vrai catalogue et l’action de création")
 	await capture("07-creation-2560x1440")
 	app._navigate("Accueil")
@@ -367,13 +378,14 @@ func match_flow() -> void:
 	var match_ui: Control = app.match_screen
 	await capture("27-avant-match-2560x1440")
 	var kickoff: Button = app.pause_button
+	var kickoff_rect := kickoff.get_global_rect()
 	var event_seen := {"pressed":false}
 	kickoff.pressed.connect(func(): event_seen.pressed=true,CONNECT_ONE_SHOT)
 	await click(kickoff)
 	await worker()
 	check(app.model.live is Dictionary and app.match_view==scene and not match_ui.opening.visible,
 		"Coup d’envoi réel conserve la scène et retire l’ouverture · clic=%s, commande=%s, erreur=%s, contrôle=%s"
-		% [str(event_seen.pressed), app.last_command, app.last_error, str(kickoff.get_global_rect())])
+		% [str(event_seen.pressed), app.last_command, app.last_error, str(kickoff_rect)])
 	if not app.model.live is Dictionary: return
 	await command("tick",{"steps":12})
 	await command("pause",{"paused":true})

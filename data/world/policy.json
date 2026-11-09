@@ -1,0 +1,21 @@
+{
+  "id": "world-estimates-v1",
+  "snapshot": "2026-11-08",
+  "potentialRule": "world-positional-age-headroom-v1",
+  "contractRule": "world-fictional-contract-1-to-3-seasons-v1",
+  "premStartingSalary": {
+    "rule": "world-prem-starting-payroll-v1",
+    "percentage": 85,
+    "basis": "fictional-game-parameter"
+  },
+  "exposurePriorMinutes": 500,
+  "actionPriorEvents": 40,
+  "maximumAxisAdjustment": 12,
+  "notes": [
+    "Estimations de jeu, jamais mesures officielles de niveau ou potentiel.",
+    "Distributions françaises par poste et âge, sans bonus automatique de championnat.",
+    "Les zéros d’exposition URC identifiés comme placeholders sont inconnus ; aucun calcul per80.",
+    "Traits cachés et finances sont des paramètres fictifs déterministes.",
+    "worldRatingsVersion distingue les attributs estimés du registre mondial des profils LNR préservés."
+  ]
+}

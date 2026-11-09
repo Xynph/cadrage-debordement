@@ -1,4 +1,5 @@
 'use strict';
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 
 const loaded={exports:require('../native/engine/worker.cjs')};
@@ -18,9 +19,9 @@ try{
  good('import',{text});assert.equal(good('export').meta.exportText,text,'Import/export presse exact.');
  for(const alter of [s=>s.pressConference.version=999,s=>s.pressConference.history[0].week=35,s=>s.pressRelations.mediaTrust=-1,s=>s.pressRelations.history=[{}]]){const doc=JSON.parse(text);alter(doc.state);const r=bad('import',{text:JSON.stringify(doc)});assert.match(r.error,/presse|conférence/i);assert.equal(good('export').meta.exportText,text);}
  good('begin_match');bad('press_conference',payload);good('delegate');m=good('finish_round');const second=answers(m);
- text=good('export').meta.exportText;const priorFile=fs.readFileSync(file),originalOpen=fs.openSync;
- fs.openSync=function(target,...args){if(target===path.join(root,'PrototypeGodot','donnees.tmp'))throw Error('disque refusé pour recette presse');return originalOpen.call(this,target,...args);};
- try{const r=bad('press_conference',second);assert.match(r.error,/sauvegarde impossible/);}finally{fs.openSync=originalOpen;}
+ text=good('export').meta.exportText;const priorFile=fs.readFileSync(file);
+ const refused=refuseSavePublication(file,()=>bad('press_conference',second));
+ assert.match(refused.error,/sauvegarde impossible/);
  assert.equal(good('export').meta.exportText,text,'Rollback complet après refus disque.');assert.deepEqual(fs.readFileSync(file),priorFile);
  m=good('press_conference',second);assert.equal(m.clubLife.press.lastOutcome.context.week,1);
  good('shutdown');b=loaded.exports.createBridge({dataDir:root,now:1700000000000});assert.equal(good('snapshot').clubLife.press.history.length,m.clubLife.press.history.length);

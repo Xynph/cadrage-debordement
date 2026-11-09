@@ -6,7 +6,9 @@ signal model_changed(model: Dictionary)
 signal command_failed(message: String)
 
 const IMPORT_LIMIT_BYTES := 8 * 1024 * 1024
+const WORLD_IMPORT_LIMIT_BYTES := 16 * 1024 * 1024
 const REQUEST_LIMIT_BYTES := 17 * 1024 * 1024
+const WORLD_REQUEST_LIMIT_BYTES := 34 * 1024 * 1024
 var model: Dictionary = {}
 var last_response_ok := false
 var child_pid: int = -1
@@ -20,6 +22,20 @@ var _queue: Array[Dictionary] = []
 var _next_id: int = 0
 var _stopping: bool = false
 var _stop_deadline_ms: int = 0
+
+static func import_preflight(text: String, byte_count: int) -> String:
+	if byte_count <= IMPORT_LIMIT_BYTES: return ""
+	if byte_count > WORLD_IMPORT_LIMIT_BYTES: return "Fichier trop volumineux (16 Mio UTF-8 maximum)."
+	var parser := JSON.new()
+	if parser.parse(text) == OK and parser.data is Dictionary:
+		var state: Variant = parser.data.get("state")
+		if state is Dictionary:
+			var mode: Variant = state.get("worldMode")
+			var database: Variant = state.get("commonDatabase")
+			var id := "rugby-world-2026-11-08-v1"
+			if mode is Dictionary and database is Dictionary and mode.get("catalogue") == id and mode.get("version") == 1 and database.get("id") == id and database.get("version") == 1 and database.size() == 2 and not state.has("franceMode") and not state.has("lnrMode"):
+				return ""
+	return "Fichier trop volumineux (8 Mio UTF-8 maximum pour cette édition)."
 
 func start(data_dir: String) -> void:
 	if child_pid > 0 or _thread != null:
@@ -73,13 +89,17 @@ func send(command: String, payload: Dictionary = {}) -> void:
 		return
 	_next_id += 1
 	var request := {"id": _next_id, "command": command, "payload": payload.duplicate(true)}
-	# Escaping 8 MiB of import text into JSON can double its encoded size.
-	# The bounded 17 MiB transport leaves room for that text and its envelope.
-	if command == "import" and str(payload.get("text", "")).to_utf8_buffer().size() > IMPORT_LIMIT_BYTES:
-		command_failed.emit("Fichier trop volumineux (8 Mio UTF-8 maximum).")
-		return
-	if JSON.stringify(request).to_utf8_buffer().size() > REQUEST_LIMIT_BYTES:
-		command_failed.emit("Message trop volumineux après encodage JSON (17 Mio maximum).")
+	# The reader applies the edition-specific 8/16 MiB save limits. Only imports
+	# can use the larger bounded envelope for escaped world save text.
+	if command == "import":
+		var text := str(payload.get("text", ""))
+		var refusal := import_preflight(text,text.to_utf8_buffer().size())
+		if not refusal.is_empty():
+			command_failed.emit(refusal)
+			return
+	var envelope_limit := WORLD_REQUEST_LIMIT_BYTES if command == "import" else REQUEST_LIMIT_BYTES
+	if JSON.stringify(request).to_utf8_buffer().size() > envelope_limit:
+		command_failed.emit("Message trop volumineux après encodage JSON.")
 		return
 	_mutex.lock()
 	_queue.append(request)

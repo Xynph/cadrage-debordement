@@ -8,11 +8,16 @@ static func missing_warning(app: Control, parent: Container, scope: String, pape
 		if warning.begins_with("Pack de carrière absent") and scope != "creation":
 			messages.append("Pack de carrière absent · Présentation de base anonymisée. Réimportez le pack pour retrouver vos identités.")
 			career_missing = true
-		elif warning.begins_with("Pack de création absent") and scope != "career":
-			messages.append("Pack de création absent · Présentation de base anonymisée. Réimportez le pack ou choisissez Base pour créer une carrière.")
+	if scope != "career" and _creation_missing(app):
+		messages.append("Pack de création absent · Présentation de base anonymisée. Réimportez le pack ou choisissez Base pour créer une carrière.")
 	if messages.is_empty(): return
 	parent.add_child(G.wrap("\n".join(messages), 13, G.ALERT if paper else Color("f1b6a9")))
 	parent.add_child(G.button("GÉRER LES PACKS", func(): app.pack_manager.open("career" if career_missing else "creation")))
+
+static func _creation_missing(app: Control) -> bool:
+	if not is_instance_valid(app.pack_manager): return false
+	var chosen: String = app.pack_manager.selected_id("creation")
+	return chosen != "base" and not app.pack_manager.installed("creation").any(func(pack: Dictionary): return str(pack.id) == chosen)
 
 static func page(app: Control) -> Control:
 	var page := G.v(18)
@@ -24,15 +29,19 @@ static func page(app: Control) -> Control:
 	var title := G.label("Votre rugby. Vos identités.", 36, G.WHITE, true)
 	G.fill(title)
 	top.add_child(title)
-	top.add_child(G.label("NOUVELLE CARRIÈRE" if app.pack_manager.scope == "creation" else "CARRIÈRE EN COURS", 13, G.WHITE))
+	var creation: bool = app.pack_manager.scope == "creation"
+	var edition := "MONDE" if app.pack_manager.mode() == "world" else "FRANCE 30"
+	top.add_child(G.label(("NOUVELLE CARRIÈRE" if creation else "CARRIÈRE EN COURS") + " · " + edition, 13, G.WHITE))
 	var row := G.h(24)
 	G.fill(row, true)
 	page.add_child(row)
 	var intro_frame := G.panel(row, 0.85)
 	var intro := G.scroll(intro_frame)
-	var compatible: bool = app.pack_manager.scope == "creation" or app.model.get("meta", {}).get("database", {}).get("active", false)
-	intro.add_child(G.label("UNE BASE COMMUNE", 13, G.GOLD))
-	intro.add_child(G.label("30 CLUBS\n1 592 JOUEURS", 42, G.INK, true))
+	var compatible: bool = creation or app.model.get("meta", {}).get("database", {}).get("active", false)
+	var database: Dictionary = app.pack_manager.database()
+	intro.add_child(G.label("BASE COMMUNE · " + edition, 13, G.GOLD))
+	if not database.is_empty():
+		intro.add_child(G.label("%s CLUBS\n%s JOUEURS" % [G.n(database.get("clubCount", 0)), G.n(database.get("playerCount", 0))], 42, G.INK, true))
 	intro.add_child(G.wrap("Les mêmes joueurs. Les mêmes capacités. Une autre façon de les reconnaître.", 22, G.INK))
 	intro.add_child(G.separator())
 	intro.add_child(G.wrap("Le jeu de base utilise des identités fictives. Un pack personnalise les noms, les blasons et les portraits. Les résultats, les contrats et la progression restent ceux de votre carrière.", 15))
@@ -51,18 +60,19 @@ static func page(app: Control) -> Control:
 	importing.disabled = app.waiting
 	commands.add_child(importing)
 	var packs: Dictionary = app.model.get("packs", {})
-	var selected := str(packs.get(app.pack_manager.scope, "base"))
-	content.add_child(G.wrap("Sélection pour la création uniquement : la carrière ouverte n’est pas modifiée." if app.pack_manager.scope == "creation" else "Cette sélection s’applique à la carrière ouverte et sera conservée dans ses sauvegardes.", 12))
+	var selected: String = app.pack_manager.selected_id()
+	content.add_child(G.wrap("Choix enregistré pour vos prochaines créations dans cette édition." if creation else "Cette sélection s’applique à la carrière ouverte et sera conservée dans ses sauvegardes.", 12))
 	if not compatible:
 		content.add_child(G.wrap("Cette ancienne carrière utilise des joueurs générés. Créez une carrière sur la base commune pour pouvoir changer ses identités. Vous pouvez déjà installer vos packs ici.", 13, G.ALERT))
-	var missing: Array = packs.get("missing", [])
+	var missing: Array = packs.get("missing", []).filter(func(message: String): return message.begins_with("Stockage") or not creation and message.begins_with("Pack de carrière absent"))
+	if creation and _creation_missing(app): missing.append("Pack de création absent dans cette édition")
 	if not missing.is_empty():
 		content.add_child(G.wrap("PACK MANQUANT · " + ", ".join(missing) + "\nLes identités concernées utilisent la base anonymisée. Réimportez le pack pour retrouver ses images et ses noms.", 13, G.ALERT))
 	var list := G.scroll(content)
-	var preview: Dictionary = packs.get("preview", {}) if packs.get("preview") is Dictionary else {}
-	if not preview.is_empty():
+	var installed: Array = app.pack_manager.installed()
+	var preview: Dictionary = app.pack_manager.preview()
+	if not preview.is_empty() and not installed.any(func(pack: Dictionary): return pack.id == preview.id):
 		_preview(app, list, preview)
-	var installed: Array = packs.get("installed", [])
 	if installed.is_empty():
 		var empty := G.card(list, G.GOLD)
 		empty.add_child(G.label("01 / VOTRE PREMIER PACK", 26, G.INK, true))

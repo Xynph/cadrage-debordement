@@ -1,4 +1,5 @@
 'use strict';
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(process.env.TEMP||require('node:os').tmpdir(),'cd-coach-notes06-'));let b,seq=0;
 const open=()=>b=createBridge({dataDir:root,seed:506,now:1700000000000});
@@ -16,8 +17,9 @@ try{
  assert.ok(current.coachNotebook.entries[0].textCodes.every(Number.isInteger));assert.equal(current.coachNotebook.entries[0].text,undefined);
  good('import',{text:saved});good('shutdown');open();assert.equal(exported(),saved);assert.equal(good('snapshot').clubLife.coachNotebook.entries[0].text,text);
  for(const corrupt of [s=>s.coachNotebook.extra=true,s=>s.coachNotebook.entries[0].week=35,s=>s.coachNotebook.entries[0].season++,s=>s.coachNotebook.entries.push({...s.coachNotebook.entries[0]}),s=>s.coachNotebook.entries[0].textCodes=[0xd800],s=>s.coachNotebook.entries[0].textCodes=[0],s=>s.coachNotebook.entries[0].textCodes=Array(2001).fill(65),s=>s.coachNotebook.entries[0].text='Contrat non déployé']){const doc=JSON.parse(saved);corrupt(doc.state);const bytes=fs.readFileSync(file);assert.equal(call('import',{text:sign(doc)}).ok,false);assert.equal(exported(),saved);assert.deepEqual(fs.readFileSync(file),bytes);}
- const originalOpen=fs.openSync,priorBytes=fs.readFileSync(file);fs.openSync=function(target,...args){if(target===path.join(path.dirname(file),'donnees.tmp'))throw Error('Disque carnet refusé');return originalOpen.call(this,target,...args);};
- try{assert.equal(call('coach_note_save',{context,target:id,text:'Brouillon non sauvegardé'}).ok,false);}finally{fs.openSync=originalOpen;}
+ const priorBytes=fs.readFileSync(file);
+ const refused=refuseSavePublication(file,()=>call('coach_note_save',{context,target:id,text:'Brouillon non sauvegardé'}));
+ assert.equal(refused.ok,false);
  assert.equal(exported(),saved);assert.deepEqual(fs.readFileSync(file),priorBytes);
  // Explicit changed-world fixture, without a multi-season campaign or private pack.
  const other=createBridge({dataDir:path.join(root,'changed-world-fixture'),seed:506,now:1700000000000});let moved;

@@ -2,6 +2,28 @@ extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
 const Semantics = preload("res://ui/data_semantics.gd")
 
+static func competition_name(id: String) -> String:
+	return {"elite":"Élite","accession":"Accession","prem":"Premiership","urc":"United Rugby Championship","champions":"Coupe des champions","challenge":"Challenge européen","access":"Barrage d’accession"}.get(id, id)
+
+static func phase_name(phase: String) -> String:
+	return {"league":"Phase régulière","pool":"Phase de poules","barrage":"Barrage","r16":"Huitième de finale","quarter":"Quart de finale","semi":"Demi-finale","final":"Finale","access":"Barrage d’accession","ended":"Compétition terminée"}.get(phase, phase)
+
+static func _calendar_date(iso: String) -> String:
+	var parts := iso.split("-")
+	return "%s/%s/%s" % [parts[2], parts[1], parts[0]] if parts.size() == 3 else iso
+
+static func archive_titles(year: Dictionary) -> Array:
+	var titles: Array = []
+	var champions: Variant = year.get("champions", [])
+	if champions is Array: titles.append_array(champions)
+	elif champions is Dictionary:
+		for id in champions:
+			if champions[id] != null: titles.append({"leagueId":id,"clubId":champions[id]})
+	for id in ["champions", "challenge"]:
+		var champion: Variant = year.get("europe", {}).get(id, {}).get("champion")
+		if champion != null: titles.append({"leagueId":id,"clubId":champion})
+	return titles
+
 # Resize only the standings presentation, keeping the live career and navigation.
 class StandingsLayout extends HBoxContainer:
 	var table_frame: Control
@@ -133,16 +155,32 @@ static func calendar(app: Control) -> Control:
 	var list := G.scroll(sheet)
 	list.get_parent().name="CalendarScroll"
 	var fixtures: Array = app.model.get("calendar", [])
+	var international: bool = app.model.get("meta", {}).get("mode") == "world"
 	var bounds:=_paged(app,sheet,"CalendarPagination",fixtures.size(),5)
 	if fixtures.is_empty(): list.add_child(G.wrap("Aucune rencontre programmée pour le moment.", 16))
 	for fixture in fixtures.slice(bounds.x,bounds.y):
 		var tile := G.card(list, G.accent_ink(app.accent) if not fixture.get("played", false) and fixture.get("week", -1) == app.model.meta.get("week", -2) else G.LINE)
+		tile.set_meta("fixture_id", fixture.get("id", ""))
 		var row := G.h(12)
 		row.custom_minimum_size.y = 36
 		tile.add_child(row)
 		var caption: String = fixture.get("label", "Semaine " + G.n(fixture.get("week", 0)))
 		caption = {"barrage":"Barrage","semi":"Demi-finale","final":"Finale","access":"Barrage d’accession"}.get(caption,caption)
-		row.add_child(G.cell(caption, 132, G.MUTED))
+		if international:
+			var details := G.v(1)
+			details.custom_minimum_size.x = 174
+			row.add_child(details)
+			var competition := competition_name(str(fixture.get("competitionId", "")))
+			var date := G.label(_calendar_date(str(fixture.get("date", ""))), 13, G.GOLD)
+			date.name = "CalendarFixtureDate"
+			details.add_child(date)
+			var phase := str(fixture.get("phase", ""))
+			var stage := "J%d · %s" % [int(fixture.get("competitionRound", 0)) + 1, "Poules" if phase == "pool" else "Championnat"] if phase in ["league", "pool"] else phase_name(phase)
+			details.add_child(G.wrap(competition + " · " + stage, 12, G.INK))
+			var venue := str(fixture.get("venue", ""))
+			if not venue.is_empty(): details.add_child(G.wrap(venue, 11, G.MUTED))
+		else:
+			row.add_child(G.cell(caption, 132, G.MUTED))
 		var home: Dictionary = fixture.get("home", {})
 		var away: Dictionary = fixture.get("away", {})
 		row.add_child(G.crest(home, 36))
@@ -156,6 +194,9 @@ static func calendar(app: Control) -> Control:
 		opponent.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		row.add_child(opponent)
 		row.add_child(G.crest(away, 36))
+		var winner: Variant = fixture.get("winner")
+		if international and score is Array and score[0] == score[1] and winner != null:
+			tile.add_child(G.wrap("Qualifié après départage · " + G.club_name(home if home.get("id") == winner else away), 12, G.GOLD))
 		list.add_child(G.separator())
 	return page
 
@@ -204,8 +245,10 @@ static func _standings_context(app: Control, page: Control) -> Control:
 	frame.name = "StandingsContext"
 	frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	var club: Dictionary = app.model.club
+	var meta: Dictionary = app.model.get("meta", {})
 	var division := ""
 	for league: Dictionary in app.model.get("leagues",[]):
+		if meta.get("mode") == "world" and league.id != meta.get("leagueId"): continue
 		for row: Dictionary in league.get("rows",[]):
 			if row.id == app.model.club.id:
 				club = row
@@ -252,26 +295,60 @@ static func tables(app: Control) -> Control:
 	page.table_frame.name = "StandingsTableFrame"
 	var leagues: Array = app.model.get("leagues", [])
 	if leagues.is_empty(): leagues = [{"id":"elite","name":"Championnat historique","rows":app.model.get("league", [])}]
-	G.chapter(sheet,"07","La course du championnat","Le classement de votre carrière, dans l’ordre de la compétition.",app.accent)
+	var international: bool = app.model.get("meta", {}).get("mode") == "world"
+	var toolbar: HBoxContainer
+	if international:
+		sheet.add_theme_constant_override("separation", 5)
+		toolbar = G.h(10)
+		sheet.add_child(toolbar)
+		G.chapter(toolbar,"07","Les classements","",app.accent)
+		G.fill(toolbar.get_child(0))
+	else:
+		G.chapter(sheet,"07","La course du championnat","Le classement de votre carrière, dans l’ordre de la compétition.",app.accent)
 	var archives:=G.button("ARCHIVES DES SAISONS",func():season_archives(app))
 	archives.name="OpenArchives"
-	sheet.add_child(archives)
+	if not international: sheet.add_child(archives)
 	var tabs := G.h(10)
 	sheet.add_child(tabs)
 	for league: Dictionary in leagues:
-		var b := G.button(str(league.get("name", league.id)).to_upper(), func(): app.table_division = league.id; app._render())
+		var label := str(league.get("name", league.id))
+		var short := str({"prem":"PREM","urc":"URC","champions":"CHAMPIONS","challenge":"CHALLENGE"}.get(league.id, label.to_upper())) if international else label.to_upper()
+		var b := G.button(short, func(): app.table_division = league.id; app._render())
 		b.name = "StandingsDivision_" + str(league.id)
+		if international: G.reading_button(b, 82)
+		b.tooltip_text = label
 		G.fill(b)
 		if app.table_division == league.id: G.selected(b,app.accent)
 		tabs.add_child(b)
 	var chosen: Dictionary = leagues[0]
 	for league: Dictionary in leagues:
 		if league.id == app.table_division: chosen = league
+	var rows: Array = chosen.get("rows", [])
+	var pagination_key := "standings_" + str(chosen.id)
+	var pools: Array = chosen.get("pools", [])
+	if international and not pools.is_empty():
+		var pool_key := "standings_pool_" + str(chosen.id)
+		var initial_pool := 0
+		for i in range(pools.size()):
+			if pools[i].rows.any(func(club: Dictionary): return club.id == app.model.club.id):
+				initial_pool = i
+				break
+		var selected_pool := clampi(int(app.management_ui.get(pool_key, initial_pool)), 0, pools.size()-1)
+		var pool_choice := OptionButton.new()
+		pool_choice.name = "StandingsPoolChoice"
+		G.reading_button(pool_choice, 104)
+		for pool: Dictionary in pools: pool_choice.add_item(str(pool.label))
+		pool_choice.select(selected_pool)
+		pool_choice.item_selected.connect(func(index: int): app.management_ui[pool_key] = index; app._render())
+		toolbar.add_child(pool_choice)
+		toolbar.add_child(G.label(phase_name(str(chosen.get("phase", "pool"))), 12, G.MUTED))
+		rows = pools[selected_pool].rows
+		pagination_key += "_poule_" + str(pools[selected_pool].id)
+	if international: toolbar.add_child(G.reading_button(archives, 144))
 	for pair in [["champion","CHAMPION"],["finalist","FINALISTE"]]:
 		if chosen.get(pair[0]) is Dictionary:
 			sheet.add_child(G.label(pair[1] + "  /  " + G.club_name(chosen[pair[0]]),18,G.GOLD))
 	var list := G.scroll(sheet)
-	var rows: Array=chosen.get("rows",[])
 	page.list = list
 	page.scroll = list.get_parent()
 	page.scroll.name="StandingsScroll"
@@ -284,7 +361,7 @@ static func tables(app: Control) -> Control:
 		var focus_index := focus.get_index() if focus != null and pager.is_ancestor_of(focus) else -1
 		for node in list.get_children():list.remove_child(node);node.queue_free()
 		for node in pager.get_children():pager.remove_child(node);node.queue_free()
-		var bounds := _paged(app,pager,"StandingsPagination",rows.size(),capacity,"standings_"+str(chosen.id))
+		var bounds := _paged(app,pager,"StandingsPagination",rows.size(),capacity,pagination_key)
 		pager.visible = rows.size()>capacity
 		_standings_rows(app,list,rows,bounds)
 		if focus_index in [0,2]:
@@ -292,8 +369,14 @@ static func tables(app: Control) -> Control:
 			if target.disabled:target=pager.get_child(0).get_child(2 if focus_index==0 else 0)
 			if not target.disabled:target.grab_focus.call_deferred()
 	page.redraw.call(page.capacity)
-	sheet.add_child(Semantics.legend(false))
-	sheet.add_child(G.wrap("MJ : matchs joués · DIFF. : points marqués moins encaissés · Forme : 6 résultats de championnat conservés, ancien → récent · — : non renseigné",12))
+	if international:
+		var legend := G.h(10)
+		sheet.add_child(legend)
+		legend.add_child(Semantics.legend())
+		legend.add_child(G.label("MJ : matchs joués · DIFF. : différence de points · — : non renseigné", 11, G.MUTED))
+	else:
+		sheet.add_child(Semantics.legend(false))
+		sheet.add_child(G.wrap("MJ : matchs joués · DIFF. : points marqués moins encaissés · Forme : 6 résultats de championnat conservés, ancien → récent · — : non renseigné",12))
 	page.context = _standings_context(app,page)
 	page.context.hide()
 	return page
@@ -320,16 +403,17 @@ static func season_archives(app:Control) -> void:
 	list.get_parent().custom_minimum_size.y=360
 	var seasons:Array=app.model.get("archives",{}).get("seasons",[]).duplicate()
 	seasons.reverse()
+	var international: bool = app.model.get("meta", {}).get("mode") == "world"
 	if seasons.is_empty():
-		list.add_child(G.wrap("Aucune saison archivée. Le championnat français alimente ce carnet au passage à la saison suivante. Les archives de la ligue historique à 14 ne sont pas présentées ici.",16))
+		list.add_child(G.wrap("Aucune saison archivée. Les quatre championnats et les deux coupes d’Europe alimentent ce carnet au passage à la saison suivante." if international else "Aucune saison archivée. Le championnat français alimente ce carnet au passage à la saison suivante. Les archives de la ligue historique à 14 ne sont pas présentées ici.",16))
 	for year:Dictionary in seasons:
 		list.add_child(G.section("SAISON "+G.n(year.season)))
-		for winner:Dictionary in year.get("champions",[]):
-			list.add_child(G.wrap("Champion %s : %s"%["Élite" if winner.leagueId=="elite" else "Accession",_archive_club(app,winner.clubId)],17,G.INK))
-		for league_id in ["elite","accession"]:
+		for winner:Dictionary in archive_titles(year):
+			list.add_child(G.wrap("Champion %s : %s"%[competition_name(winner.leagueId),_archive_club(app,winner.clubId)],17,G.INK))
+		for league_id in (["elite","accession","prem","urc"] if international else ["elite","accession"]):
 			var ranks:Array=year.get("standings",{}).get(league_id,[])
 			var position:=ranks.find(app.model.club.id)
-			if position>=0:list.add_child(G.wrap("Votre club actuel · %s · rang %d / %d en phase régulière"%["Élite" if league_id=="elite" else "Accession",position+1,ranks.size()],14,G.accent_ink(app.accent)))
+			if position>=0:list.add_child(G.wrap("Votre club actuel · %s · rang %d / %d en phase régulière"%[competition_name(league_id),position+1,ranks.size()],14,G.accent_ink(app.accent)))
 		for pair in [["promoted","Montée(s) vers l’Élite"],["relegated","Descente(s) en Accession"]]:
 			var names:Array[String]=[]
 			for id in year.get("movement",{}).get(pair[0],[]):names.append(_archive_club(app,id))

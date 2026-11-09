@@ -1,4 +1,5 @@
 'use strict';
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {createBridge}=require('../native/engine/worker.cjs');
 const {context}=require('./native-reference-harness.cjs');
@@ -18,8 +19,8 @@ try{
  act('club_board_priority',{key:'finances'});assert.equal(m.clubLife.clubStrategy.board.priority,'finances');
  const communityCash=m.finance.cash;act('club_fans_community',{key:'ecoles'});assert.equal(m.finance.cash,communityCash-1500);bad('club_fans_community',{key:'ecoles'});
  const before=call('export').meta.exportText,profile=path.join(m.meta.dataDir,'donnees.json'),bytes=fs.readFileSync(profile);
- fs.mkdirSync(path.join(m.meta.dataDir,'donnees.tmp'));
- bad('club_fans_campaign',{key:'locale'});assert.equal(call('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(profile),bytes);fs.rmdirSync(path.join(m.meta.dataDir,'donnees.tmp'));
+ refuseSavePublication(profile,()=>bad('club_fans_campaign',{key:'locale'}));
+ assert.equal(call('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(profile),bytes);
  const oldContext={...m.clubLife.clubStrategy.context,week:99};bad('club_board_priority',{context:oldContext,key:'performance'});
  call('train');assert.ok(m.finance.cash<=communityCash-1500-12000,'Investissement appliqué par la vraie séance.');
  const saved=call('export').meta.exportText;call('shutdown');b=createBridge({dataDir:root});assert.equal(call('export').meta.exportText,saved);

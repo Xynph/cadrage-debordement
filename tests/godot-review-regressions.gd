@@ -316,7 +316,6 @@ func _run() -> void:
 	if mode == "disk":
 		profile = profile.path_join("profil-au-chemin-explicite-et-suffisamment-long-pour-verifier-la-lisibilite-de-lerreur")
 		OS.set_environment("CD_GODOT_DATA_DIR", profile)
-		DirAccess.make_dir_recursive_absolute(profile.path_join("PrototypeGodot/donnees.tmp"))
 	if mode=="recovery":
 		DirAccess.make_dir_recursive_absolute(profile.path_join("PrototypeGodot"))
 		var corrupt:=FileAccess.open(profile.path_join("PrototypeGodot/donnees.json"),FileAccess.WRITE)
@@ -330,6 +329,9 @@ func _run() -> void:
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
 	await _wait()
 	_check(app.model.get("club")==null and app.route=="Accueil","Fresh profile remains on menu without automatic creation")
+	var first_write := str(app.model.get("meta",{}).get("dataDir","")).path_join("donnees.json")
+	if mode == "disk":
+		_check(first_write.replace("\\", "/").simplify_path().to_lower().begins_with(profile.replace("\\", "/").simplify_path().to_lower() + "/") and not FileAccess.file_exists(first_write) and DirAccess.make_dir_absolute(first_write) == OK, "First-write blocker placed after opening the isolated profile")
 	if mode!="recovery":await _command("new_career",{"club":0})
 	if mode=="recovery":
 		var original:=FileAccess.get_file_as_bytes(profile.path_join("PrototypeGodot/donnees.json"))
@@ -360,8 +362,8 @@ func _run() -> void:
 		_dialog_bounds("Real EISDIR failure")
 		_check(errors == 1, "Permanent first-write refusal emits exactly one error (observed %s)" % errors)
 		_check(app.model.get("club") == null and not app.waiting, "Failed creation leaves stable empty career")
-		_check(not FileAccess.file_exists(profile.path_join("PrototypeGodot/donnees.json")), "Failure does not persist a career")
-		DirAccess.remove_absolute(profile.path_join("PrototypeGodot/donnees.tmp"))
+		_check(not FileAccess.file_exists(first_write), "Failure does not persist a career")
+		_check(DirAccess.remove_absolute(first_write) == OK, "First-write blocker removed")
 		_dismiss_errors()
 		app._navigate("Création")
 		var retry: Button = null

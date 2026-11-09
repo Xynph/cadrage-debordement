@@ -191,6 +191,7 @@ func pack_edge_cases() -> void:
 	await stop_app()
 	await start_app(profile)
 	app._navigate("Création")
+	press("FRANCE · 30 CLUBS")
 	press("PACKS ET IDENTITÉS")
 	await import_archive(valid)
 	var preview: Dictionary = app.model.packs.preview
@@ -239,6 +240,7 @@ func pack_edge_cases() -> void:
 	check(JSON.parse_string(app.model.meta.exportText).state == before.state, "Reprise sans pack : S intégralement conservé")
 	check(JSON.parse_string(FileAccess.get_file_as_string(profile.path_join("donnees.json"))).seed == seed, "Reprise sans pack : RNG conservé")
 	app._navigate("Création")
+	press("FRANCE · 30 CLUBS")
 	var choice := option(app)
 	check(choice != null and "indisponible" in choice.get_item_text(choice.selected).to_lower() and choice.is_item_disabled(choice.selected), "Création : préférence absente explicitement sélectionnée")
 	check(text_visible(app, "pack de création absent"), "Création : repli et choix nécessaire annoncés")
@@ -302,6 +304,7 @@ func _run() -> void:
 	await capture("accueil-oval-legacy")
 	app._navigate("Création")
 	await process_frame
+	press("FRANCE · 30 CLUBS")
 	var import_button := button(app, "PACKS ET IDENTITÉS")
 	check(import_button != null, "Création : commande visible des packs personnalisés")
 	if import_button != null:

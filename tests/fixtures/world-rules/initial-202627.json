@@ -1,0 +1,478 @@
+{
+  "sourceSeason": "2026/27",
+  "sourceUrls": {
+    "epcr-champions-pools": "https://www.epcrugby.com/champions-cup/matches/pool-tables",
+    "epcr-challenge-pools": "https://www.epcrugby.com/challenge-cup/matches/pool-tables",
+    "epcr-202627-draw": "https://www.epcrugby.com/champions-cup/content/official-investec-champions-cup-and-epcr-challenge-pools-confirmed-for-202627-season"
+  },
+  "clubs": [
+    {
+      "id": 0,
+      "key": "toulouse",
+      "leagueId": "elite",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 1,
+      "key": "bordeaux-begles",
+      "leagueId": "elite",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 2,
+      "key": "la-rochelle",
+      "leagueId": "elite",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 3,
+      "key": "toulon",
+      "leagueId": "elite",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 4,
+      "key": "pau",
+      "leagueId": "elite",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 5,
+      "key": "bayonne",
+      "leagueId": "elite",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 6,
+      "key": "clermont",
+      "leagueId": "elite",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 7,
+      "key": "lyon",
+      "leagueId": "elite",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 8,
+      "key": "montpellier",
+      "leagueId": "elite",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 9,
+      "key": "castres",
+      "leagueId": "elite",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 10,
+      "key": "racing-92",
+      "leagueId": "elite",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 11,
+      "key": "paris",
+      "leagueId": "elite",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 12,
+      "key": "perpignan",
+      "leagueId": "elite",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 13,
+      "key": "vannes",
+      "leagueId": "elite",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 14,
+      "key": "beziers",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 15,
+      "key": "biarritz",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 16,
+      "key": "brive",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 17,
+      "key": "colomiers",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 18,
+      "key": "grenoble",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 19,
+      "key": "nice",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 20,
+      "key": "oyonnax",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 21,
+      "key": "provence-rugby",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 22,
+      "key": "narbonne",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 23,
+      "key": "agen",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 24,
+      "key": "angouleme",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 25,
+      "key": "aurillac",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 26,
+      "key": "dax",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 27,
+      "key": "montauban",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 28,
+      "key": "nevers",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 29,
+      "key": "valence-romans",
+      "leagueId": "accession",
+      "country": "FR",
+      "shield": null
+    },
+    {
+      "id": 30,
+      "key": "prem:bath",
+      "leagueId": "prem",
+      "country": "GB",
+      "shield": null
+    },
+    {
+      "id": 31,
+      "key": "prem:bristol",
+      "leagueId": "prem",
+      "country": "GB",
+      "shield": null
+    },
+    {
+      "id": 32,
+      "key": "prem:exeter",
+      "leagueId": "prem",
+      "country": "GB",
+      "shield": null
+    },
+    {
+      "id": 33,
+      "key": "prem:gloucester",
+      "leagueId": "prem",
+      "country": "GB",
+      "shield": null
+    },
+    {
+      "id": 34,
+      "key": "prem:harlequins",
+      "leagueId": "prem",
+      "country": "GB",
+      "shield": null
+    },
+    {
+      "id": 35,
+      "key": "prem:leicester",
+      "leagueId": "prem",
+      "country": "GB",
+      "shield": null
+    },
+    {
+      "id": 36,
+      "key": "prem:newcastle",
+      "leagueId": "prem",
+      "country": "GB",
+      "shield": null
+    },
+    {
+      "id": 37,
+      "key": "prem:northampton",
+      "leagueId": "prem",
+      "country": "GB",
+      "shield": null
+    },
+    {
+      "id": 38,
+      "key": "prem:sale",
+      "leagueId": "prem",
+      "country": "GB",
+      "shield": null
+    },
+    {
+      "id": 39,
+      "key": "prem:saracens",
+      "leagueId": "prem",
+      "country": "GB",
+      "shield": null
+    },
+    {
+      "id": 40,
+      "key": "urc:leinster",
+      "leagueId": "urc",
+      "country": "IE",
+      "shield": "ireland"
+    },
+    {
+      "id": 41,
+      "key": "urc:munster",
+      "leagueId": "urc",
+      "country": "IE",
+      "shield": "ireland"
+    },
+    {
+      "id": 42,
+      "key": "urc:ulster",
+      "leagueId": "urc",
+      "country": "GB",
+      "shield": "ireland"
+    },
+    {
+      "id": 43,
+      "key": "urc:connacht",
+      "leagueId": "urc",
+      "country": "IE",
+      "shield": "ireland"
+    },
+    {
+      "id": 44,
+      "key": "urc:glasgow",
+      "leagueId": "urc",
+      "country": "GB",
+      "shield": "scotland-italy"
+    },
+    {
+      "id": 45,
+      "key": "urc:edinburgh",
+      "leagueId": "urc",
+      "country": "GB",
+      "shield": "scotland-italy"
+    },
+    {
+      "id": 46,
+      "key": "urc:cardiff",
+      "leagueId": "urc",
+      "country": "GB",
+      "shield": "wales"
+    },
+    {
+      "id": 47,
+      "key": "urc:dragons",
+      "leagueId": "urc",
+      "country": "GB",
+      "shield": "wales"
+    },
+    {
+      "id": 48,
+      "key": "urc:ospreys",
+      "leagueId": "urc",
+      "country": "GB",
+      "shield": "wales"
+    },
+    {
+      "id": 49,
+      "key": "urc:scarlets",
+      "leagueId": "urc",
+      "country": "GB",
+      "shield": "wales"
+    },
+    {
+      "id": 50,
+      "key": "urc:benetton",
+      "leagueId": "urc",
+      "country": "IT",
+      "shield": "scotland-italy"
+    },
+    {
+      "id": 51,
+      "key": "urc:zebre",
+      "leagueId": "urc",
+      "country": "IT",
+      "shield": "scotland-italy"
+    },
+    {
+      "id": 52,
+      "key": "urc:stormers",
+      "leagueId": "urc",
+      "country": "ZA",
+      "shield": "south-africa"
+    },
+    {
+      "id": 53,
+      "key": "urc:bulls",
+      "leagueId": "urc",
+      "country": "ZA",
+      "shield": "south-africa"
+    },
+    {
+      "id": 54,
+      "key": "urc:sharks",
+      "leagueId": "urc",
+      "country": "ZA",
+      "shield": "south-africa"
+    },
+    {
+      "id": 55,
+      "key": "urc:lions",
+      "leagueId": "urc",
+      "country": "ZA",
+      "shield": "south-africa"
+    },
+    {
+      "id": 56,
+      "key": "guest:cheetahs",
+      "leagueId": "guest",
+      "country": "ZA",
+      "shield": null
+    },
+    {
+      "id": 57,
+      "key": "guest:black-lion",
+      "leagueId": "guest",
+      "country": "GE",
+      "shield": null
+    }
+  ],
+  "pools": {
+    "champions": [
+      [
+        4,
+        6,
+        35,
+        38,
+        40,
+        44
+      ],
+      [
+        0,
+        2,
+        32,
+        39,
+        43,
+        55
+      ],
+      [
+        1,
+        10,
+        31,
+        33,
+        41,
+        52
+      ],
+      [
+        8,
+        11,
+        30,
+        37,
+        46,
+        53
+      ]
+    ],
+    "challenge": [
+      [
+        5,
+        12,
+        42,
+        47,
+        51,
+        56
+      ],
+      [
+        7,
+        9,
+        36,
+        49,
+        54,
+        50
+      ],
+      [
+        3,
+        13,
+        34,
+        48,
+        45,
+        57
+      ]
+    ]
+  }
+}

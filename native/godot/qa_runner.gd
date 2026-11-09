@@ -12,6 +12,7 @@ var layout_reception: Array[Dictionary] = []
 var systems_reception: Dictionary = {}
 var file_reception: Dictionary = {}
 var native06_reception: Dictionary = {}
+var world_reception: Dictionary = {}
 
 func _ready() -> void:call_deferred("_run")
 
@@ -111,6 +112,13 @@ func _press(text:String) -> void:
 			if not item.disabled:item.pressed.emit()
 			return
 	_check(false,"Control exists: "+text)
+
+func _press_named(control_name: String) -> bool:
+	var button := app.root_content.find_child(control_name,true,false) as Button
+	var available := button != null and button.is_visible_in_tree() and not button.disabled
+	_check(available,"Visible action: " + control_name)
+	if available: button.pressed.emit()
+	return available
 
 func _keyboard_focus() -> void:
 	var buttons:Array=app.root_content.find_children("*","Button",true,false)
@@ -254,13 +262,19 @@ func _run() -> void:
 		return
 	_check(not app._has_career() and app.route=="Accueil","Fresh profile opens menu without creating career")
 	await _display_reception()
+	if OS.get_environment("CD_GODOT_QA_WORLD") == "1":
+		await _world_reception()
+		await _finish()
+		return
 	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]:
 		await _resize_window(resolution)
 		app._navigate("Accueil")
 		await _capture("accueil-"+str(resolution.x))
-		app.club_division="accession"
-		app.selected_club=29
 		app._navigate("Création")
+		_press_named("CreationMode_common")
+		_press_named("CreationDivision_accession")
+		app.selected_club=29
+		app._render()
 		await _capture("creation-"+str(resolution.x))
 	_press("PRENDRE LES RÊNES DE VDX  →")
 	await _wait()
@@ -532,6 +546,93 @@ func _systems_reception() -> void:
 	_check(app.user_preferences.data.camera == "action" and app.user_preferences.data.volume == 40, "Career import preserves the independent local preferences")
 	systems_reception = {"passed":failures.size() == initial_failures,"domains":domains,"academy_active":app.model.clubLife.academyPathways.active,"press_five_tones":five_tones,"staff_decision":app.model.clubLife.clubSupport.meeting.lastDecision != null,"board_priority":app.model.clubLife.clubStrategy.board.priority,"atomic_preferences":app.user_preferences.data.camera == "action" and app.user_preferences.data.volume == 40,"exact_import":exact_import,"rng_preserved":private_after.seed == private_before.seed}
 
+func _world_match(expected_competition: String) -> bool:
+	for week in 12:
+		if app.model.get("next") is Dictionary: break
+		if not await _ask("finish_round"): return false
+	var next: Variant = app.model.get("next")
+	_check(next is Dictionary and next.get("competitionId") == expected_competition,"Actual fixture: " + expected_competition)
+	if not next is Dictionary or next.get("competitionId") != expected_competition: return false
+	if not app.model.selection.valid:
+		await _ask("auto_lineup")
+		if not app.model.selection.valid: await _ask("promote_cover")
+	if not await _ask("begin_match"): return false
+	app.timer.stop()
+	app._navigate("Match")
+	await _capture("monde-match-" + expected_competition)
+	if not await _ask("delegate"): return false
+	_check(app.model.live is Dictionary and app.model.live.finished,"Native rugby match finishes: " + expected_competition)
+	if not await _ask("finish_round"): return false
+	var recorded: bool = app.model.history.any(func(r): return r.get("competitionId") == expected_competition and r.get("pair", []).has(app.model.club.id) and r.get("stats") is Array)
+	_check(recorded,"Competition-specific result and match statistics recorded")
+	return recorded
+
+func _world_creation(club_id: int, league: String) -> bool:
+	app._navigate("Création")
+	await _settle()
+	if not _press_named("CreationMode_world"): return false
+	await _settle()
+	if not _press_named("CreationDivision_" + league): return false
+	await _settle()
+	if not _press_named("CreationClub" + str(club_id)): return false
+	await _settle()
+	var replacing: bool = app._has_career()
+	if not _press_named("CreationStart"): return false
+	if replacing:
+		await _settle()
+		_confirm()
+	await _wait()
+	var created: bool = app.model.get("club") is Dictionary and int(app.model.club.id) == club_id and app.model.meta.mode == "world"
+	_check(created,"World career created through actual club picker")
+	return created
+
+func _world_reception() -> void:
+	var pack := OS.get_environment("CD_GODOT_WORLD_PACK")
+	_check(not pack.is_empty() and FileAccess.file_exists(pack),"Private world pack supplied to the disposable test profile")
+	if pack.is_empty() or not FileAccess.file_exists(pack): return
+	if not await _ask("pack_inspect",{"path":pack,"mode":"world"}): return
+	var preview: Dictionary = app.model.packs.preview
+	_check(int(preview.counts.clubs) == 58 and int(preview.counts.players) == int(app.model.meta.worldDatabase.playerCount) and int(preview.counts.staff) >= 808,"Full world pack reconciled with bundled catalogue")
+	if not await _ask("pack_install",{"path":pack,"digest":preview.digest}): return
+	if not await _ask("pack_select",{"id":preview.id,"scope":"creation","mode":"world"}): return
+	if not await _world_creation(30,"prem"): return
+	_check(app.model.packs.career == preview.id and FileAccess.file_exists(app.model.club.get("logoPath","")),"Installed real club logo selected by default in the test career")
+	_check(app.model.staff.teams.size() == 58 and app.model.leagues.size() == 6,"World staff and all competitions exposed")
+	_check(app.model.squad.any(func(p): return FileAccess.file_exists(p.get("portraitPath",""))),"Actual squad portrait assets resolve on disk")
+	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]:
+		await _resize_window(resolution)
+		for route_name in ["Création","Bureau","Effectif","Calendrier","Classements","Staff"]:
+			app._navigate(route_name)
+			await _capture("monde-" + route_name.to_lower() + "-" + str(resolution.x))
+	if not await _world_match("prem"): return
+	if not await _world_creation(40,"urc"): return
+	if not await _world_match("urc"): return
+	var euro := OS.get_environment("CD_GODOT_WORLD_EURO_EXPORT")
+	var final_doc := OS.get_environment("CD_GODOT_WORLD_FINAL_EXPORT")
+	_check(FileAccess.file_exists(euro) and FileAccess.file_exists(final_doc),"Both exact-season career checkpoints supplied")
+	if not FileAccess.file_exists(euro) or not FileAccess.file_exists(final_doc): return
+	if not await _ask("import",{"text":FileAccess.get_file_as_string(euro)}): return
+	if not await _world_match("champions"): return
+	# Exercise the actual file picker handler, not just the engine import command.
+	var file := FileAccess.open(final_doc,FileAccess.READ)
+	if file == null: return
+	var final_size := file.get_length()
+	file.close()
+	_check(final_size > 8 * 1024 * 1024,"World season checkpoint exceeds the historical limit")
+	app.open_file(true)
+	app.file_dialog.hide()
+	app.file_dialog.file_selected.emit(final_doc)
+	await _settle()
+	_confirm()
+	await _wait()
+	_check(app.bridge.last_response_ok and app.model.meta.canAdvanceSeason,"File picker restores a finished world season")
+	if not app.model.meta.canAdvanceSeason: return
+	if not await _ask("next_season",{"confirmed":true}): return
+	_check(int(app.model.meta.season)==2 and app.model.archives.seasons.size()==1,"Interseason, promotions and European qualification run in the exported app")
+	app._navigate("Classements")
+	await _capture("monde-intersaison-2560")
+	world_reception={"passed":failures.is_empty(),"pack":preview.counts,"competitions_played":["prem","urc","champions"],"season_export_bytes":final_size,"second_season":int(app.model.meta.season)}
+
 func _finish() -> void:
 	app.closing = true
 	app.timer.stop()
@@ -546,6 +647,7 @@ func _finish() -> void:
 	result.systems = systems_reception
 	result.files = file_reception
 	result.native06 = native06_reception
+	result.world = world_reception
 	if not captures.is_empty():
 		var file:=FileAccess.open(captures.path_join("report.json"),FileAccess.WRITE)
 		if file!=null:file.store_string(JSON.stringify(result,"\t"));file.close()
