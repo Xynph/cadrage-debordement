@@ -1,5 +1,11 @@
 # Journal de développement — Cadrage Débordement
 
+## 9 novembre 2026 — audit reproductible des carrières Monde sur dix saisons
+
+Le banc manuel `ci/world-ten-season-audit.cjs` et son rapport `docs/world-ten-season-audit-20261109.md` rejoignent la réception Europe dans un lot commun. Une trajectoire réelle de dix saisons Monde v1 (58 clubs, graine827381, moteur e2f111a2) a produit7910rencontres et1219commandes. Les reprises S5/S10 et la reprise d’un checkpoint hebdomadaire après budget conservent export, profil, RNG et horloge. Le banc conserve désormais les checkpoints hashés et refuse les paires incohérentes ; il reste hors des suites automatiques longues.
+
+Les3208joueurs initiaux deviennent1821 en S10 ; les trésoreries fictives passent de222,4M€ à3160,74M€. La politique sans recrutement ni renouvellement manuel et les61promotions publiques de couverture sont décrites. Cette graine ne prouve pas l’équilibrage général ni une cause de dérive : aucun coefficient n’est changé. La méthode, ses premières erreurs de banc et ses limites de provenance restent tracées dans le rapport.
+
 ## 9 novembre 2026 — préparation des listes Europe dans le client natif
 
 L’Effectif propose désormais « Préparer l’Europe » dans ses deux variantes. Le manager choisit les joueurs d’un brouillon, consulte son compteur et vérifie la présence de sa feuille actuelle ainsi que les contraintes contrôlables du résumé EPCR2026/27. Les qualifications de première ligne non attestées restent à confirmer ; aucun certificat n’est déduit du poste, aucune inscription officielle n’est annoncée et aucun nouveau blocage de match n’est ajouté. Le brouillon reste intact après un refus ou un redimensionnement ; sa fermeture l’efface explicitement. Les saisons non couvertes sont signalées.
