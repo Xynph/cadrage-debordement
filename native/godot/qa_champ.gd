@@ -150,12 +150,15 @@ func _reception() -> void:
 	_check(championship.get("champion") is Dictionary and not app.model.champBoundary.get("premExchange",true),"titre Champ et frontière PREM sans échange")
 	if not await _ask("next_season",{"confirmed":true}): return
 	completed_champ_season = _check(int(app.model.meta.season)==2 and app.model.archives.seasons.size()==1,"saison 2 et archive persistantes")
+	if OS.get_environment("CD_GODOT_CHAMP_EXPECT_077") == "1": _receive_077_pools()
 	app._navigate("Classements")
 	await _capture("champ-saison2-2560")
 	if not await _ask("pack_select",{"id":pack_id,"scope":"career","mode":mode}): return
 	_check(app.model.packs.career==pack_id,"pack changeable après reprise")
 	if OS.get_environment("CD_GODOT_CHAMP_EXPECT_ATLAS") == "1":
 		await _receive_atlas()
+	if OS.get_environment("CD_GODOT_CHAMP_EXPECT_077") == "1":
+		await _receive_077_venue()
 
 func _receive_atlas() -> void:
 	var club_id := 30
@@ -185,3 +188,22 @@ func _receive_atlas() -> void:
 	await _capture("atlas-prem-territoire-sans-pack-2560")
 	if not await _ask("pack_select",{"id":pack_id,"scope":"career","mode":mode},"Club"): return
 	atlas_verified = _check(app.model.club.presentation.get("photos",{}).size()==2,"réactivation de l’atlas dans la même carrière")
+
+func _receive_077_pools() -> void:
+	var cup: Dictionary = app.model.leagues.filter(func(l): return l.id == "challenge")[0]
+	var counts_by_pool: Array[int] = []
+	for pool: Dictionary in cup.pools:
+		var types: Dictionary = {"elite":0,"prem":0,"urc":0,"guest":0}
+		for row: Dictionary in pool.rows:
+			var id := int(row.id)
+			var league := "urc" if id >= 40 and id < 56 else ("prem" if id >= 30 and id < 40 else ("guest" if id == 56 or id == 57 else "elite"))
+			types[league] += 1
+		counts_by_pool.append(int(types.urc))
+		_check(int(types.elite)==2 and int(types.prem)<=1 and int(types.guest)<=1,"poule Challenge générée équilibrée")
+	counts_by_pool.sort()
+	_check(counts_by_pool==[2,3,3],"URC réparti dans les trois poules futures")
+
+func _receive_077_venue() -> void:
+	if not await _ask("new_career",{"mode":mode,"club":47},"Calendrier"): return
+	var alternate: Array = app.model.calendar.filter(func(f): return f.competitionId == "challenge" and int(f.home.id) == 56)
+	_check(alternate.size()==1 and str(alternate[0].venue)=="St Helen's","le déplacement européen à Swansea garde son stade publié")
