@@ -1,5 +1,17 @@
 # Journal de développement — Cadrage Débordement
 
+## 9 novembre 2026 — audit reproductible des carrières Monde sur dix saisons
+
+Le banc manuel `ci/world-ten-season-audit.cjs` et son rapport `docs/world-ten-season-audit-20261109.md` rejoignent la réception Europe dans un lot commun. Une trajectoire réelle de dix saisons Monde v1 (58 clubs, graine827381, moteur e2f111a2) a produit7910rencontres et1219commandes. Les reprises S5/S10 et la reprise d’un checkpoint hebdomadaire après budget conservent export, profil, RNG et horloge. Le banc conserve désormais les checkpoints hashés et refuse les paires incohérentes ; il reste hors des suites automatiques longues.
+
+Les3208joueurs initiaux deviennent1821 en S10 ; les trésoreries fictives passent de222,4M€ à3160,74M€. La politique sans recrutement ni renouvellement manuel et les61promotions publiques de couverture sont décrites. Cette graine ne prouve pas l’équilibrage général ni une cause de dérive : aucun coefficient n’est changé. La méthode, ses premières erreurs de banc et ses limites de provenance restent tracées dans le rapport.
+
+## 9 novembre 2026 — préparation des listes Europe dans le client natif
+
+L’Effectif propose désormais « Préparer l’Europe » dans ses deux variantes. Le manager choisit les joueurs d’un brouillon, consulte son compteur et vérifie la présence de sa feuille actuelle ainsi que les contraintes contrôlables du résumé EPCR2026/27. Les qualifications de première ligne non attestées restent à confirmer ; aucun certificat n’est déduit du poste, aucune inscription officielle n’est annoncée et aucun nouveau blocage de match n’est ajouté. Le brouillon reste intact après un refus ou un redimensionnement ; sa fermeture l’efface explicitement. Les saisons non couvertes sont signalées.
+
+Le module pur et la commande native de consultation ont passé13tests Node22 ;12tests existants couvrent aussi sauvegardes atomiques, import et calendrier. La recette Godot4.7.2 Linux a reçu121contrôles du nouveau parcours (clavier, visibilité réelle720p–1440p, refus réel puis réessai et panne du processus) et237contrôles natifs06. Une relecture indépendante a reproduit un P2 de perte de brouillon sur refus ; le correctif le conserve et distingue les erreurs de consultation des décisions de carrière, tout en gardant les pannes de connexion visibles. Les preuves d’export, de profil disque, de hasard et d’horloge sont identiques après consultation. Aucun schéma de sauvegarde modifié ; aucune réception Windows revendiquée. CI exacte et contrôle post-fusion restent requis avant attestation de livraison intégrée.
+
 ## 9 novembre 2026 — réception groupée Cloud
 
 La branche `integration/cloud-reception-20261109` réunit les lots publiés #410 (titres du journal mondial), #414 (trois doublons Champ retirés uniquement aux nouveaux départs et transfert canonique), #413 (poids des suites longues réalignés sur main), #416 (réception géométrique du refus sonore) et #417 (audit réglementaire sourcé). Une qualification supplémentaire du vrai worker Pacifique vérifie la reprise disque avec graines différentes, la continuation identique d'une journée mondiale et les frontières de provenance URC/SRP. Aucun règlement nouveau n'est imposé à partir d'une source d'une autre saison.
