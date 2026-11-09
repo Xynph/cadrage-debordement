@@ -357,6 +357,8 @@ function factory() {
         if(pool.length===6 || pool.filter(x=>byId.get(x).leagueId===c.leagueId).length===2)continue;
         if(c.leagueId==='urc' && pool.some(x=>byId.get(x).leagueId==='urc'&&byId.get(x).shield===c.shield))continue;
         pool.push(id);if(visit(index+1))return true;pool.pop();
+        // TOP 14 and PREM placements cannot constrain future URC slots.
+        if(c.leagueId!=='urc')break;
       }
       return false;
     }

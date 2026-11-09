@@ -5,12 +5,14 @@ var qa: Node
 var mode := "world-champ"
 var pack_id := ""
 var counts: Dictionary = {}
+var completed_champ_season := false
+var atlas_verified := false
 
 func run(runner: Node) -> void:
 	qa = runner
 	app = runner.app
 	await _reception()
-	qa.world_reception = {"edition":mode,"pack":counts,"pack_id":pack_id,"season":app.model.get("meta",{}).get("season")}
+	qa.world_reception = {"edition":mode,"pack":counts,"pack_id":pack_id,"season":app.model.get("meta",{}).get("season"),"champ_season2":completed_champ_season,"atlas_verified":atlas_verified}
 
 
 func _check(ok: bool, why: String) -> bool:
@@ -147,8 +149,39 @@ func _reception() -> void:
 	var championship: Dictionary = app.model.leagues.filter(func(l):return l.id=="champ")[0]
 	_check(championship.get("champion") is Dictionary and not app.model.champBoundary.get("premExchange",true),"titre Champ et frontière PREM sans échange")
 	if not await _ask("next_season",{"confirmed":true}): return
-	_check(int(app.model.meta.season)==2 and app.model.archives.seasons.size()==1,"saison 2 et archive persistantes")
+	completed_champ_season = _check(int(app.model.meta.season)==2 and app.model.archives.seasons.size()==1,"saison 2 et archive persistantes")
 	app._navigate("Classements")
 	await _capture("champ-saison2-2560")
 	if not await _ask("pack_select",{"id":pack_id,"scope":"career","mode":mode}): return
 	_check(app.model.packs.career==pack_id,"pack changeable après reprise")
+	if OS.get_environment("CD_GODOT_CHAMP_EXPECT_ATLAS") == "1":
+		await _receive_atlas()
+
+func _receive_atlas() -> void:
+	var club_id := 30
+	if not _check(int(counts.get("cityPhotos",0)) >= 10 and int(counts.get("stadiumPhotos",0)) >= 10,"inventaire des photos du territoire complet pour la PREM"): return
+	if not await _ask("new_career",{"mode":mode,"club":club_id},"Club"): return
+	var photos: Dictionary = app.model.club.presentation.get("photos",{})
+	if not _check(int(app.model.club.id)==club_id and app.model.packs.career==pack_id and photos.has("city") and photos.has("stadium"),"bon club et les deux photos liées au pack"): return
+	_check(str(app.model.club.presentation.get("city","")) == "Bath" and str(app.model.club.stadium).contains("Recreation Ground"),"ville et stade réels avec l’atlas de Bath")
+	for key in ["city","stadium"]:
+		var info: Dictionary = photos.get(key,{})
+		_check(FileAccess.file_exists(info.get("path","")) and str(info.get("source","")).begins_with("https://") and str(info.get("license","")).begins_with("https://"),"photo attribuée : "+key)
+	app._navigate("Club")
+	await _settle()
+	for key in ["city","stadium"]:
+		var credit := app.find_child("VenuePhotoCredit_"+key,true,false) as Label
+		_check(credit != null and credit.is_visible_in_tree() and credit.text.contains(photos[key].credit) and credit.tooltip_text.contains(photos[key].source),"crédit visible dans l’EXE : "+key)
+	await _capture("atlas-prem-territoire-2560")
+	app._navigate("Bureau")
+	await _settle()
+	for id in ["OfficeCityPreview","OfficeStadiumPreview"]:
+		var tile := app.find_child(id,true,false) as Control
+		_check(tile != null and tile.get_meta("photo_from_pack",false),"aperçu photo dans le Bureau : "+id)
+	await _capture("atlas-prem-bureau-2560")
+	if not await _ask("pack_select",{"id":"base","scope":"career","mode":mode},"Club"): return
+	await _settle()
+	_check(app.model.club.presentation.get("photos",{}).is_empty() and app.find_child("VenuePhotoCredit_city",true,false)==null,"retrait du pack et repli sans photo étrangère")
+	await _capture("atlas-prem-territoire-sans-pack-2560")
+	if not await _ask("pack_select",{"id":pack_id,"scope":"career","mode":mode},"Club"): return
+	atlas_verified = _check(app.model.club.presentation.get("photos",{}).size()==2,"réactivation de l’atlas dans la même carrière")

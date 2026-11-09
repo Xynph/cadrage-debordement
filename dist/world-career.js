@@ -73,12 +73,15 @@ function worldWeeklyEconomy(results){
  const w=S.worldManagement,key=S.season+':'+S.phase+':'+(S.franceMode?.week??S.round);
  if(w.lastFinance===key)return false;
  w.lastFinance=key;
+ const usesCompetitionOutcome=typeof CDFranceCompetition!=='undefined'&&
+  (CDFranceCompetition.active(S)||typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S));
  for(const c of S.clubs){
   const info=worldClub(c.id),upkeep=worldUpkeep(info.facilities);
   if(c.id===S.club){ledgerEntry(label()+' · Entretien des installations',-upkeep);continue}
   const home=results.find(r=>r.pair[0]===c.id&&!r.neutral);
   const own=results.find(r=>r.pair.includes(c.id));
-  const won=own?(typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)?CDFranceCompetition.outcome(own,c.id)>0:own.score[own.pair.indexOf(c.id)]>own.score[1-own.pair.indexOf(c.id)]):false;
+  const won=!!own&&(usesCompetitionOutcome?CDFranceCompetition.outcome(own,c.id)>0:
+   own.score[own.pair.indexOf(c.id)]>own.score[1-own.pair.indexOf(c.id)]);
   const wage=c.players.reduce((sum,p)=>sum+p.salary,0);
   // Même barème hebdomadaire de base que le club humain ; billetterie à 360 k€ fictifs.
   c.cash+=160000-wage+(home?360000:0)+(won?80000:0)-upkeep;
