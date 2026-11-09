@@ -3176,83 +3176,83 @@
         {
           "id": "world:nat:4bfc053812085f3a4241",
           "name": "Loïc Ferreon",
-          "pos": "Demi d’ouverture",
-          "fam": 5,
+          "pos": "Ailier",
+          "fam": 6,
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": true,
-          "rating": 58,
+          "rating": 63,
           "condition": 94,
           "injury": 0,
-          "salary": 1333,
+          "salary": 1740,
           "contractEnd": 3,
-          "skillBase": 58,
+          "skillBase": 63,
           "skills": {
-            "scrum": 24.6,
-            "lineout": 23.85,
-            "tackle": 50.35,
-            "speed": 54.7,
-            "pass": 58.35,
-            "kick": 57.8,
-            "goal": 56.3,
-            "mental": 63.95,
-            "discipline": 62,
-            "stamina": 59,
-            "power": 42.7
+            "scrum": 26.2,
+            "lineout": 29.1,
+            "tackle": 51.45,
+            "speed": 67.65,
+            "pass": 55.5,
+            "kick": 35.1,
+            "goal": 24.2,
+            "mental": 58.45,
+            "discipline": 59,
+            "stamina": 61.2,
+            "power": 50.6
           },
           "attributesV2": {
-            "passing": 59,
-            "receiving": 59,
+            "passing": 52,
+            "receiving": 66,
             "offload": 54,
-            "tackling": 52,
-            "jackal": 32,
-            "ruckClearout": 29,
-            "ballCarry": 48,
-            "evasion": 51,
-            "kickDistance": 58,
-            "kickAccuracy": 56,
-            "goalAccuracy": 55,
-            "ballHandling": 58,
-            "decisions": 65,
-            "anticipation": 62,
-            "vision": 65,
-            "positioning": 61,
-            "composure": 68,
-            "discipline": 62,
-            "teamwork": 59,
-            "leadership": 62,
-            "workRate": 59,
-            "acceleration": 57,
-            "topSpeed": 54,
-            "agility": 55,
-            "explosiveness": 55,
-            "strength": 43,
-            "endurance": 59,
-            "jumping": 25,
+            "tackling": 54,
+            "jackal": 31,
+            "ruckClearout": 32,
+            "ballCarry": 59,
+            "evasion": 62,
+            "kickDistance": 36,
+            "kickAccuracy": 30,
+            "goalAccuracy": 20,
+            "ballHandling": 60,
+            "decisions": 59,
+            "anticipation": 63,
+            "vision": 54,
+            "positioning": 60,
+            "composure": 62,
+            "discipline": 59,
+            "teamwork": 56,
+            "leadership": 51,
+            "workRate": 62,
+            "acceleration": 70,
+            "topSpeed": 68,
+            "agility": 65,
+            "explosiveness": 66,
+            "strength": 51,
+            "endurance": 61,
+            "jumping": 37,
             "scrumTechnique": 20,
             "hooking": 20,
             "lineoutThrow": 20,
             "lineoutJump": 20,
             "lineoutLift": 20,
             "maul": 20,
-            "kickChase": 55,
-            "aerialAbility": 39
+            "kickChase": 70,
+            "aerialAbility": 58
           },
-          "gameplayPosition": "Demi d’ouverture",
+          "gameplayPosition": "Ailier",
           "hiddenTraitsV2": {
-            "professionalism": 52,
-            "consistency": 65,
-            "bigMatches": 57,
-            "injuryResistance": 66,
-            "ambition": 61,
-            "adaptability": 56
+            "professionalism": 53,
+            "consistency": 66,
+            "bigMatches": 59,
+            "injuryResistance": 64,
+            "ambition": 66,
+            "adaptability": 57
           },
-          "potential": 67,
+          "potential": 72,
           "worldRatingsVersion": 1,
           "dev": {
-            "potential": 67,
+            "potential": 72,
             "xp": 0,
-            "seasonStart": 58,
+            "seasonStart": 63,
             "minutes": 0,
             "appearances": 0,
             "careerMinutes": 0,
@@ -4720,83 +4720,83 @@
         {
           "id": "world:nat:99114ce8a286fc9d321e",
           "name": "Gabin Vakhto",
-          "pos": "Troisième ligne",
-          "fam": 3,
+          "pos": "Arrière",
+          "fam": 8,
           "age": 24,
           "birthYear": 2002,
           "ageEstimated": false,
-          "rating": 65,
+          "rating": 66,
           "condition": 94,
           "injury": 0,
-          "salary": 1934,
+          "salary": 2037,
           "contractEnd": 2,
-          "skillBase": 65,
+          "skillBase": 66,
           "skills": {
-            "scrum": 37.4,
-            "lineout": 52.45,
-            "tackle": 66.6,
-            "speed": 58.7,
-            "pass": 53.5,
-            "kick": 32.25,
-            "goal": 24.6,
-            "mental": 64.05,
-            "discipline": 63,
-            "stamina": 70.8,
-            "power": 67
+            "scrum": 27,
+            "lineout": 37.45,
+            "tackle": 56.05,
+            "speed": 68.45,
+            "pass": 62.4,
+            "kick": 65.35,
+            "goal": 51.3,
+            "mental": 68.7,
+            "discipline": 68,
+            "stamina": 66.8,
+            "power": 52.7
           },
           "attributesV2": {
-            "passing": 53,
-            "receiving": 56,
-            "offload": 49,
-            "tackling": 66,
-            "jackal": 68,
-            "ruckClearout": 66,
-            "ballCarry": 66,
-            "evasion": 51,
-            "kickDistance": 30,
-            "kickAccuracy": 29,
-            "goalAccuracy": 20,
-            "ballHandling": 56,
-            "decisions": 66,
-            "anticipation": 62,
-            "vision": 57,
-            "positioning": 68,
-            "composure": 66,
-            "discipline": 63,
-            "teamwork": 66,
-            "leadership": 66,
-            "workRate": 70,
-            "acceleration": 61,
-            "topSpeed": 60,
-            "agility": 59,
-            "explosiveness": 68,
-            "strength": 68,
-            "endurance": 71,
-            "jumping": 64,
-            "scrumTechnique": 32,
+            "passing": 61,
+            "receiving": 70,
+            "offload": 54,
+            "tackling": 55,
+            "jackal": 42,
+            "ruckClearout": 36,
+            "ballCarry": 59,
+            "evasion": 64,
+            "kickDistance": 65,
+            "kickAccuracy": 64,
+            "goalAccuracy": 49,
+            "ballHandling": 66,
+            "decisions": 67,
+            "anticipation": 69,
+            "vision": 73,
+            "positioning": 75,
+            "composure": 72,
+            "discipline": 68,
+            "teamwork": 65,
+            "leadership": 68,
+            "workRate": 66,
+            "acceleration": 68,
+            "topSpeed": 70,
+            "agility": 67,
+            "explosiveness": 63,
+            "strength": 55,
+            "endurance": 67,
+            "jumping": 59,
+            "scrumTechnique": 20,
             "hooking": 20,
-            "lineoutThrow": 23,
-            "lineoutJump": 59,
-            "lineoutLift": 58,
-            "maul": 64,
-            "kickChase": 55,
-            "aerialAbility": 58
+            "lineoutThrow": 20,
+            "lineoutJump": 25,
+            "lineoutLift": 20,
+            "maul": 27,
+            "kickChase": 70,
+            "aerialAbility": 76
           },
-          "gameplayPosition": "Troisième ligne",
+          "gameplayPosition": "Arrière",
           "hiddenTraitsV2": {
             "professionalism": 62,
             "consistency": 58,
-            "bigMatches": 64,
-            "injuryResistance": 66,
+            "bigMatches": 63,
+            "injuryResistance": 62,
             "ambition": 54,
-            "adaptability": 52
+            "adaptability": 51
           },
-          "potential": 71,
+          "potential": 72,
           "worldRatingsVersion": 1,
           "dev": {
-            "potential": 71,
+            "potential": 72,
             "xp": 0,
-            "seasonStart": 65,
+            "seasonStart": 66,
             "minutes": 0,
             "appearances": 0,
             "careerMinutes": 0,
@@ -35238,84 +35238,84 @@
         {
           "id": "world:nat:ce9f54eadcb70511a8ad",
           "name": "Tristan Huen",
-          "pos": "Demi de mêlée",
-          "fam": 4,
+          "pos": "Demi d’ouverture",
+          "fam": 5,
           "age": 22,
           "birthYear": 2004,
           "ageEstimated": false,
           "birthDate": "2004-08-27",
-          "rating": 66,
+          "rating": 65,
           "condition": 94,
           "injury": 0,
-          "salary": 2037,
+          "salary": 1934,
           "contractEnd": 3,
-          "skillBase": 66,
+          "skillBase": 65,
           "skills": {
-            "scrum": 26.2,
-            "lineout": 26.75,
-            "tackle": 61.3,
-            "speed": 68.75,
-            "pass": 68.25,
-            "kick": 62.55,
-            "goal": 42.9,
-            "mental": 69,
-            "discipline": 71,
-            "stamina": 70.2,
-            "power": 49.4
+            "scrum": 26.4,
+            "lineout": 28.05,
+            "tackle": 58.4,
+            "speed": 64.5,
+            "pass": 66.3,
+            "kick": 66.05,
+            "goal": 63.1,
+            "mental": 70.4,
+            "discipline": 73,
+            "stamina": 68,
+            "power": 49.8
           },
           "attributesV2": {
-            "passing": 71,
-            "receiving": 65,
+            "passing": 68,
+            "receiving": 64,
             "offload": 57,
-            "tackling": 61,
-            "jackal": 58,
-            "ruckClearout": 39,
-            "ballCarry": 53,
-            "evasion": 66,
-            "kickDistance": 61,
-            "kickAccuracy": 62,
-            "goalAccuracy": 40,
+            "tackling": 59,
+            "jackal": 47,
+            "ruckClearout": 36,
+            "ballCarry": 55,
+            "evasion": 63,
+            "kickDistance": 64,
+            "kickAccuracy": 67,
+            "goalAccuracy": 62,
             "ballHandling": 68,
-            "decisions": 67,
-            "anticipation": 68,
-            "vision": 72,
-            "positioning": 66,
-            "composure": 69,
-            "discipline": 71,
+            "decisions": 70,
+            "anticipation": 67,
+            "vision": 71,
+            "positioning": 67,
+            "composure": 73,
+            "discipline": 73,
             "teamwork": 72,
-            "leadership": 68,
-            "workRate": 67,
-            "acceleration": 67,
-            "topSpeed": 71,
-            "agility": 70,
-            "explosiveness": 61,
-            "strength": 51,
-            "endurance": 71,
-            "jumping": 34,
+            "leadership": 69,
+            "workRate": 64,
+            "acceleration": 63,
+            "topSpeed": 67,
+            "agility": 65,
+            "explosiveness": 60,
+            "strength": 52,
+            "endurance": 69,
+            "jumping": 36,
             "scrumTechnique": 20,
             "hooking": 20,
             "lineoutThrow": 20,
             "lineoutJump": 20,
             "lineoutLift": 21,
-            "maul": 23,
-            "kickChase": 65,
-            "aerialAbility": 45
+            "maul": 24,
+            "kickChase": 59,
+            "aerialAbility": 51
           },
-          "gameplayPosition": "Demi de mêlée",
+          "gameplayPosition": "Demi d’ouverture",
           "hiddenTraitsV2": {
-            "professionalism": 62,
-            "consistency": 62,
-            "bigMatches": 68,
-            "injuryResistance": 65,
-            "ambition": 55,
-            "adaptability": 67
+            "professionalism": 61,
+            "consistency": 57,
+            "bigMatches": 64,
+            "injuryResistance": 68,
+            "ambition": 50,
+            "adaptability": 63
           },
-          "potential": 78,
+          "potential": 77,
           "worldRatingsVersion": 1,
           "dev": {
-            "potential": 78,
+            "potential": 77,
             "xp": 0,
-            "seasonStart": 66,
+            "seasonStart": 65,
             "minutes": 0,
             "appearances": 0,
             "careerMinutes": 0,
@@ -35508,84 +35508,84 @@
         {
           "id": "world:nat:f4c25ee1c7960e1bacd0",
           "name": "Pablo Natand",
-          "pos": "Demi d’ouverture",
-          "fam": 5,
+          "pos": "Ailier",
+          "fam": 6,
           "age": 19,
           "birthYear": 2007,
           "ageEstimated": false,
           "birthDate": "2007-01-17",
-          "rating": 71,
+          "rating": 72,
           "condition": 94,
           "injury": 0,
-          "salary": 2620,
+          "salary": 2750,
           "contractEnd": 3,
-          "skillBase": 71,
+          "skillBase": 72,
           "skills": {
-            "scrum": 26.8,
-            "lineout": 29.65,
-            "tackle": 62.15,
-            "speed": 66.2,
-            "pass": 72.2,
-            "kick": 72.7,
-            "goal": 73,
-            "mental": 70.7,
-            "discipline": 75,
-            "stamina": 68.8,
-            "power": 53.2
+            "scrum": 28,
+            "lineout": 36.35,
+            "tackle": 61.65,
+            "speed": 74.8,
+            "pass": 66.6,
+            "kick": 49,
+            "goal": 36.5,
+            "mental": 64.35,
+            "discipline": 72,
+            "stamina": 70.6,
+            "power": 59.8
           },
           "attributesV2": {
-            "passing": 73,
-            "receiving": 75,
-            "offload": 65,
-            "tackling": 62,
-            "jackal": 52,
+            "passing": 64,
+            "receiving": 73,
+            "offload": 63,
+            "tackling": 63,
+            "jackal": 48,
             "ruckClearout": 46,
-            "ballCarry": 63,
-            "evasion": 67,
-            "kickDistance": 72,
-            "kickAccuracy": 74,
-            "goalAccuracy": 73,
-            "ballHandling": 71,
-            "decisions": 69,
-            "anticipation": 69,
-            "vision": 70,
-            "positioning": 73,
-            "composure": 73,
-            "discipline": 75,
-            "teamwork": 75,
-            "leadership": 70,
-            "workRate": 64,
-            "acceleration": 65,
-            "topSpeed": 67,
-            "agility": 65,
-            "explosiveness": 62,
-            "strength": 54,
-            "endurance": 70,
-            "jumping": 37,
+            "ballCarry": 72,
+            "evasion": 73,
+            "kickDistance": 49,
+            "kickAccuracy": 47,
+            "goalAccuracy": 33,
+            "ballHandling": 73,
+            "decisions": 62,
+            "anticipation": 67,
+            "vision": 58,
+            "positioning": 69,
+            "composure": 68,
+            "discipline": 72,
+            "teamwork": 72,
+            "leadership": 58,
+            "workRate": 65,
+            "acceleration": 73,
+            "topSpeed": 76,
+            "agility": 75,
+            "explosiveness": 73,
+            "strength": 60,
+            "endurance": 72,
+            "jumping": 50,
             "scrumTechnique": 20,
             "hooking": 20,
             "lineoutThrow": 20,
-            "lineoutJump": 20,
-            "lineoutLift": 22,
-            "maul": 20,
-            "kickChase": 67,
-            "aerialAbility": 59
+            "lineoutJump": 23,
+            "lineoutLift": 26,
+            "maul": 22,
+            "kickChase": 76,
+            "aerialAbility": 76
           },
-          "gameplayPosition": "Demi d’ouverture",
+          "gameplayPosition": "Ailier",
           "hiddenTraitsV2": {
-            "professionalism": 52,
-            "consistency": 67,
-            "bigMatches": 57,
-            "injuryResistance": 61,
-            "ambition": 48,
-            "adaptability": 53
+            "professionalism": 53,
+            "consistency": 68,
+            "bigMatches": 59,
+            "injuryResistance": 59,
+            "ambition": 53,
+            "adaptability": 54
           },
-          "potential": 85,
+          "potential": 86,
           "worldRatingsVersion": 1,
           "dev": {
-            "potential": 85,
+            "potential": 86,
             "xp": 0,
-            "seasonStart": 71,
+            "seasonStart": 72,
             "minutes": 0,
             "appearances": 0,
             "careerMinutes": 0,
@@ -35688,84 +35688,84 @@
         {
           "id": "world:nat:71217f9249aabd672386",
           "name": "Marin Kaus",
-          "pos": "Ailier",
-          "fam": 6,
+          "pos": "Troisième ligne",
+          "fam": 3,
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
           "birthDate": "2005-04-03",
-          "rating": 69,
+          "rating": 66,
           "condition": 94,
           "injury": 0,
-          "salary": 2374,
+          "salary": 2037,
           "contractEnd": 1,
-          "skillBase": 69,
+          "skillBase": 66,
           "skills": {
-            "scrum": 27,
-            "lineout": 32.75,
-            "tackle": 57.95,
-            "speed": 74.7,
-            "pass": 60.15,
-            "kick": 42.95,
-            "goal": 28.8,
-            "mental": 64,
-            "discipline": 67,
-            "stamina": 64.8,
-            "power": 55.1
+            "scrum": 36.95,
+            "lineout": 54.15,
+            "tackle": 70.4,
+            "speed": 58.95,
+            "pass": 54,
+            "kick": 32.75,
+            "goal": 24.2,
+            "mental": 64.35,
+            "discipline": 65,
+            "stamina": 69.8,
+            "power": 65.8
           },
           "attributesV2": {
-            "passing": 56,
-            "receiving": 71,
-            "offload": 57,
-            "tackling": 59,
-            "jackal": 43,
-            "ruckClearout": 40,
-            "ballCarry": 67,
-            "evasion": 72,
-            "kickDistance": 40,
-            "kickAccuracy": 43,
-            "goalAccuracy": 25,
-            "ballHandling": 68,
-            "decisions": 64,
-            "anticipation": 70,
-            "vision": 56,
-            "positioning": 68,
-            "composure": 63,
-            "discipline": 67,
-            "teamwork": 68,
-            "leadership": 61,
-            "workRate": 68,
-            "acceleration": 78,
-            "topSpeed": 74,
-            "agility": 74,
-            "explosiveness": 68,
-            "strength": 55,
-            "endurance": 64,
-            "jumping": 44,
-            "scrumTechnique": 20,
-            "hooking": 20,
-            "lineoutThrow": 20,
-            "lineoutJump": 21,
-            "lineoutLift": 24,
-            "maul": 21,
-            "kickChase": 73,
-            "aerialAbility": 66
+            "passing": 53,
+            "receiving": 56,
+            "offload": 51,
+            "tackling": 71,
+            "jackal": 71,
+            "ruckClearout": 68,
+            "ballCarry": 69,
+            "evasion": 53,
+            "kickDistance": 28,
+            "kickAccuracy": 33,
+            "goalAccuracy": 20,
+            "ballHandling": 58,
+            "decisions": 66,
+            "anticipation": 67,
+            "vision": 53,
+            "positioning": 67,
+            "composure": 62,
+            "discipline": 65,
+            "teamwork": 71,
+            "leadership": 66,
+            "workRate": 73,
+            "acceleration": 63,
+            "topSpeed": 59,
+            "agility": 60,
+            "explosiveness": 66,
+            "strength": 65,
+            "endurance": 69,
+            "jumping": 60,
+            "scrumTechnique": 32,
+            "hooking": 21,
+            "lineoutThrow": 28,
+            "lineoutJump": 62,
+            "lineoutLift": 64,
+            "maul": 60,
+            "kickChase": 53,
+            "aerialAbility": 55
           },
-          "gameplayPosition": "Ailier",
+          "gameplayPosition": "Troisième ligne",
           "hiddenTraitsV2": {
-            "professionalism": 56,
-            "consistency": 62,
+            "professionalism": 57,
+            "consistency": 63,
             "bigMatches": 69,
-            "injuryResistance": 67,
-            "ambition": 60,
-            "adaptability": 57
+            "injuryResistance": 68,
+            "ambition": 58,
+            "adaptability": 60
           },
-          "potential": 80,
+          "potential": 77,
           "worldRatingsVersion": 1,
           "dev": {
-            "potential": 80,
+            "potential": 77,
             "xp": 0,
-            "seasonStart": 69,
+            "seasonStart": 66,
             "minutes": 0,
             "appearances": 0,
             "careerMinutes": 0,
@@ -36228,84 +36228,84 @@
         {
           "id": "world:nat:9fd3fdf61a64a7b3d1ac",
           "name": "Elliot Célesand",
-          "pos": "Demi de mêlée",
-          "fam": 4,
+          "pos": "Ailier",
+          "fam": 6,
           "age": 21,
           "birthYear": 2005,
           "ageEstimated": false,
           "birthDate": "2005-08-21",
-          "rating": 65,
+          "rating": 71,
           "condition": 94,
           "injury": 0,
-          "salary": 1934,
+          "salary": 2620,
           "contractEnd": 1,
-          "skillBase": 65,
+          "skillBase": 71,
           "skills": {
-            "scrum": 25.2,
-            "lineout": 25.7,
-            "tackle": 59.1,
-            "speed": 68.45,
-            "pass": 66.85,
-            "kick": 64.7,
-            "goal": 40.7,
-            "mental": 66.2,
-            "discipline": 70,
+            "scrum": 27,
+            "lineout": 32.95,
+            "tackle": 57.3,
+            "speed": 77.15,
+            "pass": 62.05,
+            "kick": 45.5,
+            "goal": 27,
+            "mental": 62.1,
+            "discipline": 69,
             "stamina": 67.6,
-            "power": 46.8
+            "power": 55.5
           },
           "attributesV2": {
-            "passing": 67,
-            "receiving": 69,
+            "passing": 57,
+            "receiving": 75,
             "offload": 58,
             "tackling": 60,
-            "jackal": 50,
+            "jackal": 38,
             "ruckClearout": 42,
-            "ballCarry": 54,
-            "evasion": 65,
-            "kickDistance": 64,
-            "kickAccuracy": 64,
-            "goalAccuracy": 38,
-            "ballHandling": 70,
-            "decisions": 64,
+            "ballCarry": 67,
+            "evasion": 73,
+            "kickDistance": 45,
+            "kickAccuracy": 43,
+            "goalAccuracy": 23,
+            "ballHandling": 72,
+            "decisions": 61,
             "anticipation": 66,
-            "vision": 71,
+            "vision": 59,
             "positioning": 64,
-            "composure": 65,
-            "discipline": 70,
-            "teamwork": 66,
-            "leadership": 72,
+            "composure": 63,
+            "discipline": 69,
+            "teamwork": 63,
+            "leadership": 62,
             "workRate": 66,
-            "acceleration": 71,
-            "topSpeed": 68,
-            "agility": 70,
-            "explosiveness": 57,
-            "strength": 46,
+            "acceleration": 80,
+            "topSpeed": 78,
+            "agility": 75,
+            "explosiveness": 67,
+            "strength": 55,
             "endurance": 68,
-            "jumping": 32,
+            "jumping": 46,
             "scrumTechnique": 20,
             "hooking": 20,
             "lineoutThrow": 20,
-            "lineoutJump": 20,
-            "lineoutLift": 20,
-            "maul": 20,
-            "kickChase": 65,
-            "aerialAbility": 42
+            "lineoutJump": 22,
+            "lineoutLift": 21,
+            "maul": 25,
+            "kickChase": 74,
+            "aerialAbility": 67
           },
-          "gameplayPosition": "Demi de mêlée",
+          "gameplayPosition": "Ailier",
           "hiddenTraitsV2": {
             "professionalism": 55,
-            "consistency": 65,
-            "bigMatches": 69,
-            "injuryResistance": 54,
+            "consistency": 61,
+            "bigMatches": 67,
+            "injuryResistance": 55,
             "ambition": 51,
-            "adaptability": 60
+            "adaptability": 57
           },
-          "potential": 74,
+          "potential": 80,
           "worldRatingsVersion": 1,
           "dev": {
-            "potential": 74,
+            "potential": 80,
             "xp": 0,
-            "seasonStart": 65,
+            "seasonStart": 71,
             "minutes": 0,
             "appearances": 0,
             "careerMinutes": 0,
@@ -36318,84 +36318,84 @@
         {
           "id": "world:nat:326c370b19c606d872f6",
           "name": "Maël Thibau",
-          "pos": "Ailier",
-          "fam": 6,
+          "pos": "Arrière",
+          "fam": 8,
           "age": 26,
           "birthYear": 2000,
           "ageEstimated": false,
           "birthDate": "2000-02-17",
-          "rating": 66,
+          "rating": 62,
           "condition": 94,
           "injury": 0,
-          "salary": 2037,
+          "salary": 1650,
           "contractEnd": 2,
-          "skillBase": 66,
+          "skillBase": 62,
           "skills": {
-            "scrum": 26.8,
-            "lineout": 30.65,
-            "tackle": 54.65,
-            "speed": 70.25,
-            "pass": 58.3,
-            "kick": 40.95,
-            "goal": 24.1,
-            "mental": 59,
-            "discipline": 61,
-            "stamina": 61.2,
-            "power": 53.6
+            "scrum": 25.8,
+            "lineout": 33.1,
+            "tackle": 53.55,
+            "speed": 63.7,
+            "pass": 60.3,
+            "kick": 60.85,
+            "goal": 45,
+            "mental": 62.7,
+            "discipline": 62,
+            "stamina": 60.6,
+            "power": 47.7
           },
           "attributesV2": {
-            "passing": 54,
-            "receiving": 70,
-            "offload": 52,
-            "tackling": 56,
-            "jackal": 38,
-            "ruckClearout": 36,
-            "ballCarry": 63,
-            "evasion": 68,
-            "kickDistance": 44,
-            "kickAccuracy": 35,
-            "goalAccuracy": 20,
-            "ballHandling": 68,
-            "decisions": 59,
+            "passing": 59,
+            "receiving": 68,
+            "offload": 48,
+            "tackling": 54,
+            "jackal": 36,
+            "ruckClearout": 31,
+            "ballCarry": 53,
+            "evasion": 61,
+            "kickDistance": 65,
+            "kickAccuracy": 56,
+            "goalAccuracy": 43,
+            "ballHandling": 66,
+            "decisions": 63,
             "anticipation": 64,
-            "vision": 54,
-            "positioning": 65,
-            "composure": 61,
-            "discipline": 61,
-            "teamwork": 60,
-            "leadership": 50,
-            "workRate": 62,
-            "acceleration": 70,
-            "topSpeed": 72,
-            "agility": 67,
-            "explosiveness": 69,
-            "strength": 54,
-            "endurance": 61,
-            "jumping": 41,
+            "vision": 64,
+            "positioning": 69,
+            "composure": 63,
+            "discipline": 62,
+            "teamwork": 61,
+            "leadership": 57,
+            "workRate": 63,
+            "acceleration": 64,
+            "topSpeed": 65,
+            "agility": 60,
+            "explosiveness": 62,
+            "strength": 49,
+            "endurance": 60,
+            "jumping": 49,
             "scrumTechnique": 20,
             "hooking": 20,
             "lineoutThrow": 20,
-            "lineoutJump": 20,
+            "lineoutJump": 21,
             "lineoutLift": 20,
             "maul": 20,
-            "kickChase": 71,
-            "aerialAbility": 63
+            "kickChase": 66,
+            "aerialAbility": 67
           },
-          "gameplayPosition": "Ailier",
+          "gameplayPosition": "Arrière",
           "hiddenTraitsV2": {
-            "professionalism": 59,
-            "consistency": 53,
-            "bigMatches": 53,
-            "injuryResistance": 62,
-            "ambition": 51,
-            "adaptability": 53
+            "professionalism": 60,
+            "consistency": 54,
+            "bigMatches": 52,
+            "injuryResistance": 59,
+            "ambition": 49,
+            "adaptability": 55
           },
-          "potential": 71,
+          "potential": 67,
           "worldRatingsVersion": 1,
           "dev": {
-            "potential": 71,
+            "potential": 67,
             "xp": 0,
-            "seasonStart": 66,
+            "seasonStart": 62,
             "minutes": 0,
             "appearances": 0,
             "careerMinutes": 0,
@@ -46752,83 +46752,83 @@
         {
           "id": "world:nat:cd61b9ec993a9b9e2273",
           "name": "Rémi Mazzeaud",
-          "pos": "Arrière",
-          "fam": 8,
-          "age": 22,
-          "birthYear": 2004,
+          "pos": "Numéro 8",
+          "fam": 3,
+          "age": 23,
+          "birthYear": 2003,
           "ageEstimated": true,
-          "rating": 63,
+          "rating": 59,
           "condition": 94,
           "injury": 0,
-          "salary": 1740,
+          "salary": 1406,
           "contractEnd": 2,
-          "skillBase": 63,
+          "skillBase": 59,
           "skills": {
-            "scrum": 25.6,
-            "lineout": 36.3,
-            "tackle": 51.85,
-            "speed": 65.15,
-            "pass": 58.5,
-            "kick": 61.7,
-            "goal": 49.2,
-            "mental": 65.2,
-            "discipline": 68,
-            "stamina": 64.2,
-            "power": 46.7
+            "scrum": 37.3,
+            "lineout": 47.85,
+            "tackle": 58.25,
+            "speed": 54,
+            "pass": 50.7,
+            "kick": 30.85,
+            "goal": 24.4,
+            "mental": 60.95,
+            "discipline": 63,
+            "stamina": 65.4,
+            "power": 62.7
           },
           "attributesV2": {
-            "passing": 56,
-            "receiving": 65,
+            "passing": 48,
+            "receiving": 52,
             "offload": 51,
-            "tackling": 52,
-            "jackal": 35,
-            "ruckClearout": 31,
-            "ballCarry": 53,
-            "evasion": 64,
-            "kickDistance": 59,
-            "kickAccuracy": 63,
-            "goalAccuracy": 47,
-            "ballHandling": 67,
-            "decisions": 64,
-            "anticipation": 69,
-            "vision": 68,
-            "positioning": 68,
-            "composure": 69,
-            "discipline": 68,
-            "teamwork": 60,
+            "tackling": 59,
+            "jackal": 52,
+            "ruckClearout": 60,
+            "ballCarry": 62,
+            "evasion": 54,
+            "kickDistance": 27,
+            "kickAccuracy": 30,
+            "goalAccuracy": 20,
+            "ballHandling": 60,
+            "decisions": 63,
+            "anticipation": 62,
+            "vision": 52,
+            "positioning": 61,
+            "composure": 64,
+            "discipline": 63,
+            "teamwork": 62,
             "leadership": 58,
-            "workRate": 65,
-            "acceleration": 63,
-            "topSpeed": 67,
-            "agility": 64,
-            "explosiveness": 58,
-            "strength": 48,
-            "endurance": 64,
-            "jumping": 55,
-            "scrumTechnique": 20,
+            "workRate": 63,
+            "acceleration": 54,
+            "topSpeed": 55,
+            "agility": 54,
+            "explosiveness": 67,
+            "strength": 61,
+            "endurance": 66,
+            "jumping": 58,
+            "scrumTechnique": 34,
             "hooking": 20,
             "lineoutThrow": 20,
-            "lineoutJump": 26,
-            "lineoutLift": 20,
-            "maul": 22,
-            "kickChase": 66,
-            "aerialAbility": 72
+            "lineoutJump": 55,
+            "lineoutLift": 55,
+            "maul": 65,
+            "kickChase": 50,
+            "aerialAbility": 50
           },
-          "gameplayPosition": "Arrière",
+          "gameplayPosition": "Numéro 8",
           "hiddenTraitsV2": {
-            "professionalism": 60,
+            "professionalism": 59,
             "consistency": 56,
-            "bigMatches": 55,
-            "injuryResistance": 52,
-            "ambition": 56,
-            "adaptability": 65
+            "bigMatches": 56,
+            "injuryResistance": 53,
+            "ambition": 57,
+            "adaptability": 66
           },
-          "potential": 74,
+          "potential": 67,
           "worldRatingsVersion": 1,
           "dev": {
-            "potential": 74,
+            "potential": 67,
             "xp": 0,
-            "seasonStart": 63,
+            "seasonStart": 59,
             "minutes": 0,
             "appearances": 0,
             "careerMinutes": 0,
@@ -55212,6 +55212,11 @@
       100
     ],
     [
+      "lnr:1753",
+      11,
+      89
+    ],
+    [
       "lnr:1847",
       4,
       98
@@ -55225,6 +55230,16 @@
       "lnr:12423",
       9,
       97
+    ],
+    [
+      "lnr:12521",
+      27,
+      97
+    ],
+    [
+      "lnr:12468",
+      18,
+      99
     ],
     [
       "lnr:463",
@@ -55247,6 +55262,26 @@
       99
     ],
     [
+      "lnr:13532",
+      7,
+      89
+    ],
+    [
+      "lnr:382",
+      16,
+      88
+    ],
+    [
+      "lnr:1058",
+      7,
+      89
+    ],
+    [
+      "lnr:2298",
+      3,
+      97
+    ],
+    [
       "lnr:11767",
       4,
       98
@@ -55257,12 +55292,37 @@
       100
     ],
     [
+      "lnr:12400",
+      18,
+      99
+    ],
+    [
       "lnr:12435",
       8,
       101
+    ],
+    [
+      "lnr:1059",
+      7,
+      89
+    ],
+    [
+      "lnr:2809",
+      17,
+      97
     ]
   ],
   "nationaleQualifications": {
+    "lnr:1753": {
+      "roles": [
+        "Pilier droit"
+      ],
+      "sources": [
+        "nat-source-691edc3b5f7e1d83",
+        "nat-source-b0e56cd3ec9c9f36",
+        "nat-source-1e54c6e84b8ae4c7"
+      ]
+    },
     "lnr:1847": {
       "roles": [
         "Deuxième ligne"
@@ -55679,6 +55739,14 @@
         "nat-source-1a71deb2143d76fd"
       ]
     },
+    "lnr:13532": {
+      "roles": [
+        "Arrière"
+      ],
+      "sources": [
+        "nat-source-82679f8a83975acc"
+      ]
+    },
     "world:nat:70b06d6a9be92f28c6f3": {
       "roles": [
         "Troisième ligne",
@@ -55788,6 +55856,30 @@
         "nat-source-fea8b5bcd5ba91d2",
         "nat-source-4512fb6a7b1c9fa2",
         "nat-source-25d960d220cbf1c6"
+      ]
+    },
+    "lnr:1058": {
+      "roles": [
+        "Troisième ligne"
+      ],
+      "sources": [
+        "nat-source-c31a648e6308409e",
+        "nat-source-691edc3b5f7e1d83",
+        "nat-source-e21eb7bed91223a2",
+        "nat-source-82679f8a83975acc",
+        "nat-source-f64816a14ee50a9c",
+        "nat-source-65337f800370a41d",
+        "nat-source-4852c9e4dfb7607b",
+        "nat-source-1e54c6e84b8ae4c7"
+      ]
+    },
+    "lnr:2298": {
+      "roles": [
+        "Pilier droit"
+      ],
+      "sources": [
+        "nat-source-290b4b77aa159697",
+        "nat-source-69193c0d5445df57"
       ]
     },
     "world:nat:e3a8a33886b209197729": {
@@ -56087,6 +56179,19 @@
         "nat-source-65337f800370a41d",
         "nat-source-70d22fc380cb2d24",
         "nat-source-624afd38a5a7b7dd"
+      ]
+    },
+    "lnr:1059": {
+      "roles": [
+        "Troisième ligne",
+        "Deuxième ligne"
+      ],
+      "sources": [
+        "nat-source-c31a648e6308409e",
+        "nat-source-1d8f6799857ef938",
+        "nat-source-b0e56cd3ec9c9f36",
+        "nat-source-1e54c6e84b8ae4c7",
+        "nat-source-82679f8a83975acc"
       ]
     },
     "world:nat:6ec42b6bd23b3a261295": {
@@ -56675,11 +56780,11 @@
     "world:nat:ce9f54eadcb70511a8ad": {
       "version": 1,
       "position": {
-        "primary": "Demi de mêlée",
+        "primary": "Demi d’ouverture",
         "basis": "estimated",
         "rule": "positional-roster-estimate",
         "qualifications": [
-          "Demi de mêlée"
+          "Demi d’ouverture"
         ]
       },
       "age": {
@@ -56691,7 +56796,7 @@
       },
       "rosterTier": "club_confirmed_2026_27",
       "rating": {
-        "value": 66,
+        "value": 65,
         "basis": "estimated",
         "confidence": "low",
         "rule": "nationale-estimates-2026-27-v1",
@@ -56712,13 +56817,13 @@
         "sample": null
       },
       "potential": {
-        "value": 78,
+        "value": 77,
         "basis": "estimated",
         "confidence": "low",
         "rule": "world-positional-age-headroom-v1",
         "range": [
-          66,
-          83
+          65,
+          82
         ]
       },
       "contract": {
@@ -57594,11 +57699,11 @@
     "world:nat:f4c25ee1c7960e1bacd0": {
       "version": 1,
       "position": {
-        "primary": "Demi d’ouverture",
+        "primary": "Ailier",
         "basis": "estimated",
         "rule": "positional-roster-estimate",
         "qualifications": [
-          "Demi d’ouverture"
+          "Ailier"
         ]
       },
       "age": {
@@ -57610,7 +57715,7 @@
       },
       "rosterTier": "club_confirmed_2026_27",
       "rating": {
-        "value": 71,
+        "value": 72,
         "basis": "estimated",
         "confidence": "low",
         "rule": "nationale-estimates-2026-27-v1",
@@ -57631,13 +57736,13 @@
         "sample": null
       },
       "potential": {
-        "value": 85,
+        "value": 86,
         "basis": "estimated",
         "confidence": "low",
         "rule": "world-positional-age-headroom-v1",
         "range": [
-          71,
-          90
+          72,
+          91
         ]
       },
       "contract": {
@@ -58057,11 +58162,11 @@
     "world:nat:71217f9249aabd672386": {
       "version": 1,
       "position": {
-        "primary": "Ailier",
+        "primary": "Troisième ligne",
         "basis": "estimated",
         "rule": "positional-roster-estimate",
         "qualifications": [
-          "Ailier"
+          "Troisième ligne"
         ]
       },
       "age": {
@@ -58073,7 +58178,7 @@
       },
       "rosterTier": "club_confirmed_2026_27",
       "rating": {
-        "value": 69,
+        "value": 66,
         "basis": "estimated",
         "confidence": "low",
         "rule": "nationale-estimates-2026-27-v1",
@@ -58094,13 +58199,13 @@
         "sample": null
       },
       "potential": {
-        "value": 80,
+        "value": 77,
         "basis": "estimated",
         "confidence": "low",
         "rule": "world-positional-age-headroom-v1",
         "range": [
-          69,
-          85
+          66,
+          82
         ]
       },
       "contract": {
@@ -60164,11 +60269,11 @@
     "world:nat:99114ce8a286fc9d321e": {
       "version": 1,
       "position": {
-        "primary": "Troisième ligne",
+        "primary": "Arrière",
         "basis": "estimated",
         "rule": "positional-roster-estimate",
         "qualifications": [
-          "Troisième ligne"
+          "Arrière"
         ]
       },
       "age": {
@@ -60178,7 +60283,7 @@
       },
       "rosterTier": "club_confirmed_2026_27",
       "rating": {
-        "value": 65,
+        "value": 66,
         "basis": "estimated",
         "confidence": "low",
         "rule": "nationale-estimates-2026-27-v1",
@@ -60199,13 +60304,13 @@
         "sample": null
       },
       "potential": {
-        "value": 71,
+        "value": 72,
         "basis": "estimated",
         "confidence": "low",
         "rule": "world-positional-age-headroom-v1",
         "range": [
-          65,
-          76
+          66,
+          77
         ]
       },
       "contract": {
@@ -60887,11 +60992,11 @@
     "world:nat:9fd3fdf61a64a7b3d1ac": {
       "version": 1,
       "position": {
-        "primary": "Demi de mêlée",
+        "primary": "Ailier",
         "basis": "estimated",
         "rule": "positional-roster-estimate",
         "qualifications": [
-          "Demi de mêlée"
+          "Ailier"
         ]
       },
       "age": {
@@ -60903,7 +61008,7 @@
       },
       "rosterTier": "club_confirmed_2026_27",
       "rating": {
-        "value": 65,
+        "value": 71,
         "basis": "estimated",
         "confidence": "low",
         "rule": "nationale-estimates-2026-27-v1",
@@ -60924,13 +61029,13 @@
         "sample": null
       },
       "potential": {
-        "value": 74,
+        "value": 80,
         "basis": "estimated",
         "confidence": "low",
         "rule": "world-positional-age-headroom-v1",
         "range": [
-          65,
-          79
+          71,
+          85
         ]
       },
       "contract": {
@@ -61019,11 +61124,11 @@
     "world:nat:326c370b19c606d872f6": {
       "version": 1,
       "position": {
-        "primary": "Ailier",
+        "primary": "Arrière",
         "basis": "estimated",
         "rule": "positional-roster-estimate",
         "qualifications": [
-          "Ailier"
+          "Arrière"
         ]
       },
       "age": {
@@ -61035,7 +61140,7 @@
       },
       "rosterTier": "club_confirmed_2026_27",
       "rating": {
-        "value": 66,
+        "value": 62,
         "basis": "estimated",
         "confidence": "low",
         "rule": "nationale-estimates-2026-27-v1",
@@ -61056,13 +61161,13 @@
         "sample": null
       },
       "potential": {
-        "value": 71,
+        "value": 67,
         "basis": "estimated",
         "confidence": "low",
         "rule": "world-positional-age-headroom-v1",
         "range": [
-          66,
-          76
+          62,
+          72
         ]
       },
       "contract": {
@@ -86097,11 +86202,11 @@
     "world:nat:4bfc053812085f3a4241": {
       "version": 1,
       "position": {
-        "primary": "Demi d’ouverture",
+        "primary": "Ailier",
         "basis": "estimated",
         "rule": "positional-roster-estimate",
         "qualifications": [
-          "Demi d’ouverture"
+          "Ailier"
         ]
       },
       "age": {
@@ -86112,7 +86217,7 @@
       },
       "rosterTier": "ffr_match_sheet_2026_27",
       "rating": {
-        "value": 58,
+        "value": 63,
         "basis": "estimated",
         "confidence": "low",
         "rule": "nationale-estimates-2026-27-v1",
@@ -86142,13 +86247,13 @@
         }
       },
       "potential": {
-        "value": 67,
+        "value": 72,
         "basis": "estimated",
         "confidence": "low",
         "rule": "world-positional-age-headroom-v1",
         "range": [
-          58,
-          72
+          63,
+          77
         ]
       },
       "contract": {
@@ -98383,22 +98488,22 @@
     "world:nat:cd61b9ec993a9b9e2273": {
       "version": 1,
       "position": {
-        "primary": "Arrière",
+        "primary": "Numéro 8",
         "basis": "estimated",
         "rule": "positional-roster-estimate",
         "qualifications": [
-          "Arrière"
+          "Numéro 8"
         ]
       },
       "age": {
-        "value": 22,
-        "birthYear": 2004,
+        "value": 23,
+        "birthYear": 2003,
         "basis": "estimated",
         "rule": "position-age-prior"
       },
       "rosterTier": "ffr_match_sheet_2026_27",
       "rating": {
-        "value": 63,
+        "value": 59,
         "basis": "estimated",
         "confidence": "low",
         "rule": "nationale-estimates-2026-27-v1",
@@ -98428,13 +98533,13 @@
         }
       },
       "potential": {
-        "value": 74,
+        "value": 67,
         "basis": "estimated",
         "confidence": "low",
         "rule": "world-positional-age-headroom-v1",
         "range": [
-          63,
-          79
+          59,
+          72
         ]
       },
       "contract": {
