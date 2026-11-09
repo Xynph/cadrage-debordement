@@ -3,7 +3,13 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const {context}=require('./native-reference-harness.cjs');
 
 function office(){
- const h=context();h.run('CDCommonCareer.start(0)');
+ const h=context();
+ // These domain tests compare the optional field with a genuine legacy shape.
+ // Current constructors now stamp bank 2; creation itself is covered by the
+ // real-worker persistence tests. Remove only that new field from this fixture.
+ h.run(`CDCommonCareer.start(0);
+  for(const p of [...S.clubs.flatMap(c=>c.players),...S.development.academy,
+   ...S.market,...S.economy.freeAgents,...S.aiRoster.academies.flatMap(a=>a.players)])delete p.appearanceBankVersion;`);
  return {...h,project:name=>JSON.parse(h.run('JSON.stringify(nativeSystems.domain('+JSON.stringify(name)+').project())'))};
 }
 function pure(h,read){
