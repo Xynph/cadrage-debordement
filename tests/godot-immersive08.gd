@@ -19,9 +19,9 @@ func command(id: String, payload: Dictionary = {}) -> void:
 	await worker()
 	check(app.bridge.last_response_ok, "Commande native : " + id + " " + app.last_error)
 
-func capture(id: String) -> void:
+func capture(id: String, close_coach: bool = true) -> void:
 	if DisplayServer.get_name() == "headless": return
-	if is_instance_valid(app.coach): app.coach.close()
+	if close_coach and is_instance_valid(app.coach): app.coach.close()
 	await settle()
 	await RenderingServer.frame_post_draw
 	var image := root.get_texture().get_image()
@@ -44,10 +44,11 @@ func click(control: Control, fraction: Vector2 = Vector2(.5,.5)) -> void:
 		root.push_input(event,true)
 		await process_frame
 
-func key(code: Key, ctrl: bool = false) -> void:
+func key(code: Key, ctrl: bool = false, alt: bool = false) -> void:
 	var event := InputEventKey.new()
 	event.keycode=code
 	event.ctrl_pressed=ctrl
+	event.alt_pressed=alt
 	event.pressed=true
 	root.push_input(event,true)
 	await settle()
@@ -207,6 +208,45 @@ func families() -> void:
 	await settle()
 	check(app.route=="Plan de jeu" and app.find_child("PlaybookTabs",true,false).current_tab==1,"Phases arrêtées ouvre la bonne sous-vue tactique")
 
+func navigation_flow() -> void:
+	app._navigate("Bureau")
+	await settle()
+	await click(app.find_child("OfficeTrainingAction",true,false))
+	await settle()
+	check(app.find_child("ImmersiveTraining",true,false)!=null,"Le dossier d’entraînement du Bureau ouvre sa vraie page")
+	await click(app.find_child("ImmersiveContinue",true,false))
+	await settle()
+	check(app.find_child("ImmersivePreparation",true,false)!=null and app.management_ui.preparation.tab==0,"Continuer ouvre le dossier de match après l’entraînement")
+	var back: Button = app.find_child("NavigationBack",true,false)
+	var forward: Button = app.find_child("NavigationForward",true,false)
+	check(back!=null and not back.disabled and forward!=null and forward.disabled,"L’historique de lecture est accessible à la souris")
+	if back!=null: await click(back); await settle()
+	else: await key(KEY_LEFT,false,true)
+	check(app.find_child("ImmersiveTraining",true,false)!=null,"Retour restaure l’entraînement plutôt que le dossier adverse")
+	await key(KEY_RIGHT,false,true)
+	check(app.find_child("ImmersivePreparation",true,false)!=null,"Alt droite rétablit le dossier de match")
+	app._navigate("Effectif")
+	await settle()
+	var player_id: String = app.selected_player
+	await click(app.find_child("OpenPlayerFull",true,false))
+	await settle()
+	await click(app.find_child("Nav_Bureau",true,false))
+	await settle()
+	await key(KEY_LEFT,false,true)
+	check(app.selected_player==player_id and app.find_child("ImmersivePlayerFull",true,false)!=null,"Retour historique restaure la fiche du même joueur")
+	await key(KEY_LEFT,false,true)
+	check(app.selected_player==player_id and app.find_child("ImmersiveRosterTable",true,false)!=null,"La fiche et le tableau de l’effectif sont deux étapes distinctes")
+	app._navigate("Réception")
+	await settle()
+	var training_task: Button
+	for task: Button in app.find_children("InboxRecommendation*","Button",true,false):
+		if task.text == "Organiser la charge de la semaine": training_task = task; break
+	check(training_task!=null,"La Réception propose la charge collective encore à décider")
+	if training_task!=null:
+		await click(training_task)
+		await settle()
+		check(app.find_child("ImmersiveTraining",true,false)!=null,"La recommandation de charge ouvre l’entraînement")
+
 func dialogs() -> void:
 	app._navigate("Bureau")
 	await settle()
@@ -225,18 +265,28 @@ func dialogs() -> void:
 	var preferences: AcceptDialog = app.get_node_or_null("PreferencesDialog")
 	check(preferences!=null and preferences.visible and preferences.find_child("PreferencesMotion",true,false)!=null,"Paramètres natifs et mode calme disponibles")
 	if preferences!=null and preferences.visible:
+		check(Rect2i(Vector2i.ZERO,root.size).encloses(Rect2i(preferences.position,preferences.size)),"La fenêtre de paramètres tient dans l’écran 1440p")
 		await capture("32-parametres-2560x1440")
 		var tabs: TabContainer = preferences.find_child("PreferencesTabs",true,false)
 		tabs.current_tab=1
 		await settle()
 		check(tabs.find_child("PreferencesInterfaceVolume",true,false).is_visible_in_tree() and tabs.find_child("PreferencesStadiumVolume",true,false).is_visible_in_tree(),"L’onglet Son conserve les deux volumes indépendants")
+		root.size=Vector2i(1440,900)
+		if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+		await create_timer(.17).timeout
+		await settle()
+		check(Rect2i(Vector2i.ZERO,root.size).encloses(Rect2i(preferences.position,preferences.size)) and tabs.current_tab==1,"Redimensionner conserve l’onglet et toute la fenêtre des paramètres")
+		await capture("34-parametres-son-1440x900")
 		preferences.canceled.emit()
+		root.size=Vector2i(2560,1440)
+		if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
 		await settle()
 	app.pause_menu()
 	await settle()
 	var pause: AcceptDialog = app.get_node_or_null("ImmersivePauseMenu")
 	check(pause!=null and pause.visible,"Menu carrière et sauvegardes ouvrable")
 	if pause!=null and pause.visible:
+		check(Rect2i(Vector2i.ZERO,root.size).encloses(Rect2i(pause.position,pause.size)),"Le menu carrière tient dans l’écran")
 		await capture("33-menu-carriere-2560x1440")
 		pause.custom_action.emit("export")
 		await settle()
@@ -245,6 +295,7 @@ func dialogs() -> void:
 		await settle()
 	await key(KEY_F1)
 	check(app.coach.expanded,"F1 ouvre l’aide du coach")
+	await capture("35-coach-gabi-2560x1440",false)
 	app.coach.close()
 	await key(KEY_S,true)
 	await worker()
@@ -427,6 +478,11 @@ func run() -> void:
 					check(app.find_child("PlayerAttribute_"+attribute,true,false)!=null,"Aptitude réelle dans la fiche : "+attribute)
 				check(app.find_child("OpenPlayerCoachNote",true,false)!=null,"Carnet personnel conservé sur la fiche")
 				await capture("04-fiche-joueur-2560x1440")
+				app.find_child("FullPlayerTab5",true,false).pressed.emit()
+				await settle()
+				for id in ["ProfileContextCompetition","ProfileContextDevelopment","ProfileContextForm","ProfileContextStaff","ProfileMean_rating"]:
+					check(app.find_child(id,true,false)!=null,"Contexte métier de la fiche complète : "+id)
+				await capture("36-fiche-joueur-reperes-2560x1440")
 				app.find_child("PlayerBackToSquad",true,false).pressed.emit()
 				await settle()
 				check(app.find_child("ImmersiveRosterTable",true,false)!=null,"Retour au tableau sans perdre le joueur")
@@ -458,6 +514,7 @@ func run() -> void:
 			await reception()
 			await resize_shell()
 			await families()
+			await navigation_flow()
 		check(bytes == FileAccess.get_file_as_bytes(disk), "Rendu et navigation ne modifient aucun octet du profil")
 		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await dialogs()
 		app._navigate("Composition")
@@ -465,7 +522,19 @@ func run() -> void:
 		var fly_half: Button=app.find_child("LineupSlot10",true,false)
 		await click(fly_half,Vector2(.97,.92))
 		await settle()
-		check(app.selected_slot==9 and app.find_child("LineupCandidates",true,false)!=null,"Le bas du maillot 10 ouvre son poste malgré l’enveloppe voisine")
+		var candidates: AcceptDialog = app.find_child("LineupCandidates",true,false)
+		check(app.selected_slot==9 and candidates!=null,"Le bas du maillot 10 ouvre son poste malgré l’enveloppe voisine")
+		if candidates!=null:
+			root.size=Vector2i(1280,720)
+			await settle()
+			var visible := Rect2(Vector2.ZERO,root.get_visible_rect().size)
+			for action: Button in [candidates.get_ok_button(), candidates.find_child("LineupRemove",true,false)]:
+				var bounds := action.get_global_rect()
+				bounds.position+=Vector2(candidates.position)
+				check(visible.encloses(bounds),"Action de la sélection entièrement visible en 720p · "+str(action.name))
+			await capture("37-candidats-redimensionne-1280x720")
+			root.size=Vector2i(2560,1440)
+			await settle()
 		app._clear_dialogs()
 		await settle()
 		var original_defense:String=app.model.tactics.defense

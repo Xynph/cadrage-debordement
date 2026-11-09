@@ -103,13 +103,17 @@ static func _choices(card: Panel, app: Control, club: Dictionary, meta: Dictiona
 	create.disabled = locked or app.catalogue.is_empty()
 	var importing := _action(choices,"Importer une carrière",func():app.open_file(true),"EntryImportCareer",accent)
 	importing.disabled = locked
-	var packs := _action(choices,"Identités et packs",func():app.pack_manager.open("creation" if club.is_empty() else "career"),"EntryPacks",accent)
+	var missing: Array = app.model.get("packs",{}).get("missing",[])
+	var creation_missing := missing.any(func(warning: String): return warning.begins_with("Pack de création absent"))
+	var career_missing := missing.any(func(warning: String): return warning.begins_with("Pack de carrière absent"))
+	var pack_scope := "creation" if club.is_empty() or (creation_missing and not career_missing) else "career"
+	var packs := _action(choices,"Identités et packs",func():app.pack_manager.open(pack_scope),"EntryPacks",accent)
 	packs.disabled = app.model.is_empty()
 	var row := C.h(16)
 	choices.add_child(row)
 	C.fill(_action(row,"Paramètres",app.settings,"EntrySettings",accent))
 	C.fill(_action(row,"Quitter",app.request_quit,"EntryQuit",accent))
-	for warning: String in app.model.get("packs",{}).get("missing",[]):
+	for warning: String in missing:
 		choices.add_child(C.wrap(warning+" · Réimportez le pack dans Identités et packs.",19,C.ALERT))
 	if meta.get("recoveryRequired",false):
 		choices.add_child(C.wrap("Le profil ne peut pas être chargé. Sa copie sera conservée avant récupération.",21,C.ALERT))

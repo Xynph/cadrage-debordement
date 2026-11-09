@@ -73,12 +73,15 @@ static func _priorities(card: Panel, app: Control) -> void:
 		var player: Dictionary = contracts[0]
 		tasks.append(["Prolonger "+str(player.name),str(player.get("status",""))+" · "+str(player.get("contractLabel","")),"SAISON "+G.n(player.get("contractEnd","—")),func():app.selected_player=str(player.id);app._navigate("Effectif"),"OfficeContractsAction"])
 	else: tasks.append(["Consulter les contrats","Échéances et engagements du groupe.","EFFECTIF",func():app._navigate("Effectif"),"OfficeContractsAction"])
-	tasks.append(["Valider l’entraînement" if not app.model.meta.get("trained",false) else "Revoir la préparation","Choix collectifs et charge du groupe.","CETTE SEMAINE",func():app._navigate("Préparation"),"OfficeTrainingAction"])
+	var trained: bool = app.model.meta.get("trained", false)
+	tasks.append(["Valider l’entraînement" if not trained else "Revoir la préparation","Choix collectifs et charge du groupe.","CETTE SEMAINE",func():
+		if trained: app._navigate("Préparation")
+		else: app.Immersive.open_training(app),"OfficeTrainingAction"])
 	var needs: Array = app.model.get("decisions",{}).get("recruitment",{}).get("needs",[])
 	var need := str(needs[0].get("pos","Effectif")) if not needs.is_empty() else "Effectif"
 	tasks.append(["Examiner le recrutement","%d profils · Priorité : %s" % [app.model.get("market",[]).size(),need],"CETTE SEMAINE",func():app._navigate("Recrutement"),"OfficeRecruitmentAction"])
-	D.text(card,852,38,"3 À TRAITER",18,C.MUTED,500,150,HORIZONTAL_ALIGNMENT_RIGHT)
-	for i in 3:
+	D.text(card,852,38,"%d DOSSIERS" % tasks.size(),18,C.MUTED,500,150,HORIZONTAL_ALIGNMENT_RIGHT)
+	for i in tasks.size():
 		var y := 71+i*108
 		D.rect(card,Rect2(19,y,833,91),Color("1b2722") if i==0 else C.PANEL,6)
 		D.rect(card,Rect2(35,y+18,36,36),Color("376448"),5)

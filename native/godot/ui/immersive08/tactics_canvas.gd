@@ -1,6 +1,7 @@
 extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
+const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
 
@@ -199,7 +200,18 @@ static func _candidates(app:Control,slot:int) -> void:
 	dialog.title="Poste %02d · choisir un joueur" % (slot+1)
 	var body:=C.v(12);dialog.add_child(body)
 	body.add_child(C.photo("tactics-briefing",Vector2(720,100)))
-	var scroll:=ScrollContainer.new();scroll.custom_minimum_size=Vector2(C.px(720),C.px(500));scroll.follow_focus=true;body.add_child(scroll)
+	var scroll:=ScrollContainer.new();scroll.follow_focus=true;body.add_child(scroll)
+	var viewport := app.get_viewport()
+	var list_width := C.px(720)
+	var list_height := C.px(500)
+	# La photo, les actions et le titre conservent leur place après réduction.
+	var reserved_height := C.px(230) + 68
+	var fit_list := func():
+		scroll.custom_minimum_size = Vector2(list_width,clampf(viewport.get_visible_rect().size.y-reserved_height,1,list_height))
+	fit_list.call()
+	viewport.size_changed.connect(fit_list)
+	dialog.tree_exiting.connect(func():
+		if is_instance_valid(viewport) and viewport.size_changed.is_connected(fit_list): viewport.size_changed.disconnect(fit_list),CONNECT_ONE_SHOT)
 	var list:=C.v(8);list.name="LineupCandidatesList";C.fill(list);scroll.add_child(list)
 	var eligible:Array=[]
 	for assignment:Dictionary in app.model.get("selection",{}).get("slots",[]):
@@ -213,7 +225,7 @@ static func _candidates(app:Control,slot:int) -> void:
 		list.add_child(action)
 	var clear:=C.button("Libérer ce poste",func():dialog.queue_free();app._command("set_lineup",{"playerId":null,"slot":slot}))
 	clear.name="LineupRemove";clear.disabled=not app._live().is_empty();body.add_child(clear)
-	dialog.confirmed.connect(dialog.queue_free);app.add_child(dialog);dialog.popup_centered(Vector2i(800,720))
+	dialog.confirmed.connect(dialog.queue_free);app.add_child(dialog);Dialogs.show_centered(dialog,Vector2i(800,720))
 
 static func validate(app:Control) -> void:
 	if app.model.get("selection",{}).get("valid",false):app._navigate("Préparation")

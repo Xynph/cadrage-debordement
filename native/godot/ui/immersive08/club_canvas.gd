@@ -5,6 +5,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const G = preload("res://ui/game_skin.gd")
 const History = preload("res://ui/club_memory_view.gd")
+const World = preload("res://ui/immersive08/world_archive.gd")
 const Strategy = preload("res://ui/strategy_view.gd")
 const KEY = "immersive08_club_tab"
 const GOALS = {"wins":"Victoires", "points":"Points", "rank":"Place au classement", "cash":"Trésorerie"}
@@ -352,6 +353,8 @@ static func _history(app: Control, canvas: Control) -> void:
 	var card := D.panel(canvas, Rect2(0,214,610,612), "Les archives du club", "trophy", "", "ClubHistorySummary")
 	D.photo(card, "club-forest", Rect2(20,69,570,164))
 	var data := History.project(app.model,int(app.model.club.id))
+	var international: bool = app.model.meta.get("mode") == "world"
+	if international: data.seasons = World.club_seasons(app.model,int(app.model.club.id))
 	var titles := 0
 	for year: Dictionary in data.seasons: titles += year.get("titles",[]).size()
 	var rows := [["Saisons archivées",data.seasons.size()],["Titres conservés",titles],["Rencontres au registre récent",data.events.size()]]
@@ -361,7 +364,87 @@ static func _history(app: Control, canvas: Control) -> void:
 		D.text(card, 586, y, rows[i][1], 35, C.MINT, 700, 118, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.line(card, Vector2(24,y+18), Vector2(586,y+18), Color(C.LINE,.6))
 	D.button(card, Rect2(24,520,562,58), "Ouvrir les compétitions", func(): app._navigate("Classements"), false, "arrow", false, U.GREEN, "ClubHistoryCompetitions")
-	U.place_detail(canvas, Rect2(626,214,1622,1030), History.build(app))
+	if international: _world_history(app,canvas,data)
+	else: U.place_detail(canvas, Rect2(626,214,1622,1030), History.build(app))
+
+static func _world_history(app: Control, canvas: Control, data: Dictionary) -> void:
+	var card := D.panel(canvas,Rect2(626,214,1622,1030),"L’histoire de "+str(data.club_name),"trophy","","CarnetClubMemory")
+	var scroll := ScrollContainer.new()
+	scroll.name = "ClubMemoryScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	card.add_child(scroll)
+	D.place(scroll,Rect2(22,69,1578,939))
+	var list := C.v(15)
+	C.fill(list)
+	scroll.add_child(list)
+	var years: Array = data.seasons
+	list.add_child(C.wrap("Saisons archivées et rencontres conservées dans cette carrière. Les rangs concernent la phase régulière.",22,C.MUTED,true))
+	if years.size() >= 2: _world_comparison(app,list,years)
+	if years.is_empty(): list.add_child(C.wrap("Aucune saison archivée pour ce club.",26,C.IVORY,true,700))
+	for year: Dictionary in years: list.add_child(_world_year(app.model,year))
+	list.add_child(C.rule())
+	list.add_child(C.label("LES RENCONTRES CONSERVÉES",27,C.GOLD,true,700))
+	if data.events.is_empty(): list.add_child(C.wrap("Aucun résultat de ce club dans le registre récent.",22,C.MUTED,true))
+	for event: Dictionary in data.events:
+		var result := C.card("Saison %s · %s" % [G.n(event.get("season","—")),World.name_for(app.model,str(event.get("leagueId","")))])
+		list.add_child(result)
+		var notes := C.content(result)
+		notes.add_child(C.wrap("%s  %s – %s  %s" % [event.home_name,G.n(event.get("home","—")),G.n(event.get("away","—")),event.away_name],27,C.IVORY,true,700))
+		if event.get("winner") != null and event.get("home") == event.get("away"):
+			notes.add_child(C.wrap("Vainqueur après départage : "+str(event.get("winner_name","—")),22,C.GOLD,true))
+		if not str(event.get("reaction","")).is_empty():
+			notes.add_child(C.wrap("Réaction simulée · %s  « %s »" % [event.get("reaction_club_name","Banc"),event.reaction],21,C.MUTED,true))
+	list.add_child(C.rule())
+	list.add_child(C.label("LE PARCOURS DU COACH",27,C.GOLD,true,700))
+	if data.manager_current_from != null: list.add_child(C.label("Mandat actuel depuis la saison "+G.n(data.manager_current_from),24))
+	if data.manager_history.is_empty(): list.add_child(C.wrap("Aucune prise de poste antérieure enregistrée.",22,C.MUTED,true))
+	for move: Dictionary in data.manager_history:
+		list.add_child(C.wrap("Saison %s · %s  →  %s" % [G.n(move.get("arrivalSeason","—")),move.from_name,move.to_name],23,C.IVORY,true))
+
+static func _world_year(model: Dictionary, year: Dictionary) -> PanelContainer:
+	var card := C.card("Saison "+G.n(year.season))
+	C.fill(card)
+	var content := C.content(card)
+	var rank := "%s · rang %s / %s" % [World.name_for(model,str(year.league_id)),G.n(year.rank),G.n(year.division_size)] if year.rank != null else "Rang de phase régulière indisponible"
+	content.add_child(C.wrap(rank,25,C.IVORY,true,600))
+	for id: String in year.titles:
+		content.add_child(C.wrap("Champion · "+World.name_for(model,id),23,C.MINT,true,600))
+	if year.promoted: content.add_child(C.label("Montée en Élite",22,C.MINT))
+	if year.relegated: content.add_child(C.label("Descente en Accession",22,C.AMBER))
+	return card
+
+static func _world_comparison(app: Control, list: VBoxContainer, years: Array) -> void:
+	var panel := C.card("Comparer deux saisons")
+	list.add_child(panel)
+	var contents := C.content(panel)
+	var selectors := C.h(16)
+	var comparison := C.h(16)
+	contents.add_child(selectors)
+	contents.add_child(comparison)
+	var indexes := [0,1]
+	var redraw := func():
+		for child in comparison.get_children():
+			comparison.remove_child(child)
+			child.queue_free()
+		for index: int in indexes: comparison.add_child(_world_year(app.model,years[index]))
+	for i in 2:
+		var key := "club_memory_season_a" if i == 0 else "club_memory_season_b"
+		var selector := OptionButton.new()
+		selector.name = "ClubMemorySeasonA" if i == 0 else "ClubMemorySeasonB"
+		selector.custom_minimum_size.y = C.px(40)
+		C.fill(selector)
+		var chosen := int(app.management_ui.get(key,years[i].season))
+		for year: Dictionary in years:
+			selector.add_item("Saison "+G.n(year.season),int(year.season))
+			if int(year.season) == chosen: indexes[i] = selector.item_count-1
+		selector.select(indexes[i])
+		selectors.add_child(selector)
+		selector.item_selected.connect(func(index: int):
+			indexes[i] = index
+			app.management_ui[key] = int(years[index].season)
+			redraw.call())
+	redraw.call()
 
 static func _territory(app: Control, canvas: Control) -> void:
 	var page := Control.new()

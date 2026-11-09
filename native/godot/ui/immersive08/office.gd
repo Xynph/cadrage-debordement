@@ -101,7 +101,7 @@ static func _priorities(parent: VBoxContainer, app: Control) -> void:
 		var first: Dictionary = contracts[0]
 		choices.append({"title":"%d contrats à préparer" % contracts.size(), "detail":str(first.get("name", "")) + " · " + str(first.get("contractLabel", "Échéance à examiner")), "action":func(): _open_player(app, str(first.id)), "id":"OfficeContractsAction"})
 	var training: Dictionary = app.model.get("decisions", {}).get("training", {})
-	choices.append({"title":"Préparer l’entraînement" if not app.model.meta.get("trained", false) else "La préparation est effectuée", "detail":str(training.get("advice", "Consultez les choix et la charge du groupe.")), "action":func(): app._navigate("Préparation"), "id":"OfficeTrainingAction"})
+	choices.append({"title":"Préparer l’entraînement" if not app.model.meta.get("trained", false) else "La préparation est effectuée", "detail":str(training.get("advice", "Consultez les choix et la charge du groupe.")), "action":func(): app.Immersive.open_training(app), "id":"OfficeTrainingAction"})
 	var selection: Dictionary = app.model.get("selection", {})
 	var valid: bool = selection.get("valid", false)
 	choices.append({"title":"Examiner le recrutement" if valid else "Compléter la feuille de match", "detail":"%d profils disponibles dans votre réseau." % app.model.get("market", []).size() if valid else "Les postes vacants ou indisponibles demandent votre attention.", "action":func(): app._navigate("Recrutement" if valid else "Composition"), "id":"OfficeRecruitmentAction"})

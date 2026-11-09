@@ -36,6 +36,12 @@ func press(label: String) -> void:
 	check(control != null and control.visible and not control.disabled, "Commande utilisable : " + label)
 	if control != null and not control.disabled: control.pressed.emit()
 
+func press_entry(id: String) -> void:
+	var control := app.find_child(id, true, false) as Button
+	var usable := control != null and control.is_visible_in_tree() and not control.disabled
+	check(usable, "Commande d’accueil utilisable : " + id)
+	if usable: control.pressed.emit()
+
 func capture(label: String) -> void:
 	if DisplayServer.get_name() == "headless": return
 	var folder := OS.get_environment("CD_GODOT_PACK_QA_CAPTURES")
@@ -214,10 +220,10 @@ func pack_edge_cases() -> void:
 	await start_app(profile)
 	check(app.route == "Accueil" and text_visible(app, "pack de carrière absent"), "Redémarrage : repli annoncé dès l’accueil")
 	await capture("pack-manquant-accueil")
-	press("GÉRER LES PACKS")
+	press_entry("EntryPacks")
 	check(app.route == "Packs" and app.pack_manager.scope == "career", "Avertissement accueil : accès au pack de carrière")
 	press("← RETOUR")
-	press("REPRENDRE LA CARRIÈRE  →")
+	press_entry("EntryResume")
 	check(app.route == "Bureau" and text_visible(app, "pack de carrière absent"), "Reprise : repli annoncé au Bureau")
 	check(app.model.packs.career == pack_id and app.model.packs.creation == pack_id, "Reprise : liaison et préférence absentes conservées")
 	for attempt in range(2):
@@ -253,7 +259,7 @@ func pack_edge_cases() -> void:
 	file.close()
 	await stop_app()
 	await start_app(profile.path_join("import-profile"))
-	press("IMPORTER UNE CARRIÈRE")
+	press_entry("EntryImportCareer")
 	check(app.file_dialog.visible, "Import sans pack : vrai sélecteur ouvert")
 	app.file_dialog.hide()
 	app.file_dialog.file_selected.emit(save_path)
@@ -267,6 +273,20 @@ func pack_edge_cases() -> void:
 	check(JSON.parse_string(app.model.meta.exportText).state == before.state, "Import sans pack : S conservé")
 	press("GÉRER LES PACKS")
 	check(app.route == "Packs" and app.pack_manager.scope == "career", "Avertissement import : accès aux packs")
+
+	await stop_app()
+	check(DirAccess.rename_absolute(profile.path_join("packs-held"), profile.path_join("packs")) == OK, "Pack remis en place avant de préparer le profil")
+	await start_app(profile)
+	app._command("pack_select", {"id":"base", "scope":"career"})
+	await wait_response()
+	app._command("pack_select", {"id":pack_id, "scope":"creation"})
+	await wait_response()
+	await stop_app()
+	check(DirAccess.rename_absolute(profile.path_join("packs"), profile.path_join("packs-held")) == OK, "Pack de création retiré après fermeture")
+	await start_app(profile)
+	check(app._has_career() and app.model.packs.career == "base" and text_visible(app, "pack de création absent"), "Accueil : seule l’identité de création est indisponible")
+	press_entry("EntryPacks")
+	check(app.route == "Packs" and app.pack_manager.scope == "creation", "Avertissement création : accès aux packs de création depuis l’accueil")
 
 func _run() -> void:
 	app = load("res://main.tscn").instantiate()

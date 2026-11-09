@@ -413,35 +413,48 @@ func _run() -> void:
 	elif mode == "modal": await _modal()
 	elif mode == "focus": await _focus()
 	elif mode == "limits":
-		for text in ["a".repeat(5 * 1024 * 1024 + 1), "\"".repeat(4 * 1024 * 1024), "é".repeat(3 * 1024 * 1024)]:
+		var maximum := NativeEngineBridge.IMPORT_LIMIT_BYTES
+		var save_path: String = str(app.model.meta.dataDir).path_join("donnees.json")
+		var before := FileAccess.get_file_as_bytes(save_path)
+		var route_before: String = app.route
+		for fixture: Array in [["ASCII", "a".repeat(maximum + 1)], ["UTF-8", "é".repeat(floori(maximum / 2.0) + 1)]]:
 			var path := profile.path_join("oversized.json")
 			var file := FileAccess.open(path, FileAccess.WRITE)
-			file.store_string(text)
+			file.store_string(fixture[1])
 			file.close()
+			_check(FileAccess.get_file_as_bytes(path).size() > maximum, "%s fixture exceeds the byte cap" % fixture[0])
+			var request_before: int = app.bridge._next_id
 			app.import_mode = true
 			app._file_selected(path)
-			for child in app.get_children():
-				if child is ConfirmationDialog and child.visible: child.confirmed.emit();break
-			_check(not app.waiting and app.last_error.to_lower().contains("volumineux"), "UI rejects inadmissible UTF8/JSON import before transport")
-			# RED must not enqueue more requests on an already stranded reader.
-			if app.waiting: break
+			var confirmation := _dialogs().any(func(dialog: AcceptDialog): return dialog is ConfirmationDialog and dialog.visible)
+			_check(not confirmation and not app.waiting and app.bridge._next_id == request_before and app.last_error.to_lower().contains("volumineux"), "%s over-limit import is refused before confirmation and transport" % fixture[0])
 			_dismiss_errors()
-		if not app.waiting:
-			await _command("snapshot")
-			_check(app.model.club != null, "Snapshot works after local import refusal")
+		# Below the byte cap, malformed JSON is checked by the worker after confirmation.
+		for text in ["a".repeat(5 * 1024 * 1024 + 1), "\"".repeat(4 * 1024 * 1024), "é".repeat(3 * 1024 * 1024)]:
+			var error_before := errors
+			_import_text(text)
+			_check(app.waiting and app.last_command == "import", "In-limit malformed import reaches the worker after confirmation")
+			await _wait()
+			_check(errors == error_before + 1 and not app.bridge.last_response_ok and app.last_error.contains("JSON"), "Worker returns a correlated JSON rejection")
+			_dismiss_errors()
+		await _command("snapshot")
+		_check(app.bridge.last_response_ok and app.model.club != null and app.route == route_before and app.pending_route.is_empty(), "Snapshot and navigation survive rejected imports")
+		_check(not before.is_empty() and FileAccess.get_file_as_bytes(save_path) == before, "Rejected imports preserve the profile bytes")
 	elif mode == "null-response":
-		# Fault injection bypasses send's local guard to exercise the actual worker
-		# protocol's id:null response and its native transport lifecycle.
+		# A non-import request exceeds both editions' ordinary wire cap.
+		var child_pid: int = app.bridge.child_pid
+		var request := {"id": 999999, "command": "snapshot", "payload": {"text": "a".repeat(NativeEngineBridge.REQUEST_LIMIT_BYTES + 1)}}
 		app.bridge._mutex.lock()
-		app.bridge._queue.append({"id": 999999, "command": "import", "payload": {"text": "a".repeat(7 * 1024 * 1024)}})
+		app.bridge._queue.append(request)
 		app.bridge._mutex.unlock()
 		app.bridge._wake.post()
-		await _delay(1500)
+		var terminal_deadline := Time.get_ticks_msec() + 5000
+		while app.bridge.child_pid > 0 and Time.get_ticks_msec() < terminal_deadline: await process_frame
+		_check(error_messages.any(func(message: String): return message.contains("Message trop volumineux")), "Actual worker rejects the oversized protocol message")
+		_check(child_pid > 0 and not OS.is_process_running(child_pid) and app.bridge.child_pid <= 0 and app.bridge._stopping, "id:null rejection terminates owned worker and reader")
 		var prior_errors := errors
 		_dismiss_errors()
 		app.bridge.send("snapshot")
-		await _delay(100)
-		_check(app.bridge.child_pid <= 0 and app.bridge._stopping, "id:null rejection terminates owned worker and reader")
 		_check(errors > prior_errors, "Further commands fail immediately after terminal response")
 	var pid: int = app.bridge.child_pid
 	app.bridge.stop()

@@ -94,10 +94,21 @@ func _trace_startup(stage: String) -> void:
 
 func _ready() -> void:
 	_trace_startup("main.ready")
-	if OS.get_environment("CD_GODOT_SELF_TEST") == "1" and OS.get_environment("CD_GODOT_DATA_DIR").is_empty():
+	var qa_script := ""
+	var immersive_qa := OS.get_environment("CD_GODOT_IMMERSIVE_SELF_TEST") == "1"
+	if immersive_qa: qa_script = "res://ui/immersive08/acceptance.gd"
+	elif OS.get_environment("CD_GODOT_SELF_TEST") == "1": qa_script = "res://qa_runner.gd"
+	var qa_data := OS.get_environment("CD_GODOT_DATA_DIR")
+	if not qa_script.is_empty() and qa_data.is_empty():
 		printerr("La réception exige un profil temporaire explicite.")
 		get_tree().quit(2)
 		return
+	if immersive_qa:
+		var directory := DirAccess.open(qa_data)
+		if not qa_data.is_absolute_path() or (directory != null and (not directory.get_files().is_empty() or not directory.get_directories().is_empty())):
+			printerr("La réception immersive exige un dossier absolu et vide.")
+			get_tree().quit(2)
+			return
 	theme = G.T.make()
 	_trace_startup("theme.ready")
 	interface_layout = load("res://ui/interface_layout.gd").new()
@@ -134,7 +145,7 @@ func _ready() -> void:
 	decision_feedback.setup(self)
 	_trace_startup("guide.setup.begin")
 	if not (OS.has_feature("editor") and OS.get_environment("CD_GODOT_GUIDE_MODULE_TEST") == "1"):
-		coach = load("res://guide/coach_guide.gd").new()
+		coach = load("res://ui/immersive08/coach_canvas.gd").new()
 		add_child(coach)
 		coach.reserved_height_changed.connect(_reserve_coach_space)
 		coach.setup(self)
@@ -156,8 +167,8 @@ func _ready() -> void:
 	timer.start()
 	get_tree().auto_accept_quit = false
 	get_tree().root.close_requested.connect(request_quit)
-	if OS.get_environment("CD_GODOT_SELF_TEST") == "1":
-		var qa: Node = load("res://qa_runner.gd").new()
+	if not qa_script.is_empty():
+		var qa: Node = load(qa_script).new()
 		qa.app = self
 		add_child(qa)
 
@@ -288,8 +299,11 @@ func _failed(message: String) -> void:
 	d.confirmed.connect(d.queue_free)
 	if route == "Accueil" or not _has_career(): _render()
 
-func _navigate(target: String, remember_ui: bool = true) -> void:
-	if target == "Effectif": set_meta("immersive08_full_player",false)
+func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = false) -> void:
+	if not keep_subview:
+		if target == "Effectif": set_meta("immersive08_full_player",false)
+		if target == "Préparation" and management_ui.get("preparation", {}).get("tab", 0) == 2:
+			management_ui.preparation.tab = 0
 	route = target
 	for chapter: Dictionary in NAV_CHAPTERS:
 		if target in chapter.routes: chapter_routes[chapter.label] = target
@@ -703,7 +717,7 @@ func pause_menu() -> void:
 	add_child(d)
 	d.confirmed.connect(d.queue_free)
 	d.canceled.connect(d.queue_free)
-	d.popup_centered(Vector2i(820,370))
+	ImmersiveDialogs.show_centered(d,Vector2i(820,370))
 
 func settings() -> void:
 	preload("res://ui/preferences_dialog.gd").open(self, user_preferences)

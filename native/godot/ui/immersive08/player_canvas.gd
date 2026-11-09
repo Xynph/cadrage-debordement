@@ -4,6 +4,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const Tactics = preload("res://ui/immersive08/tactics_canvas.gd")
 const Notes = preload("res://ui/coach_notes_view.gd")
+const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 
 static func build(app:Control,player:Dictionary) -> Control:
 	var page:=Control.new();page.name="ImmersivePlayerFull";page.custom_minimum_size=Vector2(2248,1236)*C.density;C.fill(page,true)
@@ -57,8 +58,9 @@ static func build(app:Control,player:Dictionary) -> Control:
 			_development(D.panel(page,Rect2(0,430,1670,550),"DÉVELOPPEMENT ET PROGRESSION","school"),app,player)
 			D.photo(page,"academy-player",Rect2(1686,430,562,550))
 		5:
-			_sources(D.panel(page,Rect2(0,430,1670,600),"REPÈRES DE DÉPART","info"),app,player)
-			D.photo(page,"scouting",Rect2(1686,430,562,600))
+			_contexts(D.panel(page,Rect2(0,430,1498,806),"LE JOUEUR DANS LE GROUPE","people","","FullPlayerContexts"),app,player)
+			_sources(D.panel(page,Rect2(1514,430,734,520),"REPÈRES DE DÉPART","info","","FullPlayerSources"),app,player)
+			D.photo(page,"scouting",Rect2(1514,966,734,270))
 	return page
 
 static func _position(card:Panel,app:Control,player:Dictionary) -> void:
@@ -115,7 +117,9 @@ static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
 		D.text(card,x,182,stats[i][1],22,C.MUTED,600,260)
 	D.line(card,Vector2(914,80),Vector2(914,245))
 	D.text(card,946,111,"MON CARNET PERSONNEL",26,C.GOLD,700,690)
-	D.text(card,946,151,"Conservez vos observations sur ce joueur.",19,C.MUTED,400,690,HORIZONTAL_ALIGNMENT_LEFT,true)
+	var note := _note(app,player)
+	var preview := "Conservez vos observations sur ce joueur." if note.is_empty() else str(note.get("text","")).replace("\n"," ")
+	D.text(card,946,151,preview,19,C.MUTED,400,690,HORIZONTAL_ALIGNMENT_LEFT,true).name="FullPlayerNotePreview"
 	D.button(card,Rect2(946,181,670,48),"Ouvrir ma note",func():Notes.open(app,str(player.id)),false,"mail",true,app.accent,"OpenPlayerNoteFromUsage")
 
 static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
@@ -140,14 +144,52 @@ static func _development(card:Panel,app:Control,player:Dictionary) -> void:
 static func _sources(card:Panel,app:Control,player:Dictionary) -> void:
 	var profile:Dictionary=player.rosterProfile if player.get("rosterProfile") is Dictionary else {}
 	if profile.is_empty():
-		D.text(card,24,120,"Repères du joueur dans votre carrière",31,C.IVORY,700,1530)
-		D.text(card,24,179,"Aucun dossier de référence externe associé.",22,C.MUTED,400,1530,HORIZONTAL_ALIGNMENT_LEFT,true)
+		D.text(card,24,120,"Repères du joueur dans votre carrière",31,C.IVORY,700,686)
+		D.text(card,24,179,"Aucun dossier de référence externe associé.",22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
 		return
 	var pos:Dictionary=profile.get("position",{})
 	var contract:Dictionary=profile.get("contract",{})
 	var status:Dictionary=profile.get("status",{})
-	var details:Array=["Poste d’origine : "+str(pos.get("primary",player.pos)),"Qualifications de départ : "+", ".join(pos.get("qualifications",[])),"Statut initial : "+str(status.get("value","—")),"Échéance de départ : "+G.n(contract.get("endYear","—")),"Échéance officielle publiée" if contract.get("basis")=="official" else "Durée initiale estimée pour le jeu"]
+	var qualifications: Array=pos.get("qualifications",[])
+	var details:Array=["Poste d’origine : "+str(pos.get("primary",player.pos)),"Qualifications de départ : "+(", ".join(qualifications) if not qualifications.is_empty() else "Non renseignées"),"Statut initial : "+str(status.get("value","—")),"Échéance de départ : "+G.n(contract.get("endYear","—"))]
+	if contract.has("basis"): details.append("Échéance officielle publiée" if contract.basis=="official" else "Durée initiale estimée pour le jeu")
 	for source_id in contract.get("sources",[]):
 		var source:Dictionary=app.model.get("meta",{}).get("rosterSources",{}).get(source_id,{})
 		details.append("Publication : "+str(source.get("published","date inconnue")))
-	for i in mini(9,details.size()):D.text(card,24,108+i*51,details[i],24,C.IVORY if i==0 else C.MUTED,600 if i==0 else 500,1550)
+	var scroll := _scroll(card,Rect2(22,72,690,422))
+	for i in details.size(): scroll.add_child(C.wrap(details[i],23,C.IVORY if i==0 else C.MUTED,true,600 if i==0 else 500))
+
+static func _contexts(card: Panel, app: Control, player: Dictionary) -> void:
+	var content := _scroll(card,Rect2(20,74,1458,710))
+	var entry := _note(app,player)
+	var note: VBoxContainer
+	if not entry.is_empty():
+		note=C.v(4)
+		note.name="ProfileNoteContent"
+		note.add_child(C.label("MA NOTE · S%s / SEMAINE %s" % [G.n(entry.get("season",1)),G.n(int(entry.get("week",0))+1)],19,C.GOLD))
+		var preview := C.wrap(entry.get("text",""),19,C.IVORY)
+		preview.name="ProfileNotePreview"
+		preview.max_lines_visible=4
+		preview.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+		note.add_child(preview)
+		content.add_child(note)
+	app.SquadViews._profile_contexts(content,player,app)
+	content.get_node("ProfileContexts").show()
+	if note!=null: note.reparent(content.find_child("ProfileStaffNoteSlot",true,false),false)
+	Legacy.apply(content,app.accent)
+
+static func _scroll(parent: Control, rectangle: Rect2) -> VBoxContainer:
+	var scroll := ScrollContainer.new()
+	scroll.follow_focus=true
+	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	parent.add_child(scroll)
+	D.place(scroll,rectangle)
+	var content := C.v(10)
+	C.fill(content)
+	scroll.add_child(content)
+	return content
+
+static func _note(app: Control, player: Dictionary) -> Dictionary:
+	for entry: Dictionary in app.model.get("clubLife",{}).get("coachNotebook",{}).get("entries",[]):
+		if str(entry.get("target",""))==str(player.id): return entry
+	return {}

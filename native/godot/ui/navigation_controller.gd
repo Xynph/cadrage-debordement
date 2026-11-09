@@ -35,6 +35,8 @@ func observe(route: String, player_id: String = "", staff_club: int = -1) -> voi
 		_refresh_controls()
 		return
 	var entry := {"route":route, "player":player_id if route == "Effectif" else "", "staff":staff_club if route == "Staff" else -1, "market":""}
+	if route == "Effectif": entry.full_player = app.get_meta("immersive08_full_player", false)
+	if route == "Préparation": entry.preparation_tab = int(app.management_ui.get("preparation", {}).get("tab", 0))
 	if route == "Recrutement": entry.market = str(app.management_ui.get("market", {}).get("navigation_id", ""))
 	if cursor >= 0 and history[cursor] == entry:
 		_refresh_controls()
@@ -45,24 +47,28 @@ func observe(route: String, player_id: String = "", staff_club: int = -1) -> voi
 	cursor = history.size() - 1
 	_refresh_controls()
 
-func controls() -> Control:
-	var row := G.h(5)
+func controls(show_search: bool = true) -> Control:
+	var row := G.h(5 if show_search else C.px(5))
 	row.name = "NavigationControls"
-	_back = _small_button("←", "Précédent · Alt + gauche", "NavigationBack", func(): _travel(-1))
-	_forward = _small_button("→", "Suivant · Alt + droite", "NavigationForward", func(): _travel(1))
-	_find = _small_button("Chercher", "Rechercher un menu ou un joueur · Ctrl + K", "NavigationOpen", open_palette)
-	_find.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(_back); row.add_child(_forward); row.add_child(_find)
+	_back = _small_button("←", "Précédent · Alt + gauche", "NavigationBack", func(): _travel(-1), not show_search)
+	_forward = _small_button("→", "Suivant · Alt + droite", "NavigationForward", func(): _travel(1), not show_search)
+	row.add_child(_back)
+	row.add_child(_forward)
+	if show_search:
+		_find = _small_button("Chercher", "Rechercher un menu ou un joueur · Ctrl + K", "NavigationOpen", open_palette)
+		_find.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(_find)
+	else: _find = null
 	_refresh_controls()
 	return row
 
-func _small_button(text: String, tooltip: String, id: String, action: Callable) -> Button:
-	var button := G.button(text, action)
+func _small_button(text: String, tooltip: String, id: String, action: Callable, immersive: bool = false) -> Button:
+	var button := C.button(text, action) if immersive else G.button(text, action)
 	button.name = id
 	button.tooltip_text = tooltip
 	button.accessibility_name = tooltip
-	button.custom_minimum_size = Vector2(29, 34)
-	button.add_theme_font_size_override("font_size", 12)
+	button.custom_minimum_size = Vector2(C.px(43), C.px(42)) if immersive else Vector2(29, 34)
+	button.add_theme_font_size_override("font_size", maxi(12, C.px(21)) if immersive else 12)
 	return button
 
 func _input(event: InputEvent) -> void:
@@ -139,11 +145,11 @@ func _build_palette() -> void:
 	content.add_child(heading)
 	heading.add_child(C.icon("search",27,C.GOLD))
 	heading.add_child(C.label("ACCÈS RAPIDE",26,C.GOLD,true,700))
-	content.add_child(C.wrap("Menus et joueurs · ↑ ↓ choisir · Entrée ouvrir · Échap fermer",19,C.MUTED))
+	content.add_child(C.wrap("Menus, joueurs et clubs · ↑ ↓ choisir · Entrée ouvrir · Échap fermer",19,C.MUTED))
 	_search = LineEdit.new()
 	_search.name = "NavigationSearch"
 	_search.placeholder_text = "Rechercher un menu, un nom ou un poste…"
-	_search.accessibility_name = "Rechercher un menu ou un joueur"
+	_search.accessibility_name = "Rechercher un menu, un joueur ou un club"
 	_search.add_theme_color_override("font_placeholder_color",C.MUTED)
 	_search.custom_minimum_size.y = maxi(38,C.px(46))
 	content.add_child(_search)
@@ -183,6 +189,8 @@ func _refresh_results(query: String) -> void:
 			for route: String in chapter.routes:
 				candidates.append({"kind":"menu", "route":route, "label":"Menu · " + route + " · " + str(chapter.label)})
 		candidates.append({"kind":"training","route":"Préparation","label":"Menu · Entraînement · Équipe"})
+		for team: Dictionary in app.model.get("staff", {}).get("teams", []):
+			candidates.append({"kind":"club", "id":int(team.id), "route":"Staff", "label":"Club · %s · Annuaire du staff" % G.club_name(team)})
 		var seen := {}
 		for source in ["squad", "market"]:
 			var people: Variant = app.model.get(source, [])
@@ -230,6 +238,10 @@ func _activate_selected() -> void:
 		app.management_ui.market = U.defaults()
 		app.management_ui.market.navigation_id = entry.id
 		app.management_ui.market.search = str(person.get("name", ""))
+	elif entry.kind == "club":
+		if not _staff_club_exists(entry.id):
+			_refresh_results(_search.text); return
+		app.selected_staff_club = entry.id
 	_dialog.hide()
 	app._navigate(entry.route)
 	observe(app.route, app.selected_player, app.selected_staff_club)
@@ -248,13 +260,15 @@ func _allowed_route(route: String) -> bool:
 		if route in chapter.routes: return true
 	return false
 
+func _staff_club_exists(id: int) -> bool:
+	var teams: Array = app.model.get("staff", {}).get("teams", [])
+	return teams.any(func(team: Dictionary): return int(team.get("id", -1)) == id)
+
 func _valid_entry(entry: Dictionary) -> bool:
 	if not _allowed_route(entry.route): return false
 	if not entry.player.is_empty() and _person("squad", entry.player).is_empty(): return false
 	if not entry.market.is_empty() and _person("market", entry.market).is_empty(): return false
-	if int(entry.staff) >= 0:
-		var teams: Array = app.model.get("staff", {}).get("teams", [])
-		if not teams.any(func(team: Dictionary): return int(team.get("id", -1)) == int(entry.staff)): return false
+	if int(entry.staff) >= 0 and not _staff_club_exists(int(entry.staff)): return false
 	return true
 
 func _destination(direction: int) -> int:
@@ -273,14 +287,17 @@ func _travel(direction: int) -> void:
 	cursor = next
 	if entry.route == "Effectif":
 		app.selected_player = entry.player
+		app.set_meta("immersive08_full_player", entry.get("full_player", false))
 		app.management_ui.roster = U.defaults()
 		app.roster_filter = "Tous"; app.roster_sort = "Poste"
+	if entry.route == "Préparation" and app.management_ui.get("preparation") is Dictionary:
+		app.management_ui.preparation.tab = entry.get("preparation_tab", 0)
 	if entry.route == "Staff": app.selected_staff_club = int(entry.staff)
 	if entry.route == "Recrutement":
 		app.management_ui.market = U.defaults()
 		app.management_ui.market.navigation_id = entry.market
 		if not entry.market.is_empty(): app.management_ui.market.search = str(_person("market", entry.market).get("name", ""))
-	app._navigate(entry.route)
+	app._navigate(entry.route, false, true)
 	_restoring = false
 	_refresh_controls()
 

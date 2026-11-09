@@ -38,7 +38,7 @@ static func build(app: Control) -> Control:
 static func _club(app: Control, id: Variant) -> String:
 	for division: Dictionary in app.model.get("leagues", []):
 		for row: Dictionary in division.get("rows", []):
-			if int(row.id) == int(id): return str(row.get("name", "Club %s" % id))
+			if int(row.id) == int(id): return G.club_name(row)
 	return "Club %s" % id
 
 static func _journal(tabs: TabContainer, app: Control, data: Dictionary) -> void:

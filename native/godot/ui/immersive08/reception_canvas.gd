@@ -51,7 +51,7 @@ static func unread(app: Control) -> int:
 static func _tasks(app: Control) -> Array:
 	var tasks := []
 	if not app.model.get("selection", {}).get("valid", false): tasks.append(["Compléter la feuille de match", "Composition"])
-	if not app.model.get("meta", {}).get("trained", false): tasks.append(["Organiser la charge de la semaine", "Préparation"])
+	if not app.model.get("meta", {}).get("trained", false): tasks.append(["Organiser la charge de la semaine", "Entraînement"])
 	var contracts := P.contracts(app.model)
 	if not contracts.is_empty(): tasks.append(["Examiner les échéances de %d contrat(s)" % contracts.size(), "Effectif"])
 	if P.group(app.model).injured > 0: tasks.append(["Consulter les indisponibilités de l’effectif", "Effectif"])
@@ -204,7 +204,9 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	for index in tasks.size():
 		var task: Array = tasks[index]
 		D.chip(recommendations,Rect2(22,64+index*35,38,28),str(index+1),C.MINT)
-		var action := D.button(recommendations,Rect2(74,63+index*35,1016,33),task[0],func(): app._navigate(task[1]),false,"arrow",true,app.accent,"InboxRecommendation"+str(index))
+		var action := D.button(recommendations,Rect2(74,63+index*35,1016,33),task[0],func():
+			if task[1]=="Entraînement": app.Immersive.open_training(app)
+			else: app._navigate(task[1]),false,"arrow",true,app.accent,"InboxRecommendation"+str(index))
 		action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
 	var next: Variant = app.model.get("next")
 	if next is Dictionary and not next.is_empty():

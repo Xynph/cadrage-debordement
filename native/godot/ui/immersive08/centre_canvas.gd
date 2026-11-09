@@ -57,9 +57,14 @@ func _workbench() -> void:
 	surface.clip_contents = true
 	# Les contrôles et commandes du Centre viennent de la vue métier partagée.
 	# Son onglet international peut évoluer sans recopier ni figer sa structure.
+	var viewport := ScrollContainer.new()
+	viewport.name = "CentreWorkbenchViewport"
+	viewport.follow_focus = true
+	viewport.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	surface.add_child(viewport)
+	D.place(viewport, Rect2(12, 12, 1489, 981))
 	var controls := Academy.build(app)
-	surface.add_child(controls)
-	D.place(controls, Rect2(12, 12, 1489, 981))
+	viewport.add_child(controls)
 	Legacy.apply(controls, ACCENT)
 	var tabs := controls.find_child("AcademyTabs", true, false) as TabContainer
 	if tabs == null: return

@@ -140,7 +140,7 @@ static func open_training(app: Control) -> void:
 	if not app.management_ui.get("preparation") is Dictionary:
 		app.management_ui.preparation={"tab":2,"outer":[0,0,0],"attack":0,"defense":0,"focus":["","",""]}
 	else: app.management_ui.preparation.tab=2
-	app._navigate("Préparation")
+	app._navigate("Préparation",true,true)
 
 static func _dedicated_page(app: Control, width: int) -> Script:
 	if width<2240: return null
@@ -244,7 +244,11 @@ static func _topbar(parent: Node, app: Control) -> void:
 	if _is_training(app): route_caption="Entraînement"
 	if app.route=="Effectif" and app.get_meta("immersive08_full_player",false):route_caption="Fiche joueur : "+str(P.player(app.model,app.selected_player).get("name",""))
 	D.text(panel,307,48,route_caption,25,C.IVORY,700,660)
-	var search := D.button(panel,Rect2(1264,19,475,42),"Rechercher un joueur, un club…",func():app.navigation_controller.open_palette(),false,"",true,app.accent,"ImmersiveSearch")
+	var history: Control = app.navigation_controller.controls(false)
+	panel.add_child(history)
+	D.place(history,Rect2(1155,19,91,42))
+	var search_caption := "Rechercher un joueur, un menu…" if app.model.get("staff",{}).get("teams",[]).is_empty() else "Rechercher un joueur, un club…"
+	var search := D.button(panel,Rect2(1264,19,475,42),search_caption,func():app.navigation_controller.open_palette(),false,"",true,app.accent,"ImmersiveSearch")
 	search.add_theme_font_override("font",C.BODY)
 	search.add_theme_font_size_override("font_size",maxi(12,C.px(18)))
 	search.add_theme_color_override("font_color",C.MUTED)
@@ -279,7 +283,7 @@ static func _heading(parent: Node, app: Control) -> void:
 	app.heading = D.text(row,-1,76,TITLES.get(app.route,app.route),53,C.IVORY,700,1190)
 	var values := P.group(app.model)
 	var rank := G.n(app.model.club.get("rank", "—"))
-	var metrics: Array = [[rank+("er" if rank=="1" else "e")+" · "+G.n(app.model.club.get("points",0))+" pts","trophy",C.GOLD],[str(values.available)+" disponibles","people",C.MINT],[str(values.injured)+" blessés","heart",C.ALERT],["3 décisions","calendar",C.AMBER]]
+	var metrics: Array = [[rank+("er" if rank=="1" else "e")+" · "+G.n(app.model.club.get("points",0))+" pts","trophy",C.GOLD],[str(values.available)+" disponibles","people",C.MINT],[str(values.injured)+" blessés","heart",C.ALERT],["3 priorités","calendar",C.AMBER]]
 	if app.route=="Effectif": metrics=[[str(values.total)+" joueurs","people",C.GOLD],metrics[1],metrics[2],["Niveau moyen "+str(values.rating),"star",C.GOLD]]
 	elif app.route not in ["Bureau","Composition"]: metrics=[]
 	if app.route=="Composition":

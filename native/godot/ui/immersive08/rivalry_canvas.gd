@@ -6,11 +6,12 @@ const G = preload("res://ui/game_skin.gd")
 const S = preload("res://ui/data_semantics.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Decisions = preload("res://ui/decision_views.gd")
+const World = preload("res://ui/immersive08/world_archive.gd")
 const WIDTH := 2248
 const LEFT := 1410
 const RIGHT := 822
 const PRIMARY := Color("106d43")
-const PHASES := {"league": "Championnat", "barrage": "Barrage", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession"}
+const PHASES := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession"}
 const TABS := ["Confrontations", "Échos des clubs", "Palmarès", "Carnet complet"]
 
 var app: Control
@@ -67,7 +68,7 @@ func _hero() -> void:
 		var tile := D.rect(hero, Rect2(x, 223, 321, 73), Color("112621"), 7, Color("44634f"))
 		_icon(tile, ["tactic", "shield", "trophy"][i], Rect2(16, 19, 35, 35), C.GOLD)
 		D.text(tile, 64, 29, ["Duels suivis", "Duels du club", "Saisons archivées"][i], 24, C.MUTED, 600, 169)
-		var number: int = [pairs.size(), club_pairs.size(), data.get("years", []).size()][i]
+		var number: int = [pairs.size(), club_pairs.size(), data.get("archives", []).size()][i]
 		D.text(tile, 290, 53, str(number) if not data.is_empty() else "—", 44, C.IVORY, 800, 76, HORIZONTAL_ALIGNMENT_RIGHT)
 
 func _navigation() -> void:
@@ -196,6 +197,7 @@ func _echoes() -> void:
 		var week: Variant = event.get("week", event.get("round"))
 		var timing := "Saison " + S.count_text(event.get("season"))
 		if S.count_text(week) != "—": timing += " · Semaine " + G.n(int(week) + 1)
+		if app.model.meta.get("mode") == "world" and event.has("leagueId"): timing += " · " + _division(event.leagueId)
 		D.text(card, 19, 28, timing + "  ·  " + str(PHASES.get(event.get("phase"), "Compétition")), 24, C.GOLD, 600, LEFT - 70)
 		D.text(card, 19, 66, "%s   %s – %s   %s" % [_club(event.get("a")), S.count_text(event.get("home")), S.count_text(event.get("away")), _club(event.get("b"))], 35, C.IVORY, 700, LEFT - 73)
 		var reaction := "Réaction simulée de " + _club(event.get("clubId")) + " · « " + str(event.get("reaction", "")) + " »"
@@ -245,9 +247,11 @@ func _archives() -> void:
 		var card := C.card("Saison " + S.count_text(archive.get("season")))
 		list.add_child(card)
 		var body := C.content(card)
-		if archive.get("champions") is Array:
-			for champion: Dictionary in archive.champions:
-				body.add_child(C.wrap(_division(champion.get("leagueId")) + " · " + _club(champion.get("clubId")), 29, C.IVORY, true, 700))
+		var titles := World.titles(archive)
+		if not titles.is_empty():
+			for champion: Dictionary in titles:
+				if champion.get("clubId") != null:
+					body.add_child(C.wrap(_division(champion.get("leagueId")) + " · " + _club(champion.get("clubId")), 29, C.IVORY, true, 700))
 		elif archive.get("champion") != null:
 			body.add_child(C.wrap(_club(archive.champion), 29, C.IVORY, true, 700))
 	for year: Dictionary in years:
@@ -284,9 +288,7 @@ func _club(id: Variant) -> String:
 	return G.club_name(team) if not team.is_empty() else "Club " + G.n(id) if id != null else "Club non identifié"
 
 func _division(id: Variant) -> String:
-	for league: Dictionary in app.model.get("leagues", []):
-		if league.get("id") == id: return str(league.get("name", "Championnat"))
-	return str({"elite": "Élite", "accession": "Accession"}.get(id, id)) if id != null else "Championnat"
+	return World.name_for(app.model,str(id)) if id != null else "Championnat"
 
 func _crest(parent: Node, id: Variant, area: Rect2) -> void:
 	var team: Dictionary = identities.get(id, {})

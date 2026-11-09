@@ -1,6 +1,7 @@
 extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
+const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 
 static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	for child in app.get_children():
@@ -14,7 +15,13 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	dialog.get_ok_button().text = "FERMER"
 	var content := C.v(12)
 	content.custom_minimum_size = Vector2(width-62,436)
-	dialog.add_child(content)
+	C.fill(content,true)
+	var viewport := ScrollContainer.new()
+	viewport.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	viewport.follow_focus=true
+	viewport.custom_minimum_size=Vector2(width-62,436)
+	dialog.add_child(viewport)
+	viewport.add_child(content)
 	var introduction := C.card("")
 	content.add_child(introduction)
 	var masthead := C.h(16)
@@ -108,7 +115,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	dialog.canceled.connect(dialog.queue_free)
 	app.add_child(dialog)
 	refresh.call()
-	dialog.popup_centered(Vector2i(width,600))
+	Dialogs.show_centered(dialog,Vector2i(width,600))
 	volume.get_line_edit().call_deferred("grab_focus")
 	return dialog
 
