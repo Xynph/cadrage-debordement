@@ -17,7 +17,7 @@ test('Le journal international affiche les neuf championnats avec un titre de pr
  for(const d of divisions){
   a.ok(typeof d.label==='string'&&d.label.length>0&&d.label!==d.id,'Titre absent : '+d.id);
   a.ok(d.standings.length>0);
-  if(['srp','jlo-d1','jlo-d2','nationale','champ'].includes(d.id))a.equal(d.label,names.get(d.id));
+  a.equal(d.label,names.get(d.id),d.id);
  }
  const saved=call('export').meta.exportText;
  const same=call('snapshot').clubLife.press.journal.divisions;

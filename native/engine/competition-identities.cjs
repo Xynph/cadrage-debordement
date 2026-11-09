@@ -48,6 +48,9 @@ function apply(model,identities){
   oldNames[league.id]=league.name;
   Object.assign(league,identities[league.id]);
  }
+ for(const division of model.clubLife?.press?.journal?.divisions??[]){
+  if(Object.hasOwn(identities,division.id))division.label=identities[division.id].name;
+ }
  const relabel=match=>{
   const id=match.competitionId,identity=identities[id],previous=oldNames[id];
   if(identity&&typeof previous==='string'&&match.label?.startsWith(previous+' · ')){

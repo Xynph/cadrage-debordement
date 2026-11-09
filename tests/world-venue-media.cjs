@@ -125,6 +125,7 @@ test('identités de compétition : dossier de création, affichage et retour à 
  assert.deepEqual(creation.meta.champCatalogue.find(c=>c.id===0).history,toulouse.history);
  const career=ok('new_career',{mode,club:30});
  assert.equal(career.leagues.find(l=>l.id==='prem').name,identity.name);
+ assert.equal(career.clubLife.press.journal.divisions.find(d=>d.id==='prem').label,identity.name);
  assert.equal(career.leagues.find(l=>l.id==='prem').logoPath,identity.logoPath);
  assert.ok(career.calendar.filter(f=>f.competitionId==='prem').every(f=>f.label.startsWith(identity.name)));
  const raw=ok('export').meta.exportText;assert.ok(!raw.includes(identity.logoPath));
@@ -159,6 +160,7 @@ test('identités de compétition : dossier de création, affichage et retour à 
  assert.deepEqual(creation.meta.champCatalogue.find(c=>c.id===30).startingRoster,overview);
  const base=ok('pack_select',{mode,scope:'career',id:'base'});
  assert.equal(base.leagues.find(l=>l.id==='prem').name,'Élite anglaise');
+ assert.equal(base.clubLife.press.journal.divisions.find(d=>d.id==='prem').label,'Élite anglaise');
  assert.equal(base.leagues.find(l=>l.id==='prem').logoPath,undefined);
  assert.ok(base.calendar.filter(f=>f.competitionId==='prem').every(f=>f.label.startsWith('Élite anglaise')));
 });
