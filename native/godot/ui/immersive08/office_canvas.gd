@@ -29,7 +29,11 @@ static func build(app: Control) -> Control:
 	_standings(_card(page,Rect2(718,654,684,448),"CLASSEMENT · "+P.league_name(app.model),"trophy","OfficeStandings"),app)
 	_journal(_card(page,Rect2(1418,654,548,448),"DANS VOTRE BUREAU","mail","OfficeJournal"),app)
 	_recruitment(_card(page,Rect2(1982,654,546,448),"LE RAPPORT À SUIVRE","search","OfficeRecruitment"),app)
-	_timeline(_card(page,Rect2(280,1118,2248,226),"LE FIL DE VOTRE SAISON","calendar","OfficeTimeline"),app)
+	var recent := Office.recent_results(app)
+	if recent != null:
+		page.add_child(recent)
+		page.custom_minimum_size.y += C.px(150)
+	_timeline(_card(page,Rect2(280,1118,2248,226),"LE FIL DE VOTRE SAISON","calendar","OfficeTimeline"),app,recent)
 	return page
 
 static func _fixture(card: Panel, app: Control) -> void:
@@ -221,7 +225,7 @@ static func _recruitment(card: Panel, app: Control) -> void:
 	D.text(card,23,369,"Disponibilité et modalités dans le dossier.",18,C.MUTED,400,500,HORIZONTAL_ALIGNMENT_LEFT,true)
 	D.button(card,Rect2(23,391,500,39),"Lire le rapport complet",func():app._navigate("Recrutement"),false,"arrow",true,app.accent,"OfficeMarketAction")
 
-static func _timeline(card: Panel, app: Control) -> void:
+static func _timeline(card: Panel, app: Control, recent: PanelContainer) -> void:
 	var fixtures := P.upcoming(app.model)
 	var tiles: Array[Panel] = []
 	var grounds: Array[Label] = []
@@ -231,32 +235,38 @@ static func _timeline(card: Panel, app: Control) -> void:
 		var at_home: bool = fixture.get("home",{}).get("id")==app.model.club.id
 		var opponent: Dictionary = fixture.get("away",{}) if at_home else fixture.get("home",{})
 		var location := P.fixture_location_kind(fixture, app.model.club.id)
+		var place: String = {"neutral":"Neutre","home":"Domicile","away":"Extérieur"}.get(location,"Terrain à confirmer")
 		tiles.append(D.rect(card,Rect2(x,75,304,132),Color("163a2b") if i==0 else Color("10191b"),5,C.LINE))
 		var period := D.text(card,x+16,103,Office.timeline_period(fixture),21,C.IVORY,700,244)
-		var marker := C.icon(C.fixture_location_icon(location),34,C.GOLD)
+		var marker := C.icon(C.fixture_location_icon(location,true),48,C.GOLD)
+		marker.name = "OfficeVenueIcon%d" % i
 		card.add_child(marker)
-		D.place(marker,Rect2(x+254,126,34,34))
+		D.place(marker,Rect2(x+240,120,48,48))
 		period.name = "OfficeTimelineDate%d" % i
 		var local_date := P.fixture_date(fixture, true)
 		if not local_date.is_empty(): Office.describe_fixture(period, local_date)
 		D.line(card,Vector2(x+14,118),Vector2(x+290,118))
-		D.text(card,x+16,151,G.club_name(opponent),25,C.IVORY,600,230)
+		var name := D.text(card,x+16,151,G.club_name(opponent),25,C.IVORY,600,218)
+		Office.describe_fixture(name, name.text + " · " + place)
 		var label := Office.short_fixture_label(app.model,fixture)
-		D.text(card,x+16,184,label+" · "+{"neutral":"Neutre","home":"Domicile","away":"Extérieur"}.get(location,"Terrain à confirmer"),21,C.MUTED,500,272)
+		D.text(card,x+16,184,label+" · "+place,21,C.MUTED,500,272)
 		var venue := P.fixture_venue(fixture, false)
 		var ground := D.text(card,x+16,232,venue if not venue.is_empty() else "Terrain à confirmer",22,C.MUTED,500,272)
 		ground.name = "OfficeTimelineGround%d" % i
 		ground.tooltip_text = ground.text
 		grounds.append(ground)
-	if not fixtures.is_empty():
-		var page := card.get_parent() as Control
-		var update := func():
-			var expanded := page.size.y >= card.position.y + C.px(304)
-			card.size.y = C.px(304 if expanded else 226)
-			for tile in tiles: tile.size.y = C.px(210 if expanded else 132)
-			for ground in grounds: ground.visible = expanded
-		page.resized.connect(update)
-		update.call()
+	var page := card.get_parent() as Control
+	var update := func():
+		var tail := 150 if recent != null else 0
+		var expanded := not fixtures.is_empty() and page.size.y >= card.position.y + C.px(304 + tail)
+		card.size.y = C.px(304 if expanded else 226)
+		for tile in tiles: tile.size.y = C.px(210 if expanded else 132)
+		for ground in grounds: ground.visible = expanded
+		if recent != null:
+			recent.position = Vector2(0,card.position.y + card.size.y + C.px(12))
+			recent.size.x = card.size.x
+	page.resized.connect(update)
+	update.call()
 	if fixtures.is_empty(): D.text(card,25,130,"Aucune rencontre programmée pour le moment.",25,C.MUTED,500,1500)
 	var action := D.button(card,Rect2(1888,15,335,32),"Tout le calendrier",func():app._navigate("Calendrier"),false,"arrow",true,app.accent,"OfficeCalendarAction")
 	action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))

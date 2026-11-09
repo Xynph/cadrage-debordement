@@ -552,6 +552,7 @@ func resize_shell() -> void:
 	var journal: Control = app.find_child("OfficeJournal",true,false)
 	var timeline: Control = app.find_child("OfficeTimeline",true,false)
 	var ground: Label = app.find_child("OfficeTimelineGround0",true,false)
+	check(app.find_child("OfficeRecentResults",true,false)==null,"Les résultats attendent le premier match joué")
 	var action: Button = app.find_child("ImmersiveContinue",true,false)
 	var history: Array = app.navigation_controller.history.duplicate(true)
 	for size in [Vector2i(1920,1080),Vector2i(1600,900),Vector2i(1280,720),Vector2i(1440,900),Vector2i(2560,1440)]:
@@ -581,6 +582,43 @@ func resize_shell() -> void:
 	await capture("14-calendrier-reperes-1440x900")
 	root.size = Vector2i(2560,1440)
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
+	await settle()
+
+func recent_office_results() -> void:
+	var original: Dictionary = app.model
+	app.model = original.duplicate(true)
+	var fixtures: Array = app.model.calendar
+	if fixtures.size() < 9:
+		check(false,"La recette des résultats nécessite neuf rencontres")
+		app.model = original
+		return
+	for index in 6:
+		fixtures[index].played = true
+		fixtures[index].score = [16 + index, 20]
+	fixtures[8].neutral = true
+	app.model.next = fixtures[6]
+	app.model.meta.week = fixtures[6].week
+	app._navigate("Bureau")
+	await settle()
+	root.size = Vector2i(1440,900)
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
+	await settle()
+	var results: Control = app.find_child("OfficeRecentResults",true,false)
+	var markers := app.find_children("OfficeVenueIcon*","TextureRect",true,false)
+	var icons := markers.map(func(marker): return marker.texture)
+	check(icons.size() >= 3 and icons[0] != null and icons[1] != null and icons[2] != null
+		and icons[0] != icons[1] and icons[0] != icons[2] and icons[1] != icons[2],"Maison, bus et drapeau affichés dans le fil")
+	if results != null:
+		var scores := results.find_children("OfficeRecentScore","Label",true,false)
+		check(scores.size()==5 and scores[0].text=="20 – 21","Cinq résultats du plus récent au plus ancien, score du club à gauche")
+		var viewport: Control = app.body_scroll
+		check(viewport.get_global_rect().grow(1).encloses(results.get_global_rect()),"Cinq résultats entièrement visibles à 1440 × 900")
+	check(results!=null,"La bande des résultats apparaît après des matchs joués")
+	await capture("48-bureau-cinq-resultats-1440x900")
+	app.model = original
+	root.size = Vector2i(2560,1440)
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
+	app._navigate("Calendrier")
 	await settle()
 
 const FAMILIES = [
@@ -1104,6 +1142,7 @@ func run() -> void:
 		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office":
 			await reception()
 		await resize_shell()
+		await recent_office_results()
 		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office":
 			await families()
 			await desktop_1080()
