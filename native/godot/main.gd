@@ -286,6 +286,7 @@ func _failed(message: String) -> void:
 	connection_error = bridge.child_pid <= 0 or bridge._stopping
 	var epcr_dialog := get_node_or_null("EpcrPreparationDialog") if last_command == "epcr_preview" else null
 	var editor_dialog := get_node_or_null("CompetitionEditorDialog") if last_command == "competition_editor_preview" else null
+	var market_dialog := get_node_or_null("InterclubMarket") if last_command in ["interclub_negotiate", "interclub_auction"] else null
 	# A consultation refusal belongs to its report, never to the career decision
 	# status. Preserve an existing business error and the unsaved list.
 	if last_command in ["epcr_preview", "competition_editor_preview"] and not connection_error:
@@ -299,7 +300,7 @@ func _failed(message: String) -> void:
 		status.add_theme_color_override("font_color", Color("f1b6a9"))
 	if last_command == "tick": timer.stop()
 	# Transport failures remain globally visible, but keep this local draft too.
-	if epcr_dialog != null or editor_dialog != null: return
+	if epcr_dialog != null or editor_dialog != null or market_dialog != null: return
 	# A failed annotation must leave its editor and unsaved draft alive. The
 	# notebook listens to the same failure signal and presents the local refusal.
 	if last_command in ["coach_note_save","coach_note_remove"] and get_node_or_null("CoachNotebook") != null: return
