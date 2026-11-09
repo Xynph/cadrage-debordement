@@ -36,4 +36,15 @@ module.exports=function installNationaleSquad(){
   for(let i=0;i<choices.length;i++)if(!slots.has(i)&&assigned.has(choices[i]))choices[i]=null;
   return baseBuild(c,choices.slice(0,15),choices.slice(15));
  };
+ const strategy=managerSheet;
+ const complete=sheet=>[...sheet.lineup,...sheet.bench].every(Boolean);
+ managerSheet=function(c,opponent,weather,level){
+  const proposed=strategy(c,opponent,weather,level);
+  if((CDWorldEditions.forState(S)?.version??0)<4||complete(proposed))return proposed;
+  // The tactical picker can consume a versatile prop in a different slot
+  // after the pre-match AI has already built a legal sheet. Reassign the
+  // selected group before using the valid ordinary sheet as a fallback.
+  const adjusted=buildSheet(c,proposed.lineup,proposed.bench);
+  return complete(adjusted)?adjusted:buildSheet(c);
+ };
 };
