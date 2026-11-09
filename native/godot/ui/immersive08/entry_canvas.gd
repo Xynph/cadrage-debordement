@@ -182,10 +182,22 @@ static func workspace(app: Control, page: Control, creation: bool) -> Control:
 	column.add_child(inset)
 	inset.add_child(page)
 	Legacy.apply(page,GREEN if not app.model.get("club") is Dictionary else app.accent)
+	if creation: _fit_pagination(page)
 	if size.x >= 2240 and size.y >= 1250:
 		if creation: _career_context(app, page)
 		else: _pack_guide(app, page)
 	return column
+
+static func _fit_pagination(page: Control) -> void:
+	var pagination := page.find_child("CreationPagination", true, false)
+	if pagination == null: return
+	for action in pagination.get_children():
+		if not action is Button: continue
+		var font: Font = action.get_theme_font("font")
+		var pixels: int = action.get_theme_font_size("font_size")
+		var caption := font.get_string_size(action.text,HORIZONTAL_ALIGNMENT_LEFT,-1,pixels)
+		var style: StyleBox = action.get_theme_stylebox("normal")
+		action.custom_minimum_size.x = maxf(action.custom_minimum_size.x,ceilf(caption.x+style.get_minimum_size().x)+2.0)
 
 static func _career_context(app: Control, page: Control) -> void:
 	var choices := page.find_child("CreationClubsScroll", true, false) as ScrollContainer

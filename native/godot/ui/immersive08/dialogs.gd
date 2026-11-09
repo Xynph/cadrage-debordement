@@ -63,9 +63,11 @@ static func _fit(dialog: AcceptDialog) -> void:
 	target.y=min(target.y,screen.y-68)
 	if target!=dialog.size: dialog.size=target
 	var available := screen-dialog.size
-	if available.x<0 or available.y<30: return
-	if file_picker or dialog.has_meta("immersive_dialog_size") or dialog.position.x<0 or dialog.position.y<30 or dialog.position.x>available.x or dialog.position.y>available.y:
-		dialog.position=available/2
+	var title_height := 0 if dialog.borderless else dialog.get_theme_constant("title_height", "Window")
+	var minimum_top := maxi(30,title_height)
+	if available.x<0 or available.y<minimum_top: return
+	if file_picker or dialog.has_meta("immersive_dialog_size") or dialog.position.x<0 or dialog.position.y<minimum_top or dialog.position.x>available.x or dialog.position.y>available.y:
+		dialog.position=(available+Vector2i(0,title_height))/2
 
 static func pause_content(dialog: AcceptDialog, app: Control) -> void:
 	var body := C.v(13)

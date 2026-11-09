@@ -212,13 +212,13 @@ static func _academy(model: Dictionary) -> Dictionary:
 
 static func _installations(card: Panel, app: Control, finance: Dictionary) -> void:
 	var facility: Variant = finance.get("facility")
-	var academy := _academy(app.model)
+	var academy_level: Variant = _academy(app.model).get("facilities")
 	var support: Dictionary = app.model.get("clubLife", {}).get("clubSupport", {})
 	var medical: Array = support.get("medical", {}).get("players", [])
 	var rows := [
-		["train","Centre d’entraînement","Installations du club",str(int(facility.level))+" / 10" if facility is Dictionary else "—"],
+		["train","Centre d’entraînement","Installations du club",str(int(facility.level))+" / 10" if facility is Dictionary else "Niveau indisponible"],
 		["heart","Cellule médicale","Dossiers suivis",str(medical.size()) if not support.is_empty() else "—"],
-		["school","Académie","Installations du centre",G.n(academy.facilities)+" / 3" if academy.has("facilities") else "—"]
+		["school","Académie","Installations du centre",G.n(academy_level)+" / 3" if academy_level != null else "Niveau indisponible"]
 	]
 	for i in rows.size():
 		var row: Array = rows[i]
@@ -226,10 +226,11 @@ static func _installations(card: Panel, app: Control, finance: Dictionary) -> vo
 		U.icon(card, row[0], Vector2(23,y+13), C.IVORY, 37)
 		D.text(card, 82, y+32, row[1], 28, C.IVORY, 700, 480)
 		D.text(card, 82, y+62, row[2], 22, C.MUTED, 500, 400)
-		D.text(card, 686, y+37, row[3], 29, C.MINT, 700, 138, HORIZONTAL_ALIGNMENT_RIGHT)
-		if i != 1:
+		var level_unavailable := i == 0 and not facility is Dictionary or i == 2 and academy_level == null
+		D.text(card, 686, y+37, row[3], 23 if level_unavailable else 29, C.MUTED if level_unavailable else C.MINT, 700, 210, HORIZONTAL_ALIGNMENT_RIGHT)
+		if i != 1 and not level_unavailable:
 			var total := 10 if i == 0 else 3
-			var value := int(facility.level) if i == 0 and facility is Dictionary else int(academy.get("facilities", 0)) if i == 2 else 0
+			var value := int(academy_level) if i == 2 else int(facility.level)
 			for segment in total:
 				var spacing := 13 if total == 10 else 30
 				D.rect(card, Rect2(687-(total-segment)*spacing,y+50,spacing-3,10), C.MINT if segment < value else Color("2a3735"), 3)

@@ -198,6 +198,10 @@ func _table() -> void:
 		sort.clip_text = true
 		sort.add_theme_font_override("font", C.DISPLAY)
 		sort.add_theme_font_size_override("font_size", maxi(12, C.px(22)))
+		sort.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
+		sort.add_theme_stylebox_override("hover", C.box(C.RAISED,C.MINT,4,0))
+		sort.add_theme_stylebox_override("pressed", C.box(C.PANEL,C.MINT,4,0))
+		sort.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT,WARM,4,0))
 		sort.tooltip_text = "Trier par " + str(col[3]).to_lower()
 		sort.pressed.connect(func():
 			state.descending = not state.descending if state.sort == col[3] else col[3] == "Niveau"

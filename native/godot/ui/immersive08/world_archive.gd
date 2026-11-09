@@ -1,7 +1,5 @@
 extends RefCounted
 const Club = preload("res://ui/club_views.gd")
-const DOMESTIC = ["elite", "accession", "prem", "urc", "srp"]
-const LABELS = {"elite":"Élite", "accession":"Accession", "prem":"Premiership", "urc":"United Rugby Championship", "srp":"Super Rugby Pacific", "champions":"Coupe des champions", "challenge":"Challenge européen", "access":"Barrage d’accession"}
 
 static func preparation_note(preparation: Dictionary) -> String:
 	var date := Club._calendar_date(str(preparation.get("nextDate","")))
@@ -9,9 +7,10 @@ static func preparation_note(preparation: Dictionary) -> String:
 	return "Prochain match le %s · %d semaine%s" % [date,weeks,"s" if weeks>1 else ""]
 
 static func name_for(model: Dictionary, id: String) -> String:
+	var fallback := "Championnat" if id.is_empty() else Club.competition_name(id)
 	for competition: Dictionary in model.get("leagues",[]):
-		if competition.get("id") == id: return str(competition.get("name",LABELS.get(id,id)))
-	return str(LABELS.get(id,id)) if not id.is_empty() else "Championnat"
+		if competition.get("id") == id: return str(competition.get("name",fallback))
+	return fallback
 
 static func titles(year: Dictionary) -> Array:
 	# Le lecteur Monde fournit déjà la projection commune des titres.
@@ -25,8 +24,9 @@ static func club_seasons(model: Dictionary, club_id: int) -> Array:
 	var years: Array = []
 	for archive: Dictionary in model.get("archives",{}).get("seasons",[]):
 		var year := {"season":int(archive.get("season",0)), "league_id":"", "rank":null, "division_size":null, "titles":[], "promoted":false, "relegated":false}
-		for id in DOMESTIC:
-			var table: Array = archive.get("standings",{}).get(id,[])
+		var standings: Dictionary = archive.get("standings",{})
+		for id: String in standings:
+			var table: Array = standings[id]
 			for index in table.size():
 				if int(table[index]) != club_id: continue
 				year.league_id = id

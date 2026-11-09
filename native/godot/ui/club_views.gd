@@ -63,11 +63,15 @@ class StandingsLayout extends HBoxContainer:
 static func _page_turn(app:Control,id:String,state:Dictionary,page:int,button_index:int) -> void:
 	state.page=page
 	app._render()
-	var row:=app.find_child(id,true,false)
-	if row!=null:
-		var target:Button=row.get_child(button_index)
-		if target.disabled:target=row.get_child(2 if button_index==0 else 0)
-		if not target.disabled:target.grab_focus.call_deferred()
+	var content: Control = app.root_content
+	# Le classement peut recalculer sa pagination après le montage.
+	await app.get_tree().process_frame
+	if not is_instance_valid(content) or not content.is_inside_tree(): return
+	var row := content.find_child(id,true,false) as Control
+	if row==null or not row.is_visible_in_tree(): return
+	var target: Button = row.get_child(button_index)
+	if target.disabled: target = row.get_child(2 if button_index==0 else 0)
+	if not target.disabled: target.grab_focus()
 
 static func _paged(app:Control,parent:Node,id:String,total:int,capacity:int,state_id:String="") -> Vector2i:
 	var key:=state_id if not state_id.is_empty() else id
@@ -405,13 +409,15 @@ static func season_archives(app:Control) -> void:
 	seasons.reverse()
 	var international: bool = app.model.get("meta", {}).get("mode") == "world"
 	if seasons.is_empty():
-		list.add_child(G.wrap("Aucune saison archivée. Les quatre championnats et les deux coupes d’Europe alimentent ce carnet au passage à la saison suivante." if international else "Aucune saison archivée. Le championnat français alimente ce carnet au passage à la saison suivante. Les archives de la ligue historique à 14 ne sont pas présentées ici.",16))
+		list.add_child(G.wrap("Aucune saison archivée. Les championnats et les coupes d’Europe alimentent ce carnet au passage à la saison suivante." if international else "Aucune saison archivée. Le championnat français alimente ce carnet au passage à la saison suivante. Les archives de la ligue historique à 14 ne sont pas présentées ici.",16))
 	for year:Dictionary in seasons:
 		list.add_child(G.section("SAISON "+G.n(year.season)))
 		for winner:Dictionary in archive_titles(year):
 			list.add_child(G.wrap("Champion %s : %s"%[competition_name(winner.leagueId),_archive_club(app,winner.clubId)],17,G.INK))
-		for league_id in (["elite","accession","prem","urc"] if international else ["elite","accession"]):
-			var ranks:Array=year.get("standings",{}).get(league_id,[])
+		var standings: Dictionary = year.get("standings",{})
+		var divisions: Array = standings.keys() if international else ["elite","accession"]
+		for league_id in divisions:
+			var ranks: Array = standings.get(league_id,[])
 			var position:=ranks.find(app.model.club.id)
 			if position>=0:list.add_child(G.wrap("Votre club actuel · %s · rang %d / %d en phase régulière"%[competition_name(league_id),position+1,ranks.size()],14,G.accent_ink(app.accent)))
 		for pair in [["promoted","Montée(s) vers l’Élite"],["relegated","Descente(s) en Accession"]]:

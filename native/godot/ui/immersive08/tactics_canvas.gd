@@ -212,7 +212,6 @@ static func _candidates(app:Control,slot:int) -> void:
 	app._clear_dialogs()
 	var dialog:=AcceptDialog.new();dialog.name="LineupCandidates"
 	app._prepare_dialog(dialog,800)
-	dialog.theme=preload("res://theme.gd").make()
 	dialog.title="Poste %02d · choisir un joueur" % (slot+1)
 	var body:=C.v(12);dialog.add_child(body)
 	body.add_child(C.photo("tactics-briefing",Vector2(720,100)))
@@ -241,7 +240,10 @@ static func _candidates(app:Control,slot:int) -> void:
 		list.add_child(action)
 	var clear:=C.button("Libérer ce poste",func():dialog.queue_free();app._command("set_lineup",{"playerId":null,"slot":slot}))
 	clear.name="LineupRemove";clear.disabled=not app._live().is_empty();body.add_child(clear)
-	dialog.confirmed.connect(dialog.queue_free);app.add_child(dialog);Dialogs.show_centered(dialog,Vector2i(800,720))
+	dialog.confirmed.connect(dialog.queue_free)
+	dialog.canceled.connect(dialog.queue_free)
+	app.add_child(dialog)
+	Dialogs.show_centered(dialog,Vector2i(800,720))
 
 static func validate(app:Control) -> void:
 	if app.model.get("selection",{}).get("valid",false):app._navigate("Préparation")
@@ -249,17 +251,20 @@ static func validate(app:Control) -> void:
 
 static func _defense(app:Control) -> void:
 	app._clear_dialogs()
-	var popup:=AcceptDialog.new();popup.name="TacticsDefenseChoices";app._prepare_dialog(popup,700);popup.theme=preload("res://theme.gd").make();popup.title="Les consignes défensives"
+	var popup:=AcceptDialog.new();popup.name="TacticsDefenseChoices";app._prepare_dialog(popup,700);popup.title="Les consignes défensives"
 	var body:=C.v(12);popup.add_child(body)
 	body.add_child(C.photo("tactics-briefing",Vector2(640,120)))
 	for option:Dictionary in app.model.get("tactics",{}).get("defenses",[]):
 		var action:=C.button(str(option.label),func():popup.queue_free();app._command("set_tactics",{"attack":app.model.get("tactics",{}).get("attack","equilibre"),"defense":option.id}),app.model.get("tactics",{}).get("defense")==option.id,app.accent)
 		action.name="TacticsDefense_"+str(option.id);body.add_child(action);body.add_child(C.wrap(str(option.get("description","")),18))
-	popup.confirmed.connect(popup.queue_free);app.add_child(popup);popup.popup_centered(Vector2i(700,560))
+	popup.confirmed.connect(popup.queue_free)
+	popup.canceled.connect(popup.queue_free)
+	app.add_child(popup)
+	popup.popup_centered(Vector2i(700,560))
 
 static func _individual(app:Control,player:Dictionary) -> void:
 	app._clear_dialogs()
-	var popup:=AcceptDialog.new();popup.name="IndividualInstructions";app._prepare_dialog(popup,740);popup.theme=preload("res://theme.gd").make();popup.title="Consignes · "+str(player.name)
+	var popup:=AcceptDialog.new();popup.name="IndividualInstructions";app._prepare_dialog(popup,740);popup.title="Consignes · "+str(player.name)
 	var body:=C.v(12);popup.add_child(body)
 	body.add_child(C.photo("medical-recovery" if float(player.get("injury",0))>0 else "training-session",Vector2(680,170)))
 	body.add_child(C.wrap(str(player.pos)+" · Condition "+G.n(player.get("condition",0))+" % · Charge "+G.n(player.get("physicalLoad",0))+" / 100",22,C.IVORY,true))
@@ -267,4 +272,7 @@ static func _individual(app:Control,player:Dictionary) -> void:
 	for pair in [["collective","Suivre le collectif"],["repos","Récupération"],["normal","Charge normale"],["intense","Travail intense"]]:
 		var action:=C.button(pair[1],func():popup.queue_free();app._command("set_player_load",{"playerId":player.id,"mode":pair[0]}),player.get("loadPlan","collective")==pair[0],app.accent)
 		action.name="IndividualLoad_"+pair[0];action.disabled=not app._live().is_empty();body.add_child(action)
-	popup.confirmed.connect(popup.queue_free);app.add_child(popup);popup.popup_centered(Vector2i(740,620))
+	popup.confirmed.connect(popup.queue_free)
+	popup.canceled.connect(popup.queue_free)
+	app.add_child(popup)
+	popup.popup_centered(Vector2i(740,620))

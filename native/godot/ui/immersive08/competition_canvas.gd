@@ -17,7 +17,7 @@ const DRAW := Color("a9b2b0")
 const LOSS := Color("ef8477")
 const PRIMARY := Color("106d43")
 const LABELS := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "elimination": "Match de barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession", "cup": "Coupe", "ended":"Compétition terminée"}
-const SHORT_NAMES := {"prem":"PREM", "urc":"URC", "champions":"Coupe des champions", "challenge":"Challenge européen"}
+const SHORT_NAMES := {"prem":"PREM", "urc":"URC", "srp":"SRP", "champions":"Coupe des champions", "challenge":"Challenge européen"}
 const RESULT_TINTS := {"V": WIN, "N": DRAW, "D": LOSS}
 const TABLE_COLUMNS := [
 	["#", 41, 58, "rank"], ["J", 488, 52, "played"], ["V", 549, 50, "won"],
@@ -344,7 +344,12 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 	var place_x := 470 if compact else 720
 	var location_kind := _location_kind(fixture)
 	_icon(row, "flag" if location_kind == "neutral" else "home" if location_kind == "home" else "arrow", Rect2(place_x, (line_height - 18) / 2.0, 18, 18), C.IVORY)
-	D.text(row,place_x+25,middle,venue if not venue.is_empty() and not compact else _location(fixture,compact),22,C.IVORY,500,85 if compact else 177)
+	var venue_parts := venue.split(" · ",false,1)
+	if not compact and venue_parts.size() == 2:
+		D.text(row,place_x+25,middle-7,venue_parts[0],22,C.IVORY,600,177)
+		D.text(row,place_x+25,middle+11,venue_parts[1],17,C.MUTED,500,177)
+	else:
+		D.text(row,place_x+25,middle,venue if not venue.is_empty() and not compact else _location(fixture,compact),22,C.IVORY,500,85 if compact else 177)
 	D.text(row,589 if compact else 929,middle,competition,22,C.MUTED,500,185)
 	var result_x := width - (140 if compact else 157)
 	var code := _fixture_outcome(fixture)

@@ -3,8 +3,8 @@ extends Control
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
+const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
-const DARK = preload("res://theme.gd")
 const TABS = ["Effectif U21", "Effectif U18", "Progression", "Passerelles", "Encadrement"]
 const PAGE_SIZE = 12
 const GREEN = Color("63ef96")
@@ -24,7 +24,8 @@ class Trend extends Control:
 		draw_line(Vector2.ZERO, Vector2(0, size.y), C.LINE, maxf(1.0, C.density))
 		var points := PackedVector2Array()
 		for i in levels.size():
-			var x := lerpf(size.x * .06, size.x * .94, float(i) / maxi(1, levels.size() - 1))
+			var fraction := float(i) / (levels.size() - 1) if levels.size() > 1 else 1.0
+			var x := lerpf(size.x * .06, size.x * .94, fraction)
 			var y := size.y * (1.0 - inverse_lerp(minimum, maximum, levels[i]))
 			points.append(Vector2(x, y))
 		if points.size() > 1:
@@ -273,11 +274,12 @@ func _dossier() -> void:
 		dossier.queue_free()
 	dossier = D.panel(self, Rect2(1410, 317, 838, 581), "", "", "", "AcademyImmersiveDossier")
 	dossier.clip_contents = true
-	_portrait(dossier, selected, Rect2(2, 2, 293, 336), true)
 	if selected.is_empty():
+		D.photo(dossier, "academy-training", Rect2(2, 2, 293, 336))
 		D.text(dossier, 308, 63, "Aucun dossier sélectionné", 38, C.IVORY, 700, 510)
 		D.text(dossier, 310, 105, "Choisissez un joueur dans le tableau.", 25, C.MUTED, 500, 510)
 		return
+	_portrait(dossier, selected, Rect2(2, 2, 293, 336), true)
 	var p := selected
 	var progress: Dictionary = p.get("development", {})
 	var info := _path(p)
@@ -317,12 +319,14 @@ func _trend(parent: Node, p: Dictionary) -> void:
 		chart.minimum = maxf(0, floorf((float(chart.levels.min()) - 2) / 5.0) * 5.0)
 		chart.maximum = minf(100, ceilf((float(chart.levels.max()) + 2) / 5.0) * 5.0)
 	D.text(parent, 26, 371, "Progression", 28, C.IVORY, 700, 147)
-	D.text(parent, 174, 371, "Historique annuel conservé" if history.size() > 0 else "Niveau actuel · historique après l’intersaison", 21, C.MUTED, 500, 620)
+	D.text(parent, 174, 371, "Niveau général · %s aujourd’hui" % G.n(p.get("rating","—")), 21, C.MUTED, 500, 510).name = "AcademyGeneralRating"
 	parent.add_child(chart)
 	D.place(chart, Rect2(76, 389, 610, 101))
 	for i in 4:
 		var amount := lerpf(chart.maximum, chart.minimum, float(i) / 3.0)
 		D.text(parent, 62, 397 + i * 32, G.n(amount), 17, C.IVORY, 500, 35, HORIZONTAL_ALIGNMENT_RIGHT)
+	if not history.is_empty(): D.text(parent, 77, 507, "SAISON " + G.n(history[0].get("season","—")), 16, C.MUTED, 500, 190)
+	D.text(parent, 686, 507, "CETTE SAISON", 16, C.MUTED, 500, 180, HORIZONTAL_ALIGNMENT_RIGHT)
 	_number_card(parent, Rect2(704, 382, 114, 119), _change(p), "Cette saison", GREEN)
 
 func _pathways() -> void:
@@ -557,7 +561,6 @@ func _dialog(id: String, title: String) -> Array:
 	var dialog := AcceptDialog.new()
 	dialog.name = id
 	app._prepare_dialog(dialog, C.px(640))
-	dialog.theme = DARK.make()
 	dialog.title = title
 	dialog.get_ok_button().text = "Fermer"
 	var body := C.v(13)
@@ -636,8 +639,13 @@ func _portrait(parent: Node, p: Dictionary, rectangle: Rect2, large: bool = fals
 	elif large:
 		D.photo(parent, "academy-player", rectangle)
 		_veil(parent, Rect2(rectangle.end.x - 34, rectangle.position.y, 34, rectangle.size.y), [Color("11191a", .0), Color("11191a")], [0.0, 1.0])
+	elif not fallback.is_empty():
+		D.photo(parent, fallback, rectangle)
 	else:
-		D.photo(parent, fallback if not fallback.is_empty() else "player-%02d" % posmod(int(p.get("portraitIndex", str(p.get("id", "")).hash())), 16), rectangle)
+		var id := str(p.get("id", ""))
+		var from_squad := P.player(app.model, id)
+		var index := int(from_squad.get("portraitIndex", p.get("portraitIndex", id.hash())))
+		D.photo(parent, "player-%02d" % posmod(index, 16), rectangle)
 
 func _action(parent: Node, rectangle: Rect2, caption: String, callback: Callable, primary: bool, icon: String, id: String) -> Button:
 	return D.button(parent, rectangle, caption, callback, primary, icon, false, Color("09673e"), id)

@@ -223,12 +223,25 @@ static func _ledger(card: Panel, app: Control, ledger: Array, limit: int, key: S
 
 static func _watch(card: Panel, app: Control, finance: Dictionary) -> void:
 	card.add_theme_stylebox_override("panel", D.surface(834,185,Color("2c2819"),Color("151914"),Color(C.GOLD,.85)))
+	U.italic(card.get_node("CardTitle"), 700)
 	var count := P.contracts(app.model).size()
 	var quote: Variant = finance.get("facility")
-	var facilities := "Consulter les devis" if quote is Dictionary else "Aucun devis disponible"
-	var contract_text := "%d contrat(s) à échéance d’ici la saison prochaine" % count
-	D.button(card, Rect2(19,65,796,48), contract_text, func(): U.select(app, KEY, "wages", "FinanceTab_wages"), false, "arrow", true, U.GREEN, "FinanceWatchContracts")
-	D.button(card, Rect2(19,121,796,48), "Installations  ·  "+facilities, func(): _strategy(app), false, "arrow", true, U.GREEN, "FinanceWatchFacilities")
+	var contracts := "%d contrat%s à anticiper" % [count, "" if count == 1 else "s"]
+	var facilities := "Devis indicatif · " + G.euros(quote.cost) if quote is Dictionary else "Aucun devis disponible"
+	_watch_row(card, 65, "calendar", contracts, "Échéances d’ici la saison prochaine", func(): U.select(app, KEY, "wages", "FinanceTab_wages"), "FinanceWatchContracts")
+	D.line(card, Vector2(19,117), Vector2(815,117), Color(C.GOLD,.28))
+	_watch_row(card, 121, "settings", "Infrastructures", facilities, func(): _strategy(app), "FinanceWatchFacilities")
+
+static func _watch_row(card: Panel, y: int, icon: String, title: String, detail: String, action: Callable, id: String) -> void:
+	var row := D.button(card, Rect2(19,y,796,48), "", action, false, "", true, U.GREEN, id)
+	row.accessibility_name = "%s · %s" % [title,detail]
+	row.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT,Color.TRANSPARENT,4,0))
+	row.add_theme_stylebox_override("hover", C.box(Color("372f1e"),C.GOLD,4,0))
+	row.add_theme_stylebox_override("pressed", C.box(Color("43361c"),C.GOLD,4,0))
+	U.icon(row, icon, Vector2(12,9), C.AMBER, 30)
+	D.text(row, 57, 20, title, 24, C.IVORY, 700, 684)
+	D.text(row, 57, 43, detail, 18, C.MUTED, 500, 684)
+	U.icon(row, "arrow", Vector2(756,13), C.AMBER, 22)
 
 static func _due(card: Panel, app: Control, finance: Dictionary) -> void:
 	var remaining := int(finance.get("remainingWeeks",0))

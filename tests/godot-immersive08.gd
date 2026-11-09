@@ -33,6 +33,14 @@ func check(condition: bool, message: String) -> void:
 	checks += 1
 	if not condition: failures.append(message); printerr("FAIL: " + message)
 
+func caption_fits(button: Button) -> bool:
+	if button == null: return false
+	var font := button.get_theme_font("font")
+	var size := button.get_theme_font_size("font_size")
+	var width := font.get_string_size(button.text,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x
+	var style := button.get_theme_stylebox("disabled" if button.disabled else "normal")
+	return width + style.get_minimum_size().x <= button.size.x + 1
+
 func reference_rects(expected: Dictionary) -> void:
 	for id: String in expected:
 		var node := app.find_child(id,true,false) as Control
@@ -88,6 +96,8 @@ func entry() -> void:
 		await click(france)
 		await settle()
 	check(app.route=="Création" and app.find_child("CreationStart",true,false)!=null,"Nouvelle carrière ouvre le vrai catalogue et l’action de création")
+	var pages := app.find_child("CreationPagination",true,false) as Control
+	check(pages!=null and caption_fits(pages.get_child(0)) and caption_fits(pages.get_child(2)),"Les deux commandes de pagination sont lisibles en entier dans Création")
 	var context := app.find_child("EntryCareerContext",true,false) as Control
 	var choices := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
 	check(context!=null and choices!=null and choices.size.y>=240,"Le carnet de création complète huit choix sans réduire leur zone visible")
@@ -322,6 +332,14 @@ func families() -> void:
 		await settle()
 		var view: Control = app.find_child(item[1],true,false)
 		check(view!=null and view.is_visible_in_tree(),"Gabarit raccordé au vrai parcours · "+str(item[0]))
+		if item[0]=="Formation":
+			var selected: String = app.management_ui.immersive_academy.get("player","")
+			var roster: Array = app.model.decisions.development.academy
+			var matches := roster.filter(func(p: Dictionary): return p.id==selected)
+			var general := app.find_child("AcademyGeneralRating",true,false) as Label
+			check(matches.size()==1 and general!=null and general.text=="Niveau général · %d aujourd’hui" % int(matches[0].rating),"La progression Formation distingue le vrai niveau général de la note au poste")
+		if item[0]=="Recrutement":
+			check(caption_fits(app.find_child("MarketSort_Niveau",true,false)),"Le libellé de tri par niveau reste entier en 1440p")
 		if view!=null: await capture(item[2]+"-2560x1440")
 	app._navigate("Finances")
 	await settle()
@@ -360,6 +378,9 @@ func desktop_1080() -> void:
 		var work: ScrollContainer = app.body_scroll
 		var bar := work.get_v_scroll_bar()
 		check(app.body.size.x<=work.size.x+1 and bar.max_value<=bar.page+1,"Gabarit contenu dans la surface 1080p · "+str(item[0]))
+		if item[0]=="Recrutement":
+			for id in ["MarketSort_Niveau","MarketSort_Âge"]:
+				check(caption_fits(app.find_child(id,true,false)),"Libellé de tri entier en 1080p · "+id)
 		if item[0] in ["Club","Recrutement"]: await capture(item[2]+"-1920x1080")
 	app.Immersive.open_training(app)
 	await settle()
@@ -779,11 +800,23 @@ func run() -> void:
 			root.size=Vector2i(1280,720)
 			await settle()
 			var visible := Rect2(Vector2.ZERO,root.get_visible_rect().size)
+			var title_height := candidates.get_theme_constant("title_height","Window")
+			var decoration := Vector2(0,title_height)
+			var frame := Rect2(Vector2(candidates.position)-decoration,Vector2(candidates.size)+decoration)
+			check(visible.encloses(frame),"La barre de titre et les actions du sélecteur restent visibles en 720p")
+			check(candidates.get_theme_font("title_font","Window").resource_path.ends_with("BarlowCondensed-Bold.ttf"),"Le sélecteur de poste conserve la fonte du gabarit dans sa barre de titre")
 			for action: Button in [candidates.get_ok_button(), candidates.find_child("LineupRemove",true,false)]:
 				var bounds := action.get_global_rect()
 				bounds.position+=Vector2(candidates.position)
 				check(visible.encloses(bounds),"Action de la sélection entièrement visible en 720p · "+str(action.name))
 			await capture("37-candidats-redimensionne-1280x720")
+			for pressed in [true,false]:
+				var escape := InputEventKey.new()
+				escape.keycode=KEY_ESCAPE
+				escape.pressed=pressed
+				root.push_input(escape,true)
+			await settle()
+			check(app.find_child("LineupCandidates",true,false)==null,"Échap libère complètement le sélecteur de poste")
 			root.size=Vector2i(2560,1440)
 			await settle()
 		app._clear_dialogs()

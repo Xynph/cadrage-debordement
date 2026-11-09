@@ -146,9 +146,7 @@ static func _priorities(parent: VBoxContainer, app: Control) -> void:
 		action.tooltip_text = choice.title + "\n" + choice.detail
 		action.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
 		text.add_child(action)
-		var detail := C.label(choice.detail, 17, C.MUTED, false)
-		detail.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		text.add_child(detail)
+		text.add_child(C.wrap(choice.detail, 17, C.MUTED))
 	var notebook := C.button("Mon carnet personnel", func(): open_notebook(app), false, app.accent)
 	notebook.name = "OpenCoachNotebook"
 	notebook.custom_minimum_size.y = maxi(30, C.px(40))

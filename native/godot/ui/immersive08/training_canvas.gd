@@ -5,7 +5,6 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
-const DARK = preload("res://theme.gd")
 const TABS = ["Semaine", "Groupes", "Individuel", "Staff"]
 const MODES = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const INDIVIDUAL = {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
@@ -475,7 +474,6 @@ func _dialog(id: String, title: String) -> Array:
 	var dialog := AcceptDialog.new()
 	dialog.name = id
 	app._prepare_dialog(dialog, C.px(640))
-	dialog.theme = DARK.make()
 	dialog.title = title
 	dialog.get_ok_button().text = "Fermer"
 	var body := C.v(13)
@@ -522,8 +520,13 @@ func _portrait(parent: Node, p: Dictionary, rectangle: Rect2, fallback: String =
 		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		parent.add_child(portrait)
 		D.place(portrait, rectangle)
+	elif not fallback.is_empty():
+		D.photo(parent, fallback, rectangle)
 	else:
-		D.photo(parent, fallback if not fallback.is_empty() else "player-%02d" % posmod(int(p.get("portraitIndex", str(p.get("id", "")).hash())), 16), rectangle)
+		var id := str(p.get("id", ""))
+		var from_squad := P.player(app.model, id)
+		var index := int(from_squad.get("portraitIndex", p.get("portraitIndex", id.hash())))
+		D.photo(parent, "player-%02d" % posmod(index, 16), rectangle)
 
 func _action(parent: Node, rectangle: Rect2, caption: String, callback: Callable, primary: bool, icon: String, id: String) -> Button:
 	return D.button(parent, rectangle, caption, callback, primary, icon, false, Color("09673e"), id)
