@@ -259,7 +259,7 @@ func _run() -> void:
 	check(grid != null and grid.columns == 3 and scroll_fits("CreationClubsScroll"), "La liste compacte affiche toute la grille en trois colonnes")
 	await press(named("CreationClub0"))
 	check(named("CreationClubTitle") != null and named("CreationCompetitionSummary") == null and not (named("CreationStart") as Button).disabled, "Choisir un club révèle sa fiche et active la prise de poste")
-	check(named("CreationStadium") != null and text_present(app, "Trésorerie de départ simulée"), "La fiche présente le stade et la trésorerie de départ simulée")
+	check(named("CreationStadium") != null and text_present(app, "Trésorerie de départ") and not text_present(app, "Trésorerie de départ simulée"), "La fiche présente le stade et la trésorerie de départ")
 	check(text_present(app, "Stade Ernest Wallon") and text_present(app, "jeu de mouvement") and named("CreationClubPresentation") != null, "La présentation raconte l’histoire du club choisi et indique son stade")
 	check(named("CreationClubFounded") != null and text_present(app, "Fondé en 1907") and text_present(app, "25 titres") and text_present(app, "6 titres"), "La fiche affiche la fondation et les titres du club anonymisé")
 	creation_dossier_fits(app.pack_manager.creation_catalogue()[0].history.results.size(), "club 0 · 1280 × 720")
