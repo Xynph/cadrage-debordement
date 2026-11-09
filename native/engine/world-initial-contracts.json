@@ -447,6 +447,145 @@
       "clubId": 44,
       "endSeason": 2,
       "endType": "minimum-season-end"
+    },
+    "world:champ:012123223464c15a415f": {
+      "clubId": 112,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:0cbfae2c7f1c74470daa": {
+      "clubId": 109,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:1f7ade79384b953f4382": {
+      "clubId": 112,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:20423c216b8c9d638752": {
+      "clubId": 107,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:2ee059bc35661411eba6": {
+      "clubId": 112,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:3f0ee0952f69b9850665": {
+      "clubId": 112,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:3f8ec45d81d9c3e9fc4b": {
+      "clubId": 112,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:61e10a0ee0ec3b8e4c8a": {
+      "clubId": 112,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:6d36e3efba32e5815da6": {
+      "clubId": 107,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:6d3f846c3ffb54f55cf2": {
+      "clubId": 112,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:82f4b9a4967c6cd56e15": {
+      "clubId": 108,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:86e1f307c39234403505": {
+      "clubId": 107,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:ad3ab4f57f02fa21db8d": {
+      "clubId": 112,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:c38b5e63853e2e470f6c": {
+      "clubId": 108,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:c6bec430afd361c2d729": {
+      "clubId": 112,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:cd08651aba432083d6e6": {
+      "clubId": 103,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:d82261cf6492e39e031a": {
+      "clubId": 112,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:daa2326bd6a2522354ad": {
+      "clubId": 109,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:dd9790c561535f4b3b52": {
+      "clubId": 112,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:ddced29a0ea7a86814e7": {
+      "clubId": 109,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:e3163d5702751d249c89": {
+      "clubId": 108,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:e4a451ff2b2d270de8bc": {
+      "clubId": 107,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:e73a3e69fc6251753176": {
+      "clubId": 112,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:ebccdde80aeab553f9c4": {
+      "clubId": 108,
+      "endSeason": 1,
+      "endType": "season-end"
+    },
+    "world:champ:f8f97355bd45c4b74078": {
+      "clubId": 107,
+      "endSeason": 1,
+      "endType": "season-end"
+    }
+  },
+  "inactiveAliases": {
+    "world:champ:13c1a3ff3ff86c5e2c36": {
+      "clubId": 112,
+      "canonicalId": "world:champ:8a3d1b00165633022e1a"
+    },
+    "world:champ:2e0362b3d347ff05eefe": {
+      "clubId": 112,
+      "canonicalId": "world:champ:02dad2e791f224c3284d"
+    },
+    "world:champ:3c3b80e0f9597c98651f": {
+      "clubId": 109,
+      "canonicalId": "world:champ:f7fc757633765b1e925e"
     }
   }
 }

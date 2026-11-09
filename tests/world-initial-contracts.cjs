@@ -14,9 +14,9 @@ const terms=require(engine+'world-initial-contracts.json');
 test('Le registre d’échéances n’inclut que des IDs du bon effectif et aucune identité',()=>{
  a.equal(terms.schema,'world-initial-contracts-v1');
  a.equal(terms.databaseId,world.id);
- const ids=new Set(), leagues={prem:0,urc:0}, types={'season-end':0,'minimum-season-end':0};
+ const ids=new Set(), leagues={prem:0,urc:0,champ:0}, types={'season-end':0,'minimum-season-end':0};
  for(const [id,t] of Object.entries(terms.players)){
-  a.match(id,/^world:(?:prem|urc):/);
+  a.match(id,/^(?:world:(?:prem|urc):[a-z0-9:-]+|world:champ:[0-9a-f]{20})$/);
   a.deepEqual(Object.keys(t).sort(),['clubId','endSeason','endType']);
   a.ok(Number.isInteger(t.endSeason)&&t.endSeason>=1&&t.endSeason<=6);
   const club=world.clubs[t.clubId];
@@ -24,8 +24,8 @@ test('Le registre d’échéances n’inclut que des IDs du bon effectif et aucu
   a.ok(Object.hasOwn(leagues,club.leagueId)&&Object.hasOwn(types,t.endType));
   a.ok(!ids.has(id));ids.add(id);leagues[club.leagueId]++;types[t.endType]++;
  }
- a.deepEqual(leagues,{prem:20,urc:69});
- a.deepEqual(types,{'season-end':71,'minimum-season-end':18});
+ a.deepEqual(leagues,{prem:20,urc:69,champ:25});
+ a.deepEqual(types,{'season-end':96,'minimum-season-end':18});
 });
 
 function contracts(mode,t){
@@ -45,16 +45,42 @@ function contracts(mode,t){
 
 test('Les échéances précises et bornes ne s’appliquent qu’aux créations Monde complet',t=>{
  const current=contracts('world-champ',t),prior=contracts('world-nationale',t);
- a.equal(current.size,5884);
- let changes=0;
- for(const club of world.clubs.filter(c=>c.leagueId==='prem'||c.leagueId==='urc')){
+ a.equal(current.size,5881);
+ const changed={premAndUrc:0,champ:0};
+ const aliases=terms.inactiveAliases;
+ a.equal(Object.keys(aliases).length,3);
+ for(const club of world.clubs.filter(c=>['prem','urc','champ'].includes(c.leagueId))){
   for(const p of club.players){
    const baseline=p.contractEnd,row=terms.players[p.id];
+   if(Object.hasOwn(aliases,p.id)){
+    a.equal(current.has(p.id),false,p.id);
+    continue;
+   }
    const expected=!row?baseline:row.endType==='season-end'?row.endSeason:Math.max(row.endSeason,baseline);
    a.equal(current.get(p.id),expected,p.id);
    if(prior.has(p.id))a.equal(prior.get(p.id),baseline,p.id+' édition antérieure');
-   changes+=Number(expected!==baseline);
+   changed[club.leagueId==='champ'?'champ':'premAndUrc']+=Number(expected!==baseline);
   }
  }
- a.equal(changes,55);
+ a.equal(changed.premAndUrc,55);
+ a.ok(changed.champ>0&&changed.champ<=25);
+});
+test('Seules les trois variantes attestées sont désactivées au départ, dans deux clubs du Champ',()=>{
+ const aliases=Object.entries(terms.inactiveAliases),canonicals=new Set(),affected=new Set();
+ a.equal(aliases.length,3);
+ for(const [id,row] of aliases){
+  a.match(id,/^world:champ:[0-9a-f]{20}$/);a.match(row.canonicalId,/^world:champ:[0-9a-f]{20}$/);
+  a.deepEqual(Object.keys(row).sort(),['canonicalId','clubId']);
+  a.notEqual(row.canonicalId,id);
+  a.ok(!Object.hasOwn(terms.inactiveAliases,row.canonicalId));
+  a.ok(!Object.hasOwn(terms.players,id));
+  a.ok(!canonicals.has(row.canonicalId));
+  canonicals.add(row.canonicalId);
+  const club=world.clubs[row.clubId],p=club?.players.find(p=>p.id===id),canonical=club?.players.find(p=>p.id===row.canonicalId);
+  a.equal(club?.leagueId,'champ');
+  a.ok(p&&canonical);
+  a.equal(p.pos,canonical.pos);
+  affected.add(club.id);
+ }
+ a.equal(affected.size,2);
 });
