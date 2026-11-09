@@ -1,6 +1,7 @@
 extends RefCounted
 ## Les seuils de la carrière partagent la DA des menus et les actions existantes.
 const C = preload("res://ui/immersive08/components.gd")
+const Club = preload("res://ui/club_views.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
@@ -169,4 +170,68 @@ static func workspace(app: Control, page: Control, creation: bool) -> Control:
 	column.add_child(inset)
 	inset.add_child(page)
 	Legacy.apply(page,GREEN if not app.model.get("club") is Dictionary else app.accent)
+	if app.get_window().size.x >= 2240 and app.get_window().size.y >= 1250:
+		if creation: _career_context(app, page)
+		else: _pack_guide(app, page)
 	return column
+
+static func _career_context(app: Control, page: Control) -> void:
+	var choices := page.find_child("CreationClubsScroll", true, false) as ScrollContainer
+	if choices == null: return
+	var meta: Dictionary = app.model.get("meta", {})
+	var mode: String = app.pack_manager.mode("creation")
+	var catalogue_key: String = {"world": "worldCatalogue", "world-pacific": "pacificCatalogue"}.get(mode, "legacyCatalogue")
+	var catalogue: Array = meta.get(catalogue_key, app.catalogue)
+	var selected := {}
+	for club: Dictionary in catalogue:
+		if int(club.id) == app.selected_club:
+			selected = club
+			break
+	if selected.is_empty(): return
+	var context := C.v(8)
+	context.name = "EntryCareerContext"
+	var heading := C.wrap("VOTRE CARNET · " + G.club_name(selected), 24, C.GOLD, true, 700)
+	heading.name = "EntrySelectedClub"
+	context.add_child(heading)
+	var tiles := C.h(12)
+	context.add_child(tiles)
+	var division := str(selected.get("division", ""))
+	var rivals := catalogue.filter(func(club: Dictionary): return club.get("playable", true) and str(club.get("division", "")) == division).size()
+	var ground := str(selected.get("stadium", ""))
+	var objective := str(selected.get("goal", ""))
+	_tile(tiles, "01  ·  PROJET SPORTIF", "Votre feuille de route", objective if not objective.is_empty() else "Consultez les objectifs du club dans le Bureau après la prise de poste.", "training-session", C.MINT)
+	_tile(tiles, "02  ·  TERRAIN", "Jouer à domicile", ground if not ground.is_empty() else "Retrouvez les installations du club dans le carnet de carrière.", "stadium", C.GOLD)
+	_tile(tiles, "03  ·  COMPÉTITION", Club.competition_name(division), "%s clubs jouables dans cette division" % G.n(rivals), "trophy", C.BLUE)
+	var column := choices.get_parent()
+	column.add_child(context)
+	column.move_child(context, choices.get_index() + 1)
+
+static func _pack_guide(app: Control, page: Control) -> void:
+	if not app.pack_manager.installed().is_empty() or not app.pack_manager.preview().is_empty(): return
+	for node in page.find_children("*", "Button", true, false):
+		var importer := node as Button
+		if not importer.pressed.is_connected(app.pack_manager.choose_file): continue
+		var content := importer.get_parent().get_parent()
+		for child in content.get_children():
+			if child is ScrollContainer:
+				var guide := C.v(10)
+				guide.name = "EntryPackGuide"
+				child.get_child(0).add_child(guide)
+				guide.add_child(C.label("LE PARCOURS D’IMPORT", 24, C.GOLD, true, 700))
+				var tiles := C.h(14)
+				guide.add_child(tiles)
+				_tile(tiles, "01  ·  FICHIER", "Ouvrir le ZIP", "Choisissez le fichier du pack sur votre ordinateur.", "scouting", C.BLUE)
+				_tile(tiles, "02  ·  APERÇU", "Vérifier les identités", "Vérifiez les noms, blasons et portraits recensés dans l’aperçu.", "approved-club-crest", C.GOLD, false)
+				_tile(tiles, "03  ·  SÉLECTION", "Habiller votre carrière", "Installez le pack, puis sélectionnez-le dans l’édition affichée.", "player-hero", C.MINT)
+				guide.add_child(C.wrap("Blason et portrait d’exemple · illustrations fictives", 17, C.MUTED))
+				return
+
+static func _tile(parent: HBoxContainer, label: String, title: String, copy: String, art: String, tint: Color, cover: bool = true) -> void:
+	var frame := C.card()
+	C.fill(frame)
+	parent.add_child(frame)
+	var content := C.content(frame)
+	content.add_child(C.photo(art, Vector2(0, 133), cover, .29))
+	content.add_child(C.label(label, 18, tint, true, 700))
+	content.add_child(C.wrap(title, 26, C.IVORY, true, 700))
+	content.add_child(C.wrap(copy, 17, C.MUTED))

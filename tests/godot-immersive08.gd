@@ -88,6 +88,20 @@ func entry() -> void:
 		await click(france)
 		await settle()
 	check(app.route=="Création" and app.find_child("CreationStart",true,false)!=null,"Nouvelle carrière ouvre le vrai catalogue et l’action de création")
+	var context := app.find_child("EntryCareerContext",true,false) as Control
+	var choices := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
+	check(context!=null and choices!=null and choices.size.y>=240,"Le carnet de création complète huit choix sans réduire leur zone visible")
+	if context!=null and choices!=null:
+		var first: Button = choices.find_children("CreationClub*","Button",true,false)[0]
+		var second: Button = choices.find_children("CreationClub*","Button",true,false)[1]
+		var first_id := first.name
+		await click(second)
+		await settle()
+		var selection := app.find_child("EntrySelectedClub",true,false) as Label
+		var selected_club := app.find_child("CreationClubTitle",true,false) as Label
+		check(selection!=null and selected_club!=null and selection.text.ends_with(selected_club.text),"Le contexte illustré suit le vrai club choisi")
+		await click(app.find_child(first_id,true,false))
+		await settle()
 	await capture("07-creation-2560x1440")
 	app._navigate("Accueil")
 	await settle()
@@ -95,6 +109,8 @@ func entry() -> void:
 	await click(packs)
 	await settle()
 	check(app.route=="Packs" and app.pack_manager.scope=="creation" and app.find_child("CarnetPacks",true,false)!=null,"L’atelier des identités conserve le gestionnaire de packs de création")
+	var guide := app.find_child("EntryPackGuide",true,false) as Control
+	check(guide!=null and guide.find_children("Art_*","TextureRect",true,false).size()==3,"L’atelier vide montre trois exemples originaux et le parcours d’import")
 	await capture("08-packs-2560x1440")
 	app.pack_manager.back()
 	await settle()
@@ -384,10 +400,24 @@ func dialogs() -> void:
 	if pause!=null and pause.visible:
 		check(Rect2i(Vector2i.ZERO,root.size).encloses(Rect2i(pause.position,pause.size)),"Le menu carrière tient dans l’écran")
 		await capture("33-menu-carriere-2560x1440")
+		app.file_dialog.current_dir=OS.get_environment("CD_IMMERSIVE_ARTIFACTS")
 		pause.custom_action.emit("export")
 		await settle()
 		check(app.file_dialog.visible and not app.import_mode,"Exporter ouvre le vrai choix du fichier")
+		var filename: String = app.file_dialog.current_file
+		await capture("41-export-carriere-2560x1440")
+		root.size=Vector2i(1280,720)
+		if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+		await create_timer(.17).timeout
+		await settle()
+		var list_height := 0.0
+		for list: ItemList in app.file_dialog.get_vbox().find_children("*","ItemList",true,false):
+			if list.is_visible_in_tree(): list_height=maxf(list_height,list.size.y)
+		check(list_height>=160 and app.file_dialog.current_file==filename,"Le sélecteur garde sa liste et le nom de fichier en 720p")
+		await capture("42-export-carriere-1280x720")
 		app.file_dialog.hide()
+		root.size=Vector2i(2560,1440)
+		if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
 		await settle()
 	await key(KEY_F1)
 	check(app.coach.expanded,"F1 ouvre l’aide du coach")
@@ -578,6 +608,14 @@ func run() -> void:
 			var full:Control=app.find_child("ImmersivePlayerFull",true,false)
 			check(full!=null,"La fiche complète est une vraie page, pas un bouton inerte")
 			if full!=null:
+				var shirt: Label = full.find_child("FullPlayerNumber",true,false)
+				var expected_number := "—" if target.get("shirtNumber")==null else str(int(target.shirtNumber))
+				check(shirt!=null and shirt.text==expected_number and shirt.get_theme_font_size("font_size")==82,"Le cartouche reprend le vrai numéro à la taille du visuel")
+				var role_pitch: Control = full.find_child("PlayerRolePitch",true,false)
+				check(role_pitch!=null and role_pitch.is_visible_in_tree() and role_pitch.size==Vector2(432,350),"Le terrain du poste est redessiné en perspective à la taille de la fiche")
+				for axis: String in ["power","speed","pass","tackle","stamina","mental"]:
+					var caption: Label = full.find_child("PlayerRadar_"+axis,true,false)
+					check(caption!=null and caption.text.to_int()==int(target.attributes[axis]),"Axe du radar annoté par sa vraie note · "+axis)
 				check(app.find_child("ProfilePlayerName",true,false).text.to_lower()==str(target.name).to_lower(),"Identité exacte dans la fiche complète")
 				for attribute in target.get("attributes",{}):
 					check(app.find_child("PlayerAttribute_"+attribute,true,false)!=null,"Aptitude réelle dans la fiche : "+attribute)

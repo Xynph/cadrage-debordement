@@ -12,7 +12,7 @@ const ACCENT = Color("09673e")
 var app: Control
 var data: Dictionary
 var state: Dictionary
-var restore_ready := false
+var restored_scrolls := {}
 
 static func build(application: Control, canvas: Control) -> void:
 	var page := new()
@@ -63,7 +63,7 @@ func _workbench() -> void:
 	viewport.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	surface.add_child(viewport)
 	D.place(viewport, Rect2(12, 12, 1489, 981))
-	var controls := Academy.build(app)
+	var controls := Academy.build(app, str(state.tab))
 	viewport.add_child(controls)
 	Legacy.apply(controls, ACCENT)
 	var tabs := controls.find_child("AcademyTabs", true, false) as TabContainer
@@ -78,10 +78,12 @@ func _workbench() -> void:
 			var scroll: ScrollContainer = nodes[0]
 			scrolls[key] = scroll
 			scroll.get_v_scroll_bar().value_changed.connect(func(value: float):
-				if restore_ready: state.scroll[key] = int(value))
-		if key == state.tab: tabs.current_tab = i
-	tabs.tab_changed.connect(func(index: int): state.tab = str(tabs.get_tab_control(index).name))
-	_restore.call_deferred(scrolls)
+				if restored_scrolls.has(key): state.scroll[key] = int(value))
+	tabs.tab_changed.connect(func(index: int):
+		state.tab = str(tabs.get_tab_control(index).name)
+		_restore_scroll.call_deferred(str(state.tab), scrolls.get(state.tab)))
+	var active := str(tabs.get_tab_control(tabs.current_tab).name)
+	_restore_scroll.call_deferred(active, scrolls.get(active))
 
 func _style_tabs(tabs: TabContainer) -> void:
 	tabs.add_theme_font_override("font", C.BOLD)
@@ -99,16 +101,15 @@ func _style_tabs(tabs: TabContainer) -> void:
 	tabs.add_theme_color_override("font_unselected_color", C.MUTED)
 	tabs.add_theme_color_override("font_hovered_color", C.IVORY)
 
-func _restore(scrolls: Dictionary) -> void:
-	if not is_inside_tree(): return
+func _restore_scroll(key: String, scroll: ScrollContainer) -> void:
+	if scroll == null or restored_scrolls.has(key) or not is_inside_tree(): return
 	var tree := get_tree()
 	for frame in 2:
 		await tree.process_frame
 		if not is_inside_tree(): return
-	for key: String in scrolls:
-		var scroll: ScrollContainer = scrolls[key]
-		scroll.scroll_vertical = int(state.scroll.get(key, 0))
-	restore_ready = true
+	if not scroll.is_visible_in_tree() or restored_scrolls.has(key): return
+	scroll.scroll_vertical = int(state.scroll.get(key, 0))
+	restored_scrolls[key] = true
 
 func _summary() -> void:
 	var active: bool = data.get("active", false)

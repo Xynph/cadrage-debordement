@@ -89,6 +89,11 @@ func _header() -> void:
 		D.text(card, 77, 46 if item[4] == "" else 27, item[3], 30 if item[4] == "" else 22, C.IVORY, 600, w - 86)
 		if item[4] != "": D.text(card, 77, 59, item[4], 31, C.IVORY, 700, w - 86)
 	D.photo(self, "scouting", Rect2(0, 130, 634, 156))
+	var fade := Control.new()
+	fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(fade)
+	D.place(fade, Rect2(506, 130, 128, 156))
+	C.veil(fade).flip_h = true
 	for i in TABS.size():
 		_tab(Rect2(624 + 206 * i, 190, 216, 65), TABS[i], i)
 	D.button(self, Rect2(1510, 181, 230, 61), "Comparer", _compare, false, "people", false, app.accent, "CompareMarket")

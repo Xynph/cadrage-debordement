@@ -3,7 +3,11 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const root=path.resolve(__dirname,'..'),art=path.join(root,'native/godot/art/immersive08');
 assert.ok(fs.existsSync(path.join(art,'manifest.json')),'Les illustrations approuvées doivent être intégrées comme assets indépendants');
 const manifest=JSON.parse(fs.readFileSync(path.join(art,'manifest.json'),'utf8'));
-for(const weight of ['Medium','SemiBold','Bold','ExtraBold'])assert.deepEqual(fs.readFileSync(path.join(root,'native/godot/ui/immersive08/fonts/BarlowCondensed-'+weight+'.ttf')),fs.readFileSync(path.join(root,'dist/fonts/BarlowCondensed-'+weight+'.ttf')),'Font exact de la référence : '+weight);
+for(const weight of ['Medium','SemiBold','Bold','ExtraBold']){
+ const fonts=weight==='SemiBold'?'native/godot/fonts':'native/godot/ui/immersive08/fonts';
+ const file='BarlowCondensed-'+weight+'.ttf';
+ assert.deepEqual(fs.readFileSync(path.join(root,fonts,file)),fs.readFileSync(path.join(root,'dist/fonts',file)),'Font exact de la référence : '+weight);
+}
 assert.deepEqual(fs.readFileSync(path.join(root,'native/godot/fonts/DMSans.ttf')),fs.readFileSync(path.join(root,'dist/fonts/DMSans-Variable.ttf')),'DM Sans exact de la référence');
 const generated=fs.existsSync(path.join(art,'generated-manifest.json'))?JSON.parse(fs.readFileSync(path.join(art,'generated-manifest.json'),'utf8')).assets:[];
 assert.equal(manifest.schema,'oval-immersive-art-v1');
