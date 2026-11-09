@@ -13,6 +13,7 @@ const RIGHT := 822
 const PRIMARY := Color("106d43")
 const PHASES := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "elimination": "Match de barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession"}
 const TABS := ["Confrontations", "Échos des clubs", "Palmarès", "Carnet complet"]
+const TAB_ICONS := ["tactic", "mail", "trophy", "save"]
 
 var app: Control
 var data: Dictionary
@@ -85,7 +86,7 @@ func _navigation() -> void:
 		var control := D.button(self, Rect2(i * 289, 328, 275, 53), TABS[i], func():
 			active = i
 			state.tab = i
-			_display(), i == active, ["tactic", "mail", "trophy", "save"][i], false, PRIMARY, "RivalryTab" + str(i))
+			_display(), i == active, TAB_ICONS[i], false, PRIMARY, "RivalryTab" + str(i))
 		tabs.append(control)
 	for entry: Array in [[1281, "Classements", "trophy"], [1486, "Calendrier", "calendar"], [1691, "Presse", "mail"], [1896, "Parcours du manager", "flag"]]:
 		var destination: String = "Carrière" if entry[1] == "Parcours du manager" else entry[1]
@@ -94,10 +95,7 @@ func _navigation() -> void:
 func _display() -> void:
 	_clear(workspace)
 	for i in tabs.size():
-		var style := D.surface(275, 53, Color("1a6744") if i == active else Color("182426"), Color("0b3928") if i == active else Color("101819"), Color("79cf99") if i == active else C.LINE, 6)
-		style.content_margin_left = C.px(18)
-		style.content_margin_right = C.px(18)
-		tabs[i].add_theme_stylebox_override("normal", style)
+		D.tab_state(tabs[i],Vector2(275,53),i==active,TAB_ICONS[i])
 	match active:
 		0: _pairs()
 		1: _echoes()

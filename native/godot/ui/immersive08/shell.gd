@@ -310,6 +310,7 @@ static func _topbar(parent: Node, app: Control) -> void:
 	panel.add_child(calendar)
 	D.place(calendar,Rect2(1773,25,25,25))
 	app.header_date = D.text(panel,1814,48,"",24,C.IVORY,600,240)
+	app.header_date.mouse_filter = Control.MOUSE_FILTER_PASS
 	app._update_header_date()
 	app.primary_button = D.button(panel,Rect2(2067,17,211,45),"Continuer",app.primary_action,true,"arrow",false,app.accent,"ImmersiveContinue")
 	app.primary_button.tooltip_text = app.primary_text()

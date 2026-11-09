@@ -17,7 +17,6 @@ const DRAW := Color("a9b2b0")
 const LOSS := Color("ef8477")
 const PRIMARY := Color("106d43")
 const LABELS := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "elimination": "Match de barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession", "cup": "Coupe", "ended":"Compétition terminée"}
-const SHORT_NAMES := {"prem":"PREM", "urc":"URC", "srp":"SRP", "champions":"Coupe des champions", "challenge":"Challenge européen"}
 const RESULT_TINTS := {"V": WIN, "N": DRAW, "D": LOSS}
 const TABLE_COLUMNS := [
 	["#", 41, 58, "rank"], ["J", 488, 52, "played"], ["V", 549, 50, "won"],
@@ -102,13 +101,14 @@ func _header() -> void:
 	var title := "Le fil de la saison." if mode == "calendar" else "La course au classement."
 	D.text(self, 21, 116, title, 77, C.IVORY, 800, 1240)
 	var round_label := str(app.model.meta.get("roundLabel", "")) if league.id == state.club_league else "Phase régulière" if league.get("phase", "league") == "league" else _phase(league)
-	var subhead := "%s   ·   SAISON %s   ·   %s" % [_league_short(league).to_upper(), G.n(app.model.meta.get("season", "—")), round_label.to_upper()]
+	var short_round := round_label.trim_prefix(str(league.get("name","")) + " · ")
+	var subhead := "%s   ·   SAISON %s   ·   %s" % [_league_short(league).to_upper(), G.n(app.model.meta.get("season", "—")), short_round.to_upper()]
 	D.rect(self, Rect2(24, 132, 735, 43), Color("142122"), 5, C.LINE)
 	D.text(self, 44, 161, subhead, 25, C.IVORY, 600, 691)
 	var crest := D.rect(self, Rect2(1122, 103, 218, 78), Color("111a1b"), 8, WARM)
 	_icon(self, "trophy", Rect2(1188, 18, 87, 87), WARM)
 	D.text(crest, 109, 33, "COUPE D’EUROPE" if league.has("pools") else "CHAMPIONNAT", 26, C.IVORY, 800, 208, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(crest, 109, 63, str(SHORT_NAMES.get(league.id,_league_short(league))).to_upper(), 24, C.IVORY, 700, 206, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(crest, 109, 63, World.short_name(league.id,_league_short(league)).to_upper(), 24, C.IVORY, 700, 206, HORIZONTAL_ALIGNMENT_CENTER)
 	for spec: Array in [
 		[0, 302, "Championnat", "league", "", "Section_Classements"], [307, 247, "Phases finales", "playoffs", "trophy", "CompetitionPlayoffs"],
 		[559, 290, "Calendrier", "calendar", "calendar", "Section_Calendrier"], [854, 308, "Statistiques", "stats", "flag", "CompetitionStats"]
@@ -350,7 +350,7 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 		D.text(row,place_x+25,middle+11,venue_parts[1],17,C.MUTED,500,177)
 	else:
 		D.text(row,place_x+25,middle,venue if not venue.is_empty() and not compact else _location(fixture,compact),22,C.IVORY,500,85 if compact else 177)
-	D.text(row,589 if compact else 929,middle,competition,22,C.MUTED,500,185)
+	D.text(row,589 if compact else 929,middle,World.short_name(_competition_id(fixture),competition),22,C.MUTED,500,185)
 	var result_x := width - (140 if compact else 157)
 	var code := _fixture_outcome(fixture)
 	var score := _score(fixture, own.id)
@@ -462,7 +462,7 @@ func _division_choices(parent: Node, x: float, y: float) -> void:
 	var width := floori((LEFT-2*x-gap*(leagues.size()-1))/leagues.size()) if international else 228
 	for i in leagues.size():
 		var division: Dictionary = leagues[i]
-		var caption := str(SHORT_NAMES.get(division.id,_league_short(division)))
+		var caption := World.short_name(division.id,_league_short(division))
 		var button := D.button(parent,Rect2(x+(width+gap)*i,y,width,34),caption,func():
 			app.table_division = division.id
 			var owner_app := app

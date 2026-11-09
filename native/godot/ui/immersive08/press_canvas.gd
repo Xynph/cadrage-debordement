@@ -71,6 +71,7 @@ func _nav() -> void:
 		var button := D.button(self, Rect2(i * 289, 334, 275, 55), TABS[i], func(): _select(i), i == active, TAB_ICONS[i], false, PRIMARY, "PressCanvasTab" + str(i))
 		button.disabled = data.is_empty()
 		controls.append(button)
+	_mark_tabs()
 	for entry: Array in [[1520, "Classements", "trophy"], [1766, "Calendrier", "calendar"], [2012, "Rivalités", "shield"]]:
 		var destination: String = entry[1]
 		D.button(self, Rect2(entry[0], 339, 236, 45), destination, func(): app._navigate(destination), false, entry[2], true, PRIMARY, "Section_" + destination)
@@ -151,10 +152,7 @@ func _select(index: int) -> void:
 
 func _mark_tabs() -> void:
 	for i in controls.size():
-		var style := D.surface(275, 55, Color("1a6744") if i == active else Color("182426"), Color("0b3928") if i == active else Color("101819"), Color("79cf99") if i == active else C.LINE, 6)
-		style.content_margin_left = C.px(18)
-		style.content_margin_right = C.px(18)
-		controls[i].add_theme_stylebox_override("normal", style)
+		D.tab_state(controls[i],Vector2(275,55),i==active,TAB_ICONS[i])
 
 func _update_draft() -> void:
 	if draft_status == null: return

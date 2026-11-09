@@ -62,11 +62,12 @@ static func build(app:Control) -> Control:
 				app.management_ui.playbook_tab=1
 				app._navigate("Plan de jeu")
 				return
-			if not app.management_ui.get("preparation") is Dictionary:app.management_ui.preparation={"tab":0,"outer":[0,0,0],"attack":0,"defense":0,"focus":["","",""]}
-			app.management_ui.preparation.tab=0 if i==3 else 1
-			app._navigate("Préparation"),i==0,"",true,app.accent,"TacticsTab"+str(i))
+			app.Immersive.open_preparation(app,0 if i==3 else 1),i==0,"",true,app.accent,"TacticsTab"+str(i))
 	var next:Dictionary=app.model.next if app.model.get("next") is Dictionary else {}
-	D.text(page,2248,30,(G.club_name(next.get("home",{}))+" – "+G.club_name(next.get("away",{}))+" · "+str(next.get("label",""))).to_upper(),22,C.MUTED,500,1100,HORIZONTAL_ALIGNMENT_RIGHT)
+	var fixture := "Aucun prochain match" if next.is_empty() else G.club_name(next.get("home",{}))+" – "+G.club_name(next.get("away",{}))+" · "+str(next.get("label",""))
+	D.text(page,2248,30,fixture.to_upper(),22,C.MUTED,500,1100,HORIZONTAL_ALIGNMENT_RIGHT)
+	var preparation: Variant = app.model.get("decisions",{}).get("preparation")
+	var domains: Array = preparation.get("domains",[]) if preparation is Dictionary else []
 	var composition:=_card(page,Rect2(280,264,1070,906),"COMPOSITION · ÉQUIPE PREMIÈRE","tactic","TacticsPitch")
 	D.text(composition,1050,38,"ORGANISATION ACTUELLE",18,C.MUTED,500,300,HORIZONTAL_ALIGNMENT_RIGHT)
 	var auto:=D.button(composition,Rect2(738,14,306,30),"SÉLECTION DU STAFF",func():app._command("auto_lineup"),false,"people",true,app.accent,"LineupAutomatic")
@@ -99,17 +100,19 @@ static func build(app:Control) -> Control:
 		button.pressed.connect(func():app.selected_slot=slot;app._render();_candidates(app,slot))
 	var group:=P.group(app.model)
 	D.text(composition,25,891,"Condition du groupe : %d %%" % group.condition,19,C.MUTED,500,480)
-	_identity(_card(page,Rect2(1366,264,548,906),"IDENTITÉ DE JEU","flag","TacticsIdentity"),app)
+	_identity(_card(page,Rect2(1366,264,548,906),"IDENTITÉ DE JEU","flag","TacticsIdentity"),app,domains)
 	var reserves := _bench(_card(page,Rect2(1930,264,598,529),"LE BANC","people","TacticsBench"),app)
 	D.text(composition,1046,891,"%d titulaires · %d remplaçants" % [starters,reserves],19,C.MUTED,500,440,HORIZONTAL_ALIGNMENT_RIGHT)
 	_selected(_card(page,Rect2(1930,809,598,361),"JOUEUR SÉLECTIONNÉ","","TacticsSelectedPlayer"),app)
-	var domains:Array=app.model.get("decisions",{}).get("preparation",{}).get("domains",[])
 	for i in 3:
 		var key:String=["scrum","lineout","kick"][i]
 		var found:Dictionary={}
 		for domain:Dictionary in domains:
 			if domain.get("key")==key:found=domain
 		var tile:=_card(page,Rect2(280+i*562,1186,546,158),["MÊLÉE","TOUCHE","JEU AU PIED"][i],["trophy","flag","ball"][i],"TacticsMatchup"+str(i))
+		if found.is_empty():
+			D.text(tile,25,105,"Aucune projection du staff",25,C.MUTED,500,496).name="TacticsNoReport"
+			continue
 		D.text(tile,28,105,G.n(found.get("own","—")),48,C.MINT,700,85)
 		D.text(tile,105,96,"VS",20,C.MUTED,500,60)
 		D.text(tile,157,105,G.n(found.get("opponent","—")),42,C.IVORY,600,105)
@@ -121,11 +124,10 @@ static func build(app:Control) -> Control:
 	D.text(vigilance,24,131,"Consulter l’effectif pour ajuster les charges individuelles.",19,C.MUTED,400,514,HORIZONTAL_ALIGNMENT_LEFT,true)
 	return page
 
-static func _identity(card:Panel,app:Control) -> void:
+static func _identity(card:Panel,app:Control,domains:Array) -> void:
 	for i in 3:
 		var key:String=["equilibre","occupation","large"][i]
 		D.button(card,Rect2(21+i*169,74,157,39),["Équilibré","Occupation","Large"][i],func():app._command("set_tactics",{"attack":key,"defense":app.model.get("tactics",{}).get("defense","equilibre")}),app.model.get("tactics",{}).get("attack")==key,"",true,app.accent,"TacticsAttack_"+key)
-	var domains:Array=app.model.get("decisions",{}).get("preparation",{}).get("domains",[])
 	var keys:Array=["scrum","backs","power","kick","discipline"]
 	for i in keys.size():
 		var found:Dictionary={}
@@ -133,6 +135,9 @@ static func _identity(card:Panel,app:Control) -> void:
 			if domain.get("key")==keys[i]:found=domain
 		var y:=162+i*69
 		D.text(card,23,y,["Conquête · mêlée","Passe et vitesse","Puissance des avants","Jeu au pied","Discipline"][i],24,C.IVORY,600,500)
+		if found.is_empty():
+			D.text(card,23,y+29,"Analyse indisponible",18,C.MUTED,500,400)
+			continue
 		D.text(card,23,y+29,"XV sélectionné",18,C.MUTED,500,160)
 		D.text(card,525,y+29,G.n(found.get("own","—"))+" / 100",18,C.MUTED,500,85,HORIZONTAL_ALIGNMENT_RIGHT)
 		D.bar(card,Rect2(154,y+14,252,7),float(found.get("own",0)))
@@ -148,7 +153,12 @@ static func _identity(card:Panel,app:Control) -> void:
 	var defense_description:="Choisir les consignes défensives."
 	for option:Dictionary in app.model.get("tactics",{}).get("defenses",[]):
 		if option.get("id")==app.model.get("tactics",{}).get("defense"):defense_description=str(option.get("description",""))
-	var summaries:Array=[["CONQUÊTE",roundi((domain_values.get("scrum",0)+domain_values.get("lineout",0))/2.0),"Mêlée et touche du XV sélectionné.","trophy"],["DÉFENSE",roundi(defensive/maxi(1,selected_count)),defense_description,"shield"],["ANIMATION OFFENSIVE",roundi(domain_values.get("backs",0)),attack_description,"tactic"]]
+	var conquest := "—"
+	if domain_values.has("scrum") and domain_values.has("lineout"):
+		conquest = G.n(roundi((domain_values.scrum+domain_values.lineout)/2.0))
+	var defense := G.n(roundi(defensive/selected_count)) if selected_count>0 else "—"
+	var backs := G.n(roundi(domain_values.backs)) if domain_values.has("backs") else "—"
+	var summaries:Array=[["CONQUÊTE",conquest,"Mêlée et touche du XV sélectionné.","trophy"],["DÉFENSE",defense,defense_description,"shield"],["ANIMATION OFFENSIVE",backs,attack_description,"tactic"]]
 	for i in summaries.size():
 		var summary:Array=summaries[i]
 		var y:=533+i*105

@@ -1,5 +1,9 @@
 extends RefCounted
 const Club = preload("res://ui/club_views.gd")
+const SHORT_NAMES := {"elite":"Élite","accession":"Accession","prem":"PREM","urc":"URC","srp":"SRP","champions":"Champions","challenge":"Challenge"}
+
+static func short_name(id: String, full_name: String) -> String:
+	return str(SHORT_NAMES.get(id,full_name))
 
 static func preparation_note(preparation: Dictionary) -> String:
 	var date := Club._calendar_date(str(preparation.get("nextDate","")))

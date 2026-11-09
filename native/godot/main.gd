@@ -563,8 +563,9 @@ func _update_header_date() -> void:
 		header_date.text = "%s %s %s" % [parts[2],months[int(parts[1])-1],parts[0]]
 		header_date.tooltip_text = round_label
 	else:
-		header_date.text = ("SAISON %s  /  %s" % [G.n(meta.get("season", 1)),round_label]).to_upper()
-		header_date.tooltip_text = ""
+		var short_round := round_label.get_slice(" · ",0) if round_label.begins_with("Semaine ") else round_label
+		header_date.text = ("SAISON %s  /  %s" % [G.n(meta.get("season", 1)),short_round]).to_upper()
+		header_date.tooltip_text = round_label if short_round!=round_label else ""
 
 func _build_sidebar(parent: Node) -> void:
 	var rail := PanelContainer.new()

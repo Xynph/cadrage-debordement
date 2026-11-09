@@ -48,7 +48,11 @@ static func _journal(app: Control, data: Dictionary) -> Control:
 	var chooser := OptionButton.new()
 	chooser.name = "PressDivision"
 	chooser.custom_minimum_size.y = 44
-	for division: Dictionary in divisions: chooser.add_item(division.label)
+	var competition_names := {}
+	for league: Dictionary in app.model.get("leagues", []):
+		competition_names[league.id] = str(league.get("name", league.id))
+	for division: Dictionary in divisions:
+		chooser.add_item(str(division.get("label", competition_names.get(division.id, "Championnat"))))
 	tab.add_child(chooser)
 	var list := G.scroll(tab)
 	var redraw := func(index: int):

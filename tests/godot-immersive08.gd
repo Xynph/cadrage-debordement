@@ -167,6 +167,15 @@ func pacific() -> void:
 	if not app.bridge.last_response_ok: return
 	var preparation: Dictionary = app.model.meta.get("pacificPreparation",{})
 	check(not preparation.is_empty() and app.model.next==null,"Le moteur fournit l’attente du premier match")
+	app._navigate("Composition")
+	await settle()
+	check(app.find_child("TacticsNoReport",true,false)!=null and app.find_child("TacticsVigilance",true,false)!=null,"Tactique reste complète sans rapport sur le prochain adversaire")
+	app._navigate("Presse")
+	await settle()
+	var press_division := app.find_child("PressDivision",true,false) as OptionButton
+	check(press_division!=null and press_division.selected>=0 and press_division.get_item_text(press_division.selected)=="Super Rugby Pacific","Presse 1440p reprend le vrai nom de la compétition depuis le classement")
+	app._navigate("Bureau")
+	await settle()
 	var office := app.find_child("OfficePreparationAction",true,false) as Button
 	check(office!=null and office.text.contains("PRÉPARATION"),"Le Bureau expose la préparation avant le premier match")
 	await capture("44-pacifique-bureau-2560x1440")
@@ -220,6 +229,10 @@ func pacific() -> void:
 	venue=app.find_child("OfficeFixtureVenue",true,false) as Label
 	check(date!=null and date.text.begins_with("13/02/2027") and venue!=null and venue.text=="Terrain désigné","Bureau 720p : date et terrain sont préservés")
 	await capture("48-pacifique-premier-match-1280x720")
+	app._navigate("Presse")
+	await settle()
+	press_division=app.find_child("PressDivision",true,false) as OptionButton
+	check(press_division!=null and press_division.selected>=0 and press_division.get_item_text(press_division.selected)=="Super Rugby Pacific","Le vrai nom du Pacifique est conservé dans le journal compact")
 
 func reception() -> void:
 	app._navigate("Bureau")

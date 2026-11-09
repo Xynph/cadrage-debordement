@@ -4,6 +4,9 @@ const C = preload("res://ui/immersive08/components.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const GameSkin = preload("res://ui/game_skin.gd")
 const Present = preload("res://ui/immersive08/projection.gd")
+const ACTION_FONT_PIXELS = 12
+const ACTION_HEIGHT_PIXELS = 28
+const JOURNAL_CATEGORY_PIXELS = 104
 
 var opening: Control
 var opening_title: Label
@@ -18,6 +21,7 @@ var stage_viewport: SubViewport
 var delegation: Button
 var badges: Array[Control] = []
 var team_key := ""
+var _action_defaults: Dictionary = {}
 
 func _ready() -> void:
 	super._ready()
@@ -35,6 +39,12 @@ func _ready() -> void:
 	_add_pitch_overlays()
 	for button in _bottom_controls.get_children():
 		if button is Button and button.text=="ADJOINT": delegation=button; break
+	for control in _tab_controls + _bottom_controls.get_children() + [journal.category,journal.search]:
+		if not (control is BaseButton or control is LineEdit): continue
+		_action_defaults[control] = {
+			"minimum":control.custom_minimum_size,
+			"font_size":control.get_theme_font_size("font_size")
+		}
 	_layout_short_height()
 	set_meta("immersive_match",true)
 
@@ -44,6 +54,20 @@ func _layout_short_height() -> void:
 	score.add_theme_font_size_override("font_size",C.px(56))
 	clock.add_theme_font_size_override("font_size",C.px(31))
 	for label in [home,away]: label.add_theme_font_size_override("font_size",C.px(29))
+	if not _action_defaults.is_empty(): _fit_action_sizes.call_deferred()
+
+func _fit_action_sizes() -> void:
+	var scale := maxf(.1,get_global_transform().get_scale().y)
+	var font_size := ceili(ACTION_FONT_PIXELS / scale)
+	var hit_height := ceili(ACTION_HEIGHT_PIXELS / scale)
+	for control: Control in _action_defaults:
+		var original: Dictionary = _action_defaults[control]
+		var minimum: Vector2 = original.minimum
+		minimum.y = maxf(minimum.y,hit_height)
+		if control == journal.category:
+			minimum.x = maxf(minimum.x,ceili(JOURNAL_CATEGORY_PIXELS / scale))
+		control.custom_minimum_size = minimum
+		control.add_theme_font_size_override("font_size",maxi(original.font_size,font_size))
 
 func _band(color: Color) -> StyleBoxFlat:
 	var frame := C.box(color,C.LINE,7,11)

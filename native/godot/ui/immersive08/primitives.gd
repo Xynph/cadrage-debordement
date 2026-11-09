@@ -117,6 +117,25 @@ static func chip(parent: Node, rectangle: Rect2, caption: String, color: Color =
 	text(frame,rectangle.size.x/2,rectangle.size.y/2+7,caption,19,color,600,rectangle.size.x-(4 if rectangle.size.x<=60 else 12),HORIZONTAL_ALIGNMENT_CENTER)
 	return frame
 
+static func tab_state(control: Button, dimensions: Vector2, selected: bool, icon: String) -> void:
+	var top := Color("1a6744") if selected else Color("182426")
+	var bottom := Color("0b3928") if selected else Color("101819")
+	var border := Color("79cf99") if selected else C.LINE
+	var states := {
+		"normal": [top, bottom],
+		"hover": [C.readable_primary_fill(top.lightened(.035)), bottom.lightened(.035)],
+		"pressed": [top.darkened(.14), bottom.darkened(.14)],
+	}
+	for state_name: String in states:
+		var colors: Array = states[state_name]
+		var style := surface(dimensions.x, dimensions.y, colors[0], colors[1], border, 6)
+		style.content_margin_left = C.px(18)
+		style.content_margin_right = C.px(18)
+		control.add_theme_stylebox_override(state_name, style)
+	control.icon = C.icon_texture(icon, C.IVORY if selected else C.MUTED)
+	var focus := control.get_theme_stylebox("focus") as StyleBoxFlat
+	if focus != null: focus.set_expand_margin_all(2)
+
 static func bar(parent: Node, rectangle: Rect2, value: float, color: Color = C.MINT) -> void:
 	rect(parent,rectangle,Color("2b3936"),3)
 	var fill := rectangle
