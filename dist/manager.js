@@ -20,7 +20,22 @@ function managerWeek(){
  managerMessage('Le point de la semaine',`${club().players.filter(p=>p.injury).length} blessé(s), ${club().players.filter(p=>p.contractEnd===S.season).length} contrat(s) arrivant à échéance. Prochain rendez-vous : ${label()}.`,'staff','team');
 }
 function setDelegation(key,value){if(S.live||!['training','lineup'].includes(key))return;S.manager.delegation[key]=!!value;save();render()}
-function applyStaffPreparation(){if(!S.manager||S.live)return;if(S.manager.delegation.training){const meanFitness=mean(starters().map(p=>p.condition));S.training=meanFitness<75?'repos':'normal';managerMessage('Entraînement confié au préparateur',`${TRAIN[S.training][0]} retenu avec une condition moyenne de ${Math.round(meanFitness)}%.`,'staff','tactics')}}
+const STAFF_TRAINING_RECEIPT='Entraînement confié au préparateur';
+function staffTrainingDecision(s,mode){
+ if(!s?.manager?.delegation?.training||s.live)return {mode,delegated:false};
+ const players=s.clubs[s.club].players;
+ const meanFitness=mean(s.lineup.map(id=>players.find(p=>p.id===id)).filter(Boolean).map(p=>p.condition));
+ return {mode:meanFitness<75?'repos':'normal',delegated:true,meanFitness};
+}
+function staffTrainingReceipt(s){
+ return s?.manager?.inbox?.find(m=>m.kind==='staff'&&m.title===STAFF_TRAINING_RECEIPT&&m.season===s.season&&m.week===s.economy?.week)?.body??null;
+}
+function applyStaffPreparation(){
+ const decision=staffTrainingDecision(S,S.training);
+ if(!decision.delegated)return;
+ S.training=decision.mode;
+ managerMessage(STAFF_TRAINING_RECEIPT,`${TRAIN[S.training][0]} retenu avec une condition moyenne de ${Math.round(decision.meanFitness)}%.`,'staff','tactics');
+}
 function applyStaffSelection(){if(S.manager?.delegation.lineup&&!S.live){autoLineup();managerMessage('Feuille préparée par l’adjoint','Les 23 joueurs ont été sélectionnés après l’entraînement, selon les postes et leur condition.','staff','team')}}
 function markMessage(id){const msg=S.manager.inbox.find(x=>x.id===id);if(msg){msg.read=true;save();render()}}
 function officeAction(viewName,id,tab){if(viewName==='market'&&['recruit','contracts','sales','history'].includes(tab))marketTab=tab;if(id){const msg=S.manager.inbox.find(x=>x.id===id);if(msg)msg.read=true}save();nav(viewName)}

@@ -8,7 +8,7 @@
  const PLANS=Object.freeze({
   proteger:{label:'Protéger le XV',detail:'Titulaires : récupération. Remplaçants aptes : séance normale.'},
   relever:{label:'Faire progresser la relève',detail:'Jeunes aptes et frais : intensif. Titulaires fatigués : récupération.'},
-  equilibrer:{label:'Équilibrer les charges',detail:'Repos si charge ou condition critique ; les autres suivent une séance normale.'}
+  equilibrer:{label:'Équilibrer les charges',detail:'Repos si charge ou condition critique. Les autres suivent le mode collectif.'}
  });
  const escape=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function allowed(s){return !!s&&Array.isArray(s.clubs?.[s.club]?.players)&&Array.isArray(s.lineup)&&!s.live&&!s.trained&&s.phase==='league';}
@@ -28,19 +28,27 @@
  function preview(s,key,engine){
   if(!PLANS[key]||!s||!Array.isArray(s.clubs?.[s.club]?.players)||!engine||typeof engine.outcome!=='function')return null;
   const starters=new Set(Array.isArray(s.lineup)?s.lineup:[]);
+  // Appliquer un plan configure toujours « normal » comme mode collectif de base.
+  const decision=engine.collectiveDecision?.(s,'normal')??{mode:'normal',delegated:false};
+  const collective={mode:decision.mode,reason:decision.delegated
+   ? (decision.mode==='repos'?'Le préparateur prévoit une récupération car la moyenne du XV est sous 75 %.':'Le préparateur prévoit une séance normale car la moyenne du XV atteint au moins 75 %.')
+   : 'Ce plan configure le mode collectif normal.'};
   const players=s.clubs[s.club].players.map(p=>{
    const planned=mode(p,key,starters.has(p.id));
-   const actual=planned==='collective'?'normal':planned;
-   const projected=engine.outcome(p,actual);
-   return {id:p.id,name:p.name,plan:planned,current:p.condition,
+   const effectiveMode=planned==='collective'?collective.mode:planned;
+   const projected=engine.outcome(p,effectiveMode);
+   return {id:p.id,name:p.name,plan:planned,effectiveMode,current:p.condition,
     condition:projected.condition,fatigue:projected.fatigue,
     injured:!!p.injury,starter:starters.has(p.id)};
   });
-  const counts={repos:0,normal:0,intense:0,collective:0};
-  players.forEach(p=>counts[p.plan]++);
-  return {key,players,counts,conditionGain:players.reduce((n,p)=>n+p.condition-p.current,0),
+  const counts={repos:0,normal:0,intense:0,collective:0},effectiveCounts={repos:0,normal:0,intense:0};
+  for(const p of players){counts[p.plan]++;effectiveCounts[p.effectiveMode]++;}
+  return {key,players,counts,effectiveCounts,collective,conditionGain:players.reduce((n,p)=>n+p.condition-p.current,0),
    highFatigue:players.filter(p=>!p.injured&&p.fatigue>=45).length,
    eligible:allowed(s),label:PLANS[key].label};
+ }
+ function session(s,engine){
+  return s?.trained?{status:'applied',reason:engine.trainingReceipt?.(s)??null}:{status:'pending',reason:null};
  }
  function apply(s,key,{outcome,save,render}={}){
   if(!allowed(s)||!PLANS[key]||typeof outcome!=='function'||typeof save!=='function')return false;
@@ -67,14 +75,18 @@
  }
  function panel(s,engine){
   if(!s||!Array.isArray(s.clubs?.[s.club]?.players)||!engine)return '';
-  const can=allowed(s),rows=Object.keys(PLANS).map(key=>preview(s,key,engine));
-  return '<section class="card" aria-label="Plans entraînement V67"><div class="cardtitle"><h2>Plans d’entraînement · V67</h2><span class="tag">'+(can?'À PRÉPARER':'LECTURE SEULE')+'</span></div>'+
-   '<p class="help">Choisissez une répartition effective des charges par joueur avant la séance. Les prévisions utilisent le moteur physique V27. Aucun gain de note ou blessure aléatoire anticipé.</p>'+
+  const can=allowed(s),applied=session(s,engine);
+  const header='<section class="card" aria-label="Plans entraînement V67"><div class="cardtitle"><h2>Plans d’entraînement · V67</h2><span class="tag">'+(can?'À PRÉPARER':'LECTURE SEULE')+'</span></div>';
+  if(applied.status==='applied')return header+'<p>Séance effectuée. '+escape(applied.reason??'Aucun compte rendu du préparateur pour cette séance.')+'</p>'+
+   '<p><button type="button" disabled>Configurer un plan</button></p><details><summary>État courant des joueurs</summary><ul>'+
+   s.clubs[s.club].players.map(p=>'<li>'+escape(p.name)+' · condition '+escape(p.condition)+' · charge '+escape(p.physicalLoad?.fatigue??'—')+'</li>').join('')+'</ul></details></section>';
+  const rows=Object.keys(PLANS).map(key=>preview(s,key,engine));
+  return header+'<p class="help">Proposition avant séance. La prévision physique précède les effets collectifs et médicaux. Le choix du préparateur est recalculé si l’état du XV change.</p>'+
    '<div class="stack">'+rows.map(d=>'<div class="row budgetline"><div><strong>'+escape(PLANS[d.key].label)+'</strong>'+
-   '<small>'+escape(PLANS[d.key].detail)+'</small><small>'+d.counts.repos+' récupération · '+(d.counts.normal+d.counts.collective)+' normale · '+d.counts.intense+' intense · condition totale '+(d.conditionGain>=0?'+':'')+d.conditionGain+' pts · '+d.highFatigue+' joueurs restant très chargés</small></div>'+
+   '<small>'+escape(PLANS[d.key].detail)+'</small><small>'+d.effectiveCounts.repos+' récupération · '+d.effectiveCounts.normal+' normale · '+d.effectiveCounts.intense+' intense · condition totale '+(d.conditionGain>=0?'+':'')+d.conditionGain+' pts · '+d.highFatigue+' joueurs restant très chargés</small>'+(d.counts.collective?'<small>'+escape(d.collective.reason)+'</small>':'')+'</div>'+
    '<button class="small" type="button" onclick="trainingPlanV67(\''+d.key+'\')" '+(can?'':'disabled')+'>Appliquer</button></div>').join('')+'</div>'+
-   '<details><summary>Voir les projections joueur par joueur</summary><div class="tablewrap"><table><thead><tr><th>Joueur</th><th>Mode prévu</th><th>Condition après séance</th><th>Charge après séance</th></tr></thead><tbody>'+
-   rows[0].players.map((p,i)=>'<tr><td>'+escape(p.name)+'</td><td>'+rows.map(d=>escape(d.players[i].plan)).join(' / ')+'</td><td>'+rows.map(d=>d.players[i].condition).join(' / ')+'</td><td>'+rows.map(d=>d.players[i].fatigue).join(' / ')+'</td></tr>').join('')+
+   '<details><summary>Voir les projections joueur par joueur</summary><div class="tablewrap"><table><thead><tr><th>Joueur</th><th>Mode de séance prévu</th><th>Condition après séance</th><th>Charge après séance</th></tr></thead><tbody>'+
+   rows[0].players.map((p,i)=>'<tr><td>'+escape(p.name)+'</td><td>'+rows.map(d=>escape(d.players[i].effectiveMode)).join(' / ')+'</td><td>'+rows.map(d=>d.players[i].condition).join(' / ')+'</td><td>'+rows.map(d=>d.players[i].fatigue).join(' / ')+'</td></tr>').join('')+
    '</tbody></table></div><p class="help">Colonnes dans l’ordre : protéger / relève / équilibrer. Blessés en récupération automatique.</p></details>'+
    '<p class="help">Cette action configure les plans V27 existants, sans lancer la séance. En cas de délégation au préparateur, les plans individuels restent prioritaires sur le mode collectif pour les exceptions.</p></section>';
  }
@@ -82,7 +94,7 @@
   if(!root||typeof root.tactics!=='function'||typeof root.physicalTrainingOutcome!=='function'||typeof root.save!=='function')return false;
   if(root.tactics.__v67Wrapped)return true;
   const current=()=>typeof S!=='undefined'?S:root.S;
-  const engine={outcome:(p,mode)=>root.physicalTrainingOutcome(p,mode)};
+  const engine={outcome:(p,mode)=>root.physicalTrainingOutcome(p,mode),collectiveDecision:root.staffTrainingDecision,trainingReceipt:root.staffTrainingReceipt};
   const previous=root.tactics;
   const wrapped=function(){return previous()+panel(current(),engine);};
   wrapped.__v67Wrapped=true;root.tactics=wrapped;
@@ -93,6 +105,6 @@
   });
   return true;
  }
- return Object.freeze({PLANS,allowed,mode,preview,apply,panel,install});
+ return Object.freeze({PLANS,allowed,mode,preview,session,apply,panel,install});
 });
 if(!globalThis.CDNativeHeadless&&typeof document!=='undefined'&&typeof CDTrainingPlansV67==='object')CDTrainingPlansV67.install(globalThis);

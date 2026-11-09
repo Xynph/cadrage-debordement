@@ -66,11 +66,18 @@ static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 		meeting.add_child(G.wrap("Prévision : %d joueurs concernés · moral %d · confiance %d" % [option.preview.affected, option.preview.morale, option.preview.trust], 14))
 		_action(meeting, "RÉUNIR LE STAFF · " + str(option.label), "SupportMeeting_" + str(option.key), data.meeting.available, func(): app._command("staff_meeting", {"context":data.context,"plan":option.key}))
 	list.add_child(G.separator())
-	list.add_child(G.section("Répartir les charges", "Configurer un plan ne lance pas la séance. Les plans individuels restent visibles dans l’effectif."))
+	list.add_child(G.section("Répartir les charges", "Configurer un plan ne lance pas la séance. La prévision physique précède les effets collectifs et médicaux."))
+	var session: Dictionary = data.training.get("session", {})
+	if session.get("status", "pending") == "applied":
+		var reason: Variant = session.get("reason")
+		list.add_child(G.wrap("Séance effectuée. " + (str(reason) if reason != null else "Aucun compte rendu du préparateur pour cette séance."), 16, G.GOOD))
 	for plan: Dictionary in data.training.plans:
 		list.add_child(G.wrap(str(plan.label) + " — " + str(plan.detail), 17, G.INK))
-		list.add_child(G.wrap("%d repos · %d séance normale · %d intensif · condition totale prévue %+.0f" % [plan.counts.repos, int(plan.counts.normal) + int(plan.counts.collective), plan.counts.intense, plan.conditionGain], 14))
-		_action(list, "APPLIQUER · " + str(plan.label), "SupportTraining_" + str(plan.key), data.training.available, func(): app._command("training_plan", {"context":data.context,"plan":plan.key}))
+		var modes: Dictionary = plan.get("effectiveCounts", plan.counts)
+		list.add_child(G.wrap("Prévision · %d repos · %d séance normale · %d intensif · condition totale %+.0f" % [modes.repos, int(modes.normal) + int(modes.get("collective", 0)), modes.intense, plan.conditionGain], 14))
+		if int(plan.counts.collective) > 0 and plan.has("collective"):
+			list.add_child(G.wrap(str(plan.collective.reason), 14))
+		_action(list, "CONFIGURER · " + str(plan.label), "SupportTraining_" + str(plan.key), data.training.available, func(): app._command("training_plan", {"context":data.context,"plan":plan.key}))
 	list.add_child(G.separator())
 	list.add_child(G.section("Le briefing ciblé", "Ajustements fictifs du moteur, figés au coup d’envoi ; aucun résultat garanti."))
 	var b: Dictionary = data.briefing
