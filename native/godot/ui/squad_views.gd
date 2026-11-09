@@ -48,6 +48,10 @@ static func squad(app: Control) -> Control:
 	var table := G.panel(page,1.4)
 	table.add_theme_constant_override("separation",4)
 	G.chapter(table,"01","Le groupe professionnel","Rechercher, consulter et comparer sans perdre votre place.",app.accent)
+	if app.model.get("epcrPreparation") is Dictionary:
+		var europe := G.button("Préparer l’Europe",func():load("res://ui/epcr_preparation_dialog.gd").open(app))
+		europe.name = "OpenEpcrPreparation"
+		table.add_child(europe)
 	var state:Dictionary=app.management_ui.roster
 	state.family=app.roster_filter;state.sort=app.roster_sort
 	var search:=_search(table,"RosterSearch",state)
