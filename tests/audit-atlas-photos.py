@@ -84,6 +84,20 @@ class AtlasTest(unittest.TestCase):
         self.assertEqual(r['inputs'][0]['uniqueFilesReferenced'], 1)
         self.assertEqual(r['inputs'][1]['uniqueFilesReferenced'], 2)
 
+    def test_invalid_empty_files_are_not_verified_at_either_counting_level(self):
+        self.public_manifest([('city', 'one.webp', b''), ('stadium', 'two.webp', b'')])
+        self.native_pack(city=b'', stadium=b'')
+        code, r = self.cli('--public', self.public, self.files, '--pack', self.pack, '--verify-assets')
+        self.assertEqual(code, 2)
+        for source in r['inputs']:
+            with self.subTest(kind=source['kind']):
+                self.assertEqual(source['issues']['invalidMetadata'], 2)
+                self.assertEqual(source['uniqueFilesPresent'], 2)
+                self.assertEqual(source['uniqueFilesVerified'], 0)
+                self.assertEqual(source['counts']['uniqueVerifiedSha256'], 0)
+                for category in ('city', 'stadium'):
+                    self.assertEqual(source['counts']['byCategory'][category]['verifiedReferences'], 0)
+
     def test_missing_file_and_missing_asset_do_not_become_verified(self):
         self.public_manifest(present=False); self.native_pack(missing=True)
         code, r = self.cli('--public', self.public, self.files, '--pack', self.pack, '--verify-assets')

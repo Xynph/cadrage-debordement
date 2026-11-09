@@ -100,7 +100,7 @@ def public_atlas(manifest, asset_root, verify):
                     verified, amount = byte_verification(lambda: path.open('rb'), size, sha, issues)
                     bytes_read += amount
                     require(bytes_read <= MAX_TOTAL, 'uncompressed_limit')
-            files[name] = (present, verified, size, sha)
+            files[name] = (present, verified and metadata, size, sha)
         present, verified, old_size, old_sha = files[name]
         require(old_size == size and old_sha == sha, 'conflicting_file_metadata')
         club = ('native', mapping[photo['slug']]) if mapped else ('slug', photo['slug'])
@@ -167,7 +167,7 @@ def native_pack(path, verify):
                                 verified, amount = byte_verification(lambda: archive.open(entry), size, sha, issues)
                                 bytes_read += amount
                                 require(bytes_read <= MAX_TOTAL, 'uncompressed_limit')
-                        files[name] = (present, verified, size, sha)
+                        files[name] = (present, verified and metadata, size, sha)
                     present, verified, old_size, old_sha = files[name]
                     require(size == old_size and sha == old_sha, 'conflicting_file_metadata')
                     rows.append((('native', club['id']), kind, sha if digest_valid(sha) else None, present, verified and metadata))
