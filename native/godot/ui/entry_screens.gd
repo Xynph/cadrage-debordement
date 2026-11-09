@@ -241,11 +241,11 @@ static func _creation_crest(club: Dictionary, width: int, use_mockup: bool) -> C
 		return crest
 	return G.crest(club, width)
 
-static func _club_preview(parent: VBoxContainer, club: Dictionary, photo_height: float, base_identity: bool) -> void:
+static func _club_preview(parent: VBoxContainer, club: Dictionary, championship: String, photo_height: float, base_identity: bool) -> void:
 	var illustration := base_identity and int(club.id) == 0
 	var identity := C.h(30)
 	parent.add_child(identity)
-	identity.add_child(_creation_crest(club, C.px(215), base_identity))
+	identity.add_child(_creation_crest(club, C.px(194), base_identity))
 	var copy := C.v(3)
 	copy.alignment = BoxContainer.ALIGNMENT_CENTER
 	G.fill(copy)
@@ -282,12 +282,47 @@ static func _club_preview(parent: VBoxContainer, club: Dictionary, photo_height:
 		Editorial.divider(metrics)
 		_dossier_metric(metrics, roster.get("backs", 0), "Trois-quarts")
 	parent.add_child(C.rule())
+	parent.add_child(C.label("LE CLUB", 22, Editorial.RAIL_GOLD, true, 700))
+	var city := str(club.get("city", "")).strip_edges()
+	var introduction := "Le club évolue dans le championnat %s." % championship
+	if not city.is_empty():
+		introduction = "Basé à %s, le club évolue dans le championnat %s." % [city, championship]
+	if not venue.is_empty():
+		introduction += " Il reçoit ses adversaires dans l’enceinte « %s »." % venue
+	var presentation := C.wrap(introduction, 21, C.IVORY)
+	presentation.name = "CreationClubPresentation"
+	parent.add_child(presentation)
+	parent.add_child(C.rule())
 	_dossier_line(parent, "Objectif du conseil", str(club.get("goal", "Développer le projet sportif")), true)
 	if club.has("cashMillions"):
-		_dossier_line(parent, "Trésorerie simulée", G.euros(roundi(float(club.cashMillions) * 1_000_000)))
-	if not roster.is_empty():
-		_dossier_line(parent, "Points forts", str(roster.get("strengths", "")), true)
-		_dossier_line(parent, "Besoins", str(roster.get("needs", "")), true)
+		_dossier_line(parent, "Trésorerie de départ", G.euros(roundi(float(club.cashMillions) * 1_000_000)))
+	if not str(roster.get("strengths", "")).is_empty():
+		var comparison := C.h(18)
+		parent.add_child(comparison)
+		var average := float(roster.average)
+		_dossier_position(comparison, "Points forts", str(roster.strengths), _position_detail(roster.get("strengthDetail"), average))
+		if not str(roster.get("needs", "")).is_empty():
+			Editorial.divider(comparison)
+			_dossier_position(comparison, "Points faibles", str(roster.needs), _position_detail(roster.get("weaknessDetail"), average))
+
+static func _dossier_position(parent: Container, heading: String, position: String, detail: String) -> void:
+	var column := C.v(0)
+	parent.add_child(C.fill(column))
+	column.add_child(C.wrap(heading, 21, C.IVORY))
+	column.add_child(C.wrap(position, 25, Editorial.RAIL_GOLD, true, 700))
+	if not detail.is_empty():
+		var stats := C.wrap(detail, 19, C.MUTED)
+		stats.mouse_filter = Control.MOUSE_FILTER_PASS
+		stats.tooltip_text = "Écart par rapport à la note moyenne de l’effectif."
+		column.add_child(stats)
+
+static func _position_detail(detail: Variant, club_average: float) -> String:
+	if not detail is Dictionary: return ""
+	var count := int(detail.count)
+	var difference := roundi((float(detail.average) - club_average) * 10.0)
+	var gap := String.num(absf(difference / 10.0), 1).replace(".", ",")
+	var sign := "+" if difference > 0 else ("−" if difference < 0 else "")
+	return "%d %s · moy. %s · %s%s pt%s vs club" % [count, "joueur" if count == 1 else "joueurs", _rating(detail), sign, gap, "s" if absi(difference) >= 20 else ""]
 
 static func _dossier_metric(parent: Container, value: Variant, caption: String) -> void:
 	var column := C.v(0)
@@ -303,10 +338,9 @@ static func _dossier_line(parent: Container, caption: String, detail: String, ac
 	var line := C.h(16)
 	parent.add_child(line)
 	var title := C.wrap(caption, 23, C.IVORY)
-	line.add_child(C.fill(title, false, .52))
+	line.add_child(C.fill(title, false, .41))
 	var value := C.wrap(detail, 24, Editorial.RAIL_GOLD if accent else C.IVORY, true, 700)
-	C.fill(value, false, .48)
-	line.add_child(value)
+	line.add_child(C.fill(value, false, .59))
 	parent.add_child(C.rule())
 
 static func _connected_country(tabs: HBoxContainer, button: Button, active: bool, last: bool) -> void:
@@ -428,7 +462,9 @@ static func creation(app: Control) -> Control:
 		preview.add_theme_constant_override("separation", C.px(6))
 		var photo_height := clampf(screen.y * .181, 124, 262)
 		if selected.is_empty(): _competition_summary(app, preview, division, division_clubs.size(), photo_height)
-		else: _club_preview(preview, selected, photo_height, preferred == "base")
+		else:
+			var championship := str(_competition_identity(app, division).get("name", Club.competition_name(division)))
+			_club_preview(preview, selected, championship, clampf(screen.y * .144, 108, 208), preferred == "base")
 	else:
 		var photo := _cover(selected)
 		G.fill(photo, true, 0.95)

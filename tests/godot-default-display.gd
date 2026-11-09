@@ -67,11 +67,14 @@ func run() -> void:
 		check(reloaded.load_profile(str(app.model.meta.dataDir)) and reloaded.data.display_screen == launch_screen,"Le dossier de profil conserve le moniteur pour le prochain lancement")
 	check(fullscreen != null and windowed != null,"Deux actions d'affichage identifiables")
 	if fullscreen != null and windowed != null:
+		check(fullscreen.text == "Plein écran" and windowed.text == "Fenêtré maximisé","Seuls le plein écran et la fenêtre maximisée sont proposés")
 		check(fullscreen.get_index() < windowed.get_index(),"Plein écran proposé avant le mode fenêtré")
 		check(not fullscreen.tooltip_text.is_empty() and not windowed.tooltip_text.is_empty(),"Options d'affichage expliquées")
 		if native:
 			windowed.grab_focus(); await settle(); await key(KEY_ENTER)
-			check(DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_WINDOWED and DisplayServer.window_get_size() == Vector2i(1440,900),"Vrai bouton clavier ouvre la fenêtre 1440×900")
+			var usable := DisplayServer.screen_get_usable_rect(launch_screen)
+			var actual := DisplayServer.window_get_size()
+			check(DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_MAXIMIZED and actual.x >= usable.size.x - 32 and actual.y >= usable.size.y - 80,"Le bouton ouvre une fenêtre maximisée qui occupe le moniteur")
 			check(DisplayServer.window_get_current_screen() == launch_screen,"Fenêtré conserve l’écran choisi")
 			geometry(dialog,windowed,"fenêtré"); await capture("preferences-fenetre")
 			fullscreen.grab_focus(); await settle(); await key(KEY_ENTER)
@@ -80,11 +83,17 @@ func run() -> void:
 			geometry(dialog,fullscreen,"plein écran"); await capture("preferences-plein-ecran")
 	check(not FileAccess.file_exists(str(app.model.meta.dataDir).path_join("donnees.json")),"Changer l'affichage ne crée pas de carrière")
 	dialog.hide(); dialog.queue_free(); await settle()
-	var resize_probe := QaResizeProbe.new(); resize_probe.app = app; root.add_child(resize_probe)
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
-		await resize_probe._resize_window(resolution)
-	checks += resize_probe.checks; failures.append_array(resize_probe.failures)
-	resize_probe.queue_free()
+	if native:
+		root.mode = Window.MODE_WINDOWED
+		root.size = Vector2i(1440,900)
+		await settle()
+		check(root.mode == Window.MODE_MAXIMIZED and root.current_screen == launch_screen,"Une restauration système revient à la fenêtre maximisée sur le même écran")
+	else:
+		var resize_probe := QaResizeProbe.new(); resize_probe.app = app; root.add_child(resize_probe)
+		for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
+			await resize_probe._resize_window(resolution)
+		checks += resize_probe.checks; failures.append_array(resize_probe.failures)
+		resize_probe.queue_free()
 	app.closing = true; app.bridge.stop()
 	deadline = Time.get_ticks_msec() + 3000
 	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await process_frame

@@ -15,7 +15,13 @@ module.exports=function worldModel(base,publishedVenue){
    if(group){group.count++;group.points+=player.rating;}
   }
   const ordered=byPosition.filter(row=>row.count).sort((a,b)=>b.points/b.count-a.points/a.count);
-  return {average:players.length?Math.round(points/players.length*10)/10:null,forwards,backs,strengths:ordered[0]?.name??'',needs:ordered.length>1?ordered.at(-1).name:''};
+  const strongest=ordered[0],weakest=ordered.length>1?ordered.at(-1):null;
+  const detail=group=>group?{count:group.count,average:Math.round(group.points/group.count*10)/10}:null;
+  return {
+   average:players.length?Math.round(points/players.length*10)/10:null,forwards,backs,
+   strengths:strongest?.name??'',strengthDetail:detail(strongest),
+   needs:weakest?.name??'',weaknessDetail:detail(weakest),
+  };
  }
  function catalogue(R){
   if(!catalogues.has(R)){

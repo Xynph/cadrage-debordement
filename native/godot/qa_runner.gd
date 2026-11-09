@@ -70,9 +70,12 @@ func _display_reception() -> void:
 				await get_tree().process_frame
 			await get_tree().create_timer(.2).timeout
 			await _settle()
-			var expected := DisplayServer.WINDOW_MODE_WINDOWED if button == windowed else DisplayServer.WINDOW_MODE_FULLSCREEN
+			var expected := DisplayServer.WINDOW_MODE_MAXIMIZED if button == windowed else DisplayServer.WINDOW_MODE_FULLSCREEN
 			_check(DisplayServer.window_get_mode() == expected,"Actual keyboard display action switches mode: " + str(button.name))
-			if button == windowed: _check(DisplayServer.window_get_size() == Vector2i(1440,900),"Actual windowed option is 1440x900")
+			if button == windowed:
+				var usable := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
+				var actual := DisplayServer.window_get_size()
+				_check(actual.x >= usable.size.x - 32 and actual.y >= usable.size.y - 80,"Maximized window fills the usable screen")
 			_check(button.has_focus(),"Display action retains keyboard focus: " + str(button.name))
 			_check(button.is_visible_in_tree() and button.get_global_rect().end.y <= dialog.size.y,"Display action remains visible: " + str(button.name))
 			await _capture("parametres-fenetre" if button == windowed else "parametres-plein-ecran")

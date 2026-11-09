@@ -100,6 +100,7 @@ test('identités de compétition : dossier de création, affichage et retour à 
  const ok=(command,payload={})=>{const r=request(command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;};
  const initial=ok('snapshot'),overview=initial.meta.champCatalogue.find(c=>c.id===30).startingRoster;
  assert.ok(overview.average>0&&overview.forwards>0&&overview.backs>0);
+ assert.ok(overview.strengthDetail?.count>0&&overview.weaknessDetail?.count>0);
  assert.equal(initial.meta.creationCompetitions[mode].prem.name,'Élite anglaise');
  const photo=png(),file=path.join(root,'identites.zip');
  const manifest={schema:'cd-identity-pack-v4',id:'ligue-temoin',name:'Ligues témoins',version:'1',databaseId:initial.meta.champDatabase.id,rightsStatus:'test-local',
@@ -125,6 +126,16 @@ test('identités de compétition : dossier de création, affichage et retour à 
  const state=JSON.parse(raw).state,players=state.clubs[30].players;
  assert.equal(overview.forwards+overview.backs,players.length);
  assert.equal(overview.average,Math.round(players.reduce((n,p)=>n+p.rating,0)/players.length*10)/10);
+ const positions={
+  Piliers:['Pilier gauche','Pilier droit'],Talonneurs:['Talonneur'],'Deuxièmes lignes':['Deuxième ligne'],
+  'Troisièmes lignes':['Troisième ligne','Numéro 8'],'Demis de mêlée':['Demi de mêlée'],
+  'Demis d’ouverture':['Demi d’ouverture'],Ailiers:['Ailier'],Centres:['Centre'],Arrières:['Arrière'],
+ };
+ for(const [group,detail] of [[overview.strengths,overview.strengthDetail],[overview.needs,overview.weaknessDetail]]){
+  const members=players.filter(p=>positions[group].includes(p.pos));
+  assert.deepEqual(detail,{count:members.length,average:Math.round(members.reduce((n,p)=>n+p.rating,0)/members.length*10)/10});
+ }
+ assert.ok(overview.strengthDetail.average>=overview.average&&overview.weaknessDetail.average<=overview.average);
  const base=ok('pack_select',{mode,scope:'career',id:'base'});
  assert.equal(base.leagues.find(l=>l.id==='prem').name,'Élite anglaise');
  assert.equal(base.leagues.find(l=>l.id==='prem').logoPath,undefined);
