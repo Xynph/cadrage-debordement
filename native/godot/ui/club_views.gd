@@ -384,8 +384,10 @@ static func tables(app: Control) -> Control:
 	var tabs := G.h(10)
 	sheet.add_child(tabs)
 	var abbreviations := {"prem":"PREM","urc":"URC","champions":"CHAMPIONS","challenge":"CHALLENGE"}
-	if app.model.meta.get("edition") in ["world-japan", "world-nationale"]:
+	var edition := str(app.model.meta.get("edition", ""))
+	if edition in ["world-japan", "world-nationale", "world-champ"]:
 		abbreviations.merge({"accession":"ACCESSION","jlo-d1":"JAPON D1","jlo-d2":"JAPON D2"})
+	if edition == "world-champ": abbreviations.srp = "SRP"
 	for league: Dictionary in leagues:
 		var label := str(league.get("name", league.id))
 		var short := str(abbreviations.get(league.id, label.to_upper())) if international else label.to_upper()

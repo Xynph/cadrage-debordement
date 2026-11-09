@@ -1,12 +1,14 @@
 # Journal de développement — Cadrage Débordement
 
-## 9 novembre 2026 — réception immersive, Japon et Nationale
+## 9 novembre 2026 — réception immersive, Japon, Nationale et Champ Rugby
 
 La branche `feature/immersive-1440p-20261108` adapte les vues natives de la PR400 à la tête `8ebf575` de `main`. Les wrappers de création, préparation, Bureau et compétitions exploitent les commandes et projections de cette version. Les dates et deux manches de barrages japonais s’affichent dans le calendrier et dans les archives. Le nouveau terrain fictif d’origine porte la bibliothèque à 48 PNG. La matrice [de réception immersive](docs/immersive08-coverage.md) distingue tests source, paquets Windows et finitions restantes. Les profils d’essai et packs de réception restent hors dépôt.
 
 Après l’intégration de la Nationale sur `ebef33b`, la branche reprend les 14 clubs, leurs dates et lieux, le bulletin de qualification FFR et les résultats de la phase finale. Le nouveau terrain fictif porte la bibliothèque à 49 PNG. Les archives séparent la finale de Nationale et le barrage Pro D2. Les vérifications source couvrent les vrais exports de saisons 2 et 3 et leurs transitions, aux trois définitions. Les captures Windows à 1440p et à 720p proviennent des menus natifs. Le moteur, les formats et les packs restent ceux de `main`.
 
 La recette du premier ZIP Nationale a révélé cinq défauts de redimensionnement à l’entrée. Le gabarit Création s’adapte aux quatre définitions testées et conserve le club choisi. La photo originale de tunnel porte le total à 50 PNG. Les fiches et sélecteurs Staff adoptent le thème sombre et Formation reprend l’état réel des parcours juniors. Les preuves source figurent dans la matrice immersive.
+
+Le ZIP Windows `a675dc4` passe 141 contrôles avec le pack Nationale et 233 contrôles avec le pack Pacifique après extraction et déplacement. La branche reprend ensuite le Champ Rugby sur `a378ef2` avec son illustration de terrain, les 14 clubs, les actions de préparation et la source des dates et heures. Le classement compact conserve le focus sur chacun de ses onze onglets. La recette source Champ avec pack complet reprend la saison 2. La [matrice immersive](docs/immersive08-coverage.md) détaille les preuves par version.
 
 ## 9 novembre 2026 — carrière européenne et profils compatibles
 

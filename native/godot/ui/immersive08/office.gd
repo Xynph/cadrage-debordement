@@ -81,6 +81,11 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 			left.add_child(C.label("LE PROCHAIN CHAPITRE", 21, C.GOLD))
 			left.add_child(C.wrap("La saison se termine." if app.model.meta.get("canAdvanceSeason", false) else "Le travail continue.", 42, C.IVORY, true))
 			left.add_child(C.wrap("Retrouvez les résultats et préparez la suite du projet.", 20))
+		elif SeasonPreparation.is_champ(app.model.meta):
+			var fixture := P.next_scheduled_fixture(app.model)
+			left.add_child(C.wrap("Préparation du Champ Rugby", 42, C.IVORY, true))
+			left.add_child(C.wrap(P.fixture_date(fixture, true) if not fixture.is_empty() else World.preparation_note(preparation), 25, C.IVORY, true))
+			left.add_child(C.wrap(P.fixture_venue(fixture), 18))
 		else:
 			left.add_child(C.label("JAPAN RUGBY LEAGUE ONE" if japan else "SUPER RUGBY PACIFIC",21,C.GOLD))
 			left.add_child(C.wrap("La préparation de League One." if japan else "La préparation du Pacifique.",42,C.IVORY,true))
@@ -104,7 +109,7 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 		teams.add_child(names)
 		names.add_child(C.wrap(G.club_name(next.get("home", {})), 32, C.IVORY, true))
 		names.add_child(C.wrap(G.club_name(next.get("away", {})), 30, C.IVORY, true))
-		var date := P.fixture_date(next)
+		var date := P.fixture_date(next, true)
 		if date.is_empty(): date = "SEMAINE %d" % [int(next.get("week",0))+1]
 		var timing := C.wrap(date+" · "+P.league_name(app.model),25,C.IVORY,true)
 		timing.name="OfficeFixtureDate"
@@ -278,6 +283,10 @@ static func describe_fixture(node: Control, detail: String) -> void:
 	node.tooltip_text = detail
 	node.accessibility_name = detail.replace("\n"," · ")
 
+static func timeline_period(fixture: Dictionary) -> String:
+	var date := P.fixture_date(fixture)
+	return date if not date.is_empty() else "SEM. %02d" % (int(fixture.get("week", 0))+1)
+
 static func _timeline(parent: VBoxContainer, app: Control) -> void:
 	var japan := SeasonPreparation.is_japan(app.model.meta)
 	var row := C.h(12)
@@ -291,7 +300,12 @@ static func _timeline(parent: VBoxContainer, app: Control) -> void:
 		row.add_child(tile)
 		var list := C.content(tile)
 		list.add_theme_constant_override("separation", C.px(4))
-		list.add_child(C.label("SEM. %02d" % (int(fixture.get("week", 0))+1), 21, C.GOLD))
+		var period := C.label(timeline_period(fixture), 21, C.GOLD)
+		period.name = "OfficeTimelineDate"
+		period.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		var local_date := P.fixture_date(fixture, true)
+		if not local_date.is_empty(): describe_fixture(period, local_date)
+		list.add_child(period)
 		list.add_child(C.rule())
 		var opponent: Dictionary = fixture.get("away", {}) if fixture.get("home", {}).get("id") == app.model.club.id else fixture.get("home", {})
 		var name := C.label(G.club_name(opponent), 24)

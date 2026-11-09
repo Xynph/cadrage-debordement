@@ -220,6 +220,26 @@
       "synthetic": true,
       "tool": "built-in image_gen",
       "prompt": "Create ONE new photographic background asset for the playable PC rugby management game Oval Legacy 27. This is an in-game photograph to be drawn behind the club crest and native text of the left portrait panel in the New Career screen. It is absolutely not a UI mockup. Square to portrait composition, realistic dark editorial sports photography, an anonymous rugby club manager from behind at the open end of an old concrete players' tunnel, standing on the right third (not oversized), carrying a plain dark portfolio under one arm, watching a regulation rugby union pitch and H-shaped rugby goalposts under soft floodlights beyond, countryside club grandstand and trees in light dusk mist. Warm amber doorway reflection, deep blue-green shadows and muted ivory highlights. Rich grain, realistic sports photo, natural texture. Visually compatible with dark charcoal / bottle green / warm ivory / brass rugby UI. The center and right contain the photographic point of interest. Keep upper left quarter naturally very dark and uncluttered for a future label, and bottom quarter naturally very dark with no bright elements, for future readable native text. Avoid a strong orange cast, fake crests, branded jerseys, recognisable people, unreadable letters, stadium name signs, menus, lettering, labels, signatures, watermark and any in-image typography. This depicts a fictional club only, inclusive of all countries. Make the image fill the frame. Capture the moment just before starting a real career, with a confident, quiet, premium sports editorial mood. Supply just the clean photograph."
+    },
+    {
+      "id": "champ-ground",
+      "file": "champ-ground.png",
+      "source": "exec-6097359e-b78a-4452-9b2d-f35cf18618f9.png",
+      "sourceType": "generated",
+      "source_sha256": "da28238b70f3f7fec1e18614c57ea7afb5b73d2c70b3980c86a1509c0a6aebaf",
+      "crop": [
+        0,
+        0,
+        1672,
+        941
+      ],
+      "width": 1672,
+      "height": 941,
+      "bytes": 2195645,
+      "sha256": "da28238b70f3f7fec1e18614c57ea7afb5b73d2c70b3980c86a1509c0a6aebaf",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Generate one original fictional rugby editorial photograph in wide 16:9 for the PC rugby management game Oval Legacy 27. An intimate English second-tier rugby ground under a light evening drizzle, dark wet evergreen turf with proper rugby pitch markings and one H-shaped set of rugby posts right of centre, small corrugated covered terraces and a low dark-red brick clubhouse on the right, distant town chimneys and hedgerows in soft mist. Rich blue-charcoal shadows, muted burgundy brick, restrained warm amber floodlights with natural haze, understated low-key cinematic sports editorial photography, subtly textured realism. A few very distant silhouettes can imply a match night but no visible faces or foreground people. Keep the left half dark and unobstructed for ivory game interface text, with the interesting visual detail mainly in the right two thirds and within the middle 60 percent vertically for very wide header crops. Show a distinct English atmosphere and modest scale, with no specific real ground. Full bleed frame, no border, no interface, no typography, no markings with letters, no logos, no watermark."
     }
   ]
 }

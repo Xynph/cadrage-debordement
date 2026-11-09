@@ -187,7 +187,7 @@ static func open_preparation(app: Control, tab: int) -> void:
 	app._navigate("Préparation",true,true)
 
 static func _dedicated_page(app: Control, size: Vector2i) -> Script:
-	if app.route=="Calendrier" and size.x>=1280 and size.y>=720 and app.model.meta.get("leagueId")=="nationale": return Competition
+	if app.route=="Calendrier" and size.x>=1280 and size.y>=720 and app.model.meta.get("leagueId") in ["nationale","champ"]: return Competition
 	if size.x<1920 or size.y<1080:
 		return Rivalry if app.route=="Rivalités" and size.x>=1280 and size.y>=720 else null
 	if _is_training(app): return Training

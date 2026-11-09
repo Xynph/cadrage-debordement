@@ -260,6 +260,13 @@ func _next_match() -> void:
 			return
 		var preparation := SeasonPreparation.data(app.model.meta)
 		if not preparation.is_empty():
+			if SeasonPreparation.is_champ(app.model.meta):
+				var fixture := P.next_scheduled_fixture(app.model)
+				D.text(panel,36,130,"Préparation du Champ Rugby",43,C.IVORY,800,810)
+				D.text(panel,37,179,P.fixture_date(fixture, true) if not fixture.is_empty() else World.preparation_note(preparation),29,C.IVORY,600,802)
+				D.text(panel,37,219,P.fixture_venue(fixture),24,C.MUTED,500,802)
+				D.button(panel,Rect2(166,247,589,60),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,PRIMARY,"CompetitionChampAdvance")
+				return
 			D.text(panel,36,130,"La préparation de League One" if japan else "La préparation du Pacifique",43,C.IVORY,800,810)
 			D.text(panel,37,179,World.preparation_note(preparation),29,C.IVORY,600,802)
 			D.button(panel,Rect2(166,247,589,60),"Ouvrir le dossier de préparation",func():
@@ -350,8 +357,8 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 	row.name = "CalendarFixture_" + str(fixture.get("id", y))
 	row.set_meta("fixture_id", str(fixture.get("id", "")))
 	var competition_id := _competition_id(fixture)
-	var dated_competition := competition_id in JAPAN_COMPETITIONS or competition_id in ["nationale","access-nationale"]
-	var timing := period + " · " + _dated_phase(fixture) if not date.is_empty() and dated_competition else period
+	var dated_competition := competition_id in JAPAN_COMPETITIONS or competition_id in ["nationale","access-nationale","champ"]
+	var timing := P.fixture_date(fixture, true) + " · " + _dated_phase(fixture) if not date.is_empty() and dated_competition else period
 	row.accessibility_name = "%s · %s · %s · %s" % [timing,G.club_name(opponent),venue if not venue.is_empty() else _location(fixture),competition]
 	row.tooltip_text = row.accessibility_name
 	row.add_theme_stylebox_override("normal", C.box(Color("202519") if current else Color("101a1b"), Color.TRANSPARENT, 3, 0))
@@ -431,13 +438,16 @@ func _playoffs() -> void:
 		var nationale := competition in ["nationale", "access-nationale"]
 		var stage_width := 304 if japanese or competition == "access-nationale" else 210
 		var stage := Club.competition_name(competition) if competition == "access-nationale" else _phase(result)
-		var date := _date(result) if nationale else ""
-		D.text(card, 14, 31 if date.is_empty() else 22, stage, 24, WARM, 600, stage_width)
-		if not date.is_empty(): D.text(card, 14, 41, date, 18, C.MUTED, 600, stage_width)
+		var show_details := nationale or competition in ["champ", "champions", "challenge"]
+		var timing := _date(result) if show_details else ""
+		if show_details and result.get("neutral", false):
+			timing = timing + " · Neutre" if not timing.is_empty() else "Terrain neutre"
+		D.text(card, 14, 31 if timing.is_empty() else 22, stage, 24, WARM, 600, stage_width)
+		if not timing.is_empty(): D.text(card, 14, 41, timing, 18, C.MUTED, 600, stage_width)
 		var matchup := _matchup(result)
 		var score: Variant = result.get("score")
 		var winner: Variant = result.get("winner")
-		var tiebreak: bool = nationale and score is Array and score.size() == 2 and score[0] == score[1] and identities.has(winner)
+		var tiebreak: bool = show_details and score is Array and score.size() == 2 and score[0] == score[1] and identities.has(winner)
 		D.text(card, stage_width + 18, 22 if tiebreak else 31, G.club_name(matchup[0]) + "  –  " + G.club_name(matchup[1]), 25, C.IVORY, 600, 1054 - stage_width)
 		if tiebreak:
 			D.text(card, stage_width + 18, 41, "%s après départage" % G.club_name(identities[winner]), 18, C.MUTED, 600, 1054 - stage_width)
@@ -532,7 +542,14 @@ func _division_choices(parent: Node, x: float, y: float) -> void:
 			owner_app._render(false)
 			U.focus(owner_app,"StandingsDivision_"+str(division.id)),league.id==division.id,"",true,app.accent,"StandingsDivision_"+str(division.id))
 		button.tooltip_text = str(division.get("name", caption)) if division.id in JAPAN_COMPETITIONS else _league_short(division)
-		if international: button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		if international:
+			button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+			if leagues.size() >= 11:
+				for state_name in ["normal", "hover", "pressed", "disabled"]:
+					var style := button.get_theme_stylebox(state_name)
+					style.content_margin_left = C.px(8)
+					style.content_margin_right = C.px(8)
+				if division.id == "champ": button.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
 
 func _pager(parent: Node, id: String, key: String, total: int, capacity: int, y: float, x: float) -> Vector2i:
 	var paging := _page_state(key)
@@ -592,12 +609,12 @@ func _fixture_detail(fixture: Dictionary) -> void:
 	var place := _location(fixture)
 	var venue := _venue_name(fixture)
 	if not venue.is_empty(): place += "  ·  " + venue
-	var date := _date(fixture)
+	var date := P.fixture_date(fixture, true)
 	if not date.is_empty(): content.add_child(C.label(date + "  ·  " + _competition_name(fixture),25,WARM))
 	if competition_id in JAPAN_COMPETITIONS:
 		for note: String in Club.japan_date_notes(fixture): content.add_child(C.wrap(note, 20, C.MUTED))
-	elif competition_id in ["nationale", "access-nationale"]:
-		_nationale_date_notes(content, fixture)
+	elif competition_id in ["nationale", "access-nationale", "champ"]:
+		_date_provenance(content, fixture)
 	content.add_child(C.label(_phase(fixture) + "  ·  " + place, 24, C.MUTED))
 	if fixture.get("played", false):
 		var code := _fixture_outcome(fixture)
@@ -613,11 +630,13 @@ func _fixture_detail(fixture: Dictionary) -> void:
 			content.add_child(prepare)
 	view[0].popup_centered(Vector2i(880, 520))
 
-func _nationale_date_notes(content: VBoxContainer, fixture: Dictionary) -> void:
+func _date_provenance(content: VBoxContainer, fixture: Dictionary) -> void:
 	var source: String = {
 		"published": "Date publiée",
 		"published-phase-day": "Jour de phase publié",
 		"published-window": "Date retenue dans la fenêtre publiée",
+		"rfu-card": "Date publiée par la RFU",
+		"club-announced-stage-date": "Date de phase annoncée par le club",
 		"generated": "Date générée pour cette saison",
 		"generated-window": "Date retenue dans la fenêtre de cette saison",
 	}.get(fixture.get("dateSource", ""), "")
@@ -628,6 +647,11 @@ func _nationale_date_notes(content: VBoxContainer, fixture: Dictionary) -> void:
 	var timezone: Variant = fixture.get("timezone")
 	if fixture.get("kickoffLocal") is String and timezone is String and not timezone.is_empty():
 		content.add_child(C.wrap("Heure locale · " + timezone,20,C.MUTED))
+		var kickoff_source: String = {
+			"rfu_fixture_card": "Horaire publié dans la fiche RFU",
+			"rfu_match_centre": "Horaire publié dans le centre de match RFU",
+		}.get(fixture.get("kickoffSource", ""), "")
+		if not kickoff_source.is_empty(): content.add_child(C.wrap(kickoff_source, 20, C.MUTED))
 
 func _fixture_outcome(fixture: Dictionary) -> String:
 	if not fixture.get("played", false): return "—"

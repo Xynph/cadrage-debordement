@@ -59,6 +59,7 @@ static func home(app: Control) -> Control:
 	var pacific: Array = meta.get("pacificCatalogue", [])
 	var japan: Array = meta.get("japanCatalogue", [])
 	var nationale: Array = meta.get("nationaleCatalogue", [])
+	var champ: Array = meta.get("champCatalogue", [])
 	var next_chip := 112
 	if not france.is_empty():
 		var count := france.filter(func(item: Dictionary): return item.get("playable", true)).size()
@@ -79,8 +80,12 @@ static func home(app: Control) -> Control:
 	if not nationale.is_empty():
 		var count := nationale.filter(func(item: Dictionary): return item.get("playable", true)).size()
 		D.chip(content,Rect2(next_chip,895,249,52),"Nationale · %d clubs" % count,C.GOLD).name="EntryNationaleCount"
+	var chip_position := Vector2(next_chip,895) if nationale.is_empty() else Vector2(112,961)
+	if not champ.is_empty():
+		var count := champ.filter(func(item: Dictionary): return item.get("playable", true)).size()
+		D.chip(content,Rect2(112,961,270,52),"Champ Rugby · %d clubs" % count,C.BLUE).name="EntryChampCount"
+		chip_position = Vector2(396,961)
 	if int(database.get("playerCount",0))>0:
-		var chip_position := Vector2(next_chip,895) if nationale.is_empty() else Vector2(112,961)
 		D.chip(content,Rect2(chip_position,Vector2(305,52)),G.n(database.playerCount)+" joueurs · base active",C.MINT)
 	var club: Dictionary = app.model.get("club") if app.model.get("club") is Dictionary else {}
 	var accent: Color = GREEN if club.is_empty() else app.accent
@@ -173,8 +178,8 @@ static func workspace(app: Control, page: Control, creation: bool) -> Control:
 	column.add_child(banner)
 	D.rect(banner,Rect2(0,0,2560,height),C.PANEL)
 	var mode: String = app.pack_manager.mode("creation" if creation else "")
-	var art := str({"world-pacific":"pacific-ground","world-japan":"japan-ground","world-nationale":"nationale-ground"}.get(mode,"entry-ground" if creation else "club-forest"))
-	var crop := .52 if mode=="world-nationale" else .47 if mode in ["world-pacific","world-japan"] else 0.0
+	var art := str({"world-pacific":"pacific-ground","world-japan":"japan-ground","world-nationale":"nationale-ground","world-champ":"champ-ground"}.get(mode,"entry-ground" if creation else "club-forest"))
+	var crop := .52 if mode in ["world-nationale","world-champ"] else .47 if mode in ["world-pacific","world-japan"] else 0.0
 	D.photo(banner,art,Rect2(1250,0,1310,height),crop)
 	var fade := Control.new()
 	banner.add_child(fade)
@@ -305,7 +310,7 @@ static func _career_context(app: Control, page: Control) -> void:
 	if choices == null: return
 	var meta: Dictionary = app.model.get("meta", {})
 	var mode: String = app.pack_manager.mode("creation")
-	var catalogue_key: String = {"world": "worldCatalogue", "world-pacific": "pacificCatalogue", "world-japan": "japanCatalogue", "world-nationale": "nationaleCatalogue"}.get(mode, "legacyCatalogue")
+	var catalogue_key: String = {"world": "worldCatalogue", "world-pacific": "pacificCatalogue", "world-japan": "japanCatalogue", "world-nationale": "nationaleCatalogue", "world-champ": "champCatalogue"}.get(mode, "legacyCatalogue")
 	var catalogue: Array = meta.get(catalogue_key, app.catalogue)
 	var selected := {}
 	for club: Dictionary in catalogue:
@@ -325,7 +330,7 @@ static func _career_context(app: Control, page: Control) -> void:
 	var ground := str(selected.get("stadium", ""))
 	var objective := str(selected.get("goal", ""))
 	_tile(tiles, "01  ·  PROJET SPORTIF", "Votre feuille de route", objective if not objective.is_empty() else "Consultez les objectifs du club dans le Bureau après la prise de poste.", "training-session", C.MINT)
-	_tile(tiles, "02  ·  TERRAIN", "Jouer à domicile", ground if not ground.is_empty() else "Retrouvez les installations du club dans le carnet de carrière.", "nationale-ground" if division=="nationale" else "entry-ground", C.GOLD, true, .52 if division=="nationale" else .29)
+	_tile(tiles, "02  ·  TERRAIN", "Jouer à domicile", ground if not ground.is_empty() else "Retrouvez les installations du club dans le carnet de carrière.", str({"nationale":"nationale-ground","champ":"champ-ground"}.get(division,"entry-ground")), C.GOLD, true, .52 if division in ["nationale","champ"] else .29)
 	_tile(tiles, "03  ·  COMPÉTITION", Club.competition_name(division), "%s clubs jouables dans cette division" % G.n(rivals), "trophy", C.BLUE)
 	var column := choices.get_parent()
 	column.add_child(context)

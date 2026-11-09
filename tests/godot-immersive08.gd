@@ -421,6 +421,70 @@ func nationale(compact: bool) -> void:
 	await worker()
 	check(app.bridge.last_response_ok and app.model.live is Dictionary and app.model.live.get("pair")==fixture.get("pair"),"Le match de Nationale démarre avec les deux vrais clubs")
 
+func champ(compact: bool) -> void:
+	var dimensions := "1280x720" if compact else "2560x1440"
+	if compact:
+		root.size=Vector2i(1280,720)
+		if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(root.size)
+		await settle()
+		app._render()
+		await settle()
+	var catalogue: Array = app.model.meta.get("champCatalogue", [])
+	var count := catalogue.filter(func(club: Dictionary): return club.get("playable",true)).size()
+	var badge := app.find_child("EntryChampCount",true,false) as Panel
+	check(badge!=null and badge.get_child(0).text=="Champ Rugby · %d clubs" % count,"Accueil compte les clubs jouables de Champ Rugby")
+	if not await edition_action("EntryNewCareer"): return
+	if not await edition_action("CreationMode_world-champ"): return
+	if not await edition_action("CreationDivision_champ"): return
+	var scroll := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
+	for club_id in range(102,116):
+		var club := app.find_child("CreationClub%d" % club_id,true,false) as Button
+		check(scroll!=null and club!=null and scroll.get_global_rect().grow(1).encloses(club.get_global_rect()),"Club de Champ Rugby %d visible à %s" % [club_id,dimensions])
+	var art := app.find_child("Art_champ_ground",true,false) as TextureRect
+	var texture: Texture2D = art.texture if art!=null else null
+	if texture is AtlasTexture: texture=texture.atlas
+	check(texture!=null and texture.resource_path.ends_with("champ-ground.png"),"Le terrain original du Champ est décodé dans Création")
+	await capture(("71" if compact else "70")+"-champ-creation-"+dimensions)
+	var club_id := 115 if compact else 102
+	if not await edition_action("CreationClub%d" % club_id): return
+	if not await edition_action("CreationStart"): return
+	await worker()
+	check(app.bridge.last_response_ok and app.model.meta.get("edition")=="world-champ" and app.model.meta.get("leagueId")=="champ" and app.model.club.get("id")==club_id and app.model.calendar.size()==26,"La carrière Champ est créée avec les 26 vraies rencontres")
+	if app.model.calendar.is_empty(): return
+	var first: Dictionary = app.model.calendar.front()
+	check(app.model.get("next")==null and first.date=="2026-09-19" and first.timezone=="Europe/London" and str(first.scheduleSource).begins_with("rfu-published"),"La préparation précède le vrai premier match publié")
+	var timeline := app.find_child("OfficeTimeline", true, false)
+	var dates := timeline.find_children("OfficeTimelineDate*","Label",true,false) if timeline!=null else []
+	check(dates.size()==7 and dates[0].text.contains("19/09/2026") and dates[0].text.contains(first.kickoffLocal),"Le fil du Bureau affiche les sept échéances et l’heure du premier match")
+	await capture(("73" if compact else "72")+"-champ-bureau-"+dimensions)
+	app._navigate("Rivalités" if compact else "Calendrier")
+	await settle()
+	if not await edition_action("ChampPreparationAdvance" if compact else "CompetitionChampAdvance"): return
+	await worker()
+	var upcoming: Variant = app.model.get("next")
+	check(app.bridge.last_response_ok and app.model.meta.week==first.week and upcoming is Dictionary and upcoming.date==first.date and upcoming.venue==first.venue,"La vraie commande s’arrête au prochain match, avec sa date et son terrain")
+	if not upcoming is Dictionary: return
+	app._navigate("Calendrier")
+	await settle()
+	var calendar_date := app.find_child("CompetitionNextDate",true,false) as Label
+	var calendar_venue := app.find_child("CompetitionNextVenue",true,false) as Label
+	check(calendar_date!=null and first.kickoffLocal in calendar_date.text and calendar_venue!=null and calendar_venue.text==first.venue,"Le calendrier présente l’heure locale et le lieu du premier match")
+	await capture(("75" if compact else "74")+"-champ-calendrier-"+dimensions)
+	var rows := app.find_children("CalendarFixture_*","Button",true,false)
+	var found := rows.find_custom(func(row: Node): return row.get_meta("fixture_id", "")==str(first.id))
+	check(found>=0,"La première journée du Champ est accessible au clic")
+	if found>=0:
+		await click(rows[found])
+		await settle()
+		var detail := app.get_node_or_null("CompetitionFixtureDetails") as AcceptDialog
+		check(detail!=null and detail.visible,"Le vrai détail du match Champ est visible")
+		if detail!=null:
+			var notes := detail.find_children("*","Label",true,false).map(func(label: Label): return label.text)
+			check("Date publiée par la RFU" in notes and "Heure locale · Europe/London" in notes and notes.any(func(note: String): return note.begins_with("Horaire publié")),"La fiche sépare la source de la date, l’horaire publié et le fuseau")
+			await key(KEY_ESCAPE)
+	if not await edition_action("CompetitionPrepareMatch"): return
+	check(app.route=="Préparation" and app.model.next==upcoming,"Le calendrier ouvre le vrai dossier de préparation du match")
+
 func reception() -> void:
 	app._navigate("Bureau")
 	await settle()
@@ -872,10 +936,11 @@ func run() -> void:
 	root.add_child(app)
 	await worker()
 	var scope := OS.get_environment("CD_IMMERSIVE_SCOPE")
-	if scope in ["pacific", "japan", "japan-d2", "nationale", "nationale-compact"]:
+	if scope in ["pacific", "japan", "japan-d2", "nationale", "nationale-compact", "champ", "champ-compact"]:
 		match scope:
 			"pacific": await pacific()
 			"japan", "japan-d2": await japan(scope=="japan-d2")
+			"champ", "champ-compact": await champ(scope=="champ-compact")
 			_: await nationale(scope=="nationale-compact")
 		app.queue_free()
 		await settle()

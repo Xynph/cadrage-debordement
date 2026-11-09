@@ -4,21 +4,26 @@ const Club = preload("res://ui/club_views.gd")
 const G = preload("res://ui/game_skin.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 
-static func fixture_date(fixture: Dictionary) -> String:
+static func fixture_date(fixture: Dictionary, show_timezone: bool = false) -> String:
 	var date: Variant = fixture.get("date")
 	if not date is String or date.is_empty(): return ""
 	var caption := Club._calendar_date(date)
 	var local_time: Variant = fixture.get("kickoffLocal")
-	return caption + " · " + local_time if local_time is String and not local_time.is_empty() else caption
+	if local_time is String and not local_time.is_empty():
+		caption += " · " + local_time
+		if show_timezone and fixture.get("timezone") == "Europe/London": caption += " (heure locale)"
+	return caption
 
 static func fixture_ground(meta: Dictionary, fallback: String) -> String:
 	if meta.get("leagueId") == "nationale": return "nationale-ground"
 	return SeasonPreparation.ground(meta, fallback)
 
 static func next_nationale_fixture(model: Dictionary) -> Dictionary:
-	var meta: Dictionary = model.get("meta", {})
-	if meta.get("leagueId") != "nationale": return {}
-	var week := int(meta.get("week", 0))
+	if model.get("meta", {}).get("leagueId") != "nationale": return {}
+	return next_scheduled_fixture(model)
+
+static func next_scheduled_fixture(model: Dictionary) -> Dictionary:
+	var week := int(model.get("meta", {}).get("week", 0))
 	for fixture: Dictionary in model.get("calendar", []):
 		if not fixture.get("played", false) and int(fixture.get("week", 0)) > week: return fixture
 	return {}

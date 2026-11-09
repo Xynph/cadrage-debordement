@@ -58,6 +58,7 @@ func _hero() -> void:
 	var hero := D.panel(self, Rect2(0, 0, WIDTH, 312), "", "", "", "RivalryHero")
 	hero.clip_contents = true
 	var japan := SeasonPreparation.is_japan(app.model.meta)
+	var champ := SeasonPreparation.is_champ(app.model.meta)
 	var ground := P.fixture_ground(app.model.meta,"stadium")
 	D.photo(hero, ground, Rect2(938, 0, 1310, 312),.48 if ground != "stadium" else 0.0)
 	C.veil(hero)
@@ -77,8 +78,8 @@ func _hero() -> void:
 		D.text(tile, 290, 53, str(number) if not data.is_empty() else "—", 44, C.IVORY, 800, 76, HORIZONTAL_ALIGNMENT_RIGHT)
 	var preparation := SeasonPreparation.data(app.model.meta)
 	if not preparation.is_empty():
-		var title := "Préparation de League One" if japan else "Préparation du Pacifique"
-		var section := "JapanPreparation" if japan else "PacificPreparation"
+		var title := "Préparation du Champ Rugby" if champ else "Préparation de League One" if japan else "Préparation du Pacifique"
+		var section := "ChampPreparation" if champ else "JapanPreparation" if japan else "PacificPreparation"
 		var card := D.panel(hero,Rect2(1484,28,735,256),title,"calendar","",section)
 		D.text(card,24,110,World.preparation_note(preparation),33,C.IVORY,700,685)
 		D.text(card,24,155,"Les semaines sont simulées jusqu’à la prochaine rencontre.",22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)

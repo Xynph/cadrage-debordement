@@ -3,7 +3,7 @@ extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const Nationale = preload("res://ui/immersive08/nationale_archive.gd")
-const DIVISIONS = {"elite":"Élite", "accession":"Accession", "nationale":"Nationale", "prem":"Premiership", "urc":"United Rugby Championship", "srp":"Super Rugby Pacific", "jlo-d1":"League One · Division 1", "jlo-d2":"League One · Division 2"}
+const DIVISIONS = {"elite":"Élite", "accession":"Accession", "nationale":"Nationale", "champ":"Champ Rugby", "prem":"Premiership", "urc":"United Rugby Championship", "srp":"Super Rugby Pacific", "jlo-d1":"League One · Division 1", "jlo-d2":"League One · Division 2"}
 
 static func _id_index(ids: Array, club_id: int) -> int:
 	# JSON.parse_string représente les nombres par des flottants : Array.find
@@ -162,13 +162,15 @@ static func build(app: Control) -> Control:
 	var data := project(app.model, int(app.model.get("club", {}).get("id", -1)))
 	var japanese: bool = app.model.get("meta",{}).get("edition") == "world-japan"
 	var nationale: bool = app.model.get("meta",{}).get("edition") == "world-nationale"
-	if japanese or nationale: data.seasons = world_seasons(app,data.club_id)
+	var champ: bool = app.model.get("meta",{}).get("edition") == "world-champ"
+	if japanese or nationale or champ: data.seasons = world_seasons(app,data.club_id)
 	G.chapter(sheet, "21", "L’histoire de " + data.club_name, "Les faits conservés pour ce club, quelle que soit la carrière de son coach.", app.accent)
 	var list := G.scroll(sheet)
 	list.get_parent().name = "ClubMemoryScroll"
 	var notice := "Points, scores de saisons, affluence, finances et évolution des attributs ne sont pas conservés dans ces archives."
 	if japanese: notice = "Les rangs de phase régulière et les scores des barrages japonais sont conservés."
 	if nationale: notice = "Les rangs de phase régulière, les mouvements et le barrage Pro D2 / Nationale sont conservés."
+	if champ: notice = "Les rangs de phase régulière, les titres et les mouvements archivés sont présentés ici."
 	list.add_child(G.wrap("Identités du pack actuel · 15 dernières saisons archivées au maximum. "+notice,13))
 	_comparison(list, app, data.seasons)
 	list.add_child(G.separator())

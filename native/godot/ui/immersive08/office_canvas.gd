@@ -50,6 +50,12 @@ static func _fixture(card: Panel, app: Control) -> void:
 		elif preparation.is_empty():
 			D.text(card,27,100,"La saison se termine." if app.model.meta.get("canAdvanceSeason",false) else "Le travail continue.",42,C.IVORY,700,740)
 			D.text(card,27,156,"Retrouvez les résultats et préparez la suite du projet.",21,C.MUTED,400,740,HORIZONTAL_ALIGNMENT_LEFT,true)
+		elif SeasonPreparation.is_champ(app.model.meta):
+			var fixture := P.next_scheduled_fixture(app.model)
+			D.chip(card,Rect2(24,22,281,29),"CHAMP RUGBY",C.GOLD)
+			D.text(card,27,121,"Préparation du Champ Rugby",58,C.IVORY,800,920)
+			D.text(card,27,183,P.fixture_date(fixture, true) if not fixture.is_empty() else World.preparation_note(preparation),30,C.IVORY,600,720)
+			D.text(card,27,223,P.fixture_venue(fixture),21,C.MUTED,400,735,HORIZONTAL_ALIGNMENT_LEFT,true)
 		else:
 			D.chip(card,Rect2(24,22,322 if japan else 281,29),"JAPAN RUGBY LEAGUE ONE" if japan else "SUPER RUGBY PACIFIC",C.GOLD)
 			D.text(card,27,121,"La préparation de League One." if japan else "La préparation du Pacifique.",58,C.IVORY,800,920)
@@ -71,7 +77,7 @@ static func _fixture(card: Panel, app: Control) -> void:
 	var calendar := C.icon("calendar",25,C.GOLD)
 	card.add_child(calendar)
 	D.place(calendar,Rect2(29,194,25,25))
-	var date := P.fixture_date(next)
+	var date := P.fixture_date(next, true)
 	if date.is_empty(): date = "SEMAINE %d" % [int(next.get("week",0))+1]
 	D.text(card,67,216,date+" · "+P.league_name(app.model),28,C.IVORY,600,680).name="OfficeFixtureDate"
 	var home := C.icon("home",23,C.MUTED)
@@ -214,7 +220,10 @@ static func _timeline(card: Panel, app: Control) -> void:
 		var x := 20+i*316
 		var opponent: Dictionary = fixture.get("away",{}) if fixture.get("home",{}).get("id")==app.model.club.id else fixture.get("home",{})
 		D.rect(card,Rect2(x,75,304,132),Color("163a2b") if i==0 else Color("10191b"),5,C.LINE)
-		D.text(card,x+16,103,"SEM. %02d" % (int(fixture.get("week",0))+1),21,C.IVORY,700,270)
+		var period := D.text(card,x+16,103,Office.timeline_period(fixture),21,C.IVORY,700,270)
+		period.name = "OfficeTimelineDate%d" % i
+		var local_date := P.fixture_date(fixture, true)
+		if not local_date.is_empty(): Office.describe_fixture(period, local_date)
 		D.line(card,Vector2(x+14,118),Vector2(x+290,118))
 		D.text(card,x+16,151,G.club_name(opponent),25,C.IVORY,600,272)
 		var label := Office.short_fixture_label(app.model,fixture)
