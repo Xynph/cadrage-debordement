@@ -17,6 +17,7 @@ static func build(app: Control, parent: Container, data: Dictionary) -> void:
 	overview.name = "StaffCareerOverview"
 	parent.add_child(overview)
 	overview.add_child(G.wrap(data.get("notice", ""), 13))
+	_mentoring(app, overview)
 	var teams: Array = app.model.get("staff", {}).get("teams", data.get("teams", []))
 	var chooser := OptionButton.new()
 	chooser.name = "StaffClub"
@@ -132,3 +133,75 @@ static func _departure(app: Control, parent: Container, person: Dictionary, data
 	button.name = "StaffRelease" if command == "staff_release" else "StaffRetire"
 	button.set_meta("staff_id", person.id)
 	parent.add_child(button)
+
+# Shared by the classic Staff page and its immersive styling.
+static func _mentoring(app: Control, parent: Container) -> void:
+	var data: Dictionary = app.model.get("clubLife", {}).get("staffMentoring", {})
+	if not data.get("available", false): return
+	var open := G.button("MENTORAT DES JEUNES · %d LIEN(S) →" % data.get("assignments", []).size(), func(): _mentor_overview(app, data))
+	open.name = "StaffMentoringOpen"
+	parent.add_child(open)
+
+static func _mentor_overview(app: Control, data: Dictionary) -> void:
+	var view := Dialogs.dialog(app, "Transmettre aux jeunes", "StaffMentoringOverview", 700)
+	var dialog: AcceptDialog = view[0]
+	var parent: VBoxContainer = view[1]
+	parent.add_child(G.wrap(data.get("notice", ""), 14))
+	if not data.get("enabled", false):
+		var activate := G.button("ACTIVER LE MENTORAT", func():
+			dialog.queue_free()
+			app.confirm("Activer le mentorat", "Cette carrière conservera les affectations et les séances réellement encadrées. Aucun point de croissance ni salaire supplémentaire.", func(): app._command("staff_mentoring_enable", {"confirmed":true,"context":data.context.duplicate(true)})))
+		activate.name = "StaffMentoringEnable"
+		activate.disabled = not data.get("canEnable", false)
+		parent.add_child(activate)
+	else:
+		if int(data.get("dormantAssignments", 0)) > 0: parent.add_child(G.wrap("%d lien(s) devenus indisponibles seront libérés lors de votre prochaine affectation." % int(data.dormantAssignments), 12))
+		for assignment: Dictionary in data.get("assignments", []):
+			parent.add_child(G.wrap("%s → %s · %s · %d/8 séances · %d %% ciblés%s" % [assignment.staffName, assignment.playerName, assignment.focus, int(assignment.sessions), roundi(float(assignment.targetShare) * 100), " · " + str(assignment.reason) if not assignment.get("active", false) else ""], 13))
+			var remove := G.button("LIBÉRER LE MENTOR", func():
+				dialog.queue_free(); app._command("staff_mentor_remove", {"confirmed":true,"context":data.context.duplicate(true),"staffId":str(assignment.staffId)}))
+			remove.name = "StaffMentorRemove"
+			remove.disabled = data.get("locked", true)
+			parent.add_child(remove)
+		var assign := G.button("CHOISIR UN MENTOR ET UN JEUNE →", func(): _mentor_dialog(app, data))
+		assign.name = "StaffMentorAssign"
+		assign.disabled = data.get("locked", true) or data.get("mentors", []).is_empty() or data.get("players", []).is_empty()
+		parent.add_child(assign)
+		if data.get("players", []).is_empty(): parent.add_child(G.wrap("Aucun jeune de 15 à 24 ans avec progression spécialisée disponible. Les courbes annuelles restent inchangées.", 12))
+	dialog.popup_centered()
+
+static func _mentor_dialog(app: Control, data: Dictionary) -> void:
+	var view := Dialogs.dialog(app, "Un mentor, un jeune", "StaffMentoring", 700)
+	var dialog: AcceptDialog = view[0]
+	var list: VBoxContainer = view[1]
+	list.add_child(G.wrap("Le mentor consacre son suivi à un seul jeune. La qualité ciblée prend une part de son expérience générale. Un plan individuel explicite garde priorité. Changer de qualité remet à zéro ses XP ciblés partiels, selon la règle existante.", 14))
+	var mentors := OptionButton.new()
+	mentors.name = "StaffMentorChoice"
+	for member: Dictionary in data.get("mentors", []):
+		mentors.add_item("%s · %d/8 séances observées%s" % [member.name, int(member.observedSessions), " · ancien joueur" if member.get("converted", false) else ""])
+		mentors.set_item_metadata(mentors.item_count - 1, member.id)
+	list.add_child(mentors)
+	var pupils := OptionButton.new()
+	pupils.name = "StaffMentorPupil"
+	for player: Dictionary in data.get("players", []):
+		pupils.add_item(str(player.name) + " · " + str(player.pos))
+		pupils.set_item_metadata(pupils.item_count - 1, player.id)
+	list.add_child(pupils)
+	var focus := OptionButton.new()
+	focus.name = "StaffMentorFocus"
+	list.add_child(focus)
+	var refresh := func():
+		focus.clear()
+		if pupils.selected < 0: return
+		var selected: Dictionary = data.players[pupils.selected]
+		for quality: Dictionary in selected.get("focusOptions", []):
+			focus.add_item(str(quality.label)); focus.set_item_metadata(focus.item_count - 1, quality.key)
+	pupils.item_selected.connect(func(_index: int): refresh.call())
+	refresh.call()
+	var confirm := G.button("CONFIRMER L’AFFECTATION", func():
+		if mentors.selected < 0 or pupils.selected < 0 or focus.selected < 0: return
+		var payload := {"confirmed":true,"context":data.context.duplicate(true),"staffId":str(mentors.get_item_metadata(mentors.selected)),"playerId":str(pupils.get_item_metadata(pupils.selected)),"focus":str(focus.get_item_metadata(focus.selected))}
+		dialog.queue_free(); app._command("staff_mentor_assign", payload), true)
+	confirm.name = "StaffMentorConfirm"
+	list.add_child(confirm)
+	dialog.popup_centered()
