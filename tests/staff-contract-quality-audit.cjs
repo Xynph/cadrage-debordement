@@ -38,3 +38,28 @@ test('all production edition builders and staff selectors produce reproducible a
  assert.ok(last.counts.contractOfficialDeclared>0&&last.counts.contractEstimated>0);assert.ok(warning(last,'staff-source-unknown').count>0);assert.equal(last.counts.openingActiveTerms,114);assert.equal(last.counts.openingExact,96);assert.equal(last.counts.openingMinimum,18);assert.equal(last.counts.openingChanges,71);
  const text=JSON.stringify(a);assert.equal(/https?:\/\//.test(text),false);assert.equal(text.includes(inputs.staffByDatabase[inputs.editions.at(-1).id].clubs[0].members[0].name),false);
 });
+test('missing or partial opening source never certifies active counts or zero aliases for v5',()=>{
+ const f=fixture();f.opening=null;
+ const missing=auditEdition(f);assert.equal(missing.status,'unknown');assert.equal(missing.valid,false);assert.equal(missing.opening.status,'missing');assert.equal(missing.opening.applies,true);assert.equal(missing.errors.length,0);assert.ok(warning(missing,'opening-register-missing'));
+ for(const key of ['prospectiveActivePlayers','inactiveAliases','openingChanges'])assert.equal(missing.counts[key],null,key);
+ assert.ok(missing.clubs.every(c=>c.prospectiveActivePlayers===null));assert.equal(missing.counts.players,2,'catalogue count remains known');
+ for(const field of ['players','inactiveAliases','databaseId','asOf']){const partial=fixture();delete partial.opening[field];const r=auditEdition(partial);assert.equal(r.valid,false);assert.equal(r.status,'invalid');assert.equal(r.opening.status,'invalid');assert.equal(r.counts.prospectiveActivePlayers,null);assert.equal(r.counts.inactiveAliases,null);assert.ok(codes(r).includes('invalid-opening-register'));}
+ const bad=fixture();bad.opening.inactiveAliases={'world:player:a':{clubId:0,canonicalId:'world:missing'}};assert.equal(auditEdition(bad).counts.prospectiveActivePlayers,null,'contradictory alias provenance does not yield a certified active count');
+});
+test('edition identity/version/mode contradictions cannot select an inapplicable opening policy',()=>{
+ const f=fixture();f.edition.registry.version=5;f.edition.registry.marker={id:'fixture-v5',version:5};
+ const mismatch=structuredClone(f);mismatch.edition.version=4;mismatch.edition.mode='world-nationale';const r=auditEdition(mismatch);
+ assert.equal(r.status,'invalid');assert.equal(r.opening.status,'unknown');assert.equal(r.opening.applies,null);assert.equal(r.counts.prospectiveActivePlayers,null);assert.ok(codes(r).includes('edition-registry-version-mismatch'));
+ for(const [alter,code] of [
+  [x=>x.edition.id='different-edition','edition-registry-id-mismatch'],
+  [x=>x.edition.registry.marker.id='other-marker','registry-marker-id-mismatch'],
+  [x=>x.edition.registry.marker.version=4,'registry-marker-version-mismatch'],
+  [x=>x.edition.mode='world-nationale','edition-mode-version-mismatch']
+ ]){const x=structuredClone(f);alter(x);assert.ok(codes(auditEdition(x)).includes(code),code);assert.equal(auditEdition(x).counts.inactiveAliases,null);}
+ const unknown=fixture();delete unknown.edition.version;assert.equal(auditEdition(unknown).status,'unknown');assert.equal(auditEdition(unknown).opening.applies,null);
+ const old=fixture();old.edition.version=4;old.edition.mode='world-nationale';old.opening=null;const nonApplicable=auditEdition(old);assert.equal(nonApplicable.valid,true);assert.equal(nonApplicable.opening.status,'not-applicable');assert.equal(nonApplicable.opening.applies,false);assert.equal(nonApplicable.counts.prospectiveActivePlayers,2);
+});
+test('CLI exits one with a redacted stable report when production input files are missing',()=>{
+ const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),{spawnSync}=require('node:child_process'),dir=fs.mkdtempSync(path.join(os.tmpdir(),'staff-contract-missing-private-'));
+ try{fs.mkdirSync(path.join(dir,'ci'));const copied=path.join(dir,'ci','audit.cjs');fs.copyFileSync(require.resolve('../ci/staff-contract-quality-audit.cjs'),copied);const run=spawnSync(process.execPath,[copied],{encoding:'utf8'});assert.equal(run.status,1);assert.deepEqual(JSON.parse(run.stdout),{schema:'staff-contract-quality-v1',valid:false,errors:[{code:'production-inputs-unavailable'}]});assert.equal(run.stderr,'');assert.equal(run.stdout.includes(dir),false);}finally{fs.rmSync(dir,{recursive:true,force:true});}
+});

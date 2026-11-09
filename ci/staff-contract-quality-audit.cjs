@@ -7,6 +7,9 @@ const opaque=x=>typeof x==='string'&&/^[a-zA-Z0-9:_-]{1,100}$/.test(x)?x:null;
 const day=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&Number.isFinite(Date.parse(x+'T00:00:00Z'))&&new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
 const dated=x=>day(x)||(typeof x==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(x)&&day(x.slice(0,10))&&Number.isFinite(Date.parse(x)));
 const messages={
+ 'opening-register-missing':'Registre d’ouverture absent : exclusions d’alias et effectifs actifs prospectifs non vérifiés.',
+ 'opening-register-unusable':'Registre d’ouverture incomplet ou incohérent : aucun nombre actif n’est certifié.',
+ 'edition-policy-unknown':'Politique d’édition non déterminable ; applicabilité du registre d’ouverture inconnue.',
  'staff-missing':'Aucune fiche de staff embarquée pour ce club ; couverture documentaire inconnue.',
  'staff-historical':'Fiche historique : aucune fonction actuelle ne peut être déduite.',
  'staff-source-unknown':'Ni date ni saison de source embarquée : fonction actuelle non vérifiable.',
@@ -29,7 +32,24 @@ function auditEdition(input={}){
   if(w.examples.length<5)w.examples.push({clubId:Number.isSafeInteger(clubId)?clubId:null,entityId:opaque(entityId)});
  };
  const registry=edition?.registry;
- if(!object(edition)||!object(registry)||!Array.isArray(registry.clubs))return {edition:null,valid:false,errors:[{code:'invalid-edition',clubId:null,entityId:null}],warnings:[],clubs:[],counts:{}};
+ if(!object(edition)||!object(registry)||!Array.isArray(registry.clubs))return {edition:null,valid:false,status:'invalid',opening:{status:'unknown',applies:null},errors:[{code:'invalid-edition',clubId:null,entityId:null}],warnings:[],clubs:[],counts:{}};
+ const modes={1:'world',2:'world-pacific',3:'world-japan',4:'world-nationale',5:'world-champ'};
+ let linkageInvalid=false;
+ const link=(bad,code)=>{if(bad){add(code);linkageInvalid=true;}};
+ link(edition.id!==undefined&&registry.id!==undefined&&edition.id!==registry.id,'edition-registry-id-mismatch');
+ link(edition.version!==undefined&&registry.version!==undefined&&edition.version!==registry.version,'edition-registry-version-mismatch');
+ link(registry.marker?.id!==undefined&&registry.id!==undefined&&registry.marker.id!==registry.id,'registry-marker-id-mismatch');
+ link(registry.marker?.version!==undefined&&registry.version!==undefined&&registry.marker.version!==registry.version,'registry-marker-version-mismatch');
+ link(registry.marker?.version!==undefined&&edition.version!==undefined&&registry.marker.version!==edition.version,'edition-marker-version-mismatch');
+ link(edition.mode!==undefined&&registry.mode!==undefined&&edition.mode!==registry.mode,'edition-registry-mode-mismatch');
+ link(modes[edition.version]!==undefined&&edition.mode!==undefined&&edition.mode!==modes[edition.version],'edition-mode-version-mismatch');
+ const policyKnown=!linkageInvalid&&Number.isInteger(edition.version)&&Object.hasOwn(modes,edition.version);
+ if(!policyKnown)warn('edition-policy-unknown');
+ const openingApplies=policyKnown&&edition.version===5;
+ const openingHeaderValid=object(opening)&&opening.schema==='world-initial-contracts-v1'&&opening.databaseId===registry.id&&day(opening.asOf)&&object(opening.players)&&object(opening.inactiveAliases);
+ let openingStatus=!policyKnown?'unknown':!openingApplies?'not-applicable':opening===null?'missing':openingHeaderValid?'available':'invalid';
+ if(openingStatus==='missing')warn('opening-register-missing');
+ if(openingStatus==='invalid'){add('invalid-opening-register');warn('opening-register-unusable');}
  const clubs=registry.clubs,byClub=new Map(),players=new Map(),staffIds=new Set();
  const counts={catalogueClubs:clubs.length,playableClubs:0,players:0,prospectiveActivePlayers:0,staffMembers:0,staffHistorical:0,staffHistoryUnknown:0,staffCurrentDeclared:0,contractOfficialDeclared:0,contractEstimated:0,contractUnknown:0,openingExact:0,openingMinimum:0,inactiveAliases:0,aliasCrossClub:0,openingActiveTerms:0,openingChanges:0};
  const clubReports=[];
@@ -73,11 +93,10 @@ function auditEdition(input={}){
    if(dated(member.sourceDate)&&day(member.observedAt)&&Date.parse(member.sourceDate)>Date.parse(member.observedAt+'T23:59:59Z'))warn('staff-source-after-observation',c.id,member.id);
   }
  }
- const openingApplies=edition.version===5&&opening!==null;
- const terms=openingApplies&&object(opening?.players)?opening.players:{};
- const aliases=openingApplies&&object(opening?.inactiveAliases)?opening.inactiveAliases:{};
- if(openingApplies){
-  if(opening.schema!=='world-initial-contracts-v1'||opening.databaseId!==registry.id||!day(opening.asOf)||!object(opening.players)||!object(opening.inactiveAliases))add('invalid-opening-register');
+ const terms=openingApplies&&openingHeaderValid?opening.players:{};
+ const aliases=openingApplies&&openingHeaderValid?opening.inactiveAliases:{};
+ const openingErrorsBefore=errors.length;
+ if(openingApplies&&openingHeaderValid){
   for(const [id,term] of Object.entries(terms)){
    const owner=players.get(id);
    if(!owner)add('dangling-opening-player',term?.clubId,id);
@@ -103,6 +122,7 @@ function auditEdition(input={}){
    if(owner&&canonical&&owner.club.id!==canonical.club.id)counts.aliasCrossClub++;
   }
  }
+ if(openingApplies&&openingHeaderValid&&errors.length>openingErrorsBefore){openingStatus='invalid';warn('opening-register-unusable');}
  for(const c of clubs){
   if(!object(c)||!Number.isSafeInteger(c.id)||c.id<0||!Array.isArray(c.players))continue;
   const members=staffClubs.get(c.id)?.members,active=c.players.filter(p=>!object(aliases[p?.id])||aliases[p.id].clubId!==c.id);
@@ -128,7 +148,13 @@ function auditEdition(input={}){
    else {counts.contractUnknown++;warn('contract-unknown',c.id,player.id);}
   }
  }
- return {edition:opaque(edition.id),mode:opaque(edition.mode),valid:errors.length===0,counts,errors,warnings:[...warnings.values()].sort((a,b)=>a.code.localeCompare(b.code)),clubs:clubReports.sort((a,b)=>a.clubId-b.clubId)};
+ const openingUnknown=['unknown','missing','invalid'].includes(openingStatus);
+ if(openingUnknown){
+  for(const key of ['prospectiveActivePlayers','openingExact','openingMinimum','inactiveAliases','aliasCrossClub','openingActiveTerms','openingChanges'])counts[key]=null;
+  for(const club of clubReports)club.prospectiveActivePlayers=null;
+ }
+ const status=errors.length?'invalid':openingUnknown?'unknown':'valid';
+ return {edition:opaque(edition.id),mode:opaque(edition.mode),valid:status==='valid',status,opening:{status:openingStatus,applies:policyKnown?openingApplies:null},counts,errors,warnings:[...warnings.values()].sort((a,b)=>a.code.localeCompare(b.code)),clubs:clubReports.sort((a,b)=>a.clubId-b.clubId)};
 }
 function loadProductionInputs(root=path.resolve(__dirname,'..')){
  const read=name=>require(path.join(root,'native/engine',name));
