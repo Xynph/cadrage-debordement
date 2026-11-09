@@ -33,7 +33,7 @@ static func build(app: Control) -> Control:
 	if recent != null:
 		page.add_child(recent)
 		page.custom_minimum_size.y += C.px(150)
-	_timeline(_card(page,Rect2(280,1118,2248,226),"LE FIL DE VOTRE SAISON","calendar","OfficeTimeline"),app,recent)
+	_timeline(_card(page,Rect2(280,1118,2248,226),"PROCHAINS MATCHS","calendar","OfficeTimeline"),app,recent)
 	return page
 
 static func _fixture(card: Panel, app: Control) -> void:
@@ -236,8 +236,11 @@ static func _timeline(card: Panel, app: Control, recent: PanelContainer) -> void
 		var opponent: Dictionary = fixture.get("away",{}) if at_home else fixture.get("home",{})
 		var location := P.fixture_location_kind(fixture, app.model.club.id)
 		var place: String = {"neutral":"Neutre","home":"Domicile","away":"Extérieur"}.get(location,"Terrain à confirmer")
-		tiles.append(D.rect(card,Rect2(x,75,304,132),Color("163a2b") if i==0 else Color("10191b"),5,C.LINE))
-		var period := D.text(card,x+16,103,Office.timeline_period(fixture),21,C.IVORY,700,244)
+		var is_next := i == 0
+		var border := C.GOLD if is_next else Office.UPCOMING_BORDER
+		tiles.append(D.rect(card,Rect2(x,75,304,132),Color("39301e") if is_next else Office.UPCOMING_TILE,5,border))
+		var period := D.text(card,x+16,103,Office.timeline_period(fixture),21,C.GOLD,700,174 if is_next else 244)
+		if is_next: D.chip(card,Rect2(x+199,84,89,25),"À SUIVRE",C.AMBER)
 		var marker := C.icon(C.fixture_location_icon(location,true),48,C.GOLD)
 		marker.name = "OfficeVenueIcon%d" % i
 		card.add_child(marker)
@@ -245,7 +248,7 @@ static func _timeline(card: Panel, app: Control, recent: PanelContainer) -> void
 		period.name = "OfficeTimelineDate%d" % i
 		var local_date := P.fixture_date(fixture, true)
 		if not local_date.is_empty(): Office.describe_fixture(period, local_date)
-		D.line(card,Vector2(x+14,118),Vector2(x+290,118))
+		D.line(card,Vector2(x+14,118),Vector2(x+290,118),Office.UPCOMING_BORDER)
 		var crest := Office.opponent_crest(opponent,42)
 		crest.name += str(i)
 		card.add_child(crest)
