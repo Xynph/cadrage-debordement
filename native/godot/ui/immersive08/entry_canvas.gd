@@ -53,40 +53,15 @@ static func home(app: Control) -> Control:
 	D.text(content,106,775,"Une saison à écrire.",103,C.IVORY,700,1458)
 	D.text(content,112,851,"Prenez les rênes. Préparez le XV, faites grandir le club et vivez la saison.",29,C.IVORY,400,1400,HORIZONTAL_ALIGNMENT_LEFT,true)
 	var meta: Dictionary = app.model.get("meta",{})
-	var database: Dictionary = meta.get("database",{})
-	var france: Array = meta.get("legacyCatalogue", app.catalogue)
-	var world: Array = meta.get("worldCatalogue", [])
-	var pacific: Array = meta.get("pacificCatalogue", [])
-	var japan: Array = meta.get("japanCatalogue", [])
-	var nationale: Array = meta.get("nationaleCatalogue", [])
-	var champ: Array = meta.get("champCatalogue", [])
+	var database: Dictionary = app.pack_manager.database("creation")
+	var catalogue: Array = app.pack_manager.creation_catalogue()
 	var next_chip := 112
-	if not france.is_empty():
-		var count := france.filter(func(item: Dictionary): return item.get("playable", true)).size()
-		D.chip(content,Rect2(next_chip,895,249,52),"France · %d clubs" % count,C.GOLD).name="EntryFranceCount"
-		next_chip+=263
-	if not world.is_empty():
-		var count := world.filter(func(item: Dictionary): return item.get("playable", true)).size()
-		D.chip(content,Rect2(next_chip,895,249,52),"Monde · %d clubs" % count,C.BLUE).name="EntryWorldCount"
-		next_chip+=263
-	if not pacific.is_empty():
-		var count := pacific.filter(func(item: Dictionary): return item.get("playable", true)).size()
-		D.chip(content,Rect2(next_chip,895,249,52),"Pacifique · %d clubs" % count,C.MINT).name="EntryPacificCount"
-		next_chip+=263
-	if not japan.is_empty():
-		var count := japan.filter(func(item: Dictionary): return item.get("playable", true)).size()
-		D.chip(content,Rect2(next_chip,895,249,52),"Japon · %d clubs" % count,C.GOLD).name="EntryJapanCount"
-		next_chip+=263
-	if not nationale.is_empty():
-		var count := nationale.filter(func(item: Dictionary): return item.get("playable", true)).size()
-		D.chip(content,Rect2(next_chip,895,249,52),"Nationale · %d clubs" % count,C.GOLD).name="EntryNationaleCount"
-	var chip_position := Vector2(next_chip,895) if nationale.is_empty() else Vector2(112,961)
-	if not champ.is_empty():
-		var count := champ.filter(func(item: Dictionary): return item.get("playable", true)).size()
-		D.chip(content,Rect2(112,961,270,52),"Champ Rugby · %d clubs" % count,C.BLUE).name="EntryChampCount"
-		chip_position = Vector2(396,961)
+	if not catalogue.is_empty():
+		var count := catalogue.filter(func(item: Dictionary): return item.get("playable", true)).size()
+		D.chip(content,Rect2(next_chip,895,270,52),"Monde · %d clubs jouables" % count,C.BLUE).name="EntryWorldCount"
+		next_chip += 284
 	if int(database.get("playerCount",0))>0:
-		D.chip(content,Rect2(chip_position,Vector2(305,52)),G.n(database.playerCount)+" joueurs · base active",C.MINT)
+		D.chip(content,Rect2(next_chip,895,305,52),G.n(database.playerCount)+" joueurs au départ",C.MINT)
 	var club: Dictionary = app.model.get("club") if app.model.get("club") is Dictionary else {}
 	var accent: Color = GREEN if club.is_empty() else app.accent
 	_choices(D.panel(content,Rect2(1642,248,827,1008),"","","","EntryCareerCard"),app,club,meta,accent)
@@ -331,10 +306,7 @@ static func _fit_pagination(page: Control) -> void:
 static func _career_context(app: Control, page: Control) -> void:
 	var choices := page.find_child("CreationClubsScroll", true, false) as ScrollContainer
 	if choices == null: return
-	var meta: Dictionary = app.model.get("meta", {})
-	var mode: String = app.pack_manager.mode("creation")
-	var catalogue_key: String = {"world": "worldCatalogue", "world-pacific": "pacificCatalogue", "world-japan": "japanCatalogue", "world-nationale": "nationaleCatalogue", "world-champ": "champCatalogue"}.get(mode, "legacyCatalogue")
-	var catalogue: Array = meta.get(catalogue_key, app.catalogue)
+	var catalogue: Array = app.pack_manager.creation_catalogue()
 	var selected := {}
 	for club: Dictionary in catalogue:
 		if int(club.id) == app.selected_club:

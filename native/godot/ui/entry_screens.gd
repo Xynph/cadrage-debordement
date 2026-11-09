@@ -124,6 +124,17 @@ static func home(app: Control) -> Control:
 	footer.add_child(G.button("CRÉDITS", app._credits))
 	return page
 
+const CREATION_COUNTRIES := {
+	"FR": ["France", preload("res://art/flags/fr.svg")],
+	"GB": ["Angleterre", preload("res://art/flags/gb-eng.svg")],
+	"JP": ["Japon", preload("res://art/flags/jp.svg")],
+	"international": ["International", null],
+}
+
+static func _creation_country(club: Dictionary) -> String:
+	if club.get("division") in ["urc", "srp"]: return "international"
+	return str(club.get("country", "FR"))
+
 static func _division(app: Control, id: String, clubs: Array, mode: String) -> void:
 	app.club_division = id
 	if not clubs.any(func(club: Dictionary): return int(club.id) == app.selected_club):
@@ -155,38 +166,24 @@ static func creation(app: Control) -> Control:
 	var japan := nationale or mode == "world-japan"
 	var pacific := japan or mode == "world-pacific"
 	var international := pacific or mode == "world"
-	if not meta.get("worldCatalogue", []).is_empty():
-		var edition_row := top
-		var choices := [["world", "MONDE · 56 CLUBS"], ["common", "FRANCE · 30 CLUBS"]]
-		if not meta.get("pacificCatalogue", []).is_empty():
-			edition_row = G.h(8)
-			edition_row.name = "CreationEditionRow"
-			page.add_child(edition_row)
-			edition_row.add_child(G.label("ÉDITION DE CARRIÈRE", 13, G.GOLD, true))
-			choices.push_front(["world-pacific", "MONDE + PACIFIQUE · 66 CLUBS"])
-		if not meta.get("japanCatalogue", []).is_empty():
-			choices.push_front(["world-japan", "MONDE + JAPON · 86 CLUBS"])
-		if not meta.get("nationaleCatalogue", []).is_empty():
-			choices.push_front(["world-nationale", "MONDE + NATIONALE · 100"])
-		if not meta.get("champCatalogue", []).is_empty():
-			choices.push_front(["world-champ", "MONDE + CHAMP · 114"])
-		for item in choices:
-			var choice := G.button(item[1], func(): app.pack_manager.creation_mode = item[0]; app._render())
-			choice.name = "CreationMode_" + item[0]
-			choice.disabled = app.waiting
-			if mode == item[0]: G.selected(choice, app.accent)
-			edition_row.add_child(choice)
 	top.add_child(G.button("PACKS ET IDENTITÉS", func(): app.pack_manager.open("creation")))
 	Packs.missing_warning(app, page, "creation")
-	var catalogue_key := "champCatalogue" if champ else ("nationaleCatalogue" if nationale else ("japanCatalogue" if japan else ("pacificCatalogue" if pacific else ("worldCatalogue" if international else "legacyCatalogue"))))
-	var candidates: Array = meta.get(catalogue_key, app.catalogue)
-	var clubs: Array = candidates.filter(func(club: Dictionary): return club.get("playable", true))
-	if clubs.is_empty():
+	var candidates: Array = app.pack_manager.creation_catalogue()
+	var playable: Array = candidates.filter(func(club: Dictionary): return club.get("playable", true))
+	if playable.is_empty():
 		page.add_child(G.wrap("Le catalogue des clubs est en cours de chargement.", 15, G.WHITE))
 		return page
+	var countries := {}
+	var country := _creation_country(playable[0])
+	for club: Dictionary in playable:
+		var group := _creation_country(club)
+		if not countries.has(group): countries[group] = []
+		countries[group].append(club)
+		if int(club.id) == app.selected_club: country = group
+	var clubs: Array = countries[country]
 	var division := str(app.club_division)
 	var divisions_data := [["elite", "ÉLITE"], ["accession", "ACCESSION"], ["prem", "PREM"], ["urc", "URC"]] if international else [["elite", "ÉLITE"], ["accession", "ACCESSION"]]
-	if pacific: divisions_data.append(["srp", "PACIFIQUE"])
+	if pacific: divisions_data.append(["srp", "SUPER RUGBY PACIFIC"])
 	if japan: divisions_data.append_array([["jlo-d1", "JAPON D1"], ["jlo-d2", "JAPON D2"]])
 	if nationale: divisions_data.append(["nationale", "NATIONALE"])
 	if champ: divisions_data.append(["champ", "CHAMP"])
@@ -234,45 +231,57 @@ static func creation(app: Control) -> Control:
 	G.chapter(list,"01","Prendre les rênes","Choisissez les identités puis votre club.",app.accent)
 	var installed: Array = app.pack_manager.installed("creation")
 	var preferred: String = app.pack_manager.selected_id("creation")
-	var pack_name := "MONDE D’OVAL LEGACY 27"
+	var pack_name := "JEU DE BASE"
 	for pack: Dictionary in installed:
 		if str(pack.get("id", "")) == preferred:
 			pack_name = str(pack.get("name", "Pack personnalisé")).to_upper()
 
-	var pack_choice := OptionButton.new()
-	pack_choice.name="CreationPackChoice"
-	pack_choice.add_item("Monde d’Oval Legacy 27")
-	var pack_ids: Array[String] = ["base"]
-	for pack: Dictionary in installed:
-		pack_choice.add_item(str(pack.get("name", "Pack personnalisé")))
-		pack_ids.append(str(pack.id))
-	var selected_pack := pack_ids.find(preferred)
-	var unavailable := selected_pack < 0
-	if unavailable:
-		pack_name = "PACK INDISPONIBLE"
-		selected_pack = pack_choice.item_count
-		pack_choice.add_item("Pack indisponible · réimportez ou choisissez Base")
-		pack_choice.set_item_disabled(selected_pack, true)
-	pack_choice.select(selected_pack)
+	var unavailable := preferred != "base" and not installed.any(func(pack: Dictionary): return str(pack.id) == preferred)
+	if unavailable: pack_name = "PACK INDISPONIBLE"
 	list.add_child(G.wrap("IDENTITÉS  /  " + pack_name, 12, G.GOLD))
-	pack_choice.disabled = app.waiting
-	pack_choice.item_selected.connect(func(index: int):
-		if index < pack_ids.size(): app.pack_manager.select(pack_ids[index], "creation"))
-	list.add_child(pack_choice)
+	var presentations := G.h(8)
+	list.add_child(presentations)
+	var base := G.button("Jeu de base", func(): app.pack_manager.select("base", "creation"))
+	base.name = "CreationBaseIdentity"
+	base.disabled = app.waiting or preferred == "base"
+	presentations.add_child(base)
+	var import_button := G.button("Importer une autre réalité", app.pack_manager.choose_creation_file, true)
+	import_button.name = "CreationImportReality"
+	import_button.disabled = app.waiting
+	presentations.add_child(import_button)
+	if countries.size() > 1:
+		var tabs := G.h(8)
+		tabs.name = "CreationCountries"
+		list.add_child(tabs)
+		var groups := countries.keys()
+		groups.sort()
+		for group: String in groups:
+			var members: Array = countries[group]
+			var info: Array = CREATION_COUNTRIES.get(group, [group, null])
+			var tab := G.button(info[0], func():
+				if country == group: return
+				var first_division := str(members[0].division)
+				var first_members := members.filter(func(club: Dictionary): return club.division == first_division)
+				_division(app, first_division, first_members, mode))
+			tab.name = "CreationCountry_" + group
+			tab.icon = info[1]
+			for state in ["normal", "hover", "pressed", "focus"]:
+				tab.add_theme_color_override("icon_" + state + "_color", Color.WHITE)
+			tab.disabled = app.waiting
+			G.fill(tab)
+			if country == group: G.selected(tab, app.accent)
+			tabs.add_child(tab)
 	var divisions := G.h(8)
 	list.add_child(divisions)
-	for division_index in range(divisions_data.size()):
-		if japan and division_index == 4:
-			divisions = G.h(8)
-			list.add_child(divisions)
-		var item: Array = divisions_data[division_index]
+	for item: Array in divisions_data:
 		var members: Array = clubs.filter(func(club: Dictionary): return club.division == item[0])
+		if members.is_empty(): continue
 		var caption := "%s · %d" % [item[1], members.size()] if international else "%s  /  %d CLUBS" % [item[1], members.size()]
 		var b := G.button(caption, func(): _division(app, item[0], members, mode))
 		b.name = "CreationDivision_" + item[0]
-		b.disabled = app.waiting or members.is_empty()
+		b.disabled = app.waiting
 		G.fill(b)
-		if app.club_division == item[0]: G.selected(b,app.accent)
+		if app.club_division == item[0]: G.selected(b, app.accent)
 		divisions.add_child(b)
 	if is_srp or is_japan or is_nationale or is_champ:
 		var facts := G.h(8)
@@ -321,11 +330,11 @@ static func creation(app: Control) -> Control:
 		line.add_child(names)
 		line.add_child(G.label("→", 24, G.GOLD))
 		grid.add_child(b)
-	var notice := "%s joueurs · %d clubs jouables · 4 championnats et 2 coupes d’Europe." % [G.n(meta.get("worldDatabase", {}).get("playerCount", 0)), clubs.size()] if international else "1 592 joueurs · 30 clubs · deux divisions reliées. Choisissez votre club et préparez votre première saison."
-	if pacific: notice = "%s joueurs · %d clubs jouables · cinq championnats et deux coupes d’Europe." % [G.n(meta.get("pacificDatabase", {}).get("playerCount", 0)), clubs.size()]
-	if japan: notice = "%s joueurs · %d clubs jouables · sept championnats et deux coupes d’Europe." % [G.n(meta.get("japanDatabase", {}).get("playerCount", 0)), clubs.size()]
-	if nationale: notice = "%s joueurs · %d clubs jouables · huit championnats et deux coupes d’Europe." % [G.n(meta.get("nationaleDatabase", {}).get("playerCount", 0)), clubs.size()]
-	if champ: notice = "%s joueurs · %d clubs jouables · neuf championnats et deux coupes d’Europe." % [G.n(meta.get("champDatabase", {}).get("playerCount", 0)), clubs.size()]
+	var notice := "%s joueurs · %d clubs jouables · 4 championnats et 2 coupes d’Europe." % [G.n(meta.get("worldDatabase", {}).get("playerCount", 0)), playable.size()] if international else "1 592 joueurs · 30 clubs · deux divisions reliées. Choisissez votre club et préparez votre première saison."
+	if pacific: notice = "%s joueurs · %d clubs jouables · cinq championnats et deux coupes d’Europe." % [G.n(meta.get("pacificDatabase", {}).get("playerCount", 0)), playable.size()]
+	if japan: notice = "%s joueurs · %d clubs jouables · sept championnats et deux coupes d’Europe." % [G.n(meta.get("japanDatabase", {}).get("playerCount", 0)), playable.size()]
+	if nationale: notice = "%s joueurs · %d clubs jouables · huit championnats et deux coupes d’Europe." % [G.n(meta.get("nationaleDatabase", {}).get("playerCount", 0)), playable.size()]
+	if champ: notice = "%s joueurs · %d clubs jouables · neuf championnats et deux coupes d’Europe." % [G.n(meta.get("champDatabase", {}).get("playerCount", 0)), playable.size()]
 	list.add_child(G.wrap(notice, 12))
 	var start := G.button("PRENDRE LES RÊNES DE " + G.club_abbr(selected) + "  →", func(): _create(app, selected, mode), true)
 	start.name="CreationStart"

@@ -79,22 +79,17 @@ func entry() -> void:
 	var art: TextureRect = app.find_child("Art_entry_ground",true,false)
 	check(art!=null and art.texture!=null,"Le nouveau stade IA est chargé dans l’accueil")
 	check(app.find_child("EntryResume",true,false)==null,"Aucune reprise proposée sans carrière")
-	var world: Array = app.model.get("meta",{}).get("worldCatalogue",[])
+	var world: Array = app.pack_manager.creation_catalogue()
 	if not world.is_empty():
 		var world_chip: Panel = app.find_child("EntryWorldCount",true,false)
 		var playable := world.filter(func(club: Dictionary): return club.get("playable",true)).size()
-		check(world_chip!=null and world_chip.get_child(0).text=="Monde · %d clubs" % playable,"Accueil distingue les clubs jouables des clubs invités")
+		check(world_chip!=null and world_chip.get_child(0).text=="Monde · %d clubs jouables" % playable,"Accueil distingue les clubs jouables des clubs invités")
 	await capture("00-accueil-2560x1440")
 	var new_career: Button = app.find_child("EntryNewCareer",true,false)
 	if new_career==null: return
 	await click(new_career)
 	await settle()
-	var france: Button = app.find_child("CreationMode_common",true,false)
-	if france!=null:
-		check(app.find_child("CreationMode_world",true,false)!=null,"Les deux éditions sont accessibles dans la création")
-		await capture("07-creation-editions-2560x1440")
-		await click(france)
-		await settle()
+	check(app.find_child("CreationEditionRow",true,false)==null,"La création montre un seul catalogue")
 	check(app.route=="Création" and app.find_child("CreationStart",true,false)!=null,"Nouvelle carrière ouvre le vrai catalogue et l’action de création")
 	var pages := app.find_child("CreationPagination",true,false) as Control
 	check(pages!=null and caption_fits(pages.get_child(0)) and caption_fits(pages.get_child(2)),"Les deux commandes de pagination sont lisibles en entier dans Création")
@@ -127,13 +122,17 @@ func entry() -> void:
 	check(app.route=="Accueil","Retour depuis l’atelier conserve le parcours d’entrée")
 
 func pacific() -> void:
+	app.pack_manager.creation_mode = "world-pacific"
+	app._render()
+	await settle()
 	check(app.pack_manager.mode("creation")=="world-pacific","Le nouveau catalogue par défaut est celui du Pacifique")
 	var catalogue: Array = app.model.meta.get("pacificCatalogue", [])
 	var count := catalogue.filter(func(club: Dictionary): return club.get("playable",true)).size()
-	var badge := app.find_child("EntryPacificCount",true,false) as Panel
-	check(badge!=null and badge.get_child(0).text=="Pacifique · %d clubs" % count,"Accueil indique le vrai nombre de clubs jouables au Pacifique")
+	var badge := app.find_child("EntryWorldCount",true,false) as Panel
+	check(badge!=null and badge.get_child(0).text=="Monde · %d clubs jouables" % count,"Accueil indique le vrai nombre de clubs jouables au Pacifique")
 	await click(app.find_child("EntryNewCareer",true,false))
 	await settle()
+	if not await edition_action("CreationCountry_international"): return
 	var division := app.find_child("CreationDivision_srp",true,false) as Button
 	check(division!=null,"Le vrai choix de division Pacifique est présent")
 	if division==null: return
@@ -249,6 +248,9 @@ func edition_action(id: String) -> bool:
 	return true
 
 func japan(compact: bool) -> void:
+	app.pack_manager.creation_mode = "world-japan"
+	app._render()
+	await settle()
 	var division := "jlo-d2" if compact else "jlo-d1"
 	var dimensions := "1280x720" if compact else "2560x1440"
 	if compact:
@@ -259,10 +261,10 @@ func japan(compact: bool) -> void:
 		await settle()
 	var catalogue: Array = app.model.meta.get("japanCatalogue",[])
 	var playable := catalogue.filter(func(club: Dictionary): return club.get("playable",true)).size()
-	var badge := app.find_child("EntryJapanCount",true,false) as Panel
-	check(badge!=null and badge.get_child(0).text=="Japon · %d clubs" % playable,"Accueil compte les vrais clubs jouables du catalogue Japon")
+	var badge := app.find_child("EntryWorldCount",true,false) as Panel
+	check(badge!=null and badge.get_child(0).text=="Monde · %d clubs jouables" % playable,"Accueil compte les vrais clubs jouables du catalogue Japon")
 	if not await edition_action("EntryNewCareer"): return
-	if not await edition_action("CreationMode_world-japan"): return
+	if not await edition_action("CreationCountry_JP"): return
 	if not await edition_action("CreationDivision_"+division): return
 	var first := 80 if compact else 68
 	var last := 88 if compact else 80
@@ -324,6 +326,9 @@ func japan(compact: bool) -> void:
 	check(app.bridge.last_response_ok and app.model.live is Dictionary and app.model.live.get("pair")==next.get("pair"),"Coup d’envoi des deux vraies équipes japonaises")
 
 func nationale(compact: bool) -> void:
+	app.pack_manager.creation_mode = "world-nationale"
+	app._render()
+	await settle()
 	var dimensions := "1280x720" if compact else "2560x1440"
 	if compact:
 		root.size=Vector2i(1280,720)
@@ -333,10 +338,10 @@ func nationale(compact: bool) -> void:
 		await settle()
 	var catalogue: Array = app.model.meta.get("nationaleCatalogue",[])
 	var playable := catalogue.filter(func(club: Dictionary): return club.get("playable",true)).size()
-	var badge := app.find_child("EntryNationaleCount",true,false) as Panel
-	check(badge!=null and badge.get_child(0).text=="Nationale · %d clubs" % playable,"Accueil compte les vrais clubs jouables de l’édition Nationale")
+	var badge := app.find_child("EntryWorldCount",true,false) as Panel
+	check(badge!=null and badge.get_child(0).text=="Monde · %d clubs jouables" % playable,"Accueil compte les vrais clubs jouables de l’édition Nationale")
 	if not await edition_action("EntryNewCareer"): return
-	if not await edition_action("CreationMode_world-nationale"): return
+	if not await edition_action("CreationCountry_FR"): return
 	if not await edition_action("CreationDivision_nationale"): return
 	var scroll := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
 	for club_id in range(88,102):
@@ -431,10 +436,10 @@ func champ(compact: bool) -> void:
 		await settle()
 	var catalogue: Array = app.model.meta.get("champCatalogue", [])
 	var count := catalogue.filter(func(club: Dictionary): return club.get("playable",true)).size()
-	var badge := app.find_child("EntryChampCount",true,false) as Panel
-	check(badge!=null and badge.get_child(0).text=="Champ Rugby · %d clubs" % count,"Accueil compte les clubs jouables de Champ Rugby")
+	var badge := app.find_child("EntryWorldCount",true,false) as Panel
+	check(badge!=null and badge.get_child(0).text=="Monde · %d clubs jouables" % count,"Accueil compte les clubs jouables de Champ Rugby")
 	if not await edition_action("EntryNewCareer"): return
-	if not await edition_action("CreationMode_world-champ"): return
+	if not await edition_action("CreationCountry_GB"): return
 	if not await edition_action("CreationDivision_champ"): return
 	var scroll := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
 	for club_id in range(102,116):

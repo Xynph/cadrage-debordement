@@ -293,8 +293,8 @@ func _run() -> void:
 		await _resize_window(resolution)
 		app._navigate("Accueil")
 		await _capture("accueil-"+str(resolution.x))
+		app.pack_manager.creation_mode = "common"
 		app._navigate("Création")
-		_press_named("CreationMode_common")
 		_press_named("CreationDivision_accession")
 		app.selected_club=29
 		app._render()
@@ -595,9 +595,9 @@ func _world_match(expected_competition: String) -> bool:
 	return recorded
 
 func _world_creation(club_id: int, league: String, edition: String = "world") -> bool:
+	app.selected_club = club_id
+	app.pack_manager.creation_mode = edition
 	app._navigate("Création")
-	await _settle()
-	if not _press_named("CreationMode_" + edition): return false
 	await _settle()
 	if not _press_named("CreationDivision_" + league): return false
 	await _settle()
@@ -666,9 +666,10 @@ func _pacific_reception() -> void:
 	var complete := OS.get_environment("CD_GODOT_PACIFIC_EXPECT_COMPLETE") == "1"
 	_check(FileAccess.file_exists(pack) and FileAccess.file_exists(final_doc), "Pack and completed Pacific career supplied")
 	if not FileAccess.file_exists(pack) or not FileAccess.file_exists(final_doc): return
+	app.pack_manager.creation_mode = "world-pacific"
 	app._navigate("Création")
 	await _settle()
-	_check(app.pack_manager.mode("creation") == "world-pacific", "Pacific edition is the new career default")
+	_check(app.pack_manager.mode("creation") == "world-pacific", "Pacific workshop uses its reception catalogue")
 	app.pack_manager.open("creation")
 	await _settle()
 	app.pack_manager.picker.file_selected.emit(pack)

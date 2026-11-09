@@ -29,12 +29,13 @@ test('Godot natif : création mondiale, packs par édition, calendrier, poules e
 },()=>{
  fs.mkdirSync(proofRoot,{recursive:true});
  const proof = fs.mkdtempSync(path.join(proofRoot,'world-ui-'));
- const world = path.join(proof,'world.zip'), france = path.join(proof,'france.zip');
+ const world = path.join(proof,'world.zip'), france = path.join(proof,'france.zip'), champ = path.join(proof,'champ.zip');
  writePack(world,require('../native/engine/world-registry.json').id,'world-ui','Identités Monde test',30,'Bath témoin','BAT');
  writePack(france,require('../dist/rugby-common-rosters.js').id,'france-ui','Identités France test',0,'Toulouse témoin','TLS');
+ writePack(champ,require('../native/engine/world-champ-extension.json').id,'champ-ui','Identités Monde complet test',0,'Club Monde complet témoin','TEM');
  const run = spawnSync(godot,['--headless','--audio-driver','Dummy','--max-fps','120','--path',project,'--script',path.resolve(__dirname,'world-native-ui.gd')],{
   encoding:'utf8',windowsHide:true,timeout:150000,
-  env:{...process.env,CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_SELF_TEST:'0',CD_GODOT_DATA_DIR:path.join(proof,'profile'),CD_WORLD_UI_WORLD_PACK:world,CD_WORLD_UI_FRANCE_PACK:france},
+  env:{...process.env,CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_SELF_TEST:'0',CD_GODOT_DATA_DIR:path.join(proof,'profile'),CD_WORLD_UI_WORLD_PACK:world,CD_WORLD_UI_FRANCE_PACK:france,CD_WORLD_UI_CHAMP_PACK:champ},
  });
  const output = (run.stdout||'')+(run.stderr||'');
  fs.writeFileSync(path.join(proof,'godot-world-ui.log'),output);

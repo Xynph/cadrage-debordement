@@ -79,7 +79,8 @@ func scroll_fits(id: String) -> bool:
 
 func enumerate_clubs() -> void:
 	var seen := {}
-	for league in [["elite",14],["accession",16],["prem",10],["urc",16]]:
+	for league in [["elite",14,"FR"],["accession",16,"FR"],["prem",10,"GB"],["urc",16,"international"]]:
+		await press(named("CreationCountry_" + league[2]))
 		await press(named("CreationDivision_" + league[0]))
 		var members := {}
 		for page_index in range(2):
@@ -100,6 +101,9 @@ func import_pack(path: String, expected := true) -> void:
 
 func install_and_select(path: String) -> void:
 	await import_pack(path)
+	await activate_inspected_pack()
+
+func activate_inspected_pack() -> void:
 	await press(button("INSTALLER CE PACK"))
 	await response()
 	await press(button("UTILISER CE PACK  →"))
@@ -175,10 +179,44 @@ func _run() -> void:
 		return
 	app.timer.stop()
 	await press(named("EntryNewCareer"))
-	check(app.route == "Création" and named("CreationMode_world") != null, "Édition Monde disponible depuis l’accueil")
-	await press(named("CreationMode_world"))
-	check(app.pack_manager.mode("creation") == "world", "Le sélecteur ouvre le catalogue de l’édition Monde")
+	check(app.pack_manager.mode("creation") == "world-champ" and app.model.meta.champCatalogue.size() == 116, "La création ouvre directement le Monde complet")
+	check(named("CreationEditionRow") == null and named("CreationMode_common") == null, "Les éditions intermédiaires sont absentes du parcours normal")
+	check(app.model.meta.champDatabase.playerCount == 5878 and app.model.meta.champCatalogue.filter(func(c: Dictionary): return c.playable).size() == 114, "5 878 joueurs et 114 clubs jouables")
+	for code in ["FR", "GB", "JP"]:
+		var country := named("CreationCountry_" + code) as Button
+		check(country != null and country.icon != null, "Drapeau visible · " + code)
+	check(named("CreationDivision_nationale") != null and named("CreationDivision_prem") == null and named("CreationDivision_urc") == null, "France ne montre que ses divisions")
+	await press(named("CreationCountry_GB"))
+	check(named("CreationDivision_prem") != null and named("CreationDivision_champ") != null and named("CreationDivision_urc") == null, "Angleterre montre PREM et Champ")
+	await press(named("CreationCountry_JP"))
+	check(named("CreationDivision_jlo-d1") != null and named("CreationDivision_jlo-d2") != null and named("CreationDivision_champ") == null, "Japon montre ses deux divisions")
+	await press(named("CreationCountry_international"))
+	check(named("CreationDivision_srp") != null and named("CreationDivision_urc") != null and named("CreationDivision_prem") == null, "URC et Pacifique sont sous International")
+	check(text_present(app, "114 clubs jouables"), "Le total mondial reste visible après filtrage")
+	await press(named("CreationCountry_FR"))
+	var base := named("CreationBaseIdentity") as Button
+	var importer := named("CreationImportReality") as Button
+	check(base != null and base.text == "Jeu de base" and base.disabled, "Le jeu de base est la présentation initiale")
+	check(importer != null and importer.text == "Importer une autre réalité" and named("CreationPackChoice") == null, "Le mod se choisit depuis un fichier ZIP")
+	await press(importer)
+	check(app.route == "Création" and app.pack_manager.picker.visible, "Importer ouvre directement le sélecteur de fichiers")
+	app.pack_manager.picker.get_cancel_button().pressed.emit()
+	await settle()
+	check(app.route == "Création" and not app.pack_manager.picker.visible, "Annuler conserve l’écran de création")
+	await press(importer)
+	app.pack_manager.picker.file_selected.emit(OS.get_environment("CD_WORLD_UI_CHAMP_PACK"))
+	app.pack_manager.picker.hide()
+	await response()
+	check(app.route == "Packs" and not app.pack_manager.preview().is_empty(), "Le ZIP sélectionné est analysé pour le Monde complet")
+	await activate_inspected_pack()
+	await press(button("← RETOUR"))
+	check(named("CreationClubTitle").text == "Club Monde complet témoin", "Le pack activé apparaît dans le catalogue commun")
+	app.pack_manager.creation_mode = "world"
+	app._render()
+	await settle()
+	check(app.pack_manager.mode("creation") == "world", "Le scénario historique charge son propre catalogue")
 	await enumerate_clubs()
+	await press(named("CreationCountry_GB"))
 	await press(named("CreationDivision_prem"))
 	await press(button("PACKS ET IDENTITÉS"))
 	check(text_present(app, "NOUVELLE CARRIÈRE · MONDE"), "Édition active indiquée dans les packs")
@@ -209,9 +247,9 @@ func _run() -> void:
 	await press(button("UTILISER CE PACK  →"))
 	await response()
 	check(app.model.club.name == "Bath témoin", "L’identité de carrière mondiale peut être réappliquée")
+	app.pack_manager.creation_mode = "common"
 	app._navigate("Création")
 	await settle()
-	await press(named("CreationMode_common"))
 	await press(button("PACKS ET IDENTITÉS"))
 	check(not text_present(app, "Identités Monde test"), "Packs Monde filtrés côté France malgré la carrière Monde ouverte")
 	await install_and_select(OS.get_environment("CD_WORLD_UI_FRANCE_PACK"))

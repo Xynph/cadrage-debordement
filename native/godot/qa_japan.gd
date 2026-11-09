@@ -64,9 +64,10 @@ func _reception() -> void:
 		await get_tree().process_frame
 	if not _check(app.model.get("meta",{}).get("japanCatalogue",[]).size()==88,"catalogue Japon chargé"): return
 	_check(app.model.meta.worldCatalogue.size()==58 and app.model.meta.pacificCatalogue.size()==68 and app.model.meta.legacyCatalogue.size()==30,"trois catalogues historiques préservés")
+	app.pack_manager.creation_mode = "world-japan"
 	app._navigate("Création")
 	await _settle()
-	if not await _pick("CreationMode_world-japan"): return
+	if not await _pick("CreationCountry_JP"): return
 	if not await _pick("CreationDivision_jlo-d1"): return
 	var pack := OS.get_environment("CD_GODOT_JAPAN_PACK")
 	var final_doc := OS.get_environment("CD_GODOT_JAPAN_FINAL_EXPORT")

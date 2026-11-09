@@ -160,13 +160,6 @@ func text_visible(node: Node, part: String) -> bool:
 		if text_visible(child, part): return true
 	return false
 
-func option(node: Node) -> OptionButton:
-	if node is OptionButton: return node
-	for child in node.get_children():
-		var found := option(child)
-		if found != null: return found
-	return null
-
 func stop_app() -> void:
 	app.bridge.stop()
 	var deadline := Time.get_ticks_msec() + 2500
@@ -180,6 +173,7 @@ func start_app(profile: String) -> void:
 	OS.set_environment("CD_GODOT_DATA_DIR", profile)
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
+	app.pack_manager.creation_mode = "common"
 	var deadline := Time.get_ticks_msec() + 15000
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
 	check(not app.model.is_empty(), "Profil de test connecté")
@@ -191,7 +185,6 @@ func pack_edge_cases() -> void:
 	await stop_app()
 	await start_app(profile)
 	app._navigate("Création")
-	press("FRANCE · 30 CLUBS")
 	press("PACKS ET IDENTITÉS")
 	await import_archive(valid)
 	var preview: Dictionary = app.model.packs.preview
@@ -240,16 +233,12 @@ func pack_edge_cases() -> void:
 	check(JSON.parse_string(app.model.meta.exportText).state == before.state, "Reprise sans pack : S intégralement conservé")
 	check(JSON.parse_string(FileAccess.get_file_as_string(profile.path_join("donnees.json"))).seed == seed, "Reprise sans pack : RNG conservé")
 	app._navigate("Création")
-	press("FRANCE · 30 CLUBS")
-	var choice := option(app)
-	check(choice != null and "indisponible" in choice.get_item_text(choice.selected).to_lower() and choice.is_item_disabled(choice.selected), "Création : préférence absente explicitement sélectionnée")
+	check(text_visible(app, "PACK INDISPONIBLE"), "Création : préférence absente explicitement affichée")
 	check(text_visible(app, "pack de création absent"), "Création : repli et choix nécessaire annoncés")
 	await capture("pack-manquant-creation")
 	check(button(app, "PRENDRE LES RÊNES DE " + str(app.catalogue[0].abbr) + "  →").disabled, "Création : démarrage bloqué jusqu’au choix effectif")
-	if choice != null:
-		choice.select(0)
-		choice.item_selected.emit(0)
-		await wait_response()
+	press("Jeu de base")
+	await wait_response()
 	check(app.model.packs.creation == "base" and app.model.packs.career == pack_id, "Choix Base explicite : seule la préférence de création change")
 	app._command("export")
 	await wait_response()
@@ -297,6 +286,7 @@ func _run() -> void:
 		var width := int(OS.get_environment("CD_GODOT_PACK_QA_WIDTH"))
 		root.size = Vector2i(1920, 1080) if width == 1920 else Vector2i(1440, 900)
 	root.add_child(app)
+	app.pack_manager.creation_mode = "common"
 	var deadline := Time.get_ticks_msec() + 15000
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
 	check(not app.model.is_empty(), "Moteur natif connecté")
@@ -304,7 +294,6 @@ func _run() -> void:
 	await capture("accueil-oval-legacy")
 	app._navigate("Création")
 	await process_frame
-	press("FRANCE · 30 CLUBS")
 	var import_button := button(app, "PACKS ET IDENTITÉS")
 	check(import_button != null, "Création : commande visible des packs personnalisés")
 	if import_button != null:
