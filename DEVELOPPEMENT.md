@@ -1,5 +1,9 @@
 # Journal de développement — Cadrage Débordement
 
+## 9 novembre 2026 — continuité Codex local et Cloud
+
+La [passation versionnée](docs/passations/CODEX-LOCAL-VERS-CLOUD.md) relie le jeu Windows reçu sur `e2f111a2330462aa6545866441289346ac92f2d0`, l’atelier Studio sur #372 et les trois PR en attente. Elle décrit les commandes, les recettes et le passage entre postes par branches isolées. Le pack privé, les profils et les clés restent locaux. L’atelier garde sa chaîne React, Vite et Storybook indépendante.
+
 ## 9 novembre 2026 — réception immersive, Japon, Nationale et Champ Rugby
 
 La branche `feature/immersive-1440p-20261108` adapte les vues natives de la PR400 à la tête `8ebf575` de `main`. Les wrappers de création, préparation, Bureau et compétitions exploitent les commandes et projections de cette version. Les dates et deux manches de barrages japonais s’affichent dans le calendrier et dans les archives. Le nouveau terrain fictif d’origine porte la bibliothèque à 48 PNG. La matrice [de réception immersive](docs/immersive08-coverage.md) distingue tests source, paquets Windows et finitions restantes. Les profils d’essai et packs de réception restent hors dépôt.
