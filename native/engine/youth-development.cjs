@@ -34,7 +34,7 @@ function factory(){
   attributes:Object.fromEntries(KEYS.map(k=>[k,current.attributes[k]-baseline.attributes[k]])),minutes:current.careerMinutes-baseline.careerMinutes,
   generalXP:current.generalXP-baseline.generalXP,focusedXP:current.focusedXP-baseline.focusedXP};}
  function append(row,current,reason,force=false){
-  if(!force&&same(current,row.latest))return false;
+  if(!force&&current.season===row.latest.season&&same(current,row.latest))return false;
   const d=delta(current,row.latest);row.observations.push({season:current.season,week:current.week,reason,ratingDelta:d.rating,attributeDeltas:d.attributes,minutesDelta:d.minutes,stage:current.stage});
   row.observations=row.observations.slice(-MAX_OBSERVATIONS);row.latest=current;return true;
  }
@@ -56,7 +56,7 @@ function factory(){
   if(source||plan==='general')check(focus===null,'ce plan ne cible pas de qualité');
   else{selected=focus===null?defaultFocus(p):focus;check(allowed.includes(selected),'qualité hors du poste');}
   let row=s.youthDevelopment.rows.find(x=>x.id===p.id);if(!row)row=newRow(s,p,entry.stage);
-  const target=selected||'equilibre',currentFocus=actualFocus(p),changed=row.plan!==plan||row.focus!==selected||row.planClubId!==s.club||!source&&currentFocus!==target;
+  const target=selected||'equilibre',currentFocus=actualFocus(p),changed=row.plan!==plan||row.focus!==selected||row.planClubId!==s.club||row.planSeason!==s.season||row.planWeek!==week(s)||!source&&currentFocus!==target;
   if(!changed)return true;
   if(!source&&(selected!==null||p.dev.specialization)){
    const sp=typeof ensureSpecialization==='function'?ensureSpecialization(p):(p.dev.specialization||(p.dev.specialization={version:1,focus:'equilibre',xp:0,bonuses:{}}));
@@ -123,6 +123,107 @@ function factory(){
   result.push({key:'growth',label:current.model==='annual-v11'?'Observer le bilan annuel':'Développer sans dépasser le potentiel',done:p.rating>=p.dev.potential,detail:current.model==='annual-v11'?'Les activités et minutes alimentent la courbe annuelle existante.':'Le même budget est partagé ; le potentiel et les plafonds de qualité restent actifs.'});
   return result;
  }
+ // Consultative only: all measures use the initial observed reference, never
+ // attribute earlier gains to a newly chosen plan or reconstruct missed games.
+ function historicalReview(s,p,stage,current,row){
+  const basis='Écarts depuis la référence initiale ; ils ne prouvent pas l’effet du plan actuel.'+(current.model==='annual-v11'?' Le niveau évolue au bilan annuel, pas à chaque semaine.':'');
+  const advice=(key,label,detail,destination=null,suggestedPlan=null)=>({key,label,detail,destination,suggestedPlan});
+  if(!row)return {status:'untracked',label:'Commencer par observer',basis,evidence:null,objective:null,recommendation:advice('start','Créer une référence','Démarrer le suivi avant de mesurer de nouveaux progrès.')};
+  if(row.baseline.clubId!==s.club)return {status:'context',label:'Référence d’un autre club',basis,evidence:null,objective:null,recommendation:advice('context','Examiner les faits du nouveau club','La référence initiale vient d’un autre club ; aucun déficit de minutes local n’est déduit. Réviser le plan pour le club courant.','Effectif','integration')};
+  const d=delta(current,row.baseline),weeks=current.season===row.baseline.season?current.week-row.baseline.week:null;
+  if(d.minutes<0)return {status:'context',label:'Compteur de minutes à vérifier',basis,evidence:null,objective:null,recommendation:advice('counter','Vérifier la continuité du suivi','Le total de minutes de carrière est inférieur à la référence. Aucun manque de temps de jeu ni bilan chiffré n’est déduit de cette discontinuité.','Effectif')};
+  const evidence={from:{season:row.baseline.season,week:row.baseline.week},to:{season:current.season,week:current.week},weeks,ratingDelta:d.rating,minutesDelta:d.minutes,attributeDeltas:d.attributes,observations:row.observations.length};
+  let objective=null;
+  if(row.plan==='general')objective={key:'general',label:'Consolider le niveau général',value:d.rating,target:1,unit:'point',achieved:d.rating>=1,measurement:current.model};
+  else if(row.plan==='specialist'&&row.focus)objective={key:'quality',label:'Améliorer '+LABELS[row.focus],value:d.attributes[row.focus],target:1,unit:'point',achieved:d.attributes[row.focus]>=1,measurement:current.model};
+  else if(row.plan==='integration')objective=stage==='professional'?{key:'integration',label:'Accumuler de nouvelles minutes professionnelles',value:d.minutes,target:240,unit:'minutes',achieved:d.minutes>=240,measurement:current.model}:{key:'integration',label:'Examiner le premier contrat professionnel',value:null,target:null,unit:null,achieved:false,measurement:current.model};
+  let status='observing',recommendation;
+  if(p.injury>0||current.fatigue>=55||p.condition<65){
+   status='review';recommendation=advice('recover','Adapter la charge avant de poursuivre','Blessure : '+p.injury+' semaine(s), condition : '+p.condition+' %, fatigue : '+current.fatigue+'/100. Consulter la charge et le suivi médical avant de chercher davantage de minutes.','Effectif');
+  }else if(stage==='academy'){
+   const places=typeof professionalPlaces==='function'?professionalPlaces(s.clubs[s.club],s):null;
+   if(p.age<18)recommendation=advice('academy','Poursuivre le parcours au centre','Âge : '+p.age+' ans. Le repère de premier passage professionnel de ce suivi est 18 ans ; aucun contrat automatique.','Centre');
+   else if(places!==null&&places>0)recommendation=advice('promotion','Examiner un premier contrat pro','Âge : '+p.age+' ans, '+places+' place(s) contractuelle(s). Vérifier le niveau, le salaire et les minutes envisageables avant de signer.','Centre','integration');
+   else{status='review';recommendation=advice('capacity','Préparer une place avant la promotion','Aucune place professionnelle confirmée. Conserver le parcours au centre et examiner la capacité contractuelle.','Centre');}
+  }else if((weeks!==null&&weeks>=4||current.season>row.baseline.season)&&d.minutes<80){
+   status='review';
+   const loanCandidate=p.age<=23&&(p.id.startsWith('youth-')||p.joinedSeason!==undefined)&&p.contractEnd>=s.season&&!s.lineup.includes(p.id)&&!s.reserves.includes(p.id);
+   recommendation=loanCandidate?advice('loan','Examiner un prêt pour jouer',Math.round(d.minutes)+' nouvelles minutes depuis la référence. Vérifier l’éligibilité complète, le club d’accueil et les places de retour dans les parcours du centre ; aucun prêt ni temps de jeu n’est garanti.','Centre','integration'):advice('minutes','Réexaminer les occasions de jouer',Math.round(d.minutes)+' nouvelles minutes depuis la référence. Examiner la sélection et le parcours ; une absence de gain hebdomadaire ne prouve pas un échec de progression.','Effectif','integration');
+  }else if(objective?.achieved){status='achieved';recommendation=advice('continue','Faire le point et choisir la suite','Le repère de suivi est atteint. Conserver le plan ou préparer une réorientation, sans récompense de croissance ajoutée.',stage==='academy'?'Centre':'Effectif');}
+  else recommendation=advice('observe','Laisser une période d’observation','Comparer les prochaines observations avant de conclure. Les minutes et qualités mesurées restent distinctes des promesses de progression.',stage==='academy'?'Centre':'Effectif');
+  return {status,label:{observing:'Bilan intermédiaire',review:'Parcours à revoir',achieved:'Repère atteint'}[status],basis,evidence,objective,recommendation};
+ }
+ // Rebuild only snapshots whose dates are retained. A delta is not a sample
+ // from an arbitrary week, so sparse coverage keeps its actual interval.
+ function measuredHistory(row){
+  if(!row)return [];
+  const observations=row.observations,history=[];let value=copy(row.latest);
+  for(let i=observations.length-1;i>=0;i--){
+   const event=observations[i];history.unshift({...copy(value),reason:event.reason,index:i});
+   value.rating-=event.ratingDelta;value.careerMinutes-=event.minutesDelta;
+   for(const k of KEYS)value.attributes[k]-=event.attributeDeltas[k];
+   if(i>0){value.season=observations[i-1].season;value.week=observations[i-1].week;value.stage=observations[i-1].stage;}
+  }
+  // At capacity the first delta may start after the original baseline.
+  if(observations.length<MAX_OBSERVATIONS)history.unshift({...copy(row.baseline),reason:'enable',index:-1});
+  return history;
+ }
+ function recentReview(s,current,row,history){
+  const missing=reason=>({available:false,reason,targetWeeks:4});
+  if(!row)return missing('untracked');
+  if(row.baseline.clubId!==s.club||row.latest.clubId!==s.club)return missing('club');
+  const local=history.filter(v=>v.season===current.season&&v.stage===current.stage&&v.week<=current.week);
+  if(!local.length)return missing('insufficient');
+  const cutoff=current.week-4,before=local.filter(v=>v.week<=cutoff),anchor=before.length?before[before.length-1]:local[0];
+  if(anchor.week===current.week)return missing('insufficient');
+  const events=row.observations.filter((o,i)=>i>anchor.index&&o.season===current.season&&o.week<=current.week);
+  if(current.careerMinutes<row.latest.careerMinutes||events.some(o=>o.minutesDelta<0)||current.careerMinutes<anchor.careerMinutes)return missing('counter');
+  if(events.some(o=>o.reason==='managerMobilityOnSeasonStart'||o.stage!==current.stage))return missing('context');
+  const d=delta(current,anchor);
+  return {available:true,reason:null,targetWeeks:4,from:{season:anchor.season,week:anchor.week},to:{season:current.season,week:current.week},weeks:current.week-anchor.week,
+   observations:events.length,ratingDelta:d.rating,minutesDelta:d.minutes,attributeDeltas:d.attributes};
+ }
+ function shortTermObjective(s,current,row,history){
+  if(!row?.plan)return null;
+  const annualGrowth=current.model==='annual-v11'&&row.plan==='general';
+  const from={season:row.planSeason,week:row.planWeek},due={season:row.planSeason,week:annualGrowth?null:Math.min(52,row.planWeek+4)};
+  const choices=history.filter(v=>v.reason==='plan'&&v.season===from.season&&v.week===from.week);
+  const anchor=choices[choices.length-1];
+  const available=!!anchor&&row.planClubId===s.club&&row.baseline.clubId===s.club&&anchor.stage===current.stage&&current.careerMinutes>=anchor.careerMinutes&&
+   !row.observations.some((o,i)=>i>anchor.index&&(o.minutesDelta<0||o.reason==='managerMobilityOnSeasonStart'));
+  const key=row.plan==='general'?'general':row.plan==='specialist'?'quality':'integration';
+  const label=key==='general'?'Consolider le niveau général':key==='quality'?'Améliorer '+LABELS[row.focus]:current.stage==='academy'?'Examiner le premier contrat professionnel':'Construire des minutes professionnelles';
+  let value=null,target=key==='integration'?(current.stage==='professional'?80:null):1;
+  if(available&&target!==null)value=key==='general'?current.rating-anchor.rating:key==='quality'?current.attributes[row.focus]-anchor.attributes[row.focus]:current.careerMinutes-anchor.careerMinutes;
+  return {key,label,from,due,value,target,unit:key==='integration'?'minutes':'point',achieved:value!==null&&target!==null&&value>=target,
+   coverage:available?'observed':'unavailable',measurement:current.model,expired:current.season>due.season||current.season===due.season&&due.week!==null&&current.week>=due.week};
+ }
+ function review(s,p,stage,current,row){
+  const result=historicalReview(s,p,stage,current,row),history=measuredHistory(row),recent=recentReview(s,current,row,history);
+  result.recent=recent;result.shortTermObjective=shortTermObjective(s,current,row,history);
+  result.basis+=' La fenêtre récente et l’objectif daté utilisent leurs propres bornes observées, présentées séparément.';
+  if(!row||result.status==='context'||result.recommendation.key==='recover'||stage!=='professional')return result;
+  if(!recent.available){
+   if(recent.reason==='counter'||recent.reason==='context'){
+    result.status='context';result.label='Continuité récente à vérifier';
+    result.recommendation={key:'counter',label:'Vérifier les observations récentes',detail:'Une rupture de compteur ou de contexte empêche de conclure sur les minutes récentes.',destination:'Effectif',suggestedPlan:null};
+   }else if(current.season!==row.baseline.season){
+    result.status='observing';result.label='Nouvelle période à observer';
+    result.recommendation={key:'observe',label:'Observer la nouvelle saison',detail:'Aucun intervalle comparable de cette saison n’est encore conservé. Les minutes de la saison passée ne décrivent pas les occasions actuelles.',destination:'Effectif',suggestedPlan:null};
+   }
+   return result;
+  }
+  if(recent.weeks>=4&&recent.minutesDelta<80){
+   const loanCandidate=p.age<=23&&(p.id.startsWith('youth-')||p.joinedSeason!==undefined)&&p.contractEnd>=s.season&&!s.lineup.includes(p.id)&&!s.reserves.includes(p.id);
+   result.status='review';result.label='Parcours récent à revoir';
+   result.recommendation={key:loanCandidate?'loan':'minutes',label:loanCandidate?'Examiner un prêt pour jouer':'Réexaminer les occasions de jouer',
+    detail:Math.round(recent.minutesDelta)+' minutes réellement nouvelles entre S'+recent.from.season+' semaine '+recent.from.week+' et semaine '+recent.to.week+' ('+recent.weeks+' semaines observées). Vérifier les possibilités et l’éligibilité dans le parcours existant ; aucun temps de jeu n’est garanti.',destination:loanCandidate?'Centre':'Effectif',suggestedPlan:'integration'};
+  }else if(['loan','minutes'].includes(result.recommendation.key)){
+   result.status='observing';result.label='Bilan récent intermédiaire';
+   result.recommendation={key:'observe',label:'Poursuivre l’observation récente',detail:Math.round(recent.minutesDelta)+' nouvelles minutes sur '+recent.weeks+' semaines réellement observées. Le bilan historique est conservé séparément.',destination:'Effectif',suggestedPlan:null};
+  }
+  return result;
+ }
  function project(s=state()){
   if(!s?.development)return {available:false,enabled:false,canEnable:false,locked:true,reason:'Carrière indisponible.',context:null,plans:copy(PLANS),limits:{minAge:15,maxAge:24,maxTracked:MAX_ROWS,maxObservations:MAX_OBSERVATIONS,attributeBonus:4,totalBonus:8},players:[]};
   const enabled=active(s),locked=!!s.live||s.trained||s.phase!=='league';
@@ -132,7 +233,7 @@ function factory(){
    return {id:p.id,name:p.name,pos:p.pos,age:p.age,stage,...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),model:current.model,rating:p.rating,potential:current.potential,potentialBasis:'role-estimate',condition:p.condition,injury:p.injury,fatigue:current.fatigue,careerMinutes:current.careerMinutes,
     tracked:!!row,plan:row?.plan||null,focus:row?.focus||null,canPlan:enabled&&!locked,planReason:mismatch?'Objectif individuel ou club modifié : réviser le plan pour appliquer sa répartition.':source?'Progression annuelle : les étapes suivent les expositions réelles, sans supplément de croissance.':'Le plan partage le budget régulier déjà gagné, sans bonus supplémentaire.',
     availablePlans:source?['general','integration']:PLANS.map(p=>p.key),focusOptions:source?[]:focusOptions(p).map(key=>({key,label:LABELS[key]})),defaultFocus:source?null:defaultFocus(p),
-    baseline:row?copy(row.baseline):null,current,deltas:row?delta(current,row.baseline):null,observations:row?copy(row.observations):[],nextSteps:steps(s,p,stage,current,row)};
+    baseline:row?copy(row.baseline):null,current,deltas:row?delta(current,row.baseline):null,observations:row?copy(row.observations):[],review:review(s,p,stage,current,row),nextSteps:steps(s,p,stage,current,row)};
   });
   return {available:true,enabled,canEnable:!enabled&&!s.live&&s.phase==='league',locked,reason:enabled?'':'Activer le suivi pour commencer des références réelles, sans reconstruire le passé.',context:context(s),plans:copy(PLANS),limits:{minAge:15,maxAge:24,maxTracked:MAX_ROWS,maxObservations:MAX_OBSERVATIONS,attributeBonus:4,totalBonus:8},players};
  }

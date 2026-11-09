@@ -78,12 +78,42 @@ static func build(app: Control) -> Control:
 		focus.item_selected.connect(func(index: int): app._command("set_development_focus", {"playerId":person.id, "focus":focus.get_item_metadata(index)}))
 		controls.add_child(focus)
 		if mode == "academy":
-			var promote := G.button("PREMIER CONTRAT PRO", func(): app.confirm("Promouvoir " + str(person.name), "%s rejoindra l'effectif professionnel et ajoutera %s de salaire par semaine de jeu. Son contrat court jusqu'à la fin de la saison%s. Confirmer ?" % [person.name, G.euros(person.salary), G.n(int(app.model.meta.season) + (2 if app.model.meta.phase == "ended" else 1))], func(): app._command("promote_academy", {"playerId":person.id, "confirmed":true})))
-			promote.set_meta("promote_id", person.id)
-			promote.disabled = not data.get("promotionAvailable", false)
-			controls.add_child(promote)
+			_promotion(controls,app,data,person)
 		else:
 			controls.add_child(G.button("OUVRIR LA FICHE", func(): app.selected_player = str(person.id); app._navigate("Effectif")))
 		if not str(development.get("reason", "")).is_empty(): card.add_child(G.wrap(development.reason, 12))
 		card.add_child(G.separator())
 	return page
+
+# Same action as the Formation cards, narrowed to the reviewed player.
+static func _promotion(parent: Node, app: Control, data: Dictionary, person: Dictionary) -> Button:
+	var promote := G.button("PREMIER CONTRAT PRO", func(): app.confirm("Promouvoir " + str(person.name), "%s rejoindra l'effectif professionnel et ajoutera %s de salaire par semaine de jeu. Son contrat court jusqu'à la fin de la saison%s. Confirmer ?" % [person.name, G.euros(person.salary), G.n(int(app.model.meta.season) + (2 if app.model.meta.phase == "ended" else 1))], func(): app._command("promote_academy", {"playerId":person.id, "confirmed":true})))
+	promote.name = "PromoteAcademy" + str(person.id).replace(":","_")
+	promote.set_meta("promote_id",person.id)
+	promote.disabled = app.waiting or not data.get("promotionAvailable",false)
+	parent.add_child(promote)
+	return promote
+
+static func open_player(app: Control, player_id: String) -> AcceptDialog:
+	app._clear_dialogs()
+	var dialog := AcceptDialog.new()
+	dialog.name = "YouthPromotionPathway"
+	dialog.title = "Examiner le premier contrat professionnel"
+	dialog.get_ok_button().text = "FERMER"
+	app._prepare_dialog(dialog,650)
+	var body := G.v(12)
+	dialog.add_child(body)
+	var data: Dictionary = app.model.get("decisions",{}).get("development",{})
+	var matches: Array = data.get("academy",[]).filter(func(person: Dictionary): return str(person.id)==player_id)
+	if matches.is_empty(): body.add_child(G.wrap("Ce joueur n’est plus au centre. Revenez au suivi actualisé.",16))
+	else:
+		var person: Dictionary = matches[0]
+		body.add_child(G.section(str(person.name),str(person.pos)+" · "+G.n(person.age)+" ans"))
+		body.add_child(G.wrap("Salaire proposé : %s par semaine. La promotion utilise la décision existante du centre et ses contrôles de capacité ; elle ne garantit aucune minute ni progression." % G.euros(person.salary),15))
+		_promotion(body,app,data,person).name = "YouthPathwayPromote"
+		if not data.get("promotionAvailable",false): body.add_child(G.wrap("Premier contrat indisponible dans le contexte actuel. Vérifiez la capacité et la période avant de réessayer.",14,G.ALERT))
+	dialog.confirmed.connect(dialog.queue_free)
+	dialog.canceled.connect(dialog.queue_free)
+	app.add_child(dialog)
+	preload("res://ui/immersive08/dialogs.gd").show_centered(dialog,Vector2i(650,280))
+	return dialog

@@ -1,0 +1,32 @@
+'use strict';
+const {test}=require('node:test'),a=require('node:assert/strict'),d=require('../native/engine/interclub-market.cjs'),{context}=require('./native-reference-harness.cjs');
+function office(){const h=context();h.run('CDCommonCareer.start(0);const marketOffice=('+d.factory.toString()+')();');return {...h,project:()=>JSON.parse(h.run('JSON.stringify(marketOffice.project())')),go:(command,payload)=>{h.ctx.command=command;h.ctx.payload=payload;return JSON.parse(h.run('JSON.stringify(marketOffice.execute(command,payload))'));}};}
+function request(h,p){return {playerId:p.id,sellerId:p.clubId,fee:p.fee,salary:p.salary,sourceSalary:p.sourceSalary,contractEnd:p.contractEnd,context:h.project().context};}
+function target(h){return h.project().candidates.find(p=>p.available);}
+test('contre-proposition précise sans mutation ni hasard',()=>{const h=office(),p=target(h),r=request(h,p),before=h.run('JSON.stringify(S)'),rng=h.randomState();const q=h.go('interclub_negotiate',{...r,fee:0,salary:1000}).interclubNegotiation;a.equal(q.seller.accepted,false);a.equal(q.player.accepted,false);a.equal(q.seller.counter,p.fee);a.equal(q.player.counter,p.salary);a.equal(h.run('JSON.stringify(S)'),before);a.deepEqual(h.randomState(),rng);});
+test('concurrence IA publique indépendante des notes cachées',()=>{const h=office(),p=target(h),r=request(h,p);h.ctx.id=p.id;const before=h.go('interclub_negotiate',r).interclubNegotiation;h.run('S.clubs.forEach(c=>c.players.forEach(p=>{p.rating=99;p.skills=Object.fromEntries(Object.keys(p.skills).map(k=>[k,99]));p.dev.potential=99;}))');const after=h.go('interclub_negotiate',r).interclubNegotiation;a.deepEqual(after,before);});
+test('une IA gagne réellement et paie le vendeur sans débiter le manager',()=>{const h=office(),p=target(h),r=request(h,p);h.ctx.id=p.id;h.ctx.seller=p.clubId;h.run('const rival=S.clubs.find(c=>c.id!==S.club&&c.id!==seller);rival.cash=100000000;rival.players.forEach(q=>q.salary=1000);rival.players.filter(q=>q.fam===S.clubs[seller].players.find(p=>p.id===id).fam).forEach(q=>q.contractEnd=S.season);');const q=h.go('interclub_negotiate',r).interclubNegotiation;a.notEqual(q.winner.clubId,0);const before=JSON.parse(h.run('JSON.stringify(S.clubs.map(c=>c.cash))'));h.go('interclub_auction',{...r,expectedWinner:q.winner.clubId,expectedFee:q.winner.fee,expectedSalary:q.winner.salary,confirmed:true});a.equal(h.run('S.clubs[0].cash'),before[0]);a.equal(h.run('S.clubs['+q.winner.clubId+'].cash'),before[q.winner.clubId]-q.winner.fee);a.equal(h.run('S.clubs['+p.clubId+'].cash'),before[p.clubId]+q.winner.fee);a.equal(h.run('S.clubs['+q.winner.clubId+'].players.some(p=>p.id===id)'),true);a.equal(h.run('validateCareer(S);true'),true);});
+test('enchères successives: améliorer salaire gagne, un devis dépassé refuse sans mutation',()=>{
+ const h=office(),p=target(h),r=request(h,p),first=h.go('interclub_negotiate',r).interclubNegotiation;const high={...r,salary:Math.min(100000,(first.winner?.salary||p.salary)+1000),fee:Math.max(p.fee,first.winner?.fee||0)};const second=h.go('interclub_negotiate',high).interclubNegotiation;a.equal(second.winner.clubId,0);
+ const stale={...high,expectedWinner:second.winner.clubId,expectedFee:second.winner.fee,expectedSalary:second.winner.salary,confirmed:true};
+ h.run('S.franceMode.week++');const before=h.run('JSON.stringify(S)');a.throws(()=>h.go('interclub_auction',stale),/périmé/);a.equal(h.run('JSON.stringify(S)'),before);
+});
+test('un rival devenu insolvable rend le devis concurrent périmé sans transaction',()=>{
+ const h=office(),p=target(h),r=request(h,p);h.ctx.id=p.id;h.ctx.seller=p.clubId;
+ h.run('const rival2=S.clubs.find(c=>c.id!==S.club&&c.id!==seller);rival2.cash=100000000;rival2.players.forEach(q=>q.salary=1000);rival2.players.filter(q=>q.fam===S.clubs[seller].players.find(p=>p.id===id).fam).forEach(q=>q.contractEnd=S.season);');
+ const q=h.go('interclub_negotiate',r).interclubNegotiation;a.notEqual(q.winner.clubId,0);h.ctx.rivalId=q.winner.clubId;h.run('S.clubs[rivalId].cash=0');const before=h.run('JSON.stringify(S)'),rng=h.randomState();a.throws(()=>h.go('interclub_auction',{...r,expectedWinner:q.winner.clubId,expectedFee:q.winner.fee,expectedSalary:q.winner.salary,confirmed:true}),/périmé/);a.equal(h.run('JSON.stringify(S)'),before);a.deepEqual(h.randomState(),rng);
+});
+test('plafond salarial: aucune IA ne gagne sous la demande du joueur',()=>{
+ for(const source of [100000,95239]){
+  const h=office(),p=target(h);h.ctx.id=p.id;h.ctx.seller=p.clubId;h.ctx.source=source;
+  h.run('S.clubs[seller].players.find(p=>p.id===id).salary=source;const rich=S.clubs.find(c=>c.id!==S.club&&c.id!==seller);rich.cash=100000000;rich.players.forEach(q=>q.salary=1000);rich.players.filter(q=>q.fam===S.clubs[seller].players.find(p=>p.id===id).fam).forEach(q=>q.contractEnd=S.season);validateCareer(S)');
+  const q0=h.project().candidates.find(q=>q.id===p.id),r={...request(h,q0),salary:100000},before=h.run('JSON.stringify(S)'),q=h.go('interclub_negotiate',r).interclubNegotiation;
+  a.equal(q.player.accepted,false);a.equal(q.offers.length,0);a.equal(q.winner,null);a.match(q.humanReason,/plafond/);
+  a.throws(()=>h.go('interclub_auction',{...r,expectedWinner:1,expectedFee:q0.fee,expectedSalary:100000,confirmed:true}));a.equal(h.run('JSON.stringify(S)'),before);
+ }
+});
+test('juste sous la borne: une IA solvable peut offrir 100000 et payer réellement',()=>{
+ const h=office(),p=target(h);h.ctx.id=p.id;h.ctx.seller=p.clubId;
+ h.run('S.clubs[seller].players.find(p=>p.id===id).salary=95238;const rich2=S.clubs.find(c=>c.id!==S.club&&c.id!==seller);rich2.cash=100000000;rich2.players.forEach(q=>q.salary=1000);rich2.players.filter(q=>q.fam===S.clubs[seller].players.find(p=>p.id===id).fam).forEach(q=>q.contractEnd=S.season);validateCareer(S)');
+ const q0=h.project().candidates.find(q=>q.id===p.id),r=request(h,q0),q=h.go('interclub_negotiate',r).interclubNegotiation;a(q.winner);a(q.winner.salary>=q.player.counter);const before=JSON.parse(h.run('JSON.stringify(S.clubs.map(c=>c.cash))'));h.go('interclub_auction',{...r,expectedWinner:q.winner.clubId,expectedFee:q.winner.fee,expectedSalary:q.winner.salary,confirmed:true});a.equal(h.run('S.clubs['+q.winner.clubId+'].cash'),before[q.winner.clubId]-q.winner.fee);a.equal(h.run('S.clubs['+q.winner.clubId+'].players.find(p=>p.id===id).salary'),100000);a.equal(h.run('validateCareer(S);true'),true);
+});

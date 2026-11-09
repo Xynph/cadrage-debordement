@@ -19,6 +19,7 @@ var category: OptionButton
 var search: LineEdit
 var count: Label
 var new_events: Label
+var review: Button
 var latest: Button
 var scroll: ScrollContainer
 var rows: VBoxContainer
@@ -92,6 +93,13 @@ func setup(owner_app: Control) -> void:
 	status.add_child(count)
 	new_events = G.wrap("", 12, G.GOLD)
 	status.add_child(new_events)
+	review = G.button("RELIRE", _review)
+	review.name = "MatchJournalReview"
+	review.tooltip_text = "Relire un instantané des faits filtrés et leurs positions enregistrées"
+	review.custom_minimum_size.y = 32
+	review.add_theme_font_size_override("font_size",12)
+	navigation.add_child(review)
+	_compact_control(review)
 	latest = G.button("DERNIER ÉVÉNEMENT ↓", _latest)
 	latest.custom_minimum_size.y = 32
 	latest.add_theme_font_size_override("font_size", 12)
@@ -140,6 +148,10 @@ static func _compact_control(control: Control) -> void:
 		control.add_theme_stylebox_override(key, style)
 
 func _bind_current_context() -> void:
+	var old_review := find_child("MatchActionReview",true,false)
+	if old_review != null:
+		old_review.hide()
+		old_review.queue_free()
 	_ui_state = app.management_ui
 	_revision += 1
 	_started = false
@@ -236,7 +248,16 @@ func _render(position: int, follow: bool) -> void:
 		var minute := "Minute non renseignée"
 		if event is Dictionary and (event.get("min") is int or event.get("min") is float): minute = _number(event.min) + " min"
 		var caption: String = KINDS.get(kind, "Type non renseigné" if kind.is_empty() else "Type inconnu (« %s »)" % kind)
-		entry.add_child(G.wrap(minute + " · " + caption, 13, G.GOLD))
+		var event_link := G.wrap(minute + " · " + caption + " ↗",13,G.GOLD)
+		event_link.name = "JournalActionLink"
+		event_link.tooltip_text = "Relire ce fait et sa position enregistrée · Entrée ou clic"
+		event_link.focus_mode = Control.FOCUS_ALL
+		event_link.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		event_link.focus_entered.connect(func(): event_link.add_theme_color_override("font_color",G.WHITE))
+		event_link.focus_exited.connect(func(): event_link.add_theme_color_override("font_color",G.GOLD))
+		event_link.mouse_filter = Control.MOUSE_FILTER_STOP
+		event_link.gui_input.connect(_review_input.bind(visible_events.size()-1))
+		entry.add_child(event_link)
 		entry.add_child(G.wrap(str(event.get("text", "Texte non renseigné")) if event is Dictionary else str(event), 14, G.INK))
 		if event is Dictionary and event.get("scene") is Dictionary:
 			var scene: Dictionary = event.scene
@@ -254,6 +275,7 @@ func _render(position: int, follow: bool) -> void:
 	count.text = "%d / %d faits" % [visible_events.size(), _events.size()]
 	empty.visible = visible_events.is_empty()
 	empty.text = "Aucun événement pour ces filtres." if not _events.is_empty() else "Le journal se remplira après le coup d’envoi."
+	review.disabled = visible_events.is_empty()
 	latest.disabled = visible_events.is_empty()
 	_notice()
 	_event_font_floor = _reading_font_floor()
@@ -320,3 +342,16 @@ func _latest() -> void:
 	scroll.scroll_vertical = int(scroll.get_v_scroll_bar().max_value)
 	_notice()
 	_store()
+
+func _review_input(event: InputEvent, visible_index: int) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT:
+		_review(visible_index)
+		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo and event.keycode in [KEY_ENTER,KEY_KP_ENTER,KEY_SPACE]:
+		_review(visible_index)
+		get_viewport().set_input_as_handled()
+
+func _review(start_index: int = -1) -> void:
+	# Local owned dialog is discarded with this journal on import/navigation.
+	if find_child("MatchActionReview",true,false) != null: return
+	load("res://match_action_review.gd").open(self,visible_events,_live.get("teams",[]),start_index)
