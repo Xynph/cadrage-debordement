@@ -85,3 +85,62 @@ test('Les rendus réels Finances et Contrats annoncent le même calendrier que l
     assert(contractsPanel.includes('Salaires restant à verser : environ '+forecast),mode+' : même engagement');
   }
 });
+
+test('Prévision Monde : paies et recettes connues restent distinctes, sans recettes de repos ou de terrain neutre', () => {
+  const h=worldContext();h.run("CDWorldCareer.start(0,'world')");contracts(h);
+  // Query-only calendar fixture; not exported as a complete valid season.
+  h.run(`S.worldMode.fixtures=[
+    {week:0,homeId:0,awayId:1,phase:'league',neutral:false},
+    {week:15,homeId:0,awayId:4,phase:'pool',neutral:false},
+    {week:30,homeId:1,awayId:0,phase:'league',neutral:false},
+    {week:40,homeId:0,awayId:2,phase:'quarter',neutral:true}
+  ];`);
+  for(const week of [0,30,46]) {
+    at(h,week);
+    const before=h.run('JSON.stringify(S)'),store=JSON.stringify(h.store),rng=h.seed();
+    const p=JSON.parse(h.run('JSON.stringify(forecastFinancialScenario(S,{kind:"baseline"},3))'));
+    assert.equal(p.valid,true);assert.equal(p.annual[0].payments,46-week);
+    assert.equal(p.annual[0].payroll,(46-week)*4500);
+    assert.equal(p.annual[0].partners,(46-week)*160000);
+    assert.equal(p.annual[0].homes,week===0?2:0);
+    assert.equal(p.annual[0].matchDays,week===0?4:week===30?2:0);
+    assert.equal(p.annual[1].payments,46);assert.equal(p.annual[1].payroll,3500*46);
+    assert.equal(p.annual[2].payroll,2000*46);
+    assert.equal(p.annual[1].homes,1);assert.equal(p.annual[1].matchDays,2,'ni Coupe d’Europe ni KO futurs inventés');
+    assert.equal(p.annual[1].calendarPolicy,'repeat-current-domestic-template-no-europe-or-knockouts');
+    assert.equal(p.points[2].central-p.points[1].central,2500000+46*160000-3500*46+375000+2*40000);
+    assert.equal(h.run('JSON.stringify(S)'),before);assert.equal(JSON.stringify(h.store),store);assert.equal(h.seed(),rng);
+    const html=h.run('financialForecastPanel()');
+    assert(html.includes('Dès cette saison : '+(46-week)+' semaine(s) de flux'));
+    assert(html.includes('aucune nouvelle qualification européenne'));
+    assert(!html.includes('-1 semaine(s)')&&!html.includes('-16 semaine(s)'));
+  }
+});
+
+test('France34 : les semaines de repos paient les salaires sans inventer de billetterie', () => {
+  const h=context();h.run('CDFranceCareer.start(0)');contracts(h);at(h,6);
+  const cal=JSON.parse(h.run('JSON.stringify(forecastCalendar(S,0))'));
+  assert.equal(cal.weeks,34);assert.equal(cal.entries.length,28);
+  assert.deepEqual(cal.entries.find(e=>e.week===6),{week:6,home:false,match:false});
+  const p=JSON.parse(h.run('JSON.stringify(forecastFinancialScenario(S,{kind:"baseline"},2))'));
+  assert.equal(p.annual[0].payments,28);assert.equal(p.annual[0].payroll,4500*28);
+  assert.equal(p.annual[1].payments,34);assert.equal(p.annual[1].matchDays,26);
+  at(h,34);assert.equal(h.run('forecastFinancialScenario(S,{kind:"baseline"},1).annual[0].payments'),0);
+});
+
+test('Accord de contrat réel : le récapitulatif emploie le calendrier courant sans changer l’accord', () => {
+  const h=worldContext();
+  for(const [mode,weeks] of [['fiction',29],['france',34],['world',46],['world-champ',46]]) {
+    h.ctx.auditMode=mode;
+    h.run("if(auditMode.startsWith('world'))CDWorldCareer.start(0,auditMode);else if(auditMode==='france')CDFranceCareer.start(0);else start(0,'fiction');");
+    h.run(`var wagePlayer=club().players.find(p=>p.age<30&&p.contractEnd<=S.season+1);
+      if(!wagePlayer)throw Error('Missing renewal fixture');
+      if(!negotiateContract(wagePlayer.id,'renew',100000,3))throw Error('Renewal setup failed');`);
+    const expected=h.run('money(S.economy.talks[talkKey(wagePlayer.id,"renew")].acceptedSalary*'+weeks+'*3)');
+    const state=h.run('JSON.stringify(S)'),store=JSON.stringify(h.store),rng=h.seed();
+    h.run('openContract(wagePlayer.id,"renew")');const html=h.run('modal');
+    assert(html.includes('Salaires sur 3 saison(s) complète(s) : '+expected),mode);
+    assert(html.includes('('+weeks+' semaines payées par saison ; estimation, hors primes).'),mode);
+    assert.equal(h.run('JSON.stringify(S)'),state);assert.equal(JSON.stringify(h.store),store);assert.equal(h.seed(),rng);
+  }
+});

@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {forecast,compare,stressTest,runway}=require('../dist/finance-planning.js');
+const {forecast,compare,stressTest,runway,calendar}=require('../dist/finance-planning.js');
 const base={cash:1000000,weeklyIncome:160000,weeklyWages:130000,weeklyOtherCosts:10000,weeks:4};
 let f=forecast(base);
 assert.equal(f.initialBalance,1000000);
@@ -28,3 +28,21 @@ assert.equal(runway({...base,cash:100000,weeklyIncome:0}).estimatedWeeksToDefici
 assert.equal(runway(base).estimatedWeeksToDeficit,null);
 assert.throws(()=>stressTest(base,{incomeDrop:1.2}),RangeError);
 console.log(JSON.stringify({passed:true,checks:['prévision hebdomadaire','solde et déficit','recettes et dépenses ponctuelles','part des salaires','comparaison de scénarios','validation des entrées','sans mutation']}));
+// Pay periods and fixture income are different dimensions (including byes).
+const calendarInput={weeks:5,from:1,clubId:0,fixtures:[
+ {week:0,homeId:0,awayId:1},
+ {week:1,homeId:2,awayId:0},
+ {week:2,homeId:0,awayId:3,neutral:true},
+ {week:4,homeId:0,awayId:4,neutral:false}
+]};
+const calendarBefore=JSON.stringify(calendarInput);
+assert.deepEqual(calendar(calendarInput),[
+ {week:1,match:true,home:false},{week:2,match:true,home:false},
+ {week:3,match:false,home:false},{week:4,match:true,home:true}
+]);
+assert.equal(JSON.stringify(calendarInput),calendarBefore);
+assert.deepEqual(calendar({...calendarInput,from:5}),[]);
+for(const change of [{from:-1},{from:6},{weeks:0},{weeks:105},{clubId:-1},
+ {fixtures:[{week:5,homeId:0,awayId:1}]},{fixtures:[{week:1,homeId:0,awayId:0}]},{fixtures:[{week:1,homeId:-1,awayId:0}]},
+ {fixtures:[{week:1,homeId:0,awayId:1,neutral:'false'}]}])
+ assert.throws(()=>calendar({...calendarInput,...change}),RangeError);

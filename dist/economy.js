@@ -329,9 +329,9 @@ function contractBase(){return S.season+(S.phase==='ended'?1:0)}
 function contractYears(p){ensureContract(p);return Math.max(0,p.contractEnd-S.season+1)}
 function contractLabel(p){ensureContract(p);return `Fin saison ${p.contractEnd}${p.contractEnd===S.season?' · À prolonger':''}`}
 function totalWages(){return club().players.reduce((n,p)=>n+p.salary,0)}
-function wageForecastWeeks(){
- if(typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S))return CDWorldCareer.sizing(S).rounds;
- return S.franceMode?34:29;
+function wageForecastWeeks(s=S){
+ if(typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s))return CDWorldCareer.sizing(s).rounds;
+ return s.franceMode?34:29;
 }
 function futureWages(){const weeks=wageForecastWeeks(),week=S.franceMode?.week??S.round;return club().players.reduce((n,p)=>n+p.salary*(Math.max(0,weeks-week)+Math.max(0,p.contractEnd-S.season)*weeks),0)}
 function transferValue(p){ensureDevelopment(p);const ageFactor=p.age<25?1.2:p.age>31?.65:1;const term=p.contractEnd===S.season?.65:1;return Math.max(20000,Math.round((roleNote(p)-45)**2*330*ageFactor*term*(1+Math.min(.2,(p.dev.potential-p.rating)*.012))*(p.injury?.8:1)/10000)*10000)}
@@ -426,7 +426,7 @@ function contractFee(p,kind){return kind==='renew'?Math.round(p.salary*2/1000)*1
 function ledgerEntry(title,amount){club().cash+=amount;S.ledger.unshift({title,amount});S.ledger=S.ledger.slice(0,100)}
 function transferEvent(text){S.economy.transfers.unshift({season:S.season,round:S.round,text});S.economy.transfers=S.economy.transfers.slice(0,80);news(text)}
 function openContract(id,kind='recruit'){if(economyLocked())return;let p=talkPlayer(id,kind);if(!p)return;let key=talkKey(id,kind),t=S.economy.talks[key];const min=kind==='renew'?Math.max(1,p.contractEnd-contractBase()+2):1;if(min>Math.min(3,careerContractYears(p))){toast('Pas de nouveau contrat possible avant la retraite prévue, ou contrat déjà suffisamment long.');return}
-const years=t?.years||Math.max(2,min),salary=t?.salary||askingWage(p,kind),fee=contractFee(p,kind);modal=`<div class="modalback"><section class="modal contractmodal" role="dialog" aria-modal="true" aria-label="Négociation de contrat"><div class="row" style="margin-top:0"><span class="tag">${kind==='renew'?'PROLONGATION':'RECRUTEMENT'}</span><button class="small" onclick="closeModal()">Fermer ×</button></div><h2>${p.name}</h2><p>${p.pos} · ${p.age} ans · ${kind==='renew'?'Note au poste '+roleNote(p):'Niveau estimé '+recruitmentEvidence(p).noteMin+'–'+recruitmentEvidence(p).noteMax+(recruitmentEvidence(p).seen?' (rapport daté)':' (non observé)')}</p><div class="row"><span>Salaire demandé / semaine</span><strong>${money(askingWage(p,kind))}</strong></div><div class="row"><span>Prime à la signature</span><strong>${money(fee)}</strong></div>${kind==='renew'?`<p class="help">Contrat actuel : ${contractLabel(p)} · ${money(p.salary)} / semaine. La nouvelle durée inclut ${contractBase()===S.season?'la saison en cours':'la prochaine saison'}.</p>`:`<p class="help">La durée inclut ${contractBase()===S.season?'la saison en cours':'la prochaine saison'}. Le contrat prend fin à l’issue de la dernière saison indiquée.</p>`}<p class="help">Retraite prévue : fin de saison ${retirementSeason(p)}. Le choix de durée tient compte de cette échéance.</p><div class="contractfields"><label>Salaire proposé / semaine (€)<input id="offer-wage" type="number" step="100" min="1000" max="100000" value="${salary}"></label><label>Durée du contrat<select id="offer-years">${[1,2,3].filter(y=>y>=min&&y<=careerContractYears(p)).map(y=>`<option value="${y}" ${years===y?'selected':''}>${y} saison${y>1?'s':''} · fin S${contractBase()+y-1}</option>`).join('')}</select></label></div><p class="help">Trois propositions maximum par journée. Une acceptation reste à confirmer avant toute dépense.</p>${t?`<div class="notice" role="status">${t.message}</div>`:''}<div class="contractactions">${!t||t.status!=='withdrawn'?`<button class="dark" onclick="submitContract('${id}','${kind}')">Proposer ces conditions</button>`:''}${t&&['ready','counter'].includes(t.status)?`<button class="primary" onclick="confirmContract('${key}')">${t.status==='counter'?'Accepter la contre-proposition':'Confirmer la signature'} · ${money(t.acceptedSalary)} / sem.</button>`:''}</div>${t&&['ready','counter'].includes(t.status)?`<p class="help">Accord proposé : ${t.years} saison(s), fin S${t.end}. Prime ${money(t.fee)} à payer maintenant. Salaires sur ${t.years} saison(s) complète(s) : ${money(t.acceptedSalary*29*t.years)} (29 journées payées par saison ; estimation, hors primes).</p>`:''}</section></div>`;render()}
+const years=t?.years||Math.max(2,min),salary=t?.salary||askingWage(p,kind),fee=contractFee(p,kind);modal=`<div class="modalback"><section class="modal contractmodal" role="dialog" aria-modal="true" aria-label="Négociation de contrat"><div class="row" style="margin-top:0"><span class="tag">${kind==='renew'?'PROLONGATION':'RECRUTEMENT'}</span><button class="small" onclick="closeModal()">Fermer ×</button></div><h2>${p.name}</h2><p>${p.pos} · ${p.age} ans · ${kind==='renew'?'Note au poste '+roleNote(p):'Niveau estimé '+recruitmentEvidence(p).noteMin+'–'+recruitmentEvidence(p).noteMax+(recruitmentEvidence(p).seen?' (rapport daté)':' (non observé)')}</p><div class="row"><span>Salaire demandé / semaine</span><strong>${money(askingWage(p,kind))}</strong></div><div class="row"><span>Prime à la signature</span><strong>${money(fee)}</strong></div>${kind==='renew'?`<p class="help">Contrat actuel : ${contractLabel(p)} · ${money(p.salary)} / semaine. La nouvelle durée inclut ${contractBase()===S.season?'la saison en cours':'la prochaine saison'}.</p>`:`<p class="help">La durée inclut ${contractBase()===S.season?'la saison en cours':'la prochaine saison'}. Le contrat prend fin à l’issue de la dernière saison indiquée.</p>`}<p class="help">Retraite prévue : fin de saison ${retirementSeason(p)}. Le choix de durée tient compte de cette échéance.</p><div class="contractfields"><label>Salaire proposé / semaine (€)<input id="offer-wage" type="number" step="100" min="1000" max="100000" value="${salary}"></label><label>Durée du contrat<select id="offer-years">${[1,2,3].filter(y=>y>=min&&y<=careerContractYears(p)).map(y=>`<option value="${y}" ${years===y?'selected':''}>${y} saison${y>1?'s':''} · fin S${contractBase()+y-1}</option>`).join('')}</select></label></div><p class="help">Trois propositions maximum par journée. Une acceptation reste à confirmer avant toute dépense.</p>${t?`<div class="notice" role="status">${t.message}</div>`:''}<div class="contractactions">${!t||t.status!=='withdrawn'?`<button class="dark" onclick="submitContract('${id}','${kind}')">Proposer ces conditions</button>`:''}${t&&['ready','counter'].includes(t.status)?`<button class="primary" onclick="confirmContract('${key}')">${t.status==='counter'?'Accepter la contre-proposition':'Confirmer la signature'} · ${money(t.acceptedSalary)} / sem.</button>`:''}</div>${t&&['ready','counter'].includes(t.status)?`<p class="help">Accord proposé : ${t.years} saison(s), fin S${t.end}. Prime ${money(t.fee)} à payer maintenant. Salaires sur ${t.years} saison(s) complète(s) : ${money(t.acceptedSalary*wageForecastWeeks()*t.years)} (${wageForecastWeeks()} semaines payées par saison ; estimation, hors primes).</p>`:''}</section></div>`;render()}
 function submitContract(id,kind){const wage=Number($('#offer-wage').value),years=Number($('#offer-years').value);negotiateContract(id,kind,wage,years);openContract(id,kind)}
 function negotiateContract(id,kind,wage,years){if(economyLocked())return false;let p=talkPlayer(id,kind);if(!p||!['recruit','renew'].includes(kind)||!Number.isInteger(wage)||wage<1000||wage>100000||![1,2,3].includes(years)){toast('Vérifiez le salaire et la durée proposés.');return false}let end=contractBase()+years-1;if(years>careerContractYears(p)){toast('Cette durée dépasse la retraite prévue du joueur.');return false}if(kind==='renew'&&end<=p.contractEnd){toast('La prolongation doit allonger le contrat actuel.');return false}let key=talkKey(id,kind),prev=S.economy.talks[key];if(prev?.attempts>=3||prev?.status==='withdrawn'){toast('Le joueur ne négociera plus avant la prochaine journée.');return false}const attempts=(prev?.attempts||0)+1,minimum=reservationWage(p,kind,years);const accepted=wage>=minimum;const withdrawn=!accepted&&attempts===3;const acceptedSalary=accepted?wage:minimum;const status=accepted?'ready':withdrawn?'withdrawn':'counter';const message=accepted?`Accord de principe pour ${money(wage)} par semaine. Confirmez pour signer.`:withdrawn?'Les trois propositions ont échoué. Le joueur met fin aux échanges pour cette journée.':`Le joueur refuse et demande ${money(minimum)} par semaine sur ${years} saison(s). Proposition ${attempts}/3.`;
 S.economy.talks[key]={id,kind,week:S.economy.week,attempts,years,salary:wage,acceptedSalary,status,message,end,fee:contractFee(p,kind)};logContractProposal(p,kind,wage,minimum,years,status,attempts);save();return true}
@@ -472,7 +472,28 @@ const FORECAST_PARTNERS=160000,FORECAST_HOME_LOW=300000,FORECAST_HOME_HIGH=45000
 const FORECAST_WIN_BONUS=80000,FORECAST_SEASON_FUNDING=2500000;
 let forecastChoice={recruit:'',renew:'',sale:'',years:2,horizon:3};
 function forecastContractBase(s){return s.season+(s.phase==='ended'?1:0)}
-function forecastFirstWeek(s){return s.phase==='league'?s.round:s.phase==='barrage'?26:s.phase==='semi'?27:s.phase==='final'?28:29}
+function forecastFirstWeek(s){
+ if(typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s))return Math.max(0,Math.min(CDWorldCareer.sizing(s).rounds,s.worldMode.week));
+ if(s.franceMode)return Math.max(0,Math.min(34,s.franceMode.week));
+ return s.phase==='league'?s.round:s.phase==='barrage'?26:s.phase==='semi'?27:s.phase==='final'?28:29;
+}
+function forecastCalendar(s,offset){
+ const weeks=wageForecastWeeks(s),from=offset===0?forecastFirstWeek(s):0;
+ let fixtures=[],policy='historical-regular-template';
+ if(typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s)){
+  fixtures=s.worldMode.fixtures.filter(f=>offset===0||f.phase==='league').map(f=>({week:f.week,homeId:f.homeId,awayId:f.awayId,neutral:f.neutral}));
+  policy=offset===0?'known-world-fixtures':'repeat-current-domestic-template-no-europe-or-knockouts';
+ }else if(s.franceMode){
+  const id=CDFranceCompetition.leagueId(s),league=s.franceMode.leagues[id];
+  fixtures=league.schedule.flatMap((pairs,round)=>pairs.map(pair=>({week:CDFranceCompetition.regularWeek(id,round),homeId:pair[0],awayId:pair[1],neutral:false})));
+  if(offset===0)fixtures.push(...CDFranceCompetition.currentFixtures(s).filter(f=>f.phase!=='league').map(f=>({week:s.franceMode.week,homeId:f.pair[0],awayId:f.pair[1],neutral:!!f.neutral})));
+  policy=offset===0?'known-france-fixtures':'repeat-current-domestic-template-no-knockouts';
+ }else{
+  const rounds=offset===0?s.schedule:typeof schedule==='function'?schedule():s.schedule;
+  fixtures=rounds.slice(0,26).flatMap((pairs,week)=>pairs.map(pair=>({week,homeId:pair[0],awayId:pair[1],neutral:false})));
+ }
+ return {weeks,from,policy,entries:CDFinancePlanning.calendar({weeks,from,fixtures,clubId:s.club})};
+}
 function forecastQuote(s,request){
  const kind=request?.kind||'baseline',years=request?.years??2;
  const current=s.clubs[s.club],base=forecastContractBase(s);
@@ -513,16 +534,14 @@ function forecastFinancialScenario(s,request={kind:'baseline'},horizon=3){
  const startCash=s.clubs[s.club].cash,players=quote.players.map(p=>({...p}));
  const cash={low:startCash-quote.fee,central:startCash-quote.fee,high:startCash-quote.fee};
  const minima={...cash},points=[{label:'Après opération',season:s.season,week:forecastFirstWeek(s),...cash}];
- const annual=[],cal=s.schedule,seasonal=typeof schedule==='function'?schedule():cal;
+ const annual=[];
  for(let offset=0;offset<horizon;offset++){
-  const year=s.season+offset,from=offset===0?forecastFirstWeek(s):0;
+  const year=s.season+offset,calendar=forecastCalendar(s,offset),from=calendar.from;
   if(offset>0){for(const key of ['low','central','high'])cash[key]+=FORECAST_SEASON_FUNDING;}
   let grossPayroll=0,homes=0,matchDays=0;
-  for(let week=from;week<29;week++){
+  for(const {week,home,match} of calendar.entries){
    const active=players.filter(p=>p.contractEnd===null||p.contractEnd===undefined||p.contractEnd>=year);
    const wage=active.reduce((sum,p)=>sum+p.salary,0);grossPayroll+=wage;
-   const pairs=week<26?(offset===0?cal[week]:seasonal[week]):null;
-   const home=!!pairs?.some(pair=>pair[0]===s.club),match=!!pairs?.some(pair=>pair.includes(s.club));
    if(home)homes++;
    if(match)matchDays++;
    cash.low+=FORECAST_PARTNERS-wage+(home?FORECAST_HOME_LOW:0);
@@ -530,8 +549,8 @@ function forecastFinancialScenario(s,request={kind:'baseline'},horizon=3){
    cash.high+=FORECAST_PARTNERS-wage+(home?FORECAST_HOME_HIGH:0)+(match?FORECAST_WIN_BONUS:0);
    for(const key of ['low','central','high'])minima[key]=Math.min(minima[key],cash[key]);
   }
-  annual.push({season:year,payments:29-from,homes,matchDays,payroll:grossPayroll,partners:(29-from)*FORECAST_PARTNERS,low:cash.low,central:cash.central,high:cash.high});
-  points.push({label:'Fin S'+year,season:year,week:29,...cash});
+  annual.push({season:year,payments:calendar.entries.length,calendarPolicy:calendar.policy,homes,matchDays,payroll:grossPayroll,partners:calendar.entries.length*FORECAST_PARTNERS,low:cash.low,central:cash.central,high:cash.high});
+  points.push({label:'Fin S'+year,season:year,week:calendar.weeks,...cash});
   for(let i=players.length-1;i>=0;i--)if(players[i].contractEnd!=null&&players[i].contractEnd<=year)players.splice(i,1);
  }
  const risk=quote.executable===false?'Non exécutable à ce jour':minima.low<0?'Trésorerie négative en scénario prudent':minima.central<0?'Trésorerie fragile en scénario médian':'Aucun déficit projeté dans ces hypothèses';
@@ -575,8 +594,8 @@ function financialForecastPanel(){
   row('Risque',r=>r.risk)
  ].join('');
  const details=scenarios.slice(1).map(s=>'<p class="help"><strong>'+s.label+' :</strong> '+(s.value.valid?(s.value.executable?'Hypothèse simulable, sans engagement. ':'Hypothèse non exécutable actuellement. ')+s.value.notes.join(' '):s.value.error)+'</p>').join('');
- const first=baseline.annual[0],explain='Hypothèses du moteur : partenaires 160 000 € et salaires à chaque journée ; 300 000 à 450 000 € par match à domicile déjà programmé ; prime 0/40 000/80 000 € par match pour les bornes prudent/médian/haut. '+FORECAST_SEASON_FUNDING.toLocaleString('fr-FR')+' € versés au début des saisons suivantes. Les 26 matchs de championnat sont déterminés par le calendrier de la carrière. Les trois journées finales sont payées, mais ni match ni billetterie ni prime de titre ne sont garantis. Aucun nouveau transfert, blessure, retraite, coût de scouting, prolongation automatique ou recette non codée n’est supposé.';
- return '<section class="card finance-forecast"><div class="cardtitle"><h2>Prévoir sans engager le club</h2><span class="tag">SIMULATION V31</span></div><p class="help">Quatre plans comparés sur les mêmes journées et hypothèses. Les montants sont une trésorerie de jeu, pas un budget réel. Modifier les choix ne change ni les contrats, ni les sauvegardes, ni le match.</p>'+controls+'<div class="tablewrap"><table class="forecast-table">'+cols+'<tbody>'+body+'</tbody></table></div>'+details+'<details><summary>Hypothèses, limites et calendrier</summary><p class="help">'+explain+'</p><p class="help">Dès cette saison : '+first.payments+' journée(s) de flux, '+first.homes+' match(s) à domicile de championnat restant(s), '+first.matchDays+' match(s) de championnat programmé(s). Les contrats expirés ne sont plus payés la saison suivante ; les joueurs encore présents après leur retraite éventuelle ne sont pas prédits.</p></details></section>';
+ const first=baseline.annual[0],explain='Hypothèses du moteur : partenaires 160 000 € et salaires à chaque journée ; 300 000 à 450 000 € par match à domicile déjà programmé ; prime 0/40 000/80 000 € par match pour les bornes prudent/médian/haut. '+FORECAST_SEASON_FUNDING.toLocaleString('fr-FR')+' € versés au début des saisons suivantes. Les semaines payées suivent l’édition de carrière. Les recettes courantes utilisent les rencontres déjà programmées, sans billetterie sur terrain neutre. Pour les saisons suivantes, seul le calendrier domestique courant est répété par hypothèse : aucune nouvelle qualification européenne, montée, descente ou phase finale n’est promise. Les frais d’entretien, dettes, investissements, blessures, retraites et autres opérations futures ne sont pas projetés. La fourchette représente ces seules hypothèses de flux, pas une garantie de trésorerie.';
+ return '<section class="card finance-forecast"><div class="cardtitle"><h2>Prévoir sans engager le club</h2><span class="tag">SIMULATION V31</span></div><p class="help">Quatre plans comparés sur les mêmes journées et hypothèses. Les montants sont une trésorerie de jeu, pas un budget réel. Modifier les choix ne change ni les contrats, ni les sauvegardes, ni le match.</p>'+controls+'<div class="tablewrap"><table class="forecast-table">'+cols+'<tbody>'+body+'</tbody></table></div>'+details+'<details><summary>Hypothèses, limites et calendrier</summary><p class="help">'+explain+'</p><p class="help">Dès cette saison : '+first.payments+' semaine(s) de flux, '+first.homes+' match(s) à domicile non neutre restant(s), '+first.matchDays+' rencontre(s) programmée(s) restante(s). Les contrats expirés ne sont plus payés la saison suivante ; les joueurs encore présents après leur retraite éventuelle ne sont pas prédits.</p></details></section>';
 }
 
 
