@@ -3,10 +3,11 @@
 // identity catalogue, the test harness, a network server, or protocol-supplied code.
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),readline=require('node:readline'),{randomUUID}=require('node:crypto');
 const projection=require('./model.cjs'),gestion=require('./gestion.cjs'),common=require('./common-rosters.cjs'),mediaPacks=require('./media-packs.cjs'),staff=require('./staff.cjs'),decisions=require('./decisions.cjs'),systems=require('./native-systems.cjs');
+const worldValidation=require('./world-validation.cjs'),worldKnockout=require('./world-knockout.cjs'),worldCareer=require('./world-career.cjs'),worldModel=require('./world-model.cjs'),worldCompetitions=require('./world-competitions.cjs'),worldRegistry=require('./world-registry.json');
 const MODULES=['storage.js','world-data.js','rugby.js','frontrow.js','restarts.js','matchflow.js','playbook.js','manager.js','manager-squad.js','tactical-plans.js','match-actions.js','match2d.js','match-v61-advisor.js','match-cockpit.js','economy.js','development.js','finance-planning.js','board-planning.js','academy-planning.js','transfer-planning.js','career-history.js','career-integration.js','club-ai.js','reputation.js','coach-market.js','coach-opportunities.js','facilities.js','rugby-world.js','financial-recovery.js','world-career.js','ai-roster-cycle.js','v39.js','manager-mobility.js','saves.js','opposition.js','match-preparation.js','france-clubs.js','rugby-common-rosters.js','rugby-roster-foundation.js','lnr-v11-aging.js','france-competition.js','france-knockout.js','france-career.js','france-save-validation.js','match3d/scene-adapter.js','game.js'];
 MODULES.splice(MODULES.indexOf('game.js'),0,...systems.files.filter(name=>!MODULES.includes(name)));
 const SYSTEM_COMMANDS=new Set(systems.commands);
-const IMPORT_LIMIT_BYTES=8*1024*1024,REQUEST_LIMIT_BYTES=17*1024*1024;
+const IMPORT_LIMIT_BYTES=8*1024*1024,WORLD_IMPORT_LIMIT_BYTES=16*1024*1024,REQUEST_LIMIT_BYTES=17*1024*1024,WORLD_REQUEST_LIMIT_BYTES=34*1024*1024;
 const COMMANDS=new Set([...SYSTEM_COMMANDS,'set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','finish_round','save','import','export','shutdown','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select']);
 function applicationRoot(engineDirectory=__dirname){
  // The only supported layouts are repo/native/engine and bundle/engine/core.
@@ -80,20 +81,37 @@ function createBridge(options={}){
   const run=source=>vm.runInContext(source,ctx,{timeout:15000});
   const dist=options.distDir?path.resolve(options.distDir):fs.existsSync(path.join(__dirname,'core'))?path.join(__dirname,'core'):path.resolve(__dirname,'../../dist');
   for(const name of MODULES)run(fs.readFileSync(path.join(dist,name),'utf8'));
-  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const CDCommonCareer=(${common.toString()})();const nativeModel=${projection.toString()};const nativeDecisions=${decisions.toString()};const nativeGestion=${gestion.toString()};`);
+  ctx.nativeWorldRegistryText=JSON.stringify(worldRegistry);
+  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const CDCommonCareer=(${common.toString()})();const CDWorldRegistry=JSON.parse(nativeWorldRegistryText);const CDWorldCompetitions=(${worldCompetitions.factory.toString()})();const CDWorldValidation=(${worldValidation.toString()})();const CDWorldKnockout=(${worldKnockout.toString()})();const CDWorldCareer=(${worldCareer.toString()})();CDWorldCareer.installHooks();const nativeBaseModel=${projection.toString()};const nativeModel=(${worldModel.toString()})(nativeBaseModel);const nativeDecisions=${decisions.toString()};const nativeGestion=${gestion.toString()};`);
   run(systems.bootstrap());
   try{run("if(loadSaveFailure)throw Error(loadSaveFailure);if(S){validateCareer(S);if(S.lnrMode)throw Error('Les effectifs réels ne sont pas chargés dans le moteur natif.');if(S.live&&!S.live.finished)S.live.paused=true;}");}catch(e){profileError='Profil illisible : '+e.message;run('S=null;');}
-  const packs=mediaPacks.createStore(dataDir,JSON.parse(run('JSON.stringify(CDCommonRosters)')));
-  const creation=()=>store['identity-pack-creation']||'base';
-  const snapshot=()=>{const m=JSON.parse(run('JSON.stringify(nativeModel())'));m.decisions=JSON.parse(run('JSON.stringify(nativeDecisions())'));m.clubLife=JSON.parse(run('JSON.stringify(nativeSystems.project())'));m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;return packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation());};
+  const legacyDatabase=JSON.parse(run('JSON.stringify(CDCommonRosters)')),packs=mediaPacks.createStore(dataDir,legacyDatabase,worldRegistry);
+  const creationKey=mode=>mode==='world'?'identity-pack-world-creation':'identity-pack-creation';
+  const creation=(mode='common')=>store[creationKey(mode)]||'base';
+  const edition=mode=>{if(!['common','world'].includes(mode))throw Error('Édition de pack invalide.');return mode==='world'?worldRegistry.id:legacyDatabase.id;};
+  const currentEdition=()=>run('CDWorldCareer.active(S)')?'world':'common';
+  const snapshot=()=>{const m=JSON.parse(run('JSON.stringify(nativeModel())'));m.decisions=JSON.parse(run('JSON.stringify(nativeDecisions())'));m.clubLife=JSON.parse(run('JSON.stringify(nativeSystems.project())'));m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;return packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'));};
   const persist=()=>{
-   const text=JSON.stringify({protocol:1,seed,clock,store}),temp=path.join(dataDir,'donnees.tmp'),backup=path.join(dataDir,'donnees-precedentes.json'),backupTemp=path.join(dataDir,'donnees-precedentes.tmp');
-   const write=(target,content)=>{const fd=fs.openSync(target,'w');try{fs.writeFileSync(fd,content);fs.fsyncSync(fd);}finally{fs.closeSync(fd);}};
+   const token=randomUUID(),text=JSON.stringify({protocol:1,seed,clock,store}),temp=path.join(dataDir,'donnees.tmp-'+token),backup=path.join(dataDir,'donnees-precedentes.json'),backupTemp=path.join(dataDir,'donnees-precedentes.tmp-'+token),rollback=path.join(dataDir,'donnees-precedentes.rollback-'+token);
+   const write=(target,content)=>{const fd=fs.openSync(target,'wx');try{fs.writeFileSync(fd,content);fs.fsyncSync(fd);}finally{fs.closeSync(fd);}};
+   const ordinary=target=>{const s=fs.lstatSync(target);if(!s.isFile()||s.isSymbolicLink())throw Error('Fichier de sauvegarde ou de secours non ordinaire.');};
+   let stashed=false,published=false;
    try{
     write(temp,text);
-    if(fs.existsSync(file)){write(backupTemp,fs.readFileSync(file));fs.renameSync(backupTemp,backup);}
+    if(fs.existsSync(file)){
+     ordinary(file);write(backupTemp,fs.readFileSync(file));
+     if(fs.existsSync(backup)){ordinary(backup);fs.renameSync(backup,rollback);stashed=true;}
+     fs.renameSync(backupTemp,backup);published=true;
+    }
     fs.renameSync(temp,file);
-   }catch(e){for(const p of [temp,backupTemp]){try{fs.unlinkSync(p);}catch{}}const failure=Error('Écriture de sauvegarde impossible : '+e.message);failure.storageFailure=true;throw failure;}
+   }catch(e){
+    let retained='';
+    try{if(stashed)fs.renameSync(rollback,backup);else if(published)fs.unlinkSync(backup);}catch{if(stashed)retained=' Copie de secours conservée : '+path.basename(rollback)+'.';}
+    for(const p of [temp,backupTemp]){try{fs.unlinkSync(p);}catch{}}
+    const failure=Error('Écriture de sauvegarde impossible : '+e.message+retained);failure.storageFailure=true;throw failure;
+   }
+   // A cleanup failure cannot turn an already published career into a failure.
+   if(stashed){try{fs.unlinkSync(rollback);}catch{}}
   };
   function handle(request){
    let id=null;
@@ -107,9 +125,9 @@ function createBridge(options={}){
     if(command==='snapshot')return {id,ok:true,model:snapshot()};
     if(command==='recover_profile'){if(!profileError)throw Error('Aucun profil à récupérer.');if(payload.confirmed!==true)throw Error('Confirmation requise pour préserver puis remplacer le profil illisible.');const backup=path.join(dataDir,'donnees-endommagees-'+randomUUID()+'.json');fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);recoveryBackup=backup;profileError='';store={};run('S=null;loadSaveFailure="";lastSaveError=false;');return {id,ok:true,model:snapshot()};}
     if(profileError&&!['snapshot','shutdown'].includes(command))throw Error(profileError+' Confirmez la récupération du profil.');
-    if(command==='pack_inspect'){packs.inspect(payload.path);return {id,ok:true,model:snapshot()};}
-    if(command==='pack_install'){packs.install(payload.path,payload.digest);return {id,ok:true,model:snapshot()};}
-    if(command==='pack_select'&&payload.scope==='creation'){if(payload.id!=='base'&&!packs.get(payload.id))throw Error('Pack non installé.');const prior=store['identity-pack-creation'];try{store['identity-pack-creation']=payload.id;persist();}catch(e){if(prior===undefined)delete store['identity-pack-creation'];else store['identity-pack-creation']=prior;throw e;}return {id,ok:true,model:snapshot()};}
+    if(command==='pack_inspect'){packs.inspect(payload.path,edition(payload.mode??currentEdition()));return {id,ok:true,model:snapshot()};}
+    if(command==='pack_install'){packs.install(payload.path,payload.digest,payload.mode===undefined?undefined:edition(payload.mode));return {id,ok:true,model:snapshot()};}
+    if(command==='pack_select'&&payload.scope==='creation'){const mode=payload.mode??'common',databaseId=edition(mode),key=creationKey(mode),selected=payload.id==='base'?null:packs.get(payload.id);if(payload.id!=='base'&&!selected)throw Error('Pack non installé.');if(selected&&selected.meta.databaseId!==databaseId)throw Error('Pack incompatible avec cette édition.');const prior=store[key];try{store[key]=payload.id;persist();}catch(e){if(prior===undefined)delete store[key];else store[key]=prior;throw e;}return {id,ok:true,model:snapshot()};}
     if(command==='export'){const model=snapshot();model.meta.exportText=run('JSON.stringify(createSaveDocument())');return {id,ok:true,model};}
     if(command==='shutdown'){const model=snapshot();close();return {id,ok:true,model};}
     const prior=run('JSON.stringify({state:S,playback:S?.live?playback(S.live):null,saveError:lastSaveError})'),priorStore=JSON.stringify(store),priorSeed=seed,priorClock=clock;
@@ -118,9 +136,9 @@ function createBridge(options={}){
      ctx.nativePayload=JSON.parse(JSON.stringify(payload));
      if(command!=='new_career'&&command!=='import'&&!run('!!S'))throw Error('Créez ou importez une carrière.');
      if(command==='pack_select'){
-      if(payload.scope!=='career'||!run('!!S?.commonDatabase'))throw Error('Sélection réservée à une carrière de base commune.');const pack=payload.id==='base'?null:packs.get(payload.id);if(payload.id!=='base'&&!pack)throw Error('Pack non installé.');ctx.nativeBinding=pack?{id:pack.meta.id,digest:pack.meta.digest}:null;run('if(nativeBinding)S.identityPack=nativeBinding;else delete S.identityPack');
+      if(payload.scope!=='career'||!run('!!S?.commonDatabase'))throw Error('Sélection réservée à une carrière de base commune.');const pack=payload.id==='base'?null:packs.get(payload.id);if(payload.id!=='base'&&!pack)throw Error('Pack non installé.');if(pack&&pack.meta.databaseId!==run('S.commonDatabase.id'))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding=pack?{id:pack.meta.id,digest:pack.meta.digest}:null;run('if(nativeBinding)S.identityPack=nativeBinding;else delete S.identityPack');
      }else if(command==='new_career'){
-      const mode=payload.mode??'fiction';if(!['fiction','france','common'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(payload.club)||payload.club<0||payload.club>=(mode==='fiction'?14:30))throw Error('Club invalide pour ce mode.');run("if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction')");if(mode==='common'&&creation()!=='base'){const selected=packs.get(creation());if(!selected)throw Error('Pack de création absent ; réimportez-le ou choisissez Base.');ctx.nativeBinding={id:selected.meta.id,digest:selected.meta.digest};run('S.identityPack=nativeBinding');}
+      const mode=payload.mode??'fiction';if(!['fiction','france','common','world'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(payload.club)||payload.club<0||payload.club>=(mode==='world'?56:mode==='fiction'?14:30))throw Error('Club invalide pour ce mode.');run("if(nativePayload.mode==='world')CDWorldCareer.start(nativePayload.club);else if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction')");if(['common','world'].includes(mode)&&creation(mode)!=='base'){const selected=packs.get(creation(mode));if(!selected)throw Error('Pack de création absent ; réimportez-le ou choisissez Base.');if(selected.meta.databaseId!==edition(mode))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding={id:selected.meta.id,digest:selected.meta.digest};run('S.identityPack=nativeBinding');}
      }else if(command==='train'){
       const mode=payload.mode??run('S.training');if(!['normal','repos','intense'].includes(mode))throw Error('Entraînement invalide.');
       if(run("!!S.live||S.phase==='ended'"))throw Error('Entraînement indisponible pendant le match ou après la saison.');
@@ -173,8 +191,10 @@ function createBridge(options={}){
       if(!run("S.phase!=='ended'&&(S.live?.finished||!S.live&&!nextMatch())"))throw Error('Terminez le match avant de valider la journée.');run('finishRound()');
      }else if(command==='import'){
       if(typeof payload.text!=='string')throw Error('Texte JSON d’import requis.');
-      if(Buffer.byteLength(payload.text,'utf8')>IMPORT_LIMIT_BYTES)throw Error('Fichier trop volumineux (8 Mio UTF-8 maximum).');
-      run("pendingSave=parseSaveDocument(nativePayload.text);if(pendingSave.state.lnrMode)throw Error('Les effectifs réels ne sont pas chargés dans le moteur natif.');if(!confirmSaveImport())throw Error('Import annulé : sauvegarde impossible.');");
+      if(Buffer.byteLength(payload.text,'utf8')>WORLD_IMPORT_LIMIT_BYTES)throw Error('Fichier trop volumineux (16 Mio UTF-8 maximum).');
+      run("pendingSave=parseSaveDocument(nativePayload.text);if(pendingSave.state.lnrMode)throw Error('Les effectifs réels ne sont pas chargés dans le moteur natif.');");
+      const imported=JSON.parse(run('JSON.stringify({binding:pendingSave.state.identityPack,database:pendingSave.state.commonDatabase?.id})')),bound=imported.binding&&packs.get(imported.binding.id);if(bound&&bound.meta.databaseId!==imported.database)throw Error('Pack incompatible avec cette édition.');
+      run("if(!confirmSaveImport())throw Error('Import annulé : sauvegarde impossible.');");
      }
      let extra=null;if(SYSTEM_COMMANDS.has(command)){ctx.nativeCommand=command;extra=run('nativeSystems.execute(nativeCommand,nativePayload)');}
      else if(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
@@ -190,14 +210,14 @@ function createBridge(options={}){
   return {handle,close};
  }catch(e){close();throw e;}
 }
-module.exports={createBridge,applicationRoot,IMPORT_LIMIT_BYTES,REQUEST_LIMIT_BYTES,CORE_FILES:Object.freeze([...MODULES])};
+module.exports={createBridge,applicationRoot,IMPORT_LIMIT_BYTES,REQUEST_LIMIT_BYTES,WORLD_IMPORT_LIMIT_BYTES,WORLD_REQUEST_LIMIT_BYTES,CORE_FILES:Object.freeze([...MODULES])};
 if(require.main===module){
  let bridge;
  try{const rawSeed=process.env.CD_GODOT_SEED;let seed;if(rawSeed!==undefined){seed=Number(rawSeed);if(!/^(0|[1-9]\d*)$/.test(rawSeed)||!Number.isInteger(seed)||seed<0||seed>0xffffffff)throw Error('CD_GODOT_SEED doit être un entier entre 0 et 4294967295.');}const index=process.argv.indexOf('--data-dir');bridge=createBridge({...(seed===undefined?{}:{seed}),dataDir:index>=0?process.argv[index+1]:path.join(process.env.LOCALAPPDATA||require('node:os').homedir(),'CadrageDebordement','PrototypeGodot')});}
  catch(e){process.stdout.write(JSON.stringify({id:null,ok:false,model:null,error:e.message})+'\n');process.exitCode=1;return;}
  const input=readline.createInterface({input:process.stdin,crlfDelay:Infinity});
  input.on('line',line=>{
-  let result;try{if(Buffer.byteLength(line)>REQUEST_LIMIT_BYTES)throw Error('Message trop volumineux.');result=bridge.handle(JSON.parse(line));}catch(e){result={id:null,ok:false,model:null,error:e.message};}
+  let result;try{const bytes=Buffer.byteLength(line);if(bytes>WORLD_REQUEST_LIMIT_BYTES)throw Error('Message trop volumineux.');const request=JSON.parse(line);if(bytes>REQUEST_LIMIT_BYTES){if(request.command!=='import'||typeof request.payload?.text!=='string'||Buffer.byteLength(request.payload.text)>WORLD_IMPORT_LIMIT_BYTES)throw Error('Message trop volumineux.');const state=JSON.parse(request.payload.text)?.state;if(state?.worldMode?.catalogue!==worldRegistry.id||state?.worldMode?.version!==1||state.commonDatabase?.id!==worldRegistry.id||state.commonDatabase?.version!==worldRegistry.version||state.franceMode!==undefined||state.lnrMode!==undefined)throw Error('Message trop volumineux.');}result=bridge.handle(request);}catch(e){result={id:null,ok:false,model:null,error:e.message};}
   process.stdout.write(JSON.stringify(result)+'\n');if(result.ok&&line&&JSON.parse(line).command==='shutdown'){input.close();process.stdin.destroy();}
  });
  input.on('close',()=>bridge.close());process.on('exit',()=>bridge.close());

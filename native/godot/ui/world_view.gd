@@ -1,5 +1,6 @@
 extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
+const ClubViews = preload("res://ui/club_views.gd")
 
 static func _club(app: Control, id: Variant) -> String:
 	for league: Dictionary in app.model.get("leagues", []):
@@ -14,10 +15,13 @@ static func build(app: Control) -> Control:
 	page.name = "CarnetMonde"
 	G.fill(page, true)
 	var data: Dictionary = app.model.get("clubLife", {}).get("clubWorld", {})
+	var international: bool = app.model.get("meta", {}).get("mode") == "world"
 	var left := G.panel(page, 1.0)
 	G.chapter(left, "13", "Les confrontations", "La mémoire des rencontres suivies dans cette carrière.", app.accent)
 	var duels := G.scroll(left)
-	G.photo_note(duels, app.model.club, "Territoires de rugby", G.club_name(app.model.club), "city", 140)
+	var slug := str(G.identity(app.model.club).get("slug", ""))
+	if ResourceLoader.exists("res://assets/club-atlas/%s-city.webp" % slug):
+		G.photo_note(duels, app.model.club, "Territoires de rugby", G.club_name(app.model.club), "city", 140)
 	var pairs: Array = data.get("pairs", [])
 	if pairs.is_empty(): duels.add_child(G.wrap("Les premières confrontations apparaîtront après les rencontres réellement disputées.", 17))
 	for p: Dictionary in pairs:
@@ -28,9 +32,10 @@ static func build(app: Control) -> Control:
 		duels.add_child(G.separator())
 	duels.add_child(G.section("Palmarès conservé"))
 	for archive: Dictionary in data.get("archives", []):
-		if archive.get("champions") is Array:
-			for champion: Dictionary in archive.champions:
-				duels.add_child(G.wrap("S%s · %s : %s" % [int(archive.season), "Élite" if champion.leagueId == "elite" else "Accession", _club(app, champion.clubId)], 15))
+		var champions := ClubViews.archive_titles(archive)
+		if not champions.is_empty():
+			for champion: Dictionary in champions:
+				duels.add_child(G.wrap("S%s · %s : %s" % [int(archive.season), ClubViews.competition_name(champion.leagueId), _club(app, champion.clubId)], 15))
 		elif archive.get("champion") != null:
 			duels.add_child(G.wrap("S%s · %s" % [int(archive.season), _club(app, archive.champion)], 15))
 	for year: Dictionary in data.get("years", []):
@@ -41,7 +46,10 @@ static func build(app: Control) -> Control:
 	if data.get("events", []).is_empty(): events.add_child(G.wrap("Aucun résultat suivi pour le moment. Aucun passé n’est inventé.", 17))
 	for e: Dictionary in data.get("events", []):
 		var card := G.card(events, G.accent_ink(app.accent))
-		card.add_child(G.label("S%s · %s · journée %s" % [int(e.season), {"league":"Championnat", "barrage":"Barrage", "semi":"Demi-finale", "final":"Finale", "access":"Accession"}.get(e.phase, e.phase), int(e.round) + 1], 13, G.GOLD))
+		var stage := ClubViews.phase_name(e.phase) if international else str({"league":"Championnat", "barrage":"Barrage", "semi":"Demi-finale", "final":"Finale", "access":"Accession"}.get(e.phase, e.phase))
+		var competition := ClubViews.competition_name(e.get("leagueId", "")) + " · " if international else ""
+		var unit := "semaine" if international else "journée"
+		card.add_child(G.label("S%s · %s%s · %s %s" % [int(e.season), competition, stage, unit, int(e.round) + 1], 13, G.GOLD))
 		card.add_child(G.wrap("%s  %s – %s  %s" % [_club(app, e.a), int(e.home), int(e.away), _club(app, e.b)], 24, G.INK))
 		if e.winner != null and int(e.home) == int(e.away): events.add_child(G.wrap("Vainqueur après départage : " + _club(app, e.winner), 14))
 		events.add_child(G.wrap("Réaction simulée · " + _club(app, e.clubId) + "\n« " + str(e.reaction) + " »", 15))

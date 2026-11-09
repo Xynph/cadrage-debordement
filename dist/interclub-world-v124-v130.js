@@ -11,14 +11,16 @@
  const TONES=['Analytique','Prudent','Combattif','Protecteur','Exigeant'];
  const idOf=c=>Number.isInteger(c?.id)?c.id:null;
  const pairKey=(a,b)=>[a,b].sort((x,y)=>x-y).join(':');
- const context=(s,r)=>r?.franceContext||{season:s?.season,phase:s?.phase,round:s?.round};
- const stamp=(s,r)=>r.franceContext?.fixtureId?s.season+':'+r.franceContext.fixtureId:[s.season,s.phase,s.round,r.pair[0],r.pair[1]].join(':');
+ const world=s=>typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s);
+ const context=(s,r)=>world(s)?{season:r?.season??s.season,phase:r?.phase,round:r?.week,week:r?.week,fixtureId:r?.fixtureId,leagueId:r?.competitionId}:r?.franceContext||{season:s?.season,phase:s?.phase,round:s?.round};
+ const stamp=(s,r)=>context(s,r).fixtureId?s.season+':'+context(s,r).fixtureId:[s.season,s.phase,s.round,r.pair[0],r.pair[1]].join(':');
  const fresh=()=>({version:1,pairs:{},coaches:{},events:[],years:[],lastSeason:0,observedSeason:0,seen:[],seasonMatches:0});
  const state=s=>s?.interclubWorld?.version===1&&s.interclubWorld.pairs&&
   Array.isArray(s.interclubWorld.events)&&Array.isArray(s.interclubWorld.years)?s.interclubWorld:fresh();
  function validMatch(s,r){
   if(!s||!Number.isInteger(s.season)||s.season<1||!Number.isInteger(s.round)||
-   !['league','barrage','semi','final','access'].includes(context(s,r).phase)||!Array.isArray(s.clubs))return false;
+   !(world(s)?['league','pool','r16','quarter','barrage','semi','final','access']:['league','barrage','semi','final','access']).includes(context(s,r).phase)||!Array.isArray(s.clubs))return false;
+  if(world(s)&&(!r||typeof r.fixtureId!=='string'||!r.fixtureId||r.season!==s.season||!Number.isInteger(r.week)||r.week!==s.round||typeof r.competitionId!=='string'))return false;
   if(!r||!Array.isArray(r.pair)||r.pair.length!==2||!Array.isArray(r.score)||r.score.length!==2)return false;
   const [a,b]=r.pair;
   return Number.isInteger(a)&&Number.isInteger(b)&&a!==b&&s.clubs.some(c=>idOf(c)===a)&&s.clubs.some(c=>idOf(c)===b)&&

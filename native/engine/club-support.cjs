@@ -4,6 +4,7 @@ const commands=Object.freeze(['staff_meeting','training_plan','medical_protocol'
 function factory(){
  const copy=x=>JSON.parse(JSON.stringify(x)),obj=x=>!!x&&typeof x==='object'&&!Array.isArray(x),keys=(x,list)=>obj(x)&&Object.keys(x).every(k=>list.includes(k)),int=(x,a,b)=>Number.isInteger(x)&&x>=a&&x<=b;
  const check=(ok,message='État staff, médical ou agents invalide.')=>{if(!ok)throw Error(message);};
+ const world=s=>typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s);
  const week=s=>s.franceMode?.version===1?s.franceMode.week:s.round,context=s=>({season:s.season,week:week(s),club:s.club});
  const roster=s=>s.clubs[s.club].players;
  const sameContext=(a,b)=>a?.season===b.season&&a?.week===b.week&&a?.club===b.club;
@@ -11,7 +12,7 @@ function factory(){
  const bridge=()=>({reservation:reservationWage,fee:contractFee,negotiate:negotiateContract,save:()=>true});
  function validate(s){
   if(!s)return true;
-  const max=s.franceMode?.version===1?34:29,date=(season,w)=>int(season,1,s.season)&&int(w,0,max)&&(season<s.season||w<=week(s)),serialDate=(season,w)=>int(season,1,s.season)&&int(w,0,s.economy.week);
+  const max=world(s)?CDWorldCareer.sizing(s).maxRound:s.franceMode?.version===1?34:29,date=(season,w)=>int(season,1,s.season)&&int(w,0,max)&&(season<s.season||w<=week(s)),serialDate=(season,w)=>int(season,1,s.season)&&int(w,0,s.economy.week);
   if(s.nativeSupport!==undefined){const n=s.nativeSupport,m=n.meeting;check(keys(n,['version','meeting'])&&Object.keys(n).length===2&&n.version===1&&keys(m,['context','plan'])&&Object.keys(m).length===2&&keys(m.context,['season','week','club'])&&Object.keys(m.context).length===3&&date(m.context.season,m.context.week)&&int(m.context.club,0,s.clubs.length-1)&&Object.hasOwn(CDStaffMeetingV65.OPTIONS,m.plan),'Décision de staff native invalide.');}
   const meetings=new Set();for(const receipt of s.manager?.inbox||[]){if(receipt.kind!=='staff-v65')continue;const key=receipt.season+':'+receipt.week;check(!meetings.has(key)&&Object.values(CDStaffMeetingV65.OPTIONS).some(o=>receipt.title==='Réunion de staff : '+o.label)&&serialDate(receipt.season,receipt.week),'Compte rendu de staff V65 invalide.');meetings.add(key);}
   const medical=p=>{if(p.medicalV68===undefined)return;const m=p.medicalV68;check(keys(m,['version','protocol','stage'])&&Object.keys(m).length===3&&m.version===1&&Object.hasOwn(CDMedicalV68.PROTOCOLS,m.protocol)&&['blesse','reprise','progressif','termine'].includes(m.stage),'État médical V68 invalide.');};

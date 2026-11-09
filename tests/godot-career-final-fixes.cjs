@@ -1,4 +1,5 @@
 'use strict';
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 // Controlled incidents use the actual native rules; the worker receives valid saves.
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {test}=require('node:test'),{spawnSync}=require('node:child_process');
@@ -61,8 +62,8 @@ test('Post-red20 change targets the chosen vacancy; old non-null outId payload r
  const exported=api.good('export').meta.exportText;assert.equal(api.good('import',{text:exported}).live.lineup[6].id,replacement);
 }));
 test('Disk refusal of a legal vacant change restores the match before retry',()=>worker('disk',api=>{
- const m=api.good('import',{text:after20.text}),before=api.good('export').meta.exportText,file=path.join(m.meta.dataDir,'donnees.json'),bytes=fs.readFileSync(file),blocked=path.join(m.meta.dataDir,'donnees.tmp');
- fs.mkdirSync(blocked);const p={slot:8,inId:m.live.substitutions[8].inIds[0]},r=api.call('substitute',p);assert.equal(r.ok,false);assert.match(r.error,/sauvegarde/);assert.equal(api.good('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(file),bytes);fs.rmdirSync(blocked);assert.equal(api.good('substitute',p).live.lineup[8].id,p.inId);
+ const m=api.good('import',{text:after20.text}),before=api.good('export').meta.exportText,file=path.join(m.meta.dataDir,'donnees.json'),bytes=fs.readFileSync(file);
+ const p={slot:8,inId:m.live.substitutions[8].inIds[0]},r=refuseSavePublication(file,()=>api.call('substitute',p));assert.equal(r.ok,false);assert.match(r.error,/sauvegarde/);assert.equal(api.good('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(file),bytes);assert.equal(api.good('substitute',p).live.lineup[8].id,p.inId);
 }));
 test('Projection distinguishes real halftime from historical marker, tactical pause and real extra-time transitions',()=>{
  assert.equal(halftime.model.live.minute,42);assert.equal(resumed.model.live.minute,67);

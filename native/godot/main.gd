@@ -200,9 +200,7 @@ func _receive_model(value: Dictionary) -> void:
 		route = pending_route
 		pending_route = ""
 	if bridge.last_response_ok and last_command in ["new_career","next_season","import"] and _has_career():
-		for league in model.get("leagues",[]):
-			for club in league.get("rows",[]):
-				if club.id == model.club.id: table_division=league.id
+		table_division = str(model.meta.get("leagueId", "elite"))
 	if last_command == "tick" and route not in ["Accueil", "Création"]:
 		_update_live_bar()
 		if is_instance_valid(match_screen): match_screen.update_frame(model)
@@ -623,7 +621,13 @@ func _update_live_bar() -> void:
 		var teams: Array = live.get("teams", [{},{}])
 		var score: Array = live.get("score", [0,0])
 		minibar.text = "%s  %s — %s  %s   ·   %s min%s" % [G.club_abbr(teams[0]),G.n(score[0]),G.n(score[1]),G.club_abbr(teams[1]),G.n(live.get("minute",0)),"  /  PAUSE" if live.get("paused",false) else ""]
-	else: minibar.text = "ÉLITE & ACCESSION  /  30 CLUBS" if model.meta.get("mode") in ["france30", "common"] else "CARRIÈRE HISTORIQUE  /  14 CLUBS"
+	else:
+		var meta: Dictionary = model.get("meta", {})
+		var club_count := int(meta.get("database", {}).get("clubCount", 0))
+		match meta.get("mode"):
+			"world": minibar.text = "CARRIÈRE MONDIALE  /  %s CLUBS" % G.n(club_count)
+			"france30", "common": minibar.text = "ÉLITE & ACCESSION  /  %s CLUBS" % G.n(club_count)
+			_: minibar.text = "CARRIÈRE HISTORIQUE  /  14 CLUBS"
 	if is_instance_valid(primary_button): primary_button.text = primary_text()
 
 func primary_text() -> String:
@@ -699,16 +703,26 @@ func settings() -> void:
 func open_file(importing: bool) -> void:
 	import_mode = importing
 	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE if importing else FileDialog.FILE_MODE_SAVE_FILE
+	file_dialog.title = "Importer une carrière · 8 Mio France et anciennes éditions · 16 Mio Monde" if importing else "Exporter une carrière"
 	file_dialog.current_file = "" if importing else "Oval-Legacy-27.json"
 	file_dialog.popup_centered_ratio(0.7)
 
 func _file_selected(path: String) -> void:
+	file_dialog.hide()
 	if import_mode:
 		var f := FileAccess.open(path,FileAccess.READ)
 		if f == null: _refuse_action("Le fichier ne peut pas être lu : " + error_string(FileAccess.get_open_error())); return
-		if f.get_length() > NativeEngineBridge.IMPORT_LIMIT_BYTES: f.close(); _refuse_action("Fichier trop volumineux :8 Mio UTF-8 maximum."); return
-		var text := f.get_as_text()
+		var byte_count := f.get_length()
+		if byte_count > NativeEngineBridge.WORLD_IMPORT_LIMIT_BYTES:
+			f.close()
+			_refuse_action("Fichier trop volumineux (16 Mio UTF-8 maximum).")
+			return
+		var text := f.get_buffer(byte_count).get_string_from_utf8()
 		f.close()
+		var refusal := NativeEngineBridge.import_preflight(text, byte_count)
+		if not refusal.is_empty():
+			_refuse_action(refusal)
+			return
 		confirm("Reprendre cette carrière", "La carrière importée remplacera celle du profil. Le moteur la vérifiera avant de l'appliquer.",func(): _command("import",{"text":text},"Bureau"))
 	else:
 		if waiting: _refuse_action("Une décision est en cours. Réessayez après sa réponse."); return

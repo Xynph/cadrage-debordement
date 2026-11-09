@@ -5,6 +5,7 @@ function factory(){
  const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x),int=(x,a,b)=>Number.isInteger(x)&&x>=a&&x<=b;
  const shape=(x,fields)=>object(x)&&Object.keys(x).length===fields.length&&Object.keys(x).every(k=>fields.includes(k));
  const check=(ok,message)=>{if(!ok)throw Error('Carnet personnel : '+message+'.');};
+ const world=s=>typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s);
  const week=s=>s.franceMode?.version===1?s.franceMode.week:s.round,context=s=>({season:s.season,week:week(s),club:s.club});
  const target=id=>typeof id==='string'&&/^[A-Za-z0-9:_-]{1,180}$/.test(id);
  const scalar=n=>int(n,0,0x10ffff)&&!(n>=0xd800&&n<=0xdfff)&&(n===9||n===10||n>=32&&!(n>=127&&n<=159));
@@ -17,7 +18,7 @@ function factory(){
  function validate(s){
   if(!s||s.coachNotebook===undefined)return true;
   const n=s.coachNotebook;check(shape(n,['version','entries'])&&n.version===1&&Array.isArray(n.entries)&&n.entries.length<=100,'schéma ou limite de 100 notes invalide');
-  const seen=new Set(),maxWeek=s.franceMode?.version===1?34:26;
+  const seen=new Set(),maxWeek=world(s)?CDWorldCareer.sizing(s).maxRound:s.franceMode?.version===1?34:26;
   for(const e of n.entries){
    check(shape(e,['target','textCodes','season','week','club'])&&target(e.target)&&!seen.has(e.target),'note invalide ou cible répétée');seen.add(e.target);decode(e.textCodes);
    check(int(e.season,1,s.season)&&int(e.week,0,maxWeek)&&(e.season<s.season||e.week<=week(s))&&int(e.club,0,s.clubs.length-1),'date ou club de note invalide');

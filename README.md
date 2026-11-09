@@ -1,12 +1,16 @@
 # Oval Legacy 27 — Rugby Manager
 
-**Un jeu de management de rugby à XV, en français : préalpha Windows native Godot 0.6 et version web historique.**
+**Un jeu de management de rugby à XV, en français : préalpha Windows native Godot 0.7 et version web historique.**
 
 Dirigez votre club : composez les 23, préparez votre équipe, recrutez, gérez les contrats et suivez les rencontres.
 
 Ce dépôt contient le code du jeu, sa documentation et ses tests. Les carrières Windows restent dans un profil local indépendant de l'exécutable ; les parties web restent dans le navigateur. Aucune sauvegarde personnelle n'est stockée sur GitHub.
 
-## Préalpha Windows native Godot 0.6
+## Préalpha Windows native Godot 0.7
+
+La création propose le **Monde**, avec 56 clubs jouables en Élite, Accession, PREM et URC. Deux clubs invités disputent uniquement les coupes européennes. Les 3 208 joueurs et 808 membres de staff ont des identifiants communs à la base anonymisée et aux packs personnalisés. Les coupes des champions et le Challenge européen se jouent dans la même carrière que le championnat ; les promotions françaises et les qualifications européennes sont recalculées à chaque intersaison.
+
+L'édition **France 30** reste disponible, avec ses 1 592 profils conservés. Les sauvegardes historiques restent lisibles avec leur limite de 8 Mio ; le Monde dispose d'un format borné à 16 Mio. Les packs et préférences de création sont propres à chaque édition. Les [règles et sources](docs/world-competition-rules-20261109.md), le [calibrage des effectifs](docs/world-data-calibration-20261109.md) et la [réception progressive](docs/mission-database-20261109.md) détaillent ce qui est vérifié et les conventions de simulation.
 
 Le jeu dispose d'un accueil photographique, d'une création de carrière par club et de vingt écrans de carrière regroupés dans six rubriques : **Bureau, Équipe, Développement, Club, Compétitions et Carrière**. Chaque rubrique conserve son dernier sous-menu. L'interface associe anthracite, ivoire, couleurs du club, portraits fictifs et soixante photographies des trente territoires. Le [tableau de portage natif](docs/portage-natif-20261108.md) distingue les fonctionnalités reçues en source, les limites et la réception de la distribution.
 
@@ -18,7 +22,7 @@ L'effectif et le recrutement proposent recherche sans accents, filtres, tri et c
 
 La presse réunit **500 questions, cinq réponses par question dont Humour et 30 journalistes** référencés ou fictifs. Les personnalités sont simulées ; la relation et les échanges suivent le coach. Vestiaire, duos, promesses, rivalités, sponsors, objectifs, projets et supporters ont des décisions et conséquences persistantes. La mobilité entre clubs se prépare à l'intersaison.
 
-Les trente clubs sont jouables dans deux divisions reliées de 14 et 16 clubs. La nouvelle base commune conserve les 1 592 joueurs, identifiants et statistiques de la base active, avec des noms fictifs proches. Les packs personnalisés changent les identités et images ; progression, contrats, résultats et notes de la carrière restent les mêmes. Composition à 23, entraînement, charges individuelles, tactiques, changements et offres de contrats ont des effets réels. Une promotion de secours peut compléter une feuille, après confirmation de son coût salarial.
+Dans les deux éditions, les packs personnalisés changent les identités et images ; progression, contrats, résultats et notes de la carrière restent les mêmes. Composition à 23, entraînement, charges individuelles, tactiques, changements et offres de contrats ont des effets réels. Une promotion de secours peut compléter une feuille, après confirmation de son coût salarial.
 
 La Formation expose les quinze espoirs du club et la progression des professionnels. Les parcours avancés s'activent explicitement : détection, réseau, prêts, suivi, générations et compétitions juniors simulées. Les 44 centres incluent 14 invités fictifs ; ce dispositif ne reproduit pas un championnat officiel. Les promotions historiques et avancées partagent leurs quotas et places, y compris les retours de prêt. La capacité du mode commun suit l'effectif initial du club +6, minimum 42 et maximum 100 ; les modes historiques gardent 42. Le dossier adverse, les besoins, échéances, missions et bilans restent accessibles. Voir les [décisions initiales](docs/decisions-natives-20261108.md) et le [portage actuel](docs/portage-natif-20261108.md).
 
