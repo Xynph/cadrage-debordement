@@ -43,9 +43,13 @@ static func build(app: Control) -> Control:
 		card.add_child(G.wrap(str(advice.evidence), 14))
 		card.add_child(G.wrap(str(advice.action), 14))
 	for match: Dictionary in data.get("matches", []):
-		var where: String = "Domicile" if bool(match.get("home",false)) else "Extérieur"
+		var where: String = "Lieu non conservé"
+		if match.get("neutral") != null:
+			where = "Terrain neutre" if bool(match.neutral) else ("Domicile" if bool(match.get("home",false)) else "Extérieur")
 		var date: String = "Saison %d · %s" % [int(match.season), _phase(str(match.get("phase","")))]
-		if match.get("round") != null: date += " · J%d" % (int(match.round)+1)
+		if match.get("competitionRound") != null: date += " · J%d" % (int(match.competitionRound)+1)
+		elif match.get("week") != null: date += " · Semaine %d" % (int(match.week)+1)
+		elif match.get("round") != null: date += " · J%d" % (int(match.round)+1)
 		var decision: String = " · après départage" if bool(match.get("decidedAfterTie",false)) else ""
 		panel.add_child(G.wrap("%s · %s · %s · %d — %d contre %s%s" % [date, where, str(match.outcome), int(match.pointsFor), int(match.pointsAgainst), str(match.opponentName), decision], 14, G.INK))
 	return panel

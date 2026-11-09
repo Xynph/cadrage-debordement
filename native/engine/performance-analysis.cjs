@@ -11,7 +11,7 @@ function factory(){
    const decidedAfterTie=pf===pa&&r.pair.includes(r.winner),outcome=decidedAfterTie?(r.winner===s.club?'V':'D'):pf>pa?'V':pf<pa?'D':'N';
    const raw=r.stats?.[side],stats={};
    for(const k of ['lineouts','lineoutsWon','scrums','scrumsWon','penalties'])if(finite(raw?.[k]))stats[k]=raw[k];
-   return {season:s.season,round:r.round??null,week:r.week??null,phase:r.phase??null,fixtureId:r.fixtureId??null,opponent,opponentName:name(s,opponent),home:side===0,pointsFor:pf,pointsAgainst:pa,triesFor:pair(r.tries)&&r.tries.every(finite)?r.tries[side]:null,outcome,decidedAfterTie,stats};
+   return {season:s.season,round:r.round??null,competitionRound:r.competitionRound??null,week:r.week??null,neutral:typeof r.neutral==='boolean'?r.neutral:null,phase:r.phase??null,fixtureId:r.fixtureId??null,opponent,opponentName:name(s,opponent),home:side===0,pointsFor:pf,pointsAgainst:pa,triesFor:pair(r.tries)&&r.tries.every(finite)?r.tries[side]:null,outcome,decidedAfterTie,stats};
   });
  }
  function summary(rows){return {played:rows.length,won:rows.filter(r=>r.outcome==='V').length,drawn:rows.filter(r=>r.outcome==='N').length,lost:rows.filter(r=>r.outcome==='D').length,pointsFor:rows.reduce((n,r)=>n+r.pointsFor,0),pointsAgainst:rows.reduce((n,r)=>n+r.pointsAgainst,0)};}

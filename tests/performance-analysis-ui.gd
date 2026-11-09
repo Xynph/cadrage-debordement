@@ -44,6 +44,19 @@ func run() -> void:
 	var unavailable: Control = view.build(empty)
 	check(text(unavailable).contains("indisponibles"), "Ancien moteur explicite")
 	unavailable.free()
+	# Contexte Monde : la semaine globale ne constitue pas la journée de compétition.
+	var world_model: Dictionary = model.duplicate(true)
+	world_model.clubLife.performanceAnalysis.matches = [world_model.clubLife.performanceAnalysis.matches[0].duplicate(true)]
+	var fixture: Dictionary = world_model.clubLife.performanceAnalysis.matches[0]
+	fixture.round = 20
+	fixture.week = 20
+	fixture.competitionRound = 7
+	fixture.neutral = true
+	empty.model = world_model
+	var world_panel: Control = view.build(empty)
+	check(text(world_panel).contains("Terrain neutre"), "Terrain neutre attesté")
+	check(text(world_panel).contains("J8") and not text(world_panel).contains("J21"), "Journée de compétition distincte de la semaine globale")
+	world_panel.free()
 	empty.free()
 	print("Analyses Godot : ", checks, " contrôles, ", failures.size(), " échecs.")
 	quit(0 if failures.is_empty() else 1)

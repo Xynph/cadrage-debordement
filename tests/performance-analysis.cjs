@@ -23,6 +23,9 @@ p=project(state([row(0,{stats:[stats(2),stats()]}),row(1,{stats:[stats(),stats(1
 assert.equal(p.metrics.lineouts.rate,16/20,'Le taux est un ratio pondéré des tentatives et non une moyenne de pourcentages.');
 assert.equal(project(null).available,false);assert.equal(project(state([])).summary.played,0);
 assert.deepEqual(domain.commands,[]);assert.deepEqual(domain.files,[]);
+p=project(state([row(20,{week:20,competitionRound:7,neutral:true})]));
+assert.equal(p.matches[0].competitionRound,7);assert.equal(p.matches[0].week,20);assert.equal(p.matches[0].neutral,true);
+assert.equal(project(state([row(0)])).matches[0].neutral,null,'Une absence de preuve du lieu ne devient pas un domicile attesté.');
 console.log('Analyses : fenêtre, orientation, couverture, pondération, départage, saison et immuabilité PASS.');
 // A real worker season verifies the data contract, not just handcrafted rows.
 const {createBridge}=require('../native/engine/worker.cjs'),os=require('node:os');
