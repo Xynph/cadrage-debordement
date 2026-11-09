@@ -15,7 +15,9 @@ static func build(app: Control) -> Control:
 	var text := G.scroll(notes)
 	G.photo_note(text, app.model.club, "Le centre", "La prochaine génération", "stadium", 140)
 	text.add_child(G.metric(G.n(data.get("academy", []).size()), "espoirs au centre"))
-	text.add_child(G.wrap("Quinze nouveaux espoirs par saison. Au plus 75 joueurs restent au centre. Retrouvez les rencontres juniors, les trajectoires et les mentorats dans les parcours du centre.", 14))
+	var pathways: Dictionary = app.model.get("clubLife", {}).get("academyPathways", {})
+	var follow_up := "Retrouvez les rencontres juniors, les trajectoires et les mentorats dans les parcours du centre." if pathways.get("available", false) else "Le suivi individuel des Espoirs reste disponible ici."
+	text.add_child(G.wrap("Quinze nouveaux espoirs par saison. Au plus 75 joueurs restent au centre. " + follow_up, 14))
 	text.add_child(G.button("PARCOURS DU CENTRE →", func(): app._navigate("Centre")))
 	text.add_child(G.separator())
 	for option in [["academy", "LE CENTRE DE FORMATION"], ["professional", "LES JEUNES PROFESSIONNELS"]]:

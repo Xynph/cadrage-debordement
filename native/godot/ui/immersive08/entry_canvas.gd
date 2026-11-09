@@ -192,6 +192,7 @@ static func workspace(app: Control, page: Control, creation: bool) -> Control:
 	C.fill(inset,true)
 	column.add_child(inset)
 	inset.add_child(page)
+	if creation: _illustrate_preview(page)
 	Legacy.apply(page,GREEN if not app.model.get("club") is Dictionary else app.accent)
 	if creation:
 		_fit_pagination(page)
@@ -199,10 +200,79 @@ static func workspace(app: Control, page: Control, creation: bool) -> Control:
 			_fit_japan_clubs(page)
 		if not compact:
 			_fit_club_cards(page)
+		_observe_creation_size(app, column, size)
 	if size.x >= 2240 and size.y >= 1250:
 		if creation: _career_context(app, page)
 		else: _pack_guide(app, page)
 	return column
+
+static func _observe_creation_size(app: Control, workspace: Control, built_size: Vector2i) -> void:
+	var window := app.get_window()
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.wait_time = .08
+	workspace.add_child(timer)
+	var resized := func():
+		if workspace.is_inside_tree() and window.size != built_size: timer.start()
+	window.size_changed.connect(resized)
+	workspace.tree_exiting.connect(func(): window.size_changed.disconnect(resized), CONNECT_ONE_SHOT)
+	timer.timeout.connect(func():
+		if window.size == built_size or window.size.x < 1280 or window.size.y < 720 or app.waiting: return
+		_refresh_creation_size(app, workspace))
+
+static func _refresh_creation_size(app: Control, workspace: Control) -> void:
+	if app.route != "Création" or not app.root_content.is_ancestor_of(workspace): return
+	var focus := app.get_viewport().gui_get_focus_owner()
+	var focus_id := str(focus.name) if focus != null and workspace.is_ancestor_of(focus) else ""
+	var list := workspace.find_child("CreationClubsScroll", true, false) as ScrollContainer
+	var list_scroll := list.scroll_vertical if list != null else 0
+	var page_scroll: int = app.entry_scroll.scroll_vertical
+	app._render()
+	var new_scroll: ScrollContainer = app.entry_scroll
+	await app.get_tree().process_frame
+	await app.get_tree().process_frame
+	if not is_instance_valid(new_scroll) or app.entry_scroll != new_scroll: return
+	new_scroll.scroll_vertical = page_scroll
+	list = new_scroll.find_child("CreationClubsScroll", true, false) as ScrollContainer
+	if list != null: list.scroll_vertical = list_scroll
+	if focus_id.is_empty(): return
+	var target := new_scroll.find_child(focus_id, true, false) as Control
+	if target != null and target.is_visible_in_tree(): target.grab_focus()
+
+static func _illustrate_preview(page: Control) -> void:
+	var title := page.find_child("CreationClubTitle", true, false) as Label
+	if title == null: return
+	var content := title.get_parent() as VBoxContainer
+	var overlay := content.get_parent() as MarginContainer
+	var cover := overlay.get_parent() as ColorRect
+	if cover == null or cover.get_meta("content", null) != content: return
+	var photo := C.photo("entry-preview", Vector2.ZERO, true, .43)
+	if photo.texture == null:
+		photo.free()
+		return
+	cover.clip_contents = true
+	cover.add_child(photo)
+	cover.move_child(photo, overlay.get_index())
+	photo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color(C.BG, .45))
+	gradient.add_point(.42, Color(C.BG, .05))
+	gradient.set_color(gradient.get_point_count()-1, Color(C.BG, .89))
+	var shade := GradientTexture2D.new()
+	shade.gradient = gradient
+	shade.fill_to = Vector2.DOWN
+	var veil := TextureRect.new()
+	veil.texture = shade
+	veil.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cover.add_child(veil)
+	cover.move_child(veil, overlay.get_index())
+	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var credit := C.label("ILLUSTRATION D’AMBIANCE", 17, C.GOLD, true, 700)
+	credit.name = "EntryPreviewCredit"
+	credit.set_meta("immersive_style_applied", true)
+	credit.tooltip_text = "Illustration de fiction originale générée par IA"
+	content.add_child(credit)
 
 static func _fit_japan_clubs(page: Control) -> void:
 	var choices := page.find_child("CreationClubsScroll", true, false)

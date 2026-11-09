@@ -6,6 +6,8 @@ La branche `feature/immersive-1440p-20261108` adapte les vues natives de la PR40
 
 Après l’intégration de la Nationale sur `ebef33b`, la branche reprend les 14 clubs, leurs dates et lieux, le bulletin de qualification FFR et les résultats de la phase finale. Le nouveau terrain fictif porte la bibliothèque à 49 PNG. Les archives séparent la finale de Nationale et le barrage Pro D2. Les vérifications source couvrent les vrais exports de saisons 2 et 3 et leurs transitions, aux trois définitions. Les captures Windows à 1440p et à 720p proviennent des menus natifs. Le moteur, les formats et les packs restent ceux de `main`.
 
+La recette du premier ZIP Nationale a révélé cinq défauts de redimensionnement à l’entrée. Le gabarit Création s’adapte aux quatre définitions testées et conserve le club choisi. La photo originale de tunnel porte le total à 50 PNG. Les fiches et sélecteurs Staff adoptent le thème sombre et Formation reprend l’état réel des parcours juniors. Les preuves source figurent dans la matrice immersive.
+
 ## 9 novembre 2026 — carrière européenne et profils compatibles
 
 L'édition `rugby-world-2026-11-08-v1` ajoute le mode Monde sans convertir les anciennes carrières. Le registre compilé reprend les 1 592 objets France à l'identique et ajoute PREM, URC et deux invités européens. Les dates de départ sourcées, les règles et leurs éditions figurent dans la [documentation des compétitions](docs/world-competition-rules-20261109.md). Les calendriers futurs et les invitations du monde fermé suivent des décisions de jeu explicites, sans importer de scores réels.

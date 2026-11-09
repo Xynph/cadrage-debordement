@@ -200,6 +200,26 @@
       "synthetic": true,
       "tool": "built-in image_gen",
       "prompt": "Generate one original fictional rugby editorial photograph in wide 16:9, a restrained photorealistic still for the PC rugby management game Oval Legacy 27. A modest French third-tier rugby ground on a late-autumn evening, old pale limestone and red-brick club pavilion on the right, low covered stand, thin wooden rails, slightly wet deep evergreen turf with precise white rugby markings and one proper H-shaped set of rugby posts in the right third. Distant wooded hills and a village roofline under low slate clouds. Calm blue-charcoal atmosphere with sparse warm amber practical lights and a lightly misty edge. The image should evoke the intimacy and work of a local French professionalizing club, with no specific real ground and no identifiable people. Keep the left half low-detail, dark and softly fading into charcoal so this image also crops naturally behind ivory interface text. The main strong shapes remain within the middle 60 percent of the frame vertically for wide header crops. Real sports editorial photography, subtle film grain, detailed grounded grass, desaturated natural colors. Full bleed composition, no border, no UI, no text, no letters, no logos, no watermark."
+    },
+    {
+      "id": "entry-preview",
+      "file": "entry-preview.png",
+      "source": "exec-6552e049-0dcc-42d0-af3e-16d5649d1b8a.png",
+      "sourceType": "generated",
+      "source_sha256": "19f6ad16c86a2d918667825e805bc850bcc59efdcca10a7ee9fdf58289989a0d",
+      "crop": [
+        0,
+        0,
+        1086,
+        1448
+      ],
+      "width": 1086,
+      "height": 1448,
+      "bytes": 2084426,
+      "sha256": "19f6ad16c86a2d918667825e805bc850bcc59efdcca10a7ee9fdf58289989a0d",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Create ONE new photographic background asset for the playable PC rugby management game Oval Legacy 27. This is an in-game photograph to be drawn behind the club crest and native text of the left portrait panel in the New Career screen. It is absolutely not a UI mockup. Square to portrait composition, realistic dark editorial sports photography, an anonymous rugby club manager from behind at the open end of an old concrete players' tunnel, standing on the right third (not oversized), carrying a plain dark portfolio under one arm, watching a regulation rugby union pitch and H-shaped rugby goalposts under soft floodlights beyond, countryside club grandstand and trees in light dusk mist. Warm amber doorway reflection, deep blue-green shadows and muted ivory highlights. Rich grain, realistic sports photo, natural texture. Visually compatible with dark charcoal / bottle green / warm ivory / brass rugby UI. The center and right contain the photographic point of interest. Keep upper left quarter naturally very dark and uncluttered for a future label, and bottom quarter naturally very dark with no bright elements, for future readable native text. Avoid a strong orange cast, fake crests, branded jerseys, recognisable people, unreadable letters, stadium name signs, menus, lettering, labels, signatures, watermark and any in-image typography. This depicts a fictional club only, inclusive of all countries. Make the image fill the frame. Capture the moment just before starting a real career, with a confident, quiet, premium sports editorial mood. Supply just the clean photograph."
     }
   ]
 }

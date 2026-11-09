@@ -349,6 +349,24 @@ func nationale(compact: bool) -> void:
 	var texture: Texture2D = picture.texture if picture!=null else null
 	if texture is AtlasTexture: texture=texture.atlas
 	check(texture!=null and texture.resource_path.ends_with("nationale-ground.png"),"Illustration originale Nationale décodée dans Création")
+	var preview := app.find_child("Art_entry_preview",true,false) as TextureRect
+	var preview_credit := app.find_child("EntryPreviewCredit",true,false) as Label
+	check(preview!=null and preview.get_meta("immersive_art", "")=="entry-preview" and preview_credit!=null and preview_credit.is_visible_in_tree(),"L’aperçu du club sans photo utilise l’illustration de tunnel identifiée")
+	if not compact:
+		var selected: int = app.selected_club
+		(app.find_child("CreationClub88",true,false) as Button).grab_focus()
+		for size in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080), Vector2i(2560,1440)]:
+			root.size = size
+			if DisplayServer.get_name()!="headless": DisplayServer.window_set_size(size)
+			await create_timer(.2).timeout
+			await settle()
+			var creation_list := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
+			var start := app.find_child("CreationStart",true,false) as Button
+			var last_club := app.find_child("CreationClub101",true,false) as Button
+			check(creation_list!=null and last_club!=null and creation_list.get_global_rect().grow(1).encloses(last_club.get_global_rect()),"La dernière carte de Nationale reste visible après redimensionnement à %s" % size)
+			check(start!=null and root.get_visible_rect().grow(1).encloses(start.get_global_rect()),"L’action de création reste visible après redimensionnement à %s" % size)
+			var focus := root.gui_get_focus_owner()
+			check(focus!=null and focus.name=="CreationClub88" and app.selected_club==selected,"Le focus et la sélection survivent au redimensionnement à %s" % size)
 	await capture(("63" if compact else "62")+"-nationale-creation-"+dimensions)
 	var club_id := 101 if compact else 100
 	if not await edition_action("CreationClub%d" % club_id): return

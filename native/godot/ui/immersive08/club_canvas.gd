@@ -346,6 +346,14 @@ static func _direction(app: Control, canvas: Control) -> void:
 	U.place_detail(canvas, Rect2(515,214,1733,1030), detail)
 	Legacy.apply(detail, app.accent)
 
+static func style_staff(detail: Control, accent: Color) -> void:
+	Legacy.apply(detail, accent)
+	for id in ["DelegateLineup", "DelegateTraining"]:
+		var toggle := detail.find_child(id, true, false) as CheckBox
+		if toggle != null: toggle.theme = detail.theme
+	var clubs := detail.find_child("StaffClub", true, false) as OptionButton
+	if clubs != null: clubs.get_popup().theme = detail.theme
+
 static func _staff_detail(app: Control, canvas: Control) -> void:
 	_staff(D.panel(canvas, Rect2(0,214,708,427), "L’encadrement", "people"), app)
 	var diagnostic: Dictionary = app.model.get("clubLife",{}).get("clubSupport",{}).get("diagnostic",{})
@@ -368,7 +376,8 @@ static func _staff_detail(app: Control, canvas: Control) -> void:
 		tabs.current_tab = clampi(int(app.management_ui.get("immersive08_support_tab",0)), 0, 2)
 		tabs.tab_changed.connect(func(index: int): app.management_ui.immersive08_support_tab = index)
 	U.place_detail(canvas, Rect2(724,214,1524,1030), detail)
-	if app.route == "Travail du club": Legacy.apply(detail, app.accent)
+	if app.route == "Staff": style_staff(detail, app.accent)
+	else: Legacy.apply(detail, app.accent)
 
 static func _history(app: Control, canvas: Control) -> void:
 	var card := D.panel(canvas, Rect2(0,214,610,612), "Les archives du club", "trophy", "", "ClubHistorySummary")

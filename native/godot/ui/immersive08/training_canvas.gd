@@ -215,6 +215,9 @@ func _selection(index: int) -> void:
 	D.place(holder, Rect2(0, 57, 488, 249))
 	var slot: Array = SLOTS[index]
 	D.photo(holder, "training-coach", Rect2(14, 7, 117, 118))
+	var caption := D.rect(holder, Rect2(14, 102, 117, 23), Color("101819df"), 3)
+	caption.name = "TrainingSelectedPortraitIllustration"
+	D.text(caption, 58, 17, "ILLUSTRATION", 16, C.IVORY, 700, 111, HORIZONTAL_ALIGNMENT_CENTER)
 	_icon(holder, slot[0], Rect2(150, 16, 30, 30), GREEN)
 	D.text(holder, 192, 38, slot[1], 29, C.IVORY, 700, 285)
 	var detail := str(slot[3])

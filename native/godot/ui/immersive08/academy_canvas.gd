@@ -349,6 +349,9 @@ func _staff_page() -> void:
 	_action(panel, Rect2(23, 428, 660, 63), "Gérer le centre", func(): app._navigate("Centre"), true, "arrow", "AcademyManageCentre")
 	_action(panel, Rect2(707, 428, 661, 63), "Ouvrir le staff", func(): app._navigate("Staff"), false, "arrow", "AcademyOpenStaff")
 
+func _inactive_pathway_status() -> String:
+	return "Parcours à activer" if pathway.get("available", false) else "Parcours indisponibles"
+
 func _lower_pathways() -> void:
 	var tile := D.panel(self, Rect2(1, 916, 1272, 303), "Parcours de formation · les prochaines étapes", "school", "", "AcademyLowerPathways")
 	var loans: Array = pathway.get("loans", [])
@@ -356,7 +359,7 @@ func _lower_pathways() -> void:
 	var active: bool = pathway.get("active", false)
 	var entries := [
 		["ACADÉMIE", "%d Espoirs" % roster.size(), GREEN, "school", _prospects()],
-		["PASSERELLES", "%d prêt(s) en cours" % loans.size() if active else "Parcours à activer", C.MINT, "arrow", loans],
+		["PASSERELLES", "%d prêt(s) en cours" % loans.size() if active else _inactive_pathway_status(), C.MINT, "arrow", loans],
 		["ÉQUIPE PREMIÈRE", "%d promotion(s)" % promoted.size() if active else "Premiers contrats", GOLD, "trophy", promoted],
 	]
 	for i in entries.size():
@@ -376,7 +379,11 @@ func _lower_pathways() -> void:
 		if i < 2: _icon(tile, "arrow", Rect2(x + 387, 101, 23, 23), C.IVORY)
 		D.text(tile, x, 200, ["Potentiels estimés", "Joueurs en prêt", "Joueurs promus"][i], 22, C.IVORY, 600, 386)
 		var people: Array = entry[4]
-		if people.is_empty(): D.text(tile, x, 244, "Aucun dossier" if active or i == 0 else "Disponible dans le centre", 21, C.MUTED, 500, 385)
+		if people.is_empty():
+			var caption := "Aucun dossier"
+			if not active and i > 0:
+				caption = "Disponible dans le centre" if pathway.get("available", false) else "—"
+			D.text(tile, x, 244, caption, 21, C.MUTED, 500, 385)
 		for j in mini(2, people.size()):
 			var p: Dictionary = people[j]
 			var card := D.rect(tile, Rect2(x + j * 195, 213, 184, 65), Color("132024"), 6, C.LINE)
@@ -407,8 +414,8 @@ func _academy_staff() -> Array:
 func _junior() -> void:
 	var tile := D.panel(self, Rect2(1817, 916, 431, 303), "Compétition junior", "calendar", "", "AcademyJuniorCompetition")
 	var results: Array = pathway.get("results", [])
-	var context := "Parcours à activer"
-	var subline := "Calendrier indépendant du championnat pro"
+	var context := _inactive_pathway_status()
+	var subline := "Calendrier indépendant du championnat pro" if pathway.get("available", false) else "Suivi des Espoirs dans Formation"
 	if pathway.get("active", false):
 		var round := int(pathway.get("juniorRound", 0))
 		var total := int(pathway.get("totalRounds", 0))

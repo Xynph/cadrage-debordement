@@ -475,4 +475,5 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 			app.body.add_child(app.match_screen)
 			app.match_page = app.match_screen
 			app.match_screen.update_frame(app.model)
-	if COMPACT_ART.has(app.route): Legacy.apply(app.body.get_child(0), app.accent)
+	if app.route == "Staff": ClubCanvas.style_staff(app.body.get_child(0), app.accent)
+	elif COMPACT_ART.has(app.route): Legacy.apply(app.body.get_child(0), app.accent)
