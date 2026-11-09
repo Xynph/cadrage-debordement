@@ -576,12 +576,27 @@ func resize_shell() -> void:
 	await settle()
 	app._navigate("Calendrier")
 	await settle()
+	var monthly: Control = app.find_child("CalendarMonthGrid",true,false)
+	check(monthly!=null,"La vue mensuelle s’ouvre par défaut")
+	var day: Control = app.find_child("MonthDay_"+str(app.model.calendarPlanning.today),true,false)
+	check(day!=null and day.get_meta("countdown",false),"Le jour courant précède le prochain match")
+	await capture("49-calendrier-mensuel-1440x900")
+	var show_table: Button = app.find_child("CalendarShowTable",true,false)
+	check(show_table!=null,"Le tableau historique reste accessible depuis la vue mensuelle")
+	if show_table!=null:
+		await click(show_table)
+		await settle()
 	var locations: Array[String] = []
 	for marker: TextureRect in app.find_children("CalendarLocation","TextureRect",true,false):
 		locations.append(marker.accessibility_name)
 	check(locations.any(func(label): return "domicile" in label),"Le Calendrier identifie les matchs à domicile")
 	check(locations.any(func(label): return "extérieur" in label),"Le Calendrier identifie les déplacements")
 	await capture("14-calendrier-reperes-1440x900")
+	var show_month: Button = app.find_child("CalendarShowMonth",true,false)
+	check(show_month!=null,"La vue mensuelle reste accessible depuis le tableau")
+	if show_month!=null:
+		await click(show_month)
+		await settle()
 	root.size = Vector2i(2560,1440)
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
 	await settle()
@@ -755,7 +770,9 @@ func desktop_1080() -> void:
 		"Classements","Club","Staff","Travail du club","Stratégie","Presse","Rivalités","Vestiaire","Carrière"]:
 		app._navigate(route)
 		await settle()
-		if route=="Rivalités":
+		if route=="Calendrier":
+			check(app.find_child("CalendarMonthGrid",true,false)!=null,"Grille mensuelle visible en 720p")
+		elif route=="Rivalités":
 			var hero := app.find_child("RivalryHero",true,false) as Control
 			var photo := hero.find_child("Art_stadium",true,false) as TextureRect if hero!=null else null
 			var tab := app.find_child("RivalryTab0",true,false) as Button
@@ -1006,6 +1023,7 @@ func run() -> void:
 	await worker()
 	var scope := OS.get_environment("CD_IMMERSIVE_SCOPE")
 	if scope in ["pacific", "japan", "japan-d2", "nationale", "nationale-compact", "champ", "champ-compact"]:
+		app.set_meta("calendar_table",true)
 		match scope:
 			"pacific": await pacific()
 			"japan", "japan-d2": await japan(scope=="japan-d2")

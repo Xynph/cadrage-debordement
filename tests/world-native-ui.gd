@@ -184,6 +184,9 @@ func check_competitions() -> void:
 	var prem: String = app.pack_manager.competition("prem", "career").name
 	app._navigate("Calendrier")
 	await settle()
+	var table := named("CalendarShowTable") as Button
+	check(table != null, "Tableau détaillé accessible depuis le mois")
+	if table != null: await press(table)
 	check(named("CalendarFixtureDate") != null and "/" in named("CalendarFixtureDate").text, "Date du calendrier mise en forme")
 	check(text_present(app, str(app.model.calendar[0].venue)), "Lieu de la rencontre issu du moteur")
 	for page_index in range(12):
