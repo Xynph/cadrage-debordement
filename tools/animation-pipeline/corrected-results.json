@@ -1,0 +1,2943 @@
+{
+  "source_sha256": "7fd28255c484e19ba5086d9cf815128e21dfcb677d262a88b237a5f5af081c5f",
+  "candidate_sha256": "d9139eddc66f7c407107b4d68b3d1503ca07e4256432a9a9a1528fd0fe74afbb",
+  "source_asset_changed": false,
+  "candidate_distributed": false,
+  "tool_sha256": {
+    "check_match_reader.gd": "47afeefeeaab33055ef36e9303ab31d00fbf8b67189805b1dfee978316e5186c",
+    "compare_poses.gd": "7bba556af441589c18da31e2fb57354f0351db235c469ca9d4cb9a589b1db108",
+    "compare_poses.py": "d35660932050749483d4248033a56d82c6e0d29c19e1f6afbd0dca1afb650362",
+    "compare_skin.py": "72eb38c52ea6579f7829962abff833e975aa19ad9d5e390385acdc68eb4ff124",
+    "export_roundtrip.py": "4935eef4cf9ef6265732990a9f301ad5d30a8cb2f41e28fe00b09e042a337d8c",
+    "inventory.py": "87901b190f6a86f0697da246b8dc5f6f939263af6697fe5000b0e56a58942651",
+    "rebind_skin.py": "52c2141048e1eb9da9b9f24d288309028ad01d96d20c02a219c4b4df706dc8e0",
+    "restore_normals.py": "574257327d9fa7d58289c919e5677dd958a1e62303639cf08f1fc3728765fca3",
+    "run_checks.py": "95ce2d9d6752a20b84e86d3d4572ed58b1618f5b352bb176bbdc2b7b7be5178c",
+    "skin_math.py": "d51a990452e9155369a87337524edcb86529535667c56fd591262593474c60a2",
+    "test_compare_cli.py": "2bf297016e4414d876a7a6ca00d69367592971b131d6c9e8015cfa4daea5b469",
+    "test_export_roundtrip.py": "04f74d9e0ffb712d761cf6d816e9129b7f9d43c46a7a1cca280e77759b1056cf",
+    "test_restore_normals.py": "7e6ac38ade5b7e848b4c249741656c63778ced668fa341fc649d28492d46308d",
+    "test_skin_contract.py": "2e1d593e339afd1d094f30d648ca20478d738bc9f4c8893bf5c9acc5959a9c3a"
+  },
+  "runner": {
+    "schema": "oval.animation-checks.v1",
+    "status": "pass",
+    "requested_checks_passed": true,
+    "all_checks_executed": true,
+    "counts": {
+      "pass": 10,
+      "fail": 0,
+      "not_run": 0
+    },
+    "checks": [
+      {
+        "name": "inventory_source",
+        "status": "pass",
+        "requested": true,
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+          "/workspace/work/animation-pipeline/tools/animation-pipeline/inventory.py",
+          "/workspace/work/animation-pipeline/dist/match3d/assets/quaternius-rugby-athlete.glb",
+          "--output",
+          "/workspace/work/animation-diagnosis/final-complete-frozen/inventory-source.json"
+        ],
+        "exit_code": 0,
+        "stdout_log": "inventory_source.stdout.log",
+        "stderr_log": "inventory_source.stderr.log",
+        "seconds": 0.091
+      },
+      {
+        "name": "tests_inventory",
+        "status": "pass",
+        "requested": true,
+        "command": [
+          "/workspace/.cloud-setup/tools/node-v22.23.4-linux-x64/bin/node",
+          "--test",
+          "--test-reporter=tap",
+          "/workspace/work/animation-pipeline/tests/animation-pipeline.cjs"
+        ],
+        "exit_code": 0,
+        "stdout_log": "tests_inventory.stdout.log",
+        "stderr_log": "tests_inventory.stderr.log",
+        "seconds": 2.509
+      },
+      {
+        "name": "tests_compare_cli",
+        "status": "pass",
+        "requested": true,
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+          "/workspace/work/animation-pipeline/tools/animation-pipeline/test_compare_cli.py"
+        ],
+        "exit_code": 0,
+        "stdout_log": "tests_compare_cli.stdout.log",
+        "stderr_log": "tests_compare_cli.stderr.log",
+        "seconds": 2.062,
+        "scope": "guards_and_missing_clip"
+      },
+      {
+        "name": "tests_export_guards",
+        "status": "pass",
+        "requested": true,
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+          "/workspace/work/animation-pipeline/tools/animation-pipeline/test_export_roundtrip.py",
+          "ExportGuards"
+        ],
+        "exit_code": 0,
+        "stdout_log": "tests_export_guards.stdout.log",
+        "stderr_log": "tests_export_guards.stderr.log",
+        "seconds": 0.211
+      },
+      {
+        "name": "tests_numeric_contract",
+        "status": "pass",
+        "requested": true,
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+          "-c",
+          "import sys, unittest; sys.path.insert(0, sys.argv[1]); suite=unittest.defaultTestLoader.loadTestsFromNames(['test_restore_normals','test_skin_contract']); result=unittest.TextTestRunner().run(suite); sys.exit(not result.wasSuccessful())",
+          "/workspace/work/animation-pipeline/tools/animation-pipeline"
+        ],
+        "exit_code": 0,
+        "stdout_log": "tests_numeric_contract.stdout.log",
+        "stderr_log": "tests_numeric_contract.stderr.log",
+        "seconds": 16.536
+      },
+      {
+        "name": "inventory_candidate",
+        "status": "pass",
+        "requested": true,
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+          "/workspace/work/animation-pipeline/tools/animation-pipeline/inventory.py",
+          "/workspace/work/animation-diagnosis/export/received-verified.glb",
+          "--output",
+          "/workspace/work/animation-diagnosis/final-complete-frozen/inventory-candidate.json"
+        ],
+        "exit_code": 0,
+        "stdout_log": "inventory_candidate.stdout.log",
+        "stderr_log": "inventory_candidate.stderr.log",
+        "seconds": 0.158
+      },
+      {
+        "name": "compare_poses",
+        "status": "pass",
+        "requested": true,
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+          "/workspace/work/animation-pipeline/tools/animation-pipeline/compare_poses.py",
+          "/workspace/work/animation-pipeline/dist/match3d/assets/quaternius-rugby-athlete.glb",
+          "/workspace/work/animation-diagnosis/export/received-verified.glb",
+          "--godot",
+          "/workspace/.cloud-setup/tools/godot472/Godot_v4.7.2-stable_linux.x86_64",
+          "--out",
+          "/workspace/work/animation-diagnosis/final-complete-frozen/poses.json"
+        ],
+        "exit_code": 0,
+        "stdout_log": "compare_poses.stdout.log",
+        "stderr_log": "compare_poses.stderr.log",
+        "seconds": 6.01,
+        "candidate_verdict": {
+          "additional_end_sample": "duration minus 0.0001 seconds, then exact endpoint (may wrap)",
+          "available_clips": [
+            "HumanArmature|Man_Clapping",
+            "HumanArmature|Man_Death",
+            "HumanArmature|Man_Idle",
+            "HumanArmature|Man_Jump",
+            "HumanArmature|Man_Punch",
+            "HumanArmature|Man_Run",
+            "HumanArmature|Man_RunningJump",
+            "HumanArmature|Man_Sitting",
+            "HumanArmature|Man_Standing",
+            "HumanArmature|Man_SwordSlash",
+            "HumanArmature|Man_Walk"
+          ],
+          "bones": 31,
+          "bounds": "not measured: static mesh AABB is not skinned bounds",
+          "clips": 11,
+          "complete_clip_coverage": true,
+          "distance_units": "raw imported Godot units, not calibrated gameplay metres",
+          "engine": "4.7.2-stable (official)",
+          "errors": [],
+          "global_manifest_checks": "bone names/order, clip names/order, all durations and loop modes",
+          "max_error": {
+            "position_units": 1.17987092380645e-05,
+            "rotation_rad": 1.6555917681748e-05,
+            "scale": 6.866455078125e-05
+          },
+          "passed": true,
+          "per_clip": {
+            "HumanArmature|Man_Clapping": {
+              "duration_candidate_seconds": 1.66666662693024,
+              "duration_source_seconds": 1.66666662693024,
+              "errors": [],
+              "feet": {
+                "L": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  }
+                },
+                "R": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  }
+                }
+              },
+              "loop_candidate": 0,
+              "loop_source": 0,
+              "max_error": {
+                "position_units": 1.00536353784264e-05,
+                "rotation_rad": 1.63583717945575e-05,
+                "scale": 5.340576171875e-05
+              },
+              "passed": true,
+              "sample_times_seconds": [
+                0.0,
+                0.20833332836628,
+                0.416666656732559,
+                0.624999985098839,
+                0.833333313465118,
+                1.0416666418314,
+                1.24999997019768,
+                1.45833329856396,
+                1.66656662693024,
+                1.66666662693024
+              ],
+              "sampled_poses": 10,
+              "within_pose_thresholds": true,
+              "worst_location": {
+                "position_units": {
+                  "bone_or_root": "Fingers.R",
+                  "label": "HumanArmature|Man_Clapping@0.416667:Fingers.R:world",
+                  "space": "world",
+                  "time_seconds": 0.416666656732559
+                },
+                "rotation_rad": {
+                  "bone_or_root": "Shoulder.R",
+                  "label": "HumanArmature|Man_Clapping@0.416667:Shoulder.R:world",
+                  "space": "world",
+                  "time_seconds": 0.416666656732559
+                },
+                "scale": {
+                  "bone_or_root": "Thumb2.R",
+                  "label": "HumanArmature|Man_Clapping@0.208333:Thumb2.R:world",
+                  "space": "world",
+                  "time_seconds": 0.20833332836628
+                }
+              }
+            },
+            "HumanArmature|Man_Death": {
+              "duration_candidate_seconds": 2.08333325386047,
+              "duration_source_seconds": 2.08333325386047,
+              "errors": [],
+              "feet": {
+                "L": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.173618301749229,
+                    "max_sample_step_units": 1.11940276622772,
+                    "pre_end_gap_units": 0.173618301749229,
+                    "sampled_path_length_units": 2.94833701848984,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.173618331551552,
+                    "max_sample_step_units": 1.11940276622772,
+                    "pre_end_gap_units": 0.173618331551552,
+                    "sampled_path_length_units": 2.94833691418171,
+                    "samples": 10
+                  }
+                },
+                "R": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.173618406057358,
+                    "max_sample_step_units": 0.559272468090057,
+                    "pre_end_gap_units": 0.173618406057358,
+                    "sampled_path_length_units": 1.7747957855463,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.173618450760841,
+                    "max_sample_step_units": 0.559272408485413,
+                    "pre_end_gap_units": 0.173618450760841,
+                    "sampled_path_length_units": 1.77479583024979,
+                    "samples": 10
+                  }
+                }
+              },
+              "loop_candidate": 0,
+              "loop_source": 0,
+              "max_error": {
+                "position_units": 6.57657255942468e-06,
+                "rotation_rad": 1.6555917681748e-05,
+                "scale": 5.340576171875e-05
+              },
+              "passed": true,
+              "sample_times_seconds": [
+                0.0,
+                0.260416656732559,
+                0.520833313465118,
+                0.781249970197678,
+                1.04166662693024,
+                1.3020832836628,
+                1.56249994039536,
+                1.82291659712791,
+                2.08323325386047,
+                2.08333325386047
+              ],
+              "sampled_poses": 10,
+              "within_pose_thresholds": true,
+              "worst_location": {
+                "position_units": {
+                  "bone_or_root": "Fingers.L",
+                  "label": "HumanArmature|Man_Death@2.083233:Fingers.L:world",
+                  "space": "world",
+                  "time_seconds": 2.08323325386047
+                },
+                "rotation_rad": {
+                  "bone_or_root": "Shoulder.R",
+                  "label": "HumanArmature|Man_Death@0.520833:Shoulder.R:world",
+                  "space": "world",
+                  "time_seconds": 0.520833313465118
+                },
+                "scale": {
+                  "bone_or_root": "Thumb2.L",
+                  "label": "HumanArmature|Man_Death@2.083233:Thumb2.L:world",
+                  "space": "world",
+                  "time_seconds": 2.08323325386047
+                }
+              }
+            },
+            "HumanArmature|Man_Idle": {
+              "duration_candidate_seconds": 4.16666650772095,
+              "duration_source_seconds": 4.16666650772095,
+              "errors": [],
+              "feet": {
+                "L": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  }
+                },
+                "R": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  }
+                }
+              },
+              "loop_candidate": 0,
+              "loop_source": 0,
+              "max_error": {
+                "position_units": 1.91964909390663e-06,
+                "rotation_rad": 1.62153737615966e-05,
+                "scale": 6.103515625e-05
+              },
+              "passed": true,
+              "sample_times_seconds": [
+                0.0,
+                0.520833313465118,
+                1.04166662693024,
+                1.56249994039536,
+                2.08333325386047,
+                2.60416656732559,
+                3.12499988079071,
+                3.64583319425583,
+                4.16656650772095,
+                4.16666650772095
+              ],
+              "sampled_poses": 10,
+              "within_pose_thresholds": true,
+              "worst_location": {
+                "position_units": {
+                  "bone_or_root": "Thumb1.R",
+                  "label": "HumanArmature|Man_Idle@1.562500:Thumb1.R:world",
+                  "space": "world",
+                  "time_seconds": 1.56249994039536
+                },
+                "rotation_rad": {
+                  "bone_or_root": "Shoulder.R",
+                  "label": "HumanArmature|Man_Idle@0.000000:Shoulder.R:local",
+                  "space": "local",
+                  "time_seconds": 0.0
+                },
+                "scale": {
+                  "bone_or_root": "Thumb2.L",
+                  "label": "HumanArmature|Man_Idle@0.520833:Thumb2.L:world",
+                  "space": "world",
+                  "time_seconds": 0.520833313465118
+                }
+              }
+            },
+            "HumanArmature|Man_Jump": {
+              "duration_candidate_seconds": 1.04166662693024,
+              "duration_source_seconds": 1.04166662693024,
+              "errors": [],
+              "feet": {
+                "L": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 1.22720992565155,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 3.39277037978172,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 1.22721004486084,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 3.3927703499794,
+                    "samples": 10
+                  }
+                },
+                "R": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 1.22720956802368,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 3.39276909828186,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 1.22721004486084,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 3.3927703499794,
+                    "samples": 10
+                  }
+                }
+              },
+              "loop_candidate": 0,
+              "loop_source": 0,
+              "max_error": {
+                "position_units": 1.17987092380645e-05,
+                "rotation_rad": 1.62519045257856e-05,
+                "scale": 6.103515625e-05
+              },
+              "passed": true,
+              "sample_times_seconds": [
+                0.0,
+                0.13020832836628,
+                0.260416656732559,
+                0.390624985098839,
+                0.520833313465118,
+                0.651041641831398,
+                0.781249970197678,
+                0.911458298563957,
+                1.04156662693024,
+                1.04166662693024
+              ],
+              "sampled_poses": 10,
+              "within_pose_thresholds": true,
+              "worst_location": {
+                "position_units": {
+                  "bone_or_root": "Fingers.R",
+                  "label": "HumanArmature|Man_Jump@0.390625:Fingers.R:world",
+                  "space": "world",
+                  "time_seconds": 0.390624985098839
+                },
+                "rotation_rad": {
+                  "bone_or_root": "Shoulder.R",
+                  "label": "HumanArmature|Man_Jump@0.130208:Shoulder.R:world",
+                  "space": "world",
+                  "time_seconds": 0.13020832836628
+                },
+                "scale": {
+                  "bone_or_root": "Thumb1.R",
+                  "label": "HumanArmature|Man_Jump@0.520833:Thumb1.R:world",
+                  "space": "world",
+                  "time_seconds": 0.520833313465118
+                }
+              }
+            },
+            "HumanArmature|Man_Punch": {
+              "duration_candidate_seconds": 0.916666686534882,
+              "duration_source_seconds": 0.916666686534882,
+              "errors": [],
+              "feet": {
+                "L": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  }
+                },
+                "R": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  }
+                }
+              },
+              "loop_candidate": 0,
+              "loop_source": 0,
+              "max_error": {
+                "position_units": 5.3644389481633e-06,
+                "rotation_rad": 1.65319179355593e-05,
+                "scale": 6.103515625e-05
+              },
+              "passed": true,
+              "sample_times_seconds": [
+                0.0,
+                0.11458333581686,
+                0.22916667163372,
+                0.343750007450581,
+                0.458333343267441,
+                0.572916679084301,
+                0.687500014901161,
+                0.802083350718021,
+                0.916566686534882,
+                0.916666686534882
+              ],
+              "sampled_poses": 10,
+              "within_pose_thresholds": true,
+              "worst_location": {
+                "position_units": {
+                  "bone_or_root": "MiddleHand.R",
+                  "label": "HumanArmature|Man_Punch@0.114583:MiddleHand.R:world",
+                  "space": "world",
+                  "time_seconds": 0.11458333581686
+                },
+                "rotation_rad": {
+                  "bone_or_root": "Shoulder.R",
+                  "label": "HumanArmature|Man_Punch@0.916567:Shoulder.R:world",
+                  "space": "world",
+                  "time_seconds": 0.916566686534882
+                },
+                "scale": {
+                  "bone_or_root": "Thumb2.L",
+                  "label": "HumanArmature|Man_Punch@0.114583:Thumb2.L:world",
+                  "space": "world",
+                  "time_seconds": 0.11458333581686
+                }
+              }
+            },
+            "HumanArmature|Man_Run": {
+              "duration_candidate_seconds": 0.875,
+              "duration_source_seconds": 0.875,
+              "errors": [],
+              "feet": {
+                "L": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 1.43371021747589,
+                    "pre_end_gap_units": 0.000543990638107061,
+                    "sampled_path_length_units": 7.01952684810385,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 1.43371021747589,
+                    "pre_end_gap_units": 0.000544099835678935,
+                    "sampled_path_length_units": 7.0195263910573,
+                    "samples": 10
+                  }
+                },
+                "R": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 1.67979526519775,
+                    "pre_end_gap_units": 0.000164125391165726,
+                    "sampled_path_length_units": 7.43623790545098,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 1.67979574203491,
+                    "pre_end_gap_units": 0.000164010940352455,
+                    "sampled_path_length_units": 7.43623910230235,
+                    "samples": 10
+                  }
+                }
+              },
+              "loop_candidate": 0,
+              "loop_source": 0,
+              "max_error": {
+                "position_units": 7.1308177211904e-06,
+                "rotation_rad": 1.6550926374825e-05,
+                "scale": 6.866455078125e-05
+              },
+              "passed": true,
+              "sample_times_seconds": [
+                0.0,
+                0.109375,
+                0.21875,
+                0.328125,
+                0.4375,
+                0.546875,
+                0.65625,
+                0.765625,
+                0.8749,
+                0.875
+              ],
+              "sampled_poses": 10,
+              "within_pose_thresholds": true,
+              "worst_location": {
+                "position_units": {
+                  "bone_or_root": "Fingers.R",
+                  "label": "HumanArmature|Man_Run@0.437500:Fingers.R:world",
+                  "space": "world",
+                  "time_seconds": 0.4375
+                },
+                "rotation_rad": {
+                  "bone_or_root": "Shoulder.R",
+                  "label": "HumanArmature|Man_Run@0.109375:Shoulder.R:world",
+                  "space": "world",
+                  "time_seconds": 0.109375
+                },
+                "scale": {
+                  "bone_or_root": "Thumb2.L",
+                  "label": "HumanArmature|Man_Run@0.546875:Thumb2.L:world",
+                  "space": "world",
+                  "time_seconds": 0.546875
+                }
+              }
+            },
+            "HumanArmature|Man_RunningJump": {
+              "duration_candidate_seconds": 1.25,
+              "duration_source_seconds": 1.25,
+              "errors": [],
+              "feet": {
+                "L": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 2.14723372459412,
+                    "pre_end_gap_units": 0.000912328890990466,
+                    "sampled_path_length_units": 8.52430413448019,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 2.14723348617554,
+                    "pre_end_gap_units": 0.000912365852855146,
+                    "sampled_path_length_units": 8.52430405968335,
+                    "samples": 10
+                  }
+                },
+                "R": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 2.00221610069275,
+                    "pre_end_gap_units": 0.000218081855564378,
+                    "sampled_path_length_units": 8.51716292240599,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 2.00221657752991,
+                    "pre_end_gap_units": 0.00021808645396959,
+                    "sampled_path_length_units": 8.51716513982683,
+                    "samples": 10
+                  }
+                }
+              },
+              "loop_candidate": 0,
+              "loop_source": 0,
+              "max_error": {
+                "position_units": 7.58034593673074e-06,
+                "rotation_rad": 1.63614968183526e-05,
+                "scale": 6.866455078125e-05
+              },
+              "passed": true,
+              "sample_times_seconds": [
+                0.0,
+                0.15625,
+                0.3125,
+                0.46875,
+                0.625,
+                0.78125,
+                0.9375,
+                1.09375,
+                1.2499,
+                1.25
+              ],
+              "sampled_poses": 10,
+              "within_pose_thresholds": true,
+              "worst_location": {
+                "position_units": {
+                  "bone_or_root": "Fingers.R",
+                  "label": "HumanArmature|Man_RunningJump@0.468750:Fingers.R:world",
+                  "space": "world",
+                  "time_seconds": 0.46875
+                },
+                "rotation_rad": {
+                  "bone_or_root": "Shoulder.R",
+                  "label": "HumanArmature|Man_RunningJump@0.000000:Shoulder.R:world",
+                  "space": "world",
+                  "time_seconds": 0.0
+                },
+                "scale": {
+                  "bone_or_root": "Thumb2.L",
+                  "label": "HumanArmature|Man_RunningJump@1.250000:Thumb2.L:world",
+                  "space": "world",
+                  "time_seconds": 1.25
+                }
+              }
+            },
+            "HumanArmature|Man_Sitting": {
+              "duration_candidate_seconds": 8.33333301544189,
+              "duration_source_seconds": 8.33333301544189,
+              "errors": [],
+              "feet": {
+                "L": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  }
+                },
+                "R": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  }
+                }
+              },
+              "loop_candidate": 0,
+              "loop_source": 0,
+              "max_error": {
+                "position_units": 3.10230575450987e-06,
+                "rotation_rad": 1.64708053485725e-05,
+                "scale": 5.340576171875e-05
+              },
+              "passed": true,
+              "sample_times_seconds": [
+                0.0,
+                1.04166662693024,
+                2.08333325386047,
+                3.12499988079071,
+                4.16666650772095,
+                5.20833313465118,
+                6.24999976158142,
+                7.29166638851166,
+                8.33323301544189,
+                8.33333301544189
+              ],
+              "sampled_poses": 10,
+              "within_pose_thresholds": true,
+              "worst_location": {
+                "position_units": {
+                  "bone_or_root": "Fingers.R",
+                  "label": "HumanArmature|Man_Sitting@7.291666:Fingers.R:world",
+                  "space": "world",
+                  "time_seconds": 7.29166638851166
+                },
+                "rotation_rad": {
+                  "bone_or_root": "Shoulder.R",
+                  "label": "HumanArmature|Man_Sitting@4.166667:Shoulder.R:world",
+                  "space": "world",
+                  "time_seconds": 4.16666650772095
+                },
+                "scale": {
+                  "bone_or_root": "Thumb2.L",
+                  "label": "HumanArmature|Man_Sitting@0.000000:Thumb2.L:world",
+                  "space": "world",
+                  "time_seconds": 0.0
+                }
+              }
+            },
+            "HumanArmature|Man_Standing": {
+              "duration_candidate_seconds": 0.833333313465118,
+              "duration_source_seconds": 0.833333313465118,
+              "errors": [],
+              "feet": {
+                "L": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  }
+                },
+                "R": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  }
+                }
+              },
+              "loop_candidate": 0,
+              "loop_source": 0,
+              "max_error": {
+                "position_units": 3.17251283377118e-06,
+                "rotation_rad": 1.63206514112987e-05,
+                "scale": 5.340576171875e-05
+              },
+              "passed": true,
+              "sample_times_seconds": [
+                0.0,
+                0.10416666418314,
+                0.20833332836628,
+                0.312499992549419,
+                0.416666656732559,
+                0.520833320915699,
+                0.624999985098839,
+                0.729166649281979,
+                0.833233313465118,
+                0.833333313465118
+              ],
+              "sampled_poses": 10,
+              "within_pose_thresholds": true,
+              "worst_location": {
+                "position_units": {
+                  "bone_or_root": "Fingers.R",
+                  "label": "HumanArmature|Man_Standing@0.000000:Fingers.R:world",
+                  "space": "world",
+                  "time_seconds": 0.0
+                },
+                "rotation_rad": {
+                  "bone_or_root": "Shoulder.R",
+                  "label": "HumanArmature|Man_Standing@0.000000:Shoulder.R:world",
+                  "space": "world",
+                  "time_seconds": 0.0
+                },
+                "scale": {
+                  "bone_or_root": "MiddleHand.R",
+                  "label": "HumanArmature|Man_Standing@0.104167:MiddleHand.R:world",
+                  "space": "world",
+                  "time_seconds": 0.10416666418314
+                }
+              }
+            },
+            "HumanArmature|Man_SwordSlash": {
+              "duration_candidate_seconds": 1.04166662693024,
+              "duration_source_seconds": 1.04166662693024,
+              "errors": [],
+              "feet": {
+                "L": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  }
+                },
+                "R": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 0.0,
+                    "pre_end_gap_units": 0.0,
+                    "sampled_path_length_units": 0.0,
+                    "samples": 10
+                  }
+                }
+              },
+              "loop_candidate": 0,
+              "loop_source": 0,
+              "max_error": {
+                "position_units": 1.03148786365637e-05,
+                "rotation_rad": 1.62153737615966e-05,
+                "scale": 5.340576171875e-05
+              },
+              "passed": true,
+              "sample_times_seconds": [
+                0.0,
+                0.13020832836628,
+                0.260416656732559,
+                0.390624985098839,
+                0.520833313465118,
+                0.651041641831398,
+                0.781249970197678,
+                0.911458298563957,
+                1.04156662693024,
+                1.04166662693024
+              ],
+              "sampled_poses": 10,
+              "within_pose_thresholds": true,
+              "worst_location": {
+                "position_units": {
+                  "bone_or_root": "Fingers.R",
+                  "label": "HumanArmature|Man_SwordSlash@0.390625:Fingers.R:world",
+                  "space": "world",
+                  "time_seconds": 0.390624985098839
+                },
+                "rotation_rad": {
+                  "bone_or_root": "Shoulder.R",
+                  "label": "HumanArmature|Man_SwordSlash@0.000000:Shoulder.R:local",
+                  "space": "local",
+                  "time_seconds": 0.0
+                },
+                "scale": {
+                  "bone_or_root": "MiddleHand.R",
+                  "label": "HumanArmature|Man_SwordSlash@0.130208:MiddleHand.R:world",
+                  "space": "world",
+                  "time_seconds": 0.13020832836628
+                }
+              }
+            },
+            "HumanArmature|Man_Walk": {
+              "duration_candidate_seconds": 1.04166662693024,
+              "duration_source_seconds": 1.04166662693024,
+              "errors": [],
+              "feet": {
+                "L": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 1.07865786552429,
+                    "pre_end_gap_units": 0.000591709685977548,
+                    "sampled_path_length_units": 4.48197899706429,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 1.07865798473358,
+                    "pre_end_gap_units": 0.000591679767239839,
+                    "sampled_path_length_units": 4.48197925026761,
+                    "samples": 10
+                  }
+                },
+                "R": {
+                  "candidate": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 1.0686274766922,
+                    "pre_end_gap_units": 0.000403496902436018,
+                    "sampled_path_length_units": 4.41756724147126,
+                    "samples": 10
+                  },
+                  "source": {
+                    "endpoint_gap_units": 0.0,
+                    "max_sample_step_units": 1.06862783432007,
+                    "pre_end_gap_units": 0.000403496902436018,
+                    "sampled_path_length_units": 4.417568418663,
+                    "samples": 10
+                  }
+                }
+              },
+              "loop_candidate": 0,
+              "loop_source": 0,
+              "max_error": {
+                "position_units": 3.28045598507742e-06,
+                "rotation_rad": 1.62253709273579e-05,
+                "scale": 6.103515625e-05
+              },
+              "passed": true,
+              "sample_times_seconds": [
+                0.0,
+                0.13020832836628,
+                0.260416656732559,
+                0.390624985098839,
+                0.520833313465118,
+                0.651041641831398,
+                0.781249970197678,
+                0.911458298563957,
+                1.04156662693024,
+                1.04166662693024
+              ],
+              "sampled_poses": 10,
+              "within_pose_thresholds": true,
+              "worst_location": {
+                "position_units": {
+                  "bone_or_root": "Fingers.L",
+                  "label": "HumanArmature|Man_Walk@0.390625:Fingers.L:world",
+                  "space": "world",
+                  "time_seconds": 0.390624985098839
+                },
+                "rotation_rad": {
+                  "bone_or_root": "Shoulder.R",
+                  "label": "HumanArmature|Man_Walk@0.260417:Shoulder.R:world",
+                  "space": "world",
+                  "time_seconds": 0.260416656732559
+                },
+                "scale": {
+                  "bone_or_root": "Thumb2.L",
+                  "label": "HumanArmature|Man_Walk@1.041567:Thumb2.L:world",
+                  "space": "world",
+                  "time_seconds": 1.04156662693024
+                }
+              }
+            }
+          },
+          "root_motion": "bone world transforms compared; no gameplay displacement applied",
+          "sampled_poses": 110,
+          "samples_per_clip": 9,
+          "sampling": "fresh scene pair at every sample, manual animation evaluation; reset poses",
+          "schema": 1,
+          "selected_clips": [
+            "HumanArmature|Man_Clapping",
+            "HumanArmature|Man_Death",
+            "HumanArmature|Man_Idle",
+            "HumanArmature|Man_Jump",
+            "HumanArmature|Man_Punch",
+            "HumanArmature|Man_Run",
+            "HumanArmature|Man_RunningJump",
+            "HumanArmature|Man_Sitting",
+            "HumanArmature|Man_Standing",
+            "HumanArmature|Man_SwordSlash",
+            "HumanArmature|Man_Walk"
+          ],
+          "thresholds": {
+            "position_units": 0.0001,
+            "rotation_rad": 0.001,
+            "scale": 0.0001
+          },
+          "transform_comparisons": 7040,
+          "validation_scope": "all available clips; sampled poses only",
+          "worst_location": {
+            "position_units": "HumanArmature|Man_Jump@0.390625:Fingers.R:world",
+            "rotation_rad": "HumanArmature|Man_Death@0.520833:Shoulder.R:world",
+            "scale": "HumanArmature|Man_Run@0.546875:Thumb2.L:world"
+          },
+          "source_sha256": "7fd28255c484e19ba5086d9cf815128e21dfcb677d262a88b237a5f5af081c5f",
+          "candidate_sha256": "d9139eddc66f7c407107b4d68b3d1503ca07e4256432a9a9a1528fd0fe74afbb"
+        }
+      },
+      {
+        "name": "compare_skin",
+        "status": "pass",
+        "requested": true,
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+          "/workspace/work/animation-pipeline/tools/animation-pipeline/compare_skin.py",
+          "/workspace/work/animation-pipeline/dist/match3d/assets/quaternius-rugby-athlete.glb",
+          "/workspace/work/animation-diagnosis/export/received-verified.glb",
+          "--out",
+          "/workspace/work/animation-diagnosis/final-complete-frozen/skin.json"
+        ],
+        "exit_code": 0,
+        "stdout_log": "compare_skin.stdout.log",
+        "stderr_log": "compare_skin.stderr.log",
+        "seconds": 6.969,
+        "skin_verdict": {
+          "units": "raw GLB world units, not gameplay metres",
+          "source_points": 3981,
+          "candidate_points": 4031,
+          "mapping": "fixed rest skinned position + material name + semantic joint names/weights",
+          "mapping_epsilon": 1e-05,
+          "weight_epsilon": 1e-05,
+          "unmatched": 0,
+          "ambiguous_equivalent_duplicates": 3969,
+          "max_rest_distance": 4.1673104683615935e-06,
+          "max_weight_difference": 1.1920928955078125e-07,
+          "threshold": 0.0001,
+          "passed": true,
+          "oriented_faces_equal": true,
+          "corner_normals_equal": true,
+          "source_face_count": 1854,
+          "candidate_face_count": 1854,
+          "matched_geometry_faces": 1854,
+          "matched_normal_faces": 1854,
+          "unmatched_normal_candidate_faces": [],
+          "unmatched_normal_source_faces": [],
+          "max_matched_corner_normal_angle_rad": 2.580956827951785e-08,
+          "face_mapping": "one-to-one oriented triangles at rest; normal bound applies to each corresponding corner",
+          "candidate_unmatched": 0,
+          "topology_counts_equal": true,
+          "clip_contract_equal": true,
+          "normal_basis_equal": true,
+          "max_normal_angle_rad": 2.580956827951785e-08,
+          "normal_threshold_rad": 0.001,
+          "normals_passed": true,
+          "sampled_poses": 110,
+          "compared_vertices_per_pose": 3981,
+          "clips_compared": 11,
+          "all_source_clips_compared": true,
+          "max_skinned_distance": 1.2196069346300717e-05,
+          "input_sha256": {
+            "/workspace/work/animation-pipeline/dist/match3d/assets/quaternius-rugby-athlete.glb": "7fd28255c484e19ba5086d9cf815128e21dfcb677d262a88b237a5f5af081c5f",
+            "/workspace/work/animation-diagnosis/export/received-verified.glb": "d9139eddc66f7c407107b4d68b3d1503ca07e4256432a9a9a1528fd0fe74afbb"
+          },
+          "inputs_unchanged": true
+        }
+      },
+      {
+        "name": "reader",
+        "status": "pass",
+        "requested": true,
+        "command": [
+          "/workspace/.cloud-setup/tools/godot472/Godot_v4.7.2-stable_linux.x86_64",
+          "--headless",
+          "--path",
+          "/workspace/work/animation-diagnosis/candidate-reader-final",
+          "--script",
+          "/workspace/work/animation-pipeline/tools/animation-pipeline/check_match_reader.gd"
+        ],
+        "exit_code": 0,
+        "stdout_log": "reader.stdout.log",
+        "stderr_log": "reader.stderr.log",
+        "seconds": 0.393
+      },
+      {
+        "name": "inputs_unchanged",
+        "requested": true,
+        "status": "pass",
+        "before": {
+          "/workspace/work/animation-pipeline/dist/match3d/assets/quaternius-rugby-athlete.glb": "7fd28255c484e19ba5086d9cf815128e21dfcb677d262a88b237a5f5af081c5f",
+          "/workspace/work/animation-diagnosis/export/received-verified.glb": "d9139eddc66f7c407107b4d68b3d1503ca07e4256432a9a9a1528fd0fe74afbb"
+        },
+        "after": {
+          "/workspace/work/animation-pipeline/dist/match3d/assets/quaternius-rugby-athlete.glb": "7fd28255c484e19ba5086d9cf815128e21dfcb677d262a88b237a5f5af081c5f",
+          "/workspace/work/animation-diagnosis/export/received-verified.glb": "d9139eddc66f7c407107b4d68b3d1503ca07e4256432a9a9a1528fd0fe74afbb"
+        }
+      }
+    ],
+    "limits": [
+      "Contr\u00f4les headless : aucune r\u00e9ception graphique ou Windows.",
+      "Aucun candidat install\u00e9 dans le jeu ; comparer les poses ne valide pas tous les usages du lecteur."
+    ]
+  },
+  "poses": {
+    "candidate": {
+      "additional_end_sample": "duration minus 0.0001 seconds, then exact endpoint (may wrap)",
+      "available_clips": [
+        "HumanArmature|Man_Clapping",
+        "HumanArmature|Man_Death",
+        "HumanArmature|Man_Idle",
+        "HumanArmature|Man_Jump",
+        "HumanArmature|Man_Punch",
+        "HumanArmature|Man_Run",
+        "HumanArmature|Man_RunningJump",
+        "HumanArmature|Man_Sitting",
+        "HumanArmature|Man_Standing",
+        "HumanArmature|Man_SwordSlash",
+        "HumanArmature|Man_Walk"
+      ],
+      "bones": 31,
+      "bounds": "not measured: static mesh AABB is not skinned bounds",
+      "clips": 11,
+      "complete_clip_coverage": true,
+      "distance_units": "raw imported Godot units, not calibrated gameplay metres",
+      "engine": "4.7.2-stable (official)",
+      "errors": [],
+      "global_manifest_checks": "bone names/order, clip names/order, all durations and loop modes",
+      "max_error": {
+        "position_units": 1.17987092380645e-05,
+        "rotation_rad": 1.6555917681748e-05,
+        "scale": 6.866455078125e-05
+      },
+      "passed": true,
+      "per_clip": {
+        "HumanArmature|Man_Clapping": {
+          "duration_candidate_seconds": 1.66666662693024,
+          "duration_source_seconds": 1.66666662693024,
+          "errors": [],
+          "feet": {
+            "L": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              }
+            },
+            "R": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              }
+            }
+          },
+          "loop_candidate": 0,
+          "loop_source": 0,
+          "max_error": {
+            "position_units": 1.00536353784264e-05,
+            "rotation_rad": 1.63583717945575e-05,
+            "scale": 5.340576171875e-05
+          },
+          "passed": true,
+          "sample_times_seconds": [
+            0.0,
+            0.20833332836628,
+            0.416666656732559,
+            0.624999985098839,
+            0.833333313465118,
+            1.0416666418314,
+            1.24999997019768,
+            1.45833329856396,
+            1.66656662693024,
+            1.66666662693024
+          ],
+          "sampled_poses": 10,
+          "within_pose_thresholds": true,
+          "worst_location": {
+            "position_units": {
+              "bone_or_root": "Fingers.R",
+              "label": "HumanArmature|Man_Clapping@0.416667:Fingers.R:world",
+              "space": "world",
+              "time_seconds": 0.416666656732559
+            },
+            "rotation_rad": {
+              "bone_or_root": "Shoulder.R",
+              "label": "HumanArmature|Man_Clapping@0.416667:Shoulder.R:world",
+              "space": "world",
+              "time_seconds": 0.416666656732559
+            },
+            "scale": {
+              "bone_or_root": "Thumb2.R",
+              "label": "HumanArmature|Man_Clapping@0.208333:Thumb2.R:world",
+              "space": "world",
+              "time_seconds": 0.20833332836628
+            }
+          }
+        },
+        "HumanArmature|Man_Death": {
+          "duration_candidate_seconds": 2.08333325386047,
+          "duration_source_seconds": 2.08333325386047,
+          "errors": [],
+          "feet": {
+            "L": {
+              "candidate": {
+                "endpoint_gap_units": 0.173618301749229,
+                "max_sample_step_units": 1.11940276622772,
+                "pre_end_gap_units": 0.173618301749229,
+                "sampled_path_length_units": 2.94833701848984,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.173618331551552,
+                "max_sample_step_units": 1.11940276622772,
+                "pre_end_gap_units": 0.173618331551552,
+                "sampled_path_length_units": 2.94833691418171,
+                "samples": 10
+              }
+            },
+            "R": {
+              "candidate": {
+                "endpoint_gap_units": 0.173618406057358,
+                "max_sample_step_units": 0.559272468090057,
+                "pre_end_gap_units": 0.173618406057358,
+                "sampled_path_length_units": 1.7747957855463,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.173618450760841,
+                "max_sample_step_units": 0.559272408485413,
+                "pre_end_gap_units": 0.173618450760841,
+                "sampled_path_length_units": 1.77479583024979,
+                "samples": 10
+              }
+            }
+          },
+          "loop_candidate": 0,
+          "loop_source": 0,
+          "max_error": {
+            "position_units": 6.57657255942468e-06,
+            "rotation_rad": 1.6555917681748e-05,
+            "scale": 5.340576171875e-05
+          },
+          "passed": true,
+          "sample_times_seconds": [
+            0.0,
+            0.260416656732559,
+            0.520833313465118,
+            0.781249970197678,
+            1.04166662693024,
+            1.3020832836628,
+            1.56249994039536,
+            1.82291659712791,
+            2.08323325386047,
+            2.08333325386047
+          ],
+          "sampled_poses": 10,
+          "within_pose_thresholds": true,
+          "worst_location": {
+            "position_units": {
+              "bone_or_root": "Fingers.L",
+              "label": "HumanArmature|Man_Death@2.083233:Fingers.L:world",
+              "space": "world",
+              "time_seconds": 2.08323325386047
+            },
+            "rotation_rad": {
+              "bone_or_root": "Shoulder.R",
+              "label": "HumanArmature|Man_Death@0.520833:Shoulder.R:world",
+              "space": "world",
+              "time_seconds": 0.520833313465118
+            },
+            "scale": {
+              "bone_or_root": "Thumb2.L",
+              "label": "HumanArmature|Man_Death@2.083233:Thumb2.L:world",
+              "space": "world",
+              "time_seconds": 2.08323325386047
+            }
+          }
+        },
+        "HumanArmature|Man_Idle": {
+          "duration_candidate_seconds": 4.16666650772095,
+          "duration_source_seconds": 4.16666650772095,
+          "errors": [],
+          "feet": {
+            "L": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              }
+            },
+            "R": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              }
+            }
+          },
+          "loop_candidate": 0,
+          "loop_source": 0,
+          "max_error": {
+            "position_units": 1.91964909390663e-06,
+            "rotation_rad": 1.62153737615966e-05,
+            "scale": 6.103515625e-05
+          },
+          "passed": true,
+          "sample_times_seconds": [
+            0.0,
+            0.520833313465118,
+            1.04166662693024,
+            1.56249994039536,
+            2.08333325386047,
+            2.60416656732559,
+            3.12499988079071,
+            3.64583319425583,
+            4.16656650772095,
+            4.16666650772095
+          ],
+          "sampled_poses": 10,
+          "within_pose_thresholds": true,
+          "worst_location": {
+            "position_units": {
+              "bone_or_root": "Thumb1.R",
+              "label": "HumanArmature|Man_Idle@1.562500:Thumb1.R:world",
+              "space": "world",
+              "time_seconds": 1.56249994039536
+            },
+            "rotation_rad": {
+              "bone_or_root": "Shoulder.R",
+              "label": "HumanArmature|Man_Idle@0.000000:Shoulder.R:local",
+              "space": "local",
+              "time_seconds": 0.0
+            },
+            "scale": {
+              "bone_or_root": "Thumb2.L",
+              "label": "HumanArmature|Man_Idle@0.520833:Thumb2.L:world",
+              "space": "world",
+              "time_seconds": 0.520833313465118
+            }
+          }
+        },
+        "HumanArmature|Man_Jump": {
+          "duration_candidate_seconds": 1.04166662693024,
+          "duration_source_seconds": 1.04166662693024,
+          "errors": [],
+          "feet": {
+            "L": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 1.22720992565155,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 3.39277037978172,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 1.22721004486084,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 3.3927703499794,
+                "samples": 10
+              }
+            },
+            "R": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 1.22720956802368,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 3.39276909828186,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 1.22721004486084,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 3.3927703499794,
+                "samples": 10
+              }
+            }
+          },
+          "loop_candidate": 0,
+          "loop_source": 0,
+          "max_error": {
+            "position_units": 1.17987092380645e-05,
+            "rotation_rad": 1.62519045257856e-05,
+            "scale": 6.103515625e-05
+          },
+          "passed": true,
+          "sample_times_seconds": [
+            0.0,
+            0.13020832836628,
+            0.260416656732559,
+            0.390624985098839,
+            0.520833313465118,
+            0.651041641831398,
+            0.781249970197678,
+            0.911458298563957,
+            1.04156662693024,
+            1.04166662693024
+          ],
+          "sampled_poses": 10,
+          "within_pose_thresholds": true,
+          "worst_location": {
+            "position_units": {
+              "bone_or_root": "Fingers.R",
+              "label": "HumanArmature|Man_Jump@0.390625:Fingers.R:world",
+              "space": "world",
+              "time_seconds": 0.390624985098839
+            },
+            "rotation_rad": {
+              "bone_or_root": "Shoulder.R",
+              "label": "HumanArmature|Man_Jump@0.130208:Shoulder.R:world",
+              "space": "world",
+              "time_seconds": 0.13020832836628
+            },
+            "scale": {
+              "bone_or_root": "Thumb1.R",
+              "label": "HumanArmature|Man_Jump@0.520833:Thumb1.R:world",
+              "space": "world",
+              "time_seconds": 0.520833313465118
+            }
+          }
+        },
+        "HumanArmature|Man_Punch": {
+          "duration_candidate_seconds": 0.916666686534882,
+          "duration_source_seconds": 0.916666686534882,
+          "errors": [],
+          "feet": {
+            "L": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              }
+            },
+            "R": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              }
+            }
+          },
+          "loop_candidate": 0,
+          "loop_source": 0,
+          "max_error": {
+            "position_units": 5.3644389481633e-06,
+            "rotation_rad": 1.65319179355593e-05,
+            "scale": 6.103515625e-05
+          },
+          "passed": true,
+          "sample_times_seconds": [
+            0.0,
+            0.11458333581686,
+            0.22916667163372,
+            0.343750007450581,
+            0.458333343267441,
+            0.572916679084301,
+            0.687500014901161,
+            0.802083350718021,
+            0.916566686534882,
+            0.916666686534882
+          ],
+          "sampled_poses": 10,
+          "within_pose_thresholds": true,
+          "worst_location": {
+            "position_units": {
+              "bone_or_root": "MiddleHand.R",
+              "label": "HumanArmature|Man_Punch@0.114583:MiddleHand.R:world",
+              "space": "world",
+              "time_seconds": 0.11458333581686
+            },
+            "rotation_rad": {
+              "bone_or_root": "Shoulder.R",
+              "label": "HumanArmature|Man_Punch@0.916567:Shoulder.R:world",
+              "space": "world",
+              "time_seconds": 0.916566686534882
+            },
+            "scale": {
+              "bone_or_root": "Thumb2.L",
+              "label": "HumanArmature|Man_Punch@0.114583:Thumb2.L:world",
+              "space": "world",
+              "time_seconds": 0.11458333581686
+            }
+          }
+        },
+        "HumanArmature|Man_Run": {
+          "duration_candidate_seconds": 0.875,
+          "duration_source_seconds": 0.875,
+          "errors": [],
+          "feet": {
+            "L": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 1.43371021747589,
+                "pre_end_gap_units": 0.000543990638107061,
+                "sampled_path_length_units": 7.01952684810385,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 1.43371021747589,
+                "pre_end_gap_units": 0.000544099835678935,
+                "sampled_path_length_units": 7.0195263910573,
+                "samples": 10
+              }
+            },
+            "R": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 1.67979526519775,
+                "pre_end_gap_units": 0.000164125391165726,
+                "sampled_path_length_units": 7.43623790545098,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 1.67979574203491,
+                "pre_end_gap_units": 0.000164010940352455,
+                "sampled_path_length_units": 7.43623910230235,
+                "samples": 10
+              }
+            }
+          },
+          "loop_candidate": 0,
+          "loop_source": 0,
+          "max_error": {
+            "position_units": 7.1308177211904e-06,
+            "rotation_rad": 1.6550926374825e-05,
+            "scale": 6.866455078125e-05
+          },
+          "passed": true,
+          "sample_times_seconds": [
+            0.0,
+            0.109375,
+            0.21875,
+            0.328125,
+            0.4375,
+            0.546875,
+            0.65625,
+            0.765625,
+            0.8749,
+            0.875
+          ],
+          "sampled_poses": 10,
+          "within_pose_thresholds": true,
+          "worst_location": {
+            "position_units": {
+              "bone_or_root": "Fingers.R",
+              "label": "HumanArmature|Man_Run@0.437500:Fingers.R:world",
+              "space": "world",
+              "time_seconds": 0.4375
+            },
+            "rotation_rad": {
+              "bone_or_root": "Shoulder.R",
+              "label": "HumanArmature|Man_Run@0.109375:Shoulder.R:world",
+              "space": "world",
+              "time_seconds": 0.109375
+            },
+            "scale": {
+              "bone_or_root": "Thumb2.L",
+              "label": "HumanArmature|Man_Run@0.546875:Thumb2.L:world",
+              "space": "world",
+              "time_seconds": 0.546875
+            }
+          }
+        },
+        "HumanArmature|Man_RunningJump": {
+          "duration_candidate_seconds": 1.25,
+          "duration_source_seconds": 1.25,
+          "errors": [],
+          "feet": {
+            "L": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 2.14723372459412,
+                "pre_end_gap_units": 0.000912328890990466,
+                "sampled_path_length_units": 8.52430413448019,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 2.14723348617554,
+                "pre_end_gap_units": 0.000912365852855146,
+                "sampled_path_length_units": 8.52430405968335,
+                "samples": 10
+              }
+            },
+            "R": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 2.00221610069275,
+                "pre_end_gap_units": 0.000218081855564378,
+                "sampled_path_length_units": 8.51716292240599,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 2.00221657752991,
+                "pre_end_gap_units": 0.00021808645396959,
+                "sampled_path_length_units": 8.51716513982683,
+                "samples": 10
+              }
+            }
+          },
+          "loop_candidate": 0,
+          "loop_source": 0,
+          "max_error": {
+            "position_units": 7.58034593673074e-06,
+            "rotation_rad": 1.63614968183526e-05,
+            "scale": 6.866455078125e-05
+          },
+          "passed": true,
+          "sample_times_seconds": [
+            0.0,
+            0.15625,
+            0.3125,
+            0.46875,
+            0.625,
+            0.78125,
+            0.9375,
+            1.09375,
+            1.2499,
+            1.25
+          ],
+          "sampled_poses": 10,
+          "within_pose_thresholds": true,
+          "worst_location": {
+            "position_units": {
+              "bone_or_root": "Fingers.R",
+              "label": "HumanArmature|Man_RunningJump@0.468750:Fingers.R:world",
+              "space": "world",
+              "time_seconds": 0.46875
+            },
+            "rotation_rad": {
+              "bone_or_root": "Shoulder.R",
+              "label": "HumanArmature|Man_RunningJump@0.000000:Shoulder.R:world",
+              "space": "world",
+              "time_seconds": 0.0
+            },
+            "scale": {
+              "bone_or_root": "Thumb2.L",
+              "label": "HumanArmature|Man_RunningJump@1.250000:Thumb2.L:world",
+              "space": "world",
+              "time_seconds": 1.25
+            }
+          }
+        },
+        "HumanArmature|Man_Sitting": {
+          "duration_candidate_seconds": 8.33333301544189,
+          "duration_source_seconds": 8.33333301544189,
+          "errors": [],
+          "feet": {
+            "L": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              }
+            },
+            "R": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              }
+            }
+          },
+          "loop_candidate": 0,
+          "loop_source": 0,
+          "max_error": {
+            "position_units": 3.10230575450987e-06,
+            "rotation_rad": 1.64708053485725e-05,
+            "scale": 5.340576171875e-05
+          },
+          "passed": true,
+          "sample_times_seconds": [
+            0.0,
+            1.04166662693024,
+            2.08333325386047,
+            3.12499988079071,
+            4.16666650772095,
+            5.20833313465118,
+            6.24999976158142,
+            7.29166638851166,
+            8.33323301544189,
+            8.33333301544189
+          ],
+          "sampled_poses": 10,
+          "within_pose_thresholds": true,
+          "worst_location": {
+            "position_units": {
+              "bone_or_root": "Fingers.R",
+              "label": "HumanArmature|Man_Sitting@7.291666:Fingers.R:world",
+              "space": "world",
+              "time_seconds": 7.29166638851166
+            },
+            "rotation_rad": {
+              "bone_or_root": "Shoulder.R",
+              "label": "HumanArmature|Man_Sitting@4.166667:Shoulder.R:world",
+              "space": "world",
+              "time_seconds": 4.16666650772095
+            },
+            "scale": {
+              "bone_or_root": "Thumb2.L",
+              "label": "HumanArmature|Man_Sitting@0.000000:Thumb2.L:world",
+              "space": "world",
+              "time_seconds": 0.0
+            }
+          }
+        },
+        "HumanArmature|Man_Standing": {
+          "duration_candidate_seconds": 0.833333313465118,
+          "duration_source_seconds": 0.833333313465118,
+          "errors": [],
+          "feet": {
+            "L": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              }
+            },
+            "R": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              }
+            }
+          },
+          "loop_candidate": 0,
+          "loop_source": 0,
+          "max_error": {
+            "position_units": 3.17251283377118e-06,
+            "rotation_rad": 1.63206514112987e-05,
+            "scale": 5.340576171875e-05
+          },
+          "passed": true,
+          "sample_times_seconds": [
+            0.0,
+            0.10416666418314,
+            0.20833332836628,
+            0.312499992549419,
+            0.416666656732559,
+            0.520833320915699,
+            0.624999985098839,
+            0.729166649281979,
+            0.833233313465118,
+            0.833333313465118
+          ],
+          "sampled_poses": 10,
+          "within_pose_thresholds": true,
+          "worst_location": {
+            "position_units": {
+              "bone_or_root": "Fingers.R",
+              "label": "HumanArmature|Man_Standing@0.000000:Fingers.R:world",
+              "space": "world",
+              "time_seconds": 0.0
+            },
+            "rotation_rad": {
+              "bone_or_root": "Shoulder.R",
+              "label": "HumanArmature|Man_Standing@0.000000:Shoulder.R:world",
+              "space": "world",
+              "time_seconds": 0.0
+            },
+            "scale": {
+              "bone_or_root": "MiddleHand.R",
+              "label": "HumanArmature|Man_Standing@0.104167:MiddleHand.R:world",
+              "space": "world",
+              "time_seconds": 0.10416666418314
+            }
+          }
+        },
+        "HumanArmature|Man_SwordSlash": {
+          "duration_candidate_seconds": 1.04166662693024,
+          "duration_source_seconds": 1.04166662693024,
+          "errors": [],
+          "feet": {
+            "L": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              }
+            },
+            "R": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 0.0,
+                "pre_end_gap_units": 0.0,
+                "sampled_path_length_units": 0.0,
+                "samples": 10
+              }
+            }
+          },
+          "loop_candidate": 0,
+          "loop_source": 0,
+          "max_error": {
+            "position_units": 1.03148786365637e-05,
+            "rotation_rad": 1.62153737615966e-05,
+            "scale": 5.340576171875e-05
+          },
+          "passed": true,
+          "sample_times_seconds": [
+            0.0,
+            0.13020832836628,
+            0.260416656732559,
+            0.390624985098839,
+            0.520833313465118,
+            0.651041641831398,
+            0.781249970197678,
+            0.911458298563957,
+            1.04156662693024,
+            1.04166662693024
+          ],
+          "sampled_poses": 10,
+          "within_pose_thresholds": true,
+          "worst_location": {
+            "position_units": {
+              "bone_or_root": "Fingers.R",
+              "label": "HumanArmature|Man_SwordSlash@0.390625:Fingers.R:world",
+              "space": "world",
+              "time_seconds": 0.390624985098839
+            },
+            "rotation_rad": {
+              "bone_or_root": "Shoulder.R",
+              "label": "HumanArmature|Man_SwordSlash@0.000000:Shoulder.R:local",
+              "space": "local",
+              "time_seconds": 0.0
+            },
+            "scale": {
+              "bone_or_root": "MiddleHand.R",
+              "label": "HumanArmature|Man_SwordSlash@0.130208:MiddleHand.R:world",
+              "space": "world",
+              "time_seconds": 0.13020832836628
+            }
+          }
+        },
+        "HumanArmature|Man_Walk": {
+          "duration_candidate_seconds": 1.04166662693024,
+          "duration_source_seconds": 1.04166662693024,
+          "errors": [],
+          "feet": {
+            "L": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 1.07865786552429,
+                "pre_end_gap_units": 0.000591709685977548,
+                "sampled_path_length_units": 4.48197899706429,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 1.07865798473358,
+                "pre_end_gap_units": 0.000591679767239839,
+                "sampled_path_length_units": 4.48197925026761,
+                "samples": 10
+              }
+            },
+            "R": {
+              "candidate": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 1.0686274766922,
+                "pre_end_gap_units": 0.000403496902436018,
+                "sampled_path_length_units": 4.41756724147126,
+                "samples": 10
+              },
+              "source": {
+                "endpoint_gap_units": 0.0,
+                "max_sample_step_units": 1.06862783432007,
+                "pre_end_gap_units": 0.000403496902436018,
+                "sampled_path_length_units": 4.417568418663,
+                "samples": 10
+              }
+            }
+          },
+          "loop_candidate": 0,
+          "loop_source": 0,
+          "max_error": {
+            "position_units": 3.28045598507742e-06,
+            "rotation_rad": 1.62253709273579e-05,
+            "scale": 6.103515625e-05
+          },
+          "passed": true,
+          "sample_times_seconds": [
+            0.0,
+            0.13020832836628,
+            0.260416656732559,
+            0.390624985098839,
+            0.520833313465118,
+            0.651041641831398,
+            0.781249970197678,
+            0.911458298563957,
+            1.04156662693024,
+            1.04166662693024
+          ],
+          "sampled_poses": 10,
+          "within_pose_thresholds": true,
+          "worst_location": {
+            "position_units": {
+              "bone_or_root": "Fingers.L",
+              "label": "HumanArmature|Man_Walk@0.390625:Fingers.L:world",
+              "space": "world",
+              "time_seconds": 0.390624985098839
+            },
+            "rotation_rad": {
+              "bone_or_root": "Shoulder.R",
+              "label": "HumanArmature|Man_Walk@0.260417:Shoulder.R:world",
+              "space": "world",
+              "time_seconds": 0.260416656732559
+            },
+            "scale": {
+              "bone_or_root": "Thumb2.L",
+              "label": "HumanArmature|Man_Walk@1.041567:Thumb2.L:world",
+              "space": "world",
+              "time_seconds": 1.04156662693024
+            }
+          }
+        }
+      },
+      "root_motion": "bone world transforms compared; no gameplay displacement applied",
+      "sampled_poses": 110,
+      "samples_per_clip": 9,
+      "sampling": "fresh scene pair at every sample, manual animation evaluation; reset poses",
+      "schema": 1,
+      "selected_clips": [
+        "HumanArmature|Man_Clapping",
+        "HumanArmature|Man_Death",
+        "HumanArmature|Man_Idle",
+        "HumanArmature|Man_Jump",
+        "HumanArmature|Man_Punch",
+        "HumanArmature|Man_Run",
+        "HumanArmature|Man_RunningJump",
+        "HumanArmature|Man_Sitting",
+        "HumanArmature|Man_Standing",
+        "HumanArmature|Man_SwordSlash",
+        "HumanArmature|Man_Walk"
+      ],
+      "thresholds": {
+        "position_units": 0.0001,
+        "rotation_rad": 0.001,
+        "scale": 0.0001
+      },
+      "transform_comparisons": 7040,
+      "validation_scope": "all available clips; sampled poses only",
+      "worst_location": {
+        "position_units": "HumanArmature|Man_Jump@0.390625:Fingers.R:world",
+        "rotation_rad": "HumanArmature|Man_Death@0.520833:Shoulder.R:world",
+        "scale": "HumanArmature|Man_Run@0.546875:Thumb2.L:world"
+      },
+      "source_sha256": "7fd28255c484e19ba5086d9cf815128e21dfcb677d262a88b237a5f5af081c5f",
+      "candidate_sha256": "d9139eddc66f7c407107b4d68b3d1503ca07e4256432a9a9a1528fd0fe74afbb"
+    },
+    "inputs_unchanged": true
+  },
+  "skin": {
+    "units": "raw GLB world units, not gameplay metres",
+    "source_points": 3981,
+    "candidate_points": 4031,
+    "mapping": "fixed rest skinned position + material name + semantic joint names/weights",
+    "mapping_epsilon": 1e-05,
+    "weight_epsilon": 1e-05,
+    "unmatched": 0,
+    "ambiguous_equivalent_duplicates": 3969,
+    "max_rest_distance": 4.1673104683615935e-06,
+    "max_weight_difference": 1.1920928955078125e-07,
+    "threshold": 0.0001,
+    "samples": [
+      {
+        "clip": "HumanArmature|Man_Clapping",
+        "t": 0.0,
+        "max": 4.8363416111006775e-06,
+        "thumb_max": 2.7570297122702685e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Clapping",
+        "t": 0.2083333283662796,
+        "max": 1.2106325976683947e-05,
+        "thumb_max": 1.039888223821829e-05
+      },
+      {
+        "clip": "HumanArmature|Man_Clapping",
+        "t": 0.4166666567325592,
+        "max": 1.1062956285794195e-05,
+        "thumb_max": 9.361679356874789e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Clapping",
+        "t": 0.6249999850988388,
+        "max": 1.0734890541523498e-05,
+        "thumb_max": 9.74653041303255e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Clapping",
+        "t": 0.8333333134651184,
+        "max": 1.1255735053213436e-05,
+        "thumb_max": 9.565367788205428e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Clapping",
+        "t": 1.041666641831398,
+        "max": 1.1709995791539202e-05,
+        "thumb_max": 1.043223843217796e-05
+      },
+      {
+        "clip": "HumanArmature|Man_Clapping",
+        "t": 1.2499999701976776,
+        "max": 1.0236959492196541e-05,
+        "thumb_max": 9.553266394313384e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Clapping",
+        "t": 1.4583332985639572,
+        "max": 1.1590506916935925e-05,
+        "thumb_max": 1.0475921174053141e-05
+      },
+      {
+        "clip": "HumanArmature|Man_Clapping",
+        "t": 1.6665666269302368,
+        "max": 4.836275049765842e-06,
+        "thumb_max": 2.752787298328078e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Clapping",
+        "t": 1.6666666269302368,
+        "max": 4.836341611106826e-06,
+        "thumb_max": 2.757029714108283e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Death",
+        "t": 0.0,
+        "max": 4.708881197948343e-06,
+        "thumb_max": 3.371405292700584e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Death",
+        "t": 0.2604166567325592,
+        "max": 4.598899502740309e-06,
+        "thumb_max": 3.2969491940963823e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Death",
+        "t": 0.5208333134651184,
+        "max": 5.234991047152398e-06,
+        "thumb_max": 2.294185889014495e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Death",
+        "t": 0.7812499701976776,
+        "max": 5.4194128975732616e-06,
+        "thumb_max": 3.2374923818401187e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Death",
+        "t": 1.0416666269302368,
+        "max": 6.550191969540531e-06,
+        "thumb_max": 5.262535996735502e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Death",
+        "t": 1.302083283662796,
+        "max": 6.478081667418041e-06,
+        "thumb_max": 5.633831140628142e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Death",
+        "t": 1.5624999403953552,
+        "max": 6.315357877922311e-06,
+        "thumb_max": 5.383823664835635e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Death",
+        "t": 1.8229165971279144,
+        "max": 6.556365933397488e-06,
+        "thumb_max": 5.742763731476483e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Death",
+        "t": 2.0832332538604734,
+        "max": 6.04641414777685e-06,
+        "thumb_max": 5.425363010610568e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Death",
+        "t": 2.0833332538604736,
+        "max": 6.046260090271047e-06,
+        "thumb_max": 5.425674559046375e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Idle",
+        "t": 0.0,
+        "max": 4.16490047080892e-06,
+        "thumb_max": 1.9890340441597913e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Idle",
+        "t": 0.5208333134651184,
+        "max": 4.567565225546338e-06,
+        "thumb_max": 2.2250801217974865e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Idle",
+        "t": 1.0416666269302368,
+        "max": 4.067825278354408e-06,
+        "thumb_max": 2.4136745975917727e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Idle",
+        "t": 1.5624999403953552,
+        "max": 4.590475891562431e-06,
+        "thumb_max": 1.9650516362721732e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Idle",
+        "t": 2.0833332538604736,
+        "max": 4.287869205653938e-06,
+        "thumb_max": 1.8384071301387398e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Idle",
+        "t": 2.604166567325592,
+        "max": 4.020246715767589e-06,
+        "thumb_max": 1.940932262046543e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Idle",
+        "t": 3.1249998807907104,
+        "max": 4.563099042610379e-06,
+        "thumb_max": 2.2529913016027215e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Idle",
+        "t": 3.645833194255829,
+        "max": 4.598269770807441e-06,
+        "thumb_max": 2.0079084915869276e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Idle",
+        "t": 4.1665665077209475,
+        "max": 4.165530106994293e-06,
+        "thumb_max": 1.988440368684513e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Idle",
+        "t": 4.166666507720947,
+        "max": 4.164900472445717e-06,
+        "thumb_max": 1.989034044649356e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Jump",
+        "t": 0.0,
+        "max": 4.709033837460003e-06,
+        "thumb_max": 3.4055068060911134e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Jump",
+        "t": 0.1302083283662796,
+        "max": 4.377111288812538e-06,
+        "thumb_max": 2.3170382799402723e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Jump",
+        "t": 0.2604166567325592,
+        "max": 4.137016638610189e-06,
+        "thumb_max": 2.3714698074697682e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Jump",
+        "t": 0.3906249850988388,
+        "max": 1.168575086987848e-05,
+        "thumb_max": 1.1157545927389424e-05
+      },
+      {
+        "clip": "HumanArmature|Man_Jump",
+        "t": 0.5208333134651184,
+        "max": 1.2196069346300717e-05,
+        "thumb_max": 1.1571130278481962e-05
+      },
+      {
+        "clip": "HumanArmature|Man_Jump",
+        "t": 0.651041641831398,
+        "max": 1.1978316970913671e-05,
+        "thumb_max": 1.1548956315473114e-05
+      },
+      {
+        "clip": "HumanArmature|Man_Jump",
+        "t": 0.7812499701976776,
+        "max": 4.8881187374935554e-06,
+        "thumb_max": 3.893918051292944e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Jump",
+        "t": 0.9114582985639572,
+        "max": 4.181825796951574e-06,
+        "thumb_max": 3.069125904534777e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Jump",
+        "t": 1.0415666269302368,
+        "max": 4.708944258803718e-06,
+        "thumb_max": 3.4041683092922053e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Jump",
+        "t": 1.0416666269302368,
+        "max": 4.710014164838899e-06,
+        "thumb_max": 3.405506808001543e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Punch",
+        "t": 0.0,
+        "max": 6.096072792054249e-06,
+        "thumb_max": 5.306306104564809e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Punch",
+        "t": 0.1145833358168602,
+        "max": 6.068387625719519e-06,
+        "thumb_max": 4.869216901261212e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Punch",
+        "t": 0.2291666716337204,
+        "max": 6.050106323790554e-06,
+        "thumb_max": 3.869306626627287e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Punch",
+        "t": 0.3437500074505806,
+        "max": 6.606559864110288e-06,
+        "thumb_max": 3.901951914416891e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Punch",
+        "t": 0.4583333432674408,
+        "max": 8.476413199590293e-06,
+        "thumb_max": 4.880177084494075e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Punch",
+        "t": 0.572916679084301,
+        "max": 7.976095449939175e-06,
+        "thumb_max": 4.738020738256626e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Punch",
+        "t": 0.6875000149011612,
+        "max": 7.194389619306922e-06,
+        "thumb_max": 4.035759802874474e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Punch",
+        "t": 0.8020833507180214,
+        "max": 6.25637446964554e-06,
+        "thumb_max": 5.530960524426624e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Punch",
+        "t": 0.9165666865348816,
+        "max": 6.095644761896481e-06,
+        "thumb_max": 5.320355882910065e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Punch",
+        "t": 0.9166666865348816,
+        "max": 6.096072792036923e-06,
+        "thumb_max": 5.319576115155841e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Run",
+        "t": 0.0,
+        "max": 4.37845641610987e-06,
+        "thumb_max": 2.173409931946374e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Run",
+        "t": 0.109375,
+        "max": 4.311792476132439e-06,
+        "thumb_max": 2.029732543400833e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Run",
+        "t": 0.21875,
+        "max": 4.002802258374697e-06,
+        "thumb_max": 4.002802258374697e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Run",
+        "t": 0.328125,
+        "max": 6.850545903753522e-06,
+        "thumb_max": 5.901819388308948e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Run",
+        "t": 0.4375,
+        "max": 8.641231642464929e-06,
+        "thumb_max": 7.5232299948382284e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Run",
+        "t": 0.546875,
+        "max": 7.239387842257875e-06,
+        "thumb_max": 6.122591749155716e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Run",
+        "t": 0.65625,
+        "max": 4.931710264078897e-06,
+        "thumb_max": 4.268654915620704e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Run",
+        "t": 0.765625,
+        "max": 4.1490284125039335e-06,
+        "thumb_max": 2.8864202400922886e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Run",
+        "t": 0.8749,
+        "max": 4.376995625029197e-06,
+        "thumb_max": 2.1749898703632067e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Run",
+        "t": 0.875,
+        "max": 4.37845641739993e-06,
+        "thumb_max": 2.1734099328773464e-06
+      },
+      {
+        "clip": "HumanArmature|Man_RunningJump",
+        "t": 0.0,
+        "max": 4.37845641610987e-06,
+        "thumb_max": 2.173409931946374e-06
+      },
+      {
+        "clip": "HumanArmature|Man_RunningJump",
+        "t": 0.15625,
+        "max": 4.1307876544967634e-06,
+        "thumb_max": 2.6550125672214144e-06
+      },
+      {
+        "clip": "HumanArmature|Man_RunningJump",
+        "t": 0.3125,
+        "max": 6.497880783875309e-06,
+        "thumb_max": 5.5537949848574494e-06
+      },
+      {
+        "clip": "HumanArmature|Man_RunningJump",
+        "t": 0.46875,
+        "max": 8.969524967529794e-06,
+        "thumb_max": 7.772824446386848e-06
+      },
+      {
+        "clip": "HumanArmature|Man_RunningJump",
+        "t": 0.625,
+        "max": 8.802699516370684e-06,
+        "thumb_max": 7.558613769909795e-06
+      },
+      {
+        "clip": "HumanArmature|Man_RunningJump",
+        "t": 0.78125,
+        "max": 7.99328703919127e-06,
+        "thumb_max": 6.585960127576812e-06
+      },
+      {
+        "clip": "HumanArmature|Man_RunningJump",
+        "t": 0.9375,
+        "max": 5.926085727604497e-06,
+        "thumb_max": 5.078042075298214e-06
+      },
+      {
+        "clip": "HumanArmature|Man_RunningJump",
+        "t": 1.09375,
+        "max": 4.356877708317369e-06,
+        "thumb_max": 3.945128105082568e-06
+      },
+      {
+        "clip": "HumanArmature|Man_RunningJump",
+        "t": 1.2499,
+        "max": 4.378052846419546e-06,
+        "thumb_max": 2.1749662660533573e-06
+      },
+      {
+        "clip": "HumanArmature|Man_RunningJump",
+        "t": 1.25,
+        "max": 4.37845641739993e-06,
+        "thumb_max": 2.1734099328773464e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Sitting",
+        "t": 0.0,
+        "max": 4.707895311552275e-06,
+        "thumb_max": 3.366392191135026e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Sitting",
+        "t": 1.0416666269302368,
+        "max": 3.924795672864544e-06,
+        "thumb_max": 3.734871977308234e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Sitting",
+        "t": 2.0833332538604736,
+        "max": 4.169840582107063e-06,
+        "thumb_max": 3.3262154983871526e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Sitting",
+        "t": 3.1249998807907104,
+        "max": 3.945186264261287e-06,
+        "thumb_max": 3.010712363597629e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Sitting",
+        "t": 4.166666507720947,
+        "max": 3.733431115363395e-06,
+        "thumb_max": 3.3355282181160293e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Sitting",
+        "t": 5.208333134651184,
+        "max": 4.534651824350414e-06,
+        "thumb_max": 3.5744643661826855e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Sitting",
+        "t": 6.249999761581421,
+        "max": 4.029990757864225e-06,
+        "thumb_max": 3.1056812388187163e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Sitting",
+        "t": 7.291666388511658,
+        "max": 4.076619780163645e-06,
+        "thumb_max": 3.049694533139911e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Sitting",
+        "t": 8.333233015441895,
+        "max": 4.063605060137858e-06,
+        "thumb_max": 3.821829436186081e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Sitting",
+        "t": 8.333333015441895,
+        "max": 4.06314407175885e-06,
+        "thumb_max": 3.821010265444107e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Standing",
+        "t": 0.0,
+        "max": 4.27156063580606e-06,
+        "thumb_max": 3.9649652414469485e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Standing",
+        "t": 0.1041666641831398,
+        "max": 3.8697376853783635e-06,
+        "thumb_max": 2.938988609552804e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Standing",
+        "t": 0.2083333283662796,
+        "max": 4.692291726993099e-06,
+        "thumb_max": 2.6349191419413317e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Standing",
+        "t": 0.3124999925494194,
+        "max": 4.202817955418215e-06,
+        "thumb_max": 2.9018015662826196e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Standing",
+        "t": 0.4166666567325592,
+        "max": 4.8223233295048314e-06,
+        "thumb_max": 2.431088298094955e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Standing",
+        "t": 0.520833320915699,
+        "max": 4.366285664844771e-06,
+        "thumb_max": 2.5143363785645663e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Standing",
+        "t": 0.6249999850988388,
+        "max": 4.838046964874642e-06,
+        "thumb_max": 2.6406310011431345e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Standing",
+        "t": 0.7291666492819786,
+        "max": 4.278303149064829e-06,
+        "thumb_max": 2.6051149605578113e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Standing",
+        "t": 0.8332333134651184,
+        "max": 4.722155065441916e-06,
+        "thumb_max": 3.2637759775144446e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Standing",
+        "t": 0.8333333134651184,
+        "max": 4.7227866618925835e-06,
+        "thumb_max": 3.2656056574951617e-06
+      },
+      {
+        "clip": "HumanArmature|Man_SwordSlash",
+        "t": 0.0,
+        "max": 4.232888039211073e-06,
+        "thumb_max": 2.699359135940858e-06
+      },
+      {
+        "clip": "HumanArmature|Man_SwordSlash",
+        "t": 0.1302083283662796,
+        "max": 7.006727562876113e-06,
+        "thumb_max": 6.273602079849029e-06
+      },
+      {
+        "clip": "HumanArmature|Man_SwordSlash",
+        "t": 0.2604166567325592,
+        "max": 8.24541361053033e-06,
+        "thumb_max": 7.672617613616544e-06
+      },
+      {
+        "clip": "HumanArmature|Man_SwordSlash",
+        "t": 0.3906249850988388,
+        "max": 1.0572259542961013e-05,
+        "thumb_max": 1.0197652937038823e-05
+      },
+      {
+        "clip": "HumanArmature|Man_SwordSlash",
+        "t": 0.5208333134651184,
+        "max": 6.906819594280964e-06,
+        "thumb_max": 6.177922832230034e-06
+      },
+      {
+        "clip": "HumanArmature|Man_SwordSlash",
+        "t": 0.651041641831398,
+        "max": 8.564095965246381e-06,
+        "thumb_max": 7.91039745166705e-06
+      },
+      {
+        "clip": "HumanArmature|Man_SwordSlash",
+        "t": 0.7812499701976776,
+        "max": 7.049025024227123e-06,
+        "thumb_max": 6.325902056639619e-06
+      },
+      {
+        "clip": "HumanArmature|Man_SwordSlash",
+        "t": 0.9114582985639572,
+        "max": 4.59274669601861e-06,
+        "thumb_max": 3.2304607222580633e-06
+      },
+      {
+        "clip": "HumanArmature|Man_SwordSlash",
+        "t": 1.0415666269302368,
+        "max": 4.233635193294318e-06,
+        "thumb_max": 2.7007730075134985e-06
+      },
+      {
+        "clip": "HumanArmature|Man_SwordSlash",
+        "t": 1.0416666269302368,
+        "max": 4.2328880393065786e-06,
+        "thumb_max": 2.6993591360767263e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Walk",
+        "t": 0.0,
+        "max": 4.103673060257553e-06,
+        "thumb_max": 2.3892689800341408e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Walk",
+        "t": 0.1302083283662796,
+        "max": 4.468056497241251e-06,
+        "thumb_max": 2.9521036137979825e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Walk",
+        "t": 0.2604166567325592,
+        "max": 4.257374371411481e-06,
+        "thumb_max": 2.6764754894668215e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Walk",
+        "t": 0.3906249850988388,
+        "max": 4.461476407479045e-06,
+        "thumb_max": 3.3181128405672927e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Walk",
+        "t": 0.5208333134651184,
+        "max": 4.203023460157505e-06,
+        "thumb_max": 2.90680488151739e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Walk",
+        "t": 0.651041641831398,
+        "max": 4.229658314542398e-06,
+        "thumb_max": 3.4238029178534078e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Walk",
+        "t": 0.7812499701976776,
+        "max": 4.024142230699088e-06,
+        "thumb_max": 2.4788967094743024e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Walk",
+        "t": 0.9114582985639572,
+        "max": 4.041497065554265e-06,
+        "thumb_max": 2.038837960864862e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Walk",
+        "t": 1.0415666269302368,
+        "max": 4.104265176894014e-06,
+        "thumb_max": 2.3890402252695526e-06
+      },
+      {
+        "clip": "HumanArmature|Man_Walk",
+        "t": 1.0416666269302368,
+        "max": 4.103673061547868e-06,
+        "thumb_max": 2.389268981384897e-06
+      }
+    ],
+    "passed": true,
+    "oriented_faces_equal": true,
+    "corner_normals_equal": true,
+    "source_face_count": 1854,
+    "candidate_face_count": 1854,
+    "matched_geometry_faces": 1854,
+    "matched_normal_faces": 1854,
+    "unmatched_normal_candidate_faces": [],
+    "unmatched_normal_source_faces": [],
+    "max_matched_corner_normal_angle_rad": 2.580956827951785e-08,
+    "face_mapping": "one-to-one oriented triangles at rest; normal bound applies to each corresponding corner",
+    "candidate_unmatched": 0,
+    "topology_counts_equal": true,
+    "clip_contract_equal": true,
+    "normal_basis_equal": true,
+    "max_normal_angle_rad": 2.580956827951785e-08,
+    "normal_threshold_rad": 0.001,
+    "normals_passed": true,
+    "sampled_poses": 110,
+    "compared_vertices_per_pose": 3981,
+    "clips_compared": 11,
+    "all_source_clips_compared": true,
+    "max_skinned_distance": 1.2196069346300717e-05,
+    "input_sha256": {
+      "/workspace/work/animation-pipeline/dist/match3d/assets/quaternius-rugby-athlete.glb": "7fd28255c484e19ba5086d9cf815128e21dfcb677d262a88b237a5f5af081c5f",
+      "/workspace/work/animation-diagnosis/export/received-verified.glb": "d9139eddc66f7c407107b4d68b3d1503ca07e4256432a9a9a1528fd0fe74afbb"
+    },
+    "inputs_unchanged": true
+  },
+  "reader": {
+    "display_server": "headless",
+    "engine": "4.7.2-stable (official)",
+    "failures": [],
+    "limits": [
+      "Fixtures authored, no sporting causality validated",
+      "No Windows or graphical performance reception",
+      "Only staged athlete checked; its hash identifies the tested asset, not an acceptance for distribution"
+    ],
+    "metrics": {
+      "bones": 31,
+      "clips": [
+        {
+          "length_seconds": 1.66666662693024,
+          "loop_mode": 0,
+          "name": "HumanArmature|Man_Clapping",
+          "tracks": 33
+        },
+        {
+          "length_seconds": 2.08333325386047,
+          "loop_mode": 0,
+          "name": "HumanArmature|Man_Death",
+          "tracks": 33
+        },
+        {
+          "length_seconds": 4.16666650772095,
+          "loop_mode": 1,
+          "name": "HumanArmature|Man_Idle",
+          "tracks": 33
+        },
+        {
+          "length_seconds": 1.04166662693024,
+          "loop_mode": 0,
+          "name": "HumanArmature|Man_Jump",
+          "tracks": 33
+        },
+        {
+          "length_seconds": 0.916666686534882,
+          "loop_mode": 0,
+          "name": "HumanArmature|Man_Punch",
+          "tracks": 33
+        },
+        {
+          "length_seconds": 0.875,
+          "loop_mode": 1,
+          "name": "HumanArmature|Man_Run",
+          "tracks": 33
+        },
+        {
+          "length_seconds": 1.25,
+          "loop_mode": 0,
+          "name": "HumanArmature|Man_RunningJump",
+          "tracks": 33
+        },
+        {
+          "length_seconds": 8.33333301544189,
+          "loop_mode": 0,
+          "name": "HumanArmature|Man_Sitting",
+          "tracks": 33
+        },
+        {
+          "length_seconds": 0.833333313465118,
+          "loop_mode": 0,
+          "name": "HumanArmature|Man_Standing",
+          "tracks": 33
+        },
+        {
+          "length_seconds": 1.04166662693024,
+          "loop_mode": 0,
+          "name": "HumanArmature|Man_SwordSlash",
+          "tracks": 33
+        },
+        {
+          "length_seconds": 1.04166662693024,
+          "loop_mode": 1,
+          "name": "HumanArmature|Man_Walk",
+          "tracks": 33
+        }
+      ],
+      "contact_restored_bones": 5,
+      "loaded_asset_sha256": "d9139eddc66f7c407107b4d68b3d1503ca07e4256432a9a9a1528fd0fe74afbb",
+      "pause_clip_time": 0.3
+    },
+    "passed": 81,
+    "schema": "oval-animation-reader/v1"
+  },
+  "limits": [
+    "Linux CPU/headless only; no Windows or GPU reception",
+    "Normal attributes checked at corresponding oriented triangle corners at rest",
+    "All eleven clips sampled; not a continuous-time mathematical proof"
+  ]
+}

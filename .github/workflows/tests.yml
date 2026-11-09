@@ -18,11 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      documentation_only: ${{ steps.diff.outputs.documentation_only }}
+      coverage: ${{ steps.diff.outputs.coverage }}
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
@@ -32,53 +33,14 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
           BEFORE: ${{ github.event.before }}
-        run: |
-          set -euo pipefail
-          if [[ "$EVENT_NAME" == "pull_request" ]]; then
-            base="$PR_BASE"
-          elif [[ "$EVENT_NAME" == "push" && -n "$BEFORE" && "$BEFORE" != "0000000000000000000000000000000000000000" ]]; then
-            base="$BEFORE"
-          else
-            base=""
-          fi
-          if [[ -n "$base" ]] && git cat-file -e "$base^{commit}"; then
-            git diff --name-only --diff-filter=ACMR "$base" HEAD > "$RUNNER_TEMP/modified.txt"
-          else
-            git ls-files > "$RUNNER_TEMP/modified.txt"
-          fi
-          docs=true
-          while IFS= read -r file; do
-            [[ -n "$file" ]] || continue
-            case "$file" in
-              AGENTS.md|README.md|DEVELOPPEMENT.md|docs/*) ;;
-              *) docs=false ;;
-            esac
-            case "$file" in
-              *.js|*.cjs|*.mjs)
-                if [[ -f "$file" ]]; then
-                  echo "Syntaxe : $file"
-                  node --check "$file"
-                fi ;;
-            esac
-          done < "$RUNNER_TEMP/modified.txt"
-          # La PR temoin isolee #281 doit executer les cinq shards complets.
-          # Aucun autre changement documentaire ne perd son optimisation.
-          if [[ "$EVENT_NAME" == "pull_request" && "${{ github.event.pull_request.number }}" == "281" ]] &&
-             [[ "$(wc -l < "$RUNNER_TEMP/modified.txt")" -eq 1 ]] &&
-             grep -Fxq "docs/ci-auto-release-trial.md" "$RUNNER_TEMP/modified.txt"; then
-            docs=false
-            echo "Temoin trial #281 : couverture complete obligatoire"
-          fi
-          # Jamais contourner la validation complete sur main ou en lancement manuel.
-          if [[ "$EVENT_NAME" != "pull_request" || ! -s "$RUNNER_TEMP/modified.txt" ]]; then docs=false; fi
-          echo "documentation_only=$docs" >> "$GITHUB_OUTPUT"
-          echo "Documentation seule : $docs"
-  # Répartir la couverture complète sans omettre les tests de sauvegardes.
+        run: node ci/test-coverage.cjs
+
   shards:
     name: Suites ${{ matrix.shard }}/5
     needs: classification
-    if: ${{ needs.classification.result == 'success' && needs.classification.outputs.documentation_only != 'true' }}
+    if: ${{ needs.classification.result == 'success' && needs.classification.outputs.coverage != 'documentation' }}
     strategy:
       fail-fast: false
       matrix:
@@ -87,6 +49,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
@@ -94,10 +58,10 @@ jobs:
         shell: bash
         env:
           SHARD: ${{ matrix.shard }}
+          COVERAGE: ${{ needs.classification.outputs.coverage }}
         run: |
-          set -uo pipefail
-          # Refuser explicitement tout échec du calcul de répartition.
-          if ! node ci/shard-tests.cjs "$SHARD" > "$RUNNER_TEMP/shard-suites.txt"; then exit 1; fi
+          set -euo pipefail
+          node ci/shard-tests.cjs "$SHARD" "$COVERAGE" > "$RUNNER_TEMP/shard-suites.txt"
           mapfile -t suites < "$RUNNER_TEMP/shard-suites.txt"
           total="$(find tests -maxdepth 1 -name '*.cjs' ! -name 'harness.cjs' | wc -l)"
           [[ "${#suites[@]}" -gt 0 ]] || exit 1
@@ -107,19 +71,22 @@ jobs:
             executed=$((executed+1))
             echo "::group::$test"
             start=$SECONDS
-            if timeout --signal=TERM --kill-after=10s 180s /usr/bin/time -f "CD_CPU_PROFILE suite=$test user_s=%U system_s=%S wall_s=%e cpu_pct=%P max_rss_kb=%M" node "$test"; then
+            limit=180s
+            # Ce parcours intégré a déjà dépassé 180 s sur un runner GitHub.
+            if [[ "$test" == "tests/native-academy-integrated-long.cjs" ]]; then limit=240s; fi
+            if timeout --signal=TERM --kill-after=10s "$limit" /usr/bin/time -f "CD_CPU_PROFILE suite=$test user_s=%U system_s=%S wall_s=%e cpu_pct=%P max_rss_kb=%M" node "$test"; then
               echo "PASS $test ($((SECONDS-start)) s)"
               echo "| $test | OK | $((SECONDS-start)) s |" >> "$RUNNER_TEMP/results.md"
             else
               code=$?
               failures=$((failures+1))
-              echo "::error file=$test::Échec ou délai dépassé (code $code, durée $((SECONDS-start)) s)"
+              echo "::error file=$test::Échec ou délai dépassé (code $code, durée $((SECONDS-start)) s, limite $limit)"
               echo "| $test | ECHEC ($code) | $((SECONDS-start)) s |" >> "$RUNNER_TEMP/results.md"
             fi
             echo "::endgroup::"
           done
           {
-            echo "### Shard $SHARD/5 : $executed suites sur $total"
+            echo "### Shard $SHARD/5 ($COVERAGE) : $executed suites sur $total"
             echo "| Suite | Résultat | Durée |"
             echo "| --- | --- | --- |"
             cat "$RUNNER_TEMP/results.md"
@@ -134,26 +101,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Consolider les décisions
-        env:
-          CLASSIFICATION: ${{ needs.classification.result }}
-          DOCS: ${{ needs.classification.outputs.documentation_only }}
-          SHARDS: ${{ needs.shards.result }}
-        run: |
-          echo "Classification : $CLASSIFICATION ; documentation seule : $DOCS ; shards : $SHARDS" >> "$GITHUB_STEP_SUMMARY"
-          [[ "$CLASSIFICATION" == "success" ]] || exit 1
-          if [[ "$DOCS" == "true" ]]; then
-            [[ "$SHARDS" == "skipped" ]]
-          else
-            [[ "$SHARDS" == "success" ]]
-          fi
-
       - name: Publier le verdict natif (sans écriture API)
-        if: ${{ always() }}
         shell: bash
         env:
           CLASSIFICATION: ${{ needs.classification.result }}
-          DOCS: ${{ needs.classification.outputs.documentation_only }}
+          COVERAGE: ${{ needs.classification.outputs.coverage }}
           SHARDS: ${{ needs.shards.result }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           EVENT_NAME: ${{ github.event_name }}
@@ -161,20 +113,25 @@ jobs:
           set -euo pipefail
           result='ÉCHEC'
           if [[ "$CLASSIFICATION" == "success" ]]; then
-            if [[ "$DOCS" == "true" && "$SHARDS" == "skipped" ]]; then result='SUCCÈS'; fi
-            if [[ "$DOCS" != "true" && "$SHARDS" == "success" ]]; then result='SUCCÈS'; fi
+            case "$EVENT_NAME:$COVERAGE:$SHARDS" in
+              pull_request:documentation:skipped|pull_request:web:success|pull_request:native-art:success|\
+              pull_request:full:success|push:full:success|workflow_dispatch:full:success)
+                result='SUCCÈS' ;;
+            esac
           fi
           url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           {
             echo "## Verdict CI : $result"
             echo ""
-            echo "- Commit évalué : \`$HEAD_SHA\`"
+            echo "- HEAD associé au contrôle : \`$HEAD_SHA\`"
+            echo "- Commit testé : \`$GITHUB_SHA\`"
             echo "- Événement : $EVENT_NAME"
             echo "- Classification : $CLASSIFICATION"
             echo "- Suites : $SHARDS"
-            echo "- Documentation seule : $DOCS"
+            echo "- Couverture : $COVERAGE"
             echo "- [Voir les contrôles et les erreurs]($url)"
             echo ""
             echo "Ce résumé est informatif : seule la conclusion du contrôle Validation CI autorise la décision de fusion."
           } >> "$GITHUB_STEP_SUMMARY"
           echo "::notice title=Verdict CI::$result sur $HEAD_SHA - $url"
+          [[ "$result" == "SUCCÈS" ]]

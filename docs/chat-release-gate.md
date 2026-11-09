@@ -1,5 +1,13 @@
 # Fusion contrôlée depuis Chat — PR #197
 
+L’issue #73 a atteint la limite de commentaires. Les commandes ci-dessous
+décrivent le canal historique. Pour un lot ordinaire, utiliser
+[l’intégration ordinaire](auto-release.md). Pour un lot sensible autorisé,
+l’intégrateur vérifie la CI complète du dernier `main`, puis utilise
+`ci/release-gate.cjs` avec le numéro de PR, `CD_EXPECTED_HEAD_SHA` et
+`--merge`. Il vérifie la CI complète du commit de fusion sur `main` et
+consigne le résultat dans la description de la PR.
+
 ## Utilisation et autorité
 
 Uniquement un **nouveau commentaire** de Xynph (identifiant GitHub 350229047), dans l’issue #73 du dépôt Xynph/cadrage-debordement (1439603196), sur une seule ligne exacte :

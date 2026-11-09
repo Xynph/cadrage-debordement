@@ -1,0 +1,237 @@
+{
+  "schema": "oval.animation-inventory.v1",
+  "source": "quaternius-rugby-athlete.glb",
+  "bytes": 498212,
+  "sha256": "7fd28255c484e19ba5086d9cf815128e21dfcb677d262a88b237a5f5af081c5f",
+  "json_sha256": "0f32ed71a7b76acb1675760f4c5844f0a2dd81ab9974c655aa6725cd50f213e5",
+  "bin_sha256": "9e1a779bbe9a92c24f1aa106e036dde3f216c41459a2c12481b0f2cf7ae1915e",
+  "node_count": 45,
+  "mesh_count": 1,
+  "primitive_count": 9,
+  "material_count": 9,
+  "material_names": [
+    "Shirt2",
+    "Shirt",
+    "Skin",
+    "Pants",
+    "Shoes",
+    "Socks",
+    "Hair2",
+    "Hair",
+    "Eyes"
+  ],
+  "skin_count": 1,
+  "skins": [
+    {
+      "index": 0,
+      "name": "",
+      "joint_count": 31,
+      "joint_names": [
+        "Bone",
+        "Foot.L",
+        "Body",
+        "Hips",
+        "Abdomen",
+        "Torso",
+        "Neck",
+        "Head",
+        "Shoulder.L",
+        "UpperArm.L",
+        "LowerArm.L",
+        "Palm.L",
+        "MiddleHand.L",
+        "Fingers.L",
+        "Thumb1.L",
+        "Thumb2.L",
+        "Shoulder.R",
+        "UpperArm.R",
+        "LowerArm.R",
+        "Palm.R",
+        "MiddleHand.R",
+        "Thumb1.R",
+        "Thumb2.R",
+        "Fingers.R",
+        "UpperLeg.L",
+        "LowerLeg.L",
+        "UpperLeg.R",
+        "LowerLeg.R",
+        "PoleTarget.L",
+        "Foot.R",
+        "PoleTarget.R"
+      ]
+    }
+  ],
+  "joint_count": 31,
+  "animation_count": 11,
+  "animations": [
+    {
+      "index": 0,
+      "name": "HumanArmature|Man_Clapping",
+      "start_seconds": 0.0,
+      "end_seconds": 1.6666666269302368,
+      "duration_seconds": 1.6666666269302368,
+      "track_count": 27,
+      "sampler_count": 27,
+      "target_node_count": 24,
+      "paths": {
+        "translation": 6,
+        "rotation": 21
+      },
+      "loop": "not_defined_by_gltf"
+    },
+    {
+      "index": 1,
+      "name": "HumanArmature|Man_Death",
+      "start_seconds": 0.0,
+      "end_seconds": 2.0833332538604736,
+      "duration_seconds": 2.0833332538604736,
+      "track_count": 29,
+      "sampler_count": 29,
+      "target_node_count": 26,
+      "paths": {
+        "translation": 7,
+        "rotation": 22
+      },
+      "loop": "not_defined_by_gltf"
+    },
+    {
+      "index": 2,
+      "name": "HumanArmature|Man_Idle",
+      "start_seconds": 0.0,
+      "end_seconds": 4.166666507720947,
+      "duration_seconds": 4.166666507720947,
+      "track_count": 12,
+      "sampler_count": 12,
+      "target_node_count": 12,
+      "paths": {
+        "translation": 3,
+        "rotation": 9
+      },
+      "loop": "not_defined_by_gltf"
+    },
+    {
+      "index": 3,
+      "name": "HumanArmature|Man_Jump",
+      "start_seconds": 0.0,
+      "end_seconds": 1.0416666269302368,
+      "duration_seconds": 1.0416666269302368,
+      "track_count": 24,
+      "sampler_count": 24,
+      "target_node_count": 21,
+      "paths": {
+        "translation": 5,
+        "rotation": 19
+      },
+      "loop": "not_defined_by_gltf"
+    },
+    {
+      "index": 4,
+      "name": "HumanArmature|Man_Punch",
+      "start_seconds": 0.0,
+      "end_seconds": 0.9166666865348816,
+      "duration_seconds": 0.9166666865348816,
+      "track_count": 28,
+      "sampler_count": 28,
+      "target_node_count": 24,
+      "paths": {
+        "translation": 6,
+        "rotation": 22
+      },
+      "loop": "not_defined_by_gltf"
+    },
+    {
+      "index": 5,
+      "name": "HumanArmature|Man_Run",
+      "start_seconds": 0.0,
+      "end_seconds": 0.875,
+      "duration_seconds": 0.875,
+      "track_count": 20,
+      "sampler_count": 20,
+      "target_node_count": 17,
+      "paths": {
+        "translation": 5,
+        "rotation": 15
+      },
+      "loop": "not_defined_by_gltf"
+    },
+    {
+      "index": 6,
+      "name": "HumanArmature|Man_RunningJump",
+      "start_seconds": 0.0,
+      "end_seconds": 1.25,
+      "duration_seconds": 1.25,
+      "track_count": 22,
+      "sampler_count": 22,
+      "target_node_count": 19,
+      "paths": {
+        "translation": 7,
+        "rotation": 15
+      },
+      "loop": "not_defined_by_gltf"
+    },
+    {
+      "index": 7,
+      "name": "HumanArmature|Man_Sitting",
+      "start_seconds": 0.0,
+      "end_seconds": 8.333333015441895,
+      "duration_seconds": 8.333333015441895,
+      "track_count": 24,
+      "sampler_count": 24,
+      "target_node_count": 21,
+      "paths": {
+        "translation": 5,
+        "rotation": 19
+      },
+      "loop": "not_defined_by_gltf"
+    },
+    {
+      "index": 8,
+      "name": "HumanArmature|Man_Standing",
+      "start_seconds": 0.0,
+      "end_seconds": 0.8333333134651184,
+      "duration_seconds": 0.8333333134651184,
+      "track_count": 22,
+      "sampler_count": 22,
+      "target_node_count": 19,
+      "paths": {
+        "translation": 5,
+        "rotation": 17
+      },
+      "loop": "not_defined_by_gltf"
+    },
+    {
+      "index": 9,
+      "name": "HumanArmature|Man_SwordSlash",
+      "start_seconds": 0.0,
+      "end_seconds": 1.0416666269302368,
+      "duration_seconds": 1.0416666269302368,
+      "track_count": 27,
+      "sampler_count": 27,
+      "target_node_count": 24,
+      "paths": {
+        "translation": 6,
+        "rotation": 21
+      },
+      "loop": "not_defined_by_gltf"
+    },
+    {
+      "index": 10,
+      "name": "HumanArmature|Man_Walk",
+      "start_seconds": 0.0,
+      "end_seconds": 1.0416666269302368,
+      "duration_seconds": 1.0416666269302368,
+      "track_count": 24,
+      "sampler_count": 24,
+      "target_node_count": 21,
+      "paths": {
+        "translation": 5,
+        "rotation": 19
+      },
+      "loop": "not_defined_by_gltf"
+    }
+  ],
+  "limits": [
+    "La boucle n’est pas une propriété glTF standard.",
+    "Inventaire structurel, sans validation visuelle ni certification complète glTF."
+  ]
+}

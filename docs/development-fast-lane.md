@@ -1,5 +1,9 @@
 # FAST LANE — développement plus rapide (2 novembre 2026)
 
+> **Archive du 2 novembre 2026.** Le [cycle actuel](developpement-parallele.md)
+> s’applique au travail parallèle et aux passations. Le diagnostic express
+> reste consultatif. Sa sortie peut alimenter la description de la PR.
+
 ## But
 Augmenter le temps consacré aux fonctionnalités réellement jouables de Cadrage Débordement, sans diminuer la sécurité. Une seule session GitHub active entre les deux comptes ; toute PR doit être autorisée explicitement avant sa fusion ; CI complète, Validation CI, release gate et contrôle post-fusion 7/7 restent inchangés.
 

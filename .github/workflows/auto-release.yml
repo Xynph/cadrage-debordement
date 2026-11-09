@@ -1,28 +1,41 @@
-name: Auto-release guarded (opt-in)
+name: Fusion ordinaire contrôlée
 on:
-  workflow_run:
-    workflows: ["Tests JavaScript", "UI Chromium mutualise - CI V3", "Carrieres multi-clubs - validation native", "IA adverse - audit 24 matchs natifs", "V60 relations presse hors match", "V61 calendrier conseil et objectifs"]
-    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Numéro de PR
+        type: string
+        required: true
+      sha:
+        description: SHA HEAD complet de la PR
+        type: string
+        required: true
+      mode:
+        description: Contrôler ou fusionner cette tête
+        type: choice
+        options: [check, merge]
+        default: check
+        required: true
+
 permissions: {}
+
 jobs:
-  integrate:
+  check:
     if: >-
       github.repository == 'Xynph/cadrage-debordement' &&
-      vars.CD_AUTO_RELEASE_ENABLED == 'true' &&
-      vars.CD_AUTO_RELEASE_MODE == 'trial' &&
-      vars.CD_AUTO_RELEASE_TEST_PR != '' &&
-      vars.CD_AUTO_RELEASE_TEST_SHA != '' &&
-      github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.conclusion == 'success'
+      github.ref == 'refs/heads/main' &&
+      github.actor == 'Xynph' &&
+      github.actor_id == '350229047' &&
+      github.triggering_actor == 'Xynph' &&
+      github.event.sender.id == 350229047 &&
+      github.run_attempt == 1 &&
+      inputs.mode == 'check'
     permissions:
-      contents: write
+      contents: read
       pull-requests: read
-      actions: write
-    concurrency:
-      group: chat-release-gate-main
-      cancel-in-progress: false
+      actions: read
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -31,11 +44,41 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '22'
-      - name: Policy, official gate and post-merge CI
+      - name: Contrôler la PR sélectionnée en lecture seule
         env:
           GH_TOKEN: ${{ github.token }}
-          CD_AUTO_RELEASE_ENABLED: ${{ vars.CD_AUTO_RELEASE_ENABLED }}
-          CD_AUTO_RELEASE_MODE: ${{ vars.CD_AUTO_RELEASE_MODE }}
-          CD_AUTO_RELEASE_TEST_PR: ${{ vars.CD_AUTO_RELEASE_TEST_PR }}
-          CD_AUTO_RELEASE_TEST_SHA: ${{ vars.CD_AUTO_RELEASE_TEST_SHA }}
+        run: node ci/auto-release.cjs
+
+  merge:
+    if: >-
+      github.repository == 'Xynph/cadrage-debordement' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor == 'Xynph' &&
+      github.actor_id == '350229047' &&
+      github.triggering_actor == 'Xynph' &&
+      github.event.sender.id == 350229047 &&
+      github.run_attempt == 1 &&
+      inputs.mode == 'merge' &&
+      vars.CD_ORDINARY_MERGE_ENABLED == 'true'
+    permissions:
+      contents: write
+      pull-requests: read
+      actions: write
+    concurrency:
+      group: chat-release-gate-main
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+      - name: Fusionner par le gate officiel et vérifier la CI de main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CD_ORDINARY_MERGE_ENABLED: ${{ vars.CD_ORDINARY_MERGE_ENABLED }}
         run: node ci/auto-release.cjs

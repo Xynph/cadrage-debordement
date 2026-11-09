@@ -13,8 +13,6 @@ const WEIGHTS_SECONDS = Object.freeze({
   // Profils #409 et #412 du 9 novembre 2026. Maximum mesuré et marge de 15 %.
   // Le temps mesuré sur #412 complète la mesure interrompue de world-worker-season.
   'tests/native-academy-integrated-long.cjs': 199,
-  'tests/native-delegate-transaction06.cjs': 180,
-  'tests/world-worker-season.cjs': 159,
   'tests/v63-2-stress-native.cjs': 150,
   'tests/v63-1-long-career.cjs': 91,
   'tests/ai-roster-cycle.cjs': 87,
@@ -23,10 +21,31 @@ const WEIGHTS_SECONDS = Object.freeze({
   'tests/lnr-multiclub-continuity.cjs': 55,
   'tests/lnr-career-long.cjs': 55,
   // Population v2 : mesures Node 22 48 / 29,6 / 12,2 s.
-  // Capacité réserve 45 s pour ses quatre fixtures et le staff ajouté au profil.
-  'tests/player-population-seasons.cjs': 56,
-  'tests/player-population-capacity.cjs': 45,
   'tests/player-population-worker.cjs': 15,
+  // Suites d'au moins 35 s sur #422, #423 et les cinq shards verts de #424.
+  // Maximum + 15 % (runs 42606201094, 42641635525, 42669973393 tentative 1).
+  'tests/france-career.cjs': 46,
+  'tests/france-long-career-late.cjs': 94,
+  'tests/france-long-career.cjs': 90,
+  'tests/godot-common-rosters.cjs': 51,
+  'tests/godot-roster-foundation.cjs': 50,
+  'tests/native-academy-loan-capacity.cjs': 59,
+  'tests/native-academy-network-validation.cjs': 73,
+  'tests/native-club-strategy.cjs': 55,
+  'tests/native-club-support-season.cjs': 136,
+  'tests/native-club-world-worker.cjs': 88,
+  'tests/native-delegate-transaction06.cjs': 187,
+  'tests/native-fiction-sheet.cjs': 64,
+  'tests/native-manager-career-reverse.cjs': 62,
+  'tests/native-manager-career-worker.cjs': 98,
+  'tests/native-press-personalities-worker.cjs': 95,
+  'tests/native-press-season.cjs': 64,
+  'tests/player-population-capacity.cjs': 55,
+  'tests/player-population-seasons.cjs': 83,
+  'tests/rugby-real-long-career-qa.cjs': 99,
+  'tests/world-worker-season.cjs': 169,
+  'tests/world-worker.cjs': 43,
+  'tests/youth-scout-native.cjs': 65,
   'tests/lnr05-rotation-audit.cjs': 40,
   'tests/lnr05-fatigue-scenarios.cjs': 38,
   'tests/lnr05-multiseason-strategies.cjs': 37,
@@ -77,12 +96,16 @@ function planShards(files, weights = WEIGHTS_SECONDS) {
   return shards.map(g => g.files.sort(lexical));
 }
 if (require.main === module) {
-  if (process.argv.length !== 3 || !/^[1-5]$/.test(process.argv[2])) {
-    console.error('Usage : node ci/shard-tests.cjs <1|2|3|4|5>');
+  const [, , shard, coverage = 'full'] = process.argv;
+  if (process.argv.length > 4 || !/^[1-5]$/.test(shard)) {
+    console.error('Usage : node ci/shard-tests.cjs <1|2|3|4|5> [full|web|native-art]');
     process.exitCode = 2;
   } else {
     try {
-      for (const file of planShards(allTestFiles())[Number(process.argv[2]) - 1])
+      const { suitesForCoverage } = require('./test-coverage.cjs');
+      const suites = suitesForCoverage(coverage, allTestFiles());
+      if (suites.length < 5) throw Error('Il faut au moins une suite par shard');
+      for (const file of planShards(suites)[Number(shard) - 1])
         console.log(file);
     } catch (error) {
       console.error(error.message);

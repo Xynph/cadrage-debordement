@@ -1,91 +1,222 @@
 'use strict';
-const {test}=require('node:test'),assert=require('node:assert/strict');
-const {validateTrigger,safePath,validateCandidate,checkReservations,requiredWorkflows,latestRuns,runAuto}=require('../ci/auto-release.cjs');
-const sha='a'.repeat(40),main='b'.repeat(40),repo='Xynph/cadrage-debordement';
-const env={GITHUB_EVENT_NAME:'workflow_run',GITHUB_REPOSITORY:repo,GITHUB_SHA:main,CD_AUTO_RELEASE_ENABLED:'true',CD_AUTO_RELEASE_MODE:'trial',CD_AUTO_RELEASE_TEST_PR:'271',CD_AUTO_RELEASE_TEST_SHA:sha};
-const event=()=>({action:'completed',repository:{full_name:repo},workflow_run:{id:42,name:'Tests JavaScript',event:'pull_request',status:'completed',conclusion:'success',head_sha:sha,pull_requests:[{number:271}]}});
-const pr=()=>({state:'open',draft:false,base:{ref:'main',sha:main},head:{sha,repo:{full_name:repo}},user:{login:'Xynph',id:350229047,type:'User'},mergeable:true,mergeable_state:'clean',changed_files:2});
-const files=()=>[{filename:'dist/ui03-scout-components.js',status:'modified'},{filename:'tests/scouting.cjs',status:'added'}];
-const trialFiles=()=>[{filename:'docs/ci-auto-release-trial.md',status:'added'}];
-test('disabled by default',()=>assert.throws(()=>validateTrigger(event(),{...env,CD_AUTO_RELEASE_ENABLED:''}),/flag/));
-test('valid exact CI event',()=>assert.equal(validateTrigger(event(),env).pr,271));
-for(const [label,patch] of [
- ['missing mode',{CD_AUTO_RELEASE_MODE:''}],
- ['general mode',{CD_AUTO_RELEASE_MODE:'general'}],
- ['different PR',{CD_AUTO_RELEASE_TEST_PR:'272'}],
- ['missing PR',{CD_AUTO_RELEASE_TEST_PR:''}],
- ['different SHA',{CD_AUTO_RELEASE_TEST_SHA:main}],
- ['invalid SHA',{CD_AUTO_RELEASE_TEST_SHA:'invalid'}]])
- test('trial rejects '+label,()=>assert.throws(()=>validateTrigger(event(),{...env,...patch})));
-test('trial rejects unexpected CI head',()=>{const e=event();e.workflow_run.head_sha=main;assert.throws(()=>validateTrigger(e,env),/outside trial/);});
-test('terminal ancillary CI may retrigger when all runs are green',()=>{const e=event();e.workflow_run.name='UI Chromium mutualise - CI V3';assert.equal(validateTrigger(e,env).sourceName,'UI Chromium mutualise - CI V3');});
-for(const [name,fn] of [
- ['multiple PR',e=>e.workflow_run.pull_requests.push({number:272})],
- ['missing PR',e=>e.workflow_run.pull_requests=[]],
- ['failure',e=>e.workflow_run.conclusion='failure'],
- ['non PR',e=>e.workflow_run.event='push'],
- ['wrong workflow',e=>e.workflow_run.name='Other'],
- ['wrong action',e=>e.action='requested'],
- ['bad SHA',e=>e.workflow_run.head_sha='123']])
- test('reject '+name,()=>{const e=event();fn(e);assert.throws(()=>validateTrigger(e,env));});
-test('strict file policy',()=>{
- for(const p of ['docs/a.md','tests/a.cjs','dist/ui03-scout-components.js','dist/v17-view.js','dist/style.css'])assert(safePath({filename:p,status:'modified'}),p);
- for(const p of ['.github/workflows/tests.yml','ci/release-gate.cjs','dist/storage.js','dist/rugby.js','dist/tactical-plans.js','modding/data06/rugby-master-2026-2027.json','AGENTS.md','docs/../ci/evil.md','tests/auto-release.cjs','tests/chat-release.cjs','docs/chat-release-gate.md','docs/auto-release.md'])assert(!safePath({filename:p,status:'modified'}),p);
- assert(!safePath({filename:'docs/a.md',status:'removed'}));
+
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const {runAuto}=require('../ci/auto-release.cjs');
+
+const repo='Xynph/cadrage-debordement', repoId=1439603196;
+const owner={id:350229047,login:'Xynph',type:'User'};
+const head='a'.repeat(40), main='b'.repeat(40), other='c'.repeat(40), blob='d'.repeat(40);
+const repository={full_name:repo,id:repoId};
+const env={
+ GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_REPOSITORY:repo,GITHUB_REF:'refs/heads/main',
+ GITHUB_SHA:main,GITHUB_ACTOR:'Xynph',GITHUB_ACTOR_ID:'350229047',
+ GITHUB_TRIGGERING_ACTOR:'Xynph',GITHUB_RUN_ATTEMPT:'1',CD_ORDINARY_MERGE_ENABLED:'true'
+};
+const event=(mode='check')=>({repository,sender:{...owner},inputs:{pr:'271',sha:head,mode}});
+const file=(filename='docs/ui-presentation-exemple.md',status='added')=>({filename,status,sha:blob});
+const jobs=(css=false)=>[
+ {name:'classification',status:'completed',conclusion:'success'},
+ {name:'Validation CI',status:'completed',conclusion:'success'},
+ ...(css?Array.from({length:5},(_,i)=>({name:'Suites '+(i+1)+'/5',status:'completed',conclusion:'success'})):
+ [{name:'Suites ${{ matrix.shard }}/5',status:'completed',conclusion:'skipped'}])
+];
+const base={ref:'main',sha:main,repo:repository};
+const pull=(number=271,sha=head)=>({
+ number,state:'open',draft:false,base,head:{ref:'feature/ui',sha,repo:repository},
+ user:owner,mergeable:true,mergeable_state:'clean',changed_files:1
 });
-test('conflicting producer reservations block automatic integration',()=>{
- assert.throws(()=>checkReservations(271,files(),[{number:272,state:'open'}],()=>[{filename:'tests/scouting.cjs',status:'modified'}]),/Conflicting/);
- assert(checkReservations(271,files(),[{number:272,state:'open'}],()=>[{filename:'tests/other.cjs',status:'added'}]));
+const workflow=(name,id)=>({name,id,state:'active'});
+const run=(workflowId=7,id=42)=>({
+ id,name:workflowId===7?'Tests JavaScript':'UI Chromium mutualise - CI V3',
+ workflow_id:workflowId,run_attempt:1,event:'pull_request',head_sha:head,head_branch:'feature/ui',
+ status:'completed',conclusion:'success',pull_requests:[{number:271,head:pull().head,base}],
 });
-test('clean owner PR with tested UI',()=>assert(validateCandidate(pr(),files(),sha,main)));
-for(const [name,fn] of [['draft',p=>p.draft=true],['fork',p=>p.head.repo.full_name='other/repo'],['non-owner',p=>p.user.id=99],['conflict',p=>p.mergeable_state='dirty'],['old main',p=>p.base.sha=sha],['old head',p=>p.head.sha=main],['missing files',p=>p.changed_files=1]])
- test('reject '+name,()=>{const p=pr();fn(p);assert.throws(()=>validateCandidate(p,files(),sha,main));});
-test('source JS requires test',()=>assert.throws(()=>validateCandidate({...pr(),changed_files:1},[files()[0]],sha,main),/test/));
-test('sensitive file denied',()=>assert.throws(()=>validateCandidate({...pr(),changed_files:1},[{filename:'ci/release-gate.cjs',status:'modified'}],sha,main)));
-const run=(id,name='Tests JavaScript',status='completed',conclusion='success')=>({id,name,status,conclusion,head_sha:sha,event:'pull_request'});
-test('stale or pending CI denied',()=>{
- const basic=[run(42),run(40,'V60 relations presse hors match'),run(41,'V61 calendrier conseil et objectifs')];
- assert(latestRuns(basic,sha,42,requiredWorkflows([{filename:'tests/example.cjs'}])));
- assert.throws(()=>latestRuns([...basic,run(44,'Tests JavaScript','completed','failure')],sha,42,requiredWorkflows([{filename:'tests/example.cjs'}])));
- assert.throws(()=>latestRuns([...basic,run(44,'UI Chromium mutualise - CI V3','in_progress',null)],sha,42,requiredWorkflows(files())));
- assert.throws(()=>latestRuns([...basic,run(44,'UI Chromium mutualise - CI V3','completed','failure')],sha,42,requiredWorkflows(files())));
- assert.throws(()=>latestRuns([...basic,run(44,'UI Chromium mutualise - CI V3','completed','cancelled')],sha,42,requiredWorkflows(files())));
- assert.throws(()=>latestRuns(basic,sha,42,requiredWorkflows(files())),/absent/);
- assert.throws(()=>latestRuns(basic.filter(r=>r.name!=='V61 calendrier conseil et objectifs'),sha,42,requiredWorkflows([{filename:'docs/a.md'}])),/absent/);
- assert.throws(()=>latestRuns(Array.from({length:100},(_,i)=>run(i+1)),sha,42,requiredWorkflows([{filename:'docs/a.md'}])),/ambiguous/);
-});
-test('delegates only to guarded release engine',async()=>{
- const names=['classification','Suites 1/5','Suites 2/5','Suites 3/5','Suites 4/5','Suites 5/5','Validation CI'];let called=false;
- const api=p=>{
-  if(p==='git/ref/heads/main')return {object:{sha:main}};
-  if(p==='pulls/271')return {...pr(),changed_files:1};
-  if(p==='pulls?state=open&per_page=100')return [{number:271,state:'open'}];
-  if(p==='pulls/271/files?per_page=100')return trialFiles();
-  if(p==='actions/workflows/tests.yml')return {id:7,state:'active'};
-  if(p==='actions/runs/42')return {...run(42),workflow_id:7};
-  if(p==='actions/runs/42/jobs?per_page=100')return {jobs:names.map(name=>({name,status:'completed',conclusion:'success'}))};
-  if(p.startsWith('actions/runs?'))return {workflow_runs:[{...run(42),workflow_id:7},run(43,'V60 relations presse hors match'),run(44,'V61 calendrier conseil et objectifs'),run(45,'UI Chromium mutualise - CI V3')]};
-  throw Error('Unexpected '+p);
+const rules=[
+ {type:'pull_request',parameters:{allowed_merge_methods:['squash']}},
+ {type:'required_status_checks',parameters:{strict_required_status_checks_policy:true,
+  required_status_checks:[{context:'Validation CI',integration_id:15368}]}},
+ {type:'deletion'},{type:'non_fast_forward'}
+];
+
+function fixture(options={}){
+ const changed=options.changed||[file()];
+ const css=changed.some(f=>f.filename.startsWith('dist/'));
+ const selected={...pull(),changed_files:changed.length,...options.pr};
+ const names=options.open||[selected];
+ const calls=[];
+ let lists=0;
+ const api=(path,method='GET')=>{
+  calls.push({path,method});
+  assert.equal(method,'GET');
+  if(path==='git/ref/heads/main')return {object:{sha:options.liveMain||main}};
+  if(path==='rules/branches/main')return options.rules||rules;
+  if(path==='pulls/271')return selected;
+  if(path.startsWith('pulls?')){
+   const page=Number(new URLSearchParams(path.split('?')[1]).get('page'));
+   if(page===1)lists++;
+   const rows=lists>1&&options.secondOpen||names;
+   return rows.slice((page-1)*100,page*100);
+  }
+  if(path.startsWith('pulls/271/files?'))return changed;
+  if(/^pulls\/\d+\/files\?/.test(path)){
+   const number=Number(path.split('/')[1]);
+   return options.concurrentFiles?.[number]||[file('dist/unrelated-'+number+'.js','modified')];
+  }
+  if(path==='git/trees/'+head)return {truncated:false,tree:[
+   {path:'docs',type:'tree',mode:'040000',sha:'1'.repeat(40)},
+   {path:'dist',type:'tree',mode:'040000',sha:'2'.repeat(40)}
+  ]};
+  if(/^git\/trees\/[12]{40}$/.test(path))return {truncated:false,tree:changed.map(f=>({
+   path:f.filename.split('/')[1],sha:blob,type:'blob',mode:options.fileMode||'100644'
+  }))};
+  if(path==='actions/workflows/tests.yml')return workflow('Tests JavaScript',7);
+  if(path==='actions/workflows/ui-browser-consolidated.yml')return workflow('UI Chromium mutualise - CI V3',8);
+  if(path.startsWith('actions/runs?')){
+   const visible=options.runs||[run(),...(css?[run(8,43)]:[])];
+   return {total_count:visible.length,workflow_runs:visible};
+  }
+  if(path.startsWith('actions/runs/42/attempts/1/jobs?')){
+   const list=options.jobs||jobs(css);
+   return {jobs:list,total_count:list.length};
+  }
+  if(path.startsWith('actions/runs/43/attempts/1/jobs?')){
+   const list=[{name:'UI — Chromium mutualisé (7 parcours)',status:'completed',conclusion:options.chromiumConclusion||'success'}];
+   return {jobs:list,total_count:list.length};
+  }
+  throw Error('Unexpected API '+path);
  };
- const result=await runAuto(event(),env,{api,execute:async(c,e,d)=>{called=true;assert.equal(c.expected,sha);assert(d.autoAuthorized);assert.equal(d.snapshot,main);return {ready:true};}});
- assert(called);assert.deepEqual(result,{ready:true});
+ return {
+  calls, api,
+  execute:async(cmd,e,d)=>{
+   calls.push({gate:cmd,d});
+   return cmd.mode==='check'?{ready:true}:{mergedSha:other,postRun:44,passed:true};
+  }
+ };
+}
+
+async function rejects(options={},message,dispatch=event('merge'),context=env){
+ const f=fixture(options);
+ await assert.rejects(()=>runAuto(dispatch,context,f),message);
+ assert.equal(f.calls.filter(x=>x.gate).length,0);
+}
+
+test('contrôle sans flag possible, avec PR, tête et base transmises au gate',async()=>{
+ const f=fixture();
+ assert.deepEqual(await runAuto(event(),{...env,CD_ORDINARY_MERGE_ENABLED:''},f),{ready:true});
+ const {gate,d}=f.calls.find(x=>x.gate);
+ assert.deepEqual(gate,{pr:271,expected:head,mode:'check'});
+ assert.equal(d.snapshot,main);
+ assert.equal(d.autoAuthorized,true);
 });
-test('trial refuses ordinary PR even when all checks pass',async()=>{
- const e=event();
- await assert.rejects(()=>runAuto(e,env,{api:p=>{
-  if(p==='git/ref/heads/main')return {object:{sha:main}};
-  if(p==='pulls/271')return pr();
-  if(p==='pulls/271/files?per_page=100')return files();
-  throw Error('Unexpected API call '+p);
- },execute:()=>{throw Error('Gate must not run');}}),/Trial file scope mismatch/);
+
+test('fusion explicite sur CSS autorisé avec CI JS complète et Chromium exact',async()=>{
+ const f=fixture({changed:[file('dist/style.css','modified')]});
+ assert.deepEqual(await runAuto(event('merge'),env,f),{mergedSha:other,postRun:44,passed:true});
+ assert.equal(f.calls.find(x=>x.gate).gate.mode,'merge');
 });
-test('workflow pinned main and disabled without repo variable',()=>{
- const fs=require('node:fs'),path=require('node:path'),y=fs.readFileSync(path.join(__dirname,'../.github/workflows/auto-release.yml'),'utf8');
- assert.match(y,/CD_AUTO_RELEASE_ENABLED/);
- assert.match(y,/CD_AUTO_RELEASE_MODE == 'trial'/);
- assert.match(y,/CD_AUTO_RELEASE_TEST_PR != ''/);
- assert.match(y,/CD_AUTO_RELEASE_TEST_SHA != ''/);assert.match(y,/group: chat-release-gate-main/);
- assert.match(y,/persist-credentials: false/);assert.match(y,/ref: \$\{\{ github.sha \}\}/);
- assert(!y.includes('pull_request_target'));
- for(const m of y.matchAll(/uses: (\S+)/g))assert.match(m[1],/@[a-f0-9]{40}$/);
+
+test('aucune fusion implicite, rejouée ou avec flag de l’ancien prototype',async()=>{
+ await rejects({},/CD_ORDINARY_MERGE_ENABLED/,event('merge'),{...env,CD_ORDINARY_MERGE_ENABLED:'',CD_AUTO_RELEASE_ENABLED:'true'});
+ await rejects({},/autorisé/,event('merge'),{...env,GITHUB_RUN_ATTEMPT:'2'});
+ await rejects({},/autorisé/,event('merge'),{...env,GITHUB_EVENT_NAME:'workflow_run'});
+ await rejects({},/autorisé/,event('merge'),{...env,GITHUB_TRIGGERING_ACTOR:'contributor'});
+ await rejects({},/autorisé/,event('merge'),{...env,GITHUB_REF:'refs/heads/feature'});
+ const forged=event('merge'); forged.sender.id=99;
+ await rejects({},/autorisé/,forged);
+ const malformed=event('merge'); malformed.inputs.sha=head+'\n';
+ await rejects({},/sélection/,malformed);
+});
+
+test('tête, base, dépôt, auteur et état de PR sont revérifiés',async()=>{
+ for(const patch of [
+  {draft:true},{mergeable_state:'behind'},{state:'closed'},{user:{...owner,id:99}},
+  {head:{...pull().head,sha:other}},{head:{...pull().head,repo:{id:3,full_name:'other/repo'}}},
+  {base:{...base,sha:other}},{base:{...base,ref:'develop'}},{changed_files:2}
+ ])await rejects({pr:patch},/PR|Diff/);
+ await rejects({liveMain:other},/main/);
+});
+
+test('le ruleset strict et le contrôle GitHub Actions sont exigés',async()=>{
+ await rejects({rules:rules.filter(x=>x.type!=='required_status_checks')},/Protection/);
+ await rejects({rules:[...rules.slice(0,1),{type:'required_status_checks',parameters:{
+  strict_required_status_checks_policy:false,required_status_checks:[{context:'Validation CI',integration_id:15368}]
+ }},...rules.slice(2)]},/Protection/);
+});
+
+test('ni code ou chemins sensibles ni lien symbolique ou exécutable déguisé',async()=>{
+ for(const f of [
+  file('.github/workflows/tests.yml','modified'),file('dist/ui03-scout-components.js','modified'),
+  file('docs/auto-release.md','modified'),file('dist/style.css','added'),
+  file('docs/ui-presentation-exemple.md','renamed'),file('dist/finance-v2.css','modified')
+ ])await rejects({changed:[f]},/hors périmètre/);
+ for(const fileMode of ['120000','100755','160000'])await rejects({fileMode},/blob/);
+});
+
+test('analyse la deuxième page des PR et le nom d’origine d’un renommage',async()=>{
+ const open=[pull(),...Array.from({length:125},(_,i)=>pull(300+i,other))];
+ const f=fixture({open});
+ assert.equal((await runAuto(event(),env,f)).ready,true);
+ assert(f.calls.some(x=>x.path?.includes('page=2')));
+ const rename={...file('docs/relocated.md','renamed'),previous_filename:'docs/ui-presentation-exemple.md'};
+ await rejects({open,concurrentFiles:{423:[rename]}},/Chevauchement.*#423/);
+ await rejects({open,secondOpen:open.map(p=>p.number===423?{...p,head:{...p.head,sha:blob}}:p)},/PR concurrentes ont changé/);
+});
+
+test('un résultat concurrent illisible bloque le gate',async()=>{
+ const open=[pull(),pull(423,other)];
+ await rejects({open,concurrentFiles:{423:[{status:'renamed',filename:'docs/relocated.md'}]}},/Diff concurrent/);
+});
+
+test('le verdict documentaire ne permet pas de sauter les suites CSS',async()=>{
+ await rejects({changed:[file('dist/style.css','modified')],jobs:jobs()},/Jobs/);
+ await rejects({jobs:jobs().slice(0,2)},/Jobs/);
+});
+
+test('la CI spécialisée nécessaire et le dernier verdict réussi sur la PR exacte sont exigés',async()=>{
+ await rejects({changed:[file('dist/style.css','modified')],runs:[run()]},/Chromium/);
+ await rejects({runs:[run(),{...run(7,46),status:'in_progress',conclusion:null}]},/CI PR/);
+ await rejects({runs:[{...run(),pull_requests:[{...run().pull_requests[0],number:272}]}]},/CI PR/);
+ await rejects({runs:[run(),{...run(99,46),conclusion:'failure'}]},/CI PR/);
+ await rejects({runs:[{...run(),workflow_id:99}]},/Tests JavaScript/);
+});
+
+
+test('les brouillons restent à arbitrer par l’intégrateur, sans requête de diff',async()=>{
+ const drafts=Array.from({length:115},(_,i)=>({...pull(300+i,other),draft:true}));
+ const f=fixture({
+  open:[pull(),...drafts],
+  concurrentFiles:{415:[file()]}
+ });
+ assert.equal((await runAuto(event(),env,f)).ready,true);
+ assert(!f.calls.some(x=>/^pulls\/(?!271)\d+\/files\?/.test(x.path||'')));
+});
+
+test('les chemins autorisés n’acceptent pas de saut de ligne dans leur nom',async()=>{
+ await rejects({changed:[file('docs/ui-presentation-exemple.md\n')]},/hors périmètre/);
+});
+
+test('la CI et le job Chromium doivent réussir',async()=>{
+ const css=[file('dist/style.css','modified')];
+ await rejects({changed:css,runs:[run(),{...run(8,43),conclusion:'failure'}]},/CI PR/);
+ await rejects({changed:css,chromiumConclusion:'skipped'},/Chromium/);
+});
+
+test('le workflow limite le jeton au mode et épingle le code de main',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const yaml=fs.readFileSync(path.join(__dirname,'../.github/workflows/auto-release.yml'),'utf8');
+ const [check,merge]=yaml.split(/^  merge:\s*$/m);
+ assert.match(check,/workflow_dispatch:/);
+ assert.doesNotMatch(yaml,/workflow_run:|pull_request_target:|issue_comment:|issues: write/);
+ assert.doesNotMatch(check,/: write\s*$/m);
+ assert.match(merge,/vars\.CD_ORDINARY_MERGE_ENABLED == 'true'/);
+ assert.match(merge,/group: chat-release-gate-main/);
+ for(const job of [check,merge]){
+  assert.match(job,/github\.ref == 'refs\/heads\/main'/);
+  assert.match(job,/github\.actor_id == '350229047'/);
+  assert.match(job,/github\.run_attempt == 1/);
+  assert.match(job,/ref: \$\{\{ github\.sha \}\}/);
+  assert.match(job,/persist-credentials: false/);
+  for(const action of job.matchAll(/uses: (\S+)/g))assert.match(action[1],/@[a-f0-9]{40}$/);
+ }
 });

@@ -1,0 +1,4 @@
+# Python externe : comparateur CPU skin et ses tests, versions reçues dans Cloud.
+# Pas d'installation automatique et aucun paquet requis dans le jeu distribué.
+numpy==2.3.5
+scipy==1.17.0

@@ -3,45 +3,39 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const file = fs.readFileSync(path.join(__dirname, '../AGENTS.md'), 'utf8');
 
-test('two producers may work concurrently only on compatible reserved paths', () => {
- assert.match(file, /deux développeurs peuvent travailler en même temps sur GitHub/);
- assert.match(file, /Réserver les chemins dans #73 avant modification/);
- assert.match(file, /arrêter toute écriture conflictuelle/);
+const root = path.join(__dirname, '..');
+const agents = fs.readFileSync(path.join(root, 'AGENTS.md'), 'utf8');
+const protocol = fs.readFileSync(path.join(root, 'docs/developpement-parallele.md'), 'utf8').replace(/\s+/g, ' ');
+
+test('les producteurs coordonnent les collisions dans les PR actives', () => {
+  assert.match(agents, /branches distinctes/);
+  assert.match(protocol, /En cas de travail simultané/);
+  assert.match(protocol, /chemins et les interfaces/);
+  assert.match(protocol, /suspendre les écritures/);
 });
 
-test('merges remain serialized under one integrator', () => {
- assert.match(file, /La fusion reste sérialisée/);
- assert.match(file, /un seul intégrateur désigné/);
- assert.match(file, /Un seul intégrateur effectue les opérations de fusion à la fois/);
+test('la description de la PR contient la passation unique', () => {
+  assert.match(agents, /description de la PR/);
+  for (const field of ['Périmètre', 'Collisions', 'Tests', 'Prochaine action']) {
+    assert.ok(protocol.includes('**' + field + '**'), field);
+  }
+  assert.doesNotMatch(agents, /PASSATION dans #73|Réserver les chemins dans #73 avant modification/);
+  assert.equal(fs.existsSync(path.join(root, '.github/workflows/producer-handoff.yml')), false);
 });
 
-test('explicit permission on each PR and no implicit merge', () => {
- assert.match(file, /Léo doit autoriser explicitement chaque PR/);
- assert.match(file, /autorisation explicite de Léo par numéro de PR et HEAD/);
- assert.match(file, /Les réservations #73 n'accordent aucun droit de fusion/);
- assert.match(file, /\/cd-check/);
- assert.match(file, /\/cd-merge/);
+test('un seul intégrateur applique le gate officiel et vérifie la CI après fusion', () => {
+  assert.match(agents, /Un seul intégrateur/);
+  assert.match(agents, /protections serveur/);
+  assert.match(agents, /Aucun push direct/);
+  assert.match(protocol, /HEAD exact/);
+  assert.match(protocol, /gate officiel en production/);
+  assert.match(protocol, /CI du commit fusionné/);
 });
 
-test('release safeguards retained', () => {
- for (const token of ['ci/release-gate.cjs', 'docs/chat-release-gate.md', 'sept jobs post-fusion', 'rulesets main']) {
-  assert.ok(file.includes(token), token);
- }
-});
-
-test('handoff and user-facing action labels', () => {
- assert.match(file, /PASSATION dans #73/);
- assert.match(file, /jamais seulement « Continuer »/);
-});
-
-test('obsolete exclusivity claims are not reinstated as current policy', () => {
- assert.match(file, /supplanté par le protocole parallèle/);
- for (const forbidden of [
-  'Les sessions peuvent être simultanées',
-  'travaux indépendants peuvent se poursuivre simultanément',
-  'compte intégrateur unique est seul responsable',
-  'fusion réservée au compte intégrateur unique'
- ]) assert.ok(!file.includes(forbidden), forbidden);
+test('les références produit et la validation des sauvegardes sont conservées', () => {
+  for (const reference of ['docs/rugby-rules-reference.md', 'docs/donnees-du-jeu.md', 'offline/README.md']) {
+    assert.ok(agents.includes(reference), reference);
+  }
+  assert.match(protocol, /rétrocompatibilité des sauvegardes/);
 });
