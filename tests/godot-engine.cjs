@@ -20,7 +20,10 @@ try{
  const initial=good(b,'new_career',{club:0});assert.equal(initial.protocol,1);assert.equal(initial.league.length,14);assert.equal(initial.squad.length,30);assert.equal(initial.meta.catalogue.length,30);assert.equal(initial.meta.catalogue.filter(c=>c.playable).length,30);
  assert.equal(Object.keys(initial.squad[0].attributes).length,11);assert.ok(initial.squad[0].portraitIndex<32);
  assert.equal(initial.squad[0].portraitIndex,0,'Même index de portrait que CDEditorial pour les identifiants natifs');
- const direct=context({dataDir:path.join(root,'reference')});direct.run('start(0)');
+ // new_career initializes the native staff cycle after the shared start().
+ // Exercise the same initialization in the direct reference before comparing
+ // the complete state, without the bridge, protocol or disk transactions.
+ const direct=context({dataDir:path.join(root,'reference')});direct.run('start(0);CDStaffCareer.initialize(S)');
  const assertRng=()=>assert.equal(JSON.parse(fs.readFileSync(path.join(initial.meta.dataDir,'donnees.json'),'utf8')).seed,direct.randomState().seed,'curseur RNG identique à la référence native directe');
  let document=JSON.parse(good(b,'export').meta.exportText);assert.deepEqual(document.state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')),'état initial identique au moteur direct');
  assertRng();
@@ -50,8 +53,11 @@ try{
  fs.renameSync(file,file+'.held');fs.mkdirSync(file);const failed=call(fail,'train',{mode:'intense'});assert.equal(failed.ok,false);assert.match(failed.error,/sauvegarde|EISDIR|EPERM|EACCES/i);assert.equal(good(fail,'snapshot').meta.trained,false);
  assert.equal(call(fail,'import',{text:incomingText}).ok,false);assert.equal(good(fail,'snapshot').club.id,0);fs.rmdirSync(file);fs.renameSync(file+'.held',file);assert.equal(fs.readFileSync(file,'utf8'),original);
  good(fail,'train',{mode:'normal'});assert.equal(good(fail,'snapshot').meta.trained,true);
- // Import an actual live native export: restart paused, score/fitness preserved.
- direct.run('beginMatch();tick();tick()');const liveText=direct.run('JSON.stringify(createSaveDocument())');good(restored,'import',{text:liveText});assert.equal(good(restored,'snapshot').live.paused,true);
+ // Import an actual live native export: use the production kickoff path, which
+ // prepares valid AI cover before creating a live (the bare shared beginMatch
+ // is not the native command). Restart paused, score/fitness preserved.
+ const liveSource=bridge('live-import-source');good(liveSource,'import',{text:exported});good(liveSource,'begin_match');good(liveSource,'tick',{steps:2});
+ const liveText=good(liveSource,'export').meta.exportText;good(restored,'import',{text:liveText});assert.equal(good(restored,'snapshot').live.paused,true);
  assert.deepEqual(JSON.parse(good(restored,'export').meta.exportText).state,JSON.parse(liveText).state);
  const staleRoot=path.join(root,'stale','PrototypeGodot');fs.mkdirSync(staleRoot,{recursive:true});fs.writeFileSync(path.join(staleRoot,'profil.lock'),'2147483647');const recovered=bridge('stale');assert.equal(good(recovered,'snapshot').club,null,'verrou PID disparu récupérable après fermeture forcée');
  // The private profile preserves the RNG cursor as well as the native career.
