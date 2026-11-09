@@ -7,6 +7,17 @@
  if(root)root.CDFinancePlanning=api;
 })(typeof globalThis==='object'?globalThis:null,function(){
  const finite=(n)=>typeof n==='number'&&Number.isFinite(n);
+ // Calendar counts pay periods separately from known, non-neutral home matches.
+ function calendar({weeks,from=0,fixtures=[],clubId}){
+  const validClub=id=>Number.isSafeInteger(id)&&id>=0;
+  if(!Number.isInteger(weeks)||weeks<1||weeks>104||!Number.isInteger(from)||from<0||from>weeks||!validClub(clubId)||!Array.isArray(fixtures))throw new RangeError('Calendrier financier invalide');
+  if(fixtures.some(f=>!f||!Number.isInteger(f.week)||f.week<0||f.week>=weeks||!validClub(f.homeId)||!validClub(f.awayId)||f.homeId===f.awayId||(f.neutral!==undefined&&typeof f.neutral!=='boolean')))throw new RangeError('Rencontre financière invalide');
+  const ownFixtures=fixtures.filter(f=>f.homeId===clubId||f.awayId===clubId);
+  return Array.from({length:weeks-from},(_,i)=>{
+   const week=from+i,playing=ownFixtures.filter(f=>f.week===week);
+   return {week,match:playing.length>0,home:playing.some(f=>f.homeId===clubId&&!f.neutral)};
+  });
+ }
  function forecast({cash,weeklyIncome=0,weeklyWages,weeklyOtherCosts=0,oneOffIncome=0,oneOffCosts=0,weeks=12}){
   const amounts=[cash,weeklyIncome,weeklyWages,weeklyOtherCosts,oneOffIncome,oneOffCosts];
   if(!amounts.every(finite)||!Number.isInteger(weeks)||weeks<1||weeks>104)
@@ -59,5 +70,5 @@
   return {firstDeficitWithin104:first,estimatedWeeksToDeficit:
    starting<0?0:estimated,weeklyNet:weeklyBalance};
  }
- return Object.freeze({forecast,compare,stressTest,runway});
+ return Object.freeze({forecast,compare,stressTest,runway,calendar});
 });
