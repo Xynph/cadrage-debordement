@@ -40,21 +40,23 @@ func _hero() -> void:
 	var hero := D.panel(self, Rect2(0, 0, 2248, 200), "", "", "", "CentreHero")
 	hero.clip_contents = true
 	D.photo(hero, "club-forest", Rect2(1300, 1, 946, 198))
-	D.photo(hero, "academy-training", Rect2(998, 1, 790, 198))
-	var shade := Control.new()
-	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hero.add_child(shade)
-	D.place(shade, Rect2(910, 0, 500, 200))
-	C.veil(shade)
+	D.fade_photo_edges(D.photo(hero, "academy-training", Rect2(998, 1, 790, 198)))
 	D.text(hero, 26, 36, "LE CENTRE DE FORMATION", 28, GOLD, 700, 1120)
 	app.heading = D.text(hero, 25, 111, "Les chemins de la progression.", 68, C.IVORY, 800, 1140)
-	D.text(hero, 28, 151, G.club_name(app.model.club) + "  ·  Détection, mentorat et compétition junior", 25, C.IVORY, 500, 1100)
-	D.chip(hero, Rect2(29, 163, 288, 30), "PARCOURS ACTIFS" if data.get("active", false) else "PARCOURS À ACTIVER", GREEN if data.get("active", false) else GOLD)
+	var context := "Détection, mentorat et compétition junior" if data.get("available", false) else "Suivi des Espoirs dans Formation"
+	D.text(hero, 28, 151, G.club_name(app.model.club) + "  ·  " + context, 25, C.IVORY, 500, 1100)
+	D.chip(hero, Rect2(29, 163, 288, 30), _pathway_status().to_upper(), GREEN if data.get("active", false) else GOLD)
 	D.button(hero, Rect2(1840, 126, 388, 56), "Revenir à la formation", func(): app._navigate("Formation"), true, "arrow", false, ACCENT, "CentreBackFormation")
 
 func _workbench() -> void:
 	var surface := D.panel(self, Rect2(0, 218, 1513, 1005), "", "", "", "CentreWorkbench")
 	surface.clip_contents = true
+	if not data.get("available", false):
+		_unavailable(surface)
+		return
+	if not data.get("active", false):
+		_preview(surface)
+		return
 	# Les contrôles et commandes du Centre viennent de la vue métier partagée.
 	# Son onglet international peut évoluer sans recopier ni figer sa structure.
 	var viewport := ScrollContainer.new()
@@ -84,6 +86,57 @@ func _workbench() -> void:
 		_restore_scroll.call_deferred(str(state.tab), scrolls.get(state.tab)))
 	var active := str(tabs.get_tab_control(tabs.current_tab).name)
 	_restore_scroll.call_deferred(active, scrolls.get(active))
+
+func _pathway_status() -> String:
+	if not data.get("available", false): return "Parcours indisponibles"
+	return "Parcours actifs" if data.get("active", false) else "Parcours à activer"
+
+func _preview(surface: Panel) -> void:
+	D.text(surface, 30, 56, "LES PARCOURS DU CENTRE", 28, GOLD, 700, 1420)
+	D.text(surface, 28, 127, "Trois outils pour suivre la relève.", 58, C.IVORY, 800, 1440)
+	_note(surface, Rect2(31, 152, 1450, 52), str(data.get("description", "")), 24)
+	var offers := [
+		["Detection", "Détection", "scouting", "search", "Mener la campagne de détection du centre pour préparer la prochaine génération."],
+		["Mentoring", "Mentorat", "analysis-room", "people", "Associer un Espoir à un joueur senior du même poste et suivre son accompagnement."],
+		["Junior", "Compétition junior", "lineout-analysis", "trophy", "Préparer les rencontres juniors et suivre leur calendrier, distinct du championnat professionnel."],
+	]
+	for i in offers.size():
+		var offer: Array = offers[i]
+		var card := D.panel(surface, Rect2(25 + i * 490, 222, 483, 469), "", "", "", "CentreOffer" + str(offer[0]))
+		card.clip_contents = true
+		D.photo(card, offer[2], Rect2(13, 13, 457, 236), .4)
+		D.line(card, Vector2(15, 271), Vector2(468, 271))
+		var icon := C.icon(offer[3], 32, GOLD)
+		card.add_child(icon)
+		D.place(icon, Rect2(19, 294, 32, 32))
+		D.text(card, 63, 325, offer[1], 38, C.IVORY, 800, 395)
+		_note(card, Rect2(21, 352, 435, 103), offer[4], 26)
+	var activation := D.panel(surface, Rect2(25, 713, 1463, 267), "Avant d’activer", "school", "", "CentreActivation")
+	D.text(activation, 24, 117, "Vos %s Espoirs restent au centre." % G.n(data.get("players", []).size()), 40, C.IVORY, 700, 900)
+	var locked: bool = data.get("locked", false)
+	var note := "L’activation est indisponible pendant un match ou après la clôture de la saison." if locked else "Les parcours s’ajoutent à votre suivi actuel dans cette carrière."
+	_note(activation, Rect2(25, 143, 840, 85), note, 25)
+	var action := Academy._action(activation, app, data, "ACTIVER LES PARCOURS", "academy_activate", {}, 0)
+	action.set_meta("carnet_selected", true)
+	Legacy.apply(action, ACCENT)
+	action.add_theme_font_override("font", C.BOLD)
+	action.add_theme_font_size_override("font_size", C.px(31))
+	D.place(action, Rect2(918, 130, 513, 66))
+
+func _unavailable(surface: Panel) -> void:
+	D.text(surface, 30, 56, "LES PARCOURS DU CENTRE", 28, GOLD, 700, 1420)
+	D.text(surface, 28, 129, _pathway_status(), 57, C.IVORY, 800, 1440)
+	var reason := str(data.get("reason", "Le centre est disponible dans une carrière active."))
+	_note(surface, Rect2(31, 162, 1415, 94), reason, 29)
+	D.photo(surface, "analysis-room", Rect2(29, 285, 1455, 492), .52)
+	D.text(surface, 31, 847, "Retrouvez vos Espoirs et leur progression dans Formation.", 31, C.IVORY, 600, 1430)
+	D.button(surface, Rect2(31, 872, 477, 62), "Consulter la formation", func(): app._navigate("Formation"), true, "arrow", false, ACCENT, "CentreUnavailableFormation")
+
+func _note(parent: Control, rectangle: Rect2, text: String, pixels: int) -> void:
+	var label := C.wrap("", pixels, C.MUTED)
+	parent.add_child(label)
+	D.place(label, rectangle)
+	label.text = text
 
 func _style_tabs(tabs: TabContainer) -> void:
 	tabs.add_theme_font_override("font", C.BOLD)
@@ -131,11 +184,13 @@ func _summary() -> void:
 		D.text(tile, 61, 75, entry[1], 35, entry[3], 700, 262)
 	D.line(panel, Vector2(17, 293), Vector2(699, 293))
 	D.text(panel, 22, 339, "SAISON JUNIOR", 24, GOLD, 700, 660)
-	var round := "Parcours à activer"
+	var round := _pathway_status()
 	if active:
 		round = "%s / %s périodes" % [G.n(data.get("juniorRound", "—")), G.n(data.get("totalRounds", "—"))]
 	D.text(panel, 22, 394, round, 39, C.IVORY, 700, 672)
 	var note := str(data.get("description", "Le centre est disponible dans une carrière active."))
+	if not active:
+		note = "L’activation ouvre le calendrier et les résultats juniors." if data.get("available", false) else "Formation présente les Espoirs et leurs spécialisations."
 	var lines := D.words(note, 69, 3)
 	for i in lines.size(): D.text(panel, 23, 439 + i * 27, lines[i], 23, C.MUTED, 500, 675)
 	D.button(panel, Rect2(21, 522, 676, 55), "Consulter les Espoirs", func(): app._navigate("Formation"), false, "arrow", false, ACCENT, "CentreOpenAcademy")

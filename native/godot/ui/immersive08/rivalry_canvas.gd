@@ -276,7 +276,11 @@ func _world() -> void:
 	var panel := D.panel(workspace, Rect2(0, 0, WIDTH, 828), "Carnet des territoires", "flag", "", "RivalryWorldNotebook")
 	var content: Control = app.WorldViews.build(app)
 	panel.add_child(content)
-	D.place(content, Rect2(19, 68, WIDTH - 38, 742))
+	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	content.offset_left = 19 * C.density
+	content.offset_top = 68 * C.density
+	content.offset_right = -19 * C.density
+	content.offset_bottom = -18 * C.density
 	Legacy.apply(content, PRIMARY)
 
 func _pager(parent: Node, key: String, pages: int, x: float, y: float) -> void:

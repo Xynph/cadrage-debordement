@@ -141,10 +141,12 @@ func check_competitions() -> void:
 	var archive := named("SeasonArchives")
 	check(archive != null and text_present(archive, "Champion United Rugby Championship") and text_present(archive, "Champion Coupe des champions") and text_present(archive, "Champion Challenge européen"), "Le palmarès sépare les titres des trois compétitions témoins")
 	app._clear_dialogs()
-	app.model.clubLife.clubWorld.archives = [{"season":1,"champions":{"prem":30},"europe":{"challenge":{"champion":31}}}]
+	app.model.clubLife.clubWorld.archives = [{"season":1,"champions":{"prem":30.0},"europe":{"challenge":{"champion":31.0}}}]
 	app._navigate("Rivalités")
 	await settle()
-	check(text_present(app, "S1 · Premiership") and text_present(app, "S1 · Challenge européen"), "La mémoire des rivalités distingue aussi les titres mondiaux")
+	await press(named("RivalryTab2"))
+	var rivalry_archives := named("RivalryArchives")
+	check(rivalry_archives!=null and text_present(rivalry_archives,"SAISON 1") and text_present(rivalry_archives,"PREM · Bath témoin") and text_present(rivalry_archives,"Challenge européen ·") and not text_present(rivalry_archives,"Club 31"),"Le palmarès des rivalités distingue les titres et les identités des champions")
 	app._navigate("Centre")
 	await settle()
 	check(text_present(app, "Les compétitions Espoirs ne sont pas encore disponibles") and button("ACTIVER LES PARCOURS") == null, "Centre mondial · raison visible et activation absente")

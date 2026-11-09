@@ -103,8 +103,9 @@ func handle_shortcut(event: InputEvent) -> bool:
 			return true
 		if event.ctrl_pressed and code == KEY_K: return true
 		return false
-	if _blocked(): return false
-	if code==KEY_S and event.ctrl_pressed and not event.alt_pressed and app._has_career():
+	var save_shortcut: bool = code==KEY_S and event.ctrl_pressed and not event.alt_pressed
+	if _blocked(null,save_shortcut): return false
+	if save_shortcut and app._has_career():
 		app._command("save")
 		return true
 	if code==KEY_F1 and not event.ctrl_pressed and not event.alt_pressed:
@@ -318,8 +319,11 @@ func _travel(direction: int) -> void:
 	_restoring = false
 	_refresh_controls()
 
-func _blocked(ignore: Window = null) -> bool:
-	if app == null or app.waiting or app.closing or app.connection_error or not app.last_error.is_empty(): return true
+func _blocked(ignore: Window = null, save_shortcut: bool = false) -> bool:
+	if app == null or app.waiting or app.closing or app.connection_error: return true
+	if not app.last_error.is_empty():
+		var retry: bool = save_shortcut and app.last_command=="save" and app.model.get("meta",{}).get("saveError",false)
+		if not retry: return true
 	return _has_popup(app, ignore)
 
 func _has_popup(node: Node, ignore: Window) -> bool:

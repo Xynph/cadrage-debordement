@@ -73,7 +73,7 @@ static func build(app:Control) -> Control:
 	var auto:=D.button(composition,Rect2(738,14,306,30),"SÉLECTION DU STAFF",func():app._command("auto_lineup"),false,"people",true,app.accent,"LineupAutomatic")
 	auto.disabled=not app._live().is_empty()
 	auto.add_theme_stylebox_override("normal",C.box(Color("101719"),Color.TRANSPARENT,0,0))
-	D.photo(composition,"tactics-briefing",Rect2(23,72,1024,160))
+	D.photo(composition,"tactics-briefing",Rect2(23,72,1024,160),.5)
 	var pitch:=Pitch.new();composition.add_child(pitch);D.place(pitch,Rect2(24,245,1022,626))
 	if app.model.get("tactics",{}).get("attack")=="occupation":
 		var overlay := TextureRect.new()
@@ -177,9 +177,19 @@ static func _identity(card:Panel,app:Control,domains:Array) -> void:
 		var symbol:=C.icon(summary[3],23,C.IVORY);card.add_child(symbol);D.place(symbol,Rect2(487,y+13,23,23))
 		D.text(card,41,y+27,summary[0],21,C.IVORY,700,425)
 		D.text(card,38,y+75,G.n(summary[1]),42,C.MINT,700,80)
-		var lines:=D.words(summary[2],39,2)
-		for j in lines.size():D.text(card,118,y+53+j*22,lines[j],17,C.MUTED,400,380,HORIZONTAL_ALIGNMENT_LEFT,true)
-		var hit:=Button.new();hit.flat=true;hit.name="TacticsSummary"+str(i);hit.tooltip_text="Modifier les consignes défensives" if i==1 else "Ouvrir les consignes et la préparation";card.add_child(hit);D.place(hit,Rect2(22,y,504,92))
+		var description := D.text(card,118,y+53,summary[2],17,C.MUTED,400,380,HORIZONTAL_ALIGNMENT_LEFT,true)
+		description.name = "TacticsSummaryText" + str(i)
+		description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		description.max_lines_visible = 2
+		description.size.y = C.px(44)
+		var hit := Button.new()
+		hit.flat = true
+		hit.name = "TacticsSummary" + str(i)
+		var action: String = ["Ouvrir le dossier de préparation","Modifier les consignes défensives","Ouvrir le plan de jeu"][i]
+		hit.tooltip_text = action + "\n" + description.text
+		hit.accessibility_name = "%s · %s · %s" % [summary[0], action, description.text]
+		card.add_child(hit)
+		D.place(hit,Rect2(22,y,504,92))
 		hit.pressed.connect(func():
 			if i==1:_defense(app)
 			else:app._navigate("Plan de jeu" if i==2 else "Préparation"))

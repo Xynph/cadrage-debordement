@@ -239,7 +239,9 @@ func _profile() -> void:
 	var toggle:=D.button(hero,Rect2(167,329,148,31),"Retirer" if compared else "Comparer",func():
 		if app.selected_player in app.management_ui.compare:app.management_ui.compare.erase(app.selected_player)
 		elif app.management_ui.compare.size()<2:app.management_ui.compare.append(app.selected_player)
-		_profile();compare.text="Comparer (%d/2)" % app.management_ui.compare.size(),false,"",true,app.accent,"CompareSelected")
+		var action := dossier.find_child("CompareSelected",true,false) as Button
+		if action != null: action.text="Retirer" if app.selected_player in app.management_ui.compare else "Comparer"
+		compare.text="Comparer (%d/2)" % app.management_ui.compare.size(),false,"",true,app.accent,"CompareSelected")
 	toggle.disabled=not compared and app.management_ui.compare.size()>=2
 	D.button(hero,Rect2(19,380,489,36),"Ouvrir la fiche joueur",func():app.set_meta("immersive08_full_player",true);app._render(),true,"arrow",true,app.accent,"OpenPlayerFull")
 	var health:=D.panel(dossier,Rect2(0,448,528,254),"DISPONIBILITÉ","heart")

@@ -2,6 +2,8 @@ extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
 const Board = preload("res://ui/lineup_board.gd")
 const U = preload("res://ui/management_state.gd")
+const ClubUI = preload("res://ui/immersive08/club_ui.gd")
+const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 
 # Keep the bound dictionary when a career reset replaces management_ui. Retiring
 # controls can only update their former UI state, never the new career's state.
@@ -681,6 +683,8 @@ static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 	list.get_parent().set_deferred("scroll_vertical",int(app.management_ui.market.scroll))
 
 static func comparison(app:Control) -> void:
+	var opener := app.get_viewport().gui_get_focus_owner() as Button
+	var return_focus := str(opener.name) if opener != null else ""
 	U.remember(app)
 	U.sync(app)
 	app._clear_dialogs()
@@ -688,7 +692,7 @@ static func comparison(app:Control) -> void:
 	d.name="PlayerComparison"
 	app._prepare_dialog(d,880)
 	d.title="Comparer deux dossiers"
-	d.get_ok_button().text="REVENIR À LA LISTE"
+	d.get_ok_button().text="RETOUR À LA FICHE" if app.get_meta("immersive08_full_player",false) else "RETOUR À L’EFFECTIF"
 	var content:=G.v(10)
 	d.add_child(content)
 	content.add_child(G.label("Valeurs de jeu sur 100, sauf âge, salaire et échéance.\nLes postes différents demandent une lecture par attribut, sans classement global.",12,G.MUTED))
@@ -727,10 +731,15 @@ static func comparison(app:Control) -> void:
 		_comparison_rows(app,list,current)
 	for choice:OptionButton in choices:choice.item_selected.connect(func(_index:int):refresh.call())
 	refresh.call()
-	d.confirmed.connect(func():d.queue_free();app._render())
-	d.canceled.connect(func():d.queue_free();app._render())
+	var close := func():
+		d.hide()
+		d.queue_free()
+		app._render()
+		ClubUI.focus(app, return_focus)
+	d.confirmed.connect(close)
+	d.canceled.connect(close)
 	app.add_child(d)
-	d.popup_centered(Vector2i(880,600))
+	Dialogs.show_centered(d,Vector2i(880,600))
 
 static func _comparison_rows(app:Control,list:VBoxContainer,ids:Array) -> void:
 	_empty(list)

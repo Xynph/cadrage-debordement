@@ -524,10 +524,18 @@ func desktop_1080() -> void:
 		"Classements","Club","Staff","Travail du club","Stratégie","Presse","Rivalités","Vestiaire","Carrière"]:
 		app._navigate(route)
 		await settle()
-		var art: Control = app.find_child("CompactRouteArt",true,false)
-		var photo: TextureRect = art.get_child(0) as TextureRect if art!=null else null
-		check(photo!=null and photo.texture!=null and art.is_visible_in_tree(),"Illustration visible dans le repli à 720p · "+route)
-		check(app.body.get_child(0).get_meta("immersive_style_applied",false),"Les vraies actions de la page utilisent la DA compacte · "+route)
+		if route=="Rivalités":
+			var hero := app.find_child("RivalryHero",true,false) as Control
+			var photo := hero.find_child("Art_stadium",true,false) as TextureRect if hero!=null else null
+			var tab := app.find_child("RivalryTab0",true,false) as Button
+			check(photo!=null and photo.texture!=null and photo.is_visible_in_tree(),"Illustration originale visible dans les Rivalités paginées à 720p")
+			check(tab!=null and tab.get_meta("immersive_style_applied",false) and tab.focus_mode==Control.FOCUS_ALL and not tab.disabled,"Le tableau paginé garde ses commandes immersives et accessibles à 720p")
+			await capture("61-rivalites-1280x720")
+		else:
+			var art: Control = app.find_child("CompactRouteArt",true,false)
+			var photo: TextureRect = art.get_child(0) as TextureRect if art!=null else null
+			check(photo!=null and photo.texture!=null and art.is_visible_in_tree(),"Illustration visible dans le repli à 720p · "+route)
+			check(app.body.get_child(0).get_meta("immersive_style_applied",false),"Les vraies actions de la page utilisent la DA compacte · "+route)
 		check(app.body.size.x<=app.body_scroll.size.x+1,"Le repli ne rogne pas la largeur utile · "+route)
 		if route=="Finances": await capture("12-finances-1280x720")
 	root.size=Vector2i(2560,1440)
@@ -955,6 +963,14 @@ func run() -> void:
 		var paths := app.find_child("TacticsOccupationOverlay",true,false) as TextureRect
 		check(paths!=null and paths.texture!=null and paths.mouse_filter==Control.MOUSE_FILTER_IGNORE and paths.focus_mode==Control.FOCUS_NONE,"Les trajectoires Occupation sont un calque natif transparent aux actions")
 		reference_rects({"TacticsOccupationOverlay":Rect2(304,509,1022,626)})
+		var briefing := app.find_child("Art_tactics_briefing",true,false) as TextureRect
+		var crop: AtlasTexture = briefing.texture as AtlasTexture if briefing!=null else null
+		check(crop!=null and absf(crop.region.get_center().y-crop.atlas.get_height()/2.0)<.1,"Le briefing reprend le cadrage vertical centré du SVG")
+		var summary := app.find_child("TacticsSummaryText2",true,false) as Label
+		var summary_action := app.find_child("TacticsSummary2",true,false) as Button
+		var attacks: Array = app.model.tactics.attacks
+		var description: String = attacks[attacks.find_custom(func(option: Dictionary): return option.id=="occupation")].description
+		check(summary!=null and summary_action!=null and summary.text==description and summary.max_lines_visible==2 and summary_action.tooltip_text.contains(description),"L’aperçu et l’infobulle conservent le texte complet du plan")
 		await capture("03b-tactique-occupation-2560x1440")
 		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await footer_feedback()
 		app.find_child("TacticsSummary1",true,false).pressed.emit()

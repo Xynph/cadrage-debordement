@@ -95,23 +95,7 @@ func _heading() -> void:
 	var hero := D.panel(self, Rect2(0, 0, 2248, 279), "", "", "", "AcademyHero")
 	hero.clip_contents = true
 	D.photo(hero, "club-forest", Rect2(1450, 1, 796, 276))
-	var training_art := D.photo(hero, "academy-training", Rect2(1056, 1, 780, 276))
-	var blend := Shader.new()
-	# La coordonnée locale reste continue quelle que soit la découpe de l’atlas.
-	blend.code = """
-shader_type canvas_item;
-uniform float photo_width = 1.0;
-varying float local_x;
-void vertex() { local_x = VERTEX.x; }
-void fragment() {
-	float x = local_x / photo_width;
-	COLOR.a *= smoothstep(0.0, 0.21, x) * (1.0 - smoothstep(0.78, 1.0, x));
-}
-"""
-	var material := ShaderMaterial.new()
-	material.shader = blend
-	material.set_shader_parameter("photo_width", training_art.size.x)
-	training_art.material = material
+	D.fade_photo_edges(D.photo(hero, "academy-training", Rect2(1056, 1, 780, 276)))
 	D.text(hero, 29, 36, "LA RELÈVE SE CONSTRUIT", 28, GOLD, 700, 615)
 	app.heading = D.text(hero, 26, 102, "Le futur porte nos couleurs.", 69, C.IVORY, 800, 1010)
 	D.text(hero, 30, 140, "Académie · " + G.club_name(app.model.club) + "  ·  U18 / U21", 26, C.IVORY, 500, 1000)
@@ -639,6 +623,9 @@ func _portrait(parent: Node, p: Dictionary, rectangle: Rect2, large: bool = fals
 	elif large:
 		D.photo(parent, "academy-player", rectangle)
 		_veil(parent, Rect2(rectangle.end.x - 34, rectangle.position.y, 34, rectangle.size.y), [Color("11191a", .0), Color("11191a")], [0.0, 1.0])
+		var badge := D.rect(parent,Rect2(rectangle.position.x+10,rectangle.end.y-29,190,23),Color("101819df"),3)
+		badge.name = "AcademyPortraitIllustration"
+		D.text(badge,95,17,"PORTRAIT D’ILLUSTRATION",16,C.IVORY,700,184,HORIZONTAL_ALIGNMENT_CENTER)
 	elif not fallback.is_empty():
 		D.photo(parent, fallback, rectangle)
 	else:

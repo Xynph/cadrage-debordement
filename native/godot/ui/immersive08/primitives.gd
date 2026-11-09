@@ -89,6 +89,24 @@ static func photo(parent: Node, id: String, rectangle: Rect2, vertical_focus: fl
 	place(image,rectangle)
 	return image
 
+static func fade_photo_edges(photo: TextureRect) -> void:
+	var blend := Shader.new()
+	# La coordonnée locale reste continue quelle que soit la découpe de l’atlas.
+	blend.code = """
+shader_type canvas_item;
+uniform float photo_width = 1.0;
+varying float local_x;
+void vertex() { local_x = VERTEX.x; }
+void fragment() {
+	float x = local_x / photo_width;
+	COLOR.a *= smoothstep(0.0, 0.21, x) * (1.0 - smoothstep(0.78, 1.0, x));
+}
+"""
+	var material := ShaderMaterial.new()
+	material.shader = blend
+	material.set_shader_parameter("photo_width", photo.size.x)
+	photo.material = material
+
 static func button(parent: Node, rectangle: Rect2, caption: String, callback: Callable, primary: bool = false, icon_id: String = "arrow", small: bool = false, accent: Color = Color("176e49"), id: String = "") -> Button:
 	var control := C.button(caption,callback,primary,accent)
 	control.name = id if not id.is_empty() else "Action"

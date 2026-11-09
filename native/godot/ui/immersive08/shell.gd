@@ -187,7 +187,8 @@ static func open_preparation(app: Control, tab: int) -> void:
 	app._navigate("Préparation",true,true)
 
 static func _dedicated_page(app: Control, size: Vector2i) -> Script:
-	if size.x<1920 or size.y<1080: return null
+	if size.x<1920 or size.y<1080:
+		return Rivalry if app.route=="Rivalités" and size.x>=1280 and size.y>=720 else null
 	if _is_training(app): return Training
 	match app.route:
 		"Préparation": return Preparation
