@@ -98,7 +98,17 @@ function forDatabase(id){
 }
 function project(model){
  const mode=model.meta?.mode,id=model.meta?.database?.id,selected=mode==='world'?forDatabase(id??WORLD_ID).registry:mode==='common'?registry:null;
+ const career=model.clubLife?.staffCareer;
+ if(career?.active&&Array.isArray(career.teams))return {...model,staff:{version:career.version,observedAt:null,teams:career.teams.map(c=>({...c,name:model.meta.catalogue.find(x=>x.id===c.id)?.name||'Club '+c.id,members:c.members.map(p=>({...p,personState:'career',portraitStatus:p.portraitStatus??'anonymous',identityStatus:p.identityStatus??'base'}))})),notice:career.notice||'Encadrement de carrière : contrats et passages de saison suivis. Aucun bonus sportif ni salaire ajouté au budget.'}};
  const teams=selected?selected.clubs.map(c=>({id:c.id,name:model.meta.catalogue.find(x=>x.id===c.id)?.name||'Club '+c.id,members:c.members.map(p=>({...p}))})):[];
  return {...model,staff:{version:registry.version,observedAt:[PACIFIC_ID,JAPAN_ID,NATIONALE_ID,CHAMP_ID].includes(id)?selected.observedAt:registry.observedAt,teams,notice:'Encadrement de référence documenté, indépendant de la saison de carrière. Les rôles et les portraits ne donnent aucun bonus de simulation. Les délégations restent vos choix.'}};
 }
-module.exports={project,ids,registry,worldIds,worldRegistry,isWorld,forDatabase};
+function applyCareerPresentation(model){
+ const career=model.clubLife?.staffCareer;if(!career?.active)return model;
+ const person=p=>{const identity=p?.identity;if(!identity)return;p.personState='career';for(const key of ['name','portraitPath','portraitStatus','identityStatus'])if(identity[key]!==undefined)p[key]=identity[key];if(p.portraitStatus===undefined)p.portraitStatus='anonymous';};
+ for(const team of model.staff?.teams||[])for(const p of team.members)person(p);
+ for(const team of career.teams||[])for(const p of team.members)person(p);
+ for(const list of [career.candidates,career.market])for(const p of list||[])person(p);
+ return model;
+}
+module.exports={project,applyCareerPresentation,ids,registry,worldIds,worldRegistry,isWorld,forDatabase};
