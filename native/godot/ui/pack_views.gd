@@ -3,6 +3,10 @@ const G = preload("res://ui/carnet_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const Editorial = preload("res://ui/entry_editorial.gd")
 
+static func _action(button: Button, primary: bool = false, height: int = 42) -> void:
+	Editorial.action(button, primary, false, height)
+	button.add_theme_font_override("font", Editorial.sans_bold() if primary else C.BODY)
+
 static func missing_warning(app: Control, parent: Container, scope: String, paper: bool = false) -> void:
 	var messages: Array[String] = []
 	var career_missing := false
@@ -33,25 +37,29 @@ static func page(app: Control) -> Control:
 	var preview: Dictionary = app.pack_manager.preview()
 	var top := C.h(16)
 	page.add_child(top)
-	var back := C.button("← RETOUR", app.pack_manager.back)
+	var back := C.button("← Retour", app.pack_manager.back)
 	back.name = "PackBack"
-	Editorial.action(back)
+	_action(back)
 	top.add_child(back)
 	var heading := C.v(2)
-	C.fill(heading)
-	top.add_child(heading)
-	heading.add_child(C.wrap(("NOUVELLE CARRIÈRE" if creation else "CARRIÈRE EN COURS") + "  /  " + edition, 23, Editorial.BRASS, true))
-	heading.add_child(C.wrap("Choisissez les identités de votre carrière.", 19))
-	var importing := C.button("IMPORTER UN PACK ZIP", app.pack_manager.choose_file, installed.is_empty() and preview.is_empty())
+	var importing := C.button("Importer une autre réalité", app.pack_manager.choose_file)
 	importing.name = "PackImportZip"
-	Editorial.action(importing, installed.is_empty() and preview.is_empty())
+	_action(importing)
 	importing.disabled = app.waiting
 	top.add_child(importing)
-	var calendar := C.button("ATELIER CALENDRIER", func(): preload("res://ui/competition_editor_view.gd").open(app))
+	var calendar := C.button("Atelier calendrier", func(): preload("res://ui/competition_editor_view.gd").open(app))
 	calendar.name = "OpenCompetitionEditor"
-	Editorial.action(calendar)
+	_action(calendar)
 	calendar.disabled = app.waiting
 	top.add_child(calendar)
+	C.fill(heading)
+	top.add_child(heading)
+	var edition_label := C.label(("NOUVELLE CARRIÈRE" if creation else "CARRIÈRE EN COURS") + "  /  " + edition, 18, C.MUTED)
+	edition_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	edition_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	edition_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	heading.add_child(edition_label)
+	page.add_child(C.rule())
 
 	var compatible: bool = creation or app.model.get("meta", {}).get("database", {}).get("active", false)
 	var packs: Dictionary = app.model.get("packs", {})
@@ -69,12 +77,12 @@ static func page(app: Control) -> Control:
 	var layouts := C.h(20)
 	page.add_child(layouts)
 	var base_column := C.v(0)
-	C.fill(base_column, false, .39)
+	C.fill(base_column, false, .375)
 	layouts.add_child(base_column)
 	var pack_column := C.v(14)
-	C.fill(pack_column, false, .61)
+	C.fill(pack_column, false, .625)
 	layouts.add_child(pack_column)
-	var picture_height := clampf(window_size.y * .25, 150, 340)
+	var picture_height := clampf(window_size.y * .235, 140, 330)
 	_catalogue(app, base_column, selected, compatible, picture_height)
 	var analysing := not preview.is_empty() and not inspected_installed
 	if analysing:
@@ -97,12 +105,13 @@ static func page(app: Control) -> Control:
 		if pack.id != featured.id:
 			_installed_card(app, pack_column, pack, selected, compatible, creation, false, 0)
 
-	app.status = C.wrap("Analyse en cours…" if app.waiting else "Installation locale · aucun téléchargement automatique", 19)
+	page.add_child(C.rule())
+	app.status = C.wrap("Analyse en cours…" if app.waiting else "OVAL LEGACY 27     /     Installation locale", 18)
 	page.add_child(app.status)
 	return page
 
 static func _empty(parent: Container, picture_height: float) -> void:
-	var content := _section(parent, "IMPORT LOCAL", "Importer une autre réalité", false, "match-tunnel", picture_height)
+	var content := _section(parent, "Import local", "Importer une autre réalité", "match-tunnel", picture_height)
 	for step in [["01", "Ouvrir le ZIP", "Choisissez une archive sur votre ordinateur."], ["02", "Vérifier le contenu", "Consultez les clubs, joueurs, compétitions et médias fournis."], ["03", "Installer", "Le pack devient disponible pour vos prochaines carrières."]]:
 		content.add_child(C.rule())
 		var line := C.h(14)
@@ -115,15 +124,30 @@ static func _empty(parent: Container, picture_height: float) -> void:
 		C.fill(detail)
 		line.add_child(detail)
 
-static func _section(parent: Container, caption: String, title: String, active: bool, art: String = "", picture_height: float = 0) -> VBoxContainer:
+static func _section(parent: Container, caption: String, title: String, art: String = "", picture_height: float = 0, fill_height: bool = false) -> VBoxContainer:
 	var frame := PanelContainer.new()
-	Editorial.surface(frame, Editorial.PANEL, Editorial.BRASS if active else Editorial.LINE, 20)
+	Editorial.surface(frame, Editorial.PANEL, Editorial.LINE, 1)
+	if fill_height: C.fill(frame, true)
 	parent.add_child(frame)
-	var content := C.v(13)
-	frame.add_child(content)
-	if picture_height > 0: _picture(content, art, picture_height)
-	content.add_child(C.label(caption, 20, Editorial.BRASS))
-	content.add_child(C.wrap(title, 41, C.IVORY, true, 700))
+	var column := C.v(0)
+	frame.add_child(column)
+	if picture_height > 0: _picture(column, art, picture_height)
+	var inset := C.margin(36)
+	inset.add_theme_constant_override("margin_top", C.px(16))
+	inset.add_theme_constant_override("margin_bottom", C.px(19))
+	C.fill(inset, true)
+	column.add_child(inset)
+	var content := C.v(12)
+	inset.add_child(content)
+	var heading := C.h(14)
+	content.add_child(heading)
+	heading.add_child(C.fill(Editorial.sans_heading(title, 44)))
+	if not caption.is_empty():
+		var badge := PanelContainer.new()
+		Editorial.surface(badge, Editorial.PANEL, Editorial.BRASS, 5)
+		badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		badge.add_child(C.label(caption, 19, Editorial.BRASS, false))
+		heading.add_child(badge)
 	return content
 
 static func _picture(parent: Container, art: String, height: float) -> void:
@@ -132,31 +156,34 @@ static func _picture(parent: Container, art: String, height: float) -> void:
 	parent.add_child(photo)
 
 static func _catalogue(app: Control, parent: Container, selected: String, compatible: bool, picture_height: float) -> void:
-	var content := _section(parent, "BASE ANONYMISÉE · ACTIVE" if selected == "base" else "BASE ANONYMISÉE", "Jeu de base", selected == "base", "nationale-ground", picture_height)
-	C.fill(content.get_parent(), true)
+	var content := _section(parent, "Réalité active" if selected == "base" else "", "Jeu de base", "maquette-reality-base", picture_height, true)
+	content.add_child(C.label("Identités fictives", 25, C.IVORY, false))
+	content.add_child(C.wrap("Une réalité construite pour Oval Legacy, avec des clubs, des joueurs et des compétitions anonymisés.", 21, C.IVORY))
+	content.add_child(C.rule())
 	var facts := C.h(18)
 	content.add_child(facts)
 	var database: Dictionary = app.pack_manager.database()
-	Editorial.fact(facts, database.get("clubCount", 0), "Clubs")
+	_fact(facts, database.get("clubCount", 0), "Clubs")
 	Editorial.divider(facts)
-	Editorial.fact(facts, database.get("playerCount", 0), "Joueurs")
+	_fact(facts, database.get("playerCount", 0), "Joueurs")
 	content.add_child(C.rule())
-	content.add_child(C.wrap("Clubs, joueurs et compétitions portent des identités fictives.", 22, C.IVORY))
 	content.add_child(C.wrap("Les packs changent les identités et les visuels. Le calendrier et les règles restent ceux du monde commun.", 19))
 	var space := Control.new()
 	space.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(space)
-	var base := C.button("UTILISER LA BASE ANONYMISÉE", func(): app.pack_manager.select("base"))
+	var base := C.button("Choisir le jeu de base", func(): app.pack_manager.select("base"))
 	base.name = "PackUseBase"
 	base.disabled = app.waiting or not compatible
-	Editorial.action(base)
+	_action(base)
+	base.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	content.add_child(base)
 
 static func _installed_card(app: Control, parent: Container, pack: Dictionary, selected: String, compatible: bool, creation: bool, featured: bool, picture_height: float) -> void:
 	var id := str(pack.id)
 	var active := id == selected
-	var content := _section(parent, "PACK ACTIF" if active else "PACK INSTALLÉ", str(pack.get("name", "Pack personnalisé")), active, "pacific-ground", picture_height)
+	var content := _section(parent, "Pack actif" if active else "Pack installé", str(pack.get("name", "Pack personnalisé")), "maquette-reality-pack", picture_height)
 	if featured:
+		content.add_child(C.wrap("Les identités et les médias fournis par votre pack, dans le monde commun d’Oval Legacy 27.", 21, C.IVORY))
 		_inventory(content, pack)
 		content.add_child(C.rule())
 	else:
@@ -168,15 +195,20 @@ static func _installed_card(app: Control, parent: Container, pack: Dictionary, s
 	if not active:
 		var choice := C.button("UTILISER CE PACK  →", func(): app.pack_manager.select(id), not creation)
 		choice.disabled = app.waiting or not compatible
-		Editorial.action(choice, not creation)
+		_action(choice, not creation)
 		actions.add_child(choice)
 	if creation:
+		actions.add_child(C.fill(Control.new()))
 		var start := C.button("Nouvelle carrière", _create_with_pack.bind(app, id), true)
 		start.name = "PackNewCareer" if featured else "PackNewCareer_" + id
 		start.disabled = app.waiting or app.model.get("meta", {}).get("recoveryRequired", false)
 		start.tooltip_text = "Choisir un club avec " + str(pack.get("name", "ce pack"))
-		C.fill(start)
-		Editorial.action(start, true, false, maxi(42, C.px(66)) if featured else 42)
+		start.icon = C.icon_texture("arrow", Editorial.INK)
+		start.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		start.expand_icon = true
+		start.add_theme_constant_override("icon_max_width", C.px(31))
+		start.custom_minimum_size.x = C.px(390)
+		_action(start, true, maxi(42, C.px(66)) if featured else 42)
 		actions.add_child(start)
 
 static func _create_with_pack(app: Control, id: String) -> void:
@@ -190,35 +222,55 @@ static func _create_with_pack(app: Control, id: String) -> void:
 
 static func _inventory(parent: VBoxContainer, pack: Dictionary) -> void:
 	var counts: Dictionary = pack.get("counts", {})
-	parent.add_child(C.label("INVENTAIRE DU PACK", 21, C.GOLD, true, 700))
+	parent.add_child(C.rule())
 	var tiles := C.h(12)
 	parent.add_child(tiles)
-	Editorial.fact(tiles, counts.get("clubs", 0), "Clubs personnalisés")
+	_fact(tiles, counts.get("clubs", 0), "Clubs")
 	Editorial.divider(tiles)
-	Editorial.fact(tiles, counts.get("players", 0), "Identités de joueurs")
+	_fact(tiles, counts.get("players", 0), "Joueurs")
 	Editorial.divider(tiles)
 	if counts.has("competitions"):
-		Editorial.fact(tiles, counts.competitions, "Compétitions")
+		_fact(tiles, counts.competitions, "Compétitions")
 	else:
-		Editorial.fact(tiles, counts.get("logos", 0), "Blasons de clubs")
-	var media: Array[String] = ["%s blasons de clubs · %s photos de joueurs · %s portraits IA" % [G.n(counts.get("logos", 0)), G.n(counts.get("official", 0)), G.n(counts.get("synthetic", 0))]]
+		_fact(tiles, counts.get("logos", 0), "Blasons")
+	var media := [["Portraits", "%s photos de joueurs · %s portraits IA" % [G.n(counts.get("official", 0)), G.n(counts.get("synthetic", 0))]]]
+	var identities := "%s blasons de clubs" % G.n(counts.get("logos", 0))
 	if counts.has("competitionLogos"):
-		media[0] += " · %s logos de compétitions" % G.n(counts.competitionLogos)
+		identities += " · %s logos de compétitions" % G.n(counts.competitionLogos)
+	media.append(["Identités", identities])
 	if counts.has("staff"):
-		media.append("Staff · %s identités · %s photos officielles · %s illustrations IA" % [G.n(counts.staff), G.n(counts.get("staffOfficial", 0)), G.n(counts.get("staffSynthetic", 0))])
+		media.append(["Staff", "%s identités · %s photos officielles · %s illustrations IA" % [G.n(counts.staff), G.n(counts.get("staffOfficial", 0)), G.n(counts.get("staffSynthetic", 0))]])
 	if counts.has("cityPhotos") or counts.has("stadiumPhotos"):
-		media.append("Lieux · %s villes en photo · %s stades en photo" % [G.n(counts.get("cityPhotos", 0)), G.n(counts.get("stadiumPhotos", 0))])
-	for line: String in media:
-		parent.add_child(C.wrap(line, 19))
+		media.append(["Lieux", "%s villes en photo · %s stades en photo" % [G.n(counts.get("cityPhotos", 0)), G.n(counts.get("stadiumPhotos", 0))]])
+	for item: Array in media:
+		parent.add_child(C.rule())
+		var line := C.h(16)
+		parent.add_child(line)
+		var label := Editorial.sans_heading(item[0], 20)
+		label.custom_minimum_size.x = C.px(225)
+		line.add_child(label)
+		line.add_child(C.fill(C.wrap(item[1], 19, C.IVORY)))
+
+static func _fact(parent: Container, value: Variant, caption: String) -> void:
+	var line := C.h(8)
+	C.fill(line)
+	parent.add_child(line)
+	var number := Editorial.sans_heading(G.n(value), 29)
+	number.autowrap_mode = TextServer.AUTOWRAP_OFF
+	number.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	line.add_child(number)
+	var label := C.wrap(caption, 22, C.IVORY)
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	line.add_child(C.fill(label))
 
 static func _preview(app: Control, parent: Container, pack: Dictionary) -> void:
-	var content := _section(parent, "PRÊT À INSTALLER", str(pack.get("name", "Pack personnalisé")), false)
+	var content := _section(parent, "Prêt à installer", str(pack.get("name", "Pack personnalisé")))
 	_inventory(content, pack)
 	content.add_child(C.wrap("L’installation ajoute le pack à votre profil. Vous pourrez ensuite le sélectionner."))
 	if pack.get("rightsStatus", "") == "not-cleared-for-public-distribution":
 		content.add_child(C.wrap("Droits de redistribution publique des photos et logos à vérifier séparément."))
 	var install := C.button("INSTALLER CE PACK", app.pack_manager.install, true)
-	Editorial.action(install, true)
+	_action(install, true)
 	install.disabled = app.waiting
 	install.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	content.add_child(install)

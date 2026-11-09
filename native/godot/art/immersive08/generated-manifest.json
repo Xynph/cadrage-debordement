@@ -240,6 +240,146 @@
       "synthetic": true,
       "tool": "built-in image_gen",
       "prompt": "Generate one original fictional rugby editorial photograph in wide 16:9 for the PC rugby management game Oval Legacy 27. An intimate English second-tier rugby ground under a light evening drizzle, dark wet evergreen turf with proper rugby pitch markings and one H-shaped set of rugby posts right of centre, small corrugated covered terraces and a low dark-red brick clubhouse on the right, distant town chimneys and hedgerows in soft mist. Rich blue-charcoal shadows, muted burgundy brick, restrained warm amber floodlights with natural haze, understated low-key cinematic sports editorial photography, subtly textured realism. A few very distant silhouettes can imply a match night but no visible faces or foreground people. Keep the left half dark and unobstructed for ivory game interface text, with the interesting visual detail mainly in the right two thirds and within the middle 60 percent vertically for very wide header crops. Show a distinct English atmosphere and modest scale, with no specific real ground. Full bleed frame, no border, no interface, no typography, no markings with letters, no logos, no watermark."
+    },
+    {
+      "id": "maquette-club-banner",
+      "file": "maquette-club-banner.png",
+      "source": "exec-f555d6c0-ae90-4490-8d7b-6c55132fd61f.png",
+      "sourceType": "mockup",
+      "source_sha256": "0005479bbd028ffc2d3a0e3c2ea80b28c2d04cade5ff5f4dcfce9db956b4a4ba",
+      "crop": [
+        399,
+        45,
+        1272,
+        131
+      ],
+      "width": 1272,
+      "height": 131,
+      "bytes": 326577,
+      "sha256": "d384981d67a67a579049d87d13df5b0019ba5ded301056bbb081b64f99e6b2dd",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Render one single full-screen authentic 2560x1440 16:9 widescreen PC screenshot of a redesigned French rugby management game's “Nouvelle carrière” page for OVAL LEGACY 27. Desktop UI at 80% zoom, pulled back, comfortably high information density, like a restrained editorial sports database or professional sports management simulator. A mature sober visual evolution of the existing Oval Legacy art direction: graphite charcoal #151b1e, dark slate-green ink #121c1d, a little olive, dirty ivory #eee8d8 text, old brass #b89b62 only for the active marker and understated action accents. ABSOLUTELY NO neon green, no acid lime, no saturated button, no glossy mobile game, no heroic oversized text, no pill shapes, no rounded bubbly cards. Square or 3px-radius edges, thin lines, readable restrained warm Barlow Condensed headings and neutral readable sans for content. Screen flush to edges, 32px gutters, no device mockup, no diptych, no margins outside the UI. Compact horizontal top rail: OVAL LEGACY 27 existing white understated wordmark at far left, discreet “01 Réalité   02 Club   03 Carrière” with small brass underline on Club. Under it a shallow 130px wide stadium banner at dusk, naturally atmospheric muted photo on the right, gradient into ink at left, small kicker “VOTRE PREMIÈRE SAISON”, title “Choisir son club” 40px max. Then full-width compact horizontal filter controls “France”, “Angleterre”, “Japon”, “International” with small flags, second row of narrow divisions including “Élite”, “Accession”, “Fédérale”. Central aligned full width content split 39:61. Left: one continuous editorial dossier with muted natural photo of an actual rugby stadium, left-aligned club name “Toulouse Capitole XV” and a restrained fictional maroon crest, tightly set three stats in a row “75,0 Note moyenne”, “34 Avants”, “27 Trois-quarts”, two precise lines “Objectif du conseil”, “Trésorerie simulée”, and small two-column line of roster strengths and needs. Right: a grid of ALL 14 clubs over THREE columns and FIVE rows, consistent horizontal tiles with small crest, French fictional club name and city, fine separators, small arrow, subtle brass vertical mark on selected tile. Medium restrained heading “Clubs du championnat”, note small text. Let main panels breathe without leaving any huge empty region, use panel height for real information, aligned content ends, compact bottom action bar with muted brass cream CTA “Prendre les rênes →”. Real and tactile, editorial, elegant, clear game hierarchy. At normal scale the typography looks like a PC management app, no text size over 40px."
+    },
+    {
+      "id": "maquette-club-stadium",
+      "file": "maquette-club-stadium.png",
+      "source": "exec-f555d6c0-ae90-4490-8d7b-6c55132fd61f.png",
+      "sourceType": "mockup",
+      "source_sha256": "0005479bbd028ffc2d3a0e3c2ea80b28c2d04cade5ff5f4dcfce9db956b4a4ba",
+      "crop": [
+        23,
+        264,
+        614,
+        188
+      ],
+      "width": 614,
+      "height": 188,
+      "bytes": 287026,
+      "sha256": "d16e06f60c89a8d1c4c45c0603125cfa4063836b58ba53c32617c42894297e69",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Render one single full-screen authentic 2560x1440 16:9 widescreen PC screenshot of a redesigned French rugby management game's “Nouvelle carrière” page for OVAL LEGACY 27. Desktop UI at 80% zoom, pulled back, comfortably high information density, like a restrained editorial sports database or professional sports management simulator. A mature sober visual evolution of the existing Oval Legacy art direction: graphite charcoal #151b1e, dark slate-green ink #121c1d, a little olive, dirty ivory #eee8d8 text, old brass #b89b62 only for the active marker and understated action accents. ABSOLUTELY NO neon green, no acid lime, no saturated button, no glossy mobile game, no heroic oversized text, no pill shapes, no rounded bubbly cards. Square or 3px-radius edges, thin lines, readable restrained warm Barlow Condensed headings and neutral readable sans for content. Screen flush to edges, 32px gutters, no device mockup, no diptych, no margins outside the UI. Compact horizontal top rail: OVAL LEGACY 27 existing white understated wordmark at far left, discreet “01 Réalité   02 Club   03 Carrière” with small brass underline on Club. Under it a shallow 130px wide stadium banner at dusk, naturally atmospheric muted photo on the right, gradient into ink at left, small kicker “VOTRE PREMIÈRE SAISON”, title “Choisir son club” 40px max. Then full-width compact horizontal filter controls “France”, “Angleterre”, “Japon”, “International” with small flags, second row of narrow divisions including “Élite”, “Accession”, “Fédérale”. Central aligned full width content split 39:61. Left: one continuous editorial dossier with muted natural photo of an actual rugby stadium, left-aligned club name “Toulouse Capitole XV” and a restrained fictional maroon crest, tightly set three stats in a row “75,0 Note moyenne”, “34 Avants”, “27 Trois-quarts”, two precise lines “Objectif du conseil”, “Trésorerie simulée”, and small two-column line of roster strengths and needs. Right: a grid of ALL 14 clubs over THREE columns and FIVE rows, consistent horizontal tiles with small crest, French fictional club name and city, fine separators, small arrow, subtle brass vertical mark on selected tile. Medium restrained heading “Clubs du championnat”, note small text. Let main panels breathe without leaving any huge empty region, use panel height for real information, aligned content ends, compact bottom action bar with muted brass cream CTA “Prendre les rênes →”. Real and tactile, editorial, elegant, clear game hierarchy. At normal scale the typography looks like a PC management app, no text size over 40px."
+    },
+    {
+      "id": "maquette-club-wordmark",
+      "file": "maquette-club-wordmark.png",
+      "source": "exec-f555d6c0-ae90-4490-8d7b-6c55132fd61f.png",
+      "sourceType": "mockup",
+      "source_sha256": "0005479bbd028ffc2d3a0e3c2ea80b28c2d04cade5ff5f4dcfce9db956b4a4ba",
+      "crop": [
+        32,
+        6,
+        187,
+        30
+      ],
+      "width": 187,
+      "height": 30,
+      "bytes": 13041,
+      "sha256": "672308f1b8d8a4c6e65c1856ba4fcc3d529773b27308a66985604f4953b6ca99",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Render one single full-screen authentic 2560x1440 16:9 widescreen PC screenshot of a redesigned French rugby management game's “Nouvelle carrière” page for OVAL LEGACY 27. Desktop UI at 80% zoom, pulled back, comfortably high information density, like a restrained editorial sports database or professional sports management simulator. A mature sober visual evolution of the existing Oval Legacy art direction: graphite charcoal #151b1e, dark slate-green ink #121c1d, a little olive, dirty ivory #eee8d8 text, old brass #b89b62 only for the active marker and understated action accents. ABSOLUTELY NO neon green, no acid lime, no saturated button, no glossy mobile game, no heroic oversized text, no pill shapes, no rounded bubbly cards. Square or 3px-radius edges, thin lines, readable restrained warm Barlow Condensed headings and neutral readable sans for content. Screen flush to edges, 32px gutters, no device mockup, no diptych, no margins outside the UI. Compact horizontal top rail: OVAL LEGACY 27 existing white understated wordmark at far left, discreet “01 Réalité   02 Club   03 Carrière” with small brass underline on Club. Under it a shallow 130px wide stadium banner at dusk, naturally atmospheric muted photo on the right, gradient into ink at left, small kicker “VOTRE PREMIÈRE SAISON”, title “Choisir son club” 40px max. Then full-width compact horizontal filter controls “France”, “Angleterre”, “Japon”, “International” with small flags, second row of narrow divisions including “Élite”, “Accession”, “Fédérale”. Central aligned full width content split 39:61. Left: one continuous editorial dossier with muted natural photo of an actual rugby stadium, left-aligned club name “Toulouse Capitole XV” and a restrained fictional maroon crest, tightly set three stats in a row “75,0 Note moyenne”, “34 Avants”, “27 Trois-quarts”, two precise lines “Objectif du conseil”, “Trésorerie simulée”, and small two-column line of roster strengths and needs. Right: a grid of ALL 14 clubs over THREE columns and FIVE rows, consistent horizontal tiles with small crest, French fictional club name and city, fine separators, small arrow, subtle brass vertical mark on selected tile. Medium restrained heading “Clubs du championnat”, note small text. Let main panels breathe without leaving any huge empty region, use panel height for real information, aligned content ends, compact bottom action bar with muted brass cream CTA “Prendre les rênes →”. Real and tactile, editorial, elegant, clear game hierarchy. At normal scale the typography looks like a PC management app, no text size over 40px."
+    },
+    {
+      "id": "maquette-reality-banner",
+      "file": "maquette-reality-banner.png",
+      "source": "exec-02e5fc75-6be3-4438-b310-a9ad1c63e43b.png",
+      "sourceType": "mockup",
+      "source_sha256": "4e139ea1c49cf02516d35ce1b817d98e8f1fa288011125664799bd8bc20429bf",
+      "crop": [
+        542,
+        52,
+        1130,
+        147
+      ],
+      "width": 1130,
+      "height": 147,
+      "bytes": 389292,
+      "sha256": "b1ff5db0086cdab25c1368a424b169a63465c1b2367852e10adc516e42aceffa",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Render a single 16:9 2560x1440 screenshot design reference of a sober premium French rugby management PC game OVAL LEGACY 27, page “Choisir sa réalité”. Pull back the camera/UI scale to 80%, authentic Football Manager-class PC UI with precise type and compact controls, no mobile look. Existing Oval Legacy graphite #151b1e, slate bottle green #121c1d, antique ivory #eee8d8, modest desaturated brass #b89b62. No lime, no flashy saturated highlights, no toy graphics, no rounded pills, no monumental text. Thin rules, architectural columns, shallow banner at dusk with muted real rugby photo on right and title max 40px on left, a low horizontal rail above with small wordmark and “01 Réalité / 02 Club / 03 Carrière”. Under the masthead, tight toolbar with “Retour”, “Importer une autre réalité”, “Atelier calendrier”. Then two tightly composed cards side-by-side with square edges spanning the content width in 38:62 ratio: base game editorial card on left, installed Rugby Réel card right. Images of rugby grounds integrated into both with subdued natural colors, not overly dark. Left shows “Jeu de base”, small “Identités fictives”, stat row “116 Clubs” and “5 878 Joueurs”, subtle outlined action. Right shows “Rugby Réel”, small “Pack actif”, beautiful muted stadium with mountains, three compact inline stats “116 Clubs”, “5 884 Joueurs”, “11 Compétitions”, additional compact text rows for portraits, staff and stadiums. Prominent but restrained matte brass “Nouvelle carrière →” underneath the installed pack card, right-aligned within the panel. Bottom footer compact. Clean mature treatment, fit at once on a desktop with comfortably legible neutral sans; restrained visual hierarchy and edge-to-edge desktop composition, no outer margins or device mockup."
+    },
+    {
+      "id": "maquette-reality-base",
+      "file": "maquette-reality-base.png",
+      "source": "exec-02e5fc75-6be3-4438-b310-a9ad1c63e43b.png",
+      "sourceType": "mockup",
+      "source_sha256": "4e139ea1c49cf02516d35ce1b817d98e8f1fa288011125664799bd8bc20429bf",
+      "crop": [
+        36,
+        283,
+        592,
+        218
+      ],
+      "width": 592,
+      "height": 218,
+      "bytes": 295468,
+      "sha256": "51579f0bba93b29fe0e40ada8e13ce3be964e49a3005a53b3091f78a11d2035b",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Render a single 16:9 2560x1440 screenshot design reference of a sober premium French rugby management PC game OVAL LEGACY 27, page “Choisir sa réalité”. Pull back the camera/UI scale to 80%, authentic Football Manager-class PC UI with precise type and compact controls, no mobile look. Existing Oval Legacy graphite #151b1e, slate bottle green #121c1d, antique ivory #eee8d8, modest desaturated brass #b89b62. No lime, no flashy saturated highlights, no toy graphics, no rounded pills, no monumental text. Thin rules, architectural columns, shallow banner at dusk with muted real rugby photo on right and title max 40px on left, a low horizontal rail above with small wordmark and “01 Réalité / 02 Club / 03 Carrière”. Under the masthead, tight toolbar with “Retour”, “Importer une autre réalité”, “Atelier calendrier”. Then two tightly composed cards side-by-side with square edges spanning the content width in 38:62 ratio: base game editorial card on left, installed Rugby Réel card right. Images of rugby grounds integrated into both with subdued natural colors, not overly dark. Left shows “Jeu de base”, small “Identités fictives”, stat row “116 Clubs” and “5 878 Joueurs”, subtle outlined action. Right shows “Rugby Réel”, small “Pack actif”, beautiful muted stadium with mountains, three compact inline stats “116 Clubs”, “5 884 Joueurs”, “11 Compétitions”, additional compact text rows for portraits, staff and stadiums. Prominent but restrained matte brass “Nouvelle carrière →” underneath the installed pack card, right-aligned within the panel. Bottom footer compact. Clean mature treatment, fit at once on a desktop with comfortably legible neutral sans; restrained visual hierarchy and edge-to-edge desktop composition, no outer margins or device mockup."
+    },
+    {
+      "id": "maquette-reality-pack",
+      "file": "maquette-reality-pack.png",
+      "source": "exec-02e5fc75-6be3-4438-b310-a9ad1c63e43b.png",
+      "sourceType": "mockup",
+      "source_sha256": "4e139ea1c49cf02516d35ce1b817d98e8f1fa288011125664799bd8bc20429bf",
+      "crop": [
+        645,
+        283,
+        992,
+        218
+      ],
+      "width": 992,
+      "height": 218,
+      "bytes": 500005,
+      "sha256": "d10dc6011a7602d31858766c335e1f761be9d8143fd307b82d11b196f28d05dc",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Render a single 16:9 2560x1440 screenshot design reference of a sober premium French rugby management PC game OVAL LEGACY 27, page “Choisir sa réalité”. Pull back the camera/UI scale to 80%, authentic Football Manager-class PC UI with precise type and compact controls, no mobile look. Existing Oval Legacy graphite #151b1e, slate bottle green #121c1d, antique ivory #eee8d8, modest desaturated brass #b89b62. No lime, no flashy saturated highlights, no toy graphics, no rounded pills, no monumental text. Thin rules, architectural columns, shallow banner at dusk with muted real rugby photo on right and title max 40px on left, a low horizontal rail above with small wordmark and “01 Réalité / 02 Club / 03 Carrière”. Under the masthead, tight toolbar with “Retour”, “Importer une autre réalité”, “Atelier calendrier”. Then two tightly composed cards side-by-side with square edges spanning the content width in 38:62 ratio: base game editorial card on left, installed Rugby Réel card right. Images of rugby grounds integrated into both with subdued natural colors, not overly dark. Left shows “Jeu de base”, small “Identités fictives”, stat row “116 Clubs” and “5 878 Joueurs”, subtle outlined action. Right shows “Rugby Réel”, small “Pack actif”, beautiful muted stadium with mountains, three compact inline stats “116 Clubs”, “5 884 Joueurs”, “11 Compétitions”, additional compact text rows for portraits, staff and stadiums. Prominent but restrained matte brass “Nouvelle carrière →” underneath the installed pack card, right-aligned within the panel. Bottom footer compact. Clean mature treatment, fit at once on a desktop with comfortably legible neutral sans; restrained visual hierarchy and edge-to-edge desktop composition, no outer margins or device mockup."
+    },
+    {
+      "id": "maquette-reality-wordmark",
+      "file": "maquette-reality-wordmark.png",
+      "source": "exec-02e5fc75-6be3-4438-b310-a9ad1c63e43b.png",
+      "sourceType": "mockup",
+      "source_sha256": "4e139ea1c49cf02516d35ce1b817d98e8f1fa288011125664799bd8bc20429bf",
+      "crop": [
+        45,
+        12,
+        191,
+        27
+      ],
+      "width": 191,
+      "height": 27,
+      "bytes": 11250,
+      "sha256": "e5d0d98357248969d26d88f70918e85f9a84eeaec27e857fd78fd4b7143b93b6",
+      "synthetic": true,
+      "tool": "built-in image_gen",
+      "prompt": "Render a single 16:9 2560x1440 screenshot design reference of a sober premium French rugby management PC game OVAL LEGACY 27, page “Choisir sa réalité”. Pull back the camera/UI scale to 80%, authentic Football Manager-class PC UI with precise type and compact controls, no mobile look. Existing Oval Legacy graphite #151b1e, slate bottle green #121c1d, antique ivory #eee8d8, modest desaturated brass #b89b62. No lime, no flashy saturated highlights, no toy graphics, no rounded pills, no monumental text. Thin rules, architectural columns, shallow banner at dusk with muted real rugby photo on right and title max 40px on left, a low horizontal rail above with small wordmark and “01 Réalité / 02 Club / 03 Carrière”. Under the masthead, tight toolbar with “Retour”, “Importer une autre réalité”, “Atelier calendrier”. Then two tightly composed cards side-by-side with square edges spanning the content width in 38:62 ratio: base game editorial card on left, installed Rugby Réel card right. Images of rugby grounds integrated into both with subdued natural colors, not overly dark. Left shows “Jeu de base”, small “Identités fictives”, stat row “116 Clubs” and “5 878 Joueurs”, subtle outlined action. Right shows “Rugby Réel”, small “Pack actif”, beautiful muted stadium with mountains, three compact inline stats “116 Clubs”, “5 884 Joueurs”, “11 Compétitions”, additional compact text rows for portraits, staff and stadiums. Prominent but restrained matte brass “Nouvelle carrière →” underneath the installed pack card, right-aligned within the panel. Bottom footer compact. Clean mature treatment, fit at once on a desktop with comfortably legible neutral sans; restrained visual hierarchy and edge-to-edge desktop composition, no outer margins or device mockup."
     }
   ]
 }

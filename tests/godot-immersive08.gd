@@ -112,8 +112,9 @@ func entry() -> void:
 	await click(packs)
 	await settle()
 	check(app.route=="Packs" and app.pack_manager.scope=="creation" and app.find_child("CarnetPacks",true,false)!=null,"L’atelier des identités conserve le gestionnaire de packs de création")
-	var guide := app.find_child("EntryPackGuide",true,false) as Control
-	check(guide!=null and guide.find_children("Art_*","TextureRect",true,false).size()==3,"L’atelier vide montre trois exemples originaux et le parcours d’import")
+	var base_art := app.find_child("Art_maquette_reality_base",true,false) as TextureRect
+	var import_art := app.find_child("Art_match_tunnel",true,false) as TextureRect
+	check(base_art!=null and base_art.texture!=null and import_art!=null and import_art.texture!=null and app.find_child("PackNewCareer",true,false)==null,"L’atelier vide montre le jeu de base et le parcours d’import")
 	await capture("08-packs-2560x1440")
 	app.pack_manager.back()
 	await settle()

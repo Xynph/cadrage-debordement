@@ -1,29 +1,46 @@
 extends RefCounted
 
 const C = preload("res://ui/immersive08/components.gd")
-const INK = Color("131d1e")
-const PANEL = Color("192526")
-const LINE = Color("62716b")
-const BRASS = Color("c5ac78")
+const INK = Color("121c1e")
+const PANEL = Color("172223")
+const LINE = Color("75817c")
+const BRASS = Color("c5a76e")
+static var _sans_heading: FontVariation
+
+static func sans_bold() -> Font:
+	if _sans_heading == null:
+		_sans_heading = FontVariation.new()
+		_sans_heading.base_font = C.BODY
+		_sans_heading.variation_embolden = .44
+	return _sans_heading
+
+static func sans_heading(text: String, size: int) -> Label:
+	var label := C.wrap(text, size, C.IVORY)
+	label.add_theme_font_override("font", sans_bold())
+	return label
 
 static func surface(node: PanelContainer, fill: Color = PANEL, border: Color = LINE, padding: int = 16) -> void:
 	node.set_meta("immersive_style_applied", true)
-	node.add_theme_stylebox_override("panel", C.box(fill, border, 3, padding))
+	var style := C.box(fill, border, 0, padding)
+	style.set_corner_radius_all(0)
+	node.add_theme_stylebox_override("panel", style)
 
 static func action(button: Button, primary: bool = false, selected: bool = false, height: int = 42, tile: bool = false) -> void:
 	button.set_meta("immersive_style_applied", true)
 	button.custom_minimum_size.y = height
 	button.add_theme_font_override("font", C.BOLD if primary else C.DISPLAY)
 	button.add_theme_font_size_override("font_size", maxi(14, C.px(24 if primary else 21)))
-	var normal := BRASS if primary else (Color("333b31") if selected else PANEL)
+	var normal := BRASS if primary else (Color("414334") if selected else PANEL)
 	var outline := BRASS if primary or selected else LINE
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		var background := normal
 		if state == "hover": background = normal.lightened(.09)
 		if state == "pressed": background = normal.darkened(.13)
 		if state == "disabled": background = INK
-		var style := C.box(background, outline if state != "disabled" else LINE, 3, 8)
+		var style := C.box(background, outline if state != "disabled" else LINE, 0, 10)
+		style.set_corner_radius_all(0)
 		if selected and tile: style.border_width_left = 4
+		if selected and not tile: style.border_width_bottom = 2
 		button.add_theme_stylebox_override(state, style)
 	var focus := C.box(Color.TRANSPARENT, C.IVORY, 3, 0)
 	focus.set_border_width_all(2)

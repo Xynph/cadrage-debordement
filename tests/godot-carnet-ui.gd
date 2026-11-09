@@ -206,7 +206,7 @@ func reading_actions() -> void:
 	check(packs_button != null and packs_button.is_visible_in_tree(),"Accès personnalisé aux packs visible dans les paramètres")
 	await press("Importez un pack personnalisé")
 	check(app.route=="Packs" and app.pack_manager.scope=="career","Paramètres ouvrent les packs de carrière")
-	await press("IMPORTER UN PACK ZIP")
+	await press("Importer une autre réalité")
 	check(app.pack_manager.picker.visible,"Vrai dialogue ZIP accessible")
 	for list in app.pack_manager.picker.find_children("*","ItemList",true,false):
 		if list.is_visible_in_tree():

@@ -5,3 +5,4 @@ Extraction de photographies décoratives : aucun écran complet ne sert d’inte
 Les personnes et lieux représentés sont fictifs. Les photos/noms de packs privés restent prioritaires.
 Le manifeste conserve pour chaque extrait le fichier source, son SHA-256, le rectangle et l’empreinte de sortie.
 Les sources de conception sont conservées dans CD/output/oval-legacy-27/direction-b.
+Les fichiers maquette-* reprennent les panoramas et les signatures des deux visuels IA de création approuvés le 9 novembre 2026. Le manifeste indique leurs sources et rectangles exacts.

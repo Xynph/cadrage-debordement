@@ -22,10 +22,10 @@ for(const a of [...manifest.assets,...generated]){
  assert.equal(data.readUInt32BE(16),a.width);assert.equal(data.readUInt32BE(20),a.height);
  assert.equal(crypto.createHash('sha256').update(data).digest('hex'),a.sha256,'Empreinte '+a.id);
  assert.equal(data.length,a.bytes);assert.ok(a.width>=24&&a.height>=24);if(a.sourceType!=='generated')sources.add(a.source);
- if(a.sourceType==='generated')assert.ok(a.prompt?.length>100&&a.tool==='built-in image_gen','Prompt et outil conservés pour les nouvelles images');
+ if(['generated','mockup'].includes(a.sourceType))assert.ok(a.prompt?.length>100&&a.tool==='built-in image_gen','Prompt et outil conservés pour les nouvelles images');
 }
-assert.equal(sources.size,11,'Les onze propositions contribuent à la bibliothèque finale');
-console.log(`Illustrations immersive08 : ${manifest.assets.length+generated.length} PNG vérifiés, onze références, empreintes et provenance.`);
+assert.equal(sources.size,13,'Les deux nouvelles maquettes complètent les onze références précédentes');
+console.log(`Illustrations immersive08 : ${manifest.assets.length+generated.length} PNG vérifiés, treize références, empreintes et provenance.`);
 if(process.argv.includes('--art-only'))process.exit(0);
 const {spawnSync}=require('node:child_process'),os=require('node:os');
 const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;

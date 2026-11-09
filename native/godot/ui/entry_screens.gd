@@ -142,6 +142,12 @@ const CREATION_COUNTRIES := {
 	"JP": ["Japon", preload("res://art/flags/jp.svg")],
 	"international": ["International", null],
 }
+const CREATION_COUNTRY_SCOPES := {
+	"FR": "Championnats de France",
+	"GB": "Championnats d’Angleterre",
+	"JP": "Championnats du Japon",
+	"international": "Championnats internationaux",
+}
 
 # Format joué par le moteur du Monde complet pour la première saison.
 const CREATION_FORMATS := {
@@ -200,7 +206,7 @@ static func _competition_identity(app: Control, id: String) -> Dictionary:
 static func _competition_summary(app: Control, parent: VBoxContainer, division: String, club_count: int, photo_height: float) -> void:
 	var identity := _competition_identity(app, division)
 	var title := str(identity.get("name", Club.competition_name(division)))
-	var illustration := C.photo("trophy", Vector2.ZERO, true, .39)
+	var illustration := C.photo("maquette-club-stadium", Vector2.ZERO, true, .5)
 	illustration.custom_minimum_size.y = photo_height
 	parent.add_child(illustration)
 	var row := C.h(14)
@@ -227,27 +233,30 @@ static func _competition_summary(app: Control, parent: VBoxContainer, division: 
 static func _rating(roster: Dictionary) -> String:
 	return String.num(float(roster.get("average", 0)), 1).replace(".", ",")
 
-static func _club_preview(parent: VBoxContainer, club: Dictionary, photo_height: float) -> void:
-	var photo := _cover(club)
+static func _club_preview(parent: VBoxContainer, club: Dictionary, photo_height: float, base_identity: bool) -> void:
+	var illustration := base_identity and int(club.id) == 0
+	var photo: Control = C.photo("maquette-club-stadium", Vector2.ZERO, true, .5) if illustration else _cover(club)
 	photo.name = "CreationStadium"
 	photo.custom_minimum_size.y = photo_height
 	parent.add_child(photo)
 	var identity := C.h(18)
 	parent.add_child(identity)
-	identity.add_child(G.crest(club, C.px(98)))
+	identity.add_child(G.crest(club, C.px(125)))
+	Editorial.divider(identity)
 	var copy := C.v(2)
 	G.fill(copy)
 	identity.add_child(copy)
-	var title := C.wrap(G.club_name(club), 42, C.IVORY, true, 700)
+	var title := C.wrap(G.club_name(club), 48, C.IVORY, true, 700)
 	title.name = "CreationClubTitle"
 	copy.add_child(title)
-	copy.add_child(C.wrap(str(club.get("stadium", "")), 23))
+	copy.add_child(C.wrap("%s  ·  %s" % [_territory(club), club.get("stadium", "")], 21))
+	if illustration: copy.add_child(C.wrap("Illustration de stade", 17))
 	var roster: Dictionary = club.get("startingRoster", {})
 	if not roster.is_empty():
-		parent.add_child(C.rule())
+		copy.add_child(C.rule())
 		var metrics := C.h(18)
 		metrics.name = "CreationRosterSummary"
-		parent.add_child(metrics)
+		copy.add_child(metrics)
 		Editorial.fact(metrics, _rating(roster), "Note moyenne")
 		Editorial.divider(metrics)
 		Editorial.fact(metrics, roster.get("forwards", 0), "Avants")
@@ -262,6 +271,7 @@ static func _club_preview(parent: VBoxContainer, club: Dictionary, photo_height:
 		var balance := C.h(18)
 		parent.add_child(balance)
 		for item in [["POINTS FORTS", "strengths"], ["BESOINS PRIORITAIRES", "needs"]]:
+			if item[1] == "needs": Editorial.divider(balance)
 			var column := C.v(3)
 			C.fill(column)
 			balance.add_child(column)
@@ -274,6 +284,7 @@ static func _dossier_line(parent: Container, caption: String, detail: String) ->
 	var title := C.label(caption, 23, C.IVORY)
 	title.custom_minimum_size.x = C.px(190)
 	line.add_child(title)
+	Editorial.divider(line)
 	var value := C.wrap(detail, 22)
 	C.fill(value)
 	line.add_child(value)
@@ -300,6 +311,7 @@ static func creation(app: Control) -> Control:
 	G.fill(title)
 	top.add_child(title)
 	var mode: String = app.pack_manager.mode("creation")
+	var preferred: String = app.pack_manager.selected_id("creation")
 	var champ := mode == "world-champ"
 	var nationale := champ or mode == "world-nationale"
 	var japan := nationale or mode == "world-japan"
@@ -350,13 +362,13 @@ static func creation(app: Control) -> Control:
 	var is_champ := champ and division == "champ"
 	if modern:
 		var panel := G.panel(row, 0.39)
-		Editorial.surface(panel.get_parent(), Editorial.PANEL, Editorial.LINE, 15)
+		Editorial.surface(panel.get_parent(), Editorial.PANEL, Editorial.LINE, 13)
 		var preview := G.scroll(panel)
 		preview.get_parent().name = "CreationPreviewScroll"
 		preview.add_theme_constant_override("separation", C.px(12))
-		var photo_height := clampf(screen.y * .235, 155, 338)
+		var photo_height := clampf(screen.y * .225, 138, 318)
 		if selected.is_empty(): _competition_summary(app, preview, division, division_clubs.size(), photo_height)
-		else: _club_preview(preview, selected, photo_height)
+		else: _club_preview(preview, selected, photo_height, preferred == "base")
 	else:
 		var photo := _cover(selected)
 		G.fill(photo, true, 0.95)
@@ -388,7 +400,6 @@ static func creation(app: Control) -> Control:
 	else:
 		G.chapter(list,"01","Prendre les rênes","Choisissez les identités puis votre club.",app.accent)
 	var installed: Array = app.pack_manager.installed("creation")
-	var preferred: String = app.pack_manager.selected_id("creation")
 	var pack_name := "JEU DE BASE"
 	for pack: Dictionary in installed:
 		if str(pack.get("id", "")) == preferred:
@@ -416,13 +427,12 @@ static func creation(app: Control) -> Control:
 		Editorial.action(import_button, false, false, 34)
 	var filters: Container = list
 	if modern:
-		filters = C.h(20) if screen.x >= 1480 else C.v(9)
+		filters = C.v(5)
 		page.add_child(filters)
 	if countries.size() > 1:
 		var tabs := G.h(8)
 		tabs.name = "CreationCountries"
 		filters.add_child(tabs)
-		if modern: C.fill(tabs, false, .56)
 		var groups := countries.keys()
 		groups.sort()
 		for group: String in groups:
@@ -445,9 +455,23 @@ static func creation(app: Control) -> Control:
 			tabs.add_child(tab)
 	var divisions := G.h(8)
 	if modern:
-		if filters is HBoxContainer and countries.size() > 1: Editorial.divider(filters)
-		C.fill(divisions, false, .44)
-	filters.add_child(divisions)
+		var scope := PanelContainer.new()
+		Editorial.surface(scope, Editorial.PANEL, Editorial.LINE, 9)
+		var scope_style := scope.get_theme_stylebox("panel") as StyleBoxFlat
+		scope_style.border_width_left = maxi(3, C.px(4))
+		scope_style.border_color = Editorial.BRASS
+		filters.add_child(scope)
+		var competition_row := C.h(15)
+		scope.add_child(competition_row)
+		var country_heading := C.label(CREATION_COUNTRY_SCOPES.get(country, "Championnats"), 25, C.IVORY, true, 700)
+		country_heading.name = "CreationChampionshipsScope"
+		country_heading.custom_minimum_size.x = C.px(305)
+		country_heading.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		competition_row.add_child(country_heading)
+		Editorial.divider(competition_row)
+		competition_row.add_child(C.fill(divisions))
+	else:
+		filters.add_child(divisions)
 	for item: Array in divisions_data:
 		var members: Array = clubs.filter(func(club: Dictionary): return club.division == item[0])
 		if members.is_empty(): continue
@@ -464,7 +488,7 @@ static func creation(app: Control) -> Control:
 		b.disabled = app.waiting
 		G.fill(b)
 		if modern:
-			Editorial.action(b, false, app.club_division == item[0], maxi(32, C.px(47)))
+			Editorial.action(b, false, app.club_division == item[0], maxi(31, C.px(41)))
 		elif app.club_division == item[0]: G.selected(b, app.accent)
 		divisions.add_child(b)
 	if modern:
@@ -472,7 +496,7 @@ static func creation(app: Control) -> Control:
 		page.add_child(row)
 		var intro := C.h(12)
 		list.add_child(intro)
-		intro.add_child(C.label("Clubs du championnat", 34, C.IVORY, true, 700))
+		intro.add_child(C.label("CLUBS DU CHAMPIONNAT", 36, C.IVORY, true, 700))
 		Editorial.divider(intro)
 		var identity := _competition_identity(app, division)
 		var logo := str(identity.get("logoPath", ""))
@@ -516,7 +540,7 @@ static func creation(app: Control) -> Control:
 	G.fill(grid)
 	items.add_child(grid)
 	var grid_rows := ceili(float(division_clubs.size()) / grid.columns)
-	var modern_tile_height := clampi(floori((screen.y * .66 - 119) / grid_rows), 64, 153)
+	var modern_tile_height := clampi(floori((screen.y * .66 - (148 if screen.x >= 1480 else 173)) / grid_rows), 60, 148)
 	for club in division_clubs.slice(bounds.x,bounds.y):
 		var b := G.button("", func(): _select_club(app, int(club.id), modern))
 		b.custom_minimum_size.y = clampf(app.get_viewport_rect().size.y * 0.045, 52.0, 66.0) if is_srp else (44.0 if is_japan or is_nationale or is_champ else 52.0)
@@ -560,6 +584,7 @@ static func creation(app: Control) -> Control:
 	var world_info := "%s joueurs · %d clubs jouables" % [G.n(database.get("playerCount", 0)), playable.size()]
 	if not modern: list.add_child(G.wrap(world_info, 12))
 	var caption := "CHOISISSEZ UN CLUB" if selected.is_empty() else "PRENDRE LES RÊNES DE " + G.club_abbr(selected) + "  →"
+	if modern: caption = "Choisissez un club" if selected.is_empty() else "Prendre les rênes  →"
 	var start := G.button(caption, func():
 		if not selected.is_empty(): _create(app, selected, mode), true)
 	start.name="CreationStart"
