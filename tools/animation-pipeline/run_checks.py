@@ -95,13 +95,15 @@ def run(args):
             env[name] = str(proof / 'runtime' / name.lower())
             Path(env[name]).mkdir(parents=True)
     env['PYTHON'] = sys.executable
+    env['PYTHONUTF8'] = '1'
+    env['PYTHONIOENCODING'] = 'utf-8'
 
     def phase(name, command, validate=None, extra_env=None):
         start = time.monotonic()
         row = {'name': name, 'status': 'fail', 'requested': True, 'command': list(map(str, command))}
         try:
             process = subprocess.run(row['command'], cwd=ROOT, env={**env, **(extra_env or {})},
-                                     capture_output=True, text=True, timeout=args.timeout)
+                                     capture_output=True, encoding='utf-8', errors='backslashreplace', timeout=args.timeout)
             (proof / f'{name}.stdout.log').write_text(process.stdout, encoding='utf-8')
             (proof / f'{name}.stderr.log').write_text(process.stderr, encoding='utf-8')
             row['exit_code'] = process.returncode
@@ -250,4 +252,6 @@ def main():
 
 
 if __name__ == '__main__':
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
     sys.exit(main())

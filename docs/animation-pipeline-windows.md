@@ -1,6 +1,14 @@
 # Réception Windows — chaîne d’animation Blender → Godot
 
-Cette recette est destinée à **Codex PC sur Windows**, après les contrôles techniques Cloud. Elle décrit du travail à exécuter ; elle ne constitue pas une réception Windows déjà effectuée. Aucun changement de Gabi n’est inclus. Effort GPT‑6.1 Sol : **Élevé** pour la chaîne et les diagnostics ; **Moyen** pour exécuter une recette déjà stabilisée.
+Cette recette permet de rejouer sous Windows les contrôles de la chaîne d’animation. Effort recommandé sur GPT‑6.1 Sol **Élevé** pour diagnostiquer un écart, **Moyen** pour rejouer la recette.
+
+## Réception du compactage sur le PC, 9 novembre 2026
+
+Le [premier candidat de la PR #427](https://github.com/Xynph/cadrage-debordement/pull/427#issuecomment-6747969746) avait 4 031 sommets. Le contrôle Godot de silhouettes attend 3 981 sommets et refusait ce candidat. Après restauration des normales, l’exporteur retire maintenant 32 doublons dans Skin, 6 dans Hair2 et 12 dans Hair. Il compare les octets de chaque attribut, réindexe les coins dans leur ordre d’origine et refuse une correspondance ambiguë ou une face dont la fusion répéterait un nouvel indice. Le fichier source garde son empreinte `7fd28255c484e19ba5086d9cf815128e21dfcb677d262a88b237a5f5af081c5f`.
+
+Deux exports Blender 4.3.2 Windows avec l’amont fixé ont donné `08f920e159ca97a8cd5d6ce2d945152a774e084b035df437da907b08afea5fd6`. Cette empreinte identifie aussi le prototype utilisé pour la comparaison précédente sur RTX 4080 SUPER. Avec Godot 4.7.2 et Node 22, le candidat régénéré passe les cinq suites Match3D, les dix phases du lanceur et les 81 contrôles du lecteur. La comparaison de peau couvre 3 981 sommets, 1 854 faces, 11 clips et 110 poses. Les poses denses à 21 échantillons par clip et leurs témoins passent également. L’inventaire et le lanceur produisent de l’UTF‑8 même lorsque le processus Windows démarre avec une page de codes différente.
+
+L’EXE de contrôle 0.7.8 contenant ce GLB, extrait de son ZIP local, charge le modèle de carrière et quitte avec le code 0 sur un profil isolé. Une seconde compilation, avec le seul script de recette remplacé dans la copie de test, exerce le match avec le même GLB et le moteur embarqué. Le renderer Windows sur RTX 4080 SUPER affiche 30 joueurs et les trois caméras. Pendant les 9,87 s mesurées de pause, l’horloge et les 961 transformations des joueurs, des os et du ballon restent fixes. La reprise fait passer l’horloge de la minute 5 à la minute 10. La recette change ensuite la qualité, termine le match et lance la rencontre suivante. Les deux compilations restent des paquets de contrôle. La validation de Blender 5.2 et la CI de la nouvelle tête sont distinctes de ce reçu Windows.
 
 ## Périmètre et preuves à conserver
 
