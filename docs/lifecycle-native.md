@@ -22,7 +22,7 @@ Après le changement réel de saison, le staff avance une fois. Si un moteur his
 
 ## Identités et portraits
 
-`media-packs.project` parcourt l'ensemble du modèle, dont `clubLife.staffCareer`, et traite `identity.id` avec les identifiants source. Après cette projection, `staff.applyCareerPresentation` aplatit uniquement le nom et les champs de portrait présentés vers le membre/candidat : l'UI qui lit `person.name` reçoit la même identité que celle de l'annuaire. Cela fonctionne même si un libellé de référence a été nettoyé pour respecter les caractères autorisés des sauvegardes. Les IDs de commande ne changent pas. Les packs ne modifient pas les noms anonymisés persistés ni les compétences/contrats.
+`media-packs.project` parcourt l'ensemble du modèle, dont `clubLife.staffCareer`, et traite `identity.id` avec les identifiants source. Après cette projection, `staff.applyCareerPresentation` aplatit uniquement le nom, le libellé de rôle et les champs de portrait présentés vers le membre/candidat : l'UI qui lit `person.name` reçoit la même identité que celle de l'annuaire. Cela fonctionne même si un libellé de référence a été nettoyé pour respecter les caractères autorisés des sauvegardes. Les IDs de commande ne changent pas. Les packs ne modifient pas les noms anonymisés persistés ni les compétences/contrats.
 
 ## Réception ciblée
 
@@ -30,4 +30,15 @@ Les tests `tests/lifecycle-native.cjs` couvrent nouvelles carrières sur cinq mo
 
 `tests/staff-packs.cjs` conserve sa recette v1/v2, portraits, bascule/reprise, corruption et refus ; les recherches d'identité de référence acceptent maintenant `sourceStaffId` pour les nouveaux membres dynamiques, avec assertions supplémentaires sur l'ID de commande et l'identité projetée dans `clubLife`.
 
-La recette manuelle de deux transitions natives réelles est exécutée et consignée séparément après ce commit ; elle n'est pas présentée comme reçue avant son verdict. Les tests VM du domaine seuls ne remplacent pas cette preuve de raccordement au moteur. Aucun profil personnel ou média privé n'est utilisé.
+La recette manuelle de deux transitions natives réelles a réussi : 2 × 34 semaines, 2 × 433 résultats, trois réouvertures exactes, 545 puis 548 membres âgés exactement d’un an et trois reconversions par transition. Le reçu et les empreintes des sources réellement exécutées figurent dans `lifecycle-native-reception-20261109.md`. Les tests VM du domaine seuls ne remplacent pas cette preuve de raccordement au moteur. Aucun profil personnel ou média privé n'est utilisé.
+
+
+## Interface et portraits gratuits
+
+Les commandes staff sont disponibles dans Staff : annuaire des clubs, recherche, candidats, archives et pagination de vingt profils. Recrutements et prolongations fixent une durée ; libérations et retraites demandent confirmation. Les contrats et mouvements sont réellement persistés. Les anciennes carrières proposent une activation explicite. Le panneau des besoins de recrutement présente la population persistante et son activation conjointe avec le staff.
+
+Les portraits fournis par un pack restent prioritaires, y compris une identité source imbriquée d’ancien joueur reconverti. À défaut, le jeu compose localement des portraits à partir de 48 visages fictifs IA prégénérés. Aucun réseau, abonnement, clé ou facturation à l’usage. Les variations et le vieillissement restent illustratifs ; des ressemblances sont possibles. Les aperçus du club et les deux versions de l’annuaire utilisent ce même rendu.
+
+Réception Godot 4.7.2 Linux X11/Mesa : 39 contrôles réels réussis sur 1280×800, 1440×900 et 1920×1080, avec signatures, prolongation, libération, identité source officielle prioritaire et conservation état/RNG/disque pendant la navigation. 379 contrôles graphiques distincts qualifient les portraits et les variations visibles sur une même cellule source. Le poste utilise un écran virtuel et une voix TTS factice locale pour initialiser les API ; aucune synthèse audible ni recette Windows n’est revendiquée.
+
+Quatre fixtures de capacité réellement importées avec le staff actif conservent les limites existantes : pool généré World 11 347 791 octets / 16 Mio, Champ 21 544 857 / 24 Mio ; pool de professionnels source libérés avec douze historiques chacun World 12 503 075 / 16 Mio et Champ 23 754 693 / 24 Mio. Ce sont des fixtures de taille, sans prétendre avoir joué douze années sur ces états.

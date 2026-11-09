@@ -199,11 +199,14 @@ static func _pack_texture(path: String) -> Texture2D:
 
 static func portrait(index: int, width: int = 60, player: Dictionary = {}) -> TextureRect:
 	var r := TextureRect.new()
-	var path := str(player.get("portraitPath", ""))
+	var identity_data: Dictionary = player.get("identity", {})
+	var path := str(player.get("portraitPath", identity_data.get("portraitPath", "")))
 	var texture := _pack_texture(path)
 	if texture != null:
 		r.texture = texture
-		r.tooltip_text = "Illustration IA · ressemblance non garantie" if player.get("portraitStatus", "") == "synthetic" else "Photo officielle · archive fournie par le pack"
+		r.tooltip_text = "Illustration IA · ressemblance non garantie" if player.get("portraitStatus", identity_data.get("portraitStatus", "")) == "synthetic" else "Photo officielle · archive fournie par le pack"
+	elif not str(player.get("id", "")).is_empty() and preload("res://ui/regen_portrait.gd").apply(r, player):
+		r.tooltip_text = "Portrait fictif · éléments IA composés hors ligne" if path.is_empty() else "Image du pack indisponible · portrait fictif composé hors ligne"
 	else:
 		var atlas := AtlasTexture.new()
 		index = posmod(index, 32)

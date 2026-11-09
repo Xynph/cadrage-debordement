@@ -17,10 +17,10 @@ const nationaleGeometry = require('../native/engine/nationale-calendar-2026-27.j
 function setup({phase='quarter', competition='champ', version=5, enabled=true, seed=827381}={}) {
   const h = context(seed, {source: file => fs.readFileSync(path.join(repo, 'dist', file), 'utf8')});
   Object.assign(h.ctx, {geometry, nationaleGeometry, phase, competition, version, enabled});
-  h.run(`start(0);
+  h.run(`const CDWorldCareer={active(s){return [1,2,3,4,5].includes(s?.worldMode?.version)}};
+    start(0);
     const C=(${champRules.toString()})(geometry);
     const N=(${nationaleRules.toString()})(nationaleGeometry);
-    const CDWorldCareer={active(s){return [1,2,3,4,5].includes(s?.worldMode?.version)}};
     const CDWorldKnockout=(${sharedKnockout.toString()})();
     const CDWorldNationaleMatch=(${nationaleMatch.toString()})(N);
     const CDWorldChampMatch=(${champFactory.toString()})(C);
@@ -116,7 +116,9 @@ test('Mort subite au point 4 avec un tir de chaque côté et preuve de terrain',
 });
 
 test('Relecture du match réel à partir de JSON dans les deux périodes', () => {
-  const h=setup({phase:'relegation',seed:73});
+  // Native v2 initializer consumes RNG for population: seed42 reaches real extra time.
+  const h=setup({phase:'relegation',seed:42});
+  assert.equal(h.run('S.aiRosterVersion'),2,'exercise real current population setup');
   h.run(`let reloads=0;
     for(let i=0;i<150&&!l.finished;i++){
       l.paused=false;advanceRugby(l);

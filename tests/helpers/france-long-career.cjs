@@ -67,7 +67,11 @@ function runSeasons(h,first,last){
  return measures;
 }
 function assertCheckpoint(h,fixture){
- assert.deepEqual(JSON.parse(h.run('JSON.stringify(createSaveDocument())')),fixture.checkpoint.save,'S6 exactement égale au checkpoint de la campagne continue');
+ const actual=JSON.parse(h.run('JSON.stringify(createSaveDocument())'));
+ // Fail with bounded hashes before formatting a potentially huge object diff.
+ // The full-state equality and independent RNG assertion remain mandatory.
+ assert.equal(digest(actual),digest(fixture.checkpoint.save),'Empreinte SHA256 du checkpoint S6 différente');
+ assert.deepEqual(actual,fixture.checkpoint.save,'S6 exactement égale au checkpoint de la campagne continue');
  assert.equal(h.seed(),fixture.checkpoint.rng,'curseur RNG S6 de la campagne continue');
 }
 function assertFinal(h,fixture){

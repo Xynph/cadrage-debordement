@@ -7,7 +7,12 @@ const {context}=require('./france-harness.cjs'),{createBridge}=require('../nativ
 const projection=require('../native/engine/model.cjs');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-godot-final-fixes-'));
 let serial=0;
-function harness(club=29){const h=context();h.run(`const nativeModel=${projection.toString()};start(${club},'france');`);return h;}
+function harness(club=29){const h=context();h.run(`const nativeModel=${projection.toString()};
+ // Historical v1 fixture: preserve its real RNG/calendar baseline, not new v2 pools.
+ const fixtureBaseAiSetup=aiRosterSetup;
+ aiRosterSetup=function(){const result=fixtureBaseAiSetup();if(S?.aiRoster){S.aiRosterVersion=1;S.aiRoster.version=1;delete S.aiRoster.population;}return result;};
+ start(${club},'france');`);assert.equal(h.run('S.aiRosterVersion'),1);assert.equal(h.run('S.aiRoster.population'),undefined);return h;}
+
 function capture(h){h.run('if(S.live)syncMatchPresentation(S.live);validateCareer(S)');return {model:JSON.parse(h.run('JSON.stringify(nativeModel())')),text:h.run('JSON.stringify(createSaveDocument())')};}
 function advance(h,n){h.run(`S.live.paused=false;for(let i=0;i<${n};i++)advanceRugby(S.live);pauseMatch();`);}
 function incident(slots){const h=harness();h.run('beginMatch()');for(const slot of slots)assert.equal(h.run(`giveMatchCard(S.live,S.live.userSide,S.live.sheets[S.live.userSide].on[${slot}],'red20')`),true);return h;}

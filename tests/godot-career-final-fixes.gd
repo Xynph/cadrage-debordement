@@ -104,6 +104,30 @@ func _clocks() -> void:
 		_check(app.match_screen.clock.text == pair[1], "Actual native clock state " + pair[0] + " displays " + pair[1])
 		_check(app.match_screen.stage._paused == pair[2], "Actual renderer motion follows current pause state: " + pair[0])
 
+func _current_office(model: Dictionary) -> void:
+	var hero: Node = app.body.find_child("OfficeFixture", true, false)
+	_check(hero != null, "Current immersive office emits actual fixture controls")
+	if hero == null: return
+	var texts: Array[String] = []
+	for label in _labels(hero): texts.append(label.text)
+	var venue := hero.find_child("OfficeFixtureVenue", true, false) as Label
+	var neutral: bool = model.next.neutral
+	var location_ok: bool
+	if neutral: location_ok = texts.has("NEUTRE")
+	elif model.next.home.id == model.club.id: location_ok = texts.has("À DOMICILE")
+	else: location_ok = texts.has("EXTÉRIEUR") or texts.has("À L’EXTÉRIEUR")
+	_check(location_ok, "Current responsive office emits actual fixture location")
+	var explicit_venue: String = str(model.next.get("venue", ""))
+	if neutral and explicit_venue.is_empty():
+		_check(venue == null, "Unspecified neutral venue never claims the home stadium")
+	elif not neutral:
+		_check(venue != null and venue.text == str(model.next.home.presentation.stadium), "Current office emits actual home stadium")
+	var honest_art := false
+	for image in hero.find_children("*", "TextureRect", true, false):
+		if image.has_meta("immersive_art"):
+			honest_art = image.texture != null and image.tooltip_text == "Illustration originale fictive générée par IA"
+	_check(honest_art or hero.find_child("OfficeTerritoryPreviews", true, false) != null, "Current office identifies generic artwork or club territory photographs")
+
 func _offices() -> void:
 	for dimensions in [Vector2i(1440,900),Vector2i(1920,1080)]:
 		root.size = dimensions
@@ -111,8 +135,16 @@ func _offices() -> void:
 			app.model = model
 			app._navigate("Bureau")
 			for i in 5: await process_frame
+			_current_office(model)
+			# Exercise the retained classic renderer separately: its atlas/photo contract
+			# must not be imposed on the current immersive route's generic artwork.
+			var classic := VBoxContainer.new()
+			root.add_child(classic)
+			classic.size = Vector2(dimensions.x, 600)
+			preload("res://ui/office_view.gd")._fixture(classic, app)
+			for i in 5: await process_frame
 			var texts: Array[String] = []
-			for label in _labels(app.body): texts.append(label.text)
+			for label in _labels(classic): texts.append(label.text)
 			var text := "\n".join(texts)
 			var neutral: bool = model.next.neutral
 			var stadium: String = model.next.home.presentation.stadium
@@ -121,13 +153,14 @@ func _offices() -> void:
 				_check(not text.contains(stadium) and text.contains("Territoire du club"), "Neutral venue does not claim the home club stadium and identifies the photo")
 			var image_path: String = "res://assets/club-atlas/%s-%s.webp" % [model.club.presentation.slug if neutral else model.next.home.presentation.slug,"city" if neutral else "stadium"]
 			var found := false
-			for image in app.body.find_children("*", "TextureRect", true, false):
+			for image in classic.find_children("*", "TextureRect", true, false):
 				if image.texture != null and image.texture.resource_path == image_path: found = true
 			_check(found, "Office uses honest territory or actual home-stadium photograph")
 			var client := Rect2(Vector2.ZERO, root.get_visible_rect().size)
-			for label in _labels(app.body):
+			for label in _labels(classic):
 				if label.text.contains("Terrain neutre") or label.text == stadium:
 					_check(client.encloses(label.get_global_rect()) and label.get_minimum_size().x <= label.size.x + 1, "Venue caption remains visible at " + str(dimensions))
+			classic.queue_free()
 			if DisplayServer.get_name() != "headless":
 				await RenderingServer.frame_post_draw
 				root.get_texture().get_image().save_png(OS.get_environment("CD_GODOT_DATA_DIR").path_join("office-%s-%s-%d.png" % [model.next.leagueId,model.next.phase,dimensions.x]))

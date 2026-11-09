@@ -1,6 +1,23 @@
 extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
 
+static func population(app: Control, parent: Container) -> void:
+	var data: Dictionary = app.model.get("meta", {}).get("population", {})
+	if data.is_empty(): return
+	var card := G.card(parent)
+	card.name = "PopulationOverview"
+	card.add_child(G.section("Le vivier de joueurs"))
+	if data.get("active", false):
+		card.add_child(G.wrap("Sorties des centres de formation et jeunes issus de petits clubs rejoignent durablement le recrutement.", 13))
+		if data.get("knownAccessible") != null: card.add_child(G.wrap("%s joueurs en activité ou disponibles dans le monde simulé." % G.n(data.knownAccessible), 12))
+	elif data.get("canEnable", false):
+		card.add_child(G.wrap("Votre ancienne partie peut adopter le renouvellement durable des effectifs et les carrières du staff. Les joueurs actuels sont conservés.", 13))
+		var activate := G.button("ACTIVER LE RENOUVELLEMENT", func():
+			var payload := {"confirmed":true,"context":{"season":int(app.model.meta.season),"week":int(app.model.meta.get("week", app.model.meta.get("round", 0))),"club":int(app.model.club.id)}}
+			app.confirm("Renouveler les effectifs", "Les prochains départs seront compensés par les centres de formation et le vivier de petits clubs. Les carrières du staff seront également activées, avec des âges estimés lorsque les sources manquent. Confirmer ?", func(): app._command("population_enable", payload)))
+		activate.name = "EnablePopulation"
+		card.add_child(activate)
+
 static func dossier_summary(app: Control, parent: Container) -> void:
 	var data: Variant = app.model.get("decisions", {}).get("preparation")
 	if not data is Dictionary: return
@@ -156,6 +173,7 @@ static func recruitment(app: Control) -> void:
 	var needs := G.v(6)
 	needs.name = "Besoins"
 	tabs.add_child(needs)
+	population(app, needs)
 	var missions := G.v(6)
 	missions.name = "Missions"
 	tabs.add_child(missions)

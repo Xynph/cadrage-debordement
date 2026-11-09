@@ -11,7 +11,10 @@ try{
  const initial=JSON.parse(good('export').meta.exportText),candidate=initial.state.market[0],cash=m.club.cash;
  // Pin this explicit available-player fixture as the normal watch list would,
  // so a weekly market refresh cannot remove every match for this mission.
- initial.state.economy.freeAgents.push({...candidate,contractEnd:null});good('import',{text:signed(initial)});
+ const pinned=initial.state.economy.freeAgents.find(p=>p.id===candidate.id);
+ if(pinned)assert.deepEqual(pinned,candidate,'V2 market and free-agent entries remain canonical');
+ else initial.state.economy.freeAgents.push({...candidate,contractEnd:null});
+ good('import',{text:signed(initial)});
  m=good('scout_mission',{family:candidate.fam,maxAge:40,budget:10000000,maxWage:100000,confirmed:true});
  assert.equal(m.club.cash,cash-5000,'Coût natif inchangé');assert.equal(m.decisions.recruitment.missions[0].remaining,2);
  for(let i=0;i<2;i++){good('begin_match');good('delegate');m=good('finish_round');}

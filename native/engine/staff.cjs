@@ -105,7 +105,7 @@ function project(model){
 }
 function applyCareerPresentation(model){
  const career=model.clubLife?.staffCareer;if(!career?.active)return model;
- const person=p=>{const identity=p?.identity;if(!identity)return;p.personState='career';for(const key of ['name','portraitPath','portraitStatus','identityStatus'])if(identity[key]!==undefined)p[key]=identity[key];if(p.portraitStatus===undefined)p.portraitStatus='anonymous';};
+ const person=p=>{const identity=p?.identity;if(!identity)return;p.personState='career';for(const key of ['name','portraitPath','portraitStatus','identityStatus'])if(identity[key]!==undefined)p[key]=identity[key];if(identity.role!==undefined)p.roleLabel=identity.role;if(p.portraitStatus===undefined)p.portraitStatus='anonymous';};
  for(const team of model.staff?.teams||[])for(const p of team.members)person(p);
  for(const team of career.teams||[])for(const p of team.members)person(p);
  for(const list of [career.candidates,career.market])for(const p of list||[])person(p);

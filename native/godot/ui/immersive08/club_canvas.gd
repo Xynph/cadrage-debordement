@@ -314,17 +314,12 @@ static func _staff(card: Panel, app: Control) -> void:
 	for i in mini(4, people.size()):
 		var person: Dictionary = people[i]
 		var y := 67 + i * 75
-		var path := str(person.get("portraitPath",""))
-		if not path.is_empty() and G._pack_texture(path) != null:
-			var portrait := G.portrait(0, C.px(82), person)
-			card.add_child(portrait)
-			D.place(portrait, Rect2(18,y,82,65))
-		else:
-			D.rect(card, Rect2(18,y,82,65), Color("24322e"), 4)
-			U.icon(card, "people", Vector2(39,y+11), C.MUTED, 41)
-		D.text(card, 116, y+24, person.get("role","Encadrement"), 22, C.MUTED, 500, 390)
+		var portrait := G.portrait(0, C.px(82), person)
+		card.add_child(portrait)
+		D.place(portrait, Rect2(18,y,82,65))
+		D.text(card, 116, y+24, person.get("roleLabel",person.get("role","Encadrement")), 22, C.MUTED, 500, 390)
 		D.text(card, 116, y+54, person.get("name","—"), 28, C.IVORY, 700, 407)
-		D.text(card, 685, y+39, "Archive" if person.get("historical",false) else "Référence", 20, C.GOLD, 500, 128, HORIZONTAL_ALIGNMENT_RIGHT)
+		D.text(card, 685, y+39, "Carrière" if person.get("personState", "") == "career" else "Archive" if person.get("historical",false) else "Référence", 20, C.GOLD, 500, 128, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.line(card, Vector2(18,y+69), Vector2(690,y+69), Color(C.LINE,.62))
 	if people.is_empty():
 		D.text(card, 24, 119, "Annuaire indisponible pour cette carrière", 28, C.IVORY, 700, 660)
