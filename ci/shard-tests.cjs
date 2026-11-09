@@ -77,12 +77,16 @@ function planShards(files, weights = WEIGHTS_SECONDS) {
   return shards.map(g => g.files.sort(lexical));
 }
 if (require.main === module) {
-  if (process.argv.length !== 3 || !/^[1-5]$/.test(process.argv[2])) {
-    console.error('Usage : node ci/shard-tests.cjs <1|2|3|4|5>');
+  const [, , shard, coverage = 'full'] = process.argv;
+  if (process.argv.length > 4 || !/^[1-5]$/.test(shard)) {
+    console.error('Usage : node ci/shard-tests.cjs <1|2|3|4|5> [full|web|native-art]');
     process.exitCode = 2;
   } else {
     try {
-      for (const file of planShards(allTestFiles())[Number(process.argv[2]) - 1])
+      const { suitesForCoverage } = require('./test-coverage.cjs');
+      const suites = suitesForCoverage(coverage, allTestFiles());
+      if (suites.length < 5) throw Error('Il faut au moins une suite par shard');
+      for (const file of planShards(suites)[Number(shard) - 1])
         console.log(file);
     } catch (error) {
       console.error(error.message);

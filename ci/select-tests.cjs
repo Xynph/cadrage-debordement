@@ -1,7 +1,6 @@
 'use strict';
 
-// Sélection conservatrice pour les commits de développement.
-// Les pull requests et main exécutent TOUJOURS toutes les suites.
+// Sélection de développement. La politique des pull requests est dans test-coverage.cjs.
 const fs=require('node:fs');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');

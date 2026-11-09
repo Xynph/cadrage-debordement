@@ -1,7 +1,6 @@
 name: V61 calendrier conseil et objectifs
 on:
-  pull_request:
-    branches: [main]
+  # La suite est déjà incluse dans les cinq shards JavaScript complets.
   workflow_dispatch:
 permissions:
   contents: read
