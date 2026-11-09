@@ -243,7 +243,7 @@ static func _selected(card:Panel,app:Control) -> void:
 		D.text(card,209,137,"Choisissez un joueur qualifié.",24,C.MUTED,600,369)
 		D.button(card,Rect2(20,311,558,33),"Choisir un joueur",func():_candidates(app,app.selected_slot),false,"arrow",true,app.accent,"TacticsChoosePlayer")
 		return
-	if not str(player.get("portraitPath","")).is_empty():
+	if not str(player.get("id","")).is_empty():
 		var image:=G.portrait(int(player.get("portraitIndex",0)),C.px(170),player);card.add_child(image);D.place(image,Rect2(20,75,170,213))
 	else:D.photo(card,"squad-portrait",Rect2(20,75,170,213))
 	D.text(card,209,104,str(player.name).to_upper(),34,C.IVORY,700,369)

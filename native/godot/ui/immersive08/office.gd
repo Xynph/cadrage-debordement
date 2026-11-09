@@ -300,7 +300,7 @@ static func _recruitment(parent: VBoxContainer, app: Control) -> void:
 		var player: Dictionary = market[0]
 		var row := C.h(14)
 		parent.add_child(row)
-		row.add_child(G.portrait(int(player.get("portraitIndex", 0)), C.px(125), player) if not str(player.get("portraitPath", "")).is_empty() else C.photo("recruit-profile", Vector2(125, 125)))
+		row.add_child(G.portrait(int(player.get("portraitIndex", 0)), C.px(125), player) if not str(player.get("id", "")).is_empty() else C.photo("recruit-profile", Vector2(125, 125)))
 		var identity := C.v(6)
 		C.fill(identity)
 		row.add_child(identity)

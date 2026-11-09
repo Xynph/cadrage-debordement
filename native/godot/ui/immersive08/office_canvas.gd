@@ -203,7 +203,7 @@ static func _recruitment(card: Panel, app: Control) -> void:
 	var market: Array = app.model.get("market",[]).duplicate()
 	market.sort_custom(func(a:Dictionary,b:Dictionary):return float(a.get("rating",0))>float(b.get("rating",0)))
 	var player: Dictionary = market[0] if not market.is_empty() else {}
-	if not str(player.get("portraitPath","")).is_empty():
+	if not str(player.get("id","")).is_empty():
 		var portrait := G.portrait(int(player.get("portraitIndex",0)),C.px(133),player)
 		card.add_child(portrait)
 		D.place(portrait,Rect2(22,74,133,117))

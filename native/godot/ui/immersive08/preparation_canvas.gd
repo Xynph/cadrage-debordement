@@ -283,7 +283,11 @@ func _threats(section: Control) -> void:
 	for i in mini(3, threats.size()):
 		var p: Dictionary = threats[i]
 		var y := 69 + i * 77
-		D.photo(panel, "player-%02d" % posmod(str(p.get("name", "")).hash(), 16), Rect2(20, y + 3, 72, 64))
+		if not str(p.get("id","")).is_empty():
+			var portrait := G.portrait(0,0,p)
+			portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			panel.add_child(portrait);D.place(portrait,Rect2(20,y+3,72,64))
+		else: D.photo(panel, "player-%02d" % posmod(str(p.get("name", "")).hash(), 16), Rect2(20, y + 3, 72, 64))
 		D.text(panel, 111, y + 29, p.get("name", "Joueur"), 28, C.IVORY, 700, 740)
 		D.text(panel, 111, y + 56, "%s  ·  %s" % [p.get("pos", ""), p.get("role", "")], 22, C.MUTED, 500, 740)
 		D.line(panel, Vector2(20, y + 73), Vector2(863, y + 73), Color(C.LINE, .67))

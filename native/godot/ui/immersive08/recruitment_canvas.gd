@@ -537,7 +537,7 @@ static func _badge(parent: Node, area: Rect2, caption: String, tint: Color) -> v
 	D.text(frame, area.size.x / 2, area.size.y / 2 + 7, caption, 22, Color("091a11") if filled else tint, 700, area.size.x - 10, HORIZONTAL_ALIGNMENT_CENTER)
 
 static func _portrait(parent: Node, area: Rect2, player: Dictionary, player_id: String, full: bool = false) -> void:
-	if str(player.get("portraitPath", "")).is_empty():
+	if str(player.get("id", "")).is_empty():
 		D.photo(parent, "recruit-profile" if full else "player-%02d" % posmod(player_id.hash(), 16), area)
 		return
 	var photo := G.portrait(0, C.px(minf(area.size.x, area.size.y)), player)

@@ -64,7 +64,7 @@ static func build(app:Control,player:Dictionary) -> Control:
 	var page:=Control.new();page.name="ImmersivePlayerFull";page.custom_minimum_size=Vector2(2248,1236)*C.density;C.fill(page,true)
 	var hero:=D.panel(page,Rect2(0,0,2248,350),"","","","FullPlayerHero")
 	var portrait: TextureRect
-	if not str(player.get("portraitPath","")).is_empty():
+	if not str(player.get("id","")).is_empty():
 		portrait = G.portrait(int(player.get("portraitIndex",0)),0,player)
 	else:
 		portrait = C.photo("player-hero",Vector2.ZERO,false)
