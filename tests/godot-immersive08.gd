@@ -497,7 +497,13 @@ func reception() -> void:
 	check(app.route == "Réception" and list != null, "La Réception ouvre un écran propre")
 	if list == null: return
 	check(list.get_child_count() == app.model.messages.size(), "Chaque message reçu du moteur est consultable")
-	check(app.find_child("Art_mail_staff", true, false) != null, "Illustration de la Réception chargée en jeu")
+	var portrait := app.find_child("Art_mail_staff", true, false) as TextureRect
+	check(portrait != null, "Illustration de la Réception chargée en jeu")
+	if portrait != null:
+		var crop := portrait.texture as AtlasTexture
+		check(crop!=null and crop.atlas.resource_path.ends_with("mail-staff.png") and crop.region.size.y>=177.0 and absf(portrait.size.x-523.0)<1.0,"Le bandeau garde le portrait original à sa proportion approuvée")
+		var pitch := app.find_child("Art_mail_pitch",true,false) as TextureRect
+		check(pitch!=null and pitch.texture!=null and absf(pitch.get_global_rect().end.x-portrait.get_global_rect().position.x)<1.0,"La scène originale d’entraînement rejoint le portrait sans espace")
 	await capture("05-reception-2560x1440")
 	var first: Button = list.get_child(0)
 	var original: String = first.get_meta("message_text")

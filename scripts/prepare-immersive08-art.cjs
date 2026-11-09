@@ -10,6 +10,7 @@ const recipes=[
  ['forest','01-bureau.png',[0,795,230,146]],
  ['approved-club-crest','01-bureau.png',[48,119,145,169]],
  ['mail-staff','02-reception.png',[1320,148,340,178]],
+ ['mail-pitch','02-reception.png',[938,225,382,101]],
  ['mail-trainer','02-reception.png',[489,214,57,58]],
  ['mail-medical','02-reception.png',[489,295,57,58]],
  ['mail-direction','02-reception.png',[490,596,52,55]],

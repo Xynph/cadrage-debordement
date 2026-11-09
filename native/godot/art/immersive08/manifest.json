@@ -89,6 +89,23 @@
       "synthetic": true
     },
     {
+      "id": "mail-pitch",
+      "file": "mail-pitch.png",
+      "source": "02-reception.png",
+      "source_sha256": "d54d17438ee3cdbd5851e32879d576b849fad0ca9850ec0d74916d942f0ed665",
+      "crop": [
+        938,
+        225,
+        382,
+        101
+      ],
+      "width": 382,
+      "height": 101,
+      "bytes": 85800,
+      "sha256": "12e2566a5f2dba4d680bbdd08f8a5c81d2fd6f4746341b366880652ce95a9167",
+      "synthetic": true
+    },
+    {
       "id": "mail-trainer",
       "file": "mail-trainer.png",
       "source": "02-reception.png",

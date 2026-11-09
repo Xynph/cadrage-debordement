@@ -197,7 +197,13 @@ static func workspace(app: Control, page: Control, creation: bool) -> Control:
 	C.fill(inset,true)
 	column.add_child(inset)
 	inset.add_child(page)
-	if creation: _illustrate_preview(page)
+	if creation:
+		# Le bandeau de création encadre les modes entre les boutons Accueil et Packs.
+		var actions := page.get_child(0).find_children("*","Button",false,false)
+		if actions.size() >= 2:
+			actions.front().name = "CreationBackHome"
+			actions.back().name = "CreationManagePacks"
+		_illustrate_preview(page)
 	Legacy.apply(page,GREEN if not app.model.get("club") is Dictionary else app.accent)
 	if creation:
 		_fit_pagination(page)

@@ -174,12 +174,17 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 static func _detail(card: Panel, app: Control, state: Dictionary, message: Dictionary) -> void:
 	card.clip_contents = true
 	var category: String = message.get("category","Club")
-	var photo := "medical-recovery" if category=="Médical" else "mail-staff"
-	D.photo(card,photo,Rect2(438,1,726,274))
-	var fade := Control.new()
-	card.add_child(fade)
-	D.place(fade,Rect2(0,0,797,276))
-	C.veil(fade)
+	if category=="Médical":
+		D.photo(card,"medical-recovery",Rect2(438,1,726,274))
+		_art_fade(card,Rect2(0,0,797,276))
+	else:
+		D.photo(card,"mail-pitch",Rect2(53,120,588,155))
+		_art_fade(card,Rect2(53,120,135,155))
+		_art_fade(card,Rect2(53,120,588,57),false)
+		D.photo(card,"mail-staff",Rect2(641,1,523,274))
+		var blend := _art_fade(card,Rect2(641,1,154,274))
+		blend.fill_from = Vector2(0,.23)
+		blend.fill_to = Vector2(.25,.59)
 	D.rect(card,Rect2(24,30,6,71),C.GOLD,3)
 	D.text(card,52,68,category.to_upper(),39,C.IVORY,800,780)
 	_icon(card,ICONS[category],Rect2(53,87,27,27),COLORS[category])
@@ -216,6 +221,15 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	D.line(card,Vector2(26,1026),Vector2(1138,1026),C.LINE)
 	D.text(card,35,1064,"HISTORIQUE DU COURRIER",26,C.IVORY,700,1040)
 	D.text(card,35,1100,"Consultez les messages du journal dans leur ordre de réception.",21,C.MUTED,500,1080)
+
+static func _art_fade(parent: Node, area: Rect2, horizontal: bool = true) -> GradientTexture2D:
+	var fade := Control.new()
+	fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(fade)
+	D.place(fade,area)
+	var overlay := C.veil(fade,horizontal)
+	overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	return overlay.texture as GradientTexture2D
 
 static func _actions(card: Panel, app: Control, state: Dictionary, message: Dictionary) -> void:
 	var mark: Dictionary = state.marks.get(message.id,{})
