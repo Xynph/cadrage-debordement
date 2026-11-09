@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 108">
+ <path d="M10 12h76l-3 59c-5 14-15 23-35 32C28 94 18 85 13 71z" fill="#1a2227" stroke="#4f6b93" stroke-width="4"/>
+ <path d="M17 18h62l-3 49c-2 6-5 11-9 16H29c-4-5-7-10-9-16z" fill="#4f6b93" opacity=".68"/>
+ <g stroke="#efe2c1" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" fill="none"><path d="M19 72c15-24 20-37 27-49l14 7-7 11 17 18-8 7-12-8-11 14z"/><circle cx="51" cy="34" r="2.5" fill="#ebdcbb" stroke="none"/></g>
+ <text x="48" y="90" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="#efe2c1">CPX</text></svg>

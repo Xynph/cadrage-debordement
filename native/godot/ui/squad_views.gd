@@ -543,6 +543,13 @@ static func lineup(app:Control) -> Control:
 	var errors:Array=selection.get("errors",[])
 	if errors.is_empty():side.add_child(G.label("FEUILLE VALIDE",12,G.GOOD))
 	else:side.add_child(G.wrap("\n".join(errors),12,G.ALERT))
+	var licences: Dictionary = selection.get("nationaleQualification", {})
+	if not licences.is_empty():
+		var bloc := G.wrap("FFR  ·  4 licences B/C dont 1 C maximum  ·  %d à vérifier" % int(licences.unverified), 11, G.MUTED)
+		bloc.name = "NationaleLicenceNotice"
+		var note: Dictionary = licences.get("notice", {})
+		bloc.tooltip_text = str(note.get("summary", "")) + "\n" + str(note.get("detail", ""))
+		side.add_child(bloc)
 	var auto:=G.button("SÉLECTION AUTOMATIQUE DU STAFF",func():app._command("auto_lineup"))
 	auto.name="LineupAutomatic"
 	auto.disabled=not app._live().is_empty()
