@@ -3,7 +3,7 @@
 // FFR arts. 454–455 and rule 8. Keep the shared 2 × 10 minute clock and its
 // restarts, with an edition-specific decision and evidence after both periods.
 module.exports = function nationaleMatchFactory(rules) {
-  const edition = 'rugby-world-2026-11-09-nationale-v4';
+  const editions = {4:'rugby-world-2026-11-09-nationale-v4',5:'rugby-world-2026-11-09-champ-v5'};
   const phases = ['barrage', 'semi', 'final'];
   const sportKeys = ['score', 'tries', 'goals', 'goalAttempts', 'conversions', 'conversionAttempts'];
   const fail = (valid, reason) => { if (!valid) throw Error('Nationale — ' + reason + '.'); };
@@ -17,7 +17,7 @@ module.exports = function nationaleMatchFactory(rules) {
   const isFixture = f => f?.competitionId === 'nationale' && phases.includes(f.phase);
 
   function applies(l, s = S) {
-    return isFixture(l?.worldContext) && s?.worldMode?.version === 4 && s.commonDatabase?.id === edition &&
+    return isFixture(l?.worldContext) && [4,5].includes(s?.worldMode?.version) && s.commonDatabase?.id === editions[s.worldMode.version] &&
       typeof CDWorldCareer !== 'undefined' && CDWorldCareer.active(s) === true;
   }
 

@@ -3,7 +3,7 @@
 // Article 7 of the 2026-27 League One manual. The existing match clock,
 // teams and action recorder stay responsible for the played rugby.
 module.exports = function japanMatchFactory(rules) {
-  const editions = {3:'rugby-world-2026-11-09-japan-v3',4:'rugby-world-2026-11-09-nationale-v4'};
+  const editions = {3:'rugby-world-2026-11-09-japan-v3',4:'rugby-world-2026-11-09-nationale-v4',5:'rugby-world-2026-11-09-champ-v5'};
   const cause = 'jlo-golden';
   const sportKeys = ['score','tries','goals','goalAttempts','conversions','conversionAttempts'];
   const check = (ok,reason) => { if (!ok) throw Error('League One — ' + reason); };

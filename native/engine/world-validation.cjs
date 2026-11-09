@@ -26,6 +26,9 @@ module.exports=function worldValidation(){
   check(winner!==null&&eq(tally,q.score)&&r.winner===r.pair[winner],'résultat des tirs incohérent.');
  }
  function result(r,f,live=null){
+  const champ=typeof CDWorldChampMatch!=='undefined'&&CDWorldChampMatch.isFixture(f);
+  check(r.champExtra===undefined||champ,'preuve Champ hors de sa compétition.');
+  if(champ)return CDWorldChampMatch.validateResult(r,f,live);
   const japan=typeof CDWorldJapanMatch!=='undefined'&&CDWorldJapanMatch.isFixture(f);
   const nationale=typeof CDWorldNationaleMatch!=='undefined'&&CDWorldNationaleMatch.isFixture(f);
   check(r.nationaleExtra===undefined||nationale,'preuve Nationale hors de sa competition.');
@@ -48,6 +51,9 @@ module.exports=function worldValidation(){
  }
  function live(l,f){
   check(!!f&&eq(l.worldContext,f)&&eq(l.pair,[f.homeId,f.awayId])&&l.franceContext===undefined,'match en cours hors calendrier.');
+  const champ=typeof CDWorldChampMatch!=='undefined'&&CDWorldChampMatch.isFixture(f);
+  check(l.champExtra===undefined||champ,'preuve Champ hors de sa compétition.');
+  if(champ)return CDWorldChampMatch.validateLive(l,f);
   const japan=typeof CDWorldJapanMatch!=='undefined'&&CDWorldJapanMatch.isFixture(f);
   const nationale=typeof CDWorldNationaleMatch!=='undefined'&&CDWorldNationaleMatch.isFixture(f);
   check(l.nationaleExtra===undefined||nationale,'preuve Nationale hors de sa competition.');
