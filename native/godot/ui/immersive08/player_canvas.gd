@@ -2,11 +2,23 @@ extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
+const P = preload("res://ui/immersive08/projection.gd")
 const Tactics = preload("res://ui/immersive08/tactics_canvas.gd")
 const Training = preload("res://ui/immersive08/training_canvas.gd")
 const Notes = preload("res://ui/coach_notes_view.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
+
+class ConditionDial extends Control:
+	var condition := 0.0
+	var ink := C.MINT
+
+	func _draw() -> void:
+		var radius := size.x * .43
+		var width := maxf(1, C.px(7))
+		draw_arc(size * .5, radius, -PI * .5, PI * 1.5, 64, C.LINE, width, true)
+		if condition > 0:
+			draw_arc(size * .5, radius, -PI * .5, -PI * .5 + TAU * condition / 100.0, 64, ink, width, true)
 
 class PositionPitch extends Control:
 	const MARKS = [Vector2(.25,.14), Vector2(.5,.14), Vector2(.75,.14), Vector2(.38,.27), Vector2(.62,.27),
@@ -61,15 +73,31 @@ static func build(app:Control,player:Dictionary) -> Control:
 	# Le portrait occupe aussi la marge à gauche des onglets.
 	D.place(portrait,Rect2(1,1,469,429))
 	hero.tooltip_text = portrait.tooltip_text
-	var number:=G.n(player.shirtNumber) if player.get("shirtNumber")!=null else "—"
+	var shirt_number: Variant = player.get("shirtNumber")
+	var number := G.n(shirt_number) if shirt_number != null else "—"
 	var shirt := _slanted_badge(hero,Rect2(510,41,140,102),Color("102724"),Color(C.IVORY,.78))
+	shirt.mouse_filter = Control.MOUSE_FILTER_PASS
+	shirt.tooltip_text = "Numéro sur la feuille de match" if shirt_number != null else "Aucun numéro sur la feuille de match"
 	ClubUI.italic(D.text(shirt,70,82,number,82,C.IVORY,800,110,HORIZONTAL_ALIGNMENT_CENTER),800).name="FullPlayerNumber"
 	var heading:=ClubUI.italic(D.text(hero,668,123,str(player.name).to_upper(),88,C.IVORY,800,1030),800)
 	heading.name="ProfilePlayerName"
 	D.text(hero,671,180,str(player.pos).to_upper(),39,C.GOLD,700,1020)
-	D.text(hero,671,231,G.n(player.get("age","—"))+" ans  ·  Saison "+G.n(app.model.meta.get("season",1))+"  ·  "+str(player.get("status","")),31,C.IVORY,500,1020)
-	D.chip(hero,Rect2(670,263,210,46),"Blessé" if float(player.get("injury",0))>0 else "Disponible",C.ALERT if float(player.get("injury",0))>0 else C.MINT)
-	D.chip(hero,Rect2(894,263,220,46),str(player.get("status","Effectif")),C.GOLD)
+	D.text(hero,671,231,G.n(player.get("age","—"))+" ans  ·  Saison "+G.n(app.model.meta.get("season",1)),31,C.IVORY,500,1020)
+	var injury := float(player.get("injury", 0))
+	var recovering := injury <= 0 and P.player_in_recovery(app.model, str(player.id))
+	var availability := "Disponible"
+	var availability_color := C.MINT
+	if injury > 0:
+		availability = "Indisponible"
+		availability_color = C.ALERT
+	elif recovering:
+		availability = "En reprise"
+		availability_color = C.AMBER
+	var selection := "Hors groupe"
+	if shirt_number != null:
+		selection = "Titulaire" if int(shirt_number) <= 15 else "Remplaçant"
+	D.chip(hero, Rect2(670,263,210,46), availability, availability_color).name = "PlayerHeroAvailability"
+	D.chip(hero, Rect2(894,263,220,46), selection, C.AMBER).name = "PlayerHeroSelection"
 	var rating := _slanted_badge(hero,Rect2(1710,43,236,160),Color("0a5735"),Color(C.MINT,.7))
 	ClubUI.italic(D.text(rating,118,129,G.n(player.get("rating","—")),132,C.IVORY,800,218,HORIZONTAL_ALIGNMENT_CENTER),800)
 	ClubUI.italic(D.text(hero,2084,151,G.n(player.get("potential","—")),98,C.IVORY,800,235,HORIZONTAL_ALIGNMENT_CENTER),800)
@@ -95,20 +123,20 @@ static func build(app:Control,player:Dictionary) -> Control:
 		0:
 			_position(D.panel(page,Rect2(0,430,480,520),"POSTE PRINCIPAL","tactic"),app,player)
 			_attributes(D.panel(page,Rect2(496,430,1174,520),"PROFIL DE PERFORMANCE","star"),app,player)
-			_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player)
+			_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
 			_usage(D.panel(page,Rect2(0,966,1670,270),"PERFORMANCES DE LA SAISON","trophy"),app,player)
 			_contract(D.panel(page,Rect2(1686,966,562,270),"CONTRAT","money"),app,player)
 		1:
 			_attributes(D.panel(page,Rect2(0,430,1174,520),"LES APTITUDES DU JOUEUR","star"),app,player)
 			_position(D.panel(page,Rect2(1190,430,480,520),"POSTE PRINCIPAL","tactic"),app,player)
-			_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player)
+			_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
 		2:
 			_usage(D.panel(page,Rect2(0,430,1670,270),"PERFORMANCES DE LA SAISON","trophy"),app,player)
 			_development(D.panel(page,Rect2(0,716,1670,420),"BILANS DU JOUEUR","calendar"),app,player)
-			_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player)
+			_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
 		3:
 			_contract(D.panel(page,Rect2(0,430,850,270),"CONTRAT ET NÉGOCIATION","money"),app,player)
-			_health(D.panel(page,Rect2(866,430,562,520),"CHARGE INDIVIDUELLE","heart"),app,player)
+			_health(D.panel(page,Rect2(866,430,562,520),"CHARGE INDIVIDUELLE","heart"),app,player,injury,recovering)
 			D.photo(page,"hospitality",Rect2(1444,430,804,520))
 		4:
 			_development(D.panel(page,Rect2(0,430,1670,550),"DÉVELOPPEMENT ET PROGRESSION","school"),app,player)
@@ -177,15 +205,25 @@ static func _attributes(card:Panel,app:Control,player:Dictionary) -> void:
 			number.name="PlayerAttribute_"+str(pair[0])
 			D.line(card,Vector2(x+10,y+13),Vector2(x+213,y+13),Color(C.LINE,.45))
 
-static func _health(card:Panel,app:Control,player:Dictionary) -> void:
-	D.text(card,24,112,G.n(player.get("condition",0))+" %",62,C.MINT,700,240)
-	D.text(card,24,149,"CONDITION PHYSIQUE",22,C.MUTED,500,240)
-	D.text(card,300,112,G.n(player.get("physicalLoad",0)),62,C.GOLD,700,235)
-	D.text(card,300,149,"FATIGUE",22,C.MUTED,500,235)
-	D.bar(card,Rect2(24,171,514,8),float(player.get("condition",0)))
-	var injury: float = player.get("injury",0)
-	var medical: Array = app.model.get("clubLife",{}).get("clubSupport",{}).get("medical",{}).get("players",[])
-	var recovering := medical.any(func(record: Dictionary): return record.get("id")==player.id and record.get("stage")=="reprise")
+static func _health(card:Panel,app:Control,player:Dictionary,injury:float,recovering:bool) -> void:
+	var condition := clampf(float(player.get("condition", 0)), 0, 100)
+	var condition_color := C.AMBER if condition < 85 else C.MINT
+	var dial := ConditionDial.new()
+	dial.name = "PlayerConditionDial"
+	dial.condition = condition
+	dial.ink = condition_color
+	dial.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(dial)
+	D.place(dial, Rect2(23,68,86,86))
+	var pulse := C.icon("heart", 38, condition_color)
+	dial.add_child(pulse)
+	D.place(pulse, Rect2(24,24,38,38))
+	D.text(card,123,112,G.n(condition)+" %",62,condition_color,700,180)
+	D.text(card,123,149,"CONDITION PHYSIQUE",22,C.MUTED,500,180)
+	D.line(card,Vector2(319,70),Vector2(319,154))
+	D.text(card,348,112,G.n(player.get("physicalLoad",0)),62,C.GOLD,700,190)
+	D.text(card,348,149,"FATIGUE",22,C.MUTED,500,190)
+	D.line(card,Vector2(24,175),Vector2(538,175))
 	var available := "Disponible pour le groupe"
 	if injury > 0: available = "Indisponible · "+G.n(injury)+" sem."
 	elif recovering: available = "En reprise"

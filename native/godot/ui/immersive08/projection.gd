@@ -81,6 +81,10 @@ static func player(model: Dictionary, id: String) -> Dictionary:
 		if str(person.get("id", "")) == id: return person
 	return {}
 
+static func player_in_recovery(model: Dictionary, id: String) -> bool:
+	var medical: Array = model.get("clubLife", {}).get("clubSupport", {}).get("medical", {}).get("players", [])
+	return medical.any(func(record: Dictionary): return record.get("id") == id and record.get("stage") == "reprise")
+
 static func safe_accent(color: Color) -> Color:
 	var result := color
 	while result.get_luminance() < .20: result = result.lightened(.10)

@@ -24,6 +24,7 @@ const Career = preload("res://ui/immersive08/career_canvas.gd")
 const MatchCanvas = preload("res://ui/immersive08/match_canvas.gd")
 const G = preload("res://ui/game_skin.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
+const TACTICS_CANVAS_MIN_WIDTH := 1600
 
 const GROUPS = [
 	["Bureau", "Bureau", ["Bureau"]],
@@ -229,6 +230,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 		var entry:Array=names[i]
 		var destination:String=entry[2]
 		var selected:bool=app.route==destination
+		if i==2:selected=app.route in ["Effectif","Vestiaire"]
 		if i==3:selected=app.route in ["Composition","Plan de jeu","Match"] or (app.route=="Préparation" and not _is_training(app))
 		if i==4:selected=_is_training(app)
 		if i==6:selected=app.route in ["Club","Staff","Travail du club","Stratégie"]
@@ -365,7 +367,7 @@ static func _heading(parent: Node, app: Control) -> void:
 	parent.add_child(app.minibar)
 
 static func _subnavigation(parent: Node, app: Control) -> void:
-	if app.route=="Composition" or (app.route=="Effectif" and app.get_window().size.x>=1600): return
+	if (app.route=="Composition" and app.get_window().size.x>=TACTICS_CANVAS_MIN_WIDTH) or (app.route=="Effectif" and app.get_window().size.x>=1600): return
 	for group: Array in GROUPS:
 		if app.route not in group[2] or group[2].size() < 2: continue
 		var row := C.h(8)
@@ -447,7 +449,7 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 				app.body.add_child(roster)
 				Legacy.apply(roster, app.accent)
 		"Composition":
-			if app.get_window().size.x>=1600:
+			if app.get_window().size.x>=TACTICS_CANVAS_MIN_WIDTH:
 				app.body.add_child(TacticsCanvas.build(app))
 			else:
 				var lineup: Control = app.SquadViews.lineup(app)

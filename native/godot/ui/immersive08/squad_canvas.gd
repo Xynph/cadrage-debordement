@@ -4,6 +4,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
 const U = preload("res://ui/management_state.gd")
+const Training = preload("res://ui/immersive08/training_canvas.gd")
 var app: Control
 var state: Dictionary
 var rows: VBoxContainer
@@ -104,6 +105,12 @@ func _build() -> void:
 	page_info=D.text(table,1366,1054,"",19,C.MUTED,500,190,HORIZONTAL_ALIGNMENT_CENTER)
 	page_info.name="RosterPaginationInfo"
 	next=D.button(table,Rect2(1480,1030,190,30),"Suivant →",func():state.page=int(state.page)+1;_refresh(false),false,"",true,app.accent,"RosterPaginationNext")
+	for button: Button in [previous,next]:
+		for mode in ["hover","pressed","disabled"]:
+			var style := button.get_theme_stylebox(mode)
+			style.content_margin_top=0
+			style.content_margin_bottom=0
+		button.set_deferred("size",Vector2(button.size.x,maxf(25.0,C.px(30))))
 	dossier=Control.new()
 	dossier.name="PlayerDossier"
 	add_child(dossier)
@@ -222,19 +229,22 @@ func _profile() -> void:
 	dossier.set_meta("player_id",app.selected_player)
 	if player.is_empty():return
 	var shirt: Variant = player.get("shirtNumber")
+	var injury := float(player.get("injury", 0))
+	var recovering := injury <= 0 and P.player_in_recovery(app.model, str(player.id))
+	var status := str(player.get("status", "Disponible"))
 	var hero:=D.panel(dossier,Rect2(0,0,528,432),str(player.name),"",G.n(shirt) if shirt != null else "","SelectedPlayerCard")
 	if not str(player.get("portraitPath","")).is_empty():
 		var portrait:=G.portrait(int(player.get("portraitIndex",0)),C.px(187),player)
 		hero.add_child(portrait);D.place(portrait,Rect2(19,74,187,235))
 	else:D.photo(hero,"squad-portrait",Rect2(19,74,187,235))
 	D.text(hero,227,100,str(player.pos).to_upper(),24,C.GOLD,700,281)
-	D.text(hero,227,133,G.n(player.get("age","—"))+" ans · "+str(player.get("status","")),22,C.MUTED,500,281)
+	D.text(hero,227,133,G.n(player.get("age","—"))+" ans",22,C.MUTED,500,281)
 	D.text(hero,227,167,G.n(player.get("appearances",0))+" apparitions · "+G.n(player.get("minutes",0))+" min",22,C.MUTED,500,281)
 	D.text(hero,240,241,G.n(player.get("rating","—")),74,C.MINT,700,123)
 	D.text(hero,372,237,G.n(player.get("potential","—")),53,C.GOLD,700,123)
 	D.text(hero,240,271,"NIVEAU",18,C.MUTED,500,123)
 	D.text(hero,372,271,"POTENTIEL",18,C.MUTED,500,123)
-	D.chip(hero,Rect2(19,329,137,31),str(player.get("status","Disponible")),C.MINT)
+	D.chip(hero,Rect2(19,329,137,31),status,C.ALERT if injury > 0 else C.MINT).name = "SelectedPlayerStatus"
 	var compared:bool=app.selected_player in app.management_ui.compare
 	var toggle:=D.button(hero,Rect2(167,329,148,31),"Retirer" if compared else "Comparer",func():
 		if app.selected_player in app.management_ui.compare:app.management_ui.compare.erase(app.selected_player)
@@ -251,7 +261,10 @@ func _profile() -> void:
 	D.text(health,23,156,"Fatigue",22,C.MUTED,500,350)
 	D.text(health,504,156,G.n(player.get("physicalLoad",0))+" / 100",26,C.MINT,600,160,HORIZONTAL_ALIGNMENT_RIGHT)
 	D.bar(health,Rect2(23,175,481,7),float(player.get("physicalLoad",0)),C.GOLD)
-	D.text(health,23,223,"Blessure · "+G.n(player.injury)+" semaine(s)" if float(player.get("injury",0))>0 else "Disponible · Charge "+str(player.get("loadPlan","collective")),22,C.IVORY,500,481)
+	var availability := "En reprise" if recovering else "Disponible"
+	if injury > 0: availability = "Blessure · " + G.n(injury) + " sem."
+	var plan: String = Training.INDIVIDUAL.get(player.get("loadPlan", "collective"), "Charge non renseignée")
+	D.text(health,23,223,availability+" · "+plan,22,C.ALERT if injury > 0 else C.AMBER if recovering else C.IVORY,500,481).name = "SelectedPlayerAvailability"
 	var contract:=D.panel(dossier,Rect2(0,718,528,188),"CONTRAT & STATUT","money")
 	D.text(contract,24,94,G.euros(player.get("salary",0))+" / semaine",34,C.IVORY,600,480)
 	D.text(contract,24,129,str(player.get("contractLabel","—")),23,C.MUTED,500,480)

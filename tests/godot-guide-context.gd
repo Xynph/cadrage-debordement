@@ -85,6 +85,8 @@ func navigation_cases() -> void:
 	guide.close(); guide.speech.requested.disconnect(on_requested); guide.speech.set_muted(true); guide.speech.load_manifest()
 	guide.profile.data.seen.erase("bureau"); guide.profile.data.seen.erase("centre")
 func run() -> void:
+	root.mode=Window.MODE_WINDOWED
+	root.size=Vector2i(1280,720)
 	app = load("res://main.tscn").instantiate(); root.add_child(app); await wait_model(); app.timer.stop(); attach()
 	check(guide.has_method("consider_context"), "API contextuelle disponible")
 	if not guide.has_method("consider_context"): await finish(); return

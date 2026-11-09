@@ -42,7 +42,7 @@ static func _fixture(card: Panel, app: Control) -> void:
 	else:
 		var ground := P.fixture_ground(app.model.meta,"office-hero")
 		D.photo(card,ground,Rect2(694,1,665,416),.53 if ground != "office-hero" else 0.0)
-		C.veil(card)
+		C.veil(card).set_offsets_preset(Control.PRESET_FULL_RECT,Control.PRESET_MODE_KEEP_SIZE,C.px(1))
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
 	if next.is_empty():
 		var preparation := SeasonPreparation.data(app.model.meta)
