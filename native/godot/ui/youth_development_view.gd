@@ -31,7 +31,7 @@ func _data() -> Dictionary:
 func _build() -> void:
 	name = "YouthDevelopment"; title = "Accompagner les jeunes"; get_ok_button().text = "FERMER"
 	app._prepare_dialog(self,360)
-	if not app.management_ui.get("youth_development") is Dictionary: app.management_ui.youth_development = {"page":0,"query":"","stage":0}
+	if not app.management_ui.get("youth_development") is Dictionary: app.management_ui.youth_development = {"page":0,"query":"","stage":0,"review":false}
 	state = app.management_ui.youth_development
 	scroll = ScrollContainer.new(); scroll.name = "YouthDevelopmentScroll"; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; scroll.follow_focus = true; add_child(scroll)
 	body = G.v(10); G.fill(body,true); scroll.add_child(body)
@@ -48,6 +48,8 @@ func _build() -> void:
 	for label in ["Tous les jeunes","Académie","Jeunes professionnels"]: stage.add_item(label)
 	stage.select(int(state.stage)); filters.add_child(stage)
 	stage.item_selected.connect(func(index: int): state.stage = index; state.page = 0; _redraw())
+	var review_filter := CheckButton.new(); review_filter.name = "YouthReviewFilter"; review_filter.text = "PARCOURS À REVOIR"; review_filter.button_pressed = bool(state.get("review",false)); filters.add_child(review_filter)
+	review_filter.toggled.connect(func(value: bool): state.review = value; state.page = 0; _redraw())
 	counter = G.wrap("",13); counter.name = "YouthDevelopmentCount"; body.add_child(counter)
 	list = G.v(8); list.name = "YouthDevelopmentRows"; body.add_child(list)
 	var paging := G.h(8); body.add_child(paging)
@@ -76,6 +78,7 @@ func _redraw() -> void:
 	var query := U.fold(str(state.query)).strip_edges()
 	var source: Array = _data().get("players",[])
 	var people := source.filter(func(p: Dictionary): return (query.is_empty() or U.fold(str(p.name)+" "+str(p.pos)).contains(query)) and (int(state.stage)==0 or str(p.stage)==["","academy","professional"][int(state.stage)]))
+	if state.get("review",false): people = people.filter(func(p: Dictionary): return str(p.get("review",{}).get("status","")) in ["review","context"])
 	state.page = clampi(int(state.page),0,maxi(0,ceili(float(people.size())/PAGE_SIZE)-1))
 	var start: int = int(state.page)*PAGE_SIZE
 	for person: Dictionary in people.slice(start,start+PAGE_SIZE): _person(person)
@@ -108,6 +111,7 @@ func _person(person: Dictionary) -> void:
 			var delta: float = float(deltas.get("attributes",{}).get(key,0))
 			if not is_zero_approx(delta): changes.append(str(ATTRIBUTES[key])+" "+_signed(delta))
 		info.add_child(G.wrap(" · ".join(changes) if not changes.is_empty() else "Aucun changement de qualité observé depuis cette référence.",12))
+	_review(info,person)
 	for observation: Dictionary in person.get("observations",[]):
 		info.add_child(G.wrap("S%s · semaine %s · %s · niveau %s · minutes %s" % [G.n(observation.get("season","—")),G.n(observation.get("week","—")),REASONS.get(str(observation.get("reason","")),"Observation"),_signed(observation.get("ratingDelta",0)),_signed(observation.get("minutesDelta",0))],12))
 	for step: Dictionary in person.get("nextSteps",[]): info.add_child(G.wrap(("✓ " if step.get("done",false) else "À préparer · ")+str(step.get("label",""))+" · "+str(step.get("detail","")),12))
@@ -140,6 +144,31 @@ func _person(person: Dictionary) -> void:
 		_confirm_plan(person,key,target))
 	save.name = "YouthPlanSave"; save.set_meta("player_id",str(person.id)); save.disabled = app.waiting or not person.get("canPlan",false) or plan.item_count==0; options.add_child(save)
 	plan.disabled = save.disabled; focus.disabled = save.disabled
+	var suggested: Variant = person.get("review",{}).get("recommendation",{}).get("suggestedPlan")
+	if suggested != null and str(suggested) in available and str(suggested) != str(person.get("plan","")):
+		var prepare := G.button("PRÉPARER LA RÉORIENTATION CONSEILLÉE",func():
+			for i in plan.item_count:
+				if str(plan.get_item_metadata(i))==str(suggested): plan.select(i); update_focus.call(); save.grab_focus())
+		prepare.name = "YouthReviewPrepare"; prepare.disabled = save.disabled; card.add_child(prepare)
+		card.add_child(G.wrap("Préparer ne modifie rien : relisez la répartition, puis confirmez l’objectif choisi.",12))
+
+func _review(parent: Container,person: Dictionary) -> void:
+	var review: Dictionary = person.get("review",{})
+	if review.is_empty(): return
+	var label := G.wrap(str(review.get("label","Bilan intermédiaire")),16,G.INK); label.name = "YouthReviewLabel"; parent.add_child(label)
+	var objective: Variant = review.get("objective")
+	if objective is Dictionary:
+		var line := str(objective.get("label","Objectif"))
+		if objective.get("value") != null and objective.get("target") != null: line += " · %s / %s %s depuis la référence" % [_decimal(objective.value),_decimal(objective.target),str(objective.get("unit",""))]
+		if objective.get("achieved",false): line += " · repère atteint"
+		parent.add_child(G.wrap(line,13))
+	parent.add_child(G.wrap(str(review.get("basis","")),12))
+	var advice: Dictionary = review.get("recommendation",{})
+	var detail := G.wrap(str(advice.get("label",""))+" · "+str(advice.get("detail","")),13); detail.name = "YouthReviewAdvice"; parent.add_child(detail)
+	var destination: Variant = advice.get("destination")
+	if destination != null:
+		var navigate := G.button("EXAMINER LE PARCOURS →" if str(destination)=="Centre" else "EXAMINER L’EFFECTIF →",func(): app._clear_dialogs(); app.selected_player = str(person.id); app._navigate(str(destination)))
+		navigate.name = "YouthReviewNavigate"; parent.add_child(navigate)
 
 func _enable() -> void:
 	var payload := {"confirmed":true,"context":_data().get("context",{}).duplicate(true)}
