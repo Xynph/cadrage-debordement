@@ -129,7 +129,7 @@ function factory(){
   const players=owned(s).filter(x=>young(x.p)).map(({p,stage})=>{
    const row=enabled?s.youthDevelopment.rows.find(x=>x.id===p.id):null,current=metrics(s,p,stage),source=current.model==='annual-v11';
    const mismatch=!!row?.plan&&(row.planClubId!==s.club||!source&&actualFocus(p)!==(row.focus||'equilibre'));
-   return {id:p.id,name:p.name,pos:p.pos,age:p.age,stage,model:current.model,rating:p.rating,potential:current.potential,potentialBasis:'role-estimate',condition:p.condition,injury:p.injury,fatigue:current.fatigue,careerMinutes:current.careerMinutes,
+   return {id:p.id,name:p.name,pos:p.pos,age:p.age,stage,...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),model:current.model,rating:p.rating,potential:current.potential,potentialBasis:'role-estimate',condition:p.condition,injury:p.injury,fatigue:current.fatigue,careerMinutes:current.careerMinutes,
     tracked:!!row,plan:row?.plan||null,focus:row?.focus||null,canPlan:enabled&&!locked,planReason:mismatch?'Objectif individuel ou club modifié : réviser le plan pour appliquer sa répartition.':source?'Progression annuelle : les étapes suivent les expositions réelles, sans supplément de croissance.':'Le plan partage le budget régulier déjà gagné, sans bonus supplémentaire.',
     availablePlans:source?['general','integration']:PLANS.map(p=>p.key),focusOptions:source?[]:focusOptions(p).map(key=>({key,label:LABELS[key]})),defaultFocus:source?null:defaultFocus(p),
     baseline:row?copy(row.baseline):null,current,deltas:row?delta(current,row.baseline):null,observations:row?copy(row.observations):[],nextSteps:steps(s,p,stage,current,row)};
