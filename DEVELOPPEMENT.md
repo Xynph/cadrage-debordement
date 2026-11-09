@@ -1096,3 +1096,10 @@ Les calendriers de saison 1 distinguent désormais 440 lieux nommés et 38 à co
 sur 478 rencontres PREM, URC, Pacifique et Japon. Le lot de 89 échéances documentées
 s’applique seulement à la création d’un Monde complet. Voir
 [le relevé des sources, tests et limites](docs/terrains-et-contrats-monde-20261109.md).
+
+
+## 9 novembre 2026 — Comparaison descriptive des politiques de progression
+
+Banc manuel multigraines livré : trois graines préannoncées, deux politiques qui ne lisent que le modèle public, deux saisons par bras, cinq observations et trois réouvertures exactes. Les six bras sont réellement terminés : douze saisons, douze transitions ; toutes les réconciliations financières ont un résidu nul. Revue méthodologique indépendante et 21 tests courts du banc/politiques/synthèse. Voir [résultats et limites](docs/progression-baseline-2026-11-09.md).
+
+La politique de renouvellements sélectifs conserve 22 joueurs initiaux contre 16, améliore le XV mais coûte 2,83–4,47 M€ de trésorerie fictive à S3. Deux trajectoires sportives favorables et une défavorable avec relégation : aucun vainqueur universel. Aucune difficulté de trésorerie observée, donc redressement non testé. Aucun coefficient changé. Cette référence précède le correctif de renouvellement de population ; elle ne prouve pas une croissance individuelle générale ni un équilibrage long terme.
