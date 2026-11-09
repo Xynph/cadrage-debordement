@@ -2,6 +2,8 @@
 
 Le catalogue le plus large est **Monde + Champ v5** :116clubs dont114jouables,5884fiches joueurs dont5878actifs initiaux après exclusion de6aliases,2160fiches staff dont3historiques. France30 est une autre édition. « Rugby Réel » est une présentation par pack compatible avec l’édition choisie ; le code et ses statistiques ne prouvent pas la disponibilité des photos privées.
 
+Ces volumes de catalogue sont le **snapshot de la base `9011537`**, pas une promesse sur les versions suivantes. Le lot de dédoublonnage `93b3d0e` ramène le catalogue actif à5878fiches en isolant le lecteur legacy ; d’anciens packs à5884IDs restent acceptés. Pour lire une couverture active depuis un reçu local, confronter anonymement les références du pack au registre des6aliases : ne déduire que ceux effectivement présents dans ce pack. SixIDs legacy possibles ne prouvent pas sixpersonnes ou sixportraits nouveaux, et un pack partiel ne contient pas forcément les6. L’outil compte des IDs distincts, sans certifier leur nombre de personnes réelles distinctes. Aucune vérification privée sur le PC n’est acquise ici.
+
 ## État connu au9novembre2026
 
 | Périmètre | Compte établi | Preuve |
