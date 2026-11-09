@@ -105,3 +105,17 @@ test('Un nom de joueur hérité avec guillemets ou esperluette ne bloque pas la 
  assert(converted);assert(h.model().candidates.some(p=>p.sourcePlayerId&&p.name.includes(' et ')));
  assert.equal(h.run('CDStaffCareer.validate(S)'),true);
 });
+test('Fiction et France sans catalogue : activation de CORE fictifs sans référence officielle inventée',()=>{
+ for(const count of [14,30]){
+  const S={season:1,round:0,phase:'league',club:0,clubs:Array.from({length:count},(_,id)=>({id,name:'Club '+id,cash:10000}))};
+  if(count===30)S.franceMode={week:0};
+  const ctx=vm.createContext({S});vm.runInContext('const CDStaffCareer=('+factory.toString()+')();',ctx);
+  assert.equal(vm.runInContext('CDStaffCareer.project().canEnable',ctx),true);
+  assert.equal(vm.runInContext('CDStaffCareer.project().active',ctx),false);
+  assert.equal(vm.runInContext('CDStaffCareer.initialize(S)',ctx),true);
+  const model=JSON.parse(vm.runInContext('JSON.stringify(CDStaffCareer.project())',ctx));
+  assert.equal(model.teams.length,count);assert(model.teams.every(t=>t.members.length===5));
+  assert(model.teams.every(t=>t.members.every(p=>p.sourceKind==='generated'&&p.sourceStaffId===null)));
+  assert.equal(vm.runInContext('CDStaffCareer.validate(S)',ctx),true);
+ }
+});

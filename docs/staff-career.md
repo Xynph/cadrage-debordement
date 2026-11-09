@@ -2,7 +2,7 @@
 
 ## Activation et compatibilité
 
-`native/engine/staff-career.cjs` est un domaine natif sérialisable, indépendant des registres d'origine. `S.staffCareer` version1, politique `staff-career-v1`, conserve une trajectoire propre à la carrière. L'annuaire initial n'est jamais édité. L'absence du marqueur garde l'ancien comportement ; une carrière existante demande une activation explicite. Le raccord worker initialise les nouvelles carrières prises en charge. Une carrière fictive sans catalogue de référence n'invente pas un annuaire officiel et reste sans cycle.
+`native/engine/staff-career.cjs` est un domaine natif sérialisable, indépendant des registres d'origine. `S.staffCareer` version1, politique `staff-career-v1`, conserve une trajectoire propre à la carrière. L'annuaire initial n'est jamais édité. L'absence du marqueur garde l'ancien comportement ; une carrière existante demande une activation explicite. Le raccord worker initialise les nouvelles carrières prises en charge. Une carrière fictive ou France sans catalogue de référence reçoit des encadrants CORE explicitement fictifs issus des clubs de jeu, sans inventer un annuaire officiel. Les anciennes carrières restent sans cycle tant qu'elles ne l'activent pas.
 
 La source readonly injectée dans la VM est `nativeStaffCareerSources[databaseId] = registry.clubs`, tableau de `{id,members}`. Le domaine ignore les références expressément historiques, reprend les autres profils et complète les rôles manquants par des personnages de jeu identifiés comme fictifs. Les rôles cibles de chaque club restent séparés de l'annuaire.
 
@@ -32,7 +32,7 @@ Politique financière **`descriptive-no-cost-v1`** : salaires et primes sont exp
 
 L'instance unique `CDStaffCareer` expose :
 
-- `initialize(state, teams?)` : source readonly de l'édition, no-op si actif ou édition sans catalogue ;
+- `initialize(state, teams?)` : source readonly de l'édition, no-op si actif ; source vide et profils fictifs si édition sans catalogue ;
 - `captureRetirement(state, player, ownerId?)` : no-op sans marqueur, capture idempotente du joueur vieilli ;
 - `advance(state, completedSeason)` : après incrément de `state.season`, une seule application par année ;
 - `validate(state)` : absence de marqueur compatible, sinon schéma fermé, contrats, provenance, âges et visages contrôlés ;
@@ -47,6 +47,6 @@ Les commandes sont `staff_career_enable`, `staff_hire`, `staff_renew`, `staff_re
 
 Le stockage des personnes est paginé par256 pour respecter la limite générique de2000éléments par tableau de sauvegarde. L'historique conserve512événements ; le marché192candidats ; le cache de captures récentes1900identifiants sur deux saisons. Les personnes actives gardent leur provenance propre même après expiration du cache. Les joueurs hérités contenant guillemets ou esperluettes ne sont pas modifiés et ne bloquent pas le hook de retraite. Les rôles et noms source contenant des guillemets ou `&` sont normalisés uniquement dans leur copie persistée ; le registre source reste byte-identique.
 
-`node --test tests/staff-career.cjs` : sept tests de domaine réussis sous Node22, zéro échec/ignoré, environ0,3seconde. Ils couvrent activation, commandes réelles du domaine, contexte périmé,18transitions de cycle, retraite et renouvellement IA, croissance bornée, sérialisation, reconversion/visage/dédoublonnage, et le registre complet Monde+Champ. Ce dernier initialise2491personnes sur10pages, pour1 163 749octets de cycle dans le témoin mesuré. Ce sont des transitions du domaine, pas une nouvelle simulation de dix-huit saisons sportives.
+`node --test tests/staff-career.cjs` : huit tests de domaine réussis sous Node22, zéro échec/ignoré, environ0,3seconde. Ils couvrent activation, commandes réelles du domaine, contexte périmé,18transitions de cycle, retraite et renouvellement IA, croissance bornée, sérialisation, reconversion/visage/dédoublonnage, et le registre complet Monde+Champ. Ce dernier initialise2491personnes sur10pages, pour1 163 749octets de cycle dans le témoin mesuré. Ce sont des transitions du domaine, pas une nouvelle simulation de dix-huit saisons sportives.
 
 Le raccord natif séparé doit recevoir les commandes par le vrai worker, vérifier import/réouverture et refus disque avec rollback. Ses tests et le rendu sont distincts de ces preuves de domaine ; aucune recette Windows n'est revendiquée ici.

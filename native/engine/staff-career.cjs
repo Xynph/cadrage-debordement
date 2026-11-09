@@ -19,7 +19,7 @@ function factory(){
  const week=s=>s.franceMode?.week??s.round;
  const context=s=>({season:s.season,week:week(s),club:s.club});
  function sourceTeams(s){
-  if(!s.commonDatabase?.id)return null;
+  if(!s.commonDatabase?.id)return [];
   const sources=typeof nativeStaffCareerSources==='undefined'?null:nativeStaffCareerSources;
   const teams=sources?.[s.commonDatabase.id];
   check(Array.isArray(teams),'source initiale de cette édition indisponible');return teams;
@@ -169,8 +169,8 @@ function factory(){
  function project(s=S){
   if(!s)return null;
   const sources=typeof nativeStaffCareerSources==='undefined'?null:nativeStaffCareerSources;
-  const canEnable=!s.live&&!!s.commonDatabase?.id&&Array.isArray(sources?.[s.commonDatabase.id]);
-  if(!active(s))return {active:false,enabled:false,canEnable,reason:canEnable?'Activation explicite requise pour cette carrière.':'Édition sans staff de référence ou match actif.',context:context(s),policy:POLICY,financialPolicy:FINANCE,maxYears:3,teams:[],candidates:[],market:[],retired:[],archives:[],notice:'Cycle désactivé : encadrement de référence inchangé.'};
+  const canEnable=!s.live&&(!s.commonDatabase?.id||Array.isArray(sources?.[s.commonDatabase.id]));
+  if(!active(s))return {active:false,enabled:false,canEnable,reason:canEnable?'Activation explicite requise pour cette carrière.':'Source de staff indisponible ou match actif.',context:context(s),policy:POLICY,financialPolicy:FINANCE,maxYears:3,teams:[],candidates:[],market:[],retired:[],archives:[],notice:'Cycle désactivé : encadrement de carrière inchangé.'};
   const st=s.staffCareer,base=s.season+(s.phase==='ended'?1:0);
   const display=p=>{
    const maxYears=Math.max(0,Math.min(3,p.retireAge-p.age-(base-s.season))),minYears=p.clubId===s.club?Math.max(1,p.contractEnd-base+2):1;
