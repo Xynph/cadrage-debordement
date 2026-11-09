@@ -1,7 +1,29 @@
 'use strict';
 module.exports=function worldModel(base,publishedVenue){
  const W=CDWorldCareer,copy=x=>JSON.parse(JSON.stringify(x));
- const catalogue=R=>R.clubs.map(({players,...c})=>({...c,division:c.leagueId,playable:c.leagueId!=='guest'}));
+ const catalogues=new WeakMap();
+ const positions=['Piliers','Talonneurs','Deuxièmes lignes','Troisièmes lignes','Demis de mêlée','Demis d’ouverture','Ailiers','Centres','Arrières'];
+ function startingRoster(players,profiles){
+  const byPosition=positions.map(name=>({name,count:0,points:0}));
+  let forwards=0,backs=0,points=0;
+  for(const player of players){
+   const position=profiles?.players[player.id]?.position.primary??player.pos;
+   const family=FAMILIES[POS.indexOf(position)];
+   if(family<4)forwards++;else backs++;
+   points+=player.rating;
+   const group=byPosition[family];
+   if(group){group.count++;group.points+=player.rating;}
+  }
+  const ordered=byPosition.filter(row=>row.count).sort((a,b)=>b.points/b.count-a.points/a.count);
+  return {average:players.length?Math.round(points/players.length*10)/10:null,forwards,backs,strengths:ordered[0]?.name??'',needs:ordered.length>1?ordered.at(-1).name:''};
+ }
+ function catalogue(R){
+  if(!catalogues.has(R)){
+   const profiles=CDRosterFoundation.resolve(CDRosterFoundation.marker);
+   catalogues.set(R,R.clubs.map(({players,...c})=>({...c,division:c.leagueId,playable:c.leagueId!=='guest',startingRoster:startingRoster(players,profiles)})));
+  }
+  return catalogues.get(R);
+ }
  const database=R=>({id:R.id,version:R.version,snapshot:R.snapshot,playerCount:R.playerCount,clubCount:R.clubCount});
  return function project(){
   const m=base(),old=CDWorldEditions.forMode('world').registry,pacific=CDWorldEditions.forMode('world-pacific')?.registry,japan=CDWorldEditions.forMode('world-japan')?.registry,nationale=CDWorldEditions.forMode('world-nationale')?.registry,champ=CDWorldEditions.forMode('world-champ')?.registry;
@@ -29,9 +51,9 @@ module.exports=function worldModel(base,publishedVenue){
   const f=W.userFixture(S);m.next=f?{pair:[f.homeId,f.awayId],home:clubSummary(f.homeId),away:clubSummary(f.awayId),label:W.label(S),round:f.round,week:S.round,date:f.date,neutral:f.neutral,phase:f.phase,leagueId:f.competitionId,competitionId:f.competitionId,venue:venue(f),...dateProof(f)}:null;
   if(edition.version>=2&&m.meta.leagueId==='srp'&&!m.next){const upcoming=m.calendar.find(x=>!x.played&&x.week>S.round);if(upcoming)m.meta.pacificPreparation={nextWeek:upcoming.week,nextDate:upcoming.date,weeksUntil:upcoming.week-S.round};}
   if(edition.version>=3&&['jlo-d1','jlo-d2'].includes(m.meta.leagueId)&&!m.next){const upcoming=m.calendar.find(x=>!x.played&&x.week>S.round);if(upcoming)m.meta.japanPreparation={nextWeek:upcoming.week,nextDate:upcoming.date,weeksUntil:upcoming.week-S.round};}
-  if(edition.version>=4){m.meta.competitionRules+=' · Nationale';m.nationalePromotion=copy(S.worldMode.nationale);const cards=f?CDWorldNationaleCards.project(S,{...f,season:years[0]},[...S.lineup,...S.reserves]):null;if(cards)m.selection.nationaleQualification=cards;}
+  if(edition.version>=4){m.meta.competitionRules+=' · Division fédérale';m.nationalePromotion=copy(S.worldMode.nationale);const cards=f?CDWorldNationaleCards.project(S,{...f,season:years[0]},[...S.lineup,...S.reserves]):null;if(cards)m.selection.nationaleQualification=cards;}
   if(edition.version===5){
-   m.meta.competitionRules+=' · Champ Rugby';m.champBoundary=copy(S.worldMode.champ);
+   m.meta.competitionRules+=' · Accession anglaise';m.champBoundary=copy(S.worldMode.champ);
    if(m.meta.leagueId==='champ'&&!m.next){const upcoming=m.calendar.find(x=>!x.played&&x.week>S.round);if(upcoming)m.meta.champPreparation={nextWeek:upcoming.week,nextDate:upcoming.date,weeksUntil:upcoming.week-S.round};}
   }
   m.archives={limit:15,seasons:S.worldMode.yearbook.map(y=>({...copy(y),champions:Object.entries(y.champions).map(([leagueId,clubId])=>({leagueId,clubId}))}))};m.finance.notice='La saison couvre '+W.sizing(S).rounds+' semaines de gestion.';

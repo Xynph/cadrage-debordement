@@ -35,6 +35,14 @@ func creation_catalogue() -> Array:
 	}.get(mode("creation"), "legacyCatalogue")
 	return app.model.get("meta", {}).get(key, app.catalogue)
 
+func competition(id: String, target_scope: String = "") -> Dictionary:
+	var meta: Dictionary = app.model.get("meta", {})
+	var effective := scope if target_scope.is_empty() else target_scope
+	var identities: Dictionary = meta.get("competitionIdentities", {})
+	if effective == "creation":
+		identities = meta.get("creationCompetitions", {}).get(mode("creation"), {})
+	return identities.get(id, {})
+
 func database(target_scope: String = "") -> Dictionary:
 	var meta: Dictionary = app.model.get("meta", {})
 	if mode(target_scope) == "world-champ": return meta.get("champDatabase", {})

@@ -3,6 +3,7 @@ extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const Club = preload("res://ui/club_views.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
+const Entry = preload("res://ui/entry_screens.gd")
 const G = preload("res://ui/game_skin.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const GREEN = Color("176e49")
@@ -104,7 +105,7 @@ static func _choices(card: Panel, app: Control, club: Dictionary, meta: Dictiona
 		name.add_child(C.wrap("Saison %s · %s" % [G.n(meta.get("season",1)),str(meta.get("roundLabel","Début de saison"))],20,C.MUTED))
 		_action(choices,"Reprendre la carrière",func():app._navigate("Bureau"),"EntryResume",accent,true)
 	var locked: bool = app.model.is_empty() or meta.get("recoveryRequired",false)
-	var create := _action(choices,"Nouvelle carrière",func():app._navigate("Création"),"EntryNewCareer",accent,club.is_empty())
+	var create := _action(choices,"Nouvelle carrière",func():Entry.begin_creation(app),"EntryNewCareer",accent,club.is_empty())
 	create.disabled = locked or app.catalogue.is_empty()
 	var importing := _action(choices,"Importer une carrière",func():app.open_file(true),"EntryImportCareer",accent)
 	importing.disabled = locked
@@ -178,16 +179,17 @@ static func workspace(app: Control, page: Control, creation: bool) -> Control:
 		if actions.size() >= 2:
 			actions.front().name = "CreationBackHome"
 			actions.back().name = "CreationManagePacks"
-		_illustrate_preview(page)
+		if app.pack_manager.creation_mode != "auto": _illustrate_preview(page)
 	Legacy.apply(page,GREEN if not app.model.get("club") is Dictionary else app.accent)
 	if creation:
-		_fit_pagination(page)
-		if compact and app.pack_manager.mode("creation") == "world-japan":
-			_fit_japan_clubs(page)
+		if app.pack_manager.creation_mode != "auto":
+			_fit_pagination(page)
+			if compact and app.pack_manager.mode("creation") == "world-japan": _fit_japan_clubs(page)
 		if not compact:
 			_fit_club_cards(page)
 	if size.x >= 2240 and size.y >= 1250:
-		if creation: _career_context(app, page)
+		if creation:
+			if app.pack_manager.creation_mode != "auto": _career_context(app, page)
 		else: _pack_guide(app, page)
 	_observe_entry_size(app, column, size, creation)
 	return column

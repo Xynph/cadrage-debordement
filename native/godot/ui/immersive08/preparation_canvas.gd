@@ -52,7 +52,7 @@ static func compact(app: Control) -> Control:
 	var summary := C.v(4)
 	C.fill(summary)
 	row.add_child(summary)
-	summary.add_child(C.wrap("PRÉPARATION DE LEAGUE ONE",30,C.GOLD,true,700))
+	summary.add_child(C.wrap(("PRÉPARATION · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "jlo-d1")))).to_upper(),30,C.GOLD,true,700))
 	if not preparation.is_empty():
 		summary.add_child(C.wrap(World.preparation_note(preparation),29,C.IVORY))
 		var advance := C.button(app.primary_text(),app.primary_action,true,app.accent)
@@ -113,8 +113,8 @@ func _heading() -> void:
 	D.place(shadow, Rect2(1013, 0, 635, 167))
 	hero.add_child(shadow)
 	C.veil(shadow)
-	D.text(hero, 28, 36, "PRÉPARATION DE LEAGUE ONE" if japan else "PRÉPARATION DE MATCH", 27, GOLD, 700, 680)
-	var heading := "Préparer la saison de League One." if not preparation.is_empty() else "Préparer la prochaine rencontre."
+	D.text(hero, 28, 36, ("PRÉPARATION · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "jlo-d1")))).to_upper() if japan else "PRÉPARATION DE MATCH", 27, GOLD, 700, 680)
+	var heading := ("Préparer la saison · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "jlo-d1")))) if not preparation.is_empty() else "Préparer la prochaine rencontre."
 	app.heading = D.text(hero, 26, 103, heading, 66, C.IVORY, 800, 1355)
 	var context := _pacific_preparation_note(app.model.meta) if fixture.is_empty() else ""
 	if context.is_empty(): context = "Aucune rencontre annoncée"

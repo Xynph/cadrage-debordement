@@ -2,8 +2,17 @@ extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
 const Semantics = preload("res://ui/data_semantics.gd")
 
-static func competition_name(id: String) -> String:
-	return {"elite":"Élite","accession":"Accession","prem":"Premiership","urc":"United Rugby Championship","srp":"Super Rugby Pacific","jlo-d1":"League One · Division 1","jlo-d2":"League One · Division 2","jlo-d1-d2":"Barrage Japon D1 / D2","nationale":"Nationale","champ":"Champ Rugby","access-nationale":"Barrage Pro D2 / Nationale","champions":"Coupe des champions","challenge":"Challenge européen","access":"Barrage d’accession"}.get(id, id)
+static func competition_name(id: String, model: Dictionary = {}) -> String:
+	var projected: Dictionary = model.get("meta", {}).get("competitionIdentities", {}).get(id, {})
+	var fallback := "Championnat" if id.is_empty() else id
+	return str(projected.get("name", {
+		"elite":"Élite", "accession":"Accession", "prem":"Élite anglaise",
+		"urc":"Ligue intercontinentale", "srp":"Ligue du Pacifique",
+		"jlo-d1":"Élite japonaise", "jlo-d2":"Accession japonaise", "jlo-d1-d2":"Barrage Japon D1 / D2",
+		"nationale":"Division fédérale", "champ":"Accession anglaise",
+		"access-nationale":"Barrage Accession / Fédérale", "champions":"Coupe continentale Élite",
+		"challenge":"Coupe continentale Accession", "access":"Barrage d’accession",
+	}.get(id, fallback)))
 
 static func phase_name(phase: String) -> String:
 	return {"league":"Phase régulière","pool":"Phase de poules","barrage":"Barrage","elimination":"Match de barrage","promotion":"Barrage aller-retour","third-place":"Petite finale","r16":"Huitième de finale","quarter":"Quart de finale","semi":"Demi-finale","final":"Finale","access":"Barrage d’accession","ended":"Compétition terminée"}.get(phase, phase)
@@ -208,7 +217,7 @@ static func calendar(app: Control) -> Control:
 			var details := G.v(1)
 			details.custom_minimum_size.x = 174
 			row.add_child(details)
-			var competition := competition_name(competition_id)
+			var competition := competition_name(competition_id, app.model)
 			var date := G.label(_calendar_date(str(fixture.get("date", ""))), 13, G.GOLD)
 			date.name = "CalendarFixtureDate"
 			details.add_child(date)
@@ -403,14 +412,10 @@ static func tables(app: Control) -> Control:
 	if not international: sheet.add_child(archives)
 	var tabs := G.h(10)
 	sheet.add_child(tabs)
-	var abbreviations := {"prem":"PREM","urc":"URC","champions":"CHAMPIONS","challenge":"CHALLENGE"}
-	var edition := str(app.model.meta.get("edition", ""))
-	if edition in ["world-japan", "world-nationale", "world-champ"]:
-		abbreviations.merge({"accession":"ACCESSION","jlo-d1":"JAPON D1","jlo-d2":"JAPON D2"})
-	if edition == "world-champ": abbreviations.srp = "SRP"
+	var abbreviations: Dictionary = app.model.get("meta", {}).get("competitionIdentities", {})
 	for league: Dictionary in leagues:
 		var label := str(league.get("name", league.id))
-		var short := str(abbreviations.get(league.id, label.to_upper())) if international else label.to_upper()
+		var short := str(abbreviations.get(league.id, {}).get("shortName", label.to_upper())) if international else label.to_upper()
 		var id := "StandingsDivision_" + str(league.id)
 		var b := G.button(short, func():
 			app.table_division = league.id
@@ -522,13 +527,13 @@ static func season_archives(app:Control) -> void:
 	for year:Dictionary in seasons:
 		list.add_child(G.section("SAISON "+G.n(year.season)))
 		for winner:Dictionary in archive_titles(year):
-			list.add_child(G.wrap("Champion %s : %s"%[competition_name(winner.leagueId),_archive_club(app,winner.clubId)],17,G.INK))
+			list.add_child(G.wrap("Champion %s : %s"%[competition_name(winner.leagueId, app.model),_archive_club(app,winner.clubId)],17,G.INK))
 		var standings: Dictionary = year.get("standings",{})
 		var divisions: Array = standings.keys() if international else ["elite","accession"]
 		for league_id in divisions:
 			var ranks: Array = standings.get(league_id,[])
 			var position:=ranks.find(app.model.club.id)
-			if position>=0:list.add_child(G.wrap("Votre club actuel · %s · rang %d / %d en phase régulière"%[competition_name(league_id),position+1,ranks.size()],14,G.accent_ink(app.accent)))
+			if position>=0:list.add_child(G.wrap("Votre club actuel · %s · rang %d / %d en phase régulière"%[competition_name(league_id, app.model),position+1,ranks.size()],14,G.accent_ink(app.accent)))
 		var barrages: Array = world.japan_barrages(year)
 		if not barrages.is_empty(): list.add_child(G.section("MOUVEMENTS FRANÇAIS"))
 		for pair in [["promoted","Montée(s) vers l’Élite"],["relegated","Descente(s) en Accession"]]:

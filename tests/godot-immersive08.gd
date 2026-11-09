@@ -91,20 +91,18 @@ func entry() -> void:
 	await settle()
 	check(app.find_child("CreationEditionRow",true,false)==null,"La création montre un seul catalogue")
 	check(app.route=="Création" and app.find_child("CreationStart",true,false)!=null,"Nouvelle carrière ouvre le vrai catalogue et l’action de création")
-	var pages := app.find_child("CreationPagination",true,false) as Control
-	check(pages!=null and caption_fits(pages.get_child(0)) and caption_fits(pages.get_child(2)),"Les deux commandes de pagination sont lisibles en entier dans Création")
-	var context := app.find_child("EntryCareerContext",true,false) as Control
+	var summary := app.find_child("CreationCompetitionSummary",true,false) as Control
 	var choices := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
-	check(context!=null and choices!=null and choices.size.y>=240,"Le carnet de création complète huit choix sans réduire leur zone visible")
-	if context!=null and choices!=null:
+	check(app.find_child("CreationPagination",true,false)==null and summary!=null and choices!=null and choices.size.y>=240,"Le championnat précède une grille unique de clubs")
+	if choices!=null:
 		var first: Button = choices.find_children("CreationClub*","Button",true,false)[0]
 		var second: Button = choices.find_children("CreationClub*","Button",true,false)[1]
 		var first_id := first.name
+		var expected := int(str(second.name).trim_prefix("CreationClub"))
 		await click(second)
 		await settle()
-		var selection := app.find_child("EntrySelectedClub",true,false) as Label
-		var selected_club := app.find_child("CreationClubTitle",true,false) as Label
-		check(selection!=null and selected_club!=null and selection.text.ends_with(selected_club.text),"Le contexte illustré suit le vrai club choisi")
+		var title := app.find_child("CreationClubTitle",true,false) as Label
+		check(int(app.selected_club)==expected and title!=null and app.find_child("CreationRosterSummary",true,false)!=null,"Le dossier illustré suit le vrai club choisi")
 		await click(app.find_child(first_id,true,false))
 		await settle()
 	await capture("07-creation-2560x1440")
@@ -442,16 +440,14 @@ func champ(compact: bool) -> void:
 	if not await edition_action("CreationCountry_GB"): return
 	if not await edition_action("CreationDivision_champ"): return
 	var scroll := app.find_child("CreationClubsScroll",true,false) as ScrollContainer
-	for club_id in range(102,116):
-		var club := app.find_child("CreationClub%d" % club_id,true,false) as Button
-		check(scroll!=null and club!=null and scroll.get_global_rect().grow(1).encloses(club.get_global_rect()),"Club de Champ Rugby %d visible à %s" % [club_id,dimensions])
-	var art := app.find_child("Art_champ_ground",true,false) as TextureRect
-	var texture: Texture2D = art.texture if art!=null else null
-	if texture is AtlasTexture: texture=texture.atlas
-	check(texture!=null and texture.resource_path.ends_with("champ-ground.png"),"Le terrain original du Champ est décodé dans Création")
-	await capture(("71" if compact else "70")+"-champ-creation-"+dimensions)
+	for id in range(102,116):
+		var club := app.find_child("CreationClub%d" % id,true,false) as Button
+		check(scroll!=null and club!=null and scroll.is_ancestor_of(club),"Club de Champ Rugby %d dans la liste unique à %s" % [id,dimensions])
+	check(app.find_child("CreationCompetitionSummary",true,false)!=null,"Le championnat est présenté avant la sélection")
 	var club_id := 115 if compact else 102
 	if not await edition_action("CreationClub%d" % club_id): return
+	check(app.find_child("CreationStadium",true,false)!=null,"Le dossier du club affiche son stade")
+	await capture(("71" if compact else "70")+"-champ-creation-"+dimensions)
 	if not await edition_action("CreationStart"): return
 	await worker()
 	check(app.bridge.last_response_ok and app.model.meta.get("edition")=="world-champ" and app.model.meta.get("leagueId")=="champ" and app.model.club.get("id")==club_id and app.model.calendar.size()==26,"La carrière Champ est créée avec les 26 vraies rencontres")

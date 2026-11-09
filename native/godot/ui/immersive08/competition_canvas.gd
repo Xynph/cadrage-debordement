@@ -109,9 +109,21 @@ func _header() -> void:
 	D.rect(self, Rect2(24, 132, 735, 43), Color("142122"), 5, C.LINE)
 	D.text(self, 44, 161, subhead, 25, C.IVORY, 600, 691)
 	var crest := D.rect(self, Rect2(1122, 103, 218, 78), Color("111a1b"), 8, WARM)
-	_icon(self, "trophy", Rect2(1188, 18, 87, 87), WARM)
+	var emblem := G._pack_texture(str(league.get("logoPath", "")))
+	if emblem == null:
+		_icon(self, "trophy", Rect2(1188, 18, 87, 87), WARM)
+	else:
+		var logo := TextureRect.new()
+		logo.name = "CompetitionOfficialLogo"
+		logo.texture = emblem
+		logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		logo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		logo.accessibility_name = str(league.get("name", "Championnat"))
+		add_child(logo)
+		D.place(logo, Rect2(1122, 12, 218, 83))
 	D.text(crest, 109, 33, "COUPE D’EUROPE" if league.has("pools") else "CHAMPIONNAT", 26, C.IVORY, 800, 208, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(crest, 109, 63, World.short_name(league.id,_league_short(league)).to_upper(), 24, C.IVORY, 700, 206, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(crest, 109, 63, _league_short(league).to_upper(), 24, C.IVORY, 700, 206, HORIZONTAL_ALIGNMENT_CENTER)
 	for spec: Array in [
 		[0, 302, "Championnat", "league", "", "Section_Classements"], [307, 247, "Phases finales", "playoffs", "trophy", "CompetitionPlayoffs"],
 		[559, 290, "Calendrier", "calendar", "calendar", "Section_Calendrier"], [854, 308, "Statistiques", "stats", "flag", "CompetitionStats"]
@@ -262,12 +274,12 @@ func _next_match() -> void:
 		if not preparation.is_empty():
 			if SeasonPreparation.is_champ(app.model.meta):
 				var fixture := P.next_scheduled_fixture(app.model)
-				D.text(panel,36,130,"Préparation du Champ Rugby",43,C.IVORY,800,810)
+				D.text(panel,36,130,"Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "champ"))),43,C.IVORY,800,810)
 				D.text(panel,37,179,P.fixture_date(fixture, true) if not fixture.is_empty() else World.preparation_note(preparation),29,C.IVORY,600,802)
 				D.text(panel,37,219,P.fixture_venue(fixture),24,C.MUTED,500,802)
 				D.button(panel,Rect2(166,247,589,60),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,PRIMARY,"CompetitionChampAdvance")
 				return
-			D.text(panel,36,130,"La préparation de League One" if japan else "La préparation du Pacifique",43,C.IVORY,800,810)
+			D.text(panel,36,130,"Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))),43,C.IVORY,800,810)
 			D.text(panel,37,179,World.preparation_note(preparation),29,C.IVORY,600,802)
 			D.button(panel,Rect2(166,247,589,60),"Ouvrir le dossier de préparation",func(): app.Immersive.open_preparation(app,0),true,"arrow",false,PRIMARY,"CompetitionJapanLink" if japan else "CompetitionPacificLink")
 			return
@@ -396,7 +408,7 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 		D.text(row,place_x+25,middle+11,venue_parts[1],17,C.MUTED,500,204)
 	else:
 		D.text(row,place_x+25,middle,venue if not venue.is_empty() and not compact else _location(fixture,compact),22,C.IVORY,500,85 if compact else 204)
-	D.text(row,589 if compact else 954,middle,World.short_name(_competition_id(fixture),competition),22,C.MUTED,500,185)
+	D.text(row,589 if compact else 954,middle,World.short_name(_competition_id(fixture),competition,app.model),22,C.MUTED,500,185)
 	var result_x := width - (140 if compact else 157)
 	var code := _fixture_outcome(fixture)
 	var score := _score(fixture, own.id)
@@ -435,7 +447,7 @@ func _playoffs() -> void:
 		var competition := _competition_id(result)
 		var nationale := competition in ["nationale", "access-nationale"]
 		var stage_width := 304 if japanese or competition == "access-nationale" else 210
-		var stage := Club.competition_name(competition) if competition == "access-nationale" else _phase(result)
+		var stage := Club.competition_name(competition, app.model) if competition == "access-nationale" else _phase(result)
 		var show_details := nationale or competition in ["champ", "champions", "challenge"]
 		var timing := _date(result) if show_details else ""
 		if show_details and result.get("neutral", false):
@@ -543,7 +555,7 @@ func _division_choices(parent: Node, x: float, y: float) -> void:
 	var width := floori((LEFT-2*x-gap*(leagues.size()-1))/leagues.size()) if international else 228
 	for i in leagues.size():
 		var division: Dictionary = leagues[i]
-		var caption := World.short_name(division.id,_league_short(division))
+		var caption := _league_short(division)
 		var button := D.button(parent,Rect2(x+(width+gap)*i,y,width,34),caption,func():
 			app.table_division = division.id
 			var owner_app := app
@@ -731,8 +743,7 @@ static func _score(fixture: Dictionary, club_id: Variant = null) -> String:
 
 static func _league_short(division: Dictionary) -> String:
 	var text := str(division.get("name", "Championnat"))
-	var id := str(division.get("id", ""))
-	return World.short_name(id, text) if id in JAPAN_COMPETITIONS else text.get_slice(" — ", 0)
+	return str(division.get("shortName", text.get_slice(" — ", 0)))
 
 static func _date(fixture: Dictionary) -> String:
 	return P.fixture_date(fixture)
@@ -747,7 +758,7 @@ func _competition_name(fixture: Dictionary) -> String:
 	if not international: return _phase(fixture)
 	var id := _competition_id(fixture)
 	var caption := World.name_for(app.model, id)
-	return World.short_name(id, caption) if id in JAPAN_COMPETITIONS else caption
+	return caption
 
 static func _phase(fixture: Dictionary) -> String:
 	var id := str(fixture.get("phase", "league"))

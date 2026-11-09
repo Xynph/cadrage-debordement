@@ -90,3 +90,43 @@ test('photos de territoire : import, attribution, détachement et refus sans mod
  const validV2=pack({...manifest,schema:'cd-identity-pack-v2',clubs:[{id:30,city:'Ville de repli'}]},[]);
  assert.equal(ok('pack_inspect',{mode,path:validV2}).packs.preview.counts.cityPhotos,undefined);
 });
+
+test('identités de compétition : dossier de création, affichage et retour à la base',t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-league-identity-')),mode='world-champ';
+ const bridge=createBridge({dataDir:path.join(root,'profil'),seed:415,now:1788134400000});
+ t.after(()=>{bridge.close();fs.rmSync(root,{recursive:true,force:true});});
+ let n=0;
+ const request=(command,payload={})=>bridge.handle({id:++n,command,payload});
+ const ok=(command,payload={})=>{const r=request(command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;};
+ const initial=ok('snapshot'),overview=initial.meta.champCatalogue.find(c=>c.id===30).startingRoster;
+ assert.ok(overview.average>0&&overview.forwards>0&&overview.backs>0);
+ assert.equal(initial.meta.creationCompetitions[mode].prem.name,'Élite anglaise');
+ const photo=png(),file=path.join(root,'identites.zip');
+ const manifest={schema:'cd-identity-pack-v4',id:'ligue-temoin',name:'Ligues témoins',version:'1',databaseId:initial.meta.champDatabase.id,rightsStatus:'test-local',
+  clubs:[{id:30,photos:{stadium:{asset:'photo',credit:'Témoin',source:'https://example.org/photo',license:'https://example.org/license'}}}],players:[],staff:[],
+  competitions:[{id:'prem',name:'Championnat témoin',logo:'photo'}],assets:[{id:'photo',path:'photo.png',sha256:digest(photo),bytes:photo.length}]};
+ const write=(changes={})=>zip(file,[['pack.json',Buffer.from(JSON.stringify({...manifest,...changes}))],['photo.png',photo]]);
+ for(const competitions of [[{id:'__proto__',name:'Inconnu',logo:'photo'}],[manifest.competitions[0],manifest.competitions[0]],[{id:'prem',name:'<b>Invalide</b>',logo:'photo'}]]){
+  assert.equal(request('pack_inspect',{mode,path:write({competitions})}).ok,false);
+ }
+ const preview=ok('pack_inspect',{mode,path:write()}).packs.preview;
+ assert.equal(preview.counts.competitions,1);assert.equal(preview.counts.competitionLogos,1);
+ ok('pack_install',{mode,path:file,digest:preview.digest});
+ const creation=ok('pack_select',{mode,scope:'creation',id:preview.id});
+ const identity=creation.meta.creationCompetitions[mode].prem;
+ assert.equal(identity.name,'Championnat témoin');
+ assert.equal(digest(fs.readFileSync(identity.logoPath)),digest(photo));
+ assert.equal(creation.meta.champCatalogue.find(c=>c.id===30).photos.stadium.path,identity.logoPath);
+ const career=ok('new_career',{mode,club:30});
+ assert.equal(career.leagues.find(l=>l.id==='prem').name,identity.name);
+ assert.equal(career.leagues.find(l=>l.id==='prem').logoPath,identity.logoPath);
+ assert.ok(career.calendar.filter(f=>f.competitionId==='prem').every(f=>f.label.startsWith(identity.name)));
+ const raw=ok('export').meta.exportText;assert.ok(!raw.includes(identity.logoPath));
+ const state=JSON.parse(raw).state,players=state.clubs[30].players;
+ assert.equal(overview.forwards+overview.backs,players.length);
+ assert.equal(overview.average,Math.round(players.reduce((n,p)=>n+p.rating,0)/players.length*10)/10);
+ const base=ok('pack_select',{mode,scope:'career',id:'base'});
+ assert.equal(base.leagues.find(l=>l.id==='prem').name,'Élite anglaise');
+ assert.equal(base.leagues.find(l=>l.id==='prem').logoPath,undefined);
+ assert.ok(base.calendar.filter(f=>f.competitionId==='prem').every(f=>f.label.startsWith('Élite anglaise')));
+});

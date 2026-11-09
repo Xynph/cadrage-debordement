@@ -110,14 +110,18 @@ func activate_inspected_pack() -> void:
 	await response()
 
 func check_competitions() -> void:
+	var urc: String = app.pack_manager.competition("urc", "career").name
+	var champions: String = app.pack_manager.competition("champions", "career").name
+	var challenge: String = app.pack_manager.competition("challenge", "career").name
+	var prem: String = app.pack_manager.competition("prem", "career").name
 	app._navigate("Calendrier")
 	await settle()
 	check(named("CalendarFixtureDate") != null and "/" in named("CalendarFixtureDate").text, "Date du calendrier mise en forme")
 	check(text_present(app, str(app.model.calendar[0].venue)), "Lieu de la rencontre issu du moteur")
 	for page_index in range(12):
-		if text_present(app, "Coupe des champions") or pager_next("CalendarPagination").disabled: break
+		if text_present(app, champions) or pager_next("CalendarPagination").disabled: break
 		await press(pager_next("CalendarPagination"))
-	check(text_present(app, "Coupe des champions") and text_present(app, "Poules"), "Calendrier du club mêlant championnat et journées de coupe")
+	check(text_present(app, champions) and text_present(app, "Poules"), "Calendrier du club mêlant championnat et journées de coupe")
 	app._navigate("Classements")
 	await settle()
 	check(app.find_children("StandingsDivision_*", "Button", true, false).size() == 6, "Six onglets de compétition")
@@ -143,14 +147,14 @@ func check_competitions() -> void:
 	app.model.archives.seasons = [{"season":1,"champions":[{"leagueId":"urc","clubId":40}],"europe":{"champions":{"champion":30},"challenge":{"champion":31}}}]
 	await press(named("OpenArchives"))
 	var archive := named("SeasonArchives")
-	check(archive != null and text_present(archive, "Champion United Rugby Championship") and text_present(archive, "Champion Coupe des champions") and text_present(archive, "Champion Challenge européen"), "Le palmarès sépare les titres des trois compétitions témoins")
+	check(archive != null and text_present(archive, "Champion " + urc) and text_present(archive, "Champion " + champions) and text_present(archive, "Champion " + challenge), "Le palmarès sépare les titres des trois compétitions témoins")
 	app._clear_dialogs()
 	app.model.clubLife.clubWorld.archives = [{"season":1,"champions":{"prem":30.0},"europe":{"challenge":{"champion":31.0}}}]
 	app._navigate("Rivalités")
 	await settle()
 	await press(named("RivalryTab2"))
 	var rivalry_archives := named("RivalryArchives")
-	check(rivalry_archives!=null and text_present(rivalry_archives,"SAISON 1") and text_present(rivalry_archives,"PREM · Bath témoin") and text_present(rivalry_archives,"Challenge européen ·") and not text_present(rivalry_archives,"Club 31"),"Le palmarès des rivalités distingue les titres et les identités des champions")
+	check(rivalry_archives != null and text_present(rivalry_archives, "SAISON 1") and text_present(rivalry_archives, prem + " · Bath témoin") and text_present(rivalry_archives, challenge + " ·") and not text_present(rivalry_archives, "Club 31"), "Le palmarès des rivalités distingue les titres et les identités des champions")
 	app._navigate("Centre")
 	await settle()
 	check(text_present(app, "Les compétitions Espoirs ne sont pas encore disponibles") and button("ACTIVER LES PARCOURS") == null, "Centre mondial · raison visible et activation absente")
@@ -179,6 +183,24 @@ func _run() -> void:
 		return
 	app.timer.stop()
 	await press(named("EntryNewCareer"))
+	var start := named("CreationStart") as Button
+	check(named("CreationCompetitionSummary") != null and named("CreationClubTitle") == null and start != null and start.disabled, "La création présente le championnat avant le choix d’un club")
+	check(named("CreationPagination") == null and app.find_children("CreationClub*", "Button", true, false).size() == 14, "Toute l’Élite est présente dans une seule liste")
+	check(text_present(app, "26 matchs par club") and text_present(app, "Le 13e dispute un barrage"), "Le résumé décrit le format et le barrage simulés")
+	var grid := named("CreationClubGrid") as GridContainer
+	check(grid != null and grid.columns == 2, "La liste compacte utilise deux colonnes")
+	root.size = Vector2i(1920, 1080)
+	await create_timer(0.15).timeout
+	await settle()
+	grid = named("CreationClubGrid") as GridContainer
+	check(grid != null and grid.columns == 3 and grid.get_child_count() == 14, "La même liste passe à trois colonnes sur un écran large")
+	root.size = Vector2i(1280, 720)
+	await create_timer(0.15).timeout
+	await settle()
+	await press(named("CreationClub0"))
+	check(named("CreationClubTitle") != null and named("CreationCompetitionSummary") == null and not (named("CreationStart") as Button).disabled, "Choisir un club révèle sa fiche et active la prise de poste")
+	check(named("CreationStadium") != null and text_present(app, "Trésorerie de départ simulée"), "La fiche présente le stade et la trésorerie fictive")
+	check(named("CreationRosterSummary") != null and text_present(app, "Note moyenne") and text_present(app, "Avants") and text_present(app, "Trois-quarts") and text_present(app, "Forces ·") and text_present(app, "Besoins ·"), "La fiche présente les données de l’effectif de départ")
 	check(app.pack_manager.mode("creation") == "world-champ" and app.model.meta.champCatalogue.size() == 116, "La création ouvre directement le Monde complet")
 	check(named("CreationEditionRow") == null and named("CreationMode_common") == null, "Les éditions intermédiaires sont absentes du parcours normal")
 	check(app.model.meta.champDatabase.playerCount == 5878 and app.model.meta.champCatalogue.filter(func(c: Dictionary): return c.playable).size() == 114, "5 878 joueurs et 114 clubs jouables")
@@ -194,6 +216,8 @@ func _run() -> void:
 	check(named("CreationDivision_srp") != null and named("CreationDivision_urc") != null and named("CreationDivision_prem") == null, "URC et Pacifique sont sous International")
 	check(text_present(app, "114 clubs jouables"), "Le total mondial reste visible après filtrage")
 	await press(named("CreationCountry_FR"))
+	check(named("CreationCompetitionSummary") != null and (named("CreationStart") as Button).disabled, "Changer de championnat demande un nouveau choix explicite")
+	await press(named("CreationClub0"))
 	var base := named("CreationBaseIdentity") as Button
 	var importer := named("CreationImportReality") as Button
 	check(base != null and base.text == "Jeu de base" and base.disabled, "Le jeu de base est la présentation initiale")
@@ -219,7 +243,7 @@ func _run() -> void:
 	await press(named("CreationCountry_GB"))
 	await press(named("CreationDivision_prem"))
 	await press(button("PACKS ET IDENTITÉS"))
-	check(text_present(app, "NOUVELLE CARRIÈRE · MONDE"), "Édition active indiquée dans les packs")
+	check(text_present(app, "NOUVELLE CARRIÈRE") and app.pack_manager.mode() == "world", "Édition active indiquée dans les packs")
 	await import_pack(OS.get_environment("CD_WORLD_UI_FRANCE_PACK"), false)
 	check(button("INSTALLER CE PACK") == null, "Une archive France ne peut pas être installée comme pack Monde")
 	app._clear_dialogs()
@@ -240,7 +264,7 @@ func _run() -> void:
 	await check_competitions()
 	app.pack_manager.open("career")
 	await settle()
-	check(text_present(app, "CARRIÈRE EN COURS · MONDE"), "Packs de la carrière ouverte filtrés pour le Monde")
+	check(text_present(app, "CARRIÈRE EN COURS") and app.pack_manager.mode() == "world", "Packs de la carrière ouverte filtrés pour le Monde")
 	await press(button("UTILISER LA BASE ANONYMISÉE"))
 	await response()
 	check(app.model.packs.career == "base" and app.model.meta.worldPackCreation != "base", "Changer le pack de la carrière conserve la préférence de création")

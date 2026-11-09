@@ -123,12 +123,12 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 			left.add_child(C.wrap("Retrouvez les résultats et préparez la suite du projet.", 20))
 		elif SeasonPreparation.is_champ(app.model.meta):
 			var fixture := P.next_scheduled_fixture(app.model)
-			left.add_child(C.wrap("Préparation du Champ Rugby", 42, C.IVORY, true))
+			left.add_child(C.wrap("Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))), 42, C.IVORY, true))
 			left.add_child(C.wrap(P.fixture_date(fixture, true) if not fixture.is_empty() else World.preparation_note(preparation), 25, C.IVORY, true))
 			left.add_child(C.wrap(P.fixture_venue(fixture), 18))
 		else:
-			left.add_child(C.label("JAPAN RUGBY LEAGUE ONE" if japan else "SUPER RUGBY PACIFIC",21,C.GOLD))
-			left.add_child(C.wrap("La préparation de League One." if japan else "La préparation du Pacifique.",42,C.IVORY,true))
+			left.add_child(C.label(World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))).to_upper(),21,C.GOLD))
+			left.add_child(C.wrap("Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))),42,C.IVORY,true))
 			left.add_child(C.wrap(World.preparation_note(preparation),20))
 	else:
 		var tags := C.h(12)
@@ -324,7 +324,7 @@ static func short_fixture_label(model: Dictionary, fixture: Dictionary) -> Strin
 	var id := str(fixture.competitionId)
 	var competition := World.name_for(model,id)
 	if label.begins_with(competition+" · "):
-		return World.short_name(id,competition)+label.trim_prefix(competition)
+		return World.short_name(id,competition,model)+label.trim_prefix(competition)
 	return label
 
 static func describe_fixture(node: Control, detail: String) -> void:

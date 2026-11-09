@@ -43,3 +43,18 @@ stade peuvent différer ; les manifestes privés gardent le détail.
 les refus et l’altération d’une photo. Les contrôles Windows utilisent un
 pack privé en profil jetable. Aucun média nouveau de ce pack ne fait partie
 du dépôt ou de l’exécutable.
+
+
+## Identités de compétition
+
+Le schéma `cd-identity-pack-v4` conserve les médias de territoire et ajoute le tableau
+`competitions`. Chaque entrée utilise l’identifiant d’une compétition de
+l’édition et un `name`. Elle peut ajouter un `shortName` pour les commandes
+compactes et un `logo` référant un média déclaré dans `assets`. Le lecteur
+contrôle les identifiants, les références, les formats et les empreintes.
+Les packs précédents utilisent les noms fictifs pour leurs compétitions.
+
+Le nom et le logo suivent la sélection de création et le pack lié à la
+carrière. Les calendriers, les résultats et les identifiants de compétition
+restent indépendants de ces éléments visuels. Les logos du pack privé
+Rugby Réel sont fournis avec le pack local.

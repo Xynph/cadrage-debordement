@@ -351,6 +351,8 @@ func _run() -> void:
 			_check(app.model.club==null and not app.model.meta.get("recoveryRequired",true),"Recovery returns usable menu without creating career")
 			_dismiss_errors()
 			app._navigate("Création")
+			var club_choice := app.find_child("CreationClub0", true, false) as Button
+			if club_choice != null: club_choice.pressed.emit()
 			for button in _buttons(app.root_content):
 				if button.text.begins_with("PRENDRE LES RÊNES"):button.pressed.emit();break
 			await _wait()
@@ -365,6 +367,8 @@ func _run() -> void:
 		_check(DirAccess.remove_absolute(first_write) == OK, "First-write blocker removed")
 		_dismiss_errors()
 		app._navigate("Création")
+		var club_choice := app.find_child("CreationClub0", true, false) as Button
+		if club_choice != null: club_choice.pressed.emit()
 		var retry: Button = null
 		for button in _buttons(app.root_content):
 			if button.text.begins_with("PRENDRE LES RÊNES"): retry = button
