@@ -218,10 +218,56 @@ func _receive_077_venue() -> void:
 	_check(alternate.size()==1 and str(alternate[0].venue)=="St Helen's","le déplacement européen à Swansea garde son stade publié")
 
 
-func _calendar_contains(label: String) -> bool:
-	for child in app.find_children("*","Label",true,false):
-		if child.is_visible_in_tree() and child.text.contains(label): return true
-	return false
+func _click_calendar(control: Control) -> void:
+	var point := control.get_viewport().get_screen_transform() * (control.get_global_transform_with_canvas() * (control.size / 2.0))
+	var motion := InputEventMouseMotion.new()
+	motion.position = point
+	motion.global_position = point
+	get_tree().root.push_input(motion, true)
+	await get_tree().process_frame
+	for down in [true, false]:
+		var event := InputEventMouseButton.new()
+		event.button_index = MOUSE_BUTTON_LEFT
+		event.button_mask = MOUSE_BUTTON_MASK_LEFT if down else 0
+		event.position = point
+		event.global_position = point
+		event.pressed = down
+		get_tree().root.push_input(event, true)
+		await get_tree().process_frame
+	await _settle()
+
+
+func _calendar_venue(fixture: Dictionary, venue: String) -> bool:
+	var list := app.find_child("CalendarScroll", true, false)
+	if not _check(list != null, "liste du calendrier visible"): return false
+	var rows := list.find_children("*", "Control", true, false).filter(func(row: Node):
+		return row.get_meta("fixture_id", "") == fixture.id)
+	if not _check(rows.size() == 1, "ligne unique du calendrier : " + str(fixture.id)): return false
+	var row: Control = rows.front()
+	app.body_scroll.ensure_control_visible(row)
+	await _settle()
+	var captions := row.find_children("*", "Label", true, false).filter(func(label: Label):
+		return label.is_visible_in_tree()).map(func(label: Label): return label.text)
+	var parts := venue.split(" · ", false, 1)
+	var shown := captions.has(venue) or (parts.size() == 2 and captions.has(parts[0]) and captions.has(parts[1]))
+	var fallback := str(fixture.get("home", {}).get("stadium", ""))
+	var different_home := not fallback.is_empty() and not venue.contains(fallback)
+	var good := _check(shown and (not different_home or not captions.has(fallback)),
+		"lieu exact de la ligne " + str(fixture.id) + " : " + venue)
+	# Le calendrier historique présente le lieu directement, sans fenêtre de détail.
+	if not row is Button: return good
+	await _click_calendar(row)
+	var detail := app.find_child("CompetitionFixtureDetails", true, false) as AcceptDialog
+	if not _check(detail != null and detail.visible, "la ligne ouvre le vrai détail : " + str(fixture.id)): return false
+	var full_venue := false
+	var wrong_venue := false
+	for label: Label in detail.find_children("*", "Label", true, false):
+		if not label.is_visible_in_tree(): continue
+		full_venue = full_venue or label.text.contains(venue)
+		wrong_venue = wrong_venue or (different_home and label.text.contains(fallback))
+	good = _check(full_venue and not wrong_venue, "lieu complet dans le détail : " + venue) and good
+	await _click_calendar(detail.get_ok_button())
+	return _check(not is_instance_valid(detail) or not detail.visible, "le détail du match se ferme") and good
 
 
 func _receive_078_calendars() -> void:
@@ -231,7 +277,7 @@ func _receive_078_calendars() -> void:
 	var nz := "One New Zealand Stadium · Christchurch"
 	var good := _check(pacific.size()==16 and str(pacific[0].venue)==nz and not pacific[0].neutral,"première journée du Pacifique sur son terrain publié")
 	good = _check(shared.size()==1 and str(shared[0].venue)==nz and shared[0].date=="2027-04-02","Super Round de Christchurch conservé sur terrain neutre") and good
-	_check(_calendar_contains(nz),"enceinte du Pacifique affichée dans le vrai calendrier")
+	if not pacific.is_empty(): good = (await _calendar_venue(pacific[0], nz)) and good
 	await _capture("pacifique-calendrier-2560")
 	if not await _ask("new_career",{"mode":mode,"club":85},"Calendrier"): return
 	var sayama := "SECOM RUGBY STADIUM · Sayama"
@@ -239,7 +285,7 @@ func _receive_078_calendars() -> void:
 	var first_home: Array = jp.filter(func(f):return int(f.home.id)==85 and f.date=="2026-12-27")
 	good = _check(jp.size()==14 and first_home.size()==1 and first_home[0].venue==sayama,"premier match à domicile au stade de Sayama") and good
 	good = _check(jp.any(func(f):return int(f.home.id)==85 and str(f.venue).contains("Kawagoe Sports Park")),"enceinte secondaire de Kawagoe distincte du stade principal") and good
-	_check(_calendar_contains(sayama),"enceinte japonaise affichée dans le vrai calendrier")
+	if first_home.size() == 1: good = (await _calendar_venue(first_home[0], sayama)) and good
 	await _capture("japon-calendrier-2560")
 	app._navigate("Club")
 	await _settle()

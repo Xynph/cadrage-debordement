@@ -147,8 +147,21 @@ func run() -> void:
 	await visit("Effectif", other_id)
 	var roster_search: LineEdit = named(app, "RosterSearch")
 	roster_search.text = "___aucun_joueur___"; roster_search.text_changed.emit(roster_search.text)
+	roster_search.grab_focus()
+	roster_search.caret_column = 4
+	await key(KEY_X, false, false, 120)
+	var query := roster_search.text
+	var caret := roster_search.caret_column
+	check(query == "___axucun_joueur___" and caret == 5, "La vraie frappe prépare un filtre exclusif et un curseur intérieur")
 	await key(KEY_K, true); await search(str(app.model.squad[0].name)); await key(KEY_ENTER)
 	check(app.selected_player == first_id and app.body.find_children("SquadPlayer*", "Button", true, false).any(func(button): return str(button.get_meta("player_id", "")) == first_id), "Palette depuis un effectif filtré : cible ID réellement visible")
+	var back: Button = named(app, "NavigationBack")
+	back.grab_focus(); await key(KEY_ENTER)
+	roster_search = named(app, "RosterSearch")
+	check(app.route == "Effectif" and app.selected_player == other_id and roster_search.text == query and roster_search.caret_column == caret and roster_search.has_focus(), "Précédent restaure le joueur, le filtre, le curseur et le focus")
+	var forward: Button = named(app, "NavigationForward")
+	forward.grab_focus(); await key(KEY_ENTER)
+	check(app.route == "Effectif" and app.selected_player == first_id, "Suivant rouvre la cible de la palette")
 	var ordered: Array = load("res://ui/management_state.gd").players(app.model.squad, app.management_ui.roster, int(app.model.meta.season))
 	var last_id := str(ordered.back().id)
 	await key(KEY_K, true); await search("[" + last_id + "]"); await key(KEY_ENTER)

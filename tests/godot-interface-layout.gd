@@ -25,10 +25,8 @@ func named(id: String) -> Control: return app.find_child(id,true,false)
 func resize_to(resolution: Vector2i) -> void:
 	root.size=resolution; DisplayServer.window_set_size(resolution)
 	await settle()
-func board() -> Control:
-	for c in app.body.find_children("*","Control",true,false):
-		if c.get_script()==load("res://ui/lineup_board.gd"): return c
-	return null
+func lineup_slot(number: int) -> Button:
+	return named("LineupSlot%02d" % number) as Button
 func enter(c: Control) -> void:
 	c.grab_focus(); await settle()
 	for down in [true,false]:
@@ -41,12 +39,27 @@ func capture(id: String) -> void:
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(proof.path_join(id+".png"))
 func click_at(control:Control, fraction:float) -> void:
-	var point:=control.get_global_rect().position+control.size*Vector2(fraction,.5)
+	var bounds:=control.get_global_rect()
+	await click_point(bounds.position+bounds.size*Vector2(fraction,.5))
+func click_point(point:Vector2) -> void:
 	for down in [true,false]:
 		var event:=InputEventMouseButton.new()
 		event.position=point;event.global_position=point;event.button_index=MOUSE_BUTTON_LEFT;event.pressed=down
 		root.push_input(event,true);await process_frame
 	await settle()
+func hits(button: Button, point: Vector2) -> bool:
+	var local := button.get_global_transform().affine_inverse()*point
+	if button.has_method("_has_point"): return button._has_point(local)
+	return Rect2(Vector2.ZERO,button.size).has_point(local)
+func shared_hit(first: Button, second: Button) -> bool:
+	var overlap := first.get_global_rect().intersection(second.get_global_rect())
+	if not overlap.has_area():return false
+	if hits(first,overlap.get_center()) and hits(second,overlap.get_center()):return true
+	for y in range(ceili(overlap.position.y),ceili(overlap.end.y)):
+		for x in range(ceili(overlap.position.x),ceili(overlap.end.x)):
+			var point := Vector2(x,y)
+			if hits(first,point) and hits(second,point):return true
+	return false
 func density_contract() -> void:
 	# Catches the old 1080p cap: a 1440p desktop must gain canvas space,
 	# rather than enlarge the same controls by 4/3.
@@ -64,8 +77,18 @@ func density_contract() -> void:
 	app.add_child(metric)
 	check(metric.get_child(0).get_theme_font_size("font_size")<=20,"Métrique compacte au lieu d'une deuxième page")
 	metric.queue_free()
-	check(app.heading.get_theme_font_size("font_size")<=20,"Titre du shell PC compact")
-	check(named("Chapter_Bureau").get_combined_minimum_size().y<=30,"Navigation latérale compacte")
+	var viewport := Rect2(Vector2.ZERO, Vector2(root.size))
+	var density := minf(root.size.x / 2560.0, root.size.y / 1440.0)
+	var heading: Label = app.heading
+	check(heading != null and viewport.encloses(heading.get_global_rect()), "Titre natif entièrement contenu")
+	if heading != null:
+		var font_size := heading.get_theme_font_size("font_size")
+		var font := heading.get_theme_font("font")
+		check(absf(font_size - 53.0 * density) <= 1.0 and font.get_string_size(heading.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x <= heading.size.x, "Titre natif lisible dans sa largeur au format choisi")
+	var bureau := named("Nav_Bureau") as Button
+	check(bureau != null and bureau.focus_mode == Control.FOCUS_ALL and viewport.encloses(bureau.get_global_rect()), "Navigation latérale entière et accessible au clavier")
+	if bureau != null:
+		check(absf(bureau.get_global_rect().size.y - 49.0 * density) <= 1.0, "Hauteur de navigation native à la résolution physique")
 func run() -> void:
 	var initial:=int(OS.get_environment("CD_LAYOUT_INITIAL"))
 	root.size=Vector2i(2560,1440) if initial==2560 else (Vector2i(1920,1080) if initial==1920 else (Vector2i(1600,900) if initial==1600 else Vector2i(1280,720)))
@@ -92,24 +115,70 @@ func run() -> void:
 	app._navigate("Composition");await settle();app.coach.close()
 	var original:Control=app.root_content
 	var guide_before:Dictionary=app.coach.profile.data.duplicate(true)
+	var starters: Array[Button] = []
+	for number in range(1, 16):
+		var slot := lineup_slot(number)
+		check(slot != null, "Poste natif présent %d" % number)
+		if slot != null: starters.append(slot)
+	var bench := lineup_slot(23)
+	check(bench != null and bench.focus_mode == Control.FOCUS_ALL, "Le banc 23 est une commande clavier")
+	if bench != null: bench.grab_focus()
 	for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720),Vector2i(1600,900),Vector2i(1600,720),Vector2i(1280,720)]:
 		await resize_to(resolution)
 		var expected:Vector2i=resolution
 		check(root.content_scale_size==expected,"Référence physique "+str(resolution))
 		check(app.root_content==original,"Resize conserve les instances "+str(resolution))
-		for i in 15:
-			check(app.body_scroll.get_global_rect().encloses(board().tiles[i].get_global_rect()),"Carte entière %d %s"%[i+1,resolution])
-			for j in range(i+1,15):check(not board().tiles[i].get_global_rect().intersects(board().tiles[j].get_global_rect()),"Cartes distinctes")
+		var viewport: Rect2 = app.body_scroll.get_global_rect().grow(1)
+		for i in starters.size():
+			check(is_instance_valid(starters[i]) and lineup_slot(i+1)==starters[i] and viewport.encloses(starters[i].get_global_rect()),"Carte entière %d %s"%[i+1,resolution])
+			for j in range(i+1,starters.size()):
+				check(not shared_hit(starters[i],starters[j]),"Zones cliquables distinctes %d et %d à %s"%[i+1,j+1,resolution])
+		if bench != null:
+			check(lineup_slot(23)==bench and bench.has_focus(),"Même focus du banc23 après resize "+str(resolution))
+			check(viewport.encloses(bench.get_global_rect()),"Banc23 réexposé après resize "+str(resolution))
 	await capture("composition-1280")
-	await enter(named("LineupSlot23"))
-	check(app.selected_slot==22,"Sélection réelle du banc23")
-	for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720),Vector2i(1600,900),Vector2i(1280,720)]:
-		await resize_to(resolution)
-		check(named("LineupSlot23").has_focus(),"Focus banc23 conservé")
-		check(app.body_scroll.get_global_rect().encloses(named("LineupSlot23").get_global_rect()),"Banc23 réexposé après resize")
+	if bench != null:
+		await resize_to(Vector2i(1920,1080))
+		var opening := lineup_slot(10)
+		var center := lineup_slot(13)
+		if opening!=null and center!=null:
+			var overlap := opening.get_global_rect().intersection(center.get_global_rect())
+			var point := overlap.get_center() if overlap.has_area() else opening.get_global_rect().position+opening.get_global_rect().size*Vector2(.5,.8)
+			check(hits(opening,point) and not hits(center,point),"Le contour transparent du centre ne masque pas le nom de l’ouvreur")
+			await click_point(point)
+			var opener := app.find_child("LineupCandidates",true,false) as AcceptDialog
+			check(app.selected_slot==9 and opener!=null and opener.visible,"Le vrai clic sélectionne l’ouvreur")
+			if opener!=null:opener.hide();opener.queue_free();await settle()
+		bench=lineup_slot(23)
+		await enter(bench)
+		check(app.selected_slot==22,"Sélection réelle du banc23 par Entrée")
+		var candidates := app.find_child("LineupCandidates",true,false) as AcceptDialog
+		check(candidates != null and candidates.visible,"Entrée ouvre la liste de candidats du poste choisi")
+		if candidates != null:
+			var slot: Dictionary = app.model.selection.slots[22]
+			var focus: Button = candidates.get_ok_button()
+			var enabled_ids: Array = []
+			for option: Button in candidates.find_children("LineupPlayer*","Button",true,false):
+				if not option.disabled:
+					focus = option
+					enabled_ids.append(str(option.get_meta("player_id")))
+			var eligible: Array = app.model.squad.filter(func(player: Dictionary): return player.id in slot.eligibleIds and float(player.get("injury",0)) <= 0)
+			var expected_ids := eligible.map(func(player: Dictionary): return str(player.id))
+			enabled_ids.sort()
+			expected_ids.sort()
+			check(enabled_ids==expected_ids,"Candidats autorisés issus des qualifications et disponibilités du vrai poste")
+			focus.grab_focus()
+			for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720),Vector2i(1600,900),Vector2i(1280,720)]:
+				await resize_to(resolution)
+				check(is_instance_valid(candidates) and candidates.visible and app.selected_slot==22,"Même liste du banc23 après resize "+str(resolution))
+				check(is_instance_valid(focus) and focus.has_focus(),"Focus conservé dans la liste du banc23 "+str(resolution))
+				check(Rect2(Vector2.ZERO,Vector2(resolution)).grow(1).encloses(Rect2(Vector2(candidates.position),Vector2(candidates.size))),"Fenêtre des candidats entièrement accessible "+str(resolution))
+			await capture("banc23-1280")
+			candidates.hide()
+			candidates.queue_free()
+			await settle()
 	check(app.navigation_controller.history==history,"Aucun historique parasite de resize")
 	check(app.coach.profile.data==guide_before,"Resize ne consomme aucun contexte Gabi")
-	await capture("banc23-1280")
 	var dock:=named("CoachCompactDock")
 	check(dock!=null,"Emplacement distinct du guide dans le footer")
 	if dock!=null:check(not dock.get_global_rect().intersects(named("DecisionFeedbackButton").get_global_rect()),"Dock distinct N10")
@@ -186,8 +255,13 @@ func run() -> void:
 	app._navigate("Bureau");await settle();app.coach.close()
 	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
 		await resize_to(resolution)
+		var receipt_button := named("DecisionFeedbackButton")
+		var guide_dock := named("CoachCompactDock")
+		check(receipt_button!=null and guide_dock!=null,"Reçu et emplacement du guide présents "+str(resolution))
+		if receipt_button==null or guide_dock==null:continue
+		check(guide_dock.get_global_rect().size.x>=100 and not guide_dock.get_global_rect().intersects(receipt_button.get_global_rect()),"Place physique du guide distincte du reçu "+str(resolution))
 		for fraction in [.25,.5,.75]:
-			await click_at(named("DecisionFeedbackButton"),fraction)
+			await click_at(receipt_button,fraction)
 			var receipt:Window=app.find_child("DecisionFeedbackDialog",true,false)
 			check(receipt!=null and receipt.visible,"Clic réel N10 %s %s"%[resolution,fraction])
 			if receipt!=null:receipt.hide();receipt.queue_free();await settle()

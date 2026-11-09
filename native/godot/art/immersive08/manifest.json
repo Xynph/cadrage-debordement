@@ -1,0 +1,687 @@
+{
+  "schema": "oval-immersive-art-v1",
+  "direction": "B approuvée",
+  "usage": "Illustrations fictives générées par IA, distinctes des contrôles natifs et des photos de packs privés",
+  "assets": [
+    {
+      "id": "brand",
+      "file": "brand.png",
+      "source": "01-bureau.png",
+      "source_sha256": "c5cd84322690c121d20a70dde03fbb64c8e0cfdf718ddb36d7d1efaaf1a999a4",
+      "crop": [
+        5,
+        4,
+        220,
+        96
+      ],
+      "width": 220,
+      "height": 96,
+      "bytes": 33667,
+      "sha256": "7d21caae8e6ff0930aed68b918b2be3bd7fbe25bd473ba372c4817ab7c392419",
+      "synthetic": true
+    },
+    {
+      "id": "office-hero",
+      "file": "office-hero.png",
+      "source": "01-bureau.png",
+      "source_sha256": "c5cd84322690c121d20a70dde03fbb64c8e0cfdf718ddb36d7d1efaaf1a999a4",
+      "crop": [
+        798,
+        148,
+        385,
+        353
+      ],
+      "width": 385,
+      "height": 353,
+      "bytes": 320053,
+      "sha256": "e47e26f2e798516513c4f38db5f9e471cbae602ce0dde338aa569c15eff50417",
+      "synthetic": true
+    },
+    {
+      "id": "forest",
+      "file": "forest.png",
+      "source": "01-bureau.png",
+      "source_sha256": "c5cd84322690c121d20a70dde03fbb64c8e0cfdf718ddb36d7d1efaaf1a999a4",
+      "crop": [
+        0,
+        795,
+        230,
+        146
+      ],
+      "width": 230,
+      "height": 146,
+      "bytes": 36219,
+      "sha256": "740fabd767dbfb573f981f6f4dc8a839b89fb2cff4c70d3a66f70dc55f729cbb",
+      "synthetic": true
+    },
+    {
+      "id": "approved-club-crest",
+      "file": "approved-club-crest.png",
+      "source": "01-bureau.png",
+      "source_sha256": "c5cd84322690c121d20a70dde03fbb64c8e0cfdf718ddb36d7d1efaaf1a999a4",
+      "crop": [
+        48,
+        119,
+        145,
+        169
+      ],
+      "width": 145,
+      "height": 169,
+      "bytes": 52104,
+      "sha256": "667f691183f9e273d01d90e34b7c5db75dcf1e903f4ee1661d9149c5225a0f98",
+      "synthetic": true
+    },
+    {
+      "id": "mail-staff",
+      "file": "mail-staff.png",
+      "source": "02-reception.png",
+      "source_sha256": "d54d17438ee3cdbd5851e32879d576b849fad0ca9850ec0d74916d942f0ed665",
+      "crop": [
+        1320,
+        148,
+        340,
+        178
+      ],
+      "width": 340,
+      "height": 178,
+      "bytes": 143425,
+      "sha256": "dec8016b9a574fe09155bc58e97294c1e290efd634f94563a3b6194b2e7116bd",
+      "synthetic": true
+    },
+    {
+      "id": "mail-pitch",
+      "file": "mail-pitch.png",
+      "source": "02-reception.png",
+      "source_sha256": "d54d17438ee3cdbd5851e32879d576b849fad0ca9850ec0d74916d942f0ed665",
+      "crop": [
+        938,
+        225,
+        382,
+        101
+      ],
+      "width": 382,
+      "height": 101,
+      "bytes": 85800,
+      "sha256": "12e2566a5f2dba4d680bbdd08f8a5c81d2fd6f4746341b366880652ce95a9167",
+      "synthetic": true
+    },
+    {
+      "id": "mail-trainer",
+      "file": "mail-trainer.png",
+      "source": "02-reception.png",
+      "source_sha256": "d54d17438ee3cdbd5851e32879d576b849fad0ca9850ec0d74916d942f0ed665",
+      "crop": [
+        489,
+        214,
+        57,
+        58
+      ],
+      "width": 57,
+      "height": 58,
+      "bytes": 9229,
+      "sha256": "6fe00c52d060e1a67f8debc8c076d300c10442eebc136a11162c5cb6307be3eb",
+      "synthetic": true
+    },
+    {
+      "id": "mail-medical",
+      "file": "mail-medical.png",
+      "source": "02-reception.png",
+      "source_sha256": "d54d17438ee3cdbd5851e32879d576b849fad0ca9850ec0d74916d942f0ed665",
+      "crop": [
+        489,
+        295,
+        57,
+        58
+      ],
+      "width": 57,
+      "height": 58,
+      "bytes": 8844,
+      "sha256": "e1490db967243201619b5af39140e156cddd78b57a373921fd6677fcb5f7c77e",
+      "synthetic": true
+    },
+    {
+      "id": "mail-direction",
+      "file": "mail-direction.png",
+      "source": "02-reception.png",
+      "source_sha256": "d54d17438ee3cdbd5851e32879d576b849fad0ca9850ec0d74916d942f0ed665",
+      "crop": [
+        490,
+        596,
+        52,
+        55
+      ],
+      "width": 52,
+      "height": 55,
+      "bytes": 7820,
+      "sha256": "885b3cf2dfb0bee98815bd3ebfb5567348ec833ff73dbd6afdb152400a60c8c6",
+      "synthetic": true
+    },
+    {
+      "id": "mail-recruitment",
+      "file": "mail-recruitment.png",
+      "source": "02-reception.png",
+      "source_sha256": "d54d17438ee3cdbd5851e32879d576b849fad0ca9850ec0d74916d942f0ed665",
+      "crop": [
+        490,
+        452,
+        52,
+        55
+      ],
+      "width": 52,
+      "height": 55,
+      "bytes": 7616,
+      "sha256": "278082483219f97945681d6d63a8807b7eeb1bcb66c8a8fdb25d26f48b390604",
+      "synthetic": true
+    },
+    {
+      "id": "squad-portrait",
+      "file": "squad-portrait.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        1205,
+        146,
+        158,
+        228
+      ],
+      "width": 158,
+      "height": 228,
+      "bytes": 81994,
+      "sha256": "84d3c6317d4001c404e5ff84e29babb062b78735e31482a8a359af3bea7cf5db",
+      "synthetic": true
+    },
+    {
+      "id": "player-hero",
+      "file": "player-hero.png",
+      "source": "04-fiche-joueur.png",
+      "source_sha256": "42f4581b12d6efc076dfbcdf7f00283d5d95a395b49f1ae1071e0cdd96998b8a",
+      "crop": [
+        260,
+        50,
+        315,
+        288
+      ],
+      "width": 315,
+      "height": 288,
+      "bytes": 201925,
+      "sha256": "4244389722596e467c15925ae3e590b0d2697e2afdd79a581f9b3f6dd1c53ca9",
+      "synthetic": true
+    },
+    {
+      "id": "tactics-briefing",
+      "file": "tactics-briefing.png",
+      "source": "05-tactique.png",
+      "source_sha256": "809e472917c31970f788d0b2a536e08e8cc9d24e1ea912b59a09c43a0fabe78c",
+      "crop": [
+        250,
+        188,
+        602,
+        125
+      ],
+      "width": 602,
+      "height": 125,
+      "bytes": 180587,
+      "sha256": "e93a55702e82fcf2a2d7d6653340ebc7e29e5efb172c083f91b316e243a8efff",
+      "synthetic": true
+    },
+    {
+      "id": "training-session",
+      "file": "training-session.png",
+      "source": "06-entrainement.png",
+      "source_sha256": "36da49e20653cd70b45425c032f251f03512d86ac019955d034358f2bb1131c1",
+      "crop": [
+        247,
+        678,
+        644,
+        253
+      ],
+      "width": 644,
+      "height": 253,
+      "bytes": 403561,
+      "sha256": "81244ba8dfdf1f069337c5fc91519ad123332d46796bdcfb13ad3443ddb75194",
+      "synthetic": true
+    },
+    {
+      "id": "training-coach",
+      "file": "training-coach.png",
+      "source": "06-entrainement.png",
+      "source_sha256": "36da49e20653cd70b45425c032f251f03512d86ac019955d034358f2bb1131c1",
+      "crop": [
+        1279,
+        724,
+        55,
+        52
+      ],
+      "width": 55,
+      "height": 52,
+      "bytes": 8076,
+      "sha256": "059ee1dc00b445eefc1afbb7e5d9da87c372301404097622e2bd6a93de2f6dd6",
+      "synthetic": true
+    },
+    {
+      "id": "scouting",
+      "file": "scouting.png",
+      "source": "07-recrutement.png",
+      "source_sha256": "d89a5fa5e295de2e252d7591ea64b51b29cea7860d75c20f8a3f3f5e98152474",
+      "crop": [
+        240,
+        143,
+        391,
+        108
+      ],
+      "width": 391,
+      "height": 108,
+      "bytes": 101642,
+      "sha256": "2811a32f3b73998b6cabe9b7bef86f2d6694b4d21ca1284d7840f7a74a796fc1",
+      "synthetic": true
+    },
+    {
+      "id": "recruit-profile",
+      "file": "recruit-profile.png",
+      "source": "07-recrutement.png",
+      "source_sha256": "d89a5fa5e295de2e252d7591ea64b51b29cea7860d75c20f8a3f3f5e98152474",
+      "crop": [
+        1155,
+        249,
+        183,
+        161
+      ],
+      "width": 183,
+      "height": 161,
+      "bytes": 74251,
+      "sha256": "1d5a98a9acf6f4cf358693b36791abf9b8bef371a5118eb34c6a72bb7b6cd757",
+      "synthetic": true
+    },
+    {
+      "id": "stadium",
+      "file": "stadium.png",
+      "source": "08-club.png",
+      "source_sha256": "b09f75824861bb9d8e6501b6e2e0056fca3c6fdcbc40686fda3e3983c37a0285",
+      "crop": [
+        248,
+        200,
+        584,
+        216
+      ],
+      "width": 584,
+      "height": 216,
+      "bytes": 304251,
+      "sha256": "aa32b0c80eac825478905655f6fa7e42dd877d53c47a9b3cc5a16226d09abe83",
+      "synthetic": true
+    },
+    {
+      "id": "club-forest",
+      "file": "club-forest.png",
+      "source": "08-club.png",
+      "source_sha256": "b09f75824861bb9d8e6501b6e2e0056fca3c6fdcbc40686fda3e3983c37a0285",
+      "crop": [
+        946,
+        49,
+        716,
+        86
+      ],
+      "width": 716,
+      "height": 86,
+      "bytes": 108076,
+      "sha256": "603a5b9692729570043498427854aef3e37551298bb28b8c1905c83545e53e89",
+      "synthetic": true
+    },
+    {
+      "id": "hospitality",
+      "file": "hospitality.png",
+      "source": "09-finances.png",
+      "source_sha256": "7843d9006e15bf74c8b1b0bd4fb50f75a052d57ae77b51a71ebff8aa2098a498",
+      "crop": [
+        1264,
+        50,
+        406,
+        132
+      ],
+      "width": 406,
+      "height": 132,
+      "bytes": 135123,
+      "sha256": "c835aa1266dd453dc3b485b0ca1e9402eb52c5d05640d62f928bb83c74013706",
+      "synthetic": true
+    },
+    {
+      "id": "finance-hospitality",
+      "file": "finance-hospitality.png",
+      "source": "09-finances.png",
+      "source_sha256": "7843d9006e15bf74c8b1b0bd4fb50f75a052d57ae77b51a71ebff8aa2098a498",
+      "crop": [
+        1083,
+        58,
+        589,
+        126
+      ],
+      "width": 589,
+      "height": 126,
+      "bytes": 186005,
+      "sha256": "47c4078948b3c8c9bd6866b5ecbc64982e15b6395bbc15c9983e81c6b1edb5b5",
+      "synthetic": true
+    },
+    {
+      "id": "trophy",
+      "file": "trophy.png",
+      "source": "10-competitions.png",
+      "source_sha256": "ee399f596176fe2d8169e9766031833c64ff7eb4af20327007b789cdcfdbe7ab",
+      "crop": [
+        1208,
+        49,
+        462,
+        176
+      ],
+      "width": 462,
+      "height": 176,
+      "bytes": 191963,
+      "sha256": "64f9c87199dbf09c34d35fb92c8654a14fbc8e3011ea85c01f5155f23a720170",
+      "synthetic": true
+    },
+    {
+      "id": "academy-training",
+      "file": "academy-training.png",
+      "source": "11-formation.png",
+      "source_sha256": "6b60504c969a9b801e9918f754cd3897e7e01576ecb951d08eefefbcd4205b38",
+      "crop": [
+        912,
+        49,
+        407,
+        174
+      ],
+      "width": 407,
+      "height": 174,
+      "bytes": 169375,
+      "sha256": "2c61c923df0de415a30d8596a9566dad6978ca2122257a6ad0eb1deec9e363fb",
+      "synthetic": true
+    },
+    {
+      "id": "academy-player",
+      "file": "academy-player.png",
+      "source": "11-formation.png",
+      "source_sha256": "6b60504c969a9b801e9918f754cd3897e7e01576ecb951d08eefefbcd4205b38",
+      "crop": [
+        1143,
+        275,
+        183,
+        240
+      ],
+      "width": 183,
+      "height": 240,
+      "bytes": 101087,
+      "sha256": "681a5f7f9398f29cf5676ba8a242e01b40247dc4eef67e2195bed2d493bce931",
+      "synthetic": true
+    },
+    {
+      "id": "player-00",
+      "file": "player-00.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        298,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2757,
+      "sha256": "9cb9053ec376a19d07b0503805a295533ec686df1fcbf82efcb15ee780e8996d",
+      "synthetic": true
+    },
+    {
+      "id": "player-01",
+      "file": "player-01.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        326,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2826,
+      "sha256": "5acf79cf85d9f5bcd528bc44b9d16a420a9d8a3d43049ea10bc23f29d529a3dc",
+      "synthetic": true
+    },
+    {
+      "id": "player-02",
+      "file": "player-02.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        353,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2786,
+      "sha256": "6416a1cffc9c25b585a6bfc4ba226709f52569cb2f01168d4f46237824fe4656",
+      "synthetic": true
+    },
+    {
+      "id": "player-03",
+      "file": "player-03.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        381,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2821,
+      "sha256": "f5b98dd213f85ee6c9f5fee6dedb297b00fcafe297c63dd79cba57b28111ef0f",
+      "synthetic": true
+    },
+    {
+      "id": "player-04",
+      "file": "player-04.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        409,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2825,
+      "sha256": "6925189cd709fbbc3e27a8f08d94db608089fb6d4b9b1fce4fb3c3dc852883cc",
+      "synthetic": true
+    },
+    {
+      "id": "player-05",
+      "file": "player-05.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        437,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2848,
+      "sha256": "40005cff8fa8ed1ae7b820c57056185354c78a1747139e9710eeedbc808d6c69",
+      "synthetic": true
+    },
+    {
+      "id": "player-06",
+      "file": "player-06.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        464,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2828,
+      "sha256": "66651817bb05d9a1cbe31b1ad426166fbd52120b64d918b197bdc799450e2acd",
+      "synthetic": true
+    },
+    {
+      "id": "player-07",
+      "file": "player-07.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        493,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2783,
+      "sha256": "6865e4ea0fcceae074cc626b393f855a4bb92b3730e32ee434f8b0f7abff234f",
+      "synthetic": true
+    },
+    {
+      "id": "player-08",
+      "file": "player-08.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        551,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2762,
+      "sha256": "1c1377e1d67befab637fbc60bb970d25b8c9d5e1b8acfe542e9ca3fe7a9a4b93",
+      "synthetic": true
+    },
+    {
+      "id": "player-09",
+      "file": "player-09.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        580,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2844,
+      "sha256": "301ac6f08593ff13425d0e055f99aee909610d2a712e5d2a48f9fc798ce74e59",
+      "synthetic": true
+    },
+    {
+      "id": "player-10",
+      "file": "player-10.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        608,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2846,
+      "sha256": "0ef2f0f9b07aebbcdfe45416300ce88749950f93531c980f7095efd75872d7ea",
+      "synthetic": true
+    },
+    {
+      "id": "player-11",
+      "file": "player-11.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        636,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2820,
+      "sha256": "ee1cfcc5cc747de6e0d16e17ce2d0127a2bae1d1ea2d8959eb695055da46ef8e",
+      "synthetic": true
+    },
+    {
+      "id": "player-12",
+      "file": "player-12.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        664,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2861,
+      "sha256": "28209f173508b33bae24a0fab833e4a548f4e48a79863935ebcfd0fda947e144",
+      "synthetic": true
+    },
+    {
+      "id": "player-13",
+      "file": "player-13.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        692,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2879,
+      "sha256": "5ebb724ae400ffe5a0e6887e2819d5125000c9e9ca688007f36c225da6b9621a",
+      "synthetic": true
+    },
+    {
+      "id": "player-14",
+      "file": "player-14.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        720,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2839,
+      "sha256": "c712910fd38fb91821a48a8ed15221fe15f05c52ac76212a25baa249935fa5b5",
+      "synthetic": true
+    },
+    {
+      "id": "player-15",
+      "file": "player-15.png",
+      "source": "03-effectif.png",
+      "source_sha256": "0ed3399ad5fe5f2428461e556fcd8b4a04489872bb9727f6e00416dfdacaa4db",
+      "crop": [
+        309,
+        747,
+        31,
+        30
+      ],
+      "width": 31,
+      "height": 30,
+      "bytes": 2780,
+      "sha256": "c76db3113704f05b7b8cb35256033d3da266e05b823ed221e6d7f2028a9de3c3",
+      "synthetic": true
+    }
+  ]
+}

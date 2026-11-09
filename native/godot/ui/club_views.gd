@@ -63,11 +63,15 @@ class StandingsLayout extends HBoxContainer:
 static func _page_turn(app:Control,id:String,state:Dictionary,page:int,button_index:int) -> void:
 	state.page=page
 	app._render()
-	var row:=app.find_child(id,true,false)
-	if row!=null:
-		var target:Button=row.get_child(button_index)
-		if target.disabled:target=row.get_child(2 if button_index==0 else 0)
-		if not target.disabled:target.grab_focus.call_deferred()
+	var content: Control = app.root_content
+	# Le classement peut recalculer sa pagination après le montage.
+	await app.get_tree().process_frame
+	if not is_instance_valid(content) or not content.is_inside_tree(): return
+	var row := content.find_child(id,true,false) as Control
+	if row==null or not row.is_visible_in_tree(): return
+	var target: Button = row.get_child(button_index)
+	if target.disabled: target = row.get_child(2 if button_index==0 else 0)
+	if not target.disabled: target.grab_focus()
 
 static func _paged(app:Control,parent:Node,id:String,total:int,capacity:int,state_id:String="") -> Vector2i:
 	var key:=state_id if not state_id.is_empty() else id
@@ -171,6 +175,18 @@ static func calendar(app: Control) -> Control:
 	G.fill(page, true)
 	var sheet := G.panel(page)
 	G.chapter(sheet,"06","Les rendez-vous du club","Résultats et rencontres à venir · les phases finales se précisent au fil de la saison.",app.accent)
+	var season := preload("res://ui/immersive08/season_preparation.gd")
+	var meta: Dictionary = app.model.get("meta", {})
+	var japan := season.is_japan(meta)
+	var preparation := season.data(meta) if japan or meta.get("leagueId")=="srp" else {}
+	if not preparation.is_empty():
+		var summary := G.h(12)
+		sheet.add_child(summary)
+		summary.add_child(G.fill(G.wrap("Prochain match le " + _calendar_date(preparation.nextDate), 13, G.GOLD)))
+		var prepare := G.reading_button(G.button("Ouvrir le dossier de préparation", func(): app.Immersive.open_preparation(app,0), true), 196)
+		prepare.name = "CalendarJapanPreparation" if japan else "CalendarPacificPreparation"
+		prepare.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		summary.add_child(prepare)
 	var list := G.scroll(sheet)
 	list.get_parent().name="CalendarScroll"
 	var fixtures: Array = app.model.get("calendar", [])
@@ -185,17 +201,26 @@ static func calendar(app: Control) -> Control:
 		tile.add_child(row)
 		var caption: String = fixture.get("label", "Semaine " + G.n(fixture.get("week", 0)))
 		caption = {"barrage":"Barrage","semi":"Demi-finale","final":"Finale","access":"Barrage d’accession"}.get(caption,caption)
+		var competition_id := str(fixture.get("competitionId", ""))
+		var japanese := competition_id in ["jlo-d1", "jlo-d2", "jlo-d1-d2"]
+		var fixture_title := ""
 		if international:
 			var details := G.v(1)
 			details.custom_minimum_size.x = 174
 			row.add_child(details)
-			var competition := competition_name(str(fixture.get("competitionId", "")))
+			var competition := competition_name(competition_id)
 			var date := G.label(_calendar_date(str(fixture.get("date", ""))), 13, G.GOLD)
 			date.name = "CalendarFixtureDate"
 			details.add_child(date)
 			var phase := str(fixture.get("phase", ""))
 			var stage := "J%d · %s" % [int(fixture.get("competitionRound", 0)) + 1, "Poules" if phase == "pool" else "Championnat"] if phase in ["league", "pool"] else phase_name(phase)
-			details.add_child(G.wrap(competition + " · " + stage, 12, G.INK))
+			if competition_id == "jlo-d1-d2":
+				var leg: Variant = fixture.get("leg")
+				if leg is int or leg is float: stage = "Manche %d" % int(leg)
+			elif competition_id == "jlo-d1" and phase == "quarter":
+				stage = "Barrage D1"
+			fixture_title = competition + " · " + stage
+			details.add_child(G.wrap(fixture_title, 12, G.INK))
 			var venue := str(fixture.get("venue", ""))
 			if not venue.is_empty(): details.add_child(G.wrap(venue, 11, G.MUTED))
 		else:
@@ -213,11 +238,60 @@ static func calendar(app: Control) -> Control:
 		opponent.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		row.add_child(opponent)
 		row.add_child(G.crest(away, 36))
+		if japanese or (international and competition_id in ["champions", "challenge"]):
+			var detail := G.reading_button(G.button("Détail", func(): _calendar_fixture_detail(app, fixture, fixture_title)), 72)
+			detail.name = "CalendarFixtureOpen_" + str(fixture.id).replace(":", "_")
+			detail.accessibility_name = "Détail · %s · %s – %s" % [_calendar_date(fixture.date), G.club_name(home), G.club_name(away)]
+			detail.tooltip_text = detail.accessibility_name
+			detail.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			row.add_child(detail)
 		var winner: Variant = fixture.get("winner")
 		if international and score is Array and score[0] == score[1] and winner != null:
 			tile.add_child(G.wrap("Qualifié après départage · " + G.club_name(home if home.get("id") == winner else away), 12, G.GOLD))
 		list.add_child(G.separator())
 	return page
+
+static func _calendar_fixture_detail(app: Control, fixture: Dictionary, title: String) -> void:
+	var style := preload("res://ui/immersive08/components.gd")
+	var view := preload("res://ui/decision_views.gd").dialog(app, title, "CompetitionFixtureDetails", 760)
+	var body: VBoxContainer = view[1]
+	var home: Dictionary = fixture.get("home", {})
+	var away: Dictionary = fixture.get("away", {})
+	body.add_child(style.wrap("%s  —  %s" % [G.club_name(home), G.club_name(away)], 38, style.IVORY, true, 700))
+	var date := _calendar_date(str(fixture.get("date", "")))
+	if not date.is_empty(): body.add_child(style.wrap(date, 32, style.GOLD, true, 700))
+	for note: String in japan_date_notes(fixture): body.add_child(style.wrap(note, 28, style.MUTED))
+	var venue := str(fixture.get("venue", ""))
+	if fixture.get("neutral", false) and venue != "Terrain neutre":
+		venue = "Terrain neutre" if venue.is_empty() else "Terrain neutre · " + venue
+	if not venue.is_empty(): body.add_child(style.wrap(venue, 30, style.IVORY))
+	var score: Variant = fixture.get("score")
+	if score is Array and score.size() == 2:
+		body.add_child(style.wrap("Score · %s — %s" % [G.n(score[0]), G.n(score[1])], 36, style.IVORY, true, 700))
+	else:
+		var status := "Score non renseigné" if fixture.get("played", false) else "Match à jouer"
+		body.add_child(style.wrap(status, 30, style.GOLD, true, 700))
+	var winner: Variant = fixture.get("winner")
+	if winner != null and winner in [home.get("id"), away.get("id")]:
+		body.add_child(style.wrap("Vainqueur · " + G.club_name(home if home.get("id") == winner else away), 28, style.MUTED))
+	app.ImmersiveDialogs.show_centered(view[0], Vector2i(760, 520))
+
+static func japan_date_notes(fixture: Dictionary) -> Array[String]:
+	var notes: Array[String] = []
+	var source: String = {
+		"published": "Date publiée",
+		"simulation-earliest-option": "Date retenue parmi les options publiées",
+		"simulation-window": "Date simulée dans la fenêtre publiée",
+		"simulation-future-calendar": "Date générée pour cette saison",
+	}.get(fixture.get("dateSource", ""), "")
+	if not source.is_empty(): notes.append(source)
+	var window: Array = fixture.get("dateWindow", [])
+	var options: Array = fixture.get("dateOptions", [])
+	if window.size() == 2:
+		notes.append("Fenêtre du %s au %s" % [_calendar_date(window[0]), _calendar_date(window[1])])
+	elif options.size() > 1:
+		notes.append("Dates possibles · " + " · ".join(options.map(_calendar_date)))
+	return notes
 
 static func _standings_rows(app: Control, list: VBoxContainer, rows: Array, bounds: Vector2i) -> void:
 	var header := G.h(12)
@@ -329,11 +403,20 @@ static func tables(app: Control) -> Control:
 	if not international: sheet.add_child(archives)
 	var tabs := G.h(10)
 	sheet.add_child(tabs)
+	var abbreviations := {"prem":"PREM","urc":"URC","champions":"CHAMPIONS","challenge":"CHALLENGE"}
+	var edition := str(app.model.meta.get("edition", ""))
+	if edition in ["world-japan", "world-nationale", "world-champ"]:
+		abbreviations.merge({"accession":"ACCESSION","jlo-d1":"JAPON D1","jlo-d2":"JAPON D2"})
+	if edition == "world-champ": abbreviations.srp = "SRP"
 	for league: Dictionary in leagues:
 		var label := str(league.get("name", league.id))
-		var short := str({"prem":"PREM","urc":"URC","champions":"CHAMPIONS","challenge":"CHALLENGE"}.get(league.id, label.to_upper())) if international else label.to_upper()
-		var b := G.button(short, func(): app.table_division = league.id; app._render())
-		b.name = "StandingsDivision_" + str(league.id)
+		var short := str(abbreviations.get(league.id, label.to_upper())) if international else label.to_upper()
+		var id := "StandingsDivision_" + str(league.id)
+		var b := G.button(short, func():
+			app.table_division = league.id
+			app._render()
+			preload("res://ui/immersive08/club_ui.gd").focus(app,id))
+		b.name = id
 		if international: G.reading_button(b, 82)
 		b.tooltip_text = label
 		G.fill(b)
@@ -358,7 +441,10 @@ static func tables(app: Control) -> Control:
 		G.reading_button(pool_choice, 104)
 		for pool: Dictionary in pools: pool_choice.add_item(str(pool.label))
 		pool_choice.select(selected_pool)
-		pool_choice.item_selected.connect(func(index: int): app.management_ui[pool_key] = index; app._render())
+		pool_choice.item_selected.connect(func(index: int):
+			app.management_ui[pool_key] = index
+			app._render()
+			preload("res://ui/immersive08/club_ui.gd").focus(app,"StandingsPoolChoice"))
 		toolbar.add_child(pool_choice)
 		toolbar.add_child(G.label(phase_name(str(chosen.get("phase", "pool"))), 12, G.MUTED))
 		rows = pools[selected_pool].rows
@@ -417,26 +503,46 @@ static func season_archives(app:Control) -> void:
 	d.get_ok_button().text="FERMER LES ARCHIVES"
 	var content:=G.v(10)
 	d.add_child(content)
-	content.add_child(G.label("15 dernières saisons terminées · identités du pack actuel.\nRang de phase régulière conservé ; points et scores historiques non enregistrés.",12,G.MUTED))
+	var japanese: bool = app.model.get("meta",{}).get("edition") == "world-japan"
+	var notice := "Le carnet conserve le rang de phase régulière."
+	if japanese: notice = "Rangs de phase régulière et scores des barrages japonais conservés."
+	content.add_child(G.wrap("15 dernières saisons terminées · identités du pack actuel.\n"+notice,12,G.MUTED))
 	var list:=G.scroll(content)
 	list.get_parent().custom_minimum_size.y=360
 	var seasons:Array=app.model.get("archives",{}).get("seasons",[]).duplicate()
 	seasons.reverse()
 	var international: bool = app.model.get("meta", {}).get("mode") == "world"
+	var world = load("res://ui/immersive08/world_archive.gd")
+	var nationale = load("res://ui/immersive08/nationale_archive.gd")
 	if seasons.is_empty():
-		list.add_child(G.wrap("Aucune saison archivée. Les quatre championnats et les deux coupes d’Europe alimentent ce carnet au passage à la saison suivante." if international else "Aucune saison archivée. Le championnat français alimente ce carnet au passage à la saison suivante. Les archives de la ligue historique à 14 ne sont pas présentées ici.",16))
+		var empty := "Aucune saison archivée. Le championnat français alimente ce carnet au passage à la saison suivante. Les archives de la ligue historique à 14 ne sont pas présentées ici."
+		if international: empty = "Aucune saison archivée. Les championnats et les coupes d’Europe alimentent ce carnet au passage à la saison suivante."
+		if japanese: empty = "Aucune saison archivée. Les manches des barrages japonais sont conservées au passage à la saison suivante."
+		list.add_child(G.wrap(empty,16))
 	for year:Dictionary in seasons:
 		list.add_child(G.section("SAISON "+G.n(year.season)))
 		for winner:Dictionary in archive_titles(year):
 			list.add_child(G.wrap("Champion %s : %s"%[competition_name(winner.leagueId),_archive_club(app,winner.clubId)],17,G.INK))
-		for league_id in (["elite","accession","prem","urc"] if international else ["elite","accession"]):
-			var ranks:Array=year.get("standings",{}).get(league_id,[])
+		var standings: Dictionary = year.get("standings",{})
+		var divisions: Array = standings.keys() if international else ["elite","accession"]
+		for league_id in divisions:
+			var ranks: Array = standings.get(league_id,[])
 			var position:=ranks.find(app.model.club.id)
 			if position>=0:list.add_child(G.wrap("Votre club actuel · %s · rang %d / %d en phase régulière"%[competition_name(league_id),position+1,ranks.size()],14,G.accent_ink(app.accent)))
+		var barrages: Array = world.japan_barrages(year)
+		if not barrages.is_empty(): list.add_child(G.section("MOUVEMENTS FRANÇAIS"))
 		for pair in [["promoted","Montée(s) vers l’Élite"],["relegated","Descente(s) en Accession"]]:
 			var names:Array[String]=[]
 			for id in year.get("movement",{}).get(pair[0],[]):names.append(_archive_club(app,id))
-			list.add_child(G.wrap(pair[1]+" : "+(", ".join(names) if not names.is_empty() else "aucune"),14,G.MUTED))
+			list.add_child(G.wrap(pair[1]+" · "+(", ".join(names) if not names.is_empty() else "aucune"),14,G.MUTED))
+		var nationale_lines: Array[String] = nationale.lines(app, year)
+		if not nationale_lines.is_empty():
+			list.add_child(G.section("NATIONALE ET ACCESSION"))
+			for line: String in nationale_lines: list.add_child(G.wrap(line,16,G.INK))
+		if not barrages.is_empty():
+			list.add_child(G.section("BARRAGES DU JAPON"))
+			for barrage: Dictionary in barrages:
+				for line: String in world.japan_lines(app,barrage): list.add_child(G.wrap(line,16,G.INK))
 		list.add_child(G.separator())
 	d.confirmed.connect(d.queue_free)
 	d.canceled.connect(d.queue_free)

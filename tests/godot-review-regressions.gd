@@ -46,7 +46,8 @@ func _buttons(node: Node) -> Array[Button]:
 	return result
 
 func _speed(node: Node) -> OptionButton:
-	if node is OptionButton: return node
+	if node is OptionButton and node.is_visible_in_tree() and node.item_count == 3 and node.get_item_text(2) == "Cadence ×12":
+		return node
 	for child in node.get_children():
 		var found := _speed(child)
 		if found != null: return found
@@ -57,13 +58,6 @@ func _confirm() -> void:
 		if child is ConfirmationDialog and child.visible:
 			child.confirmed.emit()
 			return
-
-func _date(node: Node) -> Label:
-	if node is Label and node.text.begins_with("SAISON "): return node
-	for child in node.get_children():
-		var found := _date(child)
-		if found != null: return found
-	return null
 
 func _named_button(node: Node, text: String) -> Button:
 	for button in _buttons(node):
@@ -184,7 +178,7 @@ func _bench() -> void:
 	app._navigate("Match")
 	var panel: Node = app.match_screen
 	var viewport: Node = app.match_view.get_parent()
-	var initial_date: String = _date(app.root_content).text
+	var initial_date: String = app.header_date.text
 	await _command("begin_match")
 	await _command("pause", {"paused":true})
 	var option: Dictionary = {}
@@ -220,13 +214,14 @@ func _bench() -> void:
 	_check(_named_button(panel.side, incoming.name).disabled, "Finished match disables entrant without another selection")
 	_check(panel.tab == "Banc" and panel.selected_slot == int(option.slot), "Finish retains bench context")
 	await _command("finish_round")
-	_check(_date(app.root_content).text != initial_date and _date(app.root_content).text.contains("JOURNÉE 2"), "First round validation refreshes the header date in Match")
+	var first_date: String = app.header_date.text
+	_check(app.header_date.is_visible_in_tree() and first_date != initial_date and first_date.contains("JOURNÉE 2") and int(app.model.meta.week) == 1, "First round validation refreshes the header date in Match")
 	await _command("auto_lineup")
 	if not app.model.selection.valid: await _command("promote_cover", {"confirmed":true})
 	await _command("begin_match")
 	await _command("delegate")
 	await _command("finish_round")
-	_check(_date(app.root_content).text.contains("JOURNÉE 3"), "Second round validation refreshes the date again")
+	_check(app.header_date.is_visible_in_tree() and app.header_date.text != first_date and app.header_date.text.contains("JOURNÉE 3") and int(app.model.meta.week) == 2, "Second round validation refreshes the date again")
 	_check(app.match_screen == panel and app.match_view.get_parent() == viewport, "Both date changes retain the actual match SubViewport")
 
 func _modal() -> void:
@@ -296,9 +291,11 @@ func _scroll_focus(scroll: ScrollContainer, context: String) -> void:
 func _focus() -> void:
 	app._navigate("Effectif")
 	for i in 5: await process_frame
-	var scrolls: Array[Node] = app.body.find_children("*", "ScrollContainer", true, false).filter(func(node: Node): return node.get_child_count() > 0 and node.is_visible_in_tree())
-	_check(scrolls.size() == 2, "Squad list and player profile each have their own scroll viewport")
-	for scroll in scrolls: await _scroll_focus(scroll, "Squad/profile")
+	var list := app.body.find_child("SquadScroll", true, false) as ScrollContainer
+	var profile := app.body.find_child("ProfileScroll", true, false) as ScrollContainer
+	_check(list != null and profile != null and list != profile and list.is_visible_in_tree() and profile.is_visible_in_tree(), "Squad list and player profile each have their own scroll viewport")
+	for scroll in [list, profile]:
+		if scroll != null: await _scroll_focus(scroll, "Squad/profile")
 	app._navigate("Match")
 	await _command("begin_match")
 	await _command("pause", {"paused":true})
@@ -313,6 +310,9 @@ func _focus() -> void:
 func _run() -> void:
 	var mode := OS.get_environment("CD_GODOT_REGRESSION")
 	var profile := OS.get_environment("CD_GODOT_DATA_DIR")
+	if DisplayServer.get_name() == "headless":
+		root.mode = Window.MODE_WINDOWED
+		root.size = Vector2i(1280, 720)
 	if mode == "disk":
 		profile = profile.path_join("profil-au-chemin-explicite-et-suffisamment-long-pour-verifier-la-lisibilite-de-lerreur")
 		OS.set_environment("CD_GODOT_DATA_DIR", profile)
@@ -336,11 +336,10 @@ func _run() -> void:
 	if mode=="recovery":
 		var original:=FileAccess.get_file_as_bytes(profile.path_join("PrototypeGodot/donnees.json"))
 		_check(app.model.get("meta",{}).get("recoveryRequired",false),"Corrupt profile exposes explicit recovery")
-		var recover:Button=null
-		for button in _buttons(app.root_content):
-			if button.text=="NOUVELLE CARRIÈRE":_check(button.disabled,"Creation is locked before recovery")
-			if button.text=="RÉCUPÉRER LE PROFIL":recover=button
-		_check(recover!=null,"Recovery action exists")
+		var creation := app.root_content.find_child("EntryNewCareer", true, false) as Button
+		var recover := app.root_content.find_child("EntryRecover", true, false) as Button
+		_check(creation!=null and creation.disabled,"Creation is locked before recovery")
+		_check(recover!=null and not recover.disabled,"Recovery action exists and is usable")
 		if recover!=null:
 			recover.pressed.emit()
 			_check(FileAccess.get_file_as_bytes(profile.path_join("PrototypeGodot/donnees.json"))==original,"Recovery does not write before confirmation")
@@ -377,11 +376,14 @@ func _run() -> void:
 	elif mode == "ui":
 		app._navigate("Match")
 		var speed := _speed(app.body)
-		speed.select(2)
-		speed.item_selected.emit(2)
+		_check(speed != null and not speed.disabled, "Match cadence offers an enabled x12 action")
+		if speed != null and not speed.disabled:
+			speed.select(2)
+			speed.item_selected.emit(2)
 		app._navigate("Effectif")
 		app._navigate("Match")
-		_check(_speed(app.body).selected == 2 and app.tick_steps == 12, "Cadence remains visually and actually x12 after navigation")
+		var restored_speed := _speed(app.body)
+		_check(restored_speed != null and restored_speed.selected == 2 and app.tick_steps == 12, "Cadence remains visually and actually x12 after navigation")
 		await _command("begin_match")
 		await _command("delegate")
 		_check(app.pause_button.disabled, "Finished match disables pause")
@@ -415,40 +417,78 @@ func _run() -> void:
 	elif mode == "modal": await _modal()
 	elif mode == "focus": await _focus()
 	elif mode == "limits":
-		for text in ["a".repeat(5 * 1024 * 1024 + 1), "\"".repeat(4 * 1024 * 1024), "é".repeat(3 * 1024 * 1024)]:
+		var maximum := NativeEngineBridge.IMPORT_LIMIT_BYTES
+		var save_path: String = str(app.model.meta.dataDir).path_join("donnees.json")
+		var before := FileAccess.get_file_as_bytes(save_path)
+		var route_before: String = app.route
+		for fixture: Array in [["ASCII", "a".repeat(maximum + 1)], ["UTF-8", "é".repeat(floori(maximum / 2.0) + 1)]]:
 			var path := profile.path_join("oversized.json")
 			var file := FileAccess.open(path, FileAccess.WRITE)
-			file.store_string(text)
+			file.store_string(fixture[1])
 			file.close()
+			_check(FileAccess.get_file_as_bytes(path).size() > maximum, "%s fixture exceeds the byte cap" % fixture[0])
+			var request_before: int = app.bridge._next_id
 			app.import_mode = true
 			app._file_selected(path)
-			for child in app.get_children():
-				if child is ConfirmationDialog and child.visible: child.confirmed.emit();break
-			_check(not app.waiting and app.last_error.to_lower().contains("volumineux"), "UI rejects inadmissible UTF8/JSON import before transport")
-			# RED must not enqueue more requests on an already stranded reader.
-			if app.waiting: break
+			var confirmation := _dialogs().any(func(dialog: AcceptDialog): return dialog is ConfirmationDialog and dialog.visible)
+			_check(not confirmation and not app.waiting and app.bridge._next_id == request_before and app.last_error.to_lower().contains("volumineux"), "%s over-limit import is refused before confirmation and transport" % fixture[0])
 			_dismiss_errors()
-		if not app.waiting:
-			await _command("snapshot")
-			_check(app.model.club != null, "Snapshot works after local import refusal")
+		await _command("export")
+		var valid_export: String = app.model.meta.get("exportText", "")
+		_check(not valid_export.is_empty(), "A complete native export is available for the NUL fixture")
+		var terminated := valid_export.to_utf8_buffer()
+		terminated.append(0)
+		terminated.append_array("suffixe non JSON".to_utf8_buffer())
+		var worker_before: int = app.bridge.child_pid
+		for fixture: Array in [["C0", ("{" + String.chr(1) + "}").to_utf8_buffer()], ["NUL après un export valide", terminated]]:
+			var control_path := profile.path_join("caractere-de-controle.json")
+			var control_file := FileAccess.open(control_path, FileAccess.WRITE)
+			control_file.store_buffer(fixture[1])
+			control_file.close()
+			var request_before: int = app.bridge._next_id
+			app.open_file(true)
+			app.file_dialog.file_selected.emit(control_path)
+			var confirmation := _dialogs().any(func(dialog: AcceptDialog): return dialog is ConfirmationDialog and dialog.visible)
+			_check(not confirmation and not app.waiting and app.bridge._next_id == request_before and app.last_error.contains("caractère de contrôle"), "%s est refusé avant le transport" % fixture[0])
+			_check(worker_before > 0 and app.bridge.child_pid == worker_before and OS.is_process_running(worker_before), "Malformed file does not stop the owned worker")
+			_dismiss_errors()
+		# Below the byte cap, malformed JSON is checked by the worker after confirmation.
+		for text in ["a".repeat(5 * 1024 * 1024 + 1), "\"".repeat(4 * 1024 * 1024), "é".repeat(3 * 1024 * 1024)]:
+			var error_before := errors
+			_import_text(text)
+			_check(app.waiting and app.last_command == "import", "In-limit malformed import reaches the worker after confirmation")
+			await _wait()
+			_check(errors == error_before + 1 and not app.bridge.last_response_ok and app.last_error.contains("JSON"), "Worker returns a correlated JSON rejection")
+			_dismiss_errors()
+		await _command("snapshot")
+		_check(app.bridge.last_response_ok and app.model.club != null and app.route == route_before and app.pending_route.is_empty(), "Snapshot and navigation survive rejected imports")
+		_check(not before.is_empty() and FileAccess.get_file_as_bytes(save_path) == before, "Rejected imports preserve the profile bytes")
 	elif mode == "null-response":
-		# Fault injection bypasses send's local guard to exercise the actual worker
-		# protocol's id:null response and its native transport lifecycle.
+		# A non-import request exceeds both editions' ordinary wire cap.
+		var child_pid: int = app.bridge.child_pid
+		var request := {"id": 999999, "command": "snapshot", "payload": {"text": "a".repeat(NativeEngineBridge.REQUEST_LIMIT_BYTES + 1)}}
 		app.bridge._mutex.lock()
-		app.bridge._queue.append({"id": 999999, "command": "import", "payload": {"text": "a".repeat(7 * 1024 * 1024)}})
+		app.bridge._queue.append(request)
 		app.bridge._mutex.unlock()
 		app.bridge._wake.post()
-		await _delay(1500)
+		var terminal_deadline := Time.get_ticks_msec() + 5000
+		while app.bridge.child_pid > 0 and Time.get_ticks_msec() < terminal_deadline: await process_frame
+		_check(error_messages.any(func(message: String): return message.contains("Message trop volumineux")), "Actual worker rejects the oversized protocol message")
+		_check(child_pid > 0 and not OS.is_process_running(child_pid) and app.bridge.child_pid <= 0 and app.bridge._stopping, "id:null rejection terminates owned worker and reader")
 		var prior_errors := errors
 		_dismiss_errors()
 		app.bridge.send("snapshot")
-		await _delay(100)
-		_check(app.bridge.child_pid <= 0 and app.bridge._stopping, "id:null rejection terminates owned worker and reader")
 		_check(errors > prior_errors, "Further commands fail immediately after terminal response")
 	var pid: int = app.bridge.child_pid
+	app.closing = true
+	app.timer.stop()
+	if is_instance_valid(app.coach): app.coach.destroy()
+	if is_instance_valid(app.soundscape): app.soundscape.dispose()
 	app.bridge.stop()
 	var close_deadline := Time.get_ticks_msec() + 2500
 	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < close_deadline: await process_frame
 	_check(app.bridge.child_pid <= 0 and (pid <= 0 or not OS.is_process_running(pid)), "Owned child closes within bounded deadline")
+	app.queue_free()
+	for i in 3: await process_frame
 	print(JSON.stringify({"mode": mode, "passed": failures.is_empty(), "checks": checks, "failures": failures, "errors": errors, "error_messages": error_messages}))
 	quit(0 if failures.is_empty() else 1)

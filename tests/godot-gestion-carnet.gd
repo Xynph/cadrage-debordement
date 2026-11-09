@@ -235,11 +235,24 @@ func real_market_and_archives() -> void:
 		target_search.text=str(candidate.name)
 		target_search.text_changed.emit(target_search.text);await settle()
 		await capture("recrutement-disponible-"+str(resolution.x))
-		var buttons:Array=app.body.find_children("*","Button",true,false).filter(func(b):return str(b.get_meta("player_id",""))==str(candidate.id))
-		await activate(buttons[0])
+		var player_id := str(candidate.id)
+		var row := named(app,"MarketPlayer_"+player_id.replace(":","_")) as Button
+		var offer: Button
+		if row != null:
+			await activate(row)
+			offer = named(app,"OfferRecruitment") as Button
+		else:
+			var buttons: Array = app.body.find_children("*","Button",true,false).filter(func(b):return str(b.get_meta("player_id",""))==player_id)
+			if not buttons.is_empty(): offer = buttons[0]
+		check(offer!=null and str(offer.get_meta("player_id",""))==player_id,"Action d’offre liée à la piste choisie "+str(resolution.x))
+		if offer==null:continue
+		await activate(offer)
 		var dialog:ConfirmationDialog=named(app,"ContractOffer")
 		check(dialog!=null and dialog.size.x<=app.size.x and dialog.size.y<=app.size.y,"Vraie offre bornée "+str(resolution.x))
-		check(named(app,"OfferSummary").text.contains("acquisition") and named(app,"OfferSummary").text.contains("ajout"),"Recrutement distingue acquisition et ajout hebdomadaire")
+		if dialog==null:continue
+		var summary := named(dialog,"OfferSummary") as Label
+		check(dialog.title.ends_with(str(candidate.name)),"L’offre concerne le joueur sélectionné")
+		check(summary!=null and summary.text.contains("acquisition") and summary.text.contains("ajout"),"Recrutement distingue acquisition et ajout hebdomadaire")
 		await capture("offre-"+str(resolution.x))
 		await activate(dialog.get_cancel_button())
 	check(before==await state(),"Vraies offres annulées sans mutation")

@@ -37,7 +37,8 @@ func _settle_layout() -> void:
 	if not is_instance_valid(app) or not app.is_inside_tree() or revision != _revision: return
 	var compact := app.size.y <= 760
 	var content := app.find_child("CareerContent",true,false)
-	if content is BoxContainer: content.add_theme_constant_override("separation",6 if compact else 8)
+	if content is BoxContainer and app.root_content.name != "ImmersiveShell":
+		content.add_theme_constant_override("separation",6 if compact else 8)
 	var search := app.find_child("RosterSearch",true,false)
 	if search != null and search.get_parent() is BoxContainer:
 		search.get_parent().add_theme_constant_override("separation",4)

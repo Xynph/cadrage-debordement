@@ -47,7 +47,20 @@ func labels(node: Node) -> String:
 	return text
 func watch_button() -> Button:
 	for b: Button in app.body.find_children("Follow*", "Button", true, false):
-		if str(b.get_meta("follow_id", "")) == watched_id: return b
+		if b.is_visible_in_tree() and str(b.get_meta("follow_id", "")) == watched_id: return b
+	return null
+func reveal_watch_button() -> Button:
+	for direction in ["Previous", "Next"]:
+		for _page in range(app.model.market.size() + 1):
+			var track := watch_button()
+			if track != null: return track
+			for row: Button in app.body.find_children("MarketPlayer_*", "Button", true, false):
+				if row.is_visible_in_tree() and str(row.get_meta("player_id", "")) == watched_id:
+					await keyboard(row)
+					return watch_button()
+			var step := app.body.find_child("MarketPagination" + direction, true, false) as Button
+			if step == null or not step.is_visible_in_tree() or step.disabled: break
+			await keyboard(step)
 	return null
 func run() -> void:
 	app = load("res://main.tscn").instantiate()
@@ -56,11 +69,14 @@ func run() -> void:
 	app.timer.stop()
 	await playbook_case()
 	await watch_case()
+	app.closing = true
+	app.bridge.stop()
+	var deadline := Time.get_ticks_msec() + 4500
+	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await process_frame
+	check(app.bridge.child_pid <= 0, "Le moteur ferme le profil avant la reprise")
 	var report := FileAccess.open(OS.get_environment("CD_PLAYBOOK_WATCH_ARTIFACTS").path_join("report.json"), FileAccess.WRITE)
 	report.store_string(JSON.stringify({"checks":checks,"failures":failures,"watchedId":watched_id}, "  "))
 	report.close()
-	app.closing = true
-	app.bridge.stop()
 	print("UI C04/C08 : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	quit(0 if failures.is_empty() else 1)
 func playbook_case() -> void:
@@ -106,31 +122,46 @@ func watch_case() -> void:
 	await settle()
 	watched_id = str(app.model.market[0].id)
 	check(app.model.clubLife.managerCareer.places == 0 and not app.model.clubLife.managerCareer.recruitmentAvailable, "Fixture réelle : effectif plein et embauche indisponible")
-	check(app.body.find_child("MarketFollowed", true, false).text == "Joueurs suivis", "Le filtre décrit le suivi persistant")
+	var followed := app.body.find_child("MarketFollowed", true, false) as Button
+	check(followed != null and followed.text == "Joueurs suivis", "Le filtre décrit le suivi persistant")
 	var before: Dictionary = await state()
-	var saved: String = app.model.meta.exportText
 	for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080)]:
 		root.size = resolution
 		await settle()
-		check(watch_button() != null and not watch_button().disabled, "Suivre reste activable à effectif plein " + str(resolution))
-	if watch_button() != null and not watch_button().disabled:
-		await keyboard(watch_button())
-		check(app.last_command == "manager_recruitment_watch", "Commande exacte de suivi depuis Entrée")
-		var after: Dictionary = await state()
-		check(after.manager.watch == [watched_id], "Le suivi est enregistré par le vrai moteur")
-		check(after.clubs[after.club].players == before.clubs[before.club].players and after.clubs[after.club].cash == before.clubs[before.club].cash, "Suivre ne recrute personne et ne coûte rien")
-		check(watch_button().text == "RETIRER DU SUIVI" and not watch_button().disabled, "Retrait activable à effectif plein")
-		await keyboard(watch_button())
-		check(app.last_command == "manager_recruitment_watch" and app.model.clubLife.managerCareer.watch.is_empty(), "Retrait réel sans recrutement")
-		await keyboard(watch_button())
-		await command("export")
-		saved = app.model.meta.exportText
-		await command("new_career", {"club":1,"mode":"fiction"})
-		await command("import", {"text":saved})
-		check(app.management_ui.shortlist == [watched_id] and app.model.clubLife.managerCareer.places == 0, "Import : suivi persistant et effectif toujours plein")
 		app._navigate("Recrutement")
 		await settle()
-		check(watch_button().text == "RETIRER DU SUIVI" and not watch_button().disabled, "Après import : retrait toujours accessible")
+		var control := await reveal_watch_button()
+		check(control != null and not control.disabled, "Suivre reste activable à effectif plein " + str(resolution))
+	var track := watch_button()
+	if track == null or track.disabled: return
+	await keyboard(track)
+	check(app.last_command == "manager_recruitment_watch", "Commande exacte de suivi depuis Entrée")
+	var after: Dictionary = await state()
+	check(after.manager.watch == [watched_id], "Le suivi est enregistré par le vrai moteur")
+	check(after.clubs[after.club].players == before.clubs[before.club].players and after.clubs[after.club].cash == before.clubs[before.club].cash, "Suivre ne recrute personne et ne coûte rien")
+	track = await reveal_watch_button()
+	check(track != null and track.text.to_lower() == "retirer du suivi" and not track.disabled, "Retrait activable à effectif plein")
+	if track == null or track.disabled: return
+	await keyboard(track)
+	check(app.last_command == "manager_recruitment_watch" and app.model.clubLife.managerCareer.watch.is_empty(), "Retrait réel sans recrutement")
+	await keyboard(await reveal_watch_button())
+	await command("export")
+	var saved: String = app.model.meta.exportText
+	await command("new_career", {"club":1,"mode":"fiction"})
+	await command("import", {"text":saved})
+	check(app.management_ui.shortlist == [watched_id] and app.model.clubLife.managerCareer.places == 0, "Import : suivi persistant et effectif toujours plein")
+	app._navigate("Recrutement")
+	await settle()
+	await keyboard(app.body.find_child("MarketFollowed", true, false))
+	track = await reveal_watch_button()
+	check(app.management_ui.market.followed and track != null and track.text.to_lower() == "retirer du suivi" and not track.disabled, "Après import, le filtre Joueurs suivis rend le retrait accessible")
+	var desktop := root.size
+	root.size = Vector2i(1280,720)
+	await settle()
+	track = watch_button()
+	check(track != null and not track.disabled, "Le suivi reste accessible après réduction de la fenêtre ouverte")
+	root.size = desktop
+	await settle()
 	var original: Dictionary = app.model.duplicate(true)
 	# Explicit UI projections for guards, no state or fixture mutation in the worker.
 	for phase in ["barrage", "semi", "final", "ended"]:
@@ -138,16 +169,19 @@ func watch_case() -> void:
 		app.model.meta.canAdvanceSeason = false
 		app._render()
 		await settle()
-		check(watch_button().disabled == (phase == "ended"), "Projection UI : garde de phase " + phase)
+		track = watch_button()
+		check(track != null and track.disabled == (phase == "ended"), "Projection UI : garde de phase " + phase)
 	app.model = original.duplicate(true)
 	app.waiting = true
 	app._render()
 	await settle()
-	check(watch_button().disabled, "Projection UI : commande en attente bloque le suivi")
+	track = watch_button()
+	check(track != null and track.disabled, "Projection UI : commande en attente bloque le suivi")
 	app.waiting = false
 	await load_fixture("live")
 	app._navigate("Recrutement")
 	await settle()
-	check(app.body.find_children("Follow*", "Button", true, false).all(func(b): return b.disabled), "Vrai match en pause : suivi bloqué")
+	track = await reveal_watch_button()
+	check(not app._live().is_empty() and track != null and track.disabled, "Vrai match en pause : action de suivi visible et bloquée")
 	# Restore the save produced by the keyboard action for process restart.
 	await command("import", {"text":saved})

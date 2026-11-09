@@ -27,7 +27,7 @@ func resize_to(resolution: Vector2i) -> void:
 	root.size = resolution
 	DisplayServer.window_set_size(resolution)
 	await settle()
-	check(root.content_scale_size == resolution, "Référence physique native conservée " + str(resolution))
+	check(root.size == resolution and app.size == Vector2(resolution), "Viewport natif à la taille physique " + str(resolution))
 func key(code: Key) -> void:
 	for down in [true, false]:
 		var event := InputEventKey.new(); event.keycode = code; event.pressed = down
@@ -97,240 +97,454 @@ func run() -> void:
 	await settle()
 	check(metric_tile.size.x <= 150 and value.get_global_rect().end.x <= metric_tile.get_global_rect().end.x,"Grand montant réellement contenu dans une tuile de150px")
 	metric_tile.free()
+	root.mode = Window.MODE_WINDOWED
 	root.size = Vector2i(1280,720)
-	app = load("res://main.tscn").instantiate(); root.add_child(app)
+	app = load("res://main.tscn").instantiate()
+	root.add_child(app)
 	await worker()
 	await command("new_career", {"club":0,"mode":"common"})
-	var annotated_id:=str(app.model.squad[0].id)
-	var annotation:="Repère de recette du dossier — uniquement pour ce joueur."
+	var annotated := _reference_player()
+	var annotated_id := str(annotated.id)
+	var annotation := "Repère de recette du dossier — uniquement pour ce joueur."
 	await command("coach_note_save",{"context":app.model.clubLife.coachNotebook.context,"target":annotated_id,"text":annotation})
-	app.selected_player=annotated_id
-	app.coach.close(); await settle()
 	await command("export")
 	var before: String = app.model.meta.exportText
 	var disk := str(app.model.meta.dataDir).path_join("donnees.json")
 	var bytes := FileAccess.get_file_as_bytes(disk)
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(2560,1440)]:
+	check(not bytes.is_empty(), "Profil réel pour la comparaison disque")
+	for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080), Vector2i(2560,1440)]:
 		await resize_to(resolution)
-		app._navigate("Bureau"); await settle(); app.coach.close()
-		var summary := named("OfficeSummary")
-		check(summary.size.y <= 90, "Repères contenus en hauteur " + str(resolution))
-		var tiles := summary.find_children("OfficeSummaryTile*","PanelContainer",true,false)
-		check(tiles.size() == 5, "Cinq repères distincts au Bureau " + str(resolution))
-		for tile: Control in tiles: check(summary.get_global_rect().encloses(tile.get_global_rect()), "Tuile contenue " + str(tile.name))
-		var decisions: Control = named("OfficeDecisions")
-		check(decisions.size.x >= 280,"Feuillet décisions assez large " + str(resolution))
-		var columns: Control = named("OfficeColumns")
-		check(columns != null and columns.get_child(2).visible == (resolution.x > 1280),"Deux colonnes compactes / trois larges " + str(resolution))
-		var office_width := decisions.size.x
-		var summary_height := summary.size.y
-		await capture("bureau-" + str(resolution.x))
-		app._navigate("Effectif"); await settle(); app.coach.close()
-		# The selected ID can reveal a partially filled last page. Measure a
-		# complete first page through the actual controls, with unchanged targets.
-		for page_back in 60:
-			var previous:Button=named("RosterPaginationPrevious")
-			if previous.disabled:break
-			previous.grab_focus();await key(KEY_ENTER)
-		check(named("RosterPaginationPrevious").disabled,"Densité mesurée sur la première page complète "+str(resolution))
-		var roster: ScrollContainer = named("SquadScroll")
-		check(named("RosterPagination") != null,"Effectif paginé sans liste infinie")
-		var dossier_tabs := named("ProfileTabs")
-		check(dossier_tabs is TabContainer and dossier_tabs.get_tab_count() == 4,"Dossier réparti en quatre tuiles de lecture")
-		if dossier_tabs is TabContainer:
-			check(dossier_tabs.get_tab_title(2)=="Contrat","Contrat conserve le troisième onglet du dossier")
-			dossier_tabs.current_tab=2; await settle()
-			for id in ["OfferRenewal","PlayerLoad"]:
-				check(named(id).is_visible_in_tree() and named("ProfileScroll").get_global_rect().encloses(named(id).get_global_rect()),"Action du dossier visible directement "+id+" "+str(resolution))
-				check(named("ProfileContract").get_global_rect().encloses(named(id).get_global_rect()),"Action contrat contenue dans son vrai onglet "+id+" "+str(resolution))
-			dossier_tabs.current_tab=0; await settle()
-		var profile_scroll: ScrollContainer = named("ProfileScroll")
-		var overview: ScrollContainer = named("ProfileOverview")
-		var empty_below: float = profile_scroll.get_global_rect().end.y-dossier_tabs.get_global_rect().end.y
-		check(absf(empty_below)<=16,"Dossier : les onglets utilisent le bas du feuillet, vide="+str(empty_below)+" "+str(resolution))
-		for id in ["OpenPlayerCoachNote","CompareSelected"]:
-			check(named(id).is_visible_in_tree() and overview.get_global_rect().encloses(named(id).get_global_rect()) and profile_scroll.get_global_rect().encloses(named(id).get_global_rect()),"Action Aperçu entièrement visible dans son vrai viewport "+id+" "+str(resolution))
-		check(overview.get_v_scroll_bar().max_value<=overview.get_v_scroll_bar().page+1,"Aperçu : note, radar et comparaison tiennent sans défilement "+str(resolution))
-		print("PROFILE_GEOMETRY ",resolution," dossier=",profile_scroll.size.y," tabs=",dossier_tabs.size.y," overview=",overview.size.y," blank=",empty_below)
-		var rows := 0
-		for row: Button in roster.find_children("*","Button",true,false):
-			if roster.get_global_rect().encloses(row.get_global_rect()): rows += 1
-		var required_rows: int = 28 if resolution.y>=1440 else 20 if resolution.y>=1080 else 9
-		check(rows >= required_rows, "Effectif PC : au moins "+str(required_rows)+" lignes entières, reçu "+str(rows)+" "+str(resolution))
-		for row: Button in roster.find_children("*","Button",true,false):
-			check(row.size.y<=28,"Ligne de tableau PC compacte "+str(row.size.y))
-		var profile_tiles := app.find_children("ProfileTile*","PanelContainer",true,false)
-		check(profile_tiles.size()==6,"Aperçu PC : six vraies tuiles factuelles")
-		var player: Dictionary = app.model.squad.filter(func(p):return str(p.id)==app.selected_player)[0]
-		for pair in [["ProfileConditionValue",str(int(player.condition))+"%"],["ProfileRatingValue",str(int(player.rating))],["ProfilePotentialValue",str(int(player.potential))],["ProfileMinutesValue",str(int(player.minutes))],["ProfileAppearancesValue",str(int(player.appearances))],["ProfileContractValue",str(player.contractLabel)]]:
-			var label: Label = named(pair[0])
-			check(label!=null and label.text==pair[1],"Tuile issue du fait courant exact "+str(pair[0]))
-		var salary: Label = named("ProfileSalaryValue")
-		check(salary!=null and salary.text.replace(" €","").replace(" ","").to_int()==int(player.salary),"Salaire de la tuile identique à la projection")
-		var preview:Label=named("ProfileNotePreview")
-		check(preview!=null and preview.text==annotation,"Aperçu de la seule note réellement projetée pour ce joueur")
-		for attribute in ["scrum","lineout","tackle","speed","pass","kick","goal","mental","discipline","stamina","power"]:
-			var figure: Label=named("ProfileAttribute_"+attribute)
-			check(figure!=null and figure.text==str(int(player.attributes[attribute])),"Chiffre du radar issu de l’attribut exact "+attribute)
-			var bar: ProgressBar=named("ProfileAttributeBar_"+attribute)
-			check(bar!=null and is_equal_approx(bar.value,float(player.attributes[attribute])),"Petite barre issue de l’attribut exact "+attribute)
-		check(named("ProfilePlanValue")!=null,"Préparation actuelle exposée avec la charge")
-		var renewal:Label=named("ProfileRenewalValue")
-		check(renewal!=null and renewal.text==("Disponible" if player.renewal.available else "Indisponible"),"Disponibilité de prolongation issue du modèle actuel")
-		if not profile_tiles.is_empty():
-			for tile: Control in profile_tiles:
-				check(overview.get_global_rect().encloses(tile.get_global_rect()),"Tuile entièrement visible dans Aperçu "+str(tile.name))
-				var tile_body:Control=tile.get_child(0)
-				var last_fact:Control=tile_body.get_child(tile_body.get_child_count()-1)
-				check(tile.get_global_rect().end.y-last_fact.get_global_rect().end.y<=8,"Tuile à hauteur naturelle sans vide interne "+str(tile.name))
-			check(named("ProfileOverviewTiles").get_child_count()==2,"Six tuiles réparties en deux colonnes indépendantes")
-			check(overview.get_global_rect().end.y-named("ProfileOverviewActions").get_global_rect().end.y<=32,"Fiche PC sans grande surface vide réservée sous ses faits")
-		if resolution.x>=1920:
-			for id in ["RosterColumn_salary","RosterColumn_contractEnd","RosterColumn_minutes"]: check(named(id)!=null and named(id).is_visible_in_tree(),"Colonne manager visible "+id)
-			check(named("RosterColumn_name").size.x<=roster.size.x*.6,"La cellule Nom ne réserve pas une majorité du grand tableau")
-		var cohort:Control=named("ProfileContextCohort")
-		var peers:Control=named("ProfileContextPeers")
-		check(cohort!=null and peers!=null,"Deux contextes desktop distincts des six faits")
-		if cohort!=null and peers!=null:
-			check(cohort.is_visible_in_tree()==(resolution.y>=1000) and peers.is_visible_in_tree()==(resolution.y>=1000),"Contextes uniquement sur la hauteur desktop")
-			check(app.find_children("ProfileContext*","PanelContainer",true,false).size()==4,"Quatre panneaux desktop de contexte approuvés")
-			if resolution.y>=1000:
-				for field in ["rating","condition","age","salary"]:
-					var total:=0.0
-					for member:Dictionary in app.model.squad:total+=float(member[field])
-					var average:Label=named("ProfileMean_"+field)
-					var observed:=average.text.split(" / ")[1].replace(" €","").replace("%","").replace(" ans","").replace(" ","").replace(",",".").to_float()
-					check(absf(observed-total/app.model.squad.size())<=(.51 if field=="salary" else .051),"Moyenne publique exacte et explicitement comparative "+field)
-				var same_position:Array=app.model.squad.filter(func(member):return str(member.id)!=str(player.id) and member.pos==player.pos)
-				var peer_actions:=peers.find_children("ProfilePeerCompare*","Button",true,false).filter(func(action):return action.is_visible_in_tree())
-				check(peer_actions.size()==mini(5 if resolution.y>=1200 else 3,same_position.size()),"Jusqu’à cinq coéquipiers du même poste principal")
-				for action:Button in peer_actions:
-					check(same_position.any(func(member):return str(member.id)==str(action.get_meta("peer_id"))),"Cible du même poste actuel par ID")
-				var professional:Array=app.model.decisions.development.professionals.filter(func(person):return str(person.id)==str(player.id))
-				check(not professional.is_empty() and named("ProfileDevelopmentDelta").text.to_int()==int(professional[0].rating-professional[0].development.seasonStart),"Développement compare le niveau général au point de départ annuel")
+		await office_reading(resolution)
+		await roster_reading(resolution, annotated, annotation)
+		await route_reading(resolution)
+		await navigate("Création")
+		for id in ["CreationStart", "CreationPagination"]:
+			check(inside(named(id)), "Création : contrôle directement visible %s %s" % [id,resolution])
+		await capture("creation-dense-" + str(resolution.x))
+	await resize_to(Vector2i(1280,720))
+	await navigate("Effectif")
+	await visit_all_players("compact 720p")
+	await responsive_reading(annotated, annotation)
+	await resize_to(Vector2i(2560,1440))
+	app.selected_player = annotated_id
+	await navigate("Effectif")
+	await visit_all_players("1440p")
+	await immersive_drafts(annotated, annotation)
+	check(FileAccess.get_file_as_bytes(disk) == bytes, "Consultation, clavier et resize : octets du profil inchangés")
+	await command("export")
+	check(app.model.meta.exportText == before, "Consultation et resize : état complet et RNG identiques")
+	finish()
+
+func _reference_player() -> Dictionary:
+	for player: Dictionary in app.model.squad:
+		var peers: Array = app.model.squad.filter(func(member: Dictionary): return member.id != player.id and member.pos == player.pos)
+		if not peers.is_empty() and player.renewal.available and player.get("rosterProfile") is Dictionary: return player
+	check(false, "La fixture doit contenir un joueur prolongeable avec un pair et des sources")
+	return app.model.squad[0]
+
+func navigate(route: String) -> void:
+	app._navigate(route)
+	await settle()
+	app.coach.close()
+	await settle()
+
+func rect(control: Control) -> Rect2:
+	return control.get_global_transform() * Rect2(Vector2.ZERO, control.size)
+
+func inside(control: Control, viewport: Control = null) -> bool:
+	if control == null or not control.is_visible_in_tree(): return false
+	var bounds := rect(control)
+	if bounds.size.x <= 0 or bounds.size.y <= 0: return false
+	var screen := Rect2(Vector2.ZERO, Vector2(root.size))
+	return screen.grow(1).encloses(bounds) and (viewport == null or rect(viewport).grow(1).encloses(bounds))
+
+func keyboard(button: BaseButton, description: String) -> void:
+	check(button != null and not button.disabled and button.is_visible_in_tree(), "Commande clavier disponible · " + description)
+	if button == null or button.disabled or not button.is_visible_in_tree(): return
+	button.grab_focus()
+	await settle()
+	check(button.has_focus(), "Focus clavier · " + description)
+	await key(KEY_ENTER)
+
+func office_reading(resolution: Vector2i) -> void:
+	await navigate("Bureau")
+	var tiles := ["OfficeFixture", "OfficeDecisions", "OfficeGroup", "OfficeStandings", "OfficeJournal", "OfficeRecruitment", "OfficeTimeline"]
+	for id: String in tiles:
+		var tile := named(id)
+		if id == "OfficeTimeline" and resolution.x == 1280 and tile != null:
+			app.body_scroll.ensure_control_visible(tile)
+			await settle()
+		check(inside(tile, app.body_scroll), "Tuile entière dans le Bureau %s %s" % [id,resolution])
+		if id == "OfficeTimeline" and resolution.x == 1280:
+			app.body_scroll.scroll_vertical = 0
+			await settle()
+	var decisions := named("OfficeDecisions")
+	check(decisions != null and rect(decisions).size.x >= 280, "Espace utile pour les décisions " + str(resolution))
+	for id in ["OfficePreparationAction", "OfficeSelectionAction", "OfficeSquadAction", "OfficeStandingsAction", "OfficeCalendarAction"]:
+		check(inside(named(id), app.body_scroll), "Accès métier visible depuis le Bureau %s %s" % [id,resolution])
+	await capture("bureau-" + str(resolution.x))
+
+func roster_rows(roster: Control) -> Array[Node]:
+	if roster == null: return []
+	return roster.find_children("*","Button",true,false).filter(func(row: Node): return row.has_meta("player_id"))
+
+func first_roster_page() -> void:
+	var search := named("RosterSearch")
+	var previous := named("RosterPaginationPrevious") as Button
+	check(previous != null and search != null, "Pagination et recherche de l’effectif présentes")
+	if previous == null or search == null: return
+	var selected: String = app.selected_player
+	for i in 60:
+		if previous.disabled: break
+		await keyboard(previous, "page précédente")
+		check(named("RosterSearch") == search, "Recul de page conserve la recherche")
+	check(previous.disabled, "Première page atteinte au clavier")
+	check(app.selected_player == selected, "Recul de page conserve le dossier choisi")
+
+func visit_all_players(format: String) -> void:
+	await first_roster_page()
+	var search := named("RosterSearch")
+	var seen: Array[String] = []
+	var next := named("RosterPaginationNext") as Button
+	check(next != null, "Pagination suivante disponible · " + format)
+	if next == null: return
+	for i in 60:
+		for row: Node in roster_rows(named("SquadScroll")): seen.append(str(row.get_meta("player_id")))
+		if next.disabled: break
+		await keyboard(next, "page suivante " + format)
+		check(named("RosterSearch") == search, "Pagination conserve la recherche · " + format)
+	var expected: Array[String] = []
+	for player: Dictionary in app.model.squad: expected.append(str(player.id))
+	expected.sort()
+	seen.sort()
+	check(next.disabled and seen == expected, "Exactement tous les identifiants, sans doublon, par pagination clavier · " + format)
+
+func roster_reading(resolution: Vector2i, player: Dictionary, annotation: String) -> void:
+	app.selected_player = str(player.id)
+	await navigate("Effectif")
+	await first_roster_page()
+	var roster := named("SquadScroll")
+	var rows := roster_rows(roster)
+	var complete := rows.filter(func(row: Control): return inside(row, roster))
+	var immersive := named("ImmersiveRosterTable") != null
+	check(immersive == (resolution.x >= 1600), "Gabarit attendu de l’Effectif " + str(resolution))
+	check(roster != null and not rows.is_empty(), "Table d’effectif natif renseignée " + str(resolution))
+	if immersive:
+		check(rows.size() == 24 and complete.size() == 24, "24 lignes entières de l’Effectif immersif %s · reçu %d/%d" % [resolution,complete.size(),rows.size()])
+		for id in ["RosterColumnSalary", "RosterColumn_CONTRAT", "RosterColumnFatigue", "RosterColumnPotential", "RosterPaginationInfo", "OpenComparison", "OpenPlayerFull"]:
+			check(inside(named(id), app.body_scroll), "Colonne ou commande visible %s %s" % [id,resolution])
+		var header := named("RosterHeader")
+		var minute := false
+		if header != null:
+			for label: Label in header.find_children("*", "Label", true, false):
+				if label.text == "MIN.": minute = inside(label, app.body_scroll)
+		check(minute, "Colonne Minutes visible " + str(resolution))
+	else:
+		check(complete.size() >= 9, "Effectif compact : au moins neuf lignes entières, reçu " + str(complete.size()))
+		check(inside(named("RosterPagination"), app.body_scroll), "Pagination de l’effectif compact visible")
 		var toolbar := named("RosterTools")
-		check(toolbar != null, "Barre de lecture dédiée")
+		check(toolbar != null, "Barre de lecture dédiée compacte")
 		if toolbar != null:
 			for button: Button in toolbar.find_children("*","Button",true,false):
 				check(button.size.y <= 42, "Commande compacte lisible " + str(button.name))
-		measurements.append({"window":str(resolution),"canvas":str(app.size),"roster_rows":rows,"roster_height":roster.size.y,"office_decisions_width":office_width,"office_summary_height":summary_height,"office_columns":2 if resolution.x == 1280 else 3,"profile_height":profile_scroll.size.y,"profile_tabs_height":dossier_tabs.size.y,"profile_overview_height":overview.size.y,"profile_blank_below":empty_below})
-		await capture("effectif-" + str(resolution.x))
-		app._navigate("Finances"); await settle(); app.coach.close()
-		await capture("finances-" + str(resolution.x))
-		for route in ["Effectif","Composition","Préparation","Recrutement","Calendrier","Classements","Finances","Club"]:
-			app._navigate(route); await settle(); app.coach.close()
-			var bar:VScrollBar=app.body_scroll.get_v_scroll_bar()
-			check(bar.max_value<=bar.page+1,"Aucun défilement global nécessaire "+route+" "+str(resolution))
-			if route=="Préparation":
-				named("CarnetPreparation")._choose(2);await settle()
-				for button:Button in named("PreparationEntrainement").find_children("*","Button",true,false):
-					check(app.body_scroll.get_global_rect().encloses(button.get_global_rect()),"Action entraînement directement visible "+str(button.name)+" "+str(resolution))
-			if route=="Recrutement":
-				for button:Button in named("MarketScroll").find_children("*","Button",true,false):
-					check(named("MarketScroll").get_global_rect().encloses(button.get_global_rect()),"Offre/suivi directement visible "+str(button.text)+" "+str(resolution))
-			for list_id in ["CalendarScroll","StandingsScroll","FinanceScroll"]:
-				var list:ScrollContainer=named(list_id)
-				if list!=null:
-					check(list.get_v_scroll_bar().max_value<=list.get_v_scroll_bar().page+1,"Toute la page tient sans défilement local "+list_id+" "+str(resolution))
-			for pager_id in ["RosterPagination","MarketPagination","CalendarPagination","StandingsPagination","FinancePagination"]:
-				var pager:=named(pager_id)
-				if pager!=null:check(app.body_scroll.get_global_rect().encloses(pager.get_global_rect()),"Pagination accessible directement "+pager_id+" "+str(resolution))
-			await capture(route.to_lower()+"-dense-"+str(resolution.x))
-		app._navigate("Création");await settle()
-		check(app.get_global_rect().encloses(named("CreationStart").get_global_rect()),"Création : validation directement visible "+str(resolution))
-		check(app.get_global_rect().encloses(named("CreationPagination").get_global_rect()),"Création : huit tuiles et pagination visibles "+str(resolution))
-		await capture("creation-dense-"+str(resolution.x))
-	await resize_to(Vector2i(1280,720))
-	app._navigate("Effectif");await settle();app.coach.close()
-	var stable_search:=named("RosterSearch")
-	var paged_player:String=app.selected_player
-	# ID navigation may correctly reveal a later page. Receive the backward
-	# keyboard path as well before checking that the forward path visits everyone.
-	for i in 60:
-		var previous:Button=named("RosterPaginationPrevious")
-		if previous.disabled:break
-		previous.grab_focus();await key(KEY_ENTER)
-		check(named("RosterSearch")==stable_search,"Retour de pagination ne reconstruit pas la recherche")
-	check(named("RosterPaginationPrevious").disabled,"Première page atteinte par les vrais boutons clavier")
-	check(app.selected_player==paged_player,"Parcourir les pages conserve le dossier explicitement sélectionné")
-	var seen:Array[String]=[]
-	for i in 60:
-		for row:Button in named("SquadScroll").find_children("*","Button",true,false):
-			var id:=str(row.get_meta("player_id",""))
-			if id not in seen:seen.append(id)
-		var next:Button=named("RosterPaginationNext")
-		if next.disabled:break
-		next.grab_focus();await key(KEY_ENTER)
-		check(named("RosterSearch")==stable_search,"Pagination ne reconstruit pas la recherche")
-	check(seen.size()==app.model.squad.size(),"Tous les joueurs atteignables par pagination clavier")
-	app._navigate("Bureau"); await settle(); app.coach.close()
-	var office_columns := named("OfficeColumns")
-	var standings_action := named("OfficeStandingsAction")
-	var standings_scroll := named("OfficeStandings").get_parent()
-	standings_action.grab_focus(); await settle()
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080),Vector2i(1280,720)]:
+	for row: Control in rows:
+		check(rect(row).size.y <= (34 if immersive else 29), "Ligne dense et entière " + str(row.name))
+	measurements.append({"window":str(resolution),"canvas":str(app.size),"roster_rows":complete.size(),
+		"roster_height":rect(roster).size.y if roster != null else 0,"row_height":rect(rows[0]).size.y if not rows.is_empty() else 0,
+		"office_tiles":7,"roster_variant":"immersive" if immersive else "compact"})
+	await capture("effectif-" + str(resolution.x))
+	if immersive:
+		await keyboard(named("OpenPlayerFull"), "ouvrir la fiche joueur complète")
+		await immersive_profile(player, resolution)
+		await keyboard(named("PlayerBackToSquad"), "retour à l’effectif")
+		check(named("ImmersiveRosterTable") != null and app.selected_player == str(player.id), "Retour au tableau sans perdre le joueur")
+	else:
+		await compact_profile(player, annotation, resolution)
+
+func labels(node: Node) -> Array[String]:
+	var result: Array[String] = []
+	if node == null: return result
+	for label: Label in node.find_children("*", "Label", true, false): result.append(label.text)
+	return result
+
+func fact(id: String, value: Variant) -> void:
+	var label := named(id) as Label
+	check(label != null and label.text == str(value), "Fait projeté exactement · %s = %s" % [id,value])
+
+func compact_profile(player: Dictionary, annotation: String, resolution: Vector2i) -> void:
+	var tabs := named("ProfileTabs") as TabContainer
+	var scroll := named("ProfileScroll")
+	var overview := named("ProfileOverview") as ScrollContainer
+	check(tabs != null and tabs.get_tab_count() == 4 and scroll != null and overview != null, "Quatre vrais onglets du dossier compact " + str(resolution))
+	if tabs == null or scroll == null or overview == null: return
+	check(absf(rect(scroll).end.y - rect(tabs).end.y) <= 16, "Les onglets utilisent la hauteur du dossier compact")
+	check(tabs.get_tab_title(2) == "Contrat", "Contrat reste le troisième onglet compact")
+	tabs.current_tab = 2
+	await settle()
+	for id in ["OfferRenewal", "PlayerLoad"]:
+		check(inside(named(id), scroll) and inside(named(id), named("ProfileContract")), "Action accessible dans Contrat compact " + id)
+	tabs.current_tab = 0
+	await settle()
+	for id in ["OpenPlayerCoachNote", "CompareSelected"]:
+		check(inside(named(id), overview) and inside(named(id), scroll), "Action entière dans l’Aperçu compact " + id)
+	check(overview.get_v_scroll_bar().max_value <= overview.get_v_scroll_bar().page+1, "Aperçu compact sans défilement local")
+	var tiles := app.find_children("ProfileTile*", "PanelContainer", true, false)
+	check(tiles.size() == 6, "Six tuiles de données dans l’Aperçu compact")
+	for tile: Control in tiles:
+		check(inside(tile, overview), "Tuile compacte visible " + str(tile.name))
+		var contents: Control = tile.get_child(0)
+		var last_fact: Control = contents.get_child(contents.get_child_count() - 1)
+		check(rect(tile).end.y - rect(last_fact).end.y <= 8, "Tuile compacte sans vide interne " + str(tile.name))
+	var overview_tiles := named("ProfileOverviewTiles")
+	check(overview_tiles != null and overview_tiles.get_child_count() == 2, "Six tuiles en deux colonnes indépendantes")
+	var overview_actions := named("ProfileOverviewActions")
+	check(overview_actions != null and rect(overview).end.y - rect(overview_actions).end.y <= 32, "Aperçu compact sans grande surface vide sous les faits")
+	for pair in [["ProfileConditionValue", G.n(player.condition)+"%"], ["ProfileRatingValue", G.n(player.rating)], ["ProfilePotentialValue", G.n(player.potential)],
+		["ProfileMinutesValue", G.n(player.minutes)], ["ProfileAppearancesValue", G.n(player.appearances)], ["ProfileRoleValue", G.n(player.note)],
+		["ProfileContractValue", player.contractLabel], ["ProfileSalaryValue", G.euros(player.salary)], ["ProfileNotePreview", annotation],
+		["ProfileRenewalValue", "Disponible" if player.renewal.available else "Indisponible"]]:
+		fact(pair[0], pair[1])
+	check(named("ProfilePlanValue") != null and named("ProfileQualificationsValue") != null, "Plan et qualifications exposés dans le dossier compact")
+	for attribute: String in player.attributes:
+		fact("ProfileAttribute_" + attribute, G.n(player.attributes[attribute]))
+		var bar := named("ProfileAttributeBar_" + attribute) as ProgressBar
+		check(bar != null and is_equal_approx(bar.value, float(player.attributes[attribute])), "Barre d’aptitude fidèle " + attribute)
+
+func immersive_profile(player: Dictionary, resolution: Vector2i) -> void:
+	var profile := named("ImmersivePlayerFull")
+	check(profile != null, "Dossier immersif ouvert depuis l’effectif " + str(resolution))
+	if profile == null: return
+	fact("ProfilePlayerName", str(player.name).to_upper())
+	var hero := labels(named("FullPlayerHero"))
+	for value in [G.n(player.rating), G.n(player.potential), str(player.pos).to_upper()]:
+		check(value in hero, "Identité et niveau du vrai dossier " + value)
+	for i in 6: check(inside(named("FullPlayerTab"+str(i)), app.body_scroll), "Onglet immersif visible " + str(i))
+	check(inside(named("OpenPlayerCoachNote"), app.body_scroll) and inside(named("FullPlayerCompare"), app.body_scroll), "Carnet et comparaison visibles sur la fiche")
+	await keyboard(named("FullPlayerTab1"), "attributs du joueur")
+	for attribute: String in player.attributes:
+		var label := named("PlayerAttribute_" + attribute) as Label
+		check(inside(label, app.body_scroll) and label.text == G.n(player.attributes[attribute]), "Attribut visible issu du moteur " + attribute)
+	var radar_found := false
+	for node: Node in named("ImmersivePlayerFull").find_children("*","Control",true,false):
+		if node.get_script() != G.W: continue
+		var expected: Array = []
+		for attribute in ["power", "speed", "pass", "tackle", "stamina", "mental"]: expected.append(player.attributes[attribute])
+		radar_found = node.get("values") == expected and inside(node, app.body_scroll)
+	check(radar_found, "Radar natif visible avec ses six valeurs exactes")
+	await keyboard(named("FullPlayerTab2"), "performances du joueur")
+	var performances := labels(named("ImmersivePlayerFull"))
+	for value in [G.n(player.appearances), G.n(player.minutes), G.n(player.note), "NOTE AU POSTE"]:
+		check(value in performances, "Performances et note au poste fidèles " + value)
+	await keyboard(named("FullPlayerTab3"), "contrat du joueur")
+	var contract := labels(named("ImmersivePlayerFull"))
+	check(G.euros(player.salary) + " / semaine" in contract and str(player.contractLabel) in contract, "Salaire et échéance exacts dans Contrat")
+	check(G.n(player.condition) + " %" in contract and G.n(player.physicalLoad) in contract, "Condition et charge exactes dans Contrat")
+	var renewal := named("OfferRenewal") as Button
+	check(inside(renewal, app.body_scroll) and renewal.disabled == not bool(player.renewal.available), "Offre de prolongation visible et disponibilité exacte")
+	check(inside(named("PlayerLoad"), app.body_scroll), "Charge individuelle visible dans Contrat")
+	await keyboard(named("FullPlayerTab4"), "développement du joueur")
+	check(inside(named("PlayerDevelopmentAction"), app.body_scroll), "Lien réel vers le suivi du développement")
+	await keyboard(named("FullPlayerTab5"), "repères du joueur")
+	var sources := labels(named("ImmersivePlayerFull"))
+	var position: Dictionary = player.rosterProfile.position
+	check("Poste d’origine : " + str(position.primary) in sources and
+		"Qualifications de départ : " + ", ".join(position.qualifications) in sources, "Poste d’origine et qualifications exacts dans Repères")
+	await keyboard(named("FullPlayerTab0"), "revenir à l’aperçu")
+	await capture("fiche-joueur-" + str(resolution.x))
+
+func route_reading(resolution: Vector2i) -> void:
+	for route in ["Effectif","Composition","Préparation","Recrutement","Calendrier","Classements","Finances","Club"]:
+		await navigate(route)
+		check(inside(app.body_scroll), "Espace de travail visible %s %s" % [route,resolution])
+		if resolution.x == 2560:
+			var outer: VScrollBar = app.body_scroll.get_v_scroll_bar()
+			check(outer.max_value <= outer.page + 1, "Aucun défilement global nécessaire en 1440p · " + route)
+		if route == "Composition":
+			for id in ["LineupSlot01", "LineupAutomatic"]:
+				check(inside(named(id), app.body_scroll), "Commande de composition directement visible %s %s" % [id,resolution])
+		if route == "Préparation":
+			await keyboard(named("Nav_Entraînement"), "ouvrir Entraînement depuis le rail")
+			var native := named("ImmersiveTraining") != null
+			var controls := ["TrainingValidateWeek", "TrainingEditSelected", "TrainingBackToPreparation"] if native else ["PreparationTrain_repos", "PreparationTrain_normal", "PreparationTrain_intense", "CollectiveFocus", "OpponentLevel", "PreparationMatch"]
+			for id: String in controls:
+				check(inside(named(id), app.body_scroll), "Action d’entraînement directement visible %s %s" % [id,resolution])
+		if route == "Recrutement":
+			var tab := named("MarketTab1") as Button
+			var immersive_market := tab != null
+			if immersive_market: await keyboard(tab, "ouvrir les joueurs du marché")
+			var market := named("ImmersiveMarketRows" if immersive_market else "MarketScroll")
+			check(market != null and inside(market, app.body_scroll), "Joueurs du marché dans un vrai viewport " + str(resolution))
+			if market != null:
+				var offers := market.find_children("*", "Button", true, false)
+				check(not offers.is_empty(), "Marché : des actions ou lignes sont présentes")
+				for button: Button in offers:
+					check(inside(button, market), "Offre, ligne ou suivi visible " + str(button.name))
+			if immersive_market:
+				check(inside(named("OfferRecruitment"), app.body_scroll), "Offre du joueur sélectionné accessible dans le marché immersif")
+				var follow := app.body.find_child("Follow*", true, false) as Button
+				check(inside(follow, app.body_scroll), "Suivi du joueur sélectionné accessible dans le marché immersif")
+		for list_id in ["CalendarScroll","StandingsScroll","FinanceScroll"]:
+			var list := named(list_id) as ScrollContainer
+			if list == null: continue
+			check(inside(list, app.body_scroll), "Viewport visible " + list_id)
+			check(list.get_v_scroll_bar().max_value <= list.get_v_scroll_bar().page + 1, "Page paginée sans défilement local " + list_id)
+		for pager_id in ["RosterPagination","MarketPagination","CalendarPagination","StandingsPagination","FinancePagination"]:
+			var pager := named(pager_id)
+			if pager != null and pager.is_visible_in_tree():
+				check(inside(pager, app.body_scroll), "Pagination directement accessible %s %s" % [pager_id,resolution])
+		if route == "Finances": await capture("finances-"+str(resolution.x))
+		await capture(route.to_lower()+"-dense-"+str(resolution.x))
+
+func responsive_reading(player: Dictionary, annotation: String) -> void:
+	await navigate("Bureau")
+	var office := named("ImmersiveOffice")
+	var standings := named("OfficeStandings")
+	var standings_action := named("OfficeStandingsAction") as Button
+	check(office != null and standings != null and standings_action != null, "Le Bureau compact et le cap sportif sont montés")
+	if standings_action != null:
+		standings_action.grab_focus()
+		await settle()
+		for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080), Vector2i(1280,720)]:
+			await resize_to(resolution)
+			check(named("ImmersiveOffice") == office and named("OfficeStandings") == standings and named("OfficeStandingsAction") == standings_action, "Bureau adapté sur les mêmes instances " + str(resolution))
+			check(standings_action.has_focus() and inside(standings_action, app.body_scroll), "Cap sportif garde le focus et sa visibilité " + str(resolution))
+	app.selected_player = str(player.id)
+	await navigate("Effectif")
+	var search := named("RosterSearch") as LineEdit
+	check(search != null, "Champ de recherche du repli compact")
+	if search == null: return
+	search.text = "Équipe œuvrée — éléphant"
+	search.caret_column = 10
+	search.select(2, 10)
+	search.grab_focus()
+	var compact_tabs := named("ProfileTabs") as TabContainer
+	for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(2560,1440), Vector2i(1920,1080)]:
 		await resize_to(resolution)
-		check(named("OfficeColumns") == office_columns and named("OfficeStandingsAction") == standings_action,"Bureau adapté sur les mêmes instances " + str(resolution))
-		check(named("OfficeStandings").get_parent() == standings_scroll,"Défilement cap sportif conservé " + str(resolution))
-		check(standings_action.has_focus(),"Focus du cap sportif conservé " + str(resolution))
-		var ancestor := standings_action.get_parent()
-		while ancestor != null and ancestor != app:
-			if ancestor is ScrollContainer: check(ancestor.get_global_rect().encloses(standings_action.get_global_rect()),"Focus du cap visible dans son feuillet " + str(resolution))
-			ancestor = ancestor.get_parent()
-	app._navigate("Effectif"); await settle(); app.coach.close()
-	var search: LineEdit = named("RosterSearch")
-	search.text = "Équipe œuvrée — éléphant"; search.caret_column = 10; search.select(2,10); search.grab_focus()
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]: await resize_to(resolution)
-	check(named("RosterSearch") == search and search.text == "Équipe œuvrée — éléphant" and search.caret_column == 10 and search.has_selection(), "Saisie Unicode, caret et sélection conservés sur la même instance")
-	check(search.has_focus(), "Focus conservé après redimensionnement")
-	search.text = ""; search.text_changed.emit(""); await settle()
-	var first: Button = named("SquadScroll").find_children("*","Button",true,false)[0]
-	first.grab_focus(); await key(KEY_ENTER)
-	check(first.has_focus() and not app.selected_player.is_empty(), "Activation clavier du vrai dossier conserve le focus")
-	await capture("effectif-focus-" + str(root.size.x))
+		check(named("RosterSearch") == search and search.text == "Équipe œuvrée — éléphant" and search.caret_column == 10 and search.has_selection(), "Saisie Unicode, caret et sélection conservés " + str(resolution))
+		check(search.has_focus() and named("ProfileTabs") == compact_tabs, "Focus et dossier conservés au redimensionnement " + str(resolution))
+		var cohort := named("ProfileContextCohort")
+		check(cohort != null and cohort.is_visible_in_tree() == (resolution.y >= 1000), "Contexte du dossier compact adapté à la hauteur " + str(resolution))
+		if resolution.y == 1440:
+			var peers := named("ProfileContextPeers")
+			var same: Array = app.model.squad.filter(func(member: Dictionary): return member.id != player.id and member.pos == player.pos)
+			check(peers != null and peers.find_children("ProfilePeerCompare*", "Button", true, false).filter(func(action: Control): return action.is_visible_in_tree()).size() == mini(5, same.size()), "Jusqu’à cinq coéquipiers du même poste à 1440p")
+	await compact_context(player)
+	search.text = ""
+	search.text_changed.emit("")
+	await settle()
+	await first_roster_page()
 	var second: Button
-	for candidate:Button in named("SquadScroll").find_children("*","Button",true,false):
-		if str(candidate.get_meta("player_id")) not in [app.selected_player,annotated_id]:second=candidate;break
-	var second_id:=str(second.get_meta("player_id"))
-	second.grab_focus();await key(KEY_ENTER)
-	check(app.selected_player==second_id and second.has_focus(),"Autre dossier choisi au clavier sans perdre le focus")
-	check(second_id!=annotated_id and named("ProfileNotePreview")==null,"Aucune note inventée pour un autre ID")
-	var selected_profile:=named("ProfileTabs")
-	for resolution in [Vector2i(1600,900),Vector2i(1280,720)]:
+	for row: Button in roster_rows(named("SquadScroll")):
+		if str(row.get_meta("player_id")) != str(player.id): second = row; break
+	check(second != null, "Autre joueur accessible au clavier")
+	if second == null: return
+	var second_id := str(second.get_meta("player_id"))
+	await keyboard(second, "ouvrir un autre dossier par ID")
+	check(app.selected_player == second_id and second.has_focus(), "Le nouveau dossier garde le focus sur la ligne choisie")
+	check(named("ProfileNotePreview") == null, "Aucune note inventée pour l’autre identifiant")
+	await keyboard(named("OpenPlayerCoachNote"), "ouvrir le carnet de l’autre joueur")
+	var notebook := app.get_node_or_null("CoachNotebook") as AcceptDialog
+	var editor := named("CoachNoteText") as TextEdit
+	check(notebook != null and editor != null and editor.text.is_empty() and editor.text != annotation, "L’autre dossier ouvre son propre carnet vide")
+	if notebook != null:
+		notebook.hide()
+		notebook.queue_free()
+		await settle()
+	var second_tabs := named("ProfileTabs")
+	for resolution in [Vector2i(1600,900), Vector2i(1280,720)]:
 		await resize_to(resolution)
-		check(named("ProfileTabs")==selected_profile and app.selected_player==second_id,"Dossier remplacé puis redimensionné sur les mêmes nœuds")
-	# A popup and its unsaved amount survive resize without committing anything.
-	preload("res://ui/squad_views.gd").contract(app,app.model.squad[0],false); await settle()
-	var offer: Window = app.find_child("ContractOffer",true,false)
-	var salary: LineEdit = offer.find_child("OfferSalary",true,false).get_line_edit()
-	salary.grab_focus(); await settle()
-	salary.text = "12345"; salary.caret_column = 3
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
+		check(named("ProfileTabs") == second_tabs and app.selected_player == second_id, "Dossier remplacé puis redimensionné sur les mêmes nœuds")
+	await capture("effectif-focus-" + str(root.size.x))
+
+func compact_context(player: Dictionary) -> void:
+	var cohort := named("ProfileContextCohort")
+	var peers := named("ProfileContextPeers")
+	check(cohort != null and peers != null and cohort.is_visible_in_tree() and peers.is_visible_in_tree(), "Deux contextes desktop distincts des six faits")
+	if cohort == null or peers == null: return
+	check(app.find_children("ProfileContext*", "PanelContainer", true, false).size() == 4, "Quatre panneaux de contexte dans le dossier compact agrandi")
+	for field in ["rating", "condition", "age", "salary"]:
+		var total := 0.0
+		for member: Dictionary in app.model.squad: total += float(member[field])
+		var average := named("ProfileMean_" + field) as Label
+		check(average != null and average.text.contains(" / "), "Moyenne comparative présente " + field)
+		if average == null or not average.text.contains(" / "): continue
+		var observed := average.text.split(" / ")[1].replace(" €","").replace("%","").replace(" ans","").replace(" ","").replace(",",".").to_float()
+		check(absf(observed - total / app.model.squad.size()) <= (.51 if field == "salary" else .051), "Moyenne publique exacte " + field)
+	var same: Array = app.model.squad.filter(func(member: Dictionary): return str(member.id) != str(player.id) and member.pos == player.pos)
+	var actions := peers.find_children("ProfilePeerCompare*", "Button", true, false).filter(func(action: Control): return action.is_visible_in_tree())
+	check(actions.size() == mini(3, same.size()), "Jusqu’à trois coéquipiers du même poste à 1080p")
+	for action: Button in actions:
+		check(same.any(func(member: Dictionary): return str(member.id) == str(action.get_meta("peer_id"))), "Cible du même poste par identifiant")
+	var professional: Array = app.model.decisions.development.professionals.filter(func(record: Dictionary): return record.id == player.id)
+	var delta := named("ProfileDevelopmentDelta") as Label
+	check(not professional.is_empty() and delta != null and delta.text.to_int() == int(professional[0].rating-professional[0].development.seasonStart), "Développement comparé au début de saison")
+	if actions.is_empty(): return
+	var peer := actions[0] as Button
+	var requested := [str(player.id), str(peer.get_meta("peer_id"))]
+	await keyboard(peer, "comparer un pair du même poste")
+	var comparison := app.get_node_or_null("PlayerComparison") as AcceptDialog
+	check(comparison != null, "Vrai comparateur ouvert")
+	if comparison == null: return
+	for slot in 2:
+		var choice := comparison.find_child("ComparisonPlayer"+str(slot), true, false) as OptionButton
+		check(choice != null and str(choice.get_item_metadata(choice.selected)) == requested[slot], "Comparateur ouvre le dossier exact " + str(slot))
+	# Fermer sans reconstruire le dossier compact, afin de continuer le scénario de resize.
+	comparison.hide()
+	comparison.queue_free()
+	await settle()
+
+func immersive_drafts(player: Dictionary, annotation: String) -> void:
+	await keyboard(named("OpenPlayerFull"), "ouvrir le dossier du joueur annoté")
+	await keyboard(named("FullPlayerTab3"), "ouvrir son Contrat")
+	await keyboard(named("PlayerLoad"), "ouvrir le réglage de charge")
+	var load_dialog := app.get_node_or_null("IndividualInstructions") as AcceptDialog
+	check(load_dialog != null, "Le bouton Charge ouvre les vrais choix")
+	if load_dialog != null:
+		for mode in ["collective","repos","normal","intense"]:
+			check(load_dialog.find_child("IndividualLoad_"+mode,true,false) != null, "Mode de charge réel " + mode)
+		load_dialog.hide()
+		load_dialog.queue_free()
+		await settle()
+	await keyboard(named("OfferRenewal"), "ouvrir la vraie offre sans la confirmer")
+	var offer := app.get_node_or_null("ContractOffer") as ConfirmationDialog
+	var salary_box := named("OfferSalary") as SpinBox
+	check(offer != null and salary_box != null, "Dialogue natif d’offre de contrat")
+	if offer != null and salary_box != null:
+		var salary := salary_box.get_line_edit()
+		salary.grab_focus()
+		await settle()
+		salary.text = "12345"
+		salary.caret_column = 3
+		for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080)]:
+			await resize_to(resolution)
+			check(is_instance_valid(offer) and offer.visible and salary.text == "12345" and salary.caret_column == 3, "Brouillon du même dialogue préservé " + str(resolution))
+			await capture("contrat-" + str(resolution.x))
+		offer.hide()
+		offer.queue_free()
+		await settle()
+	await keyboard(named("OpenPlayerCoachNote"), "ouvrir la vraie note du joueur")
+	var notebook := app.get_node_or_null("CoachNotebook") as AcceptDialog
+	var editor := named("CoachNoteText") as TextEdit
+	var picker := named("CoachNoteTarget") as OptionButton
+	check(notebook != null and editor != null and editor.text == annotation, "La fiche immersive ouvre la seule note persistée")
+	check(picker != null and str(picker.get_item_metadata(picker.selected)) == str(player.id), "Le carnet vise l’identifiant exact de la fiche")
+	if notebook == null or editor == null: return
+	editor.text = "Repère PC : garder ce brouillon 😀"
+	editor.text_changed.emit()
+	for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,900), Vector2i(1920,1080), Vector2i(2560,1440)]:
 		await resize_to(resolution)
-		check(is_instance_valid(offer) and offer.visible and salary.text == "12345" and salary.caret_column == 3,"Brouillon du même dialogue préservé " + str(resolution))
-		await capture("contrat-" + str(resolution.x))
-	offer.hide(); offer.queue_free(); await settle()
-	var note_button: Button=named("OpenPlayerCoachNote")
-	note_button.grab_focus();await key(KEY_ENTER)
-	var notebook:AcceptDialog=app.get_node("CoachNotebook")
-	var note_editor:TextEdit=notebook.find_child("CoachNoteText",true,false)
-	note_editor.text="Repère PC : garder ce brouillon 😀";note_editor.text_changed.emit()
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,900),Vector2i(1920,1080),Vector2i(2560,1440)]:
-		await resize_to(resolution)
-		check(app.get_node("CoachNotebook")==notebook and note_editor.text=="Repère PC : garder ce brouillon 😀","Même carnet et brouillon après redimensionnement physique "+str(resolution))
-		if named("ProfileContextCohort")!=null:check(named("ProfileContextCohort").is_visible_in_tree()==(resolution.y>=1000),"Contextes adaptés au seul changement de hauteur sans recréer le brouillon")
-	notebook.hide();notebook.queue_free();await settle()
-	var peer_action:Button=named("ProfileContextPeers").find_child("ProfilePeerCompare*",true,false) if named("ProfileContextPeers")!=null else null
-	check(peer_action!=null,"Comparaison desktop atteignable")
-	if peer_action!=null:
-		var requested_ids:Array=[app.selected_player,str(peer_action.get_meta("peer_id"))]
-		peer_action.grab_focus();await key(KEY_ENTER)
-		var comparison:AcceptDialog=app.get_node("PlayerComparison")
-		for slot in 2:
-			var choice:OptionButton=comparison.find_child("ComparisonPlayer"+str(slot),true,false)
-			check(str(choice.get_item_metadata(choice.selected))==str(requested_ids[slot]),"Vrai comparateur ouvre la cible ID "+str(slot))
-		comparison.get_ok_button().grab_focus();await key(KEY_ENTER)
-	check(FileAccess.get_file_as_bytes(disk) == bytes,"Consultation et resize : octets du profil inchangés")
-	await command("export")
-	check(app.model.meta.exportText == before,"Consultation et resize : état complet et RNG identiques")
-	finish()
+		check(app.get_node_or_null("CoachNotebook") == notebook and editor.text == "Repère PC : garder ce brouillon 😀", "Même carnet et brouillon Unicode après resize " + str(resolution))
+	notebook.hide()
+	notebook.queue_free()
+	await settle()
+	await keyboard(named("FullPlayerCompare"), "comparer depuis la fiche immersive")
+	var comparison := app.get_node_or_null("PlayerComparison") as AcceptDialog
+	check(comparison != null, "La fiche immersive ouvre le comparateur réel")
+	if comparison == null: return
+	var first := comparison.find_child("ComparisonPlayer0", true, false) as OptionButton
+	var other := comparison.find_child("ComparisonPlayer1", true, false) as OptionButton
+	check(first != null and str(first.get_item_metadata(first.selected)) == str(player.id), "Le comparateur conserve l’identifiant de la fiche ouverte")
+	check(other != null and other.item_count == app.model.squad.size() + 1, "Le second comparateur expose tous les joueurs réels")
+	comparison.hide()
+	comparison.queue_free()
+	await settle()

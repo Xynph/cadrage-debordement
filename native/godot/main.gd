@@ -1,6 +1,11 @@
 extends Control
 
 const G = preload("res://ui/game_skin.gd")
+const Immersive = preload("res://ui/immersive08/shell.gd")
+const ImmersiveEntry = preload("res://ui/immersive08/entry_canvas.gd")
+const ImmersiveDialogs = preload("res://ui/immersive08/dialogs.gd")
+const ImmersiveStyle = preload("res://ui/immersive08/legacy_style.gd")
+const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const Entry = preload("res://ui/entry_screens.gd")
 const ClubViews = preload("res://ui/club_views.gd")
 const SquadViews = preload("res://ui/squad_views.gd")
@@ -17,7 +22,7 @@ const SupportViews = preload("res://ui/support_view.gd")
 const ManagerCareerViews = preload("res://ui/manager_career_view.gd")
 const PlaybookViews = preload("res://ui/playbook_view.gd")
 const NAV_CHAPTERS = [
-	{"label":"Bureau", "routes":["Bureau"]},
+	{"label":"Bureau", "routes":["Bureau","Réception"]},
 	{"label":"Équipe", "routes":["Effectif","Composition","Préparation","Plan de jeu","Vestiaire","Match"]},
 	{"label":"Développement", "routes":["Recrutement","Formation","Centre"]},
 	{"label":"Club", "routes":["Club","Staff","Travail du club","Stratégie","Finances"]},
@@ -90,10 +95,22 @@ func _trace_startup(stage: String) -> void:
 
 func _ready() -> void:
 	_trace_startup("main.ready")
-	if OS.get_environment("CD_GODOT_SELF_TEST") == "1" and OS.get_environment("CD_GODOT_DATA_DIR").is_empty():
+	var qa_script := ""
+	var immersive_qa := OS.get_environment("CD_GODOT_IMMERSIVE_SELF_TEST") == "1"
+	if immersive_qa: qa_script = "res://ui/immersive08/acceptance.gd"
+	elif OS.get_environment("CD_GODOT_SELF_TEST") == "1": qa_script = "res://qa_runner.gd"
+	var qa_data := OS.get_environment("CD_GODOT_DATA_DIR")
+	if not qa_script.is_empty() and qa_data.is_empty():
 		printerr("La réception exige un profil temporaire explicite.")
 		get_tree().quit(2)
 		return
+	if immersive_qa:
+		var directory := DirAccess.open(qa_data)
+		if directory != null: directory.include_hidden = true
+		if not qa_data.is_absolute_path() or (directory != null and (not directory.get_files().is_empty() or not directory.get_directories().is_empty())):
+			printerr("La réception immersive exige un dossier absolu et vide.")
+			get_tree().quit(2)
+			return
 	theme = G.T.make()
 	_trace_startup("theme.ready")
 	interface_layout = load("res://ui/interface_layout.gd").new()
@@ -105,16 +122,18 @@ func _ready() -> void:
 	timer.timeout.connect(_live_tick)
 	add_child(timer)
 	file_dialog = FileDialog.new()
-	file_dialog.theme=G.T.paper()
+	file_dialog.theme=ImmersiveStyle.theme(accent)
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	file_dialog.filters = PackedStringArray(["*.json ; Carrière Oval Legacy 27"])
 	file_dialog.file_selected.connect(_file_selected)
 	add_child(file_dialog)
+	ImmersiveDialogs.watch_file_picker(file_dialog)
 	_trace_startup("file_dialog.ready")
 	pack_manager = load("res://pack_manager.gd").new()
 	pack_manager.app = self
 	add_child(pack_manager)
-	pack_manager.picker.theme=G.T.paper()
+	pack_manager.picker.theme=ImmersiveStyle.theme(accent)
+	ImmersiveDialogs.watch_file_picker(pack_manager.picker)
 	_trace_startup("pack_manager.ready")
 	bridge = load("res://engine_bridge.gd").new()
 	add_child(bridge)
@@ -130,7 +149,7 @@ func _ready() -> void:
 	decision_feedback.setup(self)
 	_trace_startup("guide.setup.begin")
 	if not (OS.has_feature("editor") and OS.get_environment("CD_GODOT_GUIDE_MODULE_TEST") == "1"):
-		coach = load("res://guide/coach_guide.gd").new()
+		coach = load("res://ui/immersive08/coach_canvas.gd").new()
 		add_child(coach)
 		coach.reserved_height_changed.connect(_reserve_coach_space)
 		coach.setup(self)
@@ -152,8 +171,8 @@ func _ready() -> void:
 	timer.start()
 	get_tree().auto_accept_quit = false
 	get_tree().root.close_requested.connect(request_quit)
-	if OS.get_environment("CD_GODOT_SELF_TEST") == "1":
-		var qa: Node = load("res://qa_runner.gd").new()
+	if not qa_script.is_empty():
+		var qa: Node = load(qa_script).new()
 		qa.app = self
 		add_child(qa)
 
@@ -283,7 +302,11 @@ func _failed(message: String) -> void:
 	d.confirmed.connect(d.queue_free)
 	if route == "Accueil" or not _has_career(): _render()
 
-func _navigate(target: String, remember_ui: bool = true) -> void:
+func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = false) -> void:
+	if not keep_subview:
+		if target == "Effectif": set_meta("immersive08_full_player",false)
+		if target == "Préparation" and management_ui.get("preparation", {}).get("tab", 0) == 2:
+			management_ui.preparation.tab = 0
 	route = target
 	for chapter: Dictionary in NAV_CHAPTERS:
 		if target in chapter.routes: chapter_routes[chapter.label] = target
@@ -335,6 +358,7 @@ func _render(remember_ui: bool = true) -> void:
 		if route in chapter.routes: chapter_routes[chapter.label] = route
 	if remember_ui: SquadViews.U.remember(self)
 	SquadViews.U.sync(self)
+	if Immersive.render(self): return
 	if is_instance_valid(root_content):
 		remove_child(root_content)
 		root_content.queue_free()
@@ -353,20 +377,13 @@ func _render(remember_ui: bool = true) -> void:
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root_content.add_child(bg)
 	if route == "Accueil":
-		var home := Entry.home(self)
-		_entry_workspace(home)
+		_entry_workspace(ImmersiveEntry.home(self))
 		return
 	if route == "Création":
-		var m := G.margin(12)
-		m.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		_entry_workspace(m)
-		m.add_child(Entry.creation(self))
+		_entry_workspace(ImmersiveEntry.workspace(self,Entry.creation(self),true))
 		return
 	if route == "Packs":
-		var margin := G.margin(12)
-		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		_entry_workspace(margin)
-		margin.add_child(PackViews.page(self))
+		_entry_workspace(ImmersiveEntry.workspace(self,PackViews.page(self),false))
 		return
 	if not _has_career():
 		route = "Accueil"
@@ -540,7 +557,18 @@ func _open_coach() -> void:
 func _update_header_date() -> void:
 	if not is_instance_valid(header_date): return
 	var meta: Dictionary = model.get("meta", {})
-	header_date.text = ("SAISON %s  /  %s" % [G.n(meta.get("season", 1)),meta.get("roundLabel", "Journée " + G.n(int(meta.get("round", 0))+1))]).to_upper()
+	var round_label := str(meta.get("roundLabel", "Journée " + G.n(int(meta.get("round", 0))+1)))
+	var date := str(meta.get("date",""))
+	var parts := date.split("-")
+	if parts.size()==3 and parts[1].is_valid_int() and int(parts[1]) in range(1,13):
+		var months := ["JANV.","FÉVR.","MARS","AVR.","MAI","JUIN","JUIL.","AOÛT","SEPT.","OCT.","NOV.","DÉC."]
+		header_date.text = "%s %s %s" % [parts[2],months[int(parts[1])-1],parts[0]]
+		header_date.tooltip_text = round_label
+	else:
+		var short_round := round_label.get_slice(" · ",0) if round_label.begins_with("Semaine ") else round_label
+		if round_label == "Saison terminée": short_round = "Terminée"
+		header_date.text = ("SAISON %s  /  %s" % [G.n(meta.get("season", 1)),short_round]).to_upper()
+		header_date.tooltip_text = round_label if short_round!=round_label else ""
 
 func _build_sidebar(parent: Node) -> void:
 	var rail := PanelContainer.new()
@@ -611,16 +639,25 @@ func _build_sidebar(parent: Node) -> void:
 		b.name = "Chapter_" + str(chapter.label)
 		b.custom_minimum_size.y = 28
 		navigation.add_child(b)
-	left.add_child(G.label("PRÉALPHA 0.6  /  WINDOWS", 9, G.GOLD))
+	left.add_child(G.label("PRÉALPHA %s  /  WINDOWS" % ProjectSettings.get_setting("application/config/version"), 9, G.GOLD))
 	left.add_child(G.button("MENU & SAUVEGARDES", pause_menu))
 
 func _update_live_bar() -> void:
 	if not is_instance_valid(minibar): return
 	var live := _live()
+	var office_status := minibar.name == "ImmersiveOfficeMatchStatus"
+	if office_status: minibar.visible = not live.is_empty()
 	if not live.is_empty():
 		var teams: Array = live.get("teams", [{},{}])
 		var score: Array = live.get("score", [0,0])
-		minibar.text = "%s  %s — %s  %s   ·   %s min%s" % [G.club_abbr(teams[0]),G.n(score[0]),G.n(score[1]),G.club_abbr(teams[1]),G.n(live.get("minute",0)),"  /  PAUSE" if live.get("paused",false) else ""]
+		var score_line := "%s  %s — %s  %s" % [G.club_abbr(teams[0]),G.n(score[0]),G.n(score[1]),G.club_abbr(teams[1])]
+		var minute := G.n(live.get("minute",0)) + " min"
+		if office_status:
+			var state := "MATCH TERMINÉ" if live.get("finished",false) else ("PAUSE" if live.get("paused",false) else "EN DIRECT")
+			minibar.text = score_line + "\n" + minute + "  ·  " + state
+			minibar.tooltip_text = minibar.text
+		else:
+			minibar.text = score_line + "   ·   " + minute + ("  /  PAUSE" if live.get("paused",false) else "")
 	else:
 		var meta: Dictionary = model.get("meta", {})
 		var club_count := int(meta.get("database", {}).get("clubCount", 0))
@@ -628,19 +665,27 @@ func _update_live_bar() -> void:
 			"world": minibar.text = "CARRIÈRE MONDIALE  /  %s CLUBS" % G.n(club_count)
 			"france30", "common": minibar.text = "ÉLITE & ACCESSION  /  %s CLUBS" % G.n(club_count)
 			_: minibar.text = "CARRIÈRE HISTORIQUE  /  14 CLUBS"
-	if is_instance_valid(primary_button): primary_button.text = primary_text()
+	if is_instance_valid(primary_button):
+		var action := primary_text()
+		primary_button.text = "Continuer" if primary_button.name == "ImmersiveContinue" else action
+		if office_status and not live.is_empty():
+			primary_button.text = "Valider le résultat" if live.get("finished",false) else "Retour au direct"
+		primary_button.tooltip_text = action
 
 func primary_text() -> String:
 	var live := _live()
 	if not live.is_empty(): return "VALIDER LE RÉSULTAT  →" if live.get("finished",false) else "RETOUR AU DIRECT  →"
 	if model.get("meta",{}).get("canAdvanceSeason",false): return "SAISON SUIVANTE  →"
+	if not SeasonPreparation.data(model.get("meta",{})).is_empty(): return "AVANCER LA PRÉPARATION  →"
 	return "PRÉPARER LE MATCH  →" if model.get("next") != null else "AVANCER LA SEMAINE  →"
 
 func primary_action() -> void:
+	if waiting and (last_command != "tick" or not queued_action.is_empty()): return
 	if not _live().is_empty():
 		if _live().get("finished",false): _command("finish_round")
 		else: _navigate("Match")
 	elif model.meta.get("canAdvanceSeason",false): confirm("Une nouvelle saison", "Les contrats arrivés à échéance sont réglés et les mouvements de division sont appliqués. Commencer la saison suivante ?", func(): _command("next_season",{"confirmed":true}))
+	elif not SeasonPreparation.data(model.meta).is_empty(): _command(SeasonPreparation.command(model.meta),{"fromWeek":int(model.meta.get("week",0))})
 	elif model.get("next") == null: _command("finish_round")
 	else: _navigate("Préparation")
 
@@ -670,9 +715,7 @@ func confirm(title: String, text: String, callback: Callable) -> void:
 
 func _prepare_dialog(dialog: AcceptDialog, width: int) -> void:
 	# Configure wrapping before text/insertion can queue an oversized minimum.
-	dialog.theme = G.T.paper()
-	dialog.min_size = Vector2i(width, 0)
-	dialog.dialog_autowrap = true
+	ImmersiveDialogs.prepare(dialog,width,accent)
 	dialog.visibility_changed.connect(func():
 		if not dialog.visible: call_deferred("_refresh_coach"))
 
@@ -681,9 +724,10 @@ func pause_menu() -> void:
 	if not _live().is_empty() and not _live().get("paused",false) and not _live().get("finished",false):
 		if not _command("pause",{"paused":true}): return
 	var d := AcceptDialog.new()
-	_prepare_dialog(d, 720)
+	d.name = "ImmersivePauseMenu"
+	_prepare_dialog(d, 820)
 	d.title = "Votre carrière"
-	d.dialog_text = "Sauvegarde automatique dans un profil indépendant.\n" + _profile_path()
+	ImmersiveDialogs.pause_content(d,self)
 	for pair in [["Accueil","home"],["Exporter","export"],["Importer","import"],["Paramètres","settings"],["Quitter","quit"]]: d.add_button(pair[0],false,pair[1])
 	d.custom_action.connect(func(action: String):
 		d.hide(); d.queue_free()
@@ -695,7 +739,9 @@ func pause_menu() -> void:
 			"quit": request_quit()
 	)
 	add_child(d)
-	d.popup_centered(Vector2i(720,190))
+	d.confirmed.connect(d.queue_free)
+	d.canceled.connect(d.queue_free)
+	ImmersiveDialogs.show_centered(d,Vector2i(820,370))
 
 func settings() -> void:
 	preload("res://ui/preferences_dialog.gd").open(self, user_preferences)
@@ -717,8 +763,15 @@ func _file_selected(path: String) -> void:
 			f.close()
 			_refuse_action("Fichier trop volumineux (24 Mio UTF-8 maximum).")
 			return
-		var text := f.get_buffer(byte_count).get_string_from_utf8()
+		var buffer := f.get_buffer(byte_count)
 		f.close()
+		# Le décodeur UTF-8 s'arrête au premier octet NUL.
+		var has_nul := buffer.has(0)
+		var text := "" if has_nul else buffer.get_string_from_utf8()
+		var control_characters := RegEx.create_from_string("[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f]")
+		if has_nul or control_characters.search(text) != null:
+			_refuse_action("Le fichier JSON contient un caractère de contrôle non échappé.")
+			return
 		var refusal := NativeEngineBridge.import_preflight(text, byte_count)
 		if not refusal.is_empty():
 			_refuse_action(refusal)
@@ -794,7 +847,7 @@ func request_quit() -> void:
 	if not _live().is_empty() and not _live().get("finished",false): confirm("Quitter le jeu", "La dernière décision confirmée est sauvegardée. Quitter cette rencontre ?",_close)
 	else: _close()
 
-func _close() -> void:
+func _close(exit_code: int = 0) -> void:
 	if closing: return
 	closing = true
 	if is_instance_valid(soundscape): soundscape.dispose()
@@ -803,7 +856,7 @@ func _close() -> void:
 	bridge.stop()
 	var deadline := Time.get_ticks_msec()+2300
 	while bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await get_tree().process_frame
-	get_tree().quit()
+	get_tree().quit(exit_code)
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if is_instance_valid(navigation_controller) and navigation_controller.handle_shortcut(event):
