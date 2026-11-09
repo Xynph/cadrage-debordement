@@ -56,6 +56,34 @@ func run() -> void:
 	check(is_instance_valid(dialog) and dialog.visible,"Le dialogue survit à la réponse et au rendu du modèle")
 	check(dialog.preview.registration.status=="invalid","Le dépassement de 42 est refusé par le vrai validateur")
 	check(str(dialog.find_child("EpcrPreparationNotice",true,false).text).contains("ne vaut pas inscription officielle"),"Aucune fausse inscription officielle annoncée")
+	var original_error: String = app.last_error
+	app.last_error = "Décision antérieure à vérifier"
+	var previous_error: String = app.last_error
+	var receipts_before: Array = app.decision_feedback.receipts().duplicate(true)
+	var draft_before: Dictionary = dialog.selected.duplicate(true)
+	var original_id: String = dialog.choices[0].get_meta("player_id")
+	dialog.choices[0].set_meta("player_id","foreign-review-id")
+	dialog.selected.erase(original_id);dialog.selected["foreign-review-id"] = true
+	var rejected_draft: Dictionary = dialog.selected.duplicate(true)
+	await press(verify);await wait_refusal(dialog)
+	check(is_instance_valid(dialog) and dialog.visible and dialog.selected==rejected_draft,"Un vrai refus worker conserve dialogue et sélection")
+	check(dialog.result.text.contains("identifiants uniques de votre effectif"),"Le refus réel est présenté dans le brouillon")
+	check(app.last_error==previous_error and not app.connection_error,"Le refus consultatif ne crée pas une erreur métier")
+	dialog.choices[0].set_meta("player_id",original_id);dialog.selected=draft_before.duplicate(true)
+	await press(verify);await wait_preview(dialog)
+	check(dialog.preview.registration.status=="invalid","Réessai réussi après correction de l’identifiant")
+	# This refusal returns default IDs identical to the request. It must not be
+	# consumed as a successful preview before command_failed is delivered.
+	var own_competition: String = dialog.preview.competitionId
+	dialog.preview.competitionId="challenge"
+	await press(verify);await wait_refusal(dialog)
+	check(dialog.result.text.contains("ne participe pas à cette coupe"),"Un modèle de refus avec mêmes IDs ne produit aucun faux rapport")
+	check(dialog.selected==draft_before and app.last_error==previous_error,"Second refus préserve le brouillon et le statut métier")
+	dialog.preview.competitionId=own_competition
+	await press(verify);await wait_preview(dialog)
+	check(app.last_error==previous_error,"Un succès de consultation n’efface pas l’erreur métier antérieure")
+	check(app.decision_feedback.receipts()==receipts_before,"Les consultations ne créent aucun reçu de décision métier")
+	app.last_error=original_error
 	await press(dialog.choices[0])
 	check(dialog.selected.size()==dialog.choices.size()-1 and count.text.begins_with(str(dialog.selected.size())),"Le clavier retire réellement un joueur et actualise le compteur")
 	check(dialog.result.text.contains("relancez"),"Un brouillon modifié invalide le rapport précédent")
@@ -87,11 +115,30 @@ func run() -> void:
 	await ask("export")
 	check(app.model.meta.exportText==exported,"La consultation et les choix conservent chaque champ de carrière")
 	check(FileAccess.get_file_as_bytes(career_file)==disk,"La consultation conserve disque, horloge et RNG")
+	app._navigate("Effectif");await settle()
+	await press(app.root_content.find_child("OpenEpcrPreparation",true,false))
+	dialog=app.get_node_or_null("EpcrPreparationDialog")
+	var disconnected_draft: Dictionary = dialog.selected.duplicate(true)
+	app.bridge.stop()
+	var stop_deadline := Time.get_ticks_msec()+3000
+	while app.bridge.child_pid>0 and Time.get_ticks_msec()<stop_deadline: await process_frame
+	await settle()
+	await press(dialog.verify);await settle()
+	check(is_instance_valid(dialog) and dialog.visible and dialog.selected==disconnected_draft,"La panne réelle du transport conserve le brouillon")
+	check(app.connection_error and not app.last_error.is_empty(),"Le moteur réellement fermé reste signalé globalement")
+	check(not dialog.result.text.is_empty() and not dialog.pending,"La panne termine la consultation avec une raison locale")
+	check(FileAccess.get_file_as_bytes(career_file)==disk,"La panne et les refus ne modifient pas le profil")
+	dialog.hide();dialog.queue_free();await settle()
 	await finish()
 func wait_preview(dialog: AcceptDialog) -> void:
 	var deadline:=Time.get_ticks_msec()+20000
 	while (app.waiting or dialog.pending) and Time.get_ticks_msec()<deadline:await process_frame
 	check(not app.waiting and not dialog.pending and app.bridge.last_response_ok,"Le vrai worker a répondu à epcr_preview")
+	await settle()
+func wait_refusal(dialog: AcceptDialog) -> void:
+	var deadline:=Time.get_ticks_msec()+20000
+	while (app.waiting or dialog.pending) and Time.get_ticks_msec()<deadline:await process_frame
+	check(not app.waiting and not dialog.pending and not app.bridge.last_response_ok,"Le vrai worker a refusé epcr_preview")
 	await settle()
 func finish() -> void:
 	app.closing=true;app.timer.stop()

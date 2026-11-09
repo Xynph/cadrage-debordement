@@ -23,3 +23,11 @@ Après staging officiel (`python3 scripts/build-godot-prototype.py --stage-only 
 Réception Linux sans fenêtre et pilote audio Dummy. Le test ne revendique ni un export Windows ni un examen physique des pilotes ou du son.
 
 Réception du 9 novembre 2026 sur Linux : **70 contrôles réussis, zéro échec**, Node 22.23.4 et Godot 4.7.2. Les contrôles de visibilité vérifient les rectangles des commandes dans chaque zone de défilement après le déplacement réel du focus. Les premiers essais ont révélé l’absence du bouton dans la variante d’effectif sous 1600 px ; les deux variantes possèdent désormais leur entrée.
+
+## Refus de consultation et transport
+
+Un refus réel de `epcr_preview` conserve le dialogue et les choix ; sa raison reste dans le rapport local sans remplacer une erreur de décision antérieure. La réponse JSON refusée contient parfois le modèle par défaut : elle n’est jamais consommée comme un succès, même si ses IDs sont identiques au brouillon demandé. Un réessai peut réussir après correction de l’entrée.
+
+La fermeture réelle du moteur est distincte d’un refus de liste. Dans ce cas, le dialogue conserve également le brouillon, et la panne demeure signalée dans le statut global. Aucune consultation ne crée de reçu de décision métier. Les tests utilisent un identifiant étranger envoyé au vrai worker puis une coupe non participante, vérifient la préservation des choix et le réessai, enfin arrêtent réellement le processus avant de tenter une nouvelle vérification. Les exports et les octets du profil restent inchangés.
+
+Réception renforcée après correction du refus consultatif : **110 contrôles réussis, zéro échec**, Node 22.23.4 et Godot 4.7.2 Linux sans fenêtre. Le témoin rouge initial reproduisait la destruction du brouillon par le gestionnaire d’erreur global ; le scénario conserve maintenant la même instance, ses choix et un éventuel message métier antérieur.

@@ -134,7 +134,7 @@ func _verify() -> void:
 		_on_failure("La vérification n’a pas pu démarrer. Réessayez.")
 
 func _on_model(value: Dictionary) -> void:
-	if not pending: return
+	if not pending or not app.bridge.last_response_ok or app.last_command != "epcr_preview": return
 	var data: Variant = value.get("epcrPreparation")
 	if not data is Dictionary: return
 	# Une réponse d'une autre action ne doit jamais valider ce brouillon.

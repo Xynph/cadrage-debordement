@@ -214,7 +214,7 @@ func _receive_model(value: Dictionary) -> void:
 	if not export_path.is_empty() and not _write_export():
 		if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
 		return
-	if bridge.last_response_ok: last_error = ""
+	if bridge.last_response_ok and received_command != "epcr_preview": last_error = ""
 	if bridge.last_response_ok and not pending_route.is_empty():
 		route = pending_route
 		pending_route = ""
@@ -283,12 +283,22 @@ func _failed(message: String) -> void:
 	waiting = false
 	queued_action.clear()
 	pending_route = ""
-	last_error = message
 	connection_error = bridge.child_pid <= 0 or bridge._stopping
+	var epcr_dialog := get_node_or_null("EpcrPreparationDialog") if last_command == "epcr_preview" else null
+	# A consultation refusal belongs to its report, never to the career decision
+	# status. Preserve an existing business error and the unsaved list.
+	if epcr_dialog != null and not connection_error:
+		if is_instance_valid(status):
+			status.text = _settled_status_text()
+			status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
+		return
+	last_error = message
 	if is_instance_valid(status):
 		status.text = "ACTION NON EFFECTUÉE · " + message
 		status.add_theme_color_override("font_color", Color("f1b6a9"))
 	if last_command == "tick": timer.stop()
+	# Transport failures remain globally visible, but keep this local draft too.
+	if epcr_dialog != null: return
 	# A failed annotation must leave its editor and unsaved draft alive. The
 	# notebook listens to the same failure signal and presents the local refusal.
 	if last_command in ["coach_note_save","coach_note_remove"] and get_node_or_null("CoachNotebook") != null: return
