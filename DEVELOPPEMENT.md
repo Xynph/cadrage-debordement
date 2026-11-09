@@ -1,5 +1,11 @@
 # Journal de développement — Cadrage Débordement
 
+## 9 novembre 2026 — réception groupée Cloud
+
+La branche `integration/cloud-reception-20261109` réunit les lots publiés #410 (titres du journal mondial), #414 (trois doublons Champ retirés uniquement aux nouveaux départs et transfert canonique), #413 (poids des suites longues réalignés sur main), #416 (réception géométrique du refus sonore) et #417 (audit réglementaire sourcé). Une qualification supplémentaire du vrai worker Pacifique vérifie la reprise disque avec graines différentes, la continuation identique d'une journée mondiale et les frontières de provenance URC/SRP. Aucun règlement nouveau n'est imposé à partir d'une source d'une autre saison.
+
+Les trois suites ciblées de #410 et les trois tests contrats de #414 ont été reçus séparément sous Node22. La recette croisée de #414 crée un ancien export à 5 881 joueurs avec main, le réouvre et le réimporte sans changement avec les deux moteurs ; les nouveaux départs #414 ont 5 878 joueurs, le catalogue reste à 5 884 IDs et le transfert est au club attendu. Sur la combinaison, les tests presse, contrats et répartition CI passent ; les suites complètes distantes et le contrôle après fusion restent à recevoir. Les fenêtres Godot sont qualifiées sous Linux avec le SDK4.7.2, pas sous Windows. Les preuves du lot EPCR sont séparées ; cette réception ne prétend pas livrer des inscriptions européennes.
+
 ## 9 novembre 2026 — réception Cloud du refus sonore Godot
 
 Sur main `e2f111a2`, le test de raccordements natifs06 échoue à cause de son ancien plafond de largeur de 720 px. Après la refonte immersive, les paramètres mesurent légitimement 880 × 600 sur une fenêtre 1920 × 1080 ; le message de refus et Fermer sont entièrement contenus. Le correctif remplace ce plafond par des contrôles géométriques du dialogue dans la fenêtre hôte, du bouton Fermer dans le dialogue et du message dans le dialogue et sa zone de défilement, aux quatre définitions 1280 × 720, 1600 × 900, 1920 × 1080 et 2560 × 1440. Le refus disque réel, la restauration du volume, les octets conservés et le réessai restent contrôlés.
