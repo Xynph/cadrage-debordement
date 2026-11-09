@@ -273,14 +273,14 @@ static func _club_preview(parent: VBoxContainer, club: Dictionary, championship:
 	parent.add_child(photo)
 	var roster: Dictionary = club.get("startingRoster", {})
 	if not roster.is_empty():
-		var metrics := C.h(13)
+		var metrics := C.h(16)
 		metrics.name = "CreationRosterSummary"
 		parent.add_child(metrics)
-		_dossier_metric(metrics, _rating(roster), "Note moyenne")
-		Editorial.divider(metrics)
-		_dossier_metric(metrics, roster.get("forwards", 0), "Avants")
-		Editorial.divider(metrics)
-		_dossier_metric(metrics, roster.get("backs", 0), "Trois-quarts")
+		var note := C.label(_rating(roster), 42, C.IVORY, true, 800)
+		metrics.add_child(note)
+		var caption := C.label("Note moyenne", 22, C.IVORY, false)
+		caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		metrics.add_child(caption)
 	parent.add_child(C.rule())
 	parent.add_child(C.label("LE CLUB", 22, Editorial.RAIL_GOLD, true, 700))
 	var city := str(club.get("city", "")).strip_edges()
@@ -323,16 +323,6 @@ static func _position_detail(detail: Variant, club_average: float) -> String:
 	var gap := String.num(absf(difference / 10.0), 1).replace(".", ",")
 	var sign := "+" if difference > 0 else ("−" if difference < 0 else "")
 	return "%d %s · moy. %s · %s%s pt%s vs club" % [count, "joueur" if count == 1 else "joueurs", _rating(detail), sign, gap, "s" if absi(difference) >= 20 else ""]
-
-static func _dossier_metric(parent: Container, value: Variant, caption: String) -> void:
-	var column := C.v(0)
-	parent.add_child(C.fill(column))
-	var number := C.label(value, 49, C.IVORY, true, 800)
-	number.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	column.add_child(number)
-	var title := C.wrap(caption, 20, C.IVORY)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	column.add_child(title)
 
 static func _dossier_line(parent: Container, caption: String, detail: String, accent: bool = false) -> void:
 	var line := C.h(16)
