@@ -433,18 +433,25 @@ func _run() -> void:
 			var confirmation := _dialogs().any(func(dialog: AcceptDialog): return dialog is ConfirmationDialog and dialog.visible)
 			_check(not confirmation and not app.waiting and app.bridge._next_id == request_before and app.last_error.to_lower().contains("volumineux"), "%s over-limit import is refused before confirmation and transport" % fixture[0])
 			_dismiss_errors()
-		var control_path := profile.path_join("caractere-de-controle.json")
-		var control_file := FileAccess.open(control_path, FileAccess.WRITE)
-		control_file.store_string("{" + String.chr(1) + "}")
-		control_file.close()
-		var request_before: int = app.bridge._next_id
+		await _command("export")
+		var valid_export: String = app.model.meta.get("exportText", "")
+		_check(not valid_export.is_empty(), "A complete native export is available for the NUL fixture")
+		var terminated := valid_export.to_utf8_buffer()
+		terminated.append(0)
+		terminated.append_array("suffixe non JSON".to_utf8_buffer())
 		var worker_before: int = app.bridge.child_pid
-		app.open_file(true)
-		app.file_dialog.file_selected.emit(control_path)
-		var confirmation := _dialogs().any(func(dialog: AcceptDialog): return dialog is ConfirmationDialog and dialog.visible)
-		_check(not confirmation and not app.waiting and app.bridge._next_id == request_before and app.last_error.contains("caractère de contrôle"), "Invalid raw JSON control character is refused before transport")
-		_check(worker_before > 0 and app.bridge.child_pid == worker_before and OS.is_process_running(worker_before), "Malformed file does not stop the owned worker")
-		_dismiss_errors()
+		for fixture: Array in [["C0", ("{" + String.chr(1) + "}").to_utf8_buffer()], ["NUL après un export valide", terminated]]:
+			var control_path := profile.path_join("caractere-de-controle.json")
+			var control_file := FileAccess.open(control_path, FileAccess.WRITE)
+			control_file.store_buffer(fixture[1])
+			control_file.close()
+			var request_before: int = app.bridge._next_id
+			app.open_file(true)
+			app.file_dialog.file_selected.emit(control_path)
+			var confirmation := _dialogs().any(func(dialog: AcceptDialog): return dialog is ConfirmationDialog and dialog.visible)
+			_check(not confirmation and not app.waiting and app.bridge._next_id == request_before and app.last_error.contains("caractère de contrôle"), "%s est refusé avant le transport" % fixture[0])
+			_check(worker_before > 0 and app.bridge.child_pid == worker_before and OS.is_process_running(worker_before), "Malformed file does not stop the owned worker")
+			_dismiss_errors()
 		# Below the byte cap, malformed JSON is checked by the worker after confirmation.
 		for text in ["a".repeat(5 * 1024 * 1024 + 1), "\"".repeat(4 * 1024 * 1024), "é".repeat(3 * 1024 * 1024)]:
 			var error_before := errors

@@ -259,8 +259,14 @@ static func _locker(card: Panel, app: Control) -> void:
 		var item: Array = rows[i]
 		var y := 73 + i * 83
 		U.icon(card, item[0], Vector2(20,y+13), item[3], 35)
-		D.text(card, 73, y+22, item[1], 22, C.IVORY, 500, 225)
-		D.text(card, 73, y+57, item[2], 29, item[3], 700, 228)
+		var title := D.text(card, 73, y+22, item[1], 22, C.IVORY, 500, 225)
+		var value := D.text(card, 73, y+57, item[2], 29, item[3], 700, 228)
+		if i == 2 and value.get_theme_font("font").get_string_size(value.text, HORIZONTAL_ALIGNMENT_LEFT, -1, value.get_theme_font_size("font_size")).x > value.size.x:
+			value.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			value.max_lines_visible = 2
+			value.add_theme_constant_override("line_spacing", 0)
+			value.size.y = value.get_minimum_size().y
+			value.position.y = maxf(value.position.y, title.position.y + title.size.y + 1.0)
 		if i < 2: D.line(card, Vector2(20,y+72), Vector2(304,y+72), Color(C.LINE,.65))
 	D.button(card, Rect2(20,351,284,36), "Entrer au vestiaire", func(): app._navigate("Vestiaire"), false, "arrow", true, U.GREEN, "ClubLockerAction")
 

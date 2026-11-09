@@ -11,7 +11,11 @@ func _run() -> void:
 		return
 	engine_pid = app.bridge.child_pid
 	app.timer.stop()
-	_check(not app._has_career() and app.route == "Accueil", "Accueil du profil jetable, sans carrière existante")
+	var pristine: bool = not app._has_career() and app.route == "Accueil"
+	_check(pristine, "Accueil du profil jetable, sans carrière existante")
+	if not pristine:
+		await app._close(2)
+		return
 	_verify_assets()
 	await _resize_window(Vector2i(2560, 1440))
 	await _visit("Accueil", "ImmersiveWelcome", "entry-ground", "01-accueil")

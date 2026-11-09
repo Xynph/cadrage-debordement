@@ -106,6 +106,7 @@ func _ready() -> void:
 		return
 	if immersive_qa:
 		var directory := DirAccess.open(qa_data)
+		if directory != null: directory.include_hidden = true
 		if not qa_data.is_absolute_path() or (directory != null and (not directory.get_files().is_empty() or not directory.get_directories().is_empty())):
 			printerr("La réception immersive exige un dossier absolu et vide.")
 			get_tree().quit(2)
@@ -749,10 +750,13 @@ func _file_selected(path: String) -> void:
 			f.close()
 			_refuse_action("Fichier trop volumineux (24 Mio UTF-8 maximum).")
 			return
-		var text := f.get_buffer(byte_count).get_string_from_utf8()
+		var buffer := f.get_buffer(byte_count)
 		f.close()
-		var control_characters := RegEx.create_from_string("[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]")
-		if control_characters.search(text) != null:
+		# Le décodeur UTF-8 s'arrête au premier octet NUL.
+		var has_nul := buffer.has(0)
+		var text := "" if has_nul else buffer.get_string_from_utf8()
+		var control_characters := RegEx.create_from_string("[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f]")
+		if has_nul or control_characters.search(text) != null:
 			_refuse_action("Le fichier JSON contient un caractère de contrôle non échappé.")
 			return
 		var refusal := NativeEngineBridge.import_preflight(text, byte_count)
@@ -830,7 +834,7 @@ func request_quit() -> void:
 	if not _live().is_empty() and not _live().get("finished",false): confirm("Quitter le jeu", "La dernière décision confirmée est sauvegardée. Quitter cette rencontre ?",_close)
 	else: _close()
 
-func _close() -> void:
+func _close(exit_code: int = 0) -> void:
 	if closing: return
 	closing = true
 	if is_instance_valid(soundscape): soundscape.dispose()
@@ -839,7 +843,7 @@ func _close() -> void:
 	bridge.stop()
 	var deadline := Time.get_ticks_msec()+2300
 	while bridge.child_pid > 0 and Time.get_ticks_msec() < deadline: await get_tree().process_frame
-	get_tree().quit()
+	get_tree().quit(exit_code)
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if is_instance_valid(navigation_controller) and navigation_controller.handle_shortcut(event):

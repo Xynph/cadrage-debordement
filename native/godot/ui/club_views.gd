@@ -237,8 +237,8 @@ static func calendar(app: Control) -> Control:
 		opponent.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		row.add_child(opponent)
 		row.add_child(G.crest(away, 36))
-		if japanese:
-			var detail := G.reading_button(G.button("Détail", func(): _japan_calendar_detail(app, fixture, fixture_title)), 72)
+		if japanese or (international and competition_id in ["champions", "challenge"]):
+			var detail := G.reading_button(G.button("Détail", func(): _calendar_fixture_detail(app, fixture, fixture_title)), 72)
 			detail.name = "CalendarFixtureOpen_" + str(fixture.id).replace(":", "_")
 			detail.accessibility_name = "Détail · %s · %s – %s" % [_calendar_date(fixture.date), G.club_name(home), G.club_name(away)]
 			detail.tooltip_text = detail.accessibility_name
@@ -250,7 +250,7 @@ static func calendar(app: Control) -> Control:
 		list.add_child(G.separator())
 	return page
 
-static func _japan_calendar_detail(app: Control, fixture: Dictionary, title: String) -> void:
+static func _calendar_fixture_detail(app: Control, fixture: Dictionary, title: String) -> void:
 	var style := preload("res://ui/immersive08/components.gd")
 	var view := preload("res://ui/decision_views.gd").dialog(app, title, "CompetitionFixtureDetails", 760)
 	var body: VBoxContainer = view[1]

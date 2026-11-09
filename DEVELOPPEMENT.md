@@ -14,6 +14,10 @@ Le ZIP Champ `5480f9c` passe 145 contrôles avec son pack complet et 445 dans la
 
 Le paquet Windows Atlas `2761850` passe 177 contrôles avec le pack complet et 233 contrôles Pacifique après relocalisation. La réception retrouve la saison 2 sur le runtime embarqué. L’Atelier adapte ensuite son bandeau au changement de définition en préservant la saisie, le focus et l’aperçu du pack.
 
+La branche reprend le moteur 0.7.7 sur `7ea396f`. La recette source du Champ et de l’Atlas passe 125 contrôles avec les poules et lieux européens. Le témoin du rail vérifie les couleurs des boutons et les contours de focus à 720p, 1080p et 1440p.
+
+La recette historique de ce même paquet Atlas passe 1 513 contrôles sous Windows. Sur le raccord Formation, Calendrier permet d’ouvrir le détail des rencontres européennes à 720p. Le sélecteur refuse un octet NUL brut dans un fichier d’import, y compris après un JSON complet. La recette embarquée vérifie aussi les entrées masquées du dossier de test et s’arrête si une carrière est déjà chargée.
+
 ## 9 novembre 2026 — carrière européenne et profils compatibles
 
 L'édition `rugby-world-2026-11-08-v1` ajoute le mode Monde sans convertir les anciennes carrières. Le registre compilé reprend les 1 592 objets France à l'identique et ajoute PREM, URC et deux invités européens. Les dates de départ sourcées, les règles et leurs éditions figurent dans la [documentation des compétitions](docs/world-competition-rules-20261109.md). Les calendriers futurs et les invitations du monde fermé suivent des décisions de jeu explicites, sans importer de scores réels.
