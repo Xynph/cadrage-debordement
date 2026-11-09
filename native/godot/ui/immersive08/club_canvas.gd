@@ -460,6 +460,10 @@ static func _world_history(app: Control, canvas: Control, data: Dictionary) -> v
 	var list := C.v(15)
 	C.fill(list)
 	scroll.add_child(list)
+	var analysis: Control = preload("res://ui/performance_analysis_view.gd").build(app)
+	Legacy.apply(analysis,app.accent)
+	list.add_child(analysis)
+	list.add_child(C.rule())
 	var years: Array = data.seasons
 	list.add_child(C.wrap("Saisons archivées et rencontres conservées dans cette carrière. Les rangs concernent la phase régulière.",22,C.MUTED,true))
 	if years.size() >= 2: _world_comparison(app,list,years)
