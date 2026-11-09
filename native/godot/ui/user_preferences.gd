@@ -4,7 +4,8 @@ signal changed
 const Atomic = preload("res://atomic_file.gd")
 const AUTOMATIC_SCREEN := -1
 const MAX_SCREEN_INDEX := 2147483647
-const DEFAULTS := {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":AUTOMATIC_SCREEN}
+const DEFAULTS := {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":AUTOMATIC_SCREEN,"stadium":"day"}
+const OPTIONAL_KEYS := ["display_screen","stadium"]
 const MAX_BYTES := 16 * 1024
 var data: Dictionary = DEFAULTS.duplicate(true)
 var last_error := ""
@@ -16,11 +17,15 @@ func _fail(message: String) -> bool:
 	return false
 
 func _validated(candidate: Variant) -> Dictionary:
-	if not candidate is Dictionary or candidate.size() != DEFAULTS.size() - int(not candidate.has("display_screen")):
+	if not candidate is Dictionary:
 		_fail("Préférences refusées : champs absents ou inconnus. Le fichier original est conservé.")
 		return {}
+	for key in candidate:
+		if not DEFAULTS.has(key):
+			_fail("Préférences refusées : champ inconnu « %s ». Le fichier original est conservé." % key)
+			return {}
 	for key in DEFAULTS:
-		if key != "display_screen" and not candidate.has(key):
+		if key not in OPTIONAL_KEYS and not candidate.has(key):
 			_fail("Préférences refusées : champ absent « %s ». Le fichier original est conservé." % key)
 			return {}
 	var version: Variant = candidate.version
@@ -38,7 +43,11 @@ func _validated(candidate: Variant) -> Dictionary:
 	if not (typeof(screen) in [TYPE_INT,TYPE_FLOAT]) or not is_finite(float(screen)) or screen < AUTOMATIC_SCREEN or screen > MAX_SCREEN_INDEX or float(screen) != floor(float(screen)):
 		_fail("Écran refusé : choisissez Automatique ou un numéro d’écran valide.")
 		return {}
-	return {"version":1,"volume":int(volume),"reduced_motion":candidate.reduced_motion,"quality":candidate.quality,"camera":candidate.camera,"display_screen":int(screen)}
+	var stadium: Variant = candidate.get("stadium", DEFAULTS.stadium)
+	if not stadium is String or stadium not in ["day","evening"]:
+		_fail("Éclairage du stade refusé : choisissez Jour ou Soirée.")
+		return {}
+	return {"version":1,"volume":int(volume),"reduced_motion":candidate.reduced_motion,"quality":candidate.quality,"camera":candidate.camera,"display_screen":int(screen),"stadium":stadium}
 
 func load_profile(directory: String) -> bool:
 	_available = false

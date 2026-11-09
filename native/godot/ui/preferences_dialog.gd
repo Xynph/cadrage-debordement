@@ -54,7 +54,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	var interface_volume := _volume(sound,"Sons d’interface","PreferencesInterfaceVolume")
 	var stadium_volume := _volume(sound,"Ambiance du stade","PreferencesStadiumVolume")
 	sound.add_child(C.wrap("0 coupe le canal. L’ambiance accompagne le direct visible. Le volume global et la voix de Gabi gardent leurs réglages.",17,C.MUTED))
-	display.add_child(C.label("ÉCRAN ET TAILLE DE LA FENÊTRE",20,C.GOLD,true,700))
+	display.add_child(C.label("ÉCRAN ET RENDU DU MATCH",20,C.GOLD,true,700))
 	var screen_count := 0 if DisplayServer.get_name() == "headless" else DisplayServer.get_screen_count()
 	var screen_labels := ["Automatique"]
 	if screen_count > 0:
@@ -66,6 +66,8 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	var screen := _choice(display,"Écran de jeu",screen_labels,"PreferencesDisplayScreen")
 	screen.disabled = screen_count == 0
 	screen.tooltip_text = "Automatique conserve l’écran choisi au lancement. Un écran sélectionné est mémorisé."
+	var stadium := _choice(display,"Éclairage du stade",["Jour","Soirée"],"PreferencesStadiumLighting")
+	stadium.tooltip_text = "Le réglage s’applique au stade 3D et est conservé pour les prochains matchs."
 	var error := C.wrap("",18,C.ALERT)
 	error.name = "PreferencesError"
 	error.max_lines_visible = 3
@@ -78,6 +80,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		camera.disabled = profile.data.reduced_motion
 		camera.tooltip_text = "Choix différé : le mode calme utilise une caméra tactique fixe." if profile.data.reduced_motion else "Caméra appliquée à la scène du match."
 		quality.select(["economy","balanced","detail"].find(profile.data.quality))
+		stadium.select(1 if profile.data.stadium == "evening" else 0)
 		if screen.item_count > screen_labels.size(): screen.remove_item(screen.item_count-1)
 		var saved_screen: int = profile.data.display_screen
 		if saved_screen >= screen_count:
@@ -103,6 +106,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	camera.item_selected.connect(func(index: int): profile.set_value("camera",["tv","tactical","action"][index]); refresh.call())
 	quality.item_selected.connect(func(index: int): profile.set_value("quality",["economy","balanced","detail"][index]); refresh.call())
 	screen.item_selected.connect(func(index: int): profile.set_value("display_screen",index-1); refresh.call())
+	stadium.item_selected.connect(func(index: int): profile.set_value("stadium",["day","evening"][index]); refresh.call())
 	interface_volume.value_changed.connect(func(value: float):
 		if sound_profile != null: sound_profile.set_value("interface_volume",int(value))
 		refresh.call())
@@ -111,7 +115,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		refresh.call())
 	var reset := G.button("Réinitialiser ces préférences",func(): profile.reset_defaults(); refresh.call())
 	reset.name = "PreferencesReset"; comfort.add_child(reset)
-	display.add_child(C.wrap("Le mode d’affichage s’applique à cette session.",18,C.IVORY))
+	display.add_child(C.wrap("Le mode de fenêtre s’applique à cette session.",18,C.IVORY))
 	var display_row := G.h(8); display.add_child(display_row)
 	var fullscreen := G.button("Plein écran",func(): DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN),true)
 	fullscreen.name = "PreferencesFullscreen"
