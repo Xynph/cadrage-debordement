@@ -38,7 +38,7 @@ Cette couverture est celle du sélecteur générique du moteur, avec les blessur
 
 ## Réception
 
-Les cinq tests courts couvrent conservation des flux prouvés, refus d’inventer la cause d’une disparition, alias marché/agents libres, double appartenance professionnelle interdite, non-mutation des entrées et validation de la CLI. La campagne réellement exécutée est consignée ci-dessous après réception ; les modes non exécutés ne sont pas annoncés reçus.
+Les six tests courts couvrent conservation des flux prouvés, refus d’inventer la cause d’une disparition, alias marché/agents libres, double appartenance professionnelle interdite, non-mutation des entrées et validation de la CLI. La campagne réellement exécutée est consignée ci-dessous après réception ; les modes non exécutés ne sont pas annoncés reçus.
 
 ### Monde : deux saisons reçues
 
@@ -80,3 +80,9 @@ Même source moteur, même runtime, graine 827381, club 0, mode `world-champ` : 
 La transition étendue relève 80 retraites prouvées, 58 libérations étayées, 2 recrutements nets et 3 renforts d’urgence prouvés. **488 causes de mouvements professionnels restent inconnues**. Tous les bilans d’IDs par club ont un résidu nul. Le plafond des traces nominatives limite encore davantage l’attribution causale sur ce monde de 116 clubs.
 
 Reçu de travail : `/workspace/work/world-roster-turnover-champ-1s.json`, journal correspondant. Empreinte de l’outil identique à celle du reçu Monde : aucun changement d’algorithme entre les deux campagnes. Les scénarios représentent trois saisons simulées au total, mais une seule graine et deux modes distincts ; ils ne certifient aucun équilibre de carrière à dix saisons.
+
+### Garde des doublons professionnels renforcée après revue
+
+Une fixture rouge a établi qu’un doublon à l’intérieur du même club était dédupliqué dans les emplacements, tout en restant compté deux fois dans le total professionnel. Cela pouvait produire un bilan par ID artificiellement sans résidu. `inventory()` refuse désormais toute seconde occurrence professionnelle d’un ID, dans le même club comme dans deux clubs distincts. Les présences communes aux surfaces marché/agents libres restent dédupliquées normalement. Le chemin CLI passe par cette même validation avant tout bilan.
+
+Six tests courts réussissent après correction, dont le contre-exemple qui échouait auparavant et le refus de construire un faux bilan à partir de cet inventaire. Aucun moteur ou résultat des campagnes n’est modifié. Les deux reçus longs ci-dessus restent ceux de l’outil à l’empreinte antérieure indiquée : cette garde supplémentaire ne transforme pas leurs valeurs, et aucune nouvelle campagne longue n’est revendiquée pour cette modification d’entrée.

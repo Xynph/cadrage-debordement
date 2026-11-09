@@ -18,6 +18,11 @@ test('No retirement invented for a disappearance; market refresh stays a surface
 test('Market/free-agent aliases deduplicate; duplicate professional ownership is refused',()=>{
  const row=inventory(state([[p('own')]],[],[p('market')]));a.equal(row.counts.unique,2);a.deepEqual(row.players.market.locations,['market','free-agents']);a.throws(()=>inventory(state([[p('duplicate')],[p('duplicate')]])),/duplicate professional owner/);
 });
+test('Same-club duplicate professionals cannot produce a false zero-residual balance',()=>{
+ const malformed=state([[p('same-id'),p('same-id')]]);
+ a.throws(()=>inventory(malformed),/duplicate professional/);
+ a.throws(()=>reconcile(inventory(malformed),inventory(malformed)),/duplicate professional/);
+});
 test('Analysis preserves all input objects, including event evidence',()=>{
  const before=state([[p('release')]]),after=state([[]],[],[p('release')]),events=[{season:1,clubId:0,kind:'release',playerId:'release',fee:0}],copy=JSON.stringify({before,after,events});
  reconcile(inventory(before),inventory(after),events);a.equal(JSON.stringify({before,after,events}),copy);

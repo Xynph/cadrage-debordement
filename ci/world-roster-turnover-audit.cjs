@@ -4,12 +4,11 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('nod
 const {createBridge}=require('../native/engine/worker.cjs');
 const hash=x=>crypto.createHash('sha256').update(x).digest('hex');
 function inventory(s){
- const players={},add=(p,location)=>{assert(p&&typeof p.id==='string','player ID required');const row=players[p.id]??={id:p.id,locations:[],age:p.age,salary:p.salary,contractEnd:p.contractEnd??null};if(!row.locations.includes(location))row.locations.push(location);};
+ const players={},professionalIds=new Set(),add=(p,location)=>{assert(p&&typeof p.id==='string','player ID required');if(location.startsWith('club:')){assert(!professionalIds.has(p.id),'duplicate professional owner or entry: '+p.id);professionalIds.add(p.id);}const row=players[p.id]??={id:p.id,locations:[],age:p.age,salary:p.salary,contractEnd:p.contractEnd??null};if(!row.locations.includes(location))row.locations.push(location);};
  for(const c of s.clubs||[])for(const p of c.players||[])add(p,'club:'+c.id);
  for(const p of s.development?.academy||[])add(p,'academy:'+s.club);
  for(const a of s.aiRoster?.academies||[])for(const p of a.players||[])add(p,'academy:'+a.clubId);
  for(const p of s.market||[])add(p,'market');for(const p of s.economy?.freeAgents||[])add(p,'free-agents');
- for(const p of Object.values(players))assert(p.locations.filter(l=>l.startsWith('club:')).length<=1,'duplicate professional owner: '+p.id);
  return {season:s.season,week:s.round,players,retired:(s.development?.retired||[]).map(p=>({id:p.id,season:p.season})),counts:{professionals:(s.clubs||[]).reduce((n,c)=>n+c.players.length,0),academies:Object.values(players).filter(p=>p.locations.some(l=>l.startsWith('academy:'))).length,market:(s.market||[]).length,freeAgents:(s.economy?.freeAgents||[]).length,unique:Object.keys(players).length}};
 }
 function reconcile(before,after,events=[]){
