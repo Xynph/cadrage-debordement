@@ -682,7 +682,7 @@ func _pacific_reception() -> void:
 		if not await _wait() or not app.bridge.last_response_ok:
 			_check(false, "Pacific preparation progresses from the real button")
 			return
-	_check(int(app.model.meta.week) == 23 and app.model.next is Dictionary and app.model.next.date == "2027-02-12", "Preparation stops before the first official Pacific match")
+	_check(int(app.model.meta.week) == 23 and app.model.next is Dictionary and app.model.next.date == "2027-02-13", "Preparation stops before the first official match of the selected Pacific club")
 	if not await _world_match("srp"): return
 	var file := FileAccess.open(final_doc,FileAccess.READ)
 	if file == null:
