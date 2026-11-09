@@ -5,8 +5,9 @@ const {context}=require('./france-harness.cjs');
 function finance(fixture,world=true){
  const h=context(52602);
  Object.assign(h.ctx,{fixture,world});
+ // L'initialisation réelle précède le double lexical de carrière Monde.
+ h.run('start(0);S.worldVersion=1;worldSetup();');
  h.run([
-  'start(0);S.worldVersion=1;worldSetup();',
   'const CDWorldCareer={active:()=>world};',
   'const ids=fixture.pair, initial=ids.map(id=>S.clubs[id].cash);',
   'worldWeeklyEconomy([fixture]);',

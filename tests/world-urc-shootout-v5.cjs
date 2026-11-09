@@ -19,7 +19,9 @@ function fixture({edition = 5, competition = 'urc', phase = 'quarter'} = {}) {
   const validation = require(path.join(sources, 'world-validation.cjs'));
   const h = context(82389, {source: name => fs.readFileSync(path.join(repo, 'dist', name), 'utf8')});
   Object.assign(h.ctx, {edition, competition, phase});
-  h.run(`start(0);
+  // Initialiser le vrai moteur avant de déclarer les doubles lexicaux Monde.
+  h.run('start(0)');
+  h.run(`
     const CDWorldCompetitions=(${competitionRules.toString()})();
     const CDWorldKnockout=(${knockout.toString()})();
     const CDWorldValidation=(${validation.toString()})();

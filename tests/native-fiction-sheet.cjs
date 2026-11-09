@@ -5,7 +5,8 @@ const {createBridge,CORE_FILES}=require('../native/engine/worker.cjs'),{context}
 const root=fs.mkdtempSync(path.join(process.env.CD_NATIVE_SHEET_TEST_ROOT||os.tmpdir(),'cd-native-sheet-'));
 const bridges=[],checks=[],fixtures=new Map();let serial=0;
 const clone=x=>JSON.parse(JSON.stringify(x));
-function bridge(name,seed){const b=createBridge({dataDir:path.join(root,name),seed,now:1700000000000});bridges.push(b);return b;}
+// These exact injury/RNG fixtures exercise the frozen v1 roster policy.
+function bridge(name,seed){const b=inspectedWorker()({dataDir:path.join(root,name),seed,now:1700000000000});b.probe('var setupV2=aiRosterSetup;aiRosterSetup=function(){var result=setupV2();S.aiRosterVersion=1;S.aiRoster.version=1;delete S.aiRoster.population;return result}');bridges.push(b);return b;}
 function call(b,command,payload={}){return b.handle({id:++serial,command,payload});}
 function good(b,command,payload={}){const r=call(b,command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;}
 function state(b){return JSON.parse(good(b,'export').meta.exportText).state;}
@@ -103,9 +104,9 @@ try{
   const rejected=call(b,'begin_match');assert.equal(rejected.ok,false);assert.match(rejected.error,/plafond de 100/);assert.deepEqual(state(b),before);assert.deepEqual(fs.readFileSync(file('limit')),bytes);assert.equal(profile('limit').seed,persisted.seed);
  });
  check('legacy inactive career neither migrates roster state nor throws a helper TypeError',()=>{
-  const fresh=bridge('old-healthy-source',5);good(fresh,'new_career',{club:0});const healthy=profile('old-healthy-source'),healthyState=JSON.parse(healthy.store['bdt-v1']);delete healthyState.aiRosterVersion;delete healthyState.aiRoster;healthy.store['bdt-v1']=JSON.stringify(healthyState);
+  const fresh=bridge('old-healthy-source',5);good(fresh,'new_career',{club:0});const healthy=profile('old-healthy-source'),healthyState=JSON.parse(healthy.store['bdt-v1']);delete healthyState.aiRosterVersion;delete healthyState.aiRoster;healthyState.market=[];healthyState.economy.freeAgents=[];healthy.store['bdt-v1']=JSON.stringify(healthyState);
   const playable=copied('old-healthy',healthy);good(playable,'begin_match');validateNative(playable);assert.equal(state(playable).aiRoster,undefined);assert.equal(state(playable).aiRosterVersion,undefined);
-  const persisted=clone(fixtures.get(5)),old=JSON.parse(persisted.store['bdt-v1']);delete old.aiRosterVersion;delete old.aiRoster;persisted.store['bdt-v1']=JSON.stringify(old);
+  const persisted=clone(fixtures.get(5)),old=JSON.parse(persisted.store['bdt-v1']);delete old.aiRosterVersion;delete old.aiRoster;old.market=[];old.economy.freeAgents=[];persisted.store['bdt-v1']=JSON.stringify(old);
   const b=copied('legacy',persisted),bytes=fs.readFileSync(file('legacy'));assert.equal(good(b,'snapshot').meta.profileError,'');
   const rejected=call(b,'begin_match');assert.equal(rejected.ok,false);assert.match(rejected.error,/données de carrière incohérentes/);assert.doesNotMatch(rejected.error,/TypeError|academies/);assert.deepEqual(state(b),old);assert.deepEqual(fs.readFileSync(file('legacy')),bytes);assert.equal(state(b).aiRoster,undefined);
   const text=good(b,'export').meta.exportText;good(b,'import',{text});assert.deepEqual(state(b),old);good(b,'shutdown');const reopened=bridge('legacy',1);assert.deepEqual(state(reopened),old);
@@ -149,7 +150,7 @@ try{
   assert.match(call(fail,'begin_match').error,/plafond de 100/);assert.equal(fail.matchFactory(),beforeFactory);assert.deepEqual(state(fail),before);assert.deepEqual(fs.readFileSync(file('inspected-cover-error')),bytes);
   const disk=inspected('inspected-disk-error',fixtures.get(5)),diskFactory=disk.matchFactory(),target=file('inspected-disk-error');fs.renameSync(target,target+'.held');fs.mkdirSync(target);
   try{assert.match(call(disk,'begin_match').error,/Écriture de sauvegarde impossible/);assert.equal(disk.matchFactory(),diskFactory);}finally{fs.rmdirSync(target);fs.renameSync(target+'.held',target);}
-  const noMatch=context(5);noMatch.run('start(13);while(S.phase==="league")finishRound();validateCareer(S)');assert.equal(noMatch.run('!!nextMatch()'),false);assert.notEqual(noMatch.state().phase,'ended');
+  const noMatch=context(5);noMatch.run('var setupV2=aiRosterSetup;aiRosterSetup=function(){var result=setupV2();S.aiRosterVersion=1;S.aiRoster.version=1;delete S.aiRoster.population;return result};start(13);while(S.phase==="league")finishRound();validateCareer(S)');assert.equal(noMatch.run('!!nextMatch()'),false);assert.notEqual(noMatch.state().phase,'ended');
   noMatch.run('var aiClub=S.clubs[roundPairs()[0][0]];aiClub.players.filter(p=>p.pos===POS[2]).slice(1).forEach(p=>p.injury=2);validateCareer(S)');
   const idle=inspected('inspected-no-fixture',{protocol:1,seed:noMatch.seed(),clock:1700000000000,store:{'bdt-v1':JSON.stringify(noMatch.state())}}),idleFactory=idle.matchFactory(),rosters=state(idle).clubs.map(c=>c.players.map(p=>p.id));
   good(idle,'begin_match');assert.equal(idle.matchFactory(),idleFactory);assert.deepEqual(state(idle).clubs.map(c=>c.players.map(p=>p.id)),rosters);assert.equal(state(idle).live,null);

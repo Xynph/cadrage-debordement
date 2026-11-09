@@ -201,7 +201,7 @@ func _row(player:Dictionary,index:int) -> void:
 	row.add_theme_stylebox_override("focus",C.box(Color.TRANSPARENT,C.GOLD,3,0))
 	rows.add_child(row)
 	D.text(row,14,24,G.n(player.get("shirtNumber","—")) if player.get("shirtNumber")!=null else "—",21,C.MUTED,600,38)
-	var portrait:Control=G.portrait(int(player.get("portraitIndex",0)),C.px(31),player) if not str(player.get("portraitPath","")).is_empty() else C.photo("player-%02d" % posmod(int(player.get("portraitIndex",index)),16))
+	var portrait:Control=G.portrait(int(player.get("portraitIndex",0)),C.px(31),player) if not str(player.get("id","")).is_empty() else C.photo("player-%02d" % posmod(int(player.get("portraitIndex",index)),16))
 	portrait.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	row.tooltip_text+="\n"+portrait.tooltip_text
 	row.add_child(portrait)
@@ -244,7 +244,7 @@ func _profile() -> void:
 	var recovering := injury <= 0 and P.player_in_recovery(app.model, str(player.id))
 	var status := str(player.get("status", "Disponible"))
 	var hero:=D.panel(dossier,Rect2(0,0,528,432),str(player.name),"",G.n(shirt) if shirt != null else "","SelectedPlayerCard")
-	if not str(player.get("portraitPath","")).is_empty():
+	if not str(player.get("id","")).is_empty():
 		var portrait:=G.portrait(int(player.get("portraitIndex",0)),C.px(187),player)
 		hero.add_child(portrait);D.place(portrait,Rect2(19,74,187,235))
 	else:D.photo(hero,"squad-portrait",Rect2(19,74,187,235))

@@ -91,7 +91,7 @@ function managerMobilityOnSeasonStart(){
 function validateManagerMobility(s){
  if(s.managerMobilityVersion===undefined&&s.managerMobility===undefined)return;
  const international=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s),m=s.managerMobility,maxClub=international?55:s.franceMode?29:13;
- saveCheck(s.managerMobilityVersion===1&&s.worldVersion===1&&s.integratedManagementVersion===1&&s.aiRosterVersion===1&&saveObject(m)&&m.version===1&&saveInt(m.originClub,0,maxClub)&&saveInt(m.enabledSeason,1,s.season)&&saveInt(m.currentFrom,m.enabledSeason,s.season)&&saveArray(m.applications,international?165:s.franceMode?87:39)&&saveArray(m.history,30)&&saveArray(m.archives,maxClub+1));
+ saveCheck(s.managerMobilityVersion===1&&s.worldVersion===1&&s.integratedManagementVersion===1&&[1,2].includes(s.aiRosterVersion)&&s.aiRoster?.version===s.aiRosterVersion&&saveObject(m)&&m.version===1&&saveInt(m.originClub,0,maxClub)&&saveInt(m.enabledSeason,1,s.season)&&saveInt(m.currentFrom,m.enabledSeason,s.season)&&saveArray(m.applications,international?165:s.franceMode?87:39)&&saveArray(m.history,30)&&saveArray(m.archives,maxClub+1));
  const ids=new Set(),keys=new Set();
  for(const a of m.applications){
   saveCheck(saveObject(a)&&saveId(a.id)&&a.id==='job-'+a.season+'-'+a.clubId&&saveInt(a.season,Math.max(m.enabledSeason,s.season-2),s.season)&&saveInt(a.fromClub,0,maxClub)&&saveInt(a.clubId,0,maxClub)&&a.clubId!==a.fromClub&&!ids.has(a.id)&&['offered','rejected','declined','accepted','cancelled','expired','completed'].includes(a.status)&&Object.prototype.hasOwnProperty.call(MOBILITY_REASONS,a.reason)&&saveInt(a.reputation,0,100)&&saveInt(a.risk,0,100)&&saveInt(a.affinity,0,100)&&saveInt(a.coachChanges,0,10000));

@@ -119,6 +119,8 @@ func _heading() -> void:
 	integration = _action(hero, Rect2(1709, 160, 519, 65), "Préparer une intégration", _integration_dialog, true, "arrow", "AcademyPrepareIntegration")
 	integration.add_theme_font_size_override("font_size", C.px(35))
 	_update_integration()
+	D.text(hero,1100,151,"Objectifs et gains réellement observés",23,C.IVORY,600,580)
+	D.button(hero,Rect2(1100,170,580,55),"Suivre la progression des jeunes →",func(): preload("res://ui/youth_development_view.gd").open(app),false,"arrow",false,app.accent,"OpenYouthDevelopment")
 	for i in TABS.size():
 		var tab := U.tab(self, Rect2(3 + i * 282, 247, 271, 56), TABS[i], i == active_tab, func(): _open_tab(i), "AcademyImmersiveTab" + str(i))
 		tab.toggle_mode = true
@@ -621,12 +623,17 @@ func _icon(parent: Node, icon: String, rectangle: Rect2, color: Color) -> void:
 	D.place(graphic, rectangle)
 
 func _portrait(parent: Node, p: Dictionary, rectangle: Rect2, large: bool = false, fallback: String = "") -> void:
-	if not str(p.get("portraitPath", "")).is_empty() and G._pack_texture(str(p.portraitPath)) != null:
+	if not str(p.get("id", "")).is_empty():
 		var portrait := G.portrait(int(p.get("portraitIndex", 0)), 0, p)
 		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		parent.add_child(portrait)
 		D.place(portrait, rectangle)
+		if large and portrait.material != null:
+			_veil(parent, Rect2(rectangle.end.x - 34, rectangle.position.y, 34, rectangle.size.y), [Color("11191a", .0), Color("11191a")], [0.0, 1.0])
+			var badge := D.rect(parent,Rect2(rectangle.position.x+10,rectangle.end.y-29,190,23),Color("101819df"),3)
+			badge.name = "AcademyPortraitIllustration"
+			D.text(badge,95,17,"PORTRAIT FICTIF COMPOSÉ",16,C.IVORY,700,184,HORIZONTAL_ALIGNMENT_CENTER)
 	elif large:
 		D.photo(parent, "academy-player", rectangle)
 		_veil(parent, Rect2(rectangle.end.x - 34, rectangle.position.y, 34, rectangle.size.y), [Color("11191a", .0), Color("11191a")], [0.0, 1.0])

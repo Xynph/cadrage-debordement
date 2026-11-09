@@ -605,6 +605,7 @@ static func market(app:Control) -> Control:
 	var staff:=G.scroll(tabs)
 	staff.get_parent().name="RecruitmentStaff"
 	preload("res://ui/decision_views.gd").recruitment_summary(app,staff)
+	preload("res://ui/regen_scouting_view.gd").entry(app,staff)
 	tabs.set_tab_title(0,"Pistes")
 	tabs.set_tab_title(1,"Travail du staff")
 	tabs.current_tab=clampi(int(app.management_ui.get("market_tab",0)),0,1)

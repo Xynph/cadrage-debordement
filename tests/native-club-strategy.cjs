@@ -45,14 +45,12 @@ for(const mode of ['common','fiction']){
   for(const [label,mutate] of mutations){const doc=JSON.parse(stable);mutate(doc.state);const result=b.handle({id:++seq,command:'import',payload:{text:signed(doc)}});assert.equal(result.ok,false,mode+' refuse '+label);assert.match(result.error,/direction/i);assert.equal(call('export').meta.exportText,stable,label+' : état conservé');assert.deepEqual(fs.readFileSync(profile),bytes,label+' : disque, RNG et horloge conservés');}
   call('import',{text:stable});call('begin_match');call('delegate');call('finish_round');
   const reached=call('export').meta.exportText;call('import',{text:reached});assert.equal(call('export').meta.exportText,reached,'Conseil de la semaine réellement atteinte importable');
-  let old,archive;
-  if(mode==='common'){
-   // Build the actual seasonal archive with the native hooks, without repeating
-   // UI projections for every fixture. Real worker match-days surround this fixture.
-   const reference=context({seed:13,now:1700000000000});reference.ctx.reached=JSON.parse(reached).state;reference.run('S=reached');
-   while(reference.run('S.phase!=="ended"'))reference.run('finishRound()');
-   old=JSON.parse(reference.run('JSON.stringify(S.nativeBoardCalendar)'));reference.run('advanceSeason()');archive=JSON.parse(reference.run('JSON.stringify(createSaveDocument())'));
-  }else{archive=JSON.parse(reached);old=structuredClone(archive.state.nativeBoardCalendar);old.week=29;old.history=[{week:29,trust:old.trust}];old.meetings=[{week:29,events:[]}];archive.state.season=2;archive.state.nativeBoardCalendar.season=2;}
+  // Both archives come from a real transition: staff clocks and reconversions
+  // must advance with the season, including in the fiction career.
+  const reference=context({seed:13,now:1700000000000});reference.ctx.reached=JSON.parse(reached).state;reference.run('S=reached');
+  while(reference.run('S.phase!=="ended"'))reference.run('finishRound()');
+  const old=JSON.parse(reference.run('JSON.stringify(S.nativeBoardCalendar)'));reference.run('advanceSeason()');
+  const archive=JSON.parse(reference.run('JSON.stringify(createSaveDocument())'));
   const other=structuredClone(old);other.clubId='club-1';archive.state.nativeStrategyOffices={version:1,clubs:{1:{nativeBoardCalendar:other}}};
   call('import',{text:signed(archive)});assert.equal(JSON.parse(call('export').meta.exportText).state.nativeStrategyOffices.clubs[1].nativeBoardCalendar.week,maximum,'Archives antérieures conservées au-delà de la semaine courante');
   const current=call('export').meta.exportText,currentBytes=fs.readFileSync(profile);

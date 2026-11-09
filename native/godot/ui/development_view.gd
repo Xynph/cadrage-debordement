@@ -19,6 +19,8 @@ static func build(app: Control) -> Control:
 	var follow_up := "Retrouvez les rencontres juniors, les trajectoires et les mentorats dans les parcours du centre." if pathways.get("available", false) else "Le suivi individuel des Espoirs reste disponible ici."
 	text.add_child(G.wrap("Quinze nouveaux espoirs par saison. Au plus 75 joueurs restent au centre. " + follow_up, 14))
 	text.add_child(G.button("PARCOURS DU CENTRE →", func(): app._navigate("Centre")))
+	text.add_child(G.wrap("Objectifs des jeunes : suivre les changements observés, sans gain immédiat ajouté.",13))
+	preload("res://ui/youth_development_view.gd").entry(app,text)
 	text.add_child(G.separator())
 	for option in [["academy", "LE CENTRE DE FORMATION"], ["professional", "LES JEUNES PROFESSIONNELS"]]:
 		var id: String = "Development" + option[0].capitalize()

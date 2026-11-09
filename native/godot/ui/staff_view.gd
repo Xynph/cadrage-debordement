@@ -2,6 +2,7 @@ extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
 const U = preload("res://ui/management_state.gd")
 const ImmersiveUI = preload("res://ui/immersive08/club_ui.gd")
+const Career = preload("res://ui/staff_career_view.gd")
 
 class Avatar extends Control:
 	func _draw() -> void:
@@ -35,7 +36,13 @@ static func build(app: Control) -> Control:
 	duties.add_child(G.wrap("Les identités du staff ne modifient ni ses capacités ni les résultats. Les signatures restent à confirmer par vous.", 12))
 	duties.add_child(G.button("RECRUTEMENT →", func(): app._navigate("Recrutement")))
 	var right := G.panel(page, 1.9)
+	var career: Dictionary = app.model.get("clubLife", {}).get("staffCareer", {})
+	if career.get("active", false):
+		G.chapter(right, "10", "Les carrières du staff", "Contrats, candidats et reconversions dans votre partie.", app.accent)
+		Career.build(app, right, career)
+		return page
 	G.chapter(right, "10", "Les visages du club", "Encadrement de référence · données datées, hors mouvements simulés.", app.accent)
+	Career.enable(app, right, career)
 	var teams: Array = app.model.get("staff", {}).get("teams", [])
 	if teams.is_empty():
 		right.add_child(G.wrap("Cette carrière historique conserve ses collaborateurs générés. Les identités des staffs sont disponibles avec la base commune à 30 clubs.", 17))
@@ -89,16 +96,11 @@ static func _person(parent: VBoxContainer, person: Dictionary) -> void:
 	var row := G.h(16)
 	row.set_meta("staff_id", person.id)
 	card.add_child(row)
-	var path := str(person.get("portraitPath", ""))
-	if not path.is_empty() and G.Base._pack_texture(path) != null:
-		var photo := G.portrait(0, 82, person)
-		photo.custom_minimum_size.y = 104
-		row.add_child(photo)
-	else:
-		var avatar := Avatar.new()
-		avatar.custom_minimum_size = Vector2(82, 104)
-		avatar.tooltip_text = "Avatar neutre · identité anonymisée" if person.get("portraitStatus") == "anonymous" else "Portrait non disponible dans le pack"
-		row.add_child(avatar)
+	var appearance := person.duplicate(true)
+	appearance.portraitRole = "staff"
+	var photo := G.portrait(0, 82, appearance)
+	photo.custom_minimum_size.y = 104
+	row.add_child(photo)
 	var text := G.v(5)
 	G.fill(text)
 	row.add_child(text)
@@ -107,5 +109,5 @@ static func _person(parent: VBoxContainer, person: Dictionary) -> void:
 	var season := str(person.get("sourceSeason")) if person.get("sourceSeason") != null else "Saison non précisée"
 	var date := " · source du " + str(person.sourceDate) if person.get("sourceDate") != null else ""
 	text.add_child(G.wrap(("ARCHIVE · " if person.get("historical", false) else "RÉFÉRENCE · ") + season + date, 11, G.ALERT if person.get("historical", false) else G.MUTED))
-	text.add_child(G.wrap("Relevé le " + str(person.get("observedAt", "")) + " · " + ("photo officielle du pack" if person.get("portraitStatus") == "official" else "illustration IA du pack" if person.get("portraitStatus") == "synthetic" else "avatar neutre"), 11))
+	text.add_child(G.wrap("Relevé le " + str(person.get("observedAt", "")) + " · " + ("photo officielle du pack" if person.get("portraitStatus") == "official" else "illustration IA du pack" if person.get("portraitStatus") == "synthetic" else "portrait fictif composé hors ligne"), 11))
 	card.add_child(G.separator())

@@ -22,6 +22,11 @@ const WEIGHTS_SECONDS = Object.freeze({
   'tests/rugby.cjs': 59,
   'tests/lnr-multiclub-continuity.cjs': 55,
   'tests/lnr-career-long.cjs': 55,
+  // Population v2 : mesures Node 22 48 / 29,6 / 12,2 s.
+  // Capacité réserve 45 s pour ses quatre fixtures et le staff ajouté au profil.
+  'tests/player-population-seasons.cjs': 56,
+  'tests/player-population-capacity.cjs': 45,
+  'tests/player-population-worker.cjs': 15,
   'tests/lnr05-rotation-audit.cjs': 40,
   'tests/lnr05-fatigue-scenarios.cjs': 38,
   'tests/lnr05-multiseason-strategies.cjs': 37,

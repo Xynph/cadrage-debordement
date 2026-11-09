@@ -2,6 +2,7 @@
 // Garde de répartition CI : données historiques réelles, pas un benchmark causal.
 const assert = require('node:assert/strict');
 const { allTestFiles, planShards, WEIGHTS_SECONDS } = require('../ci/shard-tests.cjs');
+const HISTORICAL = require('./fixtures/ci/p90-stress-41720921522.json');
 const STRESS = 'tests/v63-2-stress-native.cjs';
 // Runs SUCCESS chronologiques : 41708215803, 41709297149, 41715682628,
 // 41716839980, 41720921522. Mesures arrondies à la seconde par le workflow.
@@ -17,8 +18,9 @@ function percentile90(values) {
 assert.equal(percentile90(STRESS_SECONDS), 105.4);
 assert.ok(WEIGHTS_SECONDS[STRESS] >= 140 && WEIGHTS_SECONDS[STRESS] <= 180,
   'Réserve V63.2 hors de la fenêtre éprouvée : reprofiler cinq CI avant modification');
-// Les suites non renseignées dans la fixture ont une charge nulle : comparer
-// deux répartitions identiques sur la même trace, sans inventer de durées.
+// Trace partielle : les suites historiques non renseignées ont une charge nulle.
+// Les nouvelles suites ne peuvent pas être projetées sur cette trace : leur charge
+// inconnue modifierait les colocations sans contribuer aux sommes observées.
 const LATEST_SECONDS = Object.freeze({
   [STRESS]: 100,
   'tests/opposition.cjs': 26,
@@ -42,19 +44,34 @@ const LATEST_SECONDS = Object.freeze({
   'tests/manager-mobility.cjs': 14,
   'tests/lnr-save-integrity-guards.cjs': 8
 });
-const files = allTestFiles();
+// Cohorte exacte du dernier run SUCCESS ci-dessus, extraite de son arbre Git :
+// git ls-tree -r --name-only 077c6c0d7f04b5656f6a8dbe8f5ddf9634486203 tests
+// Même sélection que allTestFiles : .cjs directement dans tests/, hors harness.
+assert.equal(HISTORICAL.runId, 41720921522);
+assert.equal(HISTORICAL.headSha, '077c6c0d7f04b5656f6a8dbe8f5ddf9634486203');
+const historicalFiles = HISTORICAL.files;
+assert.equal(historicalFiles.length, 221, 'Cohorte historique complète');
+assert.equal(new Set(historicalFiles).size, historicalFiles.length);
+assert.deepEqual(historicalFiles.slice().sort(), historicalFiles);
 for (const file of Object.keys(LATEST_SECONDS))
-  assert.ok(files.includes(file), 'Fixture obsolète : ' + file);
+  assert.ok(historicalFiles.includes(file), 'Mesure hors cohorte : ' + file);
 const oldWeights = { ...WEIGHTS_SECONDS, [STRESS]: 126 };
-const oldPlan = planShards(files, oldWeights);
-const newPlan = planShards(files);
-assert.deepEqual(newPlan.flat().sort(), files.slice().sort(), 'Couverture exhaustive');
-assert.equal(new Set(newPlan.flat()).size, files.length, 'Doublon de suite');
-assert.deepEqual(planShards(files.slice().reverse()), newPlan, 'Déterminisme');
+const oldPlan = planShards(historicalFiles, oldWeights);
+const newPlan = planShards(historicalFiles);
+assert.deepEqual(planShards(historicalFiles.slice().reverse()), newPlan,
+  'Déterminisme historique');
+// Contrat courant indépendant : aucune nouvelle suite ne sort du plan, même si
+// sa durée ne figure pas dans la trace de novembre. Aucun gain CI actuel inféré.
+const files = allTestFiles();
+const currentPlan = planShards(files);
+assert.deepEqual(currentPlan.flat().sort(), files.slice().sort(), 'Couverture exhaustive');
+assert.equal(new Set(currentPlan.flat()).size, files.length, 'Doublon de suite');
+assert.deepEqual(planShards(files.slice().reverse()), currentPlan, 'Déterminisme courant');
 const sum = g => g.reduce((total, f) => total + (LATEST_SECONDS[f] || 0), 0);
 const oldLoads = oldPlan.map(sum), newLoads = newPlan.map(sum);
 const oldPeak = Math.max(...oldLoads), newPeak = Math.max(...newLoads);
 assert.ok(newPeak < oldPeak,
-  'La trace indépendante ne progresse pas : ' + oldPeak + ' -> ' + newPeak);
+  'La trace historique indépendante ne progresse pas : ' + oldPeak + ' -> ' + newPeak);
 console.log('CI P90 stress PASS ; percentile 105,4 s ; rejeu partiel ' +
-  oldPeak + ' -> ' + newPeak + ' s ; couverture ' + files.length + ' suites');
+  oldPeak + ' -> ' + newPeak + ' s sur ' + historicalFiles.length +
+  ' suites historiques ; couverture courante ' + files.length + ' suites');

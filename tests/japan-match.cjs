@@ -16,9 +16,9 @@ const validation = require(path.join(pkg,'world-validation.cjs'));
 function setup({phase='quarter',automated=false,installJapan=true,competition='jlo-d1',seed=827381}={}) {
   const h = context(seed,{source:file => fs.readFileSync(path.join(repo,'dist',file),'utf8')});
   Object.assign(h.ctx,{japanCalendar:require(path.join(pkg,'jlo-d1-calendar-2026-27-public.json')),pacificCalendar:require(path.join(pkg,'srp-calendar-2027.json')),phase,competition});
-  h.run(`start(0);const CDWorldJapanRules=(${rulesFactory.toString()})(japanCalendar);
+  h.run(`const CDWorldCareer={active(s){return [2,3].includes(s?.worldMode?.version)}};
+    start(0);const CDWorldJapanRules=(${rulesFactory.toString()})(japanCalendar);
     const CDWorldSRP=(${srpRulesFactory.toString()})(pacificCalendar);
-    const CDWorldCareer={active(s){return [2,3].includes(s?.worldMode?.version)}};
     const CDWorldSRPMatch=(${srpFactory.toString()})(CDWorldSRP);CDWorldSRPMatch.installHooks();
     const CDWorldJapanMatch=(${japanFactory.toString()})(CDWorldJapanRules);
     ${installJapan?'CDWorldJapanMatch.installHooks();':''}
@@ -83,7 +83,9 @@ test('Bronze : cinq joueurs puis première position à la sixième tentative', (
 });
 
 test('Chronomètre effectif et match complet sans mutation de la durée du règlement', () => {
-  const h=setup({phase:'final',seed:73});
+  // Seed 71 yields a real regulation draw under the new-career population-v2 RNG.
+  // No score is injected: the actual match produces its extra-time witness.
+  const h=setup({phase:'final',seed:71});
   h.run(`for(let i=0;i<130&&!l.finished;i++){
       l.paused=false;advanceRugby(l);
       if(l.japanExtra)validate();

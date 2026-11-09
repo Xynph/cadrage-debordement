@@ -1,0 +1,2396 @@
+{
+  "schema": "player-population-world-validation-v1",
+  "seed": 827381,
+  "club": 0,
+  "requestedSeasons": 10,
+  "mode": "world",
+  "node": "v22.23.4",
+  "harnessSha256": "77945740f77936422c1df39c845446890c9cb251f5c05139d2552e44280e1a5e",
+  "source": "b04d508fd69eebc7d335591ce1760a4f3abce7c5",
+  "budgetMs": 1500000,
+  "startedAt": "2026-11-09T11:21:49.130Z",
+  "status": "completed",
+  "commands": 1231,
+  "annual": [
+    {
+      "label": "end",
+      "season": 1,
+      "week": 46,
+      "phase": "ended",
+      "elapsedMs": 72295,
+      "leagues": {
+        "elite": {
+          "clubs": 14,
+          "players": 806,
+          "rosterMin": 50,
+          "rosterMax": 66,
+          "cashTotal": 38565840,
+          "cashMin": 450960,
+          "cashMax": 5578160,
+          "negativeCashClubs": 0,
+          "weeklyWages": 5050960,
+          "observedAge": 806,
+          "ageMin": 15,
+          "ageMax": 39,
+          "ageMean": 24.306451612903224,
+          "unknownAge": 0,
+          "injured": 1,
+          "uninjured": 805,
+          "contractsExpiring": 280,
+          "champion": 13,
+          "ageBelow16": 1,
+          "ageAbove40": 0
+        },
+        "accession": {
+          "clubs": 16,
+          "players": 802,
+          "rosterMin": 37,
+          "rosterMax": 61,
+          "cashTotal": 35762620,
+          "cashMin": -678200,
+          "cashMax": 5718300,
+          "negativeCashClubs": 1,
+          "weeklyWages": 5044330,
+          "observedAge": 802,
+          "ageMin": 15,
+          "ageMax": 38,
+          "ageMean": 25.2356608478803,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 802,
+          "contractsExpiring": 259,
+          "champion": 20,
+          "ageBelow16": 1,
+          "ageAbove40": 0
+        },
+        "prem": {
+          "clubs": 10,
+          "players": 638,
+          "rosterMin": 49,
+          "rosterMax": 75,
+          "cashTotal": 19384120,
+          "cashMin": -715536,
+          "cashMax": 5803926,
+          "negativeCashClubs": 2,
+          "weeklyWages": 3112780,
+          "observedAge": 638,
+          "ageMin": 17,
+          "ageMax": 37,
+          "ageMean": 25.115987460815045,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 638,
+          "contractsExpiring": 233,
+          "champion": 36,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "urc": {
+          "clubs": 16,
+          "players": 896,
+          "rosterMin": 40,
+          "rosterMax": 66,
+          "cashTotal": 28291660,
+          "cashMin": -875968,
+          "cashMax": 5491320,
+          "negativeCashClubs": 3,
+          "weeklyWages": 5109790,
+          "observedAge": 896,
+          "ageMin": 17,
+          "ageMax": 44,
+          "ageMean": 25.547991071428573,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 896,
+          "contractsExpiring": 292,
+          "champion": 47,
+          "ageBelow16": 0,
+          "ageAbove40": 1
+        }
+      },
+      "european": {
+        "champions": {
+          "entries": 24,
+          "champion": 4,
+          "unique": true
+        },
+        "challenge": {
+          "entries": 18,
+          "champion": 3,
+          "unique": true
+        }
+      },
+      "totalCash": 124202984,
+      "activePlayers": 3233,
+      "freeMarketPlayers": 49,
+      "freeMarketUnique": 49,
+      "fixtures": 791,
+      "results": 791,
+      "ownSheet": {
+        "valid": true,
+        "errors": []
+      },
+      "exportBytes": 8615644,
+      "exportSha256": "401027cbd98c43d8c1a7250a75c657251f2e9c34dc7d2dd3012281313164e43e",
+      "seasonElapsedMs": 70744
+    },
+    {
+      "label": "end",
+      "season": 2,
+      "week": 46,
+      "phase": "ended",
+      "elapsedMs": 167467,
+      "leagues": {
+        "elite": {
+          "clubs": 14,
+          "players": 709,
+          "rosterMin": 44,
+          "rosterMax": 61,
+          "cashTotal": 63396240,
+          "cashMin": -4740,
+          "cashMax": 8630840,
+          "negativeCashClubs": 1,
+          "weeklyWages": 4466940,
+          "observedAge": 709,
+          "ageMin": 16,
+          "ageMax": 36,
+          "ageMean": 25.461212976022566,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 709,
+          "contractsExpiring": 316,
+          "champion": 5,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "accession": {
+          "clubs": 16,
+          "players": 721,
+          "rosterMin": 37,
+          "rosterMax": 56,
+          "cashTotal": 91568300,
+          "cashMin": -436760,
+          "cashMax": 10405600,
+          "negativeCashClubs": 1,
+          "weeklyWages": 4529880,
+          "observedAge": 721,
+          "ageMin": 16,
+          "ageMax": 37,
+          "ageMean": 25.843273231622746,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 721,
+          "contractsExpiring": 322,
+          "champion": 16,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "prem": {
+          "clubs": 10,
+          "players": 578,
+          "rosterMin": 46,
+          "rosterMax": 70,
+          "cashTotal": 32960636,
+          "cashMin": -615658,
+          "cashMax": 10332316,
+          "negativeCashClubs": 2,
+          "weeklyWages": 2838931,
+          "observedAge": 578,
+          "ageMin": 17,
+          "ageMax": 38,
+          "ageMean": 26.006920415224915,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 578,
+          "contractsExpiring": 200,
+          "champion": 36,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "urc": {
+          "clubs": 16,
+          "players": 801,
+          "rosterMin": 37,
+          "rosterMax": 60,
+          "cashTotal": 56153060,
+          "cashMin": -1316224,
+          "cashMax": 9996524,
+          "negativeCashClubs": 2,
+          "weeklyWages": 4594634,
+          "observedAge": 801,
+          "ageMin": 18,
+          "ageMax": 37,
+          "ageMean": 26.455680399500626,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 801,
+          "contractsExpiring": 315,
+          "champion": 43,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        }
+      },
+      "european": {
+        "champions": {
+          "entries": 24,
+          "champion": 4,
+          "unique": true
+        },
+        "challenge": {
+          "entries": 18,
+          "champion": 1,
+          "unique": true
+        }
+      },
+      "totalCash": 245721500,
+      "activePlayers": 2892,
+      "freeMarketPlayers": 385,
+      "freeMarketUnique": 385,
+      "fixtures": 791,
+      "results": 791,
+      "ownSheet": {
+        "valid": true,
+        "errors": []
+      },
+      "exportBytes": 10080504,
+      "exportSha256": "67868c4272e50eb7155c47e28d134a2efee1e7ddc2f3ff7b51d71a65c82a3193",
+      "seasonElapsedMs": 95172
+    },
+    {
+      "label": "end",
+      "season": 3,
+      "week": 46,
+      "phase": "ended",
+      "elapsedMs": 274303,
+      "leagues": {
+        "elite": {
+          "clubs": 14,
+          "players": 636,
+          "rosterMin": 39,
+          "rosterMax": 56,
+          "cashTotal": 106626140,
+          "cashMin": 587880,
+          "cashMax": 13076300,
+          "negativeCashClubs": 0,
+          "weeklyWages": 3970470,
+          "observedAge": 636,
+          "ageMin": 17,
+          "ageMax": 36,
+          "ageMean": 26.15880503144654,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 636,
+          "contractsExpiring": 487,
+          "champion": 13,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "accession": {
+          "clubs": 16,
+          "players": 656,
+          "rosterMin": 32,
+          "rosterMax": 52,
+          "cashTotal": 170302600,
+          "cashMin": 1306020,
+          "cashMax": 17050160,
+          "negativeCashClubs": 0,
+          "weeklyWages": 3972180,
+          "observedAge": 656,
+          "ageMin": 17,
+          "ageMax": 38,
+          "ageMean": 25.652439024390244,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 656,
+          "contractsExpiring": 438,
+          "champion": 2,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "prem": {
+          "clubs": 10,
+          "players": 529,
+          "rosterMin": 41,
+          "rosterMax": 63,
+          "cashTotal": 58989594,
+          "cashMin": 759896,
+          "cashMax": 15581376,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2607014,
+          "observedAge": 529,
+          "ageMin": 18,
+          "ageMax": 37,
+          "ageMean": 26.822306238185256,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 529,
+          "contractsExpiring": 420,
+          "champion": 36,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "urc": {
+          "clubs": 16,
+          "players": 728,
+          "rosterMin": 37,
+          "rosterMax": 55,
+          "cashTotal": 100641008,
+          "cashMin": 173400,
+          "cashMax": 14498616,
+          "negativeCashClubs": 0,
+          "weeklyWages": 4147264,
+          "observedAge": 728,
+          "ageMin": 17,
+          "ageMax": 38,
+          "ageMean": 27.171703296703296,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 728,
+          "contractsExpiring": 576,
+          "champion": 43,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        }
+      },
+      "european": {
+        "champions": {
+          "entries": 24,
+          "champion": 32,
+          "unique": true
+        },
+        "challenge": {
+          "entries": 18,
+          "champion": 6,
+          "unique": true
+        }
+      },
+      "totalCash": 439899127.76,
+      "activePlayers": 2623,
+      "freeMarketPlayers": 692,
+      "freeMarketUnique": 692,
+      "fixtures": 791,
+      "results": 791,
+      "ownSheet": {
+        "valid": true,
+        "errors": []
+      },
+      "exportBytes": 11382243,
+      "exportSha256": "9aab3745bbdc41e25508b30a41c8d01fdf90276eff193ac9625580f474cdf938",
+      "seasonElapsedMs": 106837
+    },
+    {
+      "label": "end",
+      "season": 4,
+      "week": 46,
+      "phase": "ended",
+      "elapsedMs": 485920,
+      "leagues": {
+        "elite": {
+          "clubs": 14,
+          "players": 577,
+          "rosterMin": 37,
+          "rosterMax": 52,
+          "cashTotal": 174907480,
+          "cashMin": 2788680,
+          "cashMax": 18250700,
+          "negativeCashClubs": 0,
+          "weeklyWages": 3473700,
+          "observedAge": 577,
+          "ageMin": 17,
+          "ageMax": 37,
+          "ageMean": 25.642980935875215,
+          "unknownAge": 0,
+          "injured": 1,
+          "uninjured": 576,
+          "contractsExpiring": 276,
+          "champion": 12,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "accession": {
+          "clubs": 16,
+          "players": 609,
+          "rosterMin": 31,
+          "rosterMax": 45,
+          "cashTotal": 261296500,
+          "cashMin": 4303800,
+          "cashMax": 29919660,
+          "negativeCashClubs": 0,
+          "weeklyWages": 3433440,
+          "observedAge": 609,
+          "ageMin": 17,
+          "ageMax": 37,
+          "ageMean": 25.310344827586206,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 609,
+          "contractsExpiring": 275,
+          "champion": 29,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "prem": {
+          "clubs": 10,
+          "players": 478,
+          "rosterMin": 37,
+          "rosterMax": 57,
+          "cashTotal": 87369945.228416,
+          "cashMin": 1330600,
+          "cashMax": 21819376,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2371900,
+          "observedAge": 478,
+          "ageMin": 17,
+          "ageMax": 37,
+          "ageMean": 27.37029288702929,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 478,
+          "contractsExpiring": 216,
+          "champion": 36,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "urc": {
+          "clubs": 16,
+          "players": 654,
+          "rosterMin": 37,
+          "rosterMax": 51,
+          "cashTotal": 164341952,
+          "cashMin": 1428000,
+          "cashMax": 21583844,
+          "negativeCashClubs": 0,
+          "weeklyWages": 3636560,
+          "observedAge": 654,
+          "ageMin": 17,
+          "ageMax": 37,
+          "ageMean": 27.10244648318043,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 654,
+          "contractsExpiring": 302,
+          "champion": 51,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        }
+      },
+      "european": {
+        "champions": {
+          "entries": 24,
+          "champion": 45,
+          "unique": true
+        },
+        "challenge": {
+          "entries": 18,
+          "champion": 46,
+          "unique": true
+        }
+      },
+      "totalCash": 692846922.988416,
+      "activePlayers": 2391,
+      "freeMarketPlayers": 1013,
+      "freeMarketUnique": 1013,
+      "fixtures": 791,
+      "results": 791,
+      "ownSheet": {
+        "valid": true,
+        "errors": []
+      },
+      "exportBytes": 12710692,
+      "exportSha256": "8efc596d73a46fcafb81e2015413496fcac493ab0ea8f5b71c3810fae895fd3e",
+      "seasonElapsedMs": 211617
+    },
+    {
+      "label": "end",
+      "season": 5,
+      "week": 46,
+      "phase": "ended",
+      "elapsedMs": 633643,
+      "leagues": {
+        "elite": {
+          "clubs": 14,
+          "players": 538,
+          "rosterMin": 37,
+          "rosterMax": 43,
+          "cashTotal": 269825348.14463997,
+          "cashMin": 5741548.14464,
+          "cashMax": 32363580,
+          "negativeCashClubs": 0,
+          "weeklyWages": 3054960,
+          "observedAge": 538,
+          "ageMin": 18,
+          "ageMax": 37,
+          "ageMean": 25.33085501858736,
+          "unknownAge": 0,
+          "injured": 1,
+          "uninjured": 537,
+          "contractsExpiring": 354,
+          "champion": 9,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "accession": {
+          "clubs": 16,
+          "players": 599,
+          "rosterMin": 33,
+          "rosterMax": 41,
+          "cashTotal": 356071979.123968,
+          "cashMin": 7434199.123968,
+          "cashMax": 42181660,
+          "negativeCashClubs": 0,
+          "weeklyWages": 3239360,
+          "observedAge": 599,
+          "ageMin": 18,
+          "ageMax": 37,
+          "ageMean": 25.006677796327214,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 599,
+          "contractsExpiring": 352,
+          "champion": 17,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "prem": {
+          "clubs": 10,
+          "players": 438,
+          "rosterMin": 37,
+          "rosterMax": 51,
+          "cashTotal": 127345798.76381183,
+          "cashMin": 4164853.53539584,
+          "cashMax": 29125376,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2155200,
+          "observedAge": 438,
+          "ageMin": 17,
+          "ageMax": 37,
+          "ageMean": 27.54794520547945,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 438,
+          "contractsExpiring": 340,
+          "champion": 32,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "urc": {
+          "clubs": 16,
+          "players": 618,
+          "rosterMin": 37,
+          "rosterMax": 46,
+          "cashTotal": 246184276.07894015,
+          "cashMin": 5336209.62031616,
+          "cashMax": 27561844,
+          "negativeCashClubs": 0,
+          "weeklyWages": 3284860,
+          "observedAge": 618,
+          "ageMin": 17,
+          "ageMax": 37,
+          "ageMean": 26.797734627831716,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 618,
+          "contractsExpiring": 433,
+          "champion": 51,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        }
+      },
+      "european": {
+        "champions": {
+          "entries": 24,
+          "champion": 12,
+          "unique": true
+        },
+        "challenge": {
+          "entries": 18,
+          "champion": 13,
+          "unique": true
+        }
+      },
+      "totalCash": 1008182507.87136,
+      "activePlayers": 2267,
+      "freeMarketPlayers": 1160,
+      "freeMarketUnique": 1160,
+      "fixtures": 791,
+      "results": 791,
+      "ownSheet": {
+        "valid": true,
+        "errors": []
+      },
+      "exportBytes": 12972575,
+      "exportSha256": "c8f99d320d62cb1fd58b3d0b82b52d638223c16275413c71557e47336fae86e5",
+      "seasonElapsedMs": 147723
+    },
+    {
+      "label": "end",
+      "season": 6,
+      "week": 46,
+      "phase": "ended",
+      "elapsedMs": 768186,
+      "leagues": {
+        "elite": {
+          "clubs": 14,
+          "players": 529,
+          "rosterMin": 37,
+          "rosterMax": 40,
+          "cashTotal": 369577168.14463997,
+          "cashMin": 10838548.144639999,
+          "cashMax": 39863680,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2819050,
+          "observedAge": 529,
+          "ageMin": 17,
+          "ageMax": 37,
+          "ageMean": 24.943289224952743,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 529,
+          "contractsExpiring": 236,
+          "champion": 12,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "accession": {
+          "clubs": 16,
+          "players": 594,
+          "rosterMin": 33,
+          "rosterMax": 39,
+          "cashTotal": 461772999.123968,
+          "cashMin": 12664199.123968,
+          "cashMax": 54604160,
+          "negativeCashClubs": 0,
+          "weeklyWages": 3041960,
+          "observedAge": 594,
+          "ageMin": 18,
+          "ageMax": 37,
+          "ageMean": 24.725589225589225,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 594,
+          "contractsExpiring": 273,
+          "champion": 26,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "prem": {
+          "clubs": 10,
+          "players": 403,
+          "rosterMin": 37,
+          "rosterMax": 44,
+          "cashTotal": 174648418.76381183,
+          "cashMin": 9385053.53539584,
+          "cashMax": 37533996,
+          "negativeCashClubs": 0,
+          "weeklyWages": 1978330,
+          "observedAge": 403,
+          "ageMin": 17,
+          "ageMax": 37,
+          "ageMean": 27.858560794044664,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 403,
+          "contractsExpiring": 237,
+          "champion": 36,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "urc": {
+          "clubs": 16,
+          "players": 600,
+          "rosterMin": 37,
+          "rosterMax": 40,
+          "cashTotal": 337028536.07894015,
+          "cashMin": 8665409.620316159,
+          "cashMax": 34814244,
+          "negativeCashClubs": 0,
+          "weeklyWages": 3009490,
+          "observedAge": 600,
+          "ageMin": 18,
+          "ageMax": 37,
+          "ageMean": 26.243333333333332,
+          "unknownAge": 0,
+          "injured": 2,
+          "uninjured": 598,
+          "contractsExpiring": 273,
+          "champion": 52,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        }
+      },
+      "european": {
+        "champions": {
+          "entries": 24,
+          "champion": 7,
+          "unique": true
+        },
+        "challenge": {
+          "entries": 18,
+          "champion": 8,
+          "unique": true
+        }
+      },
+      "totalCash": 1355526507.87136,
+      "activePlayers": 2200,
+      "freeMarketPlayers": 1155,
+      "freeMarketUnique": 1155,
+      "fixtures": 791,
+      "results": 791,
+      "ownSheet": {
+        "valid": true,
+        "errors": []
+      },
+      "exportBytes": 12112578,
+      "exportSha256": "7ad3c9611dab75971a67ac78a249a25d14c4773af807cb9826a008c8acf7d026",
+      "seasonElapsedMs": 134543
+    },
+    {
+      "label": "end",
+      "season": 7,
+      "week": 46,
+      "phase": "ended",
+      "elapsedMs": 896000,
+      "leagues": {
+        "elite": {
+          "clubs": 14,
+          "players": 523,
+          "rosterMin": 37,
+          "rosterMax": 39,
+          "cashTotal": 503672980,
+          "cashMin": 25853220,
+          "cashMax": 49022740,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2631190,
+          "observedAge": 523,
+          "ageMin": 17,
+          "ageMax": 34,
+          "ageMean": 24.837476099426386,
+          "unknownAge": 0,
+          "injured": 1,
+          "uninjured": 522,
+          "contractsExpiring": 299,
+          "champion": 8,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "accession": {
+          "clubs": 16,
+          "players": 590,
+          "rosterMin": 33,
+          "rosterMax": 38,
+          "cashTotal": 553665187.268608,
+          "cashMin": 18772399.123967998,
+          "cashMax": 66966160,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2894710,
+          "observedAge": 590,
+          "ageMin": 18,
+          "ageMax": 35,
+          "ageMean": 24.872881355932204,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 590,
+          "contractsExpiring": 344,
+          "champion": 1,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "prem": {
+          "clubs": 10,
+          "players": 381,
+          "rosterMin": 36,
+          "rosterMax": 41,
+          "cashTotal": 229965918.76381183,
+          "cashMin": 15664253.53539584,
+          "cashMax": 46761896,
+          "negativeCashClubs": 0,
+          "weeklyWages": 1794750,
+          "observedAge": 381,
+          "ageMin": 17,
+          "ageMax": 37,
+          "ageMean": 27.716535433070867,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 381,
+          "contractsExpiring": 299,
+          "champion": 36,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "urc": {
+          "clubs": 16,
+          "players": 594,
+          "rosterMin": 37,
+          "rosterMax": 38,
+          "cashTotal": 436644156.07894015,
+          "cashMin": 13205809.620316159,
+          "cashMax": 41142844,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2829230,
+          "observedAge": 594,
+          "ageMin": 18,
+          "ageMax": 34,
+          "ageMean": 26.183501683501685,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 594,
+          "contractsExpiring": 391,
+          "champion": 43,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        }
+      },
+      "european": {
+        "champions": {
+          "entries": 24,
+          "champion": 6,
+          "unique": true
+        },
+        "challenge": {
+          "entries": 18,
+          "champion": 48,
+          "unique": true
+        }
+      },
+      "totalCash": 1740047247.87136,
+      "activePlayers": 2162,
+      "freeMarketPlayers": 1152,
+      "freeMarketUnique": 1152,
+      "fixtures": 791,
+      "results": 791,
+      "ownSheet": {
+        "valid": true,
+        "errors": []
+      },
+      "exportBytes": 11159200,
+      "exportSha256": "4734fbd180b0bf4ec5f288cbf4d8e1a921d7143d7c02328c75b0910ad8aa6131",
+      "seasonElapsedMs": 127815
+    },
+    {
+      "label": "end",
+      "season": 8,
+      "week": 46,
+      "phase": "ended",
+      "elapsedMs": 1022143,
+      "leagues": {
+        "elite": {
+          "clubs": 14,
+          "players": 520,
+          "rosterMin": 37,
+          "rosterMax": 38,
+          "cashTotal": 605513980,
+          "cashMin": 30674020,
+          "cashMax": 58037800,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2506090,
+          "observedAge": 520,
+          "ageMin": 18,
+          "ageMax": 35,
+          "ageMean": 24.896153846153847,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 520,
+          "contractsExpiring": 250,
+          "champion": 12,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "accession": {
+          "clubs": 16,
+          "players": 591,
+          "rosterMin": 35,
+          "rosterMax": 38,
+          "cashTotal": 691840187.268608,
+          "cashMin": 24659199.123967998,
+          "cashMax": 79559160,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2662510,
+          "observedAge": 591,
+          "ageMin": 18,
+          "ageMax": 34,
+          "ageMean": 24.80710659898477,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 591,
+          "contractsExpiring": 285,
+          "champion": 15,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "prem": {
+          "clubs": 10,
+          "players": 374,
+          "rosterMin": 37,
+          "rosterMax": 38,
+          "cashTotal": 292394818.7638118,
+          "cashMin": 20630243.228416,
+          "cashMax": 56364796,
+          "negativeCashClubs": 0,
+          "weeklyWages": 1668850,
+          "observedAge": 374,
+          "ageMin": 18,
+          "ageMax": 36,
+          "ageMean": 27.532085561497325,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 374,
+          "contractsExpiring": 204,
+          "champion": 32,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "urc": {
+          "clubs": 16,
+          "players": 593,
+          "rosterMin": 37,
+          "rosterMax": 38,
+          "cashTotal": 545816576.0789402,
+          "cashMin": 17678009.62031616,
+          "cashMax": 50401044,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2588330,
+          "observedAge": 593,
+          "ageMin": 18,
+          "ageMax": 35,
+          "ageMean": 25.804384485666105,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 593,
+          "contractsExpiring": 300,
+          "champion": 46,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        }
+      },
+      "european": {
+        "champions": {
+          "entries": 24,
+          "champion": 55,
+          "unique": true
+        },
+        "challenge": {
+          "entries": 18,
+          "champion": 53,
+          "unique": true
+        }
+      },
+      "totalCash": 2156547187.87136,
+      "activePlayers": 2152,
+      "freeMarketPlayers": 1154,
+      "freeMarketUnique": 1154,
+      "fixtures": 791,
+      "results": 791,
+      "ownSheet": {
+        "valid": true,
+        "errors": []
+      },
+      "exportBytes": 10222165,
+      "exportSha256": "56ad110096c033c776067cff036fa1007519ffa95639c7b912973dd794b58b08",
+      "seasonElapsedMs": 126143
+    },
+    {
+      "label": "end",
+      "season": 9,
+      "week": 46,
+      "phase": "ended",
+      "elapsedMs": 1151790,
+      "leagues": {
+        "elite": {
+          "clubs": 14,
+          "players": 520,
+          "rosterMin": 37,
+          "rosterMax": 38,
+          "cashTotal": 729217440,
+          "cashMin": 37419220,
+          "cashMax": 69544600,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2313900,
+          "observedAge": 520,
+          "ageMin": 18,
+          "ageMax": 33,
+          "ageMean": 24.83653846153846,
+          "unknownAge": 0,
+          "injured": 2,
+          "uninjured": 518,
+          "contractsExpiring": 276,
+          "champion": 15,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "accession": {
+          "clubs": 16,
+          "players": 591,
+          "rosterMin": 34,
+          "rosterMax": 38,
+          "cashTotal": 826838567.268608,
+          "cashMin": 31782799.123967998,
+          "cashMax": 91536660,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2508210,
+          "observedAge": 591,
+          "ageMin": 18,
+          "ageMax": 34,
+          "ageMean": 24.88155668358714,
+          "unknownAge": 0,
+          "injured": 1,
+          "uninjured": 590,
+          "contractsExpiring": 319,
+          "champion": 24,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "prem": {
+          "clubs": 10,
+          "players": 373,
+          "rosterMin": 37,
+          "rosterMax": 38,
+          "cashTotal": 361733698.7638118,
+          "cashMin": 27075443.228416,
+          "cashMax": 66976476,
+          "negativeCashClubs": 0,
+          "weeklyWages": 1533420,
+          "observedAge": 373,
+          "ageMin": 18,
+          "ageMax": 37,
+          "ageMean": 26.99731903485255,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 373,
+          "contractsExpiring": 257,
+          "champion": 36,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "urc": {
+          "clubs": 16,
+          "players": 592,
+          "rosterMin": 37,
+          "rosterMax": 37,
+          "cashTotal": 673028576.0789402,
+          "cashMin": 25539409.62031616,
+          "cashMax": 58273244,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2340600,
+          "observedAge": 592,
+          "ageMin": 18,
+          "ageMax": 35,
+          "ageMean": 25.44256756756757,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 592,
+          "contractsExpiring": 331,
+          "champion": 46,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        }
+      },
+      "european": {
+        "champions": {
+          "entries": 24,
+          "champion": 36,
+          "unique": true
+        },
+        "challenge": {
+          "entries": 18,
+          "champion": 40,
+          "unique": true
+        }
+      },
+      "totalCash": 2618406707.87136,
+      "activePlayers": 2150,
+      "freeMarketPlayers": 1151,
+      "freeMarketUnique": 1151,
+      "fixtures": 791,
+      "results": 791,
+      "ownSheet": {
+        "valid": true,
+        "errors": []
+      },
+      "exportBytes": 9942526,
+      "exportSha256": "050050d1d91c83937f83cc0ce4adf03510de8861078dcf2cf6472974a67e5993",
+      "seasonElapsedMs": 129647
+    },
+    {
+      "label": "end",
+      "season": 10,
+      "week": 46,
+      "phase": "ended",
+      "elapsedMs": 1272703,
+      "leagues": {
+        "elite": {
+          "clubs": 14,
+          "players": 518,
+          "rosterMin": 37,
+          "rosterMax": 37,
+          "cashTotal": 873690740,
+          "cashMin": 44785220,
+          "cashMax": 81285400,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2067800,
+          "observedAge": 518,
+          "ageMin": 18,
+          "ageMax": 34,
+          "ageMean": 24.826254826254825,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 518,
+          "contractsExpiring": 238,
+          "champion": 15,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "accession": {
+          "clubs": 16,
+          "players": 592,
+          "rosterMin": 36,
+          "rosterMax": 38,
+          "cashTotal": 964015967.268608,
+          "cashMin": 39949399.123968,
+          "cashMax": 103376160,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2371300,
+          "observedAge": 592,
+          "ageMin": 18,
+          "ageMax": 34,
+          "ageMean": 24.951013513513512,
+          "unknownAge": 0,
+          "injured": 1,
+          "uninjured": 591,
+          "contractsExpiring": 296,
+          "champion": 17,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "prem": {
+          "clubs": 10,
+          "players": 370,
+          "rosterMin": 37,
+          "rosterMax": 37,
+          "cashTotal": 441696098.7638118,
+          "cashMin": 35198243.228415996,
+          "cashMax": 78573276,
+          "negativeCashClubs": 0,
+          "weeklyWages": 1373500,
+          "observedAge": 370,
+          "ageMin": 18,
+          "ageMax": 36,
+          "ageMean": 25.91891891891892,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 370,
+          "contractsExpiring": 171,
+          "champion": 36,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        },
+        "urc": {
+          "clubs": 16,
+          "players": 593,
+          "rosterMin": 37,
+          "rosterMax": 38,
+          "cashTotal": 809524776.0789402,
+          "cashMin": 32646009.62031616,
+          "cashMax": 66557644,
+          "negativeCashClubs": 0,
+          "weeklyWages": 2061200,
+          "observedAge": 593,
+          "ageMin": 18,
+          "ageMax": 36,
+          "ageMean": 24.84822934232715,
+          "unknownAge": 0,
+          "injured": 0,
+          "uninjured": 593,
+          "contractsExpiring": 304,
+          "champion": 51,
+          "ageBelow16": 0,
+          "ageAbove40": 0
+        }
+      },
+      "european": {
+        "champions": {
+          "entries": 24,
+          "champion": 52,
+          "unique": true
+        },
+        "challenge": {
+          "entries": 18,
+          "champion": 24,
+          "unique": true
+        }
+      },
+      "totalCash": 3123054207.8713603,
+      "activePlayers": 2147,
+      "freeMarketPlayers": 1148,
+      "freeMarketUnique": 1148,
+      "fixtures": 791,
+      "results": 791,
+      "ownSheet": {
+        "valid": true,
+        "errors": []
+      },
+      "exportBytes": 9727803,
+      "exportSha256": "e64814c53f2fc5c1bf819fd31b34458ea8c0f39c6fe985dd025a48df8db2ac77",
+      "seasonElapsedMs": 120913
+    }
+  ],
+  "restarts": [
+    {
+      "season": 5,
+      "exportIdentical": true,
+      "privateProfileIdentical": true,
+      "seed": 2060175655,
+      "clock": 1794178800000
+    },
+    {
+      "season": 10,
+      "exportIdentical": true,
+      "privateProfileIdentical": true,
+      "seed": 1137461611,
+      "clock": 1794178800000
+    }
+  ],
+  "promotions": [
+    {
+      "season": 2,
+      "week": 2,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 14 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 2,
+      "week": 12,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 21 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 2,
+      "week": 13,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 14 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 2,
+      "week": 17,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 15 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 3,
+      "week": 3,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 16 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 3,
+      "week": 5,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 20 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 3,
+      "week": 10,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 14 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 3,
+      "week": 14,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 19 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 3,
+      "week": 21,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 18 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 3,
+      "week": 27,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 17 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 4,
+      "week": 1,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 18 à compléter.",
+        "Remplaçant 20 à compléter."
+      ],
+      "coverage": {
+        "count": 2,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 5000,
+        "message": "2 espoir(s) promu(s) : 5000 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 4,
+      "week": 3,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 19 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 4,
+      "week": 4,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 13 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 4,
+      "week": 6,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 20 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 4,
+      "week": 11,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 17 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 4,
+      "week": 14,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 16 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 4,
+      "week": 23,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 23 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 5,
+      "week": 2,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 23 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 5,
+      "week": 3,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 13 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 5,
+      "week": 4,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 15 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 5,
+      "week": 6,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 19 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 5,
+      "week": 8,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 20 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 5,
+      "week": 10,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 20 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 5,
+      "week": 14,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 16 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 5,
+      "week": 27,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 18 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 5,
+      "week": 28,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 18 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 6,
+      "week": 4,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 20 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 6,
+      "week": 8,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 13 à compléter.",
+        "Remplaçant 23 à compléter."
+      ],
+      "coverage": {
+        "count": 2,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 5000,
+        "message": "2 espoir(s) promu(s) : 5000 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 6,
+      "week": 10,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 16 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 6,
+      "week": 11,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 16 à compléter.",
+        "Remplaçant 19 à compléter."
+      ],
+      "coverage": {
+        "count": 2,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 5000,
+        "message": "2 espoir(s) promu(s) : 5000 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 6,
+      "week": 12,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 20 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 6,
+      "week": 16,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 15 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 6,
+      "week": 18,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 15 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 6,
+      "week": 29,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 21 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 7,
+      "week": 2,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 20 à compléter.",
+        "Remplaçant 23 à compléter."
+      ],
+      "coverage": {
+        "count": 2,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 5000,
+        "message": "2 espoir(s) promu(s) : 5000 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 7,
+      "week": 7,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 13 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 7,
+      "week": 10,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 19 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 7,
+      "week": 12,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 15 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 7,
+      "week": 13,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 13 à compléter.",
+        "Remplaçant 16 à compléter."
+      ],
+      "coverage": {
+        "count": 2,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 5000,
+        "message": "2 espoir(s) promu(s) : 5000 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 7,
+      "week": 17,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 18 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 7,
+      "week": 23,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 21 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 7,
+      "week": 25,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 17 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 8,
+      "week": 10,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 18 à compléter.",
+        "Remplaçant 19 à compléter."
+      ],
+      "coverage": {
+        "count": 2,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 5000,
+        "message": "2 espoir(s) promu(s) : 5000 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 8,
+      "week": 12,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 18 à compléter.",
+        "Remplaçant 23 à compléter."
+      ],
+      "coverage": {
+        "count": 2,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 5000,
+        "message": "2 espoir(s) promu(s) : 5000 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 8,
+      "week": 22,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 15 à compléter.",
+        "Remplaçant 21 à compléter."
+      ],
+      "coverage": {
+        "count": 2,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 5000,
+        "message": "2 espoir(s) promu(s) : 5000 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 8,
+      "week": 23,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 17 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 8,
+      "week": 24,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 19 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 8,
+      "week": 25,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 8 à compléter.",
+        "Remplaçant 19 à compléter.",
+        "Remplaçant 20 à compléter."
+      ],
+      "coverage": {
+        "count": 3,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 7500,
+        "message": "3 espoir(s) promu(s) : 7500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 9,
+      "week": 1,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 23 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 9,
+      "week": 2,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 13 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 9,
+      "week": 3,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 15 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 9,
+      "week": 5,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 19 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 9,
+      "week": 8,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 21 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 9,
+      "week": 14,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 20 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 9,
+      "week": 21,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 17 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 9,
+      "week": 24,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 16 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 9,
+      "week": 29,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 15 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 9,
+      "week": 30,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 15 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 10,
+      "week": 4,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 20 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 10,
+      "week": 11,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 8 à compléter.",
+        "Poste 14 à compléter.",
+        "Remplaçant 20 à compléter."
+      ],
+      "coverage": {
+        "count": 3,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 7500,
+        "message": "3 espoir(s) promu(s) : 7500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 10,
+      "week": 17,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 19 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 10,
+      "week": 18,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Poste 10 à compléter.",
+        "Remplaçant 19 à compléter."
+      ],
+      "coverage": {
+        "count": 2,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 5000,
+        "message": "2 espoir(s) promu(s) : 5000 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 10,
+      "week": 29,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 16 à compléter.",
+        "Remplaçant 17 à compléter.",
+        "Remplaçant 21 à compléter."
+      ],
+      "coverage": {
+        "count": 3,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 7500,
+        "message": "3 espoir(s) promu(s) : 7500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    },
+    {
+      "season": 10,
+      "week": 30,
+      "reason": [
+        "Choisissez 15 titulaires et 8 remplaçants.",
+        "Remplaçant 18 à compléter."
+      ],
+      "coverage": {
+        "count": 1,
+        "weeklySalary": 2500,
+        "totalWeeklySalary": 2500,
+        "message": "1 espoir(s) promu(s) : 2500 € de salaire hebdomadaire supplémentaire. Feuille à 23 complète."
+      }
+    }
+  ],
+  "policy": "No training, recruitment, investment or contract changes except auto_lineup/promote_cover needed to play; deterministic now; fictional money.",
+  "initial": {
+    "label": "initial",
+    "season": 1,
+    "week": 0,
+    "phase": "league",
+    "elapsedMs": 1551,
+    "leagues": {
+      "elite": {
+        "clubs": 14,
+        "players": 805,
+        "rosterMin": 50,
+        "rosterMax": 65,
+        "cashTotal": 67700000,
+        "cashMin": 2500000,
+        "cashMax": 7500000,
+        "negativeCashClubs": 0,
+        "weeklyWages": 5048960,
+        "observedAge": 805,
+        "ageMin": 15,
+        "ageMax": 39,
+        "ageMean": 24.31552795031056,
+        "unknownAge": 0,
+        "injured": 0,
+        "uninjured": 805,
+        "contractsExpiring": 280,
+        "champion": null,
+        "ageBelow16": 1,
+        "ageAbove40": 0
+      },
+      "accession": {
+        "clubs": 16,
+        "players": 787,
+        "rosterMin": 36,
+        "rosterMax": 61,
+        "cashTotal": 42700000,
+        "cashMin": 2000000,
+        "cashMax": 3600000,
+        "negativeCashClubs": 0,
+        "weeklyWages": 5008730,
+        "observedAge": 787,
+        "ageMin": 15,
+        "ageMax": 38,
+        "ageMean": 25.36848792884371,
+        "unknownAge": 0,
+        "injured": 0,
+        "uninjured": 787,
+        "contractsExpiring": 259,
+        "champion": null,
+        "ageBelow16": 1,
+        "ageAbove40": 0
+      },
+      "prem": {
+        "clubs": 10,
+        "players": 637,
+        "rosterMin": 48,
+        "rosterMax": 75,
+        "cashTotal": 40000000,
+        "cashMin": 4000000,
+        "cashMax": 4000000,
+        "negativeCashClubs": 0,
+        "weeklyWages": 3110780,
+        "observedAge": 637,
+        "ageMin": 17,
+        "ageMax": 37,
+        "ageMean": 25.1287284144427,
+        "unknownAge": 0,
+        "injured": 0,
+        "uninjured": 637,
+        "contractsExpiring": 233,
+        "champion": null,
+        "ageBelow16": 0,
+        "ageAbove40": 0
+      },
+      "urc": {
+        "clubs": 16,
+        "players": 888,
+        "rosterMin": 40,
+        "rosterMax": 65,
+        "cashTotal": 64000000,
+        "cashMin": 4000000,
+        "cashMax": 4000000,
+        "negativeCashClubs": 0,
+        "weeklyWages": 5093790,
+        "observedAge": 888,
+        "ageMin": 18,
+        "ageMax": 44,
+        "ageMean": 25.617117117117118,
+        "unknownAge": 0,
+        "injured": 0,
+        "uninjured": 888,
+        "contractsExpiring": 292,
+        "champion": null,
+        "ageBelow16": 0,
+        "ageAbove40": 1
+      }
+    },
+    "european": {
+      "champions": {
+        "entries": 24,
+        "champion": null,
+        "unique": true
+      },
+      "challenge": {
+        "entries": 18,
+        "champion": null,
+        "unique": true
+      }
+    },
+    "totalCash": 222400000,
+    "activePlayers": 3208,
+    "freeMarketPlayers": 50,
+    "freeMarketUnique": 50,
+    "fixtures": 740,
+    "results": 0,
+    "ownSheet": {
+      "valid": true,
+      "errors": []
+    },
+    "exportBytes": 7276845,
+    "exportSha256": "f60320042e185b5d23a21cecae7648cb0d2ba1b67e5191541fa3a069dc3c5f11"
+  },
+  "elapsedMs": 1275079,
+  "position": {
+    "season": 10,
+    "week": 46,
+    "phase": "ended",
+    "league": "accession"
+  },
+  "checkpoint": {
+    "profileSha256": "eaf950f3ea46bea72491c536209cbf526f2d23358e2f53f7cf051d4618c33bbd",
+    "position": {
+      "season": 10,
+      "week": 46,
+      "phase": "ended"
+    }
+  },
+  "projectedTenSeasonsMs": 707440,
+  "passed": true,
+  "segments": [
+    {
+      "startedAt": "2026-11-09T11:21:49.130Z",
+      "budgetMs": 1500000,
+      "harnessSha256": "77945740f77936422c1df39c845446890c9cb251f5c05139d2552e44280e1a5e"
+    },
+    {
+      "startedAt": "2026-11-09T11:37:41.908Z",
+      "budgetMs": 1500000,
+      "harnessSha256": "77945740f77936422c1df39c845446890c9cb251f5c05139d2552e44280e1a5e",
+      "from": {
+        "season": 4,
+        "week": 46,
+        "phase": "ended",
+        "league": "accession"
+      }
+    }
+  ],
+  "resumptions": [
+    {
+      "season": 4,
+      "week": 46,
+      "stateIdentical": true,
+      "privateProfileIdentical": true,
+      "exportSha256": "8efc596d73a46fcafb81e2015413496fcac493ab0ea8f5b71c3810fae895fd3e"
+    }
+  ],
+  "completedSeasons": 10,
+  "finishedAt": "2026-11-09T11:50:51.066Z",
+  "runtimeAuditSchema": "world-ten-season-audit-v1",
+  "evidence": {
+    "productionRevision": "b04d508fd69eebc7d335591ce1760a4f3abce7c5",
+    "productionTreeMatchesRevision": true,
+    "scope": {
+      "mode": "world",
+      "clubs": 58,
+      "seed": 827381,
+      "humanClubId": 0,
+      "staffLifecycleCoupled": false,
+      "champ116LongRun": false
+    },
+    "interruption": {
+      "exitCode": 137,
+      "position": {
+        "season": 4,
+        "week": 46,
+        "phase": "ended"
+      },
+      "cgroupOomKillsObserved": 2,
+      "note": "The shared cloud cgroup recorded OOM kills during concurrent local suites. The interrupted segment is not a completed ten-season result. The exact S4 checkpoint was resumed with the same source and harness."
+    },
+    "initialAccessible": 3258,
+    "finalAccessible": 3295,
+    "finalProfessionalPlayers": 2147,
+    "finalVisibleAdultCandidates": 1148,
+    "finalAIProfessionalMin": 37,
+    "finalAIProfessionalMax": 38,
+    "finalHumanProfessionals": 36,
+    "excludedAcademyPlayers": {
+      "ai": 880,
+      "human": 61
+    },
+    "uniqueAccessibleIds": 3295,
+    "accessibleRegens": 2082,
+    "professionalRegens": 1332,
+    "populationFlows": {
+      "graduated": 1120,
+      "emerged": 88,
+      "departed": 1921
+    },
+    "peakExportBytes": 12972575,
+    "saveLimitBytes": 16777216,
+    "finalProfileSha256": "eaf950f3ea46bea72491c536209cbf526f2d23358e2f53f7cf051d4618c33bbd",
+    "rawReceipts": {
+      "regen-population-b04d508-world-10.json": "1235f1dcaeec0dd58c504b0897d5b4da29754f30e30816ca27f8720404e399d3",
+      "regen-population-b04d508-world-10.json.resume.json": "1235f1dcaeec0dd58c504b0897d5b4da29754f30e30816ca27f8720404e399d3",
+      "regen-population-b04d508-world-10-resumed.json": "b0fee5a9555cafe9b9d2c87b2b10f6fc702480bf8319f8f46e3a1aac0ff8b2a4",
+      "regen-population-b04d508-world-10-resumed.json.resume.json": "00744b5aa514e007fe6c915de5828a2ad0a0597dbfb6eab385d50c26da556fcb"
+    },
+    "sourceFileSha256": {
+      "dist/ai-roster-cycle.js": "7d0b8f50710af79dc7b453ff171084f81a8e74fa2d573ff25b86be7f5ae6ce2c",
+      "dist/development.js": "bbc0fff77539b89859bde7c31f03b16cac8401d19aafde959b907800b7036087",
+      "dist/economy.js": "559b911ff359efaf1efaf66fa8e350e8fe2467d17f34047eb774fd7923406831",
+      "dist/game.js": "951a2dce55e75c35c26acfcf23d6a6363651afb954fe327be3849a896a5b0b4d",
+      "dist/manager-mobility.js": "795b5866be3ac6d7e3b85e130ec2cb53d1dd90d4c612e25e0ae7f3555290c8be",
+      "dist/saves.js": "5060b9375aa63dd7eb5d1fac8c22982828ea10691d0097c8322ecf050e9a084d",
+      "native/engine/worker.cjs": "c6c7ab12c5c30563025a0d6b5135027e3fbd30748bf8db5b1d47e76806fc24b0",
+      "native/engine/world-vm.cjs": "6ade49129d2e3b6ae4f0f88c64aefadb2567cb8baaab701ee07963bc2980a2b5",
+      "native/engine/world-career.cjs": "a5014875495c1b59b13d04e71c0710a81cfbaca66ca4d6b2b4eeb14f7f20fdee",
+      "ci/world-ten-season-audit.cjs": "77945740f77936422c1df39c845446890c9cb251f5c05139d2552e44280e1a5e"
+    }
+  }
+}

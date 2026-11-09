@@ -20,6 +20,21 @@ test('opening aliases remain inactive including transfers, and chains or reintro
  f.opening.players['world:player:a']={clubId:0,endSeason:1,endType:'season-end'};assert.ok(codes(auditEdition(f)).includes('opening-inactive-alias'));
  f.opening.inactiveAliases['world:player:b']={clubId:1,canonicalId:'world:player:a'};assert.ok(codes(auditEdition(f)).includes('inactive-alias-chain'));
 });
+test('deduplicated active rosters keep legacy aliases separate and validate their exact source links',()=>{
+ const f=fixture(),id='world:player:a',row={clubId:0,canonicalId:'world:player:b',player:structuredClone(f.edition.registry.clubs[0].players[0]),worldProfile:structuredClone(f.edition.registry.worldProfiles[id])};
+ f.edition.registry.clubs[0].players=[];delete f.edition.registry.worldProfiles[id];f.edition.registry.compatibilityAliases={[id]:row};f.opening.inactiveAliases={[id]:{clubId:0,canonicalId:row.canonicalId}};
+ const before=JSON.stringify(f),r=auditEdition(f);assert.equal(r.valid,true,JSON.stringify(r.errors));assert.equal(JSON.stringify(f),before);
+ assert.equal(r.counts.players,1);assert.equal(r.counts.legacyAliasPlayers,1);assert.equal(r.counts.playersIncludingLegacyAliases,2);assert.equal(r.counts.catalogueInactiveAliases,0);assert.equal(r.counts.prospectiveActivePlayers,1,'already removed aliases must not be subtracted twice');assert.equal(r.counts.inactiveAliases,1);assert.equal(r.counts.aliasCrossClub,1);
+ assert.equal(r.clubs.find(c=>c.clubId===0).cataloguePlayers,0);assert.equal(r.clubs.find(c=>c.clubId===0).prospectiveActivePlayers,0);
+ for(const [change,code] of [
+  [x=>delete x.edition.registry.compatibilityAliases,'dangling-inactive-alias'],
+  [x=>x.edition.registry.compatibilityAliases[id].clubId=1,'compatibility-alias-club-mismatch'],
+  [x=>x.edition.registry.compatibilityAliases[id].canonicalId='world:missing','compatibility-alias-mapping-mismatch'],
+  [x=>x.edition.registry.compatibilityAliases[id].player.id='world:other','invalid-compatibility-alias'],
+  [x=>x.edition.registry.clubs[0].players.push(structuredClone(row.player)),'compatibility-alias-still-active'],
+  [x=>x.edition.registry.compatibilityAliases[id].privateName='PRIVATE NAME','invalid-compatibility-alias'],
+ ]){const x=structuredClone(f);change(x);const bad=auditEdition(x);assert.equal(bad.valid,false);assert.ok(codes(bad).includes(code),code);assert.equal(bad.counts.prospectiveActivePlayers,null);assert.equal(JSON.stringify(bad).includes('PRIVATE NAME'),false);}
+});
 test('source metadata contradictions and wrong override targets are detected without leaking evidence',()=>{
  const f=fixture();f.edition.registry.worldProfiles['world:player:b'].contract.endYear=2030;f.edition.registry.worldProfiles['world:player:a'].contract.endSeason=3;f.opening.players['world:private:url']={clubId:99,endSeason:0,endType:'wrong'};
  const r=auditEdition(f);for(const code of ['contract-year-season-mismatch','contract-profile-roster-mismatch','dangling-opening-player','invalid-opening-term'])assert.ok(codes(r).includes(code),code);
@@ -34,14 +49,14 @@ test('all production edition builders and staff selectors produce reproducible a
  const inputs=loadProductionInputs(),digest=()=>crypto.createHash('sha256').update(JSON.stringify(inputs)).digest('hex'),before=digest();
  const a=auditAll(inputs),b=auditAll(inputs);assert.deepEqual(a,b);assert.equal(digest(),before);assert.equal(a.valid,true,JSON.stringify(a.editions.flatMap(e=>e.errors)));
  assert.deepEqual(a.editions.map(e=>e.counts.playableClubs),[56,66,86,100,114]);
- const last=a.editions.at(-1);assert.equal(last.counts.players,5884);assert.equal(last.counts.prospectiveActivePlayers,5878);assert.equal(last.counts.inactiveAliases,6);assert.equal(last.counts.staffMembers,2160);
+ const last=a.editions.at(-1);assert.equal(last.counts.players,5878);assert.equal(last.counts.legacyAliasPlayers,6);assert.equal(last.counts.playersIncludingLegacyAliases,5884);assert.equal(last.counts.catalogueInactiveAliases,0);assert.equal(last.counts.prospectiveActivePlayers,5878);assert.equal(last.counts.inactiveAliases,6);assert.equal(last.counts.staffMembers,2160);
  assert.ok(last.counts.contractOfficialDeclared>0&&last.counts.contractEstimated>0);assert.ok(warning(last,'staff-source-unknown').count>0);assert.equal(last.counts.openingActiveTerms,114);assert.equal(last.counts.openingExact,96);assert.equal(last.counts.openingMinimum,18);assert.equal(last.counts.openingChanges,71);
  const text=JSON.stringify(a);assert.equal(/https?:\/\//.test(text),false);assert.equal(text.includes(inputs.staffByDatabase[inputs.editions.at(-1).id].clubs[0].members[0].name),false);
 });
 test('missing or partial opening source never certifies active counts or zero aliases for v5',()=>{
  const f=fixture();f.opening=null;
  const missing=auditEdition(f);assert.equal(missing.status,'unknown');assert.equal(missing.valid,false);assert.equal(missing.opening.status,'missing');assert.equal(missing.opening.applies,true);assert.equal(missing.errors.length,0);assert.ok(warning(missing,'opening-register-missing'));
- for(const key of ['prospectiveActivePlayers','inactiveAliases','openingChanges'])assert.equal(missing.counts[key],null,key);
+ for(const key of ['prospectiveActivePlayers','legacyAliasPlayers','playersIncludingLegacyAliases','inactiveAliases','openingChanges'])assert.equal(missing.counts[key],null,key);
  assert.ok(missing.clubs.every(c=>c.prospectiveActivePlayers===null));assert.equal(missing.counts.players,2,'catalogue count remains known');
  for(const field of ['players','inactiveAliases','databaseId','asOf']){const partial=fixture();delete partial.opening[field];const r=auditEdition(partial);assert.equal(r.valid,false);assert.equal(r.status,'invalid');assert.equal(r.opening.status,'invalid');assert.equal(r.counts.prospectiveActivePlayers,null);assert.equal(r.counts.inactiveAliases,null);assert.ok(codes(r).includes('invalid-opening-register'));}
  const bad=fixture();bad.opening.inactiveAliases={'world:player:a':{clubId:0,canonicalId:'world:missing'}};assert.equal(auditEdition(bad).counts.prospectiveActivePlayers,null,'contradictory alias provenance does not yield a certified active count');

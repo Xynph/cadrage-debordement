@@ -5,6 +5,9 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {CORE_FILES}=require('../native/engine/worker.cjs');
 const systems=require('../native/engine/native-systems.cjs');
 const common=require('../native/engine/common-rosters.cjs');
+const staff=require('../native/engine/staff.cjs');
+const staffDatabaseIds=['world-registry','world-pacific-extension','world-japan-extension','world-nationale-extension','world-champ-extension']
+ .map(name=>require('../native/engine/'+name+'.json').id);
 function context({seed:initialSeed=827381,now=1700000000000,dataDir=''}={}){
  let seed=initialSeed>>>0,calls=0;
  const math=Object.create(Math);math.random=()=>{calls++;seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
@@ -15,7 +18,10 @@ function context({seed:initialSeed=827381,now=1700000000000,dataDir=''}={}){
  const run=source=>vm.runInContext(source,ctx,{timeout:15000});
  for(const name of CORE_FILES)run(fs.readFileSync(path.resolve(__dirname,'../dist',name),'utf8'));
  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const CDCommonCareer=(${common.toString()})();`);
- run(systems.bootstrap());
+ // Même copie des sources de référence que le vrai worker, avant les hooks.
+ ctx.nativeStaffCareerSourcesText=JSON.stringify(Object.fromEntries([run('CDCommonRosters.id'),...staffDatabaseIds]
+  .map(id=>[id,staff.forDatabase(id).registry.clubs])));
+ run(systems.bootstrap());delete ctx.nativeStaffCareerSourcesText;
  return {ctx,store,run,randomState:()=>({seed,calls})};
 }
 module.exports={context};

@@ -14,7 +14,9 @@ const geometry = require('../native/engine/nationale-calendar-2026-27.json');
 function setup({seed = 827381, phase = 'barrage', version = 4, competition = 'nationale', enabled = true} = {}) {
   const h = context(seed, {source: file => fs.readFileSync(path.join(repo, 'dist', file), 'utf8')});
   Object.assign(h.ctx, {geometry, phase, version, competition});
-  h.run(`start(0);
+  // Le vrai setup v2 s'exécute avant les doubles lexicaux Monde.
+  h.run('start(0)');
+  h.run(`
     const N=(${rulesFactory.toString()})(geometry);
     const CDWorldCareer={active(s){return [3,4].includes(s?.worldMode?.version)}};
     const CDWorldKnockout=(${oldKnockout.toString()})();
@@ -89,7 +91,8 @@ test('Cinq tirs complets, relance avec autres joueurs et validation après séri
 });
 
 test('Horloge de match réelle avec seconde période et reprise depuis JSON', () => {
-  const h = setup({phase:'final',seed:73});
+  // Le setup v2 consomme le pool avant le match ; ce témoin donne un vrai nul à 80 minutes.
+  const h = setup({phase:'final',seed:71});
   h.run(`let reloads=0;
     for(let i=0;i<150&&!l.finished;i++){
       l.paused=false;advanceRugby(l);

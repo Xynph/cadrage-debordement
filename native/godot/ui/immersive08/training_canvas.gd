@@ -519,7 +519,7 @@ func _icon(parent: Node, icon: String, rectangle: Rect2, color: Color) -> void:
 	D.place(graphic, rectangle)
 
 func _portrait(parent: Node, p: Dictionary, rectangle: Rect2, fallback: String = "") -> void:
-	if not str(p.get("portraitPath", "")).is_empty() and G._pack_texture(str(p.portraitPath)) != null:
+	if not str(p.get("id", "")).is_empty():
 		var portrait := G.portrait(int(p.get("portraitIndex", 0)), 0, p)
 		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		parent.add_child(portrait)

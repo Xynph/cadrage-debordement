@@ -3,6 +3,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const {context}=require('./harness.cjs');const t=context(),run=t.run;
 vm.runInContext(fs.readFileSync(__dirname+'/../dist/youth-pathways-v72.js','utf8'),t.ctx);
 assert.equal(run('CDYouthV72.install(globalThis)'),true);
+// This scenario preserves the original V72/AI-v1 15-player cohort contract.
+// Population-v2 graduation and six-player AI intakes have dedicated regressions.
+run("var setupPopulationV2=aiRosterSetup;aiRosterSetup=function(){var result=setupPopulationV2();S.aiRosterVersion=1;S.aiRoster.version=1;delete S.aiRoster.population;return result};");
 run('start(0)');const p=run('S.development.academy[0].id');
 assert.ok(p,'espoir disponible');
 assert.equal(run('S.development.academy.length'),15,'15 nouveaux Espoirs la premiere saison');

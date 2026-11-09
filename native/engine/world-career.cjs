@@ -2,10 +2,9 @@
 // Factory executed in the same VM as the rugby engine. Presentation packs never
 // alter its identities, membership, ratings, calendar or results.
 module.exports=function worldCareer(edition,active,initialContracts=null){
- const C=CDWorldCompetitions,REG=edition.registry,SOURCES=new Map(REG.clubs.flatMap(c=>c.players.map(p=>[p.id,p]))),IDS=edition.leagueIds,WEEKS=46;
+ const C=CDWorldCompetitions,REG=edition.registry,LEGACY=REG.compatibilityAliases||{},SOURCES=new Map([...REG.clubs.flatMap(c=>c.players.map(p=>[p.id,p])),...Object.entries(LEGACY).map(([id,row])=>[id,row.player])]),IDS=edition.leagueIds,WEEKS=46;
  const opening=edition.version===5&&edition.mode==='world-champ'&&initialContracts?.databaseId===REG.id&&initialContracts?.schema==='world-initial-contracts-v1'?initialContracts:null;
  const startingTerms=opening?.players;
- const inactiveAliases=opening?.inactiveAliases;
  const EUROPE_LEAGUES=['elite','prem','urc'],playable=new Set(edition.playable),SRP=IDS.includes("srp")?CDWorldSRP:null,JP=IDS.includes('jlo-d1')?CDWorldJapan:null,N=IDS.includes('nationale')?CDWorldNationale:null,CH=IDS.includes('champ')?CDWorldChamp:null;
  const srpSeason=s=>2027+s.season-1;
  const japanYear=s=>2026+s.season-1,japanAnchor=s=>new Date(referenceStart(s)).toISOString().slice(0,10);
@@ -215,10 +214,9 @@ module.exports=function worldCareer(edition,active,initialContracts=null){
   if(REG.worldProfiles[p.id])p.worldProfile=copy(REG.worldProfiles[p.id]);if(REG.nationaleQualifications?.[p.id])p.nationaleQualifications=REG.nationaleQualifications[p.id].roles.slice();return p;
  }
  function initialRoster(c){
-  if(c.leagueId!=='champ'||!inactiveAliases)return c.players.map(sourcePlayer);
-  // Keep the registry intact for old saves and presentation packs. Only a
-  // new Champ career omits aliases attested by independent club and RFU data.
-  return c.players.filter(p=>inactiveAliases[p.id]?.clubId!==c.id).map(sourcePlayer);
+  // The active catalogue is already deduplicated. Compatibility identities
+  // are consulted only when reading an existing career, never for creation.
+  return c.players.map(sourcePlayer);
  }
  function start(id){
   check(playable.has(id),'club jouable invalide.');
@@ -373,7 +371,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null){
   for(const p of market){check(!ownedIds.has(p.id)&&saveNumber(p.price,0,1e9),'joueur déjà sous contrat ou prix du marché invalide.');check(!copies.has(p.id)||eq(copies.get(p.id),p),'copies du marché divergentes.');copies.set(p.id,p);}
   const players=[...owned,...market];
   for(const p of players){
-   const source=SOURCES.get(p.id),profile=REG.worldProfiles[p.id];
+   const source=SOURCES.get(p.id),profile=REG.worldProfiles[p.id]||LEGACY[p.id]?.worldProfile;
    if(source)check(p.name===source.name,'identité de présentation écrite dans la carrière.');
    if(String(p.id).startsWith('world:')||p.worldRatingsVersion!==undefined){
     check(source&&profile&&p.worldRatingsVersion===1&&p.lnrRatingsVersion===undefined,'identité de joueur mondiale inconnue.');
