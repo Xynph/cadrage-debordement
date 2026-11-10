@@ -97,7 +97,7 @@ test('Le nouveau Monde Champ distingue les dix meilleurs et calibre son ouvreur 
   }
 });
 
-test('Le barème du même ouvreur est partagé entre la Base commune et les cinq éditions Monde', () => {
+test('Les références seniors gardent le même barème dans toutes leurs éditions', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'oval-senior-editions-'));
   try {
     const modes = { common: 2, world: 7, 'world-pacific': 9, 'world-japan': 10, 'world-nationale': 10, 'world-champ': 10 };
@@ -111,6 +111,23 @@ test('Le barème du même ouvreur est partagé entre la Base commune et les cinq
         assert.equal(opener.attributes.goal, 84.4, mode);
         assert.equal(created.lineup[9], opener.id, mode);
         assert.equal(created.seniorCalibrationVersion, 1, mode);
+        const roster = new Map(players(created).map(player => [player.id, player]));
+        const centre = roster.get('world:srp:p-724f734b6caa9dbb76061ef4');
+        const scrumHalf = roster.get('world:urc:193699');
+        if (mode === 'common') assert.equal(scrumHalf, undefined);
+        else {
+          assert.deepEqual([scrumHalf.rating, roleNote(scrumHalf)], [85, 86], mode);
+          assert.deepEqual([scrumHalf.attributesV2.acceleration, scrumHalf.attributesV2.evasion, scrumHalf.attributesV2.decisions], [94, 94, 93], mode);
+          assert.equal(scrumHalf.attributesV2.tackling, 62, mode);
+          assert.equal(scrumHalf.dev.seasonStart, 85, mode);
+        }
+        if (mode === 'common' || mode === 'world') assert.equal(centre, undefined);
+        else {
+          assert.deepEqual([centre.rating, roleNote(centre)], [87, 88], mode);
+          assert.deepEqual([centre.attributesV2.ballCarry, centre.attributesV2.tackling, centre.attributesV2.leadership], [96, 96, 87], mode);
+          assert.equal(centre.attributesV2.kickAccuracy, 52, mode);
+          assert.equal(centre.dev.seasonStart, 87, mode);
+        }
         assert.equal(players(created).filter(player => player.rating > 90 && roleNote(player) > 90).length, above90, mode);
       });
     }

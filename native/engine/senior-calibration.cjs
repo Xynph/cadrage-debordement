@@ -10,6 +10,22 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     decisions: 96, anticipation: 90, vision: 95, teamwork: 88, leadership: 85,
     positioning: 83, tackling: 72, evasion: 82, ballCarry: 76,
   };
+  // Floor profiles for documented senior performances below the elite starting tier.
+  const reviewed = {
+    [openerId]: [88, openerProfile],
+    'world:srp:p-724f734b6caa9dbb76061ef4': [87, {
+      passing: 86, receiving: 87, offload: 80, ballHandling: 86,
+      tackling: 96, jackal: 74, positioning: 90, leadership: 87,
+      strength: 94, explosiveness: 95, ballCarry: 96, ruckClearout: 73,
+      topSpeed: 86, acceleration: 87, agility: 86, evasion: 82, kickChase: 79,
+    }],
+    'world:urc:193699': [85, {
+      passing: 90, receiving: 86, offload: 76, ballHandling: 89,
+      topSpeed: 92, acceleration: 94, agility: 91, evasion: 94, kickChase: 82,
+      decisions: 93, anticipation: 86, vision: 89, composure: 86, teamwork: 86, leadership: 80,
+      kickDistance: 74, kickAccuracy: 74,
+    }],
+  };
   // Curated starting tiers for ten documented senior profiles, by stable ID.
   // The last column contains their signature attributes.
   const elite = {
@@ -74,9 +90,10 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
 
   function calibrate(player) {
     const opener = player.id === openerId;
+    const profile = reviewed[player.id];
     const tier = elite[player.id];
     const lift = dose(player.rating);
-    if (!opener && !tier && !lift) return;
+    if (!profile && !tier && !lift) return;
 
     const initialNote = roleNote(player);
     const position = player.gameplayPosition || player.pos;
@@ -89,8 +106,8 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
       .map(([key, value]) => [key, round(Math.min(99, Math.max(15, player.skills[key] + value - baseline[key])))]));
     let skills = skillsAt();
     let note = initialNote;
-    if (opener) {
-      for (const [axis, value] of Object.entries(openerProfile)) {
+    if (profile) {
+      for (const [axis, value] of Object.entries(profile[1])) {
         attributesV2[axis] = Math.max(starting[axis], value);
       }
       skills = skillsAt();
@@ -123,7 +140,7 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     }
 
     if (note <= initialNote) return;
-    const targetRating = opener ? 88 : tier ? tier[0] : Math.min(90, player.rating + note - initialNote);
+    const targetRating = profile?.[0] ?? tier?.[0] ?? Math.min(90, player.rating + note - initialNote);
     const rating = Math.max(player.rating, targetRating);
     const growth = rating - player.rating;
     player.skillBase += growth;
