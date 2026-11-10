@@ -1,4 +1,5 @@
 extends SceneTree
+const Rooms = preload("res://qa_runner.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -11,6 +12,7 @@ func check(ok: bool,message: String) -> void:
 func settle() -> void:
 	for frame in 10:await process_frame
 func worker() -> void:
+	if OS.get_environment("CD_TACTICS_DRAG_TRACE")=="1":print("TACTICS_COMMAND ",Time.get_ticks_msec()," ",app.last_command," checks=",checks)
 	var deadline := Time.get_ticks_msec()+45000
 	while app.waiting and Time.get_ticks_msec()<deadline:await process_frame
 	await settle()
@@ -72,6 +74,7 @@ func run() -> void:
 	while app.model.is_empty() and Time.get_ticks_msec()<deadline:await process_frame
 	check(not app.model.is_empty(),"Application prête")
 	app.timer.stop();app._command("new_career",{"mode":"common","club":0});await worker()
+	if not await Rooms.settle_club_meetings(app,self,check):await app._close(1);return
 	app._navigate("Composition");await settle();app.coach.close()
 	check(named("TacticsPitch")!=null and named("TacticsIdentity")!=null and named("TacticsBench")!=null,"Trois colonnes existantes conservées")
 	check(named("TacticsOutside")!=null,"Hors groupe simultané au banc")
@@ -197,6 +200,7 @@ func run() -> void:
 		await capture("tactique-pilier-au10-1440")
 	# Le mode hebdomadaire fictif permet un vrai coup d'envoi sans avancer le calendrier commun.
 	app._command("new_career",{"mode":"fiction","club":0});await worker()
+	if not await Rooms.settle_club_meetings(app,self,check):await app._close(1);return
 	var press:Dictionary=app.model.get("clubLife",{}).get("press",{})
 	var conference:Dictionary=press.get("conference",{})
 	if conference.get("available",false):
@@ -204,18 +208,24 @@ func run() -> void:
 		for question:Dictionary in conference.get("questions",[]):answers.append({"questionId":question.id,"answerId":question.answers[0].id})
 		app._command("press_conference",{"context":press.get("context"),"invitationId":conference.get("invitationId"),"answers":answers});await worker()
 	app._command("begin_match");await worker()
+	if not await Rooms.continue_match_phase(app,self,check,"pre"):await app._close(1);return
 	app._navigate("Composition");await settle()
 	check(not app._live().is_empty(),"Vrai match lancé pour vérifier le verrouillage")
+	check(app.route=="Match" and app.contextual_director.match_immersed(),"La scène immersive garde le direct lorsqu’on tente de revenir à Composition")
 	var live_id:=str(assignment(10).playerId)
-	check(Selection.payload(app,live_id,10)==null and not Selection.can_drop(app,{"kind":"tactics_player","player_id":live_id,"source_slot":10,"club_id":app.model.club.id},13),"Glisser-déposer indisponible pendant le match")
-	check(named("LineupAutomatic").disabled,"Sélection du staff indisponible pendant le match")
-	app.selected_slot=9;app._render();await settle()
-	await enter(named("LineupSlot10"))
-	var live_candidates:=app.find_child("LineupCandidates",true,false) as AcceptDialog
-	check(live_candidates!=null and live_candidates.find_child("LineupRemove",true,false).disabled,"Libérer est verrouillé dans la consultation pendant le match")
-	if live_candidates!=null:
-		check(live_candidates.find_child("LineupCandidatesList",true,false).get_children().all(func(row):return row.disabled),"Tous les choix de composition sont en lecture seule pendant le match")
-		live_candidates.canceled.emit();await settle()
+	var locked_payload:={"kind":"tactics_player","player_id":live_id,"source_slot":10,"club_id":app.model.club.id}
+	check(Selection.payload(app,live_id,10)==null and not Selection.can_drop(app,locked_payload,13),"Glisser-déposer indisponible pendant le match")
+	check(not Selection.editable(app) and not Selection.apply(app,locked_payload,13),"Affectation de composition indisponible pendant le match")
+	var live_profile:=str(app.model.meta.dataDir).path_join("donnees.json")
+	var live_hash:=FileAccess.get_sha256(live_profile)
+	var live_selection:Dictionary=app.model.selection.duplicate(true)
+	app._command("set_lineup",{"slot":13,"playerId":live_id})
+	var refusal_deadline:=Time.get_ticks_msec()+45000
+	while app.waiting and Time.get_ticks_msec()<refusal_deadline:await process_frame
+	await settle()
+	check(not app.waiting and not app.bridge.last_response_ok,"Le moteur refuse aussi une commande directe de composition pendant le match")
+	check(app.model.selection==live_selection and FileAccess.get_sha256(live_profile)==live_hash,"Refus pendant le direct : feuille et sauvegarde inchangées")
+
 	finish()
 func finish() -> void:
 	var file := FileAccess.open(output.path_join("report.json"),FileAccess.WRITE)

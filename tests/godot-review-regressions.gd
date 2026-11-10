@@ -469,7 +469,8 @@ func _run() -> void:
 		app.match_finish.pressed.emit()
 		await _wait()
 		_check(app.route == "Réception", "Round validation returns to Reception")
-		_check(not app.contextual_director.active() and app.root_content.is_visible_in_tree(), "Round transition exits immersion and restores management")
+		if not await ContextualFlow.settle_club_meetings(app, self, _check): await app._close(1); return
+		_check(not app.contextual_director.active() and app.root_content.is_visible_in_tree(), "Round transition and its actual meetings restore management")
 		app._navigate("Match")
 		_check(not app.pause_button.disabled, "Next kickoff enabled without navigation")
 		# Repair the actual 23 after match injuries before testing the next kickoff.

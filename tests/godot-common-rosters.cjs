@@ -2,6 +2,7 @@
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),crypto=require('node:crypto');
 const {createBridge}=require('../native/engine/worker.cjs'),{context}=require('./france-harness.cjs');
+const careerVariation=require('../native/engine/career-variation.cjs'),variation=careerVariation();
 const root=fs.mkdtempSync(path.join(process.env.CD_COMMON_TEST_ROOT||os.tmpdir(),'cd-common-'));let serial=0;const bridges=[];
 function bridge(name){const b=createBridge({dataDir:path.join(root,name),seed:827381,now:1700000000000});bridges.push(b);return b;}
 function call(b,command,payload={}){return b.handle({id:++serial,command,payload});}
@@ -17,7 +18,9 @@ function assertProfessionalDepth(state,data){
  }
 }
 try{
- const b=bridge('common0'),m=settleClubMeetings(good(b,'new_career',{mode:'common',club:0}),(command,payload)=>good(b,command,payload));assert.equal(m.meta.mode,'common');assert.equal(m.meta.database.active,true);assert.equal(m.meta.catalogue.length,30);assert.equal(m.selection.valid,true);
+ // Freeze current qualities for source/calibration comparisons; the mandatory
+ // potential variation remains active and is checked against its exact delta.
+ const b=bridge('common0'),m=settleClubMeetings(good(b,'new_career',{mode:'common',club:0,varyCurrent:false}),(command,payload)=>good(b,command,payload));assert.equal(m.meta.mode,'common');assert.equal(m.meta.database.active,true);assert.equal(m.meta.catalogue.length,30);assert.equal(m.selection.valid,true);
  const data=require('../dist/rugby-common-rosters.js'),doc=document(b),rosters=doc.state.clubs.flatMap(c=>c.players);
  const players=rosters.filter(p=>!isDepth(p));
  assertProfessionalDepth(doc.state,data);
@@ -40,14 +43,14 @@ try{
    const corrected=Object.hasOwn(corrections,p.id);
    assert.equal(p.rosterProfile.position.basis==='official',corrected,p.id+' documented exception only');
    for(const key of ['potential','hiddenTraitsV2','gameplayPosition','lnrRatingsVersion','age','birthYear','birthDate','ageEstimated','pos','fam']){
-    const value=corrected&&['pos','gameplayPosition'].includes(key)?corrections[p.id]:corrected&&key==='fam'?positions[corrections[p.id]]:source[key];
+    const value=key==='potential'?variation.sourcePotential(source[key],p.id,doc.state.careerVariation):corrected&&['pos','gameplayPosition'].includes(key)?corrections[p.id]:corrected&&key==='fam'?positions[corrections[p.id]]:source[key];
     assert.deepEqual(p[key],value,p.id+' '+key);
    }
    for(const key of ['rating','skills','attributesV2']) assert.deepEqual(immutable[key],source[key],p.id+' source '+key);
    assert.equal(immutable.dev.potential,source.dev.potential);
    if(p.age<23||JSON.stringify(p.attributesV2)===JSON.stringify(source.attributesV2)){
     for(const key of ['rating','skills','attributesV2']) assert.deepEqual(p[key],source[key],p.id+' '+key);
-    assert.equal(p.dev.potential,source.dev.potential);
+    assert.equal(p.dev.potential,Math.max(p.rating,Math.min(99,source.dev.potential+variation.deltas(doc.state.careerVariation,p.id).potential)));
    }else{
     assert.ok(p.rating>=source.rating,p.id);
     const position=p.gameplayPosition||p.pos;
@@ -57,7 +60,8 @@ try{
      const expected=aligned?value:Math.round(Math.min(99,Math.max(15,source.skills[key]+value-before[key]))*100)/100;
      assert.equal(p.skills[key],expected,p.id+' '+key);
     }
-    assert.equal(p.dev.potential,p.id==='lnr:2436'?91:Math.min(Math.max(97,source.dev.potential),source.dev.potential+p.rating-source.rating));
+    const calibratedPotential=p.id==='lnr:2436'?91:Math.min(Math.max(97,source.dev.potential),source.dev.potential+p.rating-source.rating);
+    assert.equal(p.dev.potential,Math.max(p.rating,Math.min(99,calibratedPotential+variation.deltas(doc.state.careerVariation,p.id).potential)));
    }
   }
  }
@@ -71,7 +75,7 @@ try{
  const saved=document(b);good(b,'shutdown');const restarted=bridge('common0');assert.deepEqual(document(restarted).state,saved.state);
  // Invalid markers and forged young generated players never widen legacy formats.
  const bad=clone(doc);bad.state.commonDatabase.version=99;assert.equal(call(restarted,'import',{text:JSON.stringify(bad)}).ok,false);
- const h=context();h.run('CDFranceCareer.start(0,{database:CDCommonRosters.marker,playersForClub:id=>JSON.parse(JSON.stringify(CDCommonRosters.clubs[id].players))})');
+ const h=context();h.run(`const nativeCareerVariation=(${careerVariation.toString()})();CDFranceCareer.start(0,{database:CDCommonRosters.marker,playersForClub:id=>JSON.parse(JSON.stringify(CDCommonRosters.clubs[id].players))})`);
  h.run('validateCareer(S)');
  const whole=h.state();const badState=clone(whole);badState.development.academy[0].age=15;h.ctx.rejected=badState;assert.throws(()=>h.run('validateCareer(rejected)'));
  const missingProfile=clone(whole);delete missingProfile.clubs[0].players[0].attributesV2;h.ctx.rejected=missingProfile;assert.throws(()=>h.run('validateCareer(rejected)'),/Attributs/);

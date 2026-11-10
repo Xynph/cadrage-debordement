@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const os=require('node:os');
@@ -94,7 +95,7 @@ test('Une invitation bloque la progression jusqu’à publication et un direct i
  }
  assert.equal(send('press_conference',payload(model)).ok,false,'Identifiant du courrier exigé');
  assert.deepEqual(bytes(),previous);
- good('press_conference',payload(model,arrival.id));
+ model=settleClubMeetings(good('press_conference',payload(model,arrival.id)),good);
  good('begin_match');
 
  const live=JSON.parse(good('export').meta.exportText);
@@ -112,7 +113,7 @@ test('Une invitation bloque la progression jusqu’à publication et un direct i
  assert.equal(weekly.kind,'weekly');
  assert.equal(model.clubLife.press.conference.required,true);
  assert.equal(send('press_conference',payload(model,arrival.id)).ok,false);
- good('press_conference',payload(model,weekly.id));
+ model=settleClubMeetings(good('press_conference',payload(model,weekly.id)),good);
 
  const legacy=JSON.parse(good('export').meta.exportText);
  delete legacy.state.pressInvitations;
@@ -148,7 +149,7 @@ test('Une avance accélérée s’arrête au prochain courrier obligatoire',t=>{
  assert.equal(initial.meta.week,0);
  assert.equal(initial.clubLife.press.invitations[0].kind,'arrival');
  assert.equal(send('advance_champ_preparation',{fromWeek:0}).ok,false);
- good('press_conference',payload(initial,initial.clubLife.press.conference.invitationId));
+ settleClubMeetings(good('press_conference',payload(initial,initial.clubLife.press.conference.invitationId)),good);
  const after=good('advance_champ_preparation',{fromWeek:0});
  assert.equal(after.meta.week,1);
  assert.equal(after.clubLife.press.conference.required,true);

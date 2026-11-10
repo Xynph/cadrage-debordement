@@ -1,4 +1,5 @@
 extends SceneTree
+const Rooms = preload("res://qa_runner.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -41,6 +42,7 @@ func run() -> void:
 	app.timer.stop()
 	await command("new_career", {"mode":"common", "club":0})
 	await command("new_career", {"mode":"common", "club":1})
+	if not await Rooms.settle_club_meetings(app,self,check):await app._close(1);return
 	check(app.model.meta.profileSafety.entries.size() == 1, "Copie durable créée par le moteur")
 	var file: String = str(app.model.meta.dataDir).path_join("donnees.json")
 	var before := FileAccess.get_sha256(file)

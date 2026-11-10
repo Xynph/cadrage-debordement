@@ -1,4 +1,5 @@
 extends SceneTree
+const Rooms = preload("res://qa_runner.gd")
 const Review = preload("res://ui/contract_review.gd")
 var app: Control
 var checks := 0
@@ -79,6 +80,7 @@ func run() -> void:
 	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
 	await settle()
 	check(app.bridge.last_response_ok, "Carrière réelle créée")
+	if not await Rooms.settle_club_meetings(app,self,check):await app._close(1);return
 	var file: String = str(app.model.meta.dataDir).path_join("donnees.json")
 	var before := FileAccess.get_sha256(file)
 	app._navigate("Effectif")

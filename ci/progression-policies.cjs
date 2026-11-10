@@ -1,7 +1,7 @@
 'use strict';
 // Experimental controllers. Only worker-visible models enter this module.
 const fs=require('node:fs'),crypto=require('node:crypto');
-const version='progression-policies-v1';
+const version='progression-policies-v2';
 const sourceHash=crypto.createHash('sha256').update(fs.readFileSync(__filename)).digest('hex');
 const phases=Object.freeze(['before-week','before-match','after-season','transition']);
 const commands=Object.freeze(['auto_lineup','promote_cover','extend_contract']);
@@ -9,10 +9,15 @@ const profiles=Object.freeze([
  Object.freeze({id:'minimal',label:'Gestion minimale jouable',version,maxActionsPerPhase:16,renewalCandidatesPerSeason:0}),
  Object.freeze({id:'attentive',label:'Renouvellement sélectif avec réserve',version,maxActionsPerPhase:16,
   renewalCandidatesPerSeason:6,maxAge:30,targetYears:2,minimumCashReserve:500000,payrollReserveWeeks:8,
-  priority:'note descending, potential descending, age ascending, opaque ID ascending',counteroffersPerPlayer:1})
+  priority:'rating descending, visible potential lower bound descending, age ascending, opaque ID ascending',counteroffersPerPlayer:1})
 ]);
 const finite=Number.isFinite;
 const lexical=(a,b)=>a<b?-1:a>b?1:0;
+function potentialBounds(player){
+ const range=player.potentialRange;
+ return player.knowledge?.owned!==false&&range&&finite(range.min)&&finite(range.max)&&range.min>=0&&range.max<=100&&range.min<range.max
+  ?{min:range.min,max:range.max}:null;
+}
 function createPolicy(id){
  const profile=profiles.find(p=>p.id===id);if(!profile)throw new RangeError('Unknown progression policy: '+id);
  const issued=new Set(),candidates=new Map(),events=[];
@@ -30,7 +35,7 @@ function createPolicy(id){
  function renew(model,phase,p,salary,years,fee,kind){
   return action(model,phase,'extend_contract',{playerId:p.id,salary,years,confirmed:true},
    kind==='counter'?'Accepter la contre-proposition publique sous la réserve fixée.':'Conserver un contrat expirant selon les critères visibles fixés.',
-   {kind,playerId:p.id,note:p.note,potential:p.potential,age:p.age,currentSalary:p.salary,offeredSalary:salary,fee,years,
+   {kind,playerId:p.id,rating:p.rating,potentialRange:potentialBounds(p),age:p.age,currentSalary:p.salary,offeredSalary:salary,fee,years,
     cash:model.club.cash,payroll:model.finance.wage,reserve:Math.max(profile.minimumCashReserve,profile.payrollReserveWeeks*(model.finance.wage-p.salary+salary))});
  }
  function nextAction(model,phase){
@@ -53,11 +58,11 @@ function createPolicy(id){
   }
   const season=model.meta.season,attempted=candidates.get(season)??0;
   if(attempted>=profile.renewalCandidatesPerSeason)return null;
-  const pool=model.squad.filter(p=>Number.isInteger(p.age)&&p.age<=profile.maxAge&&finite(p.note)&&finite(p.potential)&&
+  const pool=model.squad.filter(p=>Number.isInteger(p.age)&&p.age<=profile.maxAge&&finite(p.rating)&&potentialBounds(p)&&
    Number.isInteger(p.contractEnd)&&p.contractEnd<=season&&p.renewal?.available&&!issued.has('renew:'+season+':'+p.id)&&
    finite(p.renewal.salary)&&p.renewal.salary>=1000&&p.renewal.salary<=100000&&Number.isInteger(p.renewal.minYears)&&
    Number.isInteger(p.renewal.maxYears)&&p.renewal.minYears<=p.renewal.maxYears)
-   .sort((a,b)=>b.note-a.note||b.potential-a.potential||a.age-b.age||lexical(a.id,b.id));
+   .sort((a,b)=>b.rating-a.rating||potentialBounds(b).min-potentialBounds(a).min||a.age-b.age||lexical(a.id,b.id));
   for(const p of pool){
    const years=Math.max(p.renewal.minYears,Math.min(profile.targetYears,p.renewal.maxYears));
    if(years<1||years>3||!funded(model,p,p.renewal.salary,p.renewal.fee))continue;

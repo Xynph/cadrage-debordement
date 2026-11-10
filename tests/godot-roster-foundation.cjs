@@ -2,6 +2,7 @@
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
+const variation=require('../native/engine/career-variation.cjs')();
 const {assertLegacyProfessionals}=require('./helpers/assert-legacy-professionals.cjs');
 const root=fs.mkdtempSync(path.join(process.env.CD_ROSTER_TEST_ROOT||require('node:os').tmpdir(),'cd-roster-'));
 const b=createBridge({dataDir:path.join(root,'main-'+process.pid),seed:827381,now:1700000000000});let serial=0;
@@ -16,7 +17,8 @@ const sourceRosters=clubs=>clubs.map(club=>{
  return {...club,players};
 });
 try{
- const model=settleClubMeetings(good('new_career',{mode:'common',club:6}),(command,payload)=>good(command,payload));
+ // Source qualities stay fixed for parity; potential still varies at creation.
+ const model=settleClubMeetings(good('new_career',{mode:'common',club:6,varyCurrent:false}),(command,payload)=>good(command,payload));
  assert.equal(model.meta.rosterFoundation?.version,2,'new common careers expose roster foundation version');
  const data=require('../dist/rugby-roster-foundation.js'),base=require('../dist/rugby-common-rosters.js');
  const runtime=fs.readFileSync(path.join(__dirname,'../dist/rugby-roster-foundation.js'),'utf8');assert.ok(!runtime.includes('https://')&&!runtime.includes('Tuicuvu')&&!runtime.includes('Fourcade'),'anonymous runtime provenance');
@@ -26,10 +28,10 @@ try{
  const sourcePlayers=new Map(base.clubs.flatMap(c=>c.players).map(p=>[p.id,p]));
  let verified=0;for(const p of players){
   const source=sourcePlayers.get(p.id),profile=data.players[p.id];
-  assert.deepEqual(p.rosterProfile,profile);assert.equal(p.potential,source.potential);assert.deepEqual(p.hiddenTraitsV2,source.hiddenTraitsV2);
+  assert.deepEqual(p.rosterProfile,profile);assert.equal(p.potential,variation.sourcePotential(source.potential,p.id,s.careerVariation));assert.deepEqual(p.hiddenTraitsV2,source.hiddenTraitsV2);
   if(p.age<23){
    for(const k of ['rating','skills','attributesV2'])assert.deepEqual(p[k],source[k],p.id+' '+k);
-   assert.equal(p.dev.potential,source.dev.potential);
+   assert.equal(p.dev.potential,Math.max(p.rating,Math.min(99,source.dev.potential+variation.deltas(s.careerVariation,p.id).potential)));
   }
   assert.equal(p.salary,source.salary);assert.equal(p.contractEnd,profile.contract.endSeason);assert.equal(profile.wage.basis,'estimated');if(!Object.hasOwn(require('../data/roster-foundation/verified.json').statuses,p.id))assert.equal(profile.status.basis,'estimated');if(p.fam<=1)assert.deepEqual(profile.position.qualifications,[p.pos]);if(profile.contract.basis==='official')verified++;
  }

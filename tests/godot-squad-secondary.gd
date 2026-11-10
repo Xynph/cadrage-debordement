@@ -1,4 +1,5 @@
 extends SceneTree
+const Rooms = preload("res://qa_runner.gd")
 const Squad = preload("res://ui/immersive08/squad_canvas.gd")
 const U = preload("res://ui/management_state.gd")
 const C = preload("res://ui/immersive08/components.gd")
@@ -61,6 +62,7 @@ func run() -> void:
 	if DisplayServer.get_name()!="headless":DisplayServer.window_set_size(root.size)
 	app=load("res://main.tscn").instantiate();root.add_child(app);await wait_engine()
 	app._command("new_career",{"mode":"common","club":29});await wait_engine();app.timer.stop()
+	if not await Rooms.settle_club_meetings(app,self,check):await app._close(1);return
 	var original: Dictionary=app.model.duplicate(true)
 	var source_count:=0
 	for player:Dictionary in original.squad:

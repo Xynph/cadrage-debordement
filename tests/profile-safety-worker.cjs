@@ -1,4 +1,6 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+const {skipMatchTalk}=require('./helpers/scene-match-talks.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -14,7 +16,7 @@ function fixture(t, mode = 'common', club = 0) {
   t.after(() => { bridge.close(); fs.rmSync(root, { recursive: true, force: true }); });
   const call = (command, payload = {}) => bridge.handle({ id: ++sequence, command, payload });
   const good = (command, payload) => { const result = call(command, payload); assert.equal(result.ok, true, result.error); return result.model; };
-  const initial = good('new_career', { mode, club });
+  const initial = settleClubMeetings(good('new_career', { mode, club }), good);
   const file = path.join(initial.meta.dataDir, 'donnees.json');
   return { root, file, call, good, restart() { bridge.close(); bridge = createBridge({ dataDir: root, seed: 999, now: 1800000000000 }); } };
 }
@@ -97,7 +99,7 @@ test('copie altérée et quota plein refusent une restauration/import sans touch
 });
 test('A → B → A → B : copie de B cohérente, rollback restauration et action suivante identique au témoin', t => {
   const f = fixture(t);
-  const second = f.good('new_career', { mode: 'common', club: 1 });
+  const second = settleClubMeetings(f.good('new_career', { mode: 'common', club: 1 }), f.good);
   const copyA = second.meta.profileSafety.entries[0];
   const rawB = fs.readFileSync(f.file);
   const envelopeB = JSON.parse(rawB);
@@ -129,7 +131,7 @@ test('A → B → A → B : copie de B cohérente, rollback restauration et acti
 });
 test('adaptation de reprise : profil disque brut préservé, consultation sans écriture', t => {
   const f = fixture(t);
-  f.good('begin_match');
+  skipMatchTalk(f.good('begin_match'), f.good);
   const raw = fs.readFileSync(f.file);
   const envelope = JSON.parse(raw);
   assert.equal(JSON.parse(envelope.store['bdt-v1']).live.paused, false);

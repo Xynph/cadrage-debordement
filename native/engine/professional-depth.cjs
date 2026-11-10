@@ -6,13 +6,17 @@ module.exports = function professionalDepth() {
   const minimum = 40;
   const prefix = 'depth-';
   const slots = POS.map((position, index) => ({
-    position, index, demand: index === 0 || index === 2 ? 1 : FAMILIES.filter(family => family === FAMILIES[index]).length
+    position, index, demand: POS.filter(role => role === position).length
   })).filter((slot, index) => POS.indexOf(slot.position) === index);
 
   function nextSlot(players, rotation) {
     return slots.map(slot => ({
       ...slot,
-      coverage: players.filter(player => slotEligible(player, slot.index)).length / slot.demand
+      // Emergency placements are legal with a severe aptitude penalty; they
+      // cannot replace a specialist when balancing the professional roster.
+      // Front-row coverage still requires the actual side qualifications.
+      coverage: players.filter(player => slot.index < 3
+        ? slotEligible(player, slot.index) : player.pos === slot.position).length / slot.demand
     })).sort((a, b) => a.coverage - b.coverage ||
       (a.index + rotation) % POS.length - (b.index + rotation) % POS.length)[0];
   }

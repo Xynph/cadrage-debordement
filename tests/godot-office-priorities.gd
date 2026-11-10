@@ -1,4 +1,5 @@
 extends SceneTree
+const Rooms = preload("res://qa_runner.gd")
 const Priorities = preload("res://ui/immersive08/office_priorities.gd")
 const Office = preload("res://ui/immersive08/office.gd")
 var app: Control
@@ -84,11 +85,14 @@ func run() -> void:
 	app._command("new_career",{"mode":"common","club":29})
 	await wait_engine()
 	app.timer.stop()
+	if not await Rooms.settle_club_meetings(app,self,check):await app._close(1);return
 	var original: Dictionary = app.model.duplicate(true)
 	var file := str(app.model.meta.dataDir).path_join("donnees.json")
 	var before := FileAccess.get_sha256(file)
 	var commands: int = app.bridge._next_id
-	for dimensions in [Vector2i(1280,720),Vector2i(1920,1080),Vector2i(2560,1440)]:
+	var dimensions_to_check := [Vector2i(1280,720),Vector2i(1920,1080),Vector2i(2560,1440)]
+	if OS.get_environment("QA_RESOLUTION")=="2560x1440":dimensions_to_check=[Vector2i(2560,1440)]
+	for dimensions in dimensions_to_check:
 		root.size = dimensions
 		if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(dimensions)
 		await render(original)
@@ -142,17 +146,21 @@ func run() -> void:
 			check(contract.size.x <= app.find_child("OfficeDecisions",true,false).size.x,"Nom long : action contenue dans la carte")
 		scenario = original.duplicate(true)
 		scenario.clubLife.press.conference.required = false
-		scenario.live = {"finished":false,"minute":35,"score":[7,3],"teams":[original.next.home,original.next.away],"pair":[original.next.home.id,original.next.away.id]}
+		# A paused projection tests the real navigation guard without scheduling
+		# a tick against the untouched worker. An active match owns the screen.
+		scenario.live = {"finished":false,"paused":true,"minute":35,"score":[7,3],"teams":[original.next.home,original.next.away],"pair":[original.next.home.id,original.next.away.id]}
+		var live_priority: Dictionary = Office.priorities(scenario)[0]
+		check(live_priority.id == "OfficeLivePriorityAction" and live_priority.action == "match","La projection pure conserve la carte et sa destination direct")
 		await render(scenario)
-		var live_action := app.find_child("OfficeLivePriorityAction",true,false) as Button
-		check(live_action != null,"Priorité direct raccordée")
-		if live_action != null:
-			live_action.grab_focus()
-			app.model.live.finished = true
-			Office.update_live_card(app)
-			check(live_action.text.contains("Consulter le résultat") and live_action.has_focus(),"Tick final : titre et focus actualisés sans reconstruction")
-			live_action.pressed.emit(); await settle()
-			check(app.route == "Match","Le résultat est consulté sans commande de validation")
+		var director: Node = app.contextual_director
+		check(app.route == "Match" and director.active() and director.kind == "live" and not app.root_content.is_visible_in_tree(),"Un direct impose sa vraie surface immersive au lieu d’un Bureau inaccessible")
+		var live_view: Control = director.view
+		app.model.live.finished = true
+		check(Office.priorities(app.model)[0].title == "Consulter le résultat","La projection pure actualise le titre au résultat")
+		director.sync()
+		check(director.view == live_view and live_view.clock.text == "TERMINÉ" and live_view.finish.visible,"Le résultat actualise les contrôles du direct sans reconstruction")
+		app._navigate("Bureau"); await settle()
+		check(app.route == "Match" and director.view == live_view,"La consultation du résultat respecte le verrou du directeur sans commande de validation")
 		scenario = original.duplicate(true)
 		scenario.clubLife.press.conference.required = false
 		scenario.meta.phase = "ended"

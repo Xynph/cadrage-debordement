@@ -20,7 +20,11 @@ test('Tous les clubs du Monde complet disposent de 40 pros ou plus', () => {
     return result.model;
   };
   try {
-    const created = request('new_career', { mode: 'world-champ', club: 103 });
+    // This reference-floor contract uses the unchanged current levels. Default
+    // variation, bounds and replay for every pool (including depth players) are
+    // covered by career-variation-worker.cjs across all native editions.
+    const created = request('new_career', { mode: 'world-champ', club: 103, varyCurrent: false });
+    assert.equal(created.meta.careerVariation.varyCurrent, false);
     const file = path.join(created.meta.dataDir, 'donnees.json');
     const state = readCareer(file);
     const all = state.clubs.flatMap(club => club.players);

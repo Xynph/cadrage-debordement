@@ -1,4 +1,5 @@
 extends SceneTree
+const Rooms = preload("res://qa_runner.gd")
 const G = preload("res://ui/game_skin.gd")
 const K = preload("res://ui/player_knowledge_text.gd")
 const Observation = preload("res://ui/player_observation.gd")
@@ -56,6 +57,7 @@ func run() -> void:
 	app=load("res://main.tscn").instantiate();root.add_child(app)
 	if not await ready_engine():await stop_failed();return
 	if not await ask("new_career",{"mode":"common","club":29}):await stop_failed();return
+	if not await Rooms.settle_club_meetings(app,self,check):await stop_failed();return
 	app.timer.stop()
 	var original: Dictionary=app.model.duplicate(true)
 	var canonical: bool=original.squad[0].get("knowledge") is Dictionary

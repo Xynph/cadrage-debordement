@@ -1,11 +1,12 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const root=fs.mkdtempSync('/tmp/cd-position-integration-'),start=performance.now();
 let bridge=createBridge({dataDir:root,seed:213,now:1700000000000}),id=0;
 const request=(command,payload={})=>{const r=bridge.handle({id:++id,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
 try{
- let model=request('new_career',{mode:'common',club:0});assert.equal(model.selection.valid,true);
+ let model=settleClubMeetings(request('new_career',{mode:'common',club:0}),request);assert.equal(model.selection.valid,true);
  assert.deepEqual(model.selection.slots.map(s=>s.positionNumber),[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,2,1,3,4,6,9,10,11]);
  const original=model.squad.map(p=>[p.id,p.rating,p.note,p.pos,p.fam]);
  const prop=model.squad.find(p=>p.id===model.lineup[0]),back=model.squad.find(p=>p.id===model.lineup[14]);

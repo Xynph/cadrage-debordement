@@ -85,9 +85,13 @@ test('projection cannot mutate even frozen roster, camps or calendar', () => {
 });
 
 test('native career exposes confirmed absence and actual release windows without changing the career or RNG', () => {
-  const player = {id:'lnr:hook',name:'Talonneur de recette',pos:'Talonneur',fam:1,age:29,rating:90,condition:100,injury:0};
+  const player = {id:'lnr:hook',name:'Talonneur de recette',pos:'Talonneur',fam:1,age:29,rating:90,condition:100,injury:0,
+    primaryPosition:2,primaryPositions:[2],secondaryPositions:[],positionRatings:{2:90},qualifiedFrontRowPositions:[2]};
   const ctx = vm.createContext({S:{club:0,clubs:[{id:0,players:[player]}],phase:'league',worldMode:{day:0}},
-    CDWorldCareer:{active:()=>true,calendarToday:()=> '2027-01-31',nextOpening:()=> '2027-08-16'},roleNote:p=>p.rating});
+    CDWorldCareer:{active:()=>true,calendarToday:()=> '2027-01-31',nextOpening:()=> '2027-08-16'},roleNote:p=>p.rating,
+    // Availability consumes the worker's published position contract; aptitude
+    // calculations are covered by their dedicated engine/integration suites.
+    nativePositionAptitudes:{project:p=>Object.fromEntries(['primaryPosition','primaryPositions','secondaryPositions','positionRatings','qualifiedFrontRowPositions'].map(key=>[key,p[key]]))}});
   const native = createNativeInternational(source=>vm.runInContext(source,ctx),ctx,
     {nations:{FRA:['France','fr']},players:{'lnr:hook':{seniorNation:'FRA',seniorCaps:5}}},true);
   native.initialize(42,{nationalRole:'dual',nation:'FRA'});

@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
@@ -65,7 +66,7 @@ for (const [mode, club] of [['common', 29], ['world-champ', 102]]) {
       fs.rmSync(dataDir, { recursive: true, force: true });
     });
 
-    const model = ok('new_career', { mode, club });
+    const model = settleClubMeetings(ok('new_career', { mode, club }), ok);
     const saved = archive();
     const document = JSON.parse(saved);
     const academy = document.state.development.academy;

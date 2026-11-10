@@ -69,6 +69,7 @@ test('Le remplacement depuis atelier protège la carrière et les refus ne crée
  f.good('restore_checkpoint',{id:copy.id,confirmed:true});
  assert.equal(f.good('export').meta.exportText,original,'Ancienne carrière entièrement restaurée');
  const restored=JSON.parse(f.bytes());assert.equal(restored.seed,disk.seed);assert.equal(restored.clock,disk.clock);
+ settleClubMeetings(f.good('snapshot'),(command,payload)=>f.good(command,payload));
  f.good('begin_match');const live=f.bytes(),entries=f.good('snapshot').meta.profileSafety.entries;
  assert.equal(f.send('new_career',payload()).ok,false,'Contexte match refuse remplacement');
  assert.deepEqual(f.bytes(),live);assert.deepEqual(f.good('snapshot').meta.profileSafety.entries,entries,'Match en cours : aucune copie créée');

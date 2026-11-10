@@ -127,8 +127,8 @@ function factory(){
   if(s?.staffCareer?.version!==1)return null;
   return s.staffCareer.people.flat().filter(p=>p.role==='scout'&&p.clubId===s.club&&number(p.level)&&p.contractEnd>=s.season).sort((a,b)=>b.level-a.level||(a.id<b.id?-1:a.id>b.id?1:0))[0]??null;
  }
- function scouting(s,p){
-  const job=(s?.playerKnowledge?.jobs||[]).find(j=>j.playerId===p.id&&j.status!=='done'),staff=scout(s),workCycles=job?.workCycles??(staff?.level>=70?1:2),context={season:s.season,week:week(s),club:s.club};
+ function scouting(s,p,staff=scout(s)){
+  const job=(s?.playerKnowledge?.jobs||[]).find(j=>j.playerId===p.id&&j.status!=='done'),workCycles=job?.workCycles??(staff?.level>=70?1:2),context={season:s.season,week:week(s),club:s.club};
   const reason=p.owned?'Les joueurs du club sont déjà suivis.':s?.national?.role?.club===false?'Observation réservée au manager d’un club.':s.live?'Observation indisponible pendant le match.':s.phase==='ended'?'Saison terminée.':job?'Observation en cours.':pending(s).length>=4?'Quatre missions sont déjà en attente.':(s.clubs[s.club]?.cash??0)<5000?'Trésorerie insuffisante (5 000 €).':'';
   return {available:!reason,reason,cost:5000,workCycles,workUnit:'week',sourceScoutId:job?job.sourceScoutId:staff?.id??null,sourceScoutLevel:job?job.sourceScoutLevel:staff?.level??null,pending:!!job,job:job?{id:job.id,status:job.status,remaining:job.remaining,remainingWeeks:job.remaining}:null,context};
  }
@@ -175,12 +175,12 @@ function factory(){
   });
  }
  function visibility(s){
-  const known=records(s),out=Object.create(null);
+  const known=records(s),out=Object.create(null),staff=scout(s);
   for(const p of players(s).values()){
    const r=known.get(p.id),owned=p.owned,stage=owned?'club':r?.stage??'unobserved';
    out[p.id]={rating:owned?p.rating:null,ratingRange:owned?null:r?.ratingRange??null,potential:null,
     potentialRange:owned?interval(p.potential,5,salt(s)+':'+p.id+':club:potential:'+p.potential):r?.potentialRange??null,
-    knowledge:{version:VERSION,owned,stage,observedAt:owned?null:r?{season:r.season,week:r.week,date:null}:null},scouting:scouting(s,p)};
+    knowledge:{version:VERSION,owned,stage,observedAt:owned?null:r?{season:r.season,week:r.week,date:null}:null},scouting:scouting(s,p,staff)};
   }
   for(const [pid,r]of known)if(!out[pid])out[pid]={rating:null,ratingRange:r.ratingRange,potential:null,potentialRange:r.potentialRange,knowledge:{version:VERSION,owned:false,stage:r.stage,observedAt:{season:r.season,week:r.week,date:null}}};
   return out;

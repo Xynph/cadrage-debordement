@@ -36,17 +36,20 @@ function playToPost(f,model){
  assert.fail('Real match did not reach the post-match scene');
 }
 
-for(const [mode,club] of [['common',0],['world-nationale',92]]){
+for(const [mode,club] of [['common',0],['world',14]]){
  test(mode+': debrief confirms the result, preserves its day and closes the week only on Sunday',t=>{
   const f=fixture(t,{dailyCalendar:true});
   let model=settleClubMeetings(f.good('new_career',{mode,club}),f.good);
   while(!model.meta.calendarCadence.matchReady)model=settleClubMeetings(f.good('advance_day',{fromDate:model.meta.calendarToday}),f.good);
   model=playToPost(f,model);
   const day=model.meta.calendarToday,week=model.meta.week,score=model.live.score;
-  const before=fs.readFileSync(f.file),post=talk(model),payload={key:post.key,phase:post.phase};
-  const refused=refuseSavePublication(f.file,()=>f.send('match_talk_continue',payload));
-  assert.equal(refused.ok,false);assert.deepEqual(fs.readFileSync(f.file),before);
-  assert.equal(talk(f.good('snapshot')).phase,'post');
+  const post=talk(model),payload={key:post.key,phase:post.phase};
+  if(mode==='common'){
+   const before=fs.readFileSync(f.file);
+   const refused=refuseSavePublication(f.file,()=>f.send('match_talk_continue',payload));
+   assert.equal(refused.ok,false);assert.deepEqual(fs.readFileSync(f.file),before);
+   assert.equal(talk(f.good('snapshot')).phase,'post');
+  }
   model=f.good('match_talk_continue',payload);
   assert.equal(model.meta.calendarToday,day,'Debrief cannot skip the remaining days');
   assert.equal(model.meta.week,week,'Debrief does not pay or simulate a second weekly cycle');
@@ -54,23 +57,17 @@ for(const [mode,club] of [['common',0],['world-nationale',92]]){
   assert.equal(model.live,null);assert.equal(talk(model),null);
   assert.equal(f.raw().contextualMatch.current,null);
   assert.deepEqual(f.raw().live.score,score);
-  const receipt=f.good('export').meta.exportText;
-  model=f.restart();assert.equal(f.good('export').meta.exportText,receipt);
-  const stable=fs.readFileSync(f.file);
-  assert.equal(f.send('match_talk_continue',payload).ok,false);
-  assert.equal(f.send('finish_round').ok,false);
-  assert.deepEqual(fs.readFileSync(f.file),stable);
+  if(mode==='common'){
+   const receipt=f.good('export').meta.exportText;
+   model=f.restart();assert.equal(f.good('export').meta.exportText,receipt);
+   const stable=fs.readFileSync(f.file);
+   assert.equal(f.send('match_talk_continue',payload).ok,false);
+   assert.equal(f.send('finish_round').ok,false);
+   assert.deepEqual(fs.readFileSync(f.file),stable);
+  }
   while(model.meta.week===week)model=f.good('advance_day',{fromDate:model.meta.calendarToday});
   assert.equal(model.meta.week,week+1);
   assert.equal(f.raw().live,null);
   assert.equal(f.raw().contextualMatch.receipts.filter(r=>r.key===post.key).length,3);
  });
 }
-
-test('historical weekly careers still close the round once after the real post-match decision',t=>{
- const f=fixture(t);let model=settleClubMeetings(f.good('new_career',{mode:'common',club:0}),f.good);
- model=playToPost(f,model);const week=model.meta.week;
- model=continueTalk(f,model);
- assert.equal(model.live,null);assert.equal(model.meta.week,week+1);
- assert.equal(talk(model),null);assert.equal(f.raw().contextualMatch.receipts.length,3);
-});

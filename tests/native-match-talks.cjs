@@ -65,6 +65,11 @@ function workerTests(){
  const bad=(command,payload={})=>{const out=b.handle({id:++seq,command,payload});assert.equal(out.ok,false,command+' should fail');return out;};
  const scene=()=>m.clubLife.matchTalks.scene;
  const exported=()=>good('export').meta.exportText;
+ const removeFixtureCopies=()=>{
+  // Every entry here belongs to this temporary test profile. Remove each
+  // explicitly through the public command between independent morale cases.
+  for(const entry of [...m.meta.profileSafety.entries])good('remove_checkpoint',{id:entry.id,confirmed:true});
+ };
  const continuation=s=>good('match_talk_continue',{key:s.key,phase:s.phase,skip:true});
  const decision=s=>({key:s.key,phase:s.phase,choiceId:s.options[0].id,audience:'group',playerIds:[]});
  const restart=()=>{b.close();b=createBridge({dataDir:root});good('snapshot');};
@@ -84,6 +89,7 @@ function workerTests(){
    good('match_talk_decide',decision(scene()));const d=scene().decision;
    assert.equal(d.moraleBefore,morale,'decision preserves the actual base-valid imported value');assert.ok(d.moraleAfter>=0&&d.moraleAfter<=100&&Math.abs(d.moraleAfter-morale)<=1);assert.equal(d.moraleDelta,d.moraleAfter-morale);
    const savedDecision=exported();good('import',{text:savedDecision});assert.equal(exported(),savedDecision,'fractional/boundary morale decisions validate on import');
+   removeFixtureCopies();
   }
   good('import',{text:before});
   good('match_talk_decide',decision(scene()));const decidedScene=clone(scene()),decided=exported();

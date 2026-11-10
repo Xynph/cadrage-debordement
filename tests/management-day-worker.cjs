@@ -6,6 +6,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {createBridge} = require('../native/engine/worker.cjs');
+const {settleClubMeetings} = require('./helpers/club-meetings.cjs');
+const {skipMatchTalk} = require('./helpers/scene-match-talks.cjs');
 
 function profile(t, dailyCalendar = true) {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'oval-management-day-'));
@@ -24,8 +26,10 @@ function profile(t, dailyCalendar = true) {
   }
   return {
     request, good,
+    settle(model) { return settleClubMeetings(model, good); },
     advance(model) {
-      return good('advance_day', {fromDate: model.meta.calendarToday});
+      const ready = settleClubMeetings(model, good);
+      return good('advance_day', {fromDate: ready.meta.calendarToday});
     },
     disk() {
       return JSON.parse(fs.readFileSync(path.join(dataDir, 'PrototypeGodot', 'donnees.json'), 'utf8'));
@@ -40,7 +44,7 @@ function profile(t, dailyCalendar = true) {
 
 test('le pas journalier conserve le calendrier, la semaine et le RNG entre deux jours', t => {
   const game = profile(t);
-  const start = game.good('new_career', {mode: 'world-champ', club: 102});
+  const start = game.settle(game.good('new_career', {mode: 'world-champ', club: 102}));
   assert.deepEqual(start.meta.calendarCadence, {day: 0, matchReady: false, canAdvance: true});
   assert.equal(start.meta.calendarToday, '2026-08-17');
   assert.equal(start.calendarPlanning.today, start.meta.calendarToday);
@@ -53,6 +57,7 @@ test('le pas journalier conserve le calendrier, la semaine et le RNG entre deux 
   assert.equal(after.calendarPlanning.today, after.meta.calendarToday);
   assert.equal(after.meta.week, start.meta.week);
   assert.equal(after.finance.cash, start.finance.cash);
+  assert.equal(after.meta.trained, start.meta.trained);
   assert.equal(game.disk().seed, opening.seed);
   assert.deepEqual(after.calendar, start.calendar);
   assert.equal(game.request('advance_day', {fromDate: start.meta.calendarToday}).ok, false);
@@ -66,7 +71,7 @@ test('le pas journalier conserve le calendrier, la semaine et le RNG entre deux 
 
 test('le jour du match bloque le calendrier et le résultat confirmé reste disponible le lendemain', t => {
   const game = profile(t);
-  let model = game.good('new_career', {mode: 'world-nationale', club: 92});
+  let model = game.settle(game.good('new_career', {mode: 'world-nationale', club: 92}));
   const first = model.calendar[0];
   assert.deepEqual(
     [first.date, first.kickoffLocal, first.home.id, first.away.id],
@@ -78,7 +83,9 @@ test('le jour du match bloque le calendrier et le résultat confirmé reste disp
   assert.equal(model.meta.calendarCadence.matchReady, true);
   assert.equal(model.meta.calendarCadence.canAdvance, false);
   assert.equal(game.request('advance_day', {fromDate: first.date}).ok, false);
-  game.good('begin_match');
+  const begun = game.good('begin_match');
+  assert.equal(begun.clubLife.matchTalks.scene.phase, 'pre');
+  skipMatchTalk(begun, game.good);
   assert.equal(game.request('advance_day', {fromDate: first.date}).ok, false);
   const played = game.good('delegate');
   const before = game.disk();
@@ -91,6 +98,10 @@ test('le jour du match bloque le calendrier et le résultat confirmé reste disp
   assert.equal(model.calendar[0].played, true);
   assert.deepEqual(model.calendar[0].score, played.live.score);
   assert.equal(game.disk().seed, before.seed);
+  const confirmed = JSON.parse(game.good('export').meta.exportText).state;
+  assert.equal(confirmed.live.finished, true, 'The shared confirmation preserves live evidence until the weekly close');
+  assert.deepEqual(confirmed.live.score, played.live.score);
+  assert.equal(confirmed.trained, true);
   assert.equal(game.request('finish_round').ok, false);
   assert.equal(game.restart().meta.calendarCadence.resultConfirmed, true);
   model = game.advance(model);
@@ -100,13 +111,15 @@ test('le jour du match bloque le calendrier et le résultat confirmé reste disp
   while (model.meta.calendarCadence.resultConfirmed) model = game.advance(model);
   assert.equal(model.meta.calendarToday, '2026-08-24');
   const saved = JSON.parse(game.good('export').meta.exportText).state;
+  assert.equal(saved.live, null);
+  assert.equal(saved.trained, false);
   assert.equal(saved.history.filter(row => row.fixtureId === first.id).length, 1);
   assert.deepEqual(saved.history.find(row => row.fixtureId === first.id).score, played.live.score);
 });
 
 test('la reprise d’une ancienne sauvegarde garde son calendrier et sa date de match', t => {
   const game = profile(t, false);
-  const legacy = game.good('new_career', {mode: 'world', club: 0});
+  const legacy = game.settle(game.good('new_career', {mode: 'world', club: 0}));
   assert.equal(legacy.meta.calendarCadence, undefined);
   const stored = game.disk();
   const upgraded = game.restart({dailyCalendar: true});

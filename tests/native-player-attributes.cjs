@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -29,6 +30,7 @@ for (const mode of ['common', 'world-champ', 'fiction']) {
 
     try {
       const created = request('new_career', { mode, club: 0 });
+      if (mode === 'fiction') settleClubMeetings(created, request);
       const file = path.join(created.meta.dataDir, 'donnees.json');
       const before = fs.readFileSync(file);
       const saved = JSON.parse(JSON.parse(before).store['bdt-v1']);

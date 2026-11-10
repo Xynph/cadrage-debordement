@@ -34,19 +34,19 @@ Files: branche integration/oval-cloud-complet-20261110 ; docs/integration-cloud-
 Consumes: main5c19a27 ; Cloudde8c070 ; salles/staffb0421b7 ; Gabia9963e6, références complètes dans la réception finale.
 Produces: un HEAD cumulatif, une PR réservée versmain et un inventaire des PR reprises.
 
-- [ ] Publier le plan et la PR de réservation, indiquant explicitement les recouvrements.
-- [ ] Recevoir Cloud, salles/staff et Gabi ; résoudre chaque conflit en conservant les deux contrats utiles.
+- [x] Publier le plan et la PR de réservation, indiquant explicitement les recouvrements.
+- [x] Recevoir Cloud, salles/staff et Gabi ; résoudre chaque conflit en conservant les deux contrats utiles.
 - [ ] Vérifier syntaxe des scripts modifiés, imports Godot et compilation déterministe des catalogues.
-- [ ] Consigner les choix de résolution et committer la source cumulative.
+- [x] Consigner les choix de résolution et committer la source cumulative.
 
 ## Task2 — Vérifier les raccords métier et les anciennes carrières
 
 Files: native/engine/worker.cjs, native/engine/match-talks.cjs, tests/integration-cloud-complete.cjs et harness concernés selon conflit réel.
 Consumes: source cumulative ; produit: parcours publics cohérents et sauvegardes restaurables.
 
-- [ ] Reproduire les défauts22 joueurs/calendrier quotidien par les vrais chemins moteur avant correction.
-- [ ] Corriger seulement les raccords confirmés et vérifier les non-régressions associées.
-- [ ] Parcourir une ancienne sauvegarde, une nouvelle partie, plusieurs semaines et une intersaison avec reprise.
+- [x] Reproduire les défauts22 joueurs/calendrier quotidien par les vrais chemins moteur avant correction.
+- [x] Corriger seulement les raccords confirmés et vérifier les non-régressions associées.
+- [x] Parcourir une ancienne sauvegarde, une nouvelle partie, plusieurs semaines et une intersaison avec reprise.
 - [ ] Exécuter la CI JavaScript complète des cinq shards sur le HEAD exact et résoudre tous les échecs bloquants.
 
 ## Task3 — Recevoir l’interface et la revue indépendante
@@ -57,7 +57,7 @@ Consumes: même HEAD cumulatif ; produit: captures réelles1440 et revue des rac
 - [ ] Stage Godot et réception des parcours Bureau, Effectif/Contrats, Tactique, Recrutement, Calendrier, sauvegardes, scènes et Gabi.
 - [ ] Vérifier tris, listes complètes et défilement interne ; aucune qualité adverse exacte révélée.
 - [ ] Publier des captures réelles représentatives ; aucun export privé de carrière dans GitHub.
-- [ ] Faire relire le diff d’intégration par un agent indépendant ; traiter les constats importants avec reproduction et tests.
+- [x] Faire relire le diff d’intégration par un agent indépendant ; traiter les constats importants avec reproduction et tests.
 
 ## Task4 — Intégrer et transmettre
 

@@ -43,7 +43,7 @@ function safeTree(root){
  const knowledge=root?.playerKnowledge,knowledgeBudget=knowledge!==undefined&&typeof nativeKnowledgeValidate==='function';
  if(knowledgeBudget)nativeKnowledgeValidate(root);
  const evolution=root?.potentialEvolution,evolutionBudget=evolution!==undefined&&typeof nativePotentialEvolutionValidate==='function';
- if(evolution!==undefined||root.live?.potentialEvidence!==undefined){saveCheck(typeof nativePotentialEvolutionValidate==='function','Le suivi du potentiel est indisponible.');nativePotentialEvolutionValidate(root);}
+ if(evolution!==undefined||root?.live?.potentialEvidence!==undefined){saveCheck(typeof nativePotentialEvolutionValidate==='function','Le suivi du potentiel est indisponible.');nativePotentialEvolutionValidate(root);}
  const check=saveCheck,number=saveNumber,object=saveObject,isArray=Array.isArray;
  let count=0,knowledgeCount=0,evolutionCount=0;
  function visit(v,depth,inKnowledge=false,inEvolution=false){

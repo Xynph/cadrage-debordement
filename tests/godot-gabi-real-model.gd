@@ -1,4 +1,5 @@
 extends SceneTree
+const Rooms = preload("res://qa_runner.gd")
 
 var app: Control
 var checks := 0
@@ -23,7 +24,9 @@ func pose(skeleton: Skeleton3D) -> Array[Transform3D]:
 	return result
 
 func run() -> void:
-	root.size = Vector2i(1920, 1080)
+	var dimensions_to_check := [Vector2i(1920, 1080), Vector2i(2560, 1440)]
+	if OS.get_environment("QA_RESOLUTION") == "2560x1440": dimensions_to_check = [Vector2i(2560, 1440)]
+	root.size = dimensions_to_check[0]
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
 	var deadline := Time.get_ticks_msec() + 90000
@@ -42,6 +45,7 @@ func run() -> void:
 	if app.waiting or not app.bridge.last_response_ok:
 		await app._close(1)
 		return
+	if not await Rooms.settle_club_meetings(app, self, check): await app._close(1); return
 	app._navigate("Bureau")
 	await settle()
 	var coach: Control = app.coach
@@ -70,7 +74,7 @@ func run() -> void:
 		player.seek(player.get_animation(clip).length * 0.45, true)
 		check(pose(skeleton) != first, "Le clip déforme réellement le rig : " + clip)
 	check(player.get_animation("Repos").loop_mode == Animation.LOOP_LINEAR, "Repos en boucle")
-	for dimensions in [Vector2i(1920, 1080), Vector2i(2560, 1440)]:
+	for dimensions in dimensions_to_check:
 		root.size = dimensions
 		if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(dimensions)
 		coach.close()
@@ -84,6 +88,7 @@ func run() -> void:
 		key.keycode = KEY_F1
 		Input.parse_input_event(key)
 		await settle()
+		if OS.get_environment("QA_RESOLUTION") == "2560x1440": check(root.size == dimensions, "Client réel exclusivement 2560 × 1440")
 		check(coach.expanded, "F1 ouvre le guide à " + str(dimensions))
 		check(not coach.speech.speaking and coach.speech.player == null, "F1 conserve le silence")
 		portrait.set_reduced_motion(false)

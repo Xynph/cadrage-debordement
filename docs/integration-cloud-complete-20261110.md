@@ -1,4 +1,4 @@
-# Réception cumulative Oval Legacy —10novembre2026
+# Réception cumulative Oval Legacy — 10 novembre 2026
 
 ## Autorisation et source
 
@@ -21,7 +21,7 @@ Audit indépendant des ancêtres, patch-id et différences sémantiques :
 - Aucun patch produit unique restant :509,511–515,517–519,521–523,526,528,530,532,533,536.
 - 524 : de67920→b44da21 et8901a6c→f5bea34 ne diffèrent que par le raccord de présentation salariale. Tri, défilement et rapports non datés conservés.
 - 531 : produit repris ; réservation documentaire et ancienne réception enrichies ensuite par la réception canonique.
-- 516 : produit repris ; récupérer sa passation `docs/reception-decisions-20261110.md` de bafb81989407010e5adc68ca7816b67e96f56833.
+- 516 : produit repris ; passation récupérée `docs/reception-decisions-20261110.md` de bafb81989407010e5adc68ca7816b67e96f56833.
 - 534 :3eb3e0e→e7de6d0 est identique ;670bd9b hors règle AGENTS→3f84ba8 a le même patch-id. La règle est conservée puis étendue par527.
 - 525 et537 sont déjà fusionnées.527 et GabiV2 contiennent de vrais ajouts absents de538.
 
@@ -34,8 +34,39 @@ Après reçu main et CI post-fusion vérifiés, les PR505–524,526–536 et538 
 - Une vraie feuille légale de22 reste compatible avec les causeries ; les numéros du banc conservent leur place réelle malgré la place vide17 ou18.
 - Conserver l’écran de match contextuel PC avec le Journal, les statuts, motifs et focus du banc Cloud ; ne pas laisser les deux parcours diverger.
 - Reprendre les textes naturels PC avec les coûts, risques, inconnues et erreurs utiles ; ne pas restaurer les badges de provenance dans les menus.
-- CI : conserver les cinq shards, la limite globale30minutes Cloud et les marges ciblées mesurées PC ; garder la marge délégation300s déjà nécessaire au cumul Cloud. Aucun test n’est retiré pour obtenir un verdict vert.
+- CI : conserver les cinq shards et toutes les suites découvertes. Après les dépassements du run42891746395 et les campagnes locales complètes, recalibrer les poids de planification et les délais finis de chaque campagne. Les nouvelles réserves provisoires sont distinguées des durées mesurées ; aucune erreur ni expiration ne devient un succès.
+
+## Corrections de réception
+
+- Un mandat exclusivement national ne reçoit plus de rendez-vous du club. Les anciennes files restent lisibles sans mutation, les reçus sont conservés et les obligations expirent à la prochaine mutation acceptée.
+- La salle de presse transmet l’identifiant réel de son invitation. Le règlement de toutes les salles dans les fixtures passe par les mêmes commandes publiques que le jeu.
+- Le renfort des effectifs mesure la couverture par spécialistes, avec les qualifications strictes de première ligne. L’aptitude de dépannage hors poste ne suffit plus à considérer chaque poste couvert.
+- Les politiques de progression v2 décident sur le niveau visible et la borne basse de la fourchette de potentiel, sans accéder au potentiel caché. Les archives v1 conservent leur méthode historique.
+- La validation des sauvegardes rejette à nouveau une racine nulle dans l’ordre historique, sans accès prématuré à `live`.
+- La connaissance calcule le recruteur une fois par projection. Le worker ne répète plus son filtre final après chaque projection intermédiaire ; les modèles bruts restent privés et tous les chemins publics terminent par la frontière de connaissance.
+
+Les fixtures historiques ont été raccordées aux rendez-vous, causeries, qualifications et fourchettes actuels. Les cas de confirmation hebdomadaire redondants de la suite cumulative restent couverts dans les suites contextuelles et causeries. Aucun fichier de suite n’est exclu de la découverte CI.
+
+## Vérifications locales obtenues
+
+Les vérifications suivantes utilisent Node22.23.4 et des profils jetables hors du projet. Elles ne constituent pas encore un verdict global GitHub.
+
+| Périmètre | Résultat constaté |
+| --- | --- |
+| Parité worker/moteur direct | État/RNG, délégation, refus atomiques, reprises et protocole JSON-lines passent |
+| Calendrier et résultat | Deux scénarios cumulatifs common/Monde passent ; 11 contrôles de suites quotidiennes passent sans skip |
+| Feuille légale de22 | Parcours réel complet avec numéros de banc, causeries et reprises : PASS237,6s |
+| Mandat national | 4/4 : création, ancienne file, changement de mandat, reprise et octets du profil |
+| Connaissance/variation pures | 28/28 ; filtre public worker et rapports payants également rejoués |
+| Sécurité et compatibilité | Sauvegardes hostiles/hot paths, copies, rollback disque et attributs rejoués |
+| Renouvellements v2 | 9/9 avec invitations presse ; politique vérifiée contre des getters cachés qui lèvent une erreur |
+| Population, postes et prêts | Profondeur, groupes académie, éditions Monde, benchmark, feuille fiction, effectifs communs, prêts/retours et import/reprise passent |
+| Support saison complète | 34semaines,31matchs,90rendez-vous,8contrôles de pureté,9reprises et intersaison : PASS625,906s |
+| Optimisations de lecture | Même carrière, tous les stores, RNG3508888936 et horloge1700000000000 que le témoin940,652s ; gain combiné33,46% |
+| Revue indépendante | Aucun nouveau constat Critical/Important dans les corrections examinées ; réception SDK et CI globale restent des préconditions séparées |
+
+Les poids CI sont des réserves de planification, pas un compte rendu de performance GitHub. La campagne support a réellement dépassé son ancien cap240s. Le nouveau plafond global60minutes garde un délai fini par suite et le verdict bloquant sur toute erreur ou expiration. Les limites de sécurité de la VM restent inchangées.
 
 ## État de la réception
 
-En cours : fusion et corrections des raccords. Aucun succès global ni intégration main n’est encore revendiqué. Les commandes, résultats exacts, captures et reçus seront consignés ici avant livraison.
+En cours : réception Godot réelle2560×1440 et campagnes restantes, puis CI complète sur la tête finale. Aucun succès global ni intégration main n’est encore revendiqué. Le reçu du portail officiel et les sept jobs post-fusion seront consignés dans la description de la PR539 après leur vérification.

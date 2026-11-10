@@ -1,11 +1,12 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs');
 const {createBridge}=require('../native/engine/worker.cjs');
 for(const [mode,club] of [['world-japan',68],['world-nationale',88]]){
  const root=fs.mkdtempSync('/tmp/cd-position-edition-'),start=performance.now(),bridge=createBridge({dataDir:root,seed:213,now:1700000000000});let id=0;
  const request=(command,payload={})=>{const r=bridge.handle({id:++id,command,payload});assert.equal(r.ok,true,mode+' '+command+': '+r.error);return r.model;};
  try {
-  let model=request('new_career',{mode,club});model=request('auto_lineup');
+  let model=settleClubMeetings(request('new_career',{mode,club}),request);model=request('auto_lineup');
   assert.equal(model.club.id,club);assert.equal(model.selection.valid,true,model.selection.errors.join(';'));
   const all=[...model.lineup,...model.reserves];assert.equal(new Set(all).size,23);
   for(const slot of [0,1,2,15,16,17]){

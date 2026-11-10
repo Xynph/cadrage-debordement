@@ -175,7 +175,7 @@ function createBridge(options={}){
     if(calendar)S.franceCalendar={day:calendar.calendarCadence.day};
    }
    const nativeConfirmMatchResult=(${confirmMatchResult.toString()});`);
-  try{run("if(loadSaveFailure)throw Error(loadSaveFailure);if(S){validateCareer(S);if(S.lnrMode)throw Error('Les effectifs réels ne sont pas chargés dans le moteur natif.');if(normalizeAcademyPotential(S))validateCareer(S);nativeProfessionalDepth.fill(S);nativeAttributeStore.complete(S);if(S.live&&!S.live.finished)S.live.paused=true;nativeSystems.domain('press').observeInvitation();}");validateCalendarState(calendarState());}catch(e){profileError='Profil illisible : '+e.message;run('S=null;');}
+  try{run("if(loadSaveFailure)throw Error(loadSaveFailure);if(S){validateCareer(S);if(S.lnrMode)throw Error('Les effectifs réels ne sont pas chargés dans le moteur natif.');if(normalizeAcademyPotential(S))validateCareer(S);nativeProfessionalDepth.fill(S);nativeAttributeStore.complete(S);if(S.live&&!S.live.finished)S.live.paused=true;if(S.national?.role?.club!==false)nativeSystems.domain('press').observeInvitation();}");validateCalendarState(calendarState());}catch(e){profileError='Profil illisible : '+e.message;run('S=null;');}
   const national=makeNational(run,ctx,nationalFacts,options.internationalCareer===true);
   const updatePressPolicy=()=>{ctx.nativeMandatoryPress=options.mandatoryPress===true&&!national.isNationalOnly();};
   try{if(options.dailyCalendar)run('nativeEnableDailyCalendar()');national.initialize(seed);updatePressPolicy();}
@@ -248,7 +248,10 @@ function createBridge(options={}){
    for(const p of model.squad||[])if(p.knowledge?.owned&&trends[p.id])p.potentialDevelopment=trends[p.id];
    return model;
   };
-  const snapshot=operation=>{updatePressPolicy();const m=JSON.parse(run('JSON.stringify(nativeModel())'));projectFranceCalendar(m);m.decisions=JSON.parse(run('JSON.stringify(nativeDecisions())'));if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...JSON.parse(run('JSON.stringify(nativeKnowledge.reports(S))')));m.clubLife=JSON.parse(run('JSON.stringify(nativeSystems.project())'));national.project(m);m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);return projectKnowledge(result);};
+  const snapshotRaw=operation=>{updatePressPolicy();const m=JSON.parse(run('JSON.stringify(nativeModel())'));projectFranceCalendar(m);m.decisions=JSON.parse(run('JSON.stringify(nativeDecisions())'));if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...JSON.parse(run('JSON.stringify(nativeKnowledge.reports(S))')));m.clubLife=JSON.parse(run('JSON.stringify(nativeSystems.project())'));national.project(m);m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();m.meta.academyGroupPolicy=run('S?.academyGroupPolicy??0');m.meta.careerVariation=JSON.parse(run('JSON.stringify(S?.careerVariation??null)'));const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);return result;};
+  // Raw models stay private; every protocol path still applies the final
+  // knowledge boundary after attaching receipts, previews or export metadata.
+  const snapshot=operation=>projectKnowledge(snapshotRaw(operation));
   const backup=path.join(dataDir,'donnees-precedentes.json');
   let committedFiles='';
   const profileFilesVersion=()=>{
@@ -295,14 +298,14 @@ function createBridge(options={}){
     if(command==='snapshot')return {id,ok:true,model:snapshot()};
     if(command==='recover_profile'){if(!profileError)throw Error('Aucun profil à récupérer.');if(payload.confirmed!==true)throw Error('Confirmation requise pour préserver puis remplacer le profil illisible.');const backup=path.join(dataDir,'donnees-endommagees-'+randomUUID()+'.json');fs.copyFileSync(file,backup,fs.constants.COPYFILE_EXCL);recoveryBackup=backup;profileError='';store={};run('S=null;loadSaveFailure="";lastSaveError=false;');return {id,ok:true,model:snapshot()};}
     if(profileError&&!['snapshot','shutdown'].includes(command))throw Error(profileError+' Confirmez la récupération du profil.');
-    if(command==='competition_editor_preview'){const model=snapshot();model.competitionEditor=competitionEditor.project(payload);return {id,ok:true,model:projectKnowledge(model)};}
-    if(command==='epcr_preview'){const model=snapshot();model.epcrPreparation=epcrPreparation.project(model,payload);return {id,ok:true,model:projectKnowledge(model)};}
+    if(command==='competition_editor_preview'){const model=snapshotRaw();model.competitionEditor=competitionEditor.project(payload);return {id,ok:true,model:projectKnowledge(model)};}
+    if(command==='epcr_preview'){const model=snapshotRaw();model.epcrPreparation=epcrPreparation.project(model,payload);return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='pack_inspect'){packs.inspect(payload.path,edition(payload.mode??currentEdition()));return {id,ok:true,model:snapshot()};}
     if(command==='pack_install'){packs.install(payload.path,payload.digest,payload.mode===undefined?undefined:edition(payload.mode));return {id,ok:true,model:snapshot()};}
     if(command==='pack_select'&&payload.scope==='creation'){const mode=payload.mode??'common',databaseId=edition(mode),key=creationKey(mode),selected=payload.id==='base'?null:packs.get(payload.id);if(payload.id!=='base'&&!selected)throw Error('Pack non installé.');if(selected&&selected.meta.databaseId!==databaseId)throw Error('Pack incompatible avec cette édition.');const prior=store[key];try{store[key]=payload.id;persist();}catch(e){if(prior===undefined)delete store[key];else store[key]=prior;throw e;}return {id,ok:true,model:snapshot()};}
-    if(command==='export'){const model=snapshot();model.meta.exportText=run('JSON.stringify(createSaveDocument())');return {id,ok:true,model:projectKnowledge(model)};}
-    if(command==='shutdown'){const model=snapshot();close();return {id,ok:true,model:projectKnowledge(model)};}
-    if(command==='remove_checkpoint'){const receipt=profileSafety.remove(payload.id,payload.confirmed);const model=snapshot();model.meta.profileSafetyReceipt=receipt;return {id,ok:true,model:projectKnowledge(model)};}
+    if(command==='export'){const model=snapshotRaw();model.meta.exportText=run('JSON.stringify(createSaveDocument())');return {id,ok:true,model:projectKnowledge(model)};}
+    if(command==='shutdown'){const model=snapshotRaw();close();return {id,ok:true,model:projectKnowledge(model)};}
+    if(command==='remove_checkpoint'){const receipt=profileSafety.remove(payload.id,payload.confirmed);const model=snapshotRaw();model.meta.profileSafetyReceipt=receipt;return {id,ok:true,model:projectKnowledge(model)};}
     if(command==='restore_checkpoint'){if(payload.confirmed!==true)throw Error('Confirmation explicite requise pour reprendre cette copie.');restoring=profileSafety.load(payload.id);command='import';payload={...payload,text:restoring.text};}
     const advancesCareer=PRESS_PROGRESSION.has(command)||command==='match_talk_continue'&&payload.phase==='post';
     updatePressPolicy();
@@ -324,7 +327,7 @@ function createBridge(options={}){
       ctx.nativeCommand=command;
       const extra=command==='academy_groups_preview'?{academyGroups:run('CDNativeAcademyGroups.preview(S)')}:run('nativeSystems.execute(nativeCommand,nativePayload)');
       if(run('JSON.stringify(S)')!==JSON.stringify(JSON.parse(prior).state)||seed!==priorSeed||JSON.stringify(store)!==priorStore)throw Error('Une consultation ne peut pas modifier la carrière.');
-      const model=snapshot();Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));return {id,ok:true,model:projectKnowledge(model)};
+      const model=snapshotRaw();Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));return {id,ok:true,model:projectKnowledge(model)};
      }
      ctx.nativeKnowledgeBefore=run('nativeKnowledge.before(S)');ctx.nativeKnowledgeCommand=command;
      if(!restoring&&options.now===undefined)clock=Date.now();
@@ -467,7 +470,7 @@ function createBridge(options={}){
      run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);nativeSystems.domain('clubMeetings').observe(nativeCommand,nativePayload);");
      if(advancesWithinWeek)run('save()');
      else run('nativeProfessionalDepth.fill(S);nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');save();validateCareer(S)');
-     const model=snapshot({command,payload});if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
+     const model=snapshotRaw({command,payload});if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
      // Advancing the presentation cursor can leave both the career and RNG
      // untouched. Keep the previous durable revision and its recovery copy.
      if(command==='tick'&&committedFiles&&seed===priorSeed&&JSON.stringify(store)===priorStore&&profileFilesVersion()===committedFiles)clock=priorClock;

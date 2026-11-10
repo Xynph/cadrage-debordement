@@ -41,9 +41,10 @@ function leaveVacant(state,players,index){
 }
 function rejectWithoutWrite(b,dir,payload){
  const before=fs.readFileSync(savePath(dir));
- assert.equal(issue(b,'begin_match',payload).ok,false);
+ const refused=issue(b,'begin_match',payload);
+ assert.equal(refused.ok,false);
  assert.deepEqual(fs.readFileSync(savePath(dir)),before);
- assert.equal(good(b,'snapshot').live,null);
+ assert.equal(refused.model.live,null);
 }
 
 try{

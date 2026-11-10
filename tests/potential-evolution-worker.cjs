@@ -1,11 +1,12 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
 test('real training and completed match persist development evidence without revealing ceilings',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'oval-potential-worker-'));let bridge=createBridge({dataDir:root,seed:917,now:1794310000000}),serial=0;
  t.after(()=>{bridge.close();fs.rmSync(root,{recursive:true,force:true});});
  const go=(command,payload={})=>{const r=bridge.handle({id:++serial,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
- let model=go('new_career',{mode:'common',club:0}),file=path.join(model.meta.dataDir,'donnees.json');
+ let model=settleClubMeetings(go('new_career',{mode:'common',club:0}),go),file=path.join(model.meta.dataDir,'donnees.json');
  const raw=()=>JSON.parse(JSON.parse(fs.readFileSync(file)).store['bdt-v1']);
  const first=fs.readFileSync(file);go('snapshot');assert.deepEqual(fs.readFileSync(file),first);assert.equal(raw().potentialEvolution,undefined);
  const source=raw().clubs[0].players.find(p=>p.lnrRatingsVersion===1&&p.age<=22&&p.dev.potential>=p.rating+2);assert.ok(source);

@@ -34,6 +34,22 @@ func ask(command: String, payload: Dictionary = {}, refusal: bool = false) -> vo
 	app._command(command, payload)
 	await wait_command(command, refusal)
 
+# Same public daily progression as the guide/preferences receptions, with the
+# actual mandatory rooms completed at each accepted progression boundary.
+func prepare_match_day() -> bool:
+	for day in 40:
+		if not await ContextualFlow.settle_club_meetings(app, self, check): return false
+		var cadence: Dictionary = app.model.meta.get("calendarCadence", {})
+		if cadence.is_empty() or cadence.get("matchReady", false):
+			check(app.model.get("next") is Dictionary, "Actual fixture exists on the permitted kickoff day")
+			return app.model.get("next") is Dictionary
+		check(cadence.get("canAdvance", false), "Actual calendar permits the next preparation day")
+		if not cadence.get("canAdvance", false): return false
+		await ask("advance_day", {"fromDate":app.model.meta.calendarToday})
+		if not app.bridge.last_response_ok: return false
+	check(false, "Actual calendar reaches kickoff within forty preparation days")
+	return false
+
 func talk() -> Dictionary:
 	var value: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 	return value if value is Dictionary else {}
@@ -199,7 +215,9 @@ func run() -> void:
 	root.size = Vector2i(1280,720)
 	await ask("export")
 	check(app.model.meta.exportText == prior, "Observing preparation gives no training or morale gain")
+	if not await prepare_match_day(): await finish(); return
 	await ask("train")
+	if not await ContextualFlow.settle_club_meetings(app, self, check): await finish(); return
 	await ask("auto_lineup")
 	await ask("begin_match")
 	for resolution in [Vector2i(1280,720),Vector2i(1600,900)]:
@@ -270,10 +288,19 @@ func run() -> void:
 	immersive_check("locker")
 	check(director.error_label.is_visible_in_tree(), "Cannot bypass debrief with global finish")
 	await capture("post")
+	var match_day: String = app.model.meta.calendarToday
+	var match_week: int = app.model.meta.week
 	director.view._continue(true)
 	await wait_command("match_talk_continue")
-	check(app.model.live == null and not director.active(), "Post-match continue commits round and leaves immersion")
+	check(app.model.live == null and not director.active(), "Post-match continue confirms the result and leaves immersion")
+	check(app.model.meta.calendarToday == match_day and int(app.model.meta.week) == match_week and app.model.meta.calendarCadence.get("resultConfirmed", false), "Debrief confirms the actual result without skipping remaining days")
 	check(app.root_content.is_visible_in_tree(), "Management returns after final match validation")
+	for day in 7:
+		if int(app.model.meta.week) != match_week: break
+		await ask("advance_day", {"fromDate":app.model.meta.calendarToday})
+		if not await ContextualFlow.settle_club_meetings(app, self, check): await finish(); return
+	check(int(app.model.meta.week) == match_week + 1 and app.model.live == null, "The actual remaining days close exactly one match week")
+	check(not director.active() and app.root_content.is_visible_in_tree(), "Management remains accessible after real weekly closure and meetings")
 	await finish()
 
 func finish() -> void:

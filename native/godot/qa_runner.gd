@@ -42,6 +42,7 @@ static func settle_club_meetings(application: Control, tree: SceneTree, verify: 
 					answers.append({"questionId":question.id,"answerId":offered[0].id})
 				command = "press_conference"
 				payload = {"context":press.context,"answers":answers}
+				if press.conference.get("invitationId") is String: payload.invitationId = press.conference.invitationId
 			elif scene.get("ackAllowed", false):
 				command = "club_meeting_ack"
 				payload = {"meetingId":scene.id}

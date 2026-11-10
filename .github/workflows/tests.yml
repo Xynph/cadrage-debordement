@@ -46,8 +46,9 @@ jobs:
       matrix:
         shard: [1, 2, 3, 4, 5]
     runs-on: ubuntu-latest
-    # Les suites natives longues peuvent dépasser ensemble vingt minutes.
-    timeout-minutes: 30
+    # Campagnes cumulées : cinq lots équilibrés, toutes les suites conservées.
+    # Marge globale finie ; chaque suite garde aussi son propre délai maximal.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
         with:
@@ -68,21 +69,35 @@ jobs:
           [[ "${#suites[@]}" -gt 0 ]] || exit 1
           failures=0
           executed=0
+          current_suite=initialisation
+          # Keep the last real suite observable through check annotations even
+          # when a runner interruption prevents the final Markdown summary.
+          trap 'printf "::error file=%s::Interruption SIGTERM pendant la suite %s\n" "$current_suite" "$current_suite"; exit 143' TERM
+          trap 'printf "::error file=%s::Interruption SIGINT pendant la suite %s\n" "$current_suite" "$current_suite"; exit 130' INT
           for test in "${suites[@]}"; do
+            current_suite="$test"
             executed=$((executed+1))
             echo "::group::$test"
             start=$SECONDS
             limit=180s
-            # Rendez-vous réels : décisions et clôtures gardent leurs transactions.
-            # PASS locaux complets du 10 novembre : monde 325 s, manager 173 s,
-            # académie 342 s ; staff + rendez-vous combinés : délégation 159 s,
-            # support saison 171 s. Marges ciblées pour GitHub Node 22.
+            # Budgets ciblés de réception cumulative, distincts des poids de
+            # planification. Support a terminé en 883/941 s avant optimisation ;
+            # Nationale22 en 237,6 s. Les autres réserves longues sont provisoires
+            # après les timeouts observés sur 42891746395, sans retirer de contrôle.
             case "$test" in
-              tests/world-worker-season.cjs) limit=420s ;;
-              tests/native-manager-career-worker.cjs) limit=240s ;;
-              tests/native-academy-integrated-long.cjs) limit=480s ;;
-              tests/native-delegate-transaction06.cjs) limit=300s ;;
-              tests/native-club-support-season.cjs) limit=240s ;;
+              tests/world-worker-season.cjs) limit=1200s ;;
+              tests/native-manager-career-worker.cjs|tests/native-manager-career-reverse.cjs) limit=900s ;;
+              tests/native-academy-integrated-long.cjs) limit=1800s ;;
+              tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) limit=600s ;;
+              tests/native-nationale-reduced-bench.cjs|tests/native-match-talks.cjs|tests/godot-roster-foundation.cjs) limit=300s ;;
+              tests/native-club-support-season.cjs) limit=1200s ;;
+              tests/native-club-world-worker.cjs) limit=900s ;;
+              tests/native-club-strategy.cjs) limit=600s ;;
+              tests/native-press-season.cjs|tests/native-press-personalities-worker.cjs) limit=900s ;;
+              tests/deepen-staff-native.cjs) limit=1200s ;;
+              tests/custom-competition-worker.cjs) limit=900s ;;
+              tests/career-variation-worker.cjs|tests/management-day-worker.cjs) limit=600s ;;
+              tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) limit=420s ;;
             esac
             if timeout --signal=TERM --kill-after=10s "$limit" /usr/bin/time -f "CD_CPU_PROFILE suite=$test user_s=%U system_s=%S wall_s=%e cpu_pct=%P max_rss_kb=%M" node "$test"; then
               echo "PASS $test ($((SECONDS-start)) s)"

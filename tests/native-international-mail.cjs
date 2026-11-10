@@ -5,7 +5,8 @@ const test = require('node:test');
 const vm = require('node:vm');
 const createNativeInternational = require('../native/engine/international-native.cjs');
 
-const player = { id: 'lnr:hook', name: 'Joueur de référence', pos: 'Talonneur', fam: 1, age: 29, rating: 85, condition: 100, injury: 0 };
+const player = { id: 'lnr:hook', name: 'Joueur de référence', pos: 'Talonneur', fam: 1, age: 29, rating: 85, condition: 100, injury: 0,
+ primaryPosition: 2, primaryPositions: [2], secondaryPositions: [], positionRatings: {2:85}, qualifiedFrontRowPositions: [2] };
 const facts = { nations: { FRA: ['France', 'fr'] }, players: { [player.id]: { seniorNation: 'FRA', seniorCaps: 5 } } };
 const dateAfter = date => new Date(Date.parse(date) + 86400000).toISOString().slice(0, 10);
 
@@ -14,6 +15,9 @@ function bridge({ date = '2027-01-30', opening = '2027-08-16', phase = 'league',
   S: { club: 0, clubs: [{ id: 0, players: [player] }], phase, worldMode: { day: 0 }, ...(profile ? { national: profile } : {}) },
   CDWorldCareer: { active: () => true, calendarToday: () => date, nextOpening: () => opening },
   roleNote: p => p.rating,
+  // This mail unit fixture supplies the same published position contract as
+  // the full worker; aptitude calculations have their own engine suites.
+  nativePositionAptitudes: { project: p => Object.fromEntries(['primaryPosition','primaryPositions','secondaryPositions','positionRatings','qualifiedFrontRowPositions'].map(key=>[key,p[key]])) },
  });
  const international = createNativeInternational(source => vm.runInContext(source, ctx), ctx, facts, true);
  international.initialize(42, { nationalRole: 'dual', nation: 'FRA' });

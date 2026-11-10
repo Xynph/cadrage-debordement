@@ -9,7 +9,7 @@
 // Rejeu des trois anciens profils : aucun pic supérieur au plan précédent.
 const fs = require('node:fs');
 const path = require('node:path');
-const WEIGHTS_SECONDS = Object.freeze({
+const HISTORICAL_WEIGHTS_SECONDS = Object.freeze({
   // Rendez-vous obligatoires : PASS locaux du 10 novembre 2026 (Node 24),
   // parcours complets et recettes de compatibilité, maximum + 15 % arrondi.
   // Ce sont des poids de planification, pas des durées GitHub mesurées.
@@ -91,6 +91,44 @@ const WEIGHTS_SECONDS = Object.freeze({
   'tests/lnr-save-import-rollback-stress.cjs': 5,
   'tests/v28-collective-preparation.cjs': 5,
   'tests/v29-focused-development.cjs': 5
+});
+// Réception cumulative du 10 novembre : réserves de planification provisoires.
+// Les anciens profils n'incluaient pas simultanément observation, attributs,
+// nouvelles populations et rendez-vous. Ces réserves NE sont PAS des mesures
+// GitHub : elles équilibrent les campagnes en attendant le prochain profil CI.
+// Support : campagne complète locale 883/941 s avant optimisation pure ;
+// Nationale22 : 237,6 s ; les budgets d'arrêt restent distincts dans tests.yml.
+const WEIGHTS_SECONDS = Object.freeze({ ...HISTORICAL_WEIGHTS_SECONDS,
+  'tests/native-club-support-season.cjs': 750,
+  'tests/world-worker-season.cjs': 650,
+  'tests/native-manager-career-worker.cjs': 450,
+  'tests/native-manager-career-reverse.cjs': 400,
+  'tests/native-delegate-transaction06.cjs': 450,
+  'tests/native-contextual-integration.cjs': 350,
+  'tests/native-club-world-worker.cjs': 450,
+  'tests/native-club-strategy.cjs': 300,
+  'tests/native-press-season.cjs': 450,
+  'tests/native-press-personalities-worker.cjs': 450,
+  'tests/deepen-staff-native.cjs': 600,
+  'tests/custom-competition-worker.cjs': 450,
+  'tests/career-variation-worker.cjs': 300,
+  'tests/native-academy-integrated-long.cjs': 1000,
+  'tests/native-nationale-reduced-bench.cjs': 250,
+  'tests/native-player-knowledge-worker.cjs': 150,
+  'tests/native-academy-groups.cjs': 160,
+  'tests/progression-policies.cjs': 280,
+  'tests/profile-safety-worker.cjs': 160,
+  'tests/integration-cloud-complete.cjs': 150,
+  'tests/native-nation-meetings.cjs': 125,
+  'tests/native-club-meetings.cjs': 190,
+  'tests/native-academy-loan-capacity.cjs': 180,
+  'tests/native-professional-depth.cjs': 80,
+  'tests/native-player-attributes.cjs': 80,
+  'tests/potential-evolution-worker.cjs': 80,
+  'tests/management-day-worker.cjs': 350,
+  'tests/management-france-day-worker.cjs': 60,
+  'tests/native-match-talks.cjs': 210,
+  'tests/godot-roster-foundation.cjs': 200
 });
 const lexical = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 function allTestFiles() {

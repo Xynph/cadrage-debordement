@@ -1,4 +1,6 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+const {skipMatchTalk}=require('./helpers/scene-match-talks.cjs');
 
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -30,8 +32,8 @@ test('Les images seules ne réécrivent ni la carrière ni son secours', () => {
  try {
   Date.now = () => now;
   bridge = createBridge({dataDir, seed: 411});
-  good('new_career', {mode: 'common', club: 0});
-  let model = good('begin_match');
+  settleClubMeetings(good('new_career', {mode: 'common', club: 0}), good);
+  let model = skipMatchTalk(good('begin_match'), good);
   let presentation = 0, simulation = 0;
   for (let step = 0; step < 12; step++) {
    const prior = fs.readFileSync(current);

@@ -1,4 +1,5 @@
 extends SceneTree
+const Rooms = preload("res://qa_runner.gd")
 const Agenda = preload("res://ui/immersive08/calendar_agenda.gd")
 var app: Control
 var checks := 0
@@ -64,6 +65,7 @@ func run() -> void:
 	await wait_engine()
 	app._command("new_career",{"mode":"common","club":29})
 	await wait_engine(); app.timer.stop()
+	if not await Rooms.settle_club_meetings(app,self,check):await app._close(1);return
 	var original: Dictionary = app.model.duplicate(true)
 	var file := str(original.meta.dataDir).path_join("donnees.json")
 	var hash := FileAccess.get_sha256(file)

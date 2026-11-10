@@ -150,6 +150,7 @@ func run() -> void:
 	check(director.commands.size() == 1, "publication creates exactly one command while waiting")
 	var sent: Dictionary = director.commands[0]
 	check(sent.command == "press_conference" and sent.payload.context == source.context, "existing command and authoritative context")
+	check(source.conference.invitationId is String and sent.payload.get("invitationId")==source.conference.invitationId,"La publication transmet l’invitation obligatoire de la carrière")
 	check(sent.payload.answers.size() == questions.size() and not sent.payload.has("tone"), "complete ordered answers and no tone parameter")
 	for index in questions.size():
 		check(sent.payload.answers[index] == {"questionId":questions[index].id,"answerId":questions[index].answers[1].id}, "actual question order preserved in payload")
@@ -188,6 +189,8 @@ func run() -> void:
 	check(director.continuations == 1, "Continue uses director's server-validated meeting transition")
 	var next_week := career.duplicate(true)
 	next_week.clubLife.press.context.week += 1
+	var next_context: Dictionary = next_week.clubLife.press.context
+	next_week.clubLife.press.conference.invitationId = "press-v1:%d:%d:%d" % [next_context.season,next_context.week,next_context.club]
 	metadata.completed = false
 	metadata.meetingId = "test:next-week-press"
 	view.update_frame(next_week, metadata)
