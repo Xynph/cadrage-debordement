@@ -2,6 +2,7 @@ extends Control
 
 const G = preload("res://ui/game_skin.gd")
 const CommandWaitOverlay = preload("res://ui/command_wait_overlay.gd")
+const CareerProgression = preload("res://ui/career_progression.gd")
 const GABI_ENABLED_IN_EXPORT := false
 const COMMAND_WAIT_REVEAL_SECONDS := 0.25
 const COMMAND_WAIT_MESSAGES := {
@@ -16,6 +17,7 @@ const COMMAND_WAIT_MESSAGES := {
 	"begin_match": "Préparation du coup d’envoi…",
 	"delegate": "Simulation de la rencontre…",
 	"finish_round": "Mise à jour de la journée…",
+	"advance_day": "Passage au jour suivant…",
 	"train": "Application de la séance…",
 	"next_season": "Préparation de la nouvelle saison…",
 	"advance_pacific_preparation": "Avance de la préparation…",
@@ -753,6 +755,14 @@ func _update_live_bar() -> void:
 	if is_instance_valid(primary_button):
 		var action := primary_text()
 		primary_button.text = "Continuer" if primary_button.name == "ImmersiveContinue" else action
+		primary_button.disabled = false
+		if live.is_empty():
+			if CareerProgression.press_required(model):
+				if primary_button.name == "ImmersiveContinue": primary_button.text = "Conf. de presse"
+			elif not model.meta.get("canAdvanceSeason", false):
+				var daily := CareerProgression.daily(model.meta, model.get("next"), route)
+				if primary_button.name == "ImmersiveContinue": primary_button.text = daily.get("short", "Continuer")
+				primary_button.disabled = bool(daily.get("disabled", false))
 		if office_status and not live.is_empty():
 			primary_button.text = "Valider le résultat" if live.get("finished",false) else "Retour au direct"
 		primary_button.tooltip_text = action
@@ -764,7 +774,10 @@ func primary_text() -> String:
 		if live.get("finished",false): return "VALIDER LE RÉSULTAT  →"
 		if route == "Préparation" and live.get("paused",false): return "RETOUR AU MATCH  →"
 		return "RETOUR AU DIRECT  →"
+	if CareerProgression.press_required(model): return "OUVRIR LA RÉCEPTION  →"
 	if model.get("meta",{}).get("canAdvanceSeason",false): return "SAISON SUIVANTE  →"
+	var daily := CareerProgression.daily(model.get("meta", {}), model.get("next"), route)
+	if not daily.is_empty(): return daily.label
 	if not SeasonPreparation.data(model.get("meta",{})).is_empty(): return "AVANCER LA PRÉPARATION  →"
 	if model.get("next") == null: return "AVANCER LA SEMAINE  →"
 	return "ALLER AU JOUR DE MATCH  →" if route == "Préparation" else "PRÉPARER LE MATCH  →"
@@ -774,8 +787,19 @@ func primary_action() -> void:
 	if not _live().is_empty():
 		if _live().get("finished",false): _command("finish_round")
 		else: _navigate("Match")
-	elif model.meta.get("canAdvanceSeason",false): confirm("Une nouvelle saison", "Les contrats arrivés à échéance sont réglés et les mouvements de division sont appliqués. Commencer la saison suivante ?", func(): _command("next_season",{"confirmed":true}))
-	elif not SeasonPreparation.data(model.meta).is_empty(): _command(SeasonPreparation.command(model.meta),{"fromWeek":int(model.meta.get("week",0))})
+		return
+	if CareerProgression.press_required(model):
+		_navigate("Réception")
+		return
+	if model.meta.get("canAdvanceSeason",false):
+		confirm("Une nouvelle saison", "Les contrats arrivés à échéance sont réglés et les mouvements de division sont appliqués. Commencer la saison suivante ?", func(): _command("next_season",{"confirmed":true}))
+		return
+	var daily := CareerProgression.daily(model.meta, model.get("next"), route)
+	if not daily.is_empty():
+		if daily.has("route"): _navigate(daily.route)
+		elif daily.has("command"): _command(daily.command, daily.payload)
+		return
+	if not SeasonPreparation.data(model.meta).is_empty(): _command(SeasonPreparation.command(model.meta),{"fromWeek":int(model.meta.get("week",0))})
 	elif model.get("next") == null: _command("finish_round")
 	else: _navigate("Match" if route == "Préparation" else "Préparation")
 
