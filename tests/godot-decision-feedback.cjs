@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{spawnSync}=require('node:child_process');
 const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;
@@ -8,8 +9,9 @@ const {createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-decision-feedback-')),bridge=createBridge({dataDir:path.join(root,'profile'),seed:827381,now:1700000000000});
 let id=0,model=null;const cases=[];
 function act(command,payload={},expected=true,receipt=true){const before=model;const reply=bridge.handle({id:++id,command,payload});assert.equal(reply.ok,expected,reply.error);model=reply.model;cases.push({command,payload,before,after:model,ok:reply.ok,error:reply.error,receipt:expected&&receipt});return model;}
+const baseline=(command,payload={})=>{const reply=bridge.handle({id:++id,command,payload});assert.equal(reply.ok,true,command+': '+reply.error);return model=reply.model;};
 try{
- act('new_career',{club:0,mode:'common'});
+ act('new_career',{club:0,mode:'common'});model=settleClubMeetings(model,baseline);
  const context=model.clubLife.clubSupport.context;
  act('staff_meeting',{context,plan:model.clubLife.clubSupport.meeting.options[0].key});
  const signedPlayer=model.squad.find(p=>p.renewal.available);assert.ok(signedPlayer);
@@ -24,6 +26,9 @@ try{
  const profileFile=path.join(root,'profile','PrototypeGodot','donnees.json');
  refuseSavePublication(profileFile,()=>act('set_tactics',{attack:model.tactics.attacks.find(o=>o.id!==model.tactics.attack).id,defense:model.tactics.defense},false));
  act('new_career',{club:0,mode:'common'});
+ // This real conference is a receipt case: publish it before other decisions.
+ const press=model.clubLife.press;act('press_conference',{context:press.context,answers:press.conference.questions.map(q=>({questionId:q.id,answerId:q.answers[0].id}))});
+ model=settleClubMeetings(model,baseline);
  for(let i=0;i<12;i++)act('set_tactics',{attack:model.tactics.attacks[(i+1)%model.tactics.attacks.length].id,defense:model.tactics.defense});
  const ctx=model.clubLife.clubSupport.context;
  const briefing=model.clubLife.clubSupport.briefing;
@@ -44,7 +49,6 @@ try{
  act('agent_negotiate',{context:ctx,id:quote.id,years:quote.years,policy:quote.policy});
  const talk=model.clubLife.clubSupport.agents.talks.find(t=>t.id===quote.id);assert.equal(talk.status,'ready');
  act('agent_confirm',{context:ctx,key:talk.key,wage:talk.acceptedSalary,years:talk.years,fee:talk.fee,confirmed:true});
- const press=model.clubLife.press;act('press_conference',{context:press.context,answers:press.conference.questions.map(q=>({questionId:q.id,answerId:q.answers[0].id}))});
  act('training_plan',{context:ctx,plan:'proteger'});
  act('import',{text:bridge.handle({id:++id,command:'export'}).model.meta.exportText});
  const fixture=path.join(root,'cases.json');fs.writeFileSync(fixture,JSON.stringify(cases));

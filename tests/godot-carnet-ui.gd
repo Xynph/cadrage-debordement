@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -223,6 +224,7 @@ func reading_actions() -> void:
 	await settle()
 func decisions() -> void:
 	await command("new_career",{"club":29,"mode":"france"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	await render("Effectif")
 	var player_id: String = str(app.model.squad[0].id)
 	app.selected_player=player_id
@@ -346,6 +348,7 @@ func decisions() -> void:
 func variants() -> void:
 	for setup in [[29,"common"],[0,"france"],[0,"fiction"]]:
 		await command("new_career",{"club":setup[0],"mode":setup[1]})
+		await ContextualFlow.settle_club_meetings(app, self, check)
 		for route in ["Effectif","Composition","Préparation","Recrutement","Finances","Club","Calendrier","Classements","Match"]:
 			await render(route)
 			bounds(route)
@@ -382,6 +385,7 @@ func run() -> void:
 	await wait_model()
 	app.timer.stop()
 	await command("new_career", {"club":0,"mode":"common"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	for route in ROUTES:
 		await render(route)
 		check(page_for(route) != null, "Composition carnet présente " + route)

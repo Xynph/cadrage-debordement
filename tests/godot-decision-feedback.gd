@@ -40,9 +40,13 @@ func run() -> void:
 	# Capture annulée/absence de commande : aucune décision créée.
 	feedback.begin("train",{},cases[0].after); feedback.complete("train",false,cases[0].after)
 	check(feedback.receipts().is_empty(),"Annulation sans reçu")
-	feedback.begin("set_tactics",cases[14].payload,cases[14].before)
-	feedback.complete("tick",true,cases[14].before)
-	feedback.complete("set_tactics",true,cases[14].after)
+	var tactic_index := cases.find_custom(func(item: Dictionary): return item.command == "set_tactics" and item.receipt)
+	check(tactic_index >= 0, "Cas tactique réel identifié par commande et reçu")
+	if tactic_index < 0: quit(1); return
+	var tactic_case: Dictionary = cases[tactic_index]
+	feedback.begin("set_tactics",tactic_case.payload,tactic_case.before)
+	feedback.complete("tick",true,tactic_case.before)
+	feedback.complete("set_tactics",true,tactic_case.after)
 	check(feedback.receipts().size() == 1,"Réponse étrangère ne consomme pas capture")
 	var copy: Array = feedback.receipts(); copy.clear(); check(feedback.receipts().size() == 1,"Historique exposé sans accès en écriture")
 	# Projection limite explicite : identité résolue par ID, pas par nom ou index.
@@ -147,14 +151,16 @@ func run_main() -> void:
 	await command("new_career",{"club":0,"mode":"common"})
 	app._navigate("Bureau"); await settle()
 	check(app.decision_feedback.receipts().is_empty(),"Main nouvelle carrière remet reçus à zéro")
+	await ContextualFlow.settle_club_meetings(app, self, check)
+	var meeting_receipts: int = app.decision_feedback.receipts().size()
 	var before: Dictionary = app.model.finance.duplicate(true)
 	var context: Dictionary = app.model.clubLife.clubSupport.context
 	app._command("staff_meeting",{"context":context,"plan":"cohesion"})
 	check(not app._command("train",{"mode":"normal"}),"Refus local d’une deuxième action en vol")
 	while app.waiting: await process_frame
 	await settle(); await close_dialogs()
-	check(app.decision_feedback.receipts().size() == 1 and app.decision_feedback.receipts()[0].command == "staff_meeting","Refus local ne consomme pas la capture staff")
-	check(app.decision_feedback.receipts()[0].before.cash == before.cash,"Avant financier du main exact")
+	check(app.decision_feedback.receipts().size() == meeting_receipts + 1 and app.decision_feedback.receipts().back().command == "staff_meeting","Refus local ne consomme pas la capture staff")
+	check(app.decision_feedback.receipts().back().before.cash == before.cash,"Avant financier du main exact")
 	check(app.status.text == app.decision_feedback.status_text(),"Footer connecté au vrai reçu")
 	var player: Dictionary = {}
 	for p: Dictionary in app.model.squad:

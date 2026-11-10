@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 const Regen = preload("res://ui/regen_portrait.gd")
 const Academy = preload("res://ui/immersive08/academy_canvas.gd")
 var app: Control
@@ -32,6 +33,7 @@ func run() -> void:
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
 	await command("snapshot")
 	await command("new_career", {"mode":"common","club":0})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	var people: Array = app.model.decisions.development.academy
 	check(not people.is_empty(), "Vrais académiciens projetés par le worker")
 	if people.is_empty(): finish(); return

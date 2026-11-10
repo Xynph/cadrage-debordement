@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
@@ -11,7 +12,7 @@ test('native population state survives import/reopen and rejects corruption or f
  const call=(command,payload={})=>b.handle({id:++serial,command,payload});
  const ok=(command,payload)=>{const r=call(command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;};
  const archive=()=>ok('export').meta.exportText;
- const model=ok('new_career',{mode:'world',club:0}),before=archive(),doc=JSON.parse(before),s=doc.state;
+ const model=settleClubMeetings(ok('new_career',{mode:'world',club:0}),(command,payload)=>ok(command,payload)),before=archive(),doc=JSON.parse(before),s=doc.state;
  assert.equal(s.aiRosterVersion,2);
  assert.equal(s.aiRoster.population.referenceAccessible,s.clubs.reduce((n,c)=>n+c.players.length,0)+s.economy.freeAgents.length);
  assert.equal(s.market.length,s.economy.freeAgents.length);

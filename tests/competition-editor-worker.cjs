@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
 function fixture(t){
@@ -23,7 +24,7 @@ test('Atelier accessible avant création de carrière, document vérifiable sans
  assert.deepEqual(f.good('snapshot'),before);
 });
 test('Une carrière, son export, son disque et sa reprise restent exactement identiques',t=>{
- const f=fixture(t);f.good('new_career',{mode:'world',club:0});
+ const f=fixture(t);settleClubMeetings(f.good('new_career',{mode:'world',club:0}),(command,payload)=>f.good(command,payload));
  const before=f.good('export').meta.exportText,bytes=f.bytes();
  f.good('competition_editor_preview',request);
  assert.equal(f.send('competition_editor_preview',{action:'validate',document:{}}).ok,false);

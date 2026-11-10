@@ -33,6 +33,7 @@ func run() -> void:
 	if not await wait_model(): finish(); return
 	app._command("new_career", {"mode":"common", "club":0}, "Bureau")
 	if not await wait_model(): finish(); return
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	if OS.get_environment("CD_ART_DIRECTION_MATCH_ONLY") == "1":
 		await match_review()
 		finish()
@@ -121,6 +122,7 @@ func run() -> void:
 			app._command(command)
 			await wait_model()
 			if command == "begin_match": await ContextualFlow.skip_talk(app, self, "pre", check)
+			if command == "finish_round": await ContextualFlow.settle_club_meetings(app, self, check)
 	for route in ["Bureau", "Finances", "Presse", "Rivalités"]:
 		app._navigate(route)
 		await capture(route + "-apres-deux-matchs")

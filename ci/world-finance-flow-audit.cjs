@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('../tests/helpers/club-meetings.cjs');
 // Manual audit: short real weeks, no coefficients or production state changed.
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),crypto=require('node:crypto');
 const assert=require('node:assert/strict'),{execFileSync}=require('node:child_process');
@@ -52,13 +53,13 @@ function run({seed=827381,weeks=3,club=0,out}={}) {
   const report={schema:'world-finance-flows-v1',mode:'world',seed,club,node:process.version,
     source:execFileSync('git',['rev-parse','HEAD'],{cwd:path.join(__dirname,'..'),encoding:'utf8'}).trim(),
     sources:Object.fromEntries(['dist/world-career.js','dist/game.js','dist/facilities.js','dist/france-career.js','dist/ai-roster-cycle.js','dist/manager.js','native/engine/world-career.cjs','native/engine/worker.cjs',
-      'native/engine/world-finance-flow-audit.cjs','ci/world-finance-flow-audit.cjs'].map(f=>[f,sha(fs.readFileSync(path.join(__dirname,'..',f)))])),
-    now:1794178800000,policy:'Public worker commands; no training/recruitment/contract editing; necessary lineup/coverage public commands traced.',weeks:[],commands:[]};
+      'native/engine/world-finance-flow-audit.cjs','ci/world-finance-flow-audit.cjs','tests/helpers/club-meetings.cjs','native/engine/club-meetings.cjs'].map(f=>[f,sha(fs.readFileSync(path.join(__dirname,'..',f)))])),
+    now:1794178800000,policy:'Public worker commands; no training/recruitment/contract editing; mandatory press/medical/board decisions and necessary lineup/coverage public commands traced.',weeks:[],commands:[]};
   let b,serial=0,model;
   const go=(command,payload={})=>{const r=b.handle({id:++serial,command,payload});report.commands.push({command,payload,ok:r.ok});assert.equal(r.ok,true,command+': '+r.error);model=r.model;return model;};
   const exported=()=>{const text=go('export').meta.exportText;return {state:JSON.parse(text).state,sha256:sha(text)};};
   try {
-    b=createBridge({dataDir:profile,seed,now:report.now});go('new_career',{mode:'world',club});
+    b=createBridge({dataDir:profile,seed,now:report.now});settleClubMeetings(go('new_career',{mode:'world',club}),go);
     for(let n=0;n<weeks;n++) {
       if(model.next) {
         if(!model.selection.valid)go('auto_lineup');
@@ -66,7 +67,7 @@ function run({seed=827381,weeks=3,club=0,out}={}) {
         go('begin_match');go('delegate');
       }
       const before=exported(),privateBefore=sha(fs.readFileSync(path.join(profile,'donnees.json')));
-      go('finish_round');const after=exported();
+      settleClubMeetings(go('finish_round'),go);const after=exported();
       const reconciliation=reconcile(before.state,after.state);
       const experiment=counterfactual(before.state,after.state.history.filter(r=>!before.state.history.some(p=>p.fixtureId===r.fixtureId)),after.state);
       for(const row of reconciliation.rows.filter(r=>r.status==='reconciled-source-order'))

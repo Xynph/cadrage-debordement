@@ -233,10 +233,12 @@ func dialog_cases() -> void:
 	var local_path: String = str(app.model.meta.dataDir).path_join("interface.json")
 	var local_bytes := FileAccess.get_file_as_bytes(local_path)
 	await command("new_career",{"club":0,"mode":"common"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	await command("export")
 	var career_text: String = app.model.meta.exportText
 	check(not career_text.contains("reduced_motion") and not career_text.contains('"quality"') and not career_text.contains('"volume"') and not career_text.contains('"display_screen"'),"Export carrière sans préférences locales")
 	await command("new_career",{"club":1,"mode":"common"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	await command("import",{"text":career_text})
 	check(FileAccess.get_file_as_bytes(local_path) == local_bytes,"Créations et import de carrière conservent exactement le profil local")
 	var restarted = profile_script.new()

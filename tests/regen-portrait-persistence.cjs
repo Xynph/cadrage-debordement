@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs'),{describe}=require('../native/engine/portraits.cjs');
 const vm=require('node:vm'),{factory}=require('../native/engine/staff-career.cjs');
@@ -7,7 +8,7 @@ test('Real worker persists new academy portraits through promotion/reopen and ne
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-portrait-bank-')),opts={dataDir:dir,seed:827381,now:1700000000000};let b=createBridge(opts),serial=0;
  t.after(()=>{b.close();fs.rmSync(dir,{recursive:true,force:true});});
  const call=(command,payload={})=>b.handle({id:++serial,command,payload}),go=(command,payload={})=>{const r=call(command,payload);a.equal(r.ok,true,r.error);return r.model;};
- let m=go('new_career',{mode:'common',club:0}),p=m.decisions.development.academy[0];a.equal(p.appearanceBankVersion,2);const profile=describe(p);
+ let m=settleClubMeetings(go('new_career',{mode:'common',club:0}),(command,payload)=>go(command,payload)),p=m.decisions.development.academy[0];a.equal(p.appearanceBankVersion,2);const profile=describe(p);
  const native=JSON.parse(go('export').meta.exportText).state;a.equal(native.development.academy[0].appearanceBankVersion,2);
  go('promote_academy',{playerId:p.id,confirmed:true});m=go('snapshot');a.deepEqual(describe(m.squad.find(q=>q.id===p.id)),profile);
  const saved=go('export').meta.exportText;b.close();b=createBridge(opts);a.equal(go('export').meta.exportText,saved);

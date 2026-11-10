@@ -5,6 +5,7 @@ const workerPath=path.resolve(__dirname,'../native/engine/worker.cjs');
 assert.ok(fs.existsSync(workerPath),'Le worker Godot de production doit exister');
 const {createBridge,CORE_FILES}=require(workerPath),{context}=require('./native-reference-harness.cjs');
 const {skipMatchTalk}=require('./helpers/scene-match-talks.cjs');
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 assert.ok(fs.existsSync(path.resolve(__dirname,'../native/godot/engine_bridge.gd')),'Le pont Godot asynchrone doit exister');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-godot-test-'));
 let count=0;const bridges=[];
@@ -24,35 +25,45 @@ try{
  // new_career initializes the native staff cycle after the shared start().
  // Exercise the same initialization in the direct reference before comparing
  // the complete state, without the bridge, protocol or disk transactions.
- const direct=context({dataDir:path.join(root,'reference')});direct.run("function testObserve(command){nativeSystems.domain('matchTalks').observe(command);nativeSystems.domain('sceneInvitations').observe(command);}start(0);CDStaffCareer.initialize(S);testObserve('new_career')");
+ const direct=context({dataDir:path.join(root,'reference')});direct.command('new_career',{club:0});
  const assertRng=()=>assert.equal(JSON.parse(fs.readFileSync(path.join(initial.meta.dataDir,'donnees.json'),'utf8')).seed,direct.randomState().seed,'curseur RNG identique à la référence native directe');
  let document=JSON.parse(good(b,'export').meta.exportText);assert.deepEqual(document.state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')),'état initial identique au moteur direct');
  assertRng();
  const before=good(b,'export').meta.exportText;for(let i=0;i<6;i++)good(b,'snapshot');assert.equal(good(b,'export').meta.exportText,before,'snapshot/export ne consomment pas le RNG');
- good(b,'train',{mode:'normal'});direct.run('trainWeek();save()');assert.equal(good(b,'train').meta.trained,true);
+ assert.equal(call(b,'train').ok,false,'Le worker garde le rendez-vous obligatoire avant progression');
+ assert.throws(()=>direct.command('train'),/rendez-vous du club/i,'La référence directe applique le même garde avant mutation');
+ assert.equal(good(b,'export').meta.exportText,before,'Le garde conserve la carrière');assertRng();
+ const afterMeetings=settleClubMeetings(good(b,'snapshot'),(command,payload)=>good(b,command,payload));
+ settleClubMeetings(direct.project(),(command,payload)=>direct.command(command,payload));
+ document=JSON.parse(good(b,'export').meta.exportText);assert.deepEqual(document.state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')),'Mêmes vraies réponses de presse et décisions des rendez-vous initiaux');
+ assert.ok(afterMeetings.clubLife.clubMeetings.receipts.length>=2,'Les décisions initiales sont réellement enregistrées');assertRng();
+ good(b,'train',{mode:'normal'});direct.command('train',{mode:'normal'});assert.equal(good(b,'train').meta.trained,true);direct.command('train');
  assertRng();
- good(b,'auto_lineup');direct.run('autoLineup()');
+ good(b,'auto_lineup');direct.command('auto_lineup');
  assertRng();
- const started=good(b,'begin_match'),live=started.live;direct.run("beginMatch();testObserve('begin_match')");assert.equal(live.scene.players.length,30);assert.equal(live.teams.length,2);assert.equal(typeof live.teams[0].presentation.stadium,'string');assert.equal(live.statsRows[0].label,'Possession');
+ const started=good(b,'begin_match'),live=started.live;direct.command('begin_match');assert.equal(live.scene.players.length,30);assert.equal(live.teams.length,2);assert.equal(typeof live.teams[0].presentation.stadium,'string');assert.equal(live.statsRows[0].label,'Possession');
  skipMatchTalk(started,(command,payload)=>good(b,command,payload));
- direct.run("{const talk=nativeSystems.domain('matchTalks').project().scene;nativeSystems.execute('match_talk_continue',{key:talk.key,phase:talk.phase,skip:true});testObserve('match_talk_continue');}");
+ skipMatchTalk(direct.project(),(command,payload)=>direct.command(command,payload));
  assertRng();
- for(let i=0;i<15;i++){good(b,'snapshot');good(b,'tick');direct.run('tick()');}
+ for(let i=0;i<15;i++){good(b,'snapshot');good(b,'tick');direct.command('tick');}
  document=JSON.parse(good(b,'export').meta.exportText);assert.deepEqual(document.state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')),'ticks identiques au moteur direct malgré snapshots');
  assertRng();
  const scene=good(b,'snapshot').live.scene;direct.run(require('node:fs').readFileSync(path.resolve(__dirname,'../dist/match3d/scene-adapter.js'),'utf8'));assert.deepEqual(scene,JSON.parse(direct.run('JSON.stringify(CDMatch3DAdapter.normalize(matchScene(S.live)))')));
- good(b,'pause');assert.equal(good(b,'snapshot').live.paused,true);const minute=good(b,'snapshot').live.minute;good(b,'tick');assert.equal(good(b,'snapshot').live.minute,minute);good(b,'pause',{paused:false});
- good(b,'delegate');direct.run("nativeSystems.domain('matchTalks').setDelegating(true);try{nativeSystems.domain('matchTalks').observe('delegate');while(!S.live.finished){if(S.live.paused)continueMatch();else tick()}}finally{nativeSystems.domain('matchTalks').setDelegating(false)}testObserve('delegate');");assert.equal(good(b,'snapshot').live.finished,true);assert.deepEqual(JSON.parse(good(b,'export').meta.exportText).state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')));
+ good(b,'pause');direct.command('pause');assert.equal(good(b,'snapshot').live.paused,true);const minute=good(b,'snapshot').live.minute;good(b,'tick');direct.command('tick');assert.equal(good(b,'snapshot').live.minute,minute);good(b,'pause',{paused:false});direct.command('pause',{paused:false});
+ good(b,'delegate');direct.command('delegate');assert.equal(good(b,'snapshot').live.finished,true);assert.deepEqual(JSON.parse(good(b,'export').meta.exportText).state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')));
  assertRng();
- good(b,'finish_round');direct.run("finishRound();testObserve('finish_round')");assert.equal(good(b,'snapshot').meta.round,1);assert.deepEqual(JSON.parse(good(b,'export').meta.exportText).state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')));
+ good(b,'finish_round');direct.command('finish_round');assert.equal(good(b,'snapshot').meta.round,1);assert.deepEqual(JSON.parse(good(b,'export').meta.exportText).state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')));
  assertRng();
+ settleClubMeetings(good(b,'snapshot'),(command,payload)=>good(b,command,payload));
+ settleClubMeetings(direct.project(),(command,payload)=>direct.command(command,payload));
+ assert.deepEqual(JSON.parse(good(b,'export').meta.exportText).state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')),'Rendez-vous de la semaine suivante : mêmes décisions et effets réels');assertRng();
  const saved=good(b,'save');assert.ok(fs.existsSync(path.join(saved.meta.dataDir,'donnees.json')));assert.ok(fs.existsSync(path.join(saved.meta.dataDir,'donnees-precedentes.json')));
  const exported=good(b,'export').meta.exportText;assert.equal(call(b,'import',{text:'{}'}).ok,false);assert.equal(good(b,'export').meta.exportText,exported);
  assert.throws(()=>bridge('main'),/utilisé|verrou/i,'double ouverture refusée');
  good(b,'shutdown');assert.equal(call(b,'train').ok,false);const restored=bridge('main');assert.equal(good(restored,'snapshot').meta.round,1);assert.deepEqual(JSON.parse(good(restored,'export').meta.exportText).state,JSON.parse(exported).state);
- const incoming=bridge('incoming');good(incoming,'new_career',{club:13});const incomingText=good(incoming,'export').meta.exportText;good(restored,'import',{text:incomingText});assert.equal(good(restored,'snapshot').club.id,13);
+ const incoming=bridge('incoming');settleClubMeetings(good(incoming,'new_career',{club:13}),(command,payload)=>good(incoming,command,payload));const incomingText=good(incoming,'export').meta.exportText;good(restored,'import',{text:incomingText});assert.equal(good(restored,'snapshot').club.id,13);
  // A real filesystem failure at the destination must leave memory and disk intact.
- const fail=bridge('write-failure');const fm=good(fail,'new_career',{club:0}),file=path.join(fm.meta.dataDir,'donnees.json');const original=fs.readFileSync(file,'utf8');
+ const fail=bridge('write-failure');const fm=settleClubMeetings(good(fail,'new_career',{club:0}),(command,payload)=>good(fail,command,payload)),file=path.join(fm.meta.dataDir,'donnees.json');const original=fs.readFileSync(file,'utf8');
  fs.renameSync(file,file+'.held');fs.mkdirSync(file);const failed=call(fail,'train',{mode:'intense'});assert.equal(failed.ok,false);assert.match(failed.error,/sauvegarde|EISDIR|EPERM|EACCES/i);assert.equal(good(fail,'snapshot').meta.trained,false);
  assert.equal(call(fail,'import',{text:incomingText}).ok,false);assert.equal(good(fail,'snapshot').club.id,0);fs.rmdirSync(file);fs.renameSync(file+'.held',file);assert.equal(fs.readFileSync(file,'utf8'),original);
  good(fail,'train',{mode:'normal'});assert.equal(good(fail,'snapshot').meta.trained,true);
@@ -64,7 +75,7 @@ try{
  assert.deepEqual(JSON.parse(good(restored,'export').meta.exportText).state,JSON.parse(liveText).state);
  const staleRoot=path.join(root,'stale','PrototypeGodot');fs.mkdirSync(staleRoot,{recursive:true});fs.writeFileSync(path.join(staleRoot,'profil.lock'),'2147483647');const recovered=bridge('stale');assert.equal(good(recovered,'snapshot').club,null,'verrou PID disparu récupérable après fermeture forcée');
  // The private profile preserves the RNG cursor as well as the native career.
- const seeded=bridge('seeded');good(seeded,'new_career',{club:0});skipMatchTalk(good(seeded,'begin_match'),(command,payload)=>good(seeded,command,payload));good(seeded,'tick',{steps:12});good(seeded,'pause');good(seeded,'save');
+ const seeded=bridge('seeded');settleClubMeetings(good(seeded,'new_career',{club:0}),(command,payload)=>good(seeded,command,payload));skipMatchTalk(good(seeded,'begin_match'),(command,payload)=>good(seeded,command,payload));good(seeded,'tick',{steps:12});good(seeded,'pause');good(seeded,'save');
  const copyRoot=path.join(root,'seeded-copy','PrototypeGodot');fs.mkdirSync(copyRoot,{recursive:true});fs.copyFileSync(path.join(root,'seeded','PrototypeGodot','donnees.json'),path.join(copyRoot,'donnees.json'));
  good(seeded,'shutdown');const seededResume=bridge('seeded'),seededCopy=bridge('seeded-copy');for(const item of [seededResume,seededCopy]){good(item,'pause',{paused:false});good(item,'delegate');}assert.deepEqual(JSON.parse(good(seededResume,'export').meta.exportText).state,JSON.parse(good(seededCopy,'export').meta.exportText).state,'RNG persistant après redémarrage');
  console.log(JSON.stringify({passed:true,checks:['bounded protocol','real native state/export/action parity','snapshot RNG invariance','normalized scene parity','delegated match parity','atomic persistence/restart','import rollback','real disk write refusal','profile lock','live paused import','closed commands']}));
@@ -158,6 +169,30 @@ var stage := 0
 var pid := -1
 var small_export := ""
 var large_export := ""
+func _settle_club_meetings(model: Dictionary) -> bool:
+ var meeting: Variant = model.get("clubLife",{}).get("clubMeetings",{}).get("scene")
+ if not meeting is Dictionary: return false
+ if meeting.completed:
+  bridge.send("club_meeting_continue",{"meetingId":meeting.id})
+ elif meeting.kind == "press":
+  var press: Dictionary = model.clubLife.press
+  var answers: Array = []
+  for question: Dictionary in press.conference.questions:
+   if question.answers.is_empty():
+    _failed("Question réelle sans réponse autorisée")
+    return true
+   answers.append({"questionId":question.id,"answerId":question.answers[0].id})
+  bridge.send("press_conference",{"context":press.context,"answers":answers})
+ elif meeting.ackAllowed:
+  bridge.send("club_meeting_ack",{"meetingId":meeting.id})
+ else:
+  var medical: Dictionary = model.clubLife.clubSupport.medical
+  for player: Dictionary in medical.players:
+   if player.id == meeting.get("playerId"):
+    bridge.send("medical_protocol",{"context":meeting.context,"id":player.id,"protocol":player.protocol})
+    return true
+  _failed("Rendez-vous médical sans participant réel")
+ return true
 func _initialize():
  bridge = load("res://engine_bridge.gd").new()
  root.add_child.call_deferred(bridge)
@@ -209,8 +244,8 @@ func _model(model):
     stage = 32
     bridge.send("import", {"text": large_export})
    else:
-    stage = 4
-    bridge.send("begin_match")
+    stage = 35
+    bridge.send("snapshot")
   32:
    stage = 33
    bridge.send("export")
@@ -222,6 +257,10 @@ func _model(model):
    stage = 34
    bridge.send("import", {"text": small_export})
   34:
+   stage = 35
+   bridge.send("snapshot")
+  35:
+   if _settle_club_meetings(model): return
    stage = 4
    bridge.send("begin_match")
   4:

@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -65,6 +66,7 @@ func run() -> void:
 	app=load("res://main.tscn").instantiate();root.add_child(app)
 	await worker()
 	await command("import",{"text":FileAccess.get_file_as_string(proof.path_join("career.json"))})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	app._navigate("Composition");await settle();app.coach.close()
 	await command("export")
 	var before: String=app.model.meta.exportText
@@ -146,6 +148,7 @@ func run() -> void:
 		var previous:Dictionary=app.management_ui.lineup
 		previous.focus="LineupSlot23";previous.outer=999;previous.list=999
 		await command(reset,{"text":saved} if reset=="import" else {"club":0,"mode":"common"})
+		await ContextualFlow.settle_club_meetings(app, self, check)
 		app._navigate("Composition");await settle()
 		check(app.management_ui.lineup.outer==0 and app.management_ui.lineup.list==0 and app.management_ui.lineup.focus=="","Reset UI sans ancien dictionnaire "+reset)
 		check(not is_instance_valid(retiring),"Ancienne vue libérée "+reset)

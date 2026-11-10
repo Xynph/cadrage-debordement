@@ -14,6 +14,84 @@ var file_reception: Dictionary = {}
 var native06_reception: Dictionary = {}
 var world_reception: Dictionary = {}
 
+# Explicit test setup only: this never runs from the production bridge. The
+# portable QA and external GD suites share the same public-command sequence.
+static func settle_club_meetings(application: Control, tree: SceneTree, verify: Callable, stop_before_kind: String = "") -> bool:
+	application.timer.stop()
+	for count in 85:
+		var value: Variant = application.model.get("clubLife", {}).get("clubMeetings", {}).get("scene")
+		if not value is Dictionary: return true
+		var scene: Dictionary = value
+		if scene.get("kind") == stop_before_kind: return true
+		var command := ""
+		var payload: Dictionary = {}
+		if not scene.get("completed", false):
+			if scene.get("kind") == "press":
+				var press: Dictionary = application.model.get("clubLife", {}).get("press", {})
+				var questions: Array = press.get("conference", {}).get("questions", [])
+				verify.call(press.get("conference", {}).get("available", false) and not questions.is_empty(), "Préparation de base : vraies questions de presse disponibles")
+				if questions.is_empty(): return false
+				var answers: Array = []
+				for question: Dictionary in questions:
+					var offered: Array = question.get("answers", []).duplicate()
+					if offered.is_empty(): verify.call(false, "Question réelle sans réponse autorisée"); return false
+					offered.sort_custom(func(a: Dictionary, b: Dictionary):
+						var left := _club_answer_impact(a)
+						var right := _club_answer_impact(b)
+						return str(a.id) < str(b.id) if left == right else left < right)
+					answers.append({"questionId":question.id,"answerId":offered[0].id})
+				command = "press_conference"
+				payload = {"context":press.context,"answers":answers}
+			elif scene.get("ackAllowed", false):
+				command = "club_meeting_ack"
+				payload = {"meetingId":scene.id}
+			else:
+				var medical: Dictionary = application.model.get("clubLife", {}).get("clubSupport", {}).get("medical", {})
+				var player: Dictionary = {}
+				for candidate: Dictionary in medical.get("players", []):
+					if candidate.get("id") == scene.get("playerId"): player = candidate; break
+				var protocol: Dictionary = {}
+				for candidate: Dictionary in medical.get("protocols", []):
+					if candidate.get("key") == player.get("protocol"): protocol = candidate; break
+				var allowed: bool = scene.get("kind") == "medical" and medical.get("available", false) and player.get("injury", 0) > 0 and not protocol.is_empty()
+				verify.call(allowed, "Préparation de base : conserver le protocole médical réellement projeté")
+				if not allowed: return false
+				command = "medical_protocol"
+				payload = {"context":scene.context,"id":player.id,"protocol":protocol.key}
+			if not await _club_meeting_command(application, tree, verify, command, payload): return false
+		var completed: Variant = application.model.get("clubLife", {}).get("clubMeetings", {}).get("scene")
+		var same_completed: bool = completed is Dictionary and completed.get("id") == scene.id and completed.get("completed", false)
+		verify.call(same_completed, "La décision réelle termine le même rendez-vous avant Continuer")
+		if not same_completed: return false
+		if not await _club_meeting_command(application, tree, verify, "club_meeting_continue", {"meetingId":completed.id}): return false
+	verify.call(false, "La file bornée des rendez-vous doit se terminer")
+	return false
+
+static func continue_match_phase(application: Control, tree: SceneTree, verify: Callable, expected: String) -> bool:
+	var value: Variant = application.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+	if not value is Dictionary: return true
+	var valid: bool = value.get("phase") == expected and value.get("options", []).size() == 6
+	verify.call(valid, "Phase réelle de causerie avant la préparation du direct : " + expected)
+	if not valid: return false
+	return await _club_meeting_command(application, tree, verify, "match_talk_continue", {"key":value.key,"phase":value.phase,"skip":true})
+
+static func _club_answer_impact(answer: Dictionary) -> float:
+	var cost := 0.0
+	for value: Variant in answer.get("effects", {}).values():
+		if (value is int or value is float) and is_finite(float(value)): cost += absf(float(value))
+	return cost
+
+static func _club_meeting_command(application: Control, tree: SceneTree, verify: Callable, command: String, payload: Dictionary) -> bool:
+	var accepted: bool = application._command(command, payload)
+	verify.call(accepted, "Préparation explicite du rendez-vous : " + command)
+	if not accepted: return false
+	var deadline := Time.get_ticks_msec() + 30000
+	while application.waiting and Time.get_ticks_msec() < deadline: await tree.process_frame
+	application.timer.stop()
+	var ok: bool = not application.waiting and application.bridge.last_response_ok
+	verify.call(ok, "Réponse réelle du rendez-vous : " + command + " · " + str(application.last_error))
+	return ok
+
 func _ready() -> void:call_deferred("_run")
 
 func _check(value:bool,message:String) -> void:
@@ -308,6 +386,7 @@ func _run() -> void:
 	_check(app.model.get("meta",{}).get("database",{}).get("playerCount")==1592,"Shared source retains1592players")
 	_check(app.model.meta.get("rosterFoundation",{}).get("version") == 2, "Shipped registry initializes new careers in v2")
 	if not app._has_career():await _finish();return
+	await settle_club_meetings(app, get_tree(), _check)
 	_check(app.model.get("squad",[]).size()>=23,"Real squad for club29")
 	_check(app.model.get("leagues",[]).size()==2,"Both divisions projected")
 	await _coach_reception()
@@ -395,6 +474,7 @@ func _run() -> void:
 	await _wait()
 	_check(app.model.live!=null,"Actual fixture begins")
 	if app.model.live==null:await _finish();return
+	await continue_match_phase(app, get_tree(), _check, "pre")
 	await _ask("tick",{"steps":12})
 	await _ask("pause",{"paused":true})
 	_check(app.model.live.paused,"Real pause")
@@ -416,14 +496,17 @@ func _run() -> void:
 	await _wait()
 	_check(app.match_page==same_page,"Match panel remains stable across week")
 	_check(int(app.model.meta.week)==1,"Both competitions advance once")
+	await settle_club_meetings(app, get_tree(), _check)
 	await _coverage()
 	_check(not app.pause_button.disabled,"Second kickoff reenabled")
 	_press("COUP D'ENVOI")
 	await _wait()
 	_check(app.model.live!=null,"Second actual match starts without navigating away: "+app.last_error)
 	if app.model.live==null:await _finish();return
+	await continue_match_phase(app, get_tree(), _check, "pre")
 	await _ask("delegate")
 	await _ask("finish_round")
+	await settle_club_meetings(app, get_tree(), _check)
 	app._navigate("Bureau")
 	var rounds:=0
 	while not app.model.meta.get("canAdvanceSeason",false) and rounds<40:
@@ -431,8 +514,10 @@ func _run() -> void:
 		if app.model.get("next")!=null:
 			await _coverage()
 			if not await _ask("begin_match",{},true):break
+			await continue_match_phase(app, get_tree(), _check, "pre")
 			await _ask("delegate")
 		await _ask("finish_round")
+		await settle_club_meetings(app, get_tree(), _check)
 		rounds+=1
 	_check(app.model.meta.get("canAdvanceSeason",false),"Complete season reaches interseason")
 	if not app.model.meta.get("canAdvanceSeason",false):await _finish();return
@@ -446,6 +531,7 @@ func _run() -> void:
 	await _wait()
 	_check(FileAccess.file_exists(exported),"Native UI export written")
 	await _ask("new_career",{"club":0,"mode":"france"})
+	await settle_club_meetings(app, get_tree(), _check)
 	app._navigate("Bureau")
 	await _capture("bureau-toulouse")
 	app.import_mode=true
@@ -506,16 +592,6 @@ func _systems_reception() -> void:
 	var domains := ["press","relationships","clubWorld","academyPathways","clubStrategy","clubSupport","managerCareer","playbook","coachNotebook"]
 	for domain in domains:
 		_check(app.model.get("clubLife",{}).has(domain), "Bundled engine projects native domain: " + domain)
-	await _native06_reception()
-	var professional_ids: Array = app.model.squad.map(func(p: Dictionary): return str(p.id))
-	app._navigate("Centre")
-	_press("ACTIVER LES PARCOURS")
-	await _settle()
-	_confirm()
-	await _wait()
-	_check(app.model.clubLife.academyPathways.active, "Actual exported UI activates academy pathways")
-	_check(app.model.squad.map(func(p: Dictionary): return str(p.id)) == professional_ids, "Academy activation preserves the professional roster")
-	await _capture("centre-parcours-s2")
 	var press: Dictionary = app.model.clubLife.press
 	var five_tones: bool = press.conference.available
 	_check(press.people.size() == 30, "Bundled press retains all thirty journalists")
@@ -530,6 +606,17 @@ func _systems_reception() -> void:
 		_check(app.model.clubLife.press.lastOutcome != null, "Bundled conference persists its actual outcome")
 	else:
 		_check(false, "S2 reception has a real conference available")
+	await settle_club_meetings(app, get_tree(), _check)
+	await _native06_reception()
+	var professional_ids: Array = app.model.squad.map(func(p: Dictionary): return str(p.id))
+	app._navigate("Centre")
+	_press("ACTIVER LES PARCOURS")
+	await _settle()
+	_confirm()
+	await _wait()
+	_check(app.model.clubLife.academyPathways.active, "Actual exported UI activates academy pathways")
+	_check(app.model.squad.map(func(p: Dictionary): return str(p.id)) == professional_ids, "Academy activation preserves the professional roster")
+	await _capture("centre-parcours-s2")
 	app._navigate("Presse")
 	var press_tabs: TabContainer = app.root_content.find_child("PressTabs",true,false)
 	_check(press_tabs != null and press_tabs.get_tab_count() == 4, "Exported press exposes Journal, Conference, History and Relations")
@@ -580,6 +667,7 @@ func _world_match(expected_competition: String) -> bool:
 	for week in 12:
 		if app.model.get("next") is Dictionary: break
 		if not await _ask("finish_round"): return false
+		await settle_club_meetings(app, get_tree(), _check)
 	var next: Variant = app.model.get("next")
 	_check(next is Dictionary and next.get("competitionId") == expected_competition,"Actual fixture: " + expected_competition)
 	if not next is Dictionary or next.get("competitionId") != expected_competition: return false
@@ -587,12 +675,14 @@ func _world_match(expected_competition: String) -> bool:
 		await _ask("auto_lineup")
 		if not app.model.selection.valid and not await _ask("promote_cover",{"confirmed":true}): return false
 	if not await _ask("begin_match"): return false
+	await continue_match_phase(app, get_tree(), _check, "pre")
 	app.timer.stop()
 	app._navigate("Match")
 	await _capture("monde-match-" + expected_competition)
 	if not await _ask("delegate"): return false
 	_check(app.model.live is Dictionary and app.model.live.finished,"Native rugby match finishes: " + expected_competition)
 	if not await _ask("finish_round"): return false
+	await settle_club_meetings(app, get_tree(), _check)
 	var recorded: bool = app.model.history.any(func(r): return r.get("competitionId") == expected_competition and r.get("pair", []).has(app.model.club.id) and r.get("stats") is Array)
 	_check(recorded,"Competition-specific result and match statistics recorded")
 	return recorded
@@ -614,6 +704,7 @@ func _world_creation(club_id: int, league: String, edition: String = "world") ->
 	await _wait()
 	var created: bool = app.model.get("club") is Dictionary and int(app.model.club.id) == club_id and app.model.meta.mode == "world" and app.model.meta.get("edition","world") == edition
 	_check(created,"World career created through actual club picker")
+	if created: await settle_club_meetings(app, get_tree(), _check)
 	return created
 
 func _world_reception() -> void:
@@ -658,6 +749,7 @@ func _world_reception() -> void:
 	_check(app.bridge.last_response_ok and app.model.meta.canAdvanceSeason,"File picker restores a finished world season")
 	if not app.model.meta.canAdvanceSeason: return
 	if not await _ask("next_season",{"confirmed":true}): return
+	await settle_club_meetings(app, get_tree(), _check)
 	_check(int(app.model.meta.season)==2 and app.model.archives.seasons.size()==1,"Interseason, promotions and European qualification run in the exported app")
 	app._navigate("Classements")
 	await _capture("monde-intersaison-2560")
@@ -731,6 +823,7 @@ func _pacific_reception() -> void:
 	_check(app.bridge.last_response_ok and app.model.meta.canAdvanceSeason and app.model.meta.edition == "world-pacific", "Native file picker loads the completed Pacific season")
 	if not app.model.meta.canAdvanceSeason: return
 	if not await _ask("next_season",{"confirmed":true}): return
+	await settle_club_meetings(app, get_tree(), _check)
 	_check(int(app.model.meta.season) == 2 and app.model.archives.seasons.size() == 1 and app.model.leagues.size() == 7, "Pacific season two and annual European qualification are live")
 	if not await _ask("export"): return
 	var before: Dictionary = JSON.parse_string(app.model.meta.exportText).state

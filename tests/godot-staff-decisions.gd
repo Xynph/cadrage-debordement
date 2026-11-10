@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -67,6 +68,7 @@ func run() -> void:
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
 	await command("snapshot")
 	await command("new_career", {"mode":"common", "club":1})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	var pack := OS.get_environment("CD_STAFF_PACK_QA")
 	if not pack.is_empty():
 		await command("pack_inspect", {"path":pack})
@@ -171,6 +173,7 @@ func run() -> void:
 	await command("auto_lineup")
 	if not app.model.selection.valid: await command("promote_cover", {"confirmed":true})
 	await command("begin_match"); await command("delegate"); await command("finish_round")
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(app.model.decisions.report is Dictionary and not app.model.decisions.report.notes.is_empty(), "Rapport réel conservé après validation")
 	app._navigate("Match"); await settle()
 	check(contains_text(app.match_screen.side, "Dernière rencontre"), "Bilan du dernier match accessible après validation")

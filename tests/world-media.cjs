@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),crypto=require('node:crypto');
 const {createBridge}=require('../native/engine/worker.cjs'),media=require('../native/engine/media-packs.cjs'),world=require('../native/engine/world-registry.json'),legacy=require('../dist/rugby-common-rosters.js');
 const root=fs.mkdtempSync(path.join(process.env.CD_WORLD_TEST_ROOT||os.tmpdir(),'cd-world-media-'));let seq=0,b;
@@ -15,12 +16,12 @@ try{
  assert.equal(call('pack_inspect',{path:file}).ok,false,'a new world pack is not silently treated as a French30 pack');
  const preview=go('pack_inspect',{path:file,mode:'world'}).packs.preview;assert.equal(preview.databaseId,world.id);
  go('pack_install',{path:file,digest:preview.digest});assert.equal(call('pack_select',{scope:'creation',id:preview.id}).ok,false);
- const m=go('pack_select',{scope:'creation',mode:'world',id:preview.id});assert.equal(m.meta.worldCatalogue[30].name,'Nom privé du club');assert.equal(m.meta.legacyCatalogue.length,30);assert.equal(m.meta.legacyPackCreation,'base');
- const career=go('new_career',{mode:'world',club:30});assert.equal(career.club.name,'Nom privé du club');assert.equal(career.squad.find(x=>x.id===p.id).name,'Nom privé du joueur');assert.ok(fs.existsSync(career.squad.find(x=>x.id===p.id).portraitPath));
+ const m=settleClubMeetings(go('pack_select',{scope:'creation',mode:'world',id:preview.id}),(command,payload)=>go(command,payload));assert.equal(m.meta.worldCatalogue[30].name,'Nom privé du club');assert.equal(m.meta.legacyCatalogue.length,30);assert.equal(m.meta.legacyPackCreation,'base');
+ const career=settleClubMeetings(go('new_career',{mode:'world',club:30}),(command,payload)=>go(command,payload));assert.equal(career.club.name,'Nom privé du club');assert.equal(career.squad.find(x=>x.id===p.id).name,'Nom privé du joueur');assert.ok(fs.existsSync(career.squad.find(x=>x.id===p.id).portraitPath));
  const before=state();assert.equal(before.clubs[30].name,world.clubs[30].name);assert.equal(before.clubs[30].players.find(x=>x.id===p.id).name,p.name);
  const old=zip('legacy.zip',[['pack.json',JSON.stringify({schema:'cd-identity-pack-v1',id:'legacy-test',name:'France test',version:'1',databaseId:legacy.id,rightsStatus:'test-local',clubs:[{id:0,name:'Club France test'}],players:[],assets:[]})]]);
  const oldPreview=go('pack_inspect',{path:old,mode:'common'}).packs.preview;go('pack_install',{path:old,digest:oldPreview.digest});assert.equal(call('pack_select',{scope:'career',id:oldPreview.id}).ok,false);assert.deepEqual(state(),before);
- go('pack_select',{scope:'career',id:'base'});const after=state(),unbound={...before};delete unbound.identityPack;assert.deepEqual(after,unbound);
- go('pack_select',{scope:'career',id:preview.id});go('shutdown');b=createBridge({dataDir:profile,seed:99});assert.deepEqual(state(),before);assert.equal(go('snapshot').packs.career,preview.id);
+ settleClubMeetings(go('pack_select',{scope:'career',id:'base'}),(command,payload)=>go(command,payload));const after=state(),unbound={...before};delete unbound.identityPack;assert.deepEqual(after,unbound);
+ settleClubMeetings(go('pack_select',{scope:'career',id:preview.id}),(command,payload)=>go(command,payload));go('shutdown');b=createBridge({dataDir:profile,seed:99});assert.deepEqual(state(),before);assert.equal(go('snapshot').packs.career,preview.id);
  console.log(JSON.stringify({passed:true,checks:['world-only inspection','separate creation preferences','foreign logo and player image','display-only identities','cross-edition refusal without mutation','switch and restart']}));
 }finally{if(b)b.close();fs.rmSync(root,{recursive:true,force:true});}

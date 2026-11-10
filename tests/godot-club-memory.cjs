@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),zlib=require('node:zlib'),{spawnSync}=require('node:child_process');
 const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;
 if(!godot){console.log('SKIP godot-club-memory : SDK Godot absent ; aucun profil créé, réception native non exécutée.');process.exit(0);}
@@ -21,6 +22,6 @@ try{
  if(run.error)throw run.error;assert.equal(run.status,0,log);assert.doesNotMatch(log,/SCRIPT ERROR|Parse Error|ERROR:/);
  assert.deepEqual(good('snapshot').archives,model.archives);assert.equal(good('export').meta.exportText,before,'Aucune mutation du modèle canonique / RNG');assert.deepEqual(fs.readFileSync(disk),bytes,'Aucune écriture de sauvegarde en consultation');
  assert.equal(multiBridge.handle({id:3,command:'export'}).model.meta.exportText,multiBefore,'S6 sans mutation S/RNG');assert.deepEqual(fs.readFileSync(multiDisk),multiBytes,'S6 sans écriture de sauvegarde');
- const historical=good('new_career',{club:0,mode:'fiction'});assert.deepEqual(historical.archives.seasons,[],'Ancienne ligue à 14 : aucun passé reconstruit');
+ const historical=settleClubMeetings(good('new_career',{club:0,mode:'fiction'}),(command,payload)=>good(command,payload));assert.deepEqual(historical.archives.seasons,[],'Ancienne ligue à 14 : aucun passé reconstruit');
  console.log('Mémoire du club : fixtures worker S2/S6, projection/UI, pureté S/RNG/disque et ancien format PASS');
 }finally{b.close();if(multiBridge)multiBridge.close();}

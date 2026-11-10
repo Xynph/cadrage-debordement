@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {spawnSync}=require('node:child_process');
 const path=require('node:path'),fs=require('node:fs'),os=require('node:os');
@@ -14,7 +15,7 @@ if(process.env.CD_MATCH_CONTACT_PREPARE==='1'){
  let sequence=0;const call=(command,payload={})=>{const r=bridge.handle({id:++sequence,command,payload});assert.equal(r.ok,true,r.error);return r.model;};
  const lives=[];let previous=null;
  try{
-  call('new_career',{mode:'common',club:0});let model=skipMatchTalk(call('begin_match'),call);
+  settleClubMeetings(call('new_career',{mode:'common',club:0}),call);let model=skipMatchTalk(call('begin_match'),call);
   for(let tick=0;tick<50&&lives.length<32&&!model.live.finished;tick++){
    model=skipMatchTalk(model,call);
    if(model.live.scene.key!==previous){lives.push(structuredClone(model.live));previous=model.live.scene.key;}

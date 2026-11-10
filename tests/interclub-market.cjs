@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const file=path.resolve(__dirname,'../native/engine/interclub-market.cjs');
 const domain=fs.existsSync(file)?require(file):{factory:()=>({})};
@@ -16,7 +17,7 @@ function workerFixture(t,mode="common"){
  const system=path.join(engine,'native-systems.cjs');fs.writeFileSync(system,fs.readFileSync(system,'utf8').replace('const domains={',"const domains={interclubMarket:require('./interclub-market.cjs'),"));
  const {createBridge}=require(path.join(engine,'worker.cjs')),opts={dataDir:path.join(root,'profile'),distDir:path.resolve(__dirname,'../dist'),seed:827381,now:1794178800000};let b=createBridge(opts),n=0;
  const raw=(command,payload={})=>b.handle({id:++n,command,payload}),go=(command,payload={})=>{const r=raw(command,payload);a.equal(r.ok,true,command+': '+r.error);return r.model;};
- t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});go('new_career',{mode,club:0});
+ t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});settleClubMeetings(go('new_career',{mode,club:0}),(command,payload)=>go(command,payload));
  return {raw,go,model:()=>go('snapshot').clubLife.interclubMarket,state:()=>JSON.parse(go('export').meta.exportText).state,export:()=>go('export').meta.exportText,disk:()=>fs.readFileSync(path.join(root,'profile/PrototypeGodot/donnees.json')),file:path.join(root,'profile/PrototypeGodot/donnees.json'),restart:()=>{b.close();b=createBridge({...opts,seed:1,now:1});}};
 }
 test('vrai worker: refus disque atomique, achat persistant et import/reprise exacts',t=>{

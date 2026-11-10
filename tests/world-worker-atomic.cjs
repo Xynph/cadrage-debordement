@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(process.env.CD_WORLD_TEST_ROOT||os.tmpdir(),'cd-atomic-save-'));
@@ -8,7 +9,7 @@ try{
   const call=(command,payload={})=>b.handle({id:++id,command,payload});
   const good=(command,payload)=>{const r=call(command,payload);assert.equal(r.ok,true,r.error);return r.model;};
   try{
-   const m=good('new_career',{mode,club}),dir=m.meta.dataDir,primary=path.join(dir,'donnees.json'),backup=path.join(dir,'donnees-precedentes.json');
+   const m=settleClubMeetings(good('new_career',{mode,club}),(command,payload)=>good(command,payload)),dir=m.meta.dataDir,primary=path.join(dir,'donnees.json'),backup=path.join(dir,'donnees-precedentes.json');
    good('save');good('set_tactics',{attack:'conquete',defense:'equilibre'});
    const before=fs.readFileSync(primary),previous=fs.readFileSync(backup),career=good('export').meta.exportText;
    assert.notDeepEqual(before,previous,'distinct recovery point before injecting a fault');
@@ -20,7 +21,7 @@ try{
    assert.deepEqual(fs.readFileSync(backup),previous,'previous recovery file unchanged');
    assert.equal(good('export').meta.exportText,career,'career and clock rolled back');
    assert.ok(!fs.readdirSync(dir).some(n=>n.includes('.tmp')||n.includes('.rollback')));
-   good('train',{mode:'intense'});assert.deepEqual(fs.readFileSync(backup),before,'successful retry keeps immediately previous file');
+   settleClubMeetings(good('train',{mode:'intense'}),(command,payload)=>good(command,payload));assert.deepEqual(fs.readFileSync(backup),before,'successful retry keeps immediately previous file');
   }finally{b.close();}
  }
  console.log(JSON.stringify({passed:true,checks:['failed final publication preserves primary, recovery, career and clock','successful retry updates recovery','common and world editions']}));

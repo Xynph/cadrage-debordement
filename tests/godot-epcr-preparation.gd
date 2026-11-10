@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -38,6 +39,7 @@ func run() -> void:
 	while (app.model.is_empty() or app.waiting) and Time.get_ticks_msec()<deadline:await process_frame
 	app.timer.stop()
 	await ask("new_career",{"mode":"world","club":0})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	await ask("export")
 	var exported: String=app.model.meta.exportText
 	var career_file: String=str(app.model.meta.dataDir).path_join("donnees.json")

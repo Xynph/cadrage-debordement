@@ -333,6 +333,9 @@ func _failed(message: String) -> void:
 	if route == "Accueil" or not _has_career(): _render()
 
 func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = false) -> void:
+	if is_instance_valid(contextual_director) and contextual_director.active_meeting():
+		contextual_director.render_if_needed()
+		return
 	if is_instance_valid(contextual_director) and contextual_director.match_immersed() and target != "Match":
 		contextual_director.render_if_needed()
 		return

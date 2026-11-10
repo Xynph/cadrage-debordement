@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -31,7 +32,7 @@ const roster = state => state.clubs[state.club].players;
 const plan = (model, key) => support(model).training.plans.find(option => option.key === key);
 const player = (state, id) => roster(state).find(p => p.id === id);
 function staged(w, {condition=70, delegated=true, highLoad=false}={}) {
-  w.call('new_career', { mode: 'common', club: 29 });
+  settleClubMeetings(w.call('new_career', { mode: 'common', club: 29 }),(command,payload)=>w.call(command,payload));
   const doc = w.read();
   const state = doc.state;
   state.training = 'intense';

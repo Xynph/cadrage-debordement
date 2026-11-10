@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 // Controlled incidents use the actual native rules; the worker receives valid saves.
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
@@ -40,13 +41,13 @@ function worker(name,fn){const b=createBridge({dataDir:path.join(root,name),seed
 function unchangedRefusal(api,payload){const before=api.good('export').meta.exportText,file=path.join(api.good('snapshot').meta.dataDir,'donnees.json'),bytes=fs.readFileSync(file);const r=api.call('substitute',payload);assert.equal(r.ok,false,'must refuse '+JSON.stringify(payload));assert.ok(r.error);assert.equal(api.good('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(file),bytes);assert.equal(api.good('snapshot').meta.saveError,false);}
 
 test('Clearing two compatible selection slots removes both players and preserves all other assignments/export',()=>worker('clear',({good})=>{
- const first=good('new_career',{club:29,mode:'france'}),original=[...first.lineup,...first.reserves];
+ const first=settleClubMeetings(good('new_career',{club:29,mode:'france'}),(command,payload)=>good(command,payload)),original=[...first.lineup,...first.reserves];
  good('set_lineup',{slot:16,playerId:null});const m=good('set_lineup',{slot:0,playerId:null}),expected=original.slice();expected[16]=null;expected[0]=null;
  assert.deepEqual([...m.lineup,...m.reserves],expected);assert.equal(m.squad.find(p=>p.id===original[0]).status,'Hors groupe');
  const state=JSON.parse(good('export').meta.exportText).state;assert.deepEqual([...state.lineup,...state.reserves],expected);
 }));
 test('A real eligible player still swaps into the previous compatible slot',()=>worker('swap',({good})=>{
- const m=good('new_career',{club:29,mode:'france'}),a=m.lineup[0],b=m.reserves[1];const result=good('set_lineup',{slot:0,playerId:b});assert.equal(result.lineup[0],b);assert.equal(result.reserves[1],a);
+ const m=settleClubMeetings(good('new_career',{club:29,mode:'france'}),(command,payload)=>good(command,payload)),a=m.lineup[0],b=m.reserves[1];const result=good('set_lineup',{slot:0,playerId:b});assert.equal(result.lineup[0],b);assert.equal(result.reserves[1],a);
 }));
 test('Every substitution option carries its exact slot and native position, including vacancies',()=>{
  assert.deepEqual(after20.model.live.substitutions.map(s=>s.slot),Array.from({length:15},(_,i)=>i));

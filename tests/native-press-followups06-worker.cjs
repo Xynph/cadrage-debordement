@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(process.env.TEMP||require('node:os').tmpdir(),'cd-press-followups06-'));let b,seq=0;
@@ -8,7 +9,7 @@ const good=(command,payload={})=>{const r=call(command,payload);assert.equal(r.o
 function signed(doc){let h=2166136261;const raw=JSON.stringify(doc.state);for(let i=0;i<raw.length;i++)h=Math.imul(h^raw.charCodeAt(i),16777619);doc.checksum=(h>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
 try{
  open();let m=good('new_career',{mode:'fiction',club:0});
- const initial=JSON.parse(good('export').meta.exportText),candidate=initial.state.market[0],cash=m.club.cash;
+ m=settleClubMeetings(m,good);const initial=JSON.parse(good('export').meta.exportText),candidate=initial.state.market[0],cash=m.club.cash;
  // Pin this explicit available-player fixture as the normal watch list would,
  // so a weekly market refresh cannot remove every match for this mission.
  const pinned=initial.state.economy.freeAgents.find(p=>p.id===candidate.id);
@@ -17,7 +18,7 @@ try{
  good('import',{text:signed(initial)});
  m=good('scout_mission',{family:candidate.fam,maxAge:40,budget:10000000,maxWage:100000,confirmed:true});
  assert.equal(m.club.cash,cash-5000,'Coût natif inchangé');assert.equal(m.decisions.recruitment.missions[0].remaining,2);
- for(let i=0;i<2;i++){good('begin_match');good('delegate');m=good('finish_round');}
+ for(let i=0;i<2;i++){m=settleClubMeetings(good('snapshot'),good);good('begin_match');good('delegate');m=good('finish_round');}
  assert.ok(m.decisions.recruitment.reports.length>0,'Vrais rapports après deux journées de travail natives : '+JSON.stringify({missions:m.decisions.recruitment.missions,messages:m.messages.slice(0,3)}));
  assert.ok(m.decisions.recruitment.reports.every(r=>r.assessment&&r.assessment.observed.length&&r.assessment.source.includes('Saison')));
  const doc=JSON.parse(good('export').meta.exportText),q=m.clubLife.press.conference.questions[0];

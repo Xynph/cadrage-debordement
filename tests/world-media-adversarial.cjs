@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
@@ -76,7 +77,7 @@ function withPack(verify) {
   };
   const archive = path.join(root, 'pack.zip');
   fs.writeFileSync(archive, zip([['pack.json', Buffer.from(JSON.stringify(manifest))], ['image.png', pixel]]));
-  const model = go('new_career', {mode: 'world', club: club.id});
+  const model = settleClubMeetings(go('new_career', {mode: 'world', club: club.id}),(command,payload)=>go(command,payload));
   const preview = go('pack_inspect', {path: archive, mode: 'world'}).packs.preview;
   go('pack_install', {path: archive, digest: preview.digest, mode: 'world'});
   const folder = path.join(model.meta.dataDir, 'packs', preview.id);
@@ -114,7 +115,7 @@ for (const [field, corrupt] of [
  ['club', manifest => { manifest.clubs[club.id].abbr = 'INVALIDE!'; }],
 ]) {
  test(`Un manifeste installé avec un ${field} invalide est écarté`, () => withPack(({go, packId, manifestFile}) => {
-  const active = go('pack_select', {scope: 'career', id: packId});
+  const active = settleClubMeetings(go('pack_select', {scope: 'career', id: packId}),(command,payload)=>go(command,payload));
   assert.equal(active.club.name, 'Club du pack');
   const installed = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   corrupt(installed);
@@ -135,12 +136,12 @@ test('Sélection, carrière et création contrôlent le contenu du média', () =
  const rejected = call('pack_select', {scope: 'career', id: packId});
  assert.equal(rejected.ok, false, 'Sélection refusée après corruption de taille identique');
  fs.writeFileSync(imageFile, pixel);
- assert.equal(go('pack_select', {scope: 'career', id: packId}).club.name, 'Club du pack');
+ assert.equal(settleClubMeetings(go('pack_select', {scope: 'career', id: packId}),(command,payload)=>go(command,payload)).club.name, 'Club du pack');
  fs.unlinkSync(imageFile);
  assert.equal(go('snapshot').club.name, club.name, 'Repli si le média actif disparaît');
  fs.writeFileSync(imageFile, pixel);
- go('pack_select', {scope: 'career', id: 'base'});
- assert.equal(go('pack_select', {scope: 'creation', mode: 'world', id: packId}).meta.worldCatalogue[club.id].name, 'Club du pack');
+ settleClubMeetings(go('pack_select', {scope: 'career', id: 'base'}),(command,payload)=>go(command,payload));
+ assert.equal(settleClubMeetings(go('pack_select', {scope: 'creation', mode: 'world', id: packId}),(command,payload)=>go(command,payload)).meta.worldCatalogue[club.id].name, 'Club du pack');
  fs.writeFileSync(imageFile, corrupt);
  const fallback = go('snapshot');
  assert.equal(fallback.meta.worldCatalogue[club.id].name, club.name, 'Repli si le média de création est corrompu');

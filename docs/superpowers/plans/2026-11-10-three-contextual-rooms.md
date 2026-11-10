@@ -24,3 +24,10 @@ Vues extendsControl, var director:Node, update_frame(model:Dictionary,data:Dicti
 
 ## Review focus
 Contexte périmé entre ouverture et réponse : refus serveur visible ; joueur/staff parti : pas d’identité fabriquée ; sauvegarde pendant visite : pas d’état fantôme ; match lancé pendant visite : priorité immersion match ; texte long/sans logo : repli neutre et décisions toujours accessibles.
+
+## Contrat obligatoire ajouté après précision utilisateur
+- Domaine club-meetings.cjs / tests/native-club-meetings.cjs : état optionnel strict, scènes persistantes, file/reçus bornés, programmation par faits réels, guards/observe purs hors mutations acceptées.
+- Projection model.clubLife.clubMeetings.scene : id,kind,context,playerId?,reason,completed,ackAllowed. Vue reçoit les mêmes champs plus meetingId=id.
+- club_meeting_ack {meetingId} : confirmation des priorités actuelles ou lecture médicale seulement si ackAllowed ; presse requiert sa vraie commande complète. club_meeting_continue {meetingId} uniquement après completed.
+- Presse : accueil/semaines effectivement avancées si conférence disponible. Médical : épisodes nouveaux de blessure/reprise, pas chaque clic/semaine de blessure inchangée. Direction : priorités initiales, bilans périodiques et objectifs/faits nouveaux, aucune dépense forcée.
+- Parent seul raccorde native-systems/worker/main/director. Tester redémarrage avant/après décision, imports anciens, commandes détournées, refus/replay/rollback disque, observation/visite sans effets.

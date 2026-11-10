@@ -9,3 +9,6 @@ La presse montre les questions et journalistes réellement projetés puis envoie
 Les accès sont contextuels depuis les écrans concernés, jamais pendant un match ou un entretien prioritaire. Une fermeture retrouve la gestion ; un changement de carrière ou un contexte périmé invalide la visite. Match/causeries restent prioritaires. Les salles ne sont pas des routes permanentes de promenade.
 
 Cadrage d’implémentation décidé par l’intégrateur : trois composants séparés et une extension commune du directeur/factory ; commandes serveur existantes uniquement, aucune nouvelle règle sportive. XV adulte élite, saison2026–27 ; références rugby du dépôt applicables.
+
+## Précision ultérieure explicite de Léo
+Les trois salles sont plein écran, s’ouvrent automatiquement au moment opportun et sont impassables avant les décisions ou conversations attendues. Un domaine natif persistant clubMeetings programme ces rendez-vous et conserve la scène jusqu’à sa résolution puis Continuer. Les gardes serveur bloquent les commandes sans rapport ; sauvegarde/export/fermeture de l’application restent possibles. Reprendre la carrière retrouve le rendez-vous, sans rejouer les effets.

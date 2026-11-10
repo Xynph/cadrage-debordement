@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 
 var checks := 0
 var failures: Array[String] = []
@@ -161,6 +162,7 @@ func pacific() -> void:
 	await settle()
 	await click(app.find_child("CreationStart",true,false))
 	await worker()
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(app.bridge.last_response_ok and app.model.meta.get("edition")=="world-pacific" and app.model.club.id==58,"Le vrai club Pacifique est créé par son bouton")
 	if not app.bridge.last_response_ok: return
 	var preparation: Dictionary = app.model.meta.get("pacificPreparation",{})
@@ -193,6 +195,7 @@ func pacific() -> void:
 	var start := int(app.model.meta.week)
 	await click(advance)
 	await worker()
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(app.bridge.last_response_ok and int(app.model.meta.week)==start+mini(4,int(preparation.weeksUntil)),"Le clic effectue au plus quatre semaines réelles")
 	app._navigate("Bureau")
 	await settle()
@@ -200,6 +203,7 @@ func pacific() -> void:
 	start=int(app.model.meta.week)
 	await click(office)
 	await worker()
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(app.bridge.last_response_ok and int(app.model.meta.week)>start,"Le Bureau fait avancer la même préparation")
 	app._navigate("Rivalités")
 	await settle()
@@ -209,6 +213,7 @@ func pacific() -> void:
 		if advance==null: break
 		await click(advance)
 		await worker()
+		await ContextualFlow.settle_club_meetings(app, self, check)
 	check(app.model.next is Dictionary and app.model.next.get("date")=="2027-02-13" and app.model.next.get("competitionId")=="srp","La préparation s’arrête sur le vrai premier match Pacifique")
 	app._navigate("Bureau")
 	await settle()
@@ -280,6 +285,7 @@ func japan(compact: bool) -> void:
 	if not await edition_action("CreationClub%d" % club_id): return
 	if not await edition_action("CreationStart"): return
 	await worker()
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	var meta: Dictionary = app.model.meta
 	check(app.bridge.last_response_ok and meta.get("edition")=="world-japan" and meta.get("mode")=="world" and meta.get("leagueId")==division and app.model.get("club",{}).get("id")==club_id,"Création de la vraie carrière dans la division sélectionnée")
 	if not app.bridge.last_response_ok: return
@@ -305,6 +311,7 @@ func japan(compact: bool) -> void:
 		var limit := int(app.model.meta.get("japanPreparation",{}).get("weeksUntil",0))
 		if not await edition_action(actions[i]): return
 		await worker()
+		await ContextualFlow.settle_club_meetings(app, self, check)
 		check(app.bridge.last_response_ok and int(app.model.meta.week)==week+mini(4,limit),"Avance réelle jusqu’à la semaine du match · " + str(actions[i]))
 	var next: Variant = app.model.next
 	check(next is Dictionary and next.get("competitionId")==division and next.get("date")=="2026-12-13","L’avance s’arrête au vrai premier match de la division")
@@ -376,6 +383,7 @@ func nationale(compact: bool) -> void:
 	if not await edition_action("CreationClub%d" % club_id): return
 	if not await edition_action("CreationStart"): return
 	await worker()
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	var meta: Dictionary = app.model.meta
 	check(app.bridge.last_response_ok and meta.get("edition")=="world-nationale" and meta.get("leagueId")=="nationale" and app.model.get("club",{}).get("id")==club_id,"La carrière et le club sélectionnés sont confirmés par le moteur")
 	var fixture: Variant = app.model.get("next")
@@ -451,6 +459,7 @@ func champ(compact: bool) -> void:
 	await capture(("71" if compact else "70")+"-champ-creation-"+dimensions)
 	if not await edition_action("CreationStart"): return
 	await worker()
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(app.bridge.last_response_ok and app.model.meta.get("edition")=="world-champ" and app.model.meta.get("leagueId")=="champ" and app.model.club.get("id")==club_id and app.model.calendar.size()==26,"La carrière Champ est créée avec les 26 vraies rencontres")
 	if app.model.calendar.is_empty(): return
 	var first: Dictionary = app.model.calendar.front()
@@ -463,6 +472,7 @@ func champ(compact: bool) -> void:
 	await settle()
 	if not await edition_action("ChampPreparationAdvance" if compact else "CompetitionChampAdvance"): return
 	await worker()
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	var upcoming: Variant = app.model.get("next")
 	check(app.bridge.last_response_ok and app.model.meta.week==first.week and upcoming is Dictionary and upcoming.date==first.date and upcoming.venue==first.venue,"La vraie commande s’arrête au prochain match, avec sa date et son terrain")
 	if not upcoming is Dictionary: return
@@ -986,6 +996,7 @@ func match_flow() -> void:
 	await capture("30-resultat-2560x1440")
 	await click(app.match_finish)
 	await worker()
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(app.model.live==null and not app.model.history.is_empty(),"La validation du résultat alimente l’historique de carrière")
 
 func run() -> void:
@@ -1036,6 +1047,7 @@ func run() -> void:
 		return
 	if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await entry()
 	await command("new_career", {"club":0, "mode":"fiction"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	app._navigate("Bureau")
 	await settle()
 	check(app.find_child("ImmersiveShell", true, false) != null, "Raccordement dans le vrai rendu du jeu")
