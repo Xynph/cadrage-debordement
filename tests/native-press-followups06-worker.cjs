@@ -23,9 +23,16 @@ try{
  assert.ok(m.decisions.recruitment.reports.every(r=>r.assessment&&r.assessment.observed.length&&r.assessment.source.includes('Saison')));
  const doc=JSON.parse(good('export').meta.exportText),q=m.clubLife.press.conference.questions[0];
  // Explicit archive fixture to test native persistence, never a real-world quotation.
- const sourceId=require('../dist/press-question-bank.js').questions.find(source=>source.theme===q.theme&&source.id!==q.id).id;
- doc.state.pressConference={version:1,history:[{id:sourceId,season:doc.state.season,week:0,club:doc.state.club,answerId:'r4',questionText:'Quelle méthode pour ce groupe ?',answerText:'Nous avançons ensemble à Béziers, sans promettre le résultat.',journalist:{id:q.journalist.id,name:q.journalist.name,outlet:q.journalist.outlet}}]};
- m=good('import',{text:signed(doc)});const follow=m.clubLife.press.conference.questions.find(q=>q.followUp);assert.ok(follow);
+ const history=doc.state.pressConference?.history||[];
+ const archiveWeek=Array.from({length:doc.state.round},(_,week)=>week).reverse().find(week=>history.filter(h=>h.season===doc.state.season&&h.week===week&&h.club===doc.state.club).length<4);assert.notEqual(archiveWeek,undefined,'Une conférence passée peut recevoir cet échange sans dépasser quatre questions');
+ const source=require('../dist/press-question-bank.js').questions.find(source=>source.theme===q.theme&&source.id!==q.id&&!history.some(h=>h.id===source.id&&h.season===doc.state.season&&h.week===archiveWeek&&h.club===doc.state.club));assert.ok(source);
+ const quotation='Nous avançons ensemble à Béziers, sans promettre le résultat.';
+ // Keep the real conferences backing journalist memory; add a separate,
+ // coherent archive entry rather than overwriting an existing exchange.
+ history.push({id:source.id,season:doc.state.season,week:archiveWeek,club:doc.state.club,answerId:'r4',questionText:'Quelle méthode pour ce groupe ?',answerText:quotation,journalist:{id:q.journalist.id,name:q.journalist.name,outlet:q.journalist.outlet}});
+ history.sort((a,b)=>a.season-b.season||a.week-b.week);
+ doc.state.pressConference={...doc.state.pressConference,version:1,history};
+ m=good('import',{text:signed(doc)});const follow=m.clubLife.press.conference.questions.find(q=>q.followUp?.quote===quotation);assert.ok(follow);
  const before=good('export').meta.exportText,disk=path.join(m.meta.dataDir,'donnees.json'),bytes=fs.readFileSync(disk);
  fs.writeFileSync(path.join(root,'avant-conference.json'),before);
  for(let i=0;i<3;i++)good('snapshot');assert.equal(good('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(disk),bytes);

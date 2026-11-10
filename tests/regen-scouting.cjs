@@ -1,5 +1,6 @@
 'use strict';
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const file=path.resolve(__dirname,'../native/engine/regen-scouting.cjs');
 const domain=fs.existsSync(file)?require(file):{factory:()=>({})};
@@ -62,7 +63,7 @@ function workerFixture(t,mode){
 test('Vrai worker Monde : shortlist sans coût/RNG, rollback disque et réouverture exacte',t=>{
  const h=workerFixture(t,'world'),m=h.model(),p=m.candidates[0],before=h.export(),disk=h.disk(),state=h.state(),payload={playerId:p.id,watched:true,context:m.context};
  h.go('snapshot');a.equal(h.export(),before);a.deepEqual(h.disk(),disk);
- const backup=path.join(path.dirname(h.file),'donnees-precedentes.json');fs.mkdirSync(backup);a.equal(h.raw('regen_shortlist',payload).ok,false);a.equal(h.export(),before);a.deepEqual(h.disk(),disk);fs.rmdirSync(backup);
+ const refusal=refuseSavePublication(h.file,()=>h.raw('regen_shortlist',payload));a.equal(refusal.ok,false);a.match(refusal.error,/Écriture de sauvegarde impossible/);a.equal(h.export(),before);a.deepEqual(h.disk(),disk);
  h.go('regen_shortlist',payload);a(h.state().manager.watch.includes(p.id));a.equal(h.state().clubs[0].cash,state.clubs[0].cash);const saved=h.export();h.go('regen_shortlist',payload);a.equal(h.export(),saved);h.restart();a.equal(h.export(),saved);h.go('import',{text:saved});a.equal(h.export(),saved);
  const privateBefore=JSON.parse(disk),privateAfter=JSON.parse(h.disk());a.equal(privateAfter.seed,privateBefore.seed);a.equal(privateAfter.clock,privateBefore.clock);
 });

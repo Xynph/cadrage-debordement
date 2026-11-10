@@ -47,7 +47,7 @@ func run() -> void:
 	check(view.find_child("BoardRoomTrust",true,false).text.contains("72"),"true confidence is shown")
 	check(view.find_child("BoardRoomOrganization",true,false).text.contains("55"),"organization stays distinct")
 	check(view.find_child("BoardObjective_goal_points",true,false).text.contains("22"),"objective uses actual measured points")
-	check(view.find_child("BoardRoomFinanceNotice",true,false).text.contains("fictifs"),"fictional finance notice")
+	check(view.find_child("BoardRoomFinanceNotice",true,false).text.contains("Projection") and not view.find_child("BoardRoomFinanceNotice",true,false).text.contains("fictifs"),"useful forecast context without fiction warning")
 	check(JSON.stringify(host.model)==before and director.sent.is_empty(),"visits and projections are pure")
 	view._acknowledge();check(director.sent.back()==["club_meeting_ack",{"meetingId":"board:test"}],"confirming existing priorities uses only the active server meeting ID")
 	director.sent.clear()

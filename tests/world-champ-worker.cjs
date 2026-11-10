@@ -58,7 +58,7 @@ test('Champ v5 — création, calendrier, worker et sauvegarde',()=>{
   assert.deepEqual(checkpoint().doc.state,initial.doc.state);
   assert.equal(raw('advance_champ_preparation',{fromWeek:1}).ok,false);
   assert.deepEqual(checkpoint().doc.state,initial.doc.state);
-  model=go('advance_champ_preparation',{fromWeek:0});
+  model=settleClubMeetings(go('advance_champ_preparation',{fromWeek:0}),(command,payload)=>go(command,payload));
   assert.equal(model.meta.week,4);
   assert.equal(model.next.competitionId,'champ');
   assert.equal(raw('advance_champ_preparation',{fromWeek:4}).ok,false);

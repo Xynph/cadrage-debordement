@@ -99,7 +99,7 @@ func _draw() -> void:
 	facts_scroll.add_child(S.label("Les moyens connus",18,S.GOLD))
 	for item in [["Trésorerie","cash"],["Salaires / semaine","weeklyWages"],["Revenus connus / semaine","weeklyIncome"],["Coûts connus / semaine","weeklyCosts"],["Projection de fin de saison","baseForecast"]]:
 		_metric(facts_scroll,str(item[0]),finance.get(item[1]),"BoardFinance_"+str(item[1]),true)
-	var notice := S.wrap(str(finance.get("notice","Montants de jeu fictifs. Aucune projection financière disponible.")),12);notice.name="BoardRoomFinanceNotice";facts_scroll.add_child(notice)
+	var notice := S.wrap(str(finance.get("notice","Aucune projection financière disponible.")).replace("Montants de jeu fictifs.", "").strip_edges(),12);notice.name="BoardRoomFinanceNotice";facts_scroll.add_child(notice)
 	for warning: Variant in board.get("readiness",{}).get("warnings",[]):facts_scroll.add_child(S.wrap(str(warning),14,S.GOLD))
 	var history: Array=board.get("history",[])
 	if not history.is_empty():

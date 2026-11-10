@@ -1,5 +1,6 @@
 'use strict';
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const file=path.resolve(__dirname,'../native/engine/interclub-market.cjs');
 const domain=fs.existsSync(file)?require(file):{factory:()=>({})};
@@ -23,7 +24,7 @@ function workerFixture(t,mode="common"){
 test('vrai worker: refus disque atomique, achat persistant et import/reprise exacts',t=>{
  const h=workerFixture(t),m=h.model(),p=m.candidates.find(p=>p.available);a(p);const payload={playerId:p.id,sellerId:p.clubId,fee:p.fee,salary:p.salary,sourceSalary:p.sourceSalary,contractEnd:p.contractEnd,context:m.context,confirmed:true},before=h.export(),disk=h.disk();
  h.go('snapshot');a.equal(h.export(),before);a.deepEqual(h.disk(),disk);
- const backup=path.join(path.dirname(h.file),'donnees-precedentes.json');fs.mkdirSync(backup);a.equal(h.raw('interclub_transfer',payload).ok,false);a.equal(h.export(),before);a.deepEqual(h.disk(),disk);fs.rmdirSync(backup);
+ const refusal=refuseSavePublication(h.file,()=>h.raw('interclub_transfer',payload));a.equal(refusal.ok,false);a.match(refusal.error,/Écriture de sauvegarde impossible/);a.equal(h.export(),before);a.deepEqual(h.disk(),disk);
  h.go('interclub_transfer',payload);a(h.state().clubs[0].players.some(q=>q.id===p.id));const saved=h.export();h.restart();a.equal(h.export(),saved);h.go('import',{text:saved});a.equal(h.export(),saved);a(!h.model().candidates.some(q=>q.id===p.id));
 });
 test('prêt réel, famille réduite, places réservées et provision salariale bloquent sans effet',()=>{

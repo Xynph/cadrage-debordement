@@ -88,7 +88,7 @@ func _render_ui() -> void:
 	column.add_child(footer)
 	var notice_surface := S.panel(footer, 8)
 	S.G.fill(notice_surface.get_parent().get_parent())
-	var notice := S.wrap(str(data.get("notice", "")), 12, S.TEXT)
+	var notice := S.wrap("Vos réponses ont été communiquées à la presse." if meeting.get("completed", false) else "Répondez à toutes les questions pour terminer la conférence.", 12, S.TEXT)
 	notice_surface.add_child(notice)
 	# The persisted meeting domain alone unlocks the exit. A local draft or
 	# even an old conference receipt never completes a different meeting.
@@ -126,7 +126,7 @@ func _render_conference(column: VBoxContainer) -> void:
 	var name_label := S.wrap(str(journalist.get("name", "Identité indisponible")), 22, S.GOLD)
 	name_label.name = "PressJournalistName"
 	words.add_child(name_label)
-	var outlet := S.wrap(str(journalist.get("outlet", "")) + " · " + str(journalist.get("identityLabel", "")), 12, S.TEXT)
+	var outlet := S.wrap(str(journalist.get("outlet", "")), 12, S.TEXT)
 	outlet.name = "PressJournalistSource"
 	words.add_child(outlet)
 	var relation: Dictionary = question.get("relation", {})

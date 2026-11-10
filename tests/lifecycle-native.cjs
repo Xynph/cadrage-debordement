@@ -1,5 +1,6 @@
 'use strict';
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),crypto=require('node:crypto');
 const {createBridge}=require('../native/engine/worker.cjs'),staff=require('../native/engine/staff.cjs');
 function fixture(t,mode='common',club=0){const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-lifecycle-native-'));let b=createBridge({dataDir:root,seed:827381,now:1794178800000}),n=0;t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});const send=(command,payload={})=>b.handle({id:++n,command,payload}),go=(command,payload)=>{const r=send(command,payload);a.equal(r.ok,true,command+': '+r.error);return r.model;};settleClubMeetings(go('new_career',{mode,club}),(command,payload)=>go(command,payload));return {send,go,export:()=>go('export').meta.exportText,state:()=>JSON.parse(go('export').meta.exportText).state,file:path.join(root,'PrototypeGodot/donnees.json'),restart:()=>{b.close();b=createBridge({dataDir:root,seed:1,now:1});}};}
@@ -33,8 +34,10 @@ test('Refused stale, foreign and invalid staff commands preserve state and disk'
  for(const [command,payload]of requests){a.equal(f.send(command,payload).ok,false);a.equal(f.export(),before);a.deepEqual(bytes(f),disk);}
 });
 test('A real disk refusal rolls back a staff hire and permits the exact retry',t=>{
- const f=fixture(t),m=f.go('snapshot'),candidate=m.clubLife.staffCareer.candidates[0],before=f.export(),disk=bytes(f),backup=path.join(path.dirname(f.file),'donnees-precedentes.json');a.equal(fs.existsSync(backup),false);fs.mkdirSync(backup);
- const payload={...confirmed(m),candidateId:candidate.id,years:1};a.equal(f.send('staff_hire',payload).ok,false);a.equal(f.export(),before);a.deepEqual(bytes(f),disk);fs.rmdirSync(backup);const after=f.go('staff_hire',payload);a.ok(after.staff.teams[0].members.some(p=>p.id===candidate.id));
+ const f=fixture(t),m=f.go('snapshot'),candidate=m.clubLife.staffCareer.candidates[0],before=f.export(),disk=bytes(f);
+ const payload={...confirmed(m),candidateId:candidate.id,years:1};
+ const refusal=refuseSavePublication(f.file,()=>f.send('staff_hire',payload));a.equal(refusal.ok,false);a.match(refusal.error,/Écriture de sauvegarde impossible/);a.equal(f.export(),before);a.deepEqual(bytes(f),disk);
+ const after=f.go('staff_hire',payload);a.ok(after.staff.teams[0].members.some(p=>p.id===candidate.id));
 });
 test('Staff import validation rejects forged clocks and qualification references atomically',t=>{
  const f=fixture(t),before=f.export(),disk=bytes(f);

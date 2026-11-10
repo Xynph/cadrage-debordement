@@ -7,7 +7,7 @@ const payload=m=>({context:m.clubLife.press.context,answers:m.clubLife.press.con
 try{
  let m=good('new_career',{mode:'common',club:29}),guard=0;
  while(m.meta.week<34){assert.ok(guard++<40);if(m.meta.week>=26){const p=payload(m);m=good('press_conference',p);assert.equal(m.clubLife.press.lastOutcome.context.week,m.meta.week);}
-  m=settleClubMeetings(good('snapshot'),good);if(m.next){m=good('begin_match');good('delegate');}m=good('finish_round');
+  m=settleClubMeetings(good('snapshot'),good);if(m.next){if(!m.selection.valid)m=good('auto_lineup');if(!m.selection.valid)m=good('promote_cover',{confirmed:true});assert.equal(m.selection.valid,true,'Feuille qualifiée avant la rencontre réelle');m=good('begin_match');good('delegate');}m=good('finish_round');
  }
  assert.equal(m.meta.week,34);m=good('press_conference',payload(m));assert.equal(m.clubLife.press.lastOutcome.context.week,34);
  const saved=good('export').meta.exportText;good('shutdown');b=createBridge({dataDir:root,now:1700000000000});assert.equal(good('export').meta.exportText,saved);

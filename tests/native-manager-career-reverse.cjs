@@ -11,7 +11,15 @@ function signed(state){const s={format:'cadrage-debordement-save',exportVersion:
 try{
  const b=open('accession');settleClubMeetings(good(b,'new_career',{mode:'common',club:29}),(command,payload)=>good(b,command,payload));act(b,'manager_career_activate');
  if(process.env.CD_MANAGER_REVERSE_PROFILE){const profile=JSON.parse(fs.readFileSync(process.env.CD_MANAGER_REVERSE_PROFILE,'utf8')),state=JSON.parse(profile.store['bdt-v1']),carrier=doc(b),fixture=signed(state);fixture.format=carrier.format;good(b,'import',{text:JSON.stringify(fixture)});}
- else for(let i=0;i<34;i++){if(good(b,'snapshot').next){good(b,'begin_match');good(b,'delegate');}settleClubMeetings(good(b,'finish_round'),(command,payload)=>good(b,command,payload));}
+ else for(let i=0;i<34;i++){
+  if(good(b,'snapshot').next){
+   let prepared=good(b,'auto_lineup');
+   if(!prepared.selection.valid)prepared=good(b,'promote_cover',{confirmed:true});
+   assert.equal(prepared.selection.valid,true,'Feuille qualifiée avant chaque rencontre de la campagne réelle');
+   good(b,'begin_match');good(b,'delegate');
+  }
+  settleClubMeetings(good(b,'finish_round'),(command,payload)=>good(b,command,payload));
+ }
  let target=data(b).opportunities.find(x=>x.leagueId==='elite'&&x.accepted);
  if(!target){
   // Actual club29's first season can correctly receive only refusals. Qualify

@@ -14,7 +14,6 @@ static func build(app: Control) -> Control:
 	G.fill(paper.get_parent(), true)
 	G.fill(paper, true)
 	G.chapter(paper, "18", "Troisième Mi-Temps", "Journal et conférences · saison %d · semaine %d" % [data.context.season, int(data.context.week) + 1], app.accent)
-	paper.add_child(G.wrap(data.notice, 12))
 	var metrics: Dictionary = data.metrics
 	var indicators := G.h(20)
 	paper.add_child(indicators)
@@ -148,7 +147,7 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 		G.fill(identity)
 		heading.add_child(identity)
 		identity.add_child(G.wrap(str(question.journalist.name), 18, G.INK))
-		var provenance := G.wrap(str(question.journalist.outlet) + " · " + str(question.journalist.identityLabel), 12)
+		var provenance := G.wrap(str(question.journalist.outlet), 12)
 		provenance.name = "PressIdentity_" + str(question.id)
 		identity.add_child(provenance)
 		interview.add_child(G.wrap("Style d’entretien : %s · %s" % [question.journalist.styleLabel, question.journalist.personality], 12))

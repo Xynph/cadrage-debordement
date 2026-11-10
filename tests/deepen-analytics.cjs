@@ -1,5 +1,6 @@
 'use strict';
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const source=path.join(__dirname,'../native/engine/player-match-history.cjs');
 test('le registre individuel doit être disponible',()=>assert.ok(fs.existsSync(source)));
@@ -27,7 +28,11 @@ function worker(t,mode='fiction'){
  return {root,raw,good,restart:()=>{bridge.close();bridge=createBridge({...options,seed:1,now:1});},export:()=>good('export').meta.exportText};
 }
 test('vrai worker : activation atomique, collecte, export/import et reprise disque',t=>{const h=worker(t),before=h.export(),model=h.good('snapshot'),c=model.clubLife.playerMatchHistory.context;
- const backup=path.join(h.root,'profile/PrototypeGodot/donnees-precedentes.json');fs.mkdirSync(backup);assert.equal(h.raw('player_match_history_enable',{context:c,confirmed:true}).ok,false);assert.ok(h.export()===before,"export inchangé après refus");fs.rmdirSync(backup);
+ // Mandatory setup decisions already create a valid backup. Refuse the real
+ // publication step without assuming that backup path is still absent.
+ const profile=path.join(h.root,'profile/PrototypeGodot/donnees.json'),bytes=fs.readFileSync(profile);
+ const refusal=refuseSavePublication(profile,()=>h.raw('player_match_history_enable',{context:c,confirmed:true}));
+ assert.equal(refusal.ok,false);assert.match(refusal.error,/Écriture de sauvegarde impossible/);assert.ok(h.export()===before,"export inchangé après refus");assert.deepEqual(fs.readFileSync(profile),bytes,'profil intact après refus de publication');
  h.good('player_match_history_enable',{context:c,confirmed:true});for(let i=0;i<3;i++){h.good('begin_match');h.good('delegate');settleClubMeetings(h.good('finish_round'),(command,payload)=>h.good(command,payload));}
  const p=h.good('snapshot').clubLife.playerMatchHistory;assert.equal(p.recordedMatches,3);assert.ok(p.players.some(p=>p.measuredMatches>0));const saved=h.export(),disk=fs.readFileSync(path.join(h.root,'profile/PrototypeGodot/donnees.json'));h.good('snapshot');assert.ok(h.export()===saved,"export identique après reprise/import/consultation");h.restart();assert.ok(h.export()===saved,"export identique après reprise/import/consultation");assert.ok(fs.readFileSync(path.join(h.root,'profile/PrototypeGodot/donnees.json')).equals(disk),'reprise disque sans écriture');h.good('import',{text:saved});assert.ok(h.export()===saved,"export identique après reprise/import/consultation");
  const invalid=JSON.parse(saved);invalid.state.playerMatchHistory.matches[0].players[0].minutes=10000;assert.equal(h.raw('import',{text:JSON.stringify(invalid)}).ok,false);assert.ok(h.export()===saved,"export identique après reprise/import/consultation");
