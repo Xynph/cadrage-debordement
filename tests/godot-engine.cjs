@@ -31,7 +31,7 @@ try{
   const before=${initial?'null':`attributes.before(S,${liveOnly})`};
   ${source};depth.fill(S);attributes.complete(S,before,${liveOnly});
  }`);
- mutateDirect('start(0);CDStaffCareer.initialize(S)',false,true);
+ mutateDirect('start(0);CDStaffCareer.initialize(S);CDNativeAcademyGroups.start(S);nativeSystems.domain("press").observeInvitation(null,true)',false,true);
  const assertRng=()=>assert.equal(JSON.parse(fs.readFileSync(path.join(initial.meta.dataDir,'donnees.json'),'utf8')).seed,direct.randomState().seed,'curseur RNG identique à la référence native directe');
  let document=JSON.parse(good(b,'export').meta.exportText);assert.deepEqual(document.state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')),'état initial identique au moteur direct');
  assertRng();
@@ -49,7 +49,7 @@ try{
  good(b,'pause');assert.equal(good(b,'snapshot').live.paused,true);const minute=good(b,'snapshot').live.minute;good(b,'tick');assert.equal(good(b,'snapshot').live.minute,minute);good(b,'pause',{paused:false});
  good(b,'delegate');mutateDirect('while(!S.live.finished){if(S.live.paused)continueMatch();else tick()}',true);assert.equal(good(b,'snapshot').live.finished,true);assert.deepEqual(JSON.parse(good(b,'export').meta.exportText).state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')));
  assertRng();
- good(b,'finish_round');mutateDirect('finishRound()');assert.equal(good(b,'snapshot').meta.round,1);assert.deepEqual(JSON.parse(good(b,'export').meta.exportText).state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')));
+ good(b,'finish_round');mutateDirect('const press=nativeSystems.domain("press"),previous=press.context(S);finishRound();press.observeInvitation(previous)');assert.equal(good(b,'snapshot').meta.round,1);assert.deepEqual(JSON.parse(good(b,'export').meta.exportText).state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')));
  assertRng();
  const saved=good(b,'save');assert.ok(fs.existsSync(path.join(saved.meta.dataDir,'donnees.json')));assert.ok(fs.existsSync(path.join(saved.meta.dataDir,'donnees-precedentes.json')));
  const exported=good(b,'export').meta.exportText;assert.equal(call(b,'import',{text:'{}'}).ok,false);assert.equal(good(b,'export').meta.exportText,exported);
@@ -242,7 +242,7 @@ func _model(model):
    stage = 1
    bridge.send("new_career", {"club": 0})
   1:
-   if model.squad.size() != 30:
+   if model.squad.size() != 40:
     _failed("Effectif")
     return
    stage = 2

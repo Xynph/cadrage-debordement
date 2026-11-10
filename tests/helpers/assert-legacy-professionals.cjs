@@ -6,11 +6,12 @@ const { context } = require('../france-harness.cjs');
 let projector;
 
 function assertLegacyProfessionals(actual, legacy) {
-  // Derive only the expected permanent attributes. Keep the rest of the legacy
-  // fixture intact, including its catalogue, history, and prior player IDs.
+  // Derive the expected youth potentials and permanent attributes. Keep the
+  // catalogue, history, and prior player IDs intact.
   projector ??= context();
   projector.ctx.legacyComparison = JSON.stringify(legacy);
   projector.run('S=JSON.parse(legacyComparison)');
+  projector.run('normalizeAcademyPotential(S)');
   projector.prepareNativeProjection();
   const expected = projector.state();
   const clubs = actual.clubs.map((club, index) => {

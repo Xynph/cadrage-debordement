@@ -9,7 +9,16 @@ try{
  while(m.meta.week<34){
   assert.ok(guard++<40);assert.equal(m.clubLife.press.conference.required,true);
   m=good('press_conference',payload(m));assert.equal(m.clubLife.press.lastOutcome.context.week,m.meta.week);
-  if(m.next){m=good('begin_match');good('delegate');}m=good('finish_round');
+  if(m.next){
+   if(!m.selection.valid)m=good('auto_lineup');
+   if(!m.selection.valid){
+    const expectedSlots=m.selection.coverage?.slots;
+    assert.ok(expectedSlots?.length,`Semaine ${m.meta.week} : feuille incomplète sans renfort disponible`);
+    m=good('promote_cover',{confirmed:true,expectedSlots});
+   }
+   good('begin_match');good('delegate');
+  }
+  m=good('finish_round');
  }
  assert.equal(m.meta.week,34);
  assert.equal(m.clubLife.press.invitations[0].kind,'season_review');

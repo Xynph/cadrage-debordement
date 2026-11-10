@@ -2,16 +2,17 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
-const checksum=state=>{let h=2166136261;const s=JSON.stringify(state);for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);return (h>>>0).toString(16).padStart(8,'0');};
 // Conservative schema-valid capacity fixture: source rosters remain at their
 // large initial size and every candidate already has the maximum 12 history
 // entries accepted by the save validator. This is not a played 12-year claim.
 for(const population of ['generated','released-source'])for(const [mode,club,limit] of [['world',0,16*1024*1024],['world-champ',102,24*1024*1024]])test(mode+' '+population+' maximum persistent pool and full history fit the unchanged save budget',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-population-capacity-'));
- const b=createBridge({dataDir:root,seed:827381,now:1794178800000});let serial=0;
+ const options={dataDir:root,seed:827381,now:1794178800000};
+ let b=createBridge(options),serial=0;
  t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});
  const ok=(command,payload={})=>{const r=b.handle({id:++serial,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
- ok('new_career',{mode,club});const doc=JSON.parse(ok('export').meta.exportText),s=doc.state;
+ const model=ok('new_career',{mode,club}),file=path.join(model.meta.dataDir,'donnees.json');
+ const profile=JSON.parse(fs.readFileSync(file,'utf8')),s=JSON.parse(profile.store['bdt-v1']);
  const capacity=Math.min(1900,Math.max(180,s.clubs.length*20)),samples=s.economy.freeAgents;
  if(population==='generated'){
  s.economy.freeAgents=Array.from({length:capacity},(_,i)=>{
@@ -36,10 +37,21 @@ for(const population of ['generated','released-source'])for(const [mode,club,lim
  }
  s.market=JSON.parse(JSON.stringify(s.economy.freeAgents));
  s.aiRoster.population.history[0].available=capacity;
- doc.checksum=checksum(s);const text=JSON.stringify(doc),bytes=Buffer.byteLength(text);
+ // Write the synthetic state as a private profile, then exercise the actual
+ // portable export. Champ can encode repeated market entries as references.
+ b.close();
+ profile.store['bdt-v1']=JSON.stringify(s);
+ fs.writeFileSync(file,JSON.stringify(profile));
+ b=createBridge(options);
+ const text=ok('export').meta.exportText,bytes=Buffer.byteLength(text);
  assert.ok(bytes<limit,bytes+' bytes exceed '+limit+' byte save budget');
- ok('import',{text});const imported=JSON.parse(ok('export').meta.exportText).state;
+ const exported=JSON.parse(text);
+ if(Buffer.byteLength(profile.store['bdt-v1'])>=limit)assert.equal(exported.exportVersion,2);
+ ok('import',{text});
+ const imported=JSON.parse(JSON.parse(fs.readFileSync(file,'utf8')).store['bdt-v1']);
  assert.equal(imported.economy.freeAgents.length,capacity);
  assert.equal(imported.economy.freeAgents.every(p=>p.dev.history.length===12),true);
+ assert.deepEqual(imported.economy.freeAgents,exported.state.economy.freeAgents);
+ assert.deepEqual(imported.market,imported.economy.freeAgents);
  console.log(JSON.stringify({mode,population,clubs:s.clubs.length,capacity,historyPerCandidate:12,bytes,limit,margin:limit-bytes}));
 });

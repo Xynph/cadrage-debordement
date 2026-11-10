@@ -30,6 +30,8 @@ function inspectedWorker(options={}){
  let source=fs.readFileSync(filename,'utf8');
  // Preserve the historical shortage fixtures on this instrumented worker only.
  source=source.replaceAll('nativeProfessionalDepth.fill(S);','');
+ // The worldwide academy groups require the V2 roster that these fixtures bypass.
+ source=source.replace('CDNativeAcademyGroups.start(S)','void 0');
  if(options.kickoffTimeout)source=source.replace('const run=source=>vm.runInContext(source,ctx,{timeout:15000});',"const run=source=>vm.runInContext(source,ctx,{timeout:source.includes('const nativeCreate=createRugbyMatch;')?1000:15000});");
  m._compile(source.replace('return {handle,close};',"return {handle,close,matchFactory:()=>run('createRugbyMatch'),probe:run};"),filename);return m.exports.createBridge;
 }
