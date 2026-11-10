@@ -21,7 +21,7 @@ function seal(document) {
 }
 
 for (const [mode, club] of [['common', 29], ['world-champ', 102]]) {
-  test(`Effectifs disjoints du centre humain · ${mode}`, t => {
+  test(`Effectifs disjoints de tous les centres · ${mode}`, t => {
     const tmp = path.resolve(os.tmpdir());
     const dataDir = fs.mkdtempSync(path.join(tmp, 'oval-academy-groups-'));
     const options = { dataDir, seed: 827381, now: 1794178800000 };
@@ -44,20 +44,27 @@ for (const [mode, club] of [['common', 29], ['world-champ', 102]]) {
     const saved = archive();
     const document = JSON.parse(saved);
     const academy = document.state.development.academy;
-    assert.equal(document.state.academyGroupPolicy, 1);
-    assert.equal(academy.length, 60);
+    assert.equal(document.state.academyGroupPolicy, 2);
     const groups = [academy.filter(p => p.age <= 18), academy.filter(p => p.age >= 19 && p.age <= 21)];
-    assert.deepEqual(groups.map(group => group.length), [30, 30]);
-    for (const group of groups) {
-      for (const [position, slots] of Object.entries(depth)) {
-        assert.equal(group.filter(p => p.pos === position).length, slots, position);
+    const centers = [{ clubId: club, players: academy }, ...document.state.aiRoster.academies];
+    assert.deepEqual(centers.map(center => center.clubId).sort((a, b) => a - b), document.state.clubs.map(c => c.id));
+    const ids = new Set([...document.state.clubs.flatMap(c => c.players), ...document.state.economy.freeAgents].map(p => p.id));
+    for (const { clubId, players } of centers) {
+      assert.equal(players.length, 60, `centre ${clubId}`);
+      for (const group of [players.filter(p => p.age <= 18), players.filter(p => p.age >= 19 && p.age <= 21)]) {
+        assert.equal(group.length, 30);
+        for (const [position, slots] of Object.entries(depth)) {
+          assert.equal(group.filter(p => p.pos === position).length, slots, `${clubId} ${position}`);
+        }
+      }
+      assert.ok(players.every(p => p.appearanceBankVersion === 2 && p.academy && p.contractEnd == null));
+      for (const player of players) {
+        assert.ok(!ids.has(player.id), player.id);
+        ids.add(player.id);
       }
     }
-    assert.equal(new Set(academy.map(p => p.id)).size, academy.length);
     assert.ok(Array.from({length: 15}, (_, serial) => `youth-${club}-1-${serial}`).every(id => academy.some(p => p.id === id)));
-    assert.ok(academy.every(p => p.appearanceBankVersion === 2 && p.academy && p.contractEnd == null));
     assert.ok(model.decisions.development.academy.every(p => Object.keys(p.attributesV2).length === 36));
-    assert.ok(document.state.aiRoster.academies.every(a => a.players.length < 60));
     assert.ok(academy.every(p => !document.state.market.some(q => q.id === p.id)));
     assert.deepEqual(ok('snapshot').decisions.development.academy.map(p => p.id), model.decisions.development.academy.map(p => p.id));
     assert.equal(archive(), saved);
@@ -70,6 +77,11 @@ for (const [mode, club] of [['common', 29], ['world-champ', 102]]) {
     assert.equal(promoted.decisions.development.academy.filter(p => p.age >= 19).length, 29, 'la prochaine arrivée est annuelle');
     assert.ok(promoted.squad.some(p => p.id === idToPromote));
 
+    document.state.academyGroupPolicy = 1;
+    for (const center of document.state.aiRoster.academies) center.players = [];
+    const formerPolicy = ok('import', { text: seal(document) });
+    assert.equal(formerPolicy.decisions.development.academy.length, 60);
+    assert.equal(JSON.parse(archive()).state.academyGroupPolicy, 1);
     delete document.state.academyGroupPolicy;
     document.state.development.academy = academy.filter(p => /-1-\d{1,2}$/.test(p.id));
     assert.equal(document.state.development.academy.length, 15);

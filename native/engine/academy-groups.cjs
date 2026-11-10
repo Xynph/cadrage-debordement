@@ -6,7 +6,8 @@ module.exports = function academyGroups() {
     pos,
     slots: POS.flatMap((position, slot) => position === pos ? [slot] : []),
   }));
-  const active = s => s?.academyGroupPolicy === 1;
+  const active = s => [1, 2].includes(s?.academyGroupPolicy);
+  const worldwide = s => s?.academyGroupPolicy === 2;
 
   function plan(players, ages, belongs, balance) {
     const additions = [];
@@ -22,9 +23,7 @@ module.exports = function academyGroups() {
     return additions;
   }
 
-  function refill(s, initial = false) {
-    const academy = s.development;
-    const players = academy.academy;
+  function recruitmentPlan(players, initial) {
     const u18 = plan(players, [17, 18], age => age <= 18, true);
     const u21 = plan(players, [19, 20, 21], age => age >= 19 && age <= 21, initial);
     const additions = [];
@@ -32,21 +31,30 @@ module.exports = function academyGroups() {
       if (u18[index]) additions.push(u18[index]);
       if (u21[index]) additions.push(u21[index]);
     }
-    const ids = new Set([
-      ...s.clubs.flatMap(club => club.players), ...players,
+    return additions;
+  }
+
+  function occupiedIds(s) {
+    return new Set([
+      ...s.clubs.flatMap(club => club.players), ...s.development.academy,
       ...s.aiRoster.academies.flatMap(group => group.players),
-      ...s.economy.freeAgents, ...s.market, ...academy.retired,
+      ...(s.nativeAcademy?.centers ?? []).flatMap(center => center.players ?? []),
+      ...s.economy.freeAgents, ...s.market, ...s.development.retired,
     ].map(player => player.id));
+  }
+
+  function fillCenter(s, club, record, players, additions, ids) {
     const accepted = additions.slice(0, Math.max(0, capacity - players.length));
     let serial = 60000;
     for (const { slot, age } of accepted) {
-      while (ids.has(`youth-${s.club}-${s.season}-${serial}`)) serial++;
-      const player = academyPlayer(s.club, slot, s.season, serial++);
+      while (ids.has(`youth-${club.id}-${s.season}-${serial}`)) serial++;
+      const player = academyPlayer(club.id, slot, s.season, serial++, false, club);
       player.age = age;
       ids.add(player.id);
       players.push(player);
     }
-    academy.intakeSeason = s.season;
+    record.intakeSeason = s.season;
+    if (club.id !== s.club) return;
     if (accepted.length) {
       const younger = players.filter(player => player.age <= 18).length;
       news(`Le centre accueille ${accepted.length} nouveau(x) jeune(s). Effectif : ${younger} U18 et ${players.length - younger} U21.`);
@@ -56,9 +64,18 @@ module.exports = function academyGroups() {
     }
   }
 
+  function refill(s, initial) {
+    const ids = occupiedIds(s);
+    const human = s.development;
+    fillCenter(s, s.clubs[s.club], human, human.academy, recruitmentPlan(human.academy, initial), ids);
+    if (!worldwide(s)) return;
+    for (const center of s.aiRoster.academies) {
+      fillCenter(s, s.clubs[center.clubId], center, center.players, recruitmentPlan(center.players, initial), ids);
+    }
+  }
+
   function start(s) {
-    if (!s.commonDatabase) return;
-    s.academyGroupPolicy = 1;
+    s.academyGroupPolicy = 2;
     refill(s, true);
   }
 
@@ -67,7 +84,8 @@ module.exports = function academyGroups() {
   }
 
   function validate(s) {
-    if (s.academyGroupPolicy !== undefined && (!active(s) || !s.commonDatabase || !s.aiRoster || !s.development || !s.economy)) {
+    if (s.academyGroupPolicy !== undefined && (!active(s) || !s.aiRoster || !s.development || !s.economy ||
+      (worldwide(s) ? s.aiRosterVersion !== 2 : !s.commonDatabase))) {
       throw Error('Politique des effectifs de formation invalide.');
     }
   }
