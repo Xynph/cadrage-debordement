@@ -189,3 +189,70 @@ test('simulation uses repeatable match seeds and supplies legally scorable total
   }
   assert.ok(homeWins > 75 && homeWins < 100, 'ratings affect probabilities without guaranteeing every result');
 });
+
+const NATIONS = 'nations-championship-2026';
+const NORTH = ['ENG', 'FRA', 'IRE', 'ITA', 'SCO', 'WAL'];
+
+test('Nations Championship schedules all cross-hemisphere pairings and final ranking matches', () => {
+  const { createEdition, restoreEdition, standings } = competition();
+  const edition = createEdition(NATIONS);
+  assert.equal(edition.fixtures.length, 42);
+  const regular = edition.fixtures.filter(f => f.phase === 'league');
+  assert.equal(new Set(regular.map(f => [f.homeId, f.awayId].sort().join())).size, 36);
+  assert.ok(regular.every(f => NORTH.includes(f.homeId) !== NORTH.includes(f.awayId)));
+  assert.deepEqual(regular.filter(f => [f.homeId, f.awayId].includes('FRA')).map(f => [f.date, f.homeId, f.awayId]), [
+    ['2026-07-04', 'NZL', 'FRA'], ['2026-07-11', 'AUS', 'FRA'], ['2026-07-18', 'JPN', 'FRA'],
+    ['2026-11-07', 'FRA', 'FIJ'], ['2026-11-13', 'FRA', 'RSA'], ['2026-11-21', 'FRA', 'ARG'],
+  ]);
+  assert.equal(regular.find(f => f.homeId === 'FIJ').neutralVenue, true);
+  const results = Object.fromEntries(regular.map(f => [f.id, score(12, 0)]));
+  const seeded = restoreEdition(NATIONS, results, { drawSeed: 'career' });
+  const [north, south] = standings(seeded);
+  assert.deepEqual([north.pool, south.pool], ['north', 'south']);
+  assert.ok([...north.rows, ...south.rows].every(row => row.played === 6 && row.grandSlamBonus === 0));
+  assert.deepEqual(seeded.fixtures.slice(-6).map(f => [f.date, f.kickoffLocal, f.phase, f.placement]), [
+    ['2026-11-27', '16:40', 'placement', 6], ['2026-11-27', '20:10', 'placement', 3],
+    ['2026-11-28', '13:10', 'placement', 5], ['2026-11-28', '16:40', 'placement', 2],
+    ['2026-11-29', '13:10', 'placement', 4], ['2026-11-29', '16:40', 'final', 1],
+  ]);
+  for (const match of seeded.fixtures.slice(-6)) {
+    assert.equal(match.homeId, north.rows[match.placement - 1].teamId);
+    assert.equal(match.awayId, south.rows[match.placement - 1].teamId);
+  }
+  assert.deepEqual(restoreEdition(NATIONS, results, { drawSeed: 'career' }), seeded);
+});
+
+test('Nations Championship values wins before score margin among equal match points', () => {
+  const { createEdition, recordResult, standings } = competition();
+  let edition = createEdition(NATIONS);
+  const record = (home, away, result) => {
+    const fixture = edition.fixtures.find(f => f.homeId === home && f.awayId === away);
+    edition = recordResult(edition, fixture.id, result);
+  };
+  record('FRA', 'FIJ', score(3, 0));
+  record('AUS', 'FRA', score(30, 0));
+  record('ENG', 'JPN', score(0, 0));
+  record('ARG', 'ENG', score(0, 0));
+  assert.deepEqual(standings(edition)[0].rows.slice(0, 2).map(row => [row.teamId, row.points, row.won, row.pointDifference]), [
+    ['FRA', 4, 1, -27], ['ENG', 4, 0, 0],
+  ]);
+});
+
+test('Nations Championship finals share a draw and count the grand final twice for the Shield', () => {
+  const { createEdition, restoreEdition, recordResult, simulateResult, editionOutcome } = competition();
+  const edition = createEdition(NATIONS);
+  const results = Object.fromEntries(edition.fixtures.filter(f => f.phase === 'league').map(f => [f.id, score(0, 0)]));
+  let seeded = restoreEdition(NATIONS, results);
+  assert.deepEqual(editionOutcome(seeded).hemispherePoints, { north: 0, south: 0 });
+  const placement = seeded.fixtures.filter(f => f.phase === 'placement');
+  assert.ok(Array.from({ length: 100 }, (_, seed) => simulateResult(seeded, placement[0].id, { seed })).some(result => !result.winnerId));
+  seeded = recordResult(seeded, placement[0].id, score(0, 0));
+  for (const match of placement.slice(1, 3)) seeded = recordResult(seeded, match.id, score(12, 0));
+  for (const match of placement.slice(3)) seeded = recordResult(seeded, match.id, score(0, 12));
+  const final = seeded.fixtures.find(f => f.phase === 'final');
+  assert.throws(() => recordResult(seeded, final.id, score(0, 0)), /winner/i);
+  const finished = recordResult(seeded, final.id, { ...score(0, 0), winnerId: final.awayId, decidedBy: 'kicking-competition' });
+  assert.deepEqual(editionOutcome(finished).hemispherePoints, { north: 2.5, south: 4.5 });
+  assert.equal(editionOutcome(finished).hemisphereWinner, 'south');
+  assert.deepEqual(editionOutcome(finished).winnerIds, [final.awayId]);
+});
