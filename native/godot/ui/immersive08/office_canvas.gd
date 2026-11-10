@@ -251,7 +251,7 @@ static func _recruitment(card: Panel, app: Control) -> void:
 	D.button(card,Rect2(23,391,500,39),"Lire le rapport complet",func():app._navigate("Recrutement"),false,"arrow",true,app.accent,"OfficeMarketAction")
 
 static func _timeline(card: Panel, app: Control, recent: PanelContainer) -> void:
-	var fixtures := P.upcoming(app.model)
+	var fixtures := Office.upcoming_matches(app.model)
 	var tiles: Array[Panel] = []
 	var grounds: Array[Label] = []
 	for i in fixtures.size():
