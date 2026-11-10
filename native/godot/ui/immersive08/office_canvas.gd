@@ -116,9 +116,12 @@ static func _priorities(card: Panel, app: Control) -> void:
 		tasks.append(["Prolonger "+str(player.name),str(player.get("status",""))+" · "+str(player.get("contractLabel","")),"SAISON "+G.n(player.get("contractEnd","—")),func():app.selected_player=str(player.id);app._navigate("Effectif"),"OfficeContractsAction"])
 	else: tasks.append(["Consulter les contrats","Échéances et engagements du groupe.","EFFECTIF",func():app._navigate("Effectif"),"OfficeContractsAction"])
 	var trained: bool = app.model.meta.get("trained", false)
-	tasks.append(["Valider l’entraînement" if not trained else "Revoir la préparation","Choix collectifs et charge du groupe.","CETTE SEMAINE",func():
-		if trained: app._navigate("Préparation")
-		else: app.Immersive.open_training(app),"OfficeTrainingAction"])
+	if app.model.meta.get("canAdvanceSeason", false):
+		tasks.append(["Consulter le classement final",Office.final_standings_detail(app.model),"BILAN DE SAISON",Office.open_current_standings.bind(app),"OfficeFinalStandingsAction"])
+	else:
+		tasks.append(["Valider l’entraînement" if not trained else "Revoir la préparation","Choix collectifs et charge du groupe.","CETTE SEMAINE",func():
+			if trained: app._navigate("Préparation")
+			else: app.Immersive.open_training(app),"OfficeTrainingAction"])
 	var needs: Array = app.model.get("decisions",{}).get("recruitment",{}).get("needs",[])
 	var need := str(needs[0].get("pos","Effectif")) if not needs.is_empty() else "Effectif"
 	tasks.append(["Examiner le recrutement","%d profils · Priorité : %s" % [app.model.get("market",[]).size(),need],"CETTE SEMAINE",func():app._navigate("Recrutement"),"OfficeRecruitmentAction"])
