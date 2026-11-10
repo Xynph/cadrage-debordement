@@ -1,5 +1,6 @@
 extends SceneTree
 const G = preload("res://ui/carnet_skin.gd")
+const PlayerAttributes = preload("res://ui/player_attributes.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -305,10 +306,13 @@ func compact_profile(player: Dictionary, annotation: String, resolution: Vector2
 		["ProfileRenewalValue", "Disponible" if player.renewal.available else "Indisponible"]]:
 		fact(pair[0], pair[1])
 	check(named("ProfilePlanValue") != null and named("ProfileQualificationsValue") != null, "Plan et qualifications exposés dans le dossier compact")
-	for attribute: String in player.attributes:
-		fact("ProfileAttribute_" + attribute, G.n(player.attributes[attribute]))
-		var bar := named("ProfileAttributeBar_" + attribute) as ProgressBar
-		check(bar != null and is_equal_approx(bar.value, float(player.attributes[attribute])), "Barre d’aptitude fidèle " + attribute)
+	check(app.find_children("ProfileAttribute_*", "Label", true, false).is_empty(), "Aperçu sans projection des onze compétences")
+	await keyboard(named("OpenCompactDetailedAttributes"), "attributs détaillés dans le dossier compact")
+	check(tabs.current_tab == 1, "Le lien de l’Aperçu ouvre le bon onglet")
+	var attributes := named("ProfileAttributes") as ScrollContainer
+	check(attributes != null and attributes.find_children("PlayerDetailedAttribute_*", "Label", true, false).size() == 36, "Les 36 attributs sont présents dans l’onglet compact")
+	for attribute: String in player.attributesV2:
+		fact("PlayerDetailedAttribute_" + attribute, PlayerAttributes.caption(player.attributesV2[attribute]))
 
 func immersive_profile(player: Dictionary, resolution: Vector2i) -> void:
 	var profile := named("ImmersivePlayerFull")
@@ -321,16 +325,12 @@ func immersive_profile(player: Dictionary, resolution: Vector2i) -> void:
 	for i in 6: check(inside(named("FullPlayerTab"+str(i)), app.body_scroll), "Onglet immersif visible " + str(i))
 	check(inside(named("OpenPlayerCoachNote"), app.body_scroll) and inside(named("FullPlayerCompare"), app.body_scroll), "Carnet et comparaison visibles sur la fiche")
 	await keyboard(named("FullPlayerTab1"), "attributs du joueur")
-	for attribute: String in player.attributes:
-		var label := named("PlayerAttribute_" + attribute) as Label
-		check(inside(label, app.body_scroll) and label.text == G.n(player.attributes[attribute]), "Attribut visible issu du moteur " + attribute)
-	var radar_found := false
-	for node: Node in named("ImmersivePlayerFull").find_children("*","Control",true,false):
-		if node.get_script() != G.W: continue
-		var expected: Array = []
-		for attribute in ["power", "speed", "pass", "tackle", "stamina", "mental"]: expected.append(player.attributes[attribute])
-		radar_found = node.get("values") == expected and inside(node, app.body_scroll)
-	check(radar_found, "Radar natif visible avec ses six valeurs exactes")
+	var detailed := named("PlayerDetailedAttributes")
+	check(detailed != null and detailed.find_children("PlayerDetailedAttribute_*", "Label", true, false).size() == 36, "Les 36 attributs sont présents dans la fiche immersive")
+	for attribute: String in player.attributesV2:
+		var label := named("PlayerDetailedAttribute_" + attribute) as Label
+		check(inside(label, app.body_scroll) and label.text == PlayerAttributes.caption(player.attributesV2[attribute]), "Attribut visible issu du moteur " + attribute)
+	check(app.find_children("PlayerAttribute_*", "Label", true, false).is_empty(), "Fiche immersive sans projection des onze compétences")
 	await keyboard(named("FullPlayerTab2"), "performances du joueur")
 	var performances := labels(named("ImmersivePlayerFull"))
 	for value in [G.n(player.appearances), G.n(player.minutes), G.n(player.note), "NOTE AU POSTE"]:

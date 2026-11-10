@@ -8,6 +8,7 @@ const Training = preload("res://ui/immersive08/training_canvas.gd")
 const Notes = preload("res://ui/coach_notes_view.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
+const PlayerAttributes = preload("res://ui/player_attributes.gd")
 
 class ConditionDial extends Control:
 	var condition := 0.0
@@ -108,6 +109,7 @@ static func build(app:Control,player:Dictionary) -> Control:
 		app.SquadViews.comparison(app),false,"people",true,app.accent,"FullPlayerCompare")
 	D.button(hero,Rect2(1962,264,260,46),"Ma note",func():Notes.open(app,str(player.id)),false,"mail",true,app.accent,"OpenPlayerCoachNote")
 	var active:=clampi(int(app.management_ui.get("immersive_player_tab",0)),0,5)
+	var detailed := PlayerAttributes.detail(player)
 	for i in 6:
 		var id := "FullPlayerTab"+str(i)
 		var caption: String = ["Vue d’ensemble","Attributs","Performances","Contrat","Développement","Repères"][i]
@@ -122,14 +124,17 @@ static func build(app:Control,player:Dictionary) -> Control:
 	match active:
 		0:
 			_position(D.panel(page,Rect2(0,430,480,520),"POSTE PRINCIPAL","tactic"),app,player)
-			_attributes(D.panel(page,Rect2(496,430,1174,520),"PROFIL DE PERFORMANCE","star"),app,player)
+			_evaluation(D.panel(page,Rect2(496,430,1174,520),"ÉVALUATION DU JOUEUR","star"),app,player,not detailed.is_empty())
 			_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
 			_usage(D.panel(page,Rect2(0,966,1670,270),"PERFORMANCES DE LA SAISON","trophy"),app,player)
 			_contract(D.panel(page,Rect2(1686,966,562,270),"CONTRAT","money"),app,player)
 		1:
-			_attributes(D.panel(page,Rect2(0,430,1174,520),"LES APTITUDES DU JOUEUR","star"),app,player)
-			_position(D.panel(page,Rect2(1190,430,480,520),"POSTE PRINCIPAL","tactic"),app,player)
-			_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
+			if detailed.is_empty():
+				_evaluation(D.panel(page,Rect2(0,430,1174,520),"ÉVALUATION DU JOUEUR","star"),app,player,false)
+				_position(D.panel(page,Rect2(1190,430,480,520),"POSTE PRINCIPAL","tactic"),app,player)
+				_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
+			else:
+				_detailed_attributes(D.panel(page,Rect2(0,430,2248,590),"36 ATTRIBUTS DÉTAILLÉS","star","","PlayerDetailedAttributes"),player,detailed)
 		2:
 			_usage(D.panel(page,Rect2(0,430,1670,270),"PERFORMANCES DE LA SAISON","trophy"),app,player)
 			_development(D.panel(page,Rect2(0,716,1670,420),"BILANS DU JOUEUR","calendar"),app,player)
@@ -179,31 +184,34 @@ static func _position(card:Panel,app:Control,player:Dictionary) -> void:
 	D.text(card,24,464,str(player.pos),26,C.GOLD,700,428)
 	D.text(card,24,496," · ".join(compatible) if not compatible.is_empty() else "Poste de référence du dossier",18,C.MUTED,500,428)
 
-static func _attributes(card:Panel,app:Control,player:Dictionary) -> void:
-	var radar:=G.W.new();app.SquadViews.radar_setup(radar,player,C.MINT);radar.grid_color=C.LINE;radar.data_color=C.MINT;card.add_child(radar);D.place(radar,Rect2(49,117,362,338))
-	var attributes:Dictionary=player.get("attributes",{})
-	var axes := [["power","Puissance",230,101],["speed","Vitesse",393,205],["pass","Passe",393,348],
-		["tackle","Plaquage",230,447],["stamina","Endurance",69,348],["mental","Mental",69,205]]
-	for axis: Array in axes:
-		var value: Variant = attributes.get(axis[0])
-		D.text(card,axis[2],axis[3],axis[1],21,C.IVORY,600,110,HORIZONTAL_ALIGNMENT_CENTER)
-		var label := D.text(card,axis[2],axis[3]+25,G.n(value) if value!=null else "—",27,
-			C.MINT if value!=null and float(value)>=85 else C.GOLD,700,110,HORIZONTAL_ALIGNMENT_CENTER)
-		label.name="PlayerRadar_"+axis[0]
-	var groups:Array=[["TECHNIQUE",[["pass","Passe"],["kick","Jeu au pied"],["goal","But"],["scrum","Mêlée"],["lineout","Touche"],["tackle","Plaquage"]]],["MENTAL",[["mental","Mental"],["discipline","Discipline"]]],["PHYSIQUE",[["speed","Vitesse"],["stamina","Endurance"],["power","Puissance"]]]]
-	for i in groups.size():
-		var x:=452+i*234
-		D.rect(card,Rect2(x,81,224,390),Color("121c1c"),5,C.LINE)
-		D.rect(card,Rect2(x,81,224,46),Color("123629"),4)
-		D.text(card,x+12,113,groups[i][0],26,C.IVORY,700,200)
-		for j in groups[i][1].size():
-			var pair:Array=groups[i][1][j]
-			var y:int=164+j*49
-			var value:Variant=attributes.get(pair[0])
-			D.text(card,x+12,y,pair[1],23,C.IVORY,500,147)
-			var number:=D.text(card,x+210,y,G.n(value) if value!=null else "—",29,C.MINT if value!=null and float(value)>=85 else C.GOLD,700,54,HORIZONTAL_ALIGNMENT_RIGHT)
-			number.name="PlayerAttribute_"+str(pair[0])
-			D.line(card,Vector2(x+10,y+13),Vector2(x+213,y+13),Color(C.LINE,.45))
+static func _evaluation(card: Panel, app: Control, player: Dictionary, has_details: bool) -> void:
+	D.text(card,30,121,"NOTE GLOBALE / 100",26,C.MUTED,700,500)
+	D.text(card,30,225,G.n(player.get("rating","—")),88,C.MINT,800,360).name = "PlayerGlobalRating"
+	D.text(card,30,285,"Note de simulation dans cette carrière.",26,C.IVORY,500,900)
+	if has_details:
+		D.button(card,Rect2(30,332,465,60),"Voir les 36 attributs",func():
+			app.management_ui.immersive_player_tab = 1
+			app._render()
+			ClubUI.focus(app,"FullPlayerTab1"),true,"arrow",true,app.accent,"OpenDetailedPlayerAttributes")
+	else:
+		D.text(card,30,344,"Le détail à 36 attributs est indisponible pour ce profil.",25,C.MUTED,500,1080)
+
+static func _detailed_attributes(card: Panel, player: Dictionary, values: Dictionary) -> void:
+	D.text(card,24,88,PlayerAttributes.subtitle(player),23,C.MUTED,500,600)
+	for i in PlayerAttributes.GROUPS.size():
+		var group: Array = PlayerAttributes.GROUPS[i]
+		var x := 24 + i * 554
+		D.rect(card,Rect2(x,108,538,448),Color("121c1c"),5,C.LINE)
+		D.rect(card,Rect2(x,108,538,46),Color("123629"),4)
+		D.text(card,x+16,141,group[0],25,C.IVORY,700,506)
+		var entries: Array = group[1]
+		for j in entries.size():
+			var pair: Array = entries[j]
+			var y := 192 + j * 41
+			D.text(card,x+16,y,pair[1],24,C.IVORY,500,425)
+			var number := D.text(card,x+522,y,PlayerAttributes.caption(values.get(pair[0])),26,C.GOLD,700,80,HORIZONTAL_ALIGNMENT_RIGHT)
+			number.name = "PlayerDetailedAttribute_" + str(pair[0])
+			D.line(card,Vector2(x+14,y+10),Vector2(x+524,y+10),Color(C.LINE,.45))
 
 static func _health(card:Panel,app:Control,player:Dictionary,injury:float,recovering:bool) -> void:
 	var condition := clampf(float(player.get("condition", 0)), 0, 100)
