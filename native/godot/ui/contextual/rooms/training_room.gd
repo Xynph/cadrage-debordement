@@ -355,4 +355,3 @@ func make_players():
 					anim.seek(i*0.4,true)
 					break
 		# Keep native CC0 geometry and its original materials.
-

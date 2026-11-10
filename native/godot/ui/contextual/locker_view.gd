@@ -148,7 +148,7 @@ func _player_card(participant: Dictionary, compact: bool = false) -> Button:
 	words.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	S.G.fill(words)
 	row.add_child(words)
-	var name_label := S.label("%s · %s" % [str(participant.get("number", "")), text], 11 if compact else 12)
+	var name_label := S.label("%s · %s" % [str(int(participant.get("number", 0))), text], 11 if compact else 12)
 	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	words.add_child(name_label)
