@@ -36,7 +36,7 @@ function applyStaffPreparation(){
  S.training=decision.mode;
  managerMessage(STAFF_TRAINING_RECEIPT,`${TRAIN[S.training][0]} retenu avec une condition moyenne de ${Math.round(decision.meanFitness)}%.`,'staff','tactics');
 }
-function applyStaffSelection(){if(S.manager?.delegation.lineup&&!S.live){autoLineup();managerMessage('Feuille préparée par l’adjoint','Les 23 joueurs ont été sélectionnés après l’entraînement, selon les postes et leur condition.','staff','team')}}
+function applyStaffSelection(nominationSize=23){if(S.manager?.delegation.lineup&&!S.live){autoLineup();managerMessage('Feuille préparée par l’adjoint',`Les ${nominationSize} joueurs ont été sélectionnés après l’entraînement, selon les postes et leur condition.`,'staff','team')}}
 function markMessage(id){const msg=S.manager.inbox.find(x=>x.id===id);if(msg){msg.read=true;save();render()}}
 function officeAction(viewName,id,tab){if(viewName==='market'&&['recruit','contracts','sales','history'].includes(tab))marketTab=tab;if(id){const msg=S.manager.inbox.find(x=>x.id===id);if(msg)msg.read=true}save();nav(viewName)}
 function officeDecisions(){

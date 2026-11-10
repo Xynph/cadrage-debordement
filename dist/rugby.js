@@ -203,7 +203,28 @@ function advanceRugby(l){if(l.finished||l.paused)return;if(flowRules(l))resumeFl
 const observation=beginPlanObservation(l);const side=l.possession,opp=1-side;l.stats[side].possession++;l.stats[0].territory+=l.territory;l.stats[1].territory+=100-l.territory;if(flowRules(l))advanceFlowPlay(l);else if(restartRules(l)){if(l.minute===41)performKickRestart(l,'kickoff',1-l.firstKickoff,'second-half',l.firstKickoff);advanceCausalPlay(l)}else{const roll=Math.random();let penaltyProb=clamp(.12+(70-unit(l,opp,'discipline'))*.002,.06,.23);
 if(roll<penaltyProb)awardPenalty(l,side);else if(roll<penaltyProb+.12)contestSetPiece(l,side,'scrum');else if(roll<penaltyProb+.24)contestSetPiece(l,side,'lineout');else{const t=l.tactics[side],dir=side===0?1:-1;if(t==='occupation'&&Math.random()<.5){let gain=clamp(12+(unit(l,side,'kick',p=>p.fam>=4)-60)*.5+rand(-8,10)-(l.weather==='Vent'?9:0),3,38);l.territory=clamp(l.territory+dir*gain,5,95);addEvent(l,`${S.clubs[l.pair[side]].abbr} gagne ${Math.round(gain)} mètres au pied.`);changePossession(l)}else{let edge=teamEdge(l,side,'attack'),success=Math.random()<clamp(.49+edge,.18,.84);if(success){l.territory=clamp(l.territory+dir*rand(12,25),1,99);let danger=side===0?l.territory>74:l.territory<26;if(danger&&Math.random()<clamp(.36+edge,.16,.75))scoreTry(l,side,'open');else if(l.minute%8===0)addEvent(l,`${S.clubs[l.pair[side]].abbr} enchaîne les temps de jeu ${danger?'dans les 22 mètres':'et franchit la ligne d’avantage'}.`)}else{changePossession(l);addEvent(l,`${S.clubs[l.pair[opp]].abbr} récupère le ballon ${l.weather==='Pluie'?'sur une faute de main':'après une séquence défensive'}.`,'turnover')}}}}
 finishPlanObservation(l,observation);if(!flowRules(l)){if(l.minute===40&&!l.halftime){l.halftime=true;l.paused=true;addEvent(l,'Mi-temps. Analysez les statistiques et ajustez vos consignes.','break')}if(l.minute>=80)finishRugbyMatch(l)}}
-function rugbyBegin(){if(S.live||S.phase==='ended')return;let m=nextMatch();if(!m){trainWeek();finishRound();return}const preparation=matchDossier();if(S.manager?.delegation.lineup)autoLineup();if(sheetErrors().length){view='team';render();toast('Complétez votre feuille à 23. Le staff peut vous aider.');return}trainWeek();repairSheet();applyStaffSelection();if(sheetErrors().length){save();view='team';render();toast('Une blessure à l’entraînement laisse un poste vacant. Complétez la feuille.');return}S.live=createRugbyMatch(m,null,false,preparation);playback(S.live).cursor=0;if(!restartRules(S.live))addEvent(S.live,`Coup d’envoi. Météo : ${S.live.weather.toLowerCase()}.`);view='match';save();render();startTimer()}
+function rugbyBegin(reducedBench=false){
+ if(S.live||S.phase==='ended')return;
+ const reduced=reducedBench===true&&typeof CDNationaleReducedBench!=='undefined'?CDNationaleReducedBench:null;
+ const vacantNumber=reduced?.vacancy(S);
+ if(reducedBench===true&&!vacantNumber)return;
+ const m=nextMatch();if(!m){trainWeek();finishRound();return}
+ const preparation=matchDossier();
+ if(S.manager?.delegation.lineup)autoLineup();
+ if(!reduced&&sheetErrors().length){view='team';render();toast('Complétez votre feuille à 23. Le staff peut vous aider.');return}
+ trainWeek();repairSheet();applyStaffSelection(reduced?22:23);
+ if(reduced?reduced.vacancy(S)!==vacantNumber:sheetErrors().length){
+  save();view='team';render();toast(reduced?'La feuille à 22 a changé après l’entraînement.':'Une blessure à l’entraînement laisse un poste vacant. Complétez la feuille.');return
+ }
+ S.live=createRugbyMatch(m,null,false,preparation);
+ if(reduced){
+  const sh=S.live.sheets[S.live.userSide];
+  sh.bench=sh.bench.filter(Boolean);
+  S.live.nationaleReducedBench={vacantNumber};
+ }
+ playback(S.live).cursor=0;if(!restartRules(S.live))addEvent(S.live,`Coup d’envoi. Météo : ${S.live.weather.toLowerCase()}.`);
+ view='match';save();render();startTimer()
+}
 function rugbyTick(){if(!S.live)return;presentationTick(S.live)}
 function pauseMatch(){let l=S.live;if(!l)return;if(!l.finished)l.paused=true;syncMatchPresentation(l);clearInterval(timer);save();render()}
 function continueMatch(){let l=S.live;if(!l||l.finished)return;syncMatchPresentation(l);const p=playback(l),before=l.events.length;p.running=true;try{if(flowRules(l))resumeFlowHalf(l)}finally{p.running=false}if(l.events.length>before)p.cursor=before;l.paused=false;save();render();startTimer()}

@@ -57,15 +57,18 @@ function validateFrontRowState(l,s,side){
 }
 
 function validateMatchRules(l,s){
+ const reduced=l.nationaleReducedBench!==undefined;
+ if(reduced)saveCheck(l.rulesProfile===MATCH_RULES&&l.frontRowVersion===1&&typeof CDNationaleReducedBench!=='undefined'&&CDNationaleReducedBench?.validate(s,l),'Feuille de Nationale à 22 incohérente.');
  if(l.rulesProfile===undefined)return;
  saveCheck(l.rulesProfile===MATCH_RULES,'Cette version des règles de match n’est pas prise en charge.');
  if(l.frontRowVersion!==undefined)saveCheck(l.frontRowVersion===1&&saveArray(l.uncontestedScrums,2)&&l.uncontestedScrums.length===2&&l.uncontestedScrums.every(n=>saveInt(n,0,100)));
  for(let side=0;side<2;side++){
   const sh=l.sheets[side],ids=new Set(s.clubs[l.pair[side]].players.map(p=>p.id));
-  saveCheck(saveArray(sh.nominated,23)&&sh.nominated.length===23&&new Set(sh.nominated).size===23&&sh.nominated.every(id=>ids.has(id)));
+  const nominationSize=reduced&&side===l.userSide?22:23;
+  saveCheck(saveArray(sh.nominated,nominationSize)&&sh.nominated.length===nominationSize&&new Set(sh.nominated).size===nominationSize&&sh.nominated.every(id=>ids.has(id)));
   saveCheck(saveInt(sh.tacticalReturns,0,4)&&saveArray(sh.redCards,15));
   const roster=new Set(sh.nominated),places=[...sh.on.filter(Boolean),...sh.bench,...sh.sentOff];
-  saveCheck(places.length===23&&new Set(places).size===23&&places.every(id=>roster.has(id)),'Les positions des joueurs ne correspondent pas au groupe désigné.');
+  saveCheck(places.length===nominationSize&&new Set(places).size===nominationSize&&places.every(id=>roster.has(id)),'Les positions des joueurs ne correspondent pas au groupe désigné.');
   saveCheck([...sh.initial,...sh.used].every(id=>roster.has(id))&&sh.initial.every(id=>sh.used.includes(id)));
   saveCheck(sh.cards.every(c=>(sh.on.includes(c.id)||l.frontRowVersion===1&&sh.front?.exclusions?.some(e=>e.id===c.id&&e.kind==='yellow'&&!e.closed&&e.until===c.until))&&!sh.sentOff.includes(c.id)));
   saveCheck(sh.redCards.length===sh.sentOff.length&&new Set(sh.redCards.map(c=>c.id)).size===sh.redCards.length);
