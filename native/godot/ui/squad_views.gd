@@ -481,7 +481,6 @@ static func _profile_overview(parent:VBoxContainer,p:Dictionary,notes:Array,app:
 	_profile_fact(season,"ProfileMinutesValue","Minutes",G.n(p.get("minutes",0)))
 	_profile_fact(season,"ProfileAppearancesValue","Apparitions",G.n(p.get("appearances",0)))
 	_profile_fact(season,"ProfileNumberValue","Numéro","—" if p.get("shirtNumber")==null else G.n(p.shirtNumber))
-	_profile_fact(season,"ProfileRoleValue","Note au poste",G.n(p.get("note","—")))
 	var evaluation:=_profile_tile(right,"Evaluation","Évaluation")
 	_profile_fact(evaluation,"ProfileRatingValue","Niveau général",G.rating_text(p,true))
 	_profile_fact(evaluation,"ProfilePotentialValue","Potentiel",G.potential_text(p))

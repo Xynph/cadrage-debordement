@@ -79,6 +79,11 @@ func run() -> void:
 	var own: Dictionary=original.squad[0]
 	app.selected_player=str(own.id);app.set_meta("immersive08_full_player",true);app._render();await settle()
 	check(labels(app).any(func(label:Label):return label.text==G.potential_text(own)),"Fiche propre affiche la fourchette, pas le potentiel exact")
+	check(not labels(app).any(func(label:Label):return label.text=="NOTE AU POSTE"),"La note au poste reste réservée à la tactique")
+	var roles = preload("res://ui/immersive08/squad_canvas.gd")
+	var pitch: Control=app.find_child("PlayerRolePitch",true,false)
+	check(pitch.primary_numbers==roles.primary_numbers(own) and pitch.secondary_numbers==roles.secondary_numbers(own),"Terrain de la fiche : uniquement les vrais postes maîtrisés")
+	check(app.find_child("PlayerOtherRoles",true,false).text=="Autres : "+roles.secondary_caption(own),"Fiche et Effectif partagent les rôles abrégés")
 	await capture("fiche-potentiel-modele-reel-1440")
 	app.set_meta("immersive08_full_player",false)
 	app._navigate("Recrutement");await settle()

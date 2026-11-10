@@ -8,7 +8,20 @@ test('real training and completed match persist development evidence without rev
  let model=go('new_career',{mode:'common',club:0}),file=path.join(model.meta.dataDir,'donnees.json');
  const raw=()=>JSON.parse(JSON.parse(fs.readFileSync(file)).store['bdt-v1']);
  const first=fs.readFileSync(file);go('snapshot');assert.deepEqual(fs.readFileSync(file),first);assert.equal(raw().potentialEvolution,undefined);
+ const source=raw().clubs[0].players.find(p=>p.lnrRatingsVersion===1&&p.age<=22&&p.dev.potential>=p.rating+2);assert.ok(source);
+ assert.equal(model.decisions.development.professionals.find(p=>p.id===source.id).development.available,true,'the real UI offers source-player specialization');
+ // Resume a real career just before an earned XP point, then use the public
+ // training command: detailed source players must improve before season end.
+ const prepared=JSON.parse(go('export').meta.exportText);
+ prepared.state.clubs[0].players.find(p=>p.id===source.id).dev.xp=.999;
+ const checksum=state=>{let h=2166136261;for(const c of JSON.stringify(state))h=Math.imul(h^c.charCodeAt(0),16777619);return (h>>>0).toString(16).padStart(8,'0');};
+ prepared.checksum=checksum(prepared.state);go('import',{text:JSON.stringify(prepared)});
+ go('set_development_focus',{playerId:source.id,focus:'equilibre'});
  model=go('train',{mode:'normal'});let trainedState=raw(),evidence=trainedState.potentialEvolution;assert.ok(evidence.records.flat().length>0);assert.ok(evidence.records.flat().some(r=>trainedState.clubs[1].players.some(p=>p.id===r[0])),'other clubs are trained under the same system');
+ const learned=trainedState.clubs[0].players.find(p=>p.id===source.id);
+ assert.equal(learned.rating,source.rating+1);assert.equal(learned.dev.inSeasonGrowthSeason,trainedState.season);
+ assert.ok(Object.keys(source.attributesV2).some(k=>learned.attributesV2[k]>source.attributesV2[k]));
+ assert.equal(model.squad.find(p=>p.id===source.id).rating,learned.rating);
  go('train',{mode:'normal'});assert.deepEqual(raw().potentialEvolution,evidence,'weekly training cannot be repeated');
  go('auto_lineup');go('begin_match');model=go('delegate');assert.equal(model.live.finished,true);
  go('finish_round');

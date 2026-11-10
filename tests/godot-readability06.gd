@@ -301,7 +301,7 @@ func compact_profile(player: Dictionary, annotation: String, resolution: Vector2
 	var overview_actions := named("ProfileOverviewActions")
 	check(overview_actions != null and rect(overview).end.y - rect(overview_actions).end.y <= 32, "Aperçu compact sans grande surface vide sous les faits")
 	for pair in [["ProfileConditionValue", G.n(player.condition)+"%"], ["ProfileRatingValue", G.n(player.rating)], ["ProfilePotentialValue", G.potential_text(player)],
-		["ProfileMinutesValue", G.n(player.minutes)], ["ProfileAppearancesValue", G.n(player.appearances)], ["ProfileRoleValue", G.n(player.note)],
+		["ProfileMinutesValue", G.n(player.minutes)], ["ProfileAppearancesValue", G.n(player.appearances)],
 		["ProfileContractValue", player.contractLabel], ["ProfileSalaryValue", G.euros(player.salary)], ["ProfileNotePreview", annotation],
 		["ProfileRenewalValue", "Disponible" if player.renewal.available else "Indisponible"]]:
 		fact(pair[0], pair[1])
@@ -333,8 +333,9 @@ func immersive_profile(player: Dictionary, resolution: Vector2i) -> void:
 	check(app.find_children("PlayerAttribute_*", "Label", true, false).is_empty(), "Fiche immersive sans projection des onze compétences")
 	await keyboard(named("FullPlayerTab2"), "performances du joueur")
 	var performances := labels(named("ImmersivePlayerFull"))
-	for value in [G.n(player.appearances), G.n(player.minutes), G.n(player.note), "NOTE AU POSTE"]:
-		check(value in performances, "Performances et note au poste fidèles " + value)
+	for value in [G.n(player.appearances), G.n(player.minutes)]:
+		check(value in performances, "Performances fidèles " + value)
+	check("NOTE AU POSTE" not in performances,"La note au poste reste réservée à la tactique")
 	await keyboard(named("FullPlayerTab3"), "contrat du joueur")
 	var contract := labels(named("ImmersivePlayerFull"))
 	check(G.euros(player.salary) + " / semaine" in contract and str(player.contractLabel) in contract, "Salaire et échéance exacts dans Contrat")

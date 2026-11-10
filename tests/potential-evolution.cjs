@@ -75,3 +75,10 @@ test('extra-time participants remain in exposure and mismatched team contributio
  const invalid=structuredClone(f.s);invalid.live.potentialEvidence.rows[0][0]='opponent';assert.throws(()=>f.e.validate(invalid),/équipe/);
  l.finished=true;f.e.match(f.s,l);assert.equal(f.s.potentialEvolution.records[0].find(r=>r[0]===f.p.id)[8],110);
 });
+test('academy centre slots use the actual selected players rather than senior club IDs',()=>{
+ const f=fixture(),guest={...structuredClone(f.p),id:'guest-player'};
+ const result={pair:[30,40],score:[24,10]},teams=[[f.p],[guest]];
+ f.e.academyMatch(f.s,result,teams);const once=JSON.stringify(f.s);
+ f.e.academyMatch(f.s,result,teams);assert.equal(JSON.stringify(f.s),once);
+ assert.ok(f.s.potentialEvolution.records.flat().some(r=>r[0]==='guest-player'&&r[8]===80));
+});

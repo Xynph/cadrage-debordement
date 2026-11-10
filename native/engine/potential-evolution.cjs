@@ -3,7 +3,7 @@
 // database or a displayed estimate. No random draws and no writes on reads.
 module.exports=function potentialEvolution(){
  const C={ID:0,SEASON:1,START:2,INITIAL:3,WEEKS:4,QUALITY:5,WEEK:6,MATCHES:7,MINUTES:8,FORM:9,WEIGHT:10,BAD:11,REVIEW:12,NET:13,DELTA:14,REASON:15,INJURED:16};
- const indexes=new WeakMap(),seenMatches=new WeakSet();
+ const indexes=new WeakMap(),seenMatches=new WeakSet(),seenAcademy=new WeakSet();
  const IMPACT={carry:.35,turnover:1.2,'setpiece-win':.8,try:1.2,goal:.5,'hand-fault':-.6,penalty:-.8,card:-1.5};
  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),round=n=>Math.round(n*10000)/10000;
  const number=(n,a,b)=>typeof n==='number'&&Number.isFinite(n)&&n>=a&&n<=b;
@@ -54,10 +54,10 @@ module.exports=function potentialEvolution(){
   const quality=(mode==='intense'?1:.82)*clamp((p.condition??100)/80,.4,1)*clamp(1-fatigue/250,.65,1);
   r[C.WEEKS]++;r[C.QUALITY]=round(r[C.QUALITY]+quality);return true;
  }
- function match(s,l){
+ function match(s,l,providedTeams=null){
   if(!l?.finished||seenMatches.has(l)||!Array.isArray(l.pair)||l.pair.length!==2||!Array.isArray(l.sheets))return false;
   seenMatches.add(l);
-  const teams=l.pair.map(id=>s.clubs[id]),strength=teams.map((c,side)=>{const minutes=l.sheets[side]?.minutes||{},list=(c?.players||[]).filter(p=>number(minutes[p.id],1,240));const weight=list.reduce((n,p)=>n+minutes[p.id],0);return weight?list.reduce((n,p)=>n+p.rating*minutes[p.id],0)/weight:65;});
+  const teams=providedTeams||l.pair.map(id=>s.clubs[id]),strength=teams.map((c,side)=>{const minutes=l.sheets[side]?.minutes||{},list=(c?.players||[]).filter(p=>number(minutes[p.id],1,240));const weight=list.reduce((n,p)=>n+minutes[p.id],0);return weight?list.reduce((n,p)=>n+p.rating*minutes[p.id],0)/weight:65;});
   for(let side=0;side<2;side++){
    const sh=l.sheets[side],people=new Map((teams[side]?.players||[]).map(p=>[p.id,p]));if(!sh)continue;
    const expected=clamp((strength[side]-strength[1-side])*.9+(side===0?3:-3),-25,25);
@@ -75,6 +75,14 @@ module.exports=function potentialEvolution(){
   }
   delete l.potentialEvidence;
   return true;
+ }
+ function academyMatch(s,result,teams){
+  if(!result||seenAcademy.has(result)||!Array.isArray(teams)||teams.length!==2)return false;
+  seenAcademy.add(result);
+  // Centre slots are not senior club IDs. Use the actual selected players,
+  // with the 80 minutes that the junior engine actually registers for them.
+  const game={finished:true,pair:[0,1],score:result.score,sheets:teams.map(ps=>({used:ps.filter(Boolean).map(p=>p.id),minutes:Object.fromEntries(ps.filter(Boolean).map(p=>[p.id,80]))})),events:[]};
+  return match(s,game,teams.map(players=>({players:players.filter(Boolean)})));
  }
  function action(l,type,meta={}){
   const kind=meta.kind??type,weight=IMPACT[kind]??0,side=meta.team??l.possession,id=meta.actor;
@@ -135,9 +143,9 @@ module.exports=function potentialEvolution(){
   if(installed)return;installed=true;
   const oldTraining=developmentTraining;developmentTraining=function(p,mode,...args){training(S,p,mode);return oldTraining.call(this,p,mode,...args);};
   const oldEvent=addEvent;addEvent=function(l,text,type='play',meta={}){action(l,type,meta);return oldEvent.apply(this,arguments);};
-  const oldWeek=trainWeek;trainWeek=function(){if(S&&!S.trained)for(const pool of pools(S))for(const p of pool)if(p.injury&&eligible(p))training(S,p,'repos');return oldWeek.apply(this,arguments);};
+  const oldWeek=trainWeek;trainWeek=function(){const fresh=S&&!S.trained;if(fresh)for(const pool of pools(S))for(const p of pool)if(p.injury&&eligible(p))training(S,p,'repos');const result=oldWeek.apply(this,arguments);if(fresh&&S.trained)for(const pool of [...(S.aiRoster?.academies||[]).map(a=>a.players||[]),...(S.nativeAcademy?.centers||[]).map(c=>c.players||[])])for(const p of pool)training(S,p,'normal');return result;};
   const oldMatch=recordDevelopmentMatch;recordDevelopmentMatch=function(l){if(!l.developmentRecorded)match(S,l);return oldMatch.apply(this,arguments);};
   const oldAge=ageDevelopmentPlayer;ageDevelopmentPlayer=function(p,season=S.season){const age=p.age,recorded=p.dev?.lastYear===season,result=oldAge.apply(this,arguments);if(!recorded&&p.dev?.lastYear===season){const outcome=review(S,p,season,age);if(outcome.delta&&S.clubs[S.club]?.players.some(q=>q.id===p.id)&&typeof managerMessage==='function')managerMessage('Évolution du potentiel',p.name+' : '+(outcome.delta>0?'le staff relève ses perspectives après cette saison.':'le staff revoit ses perspectives après une stagnation prolongée.'),'staff','team');}return result;};
  }
- return Object.freeze({training,match,action,review,project,traits,validate,installHooks});
+ return Object.freeze({training,match,academyMatch,action,review,project,traits,validate,installHooks});
 };

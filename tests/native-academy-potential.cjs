@@ -20,16 +20,20 @@ test('Formation Toulouse : les U21 du vrai DTO couvrent plusieurs plafonds et le
   assert.equal(result.ok, true, result.error);
   const academy = result.model.decisions.development.academy;
   const u21 = academy.filter(player => player.age >= 19 && player.age <= 21);
-  const potentials = u21.map(player => player.potential);
-  console.log(JSON.stringify({ profile: dir, u21: potentials, u18: academy.filter(p => p.age <= 18).map(p => p.potential) }));
+  const saved = JSON.parse(JSON.parse(fs.readFileSync(path.join(result.model.meta.dataDir, 'donnees.json'))).store['bdt-v1']);
+  const source = new Map(saved.development.academy.map(player => [player.id, player]));
+  const potentials = u21.map(player => source.get(player.id).dev.potential);
+  console.log(JSON.stringify({ u21: potentials, publicRanges: u21.map(p => p.potentialRange) }));
   assert.equal(u21.length, 30);
   const originalU21 = u21.filter(player => /^youth-0-1-\d{1,2}$/.test(player.id));
   assert.equal(originalU21.length, 5);
-  assert.ok(originalU21.filter(player => player.potential > 90).length <= 1);
+  assert.ok(originalU21.filter(player => source.get(player.id).dev.potential > 90).length <= 1);
   assert.ok(potentials.filter(potential => potential > 90).length <= 3, String(potentials));
   assert.ok(new Set(potentials).size >= 3);
   assert.ok(Math.min(...potentials) <= 80);
-  assert.ok(academy.every(player => player.potential > player.note));
+  assert.ok(academy.every(player => player.potential === null && player.potentialRange.max-player.potentialRange.min === 4));
+  assert.ok(academy.every(player => player.potentialRange.min <= source.get(player.id).dev.potential && player.potentialRange.max >= source.get(player.id).dev.potential));
+  assert.ok(academy.every(player => source.get(player.id).dev.potential >= player.rating));
 });
 
 test('Génération : la queue supérieure est rare à travers postes, clubs et saisons', () => {

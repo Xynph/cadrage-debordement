@@ -10,6 +10,7 @@ const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 const Academy = preload("res://ui/immersive08/academy_canvas.gd")
 const PlayerAttributes = preload("res://ui/player_attributes.gd")
+const Roster = preload("res://ui/immersive08/squad_canvas.gd")
 
 class ConditionDial extends Control:
 	var condition := 0.0
@@ -26,7 +27,8 @@ class PositionPitch extends Control:
 	const MARKS = [Vector2(.25,.14), Vector2(.5,.14), Vector2(.75,.14), Vector2(.38,.27), Vector2(.62,.27),
 		Vector2(.25,.40), Vector2(.75,.40), Vector2(.5,.40), Vector2(.4,.53), Vector2(.6,.62),
 		Vector2(.12,.75), Vector2(.36,.75), Vector2(.64,.75), Vector2(.88,.75), Vector2(.5,.88)]
-	var primary_slot := 0
+	var primary_numbers: Array[int] = []
+	var secondary_numbers: Array[int] = []
 
 	func _point(x: float, y: float) -> Vector2:
 		var margin := lerpf(.12,.025,y)
@@ -51,11 +53,12 @@ class PositionPitch extends Control:
 		for index in MARKS.size():
 			var mark: Vector2 = MARKS[index]
 			var center := _point(mark.x,mark.y)
-			if index!=primary_slot:
+			if index+1 not in primary_numbers and index+1 not in secondary_numbers:
 				draw_circle(center,8*factor,C.IVORY,true,-1,true)
 				continue
-			for radius in [46,34,23]: draw_circle(center,radius*factor,Color(C.MINT,.10),true,-1,true)
-			draw_circle(center,15*factor,C.MINT,true,-1,true)
+			var ink: Color = C.MINT if index+1 in primary_numbers else C.GOLD
+			for radius in [46,34,23]: draw_circle(center,radius*factor,Color(ink,.10),true,-1,true)
+			draw_circle(center,15*factor,ink,true,-1,true)
 			var number := str(index+1)
 			var font := C.font(700)
 			var font_size := maxi(10,roundi(20*factor))
@@ -83,7 +86,7 @@ static func build(app:Control,player:Dictionary) -> Control:
 	ClubUI.italic(D.text(shirt,70,82,number,82,C.IVORY,800,110,HORIZONTAL_ALIGNMENT_CENTER),800).name="FullPlayerNumber"
 	var heading:=ClubUI.italic(D.text(hero,668,123,str(player.name).to_upper(),88,C.IVORY,800,1030),800)
 	heading.name="ProfilePlayerName"
-	D.text(hero,671,180,str(player.pos).to_upper(),39,C.GOLD,700,1020)
+	D.text(hero,671,180,Roster.primary_caption(player).to_upper(),39,C.GOLD,700,1020)
 	var facts: Dictionary = player.get("playerFacts", {})
 	D.text(hero,671,231 if facts.is_empty() else 217,G.n(player.get("age","—"))+" ans  ·  Saison "+G.n(app.model.meta.get("season",1)),31 if facts.is_empty() else 28,C.IVORY,500,1020)
 	if not facts.is_empty():
@@ -180,21 +183,17 @@ static func _slanted_badge(parent: Control, area: Rect2, fill: Color, border: Co
 	return badge
 
 static func _position(card:Panel,app:Control,player:Dictionary) -> void:
-	var slots:Array=app.model.get("selection",{}).get("slots",[])
-	var preferred:=clampi(int(player.get("fam",0)),0,8)
-	var primary_slot:int=[0,1,3,7,8,9,10,11,14][preferred]
-	if preferred==0 and str(player.get("pos","")).contains("droit"):primary_slot=2
 	var field := PositionPitch.new()
 	field.name = "PlayerRolePitch"
-	field.primary_slot = primary_slot
+	field.primary_numbers = Roster.primary_numbers(player)
+	field.secondary_numbers = Roster.secondary_numbers(player)
 	field.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(field)
 	D.place(field,Rect2(24,78,432,350))
-	var compatible:Array[String]=[]
-	for slot:Dictionary in slots:
-		if int(slot.get("slot",99))<15 and str(player.id) in slot.get("eligibleIds",[]) and str(slot.get("label","")) not in compatible:compatible.append(str(slot.label))
-	D.text(card,24,464,str(player.pos),26,C.GOLD,700,428)
-	D.text(card,24,496," · ".join(compatible) if not compatible.is_empty() else "Poste de référence du dossier",18,C.MUTED,500,428)
+	D.text(card,24,464,Roster.primary_caption(player),26,C.GOLD,700,428)
+	var other := D.text(card,24,496,"Autres : "+Roster.secondary_caption(player),18,C.MUTED,500,428)
+	other.name = "PlayerOtherRoles"; other.mouse_filter = Control.MOUSE_FILTER_PASS
+	other.tooltip_text = "Vert : poste principal · Or : autres postes maîtrisés\n"+Roster.secondary_tooltip(player,app.model)
 
 static func _evaluation(card: Panel, app: Control, player: Dictionary, has_details: bool) -> void:
 	D.text(card,30,121,"NIVEAU / 100",26,C.MUTED,700,500)
@@ -267,10 +266,10 @@ static func _health_fact(card: Panel, y: int, width: int, caption: String, value
 	D.text(fact,14,61,value,28,C.IVORY,600,width-28).name = id
 
 static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
-	var stats:Array=[[G.n(player.get("appearances",0)),"APPARITIONS"],[G.n(player.get("minutes",0)),"MINUTES"],[G.n(player.get("note","—")),"NOTE AU POSTE"]]
+	var stats:Array=[[G.n(player.get("appearances",0)),"APPARITIONS"],[G.n(player.get("minutes",0)),"MINUTES"]]
 	for i in stats.size():
-		var x:=24+i*300
-		D.text(card,x,145,stats[i][0],64,C.MINT if i==2 else C.IVORY,700,260)
+		var x:=24+i*440
+		D.text(card,x,145,stats[i][0],64,C.IVORY,700,400)
 		D.text(card,x,182,stats[i][1],22,C.MUTED,600,260)
 	D.line(card,Vector2(914,80),Vector2(914,245))
 	D.text(card,946,111,"MON CARNET PERSONNEL",26,C.GOLD,700,690)

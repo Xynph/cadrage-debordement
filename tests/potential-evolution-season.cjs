@@ -2,16 +2,18 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const {context}=require('./native-reference-harness.cjs');
 test('a complete fictional season uses actual training, human and AI matches and one annual review',()=>{
- const h=context({seed:917});h.run('start(0,"fiction");');
+ const h=context({seed:917});h.run('start(0,"fiction");nativeSystems.execute("academy_activate",{season:S.season,week:S.round,club:S.club,confirmed:true});');
  let cycles=0;
  while(h.run('S.phase!=="ended"')&&cycles++<40){
   h.run(`autoLineup();trainWeek();if(sheetErrors().length)promoteCover();if(nextMatch()){beginMatch();if(!S.live)throw Error('No match '+S.round+' '+JSON.stringify(sheetErrors()));for(var i=0;!S.live.finished&&i<180;i++){S.live.paused=false;advanceRugby(S.live);}if(!S.live.finished)throw Error('Match unfinished');}finishRound();`);
  }
  assert.equal(h.run('S.phase'), 'ended');assert.ok(cycles>=26);
  assert.ok(h.run('S.potentialEvolution.records.flat().some(r=>r[7]>=8)'), 'real appearances accumulated');
+ assert.ok(h.run('S.nativeAcademy.centers.filter(c=>c.clubId===null).some(c=>c.players.some(p=>S.potentialEvolution.records.flat().some(r=>r[0]===p.id&&r[7]>0)))'),'real invited academy appearances observed');
  const seed=h.randomState();h.run('var seasonBefore=S.season;advanceSeason();validateCareer(S);');
  assert.equal(h.run('S.season'),2);
  assert.ok(h.run('S.potentialEvolution.records.flat().some(r=>r[12]===1)'), 'annual hook reviews existing evidence');
+ assert.ok(h.run('S.potentialEvolution.records.flat().some(r=>r[0].startsWith("youth-100-")&&r[12]===1)'),'invited centre receives its annual review');
  assert.ok(h.run('S.clubs.every(c=>c.players.every(p=>p.dev.potential>=p.rating&&p.dev.potential<=99))'));
  assert.ok(h.randomState().calls>seed.calls,'normal new-season intake still has its original RNG');
  const before=h.run('JSON.stringify(S.potentialEvolution)');h.run('for(const c of S.clubs)for(const p of c.players)nativePotentialEvolution.project(S,p.id);');

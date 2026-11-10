@@ -35,7 +35,7 @@ func _build() -> void:
 	scroll = ScrollContainer.new(); scroll.name = "YouthDevelopmentScroll"; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; scroll.follow_focus = true; add_child(scroll)
 	body = G.v(10); G.fill(body,true); scroll.add_child(body)
 	body.add_child(G.section("Des objectifs, puis des faits", "Académie et jeunes professionnels · club courant"))
-	body.add_child(G.wrap("Les plans répartissent le futur budget XP existant, sans gain immédiat ajouté. Pour les profils à progression annuelle, ils servent uniquement d’objectifs de suivi : ils ne changent ni leur courbe, ni leur exposition. Blessures, fatigue et minutes réellement jouées restent déterminantes.",14))
+	body.add_child(G.wrap("Les entraînements et les matchs font progresser les attributs et le niveau pendant la saison. Les plans orientent ce travail ; le mentorat partage le même apprentissage. Âge, personnalité, blessures, fatigue et temps de jeu influencent les progrès. Le potentiel peut évoluer au bilan de saison et ne garantit jamais le niveau atteint.",14))
 	var data := _data()
 	if not str(data.get("reason","")).is_empty(): body.add_child(G.wrap(str(data.reason),13))
 	if data.get("canEnable",false):

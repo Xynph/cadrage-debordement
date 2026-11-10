@@ -14,6 +14,11 @@ func _initialize() -> void:
 	check(K.potential_text(own)=="81–85","Potentiel propre toujours en fourchette fournie")
 	check(K.sort_value(own,"potential")==81,"Tri par borne basse visible, jamais potentiel réel")
 	check(K.attributes_known(own),"Attributs propres connus")
+	check(K.potential_tooltip(own).contains("sans garantie") and K.potential_tooltip(own).contains("personnalité"),"Potentiel évolutif expliqué sans promesse")
+	own.potentialDevelopment={"season":1,"label":"Potentiel en hausse"}
+	check(K.potential_tooltip(own).contains("Potentiel en hausse"),"Bilan qualitatif propre affiché")
+	var concealed := own.duplicate(true);concealed.knowledge={"owned":false,"stage":"unobserved"}
+	check(not K.potential_tooltip(concealed).contains("Potentiel en hausse"),"Bilan propre jamais révélé sur un joueur étranger")
 	var legacy := {"rating":82,"potential":99}
 	check(K.rating_text(legacy)=="—","Ancienne projection sans appartenance : pas de niveau exact par défaut")
 	check(K.rating_text(legacy,true)=="82","Contexte propre explicite autorisé")

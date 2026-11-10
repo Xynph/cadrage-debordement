@@ -9,6 +9,7 @@ const common=require('../native/engine/common-rosters.cjs');
 const careerVariation=require('../native/engine/career-variation.cjs');
 const positionAptitudes=require('../native/engine/position-aptitudes.cjs');
 const potentialEvolution=require('../native/engine/potential-evolution.cjs');
+const inSeasonDevelopment=require('../native/engine/in-season-development.cjs');
 const staff=require('../native/engine/staff.cjs');
 const staffDatabaseIds=['world-registry','world-pacific-extension','world-japan-extension','world-nationale-extension','world-champ-extension']
  .map(name=>require('../native/engine/'+name+'.json').id);
@@ -30,7 +31,7 @@ function context({seed:initialSeed=827381,now=1700000000000,dataDir=''}={}){
  ctx.nativeStaffCareerSourcesText=JSON.stringify(Object.fromEntries([run('CDCommonRosters.id'),...staffDatabaseIds]
   .map(id=>[id,staff.forDatabase(id).registry.clubs])));
  run(systems.bootstrap());delete ctx.nativeStaffCareerSourcesText;
- run(`const nativePotentialEvolution=(${potentialEvolution.toString()})();nativePotentialEvolution.installHooks();`);
+ run(`const nativeInSeasonDevelopment=(${inSeasonDevelopment.toString()})();nativeInSeasonDevelopment.installHooks();const nativePotentialEvolution=(${potentialEvolution.toString()})();nativePotentialEvolution.installHooks();`);
  run(`const nativeKnowledge=(${playerKnowledge.factory.toString()})();nativeKnowledge.installHooks();const baseKnowledgeValidator=validateCareer;validateCareer=state=>{const result=baseKnowledgeValidator(state);nativeKnowledge.validate(state);return result;};`);
  return {ctx,store,run,randomState:()=>({seed,calls})};
 }

@@ -7,7 +7,7 @@ module.exports=function nativeGestion(command,p){
  if(command==='set_delegation'){requireThat(!S.live&&S.phase!=='ended'&&['lineup','training'].includes(p.key)&&typeof p.enabled==='boolean','Délégation indisponible ou invalide.');setDelegation(p.key,p.enabled);return;}
  if(command==='set_development_focus'){
   const target=club().players.find(x=>x.id===p.playerId)||S.development.academy.find(x=>x.id===p.playerId);
-  requireThat(target&&target.lnrRatingsVersion!==1,'Spécialisation indisponible sur ce profil à évolution annuelle.');
+  requireThat(target&&(target.lnrRatingsVersion!==1||typeof nativeInSeasonDevelopment!=='undefined'),'Spécialisation indisponible sur ce profil à évolution annuelle.');
   requireThat(setDevelopmentFocus(p.playerId,p.focus),'Objectif indisponible : séance appliquée, match en cours ou qualité inconnue.');return;
  }
  if(command==='promote_academy'){
