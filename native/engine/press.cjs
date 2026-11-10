@@ -108,13 +108,99 @@ function factory(){
   return true;
  }
  function measures(s){const p=s.pressRelations;return {morale:s.morale,trust:s.trust,mediaTrust:p?.mediaTrust??50,fanTrust:p?.fanTrust??50,boardPressure:p?.boardPressure??30};}
+ const fixtureStages={barrage:'le barrage',elimination:'le match de barrage',quarter:'le quart de finale',semi:'la demi-finale',final:'la finale',r16:'le huitième de finale',access:'le barrage d’accession','third-place':'le match pour la troisième place',promotion:'la manche de promotion'};
+ const nameOf=value=>text(value)&&value.trim()&&value.trim().length<=100?value.trim():null;
+ function conferenceFacts(s){
+  const club=id=>s.clubs.find(c=>c?.id===id);
+  const opponent=pair=>Array.isArray(pair)&&pair.length===2&&pair[0]!==pair[1]&&pair.includes(s.club)
+   ?nameOf(club(pair.find(id=>id!==s.club))?.name):null;
+  let scheduled=null;
+  if(s.phase!=='ended'){
+   if(world(s))scheduled=CDWorldCareer.userFixture?.(s);
+   else if(s.franceMode?.version===1){
+    const france=s.franceMode;
+    const hasCalendar=france.week>=33||['elite','accession'].every(id=>{
+     const league=france.leagues?.[id];
+     return league&&(france.week>=30||Array.isArray(league.schedule));
+    });
+    if(hasCalendar&&typeof CDFranceCompetition!=='undefined')scheduled=CDFranceCompetition.userFixture?.(s);
+   }else if(typeof nextMatch==='function'&&typeof S!=='undefined'&&s===S)scheduled={pair:nextMatch(),phase:s.phase};
+  }
+  const nextOpponent=scheduled&&opponent(scheduled.pair??[scheduled.homeId,scheduled.awayId]);
+  const fixture=nextOpponent?{opponent:nextOpponent,stage:Object.hasOwn(fixtureStages,scheduled.phase)?fixtureStages[scheduled.phase]:null}:null;
+  const week=weekOf(s);
+  let result=null;
+  for(const match of Array.isArray(s.history)?s.history:[]){
+   const date=match?.week??match?.round;
+   if(!int(date,Math.max(0,week-1),week)||(match.season??s.season)!==s.season
+      ||result&&date<result.week||!Array.isArray(match.score)||match.score.length!==2
+      ||!match.score.every(n=>Number.isSafeInteger(n)&&n>=0))continue;
+   const rival=opponent(match.pair);
+   if(!rival)continue;
+   const index=match.pair.indexOf(s.club);
+   result={opponent:rival,week:date,for:match.score[index],against:match.score[1-index]};
+  }
+  const injured=club(s.club)?.players?.find(p=>Number.isFinite(p?.injury)&&p.injury>0&&nameOf(p.name));
+  return {fixture,result,injured:nameOf(injured?.name)};
+ }
+ function contextualQuestion(q,{fixture,result,injured}){
+  const write=(question,answers)=>({...q,question,answers:q.answers.map((a,i)=>({...a,text:answers[i]}))});
+  if(fixture&&(q.theme==='avant_match'||q.theme==='phase_finale'&&fixture.stage)){
+   const match=(fixture.stage||'le match')+' face à '+fixture.opponent;
+   return write('Pour '+match+', quelle est votre priorité ?',[
+    'Pour '+match+', je veux qu’on sorte proprement de nos 22 mètres avant de chercher les extérieurs.',
+    'Je privilégierai les joueurs qui connaissent nos annonces en touche. Chaque changement devra servir le plan de match.',
+    'Je veux qu’on joue dans leur camp dès le coup d’envoi. À nous de leur faire remonter le terrain.',
+    'Je garde la composition pour le groupe. La priorité, c’est de sécuriser les renvois et nos premières possessions.',
+    'Les flèches du tableau noir ne gagneront pas un mètre. Je veux d’abord des soutiens proches du porteur.'
+   ]);
+  }
+  if(result&&['attaque','defense','defaite','victoire'].includes(q.theme)){
+   const match=result.for+'–'+result.against+' face à '+result.opponent;
+   const defense=q.theme==='defense';
+   let review;
+   if(result.for<result.against)review='J’assume nos choix après le '+match+'. '+(defense
+    ?'Je veux revoir le rôle du premier plaqueur et du joueur qui ferme son intérieur.'
+    :'Je veux revoir à quel moment on choisit de jouer et à quel moment il faut sortir au pied.');
+   else if(result.for>result.against)review='On a gagné '+match+'. '+(defense
+    ?'Je veux encore vérifier la couverture du fond quand le premier rideau monte.'
+    :'Je veux quand même vérifier les soutiens autour du porteur avant de reconduire nos consignes.');
+   else review='Le score de '+match+' est resté à égalité. '+(defense
+    ?'Je veux travailler la relance après récupération pour tirer profit d’un ballon gagné.'
+    :'Je veux travailler comment transformer les possessions près de la ligne en points.');
+   if(defense)return write('Après le '+match+', que voulez-vous travailler en défense ?',[
+    'Je veux que le premier rideau monte ensemble et que le fond du terrain reste couvert.',
+    review,
+    'Nous devons fermer l’axe et pousser l’adversaire vers la touche.',
+    'Je veux revoir nos replis après perte de balle avant de changer l’organisation.',
+    'Le plus court chemin vers le bon plaquage commence souvent par un pas ensemble.'
+   ]);
+   return write('Après le '+match+', quelle priorité fixez-vous à votre attaque ?',[
+    'Je veux des soutiens proches du porteur pour pouvoir rejouer vite après le premier contact.',
+    review,
+    'Je veux qu’on attaque l’axe avant d’écarter. À nous de fixer leur défense.',
+    'Je regarderai d’abord nos sorties de camp. Je déciderai ensuite où nous devons accélérer.',
+    'Un porteur ne devrait pas avoir à lancer un avis de recherche. Je veux du soutien dès le contact.'
+   ]);
+  }
+  if(injured&&q.theme==='blessures')return write(injured+' est indisponible. Comment gérez-vous cette absence ?',[
+   'Pendant l’absence de '+injured+', je prépare un joueur qui connaît déjà les annonces du poste.',
+   'Je ne donnerai pas de date pour '+injured+'. Nous préparerons la suite avec le groupe disponible.',
+   'Je veux que les joueurs disponibles prennent leur place. Le groupe doit pouvoir avancer pendant cette absence.',
+   'Je garderai les détails pour le joueur et le staff. Le retour dépendra de sa disponibilité.',
+   'Le calendrier ne soigne personne. Je préfère travailler dès maintenant la couverture du poste.'
+  ]);
+  return q;
+ }
  // A callback is a quotation from this saved career, never a reconstruction
  // from a tone or the question bank. Its exact displayed text is archived below.
  function prepareConference(s,invitation){
   const questions=mandatory()&&!invitation?null:CDV60RichPress.prepare(s,priorityThemes[invitation?.kind]);
   if(!questions||questions.length<2)return null;
   const history=s.pressConference?.history||[],prefix='Lors de notre échange de saison ';
-  return questions.map(q=>{
+  const facts=conferenceFacts(s);
+  return questions.map(base=>{
+   const q=contextualQuestion(base,facts);
    const sources=history.filter(h=>h.journalist?.id===q.journalist.id&&h.club===s.club&&h.season===s.season&&int(h.week,0,weekOf(s)-1)&&CDPressQuestionBank.questions.some(source=>source.id===h.id&&source.theme===q.theme)&&text(h.questionText)&&text(h.answerText)&&!h.questionText.startsWith(prefix));
    for(const h of sources.slice().reverse()){
     const reminder=prefix+h.season+', semaine '+(h.week+1)+', pour ce club, vous aviez répondu : « '+h.answerText+' ». ';
@@ -161,7 +247,12 @@ function factory(){
   questions.forEach((q,i)=>check(keys(payload.answers[i],['questionId','answerId'])&&payload.answers[i].questionId===q.id&&q.answers.some(a=>a.id===payload.answers[i].answerId),'Question ou réponse de conférence périmée.'));
   const scores=questions.map(q=>({journalistId:q.journalist.id,before:S.pressPeople?.contacts?.[q.journalist.id]?.score??0}));
   const before=measures(S);check(CDV60RichPress.apply(S,payload.answers.map(a=>a.answerId),priorityThemes[invitation?.kind])===true,'Conférence de presse refusée.');const after=measures(S),delta=Object.fromEntries(Object.keys(before).map(k=>[k,after[k]-before[k]]));
-  for(const q of questions){const archived=S.pressConference.history.find(h=>h.id===q.id&&h.season===S.season&&h.week===weekOf(S)&&h.club===S.club);check(!!archived,'Déclaration de conférence non archivée.');archived.questionText=q.question;}
+  for(const [index,q] of questions.entries()){
+   const archived=S.pressConference.history.find(h=>h.id===q.id&&h.season===S.season&&h.week===weekOf(S)&&h.club===S.club);
+   check(!!archived,'Déclaration de conférence non archivée.');
+   archived.questionText=q.question;
+   archived.answerText=q.answers.find(a=>a.id===payload.answers[index].answerId).text;
+  }
   if(invitation)invitation.status='published';
   S.pressConference.lastOutcome={context:context(S),before,after,delta,exchanges:scores.map(e=>{const after=S.pressPeople.contacts[e.journalistId].score;return {...e,after,delta:after-e.before};})};validate(S);return {pressOutcome:{...copy(S.pressConference.lastOutcome),...(invitation?{invitationId:invitation.id}:{})}};
  }
