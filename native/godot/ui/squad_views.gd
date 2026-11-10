@@ -837,6 +837,7 @@ static func contract(app:Control,p:Dictionary,recruiting:bool) -> void:
 	d.canceled.connect(d.queue_free)
 	app.add_child(d)
 	d.popup_centered(Vector2i(630,440))
+	d.get_cancel_button().grab_focus()
 
 static func _context_text(parent:Node,text:String,id:String="") -> Label:
 	var label:=G.wrap(text,12,G.INK)
