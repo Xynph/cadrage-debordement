@@ -89,9 +89,14 @@ func run() -> void:
 	if player_button != null:
 		player_button.grab_focus()
 		check(player_button.has_focus(), "Lien de fiche accessible au clavier")
-		player_button.pressed.emit()
+		for down: bool in [true, false]:
+			var event := InputEventKey.new()
+			event.keycode = KEY_ENTER
+			event.pressed = down
+			Input.parse_input_event(event)
+			await process_frame
 	await settle()
-	check(app.route == "Effectif" and app.selected_player == first.id, "Le lien ouvre la bonne fiche réelle")
+	check(app.route == "Effectif" and app.selected_player == first.id, "Entrée ouvre la bonne fiche réelle")
 	Availability.open(app)
 	await settle()
 	var lineup := app.find_child("InternationalAvailabilityLineup", true, false) as Button

@@ -51,6 +51,22 @@ test('overlapping supplied releases are counted once and a new active release ex
   assert.deepEqual(result.returned,[]);
 });
 
+test('injuries and suspensions remain distinct from international releases in the position depth', () => {
+  const result = projectAvailability({...base,players:players.map(player => player.id === 'cover' ? {...player,suspension:1} : player)});
+  assert.equal(result.positions[0].total,3);
+  assert.equal(result.positions[0].called,1);
+  assert.equal(result.positions[0].injured,1);
+  assert.equal(result.positions[0].available,0);
+  assert.equal(result.absentCount,1);
+});
+
+test('return dates cross leap day and recent returns cover exactly seven calendar dates', () => {
+  const release = {...camp,from:'2028-02-20',through:'2028-02-29'};
+  assert.equal(projectAvailability({...base,date:'2028-02-29',callups:[release],releaseWindows:[]}).nextReturn,'2028-03-01');
+  assert.equal(projectAvailability({...base,date:'2028-03-07',callups:[release],releaseWindows:[]}).returned.length,1);
+  assert.equal(projectAvailability({...base,date:'2028-03-08',callups:[release],releaseWindows:[]}).returned.length,0);
+});
+
 test('selection-only mandates do not claim a managed club or its player depth', () => {
   const result = projectAvailability({...base,clubManaged:false});
   assert.equal(result.clubManaged,false);

@@ -38,11 +38,11 @@ Le Bureau peut consommer `model.international.availability` : `clubManaged`,
 
 ## Vérification
 
-- Node 22.23.4 : 55/55 tests internationaux réussis, dont six nouveaux scénarios
-  sur le dernier jour d'absence, le retour, les postes, les doublons, les fenêtres
+- Node 22.23.4 : 57/57 tests internationaux réussis, dont huit nouveaux scénarios
+  sur le dernier jour d'absence, les retours bissextiles, les suspensions, les postes, les doublons, les fenêtres
   sans noms prédits, le mandat sélection seule et l'absence de mutation.
 - Godot 4.7.2 sans fenêtre : 13 contrôles réussis, une vraie carrière Monde
-  anglaise, le calendrier et le bon onglet, le lien vers la bonne fiche réelle,
+  anglaise, le calendrier et le bon onglet, Entrée vers la bonne fiche réelle,
   l'accès composition et l'empreinte sportive inchangée.
 - Le banc commence par la projection du vrai moteur puis injecte explicitement
   une projection UI contrôlée pour recevoir les états absent/retour/poste exposé.
