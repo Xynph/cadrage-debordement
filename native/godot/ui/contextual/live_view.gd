@@ -200,6 +200,8 @@ func apply_preferences() -> void:
 		stage.set_quality(quality)
 	for button: Button in _camera_controls:
 		button.set_meta("contextual_enabled", not bool(preferences.data.reduced_motion))
+		# Preferences can change without a worker/waiting transition.
+		button.disabled = bool(app.waiting) or bool(preferences.data.reduced_motion)
 		button.tooltip_text = "Mode calme : caméra tactique fixe." if preferences.data.reduced_motion else "Caméra conservée pour les prochains matchs."
 
 func _toggle_drawer(title: String) -> void:

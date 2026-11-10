@@ -36,24 +36,36 @@ static func format(weekly: Variant) -> String:
 static func bind_input(input: SpinBox, weekly: float, minimum: float, maximum: float, _step: float = 100) -> void:
 	var rate := factor()
 	input.set_meta("salary_period",period)
-	input.set_meta("salary_initial_weekly",weekly)
-	input.min_value = snappedf(minimum*rate,0.01)
-	input.max_value = snappedf(maximum*rate,0.01)
-	# Display cents without quantizing the source weekly amount on initialization.
-	input.step = 1.0 if period == "weekly" else 0.01
-	input.set_value_no_signal(snappedf(weekly*rate,0.01))
-	input.set_meta("salary_initial_display",input.value)
+	input.set_meta("salary_minimum_weekly",minimum)
+	input.set_meta("salary_maximum_weekly",maximum)
+	input.step = 100.0
+	input.min_value = snappedf(minimum*rate,100.0)
+	input.max_value = snappedf(maximum*rate,100.0)
+	_apply_input_weekly(input,weekly,false)
 	input.suffix = "€ "+period_label(true)
 	input.tooltip_text = CONVENTION + " La saisie est arrondie à l’euro hebdomadaire le plus proche avant confirmation."
 
 static func input_weekly(input: SpinBox) -> int:
-	if input.has_meta("salary_initial_display") and is_equal_approx(input.value,float(input.get_meta("salary_initial_display"))):
-		return roundi(float(input.get_meta("salary_initial_weekly")))
 	var unit := str(input.get_meta("salary_period",period))
-	return roundi(input.value/factor(unit))
+	var minimum := roundi(float(input.get_meta("salary_minimum_weekly",input.min_value/factor(unit))))
+	var maximum := roundi(float(input.get_meta("salary_maximum_weekly",input.max_value/factor(unit))))
+	if input.has_meta("salary_initial_display") and input.value == float(input.get_meta("salary_initial_display")):
+		return clampi(roundi(float(input.get_meta("salary_initial_weekly"))),minimum,maximum)
+	# Converted endpoint labels are rounded too; they still denote the exact
+	# weekly bounds, rather than 992 or 99992 euros in the monthly convention.
+	if input.value <= input.min_value: return minimum
+	if input.value >= input.max_value: return maximum
+	return clampi(roundi(input.value/factor(unit)),minimum,maximum)
 
 static func set_input_weekly(input: SpinBox, weekly: float) -> void:
-	var converted := snappedf(weekly*factor(str(input.get_meta("salary_period",period))),0.01)
-	input.set_meta("salary_initial_weekly",weekly)
-	input.set_meta("salary_initial_display",converted)
-	input.value = converted
+	_apply_input_weekly(input,weekly,true)
+
+static func _apply_input_weekly(input: SpinBox, weekly: float, notify: bool) -> void:
+	var rate := factor(str(input.get_meta("salary_period",period)))
+	var source := clampf(weekly,float(input.get_meta("salary_minimum_weekly",input.min_value/rate)),float(input.get_meta("salary_maximum_weekly",input.max_value/rate)))
+	input.set_value_no_signal(snappedf(source*rate,100.0))
+	# Keep the exact source and actual clamped display together. A copied
+	# counteroffer may have the same displayed hundred as the preceding offer.
+	input.set_meta("salary_initial_weekly",source)
+	input.set_meta("salary_initial_display",input.value)
+	if notify: input.value_changed.emit(input.value)

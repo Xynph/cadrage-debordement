@@ -2,6 +2,7 @@ extends SceneTree
 const Salary = preload("res://ui/salary_display.gd")
 const Prefs = preload("res://ui/user_preferences.gd")
 const G = preload("res://ui/game_skin.gd")
+const Rooms = preload("res://qa_runner.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -11,7 +12,10 @@ func check(ok: bool,message: String) -> void:
 	checks+=1
 	if not ok:failures.append(message);printerr("FAIL: ",message)
 func settle() -> void:
-	for frame in 12:await process_frame
+	# Let deferred controls/layout settle, then observe the actual rendered frame.
+	# Fixed twelve-frame waits multiplied the software-rendering cost per dialog.
+	for frame in 2:await process_frame
+	if DisplayServer.get_name()!="headless":await RenderingServer.frame_post_draw
 func wait_response() -> void:
 	var deadline := Time.get_ticks_msec()+45000
 	while app.waiting and Time.get_ticks_msec()<deadline:await process_frame
@@ -43,6 +47,10 @@ func current_target(id: String) -> Dictionary:
 	for player: Dictionary in app.model.market:
 		if str(player.id)==id:return player
 	return {}
+func check_salary_input(input: SpinBox,unit: String) -> void:
+	var number := input.get_line_edit().text.trim_suffix(input.suffix).strip_edges().replace(" ","")
+	check(number.is_valid_int(),"Vrai formulaire sans décimales "+unit+" : "+input.get_line_edit().text)
+	check(is_equal_approx(input.value,snappedf(input.value,100.0)),"Vrai formulaire en centaines "+unit)
 func run() -> void:
 	root.size=Vector2i(2560,1440)
 	app=load("res://main.tscn").instantiate();root.add_child(app)
@@ -51,6 +59,7 @@ func run() -> void:
 	check(not app.model.is_empty(),"Vraie application prête")
 	app.timer.stop()
 	app._command("new_career",{"mode":"common","club":0});await wait_response()
+	if not await Rooms.settle_club_meetings(app,self,check):await app._close(1);return
 	var person: Dictionary=app.model.squad[0]
 	app.selected_player=str(person.id);app._navigate("Effectif");await settle()
 	var profile := str(app.model.meta.dataDir).path_join("donnees.json")
@@ -78,13 +87,25 @@ func run() -> void:
 	check(not target.is_empty(),"Piste réelle pour vérifier commande")
 	if target.is_empty():await app._close(1);return
 	var id := str(target.id)
+	for unit in Salary.PERIODS:
+		await choose_unit(unit)
+		app.SquadViews.contract(app,target,true);await settle()
+		var offer := app.find_child("ContractOffer",true,false) as ConfirmationDialog
+		var wage := offer.find_child("OfferSalary",true,false) as SpinBox
+		check_salary_input(wage,unit)
+		check(Salary.input_weekly(wage)==int(target.salary),"Formulaire inchangé conserve source exacte "+unit)
+		await capture("offre-salaire-"+unit+"-1440")
+		offer.canceled.emit();await settle()
+		check(FileAccess.get_sha256(profile)==before,"Annuler formulaire ne modifie pas carrière "+unit)
 	await choose_unit("monthly")
 	app.SquadViews.contract(app,target,true);await settle()
 	var dialog := app.find_child("ContractOffer",true,false) as ConfirmationDialog
 	var input := dialog.find_child("OfferSalary",true,false) as SpinBox
 	check(Salary.input_weekly(input)==int(target.salary),"Montant moteur exact sans édition en mensuel")
 	check(input.suffix.contains("mois"),"Saisie dans unité choisie")
+	check_salary_input(input,"monthly commande réelle")
 	Salary.set_input_weekly(input,1000)
+	check_salary_input(input,"monthly contre-offre")
 	var years := dialog.find_child("OfferYears",true,false) as SpinBox;years.value=years.min_value
 	var cash: Variant=app.model.finance.cash
 	var roster_count: int=app.model.squad.size()
@@ -102,6 +123,7 @@ func run() -> void:
 	dialog=app.find_child("ContractOffer",true,false)
 	input=dialog.find_child("OfferSalary",true,false)
 	Salary.set_input_weekly(input,100000)
+	check_salary_input(input,"annual commande réelle")
 	check(is_equal_approx(input.value,5200000),"100000hebdo affichés5200000annuels")
 	years=dialog.find_child("OfferYears",true,false);years.value=years.min_value
 	var fee: Variant=current_target(id).fee

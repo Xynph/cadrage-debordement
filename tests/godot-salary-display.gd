@@ -6,6 +6,11 @@ var failures: Array[String] = []
 func check(ok: bool,message: String) -> void:
 	checks+=1
 	if not ok:failures.append(message);printerr("FAIL: ",message)
+func check_input(spin: SpinBox,message: String) -> void:
+	await process_frame
+	var number := spin.get_line_edit().text.trim_suffix(spin.suffix).strip_edges().replace(" ","")
+	check(number.is_valid_int(),"Saisie sans décimales "+message+" : "+spin.get_line_edit().text)
+	check(is_equal_approx(spin.value,snappedf(spin.value,100.0)),"Saisie en centaines "+message)
 func _initialize() -> void:call_deferred("run")
 func run() -> void:
 	var directory := OS.get_environment("CD_SALARY_TEST_DIR")
@@ -26,12 +31,37 @@ func run() -> void:
 		for period in Salary.PERIODS:
 			Salary.configure(period)
 			Salary.bind_input(spin,weekly,1000,100000)
+			await check_input(spin,str(weekly)+period)
 			check(Salary.input_weekly(spin)==weekly,"Aller-retour exact sans édition "+str(weekly)+period)
 			Salary.set_input_weekly(spin,weekly+0 if weekly<100000 else weekly)
+			await check_input(spin,"contre-offre "+str(weekly)+period)
 			check(Salary.input_weekly(spin)==weekly,"Copie contre-offre exacte "+period)
+	for period in Salary.PERIODS:
+		Salary.configure(period);Salary.bind_input(spin,3497,1000,100000)
+		spin.value=spin.min_value
+		await check_input(spin,"borne basse "+period)
+		check(Salary.input_weekly(spin)==1000,"Borne hebdomadaire basse exacte "+period)
+		spin.value=spin.min_value-10000
+		check(Salary.input_weekly(spin)==1000,"Dépassement inférieur borné "+period)
+		spin.value=spin.max_value
+		await check_input(spin,"borne haute "+period)
+		check(Salary.input_weekly(spin)==100000,"Borne hebdomadaire haute exacte "+period)
+		spin.value=spin.max_value+10000
+		check(Salary.input_weekly(spin)==100000,"Dépassement supérieur borné "+period)
+		Salary.set_input_weekly(spin,0)
+		check(Salary.input_weekly(spin)==1000,"Copie sous le minimum bornée "+period)
+		Salary.set_input_weekly(spin,200000)
+		check(Salary.input_weekly(spin)==100000,"Copie au-dessus du maximum bornée "+period)
 	Salary.configure("monthly");Salary.bind_input(spin,1000,1000,100000)
 	spin.value=10000
 	check(Salary.input_weekly(spin)==2308,"Édition mensuelle arrondie en euros hebdomadaires")
+	spin.value=10123.45
+	await check_input(spin,"édition mensuelle décimale")
+	check(spin.value==10100 and Salary.input_weekly(spin)==2331,"Édition quantifiée avant conversion hebdomadaire")
+	var changes: Array[float]=[]
+	spin.value_changed.connect(func(value: float):changes.append(value))
+	Salary.set_input_weekly(spin,3497);Salary.set_input_weekly(spin,3500)
+	check(Salary.input_weekly(spin)==3500 and changes.size()==2,"Contre-offres exactes et notification même si leur centaine affichée est identique")
 	Salary.configure("annual");Salary.bind_input(spin,1000,1000,100000)
 	spin.value=520000
 	check(Salary.input_weekly(spin)==10000,"Édition annuelle vers montant moteur")

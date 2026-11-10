@@ -296,7 +296,9 @@ func _bench() -> void:
 
 func _modal() -> void:
 	app._navigate("Recrutement")
-	for dimensions in [Vector2i(1440,900),Vector2i(1920,1080)]:
+	var formats := [Vector2i(1440,900),Vector2i(1920,1080)]
+	if OS.get_environment("QA_RESOLUTION") == "2560x1440": formats = [Vector2i(2560,1440)]
+	for dimensions in formats:
 		root.size = dimensions
 		for i in 5: await process_frame
 		app.SquadViews.contract(app, app.model.market[0], true)
@@ -386,7 +388,7 @@ func _run() -> void:
 	var profile := OS.get_environment("CD_GODOT_DATA_DIR")
 	if DisplayServer.get_name() == "headless":
 		root.mode = Window.MODE_WINDOWED
-		root.size = Vector2i(1280, 720)
+		root.size = Vector2i(2560,1440) if OS.get_environment("QA_RESOLUTION") == "2560x1440" else Vector2i(1280,720)
 	if mode == "disk":
 		profile = profile.path_join("profil-au-chemin-explicite-et-suffisamment-long-pour-verifier-la-lisibilite-de-lerreur")
 		OS.set_environment("CD_GODOT_DATA_DIR", profile)
