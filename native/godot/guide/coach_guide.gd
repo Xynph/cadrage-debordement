@@ -107,6 +107,15 @@ func _primary(button: Button, active: bool) -> void:
 		if active: button.add_theme_color_override(state, Color("242329"))
 		else: button.remove_theme_color_override(state)
 
+func _make_portrait() -> TextureRect:
+	return Portrait.new()
+
+func _portrait_extent(short_layout: bool) -> Vector2:
+	return Vector2(104,104) if short_layout else Vector2(136,136)
+
+func _allows_automatic_speech() -> bool:
+	return true
+
 func _build() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_compact = HBoxContainer.new(); _compact.mouse_filter = Control.MOUSE_FILTER_IGNORE; add_child(_compact)
@@ -129,7 +138,7 @@ func _build() -> void:
 	_button(top, "↔", "GuideMove", func(): _corner_left = not _corner_left; _layout()).tooltip_text = "Changer de coin"
 	_button(top, "×", "GuideClose", close).tooltip_text = "Réduire Gabi"
 	_body = Control.new(); _body.custom_minimum_size = Vector2(492, 150); _body.mouse_filter = Control.MOUSE_FILTER_IGNORE; _expanded.add_child(_body)
-	portrait = Portrait.new(); portrait.position = Vector2(356, 16); portrait.size = Vector2(136,136); _body.add_child(portrait)
+	portrait = _make_portrait(); portrait.position = Vector2(356, 16); portrait.size = Vector2(136,136); _body.add_child(portrait)
 	_balloon = Balloon.new(); _balloon.speaker = portrait; _balloon.size = Vector2(354,132); _body.add_child(_balloon)
 	var scroll := ScrollContainer.new(); scroll.name = "GuideTextScroll"
 	scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -288,17 +297,22 @@ func _layout() -> void:
 	var short_layout := mode == "context" or app.size.y <= 760
 	var width := (404.0 if short_layout else 492.0) if expanded else (492.0 if _error.visible else 140.0)
 	var balloon_width := 300.0 if short_layout else 354.0
+	var portrait_extent := _portrait_extent(short_layout)
+	var legacy_extent := Vector2(104,104) if short_layout else Vector2(136,136)
+	var portrait_top := 24.0 if short_layout else 16.0
+	if expanded: width += maxf(0.0, portrait_extent.x - legacy_extent.x)
 	var text_height := bubble.get_theme_font("font").get_multiline_string_size(bubble.text,HORIZONTAL_ALIGNMENT_LEFT,balloon_width - 45.0,15,-1,TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE).y
 	var line_count := ceili(text_height / bubble.get_theme_font("font").get_height(15))
 	text_height += maxi(0,line_count - 1) * bubble.get_theme_constant("line_spacing")
 	var balloon_height := maxf(114.0,ceilf(text_height) + 24.0) if short_layout else 132.0
-	if _settings_panel.visible: width = 492.0
+	if _settings_panel.visible: width = maxf(492.0, width)
 	var body_height := balloon_height if short_layout else 150.0
+	if portrait_extent != legacy_extent: body_height = maxf(body_height, portrait_top + portrait_extent.y)
 	var expanded_height := body_height + 70.0
 	_body.custom_minimum_size = Vector2(width, body_height)
 	_balloon.size = Vector2(balloon_width, balloon_height)
-	portrait.position = Vector2(balloon_width - 2.0, 24.0 if short_layout else 16.0)
-	portrait.size = Vector2(104,104) if short_layout else Vector2(136,136)
+	portrait.position = Vector2(balloon_width - 2.0, portrait_top)
+	portrait.size = portrait_extent
 	var height := (expanded_height if expanded else 34.0) + extra + error_height
 	custom_minimum_size = Vector2.ZERO
 	size = Vector2(width, height)
@@ -565,7 +579,8 @@ func _show_page(force: bool, request_speech: bool = true) -> void:
 	if request_speech and (force or key != _last_key):
 		_last_key = key
 		var scroll: ScrollContainer = find_child("GuideTextScroll", true, false); scroll.scroll_vertical = 0
-		speech.speak(bubble.text)
+		if _allows_automatic_speech(): speech.speak(bubble.text)
+		else: speech.stop()
 
 func _step(direction: int, skip_page: bool = false) -> void:
 	if _blocked(): return

@@ -214,8 +214,16 @@ func _coach_reception() -> void:
 	if help != null: help.pressed.emit()
 	await _settle()
 	_check(app.coach.expanded, "Coach opens from the actual app")
-	_check(app.root_content.offset_bottom == 0 and app.coach.mouse_filter == Control.MOUSE_FILTER_IGNORE and app.coach.size.x <= 500, "Coach floats without reserving or intercepting the workspace")
-	_check(app.coach.portrait.texture is AtlasTexture and app.coach.portrait.texture.atlas != null, "Exported atlas is loaded")
+	var portrait: TextureRect = app.coach.portrait
+	var uses_3d := ResourceLoader.exists("res://guide/assets/gabi.glb", "PackedScene")
+	var guide_width_limit := 700.0 if uses_3d else 500.0
+	_check(app.root_content.offset_bottom == 0 and app.coach.mouse_filter == Control.MOUSE_FILTER_IGNORE
+		and app.coach.size.x <= guide_width_limit, "Coach floats without reserving or intercepting the workspace")
+	if uses_3d:
+		_check(portrait.texture is ViewportTexture and portrait.find_child("AnimationPlayer", true, false) != null,
+			"Exported GLB is rendered and animated in the guide")
+	else:
+		_check(portrait.texture is AtlasTexture and portrait.texture.atlas != null, "Guide portrait is loaded")
 	await _capture("coach-developpe")
 	_check(app.coach.speech.player == null and app.coach.speech.voices.is_empty() and app.coach.speech.clips.is_empty(), "The visual coach initializes no audio player, clips or system voice")
 	var options := app.coach.find_child("GuideOptions", true, false) as Button

@@ -1,9 +1,25 @@
 extends "res://guide/coach_guide.gd"
-## Le guide garde son atlas, ses répliques et son placement. Ses commandes
-## reprennent les fontes et les couleurs des fenêtres de la carrière.
+## Le guide de carrière utilise le portrait 3D quand son GLB est installé.
 const C = preload("res://ui/immersive08/components.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
+const GabiPortrait = preload("res://guide/coach_portrait_3d.gd")
 const ACCENT = Color("176e49")
+
+func _make_portrait() -> TextureRect:
+	var model := load(GabiPortrait.MODEL_PATH) as PackedScene if ResourceLoader.exists(GabiPortrait.MODEL_PATH, "PackedScene") else null
+	if model == null: return super._make_portrait()
+	var display := GabiPortrait.new()
+	display.model = model
+	return display
+
+func _portrait_extent(short_layout: bool) -> Vector2:
+	if not portrait is GabiPortrait: return super._portrait_extent(short_layout)
+	var height := app.get_window().size.y
+	var side := 320.0 if height >= 1440 else (256.0 if height >= 1080 else 152.0)
+	return Vector2(side, side)
+
+func _allows_automatic_speech() -> bool:
+	return false
 
 func _build() -> void:
 	theme=Legacy.theme(ACCENT)

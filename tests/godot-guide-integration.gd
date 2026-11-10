@@ -202,7 +202,14 @@ func run() -> void:
 	check(has_coach, "Le coach est raccordé dans la vraie application")
 	if has_coach:
 		check(is_instance_valid(app.coach), "Une instance native de coach")
-		check(app.coach.portrait.texture is AtlasTexture and app.coach.portrait.texture.atlas != null, "Atlas original réellement chargé")
+		var portrait: TextureRect = app.coach.portrait
+		var uses_3d := ResourceLoader.exists("res://guide/assets/gabi.glb", "PackedScene")
+		var guide_width_limit := 700.0 if uses_3d else 500.0
+		if uses_3d:
+			check(portrait.texture is ViewportTexture and portrait.find_child("AnimationPlayer", true, false) != null,
+				"Portrait 3D réellement chargé et animé")
+		else:
+			check(portrait.texture is AtlasTexture and portrait.texture.atlas != null, "Atlas original réellement chargé")
 		app.coach.speech.set_muted(true)
 		for resolution in [Vector2i(1280,800), Vector2i(1440,900), Vector2i(1920,1080)]:
 			root.size = resolution
@@ -230,7 +237,8 @@ func run() -> void:
 				var scroll: ScrollContainer = app.entry_scroll if route in ["Accueil","Création","Packs"] else app.body_scroll
 				check(is_instance_valid(scroll) and scroll.follow_focus, "Corps défilable " + route)
 				if is_instance_valid(scroll):
-					check(app.root_content.offset_bottom == 0 and app.coach.get_global_rect().size.x <= 500 and app.coach.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Bulle libre sans panneau interceptant la page " + route)
+					check(app.root_content.offset_bottom == 0 and app.coach.get_global_rect().size.x <= guide_width_limit
+						and app.coach.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Bulle libre sans panneau interceptant la page " + route)
 				await capture(route.to_lower() + "-" + str(resolution.x))
 				app.coach.close(); await settle()
 		await profile_error()
