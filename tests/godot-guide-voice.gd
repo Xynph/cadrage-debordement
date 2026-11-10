@@ -46,7 +46,8 @@ func run() -> void:
 	check(speech.player.playing and speech.player.stream.get_length() > 0.5, "Vrai clip Gabi livré effectivement lu")
 	check(not speech._lip_track.is_empty() and speech._envelope.is_empty(), "Le WAV exact utilise sa piste de lèvres")
 	speech.stop()
-	check(speech._lip_track.is_empty() and speech.articulation == 0.0 and speech._rounding == 0.0, "Arrêter le WAV remet les lèvres au repos")
+	check(speech._lip_track.is_empty() and speech.articulation == 0.0 and speech._rounding == 0.0
+		and speech._press == 0.0 and speech._wide == 0.0, "Arrêter le WAV remet les quatre formes de lèvres au repos")
 	var folder := OS.get_environment("CD_GUIDE_VOICE_TEST_DIR")
 	if folder.is_empty(): quit(2); return
 	DirAccess.make_dir_recursive_absolute(folder)

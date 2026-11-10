@@ -4,7 +4,7 @@ signal requested(text: String)
 signal started(id: int)
 signal ended(id: int)
 signal speaking_changed(value: bool)
-signal articulation_changed(value: float, rounding: float)
+signal articulation_changed(value: float, rounding: float, press: float, wide: float)
 signal status_changed
 const ENVELOPE_STEP := 0.04
 const ENVELOPE_LIMIT := 8
@@ -12,6 +12,8 @@ const MAX_ENVELOPE_SECONDS := 30.0
 const MAX_PCM_BYTES := 4 * 1024 * 1024
 const BUNDLED_MANIFEST := "res://guide/assets/voice/manifest.json"
 const LIP_TRACKS_PATH := "res://guide/assets/voice/lip-sync.json"
+const LIP_STEP := 0.02
+const LIP_BYTES_PER_FRAME := 2
 var voices: Array[Dictionary] = []
 var voice_id := ""
 var rate := 1.0
@@ -31,9 +33,10 @@ var _recordings_complete := false
 ## -1: system voice without PCM; 0–1: opening according to the local recording.
 var articulation := 0.0
 var _rounding := 0.0
+var _press := 0.0
+var _wide := 0.0
 var _lip_tracks: Dictionary = {}
 var _lip_track := PackedByteArray()
-var _lip_step := 0.04
 var _envelope := PackedFloat32Array()
 var _envelope_cache: Dictionary = {}
 var _envelope_order: Array[String] = []
@@ -55,8 +58,7 @@ func load_manifest(source: String = BUNDLED_MANIFEST) -> void:
 			var lip_entries: Dictionary = {}
 			if bundled:
 				var lips: Variant = JSON.parse_string(FileAccess.get_file_as_string(LIP_TRACKS_PATH)) if FileAccess.file_exists(LIP_TRACKS_PATH) else null
-				if lips is Dictionary and lips.get("version") == 1 and lips.get("step_ms") in [20.0, 40.0] and lips.get("clips") is Dictionary:
-					_lip_step = float(lips.step_ms) / 1000.0
+				if lips is Dictionary and lips.get("version") == 2 and lips.get("step_ms") == 20 and lips.get("clips") is Dictionary:
 					lip_entries = lips.clips
 				var content: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://guide/dialogues.json"))
 				if content is Dictionary:
@@ -78,7 +80,8 @@ func load_manifest(source: String = BUNDLED_MANIFEST) -> void:
 				var entry: Variant = lip_entries.get(filename)
 				if entry is Dictionary and clip.has("sha256") and entry.get("sha256") == clip.sha256:
 					var frames := str(entry.get("frames", ""))
-					if frames.length() % 2 == 0 and frames.length() <= 2 * MAX_ENVELOPE_SECONDS / _lip_step and frames.is_valid_hex_number():
+					var chars_per_frame := 2 * LIP_BYTES_PER_FRAME
+					if frames.length() % chars_per_frame == 0 and frames.length() <= chars_per_frame * MAX_ENVELOPE_SECONDS / LIP_STEP and frames.is_valid_hex_number():
 						_lip_tracks[path] = frames.hex_decode()
 			_recordings_complete = bundled and expected_total > 0 and clips.size() == expected_total
 			if _recordings_complete: recording_status = "Voix de Gabi enregistrée · " + str(clips.size()) + " bulles locales."
@@ -140,10 +143,11 @@ func speak(text: String) -> void:
 			_id += 1; _active = _id
 			player.stream = stream; player.pitch_scale = rate
 			_lip_track = _lip_tracks.get(path, PackedByteArray())
-			if absf(_lip_track.size() * _lip_step - stream.get_length()) > _lip_step + 0.001:
+			var track_length := float(_lip_track.size()) / LIP_BYTES_PER_FRAME * LIP_STEP
+			if absf(track_length - stream.get_length()) > LIP_STEP + 0.001:
 				_lip_track = PackedByteArray()
 			_envelope = _recording_envelope(path, stream) if _lip_track.is_empty() else PackedFloat32Array()
-			_set_articulation(0.0 if not _lip_track.is_empty() or not _envelope.is_empty() else -1.0, 0.0, true)
+			_set_articulation(0.0 if not _lip_track.is_empty() or not _envelope.is_empty() else -1.0, 0.0, 0.0, 0.0, true)
 			player.volume_db = linear_to_db(float(clampi(volume,0,100)) / 100.0) if volume > 0 else -80.0
 			requested.emit(text); player.play(); _started(_active); return
 		_recordings_complete = false
@@ -188,19 +192,26 @@ func _process(_delta: float) -> void:
 	# the mouth at the correct point. Account for the current audio mixing block.
 	var source_time := maxf(0.0, player.get_playback_position() + (AudioServer.get_time_since_last_mix() - AudioServer.get_output_latency()) * player.pitch_scale)
 	if not _lip_track.is_empty():
-		var index := int(source_time / _lip_step)
-		# Each byte stores opening in its upper nibble and rounding in its lower nibble.
-		var frame := int(_lip_track[index]) if index < _lip_track.size() else 0
-		_set_articulation(float(frame >> 4) / 15.0, float(frame & 15) / 15.0)
+		var position := source_time / LIP_STEP
+		var index := floori(position)
+		var pose := _lip_pose(index).lerp(_lip_pose(index + 1), position - index)
+		_set_articulation(pose.x, pose.y, pose.z, pose.w)
 		return
 	if _envelope.is_empty(): return
 	var index := int(source_time / ENVELOPE_STEP)
 	_set_articulation(1.0 if index < _envelope.size() and _envelope[index] >= 0.018 else 0.0)
 
-func _set_articulation(value: float, rounding: float = 0.0, force: bool = false) -> void:
-	if articulation == value and _rounding == rounding and not force: return
-	articulation = value; _rounding = rounding
-	articulation_changed.emit(value, rounding)
+func _lip_pose(index: int) -> Vector4:
+	var offset := index * LIP_BYTES_PER_FRAME
+	if offset + 1 >= _lip_track.size(): return Vector4.ZERO
+	var vowels := int(_lip_track[offset])
+	var lips := int(_lip_track[offset + 1])
+	return Vector4(vowels >> 4, vowels & 15, lips >> 4, lips & 15) / 15.0
+
+func _set_articulation(value: float, rounding: float = 0.0, press: float = 0.0, wide: float = 0.0, force: bool = false) -> void:
+	if not force and articulation == value and _rounding == rounding and _press == press and _wide == wide: return
+	articulation = value; _rounding = rounding; _press = press; _wide = wide
+	articulation_changed.emit(value, rounding, press, wide)
 func set_global_volume(value: int) -> void:
 	var next := clampi(value, 0, 100)
 	if next == global_volume: return
