@@ -8,10 +8,19 @@ consulté au poste choisi. La condition reste une donnée distincte ; l'interfac
 n'invente aucun second malus. `selection.slots[].eligibleIds` est la seule
 autorité d'affectation, notamment pour les qualifications de première ligne.
 
-Un onglet Effectif dans la carte Banc permet de consulter tous les joueurs,
-y compris les absents de la feuille à 23. Choisir un candidat montre sa note
-au numéro actif ; une action explicite l'affecte. Le banc conserve huit places
-et les opérations par clic et clavier. Aucun nouvel écran n'est créé.
+Dernière instruction de présentation : Banc et Hors groupe sont simultanément
+visibles juste à droite du terrain ; Identité de jeu est la colonne droite.
+Le terrain garde `Rect2(280,264,1070,906)`, le banc occupe
+`Rect2(1366,264,598,529)`, Hors groupe `Rect2(1366,809,598,361)` et Identité
+`Rect2(1980,264,548,906)`. Les quatre tuiles inférieures restent présentes.
+
+Les cartes du terrain exposent le portrait existant, le numéro et la note
+au poste, avec une surface rectangulaire entière pour les déplacements.
+Hors groupe est la différence exacte de l'effectif et de tous les IDs du XV
+et du banc. Sa liste défile dans sa tuile, garde son en-tête et affiche la
+note à la cible explicitement nommée. Le banc conserve huit places et les
+opérations par clic et clavier. Aucun nouvel écran n'est créé. L'ancien
+projet d'onglets alternés et de carte Joueur sélectionné est abandonné.
 
 Le glisser-déposer utilise une seule commande `set_lineup`, comme le choix
 classique. Le moteur décide l'échange ou le refus. Une source périmée, étrangère
@@ -28,8 +37,8 @@ boutons et les données de la page actuelle avec un module de sélection dédié
   l'implémentation ; vérifier les échecs attendus.
 - [ ] Module dédié : lecture stricte des notes/projections, contrôle des sources
   et cibles, classes de boutons glissables et aperçu de déplacement.
-- [ ] Raccord de la page existante : maillots, banc, liste Effectif à en-têtes
-  fixes et carte du candidat contextualisée au numéro choisi.
+- [ ] Raccord de la page existante : portraits, notes aux quinze postes,
+  banc et Hors groupe simultanés à en-têtes fixes, Identité à droite.
 - [ ] Réception : même joueur à son poste puis au n°10, clic/clavier, affectation
   réelle, échange, refus première ligne, annulation et absence de doublons.
 - [ ] Capture réelle 2560×1440 sur cache privé, preuves et passation GitHub.
@@ -42,3 +51,19 @@ doit être refusé sans commande. Les consultations et annulations conservent
 l'export et le profil. Le défilement de l'effectif reste dans sa carte. La
 projection du banc doit fournir son numéro d'aptitude : aucun numéro16–23
 n'est interprété comme un poste de terrain.
+
+## Réception intermédiaire du cadrage
+
+Avec la projection moteur `c45557e`, la vraie application X11 2560×1440 passe
+**192 contrôles**, dont les 105 paires de rectangles du terrain sans intersection,
+les quinze portraits chargés et leurs notes projetées, la partition exacte des
+trois groupes, le choix de la cible au clavier et l'absence d'écriture sportive
+lors de la consultation. Les notes au n°10 chutent fortement pour un pilier
+selon le moteur. Cette réception de présentation ne valide pas encore les
+déplacements et effets sportifs du second commit Simulation.
+
+[Capture réelle du cadrage avec notes](tactique-polyvalence-20261110/tactique-portraits-horsgroupe-1440.png).
+[Rapport](tactique-polyvalence-20261110/cadrage-report.json).
+
+Le mode `CD_TACTICS_DRAG_PREVIEW=1` arrête le banc après la consultation ;
+le banc complet garde les scénarios de vrais glissers, annulation et affectation.
