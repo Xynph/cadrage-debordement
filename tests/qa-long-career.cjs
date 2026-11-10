@@ -1,7 +1,7 @@
 'use strict';
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
-const {Campaign, auditState, parseArgs} = require('../scripts/qa-long-career.cjs');
+const {Campaign, auditState, checkpointToRemove, parseArgs} = require('../scripts/qa-long-career.cjs');
 const {render} = require('../scripts/qa-long-career-report.cjs');
 const state = () => ({season:1, round:4, clubs:[{cash:-1000, players:[{id:'a', salary:3000}]},{cash:100, players:[{id:'b', salary:500}]}], history:[{fixtureId:'f1'}]});
 const campaign = () => new Campaign('club','Club','Worker');
@@ -32,4 +32,14 @@ test('le CLI borne graines et durées de campagne demandées', () => {
  assert.deepEqual(parseArgs([]), {seed:713492,seasons:3,throughYear:2031,campaign:'all'});
  assert.equal(parseArgs(['--seed','4294967295','--seasons','5']).seed, 4294967295);
  for (const args of [['--seed','4294967296'],['--seed','-1'],['--seasons','999'],['--through-year','2050'],['--campaign','inconnu'],['--output']]) assert.throws(() => parseArgs(args), /Argument invalide/);
+});
+
+test('le quota de sécurité est respecté et seul le plus ancien checkpoint QA est proposé', () => {
+ const safety = {entries:[{id:'new',createdAt:'2026-11-10'},{id:'old',createdAt:'2026-11-09'}],usedBytes:100,maxEntries:2,maxBytes:1000,error:''};
+ assert.equal(checkpointToRemove(safety, 10).id, 'old');
+ assert.equal(checkpointToRemove({...safety,maxEntries:3}, 10), null);
+ assert.equal(checkpointToRemove({...safety,maxEntries:3}, 950).id, 'old');
+ assert.equal(checkpointToRemove(undefined, 10), null);
+ assert.throws(() => checkpointToRemove({...safety,error:'copie corrompue'},10), /illisibles/);
+ assert.throws(() => checkpointToRemove({...safety,entries:[],maxEntries:0},10), /capacité/);
 });
