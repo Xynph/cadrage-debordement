@@ -31,7 +31,7 @@ try{
   const before=${initial?'null':`attributes.before(S,${liveOnly})`};
   ${source};depth.fill(S);attributes.complete(S,before,${liveOnly});
  }`);
- mutateDirect('start(0);CDStaffCareer.initialize(S);CDNativeAcademyGroups.start(S);nativeSystems.domain("press").observeInvitation(null,true)',false,true);
+ mutateDirect('start(0);CDStaffCareer.initialize(S);CDNativeAcademyGroups.start(S);depth.fill(S);nativeCareerVariation.apply(S,{version:1,seed:827381,varyCurrent:true});attributes.complete(S);autoLineup();nativeSystems.domain("press").observeInvitation(null,true)',false,true);
  const assertRng=()=>assert.equal(JSON.parse(fs.readFileSync(path.join(initial.meta.dataDir,'donnees.json'),'utf8')).seed,direct.randomState().seed,'curseur RNG identique à la référence native directe');
  let document=JSON.parse(good(b,'export').meta.exportText);assert.deepEqual(document.state,JSON.parse(direct.run('JSON.stringify(createSaveDocument().state)')),'état initial identique au moteur direct');
  assertRng();
