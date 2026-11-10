@@ -413,7 +413,7 @@ function aiRosterPopulationYouthIntake(){
   }
   a.players=a.players.filter(p=>p.age<=21&&p.age<p.dev.retireAge);
   for(const p of graduates)aiRosterGraduateAcademyPlayer(p,c.id);
-  for(let k=0;k<6&&a.players.length<75;k++){
+  for(let k=0;S.academyGroupPolicy!==2&&k<6&&a.players.length<75;k++){
    const slots=POS.map((_,slot)=>({slot,count:a.players.filter(p=>slotEligible(p,slot)).length,
     tie:(slot-c.id-S.season*6+150000)%15})).sort((a,b)=>a.count-b.count||a.tie-b.tie);
    const p=academyPlayer(c.id,slots[0].slot,S.season,300+k);

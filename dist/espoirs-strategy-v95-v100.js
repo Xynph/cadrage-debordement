@@ -166,7 +166,7 @@
  }
  function recruitFeeder(s,id,save){
   const st=ensure(s),n=st&&network(st,s),p=n?.players.find(x=>x.id===id),academy=youth(s);
-  const capacity=s.academyGroupPolicy===1?75:35;
+  const capacity=[1,2].includes(s.academyGroupPolicy)?75:35;
   if(!st||!unlocked(s)||!p||p.status!=='available'||p.scouted<2||!p.trial||
      academy.length>=capacity||st.recruits.length>=5||!cost(s,8000)||academy.some(x=>x.id===id))return false;
   // Underage international recruitment is not simulated as an ordinary domestic transfer.
