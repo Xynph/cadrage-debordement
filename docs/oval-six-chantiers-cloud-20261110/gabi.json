@@ -1,0 +1,13 @@
+{
+  "captures": [
+    "/tmp/oval-six-gabi/gabi-1920-Repos.png",
+    "/tmp/oval-six-gabi/gabi-1920-Salut.png",
+    "/tmp/oval-six-gabi/gabi-1920-RegardCarnet.png",
+    "/tmp/oval-six-gabi/gabi-2560-Repos.png",
+    "/tmp/oval-six-gabi/gabi-2560-Salut.png",
+    "/tmp/oval-six-gabi/gabi-2560-RegardCarnet.png"
+  ],
+  "checks": 39,
+  "display": "X11",
+  "failures": []
+}

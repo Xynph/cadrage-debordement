@@ -53,7 +53,7 @@ function help(){return heading('LE CARNET DU MANAGER','À vous de jouer.','Une c
 function news(s){S.news.unshift(s);S.news=S.news.slice(0,20);managerMessage(s,'','club','dashboard')}
 function trainWeek(){if(S.trained)return;const v39Before=v39InjuryBefore();applyStaffPreparation();S.trained=true;for(let c of S.clubs){for(let p of c.players){ensureDevelopment(p);const mode=physicalModeFor(p,c.id),wasInjured=!!p.injury;applyPhysicalTraining(p,mode);if(!wasInjured)applyCollectiveTrainingCost(p,c.id);if(wasInjured){p.injury--;continue}developmentTraining(p,mode,c.id);if(mode==='intense'&&Math.random()<.018){p.injury=rand(1,3);if(c.id===S.club)news(`${p.name} s’est blessé à l’entraînement : indisponible ${p.injury} semaine(s).`)}}}for(let p of S.development.academy)developmentTraining(p,'normal');careerAcademyTraining();worldFacilityTraining();v39AfterTraining(v39Before);repairSheet();}
 function matchView(){return rugbyMatchView()}
-function beginMatch(){rugbyBegin()}
+function beginMatch(reducedBench){rugbyBegin(reducedBench)}
 function tacticalBonus(){return 0}
 function startTimer(){clearInterval(timer);timer=setInterval(()=>{if(!S?.live||!presentationPending(S.live)&&(S.live.finished||S.live.paused)){clearInterval(timer);return}rugbyTick()},MATCH_TEMPOS[matchTempo])}
 function tick(){rugbyTick()}

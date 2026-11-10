@@ -66,19 +66,11 @@ func squad_row(id: String) -> Button:
 	return null
 
 func find_squad_row(id: String) -> Button:
-	# The real roster is paginated. Reach the requested row through its actual
-	# keyboard controls instead of assuming every player is in the current page.
-	for step in 32:
-		var previous: Button = named(app, "RosterPaginationPrevious")
-		if previous.disabled: break
-		previous.grab_focus(); await key(KEY_ENTER)
-	for step in 32:
-		var row := squad_row(id)
-		if row != null: return row
-		var next: Button = named(app, "RosterPaginationNext")
-		if next.disabled: break
-		next.grab_focus(); await key(KEY_ENTER)
-	return null
+	var row := squad_row(id)
+	var scroll := named(app,"SquadScroll") as ScrollContainer
+	if row != null and scroll != null:
+		scroll.ensure_control_visible(row); await settle()
+	return row
 
 func palette_fits(label: String) -> void:
 	var dialog := palette()
@@ -113,11 +105,15 @@ func run() -> void:
 	check(nav != null, "Contrôleur raccordé dans le vrai main")
 	if nav == null:
 		finish(); return
+	var focus_origin := named(app, "EntrySettings") as Button
+	check(focus_origin != null, "Bouton d'origine réel avant la palette")
+	if focus_origin != null: focus_origin.grab_focus()
 	await key(KEY_K, true)
 	check(palette() != null and palette().visible, "Ctrl+K ouvre une palette native")
 	check(results().item_count == 1 and results().get_item_text(0).contains("Accueil"), "Sans carrière : aucune route exigeant un modèle")
 	await key(KEY_ESCAPE)
 	check(not palette().visible and app.route == "Accueil", "Échap ferme la palette sans pause ni navigation")
+	check(focus_origin != null and focus_origin.has_focus(), "Échap restitue le focus au bouton d’origine sans navigation")
 	await command("new_career", {"club":0, "mode":"common"})
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	# Reproduce a first opening with the populated career, without a pre-sized palette.
@@ -168,14 +164,15 @@ func run() -> void:
 	var last_id := str(ordered.back().id)
 	await key(KEY_K, true); await search("[" + last_id + "]"); await key(KEY_ENTER)
 	check(app.selected_player == last_id and app.body.find_children("SquadPlayer*", "Button", true, false).any(func(button): return str(button.get_meta("player_id", "")) == last_id), "Une cible au-delà de la première page devient réellement visible depuis la palette")
-	var target_page := int(app.management_ui.roster.page)
-	check(target_page > 0, "La cible finale exige réellement une page ultérieure du vrai effectif")
-	var previous_page: Button = named(app, "RosterPaginationPrevious")
-	previous_page.grab_focus(); await key(KEY_ENTER)
-	var manual_page := int(app.management_ui.roster.page)
-	check(manual_page == target_page - 1 and app.selected_player == last_id, "La pagination volontaire reste possible sans changer le dossier ouvert")
+	var roster_scroll := named(app,"SquadScroll") as ScrollContainer
+	var last_row := squad_row(last_id)
+	check(roster_scroll != null and last_row != null and roster_scroll.get_global_rect().intersects(last_row.get_global_rect()), "La palette révèle le dernier dossier dans la liste continue")
+	var manual_scroll := mini(90,roster_scroll.get_v_scroll_bar().max_value-roster_scroll.get_v_scroll_bar().page)
+	roster_scroll.scroll_vertical=manual_scroll
+	app.management_ui.roster.scroll=manual_scroll
+	check(roster_scroll.scroll_vertical == manual_scroll and app.selected_player == last_id,"Le défilement volontaire conserve le dossier ouvert")
 	app._render(); await settle()
-	check(int(app.management_ui.roster.page) == manual_page, "Une reconstruction du menu conserve la page volontaire au lieu de forcer le dossier sélectionné")
+	check(named(app,"SquadScroll").scroll_vertical == manual_scroll and app.selected_player == last_id, "Une reconstruction conserve le défilement volontaire et le dossier sélectionné")
 	var original: Dictionary = app.model.duplicate(true)
 	app.model.squad[0].name = "Éric Même"
 	app.model.squad[1].name = "Éric Même"

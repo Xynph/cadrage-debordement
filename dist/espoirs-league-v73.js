@@ -53,7 +53,7 @@ function scoreMatch(s,pair,round,phase,st){const teams=pair.map(id=>chosen(s,id,
 function registerMinutes(s,m,st){for(let side=0;side<2;side++){const club=m.pair[side];for(const id of m.players[side]){if(!id)continue;const p=clubPlayers(s,club).find(x=>x.id===id);if(!p)continue;const minutes=80, prior=st.minutes[id]||0;st.minutes[id]=prior+minutes;
  const tired=st.fatigue[id]||0;st.fatigue[id]=clamp(tired+10,0,100);p.condition=clamp(p.condition-6,35,100);
  if(typeof growPlayer==='function')growPlayer(p,.07*Math.max(.4,p.condition/100),false);
- if(prior<640&&st.minutes[id]>=640&&p.dev){p.dev.potential=clamp(Math.max(p.rating,p.dev.potential+1),p.rating,99)}
+ if(typeof nativePotentialEvolution==='undefined'&&prior<640&&st.minutes[id]>=640&&p.dev){p.dev.potential=clamp(Math.max(p.rating,p.dev.potential+1),p.rating,99)}
  }}}
 function winners(matches){return matches.map(m=>m.pair[m.score[0]>=m.score[1]?0:1])}
 function applyRound(s,st,round){if(round!==st.round||round<0||round>=26)return false;
@@ -73,7 +73,7 @@ function applyRound(s,st,round){if(round!==st.round||round<0||round>=26)return f
  if(round===20){const win=winners(st.results.filter(x=>x.phase==='challenge-demi'));if(win.length===2)st.fixtures[20]=[[win[0],win[1]]]}
  const phase=round<10?'preliminaire':round<16?'qualification':round===16?'quarts':round===17?'demi-finales':round===18?'finale':round===19?'challenge-demi':round===20?'challenge-finale':'repos';
  for(const pair of st.fixtures[round]||[]){const kind=round>=10&&round<16&&st.groups.slice(4).some(g=>g.includes(pair[0]))?'challenge':phase;
- const match=scoreMatch(s,pair,round,kind,st);st.results.push(match);registerMinutes(s,match,st)}
+ const match=scoreMatch(s,pair,round,kind,st);st.results.push(match);if(typeof nativePotentialEvolution!=='undefined')nativePotentialEvolution.academyMatch(s,match,match.pair.map((club,side)=>clubPlayers(s,club).filter(p=>match.players[side].includes(p.id))));registerMinutes(s,match,st)}
  const played=new Set(st.results.filter(x=>x.round===round).flatMap(x=>x.players.flat()).filter(Boolean));
  for(const id of fullIds())for(const p of clubPlayers(s,id)){const prev=st.fatigue[p.id]||0;if(!played.has(p.id))p.condition=clamp(p.condition+8,35,100);st.fatigue[p.id]=clamp(prev-(played.has(p.id)?2:11),0,100)}
  if(round===18){const f=st.results.find(x=>x.phase==='finale');st.champion=f?f.pair[f.score[0]>=f.score[1]?0:1]:null;st.stage='terminee'}

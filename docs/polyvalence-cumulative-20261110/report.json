@@ -1,0 +1,19 @@
+{
+  "source_head": "6c043b66fe226b50f2d2c5a748a1357d409b0b06",
+  "native_suites": 5,
+  "native_suites_failures": 0,
+  "ui": {
+    "tactique": {
+      "checks": 436,
+      "failures": []
+    },
+    "effectif": {
+      "checks": 186,
+      "display": "X11",
+      "failures": [],
+      "model_players_with_secondary": 33,
+      "profile_unchanged": true,
+      "worker": ""
+    }
+  }
+}

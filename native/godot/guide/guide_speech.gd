@@ -16,6 +16,7 @@ var rate := 1.0
 var muted := false
 var volume := 75
 var global_volume := 100
+var _audio_allowed := true
 var _system_active := false
 var speaking := false
 var status_text := "Mode texte · aucune voix française disponible sur ce PC."
@@ -33,6 +34,7 @@ var _envelope_order: Array[String] = []
 var recording_status := "Voix enregistrée indisponible : repli sur la voix système."
 var _voice_folder := "res://guide/assets/voice"
 func load_manifest(source: String = "res://guide/assets/voice/manifest.json") -> void:
+	if not _audio_allowed: return
 	stop(); clips.clear(); _voice_folder = source.get_base_dir()
 	_recordings_complete = false
 	_envelope_cache.clear(); _envelope_order.clear()
@@ -72,8 +74,12 @@ func has_recording(text: String) -> bool:
 func has_complete_recordings() -> bool:
 	return _recordings_complete
 
-func setup(preferred: String, speed: float, quiet: bool) -> void:
-	rate = clampf(speed, 0.5, 2.0); muted = quiet
+func setup(preferred: String, speed: float, quiet: bool, allow_audio: bool = true) -> void:
+	_audio_allowed = _audio_allowed and allow_audio
+	rate = clampf(speed, 0.5, 2.0); muted = quiet or not _audio_allowed
+	if not _audio_allowed:
+		_update_status()
+		return
 	player = AudioStreamPlayer.new(); player.name = "GabiRecordedVoice"; add_child(player)
 	player.finished.connect(func():
 		if _active >= 0: _ended(_active)
@@ -96,12 +102,17 @@ func setup(preferred: String, speed: float, quiet: bool) -> void:
 		_callbacks = true
 	_update_status()
 func _update_status() -> void:
+	if not _audio_allowed:
+		status_text = "Guide visuel · voix désactivée."
+		status_changed.emit()
+		return
 	status_text = "Mode texte · aucune voix française disponible sur ce PC."
 	if not voice_id.is_empty(): status_text = "Voix système provisoire · " + ("muette" if muted else "prête")
 	if not clips.is_empty(): status_text = ("Voix de Gabi · " if _recordings_complete else "Voix provisoire de Gabi · ") + ("muette" if muted else "prête")
 	status_text += "\n" + recording_status
 	status_changed.emit()
 func speak(text: String) -> void:
+	if not _audio_allowed: return
 	stop()
 	if muted or text.is_empty(): return
 	if has_recording(text) and is_instance_valid(player):
@@ -177,8 +188,9 @@ func stop() -> void:
 	_system_active = false
 	if speaking: speaking = false; speaking_changed.emit(false)
 func set_muted(value: bool) -> void:
-	stop(); muted = value; _update_status()
+	stop(); muted = value or not _audio_allowed; _update_status()
 func configure(voice: String, speed: float) -> void:
+	if not _audio_allowed: return
 	stop()
 	if voices.any(func(item): return str(item.id) == voice): voice_id = voice
 	rate = clampf(speed, 0.5, 2.0)

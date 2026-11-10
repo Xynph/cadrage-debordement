@@ -1,0 +1,394 @@
+TAP version 13
+# Subtest: confirmed club absences include the final day, return on the following day, and leave opponents out
+ok 1 - confirmed club absences include the final day, return on the following day, and leave opponents out
+  ---
+  duration_ms: 2.399241
+  type: 'test'
+  ...
+# Subtest: announced windows remain separate from confirmed names and are grouped without duplicating nations
+ok 2 - announced windows remain separate from confirmed names and are grouped without duplicating nations
+  ---
+  duration_ms: 0.43283
+  type: 'test'
+  ...
+# Subtest: overlapping supplied releases are counted once and a new active release excludes a recent return
+ok 3 - overlapping supplied releases are counted once and a new active release excludes a recent return
+  ---
+  duration_ms: 0.340695
+  type: 'test'
+  ...
+# Subtest: injuries and suspensions remain distinct from international releases in the position depth
+ok 4 - injuries and suspensions remain distinct from international releases in the position depth
+  ---
+  duration_ms: 0.190863
+  type: 'test'
+  ...
+# Subtest: return dates cross leap day and recent returns cover exactly seven calendar dates
+ok 5 - return dates cross leap day and recent returns cover exactly seven calendar dates
+  ---
+  duration_ms: 1.160248
+  type: 'test'
+  ...
+# Subtest: selection-only mandates do not claim a managed club or its player depth
+ok 6 - selection-only mandates do not claim a managed club or its player depth
+  ---
+  duration_ms: 0.208242
+  type: 'test'
+  ...
+# Subtest: projection cannot mutate even frozen roster, camps or calendar
+ok 7 - projection cannot mutate even frozen roster, camps or calendar
+  ---
+  duration_ms: 0.72731
+  type: 'test'
+  ...
+# Subtest: native career exposes confirmed absence and actual release windows without changing the career or RNG
+ok 8 - native career exposes confirmed absence and actual release windows without changing the career or RNG
+  ---
+  duration_ms: 37.793528
+  type: 'test'
+  ...
+# Subtest: senior duty uses a deterministic reserve pool for a complete, qualified XV and bench
+ok 9 - senior duty uses a deterministic reserve pool for a complete, qualified XV and bench
+  ---
+  duration_ms: 5.01374
+  type: 'test'
+  ...
+# Subtest: a versatile first row can cover a scarce slot without overriding a valid selected preference
+ok 10 - a versatile first row can cover a scarce slot without overriding a valid selected preference
+  ---
+  duration_ms: 0.512896
+  type: 'test'
+  ...
+# Subtest: a fixture lineup cannot award caps without play, to an unused reserve, or twice after reloading
+ok 11 - a fixture lineup cannot award caps without play, to an unused reserve, or twice after reloading
+  ---
+  duration_ms: 1.436192
+  type: 'test'
+  ...
+# Subtest: Six Nations gaps give club availability back and the World Cup uses its opening date
+ok 12 - Six Nations gaps give club availability back and the World Cup uses its opening date
+  ---
+  duration_ms: 0.677323
+  type: 'test'
+  ...
+# Subtest: opens camp once, warns only for the managed nation and own club and blocks skipping its match
+ok 13 - opens camp once, warns only for the managed nation and own club and blocks skipping its match
+  ---
+  duration_ms: 61.74966
+  type: 'test'
+  ...
+# Subtest: plays an exact national fixture with real IDs and restores appearances without duplication
+ok 14 - plays an exact national fixture with real IDs and restores appearances without duplication
+  ---
+  duration_ms: 35.538556
+  type: 'test'
+  ...
+# Subtest: replays history without backdated mail or caps and resumes inside a live camp
+ok 15 - replays history without backdated mail or caps and resumes inside a live camp
+  ---
+  duration_ms: 27.47148
+  type: 'test'
+  ...
+# Subtest: simulates all editions identically across one long advance and calendar boundaries
+ok 16 - simulates all editions identically across one long advance and calendar boundaries
+  ---
+  duration_ms: 407.689721
+  type: 'test'
+  ...
+# Subtest: shows prior Nations Championship matches and catches a national match inside a club season gap
+ok 17 - shows prior Nations Championship matches and catches a national match inside a club season gap
+  ---
+  duration_ms: 26.759903
+  type: 'test'
+  ...
+# Subtest: restores a version 1 career beyond the World Cup and starts the next Six Nations camp
+ok 18 - restores a version 1 career beyond the World Cup and starts the next Six Nations camp
+  ---
+  duration_ms: 62.540749
+  type: 'test'
+  ...
+# Subtest: upgrades a legacy career already far beyond the old schedule without retrospective selections
+ok 19 - upgrades a legacy career already far beyond the old schedule without retrospective selections
+  ---
+  duration_ms: 11.626521
+  type: 'test'
+  ...
+# Subtest: keeps seasons playable and retains cumulative caps while bounding the detailed save history
+ok 20 - keeps seasons playable and retains cumulative caps while bounding the detailed save history
+  ---
+  duration_ms: 5829.457049
+  type: 'test'
+  ...
+# Subtest: official opening, French, and final dates are playable across both calendars
+ok 21 - official opening, French, and final dates are playable across both calendars
+  ---
+  duration_ms: 25.593241
+  type: 'test'
+  ...
+# Subtest: Six Nations uses a four-try bonus, seven-point boundary and five-win Grand Slam
+ok 22 - Six Nations uses a four-try bonus, seven-point boundary and five-win Grand Slam
+  ---
+  duration_ms: 2.811969
+  type: 'test'
+  ...
+# Subtest: Six Nations shares rank when points, margin and tries are identical
+ok 23 - Six Nations shares rank when points, margin and tries are identical
+  ---
+  duration_ms: 0.649436
+  type: 'test'
+  ...
+# Subtest: Cup pool ties use head-to-head before points difference
+ok 24 - Cup pool ties use head-to-head before points difference
+  ---
+  duration_ms: 4.81831
+  type: 'test'
+  ...
+# Subtest: Cup third-place comparison uses points scored ahead of tries
+ok 25 - Cup third-place comparison uses points scored ahead of tries
+  ---
+  duration_ms: 1.972104
+  type: 'test'
+  ...
+# Subtest: all fifteen official third-place permutations produce exactly sixteen distinct qualifiers
+ok 26 - all fifteen official third-place permutations produce exactly sixteen distinct qualifiers
+  ---
+  duration_ms: 13.088803
+  type: 'test'
+  ...
+# Subtest: knockout propagation, tied kicks and full history survive reverse-order replay
+ok 27 - knockout propagation, tied kicks and full history survive reverse-order replay
+  ---
+  duration_ms: 6.933088
+  type: 'test'
+  ...
+# Subtest: simulation uses repeatable match seeds and supplies legally scorable totals
+ok 28 - simulation uses repeatable match seeds and supplies legally scorable totals
+  ---
+  duration_ms: 5.740509
+  type: 'test'
+  ...
+# Subtest: Nations Championship schedules all cross-hemisphere pairings and final ranking matches
+ok 29 - Nations Championship schedules all cross-hemisphere pairings and final ranking matches
+  ---
+  duration_ms: 3.935404
+  type: 'test'
+  ...
+# Subtest: Nations Championship values wins before score margin among equal match points
+ok 30 - Nations Championship values wins before score margin among equal match points
+  ---
+  duration_ms: 0.982097
+  type: 'test'
+  ...
+# Subtest: Nations Championship finals share a draw and count the grand final twice for the Shield
+ok 31 - Nations Championship finals share a draw and count the grand final twice for the Shield
+  ---
+  duration_ms: 7.534604
+  type: 'test'
+  ...
+# Subtest: Rugby Championship keeps the three confirmed fixtures in a full schedule with rest
+ok 32 - Rugby Championship keeps the three confirmed fixtures in a full schedule with rest
+  ---
+  duration_ms: 3.31172
+  type: 'test'
+  ...
+# Subtest: Rugby Championship bonus requires a three-try margin instead of four tries
+ok 33 - Rugby Championship bonus requires a three-try margin instead of four tries
+  ---
+  duration_ms: 0.605087
+  type: 'test'
+  ...
+# Subtest: Rugby Championship ranks head-to-head wins ahead of general point margin
+ok 34 - Rugby Championship ranks head-to-head wins ahead of general point margin
+  ---
+  duration_ms: 1.489333
+  type: 'test'
+  ...
+# Subtest: the 2027 final reveals the 2031 World Cup host, and the 2028 guide survives save and reload without duplication
+ok 35 - the 2027 final reveals the 2031 World Cup host, and the 2028 guide survives save and reload without duplication
+  ---
+  duration_ms: 219.87297
+  type: 'test'
+  ...
+# Subtest: playing the last World Cup match as manager reveals the next edition before advancing the day
+ok 36 - playing the last World Cup match as manager reveals the next edition before advancing the day
+  ---
+  duration_ms: 39.741796
+  type: 'test'
+  ...
+# Subtest: the 2027 World Cup announcement reaches a club career and survives reopening without duplication
+ok 37 - the 2027 World Cup announcement reaches a club career and survives reopening without duplication
+  ---
+  duration_ms: 59.223768
+  type: 'test'
+  ...
+# Subtest: the annual and biennial tournament families expose host announcements before their opening matches
+ok 38 - the annual and biennial tournament families expose host announcements before their opening matches
+  ---
+  duration_ms: 121.980437
+  type: 'test'
+  ...
+# Subtest: the opening Nations Championship distinguishes the finals host from the distributed tournament
+ok 39 - the opening Nations Championship distinguishes the finals host from the distributed tournament
+  ---
+  duration_ms: 6.552159
+  type: 'test'
+  ...
+# Subtest: the 2027 World Cup dossier reflects the official country, cities and final
+ok 40 - the 2027 World Cup dossier reflects the official country, cities and final
+  ---
+  duration_ms: 16.766003
+  type: 'test'
+  ...
+# Subtest: 2031 preserves confirmed USA and leaves its final venue open
+ok 41 - 2031 preserves confirmed USA and leaves its final venue open
+  ---
+  duration_ms: 1.854974
+  type: 'test'
+  ...
+# Subtest: the Nations Championship separates physical home venues from designated home teams
+ok 42 - the Nations Championship separates physical home venues from designated home teams
+  ---
+  duration_ms: 1.006459
+  type: 'test'
+  ...
+# Subtest: league tournaments list the home unions and keep their decisive day separate from a final
+ok 43 - league tournaments list the home unions and keep their decisive day separate from a final
+  ---
+  duration_ms: 0.79163
+  type: 'test'
+  ...
+# Subtest: future hosts are stable, the stadium agrees with fixtures, and results do not alter the dossier
+ok 44 - future hosts are stable, the stadium agrees with fixtures, and results do not alter the dossier
+  ---
+  duration_ms: 19.352608
+  type: 'test'
+  ...
+# Subtest: career creation supports club, selection or a dual role
+ok 45 - career creation supports club, selection or a dual role
+  ---
+  duration_ms: 3.021839
+  type: 'test'
+  ...
+# Subtest: a dated national offer can add or replace the current club role
+ok 46 - a dated national offer can add or replace the current club role
+  ---
+  duration_ms: 0.930161
+  type: 'test'
+  ...
+# Subtest: a selection-only coach must actually take a new club job before gaining club permissions
+ok 47 - a selection-only coach must actually take a new club job before gaining club permissions
+  ---
+  duration_ms: 0.815795
+  type: 'test'
+  ...
+# Subtest: role imports reject forged jobs, future histories and incompatible shapes
+ok 48 - role imports reject forged jobs, future histories and incompatible shapes
+  ---
+  duration_ms: 0.389233
+  type: 'test'
+  ...
+# Subtest: recurring editions respect the transition calendar and keep the four initial IDs
+ok 49 - recurring editions respect the transition calendar and keep the four initial IDs
+  ---
+  duration_ms: 3.900292
+  type: 'test'
+  ...
+# Subtest: future tours balance hosts and recurring tournaments use separate release periods
+ok 50 - future tours balance hosts and recurring tournaments use separate release periods
+  ---
+  duration_ms: 24.556077
+  type: 'test'
+  ...
+# Subtest: simulated future editions play and restore through their respective title rules
+ok 51 - simulated future editions play and restore through their respective title rules
+  ---
+  duration_ms: 21.406153
+  type: 'test'
+  ...
+# Subtest: a new profile starting on the camp opening day immediately gets the call-up mail
+ok 52 - a new profile starting on the camp opening day immediately gets the call-up mail
+  ---
+  duration_ms: 53.120903
+  type: 'test'
+  ...
+# Subtest: international mail explains the camp and records the club return exactly once after reloading
+ok 53 - international mail explains the camp and records the club return exactly once after reloading
+  ---
+  duration_ms: 416.081261
+  type: 'test'
+  ...
+# Subtest: a closed club season retains the international date at the next opening after 2027
+ok 54 - a closed club season retains the international date at the next opening after 2027
+  ---
+  duration_ms: 126.307297
+  type: 'test'
+  ...
+# Subtest: common : copie avant remplacement, reprise explicite et RNG/horloge conservés
+ok 55 - common : copie avant remplacement, reprise explicite et RNG/horloge conservés
+  ---
+  duration_ms: 14239.778622
+  type: 'test'
+  ...
+# Subtest: world : copie avant remplacement, reprise explicite et RNG/horloge conservés
+ok 56 - world : copie avant remplacement, reprise explicite et RNG/horloge conservés
+  ---
+  duration_ms: 18597.012408
+  type: 'test'
+  ...
+# Subtest: import invalide : aucun checkpoint, aucune mutation de fichier/export/RNG/horloge
+ok 57 - import invalide : aucun checkpoint, aucune mutation de fichier/export/RNG/horloge
+  ---
+  duration_ms: 6246.786193
+  type: 'test'
+  ...
+# Subtest: import valide puis refus de publication : rollback bytewise et copie durable réutilisable
+ok 58 - import valide puis refus de publication : rollback bytewise et copie durable réutilisable
+  ---
+  duration_ms: 10604.051614
+  type: 'test'
+  ...
+# Subtest: copie altérée et quota plein refusent une restauration/import sans toucher la carrière
+ok 59 - copie altérée et quota plein refusent une restauration/import sans toucher la carrière
+  ---
+  duration_ms: 9381.43794
+  type: 'test'
+  ...
+# Subtest: A → B → A → B : copie de B cohérente, rollback restauration et action suivante identique au témoin
+ok 60 - A → B → A → B : copie de B cohérente, rollback restauration et action suivante identique au témoin
+  ---
+  duration_ms: 15750.326061
+  type: 'test'
+  ...
+# Subtest: adaptation de reprise : profil disque brut préservé, consultation sans écriture
+ok 61 - adaptation de reprise : profil disque brut préservé, consultation sans écriture
+  ---
+  duration_ms: 10704.175847
+  type: 'test'
+  ...
+# Subtest: the club match keeps the selected club and opposition players released to their unions
+ok 62 - the club match keeps the selected club and opposition players released to their unions
+  ---
+  duration_ms: 1795.717391
+  type: 'test'
+  ...
+# Subtest: selection-only career advances over the anchor match and records its AI result
+ok 63 - selection-only career advances over the anchor match and records its AI result
+  ---
+  duration_ms: 2814.699792
+  type: 'test'
+  ...
+# Subtest: the technical anchor can add injury cover without leaving invalid AI roster reports
+ok 64 - the technical anchor can add injury cover without leaving invalid AI roster reports
+  ---
+  duration_ms: 2565.464804
+  type: 'test'
+  ...
+1..64
+# tests 64
+# suites 0
+# pass 64
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 102412.337561

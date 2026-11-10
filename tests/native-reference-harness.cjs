@@ -4,7 +4,14 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {CORE_FILES}=require('../native/engine/worker.cjs');
 const systems=require('../native/engine/native-systems.cjs');
+const playerKnowledge=require('../native/engine/player-knowledge.cjs');
 const common=require('../native/engine/common-rosters.cjs');
+const careerVariation=require('../native/engine/career-variation.cjs');
+const positionAptitudes=require('../native/engine/position-aptitudes.cjs');
+const potentialEvolution=require('../native/engine/potential-evolution.cjs');
+const inSeasonDevelopment=require('../native/engine/in-season-development.cjs');
+const professionalDepth=require('../native/engine/professional-depth.cjs');
+const playerAttributes=require('../native/engine/player-attributes.cjs');
 const staff=require('../native/engine/staff.cjs');
 const model=require('../native/engine/model.cjs');
 const staffDatabaseIds=['world-registry','world-pacific-extension','world-japan-extension','world-nationale-extension','world-champ-extension']
@@ -17,12 +24,19 @@ function context({seed:initialSeed=827381,now=1700000000000,dataDir=''}={}){
  const element={innerHTML:'',textContent:'',style:{}};
  const ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
  const run=source=>vm.runInContext(source,ctx,{timeout:15000});
+ run(`const nativeCareerVariation=(${careerVariation.toString()})();`);
+ ctx.nativeKnowledgeValidate=playerKnowledge.factory().validate;
+ ctx.nativePotentialEvolutionValidate=potentialEvolution().validate;
  for(const name of CORE_FILES)run(fs.readFileSync(path.resolve(__dirname,'../dist',name),'utf8'));
+ run(`const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();`);
+ run(`const nativeProfessionalDepth=(${professionalDepth.toString()})();const nativeAttributeStore=(${playerAttributes.toString()})();const nativePlayerAttributes=p=>({...nativeAttributeStore.project(p),...nativePositionAptitudes.project(p)});`);
  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const CDCommonCareer=(${common.toString()})();`);
  // Même copie des sources de référence que le vrai worker, avant les hooks.
  ctx.nativeStaffCareerSourcesText=JSON.stringify(Object.fromEntries([run('CDCommonRosters.id'),...staffDatabaseIds]
   .map(id=>[id,staff.forDatabase(id).registry.clubs])));
  run(systems.bootstrap());delete ctx.nativeStaffCareerSourcesText;
+ run(`const nativeInSeasonDevelopment=(${inSeasonDevelopment.toString()})();nativeInSeasonDevelopment.installHooks();const nativePotentialEvolution=(${potentialEvolution.toString()})();nativePotentialEvolution.installHooks();`);
+ run(`const nativeKnowledge=(${playerKnowledge.factory.toString()})();nativeKnowledge.installHooks();const baseKnowledgeValidator=validateCareer;validateCareer=state=>{const result=baseKnowledgeValidator(state);nativeKnowledge.validate(state);return result;};`);
  run(`const nativeReferenceModel=(${model.toString()});
   function nativeReferenceGuard(command,payload){
    nativeSystems.domain('matchTalks').guard(command,payload);
@@ -44,6 +58,9 @@ function context({seed:initialSeed=827381,now=1700000000000,dataDir=''}={}){
   const previous=run('JSON.stringify({state:S,playback:S?.live?playback(S.live):null,saveError:lastSaveError})');
   const previousStore={...store},previousSeed=seed,previousCalls=calls;
   ctx.nativeCommand=name;ctx.nativePayload=JSON.parse(JSON.stringify(payload));
+  ctx.nativeReferenceAttributeBaseline=name==='new_career'?null:run('S?nativeAttributeStore.before(S,'+(['tick','delegate'].includes(name))+'):null');
+  ctx.nativeReferencePressPrevious=['begin_match','finish_round'].includes(name)?run('nativeSystems.domain("press").context(S)'):null;
+  ctx.nativeReferenceCreationSeed=previousSeed;
   const operations={
    new_career:"if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else if(nativePayload.mode==='france')CDFranceCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction');if(typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive(S))CDStaffCareer.initialize(S);",
    train:"if(!['normal','repos','intense'].includes(nativePayload.mode??S.training))throw Error('Entraînement invalide.');if(S.live||S.phase==='ended')throw Error('Entraînement indisponible.');if(!S.trained){S.training=nativePayload.mode??S.training;trainWeek();}",
@@ -65,6 +82,9 @@ function context({seed:initialSeed=827381,now=1700000000000,dataDir=''}={}){
   try{
    run('nativeReferenceGuard(nativeCommand,nativePayload)');
    run(source??operations[name]??'nativeSystems.execute(nativeCommand,nativePayload)');
+   if(name==='new_career')run('CDNativeAcademyGroups.start(S);nativeProfessionalDepth.fill(S);nativeCareerVariation.apply(S,{version:1,seed:nativeReferenceCreationSeed,varyCurrent:nativePayload.varyCurrent??true});nativeAttributeStore.complete(S);autoLineup();nativeSystems.domain("press").observeInvitation(null,true);');
+   else if(['begin_match','finish_round'].includes(name))run('nativeSystems.domain("press").observeInvitation(nativeReferencePressPrevious,false);');
+   run('nativeProfessionalDepth.fill(S);nativeAttributeStore.complete(S,nativeReferenceAttributeBaseline,'+(['tick','delegate'].includes(name))+');');
    run('nativeReferenceObserve(nativeCommand,nativePayload);save();validateCareer(S)');
    return project();
   }catch(error){
@@ -73,7 +93,7 @@ function context({seed:initialSeed=827381,now=1700000000000,dataDir=''}={}){
    ctx.nativeReferencePrior=JSON.parse(previous);
    run('nativeSystems.clearTransient();S=nativeReferencePrior.state;if(S?.live&&nativeReferencePrior.playback)MATCH_PLAYBACK.set(S.live,nativeReferencePrior.playback);pendingSave=null;lastSaveError=nativeReferencePrior.saveError;');
    throw error;
-  }finally{delete ctx.nativePayload;delete ctx.nativeCommand;delete ctx.nativeReferencePrior;}
+  }finally{delete ctx.nativePayload;delete ctx.nativeCommand;delete ctx.nativeReferencePrior;delete ctx.nativeReferenceAttributeBaseline;delete ctx.nativeReferencePressPrevious;delete ctx.nativeReferenceCreationSeed;}
  }
  return {ctx,store,run,project,command,randomState:()=>({seed,calls})};
 }

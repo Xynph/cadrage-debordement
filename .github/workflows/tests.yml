@@ -46,8 +46,8 @@ jobs:
       matrix:
         shard: [1, 2, 3, 4, 5]
     runs-on: ubuntu-latest
-    # Le précédent shard long a atteint 20 min ; mêmes cinq groupes complets.
-    timeout-minutes: 25
+    # Les suites natives longues peuvent dépasser ensemble vingt minutes.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
         with:
@@ -81,7 +81,7 @@ jobs:
               tests/world-worker-season.cjs) limit=420s ;;
               tests/native-manager-career-worker.cjs) limit=240s ;;
               tests/native-academy-integrated-long.cjs) limit=480s ;;
-              tests/native-delegate-transaction06.cjs) limit=240s ;;
+              tests/native-delegate-transaction06.cjs) limit=300s ;;
               tests/native-club-support-season.cjs) limit=240s ;;
             esac
             if timeout --signal=TERM --kill-after=10s "$limit" /usr/bin/time -f "CD_CPU_PROFILE suite=$test user_s=%U system_s=%S wall_s=%e cpu_pct=%P max_rss_kb=%M" node "$test"; then

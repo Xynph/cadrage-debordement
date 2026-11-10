@@ -145,9 +145,14 @@ function preparation(model, state, today, anchors) {
 
 function project(model, state, date, {anchors = []} = {}) {
  const today = dateOf(model,date);
+ const stored = activeState(model,state);
+ const appliedTemplates = Object.fromEntries(fixturesOf(model)
+  .filter(fixture=>!fixture.played && owns(stored,fixture.id))
+  .map(fixture=>[fixture.id,stored[fixture.id].template]));
  return {
   today,
   sessions:today ? preparation(model,state,today,anchors) : [],
+  appliedTemplates,
   templates:Object.entries(programmes).map(([id,{label}])=>({id,label}))
  };
 }

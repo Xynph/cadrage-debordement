@@ -118,12 +118,12 @@ static func build(app: Control) -> Control:
 			follow.disabled = not data.get("recruitmentAvailable", false)
 			detail.add_child(follow)
 			for term: Dictionary in p.get("terms", []):
-				detail.add_child(G.wrap("%s saison(s) · %s semaines · salaire demandé %s / sem.\nPrime %s · engagement indicatif %s" % [int(term.years), int(term.payments), G.euros(term.salary), G.euros(term.fee), G.euros(term.knownCommitment)], 14))
+				detail.add_child(G.wrap("%s saison(s) · %s semaines · salaire demandé %s\nPrime %s · engagement indicatif %s" % [int(term.years), int(term.payments), G.salary(term.salary), G.euros(term.fee), G.euros(term.knownCommitment)], 14))
 			detail.add_child(G.wrap("Salaire demandé à cette date. La négociation peut aboutir à d’autres conditions ; aucune signature depuis ce devis.", 12))
 		choose.item_selected.connect(draw)
 		draw.call(0)
 	recruitment.add_child(G.section("Rapports datés"))
 	for report: Dictionary in data.get("reports", []).slice(-8):
-		recruitment.add_child(G.wrap("%s · S%s semaine %s · rapport %s" % [_player(app, report.playerId), int(report.season), int(report.week), report.grade], 14))
+		recruitment.add_child(G.wrap("%s · S%s semaine %s · rapport %s" % [_player(app, report.playerId), int(report.season), int(report.week), str(report.get("grade")) if report.get("grade") != null else "—"], 14))
 	return page
 

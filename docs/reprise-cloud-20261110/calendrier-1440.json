@@ -1,0 +1,49 @@
+{
+  "captures": [
+    {
+      "caption": "Jour suivant",
+      "date": "2026-08-17",
+      "header": "17 AOÛT 2026",
+      "image": "01-competitions-2026",
+      "route": "Sélections"
+    },
+    {
+      "caption": "Jour suivant",
+      "date": "2026-08-17",
+      "header": "17 AOÛT 2026",
+      "image": "02-rencontres-page2",
+      "route": "Sélections"
+    },
+    {
+      "caption": "Jour suivant",
+      "date": "2026-08-17",
+      "header": "17 AOÛT 2026",
+      "image": "03-competitions-2027",
+      "route": "Sélections"
+    },
+    {
+      "caption": "Jour suivant",
+      "date": "2026-08-17",
+      "header": "17 AOÛT 2026",
+      "image": "04-calendrier-proche",
+      "route": "Calendrier"
+    },
+    {
+      "caption": "Jour suivant",
+      "date": "2026-08-17",
+      "header": "17 AOÛT 2026",
+      "image": "05-courrier-hote",
+      "route": "Réception"
+    },
+    {
+      "caption": "Jour suivant",
+      "date": "2026-08-17",
+      "header": "17 AOÛT 2026",
+      "image": "06-accueil-edition",
+      "route": "Sélections"
+    }
+  ],
+  "checks": 46,
+  "display": "X11",
+  "failures": []
+}

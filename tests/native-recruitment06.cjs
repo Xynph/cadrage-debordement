@@ -2,6 +2,7 @@
 const assert=require('node:assert/strict'),decisions=require('../native/engine/decisions.cjs');
 const {context}=require('./france-harness.cjs'),h=context(10606);
 h.run(`start(0,'fiction');const nativeDecisions=${decisions.toString()};`);
+h.prepareNativeProjection();
 // Explicit report fixture in the real native loader, not a claim of real scouting.
 h.run(`{const p=managerPool()[0];S.manager.reports=[{id:'report-fixture',mission:'mission-fixture',playerId:p.id,name:'Émile D’Ávila',pos:p.pos,family:p.fam,age:p.age,note:72,potential:81,salary:p.salary,price:p.price,grade:'A',season:S.season,week:S.economy.week}];}`);
 const project=()=>JSON.parse(h.run('JSON.stringify(nativeDecisions().recruitment)'));

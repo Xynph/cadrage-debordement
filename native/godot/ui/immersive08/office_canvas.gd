@@ -4,6 +4,7 @@ const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
+const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
 const Office = preload("res://ui/immersive08/office.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
@@ -25,11 +26,11 @@ static func build(app: Control) -> Control:
 	page.custom_minimum_size = Vector2(2248,1124)*C.density
 	C.fill(page,true)
 	_fixture(_card(page,Rect2(280,220,1360,418),"","","OfficeFixture"),app)
-	_priorities(_card(page,Rect2(1656,220,872,418),"PRIORITÉS DE LA SEMAINE","calendar","OfficeDecisions"),app)
+	_priorities(_card(page,Rect2(1656,220,872,418),"VOS TROIS PRIORITÉS","calendar","OfficeDecisions"),app)
 	_group(_card(page,Rect2(280,654,422,448),"ÉTAT DU GROUPE","heart","OfficeGroup"),app)
 	_standings(_card(page,Rect2(718,654,684,448),"CLASSEMENT · "+P.league_name(app.model),"trophy","OfficeStandings"),app)
 	_journal(_card(page,Rect2(1418,654,548,448),"DANS VOTRE BUREAU","mail","OfficeJournal"),app)
-	_recruitment(_card(page,Rect2(1982,654,546,448),"LE RAPPORT À SUIVRE","search","OfficeRecruitment"),app)
+	_recruitment(_card(page,Rect2(1982,654,546,448),"LE PROFIL À SUIVRE","search","OfficeRecruitment"),app)
 	var recent := Office.recent_results(app)
 	if recent != null:
 		page.add_child(recent)
@@ -39,6 +40,8 @@ static func build(app: Control) -> Control:
 
 static func _fixture(card: Panel, app: Control) -> void:
 	card.clip_contents = true
+	var signature: Color = app.accent.lightened(.36)
+	card.add_theme_stylebox_override("panel", D.surface(1360,418,Color("192524").lerp(app.accent,.18),Color("0d1517"),signature))
 	var japan := SeasonPreparation.is_japan(app.model.meta)
 	var territory := Office.territory_art(app.model.club)
 	if territory != null:
@@ -48,24 +51,42 @@ static func _fixture(card: Panel, app: Control) -> void:
 		var ground := P.fixture_ground(app.model.meta,"office-hero")
 		D.photo(card,ground,Rect2(694,1,665,416),.53 if ground != "office-hero" else 0.0)
 		C.veil(card).set_offsets_preset(Control.PRESET_FULL_RECT,Control.PRESET_MODE_KEEP_SIZE,C.px(1))
+	D.rect(card,Rect2(1,22,4,374),signature,0)
+	var match_info := Office.live_match(app.model)
+	if not match_info.is_empty():
+		_live_content(card, app, match_info)
+		return
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
 	if next.is_empty():
 		var preparation := SeasonPreparation.data(app.model.meta)
 		var upcoming := P.next_nationale_fixture(app.model)
+		var scheduled := P.next_scheduled_fixture(app.model)
 		if not upcoming.is_empty():
-			D.chip(card,Rect2(24,22,281,29),"NATIONALE",C.GOLD)
-			D.text(card,27,121,"Pas de match cette semaine.",58,C.IVORY,800,920)
-			D.text(card,27,183,"Prochain match · " + P.fixture_date(upcoming),30,C.IVORY,600,720)
-			D.text(card,27,223,P.fixture_venue(upcoming),21,C.MUTED,400,735,HORIZONTAL_ALIGNMENT_LEFT,true)
+			D.chip(card,Rect2(24,22,281,29),"SEMAINE EXEMPTE",C.GOLD)
+			D.text(card,27,121,Office.scheduled_opponent(app,upcoming),51,C.IVORY,800,645).name = "UpcomingOpponent"
+			D.text(card,27,183,"Prochain match · " + Office.scheduled_when(app,upcoming),27,C.IVORY,600,645).name = "UpcomingWhen"
+			var venue := Office.scheduled_venue(app,upcoming)
+			if not venue.is_empty(): D.text(card,27,223,"Lieu · " + venue,21,C.MUTED,400,645,HORIZONTAL_ALIGNMENT_LEFT,true)
+		elif preparation.is_empty() and not scheduled.is_empty():
+			D.text(card,27,45,"PROCHAINE RENCONTRE",22,C.GOLD,700,640)
+			D.text(card,27,115,Office.scheduled_opponent(app, scheduled),48,C.IVORY,800,645)
+			D.text(card,27,169,Office.scheduled_when(app, scheduled),27,C.IVORY,600,645)
+			D.text(card,27,210,P.fixture_venue(scheduled),22,C.MUTED,400,645,HORIZONTAL_ALIGNMENT_LEFT,true)
 		elif preparation.is_empty():
 			D.text(card,27,100,"La saison se termine." if app.model.meta.get("canAdvanceSeason",false) else "Le travail continue.",42,C.IVORY,700,740)
 			D.text(card,27,156,"Retrouvez les résultats et préparez la suite du projet.",21,C.MUTED,400,740,HORIZONTAL_ALIGNMENT_LEFT,true)
 		elif SeasonPreparation.is_champ(app.model.meta):
 			var fixture := P.next_scheduled_fixture(app.model)
-			D.chip(card,Rect2(24,22,281,29),World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))).to_upper(),C.GOLD)
-			D.text(card,27,121,"Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))),58,C.IVORY,800,920)
-			D.text(card,27,183,P.fixture_date(fixture, true) if not fixture.is_empty() else World.preparation_note(preparation),30,C.IVORY,600,720)
-			D.text(card,27,223,P.fixture_venue(fixture),21,C.MUTED,400,735,HORIZONTAL_ALIGNMENT_LEFT,true)
+			D.chip(card,Rect2(24,22,210,29),"PRÉPARATION",C.GOLD)
+			if fixture.is_empty():
+				D.text(card,27,121,"Préparation · " + World.name_for(app.model,"champ"),58,C.IVORY,800,920)
+				D.text(card,27,183,World.preparation_note(preparation),30,C.IVORY,600,720)
+			else:
+				D.text(card,27,121,Office.scheduled_opponent(app,fixture),51,C.IVORY,800,645).name = "UpcomingOpponent"
+				D.text(card,27,183,Office.scheduled_when(app,fixture),27,C.IVORY,600,645).name = "UpcomingWhen"
+				var venue := Office.scheduled_venue(app,fixture)
+				if not venue.is_empty(): D.text(card,27,223,"Lieu · " + venue,21,C.MUTED,400,645,HORIZONTAL_ALIGNMENT_LEFT,true)
+
 		else:
 			D.chip(card,Rect2(24,22,322 if japan else 281,29),World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))).to_upper(),C.GOLD)
 			D.text(card,27,121,"Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))),58,C.IVORY,800,920)
@@ -74,68 +95,86 @@ static func _fixture(card: Panel, app: Control) -> void:
 		D.button(card,Rect2(27,354,420,45),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,app.accent,"OfficePreparationAction")
 		return
 	var match_label := str(next.get("label",P.league_name(app.model)))
-	var competition := Office.short_fixture_label(app.model,next) if japan else match_label
-	var chip := D.chip(card,Rect2(24,22,281,29),competition.to_upper(),C.MUTED)
-	if japan: Office.describe_fixture(chip,match_label)
+	var competition := Office.fixture_stage(app.model,next,match_label)
+	D.text(card,27,45,"PROCHAIN MATCH",22,C.GOLD,700,205)
+	var chip := D.chip(card,Rect2(224,22,269,29),competition.to_upper(),C.MUTED)
+	Office.describe_fixture(chip,match_label)
 	var location := "NEUTRE" if next.get("neutral",false) else "À DOMICILE" if next.get("home",{}).get("id")==app.model.club.id else "EXTÉRIEUR"
-	D.chip(card,Rect2(323,22,147,29),location,C.GOLD)
-	_crest(card,next.get("home",{}),Rect2(32,70,91,98))
-	_crest(card,next.get("away",{}),Rect2(188,69,88,99))
-	D.text(card,154,130,"VS",24,C.GOLD,600,45,HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(card,305,110,G.club_name(next.get("home",{})).to_upper(),37,C.IVORY,700,520)
-	D.text(card,305,150,G.club_name(next.get("away",{})).to_upper(),33,C.IVORY,600,520)
+	D.chip(card,Rect2(505,22,164,29),location,C.GOLD)
+	_crest(card,next.get("home",{}),Rect2(27,72,64,64))
+	_crest(card,next.get("away",{}),Rect2(27,151,64,64))
+	D.text(card,111,111,G.club_name(next.get("home",{})).to_upper(),39,C.IVORY,800,554)
+	D.line(card,Vector2(111,143),Vector2(669,143),Color(C.LINE,.60))
+	D.text(card,61,148,"VS",17,C.GOLD,700,44,HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(card,111,189,G.club_name(next.get("away",{})).to_upper(),39,C.IVORY,800,554)
+	for side in ["home","away"]:
+		var team: Dictionary = next.get(side,{})
+		if not team.has("rank") or not team.has("points"): continue
+		var rank := G.n(team.rank)
+		var standing := "%s%s · %s pts" % [rank,"er" if rank=="1" else "e",G.n(team.points)]
+		var tint := C.MINT if team.get("id")==app.model.club.id else C.MUTED
+		D.text(card,111,135 if side=="home" else 213,standing,20,tint,600,420)
 	var calendar := C.icon("calendar",25,C.GOLD)
 	card.add_child(calendar)
-	D.place(calendar,Rect2(29,194,25,25))
+	D.place(calendar,Rect2(29,227,25,25))
 	var date := P.fixture_date(next, true)
 	if date.is_empty(): date = "SEMAINE %d" % [int(next.get("week",0))+1]
-	D.text(card,67,216,date+" · "+Office.fixture_competition(app.model,next),28,C.IVORY,600,680).name="OfficeFixtureDate"
+	D.text(card,67,250,date+" · "+Office.fixture_competition(app.model,next),27,C.IVORY,600,601).name="OfficeFixtureDate"
 	var venue_name := P.fixture_venue(next,false)
 	if not venue_name.is_empty():
 		var home := C.icon("home",23,C.MUTED)
 		card.add_child(home)
-		D.place(home,Rect2(29,235,23,23))
-		D.text(card,67,255,venue_name,21,C.MUTED,400,650,HORIZONTAL_ALIGNMENT_LEFT,true).name="OfficeFixtureVenue"
-	for i in 2:
-		var club: Dictionary = next.get("home",{}) if i==0 else next.get("away",{})
-		var rank := G.n(club.get("rank","—"))
-		D.text(card,29+i*180,300,rank+("er" if rank=="1" else "e")+" · "+G.n(club.get("points",0))+" points",22,C.MINT if i==0 else C.MUTED,600,170)
-	D.text(card,29,330,"Votre XV et votre plan de jeu pour la prochaine rencontre.",19,C.MUTED,400,660,HORIZONTAL_ALIGNMENT_LEFT,true)
-	D.button(card,Rect2(27,354,304,45),"PRÉPARER LE MATCH",func():app._navigate("Préparation"),true,"arrow",false,app.accent,"OfficePreparationAction")
-	D.button(card,Rect2(345,354,226,45),"Vérifier les 23",func():app._navigate("Composition"),false,"",false,app.accent,"OfficeSelectionAction")
-	var badge := Rect2(1118,371,218,26) if territory==null else Rect2(432,277,218,26)
-	D.chip(card,badge,"FEUILLE À PRÉPARER" if not app.model.get("selection",{}).get("valid",false) else "FEUILLE COMPLÈTE",C.GOLD)
+		D.place(home,Rect2(29,269,23,23))
+		D.text(card,67,288,venue_name,22,C.MUTED,400,596,HORIZONTAL_ALIGNMENT_LEFT,true).name="OfficeFixtureVenue"
+	var valid: bool = app.model.get("selection",{}).get("valid",false)
+	D.text(card,29,327,"Feuille complète" if valid else "Feuille à préparer",21,C.MINT if valid else C.AMBER,700,310)
+	D.button(card,Rect2(27,348,320,51),"PRÉPARER LE MATCH",func():app._navigate("Préparation"),true,"arrow",false,app.accent,"OfficePreparationAction")
+	D.button(card,Rect2(362,348,190,51),"Vérifier les 23",func():app._navigate("Composition"),false,"",false,app.accent,"OfficeSelectionAction")
 	if P.fixture_location_kind(next, app.model.club.id) == "away":
 		var bag := Rect2(1076, 192, 260, 165) if territory == null else Rect2(573, 306, 117, 99)
 		D.scenario_photo(card, "travel-bag", bag)
 
+static func _live_content(card: Panel, app: Control, match_info: Dictionary) -> void:
+	D.text(card,27,45,match_info.heading,22,C.GOLD,700,205).name = "OfficeLiveHeading"
+	if not match_info.location.is_empty():
+		D.chip(card,Rect2(224,22,176,29),match_info.location,C.MUTED)
+	var teams: Array = match_info.teams
+	for i in teams.size():
+		var team: Dictionary = teams[i]
+		var y := 71 + 77 * i
+		_crest(card,team,Rect2(27,y,62,62))
+		D.text(card,111,y+42,G.club_name(team),39,C.IVORY,800,548)
+	D.text(card,27,257,match_info.score,44,C.IVORY,800,158).name = "OfficeLiveScore"
+	D.text(card,188,254,match_info.state,25,C.GOLD,650,490).name = "OfficeLiveState"
+	if not match_info.detail.is_empty():
+		D.text(card,27,304,match_info.detail,22,C.MUTED,400,638,HORIZONTAL_ALIGNMENT_LEFT,true).name = "OfficeLiveFixtureDetail"
+	D.button(card,Rect2(27,348,358,51),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,app.accent,"OfficePreparationAction")
+	var review := D.button(card,Rect2(401,348,232,51),"Revoir le match",func():app._navigate("Match"),false,"",false,app.accent,"OfficeMatchReviewAction")
+	review.visible = match_info.finished
+
 static func _priorities(card: Panel, app: Control) -> void:
-	var contracts := P.contracts(app.model)
-	var tasks: Array = []
-	if not contracts.is_empty():
-		var player: Dictionary = contracts[0]
-		tasks.append(["Prolonger "+str(player.name),str(player.get("status",""))+" · "+str(player.get("contractLabel","")),"SAISON "+G.n(player.get("contractEnd","—")),func():app.selected_player=str(player.id);app._navigate("Effectif"),"OfficeContractsAction"])
-	else: tasks.append(["Consulter les contrats","Échéances et engagements du groupe.","EFFECTIF",func():app._navigate("Effectif"),"OfficeContractsAction"])
-	var trained: bool = app.model.meta.get("trained", false)
-	tasks.append(["Valider l’entraînement" if not trained else "Revoir la préparation","Choix collectifs et charge du groupe.","CETTE SEMAINE",func():
-		if trained: app._navigate("Préparation")
-		else: app.Immersive.open_training(app),"OfficeTrainingAction"])
-	var needs: Array = app.model.get("decisions",{}).get("recruitment",{}).get("needs",[])
-	var need := str(needs[0].get("pos","Effectif")) if not needs.is_empty() else "Effectif"
-	tasks.append(["Examiner le recrutement","%d profils · Priorité : %s" % [app.model.get("market",[]).size(),need],"CETTE SEMAINE",func():app._navigate("Recrutement"),"OfficeRecruitmentAction"])
-	D.text(card,852,38,"%d DOSSIERS" % tasks.size(),18,C.MUTED,500,150,HORIZONTAL_ALIGNMENT_RIGHT)
+	var tasks := Office.priorities(app.model)
+	if tasks.is_empty(): D.text(card,26,108,"Reprenez une carrière pour retrouver les décisions du club.",21,C.MUTED,400,816,HORIZONTAL_ALIGNMENT_LEFT,true)
 	for i in tasks.size():
-		var y := 71+i*108
-		D.rect(card,Rect2(19,y,833,91),Color("1b2722") if i==0 else C.PANEL,6)
-		D.rect(card,Rect2(35,y+18,36,36),Color("376448"),5)
-		D.text(card,53,y+46,str(i+1),27,C.MINT,700,30,HORIZONTAL_ALIGNMENT_CENTER)
-		var action := D.button(card,Rect2(89,y+7,530,35),tasks[i][0],tasks[i][3],false,"",false,app.accent,tasks[i][4])
-		action.add_theme_font_override("font",C.DISPLAY)
-		action.add_theme_font_size_override("font_size",C.px(27))
-		action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
-		D.text(card,89,y+64,tasks[i][1],19,C.MUTED,400,530,HORIZONTAL_ALIGNMENT_LEFT,true)
-		D.chip(card,Rect2(645,y+25,188,34),tasks[i][2],C.AMBER)
-	D.button(card,Rect2(578,382,274,30),"Mon carnet personnel",func():Office.open_notebook(app),false,"arrow",true,app.accent,"OpenCoachNotebook")
+		var y := 66+i*102
+		var item: Dictionary = tasks[i]
+		var tint := Office.priority_color(item)
+		D.rect(card,Rect2(18,y+3,836,94),Color(tint,.035),4,Color(tint,.22)).name = "OfficePriority" + str(i+1)
+		var icon := C.icon(item.icon,25,tint)
+		card.add_child(icon)
+		D.place(icon,Rect2(29,y+12,25,25))
+		var action := D.button(card,Rect2(62,y+2,785,39),str(i+1)+". "+str(item.title),Office.open_priority.bind(app,item),false,"arrow",false,app.accent,item.id)
+		action.set_meta("priority_number",i+1)
+		action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,12))
+		action.tooltip_text = item.title + "\n" + Office.priority_description(item)
+		action.accessibility_name = action.tooltip_text.replace("\n"," · ")
+		D.text(card,78,y+58,item.deadline,17,tint,650,747).name = "OfficePriorityDeadline" + str(i+1)
+		var reason := D.text(card,78,y+82,item.detail,18,C.MUTED,400,746,HORIZONTAL_ALIGNMENT_LEFT,true)
+		reason.name = "OfficePriorityReason" + str(i+1)
+		reason.tooltip_text = item.detail
+	if not tasks.any(func(item: Dictionary): return item.id == "OfficeTrainingAction") and not app.model.meta.get("canAdvanceSeason",false) and app.model.meta.get("phase","") != "ended":
+		D.button(card,Rect2(24,378,249,27),"Entraînement",func():app.Immersive.open_training(app),false,"arrow",true,app.accent,"OfficeTrainingAction")
+	D.button(card,Rect2(564,378,287,27),"Mon carnet personnel",func():Office.open_notebook(app),false,"arrow",true,app.accent,"OpenCoachNotebook")
 
 static func _group(card: Panel, app: Control) -> void:
 	var group := P.group(app.model)
@@ -154,13 +193,18 @@ static func _group(card: Panel, app: Control) -> void:
 	D.text(card,24,299,"Moral du vestiaire",22,C.MUTED,500,255)
 	D.text(card,397,299,"%d / 100" % float(app.model.meta.get("morale",0)),25,C.MINT,600,120,HORIZONTAL_ALIGNMENT_RIGHT)
 	D.line(card,Vector2(22,321),Vector2(400,321))
-	var warning := C.icon("warning",23,C.AMBER)
-	card.add_child(warning)
-	D.place(warning,Rect2(24,343,23,23))
-	D.text(card,62,363,"%d joueurs sous surveillance" % group.watched,22,C.AMBER if group.watched>0 else C.MINT,600,338)
-	var watched: Array = app.model.get("squad",[]).filter(func(player:Dictionary):return float(player.get("physicalLoad",0))>=70 or float(player.get("condition",100))<80)
-	D.text(card,25,399,"Aucune alerte physique" if watched.is_empty() else str(watched[0].name)+" · Charge "+G.n(watched[0].get("physicalLoad",0))+" %",21,C.MUTED,500,370)
-	D.button(card,Rect2(25,412,372,27),"Consulter le groupe",func():app._navigate("Effectif"),false,"arrow",true,app.accent,"OfficeSquadAction")
+	if group.watched > 0:
+		var action := D.button(card,Rect2(25,337,372,36),U.watch_caption(group.watched),app.navigation_controller.open_watched_roster,false,"arrow",true,app.accent,"OfficeWatchedAction")
+		action.add_theme_color_override("font_color", C.AMBER)
+		for player: Dictionary in app.model.get("squad", []):
+			var reason := U.watch_reason(player)
+			if reason.is_empty(): continue
+			var example := D.text(card,25,399,str(player.name)+" · "+reason,21,C.MUTED,500,370)
+			example.tooltip_text = example.text
+			break
+	else:
+		D.text(card,25,366,"Aucune alerte physique",22,C.MINT,600,370)
+	D.button(card,Rect2(25,412,372,27),"Consulter le groupe",app.navigation_controller.open_roster_group,false,"arrow",true,app.accent,"OfficeSquadAction")
 
 static func _standings(card: Panel, app: Control) -> void:
 	for pair in [["#",26],["CLUB",78],["J",461],["DIFF.",542],["PTS",647]]: D.text(card,pair[1],90,pair[0],18,C.MUTED,500,35)
@@ -208,29 +252,30 @@ static func _journal(card: Panel, app: Control) -> void:
 	if messages.is_empty(): D.text(card,37,120,"Le journal s’ouvrira avec votre carrière.",20,C.MUTED,400,480,HORIZONTAL_ALIGNMENT_LEFT,true)
 
 static func _recruitment(card: Panel, app: Control) -> void:
-	var market: Array = app.model.get("market",[]).duplicate()
-	market.sort_custom(func(a:Dictionary,b:Dictionary):return float(a.get("rating",0))>float(b.get("rating",0)))
-	var player: Dictionary = market[0] if not market.is_empty() else {}
-	if not str(player.get("id","")).is_empty():
+	var spotlight := Office.recruitment_spotlight(app.model)
+	var player: Dictionary = spotlight.player
+	if player.is_empty():
+		D.photo(card,"scouting",Rect2(23,74,500,116))
+		D.text(card,23,231,spotlight.empty,27,C.IVORY,700,500)
+	else:
 		var portrait := G.portrait(int(player.get("portraitIndex",0)),C.px(133),player)
 		card.add_child(portrait)
 		D.place(portrait,Rect2(22,74,133,117))
-	else: D.photo(card,"recruit-profile",Rect2(22,74,133,117))
-	D.text(card,174,104,str(player.get("name","Votre prochain renfort")).to_upper(),29,C.IVORY,700,350)
-	D.text(card,174,135,str(player.get("pos","Réseau de recrutement"))+" · "+G.n(player.get("age","—"))+" ans",22,C.MUTED,500,350)
-	D.chip(card,Rect2(174,154,150,32),"NIV. "+G.n(player.get("rating","—")),C.MINT)
-	D.text(card,23,233,"Rapport d’observation",21,C.MUTED,500,350)
-	D.text(card,523,233,"À consulter",27,C.GOLD,600,155,HORIZONTAL_ALIGNMENT_RIGHT)
-	D.bar(card,Rect2(23,253,500,7),0)
-	var needs: Array = app.model.get("decisions",{}).get("recruitment",{}).get("needs",[])
-	D.text(card,23,295,"Besoin du groupe : "+str(needs[0].get("pos","À déterminer")) if not needs.is_empty() else "Préparez les prochains mouvements du groupe.",18,C.IVORY,400,500,HORIZONTAL_ALIGNMENT_LEFT,true)
-	D.text(card,23,336,G.euros(player.get("fee",0)),32,C.IVORY,600,220)
-	D.text(card,253,336,G.euros(player.get("salary",0))+" / sem.",28,C.MUTED,500,270)
-	D.text(card,23,369,"Disponibilité et modalités dans le dossier.",18,C.MUTED,400,500,HORIZONTAL_ALIGNMENT_LEFT,true)
-	D.button(card,Rect2(23,391,500,39),"Lire le rapport complet",func():app._navigate("Recrutement"),false,"arrow",true,app.accent,"OfficeMarketAction")
+		D.text(card,174,104,str(player.name).to_upper(),29,C.IVORY,700,350)
+		D.text(card,174,135,str(player.pos)+" · "+G.n(player.age)+" ans",22,C.MUTED,500,350)
+		D.chip(card,Rect2(174,154,150,32),"NIV. "+G.rating_text(player),C.MINT)
+		var available: bool = player.get("available", false)
+		D.text(card,23,230,"Offre possible" if available else "Offre indisponible",24,C.MINT if available else C.ALERT,600,500)
+		var reason := str(player.get("reason", ""))
+		if not reason.is_empty(): D.text(card,23,260,reason,20,C.MUTED,500,500)
+		D.text(card,23,336,G.euros(player.fee),32,C.IVORY,600,220)
+		D.text(card,253,336,G.salary(player.salary),28,C.MUTED,500,270)
+	if not str(spotlight.need).is_empty():
+		D.text(card,23,295,spotlight.need,20,C.IVORY,500,500,HORIZONTAL_ALIGNMENT_LEFT,true)
+	D.button(card,Rect2(23,391,500,39),"Ouvrir le recrutement" if player.is_empty() else "Voir le dossier",Office.open_spotlight.bind(app,str(player.get("id",""))),false,"arrow",true,app.accent,"OfficeMarketAction")
 
 static func _timeline(card: Panel, app: Control, recent: PanelContainer) -> void:
-	var fixtures := P.upcoming(app.model)
+	var fixtures := Office.upcoming_matches(app.model)
 	var tiles: Array[Panel] = []
 	var grounds: Array[Label] = []
 	for i in fixtures.size():

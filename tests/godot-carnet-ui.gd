@@ -222,6 +222,38 @@ func reading_actions() -> void:
 	await capture_dialog("menu-carriere-1440")
 	app._clear_dialogs()
 	await settle()
+func check_completed_player_load() -> void:
+	var original_size := root.size
+	await render("Effectif")
+	var profile_tabs := named(app,"ProfileTabs") as TabContainer
+	profile_tabs.current_tab = 2
+	await settle()
+	var compact := named(app,"PlayerLoad") as OptionButton
+	var compact_reason := named(app,"PlayerLoadUnavailableReason") as Label
+	check(compact != null and compact.is_visible_in_tree() and compact.disabled and compact.focus_mode == Control.FOCUS_NONE,"Fiche compacte : charge verrouillée après séance")
+	check(compact_reason != null and compact_reason.is_visible_in_tree() and "Séance" in compact_reason.text,"Fiche compacte : motif visible à côté de la charge")
+	root.size = Vector2i(1920,1080)
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
+	await render("Effectif")
+	var open_full := named(app,"OpenPlayerFull") as Button
+	check(open_full != null,"Fiche large accessible")
+	if open_full != null:
+		open_full.pressed.emit()
+		await settle()
+		var load := named(app,"PlayerLoad") as Button
+		check(load != null and not load.disabled and load.focus_mode == Control.FOCUS_ALL,"Fiche large : lecture du plan accessible au clavier")
+		if load != null:
+			load.pressed.emit()
+			await settle()
+			var rest := named(app,"IndividualLoad_repos") as Button
+			var reason := named(app,"PlayerLoadUnavailableReason") as Label
+			check(rest != null and rest.disabled and rest.focus_mode == Control.FOCUS_NONE,"Fiche large : récupération verrouillée après séance")
+			check(reason != null and reason.is_visible_in_tree() and "Séance" in reason.text,"Fiche large : motif visible à côté des choix")
+	app._clear_dialogs()
+	root.size = original_size
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
+	await settle()
+
 func decisions() -> void:
 	await command("new_career",{"club":29,"mode":"france"})
 	await ContextualFlow.settle_club_meetings(app, self, check)
@@ -265,6 +297,7 @@ func decisions() -> void:
 	await press("CHARGE NORMALE")
 	await wait_model()
 	check(app.model.meta.trained,"Séance collective réellement effectuée")
+	await check_completed_player_load()
 	await render("Recrutement")
 	var available: Array=app.model.market.filter(func(p):return p.get("available",false))
 	check(not available.is_empty(),"Un vrai candidat est disponible dans cette carrière")
@@ -335,11 +368,26 @@ func decisions() -> void:
 		await wait_model()
 		check(app.model.live.lineup.any(func(p):return p is Dictionary and p.id==reserve.id),"Remplacement réel depuis le banc")
 	await command("delegate")
+	await render("Effectif")
+	var finished_load := named(app,"PlayerLoad") as OptionButton
+	var finished_reason := named(app,"PlayerLoadUnavailableReason") as Label
+	check(finished_load != null and finished_load.disabled,"Charge verrouillée avant validation du résultat")
+	check(finished_reason != null and "validation" in finished_reason.text,"Motif de charge adapté après le sifflet final")
 	await render("Match")
 	await capture("match-resultat-1440")
 	await press("VALIDER LA JOURNÉE  →")
 	await wait_model()
 	check(int(app.model.meta.week)==1,"Résultat validé une fois")
+	app.selected_player = player_id
+	await render("Effectif")
+	(named(app,"ProfileTabs") as TabContainer).current_tab = 2
+	await settle()
+	var next_load := named(app,"PlayerLoad") as OptionButton
+	check(next_load != null and next_load.is_visible_in_tree() and not next_load.disabled,"Charge réactivée la semaine suivante")
+	if next_load != null and not next_load.disabled:
+		next_load.item_selected.emit(2)
+		await wait_model()
+		check(app.bridge.last_response_ok and app.model.squad.any(func(p):return str(p.id)==player_id and p.loadPlan=="normal"),"Charge réellement réglée la semaine suivante")
 	await render("Finances")
 	check(not app.model.finance.ledger.is_empty(),"Vrais flux financiers après la journée")
 	await capture("finances-flux-reels-1440")

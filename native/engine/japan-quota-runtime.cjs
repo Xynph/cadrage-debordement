@@ -95,6 +95,7 @@ function factory(eligibility){
  function installHooks(){
   if(installed)return;installed=true;
   const originalBuild=buildSheet,originalErrors=sheetErrors,originalLegal=legalChange,originalCover=promoteCover;
+  const originalManager=managerSheet;
   const originalSlot=slotEligible,originalBench=benchEligible;
   const qualified=(p,slot,base)=>base(p,slot)||!!p&&p.worldRatingsVersion===1&&p.id.startsWith("world:jlo:")
     &&p.worldProfile?.position?.qualifications?.some(pos=>{const i=POS.indexOf(pos);return i>=0&&pos!==p.pos&&base({...p,pos,fam:FAMILIES[i]},slot);});
@@ -123,6 +124,13 @@ function factory(eligibility){
    }
    return {lineup:ids.slice(0,15),bench:ids.slice(15)};
   };
+  managerSheet=function(c,opponent,weather,level){
+   const proposed=originalManager(c,opponent,weather,level);
+   if(!activeClub(S,c.id)||c.id===S.club||nominations(S,c,proposed.lineup,proposed.bench))return proposed;
+   // Keep the tactical preferences where the quota-aware builder can use them.
+   const adjusted=buildSheet(c,proposed.lineup,proposed.bench);
+   return nominations(S,c,adjusted.lineup,adjusted.bench)?adjusted:buildSheet(c);
+  };
   sheetErrors=function(){
    const errors=originalErrors();
    if(activeClub(S,S.club)&&!nominations(S,club(),S.lineup,S.reserves))errors.push('League One : vérifiez les inscriptions et les quotas de la feuille (14 A-1, au plus 6 B/C).');
@@ -138,7 +146,7 @@ function factory(eligibility){
     const bench=i>=15,slot=bench?[1,0,2,3,5,8,9,10][i-15]:i,list=bench?S.reserves:S.lineup;
     const p=makePlayer(400+i,slot,56);
     p.id='jlo-academy-'+S.club+'-'+S.season+'-'+S.round+'-'+(S.playerSerial=(S.playerSerial||0)+1);
-    p.rating=rand(52,61);p.age=19;p.condition=100;p.salary=2500;delete p.skills;
+    p.rating=rand(52,61);p.age=19;p.condition=100;p.salary=COVER_WEEKLY_SALARY;delete p.skills;
     ensureSkills(p);ensureContract(p);ensureDevelopment(p);club().players.push(p);list[bench?i-15:i]=p.id;
    }
    if(vacancy.length)news(vacancy.length+' espoir(s) promu(s) pour compléter la feuille de match.');

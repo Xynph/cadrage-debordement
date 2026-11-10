@@ -54,6 +54,7 @@ func _pick(id: String) -> bool:
 	return true
 
 func _ask(command: String, body: Dictionary = {}, route: String = "") -> bool:
+	if command in ["begin_match","next_season"] and not await qa._publish_press_invitation(): return false
 	app._command(command,body,route)
 	if not await _wait(): return false
 	return _check(app.bridge.last_response_ok, "commande : "+command)
@@ -119,11 +120,13 @@ func _reception() -> void:
 	for route in ["Bureau","Effectif","Composition","Calendrier","Classements","Staff","Rivalités"]:
 		app._navigate(route)
 		await _capture("nationale-"+route.to_lower()+"-2560")
+	if not await qa._reach_world_match_day(): return
 	if not _check(app.model.get("next") is Dictionary and str(app.model.next.date)=="2026-08-21","premier match publié sur le calendrier de carrière"): return
 	if not await _ask("begin_match",{},"Match"): return
 	await _capture("nationale-match-2560")
 	if not await _ask("delegate"): return
 	if not await _ask("finish_round",{},"Bureau"): return
+	if not await qa._close_world_match_week(): return
 	_check(app.model.history.any(func(r):return r.competitionId=="nationale" and r.pair.any(func(id):return int(id)==100)),"résultat de Nationale enregistré")
 	if final_doc.is_empty(): return
 	if not _check(FileAccess.file_exists(final_doc),"témoin de saison complète fourni"): return

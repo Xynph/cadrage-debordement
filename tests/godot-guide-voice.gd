@@ -95,6 +95,18 @@ func run() -> void:
 			check(speech.player.playing and is_equal_approx(db_to_linear(speech.player.volume_db),0.75), "WAV conserve son gain propre sans double gain global " + str(gain))
 			check(speech.system_requests.size() == request_count, "WAV exact sans repli TTS")
 			speech.stop()
+	var silent := SpeechSpy.new(); root.add_child(silent)
+	silent.setup("spy-fr", 1.25, false, false)
+	check(silent.muted and silent.player == null and silent.voices.is_empty() and silent.clips.is_empty(), "Gabi silencieux sans lecteur, manifeste ni TTS")
+	var silent_requests: Array[String] = []
+	silent.requested.connect(func(text: String): silent_requests.append(text))
+	silent.set_muted(false); silent.configure("spy-fr", 1.5); silent.set_global_volume(100)
+	silent.load_manifest(folder.path_join("manifest.json")); silent.speak(exact)
+	silent.voice_id = "spy-fr"; silent.speak("Secours système")
+	check(silent.muted and not silent.speaking and silent.player == null and silent.clips.is_empty() and
+		silent_requests.is_empty() and silent.system_requests.is_empty() and silent.system_stops == 0,
+		"Le verrou audio résiste aux réglages, au chargement de WAV et au secours système")
+	silent.queue_free()
 	await check_articulation(folder)
 	speech.player.stream = null; speech.queue_free(); speech = null; wav = null; file = null; await create_timer(0.2).timeout
 	print("COACH VOIX LOCALE : %d contrôles ; %d échec(s)" % [checks, failures.size()])

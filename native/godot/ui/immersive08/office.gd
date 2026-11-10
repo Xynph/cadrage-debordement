@@ -2,12 +2,92 @@ extends RefCounted
 const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const P = preload("res://ui/immersive08/projection.gd")
+const Priorities = preload("res://ui/immersive08/office_priorities.gd")
+const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
 const S = preload("res://ui/data_semantics.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const UPCOMING_TILE = Color("26231b")
 const UPCOMING_BORDER = Color("706042")
+
+static func _live_fixture(model: Dictionary, pair: Array, include_next: bool = true) -> Dictionary:
+	if pair.size() != 2: return {}
+	var week := int(model.get("meta", {}).get("week", -1))
+	var next: Variant = model.get("next")
+	if include_next and next is Dictionary and next.get("pair", []) == pair and int(next.get("week", -2)) == week:
+		return next
+	var fixtures: Array = model.get("calendar", []).filter(func(fixture: Dictionary):
+		return not fixture.get("played", false) and int(fixture.get("week", -2)) == week \
+			and fixture.get("home", {}).get("id") == pair[0] and fixture.get("away", {}).get("id") == pair[1]
+	)
+	return fixtures[0] if fixtures.size() == 1 else {}
+
+static func upcoming_matches(model: Dictionary) -> Array:
+	var live: Variant = model.get("live")
+	if not live is Dictionary or live.is_empty(): return P.upcoming(model)
+	var current := _live_fixture(model, live.get("pair", []), false)
+	var fixture_id := str(current.get("id", ""))
+	if fixture_id.is_empty(): return P.upcoming(model)
+	var fixtures := P.upcoming(model, 8)
+	return fixtures.filter(func(fixture: Dictionary): return fixture.get("id") != fixture_id).slice(0, 7)
+
+static func _live_status(live: Dictionary) -> Dictionary:
+	var finished: bool = live.get("finished", false)
+	var phase := "En jeu"
+	if finished: phase = "Résultat à valider"
+	elif live.get("atBreak", false): phase = "Mi-temps"
+	elif live.get("paused", false): phase = "En pause"
+	var state := "%s′ · %s" % [G.n(live.get("minute", 0)), phase]
+	if int(live.get("nominationSize", 23)) == 22: state += " · Feuille à 22"
+	var score: Array = live.get("score", [])
+	return {
+		"heading": "MATCH TERMINÉ" if finished else "MATCH EN COURS",
+		"finished": finished,
+		"state": state,
+		"score": "%s – %s" % [G.n(score[0]), G.n(score[1])] if score.size() == 2 else "",
+	}
+
+static func live_match(model: Dictionary) -> Dictionary:
+	var live: Variant = model.get("live")
+	if not live is Dictionary or live.is_empty(): return {}
+	var summary := _live_status(live)
+	var fixture := _live_fixture(model, live.get("pair", []))
+	var details: Array[String] = []
+	for detail in [P.fixture_date(fixture, true), P.fixture_venue(fixture, false, false)]:
+		if not detail.is_empty(): details.append(detail)
+	summary.teams = live.get("teams", [])
+	summary.detail = " · ".join(details)
+	summary.location = {"neutral":"NEUTRE", "home":"À DOMICILE", "away":"À L’EXTÉRIEUR"}.get(
+		P.fixture_location_kind(fixture, model.get("club", {}).get("id")), ""
+	) if not fixture.is_empty() else ""
+	return summary
+
+static func update_live_card(app: Control) -> void:
+	var live: Dictionary = app._live()
+	if live.is_empty() or not is_instance_valid(app.root_content): return
+	var card: Node = app.root_content.find_child("OfficeFixture", true, false)
+	if card == null: return
+	var summary := _live_status(live)
+	var fields := {"heading":"OfficeLiveHeading", "score":"OfficeLiveScore", "state":"OfficeLiveState"}
+	for field in fields:
+		var label := card.find_child(fields[field], true, false) as Label
+		if label != null: label.text = summary[field]
+	var primary := card.find_child("OfficePreparationAction", true, false) as Button
+	if primary != null: primary.text = app.primary_text().trim_suffix("  →")
+	var review := card.find_child("OfficeMatchReviewAction", true, false) as Button
+	if review != null: review.visible = summary.finished
+	var priority := app.root_content.find_child("OfficeLivePriorityAction",true,false) as Button
+	if priority != null:
+		for item: Dictionary in priorities(app.model):
+			if item.id != "OfficeLivePriorityAction": continue
+			var number := int(priority.get_meta("priority_number",1))
+			priority.text = "%d. %s" % [number,item.title]
+			priority.tooltip_text = item.title + "\n" + priority_description(item)
+			priority.accessibility_name = priority.tooltip_text.replace("\n"," · ")
+			for pair in [["OfficePriorityDeadline",item.deadline],["OfficePriorityReason",item.detail]]:
+				var label := app.root_content.find_child(str(pair[0])+str(number),true,false) as Label
+				if label != null: label.text = pair[1]
 
 static func _card(parent: Node, id: String, title: String, height: int, ratio: float = 1.0) -> PanelContainer:
 	var frame := C.card(title, Vector2(0, height))
@@ -22,12 +102,38 @@ static func _link(parent: Node, id: String, text: String, app: Control, route: S
 	parent.add_child(action)
 	return action
 
+static func recruitment_availability(market: Array) -> String:
+	var offers := market.filter(func(player: Dictionary): return player.get("available", false)).size()
+	var summary := "%d piste%s · %d offre%s possible%s" % [
+		market.size(), "s" if market.size() > 1 else "", offers, "s" if offers > 1 else "", "s" if offers > 1 else ""
+	]
+	if offers == 0 and not market.is_empty():
+		var reason := str(market[0].get("reason", ""))
+		if not reason.is_empty() and market.all(func(player: Dictionary): return player.get("reason", "") == reason):
+			summary += " · " + reason
+	return summary
+
 static func _open_player(app: Control, id: String) -> void:
 	app.selected_player = id
 	app._navigate("Effectif")
 
 static func open_notebook(app: Control) -> void:
 	preload("res://ui/coach_notes_view.gd").open(app, "career")
+
+static func scheduled_opponent(app: Control, fixture: Dictionary) -> String:
+	var home: Dictionary = fixture.get("home", {})
+	return G.club_name(fixture.get("away", {}) if home.get("id") == app.model.club.id else home)
+
+static func scheduled_when(app: Control, fixture: Dictionary) -> String:
+	var date := P.fixture_date(fixture, true)
+	if date.is_empty(): date = timeline_period(fixture)
+	var location := P.fixture_location_kind(fixture, app.model.club.id)
+	var place: String = {"home":"À domicile","away":"À l’extérieur","neutral":"Terrain neutre"}.get(location,"")
+	return date if place.is_empty() else date + " · " + place
+
+static func scheduled_venue(app: Control, fixture: Dictionary) -> String:
+	var location := P.fixture_location_kind(fixture, app.model.club.id)
+	return P.fixture_venue(fixture, false, location != "neutral")
 
 static func territory_art(club: Dictionary) -> VBoxContainer:
 	var identity := G.identity(club)
@@ -70,7 +176,7 @@ static func build(app: Control) -> Control:
 	page.add_child(top)
 	var hero := _card(top, "OfficeFixture", "", 418, 1.56)
 	_fixture(hero, app)
-	var priorities := _card(top, "OfficeDecisions", "▦  Priorités de la semaine", 418)
+	var priorities := _card(top, "OfficeDecisions", "▦  Vos trois priorités", 418)
 	_priorities(C.content(priorities), app)
 	var middle := C.h(16)
 	page.add_child(middle)
@@ -182,22 +288,47 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 		row.add_child(space)
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
 	var preparation := SeasonPreparation.data(app.model.meta)
-	if next.is_empty():
+	var match_info := live_match(app.model)
+	if not match_info.is_empty():
+		_live_content(left, match_info)
+	elif next.is_empty():
 		var upcoming := P.next_nationale_fixture(app.model)
+		var scheduled := P.next_scheduled_fixture(app.model)
 		if not upcoming.is_empty():
-			left.add_child(C.label("NATIONALE", 21, C.GOLD))
-			left.add_child(C.wrap("Pas de match cette semaine.", 42, C.IVORY, true))
-			left.add_child(C.wrap("Prochain match · " + P.fixture_date(upcoming), 25, C.IVORY, true))
-			left.add_child(C.wrap(P.fixture_venue(upcoming), 18))
+			left.add_child(C.label("SEMAINE EXEMPTE",21,C.GOLD,true,700))
+			var opponent := C.wrap(scheduled_opponent(app,upcoming),42,C.IVORY,true,800)
+			opponent.name = "UpcomingOpponent"
+			left.add_child(opponent)
+			var kickoff := C.wrap("Prochain match · " + scheduled_when(app,upcoming),25,C.IVORY,true)
+			kickoff.name = "UpcomingWhen"
+			left.add_child(kickoff)
+			var venue := scheduled_venue(app,upcoming)
+			if not venue.is_empty(): left.add_child(C.wrap("Lieu · " + venue,18))
+		elif preparation.is_empty() and not scheduled.is_empty():
+			left.add_child(C.label("PROCHAINE RENCONTRE",22,C.GOLD,true,700))
+			left.add_child(C.wrap(scheduled_opponent(app,scheduled),39,C.IVORY,true,800))
+			left.add_child(C.wrap(scheduled_when(app,scheduled),25,C.IVORY,true))
+			left.add_child(C.wrap(P.fixture_venue(scheduled),20))
 		elif preparation.is_empty():
 			left.add_child(C.label("LE PROCHAIN CHAPITRE", 21, C.GOLD))
 			left.add_child(C.wrap("La saison se termine." if app.model.meta.get("canAdvanceSeason", false) else "Le travail continue.", 42, C.IVORY, true))
 			left.add_child(C.wrap("Retrouvez les résultats et préparez la suite du projet.", 20))
 		elif SeasonPreparation.is_champ(app.model.meta):
 			var fixture := P.next_scheduled_fixture(app.model)
-			left.add_child(C.wrap("Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))), 42, C.IVORY, true))
-			left.add_child(C.wrap(P.fixture_date(fixture, true) if not fixture.is_empty() else World.preparation_note(preparation), 25, C.IVORY, true))
-			left.add_child(C.wrap(P.fixture_venue(fixture), 18))
+			if fixture.is_empty():
+				left.add_child(C.wrap("Préparation · " + World.name_for(app.model, "champ"),42,C.IVORY,true))
+				left.add_child(C.wrap(World.preparation_note(preparation),25,C.IVORY,true))
+			else:
+				left.add_child(C.label("PRÉPARATION",21,C.GOLD,true,700))
+				var opponent := C.wrap(scheduled_opponent(app,fixture),42,C.IVORY,true,800)
+				opponent.name = "UpcomingOpponent"
+				left.add_child(opponent)
+				var kickoff := C.wrap(scheduled_when(app,fixture),25,C.IVORY,true)
+				kickoff.name = "UpcomingWhen"
+				left.add_child(kickoff)
+				var venue := scheduled_venue(app,fixture)
+				if not venue.is_empty(): left.add_child(C.wrap("Lieu · " + venue,18))
+
 		else:
 			left.add_child(C.label(World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))).to_upper(),21,C.GOLD))
 			left.add_child(C.wrap("Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))),42,C.IVORY,true))
@@ -205,10 +336,11 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 	else:
 		var tags := C.h(12)
 		left.add_child(tags)
+		tags.add_child(C.label("PROCHAIN MATCH",21,C.GOLD,true,700))
 		var match_label := str(next.get("label", "Prochain match"))
-		var competition := C.chip(short_fixture_label(app.model,next) if japan else match_label,C.MINT)
-		if japan: describe_fixture(competition,match_label)
-		tags.add_child(competition)
+		var stage := C.chip(fixture_stage(app.model,next,match_label),C.MINT)
+		describe_fixture(stage,match_label)
+		tags.add_child(stage)
 		var location: String = "NEUTRE" if next.get("neutral", false) else "À DOMICILE" if next.get("home", {}).get("id") == app.model.club.id else "À L’EXTÉRIEUR"
 		tags.add_child(C.chip(location, C.GOLD))
 		var teams := C.h(16)
@@ -231,56 +363,125 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 			var venue := C.wrap(venue_name,18)
 			venue.name="OfficeFixtureVenue"
 			left.add_child(venue)
-		left.add_child(C.wrap("Préparez votre XV et confirmez vos choix de jeu.", 19))
+		var valid: bool = app.model.get("selection",{}).get("valid",false)
+		left.add_child(C.label("Feuille complète" if valid else "Feuille à préparer",21,C.MINT if valid else C.AMBER,true,700))
 	var spacer := Control.new()
 	C.fill(spacer, true)
 	left.add_child(spacer)
 	var actions := C.h(12)
 	left.add_child(actions)
-	if next.is_empty():
-		var primary := C.button(app.primary_text(),app.primary_action,true,app.accent)
+	if next.is_empty() or not match_info.is_empty():
+		var caption: String = app.primary_text()
+		if not match_info.is_empty(): caption = caption.trim_suffix("  →")
+		var primary := C.button(caption,app.primary_action,true,app.accent)
 		primary.name="OfficePreparationAction"
 		actions.add_child(primary)
 		C.fill(primary)
 	else: C.fill(_link(actions, "OfficePreparationAction", "PRÉPARER LE MATCH  →", app, "Préparation", true))
-	C.fill(_link(actions, "OfficeSelectionAction", "Vérifier les 23", app, "Composition"))
+	if match_info.is_empty():
+		C.fill(_link(actions, "OfficeSelectionAction", "Vérifier les 23", app, "Composition"))
+	else:
+		var review := _link(actions, "OfficeMatchReviewAction", "Revoir le match", app, "Match")
+		review.visible = match_info.finished
+		C.fill(review)
+
+static func _live_content(left: VBoxContainer, match_info: Dictionary) -> void:
+	var tags := C.h(12)
+	left.add_child(tags)
+	var heading := C.chip(match_info.heading, C.MINT)
+	heading.get_child(0).name = "OfficeLiveHeading"
+	tags.add_child(heading)
+	if not match_info.location.is_empty(): tags.add_child(C.chip(match_info.location, C.GOLD))
+	var row := C.h(12)
+	left.add_child(row)
+	var teams: Array = match_info.teams
+	if teams.size() == 2: row.add_child(G.crest(teams[0], C.px(74)))
+	var score := C.label(match_info.score, 31, C.IVORY, true)
+	score.name = "OfficeLiveScore"
+	row.add_child(score)
+	if teams.size() == 2:
+		row.add_child(G.crest(teams[1], C.px(74)))
+		var names := C.v(2)
+		C.fill(names)
+		row.add_child(names)
+		for team: Dictionary in teams: names.add_child(C.wrap(G.club_name(team), 29, C.IVORY, true))
+	var state := C.wrap(match_info.state, 21, C.GOLD, true)
+	state.name = "OfficeLiveState"
+	left.add_child(state)
+	if not match_info.detail.is_empty():
+		var detail := C.wrap(match_info.detail, 18)
+		detail.name = "OfficeLiveFixtureDetail"
+		left.add_child(detail)
+
+static func priorities(model: Dictionary) -> Array[Dictionary]:
+	return Priorities.select(model)
+
+static func priority_color(item: Dictionary) -> Color:
+	return C.ALERT if item.level == "urgent" else C.GOLD if item.level == "important" else C.MINT
+
+static func open_priority(app: Control, item: Dictionary) -> void:
+	match item.action:
+		"press": app._show_press_inbox()
+		"match": app._navigate("Match")
+		"standings": open_current_standings(app)
+		"selection": app._navigate("Composition")
+		"finance": app._navigate("Finances")
+		"international":
+			app.management_ui.international_section = "availability"
+			app._navigate("Sélections")
+		"squad": app.navigation_controller.open_roster_group()
+		"contract": _open_player(app,str(item.player))
+		"preparation": app._navigate("Préparation")
+		"training": app.Immersive.open_training(app)
+		"recruitment": app._navigate("Recrutement")
+
+static func priority_description(item: Dictionary) -> String:
+	return str(item.deadline) + " · " + str(item.detail)
 
 static func _priorities(parent: VBoxContainer, app: Control) -> void:
-	var contracts := P.contracts(app.model)
-	var choices: Array = []
-	if not contracts.is_empty():
-		var first: Dictionary = contracts[0]
-		choices.append({"title":"%d contrats à préparer" % contracts.size(), "detail":str(first.get("name", "")) + " · " + str(first.get("contractLabel", "Échéance à examiner")), "action":func(): _open_player(app, str(first.id)), "id":"OfficeContractsAction"})
-	var training: Dictionary = app.model.get("decisions", {}).get("training", {})
-	choices.append({"title":"Préparer l’entraînement" if not app.model.meta.get("trained", false) else "La préparation est effectuée", "detail":str(training.get("advice", "Consultez les choix et la charge du groupe.")), "action":func(): app.Immersive.open_training(app), "id":"OfficeTrainingAction"})
-	var selection: Dictionary = app.model.get("selection", {})
-	var valid: bool = selection.get("valid", false)
-	choices.append({"title":"Examiner le recrutement" if valid else "Compléter la feuille de match", "detail":"%d profils disponibles dans votre réseau." % app.model.get("market", []).size() if valid else "Les postes vacants ou indisponibles demandent votre attention.", "action":func(): app._navigate("Recrutement" if valid else "Composition"), "id":"OfficeRecruitmentAction"})
-	if choices.size() < 3: choices.append({"title":"Retrouver les décisions du club", "detail":"Staff, direction et vie du groupe.", "action":func(): app._navigate("Travail du club"), "id":"OfficeSupportAction"})
-	for i in mini(3, choices.size()):
+	var choices := priorities(app.model)
+	if choices.is_empty(): parent.add_child(C.wrap("Reprenez une carrière pour retrouver les décisions de votre club.",18,C.MUTED))
+	for i in choices.size():
 		var choice: Dictionary = choices[i]
+		var tint := priority_color(choice)
 		var tile := C.card()
-		tile.add_theme_stylebox_override("panel", C.box(C.RAISED if i == 0 else C.PANEL, Color.TRANSPARENT, 5, 10))
+		tile.name = "OfficePriority" + str(i+1)
+		tile.add_theme_stylebox_override("panel", C.box(Color(tint,.035),Color(tint,.24),4,6))
 		parent.add_child(tile)
-		var line := C.h(12)
+		var line := C.h(10)
 		C.content(tile).add_child(line)
-		line.add_child(C.chip(str(i+1), C.MINT))
+		var mark := C.icon(choice.icon,22,tint)
+		mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		line.add_child(mark)
 		var text := C.v(2)
 		C.fill(text)
 		line.add_child(text)
-		var action := C.button(choice.title + "  →", choice.action)
+		var action := C.button(str(i+1) + ". " + str(choice.title) + "  →",open_priority.bind(app,choice))
 		action.name = choice.id
+		action.set_meta("priority_number",i+1)
 		action.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		action.clip_text = true
 		action.custom_minimum_size.y = C.px(34)
-		action.tooltip_text = choice.title + "\n" + choice.detail
-		action.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
+		action.tooltip_text = choice.title + "\n" + priority_description(choice)
+		action.accessibility_name = action.tooltip_text.replace("\n"," · ")
+		action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
 		text.add_child(action)
-		text.add_child(C.wrap(choice.detail, 17, C.MUTED))
-	var notebook := C.button("Mon carnet personnel", func(): open_notebook(app), false, app.accent)
+		var due := C.label(choice.deadline,15,tint,true)
+		due.name = "OfficePriorityDeadline" + str(i+1)
+		text.add_child(due)
+		var detail := C.wrap(choice.detail,17,C.MUTED)
+		detail.name = "OfficePriorityReason" + str(i+1)
+		text.add_child(detail)
+	var shortcuts := C.h(8)
+	parent.add_child(shortcuts)
+	if not choices.any(func(item: Dictionary): return item.id == "OfficeTrainingAction") and not app.model.meta.get("canAdvanceSeason",false) and app.model.meta.get("phase","") != "ended":
+		var training := C.button("Entraînement",func():app.Immersive.open_training(app),false,app.accent)
+		training.name = "OfficeTrainingAction"
+		shortcuts.add_child(C.fill(training))
+	var notebook := C.button("Mon carnet personnel",func():open_notebook(app),false,app.accent)
 	notebook.name = "OpenCoachNotebook"
-	notebook.custom_minimum_size.y = maxi(30, C.px(40))
-	parent.add_child(notebook)
+	notebook.custom_minimum_size.y = maxi(30,C.px(40))
+	shortcuts.add_child(C.fill(notebook))
 
 static func _group(parent: VBoxContainer, app: Control) -> void:
 	var group := P.group(app.model)
@@ -302,8 +503,16 @@ static func _group(parent: VBoxContainer, app: Control) -> void:
 		caption.add_child(C.label(str(int(pair[1])) + " %", 24, pair[2]))
 		parent.add_child(C.gauge(float(pair[1]), pair[2]))
 	parent.add_child(C.rule())
-	parent.add_child(C.wrap("⚠  %d joueur%s sous surveillance" % [group.watched, "s" if group.watched > 1 else ""], 22, C.AMBER, true))
-	_link(parent, "OfficeSquadAction", "Consulter le groupe  →", app, "Effectif")
+	if group.watched > 0:
+		var watched := C.button(U.watch_caption(group.watched) + "  →", app.navigation_controller.open_watched_roster)
+		watched.name = "OfficeWatchedAction"
+		watched.add_theme_color_override("font_color", C.AMBER)
+		parent.add_child(watched)
+	else:
+		parent.add_child(C.wrap("Aucune alerte physique", 22, C.MINT, true))
+	var roster := C.button("Consulter le groupe  →", app.navigation_controller.open_roster_group)
+	roster.name = "OfficeSquadAction"
+	parent.add_child(roster)
 
 static func _standings(parent: VBoxContainer, app: Control) -> void:
 	var rows := P.standings(app.model)
@@ -334,6 +543,22 @@ static func _standings(parent: VBoxContainer, app: Control) -> void:
 	if rows.is_empty(): parent.add_child(C.wrap("Le classement sera disponible lorsque le championnat sera ouvert.", 20))
 	_link(parent, "OfficeStandingsAction", "Classement complet  →", app, "Classements")
 
+static func final_standings_detail(model: Dictionary) -> String:
+	var club_id: Variant = model.get("club", {}).get("id")
+	for row: Dictionary in P.standings(model):
+		if row.get("id") != club_id: continue
+		var rank: Variant = row.get("rank")
+		if not (rank is int or rank is float) or rank < 1: break
+		var detail := "1er" if rank == 1 else "%se" % G.n(rank)
+		var points: Variant = row.get("points")
+		if points is int or points is float: detail += " · %s pts" % G.n(points)
+		return detail
+	return "Résultats de la division."
+
+static func open_current_standings(app: Control) -> void:
+	app.table_division = str(app.model.meta.get("leagueId", app.table_division))
+	app._navigate("Classements")
+
 static func standing_action(app: Control, club: Dictionary) -> Button:
 	var action := Button.new()
 	action.name="OfficeStandingRow_"+G.n(club.get("id",""))
@@ -346,9 +571,7 @@ static func standing_action(app: Control, club: Dictionary) -> Button:
 	focus.set_border_width_all(2)
 	action.add_theme_stylebox_override("focus",focus)
 	action.add_theme_stylebox_override("hover",C.box(Color(C.MINT,.07),Color(C.MINT,.68),4,0))
-	action.pressed.connect(func():
-		app.table_division=str(app.model.meta.get("leagueId",app.table_division))
-		app._navigate("Classements"))
+	action.pressed.connect(open_current_standings.bind(app))
 	return action
 
 static func _journal(parent: VBoxContainer, app: Control) -> void:
@@ -362,26 +585,60 @@ static func _journal(parent: VBoxContainer, app: Control) -> void:
 		parent.add_child(note)
 		if index < 2: parent.add_child(C.rule())
 
+static func recruitment_spotlight(model: Dictionary) -> Dictionary:
+	var market: Array = model.get("market", [])
+	var needs: Array = model.get("decisions", {}).get("recruitment", {}).get("needs", [])
+	var need: Dictionary = needs[0] if not needs.is_empty() else {}
+	var position := str(need.get("pos", "")).strip_edges()
+	var candidates := market.filter(func(player: Dictionary):
+		return not str(player.get("id", "")).is_empty() and (position.is_empty() or player.get("pos") == position))
+	candidates.sort_custom(func(a: Dictionary, b: Dictionary):
+		var available_a: bool = a.get("available", false)
+		var available_b: bool = b.get("available", false)
+		if available_a != available_b: return available_a
+		var av: Variant = G.knowledge_sort_value(a,"rating")
+		var bv: Variant = G.knowledge_sort_value(b,"rating")
+		if av == null or bv == null:
+			if av != bv: return av != null
+		elif av != bv: return av > bv
+		return str(a.id) < str(b.id))
+	var heading := "Priorité de recrutement" if need.get("need", false) else "Poste à surveiller"
+	var empty_title := "Aucune piste sur le marché" if market.is_empty() or position.is_empty() else "Aucune piste au poste suivi"
+	return {
+		"player": candidates[0] if not candidates.is_empty() else {},
+		"need": heading + " · " + position if not position.is_empty() else "",
+		"empty": empty_title,
+	}
+
+static func open_spotlight(app: Control, id: String) -> void:
+	if not app.navigation_controller.open_market_player(id): app.navigation_controller.open_market_player("")
+
 static func _recruitment(parent: VBoxContainer, app: Control) -> void:
-	var market: Array = app.model.get("market", []).duplicate()
-	market.sort_custom(func(first: Dictionary, second: Dictionary): return float(first.get("rating", 0)) > float(second.get("rating", 0)))
-	if market.is_empty():
+	var spotlight := recruitment_spotlight(app.model)
+	var player: Dictionary = spotlight.player
+	if player.is_empty():
 		parent.add_child(C.photo("scouting", Vector2(0, 150)))
-		parent.add_child(C.wrap("Votre réseau prépare les prochaines opportunités.", 23, C.IVORY, true))
+		parent.add_child(C.wrap(spotlight.empty, 23, C.IVORY, true))
 	else:
-		var player: Dictionary = market[0]
 		var row := C.h(14)
 		parent.add_child(row)
-		row.add_child(G.portrait(int(player.get("portraitIndex", 0)), C.px(125), player) if not str(player.get("id", "")).is_empty() else C.photo("recruit-profile", Vector2(125, 125)))
+		row.add_child(G.portrait(int(player.get("portraitIndex", 0)), C.px(125), player))
 		var identity := C.v(6)
 		C.fill(identity)
 		row.add_child(identity)
-		identity.add_child(C.wrap(player.get("name", "Profil à examiner"), 30, C.IVORY, true))
-		identity.add_child(C.wrap(str(player.get("pos", "")) + " · " + G.n(player.get("age", "—")) + " ans", 20))
-		identity.add_child(C.chip("NIVEAU  " + G.n(player.get("rating", "—"))))
-		parent.add_child(C.wrap(G.euros(player.get("fee", 0)) + " · " + G.euros(player.get("salary", 0)) + " / sem.", 24, C.IVORY, true))
-		parent.add_child(C.wrap(player.get("reason", "Consultez les disponibilités et les modalités avant une offre."), 18))
-	_link(parent, "OfficeMarketAction", "Lire le dossier complet  →", app, "Recrutement")
+		identity.add_child(C.wrap(player.name, 30, C.IVORY, true))
+		identity.add_child(C.wrap(str(player.pos) + " · " + G.n(player.age) + " ans", 20))
+		identity.add_child(C.chip("NIVEAU  " + G.rating_text(player)))
+		parent.add_child(C.wrap(G.euros(player.fee) + " · " + G.salary(player.salary), 24, C.IVORY, true))
+		var available: bool = player.get("available", false)
+		var status := "Offre possible" if available else "Offre indisponible"
+		var reason := str(player.get("reason", ""))
+		if not reason.is_empty(): status += " · " + reason
+		parent.add_child(C.wrap(status, 19, C.MINT if available else C.ALERT, true))
+	if not str(spotlight.need).is_empty(): parent.add_child(C.wrap(spotlight.need, 20, C.MUTED))
+	var action := C.button("Ouvrir le recrutement" if player.is_empty() else "Voir cette piste", open_spotlight.bind(app, str(player.get("id", ""))), false, app.accent)
+	action.name = "OfficeMarketAction"
+	parent.add_child(action)
 
 static func fixture_competition(model: Dictionary, fixture: Dictionary) -> String:
 	var competition := str(fixture.get("competitionId",""))
@@ -389,6 +646,9 @@ static func fixture_competition(model: Dictionary, fixture: Dictionary) -> Strin
 	for league: Dictionary in model.get("leagues",[]):
 		if league.get("id")==competition: return str(league.get("name","Championnat"))
 	return str(fixture.get("label","Championnat")).get_slice(" · ",0)
+
+static func fixture_stage(model: Dictionary, fixture: Dictionary, label: String) -> String:
+	return label.trim_prefix(fixture_competition(model,fixture) + " · ")
 
 static func short_fixture_label(model: Dictionary, fixture: Dictionary) -> String:
 	var label := str(fixture.get("label","Rencontre"))
@@ -412,7 +672,7 @@ static func _timeline(parent: VBoxContainer, app: Control) -> void:
 	var japan := SeasonPreparation.is_japan(app.model.meta)
 	var row := C.h(12)
 	parent.add_child(row)
-	var fixtures := P.upcoming(app.model)
+	var fixtures := upcoming_matches(app.model)
 	if fixtures.is_empty():
 		parent.add_child(C.wrap("Aucune rencontre programmée. Retrouvez les résultats dans le calendrier.", 21))
 	for fixture: Dictionary in fixtures:

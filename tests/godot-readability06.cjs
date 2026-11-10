@@ -18,7 +18,7 @@ test('Lisibilité 0.6 : repères actifs, trois formats, clavier et brouillons in
   }
   for (const name of ['ui', 'guide', 'audio']) fs.cpSync(path.join(source, name), path.join(project, name), { recursive: true });
   fs.copyFileSync(path.join(__dirname, 'godot-readability06.gd'), path.join(project, 'readability06-test.gd'));
-  for (const name of ['assets', 'fonts', 'branding', 'shaders', 'art', '.godot']) fs.symlinkSync(path.join(source, name), path.join(project, name), 'junction');
+  for (const name of ['art', 'assets', 'fonts', 'branding', 'shaders', '.godot']) fs.symlinkSync(path.join(source, name), path.join(project, name), 'junction');
   fs.symlinkSync(path.resolve(source, '../engine'), path.join(dir, 'engine'), 'junction');
   const manifest = {};
   for (const base of ['', 'ui', 'guide', 'audio']) for (const name of fs.readdirSync(path.join(project, base))) {

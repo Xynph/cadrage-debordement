@@ -48,3 +48,28 @@ test('La saison complète reste jouable et la saison2 reprend le calendrier pers
  assert.deepEqual(state.customCompetition,initial);assert.deepEqual(state.schedule,initial.schedule);assert.ok(state.clubs.every((c,i)=>c.name===initial.clubs[i].name));
  f.restart();assert.equal(f.good('export').meta.exportText,season2);f.good('import',{text:season2});assert.equal(f.good('export').meta.exportText,season2);
 });
+
+test('Le remplacement depuis atelier protège la carrière et les refus ne créent aucune copie',t=>{
+ const f=fixture(t),initial=f.good('new_career',{mode:'fiction',club:0});
+ const original=f.good('export').meta.exportText,bytes=f.bytes(),disk=JSON.parse(bytes);
+ const empty=f.good('snapshot').meta.profileSafety.entries;
+ assert.deepEqual(empty,[]);
+ for(const invalid of [{...payload(),confirmed:false},{...payload(),club:14},{...payload(),extra:true},
+  {...payload(),document:{...document(),name:'<invalide>'}},{...payload(),varyCurrent:'false'}]){
+  assert.equal(f.send('new_career',invalid).ok,false);
+  assert.deepEqual(f.bytes(),bytes,'Refus prévalidé sans toucher profil/RNG/horloge');
+  assert.deepEqual(f.good('snapshot').meta.profileSafety.entries,empty,'Refus sans copie de remplacement');
+ }
+ const created=f.good('new_career',{...payload(),varyCurrent:false});
+ const copy=created.meta.profileSafety.entries.find(entry=>entry.reason==='nouvelle-carriere');
+ assert.ok(copy,'Copie de la carrière précédente réellement persistée');
+ assert.equal(copy.club,initial.club.name);
+ assert.deepEqual(fs.readFileSync(path.join(created.meta.dataDir,'Copies-securite',copy.id,'profil.json')),bytes,'Copie disque exacte du profil précédent');
+ assert.equal(f.send('restore_checkpoint',{id:copy.id}).ok,false,'Reprise exige confirmation');
+ f.good('restore_checkpoint',{id:copy.id,confirmed:true});
+ assert.equal(f.good('export').meta.exportText,original,'Ancienne carrière entièrement restaurée');
+ const restored=JSON.parse(f.bytes());assert.equal(restored.seed,disk.seed);assert.equal(restored.clock,disk.clock);
+ f.good('begin_match');const live=f.bytes(),entries=f.good('snapshot').meta.profileSafety.entries;
+ assert.equal(f.send('new_career',payload()).ok,false,'Contexte match refuse remplacement');
+ assert.deepEqual(f.bytes(),live);assert.deepEqual(f.good('snapshot').meta.profileSafety.entries,entries,'Match en cours : aucune copie créée');
+});

@@ -31,9 +31,32 @@ func _wait() -> void:
 	_check(not app.waiting, "Command completes without indefinite waiting")
 
 func _command(command: String, payload: Dictionary = {}) -> void:
+	if command == "begin_match" and not await _publish_press(): return
 	app._command(command, payload)
 	await _wait()
 	if not app.bridge.last_response_ok: print("COMMANDE REFUSÉE : ", command, " · ", app.last_error)
+
+func _publish_press() -> bool:
+	var conference: Dictionary = app.model.get("clubLife", {}).get("press", {}).get("conference", {})
+	if not conference.get("required", false): return true
+	var previous_route: String = app.route
+	app._show_press_inbox()
+	var controls := ["InboxPressInvitation", "InboxOpenPressInvitation"]
+	for question: Dictionary in conference.questions:
+		controls.append("PressAnswer_" + str(question.id) + "_r4")
+	controls.append("PressSubmit")
+	for name: String in controls:
+		await process_frame
+		var button := app.root_content.find_child(name, true, false) as Button
+		var available := button != null and button.is_visible_in_tree() and not button.disabled
+		_check(available, "Action de la conférence disponible : " + name)
+		if not available: return false
+		button.pressed.emit()
+	await _wait()
+	var published: bool = app.bridge.last_response_ok and not app.model.clubLife.press.conference.required
+	_check(published, "Le courrier de presse a été publié")
+	if published: app._navigate(previous_route)
+	return published
 
 func _dismiss_errors() -> void:
 	for child in app.get_children():
@@ -95,6 +118,9 @@ func _decisions() -> void:
 	app._navigate("Match")
 	await _command("begin_match")
 	await ContextualFlow.skip_talk(app, self, "pre", _check)
+	if not app.model.live is Dictionary:
+		_check(false, "A real match starts for the decision regression")
+		return
 	app._command("save")
 	app.pause_menu()
 	var dialogs := _dialogs()
@@ -168,6 +194,9 @@ func _tactics() -> void:
 	_check(attack_button != null and defense_button != null, "Both tactical axes expose a real alternative")
 	attack_button.pressed.emit()
 	defense_button.pressed.emit()
+	_check(app.waiting and app.queued_action.is_empty() and app.last_error.is_empty(), "Preparation absorbs a second tactic while the first is pending")
+	# Bypass the view guard to exercise the separate command-level refusal.
+	app._command("set_tactics", {"attack": tactics.attack, "defense": defense.id})
 	_check(app.waiting and app.queued_action.is_empty() and not app.last_error.is_empty(), "Rapid second tactical axis is explicitly refused until the first acknowledgement")
 	await _wait()
 	_check(app.model.tactics.attack == attack.id and app.model.tactics.defense == tactics.defense, "Refused old tactical payload cannot overwrite either axis")
@@ -177,10 +206,17 @@ func _tactics() -> void:
 	await _wait()
 	_check(app.model.tactics.attack == attack.id and app.model.tactics.defense == defense.id, "Fresh defense decision preserves the acknowledged attack")
 
+func _bench_message(panel: Node, name: String) -> String:
+	var label := panel.find_child(name, true, false) as Label
+	return label.text if label != null and label.is_visible_in_tree() else ""
+
 func _bench() -> void:
 	app._navigate("Match")
 	var initial_date: String = app.header_date.text
 	await _command("begin_match")
+	if not app.model.live is Dictionary:
+		_check(false, "A real match starts for the bench regression")
+		return
 	await ContextualFlow.skip_talk(app, self, "pre", _check)
 	var panel: Node = app.match_screen
 	var viewport_id: int = app.match_view.get_parent().get_instance_id()
@@ -198,8 +234,17 @@ func _bench() -> void:
 	panel._drawer_key = ""
 	app._update_match()
 	_check(not _named_button(panel.drawer_body, incoming.name).disabled, "Paused bench enables a permitted entrant")
+	_named_button(panel, "JOURNAL").pressed.emit()
+	_check(panel.drawer_tab == "Journal" and panel.drawer.is_visible_in_tree() and _bench_message(panel, "MatchBenchStatus").is_empty(), "Journal hides the bench feedback")
+	_named_button(panel, "BANC").pressed.emit()
+	_check(panel.selected_slot == int(option.slot) and not _bench_message(panel, "MatchBenchContext").is_empty(), "Returning from the journal restores the selected bench context")
+	_named_button(panel, "STATS").pressed.emit()
+	_check(panel.drawer_tab == "Stats" and _bench_message(panel, "MatchBenchStatus").is_empty(), "Stats hides the bench feedback")
+	_named_button(panel, "BANC").pressed.emit()
+	_check(panel.selected_slot == int(option.slot) and not _bench_message(panel, "MatchBenchContext").is_empty(), "Returning from stats restores the selected bench context")
 	await _command("pause", {"paused":false})
 	_check(_named_button(panel.drawer_body, incoming.name).disabled, "Resume disables entrant without a tab or selection click")
+	_check(_bench_message(panel, "MatchBenchStatus").contains("pause"), "Running bench explains the pause requirement")
 	var stable_button := _named_button(panel.drawer_body, incoming.name)
 	await _command("tick", {"steps":1})
 	_check(_named_button(panel.drawer_body, incoming.name) == stable_button, "Unchanged running bench retains controls across ticks")
@@ -210,25 +255,38 @@ func _bench() -> void:
 	var actual: Dictionary = app.model
 	var restricted: Dictionary = actual.duplicate(true)
 	restricted.live.substitutions = []
+	var outgoing_name: String = str(actual.live.lineup[int(option.slot)].name)
+	var outgoing_button := _named_button(panel.drawer_body, "%d · %s" % [int(option.slot) + 1, outgoing_name])
+	outgoing_button.grab_focus()
 	panel.update_frame(restricted)
+	await process_frame
+	await process_frame
 	_check(_named_button(panel.drawer_body, incoming.name).disabled, "Permission-only change immediately disables the entrant")
+	_check(_bench_message(panel, "MatchBenchStatus").contains("Aucun remplaçant autorisé"), "Blocked bench explains that no replacement is available")
+	_check(_bench_message(panel, "MatchBenchContext").contains(outgoing_name), "Blocked bench retains the selected outgoing player's context")
+	_check(root.gui_get_focus_owner() == _named_button(panel.drawer_body, "%d · %s" % [int(option.slot) + 1, outgoing_name]), "Permission-only change retains the outgoing button's focus")
 	panel.update_frame(actual)
 	_check(not _named_button(panel.drawer_body, incoming.name).disabled, "Restored permission re-enables the entrant")
+	_check(not _bench_message(panel, "MatchBenchStatus").contains("Aucun remplaçant autorisé"), "Restored permission clears the blocked reason")
 	await _command("delegate")
 	_check(_named_button(panel.drawer_body, incoming.name).disabled, "Finished match disables entrant without another selection")
+	_check(_bench_message(panel, "MatchBenchStatus").contains("Match terminé"), "Finished bench explains that the match is over")
 	_check(panel.drawer_tab == "Banc" and panel.selected_slot == int(option.slot), "Finish retains bench context")
 	await _command("finish_round")
 	await ContextualFlow.settle_club_meetings(app, self, _check)
 	var first_date: String = app.header_date.text
-	_check(app.header_date.is_visible_in_tree() and first_date != initial_date and first_date.contains("JOURNÉE 2") and int(app.model.meta.week) == 1, "First round validation refreshes the visible management header date")
+	var first_day: String = str(app.model.calendarPlanning.today).get_slice("-", 2)
+	_check(app.route == "Réception" and app.header_date.is_visible_in_tree() and first_date != initial_date and first_date.begins_with(first_day + " ") and int(app.model.meta.week) == 1, "First round validation refreshes the date in Reception")
 	await _command("auto_lineup")
 	if not app.model.selection.valid: await _command("promote_cover", {"confirmed":true})
+	app._navigate("Match")
 	await _command("begin_match")
 	await ContextualFlow.skip_talk(app, self, "pre", _check)
 	await _command("delegate")
 	await _command("finish_round")
 	await ContextualFlow.settle_club_meetings(app, self, _check)
-	_check(app.header_date.is_visible_in_tree() and app.header_date.text != first_date and app.header_date.text.contains("JOURNÉE 3") and int(app.model.meta.week) == 2, "Second round validation refreshes the date again")
+	var second_day: String = str(app.model.calendarPlanning.today).get_slice("-", 2)
+	_check(app.route == "Réception" and app.header_date.is_visible_in_tree() and app.header_date.text != first_date and app.header_date.text.begins_with(second_day + " ") and int(app.model.meta.week) == 2, "Second round validation refreshes the date again in Reception")
 	_check(app.model.live == null and not app.contextual_director.active() and app.root_content.is_visible_in_tree(), "Both round validations restore management after the immersive match")
 	await _command("auto_lineup")
 	if not app.model.selection.valid: await _command("promote_cover", {"confirmed":true})
@@ -311,6 +369,9 @@ func _focus() -> void:
 	app._navigate("Match")
 	await _command("begin_match")
 	await ContextualFlow.skip_talk(app, self, "pre", _check)
+	if not app.model.live is Dictionary:
+		_check(false, "A real match starts for the focus regression")
+		return
 	await _command("pause", {"paused":true})
 	var panel: Node = app.match_screen
 	panel._toggle_drawer("Banc")
@@ -367,8 +428,8 @@ func _run() -> void:
 			app._navigate("Création")
 			var club_choice := app.find_child("CreationClub0", true, false) as Button
 			if club_choice != null: club_choice.pressed.emit()
-			for button in _buttons(app.root_content):
-				if button.name == "CreationStart":button.pressed.emit();break
+			var start := app.root_content.find_child("CreationStart", true, false) as Button
+			if start != null: start.pressed.emit()
 			await _wait()
 			_check(app.model.club!=null,"Explicit new career works after recovery")
 			_check(FileAccess.get_file_as_bytes(backup)==original,"New career preserves recovery backup")
@@ -383,9 +444,7 @@ func _run() -> void:
 		app._navigate("Création")
 		var club_choice := app.find_child("CreationClub0", true, false) as Button
 		if club_choice != null: club_choice.pressed.emit()
-		var retry: Button = null
-		for button in _buttons(app.root_content):
-			if button.name == "CreationStart": retry = button
+		var retry := app.root_content.find_child("CreationStart", true, false) as Button
 		_check(retry != null, "Explicit club creation retry available")
 		if retry != null:
 			retry.pressed.emit()
@@ -405,15 +464,20 @@ func _run() -> void:
 		await _command("begin_match")
 		await ContextualFlow.skip_talk(app, self, "pre", _check)
 		await _command("delegate")
+		if not app.model.live is Dictionary: await app._close(1); return
 		_check(app.pause_button.disabled, "Finished match disables pause")
 		app.match_finish.pressed.emit()
 		await _wait()
+		_check(app.route == "Réception", "Round validation returns to Reception")
 		_check(not app.contextual_director.active() and app.root_content.is_visible_in_tree(), "Round transition exits immersion and restores management")
 		app._navigate("Match")
 		_check(not app.pause_button.disabled, "Next kickoff enabled without navigation")
 		# Repair the actual 23 after match injuries before testing the next kickoff.
 		await _command("auto_lineup")
 		var legal:bool=app.model.get("selection",{}).get("valid",false)
+		if not await _publish_press(): await app._close(1); return
+		app._navigate("Match")
+		_check(not app.pause_button.disabled, "Next kickoff enabled after opening Match")
 		if not app.pause_button.disabled:
 			app.pause_button.pressed.emit()
 			await _wait()

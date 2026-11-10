@@ -54,7 +54,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	var interface_volume := _volume(sound,"Sons d’interface","PreferencesInterfaceVolume")
 	var stadium_volume := _volume(sound,"Ambiance du stade","PreferencesStadiumVolume")
 	sound.add_child(C.wrap("0 coupe le canal. L’ambiance accompagne le direct visible. Le volume global et la voix de Gabi gardent leurs réglages.",17,C.MUTED))
-	display.add_child(C.label("ÉCRAN ET RENDU DU MATCH",20,C.GOLD,true,700))
+	display.add_child(C.label("AFFICHAGE ET UNITÉS",20,C.GOLD,true,700))
 	var screen_count := 0 if DisplayServer.get_name() == "headless" else DisplayServer.get_screen_count()
 	var screen_labels := ["Automatique"]
 	if screen_count > 0:
@@ -66,6 +66,8 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	var screen := _choice(display,"Écran de jeu",screen_labels,"PreferencesDisplayScreen")
 	screen.disabled = screen_count == 0
 	screen.tooltip_text = "Automatique conserve l’écran choisi au lancement. Un écran sélectionné est mémorisé."
+	var salary_period := _choice(display,"Affichage des salaires",["Hebdomadaire","Mensuel","Annuel"],"PreferencesSalaryPeriod")
+	display.add_child(C.wrap(preload("res://ui/salary_display.gd").CONVENTION,17,C.MUTED))
 	var stadium := _choice(display,"Éclairage du stade",["Jour","Soirée"],"PreferencesStadiumLighting")
 	stadium.tooltip_text = "Le réglage s’applique au stade 3D et est conservé pour les prochains matchs."
 	var error := C.wrap("",18,C.ALERT)
@@ -80,6 +82,7 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		camera.disabled = profile.data.reduced_motion
 		camera.tooltip_text = "Choix différé : le mode calme utilise une caméra tactique fixe." if profile.data.reduced_motion else "Caméra appliquée à la scène du match."
 		quality.select(["economy","balanced","detail"].find(profile.data.quality))
+		salary_period.select(["weekly","monthly","annual"].find(profile.data.salary_period))
 		stadium.select(1 if profile.data.stadium == "evening" else 0)
 		if screen.item_count > screen_labels.size(): screen.remove_item(screen.item_count-1)
 		var saved_screen: int = profile.data.display_screen
@@ -104,6 +107,9 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	volume.value_changed.connect(func(value: float): profile.set_value("volume",int(value)); refresh.call())
 	motion.toggled.connect(func(value: bool): profile.set_value("reduced_motion",value); refresh.call())
 	camera.item_selected.connect(func(index: int): profile.set_value("camera",["tv","tactical","action"][index]); refresh.call())
+	salary_period.item_selected.connect(func(index: int):
+		profile.set_value("salary_period",["weekly","monthly","annual"][index])
+		refresh.call())
 	quality.item_selected.connect(func(index: int): profile.set_value("quality",["economy","balanced","detail"][index]); refresh.call())
 	screen.item_selected.connect(func(index: int): profile.set_value("display_screen",index-1); refresh.call())
 	stadium.item_selected.connect(func(index: int): profile.set_value("stadium",["day","evening"][index]); refresh.call())
@@ -133,8 +139,12 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 		dialog.hide(); dialog.queue_free()
 		app.call_deferred("_open_coach")))
 	for button in display_row.get_children(): G.fill(button)
-	dialog.confirmed.connect(dialog.queue_free)
-	dialog.canceled.connect(dialog.queue_free)
+	var initial_salary_period := str(profile.data.salary_period)
+	var close := func():
+		if initial_salary_period != str(profile.data.salary_period): app.call_deferred("_render",false)
+		dialog.queue_free()
+	dialog.confirmed.connect(close)
+	dialog.canceled.connect(close)
 	app.add_child(dialog)
 	refresh.call()
 	Dialogs.show_centered(dialog,Vector2i(width,600))

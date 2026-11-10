@@ -39,6 +39,7 @@ function play(st,pair,round,stage){const xi=pair.map(id=>fifteen(st,id)),quality
  const seed=st.season+':'+round+':'+stage+':'+pair.join('-'),delta=quality[0]-quality[1];
  const a=clamp(Math.round(21+delta*.55+rand(seed+':home',17)-6),3,60),b=clamp(Math.round(21-delta*.55+rand(seed+':away',17)-8),3,60);
  const result={pair:pair.slice(),round,stage,score:[a,b],tries:[Math.floor(a/7),Math.floor(b/7)],lineups:xi.map(ps=>ps.map(p=>p.id))};
+ const nativeState=root.CDNativeAcademy?.stateFor(st);if(nativeState&&typeof nativePotentialEvolution!=='undefined')nativePotentialEvolution.academyMatch(nativeState,result,xi);
  for(let side=0;side<2;side++)for(const p of xi[side]){const native=root.CDNativeAcademy?.stateFor(st);if(native){root.CDNativeAcademy.registerAccession(native,p);continue}p.minutes+=80;p.condition=clamp(p.condition-7,35,100);
  if(p.rating<p.potential&&p.minutes%240===0)p.rating=Math.min(p.potential,p.rating+1)}
  st.results.push(result);return result}

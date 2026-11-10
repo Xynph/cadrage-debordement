@@ -1,4 +1,4 @@
-Drapeaux France, Angleterre et Japon issus de flag-icons.
+Drapeaux des pays et territoires issus de flag-icons.
 https://github.com/lipis/flag-icons/tree/ac7e0eb3259eb62aa6100c435607e2fe03896a97/flags/4x3
 Taille de rendu des SVG fixee a 32 x 24 pixels.
 

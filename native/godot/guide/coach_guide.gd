@@ -51,16 +51,18 @@ var _placed_x := -1.0
 var _placed_y := -1.0
 var _deferred_context: Dictionary = {}
 var _dock: Control
+var _voice_enabled := true
 
-func setup(application: Control) -> void:
+func setup(application: Control, voice_enabled: bool = true) -> void:
 	app = application
+	_voice_enabled = voice_enabled
 	name = "CoachGuide"
 	var directory: String = str(app.model.get("meta", {}).get("dataDir", app._profile_path()))
 	# Same explicit normalization as native/engine/worker.cjs, even before its first snapshot.
 	if directory.replace("\\", "/").trim_suffix("/").get_file() != "PrototypeGodot": directory = directory.path_join("PrototypeGodot")
 	profile.load_profile(directory)
 	speech = Speech.new(); add_child(speech)
-	speech.setup(profile.data.voice, profile.data.rate, profile.data.muted)
+	speech.setup(profile.data.voice, profile.data.rate, profile.data.muted, _voice_enabled)
 	_build()
 	speech.speaking_changed.connect(portrait.set_speaking)
 	speech.articulation_changed.connect(portrait.set_articulation)
@@ -105,6 +107,18 @@ func _primary(button: Button, active: bool) -> void:
 		if active: button.add_theme_color_override(state, Color("242329"))
 		else: button.remove_theme_color_override(state)
 
+func _make_portrait() -> TextureRect:
+	return Portrait.new()
+
+func _portrait_extent(short_layout: bool) -> Vector2:
+	return Vector2(104,104) if short_layout else Vector2(136,136)
+
+func _allows_automatic_speech() -> bool:
+	return true
+
+func _request_portrait_gesture(_opening: bool) -> void:
+	pass
+
 func _build() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_compact = HBoxContainer.new(); _compact.mouse_filter = Control.MOUSE_FILTER_IGNORE; add_child(_compact)
@@ -127,7 +141,7 @@ func _build() -> void:
 	_button(top, "↔", "GuideMove", func(): _corner_left = not _corner_left; _layout()).tooltip_text = "Changer de coin"
 	_button(top, "×", "GuideClose", close).tooltip_text = "Réduire Gabi"
 	_body = Control.new(); _body.custom_minimum_size = Vector2(492, 150); _body.mouse_filter = Control.MOUSE_FILTER_IGNORE; _expanded.add_child(_body)
-	portrait = Portrait.new(); portrait.position = Vector2(356, 16); portrait.size = Vector2(136,136); _body.add_child(portrait)
+	portrait = _make_portrait(); portrait.position = Vector2(356, 16); portrait.size = Vector2(136,136); _body.add_child(portrait)
 	_balloon = Balloon.new(); _balloon.speaker = portrait; _balloon.size = Vector2(354,132); _body.add_child(_balloon)
 	var scroll := ScrollContainer.new(); scroll.name = "GuideTextScroll"
 	scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -143,9 +157,10 @@ func _build() -> void:
 	_previous = _button(actions, "‹", "GuidePrevious", func(): _step(-1)); _previous.tooltip_text = "Bulle précédente"
 	_next = _button(actions, "Suite ›", "GuideNext", func(): _step(1))
 	_navigate = _button(actions, "Ouvrir", "GuideNavigate", _go)
-	_button(actions, "↻", "GuideReplay", replay).tooltip_text = "Réécouter cette bulle"
-	_button(actions, "■", "GuideStop", func(): speech.stop()).tooltip_text = "Arrêter la voix"
-	_button(actions, "···", "GuideOptions", func(): _settings_open = not _settings_open; _layout()).tooltip_text = "Voix et options"
+	if _voice_enabled:
+		_button(actions, "↻", "GuideReplay", replay).tooltip_text = "Réécouter cette bulle"
+		_button(actions, "■", "GuideStop", func(): speech.stop()).tooltip_text = "Arrêter la voix"
+	_button(actions, "···", "GuideOptions", func(): _settings_open = not _settings_open; _layout()).tooltip_text = "Voix et options" if _voice_enabled else "Options du guide"
 	_settings_panel = PanelContainer.new(); _settings_panel.name = "GuideSettingsPanel"
 	_settings_panel.size = Vector2(492,154); add_child(_settings_panel)
 	_settings_panel.minimum_size_changed.connect(func():
@@ -153,7 +168,9 @@ func _build() -> void:
 	)
 	_options = VBoxContainer.new(); _options.add_theme_constant_override("separation", 5); _settings_panel.add_child(_options)
 	_voice_state = _label(_options, "", 11)
+	_voice_state.visible = _voice_enabled
 	var options := HBoxContainer.new(); _options.add_child(options)
+	options.visible = _voice_enabled
 	_voice = OptionButton.new(); _voice.name = "GuideVoice"; _voice.custom_minimum_size.x = 200
 	_voice.add_theme_font_size_override("font_size", 12); _voice.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	for voice in speech.voices:
@@ -174,6 +191,7 @@ func _build() -> void:
 	options.add_child(_speed)
 	var controls := HBoxContainer.new(); _options.add_child(controls)
 	_mute = _button(controls, "Muet", "GuideMute", _toggle_mute)
+	_mute.visible = _voice_enabled
 	_button(controls, "Passer l'étape", "GuideSkip", func(): _step(1, true))
 	_button(controls, "Désactiver", "GuideDisable", disable)
 	_notice = _label(_options, "", 11); _notice.name = "GuideStatus"; _notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -282,17 +300,22 @@ func _layout() -> void:
 	var short_layout := mode == "context" or app.size.y <= 760
 	var width := (404.0 if short_layout else 492.0) if expanded else (492.0 if _error.visible else 140.0)
 	var balloon_width := 300.0 if short_layout else 354.0
+	var portrait_extent := _portrait_extent(short_layout)
+	var legacy_extent := Vector2(104,104) if short_layout else Vector2(136,136)
+	var portrait_top := 24.0 if short_layout else 16.0
+	if expanded: width += maxf(0.0, portrait_extent.x - legacy_extent.x)
 	var text_height := bubble.get_theme_font("font").get_multiline_string_size(bubble.text,HORIZONTAL_ALIGNMENT_LEFT,balloon_width - 45.0,15,-1,TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE).y
 	var line_count := ceili(text_height / bubble.get_theme_font("font").get_height(15))
 	text_height += maxi(0,line_count - 1) * bubble.get_theme_constant("line_spacing")
 	var balloon_height := maxf(114.0,ceilf(text_height) + 24.0) if short_layout else 132.0
-	if _settings_panel.visible: width = 492.0
+	if _settings_panel.visible: width = maxf(492.0, width)
 	var body_height := balloon_height if short_layout else 150.0
+	if portrait_extent != legacy_extent: body_height = maxf(body_height, portrait_top + portrait_extent.y)
 	var expanded_height := body_height + 70.0
 	_body.custom_minimum_size = Vector2(width, body_height)
 	_balloon.size = Vector2(balloon_width, balloon_height)
-	portrait.position = Vector2(balloon_width - 2.0, 24.0 if short_layout else 16.0)
-	portrait.size = Vector2(104,104) if short_layout else Vector2(136,136)
+	portrait.position = Vector2(balloon_width - 2.0, portrait_top)
+	portrait.size = portrait_extent
 	var height := (expanded_height if expanded else 34.0) + extra + error_height
 	custom_minimum_size = Vector2.ZERO
 	size = Vector2(width, height)
@@ -330,7 +353,7 @@ func _priority_rects() -> Array[Rect2]:
 		# player selectors must not force a passive balloon up into page headings.
 		# The balloon itself lets their mouse input pass through.
 		var label: String = button.text.to_lower()
-		var principal: bool = str(button.name) in ["OfficePrimaryAction","PreparationMatch","DecisionFeedbackButton","CreationStart","ClubBoardRequest"]
+		var principal: bool = str(button.name) in ["OfficePrimaryAction","PreparationMatch","DecisionFeedbackButton","CreationStart","ClubBoardRequest","OfferRecruitment"]
 		for action in ["confirmer","valider","proposer","signer","recruter","prolonger","pause","reprendre","coup d’envoi","coup d'envoi","remplacer","terminer la"]:
 			if label.contains(action): principal = true
 		if button.text.is_empty() or not principal: continue
@@ -514,9 +537,11 @@ func open_help() -> void:
 
 func _open() -> void:
 	if _blocked(): return
+	var opening := not expanded
 	_deferred_context.clear(); _status()
 	profile.data.enabled = true; visible = true; expanded = true
 	_show_page(true); _layout(); _save()
+	if expanded: _request_portrait_gesture(opening)
 
 func toggle() -> void:
 	if expanded: close()
@@ -559,14 +584,17 @@ func _show_page(force: bool, request_speech: bool = true) -> void:
 	if request_speech and (force or key != _last_key):
 		_last_key = key
 		var scroll: ScrollContainer = find_child("GuideTextScroll", true, false); scroll.scroll_vertical = 0
-		speech.speak(bubble.text)
+		if _allows_automatic_speech(): speech.speak(bubble.text)
+		else: speech.stop()
 
 func _step(direction: int, skip_page: bool = false) -> void:
 	if _blocked(): return
 	if mode == "context": close(); return
 	var fragments: Array = Content.fragments(current_id)
 	if not skip_page and fragment_index + direction >= 0 and fragment_index + direction < fragments.size():
-		fragment_index += direction; _show_page(true); return
+		fragment_index += direction; _show_page(true)
+		_request_portrait_gesture(false)
+		return
 	if mode != "tour": close(); return
 	var index: int = Content.TOUR.find(profile.data.step)
 	if direction > 0 and profile.data.step not in profile.data.completed: profile.data.completed.append(profile.data.step)
@@ -575,6 +603,7 @@ func _step(direction: int, skip_page: bool = false) -> void:
 	fragment_index = Content.fragments(profile.data.step).size() - 1 if direction < 0 else 0
 	current_id = profile.data.step
 	_save(); _show_page(true)
+	_request_portrait_gesture(false)
 
 func _go() -> void:
 	if _blocked() or _navigate.disabled: return
@@ -586,6 +615,7 @@ func replay() -> void:
 	if expanded and not _blocked(): speech.speak(bubble.text)
 
 func _toggle_mute() -> void:
+	if not _voice_enabled: return
 	speech.set_muted(not speech.muted)
 	profile.data.muted = speech.muted; _save()
 

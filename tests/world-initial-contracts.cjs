@@ -45,7 +45,7 @@ function contracts(mode,t){
 
 test('Les échéances précises et bornes ne s’appliquent qu’aux créations Monde complet',t=>{
  const current=contracts('world-champ',t),prior=contracts('world-nationale',t);
- a.equal(current.size,5878);
+ a.equal([...current.keys()].filter(id=>!id.startsWith('depth-')).length,5878);
  const changed={premAndUrc:0,champ:0};
  const aliases=terms.inactiveAliases;
  a.equal(Object.keys(aliases).length,6);

@@ -56,11 +56,14 @@ func _run() -> void:
 	if await _activate("Nav_Entraînement"):
 		_check(app.find_child("ImmersiveTraining", true, false) != null, "Entraînement du paquet")
 		await _capture("09-entrainement")
+		var command_id: int = app.bridge._next_id
 		if await _activate("ImmersiveContinue"):
-			_check(app.find_child("ImmersivePreparation", true, false) != null, "Continuer ouvre le dossier de match")
-			_assert_art("analysis-room")
+			var opening := app.root_content.find_child("MatchOpening", true, false) as Control
+			_check(app.route == "Match" and opening != null and opening.is_visible_in_tree()
+				and app._live().is_empty() and app.bridge._next_id == command_id, "Continuer ouvre l’avant-match sans commande")
 			await _activate("NavigationBack")
-			_check(app.find_child("ImmersiveTraining", true, false) != null, "Le retour retrouve l’entraînement")
+			_check(app.find_child("ImmersiveTraining", true, false) != null and app.management_ui.preparation.tab == 2,
+				"Le retour retrouve l’entraînement")
 	await _visit("Club", "ClubStadium", "", "10-club")
 	await _visit("Finances", "FinanceLedgerPlot", "finance-hospitality", "11-finances")
 	await _visit("Recrutement", "ImmersiveMarketRows", "", "12-recrutement")
@@ -166,6 +169,7 @@ func _match_and_save() -> void:
 	await _settle()
 	if not await _activate("ImmersiveContinue"): return
 	_check(app.route == "Préparation", "Continuer mène du Bureau au dossier de match")
+	_assert_art("analysis-room")
 	await _capture("15b-preparation-du-match")
 	if not await _activate("PreparationGoMatch"): return
 	var opening := app.root_content.find_child("MatchOpening", true, false) as Control

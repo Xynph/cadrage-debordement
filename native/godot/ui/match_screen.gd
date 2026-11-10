@@ -1,5 +1,8 @@
 extends VBoxContainer
 const G = preload("res://ui/carnet_skin.gd")
+const Dialogs = preload("res://ui/immersive08/dialogs.gd")
+const MatchProjection = preload("res://ui/immersive08/projection.gd")
+const CareerProgression = preload("res://ui/career_progression.gd")
 var app: Control
 var stage: Node3D
 var clock: Label
@@ -7,17 +10,23 @@ var score: Label
 var home: Label
 var away: Label
 var play: Button
+var _nomination_notice: Label
 var finish: Button
 var events: Label
 var stats: Label
 var journal: VBoxContainer
 var side: VBoxContainer
+var _bench_feedback: VBoxContainer
+var _bench_context: Label
+var _bench_status: Label
 var tab := "Direct"
 var selected_slot := -1
 var presence_key := ""
 var model: Dictionary = {}
 var _quality_control: OptionButton
 var _camera_controls: Array[Button] = []
+var _kit_swatches: Array[Panel] = []
+var _kit_swatch_colors: Array[Color] = []
 var _applied_camera := ""
 var _applied_quality := ""
 var _score_sheet: PanelContainer
@@ -61,6 +70,20 @@ func _ready() -> void:
 	banner.add_child(away)
 	play=G.button("COUP D'ENVOI",_act,true)
 	banner.add_child(play)
+	for side in 2:
+		var swatch := Panel.new()
+		swatch.custom_minimum_size = Vector2(14, 14)
+		swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		swatch.add_theme_stylebox_override("panel", G.T.box(Color.WHITE, 3, Color("aeafa7")))
+		swatch.hide()
+		banner.add_child(swatch)
+		banner.move_child(swatch, home.get_index() + 1 if side == 0 else score.get_index() + 1)
+		_kit_swatches.append(swatch)
+	_nomination_notice=G.wrap("",15,Color("ddbd80"))
+	_nomination_notice.name="MatchNominationNotice"
+	_nomination_notice.hide()
+	score_sheet.add_child(_nomination_notice)
 	var center:=G.h(13)
 	G.fill(center,true)
 	add_child(center)
@@ -91,6 +114,15 @@ func _ready() -> void:
 		_tab_controls.append(b)
 		G.fill(b)
 		tabs.add_child(b)
+	_bench_feedback = G.v(2)
+	_bench_context = G.wrap("", 14, G.INK)
+	_bench_context.name = "MatchBenchContext"
+	_bench_status = G.wrap("", 12, G.INK)
+	_bench_status.name = "MatchBenchStatus"
+	_bench_feedback.add_child(_bench_context)
+	_bench_feedback.add_child(_bench_status)
+	_bench_feedback.hide()
+	panel.add_child(_bench_feedback)
 	side=G.scroll(panel)
 	journal=preload("res://ui/match_journal.gd").new()
 	journal.setup(app)
@@ -126,7 +158,7 @@ func _ready() -> void:
 	var spacer:=Control.new()
 	G.fill(spacer)
 	bottom.add_child(spacer)
-	finish=G.button("VALIDER LA JOURNÉE  →",func():app._command("finish_round"))
+	finish=G.button("VALIDER LE RÉSULTAT  →",app.primary_action)
 	bottom.add_child(finish)
 	for control in bottom.get_children():
 		if control is Button:
@@ -206,6 +238,12 @@ func update_frame(value:Dictionary) -> void:
 	model=value
 	if not is_node_ready():return
 	var live:Dictionary=value.live if value.get("live") is Dictionary else {}
+	var kit_colors: Array[Color] = []
+	var vacant := MatchProjection.reduced_bench_number(value)
+	_nomination_notice.text = ""
+	if vacant != 0: _nomination_notice.text = MatchProjection.reduced_bench_vacancy(vacant)
+	elif MatchProjection.is_nomination_at_22(live.get("nominationSize")): _nomination_notice.text = "Feuille à 22 joueurs"
+	_nomination_notice.visible = not _nomination_notice.text.is_empty()
 	if live.is_empty():
 		stage.apply_frame({})
 		var next:Dictionary=value.next if value.get("next") is Dictionary else {}
@@ -213,13 +251,20 @@ func update_frame(value:Dictionary) -> void:
 		away.text=G.club_name(next.get("away",{}))
 		score.text="— / —"
 		clock.text="AVANT-MATCH"
-		play.text="COUP D'ENVOI"
-		play.disabled=next.is_empty()
+		play.text="Jouer à 22" if vacant != 0 else "COUP D'ENVOI"
+		var press_due := CareerProgression.press_required(value)
+		var kickoff_today := CareerProgression.kickoff_allowed(value.meta)
+		play.disabled=next.is_empty() or press_due or not kickoff_today
+		play.tooltip_text = "Ouvrez l’invitation dans la Réception." if press_due else "Le coup d’envoi s’ouvre le jour de la rencontre." if not kickoff_today else ""
 		var season_done:bool=value.meta.get("canAdvanceSeason",false) or (value.meta.get("mode") not in ["france30","common"] and value.meta.get("phase")=="ended")
 		finish.disabled=not next.is_empty() or season_done
 		if next.is_empty():
 			clock.text="SAISON TERMINÉE" if season_done else "SANS RENCONTRE"
-			finish.text="AVANCER LA SEMAINE  →"
+		finish.text=app.primary_text()
+		var daily := CareerProgression.daily(value.meta, value.get("next"), "Match")
+		if press_due or (not season_done and daily.has("command")): finish.disabled = false
+		elif daily.has("disabled"): finish.disabled = true
+		if value.meta.get("calendarCadence", {}).get("resultConfirmed", false): clock.text="RÉSULTAT VALIDÉ"
 	else:
 		var teams:Array=live.get("teams",[{},{}])
 		home.text=G.club_abbr(teams[0])
@@ -231,10 +276,19 @@ func update_frame(value:Dictionary) -> void:
 		elif live.get("atBreak",false):clock.text="MI-TEMPS"
 		play.text="REPRENDRE" if live.get("paused",false) else "PAUSE"
 		play.disabled=live.get("finished",false)
-		finish.text="VALIDER LA JOURNÉE  →"
+		play.tooltip_text = ""
+		finish.text="VALIDER LE RÉSULTAT  →"
 		finish.disabled=not live.get("finished",false)
 		stage.set_live_cadence(app.tick_steps)
 		stage.apply_frame(live)
+		kit_colors = stage.alternative_kit_colors()
+	if kit_colors != _kit_swatch_colors:
+		_kit_swatch_colors = kit_colors
+		for side in _kit_swatches.size():
+			var swatch := _kit_swatches[side]
+			swatch.visible = not kit_colors.is_empty()
+			if swatch.visible:
+				(swatch.get_theme_stylebox("panel") as StyleBoxFlat).bg_color = kit_colors[side]
 	_side()
 
 func _select_tab(value: String) -> void:
@@ -242,6 +296,33 @@ func _select_tab(value: String) -> void:
 	app.management_ui["match_journal_tab"] = value
 	presence_key = ""
 	_side()
+
+static func _decision_label(decision: Variant, teams: Array, fallback := "Rencontre terminée.") -> String:
+	if not decision is Dictionary:
+		return fallback
+	var label := str(decision.get("label", fallback))
+	var winner: Variant = decision.get("winner")
+	if winner == null:
+		return label
+	# Match the exact model wording so only the winner's name changes.
+	var suffix: String = {
+		"tries": " au nombre d’essais.",
+		"penalties": " au nombre de pénalités réussies.",
+		"drops": " au nombre de drops.",
+		"redCards": " au nombre d’exclusions.",
+		"shootout": " aux tirs au but.",
+	}.get(decision.get("kind"), "")
+	var prefix := "Qualification de " if not suffix.is_empty() else "Victoire de "
+	if suffix.is_empty():
+		suffix = "."
+	for team: Dictionary in teams:
+		if team.get("id") == winner:
+			var internal_name := str(team.get("name", ""))
+			if not internal_name.is_empty() and label == prefix + internal_name + suffix:
+				return prefix + G.club_name(team) + suffix
+			break
+	return label
+
 
 func _side() -> void:
 	if _styled_tab != tab:
@@ -252,9 +333,11 @@ func _side() -> void:
 	var live:Dictionary=model.live if model.get("live") is Dictionary else {}
 	side.get_parent().visible = tab != "Journal"
 	journal.visible = tab == "Journal"
+	if tab != "Banc" or live.is_empty(): _bench_feedback.hide()
 	if tab == "Journal":
 		journal.update_frame(live)
 		return
+	var bench_focus := ""
 	if tab=="Banc":
 		# Fatigue/clock changes do not affect these controls. Keep focus across ticks,
 		# but rebuild when player identity or a replacement permission changes.
@@ -268,12 +351,16 @@ func _side() -> void:
 		var key:=JSON.stringify([identities,selected_slot,live.get("paused",false),live.get("finished",false),live.get("substitutions",[])])
 		if key==presence_key:return
 		presence_key=key
+		var focused := get_viewport().gui_get_focus_owner()
+		if focused != null and side.is_ancestor_of(focused):
+			bench_focus = str(focused.get_meta("match_bench_focus", ""))
 	for child in side.get_children():
 		side.remove_child(child)
 		child.queue_free()
 	if live.is_empty():
 		side.add_child(G.section("L'AVANT-MATCH"))
-		side.add_child(G.wrap("Vérifiez votre feuille à 23 et vos consignes avant le coup d’envoi.",14))
+		var guidance := "Vérifiez votre feuille et vos consignes avant le coup d’envoi." if MatchProjection.reduced_bench_number(model) != 0 else "Vérifiez votre feuille à 23 et vos consignes avant le coup d’envoi."
+		side.add_child(G.wrap(guidance,14))
 		side.add_child(G.button("VÉRIFIER LA FEUILLE",func():app._navigate("Composition")))
 		preload("res://ui/decision_views.gd").match_notes(app,side,model)
 		return
@@ -291,11 +378,13 @@ func _side() -> void:
 				if str(stat.home).ends_with("%") and percentage.is_valid_float():
 					G.gauge(side, "Domicile (%)", float(percentage), 100, G.GOLD)
 				side.add_child(G.separator())
-		"Banc":_bench(live)
+		"Banc":
+			_bench(live)
+			if not bench_focus.is_empty(): _restore_bench_focus(bench_focus)
 		_:
 			side.add_child(G.section("AU BORD DU TERRAIN"))
 			if live.get("finished",false) and live.get("decision") is Dictionary:
-				side.add_child(G.wrap(str(live.decision.get("label","Rencontre terminée")),15,G.GOLD))
+				side.add_child(G.wrap(_decision_label(live.decision,live.get("teams",[]),"Rencontre terminée"),15,G.GOLD))
 			var tries:Array=live.get("tries",[0,0])
 			side.add_child(G.label("ESSAIS   %s — %s"%[G.n(tries[0]),G.n(tries[1])],14,G.GOLD))
 			if live.get("paused",false):side.add_child(G.wrap("Le jeu est en pause. Vos changements et vos consignes restent accessibles.",12,G.GOOD))
@@ -307,40 +396,115 @@ func _side() -> void:
 				side.add_child(G.separator())
 			preload("res://ui/decision_views.gd").match_notes(app,side,model)
 
+func _restore_bench_focus(previous_focus: String) -> void:
+	var target: Button
+	var fallback: Button
+	var selected_key := "sortant:%d" % selected_slot
+	for child in side.get_children():
+		if not child is Button or child.disabled: continue
+		var key := str(child.get_meta("match_bench_focus", ""))
+		if key == previous_focus:
+			target = child
+			break
+		if key == selected_key: fallback = child
+	if target == null: target = fallback
+	if target == null: return
+	# The rebuilt list and the fixed feedback must be laid out before scrolling.
+	await get_tree().process_frame
+	if not is_instance_valid(target) or not target.is_visible_in_tree(): return
+	target.grab_focus()
+	(side.get_parent() as ScrollContainer).ensure_control_visible(target)
+
+func _update_bench_feedback(live: Dictionary, selected: bool, out: Variant, choice: Dictionary, options: Array) -> void:
+	_bench_context.visible = selected
+	if selected:
+		var position := str(choice.get("label", ""))
+		var player_name := str(out.get("name", "Joueur")) if out is Dictionary else "Poste vacant"
+		var context := "%d · %s" % [selected_slot + 1, player_name]
+		if not position.is_empty(): context = "%d · %s · %s" % [selected_slot + 1, position, player_name]
+		_bench_context.text = context
+	if live.get("finished", false):
+		_bench_status.text = "Match terminé. Les remplacements sont fermés."
+	elif not live.get("paused", false):
+		_bench_status.text = "Mettez le match en pause pour effectuer un remplacement."
+	elif not selected:
+		_bench_status.text = "Sélectionnez le joueur à remplacer."
+	elif choice.get("inIds", []).is_empty():
+		var other_choice := options.any(func(option: Dictionary): return option.get("slot") != selected_slot and not option.get("inIds", []).is_empty())
+		_bench_status.text = "Aucun remplaçant autorisé pour ce poste. " + ("Sélectionnez un autre joueur." if other_choice else "Reprenez le match pour continuer.")
+	else:
+		_bench_status.text = "Choisissez un remplaçant dans « Faire entrer » sous le XV."
+	_bench_feedback.show()
+
 func _bench(live:Dictionary) -> void:
 	side.add_child(G.section("LES CHANGEMENTS"))
-	if not live.get("paused",false):side.add_child(G.wrap("Mettez la rencontre en pause pour préparer le changement.",12,G.GOLD))
-	var players:Array=live.get("lineup",[])
-	var reserves:Array=live.get("reserves",[])
+	var players: Array = live.get("lineup", [])
+	var reserves: Array = live.get("reserves", [])
+	var options: Array = live.get("substitutions", [])
+	var slot_to_replace := selected_slot
+	var selected := slot_to_replace >= 0 and slot_to_replace < players.size()
+	var out: Variant = players[slot_to_replace] if selected else null
+	var out_id: Variant = out.get("id") if out is Dictionary else null
+	var choice: Dictionary = {}
+	for option: Dictionary in options:
+		if option.get("slot") == slot_to_replace and option.get("outId") == out_id:
+			choice = option
+			break
+	_update_bench_feedback(live, selected, out, choice, options)
 	for slot in players.size():
 		var p:Variant=players[slot]
 		var b:=G.button(str(p.get("name","Joueur")) if p is Dictionary else "%d · Poste vacant"%(slot+1),func():selected_slot=slot;presence_key="";_side())
 		b.alignment=HORIZONTAL_ALIGNMENT_LEFT
 		b.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 		b.tooltip_text=b.text
-		for option in live.get("substitutions",[]):
+		b.set_meta("match_bench_focus", "sortant:%d" % slot)
+		for option: Dictionary in options:
 			if option.get("slot")==slot:b.tooltip_text="%s\n%d · %s"%[b.text,slot+1,option.get("label","")]
 		if slot==selected_slot:b.add_theme_stylebox_override("normal",G.T.box(Color("ddd1bc"),3,G.GOLD))
 		side.add_child(b)
-	if selected_slot<0 or selected_slot>=players.size():return
-	var allowed:Array=[]
-	for option in live.get("substitutions",[]):
-		if option.get("slot")==selected_slot:allowed=option.get("inIds",[])
-	var out:Variant=players[selected_slot]
-	var out_id:Variant=out.get("id") if out is Dictionary else null
+	if not selected: return
+	var allowed: Array = choice.get("inIds", [])
 	side.add_child(G.separator())
 	side.add_child(G.label("FAIRE ENTRER",12,G.GOLD))
 	for p in reserves:
 		if not p is Dictionary:continue
-		var b:=G.button(str(p.get("name","Joueur")),func():app._command("substitute",{"slot":selected_slot,"outId":out_id,"inId":p.id}))
+		var b:=G.button(str(p.get("name","Joueur")),func():app._command("substitute",{"slot":slot_to_replace,"outId":out_id,"inId":p.id}))
+		b.set_meta("match_bench_focus", "entrant:%s" % str(p.get("id")))
 		b.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 		b.tooltip_text=str(p.get("name","Joueur"))
 		b.disabled=p.get("id") not in allowed or not live.get("paused",false) or live.get("finished",false)
 		side.add_child(b)
 
+func _confirm_reduced_bench(vacant: int) -> void:
+	if app.waiting: return
+	var fixture: Dictionary = model.next.duplicate(true)
+	app._clear_dialogs()
+	var dialog := ConfirmationDialog.new()
+	dialog.name = "MatchConfirmReducedBench"
+	dialog.title = "Coup d’envoi à 22"
+	dialog.dialog_text = "%s Vous commencez avec 15 titulaires et 7 remplaçants." % MatchProjection.reduced_bench_vacancy(vacant)
+	dialog.dialog_text += "\n\nSi la première ligne ne peut plus être complétée, les mêlées deviennent non disputées."
+	app._prepare_dialog(dialog, 520)
+	dialog.get_ok_button().text = "Jouer à 22"
+	dialog.get_cancel_button().text = "Annuler"
+	app.add_child(dialog)
+	dialog.visibility_changed.connect(func():
+		if not dialog.visible:
+			if is_instance_valid(play) and play.is_visible_in_tree(): play.grab_focus.call_deferred()
+			dialog.queue_free())
+	dialog.confirmed.connect(func():
+		if app.route == "Match" and not app.waiting and MatchProjection.reduced_bench_number(app.model) == vacant and app.model.next == fixture:
+			app._command("begin_match",{"reducedBench":true}))
+	Dialogs.show_centered(dialog,Vector2i(520,188))
+	dialog.get_cancel_button().grab_focus.call_deferred()
+
 func _act() -> void:
 	var live:Dictionary=model.live if model.get("live") is Dictionary else {}
-	if live.is_empty():app._command("begin_match")
+	if live.is_empty():
+		if CareerProgression.press_required(model) or not CareerProgression.kickoff_allowed(model.meta): return
+		var vacant := MatchProjection.reduced_bench_number(model)
+		if vacant != 0: _confirm_reduced_bench(vacant)
+		else: app._command("begin_match")
 	else:
 		app._command("pause",{"paused":not live.get("paused",false)})
 		app.timer.start()
