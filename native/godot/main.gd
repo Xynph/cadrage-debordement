@@ -48,7 +48,7 @@ const SupportViews = preload("res://ui/support_view.gd")
 const ManagerCareerViews = preload("res://ui/manager_career_view.gd")
 const PlaybookViews = preload("res://ui/playbook_view.gd")
 const NAV_CHAPTERS = [
-	{"label":"Bureau", "routes":["Bureau","Réception"]},
+	{"label":"Bureau", "routes":["Réception","Bureau"]},
 	{"label":"Équipe", "routes":["Effectif","Composition","Préparation","Plan de jeu","Vestiaire","Match"]},
 	{"label":"Développement", "routes":["Recrutement","Formation","Centre"]},
 	{"label":"Club", "routes":["Club","Staff","Travail du club","Stratégie","Finances"]},
@@ -229,6 +229,9 @@ func _receive_model(value: Dictionary) -> void:
 	# A queued action can replace last_command below; keep this response's identity.
 	var received_command := last_command
 	var response_ok: bool = bridge.last_response_ok
+	var reception_id := ""
+	if response_ok and (received_command in ["advance_day", "finish_round", "next_season", "national_play_match"] or SeasonPreparation.is_advance(received_command)):
+		reception_id = Immersive.Reception.new_priority(model, value)
 	# Keep one uninterrupted wait when the player's action follows an automatic tick.
 	if not response_ok or received_command != "tick" or queued_action.is_empty():
 		command_wait_overlay.dismiss()
@@ -255,9 +258,13 @@ func _receive_model(value: Dictionary) -> void:
 		if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
 		return
 	if bridge.last_response_ok and received_command not in ["epcr_preview", "competition_editor_preview"]: last_error = ""
-	if bridge.last_response_ok and not pending_route.is_empty():
-		route = pending_route
+	if response_ok:
+		if not pending_route.is_empty(): route = pending_route
 		pending_route = ""
+		if _has_career() and (received_command in ["new_career", "next_season", "finish_round"] or not reception_id.is_empty()):
+			_reset_reception(reception_id)
+			if has_meta("press_mail_origin"): remove_meta("press_mail_origin")
+			route = "Réception"
 	if bridge.last_response_ok and last_command in ["new_career","next_season","import"] and _has_career():
 		table_division = str(model.meta.get("leagueId", "elite"))
 	if last_command == "tick" and route not in ["Accueil", "Création"]:
@@ -368,10 +375,12 @@ func _failed(message: String) -> void:
 	d.confirmed.connect(d.queue_free)
 	if route == "Accueil" or not _has_career(): _render()
 
+func _reset_reception(selected: String = "") -> void:
+	var inbox: Dictionary = Immersive.Reception._state(self)
+	inbox.merge({"folder":0, "category":"Tous", "selected":selected, "oldest_first":false, "scroll":0, "press_opened":""}, true)
+
 func _show_press_inbox() -> void:
-	var inbox: Dictionary = management_ui.get("reception", {})
-	if not inbox.is_empty():
-		inbox.merge({"folder":0, "category":"Tous", "selected":"", "oldest_first":false, "scroll":0, "press_opened":""}, true)
+	_reset_reception()
 	_navigate("Réception", false)
 
 func _open_press_invitation(id: String) -> void:
@@ -388,6 +397,7 @@ func _open_press_invitation(id: String) -> void:
 
 func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = false) -> void:
 	if target == "Presse" and not has_meta("press_mail_origin"): return
+	if target == "Sélections" and not model.get("international") is Dictionary: return
 	if target != "Presse" and has_meta("press_mail_origin"): remove_meta("press_mail_origin")
 	if not keep_subview:
 		if target == "Effectif": set_meta("immersive08_full_player",false)
@@ -825,7 +835,7 @@ func primary_action() -> void:
 	else: _navigate("Match" if route == "Préparation" else "Préparation")
 
 func create_career(id: int) -> void:
-	var action := func(): _command("new_career",{"club":id,"mode":"common"},"Bureau")
+	var action := func(): _command("new_career",{"club":id,"mode":"common"})
 	if _has_career(): confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Exportez-la depuis le menu pour la conserver séparément. Prendre les rênes de %s ?" % catalogue[id].name, action)
 	else: action.call()
 
@@ -912,7 +922,7 @@ func _file_selected(path: String) -> void:
 		if not refusal.is_empty():
 			_refuse_action(refusal)
 			return
-		confirm("Reprendre cette carrière", "La carrière importée remplacera celle du profil. Le moteur la vérifiera avant de l'appliquer.", func(): _command("import", {"text":text}, "Bureau"), _has_career())
+		confirm("Reprendre cette carrière", "La carrière importée remplacera celle du profil. Le moteur la vérifiera avant de l'appliquer.", func(): _command("import", {"text":text}, "Réception"), _has_career())
 	else:
 		if waiting: _refuse_action("Une décision est en cours. Réessayez après sa réponse."); return
 		export_path = path

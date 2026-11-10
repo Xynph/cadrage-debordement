@@ -301,7 +301,7 @@ func _launch() -> void:
 	var chosen := play_club.selected
 	var document: Dictionary = preview.get("document", {}).duplicate(true)
 	confirmation.confirmed.connect(func():
-		app._command("new_career", {"mode":"custom", "club":chosen, "document":document, "confirmed":true}, "Bureau")
+		app._command("new_career", {"mode":"custom", "club":chosen, "document":document, "confirmed":true})
 		confirmation.queue_free())
 	confirmation.canceled.connect(confirmation.queue_free)
 	add_child(confirmation)
