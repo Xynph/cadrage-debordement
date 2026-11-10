@@ -228,7 +228,21 @@ static func _bench(card:Panel,app:Control) -> int:
 		var condition := "—" if person.is_empty() else G.n(person.get("condition","—"))+"%"
 		D.text(action,550,29,condition,25,C.MUTED if person.is_empty() else C.MINT,600,70,HORIZONTAL_ALIGNMENT_RIGHT)
 	D.text(card,578,38,"%d / 8" % filled,18,C.MUTED,500,100,HORIZONTAL_ALIGNMENT_RIGHT)
-	D.text(card,22,512,"Feuille complète et valide" if app.model.get("selection",{}).get("valid",false) else "Des points restent à traiter dans la feuille.",19,C.MUTED,500,554)
+	var selection: Dictionary = app.model.get("selection", {})
+	var errors: Array = selection.get("errors", [])
+	if errors.is_empty():
+		D.text(card, 22, 512, "Feuille complète et valide" if selection.get("valid", false) else "Des points restent à traiter dans la feuille.", 19, C.MUTED, 500, 554)
+	else:
+		# Le moteur place les motifs par poste après les messages généraux.
+		var issue := D.text(card, 22, 512, errors.back(), 21, C.AMBER, 600, 554)
+		issue.name = "TacticsLineupIssue"
+		var width := issue.get_theme_font("font").get_string_size(issue.text, HORIZONTAL_ALIGNMENT_LEFT, -1, issue.get_theme_font_size("font_size")).x
+		if errors.size() > 1 or width > issue.size.x:
+			issue.size.x = C.px(428)
+			var more := D.button(card, Rect2(462, 482, 116, 32), "Motifs (%d)" % errors.size(), validate.bind(app),
+				false, "", true, app.accent, "LineupMoreIssues")
+			more.tooltip_text = "Afficher tous les motifs de la feuille incomplète"
+			more.accessibility_name = "Motifs de la feuille (%d)" % errors.size()
 	return filled
 
 static func _selected(card:Panel,app:Control) -> void:
