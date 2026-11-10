@@ -10,6 +10,7 @@ const BLEND_TIME := 0.20
 const PORTRAIT_SIZE := 1.10
 const GREETING_SIZE := 1.30
 const GREETING_OFFSET := -0.125
+const MOUTH_BLEND_TIME := 0.055
 
 var model: PackedScene
 var reduced_motion := false
@@ -24,6 +25,13 @@ var _microgestures: Array[StringName] = []
 var _next_microgesture := 0
 var _microgesture_wait := 0.0
 var _greeted := false
+var _speaking := false
+var _mouth: MeshInstance3D
+var _mouth_open := -1
+var _mouth_round := -1
+var _articulation := Vector2.ZERO
+var _mouth_weights := Vector2.ZERO
+var _mouth_tween: Tween
 
 func _ready() -> void:
 	set_process(false)
@@ -48,6 +56,14 @@ func _ready() -> void:
 		return
 	stage.add_child(character)
 	_apply_vertex_colors(character)
+	for node in character.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		var mouth_open := mesh.find_blend_shape_by_name(&"MouthOpen")
+		if mouth_open < 0: continue
+		_mouth = mesh
+		_mouth_open = mouth_open
+		_mouth_round = mesh.find_blend_shape_by_name(&"MouthRound")
+		break
 	_animations = character.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if _animations == null or not _animations.has_animation(IDLE) or not _animations.has_animation(APPROVAL):
 		push_error("Le GLB du guide doit fournir les animations Repos et Approbation.")
@@ -117,11 +133,32 @@ func set_reduced_motion(value: bool) -> void:
 	if value: _approval_pending = false
 	_sync_visibility()
 
-func set_speaking(_value: bool) -> void:
-	pass
+func set_speaking(value: bool) -> void:
+	_speaking = value
+	if not value: _articulation = Vector2.ZERO
+	_sync_mouth()
 
-func set_articulation(_value: float) -> void:
-	pass
+func set_articulation(value: float, rounding: float = 0.0) -> void:
+	var opening := clampf(value, 0.0, 1.0)
+	var rounded := clampf(rounding, 0.0, 1.0) if _mouth_round >= 0 else 0.0
+	_articulation = opening * Vector2(1.0 - rounded, rounded)
+	_sync_mouth()
+
+func _sync_mouth() -> void:
+	if _mouth == null: return
+	if _mouth_tween != null: _mouth_tween.kill()
+	if not _can_animate():
+		_apply_mouth(Vector2.ZERO)
+		return
+	var target := _articulation if _speaking else Vector2.ZERO
+	if _mouth_weights.is_equal_approx(target): return
+	_mouth_tween = create_tween()
+	_mouth_tween.tween_method(_apply_mouth, _mouth_weights, target, MOUTH_BLEND_TIME)
+
+func _apply_mouth(weights: Vector2) -> void:
+	_mouth_weights = weights
+	_mouth.set_blend_shape_value(_mouth_open, weights.x)
+	if _mouth_round >= 0: _mouth.set_blend_shape_value(_mouth_round, weights.y)
 
 func request_gesture(opening: bool) -> void:
 	if not _can_animate() or _animations.current_animation in [APPROVAL, GREETING]: return
@@ -139,6 +176,7 @@ func _process(delta: float) -> void:
 
 func _sync_visibility() -> void:
 	if _animations == null: return
+	_sync_mouth()
 	set_process(false)
 	if not is_visible_in_tree():
 		if _camera_tween != null: _camera_tween.kill()
