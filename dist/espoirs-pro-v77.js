@@ -69,7 +69,7 @@
     let replacement=null;
     if(!remaining.length||next.length<15){
       const serial=9000+st.promotions.length*15+slot;
-      replacement=academyPlayer(s.club,slot,s.season,serial);
+      replacement=academyPlayer(s.club,slot,s.season,serial,false,s.clubs[s.club]);
       if(next.some(p=>p.id===replacement.id)||team.some(p=>p.id===replacement.id))return false;
       next.push(replacement);
     }
