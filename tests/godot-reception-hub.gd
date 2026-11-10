@@ -30,7 +30,9 @@ func run() -> void:
 	await wait_worker()
 	check(app.route == "Réception", "Une nouvelle carrière arrive en Réception")
 	check(app.find_child("InboxOpenPressInvitation", true, false) == null, "La conférence reste derrière l’ouverture du courrier")
-	check(app.find_child("Nav_Sélections", true, false) == null, "Les sélections sont masquées sans projection")
+	var selections_visible := app.find_child("Nav_Sélections", true, false) != null
+	check(selections_visible == (app.model.get("international") is Dictionary),
+		"Les sélections apparaissent lorsque le moteur les projette")
 	app._navigate("Bureau")
 	await settle()
 	check(app.route == "Bureau", "Le Bureau reste consultable")
