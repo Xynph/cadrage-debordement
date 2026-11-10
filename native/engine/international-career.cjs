@@ -1,9 +1,12 @@
 'use strict';
 
+const { hostDossier } = require('./international-hosts.cjs');
+
 function createInternationalCareer(competitions, callups, playerFacts = {}) {
  const facts = playerFacts.players ?? playerFacts;
  const historic = competitions.COMPETITION_IDS.map(id => competitions.createEdition(id));
  const templateCache = new Map(historic.map(edition => [edition.id, edition]));
+ const hostCache = new Map();
  const ranking = historic.find(edition => edition.id === 'rugby-world-cup-2027')?.rankings ?? [];
  const nations = new Map(historic.flatMap(edition => edition.teams.map(team => [team.id, team.name])));
  const firstRecurringYear = 2028;
@@ -30,6 +33,7 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
  const isReserve = (id, nation) => new RegExp('^national-' + nation + '-(?:0[1-9]|[12][0-9]|3[0-3])$').test(id);
  const campSize = competitionId => worldCup(competitionId) ? 33 : 30;
  const archiveDate = date => (yearOf(date) - 1) + '-01-01';
+ const dateLabel = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeZone: 'UTC' });
 
  function calendar(state, fromYear, throughYear) {
   const editions = historic.filter(edition => edition.year >= fromYear && edition.year <= throughYear);
@@ -47,6 +51,53 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
   const results = state.version === 1 ? state.results : state.results[template.year] ?? {};
   return Object.fromEntries(template.fixtures.filter(fixture => Object.hasOwn(results, fixture.id))
    .map(fixture => [fixture.id, results[fixture.id]]));
+ }
+
+ function hostFor(edition) {
+  if (!hostCache.has(edition.id)) hostCache.set(edition.id, hostDossier(edition));
+  return hostCache.get(edition.id);
+ }
+
+ const family = edition => edition.id.replace(/-\d{4}$/, '');
+ function previousEdition(state, edition) {
+  return calendar(state, edition.year - 4, edition.year - 1)
+   .filter(candidate => family(candidate) === family(edition)).at(-1);
+ }
+
+ function hostVisible(state, edition, date) {
+  const host = hostFor(edition);
+  if (!host) return false;
+  if (host.announcementDate <= date) return true;
+  const previous = previousEdition(state, edition);
+  return !!previous && previous.fixtures.at(-1).date <= date &&
+   Object.keys(resultsFor(state, previous)).length === previous.fixtures.length;
+ }
+
+ function hostMessage(edition, host, date, guide = false) {
+  const countries = host.countries.map(country => country.name).join(', ');
+  const location = host.city ? ' Finale à ' + host.city + (host.stadium ? ' · ' + host.stadium : '') + '.' : '';
+  const dates = ' Du ' + dateLabel.format(Date.parse(host.opens)) + ' au ' + dateLabel.format(Date.parse(host.ends)) + '.';
+  const body = (host.countries.length === 1 ? 'Pays hôte' : 'Pays hôtes') + ' · ' + countries + '.' + dates + location;
+  const prefix = guide ? 'host-guide/' : 'host/';
+  const title = guide ? 'Votre guide · ' + edition.name : 'Accueil · ' + edition.name;
+  return message(prefix + edition.id, 'international_host', title, body, date);
+ }
+
+ function hostMail(state, from, to, includeToday) {
+  return calendar(state, yearOf(from), yearOf(to) + 3).flatMap(edition => {
+   const host = hostFor(edition);
+   if (!host || host.announcementDate > to || host.announcementDate < from ||
+    (!includeToday && host.announcementDate === from)) return [];
+   return [hostMessage(edition, host, host.announcementDate, !!previousEdition(state, edition))];
+  }).sort((a, b) => compare(a.date, b.date) || compare(a.id, b.id));
+ }
+
+ function announceNextHost(state, completed, date, mail) {
+  if (completed.fixtures.some(fixture => !fixture.result)) return;
+  const following = calendar(state, completed.year + 1, completed.year + 4)
+   .find(edition => family(edition) === family(completed));
+  const host = following && hostFor(following);
+  if (host) mail.push(hostMessage(following, host, date));
  }
 
  function restore(state, templates) {
@@ -334,7 +385,7 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
   const editions = restore(next, calendar(next, yearOf(from) - 1, yearOf(to)));
   const dates = [...new Set([from, to, ...editions.flatMap(edition => edition.fixtures.map(fixture => fixture.date)),
    ...windows(editions).map(camp => camp.from)])].filter(date => from <= date && date <= to).sort();
-  const mail = [];
+  const mail = hostMail(next, from, to, notifyActive && from === to);
   const club = new Set(clubPlayerIds);
   const editionsByYear = new Map();
   for (const [index, edition] of editions.entries()) {
@@ -364,11 +415,13 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
      check(fixture.homeId && fixture.awayId, 'Rencontre internationale encore sans équipes.');
      editions[i] = playFixture(next, editions[i], fixture, players);
      refreshWindows(next, [editions[i]]);
+     announceNextHost(next, editions[i], date, mail);
     }
    }
   }
   next.date = to;
   archiveHistory(next, to);
+  mail.sort((a, b) => compare(a.date, b.date));
   return { state: next, mail };
  }
 
@@ -390,18 +443,25 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
   const mail = [message('result/' + fixture.id, 'international_result', 'Résultat international',
    nations.get(fixture.homeId) + ' ' + result.home + ' – ' + result.away + ' ' + nations.get(fixture.awayId) + '.',
    date, managedNation)];
+  announceNextHost(next, editions[i], date, mail);
   return { state: next, mail };
  }
 
  function project(state, { date = state.date, players = [], managedNation = null } = {}) {
   const snapshot = copy(upgrade(state));
   const year = yearOf(date);
-  const editions = restore(snapshot, calendar(snapshot, year - 1, year + 1));
+  const announced = calendar(snapshot, year + 2, year + 4)
+   .filter(edition => hostVisible(snapshot, edition, date));
+  const editions = restore(snapshot, [...calendar(snapshot, year - 1, year + 1), ...announced]);
   openCamps(snapshot, editions, date, players, managedNation, new Set(), []);
-  const competitionViews = editions.map(edition => ({
-   id: edition.id, year: edition.year, name: edition.name, teams: edition.teams, fixtures: edition.fixtures,
-   standings: competitions.standings(edition), outcome: competitions.editionOutcome(edition),
-  }));
+  const competitionViews = editions.map(edition => {
+   const host = hostFor(edition);
+   return {
+    id: edition.id, year: edition.year, name: edition.name, teams: edition.teams, fixtures: edition.fixtures,
+    standings: competitions.standings(edition), outcome: competitions.editionOutcome(edition),
+    ...(hostVisible(snapshot, edition, date) ? { host } : {}),
+   };
+  });
   const fixtureList = competitionViews.flatMap(edition => edition.fixtures)
    .sort((a, b) => compare(a.date, b.date) || compare(a.kickoffLocal, b.kickoffLocal));
   const own = managedNation ? fixtureList.filter(fixture => involves(fixture, managedNation)) : [];
