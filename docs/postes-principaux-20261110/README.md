@@ -7,3 +7,5 @@ La projection publie primaryPositions en plus du numéro primaire historique. Le
 Réception : test rouge puis vert sur les cinq groupes ; intégration composition/import/reprise et calculs match verts ; 235 contrôles graphiques en 2560×1440, vraie carrière, profil inchangé en consultation. Un premier lancement graphique a échoué car le serveur X privé était fermé ; il a été relancé avant la réception. Capture réelle jointe. Base c15a6e9/PR535 ; aucune fusion main.
 
 Saison simulée 2026–2027 ; correction de classement des postes de jeu, sans changement des règles d’éligibilité ni des protections de première ligne (référence World Rugby loi3 déjà lue).
+
+Libellés explicites dans les lignes, le tri, les infobulles et la fiche latérale : Troisième ligne aile (6–7), Troisième ligne centre (8). Réception graphique complémentaire : 237 contrôles verts.

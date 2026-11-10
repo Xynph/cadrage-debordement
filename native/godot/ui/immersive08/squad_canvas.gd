@@ -157,7 +157,11 @@ static func primary_numbers(player: Dictionary) -> Array[int]:
 	return result
 
 static func primary_caption(player: Dictionary) -> String:
-	return "Pilier G/D" if primary_numbers(player)==[1,3] else str(player.get("pos","—"))
+	var numbers := primary_numbers(player)
+	if numbers==[1,3]: return "Pilier G/D"
+	if numbers==[6,7]: return "Troisième ligne aile"
+	if numbers==[8]: return "Troisième ligne centre"
+	return str(player.get("pos","—"))
 
 static func secondary_numbers(player: Dictionary) -> Array[int]:
 	var result: Array[int] = []
@@ -319,7 +323,7 @@ func _row(player:Dictionary,index:int) -> void:
 	row.set_meta("player_id",str(player.id))
 	row.custom_minimum_size=Vector2(C.px(1668),C.px(ROW_HEIGHT))
 	row.clip_contents=true
-	row.tooltip_text=str(player.name)+" · "+str(player.pos)
+	row.tooltip_text=str(player.name)+" · "+primary_caption(player)
 	row.add_theme_stylebox_override("normal",C.box(Color("155f3e") if str(player.id)==app.selected_player else Color("141d1f") if index%2==0 else Color.TRANSPARENT,Color.TRANSPARENT,3,0))
 	row.add_theme_stylebox_override("hover",C.box(Color("244638"),C.MINT,3,0))
 	row.add_theme_stylebox_override("focus",C.box(Color.TRANSPARENT,C.GOLD,3,0))
@@ -332,7 +336,7 @@ func _row(player:Dictionary,index:int) -> void:
 	var reason := U.watch_reason(player) if state.family==U.WATCH_FILTER else ""
 	if not reason.is_empty():
 		row.tooltip_text += "\n" + reason
-		row.accessibility_name = str(player.name) + " · " + str(player.pos) + " · " + reason
+		row.accessibility_name = str(player.name) + " · " + primary_caption(player) + " · " + reason
 	row.add_child(portrait)
 	D.place(portrait,Rect2(54,2,31,30))
 	D.text(row,95,24,player.name,23,C.IVORY,600,190)
@@ -406,7 +410,7 @@ func _profile() -> void:
 		var portrait:=G.portrait(int(player.get("portraitIndex",0)),C.px(187),player)
 		hero.add_child(portrait);D.place(portrait,Rect2(19,74,187,235))
 	else:D.photo(hero,"squad-portrait",Rect2(19,74,187,235))
-	D.text(hero,227,100,str(player.pos).to_upper(),24,C.GOLD,700,281)
+	D.text(hero,227,100,primary_caption(player).to_upper(),24,C.GOLD,700,281)
 	D.text(hero,227,133,G.n(player.get("age","—"))+" ans",22,C.MUTED,500,281)
 	D.text(hero,227,167,G.n(player.get("appearances",0))+" apparitions · "+G.n(player.get("minutes",0))+" min",22,C.MUTED,500,281)
 	D.text(hero,240,241,G.rating_text(player,true),48,C.MINT,700,123)

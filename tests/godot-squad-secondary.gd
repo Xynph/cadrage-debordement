@@ -27,6 +27,8 @@ func pure() -> void:
 	check(Squad.secondary_caption({"primaryPositions":[8],"secondaryPositions":[6,7]})=="6·7","Le numéro 8 reste distinct de la troisième ligne aile")
 	check(Squad.primary_caption({"pos":"Pilier gauche","primaryPositions":[1,3]})=="Pilier G/D","Les deux côtés du pilier appartiennent au principal")
 	check(Squad.primary_caption({"pos":"Pilier gauche","primaryPositions":[1]})=="Pilier gauche","Pas de polyvalence automatique pour un seul côté")
+	check(Squad.primary_caption({"pos":"Troisième ligne","primaryPositions":[6,7]})=="Troisième ligne aile","Les 6–7 sont explicitement des troisièmes lignes aile")
+	check(Squad.primary_caption({"pos":"Numéro 8","primaryPositions":[8]})=="Troisième ligne centre","Le 8 est explicitement un troisième ligne centre")
 	var labels := {"selection":{"slots":[{"slot":10,"label":"Ailier gauche"},{"slot":13,"label":"Ailier droit"}]}}
 	var tip := Squad.secondary_tooltip({"secondaryPositions":[11,14]},labels)
 	check(tip.contains("11 · Ailier gauche") and tip.contains("14 · Ailier droit"),"Noms repris des étiquettes de la feuille")
