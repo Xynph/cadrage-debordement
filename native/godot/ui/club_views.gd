@@ -530,10 +530,26 @@ static func season_archives(app:Control) -> void:
 	var notice := "Le carnet conserve le rang de phase régulière."
 	if japanese: notice = "Rangs de phase régulière et scores des barrages japonais conservés."
 	content.add_child(G.wrap("15 dernières saisons terminées · identités du pack actuel.\n"+notice,12,G.MUTED))
-	var list:=G.scroll(content)
-	list.get_parent().custom_minimum_size.y=360
 	var seasons:Array=app.model.get("archives",{}).get("seasons",[]).duplicate()
 	seasons.reverse()
+	var jump: OptionButton
+	if seasons.size() > 1:
+		var navigation := G.h(10)
+		content.add_child(navigation)
+		navigation.add_child(G.label("Aller à la saison", 14, G.INK, true))
+		jump = OptionButton.new()
+		jump.name = "SeasonArchivesJump"
+		jump.accessibility_name = "Aller à la saison"
+		jump.allow_reselect = true
+		jump.custom_minimum_size.x = 180
+		jump.add_item("Début des archives")
+		for year: Dictionary in seasons:
+			jump.add_item("Saison " + G.n(year.season))
+		navigation.add_child(jump)
+	var list := G.scroll(content)
+	var scroll := list.get_parent() as ScrollContainer
+	scroll.custom_minimum_size.y = 360
+	var headings: Array[Control] = []
 	var international: bool = app.model.get("meta", {}).get("mode") == "world"
 	var world = load("res://ui/immersive08/world_archive.gd")
 	var nationale = load("res://ui/immersive08/nationale_archive.gd")
@@ -543,7 +559,10 @@ static func season_archives(app:Control) -> void:
 		if japanese: empty = "Aucune saison archivée. Les manches des barrages japonais sont conservées au passage à la saison suivante."
 		list.add_child(G.wrap(empty,16))
 	for year:Dictionary in seasons:
-		list.add_child(G.section("SAISON "+G.n(year.season)))
+		var heading := G.section("SAISON " + G.n(year.season))
+		heading.name = "SeasonArchiveHeading_" + G.n(year.season)
+		list.add_child(heading)
+		headings.append(heading)
 		for winner:Dictionary in archive_titles(year):
 			list.add_child(G.wrap("Champion %s : %s"%[competition_name(winner.leagueId, app.model),_archive_club(app,winner.clubId)],17,G.INK))
 		var standings: Dictionary = year.get("standings",{})
@@ -567,6 +586,9 @@ static func season_archives(app:Control) -> void:
 			for barrage: Dictionary in barrages:
 				for line: String in world.japan_lines(app,barrage): list.add_child(G.wrap(line,16,G.INK))
 		list.add_child(G.separator())
+	if jump != null:
+		jump.item_selected.connect(func(index: int):
+			scroll.scroll_vertical = 0 if index == 0 else int(headings[index - 1].position.y))
 	d.confirmed.connect(d.queue_free)
 	d.canceled.connect(d.queue_free)
 	app.add_child(d)
