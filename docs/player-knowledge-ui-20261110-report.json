@@ -1,0 +1,64 @@
+{
+  "canonical": true,
+  "checks": 207,
+  "failures": [],
+  "profile_unchanged": true,
+  "viewport": "2560x1440",
+  "platform": "Linux/Godot 4.7.2/llvmpipe",
+  "backend_source": "PR532 worker canonical, before final idempotence cleanup; final headless rerun uses380a0db",
+  "helpers": {
+    "checks": 22,
+    "failures": 0
+  },
+  "contracts": {
+    "checks": 154,
+    "failures": 0
+  },
+  "recruitment_sort": {
+    "checks": 153,
+    "failures": 0
+  },
+  "comparison": {
+    "checks": 33,
+    "failures": 0
+  },
+  "captures": [
+    {
+      "file": "comparaison-fourchettes-cas-ui-controle-1440.png",
+      "sha256": "c9ef1f247ad87fbd98960ad775e84c96c198aba00dd98a1188aa3aaa3a504f17"
+    },
+    {
+      "file": "effectif-connaissance-modele-reel-1440.png",
+      "sha256": "8c7e836ef6efb128b63e2b7ab927b6c9fb47bf4db09c7ee68b6e2a912fce6aaf"
+    },
+    {
+      "file": "fiche-potentiel-modele-reel-1440.png",
+      "sha256": "3391cd3098b86986a5cec24eca7a838dc3b74f37d3d70625888b721af833f7c7"
+    },
+    {
+      "file": "observation-confirmation-modele-reel-1440.png",
+      "sha256": "232fed1913ef651ea9a6dc3b2703a03976c01cc85cae9cf7519d01636708a47e"
+    },
+    {
+      "file": "observation-programmee-modele-reel-1440.png",
+      "sha256": "b8a0df8f086828d91ef468b0e0d0e105e8cb31f1a9542401aff9f465a18a46d3"
+    },
+    {
+      "file": "recrutement-deep-modele-reel-1440.png",
+      "sha256": "d30f9c5d5238a14aac7c4b5b6802b339cabaa8220c86c5cbfc82b520fa05c8a6"
+    },
+    {
+      "file": "recrutement-inconnu-modele-reel-1440.png",
+      "sha256": "2f96e9c07b102ca8018320ab3e853f040efc3fea8ac514fc8241e94dd70a8a92"
+    },
+    {
+      "file": "recrutement-observed-modele-reel-1440.png",
+      "sha256": "57aebe7e333b67c508339c61470b18014a0d79242832647bdd739057a72ede62"
+    }
+  ],
+  "final_headless": {
+    "checks": 199,
+    "failures": 0,
+    "backend": "380a0db"
+  }
+}
