@@ -89,6 +89,20 @@ static func photo(parent: Node, id: String, rectangle: Rect2, vertical_focus: fl
 	place(image,rectangle)
 	return image
 
+static func scenario_photo(parent: Node, id: String, rectangle: Rect2) -> void:
+	var tile := rect(parent, rectangle, Color("192121"), 6, C.LINE)
+	var image := TextureRect.new()
+	image.name = "ScenarioArt_" + id.replace("-", "_")
+	image.texture = load("res://art/scenario/%s.jpg" % id)
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tile.add_child(image)
+	place(image, Rect2(4, 4, rectangle.size.x - 8, rectangle.size.y - 25))
+	var attribution := "Scenario" if rectangle.size.x < 150 else "Scenario · CC BY 4.0"
+	var credit := text(tile, rectangle.size.x / 2.0, rectangle.size.y - 5, attribution, 16, C.MUTED, 600, rectangle.size.x - 8, HORIZONTAL_ALIGNMENT_CENTER)
+	credit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 static func fade_photo_edges(photo: TextureRect) -> void:
 	var blend := Shader.new()
 	# La coordonnée locale reste continue quelle que soit la découpe de l’atlas.

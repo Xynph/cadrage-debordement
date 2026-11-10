@@ -104,6 +104,9 @@ static func _fixture(card: Panel, app: Control) -> void:
 	D.button(card,Rect2(345,354,226,45),"Vérifier les 23",func():app._navigate("Composition"),false,"",false,app.accent,"OfficeSelectionAction")
 	var badge := Rect2(1118,371,218,26) if territory==null else Rect2(432,277,218,26)
 	D.chip(card,badge,"FEUILLE À PRÉPARER" if not app.model.get("selection",{}).get("valid",false) else "FEUILLE COMPLÈTE",C.GOLD)
+	if P.fixture_location_kind(next, app.model.club.id) == "away":
+		var bag := Rect2(1076, 192, 260, 165) if territory == null else Rect2(573, 306, 117, 99)
+		D.scenario_photo(card, "travel-bag", bag)
 
 static func _priorities(card: Panel, app: Control) -> void:
 	var contracts := P.contracts(app.model)

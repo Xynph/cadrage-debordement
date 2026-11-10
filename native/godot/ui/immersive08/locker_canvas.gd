@@ -32,6 +32,7 @@ static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 	D.photo(hero,art,Rect2(986,1,1261,225))
 	U.art_fade(hero,Rect2(986,1,1261,225))
 	D.chip(hero,Rect2(2043,16,182,28),"ILLUSTRATION",C.GOLD)
+	D.scenario_photo(hero, "sneaker", Rect2(1950, 53, 275, 161))
 	U.italic(D.text(hero,26,43,"LE VESTIAIRE",30,C.GOLD,700,375),700)
 	D.line(hero,Vector2(237,28),Vector2(661,28),Color(C.GOLD,.65))
 	D.text(hero,23,124,"Un groupe, une ambition.",82,C.IVORY,800,1195)

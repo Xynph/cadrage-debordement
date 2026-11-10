@@ -188,6 +188,7 @@ def build(args):
     copy_build_licenses(sdk_licenses, licenses, node_notices)
     shutil.copytree(PROJECT / "fonts", licenses / "fontes", ignore=shutil.ignore_patterns("*.import"))
     shutil.copy2(ROOT / "docs/club-atlas-credits.md", licenses / "photos.md")
+    shutil.copy2(ROOT / "docs/scenario-visual-credits.md", licenses / "illustrations-scenario.md")
     shutil.copy2(PROJECT / "guide/assets/NOTICE.md", licenses / "coach-original.md")
     shutil.copy2(PROJECT / "guide/assets/NOTICE-coach-poses.md", licenses / "coach-16-poses.md")
     voice_licenses = licenses / "voix-coach"

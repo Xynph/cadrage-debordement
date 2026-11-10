@@ -53,6 +53,10 @@ const COMPACT_ART = {
 	"Rivalités":"trophy", "Vestiaire":"lockerroom", "Carrière":"entry-ground",
 }
 
+const COMPACT_SCENARIO_ART := {
+	"Club": "treadmill", "Presse": "camera", "Vestiaire": "sneaker", "Formation": "chair",
+}
+
 static func render(app: Control) -> bool:
 	if not app.model.get("club") is Dictionary or app.route in ["Accueil", "Création", "Packs"]: return false
 	var window := app.get_window()
@@ -408,6 +412,8 @@ static func _heading(parent: Node, app: Control) -> void:
 		var image := D.panel(row,Rect2(1438,6,810,89),"","","","CompactRouteArt")
 		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		D.photo(image,COMPACT_ART[app.route],Rect2(2,2,806,85),.16)
+		if COMPACT_SCENARIO_ART.has(app.route):
+			D.scenario_photo(image, COMPACT_SCENARIO_ART[app.route], Rect2(613, 3, 190, 83))
 	var values := P.group(app.model)
 	var rank := G.n(app.model.club.get("rank", "—"))
 	var metrics: Array = [[rank+("er" if rank=="1" else "e")+" · "+G.n(app.model.club.get("points",0))+" pts","trophy",C.GOLD],[str(values.available)+" disponibles","people",C.MINT],[str(values.injured)+" blessés","heart",C.ALERT],["3 priorités","calendar",C.AMBER]]
