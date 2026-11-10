@@ -541,8 +541,25 @@ static func _connected_country(tabs: HBoxContainer, button: Button, active: bool
 		separator.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		tabs.add_child(separator)
 
+static func _show_creation_waiting(app: Control, workspace: Control) -> void:
+	var start := workspace.find_child("CreationStart", true, false) as Button
+	if start == null: return
+	start.accessibility_live = AccessibilityServer.LIVE_POLITE
+	start.text = "Création en cours…"
+	for button: BaseButton in workspace.find_children("*", "BaseButton", true, false):
+		button.disabled = true
+	# A failed reply with a model already rebuilds the page. A transport error
+	# without a model can leave this button in place when replacing a career.
+	var restore := func(_message: String):
+		if app.route == "Création" and not app.waiting: app._render(false)
+	app.bridge.command_failed.connect(restore)
+	start.tree_exiting.connect(func():
+		if is_instance_valid(app.bridge): app.bridge.command_failed.disconnect(restore), CONNECT_ONE_SHOT)
+
 static func _create(app: Control, selected: Dictionary, mode: String) -> void:
-	var action := func(): app._command("new_career", {"club":int(selected.id),"mode":mode}, "Bureau")
+	var action := func():
+		if app._command("new_career", {"club":int(selected.id),"mode":mode}, "Bureau") and is_instance_valid(app.entry_scroll):
+			_show_creation_waiting(app, app.entry_scroll)
 	if app._has_career():
 		app.confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Exportez-la depuis le menu pour la conserver séparément. Prendre les rênes de %s ?" % G.club_name(selected), action)
 	else:
@@ -891,4 +908,5 @@ static func creation(app: Control) -> Control:
 		actions.add_child(safe_space)
 	else:
 		list.add_child(start)
+	if app.waiting and app.last_command == "new_career": _show_creation_waiting(app, page)
 	return page
