@@ -343,17 +343,20 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	panel.add_child(magnifier)
 	D.place(magnifier,Rect2(1278,30,21,21))
 	var shortcut := D.chip(panel,Rect2(1582 if office_live else 1677,29,48,23),"Ctrl K",C.MUTED)
-	var calendar := C.icon("calendar",25,C.IVORY)
+	var calendar := C.button("", _open_current_calendar.bind(app))
+	calendar.name = "ImmersiveCalendarDate"
+	calendar.accessibility_name = "Ouvrir le calendrier"
+	calendar.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	panel.add_child(calendar)
-	D.place(calendar,Rect2(1680 if office_live else 1773,25,25,25))
-	app.header_date = D.text(panel,1814,48,"",24,C.IVORY,600,240)
-	app.header_date.mouse_filter = Control.MOUSE_FILTER_PASS
+	var calendar_icon := C.icon("calendar",25,C.IVORY)
+	calendar.add_child(calendar_icon)
+	app.header_date = D.text(calendar,0,48,"",24,C.IVORY,600,240)
 	app._update_header_date()
 	var action_left := TOPBAR_MATCH_ACTION_LEFT if office_live else TOPBAR_ACTION_LEFT
 	app.primary_button = D.button(panel,Rect2(action_left,17,2278-action_left,45),"Continuer",app.primary_action,true,"arrow",false,app.accent,"ImmersiveContinue")
 	_club_button(app.primary_button,CLUB_CHROME.lerp(app.accent,.69),club_edge)
 	app.primary_button.tooltip_text = app.primary_text()
-	layout.set_meta("immersive_topbar",[app.header_date,app.primary_button,shortcut,calendar,action_left])
+	layout.set_meta("immersive_topbar",[app.header_date,app.primary_button,shortcut,calendar,action_left,calendar_icon])
 	_position_topbar(layout)
 
 static func _club_button(button: Button, fill: Color, edge: Color) -> void:
@@ -374,19 +377,24 @@ static func _position_topbar(layout: Control) -> void:
 	var compact := C.px(24)*factor<14.0
 	# En petit format, les raccourcis sont regroupés dans le pied.
 	elements[2].visible=not compact
-	elements[3].visible=not compact
+	var calendar: Button = elements[3]
+	var calendar_icon: TextureRect = elements[5]
 	var date_px := maxi(C.px(24),ceili(14.0/factor))
 	var date_font := date.get_theme_font("font")
 	var action_left: int = elements[4]
 	var office_live := action_left == TOPBAR_MATCH_ACTION_LEFT
-	var date_left := (1655 if compact else 1720) if office_live else (1750 if compact else 1814)
-	date.add_theme_font_size_override("font_size",date_px)
-	date.position=Vector2(C.px(date_left),C.px(48)-date_font.get_ascent(date_px))
-	var date_width := C.px(action_left-13-date_left)
-	date.set_deferred("size",Vector2(date_width,date_font.get_height(date_px)))
-	if (compact or office_live) and date.tooltip_text.is_empty() and date_font.get_string_size(date.text,HORIZONTAL_ALIGNMENT_LEFT,-1,date_px).x>date_width:
-		date.tooltip_text=date.text
+	var icon_left := (1658 if compact else 1680) if office_live else (1753 if compact else 1773)
+	var calendar_left := icon_left - 7
+	var calendar_right := action_left - 13
 	var height := maxf(45.0*C.density,26.0/factor)
+	calendar.position = Vector2(C.px(calendar_left),(79.0*C.density-height)/2.0)
+	calendar.size = Vector2(C.px(calendar_right-calendar_left),height)
+	calendar_icon.position = Vector2(C.px(7),(height-calendar_icon.size.y)/2.0)
+	var date_left := C.px(40)
+	var text_height := date_font.get_height(date_px)
+	date.add_theme_font_size_override("font_size",date_px)
+	date.position = Vector2(date_left,(height-text_height)/2.0)
+	date.set_deferred("size",Vector2(calendar.size.x-date_left-C.px(7),text_height))
 	action.add_theme_font_size_override("font_size",maxi(C.px(25),ceili(14.0/factor)))
 	action.position.y=(79.0*C.density-height)/2.0
 	action.size.y=height
@@ -527,6 +535,13 @@ static func _position_footer(row: Control) -> void:
 	else:
 		shortcuts.position=Vector2(shortcuts_x,C.px(36-FOOTER_RISE)-shortcut_font.get_ascent(shortcut_px))
 		shortcuts.size=Vector2(C.px(800),shortcut_height)
+
+static func _open_current_calendar(app: Control) -> void:
+	app.set_meta("calendar_table",false)
+	app._navigate("Calendrier")
+	var calendar: Control = app.body.find_child("CarnetCalendar",true,false)
+	if calendar != null and not calendar.today.is_empty():
+		calendar._jump_to_today()
 
 static func _calendar_table(app: Control, show_table: bool) -> void:
 	app.set_meta("calendar_table",show_table)
