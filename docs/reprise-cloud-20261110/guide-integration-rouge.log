@@ -48,7 +48,7 @@ not ok 2 - Coach intégré : espace réservé, toutes routes et commandes access
   failureType: 'testCodeFailure'
   error: |-
     Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-    
+
     RACCORD COACH : 306 contrôles ; 29 échec(s)
     FAIL: Focus conservé après Entrée MarketReset
     FAIL: Deux offres réellement visibles pour réception coach / 1920
@@ -79,10 +79,10 @@ not ok 2 - Coach intégré : espace réservé, toutes routes et commandes access
     FAIL: Commande réelle pause
     FAIL: Aide explicitement ouverte en pause
     FAIL: Réactivation depuis les paramètres
-    
-    
+
+
     1 !== 0
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: 0
