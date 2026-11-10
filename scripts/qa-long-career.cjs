@@ -216,7 +216,7 @@ async function run(options) {
   campaign.onCheckpoint = () => { campaign.durationMs = Date.now() - began; report.durationMs = Date.now() - start; write(report, output); };
   try { await execute(); campaign.status = 'passed'; }
   catch (error) {
-   campaign.status = 'failed'; campaign.failures.push({check:error.check || 'Exécution native', message:error.message, nextAction:`Rejouer la campagne ${id} avec la graine ${options.seed}, à partir du dernier checkpoint reçu. Corriger la cause native avant de déclarer la campagne reçue.`});
+   campaign.status = 'failed'; campaign.failures.push({check:error.check || 'Exécution native', message:error.message, nextAction:`Rejouer la campagne ${id} avec la graine ${options.seed}, depuis le même état initial ; le dernier checkpoint reçu localise la période à inspecter. Corriger la cause avant de déclarer la campagne reçue.`});
   }
   campaign.durationMs = Date.now() - began;
   console.log(`${campaign.name}: ${campaign.status}, ${campaign.checks} contrôles, ${campaign.checkpoints.length} checkpoints, ${campaign.durationMs} ms`);
