@@ -6,7 +6,12 @@ const manager = require('./international-manager.cjs');
 const { createInternationalCareer } = require('./international-career.cjs');
 
 const dateAfter = date => new Date(Date.parse(date) + 86400000).toISOString().slice(0, 10);
-const teamIds = [...new Set(competitions.COMPETITION_IDS.flatMap(id => competitions.createEdition(id).teams.map(team => team.id)))];
+const referenceEditions = competitions.COMPETITION_IDS.map(id => competitions.createEdition(id));
+const teamIds = [...new Set(referenceEditions.flatMap(edition => edition.teams.map(team => team.id)))];
+const editionsByFamily = new Map(referenceEditions.map(edition => [edition.id.replace(/-\d{4}$/, ''), edition]));
+const dateFormatter = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const readableDate = date => dateFormatter.format(new Date(date));
+const campKey = camp => [camp.competitionId, camp.nation, camp.from].join('/');
 const mailKeys = ['id','kind','title','body','date','action','nation'];
 const limit = 45;
 
@@ -38,9 +43,54 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     return [...combined.values()].slice(-limit);
   }
 
+  function competitionName(id) {
+    const family = editionsByFamily.get(id.replace(/-\d{4}$/, ''));
+    if (!family) return 'la fenêtre internationale';
+    const year = /-(\d{4})$/.exec(id)?.[1];
+    return year ? family.name.replace(/\d{4}$/, year) : family.name;
+  }
+
+  function dutyMail(before, after, source, clubPlayerIds) {
+    const camps = new Map(after.callups.map(camp => [campKey(camp), camp]));
+    const club = new Set(clubPlayerIds);
+    const messages = source.map(mail => {
+      if (!['international_callup','international_release'].includes(mail.kind)) return mail;
+      const camp = camps.get(mail.id.slice(mail.id.indexOf('/')+1));
+      if (!camp) return mail;
+      const clubRelease = mail.kind === 'international_release';
+      const count = clubRelease ? camp.playerIds.filter(id => club.has(id)).length : camp.playerIds.length;
+      const start = clubRelease
+        ? `${count} ${count === 1 ? 'joueur de votre club rejoint' : 'joueurs de votre club rejoignent'} la sélection de ${teamNames[camp.nation]}`
+        : `${count} joueurs sont convoqués avec la sélection de ${teamNames[camp.nation]}`;
+      const through = camp.competitionId.startsWith('rugby-world-cup-')
+        ? ' La date de retour dépend du parcours dans la compétition.'
+        : ` La mise à disposition court jusqu’au ${readableDate(camp.through)} inclus.`;
+      return {...mail,body:`${start} pour ${competitionName(camp.competitionId)} à partir du ${readableDate(camp.from)}.${through}`};
+    });
+    if (!club.size) return messages;
+
+    const returning = new Set();
+    for (const prior of before.callups) {
+      const key = campKey(prior);
+      const camp = camps.get(key);
+      if (!camp || prior.from > before.date || before.date > prior.through || camp.through >= after.date) continue;
+      const players = camp.playerIds.filter(id => club.has(id) && !returning.has(id) &&
+        !callups.clubReleaseOn(after.callups, id, after.date));
+      if (!players.length) continue;
+      for (const id of players) returning.add(id);
+      const count = players.length;
+      messages.push({
+        id:'club-return/'+key,kind:'international_return',title:'Retour de sélection',
+        body:`${count} ${count === 1 ? 'joueur revient' : 'joueurs reviennent'} du rassemblement de ${teamNames[camp.nation]} pour ${competitionName(camp.competitionId)}. La mise à disposition prend fin le ${readableDate(after.date)}.`,
+        date:after.date,action:'international',nation:camp.nation,
+      });
+    }
+    return messages;
+  }
+
   function matchMail(state, players, nation) {
     if (!nation) return [];
-    const fixture = career.project(state, {players,managedNation:nation}).currentFixture;
+    const fixture = career.currentFixture ? career.currentFixture(state,nation) : career.project(state, {players,managedNation:nation}).currentFixture;
     if (!fixture || fixture.result) return [];
     return [{
       id:'match-day/'+fixture.id,kind:'international_match',title:'Jour de match avec votre sélection',
@@ -68,6 +118,12 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
       if (!supported() || (!ended() && previous.career.date !== worldDay()) ||
         (ended() && (previous.career.date < worldDay() || previous.career.date > nextOpening()))) {
         throw Error('Le calendrier du mandat international ne correspond pas à la carrière.');
+      }
+      const upgraded = career.upgrade?.(previous.career) ?? previous.career;
+      if (upgraded !== previous.career) {
+        const profile = {...previous,career:upgraded};
+        validate(profile);
+        write(profile);
       }
       return;
     }
@@ -99,10 +155,12 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     const players = roster();
     const managed = role(profile);
     const clubId = run('S.club');
+    const clubPlayerIds = managed.club ? players.filter(p => p.clubId === clubId).map(p => p.id) : [];
     const moved = career.advance(profile.career, {from:date,to:dateAfter(date),players,managedNation:managed.nation,
-      clubPlayerIds:managed.club ? players.filter(p => p.clubId === clubId).map(p => p.id) : []});
-    moved.mail.push(...matchMail(moved.state,players,managed.nation));
-    write({...profile,career:moved.state,mail:append(profile,moved.mail)});
+      clubPlayerIds});
+    const messages = dutyMail(profile.career,moved.state,moved.mail,clubPlayerIds);
+    messages.push(...matchMail(moved.state,players,managed.nation));
+    write({...profile,career:moved.state,mail:append(profile,messages)});
     return offSeason;
   }
 
@@ -166,10 +224,11 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
       currentManagedFixture:current,nextManagedFixture:current??overview.nextFixture,squad:overview.squad,sheet:overview.sheet,
       choicesBySlot:overview.choicesBySlot,
     };
-    if (ended() && date < nextOpening()) {
-      model.meta.canAdvanceSeason=false;
+    if (ended()) {
+      const waiting = date < nextOpening();
+      if (waiting) model.meta.canAdvanceSeason=false;
       model.meta.calendarToday=date;
-      model.meta.calendarCadence={day:(new Date(date+'T00:00:00Z').getUTCDay()+6)%7,matchReady:false,canAdvance:true};
+      model.meta.calendarCadence={day:(new Date(date+'T00:00:00Z').getUTCDay()+6)%7,matchReady:false,canAdvance:waiting&&!current};
     }
     if (current && !model.live) model.meta.nationalMatchToday=true;
     if (!managed.club) { model.next=null; model.calendar=[]; }
