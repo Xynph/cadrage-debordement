@@ -29,9 +29,32 @@ func _wait() -> void:
 	_check(not app.waiting, "Command completes without indefinite waiting")
 
 func _command(command: String, payload: Dictionary = {}) -> void:
+	if command == "begin_match" and not await _publish_press(): return
 	app._command(command, payload)
 	await _wait()
 	if not app.bridge.last_response_ok: print("COMMANDE REFUSÉE : ", command, " · ", app.last_error)
+
+func _publish_press() -> bool:
+	var conference: Dictionary = app.model.get("clubLife", {}).get("press", {}).get("conference", {})
+	if not conference.get("required", false): return true
+	var previous_route: String = app.route
+	app._show_press_inbox()
+	var controls := ["InboxPressInvitation", "InboxOpenPressInvitation"]
+	for question: Dictionary in conference.questions:
+		controls.append("PressAnswer_" + str(question.id) + "_r4")
+	controls.append("PressSubmit")
+	for name: String in controls:
+		await process_frame
+		var button := app.root_content.find_child(name, true, false) as Button
+		var available := button != null and button.is_visible_in_tree() and not button.disabled
+		_check(available, "Action de la conférence disponible : " + name)
+		if not available: return false
+		button.pressed.emit()
+	await _wait()
+	var published: bool = app.bridge.last_response_ok and not app.model.clubLife.press.conference.required
+	_check(published, "Le courrier de presse a été publié")
+	if published: app._navigate(previous_route)
+	return published
 
 func _dismiss_errors() -> void:
 	for child in app.get_children():
@@ -92,6 +115,9 @@ func _decisions() -> void:
 	_dismiss_errors()
 	app._navigate("Match")
 	await _command("begin_match")
+	if not app.model.live is Dictionary:
+		_check(false, "A real match starts for the decision regression")
+		return
 	app._command("save")
 	app.pause_menu()
 	var dialogs := _dialogs()
@@ -183,10 +209,12 @@ func _bench_message(panel: Node, name: String) -> String:
 
 func _bench() -> void:
 	app._navigate("Match")
-	var panel: Node = app.match_screen
-	var viewport: Node = app.match_view.get_parent()
 	var initial_date: String = app.header_date.text
 	await _command("begin_match")
+	if not app.model.live is Dictionary:
+		_check(false, "A real match starts for the bench regression")
+		return
+	var panel: Node = app.match_screen
 	await _command("pause", {"paused":true})
 	var option: Dictionary = {}
 	for choice in app.model.live.substitutions:
@@ -241,14 +269,14 @@ func _bench() -> void:
 	_check(panel.tab == "Banc" and panel.selected_slot == int(option.slot), "Finish retains bench context")
 	await _command("finish_round")
 	var first_date: String = app.header_date.text
-	_check(app.header_date.is_visible_in_tree() and first_date != initial_date and first_date.contains("JOURNÉE 2") and int(app.model.meta.week) == 1, "First round validation refreshes the header date in Match")
+	_check(app.route == "Réception" and app.header_date.is_visible_in_tree() and first_date != initial_date and first_date.contains("JOURNÉE 2") and int(app.model.meta.week) == 1, "First round validation refreshes the date in Reception")
 	await _command("auto_lineup")
 	if not app.model.selection.valid: await _command("promote_cover", {"confirmed":true})
+	app._navigate("Match")
 	await _command("begin_match")
 	await _command("delegate")
 	await _command("finish_round")
-	_check(app.header_date.is_visible_in_tree() and app.header_date.text != first_date and app.header_date.text.contains("JOURNÉE 3") and int(app.model.meta.week) == 2, "Second round validation refreshes the date again")
-	_check(app.match_screen == panel and app.match_view.get_parent() == viewport, "Both date changes retain the actual match SubViewport")
+	_check(app.route == "Réception" and app.header_date.is_visible_in_tree() and app.header_date.text != first_date and app.header_date.text.contains("JOURNÉE 3") and int(app.model.meta.week) == 2, "Second round validation refreshes the date again in Reception")
 
 func _modal() -> void:
 	app._navigate("Recrutement")
@@ -324,6 +352,9 @@ func _focus() -> void:
 		if scroll != null: await _scroll_focus(scroll, "Squad/profile")
 	app._navigate("Match")
 	await _command("begin_match")
+	if not app.model.live is Dictionary:
+		_check(false, "A real match starts for the focus regression")
+		return
 	await _command("pause", {"paused":true})
 	var panel: Node = app.match_screen
 	panel.tab = "Banc"
@@ -414,15 +445,17 @@ func _run() -> void:
 		_check(restored_speed != null and restored_speed.selected == 2 and app.tick_steps == 12, "Cadence remains visually and actually x12 after navigation")
 		await _command("begin_match")
 		await _command("delegate")
+		if not app.model.live is Dictionary: await app._close(1); return
 		_check(app.pause_button.disabled, "Finished match disables pause")
-		var page: Node = app.match_page
 		app.match_finish.pressed.emit()
 		await _wait()
-		_check(app.match_page == page, "Round transition retains same Match panel")
-		_check(not app.pause_button.disabled, "Next kickoff enabled without navigation")
+		_check(app.route == "Réception", "Round validation returns to Reception")
 		# Repair the actual 23 after match injuries before testing the next kickoff.
 		await _command("auto_lineup")
 		var legal:bool=app.model.get("selection",{}).get("valid",false)
+		if not await _publish_press(): await app._close(1); return
+		app._navigate("Match")
+		_check(not app.pause_button.disabled, "Next kickoff enabled after opening Match")
 		if not app.pause_button.disabled:
 			app.pause_button.pressed.emit()
 			await _wait()
