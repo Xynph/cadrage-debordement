@@ -3,7 +3,9 @@
   "international-720.json": "d1b85d4a231f72d6a57ce80338e6a1c9087ce79843fcea5ea8fe6af05c5fc2a5",
   "copies-securite.json": "8679fa961fb34520b47e234761f2b1cf91aec2355a3331950e4a9b1ba5975c79",
   "international-1440.json": "d1b85d4a231f72d6a57ce80338e6a1c9087ce79843fcea5ea8fe6af05c5fc2a5",
+  "ci-delegation.json": "fa58e52595d725b0f09abec1c371afbf309479fa6fd76c77472ad2b61926ba0d",
   "attributs-1440.png": "2d2a9dc6b745c4dbbdf0a75609a2ceb74ee604de8f9b256bba7a985997724582",
+  "ci-delegation-received.log": "0596f1fecdfd16631426e694bc2028920a08d9dfc7faf8b6cc1050a322208351",
   "international-reel-720.png": "13786ed6c0776a9b4743244064c76411d4e7fe6f90cdc35f0b292366255b401b",
   "copies-securite-1080.png": "beae14df8d4f426a4e14051309ff22f4be2e2558c1be4aa74136b036e5a2bce2",
   "comparaison.json": "2d939c6b5d71268c9343f4454618a1a4a175e013a450c2e82f5fed4eaf492918",
@@ -17,7 +19,9 @@
   "international-1080.json": "d1b85d4a231f72d6a57ce80338e6a1c9087ce79843fcea5ea8fe6af05c5fc2a5",
   "gabi.json": "812939b5de94b4d04273157137f543337c4ff5f2eb3de011a293e7bd823fab81",
   "comparaison-720.png": "167f22ad3117209c7534286200605902c80db6add6ebaa3a08c5c2b8992a0a41",
+  "ci-days-received.log": "e62126419fbb02ddc03b44207f6ca0b7ea15c1044e054619e555ae0afc0b14b2",
   "bureau.json": "3fd94cc4bd63735a999b3b6ae829894600c4f3d3d66c916d673b6e827692cf03",
   "bureau-cloture-1080.png": "c26914859d9568c9ef673ad7aba166ccb7bbf91bad189b5b390d33a6dbcc2d58",
+  "ci-medical-received.log": "2f309b83c5aa3531ae944b1d0f0efdb3053f3f101191a866bfa5dd19b7e69571",
   "bureau-720.png": "5e3395a38c5ea973e37221978f247ae210079fbd8665581f13558998bd3d7e52"
 }

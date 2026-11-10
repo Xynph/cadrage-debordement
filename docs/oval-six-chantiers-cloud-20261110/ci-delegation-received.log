@@ -1,0 +1,28 @@
+TAP version 13
+# Delegate contract received: ordinary
+# Delegate contract received: read_after_tick
+# Delegate contract received: save_mutate_read
+# Delegate contract received: caught_read
+# Delegate contract received: read_other_key
+# Delegate contract received: persist_fault
+# Delegate contract received: persist_fault_read
+# Delegate contract received: invalid_import
+# Delegate contract received: tojson_text
+# Delegate contract received: dynamic_clock
+# Delegate contract received: vm_timeout
+# Delegate transaction : 11 cas appariés complets + stdio, checkpoint réel 72min, aucune normalisation des réponses/exports/profils ; /tmp/cd-delegate-transaction-fFUSKb
+# Subtest: Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts
+ok 1 - Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts
+  ---
+  duration_ms: 385810.226451
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 386089.490204

@@ -73,6 +73,16 @@ Environnement : Linux, Node 22.23.4, Godot 4.7.2, X11/Mesa llvmpipe pour les ima
 
 Les [rapports et journaux](oval-six-chantiers-cloud-20261110/) sont conservés avec leurs [empreintes](oval-six-chantiers-cloud-20261110/sha256.json). La première tentative de recette graphique exhaustive du guide a atteint son ancien délai de 150 secondes et rencontré l'absence d'ALSA. Le lanceur Linux a ensuite été corrigé pour utiliser Dummy et un délai borné ; la validation graphique présente repose sur les recettes ciblées des écrans et du modèle réel, pas sur une exécution complète de cet ancien banc graphique.
 
+## Adaptations des bancs révélées par la CI complète
+
+Le [premier run complet](https://github.com/Xynph/cadrage-debordement/actions/runs/42828894916), sur `0293972`, a révélé trois hypothèses de fixtures devenues incompatibles avec les copies durables. Les corrections suivantes ne modifient aucun fichier du moteur, du rendu, des données ou du pilote.
+
+- **Médical** : son profil QA cumule huit copies au fil des imports. Le dernier changement de carrière doit libérer explicitement une ancienne copie via la commande confirmée. Toutes les assertions médicales sont conservées. [Réception verte](oval-six-chantiers-cloud-20261110/ci-medical-received.log).
+- **Journées** : les cinq éditions sont désormais cinq sous-tests avec des profils temporaires indépendants, au lieu de cumuler cinq créations et cinq imports dans un seul profil. Les assertions de calendrier/import restent strictes ; dix tests reçus, aucun ignoré. [Journal](oval-six-chantiers-cloud-20261110/ci-days-received.log).
+- **Délégation** : le témoin et le moteur créent légitimement des UUID et dates d'archive différents. Seule la copie jetable du module utilisée par ce banc reçoit une entropie déterministe. Les sorties ne sont pas normalisées ; les comparaisons intégrales sont conservées et étendues aux octets de toutes les archives. Onze scénarios appariés et la vraie stdio sont reçus. [Explication](ci-delegation-copies-20261110.md), [journal](oval-six-chantiers-cloud-20261110/ci-delegation-received.log), [rapport](oval-six-chantiers-cloud-20261110/ci-delegation.json).
+
+La nouvelle CI porte sur ces fixtures corrigées. Le code produit reste identique à `0293972` ; aucun quota, délai CI ou contrôle métier n'a été réduit. Son verdict terminal et le SHA exact sont consignés dans la PR #510.
+
 ## Limites et suite PC
 
 Les sources Blender manches/carnet citées dans #507 sont sur le PC et ne sont pas accessibles ici. Le GLB de la passation reste inchangé. Il faut assembler les retouches sur PC, réexporter le modèle, recevoir le rendu Windows et reconstruire le ZIP depuis le commit retenu. L'import Rugby Réel Windows reste également à recevoir. Aucune nouvelle validation Windows, cadence GPU ou livraison de ZIP n'est revendiquée.
