@@ -60,10 +60,13 @@ static func _messages(app: Control) -> Array[Dictionary]:
 	for index in range(invitations.size() - 1, -1, -1):
 		var invitation: Dictionary = invitations[index]
 		var context: Dictionary = invitation.context
-		var subject := "Présentation à la presse" if invitation.kind == "arrival" else "Conférence de la semaine"
+		var subject: String = {
+			"arrival":"Présentation à la presse", "knockout":"Conférence de phase finale",
+			"season_review":"Conférence de bilan", "weekly":"Conférence de la semaine"
+		}.get(invitation.kind, "Invitation de presse")
 		var detail := "%s · Saison %d · Semaine %d." % [Press._club(app, context.club), context.season, int(context.week) + 1]
 		match invitation.status:
-			"pending": detail += "\n\nLes journalistes vous invitent à préparer vos réponses."
+			"pending": detail += "\n\nLes journalistes vous attendent. Publiez vos réponses pour poursuivre."
 			"published": detail += "\n\nVos réponses ont été publiées."
 			"expired": detail += "\n\nCe rendez-vous est passé."
 		messages.push_front({
@@ -136,7 +139,8 @@ static func build(app: Control) -> Control:
 	var visible := messages.filter(func(message: Dictionary): return _visible(message,state))
 	if state.oldest_first: visible.reverse()
 	if not visible.any(func(message: Dictionary): return message.id == state.selected):
-		state.selected = "" if visible.is_empty() else visible[0].id
+		var ordinary := visible.filter(func(message: Dictionary): return not message.has("press_invitation"))
+		state.selected = "" if ordinary.is_empty() else ordinary[0].id
 	var current: Dictionary = {}
 	for message: Dictionary in visible:
 		if message.id == state.selected: current=message; break
@@ -192,10 +196,13 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 		D.text(card,28,190,"Choisissez un autre dossier ou filtre.",21,C.MUTED,400,690,HORIZONTAL_ALIGNMENT_LEFT,true)
 	for message: Dictionary in messages:
 		var id := "InboxMessage_"+str(message.position)
+		if message.get("press_invitation", {}).get("status") == "pending": id = "InboxPressInvitation"
+		elif message.has("press_invitation"): id = "InboxPressMessage_" + str(message.position)
 		var selected: bool = message.id==state.selected
 		var mark: Dictionary = state.marks.get(message.id,{})
 		var row := C.button("",func():
 			state.selected=message.id
+			state.press_opened=message.id if message.has("press_invitation") else ""
 			if state.folder!=1:
 				mark.read=true
 				state.marks[message.id]=mark
@@ -213,7 +220,7 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 		D.text(row,160,40,message.get("subject",message.category),29,C.IVORY,700,380)
 		D.text(row,160,76,message.text,22,C.IVORY,500,525)
 		var badge := "Message %02d" % message.position
-		if message.get("press_invitation", {}).get("status") == "pending": badge = "Invitation"
+		if message.get("press_invitation", {}).get("status") == "pending": badge = "À traiter"
 		D.chip(row,Rect2(544,13,150,31),badge,COLORS[message.category])
 	scroll.set_deferred("scroll_vertical",int(state.scroll))
 
@@ -281,14 +288,16 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 	var mark: Dictionary = state.marks.get(message.id,{})
 	if message.has("press_invitation"):
 		var invitation: Dictionary = message.press_invitation
-		if invitation.status == "pending":
-			var conference: Dictionary = app.model.get("clubLife", {}).get("press", {}).get("conference", {})
-			var action := D.button(card,Rect2(26,890,545,62),"Ouvrir la conférence",func():
-				app.set_meta("press_mail_origin", invitation.id)
-				app.management_ui.press_tab = 1
-				app._navigate("Presse", false),true,"arrow",false,app.accent,"InboxOpenPressInvitation")
-			action.disabled = app.waiting or not conference.get("available", false) or conference.get("invitationId") != invitation.id
-			if action.disabled: action.tooltip_text = str(conference.get("reason", ""))
+		if state.get("press_opened") == invitation.id:
+			var press: Dictionary = app.model.get("clubLife", {}).get("press", {})
+			var conference: Dictionary = press.get("conference", {})
+			var outcome: Variant = press.get("lastOutcome")
+			var receipt: bool = invitation.status == "published" and outcome is Dictionary and outcome.get("invitationId") == invitation.id
+			if invitation.status == "pending" or receipt:
+				var caption := "Consulter le compte rendu" if receipt else "Ouvrir la conférence"
+				var action := D.button(card,Rect2(26,890,545,62),caption,app._open_press_invitation.bind(invitation.id),true,"arrow",false,app.accent,"InboxOpenPressInvitation")
+				action.disabled = app.waiting or (not receipt and (not conference.get("available", false) or conference.get("invitationId") != invitation.id))
+				if action.disabled: action.tooltip_text = str(conference.get("reason", ""))
 	elif message.get("calendar_notice", {}).get("status") == "pending":
 		var recalibrate := D.button(card,Rect2(26,890,545,62),"Recaler la préparation",
 			_choose_calendar_preparation.bind(app,card,message.id,"recalibrate"),true,"calendar",false,app.accent,"InboxRecalibratePreparation")

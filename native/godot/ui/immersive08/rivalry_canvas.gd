@@ -94,7 +94,7 @@ func _navigation() -> void:
 			state.tab = i
 			_display(), i == active, TAB_ICONS[i], false, PRIMARY, "RivalryTab" + str(i))
 		tabs.append(control)
-	for entry: Array in [[1281, "Classements", "trophy"], [1486, "Calendrier", "calendar"], [1691, "Presse", "mail"], [1896, "Parcours du manager", "flag"]]:
+	for entry: Array in [[1486, "Classements", "trophy"], [1691, "Calendrier", "calendar"], [1896, "Parcours du manager", "flag"]]:
 		var destination: String = "Carrière" if entry[1] == "Parcours du manager" else entry[1]
 		D.button(self, Rect2(entry[0], 333, 352 if destination == "Carrière" else 192, 43), entry[1], func(): app._navigate(destination), false, entry[2], true, PRIMARY, "Section_" + destination)
 

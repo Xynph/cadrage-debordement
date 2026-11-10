@@ -133,8 +133,9 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 					if person.id == exchange.journalistId: identity = person.name; break
 				feedback.add_child(G.wrap("%s · relation %+.0f → %+.0f (%+.0f)" % [identity, exchange.before, exchange.after, exchange.delta], 12, G.GOOD if float(exchange.delta) >= 0 else G.ALERT))
 		list.add_child(G.separator())
-	if not conference.available:
-		list.add_child(G.wrap(conference.reason, 13, G.INK))
+	if not conference.available or origin != conference.get("invitationId"):
+		var explanation := "Ouvrez l’invitation dans Réception." if conference.available else str(conference.reason)
+		list.add_child(G.wrap(explanation, 13, G.INK))
 		return tab
 	list.add_child(G.wrap("Cinq tons. Tabulation pour parcourir les choix, Espace pour sélectionner. Publier valide toutes vos réponses.", 12, G.INK))
 	var memory_notice := G.wrap(conference.get("memoryNotice", ""), 12)
@@ -144,9 +145,7 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 	var submit := G.button("PUBLIER MES RÉPONSES", func():
 		var answers: Array = []
 		for question: Dictionary in conference.questions: answers.append({"questionId":question.id, "answerId":choices[question.id]})
-		var payload := {"context":data.context, "answers":answers}
-		if conference.get("invitationId") is String: payload.invitationId = conference.invitationId
-		app._command("press_conference", payload), true)
+		app._command("press_conference", {"context":data.context, "answers":answers, "invitationId":origin}), true)
 	submit.name = "PressSubmit"
 	submit.disabled = choices.size() != conference.questions.size()
 	for question: Dictionary in conference.questions:
