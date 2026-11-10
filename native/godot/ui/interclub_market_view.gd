@@ -68,15 +68,26 @@ func _redraw() -> void:
 		child.queue_free()
 	var data := _data()
 	var filtered: Array = []
+	var available := 0
+	var term := query.to_lower()
 	for person: Dictionary in data.get("candidates",[]):
-		if query.is_empty() or (str(person.name)+" "+str(person.club)+" "+str(person.pos)).to_lower().contains(query.to_lower()): filtered.append(person)
+		if term.is_empty() or (str(person.name)+" "+str(person.club)+" "+str(person.pos)).to_lower().contains(term):
+			filtered.append(person)
+			if person.get("available", false): available += 1
 	page = clampi(page,0,maxi(0,ceili(float(filtered.size())/PAGE_SIZE)-1))
+	var buyer_status := G.wrap("Votre effectif professionnel est complet. Le catalogue reste consultable.", 13, G.ALERT)
+	buyer_status.name = "InterclubBuyerStatus"
+	buyer_status.visible = available == 0 and app.model.get("decisions", {}).get("recruitment", {}).get("places", -1) == 0
+	rows.add_child(buyer_status)
 	var navigation := G.h(10)
 	rows.add_child(navigation)
 	var previous := G.button("←",func(): page -= 1; _redraw())
 	previous.disabled = page == 0
 	navigation.add_child(previous)
-	navigation.add_child(G.label("%d profils · page %d" % [filtered.size(),page+1],13))
+	var proposals := "%d propositions possibles" % available if available > 1 else "%d proposition possible" % available
+	var summary := G.label("%d profils · %s · page %d" % [filtered.size(), proposals, page+1], 13)
+	summary.name = "InterclubOfferSummary"
+	navigation.add_child(summary)
 	var next := G.button("→",func(): page += 1; _redraw())
 	next.disabled = (page+1)*PAGE_SIZE >= filtered.size()
 	navigation.add_child(next)
