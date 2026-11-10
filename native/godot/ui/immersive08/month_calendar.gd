@@ -71,6 +71,11 @@ func _setup(owner_app: Control, table_callback: Callable) -> void:
 	if initial.is_empty() and not next_fixture.is_empty(): initial = next_fixture.date
 	if initial.is_empty() and not fixtures.is_empty(): initial = fixtures[0].date
 	if initial.is_empty() and not sessions.is_empty(): initial = sessions[0].date
+	var reading: Dictionary = app.management_ui.get("calendar_reading", {})
+	var remembered := _date(reading.get("selected"))
+	if reading.get("today") == today and not remembered.is_empty():
+		initial = remembered
+		filter = str(reading.get("filter", "all"))
 	month = initial.left(7)
 	selected = initial
 	_refresh()
@@ -132,6 +137,7 @@ func _filter_by(value: String) -> void:
 	if target != null: target.call_deferred("grab_focus")
 
 func _refresh() -> void:
+	app.management_ui["calendar_reading"] = {"today":today, "selected":selected, "filter":filter}
 	for child in get_children():
 		remove_child(child)
 		child.queue_free()
