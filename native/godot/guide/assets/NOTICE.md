@@ -13,3 +13,5 @@ Prompt de production conservé pour traçabilité :
 ## Personnage animé du guide
 
 Le fichier `gabi.glb` représente Gaston Darroux, le personnage fictif d’Oval Legacy, dans sa direction visuelle de film d’animation. Le maillage a été généré localement par TRELLIS.2 à partir du visuel original de Gabi en pose A. Le visage a reçu des yeux et des paupières en volume. Le cartilage des oreilles a été repris pour évoquer les années en première ligne. Le rig et le carnet en cuir proviennent du Studio Carnet du projet. Le modèle a été adapté dans Blender aux nouvelles proportions. Le carnet suit la main gauche et la main droite reste libre. Les animations Repos, Écoute, Regard carnet, Salut, Explication et Approbation sont dans le GLB. Les matières du corps ont été adoucies avant export. Le GLB ne contient aucune piste audio.
+
+Les emmanchures ont été remontées pour dégager les flancs. Gabi serre le carnet contre le buste avec le coude gauche légèrement rapproché, et sa prise laisse visible une partie de la couverture pendant les six animations.
