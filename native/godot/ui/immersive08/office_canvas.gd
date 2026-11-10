@@ -61,10 +61,11 @@ static func _fixture(card: Panel, app: Control) -> void:
 		var upcoming := P.next_nationale_fixture(app.model)
 		var scheduled := P.next_scheduled_fixture(app.model)
 		if not upcoming.is_empty():
-			D.chip(card,Rect2(24,22,281,29),"NATIONALE",C.GOLD)
-			D.text(card,27,121,"Pas de match cette semaine.",58,C.IVORY,800,920)
-			D.text(card,27,183,"Prochain match · " + P.fixture_date(upcoming),30,C.IVORY,600,720)
-			D.text(card,27,223,P.fixture_venue(upcoming),21,C.MUTED,400,735,HORIZONTAL_ALIGNMENT_LEFT,true)
+			D.chip(card,Rect2(24,22,281,29),"SEMAINE EXEMPTE",C.GOLD)
+			D.text(card,27,121,Office.scheduled_opponent(app,upcoming),51,C.IVORY,800,645).name = "UpcomingOpponent"
+			D.text(card,27,183,"Prochain match · " + Office.scheduled_when(app,upcoming),27,C.IVORY,600,645).name = "UpcomingWhen"
+			var venue := Office.scheduled_venue(app,upcoming)
+			if not venue.is_empty(): D.text(card,27,223,"Lieu · " + venue,21,C.MUTED,400,645,HORIZONTAL_ALIGNMENT_LEFT,true)
 		elif preparation.is_empty() and not scheduled.is_empty():
 			D.text(card,27,45,"PROCHAINE RENCONTRE",22,C.GOLD,700,640)
 			D.text(card,27,115,Office.scheduled_opponent(app, scheduled),48,C.IVORY,800,645)

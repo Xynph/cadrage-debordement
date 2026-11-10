@@ -6,6 +6,7 @@ const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const S = preload("res://ui/data_semantics.gd")
 const Club = preload("res://ui/club_views.gd")
+const Office = preload("res://ui/immersive08/office.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
@@ -265,9 +266,11 @@ func _next_match() -> void:
 	if next_fixture.is_empty():
 		var upcoming := P.next_nationale_fixture(app.model)
 		if not upcoming.is_empty():
-			D.text(panel,36,130,"Pas de match cette semaine.",43,C.IVORY,800,810)
-			D.text(panel,37,179,"Prochain match · " + P.fixture_date(upcoming),29,C.IVORY,600,802)
-			D.text(panel,37,219,P.fixture_venue(upcoming),24,C.MUTED,500,802)
+			D.chip(panel,Rect2(36,67,250,29),"SEMAINE EXEMPTE",C.GOLD)
+			D.text(panel,36,130,Office.scheduled_opponent(app,upcoming),43,C.IVORY,800,810).name = "UpcomingOpponent"
+			D.text(panel,37,179,Office.scheduled_when(app,upcoming),29,C.IVORY,600,802).name = "UpcomingWhen"
+			var venue := Office.scheduled_venue(app,upcoming)
+			if not venue.is_empty(): D.text(panel,37,219,"Lieu · " + venue,24,C.MUTED,500,802)
 			D.button(panel,Rect2(166,247,589,60),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,PRIMARY,"CompetitionAdvanceWeek")
 			return
 		var preparation := SeasonPreparation.data(app.model.meta)

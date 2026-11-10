@@ -118,6 +118,10 @@ static func scheduled_when(app: Control, fixture: Dictionary) -> String:
 	var place: String = {"home":"À domicile","away":"À l’extérieur","neutral":"Terrain neutre"}.get(location,"")
 	return date if place.is_empty() else date + " · " + place
 
+static func scheduled_venue(app: Control, fixture: Dictionary) -> String:
+	var location := P.fixture_location_kind(fixture, app.model.club.id)
+	return P.fixture_venue(fixture, false, location != "neutral")
+
 static func territory_art(club: Dictionary) -> VBoxContainer:
 	var identity := G.identity(club)
 	var photos: Dictionary = identity.get("photos", {})
@@ -278,10 +282,15 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 		var upcoming := P.next_nationale_fixture(app.model)
 		var scheduled := P.next_scheduled_fixture(app.model)
 		if not upcoming.is_empty():
-			left.add_child(C.label("NATIONALE", 21, C.GOLD))
-			left.add_child(C.wrap("Pas de match cette semaine.", 42, C.IVORY, true))
-			left.add_child(C.wrap("Prochain match · " + P.fixture_date(upcoming), 25, C.IVORY, true))
-			left.add_child(C.wrap(P.fixture_venue(upcoming), 18))
+			left.add_child(C.label("SEMAINE EXEMPTE",21,C.GOLD,true,700))
+			var opponent := C.wrap(scheduled_opponent(app,upcoming),42,C.IVORY,true,800)
+			opponent.name = "UpcomingOpponent"
+			left.add_child(opponent)
+			var kickoff := C.wrap("Prochain match · " + scheduled_when(app,upcoming),25,C.IVORY,true)
+			kickoff.name = "UpcomingWhen"
+			left.add_child(kickoff)
+			var venue := scheduled_venue(app,upcoming)
+			if not venue.is_empty(): left.add_child(C.wrap("Lieu · " + venue,18))
 		elif preparation.is_empty() and not scheduled.is_empty():
 			left.add_child(C.label("PROCHAINE RENCONTRE",22,C.GOLD,true,700))
 			left.add_child(C.wrap(scheduled_opponent(app,scheduled),39,C.IVORY,true,800))
