@@ -9,6 +9,17 @@ const {execFileSync} = require('node:child_process');
 const {write} = require('./qa-long-career-report.cjs');
 const ROOT = path.resolve(__dirname, '..');
 const digest = value => crypto.createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(value)).digest('hex');
+function sourceDigest() {
+ const hash = crypto.createHash('sha256');
+ for (const folder of ['native/engine', 'dist']) {
+  for (const name of fs.readdirSync(path.join(ROOT, folder)).sort()) {
+   const file = path.join(ROOT, folder, name);
+   if (!/\.(cjs|js|json)$/.test(name) || !fs.statSync(file).isFile()) continue;
+   hash.update(folder + '/' + name + '\0'); hash.update(fs.readFileSync(file));
+  }
+ }
+ return hash.digest('hex');
+}
 
 class Campaign {
  constructor(id, name, scope) { Object.assign(this, {id, name, scope, status:'running', checks:0, checkpoints:[], failures:[], durationMs:0}); }
@@ -23,6 +34,8 @@ class Campaign {
  checkpoint(label, value, counts = {}) {
   const text = JSON.stringify(value);
   this.checkpoints.push({label, sha256:digest(text), bytes:Buffer.byteLength(text), ...counts});
+  console.log(`[${this.id}] ${label} : ${counts.results ?? 0} résultats, empreinte ${digest(text).slice(0, 12)}`);
+  if (this.onCheckpoint) this.onCheckpoint();
  }
 }
 
@@ -170,7 +183,7 @@ async function run(options) {
  const start = Date.now(), profileRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'oval-long-career-profiles-'));
  const output = options.output || fs.mkdtempSync(path.join(os.tmpdir(), 'oval-long-career-report-'));
  const git = args => execFileSync('git', args, {cwd:ROOT, encoding:'utf8'}).trim();
- const report = {format:'oval-long-career-audit', version:1, seed:options.seed, source:{commit:git(['rev-parse','HEAD']), dirty:Boolean(git(['status','--porcelain','--untracked-files=no'])), node:process.version, platform:process.platform}, startedAt:new Date(start).toISOString(), profileRoot, command:`node scripts/qa-long-career.cjs --seasons ${options.seasons} --through-year ${options.throughYear} --seed ${options.seed} --campaign ${options.campaign} --output ${output}`, status:'running', durationMs:0, campaigns:[], limits:[
+ const report = {format:'oval-long-career-audit', version:1, seed:options.seed, source:{commit:git(['rev-parse','HEAD']), engineSha256:sourceDigest(), dirty:Boolean(git(['status','--porcelain','--untracked-files=no'])), node:process.version, platform:process.platform}, startedAt:new Date(start).toISOString(), profileRoot, command:`node scripts/qa-long-career.cjs --seasons ${options.seasons} --through-year ${options.throughYear} --seed ${options.seed} --campaign ${options.campaign} --output ${output}`, status:'running', durationMs:0, campaigns:[], limits:[
   'Carrières de recette uniquement : aucun profil personnel lu ou modifié. Trésoreries du jeu fictives.',
   'Contrôles structurels et reprises : ni certification réglementaire, ni mesure de l’équilibrage ou de la performance GPU.',
   'Club : worker complet en cadence hebdomadaire avec conférences obligatoires. Les journées quotidiennes et autres championnats ne sont pas couverts par cette campagne.',
@@ -184,6 +197,7 @@ async function run(options) {
  for (const [id, name, scope, execute] of definitions) {
   if (options.campaign !== 'all' && options.campaign !== id) continue;
   const campaign = new Campaign(id, name, scope), began = Date.now(); report.campaigns.push(campaign);
+  campaign.onCheckpoint = () => { campaign.durationMs = Date.now() - began; report.durationMs = Date.now() - start; write(report, output); };
   try { await execute(); campaign.status = 'passed'; }
   catch (error) {
    campaign.status = 'failed'; campaign.failures.push({check:error.check || 'Exécution native', message:error.message, nextAction:`Rejouer la campagne ${id} avec la graine ${options.seed}, à partir du dernier checkpoint reçu. Corriger la cause native avant de déclarer la campagne reçue.`});
