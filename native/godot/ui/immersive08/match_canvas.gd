@@ -191,7 +191,7 @@ func update_frame(value: Dictionary) -> void:
 		opening_position.visible=not fixture.is_empty()
 		if opening_position.visible: opening_position.text=Present.fixture_position(fixture,value.get("club",{}).get("id"))
 		var ready: bool = value.get("selection",{}).get("valid",false)
-		var reduced := _reduced_bench_slot(value) != 0
+		var reduced := Present.reduced_bench_number(value) != 0
 		opening_status.text="FEUILLE VALIDÉE" if ready else "COMPOSITION À VÉRIFIER"
 		if reduced: opening_status.text="FEUILLE À 22 DISPONIBLE"
 		opening_sheet.text="Vérifier la feuille" if reduced else "Vérifier la feuille à 23"
@@ -237,7 +237,7 @@ func _prematch_notes() -> void:
 	var selection: Dictionary = model.get("selection",{})
 	var slots: Array = selection.get("slots",[])
 	var filled := slots.filter(func(slot:Dictionary):return slot.get("playerId")!=null).size()
-	var band := C.card("SÉLECTION ACTUELLE" if _reduced_bench_slot(model) != 0 else "LES 23 RETENUS")
+	var band := C.card("SÉLECTION ACTUELLE" if Present.reduced_bench_number(model) != 0 else "LES 23 RETENUS")
 	band.set_meta("immersive_style_applied",true)
 	side.add_child(band)
 	var content := C.content(band)
