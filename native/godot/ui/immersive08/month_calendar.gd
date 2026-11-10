@@ -470,6 +470,8 @@ func _detail(parent: Node) -> void:
 	for fixture: Dictionary in day_fixtures: body.add_child(_fixture_detail(fixture))
 	if day_sessions.is_empty() and day_fixtures.is_empty():
 		body.add_child(C.wrap("Aucun événement prévu.",18,C.MUTED))
+	if selected == today:
+		body.add_child(_action("Entraînement de la semaine", _open_training_today, "CalendarOpenTraining"))
 	if not next_fixture.is_empty() and selected != next_fixture.date:
 		body.add_child(C.rule())
 		var distance := _days_before(today,next_fixture.date) if not today.is_empty() else 0
@@ -481,6 +483,18 @@ func _detail(parent: Node) -> void:
 	if not next_fixture.is_empty():
 		_preparation(body)
 		_templates(body)
+
+func _open_training_today() -> void:
+	if app.management_ui.get("immersive_training") is Dictionary:
+		app.management_ui.immersive_training.tab = 0
+		app.management_ui.immersive_training.slot = 0
+	if app.management_ui.get("preparation") is Dictionary:
+		app.management_ui.preparation.outer[2] = 0
+		app.management_ui.preparation.focus[2] = "PreparationTabEntrainement"
+	app.Immersive.open_training(app)
+	var tab := app.find_child("TrainingTab0", true, false) as Button
+	if tab == null: tab = app.find_child("PreparationTabEntrainement", true, false) as Button
+	if tab != null: tab.grab_focus.call_deferred()
 
 func _fixture_detail(fixture: Dictionary) -> PanelContainer:
 	var panel := C.card()
