@@ -651,6 +651,9 @@ static func creation(app: Control) -> Control:
 		top.move_child(choose, manage.get_index())
 		if modern: Editorial.action(choose, false, false, 34)
 	Packs.missing_warning(app, page, "creation")
+	if role == "nation":
+		_nation_creation(app, page, mode, preferred, nation, modern)
+		return page
 	var candidates: Array = app.pack_manager.creation_catalogue()
 	var playable: Array = candidates.filter(func(club: Dictionary): return club.get("playable", true))
 	if playable.is_empty():
@@ -958,8 +961,7 @@ static func creation(app: Control) -> Control:
 	if not modern: list.add_child(G.wrap(world_info, 12))
 	var caption := "CHOISISSEZ UN CLUB" if selected.is_empty() else "PRENDRE LES RÊNES DE " + G.club_abbr(selected) + "  →"
 	if modern: caption = "Choisissez un club" if selected.is_empty() else "Prendre les rênes  →"
-	if role == "nation": caption = "Diriger " + str(nation.get("name", "la sélection")) + "  →"
-	var can_start := not selected.is_empty() if role == "club" else not nation.is_empty() and (role == "nation" or not selected.is_empty())
+	var can_start := not selected.is_empty() and (role == "club" or not nation.is_empty())
 	var start := G.button(caption, func():
 		if can_start: _create(app, selected, mode), true)
 	start.name="CreationStart"
@@ -982,3 +984,27 @@ static func creation(app: Control) -> Control:
 		list.add_child(start)
 	if app.waiting and app.last_command == "new_career": _show_creation_waiting(app, page)
 	return page
+
+static func _nation_creation(app: Control, page: Control, mode: String, preferred: String, nation: Dictionary, modern: bool) -> void:
+	var panel := G.panel(page)
+	panel.name = "CreationNationalDossier"
+	var identity := C.h(20)
+	panel.add_child(identity)
+	identity.add_child(app.Immersive.Selections.nation_badge(nation, C.px(82)))
+	var details := G.v()
+	identity.add_child(details)
+	var nation_name := str(nation.get("name", "Votre sélection"))
+	details.add_child(C.label("MANDAT INTERNATIONAL", 24, C.GOLD, true, 700))
+	details.add_child(C.label(nation_name, 48, C.IVORY, true, 700))
+	panel.add_child(C.wrap("Vous dirigez cette sélection. Retrouvez vos convocations, votre calendrier et vos résultats dans la Réception et l’espace Sélections.", 26, C.IVORY))
+	var installed: Array = app.pack_manager.installed("creation")
+	var missing := preferred != "base" and not installed.any(func(pack: Dictionary): return str(pack.id) == preferred)
+	var start := G.button("Diriger " + nation_name + "  →", _create.bind(app, {}, mode), true)
+	start.name = "CreationStart"
+	start.disabled = app.waiting or missing or nation.is_empty()
+	if modern:
+		Editorial.surface(panel.get_parent(), Color("142020"), Editorial.LINE, 14)
+		Editorial.action(start, true, false, maxi(40, C.px(72)))
+		start.add_theme_font_size_override("font_size", maxi(20, C.px(41)))
+	panel.add_child(start)
+	if app.waiting and app.last_command == "new_career": _show_creation_waiting(app, page)

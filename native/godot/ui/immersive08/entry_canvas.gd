@@ -218,7 +218,8 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 	rail.add_child(inset)
 	inset.add_child(C.photo("maquette-onglets-wordmark" if creation else "maquette-reality-wordmark", Vector2(354 if creation else 280, 48), false))
 	Editorial.divider(rail)
-	var step_names := ["01  Réalité", "02  Club", "03  Carrière"]
+	var nation_creation := creation and page.find_child("CreationNationalDossier", true, false) != null
+	var step_names := ["01  Réalité", "02  Sélection" if nation_creation else "02  Club", "03  Carrière"]
 	for index in step_names.size():
 		var active := index == (1 if creation else 0)
 		var step := C.v(5)
@@ -264,7 +265,7 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 	C.fill(heading)
 	header.add_child(heading)
 	if creation:
-		heading.add_child(C.label("Choisir son club", 74, C.IVORY, true, 700))
+		heading.add_child(C.label("Choisir sa sélection" if nation_creation else "Choisir son club", 74, C.IVORY, true, 700))
 		var underline := ColorRect.new()
 		underline.color = Editorial.RAIL_GOLD
 		underline.custom_minimum_size = Vector2(C.px(100), C.px(5))

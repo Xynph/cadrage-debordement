@@ -189,7 +189,7 @@ static func build(app: Control) -> Control:
 		if message.id == state.selected: current=message; break
 	_folders(folders,app,state)
 	var national: bool = app.Immersive.Selections.nation_only(app.model)
-	var lounge := D.panel(page, Rect2(0, 397, 298, 252), "Sélection nationale" if national else "Accueil du club", "home")
+	var lounge := D.panel(page, Rect2(0, 397, 298, 252), "Sélection" if national else "Accueil du club", "home")
 	D.scenario_photo(lounge, "lounge", Rect2(12, 64, 274, 174))
 	_list(D.panel(page,Rect2(316,0,749,1124),"","","","InboxMessages"),app,state,visible)
 	_detail(D.panel(page,Rect2(1083,0,1165,1124),"","","","InboxDetail"),app,state,current)

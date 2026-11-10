@@ -90,7 +90,7 @@ static func _add_play_button(app: Control, parent: Control, international: Dicti
 		parent.add_child(play)
 	elif international.get("nextManagedFixture") is Dictionary:
 		var next: Dictionary = international.nextManagedFixture
-		parent.add_child(G.wrap("Prochain match · %s · %s" % [next.get("date", ""), _fixture_name(next, names)]))
+		parent.add_child(G.wrap("Prochain match · %s · %s" % [P.fixture_date(next), _fixture_name(next, names)]))
 
 static func build(app: Control) -> Control:
 	var page := G.v(8)
@@ -138,7 +138,7 @@ static func _editions(international: Dictionary, names: Dictionary) -> Control:
 		var list := G.panel(view)
 		list.add_child(G.section(str(edition.get("name", ""))))
 		for table: Dictionary in edition.get("tables", []):
-			var pool := str(table.get("pool", ""))
+			var pool: String = table.pool if table.get("pool") is String else ""
 			list.add_child(G.label("Classement" if pool.is_empty() else "Poule " + pool, 16, G.GOLD, true))
 			for row: Dictionary in table.get("rows", []):
 				var team: String = row.get("teamId", "")

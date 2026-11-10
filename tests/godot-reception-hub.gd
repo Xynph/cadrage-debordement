@@ -116,5 +116,7 @@ func run() -> void:
 			var start := app.find_child("CreationStart", true, false) as Button
 			check(start != null and not start.disabled and start.text.contains("France"),
 				"Le choix sélection seule permet de démarrer sans club")
+			check(app.find_child("CreationNationalDossier", true, false) != null and app.find_child("CreationClubsScroll", true, false) == null,
+				"La création de sélection affiche le mandat et retire la liste des clubs")
 	print("Réception centrale : ", failures, " échec(s)")
 	await app._close(0 if failures == 0 else 1)
