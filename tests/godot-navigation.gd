@@ -112,11 +112,15 @@ func run() -> void:
 	check(nav != null, "Contrôleur raccordé dans le vrai main")
 	if nav == null:
 		finish(); return
+	var focus_origin := named(app, "EntrySettings") as Button
+	check(focus_origin != null, "Bouton d'origine réel avant la palette")
+	if focus_origin != null: focus_origin.grab_focus()
 	await key(KEY_K, true)
 	check(palette() != null and palette().visible, "Ctrl+K ouvre une palette native")
 	check(results().item_count == 1 and results().get_item_text(0).contains("Accueil"), "Sans carrière : aucune route exigeant un modèle")
 	await key(KEY_ESCAPE)
 	check(not palette().visible and app.route == "Accueil", "Échap ferme la palette sans pause ni navigation")
+	check(focus_origin != null and focus_origin.has_focus(), "Échap restitue le focus au bouton d’origine sans navigation")
 	await command("new_career", {"club":0, "mode":"common"})
 	# Reproduce a first opening with the populated career, without a pre-sized palette.
 	palette().queue_free(); await settle()

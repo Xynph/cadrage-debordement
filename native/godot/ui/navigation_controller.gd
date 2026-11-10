@@ -17,6 +17,7 @@ var _back: Button
 var _forward: Button
 var _find: Button
 var _restoring := false
+var _palette_return_focus: WeakRef
 
 func setup(owner_app: Control) -> void:
 	app = owner_app
@@ -90,6 +91,7 @@ func handle_shortcut(event: InputEvent) -> bool:
 	if is_instance_valid(_dialog) and _dialog.visible:
 		if code == KEY_ESCAPE:
 			_dialog.hide()
+			_restore_palette_focus()
 			return true
 		if code in [KEY_UP, KEY_DOWN] and not event.alt_pressed:
 			if _results.item_count > 0:
@@ -124,12 +126,28 @@ func handle_shortcut(event: InputEvent) -> bool:
 
 func open_palette() -> void:
 	if app == null or _blocked(): return
+	var previous := app.get_viewport().gui_get_focus_owner()
+	_palette_return_focus = weakref(previous) if previous != null else null
 	if not is_instance_valid(_dialog) or _dialog.is_queued_for_deletion(): _build_palette()
 	_search.clear()
 	_refresh_results("")
 	_dialog.popup_centered(_palette_size())
 	call_deferred("_fit_palette")
 	_search.grab_focus()
+
+func _restore_palette_focus() -> void:
+	var previous := _palette_return_focus.get_ref() as Control if _palette_return_focus != null else null
+	_palette_return_focus = null
+	if not is_instance_valid(previous): return
+	# Closing the palette is a reading action. Restore the exact field/button,
+	# without reviving a control removed by a render or a command in progress.
+	call_deferred("_focus_after_palette", previous)
+
+func _focus_after_palette(previous: Control) -> void:
+	if not is_instance_valid(previous) or _blocked() or not previous.is_inside_tree() or not previous.is_visible_in_tree(): return
+	if previous.focus_mode == Control.FOCUS_NONE: return
+	if previous is BaseButton and previous.disabled: return
+	previous.grab_focus()
 
 func _fit_palette() -> void:
 	if not is_instance_valid(_dialog) or not _dialog.visible: return
@@ -187,6 +205,7 @@ func _build_palette() -> void:
 		if handle_shortcut(event): _results.accept_event())
 	_results.item_activated.connect(func(_index: int): _activate_selected())
 	_dialog.confirmed.connect(_activate_selected)
+	_dialog.canceled.connect(_restore_palette_focus)
 	_dialog.visibility_changed.connect(_refresh_controls)
 
 func _refresh_results(query: String) -> void:
