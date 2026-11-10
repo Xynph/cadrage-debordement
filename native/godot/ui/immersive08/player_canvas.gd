@@ -260,11 +260,14 @@ static func _usage(card:Panel,app:Control,player:Dictionary) -> void:
 	D.button(card,Rect2(946,181,670,48),"Ouvrir ma note",func():Notes.open(app,str(player.id)),false,"mail",true,app.accent,"OpenPlayerNoteFromUsage")
 
 static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
+	var renewal: Dictionary = player.get("renewal", {})
+	var reason := str(renewal.get("reason", ""))
 	D.text(card,24,113,G.euros(player.get("salary",0))+" / semaine",40,C.IVORY,700,515)
 	D.text(card,24,151,str(player.get("contractLabel","—")),27,C.MUTED,500,515)
-	D.text(card,24,183,"Montants de jeu",19,C.MUTED,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
+	D.text(card,24,183,"Montants de jeu" if reason.is_empty() else reason,19,C.MUTED if reason.is_empty() else C.ALERT,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
 	var offer:=D.button(card,Rect2(24,206,514,44),"Proposer une prolongation",func():app.SquadViews.contract(app,player,false),true,"arrow",true,app.accent,"OfferRenewal")
-	offer.disabled=not player.get("renewal",{}).get("available",false) or not app._live().is_empty()
+	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
+	if not reason.is_empty(): offer.tooltip_text = reason
 
 static func _development(card:Panel,app:Control,player:Dictionary) -> void:
 	var records:Array=app.model.get("decisions",{}).get("development",{}).get("professionals",[]).filter(func(record:Dictionary):return str(record.get("id",""))==str(player.id))
