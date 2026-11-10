@@ -368,6 +368,7 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 			if destination in ["international", "national_job"]:
 				var caption := "Voir les offres de sélection" if destination == "national_job" else "Ouvrir les sélections"
 				if _has_match_sheet(app, event): caption = "Préparer la feuille de match"
+				elif _is_club_return(app, event): caption = "Voir l’effectif"
 				D.button(card,Rect2(26,top,545,62),caption,_open_international.bind(app,event),true,"arrow",false,app.accent,"InboxOpenInternational")
 		else:
 			var caption := "Ouvrir · " + str(message.route)
@@ -394,10 +395,16 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 			_redraw(app,"InboxToggleRead"),false,"mail",true,app.accent,"InboxToggleRead")
 
 static func _open_international(app: Control, event: Dictionary) -> void:
+	if _is_club_return(app, event):
+		app._navigate("Effectif")
+		return
 	app.management_ui.international_section = "offers" if event.action == "national_job" else "callups"
 	if _has_match_sheet(app, event): app.management_ui.international_section = "sheet"
 	app.management_ui.international_nation = str(event.get("nation", ""))
 	app._navigate("Sélections")
+
+static func _is_club_return(app: Control, event: Dictionary) -> bool:
+	return event.get("kind") == "international_return" and not app.Immersive.Selections.nation_only(app.model)
 
 static func _has_match_sheet(app: Control, event: Dictionary) -> bool:
 	var fixture: Dictionary = app.Immersive.Selections.current_fixture(app.model)
