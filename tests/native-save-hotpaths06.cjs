@@ -5,10 +5,13 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const LEGACY_TREE="function safeTree(root){const maxNodes=commonDatabaseActive(root)?650000:typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(root)?400000:200000;let count=0;function visit(v,depth){saveCheck(++count<maxNodes&&depth<35,'Le fichier est trop complexe.');if(typeof v==='string')saveCheck(v.length<=6000&&!/[<>\"`&\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]/.test(v),'Le fichier contient du texte non autorisé.');else if(typeof v==='number')saveCheck(saveNumber(v));else if(Array.isArray(v)){saveCheck(v.length<=2000);v.forEach(x=>visit(x,depth+1))}else if(saveObject(v)){saveCheck(Object.keys(v).length<=2000);for(const [k,x] of Object.entries(v)){saveCheck(!['__proto__','constructor','prototype'].includes(k),'Le fichier contient une structure non autorisée.');saveCheck(k.length<200&&!/[<>\"`&]/.test(k));visit(x,depth+1)}}else saveCheck(v===null||typeof v==='boolean')}visit(root,0)}";
 const LEGACY_CHECKSUM="function saveChecksum(state){const text=JSON.stringify(state);let h=2166136261;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(16).padStart(8,'0')}";
 const lines=fs.readFileSync(path.join(__dirname,'../dist/saves.js'),'utf8').split(/\r?\n/);
-const currentTree=lines.find(line=>line.startsWith('function safeTree(')),currentChecksum=lines.find(line=>line.startsWith('function saveChecksum('));
+const treeStart=lines.findIndex(line=>line.startsWith('function safeTree('));
+const treeEnd=lines.findIndex((line,index)=>index>treeStart&&line.startsWith('function '));
+assert.ok(treeStart>=0&&treeEnd>treeStart);
+const currentTree=lines.slice(treeStart,treeEnd).join('\n'),currentChecksum=lines.find(line=>line.startsWith('function saveChecksum('));
 // Standalone helper compilation includes the same stable intrinsic bindings as production.
 const numericIntrinsics=lines.find(line=>line.startsWith('const nativeSaveFinite='));assert.equal(typeof numericIntrinsics,'string');
-const helpers=[numericIntrinsics,...['saveError','saveCheck','saveObject','saveNumber'].map(name=>lines.find(line=>line.startsWith('function '+name+'(')))].join('\n');
+const helpers=[numericIntrinsics,...['saveError','saveCheck','saveObject','saveNumber','worldCareerActive'].map(name=>lines.find(line=>line.startsWith('function '+name+'(')))].join('\n');
 function pair(){return [[LEGACY_TREE,LEGACY_CHECKSUM],[currentTree,currentChecksum]].map(source=>{const ctx=vm.createContext({JSON,Math:Object.create(Math)});vm.runInContext(helpers+"\nfunction commonDatabaseActive(root){return root?.common===true}\nconst CDFranceCompetition={active:root=>root?.france===true};\n"+source.join('\n'),ctx);return ctx;});}
 function result(ctx,expression,value){ctx.candidate=value;try{return {value:vm.runInContext(expression,ctx)};}catch(error){return {error:error.name+':'+error.message};}}
 test('Sauvegardes : 205 checksums strictement identiques à la fonction historique, sans mutation',()=>{
