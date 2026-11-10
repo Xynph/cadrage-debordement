@@ -27,8 +27,34 @@ func command(id: String, payload: Dictionary = {}) -> void:
 	app._command(id,payload)
 	var deadline := Time.get_ticks_msec()+30000
 	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
-	check(not app.waiting and app.bridge.last_response_ok,"Worker réel : "+id)
+	check(not app.waiting and app.bridge.last_response_ok,"Worker réel : "+id+" · "+str(app.last_error))
 	app.timer.stop(); await settle()
+func clear_required_press() -> void:
+	if not app._press_required(): return
+	var press: Dictionary = app.model.clubLife.press
+	var conference: Dictionary = press.conference
+	var answers: Array[Dictionary] = []
+	for question: Dictionary in conference.questions:
+		answers.append({"questionId":question.id,"answerId":question.answers[0].id})
+	await command("press_conference", {"context":press.context,"invitationId":conference.invitationId,"answers":answers})
+	check(not app._press_required(), "Conférence obligatoire réellement reçue avant le match de recette")
+
+func bone_poses(skeleton: Skeleton3D) -> Array[Transform3D]:
+	var poses: Array[Transform3D] = []
+	for index in skeleton.get_bone_count(): poses.append(skeleton.get_bone_pose(index))
+	return poses
+
+func prepare_real_match() -> void:
+	for day in 40:
+		await clear_required_press()
+		var cadence: Dictionary = app.model.meta.get("calendarCadence", {})
+		if cadence.is_empty() or cadence.get("matchReady", false): break
+		if not cadence.get("canAdvance", false): break
+		await command("advance_day", {"fromDate":app.model.meta.calendarToday})
+	await clear_required_press()
+	var cadence: Dictionary = app.model.meta.get("calendarCadence", {})
+	check(cadence.is_empty() or cadence.get("matchReady", false), "Le calendrier natif atteint réellement le jour du match")
+	check(app.model.get("next") is Dictionary, "Rencontre native annoncée avant la recette du rendu")
 func run() -> void:
 	if not ResourceLoader.exists("res://ui/user_preferences.gd") or not ResourceLoader.exists("res://ui/preferences_dialog.gd"):
 		check(false,"Profil durable et dialogue de préférences absents")
@@ -81,7 +107,7 @@ func profile_cases() -> void:
 	check(not p.set_value("volume",10) and not p.last_error.is_empty(),"Écriture sans chargement refusée visiblement")
 	var folder := directory.path_join("valid")
 	check(p.load_profile(folder),"Dossier absolu neuf accepté")
-	check(p.data == {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":-1,"stadium":"day"},"Valeurs par défaut sans carrière")
+	check(p.data == {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":-1,"stadium":"day","salary_period":"weekly"},"Valeurs par défaut sans carrière")
 	check(not FileAccess.file_exists(folder.path_join("interface.json")),"Lire un profil absent ne crée pas de fichier")
 	check(not p.load_profile("relative-folder") and not p.last_error.is_empty(),"Chemin relatif refusé visiblement")
 	check(p.load_profile(folder),"Retour au dossier absolu")
@@ -234,7 +260,7 @@ func dialog_cases() -> void:
 	await command("new_career",{"club":0,"mode":"common"})
 	await command("export")
 	var career_text: String = app.model.meta.exportText
-	check(not career_text.contains("reduced_motion") and not career_text.contains('"quality"') and not career_text.contains('"volume"') and not career_text.contains('"display_screen"'),"Export carrière sans préférences locales")
+	check(not career_text.contains("reduced_motion") and not career_text.contains('"quality"') and not career_text.contains('"volume"') and not career_text.contains('"display_screen"') and not career_text.contains('"salary_period"'),"Export carrière sans préférences locales")
 	await command("new_career",{"club":1,"mode":"common"})
 	await command("import",{"text":career_text})
 	check(FileAccess.get_file_as_bytes(local_path) == local_bytes,"Créations et import de carrière conservent exactement le profil local")
@@ -244,6 +270,7 @@ func dialog_cases() -> void:
 	var rebuilt_volume: SpinBox = rebuilt.find_child("PreferencesVolume",true,false)
 	check(rebuilt_volume.value == 39,"Dialogue reconstruit affiche le réglage rechargé")
 	rebuilt.hide(); rebuilt.queue_free(); await settle()
+	await prepare_real_match()
 	await command("begin_match")
 	app._navigate("Match"); await settle()
 	var stage: Node3D = app.match_view
@@ -277,10 +304,26 @@ func dialog_cases() -> void:
 	app.coach.portrait.set_speaking(true)
 	check(p.set_value("reduced_motion",true) and stage._camera_mode == "tactical" and not stage._action_motion and app.coach.portrait.reduced_motion,"Mode calme raccordé à la scène et au vrai portrait")
 	var fixed_camera: Transform3D = stage._camera.transform
-	var fixed_pose: int = app.coach.portrait.pose_index
-	app.coach.portrait._process(2.0)
-	await settle()
-	check(stage._camera.transform == fixed_camera and app.coach.portrait.pose_index == fixed_pose and app.coach.portrait.speaking,"Caméra/pose fixes même en parole, sans désactiver l'état de parole")
+	var portrait: TextureRect = app.coach.portrait
+	if portrait.texture is ViewportTexture:
+		var player := portrait.find_child("AnimationPlayer", true, false) as AnimationPlayer
+		var skeleton: Skeleton3D
+		for node in portrait.find_children("*", "Skeleton3D", true, false):
+			skeleton = node
+			break
+		check(player != null and skeleton != null and skeleton.get_bone_count() == 20, "Le vrai portrait 3D chargé conserve son rig de vingt os")
+		if player != null and skeleton != null:
+			var fixed_pose := bone_poses(skeleton)
+			portrait.set_speaking(true)
+			portrait._process(2.0)
+			await create_timer(0.25).timeout
+			check(stage._camera.transform == fixed_camera and bone_poses(skeleton) == fixed_pose and not player.is_playing() and not portrait.is_processing(), "Caméra et vingt os fixes en mode calme malgré une demande de parole")
+			check(app.coach.speech.muted and app.coach.speech.player == null, "Le guide 3D de carrière reste silencieux, sans lecteur vocal")
+	else:
+		var fixed_pose: int = portrait.pose_index
+		portrait._process(2.0)
+		await settle()
+		check(stage._camera.transform == fixed_camera and portrait.pose_index == fixed_pose and portrait.speaking,"Caméra/pose atlas fixes même en parole, sans désactiver l'état de parole")
 	check(app.match_screen._camera_controls.all(func(button): return button.disabled) and stage._actors.size() == 30,"Caméras verrouillées en mode calme et joueurs conservés")
 	check(JSON.stringify(app.model.live) == engine_before,"Confort ne change ni temps, ni positions moteur, ni RNG du vrai match")
 	if OS.get_environment("CD_PREFERENCES_GRAPHICS") == "1":
