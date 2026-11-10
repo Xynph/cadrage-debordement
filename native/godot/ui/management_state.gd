@@ -1,4 +1,5 @@
 extends RefCounted
+const Knowledge = preload("res://ui/player_knowledge_text.gd")
 
 const WATCH_FILTER := "Sous surveillance"
 
@@ -57,9 +58,10 @@ static func players(source:Array,state:Dictionary,season:int,market:bool=false,f
 	if not sort_result: return result
 	var key:String={"Poste":"pos","Nom":"name","Niveau":"rating","Condition":"condition","Âge":"age","Salaire":"salary","Échéance":"contractEnd"}.get(state.sort,"pos")
 	result.sort_custom(func(a:Dictionary,b:Dictionary):
-		var av:Variant=a.get(key,0);var bv:Variant=b.get(key,0)
-		if av==null:av=0
-		if bv==null:bv=0
+		var av:Variant=Knowledge.sort_value(a,key,not market) if key in ["rating","potential"] else a.get(key,0);var bv:Variant=Knowledge.sort_value(b,key,not market) if key in ["rating","potential"] else b.get(key,0)
+		if av==null and bv==null:return str(a.id)<str(b.id)
+		if av==null:return false
+		if bv==null:return true
 		if key in ["name","pos"]:av=fold(av);bv=fold(bv)
 		if av==bv:return str(a.id)<str(b.id)
 		return av>bv if state.descending else av<bv)

@@ -99,7 +99,7 @@ func _heading() -> void:
 	D.text(hero, 29, 36, "LA RELÈVE SE CONSTRUIT", 28, GOLD, 700, 615)
 	app.heading = D.text(hero, 26, 102, "Le futur porte nos couleurs.", 69, C.IVORY, 800, 1010)
 	D.text(hero, 30, 140, "Académie · " + G.club_name(app.model.club) + "  ·  U18 / U21", 26, C.IVORY, 500, 1000)
-	var high := roster.filter(func(p: Dictionary): return float(p.get("potential", 0)) >= 85).size()
+	var high := roster.filter(func(p: Dictionary): return G.knowledge_sort_value(p,"potential") != null and G.knowledge_sort_value(p,"potential") >= 85).size()
 	var pro: Array = pathway.get("players", []).filter(func(p: Dictionary): return p.get("path") == "professionnel")
 	var coaches := G.n(pathway.get("coaches", "—"))
 	var metrics := [
@@ -170,7 +170,7 @@ func _filtered(group: String) -> Array:
 		if group == "u18" and age > 18: return false
 		if group == "u21" and (age <= 18 or age > 21): return false
 		if not str(state.get("position", "")).is_empty() and p.get("pos") != state.position: return false
-		if int(state.get("potential", 0)) > 0 and float(p.get("potential", 0)) < int(state.potential): return false
+		if int(state.get("potential", 0)) > 0 and (G.knowledge_sort_value(p,"potential") == null or G.knowledge_sort_value(p,"potential") < int(state.potential)): return false
 		var preparation := str(state.get("preparation", ""))
 		if preparation == "fit" and float(p.get("injury", 0)) > 0: return false
 		if preparation == "planned" and _path(p).get("path") != "professionnel": return false
@@ -187,7 +187,7 @@ func _select_visible(people: Array) -> void:
 			return
 	selected = shown[0]
 	for person: Dictionary in shown:
-		if float(person.get("potential", 0)) > float(selected.get("potential", 0)): selected = person
+		if _potential_before(person,selected): selected = person
 	state.player = selected.id
 
 func _table(group: String, people: Array) -> void:
@@ -238,6 +238,7 @@ func _source_index(person: Dictionary) -> int:
 	return -1
 
 func _sort_value(person: Dictionary, key: String) -> Variant:
+	if key in ["note","rating","potential"]: return G.knowledge_sort_value(person,"rating" if key == "note" else key,true)
 	if key == "source": return _source_index(person)
 	if key == "status": return _status(person)[0]
 	if key == "minutes":
@@ -286,8 +287,8 @@ func _draw_rows(people: Array) -> void:
 		D.text(hit, 130, 27, str(p.name), 26, C.IVORY, 700, 222)
 		D.text(hit, 365, 26, G.n(p.age) + " ans", 21, C.IVORY, 500, 87)
 		D.text(hit, 462, 26, str(p.pos), 22, C.IVORY, 500, 190)
-		D.text(hit, 700, 27, G.n(p.get("note", "—")), 26, C.IVORY, 700, 82, HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(hit, 796, 27, G.n(p.get("potential", "—")), 26, GOLD, 700, 88, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(hit, 700, 27, G.rating_text(p,true), 26, C.IVORY, 700, 82, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(hit, 796, 27, G.potential_text(p), 20, G.POTENTIAL_COLOR, 700, 88, HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(hit, 907, 27, _change(p), 24, GREEN, 700, 117, HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(hit, 1054, 26, G.n(_minutes(p)) + " min", 22, C.IVORY, 500, 123, HORIZONTAL_ALIGNMENT_CENTER)
 		if status[1] == C.IVORY:
@@ -335,8 +336,8 @@ func _dossier() -> void:
 	D.text(badge, 38, 44, G.n(slot + 1) if slot >= 0 else "—", 40, C.IVORY, 800, 65, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(dossier, 387, 46, str(p.name).to_upper(), 45, C.IVORY, 800, 426)
 	D.text(dossier, 388, 74, "%s  ·  %s ANS" % [str(p.pos).to_upper(), G.n(p.age)], 23, C.IVORY, 600, 424)
-	_number_card(dossier, Rect2(337, 91, 210, 89), G.n(p.get("note", "—")), "Niveau au poste", GREEN)
-	_number_card(dossier, Rect2(571, 91, 245, 89), G.n(p.get("potential", "—")), "Potentiel", GOLD)
+	_number_card(dossier, Rect2(337, 91, 210, 89), G.rating_text(p,true), "Niveau", GREEN)
+	_number_card(dossier, Rect2(571, 91, 245, 89), G.potential_text(p), "Potentiel", G.POTENTIAL_COLOR)
 	D.line(dossier, Vector2(307, 194), Vector2(817, 194))
 	_icon(dossier, "star", Rect2(309, 207, 26, 26), GREEN)
 	D.text(dossier, 345, 230, "Suivi de formation", 25, GREEN, 700, 244)
@@ -365,7 +366,7 @@ func _trend(parent: Node, p: Dictionary) -> void:
 		chart.minimum = maxf(0, floorf((float(chart.levels.min()) - 2) / 5.0) * 5.0)
 		chart.maximum = minf(100, ceilf((float(chart.levels.max()) + 2) / 5.0) * 5.0)
 	D.text(parent, 26, 371, "Progression", 28, C.IVORY, 700, 147)
-	D.text(parent, 174, 371, "Niveau général · %s aujourd’hui" % G.n(p.get("rating","—")), 21, C.MUTED, 500, 510).name = "AcademyGeneralRating"
+	D.text(parent, 174, 371, "Niveau général · %s aujourd’hui" % G.rating_text(p,true), 21, C.MUTED, 500, 510).name = "AcademyGeneralRating"
 	parent.add_child(chart)
 	D.place(chart, Rect2(76, 389, 610, 101))
 	for i in 4:
@@ -391,12 +392,12 @@ func _pathways() -> void:
 		_portrait(entry, p, Rect2(10, 5, 75, 63))
 		D.text(entry, 106, 32, str(p.name), 28, C.IVORY, 700, 464)
 		D.text(entry, 106, 59, "%s  ·  %s ans" % [p.pos, G.n(p.age)], 22, C.MUTED, 500, 466)
-		D.text(entry, 646, 51, G.n(p.potential), 42, GOLD, 700, 75, HORIZONTAL_ALIGNMENT_RIGHT)
+		D.text(entry, 646, 51, G.potential_text(p), 22, G.POTENTIAL_COLOR, 700, 75, HORIZONTAL_ALIGNMENT_RIGHT)
 	_action(panel, Rect2(22, 461, 1349, 66), "Ouvrir les parcours du centre  ·  mentorats, prêts et détection", func(): app._navigate("Centre"), true, "arrow", "AcademyOpenCentre")
 
 func _prospects() -> Array:
 	var prospects := roster.duplicate()
-	prospects.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.get("potential", 0)) > float(b.get("potential", 0)))
+	prospects.sort_custom(_potential_before)
 	return prospects
 
 func _staff_page() -> void:
@@ -523,7 +524,7 @@ func _integration_dialog() -> void:
 	var dialog_parts := _dialog("AcademyIntegrationDialog", title + " · " + str(p.name))
 	var dialog: AcceptDialog = dialog_parts[0]
 	var body: VBoxContainer = dialog_parts[1]
-	body.add_child(C.wrap("%s · %s ans · niveau %s · potentiel %s" % [p.pos, G.n(p.age), G.n(p.note), G.n(p.potential)], 26, C.IVORY, true))
+	body.add_child(C.wrap("%s · %s ans · niveau %s · potentiel %s" % [p.pos, G.n(p.age), G.rating_text(p,true), G.potential_text(p)], 26, C.IVORY, true))
 	var preview: Dictionary = app.DevelopmentViews.contract_preview(app.model, p)
 	if not preview.restriction.is_empty(): body.add_child(C.wrap(preview.restriction, 22, C.AMBER, true))
 	if not preview.capacity.is_empty(): body.add_child(C.wrap(preview.capacity, 22, C.MUTED, true))
@@ -682,9 +683,9 @@ func _focus_name(source: Dictionary) -> String:
 	return "Équilibré"
 
 func _number_card(parent: Node, rectangle: Rect2, value: String, caption: String, tone: Color) -> void:
-	var background := Color("413010") if tone == GOLD else Color("09432b")
+	var background := Color("413010") if tone in [GOLD,G.POTENTIAL_COLOR] else Color("09432b")
 	var tile := D.rect(parent, rectangle, background, 9, tone)
-	D.text(tile, rectangle.size.x * .5, rectangle.size.y * .59, value, 50 if rectangle.size.x > 140 else 37, tone if tone == GOLD else C.IVORY, 800, rectangle.size.x - 15, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(tile, rectangle.size.x * .5, rectangle.size.y * .59, value, 32 if value.contains("–") else 50 if rectangle.size.x > 140 else 37, tone if tone in [GOLD,G.POTENTIAL_COLOR] else C.IVORY, 800, rectangle.size.x - 15, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(tile, rectangle.size.x * .5, rectangle.size.y - 13, caption, 22 if rectangle.size.x > 140 else 17, C.IVORY, 500, rectangle.size.x - 11, HORIZONTAL_ALIGNMENT_CENTER)
 
 func _veil(parent: Node, rectangle: Rect2, colors: Array[Color], stops: Array[float]) -> void:
@@ -735,3 +736,11 @@ func _portrait(parent: Node, p: Dictionary, rectangle: Rect2, large: bool = fals
 
 func _action(parent: Node, rectangle: Rect2, caption: String, callback: Callable, primary: bool, icon: String, id: String) -> Button:
 	return D.button(parent, rectangle, caption, callback, primary, icon, false, Color("09673e"), id)
+
+static func _potential_before(a: Dictionary,b: Dictionary) -> bool:
+	var av: Variant = G.knowledge_sort_value(a,"potential")
+	var bv: Variant = G.knowledge_sort_value(b,"potential")
+	if av == null or bv == null:
+		if av != bv: return av != null
+	elif av != bv: return av > bv
+	return str(a.get("id","")) < str(b.get("id",""))

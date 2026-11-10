@@ -1,4 +1,5 @@
 extends RefCounted
+const Knowledge = preload("res://ui/player_knowledge_text.gd")
 
 const SUBTITLE := "Notes de simulation sur 100"
 
@@ -26,7 +27,8 @@ const GROUPS = [
 	]],
 ]
 
-static func detail(player: Dictionary) -> Dictionary:
+static func detail(player: Dictionary, own_context: bool = false) -> Dictionary:
+	if not Knowledge.attributes_known(player,own_context): return {}
 	var values: Variant = player.get("attributesV2")
 	return values if values is Dictionary and values.size() == 36 else {}
 

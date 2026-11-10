@@ -190,6 +190,7 @@ static func _compare_secondary(left: Array, right: Array) -> int:
 	return -1 if left.size() < right.size() else 1
 
 static func sort_value(player: Dictionary, key: String) -> Variant:
+	if key in ["Niveau","Potentiel"]: return G.knowledge_sort_value(player,"rating" if key == "Niveau" else "potential",true)
 	if key == "Autres postes":
 		var numbers := secondary_numbers(player)
 		return numbers if not numbers.is_empty() else null
@@ -332,8 +333,8 @@ func _row(player:Dictionary,index:int) -> void:
 	other.accessibility_name = "Autres postes · "+other.tooltip_text.replace("\n"," ; ")
 	row.tooltip_text += "\nAutres postes · "+other.tooltip_text.replace("\n"," ; ")
 	D.text(row,590,24,G.n(player.get("age","—")),22,C.IVORY,500,44,HORIZONTAL_ALIGNMENT_CENTER)
-	var level := D.text(row,662,24,G.n(player.get("rating","—")),24,C.MINT,700,48,HORIZONTAL_ALIGNMENT_CENTER)
-	var potential := D.text(row,729,24,G.n(player.get("potential","—")),24,POTENTIAL_COLOR,600,48,HORIZONTAL_ALIGNMENT_CENTER)
+	var level := D.text(row,662,24,G.rating_text(player,true),20,C.MINT,700,60,HORIZONTAL_ALIGNMENT_CENTER)
+	var potential := D.text(row,729,24,G.potential_text(player),20,POTENTIAL_COLOR,600,60,HORIZONTAL_ALIGNMENT_CENTER)
 	level.name = "RosterLevel"
 	potential.name = "RosterPotential"
 	var condition:float=player.get("condition",0)
@@ -392,8 +393,8 @@ func _profile() -> void:
 	D.text(hero,227,100,str(player.pos).to_upper(),24,C.GOLD,700,281)
 	D.text(hero,227,133,G.n(player.get("age","—"))+" ans",22,C.MUTED,500,281)
 	D.text(hero,227,167,G.n(player.get("appearances",0))+" apparitions · "+G.n(player.get("minutes",0))+" min",22,C.MUTED,500,281)
-	D.text(hero,240,241,G.n(player.get("rating","—")),74,C.MINT,700,123)
-	D.text(hero,372,237,G.n(player.get("potential","—")),53,POTENTIAL_COLOR,700,123)
+	D.text(hero,240,241,G.rating_text(player,true),48,C.MINT,700,123)
+	D.text(hero,372,237,G.potential_text(player),34,POTENTIAL_COLOR,700,123)
 	D.text(hero,240,271,"NIVEAU",18,C.MUTED,500,123)
 	D.text(hero,372,271,"POTENTIEL",18,C.MUTED,500,123)
 	D.chip(hero,Rect2(19,329,137,31),status,C.ALERT if injury > 0 else C.MINT).name = "SelectedPlayerStatus"

@@ -1,6 +1,7 @@
 extends RefCounted
 ## Sort projected values, never formatted money/date strings or career objects.
 const U = preload("res://ui/management_state.gd")
+const Knowledge = preload("res://ui/player_knowledge_text.gd")
 const NUMERIC := {"Âge":"age","Niveau":"rating","Salaire":"salary","Prime":"fee"}
 
 static func report_label(report: Dictionary) -> String:
@@ -23,8 +24,9 @@ static func value(item: Dictionary, column: String, reports: Dictionary, archive
 	if column == "Nom" or column == "Poste":
 		var text: Variant = item.get("name" if column == "Nom" else "pos")
 		return U.fold(text).strip_edges() if text is String and not text.strip_edges().is_empty() else null
+	if column == "Niveau": return Knowledge.sort_value(item,"rating")
 	if NUMERIC.has(column): return _number(item.get(NUMERIC[column]))
-	if column == "Potentiel": return _number(report.get("potential"))
+	if column == "Potentiel": return Knowledge.sort_value(item,"potential")
 	if column == "Date du rapport": return _date_week(report)
 	if column == "Rapport":
 		var status := report_status(report)

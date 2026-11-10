@@ -16,6 +16,12 @@ func ids(rows: Array) -> Array: return rows.map(func(row: Dictionary): return ro
 func units() -> void:
 	var source := [{"id":"z","name":"Zulu","pos":"Centre","age":100,"rating":70,"fee":100,"salary":9,"available":true},{"id":"a","name":"Álpha","pos":"Arrière","age":20,"rating":10,"fee":9,"salary":100,"available":true},{"id":"b","name":"Bravo","pos":"Ailier","age":9,"rating":40,"fee":20,"salary":20,"available":false},{"id":"u","available":true}]
 	var reports := {"z":{"id":"z","name":"Zulu","pos":"Centre","week":11,"season":1,"grade":"A","potential":90,"assessment":{"stale":false}},"a":{"id":"a","name":"Álpha","pos":"Arrière","week":2,"season":1,"grade":"C","potential":50,"assessment":{"stale":true}},"b":{"id":"b","name":"Bravo","pos":"Ailier","week":9,"season":1,"grade":"B","potential":70,"assessment":{"stale":false}}}
+	for player: Dictionary in source:
+		if player.get("rating") != null:
+			player.ratingRange={"min":player.rating,"max":player.rating+8}
+			player.potentialRange={"min":reports[player.id].potential,"max":reports[player.id].potential+10}
+			player.knowledge={"owned":false,"stage":"observed"}
+			reports[player.id].merge({"ratingRange":player.ratingRange,"potentialRange":player.potentialRange,"knowledge":player.knowledge})
 	var expected := {"Nom":[["a","b","z","u"],["z","b","a","u"]],"Poste":[["b","a","z","u"],["z","a","b","u"]],"Âge":[["b","a","z","u"],["z","a","b","u"]],"Niveau":[["a","b","z","u"],["z","b","a","u"]],"Potentiel":[["a","b","z","u"],["z","b","a","u"]],"Prime":[["a","b","z","u"],["z","b","a","u"]],"Salaire":[["z","b","a","u"],["a","b","z","u"]],"Rapport":[["a","b","z","u"],["b","z","a","u"]],"Avis":[["z","b","a","u"],["a","b","z","u"]]}
 	var before := JSON.stringify([source,reports])
 	for column: String in expected:
@@ -56,8 +62,9 @@ func fixture(original: Dictionary) -> Dictionary:
 	for index in 40:
 		var player := source.duplicate(true)
 		player.merge({"id":"qa:sort:%02d" % index,"name":"Piste %02d" % index,"pos":"Centre" if index%2 == 0 else "Ailier","age":18+index%19,"rating":40+index,"salary":100+index*100,"fee":index*10000,"available":index%3!=0},true)
+		player.merge({"rating":null,"potential":null,"ratingRange":{"min":40+index,"max":48+index},"potentialRange":{"min":50+index,"max":60+index},"knowledge":{"owned":false,"stage":"observed"}},true)
 		rows.append(player)
-		reports.append({"id":"qa-report-%02d" % index,"playerId":player.id,"name":player.name,"pos":player.pos,"age":player.age,"note":player.rating,"potential":50+index,"price":player.fee,"salary":player.salary,"season":1,"week":index,"grade":["A","B","C"][index%3],"assessment":{"stale":index%2==0,"source":"Saison 1 · semaine de suivi " + str(index)}})
+		reports.append({"id":"qa-report-%02d" % index,"playerId":player.id,"name":player.name,"pos":player.pos,"age":player.age,"note":null,"ratingRange":player.ratingRange,"potential":null,"potentialRange":player.potentialRange,"knowledge":player.knowledge,"price":player.fee,"salary":player.salary,"season":1,"week":index,"grade":["A","B","C"][index%3],"assessment":{"stale":index%2==0,"source":"Saison 1 · semaine de suivi " + str(index)}})
 	model.market = rows
 	model.decisions.recruitment.reports = reports
 	return model

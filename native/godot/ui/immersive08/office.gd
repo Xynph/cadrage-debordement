@@ -595,7 +595,11 @@ static func recruitment_spotlight(model: Dictionary) -> Dictionary:
 		var available_a: bool = a.get("available", false)
 		var available_b: bool = b.get("available", false)
 		if available_a != available_b: return available_a
-		if a.get("rating", 0) != b.get("rating", 0): return float(a.get("rating", 0)) > float(b.get("rating", 0))
+		var av: Variant = G.knowledge_sort_value(a,"rating")
+		var bv: Variant = G.knowledge_sort_value(b,"rating")
+		if av == null or bv == null:
+			if av != bv: return av != null
+		elif av != bv: return av > bv
 		return str(a.id) < str(b.id))
 	var heading := "Priorité de recrutement" if need.get("need", false) else "Poste à surveiller"
 	var empty_title := "Aucune piste sur le marché" if market.is_empty() or position.is_empty() else "Aucune piste au poste suivi"
@@ -623,7 +627,7 @@ static func _recruitment(parent: VBoxContainer, app: Control) -> void:
 		row.add_child(identity)
 		identity.add_child(C.wrap(player.name, 30, C.IVORY, true))
 		identity.add_child(C.wrap(str(player.pos) + " · " + G.n(player.age) + " ans", 20))
-		identity.add_child(C.chip("NIVEAU  " + G.n(player.rating)))
+		identity.add_child(C.chip("NIVEAU  " + G.rating_text(player)))
 		parent.add_child(C.wrap(G.euros(player.fee) + " · " + G.salary(player.salary), 24, C.IVORY, true))
 		var available: bool = player.get("available", false)
 		var status := "Offre possible" if available else "Offre indisponible"

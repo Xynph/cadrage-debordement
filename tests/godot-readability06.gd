@@ -300,7 +300,7 @@ func compact_profile(player: Dictionary, annotation: String, resolution: Vector2
 	check(overview_tiles != null and overview_tiles.get_child_count() == 2, "Six tuiles en deux colonnes indépendantes")
 	var overview_actions := named("ProfileOverviewActions")
 	check(overview_actions != null and rect(overview).end.y - rect(overview_actions).end.y <= 32, "Aperçu compact sans grande surface vide sous les faits")
-	for pair in [["ProfileConditionValue", G.n(player.condition)+"%"], ["ProfileRatingValue", G.n(player.rating)], ["ProfilePotentialValue", G.n(player.potential)],
+	for pair in [["ProfileConditionValue", G.n(player.condition)+"%"], ["ProfileRatingValue", G.n(player.rating)], ["ProfilePotentialValue", G.potential_text(player)],
 		["ProfileMinutesValue", G.n(player.minutes)], ["ProfileAppearancesValue", G.n(player.appearances)], ["ProfileRoleValue", G.n(player.note)],
 		["ProfileContractValue", player.contractLabel], ["ProfileSalaryValue", G.euros(player.salary)], ["ProfileNotePreview", annotation],
 		["ProfileRenewalValue", "Disponible" if player.renewal.available else "Indisponible"]]:
@@ -320,7 +320,7 @@ func immersive_profile(player: Dictionary, resolution: Vector2i) -> void:
 	if profile == null: return
 	fact("ProfilePlayerName", str(player.name).to_upper())
 	var hero := labels(named("FullPlayerHero"))
-	for value in [G.n(player.rating), G.n(player.potential), str(player.pos).to_upper()]:
+	for value in [G.rating_text(player,true), G.potential_text(player), str(player.pos).to_upper()]:
 		check(value in hero, "Identité et niveau du vrai dossier " + value)
 	for i in 6: check(inside(named("FullPlayerTab"+str(i)), app.body_scroll), "Onglet immersif visible " + str(i))
 	check(inside(named("OpenPlayerCoachNote"), app.body_scroll) and inside(named("FullPlayerCompare"), app.body_scroll), "Carnet et comparaison visibles sur la fiche")
