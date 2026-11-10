@@ -238,9 +238,9 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
   const sides = [fixture.homeId, fixture.awayId].map(nation => {
    const { sheet, byId } = nationalSheet(state, fixture, nation, players,
     nation === preferredNation ? lineup : undefined, nation === preferredNation ? reserves : undefined);
-   const strength = sheet.lineup.reduce((sum, id) => {
+   const strength = sheet.lineup.reduce((sum, id, slot) => {
     const player = byId.get(id);
-    return sum + player.rating * (0.5 + 0.005 * (player.condition ?? 100));
+    return sum + (player.positionRatings?.[slot+1] ?? player.rating) * (0.5 + 0.005 * (player.condition ?? 100));
    }, 0) / 15;
    // Score-only simulation marks which bench players take the field.
    const seedText = state.seed + '/' + fixture.id + '/' + nation;

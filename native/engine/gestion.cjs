@@ -29,7 +29,9 @@ module.exports=function nativeGestion(command,p){
   if(previous>=0&&previous!==p.slot){const old=player(out);all[previous]=old&&!old.injury&&eligible(old,previous)?out:null;}
   all[p.slot]=p.playerId;
   if(typeof CDWorldJapanQuota!=='undefined')requireThat(CDWorldJapanQuota.nominations(S,club(),all.slice(0,15),all.slice(15),{partial:true}),'League One : inscription ou quota de composition dépassé.');
-  S.lineup=all.slice(0,15);S.reserves=all.slice(15);return;
+  requireThat(new Set(all.filter(Boolean)).size===all.filter(Boolean).length,'Un joueur ne peut occuper deux postes.');
+  S.lineup=all.slice(0,15);S.reserves=all.slice(15);
+  return {lineupChange:{slot:p.slot,playerId:p.playerId,fromSlot:previous>=0?previous:null,swapped:previous>=0&&previous!==p.slot&&!!all[previous],vacatedSlot:previous>=0&&previous!==p.slot&&!all[previous]?previous:null,displacedPlayerId:out??null}};
  }
  if(command==='set_tactics'){
   requireThat(Object.hasOwn(TACTICS,p.attack)&&Object.hasOwn(DEFENCES,p.defense),'Consigne inconnue.');
