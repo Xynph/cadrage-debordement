@@ -24,7 +24,7 @@ const MODULES=['storage.js','world-data.js','rugby.js','frontrow.js','restarts.j
 MODULES.splice(MODULES.indexOf('game.js'),0,...systems.files.filter(name=>!MODULES.includes(name)));
 const SYSTEM_COMMANDS=new Set(systems.commands);
 const IMPORT_LIMIT_BYTES=8*1024*1024,WORLD_IMPORT_LIMIT_BYTES=16*1024*1024,REQUEST_LIMIT_BYTES=17*1024*1024,WORLD_REQUEST_LIMIT_BYTES=34*1024*1024,EXTENDED_IMPORT_LIMIT_BYTES=20*1024*1024,EXTENDED_REQUEST_LIMIT_BYTES=42*1024*1024,CHAMP_IMPORT_LIMIT_BYTES=24*1024*1024,CHAMP_REQUEST_LIMIT_BYTES=50*1024*1024;
-const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','competition_editor_preview','epcr_preview','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select']);
+const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','competition_editor_preview','epcr_preview','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','calendar_daily_enable','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','recover_profile','pack_inspect','pack_install','pack_select']);
 COMMANDS.add('calendar_template');
 COMMANDS.add('calendar_mail_decide');
 function applicationRoot(engineDirectory=__dirname){
@@ -234,8 +234,23 @@ function createBridge(options={}){
       if(!run('S.trained')){ctx.nativeMode=mode;run('S.training=nativeMode;trainWeek()');}
      }else if(command==='auto_lineup'){
       if(run('!!S.live'))throw Error('Composition indisponible pendant un match.');run('autoLineup()');
+     }else if(command==='calendar_daily_enable'){
+      if(payload.confirmed!==true)throw Error('Confirmez explicitement le calendrier journalier.');
+      run(`if(!CDWorldCareer.active(S)||S.live||S.phase==='ended')throw Error('Calendrier journalier indisponible.');
+       if(S.worldMode.day!==undefined)throw Error('Le calendrier journalier est déjà activé.');
+       S.worldMode.day=0;`);
+     }else if(command==='advance_day'){
+      run(`if(S.worldMode?.day===undefined||S.phase==='ended')throw Error('Pas journalier indisponible.');
+       if(S.live)throw Error('Terminez et validez le résultat avant de continuer.');
+       if(CDWorldCareer.userFixture(S)?.date===CDWorldCareer.calendarToday(S))throw Error('Jouez la rencontre prévue aujourd’hui avant de continuer.');
+       if(S.worldMode.day<6)S.worldMode.day++;else finishRound();`);
      }else if(command==='begin_match'){
       if(run("!!S.live||S.phase==='ended'"))throw Error('Aucun nouveau match disponible.');
+      run(`if(S.worldMode?.day!==undefined){
+       const fixture=CDWorldCareer.userFixture(S);
+       if(!fixture)throw Error('Aucune rencontre cette semaine.');
+       if(fixture.date!==CDWorldCareer.calendarToday(S))throw Error('Le coup d’envoi est indisponible avant le jour du match.');
+      }`);
       if(payload.reducedBench!==undefined&&typeof payload.reducedBench!=='boolean')throw Error('Confirmation de la feuille à 22 invalide.');
       const reducedBench=payload.reducedBench===true;
       if(reducedBench&&!run('CDNationaleReducedBench?.vacancy(S)'))throw Error('La feuille à 22 n’est pas disponible pour cette rencontre.');
@@ -280,8 +295,10 @@ function createBridge(options={}){
        run(delegateLoop);
       }
      }else if(command==='finish_round'){
+      if(run('S.worldMode?.day!==undefined&&!S.live'))throw Error('Utilisez l’avance journalière pour cette semaine.');
       if(!run("S.phase!=='ended'&&(S.live?.finished||!S.live&&!nextMatch())"))throw Error('Terminez le match avant de valider la journée.');run('finishRound()');
      }else if(['advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation'].includes(command)){
+      if(run('S.worldMode?.day!==undefined'))throw Error('Utilisez l’avance journalière pour cette préparation.');
       if(!Number.isInteger(payload.fromWeek)||payload.fromWeek<0||payload.fromWeek>=46)throw Error('Semaine de préparation invalide.');
       const allowed=command==='advance_champ_preparation'
        ?"CDWorldCareer.edition(S)?.version===5&&CDWorldCareer.leagueId(S)==='champ'"

@@ -99,6 +99,7 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
   const tableRow=r=>({...clubSummary(r.id),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,pf:r.pf,pa:r.pa,bonus:r.bonus,points:r.points,form:r.form,unresolvedTie:!!(r.unresolvedTie||r.sportingTie)});
   m.meta={...m.meta,mode:'world',engine:'native-rugby',catalogue:catalogue(R),database:{...database(R),active:true},week:S.round,leagueId:W.leagueId(S),competitionRules:edition.version===1?'Saison 2026–2027':'Saison '+years.join('–')+' · Pacifique '+years[1],rulesProfile:edition.rules,roundLabel:W.label(S),date:W.userFixture(S)?.date||null};
   m.meta.calendarToday=W.calendarToday(S);
+  if(S.worldMode.day!==undefined)m.meta.calendarCadence={day:S.worldMode.day,matchReady:W.userFixture(S)?.date===m.meta.calendarToday};
   m.club=clubSummary(S.club);m.league=tables[W.leagueId(S)].map(tableRow);
   if(edition.version>=2)m.meta.edition=edition.mode;
   if(edition.version>=3){m.meta.competitionRules+=' · Japon D1/D2 '+years.join('–');m.japanPromotion=copy(S.worldMode.japan);CDWorldJapanQuota.project(S,m);}
