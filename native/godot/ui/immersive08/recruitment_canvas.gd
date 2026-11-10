@@ -98,7 +98,9 @@ func _header(positions: Array) -> void:
 	D.button(self, Rect2(310, 223, 272, 48), "Marché entre clubs →", func(): preload("res://ui/interclub_market_view.gd").open(app), false, "", false, PRIMARY, "OpenInterclubMarket")
 	for i in TABS.size():
 		_tab(Rect2(624 + 206 * i, 190, 216, 65), TABS[i], i)
-	D.button(self, Rect2(1510, 181, 230, 61), "Comparer deux pistes", _compare, false, "people", false, app.accent, "CompareMarket")
+	var compare := D.button(self, Rect2(1510, 181, 230, 61), "Comparer", _compare, false, "people", false, app.accent, "CompareMarket")
+	compare.tooltip_text = "Comparer deux pistes de recrutement"
+	compare.accessibility_name = compare.tooltip_text
 	D.button(self, Rect2(1758, 175, 490, 69), "Lancer une mission", func(): _staff(1), true, "arrow", false, PRIMARY, "OpenScoutMission")
 
 func _watch(positions: Array) -> void:

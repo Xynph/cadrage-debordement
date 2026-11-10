@@ -28,7 +28,13 @@ func run() -> void:
 	check(Comparison.candidates(candidates, "emile", "", []).size() == 1, "Recherche accentuée insensible aux accents")
 	check(Comparison.candidates(candidates, "introuvable", "", ["a", "c"]).size() == 2, "Filtres ne perdent pas les pistes choisies")
 	check(Comparison.value({"id":"a", "potential":99}, "potential", {}) == null, "Potentiel absent du rapport non inventé")
-	root.size = Vector2i(1920,1080)
+	var resolutions: Array[Vector2i] = [Vector2i(1280,720),Vector2i(1920,1080),Vector2i(2560,1440)]
+	var requested := OS.get_environment("QA_RESOLUTION")
+	if not requested.is_empty():
+		var dimension := requested.split("x")
+		if dimension.size() == 2:
+			resolutions = [Vector2i(int(dimension[0]),int(dimension[1]))]
+	root.size = resolutions[0]
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
 	var deadline := Time.get_ticks_msec()+30000
 	while app.model.is_empty() and Time.get_ticks_msec()<deadline: await process_frame
@@ -55,18 +61,30 @@ func run() -> void:
 	check(page._filtered().any(func(p): return p.id == target.id), "Navigation vers identifiant prioritaire conserve son ancien contrat")
 	page.state.search = ""
 	page.state.navigation_id = ""
-	for dimensions in [Vector2i(1280,720),Vector2i(1920,1080),Vector2i(2560,1440)]:
+	for dimensions in resolutions:
 		root.size = dimensions
 		if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(dimensions)
 		await settle()
+		app._render(false); await settle()
 		var button: Button = app.find_child("CompareMarket",true,false)
+		if DisplayServer.get_name() != "headless":
+			await RenderingServer.frame_post_draw
+			check(root.get_texture().get_image().save_png(output.path_join("recherche-%d.png" % dimensions.x)) == OK, "Capture recherche")
 		button.pressed.emit(); await settle()
 		var dialog: AcceptDialog = app.find_child("MarketComparison",true,false)
 		check(dialog != null and dialog.visible, "Comparateur ouvert " + str(dimensions))
+		if dimensions == Vector2i(2560,1440):
+			check(dialog.size.x >= 1850 and dialog.size.y >= 1150, "Surface de lecture confortable en 1440p")
+			var hero: Label = dialog.find_child("MarketComparisonHeading",true,false)
+			check(hero.get_theme_font_size("font_size") >= 40, "Hiérarchie de titre lisible en 1440p")
 		var left: OptionButton = dialog.find_child("MarketComparisonPlayer0",true,false)
 		var right: OptionButton = dialog.find_child("MarketComparisonPlayer1",true,false)
 		check(left.selected > 0 and right.selected > 0 and left.get_item_metadata(left.selected) != right.get_item_metadata(right.selected), "Deux vrais candidats distincts préselectionnés")
 		check(right.has_focus(), "Focus initial sur choix B")
+		if dimensions == Vector2i(2560,1440):
+			check(right.get_theme_font_size("font_size") >= 26, "Sélecteur lisible en 1440p")
+			var rating_row: HBoxContainer = dialog.find_child("MarketComparisonRow_rating",true,false)
+			check(rating_row.get_child(1).get_theme_font_size("font_size") >= 26, "Valeurs du tableau lisibles en 1440p")
 		var tabs: TabContainer = dialog.find_child("MarketComparisonTabs",true,false)
 		check(tabs != null and tabs.get_tab_count() == 2, "Synthèse et attributs séparés")
 		check(dialog.find_children("MarketComparisonRow_attribute_*", "HBoxContainer", true,false).size() == 36, "Les 36 attributs restent consultables par familles")
@@ -84,6 +102,14 @@ func run() -> void:
 		if DisplayServer.get_name() != "headless":
 			await RenderingServer.frame_post_draw
 			check(root.get_texture().get_image().save_png(output.path_join("attributs-%d.png" % dimensions.x)) == OK, "Capture attributs")
+		var last_group := dialog.find_child("MarketComparisonGroupJump3",true,false) as Button
+		check(last_group != null, "Accès direct aux quatre familles")
+		last_group.pressed.emit(); await settle()
+		var group_heading: Control = dialog.find_child("ComparisonAttributeGroup3",true,false)
+		check(group_heading.has_focus(), "Raccourci famille restitue le focus dans la section")
+		if DisplayServer.get_name() != "headless":
+			await RenderingServer.frame_post_draw
+			check(root.get_texture().get_image().save_png(output.path_join("conquete-%d.png" % dimensions.x)) == OK, "Capture dernière famille")
 		var event := InputEventKey.new(); event.keycode=KEY_ESCAPE; event.pressed=true; root.push_input(event,true)
 		await settle()
 		check(not is_instance_valid(dialog) or not dialog.visible, "Échap ferme la consultation")
