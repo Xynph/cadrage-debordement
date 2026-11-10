@@ -32,7 +32,11 @@ test('An integration plan uses the same live domain for the real XP split and re
 test('Stale, foreign, unconfirmed and invalid youth decisions preserve public and private state',t=>{
  const f=fixture(t),data=activated(f),p=data.players.find(p=>p.stage==='academy'&&p.defaultFocus);a.ok(p);const payload={...confirmed(data),playerId:p.id,plan:'integration',focus:p.defaultFocus};
  for(const bad of [{...payload,confirmed:false},{...payload,context:{...data.context,week:99}},{...payload,playerId:f.state().clubs[1].players[0].id},{...payload,focus:'money'},{...payload,hidden:1}])unchangedRefusal(f,'youth_development_plan',bad);
- const annual=data.players.find(p=>p.model==='annual-v11');a.ok(annual);unchangedRefusal(f,'youth_development_plan',{...confirmed(data),playerId:annual.id,plan:'specialist',focus:null});
+ const roster=f.state().clubs[data.context.club].players;
+ const professional=data.players.find(p=>p.stage==='professional'&&roster.some(source=>source.id===p.id&&(source.lnrRatingsVersion===1||source.worldRatingsVersion===1)));
+ a.ok(professional,'A source-rated young professional must exercise the native growth model');
+ a.equal(professional.model,'xp','The native worker installs in-season progression for source-rated professionals');
+ unchangedRefusal(f,'youth_development_plan',{...confirmed(data),playerId:professional.id,plan:'unknown-plan',focus:null});
 });
 test('A refused disk publication rolls back a youth plan and the exact request can be retried',t=>{
  const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs'),f=fixture(t),data=activated(f),p=data.players.find(p=>p.stage==='academy'&&p.defaultFocus),payload={...confirmed(data),playerId:p.id,plan:'integration',focus:p.defaultFocus},before=f.export(),disk=bytes(f);

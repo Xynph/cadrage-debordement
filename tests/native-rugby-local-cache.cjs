@@ -14,7 +14,8 @@ const start=optional?JSON.parse(JSON.parse(fs.readFileSync(optional,'utf8')).sto
 const initialSeed=optional?JSON.parse(fs.readFileSync(optional,'utf8')).seed:generated.randomState().seed;
 const variants={};
 for(const name of ['baseline','production']){
- const t=context({seed:initialSeed});if(name==='baseline')t.run('buildSheet='+originalBuild+';activePlayers='+originalActive);
+ const t=context({seed:initialSeed,beforeHooks:name==='baseline'
+  ?run=>run('buildSheet='+originalBuild+';activePlayers='+originalActive):null});
  t.ctx.start=JSON.stringify(start);t.run('S=JSON.parse(start)');t.ctx.inputs=JSON.stringify(inputs);
  const before=t.run('JSON.stringify(S)'),rng=t.randomState();
  const cases=JSON.parse(t.run(`(()=>{const rows=[],active=[],saved=S,realFit=fitScore,realPlayer=matchPlayer;let fitCalls=0,lookups=0;fitScore=(...a)=>{fitCalls++;return realFit(...a)};matchPlayer=(...a)=>{lookups++;return realPlayer(...a)};try{
