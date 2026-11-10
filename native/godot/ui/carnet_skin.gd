@@ -259,3 +259,7 @@ static func cell(text: Variant, width: int, color: Color = INK, expand: bool = f
 	l.mouse_filter = Control.MOUSE_FILTER_PASS
 	if expand: fill(l)
 	return l
+
+static func salary(weekly: Variant) -> String: return Base.salary(weekly)
+static func salary_amount(weekly: Variant) -> String: return Base.salary_amount(weekly)
+static func salary_period(short: bool = false) -> String: return Base.salary_period(short)

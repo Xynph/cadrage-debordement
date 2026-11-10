@@ -4,8 +4,8 @@ signal changed
 const Atomic = preload("res://atomic_file.gd")
 const AUTOMATIC_SCREEN := -1
 const MAX_SCREEN_INDEX := 2147483647
-const DEFAULTS := {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":AUTOMATIC_SCREEN,"stadium":"day"}
-const OPTIONAL_KEYS := ["display_screen","stadium"]
+const DEFAULTS := {"version":1,"volume":75,"reduced_motion":false,"quality":"balanced","camera":"tv","display_screen":AUTOMATIC_SCREEN,"stadium":"day","salary_period":"weekly"}
+const OPTIONAL_KEYS := ["display_screen","stadium","salary_period"]
 const MAX_BYTES := 16 * 1024
 var data: Dictionary = DEFAULTS.duplicate(true)
 var last_error := ""
@@ -47,7 +47,11 @@ func _validated(candidate: Variant) -> Dictionary:
 	if not stadium is String or stadium not in ["day","evening"]:
 		_fail("Éclairage du stade refusé : choisissez Jour ou Soirée.")
 		return {}
-	return {"version":1,"volume":int(volume),"reduced_motion":candidate.reduced_motion,"quality":candidate.quality,"camera":candidate.camera,"display_screen":int(screen),"stadium":stadium}
+	var salary_period: Variant = candidate.get("salary_period",DEFAULTS.salary_period)
+	if not salary_period is String or salary_period not in ["weekly","monthly","annual"]:
+		_fail("Affichage des salaires refusé : choisissez Hebdomadaire, Mensuel ou Annuel.")
+		return {}
+	return {"version":1,"volume":int(volume),"reduced_motion":candidate.reduced_motion,"quality":candidate.quality,"camera":candidate.camera,"display_screen":int(screen),"stadium":stadium,"salary_period":salary_period}
 
 func load_profile(directory: String) -> bool:
 	_available = false
@@ -74,6 +78,7 @@ func load_profile(directory: String) -> bool:
 		candidate = _validated(parser.data)
 		if candidate.is_empty(): return false
 	data = candidate
+	preload("res://ui/salary_display.gd").configure(str(data.salary_period))
 	_available = true
 	last_error = ""
 	apply_audio()
@@ -102,6 +107,7 @@ func _save(candidate: Dictionary) -> bool:
 		return _fail("Enregistrement des préférences impossible : " + replacement_error + " Les réglages précédents et le fichier original sont conservés.")
 	var screen_changed: bool = data.display_screen != candidate.display_screen
 	data = candidate
+	preload("res://ui/salary_display.gd").configure(str(data.salary_period))
 	last_error = ""
 	apply_audio()
 	if screen_changed: _apply_screen()
