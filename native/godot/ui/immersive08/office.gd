@@ -1,6 +1,7 @@
 extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const P = preload("res://ui/immersive08/projection.gd")
+const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
 const S = preload("res://ui/data_semantics.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
@@ -323,8 +324,16 @@ static func _group(parent: VBoxContainer, app: Control) -> void:
 		caption.add_child(C.label(str(int(pair[1])) + " %", 24, pair[2]))
 		parent.add_child(C.gauge(float(pair[1]), pair[2]))
 	parent.add_child(C.rule())
-	parent.add_child(C.wrap("⚠  %d joueur%s sous surveillance" % [group.watched, "s" if group.watched > 1 else ""], 22, C.AMBER, true))
-	_link(parent, "OfficeSquadAction", "Consulter le groupe  →", app, "Effectif")
+	if group.watched > 0:
+		var watched := C.button(U.watch_caption(group.watched) + "  →", app.navigation_controller.open_watched_roster)
+		watched.name = "OfficeWatchedAction"
+		watched.add_theme_color_override("font_color", C.AMBER)
+		parent.add_child(watched)
+	else:
+		parent.add_child(C.wrap("Aucune alerte physique", 22, C.MINT, true))
+	var roster := C.button("Consulter le groupe  →", app.navigation_controller.open_roster_group)
+	roster.name = "OfficeSquadAction"
+	parent.add_child(roster)
 
 static func _standings(parent: VBoxContainer, app: Control) -> void:
 	var rows := P.standings(app.model)

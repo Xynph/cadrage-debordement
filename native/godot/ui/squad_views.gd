@@ -59,7 +59,7 @@ static func squad(app: Control) -> Control:
 	search.custom_minimum_size.y=28
 	var filters:=G.h(6)
 	table.add_child(filters)
-	var family:=_choice(filters,"RosterFamily",["Tous","Avants","Arrières","Blessés","Hors groupe"],state.family,"Groupe")
+	var family:=_choice(filters,"RosterFamily",["Tous","Avants","Arrières","Blessés","Hors groupe",U.WATCH_FILTER],state.family,"Groupe")
 	var position:=_choice(filters,"RosterPosition",_positions(app.model.get("squad",[])),state.position,"Poste")
 	var available:=_choice(filters,"RosterAvailability",["Tous","Disponibles","Blessés"],state.available,"Disponibilité")
 	var contract_filter:=_choice(filters,"RosterContract",["Tous","Fin de saison","Sans contrat"],state.contract,"Contrat")
@@ -191,7 +191,9 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 	var focus:=app.get_viewport().gui_get_focus_owner()
 	var focus_id:=str(focus.get_meta("player_id","")) if focus!=null and list.is_ancestor_of(focus) else ""
 	_empty(list)
+	var state:Dictionary=app.management_ui.roster
 	var columns:=_roster_columns(list.get_parent().size.x)
+	if state.family==U.WATCH_FILTER: columns.insert(1,["watch","MOTIF",190])
 	list.set_meta("column_count",columns.size())
 	var header:HBoxContainer=list.get_parent().get_parent().find_child("RosterHeader",false,false)
 	_empty(header)
@@ -200,7 +202,6 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 		label.name="RosterColumn_"+str(column[0])
 		header.add_child(label)
 	var players:Array=U.players(app.model.get("squad",[]),app.management_ui.roster,int(app.model.meta.get("season",1)))
-	var state:Dictionary=app.management_ui.roster
 	var capacity:=maxi(1,int(state.get("page_size",4)))
 	var reveal_id := focus_id if not focus_id.is_empty() else str(list.get_meta("reveal_id", ""))
 	if not reveal_id.is_empty():
@@ -225,6 +226,9 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 		b.name="SquadPlayer"+str(p.id).replace(":","_")
 		b.set_meta("player_id",str(p.id))
 		b.tooltip_text=str(p.name)+" · "+str(p.pos)
+		if state.family==U.WATCH_FILTER:
+			b.tooltip_text += "\n" + U.watch_reason(p)
+			b.accessibility_name = b.tooltip_text
 		if str(p.id)==app.selected_player: G.selected(b,app.accent)
 		var inset:=G.margin(4)
 		inset.add_theme_constant_override("margin_top",2)
@@ -237,7 +241,11 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 		inset.add_child(row)
 		for column:Array in columns:
 			var value:=_roster_value(p,str(column[0]))
-			var label:=G.cell(value,column[2],G.INK if column[0]=="name" else G.MUTED,column[0]=="name")
+			var color: Color = G.INK if column[0]=="name" else (G.GOLD if column[0]=="watch" else G.MUTED)
+			if state.family==U.WATCH_FILTER and column[0]=="condition" and float(p.get("injury",0))>0:
+				value="Blessé"
+				color=G.ALERT
+			var label:=G.cell(value,column[2],color,column[0]=="name")
 			label.name="RosterValue_"+str(column[0])
 			label.tooltip_text=value
 			row.add_child(label)
@@ -258,6 +266,7 @@ static func _roster_columns(width:float) -> Array:
 static func _roster_value(p:Dictionary,key:String) -> String:
 	if key=="salary":return G.euros(p.get(key,0))
 	if key=="condition":return G.n(p.get(key,0))+"%"
+	if key=="watch":return U.watch_reason(p)
 	if key=="contractEnd":return "—" if p.get(key)==null else "S"+G.n(p[key])
 	if key in ["name","pos","status"]:return str(p.get(key,"—"))
 	return "—" if p.get(key)==null else G.n(p[key])

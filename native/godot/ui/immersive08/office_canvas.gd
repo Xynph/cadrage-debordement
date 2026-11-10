@@ -3,6 +3,7 @@ extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
+const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
 const Office = preload("res://ui/immersive08/office.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
@@ -166,13 +167,18 @@ static func _group(card: Panel, app: Control) -> void:
 	D.text(card,24,299,"Moral du vestiaire",22,C.MUTED,500,255)
 	D.text(card,397,299,"%d / 100" % float(app.model.meta.get("morale",0)),25,C.MINT,600,120,HORIZONTAL_ALIGNMENT_RIGHT)
 	D.line(card,Vector2(22,321),Vector2(400,321))
-	var warning := C.icon("warning",23,C.AMBER)
-	card.add_child(warning)
-	D.place(warning,Rect2(24,343,23,23))
-	D.text(card,62,363,"%d joueurs sous surveillance" % group.watched,22,C.AMBER if group.watched>0 else C.MINT,600,338)
-	var watched: Array = app.model.get("squad",[]).filter(func(player:Dictionary):return float(player.get("physicalLoad",0))>=70 or float(player.get("condition",100))<80)
-	D.text(card,25,399,"Aucune alerte physique" if watched.is_empty() else str(watched[0].name)+" · Charge "+G.n(watched[0].get("physicalLoad",0))+" %",21,C.MUTED,500,370)
-	D.button(card,Rect2(25,412,372,27),"Consulter le groupe",func():app._navigate("Effectif"),false,"arrow",true,app.accent,"OfficeSquadAction")
+	if group.watched > 0:
+		var action := D.button(card,Rect2(25,337,372,36),U.watch_caption(group.watched),app.navigation_controller.open_watched_roster,false,"arrow",true,app.accent,"OfficeWatchedAction")
+		action.add_theme_color_override("font_color", C.AMBER)
+		for player: Dictionary in app.model.get("squad", []):
+			var reason := U.watch_reason(player)
+			if reason.is_empty(): continue
+			var example := D.text(card,25,399,str(player.name)+" · "+reason,21,C.MUTED,500,370)
+			example.tooltip_text = example.text
+			break
+	else:
+		D.text(card,25,366,"Aucune alerte physique",22,C.MINT,600,370)
+	D.button(card,Rect2(25,412,372,27),"Consulter le groupe",app.navigation_controller.open_roster_group,false,"arrow",true,app.accent,"OfficeSquadAction")
 
 static func _standings(card: Panel, app: Control) -> void:
 	for pair in [["#",26],["CLUB",78],["J",461],["DIFF.",542],["PTS",647]]: D.text(card,pair[1],90,pair[0],18,C.MUTED,500,35)

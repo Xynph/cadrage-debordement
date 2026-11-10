@@ -70,7 +70,14 @@ func _build() -> void:
 	D.place(search_glyph,Rect2(13,10,21,21))
 	search.text_changed.connect(func(value:String):state.search=value;state.page=0;state.scroll=0;_refresh(false))
 	_choice(table,Rect2(389,19,259,34),"RosterPosition",app.SquadViews._positions(app.model.get("squad",[])),str(state.position),"Poste",func(value:String):state.position=value;state.page=0;_refresh(false))
-	_choice(table,Rect2(660,19,218,34),"RosterFamily",["Tous","Avants","Arrières","Blessés","Hors groupe"],str(state.family),"Groupe",func(value:String):state.family=value;app.roster_filter=value;state.page=0;_refresh(false))
+	_choice(table,Rect2(660,19,218,34),"RosterFamily",["Tous","Avants","Arrières","Blessés","Hors groupe",U.WATCH_FILTER],str(state.family),"Groupe",func(value:String):
+		var redraw: bool = (state.family==U.WATCH_FILTER)!=(value==U.WATCH_FILTER)
+		state.family=value;app.roster_filter=value;state.page=0
+		if redraw:
+			state.focus="RosterFamily"
+			app._render(false)
+		else:
+			_refresh(false))
 	_choice(table,Rect2(890,19,237,34),"RosterContract",["Tous","Fin de saison","Sans contrat"],str(state.contract),"Contrat",func(value:String):state.contract=value;state.page=0;_refresh(false))
 	var options := D.button(table,Rect2(1140,19,192,34),"Filtres & tri",_advanced,false,"settings",true,app.accent,"RosterMoreFilters")
 	options.add_theme_font_override("font",C.DISPLAY)
@@ -79,6 +86,8 @@ func _build() -> void:
 	var header := D.rect(table,Rect2(17,71,1668,39),Color("1a2425"),4)
 	header.name="RosterHeader"
 	var columns := [["N°",9,"",40],["JOUEUR",61,"Nom",288],["POSTE",364,"Poste",196],["ÂGE",573,"Âge",60],["NIV.",648,"Niveau",50],["POT.",713,"Potentiel",58],["CONDITION",785,"Condition",128],["FAT.",923,"",60],["NOTE",994,"",72],["SALAIRE / SEM.",1083,"Salaire",160],["CONTRAT",1256,"Échéance",107],["MIN.",1378,"",95],["STATUT",1485,"",175]]
+	if state.family==U.WATCH_FILTER:
+		columns = columns.slice(0,8) + [["MOTIF DE SURVEILLANCE",994,"",364]] + columns.slice(11)
 	for column: Array in columns:
 		var caption := D.text(header,column[1],26,column[0],18,C.MUTED,600,column[3])
 		caption.name={"Salaire":"RosterColumnSalary","Potentiel":"RosterColumnPotential"}.get(column[2],"RosterColumnFatigue" if column[0]=="FAT." else "RosterColumn_"+str(column[0]))
@@ -180,7 +189,8 @@ func _refresh(reveal: bool) -> void:
 			banner.custom_minimum_size=Vector2(C.px(1668),C.px(GROUP_HEIGHT))
 			rows.add_child(banner)
 			D.rect(banner,Rect2(0,0,1668,GROUP_HEIGHT),Color("122421"),2)
-			var total:int=app.model.get("squad",[]).filter(func(p:Dictionary):return (float(p.get("fam",0))<=3)==(group=="AVANTS")).size()
+			var source: Array = players if state.family==U.WATCH_FILTER else app.model.get("squad",[])
+			var total:int=source.filter(func(p:Dictionary):return (float(p.get("fam",0))<=3)==(group=="AVANTS")).size()
 			D.text(banner,14,22,group+" · "+str(total)+" JOUEURS",19,C.GOLD,700,900)
 		_row(player,i)
 	if visible.is_empty():
@@ -204,6 +214,10 @@ func _row(player:Dictionary,index:int) -> void:
 	var portrait:Control=G.portrait(int(player.get("portraitIndex",0)),C.px(31),player) if not str(player.get("id","")).is_empty() else C.photo("player-%02d" % posmod(int(player.get("portraitIndex",index)),16))
 	portrait.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	row.tooltip_text+="\n"+portrait.tooltip_text
+	var reason := U.watch_reason(player) if state.family==U.WATCH_FILTER else ""
+	if not reason.is_empty():
+		row.tooltip_text += "\n" + reason
+		row.accessibility_name = str(player.name) + " · " + str(player.pos) + " · " + reason
 	row.add_child(portrait)
 	D.place(portrait,Rect2(54,2,31,30))
 	D.text(row,95,24,player.name,23,C.IVORY,600,259)
@@ -218,11 +232,14 @@ func _row(player:Dictionary,index:int) -> void:
 		D.text(row,892,24,"%d%%" % condition,21,C.AMBER if condition<85 else C.MINT,600,55,HORIZONTAL_ALIGNMENT_RIGHT)
 	var fatigue:float=player.get("physicalLoad",0)
 	D.text(row,942,24,G.n(fatigue),21,C.AMBER if fatigue>50 else C.MUTED,500,48,HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(row,1018,24,G.n(player.get("note","—")),22,C.MINT,600,55,HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(row,1198,24,G.euros(player.get("salary",0)),23,C.IVORY,500,162,HORIZONTAL_ALIGNMENT_RIGHT)
-	var contract_end: Variant = player.get("contractEnd")
-	var expiring: bool = contract_end != null and int(contract_end) <= int(app.model.meta.get("season",1))
-	D.text(row,1289,24,"—" if contract_end == null else "S"+G.n(contract_end),22,C.AMBER if expiring else C.MUTED,500,90,HORIZONTAL_ALIGNMENT_CENTER)
+	if state.family==U.WATCH_FILTER:
+		D.text(row,1002,24,reason,22,C.AMBER,600,354).name="RosterWatchReason"
+	else:
+		D.text(row,1018,24,G.n(player.get("note","—")),22,C.MINT,600,55,HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(row,1198,24,G.euros(player.get("salary",0)),23,C.IVORY,500,162,HORIZONTAL_ALIGNMENT_RIGHT)
+		var contract_end: Variant = player.get("contractEnd")
+		var expiring: bool = contract_end != null and int(contract_end) <= int(app.model.meta.get("season",1))
+		D.text(row,1289,24,"—" if contract_end == null else "S"+G.n(contract_end),22,C.AMBER if expiring else C.MUTED,500,90,HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(row,1407,24,G.n(player.get("minutes",0)),22,C.MUTED,500,90,HORIZONTAL_ALIGNMENT_RIGHT)
 	var status:String="Blessé" if float(player.get("injury",0))>0 else str(player.get("status","Disponible"))
 	D.chip(row,Rect2(1477,3,170,26),status,C.ALERT if status=="Blessé" else C.GOLD if status.contains("clé") else C.MINT)

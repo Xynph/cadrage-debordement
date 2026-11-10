@@ -2,6 +2,7 @@ extends RefCounted
 ## Présentation calculée depuis le modèle reçu ; aucune commande ou état global.
 const Club = preload("res://ui/club_views.gd")
 const G = preload("res://ui/game_skin.gd")
+const U = preload("res://ui/management_state.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 
 static func fixture_date(fixture: Dictionary, show_timezone: bool = false) -> String:
@@ -62,7 +63,7 @@ static func group(model: Dictionary) -> Dictionary:
 		if float(player.get("injury", 0)) > 0: injured += 1
 		condition += float(player.get("condition", 0))
 		rating += float(player.get("rating", 0))
-		if float(player.get("physicalLoad", 0)) >= 70 or float(player.get("condition", 100)) < 80: watched += 1
+		if not U.watch_reason(player).is_empty(): watched += 1
 	return {"total":squad.size(), "available":squad.size()-injured, "injured":injured, "condition":roundi(condition/maxi(1,squad.size())), "rating":roundi(rating/maxi(1,squad.size())), "watched":watched}
 
 static func contracts(model: Dictionary) -> Array:
