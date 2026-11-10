@@ -171,6 +171,7 @@ func _filters(positions: Array) -> void:
 		app.management_ui.market = U.defaults()
 		app.management_ui.market.immersive_tab = tab
 		app.management_ui.market.followed = tab == 2
+		app.management_ui.market.focus = "MarketReset"
 		app._render(false), false, "", true, app.accent, "MarketReset")
 	reset.tooltip_text = "Réinitialiser les filtres et le tri"
 	reset.add_theme_font_size_override("font_size", maxi(12, C.px(19)))
