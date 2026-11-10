@@ -1,0 +1,21 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {context}=require('./france-harness.cjs'),factory=require('../native/engine/position-aptitudes.cjs');
+const h=context(827381),start=performance.now();
+h.run(`const aptitude=(${factory.toString()})();aptitude.installHooks();start(0);beginMatch();pauseMatch();var l=S.live,side=l.userSide,sh=l.sheets[side];`);
+assert.equal(h.run('sheetErrors().length'),0);
+h.run(`var incoming=sh.bench.map(id=>player(id)).find(p=>p.fam===2);var originalMain=incoming.pos;`);
+assert.equal(h.run('eligibleChanges(l,side,7).some(p=>p.id===incoming.id)'),true,'lock selectable for number eight replacement');
+assert.equal(h.run('makeSub(l,side,7,incoming.id)'),true,'real legal substitution');
+assert.equal(h.run('sh.on[7]===incoming.id'),true);assert.equal(h.run('incoming.pos===originalMain'),true);
+assert.equal(h.run('slotEligible(incoming,0)'),false);
+assert.equal(h.run('!!createSaveDocument()'),true,'save validator accepts actual new secondary replacement');
+h.run(`var checkpoint=JSON.stringify(S),rollSeed=2811;Math.random=()=>{rollSeed=(Math.imul(rollSeed,1664525)+1013904223)>>>0;return rollSeed/4294967296;}; l.paused=false;for(var step=0;!l.finished&&step<140;step++){l.paused=false;advanceRugby(l);}var replay=JSON.stringify(S.live);S=JSON.parse(checkpoint);l=S.live;rollSeed=2811;l.paused=false;for(var step=0;!l.finished&&step<140;step++){l.paused=false;advanceRugby(l);}`);
+assert.equal(h.run('l.finished'),true);
+assert.equal(h.run('JSON.stringify(S.live)===replay'),true,'same saved state and RNG exactly reproduce match');
+assert.equal(h.run('S.clubs[S.club].players.find(p=>p.id===incoming.id).pos===originalMain'),true);
+// A card still demands a trained first row and cannot use a high-quality back.
+h.run(`S=JSON.parse(checkpoint);l=S.live;side=l.userSide;sh=l.sheets[side];l.minute=10;Math.random=()=>.99;giveMatchCard(l,side,sh.on[0]);prepareFrontRows(l);`);
+assert.equal(h.run('slotEligible(matchPlayer(l,side,sh.on[0]),0)'),true);
+assert.equal(h.run('activePlayers(l,side).length'),14);
+console.log(JSON.stringify({scenario:'live substitution and exact replay',matchReplayMs:Math.round(performance.now()-start),seed:827381}));

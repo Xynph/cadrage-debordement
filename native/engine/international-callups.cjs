@@ -22,6 +22,8 @@ function factory() {
 
  function isSlotEligible(player, slot) {
   const i = slot < 15 ? slot : cover[slot - 15];
+  if (player.positionRatings && i < 3 && Array.isArray(player.qualifiedFrontRowPositions)) return player.qualifiedFrontRowPositions.includes(i + 1);
+  if (player.positionRatings && i >= 3) return true;
   if (i === 0 || i === 2) {
    return player.pos === positions[i] || player.nationaleQualifications?.includes(positions[i]);
   }
@@ -33,7 +35,11 @@ function factory() {
  function sheetOptions(players, calledIds) {
   const called = new Set(calledIds);
   const pool = players.filter(p => called.has(p.id) && fit(p)).sort(byForm);
-  return Array.from({ length: 23 }, (_, slot) => pool.filter(player => isSlotEligible(player, slot)));
+  return Array.from({ length: 23 }, (_, slot) => pool.filter(player => isSlotEligible(player, slot)).sort((a,b)=>{
+   const number=(slot<15?slot:cover[slot-15])+1;
+   const score=p=>(p.positionRatings?.[number]??p.rating)*(0.5+(p.condition??100)*0.005);
+   return Number(!!a.nationalReserve)-Number(!!b.nationalReserve)||score(b)-score(a)||compareText(a.id,b.id);
+  }));
  }
 
  function selectInternationalChoices(players) {

@@ -140,7 +140,7 @@ function createBridge(options={}){
   if(japanRegistry)ctx.nativeWorldJapanRegistryText=JSON.stringify(japanRegistry);
   if(nationaleRegistry)ctx.nativeWorldNationaleRegistryText=JSON.stringify(nationaleRegistry);
   if(champRegistry)ctx.nativeWorldChampRegistryText=JSON.stringify(champRegistry);
-  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const nativeProfessionalDepth=(${professionalDepth.toString()})();${worldVm.bootstrap()}const nativePositionAptitudes=(${positionAptitudes.toString()})();const CDCommonCareer=(${common.toString()})(CDWorldSeniorCalibration);const nativeAttributeStore=(${playerAttributes.toString()})();const nativeFacts=(${makePlayerFacts.toString()})(${JSON.stringify(playerFactsCatalogue)},${JSON.stringify(factOrigins)},${JSON.stringify(factClubs)});
+  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const nativeProfessionalDepth=(${professionalDepth.toString()})();${worldVm.bootstrap()}const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();const CDCommonCareer=(${common.toString()})(CDWorldSeniorCalibration);const nativeAttributeStore=(${playerAttributes.toString()})();const nativeFacts=(${makePlayerFacts.toString()})(${JSON.stringify(playerFactsCatalogue)},${JSON.stringify(factOrigins)},${JSON.stringify(factClubs)});
    const nativeCallups=(${internationalCallups.toString()})();
    const nativeInternationalStatus=new WeakMap();
    const nativePlayerAttributes=p=>{
