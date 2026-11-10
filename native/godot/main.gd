@@ -632,12 +632,9 @@ func _update_header_date() -> void:
 	if not is_instance_valid(header_date): return
 	var meta: Dictionary = model.get("meta", {})
 	var round_label := str(meta.get("roundLabel", "Journée " + G.n(int(meta.get("round", 0))+1)))
-	var date := str(meta.get("date",""))
-	var planning: Variant = model.get("calendarPlanning")
-	if meta.get("mode") == "world" and planning is Dictionary:
-		# The world calendar already selects the match day while a fixture is live.
-		var today: Variant = planning.get("today")
-		if today is String and not today.is_empty(): date = today
+	var planning: Dictionary = model.get("calendarPlanning", {})
+	var today: Variant = planning.get("today", meta.get("date", ""))
+	var date: String = today if today is String else ""
 	var parts := date.split("-")
 	if parts.size()==3 and parts[1].is_valid_int() and int(parts[1]) in range(1,13):
 		var months := ["JANV.","FÉVR.","MARS","AVR.","MAI","JUIN","JUIL.","AOÛT","SEPT.","OCT.","NOV.","DÉC."]
@@ -648,6 +645,12 @@ func _update_header_date() -> void:
 		if round_label == "Saison terminée": short_round = "Terminée"
 		header_date.text = ("SAISON %s  /  %s" % [G.n(meta.get("season", 1)),short_round]).to_upper()
 		header_date.tooltip_text = round_label if short_round!=round_label else ""
+	var calendar := header_date.get_parent() as Button
+	if calendar != null:
+		calendar.accessibility_description = header_date.text
+		if not header_date.tooltip_text.is_empty():
+			calendar.accessibility_description += " · " + header_date.tooltip_text
+		calendar.tooltip_text = "Ouvrir le calendrier · " + calendar.accessibility_description
 
 func _build_sidebar(parent: Node) -> void:
 	var rail := PanelContainer.new()
