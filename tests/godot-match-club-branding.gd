@@ -26,12 +26,15 @@ func run() -> void:
 	view.set_process(false)
 	var batch := view.get_node("ManagedClubCrests") as MultiMeshInstance3D
 	check(batch != null and batch.visible, "actual club crest batch visible at ready")
-	check(batch.multimesh.instance_count == 49, "all perimeter boards and stadium fascia receive crests")
+	check(batch.multimesh.instance_count == 1, "stadium fascia receives the managed club crest")
 	var material := batch.material_override as StandardMaterial3D
 	check(material.albedo_texture != null and material.albedo_texture.get_width() == 30,
 		"active presentation pack crest wins over root identity")
 	check(material.albedo_texture.get_height() == 40, "texture retains source shape")
-	check(view.find_children("*", "Label3D", true, false).is_empty(), "no game-brand text remains on physical stadium")
+	var adverts := view.find_children("*", "Label3D", true, false)
+	check(adverts.size() == 16, "sixteen perimeter advertising boards")
+	for advert in adverts:
+		check(advert.text == "OVAL LEGACY 27", "advertising boards retain Oval Legacy 27")
 	# Dummy/headless rendering does not retain GPU MultiMesh transforms. Physical
 	# placement/aspect are verified in the real rendered contextual captures.
 	var batch_id := batch.get_instance_id()

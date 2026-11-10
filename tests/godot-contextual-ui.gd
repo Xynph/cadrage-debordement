@@ -47,6 +47,12 @@ func run() -> void:
 		var id := "test:ui:%d" % number
 		participants.append({"id":id,"number":number + 1,"group":"forwards" if number < 8 or number in [15,16,17,18,19] else "backs"})
 		squad.append({"id":id,"name":"Participant %d" % (number + 1),"portraitIndex":number,"condition":85,"physicalLoad":{"fatigue":10}})
+	# Deliberately mismatch primary positions and match jerseys. Bench numbers
+	# must never be interpreted as a fixed role (16 is an actual fullback here).
+	squad[0].pos = "Centre"
+	squad[5].pos = "Talonneur"
+	squad[15].pos = "Arrière"
+	squad[22].pos = "Pilier droit"
 	var options: Array = []
 	for i in 6: options.append({"id":"test:choice:%d" % i,"text":"Une déclaration courte %d." % i,"tone":"calm","intent":"focus"})
 	var scene := {"key":"test:fixture","phase":"pre","context":{"score":[0,0]},"participants":participants,"options":options,"decision":null}
@@ -61,6 +67,24 @@ func run() -> void:
 	check(photos.size() == 23, "all 23 actual projected participants have portraits")
 	var viewport := director.view.find_child("ContextualRoomViewport", true, false)
 	check(viewport is SubViewportContainer and viewport.stretch and viewport.get_child(0).own_world_3d, "native full viewport room")
+	var roles: Array = director.view.find_children("ParticipantPosition", "Label", true, false)
+	check(roles.size() == 23, "each actual participant has a position under his name")
+	for role: Label in roles:
+		var card: Node = role.get_parent().get_parent().get_parent().get_parent()
+		var id: String = str(card.get_meta("participant_id"))
+		if id == participants[0].id: check(role.text == "Pilier gauche", "starter jersey 1 overrides primary centre")
+		if id == participants[5].id: check(role.text == "Troisième ligne aile", "starter jersey 6 is flanker despite primary hooker")
+		if id == participants[15].id: check(role.text == "Arrière", "bench jersey 16 shows actual primary fullback")
+		if id == participants[22].id: check(role.text == "Pilier droit", "bench jersey 23 shows actual primary tighthead")
+	check(director.view._position_label({"number":18}, {"rosterProfile":{"position":{"primary":"Centre"}}}) == "Centre", "missing bench pos uses authoritative profile primary")
+	check(director.view._position_label({"number":16}, {}) == "Poste non renseigné", "missing bench position remains explicitly unknown")
+	host.model.selection = {"slots":[{"slot":7,"label":"N° 8"}]}
+	check(director.view._position_label({"number":8}, {"pos":"Arrière"}) == "N° 8", "starter prefers authoritative slot display label")
+	for resolution in [Vector2i(1280,720),Vector2i(2560,1440)]:
+		root.size = resolution
+		await settle()
+		for role: Label in director.view.find_children("ParticipantPosition", "Label", true, false):
+			check(Rect2(Vector2.ZERO, host.size).encloses(role.get_global_rect()), "position label stays visible at " + str(resolution))
 	var original := JSON.stringify(host.model)
 	director.view._select_choice(options[1])
 	director.view._toggle_player(participants[0].id)
@@ -76,6 +100,14 @@ func run() -> void:
 	host.waiting = true; director._refresh_controls()
 	check(director.view.find_child("TalkPronounce",true,false).disabled, "pending response disables duplicate command")
 	host.waiting = false
+	root.size = Vector2i(1280,720)
+	scene.decision = {"text":"Message prononcé", "playerIds":participants.map(func(p: Dictionary): return p.id), "reactions":participants.map(func(p: Dictionary): return {"id":p.id,"reaction":"encouraged"})}
+	director.sync(); await settle()
+	for role: Label in director.view.find_children("ParticipantPosition", "Label", true, false):
+		var card: Control = role.get_parent().get_parent().get_parent().get_parent()
+		check(Rect2(Vector2.ZERO, host.size).encloses(card.get_global_rect()), "reaction player card stays on screen at 720p")
+		for detail: Label in role.get_parent().get_children():
+			check(card.get_global_rect().encloses(detail.get_global_rect()), "name, position and reaction fit the same player card at 720p")
 	host.model.clubLife.matchTalks.scene = null
 	check(not director.sync(), "empty context closes")
 	check(host.root_content.visible and host.coach.visible, "shell restored")

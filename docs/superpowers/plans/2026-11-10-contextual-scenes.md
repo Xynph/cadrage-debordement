@@ -13,7 +13,7 @@
 - Six déclarations contextuelles, originales, courtes et simples ; aucune commande de ton.
 - Phases fondées sur `atHalftime(l)`/`live.finished`, pas minute 40/80.
 - Mutations et reçus atomiques dans le worker ; lecture/snapshot purs, import ancien compatible.
-- Identité et portraits du pack actif prioritaires, aucun OL/nom du jeu dans les lieux du club.
+- Identité et portraits du pack actif prioritaires, aucun OL/nom du jeu dans les lieux du club ; exception demandée pour les panneaux publicitaires du stade : « Oval Legacy 27 ».
 - Pas de menu de gestion pendant les séquences match ; aucune visite ne donne un bonus.
 - Pas de push main ; nouvelle PR et CI exactes. Données réelles non modifiées.
 
@@ -41,10 +41,10 @@ Main vérifié `978803ba727e51c5af23f458868c6d56cc878966`. Nouveaux composants p
 
 ## Vérification de l’intégration
 
-Banque native : 228 déclarations originales courtes, six choix collectifs, au plus deux propositions spécifiques au contexte et quatre intentions générales. Les entretiens individuels présentent trois réponses. Aucun sélecteur de ton.
+Banque native : 228 déclarations originales courtes, six choix collectifs, au plus deux propositions spécifiques au contexte et quatre intentions générales. Les entretiens individuels présentent trois réponses. Aucun sélecteur de ton. Sous chaque nom, les titulaires affichent le poste de leur numéro et les remplaçants leur poste principal projeté par le moteur.
 
 Les domaines sont vérifiés avec le vrai worker : frontières de mi-temps, décisions et reçus persistants, reprise, délégation, anciens exports, refus de rejeu et rollback disque. La revue indépendante a corrigé trois défauts : moral valide aux bornes/décimal, terrain neutre des phases finales fictives, maintien de l’intensité d’entraînement.
 
-Les scènes utilisent les résolveurs existants de portraits et de blasons du club actif. Le match conserve le rendu et les commandes sportifs de production ; les panneaux du stade utilisent aussi le blason. Une bibliothèque de meubles Kenney et le sportif Quaternius sont embarqués avec leurs notices CC0.
+Les scènes utilisent les résolveurs existants de portraits et de blasons du club actif. Le match conserve le rendu et les commandes sportifs de production ; la façade utilise le blason ; les panneaux publicitaires conservent « Oval Legacy 27 » à la demande explicite de Léo. Une bibliothèque de meubles Kenney et le sportif Quaternius sont embarqués avec leurs notices CC0.
 
 La validation graphique utilise des profils temporaires sous Linux/Godot 4.6.3. Elle ne constitue pas une validation Windows. La CI de la PR et les captures finales restent à consigner avant clôture de la tâche 7.

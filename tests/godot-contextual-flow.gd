@@ -82,6 +82,22 @@ func locker_check(phase: String) -> void:
 		for candidate: Dictionary in app.model.get("squad", []):
 			if str(candidate.id) == id: player = candidate
 		check(not player.is_empty(), "Participant resolves current squad identity")
+		var number := 0
+		for participant: Dictionary in talk().get("participants", []):
+			if str(participant.id) == id: number = int(participant.number)
+		var expected_position := str(player.get("pos", ""))
+		if number >= 1 and number <= 15:
+			for slot: Dictionary in app.model.get("selection", {}).get("slots", []):
+				if int(slot.slot) == number - 1: expected_position = str(slot.label)
+			if number in [6, 7] and expected_position == "Troisième ligne": expected_position = "Troisième ligne aile"
+		var position_label: Label = card.find_child("ParticipantPosition", true, false)
+		check(position_label != null and position_label.text == expected_position and not expected_position.is_empty(), "Jersey role for starter or actual primary position for substitute " + id)
+		if position_label != null:
+			check(position_label.is_visible_in_tree() and card.get_global_rect().encloses(position_label.get_global_rect()), "Position is visibly contained in the actual player card")
+			var name_label: Label
+			for label in card.find_children("*", "Label", true, false):
+				if not str(player.get("name", "")).is_empty() and str(label.text).contains(str(player.name)): name_label = label
+			check(name_label != null and position_label.get_global_rect().position.y > name_label.get_global_rect().position.y, "Actual position is displayed below the player name")
 		var portrait: TextureRect = card.find_child("ParticipantPortrait", true, false)
 		check(portrait != null and portrait.texture != null, "Actual participant has a visible portrait")
 		if portrait != null and not player.is_empty():
@@ -222,10 +238,12 @@ func run() -> void:
 		var expected_texture: Texture2D = club_crest.texture if club_crest is TextureRect else null
 		check(stage._club_crest == expected_texture, "Production stadium resolves the actual active club crest")
 		var branding: MultiMeshInstance3D = stage.get_node_or_null("ManagedClubCrests")
-		check(branding != null and branding.visible == (expected_texture != null), "Missing active crest leaves neutral stadium boards")
-		if branding != null: check(branding.material_override.albedo_texture == expected_texture, "All managed stadium boards use the active club identity")
-		for label in stage.find_children("*", "Label3D", true, false):
-			check(not str(label.text).to_lower().contains("oval legacy"), "No game branding substituted for the active club")
+		check(branding != null and branding.visible == (expected_texture != null), "Missing active crest leaves neutral stadium fascia")
+		if branding != null: check(branding.material_override.albedo_texture == expected_texture, "Stadium fascia uses the active club identity")
+		var advertisements := stage.find_children("*", "Label3D", true, false)
+		check(advertisements.size() == 16, "All sixteen Oval Legacy advertising boards remain present")
+		for label in advertisements:
+			check(str(label.text) == "OVAL LEGACY 27", "Advertising boards retain Oval Legacy 27")
 		club_crest.free()
 	var original_scene := JSON.stringify(app.model.live.scene)
 	var original_positions: Array[Vector3] = actor_positions(stage) if stage != null else []

@@ -5,6 +5,7 @@ extends Node3D
 
 const ATHLETE := "res://assets/match3d/quaternius-rugby-athlete.glb"
 const BLEND_SECONDS := 0.55
+const STADIUM_FONT := "res://fonts/BarlowCondensed-SemiBold.ttf"
 const ClubPresentation = preload("res://ui/game_skin.gd")
 const Presentation = preload("res://match_presentation.gd")
 const Motion = preload("res://match_motion.gd")
@@ -771,6 +772,7 @@ func _build_stadium() -> void:
 			var x := -56.0 + board * 16.0
 			_venue_box(Vector3(15.5, 1.05, 0.22), Vector3(x, 0.58, side * 41.2), anthracite)
 			_venue_box(Vector3(15.5, 0.06, 0.24), Vector3(x, 1.13, side * 41.2), ivory)
+			_stadium_advert(Vector3(x, 0.65, side * 41.04), PI if side > 0 else 0.0)
 		# Modest end terraces leave both in-goals unobstructed.
 		for row in 7:
 			var height := 0.65 + row * 0.72
@@ -816,7 +818,7 @@ func _build_club_branding() -> void:
 	var batch := MultiMesh.new()
 	batch.transform_format = MultiMesh.TRANSFORM_3D
 	batch.mesh = quad
-	batch.instance_count = 49 # Three crests on each of sixteen boards, one fascia.
+	batch.instance_count = 1 # The stadium fascia carries the managed club crest.
 	var material := StandardMaterial3D.new()
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
 	material.alpha_scissor_threshold = 0.1
@@ -839,19 +841,23 @@ func _update_club_branding() -> void:
 	if _club_crest == null:
 		return
 	var aspect := float(_club_crest.get_width()) / maxf(1.0, _club_crest.get_height())
-	var index := 0
-	for side in [-1.0, 1.0]:
-		for board in 8:
-			var center := -56.0 + board * 16.0
-			for offset in [-4.5, 0.0, 4.5]:
-				var height := minf(0.85, 3.5 / maxf(aspect, 0.01))
-				var basis := Basis(Vector3.UP, PI if side > 0 else 0.0).scaled(Vector3(height * aspect, height, 1.0))
-				var position_ := Vector3(center + offset, 0.65, side * 41.04)
-				_club_branding.multimesh.set_instance_transform(index, Transform3D(basis, position_))
-				index += 1
 	var height := minf(2.9, 12.0 / maxf(aspect, 0.01))
-	_club_branding.multimesh.set_instance_transform(index,
+	_club_branding.multimesh.set_instance_transform(0,
 		Transform3D(Basis.from_scale(Vector3(height * aspect, height, 1.0)), Vector3(0, 10.6, -54.6)))
+
+
+func _stadium_advert(position_: Vector3, yaw: float) -> void:
+	var label := Label3D.new()
+	label.text = "OVAL LEGACY 27"
+	label.font = load(STADIUM_FONT) as Font
+	label.font_size = 48
+	label.pixel_size = 0.017
+	label.position = position_
+	label.rotation.y = yaw
+	label.modulate = Color("e5e3d5")
+	label.outline_size = 0
+	label.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(label)
 
 
 func _venue_box(size: Vector3, position_: Vector3, material: Material, basis: Basis = Basis.IDENTITY) -> void:

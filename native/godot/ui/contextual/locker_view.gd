@@ -1,5 +1,6 @@
 extends Control
 const S = preload("res://ui/contextual/skin.gd")
+const STARTER_POSITIONS = ["Pilier gauche", "Talonneur", "Pilier droit", "Deuxième ligne", "Deuxième ligne", "Troisième ligne aile", "Troisième ligne aile", "Numéro 8", "Demi de mêlée", "Demi d’ouverture", "Ailier", "Centre", "Centre", "Ailier", "Arrière"]
 var director: Node
 var app: Control
 var model: Dictionary = {}
@@ -120,13 +121,14 @@ func _player_card(participant: Dictionary, compact: bool = false) -> Button:
 	var id: Variant = participant.get("id")
 	var player := S.person(model, id)
 	var text := str(player.get("name", "Identité indisponible"))
+	var position_text := _position_label(participant, player)
 	var decision: Dictionary = scene.get("decision", {}) if scene.get("decision") is Dictionary else {}
 	var reaction := S.reactions(decision, id)
 	var reaction_label: String = {"encouraged":"Encouragé", "unconvinced":"Peu convaincu", "unchanged":"Sans réaction visible"}.get(reaction, reaction)
 	var card := S.button("", func(): _toggle_player(id), decision.is_empty())
 	card.set_meta("participant_id", id)
-	card.tooltip_text = text + (" · " + reaction_label if not reaction_label.is_empty() else "")
-	card.custom_minimum_size.y = 46
+	card.tooltip_text = text + " · " + position_text + (" · " + reaction_label if not reaction_label.is_empty() else "")
+	card.custom_minimum_size.y = 54
 	if compact: S.G.fill(card)
 	var margin := S.G.margin(3)
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -152,12 +154,38 @@ func _player_card(participant: Dictionary, compact: bool = false) -> Button:
 	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	words.add_child(name_label)
+	var position_label := S.label(position_text, 10, S.MUTED)
+	position_label.name = "ParticipantPosition"
+	position_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	position_label.tooltip_text = position_label.text
+	position_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	words.add_child(position_label)
 	if not reaction_label.is_empty(): words.add_child(S.label(reaction_label, 10, S.GOLD))
 	elif audience == "players" and id in selected_ids: words.add_child(S.label("✓ Destinataire", 10, S.GOLD))
 	var addressed: bool = audience == "group" or (audience in ["forwards", "backs"] and participant.get("group") == audience) or (audience == "players" and id in selected_ids)
 	if not decision.is_empty(): addressed = id in decision.get("playerIds", [])
 	if addressed: S.selected(card, S.GOLD)
 	return card
+
+func _position_label(participant: Dictionary, player: Dictionary) -> String:
+	var number := int(participant.get("number", 0))
+	if number >= 1 and number <= 15:
+		# A starter's match role follows the jersey, even when his primary
+		# individual position differs. Reuse the engine's slot label when given.
+		for slot: Dictionary in model.get("selection", {}).get("slots", []):
+			if int(slot.get("slot", -1)) != number - 1: continue
+			var label := str(slot.get("label", "")).strip_edges()
+			if not label.is_empty():
+				return "Troisième ligne aile" if number in [6, 7] and label == "Troisième ligne" else label
+		return STARTER_POSITIONS[number - 1]
+	# Bench numbers are not position assignments. pos is the projected primary
+	# position (rosterProfile.position.primary in common careers), not a guess
+	# from a bench slot or a newly calculated attribute rating.
+	var primary: Variant = player.get("pos")
+	if not primary is String or primary.strip_edges().is_empty():
+		var profile: Dictionary = player.get("rosterProfile", {}) if player.get("rosterProfile") is Dictionary else {}
+		primary = profile.get("position", {}).get("primary", "")
+	return primary.strip_edges() if primary is String and not primary.strip_edges().is_empty() else "Poste non renseigné"
 
 func _select_choice(option: Dictionary) -> void:
 	if app.waiting: return
