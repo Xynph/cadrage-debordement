@@ -227,6 +227,7 @@ func _receive_model(value: Dictionary) -> void:
 		table_division = str(model.meta.get("leagueId", "elite"))
 	if last_command == "tick" and route not in ["Accueil", "Création"]:
 		_update_live_bar()
+		if route == "Bureau": Immersive.Office.update_live_card(self)
 		if is_instance_valid(match_screen): match_screen.update_frame(model)
 	else:
 		if route == "Match" and is_instance_valid(match_screen):

@@ -51,6 +51,10 @@ static func _fixture(card: Panel, app: Control) -> void:
 		D.photo(card,ground,Rect2(694,1,665,416),.53 if ground != "office-hero" else 0.0)
 		C.veil(card).set_offsets_preset(Control.PRESET_FULL_RECT,Control.PRESET_MODE_KEEP_SIZE,C.px(1))
 	D.rect(card,Rect2(1,22,4,374),signature,0)
+	var match_info := Office.live_match(app.model)
+	if not match_info.is_empty():
+		_live_content(card, app, match_info)
+		return
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
 	if next.is_empty():
 		var preparation := SeasonPreparation.data(app.model.meta)
@@ -121,6 +125,24 @@ static func _fixture(card: Panel, app: Control) -> void:
 	if P.fixture_location_kind(next, app.model.club.id) == "away":
 		var bag := Rect2(1076, 192, 260, 165) if territory == null else Rect2(573, 306, 117, 99)
 		D.scenario_photo(card, "travel-bag", bag)
+
+static func _live_content(card: Panel, app: Control, match_info: Dictionary) -> void:
+	D.text(card,27,45,match_info.heading,22,C.GOLD,700,205).name = "OfficeLiveHeading"
+	if not match_info.location.is_empty():
+		D.chip(card,Rect2(224,22,176,29),match_info.location,C.MUTED)
+	var teams: Array = match_info.teams
+	for i in teams.size():
+		var team: Dictionary = teams[i]
+		var y := 71 + 77 * i
+		_crest(card,team,Rect2(27,y,62,62))
+		D.text(card,111,y+42,G.club_name(team),39,C.IVORY,800,548)
+	D.text(card,27,257,match_info.score,44,C.IVORY,800,158).name = "OfficeLiveScore"
+	D.text(card,188,254,match_info.state,25,C.GOLD,650,490).name = "OfficeLiveState"
+	if not match_info.detail.is_empty():
+		D.text(card,27,304,match_info.detail,22,C.MUTED,400,638,HORIZONTAL_ALIGNMENT_LEFT,true).name = "OfficeLiveFixtureDetail"
+	D.button(card,Rect2(27,348,358,51),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,app.accent,"OfficePreparationAction")
+	var review := D.button(card,Rect2(401,348,232,51),"Revoir le match",func():app._navigate("Match"),false,"",false,app.accent,"OfficeMatchReviewAction")
+	review.visible = match_info.finished
 
 static func _priorities(card: Panel, app: Control) -> void:
 	var contracts := P.contracts(app.model)

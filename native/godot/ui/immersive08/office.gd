@@ -9,6 +9,64 @@ const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const UPCOMING_TILE = Color("26231b")
 const UPCOMING_BORDER = Color("706042")
 
+static func _live_fixture(model: Dictionary, pair: Array) -> Dictionary:
+	if pair.size() != 2: return {}
+	var week := int(model.get("meta", {}).get("week", -1))
+	var next: Variant = model.get("next")
+	if next is Dictionary and next.get("pair", []) == pair and int(next.get("week", -2)) == week:
+		return next
+	var fixtures: Array = model.get("calendar", []).filter(func(fixture: Dictionary):
+		return not fixture.get("played", false) and int(fixture.get("week", -2)) == week \
+			and fixture.get("home", {}).get("id") == pair[0] and fixture.get("away", {}).get("id") == pair[1]
+	)
+	return fixtures[0] if fixtures.size() == 1 else {}
+
+static func _live_status(live: Dictionary) -> Dictionary:
+	var finished: bool = live.get("finished", false)
+	var phase := "En jeu"
+	if finished: phase = "Résultat à valider"
+	elif live.get("atBreak", false): phase = "Mi-temps"
+	elif live.get("paused", false): phase = "En pause"
+	var state := "%s′ · %s" % [G.n(live.get("minute", 0)), phase]
+	if int(live.get("nominationSize", 23)) == 22: state += " · Feuille à 22"
+	var score: Array = live.get("score", [])
+	return {
+		"heading": "MATCH TERMINÉ" if finished else "MATCH EN COURS",
+		"finished": finished,
+		"state": state,
+		"score": "%s – %s" % [G.n(score[0]), G.n(score[1])] if score.size() == 2 else "",
+	}
+
+static func live_match(model: Dictionary) -> Dictionary:
+	var live: Variant = model.get("live")
+	if not live is Dictionary or live.is_empty(): return {}
+	var summary := _live_status(live)
+	var fixture := _live_fixture(model, live.get("pair", []))
+	var details: Array[String] = []
+	for detail in [P.fixture_date(fixture, true), P.fixture_venue(fixture, false, false)]:
+		if not detail.is_empty(): details.append(detail)
+	summary.teams = live.get("teams", [])
+	summary.detail = " · ".join(details)
+	summary.location = {"neutral":"NEUTRE", "home":"À DOMICILE", "away":"À L’EXTÉRIEUR"}.get(
+		P.fixture_location_kind(fixture, model.get("club", {}).get("id")), ""
+	) if not fixture.is_empty() else ""
+	return summary
+
+static func update_live_card(app: Control) -> void:
+	var live: Dictionary = app._live()
+	if live.is_empty() or not is_instance_valid(app.root_content): return
+	var card: Node = app.root_content.find_child("OfficeFixture", true, false)
+	if card == null: return
+	var summary := _live_status(live)
+	var fields := {"heading":"OfficeLiveHeading", "score":"OfficeLiveScore", "state":"OfficeLiveState"}
+	for field in fields:
+		var label := card.find_child(fields[field], true, false) as Label
+		if label != null: label.text = summary[field]
+	var primary := card.find_child("OfficePreparationAction", true, false) as Button
+	if primary != null: primary.text = app.primary_text().trim_suffix("  →")
+	var review := card.find_child("OfficeMatchReviewAction", true, false) as Button
+	if review != null: review.visible = summary.finished
+
 static func _card(parent: Node, id: String, title: String, height: int, ratio: float = 1.0) -> PanelContainer:
 	var frame := C.card(title, Vector2(0, height))
 	frame.name = id
@@ -204,7 +262,10 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 		row.add_child(space)
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
 	var preparation := SeasonPreparation.data(app.model.meta)
-	if next.is_empty():
+	var match_info := live_match(app.model)
+	if not match_info.is_empty():
+		_live_content(left, match_info)
+	elif next.is_empty():
 		var upcoming := P.next_nationale_fixture(app.model)
 		var scheduled := P.next_scheduled_fixture(app.model)
 		if not upcoming.is_empty():
@@ -267,13 +328,48 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 	left.add_child(spacer)
 	var actions := C.h(12)
 	left.add_child(actions)
-	if next.is_empty():
-		var primary := C.button(app.primary_text(),app.primary_action,true,app.accent)
+	if next.is_empty() or not match_info.is_empty():
+		var caption: String = app.primary_text()
+		if not match_info.is_empty(): caption = caption.trim_suffix("  →")
+		var primary := C.button(caption,app.primary_action,true,app.accent)
 		primary.name="OfficePreparationAction"
 		actions.add_child(primary)
 		C.fill(primary)
 	else: C.fill(_link(actions, "OfficePreparationAction", "PRÉPARER LE MATCH  →", app, "Préparation", true))
-	C.fill(_link(actions, "OfficeSelectionAction", "Vérifier les 23", app, "Composition"))
+	if match_info.is_empty():
+		C.fill(_link(actions, "OfficeSelectionAction", "Vérifier les 23", app, "Composition"))
+	else:
+		var review := _link(actions, "OfficeMatchReviewAction", "Revoir le match", app, "Match")
+		review.visible = match_info.finished
+		C.fill(review)
+
+static func _live_content(left: VBoxContainer, match_info: Dictionary) -> void:
+	var tags := C.h(12)
+	left.add_child(tags)
+	var heading := C.chip(match_info.heading, C.MINT)
+	heading.get_child(0).name = "OfficeLiveHeading"
+	tags.add_child(heading)
+	if not match_info.location.is_empty(): tags.add_child(C.chip(match_info.location, C.GOLD))
+	var row := C.h(12)
+	left.add_child(row)
+	var teams: Array = match_info.teams
+	if teams.size() == 2: row.add_child(G.crest(teams[0], C.px(74)))
+	var score := C.label(match_info.score, 31, C.IVORY, true)
+	score.name = "OfficeLiveScore"
+	row.add_child(score)
+	if teams.size() == 2:
+		row.add_child(G.crest(teams[1], C.px(74)))
+		var names := C.v(2)
+		C.fill(names)
+		row.add_child(names)
+		for team: Dictionary in teams: names.add_child(C.wrap(G.club_name(team), 29, C.IVORY, true))
+	var state := C.wrap(match_info.state, 21, C.GOLD, true)
+	state.name = "OfficeLiveState"
+	left.add_child(state)
+	if not match_info.detail.is_empty():
+		var detail := C.wrap(match_info.detail, 18)
+		detail.name = "OfficeLiveFixtureDetail"
+		left.add_child(detail)
 
 static func _priorities(parent: VBoxContainer, app: Control) -> void:
 	var contracts := P.contracts(app.model)
@@ -288,7 +384,8 @@ static func _priorities(parent: VBoxContainer, app: Control) -> void:
 		choices.append({"title":"Préparer l’entraînement" if not app.model.meta.get("trained", false) else "La préparation est effectuée", "detail":str(training.get("advice", "Consultez les choix et la charge du groupe.")), "action":func(): app.Immersive.open_training(app), "id":"OfficeTrainingAction"})
 	var selection: Dictionary = app.model.get("selection", {})
 	var valid: bool = selection.get("valid", false)
-	choices.append({"title":"Examiner le recrutement" if valid else "Compléter la feuille de match", "detail":recruitment_availability(app.model.get("market", [])) if valid else "Les postes vacants ou indisponibles demandent votre attention.", "action":func(): app._navigate("Recrutement" if valid else "Composition"), "id":"OfficeRecruitmentAction"})
+	if valid or app._live().is_empty():
+		choices.append({"title":"Examiner le recrutement" if valid else "Compléter la feuille de match", "detail":recruitment_availability(app.model.get("market", [])) if valid else "Les postes vacants ou indisponibles demandent votre attention.", "action":func(): app._navigate("Recrutement" if valid else "Composition"), "id":"OfficeRecruitmentAction"})
 	if choices.size() < 3: choices.append({"title":"Retrouver les décisions du club", "detail":"Staff, direction et vie du groupe.", "action":func(): app._navigate("Travail du club"), "id":"OfficeSupportAction"})
 	for i in mini(3, choices.size()):
 		var choice: Dictionary = choices[i]
