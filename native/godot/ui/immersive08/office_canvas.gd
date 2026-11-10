@@ -133,9 +133,7 @@ static func _priorities(card: Panel, app: Control) -> void:
 		var player: Dictionary = contracts[0]
 		tasks.append(["Prolonger "+str(player.name),str(player.get("status",""))+" · "+str(player.get("contractLabel","")),"people",func():app.selected_player=str(player.id);app._navigate("Effectif"),"OfficeContractsAction"])
 	else: tasks.append(["Consulter les contrats","Échéances et engagements du groupe.","people",func():app._navigate("Effectif"),"OfficeContractsAction"])
-	var needs: Array = app.model.get("decisions",{}).get("recruitment",{}).get("needs",[])
-	var need := str(needs[0].get("pos","Effectif")) if not needs.is_empty() else "Effectif"
-	tasks.append(["Examiner le recrutement","%d profils · Priorité : %s" % [app.model.get("market",[]).size(),need],"search",func():app._navigate("Recrutement"),"OfficeRecruitmentAction"])
+	tasks.append(["Examiner le recrutement",Office.recruitment_availability(app.model.get("market", [])),"search",func():app._navigate("Recrutement"),"OfficeRecruitmentAction"])
 	for i in tasks.size():
 		var y := 67+i*102
 		var item: Array = tasks[i]

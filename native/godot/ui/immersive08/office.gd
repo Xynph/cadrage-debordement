@@ -22,6 +22,17 @@ static func _link(parent: Node, id: String, text: String, app: Control, route: S
 	parent.add_child(action)
 	return action
 
+static func recruitment_availability(market: Array) -> String:
+	var offers := market.filter(func(player: Dictionary): return player.get("available", false)).size()
+	var summary := "%d piste%s · %d offre%s possible%s" % [
+		market.size(), "s" if market.size() > 1 else "", offers, "s" if offers > 1 else "", "s" if offers > 1 else ""
+	]
+	if offers == 0 and not market.is_empty():
+		var reason := str(market[0].get("reason", ""))
+		if not reason.is_empty() and market.all(func(player: Dictionary): return player.get("reason", "") == reason):
+			summary += " · " + reason
+	return summary
+
 static func _open_player(app: Control, id: String) -> void:
 	app.selected_player = id
 	app._navigate("Effectif")
@@ -274,7 +285,7 @@ static func _priorities(parent: VBoxContainer, app: Control) -> void:
 	choices.append({"title":"Préparer l’entraînement" if not app.model.meta.get("trained", false) else "La préparation est effectuée", "detail":str(training.get("advice", "Consultez les choix et la charge du groupe.")), "action":func(): app.Immersive.open_training(app), "id":"OfficeTrainingAction"})
 	var selection: Dictionary = app.model.get("selection", {})
 	var valid: bool = selection.get("valid", false)
-	choices.append({"title":"Examiner le recrutement" if valid else "Compléter la feuille de match", "detail":"%d profils disponibles dans votre réseau." % app.model.get("market", []).size() if valid else "Les postes vacants ou indisponibles demandent votre attention.", "action":func(): app._navigate("Recrutement" if valid else "Composition"), "id":"OfficeRecruitmentAction"})
+	choices.append({"title":"Examiner le recrutement" if valid else "Compléter la feuille de match", "detail":recruitment_availability(app.model.get("market", [])) if valid else "Les postes vacants ou indisponibles demandent votre attention.", "action":func(): app._navigate("Recrutement" if valid else "Composition"), "id":"OfficeRecruitmentAction"})
 	if choices.size() < 3: choices.append({"title":"Retrouver les décisions du club", "detail":"Staff, direction et vie du groupe.", "action":func(): app._navigate("Travail du club"), "id":"OfficeSupportAction"})
 	for i in mini(3, choices.size()):
 		var choice: Dictionary = choices[i]
