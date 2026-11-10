@@ -6,12 +6,19 @@ const b=createBridge({dataDir:path.join(root,'main-'+process.pid),seed:827381,no
 const call=(command,payload={})=>b.handle({id:++serial,command,payload});
 const good=(command,payload={})=>{const r=call(command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;};
 const state=()=>JSON.parse(good('export').meta.exportText).state;
+const sourceRosters=clubs=>clubs.map(club=>{
+ const players=club.players.filter(p=>!p.id.startsWith('depth-'));
+ const generated=club.players.filter(p=>p.id.startsWith('depth-'));
+ assert.equal(generated.length,Math.max(0,40-players.length));
+ assert.ok(generated.every(p=>!p.rosterProfile));
+ return {...club,players};
+});
 try{
  const model=good('new_career',{mode:'common',club:6});
  assert.equal(model.meta.rosterFoundation?.version,2,'new common careers expose roster foundation version');
  const data=require('../dist/rugby-roster-foundation.js'),base=require('../dist/rugby-common-rosters.js');
  const runtime=fs.readFileSync(path.join(__dirname,'../dist/rugby-roster-foundation.js'),'utf8');assert.ok(!runtime.includes('https://')&&!runtime.includes('Tuicuvu')&&!runtime.includes('Fourcade'),'anonymous runtime provenance');
- const s=state(),players=s.clubs.flatMap(c=>c.players);assert.equal(players.length,1592);assert.equal(Object.keys(data.players).length,1592);assert.equal(Object.keys(s.commonDatabase).length,2);
+ const s=state(),players=sourceRosters(s.clubs).flatMap(c=>c.players);assert.equal(players.length,1592);assert.equal(Object.keys(data.players).length,1592);assert.equal(Object.keys(s.commonDatabase).length,2);
  assert.equal(players.find(p=>p.id==='lnr:184').pos,'Pilier gauche');assert.equal(players.find(p=>p.id==='lnr:657').pos,'Talonneur');
  assert.equal(players.find(p=>p.id==='lnr:13516').rosterProfile.position.basis,'estimated','conflicting Traini evidence stays quarantined');
  let verified=0;for(const p of players){const source=base.clubs.flatMap(c=>c.players).find(x=>x.id===p.id),profile=data.players[p.id];assert.deepEqual(p.rosterProfile,profile);for(const k of ['rating','potential','skills','attributesV2','hiddenTraitsV2'])assert.deepEqual(p[k],source[k],p.id+' '+k);assert.equal(p.dev.potential,source.dev.potential);assert.equal(p.salary,source.salary);assert.equal(p.contractEnd,profile.contract.endSeason);assert.equal(profile.wage.basis,'estimated');if(!Object.hasOwn(require('../data/roster-foundation/verified.json').statuses,p.id))assert.equal(profile.status.basis,'estimated');if(p.fam<=1)assert.deepEqual(profile.position.qualifications,[p.pos]);if(profile.contract.basis==='official')verified++;}
@@ -19,10 +26,10 @@ try{
  const initial=good('export').meta.exportText;good('import',{text:initial});assert.equal(good('export').meta.exportText,initial);
  const reject=mutate=>{const d=JSON.parse(initial);mutate(d.state);const before=good('export').meta.exportText;const result=call('import',{text:JSON.stringify(d)});assert.equal(result.ok,false);assert.doesNotMatch(result.error,/modifié ou endommagé/,'metadata validation is reached before checksum');assert.equal(good('export').meta.exportText,before);};
  reject(x=>x.rosterFoundation.version=99);reject(x=>x.rosterFoundation.version=1);reject(x=>x.clubs[6].players[0].rosterProfile.version=1);reject(x=>delete x.rosterFoundation);reject(x=>delete x.clubs[6].players[0].rosterProfile);reject(x=>x.clubs[6].players[0].rosterProfile.contract.endYear=2040);reject(x=>x.clubs[6].players[0].rosterProfile.position.qualifications.push('Talonneur'));reject(x=>x.commonDatabase.extra=true);reject(x=>x.rosterFoundation.extra=true);reject(x=>x.clubs[6].players[0].rosterProfile.status.value='veteran');reject(x=>x.clubs[6].players[0].rosterProfile.contract.sources=['unknown']);reject(x=>x.development.academy[0].rosterProfile=x.clubs[6].players[0].rosterProfile);
- // A legacy common save imports without adding the marker or changing profiles/contracts.
+ // A legacy common save imports with reserve depth and preserves source profiles/contracts.
  const h=require('./france-harness.cjs').context();h.run('CDFranceCareer.start(6,{database:CDCommonRosters.marker,playersForClub:id=>JSON.parse(JSON.stringify(CDCommonRosters.clubs[id].players))})');
  const legacyText=h.run('JSON.stringify(createSaveDocument())'),legacy=JSON.parse(legacyText);
- good('import',{text:legacyText});assert.equal(state().rosterFoundation,undefined);assert.deepEqual(state().clubs,legacy.state.clubs);
+ good('import',{text:legacyText});assert.equal(state().rosterFoundation,undefined);assert.deepEqual(sourceRosters(state().clubs),legacy.state.clubs);
  good('import',{text:initial});const model2=good('snapshot');assert.equal(model2.squad.find(p=>p.id==='lnr:657').rosterProfile.position.basis,'official');
  // A real renewal changes the mutable contract, preserving its initial official reference.
  good('new_career',{mode:'common',club:3});const beforeRenew=state().clubs[3].players.find(p=>p.id==='lnr:429'),offer=good('snapshot').squad.find(p=>p.id==='lnr:429');
