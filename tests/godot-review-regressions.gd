@@ -165,6 +165,9 @@ func _tactics() -> void:
 	_check(attack_button != null and defense_button != null, "Both tactical axes expose a real alternative")
 	attack_button.pressed.emit()
 	defense_button.pressed.emit()
+	_check(app.waiting and app.queued_action.is_empty() and app.last_error.is_empty(), "Preparation absorbs a second tactic while the first is pending")
+	# Bypass the view guard to exercise the separate command-level refusal.
+	app._command("set_tactics", {"attack": tactics.attack, "defense": defense.id})
 	_check(app.waiting and app.queued_action.is_empty() and not app.last_error.is_empty(), "Rapid second tactical axis is explicitly refused until the first acknowledgement")
 	await _wait()
 	_check(app.model.tactics.attack == attack.id and app.model.tactics.defense == tactics.defense, "Refused old tactical payload cannot overwrite either axis")
