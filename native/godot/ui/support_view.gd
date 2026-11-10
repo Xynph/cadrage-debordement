@@ -71,10 +71,9 @@ static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 	for option: Dictionary in meeting_data.options:
 		var meeting := G.card(list, G.accent_ink(app.accent))
 		# Un reçu importé de l’ancienne version peut précéder le contexte natif.
-		var applied: bool = current_decision and last_decision.get("plan") == option.key
-		if receipt is Dictionary:
-			applied = receipt.get("title") == "Réunion de staff : " + str(option.label)
-		var detail := str(receipt.body) if applied and receipt is Dictionary else str(option.detail)
+		var matching_receipt: bool = receipt is Dictionary and receipt.get("title") == "Réunion de staff : " + str(option.label)
+		var applied: bool = last_decision.get("plan") == option.key if current_decision else matching_receipt
+		var detail := str(receipt.body) if applied and matching_receipt else str(option.detail)
 		meeting.add_child(G.section(option.label, detail))
 		if meeting_data.available:
 			meeting.add_child(G.wrap("Prévision : %d joueurs concernés · moral %d · confiance %d" % [option.preview.affected, option.preview.morale, option.preview.trust], 14))
