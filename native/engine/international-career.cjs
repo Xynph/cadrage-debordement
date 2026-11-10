@@ -481,6 +481,7 @@ function createInternationalCareer(competitions, callups, playerFacts = {}) {
   }
   return {
    date, competitions: competitionViews, fixtures: fixtureList, callups: snapshot.callups,
+   releaseWindows: windows(editions),
    appearances: snapshot.appearances, currentFixture, nextFixture, squad: squad.map(player => ({
     id: player.id, name: player.name, pos: player.pos, fam: player.fam, age: player.age,
     rating: player.rating, condition: player.condition, injury: player.injury,

@@ -4,6 +4,7 @@ const competitions = require('./international-competitions.cjs');
 const callups = require('./international-callups.cjs');
 const manager = require('./international-manager.cjs');
 const { createInternationalCareer } = require('./international-career.cjs');
+const { projectAvailability } = require('./international-availability.cjs');
 
 const dateAfter = date => new Date(Date.parse(date) + 86400000).toISOString().slice(0, 10);
 const referenceEditions = competitions.COMPETITION_IDS.map(id => competitions.createEdition(id));
@@ -28,7 +29,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
   const isNationalOnly = () => run('S?.national?.role?.club===false');
   const roster = () => JSON.parse(run(`JSON.stringify(S.clubs.flatMap(club=>club.players.map(p=>({
     id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,note:roleNote(p),condition:p.condition,
-    injury:p.injury,nationaleQualifications:p.nationaleQualifications,clubId:club.id
+    injury:p.injury,suspension:p.suspension,nationaleQualifications:p.nationaleQualifications,clubId:club.id
   }))))`));
 
   function write(profile) {
@@ -227,6 +228,8 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
       })).filter(camp=>camp.players.length),
       currentManagedFixture:current,nextManagedFixture:current??overview.nextFixture,squad:overview.squad,sheet:overview.sheet,
       choicesBySlot:overview.choicesBySlot,
+      availability:projectAvailability({date,clubManaged:managed.club,clubId,players,callups:overview.callups,
+        releaseWindows:overview.releaseWindows,editions:overview.competitions,teams}),
     };
     if (ended()) {
       const waiting = date < nextOpening();
