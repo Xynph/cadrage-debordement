@@ -9,6 +9,11 @@ const { createBridge } = require('../native/engine/worker.cjs');
 const roster = require('../dist/rugby-common-rosters.js');
 
 const referenceKeys = Object.keys(roster.clubs[0].players[0].attributesV2).sort();
+const activePlayers = state => [
+  ...state.clubs.flatMap(club => club.players), ...state.development.academy,
+  ...state.market, ...state.economy.freeAgents,
+  ...((state.aiRoster?.academies ?? []).flatMap(center => center.players))
+];
 
 for (const mode of ['common', 'world-champ', 'fiction']) {
   test(`Fiche joueur native · ${mode}`, () => {
@@ -27,6 +32,9 @@ for (const mode of ['common', 'world-champ', 'fiction']) {
       const file = path.join(created.meta.dataDir, 'donnees.json');
       const before = fs.readFileSync(file);
       const saved = JSON.parse(JSON.parse(before).store['bdt-v1']);
+      const generated = activePlayers(saved).filter(player => !player.attributesV2);
+      assert.ok(generated.length > 0);
+      assert.ok(generated.every(player => typeof player.nativeAttributesV1 === 'string' && player.nativeAttributesV1.length === 72));
       const source = new Map(saved.clubs[created.club.id].players.map(player => [player.id, player]));
       const model = request('snapshot');
       let detailed = 0;
@@ -35,14 +43,14 @@ for (const mode of ['common', 'world-champ', 'fiction']) {
         const original = source.get(player.id);
         assert.ok(original);
         if (original.attributesV2 === undefined) {
-          assert.equal(player.attributesV2Estimated, true, player.id);
+          assert.equal(player.attributesV2Estimated, undefined, player.id);
           assert.deepEqual(Object.keys(player.attributesV2).sort(), referenceKeys);
           assert.ok(Object.values(player.attributesV2).every(value => Number.isFinite(value) && value >= 20 && value <= 97));
           assert.equal(player.rating, original.rating);
         } else {
           assert.deepEqual(Object.keys(original.attributesV2).sort(), referenceKeys);
           assert.deepEqual(player.attributesV2, original.attributesV2, player.id);
-          assert.equal(player.attributesV2Estimated, false);
+          assert.equal(player.attributesV2Estimated, undefined);
           detailed++;
         }
       }
@@ -52,7 +60,7 @@ for (const mode of ['common', 'world-champ', 'fiction']) {
       const academy = model.decisions.development.academy;
       assert.ok(academy.length > 0);
       for (const player of [...academy, ...model.market]) {
-        assert.equal(player.attributesV2Estimated, true, player.id);
+        assert.equal(player.attributesV2Estimated, undefined, player.id);
         assert.deepEqual(Object.keys(player.attributesV2).sort(), referenceKeys);
       }
 
@@ -65,6 +73,21 @@ for (const mode of ['common', 'world-champ', 'fiction']) {
       assert.deepEqual(reopened.decisions.development.academy.map(detail), academy.map(detail));
       assert.deepEqual(fs.readFileSync(file), before);
       if (mode === 'fiction') {
+        bridge.close();
+        saved.development.academy[0].dev.xp = 0.99;
+        for (const player of generated) delete player.nativeAttributesV1;
+        const older = JSON.parse(before);
+        older.store['bdt-v1'] = JSON.stringify(saved);
+        const oldBytes = Buffer.from(JSON.stringify(older));
+        fs.writeFileSync(file, oldBytes);
+        bridge = createBridge({ dataDir, seed: 93, now: 1700000000000 });
+        assert.deepEqual(request('snapshot').squad.map(detail), model.squad.map(detail));
+        assert.deepEqual(fs.readFileSync(file), oldBytes);
+        request('save');
+        const migrated = JSON.parse(JSON.parse(fs.readFileSync(file)).store['bdt-v1']);
+        assert.ok(activePlayers(migrated).every(player => player.attributesV2 || player.nativeAttributesV1));
+        const exported = request('export').meta.exportText;
+        assert.deepEqual(request('import', { text: exported }).squad.map(detail), model.squad.map(detail));
         const byPosition = pos => model.squad.filter(player => player.pos === pos);
         const mean = (players, key) => players.reduce((sum, player) => sum + player.attributesV2[key], 0) / players.length;
         assert.ok(mean(byPosition('Pilier gauche'), 'scrumTechnique') > mean(byPosition('Ailier'), 'scrumTechnique'));
@@ -74,6 +97,22 @@ for (const mode of ['common', 'world-champ', 'fiction']) {
         const professional = promoted.squad.find(player => player.id === prospect.id);
         assert.ok(professional);
         assert.deepEqual(professional.attributesV2, prospect.attributesV2);
+        const trained = request('train', { mode: 'intense' }).squad.find(player => player.id === prospect.id);
+        assert.equal(trained.rating, professional.rating + 1);
+        assert.notDeepEqual(trained.attributesV2, professional.attributesV2);
+        bridge.close();
+        bridge = createBridge({ dataDir, seed: 93, now: 1700000000000 });
+        assert.deepEqual(detail(request('snapshot').squad.find(player => player.id === prospect.id)), detail(trained));
+        bridge.close();
+        const damaged = JSON.parse(fs.readFileSync(file));
+        const damagedCareer = JSON.parse(damaged.store['bdt-v1']);
+        damagedCareer.clubs[created.club.id].players[0].nativeAttributesV1 += '\n';
+        damaged.store['bdt-v1'] = JSON.stringify(damagedCareer);
+        const damagedBytes = Buffer.from(JSON.stringify(damaged));
+        fs.writeFileSync(file, damagedBytes);
+        bridge = createBridge({ dataDir, seed: 93, now: 1700000000000 });
+        assert.equal(request('snapshot').meta.recoveryRequired, true);
+        assert.deepEqual(fs.readFileSync(file), damagedBytes);
       }
     } finally {
       bridge.close();
