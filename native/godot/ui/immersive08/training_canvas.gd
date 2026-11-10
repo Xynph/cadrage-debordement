@@ -6,15 +6,15 @@ const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
-const TABS = ["Semaine", "Groupes", "Individuel", "Staff"]
+const Fatigue = preload("res://ui/immersive08/fatigue_overview.gd")
+const Watch = preload("res://ui/management_state.gd")
+const TABS = ["Semaine", "Groupes", "Individuel", "Staff", "Fatigue"]
 const MODES = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const INDIVIDUAL = {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const TOPICS = ["COLLECTIF", "GROUPES", "INDIVIDUEL", "VIGILANCE", "CONSIGNES", "MATCH", "ENCADREMENT"]
 const FAMILIES = [["PIL.", [0]], ["TAL.", [1]], ["2e L.", [2]], ["3e L.", [3]], ["CHAR.", [4, 5]], ["CEN.", [7]], ["3/4", [6, 8]]]
 const GREEN = Color("59eb89")
 const PALE_GOLD = Color("f7ce72")
-const WATCH_LOAD = 55.0
-const WATCH_CONDITION = 70.0
 const SLOTS = [
 	["train", "Séance collective", "Choisir la charge", "Une séance collective agit sur la récupération et le développement.", "Modifier la séance"],
 	["flag", "Travail spécifique", "Préparation ciblée", "Choisissez le travail spécifique avant d’effectuer la séance.", "Modifier le travail"],
@@ -61,7 +61,7 @@ func _build() -> void:
 	support = app.model.get("clubLife", {}).get("clubSupport", {})
 	squad = app.model.get("squad", [])
 	watched = squad.filter(func(p: Dictionary):
-		return float(p.get("physicalLoad", 0)) >= WATCH_LOAD or float(p.get("condition", 100)) < WATCH_CONDITION)
+		return not Watch.watch_reason(p).is_empty())
 	watched.sort_custom(func(a: Dictionary, b: Dictionary): return _risk(a) > _risk(b))
 	staff = _staff_members()
 	trained = meta.get("trained", false)
@@ -89,7 +89,7 @@ func _build() -> void:
 	D.text(self, 30, 142, "Semaine %s  ·  %s" % [G.n(int(meta.get("week", 0)) + 1), fixture], 27, C.IVORY, 500, 785)
 	_metrics(meta)
 	for i in TABS.size():
-		var tab := ClubUI.tab(self, Rect2(4 + i * 249, 169, 238, 58), TABS[i], i == active_tab, func(): _open_tab(i), "TrainingTab" + str(i))
+		var tab := ClubUI.tab(self, Rect2(4 + i * 199, 169, 188, 58), TABS[i], i == active_tab, func(): _open_tab(i), "TrainingTab" + str(i))
 		tab.add_theme_font_size_override("font_size", C.px(30))
 		var shape := tab.get_theme_stylebox("normal")
 		tab.add_theme_stylebox_override("pressed", shape)
@@ -113,6 +113,7 @@ func _build() -> void:
 		1: _groups()
 		2: _individuals()
 		3: _staff_tab()
+		4: Fatigue.build(app, self, state)
 
 func _risk(p: Dictionary) -> float:
 	return maxf(float(p.get("physicalLoad", 0)), 100.0 - float(p.get("condition", 100)))
@@ -279,17 +280,13 @@ func _vigilance() -> void:
 	D.line(tile, Vector2(17, 47), Vector2(469, 47))
 	if watched.is_empty():
 		D.text(tile, 22, 92, "Aucune alerte physique", 24, GREEN, 600, 420)
-		D.text(tile, 22, 127, "Charge ≥ %s ou condition < %s %%" % [G.n(WATCH_LOAD), G.n(WATCH_CONDITION)], 20, C.MUTED, 500, 420)
+		D.text(tile, 22, 127, "Mêmes repères que l’Effectif", 24, C.MUTED, 500, 420)
 		return
 	for i in mini(3, watched.size()):
 		var p: Dictionary = watched[i]
 		var y := 51 + i * 40
 		var button := _action(tile, Rect2(12, y, 464, 38), "", func(): _player_dialog(p), false, "", "TrainingRisk_" + str(i))
-		var condition := float(p.get("condition", 100))
-		var charge := float(p.get("physicalLoad", 0))
-		var reasons := PackedStringArray()
-		if condition < WATCH_CONDITION: reasons.append("Condition %s %%" % G.n(condition))
-		if charge >= WATCH_LOAD: reasons.append("Charge %s/100" % G.n(charge))
+		var reasons := Watch.watch_reason(p).split(" · ")
 		var description := "%s · %s · %s" % [p.name, p.pos, " · ".join(reasons)]
 		button.accessibility_name = description
 		button.tooltip_text = description
@@ -410,7 +407,8 @@ func _open_slot(index: int) -> void:
 		0: _mode_dialog(false)
 		1: _choices_dialog(false)
 		2, 3: _open_tab(1)
-		4, 5, 6: _open_tab(2)
+		4, 5: _open_tab(2)
+		6: _open_tab(4)
 		7: app._navigate("Travail du club")
 		8: app._navigate("Plan de jeu")
 		9: _choices_dialog(true)
