@@ -46,6 +46,11 @@ func _build() -> void:
 	compare = D.button(self,Rect2(1460,0,244,42),"Comparer la sélection",func():app.SquadViews.comparison(app),false,"",true,app.accent,"OpenComparison")
 	if app.model.get("epcrPreparation") is Dictionary:
 		D.button(self,Rect2(860,0,380,42),"Préparer l’Europe",func():load("res://ui/epcr_preparation_dialog.gd").open(app),false,"",true,app.accent,"OpenEpcrPreparation")
+	if int(state.get("immersive_tab", 0)) == 2:
+		var review := preload("res://ui/contract_review.gd").build(app)
+		add_child(review)
+		D.place(review, Rect2(0, 60, 2248, 1068))
+		return
 	var table := D.panel(self,Rect2(0,60,1704,1068),"","","","ImmersiveRosterTable")
 	var search := LineEdit.new()
 	search.name="RosterSearch"
