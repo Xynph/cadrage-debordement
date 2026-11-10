@@ -223,7 +223,7 @@ func _build_hud() -> void:
 	content.add_theme_constant_override("separation", 12)
 	card.add_child(content)
 
-	content.add_child(_label("PROTOTYPE 3D · VISAGE V6", 15, ACCENT))
+	content.add_child(_label("PROTOTYPE 3D · VISAGE V7", 15, ACCENT))
 	content.add_child(_label("Gabi", 58, INK))
 	content.add_child(_label("Gaston Darroux · ancien pilier", 18, MUTED))
 	_rule(content)
