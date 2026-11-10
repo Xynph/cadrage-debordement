@@ -305,6 +305,7 @@ function factory(){
    'Les jeunes n’ont pas besoin de porter tout le club sur leurs épaules. Je veux d’abord des passes et des soutiens autour d’eux.'
   ]);
   const questions={blessures:'Comment préparez-vous votre effectif aux indisponibilités ?',
+   formation:'Comment préparez-vous les jeunes à trouver leur place dans le groupe ?',
    crise:'Quand la confiance est sous pression, quelle priorité gardez-vous pour le groupe ?',
    phase_finale:'Comment préparez-vous un match à élimination directe ?'};
   return preparationReplies[q.theme]?write(questions[q.theme]||q.question,preparationReplies[q.theme]):q;
