@@ -51,8 +51,9 @@ try{
     assert.ok(p.rating>=source.rating,p.id);
     const position=p.gameplayPosition||p.pos;
     const before=projectSkills(source.attributesV2,position),after=projectSkills(p.attributesV2,position);
+    const aligned=corrected&&source.gameplayPosition!==position;
     for(const [key,value] of Object.entries(after)){
-     const expected=Math.round(Math.min(99,Math.max(15,source.skills[key]+value-before[key]))*100)/100;
+     const expected=aligned?value:Math.round(Math.min(99,Math.max(15,source.skills[key]+value-before[key]))*100)/100;
      assert.equal(p.skills[key],expected,p.id+' '+key);
     }
     assert.equal(p.dev.potential,p.id==='lnr:2436'?91:Math.min(Math.max(97,source.dev.potential),source.dev.potential+p.rating-source.rating));

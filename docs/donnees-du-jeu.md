@@ -24,6 +24,12 @@ sont des estimations de simulation. Les qualités fortes dépendent de leur rôl
 et alimentent les onze compétences de match par la projection des 36 attributs.
 L’aperçu à la création emploie le même barème que le premier effectif.
 
+Lorsqu’un poste officiel du registre français remplace le rôle de simulation
+d’un senior, le jeu reporte chaque écart individuel sur les références V12 du
+poste confirmé, puis recalcule les compétences de match avant le barème senior.
+La correction intervient à la création de la carrière. Les postes documentés
+et les attributs estimés conservent leurs provenances respectives.
+
 Les plafonds d’évolution des seniors recalibrés suivent la nouvelle échelle,
 dans la limite de 97 ou du plafond déjà supérieur. Les potentiels du registre
 source, les notes des jeunes, les identifiants et les identités des packs sont

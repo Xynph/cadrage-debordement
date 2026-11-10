@@ -118,3 +118,39 @@ test('Le barème du même ouvreur est partagé entre la Base commune et les cinq
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('Les profils sportifs seniors suivent les postes officiels au démarrage', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'oval-senior-roles-'));
+  const original = require('../dist/rugby-common-rosters.js').clubs.flatMap(club => club.players);
+  const { players: foundation } = require('../dist/rugby-roster-foundation.js');
+  const { projectSkills } = require('../scripts/build-world-registry.cjs');
+  try {
+    const starts = ['common', 'world-champ'].map(mode => withBridge(path.join(root, mode), ask => {
+      const model = ask('new_career', { mode, club: 0 });
+      const initial = state(model);
+      const exported = ask('export').meta.exportText;
+      assert.deepEqual(state(ask('import', { text: exported })), initial);
+      return new Map(players(initial).map(player => [player.id, player]));
+    }));
+    const changed = original.filter(player => player.age >= 23 && foundation[player.id].position.basis === 'official' &&
+      player.gameplayPosition !== foundation[player.id].position.primary);
+    assert.equal(changed.length, 54);
+    for (const source of changed) {
+      const [common, world] = starts.map(roster => roster.get(source.id));
+      assert.equal(common.pos, foundation[source.id].position.primary, source.id);
+      assert.equal(common.gameplayPosition, common.pos, source.id);
+      assert.deepEqual(numbers(common), numbers(world), source.id);
+      assert.notDeepEqual(common.attributesV2, source.attributesV2, source.id);
+      assert.deepEqual(common.skills, projectSkills(common.attributesV2, common.pos), source.id);
+      const before = roleNote({ ...source, fam: common.fam });
+      assert.ok(roleNote(common) >= before - 1, source.id + ' note existante');
+      assert.ok(roleNote(common) > common.rating - 8, source.id + ' écart au poste');
+    }
+    const young = original.filter(player => player.age < 23 && foundation[player.id].position.basis === 'official' &&
+      player.gameplayPosition !== foundation[player.id].position.primary);
+    assert.ok(young.length > 0);
+    for (const source of young) for (const roster of starts) assert.deepEqual(numbers(roster.get(source.id)), numbers(source));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});

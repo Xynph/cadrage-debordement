@@ -1,6 +1,6 @@
 'use strict';
 const crypto=require('node:crypto');
-const profiles=require('./profiles.json'),KEYS=profiles.attributeKeys;
+const profiles=require('../../native/engine/role-attribute-priors.json'),KEYS=profiles.attributeKeys;
 const clone=x=>JSON.parse(JSON.stringify(x)),hash=x=>crypto.createHash('sha256').update(typeof x==='string'||Buffer.isBuffer(x)?x:JSON.stringify(x)).digest('hex');
 const mean=a=>a.reduce((n,v)=>n+v,0)/a.length,round=n=>Math.round(n*100)/100,clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const normalize=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();

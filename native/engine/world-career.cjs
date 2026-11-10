@@ -262,7 +262,13 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  }
  function sourcePlayer(source){
   const p=copy(source),profile=CDRosterFoundation.resolve(CDRosterFoundation.marker)?.players[p.id];
-  if(profile){p.rosterProfile=copy(profile);p.pos=profile.position.primary;p.fam=FAMILIES[POS.indexOf(p.pos)];if(profile.position.basis==='official')p.gameplayPosition=p.pos;p.contractEnd=profile.contract.endSeason;}
+  if(profile){
+   if(profile.position.basis==='official'){
+    seniorCalibration?.alignStartingRole(p,profile.position.primary);
+    p.gameplayPosition=profile.position.primary;
+   }
+   p.rosterProfile=copy(profile);p.pos=profile.position.primary;p.fam=FAMILIES[POS.indexOf(p.pos)];p.contractEnd=profile.contract.endSeason;
+  }
   if(REG.worldProfiles[p.id])p.worldProfile=copy(REG.worldProfiles[p.id]);if(REG.nationaleQualifications?.[p.id])p.nationaleQualifications=REG.nationaleQualifications[p.id].roles.slice();return p;
  }
  function initialRoster(c){
