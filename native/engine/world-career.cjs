@@ -507,7 +507,10 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
    if(String(p.id).startsWith('world:')||p.worldRatingsVersion!==undefined){
     check(source&&profile&&p.worldRatingsVersion===1&&p.lnrRatingsVersion===undefined,'identité de joueur mondiale inconnue.');
     check(eq(p.worldProfile,profile),'référence initiale mondiale modifiée.');
-    for(const key of ['potential','birthYear','birthDate','ageEstimated','gameplayPosition','pos','fam'])check(eq(p[key],source[key]),'profil de joueur mondial incompatible : '+key);
+    for(const key of ['potential','birthYear','birthDate','ageEstimated','gameplayPosition','pos','fam']){
+     const expected=key==='potential'&&s.careerVariation!==undefined?nativeCareerVariation.sourcePotential(source.potential,p.id,s.careerVariation):source[key];
+     check(eq(p[key],expected),'profil de joueur mondial incompatible : '+key);
+    }
     check(p.attributesV2&&Object.keys(p.attributesV2).length===36&&Object.keys(source.attributesV2).every(k=>Number.isFinite(p.attributesV2[k])&&p.attributesV2[k]>=20&&p.attributesV2[k]<=97),'attributs mondiaux invalides.');
     check(eq(p.hiddenTraitsV2,source.hiddenTraitsV2),'traits initiaux mondiaux modifiés.');
    }else check(eq(p.worldProfile,profile),'référence initiale mondiale modifiée.');

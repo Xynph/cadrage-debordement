@@ -164,6 +164,7 @@ static func begin_creation(app: Control) -> void:
 	app.management_ui.erase(CREATION_SELECTION)
 	app.management_ui.erase("creation_role")
 	app.management_ui.erase("creation_nation")
+	app.management_ui.erase("creation_vary_current")
 	app._navigate("Création")
 
 static func _creation_country(club: Dictionary) -> String:
@@ -563,7 +564,7 @@ static func _show_creation_waiting(app: Control, workspace: Control) -> void:
 
 static func _create(app: Control, selected: Dictionary, mode: String) -> void:
 	var role: String = app.management_ui.get("creation_role", "club") if mode == "world-champ" else "club"
-	var payload := {"mode":mode}
+	var payload := {"mode":mode,"varyCurrent":bool(app.management_ui.get("creation_vary_current",true))}
 	if role != "nation": payload.club = int(selected.id)
 	if role in ["dual", "nation"]:
 		payload.nationalRole = role
@@ -961,6 +962,7 @@ static func creation(app: Control) -> Control:
 	if not modern: list.add_child(G.wrap(world_info, 12))
 	var caption := "CHOISISSEZ UN CLUB" if selected.is_empty() else "PRENDRE LES RÊNES DE " + G.club_abbr(selected) + "  →"
 	if modern: caption = "Choisissez un club" if selected.is_empty() else "Prendre les rênes  →"
+	_career_variation_controls(app,dossier if modern else list,modern)
 	var can_start := not selected.is_empty() and (role == "club" or not nation.is_empty())
 	var start := G.button(caption, func():
 		if can_start: _create(app, selected, mode), true)
@@ -999,6 +1001,7 @@ static func _nation_creation(app: Control, page: Control, mode: String, preferre
 	panel.add_child(C.wrap("Vous dirigez cette sélection. Retrouvez vos convocations, votre calendrier et vos résultats dans la Réception et l’espace Sélections.", 26, C.IVORY))
 	var installed: Array = app.pack_manager.installed("creation")
 	var missing := preferred != "base" and not installed.any(func(pack: Dictionary): return str(pack.id) == preferred)
+	_career_variation_controls(app,panel,modern)
 	var start := G.button("Diriger " + nation_name + "  →", _create.bind(app, {}, mode), true)
 	start.name = "CreationStart"
 	start.disabled = app.waiting or missing or nation.is_empty()
@@ -1008,3 +1011,17 @@ static func _nation_creation(app: Control, page: Control, mode: String, preferre
 		start.add_theme_font_size_override("font_size", maxi(20, C.px(41)))
 	panel.add_child(start)
 	if app.waiting and app.last_command == "new_career": _show_creation_waiting(app, page)
+
+static func _career_variation_controls(app: Control, parent: Node, modern: bool) -> void:
+	var group := C.v(4)
+	group.name = "CreationCareerVariation"
+	parent.add_child(group)
+	var option := CheckBox.new()
+	option.name = "CreationVaryCurrent"
+	option.text = "Faire légèrement varier le niveau actuel"
+	option.button_pressed = bool(app.management_ui.get("creation_vary_current",true))
+	option.add_theme_font_size_override("font_size",C.px(20) if modern else 16)
+	option.tooltip_text = "Les qualités de départ varient légèrement, jusqu’à ±3. Le potentiel varie toujours, jusqu’à ±5."
+	option.toggled.connect(func(value: bool): app.management_ui.creation_vary_current = value)
+	group.add_child(option)
+	group.add_child(C.wrap("Le potentiel varie à chaque nouvelle carrière (jusqu’à ±5), même lorsque cette case est décochée.",17,C.MUTED))
