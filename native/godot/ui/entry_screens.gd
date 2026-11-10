@@ -1,5 +1,6 @@
 extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
+const GameSkin = preload("res://ui/game_skin.gd")
 const Packs = preload("res://ui/pack_views.gd")
 const Club = preload("res://ui/club_views.gd")
 const C = preload("res://ui/immersive08/components.gd")
@@ -713,7 +714,9 @@ static func creation(app: Control) -> Control:
 			else:
 				if country == group: G.selected(tab, app.accent)
 				tabs.add_child(tab)
-	var divisions := G.h(8)
+	var divisions := HFlowContainer.new()
+	divisions.add_theme_constant_override("h_separation", C.px(12))
+	divisions.add_theme_constant_override("v_separation", C.px(6))
 	if modern:
 		var scope := PanelContainer.new()
 		Editorial.surface(scope, Color("152020"), Editorial.BRASS, 9)
@@ -736,31 +739,37 @@ static func creation(app: Control) -> Control:
 		country_heading.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		competition_row.add_child(country_heading)
 		Editorial.divider(competition_row)
-		competition_row.add_child(divisions)
+		competition_row.add_child(G.fill(divisions))
 	else:
 		filters.add_child(divisions)
 	for item: Array in divisions_data:
 		var members: Array = clubs.filter(func(club: Dictionary): return club.division == item[0])
 		if members.is_empty(): continue
+		var identity := _competition_identity(app, item[0])
 		var name: String = item[1]
-		if modern:
-			var identity := _competition_identity(app, item[0])
+		if modern or preferred != "base":
 			name = str(identity.get("shortName", identity.get("name", name)))
 		var caption := "%s · %d" % [name, members.size()] if international else "%s  /  %d CLUBS" % [name, members.size()]
 		var b := G.button(caption, func(): _division(app, item[0], members, mode))
 		b.name = "CreationDivision_" + item[0]
-		if modern:
-			b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-			b.tooltip_text = caption
+		b.icon = GameSkin._pack_texture(str(identity.get("logoPath", "")))
+		if b.icon != null:
+			var icon_width := minf(58, 32.0 * b.icon.get_width() / b.icon.get_height())
+			b.add_theme_constant_override("icon_max_width", maxi(1, C.px(icon_width)))
+			b.add_theme_constant_override("h_separation", C.px(10))
+			for state in ["normal", "hover", "pressed", "focus"]:
+				b.add_theme_color_override("icon_" + state + "_color", Color.WHITE)
 		b.disabled = app.waiting
 		if modern:
-			if divisions.get_child_count() > 0: Editorial.divider(divisions)
 			b.custom_minimum_size.x = C.px(235)
 			Editorial.route_tab(b, app.club_division == item[0], false)
 		else:
-			G.fill(b)
 			if app.club_division == item[0]: G.selected(b, app.accent)
 		divisions.add_child(b)
+		var max_tab_width := floorf(screen.x * .65)
+		if b.get_combined_minimum_size().x > max_tab_width:
+			b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			b.custom_minimum_size.x = max_tab_width
 	if modern:
 		page.add_child(row)
 		list.add_child(C.rule())
@@ -819,7 +828,8 @@ static func creation(app: Control) -> Control:
 		var b := G.button("", func(): _select_club(app, int(club.id), modern))
 		b.custom_minimum_size.y = clampf(app.get_viewport_rect().size.y * 0.045, 52.0, 66.0) if is_srp else (44.0 if is_japan or is_nationale or is_champ else 52.0)
 		b.name="CreationClub"+str(int(club.id))
-		b.tooltip_text=G.club_name(club)+" · "+_territory(club)
+		b.accessibility_name = G.club_name(club)
+		b.accessibility_description = _territory(club)
 		G.fill(b)
 		if modern:
 			Editorial.action(b, false, club.get("id") == selected.get("id"), C.px(106), true)
@@ -837,7 +847,9 @@ static func creation(app: Control) -> Control:
 		var line := C.h(14) if modern else G.h(16)
 		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		inset.add_child(line)
-		line.add_child(_creation_crest(club, clampi(C.px(84), 30, 84) if modern else 32, modern and preferred == "base"))
+		var crest := _creation_crest(club, clampi(C.px(84), 30, 84) if modern else 32, modern and preferred == "base")
+		crest.tooltip_text = ""
+		line.add_child(crest)
 		var names := G.v(0)
 		G.fill(names)
 		line.add_child(names)
@@ -853,7 +865,7 @@ static func creation(app: Control) -> Control:
 			names.add_child(subtitle)
 			if not roster.is_empty():
 				var roster_count := int(roster.get("forwards", 0)) + int(roster.get("backs", 0))
-				b.tooltip_text += " · Note moyenne %s · %d joueurs" % [_rating(roster), roster_count]
+				b.accessibility_description += " · Note moyenne %s · %d joueurs" % [_rating(roster), roster_count]
 				Editorial.divider(line)
 				var figures := C.v(0)
 				figures.alignment = BoxContainer.ALIGNMENT_CENTER
