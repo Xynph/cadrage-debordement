@@ -373,7 +373,7 @@ static func _open_current_player(app: Control, player_id: String) -> void:
 	app.selected_player = player_id
 	app.management_ui.profile_scroll = 0
 	app.set_meta("immersive08_full_player",true)
-	app._navigate("Effectif",false)
+	app._navigate("Effectif",false,true)
 
 static func _list(card: Panel, app: Control, state: Dictionary, messages: Array) -> void:
 	D.text(card,25,43,"Messages (%d)" % messages.size(),28,C.IVORY,700,390)

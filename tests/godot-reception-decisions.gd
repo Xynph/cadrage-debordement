@@ -111,7 +111,7 @@ func run() -> void:
 		if person != null:
 			var player_id := str(person.get_meta("player_id"))
 			await activate("InboxExpiryPlayer_0")
-			check(app.route == "Effectif" and app.selected_player == player_id, "Le portrait ouvre la bonne fiche par identifiant")
+			check(app.route == "Effectif" and app.selected_player == player_id and app.get_meta("immersive08_full_player",false), "Le portrait ouvre la bonne fiche par identifiant")
 			app._navigate("Réception"); await settle()
 			check(state.selected == expiry[0].id, "Retour de la fiche au même courrier d'échéance")
 	# Controlled UI fixture only: the product still reads the engine projection.
@@ -131,6 +131,9 @@ func run() -> void:
 	check(app.find_children("*","Button",true,false).any(func(button): return button.get_meta("message_id","") == "qa-linked-0"), "Entrée rouvre le groupe et restitue ses messages")
 	app.model = original
 	app._render(); await settle()
+	state.activity_filter = "info"; state.expanded_threads = {"fixture/old":true}; state.return_focus = true
+	app._reset_reception()
+	check(state.activity_filter == "all" and state.expanded_threads.is_empty() and not state.return_focus, "Nouvelle réception : aucun filtre ou groupe hérité de la carrière précédente")
 	check(FileAccess.get_sha256(file) == before, "Lecture, filtres, ouverture et retour : profil sportif inchangé")
 	check(app.bridge._next_id == sequence, "Parcours de lecture sans commande moteur supplémentaire")
 	var report := FileAccess.open(output.path_join("report.json"),FileAccess.WRITE)

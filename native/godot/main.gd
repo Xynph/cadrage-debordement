@@ -378,7 +378,7 @@ func _failed(message: String) -> void:
 
 func _reset_reception(selected: String = "") -> void:
 	var inbox: Dictionary = Immersive.Reception._state(self)
-	inbox.merge({"folder":0, "category":"Tous", "selected":selected, "oldest_first":false, "scroll":0, "press_opened":""}, true)
+	inbox.merge({"folder":0, "category":"Tous", "selected":selected, "oldest_first":false, "scroll":0, "press_opened":"", "activity_filter":"all", "expanded_threads":{}, "return_focus":false}, true)
 
 func _show_press_inbox() -> void:
 	_reset_reception()
