@@ -1,10 +1,11 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const a=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),{createBridge}=require('../native/engine/worker.cjs'),C=require('../native/engine/staff-completion.cjs');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'staff-completion-season-'));let bridge=createBridge({dataDir:root,seed:413,now:1700000000000}),seq=0,model;
 function good(command,payload={}){const r=bridge.handle({id:++seq,command,payload});a.equal(r.ok,true,command+': '+r.error);return model=r.model;}
 function signed(doc){let h=2166136261;for(const c of JSON.stringify(doc.state))h=Math.imul(h^c.charCodeAt(0),16777619);doc.checksum=(h>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
 try{
- good('new_career',{mode:'fiction',club:13});const doc=JSON.parse(good('export').meta.exportText);
+ good('new_career',{mode:'fiction',club:13});model=settleClubMeetings(model,good);const doc=JSON.parse(good('export').meta.exportText);
  // A validator-compatible ended historical career exercises the actual worker
  // season command; no claim that this fixture played a full sporting season.
  Object.assign(doc.state,{phase:'ended',round:26,live:null,ending:'Bilan de fin de saison du scénario de test',playoff:{pairs:[],seeds:[0,1,2,3,4,5],log:[]}});
