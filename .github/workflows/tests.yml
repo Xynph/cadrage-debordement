@@ -1,140 +1,89 @@
-name: Tests JavaScript
+name: Recette visuelle distante Sélections et Réception
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: read
-
-concurrency:
-  group: tests-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-
 jobs:
-  classification:
+  visual:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      coverage: ${{ steps.diff.outputs.coverage }}
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-      - id: diff
-        name: Classifier le changement et vérifier la syntaxe JS modifiée
-        shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          PR_BASE: ${{ github.event.pull_request.base.sha }}
-          PR_HEAD: ${{ github.event.pull_request.head.sha }}
-          BEFORE: ${{ github.event.before }}
-        run: node ci/test-coverage.cjs
-
-  shards:
-    name: Suites ${{ matrix.shard }}/5
-    needs: classification
-    if: ${{ needs.classification.result == 'success' && needs.classification.outputs.coverage != 'documentation' }}
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5]
-    runs-on: ubuntu-latest
-    # Les suites natives longues peuvent dépasser ensemble vingt minutes.
-    timeout-minutes: 30
+        include:
+          - dimensions: 1920x1080
+            scenarios: club nation
+          - dimensions: 2560x1440
+            scenarios: club nation
+          - dimensions: 1920x1080
+            scenarios: match
+    defaults:
+      run:
+        shell: bash
+        working-directory: source
     steps:
       - uses: actions/checkout@v5
         with:
+          path: qa
+          persist-credentials: false
+      - uses: actions/checkout@v5
+        with:
+          ref: bfae7dbf374b2907470f688ee34e4688b1e440dd
+          path: source
           persist-credentials: false
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Tests du jeu et bilan des erreurs
-        shell: bash
-        env:
-          SHARD: ${{ matrix.shard }}
-          COVERAGE: ${{ needs.classification.outputs.coverage }}
+      - name: Préparer Godot 4.7.2 et les ressources du jeu
         run: |
           set -euo pipefail
-          node ci/shard-tests.cjs "$SHARD" "$COVERAGE" > "$RUNNER_TEMP/shard-suites.txt"
-          mapfile -t suites < "$RUNNER_TEMP/shard-suites.txt"
-          total="$(find tests -maxdepth 1 -name '*.cjs' ! -name 'harness.cjs' | wc -l)"
-          [[ "${#suites[@]}" -gt 0 ]] || exit 1
-          failures=0
-          executed=0
-          for test in "${suites[@]}"; do
-            executed=$((executed+1))
-            echo "::group::$test"
-            start=$SECONDS
-            limit=180s
-            # Ce parcours intégré a déjà dépassé 180 s sur un runner GitHub.
-            if [[ "$test" == "tests/native-academy-integrated-long.cjs" ]]; then limit=240s; fi
-            # Les 11 comparaisons complètes rejouent deux moteurs avec les centres 30/30.
-            if [[ "$test" == "tests/native-delegate-transaction06.cjs" ]]; then limit=300s; fi
-            if timeout --signal=TERM --kill-after=10s "$limit" /usr/bin/time -f "CD_CPU_PROFILE suite=$test user_s=%U system_s=%S wall_s=%e cpu_pct=%P max_rss_kb=%M" node "$test"; then
-              echo "PASS $test ($((SECONDS-start)) s)"
-              echo "| $test | OK | $((SECONDS-start)) s |" >> "$RUNNER_TEMP/results.md"
-            else
-              code=$?
-              failures=$((failures+1))
-              echo "::error file=$test::Échec ou délai dépassé (code $code, durée $((SECONDS-start)) s, limite $limit)"
-              echo "| $test | ECHEC ($code) | $((SECONDS-start)) s |" >> "$RUNNER_TEMP/results.md"
+          mkdir -p "$RUNNER_TEMP/proofs"
+          git rev-parse HEAD | tee "$RUNNER_TEMP/proofs/source.txt"
+          test "$(git rev-parse HEAD)" = bfae7dbf374b2907470f688ee34e4688b1e440dd
+          curl --fail --silent --show-error --location --retry 3 -o "$RUNNER_TEMP/godot.zip" https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          echo "cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  $RUNNER_TEMP/godot.zip" | sha256sum -c
+          unzip -q "$RUNNER_TEMP/godot.zip" -d "$RUNNER_TEMP/godot"
+          godot="$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64"
+          "$godot" --version
+          command -v xvfb-run || (sudo apt-get update -qq && sudo apt-get install -y xvfb xauth)
+          python scripts/build-godot-prototype.py --stage-only --node "$(command -v node)"
+          "$godot" --headless --path native/godot --import >"$RUNNER_TEMP/proofs/import.log" 2>&1 || { tail -100 "$RUNNER_TEMP/proofs/import.log"; exit 1; }
+          ! grep -E 'SCRIPT ERROR|Parse Error' "$RUNNER_TEMP/proofs/import.log"
+      - name: Préparer le profil du jour de France–Fidji
+        if: matrix.scenarios == 'match'
+        run: |
+          set -euo pipefail
+          timeout 650s node "$GITHUB_WORKSPACE/qa/ci/cloud-visual-seed-match.cjs" "$RUNNER_TEMP/profile-match" 2>&1 | tee "$RUNNER_TEMP/proofs/seed-match.log"
+      - name: Recevoir les parcours Godot rendus
+        env:
+          QA_RESOLUTION: ${{ matrix.dimensions }}
+          QA_SCENARIOS: ${{ matrix.scenarios }}
+        run: |
+          set -uo pipefail
+          export LIBGL_ALWAYS_SOFTWARE=1
+          export CD_NODE_EXECUTABLE="$(command -v node)"
+          export CD_GODOT_GUIDE_MODULE_TEST=1
+          export CD_GODOT_SEED=713492
+          godot="$RUNNER_TEMP/godot/Godot_v4.7.2-stable_linux.x86_64"
+          failed=0
+          for scenario in $QA_SCENARIOS; do
+            export QA_SCENARIO="$scenario"
+            export QA_OUTPUT="$RUNNER_TEMP/proofs/$QA_RESOLUTION/$scenario"
+            export CD_GODOT_DATA_DIR="$RUNNER_TEMP/profile-$scenario"
+            export XDG_DATA_HOME="$RUNNER_TEMP/xdg-data-$scenario"
+            export XDG_CONFIG_HOME="$RUNNER_TEMP/xdg-config-$scenario"
+            mkdir -p "$QA_OUTPUT"
+            if ! timeout 115s xvfb-run -a -s "-screen 0 ${QA_RESOLUTION}x24" "$godot" --display-driver x11 --audio-driver Dummy --windowed --resolution "$QA_RESOLUTION" --max-fps 60 --path native/godot --script "$GITHUB_WORKSPACE/qa/ci/cloud-visual-reception.gd" 2>&1 | tee "$QA_OUTPUT/godot.log"; then
+              failed=1
             fi
-            echo "::endgroup::"
+            if grep -Eq 'SCRIPT ERROR|Parse Error|ERROR:' "$QA_OUTPUT/godot.log"; then failed=1; fi
           done
-          {
-            echo "### Shard $SHARD/5 ($COVERAGE) : $executed suites sur $total"
-            echo "| Suite | Résultat | Durée |"
-            echo "| --- | --- | --- |"
-            cat "$RUNNER_TEMP/results.md"
-            echo ""
-            echo "**Échecs : $failures**"
-          } >> "$GITHUB_STEP_SUMMARY"
-          [[ "$failures" -eq 0 ]]
-  validation:
-    name: Validation CI
-    if: ${{ always() }}
-    needs: [classification, shards]
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Publier le verdict natif (sans écriture API)
-        shell: bash
-        env:
-          CLASSIFICATION: ${{ needs.classification.result }}
-          COVERAGE: ${{ needs.classification.outputs.coverage }}
-          SHARDS: ${{ needs.shards.result }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          EVENT_NAME: ${{ github.event_name }}
-        run: |
-          set -euo pipefail
-          result='ÉCHEC'
-          if [[ "$CLASSIFICATION" == "success" ]]; then
-            case "$EVENT_NAME:$COVERAGE:$SHARDS" in
-              pull_request:documentation:skipped|pull_request:web:success|pull_request:native-art:success|\
-              pull_request:full:success|push:full:success|workflow_dispatch:full:success)
-                result='SUCCÈS' ;;
-            esac
-          fi
-          url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-          {
-            echo "## Verdict CI : $result"
-            echo ""
-            echo "- HEAD associé au contrôle : \`$HEAD_SHA\`"
-            echo "- Commit testé : \`$GITHUB_SHA\`"
-            echo "- Événement : $EVENT_NAME"
-            echo "- Classification : $CLASSIFICATION"
-            echo "- Suites : $SHARDS"
-            echo "- Couverture : $COVERAGE"
-            echo "- [Voir les contrôles et les erreurs]($url)"
-            echo ""
-            echo "Ce résumé est informatif : seule la conclusion du contrôle Validation CI autorise la décision de fusion."
-          } >> "$GITHUB_STEP_SUMMARY"
-          echo "::notice title=Verdict CI::$result sur $HEAD_SHA - $url"
-          [[ "$result" == "SUCCÈS" ]]
+          exit "$failed"
+      - name: Publier les captures et rapports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oval-legacy-${{ matrix.dimensions }}-${{ strategy.job-index }}
+          path: ${{ runner.temp }}/proofs/
+          retention-days: 2
+          if-no-files-found: error
