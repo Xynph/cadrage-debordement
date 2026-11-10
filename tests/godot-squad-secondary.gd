@@ -95,14 +95,22 @@ func run() -> void:
 	sort.grab_focus();await key(KEY_ENTER);var first_direction: bool=page().state.descending;await key(KEY_ENTER)
 	check(page().state.sort=="Autres postes" and page().state.descending!=first_direction and sort.has_focus(),"Clavier inverse le tri et garde le focus")
 	var controlled:=original.duplicate(true)
-	controlled.squad[0].secondaryPositions=[11,14]
-	controlled.squad[1].secondaryPositions=[11,12,13,14,15]
-	controlled.squad[2].secondaryPositions=[]
+	var backs: Array=controlled.squad.filter(func(player:Dictionary):return float(player.get("fam",0))>=4)
+	backs[0].secondaryPositions=[11,14]
+	backs[1].secondaryPositions=[11,12,13,14,15]
+	backs[2].secondaryPositions=[]
 	app.model=controlled;app._navigate("Effectif");await settle()
-	var id0:=str(controlled.squad[0].id)
+	var id0:=str(backs[0].id)
 	var sample:=page().rows.get_children().filter(func(node:Node):return str(node.get_meta("player_id",""))==id0)[0] as Control
 	check(sample.find_child("RosterSecondaryPositions",true,false).text=="11·14","Cas UI contrôlé distinct, sans formule locale")
+	var marker:=PanelContainer.new()
+	marker.z_index=1000
+	marker.position=Vector2(790,9)
+	marker.add_theme_stylebox_override("panel",C.box(Color("412d19"),C.GOLD,4,7))
+	marker.add_child(C.label("CAS UI DE RECETTE · DONNÉES CONTRÔLÉES",18,C.GOLD,true,700))
+	root.add_child(marker)
 	await capture("effectif-postes-cas-controle-1440")
+	marker.queue_free();await settle()
 	app.model=original
 	check(app.bridge._next_id==commands and FileAccess.get_sha256(file)==hash,"Consultation et tri sans commande ni écriture sportive")
 	var report:=FileAccess.open(output.path_join("report.json"),FileAccess.WRITE)
