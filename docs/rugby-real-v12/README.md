@@ -26,7 +26,7 @@ Cette capacité est une moyenne pondérée des qualités du poste. **Ce n’est 
 
 ## Comment sont estimées les notes
 
-`profiles.json` expose les 36 références pour chacun des 11 postes. L’écart de division varie selon la qualité : moins marqué pour discipline/leadership et qualités étrangères au poste ; marqué sur les qualités essentielles. Ce sont des paramètres de game design.
+Le [référentiel V12 des attributs par poste](../../native/engine/role-attribute-priors.json) expose les 36 références pour chacun des 11 postes. L’écart de division est moins marqué pour la discipline, le leadership et les qualités étrangères au poste. Il est plus marqué pour les qualités essentielles. Ces valeurs sont des paramètres de simulation.
 
 L’ancien modèle contient des estimations et du bruit déterministe. V12 retire ses effets moyens de poste/division/âge/mensurations par régression régularisée, puis ne conserve que **35 % d’un résidu individuel borné à ±15**, pour éviter d’effacer toute diversité ou d’ériger ce bruit en vérité. Aucun nouveau hasard fondé sur le nom ou l’identifiant n’est ajouté. Aucune prime de réputation du club.
 

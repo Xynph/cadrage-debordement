@@ -10,8 +10,11 @@ module.exports=function commonCareer(seniorCalibration=null){
     const p=JSON.parse(JSON.stringify(source));
     if(!registry.players[p.id])throw Error('Référence effectif absente : '+p.id);
     const profile=JSON.parse(JSON.stringify(registry.players[p.id]));
+    if(profile.position.basis==='official'){
+     seniorCalibration?.alignStartingRole(p,profile.position.primary);
+     p.gameplayPosition=profile.position.primary;
+    }
     p.rosterProfile=profile;p.pos=profile.position.primary;p.fam=FAMILIES[POS.indexOf(p.pos)];
-    if(profile.position.basis==='official')p.gameplayPosition=p.pos;
     p.contractEnd=profile.contract.endSeason;return p;
    });
    if(seniorCalibration)seniorCalibration.apply(players);

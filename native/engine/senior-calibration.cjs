@@ -1,7 +1,7 @@
 'use strict';
 
 // Serialized into the world VM and called once on the initial senior rosters.
-module.exports = function createSeniorCalibration(projectSkills, roleNote, roleWeights) {
+module.exports = function createSeniorCalibration(projectSkills, roleNote, roleWeights, rolePriors) {
   const version = 1;
   const openerId = 'lnr:2436';
   const openerProfile = {
@@ -28,6 +28,21 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
   const weightsByPosition = new Map();
   const round = value => Math.round(value * 100) / 100;
   const compareId = (a, b) => Number(a > b) - Number(a < b);
+
+  function alignStartingRole(player, confirmedPosition) {
+    const originalPosition = player.gameplayPosition || player.pos;
+    if (player.age < 23 || !player.attributesV2 || originalPosition === confirmedPosition) return;
+    const original = rolePriors[originalPosition];
+    const confirmed = rolePriors[confirmedPosition];
+    if (!original || !confirmed) return;
+
+    // Keep the player's estimated deviation from the V12 reference at each attribute.
+    const attributesV2 = Object.fromEntries(Object.entries(player.attributesV2).map(([key, value]) => [
+      key, Math.min(97, Math.max(20, value + confirmed[key] - original[key])),
+    ]));
+    player.attributesV2 = attributesV2;
+    player.skills = projectSkills({ attributesV2, gameplayPosition: confirmedPosition });
+  }
 
   function dose(rating) {
     if (rating <= anchors[0][0]) return 0;
@@ -126,5 +141,5 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     }
   }
 
-  return Object.freeze({ version, apply });
+  return Object.freeze({ version, alignStartingRole, apply });
 };
