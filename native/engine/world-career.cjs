@@ -1,7 +1,7 @@
 'use strict';
 // Factory executed in the same VM as the rugby engine. Presentation packs never
 // alter its identities, membership, ratings, calendar or results.
-module.exports=function worldCareer(edition,active,initialContracts=null){
+module.exports=function worldCareer(edition,active,initialContracts=null,seniorCalibration=null){
  const C=CDWorldCompetitions,REG=edition.registry,LEGACY=REG.compatibilityAliases||{},SOURCES=new Map([...REG.clubs.flatMap(c=>c.players.map(p=>[p.id,p])),...Object.entries(LEGACY).map(([id,row])=>[id,row.player])]),IDS=edition.leagueIds,WEEKS=46;
  const opening=edition.version===5&&edition.mode==='world-champ'&&initialContracts?.databaseId===REG.id&&initialContracts?.schema==='world-initial-contracts-v1'?initialContracts:null;
  const startingTerms=opening?.players;
@@ -219,6 +219,12 @@ module.exports=function worldCareer(edition,active,initialContracts=null){
   // are consulted only when reading an existing career, never for creation.
   return c.players.map(sourcePlayer);
  }
+ function previewRoster(id){
+  const players=initialRoster(REG.clubs[id]);
+  players.push(...nativeProfessionalDepth.additions(id,players,1));
+  if(CH&&seniorCalibration)seniorCalibration.apply(players,SOURCES);
+  return players;
+ }
  function start(id){
   check(playable.has(id),'club jouable invalide.');
   S={version:2,commonDatabase:copy(REG.marker),rosterFoundation:copy(CDRosterFoundation.marker),club:id,season:1,round:0,
@@ -236,7 +242,12 @@ module.exports=function worldCareer(edition,active,initialContracts=null){
   newSeason(S,true);setupOpposition();setupEconomy();
   if(typeof nativeProfessionalDepth!=='undefined')nativeProfessionalDepth.fill(S);
   S.aiRoster.academyAgingVersion=1;
-  setupDevelopment();club().players.forEach(ensureSatisfaction);v39Initialize();autoLineup();if(sheetErrors().length)promoteCover();refreshMarket();setupManager();careerSetup();worldSetup();save();view='dashboard';entryScreen='game';
+  setupDevelopment();
+  if(CH&&seniorCalibration){
+   for(const club of S.clubs)seniorCalibration.apply(club.players,SOURCES);
+   S.seniorCalibrationVersion=seniorCalibration.version;
+  }
+  club().players.forEach(ensureSatisfaction);v39Initialize();autoLineup();if(sheetErrors().length)promoteCover();refreshMarket();setupManager();careerSetup();worldSetup();save();view='dashboard';entryScreen='game';
  }
  function context(pair){const f=fixtures(S).find(f=>f.homeId===pair[0]&&f.awayId===pair[1]);check(!!f,'rencontre hors calendrier.');return copy(f);}
  function result(l){return{pair:l.pair.slice(),score:l.score.slice(),tries:l.tries.slice(),stats:copy(l.stats),weather:l.weather,duration:l.minute,...(l.winner!==undefined?{winner:l.winner,decision:copy(l.decision)}:{}),...(l.worldContext?.competitionId==='srp'?CDWorldSRPMatch.historyFields(l):JP&&CDWorldJapanMatch.isFixture(l.worldContext)?CDWorldJapanMatch.historyFields(l):CH&&CDWorldChampMatch.isFixture(l.worldContext)?CDWorldChampMatch.historyFields(l):N&&typeof CDWorldNationaleMatch!=='undefined'?CDWorldNationaleMatch.historyFields(l):{})};}
@@ -266,6 +277,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null){
  }
  function validate(s){
   check(active(s),'édition de base inconnue.');const w=s.worldMode,V=CDWorldValidation;
+  if(s.seniorCalibrationVersion!==undefined)check(CH&&s.seniorCalibrationVersion===seniorCalibration?.version,'barème senior inconnu.');
   check(V.keys(w,['version','catalogue','rules','startYear','week','leagues','fixtures','yearbook','movement','europe','draws','previousRanks','qualification',...(JP?['japan']:[]),...(N?['nationale']:[]),...(CH?['champ']:[]),...(w.access===undefined?[]:['access'])]),'métadonnées de compétition non reconnues.');
   if(CH)check(eq(w.champ,champBoundary()),'frontières du Champ modifiées.');
   check(w.rules===edition.rules&&w.startYear===2026,'profil de règles inconnu.');
@@ -396,5 +408,5 @@ module.exports=function worldCareer(edition,active,initialContracts=null){
   createRugbyMatch=function(pair,legacy=null,automated=false,preparation=null){const l=oldCreate(pair,legacy,automated,preparation);if(active(S))l.worldContext=context(pair);return l;};
  }
  // Aliases prevent named inner functions shadowing the globals they replace.
- return Object.freeze({active,sizing,sourcePlayerKnown:id=>SOURCES.has(id),sourcePlayer:id=>SOURCES.get(id)||null,leagueId,ranked:worldRanked,rows,cupTables,fixtures,userFixture,calendarToday,label:worldLabel,context,start,finishWeek,advance,validate,installFixture,sync,newSeason,planStages,installHooks});
+ return Object.freeze({active,sizing,sourcePlayerKnown:id=>SOURCES.has(id),sourcePlayer:id=>SOURCES.get(id)||null,previewRoster,leagueId,ranked:worldRanked,rows,cupTables,fixtures,userFixture,calendarToday,label:worldLabel,context,start,finishWeek,advance,validate,installFixture,sync,newSeason,planStages,installHooks});
 };

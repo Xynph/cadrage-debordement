@@ -67,6 +67,7 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
   if(!catalogues.has(R)){
    const profiles=CDRosterFoundation.resolve(CDRosterFoundation.marker);
    const rosters=R.clubs.map(({id,players})=>{
+    if(R.version===5)return rosterProfile(W.previewRoster(R.id,id));
     const normalized=players.map(player=>{
      const pos=profiles?.players[player.id]?.position.primary??player.pos;
      return pos===player.pos?player:{...player,pos,fam:FAMILIES[POS.indexOf(pos)]};
