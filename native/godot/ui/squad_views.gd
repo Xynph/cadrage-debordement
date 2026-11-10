@@ -569,14 +569,35 @@ static func lineup(app:Control) -> Control:
 	list.get_parent().name="LineupCandidatesScroll"
 	var eligible:Variant=selected.get("eligibleIds")
 	for p in app.model.get("squad",[]):
-		var b:=G.button("%s  ·  %s  ·  %s"%[p.name,p.pos,G.n(p.rating)],func():app._command("set_lineup",{"playerId":p.id,"slot":app.selected_slot}))
-		b.alignment=HORIZONTAL_ALIGNMENT_LEFT
-		b.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
-		b.tooltip_text="%s · %s · niveau %s"%[p.name,p.pos,G.n(p.rating)]
+		var identity := "%s · %s" % [p.name, p.pos]
+		var metrics := "Condition %s %% · Niveau %s" % [G.n(p.condition), G.n(p.rating)]
+		var b := G.button("",func():app._command("set_lineup",{"playerId":p.id,"slot":app.selected_slot}))
+		b.accessibility_name = identity + " · " + metrics
+		b.tooltip_text = b.accessibility_name
 		b.set_meta("player_id",str(p.id))
 		b.name="LineupPlayer"+str(p.id).replace(":","_")
 		b.disabled=not app._live().is_empty() or float(p.get("injury",0))>0 or (eligible is Array and p.id not in eligible)
-		if b.disabled:b.tooltip_text="Indisponible ou qualification incompatible avec ce poste. Pendant un match, utilisez les remplacements."
+		if b.disabled:b.tooltip_text+="\nIndisponible ou qualification incompatible avec ce poste. Pendant un match, utilisez les remplacements."
+		var inset := G.margin(8)
+		inset.add_theme_constant_override("margin_top",0)
+		inset.add_theme_constant_override("margin_bottom",0)
+		inset.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		inset.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(inset)
+		var row := G.h(8)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		inset.add_child(row)
+		var ink := G.MUTED if b.disabled else G.INK
+		var name := G.label(identity,14,ink)
+		name.name = "LineupCandidateIdentity"
+		name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		row.add_child(name)
+		var values := G.label(metrics,12,ink)
+		values.name = "LineupCandidateMetrics"
+		values.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		row.add_child(values)
 		list.add_child(b)
 	var remove:=G.button("LIBÉRER CE POSTE",func():app._command("set_lineup",{"playerId":null,"slot":app.selected_slot}))
 	remove.name="LineupRemove"
