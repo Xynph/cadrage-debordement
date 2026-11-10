@@ -119,9 +119,7 @@ static func _priorities(card: Panel, app: Control) -> void:
 	tasks.append(["Valider l’entraînement" if not trained else "Revoir la préparation","Choix collectifs et charge du groupe.","CETTE SEMAINE",func():
 		if trained: app._navigate("Préparation")
 		else: app.Immersive.open_training(app),"OfficeTrainingAction"])
-	var needs: Array = app.model.get("decisions",{}).get("recruitment",{}).get("needs",[])
-	var need := str(needs[0].get("pos","Effectif")) if not needs.is_empty() else "Effectif"
-	tasks.append(["Examiner le recrutement","%d profils · Priorité : %s" % [app.model.get("market",[]).size(),need],"CETTE SEMAINE",func():app._navigate("Recrutement"),"OfficeRecruitmentAction"])
+	tasks.append(["Examiner le recrutement",Office.recruitment_availability(app.model.get("market", [])),"CETTE SEMAINE",func():app._navigate("Recrutement"),"OfficeRecruitmentAction"])
 	D.text(card,852,38,"%d DOSSIERS" % tasks.size(),18,C.MUTED,500,150,HORIZONTAL_ALIGNMENT_RIGHT)
 	for i in tasks.size():
 		var y := 71+i*108
