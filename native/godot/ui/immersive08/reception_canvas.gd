@@ -148,20 +148,23 @@ static func _tasks(app: Control) -> Array:
 
 static func heading(row: Control, app: Control) -> Label:
 	var state := _state(app)
-	D.text(row,1,19,"LE COURRIER DE VOTRE CARRIÈRE",19,C.GOLD,600,780)
-	var title := D.text(row,-1,76,"Réception.",53,C.IVORY,700,777)
-	D.line(row,Vector2(746,38),Vector2(746,89),C.LINE)
-	D.chip(row,Rect2(773,36,199,52),"%d non lus" % unread(app),C.MINT)
-	D.chip(row,Rect2(991,36,204,52),"%d à faire" % Reading.counts(_messages(app), app.model).todo,C.AMBER)
+	D.text(row,1,19,"LE COURRIER DE VOTRE CARRIÈRE",17,C.GOLD,600,780)
+	var title := D.text(row,-1,57,"Réception.",28,C.IVORY,700,777)
+	var counts := Reading.counts(_messages(app),app.model)
+	D.text(row,1,82,"%d courriers · %d urgences vérifiables" % [counts.all,counts.urgent],17,C.MUTED,500,730)
+	D.line(row,Vector2(746,38),Vector2(746,76),C.LINE)
+	D.chip(row,Rect2(773,36,199,34),"%d non lus" % unread(app),C.MINT)
+	D.chip(row,Rect2(991,36,204,34),"%d à faire" % Reading.counts(_messages(app), app.model).todo,C.AMBER)
 	var x := 1230
 	var widths := [95,140,145,154,196,196]
 	for i in CATEGORIES.size():
 		var category: String = CATEGORIES[i]
 		var name := "InboxCategory"+str(i)
-		var action := D.button(row,Rect2(x,36,widths[i],52),category,func():
+		var action := D.button(row,Rect2(x,36,widths[i],34),category,func():
 			state.category=category
 			state.scroll=0
 			_redraw(app,name),state.category==category,ICONS.get(category,""),true,app.accent,name)
+		action.add_theme_font_size_override("font_size",C.px(18))
 		action.tooltip_text = "Filtrer le courrier · " + category
 		x += widths[i] + 14
 	return title
@@ -331,6 +334,7 @@ static func _context(card: Panel, app: Control, state: Dictionary, message: Dict
 			panel.add_child(open); D.place(open,Rect2(12+index*364,156,354,68))
 			var portrait := Portraits.portrait(int(player.get("portraitIndex",0)),C.px(54),player)
 			portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			open.tooltip_text = str(player.name) + " · " + portrait.tooltip_text
 			open.add_child(portrait); D.place(portrait,Rect2(5,6,54,54))
 			D.text(open,68,28,player.name,20,C.IVORY,600,276)
 			D.text(open,68,52,player.get("pos",""),17,C.MUTED,500,276)
@@ -431,7 +435,7 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 			_redraw(app,id),selected,app.accent)
 		row.name = id
 		row.gui_input.connect(_message_key.bind(app, message.id))
-		row.custom_minimum_size = Vector2(700,78)*C.density
+		row.custom_minimum_size = Vector2(700,62)*C.density
 		row.tooltip_text = message.text
 		row.set_meta("message_text",message.text)
 		row.set_meta("message_id", message.id)
@@ -439,13 +443,12 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 		row.accessibility_name = "%s · %s · %s" % [reading.label, message.get("subject",message.category), message.text]
 		rows.add_child(row)
 		if selected: row.add_theme_stylebox_override("normal",C.box(app.accent.darkened(.54),app.accent.lightened(.5),6,0))
-		if not mark.get("read",false): D.rect(row,Rect2(7,35,8,8),C.MINT,7)
-		elif mark.get("favorite",false): _icon(row,"star",Rect2(5,30,15,15),C.GOLD)
+		if not mark.get("read",false): D.rect(row,Rect2(7,27,8,8),C.MINT,7)
+		elif mark.get("favorite",false): _icon(row,"star",Rect2(5,23,15,15),C.GOLD)
 		var image: String = PORTRAITS.get(message.category,"mail-trainer")
-		D.photo(row,image,Rect2(24,12,53,50))
-		D.text(row,90,27,message.get("subject",message.category),22,C.IVORY,700,450)
-		D.text(row,90,49,message.text,17,C.IVORY,500,598)
-		D.text(row,90,70,("URGENT · " if reading.urgent else "") + str(reading.label),16,C.ALERT if reading.urgent else C.MUTED,600,525)
+		D.photo(row,image,Rect2(24,6,53,50))
+		D.text(row,90,25,message.get("subject",message.category),20,C.IVORY,700,450)
+		D.text(row,90,48,("URGENT · " if reading.urgent else "") + str(reading.label) + " · " + message.text,17,C.ALERT if reading.urgent else C.MUTED,500,598)
 		var badge := "Message %02d" % message.position
 		if message.get("press_invitation", {}).get("status") == "pending": badge = "À traiter"
 		elif message.get("calendar_notice", {}).get("status") == "pending": badge = "À décider"
@@ -500,7 +503,7 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	D.text(card,78,82,source,18,C.IVORY,500,690)
 	var title := "Le courrier de la sélection" if national else "Le courrier du club"
 	if not message.is_empty(): title = str(message.get("subject",_subject(message.text)))
-	D.text(card,32,181,title,30,C.IVORY,700,1097)
+	D.text(card,32,181,title,28,C.IVORY,700,1097)
 	var body := C.wrap(message.get("text","Aucun message à afficher dans ce dossier."),18,C.IVORY)
 	body.name = "InboxMessageText"
 	C.fill(body)
