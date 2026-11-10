@@ -526,18 +526,27 @@ func _templates(body: VBoxContainer) -> void:
 		unavailable.name = "CalendarTemplateUnavailable"
 		body.add_child(unavailable)
 		return
+	var assignments: Dictionary = planning.get("appliedTemplates", {})
+	var active_template: Variant = assignments.get(fixture_id)
 	var chooser := OptionButton.new()
 	chooser.name = "CalendarTemplate"
 	chooser.accessibility_name = "Modèle de semaine"
 	chooser.add_theme_font_override("font", C.DISPLAY)
 	chooser.add_theme_font_size_override("font_size", maxi(12,C.px(19)))
 	chooser.custom_minimum_size.y = C.px(32)
-	body.add_child(chooser)
 	chooser.add_item("Choisir un modèle…")
 	chooser.set_item_disabled(0, true)
 	for template: Dictionary in templates:
-		chooser.add_item(str(template.get("label","Semaine type")))
+		var label := str(template.get("label","Semaine type"))
+		chooser.add_item(label)
 		chooser.set_item_metadata(chooser.item_count-1, template.get("id"))
+		if active_template is String and template.get("id") == active_template:
+			var active := C.wrap("En place · " + label,18,C.MINT,true,700)
+			active.name = "CalendarAppliedTemplate"
+			body.add_child(active)
+			chooser.set_item_disabled(chooser.item_count-1, true)
+	body.add_child(chooser)
+	chooser.select(0)
 	var apply := _action("Appliquer au prochain match", func():
 		if chooser.selected > 0:
 			app._command("calendar_template", {"fixtureId":fixture_id,"template":chooser.get_item_metadata(chooser.selected)})
