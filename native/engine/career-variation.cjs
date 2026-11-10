@@ -75,9 +75,14 @@ module.exports = function careerVariation(dependencies = {}) {
       const before = note(result);
       if (result.attributesV2) {
         check(attributes.every(key => Number.isFinite(result.attributesV2[key])), 'qualités initiales incomplètes.');
-        result.attributesV2 = Object.fromEntries(attributes.map(key => [key,round(clamp(result.attributesV2[key]+variation.current,20,97))]));
         const project = dependencies.projectSkills ?? lnrProjectV12;
-        result.skills = project({ ...result, gameplayPosition:result.gameplayPosition || result.pos });
+        const originalProjection = project({ ...result, gameplayPosition:result.gameplayPosition || result.pos });
+        result.attributesV2 = Object.fromEntries(attributes.map(key => [key,round(clamp(result.attributesV2[key]+variation.current,20,97))]));
+        const variedProjection = project({ ...result, gameplayPosition:result.gameplayPosition || result.pos });
+        // Preserve any existing source calibration offset instead of silently
+        // replacing it. Only the effect of these changed attributes is applied.
+        result.skills = Object.fromEntries(Object.entries(result.skills).map(([key,value]) =>
+          [key,round(clamp(value+variedProjection[key]-originalProjection[key],15,99))]));
       } else {
         result.skills = Object.fromEntries(Object.entries(result.skills).map(([key,value]) => [key,round(clamp(value+variation.current,15,99))]));
         if (result.nativeAttributesV1 !== undefined) {
