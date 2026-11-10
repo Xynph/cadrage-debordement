@@ -78,7 +78,14 @@ static func build(app: Control) -> Control:
 		focus.item_selected.connect(func(index: int): app._command("set_development_focus", {"playerId":person.id, "focus":focus.get_item_metadata(index)}))
 		controls.add_child(focus)
 		if mode == "academy":
-			_promotion(controls,app,data,person)
+			if data.get("promotionAvailable", false):
+				_promotion(controls,app,data,person)
+			else:
+				var review := G.button("EXAMINER LE PREMIER CONTRAT", func(): open_player(app, str(person.id)))
+				review.name = "ReviewAcademy" + str(person.id).replace(":", "_")
+				review.set_meta("promote_id", person.id)
+				review.disabled = app.waiting
+				controls.add_child(review)
 		else:
 			controls.add_child(G.button("OUVRIR LA FICHE", func(): app.selected_player = str(person.id); app._navigate("Effectif")))
 		if not str(development.get("reason", "")).is_empty(): card.add_child(G.wrap(development.reason, 12))
@@ -93,6 +100,38 @@ static func _promotion(parent: Node, app: Control, data: Dictionary, person: Dic
 	promote.disabled = app.waiting or not data.get("promotionAvailable",false)
 	parent.add_child(promote)
 	return promote
+
+static func contract_preview(model: Dictionary, person: Dictionary) -> Dictionary:
+	var decisions: Dictionary = model.get("decisions", {})
+	var roster: Dictionary = decisions.get("recruitment", {})
+	var available: bool = decisions.get("development", {}).get("promotionAvailable", false)
+	var season: int = int(model.get("meta", {}).get("season", 1))
+	var terms: Array[String] = []
+	var salary: Variant = person.get("salary")
+	if salary is int or salary is float:
+		terms.append("Salaire proposé · %s / semaine" % G.euros(salary))
+	if available:
+		terms.append("Fin du contrat si signature · saison %s" % G.n(season + 1))
+	var capacity := ""
+	if roster.has("places") and roster.has("occupied") and roster.has("capacity"):
+		var places := "%s places libres" % G.n(roster.places) if int(roster.places) > 1 else "%s place libre" % G.n(roster.places)
+		capacity = "Effectif actuel · %s places comptabilisées · plafond %s · %s" % [
+			G.n(roster.occupied), G.n(roster.capacity), places]
+		var reserved := int(roster.get("reserved", 0))
+		if reserved > 0:
+			var reservation := "%s places réservées" % G.n(reserved) if reserved > 1 else "1 place réservée"
+			capacity += "\nDont %s aux retours de prêt." % reservation
+	var restriction := ""
+	if not available:
+		if model.get("live") is Dictionary:
+			restriction = "Signature indisponible pendant un match."
+		elif model.get("meta", {}).get("phase") == "ended":
+			restriction = "Signature indisponible à la clôture de la saison."
+		elif roster.get("places", -1) == 0:
+			restriction = "Aucune place professionnelle disponible."
+		else:
+			restriction = "Signature indisponible dans le contexte actuel."
+	return {"terms":"\n".join(terms), "capacity":capacity, "restriction":restriction}
 
 static func open_player(app: Control, player_id: String) -> AcceptDialog:
 	app._clear_dialogs()
@@ -109,9 +148,12 @@ static func open_player(app: Control, player_id: String) -> AcceptDialog:
 	else:
 		var person: Dictionary = matches[0]
 		body.add_child(G.section(str(person.name),str(person.pos)+" · "+G.n(person.age)+" ans"))
-		body.add_child(G.wrap("Salaire proposé : %s par semaine. La promotion utilise la décision existante du centre et ses contrôles de capacité ; elle ne garantit aucune minute ni progression." % G.euros(person.salary),15))
+		var preview := contract_preview(app.model, person)
+		if not preview.restriction.is_empty(): body.add_child(G.wrap(preview.restriction, 14, G.ALERT))
+		if not preview.capacity.is_empty(): body.add_child(G.wrap(preview.capacity, 15))
+		if not preview.terms.is_empty(): body.add_child(G.wrap(preview.terms, 15))
+		body.add_child(G.wrap("La promotion ne garantit aucune minute ni progression.", 14))
 		_promotion(body,app,data,person).name = "YouthPathwayPromote"
-		if not data.get("promotionAvailable",false): body.add_child(G.wrap("Premier contrat indisponible dans le contexte actuel. Vérifiez la capacité et la période avant de réessayer.",14,G.ALERT))
 	dialog.confirmed.connect(dialog.queue_free)
 	dialog.canceled.connect(dialog.queue_free)
 	app.add_child(dialog)
