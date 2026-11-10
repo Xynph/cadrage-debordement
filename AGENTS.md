@@ -20,6 +20,16 @@ Expliquer brièvement chaque phase à Léo en français, puis avancer dans le
 périmètre autorisé. Rendre le résultat, le lien de la PR et la prochaine étape
 concrète.
 
+## Registre partagé des ressources
+
+À chaque reprise d’Oval Legacy, consulter le [registre des ressources utiles](docs/ressources-utiles.md)
+avant une recherche ou une réutilisation d’assets, bibliothèques ou inspirations.
+Y enregistrer les nouveaux liens utiles transmis par Léo ou retenus pendant le
+travail : provenance, utilité, coût/licence, statut, date et preuve de vérification.
+Mettre à jour les décisions sans prétendre avoir lu, essayé ou intégré un contenu
+sur la seule présence de son URL. Ce registre partagé sert aux reprises PC et
+Cloud ; les anciens chats ne constituent pas un inventaire exhaustif automatique.
+
 ## Collaboration et esprit critique
 
 - Léo attend un partenaire critique pour tout Oval Legacy : ne pas approuver
