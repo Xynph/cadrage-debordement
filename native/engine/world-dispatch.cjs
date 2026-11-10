@@ -24,6 +24,7 @@ module.exports=function worldDispatcher(editions,makeCareer){
   previewRoster:(database,id)=>byEdition.get(editions.forDatabase(database)).previewRoster(id),
   sizing:onState('sizing'),leagueId:onState('leagueId'),ranked:onState('ranked'),rows:onState('rows'),
   cupTables:onState('cupTables'),fixtures:onState('fixtures'),userFixture:onState('userFixture'),calendarToday:onState('calendarToday'),
+  nextOpening:onState('nextOpening'),clubReleaseOn:onState('clubReleaseOn'),
   enableDaily:s=>{if(edition(s))current(s).enableDaily(s);},
   dailyStatus:onState('dailyStatus'),advanceDay:onState('advanceDay'),
   label:onState('label'),validate:onState('validate'),finishWeek:()=>current(S).finishWeek(),
