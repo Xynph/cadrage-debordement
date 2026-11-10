@@ -179,14 +179,22 @@ func _transport_error(message: String) -> void:
 	_mutex.lock()
 	_queue.clear()
 	_mutex.unlock()
-	if child_pid > 0 and OS.is_process_running(child_pid):
-		OS.kill(child_pid)
+	if child_pid > 0:
+		if OS.is_process_running(child_pid):
+			if OS.kill(child_pid) == OK: _release()
+		else:
+			_release()
 	command_failed.emit(message)
 
 func _process(_delta: float) -> void:
-	if _stopping and _stop_deadline_ms > 0 and Time.get_ticks_msec() >= _stop_deadline_ms and child_pid > 0 and OS.is_process_running(child_pid):
-		OS.kill(child_pid)
-	if child_pid > 0 and not OS.is_process_running(child_pid):
+	if child_pid <= 0: return
+	# Poll once. Successful OS.kill also reaps the child on Unix; release it
+	# immediately rather than querying that PID again on the following frame.
+	var running := OS.is_process_running(child_pid)
+	if _stopping and _stop_deadline_ms > 0 and Time.get_ticks_msec() >= _stop_deadline_ms and running:
+		if OS.kill(child_pid) == OK: _release()
+		return
+	if not running:
 		if not _stopping:
 			command_failed.emit("Le processus moteur s’est arrêté.")
 		_release()

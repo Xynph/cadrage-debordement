@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 
 # Real native UI/worker regressions. Every invocation requires a fresh profile.
 var app: Control
@@ -26,6 +27,7 @@ func _delay(ms: int) -> void:
 func _wait() -> void:
 	var until := Time.get_ticks_msec() + 15000
 	while app.waiting and Time.get_ticks_msec() < until: await process_frame
+	app.timer.stop()
 	_check(not app.waiting, "Command completes without indefinite waiting")
 
 func _command(command: String, payload: Dictionary = {}) -> void:
@@ -92,10 +94,11 @@ func _decisions() -> void:
 	_dismiss_errors()
 	app._navigate("Match")
 	await _command("begin_match")
+	await ContextualFlow.skip_talk(app, self, "pre", _check)
 	app._command("save")
 	app.pause_menu()
 	var dialogs := _dialogs()
-	_check(dialogs.size() == 1 and dialogs[0].visible and dialogs[0].title == "Votre décision n'a pas été appliquée", "Busy pause menu keeps only the explanatory refusal dialog")
+	_check(dialogs.is_empty() and app.contextual_director.active() and not app.last_error.is_empty(), "Busy pause refusal stays in immersion without opening a career modal")
 	_check(app.waiting and app.last_command == "save" and app.queued_action.is_empty(), "Refused menu pause preserves the in-flight save")
 	_check(not app.last_error.is_empty() and not app.model.live.paused, "Refused menu pause explicitly explains the still-running match")
 	await _wait()
@@ -112,7 +115,7 @@ func _decisions() -> void:
 	app.pause_menu()
 	dialogs = _dialogs()
 	_check(app.waiting and app.last_command == "tick" and app.queued_action == saved_queue and saved_queue.get("command") == "save", "Refused menu pause preserves an action already accepted behind the tick")
-	_check(dialogs.size() == 1 and dialogs[0].visible and dialogs[0].title == "Votre décision n'a pas été appliquée", "Saturated menu pause also keeps one explanatory dialog")
+	_check(dialogs.is_empty() and app.contextual_director.active() and not app.last_error.is_empty(), "Saturated menu pause also refuses inside immersion without a career modal")
 	await _wait()
 	_check(not app.model.live.paused, "Rejected saturated menu pause is not applied later")
 	_dismiss_errors()
@@ -143,7 +146,7 @@ func _decisions() -> void:
 	_import_text(exported)
 	_check(app.route == "Match", "Accepted import waits for its own response before navigation")
 	await _wait()
-	_check(app.route == "Bureau", "Successful import applies its own target route")
+	_check(app.route == "Match" and app.contextual_director.match_immersed() and not app.root_content.is_visible_in_tree(), "Successful live-match import restores its authoritative immersive route")
 	app._navigate("Match")
 	await _command("pause", {"paused":false})
 	app.bridge.stop()
@@ -176,10 +179,11 @@ func _tactics() -> void:
 
 func _bench() -> void:
 	app._navigate("Match")
-	var panel: Node = app.match_screen
-	var viewport: Node = app.match_view.get_parent()
 	var initial_date: String = app.header_date.text
 	await _command("begin_match")
+	await ContextualFlow.skip_talk(app, self, "pre", _check)
+	var panel: Node = app.match_screen
+	var viewport_id: int = app.match_view.get_parent().get_instance_id()
 	await _command("pause", {"paused":true})
 	var option: Dictionary = {}
 	for choice in app.model.live.substitutions:
@@ -189,40 +193,46 @@ func _bench() -> void:
 	var incoming: Dictionary = {}
 	for player in app.model.live.reserves:
 		if player.id == option.inIds[0]: incoming = player; break
-	panel.tab = "Banc"
+	panel._toggle_drawer("Banc")
 	panel.selected_slot = int(option.slot)
-	panel.presence_key = ""
+	panel._drawer_key = ""
 	app._update_match()
-	_check(not _named_button(panel.side, incoming.name).disabled, "Paused bench enables a permitted entrant")
+	_check(not _named_button(panel.drawer_body, incoming.name).disabled, "Paused bench enables a permitted entrant")
 	await _command("pause", {"paused":false})
-	_check(_named_button(panel.side, incoming.name).disabled, "Resume disables entrant without a tab or selection click")
-	var stable_button := _named_button(panel.side, incoming.name)
+	_check(_named_button(panel.drawer_body, incoming.name).disabled, "Resume disables entrant without a tab or selection click")
+	var stable_button := _named_button(panel.drawer_body, incoming.name)
 	await _command("tick", {"steps":1})
-	_check(_named_button(panel.side, incoming.name) == stable_button, "Unchanged running bench retains controls across ticks")
+	_check(_named_button(panel.drawer_body, incoming.name) == stable_button, "Unchanged running bench retains controls across ticks")
 	await _command("pause", {"paused":true})
-	_check(not _named_button(panel.side, incoming.name).disabled, "Pause re-enables entrant without a tab or selection click")
-	_check(panel.tab == "Banc" and panel.selected_slot == int(option.slot), "Pause and resume retain the bench tab and selected outgoing position")
+	_check(not _named_button(panel.drawer_body, incoming.name).disabled, "Pause re-enables entrant without a tab or selection click")
+	_check(panel.drawer_tab == "Banc" and panel.selected_slot == int(option.slot), "Pause and resume retain the bench tab and selected outgoing position")
 	# Permission-only projection change, keeping actual players and pause unchanged.
 	var actual: Dictionary = app.model
 	var restricted: Dictionary = actual.duplicate(true)
 	restricted.live.substitutions = []
 	panel.update_frame(restricted)
-	_check(_named_button(panel.side, incoming.name).disabled, "Permission-only change immediately disables the entrant")
+	_check(_named_button(panel.drawer_body, incoming.name).disabled, "Permission-only change immediately disables the entrant")
 	panel.update_frame(actual)
-	_check(not _named_button(panel.side, incoming.name).disabled, "Restored permission re-enables the entrant")
+	_check(not _named_button(panel.drawer_body, incoming.name).disabled, "Restored permission re-enables the entrant")
 	await _command("delegate")
-	_check(_named_button(panel.side, incoming.name).disabled, "Finished match disables entrant without another selection")
-	_check(panel.tab == "Banc" and panel.selected_slot == int(option.slot), "Finish retains bench context")
+	_check(_named_button(panel.drawer_body, incoming.name).disabled, "Finished match disables entrant without another selection")
+	_check(panel.drawer_tab == "Banc" and panel.selected_slot == int(option.slot), "Finish retains bench context")
 	await _command("finish_round")
 	var first_date: String = app.header_date.text
-	_check(app.header_date.is_visible_in_tree() and first_date != initial_date and first_date.contains("JOURNÉE 2") and int(app.model.meta.week) == 1, "First round validation refreshes the header date in Match")
+	_check(app.header_date.is_visible_in_tree() and first_date != initial_date and first_date.contains("JOURNÉE 2") and int(app.model.meta.week) == 1, "First round validation refreshes the visible management header date")
 	await _command("auto_lineup")
 	if not app.model.selection.valid: await _command("promote_cover", {"confirmed":true})
 	await _command("begin_match")
+	await ContextualFlow.skip_talk(app, self, "pre", _check)
 	await _command("delegate")
 	await _command("finish_round")
 	_check(app.header_date.is_visible_in_tree() and app.header_date.text != first_date and app.header_date.text.contains("JOURNÉE 3") and int(app.model.meta.week) == 2, "Second round validation refreshes the date again")
-	_check(app.match_screen == panel and app.match_view.get_parent() == viewport, "Both date changes retain the actual match SubViewport")
+	_check(app.model.live == null and not app.contextual_director.active() and app.root_content.is_visible_in_tree(), "Both round validations restore management after the immersive match")
+	await _command("auto_lineup")
+	if not app.model.selection.valid: await _command("promote_cover", {"confirmed":true})
+	await _command("begin_match")
+	await ContextualFlow.skip_talk(app, self, "pre", _check)
+	_check(app.match_view.get_parent().get_instance_id() != viewport_id and app.match_view._actors.size() == 30, "Next fixture creates its actual immersive match viewport and thirty players")
 
 func _modal() -> void:
 	app._navigate("Recrutement")
@@ -298,14 +308,15 @@ func _focus() -> void:
 		if scroll != null: await _scroll_focus(scroll, "Squad/profile")
 	app._navigate("Match")
 	await _command("begin_match")
+	await ContextualFlow.skip_talk(app, self, "pre", _check)
 	await _command("pause", {"paused":true})
 	var panel: Node = app.match_screen
-	panel.tab = "Banc"
+	panel._toggle_drawer("Banc")
 	panel.selected_slot = int(app.model.live.substitutions[0].slot)
-	panel.presence_key = ""
+	panel._drawer_key = ""
 	app._update_match()
 	for i in 5: await process_frame
-	await _scroll_focus(panel.side.get_parent(), "Bench")
+	await _scroll_focus(panel.drawer_body.get_parent(), "Bench")
 
 func _run() -> void:
 	var mode := OS.get_environment("CD_GODOT_REGRESSION")
@@ -354,7 +365,7 @@ func _run() -> void:
 			var club_choice := app.find_child("CreationClub0", true, false) as Button
 			if club_choice != null: club_choice.pressed.emit()
 			for button in _buttons(app.root_content):
-				if button.text.begins_with("PRENDRE LES RÊNES"):button.pressed.emit();break
+				if button.name == "CreationStart":button.pressed.emit();break
 			await _wait()
 			_check(app.model.club!=null,"Explicit new career works after recovery")
 			_check(FileAccess.get_file_as_bytes(backup)==original,"New career preserves recovery backup")
@@ -371,7 +382,7 @@ func _run() -> void:
 		if club_choice != null: club_choice.pressed.emit()
 		var retry: Button = null
 		for button in _buttons(app.root_content):
-			if button.text.begins_with("PRENDRE LES RÊNES"): retry = button
+			if button.name == "CreationStart": retry = button
 		_check(retry != null, "Explicit club creation retry available")
 		if retry != null:
 			retry.pressed.emit()
@@ -389,12 +400,13 @@ func _run() -> void:
 		var restored_speed := _speed(app.body)
 		_check(restored_speed != null and restored_speed.selected == 2 and app.tick_steps == 12, "Cadence remains visually and actually x12 after navigation")
 		await _command("begin_match")
+		await ContextualFlow.skip_talk(app, self, "pre", _check)
 		await _command("delegate")
 		_check(app.pause_button.disabled, "Finished match disables pause")
-		var page: Node = app.match_page
 		app.match_finish.pressed.emit()
 		await _wait()
-		_check(app.match_page == page, "Round transition retains same Match panel")
+		_check(not app.contextual_director.active() and app.root_content.is_visible_in_tree(), "Round transition exits immersion and restores management")
+		app._navigate("Match")
 		_check(not app.pause_button.disabled, "Next kickoff enabled without navigation")
 		# Repair the actual 23 after match injuries before testing the next kickoff.
 		await _command("auto_lineup")
@@ -404,6 +416,11 @@ func _run() -> void:
 			await _wait()
 			_check((app.model.live != null and app.model.meta.round == 1) if legal else (app.model.live==null and not app.last_error.is_empty()), "Second kickoff starts or gives the real selection refusal")
 			_dismiss_errors()
+			if legal:
+				await ContextualFlow.skip_talk(app, self, "pre", _check)
+				await _command("delegate")
+				await _command("finish_round")
+				app._navigate("Match")
 		var actual: Dictionary = app.model
 		app.model = actual.duplicate(true)
 		app.model.live = null
@@ -478,12 +495,11 @@ func _run() -> void:
 		var terminal_deadline := Time.get_ticks_msec() + 5000
 		while app.bridge.child_pid > 0 and Time.get_ticks_msec() < terminal_deadline: await process_frame
 		_check(error_messages.any(func(message: String): return message.contains("Message trop volumineux")), "Actual worker rejects the oversized protocol message")
-		_check(child_pid > 0 and not OS.is_process_running(child_pid) and app.bridge.child_pid <= 0 and app.bridge._stopping, "id:null rejection terminates owned worker and reader")
+		_check(child_pid > 0 and app.bridge.child_pid <= 0 and app.bridge._stopping and app.bridge._thread == null and app.bridge._stderr_thread == null and app.bridge._stdio == null and app.bridge._stderr == null, "id:null rejection terminates and releases owned worker, readers and pipes")
 		var prior_errors := errors
 		_dismiss_errors()
 		app.bridge.send("snapshot")
 		_check(errors > prior_errors, "Further commands fail immediately after terminal response")
-	var pid: int = app.bridge.child_pid
 	app.closing = true
 	app.timer.stop()
 	if is_instance_valid(app.coach): app.coach.destroy()
@@ -491,7 +507,7 @@ func _run() -> void:
 	app.bridge.stop()
 	var close_deadline := Time.get_ticks_msec() + 2500
 	while app.bridge.child_pid > 0 and Time.get_ticks_msec() < close_deadline: await process_frame
-	_check(app.bridge.child_pid <= 0 and (pid <= 0 or not OS.is_process_running(pid)), "Owned child closes within bounded deadline")
+	_check(app.bridge.child_pid <= 0 and app.bridge._thread == null and app.bridge._stderr_thread == null and app.bridge._stdio == null and app.bridge._stderr == null, "Owned child, readers and pipes close within bounded deadline")
 	app.queue_free()
 	for i in 3: await process_frame
 	print(JSON.stringify({"mode": mode, "passed": failures.is_empty(), "checks": checks, "failures": failures, "errors": errors, "error_messages": error_messages}))

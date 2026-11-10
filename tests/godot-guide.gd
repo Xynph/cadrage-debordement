@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var guide: Control
 var failures: Array[String] = []
@@ -311,15 +312,22 @@ func run() -> void:
 	check(dialog_focus != null and dialog.gui_get_focus_owner() == dialog_focus, "Focus de confirmation conservé")
 	dialog.hide(); dialog.queue_free(); await process_frame
 	app._navigate("Match")
-	await command("begin_match"); guide.refresh()
-	check(not guide.expanded, "Direct : guide compact")
-	guide.open_help(); check(not guide.expanded, "Ouverture refusée pendant le direct")
-	await command("pause", {"paused":true}); guide.refresh(); guide.open_help()
-	check(guide.expanded, "Match en pause : aide explicite disponible")
-	await command("delegate"); guide.refresh(); guide.open_help()
-	var result_fragment: Dictionary = load("res://guide/guide_content.gd").fragments("resultat")[0]
-	check(guide.current_id == "resultat" and guide.fragment_id == result_fragment.id and guide.bubble.text == result_fragment.text, "Le match terminé ouvre le premier fragment exact de la page résultat")
+	app.coach = guide
+	await command("begin_match")
+	await process_frame
+	check(app.contextual_director.kind == "locker" and not guide.is_visible_in_tree() and not app.root_content.is_visible_in_tree(), "Avant-match : causerie immersive, guide et gestion masqués")
+	await ContextualFlow.skip_talk(app, self, "pre", check)
+	guide.refresh(); guide.open_help()
+	await process_frame
+	check(not guide.expanded and not guide.is_visible_in_tree(), "Direct : ouverture du guide refusée et guide masqué")
+	await command("pause", {"paused":true})
+	await process_frame
+	check(app.contextual_director.kind == "live" and not guide.is_visible_in_tree() and not app.root_content.is_visible_in_tree(), "Match en pause : immersion conservée sans guide ni menus de gestion")
+	await command("delegate")
+	await process_frame
+	check(app.model.live.finished and not guide.is_visible_in_tree() and not app.root_content.is_visible_in_tree(), "Résultat délégué : immersion conservée jusqu’à validation")
 	await command("finish_round")
+	app.coach = null
 	app._navigate("Bureau"); guide.refresh(); guide.open_help()
 	await local_voice_cases()
 	await tts_real()

@@ -2,6 +2,7 @@
 // A real J1 injury must not leave the next native AI sheet at 22 players.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {createBridge,CORE_FILES}=require('../native/engine/worker.cjs'),{context}=require('./france-harness.cjs');
+const {skipMatchTalk}=require('./helpers/scene-match-talks.cjs');
 const root=fs.mkdtempSync(path.join(process.env.CD_NATIVE_SHEET_TEST_ROOT||os.tmpdir(),'cd-native-sheet-'));
 const bridges=[],checks=[],fixtures=new Map();let serial=0;
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -33,7 +34,7 @@ function inspectedWorker(options={}){
 }
 function inspected(name,persisted,options={}){fs.mkdirSync(path.dirname(file(name)),{recursive:true});fs.writeFileSync(file(name),JSON.stringify(persisted));const b=inspectedWorker(options)({dataDir:path.join(root,name),seed:0,now:1700000000000});bridges.push(b);return b;}
 function prepare(b,seed){
- good(b,'new_career',{club:0});good(b,'begin_match');
+ good(b,'new_career',{club:0});skipMatchTalk(good(b,'begin_match'),(command,payload)=>good(b,command,payload));
  good(b,'pause',{paused:true});good(b,'pause',{paused:false});good(b,'tick',{steps:1});good(b,'pause',{paused:true});
  good(b,'delegate');good(b,'finish_round');good(b,'auto_lineup');
  if(seed===1)good(b,'promote_cover',{confirmed:true});

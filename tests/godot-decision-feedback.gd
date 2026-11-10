@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var failures: Array[String] = []
 var checks := 0
 var app: Control
@@ -131,6 +132,7 @@ func command(id: String, payload: Dictionary = {}, expected: bool = true) -> voi
 	app._command(id,payload)
 	var until := Time.get_ticks_msec()+30000
 	while app.waiting and Time.get_ticks_msec()<until: await process_frame
+	app.timer.stop()
 	check(not app.waiting and app.bridge.last_response_ok == expected,"Main/worker réel " + id)
 	await settle()
 func run_main() -> void:
@@ -215,6 +217,7 @@ func run_main() -> void:
 	await command("import",{"text":exported})
 	check(app.decision_feedback.receipts().is_empty(),"Main import réussi remet historique à zéro")
 	await command("begin_match")
+	await ContextualFlow.skip_talk(app, self, "pre", check)
 	await command("pause",{"paused":true})
 	app._navigate("Match"); await settle()
 	app._command("tick",{"steps":1})
@@ -225,5 +228,5 @@ func run_main() -> void:
 	await settle()
 	check(app.bridge.last_response_ok and app.decision_feedback.receipts().size() == 1 and app.decision_feedback.receipts()[0].command == "set_tactics","Capture prise après tick, au vrai envoi")
 	button = app.find_child("DecisionFeedbackButton",true,false)
-	check(button != null and not button.disabled,"Premier reçu en match active bouton sans reconstruire la page")
+	check(button != null and not button.disabled and not button.is_visible_in_tree() and not app.root_content.is_visible_in_tree(),"Premier reçu active l’historique conservé sans afficher la gestion pendant le match")
 	app.bridge.stop(); app.queue_free(); await settle()

@@ -1,0 +1,227 @@
+{
+  "status": "proposition de raccordement, non intégrée à la carrière",
+  "source_head": "978803ba727e51c5af23f458868c6d56cc878966",
+  "scope": "Oval Legacy natif Godot, rugby XV adulte, saison simulée 2026–2027",
+  "principle": "Chaque scène sert une décision contextuelle ; aucun gain obtenu en visitant un lieu.",
+  "identity": {
+    "source": "native/engine/model.cjs presentation club.color",
+    "primary": "couleur du club actif ; appliquer aux maillots, fauteuils, panneaux et aimants",
+    "secondary": "non projetée actuellement ; utiliser un accent de présentation contrasté explicitement dérivé, ou ajouter une donnée sourcée",
+    "save": "pas de duplication dans la carrière ; résoudre la présentation du club actif à chaque ouverture",
+    "logo": {
+      "source": "model.club.logoPath via pack actif, même résolveur que G.crest",
+      "usage": [
+        "tapis",
+        "maillots",
+        "sacs",
+        "matériel",
+        "mobilier de club",
+        "habillage de scène"
+      ],
+      "missing": "surface neutre, jamais logo OL/Oval Legacy",
+      "prototype": "--crest chemin local PNG/SVG ; deux blasons fictifs originaux pour les deux clubs de démonstration",
+      "persistence": "référence de présentation du club actif, pas de copie du logo dans chaque sauvegarde"
+    }
+  },
+  "scenes": {
+    "office": {
+      "entry": "invitation structurée de la Réception pour un joueur réel ou membre du staff actif",
+      "topics": [
+        "temps de jeu",
+        "rôle",
+        "développement",
+        "promesse existante",
+        "charge",
+        "tension relationnelle",
+        "désaccord sur le travail du staff"
+      ],
+      "availability": "invitation pending, participant encore présent au club, hors match ; reconfirmer au clic",
+      "exit": "retour au courrier source avec compte rendu et statut traité",
+      "existing": "relationships.cjs pour entretiens joueurs ; nouveau domaine requis pour le staff",
+      "avoid": "ne pas créer de promesse de contrat ou de temps de jeu sans consentement explicite ni contourner les commandes existantes"
+    },
+    "locker": {
+      "entry": [
+        "lancement match → avant_match",
+        "live.atBreak → mi_temps",
+        "live.finished avant finish_round → apres_match",
+        "invitation ponctuelle → reunion_collective"
+      ],
+      "permanent_navigation": false,
+      "mandatory_scene": "le passage peut afficher une entrée contextuelle ; la prise de parole reste facultative ou déléguée",
+      "talk_design": [
+        "déclaration originale",
+        "ton et intention intrinsèques à la déclaration",
+        "destinataires sélectionnés",
+        "contexte réel",
+        "réactions différenciées"
+      ],
+      "audiences": [
+        "groupe",
+        "avants",
+        "arrières",
+        "leaders"
+      ],
+      "gating": "une décision par rencontre et phase ; revenir à la tactique ne recharge ni les effets ni les choix",
+      "existing": "aucune commande native de discours de match ; v39TeamTalk historique incompatible avec S.live",
+      "presentation": {
+        "mode": "plein écran applicatif sans coque de gestion",
+        "background": "scène native intérieure sans texte figé",
+        "choices": "exactement six déclarations autorisées par contexte, sélection stable et variée dans la banque ; aucun bouton pour en révéler davantage durant une phase",
+        "audiences": [
+          "groupe",
+          "avants",
+          "arrières",
+          "joueurs sélectionnés"
+        ],
+        "tone": "affichage indicatif issu de entry.tone, aucune commande de sélection",
+        "commit": "aperçu puis Prononcer ; ton et intention issus de la déclaration confirmée",
+        "player_cards": "photo résolue depuis l’identité du joueur ; priorité au portrait du pack, portrait fictif du même joueur en repli, jamais photo d’un autre joueur"
+      },
+      "match_continuity": "Même plein écran sans menus de carrière de l’avant-match jusqu’à validation finale ; commandes de tactique/remplacements/statistiques propres au match."
+    },
+    "training": {
+      "entry": "Entraînement → Observer la préparation, ou invitation factuelle du préparateur",
+      "purpose": "recevoir le diagnostic du staff et arbitrer la séance avant son exécution",
+      "facts": [
+        "model.squad.condition",
+        "model.squad.physicalLoad",
+        "model.squad.injury",
+        "decisions.training.advice",
+        "clubLife.clubSupport.training.session"
+      ],
+      "choices": [
+        {
+          "label": "Maintenir",
+          "effect": "conserver les réglages existants"
+        },
+        {
+          "label": "Alléger",
+          "command": "training_plan ou set_player_load",
+          "effect": "configurer sans encore exécuter la séance"
+        },
+        {
+          "label": "Changer la priorité",
+          "command": "set_collective_focus",
+          "values": [
+            "aucune",
+            "conquete",
+            "defence",
+            "pied"
+          ]
+        },
+        {
+          "label": "Effectuer la séance",
+          "command": "train",
+          "effect": "une seule exécution, puis bilan en lecture seule"
+        }
+      ],
+      "availability": "hors match et saison ouverte ; préparation avant S.trained, bilan après",
+      "avoid": [
+        "pas de taux de passes ou de chronos non mesurés",
+        "pas de développement instantané à la visite",
+        "ne pas doubler les effets de staff_meeting ni training_plan"
+      ]
+    }
+  },
+  "team_meeting_proposal": {
+    "triggers": [
+      {
+        "id": "consolider",
+        "facts": "3 victoires consécutives de l’équipe dans les rencontres effectivement terminées",
+        "intent": "reconnaître le travail et fixer le prochain palier"
+      },
+      {
+        "id": "repartir",
+        "facts": "3 défaites consécutives",
+        "intent": "écouter les leaders et simplifier la priorité collective"
+      },
+      {
+        "id": "rebond",
+        "facts": "première victoire après au moins 4 rencontres terminées sans victoire",
+        "intent": "reconnaître le progrès sans effacer les difficultés"
+      },
+      {
+        "id": "request",
+        "facts": "demande active et unique du capitaine ou du staff sur un problème réellement présent",
+        "intent": "discussion ciblée"
+      }
+    ],
+    "limits": "une invitation collective active ; fenêtre proposée jusqu’au prochain coup d’envoi ou deux semaines simulées ; délai de trois semaines simulées entre réunions décidées, sauf demande urgente distincte explicitement documentée",
+    "classification": "conventions de jeu proposées, pas règles sportives",
+    "decline": "reporter si la fenêtre le permet ou refuser ; la salle ne reste pas accessible ensuite",
+    "feedback": "réactions du groupe et paroles de leaders ; aucun bonus automatique garanti",
+    "anti_spam": "ne pas recréer une invitation à chaque rendu, chargement ou nouvelle lecture du même résultat"
+  },
+  "persistence_contract": {
+    "events": [
+      "id",
+      "clubId",
+      "participantId?",
+      "fixtureId?",
+      "phase",
+      "createdContext",
+      "expiresContext",
+      "status",
+      "decisionId?"
+    ],
+    "validations": [
+      "participant et club présents",
+      "rencontre et phase exactes",
+      "invitation pending non expirée",
+      "choix autorisé",
+      "réaction et reçu enregistrés atomiquement",
+      "reprise sauvegardée sans rejouer effet"
+    ],
+    "migration": "ancien fichier sans domaine : aucune décision passée fabriquée et aucune phase déjà jouée refaite",
+    "engine_authority": "worker.cjs validation/transaction/rollback ; native-systems.cjs domaine déclaré"
+  },
+  "sources": [
+    {
+      "url": "https://community.sports-interactive.com/sigames-manual/football-manager-2024/playing-a-match-r4966/",
+      "use": "inspiration phases/intention/ton/réactions, textes français originaux"
+    },
+    {
+      "url": "https://passport.world.rugby/laws-of-the-game/laws-by-number/15-ruck/",
+      "use": "ligne de hors-jeu par le point le plus reculé des participants, schéma pédagogique sans certification de tactique"
+    },
+    {
+      "path": "native/engine/relationships.cjs",
+      "use": "entretiens joueurs existants"
+    },
+    {
+      "path": "native/engine/club-support.cjs",
+      "use": "plans et séances existants"
+    },
+    {
+      "path": "dist/matchflow.js",
+      "use": "autorité pause et fin"
+    },
+    {
+      "path": "native/engine/calendar-mail.cjs",
+      "use": "précédent pour courrier typé"
+    }
+  ],
+  "verification_before_integration": [
+    "états avant/pause/après et refus hors contexte",
+    "refus replay doublon invitation expirée",
+    "reprise à chaque phase",
+    "aucun contournement par Continuer global ni délégation",
+    "isolation du club lors de mobilité et du staff actif",
+    "compatibilité sauvegardes anciennes",
+    "compte rendu conforme aux seuls faits archivés",
+    "aucun effet double sur entraînement et morale"
+  ],
+  "user_review": {
+    "rest": "approved",
+    "new_requirements": [
+      "causeries immersives plein écran",
+      "pas de menus ni barre de gestion pendant toute la séquence match",
+      "ton intrinsèque à chaque déclaration : aucun sélecteur de ton",
+      "destinataires adaptés au rugby XV",
+      "six déclarations seulement par causerie",
+      "portrait du joueur à côté du nom, titulaires et remplaçants"
+    ],
+    "reference": "capture FM fournie pour organisation, identité et textes Oval Legacy originaux"
+  }
+}

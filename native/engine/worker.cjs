@@ -197,6 +197,8 @@ function createBridge(options={}){
     try{
      ctx.nativePayload=JSON.parse(JSON.stringify(payload));
      if(command!=='new_career'&&command!=='import'&&!run('!!S'))throw Error('Créez ou importez une carrière.');
+     ctx.nativeCommand=command;
+     run("nativeSystems.domain('matchTalks').guard(nativeCommand,nativePayload);nativeSystems.domain('sceneInvitations').guard(nativeCommand,nativePayload);");
      if(command==='interclub_negotiate'){
       ctx.nativeCommand=command;const extra=run('nativeSystems.execute(nativeCommand,nativePayload)');
       if(run('JSON.stringify(S)')!==JSON.stringify(JSON.parse(prior).state)||seed!==priorSeed||JSON.stringify(store)!==priorStore)throw Error('Une consultation ne peut pas modifier la carrière.');
@@ -252,6 +254,8 @@ function createBridge(options={}){
       run(payload.paused===false?'continueMatch()':'pauseMatch()');
      }else if(command==='delegate'){
       if(!run('!!S.live'))throw Error('Aucun match à déléguer.');
+      run("nativeSystems.domain('matchTalks').setDelegating(true);nativeSystems.domain('matchTalks').observe('delegate');");
+      try{
       const delegateLoop="for(let steps=0;!S.live.finished;steps++){if(steps>=3000)throw Error('Limite de délégation atteinte.');if(S.live.paused)continueMatch();else tick();}";
       const historicalSave=ctx.save,delegateClock=clock;
       // Les saves intermédiaires restent privés à cette commande synchrone.
@@ -265,6 +269,7 @@ function createBridge(options={}){
        run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;');
        run(delegateLoop);
       }
+      }finally{run("nativeSystems.domain('matchTalks').setDelegating(false);");}
      }else if(command==='finish_round'){
       if(!run("S.phase!=='ended'&&(S.live?.finished||!S.live&&!nextMatch())"))throw Error('Terminez le match avant de valider la journée.');run('finishRound()');
      }else if(['advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation'].includes(command)){
@@ -289,7 +294,7 @@ function createBridge(options={}){
      }
      let extra=null;if(SYSTEM_COMMANDS.has(command)){ctx.nativeCommand=command;extra=run('nativeSystems.execute(nativeCommand,nativePayload)');}
      else if(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
-     run('save();validateCareer(S)');
+     run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);save();validateCareer(S)");
      const model=snapshot({command,payload});if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));persist();return {id,ok:true,model};
     }catch(error){
      seed=priorSeed;clock=priorClock;store=JSON.parse(priorStore);ctx.nativePrior=JSON.parse(prior);run('nativeSystems.clearTransient()');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;

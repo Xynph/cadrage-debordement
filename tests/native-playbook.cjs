@@ -1,6 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {createBridge}=require('../native/engine/worker.cjs');
+const {skipMatchTalk}=require('./helpers/scene-match-talks.cjs');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-native-playbook-'));let b,n=0,m;
 const good=(command,payload={})=>{const r=b.handle({id:++n,command,payload});assert.equal(r.ok,true,command+': '+r.error);return m=r.model;};
 const change=(key,value,zone)=>good('playbook_set',{context:m.clubLife.playbook.context,key,value,...(zone?{zone}:{})});
@@ -12,7 +13,7 @@ try{
  for(let i=0;i<3;i++)good('snapshot');assert.equal(good('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(profile),bytes);
  change('attack','occupation','sortie');change('defence','pression','marque');change('scrum','securiser');change('lineout','maul');change('kickoff','court');
  let s=state();assert.equal(s.manager.playbook.zones.sortie.attack,'occupation');assert.equal(s.manager.playbook.zones.marque.defence,'pression');assert.equal(s.tactic,'equilibre');
- good('train');good('auto_lineup');good('begin_match');good('pause',{paused:true});
+ good('train');good('auto_lineup');skipMatchTalk(good('begin_match'),good);good('pause',{paused:true});
  s=state();assert.equal(s.live.playbooks[s.live.userSide].zones.sortie.attack,'occupation');assert.equal(s.live.playbooks[s.live.userSide].lineout,'maul');
  change('attack','large','pression');s=state();assert.equal(s.live.playbooks[s.live.userSide].zones.pression.attack,'large');assert.equal(s.manager.playbook.zones.pression.attack,'large');
  good('pause',{paused:false});let r=b.handle({id:++n,command:'playbook_set',payload:{context:m.clubLife.playbook.context,key:'scrum',value:'pousser'}});assert.equal(r.ok,false,'Le carnet ne change pas pendant le direct actif.');

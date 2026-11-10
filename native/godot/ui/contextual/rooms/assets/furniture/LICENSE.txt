@@ -1,0 +1,13 @@
+KENNEY — FURNITURE KIT
+
+Creator: Kenney (https://kenney.nl)
+Original pack: https://kenney.nl/assets/furniture-kit
+License: Creative Commons Zero 1.0 Universal (CC0)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+The official pack page explicitly licenses these assets CC0 and allows free download.
+Files retrieved from https://github.com/shorepine/kenney/tree/main/3d/furniture
+The mirror root LICENSE.txt describes Castle Kit and is not used as the license evidence for Furniture Kit.
+Individual furniture GLBs retain their authored meshes/materials.
+Free commercial use; attribution optional, included here for provenance.
+Retrieved 2026-11-10.

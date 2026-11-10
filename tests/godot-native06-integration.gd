@@ -113,6 +113,11 @@ func event_routing() -> void:
 	app._navigate("Match"); await settle()
 	var model: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(directory.path_join("fixture-event.json")))
 	model.meta.dataDir = app.model.meta.dataDir
+	# Restoring raw state selects its latest event; use the actual prior display
+	# projection to initialise the observer before testing the next animated tick.
+	var displayed_before: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(directory.path_join("fixture-before-model.json")))
+	displayed_before.meta.dataDir = app.model.meta.dataDir
+	app.soundscape.observe_model(displayed_before, app.route, "import", app._match_visible())
 	var original := model.duplicate(true)
 	var path: String = str(app.model.meta.dataDir).path_join("donnees.json")
 	var bytes := FileAccess.get_file_as_bytes(path)
@@ -138,11 +143,16 @@ func event_routing() -> void:
 	check(options != null and options.visible,"Sous-menu Paramètres réel ouvert")
 	if options != null: options.hide(); options.queue_free()
 	app._navigate("Bureau"); await settle()
+	check(app.route == "Match" and app.contextual_director.match_immersed(),"Navigation gestion refusée pendant le match immersif")
+	app.match_screen.hide()
+	app.soundscape.observe_model(displayed_before, app.route, "import", app._match_visible())
+	app.soundscape.refresh_visibility(app.route,app._match_visible())
 	await create_timer(.4).timeout
 	previous = received.size()
 	app.last_command = "tick"; app.bridge.last_response_ok = true
 	app._receive_model(model.duplicate(true))
-	check(received.size() == previous and not app.soundscape._active,"Événement hors Match consommé silencieusement")
+	check(received.size() == previous and not app.soundscape._active,"Événement du Match masqué consommé silencieusement")
+	app.match_screen.show()
 	app._navigate("Match"); await settle()
 	app.last_command = "snapshot"; app._receive_model(model.duplicate(true))
 	check(received.size() == previous,"Menu, sous-menu et retour au direct sans cri de reprise")
