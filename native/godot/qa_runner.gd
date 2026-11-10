@@ -597,10 +597,45 @@ func _systems_reception() -> void:
 	_check(app.user_preferences.data.camera == "action" and app.user_preferences.data.volume == 40, "Career import preserves the independent local preferences")
 	systems_reception = {"passed":failures.size() == initial_failures,"domains":domains,"academy_active":app.model.clubLife.academyPathways.active,"press_five_tones":five_tones,"staff_decision":app.model.clubLife.clubSupport.meeting.lastDecision != null,"board_priority":app.model.clubLife.clubStrategy.board.priority,"atomic_preferences":app.user_preferences.data.camera == "action" and app.user_preferences.data.volume == 40,"exact_import":exact_import,"rng_preserved":private_after.seed == private_before.seed}
 
+func _advance_world_day() -> bool:
+	var today: String = app.model.meta.get("calendarToday", "")
+	var cadence: Dictionary = app.model.meta.get("calendarCadence", {})
+	var previous_week: int = app.model.meta.week
+	if today.is_empty() or not cadence.get("canAdvance", false):
+		_check(false, "Calendar can advance from " + today)
+		return false
+	if not await _ask("advance_day", {"fromDate":today}): return false
+	var next_day := Time.get_date_string_from_unix_time(int(Time.get_unix_time_from_datetime_string(today)) + 86400)
+	var week_step := 1 if int(cadence.day) == 6 else 0
+	var advanced: bool = app.model.meta.calendarToday == next_day and int(app.model.meta.week) == previous_week + week_step
+	_check(advanced, "Calendar advances exactly one day from " + today)
+	return advanced
+
+func _reach_world_match_day() -> bool:
+	# The longest preparation includes the 23 weeks before the Pacific opener.
+	for day in range(197):
+		if app.model.meta.get("calendarCadence", {}).get("matchReady", false):
+			var fixture: Variant = app.model.get("next")
+			var ready: bool = fixture is Dictionary and fixture.get("date") == app.model.meta.calendarToday
+			_check(ready, "Kickoff is available on the fixture date")
+			return ready
+		if not await _advance_world_day(): return false
+	_check(false, "The calendar reaches a match within the preparation limit")
+	return false
+
+func _close_world_match_week() -> bool:
+	var week: int = app.model.meta.week
+	var confirmed: bool = app.model.meta.get("calendarCadence", {}).get("resultConfirmed", false) and app.model.get("live") == null
+	_check(confirmed, "The confirmed result releases the remaining days of the week")
+	if not confirmed: return false
+	for day in 7:
+		if not await _advance_world_day(): return false
+		if int(app.model.meta.week) == week + 1: return true
+	_check(false, "The match week closes after the final calendar day")
+	return false
+
 func _world_match(expected_competition: String) -> bool:
-	for week in 12:
-		if app.model.get("next") is Dictionary: break
-		if not await _ask("finish_round"): return false
+	if not await _reach_world_match_day(): return false
 	var next: Variant = app.model.get("next")
 	_check(next is Dictionary and next.get("competitionId") == expected_competition,"Actual fixture: " + expected_competition)
 	if not next is Dictionary or next.get("competitionId") != expected_competition: return false
@@ -614,6 +649,7 @@ func _world_match(expected_competition: String) -> bool:
 	if not await _ask("delegate"): return false
 	_check(app.model.live is Dictionary and app.model.live.finished,"Native rugby match finishes: " + expected_competition)
 	if not await _ask("finish_round"): return false
+	if not await _close_world_match_week(): return false
 	var recorded: bool = app.model.history.any(func(r): return r.get("competitionId") == expected_competition and r.get("pair", []).has(app.model.club.id) and r.get("stats") is Array)
 	_check(recorded,"Competition-specific result and match statistics recorded")
 	return recorded
@@ -728,12 +764,7 @@ func _pacific_reception() -> void:
 				_check(last != null and list != null and list.get_global_rect().encloses(last.get_global_rect()), "All ten Pacific clubs are visible without changing page at " + str(resolution.x))
 	app._navigate("Rivalités")
 	await _settle()
-	for i in 6:
-		if app.model.get("next") is Dictionary: break
-		if not _press_named("PacificPreparationAdvance"): return
-		if not await _wait() or not app.bridge.last_response_ok:
-			_check(false, "Pacific preparation progresses from the real button")
-			return
+	if not await _reach_world_match_day(): return
 	_check(int(app.model.meta.week) == 23 and app.model.next is Dictionary and app.model.next.date == "2027-02-13", "Preparation stops before the first official match of the selected Pacific club")
 	if not await _world_match("srp"): return
 	var file := FileAccess.open(final_doc,FileAccess.READ)
