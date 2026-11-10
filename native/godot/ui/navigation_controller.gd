@@ -260,6 +260,28 @@ func _activate_selected() -> void:
 	app._navigate(entry.route, not roster_lookup)
 	observe(app.route, app.selected_player, app.selected_staff_club, roster_lookup)
 
+func open_watched_roster() -> void:
+	_open_roster_preset(U.WATCH_FILTER)
+
+func open_roster_group() -> void:
+	if app.roster_filter == U.WATCH_FILTER:
+		_open_roster_preset("Tous")
+	else:
+		app._navigate("Effectif")
+
+func _open_roster_preset(family: String) -> void:
+	U.remember(app)
+	if cursor >= 0: _store_roster_reading(history[cursor])
+	var state := U.defaults()
+	state.family = family
+	app.management_ui.roster = state
+	app.management_ui.profile_scroll = 0
+	app.roster_filter = family
+	app.roster_sort = state.sort
+	app.selected_player = ""
+	app._navigate("Effectif", false)
+	observe(app.route, app.selected_player, app.selected_staff_club, true)
+
 func _person(source: String, id: String) -> Dictionary:
 	var people: Variant = app.model.get(source, [])
 	if people is Array:

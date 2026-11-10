@@ -1,4 +1,22 @@
 extends RefCounted
+
+const WATCH_FILTER := "Sous surveillance"
+
+static func watch_reason(player: Dictionary) -> String:
+	var reasons := PackedStringArray()
+	var charge := float(player.get("physicalLoad", 0))
+	var condition := float(player.get("condition", 100))
+	if charge >= 70:
+		reasons.append("Charge %d %%" % floori(charge))
+	if condition < 80:
+		var displayed := floorf(condition * 10) / 10
+		var value := str(displayed).trim_suffix(".0").replace(".", ",")
+		reasons.append("Condition " + value + " %")
+	return " · ".join(reasons)
+
+static func watch_caption(count: int) -> String:
+	return "Voir %d joueur%s sous surveillance" % [count, "s" if count > 1 else ""]
+
 # Reading state remains local. The shortlist mirrors the engine's saved watchlist.
 static func defaults() -> Dictionary:
 	return {"search":"","family":"Tous","position":"Tous","available":"Tous","contract":"Tous","sort":"Poste","descending":false,"scroll":0,"focus":"","caret":0,"selection_from":-1,"selection_to":-1,"followed":false,"navigation_id":""}
@@ -29,6 +47,7 @@ static func players(source:Array,state:Dictionary,season:int,market:bool=false,f
 			if state.family=="Avants" and float(p.get("fam",0))>3:continue
 			if state.family=="Arrières" and float(p.get("fam",0))<=3:continue
 			if state.family=="Blessés" and float(p.get("injury",0))<=0:continue
+			if state.family==WATCH_FILTER and watch_reason(p).is_empty():continue
 			if state.family=="Hors groupe" and p.get("shirtNumber")!=null:continue
 			if state.available=="Disponibles" and float(p.get("injury",0))>0:continue
 			if state.available=="Blessés" and float(p.get("injury",0))<=0:continue
