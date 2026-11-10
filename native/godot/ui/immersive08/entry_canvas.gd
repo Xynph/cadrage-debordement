@@ -50,7 +50,7 @@ static func home(app: Control) -> Control:
 	D.line(masthead,Vector2(0,165),Vector2(2560,165),Color(C.LINE,.75))
 	D.button(masthead,Rect2(2196,57,278,52),"Crédits",app._credits,false,"info",true,GREEN,"EntryCredits")
 	D.line(content,Vector2(108,490),Vector2(198,490),C.GOLD,3)
-	D.text(content,110,535,"OVAL LEGACY 27",29,C.GOLD,700,1370)
+	D.text(content,110,535,"RUGBY LEGACY 27",29,C.GOLD,700,1370)
 	D.text(content,104,664,"Un club. Un territoire.",108,C.IVORY,800,1460)
 	D.text(content,106,775,"Une saison à écrire.",103,C.IVORY,700,1458)
 	D.text(content,112,851,"Prenez les rênes. Préparez le XV, faites grandir le club et vivez la saison.",29,C.IVORY,400,1400,HORIZONTAL_ALIGNMENT_LEFT,true)
@@ -70,7 +70,7 @@ static func home(app: Control) -> Control:
 	D.rect(content,Rect2(0,1332,2560,108),Color(C.BG,.87))
 	D.line(content,Vector2(84,1332),Vector2(2475,1332),Color(C.LINE,.64))
 	D.text(content,88,1399,"APPLICATION WINDOWS NATIVE  ·  CARRIÈRE LOCALE",23,C.IVORY,600,1180)
-	D.text(content,2468,1399,"OVAL LEGACY 27",23,C.GOLD,700,340,HORIZONTAL_ALIGNMENT_RIGHT)
+	D.text(content,2468,1399,"RUGBY LEGACY 27",23,C.GOLD,700,340,HORIZONTAL_ALIGNMENT_RIGHT)
 	return page
 
 static func _fit(page: Control, content: Control, reference: Vector2) -> void:

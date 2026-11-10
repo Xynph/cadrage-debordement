@@ -106,7 +106,7 @@ static func page(app: Control) -> Control:
 			_installed_card(app, pack_column, pack, selected, compatible, creation, false, 0)
 
 	page.add_child(C.rule())
-	app.status = C.wrap("Analyse en cours…" if app.waiting else "OVAL LEGACY 27     /     Installation locale", 18)
+	app.status = C.wrap("Analyse en cours…" if app.waiting else "RUGBY LEGACY 27     /     Installation locale", 18)
 	page.add_child(app.status)
 	return page
 
@@ -183,7 +183,7 @@ static func _installed_card(app: Control, parent: Container, pack: Dictionary, s
 	var active := id == selected
 	var content := _section(parent, "Pack actif" if active else "Pack installé", str(pack.get("name", "Pack personnalisé")), "maquette-reality-pack", picture_height)
 	if featured:
-		content.add_child(C.wrap("Les identités et les médias fournis par votre pack, dans le monde commun d’Oval Legacy 27.", 21, C.IVORY))
+		content.add_child(C.wrap("Les identités et les médias fournis par votre pack, dans le monde commun de Rugby Legacy 27.", 21, C.IVORY))
 		_inventory(content, pack)
 		content.add_child(C.rule())
 	else:

@@ -848,7 +848,7 @@ func _update_club_branding() -> void:
 
 func _stadium_advert(position_: Vector3, yaw: float) -> void:
 	var label := Label3D.new()
-	label.text = "OVAL LEGACY 27"
+	label.text = "RUGBY LEGACY 27"
 	label.font = load(STADIUM_FONT) as Font
 	label.font_size = 48
 	label.pixel_size = 0.017

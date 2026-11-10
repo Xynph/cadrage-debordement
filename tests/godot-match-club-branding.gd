@@ -34,7 +34,7 @@ func run() -> void:
 	var adverts := view.find_children("*", "Label3D", true, false)
 	check(adverts.size() == 16, "sixteen perimeter advertising boards")
 	for advert in adverts:
-		check(advert.text == "OVAL LEGACY 27", "advertising boards retain Oval Legacy 27")
+		check(advert.text == "RUGBY LEGACY 27", "advertising boards retain Rugby Legacy 27")
 	# Dummy/headless rendering does not retain GPU MultiMesh transforms. Physical
 	# placement/aspect are verified in the real rendered contextual captures.
 	var batch_id := batch.get_instance_id()

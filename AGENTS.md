@@ -22,7 +22,7 @@ concrète.
 
 ## Registre partagé des ressources
 
-À chaque reprise d’Oval Legacy, consulter le [registre des ressources utiles](docs/ressources-utiles.md)
+À chaque reprise de Rugby Legacy, consulter le [registre des ressources utiles](docs/ressources-utiles.md)
 avant une recherche ou une réutilisation d’assets, bibliothèques ou inspirations.
 Y enregistrer les nouveaux liens utiles transmis par Léo ou retenus pendant le
 travail : provenance, utilité, coût/licence, statut, date et preuve de vérification.
@@ -32,7 +32,7 @@ Cloud ; les anciens chats ne constituent pas un inventaire exhaustif automatique
 
 ## Collaboration et esprit critique
 
-- Léo attend un partenaire critique pour tout Oval Legacy : ne pas approuver
+- Léo attend un partenaire critique pour tout Rugby Legacy : ne pas approuver
   automatiquement ses propositions. En cas de désaccord, le dire clairement,
   expliquer pourquoi avec les conséquences concrètes pour le jeu, puis proposer
   la solution recommandée.
@@ -43,7 +43,7 @@ Cloud ; les anciens chats ne constituent pas un inventaire exhaustif automatique
 - Distinguer ce qui existe et a été vérifié de ce qui est proposé ou reste à
   réaliser. Après discussion, les choix explicites de Léo priment ; avancer sans
   demandes répétées de confirmation.
-- Lors des échanges sur Oval Legacy, recommander en français le niveau
+- Lors des échanges sur Rugby Legacy, recommander en français le niveau
   d’effort de GPT‑6.1 Sol adapté à la tâche ou à la prochaine étape.
 
 ## Contraintes produit
@@ -65,7 +65,7 @@ Cloud ; les anciens chats ne constituent pas un inventaire exhaustif automatique
 
 ## Immersion et textes du jeu
 
-Préférence explicite de Léo, 10 novembre 2026 : tout l’univers d’Oval Legacy
+Préférence explicite de Léo, 10 novembre 2026 : tout l’univers de Rugby Legacy
 est présenté naturellement du point de vue du manager pour préserver
 l’immersion : personnages, clubs, événements, finances, dialogues et écrans.
 Ne pas afficher de badge ou d’avertissement « personnage fictif », « profil
