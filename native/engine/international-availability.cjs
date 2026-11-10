@@ -50,7 +50,7 @@ function projectAvailability({ date, clubManaged, clubId, players, callups, rele
   const returned = new Map();
   for (const camp of callups) {
     const returnDate = shift(camp.through, 1);
-    if (returnDate > date || returnDate < shift(date, -7)) continue;
+    if (returnDate > date || returnDate < shift(date, -6)) continue;
     for (const id of camp.playerIds) {
       const player = ownById.get(id);
       if (!player || active.has(id) || returned.get(id)?.returnDate >= returnDate) continue;
