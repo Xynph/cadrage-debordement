@@ -122,7 +122,8 @@ function growPlayer(p,xp,allowFocus=true){
 function developmentTraining(p,mode,ci=null){ensureDevelopment(p);if(p.injury||mode==='repos')return;autoDevelopmentFocus(p,ci);const amount=mode==='intense'?.10:.055;const focus=developmentFocusValue(p)!==DEVELOPMENT_BALANCED;growPlayer(p,amount*ageGrowth(p)*(p.condition<50?.5:1)*growthFitnessFactor(p)*(focus?developmentCollectiveFactor(p,ci):1))}
 function recordDevelopmentMatch(l){if(l.developmentRecorded)return;l.developmentRecorded=true;for(let side=0;side<2;side++){const s=l.sheets[side];for(let id of s.used){const p=matchPlayer(l,side,id);if(!p)continue;ensureDevelopment(p);const minutes=Math.max(0,(s.minutes[id]||0)-(l.devBaseline?.[side]?.[id]||0));if(!minutes)continue;p.dev.minutes+=minutes;p.dev.careerMinutes+=minutes;p.dev.appearances++;growPlayer(p,minutes/80*.12*ageGrowth(p)*Math.max(.5,p.condition/100)*growthFitnessFactor(p),l.developmentFocusVersion===1)}}}
 // Sporting outcomes from the FFR/LNR 2024–25 centre evaluation, ranked within
-// each division. English tiers use PREM's U18-to-debut conversion review.
+// each division. PREM highlights Sale and Saracens for converting U18s into
+// first-team players, and Bath for the impact of its academy graduates.
 // The weights are game balance; the keys are the anonymised catalogue codes.
 const ACADEMY_TRAINING_WEIGHT={
  TCX:4,BER:4,LOX:4,CVX:4,GAX:4,AGX:4,ACV:4,BCV:4,
