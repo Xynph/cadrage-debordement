@@ -9,17 +9,26 @@ const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const UPCOMING_TILE = Color("26231b")
 const UPCOMING_BORDER = Color("706042")
 
-static func _live_fixture(model: Dictionary, pair: Array) -> Dictionary:
+static func _live_fixture(model: Dictionary, pair: Array, include_next: bool = true) -> Dictionary:
 	if pair.size() != 2: return {}
 	var week := int(model.get("meta", {}).get("week", -1))
 	var next: Variant = model.get("next")
-	if next is Dictionary and next.get("pair", []) == pair and int(next.get("week", -2)) == week:
+	if include_next and next is Dictionary and next.get("pair", []) == pair and int(next.get("week", -2)) == week:
 		return next
 	var fixtures: Array = model.get("calendar", []).filter(func(fixture: Dictionary):
 		return not fixture.get("played", false) and int(fixture.get("week", -2)) == week \
 			and fixture.get("home", {}).get("id") == pair[0] and fixture.get("away", {}).get("id") == pair[1]
 	)
 	return fixtures[0] if fixtures.size() == 1 else {}
+
+static func upcoming_matches(model: Dictionary) -> Array:
+	var live: Variant = model.get("live")
+	if not live is Dictionary or live.is_empty(): return P.upcoming(model)
+	var current := _live_fixture(model, live.get("pair", []), false)
+	var fixture_id := str(current.get("id", ""))
+	if fixture_id.is_empty(): return P.upcoming(model)
+	var fixtures := P.upcoming(model, 8)
+	return fixtures.filter(func(fixture: Dictionary): return fixture.get("id") != fixture_id).slice(0, 7)
 
 static func _live_status(live: Dictionary) -> Dictionary:
 	var finished: bool = live.get("finished", false)
@@ -600,7 +609,7 @@ static func _timeline(parent: VBoxContainer, app: Control) -> void:
 	var japan := SeasonPreparation.is_japan(app.model.meta)
 	var row := C.h(12)
 	parent.add_child(row)
-	var fixtures := P.upcoming(app.model)
+	var fixtures := upcoming_matches(app.model)
 	if fixtures.is_empty():
 		parent.add_child(C.wrap("Aucune rencontre programmée. Retrouvez les résultats dans le calendrier.", 21))
 	for fixture: Dictionary in fixtures:
