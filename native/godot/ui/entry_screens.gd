@@ -94,16 +94,18 @@ static func home(app: Control) -> Control:
 	choices.add_child(G.section("Ouvrir le carnet","Votre prochain chapitre commence ici."))
 	choices.add_child(G.separator())
 	if not club.is_empty():
+		var national: bool = app.Immersive.Selections.nation_only(app.model)
+		var team: Dictionary = app.Immersive.Selections.managed_team(app.model)
 		var identity := G.h(12)
 		choices.add_child(identity)
-		identity.add_child(G.crest(club, 44))
+		identity.add_child(app.Immersive.Selections.nation_badge(team, 44) if national else G.crest(club, 44))
 		var current := G.v(1)
 		G.fill(current)
 		identity.add_child(current)
 		current.add_child(G.label("CARNET EN COURS", 11, G.GOLD))
-		current.add_child(G.wrap(str(G.identity(club).get("city", "Votre territoire")), 18, G.INK))
+		current.add_child(G.wrap("Sélection nationale" if national else str(G.identity(club).get("city", "Votre territoire")), 18, G.INK))
 		choices.add_child(G.label("VOTRE CARRIÈRE", 12, G.GOLD))
-		choices.add_child(G.wrap(G.club_name(club), 26, G.INK))
+		choices.add_child(G.wrap(str(team.get("name", "Sélection")) if national else G.club_name(club), 26, G.INK))
 		choices.add_child(G.label("Saison %s · %s" % [G.n(app.model.meta.get("season", 1)), app.model.meta.get("roundLabel", "Journée " + G.n(int(app.model.meta.get("round", 0)) + 1))], 12, G.MUTED))
 		choices.add_child(G.button("REPRENDRE LA CARRIÈRE  →", func(): app._navigate("Réception"), true))
 	var locked:bool=app.model.is_empty() or app.model.get("meta",{}).get("recoveryRequired",false)
@@ -160,6 +162,8 @@ const CREATION_FORMATS := {
 
 static func begin_creation(app: Control) -> void:
 	app.management_ui.erase(CREATION_SELECTION)
+	app.management_ui.erase("creation_role")
+	app.management_ui.erase("creation_nation")
 	app._navigate("Création")
 
 static func _creation_country(club: Dictionary) -> String:
@@ -558,13 +562,53 @@ static func _show_creation_waiting(app: Control, workspace: Control) -> void:
 		if is_instance_valid(app.bridge): app.bridge.command_failed.disconnect(restore), CONNECT_ONE_SHOT)
 
 static func _create(app: Control, selected: Dictionary, mode: String) -> void:
+	var role: String = app.management_ui.get("creation_role", "club") if mode == "world-champ" else "club"
+	var payload := {"mode":mode}
+	if role != "nation": payload.club = int(selected.id)
+	if role in ["dual", "nation"]:
+		payload.nationalRole = role
+		payload.nation = app.management_ui.get("creation_nation", "")
 	var action := func():
-		if app._command("new_career", {"club":int(selected.id),"mode":mode}) and is_instance_valid(app.entry_scroll):
+		if app._command("new_career", payload) and is_instance_valid(app.entry_scroll):
 			_show_creation_waiting(app, app.entry_scroll)
 	if app._has_career():
-		app.confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Exportez-la depuis le menu pour la conserver séparément. Prendre les rênes de %s ?" % G.club_name(selected), action, true)
+		app.confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Vous pouvez l’exporter depuis le menu pour la conserver.", action, true)
 	else:
 		action.call()
+
+static func _choose_role(app: Control, teams: Array) -> void:
+	var roles := ["club", "dual", "nation"]
+	var dialog := ConfirmationDialog.new()
+	dialog.name = "CreationRoleDialog"
+	dialog.title = "Votre rôle"
+	app._prepare_dialog(dialog, 630)
+	dialog.get_ok_button().text = "Confirmer"
+	dialog.get_cancel_button().text = "Annuler"
+	var fields := G.v()
+	dialog.add_child(fields)
+	fields.add_child(G.wrap("Choisissez la responsabilité avec laquelle vous commencez."))
+	var roles_list := OptionButton.new()
+	roles_list.name = "CreationCareerRole"
+	for title: String in ["Club", "Club et sélection", "Sélection seule"]: roles_list.add_item(title)
+	roles_list.select(maxi(0, roles.find(app.management_ui.get("creation_role", "club"))))
+	fields.add_child(roles_list)
+	var nations := OptionButton.new()
+	nations.name = "CreationCareerNation"
+	for index in teams.size():
+		nations.add_item(str(teams[index].name))
+		if teams[index].id == app.management_ui.get("creation_nation", ""): nations.select(index)
+	if nations.selected < 0: nations.select(0)
+	nations.disabled = roles_list.selected == 0
+	fields.add_child(nations)
+	roles_list.item_selected.connect(func(index: int): nations.disabled = index == 0)
+	dialog.confirmed.connect(func():
+		app.management_ui.creation_role = roles[roles_list.selected]
+		app.management_ui.creation_nation = str(teams[nations.selected].id)
+		dialog.queue_free()
+		app._render(false))
+	dialog.canceled.connect(dialog.queue_free)
+	app.add_child(dialog)
+	dialog.popup_centered(Vector2i(630, 245))
 
 static func creation(app: Control) -> Control:
 	var screen := app.get_window().size
@@ -592,6 +636,20 @@ static func creation(app: Control) -> Control:
 	if modern:
 		Editorial.action(back, false, false, 34)
 		Editorial.action(manage, false, false, 34)
+	var teams: Array = app.model.get("international", {}).get("teams", []) if champ else []
+	var role: String = app.management_ui.get("creation_role", "club") if not teams.is_empty() else "club"
+	var nation := {}
+	for team: Dictionary in teams:
+		if team.id == app.management_ui.get("creation_nation", ""):
+			nation = team
+			break
+	if not teams.is_empty():
+		var caption: String = {"club":"Rôle · Club", "dual":"Rôle · Club et sélection", "nation":"Rôle · Sélection seule"}.get(role, "Rôle · Club")
+		var choose := G.button(caption, _choose_role.bind(app, teams))
+		choose.name = "CreationChooseRole"
+		top.add_child(choose)
+		top.move_child(choose, manage.get_index())
+		if modern: Editorial.action(choose, false, false, 34)
 	Packs.missing_warning(app, page, "creation")
 	var candidates: Array = app.pack_manager.creation_catalogue()
 	var playable: Array = candidates.filter(func(club: Dictionary): return club.get("playable", true))
@@ -900,10 +958,12 @@ static func creation(app: Control) -> Control:
 	if not modern: list.add_child(G.wrap(world_info, 12))
 	var caption := "CHOISISSEZ UN CLUB" if selected.is_empty() else "PRENDRE LES RÊNES DE " + G.club_abbr(selected) + "  →"
 	if modern: caption = "Choisissez un club" if selected.is_empty() else "Prendre les rênes  →"
+	if role == "nation": caption = "Diriger " + str(nation.get("name", "la sélection")) + "  →"
+	var can_start := not selected.is_empty() if role == "club" else not nation.is_empty() and (role == "nation" or not selected.is_empty())
 	var start := G.button(caption, func():
-		if not selected.is_empty(): _create(app, selected, mode), true)
+		if can_start: _create(app, selected, mode), true)
 	start.name="CreationStart"
-	start.disabled = app.waiting or unavailable or selected.is_empty()
+	start.disabled = app.waiting or unavailable or not can_start
 	if modern:
 		Editorial.action(start, true, false, maxi(40, C.px(72)))
 		start.add_theme_font_size_override("font_size", maxi(20, C.px(41)))

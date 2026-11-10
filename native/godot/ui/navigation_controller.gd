@@ -199,6 +199,8 @@ func _refresh_results(query: String) -> void:
 		for chapter: Dictionary in app.NAV_CHAPTERS:
 			for route: String in chapter.routes:
 				candidates.append({"kind":"menu", "route":route, "label":"Menu · " + route + " · " + str(chapter.label)})
+		if app.model.get("international") is Dictionary:
+			candidates.append({"kind":"menu", "route":"Sélections", "label":"Menu · Sélections internationales"})
 		candidates.append({"kind":"training","route":"Préparation","label":"Menu · Entraînement · Équipe"})
 		for team: Dictionary in app.model.get("staff", {}).get("teams", []):
 			candidates.append({"kind":"club", "id":int(team.id), "route":"Staff", "label":"Club · %s · Annuaire du staff" % G.club_name(team)})
@@ -216,6 +218,7 @@ func _refresh_results(query: String) -> void:
 				candidates.append({"kind":source, "id":id, "route":"Effectif" if source == "squad" else "Recrutement", "label":label})
 	var total := 0
 	for candidate: Dictionary in candidates:
+		if not _allowed_route(candidate.route): continue
 		if not needle.is_empty() and not U.fold(candidate.label).contains(needle): continue
 		total += 1
 		if _matches.size() >= RESULT_LIMIT: continue
@@ -288,6 +291,8 @@ func _person(source: String, id: String) -> Dictionary:
 func _allowed_route(route: String) -> bool:
 	if route == "Accueil": return true
 	if not app._has_career(): return false
+	if not app.Immersive.Selections.navigation_allowed(app.model, route): return false
+	if route == "Sélections": return app.model.get("international") is Dictionary
 	for chapter: Dictionary in app.NAV_CHAPTERS:
 		if route in chapter.routes: return true
 	return false
