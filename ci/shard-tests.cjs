@@ -37,6 +37,14 @@ const WEIGHTS_SECONDS = Object.freeze({
   'tests/regen-scouting.cjs': 35,
   'tests/world-champ-worker.cjs': 53,
   'tests/world-worker-season.cjs': 375,
+  // Staff et rendez-vous combinés : suites complètes PASS locales Node 24,
+  // le 10 novembre 2026. Maximum mesuré + 15 %, pas des durées GitHub.
+  'tests/native-staff-completion.cjs': 34,
+  'tests/native-staff-completion-season.cjs': 5,
+  'tests/staff-completion.cjs': 2,
+  'tests/regen-portrait-persistence.cjs': 12,
+  'tests/staff-career.cjs': 2,
+  'tests/native-club-support-season.cjs': 197,
   // Profils #409 et #412 du 9 novembre 2026. Maximum mesuré et marge de 15 %.
   'tests/v63-2-stress-native.cjs': 150,
   'tests/v63-1-long-career.cjs': 91,
@@ -56,7 +64,6 @@ const WEIGHTS_SECONDS = Object.freeze({
   'tests/godot-roster-foundation.cjs': 50,
   'tests/native-academy-loan-capacity.cjs': 59,
   'tests/native-academy-network-validation.cjs': 73,
-  'tests/native-club-support-season.cjs': 136,
   'tests/native-club-world-worker.cjs': 88,
   'tests/native-delegate-transaction06.cjs': 187,
   'tests/native-manager-career-reverse.cjs': 62,
