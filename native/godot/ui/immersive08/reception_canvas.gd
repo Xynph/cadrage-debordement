@@ -4,6 +4,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/management_state.gd")
+const Press = preload("res://ui/press_view.gd")
 
 const CATEGORIES = ["Tous", "Staff", "Médical", "Direction", "Recrutement", "Compétitions"]
 const ICONS = {"Staff":"train", "Médical":"heart", "Direction":"shield", "Recrutement":"search", "Formation":"school", "Compétitions":"trophy", "Club":"mail"}
@@ -53,6 +54,21 @@ static func _messages(app: Control) -> Array[Dictionary]:
 		messages.push_front({
 			"id":notice.id, "subject":"Changement de date", "text":text, "category":"Compétitions",
 			"route":"Calendrier", "position":source.size()+index+1, "calendar_notice":notice
+		})
+	var press: Dictionary = app.model.get("clubLife", {}).get("press", {})
+	var invitations: Array = press.get("invitations", [])
+	for index in range(invitations.size() - 1, -1, -1):
+		var invitation: Dictionary = invitations[index]
+		var context: Dictionary = invitation.context
+		var subject := "Présentation à la presse" if invitation.kind == "arrival" else "Conférence de la semaine"
+		var detail := "%s · Saison %d · Semaine %d." % [Press._club(app, context.club), context.season, int(context.week) + 1]
+		match invitation.status:
+			"pending": detail += "\n\nLes journalistes vous invitent à préparer vos réponses."
+			"published": detail += "\n\nVos réponses ont été publiées."
+			"expired": detail += "\n\nCe rendez-vous est passé."
+		messages.push_front({
+			"id":invitation.id, "subject":subject, "text":detail, "category":"Compétitions",
+			"route":"Presse", "position":messages.size() + 1, "press_invitation":invitation
 		})
 	return messages
 
@@ -196,7 +212,9 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 		D.photo(row,image,Rect2(57,12,83,79))
 		D.text(row,160,40,message.get("subject",message.category),29,C.IVORY,700,380)
 		D.text(row,160,76,message.text,22,C.IVORY,500,525)
-		D.chip(row,Rect2(544,13,150,31),"Message %02d" % message.position,COLORS[message.category])
+		var badge := "Message %02d" % message.position
+		if message.get("press_invitation", {}).get("status") == "pending": badge = "Invitation"
+		D.chip(row,Rect2(544,13,150,31),badge,COLORS[message.category])
 	scroll.set_deferred("scroll_vertical",int(state.scroll))
 
 static func _detail(card: Panel, app: Control, state: Dictionary, message: Dictionary) -> void:
@@ -261,7 +279,17 @@ static func _art_fade(parent: Node, area: Rect2, horizontal: bool = true) -> Gra
 
 static func _actions(card: Panel, app: Control, state: Dictionary, message: Dictionary) -> void:
 	var mark: Dictionary = state.marks.get(message.id,{})
-	if message.get("calendar_notice", {}).get("status") == "pending":
+	if message.has("press_invitation"):
+		var invitation: Dictionary = message.press_invitation
+		if invitation.status == "pending":
+			var conference: Dictionary = app.model.get("clubLife", {}).get("press", {}).get("conference", {})
+			var action := D.button(card,Rect2(26,890,545,62),"Ouvrir la conférence",func():
+				app.set_meta("press_mail_origin", invitation.id)
+				app.management_ui.press_tab = 1
+				app._navigate("Presse", false),true,"arrow",false,app.accent,"InboxOpenPressInvitation")
+			action.disabled = app.waiting or not conference.get("available", false) or conference.get("invitationId") != invitation.id
+			if action.disabled: action.tooltip_text = str(conference.get("reason", ""))
+	elif message.get("calendar_notice", {}).get("status") == "pending":
 		var recalibrate := D.button(card,Rect2(26,890,545,62),"Recaler la préparation",
 			_choose_calendar_preparation.bind(app,card,message.id,"recalibrate"),true,"calendar",false,app.accent,"InboxRecalibratePreparation")
 		var keep := D.button(card,Rect2(589,890,549,62),"Ne rien faire",
