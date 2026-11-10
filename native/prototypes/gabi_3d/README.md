@@ -1,42 +1,41 @@
-# Atelier Gabi 3D · Regard V5
+# Atelier Gabi 3D · Visage V6
 
-La variante V5 ouvre les paupières et remplace le regard peint par deux globes en volume. L’atelier de référence garde sa [branche V3](https://github.com/Xynph/cadrage-debordement/tree/prototype/gabi-3d-20261110/native/prototypes/gabi_3d).
+Cet atelier séparé permet de juger l’animation de Gabi sans lancer de carrière. La [V5](https://github.com/Xynph/cadrage-debordement/tree/prototype/gabi-regard-v5-20261110/native/prototypes/gabi_3d) sert de référence pour le regard et les gestes corporels.
 
-Ce projet Godot séparé permet de juger le prototype du coach sans lancer de carrière. Le personnage du jeu reste en 2D.
+## Essayer l’atelier
 
-## Essai local
+Importer ce dossier dans Godot 4.7.2 puis lancer avec **F5**. L’atelier s’ouvre à 1440 × 900.
 
-Ouvrir ce dossier comme projet dans Godot 4.7.2 puis lancer avec F5. Le projet s’ouvre en 1440 × 900, à la taille de référence du jeu.
+- **1 · Repos** lance la boucle bras baissés avec un clignement.
+- **2 · Approbation** joue le geste et le hochement puis revient au repos.
+- **3 · Parole** joue « Continue à construire. » avec le WAV du jeu, des accents de mâchoire et un clignement. **1** interrompt la réplique et remet le visage au neutre.
+- **F**, **P** et **R** cadrent le visage, le profil et la silhouette entière. Glisser ou utiliser les flèches pour tourner.
 
-- **1** joue la boucle de repos, bras baissés.
-- **2** joue le geste d’approbation et le hochement, puis reprend le repos.
-- **3** joue une réplique déjà présente dans Oval Legacy avec une gestuelle dédiée. La bouche reste fixe.
-- **F**, **P** et **R** cadrent le visage, le profil et la silhouette entière. Glisser dans la scène ou utiliser les flèches pour tourner autour de Gabi.
+La bouche suit le rythme d’une seule réplique. Le prototype ne forme pas de visèmes. Les commissures restent rigides et le profil de la barbe et du nez s’écarte de la planche validée en gros plan.
 
-En ligne de commande, importer avec `godot --headless --editor --path . --import --quit` puis lancer avec `godot --path .`. La recette s’exécute avec `godot --path . --script res://verify.gd`. En mode graphique, ajouter `-- --capture-dir=<dossier existant>` pour enregistrer les cinq vues et le rapport JSON.
+## Réception
 
-## Réception du prototype
+Le maillage de la bouche comporte une lèvre supérieure, une lèvre inférieure et une cavité. Les poches orbitales suivent le volume balayé par les globes. Deux morphs de paupières se combinent avec celui de la mâchoire sur le même squelette de 20 os. Le GLB de 4 635 408 octets contient deux textures et les trois clips corporels.
 
-Le candidat TRELLIS.2 en 512 conservait le gabarit mais écrasait les yeux et la bouche. Le candidat 1024 local a servi de base au rig. La texture de l’image d’entrée en A-pose a été projetée sur la zone frontale du visage avec des bords progressifs. Le matériau mat et la correction localisée de la lèvre réduisent l’aspect cireux.
+Les trois poses de bouche, les 26 combinaisons de paupières et de mâchoire, et le retour après export ont été contrôlés. Le test BVH ne détecte aucune intersection des globes avec la peau ou les parois des poches sur ces poses. Blender signale des surfaces internes de normales opposées à moins d’un millimètre. Les coordonnées UV des deux matières texturées se chevauchent sur le maillage global et leurs images sont distinctes.
 
-Le GLB pèse 3 518 360 octets. Il contient le corps de 70 474 triangles à 1,80 m, deux globes de 1 280 triangles, une texture, le squelette de 20 os et trois animations. Les globes suivent la tête et les iris sont formés par des anneaux de géométrie. Le nez et la barbe ont été adoucis de quelques millimètres, et la commissure remontée de manière asymétrique.
-
-La recette Blender ne relève aucune erreur de maillage ni de scintillement potentiel et retrouve les 11 contacts internes du pull. Les contrôles Godot Windows couvrent les trois clips à 1440 × 900. Le balayage rapproché de part et d’autre vérifie les profils. Les deux versions ont aussi été comparées à 136 × 136 et 104 × 104 pixels, les tailles du portrait du guide.
-
-La planche approuvée reste la cible d’identité. Le regard reste fixe. La chaleur de la planche, le profil nez–menton et les mèches demandent encore un travail de sculpture. La bouche fermée du maillage et ses boucles faciales ne permettent pas une articulation fiable. La réplique « Continue à construire. » utilise exactement le WAV existant du manifeste du jeu. Voir la notice de provenance de la voix.
-
-## Reproduire le GLB
-
-Les sources lourdes et la scène Blender éditable sont locales sur D:. Reconstruire d’abord le corps à partir de la variante 1024 et de l’image d’entrée.
+Sous Godot Windows, la recette de l’atelier passe 35 contrôles à 1440 × 900, dont la lecture de la voix, le clignement au repos et la coexistence des morphs en parole. La lecture indépendante a comparé la pose neutre et la pose animée à 104 × 104 et 136 × 136 pixels, puis inspecté les clignements image par image.
 
 ```powershell
-& 'E:/blender.exe' -b --factory-startup --python-exit-code 1 -P ./blender/build_gabi.py -- 'D:/OvalLegacy-outils-3d/trellis2/output/gabi-1024-review-20261110_00001.glb' 'D:/OvalLegacy-gabi-3d/review/rebuild' --review-only --mute-normal-map --reference 'D:/OvalLegacy-outils-3d/trellis2/input/gabi-reference-a-pose.png'
+godot --headless --editor --path . --import --quit
+godot --path . --script res://verify.gd
 ```
 
-Le second script sculpte et ouvre les paupières, monte les yeux, puis écrit le GLB et les vues de contrôle.
+Ajouter `-- --capture-dir=<dossier existant>` en mode graphique pour écrire les captures et le JSON.
 
-~~~powershell
-& 'E:/blender.exe' -b 'D:/OvalLegacy-gabi-3d/review/rebuild/gabi.blend' --python-exit-code 1 -P ./blender/build_gabi_regard.py -- 'D:/OvalLegacy-gabi-3d/review/rebuild-regard'
-~~~
+## Sources Blender
 
-La reconstruction dépend de Blender 5.2.3 et du candidat 1024 dont le SHA-256 est `d9661d2f428c1ab5012e7676e2174d0d73990944a4a93ab6f5062a1d8fcd0160`.
+La reconstruction part de l’image A-pose et du GLB TRELLIS 1024 stockés sur D:. `build_gabi.py` produit le corps. `build_gabi_regard.py` ouvre les paupières et monte les globes. Les étapes suivantes se lancent dans l’ordre avec Blender 5.2.3 et écrivent leurs fichiers et leurs captures dans le dossier de sortie indiqué après `--`.
+
+| Script sous `blender/` | Scène Blender en entrée | Résultat |
+| --- | --- | --- |
+| `build_gabi_orbites.py` | `gabi-v5.blend` | `gabi-orbites.blend` |
+| `build_gabi_bouche.py` avec `--mode retopo` | `gabi-orbites.blend` | `gabi-bouche-retopo.blend` |
+| `build_gabi_paupieres.py` | `gabi-bouche-retopo.blend` | `gabi-clignement-v2.blend` et `gabi.glb` |
+
+Le GLB se contrôle avec `verify_glb.py`. `verify_globe_intersections.py` s’exécute sur `gabi-clignement-v2.blend` et produit les comptages par pose.

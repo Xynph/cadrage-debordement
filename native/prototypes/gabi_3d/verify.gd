@@ -48,6 +48,14 @@ func _run() -> void:
 	_check(lab.current_clip == IDLE and player.get_animation(IDLE).loop_mode == Animation.LOOP_LINEAR,
 		"repos bouclé au démarrage")
 	_check(not lab.voice.playing, "aucune voix automatique au démarrage")
+	_check(lab.face_ready, "mâchoire et trois cibles de clignement importées")
+	if not lab.face_ready:
+		_finish()
+		return
+	player.seek(1.15, true)
+	lab._process(0.0)
+	_check(_closed_face(lab) and is_zero_approx(lab.face_mesh.get_blend_shape_value(lab.jaw_channel)),
+		"clignement au repos avec mâchoire neutre")
 	player.seek(0.0, true)
 	var head_at_start := skeleton.get_bone_global_pose(head)
 	var hand_at_start := skeleton.get_bone_global_pose(hand)
@@ -79,14 +87,19 @@ func _run() -> void:
 	lab.clip_buttons[SPEECH].pressed.emit()
 	_check(lab.current_clip == SPEECH and lab.voice.playing, "parole déclenche le clip vocal")
 	_check(absf(lab.voice.stream.get_length() - 1.875) < 0.005, "durée de la voix source conservée")
-	_check(lab.caption.text == "« Continue à construire. »" and "sans synchronisation" in lab.feedback.text,
-		"réplique affichée et absence de synchronisation signalée")
-	player.seek(0.70, true)
+	_check(lab.caption.text == "« Continue à construire. »" and "sans visèmes" in lab.feedback.text,
+		"réplique affichée et limite des visèmes signalée")
+	player.seek(0.69, true)
+	lab._process(0.0)
+	_check(lab.face_mesh.get_blend_shape_value(lab.jaw_channel) > 0.60 and _closed_face(lab),
+		"mâchoire calée et clignement simultanés sur le WAV")
 	_check(skeleton.get_bone_global_pose(hand).origin.distance_to(hand_at_start.origin) > 0.06,
 		"geste distinct pendant la parole")
 	await _capture("05-parole")
 	lab.clip_buttons[IDLE].pressed.emit()
 	_check(not lab.voice.playing and lab.caption.text.is_empty(), "interrompre la parole arrête voix et réplique")
+	_check(is_zero_approx(lab.face_mesh.get_blend_shape_value(lab.jaw_channel)) and not _closed_face(lab),
+		"interrompre la parole rend le visage neutre")
 	lab.clip_buttons[SPEECH].pressed.emit()
 	player.advance(2.5)
 	_check(lab.current_clip == IDLE and not lab.voice.playing, "fin de parole ramène au repos")
@@ -97,6 +110,14 @@ func _run() -> void:
 	await process_frame
 	_check(lab.azimuth == -4.0, "rotation clavier")
 	_finish()
+
+
+func _closed_face(lab: Node3D) -> bool:
+	for target: Dictionary in lab.blink_targets:
+		var mesh: MeshInstance3D = target.mesh
+		if mesh.get_blend_shape_value(target.closed) < 0.95:
+			return false
+	return true
 
 
 func _find_skinned_mesh(node: Node) -> MeshInstance3D:

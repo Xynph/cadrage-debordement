@@ -7,6 +7,21 @@ const ACCENT := Color("#d9e696")
 const INK := Color("#eaf1e7")
 const MUTED := Color("#a9b9b6")
 const REPLIQUE := "« Continue à construire. »"
+const JAW_ACCENTS: Array[Vector2] = [
+	Vector2(0.0, 0.0), Vector2(0.31, 0.0), Vector2(0.36, 0.22), Vector2(0.42, 0.58),
+	Vector2(0.47, 0.53), Vector2(0.51, 0.10), Vector2(0.55, 0.28), Vector2(0.59, 0.37),
+	Vector2(0.64, 0.54), Vector2(0.69, 0.66), Vector2(0.74, 0.40), Vector2(0.79, 0.35),
+	Vector2(0.83, 0.53), Vector2(0.90, 0.12), Vector2(0.94, 0.0), Vector2(0.98, 0.26),
+	Vector2(1.05, 0.43), Vector2(1.12, 0.21), Vector2(1.19, 0.10), Vector2(1.27, 0.0),
+	Vector2(1.31, 0.25), Vector2(1.35, 0.36), Vector2(1.45, 0.18), Vector2(1.55, 0.02),
+	Vector2(1.65, 0.0), Vector2(1.875, 0.0),
+]
+const BLINK: Array[Vector2] = [
+	Vector2(-0.112, 0.0), Vector2(-0.068, 0.14), Vector2(-0.037, 0.52),
+	Vector2(-0.014, 0.88), Vector2(0.0, 1.0), Vector2(0.034, 0.74),
+	Vector2(0.066, 0.40), Vector2(0.106, 0.11), Vector2(0.14, 0.0),
+]
+const BLINK_MID := 0.54
 
 @onready var animations := $Gabi.find_child("AnimationPlayer", true, false) as AnimationPlayer
 @onready var voice: AudioStreamPlayer = $Voice
@@ -21,6 +36,10 @@ var caption: Label
 var feedback: Label
 var clip_buttons: Dictionary = {}
 var view_buttons: Dictionary = {}
+var face_mesh: MeshInstance3D
+var jaw_channel := -1
+var blink_targets: Array[Dictionary] = []
+var face_ready := false
 
 
 func _ready() -> void:
@@ -31,6 +50,7 @@ func _ready() -> void:
 		for button: Button in clip_buttons.values():
 			button.disabled = true
 		return
+	face_ready = _configure_face()
 	animations.get_animation(IDLE).loop_mode = Animation.LOOP_LINEAR
 	animations.animation_finished.connect(_on_animation_finished)
 	play_clip(IDLE)
@@ -45,6 +65,8 @@ func play_clip(clip: StringName) -> void:
 	if not _clips_available() or clip not in [IDLE, APPROVAL, SPEECH]:
 		return
 	voice.stop()
+	if face_ready:
+		_apply_face(0.0, 0.0)
 	current_clip = clip
 	animations.stop(true)
 	animations.play(clip, 0.12)
@@ -58,8 +80,64 @@ func play_clip(clip: StringName) -> void:
 		APPROVAL:
 			feedback.text = "Approbation · hochement et geste de la main"
 		SPEECH:
-			feedback.text = "Voix existante · gestuelle sans synchronisation labiale"
+			feedback.text = "Mâchoire calée sur une réplique · sans visèmes" if face_ready \
+				else "Voix existante · gestuelle sans synchronisation labiale"
 			voice.play()
+
+
+func _configure_face() -> bool:
+	face_mesh = $Gabi.find_child("SK_Gabi", true, false) as MeshInstance3D
+	if face_mesh == null:
+		return false
+	jaw_channel = face_mesh.find_blend_shape_by_name(&"Machoire")
+	if jaw_channel < 0:
+		return false
+	for name: String in ["SK_Gabi", "Globe_L", "Globe_R"]:
+		var mesh := $Gabi.find_child(name, true, false) as MeshInstance3D
+		if mesh == null:
+			return false
+		var mid := mesh.find_blend_shape_by_name(&"Paupiere_Mi")
+		var closed := mesh.find_blend_shape_by_name(&"Paupiere_Fermee")
+		if mid < 0 or closed < 0:
+			return false
+		blink_targets.append({"mesh": mesh, "mid": mid, "closed": closed})
+	return true
+
+
+func _process(_delta: float) -> void:
+	if not face_ready:
+		return
+	var time := animations.current_animation_position
+	var jaw := 0.0
+	var blink := 0.0
+	if current_clip == SPEECH and voice.playing:
+		jaw = _sample(JAW_ACCENTS, time)
+		blink = _sample(BLINK, time - 0.69)
+	elif current_clip == IDLE:
+		blink = _sample(BLINK, time - 1.15)
+	_apply_face(jaw, blink)
+
+
+func _apply_face(jaw: float, blink: float) -> void:
+	face_mesh.set_blend_shape_value(jaw_channel, jaw)
+	var mid := blink / BLINK_MID if blink <= BLINK_MID else (1.0 - blink) / (1.0 - BLINK_MID)
+	var closed := 0.0 if blink <= BLINK_MID else (blink - BLINK_MID) / (1.0 - BLINK_MID)
+	for target: Dictionary in blink_targets:
+		var mesh: MeshInstance3D = target.mesh
+		mesh.set_blend_shape_value(target.mid, mid)
+		mesh.set_blend_shape_value(target.closed, closed)
+
+
+func _sample(curve: Array[Vector2], time: float) -> float:
+	if time <= curve[0].x or time >= curve[-1].x:
+		return 0.0
+	for index: int in range(1, curve.size()):
+		var target := curve[index]
+		if time <= target.x:
+			var previous := curve[index - 1]
+			var progress := inverse_lerp(previous.x, target.x, time)
+			return lerpf(previous.y, target.y, smoothstep(0.0, 1.0, progress))
+	return 0.0
 
 
 func _on_animation_finished(clip: StringName) -> void:
@@ -145,7 +223,7 @@ func _build_hud() -> void:
 	content.add_theme_constant_override("separation", 12)
 	card.add_child(content)
 
-	content.add_child(_label("PROTOTYPE 3D · REGARD V5", 15, ACCENT))
+	content.add_child(_label("PROTOTYPE 3D · VISAGE V6", 15, ACCENT))
 	content.add_child(_label("Gabi", 58, INK))
 	content.add_child(_label("Gaston Darroux · ancien pilier", 18, MUTED))
 	_rule(content)
@@ -170,7 +248,7 @@ func _build_hud() -> void:
 		views.add_child(button)
 		button.pressed.connect(set_view.bind(item[2], item[3]))
 		view_buttons[item[0]] = button
-	var disclaimer := _label("Échelle 1,80 m · yeux en volume", 14, MUTED)
+	var disclaimer := _label("Échelle 1,80 m · clignement et mâchoire", 14, MUTED)
 	disclaimer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(disclaimer)
 
