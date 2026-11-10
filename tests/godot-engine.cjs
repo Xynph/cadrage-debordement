@@ -69,7 +69,11 @@ try{
 
 // Exercise the actual private JSON-lines pipes, including malformed input and clean exit.
 (async()=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-godot-pipe-'));const child=spawn(process.execPath,[workerPath,'--data-dir',dir],{stdio:['pipe','pipe','pipe']});let stdout='',stderr='';child.stdout.on('data',d=>stdout+=d);child.stderr.on('data',d=>stderr+=d);child.stdin.end('invalid\n'+JSON.stringify({id:'a',command:'snapshot'})+'\n'+JSON.stringify({id:'z',command:'shutdown'})+'\n');const code=await new Promise((resolve,reject)=>{child.on('error',reject);child.on('exit',resolve);});assert.equal(code,0,stderr);const lines=stdout.trim().split('\n').map(JSON.parse);assert.equal(lines.length,3);assert.equal(lines[0].ok,false);assert.equal(lines[1].id,'a');assert.equal(lines[2].ok,true);assert.equal(stderr,'');fs.rmSync(dir,{recursive:true,force:true});console.log('JSON-lines process: PASS');
- if(process.env.CD_GODOT_EXECUTABLE)await godotTest();else console.log('Godot runtime: NON EXÉCUTÉ (CD_GODOT_EXECUTABLE absent)');
+ if(process.env.CD_GODOT_EXECUTABLE){
+  await godotTransportTest('unterminated');
+  await godotTransportTest('fragments');
+  await godotTest();
+ }else console.log('Godot runtime: NON EXÉCUTÉ (CD_GODOT_EXECUTABLE absent)');
 })().catch(e=>{console.error(e);process.exitCode=1;});
 }
 
@@ -106,7 +110,7 @@ async function reviewStorage(){
   const ownership=createBridge({dataDir:path.join(temp,'ownership')}),ownedPath=path.join(temp,'ownership','PrototypeGodot','profil.lock');fs.unlinkSync(ownedPath);fs.writeFileSync(ownedPath,'new-owner');assert.throws(()=>ownership.close(),/propriét|appart|verrou/i);assert.equal(fs.readFileSync(ownedPath,'utf8'),'new-owner','close ne supprime jamais un verrou remplacé');
   console.log('I2 PASS: close preserves a lock whose ownership changed');
   const abandoned=path.join(temp,'abandoned','PrototypeGodot','profil.acquisition');fs.mkdirSync(abandoned,{recursive:true});fs.writeFileSync(path.join(abandoned,'owner'),'abandoned');assert.throws(()=>createBridge({dataDir:path.join(temp,'abandoned')}),/verrou/);assert.equal(fs.readFileSync(path.join(abandoned,'owner'),'utf8'),'abandoned');
-  if(process.env.CD_GODOT_EXECUTABLE)await godotEofTest();
+  if(process.env.CD_GODOT_EXECUTABLE)await godotTransportTest();
  }finally{
   for(const child of children){if(child.connected)child.send('exit');}
   await Promise.all(children.map(child=>child.exitCode!==null?Promise.resolve():new Promise(resolve=>{const timeout=setTimeout(()=>{child.kill();resolve();},2000);child.once('exit',()=>{clearTimeout(timeout);resolve();});})));
@@ -114,34 +118,83 @@ async function reviewStorage(){
  }
 }
 
-async function godotEofTest(){
+async function godotTransportTest(mode = 'eof'){
  const temp=fs.mkdtempSync(path.join(os.tmpdir(),'cd-godot-eof-')),fake=path.join(temp,'exit.cjs');
- fs.writeFileSync(fake,"process.stdin.once('data',()=>process.exit(0));");
- fs.writeFileSync(path.join(temp,'project.godot'),'config_version=5\n[application]\nconfig/name="EOF test"\n[native_engine]\nworker_path='+JSON.stringify(fake.replaceAll('\\','/'))+'\n');
+ const writer=mode==='eof'?"process.stdin.once('data',()=>process.exit(0));":`const readline=require('node:readline');
+ const reply=(id,data)=>Buffer.from(JSON.stringify({id,ok:true,model:{data}})+'\\n');
+ const input=readline.createInterface({input:process.stdin});
+ input.on('line',line=>{
+  const request=JSON.parse(line);
+  if(${JSON.stringify(mode)}==='unterminated'){
+   const bytes=reply(request.id,'dernier fragment sans LF');
+   process.stdout.write(bytes.subarray(0,-1),()=>process.exit(0));
+  }else if(request.id===1){
+   const first=reply(1,'déjà 🏉');
+   const cut=first.indexOf(Buffer.from('🏉'))+2;
+   process.stdout.write(first.subarray(0,cut));
+   setTimeout(()=>{
+    const second=reply(2,'x'.repeat(8*1024*1024+17)+' fin 🏉');
+    process.stdout.write(Buffer.concat([first.subarray(cut),second]));
+   },30);
+  }else if(request.id===3){
+   process.stdout.write(reply(4,'mauvais identifiant'));
+  }
+ });`;
+ fs.writeFileSync(fake,writer);
+ fs.writeFileSync(path.join(temp,'project.godot'),'config_version=5\n[application]\nconfig/name="Transport test"\n[native_engine]\nworker_path='+JSON.stringify(fake.replaceAll('\\','/'))+'\n');
  fs.copyFileSync(path.resolve(__dirname,'../native/godot/engine_bridge.gd'),path.join(temp,'engine_bridge.gd'));
  fs.writeFileSync(path.join(temp,'test.gd'),`extends SceneTree
 var bridge: Node
-var failed := false
-var frames := 0
+var failure := ""
+var pid := -1
+var stage := 0
+var exited_frames := 0
+var deadline := Time.get_ticks_msec() + 9000
+const MODE := ${JSON.stringify(mode)}
 func _initialize():
  bridge = load("res://engine_bridge.gd").new()
  root.add_child.call_deferred(bridge)
- bridge.command_failed.connect(func(_message): failed = true)
+ bridge.model_changed.connect(_model)
+ bridge.command_failed.connect(func(message: String):
+  if failure.is_empty(): failure = message)
  _begin.call_deferred()
 func _begin():
  bridge.start(${JSON.stringify(temp.replaceAll('\\','/')+'/profile')})
-func _process(_delta):
- frames += 1
- if failed and bridge.child_pid == -1:
-  print("GODOT_EOF_PASS")
-  quit(0)
- if frames > 1000:
+ pid = bridge.child_pid
+func _model(model: Dictionary):
+ if MODE != "fragments":
+  push_error("Une réponse sans LF a été acceptée")
   quit(1)
+  return
+ if stage == 0 and model.data == "déjà 🏉":
+  stage = 1
+  bridge.send("snapshot")
+ elif stage == 1 and model.data.length() == 8*1024*1024+23 and model.data.ends_with(" fin 🏉"):
+  stage = 2
+  bridge.send("snapshot")
+ else:
+  push_error("Contenu, ordre ou identifiant de réponse incorrect")
+  quit(1)
+func _process(_delta):
+ if Time.get_ticks_msec() > deadline:
+  quit(1)
+ if bridge.child_pid == -1 and not failure.is_empty():
+  exited_frames += 1
+  if exited_frames >= 3:
+   if pid <= 0 or OS.is_process_running(pid) or (MODE == "fragments" and (stage != 2 or not failure.contains("identifiant inattendu"))):
+    quit(1)
+   else:
+    print("GODOT_TRANSPORT_PASS ",MODE)
+    quit(0)
  return false
 `);
- const child=spawn(process.env.CD_GODOT_EXECUTABLE,['--headless','--path',temp,'--script','test.gd'],{env:{...process.env,CD_NODE_EXECUTABLE:process.execPath},stdio:['ignore','pipe','pipe']});let output='',errors='';child.stdout.on('data',d=>output+=d);child.stderr.on('data',d=>errors+=d);
- const timer=setTimeout(()=>child.kill(),10000);const code=await new Promise((resolve,reject)=>{child.on('error',reject);child.on('exit',resolve);});clearTimeout(timer);
- try{assert.equal(code,0,output+'\n'+errors);assert.match(output,/GODOT_EOF_PASS/);assert.doesNotMatch(errors,/SCRIPT ERROR|Parse Error|ERROR:/);console.log('EOF PASS: explicit command_failed, no Godot parser error, child terminated');}finally{fs.rmSync(temp,{recursive:true,force:true});}
+ const child=spawn(process.env.CD_GODOT_EXECUTABLE,['--headless','--path',temp,'--script','test.gd'],{env:{...process.env,CD_NODE_EXECUTABLE:process.execPath},stdio:['ignore','pipe','pipe']});
+ let output='',errors='';
+ child.stdout.on('data',d=>output+=d);child.stderr.on('data',d=>errors+=d);
+ const timer=setTimeout(()=>child.kill(),12000);
+ const code=await new Promise((resolve,reject)=>{child.on('error',reject);child.on('exit',resolve);});
+ clearTimeout(timer);
+ try{assert.equal(code,0,output+'\n'+errors);assert.ok(output.includes('GODOT_TRANSPORT_PASS '+mode));assert.doesNotMatch(errors,/SCRIPT ERROR|Parse Error|ERROR:/);console.log(output.trim());}finally{fs.rmSync(temp,{recursive:true,force:true});}
 }
 
 async function godotTest(){
