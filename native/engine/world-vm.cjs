@@ -4,6 +4,7 @@ const competitions=require('./world-competitions.cjs');
 const validation=require('./world-validation.cjs');
 const knockout=require('./world-knockout.cjs');
 const career=require('./world-career.cjs');
+const seniorCalibration=require('./senior-calibration.cjs');
 const initialContracts=require('./world-initial-contracts.json');
 const lnrCalendar=require('./lnr-calendar-2026-27.json');
 const dispatch=require('./world-dispatch.cjs');
@@ -41,7 +42,8 @@ function bootstrap(){
   `const CDWorldKnockout=(${knockout.toString()})();`,
   `const CDWorldInitialContracts=${JSON.stringify(initialContracts)};`,
   `const CDWorldLnrCalendar=${JSON.stringify(lnrCalendar)};`,
-  `const CDWorldCareer=(${dispatch.toString()})(CDWorldEditions,(edition,active)=>(${career.toString()})(edition,active,CDWorldInitialContracts,CDWorldLnrCalendar));`,
+  `const CDWorldSeniorCalibration=(${seniorCalibration.toString()})(lnrProjectV12,roleNote,ROLE_WEIGHTS);`,
+  `const CDWorldCareer=(${dispatch.toString()})(CDWorldEditions,(edition,active)=>(${career.toString()})(edition,active,CDWorldInitialContracts,CDWorldLnrCalendar,CDWorldSeniorCalibration));`,
   `CDWorldCareer.installHooks();if(CDWorldPacificRegistry)CDWorldSRPMatch.installHooks();if(CDWorldJapanRegistry){CDWorldJapanMatch.installHooks();CDWorldJapanQuota.installHooks();}const CDNationaleReducedBench=CDWorldNationaleRegistry?(${nationaleSquad.toString()})():null;`,
  ].join('');
 }

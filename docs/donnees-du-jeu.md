@@ -14,6 +14,20 @@ Le catalogue de création présente une accroche historique originale par club. 
 
 Les atouts et points à renforcer viennent des notes de l’effectif de départ au poste principal. Le dossier compare deux rangs par poste dans le même championnat. Les titulaires correspondent aux joueurs les mieux notés pour le nombre de places dans le XV. Les remplaçants correspondent au groupe suivant, de même taille. Les piliers gauche et droit sont comptés séparément. Une ligne complète passe devant une ligne incomplète. À couverture égale, la somme des notes décide du rang et les égalités partagent la même place. Pour choisir les deux postes affichés, les places manquantes dans le XV priment et le rang des titulaires pèse deux fois celui des remplaçants.
 
+## Barème senior de départ · Monde Champ
+
+Les nouvelles carrières Monde Champ appliquent le barème senior V1 aux joueurs du
+registre âgés d’au moins 23 ans. Le niveau de départ des dix profils d’élite
+s’appuie sur des sélections, distinctions et postes documentés. Leurs notes
+sont des estimations de simulation. Les qualités fortes dépendent de leur rôle
+et alimentent les onze compétences de match par la projection des 36 attributs.
+L’aperçu à la création emploie le même barème que le premier effectif.
+
+Les plafonds d’évolution des seniors recalibrés suivent la nouvelle échelle,
+dans la limite de 97 ou du plafond déjà supérieur. Les potentiels du registre
+source, les notes des jeunes, les identifiants et les identités des packs sont
+conservés. Une carrière reprise ou importée conserve les valeurs déjà acquises.
+
 ## État de la version 15
 
 `dist/world-data.js` rassemble le catalogue initial des clubs et les listes de
