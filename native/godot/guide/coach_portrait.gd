@@ -50,7 +50,7 @@ func set_speaking(value: bool) -> void:
 	if value and _idle_elapsed > NOD_DELAY: _cancel_composition_nod()
 	speaking = value; _elapsed = 0.0; _idle_elapsed = 0.0
 	_frame(_talk if _mouth_can_open() else _rest)
-func set_articulation(value: float) -> void:
+func set_articulation(value: float, _rounding: float = 0.0) -> void:
 	articulation = value
 	if speaking: _frame(_talk if _mouth_can_open() and int(_elapsed / 0.18) % 3 != 1 else _rest)
 func _mouth_can_open() -> bool:
