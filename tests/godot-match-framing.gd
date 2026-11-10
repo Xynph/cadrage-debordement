@@ -101,6 +101,23 @@ func run() -> void:
 	live.teams[1].presentation.color = "#f3ecd8"
 	view.apply_frame(live)
 	check(garment(view, "1-0", "Shirt").srgb_to_linear().get_luminance() < 0.05, "Pale pair uses an anthracite away shirt")
+	var close_tone := fixture()
+	close_tone.teams = [{"color": "#359a66"}, {"color": "#5a8ec4"}]
+	view.apply_frame(close_tone)
+	check(garment(view, "0-0", "Shirt") == Color("359a66"), "Pau keeps its home shirt")
+	check(garment(view, "1-0", "Shirt") == Color("f0ecdf"), "Pau–Montpellier uses the turf-visible ivory for almost equal brightness")
+	check(garment(view, "1-0", "Shirt2") == Color("5a8ec4"), "Montpellier keeps its club colour as trim")
+	close_tone.teams = [{"color": "#d4b340"}, {"color": "#d4b340"}]
+	view.apply_frame(close_tone)
+	check(garment(view, "1-0", "Shirt") == Color("202b35"), "Identical golden shirts keep the darker fallback")
+	var outlined := view._actors["1-0"].node.get_node("TeamMarker") as MeshInstance3D
+	var outline_material := outlined.material_override as ShaderMaterial
+	check(outline_material != null, "Dark away marker has a visible rim")
+	if outline_material:
+		check(outline_material.get_shader_parameter("marker_color") == Color("202b35"), "Dark away marker keeps its jersey colour")
+	close_tone.teams = [{"color": "#d43e47"}, {"color": "#6f9ac9"}]
+	view.apply_frame(close_tone)
+	check(garment(view, "1-0", "Shirt") == Color("6f9ac9"), "Toulouse–Vannes keeps its contrasting source kits")
 	for size in [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080)]:
 		root.size = size
 		root.content_scale_size = size

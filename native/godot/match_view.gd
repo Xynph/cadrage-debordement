@@ -9,6 +9,7 @@ const STADIUM_FONT := "res://fonts/BarlowCondensed-SemiBold.ttf"
 const Presentation = preload("res://match_presentation.gd")
 const Motion = preload("res://match_motion.gd")
 const Kit = preload("res://match_kit.gd")
+const MarkerOutline = preload("res://shaders/team_marker_outline.gdshader")
 const Athlete = preload("res://match_athlete.gd")
 const Contact = preload("res://match_contact.gd")
 const Cut = preload("res://match_cut.gd")
@@ -22,6 +23,7 @@ var _athlete_scene: PackedScene
 var _actors: Dictionary = {}
 var _team_colors: Array[Color] = [Color("d43e47"), Color("6f9ac9")]
 var _kits: Array[Dictionary] = []
+var _team_marker_materials: Array[Material] = []
 var _camera_focus := Vector3.ZERO
 var _camera_framed := false
 var _camera_cut := true
@@ -54,7 +56,7 @@ var _stadium_kit: Node3D
 func _ready() -> void:
 	name = "NativeMatchView"
 	_athlete_scene = load(ATHLETE) as PackedScene
-	_kits = Kit.resolve(_team_colors)
+	_refresh_kits()
 	_build_environment()
 	_build_ground()
 	_build_stadium()
@@ -136,7 +138,7 @@ func apply_frame(live: Dictionary) -> void:
 			colors_changed = true
 	if colors_changed:
 		# A home-colour change can also change the away contrast decision.
-		_kits = Kit.resolve(_team_colors)
+		_refresh_kits()
 		Athlete.clear_palette()
 		for entry: Dictionary in _actors.values():
 			_recolor(entry.model, entry.side)
@@ -608,10 +610,32 @@ func _find_animation(node: Node) -> AnimationPlayer:
 	return null
 
 
+func _refresh_kits() -> void:
+	_kits = Kit.resolve(_team_colors)
+	_team_marker_materials.clear()
+	for kit: Dictionary in _kits:
+		if kit.get("outlined_marker", false):
+			var marker := ShaderMaterial.new()
+			marker.shader = MarkerOutline
+			marker.set_shader_parameter("marker_color", kit.marker)
+			marker.set_shader_parameter("outline_color", Kit.IVORY.darkened(0.18))
+			_team_marker_materials.append(marker)
+		else:
+			_team_marker_materials.append(_material(kit.marker, true))
+
+
+func alternative_kit_colors() -> Array[Color]:
+	if _kits.size() != 2 or _kits[1].shirt == _team_colors[1]:
+		return []
+	return [_kits[0].shirt, _kits[1].shirt]
+
+
 func _recolor(model: Node3D, side: int) -> void:
 	var marker := model.get_parent().get_node_or_null("TeamMarker") as MeshInstance3D
 	if marker:
-		marker.material_override = _material(_kits[side].marker, true)
+		marker.material_override = _team_marker_materials[side]
+		var width := 1.18 if _kits[side].get("outlined_marker", false) else 1.0
+		marker.scale = Vector3(width, 0.12, width)
 	Athlete.dress(model, _kits[side], str(model.get_meta("athlete_id", "")))
 
 func _build_environment() -> void:
