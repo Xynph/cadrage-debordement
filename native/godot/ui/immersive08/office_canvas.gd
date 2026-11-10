@@ -171,7 +171,7 @@ static func _priorities(card: Panel, app: Control) -> void:
 		var reason := D.text(card,78,y+82,item.detail,18,C.MUTED,400,746,HORIZONTAL_ALIGNMENT_LEFT,true)
 		reason.name = "OfficePriorityReason" + str(i+1)
 		reason.tooltip_text = item.detail
-	if not tasks.any(func(item: Dictionary): return item.id == "OfficeTrainingAction") and not app.model.meta.get("canAdvanceSeason",false):
+	if not tasks.any(func(item: Dictionary): return item.id == "OfficeTrainingAction") and not app.model.meta.get("canAdvanceSeason",false) and app.model.meta.get("phase","") != "ended":
 		D.button(card,Rect2(24,378,249,27),"Entraînement",func():app.Immersive.open_training(app),false,"arrow",true,app.accent,"OfficeTrainingAction")
 	D.button(card,Rect2(564,378,287,27),"Mon carnet personnel",func():Office.open_notebook(app),false,"arrow",true,app.accent,"OpenCoachNotebook")
 

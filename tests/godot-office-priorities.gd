@@ -52,6 +52,15 @@ func projections() -> void:
 	model = base()
 	model.squad = [{"injury":2}]
 	check(ids(model)[0] == "OfficeMedicalPriorityAction","Blessures reliées à l’effectif")
+	model.next = {"date":"2026-11-10"}
+	model.international = {"availability":{"clubManaged":true,"absentCount":2,"nextReturn":"2026-11-15"}}
+	model.squad = [{"id":"a","name":"Joueur","contractEnd":4,"injury":2}]
+	check(ids(model) == ["OfficeMatchPriorityAction","OfficeInternationalPriorityAction","OfficeMedicalPriorityAction"],"Match du jour prioritaire sur absences, blessures et contrat de la saison suivante")
+	model.meta.canAdvanceSeason = false
+	model.meta.phase = "ended"
+	model.selection.valid = false
+	var closing := ids(model)
+	check(closing[0] == "OfficeFinalStandingsAction" and "OfficeTrainingAction" not in closing and "OfficeSelectionPriorityAction" not in closing,"Clôture sportive conservée pendant intersaison internationale")
 
 func wait_engine() -> void:
 	var deadline := Time.get_ticks_msec()+60000
@@ -144,6 +153,14 @@ func run() -> void:
 			check(live_action.text.contains("Consulter le résultat") and live_action.has_focus(),"Tick final : titre et focus actualisés sans reconstruction")
 			live_action.pressed.emit(); await settle()
 			check(app.route == "Match","Le résultat est consulté sans commande de validation")
+		scenario = original.duplicate(true)
+		scenario.clubLife.press.conference.required = false
+		scenario.meta.phase = "ended"
+		scenario.meta.canAdvanceSeason = false
+		scenario.live = null
+		await render(scenario)
+		check(app.find_child("OfficeFinalStandingsAction",true,false) != null and app.find_child("OfficeTrainingAction",true,false) == null,"Intersaison internationale : bilan accessible et entraînement absent")
+		await capture("bureau-cloture-"+str(dimensions.x))
 	await render(original)
 	check(app.bridge._next_id == commands,"Toutes les ouvertures sont sans commande au moteur")
 	check(FileAccess.get_sha256(file) == before,"Profil sportif inchangé après consultation et tailles")
