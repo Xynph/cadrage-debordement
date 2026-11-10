@@ -25,6 +25,8 @@ func units() -> void:
 	check(ids(Sort.sorted(archive,"Date du rapport",false,{},true)) == ["a","b","z","u"], "Dates triées chronologiquement, pas comme des textes formatés")
 	check(ids(Sort.sorted(archive,"Date du rapport",true,{},true)) == ["z","b","a","u"], "Chronologie inverse avec date inconnue en dernier")
 	check(Sort.value({"week":14},"Date du rapport",{},true) == null, "Date incomplète non inventée")
+	check(Sort.value({"week":14.5,"season":2},"Date du rapport",{},true) == null, "Date invalide non triée comme une date connue")
+	check(Sort.report_status({"potential":70}) == "Non daté" and Sort.value({"id":"u"},"Rapport",{"u":{"potential":70}}) == null,"Un rapport sans date reste inconnu, pas faussement daté")
 	for descending: bool in [false,true]:
 		check(ids(Sort.sorted([{"id":"b","fee":20},{"id":"a","fee":20},{"id":"u","fee":INF}],"Prime",descending,{})) == ["a","b","u"], "Égalités stables par ID, infini inconnu")
 	check(JSON.stringify([source,reports]) == before, "Tri sans mutation des joueurs ou rapports")
@@ -120,6 +122,11 @@ func run() -> void:
 		var last := page.table_rows.get_child(39) as Button
 		last.grab_focus(); await settle()
 		check(scroll.get_global_rect().intersects(last.get_global_rect()),"Dernière ligne accessible sans page suivante")
+		for turn in 8:
+			var wheel := InputEventMouseButton.new(); wheel.button_index=MOUSE_BUTTON_WHEEL_DOWN; wheel.position=point; wheel.global_position=point; wheel.pressed=true
+			root.push_input(wheel,true); await process_frame
+		await settle()
+		check(header.get_global_rect() == fixed and dossier.get_global_rect() == fixed_dossier,"La molette en bout de liste ne déplace pas les panneaux")
 		var identity: String = last.get_meta("player_id")
 		await enter(last)
 		check(str(dossier.get_meta("player_id")) == identity,"Identité correcte après tri et défilement")
