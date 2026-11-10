@@ -152,6 +152,7 @@ func run_main() -> void:
 	app._navigate("Bureau"); await settle()
 	check(app.decision_feedback.receipts().is_empty(),"Main nouvelle carrière remet reçus à zéro")
 	await ContextualFlow.settle_club_meetings(app, self, check)
+	app._navigate("Bureau"); await settle()
 	var meeting_receipts: int = app.decision_feedback.receipts().size()
 	var before: Dictionary = app.model.finance.duplicate(true)
 	var context: Dictionary = app.model.clubLife.clubSupport.context
