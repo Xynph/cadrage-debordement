@@ -371,6 +371,13 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 				source_dates.append(str(source.get("published","date inconnue")))
 			references_tab.add_child(G.wrap("Publication officielle : %s · les signatures en jeu restent indépendantes."%", ".join(source_dates),12,G.MUTED))
 	references_tab.add_child(G.wrap(portrait.tooltip_text,12,G.MUTED))
+	var academy := preload("res://ui/immersive08/academy_canvas.gd")
+	var player_id := str(p.id)
+	if not academy.professional_progress(app, player_id).is_empty():
+		var follow_up := G.button("OUVRIR LE SUIVI INDIVIDUEL", func():
+			academy.open_professional_progress(app, player_id, "ProfileDevelopmentAction"))
+		follow_up.name = "ProfileDevelopmentAction"
+		references_tab.add_child(follow_up)
 	# The scroll owns these callbacks; weak captures also survive queued calls
 	# after a different player replaces its retired dossier.
 	var refs:Array[WeakRef]=[weakref(app),weakref(parent),weakref(list),weakref(tabs),weakref(overview)]

@@ -487,12 +487,35 @@ func _integration_dialog() -> void:
 			body.add_child(offer)
 	_popup(dialog, 770, 420)
 
+static func professional_progress(app: Control, player_id: String) -> Dictionary:
+	var people: Array = app.model.get("decisions", {}).get("development", {}).get("professionals", [])
+	for person: Dictionary in people:
+		if str(person.id) == player_id: return person
+	return {}
+
+static func open_professional_progress(app: Control, player_id: String, source_id: String) -> void:
+	var person := professional_progress(app, player_id)
+	if person.is_empty(): return
+	var dialog := _show_progress(app, person, person.get("minutes", 0))
+	dialog.tree_exited.connect(func(): U.focus(app, source_id))
+
 func _focus_dialog(p: Dictionary) -> void:
-	var dialog_parts := _dialog("AcademyFocusDialog", "Progression · " + str(p.name))
+	var professional := _professional(p)
+	var caption := "Ouvrir la fiche du joueur" if professional else "Ouvrir les parcours du centre"
+	_show_progress(app, p, _minutes(p), caption, func():
+		if professional:
+			app.selected_player = str(p.id)
+			app._navigate("Effectif")
+		else:
+			app._navigate("Centre"))
+
+static func _show_progress(app: Control, p: Dictionary, minutes: Variant, caption: String = "", open_context: Callable = Callable()) -> AcceptDialog:
+	var dialog_parts := _create_dialog(app, "AcademyFocusDialog", "Progression · " + str(p.name))
 	var dialog: AcceptDialog = dialog_parts[0]
 	var body: VBoxContainer = dialog_parts[1]
+	dialog.set_meta("development_player_id", p.id)
 	var detail: Dictionary = p.get("development", {})
-	body.add_child(C.wrap("%s minutes · %s apparition(s) · %s de progression cette saison" % [G.n(_minutes(p)), G.n(p.get("appearances", 0)), _change(p)], 24, C.IVORY, true))
+	body.add_child(C.wrap("%s minutes · %s apparition(s) · %s de progression cette saison" % [G.n(minutes), G.n(p.get("appearances", 0)), _change(p)], 24, C.IVORY, true))
 	for year: Dictionary in detail.get("history", []):
 		body.add_child(C.label("S%s · %s → %s · %s min" % [G.n(year.get("season", "—")), G.n(year.get("start", "—")), G.n(year.get("end", "—")), G.n(year.get("minutes", 0))], 21))
 	if detail.get("history", []).is_empty(): body.add_child(C.wrap("Historique annuel disponible après l’intersaison.", 19, C.MUTED, true))
@@ -506,20 +529,15 @@ func _focus_dialog(p: Dictionary) -> void:
 		control.disabled = not detail.get("available", false)
 		body.add_child(control)
 		body.add_child(C.wrap(str(detail.get("reason", "")) if control.disabled else "Changer d’axe remet à zéro l’expérience partielle non dépensée. Les qualités déjà acquises sont conservées.", 19, C.MUTED, true))
-	if _professional(p):
-		body.add_child(C.button("Ouvrir la fiche du joueur", func():
+	if open_context.is_valid():
+		body.add_child(C.button(caption, func():
 			dialog.hide()
 			dialog.queue_free()
-			app.selected_player = str(p.id)
-			app._navigate("Effectif")))
-	else:
-		body.add_child(C.button("Ouvrir les parcours du centre", func():
-			dialog.hide()
-			dialog.queue_free()
-			app._navigate("Centre")))
-	_popup(dialog, 790, 450)
+			open_context.call()))
+	app.ImmersiveDialogs.show_centered(dialog, Vector2i(C.px(790), C.px(450)))
+	return dialog
 
-func _option(id: String, caption: String, choices: Dictionary, chosen: Variant, callback: Callable) -> OptionButton:
+static func _option(id: String, caption: String, choices: Dictionary, chosen: Variant, callback: Callable) -> OptionButton:
 	var control := OptionButton.new()
 	control.name = id
 	control.accessibility_name = caption
@@ -551,6 +569,9 @@ func _picker(parent: Node, rectangle: Rect2, id: String, caption: String, choice
 	D.place(control, rectangle)
 
 func _dialog(id: String, title: String) -> Array:
+	return _create_dialog(app, id, title)
+
+static func _create_dialog(app: Control, id: String, title: String) -> Array:
 	app._clear_dialogs()
 	var dialog := AcceptDialog.new()
 	dialog.name = id
@@ -567,7 +588,7 @@ func _dialog(id: String, title: String) -> Array:
 func _popup(dialog: AcceptDialog, width: int, height: int) -> void:
 	dialog.popup_centered(Vector2i(C.px(width), C.px(height)))
 
-func _change(p: Dictionary) -> String:
+static func _change(p: Dictionary) -> String:
 	var baseline: Variant = p.get("development", {}).get("seasonStart")
 	if not (baseline is int or baseline is float) or not (p.get("rating") is int or p.get("rating") is float): return "—"
 	var delta := roundi(float(p.rating) - float(baseline))
