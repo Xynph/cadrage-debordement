@@ -136,8 +136,7 @@ func _offices() -> void:
 			app._navigate("Bureau")
 			for i in 5: await process_frame
 			_current_office(model)
-			# Exercise the retained classic renderer separately: its atlas/photo contract
-			# must not be imposed on the current immersive route's generic artwork.
+			# Exercise the retained classic renderer separately from the immersive route.
 			var classic := VBoxContainer.new()
 			root.add_child(classic)
 			classic.size = Vector2(dimensions.x, 600)
@@ -151,11 +150,10 @@ func _offices() -> void:
 			_check(text.contains("Terrain neutre") if neutral else text.contains(stadium), "Office identifies actual venue for " + model.next.phase + " " + model.next.leagueId)
 			if neutral:
 				_check(not text.contains(stadium) and text.contains("Territoire du club"), "Neutral venue does not claim the home club stadium and identifies the photo")
-			var image_path: String = "res://assets/club-atlas/%s-%s.webp" % [model.club.presentation.slug if neutral else model.next.home.presentation.slug,"city" if neutral else "stadium"]
 			var found := false
-			for image in classic.find_children("*", "TextureRect", true, false):
-				if image.texture != null and image.texture.resource_path == image_path: found = true
-			_check(found, "Office uses honest territory or actual home-stadium photograph")
+			for art in classic.find_children("*", "Control", true, false):
+				if art.get_meta("photo_kind", "") == "generated": found = true
+			_check(found, "The base-game venue preview uses generated territory art")
 			var client := Rect2(Vector2.ZERO, root.get_visible_rect().size)
 			for label in _labels(classic):
 				if label.text.contains("Terrain neutre") or label.text == stadium:

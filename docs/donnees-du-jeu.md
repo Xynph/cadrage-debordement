@@ -8,6 +8,12 @@ Les packs importés à la création ou dans les paramètres d'une carrière comm
 
 Les nouvelles carrières communes utilisent les 86 échéances publiées retenues et des durées estimées déterministes pour les 1 506 autres joueurs. Les 1 583 statuts et 1 351 postes non documentés restent estimés. Salaires et trésoreries restent fictifs. Les pages de postes observées le 7 novembre corroborent leur état courant, pas une photographie certaine au 31 octobre ; les dates et précisions figurent dans les preuves. Les calibrations candidates de la PR389 et les dossiers contradictoires restent exclus. Plafond de recrutement historique de 42 et effectifs source de 36 à 65 demeurent des limites documentées ; l'interface affiche le motif lorsque cette limite bloque une offre. Les anciennes carrières, y compris communes sans marqueur documentaire, restent inchangées, sans conversion automatique. Les sections ci-dessous décrivent les étapes antérieures.
 
+## Fiches des clubs du Monde à la création
+
+Le catalogue de création présente une accroche historique originale par club. Le dossier associe l'année de fondation et les meilleurs résultats documentés, jusqu'à la saison 2025–2026, au même identifiant dans la base et dans le pack Rugby Réel. Le jeu emploie les noms de compétitions de l'identité sélectionnée. Le fichier [club-history.json](../native/engine/club-history.json) conserve les sources publiques et privilégie les titres sur le meilleur rang ou le stade atteint en phases finales. Le relevé couvre les compétitions dont les archives ont été vérifiées. Les totaux historiques incertains et les années contradictoires restent absents.
+
+Les atouts et points à renforcer viennent des notes de l’effectif de départ au poste principal. Le dossier compare deux rangs par poste dans le même championnat. Les titulaires correspondent aux joueurs les mieux notés pour le nombre de places dans le XV. Les remplaçants correspondent au groupe suivant, de même taille. Les piliers gauche et droit sont comptés séparément. Une ligne complète passe devant une ligne incomplète. À couverture égale, la somme des notes décide du rang et les égalités partagent la même place. Pour choisir les deux postes affichés, les places manquantes dans le XV priment et le rang des titulaires pèse deux fois celui des remplaçants.
+
 ## État de la version 15
 
 `dist/world-data.js` rassemble le catalogue initial des clubs et les listes de

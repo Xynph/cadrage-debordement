@@ -42,7 +42,7 @@ func _build() -> void:
 	body.custom_minimum_size.x = width-54
 	C.fill(body,true)
 	scroll.add_child(body)
-	body.add_child(C.label(str(preview.get("competitionName","Coupe d’Europe")) + " · " + str(preview.get("season","")),26,C.GOLD))
+	body.add_child(C.label(app.pack_manager.competition(str(preview.get("competitionId", "")), "career").get("name", "Coupe d’Europe") + " · " + str(preview.get("season","")),26,C.GOLD))
 	var notice := C.wrap("Préparez une liste pour vérifier ses limites et la présence de votre feuille actuelle. Ce brouillon ne vaut pas inscription officielle et sera effacé à la fermeture.",18,C.IVORY)
 	notice.name = "EpcrPreparationNotice"
 	body.add_child(notice)

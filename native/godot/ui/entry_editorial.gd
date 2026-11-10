@@ -1,0 +1,85 @@
+extends RefCounted
+
+const C = preload("res://ui/immersive08/components.gd")
+const INK = Color("121c1e")
+const PANEL = Color("172223")
+const LINE = Color("75817c")
+const BRASS = Color("c5a76e")
+const RAIL_GOLD = Color("e2b971")
+static var _sans_heading: FontVariation
+
+static func sans_bold() -> Font:
+	if _sans_heading == null:
+		_sans_heading = FontVariation.new()
+		_sans_heading.base_font = C.BODY
+		_sans_heading.variation_embolden = .44
+	return _sans_heading
+
+static func sans_heading(text: String, size: int) -> Label:
+	var label := C.wrap(text, size, C.IVORY)
+	label.add_theme_font_override("font", sans_bold())
+	return label
+
+static func surface(node: PanelContainer, fill: Color = PANEL, border: Color = LINE, padding: int = 16) -> void:
+	node.set_meta("immersive_style_applied", true)
+	var style := C.box(fill, border, 0, padding)
+	style.set_corner_radius_all(0)
+	node.add_theme_stylebox_override("panel", style)
+
+static func action(button: Button, primary: bool = false, selected: bool = false, height: int = 42, tile: bool = false) -> void:
+	button.set_meta("immersive_style_applied", true)
+	button.custom_minimum_size.y = height
+	button.add_theme_font_override("font", C.BOLD if primary else C.DISPLAY)
+	button.add_theme_font_size_override("font_size", maxi(14, C.px(24 if primary else 21)))
+	var normal := BRASS if primary else (Color("414334") if selected else PANEL)
+	var outline := BRASS if primary or selected else LINE
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var background := normal
+		if state == "hover": background = normal.lightened(.09)
+		if state == "pressed": background = normal.darkened(.13)
+		if state == "disabled": background = INK
+		var style := C.box(background, outline if state != "disabled" else LINE, 0, 10)
+		style.set_corner_radius_all(0)
+		if selected and tile: style.border_width_left = 4
+		if selected and not tile: style.border_width_bottom = 2
+		button.add_theme_stylebox_override(state, style)
+	var focus := C.box(Color.TRANSPARENT, C.IVORY, 3, 0)
+	focus.set_border_width_all(2)
+	button.add_theme_stylebox_override("focus", focus)
+	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		button.add_theme_color_override(state, INK if primary else C.IVORY)
+	button.add_theme_color_override("font_disabled_color", C.MUTED)
+
+static func fact(parent: Container, value: Variant, caption: String) -> void:
+	var column := C.v(0)
+	C.fill(column)
+	parent.add_child(column)
+	column.add_child(C.label(value, 38, C.IVORY, true, 700))
+	column.add_child(C.wrap(caption, 20, C.MUTED))
+
+static func divider(parent: Container) -> void:
+	var line := ColorRect.new()
+	line.color = Color(LINE, .62)
+	line.custom_minimum_size.x = 1
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(line)
+
+static func route_tab(button: Button, selected: bool, country: bool) -> void:
+	action(button, false, selected, maxi(30, C.px(58 if country else 45)))
+	button.add_theme_font_size_override("font_size", maxi(15, C.px(32)))
+	button.add_theme_font_override("font", C.BOLD if selected or country else C.DISPLAY)
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var style := button.get_theme_stylebox(state) as StyleBoxFlat
+		style.set_border_width_all(0)
+		var fill := Color("80683f") if selected and not country else Color.TRANSPARENT
+		if state == "hover": fill = fill.lerp(Color("4b4935"), .65)
+		if state == "pressed": fill = Color("524a33")
+		style.bg_color = fill
+	if country:
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.expand_icon = true
+		button.add_theme_constant_override("icon_max_width", C.px(55))
+		button.add_theme_constant_override("h_separation", C.px(20))
+		for state in ["normal", "hover", "pressed", "disabled"]:
+			var style := button.get_theme_stylebox(state) as StyleBoxFlat
+			style.content_margin_left = C.px(32)

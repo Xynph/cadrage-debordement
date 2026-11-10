@@ -70,9 +70,12 @@ func _display_reception() -> void:
 				await get_tree().process_frame
 			await get_tree().create_timer(.2).timeout
 			await _settle()
-			var expected := DisplayServer.WINDOW_MODE_WINDOWED if button == windowed else DisplayServer.WINDOW_MODE_FULLSCREEN
+			var expected := DisplayServer.WINDOW_MODE_MAXIMIZED if button == windowed else DisplayServer.WINDOW_MODE_FULLSCREEN
 			_check(DisplayServer.window_get_mode() == expected,"Actual keyboard display action switches mode: " + str(button.name))
-			if button == windowed: _check(DisplayServer.window_get_size() == Vector2i(1440,900),"Actual windowed option is 1440x900")
+			if button == windowed:
+				var usable := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
+				var actual := DisplayServer.window_get_size()
+				_check(actual.x >= usable.size.x - 32 and actual.y >= usable.size.y - 80,"Maximized window fills the usable screen")
 			_check(button.has_focus(),"Display action retains keyboard focus: " + str(button.name))
 			_check(button.is_visible_in_tree() and button.get_global_rect().end.y <= dialog.size.y,"Display action remains visible: " + str(button.name))
 			await _capture("parametres-fenetre" if button == windowed else "parametres-plein-ecran")
@@ -293,8 +296,8 @@ func _run() -> void:
 		await _resize_window(resolution)
 		app._navigate("Accueil")
 		await _capture("accueil-"+str(resolution.x))
+		app.pack_manager.creation_mode = "common"
 		app._navigate("Création")
-		_press_named("CreationMode_common")
 		_press_named("CreationDivision_accession")
 		app.selected_club=29
 		app._render()
@@ -595,9 +598,9 @@ func _world_match(expected_competition: String) -> bool:
 	return recorded
 
 func _world_creation(club_id: int, league: String, edition: String = "world") -> bool:
+	app.selected_club = club_id
+	app.pack_manager.creation_mode = edition
 	app._navigate("Création")
-	await _settle()
-	if not _press_named("CreationMode_" + edition): return false
 	await _settle()
 	if not _press_named("CreationDivision_" + league): return false
 	await _settle()
@@ -666,9 +669,10 @@ func _pacific_reception() -> void:
 	var complete := OS.get_environment("CD_GODOT_PACIFIC_EXPECT_COMPLETE") == "1"
 	_check(FileAccess.file_exists(pack) and FileAccess.file_exists(final_doc), "Pack and completed Pacific career supplied")
 	if not FileAccess.file_exists(pack) or not FileAccess.file_exists(final_doc): return
+	app.pack_manager.creation_mode = "world-pacific"
 	app._navigate("Création")
 	await _settle()
-	_check(app.pack_manager.mode("creation") == "world-pacific", "Pacific edition is the new career default")
+	_check(app.pack_manager.mode("creation") == "world-pacific", "Pacific workshop uses its reception catalogue")
 	app.pack_manager.open("creation")
 	await _settle()
 	app.pack_manager.picker.file_selected.emit(pack)

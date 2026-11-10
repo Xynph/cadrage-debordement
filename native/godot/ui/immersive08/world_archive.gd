@@ -1,9 +1,7 @@
 extends RefCounted
 const Club = preload("res://ui/club_views.gd")
-const SHORT_NAMES := {"elite":"Élite","accession":"Accession","prem":"PREM","urc":"URC","srp":"SRP","jlo-d1":"Japon D1","jlo-d2":"Japon D2","jlo-d1-d2":"Barrage D1–D2","champions":"Champions","challenge":"Challenge"}
-
-static func short_name(id: String, full_name: String) -> String:
-	return str(SHORT_NAMES.get(id,full_name))
+static func short_name(id: String, full_name: String, model: Dictionary = {}) -> String:
+	return str(model.get("meta", {}).get("competitionIdentities", {}).get(id, {}).get("shortName", full_name))
 
 static func preparation_note(preparation: Dictionary) -> String:
 	var date := Club._calendar_date(str(preparation.get("nextDate","")))
@@ -11,7 +9,7 @@ static func preparation_note(preparation: Dictionary) -> String:
 	return "Prochain match le %s · %d semaine%s" % [date,weeks,"s" if weeks>1 else ""]
 
 static func name_for(model: Dictionary, id: String) -> String:
-	var fallback := "Championnat" if id.is_empty() else Club.competition_name(id)
+	var fallback := "Championnat" if id.is_empty() else Club.competition_name(id, model)
 	for competition: Dictionary in model.get("leagues",[]):
 		if competition.get("id") == id: return str(competition.get("name",fallback))
 	return fallback

@@ -61,13 +61,13 @@ static func _fixture(card: Panel, app: Control) -> void:
 			D.text(card,27,156,"Retrouvez les résultats et préparez la suite du projet.",21,C.MUTED,400,740,HORIZONTAL_ALIGNMENT_LEFT,true)
 		elif SeasonPreparation.is_champ(app.model.meta):
 			var fixture := P.next_scheduled_fixture(app.model)
-			D.chip(card,Rect2(24,22,281,29),"CHAMP RUGBY",C.GOLD)
-			D.text(card,27,121,"Préparation du Champ Rugby",58,C.IVORY,800,920)
+			D.chip(card,Rect2(24,22,281,29),World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))).to_upper(),C.GOLD)
+			D.text(card,27,121,"Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))),58,C.IVORY,800,920)
 			D.text(card,27,183,P.fixture_date(fixture, true) if not fixture.is_empty() else World.preparation_note(preparation),30,C.IVORY,600,720)
 			D.text(card,27,223,P.fixture_venue(fixture),21,C.MUTED,400,735,HORIZONTAL_ALIGNMENT_LEFT,true)
 		else:
-			D.chip(card,Rect2(24,22,322 if japan else 281,29),"JAPAN RUGBY LEAGUE ONE" if japan else "SUPER RUGBY PACIFIC",C.GOLD)
-			D.text(card,27,121,"La préparation de League One." if japan else "La préparation du Pacifique.",58,C.IVORY,800,920)
+			D.chip(card,Rect2(24,22,322 if japan else 281,29),World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))).to_upper(),C.GOLD)
+			D.text(card,27,121,"Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))),58,C.IVORY,800,920)
 			D.text(card,27,183,World.preparation_note(preparation),30,C.IVORY,600,720)
 			D.text(card,27,223,"Avancez de quatre semaines au plus, jusqu’à la prochaine rencontre.",21,C.MUTED,400,735,HORIZONTAL_ALIGNMENT_LEFT,true)
 		D.button(card,Rect2(27,354,420,45),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,app.accent,"OfficePreparationAction")

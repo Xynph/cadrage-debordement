@@ -162,6 +162,10 @@ func _ready() -> void:
 		coach.speech.speaking_changed.connect(soundscape.set_voice_active)
 		soundscape.set_voice_active(coach.speech.speaking)
 	resized.connect(func(): call_deferred("_layout_coach"))
+	if qa_script.is_empty() and DisplayServer.get_name() != "headless":
+		get_window().size_changed.connect(_keep_filled_display, CONNECT_DEFERRED)
+		get_window().focus_entered.connect(_keep_filled_display, CONNECT_DEFERRED)
+		_keep_filled_display.call_deferred()
 	_trace_startup("render.begin")
 	_render()
 	_trace_startup("render.end")
@@ -556,6 +560,19 @@ func _apply_user_preferences() -> void:
 		coach.portrait.set_reduced_motion(bool(user_preferences.data.reduced_motion))
 	if is_instance_valid(match_screen) and match_screen.has_method("apply_preferences"):
 		match_screen.apply_preferences()
+
+func _set_display_mode(mode: Window.Mode) -> void:
+	if DisplayServer.get_name() == "headless": return
+	var window := get_window()
+	var screen := window.current_screen
+	window.mode = mode
+	if screen >= 0 and screen < DisplayServer.get_screen_count() and window.current_screen != screen:
+		window.current_screen = screen
+
+func _keep_filled_display() -> void:
+	# La restauration depuis la barre de titre ou un raccourci système reste maximisée.
+	if not closing and get_window().mode == Window.MODE_WINDOWED:
+		_set_display_mode(Window.MODE_MAXIMIZED)
 
 func _layout_coach() -> void:
 	if not is_instance_valid(root_content) or not is_instance_valid(coach): return

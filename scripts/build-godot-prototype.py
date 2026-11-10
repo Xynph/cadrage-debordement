@@ -186,6 +186,7 @@ def build(args):
         shutil.copy2(path, destination)
     licenses = app / "Licences"
     copy_build_licenses(sdk_licenses, licenses, node_notices)
+    shutil.copy2(PROJECT / "art/flags/LICENSE.txt", licenses / "drapeaux.txt")
     shutil.copytree(PROJECT / "fonts", licenses / "fontes", ignore=shutil.ignore_patterns("*.import"))
     shutil.copy2(ROOT / "docs/club-atlas-credits.md", licenses / "photos.md")
     shutil.copy2(ROOT / "docs/scenario-visual-credits.md", licenses / "illustrations-scenario.md")
@@ -203,9 +204,10 @@ def build(args):
         f"OVAL LEGACY 27 — RUGBY MANAGER — PRÉALPHA {BUILD_VERSION}\n\n"
         "Lancer OvalLegacy27.exe. Aucun navigateur, Godot ou Node à installer.\n"
         "Conserver le dossier complet avec runtime et engine. Windows x64.\n\n"
-        "Nouvelle carrière : Champ (114 clubs), Nationale (100), Japon (86), Pacifique (66), Monde (56) ou France (30).\n"
-        "Chaque édition partage ses joueurs et statistiques entre les packs.\n"
-        "Importez un pack personnalisé à la création ou dans les paramètres.\n"
+        "Nouvelle carrière : un Monde de 116 clubs, dont 114 jouables, et 5 878 joueurs au départ.\n"
+        "Le jeu de base et les réalités importées partagent le même catalogue et les mêmes règles.\n"
+        "Choisissez un pays ou International, puis une division et un club.\n"
+        "À la création, « Importer une autre réalité » ouvre le sélecteur de fichiers ZIP.\n"
         "Disponible à la création et dans les paramètres de carrière.\n"
         "Les packs changent les noms/images, pas les statistiques/progrès.\n"
         "Composition à23, entraînement, tactiques, recrutement et contrats.\n"
@@ -324,10 +326,11 @@ def build(args):
     with zipfile.ZipFile(modding / "Exemple-identites-champ.zip", "w", zipfile.ZIP_DEFLATED) as example_zip:
         example_zip.writestr("pack.json", json.dumps(example_champ, ensure_ascii=False, indent=2))
     (modding / "LIRE-MOI.txt").write_text(
-        "PACKS OVAL LEGACY 27\n\nÀ la création, ouvrir la page des packs puis Importer un pack ZIP.\n"
+        "PACKS OVAL LEGACY 27\n\nÀ la création, « Importer une autre réalité » ouvre le sélecteur de fichiers ZIP.\n"
         "En carrière : Menu → Paramètres → Importez un pack personnalisé.\n"
         "Après analyse, installer puis sélectionner le pack. La base anonymisée reste disponible.\n\n"
-        "Exemple-identites.zip contient un pack de noms sans images. Décompresser, modifier\n"
+        "Exemple-identites-champ.zip cible la création d’une carrière dans le Monde complet.\n"
+        "Les autres exemples ciblent les anciennes carrières compatibles. Décompresser, modifier\n"
         "pack.json puis zipper ce fichier à la racine du ZIP. Les IDs sont stables ;\n"
         "les noms et images peuvent être partiels. Aucune statistique ne change.\n"
         "Pour les images PNG/JPEG/WebP, déclarer assets [{id,path,sha256,bytes}], puis\n"
@@ -338,8 +341,7 @@ def build(args):
         "des joueurs ; consulter engine/staff-registry.json pour les correspondances.\n"
         "Le format v1 reste accepté ; les statistiques ne sont pas importées.\n"
         "Exemple-identites-monde.zip cible la nouvelle édition Monde. Ses IDs sont dans\n"
-        "engine/world-registry.json et engine/world-staff-registry.json. Choisir l’édition\n"
-        "correspondante avant d’importer ; les préférences sont séparées.\n"
+        "engine/world-registry.json et engine/world-staff-registry.json.\n"
         "Exemple-identites-pacifique.zip cible Monde + Pacifique ; les IDs supplémentaires\n"
         "sont dans engine/world-pacific-extension.json et world-pacific-staff-extension.json.\n"
         "Exemple-identites-japon.zip cible Monde + Japon ; ses nouveaux IDs sont dans\n"

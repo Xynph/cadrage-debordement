@@ -70,7 +70,8 @@ func _reception() -> void:
 	_check(app.model.meta.worldCatalogue.size()==58 and app.model.meta.pacificCatalogue.size()==68 and app.model.meta.japanCatalogue.size()==88 and app.model.meta.nationaleCatalogue.size()==102 and app.model.meta.legacyCatalogue.size()==30,"cinq catalogues précédents préservés")
 	app._navigate("Création")
 	await _settle()
-	if not await _pick("CreationMode_world-champ"): return
+	if not _check(app.pack_manager.mode("creation") == "world-champ","Le Monde complet s’ouvre directement"): return
+	if not await _pick("CreationCountry_GB"): return
 	if not await _pick("CreationDivision_champ"): return
 	var pack := OS.get_environment("CD_GODOT_CHAMP_PACK")
 	var final_doc := OS.get_environment("CD_GODOT_CHAMP_FINAL_EXPORT")

@@ -30,10 +30,10 @@ static func build(app: Control) -> Control:
 	if not preparation.is_empty():
 		var next_date := str(preparation.get("nextDate", ""))
 		var weeks := int(preparation.get("weeksUntil", 0))
-		var titles := {"pacific":"Préparation du Pacifique", "japan":"Préparation de League One", "champ":"Préparation du Champ Rugby"}
+		var prep_id := str(meta.get("leagueId", ""))
 		var nodes := {"pacific":"PacificPreparationAdvance", "japan":"JapanPreparationAdvance", "champ":"ChampPreparationAdvance"}
 		var block := G.card(left, G.accent_ink(app.accent))
-		block.add_child(G.section(str(titles[prep_kind])))
+		block.add_child(G.section("Préparation · " + ClubViews.competition_name(prep_id, app.model)))
 		block.add_child(G.wrap("Prochain match le %s · %d semaine(s)." % [next_date, weeks], 15))
 		var action := "advance_" + prep_kind + "_preparation"
 		var advance := G.button("AVANCER DE %d SEMAINE(S)  →" % mini(weeks, 4), func(): app._command(action, {"fromWeek":int(meta.get("week", 0))}))
@@ -58,7 +58,7 @@ static func build(app: Control) -> Control:
 		var champions := ClubViews.archive_titles(archive)
 		if not champions.is_empty():
 			for champion: Dictionary in champions:
-				duels.add_child(G.wrap("S%s · %s : %s" % [int(archive.season), ClubViews.competition_name(champion.leagueId), _club(app, champion.clubId)], 15))
+				duels.add_child(G.wrap("S%s · %s : %s" % [int(archive.season), ClubViews.competition_name(champion.leagueId, app.model), _club(app, champion.clubId)], 15))
 		elif archive.get("champion") != null:
 			duels.add_child(G.wrap("S%s · %s" % [int(archive.season), _club(app, archive.champion)], 15))
 	for year: Dictionary in data.get("years", []):
@@ -70,7 +70,7 @@ static func build(app: Control) -> Control:
 	for e: Dictionary in data.get("events", []):
 		var card := G.card(events, G.accent_ink(app.accent))
 		var stage := ClubViews.phase_name(e.phase) if international else str({"league":"Championnat", "barrage":"Barrage", "semi":"Demi-finale", "final":"Finale", "access":"Accession"}.get(e.phase, e.phase))
-		var competition := ClubViews.competition_name(e.get("leagueId", "")) + " · " if international else ""
+		var competition := ClubViews.competition_name(e.get("leagueId", ""), app.model) + " · " if international else ""
 		var unit := "semaine" if international else "journée"
 		card.add_child(G.label("S%s · %s%s · %s %s" % [int(e.season), competition, stage, unit, int(e.round) + 1], 13, G.GOLD))
 		card.add_child(G.wrap("%s  %s – %s  %s" % [_club(app, e.a), int(e.home), int(e.away), _club(app, e.b)], 24, G.INK))

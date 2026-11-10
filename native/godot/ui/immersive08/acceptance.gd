@@ -19,10 +19,10 @@ func _run() -> void:
 	_verify_assets()
 	await _resize_window(Vector2i(2560, 1440))
 	await _visit("Accueil", "ImmersiveWelcome", "entry-ground", "01-accueil")
+	app.pack_manager.creation_mode = "common"
 	if not await _activate("EntryNewCareer"):
 		await _finish()
 		return
-	if app.find_child("CreationMode_common", true, false) != null: await _activate("CreationMode_common")
 	await _capture("02-creation")
 	if not await _activate("CreationStart") or not await _wait():
 		await _finish()
