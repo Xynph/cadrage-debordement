@@ -275,6 +275,20 @@ static func spin(parent: Container, title: String, minimum: float, maximum: floa
 	box.add_child(control)
 	return control
 
+static func _last_match_context(report: Dictionary) -> String:
+	var teams: Variant = report.get("teams")
+	var score: Variant = report.get("score")
+	if not teams is Array or teams.size() != 2 or not score is Array or score.size() != 2: return ""
+	var names: Array[String] = []
+	for team in teams:
+		if not team is Dictionary: return ""
+		var name := G.club_name(team).strip_edges()
+		if name.is_empty() or name == "—": return ""
+		names.append(name)
+	for points in score:
+		if not (points is int or points is float) or points < 0: return ""
+	return "%s %s — %s %s" % [names[0], G.n(score[0]), G.n(score[1]), names[1]]
+
 static func match_notes(app: Control, parent: Container, model: Dictionary) -> void:
 	var data: Dictionary = model.get("decisions", {})
 	var live: Dictionary = model.live if model.get("live") is Dictionary else {}
@@ -291,6 +305,12 @@ static func match_notes(app: Control, parent: Container, model: Dictionary) -> v
 	var report: Variant = data.get("report")
 	if (live.is_empty() or live.get("finished", false)) and report is Dictionary:
 		parent.add_child(G.section("Dernière rencontre · vos choix, les faits" if live.is_empty() else "Vos choix, les faits"))
+		if live.is_empty():
+			var context := _last_match_context(report)
+			if not context.is_empty():
+				var cue := G.wrap(context, 14, G.INK)
+				cue.name = "LastMatchResultContext"
+				parent.add_child(cue)
 		for note in report.get("notes", []): parent.add_child(G.wrap(note, 13))
 		var plans: Variant = report.get("plans")
 		if plans is Dictionary:
