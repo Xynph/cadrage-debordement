@@ -396,9 +396,10 @@ func _profile(player: Dictionary, report: Dictionary) -> void:
 	D.button(panel, Rect2(16, 763, 407, 45), "Demander une observation" if report.is_empty() else "Lire le rapport complet", func():
 		if report.is_empty(): _staff(1, str(player.get("pos", "")))
 		else: _report_dialog(report), false, "save", true, app.accent, "OpenScoutReport")
-	var offer := D.button(panel, Rect2(437, 763, 377, 45), "Approcher le joueur", func(): app.SquadViews.contract(app, player, true), true, "arrow", false, PRIMARY, "OfferRecruitment")
+	var consultation_only: bool = player.get("negotiation",{}).get("status","") == "withdrawn"
+	var offer := D.button(panel, Rect2(437, 763, 377, 45), "Consulter la discussion" if consultation_only else "Approcher le joueur", func(): app.SquadViews.contract(app, player, true), true, "arrow", false, PRIMARY, "OfferRecruitment")
 	offer.set_meta("player_id", player_id)
-	offer.disabled = player.is_empty() or app.waiting or not player.get("available", false) or not app._live().is_empty()
+	offer.disabled = player.is_empty() or app.waiting or (not player.get("available", false) and not consultation_only) or not app._live().is_empty()
 	offer.tooltip_text = str(player.get("reason", "")) if not player.is_empty() else "Le dossier est conservé dans les archives."
 
 func _observation(parent: Panel, player: Dictionary, report: Dictionary) -> void:

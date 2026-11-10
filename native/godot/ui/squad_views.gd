@@ -889,70 +889,7 @@ static func _comparison_rows(app:Control,list:VBoxContainer,ids:Array) -> void:
 			columns.add_child(label)
 
 static func contract(app:Control,p:Dictionary,recruiting:bool) -> void:
-	U.remember(app)
-	app._clear_dialogs()
-	var d:=ConfirmationDialog.new()
-	d.name="ContractOffer"
-	app._prepare_dialog(d,630)
-	d.title="Offre à "+str(p.name)
-	d.dialog_text=""
-	var fields:=G.v(8)
-	# A zero-width autowrap label inflates the initial minimum height of Window.
-	# Two explicit lines give the dialog a bounded minimum before its first layout.
-	fields.add_child(G.label("Si le joueur accepte, le contrat est signé et la prime est débitée.\nLe joueur peut refuser ou faire une contre-offre.",13,G.MUTED))
-	var salary:=SpinBox.new()
-	salary.name="OfferSalary"
-	var quote:Dictionary=p if recruiting else p.get("renewal",{})
-	var negotiation: Dictionary = quote.get("negotiation", {})
-	if negotiation.get("status") == "counter":
-		var term := int(negotiation.years)
-		var reminder := G.label("Dernière contre-offre · %s / sem. · %d saison%s · Proposition %d/3" % [
-			G.euros(negotiation.salary), term, "s" if term > 1 else "", int(negotiation.attempts)],13,G.GOLD)
-		reminder.name = "ContractCurrentNegotiation"
-		fields.add_child(reminder)
-	salary.min_value=1000
-	salary.max_value=100000
-	salary.step=100
-	salary.value=float(quote.get("salary",p.get("salary",5000)))
-	salary.suffix="€ / semaine"
-	fields.add_child(G.label("Salaire hebdomadaire",13,G.MUTED))
-	fields.add_child(salary)
-	var years:=SpinBox.new()
-	years.name="OfferYears"
-	years.min_value=quote.get("minYears",1)
-	years.max_value=quote.get("maxYears",3)
-	years.value=maxf(years.min_value,2)
-	years.suffix="saison(s)"
-	fields.add_child(G.label("Durée du contrat",13,G.MUTED))
-	fields.add_child(years)
-	var summary:=G.label("",13,G.INK)
-	summary.name="OfferSummary"
-	fields.add_child(summary)
-	var meta: Dictionary = app.model.get("meta", {})
-	# Le moteur compte depuis la saison suivante si la saison est terminée.
-	var first_season := int(meta.get("season", 1)) + (1 if meta.get("phase") == "ended" else 0)
-	var current_end: Variant = p.get("contractEnd")
-	var refresh:=func():
-		var delta:=int(salary.value)-(0 if recruiting else int(p.get("salary",0)))
-		var term := "Échéance proposée : fin saison %d" % [first_season + int(years.value) - 1]
-		if not recruiting:
-			var current := "—" if current_end == null else "fin saison %d" % int(current_end)
-			term = "Échéance actuelle : %s\n" % current + term
-		summary.text = "IMMÉDIAT À LA SIGNATURE · %s : %s\nNOUVEAU SALAIRE · %s / semaine · %s %s / semaine\n%s\nDurée totale : %s saison(s) · trésorerie actuelle : %s" % [
-			"acquisition" if recruiting else "prime de prolongation", G.euros(quote.get("fee", 0)),
-			G.euros(salary.value), "ajout" if recruiting else "écart", ("+" if delta >= 0 else "−") + G.euros(absi(delta)),
-			term, G.n(years.value), G.euros(app.model.get("finance", {}).get("cash", 0))]
-	salary.value_changed.connect(func(_value:float):refresh.call())
-	years.value_changed.connect(func(_value:float):refresh.call())
-	refresh.call()
-	d.get_ok_button().text="AUTORISER LA SIGNATURE SI ACCORD"
-	d.get_cancel_button().text="ANNULER"
-	d.add_child(fields)
-	d.confirmed.connect(func():app._command("recruit" if recruiting else "extend_contract",{"playerId":p.id,"salary":int(salary.value),"years":int(years.value),"confirmed":true});d.queue_free())
-	d.canceled.connect(d.queue_free)
-	app.add_child(d)
-	d.popup_centered(Vector2i(630,440))
-	d.get_cancel_button().grab_focus()
+	preload("res://ui/contract_negotiation.gd").open(app,p,recruiting)
 
 static func _context_text(parent:Node,text:String,id:String="") -> Label:
 	var label:=G.wrap(text,12,G.INK)
