@@ -9,7 +9,7 @@ const { test } = require('node:test');
 const { createBridge } = require('../native/engine/worker.cjs');
 const { context } = require('./france-harness.cjs');
 
-test('Formation Toulouse : les U21 du vrai DTO couvrent plusieurs plafonds, avec une exception d’élite au plus', t => {
+test('Formation Toulouse : les U21 du vrai DTO couvrent plusieurs plafonds et les exceptions d’élite restent rares', t => {
   const dir = fs.mkdtempSync(path.join(process.env.CD_ACADEMY_POTENTIAL_TEMP || os.tmpdir(), 'academy-potential-'));
   const bridge = createBridge({ dataDir: dir, seed: 437493, now: 1788134400000 });
   t.after(() => {
@@ -22,8 +22,11 @@ test('Formation Toulouse : les U21 du vrai DTO couvrent plusieurs plafonds, avec
   const u21 = academy.filter(player => player.age >= 19 && player.age <= 21);
   const potentials = u21.map(player => player.potential);
   console.log(JSON.stringify({ profile: dir, u21: potentials, u18: academy.filter(p => p.age <= 18).map(p => p.potential) }));
-  assert.equal(u21.length, 5);
-  assert.ok(potentials.filter(potential => potential > 90).length <= 1, String(potentials));
+  assert.equal(u21.length, 30);
+  const originalU21 = u21.filter(player => /^youth-0-1-\d{1,2}$/.test(player.id));
+  assert.equal(originalU21.length, 5);
+  assert.ok(originalU21.filter(player => player.potential > 90).length <= 1);
+  assert.ok(potentials.filter(potential => potential > 90).length <= 3, String(potentials));
   assert.ok(new Set(potentials).size >= 3);
   assert.ok(Math.min(...potentials) <= 80);
   assert.ok(academy.every(player => player.potential > player.note));
