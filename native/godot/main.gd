@@ -289,11 +289,14 @@ func _receive_model(value: Dictionary) -> void:
 func _command(command: String, payload: Dictionary = {}, target_route: String = "") -> bool:
 	if closing: return false
 	if waiting:
-		if command != "tick" and last_command == "tick" and queued_action.is_empty():
+		if command == "tick": return false
+		if last_command == "tick" and queued_action.is_empty():
 			queued_action = {"command":command,"payload":payload.duplicate(true),"target_route":target_route}
 			if is_instance_valid(status): status.text = "Décision en attente de la réponse du moteur…"
 			_present_command_wait(command)
 			return true
+		if not command_wait_overlay.visible and last_command != "snapshot":
+			_refuse_action("Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessayez après sa réponse.")
 		return false
 	waiting = true
 	last_command = command
