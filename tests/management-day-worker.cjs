@@ -134,7 +134,7 @@ test('les cinq éditions Monde chargent les 422 affiches LNR de 2026–27 sans c
     const first = model.calendar[0];
     assert.deepEqual(
       [first.date, first.kickoffLocal, first.kickoffSource, first.home.id, first.away.id],
-      ['2026-08-27', '21:00', 'simulated-not-official', 26, 22], mode
+      ['2026-08-27', '19:30', 'published', 26, 22], mode
     );
     assert.deepEqual(first.dateWindow, ['2026-08-27', '2026-08-28'], mode);
     const doc = JSON.parse(game.good('export').meta.exportText);
@@ -144,6 +144,12 @@ test('les cinq éditions Monde chargent les 422 affiches LNR de 2026–27 sans c
     assert.equal(league('accession').length, 240);
     assert.equal(league('elite').at(-1).date, '2027-06-06');
     assert.equal(league('accession').at(-1).date, '2027-05-14');
+    assert.equal(league('elite').filter(f => f.kickoffSource === 'published').length, 77);
+    assert.equal(league('accession').filter(f => f.kickoffSource === 'published').length, 112);
+    const briveGrenoble = league('accession').find(f => f.sourceFixtureId === 12057);
+    assert.equal(briveGrenoble.date, '2026-10-17');
+    assert.deepEqual(briveGrenoble.dateWindow, ['2026-10-17', '2026-10-17']);
+    assert.match(first.sourceRef, /lnr\.fr\/feuille-de-match\//);
     const occupied = fixtures.flatMap(f => [f.homeId, f.awayId].map(id => f.week + ':' + id));
     assert.equal(new Set(occupied).size, occupied.length, mode);
     assert.deepEqual(game.good('import', {text: JSON.stringify(doc)}).calendar, model.calendar);

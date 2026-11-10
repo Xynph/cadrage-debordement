@@ -89,12 +89,13 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  }
  const lnrRegular=Object.fromEntries(Object.entries(lnrCalendar?.fixtures??{}).map(([competitionId,fixtures])=>{
   const perRound=C.rules(competitionId).clubs/2;
-  return [competitionId,fixtures.map(([homeId,awayId,windowStart,windowEnd,date,kickoffLocal],index)=>{
-   const round=Math.floor(index/perRound),slot=index%perRound;
+  return [competitionId,fixtures.map(([homeId,awayId,windowStart,windowEnd,date,kickoffLocal,sourceFixtureId,sourceRef],index)=>{
+   const round=Math.floor(index/perRound),slot=index%perRound,published=sourceFixtureId!==undefined;
+   const dateWindow=date<windowStart||date>windowEnd?[date,date]:[windowStart,windowEnd];
    return {id:competitionId+':2026:league:'+round+':'+slot,competitionId,season:2026,round,date,homeId,awayId,phase:'league',
-    scheduleSource:'lnr-published-pairing',sourceRef:lnrCalendar.regularSources[competitionId],
-    dateStatus:'simulation-in-published-window',dateWindow:[windowStart,windowEnd],
-    kickoffLocal,kickoffSource:'simulated-not-official',timezone:'Europe/Paris'};
+    scheduleSource:published?'lnr-published-fixture':'lnr-published-pairing',sourceRef:sourceRef??lnrCalendar.regularSources[competitionId],
+    ...(published?{sourceFixtureId}:{}),dateStatus:published?'published':'simulation-in-published-window',dateWindow,
+    kickoffLocal,kickoffSource:published?'published':'simulated-not-official',timezone:'Europe/Paris'};
   })];
  }));
  const baseCache=new Map();

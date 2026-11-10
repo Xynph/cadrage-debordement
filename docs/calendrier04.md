@@ -21,3 +21,11 @@ Démarrage des nouvelles carrières fixé au **1er juillet 2026**. Le jeu de bas
 Pas de modification directe de `dist/**` ni des sauvegardes. Le compte intégrateur doit importer le fichier généré au lancement d'une nouvelle carrière, vérifier la correspondance identités réelles/alternatives, préserver les anciennes sauvegardes et éventuellement remplacer les heures simulées par les programmations officielles publiées plus tard.
 
 Les effectifs/staffs réels DATA-02 restent un chantier distinct non terminé.
+
+## Carrières Monde dans Godot
+
+Les nouvelles carrières Monde chargent ces 422 affiches pour la saison 2026–2027. La reprise d’une carrière existante conserve le calendrier de sa sauvegarde. Les saisons suivantes génèrent leur calendrier en fonction des promotions, relégations et qualifications.
+
+Le relevé du 10 novembre 2026 fournit 77 créneaux publiés de TOP 14 et 112 de PRO D2. Le jeu reprend ces heures locales et simule les 233 autres créneaux dans les fenêtres LNR. La programmation de Brive–Grenoble du 17 octobre remplace la fenêtre initiale de cette affiche. Aucun score réel n’est chargé. [Horaires du TOP 14](https://top14.lnr.fr/calendrier-et-resultats/2026-2027/j11) · [Horaires de PRO D2](https://prod2.lnr.fr/calendrier-et-resultats/2026-2027/j14) · [Brive–Grenoble](https://prod2.lnr.fr/feuille-de-match/2026-2027/j7/12057-brive-grenoble)
+
+Le fichier embarqué est reproductible avec `node scripts/build-world-lnr-calendar.cjs` et contrôlable avec `node scripts/build-world-lnr-calendar.cjs --check`.
