@@ -5,6 +5,8 @@ const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const G = preload("res://ui/game_skin.gd")
 const KEY = "immersive08_finance_tab"
+const PAGE_KEY_PREFIX = "immersive08_finance_page_"
+const WAGES_SCOPE_KEY = "immersive08_finance_wages_due"
 const TABS = [["summary","Synthèse"],["cash","Trésorerie"],["wages","Salaires"],["transfers","Transferts"],["budget","Budget"]]
 const CHART_GREEN = Color("53cd75")
 const CHART_RED = Color("ee7970")
@@ -97,7 +99,9 @@ static func _header(app: Control, canvas: Control, tab: String) -> void:
 	for i in TABS.size():
 		var key: String = TABS[i][0]
 		var id := "FinanceTab_" + key
-		U.tab(canvas, Rect2(i*273,130,264,51), TABS[i][1], key == tab, func(): U.select(app, KEY, key, id), id)
+		U.tab(canvas, Rect2(i*273,130,264,51), TABS[i][1], key == tab, func():
+			if key == "wages": _open_wages(app, false)
+			else: U.select(app, KEY, key, id), id)
 
 static func _metrics(app: Control, canvas: Control, accounts: Dictionary, finance: Dictionary) -> void:
 	var cash: Variant = accounts.get("cash",app.model.club.get("cash"))
@@ -195,7 +199,7 @@ static func _category(title: String) -> Array:
 	return ["Autre","money",C.GOLD]
 
 static func _pagination(app: Control, card: Panel, total: int, limit: int, key: String) -> int:
-	var state_key := "immersive08_finance_page_" + key
+	var state_key := PAGE_KEY_PREFIX + key
 	var page_count := maxi(1,ceili(float(total)/limit))
 	var page := clampi(int(app.management_ui.get(state_key,0)),0,page_count-1)
 	var previous_id := "FinancePrev_" + key
@@ -241,7 +245,7 @@ static func _watch(card: Panel, app: Control, finance: Dictionary) -> void:
 	var quote: Variant = finance.get("facility")
 	var contracts := "%d contrat%s à anticiper" % [count, "" if count == 1 else "s"]
 	var facilities := "Devis indicatif · " + G.euros(quote.cost) if quote is Dictionary else "Aucun devis disponible"
-	_watch_row(card, 65, "calendar", contracts, "Échéances d’ici la saison prochaine", func(): U.select(app, KEY, "wages", "FinanceTab_wages"), "FinanceWatchContracts")
+	_watch_row(card, 65, "calendar", contracts, "Échéances d’ici la saison prochaine", func(): _open_wages(app, true), "FinanceWatchContracts")
 	D.line(card, Vector2(19,117), Vector2(815,117), Color(C.GOLD,.28))
 	_watch_row(card, 121, "settings", "Infrastructures", facilities, func(): _strategy(app), "FinanceWatchFacilities")
 
@@ -313,10 +317,29 @@ static func _cash(app: Control, canvas: Control, ledger: Array) -> void:
 	D.text(totals, 24, 550, "Le journal partiel peut inclure des écritures de saisons précédentes.", 23, C.MUTED, 500, 775)
 	D.text(totals, 24, 588, "Le total des flux affichés diffère de la trésorerie du club.", 23, C.MUTED, 500, 775)
 
+static func _open_wages(app: Control, due_only: bool) -> void:
+	if due_only or app.management_ui.get(WAGES_SCOPE_KEY, false):
+		app.management_ui[PAGE_KEY_PREFIX + "wages"] = 0
+	app.management_ui[WAGES_SCOPE_KEY] = due_only
+	U.select(app, KEY, "wages", "FinanceWagesAll" if due_only else "FinanceTab_wages")
+
 static func _wages(app: Control, canvas: Control, finance: Dictionary) -> void:
 	var wages := D.panel(canvas, Rect2(0,346,1398,783), "Contrats et salaires", "people", "", "FinanceSalaryTable")
-	var squad: Array = app.model.get("squad",[]).duplicate()
-	squad.sort_custom(func(a: Dictionary,b: Dictionary): return float(a.get("salary",0)) > float(b.get("salary",0)))
+	var all_players: Array = app.model.get("squad", [])
+	var due_only: bool = app.management_ui.get(WAGES_SCOPE_KEY, false)
+	var squad := P.contracts(app.model) if due_only else all_players.duplicate()
+	if due_only:
+		squad.sort_custom(func(a: Dictionary, b: Dictionary):
+			var first := int(a.contractEnd)
+			var second := int(b.contractEnd)
+			return str(a.id) < str(b.id) if first == second else first < second)
+		var horizon := int(app.model.meta.get("season", 1)) + 1
+		var scope := "%d échéance%s jusqu’à la fin de S%d" % [squad.size(), "s" if squad.size() > 1 else "", horizon]
+		D.text(wages, 345, 37, scope, 22, C.GOLD, 600, 390).name = "FinanceWagesScope"
+		D.button(wages, Rect2(750,12,230,36), "Tous les %d joueurs" % all_players.size(),
+			func(): _open_wages(app, false), false, "", true, U.GREEN, "FinanceWagesAll")
+	else:
+		squad.sort_custom(func(a: Dictionary,b: Dictionary): return float(a.get("salary",0)) > float(b.get("salary",0)))
 	var first := _pagination(app, wages, squad.size(),16,"wages")
 	D.rect(wages, Rect2(12,62,1374,40), Color("182426"), 3)
 	for item: Array in [["JOUEUR",25],["POSTE",491],["ÉCHÉANCE",703],["PAR SEMAINE",950]]:
@@ -330,7 +353,9 @@ static func _wages(app: Control, canvas: Control, finance: Dictionary) -> void:
 		D.text(wages, 703, y+27, player.get("contractLabel","—"), 23, C.MUTED, 500, 228)
 		D.text(wages, 1096, y+27, G.euros(player.get("salary",0)), 23, C.IVORY, 600, 148, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.button(wages, Rect2(1120,y+3,247,33), "Voir le contrat", func(): _open_player(app, str(player.id)), false, "arrow", true, U.GREEN, "FinancePlayer_"+str(player.id).replace(":","_"))
-	if squad.is_empty(): D.text(wages, 24, 153, "Aucun joueur sous contrat dans cette carrière.", 30, C.MUTED, 600, 1350)
+	if squad.is_empty():
+		var empty := "Aucun contrat à anticiper d’ici cette échéance." if due_only else "Aucun joueur sous contrat dans cette carrière."
+		D.text(wages, 24, 153, empty, 30, C.MUTED, 600, 1350)
 	_allocation(D.panel(canvas, Rect2(1414,346,834,375), "Répartition des charges connues", "money"), finance)
 	_due(D.panel(canvas, Rect2(1414,737,834,191), "Prochaines échéances", "calendar"), app, finance)
 	var agents := D.panel(canvas, Rect2(1414,944,834,185), "Négociations", "people")
@@ -352,7 +377,7 @@ static func _transfers(app: Control, canvas: Control, ledger: Array) -> void:
 	D.line(card, Vector2(23,290), Vector2(810,290))
 	D.text(card, 23, 345, "Contrats du groupe", 38, C.IVORY, 700, 785)
 	D.text(card, 23, 387, "Les prolongations se négocient depuis les dossiers joueurs.", 25, C.MUTED, 500, 785)
-	D.button(card, Rect2(23,412,787,55), "Consulter les salaires et les échéances", func(): U.select(app, KEY, "wages", "FinanceTab_wages"), false, "arrow", false, U.GREEN, "FinanceTransferContracts")
+	D.button(card, Rect2(23,412,787,55), "Consulter les salaires et les échéances", func(): _open_wages(app, false), false, "arrow", false, U.GREEN, "FinanceTransferContracts")
 
 static func _budget(app: Control, canvas: Control, finance: Dictionary) -> void:
 	_allocation(D.panel(canvas, Rect2(0,346,834,375), "Répartition des charges connues", "money", "", "FinanceAllocation"), finance)
