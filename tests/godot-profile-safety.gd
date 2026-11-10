@@ -11,6 +11,14 @@ func check(value: bool, message: String) -> void:
 		printerr("FAIL: ", message)
 func settle() -> void:
 	for frame in 8: await process_frame
+func enter() -> void:
+	for pressed in [true, false]:
+		var key := InputEventKey.new()
+		key.keycode = KEY_ENTER
+		key.pressed = pressed
+		Input.parse_input_event(key)
+		await process_frame
+	await settle()
 func command(id: String, payload: Dictionary = {}) -> void:
 	app._command(id, payload)
 	var deadline := Time.get_ticks_msec() + 90000
@@ -29,8 +37,21 @@ func run() -> void:
 	check(app.model.meta.profileSafety.entries.size() == 1, "Copie durable créée par le moteur")
 	var file: String = str(app.model.meta.dataDir).path_join("donnees.json")
 	var before := FileAccess.get_sha256(file)
-	var view: AcceptDialog = load("res://ui/profile_safety_view.gd").open(app)
+	app.pause_menu()
 	await settle()
+	var entry := app.find_child("ProfileSafetyOpen", true, false) as Button
+	check(entry != null and entry.is_visible_in_tree(), "Copies accessibles depuis le vrai menu Carrière")
+	if entry == null:
+		await app._close(1)
+		return
+	entry.grab_focus()
+	await enter()
+	var view := app.get_node_or_null("ProfileSafety") as AcceptDialog
+	await settle()
+	check(view != null, "Entrée sur le menu ouvre la gestion des copies")
+	if view == null:
+		await app._close(1)
+		return
 	check(view.visible and view.title.contains("Copies de sécurité"), "Dialogue rendu et titré")
 	check(view.find_child("ProfileSafetyQuota", true, false).text.contains("1 / 8"), "Quota disponible visible")
 	var id: String = app.model.meta.profileSafety.entries[0].id
@@ -39,7 +60,7 @@ func run() -> void:
 	restore.grab_focus()
 	await settle()
 	check(restore.has_focus(), "Reprise accessible au clavier")
-	restore.pressed.emit()
+	await enter()
 	await settle()
 	var confirmation: ConfirmationDialog = view.find_child("ProfileSafetyConfirm", true, false)
 	check(confirmation != null and confirmation.visible and confirmation.dialog_text.contains("conservée"), "Confirmation explicite et conséquence annoncée")
@@ -59,6 +80,7 @@ func run() -> void:
 	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
 	await settle()
 	check(app.bridge.last_response_ok and app.model.club.id == 0, "La confirmation reprend réellement Toulouse")
+	check(app.route == "Réception", "Une reprise par copie ouvre la Réception de la carrière restaurée")
 	check(app.model.meta.profileSafetyReceipt.command == "restore_checkpoint", "Reçu de restauration exact")
 	view = load("res://ui/profile_safety_view.gd").open(app)
 	await settle()
