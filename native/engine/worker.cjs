@@ -326,6 +326,8 @@ function createBridge(options={}){
      }else if(command==='pack_select'){
       if(payload.scope!=='career'||!run('!!S?.commonDatabase'))throw Error('Sélection réservée à une carrière de base commune.');const pack=payload.id==='base'?null:packs.get(payload.id);if(payload.id!=='base'&&!pack)throw Error('Pack non installé.');if(pack&&pack.meta.databaseId!==run('S.commonDatabase.id'))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding=pack?{id:pack.meta.id,digest:pack.meta.digest}:null;run('if(nativeBinding)S.identityPack=nativeBinding;else delete S.identityPack');
      }else if(command==='new_career'&&payload.mode==='custom'){
+      run("nativeSystems.domain('customCompetition').prepareCreation((({varyCurrent,...custom})=>custom)(nativePayload))");
+      protectCurrent('nouvelle-carriere',priorSeed,priorClock);
       run("nativeSystems.domain('customCompetition').create((({varyCurrent,...custom})=>custom)(nativePayload))");
       if(run("typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive(S)"))run('CDStaffCareer.initialize(S)');
      }else if(command==='new_career'){

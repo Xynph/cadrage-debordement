@@ -75,6 +75,11 @@ manifeste reste accepté sans ajout automatique.
 
 La confirmation de création fictive de l’atelier expose la même case, cochée
 par défaut à chaque ouverture, et transmet le choix sans modifier son calendrier.
+Comme la création standard, un remplacement depuis l’atelier conserve une copie
+de sécurité du profil précédent. La forme du payload, le document et le contexte
+de match sont validés avant toute copie : un refus laisse le profil, le RNG,
+l’horloge et les copies existantes intacts. Le test ciblé restaure réellement
+cette copie et compare l’export, la graine et l’horloge de la carrière d’origine.
 
 Le banc Godot utilise l’application et son worker réels. Il teste la case et
 la sélection du club au clavier, l’absence de commande lors des réglages, la
