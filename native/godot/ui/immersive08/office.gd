@@ -1,6 +1,7 @@
 extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const P = preload("res://ui/immersive08/projection.gd")
+const Priorities = preload("res://ui/immersive08/office_priorities.gd")
 const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
 const S = preload("res://ui/data_semantics.gd")
@@ -75,6 +76,17 @@ static func update_live_card(app: Control) -> void:
 	if primary != null: primary.text = app.primary_text().trim_suffix("  →")
 	var review := card.find_child("OfficeMatchReviewAction", true, false) as Button
 	if review != null: review.visible = summary.finished
+	var priority := app.root_content.find_child("OfficeLivePriorityAction",true,false) as Button
+	if priority != null:
+		for item: Dictionary in priorities(app.model):
+			if item.id != "OfficeLivePriorityAction": continue
+			var number := int(priority.get_meta("priority_number",1))
+			priority.text = "%d. %s" % [number,item.title]
+			priority.tooltip_text = item.title + "\n" + priority_description(item)
+			priority.accessibility_name = priority.tooltip_text.replace("\n"," · ")
+			for pair in [["OfficePriorityDeadline",item.deadline],["OfficePriorityReason",item.detail]]:
+				var label := app.root_content.find_child(str(pair[0])+str(number),true,false) as Label
+				if label != null: label.text = pair[1]
 
 static func _card(parent: Node, id: String, title: String, height: int, ratio: float = 1.0) -> PanelContainer:
 	var frame := C.card(title, Vector2(0, height))
@@ -163,7 +175,7 @@ static func build(app: Control) -> Control:
 	page.add_child(top)
 	var hero := _card(top, "OfficeFixture", "", 418, 1.56)
 	_fixture(hero, app)
-	var priorities := _card(top, "OfficeDecisions", "▦  Gestion du club", 418)
+	var priorities := _card(top, "OfficeDecisions", "▦  Vos trois priorités", 418)
 	_priorities(C.content(priorities), app)
 	var middle := C.h(16)
 	page.add_child(middle)
@@ -400,49 +412,75 @@ static func _live_content(left: VBoxContainer, match_info: Dictionary) -> void:
 		detail.name = "OfficeLiveFixtureDetail"
 		left.add_child(detail)
 
+static func priorities(model: Dictionary) -> Array[Dictionary]:
+	return Priorities.select(model)
+
+static func priority_color(item: Dictionary) -> Color:
+	return C.ALERT if item.level == "urgent" else C.GOLD if item.level == "important" else C.MINT
+
+static func open_priority(app: Control, item: Dictionary) -> void:
+	match item.action:
+		"press": app._show_press_inbox()
+		"match": app._navigate("Match")
+		"standings": open_current_standings(app)
+		"selection": app._navigate("Composition")
+		"finance": app._navigate("Finances")
+		"international":
+			app.management_ui.international_section = "availability"
+			app._navigate("Sélections")
+		"squad": app.navigation_controller.open_roster_group()
+		"contract": _open_player(app,str(item.player))
+		"preparation": app._navigate("Préparation")
+		"training": app.Immersive.open_training(app)
+		"recruitment": app._navigate("Recrutement")
+
+static func priority_description(item: Dictionary) -> String:
+	return str(item.deadline) + " · " + str(item.detail)
+
 static func _priorities(parent: VBoxContainer, app: Control) -> void:
-	var contracts := P.contracts(app.model)
-	var choices: Array = []
-	if not contracts.is_empty():
-		var first: Dictionary = contracts[0]
-		choices.append({"title":"%d contrats à préparer" % contracts.size(), "detail":str(first.get("name", "")) + " · " + str(first.get("contractLabel", "Échéance à examiner")), "action":func(): _open_player(app, str(first.id)), "id":"OfficeContractsAction"})
-	if app.model.meta.get("canAdvanceSeason", false):
-		choices.append({"title":"Consulter le classement final", "detail":final_standings_detail(app.model), "action":open_current_standings.bind(app), "id":"OfficeFinalStandingsAction"})
-	else:
-		var training: Dictionary = app.model.get("decisions", {}).get("training", {})
-		choices.append({"title":"Préparer l’entraînement" if not app.model.meta.get("trained", false) else "La préparation est effectuée", "detail":str(training.get("advice", "Consultez les choix et la charge du groupe.")), "action":func(): app.Immersive.open_training(app), "id":"OfficeTrainingAction"})
-	var selection: Dictionary = app.model.get("selection", {})
-	var valid: bool = selection.get("valid", false)
-	if valid or app._live().is_empty():
-		choices.append({"title":"Examiner le recrutement" if valid else "Compléter la feuille de match", "detail":recruitment_availability(app.model.get("market", [])) if valid else "Les postes vacants ou indisponibles demandent votre attention.", "action":func(): app._navigate("Recrutement" if valid else "Composition"), "id":"OfficeRecruitmentAction"})
-	if choices.size() < 3: choices.append({"title":"Retrouver les décisions du club", "detail":"Staff, direction et vie du groupe.", "action":func(): app._navigate("Travail du club"), "id":"OfficeSupportAction"})
-	for i in mini(3, choices.size()):
+	var choices := priorities(app.model)
+	if choices.is_empty(): parent.add_child(C.wrap("Reprenez une carrière pour retrouver les décisions de votre club.",18,C.MUTED))
+	for i in choices.size():
 		var choice: Dictionary = choices[i]
+		var tint := priority_color(choice)
 		var tile := C.card()
-		tile.add_theme_stylebox_override("panel", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 4))
+		tile.name = "OfficePriority" + str(i+1)
+		tile.add_theme_stylebox_override("panel", C.box(Color(tint,.035),Color(tint,.24),4,6))
 		parent.add_child(tile)
-		var line := C.h(12)
+		var line := C.h(10)
 		C.content(tile).add_child(line)
-		var icon: String = {"OfficeContractsAction":"people","OfficeTrainingAction":"train","OfficeRecruitmentAction":"search"}.get(choice.id,"shield")
-		var mark := C.icon(icon,24,C.MUTED)
+		var mark := C.icon(choice.icon,22,tint)
 		mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		line.add_child(mark)
 		var text := C.v(2)
 		C.fill(text)
 		line.add_child(text)
-		var action := C.button(choice.title + "  →", choice.action)
+		var action := C.button(str(i+1) + ". " + str(choice.title) + "  →",open_priority.bind(app,choice))
 		action.name = choice.id
+		action.set_meta("priority_number",i+1)
 		action.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		action.clip_text = true
 		action.custom_minimum_size.y = C.px(34)
-		action.tooltip_text = choice.title + "\n" + choice.detail
-		action.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
+		action.tooltip_text = choice.title + "\n" + priority_description(choice)
+		action.accessibility_name = action.tooltip_text.replace("\n"," · ")
+		action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
 		text.add_child(action)
-		text.add_child(C.wrap(choice.detail, 17, C.MUTED))
-	var notebook := C.button("Mon carnet personnel", func(): open_notebook(app), false, app.accent)
+		var due := C.label(choice.deadline,15,tint,true)
+		due.name = "OfficePriorityDeadline" + str(i+1)
+		text.add_child(due)
+		var detail := C.wrap(choice.detail,17,C.MUTED)
+		detail.name = "OfficePriorityReason" + str(i+1)
+		text.add_child(detail)
+	var shortcuts := C.h(8)
+	parent.add_child(shortcuts)
+	if not choices.any(func(item: Dictionary): return item.id == "OfficeTrainingAction") and not app.model.meta.get("canAdvanceSeason",false):
+		var training := C.button("Entraînement",func():app.Immersive.open_training(app),false,app.accent)
+		training.name = "OfficeTrainingAction"
+		shortcuts.add_child(C.fill(training))
+	var notebook := C.button("Mon carnet personnel",func():open_notebook(app),false,app.accent)
 	notebook.name = "OpenCoachNotebook"
-	notebook.custom_minimum_size.y = maxi(30, C.px(40))
-	parent.add_child(notebook)
+	notebook.custom_minimum_size.y = maxi(30,C.px(40))
+	shortcuts.add_child(C.fill(notebook))
 
 static func _group(parent: VBoxContainer, app: Control) -> void:
 	var group := P.group(app.model)

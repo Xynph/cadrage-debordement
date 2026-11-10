@@ -25,7 +25,7 @@ static func build(app: Control) -> Control:
 	page.custom_minimum_size = Vector2(2248,1124)*C.density
 	C.fill(page,true)
 	_fixture(_card(page,Rect2(280,220,1360,418),"","","OfficeFixture"),app)
-	_priorities(_card(page,Rect2(1656,220,872,418),"GESTION DU CLUB","calendar","OfficeDecisions"),app)
+	_priorities(_card(page,Rect2(1656,220,872,418),"VOS TROIS PRIORITÉS","calendar","OfficeDecisions"),app)
 	_group(_card(page,Rect2(280,654,422,448),"ÉTAT DU GROUPE","heart","OfficeGroup"),app)
 	_standings(_card(page,Rect2(718,654,684,448),"CLASSEMENT · "+P.league_name(app.model),"trophy","OfficeStandings"),app)
 	_journal(_card(page,Rect2(1418,654,548,448),"DANS VOTRE BUREAU","mail","OfficeJournal"),app)
@@ -152,33 +152,28 @@ static func _live_content(card: Panel, app: Control, match_info: Dictionary) -> 
 	review.visible = match_info.finished
 
 static func _priorities(card: Panel, app: Control) -> void:
-	var contracts := P.contracts(app.model)
-	var tasks: Array = []
-	var trained: bool = app.model.meta.get("trained", false)
-	if app.model.meta.get("canAdvanceSeason", false):
-		tasks.append(["Consulter le classement final",Office.final_standings_detail(app.model),"trophy",Office.open_current_standings.bind(app),"OfficeFinalStandingsAction"])
-	else:
-		tasks.append(["Préparer l’entraînement" if not trained else "Revoir la préparation","Choix collectifs et charge du groupe.","train",func():
-			if trained: app._navigate("Préparation")
-			else: app.Immersive.open_training(app),"OfficeTrainingAction"])
-	if not contracts.is_empty():
-		var player: Dictionary = contracts[0]
-		tasks.append(["Prolonger "+str(player.name),str(player.get("status",""))+" · "+str(player.get("contractLabel","")),"people",func():app.selected_player=str(player.id);app._navigate("Effectif"),"OfficeContractsAction"])
-	else: tasks.append(["Consulter les contrats","Échéances et engagements du groupe.","people",func():app._navigate("Effectif"),"OfficeContractsAction"])
-	tasks.append(["Examiner le recrutement",Office.recruitment_availability(app.model.get("market", [])),"search",func():app._navigate("Recrutement"),"OfficeRecruitmentAction"])
+	var tasks := Office.priorities(app.model)
+	if tasks.is_empty(): D.text(card,26,108,"Reprenez une carrière pour retrouver les décisions du club.",21,C.MUTED,400,816,HORIZONTAL_ALIGNMENT_LEFT,true)
 	for i in tasks.size():
-		var y := 67+i*102
-		var item: Array = tasks[i]
-		var tint := C.MINT if i==0 and not trained else C.MUTED
-		var icon := C.icon(item[2],27,tint)
+		var y := 66+i*102
+		var item: Dictionary = tasks[i]
+		var tint := Office.priority_color(item)
+		D.rect(card,Rect2(18,y+3,836,94),Color(tint,.035),4,Color(tint,.22)).name = "OfficePriority" + str(i+1)
+		var icon := C.icon(item.icon,25,tint)
 		card.add_child(icon)
-		D.place(icon,Rect2(29,y+18,27,27))
-		var action := D.button(card,Rect2(62,y+4,789,46),item[0],item[3],false,"arrow",false,app.accent,item[4])
-		action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,18))
-		action.tooltip_text = item[0] + "\n" + item[1]
-		D.text(card,80,y+74,item[1],20,C.MUTED,400,740,HORIZONTAL_ALIGNMENT_LEFT,true)
-		D.line(card,Vector2(22,y+91),Vector2(851,y+91),Color(C.LINE,.5))
-	D.button(card,Rect2(564,374,287,31),"Mon carnet personnel",func():Office.open_notebook(app),false,"arrow",true,app.accent,"OpenCoachNotebook")
+		D.place(icon,Rect2(29,y+12,25,25))
+		var action := D.button(card,Rect2(62,y+2,785,39),str(i+1)+". "+str(item.title),Office.open_priority.bind(app,item),false,"arrow",false,app.accent,item.id)
+		action.set_meta("priority_number",i+1)
+		action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,12))
+		action.tooltip_text = item.title + "\n" + Office.priority_description(item)
+		action.accessibility_name = action.tooltip_text.replace("\n"," · ")
+		D.text(card,78,y+58,item.deadline,17,tint,650,747).name = "OfficePriorityDeadline" + str(i+1)
+		var reason := D.text(card,78,y+82,item.detail,18,C.MUTED,400,746,HORIZONTAL_ALIGNMENT_LEFT,true)
+		reason.name = "OfficePriorityReason" + str(i+1)
+		reason.tooltip_text = item.detail
+	if not tasks.any(func(item: Dictionary): return item.id == "OfficeTrainingAction") and not app.model.meta.get("canAdvanceSeason",false):
+		D.button(card,Rect2(24,378,249,27),"Entraînement",func():app.Immersive.open_training(app),false,"arrow",true,app.accent,"OfficeTrainingAction")
+	D.button(card,Rect2(564,378,287,27),"Mon carnet personnel",func():Office.open_notebook(app),false,"arrow",true,app.accent,"OpenCoachNotebook")
 
 static func _group(card: Panel, app: Control) -> void:
 	var group := P.group(app.model)
