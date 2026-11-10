@@ -796,9 +796,10 @@ func navigation_flow() -> void:
 	await click(app.find_child("OfficeTrainingAction",true,false))
 	await settle()
 	check(app.find_child("ImmersiveTraining",true,false)!=null,"Le dossier d’entraînement du Bureau ouvre sa vraie page")
+	var command_id: int = app.bridge._next_id
 	await click(app.find_child("ImmersiveContinue",true,false))
 	await settle()
-	check(app.find_child("ImmersivePreparation",true,false)!=null and app.management_ui.preparation.tab==0,"Continuer ouvre le dossier de match après l’entraînement")
+	check(app.route=="Match" and app._live().is_empty() and app.management_ui.preparation.tab==2 and app.bridge._next_id==command_id,"Continuer ouvre l’avant-match sans lancer la rencontre et mémorise l’entraînement")
 	var back: Button = app.find_child("NavigationBack",true,false)
 	var forward: Button = app.find_child("NavigationForward",true,false)
 	check(back!=null and not back.disabled and forward!=null and forward.disabled,"L’historique de lecture est accessible à la souris")
@@ -806,7 +807,7 @@ func navigation_flow() -> void:
 	else: await key(KEY_LEFT,false,true)
 	check(app.find_child("ImmersiveTraining",true,false)!=null,"Retour restaure l’entraînement plutôt que le dossier adverse")
 	await key(KEY_RIGHT,false,true)
-	check(app.find_child("ImmersivePreparation",true,false)!=null,"Alt droite rétablit le dossier de match")
+	check(app.route=="Match" and app._live().is_empty(),"Alt droite rétablit l’avant-match")
 	app._navigate("Effectif")
 	await settle()
 	var player_id: String = app.selected_player
