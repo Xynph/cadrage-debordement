@@ -367,6 +367,7 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 			var destination: String = event.get("action", "")
 			if destination in ["international", "national_job"]:
 				var caption := "Voir les offres de sélection" if destination == "national_job" else "Ouvrir les sélections"
+				if _has_match_sheet(app, event): caption = "Préparer la feuille de match"
 				D.button(card,Rect2(26,top,545,62),caption,_open_international.bind(app,event),true,"arrow",false,app.accent,"InboxOpenInternational")
 		else:
 			var caption := "Ouvrir · " + str(message.route)
@@ -394,8 +395,13 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 
 static func _open_international(app: Control, event: Dictionary) -> void:
 	app.management_ui.international_section = "offers" if event.action == "national_job" else "callups"
+	if _has_match_sheet(app, event): app.management_ui.international_section = "sheet"
 	app.management_ui.international_nation = str(event.get("nation", ""))
 	app._navigate("Sélections")
+
+static func _has_match_sheet(app: Control, event: Dictionary) -> bool:
+	var fixture: Dictionary = app.Immersive.Selections.current_fixture(app.model)
+	return not fixture.is_empty() and event.id == "match-day/" + str(fixture.id) and not app.Immersive.Selections.Sheet.slots(app.model.international).is_empty()
 
 static func _current_expiry_roster(model: Dictionary) -> Dictionary:
 	var expiring: Variant = model.get("decisions", {}).get("recruitment", {}).get("expiring")

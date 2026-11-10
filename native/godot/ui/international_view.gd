@@ -3,6 +3,7 @@ extends RefCounted
 const G = preload("res://ui/game_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const P = preload("res://ui/immersive08/projection.gd")
+const Sheet = preload("res://ui/national_sheet.gd")
 
 static func nation_only(model: Dictionary) -> bool:
 	return model.get("international", {}).get("role") == "nation"
@@ -33,10 +34,23 @@ static func current_fixture(model: Dictionary) -> Dictionary:
 	var fixture: Variant = model.get("international", {}).get("currentManagedFixture")
 	return fixture if fixture is Dictionary and fixture.has("id") and fixture.has("date") else {}
 
+static func _editable_fixture(model: Dictionary) -> Dictionary:
+	var current := current_fixture(model)
+	if not current.is_empty(): return current
+	var upcoming: Variant = model.get("international", {}).get("nextManagedFixture")
+	return upcoming if upcoming is Dictionary and upcoming.has("id") else {}
+
 static func play_current(app: Control) -> void:
 	var fixture := current_fixture(app.model)
-	if not fixture.is_empty():
-		app._command("national_play_match", {"fixtureId":fixture.id, "fromDate":fixture.date})
+	if fixture.is_empty(): return
+	var payload := {"fixtureId":fixture.id, "fromDate":fixture.date}
+	var international: Dictionary = app.model.international
+	var available := Sheet.slots(international)
+	if not available.is_empty():
+		var draft := Sheet.draft_for(app, international, fixture, available)
+		payload.lineup = draft.slice(0, Sheet.XV.size())
+		payload.reserves = draft.slice(Sheet.XV.size())
+	app._command("national_play_match", payload)
 
 static func calendar(app: Control) -> Control:
 	var page := G.v(8)
@@ -59,7 +73,12 @@ static func calendar(app: Control) -> Control:
 			var date := str(fixture.get("date", ""))
 			section.add_child(G.wrap(_fixture_row(fixture, names), 16, G.GOOD if date == today else G.INK))
 	if total == 0: page.add_child(G.wrap("Aucune rencontre programmée pour cette sélection."))
-	_add_play_button(app, page, international, names)
+	if not _editable_fixture(app.model).is_empty() and not Sheet.slots(international).is_empty():
+		page.add_child(G.button("Préparer la feuille de match", func():
+			app.management_ui.international_section = "sheet"
+			app._navigate("Sélections"), true))
+	else:
+		_add_play_button(app, page, international, names)
 	return page
 
 static func _team_names(international: Dictionary) -> Dictionary:
@@ -111,10 +130,15 @@ static func build(app: Control) -> Control:
 	tabs.add_child(_callups(international, names))
 	tabs.add_child(_editions(international, names))
 	tabs.add_child(_offers(app, international, role))
-	tabs.current_tab = 2 if app.management_ui.get("international_section") == "offers" else 0
+	var sections := ["callups", "editions", "offers"]
+	var fixture := _editable_fixture(app.model)
+	var available := Sheet.slots(international)
+	if not fixture.is_empty() and not available.is_empty():
+		sections.append("sheet")
+		tabs.add_child(Sheet.build(app, international, fixture, available))
+	tabs.current_tab = maxi(0, sections.find(app.management_ui.get("international_section", "")))
 	tabs.tab_changed.connect(func(index: int):
-		app.management_ui.international_section = ["callups", "editions", "offers"][index])
-	if app.management_ui.get("international_section") == "editions": tabs.current_tab = 1
+		app.management_ui.international_section = sections[index])
 	return page
 
 static func _callups(international: Dictionary, names: Dictionary) -> Control:
@@ -172,6 +196,11 @@ static func _offers(app: Control, international: Dictionary, role: String) -> Co
 		card.add_child(only)
 	if view.get_child_count() == 0: view.add_child(G.wrap("Aucun poste de sélectionneur disponible."))
 	if role == "dual":
+		var current := managed_team(app.model)
+		if not current.is_empty():
+			var full_time := G.button("Se consacrer à cette sélection", _take.bind(app, current.id, current.name, "nation"))
+			full_time.name = "NationalJobCurrentOnly"
+			view.add_child(full_time)
 		view.add_child(G.button("Quitter la sélection", func():
 			app.confirm("Quitter la sélection", "Votre carrière en club continue.",
 				func(): app._command("national_leave_job", {"confirmed":true}))))
