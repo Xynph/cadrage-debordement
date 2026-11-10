@@ -1,6 +1,9 @@
 extends "res://qa_runner.gd"
 
 const C = preload("res://ui/immersive08/components.gd")
+const G = preload("res://ui/game_skin.gd")
+const P = preload("res://ui/immersive08/projection.gd")
+const RegenPortrait = preload("res://ui/regen_portrait.gd")
 const ART := "res://art/immersive08/"
 
 func _run() -> void:
@@ -36,12 +39,12 @@ func _run() -> void:
 	var baseline: String = app.model.meta.exportText
 	var save_path := str(app.model.meta.dataDir).path_join("donnees.json")
 	var digest := FileAccess.get_sha256(save_path)
-	await _visit("Bureau", "OfficeFixture", "office-hero", "03-bureau")
+	await _visit_office("03-bureau")
 	await _find_club()
 	await _visit("Réception", "ImmersiveInbox", "", "04-reception")
 	await _visit("Effectif", "ImmersiveRosterTable", "", "05-effectif")
 	if await _activate("OpenPlayerFull"):
-		_assert_art("player-hero")
+		_assert_selected_portrait()
 		await _capture("06-fiche")
 	await _visit("Composition", "LineupSlot10", "tactics-briefing", "07-tactique")
 	if await _activate("LineupSlot10"):
@@ -101,8 +104,36 @@ func _activate(id: String) -> bool:
 
 func _assert_art(id: String) -> void:
 	var image := app.root_content.find_child("Art_" + id.replace("-", "_"), true, false) as TextureRect
-	_check(image != null and image.is_visible_in_tree() and image.texture != null and image.size.x > 0 and image.size.y > 0,
-		"Illustration affichée dans le jeu : " + id)
+	_check(_has_visible_texture(image), "Illustration affichée dans le jeu : " + id)
+
+func _has_visible_texture(image: TextureRect) -> bool:
+	return image != null and image.is_visible_in_tree() and image.texture != null and image.size.x > 0 and image.size.y > 0
+
+func _assert_selected_portrait() -> void:
+	var hero := app.root_content.find_child("FullPlayerHero", true, false) as Control
+	var portrait := hero.get_child(0) as TextureRect if hero != null and hero.get_child_count() > 0 else null
+	var player := P.player(app.model, app.selected_player)
+	_check(not player.is_empty() and _has_visible_texture(portrait)
+		and portrait.texture == RegenPortrait.texture(player) and portrait.material == RegenPortrait.material(player),
+		"Portrait du joueur sélectionné affiché dans sa fiche")
+
+func _visit_office(shot: String) -> void:
+	await _visit("Bureau", "OfficeFixture", "", "")
+	var identity := G.identity(app.model.club)
+	var photos: Dictionary = identity.get("photos", {})
+	var has_territory := false
+	var illustrated := true
+	for info in [["city", "OfficeCityPreview"], ["stadium", "OfficeStadiumPreview"]]:
+		var place: Variant = identity.get(info[0])
+		if (place == null or str(place).strip_edges().is_empty()) and photos.get(info[0], {}).is_empty(): continue
+		has_territory = true
+		var preview := app.root_content.find_child(info[1], true, false) as Control
+		illustrated = illustrated and preview != null and preview.get_child_count() > 0 and _has_visible_texture(preview.get_child(0) as TextureRect)
+	if not has_territory:
+		_assert_art(P.fixture_ground(app.model.meta, "office-hero"))
+	else:
+		_check(illustrated, "Illustrations du territoire du club affichées au Bureau")
+	await _capture(shot)
 
 func _visit(route: String, expected: String, art: String, shot: String) -> void:
 	app._navigate(route)
@@ -110,7 +141,7 @@ func _visit(route: String, expected: String, art: String, shot: String) -> void:
 	var node := app.root_content.find_child(expected, true, false) as Control
 	_check(node != null and node.is_visible_in_tree(), "Gabarit visible dans l’exécutable : " + route)
 	if not art.is_empty(): _assert_art(art)
-	await _capture(shot)
+	if not shot.is_empty(): await _capture(shot)
 
 func _find_club() -> void:
 	var teams: Array = app.model.get("staff", {}).get("teams", [])
@@ -193,7 +224,7 @@ func _world_save(path: String) -> void:
 	var results: int = app.model.get("history", []).size()
 	_check(competitions.has("prem") and competitions.has("urc") and competitions.has("champions") and competitions.has("challenge") and results > 0,
 		"Championnat, coupes et résultats de la carrière sont projetés dans le paquet")
-	await _visit("Bureau", "OfficeFixture", "office-hero", "20-bureau-monde")
+	await _visit_office("20-bureau-monde")
 	await _visit("Classements", "StandingsRows", "", "21-classements-monde")
 	if await _activate("StandingsDivision_champions"): await _capture("22-poules-europe")
 	if meta.get("canAdvanceSeason", false):

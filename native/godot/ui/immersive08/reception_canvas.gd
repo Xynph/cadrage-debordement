@@ -117,6 +117,8 @@ static func build(app: Control) -> Control:
 	for message: Dictionary in visible:
 		if message.id == state.selected: current=message; break
 	_folders(folders,app,state)
+	var lounge := D.panel(page, Rect2(0, 397, 298, 252), "Accueil du club", "home")
+	D.scenario_photo(lounge, "lounge", Rect2(12, 64, 274, 174))
 	_list(D.panel(page,Rect2(316,0,749,1124),"","","","InboxMessages"),app,state,visible)
 	_detail(D.panel(page,Rect2(1083,0,1165,1124),"","","","InboxDetail"),app,state,current)
 	return page

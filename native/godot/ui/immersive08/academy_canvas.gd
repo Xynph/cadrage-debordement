@@ -116,6 +116,7 @@ func _heading() -> void:
 		D.text(card, 66, 37, entry[2], 34, entry[4], 700, width - 73)
 		D.text(card, 66, 62, entry[3], 19, C.IVORY, 500, width - 73)
 		x += width + 17.0
+	D.scenario_photo(hero, "chair", Rect2(2070, 9, 158, 142))
 	integration = _action(hero, Rect2(1709, 160, 519, 65), "Préparer une intégration", _integration_dialog, true, "arrow", "AcademyPrepareIntegration")
 	integration.add_theme_font_size_override("font_size", C.px(35))
 	_update_integration()
