@@ -43,8 +43,10 @@ Cloud ; les anciens chats ne constituent pas un inventaire exhaustif automatique
 - Distinguer ce qui existe et a été vérifié de ce qui est proposé ou reste à
   réaliser. Après discussion, les choix explicites de Léo priment ; avancer sans
   demandes répétées de confirmation.
-- Lors des échanges sur Oval Legacy, recommander en français le niveau
-  d’effort de GPT‑6.1 Sol adapté à la tâche ou à la prochaine étape.
+- Dans chaque message adressé à Léo sur Oval Legacy, indiquer en français le
+  niveau d’effort recommandé pour GPT‑6.1 Sol, adapté à la tâche ou à la prochaine
+  étape, afin qu’il puisse l’ajuster. Réserver cette recommandation aux échanges
+  sur Oval Legacy.
 
 ## Contraintes produit
 
