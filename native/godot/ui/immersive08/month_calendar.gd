@@ -376,10 +376,10 @@ func _match_chip(fixture: Dictionary) -> PanelContainer:
 	return panel
 
 func _session_chip(session: Dictionary, expanded: bool = false) -> PanelContainer:
-	var done := not today.is_empty() and str(session.date) < today
-	var panel := _tile(Color("1b2929") if done else Color("1b3631"), Color("3c5450") if done else Color("579284"), 4)
+	var past := not today.is_empty() and str(session.date) < today
+	var panel := _tile(Color("1b2929") if past else Color("1b3631"), Color("3c5450") if past else Color("579284"), 4)
 	panel.name = "MonthSession_" + str(session.get("id","")).validate_node_name()
-	panel.set_meta("completed", done)
+	panel.set_meta("completed", past)
 	panel.set_meta("date", session.date)
 	var row := C.h(6)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -389,7 +389,7 @@ func _session_chip(session: Dictionary, expanded: bool = false) -> PanelContaine
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(C.fill(text))
 	var label := str(session.get("label","Entraînement"))
-	var caption := C.label(label, 19, C.MUTED if done else Color("d8eee7"), true, 700)
+	var caption := C.label(label, 19, C.MUTED if past else Color("d8eee7"), true, 700)
 	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	text.add_child(caption)
 	var forwards := _caption(session.get("forwards"))
@@ -399,13 +399,13 @@ func _session_chip(session: Dictionary, expanded: bool = false) -> PanelContaine
 		var line := C.label("%s · %s" % group, 16, C.MUTED)
 		line.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		text.add_child(line)
-	panel.accessibility_name = label + (" · Séance effectuée" if done else "")
+	panel.accessibility_name = label + (" · Créneau passé" if past else "")
 	if not forwards.is_empty(): panel.accessibility_name += " · Avants : " + forwards
 	if not backs.is_empty(): panel.accessibility_name += " · Trois-quarts : " + backs
-	if done:
-		var check := C.icon("check", 17, Color("86b6a2"))
-		check.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(check)
+	if past:
+		var clock := C.icon("clock", 17, C.MUTED)
+		clock.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(clock)
 	return panel
 
 static func _caption(value: Variant) -> String:
@@ -447,8 +447,8 @@ func _legend(parent: Node) -> void:
 		legend.add_child(C.label(PLACES[key], 17, C.MUTED))
 	legend.add_child(_session_icon("strength"))
 	legend.add_child(C.label("Entraînement", 17, C.MUTED))
-	legend.add_child(C.icon("check", 21, Color("86b6a2")))
-	legend.add_child(C.label("Séance effectuée",17,C.MUTED))
+	legend.add_child(C.icon("clock", 21, C.MUTED))
+	legend.add_child(C.label("Créneau passé",17,C.MUTED))
 
 func _detail(parent: Node) -> void:
 	var card := C.card("",Vector2(402,0))
@@ -514,8 +514,7 @@ func _preparation(body: VBoxContainer) -> void:
 	body.add_child(C.label("FIL DE PRÉPARATION",20,C.GOLD,true,700))
 	body.add_child(C.wrap(G.club_name(_opponent(next_fixture)),21,C.IVORY,true,700))
 	for session: Dictionary in related:
-		var tag := "✓ " if not today.is_empty() and str(session.date) < today else ""
-		var label := "%s%s/%s   %s" % [tag,session.date.right(2),session.date.substr(5,2),session.get("label","Entraînement")]
+		var label := "%s/%s   %s" % [session.date.right(2),session.date.substr(5,2),session.get("label","Entraînement")]
 		body.add_child(C.wrap(label,18,C.MUTED))
 
 func _templates(body: VBoxContainer) -> void:
