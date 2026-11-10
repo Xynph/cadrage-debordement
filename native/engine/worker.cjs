@@ -152,8 +152,18 @@ function createBridge(options={}){
    }
   }
   const snapshot=operation=>{const m=JSON.parse(run('JSON.stringify(nativeModel())'));m.decisions=JSON.parse(run('JSON.stringify(nativeDecisions())'));m.clubLife=JSON.parse(run('JSON.stringify(nativeSystems.project())'));m.meta.profileError=profileError;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;const result=packs.project(staff.project(m),JSON.parse(run('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'));staff.applyCareerPresentation(result);const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=epcrPreparation.project(result);projectCalendar(result,operation);return result;};
+  const backup=path.join(dataDir,'donnees-precedentes.json');
+  let committedFiles='';
+  const profileFilesVersion=()=>{
+   try{
+    const entries=[file,backup].map(target=>fs.lstatSync(target,{bigint:true}));
+    if(entries.some(entry=>!entry.isFile()))return '';
+    return entries.map(entry=>[entry.dev,entry.ino,entry.size,entry.mtimeNs,entry.ctimeNs].join(':')).join('|');
+   }catch{return '';}
+  };
   const persist=()=>{
-   const token=randomUUID(),text=JSON.stringify({protocol:1,seed,clock,store}),temp=path.join(dataDir,'donnees.tmp-'+token),backup=path.join(dataDir,'donnees-precedentes.json'),backupTemp=path.join(dataDir,'donnees-precedentes.tmp-'+token),rollback=path.join(dataDir,'donnees-precedentes.rollback-'+token);
+   committedFiles='';
+   const token=randomUUID(),text=JSON.stringify({protocol:1,seed,clock,store}),temp=path.join(dataDir,'donnees.tmp-'+token),backupTemp=path.join(dataDir,'donnees-precedentes.tmp-'+token),rollback=path.join(dataDir,'donnees-precedentes.rollback-'+token);
    const write=(target,content)=>{const fd=fs.openSync(target,'wx');try{fs.writeFileSync(fd,content);fs.fsyncSync(fd);}finally{fs.closeSync(fd);}};
    const ordinary=target=>{const s=fs.lstatSync(target);if(!s.isFile()||s.isSymbolicLink())throw Error('Fichier de sauvegarde ou de secours non ordinaire.');};
    let stashed=false,published=false;
@@ -173,6 +183,7 @@ function createBridge(options={}){
    }
    // A cleanup failure cannot turn an already published career into a failure.
    if(stashed){try{fs.unlinkSync(rollback);}catch{}}
+   committedFiles=profileFilesVersion();
   };
   function handle(request){
    let id=null;
@@ -290,7 +301,12 @@ function createBridge(options={}){
      let extra=null;if(SYSTEM_COMMANDS.has(command)){ctx.nativeCommand=command;extra=run('nativeSystems.execute(nativeCommand,nativePayload)');}
      else if(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
      run('save();validateCareer(S)');
-     const model=snapshot({command,payload});if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));persist();return {id,ok:true,model};
+     const model=snapshot({command,payload});if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
+     // Advancing the presentation cursor can leave both the career and RNG
+     // untouched. Keep the previous durable revision and its recovery copy.
+     if(command==='tick'&&committedFiles&&seed===priorSeed&&JSON.stringify(store)===priorStore&&profileFilesVersion()===committedFiles)clock=priorClock;
+     else persist();
+     return {id,ok:true,model};
     }catch(error){
      seed=priorSeed;clock=priorClock;store=JSON.parse(priorStore);ctx.nativePrior=JSON.parse(prior);run('nativeSystems.clearTransient()');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
      run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;');
