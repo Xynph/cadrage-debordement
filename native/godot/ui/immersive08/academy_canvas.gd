@@ -252,8 +252,9 @@ func _select(p: Dictionary) -> void:
 	_dossier()
 
 func _update_integration() -> void:
-	integration.disabled = selected.is_empty() or _professional(selected) or not development.get("promotionAvailable", false)
-	integration.tooltip_text = "Consulter les conditions du premier contrat professionnel" if not integration.disabled else "Sélectionnez un Espoir et vérifiez les places disponibles."
+	integration.disabled = app.waiting or selected.is_empty() or _professional(selected)
+	integration.text = "Préparer une intégration" if development.get("promotionAvailable", false) else "Consulter le premier contrat"
+	integration.tooltip_text = "Consulter les conditions du premier contrat professionnel" if not integration.disabled else "Sélectionnez un Espoir."
 
 func _dossier() -> void:
 	if is_instance_valid(dossier):
@@ -457,15 +458,19 @@ func _club(club_id: Variant) -> Dictionary:
 	return {"name":"Centre", "abbr":"Centre", "color":"#436859"}
 
 func _integration_dialog() -> void:
-	if selected.is_empty() or _professional(selected): return
+	if app.waiting or selected.is_empty() or _professional(selected): return
 	var p := selected
 	var info := _path(p)
-	var dialog_parts := _dialog("AcademyIntegrationDialog", "Préparer l’intégration · " + str(p.name))
+	var title := "Préparer l’intégration" if development.get("promotionAvailable", false) else "Consulter le premier contrat"
+	var dialog_parts := _dialog("AcademyIntegrationDialog", title + " · " + str(p.name))
 	var dialog: AcceptDialog = dialog_parts[0]
 	var body: VBoxContainer = dialog_parts[1]
 	body.add_child(C.wrap("%s · %s ans · niveau %s · potentiel estimé %s" % [p.pos, G.n(p.age), G.n(p.note), G.n(p.potential)], 26, C.IVORY, true))
-	body.add_child(C.wrap("Le joueur rejoint l’effectif professionnel si l’offre est confirmée et autorisée par la carrière.", 22, C.MUTED, true))
-	var standard := C.button("Premier contrat pro  ·  %s / semaine" % G.euros(p.salary), func():
+	var preview: Dictionary = app.DevelopmentViews.contract_preview(app.model, p)
+	if not preview.restriction.is_empty(): body.add_child(C.wrap(preview.restriction, 22, C.AMBER, true))
+	if not preview.capacity.is_empty(): body.add_child(C.wrap(preview.capacity, 22, C.MUTED, true))
+	if not preview.terms.is_empty(): body.add_child(C.wrap(preview.terms, 22, C.IVORY, true))
+	var standard := C.button("Premier contrat pro", func():
 		var end_season := int(app.model.meta.get("season", 0)) + (2 if app.model.meta.get("phase") == "ended" else 1)
 		app.confirm("Promouvoir " + str(p.name), "%s rejoindra l’effectif professionnel et ajoutera %s de salaire par semaine. Fin de contrat à la fin de la saison %s. Confirmer ?" % [p.name, G.euros(p.salary), G.n(end_season)], func(): app._command("promote_academy", {"playerId":p.id, "confirmed":true})), true, app.accent)
 	standard.name = "AcademyPromoteSelected"
@@ -483,9 +488,9 @@ func _integration_dialog() -> void:
 				args.merge({"playerId":p.id, "years":years, "confirmed":true})
 				app.confirm("Premier contrat professionnel", "%s quittera le centre et ajoutera %s par semaine à la masse salariale pour %d saison(s). Confirmer ?" % [p.name, wage, years], func(): app._command("academy_promote", args)))
 			offer.name = "AcademyOfferYears" + str(years)
-			offer.disabled = pathway.get("locked", false) or not pathway.get("promotionAvailable", false)
+			offer.disabled = standard.disabled or pathway.get("locked", false) or not pathway.get("promotionAvailable", false)
 			body.add_child(offer)
-	_popup(dialog, 770, 420)
+	preload("res://ui/immersive08/dialogs.gd").show_centered(dialog, Vector2i(C.px(770), C.px(420)))
 
 func _focus_dialog(p: Dictionary) -> void:
 	var dialog_parts := _dialog("AcademyFocusDialog", "Progression · " + str(p.name))
