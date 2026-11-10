@@ -216,6 +216,7 @@ function createBridge(options={}){
      }
      if(options.now===undefined)clock=Date.now();
      const liveOnly=command==='tick'||command==='delegate';
+     const previousAcademyClub=command==='next_season'?run('S.club'):null;
      ctx.nativeAttributeBaseline=['new_career','import'].includes(command)?null:run('nativeAttributeStore.before(S,'+liveOnly+');');
      if(command==='population_enable'){
       if(payload.confirmed!==true||Object.keys(payload).some(k=>!['confirmed','context'].includes(k)))throw Error('Confirmez explicitement la nouvelle politique de population.');
@@ -306,6 +307,8 @@ function createBridge(options={}){
      }
      let extra=null;if(SYSTEM_COMMANDS.has(command)){ctx.nativeCommand=command;extra=run('nativeSystems.execute(nativeCommand,nativePayload)');}
      else if(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
+     if(command==='new_career')run('CDNativeAcademyGroups.start(S)');
+     else if(command==='next_season')run('CDNativeAcademyGroups.afterSeason(S,'+previousAcademyClub+');');
      run('nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');save();validateCareer(S)');
      const model=snapshot({command,payload});if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
      // Advancing the presentation cursor can leave both the career and RNG
