@@ -1,6 +1,7 @@
 extends TextureRect
 
 const MODEL_PATH := "res://guide/assets/gabi.glb"
+const RENDER_SIZE := Vector2i(768, 768)
 const IDLE := &"Repos"
 const APPROVAL := &"Approbation"
 const GREETING := &"Salut"
@@ -36,8 +37,9 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_viewport.name = "GabiPortraitViewport"
-	_viewport.size = Vector2i(320, 320)
+	_viewport.size = RENDER_SIZE
 	_viewport.own_world_3d = true
 	_viewport.transparent_bg = true
 	_viewport.msaa_3d = Viewport.MSAA_2X
