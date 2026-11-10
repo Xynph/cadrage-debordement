@@ -76,3 +76,12 @@ test('old manager cumulative weeks never become a fabricated season date or inva
 test('a pending report planned without a scout never invents the source of a later hire',()=>{
  const s=fixture(),p=k.players(s).get('foreign');k.plan(s,{playerId:'foreign',confirmed:true,context:{season:1,week:0,club:0}},{charge:n=>s.clubs[0].cash-=n});s.staffCareer={version:1,people:[[{id:'later-scout',role:'scout',clubId:0,level:95,contractEnd:1}]]};const offer=k.scouting(s,p);assert.equal(offer.workCycles,2);assert.equal(offer.sourceScoutId,null);assert.equal(offer.sourceScoutLevel,null);
 });
+test('actual legacy managerWeek and targeted jobs share FIFO and advance only once per work week',()=>{
+ const fs=require('node:fs'),vm=require('node:vm'),s=fixture();s.economy={week:0,freeAgents:[]};Object.assign(s.manager,{lastWeek:0,inbox:[],watch:[],delegation:{}});s.market=[];
+ const context=vm.createContext({S:s,POS:['Pilier'],FAMILIES:[0],club:()=>s.clubs[s.club],label:()=>'',save(){},ledgerEntry:(label,amount)=>s.clubs[0].cash+=amount,render(){}});
+ vm.runInContext(fs.readFileSync(require.resolve('../dist/manager.js'),'utf8'),context);
+ vm.runInContext('const knowledge=('+factory.toString()+')();knowledge.installHooks();if(!createScoutMission(0,30,100000,10000))throw Error("legacy refused");',context);
+ k.plan(s,{playerId:'foreign',confirmed:true,context:{season:1,week:0,club:0}},{charge:n=>s.clubs[0].cash-=n});const job=s.playerKnowledge.jobs[0];assert.equal(job.status,'queued');
+ function cycle(n){s.round=n;s.economy.week=n;vm.runInContext('managerWeek()',context);}
+ cycle(1);assert.equal(s.manager.missions[0].remaining,1);assert.equal(job.remaining,2);cycle(2);assert.equal(s.manager.missions[0].status,'done');assert.equal(job.status,'active');assert.equal(job.remaining,2);cycle(3);assert.equal(job.remaining,1);vm.runInContext('managerWeek()',context);assert.equal(job.remaining,1);cycle(4);assert.equal(job.status,'done');assert.equal(external(s).knowledge.stage,'observed');
+});
