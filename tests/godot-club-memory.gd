@@ -122,7 +122,7 @@ func run() -> void:
 		check(int(app.management_ui.get("club_memory_season_b",-1)) == 2, "Deuxième saison changée au clavier")
 		check(app.view.find_child("ClubMemoryComparison",true,false).get_child_count() == 2, "Comparatif restitué après choix des deux saisons")
 		var text := all_text(app.view)
-		check(text.contains("Dans sa division") and text.contains("Fiction du banc") and text.contains("Réaction simulée"), "Limites et fiction explicites")
+		check(text.contains("Dans sa division") and text.contains("Fiction du banc") and text.contains("Réaction du banc"), "Réaction conservée et limites de division affichées")
 		await capture("histoire-projection-limite-%d" % resolution.x)
 		app.management_ui.clear()
 	check(JSON.stringify(sample) == before, "Construction et clavier sans mutation de modèle")

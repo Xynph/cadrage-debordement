@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');const {createBridge}=require('../native/engine/worker.cjs'),media=require('../native/engine/media-packs.cjs'),db=require('../dist/rugby-common-rosters.js');
 // Optional fixture is produced by native-manager-career-worker's real season.
 // This focused replay installs a public synthetic identity pack before the same
@@ -7,7 +8,7 @@ const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'native-manager-
 const call=(b,command,payload={})=>{const r=b.handle({id:++seq,command,payload});assert.equal(r.ok,true,r.error);return r.model;};
 const b=createBridge({dataDir:path.join(root,'pack'),seed:13,now:1700000000000});bridges.push(b);
 try{
- call(b,'new_career',{mode:'common',club:29});
+ settleClubMeetings(call(b,'new_career',{mode:'common',club:29}),(command,payload)=>call(b,command,payload));
  const manifest={schema:'cd-identity-pack-v1',id:'mobilite-test',name:'Mobilité test',version:'1',databaseId:db.id,rightsStatus:'test-local',clubs:db.clubs.map(c=>({id:c.id,name:'Club témoin '+c.id,abbr:'T'+c.id})),players:[],assets:[]};
  const n=Buffer.from('pack.json'),data=Buffer.from(JSON.stringify(manifest)),crc=media.crc32(data),local=Buffer.alloc(30),central=Buffer.alloc(46),end=Buffer.alloc(22);local.writeUInt32LE(0x04034b50);local.writeUInt16LE(20,4);local.writeUInt16LE(0x800,6);local.writeUInt32LE(crc,14);local.writeUInt32LE(data.length,18);local.writeUInt32LE(data.length,22);local.writeUInt16LE(n.length,26);central.writeUInt32LE(0x02014b50);central.writeUInt16LE(20,4);central.writeUInt16LE(20,6);central.writeUInt16LE(0x800,8);central.writeUInt32LE(crc,16);central.writeUInt32LE(data.length,20);central.writeUInt32LE(data.length,24);central.writeUInt16LE(n.length,28);end.writeUInt32LE(0x06054b50);end.writeUInt16LE(1,8);end.writeUInt16LE(1,10);end.writeUInt32LE(central.length+n.length,12);end.writeUInt32LE(local.length+n.length+data.length,16);const archive=path.join(root,'pack.zip');fs.writeFileSync(archive,Buffer.concat([local,n,data,central,n,end]));const p=call(b,'pack_inspect',{path:archive}).packs.preview;call(b,'pack_install',{path:archive,digest:p.digest});call(b,'pack_select',{id:p.id,scope:'career'});
  const fixture=process.env.CD_MANAGER_FIXTURE;

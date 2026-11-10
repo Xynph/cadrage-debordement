@@ -14,7 +14,7 @@ function factory(){
   const reference=['commonDatabase','worldMode','franceMode','lnrMode','rosterFoundation','identityPack'].some(k=>s[k]!==undefined);
   const fiction=!reference&&s.version===2&&s.worldVersion===1&&s.integratedManagementVersion===1&&s.clubs?.length===14&&s.clubs.every((c,i)=>c.id===i)&&
    (s.customCompetition===undefined||s.customCompetition?.version===1&&s.customCompetition?.clubs?.length===14);
-  return {kind:fiction?'historical-fiction-30':'reference-or-unknown',minimum:fiction?28:37,notice:fiction?'Garde de jeu fictive : 28 professionnels après départ (23 de feuille et cinq couvertures), deux joueurs par famille et deux piliers de chaque côté.':'Garde conservatrice : 37 professionnels après départ, deux joueurs par famille et deux piliers de chaque côté.'};
+  return {kind:fiction?'historical-fiction-30':'reference-or-unknown',minimum:fiction?28:37,notice:fiction?'Effectif minimum : 28 professionnels après départ (23 de feuille et cinq couvertures), deux joueurs par famille et deux piliers de chaque côté.':'Effectif minimum : 37 professionnels après départ, deux joueurs par famille et deux piliers de chaque côté.'};
  }
  const loans=()=>[S.v78to81,...Object.values(S.nativeAcademy?.offices||{}).map(o=>o.v78to81)].flatMap(o=>o?.loans||[]).filter(l=>l.season===S.season);
  function quote(c,p,loanIds=new Set(loans().map(l=>l.id))){
@@ -37,7 +37,7 @@ function factory(){
  }
  function project(){
   const available=typeof S!=='undefined'&&!!S?.economy&&!!S.clubs?.[S.club];
-  const base={available,releasePolicy:available?releasePolicy(S):null,context:available?context():null,candidates:[],notice:'Accord de libération anticipée fictif. Indemnité intégralement versée au club vendeur ; salaire proposé +5 % (minimum 1 000 €/semaine), échéance conservée. La profondeur de libération dépend de l’univers et reste affichée ; deux joueurs de la famille et deux piliers de chaque côté sont conservés. Réserve de 400 000 € et provision des huit prochaines semaines du nouveau salaire ; aucune inscription réglementaire automatique.'};
+  const base={available,releasePolicy:available?releasePolicy(S):null,context:available?context():null,candidates:[],notice:'Accord de libération anticipée. Indemnité intégralement versée au club vendeur ; salaire proposé +5 % (minimum 1 000 €/semaine), échéance conservée. La profondeur de libération dépend de l’univers et reste affichée ; deux joueurs de la famille et deux piliers de chaque côté sont conservés. Réserve de 400 000 € et provision des huit prochaines semaines du nouveau salaire ; aucune inscription réglementaire automatique.'};
   if(!available)return base;
   base.notice+=' '+base.releasePolicy.notice;
   const loanIds=new Set(loans().map(l=>l.id));
@@ -72,7 +72,7 @@ function factory(){
    offers.push({clubId:c.id,club:c.name,fee,salary,need,human:false});
   }
   offers.sort((a,b)=>b.salary-a.salary||b.fee-a.fee||b.need-a.need||a.clubId-b.clubId);
-  return {playerId:player.id,sellerId:seller.id,context:now,seller:sellerResponse,player:playerResponse,humanReady,humanReason:humanReady?'Offre recevable.':q.salary>100000?'La demande du joueur dépasse le plafond salarial de 100 000 € ; aucun accord possible.':!affordable(S.clubs[S.club],p.fee,p.salary)?'Effectif ou provision financière insuffisants.':'Indemnité ou salaire refusé.',offers,winner:offers[0]||null,notice:'Offres fictives recalculées à la clôture : salaire, indemnité, besoin public et identifiant départagent les clubs. Aucune transaction avant confirmation.'};
+  return {playerId:player.id,sellerId:seller.id,context:now,seller:sellerResponse,player:playerResponse,humanReady,humanReason:humanReady?'Offre recevable.':q.salary>100000?'La demande du joueur dépasse le plafond salarial de 100 000 € ; aucun accord possible.':!affordable(S.clubs[S.club],p.fee,p.salary)?'Effectif ou provision financière insuffisants.':'Indemnité ou salaire refusé.',offers,winner:offers[0]||null,notice:'Les offres sont examinées à la clôture selon le salaire, l’indemnité et les besoins du club. Aucune transaction avant confirmation.'};
  }
  function auction(p){
   check(shape(p,['playerId','sellerId','fee','salary','sourceSalary','contractEnd','context','expectedWinner','expectedFee','expectedSalary','confirmed'])&&p.confirmed===true&&integer(p.expectedWinner,0,S.clubs.length-1)&&integer(p.expectedFee,20000,1000000000)&&integer(p.expectedSalary,1000,100000),'clôture invalide');
@@ -83,7 +83,7 @@ function factory(){
   if(buyer.id===S.club)ledgerEntry('Libération anticipée négociée : '+player.name,-win.fee);else buyer.cash-=win.fee;
   player.salary=win.salary;player.joinedSeason=S.season;player.joinedRound=S.round;
   delete S.economy.listings[player.id];S.economy.offers=S.economy.offers.filter(o=>o.playerId!==player.id);S.market=S.market.filter(x=>x.id!==player.id);S.economy.freeAgents=S.economy.freeAgents.filter(x=>x.id!==player.id);
-  transferEvent(player.name+' rejoint '+buyer.name+' après concurrence entre '+result.offers.length+' club(s), pour '+money(win.fee)+' (accord fictif).');
+  transferEvent(player.name+' rejoint '+buyer.name+' après concurrence entre '+result.offers.length+' club(s), pour '+money(win.fee)+'.');
   return {interclubTransfer:{playerId:player.id,sellerId:seller.id,buyerId:buyer.id,fee:win.fee,salary:win.salary,contractEnd:player.contractEnd,competingClubs:result.offers.length,humanWon:buyer.id===S.club}};
  }
  function execute(command,p){
@@ -103,7 +103,7 @@ function factory(){
   player.salary=p.salary;player.joinedSeason=S.season;player.joinedRound=S.round;
   delete S.economy.listings[player.id];S.economy.offers=S.economy.offers.filter(o=>o.playerId!==player.id);
   S.market=S.market.filter(x=>x.id!==player.id);S.economy.freeAgents=S.economy.freeAgents.filter(x=>x.id!==player.id);
-  transferEvent(player.name+' rejoint '+buyer.name+' depuis '+seller.name+' : accord fictif de '+money(p.fee)+', fin de contrat S'+player.contractEnd+'.');
+  transferEvent(player.name+' rejoint '+buyer.name+' depuis '+seller.name+' : accord de '+money(p.fee)+', fin de contrat S'+player.contractEnd+'.');
   return {interclubTransfer:{playerId:player.id,sellerId:seller.id,buyerId:buyer.id,fee:p.fee,salary:player.salary,contractEnd:player.contractEnd}};
  }
  return {project,execute,validate:()=>true,installHooks:()=>true};

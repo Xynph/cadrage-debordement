@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 const Portrait = preload("res://ui/regen_portrait.gd")
 const Training = preload("res://ui/immersive08/training_canvas.gd")
 const Recruitment = preload("res://ui/immersive08/recruitment_canvas.gd")
@@ -20,6 +21,7 @@ func command(id: String,payload: Dictionary={}) -> void:
 func run() -> void:
 	root.size=Vector2i(1920,1080);app=load("res://main.tscn").instantiate();root.add_child(app)
 	await response("snapshot initial");await command("new_career",{"mode":"common","club":0})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	var source: Dictionary={}
 	for person: Dictionary in app.model.decisions.development.academy:
 		var profile:=Portrait.describe(person)
@@ -90,6 +92,7 @@ func run() -> void:
 	check(Portrait.describe(reopened)==original,"Reprise réelle conserve exactement l’apparence")
 	print("Banque/base réellement reçue : ",original.baseId)
 	await command("new_career",{"mode":"fiction","club":0})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	app._navigate("Préparation");await settle()
 	var threats: Array=app.model.decisions.preparation.threats
 	check(not threats.is_empty(),"Vrais joueurs adverses projetés")

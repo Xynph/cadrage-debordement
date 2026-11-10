@@ -221,7 +221,7 @@ static func photo(id: String, minimum: Vector2 = Vector2.ZERO, cover: bool = tru
 	control.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED if cover else TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	control.custom_minimum_size = minimum * density
 	control.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	control.tooltip_text = "Illustration originale fictive générée par IA"
+	control.tooltip_text = "Vue du club"
 	control.set_meta("immersive_art", id)
 	return control
 

@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {spawn}=require('node:child_process'),readline=require('node:readline');
 const {createBridge}=require('../native/engine/worker.cjs'),{context}=require('./native-reference-harness.cjs');
@@ -9,7 +10,7 @@ function pad(text){return text+' '.repeat(limit-Buffer.byteLength(text));}
 async function main(){
  const b=createBridge({dataDir:path.join(folder,'direct'),seed:13,now:1700000000000});let original;
  try{
-  const m=good(b,'new_career',{club:0}),file=path.join(m.meta.dataDir,'donnees.json');original=good(b,'export').meta.exportText;
+  const m=settleClubMeetings(good(b,'new_career',{club:0}),(command,payload)=>good(b,command,payload)),file=path.join(m.meta.dataDir,'donnees.json');original=good(b,'export').meta.exportText;
   const exact=pad(original);assert.equal(Buffer.byteLength(exact),limit);
   good(b,'import',{text:exact});assert.equal(good(b,'export').meta.exportText,original,'Document exactement8Mio accepté sans modifier état');
   const bytes=fs.readFileSync(file);

@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {createBridge}=require('../native/engine/worker.cjs');
@@ -8,7 +9,7 @@ const call=(command,payload={})=>{const r=b.handle({id:++seq,command,payload});a
 const act=(command,payload={})=>call(command,{context:m.clubLife.clubStrategy.context,confirmed:true,...payload});
 const bad=(command,payload={})=>assert.equal(b.handle({id:++seq,command,payload:{context:m.clubLife.clubStrategy.context,confirmed:true,...payload}}).ok,false);
 try{
- b=createBridge({dataDir:root,seed:31,now:1700000000000});call('new_career',{mode:'common',club:29});
+ b=createBridge({dataDir:root,seed:31,now:1700000000000});settleClubMeetings(call('new_career',{mode:'common',club:29}),call);
  assert.ok(m.clubLife.clubStrategy,'Les décisions financières doivent être accessibles.');
  assert.equal(m.clubLife.clubStrategy.finance.weeksPerSeason,34);
  assert.equal(m.clubLife.clubStrategy.finance.remainingWeeks,34,'Les 34 échéances restent à payer avant la première journée.');
@@ -22,7 +23,7 @@ try{
  refuseSavePublication(profile,()=>bad('club_fans_campaign',{key:'locale'}));
  assert.equal(call('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(profile),bytes);
  const oldContext={...m.clubLife.clubStrategy.context,week:99};bad('club_board_priority',{context:oldContext,key:'performance'});
- call('train');assert.ok(m.finance.cash<=communityCash-1500-12000,'Investissement appliqué par la vraie séance.');
+ settleClubMeetings(call('train'),call);assert.ok(m.finance.cash<=communityCash-1500-12000,'Investissement appliqué par la vraie séance.');
  const saved=call('export').meta.exportText;call('shutdown');b=createBridge({dataDir:root});assert.equal(call('export').meta.exportText,saved);
  console.log('Stratégie native : sponsors, formation, projets, supporters, devis34semaines et rollback/reprise PASS.');
 }finally{b?.close();}
@@ -32,7 +33,7 @@ function signed(doc){let h=2166136261;for(const c of JSON.stringify(doc.state)){
 for(const mode of ['common','fiction']){
  const dataDir=path.join(root,'calendar-'+mode);b=createBridge({dataDir,seed:13,now:1700000000000});
  try{
-  call('new_career',{mode,club:0});act('club_board_objective',{type:'wins',target:1,deadline:1});
+  settleClubMeetings(call('new_career',{mode,club:0}),call);act('club_board_objective',{type:'wins',target:1,deadline:1});
   const initial=call('export').meta.exportText,legacy=JSON.parse(initial);delete legacy.state.nativeBoardCalendar;call('import',{text:signed(legacy)});assert.equal(JSON.parse(call('export').meta.exportText).state.nativeBoardCalendar,undefined,'Ancien export sans namespace conseil accepté');call('import',{text:initial});
   const stable=call('export').meta.exportText,profile=path.join(m.meta.dataDir,'donnees.json'),bytes=fs.readFileSync(profile),maximum=mode==='common'?34:29;
   const mutations=[
@@ -43,7 +44,7 @@ for(const mode of ['common','fiction']){
    ['bureau courant futur',s=>{const board=structuredClone(s.nativeBoardCalendar);board.clubId='club-1';board.week=maximum;s.nativeStrategyOffices={version:1,clubs:{1:{nativeBoardCalendar:board}}};}]
   ];
   for(const [label,mutate] of mutations){const doc=JSON.parse(stable);mutate(doc.state);const result=b.handle({id:++seq,command:'import',payload:{text:signed(doc)}});assert.equal(result.ok,false,mode+' refuse '+label);assert.match(result.error,/direction/i);assert.equal(call('export').meta.exportText,stable,label+' : état conservé');assert.deepEqual(fs.readFileSync(profile),bytes,label+' : disque, RNG et horloge conservés');}
-  call('import',{text:stable});call('begin_match');call('delegate');call('finish_round');
+  call('import',{text:stable});call('begin_match');call('delegate');settleClubMeetings(call('finish_round'),call);
   const reached=call('export').meta.exportText;call('import',{text:reached});assert.equal(call('export').meta.exportText,reached,'Conseil de la semaine réellement atteinte importable');
   // Both archives come from a real transition: staff clocks and reconversions
   // must advance with the season, including in the fiction career.
@@ -55,7 +56,7 @@ for(const mode of ['common','fiction']){
   call('import',{text:signed(archive)});assert.equal(JSON.parse(call('export').meta.exportText).state.nativeStrategyOffices.clubs[1].nativeBoardCalendar.week,maximum,'Archives antérieures conservées au-delà de la semaine courante');
   const current=call('export').meta.exportText,currentBytes=fs.readFileSync(profile);
   for(const season of [1,3]){const stale=JSON.parse(current);stale.state.nativeBoardCalendar=structuredClone(old);stale.state.nativeBoardCalendar.clubId='club-'+stale.state.club;stale.state.nativeBoardCalendar.season=season;stale.state.nativeBoardCalendar.archived=true;const refused=b.handle({id:++seq,command:'import',payload:{text:signed(stale)}});assert.equal(refused.ok,false,'Conseil actif hors saison courante refusé malgré marqueur importé : '+season);assert.match(refused.error,/direction/i);assert.equal(call('export').meta.exportText,current);assert.deepEqual(fs.readFileSync(profile),currentBytes,'Saison active incorrecte : état/RNG/disque conservés');}
-  call('begin_match');call('delegate');call('finish_round');
+  call('begin_match');call('delegate');settleClubMeetings(call('finish_round'),call);
   console.log('Calendrier '+mode+' : imports signés refusés sans mutation, contexte atteint, archives et vraie journée PASS.');
  }finally{b.close();}
 }

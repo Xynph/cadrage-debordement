@@ -1,5 +1,6 @@
 extends RefCounted
 # Présentation du Bureau uniquement : aucune commande de carrière à l'affichage.
+const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/game_skin.gd")
 const Carnet = preload("res://ui/carnet_skin.gd")
 const Semantics = preload("res://ui/data_semantics.gd")
@@ -179,7 +180,7 @@ static func _journal(parent: Node, app: Control) -> void:
 		var row := G.h(9)
 		block.add_child(row)
 		row.add_child(G.label("•", 20, app.accent))
-		var text := str(messages[index]).replace("l’onglet Contrats", "les fiches des joueurs dans Effectif").replace("l'onglet Contrats", "les fiches des joueurs dans Effectif")
+		var text := Copy.news(str(messages[index])).replace("l’onglet Contrats", "les fiches des joueurs dans Effectif").replace("l'onglet Contrats", "les fiches des joueurs dans Effectif")
 		var note := _text(text, 14)
 		G.fill(note)
 		row.add_child(note)

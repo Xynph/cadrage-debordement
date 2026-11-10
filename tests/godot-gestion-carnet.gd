@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var failures: Array[String]=[]
 var checks:=0
@@ -66,6 +67,7 @@ func run() -> void:
 	while app.model.is_empty():await process_frame
 	app.timer.stop()
 	await command("new_career",{"club":0,"mode":"common"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	app._navigate("Effectif")
 	await settle()
 	check(named(app,"RosterSearch") is LineEdit,"Recherche effectif réellement accessible")
@@ -223,6 +225,7 @@ func run() -> void:
 	finish()
 func real_market_and_archives() -> void:
 	await command("new_career",{"club":29,"mode":"france"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(app.management_ui.compare.is_empty() and app.management_ui.shortlist.is_empty() and app.management_ui.roster.search.is_empty(),"Vraie nouvelle carrière efface les IDs et filtres de la précédente")
 	app._navigate("Recrutement");await settle()
 	var candidate:Dictionary=app.model.market.filter(func(p):return p.available)[0]

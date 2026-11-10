@@ -1,4 +1,5 @@
 extends RefCounted
+const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -95,7 +96,7 @@ static func _venue_caption(picture: Control) -> String:
 	match picture.get_meta("photo_kind", ""):
 		"pack": return "Photo du pack"
 		"archive": return "Photo d’archive"
-		_: return "Illustration IA"
+		_: return "Vue du club"
 
 static func _venue_credit(control: Control, photo: Dictionary) -> void:
 	control.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -151,7 +152,7 @@ static func _stadium(card: Panel, app: Control, fans: Dictionary) -> void:
 	D.text(card, 23, 348, str(identity.get("stadium", "Le stade du club")), 41, C.IVORY, 700, 598)
 	U.icon(card, "people", Vector2(24,363), C.MUTED, 24)
 	var attendance := "Affluence prévue " + G.n(fans.expectedAttendance) if fans.has("expectedAttendance") else "Affluence indisponible"
-	var capacity := " · " + G.n(fans.capacity) + " places simulées" if fans.has("capacity") else ""
+	var capacity := " · " + G.n(fans.capacity) + " places" if fans.has("capacity") else ""
 	D.text(card, 60, 385, attendance + capacity, 23, C.MUTED, 500, 535)
 	D.button(card, Rect2(697,337,216,48), "Voir le stade", func(): _tab(app, "territory"), false, "arrow", false, U.GREEN, "ClubSeeStadium")
 
@@ -325,7 +326,7 @@ static func _fans(card: Panel, app: Control, strategy: Dictionary) -> void:
 	D.text(card, 78, 91, "Sentiment des supporters", 22, C.MUTED, 500, 310)
 	D.text(card, 78, 130, G.n(fans.sentiment)+" / 100" if fans.has("sentiment") else "—", 41, C.IVORY, 700, 315)
 	D.line(card, Vector2(397,73), Vector2(397,134))
-	D.text(card, 476, 91, "Abonnés simulés", 22, C.MUTED, 500, 291)
+	D.text(card, 476, 91, "Abonnés", 22, C.MUTED, 500, 291)
 	D.text(card, 476, 130, fans.get("subscribers","—"), 41, C.IVORY, 700, 290)
 	D.line(card, Vector2(19,151), Vector2(777,151), Color(C.LINE,.7))
 	U.icon(card, "money", Vector2(23,175), C.GOLD, 35)
@@ -338,10 +339,10 @@ static func _fans(card: Panel, app: Control, strategy: Dictionary) -> void:
 	for i in mini(2,news.size()):
 		var y := 284 + i * 54
 		D.rect(card, Rect2(22,y,4,43), C.BLUE if i == 0 else C.MINT, 2)
-		var lines := D.words(str(news[i]), 85, 2)
+		var lines := D.words(Copy.news(str(news[i])), 85, 2)
 		for j in lines.size():
 			var label := D.text(card, 39, y+19+j*21, lines[j], 19, C.MUTED, 500, 727)
-			label.tooltip_text = str(news[i])
+			label.tooltip_text = Copy.news(str(news[i]))
 	if news.is_empty(): D.text(card, 23, 320, "Aucun message enregistré.", 23, C.MUTED, 500, 739)
 
 static func _footer(card: Panel, app: Control, finance: Dictionary, board: Dictionary) -> void:
@@ -468,7 +469,7 @@ static func _world_history(app: Control, canvas: Control, data: Dictionary) -> v
 		if event.get("winner") != null and event.get("home") == event.get("away"):
 			notes.add_child(C.wrap("Vainqueur après départage : "+str(event.get("winner_name","—")),22,C.GOLD,true))
 		if not str(event.get("reaction","")).is_empty():
-			notes.add_child(C.wrap("Réaction simulée · %s  « %s »" % [event.get("reaction_club_name","Banc"),event.reaction],21,C.MUTED,true))
+			notes.add_child(C.wrap("Réaction du banc · %s  « %s »" % [event.get("reaction_club_name","Banc"),event.reaction],21,C.MUTED,true))
 	list.add_child(C.rule())
 	list.add_child(C.label("LE PARCOURS DU COACH",27,C.GOLD,true,700))
 	if data.manager_current_from != null: list.add_child(C.label("Mandat actuel depuis la saison "+G.n(data.manager_current_from),24))

@@ -20,9 +20,9 @@ const SLOTS = [
 	["star", "Axes individuels", "Développement", "Les spécialisations disponibles dépendent du profil et de la semaine.", "Suivre les joueurs"],
 	["train", "Charge individuelle", "Exceptions au collectif", "Ajustez les charges avant la séance. Les joueurs blessés récupèrent.", "Ajuster les charges"],
 	["heart", "Récupération", "Vigilance physique", "L’effectif met en évidence la charge cumulée et la condition actuelle.", "Voir les joueurs"],
-	["heart", "Suivi médical", "Disponibilité et reprise", "Le suivi médical du club applique les protocoles de simulation à la séance suivante.", "Ouvrir le suivi"],
+	["heart", "Suivi médical", "Disponibilité et reprise", "Les protocoles médicaux seront appliqués à la séance suivante.", "Ouvrir le suivi"],
 	["tactic", "Plan de jeu", "Consignes collectives", "Ouvrez vos choix de jeu et les consignes de préparation du match.", "Ouvrir le plan de jeu"],
-	["shield", "Niveau adverse", "Entraîneurs adverses", "Le niveau règle les choix des entraîneurs adverses dans la simulation.", "Ajuster le niveau"],
+	["shield", "Niveau adverse", "Entraîneurs adverses", "Le niveau détermine les exigences des entraîneurs adverses.", "Ajuster le niveau"],
 	["people", "Feuille de match", "XV et banc", "Contrôlez la qualification et la disponibilité des joueurs de la feuille.", "Ouvrir la composition"],
 	["ball", "Jour de match", "Prochaine rencontre", "Retrouvez les informations de la prochaine rencontre.", "Aller au jour de match"],
 	["info", "Conseil du staff", "État du groupe", "Consultez le diagnostic actuel et les responsabilités de l’encadrement.", "Voir les conseils"],
@@ -156,7 +156,7 @@ func _week(fixture: Dictionary) -> void:
 		str(fixture.get("label", "Aucune rencontre")), "Diagnostic actuel", "Répartir les décisions",
 	]
 	var selected := clampi(int(state.get("slot", 0)), 0, SLOTS.size() - 1)
-	D.text(self, 6, 256, "PLAN DE SEMAINE  /  1 SÉANCE COLLECTIVE SIMULÉE", 17, C.MUTED, 600, 800)
+	D.text(self, 6, 256, "PLAN DE SEMAINE  /  1 SÉANCE COLLECTIVE", 17, C.MUTED, 600, 800)
 	for i in TOPICS.size():
 		var column := D.panel(self, Rect2(4 + i * 250, 270, 239, 545), "", "", "", "TrainingWeekColumn" + str(i))
 		var tone := PALE_GOLD if i == 5 and not fixture.is_empty() else GREEN
@@ -403,7 +403,7 @@ func _mode_dialog(validate: bool) -> void:
 	var window := _dialog("TrainingSessionDialog", "Valider la semaine" if validate else "Modifier la séance")
 	var body: VBoxContainer = window[1]
 	var dialog: AcceptDialog = window[0]
-	body.add_child(C.wrap("Le moteur applique une séance collective par semaine. Ajustez d’abord la préparation spécifique et les charges individuelles.", 22, C.IVORY, true))
+	body.add_child(C.wrap("Une séance collective peut être effectuée chaque semaine. Ajustez d’abord la préparation spécifique et les charges individuelles.", 22, C.IVORY, true))
 	if trained or locked:
 		body.add_child(C.wrap("Séance effectuée cette semaine." if trained else "Séance indisponible pendant le match ou après la saison.", 22, C.MUTED, true))
 	else:

@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var failures: Array[String] = []
 var checks := 0
@@ -148,6 +149,7 @@ func watch_case() -> void:
 	await command("export")
 	var saved: String = app.model.meta.exportText
 	await command("new_career", {"club":1,"mode":"fiction"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	await command("import", {"text":saved})
 	check(app.management_ui.shortlist == [watched_id] and app.model.clubLife.managerCareer.places == 0, "Import : suivi persistant et effectif toujours plein")
 	app._navigate("Recrutement")

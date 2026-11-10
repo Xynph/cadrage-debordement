@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 const S = preload("res://ui/data_semantics.gd")
 const Office = preload("res://ui/office_view.gd")
 const ClubViews = preload("res://ui/club_views.gd")
@@ -384,6 +385,7 @@ func real_pages() -> void:
  if is_instance_valid(live_app.coach): live_app.coach.speech.set_muted(true)
  if not await wait_live_model(): quit(1);return
  if not await ask_live("new_career",{"club":0,"mode":"common"}): quit(1);return
+ await ContextualFlow.settle_club_meetings(live_app, self, check)
  # Laisser les premiers conseils de visite s'enregistrer avant les invariants.
  for route in ["Bureau","Classements"]:
   live_app._navigate(route)

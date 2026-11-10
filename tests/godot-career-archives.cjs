@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),zlib=require('node:zlib');
 const {createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-archives-')),b=createBridge({dataDir:root,seed:827381,now:1700000000000});let n=0;
@@ -10,6 +11,6 @@ try{
  const before=good('export').meta.exportText,disk=path.join(root,'PrototypeGodot','donnees.json'),bytes=fs.readFileSync(disk);
  for(let i=0;i<3;i++)assert.deepEqual(good('snapshot').archives,m.archives);
  assert.equal(good('export').meta.exportText,before,'projection sans mutation S/RNG');assert.deepEqual(fs.readFileSync(disk),bytes,'projection sans écriture');
- assert.deepEqual(good('new_career',{club:0,mode:'fiction'}).archives,{limit:15,seasons:[]},'nouvelle carrière sans archive inventée');
+ assert.deepEqual(settleClubMeetings(good('new_career',{club:0,mode:'fiction'}),(command,payload)=>good(command,payload)).archives,{limit:15,seasons:[]},'nouvelle carrière sans archive inventée');
  console.log('Archives : checkpoint réel S2, IDs exacts, lectures sans mutation et nouvelle carrière PASS');
 }finally{b.close();fs.rmSync(root,{recursive:true,force:true});}

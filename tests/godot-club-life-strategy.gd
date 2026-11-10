@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var failures: Array[String] = []
 var checks := 0
@@ -68,6 +69,7 @@ func run() -> void:
 	if not await wait_model():
 		finish()
 		return
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	for resolution in [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080)]:
 		root.size = resolution
 		app._navigate("Stratégie")

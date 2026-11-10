@@ -35,6 +35,7 @@ func _run() -> void:
 		await _finish()
 		return
 	app.coach.speech.volume = 0
+	await settle_club_meetings(app, get_tree(), _check)
 	await _ask("export")
 	var baseline: String = app.model.meta.exportText
 	var save_path := str(app.model.meta.dataDir).path_join("donnees.json")
@@ -178,12 +179,15 @@ func _match_and_save() -> void:
 	kickoff.pressed.emit()
 	if not await _wait(): return
 	app.timer.stop()
+	await continue_match_phase(app, get_tree(), _check, "pre")
 	_check(is_instance_valid(app.match_view) and app.model.live is Dictionary, "Le vrai match 3D reçoit le direct")
 	await _capture("17-direct")
 	if not await _ask("delegate"): return
 	_check(app.model.live is Dictionary and app.model.live.finished, "Le moteur a joué la rencontre")
 	await _capture("18-resultat")
-	if not await _ask("finish_round") or not await _ask("save") or not await _ask("export"): return
+	if not await _ask("finish_round"): return
+	await settle_club_meetings(app, get_tree(), _check)
+	if not await _ask("save") or not await _ask("export"): return
 	var saved: String = app.model.meta.exportText
 	var history: Array = app.model.history
 	_check(not history.is_empty(), "La rencontre validée figure dans l’historique")
@@ -230,6 +234,7 @@ func _world_save(path: String) -> void:
 	if meta.get("canAdvanceSeason", false):
 		var season := int(meta.season)
 		if await _ask("next_season", {"confirmed": true}):
+			await settle_club_meetings(app, get_tree(), _check)
 			_check(int(app.model.meta.season) == season + 1, "Le paquet ouvre la saison suivante de la vraie carrière Monde")
 			await _visit("Club", "ImmersiveClub", "", "23-club-monde")
 			if await _activate("ClubTab_history"): await _capture("24-palmares-monde")

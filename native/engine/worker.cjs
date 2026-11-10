@@ -198,7 +198,7 @@ function createBridge(options={}){
      ctx.nativePayload=JSON.parse(JSON.stringify(payload));
      if(command!=='new_career'&&command!=='import'&&!run('!!S'))throw Error('Créez ou importez une carrière.');
      ctx.nativeCommand=command;
-     run("nativeSystems.domain('matchTalks').guard(nativeCommand,nativePayload);nativeSystems.domain('sceneInvitations').guard(nativeCommand,nativePayload);");
+     run("nativeSystems.domain('matchTalks').guard(nativeCommand,nativePayload);nativeSystems.domain('sceneInvitations').guard(nativeCommand,nativePayload);nativeSystems.domain('clubMeetings').guard(nativeCommand,nativePayload);");
      if(command==='interclub_negotiate'){
       ctx.nativeCommand=command;const extra=run('nativeSystems.execute(nativeCommand,nativePayload)');
       if(run('JSON.stringify(S)')!==JSON.stringify(JSON.parse(prior).state)||seed!==priorSeed||JSON.stringify(store)!==priorStore)throw Error('Une consultation ne peut pas modifier la carrière.');
@@ -294,7 +294,7 @@ function createBridge(options={}){
      }
      let extra=null;if(SYSTEM_COMMANDS.has(command)){ctx.nativeCommand=command;extra=run('nativeSystems.execute(nativeCommand,nativePayload)');}
      else if(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','set_lineup','set_tactics','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
-     run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);save();validateCareer(S)");
+     run("nativeSystems.domain('matchTalks').observe(nativeCommand);nativeSystems.domain('sceneInvitations').observe(nativeCommand);nativeSystems.domain('clubMeetings').observe(nativeCommand,nativePayload);save();validateCareer(S)");
      const model=snapshot({command,payload});if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));persist();return {id,ok:true,model};
     }catch(error){
      seed=priorSeed;clock=priorClock;store=JSON.parse(priorStore);ctx.nativePrior=JSON.parse(prior);run('nativeSystems.clearTransient()');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;

@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), crypto = require('node:crypto');
@@ -26,7 +27,7 @@ test('Raccordements natifs06 : vrais boutons, son indépendant et réponse tick 
     return response.model;
   };
   try {
-    call('new_career', { club: 0, mode: 'fiction' });
+    settleClubMeetings(call('new_career',{ club: 0, mode: 'fiction' }),call);
     let previous = skipMatchTalk(call('begin_match'), call);
     for (let tick = 0; tick < 240; tick++) {
       previous = skipMatchTalk(previous, call);

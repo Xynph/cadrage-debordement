@@ -226,7 +226,7 @@ func _dossier() -> void:
 		D.text(comparison, 674, y + 29, domain.get("label", "Secteur"), 24, C.IVORY, 600, 315, HORIZONTAL_ALIGNMENT_CENTER)
 		D.bar(comparison, Rect2(844, y + 19, 375, 12), float(domain.get("opponent", 0)), GOLD)
 		D.text(comparison, 1264, y + 30, G.n(domain.get("opponent", "—")), 28, GOLD, 700, 65, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(comparison, 23, 576, "Notes de simulation ajustées à la condition · sur 100", 21, C.MUTED, 500, 1297)
+	D.text(comparison, 23, 576, "Évaluations sur 100 ajustées à la condition", 21, C.MUTED, 500, 1297)
 	_recommended(section)
 	_recent(section)
 	_threats(section)

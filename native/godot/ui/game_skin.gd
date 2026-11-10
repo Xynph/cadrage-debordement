@@ -199,14 +199,16 @@ static func _pack_texture(path: String) -> Texture2D:
 
 static func portrait(index: int, width: int = 60, player: Dictionary = {}) -> TextureRect:
 	var r := TextureRect.new()
+	var caption := str(player.get("name", "Portrait"))
+	if caption.is_empty(): caption = "Portrait"
 	var identity_data: Dictionary = player.get("identity", {})
 	var path := str(player.get("portraitPath", identity_data.get("portraitPath", "")))
 	var texture := _pack_texture(path)
 	if texture != null:
 		r.texture = texture
-		r.tooltip_text = "Illustration IA · ressemblance non garantie" if player.get("portraitStatus", identity_data.get("portraitStatus", "")) == "synthetic" else "Photo officielle · archive fournie par le pack"
+		r.tooltip_text = caption
 	elif not str(player.get("id", "")).is_empty() and preload("res://ui/regen_portrait.gd").apply(r, player):
-		r.tooltip_text = "Portrait fictif · éléments IA composés hors ligne" if path.is_empty() else "Image du pack indisponible · portrait fictif composé hors ligne"
+		r.tooltip_text = caption if path.is_empty() else "Image du pack indisponible · " + caption
 	else:
 		var atlas := AtlasTexture.new()
 		index = posmod(index, 32)
@@ -214,7 +216,7 @@ static func portrait(index: int, width: int = 60, player: Dictionary = {}) -> Te
 		var cell := atlas.atlas.get_size() / 4.0
 		atlas.region = Rect2(Vector2(index % 4, (index % 16) / 4) * cell, cell)
 		r.texture = atlas
-		r.tooltip_text = "Portrait décoratif fictif généré par IA" if path.is_empty() else "Image du pack indisponible · portrait fictif généré par IA"
+		r.tooltip_text = caption if path.is_empty() else "Image du pack indisponible · " + caption
 	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	r.custom_minimum_size = Vector2(width, width)
@@ -278,7 +280,7 @@ static func club_picture(club: Dictionary, kind: String = "stadium", dark: bool 
 	elif from_archive:
 		base.tooltip_text = "Photographie d’archive · Crédits et licences"
 	else:
-		base.tooltip_text = "Illustration générée par IA"
+		base.tooltip_text = "Vue du club"
 	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED

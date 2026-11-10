@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 // Integration contract: use the exported production worker, its real VM, match
 // simulation, validation and atomic filesystem publication. No source rewriting.
 const {test} = require('node:test');
@@ -39,7 +40,7 @@ function fixture(t) {
     exact(before); return good('snapshot');
   };
   t.after(() => {bridge.close();fs.rmSync(directory,{recursive:true,force:true});});
-  good('new_career',{mode:'common',club:29});
+  settleClubMeetings(good('new_career',{mode:'common',club:29}),good);
   return {send,good,bad,exported,bytes,state,file,checkpoint,exact,reopen};
 }
 
@@ -75,7 +76,7 @@ function scene(f,phase) {
   const before=f.checkpoint(); f.good('snapshot'); f.good('snapshot'); f.exact(before);
   return value;
 }
-function start(f) { f.good('train'); f.good('auto_lineup'); return f.good('begin_match'); }
+function start(f) { settleClubMeetings(f.good('snapshot'),(command,payload)=>f.good(command,payload));settleClubMeetings(f.good('train'),(command,payload)=>f.good(command,payload)); f.good('auto_lineup'); return f.good('begin_match'); }
 function continueScene(f,s,skip=false) {return f.good('match_talk_continue',{key:s.key,phase:s.phase,...(skip?{skip:true}:{})});}
 function decidePayload(s) {return {key:s.key,phase:s.phase,choiceId:s.options[0].id,audience:'players',playerIds:[s.participants[0].id]};}
 function boundary(f,phase) {
@@ -111,7 +112,7 @@ test('Contextual invitations: real people, pure reads, one atomic answer and exp
   let active=invitations(f.good('scene_invitation_open',{id:player.id})).active;
   assert.equal(active.id,player.id);assert.equal(active.options.length,3,'Private interviews offer three focused replies; collective match talks offer six');
   const opened=f.checkpoint(); f.reopen(); f.exact(opened);
-  f.good('train');f.good('auto_lineup');f.bad('begin_match');
+  settleClubMeetings(f.good('train'),(command,payload)=>f.good(command,payload));f.good('auto_lineup');f.bad('begin_match');
   f.bad('scene_invitation_open',{id:staff.id});
   f.bad('scene_invitation_reply',{id:player.id,choiceId:'not-offered'});
   const payload={id:player.id,choiceId:active.options[0].id};
@@ -179,7 +180,7 @@ test('Delegation skips pending pre/half/post scenes and preserves existing deleg
     const model=f.good('delegate');assert.equal(model.live.finished,true,phase+' delegation completes actual live');
     assert.equal(talks(model).scene,null,phase+' delegation closes every phase');
     assert.deepEqual(talks(model).receipts.map(r=>r.status),expected);
-    const before=f.state(), done=f.good('finish_round');assert.equal(done.live,null);
+    const before=f.state(), done=settleClubMeetings(f.good('finish_round'),(command,payload)=>f.good(command,payload));assert.equal(done.live,null);
     assert.equal(f.state().economy.week,before.economy.week+1);
     f.bad('finish_round');
   }
@@ -197,7 +198,7 @@ test('Closed imported namespaces refuse malformed fields atomically; absent old 
   assert.equal(f.state().contextualMatch,undefined);assert.equal(f.state().sceneInvitations,undefined);
   f.good('tick',{steps:120});assert.equal(talks(f.good('snapshot')).scene,null,'No retroactive pre-match after imported live advances');
   assert.equal(f.state().contextualMatch,undefined);
-  f.good('delegate');f.good('finish_round');
+  f.good('delegate');settleClubMeetings(f.good('finish_round'),(command,payload)=>f.good(command,payload));
 });
 
 test('Invitation context is revalidated after club change, participant departure and elapsed window',t=>{
@@ -210,7 +211,7 @@ test('Invitation context is revalidated after club change, participant departure
   // A genuine new active-club state receives the former club's retained history
   // at the save boundary. This exercises revalidation, without simulating a
   // manager mobility season or fabricating a sporting result.
-  f.good('new_career',{mode:'common',club:28});
+  settleClubMeetings(f.good('new_career',{mode:'common',club:28}),(command,payload)=>f.good(command,payload));
   const former=JSON.parse(base).state.sceneInvitations;
   f.good('import',{text:editDocument(f.exported(),s=>s.sceneInvitations=former)});
   assert.equal(f.state().club,28);

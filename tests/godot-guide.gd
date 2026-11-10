@@ -174,6 +174,7 @@ func visible_error(context: String, capture_id: String = "") -> void:
 		check(root.get_texture().get_image().save_png(OS.get_environment("CD_GUIDE_CAPTURES").path_join(capture_id + ".png")) == OK, "Capture erreur " + capture_id)
 func write_error_cases() -> void:
 	await command("new_career", {"club":0,"mode":"common"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	root.content_scale_size = Vector2i(1280,800); root.size = Vector2i(1280,800)
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(Vector2i(1280,800))
 	app._navigate("Bureau"); attach(); guide.open_help(); guide.close()
@@ -240,6 +241,7 @@ func run() -> void:
 	await press("GuideNavigate")
 	check(app.route == "Création", "Navigation seulement après action explicite")
 	await command("new_career", {"club":0,"mode":"common"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	app._navigate("Bureau"); guide.refresh()
 	var before: Dictionary = await state_export()
 	var save_path: String = str(app.model.meta.dataDir).path_join("donnees.json")
@@ -327,6 +329,7 @@ func run() -> void:
 	await process_frame
 	check(app.model.live.finished and not guide.is_visible_in_tree() and not app.root_content.is_visible_in_tree(), "Résultat délégué : immersion conservée jusqu’à validation")
 	await command("finish_round")
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	app.coach = null
 	app._navigate("Bureau"); guide.refresh(); guide.open_help()
 	await local_voice_cases()

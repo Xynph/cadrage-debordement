@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const media=require('../native/engine/media-packs.cjs'),{createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-nationale-pack-'));let seq=0;
@@ -17,7 +18,7 @@ test('Nationale presentation fields apply in creation and career without changin
  const state=()=>JSON.parse(good('export').meta.exportText).state;
  const mode='world-nationale';
  try{
-  let m=good('new_career',{mode,club:88});
+  let m=settleClubMeetings(good('new_career',{mode,club:88}),(command,payload)=>good(command,payload));
   const before=state(),coach=m.staff.teams.find(t=>t.id===88).members[0];
   assert.equal(typeof coach.sourceStaffId,'string');
   assert.notEqual(coach.id,coach.sourceStaffId);
@@ -25,11 +26,11 @@ test('Nationale presentation fields apply in creation and career without changin
   assert.equal(raw('pack_inspect',{path:archive({...manifest,staff:[{id:coach.id,role:'Mêlée et conquête'}]}),mode}).ok,false,'Un ID de commande de carrière ne remplace pas une référence du pack');
   const zip=archive(manifest),preview=good('pack_inspect',{path:zip,mode}).packs.preview;
   good('pack_install',{path:zip,digest:preview.digest,mode});
-  m=good('pack_select',{scope:'creation',id:preview.id,mode});
+  m=settleClubMeetings(good('pack_select',{scope:'creation',id:preview.id,mode}),(command,payload)=>good(command,payload));
   assert.equal(m.meta.nationaleCatalogue.find(c=>c.id===88).city,'Ville témoin');
   assert.equal(m.meta.nationaleCatalogue.find(c=>c.id===88).stadium,'Parc témoin');
   assert.notEqual(m.club.stadium,'Parc témoin');
-  m=good('pack_select',{scope:'career',id:preview.id,mode});
+  m=settleClubMeetings(good('pack_select',{scope:'career',id:preview.id,mode}),(command,payload)=>good(command,payload));
   assert.equal(m.club.stadium,'Parc témoin');
   assert.equal(m.club.presentation.city,'Ville témoin');
   assert.equal(m.staff.teams.find(t=>t.id===88).members[0].identity.role,'Mêlée et conquête');
@@ -48,7 +49,7 @@ test('Nationale presentation fields apply in creation and career without changin
    assert.equal(raw('pack_inspect',{path:archive(badRole),mode}).ok,false,'Rôle cosmétique invalide refusé');
   }
   assert.equal(state().identityPack.id,preview.id);
-  m=good('pack_select',{scope:'career',id:'base',mode});
+  m=settleClubMeetings(good('pack_select',{scope:'career',id:'base',mode}),(command,payload)=>good(command,payload));
   assert.equal(m.staff.teams.find(t=>t.id===88).members[0].role,coach.role);
   assert.equal(m.staff.teams.find(t=>t.id===88).members[0].roleLabel,coach.roleLabel);
   assert.deepEqual(state(),before);

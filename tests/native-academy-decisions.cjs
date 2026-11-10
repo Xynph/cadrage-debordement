@@ -1,8 +1,9 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');const {createBridge}=require('../native/engine/worker.cjs');const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'native-academy-decisions-'));const b=createBridge({dataDir:root,seed:19,now:1700000000000});let id=0;
 function good(command,payload={}){const x=b.handle({id:++id,command,payload});assert.equal(x.ok,true,command+': '+x.error);return x.model;}
 function data(){return good('snapshot').clubLife.academyPathways}function act(command,extras={}){return good(command,{...data().context,...extras});}
-try{good('new_career',{mode:'france',club:29});act('academy_activate',{confirmed:true});let d=data(),p=d.players[0];
+try{settleClubMeetings(good('new_career',{mode:'france',club:29}),(command,payload)=>good(command,payload));act('academy_activate',{confirmed:true});let d=data(),p=d.players[0];
  const base=JSON.parse(good('export').meta.exportText).state.clubs.flatMap(c=>c.players).map(p=>p.id);
  for(const [cmd,payload]of [['academy_mode',{mode:'developpement'}],['academy_target',{playerId:p.id,minutes:480}],['academy_plan',{playerId:p.id,target:'minutes'}],['academy_goal',{goal:'formation'}],['academy_contract',{playerId:p.id,years:2,confirmed:true}],['academy_upgrade',{kind:'coaches',confirmed:true}],['academy_specialize',{playerId:p.id,kind:'technique'}],['academy_interview',{playerId:p.id,answer:'minutes'}],['academy_discover',{region:'Bretagne',confirmed:true}],['academy_meeting',{confirmed:true}],['academy_load',{playerId:p.id,load:'intensive'}],['academy_ambition',{playerId:p.id,decision:'accompagner'}],['academy_identity',{identity:'mouvement'}],['academy_path',{playerId:p.id,strategy:'minutes'}]])act(cmd,payload);
  const mentor=d.seniors.find(x=>x.pos===p.pos&&x.age>=23);if(mentor)act('academy_pair',{playerId:p.id,seniorId:mentor.id});act('academy_u20',{playerId:p.id});

@@ -140,7 +140,7 @@ func _ready() -> void:
 	app.pause_button=play
 	app.match_finish=finish
 	app.match_clock=clock
-	_caption = G.label("Simulation de carrière · enceinte générique · caméras TV, tactique et au contact",12,G.WHITE)
+	_caption = G.label("Jour de match · caméras TV, tactique et au contact",12,G.WHITE)
 	add_child(_caption)
 	get_viewport().size_changed.connect(_layout_short_height)
 	_layout_short_height()

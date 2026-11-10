@@ -41,11 +41,11 @@ static func build(app: Control) -> Control:
 		G.chapter(right, "10", "Les carrières du staff", "Contrats, candidats et reconversions dans votre partie.", app.accent)
 		Career.build(app, right, career)
 		return page
-	G.chapter(right, "10", "Les visages du club", "Encadrement de référence · données datées, hors mouvements simulés.", app.accent)
+	G.chapter(right, "10", "Les visages du club", "Les membres de l’encadrement et leurs responsabilités.", app.accent)
 	Career.enable(app, right, career)
 	var teams: Array = app.model.get("staff", {}).get("teams", [])
 	if teams.is_empty():
-		right.add_child(G.wrap("Cette carrière historique conserve ses collaborateurs générés. Les identités des staffs sont disponibles avec la base commune à 30 clubs.", 17))
+		right.add_child(G.wrap("Les collaborateurs de cette carrière sont conservés.", 17))
 		return page
 	if not teams.any(func(c: Dictionary): return int(c.id) == app.selected_staff_club): app.selected_staff_club = int(app.model.club.id)
 	var chooser := OptionButton.new()
@@ -84,11 +84,11 @@ static func build(app: Control) -> Control:
 			if not needle.is_empty() and not U.fold(str(person.name) + " " + str(person.role)).contains(needle): continue
 			shown += 1
 			_person(list, person)
-		count.text = "%d / %d membres documentés · noms anonymisés hors pack" % [shown, people.size()]
+		count.text = "%d / %d membres" % [shown, people.size()]
 		if shown == 0: list.add_child(G.wrap("Aucun membre ne correspond à cette recherche.", 15))
 	search.text_changed.connect(redraw)
 	redraw.call("")
-	right.add_child(G.wrap("Les pages officielles ne précisent pas toutes leur saison. Les références anciennes sont indiquées ; cet annuaire ne simule pas les mutations du staff.", 12))
+	right.add_child(G.wrap("Retrouvez les fonctions de chaque membre de l’encadrement.", 12))
 	return page
 
 static func _person(parent: VBoxContainer, person: Dictionary) -> void:
@@ -108,6 +108,6 @@ static func _person(parent: VBoxContainer, person: Dictionary) -> void:
 	text.add_child(G.wrap(person.role, 15, G.GOLD))
 	var season := str(person.get("sourceSeason")) if person.get("sourceSeason") != null else "Saison non précisée"
 	var date := " · source du " + str(person.sourceDate) if person.get("sourceDate") != null else ""
-	text.add_child(G.wrap(("ARCHIVE · " if person.get("historical", false) else "RÉFÉRENCE · ") + season + date, 11, G.ALERT if person.get("historical", false) else G.MUTED))
-	text.add_child(G.wrap("Relevé le " + str(person.get("observedAt", "")) + " · " + ("photo officielle du pack" if person.get("portraitStatus") == "official" else "illustration IA du pack" if person.get("portraitStatus") == "synthetic" else "portrait fictif composé hors ligne"), 11))
+	if person.get("historical", false):
+		text.add_child(G.wrap("Ancien membre du staff · " + season, 11, G.MUTED))
 	card.add_child(G.separator())

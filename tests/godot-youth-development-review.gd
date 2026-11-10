@@ -4,6 +4,7 @@ func run() -> void:
 	root.size = Vector2i(1280,800)
 	app = load("res://main.tscn").instantiate(); root.add_child(app)
 	await command("snapshot"); print("review.snapshot"); await command("new_career",{"mode":"common","club":0}); print("review.career")
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	var view := await open_youth(); print("review.open")
 	check(view != null,"Dialogue suivi existant")
 	if view == null: quit(1); return

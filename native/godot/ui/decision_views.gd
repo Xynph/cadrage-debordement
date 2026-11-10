@@ -9,7 +9,7 @@ static func population(app: Control, parent: Container) -> void:
 	card.add_child(G.section("Le vivier de joueurs"))
 	if data.get("active", false):
 		card.add_child(G.wrap("Sorties des centres de formation et jeunes issus de petits clubs rejoignent durablement le recrutement.", 13))
-		if data.get("knownAccessible") != null: card.add_child(G.wrap("%s joueurs en activité ou disponibles dans le monde simulé." % G.n(data.knownAccessible), 12))
+		if data.get("knownAccessible") != null: card.add_child(G.wrap("%s joueurs en activité ou disponibles dans le circuit professionnel." % G.n(data.knownAccessible), 12))
 	elif data.get("canEnable", false):
 		card.add_child(G.wrap("Votre ancienne partie peut adopter le renouvellement durable des effectifs et les carrières du staff. Les joueurs actuels sont conservés.", 13))
 		var activate := G.button("ACTIVER LE RENOUVELLEMENT", func():
@@ -38,7 +38,7 @@ static func dossier_summary(app: Control, parent: Container) -> void:
 		metrics.add_child(c)
 		c.add_child(G.label("%s / %s" % [G.n(sector.own), G.n(sector.opponent)], 24, G.GOOD if sector.own >= sector.opponent else G.ALERT, true))
 		c.add_child(G.wrap(sector.label, 11))
-	card.add_child(G.wrap("Votre XV / projection adverse · notes de simulation sur100, ajustées à la condition.", 11))
+	card.add_child(G.wrap("Votre XV / projection adverse · évaluations sur 100, ajustées à la condition.", 11))
 
 static func dialog(app: Control, title: String, id: String, width: int = 880) -> Array:
 	app._clear_dialogs()
@@ -208,7 +208,7 @@ static func recruitment(app: Control) -> void:
 	var mission := G.button("CONFIER LA MISSION · 5 000 €", func():
 		var payload := {"family":position.selected, "maxAge":int(age.value), "budget":int(fee.value), "maxWage":int(wage.value), "confirmed":true}
 		d.queue_free()
-		app.confirm("Lancer une mission", "5 000 € seront payés immédiatement. Le rapport porte sur les agents libres de la simulation et arrive après deux journées de travail. Confirmer ?", func(): app._command("scout_mission", payload)))
+		app.confirm("Lancer une mission", "5 000 € seront payés immédiatement. Le rapport porte sur les agents libres disponibles et arrive après deux journées de travail. Confirmer ?", func(): app._command("scout_mission", payload)))
 	mission.name = "CreateScoutMission"
 	mission.disabled = not data.get("missionAvailable", false)
 	list.add_child(mission)

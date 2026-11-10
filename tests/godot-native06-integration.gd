@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 class Reception extends "res://qa_runner.gd":
 	func _ready() -> void: pass
 var app: Control
@@ -32,6 +33,7 @@ func run() -> void:
 		cues.append(id)
 		if id.begins_with("stadium-"): received.append(app.last_command))
 	await ask("new_career",{"mode":"fiction","club":0})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	qa = Reception.new(); qa.app = app; root.add_child(qa)
 	await qa._native06_reception()
 	await persistence_refusals()
@@ -106,6 +108,7 @@ func persistence_refusals() -> void:
 	await ask("import",{"text":exported})
 	check(not is_instance_valid(popup),"Import confirmé ferme l’ancien éditeur et son brouillon")
 	await ask("new_career",{"mode":"fiction","club":0})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(app.model.clubLife.coachNotebook.entries.is_empty(),"Nouvelle carrière du même club ne reprend aucune note")
 func event_routing() -> void:
 	var baseline_text := FileAccess.get_file_as_string(directory.path_join("fixture-before.json"))

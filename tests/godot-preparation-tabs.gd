@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -79,6 +80,7 @@ func run() -> void:
 	root.add_child(app)
 	await worker()
 	await command("import", {"text":FileAccess.get_file_as_string(proof.path_join("career.json"))})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	app._navigate("Préparation")
 	await settle()
 	check(named("PreparationTabDossier") != null, "Trois vrais sous-onglets de préparation")
@@ -162,6 +164,7 @@ func cases() -> void:
 	await command("export")
 	check(app.model.meta.exportText == before, "Consultation : S et RNG/export identiques")
 	await command("new_career", {"club":0,"mode":"common"})
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	app._navigate("Préparation")
 	await settle()
 	check(named("PreparationDossier").is_visible_in_tree(), "Nouvelle carrière remet l’onglet Dossier")

@@ -1,4 +1,5 @@
 extends AcceptDialog
+const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
 var app: Control
 var rows: VBoxContainer
@@ -45,7 +46,7 @@ func _build() -> void:
 	G.fill(body,true)
 	scroll.add_child(body)
 	body.add_child(G.section("Approcher un joueur sous contrat"))
-	body.add_child(G.wrap(str(_data().get("notice","Marché indisponible dans cette édition.")),13))
+	body.add_child(G.wrap(Copy.notice("interclub", _data().get("notice","Marché indisponible dans cette édition.")),13))
 	var search := LineEdit.new()
 	search_field = search
 	search.name = "InterclubSearch"
@@ -85,7 +86,7 @@ func _redraw() -> void:
 		var card := G.card(rows)
 		card.add_child(G.section(str(person.name),"%s · %s · %d ans" % [str(person.club),str(person.pos),int(person.age)]))
 		card.add_child(G.wrap("Indemnité %s · salaire proposé %s / semaine · échéance S%d conservée" % [G.euros(person.fee),G.euros(person.salary),int(person.contractEnd)],13))
-		if not str(person.reason).is_empty(): card.add_child(G.wrap(str(person.reason),12,G.ALERT))
+		if not str(person.reason).is_empty(): card.add_child(G.wrap(Copy.notice("interclub", person.reason),12,G.ALERT))
 		var offer := G.button("PROPOSER L’ACCORD",func(): _offer(person))
 		offer.name = "InterclubOffer"
 		offer.set_meta("player_id",str(person.id))
@@ -107,7 +108,7 @@ func _draw_negotiation() -> void:
 	search_field.editable = false
 	var person := selected_person
 	rows.add_child(G.section(str(person.name), "Négocier avec " + str(person.club)))
-	rows.add_child(G.wrap("Les montants sont fictifs. La consultation ne réserve pas le joueur. La clôture peut attribuer le joueur à un autre club ; vous verrez le gagnant pressenti avant de confirmer.",13))
+	rows.add_child(G.wrap("La consultation ne réserve pas le joueur. La clôture peut attribuer le joueur à un autre club ; vous verrez le gagnant pressenti avant de confirmer.",13))
 	var fields := G.h(12)
 	rows.add_child(fields)
 	for item in [["Indemnité (€)","fee",offer_fee,1000000000,1000],["Salaire / semaine (€)","salary",offer_salary,100000,100]]:
@@ -166,11 +167,11 @@ func _on_model(value: Dictionary) -> void:
 		salary_input.editable = true
 		negotiation = value.get("meta",{}).get("interclubNegotiation",{}).duplicate(true)
 		var lines := PackedStringArray()
-		lines.append(str(negotiation.get("seller",{}).get("reason","")))
-		lines.append(str(negotiation.get("player",{}).get("reason","")))
+		lines.append(Copy.notice("interclub", negotiation.get("seller",{}).get("reason","")))
+		lines.append(Copy.notice("interclub", negotiation.get("player",{}).get("reason","")))
 		lines.append(str(negotiation.get("humanReason","")))
 		for offer: Dictionary in negotiation.get("offers",[]):
-			lines.append("%s : %s d’indemnité, %s / semaine · besoin public %d" % [str(offer.club),G.euros(offer.fee),G.euros(offer.salary),int(offer.need)])
+			lines.append("%s : %s d’indemnité, %s / semaine · besoin annoncé %d" % [str(offer.club),G.euros(offer.fee),G.euros(offer.salary),int(offer.need)])
 		var winner: Variant = negotiation.get("winner")
 		if winner is Dictionary:
 			lines.append("Gagnant pressenti : " + str(winner.club) + ". Vérification finale à la clôture.")

@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 // Witness: delegate branch captured verbatim from worker.cjs at f88e16fd.
 // Only disposable worker fixtures are rewritten; no runtime optimisation switch.
@@ -60,14 +61,14 @@ test('Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts
   const setup=load('historical','ordinary').createBridge({dataDir:checkpoint,seed:411,now:1700000000000});
   const send=(command,payload={})=>{const r=setup.handle({id:++setupCommands,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
   try{
-   send('new_career',{mode:'common',club:29});send('train');send('auto_lineup');
+   settleClubMeetings(send('new_career',{mode:'common',club:29}),send);send('train');send('auto_lineup');
    const support=send('snapshot').clubLife.clubSupport;send('strategic_briefing',{context:support.context,fixture:support.briefing.fixture,plan:'espaces'});checkpointModel=send('begin_match');
    // This byte-for-byte witness exercises the historical delegate branch on
    // an old live save. Import that explicit legacy fixture through the real
    // validator; never weaken the new causerie guards or rewrite the witness.
-   const legacy=JSON.parse(send('export').meta.exportText);delete legacy.state.contextualMatch;legacy.checksum=checksum(legacy.state);
+   const legacy=JSON.parse(send('export').meta.exportText);delete legacy.state.contextualMatch;delete legacy.state.clubMeetings;legacy.checksum=checksum(legacy.state);
    checkpointModel=send('import',{text:JSON.stringify(legacy)});
-   assert.equal(JSON.parse(send('export').meta.exportText).state.contextualMatch,undefined);
+   assert.equal(JSON.parse(send('export').meta.exportText).state.contextualMatch,undefined);assert.equal(JSON.parse(send('export').meta.exportText).state.clubMeetings,undefined);
    for(let steps=0;checkpointModel.live.minute<72&&steps<40;steps++){
     if(checkpointModel.live.paused)checkpointModel=send('pause',{paused:false});
     checkpointModel=send('tick',{steps:Math.min(16,72-checkpointModel.live.minute)});

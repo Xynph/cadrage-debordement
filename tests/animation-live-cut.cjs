@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -30,7 +31,7 @@ function capture() {
 
   try {
     bridge = createBridge(options);
-    call('new_career', { club: 0 });
+    settleClubMeetings(call('new_career',{ club: 0 }),call);
     let model = skipMatchTalk(call('begin_match'), call), live = model.live;
     const samples = [];
     const seen = new Set();

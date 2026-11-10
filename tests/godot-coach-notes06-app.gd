@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var failures: Array[String] = []
 var checks := 0
@@ -18,6 +19,7 @@ func run() -> void:
 	app = load("res://main.tscn").instantiate();root.add_child(app)
 	await wait_response()
 	app._command("new_career", {"mode":"fiction","club":0});await wait_response()
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(app.bridge.last_response_ok,"Carrière temporaire native créée")
 	var view = load("res://ui/coach_notes_view.gd")
 	if view == null or not view.can_instantiate(): check(false,"Vue du carnet compilable");finish();return
@@ -56,6 +58,7 @@ func run() -> void:
 	editor = popup.find_child("CoachNoteText",true,false)
 	check(editor.text == text,"Réouverture reçoit le texte enregistré")
 	app._command("new_career", {"mode":"fiction","club":0});await wait_response()
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(app.model.clubLife.coachNotebook.entries.is_empty(),"Nouvelle carrière du même club sans ancienne note")
 	check(not is_instance_valid(popup),"Éditeur fermé sur changement de carrière")
 	finish()

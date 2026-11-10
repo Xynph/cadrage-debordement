@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -49,7 +50,7 @@ test('Pacifique : reprise disque et continuation déterministes sans changement 
   }
   try {
     bridge = open(827381);
-    const initialModel = go('new_career', {mode: 'world-pacific', club: 58});
+    const initialModel = settleClubMeetings(go('new_career', {mode: 'world-pacific', club: 58}),(command,payload)=>go(command,payload));
     const exported = go('export').meta.exportText;
     const initialState = JSON.parse(exported).state;
     boundary(initialModel, initialState);
@@ -69,7 +70,7 @@ test('Pacifique : reprise disque et continuation déterministes sans changement 
     bridge = open(7); // A different proposed seed must lose to the stored RNG.
     boundary(go('snapshot'), state());
     assert.deepEqual(state(), initialState);
-    go('finish_round');
+    settleClubMeetings(go('finish_round'),(command,payload)=>go(command,payload));
     const firstContinuation = state();
     const firstDisk = JSON.parse(fs.readFileSync(file));
     assert.notEqual(firstDisk.seed, checkpointData.seed, 'la continuation exerce réellement le RNG');
@@ -80,7 +81,7 @@ test('Pacifique : reprise disque et continuation déterministes sans changement 
     // Restore only our complete disposable checkpoint, with no active worker.
     fs.writeFileSync(file, checkpoint);
     bridge = open(999999);
-    go('finish_round');
+    settleClubMeetings(go('finish_round'),(command,payload)=>go(command,payload));
     assert.deepEqual(state(), firstContinuation, 'même continuation complète après restauration/reprise');
     assert.deepEqual(JSON.parse(fs.readFileSync(file)), firstDisk, 'même profil, curseur RNG et horloge compris');
     boundary(go('snapshot'), state());

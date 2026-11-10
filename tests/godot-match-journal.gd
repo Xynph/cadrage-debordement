@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var failures: Array[String] = []
 var checks := 0
@@ -238,6 +239,7 @@ func round_one() -> void:
 		journal.search.text_changed.emit(journal.search.text)
 		await choose(2)
 		await command("new_career", {"club":club,"mode":"fiction"})
+		await ContextualFlow.settle_club_meetings(app, self, check)
 		app.timer.stop()
 		app._navigate("Bureau")
 		await settle()

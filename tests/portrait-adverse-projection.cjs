@@ -1,9 +1,10 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{createBridge}=require('../native/engine/worker.cjs');
 test('Opponent threats inherit the real new player bank and public age without mutation or legacy upgrade',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-portrait-adverse-')),b=createBridge({dataDir:root,seed:827381,now:1700000000000});t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});let id=0;
  const go=(command,payload={})=>{const r=b.handle({id:++id,command,payload});a.equal(r.ok,true,r.error);return r.model;};
- let m=go('new_career',{mode:'fiction',club:0}),text=go('export').meta.exportText,state=JSON.parse(text).state;
+ let m=settleClubMeetings(go('new_career',{mode:'fiction',club:0}),(command,payload)=>go(command,payload)),text=go('export').meta.exportText,state=JSON.parse(text).state;
  const source=m.decisions.preparation,opponent=state.clubs[source.opponent.id];a(source.threats.length>0);
  for(const threat of source.threats){const p=opponent.players.find(p=>p.id===threat.id);a(p);a.equal(p.appearanceBankVersion,2);a.equal(threat.appearanceBankVersion,2);a.equal(threat.age,p.age);}
  const file=path.join(root,'PrototypeGodot/donnees.json'),bytes=fs.readFileSync(file);go('snapshot');a.equal(go('export').meta.exportText,text);a.deepEqual(fs.readFileSync(file),bytes);

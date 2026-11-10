@@ -1,4 +1,6 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
+const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const source=path.join(__dirname,'../native/engine/player-match-history.cjs');
 test('le registre individuel doit être disponible',()=>assert.ok(fs.existsSync(source)));
@@ -22,16 +24,20 @@ function worker(t,mode='fiction'){
  const manifest=path.join(engine,'native-systems.cjs'),text=fs.readFileSync(manifest,'utf8');if(!text.includes("require('./player-match-history.cjs')"))fs.writeFileSync(manifest,text.replace('const domains={',"const domains={playerMatchHistory:require('./player-match-history.cjs'),"));
  const {createBridge}=require(path.join(engine,'worker.cjs')),options={dataDir:path.join(root,'profile'),distDir:path.resolve(__dirname,'../dist'),seed:827381,now:1700000000000};let bridge=createBridge(options),serial=0;
  const raw=(command,payload={})=>bridge.handle({id:++serial,command,payload}),good=(command,payload={})=>{const r=raw(command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;};
- t.after(()=>{bridge.close();fs.rmSync(root,{recursive:true,force:true});});good('new_career',{mode,club:0});
+ t.after(()=>{bridge.close();fs.rmSync(root,{recursive:true,force:true});});settleClubMeetings(good('new_career',{mode,club:0}),(command,payload)=>good(command,payload));
  return {root,raw,good,restart:()=>{bridge.close();bridge=createBridge({...options,seed:1,now:1});},export:()=>good('export').meta.exportText};
 }
 test('vrai worker : activation atomique, collecte, export/import et reprise disque',t=>{const h=worker(t),before=h.export(),model=h.good('snapshot'),c=model.clubLife.playerMatchHistory.context;
- const backup=path.join(h.root,'profile/PrototypeGodot/donnees-precedentes.json');fs.mkdirSync(backup);assert.equal(h.raw('player_match_history_enable',{context:c,confirmed:true}).ok,false);assert.ok(h.export()===before,"export inchangé après refus");fs.rmdirSync(backup);
- h.good('player_match_history_enable',{context:c,confirmed:true});for(let i=0;i<3;i++){h.good('begin_match');h.good('delegate');h.good('finish_round');}
+ // Mandatory setup decisions already create a valid backup. Refuse the real
+ // publication step without assuming that backup path is still absent.
+ const profile=path.join(h.root,'profile/PrototypeGodot/donnees.json'),bytes=fs.readFileSync(profile);
+ const refusal=refuseSavePublication(profile,()=>h.raw('player_match_history_enable',{context:c,confirmed:true}));
+ assert.equal(refusal.ok,false);assert.match(refusal.error,/Écriture de sauvegarde impossible/);assert.ok(h.export()===before,"export inchangé après refus");assert.deepEqual(fs.readFileSync(profile),bytes,'profil intact après refus de publication');
+ h.good('player_match_history_enable',{context:c,confirmed:true});for(let i=0;i<3;i++){h.good('begin_match');h.good('delegate');settleClubMeetings(h.good('finish_round'),(command,payload)=>h.good(command,payload));}
  const p=h.good('snapshot').clubLife.playerMatchHistory;assert.equal(p.recordedMatches,3);assert.ok(p.players.some(p=>p.measuredMatches>0));const saved=h.export(),disk=fs.readFileSync(path.join(h.root,'profile/PrototypeGodot/donnees.json'));h.good('snapshot');assert.ok(h.export()===saved,"export identique après reprise/import/consultation");h.restart();assert.ok(h.export()===saved,"export identique après reprise/import/consultation");assert.ok(fs.readFileSync(path.join(h.root,'profile/PrototypeGodot/donnees.json')).equals(disk),'reprise disque sans écriture');h.good('import',{text:saved});assert.ok(h.export()===saved,"export identique après reprise/import/consultation");
  const invalid=JSON.parse(saved);invalid.state.playerMatchHistory.matches[0].players[0].minutes=10000;assert.equal(h.raw('import',{text:JSON.stringify(invalid)}).ok,false);assert.ok(h.export()===saved,"export identique après reprise/import/consultation");
  const fixture=process.env.CD_DEEPEN_ANALYTICS_MODEL||path.join(h.root,'model.json');fs.writeFileSync(fixture,JSON.stringify(h.good('snapshot')));
  const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;if(godot){const result=require('node:child_process').spawnSync(godot,['--headless','--path',path.resolve(__dirname,'../native/godot'),'--script',path.join(__dirname,'deepen-analytics-ui.gd')],{encoding:'utf8',timeout:60000,env:{...process.env,CD_DEEPEN_ANALYTICS_MODEL:fixture}});const log=(result.stdout||'')+(result.stderr||'');console.log(log);if(result.error)throw result.error;assert.equal(result.status,0,log);assert.doesNotMatch(log,/SCRIPT ERROR|Parse Error|ERROR:/);}
 });
-test('Monde : une vraie rencontre avec calendrier qualifié est capturée et reprise',t=>{const h=worker(t,'world');let model=h.good('snapshot');h.good('player_match_history_enable',{context:model.clubLife.playerMatchHistory.context,confirmed:true});for(let i=0;i<8;i++){model=h.good('begin_match');if(model.live){h.good('delegate');model=h.good('finish_round');}if(model.clubLife.playerMatchHistory.recordedMatches>0)break;}assert.ok(model.clubLife.playerMatchHistory.recordedMatches>0);const state=JSON.parse(h.export()).state,record=state.playerMatchHistory.matches[0];assert.ok(record.fixtureId);assert.ok(state.history.some(r=>r.fixtureId===record.fixtureId));const saved=h.export();h.restart();assert.ok(h.export()===saved,'reprise Monde identique');});
+test('Monde : une vraie rencontre avec calendrier qualifié est capturée et reprise',t=>{const h=worker(t,'world');let model=h.good('snapshot');h.good('player_match_history_enable',{context:model.clubLife.playerMatchHistory.context,confirmed:true});for(let i=0;i<8;i++){model=h.good('begin_match');if(model.live){h.good('delegate');model=settleClubMeetings(h.good('finish_round'),(command,payload)=>h.good(command,payload));}if(model.clubLife.playerMatchHistory.recordedMatches>0)break;}assert.ok(model.clubLife.playerMatchHistory.recordedMatches>0);const state=JSON.parse(h.export()).state,record=state.playerMatchHistory.matches[0];assert.ok(record.fixtureId);assert.ok(state.history.some(r=>r.fixtureId===record.fixtureId));const saved=h.export();h.restart();assert.ok(h.export()===saved,'reprise Monde identique');});
 }

@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -31,7 +32,7 @@ function reopen() {
 }
 
 try {
-  const initial = good('new_career',{mode:'fiction',club:0});
+  const initial = settleClubMeetings(good('new_career',{mode:'fiction',club:0}),(command,payload)=>good(command,payload));
   const first = initial.calendarPlanning.fixtures[0];
   assert.equal(initial.calendarPlanning.simulatedDates,true);
   assert.equal(initial.calendarPlanning.today,'2026-09-07');
@@ -49,13 +50,13 @@ try {
   assert.equal(good('export').meta.exportText,planned,'Un choix invalide ne modifie pas la sauvegarde.');
   good('begin_match');
   good('delegate');
-  const next = good('finish_round');
+  const next = settleClubMeetings(good('finish_round'),(command,payload)=>good(command,payload));
   const sessions = next.calendarPlanning.sessions;
   assert.ok(sessions.some(session=>session.date<next.calendarPlanning.today));
   assert.ok(sessions.every(session=>session.completed===(session.date<next.calendarPlanning.today)));
   assert.deepEqual(reopen().calendarPlanning.sessions,sessions);
 
-  const world = good('new_career',{mode:'world',club:0});
+  const world = settleClubMeetings(good('new_career',{mode:'world',club:0}),(command,payload)=>good(command,payload));
   assert.equal(world.calendarPlanning.simulatedDates,false);
   const current = world.calendar.find(fixture=>fixture.date>world.calendarPlanning.today);
   assert.ok(current);

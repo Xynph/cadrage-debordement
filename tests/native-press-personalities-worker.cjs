@@ -1,4 +1,5 @@
 'use strict';
+const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs'),root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'cd-press-personalities-worker-'));let bridge,seq=0;
@@ -17,13 +18,13 @@ try{
  for(const corrupt of [s=>s.pressPeople.version=2,s=>s.pressPeople.contacts.unknown={score:0,encounters:1,memory:[]},s=>s.pressPeople.contacts[asked[0].journalist.id].memory[0].answerId='r9',s=>s.pressPeople.contacts[asked[0].journalist.id].encounters=0,s=>s.pressPeople.contacts[asked[0].journalist.id].memory[0].secret='x']){const d=JSON.parse(exact);corrupt(d.state);assert.equal(call('import',{text:sign(d)}).ok,false);assert.equal(exported(),exact);}
  const legacy=JSON.parse(exact);delete legacy.state.pressPeople;for(const h of legacy.state.pressConference.history){delete h.journalist;delete h.questionText;delete h.answerText;h.answerId='r3';}delete legacy.state.pressConference.lastOutcome.exchanges;m=good('import',{text:sign(legacy)});assert.ok(m.clubLife.press.people.every(j=>!j.encounters));assert.ok(m.clubLife.press.history.every(h=>h.question===null&&h.answer===null&&!h.journalist));good('import',{text:exact});
  // Real full-calendar play, then an actual manager move. No fabricated past matches.
- m=good('manager_career_activate',{context:good('snapshot').clubLife.managerCareer.context});
+ m=settleClubMeetings(good('snapshot'),good);m=good('manager_career_activate',{context:good('snapshot').clubLife.managerCareer.context});
  for(let i=0;i<34;i++){
   m=good('snapshot');if(m.clubLife.press.conference.available)good('press_conference',choose(m));
-  if(m.next){good('begin_match');good('delegate');}m=good('finish_round');
+  m=settleClubMeetings(good('snapshot'),good);if(m.next){good('begin_match');good('delegate');}m=good('finish_round');
  }
  assert.equal(m.clubLife.press.context.week,34);m=good('press_conference',choose(m));
- const c=m.clubLife.managerCareer,target=c.opportunities.find(o=>o.clubId>=14&&o.accepted);assert.ok(target);
+ m=settleClubMeetings(m,good);const c=m.clubLife.managerCareer,target=c.opportunities.find(o=>o.clubId>=14&&o.accepted);assert.ok(target);
  good('manager_career_apply',{context:c.context,clubId:target.clubId});good('manager_career_accept',{context:c.context,offerId:'job-1-'+target.clubId,confirmed:true});
  const memoryBefore=JSON.parse(exported()).state.pressPeople;m=good('next_season',{confirmed:true});assert.equal(JSON.parse(exported()).state.club,target.clubId);assert.deepEqual(JSON.parse(exported()).state.pressPeople,memoryBefore,'Mémoire du coach conservée lors de la vraie mobilité');
  const payload=choose(m),rollback=exported(),prior=fs.readFileSync(disk);

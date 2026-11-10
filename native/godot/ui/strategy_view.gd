@@ -1,4 +1,5 @@
 extends RefCounted
+const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
 
 static func _send(app: Control, command: String, payload: Dictionary, confirmation: String = "") -> void:
@@ -78,7 +79,7 @@ static func _finance(app: Control, page: Container, data: Dictionary, locked: bo
 	_amount(amounts, "TRÉSORERIE DISPONIBLE", G.euros(f.cash), G.GOOD if f.cash >= 0 else G.ALERT)
 	_amount(amounts, "SALAIRES / SEMAINE", G.euros(f.weeklyWages))
 	_amount(amounts, "PROJECTION DES ENGAGEMENTS", G.euros(f.baseForecast), G.GOLD)
-	card.add_child(G.wrap("%d semaines restantes sur %d · %s" % [f.remainingWeeks, f.weeksPerSeason, f.notice], 12))
+	card.add_child(G.wrap("%d semaines restantes sur %d · %s" % [f.remainingWeeks, f.weeksPerSeason, Copy.notice("strategy", f.notice)], 12))
 	if not f.facility is Dictionary:
 		var notice := G.wrap("Installations · Aucun devis disponible", 22, G.MUTED)
 		notice.add_theme_font_size_override("font_size", 22)
@@ -117,7 +118,7 @@ static func _board(app: Control, page: Container, data: Dictionary, locked: bool
 		button.name = "BoardPriority_" + key
 		button.disabled = locked
 		row.add_child(button)
-	card.add_child(G.wrap(b.notice, 12))
+	card.add_child(G.wrap(Copy.notice("strategy", b.notice), 12))
 	var health := G.h(18)
 	card.add_child(health)
 	_amount(health, "JOUEURS DISPONIBLES", G.n(b.readiness.available))
@@ -132,7 +133,7 @@ static func _board(app: Control, page: Container, data: Dictionary, locked: bool
 	objectives.add_child(G.section("Les rendez-vous du conseil", "Objectifs suivis depuis les résultats de votre carrière."))
 	for goal: Dictionary in b.objectives:
 		objectives.add_child(G.wrap("%s · cible %s · semaine %d · %s" % [goal.type, G.n(goal.target), goal.deadline, {"pending":"À suivre","met":"Atteint","missed":"Manqué","unverified":"Non vérifiable"}.get(goal.status, goal.status)], 14))
-	if b.objectives.is_empty(): objectives.add_child(G.wrap("Fixez un premier jalon. Les objectifs servent au suivi du projet ; le bilan moteur reste seul responsable de la confiance présidentielle.", 14))
+	if b.objectives.is_empty(): objectives.add_child(G.wrap("Fixez un premier jalon. Les objectifs servent au suivi du projet ; la confiance du président dépend du bilan du club.", 14))
 	var goal_row := G.h(10)
 	objectives.add_child(goal_row)
 	var kind := OptionButton.new()
@@ -165,8 +166,8 @@ static func _fans(app: Control, page: Container, data: Dictionary, locked: bool)
 	card.add_child(metrics)
 	_amount(metrics, "SENTIMENT", "%d / 100" % f.sentiment, G.GOLD)
 	_amount(metrics, "AFFLUENCE PRÉVUE", G.n(f.expectedAttendance))
-	_amount(metrics, "ABONNÉS SIMULÉS", G.n(f.subscribers))
-	card.add_child(G.wrap(f.notice, 12))
+	_amount(metrics, "ABONNÉS", G.n(f.subscribers))
+	card.add_child(G.wrap(Copy.notice("strategy", f.notice), 12))
 	var price_row := G.h(10)
 	card.add_child(price_row)
 	for price: Dictionary in f.prices:
@@ -175,6 +176,6 @@ static func _fans(app: Control, page: Container, data: Dictionary, locked: bool)
 		price_row.add_child(button)
 	for category: Dictionary in [{"title":"Faire venir","key":"campaigns","command":"club_fans_campaign"},{"title":"Tisser des liens","key":"community","command":"club_fans_community"},{"title":"Accueillir au stade","key":"services","command":"club_fans_service"}]:
 		var actions := G.panel(page)
-		actions.add_child(G.section(category.title, "Dépenses de simulation, sans nouvelle recette automatique."))
+		actions.add_child(G.section(category.title, "Dépenses prévues, sans nouvelle recette automatique."))
 		for option: Dictionary in f[category.key]:
 			_action_row(app, actions, option.label, G.euros(option.cost) + (" · DÉJÀ ENGAGÉ" if option.used else ""), category.command, {"key":option.id}, locked or option.used or data.finance.cash < option.cost, "Engager « %s » pour %s ?" % [option.label, G.euros(option.cost)])
