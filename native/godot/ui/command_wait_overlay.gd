@@ -107,7 +107,7 @@ func _configure_label(label: Label, color: Color) -> void:
 
 
 func _layout() -> void:
-	_scale = clampf(minf(size.x / 1280.0, size.y / 720.0), 0.42, 1.38)
+	_scale = clampf(minf(size.x / 1280.0, size.y / 720.0), 0.42, 2.0)
 	_frame.size = FRAME_SIZE * _scale
 	_frame.position = (size - _frame.size) * 0.5
 	_kicker.position = Vector2(48, 18) * _scale
@@ -125,9 +125,9 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), SCRIM if _frame.visible else Color(SCRIM, 0.12))
 	if not _frame.visible:
 		return
+	draw_rect(Rect2(Vector2.ZERO, size), SCRIM)
 	draw_set_transform(_frame.position, 0, Vector2.ONE * _scale)
 	draw_style_box(_frame_style, Rect2(Vector2.ZERO, FRAME_SIZE))
 	draw_line(Vector2(40, 37), Vector2(199, 37), OUTLINE, 1.0, true)
