@@ -117,19 +117,13 @@ static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	reset.name = "PreferencesReset"; comfort.add_child(reset)
 	display.add_child(C.wrap("Le mode de fenêtre s’applique à cette session.",18,C.IVORY))
 	var display_row := G.h(8); display.add_child(display_row)
-	var fullscreen := G.button("Plein écran",func(): DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN),true)
+	var fullscreen := G.button("Plein écran",app._set_display_mode.bind(Window.MODE_FULLSCREEN),true)
 	fullscreen.name = "PreferencesFullscreen"
 	fullscreen.tooltip_text = "Mode par défaut à chaque lancement du jeu."
 	display_row.add_child(fullscreen)
-	var windowed := G.button("Fenêtré 1440×900",func():
-		var current_screen := -1 if DisplayServer.get_name() == "headless" else DisplayServer.window_get_current_screen()
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		DisplayServer.window_set_size(Vector2i(1440,900))
-		if current_screen >= 0 and current_screen < DisplayServer.get_screen_count():
-			# La sortie du plein écran peut rétablir une ancienne position de fenêtre.
-			DisplayServer.window_set_current_screen(current_screen))
+	var windowed := G.button("Fenêtré maximisé",app._set_display_mode.bind(Window.MODE_MAXIMIZED))
 	windowed.name = "PreferencesWindowed"
-	windowed.tooltip_text = "Option pour cette session : une fenêtre plus petite de 1440×900."
+	windowed.tooltip_text = "Occupe tout l’espace disponible sur l’écran choisi, avec la barre des tâches accessible."
 	display_row.add_child(windowed)
 	var links := G.v(8); display.add_child(links)
 	links.add_child(G.button("Importez un pack personnalisé",func():

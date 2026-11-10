@@ -31,18 +31,16 @@ static func open_notebook(app: Control) -> void:
 static func territory_art(club: Dictionary) -> VBoxContainer:
 	var identity := G.identity(club)
 	var photos: Dictionary = identity.get("photos", {})
-	if photos.is_empty(): return null
 	var cards := C.v(6)
 	cards.name = "OfficeTerritoryPreviews"
 	cards.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for info in [["city","VILLE DU CLUB","OfficeCityPreview"],["stadium","STADE DU CLUB","OfficeStadiumPreview"]]:
 		var kind: String = info[0]
 		var photo: Dictionary = photos.get(kind, {})
-		if photo.is_empty(): continue
-		var picture := G.picture(str(identity.get("slug", "")),kind,true,str(photo.get("path", "")))
-		if not picture.get_meta("photo_from_pack", false):
-			picture.free()
-			continue
+		var location: Variant = identity.get(kind)
+		var place := str(location).strip_edges() if location != null else ""
+		if place.is_empty() and photo.is_empty(): continue
+		var picture := G.club_picture(club, kind)
 		picture.name = info[2]
 		picture.custom_minimum_size = Vector2.ZERO
 		C.fill(picture, true)
@@ -50,14 +48,15 @@ static func territory_art(club: Dictionary) -> VBoxContainer:
 		var content: VBoxContainer = picture.get_meta("content")
 		content.add_theme_constant_override("separation", C.px(3))
 		content.add_child(G.spacer())
-		var title := C.label(info[1] + " · " + str(identity.get(kind, "—")), 20, C.IVORY, true, 700)
+		var title := C.label(info[1] + " · " + (place if not place.is_empty() else "—"), 20, C.IVORY, true, 700)
 		title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		content.add_child(title)
-		var credit := C.label(photo.get("credit", ""), 17, C.MUTED)
+		var caption := str({"pack":photo.get("credit", ""), "archive":"Photo d’archive"}.get(picture.get_meta("photo_kind"), "Illustration IA"))
+		var credit := C.label(caption, 17, C.MUTED)
 		credit.name = "OfficePhotoCredit"
 		credit.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		content.add_child(credit)
-		describe_fixture(credit, "\n".join([title.text, credit.text, str(photo.get("source", "")), str(photo.get("license", ""))]))
+		describe_fixture(credit, title.text + "\n" + picture.tooltip_text)
 	if cards.get_child_count() > 0: return cards
 	cards.free()
 	return null
@@ -195,12 +194,12 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 			left.add_child(C.wrap("Retrouvez les résultats et préparez la suite du projet.", 20))
 		elif SeasonPreparation.is_champ(app.model.meta):
 			var fixture := P.next_scheduled_fixture(app.model)
-			left.add_child(C.wrap("Préparation du Champ Rugby", 42, C.IVORY, true))
+			left.add_child(C.wrap("Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))), 42, C.IVORY, true))
 			left.add_child(C.wrap(P.fixture_date(fixture, true) if not fixture.is_empty() else World.preparation_note(preparation), 25, C.IVORY, true))
 			left.add_child(C.wrap(P.fixture_venue(fixture), 18))
 		else:
-			left.add_child(C.label("JAPAN RUGBY LEAGUE ONE" if japan else "SUPER RUGBY PACIFIC",21,C.GOLD))
-			left.add_child(C.wrap("La préparation de League One." if japan else "La préparation du Pacifique.",42,C.IVORY,true))
+			left.add_child(C.label(World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))).to_upper(),21,C.GOLD))
+			left.add_child(C.wrap("Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))),42,C.IVORY,true))
 			left.add_child(C.wrap(World.preparation_note(preparation),20))
 	else:
 		var tags := C.h(12)
@@ -396,7 +395,7 @@ static func short_fixture_label(model: Dictionary, fixture: Dictionary) -> Strin
 	var id := str(fixture.competitionId)
 	var competition := World.name_for(model,id)
 	if label.begins_with(competition+" · "):
-		return World.short_name(id,competition)+label.trim_prefix(competition)
+		return World.short_name(id,competition,model)+label.trim_prefix(competition)
 	return label
 
 static func describe_fixture(node: Control, detail: String) -> void:

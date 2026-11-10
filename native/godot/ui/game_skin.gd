@@ -221,6 +221,7 @@ static func portrait(index: int, width: int = 60, player: Dictionary = {}) -> Te
 	return r
 
 static var venue_textures: Dictionary = {}
+const TERRITORY_STANDALONE := [30, 61, 70]
 
 static func _venue_texture(path: String) -> Texture2D:
 	if path.is_empty() or not path.is_absolute_path() or not FileAccess.file_exists(path): return null
@@ -232,18 +233,52 @@ static func _venue_texture(path: String) -> Texture2D:
 	venue_textures[path] = texture
 	return texture
 
-static func picture(slug: String, kind: String = "stadium", dark: bool = true, external_path: String = "") -> Control:
+static func _territory_texture(club: Dictionary, kind: String) -> Texture2D:
+	var id := int(club.get("id", -1))
+	var direct := "res://art/territories/%d-%s.png" % [id, kind]
+	if ResourceLoader.exists(direct): return load(direct) as Texture2D
+	if id >= 0 and id < 116 and id not in TERRITORY_STANDALONE:
+		# Atlas order follows club IDs, skipping the standalone high-resolution views.
+		var index := id
+		for standalone: int in TERRITORY_STANDALONE:
+			if id > standalone: index -= 1
+		var path := "res://art/territories/%02d.png" % floori(index / 8.0)
+		if ResourceLoader.exists(path):
+			var atlas := load(path) as Texture2D
+			var cell := atlas.get_size() / 4.0
+			var slot := (index % 8) * 2 + (1 if kind == "city" else 0)
+			var texture := AtlasTexture.new()
+			texture.atlas = atlas
+			texture.region = Rect2(Vector2(slot % 4, floori(slot / 4.0)) * cell + Vector2(4, 4), cell - Vector2(8, 8))
+			texture.filter_clip = true
+			return texture
+	var fallback := "club-forest" if kind == "city" else "stadium"
+	if id == 0 and kind == "stadium": fallback = "maquette-onglets-stadium"
+	return load("res://art/immersive08/%s.png" % fallback) as Texture2D
+
+static func club_picture(club: Dictionary, kind: String = "stadium", dark: bool = true) -> Control:
+	var identity_data := identity(club)
+	var supplied: Dictionary = identity_data.get("photos", {}).get(kind, {})
 	var base := Control.new()
 	base.clip_contents = true
 	base.custom_minimum_size = Vector2(0, 140)
 	var image := TextureRect.new()
-	var path := "res://assets/club-atlas/%s-%s.webp" % [slug, kind]
-	image.texture = _venue_texture(external_path)
+	image.texture = _venue_texture(str(supplied.get("path", "")))
 	var from_pack := image.texture != null
-	if not from_pack and ResourceLoader.exists(path):
-		image.texture = load(path)
+	if not from_pack and identity_data.get("licensedTerritoryArchive", false):
+		var path := "res://assets/club-atlas/%s-%s.webp" % [identity_data.get("slug", ""), kind]
+		if ResourceLoader.exists(path): image.texture = load(path)
+	var from_archive := image.texture != null and not from_pack
+	if image.texture == null: image.texture = _territory_texture(identity_data, kind)
 	base.set_meta("has_photo", image.texture != null)
 	base.set_meta("photo_from_pack", from_pack)
+	base.set_meta("photo_kind", "pack" if from_pack else "archive" if from_archive else "generated")
+	if from_pack:
+		base.tooltip_text = "%s\n%s\n%s" % [supplied.get("credit", ""), supplied.get("source", ""), supplied.get("license", "")]
+	elif from_archive:
+		base.tooltip_text = "Photographie d’archive · Crédits et licences"
+	else:
+		base.tooltip_text = "Illustration générée par IA"
 	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED

@@ -256,7 +256,7 @@ static func _fixture(parent: Node, app: Control) -> void:
 	var next: Dictionary = app.model.next if app.model.get("next") is Dictionary else {}
 	var neutral: bool = next.get("neutral", false)
 	var venue: Dictionary = app.model.club if neutral else next.get("home", app.model.club)
-	var picture := G.picture(str(G.identity(venue).get("slug", "toulouse")), "city" if neutral else "stadium")
+	var picture := G.club_picture(venue, "city" if neutral else "stadium")
 	picture.name = "OfficeFixture"
 	picture.custom_minimum_size.y = 250 if next.is_empty() or (G.club_name(next.home) + G.club_name(next.away)).length() < 75 else 330
 	var veil := ColorRect.new()
@@ -522,26 +522,25 @@ static func _identity(parent: Node, app: Control) -> void:
 	var row := G.h(8)
 	content.add_child(row)
 	var identity := G.identity(app.model.club)
-	var slug := str(identity.get("slug",""))
 	for pair in [["city","LA VILLE","OfficeCityPreview"],["stadium","NOTRE STADE","OfficeStadiumPreview"]]:
 		var supplied: Variant=identity.get(pair[0])
 		var value := "—" if supplied==null or str(supplied).strip_edges().is_empty() else str(supplied)
 		var kind: String = pair[0]
 		var photo: Dictionary = identity.get("photos", {}).get(kind, {})
-		var picture := G.picture(slug, kind, true, str(photo.get("path", "")))
+		var picture: Control
 		var over: VBoxContainer
-		if picture.get_meta("has_photo", false):
-			over=picture.get_meta("content")
-		else:
-			picture.free()
+		if value == "—" and photo.is_empty():
 			var fallback := PanelContainer.new()
 			fallback.add_theme_stylebox_override("panel",G.T.box(CHARCOAL,2))
-			picture=fallback
-			over=G.v(4)
+			picture = fallback
+			over = G.v(4)
 			fallback.add_child(over)
+		else:
+			picture = G.club_picture(app.model.club, kind)
+			over = picture.get_meta("content")
 		picture.name=pair[2]
 		picture.custom_minimum_size.y=110
-		picture.tooltip_text=value + (" · " + str(photo.get("credit", "")) if picture.get_meta("photo_from_pack", false) else "")
+		picture.tooltip_text = value if picture.tooltip_text.is_empty() else value + "\n" + picture.tooltip_text
 		G.fill(picture)
 		row.add_child(picture)
 		over.add_child(G.spacer())

@@ -1,0 +1,57 @@
+{
+  "tool": "built-in image_gen",
+  "description": "Miniatures IA originales. Les références publiques guident les formes de plusieurs compétitions actuelles. Les compétitions historiques ou sans référence visuelle vérifiée utilisent des créations libres.",
+  "sources": {
+    "elite": "https://top14.lnr.fr/actualite/bouclier-de-brennus-histoire-origine-et-palmares-du-trophee-du-top-14",
+    "accession": "https://prod2.lnr.fr/actualite/decouvrez-les-nouveaux-ballons-de-la-phase-finale-de-pro-d2",
+    "nationale": "https://monclubhouse.ffr.fr/actualites/rugby-amateur-la-course-au-bouclier-est-lancee",
+    "prem": "https://www.premrugby.com/content/prem-rugby-unveils-the-heaviest-trophy-in-uk-sport",
+    "champions": "https://thomaslyte.com/tl-sports-update-new-epcr-trophies-revealed/",
+    "challenge": "https://thomaslyte.com/epcr-challenge-cup-trophy-designers-and-makers/",
+    "urc": "https://www.irishrugby.ie/2022/04/21/trophy-for-urc-champions-is-digitally-revealed",
+    "srp": "https://super.rugby/superrugby/news/new-super-rugby-pacific-trophy-unveiled/"
+  },
+  "assets": [
+    {
+      "file": "competitions.png",
+      "source": "exec-3d3a839c-4c9e-4c82-b07f-867d2673640a.png",
+      "columns": 4,
+      "rows": 3,
+      "competitions": [
+        "elite",
+        "accession",
+        "nationale",
+        "prem",
+        "champ",
+        "champions",
+        "challenge",
+        "urc",
+        "srp",
+        "jlo-d1",
+        "jlo-d2",
+        "jlo-d3"
+      ],
+      "prompt": "One production RGBA texture atlas for the desktop sports manager Oval Legacy 27. EXACTLY 4 equal columns and 3 equal rows, same proportions, perfectly aligned regular grid, exactly one centered isolated trophy in each cell. All objects entire with a clear 13% padding from the four edges of each cell; silhouettes large and readable at 32 px. Flat completely transparent background, empty spaces including underneath each object, no visible grid lines or gutters, no table and no drop shadow on the background. Consistent three-quarter-frontal straight-on product angle, physically rendered metalwork for a mature rugby simulation, discreet warm rim light, patinated brass and high-contrast steel detail. Every object is an original plausible reinterpretation, visually recognizable by its family and silhouette, no official lettering, no logos, no text anywhere, no ribbons or sponsors. Cell order is fixed:\nRow 1, left to right: (1) A French first-division heritage shield in the spirit of the Bouclier de Brennus: warm rectangular dark walnut board with prominent softly pointed hammered brass central shield and two narrow independent brass ornaments below, a fresh emblem of intertwined leaves, no text. (2) A French second-division dark circular champion shield with a ring of heavy golden laurel leaves, black wood and pale gold edge, clearly round. (3) A smaller French federal shield, dark hexagonal oak plaque with a large round brushed silver medallion and crossed laurel, understated. (4) English top division modern Premiership-inspired massive flared silver cup with thick angular handles, boldly sculpted silver, black faceted low base, stadium-championship feel.\nRow 2, left to right: (1) English second division tall mirror-polished silver two-handled traditional cup with crown lid and stepped black plinth. (2) European Champions Cup-inspired large sterling silver trophy with an arcing sculptural silhouette, polished silver sweeping arms and one small prominent golden star at the top centre, black round plinth, no word marks. (3) European Challenge Cup-inspired silver oval rugby ball raised by several rising, splayed slender polished silver rods with small star finials, slender open construction on low circular dark base. (4) URC 'The Array' inspired contemporary industrial silver fluted tall cup, four dark broad angular fins frame it, charcoal base, bold steel contrast.\nRow 3, left to right: (1) Super Rugby Pacific-inspired chrome oval rugby ball embraced by one distinct glossy blue and teal ocean wave sweeping around it, chrome base. (2) Japanese first-division champion sculpture with upright crimson metallic rugby oval encircled by four sweeping dark-silver fins rising from a squat black pedestal. (3) Japanese second-division taller silver fluted cup with black enamel handle accents and small steel ball finial, small base. (4) Japanese third-division compact flared satin bronze cup with angular silver rim and low dark base.",
+      "sha256": "9ad6350f69667fec039817196f02b1e181e7c0d3a5511a5aaa852017aa910f10"
+    },
+    {
+      "file": "archives.png",
+      "source": "exec-5de70bf8-a4a1-4413-adfe-3384d4aabec8.png",
+      "columns": 4,
+      "rows": 2,
+      "competitions": [
+        "eng-third",
+        "jp-national",
+        "jp-top-league",
+        "jp-company",
+        "sr-au",
+        "sr-nz",
+        "sr-trans-tasman",
+        "other"
+      ],
+      "prompt": "One production RGBA texture atlas for the desktop sports manager Oval Legacy 27. EXACTLY 4 equal columns and 2 equal rows, same proportions, perfectly aligned regular grid, exactly one centered isolated trophy in each cell. All objects entire with a clear 13% padding from the four edges of each cell; silhouettes large and readable at 32 px. Flat completely transparent background, empty spaces including underneath each object, no visible grid lines or gutters, no table and no drop shadow on the background. Consistent three-quarter-frontal straight-on product angle, physically rendered metalwork for a mature rugby simulation, discreet warm rim light, patinated brass and high-contrast steel detail. Every object is an original plausible reinterpretation, visually recognizable by its family and silhouette, no official lettering, no logos, no text anywhere, no ribbons or sponsors. Cell order is fixed:\nRow 1, left to right: (1) English historic third division, a traditional silver vase-shaped cup with open ring handles on wood. (2) Japanese national championship, a heritage ornamental sterling silver cup with a chased floral band, footed bowl and shallow lid. (3) Former Japanese Top League, a tall silver flared sculptural trophy cradling a copper rugby ball on a black rectangular pedestal, early 2000s sporting design. (4) Japanese historic company championship, a vintage shallow bronze pedestal bowl with modest Japanese metalwork details and black wood.\nRow 2, left to right: (1) Historic Super Rugby Australia, a gleaming wide chrome cup with sturdy open side arches and a dark rounded base. (2) Historic Super Rugby Aotearoa, a curved dark carved-wood sculpture with two organic rising arms lifting a silver oval rugby ball, no culturally specific ornament. (3) Historic Trans-Tasman, twin polished silver ribbons crossing beneath a smooth oval rugby ball on a low rectangular black plinth. (4) An original restrained fallback championship silverware, a classical modest silver cup with two handles on a dark base.",
+      "alphaEdit": "Edit this 4 column by 2 row RGBA texture atlas of eight cut-out sports trophies. Preserve all eight trophy silhouettes, details, order, exact uniform 4 by 2 alignment, and padding. Remove the entire white and gray studio background and faint grid across the whole image. All pixels outside the trophy silhouettes must be real 0 alpha (RGBA PNG cutouts), including corners, the spaces between sprites, the holes inside the handles, and around the stands. No white color, no tint, no lighting or shadow outside the objects. This is for compositing onto a dark green interface, true zero-alpha is essential. Silver or other highlights inside the metal remain visible. Maintain the same landscape 2:1 aspect and all eight complete sprites. No checkerboard in the image itself.",
+      "sha256": "f9f004eee561ac7124c3e824751a496bb4509d40b6ec67e5f60506042086cb8e"
+    }
+  ]
+}

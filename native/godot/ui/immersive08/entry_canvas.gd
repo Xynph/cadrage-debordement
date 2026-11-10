@@ -3,8 +3,10 @@ extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const Club = preload("res://ui/club_views.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
+const Entry = preload("res://ui/entry_screens.gd")
 const G = preload("res://ui/game_skin.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
+const Editorial = preload("res://ui/entry_editorial.gd")
 const GREEN = Color("176e49")
 
 static func _configure(app: Control) -> void:
@@ -53,40 +55,15 @@ static func home(app: Control) -> Control:
 	D.text(content,106,775,"Une saison à écrire.",103,C.IVORY,700,1458)
 	D.text(content,112,851,"Prenez les rênes. Préparez le XV, faites grandir le club et vivez la saison.",29,C.IVORY,400,1400,HORIZONTAL_ALIGNMENT_LEFT,true)
 	var meta: Dictionary = app.model.get("meta",{})
-	var database: Dictionary = meta.get("database",{})
-	var france: Array = meta.get("legacyCatalogue", app.catalogue)
-	var world: Array = meta.get("worldCatalogue", [])
-	var pacific: Array = meta.get("pacificCatalogue", [])
-	var japan: Array = meta.get("japanCatalogue", [])
-	var nationale: Array = meta.get("nationaleCatalogue", [])
-	var champ: Array = meta.get("champCatalogue", [])
+	var database: Dictionary = app.pack_manager.database("creation")
+	var catalogue: Array = app.pack_manager.creation_catalogue()
 	var next_chip := 112
-	if not france.is_empty():
-		var count := france.filter(func(item: Dictionary): return item.get("playable", true)).size()
-		D.chip(content,Rect2(next_chip,895,249,52),"France · %d clubs" % count,C.GOLD).name="EntryFranceCount"
-		next_chip+=263
-	if not world.is_empty():
-		var count := world.filter(func(item: Dictionary): return item.get("playable", true)).size()
-		D.chip(content,Rect2(next_chip,895,249,52),"Monde · %d clubs" % count,C.BLUE).name="EntryWorldCount"
-		next_chip+=263
-	if not pacific.is_empty():
-		var count := pacific.filter(func(item: Dictionary): return item.get("playable", true)).size()
-		D.chip(content,Rect2(next_chip,895,249,52),"Pacifique · %d clubs" % count,C.MINT).name="EntryPacificCount"
-		next_chip+=263
-	if not japan.is_empty():
-		var count := japan.filter(func(item: Dictionary): return item.get("playable", true)).size()
-		D.chip(content,Rect2(next_chip,895,249,52),"Japon · %d clubs" % count,C.GOLD).name="EntryJapanCount"
-		next_chip+=263
-	if not nationale.is_empty():
-		var count := nationale.filter(func(item: Dictionary): return item.get("playable", true)).size()
-		D.chip(content,Rect2(next_chip,895,249,52),"Nationale · %d clubs" % count,C.GOLD).name="EntryNationaleCount"
-	var chip_position := Vector2(next_chip,895) if nationale.is_empty() else Vector2(112,961)
-	if not champ.is_empty():
-		var count := champ.filter(func(item: Dictionary): return item.get("playable", true)).size()
-		D.chip(content,Rect2(112,961,270,52),"Champ Rugby · %d clubs" % count,C.BLUE).name="EntryChampCount"
-		chip_position = Vector2(396,961)
+	if not catalogue.is_empty():
+		var count := catalogue.filter(func(item: Dictionary): return item.get("playable", true)).size()
+		D.chip(content,Rect2(next_chip,895,270,52),"Monde · %d clubs jouables" % count,C.BLUE).name="EntryWorldCount"
+		next_chip += 284
 	if int(database.get("playerCount",0))>0:
-		D.chip(content,Rect2(chip_position,Vector2(305,52)),G.n(database.playerCount)+" joueurs · base active",C.MINT)
+		D.chip(content,Rect2(next_chip,895,305,52),G.n(database.playerCount)+" joueurs au départ",C.MINT)
 	var club: Dictionary = app.model.get("club") if app.model.get("club") is Dictionary else {}
 	var accent: Color = GREEN if club.is_empty() else app.accent
 	_choices(D.panel(content,Rect2(1642,248,827,1008),"","","","EntryCareerCard"),app,club,meta,accent)
@@ -129,7 +106,7 @@ static func _choices(card: Panel, app: Control, club: Dictionary, meta: Dictiona
 		name.add_child(C.wrap("Saison %s · %s" % [G.n(meta.get("season",1)),str(meta.get("roundLabel","Début de saison"))],20,C.MUTED))
 		_action(choices,"Reprendre la carrière",func():app._navigate("Bureau"),"EntryResume",accent,true)
 	var locked: bool = app.model.is_empty() or meta.get("recoveryRequired",false)
-	var create := _action(choices,"Nouvelle carrière",func():app._navigate("Création"),"EntryNewCareer",accent,club.is_empty())
+	var create := _action(choices,"Nouvelle carrière",func():Entry.begin_creation(app),"EntryNewCareer",accent,club.is_empty())
 	create.disabled = locked or app.catalogue.is_empty()
 	var importing := _action(choices,"Importer une carrière",func():app.open_file(true),"EntryImportCareer",accent)
 	importing.disabled = locked
@@ -169,6 +146,8 @@ static func _action(parent: Container, caption: String, callback: Callable, id: 
 static func workspace(app: Control, page: Control, creation: bool) -> Control:
 	_configure(app)
 	var size := app.get_window().size
+	if not creation or app.pack_manager.creation_mode == "auto":
+		return _editorial_workspace(app, page, creation, size)
 	var compact := size.y < 850
 	var column := C.v(8 if compact else 14)
 	column.name = "ImmersiveCreationWorkspace" if creation else "ImmersiveIdentityWorkspace"
@@ -203,19 +182,116 @@ static func workspace(app: Control, page: Control, creation: bool) -> Control:
 		if actions.size() >= 2:
 			actions.front().name = "CreationBackHome"
 			actions.back().name = "CreationManagePacks"
-		_illustrate_preview(page)
+		if app.pack_manager.creation_mode != "auto": _illustrate_preview(page)
 	Legacy.apply(page,GREEN if not app.model.get("club") is Dictionary else app.accent)
 	if creation:
-		_fit_pagination(page)
-		if compact and app.pack_manager.mode("creation") == "world-japan":
-			_fit_japan_clubs(page)
+		if app.pack_manager.creation_mode != "auto":
+			_fit_pagination(page)
+			if compact and app.pack_manager.mode("creation") == "world-japan": _fit_japan_clubs(page)
 		if not compact:
 			_fit_club_cards(page)
 	if size.x >= 2240 and size.y >= 1250:
-		if creation: _career_context(app, page)
-		else: _pack_guide(app, page)
+		_career_context(app, page)
 	_observe_entry_size(app, column, size, creation)
 	return column
+
+static func _editorial_workspace(app: Control, page: Control, creation: bool, size: Vector2i) -> Control:
+	var shell := PanelContainer.new()
+	shell.name = "ImmersiveCreationWorkspace" if creation else "ImmersiveIdentityWorkspace"
+	Editorial.surface(shell, Editorial.INK, Color.TRANSPARENT, 0)
+	if creation:
+		var ink := C.photo("maquette-onglets-ink", Vector2.ZERO, false)
+		ink.stretch_mode = TextureRect.STRETCH_SCALE
+		ink.modulate.a = .32
+		shell.add_child(ink)
+	var column := C.v(0)
+	shell.add_child(column)
+	var masthead := PanelContainer.new()
+	Editorial.surface(masthead, Color("0f1719"), Color.TRANSPARENT, 0)
+	column.add_child(masthead)
+	var rail := C.h(24)
+	masthead.add_child(rail)
+	var inset := C.margin(13)
+	rail.add_child(inset)
+	inset.add_child(C.photo("maquette-onglets-wordmark" if creation else "maquette-reality-wordmark", Vector2(354 if creation else 280, 48), false))
+	Editorial.divider(rail)
+	var step_names := ["01  Réalité", "02  Club", "03  Carrière"]
+	for index in step_names.size():
+		var active := index == (1 if creation else 0)
+		var step := C.v(5)
+		step.alignment = BoxContainer.ALIGNMENT_CENTER
+		rail.add_child(step)
+		step.add_child(C.label(step_names[index], 29 if creation else 25, Editorial.RAIL_GOLD if creation and active else C.IVORY, creation, 700 if active else 600))
+		var underline := ColorRect.new()
+		underline.color = Editorial.BRASS if active else Color.TRANSPARENT
+		underline.custom_minimum_size.y = 2
+		step.add_child(underline)
+	var banner := Control.new()
+	banner.custom_minimum_size.y = clampf(size.y * (.128 if creation else .15), 88, 215)
+	column.add_child(banner)
+	var photo := C.photo("maquette-onglets-banner" if creation else "maquette-reality-banner", Vector2.ZERO, true, .5)
+	banner.add_child(photo)
+	photo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	photo.anchor_left = 0.0 if creation else .31
+	var gradient := Gradient.new()
+	gradient.colors = PackedColorArray([Color(Editorial.INK, .72), Color(Editorial.INK, .44), Color(Editorial.INK, 0.0)]) if creation else PackedColorArray([Editorial.INK, Editorial.INK, Color(Editorial.INK, 0.0)])
+	gradient.offsets = PackedFloat32Array([0.0, .16 if creation else .32, .43 if creation else .56])
+	var shade_texture := GradientTexture2D.new()
+	shade_texture.gradient = gradient
+	var shade := TextureRect.new()
+	shade.texture = shade_texture
+	shade.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	banner.add_child(shade)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var padding := C.margin(57 if creation else 48)
+	padding.add_theme_constant_override("margin_top", C.px(30))
+	padding.add_theme_constant_override("margin_bottom", C.px(30))
+	banner.add_child(padding)
+	padding.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var header := C.h(29)
+	padding.add_child(header)
+	if not creation:
+		var marker := ColorRect.new()
+		marker.color = Editorial.BRASS
+		marker.custom_minimum_size.x = maxi(2, C.px(4))
+		header.add_child(marker)
+	var heading := C.v(0)
+	heading.alignment = BoxContainer.ALIGNMENT_CENTER
+	C.fill(heading)
+	header.add_child(heading)
+	if creation:
+		heading.add_child(C.label("Choisir son club", 74, C.IVORY, true, 700))
+		var underline := ColorRect.new()
+		underline.color = Editorial.RAIL_GOLD
+		underline.custom_minimum_size = Vector2(C.px(100), C.px(5))
+		underline.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		heading.add_child(underline)
+	else:
+		heading.add_child(Editorial.sans_heading("Choisir sa réalité", 53))
+		heading.add_child(C.wrap("Sélectionnez la réalité de jeu pour votre prochaine carrière.", 25, C.IVORY))
+	column.add_child(C.rule())
+	var body := C.margin(21 if creation else 27)
+	C.fill(body, true)
+	column.add_child(body)
+	body.add_child(page)
+	if creation:
+		var tools := page.get_child(0) as HBoxContainer
+		var buttons := tools.find_children("*", "Button", false, false)
+		if buttons.size() >= 2:
+			buttons.front().name = "CreationBackHome"
+			buttons.back().name = "CreationManagePacks"
+		if size.x >= 1480:
+			page.remove_child(tools)
+			rail.add_child(C.fill(Control.new()))
+			tools.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			rail.add_child(tools)
+			var edge := Control.new()
+			edge.custom_minimum_size.x = C.px(15)
+			rail.add_child(edge)
+	Legacy.apply(page, Editorial.BRASS)
+	_observe_entry_size(app, shell, size, creation)
+	return shell
 
 static func _observe_entry_size(app: Control, workspace: Control, built_size: Vector2i, creation: bool) -> void:
 	var window := app.get_window()
@@ -331,10 +407,7 @@ static func _fit_pagination(page: Control) -> void:
 static func _career_context(app: Control, page: Control) -> void:
 	var choices := page.find_child("CreationClubsScroll", true, false) as ScrollContainer
 	if choices == null: return
-	var meta: Dictionary = app.model.get("meta", {})
-	var mode: String = app.pack_manager.mode("creation")
-	var catalogue_key: String = {"world": "worldCatalogue", "world-pacific": "pacificCatalogue", "world-japan": "japanCatalogue", "world-nationale": "nationaleCatalogue", "world-champ": "champCatalogue"}.get(mode, "legacyCatalogue")
-	var catalogue: Array = meta.get(catalogue_key, app.catalogue)
+	var catalogue: Array = app.pack_manager.creation_catalogue()
 	var selected := {}
 	for club: Dictionary in catalogue:
 		if int(club.id) == app.selected_club:
@@ -358,26 +431,6 @@ static func _career_context(app: Control, page: Control) -> void:
 	var column := choices.get_parent()
 	column.add_child(context)
 	column.move_child(context, choices.get_index() + 1)
-
-static func _pack_guide(app: Control, page: Control) -> void:
-	if not app.pack_manager.installed().is_empty() or not app.pack_manager.preview().is_empty(): return
-	for node in page.find_children("*", "Button", true, false):
-		var importer := node as Button
-		if not importer.pressed.is_connected(app.pack_manager.choose_file): continue
-		var content := importer.get_parent().get_parent()
-		for child in content.get_children():
-			if child is ScrollContainer:
-				var guide := C.v(10)
-				guide.name = "EntryPackGuide"
-				child.get_child(0).add_child(guide)
-				guide.add_child(C.label("LE PARCOURS D’IMPORT", 24, C.GOLD, true, 700))
-				var tiles := C.h(14)
-				guide.add_child(tiles)
-				_tile(tiles, "01  ·  FICHIER", "Ouvrir le ZIP", "Choisissez le fichier du pack sur votre ordinateur.", "scouting", C.BLUE)
-				_tile(tiles, "02  ·  APERÇU", "Vérifier les identités", "Vérifiez les noms, blasons et portraits recensés dans l’aperçu.", "approved-club-crest", C.GOLD, false)
-				_tile(tiles, "03  ·  SÉLECTION", "Habiller votre carrière", "Installez le pack, puis sélectionnez-le dans l’édition affichée.", "player-hero", C.MINT, true, .12)
-				guide.add_child(C.wrap("Blason et portrait d’exemple · illustrations fictives", 17, C.MUTED))
-				return
 
 static func _tile(parent: HBoxContainer, label: String, title: String, copy: String, art: String, tint: Color, cover: bool = true, focus: float = .29) -> void:
 	var frame := C.card()

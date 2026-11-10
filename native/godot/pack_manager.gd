@@ -21,11 +21,27 @@ func mode(target_scope: String = "") -> String:
 	var meta: Dictionary = app.model.get("meta", {})
 	if effective_scope == "career":
 		return str(meta.get("edition", "world")) if meta.get("mode") == "world" else "common"
-	if creation_mode == "world-champ" and not meta.get("champCatalogue", []).is_empty(): return "world-champ"
-	if creation_mode in ["world-nationale", "world-champ"] and not meta.get("nationaleCatalogue", []).is_empty(): return "world-nationale"
-	if creation_mode in ["world-japan", "world-nationale", "world-champ"] and not meta.get("japanCatalogue", []).is_empty(): return "world-japan"
+	if creation_mode in ["auto", "world-champ"] and not meta.get("champCatalogue", []).is_empty(): return "world-champ"
+	if creation_mode in ["auto", "world-nationale", "world-champ"] and not meta.get("nationaleCatalogue", []).is_empty(): return "world-nationale"
+	if creation_mode in ["auto", "world-japan", "world-nationale", "world-champ"] and not meta.get("japanCatalogue", []).is_empty(): return "world-japan"
 	if creation_mode in ["auto", "world-pacific", "world-japan", "world-nationale", "world-champ"] and not meta.get("pacificCatalogue", []).is_empty(): return "world-pacific"
 	return "world" if creation_mode in ["auto", "world", "world-pacific", "world-japan", "world-nationale", "world-champ"] and not meta.get("worldCatalogue", []).is_empty() else "common"
+
+func creation_catalogue() -> Array:
+	var key: String = {
+		"world-champ": "champCatalogue", "world-nationale": "nationaleCatalogue",
+		"world-japan": "japanCatalogue", "world-pacific": "pacificCatalogue",
+		"world": "worldCatalogue",
+	}.get(mode("creation"), "legacyCatalogue")
+	return app.model.get("meta", {}).get(key, app.catalogue)
+
+func competition(id: String, target_scope: String = "") -> Dictionary:
+	var meta: Dictionary = app.model.get("meta", {})
+	var effective := scope if target_scope.is_empty() else target_scope
+	var identities: Dictionary = meta.get("competitionIdentities", {})
+	if effective == "creation":
+		identities = meta.get("creationCompetitions", {}).get(mode("creation"), {})
+	return identities.get(id, {})
 
 func database(target_scope: String = "") -> Dictionary:
 	var meta: Dictionary = app.model.get("meta", {})
@@ -64,10 +80,21 @@ func open(target_scope: String) -> void:
 		return
 	scope = target_scope
 	return_route = app.route
-	if not app._live().is_empty() and not app._live().get("paused", false) and not app._live().get("finished", false):
+	if _match_running():
 		app._command("pause", {"paused":true}, "Packs")
 	else:
 		app._navigate("Packs")
+
+func _match_running() -> bool:
+	var live: Dictionary = app._live()
+	return not live.is_empty() and not live.get("paused", false) and not live.get("finished", false)
+
+func choose_creation_file() -> void:
+	if not app.waiting and _match_running():
+		app._command("pause", {"paused": true})
+		while app.waiting: await get_tree().process_frame
+		if app.route != "Création" or _match_running(): return
+	choose_file()
 
 func choose_file() -> void:
 	if app.waiting:
@@ -80,6 +107,9 @@ func inspect(path: String) -> void:
 	if app.waiting:
 		app._refuse_action("Une analyse est déjà en cours. Réessayez après sa réponse.")
 		return
+	if app.route == "Création":
+		open("creation")
+		if app.route != "Packs": return
 	source_path = path
 	inspected_mode = mode()
 	app._command("pack_inspect", {"path":path,"mode":inspected_mode})

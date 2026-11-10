@@ -124,10 +124,12 @@ test('Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts
  const cliRoot=path.join(scratch,'stdio'),profile=path.join(cliRoot,'profile');fs.mkdirSync(cliRoot);
  const clockFixture=path.join(cliRoot,'clock.cjs');fs.writeFileSync(clockFixture,"'use strict';Date.now=()=>1700000000000;\n");
  const lines=[JSON.stringify({id:1,command:'new_career',payload:{mode:'common',club:29}}),JSON.stringify({id:2,command:'snapshot',payload:JSON.parse('{"toJSON":"texte","__proto__":{"polluted":true}}')}),JSON.stringify({id:3,command:'delegate; process.exit(7)',payload:{}}),'{invalid}',JSON.stringify({id:4,command:'shutdown'})].join('\n')+'\n';
+ // Four replies carry the full creation catalogues, including club history and roster reports.
+ const stdioMaxBuffer=16*1024*1024;
  let first,firstProfile;
  for(const variant of ['historical','current']){
   fs.writeFileSync(fixtureWorker,variant==='historical'?historical:source);
-  const result=spawnSync(process.execPath,['--require',clockFixture,fixtureWorker,'--data-dir',profile],{input:lines,env:{...process.env,CD_GODOT_SEED:'411'},encoding:'utf8',windowsHide:true,timeout:30000,maxBuffer:8*1024*1024});
+  const result=spawnSync(process.execPath,['--require',clockFixture,fixtureWorker,'--data-dir',profile],{input:lines,env:{...process.env,CD_GODOT_SEED:'411'},encoding:'utf8',windowsHide:true,timeout:30000,maxBuffer:stdioMaxBuffer});
   assert.equal(result.error,undefined);assert.equal(result.status,0,result.stderr);assert.equal(result.stderr,'');
   const parsed=result.stdout.trim().split('\n').map(line=>JSON.parse(line));assert.deepEqual(parsed.map(item=>item.ok),[true,true,false,false,true]);
   assert.equal(parsed[2].error,'Commande inconnue ou interdite.');assert.equal(parsed[3].model,null);

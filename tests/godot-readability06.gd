@@ -118,7 +118,7 @@ func run() -> void:
 		await roster_reading(resolution, annotated, annotation)
 		await route_reading(resolution)
 		await navigate("Création")
-		for id in ["CreationStart", "CreationPagination"]:
+		for id in ["CreationStart", "CreationClubsScroll"]:
 			check(inside(named(id)), "Création : contrôle directement visible %s %s" % [id,resolution])
 		await capture("creation-dense-" + str(resolution.x))
 	await resize_to(Vector2i(1280,720))

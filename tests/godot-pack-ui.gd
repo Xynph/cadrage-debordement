@@ -59,7 +59,7 @@ func sports(state: Dictionary) -> String:
 	return JSON.stringify(copy)
 
 func import_archive(path: String, expected_ok: bool = true) -> void:
-	press("IMPORTER UN PACK ZIP")
+	press("Importer une autre réalité")
 	await process_frame
 	check(app.pack_manager.picker.visible, "Vrai sélecteur de fichiers ZIP ouvert")
 	check("*.zip" in str(app.pack_manager.picker.filters), "Sélecteur limité aux archives ZIP")
@@ -88,7 +88,7 @@ func integration() -> void:
 	check(app.model.packs.creation == pack_id, "Choix du pack pour nouvelle carrière")
 	app.selected_club = 23
 	app.club_division = "accession"
-	press("← RETOUR")
+	press("← Retour")
 	await process_frame
 	check(app.route == "Création", "Retour à la sélection de club")
 	check(str(app.catalogue[23].name) == "SU Agen", "Noms réels visibles avant création")
@@ -118,7 +118,7 @@ func integration() -> void:
 	press("Packs et identités")
 	await process_frame
 	check(app.route == "Packs" and app.pack_manager.scope == "career", "Paramètres : deuxième entrée fonctionnelle des packs")
-	press("UTILISER LA BASE ANONYMISÉE")
+	press("Choisir le jeu de base")
 	await wait_response()
 	check(app.model.packs.career == "base" and app.model.packs.creation == pack_id, "Choix carrière indépendant du choix de création")
 	app._command("export")
@@ -160,13 +160,6 @@ func text_visible(node: Node, part: String) -> bool:
 		if text_visible(child, part): return true
 	return false
 
-func option(node: Node) -> OptionButton:
-	if node is OptionButton: return node
-	for child in node.get_children():
-		var found := option(child)
-		if found != null: return found
-	return null
-
 func stop_app() -> void:
 	app.bridge.stop()
 	var deadline := Time.get_ticks_msec() + 2500
@@ -180,6 +173,7 @@ func start_app(profile: String) -> void:
 	OS.set_environment("CD_GODOT_DATA_DIR", profile)
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
+	app.pack_manager.creation_mode = "common"
 	var deadline := Time.get_ticks_msec() + 15000
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
 	check(not app.model.is_empty(), "Profil de test connecté")
@@ -191,11 +185,11 @@ func pack_edge_cases() -> void:
 	await stop_app()
 	await start_app(profile)
 	app._navigate("Création")
-	press("FRANCE · 30 CLUBS")
 	press("PACKS ET IDENTITÉS")
 	await import_archive(valid)
 	var preview: Dictionary = app.model.packs.preview
 	check(button(app, "INSTALLER CE PACK") != null, "ZIP A valide : aperçu installable")
+	check(button(app, "Nouvelle carrière") == null, "L’aperçu seul ne permet pas de continuer avec le pack")
 	await import_archive(OS.get_environment("CD_GODOT_PACK_EDGE_INVALID"), false)
 	check(app.model.packs.preview == null, "ZIP B refusé : ancien aperçu effacé")
 	check(button(app, "INSTALLER CE PACK") == null and not text_visible(app, "PRÊT À INSTALLER"), "ZIP B refusé : aucun ancien contrôle installable")
@@ -205,9 +199,16 @@ func pack_edge_cases() -> void:
 	check(app.model.packs.preview.digest == preview.digest, "Nouvelle analyse A : empreinte correcte restaurée")
 	press("INSTALLER CE PACK")
 	await wait_response()
-	press("UTILISER CE PACK  →")
+	check(app.model.packs.creation == "base", "Installer conserve le choix de création")
+	await capture("pack-installe-creation")
+	press("Nouvelle carrière")
 	await wait_response()
-	press("← RETOUR")
+	check(app.route == "Création" and app.model.packs.creation == preview.id and not app._has_career(), "Le bouton sélectionne le pack installé puis ouvre le choix du club")
+	if app.route != "Création": return
+	press("PACKS ET IDENTITÉS")
+	await capture("pack-actif-creation")
+	press("Nouvelle carrière")
+	check(app.route == "Création" and not app.waiting, "Le pack déjà actif ouvre directement la création")
 	press("PRENDRE LES RÊNES DE REC  →")
 	await wait_response()
 	app._command("export")
@@ -223,7 +224,8 @@ func pack_edge_cases() -> void:
 	await capture("pack-manquant-accueil")
 	press_entry("EntryPacks")
 	check(app.route == "Packs" and app.pack_manager.scope == "career", "Avertissement accueil : accès au pack de carrière")
-	press("← RETOUR")
+	check(button(app, "Nouvelle carrière") == null, "L’atelier de la carrière ouverte conserve ses propres actions")
+	press("← Retour")
 	press_entry("EntryResume")
 	check(app.route == "Bureau" and text_visible(app, "pack de carrière absent"), "Reprise : repli annoncé au Bureau")
 	check(app.model.packs.career == pack_id and app.model.packs.creation == pack_id, "Reprise : liaison et préférence absentes conservées")
@@ -240,16 +242,12 @@ func pack_edge_cases() -> void:
 	check(JSON.parse_string(app.model.meta.exportText).state == before.state, "Reprise sans pack : S intégralement conservé")
 	check(JSON.parse_string(FileAccess.get_file_as_string(profile.path_join("donnees.json"))).seed == seed, "Reprise sans pack : RNG conservé")
 	app._navigate("Création")
-	press("FRANCE · 30 CLUBS")
-	var choice := option(app)
-	check(choice != null and "indisponible" in choice.get_item_text(choice.selected).to_lower() and choice.is_item_disabled(choice.selected), "Création : préférence absente explicitement sélectionnée")
+	check(text_visible(app, "PACK INDISPONIBLE"), "Création : préférence absente explicitement affichée")
 	check(text_visible(app, "pack de création absent"), "Création : repli et choix nécessaire annoncés")
 	await capture("pack-manquant-creation")
 	check(button(app, "PRENDRE LES RÊNES DE " + str(app.catalogue[0].abbr) + "  →").disabled, "Création : démarrage bloqué jusqu’au choix effectif")
-	if choice != null:
-		choice.select(0)
-		choice.item_selected.emit(0)
-		await wait_response()
+	press("Jeu de base")
+	await wait_response()
 	check(app.model.packs.creation == "base" and app.model.packs.career == pack_id, "Choix Base explicite : seule la préférence de création change")
 	app._command("export")
 	await wait_response()
@@ -297,6 +295,7 @@ func _run() -> void:
 		var width := int(OS.get_environment("CD_GODOT_PACK_QA_WIDTH"))
 		root.size = Vector2i(1920, 1080) if width == 1920 else Vector2i(1440, 900)
 	root.add_child(app)
+	app.pack_manager.creation_mode = "common"
 	var deadline := Time.get_ticks_msec() + 15000
 	while app.model.is_empty() and Time.get_ticks_msec() < deadline: await process_frame
 	check(not app.model.is_empty(), "Moteur natif connecté")
@@ -304,15 +303,14 @@ func _run() -> void:
 	await capture("accueil-oval-legacy")
 	app._navigate("Création")
 	await process_frame
-	press("FRANCE · 30 CLUBS")
 	var import_button := button(app, "PACKS ET IDENTITÉS")
 	check(import_button != null, "Création : commande visible des packs personnalisés")
 	if import_button != null:
 		import_button.pressed.emit()
 		await process_frame
 		check(app.route == "Packs", "Création : vraie commande ouvre les packs")
-		check(button(app, "IMPORTER UN PACK ZIP") != null, "Packs : sélecteur ZIP disponible")
-		check(button(app, "UTILISER LA BASE ANONYMISÉE") != null, "Packs : retour explicite à la base")
+		check(button(app, "Importer une autre réalité") != null, "Packs : sélecteur ZIP disponible")
+		check(button(app, "Choisir le jeu de base") != null, "Packs : retour explicite à la base")
 	var skin = load("res://ui/game_skin.gd")
 	var badge: Control = skin.crest({"abbr":"QA","logoPath":OS.get_environment("CD_GODOT_PACK_TEST_IMAGE")}, 56)
 	check(badge is TextureRect and badge.texture != null, "Blason : image du pack chargée depuis le profil")

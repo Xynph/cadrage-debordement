@@ -78,7 +78,7 @@ func _hero() -> void:
 		D.text(tile, 290, 53, str(number) if not data.is_empty() else "—", 44, C.IVORY, 800, 76, HORIZONTAL_ALIGNMENT_RIGHT)
 	var preparation := SeasonPreparation.data(app.model.meta)
 	if not preparation.is_empty():
-		var title := "Préparation du Champ Rugby" if champ else "Préparation de League One" if japan else "Préparation du Pacifique"
+		var title := "Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp")))
 		var section := "ChampPreparation" if champ else "JapanPreparation" if japan else "PacificPreparation"
 		var card := D.panel(hero,Rect2(1484,28,735,256),title,"calendar","",section)
 		D.text(card,24,110,World.preparation_note(preparation),33,C.IVORY,700,685)

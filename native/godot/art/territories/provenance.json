@@ -1,0 +1,275 @@
+{
+  "generator": "OpenAI image generation",
+  "atlasLayout": "4 × 4, stadium then city per club, left to right then top to bottom",
+  "assets": [
+    {
+      "file": "30-stadium.png",
+      "source": "exec-e0afe92d-dd0b-4202-b7f0-c0abbcbf4cb9.png",
+      "sha256": "3dc3cbe2a767f7b6132072af06abaae1f42d5ec63ac0d18cd079adfe3ad7d11a",
+      "prompt": "Create one photorealistic wide establishing photograph for the desktop rugby management game Oval Legacy 27, to be cropped as a landscape thumbnail. Bath, southwest England. A fictional historic rugby ground with a honey-coloured Bath-stone terrace visible beyond one compact slate-roof stand; tree-lined floodplain, light autumn fog. Give the scene a distinct location and architecture, mature editorial sports photography, rich dark greens and neutral charcoal shadows, restrained natural colors and crisp detail. Natural photographic realism, subtle film grain. Keep the important elements within the center 65 percent. A clear rugby pitch and one pair of recognizable H-shaped rugby goalposts. Original fictional place inspired by the region, no existing club crest, no commercial signs, no typography, no overlay, no frames, no watermark."
+    },
+    {
+      "file": "30-city.png",
+      "source": "exec-3649aeff-3223-4512-bb7a-4a092854d711.png",
+      "sha256": "b5f6e3d2db20c32d203fca0f01fd3f6a8560794d5f5a2985c33b0df840a0ca52",
+      "prompt": "Create one photorealistic wide establishing photograph for the desktop rugby management game Oval Legacy 27, to be cropped as a landscape thumbnail. Bath, southwest England reimagined as an original game location. Honey-coloured Georgian townhouses ascending a green slope above a river and stone footbridge, blue morning. Give the scene a distinct location and architecture, mature editorial sports photography, rich dark greens and neutral charcoal shadows, restrained natural colors and crisp detail. Natural photographic realism, subtle film grain. Keep the important elements within the center 65 percent. No sports stadium in this city view. Original fictional place inspired by the region, no existing club crest, no commercial signs, no typography, no overlay, no frames, no watermark."
+    },
+    {
+      "file": "61-stadium.png",
+      "source": "exec-5af92523-600f-41f1-a4a6-2769900251b3.png",
+      "sha256": "5f6c48f39928bb82ad8cd46858c382e6619fa37f6bad16b993f013fde9654076",
+      "prompt": "Create one photorealistic wide establishing photograph for the desktop rugby management game Oval Legacy 27, to be cropped as a landscape thumbnail. Christchurch, South Island. Original provincial rugby stadium with one low angular cantilevered roof, dark red seating accents, a rugged view to the Port Hills, cool southerly light. Give the scene a distinct location and architecture, mature editorial sports photography, rich dark greens and neutral charcoal shadows, restrained natural colors and crisp detail. Natural photographic realism, subtle film grain. Keep the important elements within the center 65 percent. A clear rugby pitch and one pair of recognizable H-shaped rugby goalposts. Original fictional place inspired by the region, no existing club crest, no commercial signs, no typography, no overlay, no frames, no watermark."
+    },
+    {
+      "file": "61-city.png",
+      "source": "exec-215150de-17ab-4b97-b63f-91b38498ef81.png",
+      "sha256": "7034f54942e026fcf989a63eac76a93924104518da7552821a277c3ca03b425c",
+      "prompt": "Create one photorealistic wide establishing photograph for the desktop rugby management game Oval Legacy 27, to be cropped as a landscape thumbnail. Christchurch, South Island reimagined as a fictional city district. Leafy river bend, compact buildings, distant Port Hills, late afternoon light on the Avon-like water. Give the scene a distinct location and architecture, mature editorial sports photography, rich dark greens and neutral charcoal shadows, restrained natural colors and crisp detail. Natural photographic realism, subtle film grain. Keep the important elements within the center 65 percent. No sports stadium in this city view. Original fictional place inspired by the region, no existing club crest, no commercial signs, no typography, no overlay, no frames, no watermark."
+    },
+    {
+      "file": "70-stadium.png",
+      "source": "exec-b3704f7c-95bb-4a17-9c08-8cf18b4c0715.png",
+      "sha256": "d5615ecb3bebb9328f48c3a6e479a5f0fdb7b917240436f6f75d326f3c957acf",
+      "prompt": "Create one photorealistic wide establishing photograph for the desktop rugby management game Oval Legacy 27, to be cropped as a landscape thumbnail. Kobe, Japan. Original rugby ground against distant forest hills and an industrial port skyline, precise roof framing and burgundy seats under clear cold stadium lights. Give the scene a distinct location and architecture, mature editorial sports photography, rich dark greens and neutral charcoal shadows, restrained natural colors and crisp detail. Natural photographic realism, subtle film grain. Keep the important elements within the center 65 percent. A clear rugby pitch and one pair of recognizable H-shaped rugby goalposts. Original fictional place inspired by the region, no existing club crest, no commercial signs, no typography, no overlay, no frames, no watermark."
+    },
+    {
+      "file": "70-city.png",
+      "source": "exec-f122942b-edf3-4075-8d27-1a7af002d4d6.png",
+      "sha256": "ebf4c297a763b759efae5ea3d67169e5df70012be53e186d06151bc7e5981cf6",
+      "prompt": "Create one photorealistic wide establishing photograph for the desktop rugby management game Oval Legacy 27, to be cropped as a landscape thumbnail. Kobe, Japan as an original game location. Urban hillside overlooks the industrial bay with cranes and a low seaside street, warm shop lights, mountains meet the sea. Give the scene a distinct location and architecture, mature editorial sports photography, rich dark greens and neutral charcoal shadows, restrained natural colors and crisp detail. Natural photographic realism, subtle film grain. Keep the important elements within the center 65 percent. No sports stadium in this city view. Original fictional place inspired by the region, no existing club crest, no commercial signs, no typography, no overlay, no frames, no watermark."
+    },
+    {
+      "file": "00.png",
+      "source": "exec-53256067-d5b2-422e-9810-c0990f088739.png",
+      "sha256": "41cd021e368199d84e911c6608bd99f62b008ff9e57edae94bdbbd85a3140d53",
+      "prompt": "Generate a single production texture atlas for Oval Legacy 27, a mature desktop rugby manager. Precisely 4 columns and 4 rows of independent rectangular photographic vignettes on a single landscape canvas. Each vignette fills exactly one quarter of width and one quarter of height. Sharp straight boundaries at 25%, 50% and 75%; no gutter, label, margin, title, numbers, icon, frame or watermark. Never let a scene or a sky continue into its neighboring tile. Every tile is a separate believable wide editorial photo with natural detail and sober colors, of an original invented location inspired by the geography below. Rugged serious sports documentary style. Important subjects centered inside each tile with breathing room. The two stadium tiles on each row show distinct invented professional rugby grounds with green pitches and recognizable H rugby posts, some grandstands and no branding. The two urban tiles show distinct inhabited cityscapes, no stadium or sports field. Specific row and column order (these instructions must never be written into the image):\nRow 1: column 1, rugby stadium in a fictional Toulouse district; column 2, an urban view evoking Toulouse; column 3, a different rugby stadium in a fictional Bordeaux district; column 4, an urban view evoking Bordeaux.\nRow 2: column 1, rugby stadium in a fictional La Rochelle district; column 2, an urban view evoking La Rochelle; column 3, a different rugby stadium in a fictional Toulon district; column 4, an urban view evoking Toulon.\nRow 3: column 1, rugby stadium in a fictional Pau district; column 2, an urban view evoking Pau; column 3, a different rugby stadium in a fictional Bayonne district; column 4, an urban view evoking Bayonne.\nRow 4: column 1, rugby stadium in a fictional Clermont-Ferrand district; column 2, an urban view evoking Clermont-Ferrand; column 3, a different rugby stadium in a fictional Lyon district; column 4, an urban view evoking Lyon.\nAim for clean perfectly aligned 4-by-4 game texture atlas layout. Variety in terrain, angle, materials, lighting and capacity across grounds, avoid replication of real stadium architecture. All cells photorealistic, no map, no UI, no people in close-up.",
+      "clubs": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "file": "01.png",
+      "source": "exec-096024dd-f9da-45b7-8702-a84ad35cc552.png",
+      "sha256": "494564898bfc9dfa7baf79e5e49614da79a10701db04bd55c6e4fb16c8ef2bc3",
+      "prompt": "Generate a single production texture atlas for Oval Legacy 27, a mature desktop rugby manager. Precisely 4 columns and 4 rows of independent rectangular photographic vignettes on a single landscape canvas. Each vignette fills exactly one quarter of width and one quarter of height. Sharp straight boundaries at 25%, 50% and 75%; no gutter, label, margin, title, numbers, icon, frame or watermark. Never let a scene or a sky continue into its neighboring tile. Every tile is a separate believable wide editorial photo with natural detail and sober colors, of an original invented location inspired by the geography below. Rugged serious sports documentary style. Important subjects centered inside each tile with breathing room. The two stadium tiles on each row show distinct invented professional rugby grounds with green pitches and recognizable H rugby posts, some grandstands and no branding. The two urban tiles show distinct inhabited cityscapes, no stadium or sports field. Specific row and column order (these instructions must never be written into the image):\nRow 1: column 1, rugby stadium in a fictional Montpellier district; column 2, an urban view evoking Montpellier; column 3, a different rugby stadium in a fictional Castres district; column 4, an urban view evoking Castres.\nRow 2: column 1, rugby stadium in a fictional Nanterre district; column 2, an urban view evoking Nanterre; column 3, a different rugby stadium in a fictional Paris district; column 4, an urban view evoking Paris.\nRow 3: column 1, rugby stadium in a fictional Perpignan district; column 2, an urban view evoking Perpignan; column 3, a different rugby stadium in a fictional Vannes district; column 4, an urban view evoking Vannes.\nRow 4: column 1, rugby stadium in a fictional Béziers district; column 2, an urban view evoking Béziers; column 3, a different rugby stadium in a fictional Biarritz district; column 4, an urban view evoking Biarritz.\nAim for clean perfectly aligned 4-by-4 game texture atlas layout. Variety in terrain, angle, materials, lighting and capacity across grounds, avoid replication of real stadium architecture. All cells photorealistic, no map, no UI, no people in close-up.",
+      "clubs": [
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "file": "02.png",
+      "source": "exec-de81e0cb-d443-4c36-b5eb-1765d9710bf5.png",
+      "sha256": "bb3bb22dd85fcb8063305ee28004893aac642ac90b75332f09657958a9a54312",
+      "prompt": "Generate a single production texture atlas for Oval Legacy 27, a mature desktop rugby manager. Precisely 4 columns and 4 rows of independent rectangular photographic vignettes on a single landscape canvas. Each vignette fills exactly one quarter of width and one quarter of height. Sharp straight boundaries at 25%, 50% and 75%; no gutter, label, margin, title, numbers, icon, frame or watermark. Never let a scene or a sky continue into its neighboring tile. Every tile is a separate believable wide editorial photo with natural detail and sober colors, of an original invented location inspired by the geography below. Rugged serious sports documentary style. Important subjects centered inside each tile with breathing room. The two stadium tiles on each row show distinct invented professional rugby grounds with green pitches and recognizable H rugby posts, some grandstands and no branding. The two urban tiles show distinct inhabited cityscapes, no stadium or sports field. Specific row and column order (these instructions must never be written into the image):\nRow 1: column 1, rugby stadium in a fictional Brive-la-Gaillarde district; column 2, an urban view evoking Brive-la-Gaillarde; column 3, a different rugby stadium in a fictional Colomiers district; column 4, an urban view evoking Colomiers.\nRow 2: column 1, rugby stadium in a fictional Grenoble district; column 2, an urban view evoking Grenoble; column 3, a different rugby stadium in a fictional Nice district; column 4, an urban view evoking Nice.\nRow 3: column 1, rugby stadium in a fictional Oyonnax district; column 2, an urban view evoking Oyonnax; column 3, a different rugby stadium in a fictional Aix-en-Provence district; column 4, an urban view evoking Aix-en-Provence.\nRow 4: column 1, rugby stadium in a fictional Narbonne district; column 2, an urban view evoking Narbonne; column 3, a different rugby stadium in a fictional Agen district; column 4, an urban view evoking Agen.\nAim for clean perfectly aligned 4-by-4 game texture atlas layout. Variety in terrain, angle, materials, lighting and capacity across grounds, avoid replication of real stadium architecture. All cells photorealistic, no map, no UI, no people in close-up.",
+      "clubs": [
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ]
+    },
+    {
+      "file": "03.png",
+      "source": "exec-982f7191-ae5a-46cf-9f66-67c59ce3e17c.png",
+      "sha256": "03252f158b138cf865419273fb26352db4068f808f83cf029ffedfe723e94711",
+      "prompt": "Generate a single production texture atlas for Oval Legacy 27, a mature desktop rugby manager. Precisely 4 columns and 4 rows of independent rectangular photographic vignettes on a single landscape canvas. Each vignette fills exactly one quarter of width and one quarter of height. Sharp straight boundaries at 25%, 50% and 75%; no gutter, label, margin, title, numbers, icon, frame or watermark. Never let a scene or a sky continue into its neighboring tile. Every tile is a separate believable wide editorial photo with natural detail and sober colors, of an original invented location inspired by the geography below. Rugged serious sports documentary style. Important subjects centered inside each tile with breathing room. The two stadium tiles on each row show distinct invented professional rugby grounds with green pitches and recognizable H rugby posts, some grandstands and no branding. The two urban tiles show distinct inhabited cityscapes, no stadium or sports field. Specific row and column order (these instructions must never be written into the image):\nRow 1: column 1, rugby stadium in a fictional Angoulême district; column 2, an urban view evoking Angoulême; column 3, a different rugby stadium in a fictional Aurillac district; column 4, an urban view evoking Aurillac.\nRow 2: column 1, rugby stadium in a fictional Dax district; column 2, an urban view evoking Dax; column 3, a different rugby stadium in a fictional Montauban district; column 4, an urban view evoking Montauban.\nRow 3: column 1, rugby stadium in a fictional Nevers district; column 2, an urban view evoking Nevers; column 3, a different rugby stadium in a fictional Valence district; column 4, an urban view evoking Valence.\nRow 4: column 1, rugby stadium in a fictional Bristol district; column 2, an urban view evoking Bristol; column 3, a different rugby stadium in a fictional Exeter district; column 4, an urban view evoking Exeter.\nAim for clean perfectly aligned 4-by-4 game texture atlas layout. Variety in terrain, angle, materials, lighting and capacity across grounds, avoid replication of real stadium architecture. All cells photorealistic, no map, no UI, no people in close-up.",
+      "clubs": [
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        31,
+        32
+      ]
+    },
+    {
+      "file": "04.png",
+      "source": "exec-cabbcbf9-5809-4905-b1dc-41d5d4cb3be4.png",
+      "sha256": "4a9dbb534497dfe5ef581c2e02b83752eed4d6656be3d4bf911a112e3d59f912",
+      "prompt": "Generate a single production texture atlas for Oval Legacy 27, a mature desktop rugby manager. Precisely 4 columns and 4 rows of independent rectangular photographic vignettes on a single landscape canvas. Each vignette fills exactly one quarter of width and one quarter of height. Sharp straight boundaries at 25%, 50% and 75%; no gutter, label, margin, title, numbers, icon, frame or watermark. Never let a scene or a sky continue into its neighboring tile. Every tile is a separate believable wide editorial photo with natural detail and sober colors, of an original invented location inspired by the geography below. Rugged serious sports documentary style. Important subjects centered inside each tile with breathing room. The two stadium tiles on each row show distinct invented professional rugby grounds with green pitches and recognizable H rugby posts, some grandstands and no branding. The two urban tiles show distinct inhabited cityscapes, no stadium or sports field. Specific row and column order (these instructions must never be written into the image):\nRow 1: column 1, rugby stadium in a fictional Gloucester district; column 2, an urban view evoking Gloucester; column 3, a different rugby stadium in a fictional Twickenham district; column 4, an urban view evoking Twickenham.\nRow 2: column 1, rugby stadium in a fictional Leicester district; column 2, an urban view evoking Leicester; column 3, a different rugby stadium in a fictional Newcastle upon Tyne district; column 4, an urban view evoking Newcastle upon Tyne.\nRow 3: column 1, rugby stadium in a fictional Northampton district; column 2, an urban view evoking Northampton; column 3, a different rugby stadium in a fictional Salford district; column 4, an urban view evoking Salford.\nRow 4: column 1, rugby stadium in a fictional Mill Hill, London district; column 2, an urban view evoking Mill Hill, London; column 3, a different rugby stadium in a fictional Dublin district; column 4, an urban view evoking Dublin.\nAim for clean perfectly aligned 4-by-4 game texture atlas layout. Variety in terrain, angle, materials, lighting and capacity across grounds, avoid replication of real stadium architecture. All cells photorealistic, no map, no UI, no people in close-up.",
+      "clubs": [
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ]
+    },
+    {
+      "file": "05.png",
+      "source": "exec-39579000-2ec1-4cee-80c5-1a23c340d255.png",
+      "sha256": "84bf71db47f0c15f6993fca24d6b437542dd3e7974b17d5a56f790f603a70ee5",
+      "prompt": "Generate a single production texture atlas for Oval Legacy 27, a mature desktop rugby manager. Precisely 4 columns and 4 rows of independent rectangular photographic vignettes on a single landscape canvas. Each vignette fills exactly one quarter of width and one quarter of height. Sharp straight boundaries at 25%, 50% and 75%; no gutter, label, margin, title, numbers, icon, frame or watermark. Never let a scene or a sky continue into its neighboring tile. Every tile is a separate believable wide editorial photo with natural detail and sober colors, of an original invented location inspired by the geography below. Rugged serious sports documentary style. Important subjects centered inside each tile with breathing room. The two stadium tiles on each row show distinct invented professional rugby grounds with green pitches and recognizable H rugby posts, some grandstands and no branding. The two urban tiles show distinct inhabited cityscapes, no stadium or sports field. Specific row and column order (these instructions must never be written into the image):\nRow 1: column 1, rugby stadium in a fictional Limerick district; column 2, an urban view evoking Limerick; column 3, a different rugby stadium in a fictional Belfast district; column 4, an urban view evoking Belfast.\nRow 2: column 1, rugby stadium in a fictional Galway district; column 2, an urban view evoking Galway; column 3, a different rugby stadium in a fictional Glasgow district; column 4, an urban view evoking Glasgow.\nRow 3: column 1, rugby stadium in a fictional Édimbourg district; column 2, an urban view evoking Édimbourg; column 3, a different rugby stadium in a fictional Cardiff district; column 4, an urban view evoking Cardiff.\nRow 4: column 1, rugby stadium in a fictional Newport district; column 2, an urban view evoking Newport; column 3, a different rugby stadium in a fictional Swansea district; column 4, an urban view evoking Swansea.\nAim for clean perfectly aligned 4-by-4 game texture atlas layout. Variety in terrain, angle, materials, lighting and capacity across grounds, avoid replication of real stadium architecture. All cells photorealistic, no map, no UI, no people in close-up.",
+      "clubs": [
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48
+      ]
+    },
+    {
+      "file": "06.png",
+      "source": "exec-2fb141e6-5c58-4eb6-9f81-620a2058534e.png",
+      "sha256": "703d4bd1d1ed1b7e451f682cdb3b2899a37078588a5a7c83bfc9811ec8932a06",
+      "prompt": "Generate a single production texture atlas for Oval Legacy 27, a mature desktop rugby manager. Precisely 4 columns and 4 rows of independent rectangular photographic vignettes on a single landscape canvas. Each vignette fills exactly one quarter of width and one quarter of height. Sharp straight boundaries at 25%, 50% and 75%; no gutter, label, margin, title, numbers, icon, frame or watermark. Never let a scene or a sky continue into its neighboring tile. Every tile is a separate believable wide editorial photo with natural detail and sober colors, of an original invented location inspired by the geography below. Rugged serious sports documentary style. Important subjects centered inside each tile with breathing room. The two stadium tiles on each row show distinct invented professional rugby grounds with green pitches and recognizable H rugby posts, some grandstands and no branding. The two urban tiles show distinct inhabited cityscapes, no stadium or sports field. Specific row and column order (these instructions must never be written into the image):\nRow 1: column 1, rugby stadium in a fictional Llanelli district; column 2, an urban view evoking Llanelli; column 3, a different rugby stadium in a fictional Trévise district; column 4, an urban view evoking Trévise.\nRow 2: column 1, rugby stadium in a fictional Parme district; column 2, an urban view evoking Parme; column 3, a different rugby stadium in a fictional Le Cap district; column 4, an urban view evoking Le Cap.\nRow 3: column 1, rugby stadium in a fictional Pretoria district; column 2, an urban view evoking Pretoria; column 3, a different rugby stadium in a fictional Durban district; column 4, an urban view evoking Durban.\nRow 4: column 1, rugby stadium in a fictional Johannesburg district; column 2, an urban view evoking Johannesburg; column 3, a different rugby stadium in a fictional Bloemfontein district; column 4, an urban view evoking Bloemfontein.\nAim for clean perfectly aligned 4-by-4 game texture atlas layout. Variety in terrain, angle, materials, lighting and capacity across grounds, avoid replication of real stadium architecture. All cells photorealistic, no map, no UI, no people in close-up.",
+      "clubs": [
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56
+      ]
+    },
+    {
+      "file": "07.png",
+      "source": "exec-90ab7dc7-745f-4ea9-982c-03fdba1a5731.png",
+      "sha256": "db0d76d4cbb5aaec096805c516e8f3f0ed14e0b37ca6b99e7a5ceff943f2cc53",
+      "prompt": "Generate a single production texture atlas for Oval Legacy 27, a mature desktop rugby manager. Precisely 4 columns and 4 rows of independent rectangular photographic vignettes on a single landscape canvas. Each vignette fills exactly one quarter of width and one quarter of height. Sharp straight boundaries at 25%, 50% and 75%; no gutter, label, margin, title, numbers, icon, frame or watermark. Never let a scene or a sky continue into its neighboring tile. Every tile is a separate believable wide editorial photo with natural detail and sober colors, of an original invented location inspired by the geography below. Rugged serious sports documentary style. Important subjects centered inside each tile with breathing room. The two stadium tiles on each row show distinct invented professional rugby grounds with green pitches and recognizable H rugby posts, some grandstands and no branding. The two urban tiles show distinct inhabited cityscapes, no stadium or sports field. Specific row and column order (these instructions must never be written into the image):\nRow 1: column 1, rugby stadium in a fictional Tbilissi district; column 2, an urban view evoking Tbilissi; column 3, a different rugby stadium in a fictional Auckland district; column 4, an urban view evoking Auckland.\nRow 2: column 1, rugby stadium in a fictional Canberra district; column 2, an urban view evoking Canberra; column 3, a different rugby stadium in a fictional Hamilton district; column 4, an urban view evoking Hamilton.\nRow 3: column 1, rugby stadium in a fictional Suva district; column 2, an urban view evoking Suva; column 3, a different rugby stadium in a fictional Dunedin district; column 4, an urban view evoking Dunedin.\nRow 4: column 1, rugby stadium in a fictional Wellington district; column 2, an urban view evoking Wellington; column 3, a different rugby stadium in a fictional Brisbane district; column 4, an urban view evoking Brisbane.\nAim for clean perfectly aligned 4-by-4 game texture atlas layout. Variety in terrain, angle, materials, lighting and capacity across grounds, avoid replication of real stadium architecture. All cells photorealistic, no map, no UI, no people in close-up.",
+      "clubs": [
+        57,
+        58,
+        59,
+        60,
+        62,
+        63,
+        64,
+        65
+      ]
+    },
+    {
+      "file": "08.png",
+      "source": "exec-3558c1a3-5b09-49ca-bcf1-bf442a23385b.png",
+      "sha256": "b1c6960026214cfdfa41d2ad0ca9bdcaff82d61fc25466fd1557fc76e603d582",
+      "prompt": "Generate a single production texture atlas for Oval Legacy 27, a mature desktop rugby manager. Precisely 4 columns and 4 rows of independent rectangular photographic vignettes on a single landscape canvas. Each vignette fills exactly one quarter of width and one quarter of height. Sharp straight boundaries at 25%, 50% and 75%; no gutter, label, margin, title, numbers, icon, frame or watermark. Never let a scene or a sky continue into its neighboring tile. Every tile is a separate believable wide editorial photo with natural detail and sober colors, of an original invented location inspired by the geography below. Rugged serious sports documentary style. Important subjects centered inside each tile with breathing room. The two stadium tiles on each row show distinct invented professional rugby grounds with green pitches and recognizable H rugby posts, some grandstands and no branding. The two urban tiles show distinct inhabited cityscapes, no stadium or sports field. Specific row and column order (these instructions must never be written into the image):\nRow 1: column 1, rugby stadium in a fictional Sydney district; column 2, an urban view evoking Sydney; column 3, a different rugby stadium in a fictional Perth district; column 4, an urban view evoking Perth.\nRow 2: column 1, rugby stadium in a fictional Setagaya, Tokyo district; column 2, an urban view evoking Setagaya, Tokyo; column 3, a different rugby stadium in a fictional Utsunomiya district; column 4, an urban view evoking Utsunomiya.\nRow 3: column 1, rugby stadium in a fictional Funabashi district; column 2, an urban view evoking Funabashi; column 3, a different rugby stadium in a fictional Sagamihara district; column 4, an urban view evoking Sagamihara.\nRow 4: column 1, rugby stadium in a fictional Kumagaya district; column 2, an urban view evoking Kumagaya; column 3, a different rugby stadium in a fictional Iwata district; column 4, an urban view evoking Iwata.\nAim for clean perfectly aligned 4-by-4 game texture atlas layout. Variety in terrain, angle, materials, lighting and capacity across grounds, avoid replication of real stadium architecture. All cells photorealistic, no map, no UI, no people in close-up.",
+      "clubs": [
+        66,
+        67,
+        68,
+        69,
+        71,
+        72,
+        73,
+        74
+      ]
+    },
+    {
+      "file": "09.png",
+      "source": "exec-c291272c-0800-4d2c-b02f-577412b03c4d.png",
+      "sha256": "5a07f4d26fb7a5b6d7b45a06a76e23736c17582b968d6edd01b9d118ba92dcee",
+      "prompt": "Generate a single production texture atlas for Oval Legacy 27, a mature desktop rugby manager. Precisely 4 columns and 4 rows of independent rectangular photographic vignettes on a single landscape canvas. Each vignette fills exactly one quarter of width and one quarter of height. Sharp straight boundaries at 25%, 50% and 75%; no gutter, label, margin, title, numbers, icon, frame or watermark. Never let a scene or a sky continue into its neighboring tile. Every tile is a separate believable wide editorial photo with natural detail and sober colors, of an original invented location inspired by the geography below. Rugged serious sports documentary style. Important subjects centered inside each tile with breathing room. The two stadium tiles on each row show distinct invented professional rugby grounds with green pitches and recognizable H rugby posts, some grandstands and no branding. The two urban tiles show distinct inhabited cityscapes, no stadium or sports field. Specific row and column order (these instructions must never be written into the image):\nRow 1: column 1, rugby stadium in a fictional Fuchū, Tokyo district; column 2, an urban view evoking Fuchū, Tokyo; column 3, a different rugby stadium in a fictional Fuchū, Tokyo district; column 4, an urban view evoking Fuchū, Tokyo.\nRow 2: column 1, rugby stadium in a fictional Toyota, Aichi district; column 2, an urban view evoking Toyota, Aichi; column 3, a different rugby stadium in a fictional Urayasu district; column 4, an urban view evoking Urayasu.\nRow 3: column 1, rugby stadium in a fictional Yokohama district; column 2, an urban view evoking Yokohama; column 3, a different rugby stadium in a fictional Kashiwa district; column 4, an urban view evoking Kashiwa.\nRow 4: column 1, rugby stadium in a fictional Higashiōsaka district; column 2, an urban view evoking Higashiōsaka; column 3, a different rugby stadium in a fictional Kōtō, Tokyo district; column 4, an urban view evoking Kōtō, Tokyo.\nAim for clean perfectly aligned 4-by-4 game texture atlas layout. Variety in terrain, angle, materials, lighting and capacity across grounds, avoid replication of real stadium architecture. All cells photorealistic, no map, no UI, no people in close-up.",
+      "clubs": [
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82
+      ]
+    },
+    {
+      "file": "10.png",
+      "source": "exec-078f3cca-aaef-4b4b-9727-acd47ff1d3a3.png",
+      "sha256": "aeb613d6b8242d688e81c62cdeae46a5ec8719aa11b3af52706da9231b33f1be",
+      "prompt": "Generate a single production texture atlas for Oval Legacy 27, a mature desktop rugby manager. Precisely 4 columns and 4 rows of independent rectangular photographic vignettes on a single landscape canvas. Each vignette fills exactly one quarter of width and one quarter of height. Sharp straight boundaries at 25%, 50% and 75%; no gutter, label, margin, title, numbers, icon, frame or watermark. Never let a scene or a sky continue into its neighboring tile. Every tile is a separate believable wide editorial photo with natural detail and sober colors, of an original invented location inspired by the geography below. Rugged serious sports documentary style. Important subjects centered inside each tile with breathing room. The two stadium tiles on each row show distinct invented professional rugby grounds with green pitches and recognizable H rugby posts, some grandstands and no branding. The two urban tiles show distinct inhabited cityscapes, no stadium or sports field. Specific row and column order (these instructions must never be written into the image):\nRow 1: column 1, rugby stadium in a fictional Fukuoka district; column 2, an urban view evoking Fukuoka; column 3, a different rugby stadium in a fictional Osaka district; column 4, an urban view evoking Osaka.\nRow 2: column 1, rugby stadium in a fictional Kawagoe district; column 2, an urban view evoking Kawagoe; column 3, a different rugby stadium in a fictional Kariya district; column 4, an urban view evoking Kariya.\nRow 3: column 1, rugby stadium in a fictional Hiroshima district; column 2, an urban view evoking Hiroshima; column 3, a different rugby stadium in a fictional Périgueux district; column 4, an urban view evoking Périgueux.\nRow 4: column 1, rugby stadium in a fictional Bourgoin-Jallieu district; column 2, an urban view evoking Bourgoin-Jallieu; column 3, a different rugby stadium in a fictional Vienne district; column 4, an urban view evoking Vienne.\nAim for clean perfectly aligned 4-by-4 game texture atlas layout. Variety in terrain, angle, materials, lighting and capacity across grounds, avoid replication of real stadium architecture. All cells photorealistic, no map, no UI, no people in close-up.",
+      "clubs": [
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90
+      ]
+    },
+    {
+      "file": "11.png",
+      "source": "exec-9914c73b-8c8a-4045-a096-0736c19f13c9.png",
+      "sha256": "caf68b9184ac4356c4abe8ab3b2d3ce8e368c0d1a1d9ade7058d96fe44be344c",
+      "prompt": "Generate a single production texture atlas for Oval Legacy 27, a mature desktop rugby manager. Precisely 4 columns and 4 rows of independent rectangular photographic vignettes on a single landscape canvas. Each vignette fills exactly one quarter of width and one quarter of height. Sharp straight boundaries at 25%, 50% and 75%; no gutter, label, margin, title, numbers, icon, frame or watermark. Never let a scene or a sky continue into its neighboring tile. Every tile is a separate believable wide editorial photo with natural detail and sober colors, of an original invented location inspired by the geography below. Rugged serious sports documentary style. Important subjects centered inside each tile with breathing room. The two stadium tiles on each row show distinct invented professional rugby grounds with green pitches and recognizable H rugby posts, some grandstands and no branding. The two urban tiles show distinct inhabited cityscapes, no stadium or sports field. Specific row and column order (these instructions must never be written into the image):\nRow 1: column 1, rugby stadium in a fictional Marcq-en-Barœul district; column 2, an urban view evoking Marcq-en-Barœul; column 3, a different rugby stadium in a fictional Orléans district; column 4, an urban view evoking Orléans.\nRow 2: column 1, rugby stadium in a fictional Rennes district; column 2, an urban view evoking Rennes; column 3, a different rugby stadium in a fictional Rouen district; column 4, an urban view evoking Rouen.\nRow 3: column 1, rugby stadium in a fictional Suresnes district; column 2, an urban view evoking Suresnes; column 3, a different rugby stadium in a fictional Massy district; column 4, an urban view evoking Massy.\nRow 4: column 1, rugby stadium in a fictional Albi district; column 2, an urban view evoking Albi; column 3, a different rugby stadium in a fictional Mont-de-Marsan district; column 4, an urban view evoking Mont-de-Marsan.\nAim for clean perfectly aligned 4-by-4 game texture atlas layout. Variety in terrain, angle, materials, lighting and capacity across grounds, avoid replication of real stadium architecture. All cells photorealistic, no map, no UI, no people in close-up.",
+      "clubs": [
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98
+      ]
+    },
+    {
+      "file": "12.png",
+      "source": "exec-103ea320-72a7-4340-86e8-c00b3b4d1409.png",
+      "sha256": "7c8da56e57b131d6b32e2dd16a9ee5c193ccce0f97255adaa4acd164f97b8f3a",
+      "prompt": "Generate a single production texture atlas for Oval Legacy 27, a mature desktop rugby manager. Precisely 4 columns and 4 rows of independent rectangular photographic vignettes on a single landscape canvas. Each vignette fills exactly one quarter of width and one quarter of height. Sharp straight boundaries at 25%, 50% and 75%; no gutter, label, margin, title, numbers, icon, frame or watermark. Never let a scene or a sky continue into its neighboring tile. Every tile is a separate believable wide editorial photo with natural detail and sober colors, of an original invented location inspired by the geography below. Rugged serious sports documentary style. Important subjects centered inside each tile with breathing room. The two stadium tiles on each row show distinct invented professional rugby grounds with green pitches and recognizable H rugby posts, some grandstands and no branding. The two urban tiles show distinct inhabited cityscapes, no stadium or sports field. Specific row and column order (these instructions must never be written into the image):\nRow 1: column 1, rugby stadium in a fictional Chambéry district; column 2, an urban view evoking Chambéry; column 3, a different rugby stadium in a fictional Bourg-en-Bresse district; column 4, an urban view evoking Bourg-en-Bresse.\nRow 2: column 1, rugby stadium in a fictional Carcassonne district; column 2, an urban view evoking Carcassonne; column 3, a different rugby stadium in a fictional Ampthill district; column 4, an urban view evoking Ampthill.\nRow 3: column 1, rugby stadium in a fictional Bedford district; column 2, an urban view evoking Bedford; column 3, a different rugby stadium in a fictional London district; column 4, an urban view evoking London.\nRow 4: column 1, rugby stadium in a fictional Wirral district; column 2, an urban view evoking Wirral; column 3, a different rugby stadium in a fictional Thame district; column 4, an urban view evoking Thame.\nAim for clean perfectly aligned 4-by-4 game texture atlas layout. Variety in terrain, angle, materials, lighting and capacity across grounds, avoid replication of real stadium architecture. All cells photorealistic, no map, no UI, no people in close-up.",
+      "clubs": [
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106
+      ]
+    },
+    {
+      "file": "13.png",
+      "source": "exec-13e66fe8-d2cd-4f30-ba64-0cd046addb3f.png",
+      "sha256": "6c0886abd87082a627c9470c6a90f797dc9f92b040280527ce7daea1089a8523",
+      "prompt": "Generate a single production texture atlas for Oval Legacy 27, a mature desktop rugby manager. Precisely 4 columns and 4 rows of independent rectangular photographic vignettes on a single landscape canvas. Each vignette fills exactly one quarter of width and one quarter of height. Sharp straight boundaries at 25%, 50% and 75%; no gutter, label, margin, title, numbers, icon, frame or watermark. Never let a scene or a sky continue into its neighboring tile. Every tile is a separate believable wide editorial photo with natural detail and sober colors, of an original invented location inspired by the geography below. Rugged serious sports documentary style. Important subjects centered inside each tile with breathing room. The two stadium tiles on each row show distinct invented professional rugby grounds with green pitches and recognizable H rugby posts, some grandstands and no branding. The two urban tiles show distinct inhabited cityscapes, no stadium or sports field. Specific row and column order (these instructions must never be written into the image):\nRow 1: column 1, rugby stadium in a fictional Penzance district; column 2, an urban view evoking Penzance; column 3, a different rugby stadium in a fictional Coventry district; column 4, an urban view evoking Coventry.\nRow 2: column 1, rugby stadium in a fictional Doncaster district; column 2, an urban view evoking Doncaster; column 3, a different rugby stadium in a fictional London district; column 4, an urban view evoking London.\nRow 3: column 1, rugby stadium in a fictional Gloucester district; column 2, an urban view evoking Gloucester; column 3, a different rugby stadium in a fictional West Bridgford district; column 4, an urban view evoking West Bridgford.\nRow 4: column 1, rugby stadium in a fictional Richmond district; column 2, an urban view evoking Richmond; column 3, a different rugby stadium in a fictional Rotherham district; column 4, an urban view evoking Rotherham.\nAim for clean perfectly aligned 4-by-4 game texture atlas layout. Variety in terrain, angle, materials, lighting and capacity across grounds, avoid replication of real stadium architecture. All cells photorealistic, no map, no UI, no people in close-up.",
+      "clubs": [
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114
+      ]
+    },
+    {
+      "file": "14.png",
+      "source": "exec-3141165f-9e75-4a60-8d24-812340d3c801.png",
+      "sha256": "1ce7841c71545fcd5285f2ea4a968286fee305aa9b7333a4be70cfec25ae3cd3",
+      "prompt": "Generate a single production texture atlas for Oval Legacy 27, a mature desktop rugby manager. Precisely 4 columns and 4 rows of independent rectangular photographic vignettes on a single landscape canvas. Each vignette fills exactly one quarter of width and one quarter of height. Sharp straight boundaries at 25%, 50% and 75%; no gutter, label, margin, title, numbers, icon, frame or watermark. Never let a scene or a sky continue into its neighboring tile. Every tile is a separate believable wide editorial photo with natural detail and sober colors, of an original invented location inspired by the geography below. Rugged serious sports documentary style. Important subjects centered inside each tile with breathing room. The two stadium tiles on each row show distinct invented professional rugby grounds with green pitches and recognizable H rugby posts, some grandstands and no branding. The two urban tiles show distinct inhabited cityscapes, no stadium or sports field. Specific row and column order (these instructions must never be written into the image):\nRow 1: column 1, rugby stadium in a fictional Worcester district; column 2, an urban view evoking Worcester; column 3, a different rugby stadium in a fictional a quiet fictional regional town district; column 4, an urban view evoking a quiet fictional regional town.\nRow 2: column 1, rugby stadium in a fictional a quiet fictional regional town district; column 2, an urban view evoking a quiet fictional regional town; column 3, a different rugby stadium in a fictional a quiet fictional regional town district; column 4, an urban view evoking a quiet fictional regional town.\nRow 3: column 1, rugby stadium in a fictional a quiet fictional regional town district; column 2, an urban view evoking a quiet fictional regional town; column 3, a different rugby stadium in a fictional a quiet fictional regional town district; column 4, an urban view evoking a quiet fictional regional town.\nRow 4: column 1, rugby stadium in a fictional a quiet fictional regional town district; column 2, an urban view evoking a quiet fictional regional town; column 3, a different rugby stadium in a fictional a quiet fictional regional town district; column 4, an urban view evoking a quiet fictional regional town.\nAim for clean perfectly aligned 4-by-4 game texture atlas layout. Variety in terrain, angle, materials, lighting and capacity across grounds, avoid replication of real stadium architecture. All cells photorealistic, no map, no UI, no people in close-up.",
+      "clubs": [
+        115
+      ]
+    }
+  ]
+}

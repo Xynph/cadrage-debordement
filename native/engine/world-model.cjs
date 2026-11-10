@@ -1,7 +1,86 @@
 'use strict';
-module.exports=function worldModel(base,publishedVenue){
+module.exports=function worldModel(base,publishedVenue,clubHistory){
  const W=CDWorldCareer,copy=x=>JSON.parse(JSON.stringify(x));
- const catalogue=R=>R.clubs.map(({players,...c})=>({...c,division:c.leagueId,playable:c.leagueId!=='guest'}));
+ const catalogues=new WeakMap();
+ const positions=['Piliers','Talonneurs','Deuxièmes lignes','Troisièmes lignes','Demis de mêlée','Demis d’ouverture','Ailiers','Centres','Arrières'];
+ const starterSlots=positions.map((_,family)=>FAMILIES.filter(slot=>slot===family).length);
+ const round=value=>Math.round(value*10)/10;
+ function rankLine(lanes,depth){
+  let filled=0,expected=0,points=0;
+  for(const lane of lanes){
+   const selected=lane.ratings.slice(depth*lane.slots,(depth+1)*lane.slots);
+   filled+=selected.length;
+   expected+=lane.slots;
+   points+=selected.reduce((sum,rating)=>sum+rating,0);
+  }
+  return {filled,expected,points};
+ }
+ function rosterProfile(players,profiles){
+  const groups=positions.map((_,family)=>family===0
+   ?[{position:POS[0],slots:1,ratings:[]},{position:POS[2],slots:1,ratings:[]}]
+   :[{slots:starterSlots[family],ratings:[]}]);
+  let forwards=0,backs=0,points=0;
+  for(const player of players){
+   const position=profiles?.players[player.id]?.position.primary??player.pos;
+   const family=FAMILIES[POS.indexOf(position)];
+   if(family<4)forwards++;else backs++;
+   points+=player.rating;
+   const lane=groups[family]?.find(row=>row.position===undefined||row.position===position);
+   if(lane)lane.ratings.push(player.rating);
+  }
+  const byPosition=groups.map(lanes=>{
+   for(const lane of lanes)lane.ratings.sort((a,b)=>b-a);
+   return {starters:rankLine(lanes,0),reserves:rankLine(lanes,1)};
+  });
+  return {average:players.length?round(points/players.length):null,forwards,backs,byPosition};
+ }
+ const compareLine=(a,b)=>b.filled-a.filled||b.points-a.points;
+ function leagueRank(line,peers){
+  const rank=1+peers.filter(peer=>compareLine(peer,line)<0).length;
+  const tied=peers.filter(peer=>compareLine(peer,line)===0).length>1;
+  return {rank,tied,filled:line.filled,expected:line.expected};
+ }
+ function startingRoster({average,forwards,backs,byPosition},division){
+  const ordered=byPosition.map((group,index)=>{
+   const peers=division.map(roster=>roster.byPosition[index]);
+   return {name:positions[index],detail:{
+    clubs:peers.length,
+    starters:leagueRank(group.starters,peers.map(peer=>peer.starters)),
+    reserves:leagueRank(group.reserves,peers.map(peer=>peer.reserves)),
+   }};
+  });
+  ordered.sort((a,b)=>{
+   const left=a.detail,right=b.detail;
+   const missing=line=>line.expected-line.filled;
+   return missing(left.starters)-missing(right.starters)
+    || (2*left.starters.rank+left.reserves.rank)-(2*right.starters.rank+right.reserves.rank)
+    || left.starters.rank-right.starters.rank;
+  });
+  const strongest=ordered[0],weakest=ordered.at(-1);
+  return {
+   average,forwards,backs,
+   strengths:strongest?.name??'',strengthDetail:strongest?.detail??null,
+   needs:weakest?.name??'',weaknessDetail:weakest?.detail??null,
+  };
+ }
+ function catalogue(R){
+  if(!catalogues.has(R)){
+   const profiles=CDRosterFoundation.resolve(CDRosterFoundation.marker);
+   const rosters=R.clubs.map(({players})=>rosterProfile(players,profiles)),divisions=new Map();
+   R.clubs.forEach((club,index)=>{
+    if(!divisions.has(club.leagueId))divisions.set(club.leagueId,[]);
+    divisions.get(club.leagueId).push(rosters[index]);
+   });
+   catalogues.set(R,R.clubs.map(({players,...c},index)=>{
+    const history=clubHistory[c.id];
+    return {
+     ...c,division:c.leagueId,playable:c.leagueId!=='guest',startingRoster:startingRoster(rosters[index],divisions.get(c.leagueId)),
+     ...(history?{history:{founded:history.founded,bio:history.bio,results:history.results}}:{}),
+    };
+   }));
+  }
+  return catalogues.get(R);
+ }
  const database=R=>({id:R.id,version:R.version,snapshot:R.snapshot,playerCount:R.playerCount,clubCount:R.clubCount});
  return function project(){
   const m=base(),old=CDWorldEditions.forMode('world').registry,pacific=CDWorldEditions.forMode('world-pacific')?.registry,japan=CDWorldEditions.forMode('world-japan')?.registry,nationale=CDWorldEditions.forMode('world-nationale')?.registry,champ=CDWorldEditions.forMode('world-champ')?.registry;
@@ -30,9 +109,9 @@ module.exports=function worldModel(base,publishedVenue){
   const f=W.userFixture(S);m.next=f?{pair:[f.homeId,f.awayId],home:clubSummary(f.homeId),away:clubSummary(f.awayId),label:W.label(S),round:f.round,week:S.round,date:f.date,neutral:f.neutral,phase:f.phase,leagueId:f.competitionId,competitionId:f.competitionId,venue:venue(f),...dateProof(f)}:null;
   if(edition.version>=2&&m.meta.leagueId==='srp'&&!m.next){const upcoming=m.calendar.find(x=>!x.played&&x.week>S.round);if(upcoming)m.meta.pacificPreparation={nextWeek:upcoming.week,nextDate:upcoming.date,weeksUntil:upcoming.week-S.round};}
   if(edition.version>=3&&['jlo-d1','jlo-d2'].includes(m.meta.leagueId)&&!m.next){const upcoming=m.calendar.find(x=>!x.played&&x.week>S.round);if(upcoming)m.meta.japanPreparation={nextWeek:upcoming.week,nextDate:upcoming.date,weeksUntil:upcoming.week-S.round};}
-  if(edition.version>=4){m.meta.competitionRules+=' · Nationale';m.nationalePromotion=copy(S.worldMode.nationale);const cards=f?CDWorldNationaleCards.project(S,{...f,season:years[0]},[...S.lineup,...S.reserves]):null;if(cards)m.selection.nationaleQualification=cards;}
+  if(edition.version>=4){m.meta.competitionRules+=' · Division fédérale';m.nationalePromotion=copy(S.worldMode.nationale);const cards=f?CDWorldNationaleCards.project(S,{...f,season:years[0]},[...S.lineup,...S.reserves]):null;if(cards)m.selection.nationaleQualification=cards;}
   if(edition.version===5){
-   m.meta.competitionRules+=' · Champ Rugby';m.champBoundary=copy(S.worldMode.champ);
+   m.meta.competitionRules+=' · Accession anglaise';m.champBoundary=copy(S.worldMode.champ);
    if(m.meta.leagueId==='champ'&&!m.next){const upcoming=m.calendar.find(x=>!x.played&&x.week>S.round);if(upcoming)m.meta.champPreparation={nextWeek:upcoming.week,nextDate:upcoming.date,weeksUntil:upcoming.week-S.round};}
   }
   m.archives={limit:15,seasons:S.worldMode.yearbook.map(y=>({...copy(y),champions:Object.entries(y.champions).map(([leagueId,clubId])=>({leagueId,clubId}))}))};m.finance.notice='La saison couvre '+W.sizing(S).rounds+' semaines de gestion.';
