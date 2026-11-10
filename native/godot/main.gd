@@ -785,6 +785,7 @@ func primary_text() -> String:
 		if live.get("finished",false): return "VALIDER LE RÉSULTAT  →"
 		if route == "Préparation" and live.get("paused",false): return "RETOUR AU MATCH  →"
 		return "RETOUR AU DIRECT  →"
+	if model.get("clubLife", {}).get("press", {}).get("conference", {}).get("required", false): return "OUVRIR LA RÉCEPTION  →"
 	if model.get("meta",{}).get("canAdvanceSeason",false): return "SAISON SUIVANTE  →"
 	if not SeasonPreparation.data(model.get("meta",{})).is_empty(): return "AVANCER LA PRÉPARATION  →"
 	if model.get("next") == null: return "AVANCER LA SEMAINE  →"
@@ -795,6 +796,7 @@ func primary_action() -> void:
 	if not _live().is_empty():
 		if _live().get("finished",false): _command("finish_round")
 		else: _navigate("Match")
+	elif model.get("clubLife", {}).get("press", {}).get("conference", {}).get("required", false): _show_press_inbox()
 	elif model.meta.get("canAdvanceSeason",false): confirm("Une nouvelle saison", "Les contrats arrivés à échéance sont réglés et les mouvements de division sont appliqués. Commencer la saison suivante ?", func(): _command("next_season",{"confirmed":true}))
 	elif not SeasonPreparation.data(model.meta).is_empty(): _command(SeasonPreparation.command(model.meta),{"fromWeek":int(model.meta.get("week",0))})
 	elif model.get("next") == null: _command("finish_round")
