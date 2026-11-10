@@ -128,7 +128,34 @@ func _heading() -> void:
 		tab.set_pressed_no_signal(i == active_tab)
 		tab.add_theme_stylebox_override("pressed", tab.get_theme_stylebox("normal"))
 		if i < 2: tab.tooltip_text = "Espoirs de 19 à 21 ans" if i == 0 else "Espoirs jusqu’à 18 ans"
+	_group_upgrade()
 	D.line(self, Vector2(1, 304), Vector2(2248, 304), Color(C.LINE, .90))
+
+func _group_upgrade() -> void:
+	var meta: Dictionary = app.model.get("meta", {})
+	if int(meta.get("academyGroupPolicy", 0)) >= 2: return
+	var preview: Dictionary = meta.get("academyGroups", {})
+	var rectangle := Rect2(1415, 247, 813, 56)
+	if preview.is_empty():
+		_action(self, rectangle, "Vérifier le passage à 30 U18 et 30 U21", func(): app._command("academy_groups_preview"), false, "people", "AcademyGroupsPreview")
+		return
+	if not preview.get("available", false):
+		_action(self, rectangle, "Pourquoi la mise à jour attend", func(): _group_upgrade_reason(preview), false, "people", "AcademyGroupsBlocked")
+		return
+	var text := "Compléter les U18 et U21 des %d clubs ? %d jeunes rejoindront les centres. Les joueurs en place garderont leur fiche et leurs acquis." % [int(preview.centers), int(preview.additions)]
+	_action(self, rectangle, "Compléter les centres de formation", func():
+		app.confirm("30 U18 et 30 U21 par club", text, func():
+			app._command("academy_groups_enable", {"confirmed": true, "context": preview.context}), true), true, "people", "AcademyGroupsEnable")
+
+func _group_upgrade_reason(preview: Dictionary) -> void:
+	var dialog := AcceptDialog.new()
+	app._prepare_dialog(dialog, 620)
+	dialog.title = "Mise à jour des centres de formation"
+	dialog.dialog_text = str(preview.get("reason", "Réessayez après la prochaine intersaison."))
+	app.add_child(dialog)
+	dialog.confirmed.connect(dialog.queue_free)
+	dialog.canceled.connect(dialog.queue_free)
+	dialog.popup_centered(Vector2i(620, 190))
 
 func _open_tab(index: int) -> void:
 	state.tab = index

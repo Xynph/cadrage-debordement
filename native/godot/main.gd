@@ -22,6 +22,7 @@ const COMMAND_WAIT_MESSAGES := {
 	"advance_japan_preparation": "Avance de la préparation…",
 	"advance_champ_preparation": "Avance de la préparation…",
 	"population_enable": "Mise à jour de la base de joueurs…",
+	"academy_groups_enable": "Mise à jour des centres de formation…",
 	"promote_cover": "Enregistrement des renforts…"
 }
 const Immersive = preload("res://ui/immersive08/shell.gd")
