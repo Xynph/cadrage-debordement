@@ -8,9 +8,10 @@ const {
 } = require('./international-2027.cjs');
 const nations = require('./nations-championship-2026.cjs');
 const rugbyChampionship = require('./rugby-championship-2027.cjs');
+const { worldCupHost, nationsFinalHost } = require('./international-hosts.cjs');
 const {
   editionIds, editionYear, templateId, sixNationsCalendar, nationsCalendar, rugbyChampionshipCalendar,
-  hostCountryId, worldCupGroups, worldCupCalendar, simulatedProvenance,
+  confirmedWorldCupCountryId, worldCupGroups, worldCupCalendar, simulatedProvenance,
 } = require('./international-edition-calendar.cjs');
 
 const COMPETITION_IDS = Object.freeze([SIX_NATIONS, WORLD_CUP, nations.id, rugbyChampionship.id]);
@@ -39,6 +40,7 @@ function createEdition(competitionId, { rankings = defaultRankings, drawSeed = 0
   const sixNations = template === SIX_NATIONS;
   const nationsChampionship = template === nations.id;
   const trc = template === rugbyChampionship.id;
+  const cupHost = template === WORLD_CUP ? worldCupHost(year) : null;
   const groups = editionGroups(competitionId);
   const teamIds = groups.flatMap(([, ids]) => ids);
   assert(Array.isArray(rankings) && new Set(rankings).size === rankings.length &&
@@ -71,11 +73,12 @@ function createEdition(competitionId, { rankings = defaultRankings, drawSeed = 0
     const { leagueSchedule, finalsSchedule } = recurring ? nationsCalendar(year) : nations;
     fixtures = leagueSchedule.flatMap((matches, r) => matches.map(([day, kickoff, home, away, venue, neutral], i) =>
       fixture('r' + (r + 1) + '-' + (i + 1), day, kickoff, r + 1, 'league', null, home, away, venue, neutral)));
+    const finalVenue = nationsFinalHost(year).stadium;
     for (const [day, kickoff, placement] of finalsSchedule) {
       const phase = placement === 1 ? 'final' : 'placement';
       const key = placement === 1 ? 'final' : 'placement-' + placement;
       fixtures.push({
-        ...fixture(key, day, kickoff, 7, phase, null, null, null, recurring ? null : 'Allianz Stadium', true),
+        ...fixture(key, day, kickoff, 7, phase, null, null, null, finalVenue, true),
         placement,
         homeSource: 'north-' + placement,
         awaySource: 'south-' + placement,
@@ -95,8 +98,9 @@ function createEdition(competitionId, { rankings = defaultRankings, drawSeed = 0
       fixture('pool-' + pool.toLowerCase() + '-' + (i + 1), recurring ? day : '10-' + String(day).padStart(2, '0'),
         kickoff, Math.floor(i / 2) + 1, 'pool', pool, home, away, worldCupVenues[venue] ?? null, true))).sort(beforeKickoff);
     for (const [key, day, kickoff, venue, round, phase, homeSource, awaySource] of knockoutSchedule) {
+      const stadium = phase === 'final' ? cupHost.stadium : worldCupVenues[venue] ?? null;
       fixtures.push({
-        ...fixture(key, day, kickoff, round, phase, null, null, null, worldCupVenues[venue] ?? null, true),
+        ...fixture(key, day, kickoff, round, phase, null, null, null, stadium, true),
         homeSource,
         awaySource,
       });
@@ -109,7 +113,7 @@ function createEdition(competitionId, { rankings = defaultRankings, drawSeed = 0
       nationsChampionship ? 'Nations Championship' : trc ? 'Rugby Championship' : 'Coupe du monde de rugby') + ' ' + year,
     year,
     ...(nationsChampionship ? { drawSeed } : {}),
-    ...(recurring && template === WORLD_CUP ? { hostCountryId: hostCountryId(year) } : {}),
+    ...(recurring && cupHost ? { hostCountryId: cupHost.id } : {}),
     teams: teamIds.map(id => ({ id, name: teamNames[id] })),
     rankings: rankings.filter(id => teamIds.includes(id)),
     fixtures,
@@ -472,7 +476,7 @@ function simulateResult(edition, fixtureId, { seed = 0, homeStrength, awayStreng
   const rating = (value, teamId) => Number.isFinite(value) ? Math.max(30, Math.min(100, value)) : defaultStrength(teamId);
   const homeAdvantage = fixture.neutralVenue ? 0 : 3;
   const template = templateId(edition.id);
-  const host = template === WORLD_CUP ? hostCountryId(edition.year) : null;
+  const host = template === WORLD_CUP ? confirmedWorldCupCountryId(edition.year) : null;
   const hostAdvantage = host ? 3 * (Number(fixture.homeId === host) - Number(fixture.awayId === host)) : 0;
   const difference = rating(homeStrength, fixture.homeId) - rating(awayStrength, fixture.awayId) + homeAdvantage + hostAdvantage;
   const random = fixtureRandom(seed, fixture.id);

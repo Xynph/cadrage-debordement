@@ -86,7 +86,8 @@ function rugbyChampionshipCalendar(year) {
   ]);
 }
 
-function hostCountryId(year) {
+// Preserve the draws and score simulation of editions already in career saves.
+function confirmedWorldCupCountryId(year) {
   return year === 2027 ? 'AUS' : year === 2031 ? 'USA' : null;
 }
 
@@ -101,7 +102,7 @@ function worldCupGroups(year, random) {
     }
     groups.forEach((group, i) => group.push(band[i]));
   }
-  const host = hostCountryId(year);
+  const host = confirmedWorldCupCountryId(year);
   if (host) {
     const group = groups.find(teams => teams.includes(host));
     const band = group.indexOf(host);
@@ -141,5 +142,5 @@ function simulatedProvenance(template, year) {
 
 module.exports = {
   editionIds, editionYear, templateId, sixNationsCalendar, nationsCalendar, rugbyChampionshipCalendar,
-  hostCountryId, worldCupGroups, worldCupCalendar, simulatedProvenance,
+  confirmedWorldCupCountryId, worldCupGroups, worldCupCalendar, simulatedProvenance,
 };

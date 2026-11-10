@@ -87,5 +87,4 @@ test('simulated future editions play and restore through their respective title 
     assert.deepEqual(restoreEdition(id, Object.fromEntries(edition.fixtures.slice().reverse()
       .map(f => [f.id, f.result]))), edition);
   }
-  assert.equal(createEdition('rugby-world-cup-2035').hostCountryId, null);
 });
