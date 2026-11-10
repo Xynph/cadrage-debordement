@@ -434,17 +434,18 @@ func _run() -> void:
 	await _ask("delegate")
 	_check(app.model.live.finished,"Actual match finishes")
 	await _capture("resultat")
-	var same_page:Node=app.match_page
 	_press("VALIDER LA JOURNÉE  →")
 	await _wait()
-	_check(app.match_page==same_page,"Match panel remains stable across week")
+	_check(app.route=="Réception","Validating the result returns to the reception")
 	_check(int(app.model.meta.week)==1,"Both competitions advance once")
 	await _coverage()
 	if not await _publish_press_invitation(): await _finish(); return
+	app._navigate("Match")
+	await _settle()
 	_check(not app.pause_button.disabled,"Second kickoff reenabled")
 	_press("COUP D'ENVOI")
 	await _wait()
-	_check(app.model.live!=null,"Second actual match starts without navigating away: "+app.last_error)
+	_check(app.model.live!=null,"Second actual match starts after reopening Match: "+app.last_error)
 	if app.model.live==null:await _finish();return
 	await _ask("delegate")
 	await _ask("finish_round")
