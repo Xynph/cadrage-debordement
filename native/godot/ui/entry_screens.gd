@@ -544,7 +544,7 @@ static func _connected_country(tabs: HBoxContainer, button: Button, active: bool
 static func _create(app: Control, selected: Dictionary, mode: String) -> void:
 	var action := func(): app._command("new_career", {"club":int(selected.id),"mode":mode}, "Bureau")
 	if app._has_career():
-		app.confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Exportez-la depuis le menu pour la conserver séparément. Prendre les rênes de %s ?" % G.club_name(selected), action)
+		app.confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Exportez-la depuis le menu pour la conserver séparément. Prendre les rênes de %s ?" % G.club_name(selected), action, true)
 	else:
 		action.call()
 

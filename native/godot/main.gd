@@ -806,7 +806,7 @@ func _file_selected(path: String) -> void:
 		if not refusal.is_empty():
 			_refuse_action(refusal)
 			return
-		confirm("Reprendre cette carrière", "La carrière importée remplacera celle du profil. Le moteur la vérifiera avant de l'appliquer.",func(): _command("import",{"text":text},"Bureau"))
+		confirm("Reprendre cette carrière", "La carrière importée remplacera celle du profil. Le moteur la vérifiera avant de l'appliquer.", func(): _command("import", {"text":text}, "Bureau"), _has_career())
 	else:
 		if waiting: _refuse_action("Une décision est en cours. Réessayez après sa réponse."); return
 		export_path = path
