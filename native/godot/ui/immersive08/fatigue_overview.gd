@@ -86,7 +86,7 @@ static func build(app: Control, parent: Control, state: Dictionary) -> void:
 	D.button(parent, Rect2(1575, 334, 669, 42), "Ouvrir la composition →", func(): app._navigate("Composition"), true, "people", false, app.accent, "FatigueOpenLineup").add_theme_font_size_override("font_size", C.px(20))
 	var panel := D.panel(parent, Rect2(4, 391, 2240, 814), "Rotation et charge individuelle", "heart", "", "FatigueTable")
 	var display_rows: Array = data.rows
-	var note := "Blessure, suspension et sélection restent distinctes. La charge ne prédit pas une blessure."
+	var note := "Blessure, suspension et sélection restent distinctes. Repères de simulation, pas un diagnostic médical."
 	if display_rows.is_empty():
 		display_rows = overview(app.model, FILTERS[4]).rows
 		note = "Aucun profil « %s » : effectif complet ci-dessous pour comparer les plans et préparer la rotation." % selected
@@ -150,10 +150,13 @@ static func _row(app: Control, list: VBoxContainer, row: Dictionary) -> void:
 	D.text(item, 748, 22, _number(player, "physicalLoad", ""), 19, C.GOLD if not str(row.watch_reason).is_empty() else C.IVORY, 600, 65)
 	if player.has("physicalLoad"): D.bar(item, Rect2(816, 12, 76, 5), float(player.physicalLoad), C.GOLD)
 	D.text(item, 910, 22, _number(player, "minutes", ""), 18, C.IVORY, 500, 100)
-	D.text(item, 1028, 22, "%s sem." % G.n(player.get("injury", 0)) if row.injured else "Aucune projetée", 18, C.ALERT if row.injured else C.MUTED, 500, 170)
+	if row.injured: _status_icon(item, "heart", 1028, C.ALERT)
+	D.text(item, 1050, 22, "%s sem." % G.n(player.get("injury", 0)) if row.injured else "Aucune projetée", 18, C.ALERT if row.injured else C.MUTED, 500, 148)
 	var release: String = "En sélection" if row.called else "Non renseigné" if not app.model.get("international", {}).has("availability") else "Au club"
-	D.text(item, 1208, 22, release, 18, C.BLUE if row.called else C.MUTED, 500, 200)
-	D.text(item, 1428, 22, G.n(player.suspension) if row.suspended else "Aucune projetée" if row.suspension_known else "Non renseignée", 18, C.ALERT if row.suspended else C.MUTED, 500, 170)
+	if row.called: _status_icon(item, "flag", 1208, C.BLUE)
+	D.text(item, 1230, 22, release, 18, C.BLUE if row.called else C.MUTED, 500, 178)
+	if row.suspended: _status_icon(item, "warning", 1428, C.ALERT)
+	D.text(item, 1450, 22, G.n(player.suspension) if row.suspended else "Aucune projetée" if row.suspension_known else "Non renseignée", 18, C.ALERT if row.suspended else C.MUTED, 500, 148)
 	D.text(item, 1613, 22, PLANS.get(player.get("loadPlan", ""), "Non renseigné"), 18, C.IVORY, 500, 265)
 	var button := D.button(item, Rect2(1910, 0, 260, 28), "Régler", func(): open_adjustment(app, player), false, "", false, app.accent, "FatigueAdjust_" + identifier(str(player.id)))
 	button.set_meta("player_id", player.id)
@@ -165,6 +168,11 @@ static func _row(app: Control, list: VBoxContainer, row: Dictionary) -> void:
 		compact_style.content_margin_bottom = 0
 		button.add_theme_stylebox_override(style_name, compact_style)
 	button.tooltip_text = load_blocker(app) if not load_blocker(app).is_empty() else item.tooltip_text + " · Choisir puis confirmer le plan"
+
+static func _status_icon(parent: Control, kind: String, left: float, tone: Color) -> void:
+	var icon := C.icon(kind, 16, tone)
+	parent.add_child(icon)
+	D.place(icon, Rect2(left, 7, 16, 16))
 
 static func _number(player: Dictionary, key: String, suffix: String) -> String:
 	return G.n(player[key]) + suffix if player.has(key) and (player[key] is float or player[key] is int) else "—"

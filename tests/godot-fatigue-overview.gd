@@ -85,6 +85,12 @@ func run() -> void:
 	await press("TrainingTab4")
 	check(app.find_child("FatigueTable", true, false) != null, "Tableau fatigue raccordé à Entraînement")
 	await press("FatigueFilter4")
+	var scroll := app.find_child("FatigueScroll", true, false) as ScrollContainer
+	var visible_rows := 0
+	for row in app.find_children("FatigueRow_*", "Control", true, false):
+		if row.get_global_rect().intersection(scroll.get_global_rect()).size.y >= 28:
+			visible_rows += 1
+	check(visible_rows >= 20, "Au moins vingt joueurs visibles dans le tableau dense à 1440p")
 	var row_id := "FatigueAdjust_" + Fatigue.identifier(str(player.id))
 	var adjust := app.find_child(row_id, true, false) as Button
 	check(adjust != null and adjust.get_meta("player_id") == player.id, "Action liée au bon identifiant réel")
@@ -95,6 +101,7 @@ func run() -> void:
 		if dialog.visible: confirmation = dialog
 	check(confirmation != null and confirmation.dialog_text.contains(str(player.name)), "Confirmation explicite nomme le bon joueur")
 	check(app.bridge._next_id == requests and FileAccess.get_sha256(filename) == unchanged, "Lecture et proposition non confirmée : zéro commande et zéro écriture sportive")
+	await capture("fatigue-confirmation-individuelle-1440")
 	if confirmation != null: confirmation.canceled.emit()
 	await settle()
 	check(app.bridge._next_id == requests, "Annuler conserve le profil sans requête")
@@ -133,7 +140,7 @@ func run() -> void:
 	app.model.meta.phase = "ended"
 	check(not Fatigue.load_blocker(app).is_empty(), "Fin de saison : plan verrouillé avec motif")
 	var file := FileAccess.open(OS.get_environment("CD_FATIGUE_OUTPUT").path_join("report.json"), FileAccess.WRITE)
-	file.store_string(JSON.stringify({"checks":checks,"failures":failures,"captures":captures,"display":DisplayServer.get_name(),"note":"La deuxième capture injecte uniquement la projection UI ; le profil moteur reste intact."}, "  "))
+	file.store_string(JSON.stringify({"checks":checks,"failures":failures,"captures":captures,"display":DisplayServer.get_name(),"note":"La capture fatigue-projection-de-recette-1440 injecte uniquement la projection UI ; le profil moteur reste intact."}, "  "))
 	file.close()
 	print("FATIGUE : %d contrôles ; %d échecs" % [checks, failures.size()])
 	await app._close(0 if failures.is_empty() else 1)
