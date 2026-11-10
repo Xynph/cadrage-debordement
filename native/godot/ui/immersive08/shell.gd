@@ -23,6 +23,7 @@ const Press = preload("res://ui/immersive08/press_canvas.gd")
 const Rivalry = preload("res://ui/immersive08/rivalry_canvas.gd")
 const Locker = preload("res://ui/immersive08/locker_canvas.gd")
 const Career = preload("res://ui/immersive08/career_canvas.gd")
+const Selections = preload("res://ui/international_view.gd")
 const MatchCanvas = preload("res://ui/immersive08/match_canvas.gd")
 const MatchCompact = preload("res://ui/immersive08/match_compact.gd")
 const G = preload("res://ui/game_skin.gd")
@@ -253,7 +254,8 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	var crest:=G.crest(app.model.club,C.px(126));rail.add_child(crest);D.place(crest,Rect2(61,151,126,147))
 	D.text(rail,124,331,G.club_name(app.model.club).to_upper(),23,C.IVORY,700,222,HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(rail,124,354,"SAISON "+G.n(app.model.meta.get("season",1)),16,C.GOLD,500,215,HORIZONTAL_ALIGNMENT_CENTER)
-	var names:Array=[["home","Bureau","Bureau"],["mail","Réception","Réception"],["people","Effectif","Effectif"],["tactic","Tactique","Composition"],["train","Entraînement","Préparation"],["search","Recrutement","Recrutement"],["shield","Club","Club"],["money","Finances","Finances"],["trophy","Compétitions","Classements"],["school","Formation","Formation"]]
+	var names:Array=[["mail","Réception","Réception"],["home","Bureau","Bureau"],["people","Effectif","Effectif"],["tactic","Tactique","Composition"],["train","Entraînement","Préparation"],["search","Recrutement","Recrutement"],["shield","Club","Club"],["money","Finances","Finances"],["trophy","Compétitions","Classements"],["school","Formation","Formation"]]
+	if app.model.get("international") is Dictionary: names.append(["flag","Sélections","Sélections"])
 	for i in names.size():
 		var entry:Array=names[i]
 		var destination:String=entry[2]
@@ -278,7 +280,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 		focus.set_expand_margin_all(2)
 		if selected:D.rect(rail,Rect2(7,y,4,49),club_edge)
 		var symbol:=C.icon(entry[0],25,C.IVORY if selected else Color("c8d0c6"));rail.add_child(symbol);D.place(symbol,Rect2(23,y+12,25,25))
-		var unread: int = Reception.unread(app) if i==1 else 0
+		var unread: int = Reception.unread(app) if destination=="Réception" else 0
 		if unread>0:
 			D.rect(rail,Rect2(207,y+13,24,24),C.GOLD,4)
 			D.text(rail,219,y+31,unread,18,Color("101511"),700,24,HORIZONTAL_ALIGNMENT_CENTER)
@@ -576,6 +578,10 @@ static func _calendar_table(app: Control, show_table: bool) -> void:
 static func _existing_page(app: Control, immersive_match: bool) -> void:
 	match app.route:
 		"Réception": app.body.add_child(Reception.build(app))
+		"Sélections":
+			var page := Selections.build(app)
+			app.body.add_child(page)
+			Legacy.apply(page, app.accent)
 		"Club": app.body.add_child(app.ClubViews.club(app))
 		"Calendrier":
 			if app.get_meta("calendar_table",false):

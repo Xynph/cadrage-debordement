@@ -18,6 +18,32 @@ static func _state(app: Control) -> Dictionary:
 		app.management_ui.reception = {"folder":0, "category":"Tous", "selected":"", "oldest_first":false, "marks":{}, "scroll":0}
 	return app.management_ui.reception
 
+static func international_mail(model: Dictionary) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var international: Variant = model.get("international")
+	if not international is Dictionary or not international.get("mail") is Array: return result
+	var seen := {}
+	for event: Variant in international.mail:
+		if not event is Dictionary or not event.get("id") is String or event.id.is_empty() or seen.has(event.id): continue
+		seen[event.id] = true
+		result.append(event)
+	return result
+
+static func _priority_ids(model: Dictionary) -> Array[String]:
+	var ids: Array[String] = []
+	for invitation: Dictionary in model.get("clubLife", {}).get("press", {}).get("invitations", []):
+		if invitation.status == "pending": ids.append(invitation.id)
+	for notice: Dictionary in model.get("calendarMail", []):
+		if notice.status == "pending": ids.append(notice.id)
+	for event: Dictionary in international_mail(model): ids.append("international:" + event.id)
+	return ids
+
+static func new_priority(previous: Dictionary, current: Dictionary) -> String:
+	var before := _priority_ids(previous)
+	for id in _priority_ids(current):
+		if id not in before: return id
+	return ""
+
 static func _messages(app: Control) -> Array[Dictionary]:
 	var source: Array = app.model.get("messages", [])
 	var messages: Array[Dictionary] = []
@@ -73,6 +99,12 @@ static func _messages(app: Control) -> Array[Dictionary]:
 			"id":invitation.id, "subject":subject, "text":detail, "category":"Compétitions",
 			"route":"Presse", "position":messages.size() + 1, "press_invitation":invitation
 		})
+	for event: Dictionary in international_mail(app.model):
+		messages.push_front({
+			"id":"international:" + event.id, "subject":str(event.get("title", "Sélections internationales")),
+			"text":str(event.get("body", "")), "category":"Compétitions",
+			"position":messages.size() + 1, "international_event":event
+		})
 	return messages
 
 static func _is_season_expiry_mail(message: String) -> bool:
@@ -106,8 +138,8 @@ static func _tasks(app: Control) -> Array:
 
 static func heading(row: Control, app: Control) -> Label:
 	var state := _state(app)
-	D.text(row,1,19,"LE COURRIER DU CLUB",19,C.GOLD,600,780)
-	var title := D.text(row,-1,76,"Les nouvelles du vestiaire.",53,C.IVORY,700,777)
+	D.text(row,1,19,"LE COURRIER DE VOTRE CARRIÈRE",19,C.GOLD,600,780)
+	var title := D.text(row,-1,76,"Réception.",53,C.IVORY,700,777)
 	D.line(row,Vector2(746,38),Vector2(746,89),C.LINE)
 	D.chip(row,Rect2(773,36,199,52),"%d non lus" % unread(app),C.MINT)
 	D.chip(row,Rect2(991,36,204,52),"%d décisions" % _tasks(app).size(),C.AMBER)
@@ -138,6 +170,12 @@ static func build(app: Control) -> Control:
 	var folders := D.panel(page,Rect2(0,0,298,379),"", "", "", "InboxFolders")
 	var visible := messages.filter(func(message: Dictionary): return _visible(message,state))
 	if state.oldest_first: visible.reverse()
+	var priority := _priority_ids(app.model)
+	var mandatory := visible.filter(func(message: Dictionary): return message.has("press_invitation") and message.id in priority)
+	var urgent := visible.filter(func(message: Dictionary):
+		return (message.id in priority and not message.has("press_invitation")
+			and (not message.has("international_event") or not marks.get(message.id, {}).get("read", false))))
+	visible = mandatory + urgent + visible.filter(func(message: Dictionary): return message not in mandatory and message not in urgent)
 	if not visible.any(func(message: Dictionary): return message.id == state.selected):
 		var ordinary := visible.filter(func(message: Dictionary): return not message.has("press_invitation"))
 		state.selected = "" if ordinary.is_empty() else ordinary[0].id
@@ -221,6 +259,8 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 		D.text(row,160,76,message.text,22,C.IVORY,500,525)
 		var badge := "Message %02d" % message.position
 		if message.get("press_invitation", {}).get("status") == "pending": badge = "À traiter"
+		elif message.get("calendar_notice", {}).get("status") == "pending": badge = "À décider"
+		elif message.has("international_event"): badge = "Sélections"
 		D.chip(row,Rect2(544,13,150,31),badge,COLORS[message.category])
 	scroll.set_deferred("scroll_vertical",int(state.scroll))
 
@@ -241,7 +281,12 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	D.rect(card,Rect2(24,30,6,71),C.GOLD,3)
 	D.text(card,52,68,category.to_upper(),39,C.IVORY,800,780)
 	_icon(card,ICONS[category],Rect2(53,87,27,27),COLORS[category])
-	D.text(card,92,110,"Journal du club" if message.is_empty() else "Journal du club · Message %02d" % message.position,24,C.IVORY,500,690)
+	var event: Dictionary = message.get("international_event", {})
+	var source := "Journal du club" if message.is_empty() else "Journal du club · Message %02d" % message.position
+	if not event.is_empty():
+		var date := P.fixture_date({"date":event.get("date")})
+		source = "Sélections" if date.is_empty() else "Sélections · " + date
+	D.text(card,92,110,source,24,C.IVORY,500,690)
 	var title := "Le courrier du club" if message.is_empty() else str(message.get("subject",_subject(message.text)))
 	D.text(card,32,303,title,44,C.IVORY,700,1097)
 	var body := C.wrap(message.get("text","Aucun message à afficher dans ce dossier."),23,C.IVORY)
@@ -256,21 +301,23 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	_metric(card,Rect2(33,533,357,59),"people","%d disponibles" % group.available,C.MINT)
 	_metric(card,Rect2(404,533,296,59),"heart","%d blessés" % group.injured,C.ALERT if group.injured>0 else C.MUTED)
 	_metric(card,Rect2(714,533,416,59),"heart","Condition · %d %%" % group.condition,C.MINT)
-	var tasks := _tasks(app).slice(0,3)
-	var recommendations := D.panel(card,Rect2(26,610,1112,175),"Mes recommandations","warning")
-	if tasks.is_empty(): D.text(recommendations,25,104,"Aucune priorité immédiate.",23,C.MUTED,600,1020)
-	for index in tasks.size():
-		var task: Array = tasks[index]
-		D.chip(recommendations,Rect2(22,64+index*35,38,28),str(index+1),C.MINT)
-		var action := D.button(recommendations,Rect2(74,63+index*35,1016,33),task[0],func():
-			if task[1]=="Entraînement": app.Immersive.open_training(app)
-			else: app._navigate(task[1]),false,"arrow",true,app.accent,"InboxRecommendation"+str(index))
-		action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
-	var next: Variant = app.model.get("next")
-	if not message.has("calendar_notice") and next is Dictionary and not next.is_empty():
-		var fixture := D.button(card,Rect2(26,801,1112,69),"Dossier de préparation · "+str(next.get("label","Prochain match")),func():app._navigate("Préparation"),false,"tactic",false,app.accent,"InboxPreparation")
-		fixture.tooltip_text = "Ouvrir l’analyse de la prochaine rencontre"
-	if not message.is_empty(): _actions(card,app,state,message)
+	var focused := message.has("press_invitation") or message.has("calendar_notice") or not event.is_empty()
+	if not focused:
+		var tasks := _tasks(app).slice(0,3)
+		var recommendations := D.panel(card,Rect2(26,610,1112,175),"Mes recommandations","warning")
+		if tasks.is_empty(): D.text(recommendations,25,104,"Aucune priorité immédiate.",23,C.MUTED,600,1020)
+		for index in tasks.size():
+			var task: Array = tasks[index]
+			D.chip(recommendations,Rect2(22,64+index*35,38,28),str(index+1),C.MINT)
+			var action := D.button(recommendations,Rect2(74,63+index*35,1016,33),task[0],func():
+				if task[1]=="Entraînement": app.Immersive.open_training(app)
+				else: app._navigate(task[1]),false,"arrow",true,app.accent,"InboxRecommendation"+str(index))
+			action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
+		var next: Variant = app.model.get("next")
+		if next is Dictionary and not next.is_empty():
+			var fixture := D.button(card,Rect2(26,801,1112,69),"Dossier de préparation · "+str(next.get("label","Prochain match")),func():app._navigate("Préparation"),false,"tactic",false,app.accent,"InboxPreparation")
+			fixture.tooltip_text = "Ouvrir l’analyse de la prochaine rencontre"
+	if not message.is_empty(): _actions(card,app,state,message,628 if focused else 890)
 	D.line(card,Vector2(26,1026),Vector2(1138,1026),C.LINE)
 	D.text(card,35,1064,"HISTORIQUE DU COURRIER",26,C.IVORY,700,1040)
 	D.text(card,35,1100,"Consultez les messages du journal dans leur ordre de réception.",21,C.MUTED,500,1080)
@@ -284,7 +331,7 @@ static func _art_fade(parent: Node, area: Rect2, horizontal: bool = true) -> Gra
 	overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	return overlay.texture as GradientTexture2D
 
-static func _actions(card: Panel, app: Control, state: Dictionary, message: Dictionary) -> void:
+static func _actions(card: Panel, app: Control, state: Dictionary, message: Dictionary, top: int) -> void:
 	var mark: Dictionary = state.marks.get(message.id,{})
 	if message.has("press_invitation"):
 		var invitation: Dictionary = message.press_invitation
@@ -295,39 +342,51 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 			var receipt: bool = invitation.status == "published" and outcome is Dictionary and outcome.get("invitationId") == invitation.id
 			if invitation.status == "pending" or receipt:
 				var caption := "Consulter le compte rendu" if receipt else "Ouvrir la conférence"
-				var action := D.button(card,Rect2(26,890,545,62),caption,app._open_press_invitation.bind(invitation.id),true,"arrow",false,app.accent,"InboxOpenPressInvitation")
+				var action := D.button(card,Rect2(26,top,545,62),caption,app._open_press_invitation.bind(invitation.id),true,"arrow",false,app.accent,"InboxOpenPressInvitation")
 				action.disabled = app.waiting or (not receipt and (not conference.get("available", false) or conference.get("invitationId") != invitation.id))
 				if action.disabled: action.tooltip_text = str(conference.get("reason", ""))
 	elif message.get("calendar_notice", {}).get("status") == "pending":
-		var recalibrate := D.button(card,Rect2(26,890,545,62),"Recaler la préparation",
+		var recalibrate := D.button(card,Rect2(26,top,545,62),"Recaler la préparation",
 			_choose_calendar_preparation.bind(app,card,message.id,"recalibrate"),true,"calendar",false,app.accent,"InboxRecalibratePreparation")
-		var keep := D.button(card,Rect2(589,890,549,62),"Ne rien faire",
+		var keep := D.button(card,Rect2(589,top,549,62),"Conserver la préparation",
 			_choose_calendar_preparation.bind(app,card,message.id,"keep"),false,"check",false,app.accent,"InboxKeepPreparation")
 		recalibrate.disabled = app.waiting
 		keep.disabled = app.waiting
 	else:
-		var caption := "Ouvrir · " + str(message.route)
-		var open := Callable(app, "_navigate").bind(message.route)
-		if message.get("season_expiry", false):
-			var current := _current_expiry_roster(app.model)
-			if not current.is_empty():
-				caption = "Voir les échéances actuelles (%d)" % current.count
-				open = _open_expiry_roster.bind(app, current.roster)
-		D.button(card,Rect2(26,890,545,62),caption,open,true,"arrow",false,app.accent,"InboxOpenMessageAction")
-		D.button(card,Rect2(589,890,549,62),"Réouvrir le message" if mark.get("archived",false) else "Marquer comme traité",func():
+		if message.has("international_event"):
+			var event: Dictionary = message.international_event
+			var destination: String = event.get("action", "")
+			if destination in ["international", "national_job"]:
+				var caption := "Voir les offres de sélection" if destination == "national_job" else "Ouvrir les sélections"
+				D.button(card,Rect2(26,top,545,62),caption,_open_international.bind(app,event),true,"arrow",false,app.accent,"InboxOpenInternational")
+		else:
+			var caption := "Ouvrir · " + str(message.route)
+			var open := Callable(app, "_navigate").bind(message.route)
+			if message.get("season_expiry", false):
+				var current := _current_expiry_roster(app.model)
+				if not current.is_empty():
+					caption = "Voir les échéances actuelles (%d)" % current.count
+					open = _open_expiry_roster.bind(app, current.roster)
+			D.button(card,Rect2(26,top,545,62),caption,open,true,"arrow",false,app.accent,"InboxOpenMessageAction")
+		D.button(card,Rect2(589,top,549,62),"Réouvrir le message" if mark.get("archived",false) else "Marquer comme traité",func():
 			mark.archived=not mark.get("archived",false)
 			mark.read=true
 			state.marks[message.id]=mark
 			_redraw(app,"InboxFolder"+str(state.folder)),false,"check",false,app.accent,"InboxToggleArchive")
-	D.button(card,Rect2(26,966,300,44),"Retirer des favoris" if mark.get("favorite",false) else "Ajouter aux favoris",func():
+	D.button(card,Rect2(26,top+76,300,44),"Retirer des favoris" if mark.get("favorite",false) else "Ajouter aux favoris",func():
 		mark.favorite=not mark.get("favorite",false)
 		state.marks[message.id]=mark
 		_redraw(app,"InboxToggleFavorite"),false,"star",true,app.accent,"InboxToggleFavorite")
 	if not mark.get("archived",false):
-		D.button(card,Rect2(342,966,300,44),"Marquer non lu" if mark.get("read",false) else "Marquer lu",func():
+		D.button(card,Rect2(342,top+76,300,44),"Marquer non lu" if mark.get("read",false) else "Marquer lu",func():
 			mark.read=not mark.get("read",false)
 			state.marks[message.id]=mark
 			_redraw(app,"InboxToggleRead"),false,"mail",true,app.accent,"InboxToggleRead")
+
+static func _open_international(app: Control, event: Dictionary) -> void:
+	app.management_ui.international_section = "offers" if event.action == "national_job" else "callups"
+	app.management_ui.international_nation = str(event.get("nation", ""))
+	app._navigate("Sélections")
 
 static func _current_expiry_roster(model: Dictionary) -> Dictionary:
 	var expiring: Variant = model.get("decisions", {}).get("recruitment", {}).get("expiring")

@@ -105,7 +105,7 @@ static func home(app: Control) -> Control:
 		choices.add_child(G.label("VOTRE CARRIÈRE", 12, G.GOLD))
 		choices.add_child(G.wrap(G.club_name(club), 26, G.INK))
 		choices.add_child(G.label("Saison %s · %s" % [G.n(app.model.meta.get("season", 1)), app.model.meta.get("roundLabel", "Journée " + G.n(int(app.model.meta.get("round", 0)) + 1))], 12, G.MUTED))
-		choices.add_child(G.button("REPRENDRE LA CARRIÈRE  →", func(): app._navigate("Bureau"), true))
+		choices.add_child(G.button("REPRENDRE LA CARRIÈRE  →", func(): app._navigate("Réception"), true))
 	var locked:bool=app.model.is_empty() or app.model.get("meta",{}).get("recoveryRequired",false)
 	var new_career:=G.button("NOUVELLE CARRIÈRE", func(): begin_creation(app), club.is_empty())
 	new_career.disabled=locked
@@ -559,7 +559,7 @@ static func _show_creation_waiting(app: Control, workspace: Control) -> void:
 
 static func _create(app: Control, selected: Dictionary, mode: String) -> void:
 	var action := func():
-		if app._command("new_career", {"club":int(selected.id),"mode":mode}, "Bureau") and is_instance_valid(app.entry_scroll):
+		if app._command("new_career", {"club":int(selected.id),"mode":mode}) and is_instance_valid(app.entry_scroll):
 			_show_creation_waiting(app, app.entry_scroll)
 	if app._has_career():
 		app.confirm("Une nouvelle histoire", "La carrière actuelle sera remplacée dans ce profil. Exportez-la depuis le menu pour la conserver séparément. Prendre les rênes de %s ?" % G.club_name(selected), action, true)
