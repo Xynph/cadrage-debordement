@@ -83,3 +83,38 @@ Les anciennes recettes `career-resilience` et `rugby-real-long-career-qa` garden
 leur rôle sur les trajectoires multi-clubs et les effectifs V11/V12. Ce pilote
 complète leur couverture avec le worker récent, la presse et le calendrier
 international ; il ne remplace pas ces suites ni leurs preuves.
+
+## Réception observée le 10 novembre 2026
+
+Source du pilote `6dc85e977a4acffb2cd34c1b46e1965297f008ff`, copie propre au
+lancement, Node 22.23.4 sur Linux, graine 713492. Empreinte du périmètre moteur
+et données lu par le pilote :
+`ba3581f3eb8bf7c72464db538b3ca1731de005b0756b5c20de9ddbc6e48e9a7e`.
+
+| Campagne | Contrôles reçus | Points de reprise | Durée réelle |
+| --- | --- | --- | --- |
+| Club : trois saisons, 90 matchs du club délégués | 734 | 9 exports/imports/redémarrages | 663,386 s |
+| International : 2026–2031, 353 résultats, 168 courriers | 441 | 7 restaurations JSON | 3,642 s |
+
+Les trois saisons club ont chacune clôturé avec 433 résultats natifs. Les 168
+courriers internationaux comprennent 28 annonces d'hôtes, 68 notifications de
+départ en sélection des joueurs du club, 17 convocations de la France et 55
+résultats de la France. Aucun doublon n'a été détecté dans ces campagnes.
+Le total est de **1 175 contrôles**, 16 points de reprise et **667,131 secondes**
+pour l'exécution complète ; le coût reflète aussi la charge Cloud simultanée.
+
+Preuves : [rapport HTML autonome](qa-long-career-20261110/index.html),
+[JSON complet](qa-long-career-20261110/report.json),
+[aperçu large](qa-long-career-20261110/apercu-1440.png),
+[aperçu mobile](qa-long-career-20261110/apercu-390.png) et
+[réception Chromium](qa-long-career-20261110/browser.json).
+Le rendu HTML a passé six contrôles : deux campagnes et leurs seize points
+présents, deux statuts reçus, téléchargement JSON fonctionnel et absence de
+débordement horizontal à 1440 et 390 px. Deux captures complètes ont été
+inspectées. Ce sont des captures du **rapport**, pas des écrans Godot du jeu.
+
+La prise en charge du quota des copies de sécurité a été ajoutée ensuite et
+reçue par les tests ciblés du pilote (quatre tests réussis). La campagne longue
+ci-dessus précède cette protection ; elle ne valide pas le cumul avec ce
+nouveau stockage. La réception d'intégration doit donc conserver cette
+distinction et vérifier le chemin `remove_checkpoint` avec le moteur protégé.
