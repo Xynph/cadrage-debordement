@@ -88,6 +88,34 @@ for(const requestedTheme of ['avant_match','attaque','defense','joueurs','suppor
 }
 run('CDV60RichPress=normalPreparation;');
 
+// Every training-bank variant must remain a general policy question when no
+// individual training event is available, including the arrival invitation.
+const trainingBank=read("CDPressQuestionBank.questions.filter(q=>q.theme==='formation')");
+assert.equal(trainingBank.length,20);
+let trainingVariants=0;
+for(const source of trainingBank){
+ for(let variant=0;variant<source.variants.length;variant++){
+  context.trainingSource=source;
+  context.trainingVariant=variant;
+  run(`CDV60RichPress={...normalPreparation,prepare(s){
+   const samples=CDPressQuestionBank.pick({season:s.season,week:s.franceMode.week,seed:s.club,
+    count:2,context:{themes:['formation']}});
+   return [{...trainingSource,question:trainingSource.variants[trainingVariant],
+    variant:trainingVariant,journalist:samples[0].journalist},samples[1]];
+  }};`);
+  const q=conference()[0];
+  assert.match(q.question,/jeunes|formation/i,source.id+' / variante '+variant);
+  assert.doesNotMatch(q.question,/\bson\b|\bsa\b|\bses\b|\bcet\b|\bil\b|premier match|titularisation|espoir|prêt|«/i,
+   source.id+' / variante '+variant+' : aucun joueur ou événement ne doit être présupposé');
+  assert.deepEqual([q.id,q.answers.map(a=>[a.id,a.tone])],
+   [source.id,source.answers.map(a=>[a.id,a.tone])]);
+  assert.equal(q.answers.length,5);
+  trainingVariants++;
+ }
+}
+assert.equal(trainingVariants,60);
+run('CDV60RichPress=normalPreparation;');
+
 run(`
   S.franceMode.fixture={pair:[26,29],phase:'barrage',week:12};
   S.history=[
