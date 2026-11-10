@@ -88,3 +88,7 @@ test('actual legacy managerWeek and targeted jobs share FIFO and advance only on
 test('a completed targeted report cannot precede its own planning date',()=>{
  const s=fixture();s.round=10;k.plan(s,{playerId:'foreign',confirmed:true,context:{season:1,week:10,club:0}},{charge:n=>s.clubs[0].cash-=n});const j=s.playerKnowledge.jobs[0];Object.assign(j,{status:'done',remaining:0,completedSeason:1,completedWeek:0});assert.throws(()=>k.validate(s),/mission ciblée invalide/);
 });
+test('historical academy plans and unknown playerId copies cannot leak a lone level alias',()=>{
+ const m={clubLife:{academyPathways:{plans:[{id:'old-youth',name:'Ancien joueur',target:'progression',startRating:73,season:1}],targets:[{id:'old-youth',name:'Ancien joueur',start:240,minutes:480}],promotions:[{playerId:'old-departed',rating:76,potential:88}]}},staff:{members:[{id:'staff-scout',name:'Recruteur',role:'scout',level:75}]}};
+ k.project(m,{});assert.equal(m.clubLife.academyPathways.plans[0].startRating,null);assert.equal(m.clubLife.academyPathways.promotions[0].rating,null);assert.equal(m.clubLife.academyPathways.promotions[0].potential,null);assert.equal(m.clubLife.academyPathways.targets[0].start,240);assert.equal(m.staff.members[0].level,75);
+});

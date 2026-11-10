@@ -194,7 +194,9 @@ function factory(){
    if(Array.isArray(value)){for(const row of value)visit(row,person,path);return;}
    if(!object(value))return;
    const pid=typeof value.playerId==='string'&&Object.hasOwn(visible,value.playerId)?value.playerId:typeof value.id==='string'&&Object.hasOwn(visible,value.id)?value.id:null;
-   const looksLikePlayer=!pid&&id(value.id)&&(typeof value.pos==='string'||typeof value.name==='string')&&['rating','note','potential','attributesV2','positionRatings'].some(k=>Object.hasOwn(value,k));
+   const unknownId=typeof value.playerId==='string'?value.playerId:value.id;
+   const aliases=['rating',...levels.filter(k=>typeof value.playerId==='string'||typeof value.pos==='string'||!['level','quality'].includes(k)),...ceilings,'attributesV2','positionRatings'];
+   const looksLikePlayer=!pid&&id(unknownId)&&(typeof value.playerId==='string'||typeof value.pos==='string'||typeof value.name==='string')&&aliases.some(k=>Object.hasOwn(value,k));
    const unknown={rating:null,ratingRange:null,potential:null,potentialRange:null,knowledge:{version:VERSION,owned:false,stage:'unobserved',observedAt:null}};
    const ownPerson=pid?visible[pid]:looksLikePlayer?unknown:person;
    if(pid||looksLikePlayer){
