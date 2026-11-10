@@ -270,6 +270,15 @@ static func _show_profile(app:Control,parent:VBoxContainer) -> void:
 		if str(p.id)==app.selected_player:_profile(app,parent,p);return
 	parent.add_child(G.wrap("Sélectionnez un joueur pour consulter son dossier.",15))
 
+static func player_load_unavailable_reason(app: Control) -> String:
+	var meta: Dictionary = app.model.get("meta", {})
+	var live: Dictionary = app._live()
+	if not live.is_empty():
+		return "Charge indisponible avant la validation de la journée." if live.get("finished", false) else "Charge indisponible pendant le match."
+	if meta.get("phase") == "ended": return "Charge indisponible en fin de saison."
+	if meta.get("trained", false): return "Séance effectuée. La charge se règle avant la prochaine séance."
+	return ""
+
 static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	parent.get_parent().size_flags_vertical=Control.SIZE_SHRINK_BEGIN
 	var list:=G.scroll(parent)
@@ -346,9 +355,15 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	for text in ["Suivre le collectif","Récupération individuelle","Charge normale","Charge intense"]:load_plan.add_item(text)
 	load_plan.name="PlayerLoad"
 	load_plan.select(maxi(0,modes.find(p.get("loadPlan","collective"))))
-	load_plan.disabled=not app._live().is_empty()
+	var load_reason := player_load_unavailable_reason(app)
+	load_plan.disabled = not load_reason.is_empty()
 	load_plan.item_selected.connect(func(index:int):app._command("set_player_load",{"playerId":p.id,"mode":modes[index]}))
 	contracts.add_child(load_plan)
+	if not load_reason.is_empty():
+		load_plan.focus_mode = Control.FOCUS_NONE
+		var load_hint := G.wrap(load_reason,13)
+		load_hint.name = "PlayerLoadUnavailableReason"
+		contracts.add_child(load_hint)
 	references_tab.add_child(G.section("Repères de départ","Origine et degré de vérification des données initiales"))
 	var roster:Dictionary=p.get("rosterProfile",{}) if p.get("rosterProfile")!=null else {}
 	if not roster.is_empty():
