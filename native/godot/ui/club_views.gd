@@ -143,7 +143,8 @@ static func _territory(app: Control) -> Control:
 		photos.add_child(picture)
 		var content: VBoxContainer = picture.get_meta("content")
 		content.add_child(G.label("LE TERRITOIRE" if kind == "city" else "LE STADE", 14, G.WHITE))
-		content.add_child(G.spacer())
+		var spacer := G.spacer()
+		content.add_child(spacer)
 		var supplied: Variant = c.get(kind)
 		var place := str(supplied).strip_edges() if supplied != null else ""
 		if place.is_empty(): place = "Ville à préciser" if kind == "city" else "Stade à préciser"
@@ -160,6 +161,8 @@ static func _territory(app: Control) -> Control:
 			content.add_child(credit)
 		else:
 			content.add_child(G.wrap("Photo d’archive · crédits accessibles" if source == "archive" else "Illustration IA", 12, G.WHITE))
+		if kind == "stadium":
+			content.move_child(spacer, content.get_child_count() - 1)
 	var dossier := G.panel(page)
 	var row := G.h(20)
 	dossier.add_child(row)
