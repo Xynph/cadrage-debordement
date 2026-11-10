@@ -68,7 +68,7 @@ func _render() -> void:
 		card.add_child(G.label(str(entry.get("club", "Copie indisponible")), 17, G.INK, true))
 		var date := str(entry.get("createdAt", "Date inconnue")).replace("T", " · ").replace("Z", " UTC")
 		if date.contains("."): date = date.get_slice(".", 0) + " UTC"
-		card.add_child(G.wrap("%s · Saison %s · Journée %s" % [date, str(entry.get("season", "?")), str(int(entry.get("round", 0)) + 1)], 12))
+		card.add_child(G.wrap("%s · Saison %s · Journée %s" % [date, G.n(entry.get("season", "?")), str(int(entry.get("round", 0)) + 1)], 12))
 		card.add_child(G.wrap("%s · %.1f Mio" % [str(REASONS.get(str(entry.get("reason", "")), "Origine non vérifiable")), float(entry.get("bytes", 0)) / 1048576.0], 12))
 		if not bool(entry.get("available", false)):
 			card.add_child(G.wrap(str(entry.get("error", "Cette copie ne peut pas être reprise.")), 12, G.ALERT))

@@ -82,7 +82,7 @@ static func build(app: Control) -> Control:
 	metrics.add_theme_constant_override("v_separation", C.px(8))
 	view.add_child(metrics)
 	if state.get("clubManaged", false):
-		_metric(metrics, "Joueurs du club en sélection", str(state.get("absentCount", 0)), C.GOLD)
+		_metric(metrics, "Joueurs du club en sélection", str(int(state.get("absentCount", 0))), C.GOLD)
 		_metric(metrics, "Prochain retour au club", _date(state.get("nextReturn")), C.MINT)
 		_metric(metrics, "Postes principaux concernés", str(state.get("positions", []).size()), C.IVORY)
 		if int(state.get("absentCount", 0)) == 0:
