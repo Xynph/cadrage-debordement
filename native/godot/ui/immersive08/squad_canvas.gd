@@ -88,12 +88,12 @@ func _build() -> void:
 	count=D.text(table,1680,43,"",19,C.MUTED,500,334,HORIZONTAL_ALIGNMENT_RIGHT)
 	var header := D.rect(table,Rect2(17,71,1668,39),Color("1a2425"),4)
 	header.name="RosterHeader"
-	var columns := [["N°",9,"Numéro",40],["JOUEUR",61,"Nom",288],["POSTE",364,"Poste",196],["ÂGE",573,"Âge",60],["NIV.",648,"Niveau",50],["POT.",713,"Potentiel",58],["CONDITION",785,"Condition",128],["FAT.",923,"Fatigue",60],["SALAIRE "+G.salary_period(true).to_upper(),994,"Salaire",210],["FIN DE CONTRAT",1216,"Échéance",160],["MIN.",1378,"Minutes",95],["STATUT",1485,"Statut",175]]
+	var columns := [["N°",9,"Numéro",40],["JOUEUR",61,"Nom",248],["POSTE PRINCIPAL",326,"Poste",154],["AUTRES",492,"Autres postes",70],["ÂGE",573,"Âge",60],["NIV.",648,"Niveau",50],["POT.",713,"Potentiel",58],["CONDITION",785,"Condition",128],["FAT.",923,"Fatigue",60],["SALAIRE "+G.salary_period(true).to_upper(),994,"Salaire",210],["FIN DE CONTRAT",1216,"Échéance",160],["MIN.",1378,"Minutes",95],["STATUT",1485,"Statut",175]]
 	if state.family==U.WATCH_FILTER:
-		columns = columns.slice(0,8) + [["MOTIF DE SURVEILLANCE",994,"Motif",364]] + columns.slice(10)
+		columns = columns.slice(0,9) + [["MOTIF DE SURVEILLANCE",994,"Motif",364]] + columns.slice(11)
 	for column: Array in columns:
 		var caption := D.text(header,column[1],26,column[0],18,C.MUTED,600,column[3])
-		caption.name={"Salaire":"RosterColumnSalary","Potentiel":"RosterColumnPotential"}.get(column[2],"RosterColumnFatigue" if column[0]=="FAT." else "RosterColumn_"+str(column[0]))
+		caption.name={"Salaire":"RosterColumnSalary","Potentiel":"RosterColumnPotential","Poste":"RosterColumn_POSTE","Autres postes":"RosterColumnSecondaryPositions"}.get(column[2],"RosterColumnFatigue" if column[0]=="FAT." else "RosterColumn_"+str(column[0]))
 		var key := str(column[2])
 		var sort := Button.new()
 		sort.name = "Sort_"+key
@@ -145,7 +145,54 @@ func _choice(parent: Node, rectangle: Rect2, id: String, values: Array, selected
 static func _known_number(value: Variant) -> bool:
 	return (value is int or value is float) and is_finite(float(value))
 
+static func secondary_numbers(player: Dictionary) -> Array[int]:
+	var result: Array[int] = []
+	var source: Variant = player.get("secondaryPositions")
+	if not source is Array: return result
+	for value: Variant in source:
+		if not _known_number(value): continue
+		var number := int(value)
+		if float(value) != float(number) or number < 1 or number > 15 or number in result: continue
+		result.append(number)
+	result.sort()
+	return result
+
+static func secondary_caption(player: Dictionary) -> String:
+	var numbers := secondary_numbers(player)
+	if numbers.is_empty(): return "—"
+	var groups: Array[String] = []
+	var index := 0
+	while index < numbers.size():
+		var end := index
+		while end+1 < numbers.size() and numbers[end+1] == numbers[end]+1: end += 1
+		if end-index >= 2:
+			groups.append("%d–%d" % [numbers[index],numbers[end]])
+		else:
+			for offset in range(index,end+1): groups.append(str(numbers[offset]))
+		index = end+1
+	return "·".join(groups)
+
+static func secondary_tooltip(player: Dictionary, model: Dictionary) -> String:
+	var result: Array[String] = []
+	for number: int in secondary_numbers(player):
+		var label := "Poste n°%d" % number
+		for slot: Dictionary in model.get("selection",{}).get("slots",[]):
+			if int(slot.get("slot",-1)) == number-1 and slot.get("label") is String and not str(slot.label).is_empty():
+				label = slot.label
+				break
+		result.append("%d · %s" % [number,label])
+	return "\n".join(result) if not result.is_empty() else "—"
+
+static func _compare_secondary(left: Array, right: Array) -> int:
+	for index in mini(left.size(),right.size()):
+		if int(left[index]) != int(right[index]): return -1 if int(left[index]) < int(right[index]) else 1
+	if left.size() == right.size(): return 0
+	return -1 if left.size() < right.size() else 1
+
 static func sort_value(player: Dictionary, key: String) -> Variant:
+	if key == "Autres postes":
+		var numbers := secondary_numbers(player)
+		return numbers if not numbers.is_empty() else null
 	if key == "Statut":
 		if _known_number(player.get("injury")) and float(player.injury) > 0: return U.fold("Blessé")
 		var status: Variant = player.get("status")
@@ -180,6 +227,10 @@ static func ordered_players(source: Array, reading: Dictionary, season: int) -> 
 		if left == null and right == null: return str(a.get("id","")) < str(b.get("id",""))
 		if left == null: return false
 		if right == null: return true
+		if key == "Autres postes":
+			var comparison := _compare_secondary(left,right)
+			if comparison == 0: return str(a.get("id","")) < str(b.get("id",""))
+			return comparison > 0 if descending else comparison < 0
 		if left == right: return str(a.get("id","")) < str(b.get("id",""))
 		return left > right if descending else left < right)
 	return result
@@ -268,8 +319,18 @@ func _row(player:Dictionary,index:int) -> void:
 		row.accessibility_name = str(player.name) + " · " + str(player.pos) + " · " + reason
 	row.add_child(portrait)
 	D.place(portrait,Rect2(54,2,31,30))
-	D.text(row,95,24,player.name,23,C.IVORY,600,259)
-	D.text(row,363,24,player.pos,21,C.MUTED,500,202)
+	D.text(row,95,24,player.name,23,C.IVORY,600,190)
+	var main_position := D.text(row,325,24,player.pos,21,C.MUTED,500,154)
+	main_position.name = "RosterPrimaryPosition"
+	main_position.mouse_filter = Control.MOUSE_FILTER_PASS
+	var primary: Variant = player.get("primaryPosition")
+	main_position.tooltip_text = "Poste principal · %d · %s" % [int(primary),str(player.pos)] if _known_number(primary) and int(primary) >= 1 and int(primary) <= 15 else str(player.pos)
+	var other := D.text(row,529,24,secondary_caption(player),18,C.BLUE,600,76,HORIZONTAL_ALIGNMENT_CENTER)
+	other.name = "RosterSecondaryPositions"
+	other.mouse_filter = Control.MOUSE_FILTER_PASS
+	other.tooltip_text = secondary_tooltip(player,app.model)
+	other.accessibility_name = "Autres postes · "+other.tooltip_text.replace("\n"," ; ")
+	row.tooltip_text += "\nAutres postes · "+other.tooltip_text.replace("\n"," ; ")
 	D.text(row,590,24,G.n(player.get("age","—")),22,C.IVORY,500,44,HORIZONTAL_ALIGNMENT_CENTER)
 	var level := D.text(row,662,24,G.n(player.get("rating","—")),24,C.MINT,700,48,HORIZONTAL_ALIGNMENT_CENTER)
 	var potential := D.text(row,729,24,G.n(player.get("potential","—")),24,POTENTIAL_COLOR,600,48,HORIZONTAL_ALIGNMENT_CENTER)
@@ -383,7 +444,7 @@ func _advanced() -> void:
 	var fields:=C.v(12)
 	dialog.add_child(fields)
 	_choice(fields,Rect2(0,0,500,40),"RosterAvailability",["Tous","Disponibles","Blessés"],str(state.available),"Disponibilité",func(value:String):state.available=value;_refresh(false))
-	_choice(fields,Rect2(0,55,500,40),"RosterSort",["Numéro","Poste","Nom","Niveau","Potentiel","Condition","Fatigue","Minutes","Statut","Âge","Salaire","Échéance","Motif"],str(state.sort),"Trier par",func(value:String):state.sort=value;app.roster_sort=value;_refresh(false))
+	_choice(fields,Rect2(0,55,500,40),"RosterSort",["Numéro","Poste","Autres postes","Nom","Niveau","Potentiel","Condition","Fatigue","Minutes","Statut","Âge","Salaire","Échéance","Motif"],str(state.sort),"Trier par",func(value:String):state.sort=value;app.roster_sort=value;_refresh(false))
 	var direction:=C.button("Changer le sens du tri",func():state.descending=not state.descending;_refresh(false))
 	direction.name="RosterDirection"
 	fields.add_child(direction)
