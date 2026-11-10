@@ -99,6 +99,18 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     }];
   }
 
+  function advanceProfile(profile, to, notifyActive = false) {
+    const players = roster();
+    const managed = role(profile);
+    const clubId = run('S.club');
+    const clubPlayerIds = managed.club ? players.filter(p => p.clubId === clubId).map(p => p.id) : [];
+    const moved = career.advance(profile.career, {from:profile.career.date,to,players,managedNation:managed.nation,
+      clubPlayerIds,notifyActive});
+    const messages = dutyMail(profile.career,moved.state,moved.mail,clubPlayerIds);
+    messages.push(...matchMail(moved.state,players,managed.nation));
+    return {...profile,career:moved.state,mail:append(profile,messages)};
+  }
+
   function validate(profile) {
     if (profile === null) return;
     if (!profile || Object.keys(profile).length !== 3 || !profile.career || !Array.isArray(profile.mail) || profile.mail.length > limit ||
@@ -121,7 +133,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
       }
       const upgraded = career.upgrade?.(previous.career) ?? previous.career;
       if (upgraded !== previous.career) {
-        const profile = {...previous,career:upgraded};
+        const profile = advanceProfile({...previous,career:upgraded},upgraded.date,true);
         validate(profile);
         write(profile);
       }
@@ -142,7 +154,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
       id:'national-jobs',kind:'international_job',title:'Les postes de sélectionneur',
       body:'Consultez les sélections ouvertes aux candidatures. Vous pouvez garder votre club ou vous consacrer à une sélection.',date,action:'national_job',
     });
-    write(newProfile);
+    write(advanceProfile(newProfile,date,true));
   }
 
   function advance(from) {
@@ -152,15 +164,7 @@ module.exports = function nativeInternational(run, ctx, facts, enabled) {
     const date = profile.career.date;
     if (from !== date) throw Error('La date de carrière a changé.');
     if (offSeason && date >= nextOpening()) throw Error('Commencez la saison suivante.');
-    const players = roster();
-    const managed = role(profile);
-    const clubId = run('S.club');
-    const clubPlayerIds = managed.club ? players.filter(p => p.clubId === clubId).map(p => p.id) : [];
-    const moved = career.advance(profile.career, {from:date,to:dateAfter(date),players,managedNation:managed.nation,
-      clubPlayerIds});
-    const messages = dutyMail(profile.career,moved.state,moved.mail,clubPlayerIds);
-    messages.push(...matchMail(moved.state,players,managed.nation));
-    write({...profile,career:moved.state,mail:append(profile,messages)});
+    write(advanceProfile(profile,dateAfter(date)));
     return offSeason;
   }
 

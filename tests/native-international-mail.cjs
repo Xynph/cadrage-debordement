@@ -33,6 +33,16 @@ function bridge({ date = '2027-01-30', opening = '2027-08-16', phase = 'league',
  };
 }
 
+test('a new profile starting on the camp opening day immediately gets the call-up mail', () => {
+ const date = '2027-01-31';
+ const fresh = bridge({ date });
+ const profile = fresh.read();
+ assert.ok(profile.career.callups.some(camp => camp.nation === 'FRA' && camp.from === date));
+ assert.equal(profile.mail.filter(mail => mail.nation === 'FRA' && mail.kind === 'international_callup').length, 1);
+ assert.equal(profile.mail.filter(mail => mail.nation === 'FRA' && mail.kind === 'international_release').length, 1);
+ assert.deepEqual(bridge({ date, profile }).read(), profile);
+});
+
 test('international mail explains the camp and records the club return exactly once after reloading', () => {
  const initial = bridge();
  initial.advance();
