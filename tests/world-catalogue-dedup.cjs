@@ -16,7 +16,25 @@ function fixture(t,club=112){
  t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});settleClubMeetings(go('new_career',{mode:'world-champ',club}),(command,payload)=>go(command,payload));
  return {root,go,raw,export:()=>go('export').meta.exportText,disk:()=>fs.readFileSync(path.join(root,'PrototypeGodot/donnees.json')),restart:()=>{b.close();b=createBridge({...opts,seed:1,now:1});}};
 }
-function legacyDocument(text){const doc=JSON.parse(text);for(const[id,row]of Object.entries(loadLegacy().aliases))doc.state.clubs[row.clubId].players.push({...structuredClone(row.player),worldProfile:structuredClone(row.worldProfile)});const s=JSON.stringify(doc.state);let hash=2166136261;for(let i=0;i<s.length;i++)hash=Math.imul(hash^s.charCodeAt(i),16777619);doc.checksum=(hash>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
+let legacyVariationContext;
+function legacyDocument(text){
+ const doc=JSON.parse(text);
+ for(const row of Object.values(loadLegacy().aliases)){
+  let player={...structuredClone(row.player),worldProfile:structuredClone(row.worldProfile)};
+  if(doc.state.careerVariation!==undefined){
+   // These retired IDs predate deduplication, while this carrier uses the
+   // modern creation manifest. Apply its complete production variation by ID,
+   // including current qualities and both potential references, exactly once.
+   legacyVariationContext??=require('./native-reference-harness.cjs').context();
+   legacyVariationContext.ctx.legacyPlayer=player;
+   legacyVariationContext.ctx.legacyVariation=doc.state.careerVariation;
+   player=JSON.parse(legacyVariationContext.run('JSON.stringify(nativeCareerVariation.player(legacyPlayer,legacyVariation))'));
+   delete legacyVariationContext.ctx.legacyPlayer;delete legacyVariationContext.ctx.legacyVariation;
+  }
+  doc.state.clubs[row.clubId].players.push(player);
+ }
+ const s=JSON.stringify(doc.state);let hash=2166136261;for(let i=0;i<s.length;i++)hash=Math.imul(hash^s.charCodeAt(i),16777619);doc.checksum=(hash>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);
+}
 test('Le vrai lecteur conserve les six fiches présentes dans un ancien export : état, RNG et reprise exacts',t=>{
  const sourceCount=text=>JSON.parse(text).state.clubs.flatMap(c=>c.players).filter(p=>!p.id.startsWith('depth-')).length;
  const h=fixture(t),fresh=h.export(),old=legacyDocument(fresh);h.go('import',{text:old});a.equal(h.export(),old);a.equal(sourceCount(old),5884);

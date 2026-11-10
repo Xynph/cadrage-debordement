@@ -16,7 +16,7 @@ const staff=require('../native/engine/staff.cjs');
 const model=require('../native/engine/model.cjs');
 const staffDatabaseIds=['world-registry','world-pacific-extension','world-japan-extension','world-nationale-extension','world-champ-extension']
  .map(name=>require('../native/engine/'+name+'.json').id);
-function context({seed:initialSeed=827381,now=1700000000000,dataDir=''}={}){
+function context({seed:initialSeed=827381,now=1700000000000,dataDir='',beforePositionHooks}={}){
  let seed=initialSeed>>>0,calls=0;
  const math=Object.create(Math);math.random=()=>{calls++;seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
  class EngineDate extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}}
@@ -28,6 +28,8 @@ function context({seed:initialSeed=827381,now=1700000000000,dataDir=''}={}){
  ctx.nativeKnowledgeValidate=playerKnowledge.factory().validate;
  ctx.nativePotentialEvolutionValidate=potentialEvolution().validate;
  for(const name of CORE_FILES)run(fs.readFileSync(path.resolve(__dirname,'../dist',name),'utf8'));
+ // Test-only source overlay: both variants still receive the production wrappers.
+ if(beforePositionHooks!==undefined){if(typeof beforePositionHooks!=='string')throw new TypeError('beforePositionHooks must be JavaScript source');run(beforePositionHooks);}
  run(`const nativePositionAptitudes=(${positionAptitudes.toString()})();nativePositionAptitudes.installHooks();`);
  run(`const nativeProfessionalDepth=(${professionalDepth.toString()})();const nativeAttributeStore=(${playerAttributes.toString()})();const nativePlayerAttributes=p=>({...nativeAttributeStore.project(p),...nativePositionAptitudes.project(p)});`);
  run(`render=()=>{};toast=()=>{};startTimer=()=>{};save=()=>{if(S&&!validatingStartup){gameStorage.setItem('bdt-v1',JSON.stringify(S));lastSaveError=false;}};validatingStartup=false;const CDCommonCareer=(${common.toString()})();`);

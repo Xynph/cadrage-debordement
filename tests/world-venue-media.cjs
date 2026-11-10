@@ -124,7 +124,10 @@ test('identités de compétition : dossier de création, affichage et retour à 
  assert.equal(digest(fs.readFileSync(identity.logoPath)),digest(photo));
  assert.equal(creation.meta.champCatalogue.find(c=>c.id===30).photos.stadium.path,identity.logoPath);
  assert.deepEqual(creation.meta.champCatalogue.find(c=>c.id===0).history,toulouse.history);
- const career=settleClubMeetings(ok('new_career',{mode,club:30}),(command,payload)=>ok(command,payload));
+ // Catalogue summaries describe the reference levels. Career variation and its
+ // replay are exercised separately; this fixture compares identity projection.
+ const career=settleClubMeetings(ok('new_career',{mode,club:30,varyCurrent:false}),(command,payload)=>ok(command,payload));
+ assert.equal(career.meta.careerVariation.varyCurrent,false);
  assert.equal(career.leagues.find(l=>l.id==='prem').name,identity.name);
  assert.equal(career.clubLife.press.journal.divisions.find(d=>d.id==='prem').label,identity.name);
  assert.equal(career.leagues.find(l=>l.id==='prem').logoPath,identity.logoPath);
@@ -164,4 +167,6 @@ test('identités de compétition : dossier de création, affichage et retour à 
  assert.equal(base.clubLife.press.journal.divisions.find(d=>d.id==='prem').label,'Élite anglaise');
  assert.equal(base.leagues.find(l=>l.id==='prem').logoPath,undefined);
  assert.ok(base.calendar.filter(f=>f.competitionId==='prem').every(f=>f.label.startsWith('Élite anglaise')));
+ const referenceState=structuredClone(state);delete referenceState.identityPack;
+ assert.deepEqual(JSON.parse(ok('export').meta.exportText).state,referenceState,'Returning to Base changes identity only, preserving the complete engine state');
 });
