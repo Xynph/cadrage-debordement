@@ -103,6 +103,9 @@ const HISTORICAL_WEIGHTS_SECONDS = Object.freeze({
 // Nationale22 : 237,6 s ; les budgets d'arrêt restent distincts dans tests.yml.
 const WEIGHTS_SECONDS = Object.freeze({ ...HISTORICAL_WEIGHTS_SECONDS,
   'tests/native-club-support-season.cjs': 750,
+  // CI interrompue à 180 s ; réception locale complète en 91,9 s (Node 26).
+  // Réserve de planification provisoire, distincte du budget d’arrêt de 600 s.
+  'tests/world-worker.cjs': 300,
   'tests/world-worker-season.cjs': 650,
   'tests/native-manager-career-worker.cjs': 450,
   'tests/native-manager-career-reverse.cjs': 400,

@@ -4,6 +4,7 @@ const os = require('node:os');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const {test} = require('node:test');
+const {settleClubMeetings} = require('./helpers/club-meetings.cjs');
 const {checkpointToRemove} = require('../scripts/qa-long-career.cjs');
 const root = process.env.OVAL_QA_SOURCE_ROOT || path.resolve(__dirname, '..');
 const protectedEngine = fs.existsSync(path.join(root, 'native/engine/profile-safety.cjs'));
@@ -22,7 +23,7 @@ test('le pilote respecte le quota réel : neuf imports, suppression QA confirmé
   return model;
  };
  try {
-  good('new_career',{mode:'common',club:29});
+  model=settleClubMeetings(good('new_career',{mode:'common',club:29}),good);
   for (let i=0; i<9; i++) {
    good('coach_note_save',{context:model.clubLife.coachNotebook.context,target:'career',text:'Recette du quota : état ' + i});
    const text = good('export').meta.exportText;

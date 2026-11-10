@@ -3,6 +3,7 @@ const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),crypto=require('node:crypto');
 const compose=require('../native/engine/world-pacific-registry.cjs'),terms=require('../native/engine/world-initial-contracts.json'),delta=require('../native/engine/world-champ-extension.json');
 const aliases=Object.entries(terms.inactiveAliases),loadLegacy=()=>require('../native/engine/world-legacy-aliases.json');
+const variation=require('../native/engine/career-variation.cjs')();
 function registry(){const base=require('../native/engine/world-registry.json'),p=compose.extendWorldRegistry(base,require('../native/engine/world-pacific-extension.json')),j=compose.extendJapanRegistry(p,require('../native/engine/world-japan-extension.json')),n=compose.extendNationaleRegistry(j,require('../native/engine/world-nationale-extension.json'));return compose.extendChampRegistry(n,delta);}
 test('Le catalogue actif retire réellement les six doublons, seul le lecteur de compatibilité les conserve',()=>{
  const world=registry(),active=new Set(world.clubs.flatMap(c=>c.players.map(p=>p.id)));
@@ -16,10 +17,33 @@ function fixture(t,club=112){
  t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});settleClubMeetings(go('new_career',{mode:'world-champ',club}),(command,payload)=>go(command,payload));
  return {root,go,raw,export:()=>go('export').meta.exportText,disk:()=>fs.readFileSync(path.join(root,'PrototypeGodot/donnees.json')),restart:()=>{b.close();b=createBridge({...opts,seed:1,now:1});}};
 }
-function legacyDocument(text){const doc=JSON.parse(text);for(const[id,row]of Object.entries(loadLegacy().aliases))doc.state.clubs[row.clubId].players.push({...structuredClone(row.player),worldProfile:structuredClone(row.worldProfile)});const s=JSON.stringify(doc.state);let hash=2166136261;for(let i=0;i<s.length;i++)hash=Math.imul(hash^s.charCodeAt(i),16777619);doc.checksum=(hash>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
+function encodedDocument(doc){const s=JSON.stringify(doc.state);let hash=2166136261;for(let i=0;i<s.length;i++)hash=Math.imul(hash^s.charCodeAt(i),16777619);doc.checksum=(hash>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
+function legacyDocument(text){
+ const doc=JSON.parse(text);
+ for(const[id,row]of Object.entries(loadLegacy().aliases)){
+  const player={...structuredClone(row.player),worldProfile:structuredClone(row.worldProfile)};
+  // The source potential follows the policy already declared by this export.
+  // Mutable career qualities and the original alias identity remain untouched.
+  player.potential=variation.sourcePotential(player.potential,id,doc.state.careerVariation);
+  doc.state.clubs[row.clubId].players.push(player);
+ }
+ return encodedDocument(doc);
+}
 test('Le vrai lecteur conserve les six fiches présentes dans un ancien export : état, RNG et reprise exacts',t=>{
  const sourceCount=text=>JSON.parse(text).state.clubs.flatMap(c=>c.players).filter(p=>!p.id.startsWith('depth-')).length;
- const h=fixture(t),fresh=h.export(),old=legacyDocument(fresh);h.go('import',{text:old});a.equal(h.export(),old);a.equal(sourceCount(old),5884);
+ const h=fixture(t),fresh=h.export(),old=legacyDocument(fresh),invalid=JSON.parse(old),[id,row]=Object.entries(loadLegacy().aliases)[0];
+ const wrong=invalid.state.clubs[row.clubId].players.find(p=>p.id===id);
+ a.notEqual(wrong.potential,row.player.potential,'Cette graine distingue le potentiel de carrière du catalogue brut');
+ wrong.potential=row.player.potential;
+ const before=h.disk(),refused=h.raw('import',{text:encodedDocument(invalid)});
+ a.equal(refused.ok,false);a.match(refused.error,/profil de joueur mondial incompatible : potential/);
+ a.equal(h.export(),fresh);a.deepEqual(h.disk(),before,'Une politique mélangée reste refusée sans modifier le profil');
+ h.go('import',{text:old});a.equal(h.export(),old);a.equal(sourceCount(old),5884);
+ const imported=JSON.parse(h.export()).state;
+ for(const[alias,source]of Object.entries(loadLegacy().aliases)){
+  const player=imported.clubs[source.clubId].players.find(p=>p.id===alias);
+  a(player);a.equal(player.name,source.player.name);a.deepEqual(player.worldProfile,source.worldProfile);
+ }
  const disk=h.disk();h.go('snapshot');a.deepEqual(h.disk(),disk);h.restart();a.equal(h.export(),old);a.deepEqual(h.disk(),disk);
  settleClubMeetings(h.go('new_career',{mode:'world-champ',club:112}),(command,payload)=>h.go(command,payload));a.equal(sourceCount(h.export()),5878);
 });

@@ -85,6 +85,7 @@ jobs:
             # Nationale22 en 237,6 s. Les autres réserves longues sont provisoires
             # après les timeouts observés sur 42891746395, sans retirer de contrôle.
             case "$test" in
+              tests/world-worker.cjs) limit=600s ;;
               tests/world-worker-season.cjs) limit=1200s ;;
               tests/native-manager-career-worker.cjs|tests/native-manager-career-reverse.cjs) limit=900s ;;
               tests/native-academy-integrated-long.cjs) limit=1800s ;;

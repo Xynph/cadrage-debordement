@@ -124,13 +124,15 @@ test('identités de compétition : dossier de création, affichage et retour à 
  assert.equal(digest(fs.readFileSync(identity.logoPath)),digest(photo));
  assert.equal(creation.meta.champCatalogue.find(c=>c.id===30).photos.stadium.path,identity.logoPath);
  assert.deepEqual(creation.meta.champCatalogue.find(c=>c.id===0).history,toulouse.history);
- const career=settleClubMeetings(ok('new_career',{mode,club:30}),(command,payload)=>ok(command,payload));
+ // Compare the reference catalogue with an unvaried starting roster.
+ const career=settleClubMeetings(ok('new_career',{mode,club:30,varyCurrent:false}),(command,payload)=>ok(command,payload));
  assert.equal(career.leagues.find(l=>l.id==='prem').name,identity.name);
  assert.equal(career.clubLife.press.journal.divisions.find(d=>d.id==='prem').label,identity.name);
  assert.equal(career.leagues.find(l=>l.id==='prem').logoPath,identity.logoPath);
  assert.ok(career.calendar.filter(f=>f.competitionId==='prem').every(f=>f.label.startsWith(identity.name)));
  const raw=ok('export').meta.exportText;assert.ok(!raw.includes(identity.logoPath));
  const state=JSON.parse(raw).state,players=state.clubs[30].players;
+ assert.equal(state.careerVariation.varyCurrent,false);
  assert.equal(overview.forwards+overview.backs,players.length);
  assert.equal(overview.average,Math.round(players.reduce((n,p)=>n+p.rating,0)/players.length*10)/10);
  const positions={
