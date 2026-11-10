@@ -241,7 +241,7 @@ static func _bench(card:Panel,app:Control) -> int:
 		var person:=_player(app,slot)
 		entries.append({"id":str(person.get("id","vacant"))+"/"+str(slot),"slot":slot,"person":person})
 	entries=TableOrder.ordered(entries,state.key,state.descending,func(entry:Dictionary,key:String):return entry.slot if key=="slot" else entry.person.get(key))
-	var scroll:=ScrollContainer.new();scroll.name="BenchPlayerScroll";scroll.follow_focus=true
+	var scroll:=ScrollContainer.new();scroll.name="BenchPlayerScroll";scroll.follow_focus=true;scroll.mouse_force_pass_scroll_events=false
 	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
 	card.add_child(scroll);D.place(scroll,Rect2(20,104,578,376))
 	var rows:=Control.new();rows.name="BenchPlayerRows";rows.custom_minimum_size=Vector2(C.px(558),C.px(376));scroll.add_child(rows)

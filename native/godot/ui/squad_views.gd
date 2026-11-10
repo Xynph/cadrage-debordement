@@ -95,6 +95,7 @@ static func squad(app: Control) -> Control:
 	list.set_meta("reveal_id", app.selected_player if str(state.get("visible_player", "")) != app.selected_player else "")
 	list.add_theme_constant_override("separation",2)
 	list.get_parent().name="SquadScroll"
+	list.get_parent().mouse_force_pass_scroll_events=false
 	var profile := G.panel(page,1.1)
 	profile.name="PlayerDossier"
 	var refresh:=func():_squad_rows(app,list,profile,count,compare)

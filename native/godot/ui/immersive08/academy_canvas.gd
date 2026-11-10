@@ -217,6 +217,7 @@ func _table(group: String, people: Array) -> void:
 			action.add_theme_stylebox_override(mode,style)
 	var scroll := ScrollContainer.new()
 	scroll.name = "AcademyPlayerScroll"
+	scroll.mouse_force_pass_scroll_events = false
 	scroll.follow_focus = true
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	table.add_child(scroll); D.place(scroll,Rect2(13,106,1380,434))
