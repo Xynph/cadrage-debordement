@@ -18,6 +18,8 @@ var presence_key := ""
 var model: Dictionary = {}
 var _quality_control: OptionButton
 var _camera_controls: Array[Button] = []
+var _kit_swatches: Array[Panel] = []
+var _kit_swatch_colors: Array[Color] = []
 var _applied_camera := ""
 var _applied_quality := ""
 var _score_sheet: PanelContainer
@@ -61,6 +63,16 @@ func _ready() -> void:
 	banner.add_child(away)
 	play=G.button("COUP D'ENVOI",_act,true)
 	banner.add_child(play)
+	for side in 2:
+		var swatch := Panel.new()
+		swatch.custom_minimum_size = Vector2(14, 14)
+		swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		swatch.add_theme_stylebox_override("panel", G.T.box(Color.WHITE, 3, Color("aeafa7")))
+		swatch.hide()
+		banner.add_child(swatch)
+		banner.move_child(swatch, home.get_index() + 1 if side == 0 else score.get_index() + 1)
+		_kit_swatches.append(swatch)
 	var center:=G.h(13)
 	G.fill(center,true)
 	add_child(center)
@@ -206,6 +218,7 @@ func update_frame(value:Dictionary) -> void:
 	model=value
 	if not is_node_ready():return
 	var live:Dictionary=value.live if value.get("live") is Dictionary else {}
+	var kit_colors: Array[Color] = []
 	if live.is_empty():
 		stage.apply_frame({})
 		var next:Dictionary=value.next if value.get("next") is Dictionary else {}
@@ -235,6 +248,14 @@ func update_frame(value:Dictionary) -> void:
 		finish.disabled=not live.get("finished",false)
 		stage.set_live_cadence(app.tick_steps)
 		stage.apply_frame(live)
+		kit_colors = stage.alternative_kit_colors()
+	if kit_colors != _kit_swatch_colors:
+		_kit_swatch_colors = kit_colors
+		for side in _kit_swatches.size():
+			var swatch := _kit_swatches[side]
+			swatch.visible = not kit_colors.is_empty()
+			if swatch.visible:
+				(swatch.get_theme_stylebox("panel") as StyleBoxFlat).bg_color = kit_colors[side]
 	_side()
 
 func _select_tab(value: String) -> void:

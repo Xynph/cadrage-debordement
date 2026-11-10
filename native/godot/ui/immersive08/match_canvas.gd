@@ -84,7 +84,7 @@ func _add_badges() -> void:
 		mount.custom_minimum_size=Vector2(C.px(63),C.px(63))
 		mount.size_flags_vertical=Control.SIZE_SHRINK_CENTER
 		row.add_child(mount)
-		row.move_child(mount,home.get_index()+1 if index==0 else score.get_index()+1)
+		row.move_child(mount,_kit_swatches[0].get_index()+1 if index==0 else score.get_index()+1)
 		badges.append(mount)
 
 func _add_pitch_overlays() -> void:
