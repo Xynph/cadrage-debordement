@@ -76,5 +76,41 @@ func run() -> void:
 	var tabs := app.find_child("InternationalTabs", true, false) as TabContainer
 	check(tabs != null and tabs.current_tab == 2 and tabs.get_tab_title(2) == "Offres", "Le courrier d’offre ouvre les offres")
 	check(app.find_child("NationalJobDual_FRA", true, false) != null, "L’offre expose la prise de poste mixte")
+	next = next.duplicate(true)
+	next.international.role = "nation"
+	next.international.nation = "FRA"
+	next.international.teams = [{"id":"FRA", "name":"France", "flagCode":"fr"}, {"id":"IRE", "name":"Irlande", "flagCode":"ie"}]
+	next.international.currentManagedFixture = {"id":"fixture:test", "date":"2026-08-17", "homeId":"FRA", "awayId":"IRE"}
+	next.international.editions = [{"id":"tournament:test", "name":"Tournoi test", "fixtures":[next.international.currentManagedFixture]}]
+	app._receive_model(next)
+	await settle()
+	check(app.find_child("Nav_Bureau", true, false) == null and app.find_child("Nav_Effectif", true, false) == null,
+		"Une carrière de sélectionneur masque le club simulé")
+	check(app.primary_button.text == "Jouer la sélection", "Le match international du jour pilote l’action principale")
+	app._navigate("Calendrier")
+	await settle()
+	check(app.find_child("InternationalCalendar", true, false) != null, "Le calendrier de sélection affiche les échéances internationales")
+	app._navigate("Bureau")
+	check(app.route == "Calendrier", "La navigation directe protège le club simulé")
+	app._navigate("Création")
+	await settle()
+	var role := app.find_child("CreationChooseRole", true, false) as Button
+	check(role != null, "L’atelier propose le choix de rôle si le moteur fournit des sélections")
+	if role != null:
+		role.pressed.emit()
+		await settle()
+		var dialog := app.get_node_or_null("CreationRoleDialog") as ConfirmationDialog
+		var roles := app.find_child("CreationCareerRole", true, false) as OptionButton
+		var nations := app.find_child("CreationCareerNation", true, false) as OptionButton
+		check(dialog != null and roles != null and nations != null, "Le choix de rôle présente les nations disponibles")
+		if dialog != null and roles != null and nations != null:
+			roles.select(2)
+			roles.item_selected.emit(2)
+			nations.select(0)
+			dialog.confirmed.emit()
+			await settle()
+			var start := app.find_child("CreationStart", true, false) as Button
+			check(start != null and not start.disabled and start.text.contains("France"),
+				"Le choix sélection seule permet de démarrer sans club")
 	print("Réception centrale : ", failures, " échec(s)")
 	await app._close(0 if failures == 0 else 1)

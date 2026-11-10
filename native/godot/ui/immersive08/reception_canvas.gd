@@ -31,10 +31,11 @@ static func international_mail(model: Dictionary) -> Array[Dictionary]:
 
 static func _priority_ids(model: Dictionary) -> Array[String]:
 	var ids: Array[String] = []
-	for invitation: Dictionary in model.get("clubLife", {}).get("press", {}).get("invitations", []):
-		if invitation.status == "pending": ids.append(invitation.id)
-	for notice: Dictionary in model.get("calendarMail", []):
-		if notice.status == "pending": ids.append(notice.id)
+	if model.get("international", {}).get("role") != "nation":
+		for invitation: Dictionary in model.get("clubLife", {}).get("press", {}).get("invitations", []):
+			if invitation.status == "pending": ids.append(invitation.id)
+		for notice: Dictionary in model.get("calendarMail", []):
+			if notice.status == "pending": ids.append(notice.id)
 	for event: Dictionary in international_mail(model): ids.append("international:" + event.id)
 	return ids
 
@@ -45,7 +46,8 @@ static func new_priority(previous: Dictionary, current: Dictionary) -> String:
 	return ""
 
 static func _messages(app: Control) -> Array[Dictionary]:
-	var source: Array = app.model.get("messages", [])
+	var national: bool = app.Immersive.Selections.nation_only(app.model)
+	var source: Array = [] if national else app.model.get("messages", [])
 	var messages: Array[Dictionary] = []
 	var occurrences := {}
 	# Le moteur ne fournit que des textes dans l'ordre de réception. Distinguer
@@ -63,7 +65,7 @@ static func _messages(app: Control) -> Array[Dictionary]:
 		var item := {"id":id, "text":clean, "category":category, "route":destination, "position":source.size()-index}
 		if _is_season_expiry_mail(message): item.season_expiry = true
 		messages.push_front(item)
-	var notices: Array = app.model.get("calendarMail", [])
+	var notices: Array = [] if national else app.model.get("calendarMail", [])
 	for index in notices.size():
 		var notice: Dictionary = notices[index]
 		var previous_date := P.fixture_date({"date":notice.fromDate})
@@ -82,7 +84,7 @@ static func _messages(app: Control) -> Array[Dictionary]:
 			"route":"Calendrier", "position":source.size()+index+1, "calendar_notice":notice
 		})
 	var press: Dictionary = app.model.get("clubLife", {}).get("press", {})
-	var invitations: Array = press.get("invitations", [])
+	var invitations: Array = [] if national else press.get("invitations", [])
 	for index in range(invitations.size() - 1, -1, -1):
 		var invitation: Dictionary = invitations[index]
 		var context: Dictionary = invitation.context
@@ -127,6 +129,7 @@ static func unread(app: Control) -> int:
 
 static func _tasks(app: Control) -> Array:
 	var tasks := []
+	if app.Immersive.Selections.nation_only(app.model): return tasks
 	if not app.model.get("selection", {}).get("valid", false): tasks.append(["Compléter la feuille de match", "Composition"])
 	if not app.model.get("meta", {}).get("trained", false): tasks.append(["Organiser la charge de la semaine", "Entraînement"])
 	var contracts := P.contracts(app.model)
@@ -183,7 +186,8 @@ static func build(app: Control) -> Control:
 	for message: Dictionary in visible:
 		if message.id == state.selected: current=message; break
 	_folders(folders,app,state)
-	var lounge := D.panel(page, Rect2(0, 397, 298, 252), "Accueil du club", "home")
+	var national: bool = app.Immersive.Selections.nation_only(app.model)
+	var lounge := D.panel(page, Rect2(0, 397, 298, 252), "Sélection nationale" if national else "Accueil du club", "home")
 	D.scenario_photo(lounge, "lounge", Rect2(12, 64, 274, 174))
 	_list(D.panel(page,Rect2(316,0,749,1124),"","","","InboxMessages"),app,state,visible)
 	_detail(D.panel(page,Rect2(1083,0,1165,1124),"","","","InboxDetail"),app,state,current)
@@ -266,6 +270,7 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 
 static func _detail(card: Panel, app: Control, state: Dictionary, message: Dictionary) -> void:
 	card.clip_contents = true
+	var national: bool = app.Immersive.Selections.nation_only(app.model)
 	var category: String = message.get("category","Club")
 	if category=="Médical":
 		D.photo(card,"medical-recovery",Rect2(438,1,726,274))
@@ -282,12 +287,13 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	D.text(card,52,68,category.to_upper(),39,C.IVORY,800,780)
 	_icon(card,ICONS[category],Rect2(53,87,27,27),COLORS[category])
 	var event: Dictionary = message.get("international_event", {})
-	var source := "Journal du club" if message.is_empty() else "Journal du club · Message %02d" % message.position
+	var source := "Journal de la sélection" if national else ("Journal du club" if message.is_empty() else "Journal du club · Message %02d" % message.position)
 	if not event.is_empty():
 		var date := P.fixture_date({"date":event.get("date")})
 		source = "Sélections" if date.is_empty() else "Sélections · " + date
 	D.text(card,92,110,source,24,C.IVORY,500,690)
-	var title := "Le courrier du club" if message.is_empty() else str(message.get("subject",_subject(message.text)))
+	var title := "Le courrier de la sélection" if national else "Le courrier du club"
+	if not message.is_empty(): title = str(message.get("subject",_subject(message.text)))
 	D.text(card,32,303,title,44,C.IVORY,700,1097)
 	var body := C.wrap(message.get("text","Aucun message à afficher dans ce dossier."),23,C.IVORY)
 	body.name = "InboxMessageText"
@@ -297,12 +303,13 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	card.add_child(scroll)
 	D.place(scroll,Rect2(33,330,1097,180))
 	scroll.add_child(body)
-	var group := P.group(app.model)
-	_metric(card,Rect2(33,533,357,59),"people","%d disponibles" % group.available,C.MINT)
-	_metric(card,Rect2(404,533,296,59),"heart","%d blessés" % group.injured,C.ALERT if group.injured>0 else C.MUTED)
-	_metric(card,Rect2(714,533,416,59),"heart","Condition · %d %%" % group.condition,C.MINT)
+	if not national:
+		var group := P.group(app.model)
+		_metric(card,Rect2(33,533,357,59),"people","%d disponibles" % group.available,C.MINT)
+		_metric(card,Rect2(404,533,296,59),"heart","%d blessés" % group.injured,C.ALERT if group.injured>0 else C.MUTED)
+		_metric(card,Rect2(714,533,416,59),"heart","Condition · %d %%" % group.condition,C.MINT)
 	var focused := message.has("press_invitation") or message.has("calendar_notice") or not event.is_empty()
-	if not focused:
+	if not focused and not national:
 		var tasks := _tasks(app).slice(0,3)
 		var recommendations := D.panel(card,Rect2(26,610,1112,175),"Mes recommandations","warning")
 		if tasks.is_empty(): D.text(recommendations,25,104,"Aucune priorité immédiate.",23,C.MUTED,600,1020)

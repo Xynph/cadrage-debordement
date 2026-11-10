@@ -112,7 +112,7 @@ static func render(app: Control) -> bool:
 	inset.add_child(content)
 	var canvas_script := _dedicated_page(app,physical)
 	var immersive_match: bool = app.route=="Match" and physical.x>=1920 and physical.y>=1080
-	var monthly_calendar: bool = app.route=="Calendrier" and not app.get_meta("calendar_table",false)
+	var monthly_calendar: bool = app.route=="Calendrier" and not Selections.nation_only(app.model) and not app.get_meta("calendar_table",false)
 	if canvas_script!=null or immersive_match or monthly_calendar or (app.route=="Effectif" and app.get_meta("immersive08_full_player",false)):
 		app.heading=null
 		app.minibar=C.label("",17,C.GOLD);app.minibar.visible=false;content.add_child(app.minibar)
@@ -212,6 +212,7 @@ static func open_preparation(app: Control, tab: int) -> void:
 	app._navigate("Préparation",true,true)
 
 static func _dedicated_page(app: Control, size: Vector2i) -> Script:
+	if app.route == "Calendrier" and Selections.nation_only(app.model): return null
 	if app.route == "Calendrier" and not app.get_meta("calendar_table",false): return null
 	if app.route=="Calendrier" and size.x>=1280 and size.y>=720 and app.model.meta.get("leagueId") in ["nationale","champ"]: return Competition
 	if size.x<1920 or size.y<1080:
@@ -251,16 +252,22 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	D.line(rail,Vector2(24,128),Vector2(224,128),Color(C.GOLD,.55))
 	D.rect(rail,Rect2(18,143,212,224),CLUB_CHROME.lerp(club_accent,.24),12,Color(club_edge,.46))
 	D.line(rail,Vector2(75,367),Vector2(173,367),club_edge,3)
-	var crest:=G.crest(app.model.club,C.px(126));rail.add_child(crest);D.place(crest,Rect2(61,151,126,147))
-	D.text(rail,124,331,G.club_name(app.model.club).to_upper(),23,C.IVORY,700,222,HORIZONTAL_ALIGNMENT_CENTER)
+	var national := Selections.nation_only(app.model)
+	var nation := Selections.managed_team(app.model)
+	var identity := str(nation.get("name", "Sélection")) if national else G.club_name(app.model.club)
+	var crest := Selections.nation_badge(nation, C.px(126)) if national else G.crest(app.model.club,C.px(126))
+	rail.add_child(crest)
+	D.place(crest,Rect2(61,151,126,147))
+	D.text(rail,124,331,identity.to_upper(),23,C.IVORY,700,222,HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(rail,124,354,"SAISON "+G.n(app.model.meta.get("season",1)),16,C.GOLD,500,215,HORIZONTAL_ALIGNMENT_CENTER)
 	var names:Array=[["mail","Réception","Réception"],["home","Bureau","Bureau"],["people","Effectif","Effectif"],["tactic","Tactique","Composition"],["train","Entraînement","Préparation"],["search","Recrutement","Recrutement"],["shield","Club","Club"],["money","Finances","Finances"],["trophy","Compétitions","Classements"],["school","Formation","Formation"]]
 	if app.model.get("international") is Dictionary: names.append(["flag","Sélections","Sélections"])
+	if national: names = [["mail","Réception","Réception"],["flag","Sélections","Sélections"],["calendar","Calendrier","Calendrier"]]
 	for i in names.size():
 		var entry:Array=names[i]
 		var destination:String=entry[2]
 		var selected:bool=app.route==destination
-		if i==2:selected=app.route in ["Effectif","Vestiaire"]
+		if i==2 and not national:selected=app.route in ["Effectif","Vestiaire"]
 		if i==3:selected=app.route in ["Composition","Plan de jeu","Match"] or (app.route=="Préparation" and not _is_training(app))
 		if i==4:selected=_is_training(app)
 		if i==6:selected=app.route in ["Club","Staff","Travail du club","Stratégie"]
@@ -293,6 +300,7 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	D.rect(dock,Rect2(0,45,247,94),Color("0c1717"))
 	D.line(dock,Vector2(22,45),Vector2(226,45))
 	for i in 3:
+		if i == 0 and national: continue
 		var caption:String=["Carrière","Réglages","Sauvegarder"][i]
 		var y:float=[0,58,100][i]
 		var action:=D.button(dock,Rect2(12,y,224,38),caption,func():
@@ -305,7 +313,8 @@ static func _sidebar(parent: Node, app: Control) -> void:
 	D.rect(dock,Rect2(0,220,247,75),Color("0b1614"))
 	D.rect(dock,Rect2(21,245,8,8),C.ALERT if app._status_has_error() else C.MINT,4)
 	D.text(dock,39,255,"Stockage à vérifier" if app._status_has_error() else "Sauvegarde automatique",17,C.MUTED,500,198)
-	D.text(dock,24,281,G.club_abbr(app.model.club)+" · Carrière principale",17,C.FAINT,500,210)
+	var profile := "Sélection nationale" if national else G.club_abbr(app.model.club)+" · Carrière principale"
+	D.text(dock,24,281,profile,17,C.FAINT,500,210)
 
 static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	var panel := Control.new()
@@ -321,7 +330,8 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	panel.add_child(home)
 	D.place(home,Rect2(34,24,25,25))
 	D.text(panel,77,48,"›",26,C.MUTED)
-	var club_name := G.club_name(app.model.club)
+	var national := Selections.nation_only(app.model)
+	var club_name := str(Selections.managed_team(app.model).get("name", "Sélection")) if national else G.club_name(app.model.club)
 	var name_width := clampf(C.MEDIUM.get_string_size(club_name,HORIZONTAL_ALIGNMENT_LEFT,-1,C.px(24)).x/C.density+8,170,320)
 	D.text(panel,103,48,club_name,24,C.MUTED,500,name_width)
 	D.text(panel,108+name_width,48,"›",26,C.MUTED)
@@ -334,6 +344,7 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	D.place(history,Rect2(1155,19,91,42))
 	var office_live: bool = app.route=="Bureau" and not app._live().is_empty()
 	var search_caption := "Rechercher un joueur, un menu…" if app.model.get("staff",{}).get("teams",[]).is_empty() else "Rechercher un joueur, un club…"
+	if national: search_caption = "Rechercher un écran…"
 	var search := D.button(panel,Rect2(1264,19,380 if office_live else 475,42),"Rechercher…" if office_live else search_caption,func():app.navigation_controller.open_palette(),false,"",true,app.accent,"ImmersiveSearch")
 	if office_live: search.tooltip_text = search_caption
 	search.add_theme_font_override("font",C.BODY)
@@ -484,6 +495,7 @@ static func _sync_office_props(match_status: Label) -> void:
 		D.place(props,Rect2(1080,5,260,78))
 
 static func _subnavigation(parent: Node, app: Control) -> void:
+	if Selections.nation_only(app.model): return
 	if (app.route=="Composition" and app.get_window().size.x>=TACTICS_CANVAS_MIN_WIDTH) or (app.route=="Effectif" and app.get_window().size.x>=1600): return
 	for group: Array in GROUPS:
 		if app.route not in group[2] or group[2].size() < 2: continue
@@ -584,7 +596,8 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 			Legacy.apply(page, app.accent)
 		"Club": app.body.add_child(app.ClubViews.club(app))
 		"Calendrier":
-			if app.get_meta("calendar_table",false):
+			if Selections.nation_only(app.model): app.body.add_child(Selections.calendar(app))
+			elif app.get_meta("calendar_table",false):
 				D.button(app.heading.get_parent(),Rect2(1050,16,340,52),"Vue mensuelle",_calendar_table.bind(app,false),false,"calendar",true,app.accent,"CalendarShowMonth")
 				app.body.add_child(app.ClubViews.calendar(app))
 			else:

@@ -253,7 +253,8 @@ func _receive_model(value: Dictionary) -> void:
 	waiting = false
 	if SeasonPreparation.is_advance(received_command): SeasonPreparation.show_pending(self, false)
 	connection_error = false
-	if _has_career(): accent = Color(G.identity(model.club).get("color", "#d43e47"))
+	if _has_career():
+		accent = Color("106d43") if Immersive.Selections.nation_only(model) else Color(G.identity(model.club).get("color", "#d43e47"))
 	if not export_path.is_empty() and not _write_export():
 		if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
 		return
@@ -398,6 +399,7 @@ func _open_press_invitation(id: String) -> void:
 func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = false) -> void:
 	if target == "Presse" and not has_meta("press_mail_origin"): return
 	if target == "Sélections" and not model.get("international") is Dictionary: return
+	if not Immersive.Selections.navigation_allowed(model, target): return
 	if target != "Presse" and has_meta("press_mail_origin"): remove_meta("press_mail_origin")
 	if not keep_subview:
 		if target == "Effectif": set_meta("immersive08_full_player",false)
@@ -449,6 +451,7 @@ func _build_subnavigation(parent: Container) -> void:
 
 func _render(remember_ui: bool = true) -> void:
 	if route == "Presse" and not has_meta("press_mail_origin"): route = "Réception"
+	if not Immersive.Selections.navigation_allowed(model, route): route = "Réception"
 	call_deferred("_refresh_coach")
 	call_deferred("_observe_navigation")
 	for chapter: Dictionary in NAV_CHAPTERS:
@@ -788,10 +791,12 @@ func _update_live_bar() -> void:
 		primary_button.text = "Continuer" if primary_button.name == "ImmersiveContinue" else action
 		primary_button.disabled = false
 		if live.is_empty():
-			if CareerProgression.press_required(model):
+			if _press_required():
 				if primary_button.name == "ImmersiveContinue": primary_button.text = "Conf. de presse"
+			elif not Immersive.Selections.current_fixture(model).is_empty():
+				if primary_button.name == "ImmersiveContinue": primary_button.text = "Jouer la sélection"
 			elif not model.meta.get("canAdvanceSeason", false):
-				var daily := CareerProgression.daily(model.meta, model.get("next"), route)
+				var daily := _daily_progression()
 				if primary_button.name == "ImmersiveContinue": primary_button.text = daily.get("short", "Continuer")
 				primary_button.disabled = bool(daily.get("disabled", false))
 		if office_status and not live.is_empty():
@@ -799,15 +804,23 @@ func _update_live_bar() -> void:
 		primary_button.tooltip_text = action
 	if waiting and SeasonPreparation.is_advance(last_command): SeasonPreparation.show_pending(self, true)
 
+func _press_required() -> bool:
+	return not Immersive.Selections.nation_only(model) and CareerProgression.press_required(model)
+
+func _daily_progression() -> Dictionary:
+	var fixture: Variant = null if Immersive.Selections.nation_only(model) else model.get("next")
+	return CareerProgression.daily(model.get("meta", {}), fixture, route)
+
 func primary_text() -> String:
 	var live := _live()
 	if not live.is_empty():
 		if live.get("finished",false): return "VALIDER LE RÉSULTAT  →"
 		if route == "Préparation" and live.get("paused",false): return "RETOUR AU MATCH  →"
 		return "RETOUR AU DIRECT  →"
-	if CareerProgression.press_required(model): return "OUVRIR LA RÉCEPTION  →"
+	if _press_required(): return "OUVRIR LA RÉCEPTION  →"
+	if not Immersive.Selections.current_fixture(model).is_empty(): return "JOUER LE MATCH DE SÉLECTION  →"
 	if model.get("meta",{}).get("canAdvanceSeason",false): return "SAISON SUIVANTE  →"
-	var daily := CareerProgression.daily(model.get("meta", {}), model.get("next"), route)
+	var daily := _daily_progression()
 	if not daily.is_empty(): return daily.label
 	if not SeasonPreparation.data(model.get("meta",{})).is_empty(): return "AVANCER LA PRÉPARATION  →"
 	if model.get("next") == null: return "AVANCER LA SEMAINE  →"
@@ -819,13 +832,16 @@ func primary_action() -> void:
 		if _live().get("finished",false): _command("finish_round")
 		else: _navigate("Match")
 		return
-	if CareerProgression.press_required(model):
+	if _press_required():
 		_show_press_inbox()
+		return
+	if not Immersive.Selections.current_fixture(model).is_empty():
+		Immersive.Selections.play_current(self)
 		return
 	if model.meta.get("canAdvanceSeason",false):
 		confirm("Une nouvelle saison", "Les contrats arrivés à échéance sont réglés et les mouvements de division sont appliqués. Commencer la saison suivante ?", func(): _command("next_season",{"confirmed":true}))
 		return
-	var daily := CareerProgression.daily(model.meta, model.get("next"), route)
+	var daily := _daily_progression()
 	if not daily.is_empty():
 		if daily.has("route"): _navigate(daily.route)
 		elif daily.has("command"): _command(daily.command, daily.payload)

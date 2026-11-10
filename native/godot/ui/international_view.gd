@@ -1,14 +1,100 @@
 extends RefCounted
 
 const G = preload("res://ui/game_skin.gd")
+const C = preload("res://ui/immersive08/components.gd")
+const P = preload("res://ui/immersive08/projection.gd")
+
+static func nation_only(model: Dictionary) -> bool:
+	return model.get("international", {}).get("role") == "nation"
+
+static func navigation_allowed(model: Dictionary, route: String) -> bool:
+	return not nation_only(model) or route in ["Accueil", "Création", "Packs", "Réception", "Sélections", "Calendrier"]
+
+static func managed_team(model: Dictionary) -> Dictionary:
+	var international: Dictionary = model.get("international", {})
+	for team: Dictionary in international.get("teams", []):
+		if team.id == international.get("nation"): return team
+	return {}
+
+static func nation_badge(team: Dictionary, width: int) -> Control:
+	var code := str(team.get("flagCode", "")).to_lower()
+	var path := "res://art/flags/%s.svg" % code
+	if not code.replace("-", "").is_valid_identifier() or not ResourceLoader.exists(path):
+		return C.icon("flag", width, C.GOLD)
+	var badge := TextureRect.new()
+	badge.texture = load(path)
+	badge.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	badge.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	badge.custom_minimum_size = Vector2(width, width * .7)
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return badge
+
+static func current_fixture(model: Dictionary) -> Dictionary:
+	var fixture: Variant = model.get("international", {}).get("currentManagedFixture")
+	return fixture if fixture is Dictionary and fixture.has("id") and fixture.has("date") else {}
+
+static func play_current(app: Control) -> void:
+	var fixture := current_fixture(app.model)
+	if not fixture.is_empty():
+		app._command("national_play_match", {"fixtureId":fixture.id, "fromDate":fixture.date})
+
+static func calendar(app: Control) -> Control:
+	var page := G.v(8)
+	page.name = "InternationalCalendar"
+	var international: Dictionary = app.model.get("international", {})
+	var names := _team_names(international)
+	var today := str(app.model.get("meta", {}).get("calendarToday", ""))
+	var nation: String = international.get("nation", "")
+	page.add_child(G.section("Calendrier de la sélection", str(names.get(nation, nation))))
+	var total := 0
+	for edition: Dictionary in international.get("editions", []):
+		var fixtures: Array = edition.get("fixtures", [])
+		var managed := fixtures.filter(func(fixture: Dictionary):
+			return fixture.get("homeId") == nation or fixture.get("awayId") == nation)
+		if managed.is_empty(): continue
+		total += managed.size()
+		var section := G.panel(page)
+		section.add_child(G.section(str(edition.get("name", ""))))
+		for fixture: Dictionary in managed:
+			var date := str(fixture.get("date", ""))
+			section.add_child(G.wrap(_fixture_row(fixture, names), 16, G.GOOD if date == today else G.INK))
+	if total == 0: page.add_child(G.wrap("Aucune rencontre programmée pour cette sélection."))
+	_add_play_button(app, page, international, names)
+	return page
+
+static func _team_names(international: Dictionary) -> Dictionary:
+	var names := {}
+	for team: Dictionary in international.get("teams", []):
+		names[team.id] = team.name
+	return names
+
+static func _fixture_name(fixture: Dictionary, names: Dictionary) -> String:
+	var home: String = fixture.get("homeId", "")
+	var away: String = fixture.get("awayId", "")
+	return "%s – %s" % [names.get(home, home), names.get(away, away)]
+
+static func _fixture_row(fixture: Dictionary, names: Dictionary) -> String:
+	var line := "%s · %s" % [P.fixture_date(fixture), _fixture_name(fixture, names)]
+	var result: Variant = fixture.get("result")
+	if result is Dictionary: line += " · %s – %s" % [G.n(result.home), G.n(result.away)]
+	return line
+
+static func _add_play_button(app: Control, parent: Control, international: Dictionary, names: Dictionary) -> void:
+	var fixture := current_fixture(app.model)
+	if not fixture.is_empty():
+		var play := G.button("Jouer · " + _fixture_name(fixture, names), play_current.bind(app), true)
+		play.name = "NationalPlayMatch"
+		play.disabled = app.waiting
+		parent.add_child(play)
+	elif international.get("nextManagedFixture") is Dictionary:
+		var next: Dictionary = international.nextManagedFixture
+		parent.add_child(G.wrap("Prochain match · %s · %s" % [next.get("date", ""), _fixture_name(next, names)]))
 
 static func build(app: Control) -> Control:
 	var page := G.v(8)
 	page.name = "InternationalSelections"
 	var international: Dictionary = app.model.get("international", {})
-	var names := {}
-	for team: Dictionary in international.get("teams", []):
-		names[team.id] = team.name
+	var names := _team_names(international)
 	var nation := str(international.get("nation", ""))
 	var role: String = international.get("role", "club")
 	if role in ["dual", "nation"]:
@@ -16,11 +102,12 @@ static func build(app: Control) -> Control:
 		page.add_child(G.section("%s · %s" % [status, names.get(nation, nation)]))
 	else:
 		page.add_child(G.section("Votre carrière en club", "Suivez les convocations et les postes disponibles."))
+	_add_play_button(app, page, international, names)
 	var tabs := TabContainer.new()
 	tabs.name = "InternationalTabs"
 	page.add_child(tabs)
 	tabs.add_child(_callups(international, names))
-	tabs.add_child(_editions(international))
+	tabs.add_child(_editions(international, names))
 	tabs.add_child(_offers(app, international, role))
 	tabs.current_tab = 2 if app.management_ui.get("international_section") == "offers" else 0
 	tabs.tab_changed.connect(func(index: int):
@@ -36,18 +123,27 @@ static func _callups(international: Dictionary, names: Dictionary) -> Control:
 		list.add_child(G.section(str(names.get(callup.nation, callup.nation)),
 			"%s au %s" % [callup.from, callup.through]))
 		for player: Dictionary in callup.get("players", []):
-			list.add_child(G.wrap("%s · %s · %s ans" % [player.name, player.pos, player.age], 15, G.INK))
+			var identity := "%s · %s · %s ans" % [player.name, player.pos, G.n(player.age)]
+			if player.get("note") != null: identity += " · Note " + G.n(player.note)
+			list.add_child(G.wrap(identity, 15, G.INK))
 	if view.get_child_count() == 0: view.add_child(G.wrap("Aucune convocation enregistrée."))
 	return view
 
-static func _editions(international: Dictionary) -> Control:
+static func _editions(international: Dictionary, names: Dictionary) -> Control:
 	var view := G.v()
 	view.name = "Compétitions"
 	for edition: Dictionary in international.get("editions", []):
 		var list := G.panel(view)
 		list.add_child(G.section(str(edition.get("name", ""))))
-		var fixtures: Variant = edition.get("fixtures")
-		if fixtures is Array: list.add_child(G.wrap("%d rencontres au programme" % fixtures.size()))
+		for table: Dictionary in edition.get("tables", []):
+			var pool := str(table.get("pool", ""))
+			list.add_child(G.label("Classement" if pool.is_empty() else "Poule " + pool, 16, G.GOLD, true))
+			for row: Dictionary in table.get("rows", []):
+				var team: String = row.get("teamId", "")
+				list.add_child(G.wrap("%s. %s · %s J · %s pts" % [
+					G.n(row.rank), names.get(team, team), G.n(row.played), G.n(row.points)], 14, G.INK))
+		for fixture: Dictionary in edition.get("fixtures", []):
+			list.add_child(G.wrap(_fixture_row(fixture, names), 14, G.INK))
 	if view.get_child_count() == 0: view.add_child(G.wrap("Aucune édition internationale disponible."))
 	return view
 
