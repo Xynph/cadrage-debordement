@@ -4,6 +4,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
+const U = preload("res://ui/management_state.gd")
 
 class JerseyButton extends Button:
 	var density := 1.0
@@ -131,9 +132,14 @@ static func build(app:Control) -> Control:
 		D.text(tile,280,101,"Projection du staff",23,C.MUTED,500,245)
 		D.bar(tile,Rect2(25,131,496,6),float(found.get("own",0)))
 	var vigilance:=_card(page,Rect2(1966,1186,562,158),"VIGILANCE PHYSIQUE","warning","TacticsVigilance")
-	var watched:Array=app.model.get("squad",[]).filter(func(player:Dictionary):return float(player.get("physicalLoad",0))>=70 or float(player.get("condition",100))<80)
-	D.text(vigilance,24,94,"Aucune alerte physique" if watched.is_empty() else str(watched[0].name)+" · Charge "+G.n(watched[0].get("physicalLoad",0))+" %",27,C.MINT if watched.is_empty() else C.AMBER,600,514)
-	D.text(vigilance,24,131,"Consulter l’effectif pour ajuster les charges individuelles.",19,C.MUTED,400,514,HORIZONTAL_ALIGNMENT_LEFT,true)
+	var watched: Array = app.model.get("squad", []).filter(func(player: Dictionary): return not U.watch_reason(player).is_empty())
+	if watched.is_empty():
+		D.text(vigilance,24,94,"Aucune alerte physique",27,C.MINT,600,514)
+	else:
+		var player: Dictionary = watched[0]
+		D.text(vigilance,24,72,player.name,23,C.IVORY,600,514).name = "TacticsVigilancePlayer"
+		D.text(vigilance,24,106,U.watch_reason(player),24,C.AMBER,600,514).name = "TacticsVigilanceReason"
+	D.text(vigilance,24,131 if watched.is_empty() else 135,"Consulter l’effectif pour ajuster les charges individuelles.",19,C.MUTED,400,514,HORIZONTAL_ALIGNMENT_LEFT,true)
 	return page
 
 static func _nationale_qualification(parent: Panel, selection: Dictionary) -> void:
