@@ -51,6 +51,38 @@ test('Génération : la queue supérieure est rare à travers postes, clubs et s
   assert.ok(shown[Math.floor(shown.length*.5)] >= 72 && shown[Math.floor(shown.length*.5)] <= 82);
 });
 
+test('Les centres formateurs et les grands clubs ont un avantage sans exclure les surprises', () => {
+  const h = context(437493);
+  const result = JSON.parse(h.run(`start(0, 'france');
+    S.commonDatabase = CDCommonRosters.marker;
+    const tracked = [0, 3, 25, 26];
+    const distribution = Object.fromEntries(tracked.map(id => {
+      const club = S.clubs[id];
+      const scores = Array.from({length:100}, (_, year) => POS.map((_, slot) =>
+        potentialAtRole(academyPlayer(id, slot, year+1, slot, false, club)))).flat();
+      return [id, {weight:academyRecruitmentWeight(club), elite:scores.filter(score => score > 90).length,
+        prospects:scores.filter(score => score >= 83).length, max:Math.max(...scores)}];
+    }));
+    const baseline = academyPlayer(0, 10, 1, 72);
+    const emergency = academyPlayer(0, 10, 1, 72, true, S.clubs[0]);
+    const legacyEmergency = academyPlayer(0, 10, 1, 72, true);
+    delete S.commonDatabase;
+    JSON.stringify({distribution, baseline:baseline.dev.potential, ordinary:academyPotential(baseline),
+      emergency:emergency.dev.potential, legacyEmergency:legacyEmergency.dev.potential,
+      fictional:academyRecruitmentWeight({id:0,base:60})});`));
+  const { distribution } = result;
+  console.log(JSON.stringify({ generatedPerClub:1500, ...distribution }));
+  assert.ok(distribution[0].elite > distribution[3].elite);
+  assert.ok(distribution[25].elite > distribution[3].elite);
+  assert.ok(distribution[3].elite > distribution[26].elite);
+  assert.ok(distribution[26].elite > 0);
+  assert.ok(distribution[0].prospects > distribution[26].prospects);
+  assert.ok(Object.values(distribution).every(club => club.max <= 94 && club.elite < 150));
+  assert.equal(result.baseline, result.ordinary);
+  assert.equal(result.emergency, result.legacyEmergency);
+  assert.equal(result.fictional, 0);
+});
+
 test('Migration : les points acquis, la majoration historique et les profils documentés restent protégés', () => {
   const h = context(437493);
   h.run(`start(0);

@@ -139,8 +139,7 @@ function aiRosterYouthIntake(){
   a.players=a.players.filter(p=>p.age<=21&&p.age<p.dev.retireAge);
   for(let k=0;k<15;k++){
    const slot=(c.id*3+S.season*7+k)%15;
-   const p=academyPlayer(c.id,slot,S.season,300+k);
-   p.dev.potential=clamp(p.dev.potential+Math.max(0,(info?.facilities||2)-2),p.rating,99);
+   const p=academyPlayer(c.id,slot,S.season,300+k,false,c);
    a.players.push(p);
   }
   // Plafond quinquennal : aucun recrutement fantome, anciens profils preservés.
@@ -416,8 +415,7 @@ function aiRosterPopulationYouthIntake(){
   for(let k=0;S.academyGroupPolicy!==2&&k<6&&a.players.length<75;k++){
    const slots=POS.map((_,slot)=>({slot,count:a.players.filter(p=>slotEligible(p,slot)).length,
     tie:(slot-c.id-S.season*6+150000)%15})).sort((a,b)=>a.count-b.count||a.tie-b.tie);
-   const p=academyPlayer(c.id,slots[0].slot,S.season,300+k);
-   p.dev.potential=clamp(p.dev.potential+Math.max(0,(info?.facilities||2)-2),p.rating,99);
+   const p=academyPlayer(c.id,slots[0].slot,S.season,300+k,false,c);
    a.players.push(p);
   }
   a.intakeSeason=S.season;
