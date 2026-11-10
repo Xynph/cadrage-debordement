@@ -8,6 +8,7 @@ const Training = preload("res://ui/immersive08/training_canvas.gd")
 const Notes = preload("res://ui/coach_notes_view.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
+const Academy = preload("res://ui/immersive08/academy_canvas.gd")
 
 class ConditionDial extends Control:
 	var condition := 0.0
@@ -270,16 +271,21 @@ static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
 	if not reason.is_empty(): offer.tooltip_text = reason
 
 static func _development(card:Panel,app:Control,player:Dictionary) -> void:
-	var records:Array=app.model.get("decisions",{}).get("development",{}).get("professionals",[]).filter(func(record:Dictionary):return str(record.get("id",""))==str(player.id))
-	var development:Dictionary=records[0].get("development",{}) if not records.is_empty() else {}
+	var player_id := str(player.id)
+	var record := Academy.professional_progress(app, player_id)
+	var development: Dictionary = record.get("development", {})
 	D.text(card,24,108,"NIVEAU ACTUEL  "+G.n(player.get("rating","—"))+"     ·     POTENTIEL  "+G.n(player.get("potential","—")),31,C.MINT,700,1550)
-	D.text(card,24,163,"Bilan et objectifs individuels dans le suivi de formation.",22,C.MUTED,400,1550,HORIZONTAL_ALIGNMENT_LEFT,true)
+	if record.is_empty():
+		D.text(card,24,163,"Suivi individuel indisponible pour ce joueur.",22,C.MUTED,400,1550,HORIZONTAL_ALIGNMENT_LEFT,true)
+		return
+	D.text(card,24,163,"Bilan et objectifs de ce joueur.",22,C.MUTED,400,1550,HORIZONTAL_ALIGNMENT_LEFT,true)
 	var history:Array=development.get("history",[])
 	if history.is_empty():D.text(card,24,223,"Premier bilan annuel à venir.",25,C.MUTED,500,1550)
 	for i in mini(4,history.size()):
 		var year:Dictionary=history[history.size()-1-i]
 		D.text(card,24,223+i*42,"Saison %s · %s → %s · %s minutes" % [G.n(year.get("season","—")),G.n(year.get("start","—")),G.n(year.get("end","—")),G.n(year.get("minutes","—"))],24,C.IVORY,500,1500)
-	D.button(card,Rect2(24,352,520,42),"Ouvrir le suivi de formation",func():app._navigate("Formation"),false,"school",true,app.accent,"PlayerDevelopmentAction")
+	D.button(card,Rect2(24,352,520,42),"Ouvrir le suivi individuel",func():
+		Academy.open_professional_progress(app, player_id, "PlayerDevelopmentAction"),false,"school",true,app.accent,"PlayerDevelopmentAction")
 
 static func _sources(card:Panel,app:Control,player:Dictionary) -> void:
 	var profile:Dictionary=player.rosterProfile if player.get("rosterProfile") is Dictionary else {}
