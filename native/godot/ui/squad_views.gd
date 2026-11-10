@@ -1,4 +1,5 @@
 extends RefCounted
+const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const Board = preload("res://ui/lineup_board.gd")
 const U = preload("res://ui/management_state.gd")
@@ -527,6 +528,9 @@ static func lineup(app:Control) -> Control:
 	var pitch:=G.panel(page,1.15)
 	if app.size.y<=760:pitch.add_theme_constant_override("separation",3)
 	G.chapter(pitch,"02","La feuille de match","Titulaire ou remplaçant : choisissez un poste.",app.accent)
+	var condition := G.label("Condition du XV · " + P.lineup_condition(app.model), 15)
+	condition.name = "LineupCondition"
+	pitch.add_child(condition)
 	var board:=Board.new()
 	board.app=app
 	pitch.add_child(board)

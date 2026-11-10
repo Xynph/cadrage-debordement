@@ -111,7 +111,8 @@ static func build(app:Control) -> Control:
 		D.text(button,84,78,_slot_name(person),22,Color("081d12") if selected else C.IVORY,600,158,HORIZONTAL_ALIGNMENT_CENTER)
 		button.pressed.connect(func():app.selected_slot=slot;app._render();_candidates(app,slot))
 	var group:=P.group(app.model)
-	D.text(composition,25,891,"Condition du groupe : %d %%" % group.condition,19,C.MUTED,500,480)
+	var condition := "Condition · XV %s · Groupe %d %%" % [P.lineup_condition(app.model), group.condition]
+	D.text(composition,25,893,condition,21,C.IVORY,600,342).name = "LineupCondition"
 	_identity(_card(page,Rect2(1366,264,548,906),"IDENTITÉ DE JEU","flag","TacticsIdentity"),app,domains)
 	var reserves := _bench(_card(page,Rect2(1930,264,598,529),"LE BANC","people","TacticsBench"),app)
 	D.text(composition,1046,891,"%d titulaires · %d remplaçants" % [starters,reserves],19,C.MUTED,500,440,HORIZONTAL_ALIGNMENT_RIGHT)

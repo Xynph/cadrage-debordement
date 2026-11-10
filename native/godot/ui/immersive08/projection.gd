@@ -97,6 +97,22 @@ static func player(model: Dictionary, id: String) -> Dictionary:
 		if str(person.get("id", "")) == id: return person
 	return {}
 
+static func lineup_condition(model: Dictionary) -> String:
+	var total := 0.0
+	var starters := 0
+	for assignment: Dictionary in model.get("selection", {}).get("slots", []):
+		var slot := int(assignment.get("slot", -1))
+		if slot < 0 or slot >= 15: continue
+		var person := player(model, str(assignment.get("playerId", "")))
+		var condition: Variant = person.get("condition")
+		if condition is not float and condition is not int: continue
+		total += float(condition)
+		starters += 1
+	if starters == 0: return "—"
+	var caption := "%d %%" % roundi(total / starters)
+	if starters < 15: caption += " (%d/15)" % starters
+	return caption
+
 static func player_in_recovery(model: Dictionary, id: String) -> bool:
 	var medical: Array = model.get("clubLife", {}).get("clubSupport", {}).get("medical", {}).get("players", [])
 	return medical.any(func(record: Dictionary): return record.get("id") == id and record.get("stage") == "reprise")
