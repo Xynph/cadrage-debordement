@@ -58,7 +58,7 @@ func _build() -> void:
 	confirmed.connect(queue_free); canceled.connect(queue_free); app.add_child(self)
 	app.bridge.model_changed.connect(func(_model: Dictionary):
 		if not app.bridge.last_response_ok: return
-		if app.last_command in ["new_career","import","recover_profile"]: queue_free()
+		if app.last_command in ["new_career","import","recover_profile","restore_checkpoint"]: queue_free()
 		else: _redraw())
 	app.get_window().size_changed.connect(_fit)
 	_redraw(); _fit()

@@ -182,7 +182,7 @@ func _confirm_remove() -> void:
 	Dialogs.show_centered(confirmation, Vector2i(520, 160))
 
 func _on_model(model: Dictionary) -> void:
-	if _app.bridge.last_response_ok and _app.last_command in ["new_career", "import", "recover_profile"]:
+	if _app.bridge.last_response_ok and _app.last_command in ["new_career", "import", "recover_profile", "restore_checkpoint"]:
 		queue_free()
 		return
 	_data = model.get("clubLife", {}).get("coachNotebook", {})

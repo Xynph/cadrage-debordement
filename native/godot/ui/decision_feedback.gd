@@ -27,13 +27,13 @@ func status_text() -> String:
 
 func begin(command: String, payload: Dictionary, model: Dictionary) -> void:
 	# À appeler à l'envoi réel, après la file d'attente et les refus locaux.
-	if command in ["new_career","import","recover_profile"]:
+	if command in ["new_career","import","recover_profile","restore_checkpoint"]:
 		_pending = {"command":command}
 	elif TITLES.has(command):
 		_pending = {"command":command,"payload":payload.duplicate(true),"before":_metrics(model),"evidence":_evidence(command,payload,model),"detail":_detail(command,payload,model)}
 
 func complete(command: String, ok: bool, model: Dictionary) -> void:
-	if command in ["new_career","import","recover_profile"] and ok:
+	if command in ["new_career","import","recover_profile","restore_checkpoint"] and ok:
 		reset()
 		return
 	if _pending.get("command","") != command: return
