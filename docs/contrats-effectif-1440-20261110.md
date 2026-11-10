@@ -55,3 +55,27 @@ Pour rejouer : `CD_GODOT_EXECUTABLE=/chemin/Godot4.7.2 node --test
 `QA_RESOLUTION=2560x1440`, `CD_CONTRACT_REVIEW_GRAPHICS=1` et éventuellement
 `CD_CONTRACT_REVIEW_OUTPUT`, sur un écran X11 2560 × 1440. Les profils sont
 créés automatiquement sous le dossier temporaire, hors de l'application.
+
+## Notes et tri des colonnes
+
+Deux colonnes suivent Poste : **Niveau** reprend le champ global `rating` et
+**Potentiel** le champ `potential` déjà projeté et affiché par la fiche native.
+La note pondérée au poste `note` n'est pas substituée au niveau global. Aucune
+moyenne des attributs ou des potentiels n'est inventée ; une valeur absente
+reste « — ».
+
+Chaque titre de colonne de données est cliquable, hors Consulter. Deux clics
+alternent les sens de tri, signalés par un triangle ; les valeurs inconnues
+restent à la fin dans les deux sens et les égalités sont départagées par ID.
+Le tri s'applique après les filtres et conserve sélection et focus. Les salaires
+et notes sont triés numériquement, les échéances par saison et les textes avec
+normalisation des accents. La cellule salaire et son unité ne changent pas
+avec cet ajout.
+
+La liste n'a pas de pagination : seule la zone des lignes défile à la molette,
+y compris au-dessus d'un bouton. Les titres, filtres et panneaux restent fixes.
+Le conteneur bloque la propagation de la molette vers la page globale, même en
+butée. **141 contrôles sans fenêtre réussis** couvrent les nouveaux champs, tous
+les titres dans les deux sens, les inconnues, le focus, le dernier joueur atteint
+à la molette et l'absence de défilement global. La réception graphique finale de
+cet ensemble est centralisée par l'intégrateur en 1440p.
