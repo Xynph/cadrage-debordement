@@ -1,5 +1,6 @@
 extends RefCounted
 # Les calculs appartiennent à la projection native ; cette vue ne reconstitue pas de statistiques.
+const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
 
 static func _decimal(value: float) -> String:
@@ -15,11 +16,11 @@ static func build(app: Control) -> Control:
 	panel.add_child(G.section("Comprendre nos cinq dernières rencontres", "Scores et statistiques collectives réellement conservés."))
 	var data: Dictionary = app.model.get("clubLife", {}).get("performanceAnalysis", {})
 	if not bool(data.get("available", false)):
-		panel.add_child(G.wrap("Analyses indisponibles dans cette version du moteur.", 14))
+		panel.add_child(G.wrap("Analyses indisponibles pour cette carrière.", 14))
 		return panel
 	var summary: Dictionary = data.get("summary", {})
 	var count: int = int(summary.get("played", 0))
-	panel.add_child(G.wrap(str(data.get("notice", "")), 12))
+	panel.add_child(G.wrap(Copy.notice("performance", data.get("notice", "")), 12))
 	_individual(app, panel)
 	if count == 0:
 		panel.add_child(G.wrap("Aucune rencontre conservée pour ce club cette saison. Le bilan apparaîtra après les premiers matchs.", 16, G.INK))
@@ -63,10 +64,10 @@ static func _individual(app: Control, panel: Container) -> void:
 	if not data.get("available", false): return
 	panel.add_child(G.separator())
 	panel.add_child(G.section("Performances individuelles mesurées", "Cinq dernières feuilles conservées par joueur · registre limité à 40 rencontres."))
-	panel.add_child(G.wrap(str(data.get("notice", "")), 12))
+	panel.add_child(G.wrap(Copy.notice("performance", data.get("notice", "")), 12))
 	if not data.get("enabled", false):
 		var enable := G.button("ACTIVER LE SUIVI INDIVIDUEL", func():
-			app.confirm("Conserver les performances individuelles", "Seules les prochaines rencontres jouées seront conservées, dans cette carrière. Aucun passé ne sera inventé.", func(): app._command("player_match_history_enable", {"context":data.context.duplicate(true),"confirmed":true})))
+			app.confirm("Conserver les performances individuelles", "Seules les prochaines rencontres jouées seront conservées, dans cette carrière.", func(): app._command("player_match_history_enable", {"context":data.context.duplicate(true),"confirmed":true})))
 		enable.name = "PlayerMatchHistoryEnable"
 		enable.disabled = not data.get("canEnable", false)
 		panel.add_child(enable)

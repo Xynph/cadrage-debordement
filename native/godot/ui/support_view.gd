@@ -1,4 +1,5 @@
 extends RefCounted
+const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
 
 static func build(app: Control) -> Control:
@@ -13,7 +14,7 @@ static func build(app: Control) -> Control:
 	G.fill(paper.get_parent(), true)
 	G.fill(paper, true)
 	G.chapter(paper, "21", "Le travail de la semaine", "Staff · préparation · cellule médicale · mandats", app.accent)
-	paper.add_child(G.wrap(data.notice, 12))
+	paper.add_child(G.wrap(Copy.notice("support", data.notice), 12))
 	var tabs := TabContainer.new()
 	tabs.name = "SupportTabs"
 	tabs.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
@@ -79,7 +80,7 @@ static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 			list.add_child(G.wrap(str(plan.collective.reason), 14))
 		_action(list, "CONFIGURER · " + str(plan.label), "SupportTraining_" + str(plan.key), data.training.available, func(): app._command("training_plan", {"context":data.context,"plan":plan.key}))
 	list.add_child(G.separator())
-	list.add_child(G.section("Le briefing ciblé", "Ajustements fictifs du moteur, figés au coup d’envoi ; aucun résultat garanti."))
+	list.add_child(G.section("Le briefing ciblé", "Consignes préparées pour le coup d’envoi ; aucun résultat garanti."))
 	var b: Dictionary = data.briefing
 	if b.evidence is Dictionary:
 		list.add_child(G.wrap("Écart avants %+.0f · passe/vitesse %+.0f · danger adverse %+.0f" % [b.evidence.pack, b.evidence.backs, b.evidence.danger], 16))
@@ -96,7 +97,7 @@ static func _medical(tabs: TabContainer, app: Control, data: Dictionary) -> void
 		var identity: Dictionary = p
 		for candidate: Dictionary in app.model.squad:
 			if candidate.id == p.id: identity = candidate; break
-		G.person(list, identity, _name(app, p.id), "Suivi médical · données de simulation", 48)
+		G.person(list, identity, _name(app, p.id), "Suivi médical du joueur", 48)
 		list.add_child(G.section(_name(app, p.id), "%d semaine(s) d’indisponibilité · condition %.0f · charge %.0f" % [p.injury, p.condition, p.fatigue]))
 		if p.injury > 0:
 			var picker := OptionButton.new()
@@ -113,14 +114,14 @@ static func _medical(tabs: TabContainer, app: Control, data: Dictionary) -> void
 			picker.item_selected.connect(func(index: int): explanation.text = str(data.medical.protocols[index].description))
 			_action(list, "CONFIRMER LE SUIVI", "MedicalChoose_" + str(p.id), data.medical.available, func(): app._command("medical_protocol", {"context":data.context,"id":p.id,"protocol":picker.get_item_metadata(picker.selected)}))
 		else:
-			list.add_child(G.wrap("Reprise progressive : repos, condition +8, charge −12. Retour complet : condition −7, charge +12 et risque fictif de rechute.", 14))
+			list.add_child(G.wrap("Reprise progressive : repos, condition +8, charge −12. Retour complet : condition −7, charge +12 et risque de rechute.", 14))
 			_action(list, "REPRISE PROGRESSIVE", "MedicalReturnProgressive_" + str(p.id), data.medical.available, func(): app._command("medical_return", {"context":data.context,"id":p.id,"choice":"progressif"}))
 			_action(list, "RETOUR COMPLET À RISQUE", "MedicalReturnFull_" + str(p.id), data.medical.available, func(): app._command("medical_return", {"context":data.context,"id":p.id,"choice":"complet"}))
 		list.add_child(G.separator())
 
 static func _agents(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 	var list := _tab(tabs, "Agents")
-	list.add_child(G.section("Préparer une prolongation", "Les représentants sont des archétypes fictifs. Trois propositions par semaine ; aucune prime débitée avant confirmation de signature."))
+	list.add_child(G.section("Préparer une prolongation", "Trois propositions par semaine ; aucune prime débitée avant confirmation de signature."))
 	if not data.agents.players.is_empty():
 		var player := OptionButton.new()
 		player.name = "AgentPlayer"
@@ -167,7 +168,7 @@ static func _confirm(app: Control, data: Dictionary, talk: Dictionary) -> void:
 	var paid_weeks: int = 34 if int(app.model.meta.get("clubCount", 0)) == 30 else 29
 	for p: Dictionary in data.agents.players:
 		if p.id == talk.id and not p.quotes.is_empty(): paid_weeks = int(p.quotes[0].paidWeeks)
-	dialog.dialog_text = "%s\nPrime immédiate : %s\nSalaire : %s / semaine · %d saison(s)\nEngagement théorique : %s (%d semaines payées par saison).\nTrésorerie fictive du jeu." % [_name(app, talk.id), G.euros(talk.fee), G.euros(talk.acceptedSalary), talk.years, G.euros(talk.acceptedSalary * paid_weeks * talk.years + talk.fee), paid_weeks]
+	dialog.dialog_text = "%s\nPrime immédiate : %s\nSalaire : %s / semaine · %d saison(s)\nEngagement théorique : %s (%d semaines payées par saison)." % [_name(app, talk.id), G.euros(talk.fee), G.euros(talk.acceptedSalary), talk.years, G.euros(talk.acceptedSalary * paid_weeks * talk.years + talk.fee), paid_weeks]
 	dialog.confirmed.connect(func(): app._command("agent_confirm", {"context":data.context,"key":talk.key,"confirmed":true,"wage":talk.acceptedSalary,"years":talk.years,"fee":talk.fee}); dialog.queue_free())
 	dialog.canceled.connect(func(): dialog.queue_free())
 	app.add_child(dialog)

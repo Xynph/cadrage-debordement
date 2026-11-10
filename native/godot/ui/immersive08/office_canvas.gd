@@ -1,5 +1,6 @@
 extends RefCounted
 ## Reproduction du gabarit approuvé : positions et typographie du SVG, données natives.
+const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -195,7 +196,7 @@ static func _journal(card: Panel, app: Control) -> void:
 	var messages: Array = app.model.get("messages",[])
 	for i in mini(3,messages.size()):
 		var y := 79+i*116
-		var message := str(messages[i]).replace("l’onglet Contrats","les fiches joueurs")
+		var message := Copy.news(str(messages[i])).replace("l’onglet Contrats","les fiches joueurs")
 		var category := "DIRECTION" if message.to_lower().contains("contrat") else "FORMATION" if message.to_lower().contains("espoir") else "VIE DU CLUB"
 		var color: Color = [C.BLUE,C.ALERT,C.GOLD][i]
 		D.rect(card,Rect2(18,y,4,92),color,2)

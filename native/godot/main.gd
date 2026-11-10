@@ -270,7 +270,7 @@ func _command(command: String, payload: Dictionary = {}, target_route: String = 
 		if command == "tick": return false
 		if last_command == "tick" and queued_action.is_empty():
 			queued_action = {"command":command,"payload":payload.duplicate(true),"target_route":target_route}
-			if is_instance_valid(status): status.text = "Décision en attente de la réponse du moteur…"
+			if is_instance_valid(status): status.text = "Votre décision est en attente de traitement…"
 			return true
 		_refuse_action("Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessayez après sa réponse.")
 		return false
@@ -831,7 +831,7 @@ func _file_selected(path: String) -> void:
 		if not refusal.is_empty():
 			_refuse_action(refusal)
 			return
-		confirm("Reprendre cette carrière", "La carrière importée remplacera celle du profil. Le moteur la vérifiera avant de l'appliquer.",func(): _command("import",{"text":text},"Bureau"))
+		confirm("Reprendre cette carrière", "La carrière importée remplacera celle du profil. Ses données seront vérifiées avant la reprise.",func(): _command("import",{"text":text},"Bureau"))
 	else:
 		if waiting: _refuse_action("Une décision est en cours. Réessayez après sa réponse."); return
 		export_path = path
@@ -841,7 +841,7 @@ func _write_export() -> bool:
 	var destination := export_path
 	export_path = ""
 	var text := str(model.get("meta",{}).get("exportText",""))
-	if text.is_empty(): _failed("Le moteur n'a pas fourni d'export."); return false
+	if text.is_empty(): _failed("Aucun export de carrière n’a été reçu."); return false
 	var temporary := destination + ".tmp-" + str(OS.get_process_id()) + "-" + str(Time.get_ticks_usec())
 	var f := FileAccess.open(temporary,FileAccess.WRITE)
 	if f == null: _failed("L'export ne peut pas être écrit."); return false
@@ -895,7 +895,7 @@ func _credits() -> void:
 	var d := AcceptDialog.new()
 	_prepare_dialog(d, 760)
 	d.title = "Oval Legacy 27 · Crédits"
-	d.dialog_text = "Photographies de territoires : auteurs, sources, licences et modifications dans Licences.\nModèle Quaternius : CC0. DM Sans et Barlow Condensed : SIL OFL.\nGodot : MIT. Node : notices incluses.\n\nBase commune de joueurs aux identités anonymisées. Capacités et finances de simulation, non officielles.\nLes images et noms des packs personnalisés restent séparés du jeu de base.\nLes portraits IA sont signalés ; l'enceinte3D est générique."
+	d.dialog_text = "Photographies de territoires : auteurs, sources, licences et modifications dans Licences.\nModèle Quaternius : CC0. DM Sans et Barlow Condensed : SIL OFL.\nGodot : MIT. Node : notices incluses.\n\nBase commune de joueurs aux identités anonymisées. Capacités et finances de simulation, non officielles.\nLes images et noms des packs personnalisés restent séparés du jeu de base.\nCertains portraits sont des illustrations IA ; leur provenance figure dans les crédits et les métadonnées. L'enceinte3D est générique."
 	add_child(d)
 	d.popup_centered(Vector2i(760,260))
 	d.confirmed.connect(d.queue_free)

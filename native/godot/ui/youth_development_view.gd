@@ -1,4 +1,5 @@
 extends AcceptDialog
+const Copy = preload("res://ui/management_copy.gd")
 ## Objectifs et changements réellement observés dans le club courant.
 const G = preload("res://ui/carnet_skin.gd")
 const U = preload("res://ui/management_state.gd")
@@ -35,7 +36,7 @@ func _build() -> void:
 	scroll = ScrollContainer.new(); scroll.name = "YouthDevelopmentScroll"; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; scroll.follow_focus = true; add_child(scroll)
 	body = G.v(10); G.fill(body,true); scroll.add_child(body)
 	body.add_child(G.section("Des objectifs, puis des faits", "Académie et jeunes professionnels · club courant"))
-	body.add_child(G.wrap("Les plans répartissent le futur budget XP existant, sans gain immédiat ajouté. Pour les profils à progression annuelle, ils servent uniquement d’objectifs de suivi : ils ne changent ni leur courbe, ni leur exposition. Blessures, fatigue et minutes réellement jouées restent déterminantes.",14))
+	body.add_child(G.wrap("Les plans orientent le travail à venir, sans gain immédiat. Pour les profils à progression annuelle, ils servent uniquement d’objectifs de suivi : ils ne changent ni leur courbe, ni leur exposition. Blessures, fatigue et minutes réellement jouées restent déterminantes.",14))
 	var data := _data()
 	if not str(data.get("reason","")).is_empty(): body.add_child(G.wrap(str(data.reason),13))
 	if data.get("canEnable",false):
@@ -117,11 +118,11 @@ func _person(person: Dictionary) -> void:
 	var info := G.v(4); G.fill(info); row.add_child(info)
 	info.add_child(G.wrap("%s · %s · %s ans" % [str(person.name),str(person.pos),G.n(person.age)],20,G.INK))
 	var annual: bool = str(person.get("model",""))=="annual-v11"
-	info.add_child(G.wrap("Progression annuelle : les qualités évoluent au bilan annuel selon l’exposition réelle. La spécialisation d’XP n’est pas disponible pour ce profil." if annual else "Progression par XP : le plan répartit le budget existant, sans XP supplémentaire.",13))
+	info.add_child(G.wrap("Progression annuelle : les qualités évoluent au bilan annuel selon l’exposition réelle. La spécialisation n’est pas disponible pour ce profil." if annual else "Progression par le travail : le plan répartit les efforts à venir, sans gain supplémentaire.",13))
 	info.add_child(G.wrap("Niveau général %s · potentiel estimé au poste %s · condition %s %% · fatigue %s / 100 · blessure %s semaine(s)" % [G.n(person.get("rating",0)),G.n(person.get("potential",0)),G.n(person.get("condition",0)),G.n(person.get("fatigue",0)),G.n(person.get("injury",0))],13))
 	var current: Dictionary = person.get("current",{})
 	var minutes := "Minutes de carrière : %s" % G.n(person.get("careerMinutes",current.get("careerMinutes",0)))
-	if not annual: minutes += " · XP générale %s · XP ciblée %s" % [_decimal(current.get("generalXP",0)),_decimal(current.get("focusedXP",0))]
+	if not annual: minutes += " · progression générale %s · progression ciblée %s" % [_decimal(current.get("generalXP",0)),_decimal(current.get("focusedXP",0))]
 	info.add_child(G.wrap(minutes,12))
 	var baseline: Variant = person.get("baseline")
 	var deltas: Variant = person.get("deltas")
@@ -137,7 +138,7 @@ func _person(person: Dictionary) -> void:
 	_review(info,person)
 	for observation: Dictionary in person.get("observations",[]):
 		info.add_child(G.wrap("S%s · semaine %s · %s · niveau %s · minutes %s" % [G.n(observation.get("season","—")),G.n(observation.get("week","—")),REASONS.get(str(observation.get("reason","")),"Observation"),_signed(observation.get("ratingDelta",0)),_signed(observation.get("minutesDelta",0))],12))
-	for step: Dictionary in person.get("nextSteps",[]): info.add_child(G.wrap(("✓ " if step.get("done",false) else "À préparer · ")+str(step.get("label",""))+" · "+str(step.get("detail","")),12))
+	for step: Dictionary in person.get("nextSteps",[]): info.add_child(G.wrap(("✓ " if step.get("done",false) else "À préparer · ")+str(step.get("label",""))+" · "+Copy.notice("youth", step.get("detail","")),12))
 	if not str(person.get("planReason","")).is_empty(): info.add_child(G.wrap(str(person.planReason),13,G.ALERT))
 	var draft: Dictionary = state.drafts.get(str(person.id),{})
 	var options := HFlowContainer.new(); card.add_child(options)
@@ -248,14 +249,14 @@ func _review(parent: Container,person: Dictionary) -> void:
 
 func _enable() -> void:
 	var payload := {"confirmed":true,"context":_data().get("context",{}).duplicate(true)}
-	app.confirm("Démarrer le suivi des jeunes","Une référence sera conservée à partir d’aujourd’hui. Aucun gain immédiat ni observation passée inventée. Confirmer ?",Callable(app,"_command").bind("youth_development_enable",payload))
+	app.confirm("Démarrer le suivi des jeunes","Une référence sera conservée à partir d’aujourd’hui. Le suivi ne produit aucun gain immédiat. Confirmer ?",Callable(app,"_command").bind("youth_development_enable",payload))
 
 func _confirm_plan(person: Dictionary,plan: String,focus: Variant) -> void:
 	_remember_draft(str(person.id),plan,focus)
 	var payload := {"confirmed":true,"context":_data().get("context",{}).duplicate(true),"playerId":str(person.id),"plan":plan,"focus":focus}
-	var detail := "Cet objectif sert uniquement au suivi : il ne change ni la courbe annuelle, ni le temps de jeu." if str(person.get("model",""))=="annual-v11" else "Le plan répartit le futur budget XP existant, sans bonus immédiat."
+	var detail := "Cet objectif sert uniquement au suivi : il ne change ni la courbe annuelle, ni le temps de jeu." if str(person.get("model",""))=="annual-v11" else "Le plan répartit le travail à venir, sans gain immédiat."
 	if str(person.get("model",""))!="annual-v11":
-		detail += " Si la qualité ciblée change, l’XP ciblée partielle non dépensée est remise à zéro ; les qualités déjà gagnées sont conservées."
+		detail += " Si la qualité ciblée change, la progression ciblée partielle non utilisée est remise à zéro ; les qualités déjà gagnées sont conservées."
 	app.confirm("Adapter l’objectif de "+str(person.name),detail+" Confirmer date une nouvelle période de suivi à partir d’aujourd’hui, même si le plan reste identique. Les minutes, la fatigue et les blessures restent prises en compte. Confirmer ?",Callable(app,"_command").bind("youth_development_plan",payload))
 
 static func _decimal(value: Variant) -> String: return "%.2f" % float(value)

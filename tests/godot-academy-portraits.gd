@@ -26,7 +26,7 @@ func portrait_probe(helper: Control, person: Dictionary, large: bool, packed: bo
 		var photo: TextureRect = photos[0]
 		check(photo.texture != null and (photo.material == null if packed else photo.material != null), "Priorité pack / composition locale " + str(large))
 		if not packed: check(photo.texture == Regen.texture(person), "Même visage déterministe en vignette et dossier")
-	check((panel.find_child("AcademyPortraitIllustration",true,false) != null) == (large and not packed), "Badge fictif seulement sur grand portrait composé")
+	check(panel.find_child("AcademyPortraitIllustration",true,false) == null, "Portrait du joueur sans badge d’origine")
 	panel.queue_free(); await settle()
 func run() -> void:
 	root.size = Vector2i(1280,800)
@@ -65,7 +65,7 @@ func run() -> void:
 	helper._portrait(anonymous, {}, Rect2(0,0,180,220), true)
 	var illustration := anonymous.find_children("*","TextureRect",true,false)
 	check(not illustration.is_empty() and illustration[0].material == null, "Sans identité : illustration générique, sans visage attribué")
-	check(anonymous.find_child("AcademyPortraitIllustration",true,false) != null, "Sans identité : illustration explicitement signalée")
+	check(anonymous.find_child("AcademyPortraitIllustration",true,false) == null, "Sans identité : illustration sans badge d’origine")
 	anonymous.queue_free(); await settle()
 	helper.free()
 	await command("export")
@@ -79,6 +79,7 @@ func run() -> void:
 	var changed := source.duplicate(true); changed.name = "Autre nom"; changed.clubId = 29
 	check(Regen.describe(changed) == profile, "Nom et club ne modifient pas le visage")
 	var staff := {"id":"staff-conversion-probe","sourcePlayerId":source.id,"portraitRole":"staff","appearanceAge":source.age,"age":49}
+	if source.has("appearanceBankVersion"): staff.appearanceBankVersion = source.appearanceBankVersion
 	var future: Dictionary = Regen.describe(staff)
 	for key in profile:
 		if key not in ["maturity","referenceAge","ageBasis"]: check(future[key] == profile[key], "Contrat reconversion préserve " + str(key))

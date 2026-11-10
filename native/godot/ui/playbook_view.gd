@@ -1,4 +1,5 @@
 extends RefCounted
+const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
 
 static func _choose(app: Control, key: String, value: String, zone: String = "", staff: bool = false) -> void:
@@ -46,7 +47,7 @@ static func build(app: Control) -> Control:
 	if data.get("zones", []).is_empty():
 		paper.add_child(G.wrap(str(data.get("reason", "Ce carnet sera disponible après création d’une carrière.")), 16))
 		return page
-	paper.add_child(G.wrap(str(data.notice), 13))
+	paper.add_child(G.wrap(Copy.notice("playbook", data.notice), 13))
 	var plans := G.h(20)
 	paper.add_child(plans)
 	plans.add_child(G.metric(str(data.general.attackLabel), "ATTAQUE PRINCIPALE"))

@@ -125,7 +125,7 @@ func _current_office(model: Dictionary) -> void:
 	var honest_art := false
 	for image in hero.find_children("*", "TextureRect", true, false):
 		if image.has_meta("immersive_art"):
-			honest_art = image.texture != null and image.tooltip_text == "Illustration originale fictive générée par IA"
+			honest_art = image.texture != null and image.tooltip_text == "Vue du club"
 	_check(honest_art or hero.find_child("OfficeTerritoryPreviews", true, false) != null, "Current office identifies generic artwork or club territory photographs")
 
 func _offices() -> void:

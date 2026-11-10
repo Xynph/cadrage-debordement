@@ -127,7 +127,7 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 		list.add_child(G.wrap(conference.reason, 13, G.INK))
 		return tab
 	list.add_child(G.wrap("Cinq tons. Tabulation pour parcourir les choix, Espace pour sélectionner. Publier valide toutes vos réponses.", 12, G.INK))
-	var memory_notice := G.wrap(conference.get("memoryNotice", ""), 12)
+	var memory_notice := G.wrap("Les relances reprennent vos échanges précédents avec ce journaliste, dans ce club et cette saison.", 12)
 	memory_notice.name = "PressMemoryNotice"
 	list.add_child(memory_notice)
 	var choices := _conference_draft(app, data)

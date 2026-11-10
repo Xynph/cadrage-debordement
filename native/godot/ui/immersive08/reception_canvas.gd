@@ -1,5 +1,6 @@
 extends RefCounted
 ## Le journal du moteur, accompagné de repères et d'actions réellement disponibles.
+const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -26,7 +27,7 @@ static func _messages(app: Control) -> Array[Dictionary]:
 		var message := str(source[index])
 		occurrences[message] = int(occurrences.get(message, 0)) + 1
 		var id := message.sha256_text() + "-" + str(occurrences[message])
-		var clean := message.replace("l’onglet Contrats", "les fiches des joueurs dans Effectif").replace("l'onglet Contrats", "les fiches des joueurs dans Effectif")
+		var clean := Copy.news(message).replace("l’onglet Contrats", "les fiches des joueurs dans Effectif").replace("l'onglet Contrats", "les fiches des joueurs dans Effectif")
 		var folded := U.fold(clean)
 		var category := _category(folded)
 		var destination: String = ROUTES[category]

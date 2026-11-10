@@ -31,7 +31,7 @@ static func build(app: Control) -> Control:
 		b.name = id
 		if mode == option[0]: G.selected(b, app.accent)
 		text.add_child(b)
-	text.add_child(G.wrap("Le potentiel est une estimation de simulation. La promotion ne garantit ni le temps de jeu ni la progression. Les courbes annuelles des profils communs et les gains graduels des joueurs générés sont distingués.", 13))
+	text.add_child(G.wrap("Le potentiel reste une estimation. La promotion ne garantit ni le temps de jeu ni la progression. Le rythme d’évolution dépend du parcours de chaque joueur.", 13))
 	text.add_child(G.button("CONSULTER L'EFFECTIF →", func(): app._navigate("Effectif")))
 	var body := G.panel(page, 1.95)
 	G.chapter(body, "12", "Ouvrir des perspectives", "Poste, travail et minutes réellement disputées.", app.accent)
@@ -61,7 +61,7 @@ static func build(app: Control) -> Control:
 		for year: Dictionary in history:
 			if year.get("end") is float or year.get("end") is int: levels.append(year.end)
 		G.trend(card, levels, "Niveau en fin de saison · historique conservé", app.accent)
-		if history.is_empty(): card.add_child(G.wrap("L'historique annuel apparaîtra à l'intersaison ; aucune courbe passée n'est inventée.", 12))
+		if history.is_empty(): card.add_child(G.wrap("L'historique annuel apparaîtra à l'intersaison.", 12))
 		for year: Dictionary in history.slice(maxi(0, history.size() - 3)):
 			card.add_child(G.wrap("S%s · niveau %s → %s · %s minutes / %s apparitions" % [G.n(year.get("season", "—")), G.n(year.get("start", "—")), G.n(year.get("end", "—")), G.n(year.get("minutes", 0)), G.n(year.get("appearances", 0))], 13))
 		var controls := G.h(12)
@@ -74,7 +74,7 @@ static func build(app: Control) -> Control:
 			focus.set_item_metadata(focus.item_count - 1, option.id)
 			if option.id == development.get("focus"): focus.select(focus.item_count - 1)
 		focus.disabled = not development.get("available", false)
-		focus.tooltip_text = "Changer la spécialisation remet à zéro son XP partiel non dépensé. Les qualités déjà gagnées sont conservées."
+		focus.tooltip_text = "Changer la spécialisation remet à zéro sa progression partielle non utilisée. Les qualités déjà gagnées sont conservées."
 		focus.item_selected.connect(func(index: int): app._command("set_development_focus", {"playerId":person.id, "focus":focus.get_item_metadata(index)}))
 		controls.add_child(focus)
 		if mode == "academy":

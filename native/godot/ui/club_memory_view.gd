@@ -178,7 +178,7 @@ static func build(app: Control) -> Control:
 	list.add_child(G.separator())
 	list.add_child(G.section("La chronologie du club"))
 	if data.seasons.is_empty():
-		list.add_child(G.wrap("Aucune saison archivée pour ce club. Aucun passé n’est inventé.", 17, G.INK))
+		list.add_child(G.wrap("Aucune saison archivée pour ce club.", 17, G.INK))
 		if data.historical: list.add_child(G.wrap("Les saisons de la ligue historique à 14 ne sont pas conservées dans ce carnet par division.", 14))
 	for year: Dictionary in data.seasons: _season(list, year, app)
 	list.add_child(G.separator())
@@ -190,8 +190,8 @@ static func build(app: Control) -> Control:
 		if event.has("home") and event.has("away"):
 			card.add_child(G.wrap("%s  %d — %d  %s" % [event.home_name, int(event.home), int(event.away), event.away_name], 21, G.INK))
 			if int(event.home) == int(event.away) and event.get("winner") != null: card.add_child(G.wrap("Vainqueur après départage : " + event.winner_name, 14, G.INK))
-		if not str(event.get("reaction", "")).is_empty(): card.add_child(G.wrap("Réaction simulée · %s\n« %s »" % [event.get("reaction_club_name", "Banc"), event.reaction], 14))
-	list.add_child(G.wrap("Les scores enregistrés sont des faits de la carrière ; réactions des bancs, surprise, rivalité, tension et pression sont des récits simulés.", 12))
+		if not str(event.get("reaction", "")).is_empty(): card.add_child(G.wrap("Réaction du banc · %s\n« %s »" % [event.get("reaction_club_name", "Banc"), event.reaction], 14))
+	list.add_child(G.wrap("Retrouvez le résultat, les réactions des bancs et l’évolution de la rivalité pour chaque rencontre.", 12))
 	list.add_child(G.separator())
 	list.add_child(G.section("Le parcours du coach, à part", "Les prises de poste concernent le manager ; elles ne constituent pas le palmarès du club actuel."))
 	if data.manager_current_from != null: list.add_child(G.wrap("Mandat actuel depuis la saison " + str(int(data.manager_current_from)), 15, G.INK))

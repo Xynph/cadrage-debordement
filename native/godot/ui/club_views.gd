@@ -159,7 +159,7 @@ static func _territory(app: Control) -> Control:
 			credit.tooltip_text = "Source : %s\nLicence : %s" % [photo.get("source", ""), photo.get("license", "")]
 			content.add_child(credit)
 		else:
-			content.add_child(G.wrap("Photo d’archive · crédits accessibles" if source == "archive" else "Illustration IA", 12, G.WHITE))
+			content.add_child(G.wrap("Photo d’archive · crédits accessibles" if source == "archive" else "Vue du club", 12, G.WHITE))
 	var dossier := G.panel(page)
 	var row := G.h(20)
 	dossier.add_child(row)
@@ -292,8 +292,8 @@ static func japan_date_notes(fixture: Dictionary) -> Array[String]:
 	var source: String = {
 		"published": "Date publiée",
 		"simulation-earliest-option": "Date retenue parmi les options publiées",
-		"simulation-window": "Date simulée dans la fenêtre publiée",
-		"simulation-future-calendar": "Date générée pour cette saison",
+		"simulation-window": "Date prévue dans la fenêtre publiée",
+		"simulation-future-calendar": "Date prévue pour cette saison",
 	}.get(fixture.get("dateSource", ""), "")
 	if not source.is_empty(): notes.append(source)
 	var window: Array = fixture.get("dateWindow", [])

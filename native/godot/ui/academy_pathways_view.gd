@@ -1,4 +1,5 @@
 extends RefCounted
+const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
 
 static func _send(app: Control, data: Dictionary, command: String, payload: Dictionary, title: String = "", detail: String = "") -> void:
@@ -12,7 +13,7 @@ static func _send(app: Control, data: Dictionary, command: String, payload: Dict
 
 static func _action(parent: Node, app: Control, data: Dictionary, label: String, command: String, payload: Dictionary = {}, cost: int = -1, disabled: bool = false) -> Button:
 	var title := label if cost >= 0 else ""
-	var detail := "Confirmer cette décision ?" if cost == 0 else "Dépense de %s dans la simulation. Confirmer ?" % G.euros(cost)
+	var detail := "Confirmer cette décision ?" if cost == 0 else "Dépense de %s pour le centre. Confirmer ?" % G.euros(cost)
 	var b := G.button(label, func(): _send(app, data, command, payload, title, detail))
 	b.name = command + "_" + str(payload.get("playerId", payload.get("centerId", "action"))).replace(":", "_")
 	b.disabled = data.get("locked", false) or disabled
@@ -49,9 +50,9 @@ static func build(app: Control, initial_tab: String = "") -> Control:
 	if not data.get("available", false):
 		paper.add_child(G.wrap(data.get("reason", "Le centre est disponible dans une carrière active."), 18))
 		return page
-	paper.add_child(G.wrap(data.description, 13))
+	paper.add_child(G.wrap(Copy.notice("academy", data.description), 13))
 	if not data.get("active", false):
-		paper.add_child(G.wrap("Les %d Espoirs actuels restent dans votre centre. Activer les parcours ajoute la détection, les mentorats et les compétitions juniors simulées à cette carrière." % data.players.size(), 18))
+		paper.add_child(G.wrap("Les %d Espoirs actuels restent dans votre centre. Activer les parcours ajoute la détection, les mentorats et les compétitions juniors à cette carrière." % data.players.size(), 18))
 		_action(paper, app, data, "ACTIVER LES PARCOURS", "academy_activate", {}, 0)
 		return page
 	var summary := G.h(18)
@@ -101,7 +102,7 @@ static func _center(list: VBoxContainer, app: Control, data: Dictionary) -> void
 	var pulse := G.h(24)
 	list.add_child(pulse)
 	G.gauge(pulse, "Cohésion du centre", float(data.cohesion))
-	G.gauge(pulse, "Réputation simulée", float(data.reputation), 100, G.GOLD)
+	G.gauge(pulse, "Réputation", float(data.reputation), 100, G.GOLD)
 	list.add_child(G.section("Préparer la prochaine génération", "Le calendrier junior suit ses propres périodes. Les semaines de repos seniors ne le bloquent pas."))
 	_action(list, app, data, "DÉTECTION ANNUELLE · 35 000 €", "academy_scout", {}, 35000, data.nextScouted)
 	list.add_child(G.wrap("Cette campagne augmente de 3 le potentiel, au maximum 99, des 15 nouveaux Espoirs de la prochaine saison. Une seule campagne par année.", 14))
@@ -115,7 +116,7 @@ static func _center(list: VBoxContainer, app: Control, data: Dictionary) -> void
 			_choice(list, "%d · %s" % [slot + 1, data.positions[slot]], choices, func(value):
 				if value != "": _send(app, data, "academy_lineup", {"slot":slot, "playerId":value})).disabled = data.locked
 	list.add_child(G.separator())
-	list.add_child(G.section("Investir dans le centre", "Ces dépenses utilisent la trésorerie fictive du club."))
+	list.add_child(G.section("Investir dans le centre", "Ces dépenses sont prélevées sur la trésorerie du club."))
 	for kind in ["facilities", "coaches"]:
 		var level: int = int(data[kind])
 		var fee: int = (level + 1) * (85000 if kind == "facilities" else 55000)
@@ -170,7 +171,7 @@ static func _player_details(detail: VBoxContainer, app: Control, data: Dictionar
 	_choice(detail, "Charge de travail", [["equilibree","Équilibrée"],["allegee","Allégée"],["intensive","Intensive"]], func(value): _send(app, data, "academy_load", {"playerId":p.id,"load":value})).disabled = data.locked
 	_choice(detail, "Entretien · engagement évalué en fin de saison", [["minutes","Promettre des minutes"],["promouvoir","Préparer une promotion"],["preter","Préparer un prêt"],["refuser","Refuser la demande"]], func(value): _send(app, data, "academy_interview", {"playerId":p.id,"answer":value})).disabled = data.locked
 	_choice(detail, "Ambition du joueur", [["accompagner","Accompagner"],["patienter","Patienter"],["professionnel","Passer professionnel"],["pret","Prêt"]], func(value): _send(app, data, "academy_ambition", {"playerId":p.id,"decision":value})).disabled = data.locked
-	_action(detail, app, data, "STAGE U20 FICTIF", "academy_u20", {"playerId":p.id}, -1, p.age > 20 or p.injury > 0)
+	_action(detail, app, data, "STAGE U20", "academy_u20", {"playerId":p.id}, -1, p.age > 20 or p.injury > 0)
 	for offer: Dictionary in data.offers:
 		if offer.id != p.id or offer.clubs.is_empty(): continue
 		_action(detail, app, data, "FIDÉLISER FACE À LA CONCURRENCE · %s" % G.euros(offer.fee), "academy_retain", {"playerId":p.id,"clubId":offer.clubs[0].clubId}, int(offer.fee), offer.retained)
@@ -193,7 +194,7 @@ static func _scouting(list: VBoxContainer, app: Control, data: Dictionary) -> vo
 		list.add_child(G.separator())
 
 static func _network(list: VBoxContainer, app: Control, data: Dictionary) -> void:
-	list.add_child(G.section("Les filières fictives", "Observations, essai et accord du joueur. Les autorisations internationales sont simulées ; elles n’attestent aucune conformité réelle."))
+	list.add_child(G.section("Les filières de recrutement", "Observations, essai et accord du joueur. Les autorisations internationales nécessaires restent à vérifier."))
 	for region in ["Atlantique","Bretagne","Centre","Sud-Ouest","Mediterranee","Alpes"]:
 		_action(list, app, data, "DÉTECTER · %s · 3 000 €" % region, "academy_discover", {"region":region}, 3000)
 	for feeder: Dictionary in data.feeders:
@@ -204,7 +205,7 @@ static func _network(list: VBoxContainer, app: Control, data: Dictionary) -> voi
 		list.add_child(G.wrap("Observations %d/3 · essai %s · note estimée %s · potentiel %s" % [p.scouted,"réalisé" if p.trial else "à organiser",str(p.rating) if p.scouted > 0 else "?",str(p.potential) if p.scouted > 1 else "?"],14))
 		_action(list, app, data, "OBSERVER · 500 €", "academy_watch", {"playerId":p.id}, 500, p.scouted >= 3)
 		_action(list, app, data, "ESSAI · 1 000 €", "academy_trial", {"playerId":p.id}, 1000, p.trial or p.scouted == 0)
-		if p.union != "FR": _action(list, app, data, "ENREGISTRER L’AUTORISATION SIMULÉE", "academy_clearance", {"playerId":p.id}, -1, p.age < 18 or not p.trial or p.get("clearanceRecorded",false))
+		if p.union != "FR": _action(list, app, data, "ENREGISTRER L’AUTORISATION", "academy_clearance", {"playerId":p.id}, -1, p.age < 18 or not p.trial or p.get("clearanceRecorded",false))
 		_action(list, app, data, "PROPOSER LE PROJET · 8 000 € SI ACCEPTÉ", "academy_feeder_recruit", {"playerId":p.id}, 8000, p.scouted < 2 or not p.trial or p.age < 16)
 
 static func _professionals(list: VBoxContainer, app: Control, data: Dictionary, player_id: String = "") -> void:
@@ -222,7 +223,7 @@ static func _professionals(list: VBoxContainer, app: Control, data: Dictionary, 
 	if data.loans.is_empty(): list.add_child(G.wrap("Aucun prêt en cours. Les joueurs de la feuille de 23 doivent d’abord être retirés de la sélection.",15))
 
 static func _history(list: VBoxContainer, data: Dictionary) -> void:
-	list.add_child(G.section("La mémoire des générations", "Quinze saisons maximum, archivées une seule fois. Les données sont des résultats de votre simulation."))
+	list.add_child(G.section("La mémoire des générations", "Quinze saisons maximum, archivées une seule fois. Retrouvez les résultats des générations précédentes."))
 	if data.generations.is_empty(): list.add_child(G.wrap("La première génération sera archivée à la fin de cette saison.",18))
 	for generation: Dictionary in data.generations:
 		list.add_child(G.section("Saison %d" % generation.season, "%d joueurs suivis · %d promotions · réputation %d" % [generation.players.size(),generation.graduates,generation.reputation]))

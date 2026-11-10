@@ -1,5 +1,6 @@
 extends Control
 ## Coque illustrée du Centre, autour des mêmes parcours et contrôles métier.
+const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
@@ -94,7 +95,7 @@ func _pathway_status() -> String:
 func _preview(surface: Panel) -> void:
 	D.text(surface, 30, 56, "LES PARCOURS DU CENTRE", 28, GOLD, 700, 1420)
 	D.text(surface, 28, 127, "Trois outils pour suivre la relève.", 58, C.IVORY, 800, 1440)
-	_note(surface, Rect2(31, 152, 1450, 52), str(data.get("description", "")), 24)
+	_note(surface, Rect2(31, 152, 1450, 52), Copy.notice("academy", data.get("description", "")), 24)
 	var offers := [
 		["Detection", "Détection", "scouting", "search", "Mener la campagne de détection du centre pour préparer la prochaine génération."],
 		["Mentoring", "Mentorat", "analysis-room", "people", "Associer un Espoir à un joueur senior du même poste et suivre son accompagnement."],
@@ -171,7 +172,7 @@ func _summary() -> void:
 		["ESPOIRS SUIVIS", G.n(data.get("players", []).size()), "people", GREEN],
 		["ENVELOPPE JUNIOR", G.euros(data.recruitBudget) if data.has("recruitBudget") else "—", "money", GOLD],
 		["COHÉSION DU CENTRE", G.n(data.get("cohesion", "—")), "heart", GREEN],
-		["RÉPUTATION SIMULÉE", G.n(data.get("reputation", "—")), "star", GOLD],
+		["RÉPUTATION", G.n(data.get("reputation", "—")), "star", GOLD],
 	]
 	for i in facts.size():
 		var entry: Array = facts[i]
@@ -188,7 +189,7 @@ func _summary() -> void:
 	if active:
 		round = "%s / %s périodes" % [G.n(data.get("juniorRound", "—")), G.n(data.get("totalRounds", "—"))]
 	D.text(panel, 22, 394, round, 39, C.IVORY, 700, 672)
-	var note := str(data.get("description", "Le centre est disponible dans une carrière active."))
+	var note := Copy.notice("academy", data.get("description", "Le centre est disponible dans une carrière active."))
 	if not active:
 		note = "L’activation ouvre le calendrier et les résultats juniors." if data.get("available", false) else "Formation présente les Espoirs et leurs spécialisations."
 	var lines := D.words(note, 69, 3)

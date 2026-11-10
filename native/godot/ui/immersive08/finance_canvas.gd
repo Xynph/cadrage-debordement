@@ -168,7 +168,7 @@ static func _allocation(card: Panel, finance: Dictionary) -> void:
 		D.text(card, 529, y+23, G.euros(item[2]) if item[2] != null else "—", 23, C.IVORY, 600, 230, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.text(card, 808, y+23, U.amount(float(item[2])*remaining) if item[2] != null else "—", 23, C.MINT, 600, 235, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.line(card, Vector2(20,y+29), Vector2(812,y+29), Color(C.LINE,.45))
-	D.text(card, 22, 365, "Engagements connus · hypothèse du moteur sur %d semaine(s)" % remaining, 18, C.MUTED, 500, 786)
+	D.text(card, 22, 365, "Engagements connus · prévision sur %d semaine(s)" % remaining, 18, C.MUTED, 500, 786)
 
 static func _category(title: String) -> Array:
 	var key := title.to_lower()
@@ -362,6 +362,6 @@ static func _budget(app: Control, canvas: Control, finance: Dictionary) -> void:
 		else:
 			D.text(tile, 22, 116, U.amount(item[3]), 47, C.MINT, 700, 392)
 		D.text(tile, 22, 158, item[2], 23, C.MUTED, 500, 392)
-	D.text(decisions, 25, 488, "Les montants appartiennent à la simulation.", 26, C.MUTED, 500, 1348)
+	D.text(decisions, 25, 488, "Les montants reprennent les engagements du club.", 26, C.MUTED, 500, 1348)
 	D.text(decisions, 25, 529, "Les devis et conditions de signature sont détaillés dans les décisions du club.", 26, C.MUTED, 500, 1348)
 	D.button(decisions, Rect2(25,575,550,58), "Ouvrir les décisions financières", func(): _strategy(app), true, "arrow", false, U.GREEN, "FinanceBudgetDecisions")

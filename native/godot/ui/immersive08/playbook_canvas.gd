@@ -1,5 +1,6 @@
 extends Control
 ## Les quatre zones sont orientées depuis notre en-but. Le carnet utilise les choix du moteur.
+const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
@@ -155,7 +156,7 @@ func _phases() -> void:
 		var choice: String = str(phase.get("selected", ""))
 		_metric(tile, Rect2(23, 74, 677, 42), "Choix retenu", _option_title(options, choice), GREEN)
 		_selector(tile, Rect2(22, 135, 680, 56), str(phase.key), options, choice)
-		D.text(tile, 23, 228, "LES OPTIONS DE SIMULATION", 22, GOLD, 700, 667)
+		D.text(tile, 23, 228, "LES CHOIX DE JEU", 22, GOLD, 700, 667)
 		var y := 247
 		for option: Dictionary in options:
 			var selected: bool = option.id == choice
@@ -200,7 +201,7 @@ func _advice() -> void:
 
 func _notice(parent: Node, y: int) -> void:
 	var tile := D.panel(parent, Rect2(15, y, 2216, 60), "", "", "", "PlaybookNotice")
-	var text := str(data.get("notice", "")) if available else str(data.get("reason", ""))
+	var text := Copy.notice("playbook", data.get("notice", "")) if available else str(data.get("reason", ""))
 	if text.is_empty() and app.waiting: text = "Décision en cours de traitement…"
 	D.text(tile, 21, 41, text, 24, C.MUTED if available else C.ALERT, 500, 2173)
 

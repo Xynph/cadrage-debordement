@@ -315,7 +315,7 @@ static func _individual(app:Control,player:Dictionary) -> void:
 	var body:=C.v(12);popup.add_child(body)
 	body.add_child(C.photo("medical-recovery" if float(player.get("injury",0))>0 else "training-session",Vector2(680,170)))
 	body.add_child(C.wrap(str(player.pos)+" · Condition "+G.n(player.get("condition",0))+" % · Charge "+G.n(player.get("physicalLoad",0))+" / 100",22,C.IVORY,true))
-	body.add_child(C.wrap("La charge individuelle est appliquée par le moteur à la prochaine préparation.",18))
+	body.add_child(C.wrap("La charge individuelle sera appliquée à la prochaine préparation.",18))
 	for pair in [["collective","Suivre le collectif"],["repos","Récupération"],["normal","Charge normale"],["intense","Travail intense"]]:
 		var action:=C.button(pair[1],func():popup.queue_free();app._command("set_player_load",{"playerId":player.id,"mode":pair[0]}),player.get("loadPlan","collective")==pair[0],app.accent)
 		action.name="IndividualLoad_"+pair[0];action.disabled=not app._live().is_empty();body.add_child(action)
