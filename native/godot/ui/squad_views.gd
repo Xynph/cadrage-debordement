@@ -521,6 +521,11 @@ static func lineup(app:Control) -> Control:
 	page.add_theme_constant_override("separation",14)
 	if not app.management_ui.get("lineup") is Dictionary:app.management_ui.lineup={"outer":0,"list":0,"focus":""}
 	page.state=app.management_ui.lineup
+	if page.state.get("candidate_slot", app.selected_slot) != app.selected_slot:
+		page.state.list = 0
+		if str(page.state.focus).begins_with("LineupPlayer"):
+			page.state.focus = "LineupSlot%02d" % (app.selected_slot + 1)
+	page.state.candidate_slot = app.selected_slot
 	page.outer=app.body_scroll
 	G.fill(page,true)
 	page.name="CarnetLineup"
@@ -540,7 +545,11 @@ static func lineup(app:Control) -> Control:
 		if app.selected_slot==slot: b.add_theme_stylebox_override("normal",G.T.box(Color("ddd1bc"),3,G.GOLD))
 		bench.add_child(b)
 	var side:=G.panel(page,1.0)
-	side.add_child(G.section("Poste %02d"%(app.selected_slot+1),"Seuls les joueurs disponibles et qualifiés peuvent être affectés."))
+	var heading := G.section("Poste %02d" % (app.selected_slot + 1))
+	var candidate_count := G.wrap("", 13, G.MUTED)
+	candidate_count.name = "LineupCandidateCount"
+	heading.add_child(candidate_count)
+	side.add_child(heading)
 	var selection:Dictionary=app.model.get("selection",{})
 	var slots:Array=selection.get("slots",[])
 	var selected:Dictionary={}
@@ -578,6 +587,13 @@ static func lineup(app:Control) -> Control:
 		b.disabled=not app._live().is_empty() or float(p.get("injury",0))>0 or (eligible is Array and p.id not in eligible)
 		if b.disabled:b.tooltip_text="Indisponible ou qualification incompatible avec ce poste. Pendant un match, utilisez les remplacements."
 		list.add_child(b)
+	var allowed_count := 0
+	for candidate: Button in list.get_children():
+		if candidate.disabled: continue
+		list.move_child(candidate, allowed_count)
+		allowed_count += 1
+	var plural := "s" if allowed_count > 1 else ""
+	candidate_count.text = "%d candidat%s autorisé%s sur %d" % [allowed_count, plural, plural, list.get_child_count()]
 	var remove:=G.button("LIBÉRER CE POSTE",func():app._command("set_lineup",{"playerId":null,"slot":app.selected_slot}))
 	remove.name="LineupRemove"
 	remove.disabled=not app._live().is_empty()
