@@ -588,6 +588,11 @@ func _update_header_date() -> void:
 	var meta: Dictionary = model.get("meta", {})
 	var round_label := str(meta.get("roundLabel", "Journée " + G.n(int(meta.get("round", 0))+1)))
 	var date := str(meta.get("date",""))
+	var planning: Variant = model.get("calendarPlanning")
+	if meta.get("mode") == "world" and planning is Dictionary:
+		# The world calendar already selects the match day while a fixture is live.
+		var today: Variant = planning.get("today")
+		if today is String and not today.is_empty(): date = today
 	var parts := date.split("-")
 	if parts.size()==3 and parts[1].is_valid_int() and int(parts[1]) in range(1,13):
 		var months := ["JANV.","FÉVR.","MARS","AVR.","MAI","JUIN","JUIL.","AOÛT","SEPT.","OCT.","NOV.","DÉC."]
