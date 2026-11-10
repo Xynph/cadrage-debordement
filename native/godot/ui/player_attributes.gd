@@ -1,5 +1,7 @@
 extends RefCounted
 
+const SUBTITLE := "Notes de simulation sur 100"
+
 # Clés du registre attributesV2. Ces groupes organisent seulement la lecture.
 const GROUPS = [
 	["Ballon et jeu au pied", [
@@ -27,9 +29,6 @@ const GROUPS = [
 static func detail(player: Dictionary) -> Dictionary:
 	var values: Variant = player.get("attributesV2")
 	return values if values is Dictionary and values.size() == 36 else {}
-
-static func subtitle(player: Dictionary) -> String:
-	return "Estimations par poste · sur 100" if player.get("attributesV2Estimated", false) else "Notes de simulation sur 100"
 
 static func caption(value: Variant) -> String:
 	if value is int or value is float:

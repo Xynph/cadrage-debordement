@@ -135,7 +135,7 @@ static func build(app:Control,player:Dictionary) -> Control:
 				_position(D.panel(page,Rect2(1190,430,480,520),"POSTE PRINCIPAL","tactic"),app,player)
 				_health(D.panel(page,Rect2(1686,430,562,520),"DISPONIBILITÉ","heart"),app,player,injury,recovering)
 			else:
-				_detailed_attributes(D.panel(page,Rect2(0,430,2248,590),"36 ATTRIBUTS DÉTAILLÉS","star","","PlayerDetailedAttributes"),player,detailed)
+				_detailed_attributes(D.panel(page,Rect2(0,430,2248,590),"36 ATTRIBUTS DÉTAILLÉS","star","","PlayerDetailedAttributes"),detailed)
 		2:
 			_usage(D.panel(page,Rect2(0,430,1670,270),"PERFORMANCES DE LA SAISON","trophy"),app,player)
 			_development(D.panel(page,Rect2(0,716,1670,420),"BILANS DU JOUEUR","calendar"),app,player)
@@ -197,8 +197,8 @@ static func _evaluation(card: Panel, app: Control, player: Dictionary, has_detai
 	else:
 		D.text(card,30,344,"Le détail à 36 attributs est indisponible pour ce profil.",25,C.MUTED,500,1080)
 
-static func _detailed_attributes(card: Panel, player: Dictionary, values: Dictionary) -> void:
-	D.text(card,24,88,PlayerAttributes.subtitle(player),23,C.MUTED,500,600)
+static func _detailed_attributes(card: Panel, values: Dictionary) -> void:
+	D.text(card,24,88,PlayerAttributes.SUBTITLE,23,C.MUTED,500,600)
 	for i in PlayerAttributes.GROUPS.size():
 		var group: Array = PlayerAttributes.GROUPS[i]
 		var x := 24 + i * 554
