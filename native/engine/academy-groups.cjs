@@ -8,30 +8,44 @@ module.exports = function academyGroups() {
   }));
   const active = s => [1, 2].includes(s?.academyGroupPolicy);
   const worldwide = s => s?.academyGroupPolicy === 2;
+  const groupSize = 2 * POS.length;
 
   function plan(players, ages, belongs, balance) {
+    const group = players.filter(player => belongs(player.age));
     const additions = [];
     for (const { pos, slots } of roles) {
-      const current = players.filter(player => player.pos === pos && belongs(player.age));
+      const current = group.filter(player => player.pos === pos);
       const cohorts = ages.map(age => current.filter(player => player.age === age).length);
       for (let count = current.length; count < 2 * slots.length; count++) {
         const cohort = balance ? cohorts.indexOf(Math.min(...cohorts)) : 0;
         cohorts[cohort]++;
-        additions.push({ slot: slots[count % slots.length], age: ages[cohort] });
+        additions.push({ slot: slots[count % slots.length], age: ages[cohort], coverage: count / slots.length });
       }
     }
-    return additions;
+    return { additions, shortfall: Math.max(0, groupSize - group.length) };
+  }
+
+  function interleave(a, b) {
+    const ordered = [];
+    for (let index = 0; index < Math.max(a.length, b.length); index++) {
+      if (a[index]) ordered.push(a[index]);
+      if (b[index]) ordered.push(b[index]);
+    }
+    return ordered;
   }
 
   function recruitmentPlan(players, initial) {
     const u18 = plan(players, [17, 18], age => age <= 18, true);
     const u21 = plan(players, [19, 20, 21], age => age >= 19 && age <= 21, initial);
-    const additions = [];
-    for (let index = 0; index < Math.max(u18.length, u21.length); index++) {
-      if (u18[index]) additions.push(u18[index]);
-      if (u21[index]) additions.push(u21[index]);
+    if (players.length + u18.additions.length + u21.additions.length <= capacity) {
+      return interleave(u18.additions, u21.additions);
     }
-    return additions;
+    const byCoverage = (a, b) => a.coverage - b.coverage;
+    u18.additions.sort(byCoverage);
+    u21.additions.sort(byCoverage);
+    const minU18 = u18.additions.slice(0, u18.shortfall), extraU18 = u18.additions.slice(u18.shortfall);
+    const minU21 = u21.additions.slice(0, u21.shortfall), extraU21 = u21.additions.slice(u21.shortfall);
+    return [...interleave(minU18, minU21), ...interleave(extraU18, extraU21)];
   }
 
   function occupiedIds(s) {
@@ -83,6 +97,41 @@ module.exports = function academyGroups() {
     if (active(s)) refill(s, s.club !== previousClub);
   }
 
+  function preview(s) {
+    const context = { season: s.season, week: s.worldMode?.week ?? s.franceMode?.week ?? s.round, club: s.club };
+    const result = { context, version: s.academyGroupPolicy ?? 0, centers: s.clubs.length,
+      available: false, additions: 0, blocked: [], reason: '' };
+    if (worldwide(s)) result.reason = 'Les groupes U18 et U21 sont déjà actifs dans tous les clubs.';
+    else if (s.aiRosterVersion !== 2 || s.aiRoster?.version !== 2) result.reason = 'Activez d’abord la politique de population récente.';
+    else if (s.live || s.phase !== 'league') result.reason = 'Ouvrez cette reprise hors match, pendant le championnat.';
+    if (result.reason) return result;
+    const all = [{ clubId: s.club, players: s.development.academy }, ...s.aiRoster.academies];
+    for (const { clubId, players } of all) {
+      const additions = recruitmentPlan(players, true).length;
+      const required = players.length + additions;
+      result.additions += additions;
+      if (required > capacity) result.blocked.push({ clubId, name: s.clubs[clubId].name, current: players.length, required });
+    }
+    if (result.blocked.length) {
+      const first = result.blocked[0];
+      result.reason = `${first.name} aurait besoin de ${first.required} places pour garder ses ${first.current} jeunes et compléter ses groupes. Le plafond est de ${capacity}. Réessayez après les sorties de saison.`;
+    } else result.available = true;
+    return result;
+  }
+
+  function enable(s, payload) {
+    if (payload.confirmed !== true || Object.keys(payload).some(key => !['confirmed', 'context'].includes(key))) {
+      throw Error('Confirmez la reprise des groupes U18 et U21.');
+    }
+    const result = preview(s);
+    const supplied = payload.context;
+    if (!supplied || Object.keys(supplied).length !== 3 || Object.keys(result.context).some(key => supplied[key] !== result.context[key])) {
+      throw Error('Le contexte de carrière a changé. Consultez à nouveau la reprise des groupes.');
+    }
+    if (!result.available) throw Error(result.reason);
+    start(s);
+  }
+
   function validate(s) {
     if (s.academyGroupPolicy !== undefined && (!active(s) || !s.aiRoster || !s.development || !s.economy ||
       (worldwide(s) ? s.aiRosterVersion !== 2 : !s.commonDatabase))) {
@@ -99,5 +148,5 @@ module.exports = function academyGroups() {
     };
   }
 
-  return { start, afterSeason, validate, installHooks };
+  return { start, afterSeason, preview, enable, validate, installHooks };
 };
