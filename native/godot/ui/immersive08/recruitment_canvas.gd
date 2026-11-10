@@ -98,7 +98,7 @@ func _header(positions: Array) -> void:
 	D.button(self, Rect2(310, 223, 272, 48), "Marché entre clubs →", func(): preload("res://ui/interclub_market_view.gd").open(app), false, "", false, PRIMARY, "OpenInterclubMarket")
 	for i in TABS.size():
 		_tab(Rect2(624 + 206 * i, 190, 216, 65), TABS[i], i)
-	D.button(self, Rect2(1510, 181, 230, 61), "Comparer", _compare, false, "people", false, app.accent, "CompareMarket")
+	D.button(self, Rect2(1510, 181, 230, 61), "Comparer deux pistes", _compare, false, "people", false, app.accent, "CompareMarket")
 	D.button(self, Rect2(1758, 175, 490, 69), "Lancer une mission", func(): _staff(1), true, "arrow", false, PRIMARY, "OpenScoutMission")
 
 func _watch(positions: Array) -> void:
@@ -148,7 +148,7 @@ func _filters(positions: Array) -> void:
 	D.text(panel, 58, 41, "FILTRES DE RECHERCHE", 26, C.IVORY, 700, 225)
 	var search := LineEdit.new()
 	search.name = "MarketSearch"
-	search.placeholder_text = "Nom ou poste…"
+	search.placeholder_text = "Nom, poste, mots-clés…"
 	search.text = str(state.get("search", ""))
 	search.clear_button_enabled = true
 	search.accessibility_name = "Rechercher une piste par nom ou poste"
@@ -165,7 +165,7 @@ func _filters(positions: Array) -> void:
 		_filter_changed())
 	position_filter = _choice(panel, Rect2(552, 11, 229, 40), "MarketPosition", "Poste", positions, state.position, func(value: String): state.position = value; _filter_changed())
 	_choice(panel, Rect2(791, 11, 146, 40), "MarketAge", "Âge", ["Tous", "≤ 22 ans", "23–28 ans", "≥ 29 ans"], state.get("age_filter", "Tous"), func(value: String): state.age_filter = value; _filter_changed())
-	_choice(panel, Rect2(947, 11, 157, 40), "MarketAvailability", "Offres", ["Tous", "Disponibles"], state.available, func(value: String): state.available = value; _filter_changed())
+	_choice(panel, Rect2(947, 11, 157, 40), "MarketAvailability", "Offres", ["Tous", "Disponibles", "Indisponibles"], state.available, func(value: String): state.available = value; _filter_changed())
 	_choice(panel, Rect2(1114, 11, 147, 40), "MarketBudget", "Prime", ["Toutes", "≤ 100 k€", "≤ 400 k€", "≤ 1 M€"], state.get("budget_filter", "Toutes"), func(value: String): state.budget_filter = value; _filter_changed())
 	var reset := D.button(panel, Rect2(1271, 11, 113, 40), "Réinitialiser", func():
 		app.management_ui.market = U.defaults()
@@ -266,11 +266,20 @@ func _filtered() -> Array:
 		var archive: Array = data.get("reports", []).duplicate()
 		archive.reverse()
 		return archive
-	var players := U.players(app.model.get("market", []), state, int(app.model.meta.get("season", 1)), true, app.management_ui.shortlist)
+	var query_state := state.duplicate()
+	query_state.search = ""
+	var players := U.players(app.model.get("market", []), query_state, int(app.model.meta.get("season", 1)), true, app.management_ui.shortlist)
+	var terms: PackedStringArray = []
+	if str(state.get("navigation_id", "")).is_empty():
+		terms = U.fold(str(state.get("search", ""))).split(" ", false)
 	var fee := float({"≤ 100 k€": 100000, "≤ 400 k€": 400000, "≤ 1 M€": 1000000}.get(state.get("budget_filter"), INF))
 	var ages: Vector2 = {"≤ 22 ans": Vector2(0, 22), "23–28 ans": Vector2(23, 28), "≥ 29 ans": Vector2(29, INF)}.get(state.get("age_filter"), Vector2(0, INF))
 	return players.filter(func(p: Dictionary):
 		var age := float(p.get("age", -1))
+		var searchable := U.fold(str(p.get("name", "")) + " " + str(p.get("pos", "")))
+		for term in terms:
+			if not searchable.contains(term): return false
+		if state.available == "Indisponibles" and p.get("available", false): return false
 		return age >= ages.x and age <= ages.y and float(p.get("fee", INF)) <= fee)
 
 func _refresh() -> void:
@@ -481,55 +490,7 @@ func _report_dialog(report: Dictionary) -> void:
 	Dialogs.show_centered(view[0], Vector2i(920, 565))
 
 func _compare() -> void:
-	var players: Array = app.model.get("market", [])
-	var view := Decisions.dialog(app, "Comparer deux pistes", "MarketComparison", 1020)
-	var content: VBoxContainer = view[1]
-	content.add_child(C.wrap("Valeurs du marché au jour de la consultation. Le potentiel provient d’un rapport daté lorsqu’il existe.", 20, C.MUTED))
-	var choices := C.h(14)
-	content.add_child(choices)
-	var picks: Array[OptionButton] = []
-	var chosen := str(dossier.get_meta("player_id", ""))
-	for slot in 2:
-		var picker := OptionButton.new()
-		picker.name = "MarketComparisonPlayer" + str(slot)
-		picker.fit_to_longest_item = false
-		picker.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		C.fill(picker)
-		choices.add_child(picker)
-		picker.add_item("Choisir une piste")
-		for player: Dictionary in players:
-			picker.add_item(str(player.name) + " · " + str(player.pos))
-			if slot == 0 and str(player.id) == chosen: picker.select(picker.item_count - 1)
-		picks.append(picker)
-	var facts := C.v(9)
-	content.add_child(facts)
-	var update := func(_index: int): _comparison_rows(facts, picks, players)
-	for picker in picks: picker.item_selected.connect(update)
-	update.call(0)
-	Dialogs.show_centered(view[0], Vector2i(1020, 620))
-
-func _comparison_rows(parent: VBoxContainer, picks: Array[OptionButton], players: Array) -> void:
-	_clear(parent)
-	if picks[0].selected > 0 and picks[0].selected == picks[1].selected:
-		parent.add_child(C.wrap("Sélectionnez deux pistes distinctes.", 23, C.ALERT))
-		return
-	var columns := GridContainer.new()
-	columns.columns = 3
-	columns.add_theme_constant_override("h_separation", C.px(30))
-	columns.add_theme_constant_override("v_separation", C.px(9))
-	parent.add_child(columns)
-	for pair: Array in [["Joueur", "name"], ["Poste", "pos"], ["Âge", "age"], ["Niveau de jeu / 100", "rating"], ["Potentiel / 100", "potential"], ["Prime", "fee"], ["Salaire / semaine", "salary"]]:
-		columns.add_child(C.label(pair[0], 22, C.MUTED))
-		for picker in picks:
-			var player: Dictionary = players[picker.selected - 1] if picker.selected > 0 else {}
-			var report: Dictionary = report_by_player.get(str(player.get("id", "")), {})
-			var value: Variant = player.get(pair[1], "—")
-			match pair[1]:
-				"potential": value = report.get("potential", "—")
-				"fee", "salary": value = _money(player.get(pair[1]))
-			var label := C.wrap(value, 22, C.IVORY, true)
-			label.custom_minimum_size.x = C.px(240)
-			columns.add_child(label)
+	load("res://ui/immersive08/recruitment_comparison.gd").open(app, str(dossier.get_meta("player_id", "")), report_by_player)
 
 func _market_player(player_id: String) -> Dictionary:
 	for person: Dictionary in app.model.get("market", []):
