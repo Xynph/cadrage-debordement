@@ -72,21 +72,23 @@ for(const [name,script]of [
   ['press','godot-press-room.gd'],['medical','godot-medical-room.gd'],
   ['board','godot-board-room.gd'],['flow','godot-three-rooms-flow.gd']
 ])test('Three contextual rooms: '+name,{
-  skip:!godot&&'SDK Godot requis (CD_GODOT_EXECUTABLE)',timeout:name==='flow'?360000:120000
+  skip:!godot&&'SDK Godot requis (CD_GODOT_EXECUTABLE)',timeout:name==='flow'?630000:120000
 },()=>{
   const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'cd-three-rooms-'+name+'-'));
   const artifacts=process.env.CD_THREE_ROOMS_ARTIFACTS?path.resolve(process.env.CD_THREE_ROOMS_ARTIFACTS,name):path.join(temporary,'artifacts');
   fs.mkdirSync(artifacts,{recursive:true});
   const fixtures=name==='flow'?prepareFixtures(temporary):'';
-  const result=spawnSync(godot,[...(process.env.CD_THREE_ROOMS_GRAPHICS==='1'?[]:['--headless']),
-    '--audio-driver','Dummy','--max-fps','120','--log-file',path.join(artifacts,'runtime.log'),
+  const graphics=process.env.CD_THREE_ROOMS_GRAPHICS==='1';
+  const result=spawnSync(godot,[...(graphics?[]:['--headless']),
+    '--audio-driver','Dummy','--max-fps',name==='flow'&&!graphics?'60':'120','--log-file',path.join(artifacts,'runtime.log'),
     '--path',path.join(repository,'native/godot'),'--script',path.join(__dirname,script)],{
     cwd:repository,env:{...process.env,
       XDG_DATA_HOME:path.join(temporary,'data'),XDG_CONFIG_HOME:path.join(temporary,'config'),XDG_CACHE_HOME:path.join(temporary,'cache'),
       APPDATA:path.join(temporary,'appdata'),LOCALAPPDATA:path.join(temporary,'localappdata'),TEMP:path.join(temporary,'tmp'),TMP:path.join(temporary,'tmp'),
       CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_SELF_TEST:'0',CD_GODOT_SEED:'13',CD_GODOT_DATA_DIR:path.join(temporary,'profile'),
-      CD_THREE_ROOMS_ARTIFACTS:artifacts,CD_THREE_ROOMS_FIXTURES:fixtures},
-    encoding:'utf8',windowsHide:true,timeout:name==='flow'?345000:105000,maxBuffer:16*1024*1024
+      CD_THREE_ROOMS_ARTIFACTS:artifacts,CD_THREE_ROOMS_FIXTURES:fixtures,CD_THREE_ROOMS_FLOW_PHASE:'',
+      ...(name==='flow'?{CD_THREE_ROOMS_PROGRESS:process.env.CD_THREE_ROOMS_PROGRESS??'1'}:{})},
+    encoding:'utf8',windowsHide:true,timeout:name==='flow'?585000:105000,maxBuffer:16*1024*1024
   });
   const output=(result.stdout||'')+(result.stderr||'');
   fs.writeFileSync(path.join(artifacts,'godot.log'),output);
@@ -96,6 +98,7 @@ for(const [name,script]of [
   assert.doesNotMatch(output,/SCRIPT ERROR|Parse Error|ERROR:|instances were leaked/,'No script, engine or lifecycle error is accepted');
   if(name==='flow'){
     const report=JSON.parse(fs.readFileSync(path.join(artifacts,'report.json'),'utf8'));
+    assert.ok(!Object.hasOwn(report,'diagnostic_phase'),'The complete flow cannot be replaced by a diagnostic phase');
     assert.deepEqual(report.failures,[]);assert.equal(report.real_worker,true);assert.ok(report.checks>100);
   }
 });

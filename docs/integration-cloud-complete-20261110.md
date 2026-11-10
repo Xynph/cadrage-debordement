@@ -13,6 +13,10 @@ Léo demande de réunir les passations et les six chantiers, recevoir la version
 
 Le main `de8e3a962625fa828388dc48eb73344695f3b67d` a ensuite été reçu : squashPC527 `a741f98196b5f9a604915d21ea1df381d68b56c8`, puis registre540. Le delta PC final par rapport àb042 concerne uniquement trois fichiers (budget/poids CI et transaction atomique). Les résolutions Cloud sont conservées ; les derniers correctifs PC et le registre partagé sont reçus. CI main42902362083 : sept jobs complets réussis, vérifiés.
 
+La réception finale du lot PC est figée à `e6b39307f5f47018afb901ef022e7a40fc0a821f` (PR543) : Gabi507 `363478865cfd055e13823566c1da200c29effdd4` et presse contextuelle541 `a14e2ae3e3d6fe1e22759c7daab301302a5afb3e`, avec priorités des invitations et entrée par courrier conservées. Le modèle GLB de8 321 636octets a été reçu en Godot graphique :42/0,20os,6clips,4formes de bouche. Les retouches éditoriales ultérieures de presse54bc63a/3b42dbf restent au prochain lot ; seul le raccord du runner de réceptionfa482c6 est repris. Ce gel évite de poursuivre indéfiniment une branche PC active.
+
+Le main `1c83195d4f57aac3c0d61cec1415f9536dc96647` (registres542/544) est reçu. Sa CI42913522699 comporte les sept jobs complets verts.
+
 Les branches sources sont préservées. L’intégration travaille dans `/workspace/work/oval-integration`, séparée de la copie de développement et des fichiers d’assets non suivis qui y étaient déjà présents.
 
 ## Inventaire de reprise
@@ -49,6 +53,10 @@ Après reçu main et CI post-fusion vérifiés, les PR505–524,526,528–536 et
 
 Les fixtures historiques ont été raccordées aux rendez-vous, causeries, qualifications et fourchettes actuels. Les cas de confirmation hebdomadaire redondants de la suite cumulative restent couverts dans les suites contextuelles et causeries. Aucun fichier de suite n’est exclu de la découverte CI.
 
+Les champs d’offres salariales suivent désormais les centaines d’euros entières dans les trois périodes, avec conservation des montants hebdomadaires sources exacts lorsque l’affichage arrondit. Les bornes et contre-offres restent exactes. Le mode calme désactive immédiatement la caméra, y compris avant son premier rafraîchissement.
+
+Les derniers échecs du run42909005768 ont été diagnostiqués sans assouplir les règles du jeu : fixtures historiques rendues cohérentes avec variation/profondeur/rendez-vous, buffer stdio fini adapté aux catalogues complets, et témoin du cache enveloppé des mêmes qualifications de postes que la production. Le détail des résultats ciblés et le verdict global final sont consignés dans la PR539. L’audit financier V2 de cette recette utilise désormais un contexte historique isolé avec les sélecteurs de postes antérieurs, sans profondeur/extension académie : il contrôle le refus d’attribution V2 et ne constitue pas un audit intégral du worker de production actuel.
+
 Les réceptions visuelles ont également corrigé les derniers raccords de présentation : Contrats réutilise les postes principaux canoniques3E L/8 pour ses lignes, filtres, tris et couvertures ; le Bureau affiche les années de fin de contrat. Les anciens libellés source restent recherchables et les données de carrière ne sont pas réécrites.
 
 ## Vérifications locales obtenues
@@ -68,6 +76,14 @@ Les vérifications suivantes utilisent Node22.23.4 et des profils jetables hors 
 | Support saison complète | 34semaines,31matchs,90rendez-vous,8contrôles de pureté,9reprises et intersaison : PASS625,906s |
 | Optimisations de lecture | Même carrière, tous les stores, RNG3508888936 et horloge1700000000000 que le témoin940,652s ; gain combiné33,46% |
 | Interface réelle1440p | Connaissance209/0, Contrats196/0, Calendrier71/0, Bureau59/0, Gabi42/0 et Copies47/0 sous X11 ; Tactique457/0 en headless avec vrais événements et captures graphiques réelles |
+| Saisie des salaires |130/0 en headless et92/0 sous X11 : périodes, centaines entières, bornes, contre-offre et recrutement réel |
+| Journal du match1440 |315/0 en headless : événements, filtres, clavier, export, absence de mutation et verrou caméra immédiat |
+| Compatibilité financière/catalogue |Finance4/4, catalogue4/4 et identités/photos2/2 ; scénarios historiques isolés explicités, aucun relâchement de validation production |
+| Trois salles complètes1440 |897/0 en Godot headless,288,569s ;148réponses, attente maximale3,512s ; parcours complet malgré variable diagnostic héritée |
+| Jeunes et progression |7/7 en236,649s ; vrai document annuel importé, baseline conservée et transition réelle vers le suivi en saison |
+| Copies et parité finales |Neuf imports et quota8 :65,023s ; moteur direct/JSONL sans SDK :92,555s, état/RNG/profils exacts |
+| Cache des joueurs |88sources,352feuilles et352cas actifs ; deux semaines état/store/RNG identiques ;26,4s |
+| Académie longue en CI |Deux saisons complètes,60matchs, conférences et causeries réelles, reprises10/20/34 : PASS1098,09s sur42909005768 |
 | Revue indépendante | Aucun nouveau constat Critical/Important dans les corrections examinées ; réception SDK et CI globale restent des préconditions séparées |
 
 Les poids CI sont des réserves de planification, pas un compte rendu de performance GitHub. La campagne support a réellement dépassé son ancien cap240s. Le nouveau plafond global60minutes garde un délai fini par suite et le verdict bloquant sur toute erreur ou expiration. Les limites de sécurité de la VM restent inchangées.
@@ -76,10 +92,12 @@ Les poids CI sont des réserves de planification, pas un compte rendu de perform
 
 [Captures originales et provenance](integration-cloud-complete-20261110/README.md). La longue recette graphique Tactique a dépassé son délai de 300 s au passage en scène3D sous rendu logiciel ; les captures du terrain sont réelles, mais la fin de ce parcours graphique n’est pas déclarée réussie. Son contrat complet de déplacements et verrouillage passe en Godot headless457/0.
 
-La campagne locale académie2saisons a été interrompue par la limite VM15000ms àS1w20, puis une reprise àS2w12. Les rejeux isolés sur copies passent sans modifier la limite : `finish_round`2,955s (VM1,654s), conférence4,107s (VM maximale1,607s). Ces preuves partielles ne remplacent pas la campagne entière ; le verdict complet reste attendu de la CI isolée.
+Les deux interruptions VM locales de la campagne académie ont été dépassées par la réception complète CI isolée : deux saisons depuis une création neuve,60matchs, aucun état repris initialement, sauvegarde maximale7 402 854octets ; PASS1098,09s. Les limites de sécurité VM restent inchangées. Cette réussite individuelle ne rend pas vert le run42909005768, dont les autres échecs ont été traités séparément.
+
+La première campagne Trois salles a dépassé son attente de30s sur un import ; le même état isolé passe en2,919s, puis le parcours complet passe avec l’attente de30s inchangée. Le rendu headless de cette recette est limité à60fps pour partager la machine avec son worker ; aucune cause produit du premier ralentissement n’est revendiquée. Le lanceur complet impose la phase complète et refuse un rapport diagnostic.
 
 Les postes principaux reflètent actuellement le catalogue ; la famille naturelle des numéros6–7–8 partage ses pondérations. Une inférence plus fine du principal entre aile et centre demanderait des critères sportifs distincts et un versionnement cohérent des couvertures. Aucun badge ou joueur artificiel n’a été ajouté pour satisfaire une fixture.
 
 ## État de la réception
 
-En cours : dernières scènes et CI complète sur la tête finale. Aucun succès global ni intégration main n’est encore revendiqué. Le reçu du portail officiel et les sept jobs post-fusion seront consignés dans la description de la PR539 après leur vérification.
+Ce document fige les sources et les réceptions locales obtenues avant le portail de fusion. Le verdict global de la tête, la dernière campagne Delegate, le reçu exact du portail et les sept jobs post-fusion sont consignés dans la description de la PR539 après vérification. Cette description GitHub constitue le suivi final ; les preuves locales seules ne valent pas un reçu main.

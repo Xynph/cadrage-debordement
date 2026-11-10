@@ -131,7 +131,41 @@ const WEIGHTS_SECONDS = Object.freeze({ ...HISTORICAL_WEIGHTS_SECONDS,
   'tests/management-day-worker.cjs': 350,
   'tests/management-france-day-worker.cjs': 60,
   'tests/native-match-talks.cjs': 210,
-  'tests/godot-roster-foundation.cjs': 200
+  'tests/godot-roster-foundation.cjs': 200,
+  // Suites PASS du run42909005768 (HEAD464021b), wall mesuré +15%.
+  // Une mesure individuelle ne déclare pas vert le run global rouge.
+  'tests/deepen-analytics.cjs': 82,
+  'tests/deepen-staff-native.cjs': 624,
+  'tests/deepen-youth-worker.cjs': 85,
+  'tests/epcr-preparation-worker.cjs': 103,
+  'tests/france-career.cjs': 207,
+  'tests/france-saves.cjs': 97,
+  'tests/godot-common-rosters.cjs': 80,
+  'tests/godot-engine.cjs': 91,
+  'tests/lifecycle-native.cjs': 109,
+  'tests/native-academy-appearance-bank.cjs': 100,
+  'tests/native-academy-integrated-long.cjs': 1263,
+  'tests/native-academy-network-validation.cjs': 80,
+  'tests/native-club-support-medical.cjs': 119,
+  'tests/native-fiction-sheet.cjs': 100,
+  'tests/native-manager-career-reverse.cjs': 515,
+  'tests/native-manager-career-worker.cjs': 480,
+  'tests/native-press-personalities-worker.cjs': 516,
+  'tests/native-staff-completion.cjs': 77,
+  'tests/player-population-capacity.cjs': 142,
+  'tests/regen-scouting.cjs': 98,
+  'tests/rugby-real-long-career-qa.cjs': 101,
+  'tests/v63-1-long-career.cjs': 92,
+  'tests/world-champ-worker.cjs': 125,
+  'tests/world-save-runtime.cjs': 92,
+  'tests/world-worker-season.cjs': 878,
+  'tests/world-worker.cjs': 184,
+  // Réserve : PASS local complet236,649s sousNode22, y compris fixture legacy.
+  'tests/youth-scout-native.cjs': 300,
+  // PASS locaux Node22, deux suites au plus en parallèle : temps reçus+15%.
+  // Catalogue: wall ; venue: somme des deux cas (détail dans la réception JSON).
+  'tests/world-catalogue-dedup.cjs': 164,
+  'tests/world-venue-media.cjs': 145
 });
 const lexical = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 function allTestFiles() {

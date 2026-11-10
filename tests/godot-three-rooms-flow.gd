@@ -8,6 +8,8 @@ var failures: Array[String] = []
 var checks := 0
 var directory := OS.get_environment("CD_THREE_ROOMS_ARTIFACTS")
 var fixtures := OS.get_environment("CD_THREE_ROOMS_FIXTURES")
+var dimensions_to_check: Array[Vector2i] = [Vector2i(1280,720),Vector2i(1600,900)]
+var progress_phase := ""
 
 func _initialize() -> void: call_deferred("run")
 
@@ -20,9 +22,24 @@ func check(value: bool, message: String) -> void:
 func settle() -> void:
 	for i in 8: await process_frame
 
+func progress(event: String, details: Dictionary = {}) -> void:
+	if OS.get_environment("CD_THREE_ROOMS_PROGRESS") != "1": return
+	var values := {"event":event,"phase":progress_phase,"ticks_ms":Time.get_ticks_msec()}
+	if is_instance_valid(app):
+		values.merge({"waiting":app.waiting,"last_command":app.last_command,"last_response_ok":app.bridge.last_response_ok,"request_id":app.bridge._next_id,"worker_pid":app.bridge.child_pid,"error":app.last_error})
+	values.merge(details)
+	print("THREE_ROOMS_PROGRESS ", JSON.stringify(values))
+
 func wait_command(command: String, refusal: bool = false) -> void:
-	var deadline := Time.get_ticks_msec() + 30000
-	while app.waiting and Time.get_ticks_msec() < deadline: await process_frame
+	var started := Time.get_ticks_msec()
+	var deadline := started + 30000
+	var next_progress := started + 5000
+	while app.waiting and Time.get_ticks_msec() < deadline:
+		if Time.get_ticks_msec() >= next_progress:
+			progress("waiting", {"command":command,"elapsed_ms":Time.get_ticks_msec() - started})
+			next_progress += 5000
+		await process_frame
+	progress("wait_finished", {"command":command,"elapsed_ms":Time.get_ticks_msec() - started})
 	check(not app.waiting, "Real worker answered " + command)
 	check(bool(app.bridge.last_response_ok) != refusal, "Production response for " + command)
 	app.timer.stop()
@@ -30,8 +47,13 @@ func wait_command(command: String, refusal: bool = false) -> void:
 	app.timer.stop()
 
 func ask(command: String, payload: Dictionary = {}, refusal: bool = false) -> void:
-	app._command(command, payload)
+	var started := Time.get_ticks_msec()
+	if OS.get_environment("CD_THREE_ROOMS_PROGRESS") == "1":
+		progress("dispatch", {"command":command,"import_bytes":str(payload.get("text", "")).to_utf8_buffer().size() if command == "import" else 0})
+	var accepted: bool = app._command(command, payload)
+	progress("dispatched", {"command":command,"accepted":accepted,"dispatch_ms":Time.get_ticks_msec() - started})
 	await wait_command(command, refusal)
+	progress("command_finished", {"command":command,"elapsed_ms":Time.get_ticks_msec() - started})
 
 func prepare_match_day() -> bool:
 	for day in 40:
@@ -58,9 +80,9 @@ func start_app() -> void:
 	if root.size_changed.is_connected(maximize): root.size_changed.disconnect(maximize)
 	if root.focus_entered.is_connected(maximize): root.focus_entered.disconnect(maximize)
 	root.mode = Window.MODE_WINDOWED
-	root.size = Vector2i(1280,720)
+	root.size = dimensions_to_check[0]
 	await settle()
-	check(root.size == Vector2i(1280,720), "Actual client area is exactly 1280x720")
+	check(root.size == dimensions_to_check[0], "Actual client area is exactly " + str(dimensions_to_check[0]))
 	director = app.find_child("ContextualDirector", true, false)
 	check(director != null, "Production contextual director is installed")
 
@@ -149,13 +171,13 @@ func restart_meeting(id: String, completed: bool) -> void:
 	await same_checkpoint(saved,"Worker restart")
 
 func capture_room(kind: String, continue_name: String) -> void:
-	for resolution in [Vector2i(1280,720),Vector2i(1600,900)]:
+	for resolution in dimensions_to_check:
 		root.size = resolution
 		await settle()
 		room_check(kind,resolution)
 		assert_visible_action(continue_name)
 		await capture(kind + "-" + str(resolution.x))
-	root.size = Vector2i(1280,720)
+	root.size = dimensions_to_check[0]
 	await settle()
 
 func answer_press() -> Dictionary:
@@ -332,14 +354,19 @@ func medical_flow() -> void:
 	await restart_meeting(id,true)
 	press_button("MedicalClose")
 	await wait_command("club_meeting_continue")
+	await medical_follow_up(patient)
+
+func medical_follow_up(patient: String) -> void:
 	# Training is a real mutation; it supplies a read-only medical follow-up.
+	progress_phase = "medical_reimport_after_protocol_restart"
 	await ask("import",{"text":fixture_text("medical")})
+	progress_phase = "medical_training_after_reimport"
 	await ask("train",{"mode":"repos"})
 	check(meeting().get("kind") == "medical" and meeting().ackAllowed,"Actual completed training schedules a read-only factual medical follow-up")
 	check(not app.model.clubLife.clubSupport.medical.available,"Worker medical decision flags are unavailable after real training")
 	var confirm: Button = director.view.find_child("MedicalConfirmProtocol",true,false)
 	check(confirm == null or confirm.disabled,"Protocol cannot be changed when actual medical flags forbid it")
-	id = str(meeting().id)
+	var id := str(meeting().id)
 	await refused("medical_protocol",{"context":app.model.clubLife.clubSupport.context,"id":patient,"protocol":"standard"})
 	var readonly := await checkpoint()
 	press_button("MedicalAcknowledge")
@@ -430,6 +457,8 @@ func capture(name: String) -> void:
 func finish() -> void:
 	await stop_app()
 	var report := {"checks":checks,"failures":failures,"real_worker":true,"display":DisplayServer.get_name(),"invented_sporting_results":false}
+	if not OS.get_environment("CD_THREE_ROOMS_FLOW_PHASE").is_empty():
+		report["diagnostic_phase"] = OS.get_environment("CD_THREE_ROOMS_FLOW_PHASE")
 	if not directory.is_empty():
 		var file := FileAccess.open(directory.path_join("report.json"),FileAccess.WRITE)
 		if file != null: file.store_string(JSON.stringify(report,"  ")); file.close()
@@ -442,9 +471,23 @@ func run() -> void:
 		quit(1)
 		return
 	AudioServer.set_bus_mute(0,true)
+	if OS.get_environment("QA_RESOLUTION") == "2560x1440": dimensions_to_check = [Vector2i(2560,1440)]
 	if not directory.is_empty(): DirAccess.make_dir_recursive_absolute(directory)
 	await start_app()
 	if director == null:
+		await finish()
+		return
+	var phase := OS.get_environment("CD_THREE_ROOMS_FLOW_PHASE")
+	if not phase.is_empty():
+		# Diagnostic slices still use the real app/worker and all assertions in the
+		# selected flow. Their caller supplies a copied disposable starting profile.
+		check(phase in ["medical", "medical-follow-up"], "Known diagnostic three-room phase")
+		if phase == "medical": await medical_flow()
+		elif phase == "medical-follow-up":
+			var meta: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(fixtures.path_join("meta.json")))
+			var patient := str(meta.patientId)
+			check(meeting().is_empty() and medical_row(patient).get("protocol") == "prudent" and not app.model.meta.get("trained", false), "Diagnostic resumes the actual closed prudent-protocol checkpoint before reimport")
+			await medical_follow_up(patient)
 		await finish()
 		return
 	if not await press_flow():

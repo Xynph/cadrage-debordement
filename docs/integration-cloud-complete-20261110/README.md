@@ -11,5 +11,7 @@ Images originales 2560×1440 produites par Godot 4.7.2 sous Linux Cloud, sur des
 | Bureau | [Ouvrir](bureau.png) |59 contrôles en X11 : priorités, destinations et consultations sans écriture ; années de fin de contrat. |
 | Calendrier | [Ouvrir](calendrier.png) |71 contrôles en X11 : semaine/mois, filtres, absences et retour clavier. |
 | Copies | [Ouvrir](copies-securite.png) |47 contrôles en X11 : entrée réelle par Carrière, confirmation, annulation, restauration et suppression ciblée. |
+| Gabi final PC | [Ouvrir](gabi.png) |42 contrôles en X11 avec le GLB final reçu :20os,6clips,4formes de bouche, F1, silence et mouvements réduits. |
+| Offre mensuelle | [Ouvrir](offre-salaire-mensuel.png) |92 contrôles en X11 : montants en centaines entières, bornes exactes et négociation/recrutement réels. |
 
-Les nombres de contrôles sont ceux des réceptions locales correspondantes, pas une somme de cas indépendants ni un verdict de CI globale. GabiV2 passe également42 contrôles réels en 1440p (rig de 20 os, six clips, F1, silence, mouvements réduits). Ces résultats ne constituent pas une exécution native Windows.
+Les nombres de contrôles sont ceux des réceptions locales correspondantes, pas une somme de cas indépendants ni un verdict de CI globale. Ces résultats ne constituent pas une exécution native Windows.

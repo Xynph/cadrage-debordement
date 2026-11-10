@@ -96,7 +96,13 @@ jobs:
               tests/native-press-season.cjs|tests/native-press-personalities-worker.cjs) limit=900s ;;
               tests/deepen-staff-native.cjs) limit=1200s ;;
               tests/custom-competition-worker.cjs) limit=900s ;;
+              # Réception locale complète233s; conserve créations, Rooms et refus.
+              tests/youth-scout-native.cjs) limit=600s ;;
+              # Fixtures complètes PASS locales142/126s, sans refus précoce.
+              tests/world-catalogue-dedup.cjs|tests/world-venue-media.cjs) limit=300s ;;
               tests/career-variation-worker.cjs|tests/management-day-worker.cjs) limit=600s ;;
+              # PASS CI42909005768 :179,80/159,68s, marge finie avant le cap180.
+              tests/france-career.cjs|tests/world-worker.cjs) limit=300s ;;
               tests/progression-policies.cjs|tests/native-academy-groups.cjs|tests/profile-safety-worker.cjs) limit=420s ;;
             esac
             if timeout --signal=TERM --kill-after=10s "$limit" /usr/bin/time -f "CD_CPU_PROFILE suite=$test user_s=%U system_s=%S wall_s=%e cpu_pct=%P max_rss_kb=%M" node "$test"; then

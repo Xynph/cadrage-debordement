@@ -2,6 +2,8 @@
 
 > **For agentic workers:** Use superpowers:executing-plans task-by-task, with an independent final review.
 
+Le verdict final et le reçu post-fusion sont suivis dans [PR539](https://github.com/Xynph/cadrage-debordement/pull/539). Les cases de portail ci-dessous restent celles du snapshot préparé avant fusion.
+
 **Goal:** Réunir les passations PC, les six chantiers Cloud et les demandes ultérieures dans une version jouable, vérifiée et intégrée à main.
 
 **Architecture:** Une PR cumulative depuis main reçoit les trois têtes publiées, sans réécrire les branches sources. Résolution manuelle des raccords du moteur, des sauvegardes et des scènes ; corrections limitées aux défauts d’intégration reproduits. Le portail officiel effectue la fusion avec SHA verrouillés après réception complète, puis la CI du reçu de fusion est contrôlée.
@@ -54,8 +56,8 @@ Consumes: source cumulative ; produit: parcours publics cohérents et sauvegarde
 Files: tests/godot-*.cjs/gd existants ; docs/integration-cloud-complete-20261110/ pour preuves choisies.
 Consumes: même HEAD cumulatif ; produit: captures réelles1440 et revue des raccords.
 
-- [ ] Stage Godot et réception des parcours Bureau, Effectif/Contrats, Tactique, Recrutement, Calendrier, sauvegardes, scènes et Gabi.
-- [ ] Vérifier tris, listes complètes et défilement interne ; aucune qualité adverse exacte révélée.
+- [x] Stage Godot et réception des parcours Bureau, Effectif/Contrats, Tactique, Recrutement, Calendrier, sauvegardes, scènes et Gabi.
+- [x] Vérifier tris, listes complètes et défilement interne ; aucune qualité adverse exacte révélée.
 - [x] Publier des captures réelles représentatives ; aucun export privé de carrière dans GitHub.
 - [x] Faire relire le diff d’intégration par un agent indépendant ; traiter les constats importants avec reproduction et tests.
 
@@ -64,7 +66,7 @@ Consumes: même HEAD cumulatif ; produit: captures réelles1440 et revue des rac
 Files: PR cumulative et descriptions des PR réellement reprises, docs/integration-cloud-complete-20261110.md.
 Consumes: tête finale, CI complète verte et main exact vert ; produit: reçu main validé.
 
-- [ ] Vérifier que les trois têtes sources et main n’ont pas avancé sans réception.
+- [x] Vérifier les têtes sources figées et main ; consigner séparément les ajouts PC ultérieurs hors lot.
 - [ ] Exécuter le portail officiel en check puis merge avec CD_EXPECTED_HEAD_SHA et CD_EXPECTED_BASE_SHA.
 - [ ] Vérifier le SHA du reçu et les sept jobs complets de la CI post-fusion.
 - [ ] Fermer comme remplacées uniquement les PR prouvées intégrées, sans supprimer leurs branches.
