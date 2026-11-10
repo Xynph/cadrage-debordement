@@ -1147,14 +1147,20 @@ func run() -> void:
 				check(shirt!=null and shirt.text==expected_number and shirt.get_theme_font_size("font_size")==82,"Le cartouche reprend le vrai numéro à la taille du visuel")
 				var role_pitch: Control = full.find_child("PlayerRolePitch",true,false)
 				check(role_pitch!=null and role_pitch.is_visible_in_tree() and role_pitch.size==Vector2(432,350),"Le terrain du poste est redessiné en perspective à la taille de la fiche")
-				for axis: String in ["power","speed","pass","tackle","stamina","mental"]:
-					var caption: Label = full.find_child("PlayerRadar_"+axis,true,false)
-					check(caption!=null and caption.text.to_int()==int(target.attributes[axis]),"Axe du radar annoté par sa vraie note · "+axis)
+				var global_rating := full.find_child("PlayerGlobalRating",true,false) as Label
+				check(global_rating != null and global_rating.text.to_int() == int(target.rating), "Note globale exacte dans la fiche complète")
 				check(app.find_child("ProfilePlayerName",true,false).text.to_lower()==str(target.name).to_lower(),"Identité exacte dans la fiche complète")
-				for attribute in target.get("attributes",{}):
-					check(app.find_child("PlayerAttribute_"+attribute,true,false)!=null,"Aptitude réelle dans la fiche : "+attribute)
 				check(app.find_child("OpenPlayerCoachNote",true,false)!=null,"Carnet personnel conservé sur la fiche")
 				await capture("04-fiche-joueur-2560x1440")
+				app.find_child("FullPlayerTab1",true,false).pressed.emit()
+				await settle()
+				var attributes: Dictionary = target.get("attributesV2", {})
+				var detailed := app.find_child("PlayerDetailedAttributes",true,false) as Panel
+				check(detailed != null and attributes.size() == 36 and detailed.find_children("PlayerDetailedAttribute_*", "Label", true, false).size() == 36, "Les 36 attributs du joueur sont affichés")
+				check(app.find_children("PlayerAttribute_*", "Label", true, false).is_empty(), "Aucune grille des 11 qualités internes")
+				for key: String in attributes:
+					var value := app.find_child("PlayerDetailedAttribute_" + key,true,false) as Label
+					check(value != null and value.text.replace(",", ".").to_float() == float(attributes[key]), "Attribut affiché à sa valeur exacte : " + key)
 				app.find_child("FullPlayerTab5",true,false).pressed.emit()
 				await settle()
 				for id in ["ProfileContextCompetition","ProfileContextDevelopment","ProfileContextForm","ProfileContextStaff","ProfileMean_rating"]:

@@ -28,7 +28,7 @@ module.exports=function nativeModel(){
   const renewal={available:!S.live&&!withdrawn&&p.contractEnd<contractBase()+2&&careerContractYears(p)>=Math.max(1,p.contractEnd-contractBase()+2),
    salary:askingWage(p,'renew'),fee:contractFee(p,'renew'),minYears:Math.max(1,p.contractEnd-contractBase()+2),maxYears:Math.min(3,careerContractYears(p)),
    ...(negotiation?{negotiation}:{}),...(withdrawn?{reason:withdrawnReason}:{})};
-  return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),rosterProfile:p.rosterProfile??null,id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,note:roleNote(p),potential:potentialAtRole(p),condition:p.condition,physicalLoad:physicalLoadValue(p),loadPlan:physicalPlan(p),injury:p.injury,salary:p.salary,contractEnd:p.contractEnd??null,renewal,contractLabel:p.contractEnd==null?'Sans contrat professionnel':contractLabel(p),minutes:p.dev?.minutes??0,appearances:p.dev?.appearances??0,status:p.injury?'Blessé':index>=0?'Titulaire':bench>=0?'Remplaçant':'Hors groupe',shirtNumber:index>=0?index+1:bench>=0?bench+16:null,attributes:Object.fromEntries(Object.keys(ATTR).map(k=>[k,skill(p,k)])),portraitIndex:nativeId?Number(nativeId[1])%32:(hash>>>0)%32};
+  return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),rosterProfile:p.rosterProfile??null,id:p.id,name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,note:roleNote(p),potential:potentialAtRole(p),condition:p.condition,physicalLoad:physicalLoadValue(p),loadPlan:physicalPlan(p),injury:p.injury,salary:p.salary,contractEnd:p.contractEnd??null,renewal,contractLabel:p.contractEnd==null?'Sans contrat professionnel':contractLabel(p),minutes:p.dev?.minutes??0,appearances:p.dev?.appearances??0,status:p.injury?'Blessé':index>=0?'Titulaire':bench>=0?'Remplaçant':'Hors groupe',shirtNumber:index>=0?index+1:bench>=0?bench+16:null,...nativePlayerAttributes(p),attributes:Object.fromEntries(Object.keys(ATTR).map(k=>[k,skill(p,k)])),portraitIndex:nativeId?Number(nativeId[1])%32:(hash>>>0)%32};
  });
  const places=professionalPlaces(own),cash=own.cash;
  const market=S.market.map(source=>{
@@ -37,7 +37,7 @@ module.exports=function nativeModel(){
   const withdrawn=negotiation?.status==='withdrawn';
   const reason=S.live?'Match en cours':places<=0?'Effectif complet':cash<p.price?'Trésorerie insuffisante':maxYears<1?'Retraite prévue':withdrawn?withdrawnReason:'';
   const available=!S.live&&places>0&&cash>=p.price&&maxYears>=1&&!withdrawn;
-  return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),id:p.id,name:p.name,pos:p.pos,age:p.age,rating:p.rating,
+  return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),id:p.id,name:p.name,pos:p.pos,age:p.age,rating:p.rating,...nativePlayerAttributes(p),
    salary:askingWage(p,'recruit'),fee:contractFee(p,'recruit'),minYears:1,maxYears,available,reason,...(negotiation?{negotiation}:{})};
  });
  const pair=nextMatch(),l=S.live;

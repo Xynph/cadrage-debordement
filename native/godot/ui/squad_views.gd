@@ -7,6 +7,7 @@ const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const Cover = preload("res://ui/lineup_cover.gd")
+const PlayerAttributes = preload("res://ui/player_attributes.gd")
 
 # Keep the bound dictionary when a career reset replaces management_ui. Retiring
 # controls can only update their former UI state, never the new career's state.
@@ -330,19 +331,13 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	for i in 4:tabs.set_tab_title(i,["Aperçu","Attributs","Contrat","Repères"][i])
 	tabs.current_tab=clampi(int(app.management_ui.get("profile_tab",0)),0,3)
 	tabs.tab_changed.connect(func(index:int):app.management_ui.profile_tab=index)
-	var actions:=_profile_overview(overview,p,app.accent,app.model.get("clubLife",{}).get("coachNotebook",{}).get("entries",[]),app)
+	var details := PlayerAttributes.detail(p)
+	var actions:=_profile_overview(overview,p,app.model.get("clubLife",{}).get("coachNotebook",{}).get("entries",[]),app,tabs,not details.is_empty())
 	var note:=G.button("MA NOTE SUR CE JOUEUR",func(): preload("res://ui/coach_notes_view.gd").open(app,str(p.id)))
 	note.name="OpenPlayerCoachNote"
 	G.fill(note)
 	actions.add_child(note)
-	var grid:=GridContainer.new()
-	grid.columns=2
-	grid.add_theme_constant_override("h_separation",20)
-	attributes.add_child(grid)
-	for pair in [["scrum","Mêlée"],["lineout","Touche"],["tackle","Plaquage"],["speed","Vitesse"],["pass","Passe"],["kick","Jeu au pied"],["goal","But"],["mental","Mental"],["discipline","Discipline"],["stamina","Endurance"],["power","Puissance"]]:
-		var value: Variant = p.get("attributes",{}).get(pair[0])
-		if value != null: G.gauge(grid, pair[1], float(value), 100, G.accent_ink(app.accent))
-		else: grid.add_child(G.label(pair[1]+"  —",14,G.MUTED))
+	_profile_attributes(attributes,p,details)
 	contracts.add_child(G.wrap("Contrat courant : "+p.get("contractLabel",""),13))
 	contracts.add_child(G.wrap(G.euros(p.get("salary",0))+" / semaine",12,G.MUTED))
 	var compared:bool=str(p.id) in app.management_ui.compare
@@ -453,7 +448,7 @@ static func _profile_fact(parent:Node,id:String,caption:String,value:String) -> 
 	fact.name=id
 	row.add_child(fact)
 
-static func _profile_overview(parent:VBoxContainer,p:Dictionary,accent:Color,notes:Array,app:Control) -> HBoxContainer:
+static func _profile_overview(parent:VBoxContainer,p:Dictionary,notes:Array,app:Control,tabs:TabContainer,has_details:bool) -> HBoxContainer:
 	var tiles:=G.h(6)
 	tiles.name="ProfileOverviewTiles"
 	G.fill(tiles)
@@ -480,26 +475,17 @@ static func _profile_overview(parent:VBoxContainer,p:Dictionary,accent:Color,not
 	_profile_fact(season,"ProfileNumberValue","Numéro","—" if p.get("shirtNumber")==null else G.n(p.shirtNumber))
 	_profile_fact(season,"ProfileRoleValue","Note au poste",G.n(p.get("note",0)))
 	var evaluation:=_profile_tile(right,"Evaluation","Évaluation")
-	_profile_fact(evaluation,"ProfileRatingValue","Niveau",G.n(p.get("rating",0)))
-	_profile_fact(evaluation,"ProfilePotentialValue","Potentiel",G.n(p.get("potential",0)))
-	var qualities:=_profile_tile(left,"Attributes","Profil de jeu")
-	var row:=G.h(4);qualities.add_child(row)
-	var radar:=G.W.new()
-	radar_setup(radar,p,accent)
-	radar.custom_minimum_size=Vector2(72,72)
-	row.add_child(radar)
-	var figures:=G.v(0);G.fill(figures);row.add_child(figures)
-	var attrs:Dictionary=p.get("attributes",{})
-	for pair in [["scrum","Mêlée"],["lineout","Touche"],["tackle","Plaquage"],["speed","Vitesse"],["pass","Passe"],["kick","Pied"],["goal","But"],["mental","Mental"],["discipline","Discipline"],["stamina","Endurance"],["power","Puissance"]]:
-		var value:Variant=attrs.get(pair[0])
-		var quality:=G.h(4);figures.add_child(quality)
-		var caption:=G.label(pair[1],11,G.MUTED);caption.custom_minimum_size.x=56;quality.add_child(caption)
-		var bar:=ProgressBar.new();bar.name="ProfileAttributeBar_"+str(pair[0])
-		bar.show_percentage=false;bar.max_value=100;bar.value=0 if value==null else float(value)
-		bar.custom_minimum_size=Vector2(22,3);G.fill(bar);bar.size_flags_vertical=Control.SIZE_SHRINK_CENTER
-		quality.add_child(bar)
-		var figure:=G.label("—" if value==null else G.n(value),11,G.INK)
-		figure.name="ProfileAttribute_"+str(pair[0]);figure.custom_minimum_size.x=18;quality.add_child(figure)
+	_profile_fact(evaluation,"ProfileRatingValue","Note globale",G.n(p.get("rating","—")))
+	_profile_fact(evaluation,"ProfilePotentialValue","Potentiel estimé",G.n(p.get("potential",0)))
+	var qualities := _profile_tile(left,"Attributes","Profil de jeu")
+	if has_details:
+		var detail_button := G.button("VOIR LES 36 ATTRIBUTS", func():
+			tabs.current_tab = 1
+			tabs.get_tab_bar().grab_focus())
+		detail_button.name = "OpenCompactDetailedAttributes"
+		qualities.add_child(detail_button)
+	else:
+		qualities.add_child(G.wrap("Détail des attributs indisponible.",12))
 	var qualifications:=_profile_tile(right,"Qualifications","Postes")
 	var roster:Dictionary=p.get("rosterProfile",{}) if p.get("rosterProfile") is Dictionary else {}
 	var positions:Array=roster.get("position",{}).get("qualifications",[])
@@ -540,17 +526,31 @@ static func _fit_profile(app:Control,parent:VBoxContainer,list:VBoxContainer,tab
 	var budget:float=app.body_scroll.size.y-12.0 if is_instance_valid(app.body_scroll) else app.size.y-180.0
 	if budget>0:list.get_parent().custom_minimum_size.y=minf(list.get_combined_minimum_size().y,budget)
 
-static func radar_setup(radar:Control,p:Dictionary,accent:Color) -> void:
-	radar_mode(radar)
-	radar.accent=accent
-	var attrs:Dictionary=p.get("attributes",{})
-	radar.values=[attrs.get("power",0),attrs.get("speed",0),attrs.get("pass",0),attrs.get("tackle",0),attrs.get("stamina",0),attrs.get("mental",0)]
-	radar.grid_color=G.LINE
-	radar.data_color=G.accent_ink(accent)
-	radar.custom_minimum_size=Vector2(140,140)
-
-static func radar_mode(radar:Control) -> void:
-	radar.mode="radar"
+static func _profile_attributes(parent: VBoxContainer, player: Dictionary, details: Dictionary) -> void:
+	if details.is_empty():
+		_profile_fact(parent, "ProfileDetailedFallbackRating", "Note globale", G.n(player.get("rating", "—")))
+		parent.add_child(G.wrap("Les attributs détaillés sont indisponibles pour ce dossier.",12))
+		return
+	parent.add_child(G.label("36 ATTRIBUTS · " + PlayerAttributes.subtitle(player).to_upper(), 12, G.MUTED))
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	G.fill(grid)
+	parent.add_child(grid)
+	for index in PlayerAttributes.GROUPS.size():
+		var group: Array = PlayerAttributes.GROUPS[index]
+		var card := _profile_tile(grid, str(index), group[0], "ProfileDetailedGroup")
+		for pair: Array in group[1]:
+			var row := G.h(5)
+			card.add_child(row)
+			row.add_child(G.fill(G.wrap(pair[1], 12, G.MUTED)))
+			var caption := G.label(PlayerAttributes.caption(details.get(pair[0])), 13, G.INK)
+			caption.name = "PlayerDetailedAttribute_" + pair[0]
+			caption.accessibility_name = "%s : %s sur 100" % [pair[1], caption.text]
+			caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			caption.custom_minimum_size.x = 37
+			row.add_child(caption)
 
 static func lineup(app:Control) -> Control:
 	var page:=LineupReading.new()
@@ -814,7 +814,7 @@ static func comparison(app:Control) -> void:
 	d.get_ok_button().text="RETOUR À LA FICHE" if app.get_meta("immersive08_full_player",false) else "RETOUR À L’EFFECTIF"
 	var content:=G.v(10)
 	d.add_child(content)
-	content.add_child(G.label("Valeurs de jeu sur 100, sauf âge, salaire et échéance.\nLes postes différents demandent une lecture par attribut, sans classement global.",12,G.MUTED))
+	content.add_child(G.label("La note globale est sur 100. Tenez compte du poste et de la condition des joueurs.",12,G.MUTED))
 	var selectors:=G.h(12)
 	content.add_child(selectors)
 	var ids:Array=app.management_ui.compare.duplicate()
@@ -837,7 +837,7 @@ static func comparison(app:Control) -> void:
 		selectors.add_child(choice)
 		choices.append(choice)
 	var list:=G.scroll(content)
-	list.get_parent().custom_minimum_size.y=340
+	list.get_parent().custom_minimum_size.y=260
 	list.get_parent().name="ComparisonScroll"
 	var refresh:=func():
 		var current:Array=[]
@@ -858,7 +858,7 @@ static func comparison(app:Control) -> void:
 	d.confirmed.connect(close)
 	d.canceled.connect(close)
 	app.add_child(d)
-	Dialogs.show_centered(d,Vector2i(880,600))
+	Dialogs.show_centered(d,Vector2i(880,460))
 
 static func _comparison_rows(app:Control,list:VBoxContainer,ids:Array) -> void:
 	_empty(list)
@@ -882,14 +882,13 @@ static func _comparison_rows(app:Control,list:VBoxContainer,ids:Array) -> void:
 	columns.add_theme_constant_override("h_separation",18)
 	columns.add_theme_constant_override("v_separation",10)
 	list.add_child(columns)
-	var rows:Array=[["Identité","name"],["Poste","pos"],["Âge · ans","age"],["Niveau / 100","rating"],["Condition · %","condition"],["Salaire / semaine","salary"],["Contrat courant","contractLabel"]]
-	for pair in [["Mêlée","scrum"],["Touche","lineout"],["Plaquage","tackle"],["Vitesse","speed"],["Passe","pass"],["Jeu au pied","kick"],["But","goal"],["Mental","mental"],["Discipline","discipline"],["Endurance","stamina"],["Puissance","power"]]:rows.append([pair[0]+" / 100","attr:"+pair[1]])
+	var rows:Array=[["Identité","name"],["Poste","pos"],["Âge · ans","age"],["Note globale / 100","rating"],["Condition · %","condition"],["Salaire / semaine","salary"],["Contrat courant","contractLabel"]]
 	for row in rows:
 		columns.add_child(G.label(row[0],13,G.MUTED))
 		for p:Dictionary in players:
 			var value:Variant="—"
 			if not p.is_empty():
-				value=p.get("attributes",{}).get(str(row[1]).trim_prefix("attr:"),"—") if str(row[1]).begins_with("attr:") else p.get(row[1],"—")
+				value=p.get(row[1],"—")
 				if row[1]=="salary":value=G.euros(value)
 				elif value is float:value=G.n(value)
 			var label:=G.wrap(str(value),14,G.INK)
