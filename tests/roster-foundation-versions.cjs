@@ -1,4 +1,5 @@
 'use strict';
+const { assertLegacyProfessionals } = require('./helpers/assert-legacy-professionals.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),zlib=require('node:zlib'),crypto=require('node:crypto');
 const data=require('../dist/rugby-roster-foundation.js'),{createBridge}=require('../native/engine/worker.cjs');
 assert.equal(data.version,2,'new careers use registry v2');
@@ -20,7 +21,7 @@ const call=(command,payload={})=>bridge.handle({id:++n,command,payload});
 const good=(command,payload={})=>{const r=call(command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;};
 const state=()=>JSON.parse(good('export').meta.exportText).state;
 try{
- good('import',{text});assert.deepEqual(state(),original.state,'real delivered v1 S2 imports without migration');
+ good('import',{text});assertLegacyProfessionals(state(),original.state);
  assert.deepEqual(good('snapshot').meta.rosterSources,v1.sources,'model resolves saved v1 sources');
  const disk=path.join(root,'PrototypeGodot','donnees.json'),before=fs.readFileSync(disk),exported=good('export').meta.exportText;
  const reject=mutate=>{const d=JSON.parse(exported);mutate(d.state);const refused=call('import',{text:JSON.stringify(d)});assert.equal(refused.ok,false);assert.doesNotMatch(refused.error,/modifié ou endommagé/,'v1 metadata checked before checksum');assert.equal(good('export').meta.exportText,exported);assert.deepEqual(fs.readFileSync(disk),before,'invalid import does not write');};
