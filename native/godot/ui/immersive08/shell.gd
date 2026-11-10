@@ -161,7 +161,9 @@ static func _fit_layout(root: Control, layout: Control, reference: Vector2) -> v
 	if layout.has_meta("immersive_topbar"):
 		_position_topbar(layout)
 	if layout.has_meta("immersive_office_match_status"):
-		_position_office_match_status(layout.get_meta("immersive_office_match_status"),factor)
+		var match_status: Label = layout.get_meta("immersive_office_match_status")
+		_position_office_match_status(match_status,factor)
+		_sync_office_props(match_status)
 	if layout.has_meta("immersive_pack_warning"):
 		_fit_pack_warning(layout.get_meta("immersive_pack_warning"),factor)
 
@@ -441,14 +443,32 @@ static func _heading(parent: Node, app: Control) -> void:
 			D.place(symbol,Rect2(x+16,32,25,25))
 			D.text(row,x+53,54,item[0],25,item[2],600,179)
 	if app.route=="Bureau":
-		app.minibar = D.text(row,590,49,"",25,C.GOLD,700,630)
-		app.minibar.name = "ImmersiveOfficeMatchStatus"
-		app.minibar.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		D.place(app.minibar,Rect2(590,3,630,91))
+		var match_status := D.text(row,590,49,"",25,C.GOLD,700,630)
+		match_status.name = "ImmersiveOfficeMatchStatus"
+		match_status.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		D.place(match_status,Rect2(590,3,630,91))
+		match_status.visible = not app._live().is_empty()
+		match_status.visibility_changed.connect(_sync_office_props.bind(match_status))
+		_sync_office_props(match_status)
+		app.minibar = match_status
 	else:
 		app.minibar = C.label("",17,C.GOLD)
 		parent.add_child(app.minibar)
-	app.minibar.hide()
+		app.minibar.hide()
+
+static func _sync_office_props(match_status: Label) -> void:
+	if not match_status.is_inside_tree(): return
+	var row := match_status.get_parent()
+	var props := row.get_node_or_null("OfficeProps") as TextureRect
+	if match_status.get_window().size.x < 1600 or match_status.visible:
+		if props != null:
+			row.remove_child(props)
+			props.queue_free()
+	elif props == null:
+		var scene := load("res://art/office_props/office_props.tscn") as PackedScene
+		props = scene.instantiate() as TextureRect
+		row.add_child(props)
+		D.place(props,Rect2(1080,5,260,78))
 
 static func _subnavigation(parent: Node, app: Control) -> void:
 	if (app.route=="Composition" and app.get_window().size.x>=TACTICS_CANVAS_MIN_WIDTH) or (app.route=="Effectif" and app.get_window().size.x>=1600): return
