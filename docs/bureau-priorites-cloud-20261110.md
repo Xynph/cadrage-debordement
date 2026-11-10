@@ -11,7 +11,7 @@ en infobulle et dans le nom accessible lorsque le gabarit abrège une ligne long
 Le carnet personnel et l’accès à l’entraînement restent accessibles.
 
 L’ordre est explicite et stable : match en cours/résultat, presse obligatoire,
-clôture de saison ou feuille invalide, trésorerie négative, absences internationales
+clôture de saison ou feuille invalide, trésorerie négative, match prévu aujourd’hui, absences internationales
 confirmées, blessures, échéances de contrat, prochain match, entraînement et
 recrutement. Les situations absentes ne créent pas d’alerte. Le contrat le plus
 proche est choisi par échéance puis identifiant, pas selon l’ordre du tableau.
@@ -30,7 +30,7 @@ le bouton ni perdre le focus. Une carrière absente affiche un état vide.
 
 ## Réception locale
 
-Node 22.23.4 et Godot 4.7.2 Linux : **87 contrôles réussis sans fenêtre**, sans test
+Node 22.23.4 et Godot 4.7.2 Linux : **92 contrôles réussis sans fenêtre**, sans test
 ignoré, sans erreur de script. Le banc ouvre une carrière common via le vrai moteur,
 puis reçoit les interfaces à 1280×720, 1920×1080 et 2560×1440. Il teste aussi les
 projections d’alerte contrôlées, les contrats de deux échéances et les noms longs.
@@ -39,6 +39,9 @@ projections d’alerte contrôlées, les contrats de deux échéances et les nom
 - Entrée sur la priorité presse ouvre la vraie Réception.
 - Les priorités de trésorerie et de résultat ouvrent leurs écrans.
 - Un tick final actualise le titre tout en conservant le focus.
+- Le match du jour reste prioritaire sur les alertes informatives et contrats futurs.
+- La clôture sportive garde le bilan et retire l’entraînement, même si les
+  compétitions internationales empêchent encore le passage de saison.
 - Les consultations n’envoient aucune commande supplémentaire au moteur.
 - L’empreinte du profil sportif reste identique.
 
@@ -51,8 +54,8 @@ CD_GODOT_EXECUTABLE=/chemin/vers/Godot node --test tests/godot-office-priorities
 ```
 
 Pour les captures X11, ajouter `CD_OFFICE_PRIORITIES_GRAPHICS=1` et
-`CD_OFFICE_PRIORITIES_OUTPUT=/tmp/recette-bureau`. Le même banc produit une image
-pour chaque définition et un rapport JSON. Le profil de recette est créé dans un
+`CD_OFFICE_PRIORITIES_OUTPUT=/tmp/recette-bureau`. Le même banc produit deux images
+pour chaque définition (priorités courantes et clôture sportive) et un rapport JSON. Le profil de recette est créé dans un
 autre dossier temporaire, hors de l’application. Préparer les ressources par le
 stage du projet et l’import Godot avant exécution.
 
