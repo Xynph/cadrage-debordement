@@ -23,10 +23,35 @@ func attach(view: NativeMatchView) -> void:
 	_evening.background_color = Color("101a32")
 	_evening.ambient_light_color = Color("a9bddf")
 	_evening.ambient_light_energy = 0.38
+	_evening.ambient_light_sky_contribution = 0.0
+	# Air nocturne visible dans les faisceaux des projecteurs.
+	_evening.volumetric_fog_density = 0.012
+	_evening.volumetric_fog_albedo = Color("c8d6ea")
+	_evening.volumetric_fog_length = 120.0
+	_evening.fog_light_color = Color("1d2a44")
+	_evening.glow_intensity = 0.6
+	_evening.glow_bloom = 0.06
 	_build_modules()
+	apply_quality(view._quality)
 	name = "StadiumEvening"
 	visible = false
 	view.add_child(self)
+
+
+## Le soir hérite des réglages du jour, plus le brouillard volumétrique et les
+## ombres des projecteurs réservés au niveau « Détail ».
+func apply_quality(profile: String) -> void:
+	if _evening == null:
+		return
+	# Le jour peut être hors scène pendant le soir : il reçoit aussi le réglage.
+	NativeMatchView.apply_environment_quality(_day, profile)
+	NativeMatchView.apply_environment_quality(_evening, profile)
+	_evening.volumetric_fog_enabled = profile == "detail"
+	var floodlights := get_node_or_null("Floodlights")
+	if floodlights:
+		for light: Node in floodlights.get_children():
+			if light is SpotLight3D:
+				(light as SpotLight3D).shadow_enabled = profile == "detail"
 
 
 func set_evening(enabled: bool) -> void:
