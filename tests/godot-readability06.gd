@@ -313,6 +313,8 @@ func compact_profile(player: Dictionary, annotation: String, resolution: Vector2
 	check(attributes != null and attributes.find_children("PlayerDetailedAttribute_*", "Label", true, false).size() == 36, "Les 36 attributs sont présents dans l’onglet compact")
 	for attribute: String in player.attributesV2:
 		fact("PlayerDetailedAttribute_" + attribute, PlayerAttributes.caption(player.attributesV2[attribute]))
+	tabs.current_tab = 0
+	await settle()
 
 func immersive_profile(player: Dictionary, resolution: Vector2i) -> void:
 	var profile := named("ImmersivePlayerFull")
