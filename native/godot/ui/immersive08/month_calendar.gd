@@ -203,6 +203,7 @@ func _refresh() -> void:
 	if view_mode == "week": _week_grid(body)
 	else: _grid(body)
 	_legend(body)
+	_context_panels(body)
 	_detail(workspace)
 	_undated_panel()
 
@@ -210,9 +211,9 @@ static func _plural(count: int, singular: String, plural: String) -> String:
 	return "%d %s" % [count, singular if count == 1 else plural]
 
 func _heading(title: String, description: String, match_count: int, session_count: int) -> void:
-	var panel := C.card("", Vector2(0,146))
+	var panel := C.card("", Vector2(0,106))
 	var ink := Color("182824").lerp(app.accent, .12)
-	var edge := C.box(ink, Color("50665e"), 10, 20)
+	var edge := C.box(ink, Color("50665e"), 8, 12)
 	edge.border_color = Color("50665e").lerp(app.accent, .35)
 	panel.add_theme_stylebox_override("panel", edge)
 	var photo := C.photo("stadium", Vector2.ZERO, true, .42)
@@ -225,15 +226,15 @@ func _heading(title: String, description: String, match_count: int, session_coun
 	var body := C.content(panel)
 	var season := G.n(app.model.get("meta", {}).get("season", ""))
 	var league := P.league_name(app.model)
-	body.add_child(C.label(("SAISON %s   /   %s" % [season, league]).to_upper(), 21, C.GOLD, true, 700))
+	body.add_child(C.label(("SAISON %s   /   %s" % [season, league]).to_upper(), 16, C.GOLD, true, 700))
 	var heading := title if month.is_empty() else title + " " + month.left(4)
 	if view_mode == "week":
 		var dates := Agenda.week(selected)
 		if not dates.is_empty(): heading = "Semaine du " + _display_date(dates[0]) + " " + dates[0].left(4) + " au " + _display_date(dates[-1]) + " " + dates[-1].left(4)
-	body.add_child(C.label(heading, 53, C.IVORY, true, 800))
+	body.add_child(C.label(heading, 28, C.IVORY, true, 800))
 	var line := C.h(12)
 	body.add_child(line)
-	var subtitle := C.label(description, 19, C.IVORY, false)
+	var subtitle := C.label(description, 17, C.IVORY, false)
 	subtitle.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	line.add_child(C.fill(subtitle))
 	if not month.is_empty():
@@ -249,7 +250,7 @@ func _toolbar(parent: Node) -> void:
 	padding.add_child(rows)
 	var bar := C.h(10)
 	rows.add_child(bar)
-	var caption := C.label("Planning du club",26,C.IVORY,true,700)
+	var caption := C.label("Planning du club",22,C.IVORY,true,700)
 	caption.name = "MonthCalendarCaption"
 	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	bar.add_child(C.fill(caption))
@@ -274,7 +275,7 @@ func _action(caption: String, callback: Callable, id: String, tooltip: String = 
 	var control := C.button(caption, callback, active, app.accent)
 	control.name = id
 	control.custom_minimum_size = Vector2(C.px(40),C.px(34))
-	control.add_theme_font_size_override("font_size", maxi(18,C.px(20)))
+	control.add_theme_font_size_override("font_size", maxi(16,C.px(18)))
 	control.tooltip_text = tooltip
 	control.focus_entered.connect(_remember_focus.bind(id))
 	if not tooltip.is_empty(): control.accessibility_name = tooltip
@@ -299,7 +300,7 @@ func _grid(parent: Node) -> void:
 	var count := _month_length(month.left(4).to_int(), month.right(2).to_int())
 	var start := int(Time.get_unix_time_from_datetime_string(first + "T00:00:00")) - offset * DAY_SECONDS
 	var weeks := ceili(float(offset + count) / 7.0)
-	var height := 125 if weeks == 6 else 145
+	var height := 96 if weeks == 6 else 110
 	for row_index in weeks:
 		var week := C.h(0)
 		grid.add_child(week)
@@ -313,7 +314,7 @@ func _week_grid(parent: Node) -> void:
 	grid.name = "CalendarWeekGrid"
 	parent.add_child(grid)
 	for date: String in Agenda.week(selected):
-		grid.add_child(_day(date,_weekday(date) >= 5,360))
+		grid.add_child(_day(date,_weekday(date) >= 5,210))
 
 func _day_fixtures(date: String) -> Array:
 	if filter not in ["all","matches","travel"]: return []
@@ -376,7 +377,7 @@ func _day(date: String, weekend: bool, height: int) -> Button:
 	var head := C.h(4)
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	lines.add_child(head)
-	var date_label := C.label((SHORT_DAYS[_weekday(date)] + " " if view_mode == "week" else "") + str(date.right(2).to_int()), 25, C.MUTED if outside or past else C.IVORY, true, 700)
+	var date_label := C.label((SHORT_DAYS[_weekday(date)] + " " if view_mode == "week" else "") + str(date.right(2).to_int()), 22, C.MUTED if outside or past else C.IVORY, true, 700)
 	head.add_child(C.fill(date_label))
 	if current:
 		head.add_child(_pill("AUJOURD’HUI", Color("bce8dc"), Color("173631"), 15))
@@ -388,6 +389,10 @@ func _day(date: String, weekend: bool, height: int) -> Button:
 	for fixture: Dictionary in _day_fixtures(date): lines.add_child(_match_chip(fixture))
 	var absences := _absence_events(date)
 	if not absences.is_empty(): lines.add_child(_absence_chip(absences))
+	if view_mode == "week" and lines.get_child_count() == 1:
+		lines.add_child(C.wrap("Aucun événement publié pour ce filtre.",16,C.FAINT))
+		var next := _next_event_after(date)
+		if not next.is_empty(): lines.add_child(C.wrap(next,16,C.MUTED))
 	cell.custom_minimum_size.y = maxi(C.px(height), ceili(lines.get_combined_minimum_size().y) + 2*C.px(6))
 	cell.clip_contents = true
 	return cell
@@ -435,7 +440,7 @@ func _match_chip(fixture: Dictionary) -> PanelContainer:
 	var text := C.v(0)
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(C.fill(text))
-	var caption := C.label(G.club_name(club), 20, C.IVORY, true, 700)
+	var caption := C.label(G.club_name(club), 18, C.IVORY, true, 700)
 	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	text.add_child(caption)
 	var time := str(fixture.get("kickoffLocal","")) if fixture.get("kickoffLocal") is String else ""
@@ -490,19 +495,20 @@ func _session_chip(session: Dictionary, expanded: bool = false) -> PanelContaine
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(C.fill(text))
 	var label := str(session.get("label","Entraînement"))
-	var caption := C.label(label, 20, C.MUTED if past else Color("d8eee7"), true, 700)
+	var caption := C.label(label, 18, C.MUTED if past else Color("d8eee7"), true, 700)
 	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	text.add_child(caption)
 	var forwards := _caption(session.get("forwards"))
 	var backs := _caption(session.get("backs"))
 	for group: Array in [["Avants",forwards],["Trois-quarts" if expanded else "3/4",backs]]:
-		if group[1].is_empty(): continue
-		var line := C.label("%s · %s" % group, 18, C.MUTED)
+		if group[1].is_empty() or not expanded: continue
+		var line := C.label("%s · %s" % group, 16, C.MUTED)
 		line.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		text.add_child(line)
 	panel.accessibility_name = label + (" · Créneau passé" if past else "")
 	if not forwards.is_empty(): panel.accessibility_name += " · Avants : " + forwards
 	if not backs.is_empty(): panel.accessibility_name += " · Trois-quarts : " + backs
+	panel.tooltip_text = panel.accessibility_name
 	if past:
 		var clock := C.icon("clock", 17, C.MUTED)
 		clock.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -551,8 +557,71 @@ func _legend(parent: Node) -> void:
 	legend.add_child(C.icon("clock", 21, C.MUTED))
 	legend.add_child(C.label("Créneau passé",17,C.MUTED))
 
+func _next_event_after(date: String) -> String:
+	var upcoming: Array = fixtures.filter(func(fixture: Dictionary): return fixture.date > date)
+	upcoming.sort_custom(func(a: Dictionary,b: Dictionary): return a.date < b.date)
+	if upcoming.is_empty(): return ""
+	return "Prochain match publié · %s/%s" % [str(upcoming[0].date).right(2),str(upcoming[0].date).substr(5,2)]
+
+func _context_panels(parent: Node) -> void:
+	var padding := C.margin(10)
+	parent.add_child(padding)
+	var row := C.h(12)
+	padding.add_child(row)
+	var upcoming := C.card()
+	upcoming.name = "CalendarUpcomingContext"
+	row.add_child(C.fill(upcoming))
+	var list := C.content(upcoming)
+	list.add_child(C.label("PROCHAINS RENDEZ-VOUS PUBLIÉS",19,C.GOLD,true,700))
+	var reference := selected if today.is_empty() or selected >= today else today
+	var next_games: Array = fixtures.filter(func(fixture: Dictionary): return fixture.date >= reference and not fixture.get("played",false))
+	next_games.sort_custom(func(a: Dictionary,b: Dictionary): return a.date < b.date if a.date != b.date else Agenda.fixture_key(a) < Agenda.fixture_key(b))
+	if next_games.is_empty(): list.add_child(C.wrap("Aucune prochaine rencontre datée dans le calendrier publié.",17,C.MUTED))
+	for fixture: Dictionary in next_games.slice(0,3):
+		var line := C.h(8)
+		list.add_child(line)
+		line.add_child(C.label(str(fixture.date).right(2)+"/"+str(fixture.date).substr(5,2),18,C.GOLD,true,700))
+		var text := C.label(G.club_name(_opponent(fixture)),18,C.IVORY,true,600)
+		text.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		line.add_child(C.fill(text))
+		var place := P.fixture_location_kind(fixture,_club_id())
+		line.add_child(C.label(str(PLACES.get(place,"")),16,C.MUTED))
+		line.add_child(_action("Voir",_select.bind(fixture.date),"CalendarUpcoming_"+str(fixture.get("id",fixture.date)).validate_node_name(),"Voir le programme du "+_display_date(fixture.date)))
+	var chart := C.card()
+	chart.name = "CalendarSessionChart"
+	row.add_child(C.fill(chart))
+	var content := C.content(chart)
+	content.add_child(C.label("SÉANCES PUBLIÉES · SEMAINE SÉLECTIONNÉE",19,C.MINT,true,700))
+	var bars := C.h(8)
+	content.add_child(bars)
+	var dates := Agenda.week(selected)
+	var maximum := 1
+	for day: String in dates: maximum = maxi(maximum,sessions_by_day.get(day,[]).size())
+	for day: String in dates:
+		var column := C.v(3)
+		bars.add_child(C.fill(column))
+		var count: int = sessions_by_day.get(day,[]).size()
+		var number := C.label(str(count),18,C.MINT,true,700)
+		number.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		column.add_child(number)
+		var bar := ProgressBar.new()
+		bar.name = "CalendarSessionCount_"+day
+		bar.max_value = maximum
+		bar.value = count
+		bar.show_percentage = false
+		bar.fill_mode = ProgressBar.FILL_BOTTOM_TO_TOP
+		bar.custom_minimum_size = Vector2(C.px(22),C.px(58))
+		bar.add_theme_stylebox_override("background",C.box(Color("142321"),Color.TRANSPARENT,3,0))
+		bar.add_theme_stylebox_override("fill",C.box(Color("539d85"),Color.TRANSPARENT,3,0))
+		bar.tooltip_text = _display_date(day)+" · "+str(count)+" créneau(x) publié(s)"
+		column.add_child(bar)
+		var label := C.label(SHORT_DAYS[_weekday(day)],16,C.MUTED)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		column.add_child(label)
+	content.add_child(C.wrap("Comptage des créneaux, sans estimation de charge physique.",16,C.FAINT))
+
 func _detail(parent: Node) -> void:
-	var card := C.card("",Vector2(402,0))
+	var card := C.card("",Vector2(420,0))
 	card.name = "MonthDayDetail"
 	card.add_theme_stylebox_override("panel", C.box(C.PANEL,Color("425751"),10,14))
 	parent.add_child(card)
@@ -560,7 +629,7 @@ func _detail(parent: Node) -> void:
 	var heading := "PROGRAMME DU JOUR" if selected == today else "JOUR SÉLECTIONNÉ"
 	body.add_child(C.label(heading,20,C.MINT if selected == today else C.IVORY,true,700))
 	var title := "Aujourd’hui · " + _display_date(selected) if selected == today else _display_date(selected)
-	body.add_child(C.wrap(title,27,C.IVORY,true,700))
+	body.add_child(C.wrap(title,24,C.IVORY,true,700))
 	if selected != today and not today.is_empty() and selected > today and not next_fixture.is_empty() and selected < next_fixture.date:
 		var remaining := _days_before(selected,next_fixture.date)
 		if remaining <= 7:
@@ -661,7 +730,7 @@ func _templates(body: VBoxContainer) -> void:
 	chooser.accessibility_name = "Modèle de semaine"
 	chooser.tooltip_text = "Choisissez une semaine type pour rendre le bouton Appliquer disponible."
 	chooser.add_theme_font_override("font", C.DISPLAY)
-	chooser.add_theme_font_size_override("font_size", maxi(18,C.px(20)))
+	chooser.add_theme_font_size_override("font_size", maxi(16,C.px(18)))
 	chooser.custom_minimum_size.y = C.px(32)
 	chooser.add_item("Choisir un modèle…")
 	chooser.set_item_disabled(0, true)

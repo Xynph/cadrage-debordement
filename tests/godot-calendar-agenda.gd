@@ -77,6 +77,11 @@ func run() -> void:
 	var dates := Agenda.week(view().selected)
 	var grid: Control = app.find_child("CalendarWeekGrid",true,false)
 	check(grid.get_child_count() == 7,"La semaine ne duplique aucun jour")
+	check(app.find_child("CalendarUpcomingContext",true,false) != null,"Contexte des prochains rendez-vous visible")
+	check(app.find_child("CalendarSessionChart",true,false) != null,"Histogramme des séances publiées visible")
+	for date: String in dates:
+		var bar := app.find_child("CalendarSessionCount_"+date,true,false) as ProgressBar
+		check(bar != null and int(bar.value) == view().sessions_by_day.get(date,[]).size(),"Histogramme fidèle au nombre de créneaux : "+date)
 	await press("MonthFilter_training")
 	check(app.find_child("CalendarWeekGrid",true,false).find_children("MonthMatch_*","PanelContainer",true,false).is_empty(),"Filtre entraînement masque les matchs de la semaine")
 	var selected: String = view().selected
