@@ -116,6 +116,9 @@ func _portrait_extent(short_layout: bool) -> Vector2:
 func _allows_automatic_speech() -> bool:
 	return true
 
+func _request_portrait_gesture(_opening: bool) -> void:
+	pass
+
 func _build() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_compact = HBoxContainer.new(); _compact.mouse_filter = Control.MOUSE_FILTER_IGNORE; add_child(_compact)
@@ -534,9 +537,11 @@ func open_help() -> void:
 
 func _open() -> void:
 	if _blocked(): return
+	var opening := not expanded
 	_deferred_context.clear(); _status()
 	profile.data.enabled = true; visible = true; expanded = true
 	_show_page(true); _layout(); _save()
+	if expanded: _request_portrait_gesture(opening)
 
 func toggle() -> void:
 	if expanded: close()
@@ -587,7 +592,9 @@ func _step(direction: int, skip_page: bool = false) -> void:
 	if mode == "context": close(); return
 	var fragments: Array = Content.fragments(current_id)
 	if not skip_page and fragment_index + direction >= 0 and fragment_index + direction < fragments.size():
-		fragment_index += direction; _show_page(true); return
+		fragment_index += direction; _show_page(true)
+		_request_portrait_gesture(false)
+		return
 	if mode != "tour": close(); return
 	var index: int = Content.TOUR.find(profile.data.step)
 	if direction > 0 and profile.data.step not in profile.data.completed: profile.data.completed.append(profile.data.step)
@@ -596,6 +603,7 @@ func _step(direction: int, skip_page: bool = false) -> void:
 	fragment_index = Content.fragments(profile.data.step).size() - 1 if direction < 0 else 0
 	current_id = profile.data.step
 	_save(); _show_page(true)
+	_request_portrait_gesture(false)
 
 func _go() -> void:
 	if _blocked() or _navigate.disabled: return

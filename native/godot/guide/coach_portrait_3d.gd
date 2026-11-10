@@ -3,6 +3,10 @@ extends TextureRect
 const MODEL_PATH := "res://guide/assets/gabi.glb"
 const IDLE := &"Repos"
 const APPROVAL := &"Approbation"
+const GREETING := &"Salut"
+const EXPLANATION := &"Explication"
+const MICROGESTURES := [&"Ecoute", &"RegardCarnet"]
+const BLEND_TIME := 0.20
 
 var model: PackedScene
 var reduced_motion := false
@@ -10,8 +14,14 @@ var _context := ""
 var _approval_pending := false
 var _viewport := SubViewport.new()
 var _animations: AnimationPlayer
+var _gesture_random := RandomNumberGenerator.new()
+var _microgestures: Array[StringName] = []
+var _next_microgesture := 0
+var _microgesture_wait := 0.0
+var _greeted := false
 
 func _ready() -> void:
+	set_process(false)
 	name = "GabiPortrait3D"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -37,7 +47,13 @@ func _ready() -> void:
 		push_error("Le GLB du guide doit fournir les animations Repos et Approbation.")
 		return
 	_animations.get_animation(IDLE).loop_mode = Animation.LOOP_LINEAR
-	_animations.get_animation(APPROVAL).loop_mode = Animation.LOOP_NONE
+	for clip: StringName in [APPROVAL, GREETING, EXPLANATION] + MICROGESTURES:
+		if not _animations.has_animation(clip): continue
+		_animations.get_animation(clip).loop_mode = Animation.LOOP_NONE
+		if clip in MICROGESTURES: _microgestures.append(clip)
+	_gesture_random.randomize()
+	if not _microgestures.is_empty():
+		_next_microgesture = _gesture_random.randi_range(0, _microgestures.size() - 1)
 	_animations.animation_finished.connect(_animation_finished)
 
 	var studio := WorldEnvironment.new()
@@ -72,7 +88,7 @@ func _light(stage: Node3D, angle: Vector3, color: Color, energy: float) -> void:
 func set_context(id: String) -> void:
 	if id == _context: return
 	_context = id
-	_approval_pending = id in ["composition", "resultat"]
+	_approval_pending = not reduced_motion and id in ["composition", "resultat"]
 	if is_visible_in_tree(): _sync_visibility()
 
 func set_reduced_motion(value: bool) -> void:
@@ -87,8 +103,23 @@ func set_speaking(_value: bool) -> void:
 func set_articulation(_value: float) -> void:
 	pass
 
+func request_gesture(opening: bool) -> void:
+	if not _can_animate() or _animations.current_animation in [APPROVAL, GREETING]: return
+	if opening and not _greeted and _play_gesture(GREETING):
+		_greeted = true
+		return
+	_play_gesture(EXPLANATION)
+
+func _process(delta: float) -> void:
+	_microgesture_wait -= delta
+	if _microgesture_wait > 0.0: return
+	var clip := _microgestures[_next_microgesture]
+	_next_microgesture = (_next_microgesture + 1) % _microgestures.size()
+	_play_gesture(clip)
+
 func _sync_visibility() -> void:
 	if _animations == null: return
+	set_process(false)
 	if not is_visible_in_tree():
 		_animations.pause()
 		_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
@@ -100,10 +131,27 @@ func _sync_visibility() -> void:
 		_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 		return
 	_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
-	var clip := APPROVAL if _approval_pending else IDLE
+	var approval := _approval_pending
 	_approval_pending = false
-	_animations.play(clip, 0.12)
+	if approval:
+		_play_gesture(APPROVAL)
+	else:
+		_play_idle()
 
-func _animation_finished(clip: StringName) -> void:
-	if clip == APPROVAL and is_visible_in_tree() and not reduced_motion:
-		_animations.play(IDLE, 0.12)
+func _can_animate() -> bool:
+	return _animations != null and is_visible_in_tree() and not reduced_motion
+
+func _play_gesture(clip: StringName) -> bool:
+	if not _can_animate() or not _animations.has_animation(clip): return false
+	set_process(false)
+	_animations.play(clip, BLEND_TIME)
+	return true
+
+func _play_idle() -> void:
+	_animations.play(IDLE, BLEND_TIME)
+	if _microgestures.is_empty(): return
+	_microgesture_wait = _gesture_random.randf_range(7.0, 13.0)
+	set_process(true)
+
+func _animation_finished(_clip: StringName) -> void:
+	if _can_animate(): _play_idle()

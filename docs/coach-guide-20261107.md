@@ -50,6 +50,8 @@ La recette vérifie contrôles interactifs, navigation explicite, snapshots sans
 
 Le guide de carrière ouvre ses textes et son portrait via **F1**. Le modèle 3D est chargé depuis `native/godot/guide/assets/gabi.glb`. La scène importée doit contenir un `AnimationPlayer` avec les clips `Repos` et `Approbation`, et un personnage à l’échelle du studio, pieds au sol et visage orienté vers +Z. Sans modèle installé, le guide utilise son portrait d’origine.
 
+Avec les clips optionnels, le guide alterne `Ecoute` et `RegardCarnet` après 7 à 13 secondes au repos. `Salut` joue une fois par session de jeu à une ouverture explicite du guide. Les demandes explicites suivantes peuvent jouer `Explication`. `Approbation` garde la priorité en composition et au résultat. Le guide suspend ses animations quand il est masqué. Le réglage Mouvements réduits fige sa pose.
+
 Dans `native/godot/main.gd`, `coach.setup(self, false)` désactive la voix du guide de carrière et ses commandes audio. Pour réactiver la voix dans une future version, remplacer ce paramètre par `true`. Les clips, les réglages et le moteur vocal restent disponibles. Le guide de carrière interdit la lecture automatique à l’ouverture et au changement de bulle. La commande de réécoute déclenche la voix sur demande quand elle est activée.
 
 La réactivation de l’animation faciale demande de raccorder `set_speaking` et `set_articulation` dans `native/godot/guide/coach_portrait_3d.gd` au rig du modèle retenu. Les clips corporels `Repos` et `Approbation` jouent indépendamment de la voix. Un clip `Parole` éventuel doit être raccordé avec les signaux d’articulation pour synchroniser la bouche.

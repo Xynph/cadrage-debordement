@@ -21,6 +21,10 @@ func _portrait_extent(short_layout: bool) -> Vector2:
 func _allows_automatic_speech() -> bool:
 	return false
 
+func _request_portrait_gesture(opening: bool) -> void:
+	if portrait is GabiPortrait:
+		portrait.request_gesture(opening and app._has_career())
+
 func _build() -> void:
 	theme=Legacy.theme(ACCENT)
 	super._build()
