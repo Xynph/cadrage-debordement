@@ -109,11 +109,22 @@ func _build() -> void:
 	else: _consignes()
 	add_child(match_context)
 	match_context.bind(app)
+	app.bridge.model_changed.connect(_refresh_briefing)
 	_observe(self)
 	if app.body_scroll != null:
 		app.body_scroll.get_v_scroll_bar().value_changed.connect(func(value: float):
 			if focus_ready: state.outer[active_tab] = int(value))
 	_restore.call_deferred()
+
+func _refresh_briefing(model: Dictionary) -> void:
+	# Ticks update the live-state wording without rebuilding the focused page.
+	var button := find_child("PreparationBriefing_live", true, false) as Button
+	if button == null: return
+	for check: Dictionary in Briefing.project(model).checks:
+		if check.id != "live": continue
+		button.text = check.title + "  →"
+		button.tooltip_text = check.detail + "\n" + check.caption
+		button.accessibility_name = check.title + " · " + check.detail
 
 func _heading() -> void:
 	var hero := D.panel(self, Rect2(0, 0, 2248, 167), "", "", "", "PreparationHero")
@@ -242,17 +253,21 @@ func _dossier() -> void:
 	D.text(comparison, 672, 117, "VS", 30, C.MUTED, 600, 70, HORIZONTAL_ALIGNMENT_CENTER)
 	D.line(comparison, Vector2(22, 163), Vector2(1322, 163))
 	var domains: Array = reports.get("domains", [])
+	if domains.is_empty():
+		D.text(comparison, 28, 266, "La comparaison par secteur n’est pas disponible.", 29, C.MUTED, 500, 1270)
 	var row_height := minf(75.0, 369.0 / maxi(1, domains.size()))
 	for i in domains.size():
 		var domain: Dictionary = domains[i]
 		var y := 176.0 + row_height * i
 		D.rect(comparison, Rect2(20, y, 1304, row_height - 3), Color("14201f") if i % 2 else Color("10191a"), 3)
 		D.text(comparison, 81, y + 30, G.n(domain.get("own", "—")), 28, GREEN, 700, 60, HORIZONTAL_ALIGNMENT_CENTER)
-		D.bar(comparison, Rect2(129, y + 19, 375, 12), float(domain.get("own", 0)), GREEN)
+		if domain.get("own") is float or domain.get("own") is int:
+			D.bar(comparison, Rect2(129, y + 19, 375, 12), float(domain.own), GREEN)
 		D.text(comparison, 674, y + 29, domain.get("label", "Secteur"), 24, C.IVORY, 600, 315, HORIZONTAL_ALIGNMENT_CENTER)
-		D.bar(comparison, Rect2(844, y + 19, 375, 12), float(domain.get("opponent", 0)), GOLD)
+		if domain.get("opponent") is float or domain.get("opponent") is int:
+			D.bar(comparison, Rect2(844, y + 19, 375, 12), float(domain.opponent), GOLD)
 		D.text(comparison, 1264, y + 30, G.n(domain.get("opponent", "—")), 28, GOLD, 700, 65, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(comparison, 23, 576, "Notes de simulation ajustées à la condition · sur 100", 24, C.MUTED, 500, 1297)
+	D.text(comparison, 23, 576, "Comparaison chiffrée indisponible" if domains.is_empty() else "Notes de simulation ajustées à la condition · sur 100", 24, C.MUTED, 500, 1297)
 	_recommended(section)
 	_recent(section)
 	_threats(section)
@@ -269,7 +284,7 @@ func _recommended(section: Control) -> void:
 		action.add_theme_font_size_override("font_size", C.px(27))
 		action.tooltip_text = check.detail + "\n" + check.caption
 		action.accessibility_name = check.title + " · " + check.detail
-		var lines := D.words(check.detail, 83, 2)
+		var lines := D.words(check.detail, 64, 2)
 		for line in lines.size(): D.text(panel, 39, y + 79 + line * 29, lines[line], 24, C.MUTED, 500, 800, HORIZONTAL_ALIGNMENT_LEFT, true)
 	var all := _button(panel, Rect2(22, 480, 411, 49), "Tous les repères (%d)" % checks.size(), Briefing.open_all.bind(app, _choose.bind(1)), false, "search", "PreparationBriefingAll")
 	all.add_theme_font_size_override("font_size", C.px(24))
@@ -294,7 +309,7 @@ func _recent(section: Control) -> void:
 	var panel := D.panel(section, Rect2(0, 614, 1344, 352), "Les faits récents", "calendar", "", "PreparationRecent")
 	var recent: Array = reports.get("recent", [])
 	var opponent := _opponent()
-	if recent.is_empty(): D.text(panel, 24, 109, "Aucun résultat adverse enregistré cette saison.", 26, C.MUTED, 500, 1266)
+	if recent.is_empty(): D.text(panel, 24, 109, "Résultats adverses non publiés dans ce dossier." if reports.is_empty() else "Aucun résultat adverse enregistré cette saison.", 26, C.MUTED, 500, 1266)
 	for i in mini(5, recent.size()):
 		var result: Dictionary = recent[i]
 		var y := 72 + i * 50
@@ -327,7 +342,7 @@ func _threats(section: Control) -> void:
 		D.text(panel, 111, y + 56, "%s  ·  %s" % [p.get("pos", ""), p.get("role", "")], 22, C.MUTED, 500, 740)
 		D.line(panel, Vector2(20, y + 73), Vector2(863, y + 73), Color(C.LINE, .67))
 	var signals: Array = reports.get("signals", [])
-	D.text(panel, 23, 331, "%d signal(aux) documenté(s) · détails dans le dossier" % signals.size() if not signals.is_empty() else "Pas de signal robuste dans les observations disponibles.", 21, GOLD, 500, 842)
+	D.text(panel, 23, 331, "%d signal(aux) documenté(s) · détails dans le dossier" % signals.size() if not signals.is_empty() else "Observations adverses indisponibles." if reports.is_empty() else "Pas de signal robuste dans les observations disponibles.", 24, GOLD, 500, 842)
 
 func _consignes() -> void:
 	var section := _section("PreparationConsignes")
