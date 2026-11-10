@@ -323,36 +323,73 @@ static func _open_wages(app: Control, due_only: bool) -> void:
 	app.management_ui[WAGES_SCOPE_KEY] = due_only
 	U.select(app, KEY, "wages", "FinanceWagesAll" if due_only else "FinanceTab_wages")
 
+static func _wage_value(player: Dictionary, key: String) -> Variant:
+	if key == "name" or key == "pos":
+		var value := str(player.get(key, "")).strip_edges()
+		return null if value.is_empty() else value.to_lower()
+	var value: Variant = player.get(key)
+	return value if (value is int or value is float) and is_finite(float(value)) else null
+
+static func wage_rows(players: Array, key: String, descending: bool) -> Array:
+	var result := players.duplicate()
+	result.sort_custom(func(a: Dictionary, b: Dictionary):
+		var first: Variant = _wage_value(a,key)
+		var second: Variant = _wage_value(b,key)
+		if first == null or second == null:
+			if first != second: return second == null
+		elif first != second: return first > second if descending else first < second
+		return str(a.get("id","")) < str(b.get("id","")))
+	return result
+
+static func _wage_sort(app: Control, key: String) -> void:
+	var state: Dictionary = app.management_ui.get("finance_wage_sort",{})
+	app.management_ui.finance_wage_sort = {"key":key,"descending":not bool(state.get("descending",false)) if state.get("key") == key else key == "salary"}
+	app.management_ui["finance_wage_scroll"] = 0
+	app._render()
+	var button := app.find_child("FinanceSort_"+key,true,false)
+	if button != null: button.call_deferred("grab_focus")
+
 static func _wages(app: Control, canvas: Control, finance: Dictionary) -> void:
 	var wages := D.panel(canvas, Rect2(0,346,1398,783), "Contrats et salaires", "people", "", "FinanceSalaryTable")
 	var all_players: Array = app.model.get("squad", [])
 	var due_only: bool = app.management_ui.get(WAGES_SCOPE_KEY, false)
 	var squad := P.contracts(app.model) if due_only else all_players.duplicate()
 	if due_only:
-		squad.sort_custom(func(a: Dictionary, b: Dictionary):
-			var first := int(a.contractEnd)
-			var second := int(b.contractEnd)
-			return str(a.id) < str(b.id) if first == second else first < second)
 		var horizon := int(app.model.meta.get("season", 1)) + 1
 		var scope := "%d échéance%s jusqu’à la fin de S%d" % [squad.size(), "s" if squad.size() > 1 else "", horizon]
 		D.text(wages, 345, 37, scope, 22, C.GOLD, 600, 390).name = "FinanceWagesScope"
 		D.button(wages, Rect2(750,12,230,36), "Tous les %d joueurs" % all_players.size(),
 			func(): _open_wages(app, false), false, "", true, U.GREEN, "FinanceWagesAll")
-	else:
-		squad.sort_custom(func(a: Dictionary,b: Dictionary): return float(a.get("salary",0)) > float(b.get("salary",0)))
-	var first := _pagination(app, wages, squad.size(),16,"wages")
+	var sort_state: Dictionary = app.management_ui.get("finance_wage_sort", {"key":"contractEnd" if due_only else "salary", "descending":not due_only})
+	squad = wage_rows(squad,str(sort_state.key),bool(sort_state.descending))
+	D.text(wages, 1020, 37, "%d joueurs" % squad.size(), 18, C.MUTED, 500, 250)
 	D.rect(wages, Rect2(12,62,1374,40), Color("182426"), 3)
-	for item: Array in [["JOUEUR",25],["POSTE",491],["ÉCHÉANCE",703],["PAR SEMAINE",950]]:
-		D.text(wages, item[1], 88, item[0], 21, C.MUTED, 700, 170)
-	for i in mini(16,squad.size()-first):
-		var player: Dictionary = squad[first+i]
-		var y := 106+i*41
-		if i%2 == 0: D.rect(wages, Rect2(12,y,1374,39), Color("131e20"))
-		D.text(wages, 25, y+27, player.get("name","—"), 25, C.IVORY, 700, 450)
-		D.text(wages, 491, y+27, player.get("pos","—"), 23, C.MUTED, 500, 198)
-		D.text(wages, 703, y+27, player.get("contractLabel","—"), 23, C.MUTED, 500, 228)
-		D.text(wages, 1096, y+27, G.euros(player.get("salary",0)), 23, C.IVORY, 600, 148, HORIZONTAL_ALIGNMENT_RIGHT)
-		D.button(wages, Rect2(1120,y+3,247,33), "Voir le contrat", func(): _open_player(app, str(player.id)), false, "arrow", true, U.GREEN, "FinancePlayer_"+str(player.id).replace(":","_"))
+	for item: Array in [["JOUEUR",25,"name",450],["POSTE",491,"pos",198],["ÉCHÉANCE",703,"contractEnd",228],["PAR SEMAINE",950,"salary",170]]:
+		var arrow := (" ▼" if sort_state.descending else " ▲") if sort_state.key == item[2] else " ↕"
+		D.button(wages,Rect2(item[1]-4,63,item[3],38),str(item[0])+arrow,_wage_sort.bind(app,str(item[2])),false,"",true,U.GREEN,"FinanceSort_"+str(item[2]))
+	var scroll := ScrollContainer.new()
+	scroll.name = "FinanceWageScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.mouse_force_pass_scroll_events = false
+	wages.add_child(scroll)
+	D.place(scroll,Rect2(12,106,1374,650))
+	var rows := Control.new()
+	rows.name = "FinanceWageRows"
+	rows.custom_minimum_size = Vector2(C.px(1350),C.px(maxi(1,squad.size())*34))
+	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rows.mouse_filter = Control.MOUSE_FILTER_PASS
+	scroll.add_child(rows)
+	scroll.set_deferred("scroll_vertical",int(app.management_ui.get("finance_wage_scroll",0)))
+	scroll.get_v_scroll_bar().value_changed.connect(func(value): app.management_ui["finance_wage_scroll"] = int(value))
+	for i in squad.size():
+		var player: Dictionary = squad[i]
+		var y := i*34
+		if i%2 == 0: D.rect(rows, Rect2(0,y,1350,33), Color("131e20"))
+		D.text(rows, 25, y+23, player.get("name","—"), 18, C.IVORY, 700, 450)
+		D.text(rows, 491, y+23, player.get("pos","—"), 18, C.MUTED, 500, 198)
+		D.text(rows, 703, y+23, player.get("contractLabel","—"), 18, C.MUTED, 500, 228)
+		D.text(rows, 1096, y+23, G.euros(player.get("salary",0)), 18, C.IVORY, 600, 148, HORIZONTAL_ALIGNMENT_RIGHT)
+		D.button(rows, Rect2(1120,y+1,225,31), "Voir le contrat", func(): _open_player(app, str(player.id)), false, "arrow", true, U.GREEN, "FinancePlayer_"+str(player.id).replace(":","_"))
 	if squad.is_empty():
 		var empty := "Aucun contrat à anticiper d’ici cette échéance." if due_only else "Aucun joueur sous contrat dans cette carrière."
 		D.text(wages, 24, 153, empty, 30, C.MUTED, 600, 1350)
