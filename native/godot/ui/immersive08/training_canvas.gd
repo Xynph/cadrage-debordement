@@ -13,6 +13,8 @@ const TOPICS = ["COLLECTIF", "GROUPES", "INDIVIDUEL", "VIGILANCE", "CONSIGNES", 
 const FAMILIES = [["PIL.", [0]], ["TAL.", [1]], ["2e L.", [2]], ["3e L.", [3]], ["CHAR.", [4, 5]], ["CEN.", [7]], ["3/4", [6, 8]]]
 const GREEN = Color("59eb89")
 const PALE_GOLD = Color("f7ce72")
+const WATCH_LOAD = 55.0
+const WATCH_CONDITION = 70.0
 const SLOTS = [
 	["train", "Séance collective", "Choisir la charge", "Une séance collective agit sur la récupération et le développement.", "Modifier la séance"],
 	["flag", "Travail spécifique", "Préparation ciblée", "Choisissez le travail spécifique avant d’effectuer la séance.", "Modifier le travail"],
@@ -58,7 +60,8 @@ func _build() -> void:
 	training = decisions.get("training", {})
 	support = app.model.get("clubLife", {}).get("clubSupport", {})
 	squad = app.model.get("squad", [])
-	watched = squad.filter(func(p: Dictionary): return float(p.get("physicalLoad", 0)) >= 55 or float(p.get("condition", 100)) < 70)
+	watched = squad.filter(func(p: Dictionary):
+		return float(p.get("physicalLoad", 0)) >= WATCH_LOAD or float(p.get("condition", 100)) < WATCH_CONDITION)
 	watched.sort_custom(func(a: Dictionary, b: Dictionary): return _risk(a) > _risk(b))
 	staff = _staff_members()
 	trained = meta.get("trained", false)
@@ -271,22 +274,32 @@ func _chart() -> void:
 func _vigilance() -> void:
 	var tile := D.panel(self, Rect2(1760, 318, 488, 178), "", "", "", "TrainingRisk")
 	_icon(tile, "warning", Rect2(18, 13, 25, 25), PALE_GOLD)
-	D.text(tile, 54, 35, "RISQUE DE FATIGUE  (%d)" % watched.size(), 25, C.IVORY, 700, 410)
+	D.text(tile, 54, 35, "VIGILANCE PHYSIQUE  (%d)" % watched.size(), 25, C.IVORY, 700, 410)
 	D.line(tile, Vector2(17, 47), Vector2(469, 47))
 	if watched.is_empty():
 		D.text(tile, 22, 92, "Aucune alerte physique", 24, GREEN, 600, 420)
-		D.text(tile, 22, 127, "Charge ≥ 55 ou condition < 70 %", 20, C.MUTED, 500, 420)
+		D.text(tile, 22, 127, "Charge ≥ %s ou condition < %s %%" % [G.n(WATCH_LOAD), G.n(WATCH_CONDITION)], 20, C.MUTED, 500, 420)
 		return
 	for i in mini(3, watched.size()):
 		var p: Dictionary = watched[i]
 		var y := 51 + i * 40
 		var button := _action(tile, Rect2(12, y, 464, 38), "", func(): _player_dialog(p), false, "", "TrainingRisk_" + str(i))
-		button.accessibility_name = str(p.name)
+		var condition := float(p.get("condition", 100))
+		var charge := float(p.get("physicalLoad", 0))
+		var reasons := PackedStringArray()
+		if condition < WATCH_CONDITION: reasons.append("Condition %s %%" % G.n(condition))
+		if charge >= WATCH_LOAD: reasons.append("Charge %s/100" % G.n(charge))
+		var description := "%s · %s · %s" % [p.name, p.pos, " · ".join(reasons)]
+		button.accessibility_name = description
+		button.tooltip_text = description
 		button.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
 		_icon(button, "people", Rect2(13, 9, 23, 23), C.IVORY)
-		D.text(button, 53, 27, str(p.name), 22, C.IVORY, 700, 231)
-		D.text(button, 298, 26, str(p.pos), 18, C.MUTED, 500, 93)
-		D.text(button, 452, 28, G.n(p.get("physicalLoad", 0)) + " / 100", 21, PALE_GOLD, 700, 67, HORIZONTAL_ALIGNMENT_RIGHT)
+		D.text(button, 53, 17, str(p.name), 22, C.IVORY, 700, 205)
+		D.text(button, 53, 34, str(p.pos), 16, C.MUTED, 500, 205)
+		for line in reasons.size():
+			var baseline := 26 if reasons.size() == 1 else 17 + line * 17
+			var reason := D.text(button, 452, baseline, reasons[line], 19, PALE_GOLD, 700, 183, HORIZONTAL_ALIGNMENT_RIGHT)
+			reason.name = "TrainingRiskReason%d" % line
 
 func _axes(tile: Panel) -> void:
 	var people: Array = app.model.get("decisions", {}).get("development", {}).get("professionals", [])
