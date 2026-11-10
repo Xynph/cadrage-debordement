@@ -74,7 +74,10 @@ for (const mode of ['common', 'world-champ', 'fiction']) {
       assert.deepEqual(fs.readFileSync(file), before);
       if (mode === 'fiction') {
         bridge.close();
-        saved.development.academy[0].dev.xp = 0.99;
+        // Variation can cap the first prospect: exercise growth on a player with room.
+        const developing = saved.development.academy.find(player => player.dev.potential > player.rating + 1);
+        assert.ok(developing);
+        developing.dev.xp = 0.99;
         for (const player of generated) delete player.nativeAttributesV1;
         const older = JSON.parse(before);
         older.store['bdt-v1'] = JSON.stringify(saved);
@@ -92,7 +95,8 @@ for (const mode of ['common', 'world-champ', 'fiction']) {
         const mean = (players, key) => players.reduce((sum, player) => sum + player.attributesV2[key], 0) / players.length;
         assert.ok(mean(byPosition('Pilier gauche'), 'scrumTechnique') > mean(byPosition('Ailier'), 'scrumTechnique'));
         assert.ok(mean(byPosition('Ailier'), 'topSpeed') > mean(byPosition('Pilier gauche'), 'topSpeed'));
-        const prospect = academy[0];
+        const prospect = academy.find(player => player.id === developing.id);
+        assert.ok(prospect);
         const promoted = request('promote_academy', { playerId: prospect.id, confirmed: true });
         const professional = promoted.squad.find(player => player.id === prospect.id);
         assert.ok(professional);
