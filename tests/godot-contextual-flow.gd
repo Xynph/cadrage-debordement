@@ -90,6 +90,7 @@ func locker_check(phase: String) -> void:
 			for slot: Dictionary in app.model.get("selection", {}).get("slots", []):
 				if int(slot.slot) == number - 1: expected_position = str(slot.label)
 			if number in [6, 7] and expected_position == "Troisième ligne": expected_position = "Troisième ligne aile"
+		if expected_position in ["Numéro 8", "N° 8", "N°8"]: expected_position = "Troisième ligne centre"
 		var position_label: Label = card.find_child("ParticipantPosition", true, false)
 		check(position_label != null and position_label.text == expected_position and not expected_position.is_empty(), "Jersey role for starter or actual primary position for substitute " + id)
 		if position_label != null:

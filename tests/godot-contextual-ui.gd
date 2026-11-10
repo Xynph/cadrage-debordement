@@ -78,8 +78,9 @@ func run() -> void:
 		if id == participants[22].id: check(role.text == "Pilier droit", "bench jersey 23 shows actual primary tighthead")
 	check(director.view._position_label({"number":18}, {"rosterProfile":{"position":{"primary":"Centre"}}}) == "Centre", "missing bench pos uses authoritative profile primary")
 	check(director.view._position_label({"number":16}, {}) == "Poste non renseigné", "missing bench position remains explicitly unknown")
+	check(director.view._position_label({"number":20}, {"pos":"Numéro 8"}) == "Troisième ligne centre", "bench primary number eight uses third-row centre terminology")
 	host.model.selection = {"slots":[{"slot":7,"label":"N° 8"}]}
-	check(director.view._position_label({"number":8}, {"pos":"Arrière"}) == "N° 8", "starter prefers authoritative slot display label")
+	check(director.view._position_label({"number":8}, {"pos":"Arrière"}) == "Troisième ligne centre", "starter jersey 8 uses third-row centre terminology")
 	for resolution in [Vector2i(1280,720),Vector2i(2560,1440)]:
 		root.size = resolution
 		await settle()

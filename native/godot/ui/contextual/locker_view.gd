@@ -1,6 +1,6 @@
 extends Control
 const S = preload("res://ui/contextual/skin.gd")
-const STARTER_POSITIONS = ["Pilier gauche", "Talonneur", "Pilier droit", "Deuxième ligne", "Deuxième ligne", "Troisième ligne aile", "Troisième ligne aile", "Numéro 8", "Demi de mêlée", "Demi d’ouverture", "Ailier", "Centre", "Centre", "Ailier", "Arrière"]
+const STARTER_POSITIONS = ["Pilier gauche", "Talonneur", "Pilier droit", "Deuxième ligne", "Deuxième ligne", "Troisième ligne aile", "Troisième ligne aile", "Troisième ligne centre", "Demi de mêlée", "Demi d’ouverture", "Ailier", "Centre", "Centre", "Ailier", "Arrière"]
 var director: Node
 var app: Control
 var model: Dictionary = {}
@@ -176,7 +176,7 @@ func _position_label(participant: Dictionary, player: Dictionary) -> String:
 			if int(slot.get("slot", -1)) != number - 1: continue
 			var label := str(slot.get("label", "")).strip_edges()
 			if not label.is_empty():
-				return "Troisième ligne aile" if number in [6, 7] and label == "Troisième ligne" else label
+				return "Troisième ligne aile" if number in [6, 7] and label == "Troisième ligne" else _position_display(label)
 		return STARTER_POSITIONS[number - 1]
 	# Bench numbers are not position assignments. pos is the projected primary
 	# position (rosterProfile.position.primary in common careers), not a guess
@@ -185,7 +185,10 @@ func _position_label(participant: Dictionary, player: Dictionary) -> String:
 	if not primary is String or primary.strip_edges().is_empty():
 		var profile: Dictionary = player.get("rosterProfile", {}) if player.get("rosterProfile") is Dictionary else {}
 		primary = profile.get("position", {}).get("primary", "")
-	return primary.strip_edges() if primary is String and not primary.strip_edges().is_empty() else "Poste non renseigné"
+	return _position_display(primary.strip_edges()) if primary is String and not primary.strip_edges().is_empty() else "Poste non renseigné"
+
+func _position_display(value: String) -> String:
+	return "Troisième ligne centre" if value in ["Numéro 8", "N° 8", "N°8"] else value
 
 func _select_choice(option: Dictionary) -> void:
 	if app.waiting: return
