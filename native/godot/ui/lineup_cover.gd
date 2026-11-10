@@ -27,4 +27,6 @@ static func confirm(app: Control, quote: Dictionary) -> void:
 	detail += "Salaires supplémentaires de %s par semaine, soit %s par joueur." % [
 		G.euros(quote.totalWeeklySalary), G.euros(quote.weeklySalary)
 	]
+	if quote.get("reviewAfterTraining", false):
+		detail += "\n\nUn retour de blessure pourrait réduire le besoin. Si vous prévoyez une séance, revérifiez la feuille ensuite avant de signer."
 	app.confirm("Renforts d’urgence", detail, func(): app._command("promote_cover", {"confirmed": true, "expectedSlots": slots}), true)

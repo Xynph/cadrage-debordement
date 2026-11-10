@@ -17,6 +17,17 @@ try{
  let m=good('new_career',{club:29,mode:'france'});
  const doc=JSON.parse(good('export').meta.exportText),injured=doc.state.reserves.slice(0,3);
  for(const p of doc.state.clubs[29].players)if(injured.includes(p.id))p.injury=2;
+ const recovering=doc.state.clubs[29].players.find(p=>p.id===injured[0]);
+ recovering.injury=1;
+ doc.checksum=checksum(doc.state);
+ good('import',{text:JSON.stringify(doc)});
+ const recoveryQuote=good('snapshot').selection.coverage;
+ assert.deepEqual(recoveryQuote?.slots,[16,17,18]);
+ assert.equal(recoveryQuote.reviewAfterTraining,true);
+ const afterTraining=good('train',{mode:'normal'}).selection.coverage;
+ assert.deepEqual(afterTraining?.slots,[17,18]);
+ assert.equal(afterTraining.reviewAfterTraining,undefined);
+ recovering.injury=2;
  doc.checksum=checksum(doc.state);
  good('import',{text:JSON.stringify(doc)});
  m=good('auto_lineup');
@@ -28,6 +39,7 @@ try{
  const prior=stored.map(file=>fs.readFileSync(file,'utf8'));
  const quote=good('snapshot').selection.coverage;
  assert.deepEqual(quote?.slots,[16,17,18],'le devis indique les places après sélection');
+ assert.equal(quote.reviewAfterTraining,undefined,'aucun retour possible après une seule séance');
  assert.equal(quote.weeklySalary,2500);
  assert.equal(quote.totalWeeklySalary,7500);
  assert.ok(quote.places>=3);
