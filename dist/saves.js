@@ -38,15 +38,20 @@ function safeTree(root){
  const maxNodes=world?(typeof CDWorldCareer.edition==='function'?CDWorldCareer.edition(root)?.limits?.maxSaveNodes??1500000:1500000):
   commonDatabaseActive(root)?650000:typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(root)?400000:200000;
  const pairs=world?root.interclubWorld?.pairs:null;
+ // Player knowledge has an independent, finite schema and node allowance.
+ // Validate it before granting any allowance, including during initial loading.
+ const knowledge=root?.playerKnowledge,knowledgeBudget=knowledge!==undefined&&typeof nativeKnowledgeValidate==='function';
+ if(knowledgeBudget)nativeKnowledgeValidate(root);
  const check=saveCheck,number=saveNumber,object=saveObject,isArray=Array.isArray;
- let count=0;
- function visit(v,depth){
-  check(++count<maxNodes&&depth<35,'Le fichier est trop complexe.');
+ let count=0,knowledgeCount=0;
+ function visit(v,depth,inKnowledge=false){
+  const allowed=inKnowledge?++knowledgeCount<460000:++count<maxNodes;
+  check(allowed&&depth<35,'Le fichier est trop complexe.');
   if(typeof v==='string')check(v.length<=6000&&!/[<>"`&\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(v),'Le fichier contient du texte non autorisé.');
   else if(typeof v==='number')check(number(v));
   else if(isArray(v)){
    check(v.length<=2000);
-   v.forEach(x=>visit(x,depth+1));
+   v.forEach(x=>visit(x,depth+1,inKnowledge));
   }else if(object(v)){
    const keys=Object.keys(v).length;
    if(keys>2000){
@@ -58,7 +63,7 @@ function safeTree(root){
    for(const [k,x] of Object.entries(v)){
     check(!['__proto__','constructor','prototype'].includes(k),'Le fichier contient une structure non autorisée.');
     check(k.length<200&&!/[<>"`&]/.test(k));
-    visit(x,depth+1);
+    visit(x,depth+1,inKnowledge||knowledgeBudget&&x===knowledge);
    }
   }else check(v===null||typeof v==='boolean');
  }

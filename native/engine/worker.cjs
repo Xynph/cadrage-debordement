@@ -136,6 +136,7 @@ function createBridge(options={}){
   function validateCalendarState(state){
    if(calendarPlanning.validateState(state.planning)===false||calendarMail.validate(state.mail)===false)throw Error('Planification du calendrier invalide.');
   }
+  ctx.nativeKnowledgeValidate=knowledgeProjection.validate;
   const dist=options.distDir?path.resolve(options.distDir):fs.existsSync(path.join(__dirname,'core'))?path.join(__dirname,'core'):path.resolve(__dirname,'../../dist');
   for(const name of MODULES)run(fs.readFileSync(path.join(dist,name),'utf8'));
   ctx.nativeWorldRegistryText=JSON.stringify(worldRegistry);

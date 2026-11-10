@@ -85,3 +85,6 @@ test('actual legacy managerWeek and targeted jobs share FIFO and advance only on
  function cycle(n){s.round=n;s.economy.week=n;vm.runInContext('managerWeek()',context);}
  cycle(1);assert.equal(s.manager.missions[0].remaining,1);assert.equal(job.remaining,2);cycle(2);assert.equal(s.manager.missions[0].status,'done');assert.equal(job.status,'active');assert.equal(job.remaining,2);cycle(3);assert.equal(job.remaining,1);vm.runInContext('managerWeek()',context);assert.equal(job.remaining,1);cycle(4);assert.equal(job.status,'done');assert.equal(external(s).knowledge.stage,'observed');
 });
+test('a completed targeted report cannot precede its own planning date',()=>{
+ const s=fixture();s.round=10;k.plan(s,{playerId:'foreign',confirmed:true,context:{season:1,week:10,club:0}},{charge:n=>s.clubs[0].cash-=n});const j=s.playerKnowledge.jobs[0];Object.assign(j,{status:'done',remaining:0,completedSeason:1,completedWeek:0});assert.throws(()=>k.validate(s),/mission ciblée invalide/);
+});
