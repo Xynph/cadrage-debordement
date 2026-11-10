@@ -1,10 +1,12 @@
 extends RefCounted
 ## Le journal du moteur, accompagné de repères et d'actions réellement disponibles.
 const C = preload("res://ui/immersive08/components.gd")
+const Portraits = preload("res://ui/game_skin.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const U = preload("res://ui/management_state.gd")
 const Press = preload("res://ui/press_view.gd")
+const Reading = preload("res://ui/immersive08/reception_reading.gd")
 
 const CATEGORIES = ["Tous", "Staff", "Médical", "Direction", "Recrutement", "Compétitions"]
 const ICONS = {"Staff":"train", "Médical":"heart", "Direction":"shield", "Recrutement":"search", "Formation":"school", "Compétitions":"trophy", "Club":"mail"}
@@ -16,7 +18,10 @@ const SEASON_EXPIRY_MAIL := "%d contrat(s) expire(nt) à la fin de cette saison.
 static func _state(app: Control) -> Dictionary:
 	if not app.management_ui.has("reception"):
 		app.management_ui.reception = {"folder":0, "category":"Tous", "selected":"", "oldest_first":false, "marks":{}, "scroll":0}
-	return app.management_ui.reception
+	var state: Dictionary = app.management_ui.reception
+	if not state.has("activity_filter"): state.activity_filter = "all"
+	if not state.has("expanded_threads"): state.expanded_threads = {}
+	return state
 
 static func international_mail(model: Dictionary) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
@@ -147,7 +152,7 @@ static func heading(row: Control, app: Control) -> Label:
 	var title := D.text(row,-1,76,"Réception.",53,C.IVORY,700,777)
 	D.line(row,Vector2(746,38),Vector2(746,89),C.LINE)
 	D.chip(row,Rect2(773,36,199,52),"%d non lus" % unread(app),C.MINT)
-	D.chip(row,Rect2(991,36,204,52),"%d décisions" % _tasks(app).size(),C.AMBER)
+	D.chip(row,Rect2(991,36,204,52),"%d à faire" % Reading.counts(_messages(app), app.model).todo,C.AMBER)
 	var x := 1230
 	var widths := [95,140,145,154,196,196]
 	for i in CATEGORIES.size():
@@ -172,8 +177,12 @@ static func build(app: Control) -> Control:
 	var active := messages.map(func(message: Dictionary): return message.id)
 	for id in marks.keys():
 		if id not in active: marks.erase(id)
-	var folders := D.panel(page,Rect2(0,0,298,379),"", "", "", "InboxFolders")
-	var visible := messages.filter(func(message: Dictionary): return _visible(message,state))
+	var folders := D.panel(page,Rect2(0,0,298,270),"", "", "", "InboxFolders")
+	var unfiltered := messages.filter(func(message: Dictionary): return _visible(message,state))
+	var selected: Array = unfiltered.filter(func(message: Dictionary): return message.id == state.selected)
+	if state.activity_filter != "all" and not selected.is_empty() and Reading.status(selected[0], app.model).key != state.activity_filter:
+		state.activity_filter = "all" # A newly selected priority stays visible after a model update.
+	var visible := unfiltered.filter(func(message: Dictionary): return state.activity_filter == "all" or Reading.status(message, app.model).key == state.activity_filter)
 	if state.oldest_first: visible.reverse()
 	var priority := _priority_ids(app.model)
 	var mandatory := visible.filter(func(message: Dictionary): return message.has("press_invitation") and message.id in priority)
@@ -189,10 +198,17 @@ static func build(app: Control) -> Control:
 		if message.id == state.selected: current=message; break
 	_folders(folders,app,state)
 	var national: bool = app.Immersive.Selections.nation_only(app.model)
-	var lounge := D.panel(page, Rect2(0, 397, 298, 252), "Sélection" if national else "Accueil du club", "home")
-	D.scenario_photo(lounge, "lounge", Rect2(12, 64, 274, 174))
+	_activity_filters(D.panel(page, Rect2(0,288,298,255),"","","","InboxActivityFilters"), app, state, unfiltered)
+	var lounge := D.panel(page, Rect2(0, 561, 298, 196), "Sélection" if national else "Accueil du club", "home")
+	D.scenario_photo(lounge, "lounge", Rect2(12, 50, 274, 132))
+	var category_view: Dictionary = state.duplicate()
+	category_view.category = "Tous"
+	_category_chart(D.panel(page,Rect2(0,775,298,349),"","","","InboxCategoryChart"), app, state, messages.filter(func(item: Dictionary): return _visible(item,category_view)))
 	_list(D.panel(page,Rect2(316,0,749,1124),"","","","InboxMessages"),app,state,visible)
 	_detail(D.panel(page,Rect2(1083,0,1165,1124),"","","","InboxDetail"),app,state,current)
+	if state.get("return_focus", false):
+		state.return_focus = false
+		_restore_reading.call_deferred(page, state)
 	return page
 
 static func _visible(message: Dictionary, state: Dictionary) -> bool:
@@ -209,28 +225,166 @@ static func _folders(card: Panel, app: Control, state: Dictionary) -> void:
 	var captions := ["Tous les messages", "Non lus  (%d)" % unread(app), "Favoris", "Archives"]
 	for index in captions.size():
 		var id := "InboxFolder"+str(index)
-		var row := D.button(card,Rect2(10,24+index*82,278,71),captions[index],func():
+		var row := D.button(card,Rect2(10,18+index*53,278,43),captions[index],func():
 			state.folder=index
 			state.category="Tous"
 			state.scroll=0
 			_redraw(app,id),state.folder==index,["mail","check","star","save"][index],false,app.accent,id)
+		row.add_theme_font_size_override("font_size", C.px(18))
 		if state.folder != index: row.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,16))
-		if index < 3: D.line(card,Vector2(20,99+index*82),Vector2(278,99+index*82),Color(C.LINE,.5))
-	D.text(card,19,367,"Repères de cette session",18,C.MUTED,500,258)
+		if index < 3: D.line(card,Vector2(20,67+index*53),Vector2(278,67+index*53),Color(C.LINE,.5))
+	D.text(card,19,251,"Repères de session",16,C.MUTED,500,258)
+
+static func _activity_filters(card: Panel, app: Control, state: Dictionary, messages: Array) -> void:
+	D.text(card,20,33,"PAR ÉTAT",22,C.GOLD,700,260)
+	var counts := Reading.counts(messages, app.model)
+	var keys := ["all", "todo", "waiting", "info"]
+	for index in keys.size():
+		var key: String = keys[index]
+		var id := "InboxActivity_" + key
+		var action := D.button(card,Rect2(10,48+index*49,278,39),"%s (%d)" % [Reading.LABELS[key], counts[key]],func():
+			state.activity_filter = key
+			state.selected = ""
+			state.scroll = 0
+			_redraw(app,id),state.activity_filter==key,"",false,app.accent,id)
+		action.add_theme_font_size_override("font_size", C.px(18))
+		action.accessibility_name = "%s : %d courrier(s)" % [Reading.LABELS[key], counts[key]]
+		action.tooltip_text = "Filtrer les états réellement indiqués par le moteur. Les messages sans décision explicite restent des informations."
+
+static func _open_related(app: Control, message: Dictionary, action: Callable) -> void:
+	if message.is_empty():
+		action.call()
+		return
+	var state := _state(app)
+	state.selected = message.id
+	state.expanded_threads[Reading.thread_key(message)] = true
+	var scroll := app.root_content.find_child("InboxMessageScroll", true, false) as ScrollContainer
+	if scroll != null: state.scroll = scroll.scroll_vertical
+	state.return_focus = true
+	action.call()
+
+static func _restore_reading(page: Control, state: Dictionary) -> void:
+	if not is_instance_valid(page) or not page.is_inside_tree(): return
+	for row in page.find_children("*", "Button", true, false):
+		if row.get_meta("message_id", "") == state.selected:
+			row.grab_focus()
+			var scroll := page.find_child("InboxMessageScroll", true, false) as ScrollContainer
+			if scroll != null: scroll.set_deferred("scroll_vertical", int(state.scroll))
+			return
+
+static func _category_chart(card: Panel, app: Control, state: Dictionary, messages: Array) -> void:
+	D.text(card,18,33,"COURRIER PAR SUJET",22,C.GOLD,700,270)
+	var categories := ["Staff","Médical","Direction","Recrutement","Formation","Compétitions","Club"]
+	var counts := {}
+	var maximum := 1
+	for category in categories:
+		counts[category] = messages.filter(func(message: Dictionary): return message.category == category).size()
+		maximum = maxi(maximum, counts[category])
+	for index in categories.size():
+		var category: String = categories[index]
+		var top := 61+index*40
+		var id := "InboxCategoryMetric_"+category
+		var action := C.button("",func():
+			state.category = category
+			state.scroll = 0
+			_redraw(app,id),state.category==category,app.accent)
+		action.name = id
+		action.accessibility_name = "%s : %d courrier(s), filtrer" % [category,counts[category]]
+		card.add_child(action); D.place(action,Rect2(8,top-22,282,38))
+		D.text(action,10,21,category,18,C.IVORY,500,225)
+		D.text(action,270,21,counts[category],18,COLORS[category],700,40,HORIZONTAL_ALIGNMENT_RIGHT)
+		D.bar(action,Rect2(10,29,260,5),100.0*counts[category]/maximum,COLORS[category])
+
+
+static func _context(card: Panel, app: Control, state: Dictionary, message: Dictionary, top: int) -> void:
+	var height := 1105-top
+	var panel := D.panel(card,Rect2(26,top,1112,height),"","","","InboxContext")
+	D.text(panel,18,32,"EN CONTEXTE",22,C.GOLD,700,1060)
+	var next: Variant = app.model.get("next")
+	if next is Dictionary and not next.is_empty():
+		D.text(panel,18,68,next.get("label","Prochaine rencontre"),23,C.IVORY,700,850)
+		D.text(panel,18,97,P.fixture_date(next),18,C.MUTED,500,850)
+		D.button(panel,Rect2(910,53,183,34),"Préparation",_open_related.bind(app,message,Callable(app,"_navigate").bind("Préparation")),false,"tactic",false,app.accent,"InboxContextPreparation")
+	else:
+		D.text(panel,18,70,"Calendrier et archives de votre carrière",20,C.IVORY,600,850)
+		D.button(panel,Rect2(910,53,183,34),"Calendrier",_open_related.bind(app,message,Callable(app,"_navigate").bind("Calendrier")),false,"calendar",false,app.accent,"InboxContextCalendar")
+	D.line(panel,Vector2(18,116),Vector2(1094,116))
+	var others: Array = _messages(app).filter(func(item: Dictionary): return item.id != message.get("id", ""))
+	var related: Array = others.filter(func(item: Dictionary): return Reading.thread_key(item) == Reading.thread_key(message))
+	var caption := "Courriers liés"
+	if related.is_empty():
+		related = others.filter(func(item: Dictionary): return item.category == message.get("category", ""))
+		caption = "Dans le même dossier"
+	if related.is_empty(): related = others; caption = "Derniers courriers"
+	var related_top := 160
+	if message.get("season_expiry", false):
+		var expiring: Array = app.model.get("decisions", {}).get("recruitment", {}).get("expiring", [])
+		var ids: Array = expiring.map(func(player: Dictionary): return str(player.id))
+		var players: Array = app.model.get("squad", []).filter(func(player: Dictionary): return str(player.id) in ids)
+		D.text(panel,18,145,"Échéances actuelles · %d joueur(s) dans l’effectif" % players.size(),18,C.GOLD,600,1060)
+		for index in mini(players.size(),3):
+			var player: Dictionary = players[index]
+			var open := C.button("",_open_related.bind(app,message,_open_current_player.bind(app,str(player.id))),false,app.accent)
+			open.name = "InboxExpiryPlayer_"+str(index)
+			open.set_meta("player_id",str(player.id))
+			open.accessibility_name = "Ouvrir la fiche de " + str(player.name)
+			panel.add_child(open); D.place(open,Rect2(12+index*364,156,354,68))
+			var portrait := Portraits.portrait(int(player.get("portraitIndex",0)),C.px(54),player)
+			portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			open.add_child(portrait); D.place(portrait,Rect2(5,6,54,54))
+			D.text(open,68,28,player.name,20,C.IVORY,600,276)
+			D.text(open,68,52,player.get("pos",""),17,C.MUTED,500,276)
+		related_top = 264
+	D.text(panel,18,related_top-12,"%s · %d" % [caption,related.size()],18,C.MUTED,600,1060)
+	var row_height := 52 if height>350 else 42
+	var capacity := mini(6,maxi(0,floori(float(height-related_top)/row_height)))
+	for index in mini(related.size(),capacity):
+		var item: Dictionary = related[index]
+		var reading := Reading.status(item,app.model)
+		var button := C.button("",func():
+			state.selected = item.id
+			state.activity_filter = "all"
+			state.folder = 0
+			state.category = "Tous"
+			state.expanded_threads[Reading.thread_key(item)] = true
+			state.press_opened = item.id if item.has("press_invitation") else ""
+			var mark: Dictionary = state.marks.get(item.id,{})
+			mark.read = true
+			state.marks[item.id] = mark
+			_redraw(app,_row_id(item)),false,app.accent)
+		button.name = "InboxRelated_"+str(index)
+		button.accessibility_name = "%s · %s" % [reading.label,item.get("subject",item.category)]
+		panel.add_child(button)
+		D.place(button,Rect2(12,related_top+index*row_height,1088,row_height-4))
+		D.text(button,12,25,item.get("subject",_subject(item.text)),20,C.IVORY,600,840)
+		D.text(button,1062,25,reading.label,17,C.ALERT if reading.urgent else C.MINT,600,190,HORIZONTAL_ALIGNMENT_RIGHT)
+		if row_height>50: D.text(button,12,45,item.text,17,C.MUTED,500,1050)
+
+static func _open_current_player(app: Control, player_id: String) -> void:
+	if not app.model.get("squad", []).any(func(player: Dictionary): return str(player.id)==player_id): return
+	U.remember(app)
+	app.management_ui.roster = U.defaults()
+	app.roster_filter = "Tous"
+	app.roster_sort = "Poste"
+	app.selected_player = player_id
+	app.management_ui.profile_scroll = 0
+	app.set_meta("immersive08_full_player",true)
+	app._navigate("Effectif",false)
 
 static func _list(card: Panel, app: Control, state: Dictionary, messages: Array) -> void:
-	D.text(card,25,54,"Messages (%d)" % messages.size(),32,C.IVORY,700,390)
-	D.button(card,Rect2(503,17,223,48),"Plus anciens" if state.oldest_first else "Plus récents",func():
+	D.text(card,25,43,"Messages (%d)" % messages.size(),28,C.IVORY,700,390)
+	D.button(card,Rect2(503,12,223,38),"Plus anciens" if state.oldest_first else "Plus récents",func():
 		state.oldest_first=not state.oldest_first
 		state.scroll=0
 		_redraw(app,"InboxSort"),false,"clock",true,app.accent,"InboxSort")
-	D.line(card,Vector2(1,73),Vector2(748,73))
+	D.text(card,25,78,"↑ ↓ choisir · Entrée ouvrir le courrier",17,C.MUTED,500,700)
+	D.line(card,Vector2(1,94),Vector2(748,94))
 	var scroll := ScrollContainer.new()
 	scroll.name = "InboxMessageScroll"
 	scroll.follow_focus = true
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	card.add_child(scroll)
-	D.place(scroll,Rect2(3,82,743,1009))
+	D.place(scroll,Rect2(3,103,743,988))
 	var rows := C.v(1)
 	rows.name = "InboxMessageRows"
 	C.fill(rows)
@@ -238,10 +392,29 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 	if messages.is_empty():
 		D.text(card,28,150,"Aucun message dans cette vue.",27,C.MUTED,600,690)
 		D.text(card,28,190,"Choisissez un autre dossier ou filtre.",21,C.MUTED,400,690,HORIZONTAL_ALIGNMENT_LEFT,true)
-	for message: Dictionary in messages:
-		var id := "InboxMessage_"+str(message.position)
-		if message.get("press_invitation", {}).get("status") == "pending": id = "InboxPressInvitation"
-		elif message.has("press_invitation"): id = "InboxPressMessage_" + str(message.position)
+	var list_entries: Array[Dictionary] = []
+	for group: Dictionary in Reading.groups(messages):
+		var linked: Array = group.messages
+		if linked.size() > 1:
+			var default_open: bool = linked.any(func(item: Dictionary): return item.id == state.selected or Reading.status(item, app.model).key == "todo")
+			var opened: bool = state.expanded_threads.get(group.key, default_open)
+			list_entries.append({"thread_header":true,"key":group.key,"opened":opened,"count":linked.size()})
+			if not opened: continue
+		for item: Dictionary in linked: list_entries.append(item)
+	for message: Dictionary in list_entries:
+		if message.get("thread_header", false):
+			var group_id := "InboxThread_" + str(message.key).sha256_text().left(12)
+			var toggle := C.button(("▾ " if message.opened else "▸ ") + "%d courriers liés" % message.count, func():
+				state.expanded_threads[message.key] = not message.opened
+				_redraw(app, group_id), false, app.accent)
+			toggle.add_theme_font_size_override("font_size", C.px(18))
+			toggle.custom_minimum_size.y = C.px(34)
+			toggle.name = group_id
+			toggle.set_meta("thread_key", message.key)
+			toggle.tooltip_text = "Déplier ou réduire les courriers de la même rencontre, édition ou conférence"
+			rows.add_child(toggle)
+			continue
+		var id := _row_id(message)
 		var selected: bool = message.id==state.selected
 		var mark: Dictionary = state.marks.get(message.id,{})
 		var row := C.button("",func():
@@ -252,84 +425,116 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 				state.marks[message.id]=mark
 			_redraw(app,id),selected,app.accent)
 		row.name = id
-		row.custom_minimum_size = Vector2(700,104)*C.density
+		row.gui_input.connect(_message_key.bind(app, message.id))
+		row.custom_minimum_size = Vector2(700,78)*C.density
 		row.tooltip_text = message.text
 		row.set_meta("message_text",message.text)
+		row.set_meta("message_id", message.id)
+		var reading := Reading.status(message, app.model)
+		row.accessibility_name = "%s · %s · %s" % [reading.label, message.get("subject",message.category), message.text]
 		rows.add_child(row)
 		if selected: row.add_theme_stylebox_override("normal",C.box(app.accent.darkened(.54),app.accent.lightened(.5),6,0))
-		if not mark.get("read",false): D.rect(row,Rect2(18,44,13,13),C.MINT,7)
-		elif mark.get("favorite",false): _icon(row,"star",Rect2(14,38,23,23),C.GOLD)
+		if not mark.get("read",false): D.rect(row,Rect2(7,35,8,8),C.MINT,7)
+		elif mark.get("favorite",false): _icon(row,"star",Rect2(5,30,15,15),C.GOLD)
 		var image: String = PORTRAITS.get(message.category,"mail-trainer")
-		D.photo(row,image,Rect2(57,12,83,79))
-		D.text(row,160,40,message.get("subject",message.category),29,C.IVORY,700,380)
-		D.text(row,160,76,message.text,22,C.IVORY,500,525)
+		D.photo(row,image,Rect2(24,12,53,50))
+		D.text(row,90,27,message.get("subject",message.category),22,C.IVORY,700,450)
+		D.text(row,90,49,message.text,17,C.IVORY,500,598)
+		D.text(row,90,70,("URGENT · " if reading.urgent else "") + str(reading.label),16,C.ALERT if reading.urgent else C.MUTED,600,525)
 		var badge := "Message %02d" % message.position
 		if message.get("press_invitation", {}).get("status") == "pending": badge = "À traiter"
 		elif message.get("calendar_notice", {}).get("status") == "pending": badge = "À décider"
 		elif message.has("international_event"): badge = "Sélections"
-		D.chip(row,Rect2(544,13,150,31),badge,COLORS[message.category])
+		D.chip(row,Rect2(544,7,150,24),badge,COLORS[message.category])
 	scroll.set_deferred("scroll_vertical",int(state.scroll))
+
+static func _row_id(message: Dictionary) -> String:
+	if message.get("press_invitation", {}).get("status") == "pending": return "InboxPressInvitation"
+	if message.has("press_invitation"): return "InboxPressMessage_" + str(message.position)
+	return "InboxMessage_" + str(message.position)
+
+static func _message_key(event: InputEvent, app: Control, message_id: String) -> void:
+	if not event is InputEventKey or not event.pressed or event.echo or event.ctrl_pressed or event.alt_pressed: return
+	if event.keycode not in [KEY_UP, KEY_DOWN, KEY_HOME, KEY_END]: return
+	var rows: Node = app.root_content.find_child("InboxMessageRows", true, false)
+	if rows == null: return
+	var buttons: Array = rows.get_children().filter(func(node): return node is Button and node.has_meta("message_id"))
+	var index := -1
+	for position in buttons.size():
+		if buttons[position].get_meta("message_id") == message_id: index = position; break
+	if index < 0: return
+	var next := clampi(index + (1 if event.keycode == KEY_DOWN else -1), 0, buttons.size()-1)
+	if event.keycode == KEY_HOME: next = 0
+	if event.keycode == KEY_END: next = buttons.size()-1
+	app.get_viewport().set_input_as_handled()
+	buttons[next].pressed.emit()
 
 static func _detail(card: Panel, app: Control, state: Dictionary, message: Dictionary) -> void:
 	card.clip_contents = true
 	var national: bool = app.Immersive.Selections.nation_only(app.model)
 	var category: String = message.get("category","Club")
 	if category=="Médical":
-		D.photo(card,"medical-recovery",Rect2(438,1,726,274))
-		_art_fade(card,Rect2(0,0,797,276))
+		D.photo(card,"medical-recovery",Rect2(438,1,726,140))
+		_art_fade(card,Rect2(0,0,797,142))
 	else:
-		D.photo(card,"mail-pitch",Rect2(53,120,588,155))
-		_art_fade(card,Rect2(53,120,135,155))
-		_art_fade(card,Rect2(53,120,588,57),false)
-		D.photo(card,"mail-staff",Rect2(641,1,523,274))
-		var blend := _art_fade(card,Rect2(641,1,154,274))
+		D.photo(card,"mail-pitch",Rect2(53,1,588,140))
+		_art_fade(card,Rect2(53,1,135,140))
+		_art_fade(card,Rect2(53,1,588,45),false)
+		D.photo(card,"mail-staff",Rect2(641,1,523,140))
+		var blend := _art_fade(card,Rect2(641,1,154,140))
 		blend.fill_from = Vector2(0,.23)
 		blend.fill_to = Vector2(.25,.59)
-	D.rect(card,Rect2(24,30,6,71),C.GOLD,3)
-	D.text(card,52,68,category.to_upper(),39,C.IVORY,800,780)
-	_icon(card,ICONS[category],Rect2(53,87,27,27),COLORS[category])
+	D.rect(card,Rect2(24,20,4,66),C.GOLD,3)
+	D.text(card,46,48,category.to_upper(),28,C.IVORY,800,780)
+	_icon(card,ICONS[category],Rect2(47,64,20,20),COLORS[category])
 	var event: Dictionary = message.get("international_event", {})
 	var source := "Journal de la sélection" if national else ("Journal du club" if message.is_empty() else "Journal du club · Message %02d" % message.position)
 	if not event.is_empty():
 		var date := P.fixture_date({"date":event.get("date")})
 		source = "Sélections" if date.is_empty() else "Sélections · " + date
-	D.text(card,92,110,source,24,C.IVORY,500,690)
+	D.text(card,78,82,source,18,C.IVORY,500,690)
 	var title := "Le courrier de la sélection" if national else "Le courrier du club"
 	if not message.is_empty(): title = str(message.get("subject",_subject(message.text)))
-	D.text(card,32,303,title,44,C.IVORY,700,1097)
-	var body := C.wrap(message.get("text","Aucun message à afficher dans ce dossier."),23,C.IVORY)
+	D.text(card,32,181,title,30,C.IVORY,700,1097)
+	var body := C.wrap(message.get("text","Aucun message à afficher dans ce dossier."),18,C.IVORY)
 	body.name = "InboxMessageText"
 	C.fill(body)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	card.add_child(scroll)
-	D.place(scroll,Rect2(33,330,1097,180))
+	var text_height := body.get_theme_font("font").get_multiline_string_size(body.text,HORIZONTAL_ALIGNMENT_LEFT,C.px(1080),C.px(18),-1,TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE).y / C.density
+	var body_height := clampf(text_height+14,52,207)
+	var offset := body_height-207
+	D.place(scroll,Rect2(33,204,1097,body_height))
 	scroll.add_child(body)
+	if not message.is_empty():
+		var reading := Reading.status(message, app.model)
+		D.chip(card,Rect2(32,101,600,30),("URGENT · " if reading.urgent else "") + str(reading.label),C.ALERT if reading.urgent else C.GOLD)
 	if not national:
 		var group := P.group(app.model)
-		_metric(card,Rect2(33,533,357,59),"people","%d disponibles" % group.available,C.MINT)
-		_metric(card,Rect2(404,533,296,59),"heart","%d blessés" % group.injured,C.ALERT if group.injured>0 else C.MUTED)
-		_metric(card,Rect2(714,533,416,59),"heart","Condition · %d %%" % group.condition,C.MINT)
+		_metric(card,Rect2(33,430+offset,357,43),"people","%d disponibles" % group.available,C.MINT)
+		_metric(card,Rect2(404,430+offset,296,43),"heart","%d blessés" % group.injured,C.ALERT if group.injured>0 else C.MUTED)
+		_metric(card,Rect2(714,430+offset,416,43),"heart","Condition · %d %%" % group.condition,C.MINT)
 	var focused := message.has("press_invitation") or message.has("calendar_notice") or not event.is_empty()
 	if not focused and not national:
 		var tasks := _tasks(app).slice(0,3)
-		var recommendations := D.panel(card,Rect2(26,610,1112,175),"Mes recommandations","warning")
-		if tasks.is_empty(): D.text(recommendations,25,104,"Aucune priorité immédiate.",23,C.MUTED,600,1020)
+		var recommendations := D.panel(card,Rect2(26,489+offset,1112,145),"Mes recommandations","warning")
+		if tasks.is_empty(): D.text(recommendations,25,91,"Aucune priorité immédiate.",23,C.MUTED,600,1020)
 		for index in tasks.size():
 			var task: Array = tasks[index]
-			D.chip(recommendations,Rect2(22,64+index*35,38,28),str(index+1),C.MINT)
-			var action := D.button(recommendations,Rect2(74,63+index*35,1016,33),task[0],func():
+			D.chip(recommendations,Rect2(22,50+index*28,28,23),str(index+1),C.MINT)
+			var action := D.button(recommendations,Rect2(62,48+index*28,1028,26),task[0],func():
 				if task[1]=="Entraînement": app.Immersive.open_training(app)
 				else: app._navigate(task[1]),false,"arrow",true,app.accent,"InboxRecommendation"+str(index))
 			action.add_theme_stylebox_override("normal",C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0))
 		var next: Variant = app.model.get("next")
 		if next is Dictionary and not next.is_empty():
-			var fixture := D.button(card,Rect2(26,801,1112,69),"Dossier de préparation · "+str(next.get("label","Prochain match")),func():app._navigate("Préparation"),false,"tactic",false,app.accent,"InboxPreparation")
+			var fixture := D.button(card,Rect2(26,648+offset,1112,45),"Dossier de préparation · "+str(next.get("label","Prochain match")),func():app._navigate("Préparation"),false,"tactic",false,app.accent,"InboxPreparation")
 			fixture.tooltip_text = "Ouvrir l’analyse de la prochaine rencontre"
-	if not message.is_empty(): _actions(card,app,state,message,628 if focused else 890)
-	D.line(card,Vector2(26,1026),Vector2(1138,1026),C.LINE)
-	D.text(card,35,1064,"HISTORIQUE DU COURRIER",26,C.IVORY,700,1040)
-	D.text(card,35,1100,"Consultez les messages du journal dans leur ordre de réception.",21,C.MUTED,500,1080)
+	if not message.is_empty(): _actions(card,app,state,message,int((489 if focused else 712)+offset))
+	_context(card,app,state,message,int((610 if focused else 830)+offset))
+	for action in card.find_children("*", "Button", true, false):
+		action.add_theme_font_size_override("font_size", C.px(18))
 
 static func _art_fade(parent: Node, area: Rect2, horizontal: bool = true) -> GradientTexture2D:
 	var fade := Control.new()
@@ -351,13 +556,13 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 			var receipt: bool = invitation.status == "published" and outcome is Dictionary and outcome.get("invitationId") == invitation.id
 			if invitation.status == "pending" or receipt:
 				var caption := "Consulter le compte rendu" if receipt else "Ouvrir la conférence"
-				var action := D.button(card,Rect2(26,top,545,62),caption,app._open_press_invitation.bind(invitation.id),true,"arrow",false,app.accent,"InboxOpenPressInvitation")
+				var action := D.button(card,Rect2(26,top,545,38),caption,_open_related.bind(app, message, app._open_press_invitation.bind(invitation.id)),true,"arrow",false,app.accent,"InboxOpenPressInvitation")
 				action.disabled = app.waiting or (not receipt and (not conference.get("available", false) or conference.get("invitationId") != invitation.id))
 				if action.disabled: action.tooltip_text = str(conference.get("reason", ""))
 	elif message.get("calendar_notice", {}).get("status") == "pending":
-		var recalibrate := D.button(card,Rect2(26,top,545,62),"Recaler la préparation",
+		var recalibrate := D.button(card,Rect2(26,top,545,38),"Recaler la préparation",
 			_choose_calendar_preparation.bind(app,card,message.id,"recalibrate"),true,"calendar",false,app.accent,"InboxRecalibratePreparation")
-		var keep := D.button(card,Rect2(589,top,549,62),"Conserver la préparation",
+		var keep := D.button(card,Rect2(589,top,549,38),"Conserver la préparation",
 			_choose_calendar_preparation.bind(app,card,message.id,"keep"),false,"check",false,app.accent,"InboxKeepPreparation")
 		recalibrate.disabled = app.waiting
 		keep.disabled = app.waiting
@@ -370,12 +575,12 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 				if not edition.is_empty():
 					var caption: String = app.Immersive.Selections.host_mail_caption(edition)
 					var open: Callable = app.Immersive.Selections.open_host.bind(app, edition)
-					D.button(card,Rect2(26,top,545,62),caption,open,true,"arrow",false,app.accent,"InboxOpenInternational")
+					D.button(card,Rect2(26,top,545,38),caption,_open_related.bind(app, message, open),true,"arrow",false,app.accent,"InboxOpenInternational")
 			elif destination in ["international", "national_job"]:
 				var caption := "Voir les offres de sélection" if destination == "national_job" else "Ouvrir les sélections"
 				if _has_match_sheet(app, event): caption = "Préparer la feuille de match"
 				elif _is_club_return(app, event): caption = "Voir l’effectif"
-				D.button(card,Rect2(26,top,545,62),caption,_open_international.bind(app,event),true,"arrow",false,app.accent,"InboxOpenInternational")
+				D.button(card,Rect2(26,top,545,38),caption,_open_related.bind(app, message, _open_international.bind(app,event)),true,"arrow",false,app.accent,"InboxOpenInternational")
 		else:
 			var caption := "Ouvrir · " + str(message.route)
 			var open := Callable(app, "_navigate").bind(message.route)
@@ -384,18 +589,18 @@ static func _actions(card: Panel, app: Control, state: Dictionary, message: Dict
 				if not current.is_empty():
 					caption = "Voir les échéances actuelles (%d)" % current.count
 					open = _open_expiry_roster.bind(app, current.roster)
-			D.button(card,Rect2(26,top,545,62),caption,open,true,"arrow",false,app.accent,"InboxOpenMessageAction")
-		D.button(card,Rect2(589,top,549,62),"Réouvrir le message" if mark.get("archived",false) else "Marquer comme traité",func():
+			D.button(card,Rect2(26,top,545,38),caption,_open_related.bind(app, message, open),true,"arrow",false,app.accent,"InboxOpenMessageAction")
+		D.button(card,Rect2(589,top,549,38),"Réouvrir le message" if mark.get("archived",false) else "Marquer comme traité",func():
 			mark.archived=not mark.get("archived",false)
 			mark.read=true
 			state.marks[message.id]=mark
 			_redraw(app,"InboxFolder"+str(state.folder)),false,"check",false,app.accent,"InboxToggleArchive")
-	D.button(card,Rect2(26,top+76,300,44),"Retirer des favoris" if mark.get("favorite",false) else "Ajouter aux favoris",func():
+	D.button(card,Rect2(26,top+48,300,34),"Retirer des favoris" if mark.get("favorite",false) else "Ajouter aux favoris",func():
 		mark.favorite=not mark.get("favorite",false)
 		state.marks[message.id]=mark
 		_redraw(app,"InboxToggleFavorite"),false,"star",true,app.accent,"InboxToggleFavorite")
 	if not mark.get("archived",false):
-		D.button(card,Rect2(342,top+76,300,44),"Marquer non lu" if mark.get("read",false) else "Marquer lu",func():
+		D.button(card,Rect2(342,top+48,300,34),"Marquer non lu" if mark.get("read",false) else "Marquer lu",func():
 			mark.read=not mark.get("read",false)
 			state.marks[message.id]=mark
 			_redraw(app,"InboxToggleRead"),false,"mail",true,app.accent,"InboxToggleRead")
@@ -462,8 +667,8 @@ static func _icon(parent: Control, id: String, rectangle: Rect2, color: Color) -
 
 static func _metric(parent: Control, rectangle: Rect2, icon: String, value: String, color: Color) -> void:
 	var tile := D.rect(parent,rectangle,Color(color,.10),6,Color(color,.6))
-	_icon(tile,icon,Rect2(21,14,32,32),color)
-	D.text(tile,75,41,value,32,C.IVORY,700,rectangle.size.x-94)
+	_icon(tile,icon,Rect2(15,11,22,22),color)
+	D.text(tile,47,29,value,20,C.IVORY,700,rectangle.size.x-94)
 
 static func _redraw(app: Control, focus: String) -> void:
 	var state := _state(app)
