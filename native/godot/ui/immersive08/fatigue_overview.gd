@@ -8,6 +8,7 @@ const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const FILTERS := ["À ménager", "Blessés", "Suspendus", "En sélection", "Tout l’effectif"]
 const PLANS := {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
+const SORT_KEYS := ["name", "pos", "condition", "physicalLoad", "minutes", "injury", "selection", "suspension", "loadPlan"]
 
 static func identifier(id: String) -> String:
 	return id.replace(":", "_")
@@ -15,7 +16,7 @@ static func identifier(id: String) -> String:
 static func date_label(value: String) -> String:
 	return value.substr(8, 2) + "/" + value.substr(5, 2) + "/" + value.substr(0, 4) if value.length() == 10 else "non renseigné"
 
-static func overview(model: Dictionary, filter: String = "Tout l’effectif") -> Dictionary:
+static func overview(model: Dictionary, filter: String = "Tout l’effectif", sort_key: String = "priority", descending: bool = false) -> Dictionary:
 	var called := {}
 	for release: Dictionary in model.get("international", {}).get("availability", {}).get("players", []):
 		called[str(release.id)] = release
@@ -24,7 +25,7 @@ static func overview(model: Dictionary, filter: String = "Tout l’effectif") ->
 	for player: Dictionary in model.get("squad", []):
 		var reason := U.watch_reason(player)
 		var injury := float(player.get("injury", 0)) > 0
-		var suspension_known := player.has("suspension") and (player.suspension is float or player.suspension is int)
+		var suspension_known: bool = numeric(player, "suspension") != null
 		var suspension := suspension_known and float(player.suspension) > 0
 		var international := called.has(str(player.id))
 		var reasons := PackedStringArray()
@@ -40,20 +41,79 @@ static func overview(model: Dictionary, filter: String = "Tout l’effectif") ->
 		if international: counts.called += 1
 		if not suspension_known: counts.suspension_unknown += 1
 		var row := {"player":player, "watch_reason":reason, "injured":injury, "suspended":suspension,
+			"injury_known":numeric(player, "injury") != null,
 			"suspension_known":suspension_known, "called":international, "reasons":reasons,
+			"selection_known":model.get("international", {}).get("availability", {}).get("players") is Array,
 			"rank":0 if injury else 1 if suspension else 2 if international else 3 if not reason.is_empty() else 4}
 		if filter == "À ménager" and reason.is_empty(): continue
 		if filter == "Blessés" and not injury: continue
 		if filter == "Suspendus" and not suspension: continue
 		if filter == "En sélection" and not international: continue
 		rows.append(row)
-	rows.sort_custom(func(a: Dictionary, b: Dictionary):
+	if sort_key in SORT_KEYS:
+		rows.sort_custom(func(a: Dictionary, b: Dictionary): return less(a, b, sort_key, descending))
+	else: rows.sort_custom(func(a: Dictionary, b: Dictionary):
 		if a.rank != b.rank: return a.rank < b.rank
 		var left := float(a.player.get("physicalLoad", 0))
 		var right := float(b.player.get("physicalLoad", 0))
 		if left != right: return left > right
 		return str(a.player.id) < str(b.player.id))
 	return {"rows":rows, "counts":counts, "total":model.get("squad", []).size()}
+
+static func numeric(player: Dictionary, key: String) -> Variant:
+	var value: Variant = player.get(key)
+	return value if (value is int or value is float) and is_finite(float(value)) else null
+
+static func sort_value(row: Dictionary, key: String) -> Variant:
+	var player: Dictionary = row.player
+	if key in ["condition", "physicalLoad", "minutes"]: return numeric(player, key)
+	if key == "injury":
+		var value: Variant = numeric(player, key)
+		return null if value == null else U.fold("%s sem." % G.n(value) if float(value) > 0 else "Aucune projetée")
+	if key == "selection":
+		return U.fold("En sélection" if row.called else "Au club") if row.get("selection_known", false) else null
+	if key == "suspension":
+		return U.fold(G.n(player.suspension) if row.suspended else "Aucune projetée") if row.suspension_known else null
+	if key == "loadPlan": return U.fold(PLANS[player.loadPlan]) if PLANS.has(player.get("loadPlan")) else null
+	var value: Variant = player.get(key)
+	return U.fold(value) if value is String and not value.strip_edges().is_empty() else null
+
+static func less(a: Dictionary, b: Dictionary, key: String, descending: bool) -> bool:
+	var left: Variant = sort_value(a, key)
+	var right: Variant = sort_value(b, key)
+	if left == null and right != null: return false
+	if right == null and left != null: return true
+	if left == right: return str(a.player.id) < str(b.player.id)
+	return left > right if descending else left < right
+
+static func sorted_players(source: Array, key: String, descending: bool) -> Array:
+	if key not in SORT_KEYS: return source.duplicate()
+	return overview({"squad":source}, FILTERS[4], key, descending).rows.map(func(row: Dictionary): return row.player)
+
+static func compact_button(button: Button, font_size: int) -> void:
+	button.add_theme_font_size_override("font_size", C.px(font_size))
+	for style_name in ["normal", "hover", "pressed", "disabled", "focus"]:
+		var compact_style := button.get_theme_stylebox(style_name).duplicate() as StyleBox
+		compact_style.content_margin_top = 0
+		compact_style.content_margin_bottom = 0
+		button.add_theme_stylebox_override(style_name, compact_style)
+
+static func sort_header(app: Control, parent: Control, rectangle: Rect2, caption: String, key: String, state: Dictionary, prefix: String, id: String) -> Button:
+	var active: bool = state.get(prefix + "_sort", "") == key
+	var descending: bool = state.get(prefix + "_descending", false)
+	var arrow := " ↓" if active and descending else " ↑" if active else " ↕"
+	var button := D.button(parent, rectangle, caption + arrow, func():
+		state[prefix + "_descending"] = not descending if active else false
+		state[prefix + "_sort"] = key
+		app._render()
+		ClubUI.focus(app, id), false, "", false, app.accent, id)
+	compact_button(button, 16)
+	button.add_theme_color_override("font_color", C.GOLD if active else C.MUTED)
+	button.set_meta("sort_key", key)
+	button.set_meta("descending", active and descending)
+	button.accessibility_name = "Trier par " + caption.to_lower() + " · prochain tri " + ("décroissant" if active and not descending else "croissant")
+	button.tooltip_text = button.accessibility_name + " · valeurs non renseignées toujours en fin de liste"
+	return button
 
 static func load_blocker(app: Control) -> String:
 	var meta: Dictionary = app.model.get("meta", {})
@@ -65,7 +125,9 @@ static func load_blocker(app: Control) -> String:
 static func build(app: Control, parent: Control, state: Dictionary) -> void:
 	var selected := str(state.get("fatigue_filter", FILTERS[4]))
 	if selected not in FILTERS: selected = FILTERS[4]
-	var data := overview(app.model, selected)
+	var key := str(state.get("fatigue_sort", "priority"))
+	var descending: bool = state.get("fatigue_descending", false)
+	var data := overview(app.model, selected, key, descending)
 	var stats: Dictionary = data.counts
 	var captions := ["À ménager", "Blessés", "Suspendus connus", "En sélection"]
 	var values := [stats.watched, stats.injured, stats.suspended, stats.called]
@@ -88,11 +150,11 @@ static func build(app: Control, parent: Control, state: Dictionary) -> void:
 	var display_rows: Array = data.rows
 	var note := "Blessure, suspension et sélection restent distinctes. Repères de simulation, pas un diagnostic médical."
 	if display_rows.is_empty():
-		display_rows = overview(app.model, FILTERS[4]).rows
+		display_rows = overview(app.model, FILTERS[4], key, descending).rows
 		note = "Aucun profil « %s » : effectif complet ci-dessous pour comparer les plans et préparer la rotation." % selected
 	D.text(panel, 18, 87, note, 17, C.MUTED, 500, 2180).name = "FatigueEmpty" if data.rows.is_empty() else "FatigueReadingGuide"
-	for column in [["JOUEUR", 47, 310], ["POSTE", 380, 205], ["CONDITION", 602, 145], ["CHARGE", 763, 150], ["MIN.", 925, 95], ["BLESSURE", 1043, 170], ["SÉLECTION", 1223, 200], ["SUSPENSION", 1443, 170], ["PLAN", 1628, 265]]:
-		D.text(panel, column[1], 120, column[0], 16, C.MUTED, 700, column[2])
+	for column in [["JOUEUR", 32, 325, "name"], ["POSTE", 365, 210, "pos"], ["CONDITION", 587, 150, "condition"], ["CHARGE", 748, 155, "physicalLoad"], ["MIN.", 910, 105, "minutes"], ["BLESSURE", 1028, 175, "injury"], ["SÉLECTION", 1208, 210, "selection"], ["SUSPENSION", 1428, 175, "suspension"], ["PLAN", 1613, 275, "loadPlan"]]:
+		sort_header(app, panel, Rect2(column[1], 95, column[2], 30), column[0], column[3], state, "fatigue", "FatigueSort_" + str(column[3]))
 	var scroll := ScrollContainer.new()
 	scroll.name = "FatigueScroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -151,8 +213,8 @@ static func _row(app: Control, list: VBoxContainer, row: Dictionary) -> void:
 	if player.has("physicalLoad"): D.bar(item, Rect2(816, 12, 76, 5), float(player.physicalLoad), C.GOLD)
 	D.text(item, 910, 22, _number(player, "minutes", ""), 18, C.IVORY, 500, 100)
 	if row.injured: _status_icon(item, "heart", 1028, C.ALERT)
-	D.text(item, 1050, 22, "%s sem." % G.n(player.get("injury", 0)) if row.injured else "Aucune projetée", 18, C.ALERT if row.injured else C.MUTED, 500, 148)
-	var release: String = "En sélection" if row.called else "Non renseigné" if not app.model.get("international", {}).has("availability") else "Au club"
+	D.text(item, 1050, 22, "%s sem." % G.n(player.get("injury", 0)) if row.injured else "Aucune projetée" if row.injury_known else "Non renseignée", 18, C.ALERT if row.injured else C.MUTED, 500, 148)
+	var release: String = "En sélection" if row.called else "Non renseigné" if not row.selection_known else "Au club"
 	if row.called: _status_icon(item, "flag", 1208, C.BLUE)
 	D.text(item, 1230, 22, release, 18, C.BLUE if row.called else C.MUTED, 500, 178)
 	if row.suspended: _status_icon(item, "warning", 1428, C.ALERT)
@@ -161,12 +223,7 @@ static func _row(app: Control, list: VBoxContainer, row: Dictionary) -> void:
 	var button := D.button(item, Rect2(1910, 0, 260, 28), "Régler", func(): open_adjustment(app, player), false, "", false, app.accent, "FatigueAdjust_" + identifier(str(player.id)))
 	button.set_meta("player_id", player.id)
 	button.accessibility_name = "Ajuster la charge de " + str(player.name)
-	button.add_theme_font_size_override("font_size", C.px(18))
-	for style_name in ["normal", "hover", "pressed", "disabled", "focus"]:
-		var compact_style := button.get_theme_stylebox(style_name).duplicate() as StyleBox
-		compact_style.content_margin_top = 0
-		compact_style.content_margin_bottom = 0
-		button.add_theme_stylebox_override(style_name, compact_style)
+	compact_button(button, 18)
 	button.tooltip_text = load_blocker(app) if not load_blocker(app).is_empty() else item.tooltip_text + " · Choisir puis confirmer le plan"
 
 static func _status_icon(parent: Control, kind: String, left: float, tone: Color) -> void:
