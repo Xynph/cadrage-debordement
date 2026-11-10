@@ -125,3 +125,38 @@ reçue par les tests ciblés du pilote (quatre tests réussis). La campagne long
 ci-dessus précède cette protection ; elle ne valide pas le cumul avec ce
 nouveau stockage. La réception d'intégration doit donc conserver cette
 distinction et vérifier le chemin `remove_checkpoint` avec le moteur protégé.
+
+## Réception distincte du cumul protégé
+
+Une nouvelle exécution du pilote, via `OVAL_QA_SOURCE_ROOT`, a reçu une saison
+sur le checkout propre `4a278beaef5773dfdb4df097c695b850961606d9` : **242
+contrôles et trois exports/imports/redémarrages**, terminés sans échec en
+**114,929 secondes** pour la campagne (115,073 secondes pour l'exécution).
+Cette source comprend les copies de sécurité et les raccords du cumul ; elle
+est distincte de la campagne longue ci-dessus.
+
+Les empreintes d'état reçues à l'ouverture, mi-saison et clôture restent
+identiques à celles de la campagne initiale, dont la saison clôturée compte
+433 résultats. La réception ne change ni l'état sportif ni le RNG malgré les
+copies de protection créées par les trois imports. Le quota de huit copies
+n'est pas atteint dans ce parcours d'une saison.
+
+Preuves du cumul : [rapport HTML](qa-long-career-20261110/cumul-4a278be/index.html)
+et [rapport JSON](qa-long-career-20261110/cumul-4a278be/report.json). Le JSON
+identifie aussi l'empreinte du pilote et celle du moteur reçu :
+`bea6eb777f8ba00913b4fe5751b32b93c5b31da51f670dff08b5b663918ae38c`.
+
+Le [test d'intégration du quota](qa-long-career-20261110/cumul-4a278be/quota.log)
+a ensuite passé sur un **autre profil QA neuf**, en 31,015 secondes : neuf
+états distincts produits par des notes de carnet natives, neuf imports,
+une suppression confirmée via `remove_checkpoint` au neuvième import et
+huit copies conservées. L'état sportif et la note importés restent strictement
+identiques après chaque import. Ce test ne supprime aucune copie d'un profil
+personnel et ne désactive aucune protection. Il est rejouable ainsi :
+
+```sh
+OVAL_QA_SOURCE_ROOT=/chemin/du/checkout node --test tests/qa-long-career-protected.cjs
+```
+
+Sans moteur contenant `profile-safety.cjs`, ce test est explicitement ignoré ;
+les quatre tests courts du pilote restent exécutés indépendamment.
