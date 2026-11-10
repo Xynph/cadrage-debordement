@@ -125,20 +125,36 @@ function internationalCampaign(campaign, options) {
  const career = createInternationalCareer(competitions, callups, facts);
  let state = career.initial('2026-08-17', options.seed);
  const mailIds = new Set(), kinds = {}, resultIds = new Set();
- const advance = to => {
-  const before = state.date;
-  const result = career.advance(state, {from:state.date, to, players, managedNation:null, clubPlayerIds:own});
-  state = result.state;
-  campaign.check(state.date >= before && state.date === to, 'Date internationale monotone');
-  for (const item of result.mail) {
+ const receiveMail = items => {
+  for (const item of items) {
    campaign.check(!mailIds.has(item.id), 'Courrier international unique', 'Courrier répété : ' + item.id);
    mailIds.add(item.id); kinds[item.kind] = (kinds[item.kind] || 0) + 1;
+  }
+ };
+ const advanceOnce = to => {
+  const before = state.date;
+  const result = career.advance(state, {from:state.date, to, players, managedNation:'FRA', clubPlayerIds:own});
+  state = result.state;
+  campaign.check(state.date >= before && state.date === to, 'Date internationale monotone');
+  receiveMail(result.mail);
+ };
+ const advance = to => {
+  let guard = 0;
+  while (true) {
+   campaign.check(++guard < 100, 'Borne des matchs internationaux à recevoir');
+   try { advanceOnce(to); break; }
+   catch (error) {
+    if (error.code !== 'INTERNATIONAL_MATCH_PENDING') throw error;
+    advanceOnce(error.date);
+    const played = career.play(state, {date:error.date, fixtureId:error.fixtureId, managedNation:'FRA', players});
+    state = played.state; receiveMail(played.mail);
+   }
   }
   campaign.check(career.validate(state), 'Historique international validé par le moteur');
   campaign.check(unique(state.callups.map(camp => [camp.competitionId, camp.nation, camp.from].join('/'))), 'Convocations uniques');
   campaign.check(state.callups.every(camp => unique(camp.playerIds)), 'Joueurs uniques par convocation');
   campaign.check(unique(state.appearances.map(row => [row.fixtureId, row.nation].join('/'))), 'Participations internationales uniques');
-  const sameDay = career.advance(state, {from:state.date, to:state.date, players, clubPlayerIds:own});
+  const sameDay = career.advance(state, {from:state.date, to:state.date, players, managedNation:'FRA', clubPlayerIds:own});
   campaign.check(sameDay.mail.length === 0 && digest(sameDay.state) === digest(state), 'Même date sans nouveau courrier ni mutation');
  };
  campaign.checkpoint('Ouverture · 2026', state, {date:state.date, players:players.length, results:0, mail:0});
@@ -156,12 +172,12 @@ function internationalCampaign(campaign, options) {
   campaign.checkpoint('Fin ' + year, state, {date:state.date, players:players.length, results:resultIds.size, mail:mailIds.size});
  }
  campaign.check((kinds.international_host || 0) > 0, 'Des annonces de prochains hôtes ont été produites');
- campaign.check((kinds.international_callup || 0) > 0, 'Des convocations du club ont été produites');
+ campaign.check((kinds.international_callup || 0) > 0, 'Des convocations de la sélection gérée ont été produites');
  if (options.throughYear >= 2031) {
   const cup = career.project(state, {players}).competitions.find(edition => edition.id === 'rugby-world-cup-2031');
   campaign.check(cup?.outcome.complete, 'Mondial 2031 terminé');
  }
- campaign.note = `Module international de production, registre mondial de ${players.length} joueurs, années 2026–${options.throughYear}. ${resultIds.size} résultats observés, ${mailIds.size} courriers. Reprise JSON du module uniquement ; ce scénario ne simule pas une carrière complète de club ni des clics UI.`;
+ campaign.note = `Module international de production, France gérée avec composition automatique native, registre mondial de ${players.length} joueurs, années 2026–${options.throughYear}. ${resultIds.size} résultats observés, ${mailIds.size} courriers. Reprise JSON du module uniquement ; ce scénario ne simule pas une carrière complète de club ni des clics UI.`;
  campaign.mailKinds = kinds;
 }
 
