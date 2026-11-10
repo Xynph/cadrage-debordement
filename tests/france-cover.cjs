@@ -16,9 +16,13 @@ const checksum=s=>{
 
 try{
  let m=good('new_career',{club:29,mode:'france'});
- const doc=JSON.parse(good('export').meta.exportText),injured=doc.state.reserves.slice(0,3);
- for(const p of doc.state.clubs[29].players)if(injured.includes(p.id))p.injury=2;
- const recovering=doc.state.clubs[29].players.find(p=>p.id===injured[0]);
+ const doc=JSON.parse(good('export').meta.exportText);
+ const players=doc.state.clubs[29].players, starters=doc.state.lineup.slice(0,3);
+ const recovering=players.find(p=>p.id===doc.state.reserves[0]);
+ const frontRow=new Set(players.filter(p=>starters.includes(p.id)).map(p=>p.pos));
+ assert.equal(frontRow.size,3);
+ // Leave one healthy starter per specialist position, including the expanded depth.
+ for(const p of players)if(frontRow.has(p.pos)&&!starters.includes(p.id))p.injury=2;
  recovering.injury=1;
  doc.checksum=checksum(doc.state);
  good('import',{text:JSON.stringify(doc)});
@@ -57,31 +61,42 @@ try{
  assert.equal(m.lineup.filter(Boolean).length,15,'XV complet malgré blessures des doublures');
  assert.equal(m.reserves.filter(Boolean).length,5,'trois remplaçants de première ligne absents');
  assert.equal(m.selection.valid,false);
+ const blocked=good('snapshot').selection.coverage;
+ assert.deepEqual(blocked?.slots,[16,17,18]);
+ assert.equal(blocked.places,2,'le plancher de 40 laisse deux places sous le plafond de 42');
+ const blockedFiles=['donnees.json','donnees-precedentes.json'].map(name=>path.join(m.meta.dataDir,name));
+ const blockedPrior=blockedFiles.map(file=>fs.readFileSync(file,'utf8'));
+ assert.equal(call('promote_cover',{confirmed:true,expectedSlots:blocked.slots}).ok,false);
+ assert.deepEqual(blockedFiles.map(file=>fs.readFileSync(file,'utf8')),blockedPrior,'aucune promotion partielle au plafond');
+ recovering.injury=0;
+ doc.checksum=checksum(doc.state);
+ good('import',{text:JSON.stringify(doc)});
+ m=good('auto_lineup');
  const before=m.squad.length,wage=m.finance.wage;
  const stored=['donnees.json','donnees-precedentes.json'].map(name=>path.join(m.meta.dataDir,name));
  const prior=stored.map(file=>fs.readFileSync(file,'utf8'));
  const quote=good('snapshot').selection.coverage;
- assert.deepEqual(quote?.slots,[16,17,18],'le devis indique les places après sélection');
+ assert.deepEqual(quote?.slots,[17,18],'le devis indique les places après sélection');
  assert.equal(quote.reviewAfterTraining,undefined,'aucun retour possible après une seule séance');
  assert.equal(quote.weeklySalary,2500);
- assert.equal(quote.totalWeeklySalary,7500);
- assert.ok(quote.places>=3);
+ assert.equal(quote.totalWeeklySalary,5000);
+ assert.equal(quote.places,2);
  assert.equal(call('promote_cover').ok,false);
- const stale=call('promote_cover',{confirmed:true,expectedSlots:[16,17,19]});
+ const stale=call('promote_cover',{confirmed:true,expectedSlots:[17,19]});
  assert.equal(stale.ok,false);
  assert.match(stale.error,/feuille a changé/);
  assert.deepEqual(stored.map(file=>fs.readFileSync(file,'utf8')),prior,'devis et refus sans écriture');
  m=good('promote_cover',{confirmed:true,expectedSlots:quote.slots});
  assert.equal(m.selection.valid,true);
  assert.equal(m.reserves.filter(Boolean).length,8);
- assert.equal(m.squad.length,before+3);
- assert.equal(m.finance.wage,wage+7500);
+ assert.equal(m.squad.length,before+2);
+ assert.equal(m.finance.wage,wage+5000);
  assert.equal(m.meta.coverage.totalWeeklySalary,quote.totalWeeklySalary);
- assert.ok(m.reserves.slice(0,3).every(id=>m.squad.find(p=>p.id===id).salary===2500));
+ assert.ok(m.reserves.slice(1,3).every(id=>m.squad.find(p=>p.id===id).salary===2500));
  assert.deepEqual(m.reserves.slice(0,3).map(id=>m.squad.find(p=>p.id===id).pos),['Talonneur','Pilier gauche','Pilier droit']);
  assert.equal(call('promote_cover',{confirmed:true}).ok,false,'pas de promotion superflue');
  m=good('begin_match');
  assert.equal(m.selection.coverage,undefined);
  assert.equal(call('promote_cover',{confirmed:true}).ok,false,'pas de modification effectif pendant match');
- console.log('Couverture native : devis 3 places/7 500 €, validation exacte, lecture et refus sans écriture PASS');
+ console.log('Couverture native : refus de 3 places au plafond, devis 2 places/5 000 €, lecture et refus sans écriture PASS');
 }finally{b.close();}
