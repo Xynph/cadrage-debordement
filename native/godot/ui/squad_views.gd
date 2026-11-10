@@ -495,7 +495,7 @@ static func _profile_attributes(parent: VBoxContainer, player: Dictionary, detai
 		_profile_fact(parent, "ProfileDetailedFallbackRating", "Note globale", G.n(player.get("rating", "—")))
 		parent.add_child(G.wrap("Les attributs détaillés sont indisponibles pour ce dossier.",12))
 		return
-	parent.add_child(G.label("36 ATTRIBUTS · " + PlayerAttributes.subtitle(player).to_upper(), 12, G.MUTED))
+	parent.add_child(G.label("36 ATTRIBUTS · " + PlayerAttributes.SUBTITLE.to_upper(), 12, G.MUTED))
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", 8)
