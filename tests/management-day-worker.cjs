@@ -126,33 +126,37 @@ test('la reprise d’une ancienne sauvegarde garde son calendrier et sa date de 
   assert.equal(imported.meta.calendarToday, legacy.next.date);
   assert.deepEqual(imported.calendar, upgraded.calendar);
 });
-test('les cinq éditions Monde chargent les 422 affiches LNR de 2026–27 sans collision', t => {
-  const game = profile(t);
+test('les cinq éditions Monde chargent les 422 affiches LNR de 2026–27 sans collision', async t => {
   for (const mode of ['world', 'world-pacific', 'world-japan', 'world-nationale', 'world-champ']) {
-    const model = game.good('new_career', {mode, club: 26});
-    assert.equal(model.meta.calendarToday, '2026-08-17', mode);
-    const first = model.calendar[0];
-    assert.deepEqual(
-      [first.date, first.kickoffLocal, first.kickoffSource, first.home.id, first.away.id],
-      ['2026-08-27', '19:30', 'published', 26, 22], mode
-    );
-    assert.deepEqual(first.dateWindow, ['2026-08-27', '2026-08-28'], mode);
-    const doc = JSON.parse(game.good('export').meta.exportText);
-    const fixtures = doc.state.worldMode.fixtures;
-    const league = id => fixtures.filter(f => f.competitionId === id);
-    assert.equal(league('elite').length, 182);
-    assert.equal(league('accession').length, 240);
-    assert.equal(league('elite').at(-1).date, '2027-06-06');
-    assert.equal(league('accession').at(-1).date, '2027-05-14');
-    assert.equal(league('elite').filter(f => f.kickoffSource === 'published').length, 77);
-    assert.equal(league('accession').filter(f => f.kickoffSource === 'published').length, 112);
-    const briveGrenoble = league('accession').find(f => f.sourceFixtureId === 12057);
-    assert.equal(briveGrenoble.date, '2026-10-17');
-    assert.deepEqual(briveGrenoble.dateWindow, ['2026-10-17', '2026-10-17']);
-    assert.match(first.sourceRef, /lnr\.fr\/feuille-de-match\//);
-    const occupied = fixtures.flatMap(f => [f.homeId, f.awayId].map(id => f.week + ':' + id));
-    assert.equal(new Set(occupied).size, occupied.length, mode);
-    assert.deepEqual(game.good('import', {text: JSON.stringify(doc)}).calendar, model.calendar);
+    await t.test(mode, t => {
+      // Each edition is an independent import round trip. Keep its durable
+      // checkpoints and profile lifetime independent from the other editions.
+      const game = profile(t);
+      const model = game.good('new_career', {mode, club: 26});
+      assert.equal(model.meta.calendarToday, '2026-08-17', mode);
+      const first = model.calendar[0];
+      assert.deepEqual(
+        [first.date, first.kickoffLocal, first.kickoffSource, first.home.id, first.away.id],
+        ['2026-08-27', '19:30', 'published', 26, 22], mode
+      );
+      assert.deepEqual(first.dateWindow, ['2026-08-27', '2026-08-28'], mode);
+      const doc = JSON.parse(game.good('export').meta.exportText);
+      const fixtures = doc.state.worldMode.fixtures;
+      const league = id => fixtures.filter(f => f.competitionId === id);
+      assert.equal(league('elite').length, 182);
+      assert.equal(league('accession').length, 240);
+      assert.equal(league('elite').at(-1).date, '2027-06-06');
+      assert.equal(league('accession').at(-1).date, '2027-05-14');
+      assert.equal(league('elite').filter(f => f.kickoffSource === 'published').length, 77);
+      assert.equal(league('accession').filter(f => f.kickoffSource === 'published').length, 112);
+      const briveGrenoble = league('accession').find(f => f.sourceFixtureId === 12057);
+      assert.equal(briveGrenoble.date, '2026-10-17');
+      assert.deepEqual(briveGrenoble.dateWindow, ['2026-10-17', '2026-10-17']);
+      assert.match(first.sourceRef, /lnr\.fr\/feuille-de-match\//);
+      const occupied = fixtures.flatMap(f => [f.homeId, f.awayId].map(id => f.week + ':' + id));
+      assert.equal(new Set(occupied).size, occupied.length, mode);
+      assert.deepEqual(game.good('import', {text: JSON.stringify(doc)}).calendar, model.calendar);
+    });
   }
 });
 
