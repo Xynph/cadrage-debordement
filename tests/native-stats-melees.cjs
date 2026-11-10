@@ -6,6 +6,7 @@ const { context } = require('./france-harness.cjs');
 const nativeModel = require('../native/engine/model.cjs');
 
 function statsRows(match) {
+  match.prepareNativeProjection();
   return JSON.parse(match.run(`JSON.stringify((${nativeModel.toString()})().live.statsRows)`));
 }
 
