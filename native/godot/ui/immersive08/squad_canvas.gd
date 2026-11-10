@@ -4,7 +4,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const G = preload("res://ui/game_skin.gd")
 const U = preload("res://ui/management_state.gd")
-const ROW_HEIGHT := 33
+const ROW_HEIGHT := 34
 const GROUP_HEIGHT := 29
 const Training = preload("res://ui/immersive08/training_canvas.gd")
 var app: Control
@@ -12,12 +12,9 @@ var state: Dictionary
 var rows: VBoxContainer
 var dossier: Control
 var count: Label
-var page_info: Label
-var previous: Button
-var next: Button
 var compare: Button
 var selected_summary: Label
-var capacity := 24
+var sort_headers: Dictionary = {}
 
 static func build(owner_app: Control) -> Control:
 	var page: Control = load("res://ui/immersive08/squad_canvas.gd").new()
@@ -30,7 +27,6 @@ func _build() -> void:
 	custom_minimum_size = Vector2(2248,1128)*C.density
 	C.fill(self,true)
 	state = app.management_ui.roster
-	if not state.has("page"): state.page = 0
 	state.family = app.roster_filter
 	state.sort = app.roster_sort
 	var tabs := ["Vue d’ensemble","Condition","Contrats","Développement"]
@@ -39,7 +35,6 @@ func _build() -> void:
 			state.immersive_tab=i
 			state.sort=["Poste","Condition","Échéance","Potentiel"][i]
 			state.descending=i in [1,3]
-			state.page=0
 			app.roster_sort=state.sort
 			app._render(),int(state.get("immersive_tab",0))==i,"",true,app.accent,"RosterTab"+str(i))
 	D.button(self,Rect2(1258,0,184,42),"Vestiaire",func():app._navigate("Vestiaire"),false,"people",true,app.accent,"RosterOpenLocker")
@@ -73,39 +68,38 @@ func _build() -> void:
 	search_glyph.name = "RosterSearchGlyph"
 	search.add_child(search_glyph)
 	D.place(search_glyph,Rect2(13,10,21,21))
-	search.text_changed.connect(func(value:String):state.search=value;state.page=0;state.scroll=0;_refresh(false))
-	_choice(table,Rect2(389,19,259,34),"RosterPosition",app.SquadViews._positions(app.model.get("squad",[])),str(state.position),"Poste",func(value:String):state.position=value;state.page=0;_refresh(false))
+	search.text_changed.connect(func(value:String):state.search=value;state.scroll=0;_refresh(false))
+	_choice(table,Rect2(389,19,259,34),"RosterPosition",app.SquadViews._positions(app.model.get("squad",[])),str(state.position),"Poste",func(value:String):state.position=value;_refresh(false))
 	_choice(table,Rect2(660,19,218,34),"RosterFamily",["Tous","Avants","Arrières","Blessés","Hors groupe",U.WATCH_FILTER],str(state.family),"Groupe",func(value:String):
 		var redraw: bool = (state.family==U.WATCH_FILTER)!=(value==U.WATCH_FILTER)
-		state.family=value;app.roster_filter=value;state.page=0
+		state.family=value;app.roster_filter=value
 		if redraw:
 			state.focus="RosterFamily"
 			app._render(false)
 		else:
 			_refresh(false))
-	_choice(table,Rect2(890,19,237,34),"RosterContract",["Tous","Fin de saison","Sans contrat"],str(state.contract),"Contrat",func(value:String):state.contract=value;state.page=0;_refresh(false))
+	_choice(table,Rect2(890,19,237,34),"RosterContract",["Tous","Fin de saison","Sans contrat"],str(state.contract),"Contrat",func(value:String):state.contract=value;_refresh(false))
 	var options := D.button(table,Rect2(1140,19,192,34),"Filtres & tri",_advanced,false,"settings",true,app.accent,"RosterMoreFilters")
 	options.add_theme_font_override("font",C.DISPLAY)
 	options.add_theme_font_size_override("font_size",C.px(19))
 	count=D.text(table,1680,43,"",19,C.MUTED,500,334,HORIZONTAL_ALIGNMENT_RIGHT)
 	var header := D.rect(table,Rect2(17,71,1668,39),Color("1a2425"),4)
 	header.name="RosterHeader"
-	var columns := [["N°",9,"",40],["JOUEUR",61,"Nom",288],["POSTE",364,"Poste",196],["ÂGE",573,"Âge",60],["NIV.",648,"Niveau",50],["POT.",713,"Potentiel",58],["CONDITION",785,"Condition",128],["FAT.",923,"",60],["NOTE",994,"",72],["SALAIRE / SEM.",1083,"Salaire",160],["CONTRAT",1256,"Échéance",107],["MIN.",1378,"",95],["STATUT",1485,"",175]]
+	var columns := [["N°",9,"Numéro",40],["JOUEUR",61,"Nom",288],["POSTE",364,"Poste",196],["ÂGE",573,"Âge",60],["NIV.",648,"Niveau",50],["POT.",713,"Potentiel",58],["CONDITION",785,"Condition",128],["FAT.",923,"Fatigue",60],["NOTE",994,"Note",72],["SALAIRE / SEM.",1083,"Salaire",160],["CONTRAT",1256,"Échéance",107],["MIN.",1378,"Minutes",95],["STATUT",1485,"Statut",175]]
 	if state.family==U.WATCH_FILTER:
-		columns = columns.slice(0,8) + [["MOTIF DE SURVEILLANCE",994,"",364]] + columns.slice(11)
+		columns = columns.slice(0,8) + [["MOTIF DE SURVEILLANCE",994,"Motif",364]] + columns.slice(11)
 	for column: Array in columns:
 		var caption := D.text(header,column[1],26,column[0],18,C.MUTED,600,column[3])
 		caption.name={"Salaire":"RosterColumnSalary","Potentiel":"RosterColumnPotential"}.get(column[2],"RosterColumnFatigue" if column[0]=="FAT." else "RosterColumn_"+str(column[0]))
-		if not str(column[2]).is_empty():
-			var sort := Button.new()
-			sort.name="Sort_"+str(column[2])
-			sort.flat=true
-			sort.tooltip_text="Trier par "+str(column[2])
-			header.add_child(sort)
-			D.place(sort,Rect2(column[1]-2,0,column[3],39))
-			sort.pressed.connect(func():
-				state.descending=not state.descending if state.sort==column[2] else column[2] in ["Niveau","Potentiel","Condition"]
-				state.sort=column[2];app.roster_sort=state.sort;state.page=0;_refresh(false))
+		var key := str(column[2])
+		var sort := Button.new()
+		sort.name = "Sort_"+key
+		sort.flat = true
+		sort.focus_mode = Control.FOCUS_ALL
+		header.add_child(sort)
+		D.place(sort,Rect2(column[1]-2,0,column[3],39))
+		sort_headers[key] = {"label":caption,"caption":str(column[0]),"button":sort}
+		sort.pressed.connect(_toggle_sort.bind(key))
 	var scroll := ScrollContainer.new()
 	scroll.name="SquadScroll"
 	scroll.follow_focus=true
@@ -113,29 +107,14 @@ func _build() -> void:
 	scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_AUTO
 	table.add_child(scroll)
 	D.place(scroll,Rect2(18,116,1668,908))
-	# Réserver la place de deux intertitres sur une page pleine.
-	var full_page := capacity*C.px(ROW_HEIGHT)+2*C.px(GROUP_HEIGHT)
-	var gap := floori((scroll.size.y-full_page)/float(capacity+1))
 	rows=C.v(2)
-	rows.add_theme_constant_override("separation",clampi(gap,0,C.px(2)))
+	rows.add_theme_constant_override("separation",C.px(2))
 	rows.name="ImmersiveRosterRows"
 	rows.custom_minimum_size.x=C.px(1668)
 	C.fill(rows)
 	scroll.add_child(rows)
 	selected_summary=D.text(table,27,1056,"",20,C.MUTED,500,850)
-	previous=D.button(table,Rect2(1070,1030,170,30),"← Précédent",func():state.page=maxi(0,int(state.page)-1);_refresh(false),false,"",true,app.accent,"RosterPaginationPrevious")
-	page_info=D.text(table,1366,1054,"",19,C.MUTED,500,190,HORIZONTAL_ALIGNMENT_CENTER)
-	page_info.name="RosterPaginationInfo"
-	next=D.button(table,Rect2(1480,1030,190,30),"Suivant →",func():state.page=int(state.page)+1;_refresh(false),false,"",true,app.accent,"RosterPaginationNext")
-	var pager_height := maxf(25.0,C.px(30))
-	var pager_max_top := table.size.y-pager_height-C.px(2)
-	for button: Button in [previous,next]:
-		for mode in ["hover","pressed","disabled"]:
-			var style := button.get_theme_stylebox(mode)
-			style.content_margin_top=0
-			style.content_margin_bottom=0
-		button.position.y=minf(button.position.y,pager_max_top)
-		button.set_deferred("size",Vector2(button.size.x,pager_height))
+	D.text(table,1680,1056,"Molette dans la liste · Début / Fin · Page ↑ / ↓",17,C.MUTED,400,780,HORIZONTAL_ALIGNMENT_RIGHT).name = "RosterScrollHint"
 	dossier=Control.new()
 	dossier.name="PlayerDossier"
 	add_child(dossier)
@@ -160,31 +139,84 @@ func _choice(parent: Node, rectangle: Rect2, id: String, values: Array, selected
 	D.place(choice,rectangle)
 	return choice
 
-func _players() -> Array:
-	var result := U.players(app.model.get("squad",[]),state,int(app.model.meta.get("season",1)))
-	if state.sort=="Potentiel":result.sort_custom(func(a:Dictionary,b:Dictionary):return float(a.get("potential",0))>float(b.get("potential",0)) if state.descending else float(a.get("potential",0))<float(b.get("potential",0)))
-	if state.sort=="Poste":result.sort_custom(func(a:Dictionary,b:Dictionary):
-		if a.get("fam",0)==b.get("fam",0):return str(a.id)<str(b.id)
-		return float(a.get("fam",0))>float(b.get("fam",0)) if state.descending else float(a.get("fam",0))<float(b.get("fam",0)))
+static func _known_number(value: Variant) -> bool:
+	return (value is int or value is float) and is_finite(float(value))
+
+static func sort_value(player: Dictionary, key: String) -> Variant:
+	if key == "Statut":
+		if _known_number(player.get("injury")) and float(player.injury) > 0: return U.fold("Blessé")
+		var status: Variant = player.get("status")
+		return U.fold(status.strip_edges()) if status is String and not status.strip_edges().is_empty() and status != "—" else null
+	if key == "Motif":
+		var source := player.duplicate()
+		if not _known_number(source.get("condition")): source.condition = 100
+		if not _known_number(source.get("physicalLoad")): source.physicalLoad = 0
+		var reason := U.watch_reason(source)
+		return U.fold(reason) if not reason.is_empty() else null
+	var field: String = {"Numéro":"shirtNumber","Poste":"pos","Nom":"name","Niveau":"rating","Potentiel":"potential","Condition":"condition","Âge":"age","Salaire":"salary","Échéance":"contractEnd","Fatigue":"physicalLoad","Note":"note","Minutes":"minutes"}.get(key,"pos")
+	var value: Variant = player.get(field)
+	if key in ["Nom","Poste"]:
+		if not value is String or value.strip_edges().is_empty() or value.strip_edges() in ["—","-"]: return null
+		var text := U.fold(value.strip_edges())
+		# Le tri de poste conserve les familles rugby du tableau, puis le poste.
+		if key == "Poste" and _known_number(player.get("fam")): return "%03d/" % int(player.fam) + text
+		return text
+	return value if _known_number(value) else null
+
+static func ordered_players(source: Array, reading: Dictionary, season: int) -> Array:
+	# Réutiliser les filtres sans subir un premier tri numérique sur un inconnu.
+	var filtering := reading.duplicate()
+	filtering.sort = "Nom"
+	filtering.descending = false
+	var result := U.players(source,filtering,season)
+	var key := str(reading.get("sort","Poste"))
+	var descending: bool = reading.get("descending",false)
+	result.sort_custom(func(a: Dictionary,b: Dictionary):
+		var left: Variant = sort_value(a,key)
+		var right: Variant = sort_value(b,key)
+		if left == null and right == null: return str(a.get("id","")) < str(b.get("id",""))
+		if left == null: return false
+		if right == null: return true
+		if left == right: return str(a.get("id","")) < str(b.get("id",""))
+		return left > right if descending else left < right)
 	return result
 
+func _players() -> Array:
+	return ordered_players(app.model.get("squad",[]),state,int(app.model.meta.get("season",1)))
+
+func _toggle_sort(key: String) -> void:
+	state.descending = not state.descending if state.sort == key else key in ["Niveau","Potentiel","Condition","Fatigue","Note","Minutes"]
+	state.sort = key
+	app.roster_sort = key
+	state.scroll = 0
+	state.focus = "Sort_"+key
+	var scroll := find_child("SquadScroll",true,false) as ScrollContainer
+	if scroll != null: scroll.scroll_vertical = 0
+	_refresh(false)
+	var button := find_child("Sort_"+key,true,false) as Button
+	if button != null: button.grab_focus()
+
+func _sort_header_state() -> void:
+	for key: String in sort_headers:
+		var header: Dictionary = sort_headers[key]
+		var active: bool = state.sort == key
+		var direction := "décroissant" if state.descending else "croissant"
+		header.label.text = header.caption + (" ↓" if state.descending else " ↑") if active else header.caption
+		header.label.add_theme_color_override("font_color",C.GOLD if active else C.MUTED)
+		var detail := "par famille puis poste" if key == "Poste" else "par "+key
+		header.button.tooltip_text = "Tri "+direction+" "+detail+" · cliquer pour inverser" if active else "Trier "+detail+" · valeurs inconnues en dernier"
+		header.button.accessibility_name = str(header.caption)+" · "+("tri "+direction if active else "trier")
+
 func _refresh(reveal: bool) -> void:
+	_sort_header_state()
 	for child in rows.get_children():rows.remove_child(child);child.queue_free()
 	var players := _players()
 	if app.selected_player.is_empty() and not players.is_empty():app.selected_player=str(players[0].id)
-	if reveal and str(state.get("visible_player",""))!=app.selected_player:
-		for i in players.size():
-			if str(players[i].id)==app.selected_player:state.page=i/capacity;break
 	state.visible_player=app.selected_player
-	var pages:=maxi(1,ceili(float(players.size())/capacity))
-	state.page=clampi(int(state.page),0,pages-1)
-	previous.disabled=int(state.page)==0
-	next.disabled=int(state.page)>=pages-1
-	page_info.text="Page %d / %d" % [int(state.page)+1,pages]
-	count.text="%d / %d joueurs affichés" % [mini(capacity,maxi(0,players.size()-int(state.page)*capacity)),players.size()]
+	count.text="%d / %d joueurs · liste complète" % [players.size(),app.model.get("squad",[]).size()]
 	compare.text="Comparer (%d/2)" % app.management_ui.compare.size()
 	var family := ""
-	var visible := players.slice(int(state.page)*capacity,(int(state.page)+1)*capacity)
+	var visible := players
 	for i in visible.size():
 		var player:Dictionary=visible[i]
 		var group := "AVANTS" if float(player.get("fam",0))<=3 else "ARRIÈRES"
@@ -201,6 +233,12 @@ func _refresh(reveal: bool) -> void:
 	if visible.is_empty():
 		var empty:=C.wrap("Aucun joueur ne correspond. Modifiez les filtres ou réinitialisez la recherche.",22)
 		rows.add_child(empty)
+	if reveal:
+		var scroll := find_child("SquadScroll",true,false) as ScrollContainer
+		for row: Control in rows.get_children():
+			if row.get_meta("player_id","") == app.selected_player and scroll != null:
+				scroll.ensure_control_visible.call_deferred(row)
+				break
 	_profile()
 	selected_summary.text="1 joueur sélectionné · "+str(P.player(app.model,app.selected_player).get("name","—"))
 
@@ -215,6 +253,7 @@ func _row(player:Dictionary,index:int) -> void:
 	row.add_theme_stylebox_override("hover",C.box(Color("244638"),C.MINT,3,0))
 	row.add_theme_stylebox_override("focus",C.box(Color.TRANSPARENT,C.GOLD,3,0))
 	rows.add_child(row)
+	row.gui_input.connect(_row_key.bind(row))
 	D.text(row,14,24,G.n(player.get("shirtNumber","—")) if player.get("shirtNumber")!=null else "—",21,C.MUTED,600,38)
 	var portrait:Control=G.portrait(int(player.get("portraitIndex",0)),C.px(31),player) if not str(player.get("id","")).is_empty() else C.photo("player-%02d" % posmod(int(player.get("portraitIndex",index)),16))
 	portrait.mouse_filter=Control.MOUSE_FILTER_IGNORE
@@ -255,6 +294,20 @@ func _row(player:Dictionary,index:int) -> void:
 		_profile()
 		selected_summary.text="1 joueur sélectionné · "+str(player.name)
 		app._observe_navigation())
+
+func _row_key(event: InputEvent, current: Button) -> void:
+	if not event is InputEventKey or not event.pressed or event.echo or event.ctrl_pressed or event.alt_pressed: return
+	if event.keycode not in [KEY_HOME,KEY_END,KEY_PAGEUP,KEY_PAGEDOWN]: return
+	var items := rows.get_children().filter(func(node: Node): return node is Button and node.has_meta("player_id"))
+	if items.is_empty(): return
+	var index := items.find(current)
+	var scroll := find_child("SquadScroll",true,false) as ScrollContainer
+	var stride := maxi(1,floori(scroll.size.y / float(C.px(ROW_HEIGHT)+C.px(2)))-1)
+	var target := 0 if event.keycode == KEY_HOME else items.size()-1 if event.keycode == KEY_END else clampi(index+(-stride if event.keycode == KEY_PAGEUP else stride),0,items.size()-1)
+	get_viewport().set_input_as_handled()
+	items[target].grab_focus()
+	scroll.ensure_control_visible(items[target])
+	state.scroll = scroll.scroll_vertical
 
 func _profile() -> void:
 	for child in dossier.get_children():dossier.remove_child(child);child.queue_free()
@@ -325,8 +378,8 @@ func _advanced() -> void:
 	dialog.title="Filtres et tri de l’effectif"
 	var fields:=C.v(12)
 	dialog.add_child(fields)
-	_choice(fields,Rect2(0,0,500,40),"RosterAvailability",["Tous","Disponibles","Blessés"],str(state.available),"Disponibilité",func(value:String):state.available=value;state.page=0;_refresh(false))
-	_choice(fields,Rect2(0,55,500,40),"RosterSort",["Poste","Nom","Niveau","Potentiel","Condition","Âge","Salaire","Échéance"],str(state.sort),"Trier par",func(value:String):state.sort=value;app.roster_sort=value;state.page=0;_refresh(false))
+	_choice(fields,Rect2(0,0,500,40),"RosterAvailability",["Tous","Disponibles","Blessés"],str(state.available),"Disponibilité",func(value:String):state.available=value;_refresh(false))
+	_choice(fields,Rect2(0,55,500,40),"RosterSort",["Numéro","Poste","Nom","Niveau","Potentiel","Condition","Fatigue","Note","Minutes","Statut","Âge","Salaire","Échéance","Motif"],str(state.sort),"Trier par",func(value:String):state.sort=value;app.roster_sort=value;_refresh(false))
 	var direction:=C.button("Changer le sens du tri",func():state.descending=not state.descending;_refresh(false))
 	direction.name="RosterDirection"
 	fields.add_child(direction)
