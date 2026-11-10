@@ -361,26 +361,56 @@ static func _journal(parent: VBoxContainer, app: Control) -> void:
 		parent.add_child(note)
 		if index < 2: parent.add_child(C.rule())
 
+static func recruitment_spotlight(model: Dictionary) -> Dictionary:
+	var market: Array = model.get("market", [])
+	var needs: Array = model.get("decisions", {}).get("recruitment", {}).get("needs", [])
+	var need: Dictionary = needs[0] if not needs.is_empty() else {}
+	var position := str(need.get("pos", "")).strip_edges()
+	var candidates := market.filter(func(player: Dictionary):
+		return not str(player.get("id", "")).is_empty() and (position.is_empty() or player.get("pos") == position))
+	candidates.sort_custom(func(a: Dictionary, b: Dictionary):
+		var available_a: bool = a.get("available", false)
+		var available_b: bool = b.get("available", false)
+		if available_a != available_b: return available_a
+		if a.get("rating", 0) != b.get("rating", 0): return float(a.get("rating", 0)) > float(b.get("rating", 0))
+		return str(a.id) < str(b.id))
+	var heading := "Priorité de recrutement" if need.get("need", false) else "Poste à surveiller"
+	var empty_title := "Aucune piste sur le marché" if market.is_empty() or position.is_empty() else "Aucune piste au poste suivi"
+	return {
+		"player": candidates[0] if not candidates.is_empty() else {},
+		"need": heading + " · " + position if not position.is_empty() else "",
+		"empty": empty_title,
+	}
+
+static func open_spotlight(app: Control, id: String) -> void:
+	if not app.navigation_controller.open_market_player(id): app.navigation_controller.open_market_player("")
+
 static func _recruitment(parent: VBoxContainer, app: Control) -> void:
-	var market: Array = app.model.get("market", []).duplicate()
-	market.sort_custom(func(first: Dictionary, second: Dictionary): return float(first.get("rating", 0)) > float(second.get("rating", 0)))
-	if market.is_empty():
+	var spotlight := recruitment_spotlight(app.model)
+	var player: Dictionary = spotlight.player
+	if player.is_empty():
 		parent.add_child(C.photo("scouting", Vector2(0, 150)))
-		parent.add_child(C.wrap("Votre réseau prépare les prochaines opportunités.", 23, C.IVORY, true))
+		parent.add_child(C.wrap(spotlight.empty, 23, C.IVORY, true))
 	else:
-		var player: Dictionary = market[0]
 		var row := C.h(14)
 		parent.add_child(row)
-		row.add_child(G.portrait(int(player.get("portraitIndex", 0)), C.px(125), player) if not str(player.get("id", "")).is_empty() else C.photo("recruit-profile", Vector2(125, 125)))
+		row.add_child(G.portrait(int(player.get("portraitIndex", 0)), C.px(125), player))
 		var identity := C.v(6)
 		C.fill(identity)
 		row.add_child(identity)
-		identity.add_child(C.wrap(player.get("name", "Profil à examiner"), 30, C.IVORY, true))
-		identity.add_child(C.wrap(str(player.get("pos", "")) + " · " + G.n(player.get("age", "—")) + " ans", 20))
-		identity.add_child(C.chip("NIVEAU  " + G.n(player.get("rating", "—"))))
-		parent.add_child(C.wrap(G.euros(player.get("fee", 0)) + " · " + G.euros(player.get("salary", 0)) + " / sem.", 24, C.IVORY, true))
-		parent.add_child(C.wrap(player.get("reason", "Consultez les disponibilités et les modalités avant une offre."), 18))
-	_link(parent, "OfficeMarketAction", "Lire le dossier complet  →", app, "Recrutement")
+		identity.add_child(C.wrap(player.name, 30, C.IVORY, true))
+		identity.add_child(C.wrap(str(player.pos) + " · " + G.n(player.age) + " ans", 20))
+		identity.add_child(C.chip("NIVEAU  " + G.n(player.rating)))
+		parent.add_child(C.wrap(G.euros(player.fee) + " · " + G.euros(player.salary) + " / sem.", 24, C.IVORY, true))
+		var available: bool = player.get("available", false)
+		var status := "Offre possible" if available else "Offre indisponible"
+		var reason := str(player.get("reason", ""))
+		if not reason.is_empty(): status += " · " + reason
+		parent.add_child(C.wrap(status, 19, C.MINT if available else C.ALERT, true))
+	if not str(spotlight.need).is_empty(): parent.add_child(C.wrap(spotlight.need, 20, C.MUTED))
+	var action := C.button("Ouvrir le recrutement" if player.is_empty() else "Voir cette piste", open_spotlight.bind(app, str(player.get("id", ""))), false, app.accent)
+	action.name = "OfficeMarketAction"
+	parent.add_child(action)
 
 static func fixture_competition(model: Dictionary, fixture: Dictionary) -> String:
 	var competition := str(fixture.get("competitionId",""))
