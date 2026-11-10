@@ -302,9 +302,20 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 			left.add_child(C.wrap("Retrouvez les résultats et préparez la suite du projet.", 20))
 		elif SeasonPreparation.is_champ(app.model.meta):
 			var fixture := P.next_scheduled_fixture(app.model)
-			left.add_child(C.wrap("Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))), 42, C.IVORY, true))
-			left.add_child(C.wrap(P.fixture_date(fixture, true) if not fixture.is_empty() else World.preparation_note(preparation), 25, C.IVORY, true))
-			left.add_child(C.wrap(P.fixture_venue(fixture), 18))
+			if fixture.is_empty():
+				left.add_child(C.wrap("Préparation · " + World.name_for(app.model, "champ"),42,C.IVORY,true))
+				left.add_child(C.wrap(World.preparation_note(preparation),25,C.IVORY,true))
+			else:
+				left.add_child(C.label("PRÉPARATION",21,C.GOLD,true,700))
+				var opponent := C.wrap(scheduled_opponent(app,fixture),42,C.IVORY,true,800)
+				opponent.name = "UpcomingOpponent"
+				left.add_child(opponent)
+				var kickoff := C.wrap(scheduled_when(app,fixture),25,C.IVORY,true)
+				kickoff.name = "UpcomingWhen"
+				left.add_child(kickoff)
+				var venue := scheduled_venue(app,fixture)
+				if not venue.is_empty(): left.add_child(C.wrap("Lieu · " + venue,18))
+
 		else:
 			left.add_child(C.label(World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))).to_upper(),21,C.GOLD))
 			left.add_child(C.wrap("Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp"))),42,C.IVORY,true))
