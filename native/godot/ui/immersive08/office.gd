@@ -95,6 +95,21 @@ static func _open_player(app: Control, id: String) -> void:
 static func open_notebook(app: Control) -> void:
 	preload("res://ui/coach_notes_view.gd").open(app, "career")
 
+static func scheduled_opponent(app: Control, fixture: Dictionary) -> String:
+	var home: Dictionary = fixture.get("home", {})
+	return G.club_name(fixture.get("away", {}) if home.get("id") == app.model.club.id else home)
+
+static func scheduled_when(app: Control, fixture: Dictionary) -> String:
+	var date := P.fixture_date(fixture, true)
+	if date.is_empty(): date = timeline_period(fixture)
+	var location := P.fixture_location_kind(fixture, app.model.club.id)
+	var place: String = {"home":"À domicile","away":"À l’extérieur","neutral":"Terrain neutre"}.get(location,"")
+	return date if place.is_empty() else date + " · " + place
+
+static func scheduled_venue(app: Control, fixture: Dictionary) -> String:
+	var location := P.fixture_location_kind(fixture, app.model.club.id)
+	return P.fixture_venue(fixture, false, location != "neutral")
+
 static func territory_art(club: Dictionary) -> VBoxContainer:
 	var identity := G.identity(club)
 	var photos: Dictionary = identity.get("photos", {})
@@ -254,10 +269,15 @@ static func _fixture(frame: PanelContainer, app: Control) -> void:
 	elif next.is_empty():
 		var upcoming := P.next_nationale_fixture(app.model)
 		if not upcoming.is_empty():
-			left.add_child(C.label("NATIONALE", 21, C.GOLD))
-			left.add_child(C.wrap("Pas de match cette semaine.", 42, C.IVORY, true))
-			left.add_child(C.wrap("Prochain match · " + P.fixture_date(upcoming), 25, C.IVORY, true))
-			left.add_child(C.wrap(P.fixture_venue(upcoming), 18))
+			left.add_child(C.label("SEMAINE EXEMPTE",21,C.GOLD,true,700))
+			var opponent := C.wrap(scheduled_opponent(app,upcoming),42,C.IVORY,true,800)
+			opponent.name = "UpcomingOpponent"
+			left.add_child(opponent)
+			var kickoff := C.wrap("Prochain match · " + scheduled_when(app,upcoming),25,C.IVORY,true)
+			kickoff.name = "UpcomingWhen"
+			left.add_child(kickoff)
+			var venue := scheduled_venue(app,upcoming)
+			if not venue.is_empty(): left.add_child(C.wrap("Lieu · " + venue,18))
 		elif preparation.is_empty():
 			left.add_child(C.label("LE PROCHAIN CHAPITRE", 21, C.GOLD))
 			left.add_child(C.wrap("La saison se termine." if app.model.meta.get("canAdvanceSeason", false) else "Le travail continue.", 42, C.IVORY, true))

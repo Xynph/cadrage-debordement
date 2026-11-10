@@ -56,10 +56,11 @@ static func _fixture(card: Panel, app: Control) -> void:
 		var preparation := SeasonPreparation.data(app.model.meta)
 		var upcoming := P.next_nationale_fixture(app.model)
 		if not upcoming.is_empty():
-			D.chip(card,Rect2(24,22,281,29),"NATIONALE",C.GOLD)
-			D.text(card,27,121,"Pas de match cette semaine.",58,C.IVORY,800,920)
-			D.text(card,27,183,"Prochain match · " + P.fixture_date(upcoming),30,C.IVORY,600,720)
-			D.text(card,27,223,P.fixture_venue(upcoming),21,C.MUTED,400,735,HORIZONTAL_ALIGNMENT_LEFT,true)
+			D.chip(card,Rect2(24,22,281,29),"SEMAINE EXEMPTE",C.GOLD)
+			D.text(card,27,121,Office.scheduled_opponent(app,upcoming),51,C.IVORY,800,645).name = "UpcomingOpponent"
+			D.text(card,27,183,"Prochain match · " + Office.scheduled_when(app,upcoming),27,C.IVORY,600,645).name = "UpcomingWhen"
+			var venue := Office.scheduled_venue(app,upcoming)
+			if not venue.is_empty(): D.text(card,27,223,"Lieu · " + venue,21,C.MUTED,400,645,HORIZONTAL_ALIGNMENT_LEFT,true)
 		elif preparation.is_empty():
 			D.text(card,27,100,"La saison se termine." if app.model.meta.get("canAdvanceSeason",false) else "Le travail continue.",42,C.IVORY,700,740)
 			D.text(card,27,156,"Retrouvez les résultats et préparez la suite du projet.",21,C.MUTED,400,740,HORIZONTAL_ALIGNMENT_LEFT,true)
