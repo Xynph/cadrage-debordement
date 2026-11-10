@@ -27,3 +27,6 @@ Politique financière inchangée : `descriptive-no-cost-v1`, salaire/prime0, auc
 ## Preuves
 
 Rapport par club France30/Monde116 : nombre actif avant/après, ajouts par fonction, cible. Tests de couverture minimale, identifiants/noms uniques, sources byte-identiques, pureté/déterminisme, portraits2 stables, sourceKinds corrects, compatibilité ancien cycle, licenciement/reprise sans refill, retraites et recrutements IA annuels, vrai worker import/export/redémarrage/rollback sans coût.
+
+## Présentation demandée par Léo
+Les profils sont présentés normalement dans le jeu : nom, rôle, âge, contrat. Aucun badge « Personnage fictif » ou avertissement sur leur origine. Les marqueurs generated/fictional sont uniquement des métadonnées de provenance et de validation. Préférence durable inscrite dans AGENTS.md.

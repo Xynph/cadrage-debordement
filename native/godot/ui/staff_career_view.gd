@@ -4,10 +4,6 @@ const U = preload("res://ui/management_state.gd")
 const Dialogs = preload("res://ui/decision_views.gd")
 const PAGE_SIZE := 20
 
-static func is_fictional(person: Dictionary) -> bool:
-	var identity: Variant = person.get("identity")
-	return person.get("sourceKind") == "generated" or person.get("identityStatus") == "fictional" or (identity is Dictionary and identity.get("identityStatus") == "fictional")
-
 static func enable(app: Control, parent: Container, data: Dictionary) -> void:
 	if not data.get("canEnable", false): return
 	var button := G.button("ACTIVER LES CARRIÈRES DU STAFF", func():
@@ -92,7 +88,6 @@ static func _person(app: Control, parent: Container, person: Dictionary, data: D
 	G.fill(text); row.add_child(text)
 	text.add_child(G.wrap(person.name, 21, G.INK))
 	text.add_child(G.wrap(person.get("roleLabel", data.get("roles", {}).get(person.get("role", ""), person.get("role", "Staff"))), 14, G.GOLD))
-	if is_fictional(person): text.add_child(G.wrap("Personnage fictif · Profil de jeu", 12, G.GOLD))
 	var estimated := str(person.get("ageBasis", "")).contains("estimated") or str(person.get("ageBasis", "")).contains("simulated")
 	text.add_child(G.wrap("%s ans · %s" % [G.n(person.get("age", 0)), "âge de carrière estimé" if estimated else "âge de carrière"], 12))
 	if person.get("contractEnd") != null: text.add_child(G.wrap("Contrat jusqu’à la saison %s" % G.n(person.contractEnd), 12))
@@ -284,7 +279,7 @@ static func _employment(app: Control, parent: Container) -> void:
 	var data: Dictionary = app.model.get("clubLife", {}).get("staffEmployment", {})
 	if not data.get("available", false): return
 	if not data.get("enabled", false):
-		var activate := G.button("ACTIVER LES CONTRATS RÉMUNÉRÉS",func(): app.confirm("Rémunération nominative du staff", "Activation gratuite, sans adoption des contrats en poste. Les futurs recrutements de ce club seront rémunérés selon un barème fictif visible avant signature ; aucun bonus de match ajouté.",func():app._command("staff_employment_enable",{"confirmed":true,"context":data.context.duplicate(true)})))
+		var activate := G.button("ACTIVER LES CONTRATS RÉMUNÉRÉS",func(): app.confirm("Rémunération nominative du staff", "Activation gratuite, sans adoption des contrats en poste. Les futurs recrutements de ce club seront rémunérés selon le barème visible avant signature.",func():app._command("staff_employment_enable",{"confirmed":true,"context":data.context.duplicate(true)})))
 		activate.name = "StaffEmploymentEnable"; activate.disabled = not data.get("canEnable", false)
 		parent.add_child(activate)
 	else:
