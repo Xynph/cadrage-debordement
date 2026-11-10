@@ -18,4 +18,4 @@ Les emmanchures ont été remontées pour dégager les flancs. Gabi serre le car
 
 La carrure a été renforcée légèrement. Les manches ont chacune un revers roulé en volume avec sa matière bordeaux. Gabi tient le carnet de la main gauche, pouce en haut, et salue de la droite, paume tournée vers le joueur. Les mouvements du coude, de l’avant-bras et du poignet se répartissent sur le geste.
 
-Les revers suivent la déformation des bras et la peau est dégagée du tissu sous le bras levé. Les deux mains ont des espaces modelés entre les doigts. Les commissures du visage dessinent un léger sourire au repos. Le GLB contient les formes `MouthOpen` et `MouthRound` pour l’articulation de la bouche.
+Les revers suivent la déformation des bras et la peau est dégagée du tissu sous le bras levé. Les deux mains ont des espaces modelés entre les doigts. Les commissures du visage dessinent un léger sourire au repos. La bouche en volume comprend une rangée supérieure de dents et quatre formes d’articulation `MouthOpen`, `MouthRound`, `MouthPress` et `MouthWide`.
