@@ -264,11 +264,11 @@ func _side() -> void:
 	var live:Dictionary=model.live if model.get("live") is Dictionary else {}
 	side.get_parent().visible = tab != "Journal"
 	journal.visible = tab == "Journal"
+	if tab != "Banc" or live.is_empty(): _bench_feedback.hide()
 	if tab == "Journal":
 		journal.update_frame(live)
 		return
 	var bench_focus := ""
-	if tab != "Banc" or live.is_empty(): _bench_feedback.hide()
 	if tab=="Banc":
 		# Fatigue/clock changes do not affect these controls. Keep focus across ticks,
 		# but rebuild when player identity or a replacement permission changes.
