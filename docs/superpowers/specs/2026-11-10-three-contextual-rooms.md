@@ -12,3 +12,7 @@ Cadrage d’implémentation décidé par l’intégrateur : trois composants sé
 
 ## Précision ultérieure explicite de Léo
 Les trois salles sont plein écran, s’ouvrent automatiquement au moment opportun et sont impassables avant les décisions ou conversations attendues. Un domaine natif persistant clubMeetings programme ces rendez-vous et conserve la scène jusqu’à sa résolution puis Continuer. Les gardes serveur bloquent les commandes sans rapport ; sauvegarde/export/fermeture de l’application restent possibles. Reprendre la carrière retrouve le rendez-vous, sans rejouer les effets.
+
+## Limite éditoriale constatée lors de la revue visuelle finale
+
+La banque de presse existante ne couple pas toujours assez précisément les réponses à la question affichée : 500 questions et 1 500 formulations partagent des réponses sérieuses par sujet, indépendamment de certaines intentions. Le choix, les effets et l’archivage fonctionnent ; certaines déclarations restent trop génériques. Cette intégration ne prétend pas avoir réécrit cette banque. Une révision éditoriale distincte devra conserver les identifiants, tons, effets et archives, rendre les variantes d’une question synonymes et leur associer cinq réponses pertinentes. La salle 3D présente les textes existants sans inventer de conversation différente de celle enregistrée.

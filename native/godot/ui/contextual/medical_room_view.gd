@@ -124,7 +124,7 @@ func _draw() -> void:
 		if fatigue is Dictionary: fatigue = fatigue.get("fatigue", "—")
 		facts_scroll.add_child(S.label("Charge cumulée : %s / 100" % str(fatigue), 16))
 		var injury := int(player.get("injury", 0))
-		facts_scroll.add_child(S.wrap("Indisponibilité enregistrée : %d semaine(s) de jeu." % injury if injury > 0 else "Aucune indisponibilité enregistrée.", 16, S.TEXT))
+		facts_scroll.add_child(S.wrap("Indisponibilité enregistrée : %d %s." % [injury, "semaine" if injury == 1 else "semaines"] if injury > 0 else "Aucune indisponibilité enregistrée.", 16, S.TEXT))
 		var stage := str(_followup().get("stage", ""))
 		if not stage.is_empty():
 			facts_scroll.add_child(S.label("Suivi : " + str({"blesse":"indisponibilité", "reprise":"reprise à organiser", "progressif":"reprise progressive", "termine":"suivi terminé"}.get(stage, stage)), 14))
@@ -160,7 +160,7 @@ func _draw() -> void:
 	if player.is_empty():
 		list.add_child(S.wrap("Aucune décision disponible pour ce dossier.", 16))
 	elif int(player.get("injury", 0)) > 0:
-		list.add_child(S.wrap("Le suivi choisi agit lors de la prochaine séance. Ouvrir cette salle ne réduit pas l’indisponibilité.", 15, S.TEXT))
+		list.add_child(S.wrap("Le suivi choisi sera appliqué à partir de la prochaine séance.", 15, S.TEXT))
 		var protocols: Array = _medical().get("protocols", [])
 		for protocol: Dictionary in protocols:
 			var key := str(protocol.get("key", ""))
