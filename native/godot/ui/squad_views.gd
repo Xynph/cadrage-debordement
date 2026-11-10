@@ -338,7 +338,9 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	var extend:=G.button("PROPOSER UNE PROLONGATION",func(): contract(app,p,false))
 	extend.name="OfferRenewal"
 	extend.disabled=not renewal.get("available",false) or not app._live().is_empty()
-	extend.tooltip_text="Le contrat ne permet pas de prolongation supplémentaire dans la limite de trois saisons." if not renewal.get("available",false) else "Une offre sera soumise au joueur avant toute signature."
+	var renewal_reason := str(renewal.get("reason", ""))
+	extend.tooltip_text=renewal_reason if not renewal_reason.is_empty() else ("Le contrat ne permet pas de prolongation supplémentaire dans la limite de trois saisons." if not renewal.get("available",false) else "Une offre sera soumise au joueur avant toute signature.")
+	if not renewal_reason.is_empty(): contracts.add_child(G.wrap(renewal_reason,13,G.ALERT))
 	contracts.add_child(extend)
 	contracts.add_child(G.label("CHARGE INDIVIDUELLE",13,G.MUTED))
 	var load_plan:=OptionButton.new()
@@ -806,6 +808,13 @@ static func contract(app:Control,p:Dictionary,recruiting:bool) -> void:
 	var salary:=SpinBox.new()
 	salary.name="OfferSalary"
 	var quote:Dictionary=p if recruiting else p.get("renewal",{})
+	var negotiation: Dictionary = quote.get("negotiation", {})
+	if negotiation.get("status") == "counter":
+		var term := int(negotiation.years)
+		var reminder := G.label("Dernière contre-offre · %s / sem. · %d saison%s · Proposition %d/3" % [
+			G.euros(negotiation.salary), term, "s" if term > 1 else "", int(negotiation.attempts)],13,G.GOLD)
+		reminder.name = "ContractCurrentNegotiation"
+		fields.add_child(reminder)
 	salary.min_value=1000
 	salary.max_value=100000
 	salary.step=100

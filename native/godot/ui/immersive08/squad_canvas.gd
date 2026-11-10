@@ -280,8 +280,10 @@ func _profile() -> void:
 	D.text(contract,24,94,G.euros(player.get("salary",0))+" / semaine",34,C.IVORY,600,480)
 	D.text(contract,24,129,str(player.get("contractLabel","—")),23,C.MUTED,500,480)
 	var renewal:Dictionary=player.get("renewal",{})
-	var offer:=D.button(contract,Rect2(305,143,198,32),"Prolonger",func():app.SquadViews.contract(app,player,false),false,"",true,app.accent,"OfferRenewal")
+	var reason := str(renewal.get("reason", ""))
+	var offer:=D.button(contract,Rect2(305,143,198,32),"Prolonger" if reason.is_empty() else "Négociation close",func():app.SquadViews.contract(app,player,false),false,"",true,app.accent,"OfferRenewal")
 	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
+	if not reason.is_empty(): offer.tooltip_text = reason
 	var contract_end: Variant = player.get("contractEnd")
 	D.text(contract,24,167,"Échéance : —" if contract_end == null else "Échéance : saison "+G.n(contract_end),21,C.MUTED,500,280)
 	var depth:=D.panel(dossier,Rect2(0,922,528,206),"L’ÉQUILIBRE DU GROUPE","people")
