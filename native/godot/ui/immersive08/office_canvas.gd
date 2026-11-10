@@ -262,7 +262,7 @@ static func _recruitment(card: Panel, app: Control) -> void:
 		D.place(portrait,Rect2(22,74,133,117))
 		D.text(card,174,104,str(player.name).to_upper(),29,C.IVORY,700,350)
 		D.text(card,174,135,str(player.pos)+" · "+G.n(player.age)+" ans",22,C.MUTED,500,350)
-		D.chip(card,Rect2(174,154,150,32),"NIV. "+G.n(player.rating),C.MINT)
+		D.chip(card,Rect2(174,154,150,32),"NIV. "+G.rating_text(player),C.MINT)
 		var available: bool = player.get("available", false)
 		D.text(card,23,230,"Offre possible" if available else "Offre indisponible",24,C.MINT if available else C.ALERT,600,500)
 		var reason := str(player.get("reason", ""))

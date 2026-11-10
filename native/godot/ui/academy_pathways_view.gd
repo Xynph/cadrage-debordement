@@ -144,7 +144,7 @@ static func _players(list: VBoxContainer, app: Control, data: Dictionary) -> voi
 static func _player(parent: Node, app: Control, data: Dictionary, p: Dictionary) -> void:
 	var card := G.card(parent, G.accent_ink(app.accent))
 	card.set_meta("academy_player", p.id)
-	G.person(card, p, p.name, "%s · %d ans · %d / %d · condition %d%%" % [p.pos, p.age, p.rating, p.potential, p.condition])
+	G.person(card, p, p.name, "%s · %d ans · %s / %s · condition %d%%" % [p.pos, p.age, G.rating_text(p,true), G.potential_text(p), p.condition])
 	if float(p.target) > 0: G.gauge(card, "Minutes juniors / objectif", float(p.minutes), float(p.target))
 	card.add_child(G.wrap("%d minutes juniors · objectif %d · parcours %s" % [p.minutes, p.target, p.path], 15))
 	var detail := VBoxContainer.new()
@@ -188,7 +188,7 @@ static func _scouting(list: VBoxContainer, app: Control, data: Dictionary) -> vo
 		list.add_child(G.wrap("%s · %s · %d joueurs" % [center.name,center.division,center.count], 18, G.INK))
 		_action(list, app, data, "OBSERVER · 1 200 €", "academy_center_scout", {"centerId":center.id}, 1200, center.scouted or center.count <= 15)
 		for p: Dictionary in center.candidates:
-			list.add_child(G.wrap("%s · %s · %d / %d" % [p.name,p.pos,p.rating,p.potential],15))
+			list.add_child(G.wrap("%s · %s · %s / %s" % [p.name,p.pos,G.rating_text(p),G.potential_text(p)],15))
 			_action(list, app, data, "PROPOSER %s" % G.euros(p.fee), "academy_recruit", {"playerId":p.id,"offer":p.fee}, int(p.fee))
 		list.add_child(G.separator())
 
@@ -201,7 +201,7 @@ static func _network(list: VBoxContainer, app: Control, data: Dictionary) -> voi
 	for p: Dictionary in data.prospects:
 		list.add_child(G.separator())
 		list.add_child(G.section(p.name, "%s · %s · %d ans" % [p.clubName,p.pos,p.age]))
-		list.add_child(G.wrap("Observations %d/3 · essai %s · niveau %s · potentiel %s" % [p.scouted,"réalisé" if p.trial else "à organiser",str(p.rating) if p.scouted > 0 else "?",str(p.potential) if p.scouted > 1 else "?"],14))
+		list.add_child(G.wrap("Observations %d/3 · essai %s · niveau %s · potentiel %s" % [p.scouted,"réalisé" if p.trial else "à organiser",G.rating_text(p),G.potential_text(p)],14))
 		_action(list, app, data, "OBSERVER · 500 €", "academy_watch", {"playerId":p.id}, 500, p.scouted >= 3)
 		_action(list, app, data, "ESSAI · 1 000 €", "academy_trial", {"playerId":p.id}, 1000, p.trial or p.scouted == 0)
 		if p.union != "FR": _action(list, app, data, "ENREGISTRER L’AUTORISATION SIMULÉE", "academy_clearance", {"playerId":p.id}, -1, p.age < 18 or not p.trial or p.get("clearanceRecorded",false))
@@ -227,7 +227,7 @@ static func _history(list: VBoxContainer, data: Dictionary) -> void:
 	for generation: Dictionary in data.generations:
 		list.add_child(G.section("Saison %d" % generation.season, "%d joueurs suivis · %d promotions · réputation %d" % [generation.players.size(),generation.graduates,generation.reputation]))
 		for p: Dictionary in generation.players:
-			list.add_child(G.wrap("%s · %s · %d/%d · %d minutes · %s" % [p.name,p.pos,p.rating,p.potential,p.minutes,p.strategy],14))
+			list.add_child(G.wrap("%s · %s · %s/%s · %d minutes · %s" % [p.name,p.pos,G.rating_text(p,true),G.potential_text(p),p.minutes,p.strategy],14))
 		list.add_child(G.separator())
 
 static func open_professional(app: Control, player_id: String) -> AcceptDialog:

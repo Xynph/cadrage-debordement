@@ -25,8 +25,7 @@ static func action_id(prefix: String, player_id: String) -> String:
 	return prefix + "_" + player_id.sha256_text().substr(0, 16)
 
 static func projected_mark(player: Dictionary, key: String) -> String:
-	var value: Variant = player.get(key)
-	return G.n(value) if (value is int or value is float) and is_finite(float(value)) else "—"
+	return G.potential_text(player) if key == "potential" else G.rating_text(player,true)
 
 static func horizon(player: Dictionary) -> int:
 	var value: Variant = player.get("contractEnd")
@@ -67,6 +66,7 @@ static func filtered(players: Array, filters: Dictionary) -> Array:
 	return result
 
 static func sort_value(player: Dictionary, key: String, live: bool = false) -> Variant:
+	if key in ["rating","potential"]: return G.knowledge_sort_value(player,key,true)
 	if key == "contractEnd": return horizon(player) if horizon(player) >= 0 else null
 	if key == "renewal": return renewal_reason(player, live) if player.get("renewal") is Dictionary and not player.renewal.is_empty() else null
 	var value: Variant = player.get(key)
@@ -382,15 +382,15 @@ func _row(player: Dictionary) -> void:
 	var ending := horizon(player)
 	var year := int(app.model.get("meta", {}).get("season", 1))
 	line.add_child(_cell(str(player.get("pos", "—")), 160, C.MUTED))
-	var level := _cell(projected_mark(player, "rating"), 72, C.MINT, 18)
+	var level := _cell(G.rating_text(player,true), 72, C.MINT, 18)
 	level.name = action_id("ContractLevel", str(player.id))
 	level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	level.tooltip_text = "Niveau global projeté / 100, identique à la fiche du joueur."
 	line.add_child(level)
-	var potential := _cell(projected_mark(player, "potential"), 84, Color("ffb454"), 18)
+	var potential := _cell(G.potential_text(player), 84, Color("ffb454"), 18)
 	potential.name = action_id("ContractPotential", str(player.id))
 	potential.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	potential.tooltip_text = "Potentiel projeté au poste / 100, identique à la fiche. Ce plafond n’est pas garanti."
+	potential.tooltip_text = "Potentiel / 100. Ce plafond n’est pas garanti."
 	line.add_child(potential)
 	line.add_child(_cell(G.n(player.age) if player.get("age") != null else "—", 60, C.MUTED))
 	line.add_child(_cell(G.contract_year(ending) if ending >= 0 else "Non renseignée", 145, C.GOLD if ending >= 0 and ending <= year else C.MINT if ending > year else C.MUTED))

@@ -211,7 +211,7 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 		if field=="name": G.fill(label)
 		label.tooltip_text="Trier "+str(column[1])+" · valeurs inconnues en dernier"
 		header.add_child(label)
-	var players:Array=TableOrder.ordered(U.players(app.model.get("squad",[]),app.management_ui.roster,int(app.model.meta.get("season",1))),key,state.descending,func(person:Dictionary,field:String): return U.watch_reason(person) if field=="watch" else person.get(field))
+	var players:Array=TableOrder.ordered(U.players(app.model.get("squad",[]),app.management_ui.roster,int(app.model.meta.get("season",1))),key,state.descending,func(person:Dictionary,field:String): return U.watch_reason(person) if field=="watch" else G.knowledge_sort_value(person,field,true) if field in ["rating","potential","note"] else person.get(field))
 	count.text="%d / %d joueurs · lecture seule"%[players.size(),app.model.get("squad",[]).size()]
 	compare.text="COMPARER (%d/2)"%app.management_ui.compare.size()
 	if app.selected_player.is_empty() and not players.is_empty():app.selected_player=str(players[0].id)
@@ -247,7 +247,7 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 		inset.add_child(row)
 		for column:Array in columns:
 			var value:=_roster_value(p,str(column[0]))
-			var color: Color = G.INK if column[0]=="name" else (G.GOLD if column[0]=="watch" else G.MUTED)
+			var color: Color = G.POTENTIAL_COLOR if column[0]=="potential" else G.INK if column[0]=="name" else (G.GOLD if column[0]=="watch" else G.MUTED)
 			if state.family==U.WATCH_FILTER and column[0]=="condition" and float(p.get("injury",0))>0:
 				value="Blessé"
 				color=G.ALERT
@@ -277,10 +277,12 @@ static func _roster_columns(width:float) -> Array:
 	if width>=900:columns.append_array([["minutes","MIN.",42],["appearances","APP.",32],["physicalLoad","CHARGE",42]])
 	if width>=950:
 		columns[1][2]=100
-		columns.append_array([["potential","POT.",32],["note","NOTE",34],["status","SÉLECTION",76]])
+		columns.append_array([["potential","POT.",60],["status","SÉLECTION",76]])
 	return columns
 
 static func _roster_value(p:Dictionary,key:String) -> String:
+	if key in ["rating","note"]:return G.rating_text(p,true)
+	if key=="potential":return G.potential_text(p)
 	if key=="salary":return G.salary_amount(p.get(key,0))
 	if key=="condition":return G.n(p.get(key,0))+"%"
 	if key=="watch":return U.watch_reason(p)
@@ -347,7 +349,7 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	for i in 4:tabs.set_tab_title(i,["Aperçu","Attributs","Contrat","Repères"][i])
 	tabs.current_tab=clampi(int(app.management_ui.get("profile_tab",0)),0,3)
 	tabs.tab_changed.connect(func(index:int):app.management_ui.profile_tab=index)
-	var details := PlayerAttributes.detail(p)
+	var details := PlayerAttributes.detail(p,true)
 	var actions:=_profile_overview(overview,p,app.model.get("clubLife",{}).get("coachNotebook",{}).get("entries",[]),app,tabs,not details.is_empty())
 	var note:=G.button("MA NOTE SUR CE JOUEUR",func(): preload("res://ui/coach_notes_view.gd").open(app,str(p.id)))
 	note.name="OpenPlayerCoachNote"
@@ -450,7 +452,7 @@ static func _profile_fact(parent:Node,id:String,caption:String,value:String) -> 
 	var label:=G.label(caption,11,G.MUTED)
 	G.fill(label)
 	row.add_child(label)
-	var fact:=G.label(value,12,G.INK)
+	var fact:=G.label(value,12,G.POTENTIAL_COLOR if id=="ProfilePotentialValue" else G.INK)
 	fact.name=id
 	row.add_child(fact)
 
@@ -479,10 +481,10 @@ static func _profile_overview(parent:VBoxContainer,p:Dictionary,notes:Array,app:
 	_profile_fact(season,"ProfileMinutesValue","Minutes",G.n(p.get("minutes",0)))
 	_profile_fact(season,"ProfileAppearancesValue","Apparitions",G.n(p.get("appearances",0)))
 	_profile_fact(season,"ProfileNumberValue","Numéro","—" if p.get("shirtNumber")==null else G.n(p.shirtNumber))
-	_profile_fact(season,"ProfileRoleValue","Note au poste",G.n(p.get("note",0)))
+	_profile_fact(season,"ProfileRoleValue","Note au poste",G.n(p.get("note","—")))
 	var evaluation:=_profile_tile(right,"Evaluation","Évaluation")
-	_profile_fact(evaluation,"ProfileRatingValue","Note globale",G.n(p.get("rating","—")))
-	_profile_fact(evaluation,"ProfilePotentialValue","Potentiel",G.n(p.get("potential",0)))
+	_profile_fact(evaluation,"ProfileRatingValue","Niveau général",G.rating_text(p,true))
+	_profile_fact(evaluation,"ProfilePotentialValue","Potentiel",G.potential_text(p))
 	var qualities := _profile_tile(left,"Attributes","Profil de jeu")
 	if has_details:
 		var detail_button := G.button("VOIR LES 36 ATTRIBUTS", func():
@@ -534,7 +536,7 @@ static func _fit_profile(app:Control,parent:VBoxContainer,list:VBoxContainer,tab
 
 static func _profile_attributes(parent: VBoxContainer, player: Dictionary, details: Dictionary) -> void:
 	if details.is_empty():
-		_profile_fact(parent, "ProfileDetailedFallbackRating", "Note globale", G.n(player.get("rating", "—")))
+		_profile_fact(parent, "ProfileDetailedFallbackRating", "Niveau général", G.rating_text(player,true))
 		parent.add_child(G.wrap("Les attributs détaillés sont indisponibles pour ce dossier.",12))
 		return
 	parent.add_child(G.label("36 ATTRIBUTS · " + PlayerAttributes.SUBTITLE.to_upper(), 12, G.MUTED))
@@ -632,7 +634,7 @@ static func lineup(app:Control) -> Control:
 	var eligible:Variant=selected.get("eligibleIds")
 	for p in app.model.get("squad",[]):
 		var identity := "%s · %s" % [p.name, p.pos]
-		var metrics := "Condition %s %% · Niveau %s" % [G.n(p.condition), G.n(p.rating)]
+		var metrics := "Condition %s %% · Niveau %s" % [G.n(p.condition), G.rating_text(p,true)]
 		var b := G.button("",func():app._command("set_lineup",{"playerId":p.id,"slot":app.selected_slot}))
 		b.accessibility_name = identity + " · " + metrics
 		b.tooltip_text = b.accessibility_name
@@ -782,7 +784,7 @@ static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 		var summary:=G.h(10)
 		card.add_child(summary)
 		summary.add_child(G.label(G.n(p.age)+" ans",13))
-		summary.add_child(G.label("Niveau "+G.n(p.rating),13,G.GOLD))
+		summary.add_child(G.label("Niveau "+G.rating_text(p),13,G.GOLD))
 		card.add_child(G.wrap(G.salary(p.get("salary",0))+" · salaire demandé",13,G.MUTED))
 		var followed:bool=str(p.id) in app.management_ui.shortlist
 		var track:=G.button("RETIRER DU SUIVI" if followed else "SUIVRE CETTE PISTE",func():
@@ -801,6 +803,9 @@ static func _market_rows(app:Control,list:VBoxContainer,count:Label) -> void:
 			card.add_child(G.wrap(reason,13,G.ALERT))
 		var actions:=G.h(8)
 		card.add_child(actions)
+		var observer := G.button("",func(): pass)
+		preload("res://ui/player_observation.gd").configure(observer,app,p)
+		card.add_child(observer)
 		G.fill(track);G.fill(b)
 		actions.add_child(track)
 		actions.add_child(b)
@@ -888,14 +893,15 @@ static func _comparison_rows(app:Control,list:VBoxContainer,ids:Array) -> void:
 	columns.add_theme_constant_override("h_separation",18)
 	columns.add_theme_constant_override("v_separation",10)
 	list.add_child(columns)
-	var rows:Array=[["Identité","name"],["Poste","pos"],["Âge · ans","age"],["Note globale / 100","rating"],["Condition · %","condition"],["Salaire "+G.salary_period(),"salary"],["Fin de contrat","contractEnd"]]
+	var rows:Array=[["Identité","name"],["Poste","pos"],["Âge · ans","age"],["Niveau / 100","rating"],["Condition · %","condition"],["Salaire "+G.salary_period(),"salary"],["Fin de contrat","contractEnd"]]
 	for row in rows:
 		columns.add_child(G.label(row[0],13,G.MUTED))
 		for p:Dictionary in players:
 			var value:Variant="—"
 			if not p.is_empty():
 				value=p.get(row[1],"—")
-				if row[1]=="salary":value=G.salary_amount(value)
+				if row[1]=="rating":value=G.rating_text(p,true)
+				elif row[1]=="salary":value=G.salary_amount(value)
 				elif row[1]=="contractEnd":value=G.contract_year(value)
 				elif value is float:value=G.n(value)
 			var label:=G.wrap(str(value),14,G.INK)
@@ -925,7 +931,7 @@ static func _profile_contexts(parent:VBoxContainer,p:Dictionary,app:Control) -> 
 		for member:Dictionary in squad:total+=float(member.get(field[0],0))
 		var mean:float=total/squad.size() if not squad.is_empty() else NAN
 		var average:String="—" if not is_finite(mean) else G.salary_amount(mean) if field[0]=="salary" else ("%.1f"%mean).replace(".",",")+field[2]
-		var own:String=G.salary_amount(p.get(field[0],0)) if field[0]=="salary" else G.n(p.get(field[0],0))+field[2]
+		var own:String=G.rating_text(p,true) if field[0]=="rating" else G.salary_amount(p.get(field[0],0)) if field[0]=="salary" else G.n(p.get(field[0],0))+field[2]
 		_profile_fact(cohort,"ProfileMean_"+str(field[0]),field[1],own+" / "+average)
 	var peers:=G.v(3);peers.name="ProfileContextPeers";competition.add_child(peers)
 	peers.add_child(G.label("Même poste principal · "+str(p.pos)+" · niveau / condition",11,G.MUTED))
@@ -934,7 +940,7 @@ static func _profile_contexts(parent:VBoxContainer,p:Dictionary,app:Control) -> 
 	for i in people.size():
 		var person:Dictionary=people[i];var row:=G.h(5);rows.add_child(row)
 		var name:=G.label(person.name,12,G.INK);G.fill(name);name.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS;name.tooltip_text=person.name;row.add_child(name)
-		row.add_child(G.label(G.n(person.rating)+" / "+G.n(person.condition)+"%",11,G.MUTED))
+		row.add_child(G.label(G.rating_text(person,true)+" / "+G.n(person.condition)+"%",11,G.MUTED))
 		var compare:=G.button("Comparer",func():app.management_ui.compare=[str(p.id),str(person.id)];comparison(app))
 		compare.name="ProfilePeerCompare"+str(i);compare.set_meta("peer_id",str(person.id));compare.custom_minimum_size.y=24;row.add_child(compare)
 	if people.is_empty():_context_text(peers,"Aucun autre coéquipier à afficher au même poste principal.","PeersEmpty")

@@ -55,8 +55,8 @@ static func build(app: Control) -> Control:
 		row.add_child(identity)
 		identity.add_child(G.wrap(person.name, 25, G.INK))
 		identity.add_child(G.wrap("%s · %s ans · %s minutes · %s apparitions" % [person.pos, G.n(person.age), G.n(person.minutes), G.n(person.appearances)], 13))
-		row.add_child(G.metric(G.n(person.note), "note au poste"))
-		row.add_child(G.metric(G.n(person.potential), "potentiel"))
+		row.add_child(G.metric(G.rating_text(person,true), "niveau"))
+		row.add_child(G.metric(G.potential_text(person), "potentiel",G.POTENTIAL_COLOR))
 		var development: Dictionary = person.get("development", {})
 		var history: Array = development.get("history", [])
 		var levels: Array = []

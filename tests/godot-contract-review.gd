@@ -27,9 +27,12 @@ func choose(control: OptionButton, index: int) -> void:
 	await settle()
 func pure_cases() -> void:
 	check(Review.projected_mark({"rating":77,"note":91,"potential":88}, "rating") == "77", "Niveau global lu sans utiliser la note au poste")
-	check(Review.projected_mark({"rating":77,"potential":88}, "potential") == "88", "Potentiel moteur lu sans moyenne inventée")
+	check(Review.projected_mark({"rating":77,"potential":99,"potentialRange":{"min":86,"max":90}}, "potential") == "86–90", "Potentiel fourni en fourchette, jamais scalaire")
+	check(Review.projected_mark({"potential":99}, "potential") == "—", "Ancien potentiel scalaire masqué")
 	check(Review.projected_mark({}, "rating") == "—" and Review.projected_mark({"potential":null}, "potential") == "—", "Notes absentes affichées sans zéro inventé")
 	var sorting: Array = [{"id":"a","name":"Émile","pos":"Ailier","rating":70,"potential":90,"age":23,"contractEnd":2,"salary":10000,"minutes":20,"status":"Titulaire","renewal":{"available":true}}, {"id":"b","name":"Alice","pos":"Centre","rating":80,"potential":85,"age":24,"contractEnd":1,"salary":2000,"minutes":10,"status":"Hors groupe","renewal":{"available":false,"reason":"Z"}}, {"id":"u","name":"","pos":""}]
+	for person: Dictionary in sorting:
+		if person.has("potential"): person.potentialRange={"min":int(person.potential)-2,"max":int(person.potential)+2}
 	var tied: Dictionary = sorting[0].duplicate(true)
 	tied.id = "c"
 	sorting.append(tied)

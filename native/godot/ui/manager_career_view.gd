@@ -124,6 +124,6 @@ static func build(app: Control) -> Control:
 		draw.call(0)
 	recruitment.add_child(G.section("Rapports datés"))
 	for report: Dictionary in data.get("reports", []).slice(-8):
-		recruitment.add_child(G.wrap("%s · S%s semaine %s · rapport %s" % [_player(app, report.playerId), int(report.season), int(report.week), report.grade], 14))
+		recruitment.add_child(G.wrap("%s · S%s semaine %s · rapport %s" % [_player(app, report.playerId), int(report.season), int(report.week), str(report.get("grade")) if report.get("grade") != null else "—"], 14))
 	return page
 

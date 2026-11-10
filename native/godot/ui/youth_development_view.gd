@@ -118,7 +118,7 @@ func _person(person: Dictionary) -> void:
 	info.add_child(G.wrap("%s · %s · %s ans" % [str(person.name),str(person.pos),G.n(person.age)],20,G.INK))
 	var annual: bool = str(person.get("model",""))=="annual-v11"
 	info.add_child(G.wrap("Progression annuelle : les qualités évoluent au bilan annuel selon l’exposition réelle. La spécialisation d’XP n’est pas disponible pour ce profil." if annual else "Progression par XP : le plan répartit le budget existant, sans XP supplémentaire.",13))
-	info.add_child(G.wrap("Niveau général %s · potentiel au poste %s · condition %s %% · fatigue %s / 100 · blessure %s semaine(s)" % [G.n(person.get("rating",0)),G.n(person.get("potential",0)),G.n(person.get("condition",0)),G.n(person.get("fatigue",0)),G.n(person.get("injury",0))],13))
+	info.add_child(G.wrap("Niveau général %s · potentiel %s · condition %s %% · fatigue %s / 100 · blessure %s semaine(s)" % [G.rating_text(person,true),G.potential_text(person),G.n(person.get("condition",0)),G.n(person.get("fatigue",0)),G.n(person.get("injury",0))],13))
 	var current: Dictionary = person.get("current",{})
 	var minutes := "Minutes de carrière : %s" % G.n(person.get("careerMinutes",current.get("careerMinutes",0)))
 	if not annual: minutes += " · XP générale %s · XP ciblée %s" % [_decimal(current.get("generalXP",0)),_decimal(current.get("focusedXP",0))]

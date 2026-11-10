@@ -81,7 +81,7 @@ static func build(app: Control, international: Dictionary, fixture: Dictionary, 
 				for id: Variant in available[slot]:
 					if not players.has(id): continue
 					var player: Dictionary = players[id]
-					option.add_item("%s · %s · %s" % [player.name, player.pos, G.n(player.rating)])
+					option.add_item("%s · %s · %s" % [player.name, player.pos, G.rating_text(player)])
 					option.set_item_metadata(option.item_count - 1, id)
 					if draft[slot] == id: option.select(option.item_count - 1)
 			option.item_selected.connect(func(item: int):

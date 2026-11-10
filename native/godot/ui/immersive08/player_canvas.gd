@@ -109,8 +109,8 @@ static func build(app:Control,player:Dictionary) -> Control:
 	D.chip(hero, Rect2(670,263,210,46), availability, availability_color).name = "PlayerHeroAvailability"
 	D.chip(hero, Rect2(894,263,220,46), selection, C.AMBER).name = "PlayerHeroSelection"
 	var rating := _slanted_badge(hero,Rect2(1710,43,236,160),Color("0a5735"),Color(C.MINT,.7))
-	ClubUI.italic(D.text(rating,118,129,G.n(player.get("rating","—")),132,C.IVORY,800,218,HORIZONTAL_ALIGNMENT_CENTER),800)
-	ClubUI.italic(D.text(hero,2084,151,G.n(player.get("potential","—")),98,C.IVORY,800,235,HORIZONTAL_ALIGNMENT_CENTER),800)
+	ClubUI.italic(D.text(rating,118,129,G.rating_text(player,true),64,C.MINT,800,218,HORIZONTAL_ALIGNMENT_CENTER),800)
+	ClubUI.italic(D.text(hero,2084,151,G.potential_text(player),64,G.POTENTIAL_COLOR,800,235,HORIZONTAL_ALIGNMENT_CENTER),800)
 	D.text(hero,1828,234,"NIVEAU",23,C.MUTED,600,220,HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(hero,2084,234,"POTENTIEL",23,C.GOLD,600,235,HORIZONTAL_ALIGNMENT_CENTER)
 	D.button(hero,Rect2(1710,264,236,46),"Comparer",func():
@@ -118,7 +118,7 @@ static func build(app:Control,player:Dictionary) -> Control:
 		app.SquadViews.comparison(app),false,"people",true,app.accent,"FullPlayerCompare")
 	D.button(hero,Rect2(1962,264,260,46),"Ma note",func():Notes.open(app,str(player.id)),false,"mail",true,app.accent,"OpenPlayerCoachNote")
 	var active:=clampi(int(app.management_ui.get("immersive_player_tab",0)),0,5)
-	var detailed := PlayerAttributes.detail(player)
+	var detailed := PlayerAttributes.detail(player,true)
 	for i in 6:
 		var id := "FullPlayerTab"+str(i)
 		var caption: String = ["Vue d’ensemble","Attributs","Performances","Contrat","Développement","Repères"][i]
@@ -194,9 +194,9 @@ static func _position(card:Panel,app:Control,player:Dictionary) -> void:
 	D.text(card,24,496," · ".join(compatible) if not compatible.is_empty() else "Poste de référence du dossier",18,C.MUTED,500,428)
 
 static func _evaluation(card: Panel, app: Control, player: Dictionary, has_details: bool) -> void:
-	D.text(card,30,121,"NOTE GLOBALE / 100",26,C.MUTED,700,500)
-	D.text(card,30,225,G.n(player.get("rating","—")),88,C.MINT,800,360).name = "PlayerGlobalRating"
-	D.text(card,30,285,"Note de simulation dans cette carrière.",26,C.IVORY,500,900)
+	D.text(card,30,121,"NIVEAU / 100",26,C.MUTED,700,500)
+	D.text(card,30,225,G.rating_text(player,true),88,C.MINT,800,360).name = "PlayerGlobalRating"
+	D.text(card,30,285,"Niveau actuel du joueur.",26,C.IVORY,500,900)
 	if has_details:
 		D.button(card,Rect2(30,332,465,60),"Voir les 36 attributs",func():
 			app.management_ui.immersive_player_tab = 1
@@ -290,7 +290,8 @@ static func _development(card:Panel,app:Control,player:Dictionary) -> void:
 	var player_id := str(player.id)
 	var record := Academy.professional_progress(app, player_id)
 	var development: Dictionary = record.get("development", {})
-	D.text(card,24,108,"NIVEAU ACTUEL  "+G.n(player.get("rating","—"))+"     ·     POTENTIEL  "+G.n(player.get("potential","—")),31,C.MINT,700,1550)
+	D.text(card,820,108,"POTENTIEL  "+G.potential_text(player),26,G.POTENTIAL_COLOR,700,700)
+	D.text(card,24,108,"NIVEAU ACTUEL  "+G.rating_text(player,true),26,C.MINT,700,700)
 	if record.is_empty():
 		D.text(card,24,163,"Suivi individuel indisponible pour ce joueur.",22,C.MUTED,400,1550,HORIZONTAL_ALIGNMENT_LEFT,true)
 		return

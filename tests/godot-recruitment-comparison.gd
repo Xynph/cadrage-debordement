@@ -76,15 +76,15 @@ func run() -> void:
 		if dimensions == Vector2i(2560,1440):
 			check(dialog.size.x >= 1850 and dialog.size.y >= 1150, "Surface de lecture confortable en 1440p")
 			var hero: Label = dialog.find_child("MarketComparisonHeading",true,false)
-			check(hero.get_theme_font_size("font_size") >= 40, "Hiérarchie de titre lisible en 1440p")
+			check(hero.get_theme_font_size("font_size") == 28, "Titre dense de 28 px en 1440p")
 		var left: OptionButton = dialog.find_child("MarketComparisonPlayer0",true,false)
 		var right: OptionButton = dialog.find_child("MarketComparisonPlayer1",true,false)
 		check(left.selected > 0 and right.selected > 0 and left.get_item_metadata(left.selected) != right.get_item_metadata(right.selected), "Deux vrais candidats distincts préselectionnés")
 		check(right.has_focus(), "Focus initial sur choix B")
 		if dimensions == Vector2i(2560,1440):
-			check(right.get_theme_font_size("font_size") >= 26, "Sélecteur lisible en 1440p")
+			check(right.get_theme_font_size("font_size") == 20, "Sélecteur dense de 20 px en 1440p")
 			var rating_row: HBoxContainer = dialog.find_child("MarketComparisonRow_rating",true,false)
-			check(rating_row.get_child(1).get_theme_font_size("font_size") >= 26, "Valeurs du tableau lisibles en 1440p")
+			check(rating_row.get_child(1).get_theme_font_size("font_size") == 20, "Données denses de 20 px en 1440p")
 		var tabs: TabContainer = dialog.find_child("MarketComparisonTabs",true,false)
 		check(tabs != null and tabs.get_tab_count() == 2, "Synthèse et attributs séparés")
 		check(dialog.find_children("MarketComparisonRow_attribute_*", "HBoxContainer", true,false).size() == 36, "Les 36 attributs restent consultables par familles")

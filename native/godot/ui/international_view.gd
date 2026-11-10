@@ -169,7 +169,7 @@ static func _callups(international: Dictionary, names: Dictionary) -> Control:
 			"%s au %s" % [callup.from, callup.through]))
 		for player: Dictionary in callup.get("players", []):
 			var identity := "%s · %s · %s ans" % [player.name, player.pos, G.n(player.age)]
-			if player.get("note") != null: identity += " · Note " + G.n(player.note)
+			identity += " · Niveau " + G.rating_text(player)
 			list.add_child(G.wrap(identity, 15, G.INK))
 	if view.get_child_count() == 0: view.add_child(G.wrap("Aucune convocation enregistrée."))
 	return view

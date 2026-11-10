@@ -360,8 +360,8 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 	else:
 		D.text(row, 325, 25, item.get("pos", "—"), 17, C.IVORY, 500, 155)
 		D.text(row, 510, 25, G.n(item.get("age", "—")), 18, C.IVORY, 600, 52, HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(row, 582, 26, G.n(item.get("rating", "—")), 21, GREEN, 700, 65, HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(row, 675, 26, G.n(report.get("potential", "—")), 20, GREEN if report.has("potential") else C.FAINT, 700, 80, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(row, 582, 26, G.rating_text(item), 21, GREEN, 700, 65, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(row, 675, 26, G.potential_text(item if not item.is_empty() else report), 18, G.POTENTIAL_COLOR, 700, 80, HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(row, 742, 25, _money(item.get("fee")), 17, C.IVORY, 600, 111)
 		D.text(row, 864, 22, G.salary(item.get("salary")), 17, C.IVORY, 500, 174)
 		if max_salary > 0 and (item.get("salary") is float or item.get("salary") is int):
@@ -397,11 +397,11 @@ func _profile(player: Dictionary, report: Dictionary) -> void:
 	D.text(panel, 370, 57, str(person.get("name", "—")).to_upper(), 46, C.IVORY, 800, 440)
 	D.text(panel, 374, 89, person.get("pos", "—"), 27, C.IVORY, 600, 430)
 	D.rect(panel, Rect2(374, 104, 211, 84), Color("0d4e31"), 9)
-	D.text(panel, 479, 172, G.n(person.get("note" if tab == 3 else "rating", "—")), 75, C.IVORY, 800, 197, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(panel, 479, 172, G.rating_text(person), 43, C.IVORY, 800, 197, HORIZONTAL_ALIGNMENT_CENTER)
 	D.line(panel, Vector2(599, 111), Vector2(599, 186), C.LINE)
-	D.text(panel, 707, 149, G.n(report.get("potential", "—")), 53, C.IVORY, 800, 198, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(panel, 707, 149, G.potential_text(person), 34, G.POTENTIAL_COLOR, 800, 198, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(panel, 707, 177, "Potentiel", 25, C.MUTED, 600, 198, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(panel, 375, 222, G.n(person.get("age", "—")) + " ans" + (" lors du rapport" if tab == 3 else ""), 28, C.IVORY, 600, 174)
+	D.text(panel, 375, 222, G.n(person.get("age", "—")) + " ans", 24, C.IVORY, 600, 174)
 	var can_track: bool = not player.is_empty() and not app.waiting and app._live().is_empty() and app.model.meta.get("phase", "") != "ended"
 	var context: Variant = app.model.get("clubLife", {}).get("managerCareer", {}).get("context")
 	var track := D.button(panel, Rect2(555, 195, 253, 41), "Retirer du suivi" if player_id in app.management_ui.shortlist else "Suivre cette piste", func():
@@ -411,12 +411,16 @@ func _profile(player: Dictionary, report: Dictionary) -> void:
 	var source := D.rect(panel, Rect2(16, 255, 490, 43), Color("152224"), 7, C.LINE)
 	_icon(source, "people", Rect2(16, 10, 23, 23), C.IVORY)
 	D.text(source, 52, 29, info.get("source", "Aucune observation enregistrée"), 24, C.IVORY, 600, 426)
-	var scouting := D.rect(panel, Rect2(520, 255, 294, 43), Color("152224"), 7, C.LINE)
-	_icon(scouting, "search", Rect2(15, 10, 23, 23), C.IVORY)
-	D.text(scouting, 51, 29, "Agent libre" if report.is_empty() else _report_label(report), 24, C.IVORY, 600, 230)
+	if person.get("scouting") is Dictionary:
+		var observer := D.button(panel,Rect2(520,255,294,43),"",func(): pass,false,"search",true,app.accent,"ObserveRecruitment")
+		preload("res://ui/player_observation.gd").configure(observer,app,person)
+	else:
+		var scouting := D.rect(panel, Rect2(520, 255, 294, 43), Color("152224"), 7, C.LINE)
+		_icon(scouting, "search", Rect2(15, 10, 23, 23), C.IVORY)
+		D.text(scouting, 51, 29, "Agent libre" if report.is_empty() else _report_label(report), 24, C.IVORY, 600, 230)
 	_observation(panel, player, report)
 	_deal(panel, player, report)
-	D.button(panel, Rect2(16, 763, 407, 45), "Demander une observation" if report.is_empty() else "Lire le rapport complet", func():
+	D.button(panel, Rect2(16, 763, 407, 45), "Missions du recruteur" if report.is_empty() else "Lire le rapport complet", func():
 		if report.is_empty(): _staff(1, str(player.get("pos", "")))
 		else: _report_dialog(report), false, "save", true, app.accent, "OpenScoutReport")
 	var consultation_only: bool = player.get("negotiation",{}).get("status","") == "withdrawn"
@@ -428,9 +432,11 @@ func _profile(player: Dictionary, report: Dictionary) -> void:
 func _observation(parent: Panel, player: Dictionary, report: Dictionary) -> void:
 	var info: Dictionary = report.get("assessment", {})
 	var observed := _section(parent, Rect2(16, 305, 286, 137), "FAITS RELEVÉS", "check")
-	var facts: Array = info.get("observed", [])
+	var facts: Array = []
+	for fact: String in info.get("observed", []):
+		if fact not in facts: facts.append(fact)
 	if facts.is_empty():
-		facts = ["Âge : " + G.n(player.get("age", "—")) + " ans", "Niveau du marché : " + G.n(player.get("rating", "—")), "Sans rapport daté"]
+		facts = ["Âge : " + G.n(player.get("age", "—")) + " ans", "Niveau du marché : " + G.rating_text(player), "Sans rapport daté"]
 	for i in mini(facts.size(), 3):
 		D.text(observed, 15, 65 + 27 * i, facts[i], 22, C.IVORY, 500, 255)
 	var vigilance := _section(parent, Rect2(310, 305, 291, 137), "VIGILANCE", "warning")
@@ -440,18 +446,27 @@ func _observation(parent: Panel, player: Dictionary, report: Dictionary) -> void
 	for i in warning_lines.size():
 		D.text(vigilance, 16, 65 + 25 * i, warning_lines[i], 22, C.IVORY, 500, 259)
 	var trust := _section(parent, Rect2(610, 305, 204, 137), "APPRÉCIATION", "star")
-	D.text(trust, 102, 107, report.get("grade", "—"), 65, _report_color(report), 800, 179, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(trust, 102, 107, str(report.get("grade")) if report.get("grade") != null else "—", 65, _report_color(report), 800, 179, HORIZONTAL_ALIGNMENT_CENTER)
 	var compare := _section(parent, Rect2(16, 452, 798, 162), "COMPARAISON AU MÊME POSTE", "people")
 	var role := str(player.get("pos", report.get("pos", "")))
 	var squad: Array = app.model.get("squad", []).filter(func(p: Dictionary): return str(p.get("pos", "")) == role)
 	var average := 0.0
 	for teammate: Dictionary in squad: average += float(teammate.get("rating", 0))
-	var values: Array = [player.get("rating"), roundi(average / squad.size()) if not squad.is_empty() else null, report.get("potential")]
+	var evaluation := report if tab == 3 else player
+	var values: Array = [G.knowledge_sort_value(evaluation,"rating"), roundi(average / squad.size()) if not squad.is_empty() else null, G.knowledge_sort_value(evaluation,"potential")]
+	var captions: Array = [G.rating_text(evaluation),G.n(values[1]) if values[1] != null else "—",G.potential_text(evaluation)]
 	for i in values.size():
 		var y := 59 + i * 36
 		D.text(compare, 25, y + 12, ["Niveau de la piste", "Moyenne de l’effectif", "Potentiel observé"][i], 24, C.IVORY, 500, 272)
-		D.bar(compare, Rect2(312, y - 2, 400, 12), float(values[i]) if values[i] is float or values[i] is int else 0.0, GREEN if i != 1 else C.MUTED)
-		D.text(compare, 771, y + 12, G.n(values[i]) if values[i] != null else "—", 27, GREEN if i != 1 else C.MUTED, 700, 54, HORIZONTAL_ALIGNMENT_RIGHT)
+		if values[i] != null:
+			var tone: Color = G.POTENTIAL_COLOR if i == 2 else GREEN if i == 0 else C.MUTED
+			D.bar(compare, Rect2(312, y - 2, 340, 12), float(values[i]), tone)
+			if i != 1:
+				var interval: Dictionary = G.knowledge_bounds(evaluation,"potential" if i == 2 else "rating")
+				if not interval.is_empty() and interval.max > interval.min:
+					var rail := D.rect(compare,Rect2(312+340*float(interval.min)/100,y-2,340*float(interval.max-interval.min)/100,12),Color(tone,.35),0,tone)
+					rail.name = "CandidatePotentialRange" if i == 2 else "CandidateRatingRange"
+		D.text(compare, 771, y + 12, str(captions[i]), 22, G.POTENTIAL_COLOR if i == 2 else GREEN if i == 0 else C.MUTED, 700, 110, HORIZONTAL_ALIGNMENT_RIGHT)
 
 func _deal(parent: Panel, player: Dictionary, report: Dictionary) -> void:
 	var section := _section(parent, Rect2(16, 624, 798, 125), "SYNTHÈSE DU CONTRAT", "money")
