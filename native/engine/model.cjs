@@ -36,6 +36,7 @@ module.exports=function nativeModel(){
   ['Possession',total?Math.round(a.possession/total*100)+'%':'—',total?Math.round(b.possession/total*100)+'%':'—'],
   ['Territoire',total?Math.round(a.territory/total)+'%':'—',total?Math.round(b.territory/total)+'%':'—'],
   ['Mêlées conservées',a.scrumsWon+' / '+a.scrums,b.scrumsWon+' / '+b.scrums],
+  ...(l.uncontestedScrums?.some(count=>count>0)?[['Dont non disputées',...l.uncontestedScrums]]:[]),
   ['Touches conservées',a.lineoutsWon+' / '+a.lineouts,b.lineoutsWon+' / '+b.lineouts],
   ['Pénalités concédées',a.penalties,b.penalties],['Cartons jaunes',a.yellows,b.yellows],
   ['Tirs de pénalité',a.goals+' / '+a.goalAttempts,b.goals+' / '+b.goalAttempts],
