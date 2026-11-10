@@ -51,16 +51,18 @@ var _placed_x := -1.0
 var _placed_y := -1.0
 var _deferred_context: Dictionary = {}
 var _dock: Control
+var _voice_enabled := true
 
-func setup(application: Control) -> void:
+func setup(application: Control, voice_enabled: bool = true) -> void:
 	app = application
+	_voice_enabled = voice_enabled
 	name = "CoachGuide"
 	var directory: String = str(app.model.get("meta", {}).get("dataDir", app._profile_path()))
 	# Same explicit normalization as native/engine/worker.cjs, even before its first snapshot.
 	if directory.replace("\\", "/").trim_suffix("/").get_file() != "PrototypeGodot": directory = directory.path_join("PrototypeGodot")
 	profile.load_profile(directory)
 	speech = Speech.new(); add_child(speech)
-	speech.setup(profile.data.voice, profile.data.rate, profile.data.muted)
+	speech.setup(profile.data.voice, profile.data.rate, profile.data.muted, _voice_enabled)
 	_build()
 	speech.speaking_changed.connect(portrait.set_speaking)
 	speech.articulation_changed.connect(portrait.set_articulation)
@@ -143,9 +145,10 @@ func _build() -> void:
 	_previous = _button(actions, "‹", "GuidePrevious", func(): _step(-1)); _previous.tooltip_text = "Bulle précédente"
 	_next = _button(actions, "Suite ›", "GuideNext", func(): _step(1))
 	_navigate = _button(actions, "Ouvrir", "GuideNavigate", _go)
-	_button(actions, "↻", "GuideReplay", replay).tooltip_text = "Réécouter cette bulle"
-	_button(actions, "■", "GuideStop", func(): speech.stop()).tooltip_text = "Arrêter la voix"
-	_button(actions, "···", "GuideOptions", func(): _settings_open = not _settings_open; _layout()).tooltip_text = "Voix et options"
+	if _voice_enabled:
+		_button(actions, "↻", "GuideReplay", replay).tooltip_text = "Réécouter cette bulle"
+		_button(actions, "■", "GuideStop", func(): speech.stop()).tooltip_text = "Arrêter la voix"
+	_button(actions, "···", "GuideOptions", func(): _settings_open = not _settings_open; _layout()).tooltip_text = "Voix et options" if _voice_enabled else "Options du guide"
 	_settings_panel = PanelContainer.new(); _settings_panel.name = "GuideSettingsPanel"
 	_settings_panel.size = Vector2(492,154); add_child(_settings_panel)
 	_settings_panel.minimum_size_changed.connect(func():
@@ -153,7 +156,9 @@ func _build() -> void:
 	)
 	_options = VBoxContainer.new(); _options.add_theme_constant_override("separation", 5); _settings_panel.add_child(_options)
 	_voice_state = _label(_options, "", 11)
+	_voice_state.visible = _voice_enabled
 	var options := HBoxContainer.new(); _options.add_child(options)
+	options.visible = _voice_enabled
 	_voice = OptionButton.new(); _voice.name = "GuideVoice"; _voice.custom_minimum_size.x = 200
 	_voice.add_theme_font_size_override("font_size", 12); _voice.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	for voice in speech.voices:
@@ -174,6 +179,7 @@ func _build() -> void:
 	options.add_child(_speed)
 	var controls := HBoxContainer.new(); _options.add_child(controls)
 	_mute = _button(controls, "Muet", "GuideMute", _toggle_mute)
+	_mute.visible = _voice_enabled
 	_button(controls, "Passer l'étape", "GuideSkip", func(): _step(1, true))
 	_button(controls, "Désactiver", "GuideDisable", disable)
 	_notice = _label(_options, "", 11); _notice.name = "GuideStatus"; _notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -586,6 +592,7 @@ func replay() -> void:
 	if expanded and not _blocked(): speech.speak(bubble.text)
 
 func _toggle_mute() -> void:
+	if not _voice_enabled: return
 	speech.set_muted(not speech.muted)
 	profile.data.muted = speech.muted; _save()
 
