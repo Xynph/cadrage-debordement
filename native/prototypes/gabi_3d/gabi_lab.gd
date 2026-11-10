@@ -145,7 +145,7 @@ func _build_hud() -> void:
 	content.add_theme_constant_override("separation", 12)
 	card.add_child(content)
 
-	content.add_child(_label("PROTOTYPE 3D", 15, ACCENT))
+	content.add_child(_label("PROTOTYPE 3D · REGARD V5", 15, ACCENT))
 	content.add_child(_label("Gabi", 58, INK))
 	content.add_child(_label("Gaston Darroux · ancien pilier", 18, MUTED))
 	_rule(content)
@@ -170,7 +170,7 @@ func _build_hud() -> void:
 		views.add_child(button)
 		button.pressed.connect(set_view.bind(item[2], item[3]))
 		view_buttons[item[0]] = button
-	var disclaimer := _label("Personnage à l’échelle de 1,80 m · rig corporel", 14, MUTED)
+	var disclaimer := _label("Échelle 1,80 m · yeux en volume", 14, MUTED)
 	disclaimer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(disclaimer)
 

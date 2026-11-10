@@ -37,6 +37,10 @@ func _run() -> void:
 			return
 	var head := skeleton.find_bone("Head")
 	var hand := skeleton.find_bone("Hand.R")
+	for eye_name: String in ["Globe_L", "Globe_R"]:
+		var eye := lab.get_node("Gabi").find_child(eye_name, true, false) as MeshInstance3D
+		_check(eye != null and eye.skin != null and eye.mesh.get_surface_count() >= 4,
+			"globe géométrique importé " + eye_name)
 	_check(head >= 0 and hand >= 0, "os du visage et de la main identifiables")
 	if head < 0 or hand < 0:
 		_finish()
