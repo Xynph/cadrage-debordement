@@ -524,6 +524,11 @@ func _templates(body: VBoxContainer) -> void:
 	if templates.is_empty() or not fixture_id is String or fixture_id.is_empty(): return
 	body.add_child(C.rule())
 	body.add_child(C.label("SEMAINES TYPES",20,C.GOLD,true,700))
+	if not app._live().is_empty():
+		var unavailable := C.wrap("Les semaines types sont indisponibles jusqu’à la validation du résultat.",18,C.MUTED)
+		unavailable.name = "CalendarTemplateUnavailable"
+		body.add_child(unavailable)
+		return
 	var chooser := OptionButton.new()
 	chooser.name = "CalendarTemplate"
 	chooser.accessibility_name = "Modèle de semaine"
