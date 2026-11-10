@@ -707,10 +707,14 @@ func _update_live_bar() -> void:
 
 func primary_text() -> String:
 	var live := _live()
-	if not live.is_empty(): return "VALIDER LE RÉSULTAT  →" if live.get("finished",false) else "RETOUR AU DIRECT  →"
+	if not live.is_empty():
+		if live.get("finished",false): return "VALIDER LE RÉSULTAT  →"
+		if route == "Préparation" and live.get("paused",false): return "RETOUR AU MATCH  →"
+		return "RETOUR AU DIRECT  →"
 	if model.get("meta",{}).get("canAdvanceSeason",false): return "SAISON SUIVANTE  →"
 	if not SeasonPreparation.data(model.get("meta",{})).is_empty(): return "AVANCER LA PRÉPARATION  →"
-	return "PRÉPARER LE MATCH  →" if model.get("next") != null else "AVANCER LA SEMAINE  →"
+	if model.get("next") == null: return "AVANCER LA SEMAINE  →"
+	return "ALLER AU JOUR DE MATCH  →" if route == "Préparation" else "PRÉPARER LE MATCH  →"
 
 func primary_action() -> void:
 	if waiting and (last_command != "tick" or not queued_action.is_empty()): return
@@ -720,7 +724,7 @@ func primary_action() -> void:
 	elif model.meta.get("canAdvanceSeason",false): confirm("Une nouvelle saison", "Les contrats arrivés à échéance sont réglés et les mouvements de division sont appliqués. Commencer la saison suivante ?", func(): _command("next_season",{"confirmed":true}))
 	elif not SeasonPreparation.data(model.meta).is_empty(): _command(SeasonPreparation.command(model.meta),{"fromWeek":int(model.meta.get("week",0))})
 	elif model.get("next") == null: _command("finish_round")
-	else: _navigate("Préparation")
+	else: _navigate("Match" if route == "Préparation" else "Préparation")
 
 func create_career(id: int) -> void:
 	var action := func(): _command("new_career",{"club":id,"mode":"common"},"Bureau")
