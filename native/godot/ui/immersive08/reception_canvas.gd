@@ -398,13 +398,18 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array)
 		if linked.size() > 1:
 			var default_open: bool = linked.any(func(item: Dictionary): return item.id == state.selected or Reading.status(item, app.model).key == "todo")
 			var opened: bool = state.expanded_threads.get(group.key, default_open)
-			list_entries.append({"thread_header":true,"key":group.key,"opened":opened,"count":linked.size()})
+			var title: String = str(linked[0].get("subject",linked[0].category))
+			var notice: Dictionary = linked[0].get("calendar_notice",{})
+			if not str(notice.get("opponent","")).is_empty(): title += " · " + str(notice.opponent)
+			var context: Dictionary = linked[0].get("press_invitation",{}).get("context",{})
+			if context.has_all(["season","week"]): title += " · S%d / sem. %d" % [context.season,int(context.week)+1]
+			list_entries.append({"thread_header":true,"key":group.key,"opened":opened,"count":linked.size(),"title":title})
 			if not opened: continue
 		for item: Dictionary in linked: list_entries.append(item)
 	for message: Dictionary in list_entries:
 		if message.get("thread_header", false):
 			var group_id := "InboxThread_" + str(message.key).sha256_text().left(12)
-			var toggle := C.button(("▾ " if message.opened else "▸ ") + "%d courriers liés" % message.count, func():
+			var toggle := C.button(("▾ " if message.opened else "▸ ") + "%s · %d courriers" % [message.title,message.count], func():
 				state.expanded_threads[message.key] = not message.opened
 				_redraw(app, group_id), false, app.accent)
 			toggle.add_theme_font_size_override("font_size", C.px(18))
