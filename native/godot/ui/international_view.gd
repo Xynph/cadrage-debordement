@@ -185,8 +185,8 @@ static func _edition_title(edition: Dictionary, year: int) -> String:
 
 static func host_mail_edition(model: Dictionary, event: Dictionary) -> Dictionary:
 	var id := str(event.get("id", ""))
-	if event.get("kind") != "international_host" or not id.begins_with("host/"): return {}
-	var edition_id := id.trim_prefix("host/")
+	if event.get("kind") != "international_host" or id.get_slice("/", 0) not in ["host", "host-guide"]: return {}
+	var edition_id := id.substr(id.find("/") + 1)
 	for edition: Dictionary in model.get("international", {}).get("editions", []):
 		if edition.get("id") == edition_id and not _host_data(edition).is_empty(): return edition
 	return {}
