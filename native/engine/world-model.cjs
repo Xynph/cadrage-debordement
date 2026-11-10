@@ -5,6 +5,32 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
  const positions=['Piliers','Talonneurs','Deuxièmes lignes','Troisièmes lignes','Demis de mêlée','Demis d’ouverture','Ailiers','Centres','Arrières'];
  const starterSlots=positions.map((_,family)=>FAMILIES.filter(slot=>slot===family).length);
  const round=value=>Math.round(value*10)/10;
+ const countryTimezones={FR:'Europe/Paris',GB:'Europe/London',IE:'Europe/Dublin',IT:'Europe/Rome',ZA:'Africa/Johannesburg',
+  GE:'Asia/Tbilisi',JP:'Asia/Tokyo',NZ:'Pacific/Auckland',FJ:'Pacific/Fiji'};
+ const pacificTimezones={'srp:brumbies':'Australia/Canberra','srp:reds':'Australia/Brisbane',
+  'srp:waratahs':'Australia/Sydney','srp:force':'Australia/Perth'};
+ const timeFormats=new Map();
+ function localTime(utc,timezone){
+  if(!timeFormats.has(timezone))timeFormats.set(timezone,new Intl.DateTimeFormat('fr-FR',{
+   timeZone:timezone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'
+  }));
+  return timeFormats.get(timezone).format(new Date(utc));
+ }
+ function scheduleProof(f,registry){
+  const home=registry.clubs[f.homeId];
+  const timezone=f.timezone??(f.venuePolicy==='centralised-super-round'?'Pacific/Auckland':
+   f.neutral&&f.venueRegion==='Europe'?'Europe/Paris':pacificTimezones[home.key]??countryTimezones[home.country]??'Europe/Paris');
+  const kickoffUtc=f.kickoffUtc??null;
+  const weekday=new Date(f.date+'T00:00:00Z').getUTCDay();
+  const kickoffLocal=f.kickoffLocal??(kickoffUtc?localTime(kickoffUtc,timezone):({0:'15:00',6:'16:00'}[weekday]??'19:30'));
+  const kickoffSource=f.kickoffSource??(f.kickoffLocal||kickoffUtc?'published':'simulated-not-official');
+  const source=f.scheduleSource??'generated-game';
+  const dateSource=f.dateStatus??f.dateSource??(source==='official-snapshot-provisional'?'published-provisional':
+   source.startsWith('official-')?'published':source==='game-adjusted-from-official'?'simulation-adjusted-from-published':'generated');
+  return {dateSource,dateWindow:f.dateWindow??[],kickoffLocal,kickoffUtc,kickoffSource,timezone,scheduleSource:source,
+   ...(f.sourceRef?{sourceRef:f.sourceRef}:{}),...(f.sourceDate?{sourceDate:f.sourceDate}:{}),
+   ...(f.competitionId.startsWith('jlo-')?{dateOptions:f.dateOptions??[],leg:f.leg??null}:{})};
+ }
  function rankLine(lanes,depth){
   let filled=0,expected=0,points=0;
   for(const lane of lanes){
@@ -102,7 +128,7 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
   const tables=Object.fromEntries([...edition.leagueIds,'guest'].map(id=>[id,W.ranked(S,id)])),summaries=new Map();
   const clubSummary=id=>{if(!summaries.has(id)){const c=S.clubs[id],{players,...source}=R.clubs[id],table=tables[W.leagueId(S,id)];summaries.set(id,{id,name:c.name,abbr:c.abbr,color:c.color,stadium:c.stadium,cash:c.cash,goal:c.goal,points:c.points,rank:table.findIndex(x=>x.id===id)+1,presentation:source});}return summaries.get(id);};
   const names={'jlo-d1-d2':'Barrage Japon D1 / D2','access-nationale':'Barrage Pro D2 / Nationale'},phaseLabels={'third-place':'Petite finale',promotion:'Barrage'},champPhases={quarter:'Quarts de finale',semi:'Demi-finales',final:'Finale'};
-  const dateProof=f=>edition.version>=3&&f.competitionId.startsWith('jlo-')?{dateSource:f.dateSource,dateOptions:f.dateOptions||[],dateWindow:f.dateWindow||[],leg:f.leg||null}:edition.version>=4&&['nationale','access-nationale'].includes(f.competitionId)?{dateSource:f.dateStatus,dateWindow:f.dateWindow||[],kickoffLocal:f.kickoffLocal??null,timezone:f.timezone??'Europe/Paris',scheduleSource:f.scheduleSource}:edition.version===5&&f.competitionId==='champ'?{dateSource:f.dateStatus,kickoffLocal:f.kickoffLocal??null,kickoffSource:f.kickoffSource??null,timezone:f.timezone??'Europe/London',scheduleSource:f.scheduleSource}:{};
+  const dateProof=f=>scheduleProof(f,R);
   const tableRow=r=>({...clubSummary(r.id),played:r.played,won:r.won,drawn:r.drawn,lost:r.lost,pf:r.pf,pa:r.pa,bonus:r.bonus,points:r.points,form:r.form,unresolvedTie:!!(r.unresolvedTie||r.sportingTie)});
   m.meta={...m.meta,mode:'world',engine:'native-rugby',catalogue:catalogue(R),database:{...database(R),active:true},week:S.round,leagueId:W.leagueId(S),competitionRules:edition.version===1?'Saison 2026–2027':'Saison '+years.join('–')+' · Pacifique '+years[1],rulesProfile:edition.rules,roundLabel:W.label(S),date:W.userFixture(S)?.date||null};
   m.meta.calendarToday=W.calendarToday(S);
