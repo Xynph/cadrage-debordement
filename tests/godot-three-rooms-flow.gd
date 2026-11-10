@@ -1,4 +1,5 @@
 extends SceneTree
+const ContextualFlow = preload("helpers/contextual_flow.gd")
 # Production main scene and exported worker only. Persistent meeting decisions
 # must be accepted before the corresponding full-screen scene can continue.
 var app: Control
@@ -31,6 +32,20 @@ func wait_command(command: String, refusal: bool = false) -> void:
 func ask(command: String, payload: Dictionary = {}, refusal: bool = false) -> void:
 	app._command(command, payload)
 	await wait_command(command, refusal)
+
+func prepare_match_day() -> bool:
+	for day in 40:
+		if not await ContextualFlow.settle_club_meetings(app, self, check): return false
+		var cadence: Dictionary = app.model.meta.get("calendarCadence", {})
+		if cadence.is_empty() or cadence.get("matchReady", false):
+			check(app.model.get("next") is Dictionary, "Actual fixture exists on the permitted kickoff day")
+			return app.model.get("next") is Dictionary
+		check(cadence.get("canAdvance", false), "Actual calendar permits the next preparation day")
+		if not cadence.get("canAdvance", false): return false
+		await ask("advance_day", {"fromDate":app.model.meta.calendarToday})
+		if not app.bridge.last_response_ok: return false
+	check(false, "Actual calendar reaches kickoff within forty preparation days")
+	return false
 
 func start_app() -> void:
 	app = load("res://main.tscn").instantiate()
@@ -362,7 +377,9 @@ func priorities_and_context() -> void:
 	# Current-match priority is tested with a real pending pre-match scene.
 	await ask("train",{"mode":"repos"})
 	check(meeting().is_empty(),"Completed same-context meeting receipts are not re-created by training")
+	if not await prepare_match_day(): return
 	await ask("auto_lineup")
+	if not await ContextualFlow.settle_club_meetings(app, self, check): return
 	await ask("begin_match")
 	check(director.kind == "locker" and app.model.clubLife.matchTalks.scene.phase == "pre","Actual match talk remains above all three management rooms")
 	var before := await checkpoint()
