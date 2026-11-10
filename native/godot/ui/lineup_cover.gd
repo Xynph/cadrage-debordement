@@ -7,10 +7,11 @@ static func data(app: Control) -> Dictionary:
 
 static func caption(quote: Dictionary) -> String:
 	var places := int(quote.places)
-	if places == 0:
-		return "Renforts · effectif complet"
-	if places < quote.slots.size():
-		return "Renforts · %d/%d places libres" % [places, quote.slots.size()]
+	if places == 0 or places < quote.slots.size():
+		var capacity := "Effectif complet" if places == 0 else "%d/%d places libres" % [places, quote.slots.size()]
+		if quote.get("reviewAfterTraining", false):
+			return capacity + " · Revoir après entraînement"
+		return "Renforts · " + capacity.to_lower()
 	return "Renforts · +%s/sem." % G.euros(quote.totalWeeklySalary)
 
 static func configure(button: Button, quote: Dictionary) -> void:
