@@ -3,6 +3,8 @@ extends Node3D
 const IDLE := &"Repos"
 const APPROVAL := &"Approbation"
 const SPEECH := &"Parole"
+const NOTEBOOK := &"Carnet"
+const NOTEBOOK_ASSET := preload("res://carnet.glb")
 const ACCENT := Color("#d9e696")
 const INK := Color("#eaf1e7")
 const MUTED := Color("#a9b9b6")
@@ -45,10 +47,14 @@ const BLINK_MID := 0.54
 @onready var voice: AudioStreamPlayer = $Voice
 @onready var camera: Camera3D = $ReviewCamera
 @onready var hud: CanvasLayer = $HUD
+@onready var notebook_anchor := $Gabi.find_child("AttacheCarnet", true, false) as Node3D
 
 var current_clip := IDLE
 var azimuth := -14.0
 var portrait := false
+var bust := false
+var notebook_correction := -1
+var notebook_ready := false
 var dragging := false
 var caption: Label
 var feedback: Label
@@ -70,6 +76,14 @@ func _ready() -> void:
 			button.disabled = true
 		return
 	face_ready = _configure_face()
+	if is_instance_valid(notebook_anchor) and is_instance_valid(face_mesh) and animations.has_animation(NOTEBOOK):
+		notebook_correction = face_mesh.find_blend_shape_by_name(&"CorrectionCarnet")
+		if notebook_correction >= 0:
+			notebook_anchor.add_child(NOTEBOOK_ASSET.instantiate())
+			notebook_anchor.hide()
+			animations.get_animation(NOTEBOOK).loop_mode = Animation.LOOP_LINEAR
+			notebook_ready = true
+	clip_buttons[NOTEBOOK].disabled = not notebook_ready
 	animations.get_animation(IDLE).loop_mode = Animation.LOOP_LINEAR
 	animations.animation_finished.connect(_on_animation_finished)
 	play_clip(IDLE)
@@ -81,21 +95,32 @@ func _clips_available() -> bool:
 
 
 func play_clip(clip: StringName) -> void:
-	if not _clips_available() or clip not in [IDLE, APPROVAL, SPEECH]:
+	if not _clips_available() or clip not in [IDLE, APPROVAL, SPEECH, NOTEBOOK] or (clip == NOTEBOOK and not notebook_ready):
 		return
 	voice.stop()
 	if face_ready:
 		_apply_face(0.0, 0.0)
+	var was_notebook := current_clip == NOTEBOOK
 	current_clip = clip
 	animations.stop(true)
-	animations.play(clip, 0.12)
+	animations.play(clip, 0.0 if was_notebook or clip == NOTEBOOK else 0.12)
 	animations.advance(0.0)
+	if notebook_ready:
+		var holding := clip == NOTEBOOK
+		face_mesh.set_blend_shape_value(notebook_correction, 1.0 if holding else 0.0)
+		notebook_anchor.visible = holding
+	if clip == NOTEBOOK:
+		set_view(14.0, false, true)
+	elif was_notebook:
+		set_view(-14.0, false)
 	for key: StringName in clip_buttons:
 		clip_buttons[key].set_pressed_no_signal(key == clip)
 	caption.text = REPLIQUE if clip == SPEECH else ""
 	match clip:
 		IDLE:
 			feedback.text = "Repos · boucle continue"
+		NOTEBOOK:
+			feedback.text = "Carnet · prise de la main gauche, respiration lente"
 		APPROVAL:
 			feedback.text = "Approbation · hochement et geste de la main"
 		SPEECH:
@@ -137,7 +162,7 @@ func _process(_delta: float) -> void:
 		blink = _sample(BLINK, time - 0.69)
 		if not articulation_channels.has(-1):
 			form = Vector3(_sample(FORM_ROUND, time), _sample(FORM_OPEN, time), _sample(FORM_SPREAD, time))
-	elif current_clip == IDLE:
+	elif current_clip in [IDLE, NOTEBOOK]:
 		blink = _sample(BLINK, time - 1.15)
 	_apply_face(jaw, blink, form)
 
@@ -173,23 +198,28 @@ func _on_animation_finished(clip: StringName) -> void:
 		play_clip(IDLE)
 
 
-func set_view(angle: float, close_up: bool) -> void:
+func set_view(angle: float, close_up: bool, bust_view := false) -> void:
 	azimuth = angle
 	portrait = close_up
+	bust = bust_view
 	_update_camera()
-	var active_view := &"profil" if portrait and is_equal_approx(absf(azimuth), 90.0) else (&"portrait" if portrait else &"ensemble")
+	var active_view := &"profil" if portrait and is_equal_approx(absf(azimuth), 90.0) else (&"buste" if bust else (&"portrait" if portrait else &"ensemble"))
 	for key: StringName in view_buttons:
 		view_buttons[key].set_pressed_no_signal(key == active_view)
 
 
+func _profile_view() -> void:
+	set_view(90.0 if current_clip == NOTEBOOK else -90.0, true, current_clip == NOTEBOOK)
+
+
 func _update_camera() -> void:
 	var radians := deg_to_rad(azimuth)
-	var target := Vector3(0.0, 1.54 if portrait else 0.90, 0.0)
-	var vertical_offset := 0.025 if portrait else 0.28
+	var target := Vector3(0.0, 1.23 if bust else (1.54 if portrait else 0.90), 0.0)
+	var vertical_offset := 0.05 if bust else (0.025 if portrait else 0.28)
 	camera.position = target + Vector3(sin(radians) * 3.5, vertical_offset, cos(radians) * 3.5)
 	camera.look_at(target, Vector3.UP)
-	camera.size = 0.66 if portrait else 2.12
-	camera.h_offset = 0.145 if portrait else 0.47
+	camera.size = 1.24 if bust else (0.66 if portrait else 2.12)
+	camera.h_offset = 0.27 if bust else (0.145 if portrait else 0.47)
 	camera.v_offset = 0.0
 
 
@@ -210,11 +240,12 @@ func _input(event: InputEvent) -> void:
 		KEY_1: play_clip(IDLE)
 		KEY_2: play_clip(APPROVAL)
 		KEY_3: play_clip(SPEECH)
+		KEY_4: play_clip(NOTEBOOK)
 		KEY_F: set_view(-10.0, true)
-		KEY_P: set_view(-90.0, true)
+		KEY_P: _profile_view()
 		KEY_R: set_view(-14.0, false)
-		KEY_LEFT: set_view(azimuth - 10.0, portrait)
-		KEY_RIGHT: set_view(azimuth + 10.0, portrait)
+		KEY_LEFT: set_view(azimuth - 10.0, portrait, bust)
+		KEY_RIGHT: set_view(azimuth + 10.0, portrait, bust)
 		_: return
 	get_viewport().set_input_as_handled()
 
@@ -251,12 +282,12 @@ func _build_hud() -> void:
 	content.add_theme_constant_override("separation", 12)
 	card.add_child(content)
 
-	content.add_child(_label("PROTOTYPE 3D · ARTICULATION V8", 15, ACCENT))
+	content.add_child(_label("PROTOTYPE 3D · STUDIO CARNET", 15, ACCENT))
 	content.add_child(_label("Gabi", 58, INK))
 	content.add_child(_label("Gaston Darroux · ancien pilier", 18, MUTED))
 	_rule(content)
 	content.add_child(_label("ANIMATIONS", 15, ACCENT))
-	for item: Array in [[IDLE, "1   Repos"], [APPROVAL, "2   Approbation"], [SPEECH, "3   Parole"]]:
+	for item: Array in [[IDLE, "1   Repos"], [APPROVAL, "2   Approbation"], [SPEECH, "3   Parole"], [NOTEBOOK, "4   Carnet"]]:
 		var button := _button(item[1])
 		content.add_child(button)
 		button.pressed.connect(play_clip.bind(item[0]))
@@ -270,11 +301,16 @@ func _build_hud() -> void:
 	var views := HBoxContainer.new()
 	views.add_theme_constant_override("separation", 8)
 	content.add_child(views)
-	for item: Array in [[&"ensemble", "En pied", -14.0, false], [&"portrait", "Visage", -10.0, true], [&"profil", "Profil", -90.0, true]]:
+	for item: Array in [
+		[&"ensemble", "En pied", set_view.bind(-14.0, false)],
+		[&"portrait", "Visage", set_view.bind(-10.0, true)],
+		[&"profil", "Profil", _profile_view],
+		[&"buste", "Buste", set_view.bind(-14.0, false, true)],
+	]:
 		var button := _button(item[1])
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		views.add_child(button)
-		button.pressed.connect(set_view.bind(item[2], item[3]))
+		button.pressed.connect(item[2])
 		view_buttons[item[0]] = button
 	var disclaimer := _label("Échelle 1,80 m · articulation et clignement", 14, MUTED)
 	disclaimer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

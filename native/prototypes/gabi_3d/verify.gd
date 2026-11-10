@@ -4,10 +4,12 @@ const SCENE := preload("res://gabi_lab.tscn")
 const IDLE := &"Repos"
 const APPROVAL := &"Approbation"
 const SPEECH := &"Parole"
+const NOTEBOOK := &"Carnet"
 
 var checks: Array[Dictionary] = []
 var capture_dir := ""
 var lab: Node3D
+var notebook_motion := {}
 
 
 func _initialize() -> void:
@@ -124,7 +126,93 @@ func _run() -> void:
 	Input.parse_input_event(rotate_key)
 	await process_frame
 	_check(lab.azimuth == -4.0, "rotation clavier")
+	await _check_notebook(player, skeleton, hand, hand_at_start)
 	_finish()
+
+
+func _check_notebook(player: AnimationPlayer, skeleton: Skeleton3D, right: int, right_rest: Transform3D) -> void:
+	var left := skeleton.find_bone("Hand.L")
+	var anchor: Node3D = lab.notebook_anchor
+	_check(lab.notebook_ready and player.has_animation(NOTEBOOK) and anchor != null, "pose Carnet et point d’attache importés")
+	if not lab.notebook_ready or left < 0:
+		return
+	var mesh := anchor.find_child("SM_GabiCarnet",true,false) as MeshInstance3D
+	var attachment := anchor.get_parent() as BoneAttachment3D
+	_check(attachment != null and attachment.get_bone_idx() == left, "le carnet suit la main gauche")
+	_check(mesh != null and mesh.get_aabb().size.is_equal_approx(Vector3(0.15,0.20,0.025)), "carnet à l’échelle 15 × 20 × 2,5 cm")
+	var correction: int = lab.notebook_correction
+	_check(not anchor.visible and is_zero_approx(lab.face_mesh.get_blend_shape_value(correction)),
+		"carnet absent et manche d’origine au repos")
+	lab.set_view(0.0, false, true)
+	await _capture("06-v8-temoin-meme-cadrage")
+	_key(KEY_4)
+	await process_frame
+	_check(lab.current_clip == NOTEBOOK and lab.bust and lab.clip_buttons[NOTEBOOK].button_pressed,
+		"4 ouvre la pose Carnet en buste")
+	_check(anchor.visible and is_equal_approx(lab.face_mesh.get_blend_shape_value(correction),1.0) and not lab.voice.playing,
+		"le carnet et la correction de manche sont actifs seulement dans cette pose")
+	var duration := player.current_animation_length
+	_check(absf(duration-5.3667)<0.02 and player.get_animation(NOTEBOOK).loop_mode == Animation.LOOP_LINEAR,
+		"respiration bouclée de 5,37 s")
+	player.pause()
+	player.seek(0.0,true)
+	await process_frame
+	var first := anchor.global_transform
+	var right_start := skeleton.get_bone_global_pose(right)
+	var offset := _hand_offset(skeleton, left, anchor)
+	_check(right_start.is_equal_approx(right_rest),"bras droit libre dans la pose de départ")
+	var drift := 0.0
+	var move := 0.0
+	for t: float in [0.0,0.5,1.0,1.15,2.2,3.1,4.4,duration-0.001]:
+		player.seek(t,true)
+		lab._process(0.0)
+		await process_frame
+		drift = maxf(drift,offset.origin.distance_to(_hand_offset(skeleton,left,anchor).origin))
+		move = maxf(move,first.origin.distance_to(anchor.global_position))
+	notebook_motion = {"duration_s": duration, "attachment_drift_mm": drift * 1000.0, "breathing_motion_mm": move * 1000.0, "loop_error_mm": first.origin.distance_to(anchor.global_position) * 1000.0}
+	_check(drift < 0.00005,"prise stable durant toute la respiration")
+	_check(move>0.003 and move<0.02,"carnet accompagne la respiration")
+	_check(first.origin.distance_to(anchor.global_position)<0.0001,"boucle Carnet sans saut")
+	player.seek(1.15,true)
+	lab._process(0.0)
+	_check(_closed_face(lab),"clignement conservé en studio")
+	player.seek(0.0,true)
+	lab._process(0.0)
+	lab.set_view(0.0,false,true)
+	await _capture("07-carnet-face")
+	lab.set_view(36.0,false,true)
+	await _capture("08-carnet-trois-quarts")
+	_key(KEY_P)
+	await process_frame
+	_check(lab.azimuth == 90.0 and lab.bust and lab.view_buttons[&"profil"].button_pressed,
+		"P cadre le profil de la main qui tient le carnet")
+	await _capture("09-carnet-profil")
+	_key(KEY_R)
+	await process_frame
+	_check(not lab.bust and lab.camera.size>2.0,"R reste en pied avec le carnet")
+	await _capture("10-carnet-en-pied")
+	_key(KEY_1)
+	await process_frame
+	_check(lab.current_clip==IDLE and not anchor.visible and is_zero_approx(lab.face_mesh.get_blend_shape_value(correction)),
+		"retour au repos et retrait immédiat du carnet et de la correction")
+	_key(KEY_2)
+	await process_frame
+	_check(lab.current_clip==APPROVAL and not anchor.visible,"Approbation garde les mains sans accessoire")
+	_key(KEY_3)
+	await process_frame
+	_check(lab.current_clip==SPEECH and lab.voice.playing and not anchor.visible,"Parole reprend avec le WAV existant")
+	lab.play_clip(IDLE)
+
+
+func _key(code: Key) -> void:
+	var event := InputEventKey.new()
+	event.keycode = code
+	event.pressed = true
+	Input.parse_input_event(event)
+
+
+func _hand_offset(skeleton: Skeleton3D, hand: int, anchor: Node3D) -> Transform3D:
+	return (skeleton.global_transform * skeleton.get_bone_global_pose(hand)).affine_inverse() * anchor.global_transform
 
 
 func _closed_face(lab: Node3D) -> bool:
@@ -161,7 +249,7 @@ func _check(ok: bool, label: String) -> void:
 func _finish() -> void:
 	var errors := checks.filter(func(row: Dictionary) -> bool: return not row.ok)
 	var report := {"controles": checks.size(), "echecs": errors.size(),
-		"mode": DisplayServer.get_name(), "taille": str(root.size), "resultats": checks}
+		"mode": DisplayServer.get_name(), "taille": str(root.size), "mouvement_carnet": notebook_motion, "resultats": checks}
 	var json := JSON.stringify(report, "\t")
 	print(json)
 	if not capture_dir.is_empty():

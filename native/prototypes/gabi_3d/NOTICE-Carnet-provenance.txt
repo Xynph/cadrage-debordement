@@ -1,0 +1,4 @@
+Carnet de Gabi · Oval Legacy
+Créé dans Blender 5.2.3 pendant la session du 10 novembre 2026. Modèle original du lot Accessoires d’après la planche approuvée. Le GLB inclut un matériau opaque, un albédo et une rugosité procéduraux. Il est fourni séparément du personnage et de sa voix.
+Source Blender éditable sur D:/OvalLegacy-carnet-Gabi-20261110/source/Carnet-Gabi.blend. Script source et contrôle sous D:/OvalLegacy-carnet-Gabi-20261110/source.
+Taille de l’accessoire 15 × 20 × 2,5 cm. SHA-256 34ee54a340b4f16b6890f928afc6df110af0ccdefb8c7ab656278ee69f1f8722.

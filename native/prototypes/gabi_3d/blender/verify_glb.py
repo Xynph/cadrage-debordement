@@ -12,7 +12,7 @@ assert magic == b"glTF" and version == 2 and size == len(header) and chunk_type 
 gltf = json.loads(header[20:20+json_len])
 assert len(gltf["skins"]) == 1 and len(gltf["images"]) == 2
 assert len(gltf["meshes"]) == 3 and len(gltf["materials"]) == 9
-assert {a["name"] for a in gltf["animations"]} == {"Approbation", "Parole", "Repos"}
+assert {a["name"] for a in gltf["animations"]} == {"Approbation", "Carnet", "Parole", "Repos"}
 assert len(gltf["skins"][0]["joints"]) == 20
 assert p.stat().st_size < 5_500_000
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -21,7 +21,7 @@ rig = next(obj for obj in bpy.context.scene.objects if obj.type == "ARMATURE")
 body = bpy.data.objects["SK_Gabi"]
 assert set(body.data.shape_keys.key_blocks.keys()) == {
     "Basis", "Machoire", "Paupiere_Mi", "Paupiere_Fermee",
-    "ArrondiPhrase", "OuverturePhrase", "EtirementPhrase",
+    "ArrondiPhrase", "OuverturePhrase", "EtirementPhrase", "CorrectionCarnet",
 }
 for name in ("Globe_L", "Globe_R"):
     eye = bpy.data.objects[name]
