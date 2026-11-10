@@ -1,6 +1,8 @@
 extends RefCounted
 
 const T = preload("res://theme.gd")
+const Knowledge = preload("res://ui/player_knowledge_text.gd")
+const POTENTIAL_COLOR = Knowledge.POTENTIAL_COLOR
 const W = preload("res://visual_widgets.gd")
 const Art = preload("res://ui/art_widgets.gd")
 const BG = Color("151b1f")
@@ -344,3 +346,10 @@ static func salary_period(short: bool = false) -> String:
 static func contract_year(end_season: Variant) -> String:
 	if not (end_season is int or end_season is float) or not is_finite(float(end_season)) or float(end_season) != floorf(float(end_season)) or end_season < 0 or end_season > 7973: return "—"
 	return str(2026 + int(end_season))
+
+static func rating_text(person: Dictionary, own_context: bool = false) -> String: return Knowledge.rating_text(person,own_context)
+static func potential_text(person: Dictionary) -> String: return Knowledge.potential_text(person)
+static func knowledge_sort_value(person: Dictionary, field: String, own_context: bool = false) -> Variant: return Knowledge.sort_value(person,field,own_context)
+static func knowledge_bounds(person: Dictionary, field: String, own_context: bool = false) -> Dictionary: return Knowledge.bounds(person,field,own_context)
+static func attributes_known(person: Dictionary, own_context: bool = false) -> bool: return Knowledge.attributes_known(person,own_context)
+static func knowledge_delta(left: Dictionary, right: Dictionary, field: String, own_context: bool = false) -> String: return Knowledge.range_delta(left,right,field,own_context)
