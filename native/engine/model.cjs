@@ -45,6 +45,7 @@ module.exports=function nativeModel(){
  const errors=sheetErrors(),all=[...S.lineup,...S.reserves];
  const selection={valid:errors.length===0,errors,slots:all.map((playerId,slot)=>({
   slot,
+  ...(typeof nativePositionAptitudes==='undefined'?{}:{positionNumber:nativePositionAptitudes.positionNumber(slot)}),
   label:slot<15?POS[slot]:BENCH_LABELS[slot-15],
   playerId,
   eligibleIds:own.players.filter(p=>!p.injury&&(slot<15?slotEligible(p,slot):benchEligible(p,slot-15))).map(p=>p.id)
