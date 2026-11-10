@@ -12,6 +12,8 @@ var _count: Label
 var _scroll: ScrollContainer
 var _season: OptionButton
 var _position: OptionButton
+var _headers: Dictionary = {}
+const SORT_KEYS := ["name","pos","rating","potential","age","contractEnd","salary","minutes","status","renewal"]
 
 static func build(owner_app: Control) -> Control:
 	var view: Control = load("res://ui/contract_review.gd").new()
@@ -21,6 +23,10 @@ static func build(owner_app: Control) -> Control:
 
 static func action_id(prefix: String, player_id: String) -> String:
 	return prefix + "_" + player_id.sha256_text().substr(0, 16)
+
+static func projected_mark(player: Dictionary, key: String) -> String:
+	var value: Variant = player.get(key)
+	return G.n(value) if (value is int or value is float) and is_finite(float(value)) else "—"
 
 static func horizon(player: Dictionary) -> int:
 	var value: Variant = player.get("contractEnd")
@@ -44,13 +50,29 @@ static func filtered(players: Array, filters: Dictionary) -> Array:
 		var query := U.fold(str(filters.get("search", "")).strip_edges())
 		if not query.is_empty() and not U.fold(str(player.get("name", "")) + " " + str(player.get("pos", ""))).contains(query): continue
 		result.append(player)
+	var sort_key := str(filters.get("sort", "contractEnd"))
+	if not sort_key in SORT_KEYS: sort_key = "contractEnd"
+	var descending := bool(filters.get("descending", false))
 	result.sort_custom(func(a: Dictionary, b: Dictionary):
-		var first := horizon(a)
-		var second := horizon(b)
-		if first != second: return first < second if first >= 0 and second >= 0 else first >= 0
-		var names := U.fold(str(a.get("name", ""))).naturalnocasecmp_to(U.fold(str(b.get("name", ""))))
-		return names < 0 if names != 0 else str(a.id) < str(b.id))
+		var first: Variant = sort_value(a, sort_key, bool(filters.get("live", false)))
+		var second: Variant = sort_value(b, sort_key, bool(filters.get("live", false)))
+		if first == null and second != null: return false
+		if first != null and second == null: return true
+		var comparison := 0
+		if first != null:
+			if first is String: comparison = U.fold(first).naturalnocasecmp_to(U.fold(str(second)))
+			else: comparison = -1 if float(first) < float(second) else 1 if float(first) > float(second) else 0
+		if comparison == 0: return str(a.id) < str(b.id)
+		return comparison > 0 if descending else comparison < 0)
 	return result
+
+static func sort_value(player: Dictionary, key: String, live: bool = false) -> Variant:
+	if key == "contractEnd": return horizon(player) if horizon(player) >= 0 else null
+	if key == "renewal": return renewal_reason(player, live) if player.get("renewal") is Dictionary and not player.renewal.is_empty() else null
+	var value: Variant = player.get(key)
+	if key in ["rating","potential","age","salary","minutes"]:
+		return value if (value is int or value is float) and is_finite(float(value)) else null
+	return str(value) if value != null and not str(value).strip_edges().is_empty() else null
 
 static func coverage(players: Array, season: int) -> Array:
 	var groups: Dictionary = {}
@@ -117,6 +139,8 @@ func _build() -> void:
 	if not app.management_ui.roster.has("contract_review"):
 		app.management_ui.roster.contract_review = {"season":0,"status":"Tous","precision":"Toutes","position":"Tous","search":"","scroll":0,"focus":""}
 	state = app.management_ui.roster.contract_review
+	if not state.has("sort"): state.sort = "contractEnd"
+	if not state.has("descending"): state.descending = false
 	add_child(_label("Les échéances de votre effectif", 26))
 	add_child(_label("Échéances classées par fin de saison, sans présumer une urgence. Aucune date précise d’expiration n’est fournie.", 17, C.MUTED))
 	var top := HBoxContainer.new()
@@ -185,11 +209,26 @@ func _build() -> void:
 	var inset := Control.new()
 	inset.custom_minimum_size.x = 8
 	header.add_child(inset)
-	for column in [["JOUEUR",330],["POSTE",180],["ÂGE",60],["ÉCHÉANCE",145],["SALAIRE / SEM.",145],["MIN.",95],["STATUT",110],["PROLONGATION",300],["CONSULTER",276]]: header.add_child(_cell(column[0], column[1], C.MUTED, 16))
+	for column in [["JOUEUR",300,"name"],["POSTE",160,"pos"],["NIVEAU",72,"rating"],["POTENTIEL",84,"potential"],["ÂGE",60,"age"],["ÉCHÉANCE",145,"contractEnd"],["SALAIRE / SEM.",145,"salary"],["MIN.",95,"minutes"],["STATUT",110,"status"],["PROLONGATION",190,"renewal"],["CONSULTER",276,""]]:
+		if str(column[2]).is_empty():
+			header.add_child(_cell(column[0], column[1], C.MUTED, 16))
+			continue
+		var key := str(column[2])
+		var sort := _button(str(column[0]), "ContractSort_" + key, func(): _sort(key))
+		sort.custom_minimum_size = Vector2(column[1], 30)
+		sort.add_theme_font_size_override("font_size", 16)
+		sort.clip_text = true
+		sort.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		for mode in ["normal","hover","pressed"]:
+			sort.add_theme_stylebox_override(mode, C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
+		sort.set_meta("caption", str(column[0]))
+		header.add_child(sort)
+		_headers[key] = sort
 	main.add_child(header)
 	_scroll = ScrollContainer.new()
 	_scroll.name = "ContractReviewScroll"
 	_scroll.follow_focus = true
+	_scroll.mouse_force_pass_scroll_events = false
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll.custom_minimum_size.y = 400
@@ -207,6 +246,7 @@ func _build() -> void:
 	sidebar.add_child(_label("Postes principaux · aucun départ annoncé. Cliquez un poste pour filtrer.", 16, C.MUTED))
 	var side_scroll := ScrollContainer.new()
 	side_scroll.follow_focus = true
+	_scroll.mouse_force_pass_scroll_events = false
 	side_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	side_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	sidebar.add_child(side_scroll)
@@ -236,14 +276,30 @@ func _fill_choice(choice: OptionButton, values: Array, selected: String) -> void
 		if str(value) == selected: choice.select(choice.item_count - 1)
 
 func _reset() -> void:
-	state.merge({"season":0,"status":"Tous","precision":"Toutes","position":"Tous","search":"","scroll":0,"focus":"ContractReviewReset"}, true)
+	state.merge({"season":0,"status":"Tous","precision":"Toutes","position":"Tous","search":"","scroll":0,"focus":"ContractReviewReset","sort":"contractEnd","descending":false}, true)
 	app._render(false)
+
+func _sort(key: String) -> void:
+	state.descending = not bool(state.descending) if str(state.sort) == key else false
+	state.sort = key
+	state.scroll = 0
+	state.focus = "ContractSort_" + key
+	_refresh()
+	_restore_focus()
 
 func _refresh() -> void:
 	for node in _rows.get_children(): _rows.remove_child(node); node.queue_free()
 	for node in _coverage.get_children(): _coverage.remove_child(node); node.queue_free()
-	var players := filtered(app.model.get("squad", []), state)
-	_count.text = "%d / %d joueurs · échéances les plus proches d’abord · consultation sans signature" % [players.size(), app.model.get("squad", []).size()]
+	var filters := state.duplicate(true)
+	filters.live = not app._live().is_empty()
+	var players := filtered(app.model.get("squad", []), filters)
+	_count.text = "%d / %d joueurs · cliquez un titre pour trier · consultation sans signature" % [players.size(), app.model.get("squad", []).size()]
+	for key: String in _headers:
+		var sort: Button = _headers[key]
+		var selected := str(state.sort) == key
+		sort.text = str(sort.get_meta("caption")) + (" ▼" if state.descending else " ▲") if selected else str(sort.get_meta("caption")) + " ↕"
+		sort.tooltip_text = "Trier par " + str(sort.get_meta("caption")) + (" · ordre décroissant" if selected and state.descending else " · ordre croissant" if selected else "")
+		sort.accessibility_name = sort.tooltip_text
 	if players.is_empty(): _rows.add_child(_label("Aucun joueur ne correspond. Modifiez les filtres ou réinitialisez la recherche.", 18, C.MUTED))
 	for player: Dictionary in players: _row(player)
 	var year := int(state.season) if int(state.season) > 0 else int(app.model.get("meta", {}).get("season", 1))
@@ -317,22 +373,32 @@ func _row(player: Dictionary) -> void:
 	panel.add_child(line)
 	var identity := HBoxContainer.new()
 	identity.add_theme_constant_override("separation", 6)
-	identity.custom_minimum_size.x = 330
+	identity.custom_minimum_size.x = 300
 	line.add_child(identity)
 	var portrait: Control = G.portrait(int(player.get("portraitIndex", 0)), 30, player)
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	identity.add_child(portrait)
-	identity.add_child(_cell(str(player.get("name", "Joueur")), 294, C.IVORY, 18))
+	identity.add_child(_cell(str(player.get("name", "Joueur")), 264, C.IVORY, 18))
 	var ending := horizon(player)
 	var year := int(app.model.get("meta", {}).get("season", 1))
-	line.add_child(_cell(str(player.get("pos", "—")), 180, C.MUTED))
+	line.add_child(_cell(str(player.get("pos", "—")), 160, C.MUTED))
+	var level := _cell(projected_mark(player, "rating"), 72, C.MINT, 18)
+	level.name = action_id("ContractLevel", str(player.id))
+	level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	level.tooltip_text = "Niveau global projeté / 100, identique à la fiche du joueur."
+	line.add_child(level)
+	var potential := _cell(projected_mark(player, "potential"), 84, C.GOLD, 18)
+	potential.name = action_id("ContractPotential", str(player.id))
+	potential.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	potential.tooltip_text = "Potentiel projeté au poste / 100, identique à la fiche. Ce plafond n’est pas garanti."
+	line.add_child(potential)
 	line.add_child(_cell(G.n(player.age) if player.get("age") != null else "—", 60, C.MUTED))
 	line.add_child(_cell("Fin S%d" % ending if ending >= 0 else "Non renseignée", 145, C.GOLD if ending >= 0 and ending <= year else C.MINT if ending > year else C.MUTED))
 	var salary: Variant = player.get("salary")
 	line.add_child(_cell(G.euros(salary) if salary is int or salary is float else "Non fourni", 145))
 	line.add_child(_cell(G.n(player.minutes) if player.get("minutes") != null else "—", 95, C.MUTED))
 	line.add_child(_cell(str(player.get("status", "—")), 110, C.MUTED, 16))
-	line.add_child(_cell(renewal_reason(player, not app._live().is_empty()), 300, C.MUTED, 16))
+	line.add_child(_cell(renewal_reason(player, not app._live().is_empty()), 190, C.MUTED, 16))
 	var actions := HBoxContainer.new()
 	actions.custom_minimum_size.x = 276
 	actions.add_theme_constant_override("separation", 8)
