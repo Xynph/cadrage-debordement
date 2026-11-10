@@ -50,11 +50,19 @@ module.exports=function nativeModel(){
   eligibleIds:own.players.filter(p=>!p.injury&&(slot<15?slotEligible(p,slot):benchEligible(p,slot-15))).map(p=>p.id)
  }))};
  if(errors.length&&!l&&S.phase!=='ended'){
-  const sheet=buildSheet({...own,players:own.players.map(p=>({...p}))},S.lineup,S.reserves);
+  const team={...own,players:own.players.map(p=>({...p}))};
+  const sheet=buildSheet(team,S.lineup,S.reserves);
   const slots=vacantMatchSlots(sheet.lineup,sheet.bench);
-  if(slots.length)selection.coverage={
-   slots,places:professionalPlaces(own),weeklySalary:COVER_WEEKLY_SALARY,totalWeeklySalary:slots.length*COVER_WEEKLY_SALARY
-  };
+  if(slots.length){
+   const places=professionalPlaces(own);
+   const quote={slots,places,weeklySalary:COVER_WEEKLY_SALARY,totalWeeklySalary:slots.length*COVER_WEEKLY_SALARY};
+   if(!S.trained&&places>=slots.length&&team.players.some(p=>p.injury===1)){
+    const recovered={...team,players:team.players.map(p=>p.injury===1?{...p,injury:0}:p)};
+    const after=buildSheet(recovered,S.lineup,S.reserves);
+    if(vacantMatchSlots(after.lineup,after.bench).length<slots.length)quote.reviewAfterTraining=true;
+   }
+   selection.coverage=quote;
+  }
  }
  const tactics={attack:S.tactic,defense:S.defence||'equilibre',attacks:Object.entries(TACTICS).map(([id,[label,description]])=>({id,label,description})),defenses:Object.entries(DEFENCES).map(([id,[label,description]])=>({id,label,description}))};
  const row=c=>({...summary(c),played:c.played,won:c.won,drawn:c.drawn,lost:c.lost,pf:c.pf,pa:c.pa,bonus:c.bonus,form:c.form});
