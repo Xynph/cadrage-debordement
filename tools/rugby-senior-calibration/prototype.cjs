@@ -110,7 +110,10 @@ function prepare(state, overrides, applyCurve = true) {
     players: club.players.map(player => {
       assert.ok(player.attributesV2 && Object.keys(player.attributesV2).length === 36, player.id);
       const override = Object.hasOwn(overrides, player.id) ? overrides[player.id] : undefined;
-      if (override) seen.add(player.id);
+      if (override) {
+        assert.ok(player.age >= 23, 'La dérogation exige un joueur de 23 ans ou plus.');
+        seen.add(player.id);
+      }
       return calibrate(player, override, applyCurve);
     }),
   }));

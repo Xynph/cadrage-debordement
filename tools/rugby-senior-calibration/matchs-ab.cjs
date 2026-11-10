@@ -46,7 +46,7 @@ const envelope = JSON.parse(original);
 const base = stateOf(envelope);
 const calibrated = prepare(base, fixedOpener ? { [fixedOpener]: overrides[fixedOpener] } : overrides, !fixedOpener);
 const league = Object.entries(base.worldMode.leagues).find(([, value]) => value.members.includes(club))?.[0];
-const opener = Object.keys(overrides)[0];
+const opener = fixedOpener ?? Object.keys(overrides)[0];
 const preparation = {
   srp: 'advance_pacific_preparation',
   'jlo-d1': 'advance_japan_preparation',
