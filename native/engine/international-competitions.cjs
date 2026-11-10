@@ -8,6 +8,10 @@ const {
 } = require('./international-2027.cjs');
 const nations = require('./nations-championship-2026.cjs');
 const rugbyChampionship = require('./rugby-championship-2027.cjs');
+const {
+  editionIds, editionYear, templateId, sixNationsCalendar, nationsCalendar, rugbyChampionshipCalendar,
+  hostCountryId, worldCupGroups, worldCupCalendar, simulatedProvenance,
+} = require('./international-edition-calendar.cjs');
 
 const COMPETITION_IDS = Object.freeze([SIX_NATIONS, WORLD_CUP, nations.id, rugbyChampionship.id]);
 const homeUnions = ['ENG', 'IRE', 'SCO', 'WAL'];
@@ -17,18 +21,26 @@ const beforeKickoff = (a, b) => a.date.localeCompare(b.date);
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 
 function editionGroups(competitionId) {
-  if (competitionId === WORLD_CUP) return Object.entries(worldCupPools);
-  if (competitionId === nations.id) return Object.entries(nations.hemispheres);
-  return [[null, competitionId === rugbyChampionship.id ? rugbyChampionship.teams : sixNationsTeams]];
+  const template = templateId(competitionId);
+  if (template === WORLD_CUP) {
+    if (competitionId === WORLD_CUP) return Object.entries(worldCupPools);
+    const year = editionYear(competitionId);
+    return worldCupGroups(year, fixtureRandom(year, 'world-cup-draw'));
+  }
+  if (template === nations.id) return Object.entries(nations.hemispheres);
+  return [[null, template === rugbyChampionship.id ? rugbyChampionship.teams : sixNationsTeams]];
 }
 
 function createEdition(competitionId, { rankings = defaultRankings, drawSeed = 0 } = {}) {
-  assert(COMPETITION_IDS.includes(competitionId), 'unknown international competition: ' + competitionId);
-  const sixNations = competitionId === SIX_NATIONS;
-  const nationsChampionship = competitionId === nations.id;
-  const trc = competitionId === rugbyChampionship.id;
-  const year = nationsChampionship ? nations.year : 2027;
-  const teamIds = editionGroups(competitionId).flatMap(([, ids]) => ids);
+  const year = editionYear(competitionId);
+  assert(year !== null, 'unknown international competition: ' + competitionId);
+  const template = templateId(competitionId);
+  const recurring = competitionId !== template;
+  const sixNations = template === SIX_NATIONS;
+  const nationsChampionship = template === nations.id;
+  const trc = template === rugbyChampionship.id;
+  const groups = editionGroups(competitionId);
+  const teamIds = groups.flatMap(([, ids]) => ids);
   assert(Array.isArray(rankings) && new Set(rankings).size === rankings.length &&
     rankings.every(id => Object.hasOwn(teamNames, id)) &&
     teamIds.every(id => rankings.includes(id)), 'rankings must list every participating team once');
@@ -45,38 +57,46 @@ function createEdition(competitionId, { rankings = defaultRankings, drawSeed = 0
     neutralVenue,
     venue,
     result: null,
+    ...(recurring ? { dateStatus: 'simulated' } : {}),
   });
 
   let fixtures;
   if (sixNations) {
-    fixtures = sixNationsSchedule.flatMap((matches, r) => matches.map(([day, kickoff, home, away], i) =>
-      fixture('r' + (r + 1) + '-' + (i + 1), day, kickoff, r + 1, 'league', null, home, away, sixNationsVenues[home])));
+    const schedule = recurring ? sixNationsCalendar(year) : sixNationsSchedule;
+    fixtures = schedule.flatMap((matches, r) => matches.map(([day, kickoff, home, away], i) =>
+      fixture('r' + (r + 1) + '-' + (i + 1), day, kickoff, r + 1, 'league', null, home, away,
+        recurring ? null : sixNationsVenues[home])));
   } else if (nationsChampionship) {
     assert(typeof drawSeed === 'string' || Number.isFinite(drawSeed), 'invalid Nations Championship draw seed');
-    fixtures = nations.leagueSchedule.flatMap((matches, r) => matches.map(([day, kickoff, home, away, venue, neutral], i) =>
+    const { leagueSchedule, finalsSchedule } = recurring ? nationsCalendar(year) : nations;
+    fixtures = leagueSchedule.flatMap((matches, r) => matches.map(([day, kickoff, home, away, venue, neutral], i) =>
       fixture('r' + (r + 1) + '-' + (i + 1), day, kickoff, r + 1, 'league', null, home, away, venue, neutral)));
-    for (const [day, kickoff, placement] of nations.finalsSchedule) {
+    for (const [day, kickoff, placement] of finalsSchedule) {
       const phase = placement === 1 ? 'final' : 'placement';
       const key = placement === 1 ? 'final' : 'placement-' + placement;
       fixtures.push({
-        ...fixture(key, day, kickoff, 7, phase, null, null, null, 'Allianz Stadium', true),
+        ...fixture(key, day, kickoff, 7, phase, null, null, null, recurring ? null : 'Allianz Stadium', true),
         placement,
         homeSource: 'north-' + placement,
         awaySource: 'south-' + placement,
       });
     }
   } else if (trc) {
-    fixtures = rugbyChampionship.schedule.flatMap(([day, matches], r) => matches.map(([home, away, venue], i) => ({
+    const schedule = recurring ? rugbyChampionshipCalendar(year) : rugbyChampionship.schedule;
+    fixtures = schedule.flatMap(([day, matches], r) => matches.map(([home, away, venue], i) => ({
       ...fixture('r' + (r + 1) + '-' + (i + 1), day, null, r + 1, 'league', null, home, away, venue ?? null),
       dateStatus: venue ? 'official' : 'simulated',
     })));
   } else {
-    fixtures = Object.entries(worldCupPoolSchedule).flatMap(([pool, matches]) => matches.map(([day, kickoff, venue, home, away], i) =>
-      fixture('pool-' + pool.toLowerCase() + '-' + (i + 1), '10-' + String(day).padStart(2, '0'), kickoff,
-        Math.floor(i / 2) + 1, 'pool', pool, home, away, worldCupVenues[venue], true))).sort(beforeKickoff);
-    for (const [key, day, kickoff, venue, round, phase, homeSource, awaySource] of worldCupKnockoutSchedule) {
+    const { poolSchedule, knockoutSchedule } = recurring ? worldCupCalendar(year, groups) : {
+      poolSchedule: Object.entries(worldCupPoolSchedule), knockoutSchedule: worldCupKnockoutSchedule,
+    };
+    fixtures = poolSchedule.flatMap(([pool, matches]) => matches.map(([day, kickoff, venue, home, away], i) =>
+      fixture('pool-' + pool.toLowerCase() + '-' + (i + 1), recurring ? day : '10-' + String(day).padStart(2, '0'),
+        kickoff, Math.floor(i / 2) + 1, 'pool', pool, home, away, worldCupVenues[venue] ?? null, true))).sort(beforeKickoff);
+    for (const [key, day, kickoff, venue, round, phase, homeSource, awaySource] of knockoutSchedule) {
       fixtures.push({
-        ...fixture(key, day, kickoff, round, phase, null, null, null, worldCupVenues[venue], true),
+        ...fixture(key, day, kickoff, round, phase, null, null, null, worldCupVenues[venue] ?? null, true),
         homeSource,
         awaySource,
       });
@@ -85,14 +105,15 @@ function createEdition(competitionId, { rankings = defaultRankings, drawSeed = 0
 
   return {
     id: competitionId,
-    name: sixNations ? 'Tournoi des Six Nations 2027' :
-      nationsChampionship ? nations.name : trc ? rugbyChampionship.name : 'Coupe du monde de rugby 2027',
+    name: (sixNations ? 'Tournoi des Six Nations' :
+      nationsChampionship ? 'Nations Championship' : trc ? 'Rugby Championship' : 'Coupe du monde de rugby') + ' ' + year,
     year,
     ...(nationsChampionship ? { drawSeed } : {}),
+    ...(recurring && template === WORLD_CUP ? { hostCountryId: hostCountryId(year) } : {}),
     teams: teamIds.map(id => ({ id, name: teamNames[id] })),
     rankings: rankings.filter(id => teamIds.includes(id)),
     fixtures,
-    provenance: sixNations ? {
+    provenance: recurring ? simulatedProvenance(template, year) : sixNations ? {
       calendar: sources.sixNationsCalendar,
       rules: sources.sixNationsRules,
     } : nationsChampionship ? { ...nations.provenance } : trc ? { ...rugbyChampionship.provenance } : {
@@ -105,8 +126,8 @@ function createEdition(competitionId, { rankings = defaultRankings, drawSeed = 0
   };
 }
 
-function fixturesForTable(edition, pool) {
-  return edition.fixtures.filter(f => phasesWithTables.has(f.phase) && (edition.id === nations.id || f.pool === pool));
+function fixturesForTable(edition, pool, crossHemisphere) {
+  return edition.fixtures.filter(f => phasesWithTables.has(f.phase) && (crossHemisphere || f.pool === pool));
 }
 
 function newRow(teamId) {
@@ -205,10 +226,12 @@ function rugbyChampionshipOrder(rows, fixtures) {
 }
 
 function standings(edition) {
-  const sixNations = edition.id === SIX_NATIONS;
-  const trc = edition.id === rugbyChampionship.id;
+  const template = templateId(edition.id);
+  const sixNations = template === SIX_NATIONS;
+  const trc = template === rugbyChampionship.id;
+  const crossHemisphere = template === nations.id;
   return editionGroups(edition.id).map(([pool, teamIds]) => {
-    const fixtures = fixturesForTable(edition, pool);
+    const fixtures = fixturesForTable(edition, pool, crossHemisphere);
     const rows = new Map(teamIds.map(id => [id, newRow(id)]));
     for (const { homeId, awayId, result } of fixtures) {
       if (!result) continue;
@@ -224,7 +247,7 @@ function standings(edition) {
     }
     const entries = [...rows.values()];
     const leagueOrder = trc ? rugbyChampionshipOrder(entries, fixtures) : sixNations ? sixNationsOrder : null;
-    const ordered = leagueOrder ? entries.sort(leagueOrder) : edition.id === nations.id ?
+    const ordered = leagueOrder ? entries.sort(leagueOrder) : crossHemisphere ?
       nationsOrder(entries, pool, edition.drawSeed) : poolOrder(entries, fixtures, edition.rankings);
     ordered.forEach((row, i) => {
       const previous = ordered[i - 1];
@@ -247,7 +270,7 @@ function rankedThirds(tables, rankings) {
 }
 
 function bestThirds(edition) {
-  if (edition.id !== WORLD_CUP || !poolStageComplete(edition)) return [];
+  if (templateId(edition.id) !== WORLD_CUP || !poolStageComplete(edition)) return [];
   return rankedThirds(standings(edition), edition.rankings);
 }
 
@@ -325,7 +348,7 @@ function canonicalResult(fixture, result) {
     winnerId = result.winnerId;
   }
   assert(result.winnerId === undefined || result.winnerId === winnerId, 'winner conflicts with score');
-  const normalExtraTime = fixture.competitionId === WORLD_CUP && decidedBy === 'extra-time';
+  const normalExtraTime = templateId(fixture.competitionId) === WORLD_CUP && decidedBy === 'extra-time';
   assert(decidedBy === undefined || (knockout && (tied ? mustDecide && decidedBy === 'kicking-competition' :
     normalExtraTime || decidedBy === 'sudden-death')), 'invalid knockout deciding method');
   const canonical = { home, away, homeTries, awayTries, winnerId };
@@ -350,8 +373,9 @@ function recordResult(edition, fixtureId, result) {
     return edition;
   }
   const updated = { ...edition, fixtures: edition.fixtures.map(f => f === fixture ? { ...f, result: score } : f) };
-  if (edition.id === WORLD_CUP) return resolveWorldCupBracket(updated);
-  if (edition.id === nations.id) return resolveNationsFinals(updated);
+  const template = templateId(edition.id);
+  if (template === WORLD_CUP) return resolveWorldCupBracket(updated);
+  if (template === nations.id) return resolveNationsFinals(updated);
   return updated;
 }
 
@@ -372,9 +396,10 @@ function editionOutcome(edition) {
     winnerIds: [], runnerUpIds: [], thirdPlaceIds: [],
     grandSlamIds: [], tripleCrownIds: [],
   };
-  if (editionsWithSharedRanks.has(edition.id)) {
+  const template = templateId(edition.id);
+  if (editionsWithSharedRanks.has(template)) {
     const [{ rows }] = standings(edition);
-    if (edition.id === SIX_NATIONS) {
+    if (template === SIX_NATIONS) {
       outcome.grandSlamIds = rows.filter(row => row.grandSlamBonus).map(row => row.teamId);
       outcome.tripleCrownIds = homeUnions.filter(id => edition.fixtures.filter(f =>
         f.result?.winnerId === id && homeUnions.includes(f.homeId) && homeUnions.includes(f.awayId)).length === 3);
@@ -392,7 +417,7 @@ function editionOutcome(edition) {
       outcome.runnerUpIds = [losingTeam(final)];
     }
     if (bronze.result) outcome.thirdPlaceIds = bronze.result.winnerId ? [bronze.result.winnerId] : [bronze.homeId, bronze.awayId];
-    if (edition.id === nations.id) {
+    if (template === nations.id) {
       const points = { north: 0, south: 0 };
       for (const f of edition.fixtures.filter(f => f.placement && f.result)) {
         const value = f.placement === 1 ? 2 : 1;
@@ -446,9 +471,9 @@ function simulateResult(edition, fixtureId, { seed = 0, homeStrength, awayStreng
   const defaultStrength = teamId => 91 - 2.05 * defaultRankings.indexOf(teamId);
   const rating = (value, teamId) => Number.isFinite(value) ? Math.max(30, Math.min(100, value)) : defaultStrength(teamId);
   const homeAdvantage = fixture.neutralVenue ? 0 : 3;
-  const hostAdvantage = edition.id === WORLD_CUP
-    ? 3 * (Number(fixture.homeId === 'AUS') - Number(fixture.awayId === 'AUS'))
-    : 0;
+  const template = templateId(edition.id);
+  const host = template === WORLD_CUP ? hostCountryId(edition.year) : null;
+  const hostAdvantage = host ? 3 * (Number(fixture.homeId === host) - Number(fixture.awayId === host)) : 0;
   const difference = rating(homeStrength, fixture.homeId) - rating(awayStrength, fixture.awayId) + homeAdvantage + hostAdvantage;
   const random = fixtureRandom(seed, fixture.id);
   const result = { home: 0, away: 0, homeTries: 0, awayTries: 0 };
@@ -463,14 +488,14 @@ function simulateResult(edition, fixtureId, { seed = 0, homeStrength, awayStreng
   playPeriod(1);
 
   if (!phasesWithTables.has(fixture.phase) && result.home === result.away) {
-    if (edition.id === WORLD_CUP) {
+    if (template === WORLD_CUP) {
       playPeriod(0.25);
       if (result.home !== result.away) {
         result.decidedBy = 'extra-time';
         return canonicalResult(fixture, result);
       }
     }
-    const goldenPeriods = edition.id === nations.id && fixture.phase === 'final' ? 2 : 1;
+    const goldenPeriods = template === nations.id && fixture.phase === 'final' ? 2 : 1;
     let favouredHome = false;
     for (let period = 0; period < goldenPeriods; period++) {
       const home = scorePeriod(difference, 0.125, random);
@@ -493,5 +518,5 @@ function simulateResult(edition, fixtureId, { seed = 0, homeStrength, awayStreng
 }
 
 module.exports = {
-  COMPETITION_IDS, createEdition, restoreEdition, standings, bestThirds, editionOutcome, recordResult, simulateResult,
+  COMPETITION_IDS, editionIds, createEdition, restoreEdition, standings, bestThirds, editionOutcome, recordResult, simulateResult,
 };
